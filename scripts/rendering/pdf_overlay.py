@@ -24,6 +24,25 @@ def strip_page_links(page: fitz.Page) -> None:
             continue
 
 
+def redact_translated_text_areas(page: fitz.Page, translated_items: list[dict]) -> None:
+    rects: list[fitz.Rect] = []
+    for item in translated_items:
+        bbox = item.get("bbox", [])
+        translated_text = (item.get("translated_text") or "").strip()
+        if len(bbox) != 4 or not translated_text:
+            continue
+        rects.append(fitz.Rect(bbox))
+
+    for rect in rects:
+        page.add_redact_annot(rect, fill=(1, 1, 1))
+    if rects:
+        page.apply_redactions(
+            images=fitz.PDF_REDACT_IMAGE_NONE,
+            graphics=fitz.PDF_REDACT_LINE_ART_NONE,
+            text=fitz.PDF_REDACT_TEXT_REMOVE,
+        )
+
+
 def extract_single_page_pdf(source_pdf_path: Path, output_pdf_path: Path, page_idx: int) -> None:
     source_doc = fitz.open(source_pdf_path)
     output_doc = fitz.open()
@@ -45,7 +64,6 @@ def insert_fitted_text(page: fitz.Page, rect: fitz.Rect, text: str, font_path: P
             expanded_rect,
             text,
             fontname="noto_cjk",
-            fontfile=str(font_path),
             fontsize=current_size,
             color=(0, 0, 0),
             align=0,
@@ -59,7 +77,6 @@ def insert_fitted_text(page: fitz.Page, rect: fitz.Rect, text: str, font_path: P
         fitz.Point(rect.x0, rect.y1 - 1),
         text,
         fontname="noto_cjk",
-        fontfile=str(font_path),
         fontsize=MIN_FONT_SIZE,
         color=(0, 0, 0),
         overlay=True,
@@ -141,12 +158,35 @@ def insert_reflowed_segments(
                 fitz.Point(x, y),
                 draw_text,
                 fontname="noto_cjk",
-                fontfile=str(font_path),
                 fontsize=font_size,
                 color=(0, 0, 0),
                 overlay=True,
             )
         x += width
+
+
+def apply_translated_items_to_page(
+    page: fitz.Page,
+    translated_items: list[dict],
+    font_path: Path,
+) -> None:
+    valid_items: list[tuple[fitz.Rect, dict]] = []
+    for item in translated_items:
+        bbox = item["bbox"]
+        translated_text = (item.get("translated_text") or "").strip()
+        if len(bbox) != 4 or not translated_text:
+            continue
+        rect = fitz.Rect(bbox)
+        valid_items.append((rect, item))
+    redact_translated_text_areas(page, translated_items)
+
+    page.insert_font(fontname="noto_cjk", fontfile=str(font_path))
+    for rect, item in valid_items:
+        translated_text = (item.get("translated_text") or "").strip()
+        if item.get("formula_map"):
+            insert_reflowed_segments(page, rect, translated_text, item.get("formula_map", []), font_path)
+        else:
+            insert_fitted_text(page, rect, translated_text, font_path)
 
 
 def build_dev_pdf(
@@ -159,20 +199,7 @@ def build_dev_pdf(
     doc = fitz.open(source_pdf_path)
     page = doc[page_idx]
     strip_page_links(page)
-    page.insert_font(fontname="noto_cjk", fontfile=str(font_path))
-
-    for item in translated_items:
-        bbox = item["bbox"]
-        translated_text = (item.get("translated_text") or "").strip()
-        if len(bbox) != 4 or not translated_text:
-            continue
-
-        rect = fitz.Rect(bbox)
-        page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1), overlay=True)
-        if item.get("formula_map"):
-            insert_reflowed_segments(page, rect, translated_text, item.get("formula_map", []), font_path)
-        else:
-            insert_fitted_text(page, rect, translated_text, font_path)
+    apply_translated_items_to_page(page, translated_items, font_path)
 
     save_optimized_pdf(doc, output_pdf_path)
     doc.close()
@@ -190,20 +217,7 @@ def build_single_page_dev_pdf(
     temp_doc.insert_pdf(source_doc, from_page=page_idx, to_page=page_idx)
     page = temp_doc[0]
     strip_page_links(page)
-    page.insert_font(fontname="noto_cjk", fontfile=str(font_path))
-
-    for item in translated_items:
-        bbox = item["bbox"]
-        translated_text = (item.get("translated_text") or "").strip()
-        if len(bbox) != 4 or not translated_text:
-            continue
-
-        rect = fitz.Rect(bbox)
-        page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1), overlay=True)
-        if item.get("formula_map"):
-            insert_reflowed_segments(page, rect, translated_text, item.get("formula_map", []), font_path)
-        else:
-            insert_fitted_text(page, rect, translated_text, font_path)
+    apply_translated_items_to_page(page, translated_items, font_path)
 
     save_optimized_pdf(temp_doc, output_pdf_path)
     temp_doc.close()

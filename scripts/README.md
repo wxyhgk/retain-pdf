@@ -168,8 +168,6 @@ Run the page-by-page pipeline in one command:
 python scripts/run_book.py \
   --source-json Data/test1/test1.json \
   --source-pdf Data/test1/test1.pdf \
-  --start-page 0 \
-  --end-page 7 \
   --batch-size 6 \
   --workers 4 \
   --base-url http://1.94.67.196:10001/v1 \
@@ -177,3 +175,6 @@ python scripts/run_book.py \
   --output-dir translations/test1-run \
   --output test1-run.pdf
 ```
+
+If you omit `--end-page`, the scripts process the full document by default.
+`run_book.py` defaults to `typst` rendering, which now compiles one combined overlay PDF for the whole book.

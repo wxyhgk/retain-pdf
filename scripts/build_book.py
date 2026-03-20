@@ -20,8 +20,8 @@ def parse_args() -> argparse.Namespace:
         default="dev-book.pdf",
         help="Output PDF filename placed under output/.",
     )
-    parser.add_argument("--start-page", type=int, default=0, help="Zero-based start page index.")
-    parser.add_argument("--end-page", type=int, default=-1, help="Zero-based end page index, inclusive. -1 means last translated page.")
+    parser.add_argument("--start-page", type=int, default=0, help="Zero-based start page index. Default is the first page.")
+    parser.add_argument("--end-page", type=int, default=-1, help="Zero-based end page index, inclusive. Default is the last translated page.")
     parser.add_argument(
         "--source-pdf",
         type=str,

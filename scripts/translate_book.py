@@ -9,8 +9,8 @@ from translation.translation_workflow import default_page_translation_name, tran
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Translate all pages in the OCR JSON with DeepSeek.")
-    parser.add_argument("--start-page", type=int, default=0, help="Zero-based start page index.")
-    parser.add_argument("--end-page", type=int, default=-1, help="Zero-based end page index, inclusive. -1 means last page.")
+    parser.add_argument("--start-page", type=int, default=0, help="Zero-based start page index. Default is the first page.")
+    parser.add_argument("--end-page", type=int, default=-1, help="Zero-based end page index, inclusive. Default is the last page.")
     parser.add_argument("--batch-size", type=int, default=8, help="Number of text items per API call.")
     parser.add_argument("--workers", type=int, default=1, help="Concurrent translation requests per page.")
     parser.add_argument("--api-key", type=str, default="", help="Optional API key. Prefer env DEEPSEEK_API_KEY.")
