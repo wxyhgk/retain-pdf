@@ -1,0 +1,282 @@
+[
+  {
+    "item_id": "p001-b000",
+    "page_idx": 0,
+    "block_idx": 0,
+    "block_type": "title",
+    "bbox": [
+      232,
+      136,
+      360,
+      169
+    ],
+    "source_text": "s t d 2",
+    "translated_text": "s t d 2"
+  },
+  {
+    "item_id": "p001-b001",
+    "page_idx": 0,
+    "block_idx": 1,
+    "block_type": "title",
+    "bbox": [
+      88,
+      186,
+      506,
+      273
+    ],
+    "source_text": "A Program Package for computing excited states and response functions via simplified TD-DFT methods (sTDA, sTD-DFT, SF-sTD-DFT, XsTDA, XsTD-DFT, and SF-XsTD-DFT)",
+    "translated_text": "一个通过简化TD-DFT方法（sTDA、sTD-DFT、SF-sTD-DFT、XsTDA、XsTD-DFT和SF-XsTD-DFT）计算激发态和响应函数的程序包"
+  },
+  {
+    "item_id": "p001-b002",
+    "page_idx": 0,
+    "block_idx": 2,
+    "block_type": "text",
+    "bbox": [
+      250,
+      290,
+      343,
+      306
+    ],
+    "source_text": "Version 2.0.0",
+    "translated_text": "Version 2.0.0"
+  },
+  {
+    "item_id": "p001-b003",
+    "page_idx": 0,
+    "block_idx": 3,
+    "block_type": "title",
+    "bbox": [
+      217,
+      327,
+      377,
+      351
+    ],
+    "source_text": "User Manual",
+    "translated_text": "用户手册"
+  },
+  {
+    "item_id": "p001-b004",
+    "page_idx": 0,
+    "block_idx": 4,
+    "block_type": "text",
+    "bbox": [
+      257,
+      380,
+      336,
+      393
+    ],
+    "source_text": "January 9, 2025",
+    "translated_text": "2025年1月9日"
+  },
+  {
+    "item_id": "p001-b005",
+    "page_idx": 0,
+    "block_idx": 5,
+    "block_type": "text",
+    "bbox": [
+      260,
+      407,
+      333,
+      420
+    ],
+    "source_text": "Developed by:",
+    "translated_text": "开发人员："
+  },
+  {
+    "item_id": "p001-b006",
+    "page_idx": 0,
+    "block_idx": 6,
+    "block_type": "text",
+    "bbox": [
+      251,
+      420,
+      340,
+      433
+    ],
+    "source_text": "Stefan Grimme*",
+    "translated_text": "Stefan Grimme*"
+  },
+  {
+    "item_id": "p001-b007",
+    "page_idx": 0,
+    "block_idx": 7,
+    "block_type": "text",
+    "bbox": [
+      193,
+      443,
+      400,
+      456
+    ],
+    "source_text": "Mulliken Center for Theoretical Chemistry",
+    "translated_text": "马利肯理论化学中心"
+  },
+  {
+    "item_id": "p001-b008",
+    "page_idx": 0,
+    "block_idx": 8,
+    "block_type": "text",
+    "bbox": [
+      174,
+      456,
+      420,
+      469
+    ],
+    "source_text": "Institut f¨ur Physikalische und Theoretische Chemie",
+    "translated_text": "物理与理论化学研究所"
+  },
+  {
+    "item_id": "p001-b009",
+    "page_idx": 0,
+    "block_idx": 9,
+    "block_type": "text",
+    "bbox": [
+      246,
+      470,
+      351,
+      481
+    ],
+    "source_text": "der Universit¨at Bonn",
+    "translated_text": "波恩大学"
+  },
+  {
+    "item_id": "p001-b010",
+    "page_idx": 0,
+    "block_idx": 10,
+    "block_type": "text",
+    "bbox": [
+      208,
+      484,
+      386,
+      497
+    ],
+    "source_text": "Beringstr. 4, 53115 Bonn, Germany.",
+    "translated_text": "德国波恩53115，贝林街4号。"
+  },
+  {
+    "item_id": "p001-b011",
+    "page_idx": 0,
+    "block_idx": 11,
+    "block_type": "text",
+    "bbox": [
+      211,
+      502,
+      382,
+      515
+    ],
+    "source_text": "Email: grimme@thch.uni-bonn.de",
+    "translated_text": "Email: grimme@thch.uni-bonn.de"
+  },
+  {
+    "item_id": "p001-b012",
+    "page_idx": 0,
+    "block_idx": 12,
+    "block_type": "text",
+    "bbox": [
+      239,
+      529,
+      354,
+      544
+    ],
+    "source_text": "Marc de Wergifosse",
+    "translated_text": "Marc de Wergifosse"
+  },
+  {
+    "item_id": "p001-b013",
+    "page_idx": 0,
+    "block_idx": 13,
+    "block_type": "text",
+    "bbox": [
+      227,
+      553,
+      368,
+      565
+    ],
+    "source_text": "Theoretical Chemistry Group",
+    "translated_text": "理论化学研究组"
+  },
+  {
+    "item_id": "p001-b014",
+    "page_idx": 0,
+    "block_idx": 14,
+    "block_type": "text",
+    "bbox": [
+      180,
+      566,
+      414,
+      579
+    ],
+    "source_text": "Institute of Condensed Matter and Nanosciences",
+    "translated_text": "凝聚态与纳米科学研究所"
+  },
+  {
+    "item_id": "p001-b015",
+    "page_idx": 0,
+    "block_idx": 15,
+    "block_type": "text",
+    "bbox": [
+      217,
+      580,
+      378,
+      592
+    ],
+    "source_text": "Universit´e Catholique de Louvain",
+    "translated_text": "Universit´e Catholique de Louvain"
+  },
+  {
+    "item_id": "p001-b016",
+    "page_idx": 0,
+    "block_idx": 16,
+    "block_type": "text",
+    "bbox": [
+      138,
+      593,
+      456,
+      606
+    ],
+    "source_text": "Place Louis Pasteur 1/L4.01.02, 1348 Louvain-la-Neuve, Belgium.",
+    "translated_text": "比利时新鲁汶市路易·巴斯德广场1号/L4.01.02，邮编1348。"
+  },
+  {
+    "item_id": "p001-b017",
+    "page_idx": 0,
+    "block_idx": 17,
+    "block_type": "text",
+    "bbox": [
+      197,
+      611,
+      396,
+      624
+    ],
+    "source_text": "Email: marc.dewergifosse@uclouvain.be",
+    "translated_text": "Email: marc.dewergifosse@uclouvain.be"
+  },
+  {
+    "item_id": "p001-b018",
+    "page_idx": 0,
+    "block_idx": 18,
+    "block_type": "text",
+    "bbox": [
+      235,
+      640,
+      358,
+      652
+    ],
+    "source_text": "With contributions from:",
+    "translated_text": "贡献者："
+  },
+  {
+    "item_id": "p001-b019",
+    "page_idx": 0,
+    "block_idx": 19,
+    "block_type": "text",
+    "bbox": [
+      127,
+      653,
+      465,
+      666
+    ],
+    "source_text": "Christoph Bannwarth, Philip Shushkov, and Pierre Beaujean",
+    "translated_text": "Christoph Bannwarth、Philip Shushkov 和 Pierre Beaujean"
+  }
+]

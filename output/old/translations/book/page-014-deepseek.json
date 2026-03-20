@@ -1,0 +1,1001 @@
+[
+  {
+    "item_id": "p014-b000",
+    "page_idx": 13,
+    "block_idx": 0,
+    "block_type": "text",
+    "bbox": [
+      86,
+      99,
+      353,
+      111
+    ],
+    "source_text": "std2 -f pbe0.molden.inp -ax 0.25 -e 6 > output",
+    "lines": [
+      {
+        "bbox": [
+          87,
+          97,
+          354,
+          113
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "std2 -f pbe0.molden.inp -ax 0.25 -e 6 > output",
+            "bbox": [
+              87,
+              97,
+              354,
+              113
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "std2 -f pbe0.molden.inp -ax 0.25 -e 6 > output",
+    "formula_map": [],
+    "protected_translated_text": "std2 -f pbe0.molden.inp -ax 0.25 -e 6 > output",
+    "translated_text": "std2 -f pbe0.molden.inp -ax 0.25 -e 6 > output"
+  },
+  {
+    "item_id": "p014-b001",
+    "page_idx": 13,
+    "block_idx": 1,
+    "block_type": "text",
+    "bbox": [
+      85,
+      125,
+      505,
+      179
+    ],
+    "source_text": "We pipe the standard output into the file output. The program also writes the file tda.dat which contains for each state the transition energy and the length and velocity representations of the oscillator and rotatory strengths (in 1 0 ^ { 4 0 } erg · cm3), respectively. To run the same calculation but at the XsTDA level of theory:",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          124,
+          508,
+          139
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "We pipe the standard output into the file output. The program also writes the file",
+            "bbox": [
+              88,
+              124,
+              508,
+              139
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          87,
+          139,
+          506,
+          152
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "tda.dat which contains for each state the transition energy and the length and velocity",
+            "bbox": [
+              87,
+              139,
+              506,
+              152
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          85,
+          151,
+          506,
+          168
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "representations of the oscillator and rotatory strengths (in",
+            "bbox": [
+              85,
+              151,
+              368,
+              168
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "1 0 ^ { 4 0 }",
+            "bbox": [
+              368,
+              153,
+              389,
+              163
+            ]
+          },
+          {
+            "type": "text",
+            "content": "erg · cm3), respectively.",
+            "bbox": [
+              389,
+              151,
+              506,
+              168
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          164,
+          391,
+          180
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To run the same calculation but at the XsTDA level of theory:",
+            "bbox": [
+              86,
+              164,
+              391,
+              180
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "We pipe the standard output into the file output. The program also writes the file tda.dat which contains for each state the transition energy and the length and velocity representations of the oscillator and rotatory strengths (in [[FORMULA_1]] erg · cm3), respectively. To run the same calculation but at the XsTDA level of theory:",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "1 0 ^ { 4 0 }"
+      }
+    ],
+    "protected_translated_text": "我们将标准输出重定向至文件output。程序还会生成文件tda.dat，其中包含每个态的跃迁能量以及振子强度和旋光强度的长度与速度表示（单位为[[FORMULA_1]] erg·cm3）。若要在XsTDA理论级别运行相同计算：",
+    "translated_text": "我们将标准输出重定向至文件output。程序还会生成文件tda.dat，其中包含每个态的跃迁能量以及振子强度和旋光强度的长度与速度表示（单位为1 0 ^ { 4 0 } erg·cm3）。若要在XsTDA理论级别运行相同计算："
+  },
+  {
+    "item_id": "p014-b002",
+    "page_idx": 13,
+    "block_idx": 2,
+    "block_type": "text",
+    "bbox": [
+      86,
+      193,
+      387,
+      206
+    ],
+    "source_text": "std2 -f pbe0.molden.inp -ax 0.25 -e 6 -XsTD > output",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          193,
+          388,
+          207
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "std2 -f pbe0.molden.inp -ax 0.25 -e 6 -XsTD > output",
+            "bbox": [
+              88,
+              193,
+              388,
+              207
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "std2 -f pbe0.molden.inp -ax 0.25 -e 6 -XsTD > output",
+    "formula_map": [],
+    "protected_translated_text": "std2 -f pbe0.molden.inp -ax 0.25 -e 6 -XsTD > output",
+    "translated_text": "std2 -f pbe0.molden.inp -ax 0.25 -e 6 -XsTD > output"
+  },
+  {
+    "item_id": "p014-b003",
+    "page_idx": 13,
+    "block_idx": 3,
+    "block_type": "title",
+    "bbox": [
+      86,
+      248,
+      506,
+      262
+    ],
+    "source_text": "3.3.2 Using a range-separated hybrid functional with sTDA and sTD-DFT schemes",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          248,
+          508,
+          265
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "3.3.2 Using a range-separated hybrid functional with sTDA and sTD-DFT schemes",
+            "bbox": [
+              86,
+              248,
+              508,
+              265
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "3.3.2 Using a range-separated hybrid functional with sTDA and sTD-DFT schemes",
+    "formula_map": [],
+    "protected_translated_text": "3.3.2 使用范围分离杂化泛函配合sTDA和sTD-DFT方案",
+    "translated_text": "3.3.2 使用范围分离杂化泛函配合sTDA和sTD-DFT方案"
+  },
+  {
+    "item_id": "p014-b004",
+    "page_idx": 13,
+    "block_idx": 4,
+    "block_type": "text",
+    "bbox": [
+      85,
+      269,
+      555,
+      298
+    ],
+    "source_text": "If we have Molden input file from e.g. an \\omega B97X single-point calculation (here: wb97x.molden.inp), the respective sTDA calculation can be performed as:",
+    "lines": [
+      {
+        "bbox": [
+          85,
+          268,
+          557,
+          285
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "If we have Molden input file from e.g. an",
+            "bbox": [
+              85,
+              268,
+              276,
+              285
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\omega",
+            "bbox": [
+              276,
+              275,
+              283,
+              280
+            ]
+          },
+          {
+            "type": "text",
+            "content": "B97X single-point calculation (here: wb97x.molden.inp),",
+            "bbox": [
+              284,
+              268,
+              557,
+              285
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          282,
+          347,
+          297
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the respective sTDA calculation can be performed as:",
+            "bbox": [
+              86,
+              282,
+              347,
+              297
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "If we have Molden input file from e.g. an [[FORMULA_1]] B97X single-point calculation (here: wb97x.molden.inp), the respective sTDA calculation can be performed as:",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\omega"
+      }
+    ],
+    "protected_translated_text": "如果我们有来自例如[[FORMULA_1]] B97X单点计算的Molden输入文件（此处为wb97x.molden.inp），则可以执行相应的sTDA计算如下：",
+    "translated_text": "如果我们有来自例如\\omega B97X单点计算的Molden输入文件（此处为wb97x.molden.inp），则可以执行相应的sTDA计算如下："
+  },
+  {
+    "item_id": "p014-b005",
+    "page_idx": 13,
+    "block_idx": 5,
+    "block_type": "text",
+    "bbox": [
+      86,
+      311,
+      467,
+      323
+    ],
+    "source_text": "std2 -f wb97x.molden.inp -ax 0.56 -be 8.00 -al 4.58 -e 10 > output",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          307,
+          468,
+          325
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "std2 -f wb97x.molden.inp -ax 0.56 -be 8.00 -al 4.58 -e 10 > output",
+            "bbox": [
+              86,
+              307,
+              468,
+              325
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "std2 -f wb97x.molden.inp -ax 0.56 -be 8.00 -al 4.58 -e 10 > output",
+    "formula_map": [],
+    "protected_translated_text": "std2 -f wb97x.molden.inp -ax 0.56 -be 8.00 -al 4.58 -e 10 > output",
+    "translated_text": "std2 -f wb97x.molden.inp -ax 0.56 -be 8.00 -al 4.58 -e 10 > output"
+  },
+  {
+    "item_id": "p014-b006",
+    "page_idx": 13,
+    "block_idx": 6,
+    "block_type": "text",
+    "bbox": [
+      85,
+      337,
+      506,
+      362
+    ],
+    "source_text": "The std2 parameters ( \\alpha , \\beta , and a _ { x } ) for this range-separated hybrid functional are taken from Tab. 1 in Ref. 30.",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          335,
+          507,
+          351
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The std2 parameters (",
+            "bbox": [
+              86,
+              335,
+              193,
+              351
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\alpha",
+            "bbox": [
+              194,
+              343,
+              201,
+              348
+            ]
+          },
+          {
+            "type": "text",
+            "content": ",",
+            "bbox": [
+              202,
+              335,
+              207,
+              351
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\beta",
+            "bbox": [
+              207,
+              339,
+              215,
+              349
+            ]
+          },
+          {
+            "type": "text",
+            "content": ", and",
+            "bbox": [
+              215,
+              335,
+              241,
+              351
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "a _ { x }",
+            "bbox": [
+              242,
+              343,
+              253,
+              349
+            ]
+          },
+          {
+            "type": "text",
+            "content": ") for this range-separated hybrid functional are taken",
+            "bbox": [
+              253,
+              335,
+              507,
+              351
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          349,
+          200,
+          363
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "from Tab. 1 in Ref. 30.",
+            "bbox": [
+              86,
+              349,
+              200,
+              363
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "The std2 parameters ( [[FORMULA_1]] , [[FORMULA_2]] , and [[FORMULA_3]] ) for this range-separated hybrid functional are taken from Tab. 1 in Ref. 30.",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\alpha"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\beta"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "a _ { x }"
+      }
+    ],
+    "protected_translated_text": "该范围分离杂化泛函的std2参数（[[FORMULA_1]]、[[FORMULA_2]]和[[FORMULA_3]]）取自参考文献30中的表1。",
+    "translated_text": "该范围分离杂化泛函的std2参数（\\alpha、\\beta和a _ { x }）取自参考文献30中的表1。"
+  },
+  {
+    "item_id": "p014-b007",
+    "page_idx": 13,
+    "block_idx": 7,
+    "block_type": "text",
+    "bbox": [
+      85,
+      364,
+      506,
+      391
+    ],
+    "source_text": "Note that \\alpha ^ { ( 1 ) } given therein corresponds to \\beta and \\beta ^ { ( 1 ) } to \\alpha (according to Eqs. 4 and 5). Thus for \\omega B97X, the parameter used to calculate \\gamma _ { A B } ^ { J } is \\beta = 8 . 0 0 .",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          361,
+          506,
+          380
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Note that",
+            "bbox": [
+              86,
+              361,
+              138,
+              380
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\alpha ^ { ( 1 ) }",
+            "bbox": [
+              138,
+              364,
+              157,
+              375
+            ]
+          },
+          {
+            "type": "text",
+            "content": "given therein corresponds to",
+            "bbox": [
+              157,
+              361,
+              296,
+              380
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\beta",
+            "bbox": [
+              296,
+              367,
+              304,
+              377
+            ]
+          },
+          {
+            "type": "text",
+            "content": "and",
+            "bbox": [
+              304,
+              361,
+              327,
+              380
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\beta ^ { ( 1 ) }",
+            "bbox": [
+              328,
+              364,
+              346,
+              377
+            ]
+          },
+          {
+            "type": "text",
+            "content": "to",
+            "bbox": [
+              346,
+              361,
+              362,
+              380
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\alpha",
+            "bbox": [
+              362,
+              370,
+              370,
+              375
+            ]
+          },
+          {
+            "type": "text",
+            "content": "(according to Eqs. 4 and 5).",
+            "bbox": [
+              370,
+              361,
+              506,
+              380
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          375,
+          408,
+          393
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Thus for",
+            "bbox": [
+              86,
+              375,
+              132,
+              393
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\omega",
+            "bbox": [
+              133,
+              384,
+              139,
+              388
+            ]
+          },
+          {
+            "type": "text",
+            "content": "B97X, the parameter used to calculate",
+            "bbox": [
+              140,
+              375,
+              327,
+              393
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\gamma _ { A B } ^ { J }",
+            "bbox": [
+              328,
+              379,
+              348,
+              391
+            ]
+          },
+          {
+            "type": "text",
+            "content": "is",
+            "bbox": [
+              348,
+              375,
+              361,
+              393
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\beta = 8 . 0 0",
+            "bbox": [
+              362,
+              380,
+              403,
+              391
+            ]
+          },
+          {
+            "type": "text",
+            "content": ".",
+            "bbox": [
+              403,
+              375,
+              408,
+              393
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Note that [[FORMULA_1]] given therein corresponds to [[FORMULA_2]] and [[FORMULA_3]] to [[FORMULA_4]] (according to Eqs. 4 and 5). Thus for [[FORMULA_5]] B97X, the parameter used to calculate [[FORMULA_6]] is [[FORMULA_7]] .",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\alpha ^ { ( 1 ) }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\beta"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "\\beta ^ { ( 1 ) }"
+      },
+      {
+        "placeholder": "[[FORMULA_4]]",
+        "formula_text": "\\alpha"
+      },
+      {
+        "placeholder": "[[FORMULA_5]]",
+        "formula_text": "\\omega"
+      },
+      {
+        "placeholder": "[[FORMULA_6]]",
+        "formula_text": "\\gamma _ { A B } ^ { J }"
+      },
+      {
+        "placeholder": "[[FORMULA_7]]",
+        "formula_text": "\\beta = 8 . 0 0"
+      }
+    ],
+    "protected_translated_text": "请注意，其中给出的[[FORMULA_1]]对应于[[FORMULA_2]]，而[[FORMULA_3]]对应于[[FORMULA_4]]（根据公式4和5）。因此对于[[FORMULA_5]] B97X，用于计算[[FORMULA_6]]的参数是[[FORMULA_7]]。",
+    "translated_text": "请注意，其中给出的\\alpha ^ { ( 1 ) }对应于\\beta，而\\beta ^ { ( 1 ) }对应于\\alpha（根据公式4和5）。因此对于\\omega B97X，用于计算\\gamma _ { A B } ^ { J }的参数是\\beta = 8 . 0 0。"
+  },
+  {
+    "item_id": "p014-b008",
+    "page_idx": 13,
+    "block_idx": 8,
+    "block_type": "text",
+    "bbox": [
+      86,
+      404,
+      476,
+      417
+    ],
+    "source_text": "To perform a sTD-DFT calculation with the same set-up, just add the -rpa flag:",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          402,
+          477,
+          420
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To perform a sTD-DFT calculation with the same set-up, just add the -rpa flag:",
+            "bbox": [
+              86,
+              402,
+              477,
+              420
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "To perform a sTD-DFT calculation with the same set-up, just add the -rpa flag:",
+    "formula_map": [],
+    "protected_translated_text": "要使用相同设置执行sTD-DFT计算，只需添加-rpa标志：",
+    "translated_text": "要使用相同设置执行sTD-DFT计算，只需添加-rpa标志："
+  },
+  {
+    "item_id": "p014-b009",
+    "page_idx": 13,
+    "block_idx": 9,
+    "block_type": "text",
+    "bbox": [
+      85,
+      433,
+      506,
+      471
+    ],
+    "source_text": "std2 -f wb97x.molden.inp -ax 0.56 -be 8.00 -al 4.58 -e 10 -rpa > output So far, five range-separated hybrid functionals were parametrized. The parameters are given below:",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          432,
+          497,
+          445
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "std2 -f wb97x.molden.inp -ax 0.56 -be 8.00 -al 4.58 -e 10 -rpa > output",
+            "bbox": [
+              86,
+              432,
+              497,
+              445
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          444,
+          506,
+          459
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "So far, five range-separated hybrid functionals were parametrized. The parameters are",
+            "bbox": [
+              86,
+              444,
+              506,
+              459
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          85,
+          459,
+          149,
+          473
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "given below:",
+            "bbox": [
+              85,
+              459,
+              149,
+              473
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "std2 -f wb97x.molden.inp -ax 0.56 -be 8.00 -al 4.58 -e 10 -rpa > output So far, five range-separated hybrid functionals were parametrized. The parameters are given below:",
+    "formula_map": [],
+    "protected_translated_text": "std2 -f wb97x.molden.inp -ax 0.56 -be 8.00 -al 4.58 -e 10 -rpa > output 目前已有五种范围分离杂化泛函完成参数化。参数如下：",
+    "translated_text": "std2 -f wb97x.molden.inp -ax 0.56 -be 8.00 -al 4.58 -e 10 -rpa > output 目前已有五种范围分离杂化泛函完成参数化。参数如下："
+  },
+  {
+    "item_id": "p014-b011",
+    "page_idx": 13,
+    "block_idx": 11,
+    "block_type": "title",
+    "bbox": [
+      86,
+      590,
+      476,
+      616
+    ],
+    "source_text": "3.3.3 Using a range-separated hybrid functional with XsTDA and XsTD-DFT schemes",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          589,
+          478,
+          606
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "3.3.3 Using a range-separated hybrid functional with XsTDA and XsTD-DFT",
+            "bbox": [
+              86,
+              589,
+              478,
+              606
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          117,
+          603,
+          163,
+          618
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "schemes",
+            "bbox": [
+              117,
+              603,
+              163,
+              618
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "3.3.3 Using a range-separated hybrid functional with XsTDA and XsTD-DFT schemes",
+    "formula_map": [],
+    "protected_translated_text": "3.3.3 使用范围分离杂化泛函配合XsTDA和XsTD-DFT方案",
+    "translated_text": "3.3.3 使用范围分离杂化泛函配合XsTDA和XsTD-DFT方案"
+  },
+  {
+    "item_id": "p014-b012",
+    "page_idx": 13,
+    "block_idx": 12,
+    "block_type": "text",
+    "bbox": [
+      85,
+      624,
+      505,
+      651
+    ],
+    "source_text": "If we have Molden input file from e.g. an ωB97X-D3 single-point calculation (here: wb97xD3.molden.inp), the respective XsTDA calculation can be performed as:",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          624,
+          506,
+          639
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "If we have Molden input file from e.g. an ωB97X-D3 single-point calculation (here:",
+            "bbox": [
+              86,
+              624,
+              506,
+              639
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          87,
+          638,
+          469,
+          652
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "wb97xD3.molden.inp), the respective XsTDA calculation can be performed as:",
+            "bbox": [
+              87,
+              638,
+              469,
+              652
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "If we have Molden input file from e.g. an ωB97X-D3 single-point calculation (here: wb97xD3.molden.inp), the respective XsTDA calculation can be performed as:",
+    "formula_map": [],
+    "protected_translated_text": "如果我们有来自例如ωB97X-D3单点计算的Molden输入文件（此处为wb97xD3.molden.inp），则可按如下方式执行相应的XsTDA计算：",
+    "translated_text": "如果我们有来自例如ωB97X-D3单点计算的Molden输入文件（此处为wb97xD3.molden.inp），则可按如下方式执行相应的XsTDA计算："
+  },
+  {
+    "item_id": "p014-b013",
+    "page_idx": 13,
+    "block_idx": 13,
+    "block_type": "text",
+    "bbox": [
+      86,
+      666,
+      375,
+      678
+    ],
+    "source_text": "std2 -f wb97xD3.molden.inp -wB97XD3 -e 10 > output",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          664,
+          377,
+          680
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "std2 -f wb97xD3.molden.inp -wB97XD3 -e 10 > output",
+            "bbox": [
+              86,
+              664,
+              377,
+              680
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "std2 -f wb97xD3.molden.inp -wB97XD3 -e 10 > output",
+    "formula_map": [],
+    "protected_translated_text": "std2 -f wb97xD3.molden.inp -wB97XD3 -e 10 > output",
+    "translated_text": "std2 -f wb97xD3.molden.inp -wB97XD3 -e 10 > output"
+  }
+]

@@ -1,0 +1,433 @@
+[
+  {
+    "item_id": "p006-b000",
+    "page_idx": 5,
+    "block_idx": 0,
+    "block_type": "text",
+    "bbox": [
+      85,
+      84,
+      506,
+      125
+    ],
+    "source_text": "A _ { k c , k c } ^ { \\prime }larger than the energy threshold. On the other hand, the configurations_ { i a }have diagonal elementsA _ { i a , i a } ^ { \\prime }smaller than the threshold and are therefore included in the matrix\\mathbf { A } ^ { \\prime }from the very beginning.",
+    "protected_source_text": "A [[FORMULA_1]]k c , k c [[FORMULA_2]]larger than the energy threshold. On the other hand, the [[FORMULA_3]]i a [[FORMULA_4]]have diagonal elementsA [[FORMULA_5]]i a , i a [[FORMULA_6]]smaller than the threshold and are therefore included in the matrix[[FORMULA_7]]A [[FORMULA_8]]from the very beginning.",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "_ {"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "} ^ { \\prime }"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "configurations_ {"
+      },
+      {
+        "placeholder": "[[FORMULA_4]]",
+        "formula_text": "}"
+      },
+      {
+        "placeholder": "[[FORMULA_5]]",
+        "formula_text": "_ {"
+      },
+      {
+        "placeholder": "[[FORMULA_6]]",
+        "formula_text": "} ^ { \\prime }"
+      },
+      {
+        "placeholder": "[[FORMULA_7]]",
+        "formula_text": "\\mathbf {"
+      },
+      {
+        "placeholder": "[[FORMULA_8]]",
+        "formula_text": "} ^ { \\prime }"
+      }
+    ],
+    "translated_text": ""
+  },
+  {
+    "item_id": "p006-b001",
+    "page_idx": 5,
+    "block_idx": 1,
+    "block_type": "text",
+    "bbox": [
+      85,
+      125,
+      506,
+      157
+    ],
+    "source_text": "the configurationIf the summed coupling of configurationk cwill be included (default:k cwith all configurationsE _ { t h r } ^ { ( 2 ) } = 1 0 ^ { - 4 } E _ { h } ,)._ { i a }is larger thanE _ { t h r } ^ { ( 2 ) }",
+    "protected_source_text": "the configurationIf the summed coupling of configurationk cwill be included (default:k cwith all configurationsE [[FORMULA_1]]t h r [[FORMULA_2]]( 2 ) [[FORMULA_3]]1 0 [[FORMULA_4]]- 4 [[FORMULA_5]]E [[FORMULA_6]]h [[FORMULA_7]]i a [[FORMULA_8]]is larger thanE [[FORMULA_9]]t h r [[FORMULA_10]]( 2 ) [[FORMULA_11]]",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "_ {"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "} ^ {"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "} ="
+      },
+      {
+        "placeholder": "[[FORMULA_4]]",
+        "formula_text": "^ {"
+      },
+      {
+        "placeholder": "[[FORMULA_5]]",
+        "formula_text": "}"
+      },
+      {
+        "placeholder": "[[FORMULA_6]]",
+        "formula_text": "_ {"
+      },
+      {
+        "placeholder": "[[FORMULA_7]]",
+        "formula_text": "} ,)._ {"
+      },
+      {
+        "placeholder": "[[FORMULA_8]]",
+        "formula_text": "}"
+      },
+      {
+        "placeholder": "[[FORMULA_9]]",
+        "formula_text": "_ {"
+      },
+      {
+        "placeholder": "[[FORMULA_10]]",
+        "formula_text": "} ^ {"
+      },
+      {
+        "placeholder": "[[FORMULA_11]]",
+        "formula_text": "}"
+      }
+    ],
+    "translated_text": ""
+  },
+  {
+    "item_id": "p006-b002",
+    "page_idx": 5,
+    "block_idx": 2,
+    "block_type": "title",
+    "bbox": [
+      86,
+      171,
+      414,
+      186
+    ],
+    "source_text": "2.2 Simplified Time-Dependent-Density Functional Theory",
+    "protected_source_text": "2.2 Simplified Time-Dependent-Density Functional Theory",
+    "formula_map": [],
+    "translated_text": ""
+  },
+  {
+    "item_id": "p006-b003",
+    "page_idx": 5,
+    "block_idx": 3,
+    "block_type": "text",
+    "bbox": [
+      85,
+      191,
+      508,
+      220
+    ],
+    "source_text": "In the same simplified manner, the full TD-DFT problem (Eq. 1) can be solved[ 2 ]. The elements of the simplified matrix\\mathbf { B ^ { \\prime } }are given as:",
+    "protected_source_text": "In the same simplified manner, the full TD-DFT problem (Eq. 1) can be solved[ 2 ]. The elements of the simplified matrix[[FORMULA_1]]B [[FORMULA_2]]are given as:",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathbf {"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "^ { \\prime } }"
+      }
+    ],
+    "translated_text": ""
+  },
+  {
+    "item_id": "p006-b005",
+    "page_idx": 5,
+    "block_idx": 5,
+    "block_type": "text",
+    "bbox": [
+      85,
+      270,
+      506,
+      310
+    ],
+    "source_text": "a _ { x }is the amount of non-local Fock exchange in the density functional (e.g. 0.2 for B3LYP). This approach has proven to yield more reliable transition moments and there- fore better UV/VIS and ECD spectra than sTDA (see Ref. 2 for more information).",
+    "protected_source_text": "a [[FORMULA_1]]x [[FORMULA_2]]is the amount of non-local Fock exchange in the density functional (e.g. 0.2 for B3LYP). This approach has proven to yield more reliable transition moments and there- fore better UV/VIS and ECD spectra than sTDA (see Ref. 2 for more information).",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "_ {"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "}"
+      }
+    ],
+    "translated_text": ""
+  },
+  {
+    "item_id": "p006-b006",
+    "page_idx": 5,
+    "block_idx": 6,
+    "block_type": "text",
+    "bbox": [
+      86,
+      311,
+      506,
+      351
+    ],
+    "source_text": "The\\alphaand\\betaparameters (see Eqs. 4 and 5) are identical in sTDA and sTD-DFT. Thus, \\gamma _ { A B } ^ { J }and\\gamma _ { A B } ^ { K }are the same in both approaches. The same is true for the dimension of the matrices\\mathbf { A } ^ { \\prime }and\\mathbf { B ^ { \\prime } }, i.e. the same configuration selection as in sTDA is performed.",
+    "protected_source_text": "The[[FORMULA_1]](see Eqs. 4 and 5) are identical in sTDA and sTD-DFT. Thus, [[FORMULA_2]]A B [[FORMULA_3]]J [[FORMULA_4]]A B [[FORMULA_5]]K [[FORMULA_6]]are the same in both approaches. The same is true for the dimension of the matrices[[FORMULA_7]]A [[FORMULA_8]]B [[FORMULA_9]]i.e. the same configuration selection as in sTDA is performed.",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\alphaand\\betaparameters"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\gamma _ {"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "} ^ {"
+      },
+      {
+        "placeholder": "[[FORMULA_4]]",
+        "formula_text": "}and\\gamma _ {"
+      },
+      {
+        "placeholder": "[[FORMULA_5]]",
+        "formula_text": "} ^ {"
+      },
+      {
+        "placeholder": "[[FORMULA_6]]",
+        "formula_text": "}"
+      },
+      {
+        "placeholder": "[[FORMULA_7]]",
+        "formula_text": "\\mathbf {"
+      },
+      {
+        "placeholder": "[[FORMULA_8]]",
+        "formula_text": "} ^ { \\prime }and\\mathbf {"
+      },
+      {
+        "placeholder": "[[FORMULA_9]]",
+        "formula_text": "^ { \\prime } },"
+      }
+    ],
+    "translated_text": ""
+  },
+  {
+    "item_id": "p006-b007",
+    "page_idx": 5,
+    "block_idx": 7,
+    "block_type": "title",
+    "bbox": [
+      86,
+      366,
+      384,
+      380
+    ],
+    "source_text": "2.3 Simplified Linear and Quadratic Response Theory",
+    "protected_source_text": "2.3 Simplified Linear and Quadratic Response Theory",
+    "formula_map": [],
+    "translated_text": ""
+  },
+  {
+    "item_id": "p006-b008",
+    "page_idx": 5,
+    "block_idx": 8,
+    "block_type": "text",
+    "bbox": [
+      85,
+      387,
+      506,
+      432
+    ],
+    "source_text": "The linear-response matrix equation is similar to equation 1 when the perturbation is turned on by taking its first derivative with respect to the external applied electric field \\big ( { \\frac { \\partial } { \\partial F _ { \\zeta } } } \\big | _ { \\vec { F } = 0 } \\big ):",
+    "protected_source_text": "The linear-response matrix equation is similar to equation 1 when the perturbation is turned on by taking its first derivative with respect to the external applied electric field [[FORMULA_1]]( [[FORMULA_2]]F [[FORMULA_3]]| [[FORMULA_4]]F [[FORMULA_5]]0 [[FORMULA_6]]):",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\big"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "{ \\frac { \\partial } { \\partial"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "_ { \\zeta } } } \\big"
+      },
+      {
+        "placeholder": "[[FORMULA_4]]",
+        "formula_text": "_ { \\vec {"
+      },
+      {
+        "placeholder": "[[FORMULA_5]]",
+        "formula_text": "} ="
+      },
+      {
+        "placeholder": "[[FORMULA_6]]",
+        "formula_text": "} \\big"
+      }
+    ],
+    "translated_text": ""
+  },
+  {
+    "item_id": "p006-b010",
+    "page_idx": 5,
+    "block_idx": 10,
+    "block_type": "text",
+    "bbox": [
+      85,
+      466,
+      506,
+      541
+    ],
+    "source_text": "where the derivative of the first-order perturbation of the density matrix defines the frequency-dependent response vectors\\begin{array} { r } { \\frac { \\partial D _ { a i } ^ { ( 1 ) } ( \\omega ) } { \\partial { \\cal F } _ { \\zeta } } | _ { \\vec { F } = 0 } = X _ { \\zeta , a i } ( \\omega ) + Y _ { \\zeta , a i } ( \\omega ) } \\end{array}and where \\mu _ { \\zeta , a i } = \\langle \\phi _ { a } | { \\hat { \\mu } } _ { \\zeta } | \\phi _ { i } \\rangle. In the sTD-DFT framework, the linear-response vectors [15] used to compute the polarizability and the first hyperpolarizability are obtained by solving equation 8:",
+    "protected_source_text": "where the derivative of the first-order perturbation of the density matrix defines the frequency-dependent response vectors[[FORMULA_1]]r [[FORMULA_2]]D [[FORMULA_3]]a i [[FORMULA_4]]( 1 ) [[FORMULA_5]]( [[FORMULA_6]]) [[FORMULA_7]]F [[FORMULA_8]]| [[FORMULA_9]]F [[FORMULA_10]]0 [[FORMULA_11]]X [[FORMULA_12]], a i [[FORMULA_13]]( [[FORMULA_14]]) + Y [[FORMULA_15]], a i [[FORMULA_16]]( [[FORMULA_17]]) [[FORMULA_18]]and where [[FORMULA_19]], a i [[FORMULA_20]]a [[FORMULA_21]]| [[FORMULA_22]]| [[FORMULA_23]]i [[FORMULA_24]]In the sTD-DFT framework, the linear-response vectors [15] used to compute the polarizability and the first hyperpolarizability are obtained by solving equation 8:",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\begin{array} {"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "} { \\frac { \\partial"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "_ {"
+      },
+      {
+        "placeholder": "[[FORMULA_4]]",
+        "formula_text": "} ^ {"
+      },
+      {
+        "placeholder": "[[FORMULA_5]]",
+        "formula_text": "}"
+      },
+      {
+        "placeholder": "[[FORMULA_6]]",
+        "formula_text": "\\omega"
+      },
+      {
+        "placeholder": "[[FORMULA_7]]",
+        "formula_text": "} { \\partial { \\cal"
+      },
+      {
+        "placeholder": "[[FORMULA_8]]",
+        "formula_text": "} _ { \\zeta } }"
+      },
+      {
+        "placeholder": "[[FORMULA_9]]",
+        "formula_text": "_ { \\vec {"
+      },
+      {
+        "placeholder": "[[FORMULA_10]]",
+        "formula_text": "} ="
+      },
+      {
+        "placeholder": "[[FORMULA_11]]",
+        "formula_text": "} ="
+      },
+      {
+        "placeholder": "[[FORMULA_12]]",
+        "formula_text": "_ { \\zeta"
+      },
+      {
+        "placeholder": "[[FORMULA_13]]",
+        "formula_text": "}"
+      },
+      {
+        "placeholder": "[[FORMULA_14]]",
+        "formula_text": "\\omega"
+      },
+      {
+        "placeholder": "[[FORMULA_15]]",
+        "formula_text": "_ { \\zeta"
+      },
+      {
+        "placeholder": "[[FORMULA_16]]",
+        "formula_text": "}"
+      },
+      {
+        "placeholder": "[[FORMULA_17]]",
+        "formula_text": "\\omega"
+      },
+      {
+        "placeholder": "[[FORMULA_18]]",
+        "formula_text": "} \\end{array}"
+      },
+      {
+        "placeholder": "[[FORMULA_19]]",
+        "formula_text": "\\mu _ { \\zeta"
+      },
+      {
+        "placeholder": "[[FORMULA_20]]",
+        "formula_text": "} = \\langle \\phi _ {"
+      },
+      {
+        "placeholder": "[[FORMULA_21]]",
+        "formula_text": "}"
+      },
+      {
+        "placeholder": "[[FORMULA_22]]",
+        "formula_text": "{ \\hat { \\mu } } _ { \\zeta }"
+      },
+      {
+        "placeholder": "[[FORMULA_23]]",
+        "formula_text": "\\phi _ {"
+      },
+      {
+        "placeholder": "[[FORMULA_24]]",
+        "formula_text": "} \\rangle."
+      }
+    ],
+    "translated_text": ""
+  },
+  {
+    "item_id": "p006-b012",
+    "page_idx": 5,
+    "block_idx": 12,
+    "block_type": "text",
+    "bbox": [
+      86,
+      562,
+      284,
+      576
+    ],
+    "source_text": "The polarizability is then determined by",
+    "protected_source_text": "The polarizability is then determined by",
+    "formula_map": [],
+    "translated_text": ""
+  },
+  {
+    "item_id": "p006-b014",
+    "page_idx": 5,
+    "block_idx": 14,
+    "block_type": "text",
+    "bbox": [
+      85,
+      619,
+      505,
+      645
+    ],
+    "source_text": "and the second-harmonic generation first hyperpolarizability in the sTD-DFT approxi- mations reads",
+    "protected_source_text": "and the second-harmonic generation first hyperpolarizability in the sTD-DFT approxi- mations reads",
+    "formula_map": [],
+    "translated_text": ""
+  }
+]

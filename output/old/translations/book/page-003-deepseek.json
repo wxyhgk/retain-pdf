@@ -1,0 +1,483 @@
+[
+  {
+    "item_id": "p003-b000",
+    "page_idx": 2,
+    "block_idx": 0,
+    "block_type": "title",
+    "bbox": [
+      86,
+      82,
+      326,
+      100
+    ],
+    "source_text": "General Features and Requirements",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          79,
+          326,
+          101
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "General Features and Requirements",
+            "bbox": [
+              86,
+              79,
+              326,
+              101
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "General Features and Requirements",
+    "formula_map": [],
+    "protected_translated_text": "通用特性与要求",
+    "translated_text": "通用特性与要求"
+  },
+  {
+    "item_id": "p003-b002",
+    "page_idx": 2,
+    "block_idx": 2,
+    "block_type": "title",
+    "bbox": [
+      86,
+      407,
+      235,
+      423
+    ],
+    "source_text": "1 About the Program",
+    "lines": [
+      {
+        "bbox": [
+          85,
+          405,
+          236,
+          425
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "1 About the Program",
+            "bbox": [
+              85,
+              405,
+              236,
+              425
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "1 About the Program",
+    "formula_map": [],
+    "protected_translated_text": "1 关于程序",
+    "translated_text": "1 关于程序"
+  },
+  {
+    "item_id": "p003-b003",
+    "page_idx": 2,
+    "block_idx": 3,
+    "block_type": "text",
+    "bbox": [
+      85,
+      433,
+      506,
+      553
+    ],
+    "source_text": "The std2 program is the rebranded and updated version of the stda program. Originally, stda was implemented only for the simplified time-dependent density functional theory using the Tamm-Dancoff approximation (sTDA) method[1]. With the implementation of more simplified quantum chemistry (sQC) methods in stda, the name was not fitting the application of the program anymore. The std2 program can compute excited states and response properties with the simplified time-dependent density functional theory (sTD-DFT)[2], sTDA[1], eXact integral sTD-DFT (XsTD-DFT)[3,4], and the XsTDA[3,4] methods. Originally, it was developed as an add-on for the TURBOMOLE suite of pro- grams[5,6].",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          432,
+          506,
+          448
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The std2 program is the rebranded and updated version of the stda program. Originally,",
+            "bbox": [
+              86,
+              432,
+              506,
+              448
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          446,
+          506,
+          462
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "stda was implemented only for the simplified time-dependent density functional theory",
+            "bbox": [
+              86,
+              446,
+              506,
+              462
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          460,
+          507,
+          475
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "using the Tamm-Dancoff approximation (sTDA) method[1]. With the implementation",
+            "bbox": [
+              86,
+              460,
+              507,
+              475
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          473,
+          507,
+          489
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of more simplified quantum chemistry (sQC) methods in stda, the name was not fitting",
+            "bbox": [
+              86,
+              473,
+              507,
+              489
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          486,
+          507,
+          502
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the application of the program anymore. The std2 program can compute excited states",
+            "bbox": [
+              86,
+              486,
+              507,
+              502
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          501,
+          506,
+          516
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and response properties with the simplified time-dependent density functional theory",
+            "bbox": [
+              86,
+              501,
+              506,
+              516
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          511,
+          508,
+          528
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(sTD-DFT)[2], sTDA[1], eXact integral sTD-DFT (XsTD-DFT)[3,4], and the XsTDA[3,4]",
+            "bbox": [
+              86,
+              511,
+              508,
+              528
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          528,
+          506,
+          543
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "methods. Originally, it was developed as an add-on for the TURBOMOLE suite of pro-",
+            "bbox": [
+              86,
+              528,
+              506,
+              543
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          85,
+          539,
+          140,
+          555
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "grams[5,6].",
+            "bbox": [
+              85,
+              539,
+              140,
+              555
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "The std2 program is the rebranded and updated version of the stda program. Originally, stda was implemented only for the simplified time-dependent density functional theory using the Tamm-Dancoff approximation (sTDA) method[1]. With the implementation of more simplified quantum chemistry (sQC) methods in stda, the name was not fitting the application of the program anymore. The std2 program can compute excited states and response properties with the simplified time-dependent density functional theory (sTD-DFT)[2], sTDA[1], eXact integral sTD-DFT (XsTD-DFT)[3,4], and the XsTDA[3,4] methods. Originally, it was developed as an add-on for the TURBOMOLE suite of pro- grams[5,6].",
+    "formula_map": [],
+    "protected_translated_text": "std2程序是stda程序经过品牌重塑和更新后的版本。最初，stda仅用于实现基于Tamm-Dancoff近似（sTDA）方法的简化含时密度泛函理论[1]。随着更多简化量子化学（sQC）方法在stda中的实现，原程序名称已不再符合其应用范围。std2程序能够使用简化含时密度泛函理论（sTD-DFT）[2]、sTDA[1]、精确积分sTD-DFT（XsTD-DFT）[3,4]以及XsTDA[3,4]方法计算激发态和响应性质。该程序最初是作为TURBOMOLE程序套件[5,6]的附加组件开发的。",
+    "translated_text": "std2程序是stda程序经过品牌重塑和更新后的版本。最初，stda仅用于实现基于Tamm-Dancoff近似（sTDA）方法的简化含时密度泛函理论[1]。随着更多简化量子化学（sQC）方法在stda中的实现，原程序名称已不再符合其应用范围。std2程序能够使用简化含时密度泛函理论（sTD-DFT）[2]、sTDA[1]、精确积分sTD-DFT（XsTD-DFT）[3,4]以及XsTDA[3,4]方法计算激发态和响应性质。该程序最初是作为TURBOMOLE程序套件[5,6]的附加组件开发的。"
+  },
+  {
+    "item_id": "p003-b004",
+    "page_idx": 2,
+    "block_idx": 4,
+    "block_type": "text",
+    "bbox": [
+      85,
+      555,
+      506,
+      664
+    ],
+    "source_text": "Since version 1.2, the program uses a Molden[7] input file that contains the Carte- sian GTO basis as well as the molecular orbital coefficients. Molden files generated by TURBOMOLE, MOLPRO[8] and TERACHEM [ 9 ] can be processed. GAUSSIAN[10] can be used via the interfacing tool g2molden (see Sec. 5) and Q-CHEM[11] via qc2molden.sh (see Sec. 6). We are interested in making the program compatible with different quantum chemistry program packages and are open for suggestions. However, in the present ver- sion the std2 code can work with Cartesian GTO basis functions only and the quantum chemistry software must provide Cartesian basis functions. Spectra may be computed",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          554,
+          507,
+          569
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Since version 1.2, the program uses a Molden[7] input file that contains the Carte-",
+            "bbox": [
+              86,
+              554,
+              507,
+              569
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          568,
+          507,
+          583
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "sian GTO basis as well as the molecular orbital coefficients. Molden files generated by",
+            "bbox": [
+              86,
+              568,
+              507,
+              583
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          580,
+          509,
+          597
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "TURBOMOLE, MOLPRO[8] and TERACHEM",
+            "bbox": [
+              86,
+              580,
+              315,
+              597
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "[ 9 ]",
+            "bbox": [
+              315,
+              582,
+              325,
+              592
+            ]
+          },
+          {
+            "type": "text",
+            "content": "can be processed. GAUSSIAN[10] can",
+            "bbox": [
+              326,
+              580,
+              509,
+              597
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          593,
+          508,
+          610
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "be used via the interfacing tool g2molden (see Sec. 5) and Q-CHEM[11] via qc2molden.sh",
+            "bbox": [
+              86,
+              593,
+              508,
+              610
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          88,
+          609,
+          506,
+          623
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(see Sec. 6). We are interested in making the program compatible with different quantum",
+            "bbox": [
+              88,
+              609,
+              506,
+              623
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          622,
+          506,
+          637
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "chemistry program packages and are open for suggestions. However, in the present ver-",
+            "bbox": [
+              86,
+              622,
+              506,
+              637
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          635,
+          506,
+          650
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "sion the std2 code can work with Cartesian GTO basis functions only and the quantum",
+            "bbox": [
+              86,
+              635,
+              506,
+              650
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          88,
+          650,
+          506,
+          663
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "chemistry software must provide Cartesian basis functions. Spectra may be computed",
+            "bbox": [
+              88,
+              650,
+              506,
+              663
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Since version 1.2, the program uses a Molden[7] input file that contains the Carte- sian GTO basis as well as the molecular orbital coefficients. Molden files generated by TURBOMOLE, MOLPRO[8] and TERACHEM [[FORMULA_1]] can be processed. GAUSSIAN[10] can be used via the interfacing tool g2molden (see Sec. 5) and Q-CHEM[11] via qc2molden.sh (see Sec. 6). We are interested in making the program compatible with different quantum chemistry program packages and are open for suggestions. However, in the present ver- sion the std2 code can work with Cartesian GTO basis functions only and the quantum chemistry software must provide Cartesian basis functions. Spectra may be computed",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "[ 9 ]"
+      }
+    ],
+    "protected_translated_text": "自1.2版本起，该程序使用包含笛卡尔GTO基组及分子轨道系数的Molden[7]输入文件。可处理由TURBOMOLE、MOLPRO[8]和TERACHEM [[FORMULA_1]]生成的Molden文件。GAUSSIAN[10]可通过接口工具g2molden（见第5节）使用，Q-CHEM[11]则通过qc2molden.sh（见第6节）使用。我们致力于使程序兼容不同的量子化学程序包，并欢迎相关建议。然而，在当前版本中，std2代码仅适用于笛卡尔GTO基函数，且量子化学软件必须提供笛卡尔基函数。光谱计算功能",
+    "translated_text": "自1.2版本起，该程序使用包含笛卡尔GTO基组及分子轨道系数的Molden[7]输入文件。可处理由TURBOMOLE、MOLPRO[8]和TERACHEM [ 9 ]生成的Molden文件。GAUSSIAN[10]可通过接口工具g2molden（见第5节）使用，Q-CHEM[11]则通过qc2molden.sh（见第6节）使用。我们致力于使程序兼容不同的量子化学程序包，并欢迎相关建议。然而，在当前版本中，std2代码仅适用于笛卡尔GTO基函数，且量子化学软件必须提供笛卡尔基函数。光谱计算功能"
+  }
+]

@@ -1,0 +1,842 @@
+[
+  {
+    "item_id": "p001-b000",
+    "page_idx": 0,
+    "block_idx": 0,
+    "block_type": "title",
+    "bbox": [
+      232,
+      136,
+      360,
+      169
+    ],
+    "source_text": "s t d 2",
+    "lines": [
+      {
+        "bbox": [
+          222,
+          129,
+          371,
+          178
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "s t d 2",
+            "bbox": [
+              222,
+              129,
+              371,
+              178
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "s t d 2",
+    "formula_map": [],
+    "protected_translated_text": "s t d 2",
+    "translated_text": "s t d 2"
+  },
+  {
+    "item_id": "p001-b001",
+    "page_idx": 0,
+    "block_idx": 1,
+    "block_type": "title",
+    "bbox": [
+      88,
+      186,
+      506,
+      273
+    ],
+    "source_text": "A Program Package for computing excited states and response functions via simplified TD-DFT methods (sTDA, sTD-DFT, SF-sTD-DFT, XsTDA, XsTD-DFT, and SF-XsTD-DFT)",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          185,
+          508,
+          209
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "A Program Package for computing excited states",
+            "bbox": [
+              86,
+              185,
+              508,
+              209
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          97,
+          208,
+          496,
+          231
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and response functions via simplified TD-DFT",
+            "bbox": [
+              97,
+              208,
+              496,
+              231
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          114,
+          231,
+          478,
+          252
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "methods (sTDA, sTD-DFT, SF-sTD-DFT,",
+            "bbox": [
+              114,
+              231,
+              478,
+              252
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          116,
+          252,
+          477,
+          274
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "XsTDA, XsTD-DFT, and SF-XsTD-DFT)",
+            "bbox": [
+              116,
+              252,
+              477,
+              274
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "A Program Package for computing excited states and response functions via simplified TD-DFT methods (sTDA, sTD-DFT, SF-sTD-DFT, XsTDA, XsTD-DFT, and SF-XsTD-DFT)",
+    "formula_map": [],
+    "protected_translated_text": "一个通过简化TD-DFT方法（sTDA、sTD-DFT、SF-sTD-DFT、XsTDA、XsTD-DFT和SF-XsTD-DFT）计算激发态和响应函数的程序包",
+    "translated_text": "一个通过简化TD-DFT方法（sTDA、sTD-DFT、SF-sTD-DFT、XsTDA、XsTD-DFT和SF-XsTD-DFT）计算激发态和响应函数的程序包"
+  },
+  {
+    "item_id": "p001-b002",
+    "page_idx": 0,
+    "block_idx": 2,
+    "block_type": "text",
+    "bbox": [
+      250,
+      290,
+      343,
+      306
+    ],
+    "source_text": "Version 2.0.0",
+    "lines": [
+      {
+        "bbox": [
+          250,
+          288,
+          344,
+          308
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Version 2.0.0",
+            "bbox": [
+              250,
+              288,
+              344,
+              308
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Version 2.0.0",
+    "formula_map": [],
+    "protected_translated_text": "版本 2.0.0",
+    "translated_text": "版本 2.0.0"
+  },
+  {
+    "item_id": "p001-b003",
+    "page_idx": 0,
+    "block_idx": 3,
+    "block_type": "title",
+    "bbox": [
+      217,
+      327,
+      377,
+      351
+    ],
+    "source_text": "User Manual",
+    "lines": [
+      {
+        "bbox": [
+          217,
+          325,
+          379,
+          354
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "User Manual",
+            "bbox": [
+              217,
+              325,
+              379,
+              354
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "User Manual",
+    "formula_map": [],
+    "protected_translated_text": "用户手册",
+    "translated_text": "用户手册"
+  },
+  {
+    "item_id": "p001-b004",
+    "page_idx": 0,
+    "block_idx": 4,
+    "block_type": "text",
+    "bbox": [
+      257,
+      380,
+      336,
+      393
+    ],
+    "source_text": "January 9, 2025",
+    "lines": [
+      {
+        "bbox": [
+          257,
+          379,
+          337,
+          394
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "January 9, 2025",
+            "bbox": [
+              257,
+              379,
+              337,
+              394
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "January 9, 2025",
+    "formula_map": [],
+    "protected_translated_text": "2025年1月9日",
+    "translated_text": "2025年1月9日"
+  },
+  {
+    "item_id": "p001-b005",
+    "page_idx": 0,
+    "block_idx": 5,
+    "block_type": "text",
+    "bbox": [
+      260,
+      407,
+      333,
+      420
+    ],
+    "source_text": "Developed by:",
+    "lines": [
+      {
+        "bbox": [
+          261,
+          406,
+          333,
+          423
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Developed by:",
+            "bbox": [
+              261,
+              406,
+              333,
+              423
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Developed by:",
+    "formula_map": [],
+    "protected_translated_text": "开发人员：",
+    "translated_text": "开发人员："
+  },
+  {
+    "item_id": "p001-b006",
+    "page_idx": 0,
+    "block_idx": 6,
+    "block_type": "text",
+    "bbox": [
+      251,
+      420,
+      340,
+      433
+    ],
+    "source_text": "Stefan Grimme*",
+    "lines": [
+      {
+        "bbox": [
+          251,
+          420,
+          341,
+          434
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Stefan Grimme*",
+            "bbox": [
+              251,
+              420,
+              341,
+              434
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Stefan Grimme*",
+    "formula_map": [],
+    "protected_translated_text": "Stefan Grimme*",
+    "translated_text": "Stefan Grimme*"
+  },
+  {
+    "item_id": "p001-b007",
+    "page_idx": 0,
+    "block_idx": 7,
+    "block_type": "text",
+    "bbox": [
+      193,
+      443,
+      400,
+      456
+    ],
+    "source_text": "Mulliken Center for Theoretical Chemistry",
+    "lines": [
+      {
+        "bbox": [
+          193,
+          441,
+          401,
+          459
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Mulliken Center for Theoretical Chemistry",
+            "bbox": [
+              193,
+              441,
+              401,
+              459
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Mulliken Center for Theoretical Chemistry",
+    "formula_map": [],
+    "protected_translated_text": "Mulliken Center for Theoretical Chemistry",
+    "translated_text": "Mulliken Center for Theoretical Chemistry"
+  },
+  {
+    "item_id": "p001-b008",
+    "page_idx": 0,
+    "block_idx": 8,
+    "block_type": "text",
+    "bbox": [
+      174,
+      456,
+      420,
+      469
+    ],
+    "source_text": "Institut f¨ur Physikalische und Theoretische Chemie",
+    "lines": [
+      {
+        "bbox": [
+          174,
+          456,
+          420,
+          470
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Institut f¨ur Physikalische und Theoretische Chemie",
+            "bbox": [
+              174,
+              456,
+              420,
+              470
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Institut f¨ur Physikalische und Theoretische Chemie",
+    "formula_map": [],
+    "protected_translated_text": "物理与理论化学研究所",
+    "translated_text": "物理与理论化学研究所"
+  },
+  {
+    "item_id": "p001-b009",
+    "page_idx": 0,
+    "block_idx": 9,
+    "block_type": "text",
+    "bbox": [
+      246,
+      470,
+      351,
+      481
+    ],
+    "source_text": "der Universit¨at Bonn",
+    "lines": [
+      {
+        "bbox": [
+          248,
+          469,
+          351,
+          483
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "der Universit¨at Bonn",
+            "bbox": [
+              248,
+              469,
+              351,
+              483
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "der Universit¨at Bonn",
+    "formula_map": [],
+    "protected_translated_text": "波恩大学",
+    "translated_text": "波恩大学"
+  },
+  {
+    "item_id": "p001-b010",
+    "page_idx": 0,
+    "block_idx": 10,
+    "block_type": "text",
+    "bbox": [
+      208,
+      484,
+      386,
+      497
+    ],
+    "source_text": "Beringstr. 4, 53115 Bonn, Germany.",
+    "lines": [
+      {
+        "bbox": [
+          207,
+          481,
+          387,
+          499
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Beringstr. 4, 53115 Bonn, Germany.",
+            "bbox": [
+              207,
+              481,
+              387,
+              499
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Beringstr. 4, 53115 Bonn, Germany.",
+    "formula_map": [],
+    "protected_translated_text": "Beringstr. 4, 53115 Bonn, Germany.",
+    "translated_text": "Beringstr. 4, 53115 Bonn, Germany."
+  },
+  {
+    "item_id": "p001-b011",
+    "page_idx": 0,
+    "block_idx": 11,
+    "block_type": "text",
+    "bbox": [
+      211,
+      502,
+      382,
+      515
+    ],
+    "source_text": "Email: grimme@thch.uni-bonn.de",
+    "lines": [
+      {
+        "bbox": [
+          214,
+          502,
+          382,
+          516
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Email: grimme@thch.uni-bonn.de",
+            "bbox": [
+              219,
+              502,
+              382,
+              516
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Email: grimme@thch.uni-bonn.de",
+    "formula_map": [],
+    "protected_translated_text": "Email: grimme@thch.uni-bonn.de",
+    "translated_text": "Email: grimme@thch.uni-bonn.de"
+  },
+  {
+    "item_id": "p001-b012",
+    "page_idx": 0,
+    "block_idx": 12,
+    "block_type": "text",
+    "bbox": [
+      239,
+      529,
+      354,
+      544
+    ],
+    "source_text": "Marc de Wergifosse",
+    "lines": [
+      {
+        "bbox": [
+          239,
+          529,
+          351,
+          545
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Marc de Wergifosse",
+            "bbox": [
+              239,
+              529,
+              351,
+              545
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Marc de Wergifosse",
+    "formula_map": [],
+    "protected_translated_text": "Marc de Wergifosse",
+    "translated_text": "Marc de Wergifosse"
+  },
+  {
+    "item_id": "p001-b013",
+    "page_idx": 0,
+    "block_idx": 13,
+    "block_type": "text",
+    "bbox": [
+      227,
+      553,
+      368,
+      565
+    ],
+    "source_text": "Theoretical Chemistry Group",
+    "lines": [
+      {
+        "bbox": [
+          227,
+          550,
+          368,
+          568
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Theoretical Chemistry Group",
+            "bbox": [
+              227,
+              550,
+              368,
+              568
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Theoretical Chemistry Group",
+    "formula_map": [],
+    "protected_translated_text": "理论化学研究组",
+    "translated_text": "理论化学研究组"
+  },
+  {
+    "item_id": "p001-b014",
+    "page_idx": 0,
+    "block_idx": 14,
+    "block_type": "text",
+    "bbox": [
+      180,
+      566,
+      414,
+      579
+    ],
+    "source_text": "Institute of Condensed Matter and Nanosciences",
+    "lines": [
+      {
+        "bbox": [
+          180,
+          566,
+          415,
+          579
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Institute of Condensed Matter and Nanosciences",
+            "bbox": [
+              180,
+              566,
+              415,
+              579
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Institute of Condensed Matter and Nanosciences",
+    "formula_map": [],
+    "protected_translated_text": "凝聚态与纳米科学研究所",
+    "translated_text": "凝聚态与纳米科学研究所"
+  },
+  {
+    "item_id": "p001-b015",
+    "page_idx": 0,
+    "block_idx": 15,
+    "block_type": "text",
+    "bbox": [
+      217,
+      580,
+      378,
+      592
+    ],
+    "source_text": "Universit´e Catholique de Louvain",
+    "lines": [
+      {
+        "bbox": [
+          217,
+          578,
+          379,
+          594
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Universit´e Catholique de Louvain",
+            "bbox": [
+              217,
+              578,
+              379,
+              594
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Universit´e Catholique de Louvain",
+    "formula_map": [],
+    "protected_translated_text": "Universit´e Catholique de Louvain",
+    "translated_text": "Universit´e Catholique de Louvain"
+  },
+  {
+    "item_id": "p001-b016",
+    "page_idx": 0,
+    "block_idx": 16,
+    "block_type": "text",
+    "bbox": [
+      138,
+      593,
+      456,
+      606
+    ],
+    "source_text": "Place Louis Pasteur 1/L4.01.02, 1348 Louvain-la-Neuve, Belgium.",
+    "lines": [
+      {
+        "bbox": [
+          137,
+          591,
+          456,
+          608
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Place Louis Pasteur 1/L4.01.02, 1348 Louvain-la-Neuve, Belgium.",
+            "bbox": [
+              137,
+              591,
+              456,
+              608
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Place Louis Pasteur 1/L4.01.02, 1348 Louvain-la-Neuve, Belgium.",
+    "formula_map": [],
+    "protected_translated_text": "比利时，1348 新鲁汶，路易·巴斯德广场 1/L4.01.02。",
+    "translated_text": "比利时，1348 新鲁汶，路易·巴斯德广场 1/L4.01.02。"
+  },
+  {
+    "item_id": "p001-b017",
+    "page_idx": 0,
+    "block_idx": 17,
+    "block_type": "text",
+    "bbox": [
+      197,
+      611,
+      396,
+      624
+    ],
+    "source_text": "Email: marc.dewergifosse@uclouvain.be",
+    "lines": [
+      {
+        "bbox": [
+          199,
+          611,
+          396,
+          627
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Email: marc.dewergifosse@uclouvain.be",
+            "bbox": [
+              205,
+              611,
+              396,
+              627
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Email: marc.dewergifosse@uclouvain.be",
+    "formula_map": [],
+    "protected_translated_text": "电子邮件：marc.dewergifosse@uclouvain.be",
+    "translated_text": "电子邮件：marc.dewergifosse@uclouvain.be"
+  },
+  {
+    "item_id": "p001-b018",
+    "page_idx": 0,
+    "block_idx": 18,
+    "block_type": "text",
+    "bbox": [
+      235,
+      640,
+      358,
+      652
+    ],
+    "source_text": "With contributions from:",
+    "lines": [
+      {
+        "bbox": [
+          236,
+          640,
+          358,
+          654
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "With contributions from:",
+            "bbox": [
+              236,
+              640,
+              358,
+              654
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "With contributions from:",
+    "formula_map": [],
+    "protected_translated_text": "贡献者：",
+    "translated_text": "贡献者："
+  },
+  {
+    "item_id": "p001-b019",
+    "page_idx": 0,
+    "block_idx": 19,
+    "block_type": "text",
+    "bbox": [
+      127,
+      653,
+      465,
+      666
+    ],
+    "source_text": "Christoph Bannwarth, Philip Shushkov, and Pierre Beaujean",
+    "lines": [
+      {
+        "bbox": [
+          127,
+          652,
+          466,
+          669
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Christoph Bannwarth, Philip Shushkov, and Pierre Beaujean",
+            "bbox": [
+              127,
+              652,
+              466,
+              669
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Christoph Bannwarth, Philip Shushkov, and Pierre Beaujean",
+    "formula_map": [],
+    "protected_translated_text": "Christoph Bannwarth、Philip Shushkov 和 Pierre Beaujean",
+    "translated_text": "Christoph Bannwarth、Philip Shushkov 和 Pierre Beaujean"
+  }
+]

@@ -1,0 +1,902 @@
+[
+  {
+    "item_id": "p016-b001",
+    "page_idx": 15,
+    "block_idx": 1,
+    "block_type": "text",
+    "bbox": [
+      86,
+      137,
+      505,
+      175
+    ],
+    "source_text": "The last point is necessary since the std2 program can only handle Cartesian atomic or- bitals. An exemplary input for the calculation with GAUSSIAN (on a water molecule) may look like this:",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          136,
+          506,
+          150
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The last point is necessary since the std2 program can only handle Cartesian atomic or-",
+            "bbox": [
+              86,
+              136,
+              506,
+              150
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          148,
+          506,
+          164
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "bitals. An exemplary input for the calculation with GAUSSIAN (on a water molecule)",
+            "bbox": [
+              86,
+              148,
+              506,
+              164
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          87,
+          163,
+          179,
+          177
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "may look like this:",
+            "bbox": [
+              87,
+              163,
+              179,
+              177
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "The last point is necessary since the std2 program can only handle Cartesian atomic or- bitals. An exemplary input for the calculation with GAUSSIAN (on a water molecule) may look like this:",
+    "formula_map": [],
+    "protected_translated_text": "最后一点是必要的，因为std2程序只能处理笛卡尔原子轨道。一个使用GAUSSIAN（针对水分子）计算的示例输入可能如下所示：",
+    "translated_text": "最后一点是必要的，因为std2程序只能处理笛卡尔原子轨道。一个使用GAUSSIAN（针对水分子）计算的示例输入可能如下所示："
+  },
+  {
+    "item_id": "p016-b003",
+    "page_idx": 15,
+    "block_idx": 3,
+    "block_type": "text",
+    "bbox": [
+      86,
+      205,
+      187,
+      216
+    ],
+    "source_text": "water singlepoint",
+    "lines": [
+      {
+        "bbox": [
+          87,
+          204,
+          187,
+          218
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "water singlepoint",
+            "bbox": [
+              87,
+              204,
+              187,
+              218
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "water singlepoint",
+    "formula_map": [],
+    "protected_translated_text": "水分子单点计算",
+    "translated_text": "水分子单点计算"
+  },
+  {
+    "item_id": "p016-b004",
+    "page_idx": 15,
+    "block_idx": 4,
+    "block_type": "text",
+    "bbox": [
+      86,
+      232,
+      129,
+      244
+    ],
+    "source_text": "0 1 xyz",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          230,
+          132,
+          247
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "0 1 xyz",
+            "bbox": [
+              86,
+              230,
+              132,
+              247
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "0 1 xyz",
+    "formula_map": [],
+    "protected_translated_text": "0 1 xyz",
+    "translated_text": "0 1 xyz"
+  },
+  {
+    "item_id": "p016-b005",
+    "page_idx": 15,
+    "block_idx": 5,
+    "block_type": "text",
+    "bbox": [
+      86,
+      245,
+      255,
+      256
+    ],
+    "source_text": "H 0.000000 0.776483 -0.472981",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          243,
+          256,
+          258
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "H 0.000000 0.776483 -0.472981",
+            "bbox": [
+              86,
+              243,
+              256,
+              258
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "H 0.000000 0.776483 -0.472981",
+    "formula_map": [],
+    "protected_translated_text": "H 0.000000 0.776483 -0.472981",
+    "translated_text": "H 0.000000 0.776483 -0.472981"
+  },
+  {
+    "item_id": "p016-b006",
+    "page_idx": 15,
+    "block_idx": 6,
+    "block_type": "text",
+    "bbox": [
+      86,
+      259,
+      260,
+      269
+    ],
+    "source_text": "H 0.000000 -0.776483 -0.472981",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          259,
+          261,
+          271
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "H 0.000000 -0.776483 -0.472981",
+            "bbox": [
+              86,
+              259,
+              261,
+              271
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "H 0.000000 -0.776483 -0.472981",
+    "formula_map": [],
+    "protected_translated_text": "H 0.000000 -0.776483 -0.472981",
+    "translated_text": "H 0.000000 -0.776483 -0.472981"
+  },
+  {
+    "item_id": "p016-b007",
+    "page_idx": 15,
+    "block_idx": 7,
+    "block_type": "text",
+    "bbox": [
+      86,
+      272,
+      250,
+      283
+    ],
+    "source_text": "O 0.000000 0.000000 0.118245",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          272,
+          250,
+          285
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "O 0.000000 0.000000 0.118245",
+            "bbox": [
+              88,
+              272,
+              250,
+              285
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "O 0.000000 0.000000 0.118245",
+    "formula_map": [],
+    "protected_translated_text": "O 0.000000 0.000000 0.118245",
+    "translated_text": "O 0.000000 0.000000 0.118245"
+  },
+  {
+    "item_id": "p016-b008",
+    "page_idx": 15,
+    "block_idx": 8,
+    "block_type": "text",
+    "bbox": [
+      85,
+      312,
+      506,
+      339
+    ],
+    "source_text": "After running the ground-state calculation with GAUSSIAN, you may convert the out- put file (termed g09.log here) into a Molden input file by:",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          310,
+          506,
+          327
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "After running the ground-state calculation with GAUSSIAN, you may convert the out-",
+            "bbox": [
+              86,
+              310,
+              506,
+              327
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          326,
+          373,
+          341
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "put file (termed g09.log here) into a Molden input file by:",
+            "bbox": [
+              86,
+              326,
+              373,
+              341
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "After running the ground-state calculation with GAUSSIAN, you may convert the out- put file (termed g09.log here) into a Molden input file by:",
+    "formula_map": [],
+    "protected_translated_text": "在使用GAUSSIAN完成基态计算后，您可以通过以下方式将输出文件（此处称为g09.log）转换为Molden输入文件：",
+    "translated_text": "在使用GAUSSIAN完成基态计算后，您可以通过以下方式将输出文件（此处称为g09.log）转换为Molden输入文件："
+  },
+  {
+    "item_id": "p016-b009",
+    "page_idx": 15,
+    "block_idx": 9,
+    "block_type": "text",
+    "bbox": [
+      86,
+      354,
+      267,
+      366
+    ],
+    "source_text": "g2molden g09.log > molden.input",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          353,
+          267,
+          368
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "g2molden g09.log > molden.input",
+            "bbox": [
+              86,
+              353,
+              267,
+              368
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "g2molden g09.log > molden.input",
+    "formula_map": [],
+    "protected_translated_text": "g2molden g09.log > molden.input",
+    "translated_text": "g2molden g09.log > molden.input"
+  },
+  {
+    "item_id": "p016-b010",
+    "page_idx": 15,
+    "block_idx": 10,
+    "block_type": "text",
+    "bbox": [
+      85,
+      380,
+      506,
+      433
+    ],
+    "source_text": "The molden.input file may be used as an input file for the std2 program as described above (using -sty 3, see Sec. 3). If you encounter problems with the g2molden tool or the std2 program, feel free to contact us. However, we cannot give any support for problems related to GAUSSIAN itself.",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          379,
+          507,
+          394
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The molden.input file may be used as an input file for the std2 program as described",
+            "bbox": [
+              86,
+              379,
+              507,
+              394
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          392,
+          507,
+          408
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "above (using -sty 3, see Sec. 3). If you encounter problems with the g2molden tool",
+            "bbox": [
+              86,
+              392,
+              507,
+              408
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          407,
+          506,
+          422
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "or the std2 program, feel free to contact us. However, we cannot give any support for",
+            "bbox": [
+              86,
+              407,
+              506,
+              422
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          421,
+          273,
+          433
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "problems related to GAUSSIAN itself.",
+            "bbox": [
+              86,
+              421,
+              273,
+              433
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "The molden.input file may be used as an input file for the std2 program as described above (using -sty 3, see Sec. 3). If you encounter problems with the g2molden tool or the std2 program, feel free to contact us. However, we cannot give any support for problems related to GAUSSIAN itself.",
+    "formula_map": [],
+    "protected_translated_text": "如上所述（使用 -sty 3，参见第 3 节），molden.input 文件可作为 std2 程序的输入文件。如果您在使用 g2molden 工具或 std2 程序时遇到问题，请随时联系我们。然而，对于与 GAUSSIAN 本身相关的问题，我们无法提供任何支持。",
+    "translated_text": "如上所述（使用 -sty 3，参见第 3 节），molden.input 文件可作为 std2 程序的输入文件。如果您在使用 g2molden 工具或 std2 程序时遇到问题，请随时联系我们。然而，对于与 GAUSSIAN 本身相关的问题，我们无法提供任何支持。"
+  },
+  {
+    "item_id": "p016-b011",
+    "page_idx": 15,
+    "block_idx": 11,
+    "block_type": "title",
+    "bbox": [
+      86,
+      452,
+      246,
+      468
+    ],
+    "source_text": "6 Usage with Q-CHEM",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          450,
+          246,
+          471
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "6 Usage with Q-CHEM",
+            "bbox": [
+              86,
+              450,
+              246,
+              471
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "6 Usage with Q-CHEM",
+    "formula_map": [],
+    "protected_translated_text": "6 与 Q-CHEM 配合使用",
+    "translated_text": "6 与 Q-CHEM 配合使用"
+  },
+  {
+    "item_id": "p016-b012",
+    "page_idx": 15,
+    "block_idx": 12,
+    "block_type": "text",
+    "bbox": [
+      85,
+      479,
+      505,
+      505
+    ],
+    "source_text": "A molden file can be automatically generated by Q-CHEM using the following argu- ments in the $rem section of your input file:",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          477,
+          506,
+          494
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "A molden file can be automatically generated by Q-CHEM using the following argu-",
+            "bbox": [
+              86,
+              477,
+              506,
+              494
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          493,
+          300,
+          506
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "ments in the $rem section of your input file:",
+            "bbox": [
+              86,
+              493,
+              300,
+              506
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "A molden file can be automatically generated by Q-CHEM using the following argu- ments in the $rem section of your input file:",
+    "formula_map": [],
+    "protected_translated_text": "Q-CHEM 可在输入文件的 $rem 部分使用以下参数自动生成 molden 文件：",
+    "translated_text": "Q-CHEM 可在输入文件的 $rem 部分使用以下参数自动生成 molden 文件："
+  },
+  {
+    "item_id": "p016-b013",
+    "page_idx": 15,
+    "block_idx": 13,
+    "block_type": "text",
+    "bbox": [
+      86,
+      520,
+      224,
+      532
+    ],
+    "source_text": "PRINT ORBITALS = 2000000",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          521,
+          225,
+          533
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "PRINT ORBITALS",
+            "bbox": [
+              88,
+              521,
+              171,
+              533
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "=",
+            "bbox": [
+              171,
+              523,
+              180,
+              530
+            ]
+          },
+          {
+            "type": "text",
+            "content": "2000000",
+            "bbox": [
+              180,
+              521,
+              225,
+              533
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "PRINT ORBITALS [[FORMULA_1]] 2000000",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "="
+      }
+    ],
+    "protected_translated_text": "PRINT ORBITALS [[FORMULA_1]] 2000000",
+    "translated_text": "PRINT ORBITALS = 2000000"
+  },
+  {
+    "item_id": "p016-b014",
+    "page_idx": 15,
+    "block_idx": 14,
+    "block_type": "text",
+    "bbox": [
+      86,
+      534,
+      202,
+      545
+    ],
+    "source_text": "MOLDEN FORMAT = true",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          532,
+          204,
+          548
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "MOLDEN FORMAT",
+            "bbox": [
+              86,
+              532,
+              165,
+              548
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "=",
+            "bbox": [
+              165,
+              535,
+              174,
+              544
+            ]
+          },
+          {
+            "type": "text",
+            "content": "true",
+            "bbox": [
+              174,
+              532,
+              204,
+              548
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "MOLDEN FORMAT [[FORMULA_1]] true",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "="
+      }
+    ],
+    "protected_translated_text": "MOLDEN 格式 [[FORMULA_1]] 正确",
+    "translated_text": "MOLDEN 格式 = 正确"
+  },
+  {
+    "item_id": "p016-b015",
+    "page_idx": 15,
+    "block_idx": 15,
+    "block_type": "text",
+    "bbox": [
+      86,
+      547,
+      175,
+      559
+    ],
+    "source_text": "PURECART = 2222",
+    "lines": [
+      {
+        "bbox": [
+          87,
+          547,
+          176,
+          560
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "PURECART",
+            "bbox": [
+              87,
+              547,
+              138,
+              560
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "=",
+            "bbox": [
+              138,
+              549,
+              148,
+              558
+            ]
+          },
+          {
+            "type": "text",
+            "content": "2222",
+            "bbox": [
+              148,
+              547,
+              176,
+              560
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "PURECART [[FORMULA_1]] 2222",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "="
+      }
+    ],
+    "protected_translated_text": "PURECART [[FORMULA_1]] 2222",
+    "translated_text": "PURECART = 2222"
+  },
+  {
+    "item_id": "p016-b016",
+    "page_idx": 15,
+    "block_idx": 16,
+    "block_type": "text",
+    "bbox": [
+      85,
+      574,
+      506,
+      655
+    ],
+    "source_text": "PRINT ORBITALS is the maximum number of orbitals printed, it needs to be very large to have all orbitals printed. PURECART = 2222 specified that a Cartesian orbital basis set is used in the calculation. The molden file generated by Q-CHEM cannot be directly read by std2. The qc2molden.sh script extracts and converts the molden file. Just run qc2molden.sh your qchem output and a molden.input file is generated. The -sty 3 argument needs to be used when running std2.",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          572,
+          506,
+          588
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "PRINT ORBITALS is the maximum number of orbitals printed, it needs to be very large",
+            "bbox": [
+              86,
+              572,
+              506,
+              588
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          587,
+          506,
+          600
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "to have all orbitals printed. PURECART = 2222 specified that a Cartesian orbital basis",
+            "bbox": [
+              86,
+              587,
+              506,
+              600
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          602,
+          506,
+          615
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "set is used in the calculation. The molden file generated by Q-CHEM cannot be directly",
+            "bbox": [
+              86,
+              602,
+              506,
+              615
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          615,
+          506,
+          628
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "read by std2. The qc2molden.sh script extracts and converts the molden file. Just run",
+            "bbox": [
+              86,
+              615,
+              506,
+              628
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          629,
+          508,
+          642
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "qc2molden.sh your qchem output and a molden.input file is generated. The -sty 3",
+            "bbox": [
+              86,
+              629,
+              508,
+              642
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          85,
+          642,
+          314,
+          655
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "argument needs to be used when running std2.",
+            "bbox": [
+              85,
+              642,
+              314,
+              655
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "PRINT ORBITALS is the maximum number of orbitals printed, it needs to be very large to have all orbitals printed. PURECART = 2222 specified that a Cartesian orbital basis set is used in the calculation. The molden file generated by Q-CHEM cannot be directly read by std2. The qc2molden.sh script extracts and converts the molden file. Just run qc2molden.sh your qchem output and a molden.input file is generated. The -sty 3 argument needs to be used when running std2.",
+    "formula_map": [],
+    "protected_translated_text": "PRINT ORBITALS 是打印的最大轨道数，需要设置得非常大才能打印所有轨道。PURECART = 2222 指定在计算中使用笛卡尔轨道基组。Q-CHEM 生成的 molden 文件无法被 std2 直接读取。qc2molden.sh 脚本提取并转换 molden 文件。只需运行 qc2molden.sh 你的 qchem 输出文件，即可生成 molden.input 文件。运行 std2 时需要使用 -sty 3 参数。",
+    "translated_text": "PRINT ORBITALS 是打印的最大轨道数，需要设置得非常大才能打印所有轨道。PURECART = 2222 指定在计算中使用笛卡尔轨道基组。Q-CHEM 生成的 molden 文件无法被 std2 直接读取。qc2molden.sh 脚本提取并转换 molden 文件。只需运行 qc2molden.sh 你的 qchem 输出文件，即可生成 molden.input 文件。运行 std2 时需要使用 -sty 3 参数。"
+  }
+]

@@ -1,0 +1,743 @@
+[
+  {
+    "item_id": "p007-b002",
+    "page_idx": 6,
+    "block_idx": 2,
+    "block_type": "text",
+    "bbox": [
+      85,
+      178,
+      506,
+      218
+    ],
+    "source_text": "where linear response vectors are determined for \\omega and - 2 \\omega . Two-photon absorption cross-sections are obtained by the single residue of the first hyperpolarizability and the state-to-state unrelaxed dipole moments by the double residue.",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          178,
+          506,
+          191
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "where linear response vectors are determined for",
+            "bbox": [
+              88,
+              178,
+              328,
+              191
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\omega",
+            "bbox": [
+              329,
+              183,
+              336,
+              188
+            ]
+          },
+          {
+            "type": "text",
+            "content": "and",
+            "bbox": [
+              336,
+              178,
+              361,
+              191
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "- 2 \\omega",
+            "bbox": [
+              362,
+              181,
+              383,
+              189
+            ]
+          },
+          {
+            "type": "text",
+            "content": ". Two-photon absorption",
+            "bbox": [
+              384,
+              178,
+              506,
+              191
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          191,
+          506,
+          205
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "cross-sections are obtained by the single residue of the first hyperpolarizability and the",
+            "bbox": [
+              86,
+              191,
+              506,
+              205
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          205,
+          390,
+          218
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "state-to-state unrelaxed dipole moments by the double residue.",
+            "bbox": [
+              86,
+              205,
+              390,
+              218
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "where linear response vectors are determined for [[FORMULA_1]] and [[FORMULA_2]] . Two-photon absorption cross-sections are obtained by the single residue of the first hyperpolarizability and the state-to-state unrelaxed dipole moments by the double residue.",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\omega"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "- 2 \\omega"
+      }
+    ],
+    "protected_translated_text": "其中，线性响应向量是针对[[FORMULA_1]]和[[FORMULA_2]]确定的。双光子吸收截面通过第一超极化率的单残差获得，而态间未弛豫偶极矩则通过双残差获得。",
+    "translated_text": "其中，线性响应向量是针对\\omega和- 2 \\omega确定的。双光子吸收截面通过第一超极化率的单残差获得，而态间未弛豫偶极矩则通过双残差获得。"
+  },
+  {
+    "item_id": "p007-b003",
+    "page_idx": 6,
+    "block_idx": 3,
+    "block_type": "title",
+    "bbox": [
+      86,
+      232,
+      271,
+      247
+    ],
+    "source_text": "2.4 Simplified Spin-Flip TD-DFT",
+    "lines": [
+      {
+        "bbox": [
+          87,
+          232,
+          271,
+          248
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "2.4 Simplified Spin-Flip TD-DFT",
+            "bbox": [
+              87,
+              232,
+              271,
+              248
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "2.4 Simplified Spin-Flip TD-DFT",
+    "formula_map": [],
+    "protected_translated_text": "2.4 简化自旋翻转TD-DFT",
+    "translated_text": "2.4 简化自旋翻转TD-DFT"
+  },
+  {
+    "item_id": "p007-b004",
+    "page_idx": 6,
+    "block_idx": 4,
+    "block_type": "text",
+    "bbox": [
+      85,
+      254,
+      506,
+      295
+    ],
+    "source_text": "In the spin-flip formalism, only single excitations from the \\alpha space to the \\beta space are considered. For collinear functionals, exclusively the \\left( i _ { \\alpha } j _ { \\alpha } | a _ { \\beta } b _ { \\beta } \\right) two-electron integrals remain and the SF-sTD-DFT[17] eigenvalue equation becomes:",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          254,
+          506,
+          268
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "In the spin-flip formalism, only single excitations from the",
+            "bbox": [
+              86,
+              254,
+              375,
+              268
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\alpha",
+            "bbox": [
+              376,
+              260,
+              383,
+              265
+            ]
+          },
+          {
+            "type": "text",
+            "content": "space to the",
+            "bbox": [
+              383,
+              254,
+              449,
+              268
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\beta",
+            "bbox": [
+              449,
+              257,
+              456,
+              267
+            ]
+          },
+          {
+            "type": "text",
+            "content": "space are",
+            "bbox": [
+              456,
+              254,
+              506,
+              268
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          268,
+          506,
+          282
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "considered. For collinear functionals, exclusively the",
+            "bbox": [
+              86,
+              268,
+              344,
+              282
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\left( i _ { \\alpha } j _ { \\alpha } | a _ { \\beta } b _ { \\beta } \\right)",
+            "bbox": [
+              345,
+              270,
+              398,
+              282
+            ]
+          },
+          {
+            "type": "text",
+            "content": "two-electron integrals",
+            "bbox": [
+              399,
+              268,
+              506,
+              282
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          85,
+          278,
+          389,
+          297
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "remain and the SF-sTD-DFT[17] eigenvalue equation becomes:",
+            "bbox": [
+              85,
+              278,
+              389,
+              297
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "In the spin-flip formalism, only single excitations from the [[FORMULA_1]] space to the [[FORMULA_2]] space are considered. For collinear functionals, exclusively the [[FORMULA_3]] two-electron integrals remain and the SF-sTD-DFT[17] eigenvalue equation becomes:",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\alpha"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\beta"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "\\left( i _ { \\alpha } j _ { \\alpha } | a _ { \\beta } b _ { \\beta } \\right)"
+      }
+    ],
+    "protected_translated_text": "在自旋翻转形式中，仅考虑从[[FORMULA_1]]空间到[[FORMULA_2]]空间的单激发。对于共线泛函，仅保留[[FORMULA_3]]双电子积分，SF-sTD-DFT[17]特征值方程变为：",
+    "translated_text": "在自旋翻转形式中，仅考虑从\\alpha空间到\\beta空间的单激发。对于共线泛函，仅保留\\left( i _ { \\alpha } j _ { \\alpha } | a _ { \\beta } b _ { \\beta } \\right)双电子积分，SF-sTD-DFT[17]特征值方程变为："
+  },
+  {
+    "item_id": "p007-b006",
+    "page_idx": 6,
+    "block_idx": 6,
+    "block_type": "text",
+    "bbox": [
+      86,
+      332,
+      112,
+      342
+    ],
+    "source_text": "were",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          333,
+          112,
+          343
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "were",
+            "bbox": [
+              88,
+              333,
+              112,
+              343
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "were",
+    "formula_map": [],
+    "protected_translated_text": "是",
+    "translated_text": "是"
+  },
+  {
+    "item_id": "p007-b008",
+    "page_idx": 6,
+    "block_idx": 8,
+    "block_type": "text",
+    "bbox": [
+      85,
+      364,
+      506,
+      388
+    ],
+    "source_text": "For simplified spin-flip two-electron integrals, the damped Coulomb operator takes the form:",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          362,
+          507,
+          378
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "For simplified spin-flip two-electron integrals, the damped Coulomb operator takes the",
+            "bbox": [
+              86,
+              362,
+              507,
+              378
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          376,
+          117,
+          392
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "form:",
+            "bbox": [
+              86,
+              376,
+              117,
+              392
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "For simplified spin-flip two-electron integrals, the damped Coulomb operator takes the form:",
+    "formula_map": [],
+    "protected_translated_text": "对于简化的自旋翻转双电子积分，阻尼库仑算符的形式为：",
+    "translated_text": "对于简化的自旋翻转双电子积分，阻尼库仑算符的形式为："
+  },
+  {
+    "item_id": "p007-b010",
+    "page_idx": 6,
+    "block_idx": 10,
+    "block_type": "text",
+    "bbox": [
+      86,
+      423,
+      118,
+      433
+    ],
+    "source_text": "where",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          421,
+          120,
+          436
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "where",
+            "bbox": [
+              86,
+              421,
+              120,
+              436
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "where",
+    "formula_map": [],
+    "protected_translated_text": "其中",
+    "translated_text": "其中"
+  },
+  {
+    "item_id": "p007-b012",
+    "page_idx": 6,
+    "block_idx": 12,
+    "block_type": "text",
+    "bbox": [
+      85,
+      455,
+      508,
+      483
+    ],
+    "source_text": "From the sTD-DFT state-to-state transition dipole moment expression [16], its spin-flip analogue reads",
+    "lines": [
+      {
+        "bbox": [
+          85,
+          451,
+          508,
+          472
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "From the sTD-DFT state-to-state transition dipole moment expression [16], its spin-flip",
+            "bbox": [
+              85,
+              451,
+              508,
+              472
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          469,
+          161,
+          483
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "analogue reads",
+            "bbox": [
+              86,
+              469,
+              161,
+              483
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "From the sTD-DFT state-to-state transition dipole moment expression [16], its spin-flip analogue reads",
+    "formula_map": [],
+    "protected_translated_text": "根据sTD-DFT态间跃迁偶极矩表达式[16]，其自旋翻转版本可表述为",
+    "translated_text": "根据sTD-DFT态间跃迁偶极矩表达式[16]，其自旋翻转版本可表述为"
+  },
+  {
+    "item_id": "p007-b014",
+    "page_idx": 6,
+    "block_idx": 14,
+    "block_type": "text",
+    "bbox": [
+      85,
+      543,
+      508,
+      624
+    ],
+    "source_text": "Additionally, a spin-flip version of the tight-binding sTD-DFT-xTB method \\lfloor 1 4 \\rfloor has been implemented. Here, the effective Fock exchange parameter in the sTDA part is changed to a _ { x } = 0 . 3 6 , whereas y _ { \\alpha \\to \\beta } = 3 . 0 . For clarity, it is noted that the monopole correction \\Delta _ { K } for the “exchange-type” (Coulomb response) integrals is zero in SF-sTD-DFT-xTB. The vTB and xTB parts remain unchanged compared to the original formulation for open shell systems. [14]",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          542,
+          507,
+          556
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Additionally, a spin-flip version of the tight-binding sTD-DFT-xTB method",
+            "bbox": [
+              86,
+              542,
+              447,
+              556
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\lfloor 1 4 \\rfloor",
+            "bbox": [
+              447,
+              543,
+              461,
+              553
+            ]
+          },
+          {
+            "type": "text",
+            "content": "has been",
+            "bbox": [
+              461,
+              542,
+              507,
+              556
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          88,
+          556,
+          506,
+          570
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "implemented. Here, the effective Fock exchange parameter in the sTDA part is changed",
+            "bbox": [
+              88,
+              556,
+              506,
+              570
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          570,
+          508,
+          585
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "to",
+            "bbox": [
+              86,
+              570,
+              101,
+              585
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "a _ { x } = 0 . 3 6",
+            "bbox": [
+              102,
+              573,
+              147,
+              582
+            ]
+          },
+          {
+            "type": "text",
+            "content": ", whereas",
+            "bbox": [
+              148,
+              570,
+              195,
+              585
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "y _ { \\alpha \\to \\beta } = 3 . 0",
+            "bbox": [
+              195,
+              573,
+              249,
+              584
+            ]
+          },
+          {
+            "type": "text",
+            "content": ". For clarity, it is noted that the monopole correction",
+            "bbox": [
+              249,
+              570,
+              508,
+              585
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          88,
+          582,
+          506,
+          597
+        ],
+        "spans": [
+          {
+            "type": "inline_equation",
+            "content": "\\Delta _ { K }",
+            "bbox": [
+              88,
+              586,
+              106,
+              596
+            ]
+          },
+          {
+            "type": "text",
+            "content": "for the “exchange-type” (Coulomb response) integrals is zero in SF-sTD-DFT-xTB.",
+            "bbox": [
+              107,
+              582,
+              506,
+              597
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          596,
+          506,
+          611
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The vTB and xTB parts remain unchanged compared to the original formulation for",
+            "bbox": [
+              86,
+              596,
+              506,
+              611
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          610,
+          196,
+          624
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "open shell systems. [14]",
+            "bbox": [
+              86,
+              610,
+              196,
+              624
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Additionally, a spin-flip version of the tight-binding sTD-DFT-xTB method [[FORMULA_1]] has been implemented. Here, the effective Fock exchange parameter in the sTDA part is changed to [[FORMULA_2]] , whereas [[FORMULA_3]] . For clarity, it is noted that the monopole correction [[FORMULA_4]] for the “exchange-type” (Coulomb response) integrals is zero in SF-sTD-DFT-xTB. The vTB and xTB parts remain unchanged compared to the original formulation for open shell systems. [14]",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\lfloor 1 4 \\rfloor"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "a _ { x } = 0 . 3 6"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "y _ { \\alpha \\to \\beta } = 3 . 0"
+      },
+      {
+        "placeholder": "[[FORMULA_4]]",
+        "formula_text": "\\Delta _ { K }"
+      }
+    ],
+    "protected_translated_text": "此外，我们已实现了紧束缚sTD-DFT-xTB方法的自旋翻转版本[[FORMULA_1]]。其中，sTDA部分的有效福克交换参数被修改为[[FORMULA_2]]，而[[FORMULA_3]]。需要明确说明的是，在SF-sTD-DFT-xTB中，“交换型”（库仑响应）积分的单极校正[[FORMULA_4]]为零。对于开壳层体系，vTB和xTB部分仍保持与原方法一致。[14]",
+    "translated_text": "此外，我们已实现了紧束缚sTD-DFT-xTB方法的自旋翻转版本\\lfloor 1 4 \\rfloor。其中，sTDA部分的有效福克交换参数被修改为a _ { x } = 0 . 3 6，而y _ { \\alpha \\to \\beta } = 3 . 0。需要明确说明的是，在SF-sTD-DFT-xTB中，“交换型”（库仑响应）积分的单极校正\\Delta _ { K }为零。对于开壳层体系，vTB和xTB部分仍保持与原方法一致。[14]"
+  }
+]

@@ -1,0 +1,890 @@
+[
+  {
+    "item_id": "p013-b000",
+    "page_idx": 12,
+    "block_idx": 0,
+    "block_type": "text",
+    "bbox": [
+      86,
+      99,
+      141,
+      109
+    ],
+    "source_text": "-CAMB3LYP",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          99,
+          142,
+          111
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "-CAMB3LYP",
+            "bbox": [
+              88,
+              99,
+              142,
+              111
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "-CAMB3LYP",
+    "formula_map": [],
+    "protected_translated_text": "-CAMB3LYP",
+    "translated_text": "-CAMB3LYP"
+  },
+  {
+    "item_id": "p013-b001",
+    "page_idx": 12,
+    "block_idx": 1,
+    "block_type": "text",
+    "bbox": [
+      86,
+      125,
+      505,
+      152
+    ],
+    "source_text": "To invoke the CAM-B3LYP RSH functional for XsTD schemes only. This keyword implies the -XsTD one and all other parameters.",
+    "lines": [
+      {
+        "bbox": [
+          87,
+          123,
+          506,
+          139
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To invoke the CAM-B3LYP RSH functional for XsTD schemes only. This keyword",
+            "bbox": [
+              87,
+              123,
+              506,
+              139
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          138,
+          319,
+          153
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "implies the -XsTD one and all other parameters.",
+            "bbox": [
+              86,
+              138,
+              319,
+              153
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "To invoke the CAM-B3LYP RSH functional for XsTD schemes only. This keyword implies the -XsTD one and all other parameters.",
+    "formula_map": [],
+    "protected_translated_text": "仅用于在XsTD方案中调用CAM-B3LYP RSH泛函。此关键词隐含了-XsTD以及所有其他参数。",
+    "translated_text": "仅用于在XsTD方案中调用CAM-B3LYP RSH泛函。此关键词隐含了-XsTD以及所有其他参数。"
+  },
+  {
+    "item_id": "p013-b002",
+    "page_idx": 12,
+    "block_idx": 2,
+    "block_type": "text",
+    "bbox": [
+      86,
+      166,
+      135,
+      177
+    ],
+    "source_text": "-wB97XD2",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          167,
+          136,
+          179
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "-wB97XD2",
+            "bbox": [
+              88,
+              167,
+              136,
+              179
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "-wB97XD2",
+    "formula_map": [],
+    "protected_translated_text": "-wB97XD2",
+    "translated_text": "-wB97XD2"
+  },
+  {
+    "item_id": "p013-b003",
+    "page_idx": 12,
+    "block_idx": 3,
+    "block_type": "text",
+    "bbox": [
+      86,
+      192,
+      504,
+      219
+    ],
+    "source_text": "To invoke the wB97X-D2 RSH functional for XsTD schemes only. This keyword im- plies the -XsTD one and all other parameters.",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          191,
+          505,
+          207
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To invoke the wB97X-D2 RSH functional for XsTD schemes only. This keyword im-",
+            "bbox": [
+              86,
+              191,
+              505,
+              207
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          206,
+          308,
+          221
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "plies the -XsTD one and all other parameters.",
+            "bbox": [
+              86,
+              206,
+              308,
+              221
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "To invoke the wB97X-D2 RSH functional for XsTD schemes only. This keyword im- plies the -XsTD one and all other parameters.",
+    "formula_map": [],
+    "protected_translated_text": "仅针对XsTD方案调用wB97X-D2 RSH泛函。此关键词隐含-XsTD及其他所有参数。",
+    "translated_text": "仅针对XsTD方案调用wB97X-D2 RSH泛函。此关键词隐含-XsTD及其他所有参数。"
+  },
+  {
+    "item_id": "p013-b004",
+    "page_idx": 12,
+    "block_idx": 4,
+    "block_type": "text",
+    "bbox": [
+      86,
+      234,
+      135,
+      245
+    ],
+    "source_text": "-wB97XD3",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          234,
+          136,
+          246
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "-wB97XD3",
+            "bbox": [
+              88,
+              234,
+              136,
+              246
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "-wB97XD3",
+    "formula_map": [],
+    "protected_translated_text": "-wB97XD3",
+    "translated_text": "-wB97XD3"
+  },
+  {
+    "item_id": "p013-b005",
+    "page_idx": 12,
+    "block_idx": 5,
+    "block_type": "text",
+    "bbox": [
+      86,
+      260,
+      505,
+      287
+    ],
+    "source_text": "To invoke the wB97X-D3 RSH functional for XsTD schemes only. This keyword im- plies the -XsTD one and all other parameters.",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          259,
+          506,
+          275
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To invoke the wB97X-D3 RSH functional for XsTD schemes only. This keyword im-",
+            "bbox": [
+              86,
+              259,
+              506,
+              275
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          87,
+          275,
+          307,
+          288
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "plies the -XsTD one and all other parameters.",
+            "bbox": [
+              87,
+              275,
+              307,
+              288
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "To invoke the wB97X-D3 RSH functional for XsTD schemes only. This keyword im- plies the -XsTD one and all other parameters.",
+    "formula_map": [],
+    "protected_translated_text": "仅针对XsTD方案调用wB97X-D3 RSH泛函。此关键词隐含-XsTD及其他所有参数。",
+    "translated_text": "仅针对XsTD方案调用wB97X-D3 RSH泛函。此关键词隐含-XsTD及其他所有参数。"
+  },
+  {
+    "item_id": "p013-b006",
+    "page_idx": 12,
+    "block_idx": 6,
+    "block_type": "text",
+    "bbox": [
+      86,
+      301,
+      129,
+      312
+    ],
+    "source_text": "-wB97MV",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          302,
+          130,
+          314
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "-wB97MV",
+            "bbox": [
+              88,
+              302,
+              130,
+              314
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "-wB97MV",
+    "formula_map": [],
+    "protected_translated_text": "-wB97MV",
+    "translated_text": "-wB97MV"
+  },
+  {
+    "item_id": "p013-b007",
+    "page_idx": 12,
+    "block_idx": 7,
+    "block_type": "text",
+    "bbox": [
+      86,
+      328,
+      505,
+      354
+    ],
+    "source_text": "To invoke the wB97MV RSH functional for XsTD schemes only. This keyword im- plies the -XsTD one and all other parameters.",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          327,
+          506,
+          343
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To invoke the wB97MV RSH functional for XsTD schemes only. This keyword im-",
+            "bbox": [
+              86,
+              327,
+              506,
+              343
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          87,
+          342,
+          307,
+          356
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "plies the -XsTD one and all other parameters.",
+            "bbox": [
+              87,
+              342,
+              307,
+              356
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "To invoke the wB97MV RSH functional for XsTD schemes only. This keyword im- plies the -XsTD one and all other parameters.",
+    "formula_map": [],
+    "protected_translated_text": "仅用于XsTD方案调用wB97MV RSH泛函。此关键词隐含-XsTD及所有其他参数。",
+    "translated_text": "仅用于XsTD方案调用wB97MV RSH泛函。此关键词隐含-XsTD及所有其他参数。"
+  },
+  {
+    "item_id": "p013-b008",
+    "page_idx": 12,
+    "block_idx": 8,
+    "block_type": "text",
+    "bbox": [
+      86,
+      370,
+      129,
+      380
+    ],
+    "source_text": "-SRC2R1",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          370,
+          130,
+          382
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "-SRC2R1",
+            "bbox": [
+              88,
+              370,
+              130,
+              382
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "-SRC2R1",
+    "formula_map": [],
+    "protected_translated_text": "-SRC2R1",
+    "translated_text": "-SRC2R1"
+  },
+  {
+    "item_id": "p013-b009",
+    "page_idx": 12,
+    "block_idx": 9,
+    "block_type": "text",
+    "bbox": [
+      86,
+      396,
+      505,
+      423
+    ],
+    "source_text": "To invoke the SRC2R1 RSH functional for XsTD schemes only. This keyword implies the -XsTD one and all other parameters.",
+    "lines": [
+      {
+        "bbox": [
+          87,
+          394,
+          506,
+          411
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To invoke the SRC2R1 RSH functional for XsTD schemes only. This keyword implies",
+            "bbox": [
+              87,
+              394,
+              506,
+              411
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          409,
+          282,
+          423
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the -XsTD one and all other parameters.",
+            "bbox": [
+              86,
+              409,
+              282,
+              423
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "To invoke the SRC2R1 RSH functional for XsTD schemes only. This keyword implies the -XsTD one and all other parameters.",
+    "formula_map": [],
+    "protected_translated_text": "仅针对XsTD方案调用SRC2R1 RSH泛函。此关键词隐含了-XsTD以及所有其他参数。",
+    "translated_text": "仅针对XsTD方案调用SRC2R1 RSH泛函。此关键词隐含了-XsTD以及所有其他参数。"
+  },
+  {
+    "item_id": "p013-b010",
+    "page_idx": 12,
+    "block_idx": 10,
+    "block_type": "text",
+    "bbox": [
+      86,
+      437,
+      129,
+      448
+    ],
+    "source_text": "-SRC2R2",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          438,
+          130,
+          450
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "-SRC2R2",
+            "bbox": [
+              88,
+              438,
+              130,
+              450
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "-SRC2R2",
+    "formula_map": [],
+    "protected_translated_text": "-SRC2R2",
+    "translated_text": "-SRC2R2"
+  },
+  {
+    "item_id": "p013-b011",
+    "page_idx": 12,
+    "block_idx": 11,
+    "block_type": "text",
+    "bbox": [
+      86,
+      463,
+      505,
+      490
+    ],
+    "source_text": "To invoke the SRC2R2 RSH functional for XsTD schemes only. This keyword implies the -XsTD one and all other parameters.",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          462,
+          508,
+          478
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To invoke the SRC2R2 RSH functional for XsTD schemes only. This keyword implies",
+            "bbox": [
+              86,
+              462,
+              508,
+              478
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          87,
+          477,
+          282,
+          491
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the -XsTD one and all other parameters.",
+            "bbox": [
+              87,
+              477,
+              282,
+              491
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "To invoke the SRC2R2 RSH functional for XsTD schemes only. This keyword implies the -XsTD one and all other parameters.",
+    "formula_map": [],
+    "protected_translated_text": "仅用于调用XsTD方案的SRC2R2 RSH功能。此关键词隐含了-XsTD参数及其他所有参数。",
+    "translated_text": "仅用于调用XsTD方案的SRC2R2 RSH功能。此关键词隐含了-XsTD参数及其他所有参数。"
+  },
+  {
+    "item_id": "p013-b012",
+    "page_idx": 12,
+    "block_idx": 12,
+    "block_type": "title",
+    "bbox": [
+      86,
+      505,
+      230,
+      519
+    ],
+    "source_text": "3.3 Exemplary Procedure",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          504,
+          230,
+          523
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "3.3 Exemplary Procedure",
+            "bbox": [
+              86,
+              504,
+              230,
+              523
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "3.3 Exemplary Procedure",
+    "formula_map": [],
+    "protected_translated_text": "3.3 示例程序",
+    "translated_text": "3.3 示例程序"
+  },
+  {
+    "item_id": "p013-b013",
+    "page_idx": 12,
+    "block_idx": 13,
+    "block_type": "title",
+    "bbox": [
+      86,
+      526,
+      279,
+      539
+    ],
+    "source_text": "3.3.1 Using a global hybrid functional",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          525,
+          279,
+          542
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "3.3.1 Using a global hybrid functional",
+            "bbox": [
+              86,
+              525,
+              279,
+              542
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "3.3.1 Using a global hybrid functional",
+    "formula_map": [],
+    "protected_translated_text": "3.3.1 使用全局混合泛函",
+    "translated_text": "3.3.1 使用全局混合泛函"
+  },
+  {
+    "item_id": "p013-b014",
+    "page_idx": 12,
+    "block_idx": 14,
+    "block_type": "text",
+    "bbox": [
+      86,
+      547,
+      504,
+      587
+    ],
+    "source_text": "Perform a Kohn-Sham DFT ground state calculation with a hybrid density functional. In this example, we assume a PBE0 calculation was performed with TURBOMOLE. Then run",
+    "lines": [
+      {
+        "bbox": [
+          87,
+          548,
+          505,
+          560
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Perform a Kohn-Sham DFT ground state calculation with a hybrid density functional.",
+            "bbox": [
+              87,
+              548,
+              505,
+              560
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          87,
+          560,
+          506,
+          574
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "In this example, we assume a PBE0 calculation was performed with TURBOMOLE.",
+            "bbox": [
+              87,
+              560,
+              506,
+              574
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          574,
+          136,
+          588
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Then run",
+            "bbox": [
+              86,
+              574,
+              136,
+              588
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Perform a Kohn-Sham DFT ground state calculation with a hybrid density functional. In this example, we assume a PBE0 calculation was performed with TURBOMOLE. Then run",
+    "formula_map": [],
+    "protected_translated_text": "使用杂化密度泛函进行Kohn-Sham DFT基态计算。在本示例中，我们假设已使用TURBOMOLE执行了PBE0计算。然后运行",
+    "translated_text": "使用杂化密度泛函进行Kohn-Sham DFT基态计算。在本示例中，我们假设已使用TURBOMOLE执行了PBE0计算。然后运行"
+  },
+  {
+    "item_id": "p013-b015",
+    "page_idx": 12,
+    "block_idx": 15,
+    "block_type": "text",
+    "bbox": [
+      86,
+      602,
+      141,
+      613
+    ],
+    "source_text": "tm2molden",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          602,
+          142,
+          615
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "tm2molden",
+            "bbox": [
+              88,
+              602,
+              142,
+              615
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "tm2molden",
+    "formula_map": [],
+    "protected_translated_text": "tm2molden",
+    "translated_text": "tm2molden"
+  },
+  {
+    "item_id": "p013-b016",
+    "page_idx": 12,
+    "block_idx": 16,
+    "block_type": "text",
+    "bbox": [
+      86,
+      629,
+      505,
+      669
+    ],
+    "source_text": "and make sure that the GTO/MO data is written into the Molden input file (here: pbe0.molden.inp). Let us assume that we are interested in all excitations up to 6 \\mathrm { e V } . The std2 program is called by:",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          629,
+          506,
+          642
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and make sure that the GTO/MO data is written into the Molden input file (here:",
+            "bbox": [
+              86,
+              629,
+              506,
+              642
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          642,
+          506,
+          655
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "pbe0.molden.inp). Let us assume that we are interested in all excitations up to",
+            "bbox": [
+              86,
+              642,
+              482,
+              655
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "6 \\mathrm { e V }",
+            "bbox": [
+              482,
+              645,
+              502,
+              653
+            ]
+          },
+          {
+            "type": "text",
+            "content": ".",
+            "bbox": [
+              502,
+              642,
+              506,
+              655
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          655,
+          236,
+          669
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The std2 program is called by:",
+            "bbox": [
+              86,
+              655,
+              236,
+              669
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "and make sure that the GTO/MO data is written into the Molden input file (here: pbe0.molden.inp). Let us assume that we are interested in all excitations up to [[FORMULA_1]] . The std2 program is called by:",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "6 \\mathrm { e V }"
+      }
+    ],
+    "protected_translated_text": "并确保将GTO/MO数据写入Molden输入文件（此处为pbe0.molden.inp）。假设我们关注所有激发态，直至[[FORMULA_1]]。调用std2程序的命令为：",
+    "translated_text": "并确保将GTO/MO数据写入Molden输入文件（此处为pbe0.molden.inp）。假设我们关注所有激发态，直至6 \\mathrm { e V }。调用std2程序的命令为："
+  }
+]

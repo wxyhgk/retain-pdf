@@ -1,0 +1,638 @@
+[
+  {
+    "item_id": "p012-b000",
+    "page_idx": 11,
+    "block_idx": 0,
+    "block_type": "text",
+    "bbox": [
+      85,
+      84,
+      506,
+      125
+    ],
+    "source_text": "To use the SF-(X)sTD-DFT method[17] with a high-spin reference. First-SF-state-to-SF- state transitions are computed as well. Use the -spin option to get < S ^ { 2 } > of spin-flip states.",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          83,
+          506,
+          98
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To use the SF-(X)sTD-DFT method[17] with a high-spin reference. First-SF-state-to-SF-",
+            "bbox": [
+              86,
+              83,
+              506,
+              98
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          98,
+          506,
+          113
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "state transitions are computed as well. Use the -spin option to get",
+            "bbox": [
+              86,
+              98,
+              415,
+              113
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "< S ^ { 2 } >",
+            "bbox": [
+              415,
+              100,
+              451,
+              110
+            ]
+          },
+          {
+            "type": "text",
+            "content": "of spin-flip",
+            "bbox": [
+              451,
+              98,
+              506,
+              113
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          112,
+          121,
+          126
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "states.",
+            "bbox": [
+              86,
+              112,
+              121,
+              126
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "To use the SF-(X)sTD-DFT method[17] with a high-spin reference. First-SF-state-to-SF- state transitions are computed as well. Use the -spin option to get [[FORMULA_1]] of spin-flip states.",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "< S ^ { 2 } >"
+      }
+    ],
+    "protected_translated_text": "要使用SF-(X)sTD-DFT方法[17]配合高自旋参考态。同时计算第一SF态到SF态的跃迁。使用-spin选项获取自旋翻转态的[[FORMULA_1]]。",
+    "translated_text": "要使用SF-(X)sTD-DFT方法[17]配合高自旋参考态。同时计算第一SF态到SF态的跃迁。使用-spin选项获取自旋翻转态的< S ^ { 2 } >。"
+  },
+  {
+    "item_id": "p012-b001",
+    "page_idx": 11,
+    "block_idx": 1,
+    "block_type": "title",
+    "bbox": [
+      86,
+      140,
+      166,
+      151
+    ],
+    "source_text": "-nto <#state>",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          140,
+          164,
+          152
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "-nto <#state>",
+            "bbox": [
+              88,
+              140,
+              164,
+              152
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "-nto <#state>",
+    "formula_map": [],
+    "protected_translated_text": "-nto <#state>",
+    "translated_text": "-nto <#state>"
+  },
+  {
+    "item_id": "p012-b002",
+    "page_idx": 11,
+    "block_idx": 2,
+    "block_type": "text",
+    "bbox": [
+      85,
+      165,
+      506,
+      220
+    ],
+    "source_text": "To compute natural transition orbitals for the #state first states. All NTOs are com- puted in molden files where the orbital energy parameter is in fact the weight of this pair of NTOs. A jmol.spt script file may be used with jmol to generate all NTOs pictures. Then, one can easily visualized them by opening the NTOs.html file.",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          166,
+          506,
+          179
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To compute natural transition orbitals for the #state first states. All NTOs are com-",
+            "bbox": [
+              88,
+              166,
+              506,
+              179
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          179,
+          506,
+          193
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "puted in molden files where the orbital energy parameter is in fact the weight of this pair",
+            "bbox": [
+              86,
+              179,
+              506,
+              193
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          193,
+          505,
+          206
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of NTOs. A jmol.spt script file may be used with jmol to generate all NTOs pictures.",
+            "bbox": [
+              86,
+              193,
+              505,
+              206
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          206,
+          419,
+          220
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Then, one can easily visualized them by opening the NTOs.html file.",
+            "bbox": [
+              86,
+              206,
+              419,
+              220
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "To compute natural transition orbitals for the #state first states. All NTOs are com- puted in molden files where the orbital energy parameter is in fact the weight of this pair of NTOs. A jmol.spt script file may be used with jmol to generate all NTOs pictures. Then, one can easily visualized them by opening the NTOs.html file.",
+    "formula_map": [],
+    "protected_translated_text": "为计算#state前几个态的自然跃迁轨道。所有NTO均计算在molden文件中，其中轨道能量参数实际上是这对NTO的权重。可使用jmol.spt脚本文件配合jmol生成所有NTO图像。随后，通过打开NTOs.html文件即可轻松可视化查看。",
+    "translated_text": "为计算#state前几个态的自然跃迁轨道。所有NTO均计算在molden文件中，其中轨道能量参数实际上是这对NTO的权重。可使用jmol.spt脚本文件配合jmol生成所有NTO图像。随后，通过打开NTOs.html文件即可轻松可视化查看。"
+  },
+  {
+    "item_id": "p012-b003",
+    "page_idx": 11,
+    "block_idx": 3,
+    "block_type": "text",
+    "bbox": [
+      85,
+      233,
+      508,
+      314
+    ],
+    "source_text": "With this option, doing a polarizability or an optical rotation calculation, it is pos- sible to use the RespA approach[21] to compute natural response orbitals as well as chemical fragment responses for convenient elucidation of structure–(optical)property relationships. In this case, the number of states does not need to be specified. To com- pute chemical fragment responses, a file called ”fragments” needs to be specified and its content is:",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          232,
+          506,
+          248
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "With this option, doing a polarizability or an optical rotation calculation, it is pos-",
+            "bbox": [
+              86,
+              232,
+              506,
+              248
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          85,
+          245,
+          508,
+          262
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "sible to use the RespA approach[21] to compute natural response orbitals as well as",
+            "bbox": [
+              85,
+              245,
+              508,
+              262
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          260,
+          506,
+          275
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "chemical fragment responses for convenient elucidation of structure–(optical)property",
+            "bbox": [
+              86,
+              260,
+              506,
+              275
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          275,
+          506,
+          287
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "relationships. In this case, the number of states does not need to be specified. To com-",
+            "bbox": [
+              86,
+              275,
+              506,
+              287
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          287,
+          506,
+          301
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "pute chemical fragment responses, a file called ”fragments” needs to be specified and its",
+            "bbox": [
+              86,
+              287,
+              506,
+              301
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          88,
+          302,
+          140,
+          314
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "content is:",
+            "bbox": [
+              88,
+              302,
+              140,
+              314
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "With this option, doing a polarizability or an optical rotation calculation, it is pos- sible to use the RespA approach[21] to compute natural response orbitals as well as chemical fragment responses for convenient elucidation of structure–(optical)property relationships. In this case, the number of states does not need to be specified. To com- pute chemical fragment responses, a file called ”fragments” needs to be specified and its content is:",
+    "formula_map": [],
+    "protected_translated_text": "使用此选项进行极化率或旋光性计算时，可采用RespA方法[21]计算自然响应轨道以及化学片段响应，以便于阐明结构-(光学)性质关系。在此情况下，无需指定态的数量。要计算化学片段响应，需指定名为“fragments”的文件，其内容为：",
+    "translated_text": "使用此选项进行极化率或旋光性计算时，可采用RespA方法[21]计算自然响应轨道以及化学片段响应，以便于阐明结构-(光学)性质关系。在此情况下，无需指定态的数量。要计算化学片段响应，需指定名为“fragments”的文件，其内容为："
+  },
+  {
+    "item_id": "p012-b006",
+    "page_idx": 11,
+    "block_idx": 6,
+    "block_type": "text",
+    "bbox": [
+      86,
+      423,
+      424,
+      437
+    ],
+    "source_text": "If this file is not present, only natural response orbitals are computed.",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          422,
+          424,
+          438
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "If this file is not present, only natural response orbitals are computed.",
+            "bbox": [
+              86,
+              422,
+              424,
+              438
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "If this file is not present, only natural response orbitals are computed.",
+    "formula_map": [],
+    "protected_translated_text": "如果此文件不存在，则仅计算自然响应轨道。",
+    "translated_text": "如果此文件不存在，则仅计算自然响应轨道。"
+  },
+  {
+    "item_id": "p012-b007",
+    "page_idx": 11,
+    "block_idx": 7,
+    "block_type": "text",
+    "bbox": [
+      86,
+      465,
+      108,
+      475
+    ],
+    "source_text": "-rw",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          466,
+          108,
+          477
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "-rw",
+            "bbox": [
+              88,
+              466,
+              108,
+              477
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "-rw",
+    "formula_map": [],
+    "protected_translated_text": "-rw",
+    "translated_text": "-rw"
+  },
+  {
+    "item_id": "p012-b008",
+    "page_idx": 11,
+    "block_idx": 8,
+    "block_type": "text",
+    "bbox": [
+      85,
+      491,
+      506,
+      516
+    ],
+    "source_text": "Saving some memory by writing on the disk large temporary files when running a re- stricted calculation.",
+    "lines": [
+      {
+        "bbox": [
+          86,
+          490,
+          506,
+          506
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Saving some memory by writing on the disk large temporary files when running a re-",
+            "bbox": [
+              86,
+              490,
+              506,
+              506
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          87,
+          503,
+          184,
+          517
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "stricted calculation.",
+            "bbox": [
+              87,
+              503,
+              184,
+              517
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "Saving some memory by writing on the disk large temporary files when running a re- stricted calculation.",
+    "formula_map": [],
+    "protected_translated_text": "通过将大型临时文件写入磁盘来节省内存，在运行受限计算时。",
+    "translated_text": "通过将大型临时文件写入磁盘来节省内存，在运行受限计算时。"
+  },
+  {
+    "item_id": "p012-b009",
+    "page_idx": 11,
+    "block_idx": 9,
+    "block_type": "text",
+    "bbox": [
+      86,
+      532,
+      119,
+      543
+    ],
+    "source_text": "-dual",
+    "lines": [
+      {
+        "bbox": [
+          88,
+          530,
+          119,
+          545
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "-dual",
+            "bbox": [
+              88,
+              530,
+              119,
+              545
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "-dual",
+    "formula_map": [],
+    "protected_translated_text": "-dual",
+    "translated_text": "-dual"
+  },
+  {
+    "item_id": "p012-b010",
+    "page_idx": 11,
+    "block_idx": 10,
+    "block_type": "text",
+    "bbox": [
+      85,
+      558,
+      508,
+      599
+    ],
+    "source_text": "To use the dual threshold method[22] for restricted calculations (implying the -rw op- tion). With this option, two energy thresholds are used: one for the inner shell specified by the -e <Ethr> option and one for the outer shell specified in a file called ”dual”:",
+    "lines": [
+      {
+        "bbox": [
+          85,
+          555,
+          508,
+          574
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To use the dual threshold method[22] for restricted calculations (implying the -rw op-",
+            "bbox": [
+              85,
+              555,
+              508,
+              574
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          572,
+          506,
+          586
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "tion). With this option, two energy thresholds are used: one for the inner shell specified",
+            "bbox": [
+              86,
+              572,
+              506,
+              586
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          86,
+          585,
+          491,
+          599
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "by the -e <Ethr> option and one for the outer shell specified in a file called ”dual”:",
+            "bbox": [
+              86,
+              585,
+              491,
+              599
+            ]
+          }
+        ]
+      }
+    ],
+    "protected_source_text": "To use the dual threshold method[22] for restricted calculations (implying the -rw op- tion). With this option, two energy thresholds are used: one for the inner shell specified by the -e <Ethr> option and one for the outer shell specified in a file called ”dual”:",
+    "formula_map": [],
+    "protected_translated_text": "要使用双阈值方法[22]进行受限计算（意味着使用-rw选项）。通过此选项，将使用两个能量阈值：一个用于由-e <Ethr>选项指定的内壳层，另一个用于名为“dual”的文件中指定的外壳层：",
+    "translated_text": "要使用双阈值方法[22]进行受限计算（意味着使用-rw选项）。通过此选项，将使用两个能量阈值：一个用于由-e <Ethr>选项指定的内壳层，另一个用于名为“dual”的文件中指定的外壳层："
+  }
+]
