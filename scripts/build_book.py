@@ -22,6 +22,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--start-page", type=int, default=0, help="Zero-based start page index.")
     parser.add_argument("--end-page", type=int, default=-1, help="Zero-based end page index, inclusive. -1 means last translated page.")
+    parser.add_argument(
+        "--source-pdf",
+        type=str,
+        default=str(SOURCE_PDF),
+        help="Source PDF path.",
+    )
     return parser.parse_args()
 
 
@@ -63,7 +69,7 @@ def main() -> None:
 
     output_pdf_path = OUTPUT_DIR / args.output
     build_book_typst_pdf(
-        source_pdf_path=SOURCE_PDF,
+        source_pdf_path=Path(args.source_pdf),
         output_pdf_path=output_pdf_path,
         translated_pages=selected_pages,
     )

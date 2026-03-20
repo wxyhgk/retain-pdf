@@ -21,6 +21,8 @@ Current status:
   Translate one page with a configurable OpenAI-compatible API.
 - `translate_book.py`
   Translate a page range or the full book with a configurable OpenAI-compatible API.
+- `run_book.py`
+  Translate and render a full book in one page-by-page pipeline.
 
 ### `common/`
 
@@ -158,4 +160,20 @@ python scripts/build_book.py \
   --output book-q35.pdf \
   --start-page 0 \
   --end-page 19
+```
+
+Run the page-by-page pipeline in one command:
+
+```bash
+python scripts/run_book.py \
+  --source-json Data/test1/test1.json \
+  --source-pdf Data/test1/test1.pdf \
+  --start-page 0 \
+  --end-page 7 \
+  --batch-size 6 \
+  --workers 4 \
+  --base-url http://1.94.67.196:10001/v1 \
+  --model Q3.5-turbo \
+  --output-dir translations/test1-run \
+  --output test1-run.pdf
 ```

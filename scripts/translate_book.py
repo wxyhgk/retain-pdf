@@ -27,6 +27,12 @@ def parse_args() -> argparse.Namespace:
         default="translations/book",
         help="Output directory under output/ for per-page translation JSON files.",
     )
+    parser.add_argument(
+        "--source-json",
+        type=str,
+        default=str(SOURCE_JSON),
+        help="OCR JSON source path.",
+    )
     return parser.parse_args()
 
 
@@ -39,7 +45,7 @@ def main() -> None:
     output_dir = OUTPUT_DIR / args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    data = load_ocr_json(SOURCE_JSON)
+    data = load_ocr_json(Path(args.source_json))
     pages = data.get("pdf_info", [])
     if not pages:
         raise RuntimeError("No pages found in OCR JSON.")

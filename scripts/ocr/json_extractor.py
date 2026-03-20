@@ -65,7 +65,14 @@ def merge_segments_text(segments: list[dict]) -> str:
     return normalize_text(" ".join(segment["content"] for segment in segments if segment["content"]))
 
 
-SKIP_BLOCK_TYPES = {"interline_equation", "code", "table", "ref_text"}
+SKIP_BLOCK_TYPES = {
+    "interline_equation",
+    "code",
+    "table",
+    "ref_text",
+    "image",
+    "image_body",
+}
 
 
 def should_translate_block(block: dict, text: str) -> bool:

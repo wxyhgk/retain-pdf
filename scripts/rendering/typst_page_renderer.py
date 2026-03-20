@@ -12,7 +12,7 @@ from rendering.render_payloads import build_render_blocks
 
 TYPST_BIN = "/snap/bin/typst"
 TYPST_OVERLAY_DIR = OUTPUT_DIR / "typst_overlay"
-TYPST_TEXT_FONT = "Droid Sans Fallback"
+TYPST_TEXT_FONT = "Noto Serif CJK SC"
 CMARKER_VERSION = "0.1.8"
 MITEX_VERSION = "0.2.6"
 
@@ -27,10 +27,12 @@ def _build_typst_block(block_id: str, block: RenderBlock) -> str:
     markdown_name = f"{block_id}_md"
     body_name = f"{block_id}_body"
     markdown = block.markdown_text
+    font_size = max(1.0, block.font_size_pt)
+    leading = max(0.1, block.leading_em)
 
     command = (
         f'#let {markdown_name} = "{_escape_typst_string(markdown)}"\n'
-        f"#let {body_name} = block(width: {width}pt)[#cmarker.render({markdown_name}, math: mitex)]\n"
+        f"#let {body_name} = block(width: {width}pt)[#{{ set text(size: {font_size}pt); set par(leading: {leading}em); cmarker.render({markdown_name}, math: mitex) }}]\n"
         "#context {\n"
         f"  let size = measure({body_name})\n"
         f"  place(top + left, dx: {x0}pt, dy: {y0}pt + ({height}pt - size.height) / 2, {body_name})\n"

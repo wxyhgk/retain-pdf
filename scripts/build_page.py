@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 
 from common.config import (
     DEFAULT_FONT_PATH,
@@ -47,13 +48,27 @@ def parse_args() -> argparse.Namespace:
         choices=["default", "typst"],
         help="Rendering mode for translated overlay.",
     )
+    parser.add_argument(
+        "--source-json",
+        type=str,
+        default=str(SOURCE_JSON),
+        help="OCR JSON source path.",
+    )
+    parser.add_argument(
+        "--source-pdf",
+        type=str,
+        default=str(SOURCE_PDF),
+        help="Source PDF path.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
 
-    data = load_ocr_json(SOURCE_JSON)
+    source_json = Path(args.source_json)
+    source_pdf = Path(args.source_pdf)
+    data = load_ocr_json(source_json)
     items = extract_text_items(data, page_idx=args.page)
 
     translation_path = (
@@ -67,20 +82,20 @@ def main() -> None:
     output_pdf_path = OUTPUT_DIR / args.output
     if args.extract_original_only:
         extract_single_page_pdf(
-            source_pdf_path=SOURCE_PDF,
+            source_pdf_path=source_pdf,
             output_pdf_path=output_pdf_path,
             page_idx=args.page,
         )
     elif args.single_page and args.render_mode == "typst":
         build_single_page_typst_pdf(
-            source_pdf_path=SOURCE_PDF,
+            source_pdf_path=source_pdf,
             output_pdf_path=output_pdf_path,
             translated_items=translated_items,
             page_idx=args.page,
         )
     elif args.single_page:
         build_single_page_dev_pdf(
-            source_pdf_path=SOURCE_PDF,
+            source_pdf_path=source_pdf,
             output_pdf_path=output_pdf_path,
             translated_items=translated_items,
             page_idx=args.page,
@@ -88,7 +103,7 @@ def main() -> None:
         )
     else:
         build_dev_pdf(
-            source_pdf_path=SOURCE_PDF,
+            source_pdf_path=source_pdf,
             output_pdf_path=output_pdf_path,
             translated_items=translated_items,
             page_idx=args.page,

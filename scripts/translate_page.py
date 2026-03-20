@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 
 from common.config import OUTPUT_DIR, SOURCE_JSON, TRANSLATIONS_DIR
 from ocr.json_extractor import extract_text_items, load_ocr_json
@@ -25,6 +26,12 @@ def parse_args() -> argparse.Namespace:
         default="",
         help="Optional translation JSON path under output/.",
     )
+    parser.add_argument(
+        "--source-json",
+        type=str,
+        default=str(SOURCE_JSON),
+        help="OCR JSON source path.",
+    )
     return parser.parse_args()
 
 
@@ -35,7 +42,7 @@ def main() -> None:
         required=normalize_base_url(args.base_url) == normalize_base_url(DEFAULT_BASE_URL),
     )
 
-    data = load_ocr_json(SOURCE_JSON)
+    data = load_ocr_json(Path(args.source_json))
     items = extract_text_items(data, page_idx=args.page)
     translation_path = (
         TRANSLATIONS_DIR / f"page-{args.page + 1}.json"
