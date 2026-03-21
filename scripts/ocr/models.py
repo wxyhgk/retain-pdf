@@ -11,3 +11,4 @@ class TextItem:
     text: str
     segments: list[dict]
     lines: list[dict]
+    metadata: dict

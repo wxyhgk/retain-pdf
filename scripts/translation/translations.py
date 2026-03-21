@@ -19,10 +19,20 @@ def export_translation_template(items: list[TextItem], output_path: Path, page_i
                 "bbox": item.bbox,
                 "source_text": item.text,
                 "lines": item.lines,
+                "metadata": item.metadata,
                 "protected_source_text": protected_source_text,
                 "formula_map": formula_map,
+                "classification_label": "",
+                "should_translate": True,
                 "protected_translated_text": "",
                 "translated_text": "",
+                "continuation_group": "",
+                "continuation_prev_text": "",
+                "continuation_next_text": "",
+                "group_protected_source_text": "",
+                "group_formula_map": [],
+                "group_protected_translated_text": "",
+                "group_translated_text": "",
             }
         )
 
@@ -62,9 +72,49 @@ def ensure_translation_template(items: list[TextItem], output_path: Path, page_i
             protected_source_text, formula_map = protect_inline_formulas_in_segments(item.segments)
             record["source_text"] = item.text
             record["lines"] = item.lines
+            record["metadata"] = item.metadata
             record["protected_source_text"] = protected_source_text
             record["formula_map"] = formula_map
+            record.setdefault("classification_label", "")
+            record.setdefault("should_translate", True)
             record.setdefault("protected_translated_text", "")
+            record.setdefault("continuation_group", "")
+            record.setdefault("continuation_prev_text", "")
+            record.setdefault("continuation_next_text", "")
+            record.setdefault("group_protected_source_text", "")
+            record.setdefault("group_formula_map", [])
+            record.setdefault("group_protected_translated_text", "")
+            record.setdefault("group_translated_text", "")
+            changed = True
+        if "classification_label" not in record:
+            record["classification_label"] = ""
+            changed = True
+        if "metadata" not in record:
+            record["metadata"] = item.metadata
+            changed = True
+        if "should_translate" not in record:
+            record["should_translate"] = True
+            changed = True
+        if "continuation_group" not in record:
+            record["continuation_group"] = ""
+            changed = True
+        if "continuation_prev_text" not in record:
+            record["continuation_prev_text"] = ""
+            changed = True
+        if "continuation_next_text" not in record:
+            record["continuation_next_text"] = ""
+            changed = True
+        if "group_protected_source_text" not in record:
+            record["group_protected_source_text"] = ""
+            changed = True
+        if "group_formula_map" not in record:
+            record["group_formula_map"] = []
+            changed = True
+        if "group_protected_translated_text" not in record:
+            record["group_protected_translated_text"] = ""
+            changed = True
+        if "group_translated_text" not in record:
+            record["group_translated_text"] = ""
             changed = True
         if not record.get("protected_translated_text") and record.get("translated_text"):
             record["protected_translated_text"] = re_protect_restored_formulas(

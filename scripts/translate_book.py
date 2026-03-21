@@ -2,9 +2,10 @@ import argparse
 from pathlib import Path
 
 from common.config import OUTPUT_DIR, SOURCE_JSON
-from ocr.json_extractor import extract_text_items, load_ocr_json
-from translation.deepseek_client import DEFAULT_BASE_URL, get_api_key, normalize_base_url
-from translation.translation_workflow import default_page_translation_name, translate_items_to_path
+from pipeline.book_pipeline import translate_book_pipeline
+from translation.deepseek_client import DEFAULT_BASE_URL
+from translation.deepseek_client import get_api_key
+from translation.deepseek_client import normalize_base_url
 
 
 def parse_args() -> argparse.Namespace:
@@ -13,6 +14,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--end-page", type=int, default=-1, help="Zero-based end page index, inclusive. Default is the last page.")
     parser.add_argument("--batch-size", type=int, default=8, help="Number of text items per API call.")
     parser.add_argument("--workers", type=int, default=1, help="Concurrent translation requests per page.")
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="fast",
+        choices=["fast", "precise", "sci"],
+        help="Translation mode. sci is the academic-paper mode: skip titles and all content after the last title in the whole document.",
+    )
+    parser.add_argument(
+        "--skip-title-translation",
+        action="store_true",
+        help="Do not translate OCR blocks with block_type=title.",
+    )
+    parser.add_argument("--classify-batch-size", type=int, default=12, help="Number of suspicious items per classification API call.")
     parser.add_argument("--api-key", type=str, default="", help="Optional API key. Prefer env DEEPSEEK_API_KEY.")
     parser.add_argument("--model", type=str, default="deepseek-chat", help="Model name.")
     parser.add_argument(
@@ -42,45 +56,28 @@ def main() -> None:
         args.api_key,
         required=normalize_base_url(args.base_url) == normalize_base_url(DEFAULT_BASE_URL),
     )
-    output_dir = OUTPUT_DIR / args.output_dir
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    data = load_ocr_json(Path(args.source_json))
-    pages = data.get("pdf_info", [])
-    if not pages:
-        raise RuntimeError("No pages found in OCR JSON.")
-
-    start_page = max(0, args.start_page)
-    end_page = len(pages) - 1 if args.end_page < 0 else min(args.end_page, len(pages) - 1)
-    if start_page > end_page:
-        raise RuntimeError(f"Invalid page range: start_page={start_page}, end_page={end_page}")
-
-    summaries = []
-    for page_idx in range(start_page, end_page + 1):
-        items = extract_text_items(data, page_idx=page_idx)
-        translation_path = output_dir / default_page_translation_name(page_idx)
-        summary = translate_items_to_path(
-            items=items,
-            translation_path=translation_path,
-            page_idx=page_idx,
-            api_key=api_key,
-            batch_size=args.batch_size,
-            workers=max(1, args.workers),
-            model=args.model,
-            base_url=args.base_url,
-            progress_label=f"page {page_idx + 1}/{len(pages)}",
-        )
-        summaries.append(summary)
+    summary = translate_book_pipeline(
+        source_json_path=Path(args.source_json),
+        output_dir=OUTPUT_DIR / args.output_dir,
+        api_key=api_key,
+        start_page=args.start_page,
+        end_page=args.end_page,
+        batch_size=args.batch_size,
+        workers=max(1, args.workers),
+        mode=args.mode,
+        classify_batch_size=max(1, args.classify_batch_size),
+        skip_title_translation=args.skip_title_translation,
+        model=args.model,
+        base_url=args.base_url,
+    )
+    for page_summary in summary["summaries"]:
         print(
-            f"page {page_idx + 1}: {summary['translated_items']}/{summary['total_items']} translated "
-            f"-> {summary['translation_path']}"
+            f"page {page_summary['page_idx'] + 1}: {page_summary['translated_items']}/{page_summary['total_items']} translated "
+            f"-> {page_summary['translation_path']}"
         )
-
-    total_items = sum(item["total_items"] for item in summaries)
-    translated_items = sum(item["translated_items"] for item in summaries)
     print(
-        f"book translation completed: {translated_items}/{total_items} items translated "
-        f"across {len(summaries)} pages into {output_dir}"
+        f"book translation completed: {summary['translated_items']}/{summary['total_items']} items translated "
+        f"across {summary['page_count']} pages into {summary['output_dir']}"
     )
 
 

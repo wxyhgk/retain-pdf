@@ -6,6 +6,8 @@ from typing import Any
 
 import requests
 
+from common.prompt_loader import load_prompt
+
 
 DEFAULT_BASE_URL = "https://api.deepseek.com/v1"
 DEFAULT_API_KEY_ENV = "DEEPSEEK_API_KEY"
@@ -13,24 +15,60 @@ _THREAD_LOCAL = threading.local()
 
 
 def build_messages(batch: list[dict]) -> list[dict[str, str]]:
-    system_prompt = (
-        "You are a scientific translator. Translate English OCR text into concise, natural Simplified Chinese. "
-        "Translate only the natural-language text. Keep placeholders like [[FORMULA_1]] exactly unchanged. "
-        "Do not rewrite, remove, renumber, or explain placeholders. "
-        "Keep code snippets, emails, person names, version strings, citation metadata, and technical abbreviations unchanged when appropriate. "
-        "For bibliography or reference entries, keep author lists, journal names, years, volume/issue numbers, and page ranges unchanged; "
-        "translate only the work title into Simplified Chinese and keep the citation order intact. "
-        "Do not transliterate author names. "
-        "Return only valid JSON with the schema "
-        '{"translations":[{"item_id":"...","translated_text":"..."}]}.'
-    )
+    system_prompt = load_prompt("translation_system.txt")
+    groups: dict[str, dict[str, Any]] = {}
+    items_payload = []
+    for item in batch:
+        group_id = item.get("continuation_group", "")
+        item_payload = {
+            "item_id": item["item_id"],
+            "source_text": item["protected_source_text"],
+        }
+        if group_id:
+            item_payload["continuation_group"] = group_id
+            if item.get("continuation_prev_text"):
+                item_payload["context_before"] = item["continuation_prev_text"]
+            if item.get("continuation_next_text"):
+                item_payload["context_after"] = item["continuation_next_text"]
+            group = groups.setdefault(group_id, {"group_id": group_id, "item_ids": [], "combined_source_text": []})
+            group["item_ids"].append(item["item_id"])
+            group["combined_source_text"].append(item["protected_source_text"])
+        items_payload.append(item_payload)
     user_payload = {
-        "task": "Translate each source_text into Simplified Chinese while preserving meaning and technical terms. Do not translate placeholders or code.",
-        "items": [{"item_id": item["item_id"], "source_text": item["protected_source_text"]} for item in batch],
+        "task": load_prompt("translation_task.txt"),
+        "items": items_payload,
     }
+    if groups:
+        user_payload["continuation_groups"] = [
+            {
+                "group_id": group["group_id"],
+                "item_ids": group["item_ids"],
+                "combined_source_text": " ".join(group["combined_source_text"]),
+            }
+            for group in groups.values()
+        ]
     return [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
+    ]
+
+
+def build_single_item_fallback_messages(item: dict) -> list[dict[str, str]]:
+    system_prompt = load_prompt("translation_system.txt")
+    fallback_system = (
+        f"{system_prompt}\n"
+        "You are translating exactly one item.\n"
+        "Return only the translated_text as plain text.\n"
+        "Do not return JSON, markdown, code fences, labels, or explanations."
+    )
+    user_prompt = (
+        f"{load_prompt('translation_task.txt')}\n\n"
+        f"item_id: {item['item_id']}\n"
+        f"source_text:\n{item['protected_source_text']}"
+    )
+    return [
+        {"role": "system", "content": fallback_system},
+        {"role": "user", "content": user_prompt},
     ]
 
 
@@ -76,49 +114,71 @@ def get_session() -> requests.Session:
     return session
 
 
+def request_chat_content(
+    messages: list[dict[str, str]],
+    api_key: str = "",
+    model: str = "deepseek-chat",
+    base_url: str = DEFAULT_BASE_URL,
+    temperature: float = 0.2,
+    response_format: dict[str, str] | None = None,
+    timeout: int = 120,
+    request_label: str = "",
+) -> str:
+    last_error: Exception | None = None
+    body: dict[str, Any] = {
+        "model": model,
+        "temperature": temperature,
+        "messages": messages,
+    }
+    if response_format is not None:
+        body["response_format"] = response_format
+
+    for attempt in range(1, 5):
+        started = time.perf_counter()
+        try:
+            if request_label:
+                print(
+                    f"{request_label}: http attempt {attempt}/4 -> {model} {chat_completions_url(base_url)} timeout={timeout}s",
+                    flush=True,
+                )
+            response = get_session().post(
+                chat_completions_url(base_url),
+                headers=build_headers(api_key),
+                json=body,
+                timeout=timeout,
+            )
+            response.raise_for_status()
+            data: dict[str, Any] = response.json()
+            if request_label:
+                elapsed = time.perf_counter() - started
+                print(f"{request_label}: http ok in {elapsed:.2f}s", flush=True)
+            return data["choices"][0]["message"]["content"]
+        except (requests.RequestException, ValueError, KeyError, json.JSONDecodeError) as exc:
+            last_error = exc
+            elapsed = time.perf_counter() - started
+            if request_label:
+                print(
+                    f"{request_label}: http failed attempt {attempt}/4 after {elapsed:.2f}s: {type(exc).__name__}: {exc}",
+                    flush=True,
+                )
+            if attempt >= 4:
+                raise
+            time.sleep(min(8, 2 * attempt))
+
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError("Chat completion failed without an exception.")
+
+
 def translate_batch(
     batch: list[dict],
     api_key: str = "",
     model: str = "deepseek-chat",
     base_url: str = DEFAULT_BASE_URL,
 ) -> dict[str, str]:
-    last_error: Exception | None = None
-    for attempt in range(1, 5):
-        try:
-            response = get_session().post(
-                chat_completions_url(base_url),
-                headers=build_headers(api_key),
-                json={
-                    "model": model,
-                    "temperature": 0.2,
-                    "messages": build_messages(batch),
-                    "response_format": {"type": "json_object"},
-                },
-                timeout=120,
-            )
-            response.raise_for_status()
-            data: dict[str, Any] = response.json()
-            content = data["choices"][0]["message"]["content"]
-            payload = json.loads(extract_json_text(content))
-            break
-        except (requests.RequestException, ValueError, KeyError, json.JSONDecodeError) as exc:
-            last_error = exc
-            if attempt >= 4:
-                raise
-            time.sleep(min(8, 2 * attempt))
-    else:
-        if last_error is not None:
-            raise last_error
-        raise RuntimeError("DeepSeek translation failed without an exception.")
+    from translation.retrying_translator import translate_batch as _translate_batch
 
-    translations = payload.get("translations", [])
-    result = {}
-    for item in translations:
-        item_id = item.get("item_id")
-        translated_text = item.get("translated_text", "").strip()
-        if item_id:
-            result[item_id] = translated_text
-    return result
+    return _translate_batch(batch, api_key=api_key, model=model, base_url=base_url)
 
 
 def get_api_key(explicit_api_key: str = "", env_var: str = DEFAULT_API_KEY_ENV, required: bool = True) -> str:
