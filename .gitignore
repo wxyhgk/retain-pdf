@@ -5,3 +5,4 @@ __pycache__/
 output/
 scripts/.env/*.env
 Fast_API/jobs/
+Fast_API/uploads/

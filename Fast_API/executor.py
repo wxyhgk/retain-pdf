@@ -145,8 +145,8 @@ def list_jobs(limit: int = 50) -> list[JobRecord]:
     return records
 
 
-def create_job(job_type: str, command: list[str], request_payload: dict) -> JobRecord:
-    job_id = uuid.uuid4().hex[:12]
+def create_job(job_type: str, command: list[str], request_payload: dict, job_id: str | None = None) -> JobRecord:
+    job_id = job_id or uuid.uuid4().hex[:12]
     record = JobRecord(
         job_id=job_id,
         job_type=job_type,
@@ -159,8 +159,8 @@ def create_job(job_type: str, command: list[str], request_payload: dict) -> JobR
     return save_job(record)
 
 
-def submit_job(job_type: str, command: list[str], request_payload: dict) -> SubmitJobResponse:
-    record = create_job(job_type, command, request_payload)
+def submit_job(job_type: str, command: list[str], request_payload: dict, job_id: str | None = None) -> SubmitJobResponse:
+    record = create_job(job_type, command, request_payload, job_id=job_id)
     _JOB_TASKS[record.job_id] = asyncio.create_task(_run_job(record.job_id))
     return SubmitJobResponse(
         job_id=record.job_id,

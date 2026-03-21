@@ -26,6 +26,8 @@ uvicorn Fast_API.main:app --host 0.0.0.0 --port 40000
 - `GET /health`
 - `POST /v1/run-case`
 - `POST /v1/run-mineru-case`
+- `POST /v1/run-mineru-case-upload`
+- `POST /v1/upload-mineru-case`
 - `GET /v1/jobs/{job_id}`
 - `GET /v1/jobs?limit=20`
 
@@ -131,6 +133,75 @@ curl -X POST http://127.0.0.1:40000/v1/run-mineru-case \
   }'
 ```
 
+## `POST /v1/run-mineru-case-upload`
+
+Wraps the same MinerU pipeline, but accepts a local PDF upload directly as `multipart/form-data`.
+
+This route is intended for frontend or browser upload flows:
+
+1. upload a PDF file
+2. save it under `Fast_API/uploads/<job_id>/`
+3. submit the background MinerU job immediately
+4. poll the same `GET /v1/jobs/{job_id}` endpoint
+
+Recommended route:
+
+- `POST /v1/run-mineru-case-upload`
+
+Compatibility alias:
+
+- `POST /v1/upload-mineru-case`
+
+Example:
+
+```bash
+curl -X POST http://127.0.0.1:40000/v1/run-mineru-case-upload \
+  -F "file=@/home/wxyhgk/tmp/Code/Data/test1/test1.pdf" \
+  -F "mineru_token=YOUR_MINERU_TOKEN" \
+  -F "model_version=vlm" \
+  -F "language=en" \
+  -F "page_ranges=1-3" \
+  -F "mode=sci" \
+  -F "model=Q3.5-turbo" \
+  -F "base_url=http://1.94.67.196:10001/v1" \
+  -F "api_key=" \
+  -F "workers=4" \
+  -F "batch_size=6" \
+  -F "render_mode=typst"
+```
+
+Common form fields:
+
+- `file`
+- `mode`
+- `skip_title_translation`
+- `start_page`
+- `end_page`
+- `classify_batch_size`
+- `model`
+- `base_url`
+- `api_key`
+- `workers`
+- `batch_size`
+- `render_mode`
+- `compile_workers`
+- `typst_font_family`
+- `mineru_token`
+- `model_version`
+- `is_ocr`
+- `disable_formula`
+- `disable_table`
+- `language`
+- `page_ranges`
+- `data_id`
+- `no_cache`
+- `cache_tolerance`
+- `extra_formats`
+- `poll_interval`
+- `poll_timeout`
+- `translated_pdf_name`
+- body layout tuning fields such as `body_font_size_factor`
+
 ## Poll Job Status
 
 ```bash
@@ -171,9 +242,16 @@ For `run-mineru-case`, artifacts typically include:
 - `output_pdf`
 - `summary`
 
+Upload-based MinerU jobs reuse the same artifact parsing. Their stored request payload additionally includes:
+
+- `uploaded_file`
+- `uploaded_filename`
+
 ## Notes
 
 - The wrapper stays thin and continues to call the existing CLIs.
 - Job metadata is persisted under `Fast_API/jobs/`.
 - Long-running tasks no longer block the HTTP request.
 - Passing `output/...` as API output paths is unnecessary. The server already writes inside a structured job folder under `output/`.
+- Uploaded files are stored under `Fast_API/uploads/<job_id>/`.
+- The upload route passes the generated `job_id` through to `scripts/run_mineru_case.py`, so final outputs still land under `output/<job_id>/originPDF|jsonPDF|transPDF`.

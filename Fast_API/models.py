@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+import uuid
 import sys
 from pathlib import Path
 from typing import Any, Literal
@@ -10,6 +12,8 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RUN_CASE_SCRIPT = PROJECT_ROOT / "scripts" / "run_case.py"
 RUN_MINERU_CASE_SCRIPT = PROJECT_ROOT / "scripts" / "run_mineru_case.py"
+UPLOADS_DIR = PROJECT_ROOT / "Fast_API" / "uploads"
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _strip_output_prefix(value: str) -> str:
@@ -21,6 +25,10 @@ def _strip_output_prefix(value: str) -> str:
     if text.startswith("output/"):
         return text[len("output/") :]
     return text
+
+
+def build_timestamp_job_id() -> str:
+    return f"{time.strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6]}"
 
 
 class LayoutTuningParams(BaseModel):
