@@ -12,6 +12,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--page", type=int, default=0, help="Zero-based page index.")
     parser.add_argument("--batch-size", type=int, default=8, help="Number of text items per API call.")
     parser.add_argument("--workers", type=int, default=1, help="Concurrent translation requests per page.")
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="fast",
+        choices=["fast", "precise", "sci"],
+        help="Translation mode. sci is the academic-paper mode: skip titles and all content after the last title in the whole document when available.",
+    )
+    parser.add_argument(
+        "--skip-title-translation",
+        action="store_true",
+        help="Do not translate OCR blocks with block_type=title.",
+    )
+    parser.add_argument("--classify-batch-size", type=int, default=12, help="Number of suspicious items per classification API call.")
     parser.add_argument("--api-key", type=str, default="", help="Optional API key. Prefer env DEEPSEEK_API_KEY.")
     parser.add_argument("--model", type=str, default="deepseek-chat", help="Model name.")
     parser.add_argument(
@@ -58,6 +71,9 @@ def main() -> None:
         workers=max(1, args.workers),
         model=args.model,
         base_url=args.base_url,
+        mode=args.mode,
+        classify_batch_size=max(1, args.classify_batch_size),
+        skip_title_translation=args.skip_title_translation,
     )
 
     print(f"translation json updated: {summary['translation_path']}")

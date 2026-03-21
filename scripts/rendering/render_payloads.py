@@ -1,349 +1,254 @@
 import re
+from copy import deepcopy
 from statistics import median
-from dataclasses import dataclass
 
 from common.config import DEFAULT_FONT_SIZE
+from rendering.font_fit import bbox_width
+from rendering.font_fit import estimate_font_size_pt
+from rendering.font_fit import estimate_leading_em
+from rendering.font_fit import inner_bbox
+from rendering.font_fit import is_body_text_candidate
+from rendering.font_fit import is_default_text_block
+from rendering.font_fit import page_baseline_font_size
+from rendering.math_utils import build_markdown_from_parts
+from rendering.math_utils import build_markdown_paragraph
+from rendering.math_utils import build_plain_text_from_text
+from rendering.math_utils import build_plain_text
+from rendering.models import RenderBlock
 
 
-@dataclass
-class RenderBlock:
-    bbox: list[float]
-    inner_bbox: list[float]
-    markdown_text: str
-    font_size_pt: float
-    leading_em: float
+TOKEN_RE = re.compile(r"(\[\[FORMULA_\d+]]|\s+|[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*|[\u4e00-\u9fff]|.)")
 
 
-MIN_FONT_SIZE_PT = 8.4
-MAX_FONT_SIZE_PT = 11.6
-ZH_FONT_SCALE = 0.91
-BLOCK_SCALE_MIN = 0.985
-BLOCK_SCALE_MAX = 1.015
-DENSITY_SCALE_STEP = 0.03
-DEFAULT_LEADING_EM = 0.40
-BODY_LEADING_MIN = 0.45
-BODY_LEADING_MAX = 0.55
-BODY_FONT_SEARCH_FACTORS = (0.95, 0.93, 0.91, 0.89)
-
-
-def _formula_map_lookup(formula_map: list[dict]) -> dict[str, str]:
-    return {item["placeholder"]: item["formula_text"] for item in formula_map}
-
-
-def _split_protected_text(protected_text: str) -> list[str]:
-    parts: list[str] = []
-    cursor = 0
-    while cursor < len(protected_text):
-        start = protected_text.find("[[FORMULA_", cursor)
-        if start == -1:
-            parts.append(protected_text[cursor:])
-            break
-        if start > cursor:
-            parts.append(protected_text[cursor:start])
-        end = protected_text.find("]]", start)
-        if end == -1:
-            parts.append(protected_text[start:])
-            break
-        parts.append(protected_text[start : end + 2])
-        cursor = end + 2
-    return [part for part in parts if part]
-
-
-def _normalize_formula_for_latex_math(formula_text: str) -> str:
-    expr = " ".join(formula_text.strip().split())
-    if not expr:
-        return expr
-    expr = re.sub(r"\\begin\{array\}\s*\{[^{}]*\}\s*", "", expr)
-    expr = re.sub(r"\s*\\end\{array\}", "", expr)
-    expr = re.sub(r"\\cal\s+([A-Za-z])", r"\\mathcal{\1}", expr)
-    if expr.startswith(("_", "^")):
-        expr = "{} " + expr
-    return expr
-
-
-def _looks_like_citation(formula_text: str) -> bool:
-    expr = " ".join(formula_text.strip().split())
-    return bool(re.fullmatch(r"\[\s*\d+(?:\s*[-,]\s*\d+)*\s*\]", expr))
-
-
-def _normalize_plain_citation(formula_text: str) -> str:
-    digits = re.findall(r"\d+", formula_text)
-    return f"[{','.join(digits)}]" if digits else formula_text.strip()
-
-
-def _line_height(line: dict) -> float:
-    bbox = line.get("bbox", [])
-    if len(bbox) != 4:
-        return 0.0
-    return max(0.0, bbox[3] - bbox[1])
-
-
-def _median_line_height(item: dict) -> float:
-    heights = [_line_height(line) for line in item.get("lines", [])]
-    heights = [height for height in heights if height > 0]
-    return median(heights) if heights else 0.0
-
-
-def _line_centers(item: dict) -> list[float]:
-    centers: list[float] = []
-    for line in item.get("lines", []):
-        bbox = line.get("bbox", [])
-        if len(bbox) != 4:
-            continue
-        centers.append((bbox[1] + bbox[3]) / 2)
-    return centers
-
-
-def _median_line_pitch(item: dict) -> float:
-    centers = _line_centers(item)
-    if len(centers) < 2:
-        return 0.0
-    diffs = [centers[i + 1] - centers[i] for i in range(len(centers) - 1)]
-    diffs = [diff for diff in diffs if diff > 0]
-    return median(diffs) if diffs else 0.0
-
-
-def _plain_text_chars_per_line(item: dict) -> float:
-    counts: list[int] = []
-    for line in item.get("lines", []):
-        text_chunks: list[str] = []
-        for span in line.get("spans", []):
-            if span.get("type") != "text":
-                continue
-            text_chunks.append(span.get("content", ""))
-        plain = re.sub(r"\s+", "", "".join(text_chunks))
-        if plain:
-            counts.append(len(plain))
-    return median(counts) if counts else 0.0
-
-
-def _formula_ratio(item: dict) -> float:
-    text_spans = 0
-    formula_spans = 0
-    for line in item.get("lines", []):
-        for span in line.get("spans", []):
-            span_type = span.get("type")
-            if span_type == "inline_equation":
-                formula_spans += 1
-            elif span_type == "text":
-                text_spans += 1
-    total = text_spans + formula_spans
-    return formula_spans / total if total else 0.0
-
-
-def _bbox_width(item: dict) -> float:
-    bbox = item.get("bbox", [])
-    return max(0.0, bbox[2] - bbox[0]) if len(bbox) == 4 else 0.0
-
-
-def _bbox_height(item: dict) -> float:
-    bbox = item.get("bbox", [])
-    return max(0.0, bbox[3] - bbox[1]) if len(bbox) == 4 else 0.0
-
-
-def _occupied_ratio(item: dict) -> float:
-    block_height = _bbox_height(item)
-    if block_height <= 0:
-        return 0.0
-    total_line_height = sum(_line_height(line) for line in item.get("lines", []))
-    return total_line_height / block_height
-
-
-def _line_widths(item: dict) -> list[float]:
-    widths: list[float] = []
-    for line in item.get("lines", []):
-        bbox = line.get("bbox", [])
-        if len(bbox) != 4:
-            continue
-        widths.append(max(0.0, bbox[2] - bbox[0]))
-    return widths
-
-
-def _occupied_ratio_x(item: dict) -> float:
-    block_width = _bbox_width(item)
-    if block_width <= 0:
-        return 0.0
-    widths = _line_widths(item)
-    if len(widths) > 1:
-        widths = widths[:-1]
-    widths = [width for width in widths if width > 0]
-    return median(widths) / block_width if widths else 0.0
-
-
-def _inner_bbox(item: dict) -> list[float]:
-    bbox = item.get("bbox", [])
-    if len(bbox) != 4:
-        return bbox
-
-    x0, y0, x1, y1 = bbox
-    width = x1 - x0
-    height = y1 - y0
-    shrink_x = width * 0.03
-    shrink_y = height * 0.03
-
-    rho_x = _occupied_ratio_x(item)
-    rho_y = _occupied_ratio(item)
-    if rho_x > 0.82:
-        shrink_x = width * 0.02
-    if rho_y > 0.82:
-        shrink_y = height * 0.02
-
-    nx0 = x0 + shrink_x
-    nx1 = x1 - shrink_x
-    ny0 = y0 + shrink_y
-    ny1 = y1 - shrink_y
-    if nx1 - nx0 < width * 0.7:
-        nx0, nx1 = x0 + width * 0.015, x1 - width * 0.015
-    if ny1 - ny0 < height * 0.7:
-        ny0, ny1 = y0 + height * 0.015, y1 - height * 0.015
-    return [nx0, ny0, nx1, ny1]
-
-
-def _candidate_text_items(items: list[dict]) -> list[dict]:
-    candidates: list[dict] = []
-    widths = [_bbox_width(item) for item in items if item.get("block_type") == "text"]
-    page_text_width_med = median(widths) if widths else 0.0
-    for item in items:
-        if item.get("block_type") != "text":
-            continue
-        if len(item.get("lines", [])) < 3:
-            continue
-        if len(re.sub(r"\s+", "", item.get("source_text", ""))) < 40:
-            continue
-        if _formula_ratio(item) > 0.35:
-            continue
-        if page_text_width_med > 0 and _bbox_width(item) < page_text_width_med * 0.6:
-            continue
-        candidates.append(item)
-    return candidates
-
-
-def _is_body_text_candidate(item: dict, page_text_width_med: float) -> bool:
-    if item.get("block_type") != "text":
+def _is_flag_like_plain_text_block(item: dict) -> bool:
+    text = build_plain_text(item)
+    if not text:
         return False
-    if _formula_ratio(item) > 0.35:
-        return False
-    text_len = len(re.sub(r"\s+", "", item.get("source_text", "")))
-    width = _bbox_width(item)
-    if page_text_width_med > 0 and width < page_text_width_med * 0.75:
-        return False
-    return text_len >= 40
-
-
-def _is_default_text_block(item: dict) -> bool:
-    if item.get("block_type") == "title":
-        return True
-    if item.get("block_type") != "text":
+    if len(item.get("formula_map", [])) > 0:
         return False
     line_count = len(item.get("lines", []))
-    text_len = len(re.sub(r"\s+", "", item.get("source_text", "")))
-    return line_count <= 1 and text_len < 60
+    if line_count > 2:
+        return False
+    if not text.startswith("-"):
+        return False
+    if len(text) > 64:
+        return False
+    return True
 
 
-def _page_baseline_font_size(items: list[dict]) -> tuple[float, float, float, float]:
-    candidates = _candidate_text_items(items)
-    line_pitches = [_median_line_pitch(item) for item in candidates]
-    line_pitches = [pitch for pitch in line_pitches if pitch > 0]
-    line_heights = [_median_line_height(item) for item in candidates]
-    line_heights = [height for height in line_heights if height > 0]
-    baseline_line_pitch = median(line_pitches) if line_pitches else 0.0
-    baseline_line_height = median(line_heights) if line_heights else 0.0
-    metric = baseline_line_pitch or baseline_line_height
-    if metric <= 0:
-        return DEFAULT_FONT_SIZE, 0.0, 0.0, 0.0
-    page_font_size = max(
-        MIN_FONT_SIZE_PT,
-        min(MAX_FONT_SIZE_PT, metric * ZH_FONT_SCALE),
+def _block_metrics(item: dict, page_font_size: float, page_line_pitch: float, page_line_height: float, density_baseline: float, page_text_width_med: float) -> tuple[float, float]:
+    item = dict(item)
+    item["_is_body_text_candidate"] = is_body_text_candidate(item, page_text_width_med)
+    font_size_pt = estimate_font_size_pt(
+        item,
+        page_font_size,
+        page_line_pitch,
+        page_line_height,
+        density_baseline,
     )
-    chars_per_line = [_plain_text_chars_per_line(item) for item in candidates]
-    chars_per_line = [value for value in chars_per_line if value > 0]
-    density_baseline = median(chars_per_line) if chars_per_line else 0.0
-    return page_font_size, baseline_line_pitch, baseline_line_height, density_baseline
+    if is_default_text_block(item):
+        font_size_pt = DEFAULT_FONT_SIZE
+    leading_em = estimate_leading_em(item, page_line_pitch, font_size_pt)
+    return font_size_pt, leading_em
 
 
-def _clamp(value: float, min_value: float, max_value: float) -> float:
-    return max(min_value, min(max_value, value))
+def _tokenize_protected_text(text: str) -> list[str]:
+    return TOKEN_RE.findall(text or "")
 
 
-def estimate_font_size_pt(
-    item: dict,
-    page_font_size: float,
-    page_line_pitch: float,
-    page_line_height: float,
-    density_baseline: float,
-) -> float:
-    if item.get("block_type") != "text":
-        return DEFAULT_FONT_SIZE
-
-    if not item.get("_is_body_text_candidate", False):
-        return DEFAULT_FONT_SIZE
-    block_scale = 1.0
-    block_line_pitch = _median_line_pitch(item)
-    block_line_height = _median_line_height(item)
-    if page_line_pitch > 0 and block_line_pitch > 0:
-        block_scale = _clamp(block_line_pitch / page_line_pitch, BLOCK_SCALE_MIN, BLOCK_SCALE_MAX)
-    elif page_line_height > 0 and block_line_height > 0:
-        block_scale = _clamp(block_line_height / page_line_height, BLOCK_SCALE_MIN, BLOCK_SCALE_MAX)
-    return round(_clamp(page_font_size * block_scale, MIN_FONT_SIZE_PT, MAX_FONT_SIZE_PT), 2)
+def _token_units(token: str, formula_lookup: dict[str, str]) -> float:
+    if not token:
+        return 0.0
+    if token.isspace():
+        return max(0.2, len(token) * 0.25)
+    if token.startswith("[[FORMULA_"):
+        formula_text = formula_lookup.get(token, token)
+        normalized = re.sub(r"\s+", "", formula_text)
+        return max(1.5, len(normalized) * 0.48)
+    if re.fullmatch(r"[\u4e00-\u9fff]", token):
+        return 1.0
+    if re.fullmatch(r"[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*", token):
+        return max(1.0, len(token) * 0.55)
+    return 0.45
 
 
-def estimate_leading_em(item: dict, page_line_pitch: float, font_size_pt: float) -> float:
-    if item.get("_is_body_text_candidate", False):
-        if page_line_pitch > 0 and font_size_pt > 0:
-            estimated = (page_line_pitch / font_size_pt) - 1.0
-            return round(_clamp(estimated, BODY_LEADING_MIN, BODY_LEADING_MAX), 2)
-        return 0.50
-    return DEFAULT_LEADING_EM
+def _box_capacity_units(inner: list[float], font_size_pt: float, leading_em: float) -> float:
+    if len(inner) != 4:
+        return 0.0
+    width = max(8.0, inner[2] - inner[0])
+    height = max(8.0, inner[3] - inner[1])
+    line_step = max(font_size_pt * 1.02, font_size_pt * (1.0 + leading_em))
+    lines = max(1, int(height / line_step))
+    chars_per_line = max(4.0, width / max(font_size_pt * 0.92, 1.0))
+    return lines * chars_per_line * 0.98
 
 
-def build_markdown_paragraph(item: dict) -> str:
-    protected = item.get("protected_translated_text") or item.get("protected_source_text", "")
-    parts = _split_protected_text(protected)
-    formula_lookup = _formula_map_lookup(item.get("formula_map", []))
+def _trim_joined_tokens(tokens: list[str]) -> str:
+    return "".join(tokens).strip()
+
+
+def _split_protected_text_for_boxes(protected_text: str, formula_map: list[dict], capacities: list[float]) -> list[str]:
+    if len(capacities) <= 1:
+        return [protected_text.strip()]
+    tokens = _tokenize_protected_text(protected_text)
+    if not tokens:
+        return [""] * len(capacities)
+    formula_lookup = {entry["placeholder"]: entry["formula_text"] for entry in formula_map}
+    token_costs = [_token_units(token, formula_lookup) for token in tokens]
+    remaining_cost = sum(token_costs)
+    if remaining_cost <= 0:
+        return [_trim_joined_tokens(tokens)] + [""] * (len(capacities) - 1)
+
     chunks: list[str] = []
+    cursor = 0
+    total_capacity = sum(max(1.0, capacity) for capacity in capacities)
 
-    for part in parts:
-        if part.startswith("[[FORMULA_"):
-            formula_text = formula_lookup.get(part, part)
-            if _looks_like_citation(formula_text):
-                chunks.append(_normalize_plain_citation(formula_text))
-                continue
-            chunks.append(f"${_normalize_formula_for_latex_math(formula_text)}$")
-        else:
-            text = part.strip()
-            if text:
-                chunks.append(text)
+    for box_index, capacity in enumerate(capacities):
+        if box_index == len(capacities) - 1:
+            chunks.append(_trim_joined_tokens(tokens[cursor:]))
+            break
 
-    return "".join(chunks).strip()
+        share = max(1.0, capacity) / max(1.0, total_capacity)
+        target_cost = remaining_cost * share
+        running_cost = 0.0
+        end = cursor
+        best_end = cursor
+        while end < len(tokens):
+            running_cost += token_costs[end]
+            end += 1
+            if running_cost >= target_cost:
+                best_end = end
+                lookahead = min(len(tokens), end + 12)
+                probe = end
+                while probe < lookahead:
+                    probe += 1
+                    candidate = _trim_joined_tokens(tokens[cursor:probe])
+                    if candidate.endswith((".", "。", "!", "！", "?", "？", ";", "；", ":", "：", ",", "，")):
+                        best_end = probe
+                        break
+                break
+        if best_end == cursor:
+            best_end = min(len(tokens), max(cursor + 1, end))
+
+        remaining_boxes = len(capacities) - box_index - 1
+        if len(tokens) - best_end < remaining_boxes:
+            best_end = max(cursor + 1, len(tokens) - remaining_boxes)
+
+        chunks.append(_trim_joined_tokens(tokens[cursor:best_end]))
+        remaining_cost = max(0.0, remaining_cost - sum(token_costs[cursor:best_end]))
+        total_capacity = max(1.0, total_capacity - max(1.0, capacity))
+        cursor = best_end
+
+    while len(chunks) < len(capacities):
+        chunks.append("")
+    return chunks[: len(capacities)]
+
+
+def _build_single_render_block(block_id: str, item: dict, protected_text: str, formula_map: list[dict], font_size_pt: float, leading_em: float, render_kind: str) -> RenderBlock:
+    return RenderBlock(
+        block_id=block_id,
+        bbox=item.get("bbox", []),
+        inner_bbox=inner_bbox(item),
+        markdown_text=build_markdown_from_parts(protected_text, formula_map),
+        plain_text=build_plain_text_from_text(protected_text),
+        render_kind=render_kind,
+        font_size_pt=font_size_pt,
+        leading_em=leading_em,
+    )
+
+
+def prepare_render_payloads_by_page(translated_pages: dict[int, list[dict]]) -> dict[int, list[dict]]:
+    prepared = {page_idx: deepcopy(items) for page_idx, items in translated_pages.items()}
+    if not prepared:
+        return prepared
+
+    page_metrics: dict[int, tuple[float, float, float, float, float]] = {}
+    flat_items: list[dict] = []
+    for page_idx in sorted(prepared):
+        items = prepared[page_idx]
+        page_font_size, page_line_pitch, page_line_height, density_baseline = page_baseline_font_size(items)
+        text_widths = [bbox_width(item) for item in items if item.get("block_type") == "text"]
+        page_text_width_med = median(text_widths) if text_widths else 0.0
+        page_metrics[page_idx] = (
+            page_font_size,
+            page_line_pitch,
+            page_line_height,
+            density_baseline,
+            page_text_width_med,
+        )
+        for item in items:
+            item["render_protected_text"] = (item.get("protected_translated_text") or "").strip()
+            item["render_formula_map"] = item.get("formula_map", [])
+            flat_items.append(item)
+
+    groups: dict[str, list[dict]] = {}
+    for item in flat_items:
+        group_id = item.get("continuation_group", "")
+        if group_id:
+            groups.setdefault(group_id, []).append(item)
+
+    for group_id, items in groups.items():
+        items = [item for item in items if (item.get("group_protected_translated_text") or "").strip()]
+        if not items:
+            continue
+        group_formula_map = items[0].get("group_formula_map", [])
+        protected_group_text = (items[0].get("group_protected_translated_text") or "").strip()
+        capacities: list[float] = []
+        for item in items:
+            page_font_size, page_line_pitch, page_line_height, density_baseline, page_text_width_med = page_metrics[
+                item.get("page_idx", 0)
+            ]
+            font_size_pt, leading_em = _block_metrics(
+                item,
+                page_font_size,
+                page_line_pitch,
+                page_line_height,
+                density_baseline,
+                page_text_width_med,
+            )
+            capacities.append(_box_capacity_units(inner_bbox(item), font_size_pt, leading_em))
+
+        chunks = _split_protected_text_for_boxes(protected_group_text, group_formula_map, capacities)
+        for item, chunk in zip(items, chunks):
+            item["render_protected_text"] = chunk
+            item["render_formula_map"] = group_formula_map
+
+    return prepared
 
 
 def build_render_blocks(translated_items: list[dict]) -> list[RenderBlock]:
     blocks: list[RenderBlock] = []
-    page_font_size, page_line_pitch, page_line_height, density_baseline = _page_baseline_font_size(translated_items)
-    text_widths = [_bbox_width(item) for item in translated_items if item.get("block_type") == "text"]
+    page_font_size, page_line_pitch, page_line_height, density_baseline = page_baseline_font_size(translated_items)
+    text_widths = [bbox_width(item) for item in translated_items if item.get("block_type") == "text"]
     page_text_width_med = median(text_widths) if text_widths else 0.0
-    for item in translated_items:
-        translated_text = (item.get("translated_text") or "").strip()
+    for index, item in enumerate(translated_items):
+        translated_text = (item.get("render_protected_text") or item.get("protected_translated_text") or "").strip()
         bbox = item.get("bbox", [])
         if len(bbox) != 4 or not translated_text:
             continue
-        item = dict(item)
-        item["_is_body_text_candidate"] = _is_body_text_candidate(item, page_text_width_med)
-        font_size_pt = estimate_font_size_pt(
+        font_size_pt, leading_em = _block_metrics(
             item,
             page_font_size,
             page_line_pitch,
             page_line_height,
             density_baseline,
+            page_text_width_med,
         )
-        if _is_default_text_block(item):
-            font_size_pt = DEFAULT_FONT_SIZE
-        leading_em = estimate_leading_em(item, page_line_pitch, font_size_pt)
         blocks.append(
             RenderBlock(
+                block_id=f"item-{index}",
                 bbox=bbox,
-                inner_bbox=_inner_bbox(item),
-                markdown_text=build_markdown_paragraph(item),
+                inner_bbox=inner_bbox(item),
+                markdown_text=build_markdown_from_parts(
+                    translated_text,
+                    item.get("render_formula_map") or item.get("formula_map", []),
+                ),
+                plain_text=build_plain_text_from_text(translated_text),
+                render_kind=(
+                    "plain_line"
+                    if item.get("_force_plain_line") or _is_flag_like_plain_text_block(item)
+                    else "markdown"
+                ),
                 font_size_pt=font_size_pt,
                 leading_em=leading_em,
             )
