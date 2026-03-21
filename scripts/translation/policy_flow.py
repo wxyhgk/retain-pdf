@@ -20,7 +20,7 @@ def apply_translation_policies(
     classified_items = 0
     skip_summary = {"title_skipped": 0, "tail_skipped": 0}
 
-    if mode in {"precise", "sci"}:
+    if mode == "precise":
         labels = classify_payload_items(
             payload,
             api_key=api_key,
