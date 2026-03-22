@@ -3,30 +3,50 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OCR MinerU Frontend</title>
+    <title>保留排版翻译 by wxyhgk</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="page">
       <header class="hero">
         <div>
-          <h1>MinerU 翻译面板</h1>
-          <p class="muted">三步完成：提交 PDF，观察状态，下载结果。</p>
+          <h1>保留排版翻译 by wxyhgk</h1>
+          <p class="muted">三步完成：提交 PDF，观察状态，下载结果。目前仅开放 sci 论文保留排版翻译，其他类型文档效果暂不保证。</p>
         </div>
         <div class="hero-actions">
-          <label class="api-field">
-            <span>API Base</span>
-            <input id="api-base" name="apiBase" type="text" value="" />
-          </label>
           <button id="developer-btn" type="button" class="secondary">开发人员</button>
         </div>
       </header>
 
+      <section class="card notice-card">
+        <strong>普通用户限制：仅支持 10MB 以内、30 页以内的 PDF。目前仅开放 sci 论文保留排版翻译，其他文档类型暂未开放，效果可能较差。</strong>
+        <p class="notice-links">
+          默认可提供 MinerU 与 DeepSeek API。
+          翻译服务当前使用我的 5090 GPU，少量体验可直接使用；MinerU 默认走我个人账户，每天只有 2000 页额度。
+          如果需要高频或大量使用，建议自行申请并填写自己的 Key。
+          <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer">申请 DeepSeek API</a>
+          <span>｜</span>
+          <a href="https://mineru.net/apiManage/token" target="_blank" rel="noopener noreferrer">申请 MinerU API</a>
+        </p>
+      </section>
+
       <section class="panel-grid">
         <section class="card panel">
           <h2>提交</h2>
-          <p class="muted">选择一个 PDF，然后直接启动任务。</p>
+          <p class="muted">常驻界面只保留运行所需的两个密钥。普通用户上传限制为 10MB / 30 页，目前仅建议上传 sci 论文 PDF，其它参数放在开发入口。</p>
+          <div id="job-warning" class="job-warning hidden">检测到上一个任务还未完成。建议先等待当前任务结束，避免重复提交。</div>
           <form id="job-form" class="form">
+            <div class="grid two">
+              <label>
+                <span>MinerU API key</span>
+                <input id="mineru_token" name="mineru_token" type="password" value="" autocomplete="off" />
+              </label>
+              <label>
+                <span>DeepSeek API key</span>
+                <input id="api_key" name="api_key" type="password" value="" autocomplete="off" />
+              </label>
+            </div>
+
             <label for="file" class="upload-tile">
               <input id="file" name="file" type="file" accept="application/pdf,.pdf" required />
               <span class="upload-kicker">PDF 上传</span>
@@ -34,8 +54,20 @@
               <em>支持单个 PDF，默认参数可直接运行</em>
             </label>
 
+            <div id="upload-progress-panel" class="upload-progress-panel hidden" aria-live="polite">
+              <div class="progress-meta">
+                <span>上传进度</span>
+                <strong id="upload-progress-text">0%</strong>
+              </div>
+              <div class="progress-track">
+                <div id="upload-progress-bar" class="progress-bar"></div>
+              </div>
+            </div>
+
+            <div id="upload-status" class="upload-status">未上传文件</div>
+
             <div class="actions vertical-actions">
-              <button id="submit-btn" type="submit">运行任务</button>
+              <button id="submit-btn" type="submit" disabled>运行任务</button>
             </div>
           </form>
         </section>
@@ -59,6 +91,29 @@
               <div class="label">job_type</div>
               <div id="job-type" class="mono">-</div>
             </div>
+            <div>
+              <div class="label">stage</div>
+              <div id="job-stage" class="mono">-</div>
+            </div>
+            <div>
+              <div class="label">stage_detail</div>
+              <div id="job-stage-detail" class="mono">-</div>
+            </div>
+          </div>
+
+          <div class="top-gap">
+            <div class="progress-meta">
+              <span class="label compact-label">任务进度</span>
+              <strong id="job-progress-text">-</strong>
+            </div>
+            <div class="progress-track">
+              <div id="job-progress-bar" class="progress-bar"></div>
+            </div>
+          </div>
+
+          <div id="developer-log-panel" class="top-gap hidden">
+            <div class="label">log_tail</div>
+            <pre id="log-tail" class="log">-</pre>
           </div>
 
           <div class="top-gap">
@@ -66,7 +121,7 @@
             <pre id="error-box" class="log error-box">-</pre>
           </div>
 
-          <details class="raw-panel top-gap">
+          <details id="developer-details-panel" class="raw-panel top-gap hidden">
             <summary>详细信息</summary>
             <div class="top-gap">
               <div class="label">关键产物</div>
@@ -105,6 +160,25 @@
       </section>
     </main>
 
+    <dialog id="developer-auth-dialog" class="dev-dialog auth-dialog">
+      <form method="dialog" class="dev-shell auth-shell">
+        <div class="dev-head">
+          <h2>开发人员验证</h2>
+          <button id="developer-auth-cancel-btn" type="submit" class="secondary">关闭</button>
+        </div>
+        <div class="advanced-body">
+          <label>
+            <span>密码</span>
+            <input id="developer-password" type="password" autocomplete="off" />
+          </label>
+          <div id="developer-auth-error" class="auth-error hidden">密码错误</div>
+          <div class="actions">
+            <button id="developer-auth-submit-btn" type="button">验证并进入</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="developer-dialog" class="dev-dialog">
       <form method="dialog" class="dev-shell">
         <div class="dev-head">
@@ -130,20 +204,24 @@
               <span>base_url</span>
               <input id="base_url" name="base_url" type="text" value="http://1.94.67.196:10001/v1" />
             </label>
+            <label>
+              <span>API Base</span>
+              <input id="api-base" name="apiBase" type="text" value="" />
+            </label>
           </div>
 
           <div class="grid three">
             <label>
-              <span>api_key</span>
-              <input id="api_key" name="api_key" type="password" value="" />
-            </label>
-            <label>
               <span>workers</span>
-              <input id="workers" name="workers" type="number" min="1" value="4" />
+              <input id="workers" name="workers" type="number" min="0" value="0" />
             </label>
             <label>
               <span>batch_size</span>
               <input id="batch_size" name="batch_size" type="number" min="1" value="6" />
+            </label>
+            <label>
+              <span>classify_batch_size</span>
+              <input id="classify_batch_size" name="classify_batch_size" type="number" min="1" value="12" />
             </label>
           </div>
 
@@ -159,16 +237,16 @@
               </select>
             </label>
             <label>
-              <span>mineru_token</span>
-              <input id="mineru_token" name="mineru_token" type="password" value="" />
-            </label>
-            <label>
               <span>model_version</span>
               <select id="model_version" name="model_version">
                 <option value="vlm" selected>vlm</option>
                 <option value="pipeline">pipeline</option>
                 <option value="MinerU-HTML">MinerU-HTML</option>
               </select>
+            </label>
+            <label>
+              <span>compile_workers</span>
+              <input id="compile_workers" name="compile_workers" type="number" min="0" value="8" />
             </label>
           </div>
 

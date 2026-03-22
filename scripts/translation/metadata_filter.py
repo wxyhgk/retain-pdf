@@ -22,6 +22,7 @@ AFFILIATION_RE = re.compile(
     r"\b(university|department|departamento|faculty|facultad|institute|institut|laboratory|laboratoire|school|college|center|centre|campus|street|road|avenue|casilla|minneapolis|minnesota|santiago|france|united states|china)\b",
     re.I,
 )
+PERSON_NAME_RE = re.compile(r"^[A-Z][a-z]+(?:\s+[A-Z][a-z.'-]+){1,3}$")
 POSTAL_RE = re.compile(r"\b\d{4,6}\b")
 INITIAL_NAME_RE = re.compile(r"\b[A-Z]\.\s*[A-Z][a-z]+")
 ALL_CAPS_TOKEN_RE = re.compile(r"\b[A-Z][A-Z'`´.-]{1,}\b")
@@ -57,9 +58,13 @@ def _looks_like_author_or_affiliation(text: str) -> bool:
     initial_names = len(INITIAL_NAME_RE.findall(text))
     if AUTHOR_MARKER_RE.search(text) and (_comma_count(text) >= 1 or initial_names >= 1 or upper_name_tokens >= 2):
         return True
+    if PERSON_NAME_RE.fullmatch(text.strip()) and len(text) <= 80:
+        return True
     if initial_names >= 2 and _comma_count(text) >= 1:
         return True
     if upper_name_tokens >= 4 and _comma_count(text) >= 1 and len(text) <= 360:
+        return True
+    if AFFILIATION_RE.search(text) and len(text) <= 160 and _comma_count(text) == 0:
         return True
     if AFFILIATION_RE.search(text) and (_comma_count(text) >= 2 or POSTAL_RE.search(text)) and len(text) <= 360:
         return True

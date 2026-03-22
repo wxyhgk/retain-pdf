@@ -5,6 +5,7 @@ import uuid
 import sys
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -33,6 +34,33 @@ def build_timestamp_job_id() -> str:
     return f"{time.strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6]}"
 
 
+def _normalize_base_url(value: str) -> str:
+    text = (value or "").strip()
+    if not text:
+        return ""
+    return text.rstrip("/").lower()
+
+
+def _is_deepseek_endpoint(base_url: str, model: str) -> bool:
+    normalized = _normalize_base_url(base_url)
+    model_text = (model or "").strip().lower()
+    if "deepseek" in model_text:
+        return True
+    if not normalized:
+        return False
+    parsed = urlparse(normalized if "://" in normalized else f"https://{normalized}")
+    host = (parsed.netloc or parsed.path or "").lower()
+    return "deepseek.com" in host
+
+
+def resolve_translation_workers(workers: int, *, base_url: str, model: str) -> int:
+    if workers > 0:
+        return workers
+    if _is_deepseek_endpoint(base_url, model):
+        return 50
+    return 4
+
+
 class LayoutTuningParams(BaseModel):
     body_font_size_factor: float = Field(default=0.95, description="Body font size scaling factor.")
     body_leading_factor: float = Field(default=1.08, description="Body leading scaling factor.")
@@ -46,7 +74,7 @@ class TranslationRenderParams(BaseModel):
     start_page: int = Field(default=0, ge=0, description="Zero-based start page index.")
     end_page: int = Field(default=-1, description="Zero-based end page index; -1 means the last page.")
     batch_size: int = Field(default=6, ge=1, description="Number of text items per translation batch.")
-    workers: int = Field(default=4, ge=1, description="Concurrent translation requests.")
+    workers: int = Field(default=0, ge=0, description="Concurrent translation requests. 0 means auto: DeepSeek=50, local-compatible APIs=4.")
     mode: Literal["fast", "precise", "sci"] = Field(default="sci", description="Translation mode.")
     skip_title_translation: bool = Field(default=False, description="Skip title blocks.")
     classify_batch_size: int = Field(default=12, ge=1, description="Classification batch size.")
@@ -93,6 +121,11 @@ class RunCaseRequest(TranslationRenderParams, LayoutTuningParams):
         return normalized or "output"
 
     def to_command(self) -> list[str]:
+        resolved_workers = resolve_translation_workers(
+            self.workers,
+            base_url=self.base_url,
+            model=self.model,
+        )
         cmd = [sys.executable, str(RUN_CASE_SCRIPT)]
         if self.source_json.strip() and self.source_pdf.strip():
             cmd += ["--source-json", self.source_json.strip(), "--source-pdf", self.source_pdf.strip()]
@@ -107,7 +140,7 @@ class RunCaseRequest(TranslationRenderParams, LayoutTuningParams):
             "--batch-size",
             str(self.batch_size),
             "--workers",
-            str(self.workers),
+            str(resolved_workers),
             "--mode",
             self.mode,
         ]
@@ -198,6 +231,11 @@ class RunMinerUCaseRequest(TranslationRenderParams, LayoutTuningParams):
         return _strip_output_prefix(value)
 
     def to_command(self) -> list[str]:
+        resolved_workers = resolve_translation_workers(
+            self.workers,
+            base_url=self.base_url,
+            model=self.model,
+        )
         cmd = [sys.executable, str(RUN_MINERU_CASE_SCRIPT)]
         if self.file_url.strip():
             cmd += ["--file-url", self.file_url.strip()]
@@ -250,7 +288,7 @@ class RunMinerUCaseRequest(TranslationRenderParams, LayoutTuningParams):
             "--batch-size",
             str(self.batch_size),
             "--workers",
-            str(self.workers),
+            str(resolved_workers),
             "--mode",
             self.mode,
         ]
@@ -287,6 +325,87 @@ class RunMinerUCaseRequest(TranslationRenderParams, LayoutTuningParams):
             str(self.inner_bbox_dense_shrink_y),
         ]
         return cmd
+
+
+class RunUploadedMinerUCaseRequest(TranslationRenderParams, LayoutTuningParams):
+    upload_id: str = Field(description="Previously uploaded PDF id.")
+    mineru_token: str = Field(default="", description="MinerU API token.")
+    model_version: str = Field(default="vlm", description="MinerU model version.")
+    is_ocr: bool = Field(default=False, description="Enable OCR.")
+    disable_formula: bool = Field(default=False, description="Disable formula recognition.")
+    disable_table: bool = Field(default=False, description="Disable table recognition.")
+    language: str = Field(default="ch", description="Document language.")
+    page_ranges: str = Field(default="", description="Optional page ranges, for example 2,4-6.")
+    data_id: str = Field(default="", description="Optional business data id.")
+    no_cache: bool = Field(default=False, description="Bypass MinerU URL cache.")
+    cache_tolerance: int = Field(default=900, ge=0, description="URL cache tolerance in seconds.")
+    extra_formats: str = Field(default="", description="Comma-separated extra export formats.")
+    poll_interval: int = Field(default=5, ge=1, description="Seconds between polling requests.")
+    poll_timeout: int = Field(default=1800, ge=1, description="Max seconds to wait for completion.")
+    job_id: str = Field(default="", description="Optional explicit job directory name.")
+    output_root: str = Field(default="output", description="Root directory for structured job outputs.")
+    translated_pdf_name: str = Field(default="", description="Optional translated PDF filename.")
+
+    @field_validator("output_root")
+    @classmethod
+    def _normalize_uploaded_output_root(cls, value: str) -> str:
+        normalized = _strip_output_prefix(value)
+        return normalized or "output"
+
+    @field_validator("translated_pdf_name")
+    @classmethod
+    def _normalize_uploaded_translated_pdf_name(cls, value: str) -> str:
+        return _strip_output_prefix(value)
+
+    def to_command(self, *, file_path: str) -> list[str]:
+        request = RunMinerUCaseRequest(
+            file_path=file_path,
+            mineru_token=self.mineru_token,
+            model_version=self.model_version,
+            is_ocr=self.is_ocr,
+            disable_formula=self.disable_formula,
+            disable_table=self.disable_table,
+            language=self.language,
+            page_ranges=self.page_ranges,
+            data_id=self.data_id,
+            no_cache=self.no_cache,
+            cache_tolerance=self.cache_tolerance,
+            extra_formats=self.extra_formats,
+            poll_interval=self.poll_interval,
+            poll_timeout=self.poll_timeout,
+            start_page=self.start_page,
+            end_page=self.end_page,
+            batch_size=self.batch_size,
+            workers=self.workers,
+            mode=self.mode,
+            skip_title_translation=self.skip_title_translation,
+            classify_batch_size=self.classify_batch_size,
+            api_key=self.api_key,
+            model=self.model,
+            base_url=self.base_url,
+            render_mode=self.render_mode,
+            compile_workers=self.compile_workers,
+            typst_font_family=self.typst_font_family,
+            pdf_compress_dpi=self.pdf_compress_dpi,
+            output_root=self.output_root,
+            translated_pdf_name=self.translated_pdf_name,
+            body_font_size_factor=self.body_font_size_factor,
+            body_leading_factor=self.body_leading_factor,
+            inner_bbox_shrink_x=self.inner_bbox_shrink_x,
+            inner_bbox_shrink_y=self.inner_bbox_shrink_y,
+            inner_bbox_dense_shrink_x=self.inner_bbox_dense_shrink_x,
+            inner_bbox_dense_shrink_y=self.inner_bbox_dense_shrink_y,
+            job_id=self.job_id,
+        )
+        return request.to_command()
+
+
+class UploadPdfResponse(BaseModel):
+    upload_id: str
+    filename: str
+    bytes: int
+    page_count: int
+    uploaded_at: str
 
 
 class ProcessResult(BaseModel):
@@ -358,6 +477,11 @@ class JobStatus(BaseModel):
     finished_at: str | None = None
     command: list[str]
     error: str | None = None
+    stage: str | None = None
+    stage_detail: str | None = None
+    progress_current: int | None = None
+    progress_total: int | None = None
+    log_tail: list[str] = Field(default_factory=list)
     result: ProcessResult | None = None
     artifacts: RunCaseArtifacts | RunMinerUCaseArtifacts | None = None
 
@@ -373,5 +497,10 @@ class JobRecord(BaseModel):
     command: list[str]
     request_payload: dict[str, Any] = Field(default_factory=dict)
     error: str | None = None
+    stage: str | None = None
+    stage_detail: str | None = None
+    progress_current: int | None = None
+    progress_total: int | None = None
+    log_tail: list[str] = Field(default_factory=list)
     result: ProcessResult | None = None
     artifacts: RunCaseArtifacts | RunMinerUCaseArtifacts | None = None

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import json
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from pypdf import PdfReader
 
 from .executor import build_job_download_zip
 from .executor import list_jobs
@@ -14,9 +17,14 @@ from .executor import submit_job
 from .models import JobStatus
 from .models import RunCaseRequest
 from .models import RunMinerUCaseRequest
+from .models import RunUploadedMinerUCaseRequest
 from .models import SubmitJobResponse
+from .models import UploadPdfResponse
 from .models import UPLOADS_DIR
 from .models import build_timestamp_job_id
+
+NORMAL_MAX_BYTES = 10 * 1024 * 1024
+NORMAL_MAX_PAGES = 30
 
 
 app = FastAPI(
@@ -49,6 +57,96 @@ async def run_mineru_case(request: RunMinerUCaseRequest) -> SubmitJobResponse:
     return submit_job("run-mineru-case", request.to_command(), request.model_dump())
 
 
+def _upload_dir(upload_id: str) -> Path:
+    return UPLOADS_DIR / upload_id
+
+
+def _upload_meta_path(upload_id: str) -> Path:
+    return _upload_dir(upload_id) / "upload.json"
+
+
+def _load_uploaded_pdf(upload_id: str) -> dict:
+    meta_path = _upload_meta_path(upload_id)
+    if not meta_path.exists():
+        raise HTTPException(status_code=404, detail=f"upload not found: {upload_id}")
+    return json.loads(meta_path.read_text(encoding="utf-8"))
+
+
+def _write_upload_meta(upload_id: str, payload: dict) -> None:
+    meta_path = _upload_meta_path(upload_id)
+    meta_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+@app.post("/v1/uploads/pdf", response_model=UploadPdfResponse)
+async def upload_pdf(
+    file: UploadFile = File(...),
+    developer_mode: bool = Form(False),
+) -> UploadPdfResponse:
+    filename = Path(file.filename or "upload.pdf").name
+    if not filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="uploaded file must be a PDF")
+
+    upload_id = build_timestamp_job_id()
+    upload_dir = _upload_dir(upload_id)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    upload_path = upload_dir / filename
+    byte_count = 0
+    with upload_path.open("wb") as f:
+        while chunk := await file.read(1024 * 1024):
+            byte_count += len(chunk)
+            f.write(chunk)
+    await file.close()
+
+    try:
+        reader = PdfReader(str(upload_path))
+        page_count = len(reader.pages)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"invalid pdf: {exc}") from exc
+
+    if not developer_mode:
+        if byte_count > NORMAL_MAX_BYTES:
+            raise HTTPException(status_code=400, detail="普通用户仅支持 10MB 以内 PDF")
+        if page_count > NORMAL_MAX_PAGES:
+            raise HTTPException(status_code=400, detail="普通用户仅支持 30 页以内 PDF")
+
+    payload = {
+        "upload_id": upload_id,
+        "filename": filename,
+        "path": str(upload_path),
+        "bytes": byte_count,
+        "page_count": page_count,
+        "uploaded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "developer_mode": bool(developer_mode),
+    }
+    _write_upload_meta(upload_id, payload)
+    return UploadPdfResponse(
+        upload_id=upload_id,
+        filename=filename,
+        bytes=byte_count,
+        page_count=page_count,
+        uploaded_at=payload["uploaded_at"],
+    )
+
+
+@app.post("/v1/run-uploaded-mineru-case", response_model=SubmitJobResponse)
+async def run_uploaded_mineru_case(request: RunUploadedMinerUCaseRequest) -> SubmitJobResponse:
+    uploaded = _load_uploaded_pdf(request.upload_id)
+    file_path = str(uploaded.get("path", "") or "")
+    if not file_path or not Path(file_path).exists():
+        raise HTTPException(status_code=404, detail=f"uploaded file missing: {request.upload_id}")
+    request_payload = request.model_dump()
+    request_payload["uploaded_file"] = file_path
+    request_payload["uploaded_filename"] = uploaded.get("filename", "")
+    request_payload["page_count"] = uploaded.get("page_count")
+    request_payload["bytes"] = uploaded.get("bytes")
+    return submit_job(
+        "run-mineru-case",
+        request.to_command(file_path=file_path),
+        request_payload,
+        job_id=request.job_id.strip() or None,
+    )
+
+
 @app.post("/v1/run-mineru-case-upload", response_model=SubmitJobResponse)
 @app.post("/v1/upload-mineru-case", response_model=SubmitJobResponse)
 async def upload_mineru_case(
@@ -66,7 +164,7 @@ async def upload_mineru_case(
     start_page: int = Form(0),
     end_page: int = Form(-1),
     batch_size: int = Form(6),
-    workers: int = Form(4),
+    workers: int = Form(0),
     output_root: str = Form("output"),
     translated_pdf_name: str = Form(""),
     mineru_token: str = Form(""),

@@ -1,5 +1,6 @@
 import os
 import subprocess
+import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -126,9 +127,10 @@ def build_typst_book_overlay_source(
 def build_typst_book_background_source(
     source_pdf_path: Path,
     page_specs: list[tuple[int, float, float, list[dict]]],
+    work_dir: Path,
     font_family: str = TYPST_DEFAULT_FONT_FAMILY,
 ) -> str:
-    source_rel = os.path.relpath(source_pdf_path, TYPST_OVERLAY_DIR)
+    source_rel = os.path.relpath(source_pdf_path, work_dir)
     lines = [
         f'#set text(font: "{font_family}", size: {DEFAULT_FONT_SIZE}pt)',
         f'#import "@preview/cmarker:{CMARKER_VERSION}"',
@@ -167,10 +169,12 @@ def compile_typst_overlay_pdf(
     stem: str,
     font_family: str = TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
+    work_dir: Path | None = None,
 ) -> Path:
-    TYPST_OVERLAY_DIR.mkdir(parents=True, exist_ok=True)
-    typ_path = TYPST_OVERLAY_DIR / f"{stem}.typ"
-    pdf_path = TYPST_OVERLAY_DIR / f"{stem}.pdf"
+    work_dir = work_dir or TYPST_OVERLAY_DIR
+    work_dir.mkdir(parents=True, exist_ok=True)
+    typ_path = work_dir / f"{stem}.typ"
+    pdf_path = work_dir / f"{stem}.pdf"
     typ_path.write_text(
         build_typst_overlay_source(page_width, page_height, translated_items, font_family=font_family),
         encoding="utf-8",
@@ -186,10 +190,12 @@ def compile_typst_book_overlay_pdf(
     stem: str,
     font_family: str = TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
+    work_dir: Path | None = None,
 ) -> Path:
-    TYPST_OVERLAY_DIR.mkdir(parents=True, exist_ok=True)
-    typ_path = TYPST_OVERLAY_DIR / f"{stem}.typ"
-    pdf_path = TYPST_OVERLAY_DIR / f"{stem}.pdf"
+    work_dir = work_dir or TYPST_OVERLAY_DIR
+    work_dir.mkdir(parents=True, exist_ok=True)
+    typ_path = work_dir / f"{stem}.typ"
+    pdf_path = work_dir / f"{stem}.pdf"
     typ_path.write_text(build_typst_book_overlay_source(page_specs, font_family=font_family), encoding="utf-8")
     proc = subprocess.run(_typst_compile_command(typ_path, pdf_path, font_paths), capture_output=True, text=True)
     if proc.returncode != 0:
@@ -203,12 +209,14 @@ def compile_typst_book_background_pdf(
     stem: str,
     font_family: str = TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
+    work_dir: Path | None = None,
 ) -> Path:
-    TYPST_OVERLAY_DIR.mkdir(parents=True, exist_ok=True)
-    typ_path = TYPST_OVERLAY_DIR / f"{stem}.typ"
-    pdf_path = TYPST_OVERLAY_DIR / f"{stem}.pdf"
+    work_dir = work_dir or TYPST_OVERLAY_DIR
+    work_dir.mkdir(parents=True, exist_ok=True)
+    typ_path = work_dir / f"{stem}.typ"
+    pdf_path = work_dir / f"{stem}.pdf"
     typ_path.write_text(
-        build_typst_book_background_source(source_pdf_path, page_specs, font_family=font_family),
+        build_typst_book_background_source(source_pdf_path, page_specs, work_dir, font_family=font_family),
         encoding="utf-8",
     )
     command = [TYPST_BIN, "compile", "--root", str(ROOT_DIR)]
@@ -229,29 +237,33 @@ def overlay_translated_items_on_page(
     font_paths: list[Path] | None = None,
 ) -> None:
     redact_translated_text_areas(page, translated_items)
-    try:
-        overlay_pdf = compile_typst_overlay_pdf(
-            page.rect.width,
-            page.rect.height,
-            translated_items,
-            stem=stem,
-            font_family=font_family,
-            font_paths=font_paths,
-        )
-    except RuntimeError:
-        overlay_pdf = compile_typst_overlay_pdf(
-            page.rect.width,
-            page.rect.height,
-            _force_plain_text_items(translated_items),
-            stem=f"{stem}-plain",
-            font_family=font_family,
-            font_paths=font_paths,
-        )
-    overlay_doc = fitz.open(overlay_pdf)
-    try:
-        page.show_pdf_page(page.rect, overlay_doc, 0, overlay=True)
-    finally:
-        overlay_doc.close()
+    with tempfile.TemporaryDirectory(prefix="typst-overlay-", dir=OUTPUT_DIR) as temp_dir:
+        work_dir = Path(temp_dir)
+        try:
+            overlay_pdf = compile_typst_overlay_pdf(
+                page.rect.width,
+                page.rect.height,
+                translated_items,
+                stem=stem,
+                font_family=font_family,
+                font_paths=font_paths,
+                work_dir=work_dir,
+            )
+        except RuntimeError:
+            overlay_pdf = compile_typst_overlay_pdf(
+                page.rect.width,
+                page.rect.height,
+                _force_plain_text_items(translated_items),
+                stem=f"{stem}-plain",
+                font_family=font_family,
+                font_paths=font_paths,
+                work_dir=work_dir,
+            )
+        overlay_doc = fitz.open(overlay_pdf)
+        try:
+            page.show_pdf_page(page.rect, overlay_doc, 0, overlay=True)
+        finally:
+            overlay_doc.close()
 
 
 def _compile_overlay_with_fallback(
@@ -262,6 +274,7 @@ def _compile_overlay_with_fallback(
     font_family: str = TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
 ) -> Path:
+    work_dir = Path(tempfile.mkdtemp(prefix="typst-page-", dir=OUTPUT_DIR))
     try:
         return compile_typst_overlay_pdf(
             page_width,
@@ -270,6 +283,7 @@ def _compile_overlay_with_fallback(
             stem=stem,
             font_family=font_family,
             font_paths=font_paths,
+            work_dir=work_dir,
         )
     except RuntimeError:
         return compile_typst_overlay_pdf(
@@ -279,6 +293,7 @@ def _compile_overlay_with_fallback(
             stem=f"{stem}-plain",
             font_family=font_family,
             font_paths=font_paths,
+            work_dir=work_dir,
         )
 
 
@@ -288,24 +303,14 @@ def _compile_book_overlay_with_fallback(
     font_family: str = TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
 ) -> Path:
-    try:
-        return compile_typst_book_overlay_pdf(
-            page_specs,
-            stem=stem,
-            font_family=font_family,
-            font_paths=font_paths,
-        )
-    except RuntimeError:
-        plain_specs = [
-            (page_width, page_height, _force_plain_text_items(translated_items))
-            for page_width, page_height, translated_items in page_specs
-        ]
-        return compile_typst_book_overlay_pdf(
-            plain_specs,
-            stem=f"{stem}-plain",
-            font_family=font_family,
-            font_paths=font_paths,
-        )
+    work_dir = Path(tempfile.mkdtemp(prefix="typst-book-", dir=OUTPUT_DIR))
+    return compile_typst_book_overlay_pdf(
+        page_specs,
+        stem=stem,
+        font_family=font_family,
+        font_paths=font_paths,
+        work_dir=work_dir,
+    )
 
 
 def _overlay_pages_from_single_pdf(
@@ -323,6 +328,12 @@ def _overlay_pages_from_single_pdf(
             page.show_pdf_page(page.rect, overlay_doc, overlay_page_idx, overlay=True)
     finally:
         overlay_doc.close()
+        try:
+            overlay_pdf_path.unlink(missing_ok=True)
+            overlay_pdf_path.with_suffix(".typ").unlink(missing_ok=True)
+            overlay_pdf_path.parent.rmdir()
+        except Exception:
+            pass
 
 
 def _overlay_pages_via_page_fallback(
@@ -362,6 +373,13 @@ def _overlay_pages_via_page_fallback(
             page.show_pdf_page(page.rect, overlay_doc, 0, overlay=True)
         finally:
             overlay_doc.close()
+            try:
+                overlay_path = overlay_paths[page_idx]
+                overlay_path.unlink(missing_ok=True)
+                overlay_path.with_suffix(".typ").unlink(missing_ok=True)
+                overlay_path.parent.rmdir()
+            except Exception:
+                pass
 
 
 def overlay_translated_pages_on_doc(
@@ -393,6 +411,7 @@ def overlay_translated_pages_on_doc(
         )
         _overlay_pages_from_single_pdf(doc, ordered_page_indices, translated_pages, overlay_pdf)
     except RuntimeError:
+        print("typst book compile failed; falling back to per-page compilation")
         _overlay_pages_via_page_fallback(
             doc,
             ordered_page_indices,
@@ -531,15 +550,17 @@ def build_book_typst_background_pdf(
     finally:
         source_doc.close()
 
-    background_pdf = compile_typst_book_background_pdf(
-        source_pdf_path=source_pdf_path,
-        page_specs=page_specs,
-        stem="book-background-overlay",
-        font_family=font_family,
-        font_paths=font_paths,
-    )
-    background_doc = fitz.open(background_pdf)
-    try:
-        save_optimized_pdf(background_doc, output_pdf_path)
-    finally:
-        background_doc.close()
+    with tempfile.TemporaryDirectory(prefix="typst-background-", dir=OUTPUT_DIR) as temp_dir:
+        background_pdf = compile_typst_book_background_pdf(
+            source_pdf_path=source_pdf_path,
+            page_specs=page_specs,
+            stem="book-background-overlay",
+            font_family=font_family,
+            font_paths=font_paths,
+            work_dir=Path(temp_dir),
+        )
+        background_doc = fitz.open(background_pdf)
+        try:
+            save_optimized_pdf(background_doc, output_pdf_path)
+        finally:
+            background_doc.close()

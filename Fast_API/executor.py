@@ -50,6 +50,12 @@ JOBS_DIR = PROJECT_ROOT / "Fast_API" / "jobs"
 JOBS_DIR.mkdir(parents=True, exist_ok=True)
 
 _JOB_TASKS: dict[str, asyncio.Task] = {}
+_LOG_TAIL_LIMIT = 40
+
+_BATCH_PROGRESS_RE = re.compile(r"^book: completed batch (\d+)/(\d+)$")
+_PENDING_BATCH_RE = re.compile(r"^book: pending items=(\d+) batches=(\d+) workers=(\d+)$")
+_PAGE_PROGRESS_RE = re.compile(r"^page (\d+): translated (\d+)/(\d+)$")
+_MINERU_BATCH_STATE_RE = re.compile(r"^batch ([^:]+): state=(.+)$")
 
 
 def _job_file(job_id: str) -> Path:
@@ -117,6 +123,143 @@ async def run_command(command: list[str]) -> tuple[int, float, str, str]:
     return proc.returncode, duration, stdout_bytes.decode("utf-8", errors="replace"), stderr_bytes.decode("utf-8", errors="replace")
 
 
+def _append_log_tail(record: JobRecord, line: str) -> None:
+    text = line.rstrip("\n")
+    if not text:
+        return
+    record.log_tail.append(text)
+    if len(record.log_tail) > _LOG_TAIL_LIMIT:
+        record.log_tail = record.log_tail[-_LOG_TAIL_LIMIT:]
+
+
+def _set_stage(
+    record: JobRecord,
+    *,
+    stage: str,
+    detail: str | None = None,
+    progress_current: int | None = None,
+    progress_total: int | None = None,
+) -> None:
+    record.stage = stage
+    if detail is not None:
+        record.stage_detail = detail
+    if progress_current is not None:
+        record.progress_current = progress_current
+    if progress_total is not None:
+        record.progress_total = progress_total
+
+
+def _update_progress_from_line(record: JobRecord, line: str) -> bool:
+    stripped = line.strip()
+    _append_log_tail(record, stripped)
+
+    if record.job_type == "run-mineru-case":
+        if stripped.startswith("upload done: "):
+            _set_stage(record, stage="mineru_upload", detail="文件上传完成，等待 MinerU 处理")
+            return True
+        match = _MINERU_BATCH_STATE_RE.match(stripped)
+        if match:
+            state = match.group(2).strip()
+            _set_stage(record, stage="mineru_processing", detail=f"MinerU 状态: {state}")
+            return True
+        if stripped.startswith("layout json: "):
+            _set_stage(record, stage="translation_prepare", detail="MinerU 结果已就绪，准备翻译")
+            return True
+
+    if stripped.startswith("domain-infer: "):
+        _set_stage(record, stage="domain_inference", detail="正在识别论文领域")
+        return True
+    if stripped.startswith("continuation-review "):
+        _set_stage(record, stage="continuation_review", detail="正在判断跨栏/跨页连续段")
+        return True
+    match = _PENDING_BATCH_RE.match(stripped)
+    if match:
+        total_batches = int(match.group(2))
+        _set_stage(
+            record,
+            stage="translation",
+            detail=f"正在翻译，批次数 {total_batches}",
+            progress_current=0,
+            progress_total=total_batches,
+        )
+        return True
+    match = _BATCH_PROGRESS_RE.match(stripped)
+    if match:
+        current = int(match.group(1))
+        total = int(match.group(2))
+        _set_stage(
+            record,
+            stage="translation",
+            detail=f"正在翻译，第 {current}/{total} 批",
+            progress_current=current,
+            progress_total=total,
+        )
+        return True
+    match = _PAGE_PROGRESS_RE.match(stripped)
+    if match:
+        page_idx = int(match.group(1))
+        _set_stage(record, stage="rendering", detail=f"正在整理渲染结果，第 {page_idx} 页已完成")
+        return True
+    if stripped.startswith("translate+render time: "):
+        _set_stage(record, stage="saving", detail="翻译和渲染完成，正在保存 PDF")
+        return True
+    if stripped.startswith("save time: "):
+        _set_stage(record, stage="finalizing", detail="正在收尾并写出产物")
+        return True
+    if stripped.startswith("output pdf: "):
+        _set_stage(record, stage="completed", detail="输出 PDF 已生成")
+        return True
+    return False
+
+
+async def run_command_streaming(job_id: str, command: list[str]) -> tuple[int, float, str, str]:
+    started = time.perf_counter()
+    proc = await asyncio.create_subprocess_exec(
+        *command,
+        cwd=PROJECT_ROOT,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    stdout_chunks: list[str] = []
+    stderr_chunks: list[str] = []
+
+    async def _consume_stdout() -> None:
+        assert proc.stdout is not None
+        while True:
+            line = await proc.stdout.readline()
+            if not line:
+                break
+            text = line.decode("utf-8", errors="replace")
+            stdout_chunks.append(text)
+            try:
+                record = load_job(job_id)
+            except KeyError:
+                continue
+            if _update_progress_from_line(record, text):
+                record.updated_at = utc_now_iso()
+            else:
+                record.updated_at = utc_now_iso()
+            try:
+                record.artifacts = _artifacts_for_job(record.job_type, "".join(stdout_chunks))
+            except Exception:
+                pass
+            save_job(record)
+
+    async def _consume_stderr() -> None:
+        assert proc.stderr is not None
+        while True:
+            line = await proc.stderr.readline()
+            if not line:
+                break
+            stderr_chunks.append(line.decode("utf-8", errors="replace"))
+
+    await asyncio.gather(_consume_stdout(), _consume_stderr())
+    return_code = await proc.wait()
+    duration = time.perf_counter() - started
+    return return_code, duration, "".join(stdout_chunks), "".join(stderr_chunks)
+
+
 def _read_job(job_id: str) -> JobRecord:
     path = _job_file(job_id)
     if not path.exists():
@@ -157,6 +300,8 @@ def create_job(job_type: str, command: list[str], request_payload: dict, job_id:
         updated_at=utc_now_iso(),
         command=command,
         request_payload=request_payload,
+        stage="queued",
+        stage_detail="任务已进入队列",
     )
     return save_job(record)
 
@@ -186,26 +331,39 @@ async def _run_job(job_id: str) -> None:
     except KeyError:
         return
 
-    record.status = "running"
-    record.started_at = utc_now_iso()
-    record.updated_at = utc_now_iso()
-    save_job(record)
-
     try:
-        return_code, duration, stdout, stderr = await run_command(record.command)
-        result = build_process_result(record.command, return_code, duration, stdout, stderr)
-        record.result = result
-        record.artifacts = _artifacts_for_job(record.job_type, stdout)
-        record.status = "succeeded" if result.success else "failed"
-        record.finished_at = utc_now_iso()
-        record.updated_at = record.finished_at
+        record.status = "running"
+        record.started_at = utc_now_iso()
+        record.updated_at = utc_now_iso()
+        record.stage = "starting"
+        record.stage_detail = "任务已启动"
         save_job(record)
-    except Exception as exc:
-        record.status = "failed"
-        record.finished_at = utc_now_iso()
-        record.updated_at = record.finished_at
-        record.error = f"{type(exc).__name__}: {exc}"
-        save_job(record)
+
+        try:
+            return_code, duration, stdout, stderr = await run_command_streaming(record.job_id, record.command)
+            record = load_job(job_id)
+            result = build_process_result(record.command, return_code, duration, stdout, stderr)
+            record.result = result
+            record.artifacts = _artifacts_for_job(record.job_type, stdout)
+            record.status = "succeeded" if result.success else "failed"
+            record.finished_at = utc_now_iso()
+            record.updated_at = record.finished_at
+            if result.success:
+                record.stage = "completed"
+                record.stage_detail = "任务完成"
+            else:
+                record.stage = "failed"
+                record.stage_detail = "任务失败"
+            save_job(record)
+        except Exception as exc:
+            record = load_job(job_id)
+            record.status = "failed"
+            record.finished_at = utc_now_iso()
+            record.updated_at = record.finished_at
+            record.error = f"{type(exc).__name__}: {exc}"
+            record.stage = "failed"
+            record.stage_detail = "任务失败"
+            save_job(record)
     finally:
         _JOB_TASKS.pop(job_id, None)
 
@@ -221,6 +379,11 @@ def status_payload(record: JobRecord) -> JobStatus:
         finished_at=record.finished_at,
         command=record.command,
         error=record.error,
+        stage=record.stage,
+        stage_detail=record.stage_detail,
+        progress_current=record.progress_current,
+        progress_total=record.progress_total,
+        log_tail=record.log_tail,
         result=record.result,
         artifacts=record.artifacts,
     )

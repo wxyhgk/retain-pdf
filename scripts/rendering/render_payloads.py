@@ -363,7 +363,7 @@ def build_render_blocks(translated_items: list[dict]) -> list[RenderBlock]:
             down_band = 0.7 if is_dense_block else 0.45
             up_band = 0.35 if is_dense_block else 0.3
             font_size_pt = round(min(max(font_size_pt, page_body_font_size_pt - down_band), page_body_font_size_pt + up_band), 2)
-        if is_dense_block:
+        if is_dense_block and not body_flags.get(index):
             font_size_pt = round(font_size_pt * COMPACT_SCALE, 2)
             leading_em = round(leading_em * COMPACT_SCALE, 2)
         font_size_pt, leading_em = _fit_translated_block_metrics(
