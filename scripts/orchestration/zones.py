@@ -99,5 +99,36 @@ def annotate_payload_layout_zones(payload: list[dict]) -> tuple[str, float]:
             else:
                 zone = "single_column"
         item["layout_zone"] = zone
-    return layout_mode, split_x
+        item["layout_zone_rank"] = -1
+        item["layout_zone_size"] = 0
+        item["layout_boundary_role"] = ""
 
+    zone_items: dict[str, list[dict]] = {}
+    for item in payload:
+        zone = str(item.get("layout_zone", "") or "")
+        if zone == "non_flow":
+            continue
+        zone_items.setdefault(zone, []).append(item)
+
+    for zone, items in zone_items.items():
+        ordered = sorted(
+            items,
+            key=lambda item: (
+                (item.get("bbox", [0, 0, 0, 0])[1] if len(item.get("bbox", [])) == 4 else 0),
+                (item.get("bbox", [0, 0, 0, 0])[0] if len(item.get("bbox", [])) == 4 else 0),
+            ),
+        )
+        size = len(ordered)
+        for idx, item in enumerate(ordered):
+            item["layout_zone_rank"] = idx
+            item["layout_zone_size"] = size
+            if size == 1:
+                role = "single"
+            elif idx == 0:
+                role = "head"
+            elif idx == size - 1:
+                role = "tail"
+            else:
+                role = "middle"
+            item["layout_boundary_role"] = role
+    return layout_mode, split_x

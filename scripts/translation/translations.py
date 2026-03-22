@@ -23,6 +23,9 @@ def export_translation_template(items: list[TextItem], output_path: Path, page_i
                 "layout_mode": "",
                 "layout_split_x": 0.0,
                 "layout_zone": "",
+                "layout_zone_rank": -1,
+                "layout_zone_size": 0,
+                "layout_boundary_role": "",
                 "protected_source_text": protected_source_text,
                 "formula_map": formula_map,
                 "classification_label": "",
@@ -111,6 +114,15 @@ def ensure_translation_template(items: list[TextItem], output_path: Path, page_i
             changed = True
         if "layout_zone" not in record:
             record["layout_zone"] = ""
+            changed = True
+        if "layout_zone_rank" not in record:
+            record["layout_zone_rank"] = -1
+            changed = True
+        if "layout_zone_size" not in record:
+            record["layout_zone_size"] = 0
+            changed = True
+        if "layout_boundary_role" not in record:
+            record["layout_boundary_role"] = ""
             changed = True
         if "metadata" not in record:
             record["metadata"] = item.metadata

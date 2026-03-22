@@ -16,6 +16,36 @@ def annotate_layout_zones_by_page(page_payloads: dict[int, list[dict]]) -> None:
         annotate_payload_layout_zones(page_payloads[page_idx])
 
 
+def _is_boundary_role(role: str) -> bool:
+    return role in {"head", "tail", "single"}
+
+
+def _filter_boundary_candidate_pairs(flat_payload: list[dict], pairs: list[dict]) -> list[dict]:
+    item_by_id = {str(item.get("item_id", "") or ""): item for item in flat_payload}
+    boundary_pairs: list[dict] = []
+    for pair in pairs:
+        prev_item = item_by_id.get(str(pair.get("prev_item_id", "") or ""))
+        next_item = item_by_id.get(str(pair.get("next_item_id", "") or ""))
+        if not prev_item or not next_item:
+            continue
+        prev_page = prev_item.get("page_idx", -1)
+        next_page = next_item.get("page_idx", -1)
+        prev_zone = str(prev_item.get("layout_zone", "") or "")
+        next_zone = str(next_item.get("layout_zone", "") or "")
+        prev_role = str(prev_item.get("layout_boundary_role", "") or "")
+        next_role = str(next_item.get("layout_boundary_role", "") or "")
+
+        if prev_page != next_page:
+            boundary_pairs.append(pair)
+            continue
+        if prev_zone != next_zone:
+            boundary_pairs.append(pair)
+            continue
+        if _is_boundary_role(prev_role) or _is_boundary_role(next_role):
+            boundary_pairs.append(pair)
+    return boundary_pairs
+
+
 def review_candidate_continuation_pairs(
     *,
     page_payloads: dict[int, list[dict]],
@@ -29,14 +59,17 @@ def review_candidate_continuation_pairs(
 ) -> int:
     flat_payload = [item for page_idx in sorted(page_payloads) for item in page_payloads[page_idx]]
     pairs = candidate_continuation_pairs(flat_payload)
-    if not pairs:
+    boundary_pairs = _filter_boundary_candidate_pairs(flat_payload, pairs)
+    if pairs and len(boundary_pairs) != len(pairs):
+        print(f"book: continuation review filtered {len(pairs)} -> {len(boundary_pairs)} boundary pairs", flush=True)
+    if not boundary_pairs:
         finalize_orchestration_metadata_by_page(page_payloads)
         return 0
 
     def chunked(seq: list[dict], size: int) -> list[list[dict]]:
         return [seq[i : i + size] for i in range(0, len(seq), size)]
 
-    batches = chunked(pairs, max(1, batch_size))
+    batches = chunked(boundary_pairs, max(1, batch_size))
     approved: list[tuple[str, str]] = []
 
     def _run_review(batch_pairs: list[dict], index: int) -> list[tuple[str, str]]:

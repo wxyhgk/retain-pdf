@@ -2,6 +2,8 @@ import json
 import time
 import re
 
+from translation.cache import split_cached_batch
+from translation.cache import store_cached_batch
 from translation.deepseek_client import build_messages
 from translation.deepseek_client import build_single_item_fallback_messages
 from translation.deepseek_client import extract_json_text
@@ -120,27 +122,49 @@ def translate_batch(
     request_label: str = "",
     domain_guidance: str = "",
 ) -> dict[str, str]:
+    cached_result, uncached_batch = split_cached_batch(
+        batch,
+        model=model,
+        base_url=base_url,
+        domain_guidance=domain_guidance,
+    )
+    if request_label and cached_result:
+        print(
+            f"{request_label}: cache hit {len(cached_result)}/{len(batch)}",
+            flush=True,
+        )
+    if not uncached_batch:
+        return cached_result
+
     last_error: Exception | None = None
     for attempt in range(1, 5):
         started = time.perf_counter()
         try:
             if request_label:
                 print(
-                    f"{request_label}: translate attempt {attempt}/4 items={len(batch)}",
+                    f"{request_label}: translate attempt {attempt}/4 items={len(uncached_batch)}",
                     flush=True,
                 )
             result = _translate_batch_once(
-                batch,
+                uncached_batch,
                 api_key=api_key,
                 model=model,
                 base_url=base_url,
                 request_label=f"{request_label} req#{attempt}" if request_label else "",
                 domain_guidance=domain_guidance,
             )
+            store_cached_batch(
+                uncached_batch,
+                result,
+                model=model,
+                base_url=base_url,
+                domain_guidance=domain_guidance,
+            )
+            merged = {**cached_result, **result}
             if request_label:
                 elapsed = time.perf_counter() - started
                 print(f"{request_label}: translate ok in {elapsed:.2f}s", flush=True)
-            return result
+            return merged
         except (ValueError, KeyError, json.JSONDecodeError) as exc:
             last_error = exc
             elapsed = time.perf_counter() - started
@@ -150,30 +174,37 @@ def translate_batch(
                     flush=True,
                 )
             if attempt >= 4:
-                if len(batch) > 1:
+                if len(uncached_batch) > 1:
                     if request_label:
                         print(f"{request_label}: falling back to single-item translation", flush=True)
-                    result: dict[str, str] = {}
-                    for item_index, item in enumerate(batch, start=1):
-                        result.update(
-                            translate_batch(
-                                [item],
-                                api_key=api_key,
-                                model=model,
-                                base_url=base_url,
-                                request_label=f"{request_label} item {item_index}/{len(batch)} {item['item_id']}",
-                                domain_guidance=domain_guidance,
-                            )
+                    result: dict[str, str] = dict(cached_result)
+                    for item_index, item in enumerate(uncached_batch, start=1):
+                        single = translate_batch(
+                            [item],
+                            api_key=api_key,
+                            model=model,
+                            base_url=base_url,
+                            request_label=f"{request_label} item {item_index}/{len(uncached_batch)} {item['item_id']}",
+                            domain_guidance=domain_guidance,
                         )
+                        result.update(single)
                     return result
-                return _translate_single_item_plain_text(
-                    batch[0],
+                single = _translate_single_item_plain_text(
+                    uncached_batch[0],
                     api_key=api_key,
                     model=model,
                     base_url=base_url,
-                    request_label=f"{request_label} plain-text fallback {batch[0]['item_id']}",
+                    request_label=f"{request_label} plain-text fallback {uncached_batch[0]['item_id']}",
                     domain_guidance=domain_guidance,
                 )
+                store_cached_batch(
+                    uncached_batch,
+                    single,
+                    model=model,
+                    base_url=base_url,
+                    domain_guidance=domain_guidance,
+                )
+                return {**cached_result, **single}
             time.sleep(min(8, 2 * attempt))
 
     if last_error is not None:
