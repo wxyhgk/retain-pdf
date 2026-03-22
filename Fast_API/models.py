@@ -59,6 +59,7 @@ class TranslationRenderParams(BaseModel):
     )
     compile_workers: int = Field(default=0, ge=0, description="Parallel Typst compilation workers; 0 means auto.")
     typst_font_family: str = Field(default="Noto Serif CJK SC", description="Base Typst font family.")
+    pdf_compress_dpi: int = Field(default=200, ge=0, description="Final PDF image downsample DPI; 0 disables post-compression.")
     output_dir: str = Field(default="", description="Translation output directory under output/.")
     output: str = Field(default="", description="Output PDF filename under output/.")
     name: str = Field(default="", description="Optional output name prefix.")
@@ -127,6 +128,8 @@ class RunCaseRequest(TranslationRenderParams, LayoutTuningParams):
             str(self.compile_workers),
             "--typst-font-family",
             self.typst_font_family,
+            "--pdf-compress-dpi",
+            str(self.pdf_compress_dpi),
         ]
         if self.name.strip():
             cmd += ["--name", self.name.strip()]
@@ -268,6 +271,8 @@ class RunMinerUCaseRequest(TranslationRenderParams, LayoutTuningParams):
             str(self.compile_workers),
             "--typst-font-family",
             self.typst_font_family,
+            "--pdf-compress-dpi",
+            str(self.pdf_compress_dpi),
             "--body-font-size-factor",
             str(self.body_font_size_factor),
             "--body-leading-factor",

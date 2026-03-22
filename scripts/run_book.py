@@ -3,6 +3,7 @@ from pathlib import Path
 
 from common.config import BODY_FONT_SIZE_FACTOR
 from common.config import BODY_LEADING_FACTOR
+from common.config import DEFAULT_PDF_COMPRESS_DPI
 from common.config import INNER_BBOX_DENSE_SHRINK_X
 from common.config import INNER_BBOX_DENSE_SHRINK_Y
 from common.config import INNER_BBOX_SHRINK_X
@@ -88,6 +89,12 @@ def parse_args() -> argparse.Namespace:
         default=TYPST_DEFAULT_FONT_FAMILY,
         help="Base Typst font family name.",
     )
+    parser.add_argument(
+        "--pdf-compress-dpi",
+        type=int,
+        default=DEFAULT_PDF_COMPRESS_DPI,
+        help="Final PDF image downsample DPI after rendering. 0 disables post-compression.",
+    )
     parser.add_argument("--body-font-size-factor", type=float, default=BODY_FONT_SIZE_FACTOR)
     parser.add_argument("--body-leading-factor", type=float, default=BODY_LEADING_FACTOR)
     parser.add_argument("--inner-bbox-shrink-x", type=float, default=INNER_BBOX_SHRINK_X)
@@ -129,6 +136,7 @@ def main() -> None:
         render_mode=args.render_mode,
         compile_workers=args.compile_workers or None,
         typst_font_family=args.typst_font_family,
+        pdf_compress_dpi=args.pdf_compress_dpi,
     )
     print(f"translation dir: {result['output_dir']}")
     print(f"output pdf: {result['output_pdf_path']}")

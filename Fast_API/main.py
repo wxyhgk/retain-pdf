@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from .executor import build_job_download_zip
@@ -22,6 +23,14 @@ app = FastAPI(
     title="OCR Translation API",
     version="1.1.0",
     description="FastAPI wrapper around the stable OCR translation and MinerU pipelines.",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -53,6 +62,7 @@ async def upload_mineru_case(
     render_mode: str = Form("typst"),
     compile_workers: int = Form(0),
     typst_font_family: str = Form("Noto Serif CJK SC"),
+    pdf_compress_dpi: int = Form(200),
     start_page: int = Form(0),
     end_page: int = Form(-1),
     batch_size: int = Form(6),
@@ -104,6 +114,7 @@ async def upload_mineru_case(
             render_mode=render_mode,
             compile_workers=compile_workers,
             typst_font_family=typst_font_family,
+            pdf_compress_dpi=pdf_compress_dpi,
             start_page=start_page,
             end_page=end_page,
             batch_size=batch_size,

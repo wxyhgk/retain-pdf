@@ -2,8 +2,10 @@
 
 Recommended entry points:
 
+- `../../run_mineru_case.py`
+  Recommended top-level one-command entry. Use this first for normal parse -> translate -> render runs.
 - `mineru_pipeline.py`
-  Full end-to-end flow. Parse with MinerU, then translate from `layout.json`, then render into `transPDF`.
+  Stable implementation behind `scripts/run_mineru_case.py`. Parse with MinerU, then translate from `layout.json`, then render into `transPDF`.
 - `mineru_job.py`
   Parse only. Download and unpack MinerU outputs into a structured job directory.
 - `migrate_legacy_output.py`

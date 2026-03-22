@@ -260,17 +260,16 @@ def build_job_download_zip(record: JobRecord) -> Path:
         raise RuntimeError("job root is missing")
 
     zip_path = DOWNLOADS_DIR / f"{record.job_id}.zip"
-    origin_pdf_dir = job_root / "originPDF"
     unpacked_dir = job_root / "jsonPDF" / "unpacked"
+    markdown_path = unpacked_dir / "full.md"
+    markdown_images_dir = unpacked_dir / "images"
     output_pdf = _resolve_path(getattr(record.artifacts, "output_pdf", None))
-    summary_path = _resolve_path(getattr(record.artifacts, "summary", None))
 
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zip_file:
-        _add_tree_to_zip(zip_file, origin_pdf_dir, f"{record.job_id}/originPDF")
-        _add_tree_to_zip(zip_file, unpacked_dir, f"{record.job_id}/jsonPDF/unpacked")
         if output_pdf is not None and output_pdf.exists():
-            _add_file_to_zip(zip_file, output_pdf, f"{record.job_id}/transPDF/{output_pdf.name}")
-        if summary_path is not None and summary_path.exists():
-            _add_file_to_zip(zip_file, summary_path, f"{record.job_id}/transPDF/{summary_path.name}")
+            _add_file_to_zip(zip_file, output_pdf, output_pdf.name)
+        if markdown_path.exists():
+            _add_file_to_zip(zip_file, markdown_path, "markdown/full.md")
+        _add_tree_to_zip(zip_file, markdown_images_dir, "markdown/images")
 
     return zip_path

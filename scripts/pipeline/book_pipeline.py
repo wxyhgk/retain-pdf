@@ -4,10 +4,12 @@ from pathlib import Path
 import fitz
 
 from common.config import DEFAULT_FONT_PATH
+from common.config import DEFAULT_PDF_COMPRESS_DPI
 from common.config import TYPST_DEFAULT_FONT_FAMILY
 from ocr.json_extractor import load_ocr_json
 from rendering.pdf_overlay import apply_translated_items_to_page
 from rendering.pdf_overlay import save_optimized_pdf
+from rendering.pdf_compress import compress_pdf_with_ghostscript
 from rendering.pdf_overlay import strip_page_links
 from rendering.render_payloads import prepare_render_payloads_by_page
 from rendering.typst_page_renderer import build_dual_book_pdf
@@ -115,6 +117,7 @@ def build_book_from_translations(
     extract_selected_pages: bool = False,
     render_mode: str = "typst",
     typst_font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    pdf_compress_dpi: int = DEFAULT_PDF_COMPRESS_DPI,
 ) -> int:
     translated_pages: dict[int, list[dict]] = {}
     for path in sorted(translations_dir.glob("page-*-deepseek.json")):
@@ -150,6 +153,7 @@ def build_book_from_translations(
             compile_workers=compile_workers,
             font_family=typst_font_family,
         )
+        compress_pdf_with_ghostscript(output_pdf_path, dpi=pdf_compress_dpi)
         return len(selected_pages)
 
     if render_mode == "direct":
@@ -164,6 +168,7 @@ def build_book_from_translations(
             save_optimized_pdf(doc, output_pdf_path)
         finally:
             doc.close()
+        compress_pdf_with_ghostscript(output_pdf_path, dpi=pdf_compress_dpi)
         return len(selected_pages)
 
     if extract_selected_pages:
@@ -186,6 +191,7 @@ def build_book_from_translations(
         finally:
             temp_doc.close()
             source_doc.close()
+        compress_pdf_with_ghostscript(output_pdf_path, dpi=pdf_compress_dpi)
         return stop - start + 1
 
     build_book_typst_pdf(
@@ -195,6 +201,7 @@ def build_book_from_translations(
         compile_workers=compile_workers,
         font_family=typst_font_family,
     )
+    compress_pdf_with_ghostscript(output_pdf_path, dpi=pdf_compress_dpi)
     return len(selected_pages)
 
 
@@ -209,6 +216,7 @@ def build_book_pipeline(
     extract_selected_pages: bool = False,
     render_mode: str = "typst",
     typst_font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    pdf_compress_dpi: int = DEFAULT_PDF_COMPRESS_DPI,
 ) -> dict:
     pages_rendered = build_book_from_translations(
         source_pdf_path=source_pdf_path,
@@ -220,6 +228,7 @@ def build_book_pipeline(
         extract_selected_pages=extract_selected_pages,
         render_mode=render_mode,
         typst_font_family=typst_font_family,
+        pdf_compress_dpi=pdf_compress_dpi,
     )
     return {
         "output_pdf_path": output_pdf_path,
@@ -247,6 +256,7 @@ def run_book_pipeline(
     render_mode: str,
     compile_workers: int | None = None,
     typst_font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    pdf_compress_dpi: int = DEFAULT_PDF_COMPRESS_DPI,
 ) -> dict:
     data = load_ocr_json(source_json_path)
     pages = data.get("pdf_info", [])
@@ -299,6 +309,7 @@ def run_book_pipeline(
             save_optimized_pdf(doc, output_pdf_path)
         finally:
             doc.close()
+        compress_pdf_with_ghostscript(output_pdf_path, dpi=pdf_compress_dpi)
     else:
         build_book_pipeline(
             source_pdf_path=source_pdf_path,
@@ -310,6 +321,7 @@ def run_book_pipeline(
             extract_selected_pages=False,
             render_mode=effective_render_mode,
             typst_font_family=typst_font_family,
+            pdf_compress_dpi=pdf_compress_dpi,
         )
     save_elapsed = time.perf_counter() - save_started
     total_elapsed = time.perf_counter() - total_started

@@ -1,8 +1,15 @@
 from translation.formula_protection import restore_inline_formulas
 from translation.body_text_filter import find_narrow_body_noise_item_ids
+from translation.metadata_filter import find_metadata_fragment_item_ids
 
 
 GROUP_ITEM_PREFIX = "__cg__:"
+RESETTABLE_LABEL_PREFIXES = (
+    "skip_",
+    "code",
+    "review",
+    "translate",
+)
 
 
 def _has_group_translation(item: dict) -> bool:
@@ -17,6 +24,20 @@ def _has_any_translation(item: dict) -> bool:
     if item.get("continuation_group"):
         return _has_group_translation(item)
     return _has_item_translation(item)
+
+
+def reset_policy_state(payload: list[dict]) -> int:
+    reset = 0
+    for item in payload:
+        label = str(item.get("classification_label", "") or "")
+        if not label:
+            continue
+        if not label.startswith(RESETTABLE_LABEL_PREFIXES):
+            continue
+        item["classification_label"] = ""
+        item["should_translate"] = True
+        reset += 1
+    return reset
 
 
 def apply_classification_labels(payload: list[dict], labels: dict[str, str]) -> int:
@@ -51,7 +72,7 @@ def apply_title_skip(payload: list[dict]) -> int:
 
 
 def _mark_item_skipped(item: dict, label: str) -> None:
-    item["classification_label"] = item.get("classification_label") or label
+    item["classification_label"] = label
     item["should_translate"] = False
     item["protected_translated_text"] = ""
     item["translated_text"] = ""
@@ -118,6 +139,24 @@ def apply_narrow_body_text_skip(payload: list[dict]) -> int:
         if not item.get("should_translate", True):
             continue
         _mark_item_skipped(item, "skip_narrow_body_noise")
+        skipped += 1
+    return skipped
+
+
+def apply_metadata_fragment_skip(payload: list[dict], *, page_idx: int, max_page_idx: int) -> int:
+    if page_idx > max_page_idx:
+        return 0
+    skip_ids = find_metadata_fragment_item_ids(payload)
+    if not skip_ids:
+        return 0
+    skipped = 0
+    for item in payload:
+        item_id = item.get("item_id", "")
+        if item_id not in skip_ids:
+            continue
+        if not item.get("should_translate", True):
+            continue
+        _mark_item_skipped(item, "skip_metadata_fragment")
         skipped += 1
     return skipped
 

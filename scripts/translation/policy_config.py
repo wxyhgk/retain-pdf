@@ -14,6 +14,8 @@ class TranslationPolicyConfig:
     enable_title_skip: bool = False
     enable_after_last_title_cutoff: bool = False
     enable_narrow_body_noise_skip: bool = True
+    enable_metadata_fragment_skip: bool = True
+    metadata_fragment_max_page_idx: int = 1
     enable_domain_inference: bool = False
     sci_cutoff_page_idx: int | None = None
     sci_cutoff_block_idx: int | None = None
@@ -33,6 +35,10 @@ def should_apply_after_last_title_cutoff(mode: str) -> bool:
 
 
 def should_apply_narrow_body_noise_skip() -> bool:
+    return True
+
+
+def should_apply_metadata_fragment_skip() -> bool:
     return True
 
 
@@ -73,6 +79,8 @@ def build_translation_policy_config(
     enable_title_skip: bool | None = None,
     enable_after_last_title_cutoff: bool | None = None,
     enable_narrow_body_noise_skip: bool | None = None,
+    enable_metadata_fragment_skip: bool | None = None,
+    metadata_fragment_max_page_idx: int | None = None,
     enable_domain_inference: bool | None = None,
 ) -> TranslationPolicyConfig:
     return TranslationPolicyConfig(
@@ -86,6 +94,10 @@ def build_translation_policy_config(
         enable_narrow_body_noise_skip=should_apply_narrow_body_noise_skip()
         if enable_narrow_body_noise_skip is None
         else enable_narrow_body_noise_skip,
+        enable_metadata_fragment_skip=should_apply_metadata_fragment_skip()
+        if enable_metadata_fragment_skip is None
+        else enable_metadata_fragment_skip,
+        metadata_fragment_max_page_idx=1 if metadata_fragment_max_page_idx is None else metadata_fragment_max_page_idx,
         enable_domain_inference=(mode == "sci")
         if enable_domain_inference is None
         else enable_domain_inference,

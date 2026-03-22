@@ -12,6 +12,7 @@ sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from common.config import BODY_FONT_SIZE_FACTOR
 from common.config import BODY_LEADING_FACTOR
+from common.config import DEFAULT_PDF_COMPRESS_DPI
 from common.config import INNER_BBOX_DENSE_SHRINK_X
 from common.config import INNER_BBOX_DENSE_SHRINK_Y
 from common.config import INNER_BBOX_SHRINK_X
@@ -19,6 +20,9 @@ from common.config import INNER_BBOX_SHRINK_Y
 from common.config import OUTPUT_DIR
 from common.config import TYPST_DEFAULT_FONT_FAMILY
 from common.config import apply_layout_tuning
+from common.job_cleanup import prune_mineru_json_dir
+from common.job_cleanup import prune_origin_pdf_dir
+from common.job_cleanup import prune_trans_pdf_dir
 from common.job_dirs import create_job_dirs
 from integrations.mineru.mineru_api import MINERU_ENV_FILE
 from integrations.mineru.mineru_api import MINERU_TOKEN_ENV
@@ -75,6 +79,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--render-mode", type=str, default="typst", choices=["auto", "compact", "direct", "typst", "dual"], help="Rendering mode for translated pages.")
     parser.add_argument("--compile-workers", type=int, default=0, help="Parallel Typst overlay compilation workers. 0 means auto.")
     parser.add_argument("--typst-font-family", type=str, default=TYPST_DEFAULT_FONT_FAMILY, help="Base Typst font family name.")
+    parser.add_argument("--pdf-compress-dpi", type=int, default=DEFAULT_PDF_COMPRESS_DPI, help="Final PDF image downsample DPI after rendering. 0 disables post-compression.")
 
     parser.add_argument("--translated-pdf-name", type=str, default="", help="Optional final PDF name inside transPDF.")
     parser.add_argument("--body-font-size-factor", type=float, default=BODY_FONT_SIZE_FACTOR)
@@ -207,8 +212,6 @@ def run_mineru_to_job_dir(args: argparse.Namespace) -> tuple[Path, Path, Path]:
         shutil.copy2(unpacked_origin, source_pdf_path)
     else:
         unpacked_origin = next(unpack_dir.glob("*_origin.pdf"), None)
-        if unpacked_origin is not None:
-            shutil.copy2(unpacked_origin, job_dirs.origin_pdf_dir / unpacked_origin.name)
 
     layout_json_path = unpack_dir / "layout.json"
     if not layout_json_path.exists():
@@ -260,6 +263,7 @@ def main() -> None:
         render_mode=args.render_mode,
         compile_workers=args.compile_workers or None,
         typst_font_family=args.typst_font_family,
+        pdf_compress_dpi=args.pdf_compress_dpi,
     )
 
     summary_path = trans_pdf_dir / "pipeline_summary.json"
@@ -280,8 +284,13 @@ def main() -> None:
             "model": args.model,
             "base_url": args.base_url,
             "render_mode": args.render_mode,
+            "pdf_compress_dpi": args.pdf_compress_dpi,
         },
     )
+
+    prune_origin_pdf_dir(job_root / "originPDF", source_pdf_path)
+    prune_trans_pdf_dir(job_root / "transPDF", output_pdf_path)
+    prune_mineru_json_dir(job_root / "jsonPDF")
 
     print(f"job root: {job_root}")
     print(f"source pdf: {source_pdf_path}")

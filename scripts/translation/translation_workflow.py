@@ -83,6 +83,9 @@ def translate_items_to_path(
         if skip_summary["title_skipped"]:
             save_translations(translation_path, payload)
             print(f"{label}: skipped {skip_summary['title_skipped']} title items")
+    if skip_summary.get("metadata_fragment_skipped"):
+        save_translations(translation_path, payload)
+        print(f"{label}: skipped {skip_summary['metadata_fragment_skipped']} metadata fragments")
 
     pending = pending_translation_items(payload)
     batches = chunked(pending, max(1, batch_size))

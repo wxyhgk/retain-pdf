@@ -11,7 +11,7 @@ Current status:
 - `list` child blocks are extracted and rendered item-by-item
 - `inline_equation` is preserved via placeholders during translation
 - `ref_text` is skipped and not sent to translation
-- `image`, `image_body`, and `image_caption` are currently left untouched to avoid OCR caption misclassification from destabilizing layout
+- `image`, `image_body`, `image_caption`, `table_caption`, and `table_footnote` are left untouched in the stable sci pipeline
 - translation supports DeepSeek and OpenAI-compatible local endpoints
 - translation now supports concurrent batch workers and HTTP session reuse
 - full-book translation now supports continuation groups across page boundaries
@@ -35,6 +35,8 @@ Current status:
   Translate and render a full book in one page-by-page pipeline.
 - `run_case.py`
   Simplest one-command entry: point it at a folder containing exactly one `.json` and one `.pdf`, and it auto-discovers inputs, auto-names outputs, then runs the full pipeline.
+- `run_mineru_case.py`
+  Recommended one-command MinerU entry at the top level. Parse with MinerU, translate from `layout.json`, and render into one structured job directory by reusing `integrations/mineru/mineru_pipeline.py`.
 - `integrations/mineru/mineru_api.py`
   Minimal MinerU precise-API caller. Supports both remote URL task submission and local-file upload + polling.
 - `integrations/mineru/mineru_api_example.py`
@@ -50,7 +52,7 @@ Current status:
 ### `ocr/`
 
 - `json_extractor.py`
-  Reads OCR JSON and extracts page/block text items. Skips `interline_equation`, `code`, `table`, `ref_text`, `image`, `image_body`, and `image_caption`.
+  Reads OCR JSON and extracts page/block text items. Skips `interline_equation`, `code`, `table`, `ref_text`, `image`, `image_body`, `image_caption`, `table_caption`, and `table_footnote`.
 - `models.py`
   OCR-side data structures.
 
@@ -111,7 +113,7 @@ The current preferred path is:
 
 `OCR JSON -> translation JSON -> render_payloads -> typst_page_renderer -> PDF`
 
-For the simplest day-to-day usage, prefer explicit source paths:
+For the simplest day-to-day usage, prefer the top-level one-step entry for local OCR JSON/PDF cases:
 
 ```bash
 python scripts/run_case.py \
@@ -156,12 +158,25 @@ python scripts/run_case.py \
   --output test9-run.pdf
 ```
 
+Recommended MinerU one-step entry:
+
+```bash
+python scripts/run_mineru_case.py \
+  --file-path Data/test9/test9.pdf \
+  --model-version vlm \
+  --mode sci \
+  --model Q3.5-turbo \
+  --base-url http://1.94.67.196:10001/v1
+```
+
 What each main CLI is for:
 
 - `run_case.py`
   Recommended daily/API entry. Prefer explicit `--source-json`, `--source-pdf`, `--output-dir`, and `--output`. It also supports one fallback `input_dir` for local convenience.
 - `run_book.py`
   Full end-to-end entry when you want to pass the JSON path, PDF path, output folder, and output PDF name explicitly.
+- `run_mineru_case.py`
+  Recommended MinerU daily entry. Use this when the source is still a PDF and you want `parse -> unpack -> translate -> render` in one command from the `scripts/` top level.
 - `translate_book.py`
   Translate only. Use this when you want to keep translation JSONs and rebuild multiple times without paying translation cost again.
 - `build_book.py`
@@ -189,10 +204,10 @@ Common output behavior:
 
 Examples:
 
-MinerU all-in-one pipeline:
+Recommended MinerU all-in-one pipeline:
 
 ```bash
-python scripts/integrations/mineru/mineru_pipeline.py \
+python scripts/run_mineru_case.py \
   --file-path Data/test9/test9.pdf \
   --model-version vlm \
   --mode sci \
@@ -207,6 +222,11 @@ This creates:
 - `output/<job-id>/transPDF`
 
 `layout.json` is used as the default MinerU OCR JSON for the translation pipeline.
+
+Low-level MinerU implementation note:
+
+- `scripts/run_mineru_case.py` is the recommended public entry.
+- `scripts/integrations/mineru/mineru_pipeline.py` remains the stable implementation it delegates to.
 
 MinerU middle-level job runner, only parse and unpack:
 
@@ -413,6 +433,8 @@ The current direction is:
 - do not translate `image`
 - do not translate `image_body`
 - do not translate `image_caption`
+- do not translate `table_caption`
+- do not translate `table_footnote`
 
 In `precise` mode:
 
