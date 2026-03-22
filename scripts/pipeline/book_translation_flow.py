@@ -1,11 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from orchestration.document_orchestrator import annotate_layout_zones_by_page
+from orchestration.document_orchestrator import finalize_orchestration_metadata_by_page
+from orchestration.document_orchestrator import review_candidate_continuation_pairs
 from ocr.json_extractor import extract_text_items
-from translation.continuation_review import review_candidate_pairs
-from translation.continuations import apply_candidate_pair_joins
 from translation.continuations import annotate_continuation_context_global
-from translation.continuations import candidate_continuation_pairs
 from translation.continuations import summarize_continuation_decisions
 from translation.payload_ops import GROUP_ITEM_PREFIX
 from translation.payload_ops import apply_translated_text_map
@@ -132,62 +132,6 @@ def save_pages(
         save_translations(translation_paths[page_idx], page_payloads[page_idx])
 
 
-def review_candidate_continuation_pairs(
-    *,
-    page_payloads: dict[int, list[dict]],
-    translation_paths: dict[int, Path],
-    api_key: str,
-    model: str,
-    base_url: str,
-    workers: int,
-    batch_size: int = 24,
-) -> int:
-    flat_payload = [item for page_idx in sorted(page_payloads) for item in page_payloads[page_idx]]
-    pairs = candidate_continuation_pairs(flat_payload)
-    if not pairs:
-        return 0
-    batches = chunked(pairs, max(1, batch_size))
-    approved: list[tuple[str, str]] = []
-
-    def _run_review(batch_pairs: list[dict], index: int) -> list[tuple[str, str]]:
-        labeled_pairs = []
-        for offset, pair in enumerate(batch_pairs, start=1):
-            pair = dict(pair)
-            pair["pair_id"] = f"pair-{index:03d}-{offset:03d}"
-            labeled_pairs.append(pair)
-        reviewed = review_candidate_pairs(
-            labeled_pairs,
-            api_key=api_key,
-            model=model,
-            base_url=base_url,
-            request_label=f"continuation-review {index}/{len(batches)}",
-        )
-        pair_map = {pair["pair_id"]: pair for pair in labeled_pairs}
-        return [
-            (pair_map[pair_id]["prev_item_id"], pair_map[pair_id]["next_item_id"])
-            for pair_id, decision in reviewed.items()
-            if decision == "join" and pair_id in pair_map
-        ]
-
-    if workers <= 1 or len(batches) == 1:
-        for index, batch in enumerate(batches, start=1):
-            approved.extend(_run_review(batch, index))
-    else:
-        with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
-            futures = {
-                executor.submit(_run_review, batch, index): index
-                for index, batch in enumerate(batches, start=1)
-            }
-            for future in as_completed(futures):
-                approved.extend(future.result())
-
-    applied = apply_candidate_pair_joins(flat_payload, approved)
-    if applied:
-        save_pages(page_payloads, translation_paths)
-        print(f"book: continuation review approved={applied} items from pairs={len(approved)}", flush=True)
-    return applied
-
-
 def translate_pending_units(
     *,
     page_payloads: dict[int, list[dict]],
@@ -201,14 +145,14 @@ def translate_pending_units(
 ) -> None:
     flat_payload: list[dict] = []
     item_to_page: dict[str, int] = {}
-    group_to_pages: dict[str, set[int]] = {}
+    unit_to_pages: dict[str, set[int]] = {}
     for page_idx in sorted(page_payloads):
         for item in page_payloads[page_idx]:
             flat_payload.append(item)
             item_to_page[item.get("item_id", "")] = page_idx
-            group_id = item.get("continuation_group", "")
-            if group_id:
-                group_to_pages.setdefault(group_id, set()).add(page_idx)
+            unit_id = str(item.get("translation_unit_id") or item.get("item_id") or "")
+            if unit_id:
+                unit_to_pages.setdefault(unit_id, set()).add(page_idx)
 
     pending = pending_translation_items(flat_payload)
     batches = chunked(pending, max(1, batch_size))
@@ -226,7 +170,7 @@ def translate_pending_units(
                 domain_guidance=domain_guidance,
             )
             apply_translated_text_map(flat_payload, translated)
-            touched_pages = touched_pages_for_batch(translated, item_to_page, group_to_pages)
+            touched_pages = touched_pages_for_batch(translated, item_to_page, unit_to_pages)
             save_pages(page_payloads, translation_paths, touched_pages)
         return
 
@@ -248,7 +192,7 @@ def translate_pending_units(
             translated = future.result()
             apply_translated_text_map(flat_payload, translated)
             completed += 1
-            touched_pages = touched_pages_for_batch(translated, item_to_page, group_to_pages)
+            touched_pages = touched_pages_for_batch(translated, item_to_page, unit_to_pages)
             save_pages(page_payloads, translation_paths, touched_pages)
             print(f"book: completed batch {completed}/{total_batches}", flush=True)
 
@@ -256,12 +200,12 @@ def translate_pending_units(
 def touched_pages_for_batch(
     translated: dict[str, str],
     item_to_page: dict[str, int],
-    group_to_pages: dict[str, set[int]],
+    unit_to_pages: dict[str, set[int]],
 ) -> set[int]:
     touched_pages: set[int] = set()
     for item_id in translated:
         if item_id.startswith(GROUP_ITEM_PREFIX):
-            touched_pages.update(group_to_pages.get(item_id[len(GROUP_ITEM_PREFIX) :], set()))
+            touched_pages.update(unit_to_pages.get(item_id, set()))
         elif item_id in item_to_page:
             touched_pages.add(item_to_page[item_id])
     return touched_pages
@@ -293,10 +237,13 @@ def translate_book_with_global_continuations(
         output_dir=output_dir,
         page_indices=page_indices,
     )
+    annotate_layout_zones_by_page(page_payloads)
+    finalize_orchestration_metadata_by_page(page_payloads)
     continuation_items = annotate_continuation_context_global(page_payloads)
     flat_payload = [item for page_idx in sorted(page_payloads) for item in page_payloads[page_idx]]
     continuation_summary = summarize_continuation_decisions(flat_payload)
     if continuation_items or continuation_summary["candidate_break_items"]:
+        finalize_orchestration_metadata_by_page(page_payloads)
         save_pages(page_payloads, translation_paths)
         print(
             f"book: continuation joined={continuation_summary['joined_items']} "
@@ -311,6 +258,7 @@ def translate_book_with_global_continuations(
             model=model,
             base_url=base_url,
             workers=min(max(1, workers), 8),
+            save_pages_fn=save_pages,
         )
 
     classified_items = apply_page_policies(
@@ -327,6 +275,7 @@ def translate_book_with_global_continuations(
     )
     if classified_items:
         print(f"book: classified {classified_items} items", flush=True)
+    finalize_orchestration_metadata_by_page(page_payloads)
     save_pages(page_payloads, translation_paths)
 
     translate_pending_units(

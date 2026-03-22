@@ -16,6 +16,8 @@ Current status:
 - translation now supports concurrent batch workers and HTTP session reuse
 - full-book translation now supports continuation groups across page boundaries
 - continuation handling now uses a fast rule pass first, then only sends ambiguous candidate pairs to the model for review
+- payloads now also carry orchestration metadata such as `layout_mode`, `layout_zone`, `skip_reason`, and `translation_unit_id`
+- grouped translation/rendering now explicitly runs on `translation_unit_id`, while `continuation_group` remains only as one source of unit formation
 - `precise` mode adds LLM block classification for suspicious OCR text blocks before translation
 - `fast` and `sci` do not run the classifier; they rely on OCR block types plus skip policies
 - `sci` mode can infer the document domain from the first two PDF pages and inject document-specific guidance into later translation batches
@@ -71,6 +73,15 @@ Current status:
   In `sci` mode, infers the document domain from the first two PDF pages and generates translation guidance for the rest of the book.
 - `continuations.py`
   Detects likely paragraph continuations, including cross-page continuation groups for full-book runs.
+
+### `orchestration/`
+
+- `zones.py`
+  Shared page-layout helpers. Detects single/double-column structure and annotates each payload item with a layout zone.
+- `units.py`
+  Normalizes orchestration-facing payload fields such as `skip_reason` and `translation_unit_id`.
+- `document_orchestrator.py`
+  Lightweight document orchestration layer that keeps layout-zone annotation, candidate continuation review, and payload finalization out of rendering.
 
 ### `pipeline/`
 

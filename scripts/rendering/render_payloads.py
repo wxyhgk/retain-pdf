@@ -273,22 +273,30 @@ def prepare_render_payloads_by_page(translated_pages: dict[int, list[dict]]) -> 
             page_text_width_med,
         )
         for item in items:
-            item["render_protected_text"] = (item.get("protected_translated_text") or "").strip()
-            item["render_formula_map"] = item.get("formula_map", [])
+            item["render_protected_text"] = (
+                item.get("translation_unit_protected_translated_text")
+                or item.get("protected_translated_text")
+                or ""
+            ).strip()
+            item["render_formula_map"] = item.get("translation_unit_formula_map") or item.get("formula_map", [])
             flat_items.append(item)
 
-    groups: dict[str, list[dict]] = {}
+    units: dict[str, list[dict]] = {}
     for item in flat_items:
-        group_id = item.get("continuation_group", "")
-        if group_id:
-            groups.setdefault(group_id, []).append(item)
+        unit_id = str(item.get("translation_unit_id", "") or "")
+        if item.get("translation_unit_kind") == "group" and unit_id:
+            units.setdefault(unit_id, []).append(item)
 
-    for group_id, items in groups.items():
-        items = [item for item in items if (item.get("group_protected_translated_text") or "").strip()]
+    for unit_id, items in units.items():
+        items = [item for item in items if (item.get("translation_unit_protected_translated_text") or "").strip()]
         if not items:
             continue
-        group_formula_map = items[0].get("group_formula_map", [])
-        protected_group_text = (items[0].get("group_protected_translated_text") or "").strip()
+        unit_formula_map = items[0].get("translation_unit_formula_map") or items[0].get("group_formula_map", [])
+        protected_unit_text = (
+            items[0].get("translation_unit_protected_translated_text")
+            or items[0].get("group_protected_translated_text")
+            or ""
+        ).strip()
         capacities: list[float] = []
         for item in items:
             page_font_size, page_line_pitch, page_line_height, density_baseline, page_text_width_med = page_metrics[
@@ -304,10 +312,10 @@ def prepare_render_payloads_by_page(translated_pages: dict[int, list[dict]]) -> 
             )
             capacities.append(_box_capacity_units(inner_bbox(item), font_size_pt, leading_em))
 
-        chunks = _split_protected_text_for_boxes(protected_group_text, group_formula_map, capacities)
+        chunks = _split_protected_text_for_boxes(protected_unit_text, unit_formula_map, capacities)
         for item, chunk in zip(items, chunks):
             item["render_protected_text"] = chunk
-            item["render_formula_map"] = group_formula_map
+            item["render_formula_map"] = unit_formula_map
 
     return prepared
 
@@ -338,12 +346,17 @@ def build_render_blocks(translated_items: list[dict]) -> list[RenderBlock]:
     page_body_font_size_pt = round(median(body_base_sizes), 2) if body_base_sizes else None
 
     for index, item in enumerate(translated_items):
-        translated_text = (item.get("render_protected_text") or item.get("protected_translated_text") or "").strip()
+        translated_text = (
+            item.get("render_protected_text")
+            or item.get("translation_unit_protected_translated_text")
+            or item.get("protected_translated_text")
+            or ""
+        ).strip()
         bbox = item.get("bbox", [])
         if len(bbox) != 4 or not translated_text:
             continue
         font_size_pt, leading_em = base_metrics[index]
-        formula_map = item.get("render_formula_map") or item.get("formula_map", [])
+        formula_map = item.get("render_formula_map") or item.get("translation_unit_formula_map") or item.get("formula_map", [])
         density_ratio = _translation_density_ratio(item, translated_text)
         is_dense_block = density_ratio >= COMPACT_TRIGGER_RATIO
         if body_flags.get(index) and page_body_font_size_pt is not None:

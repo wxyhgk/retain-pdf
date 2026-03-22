@@ -78,7 +78,13 @@ def redact_translated_text_areas(
     redactions: list[tuple[fitz.Rect, tuple[float, float, float] | None]] = []
     for item in translated_items:
         bbox = item.get("bbox", [])
-        translated_text = (item.get("render_protected_text") or item.get("group_translated_text") or item.get("translated_text") or "").strip()
+        translated_text = (
+            item.get("render_protected_text")
+            or item.get("translation_unit_translated_text")
+            or item.get("group_translated_text")
+            or item.get("translated_text")
+            or ""
+        ).strip()
         if len(bbox) != 4 or not translated_text:
             continue
         rect = fitz.Rect(bbox)
@@ -228,7 +234,13 @@ def apply_translated_items_to_page(
     valid_items: list[tuple[fitz.Rect, dict]] = []
     for item in translated_items:
         bbox = item["bbox"]
-        translated_text = (item.get("render_protected_text") or item.get("group_translated_text") or item.get("translated_text") or "").strip()
+        translated_text = (
+            item.get("render_protected_text")
+            or item.get("translation_unit_translated_text")
+            or item.get("group_translated_text")
+            or item.get("translated_text")
+            or ""
+        ).strip()
         if len(bbox) != 4 or not translated_text:
             continue
         rect = fitz.Rect(bbox)
@@ -237,8 +249,19 @@ def apply_translated_items_to_page(
 
     page.insert_font(fontname="noto_cjk", fontfile=str(font_path))
     for rect, item in valid_items:
-        translated_text = (item.get("render_protected_text") or item.get("group_translated_text") or item.get("translated_text") or "").strip()
-        formula_map = item.get("render_formula_map") or item.get("group_formula_map") or item.get("formula_map", [])
+        translated_text = (
+            item.get("render_protected_text")
+            or item.get("translation_unit_translated_text")
+            or item.get("group_translated_text")
+            or item.get("translated_text")
+            or ""
+        ).strip()
+        formula_map = (
+            item.get("render_formula_map")
+            or item.get("translation_unit_formula_map")
+            or item.get("group_formula_map")
+            or item.get("formula_map", [])
+        )
         if formula_map:
             insert_reflowed_segments(page, rect, translated_text, formula_map, font_path)
         else:

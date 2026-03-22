@@ -2,6 +2,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from orchestration.document_orchestrator import annotate_payload_layout_zones
+from orchestration.document_orchestrator import finalize_payload_orchestration_metadata
 from translation.payload_ops import apply_translated_text_map
 from translation.payload_ops import pending_translation_items
 from translation.payload_ops import summarize_payload
@@ -43,9 +45,12 @@ def translate_items_to_path(
 
     payload = load_translations(translation_path)
     label = progress_label or f"page {page_idx + 1}"
+    annotate_payload_layout_zones(payload)
+    finalize_payload_orchestration_metadata(payload)
     continuation_items = annotate_continuation_context(payload)
     continuation_summary = summarize_continuation_decisions(payload)
     if continuation_items or continuation_summary["candidate_break_items"]:
+        finalize_payload_orchestration_metadata(payload)
         save_translations(translation_path, payload)
         print(
             f"{label}: continuation joined={continuation_summary['joined_items']} "
@@ -75,11 +80,13 @@ def translate_items_to_path(
         policy_config=policy_config,
     )
     if classified_items:
+        finalize_payload_orchestration_metadata(payload)
         save_translations(translation_path, payload)
         print(f"{label}: classified {classified_items} page items")
 
     if policy_config.enable_after_last_title_cutoff:
         if skip_summary["title_skipped"] or skip_summary["tail_skipped"]:
+            finalize_payload_orchestration_metadata(payload)
             save_translations(translation_path, payload)
             if skip_summary["title_skipped"]:
                 print(f"{label}: skipped {skip_summary['title_skipped']} title items")
@@ -87,9 +94,11 @@ def translate_items_to_path(
                 print(f"{label}: skipped {skip_summary['tail_skipped']} items after the last title cutoff")
     elif policy_config.enable_title_skip:
         if skip_summary["title_skipped"]:
+            finalize_payload_orchestration_metadata(payload)
             save_translations(translation_path, payload)
             print(f"{label}: skipped {skip_summary['title_skipped']} title items")
     if skip_summary.get("metadata_fragment_skipped"):
+        finalize_payload_orchestration_metadata(payload)
         save_translations(translation_path, payload)
         print(f"{label}: skipped {skip_summary['metadata_fragment_skipped']} metadata fragments")
 
@@ -144,6 +153,8 @@ def translate_items_to_path(
                     flush=True,
                 )
 
+    finalize_payload_orchestration_metadata(payload)
+    save_translations(translation_path, payload)
     return summarize_payload(
         payload,
         str(translation_path),

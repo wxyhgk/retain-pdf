@@ -1,6 +1,10 @@
 import re
 from statistics import median
 
+from orchestration.zones import bbox_center_x
+from orchestration.zones import bbox_height
+from orchestration.zones import bbox_width
+from orchestration.zones import detect_columns_from_main_items
 
 BODY_WIDTH_SKIP_RATIO = 0.5
 MIN_MAIN_TEXT_LEN = 40
@@ -8,21 +12,6 @@ MIN_SINGLE_COLUMN_MAIN_ITEMS = 3
 MIN_DOUBLE_COLUMN_MAIN_ITEMS = 3
 MIN_TWO_COLUMN_GAP_RATIO = 0.18
 MIN_MAIN_BOX_HEIGHT = 42
-
-
-def _bbox_width(item: dict) -> float:
-    bbox = item.get("bbox", [])
-    return max(0.0, bbox[2] - bbox[0]) if len(bbox) == 4 else 0.0
-
-
-def _bbox_center_x(item: dict) -> float:
-    bbox = item.get("bbox", [])
-    return (bbox[0] + bbox[2]) / 2 if len(bbox) == 4 else 0.0
-
-
-def _bbox_height(item: dict) -> float:
-    bbox = item.get("bbox", [])
-    return max(0.0, bbox[3] - bbox[1]) if len(bbox) == 4 else 0.0
 
 
 def _text_len(item: dict) -> int:
@@ -46,7 +35,7 @@ def _is_body_text_candidate(item: dict) -> bool:
         return False
     if not item.get("should_translate", True):
         return False
-    if item.get("continuation_group"):
+    if str(item.get("translation_unit_id", "") or "").startswith("__cg__:") or item.get("continuation_group"):
         return False
     if _structure_role(item) not in {"", "body"}:
         return False
@@ -60,7 +49,7 @@ def _is_main_body_width_item(item: dict) -> bool:
         return False
     if _text_len(item) < MIN_MAIN_TEXT_LEN:
         return False
-    return _line_count(item) >= 2 or _bbox_height(item) >= MIN_MAIN_BOX_HEIGHT
+    return _line_count(item) >= 2 or bbox_height(item) >= MIN_MAIN_BOX_HEIGHT
 
 
 def _page_width(items: list[dict]) -> float:
@@ -73,29 +62,12 @@ def _page_width(items: list[dict]) -> float:
 
 
 def _detect_columns(main_items: list[dict]) -> tuple[str, float]:
-    if len(main_items) < (MIN_SINGLE_COLUMN_MAIN_ITEMS * 2):
-        return "single", 0.0
-    page_width = _page_width(main_items)
-    if page_width <= 0:
-        return "single", 0.0
-
-    centers = sorted((_bbox_center_x(item), idx, item) for idx, item in enumerate(main_items))
-    gaps = []
-    for idx in range(len(centers) - 1):
-        gap = centers[idx + 1][0] - centers[idx][0]
-        gaps.append((gap, idx))
-    if not gaps:
-        return "single", 0.0
-    largest_gap, gap_idx = max(gaps, key=lambda entry: entry[0])
-    if largest_gap < page_width * MIN_TWO_COLUMN_GAP_RATIO:
-        return "single", 0.0
-
-    split_x = (centers[gap_idx][0] + centers[gap_idx + 1][0]) / 2
-    left = [item for center, _, item in centers if center < split_x]
-    right = [item for center, _, item in centers if center >= split_x]
-    if len(left) < MIN_DOUBLE_COLUMN_MAIN_ITEMS or len(right) < MIN_DOUBLE_COLUMN_MAIN_ITEMS:
-        return "single", 0.0
-    return "double", split_x
+    return detect_columns_from_main_items(
+        main_items,
+        min_single_column_items=MIN_SINGLE_COLUMN_MAIN_ITEMS,
+        min_double_column_items=MIN_DOUBLE_COLUMN_MAIN_ITEMS,
+        min_two_column_gap_ratio=MIN_TWO_COLUMN_GAP_RATIO,
+    )
 
 
 def _column_reference_widths(items: list[dict]) -> tuple[str, float, float, float]:
@@ -105,11 +77,11 @@ def _column_reference_widths(items: list[dict]) -> tuple[str, float, float, floa
 
     layout, split_x = _detect_columns(main_items)
     if layout == "single":
-        widths = [_bbox_width(item) for item in main_items]
+        widths = [bbox_width(item) for item in main_items]
         return layout, split_x, median(widths) if widths else 0.0, 0.0
 
-    left_widths = [_bbox_width(item) for item in main_items if _bbox_center_x(item) < split_x]
-    right_widths = [_bbox_width(item) for item in main_items if _bbox_center_x(item) >= split_x]
+    left_widths = [bbox_width(item) for item in main_items if bbox_center_x(item) < split_x]
+    right_widths = [bbox_width(item) for item in main_items if bbox_center_x(item) >= split_x]
     return (
         layout,
         split_x,
@@ -121,7 +93,7 @@ def _column_reference_widths(items: list[dict]) -> tuple[str, float, float, floa
 def _reference_width_for_item(item: dict, layout: str, split_x: float, left_ref: float, right_ref: float) -> float:
     if layout != "double":
         return left_ref
-    return left_ref if _bbox_center_x(item) < split_x else right_ref
+    return left_ref if bbox_center_x(item) < split_x else right_ref
 
 
 def _looks_like_short_noise(item: dict) -> bool:
@@ -134,7 +106,7 @@ def _looks_like_short_noise(item: dict) -> bool:
         return False
     if _text_len(item) > 80:
         return False
-    if _bbox_height(item) > 28:
+    if bbox_height(item) > 28:
         return False
     return True
 
@@ -155,6 +127,6 @@ def find_narrow_body_noise_item_ids(payload: list[dict]) -> set[str]:
         ref_width = _reference_width_for_item(item, layout, split_x, left_ref, right_ref)
         if ref_width <= 0:
             continue
-        if _bbox_width(item) < ref_width * BODY_WIDTH_SKIP_RATIO:
+        if bbox_width(item) < ref_width * BODY_WIDTH_SKIP_RATIO:
             skipped.add(item.get("item_id", ""))
     return skipped

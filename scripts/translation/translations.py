@@ -20,10 +20,21 @@ def export_translation_template(items: list[TextItem], output_path: Path, page_i
                 "source_text": item.text,
                 "lines": item.lines,
                 "metadata": item.metadata,
+                "layout_mode": "",
+                "layout_split_x": 0.0,
+                "layout_zone": "",
                 "protected_source_text": protected_source_text,
                 "formula_map": formula_map,
                 "classification_label": "",
                 "should_translate": True,
+                "skip_reason": "",
+                "translation_unit_id": item.item_id,
+                "translation_unit_kind": "single",
+                "translation_unit_member_ids": [item.item_id],
+                "translation_unit_protected_source_text": protected_source_text,
+                "translation_unit_formula_map": formula_map,
+                "translation_unit_protected_translated_text": "",
+                "translation_unit_translated_text": "",
                 "protected_translated_text": "",
                 "translated_text": "",
                 "continuation_group": "",
@@ -92,11 +103,44 @@ def ensure_translation_template(items: list[TextItem], output_path: Path, page_i
         if "classification_label" not in record:
             record["classification_label"] = ""
             changed = True
+        if "layout_mode" not in record:
+            record["layout_mode"] = ""
+            changed = True
+        if "layout_split_x" not in record:
+            record["layout_split_x"] = 0.0
+            changed = True
+        if "layout_zone" not in record:
+            record["layout_zone"] = ""
+            changed = True
         if "metadata" not in record:
             record["metadata"] = item.metadata
             changed = True
         if "should_translate" not in record:
             record["should_translate"] = True
+            changed = True
+        if "skip_reason" not in record:
+            record["skip_reason"] = ""
+            changed = True
+        if "translation_unit_id" not in record:
+            record["translation_unit_id"] = record.get("item_id", item.item_id)
+            changed = True
+        if "translation_unit_kind" not in record:
+            record["translation_unit_kind"] = "single"
+            changed = True
+        if "translation_unit_member_ids" not in record:
+            record["translation_unit_member_ids"] = [record.get("item_id", item.item_id)]
+            changed = True
+        if "translation_unit_protected_source_text" not in record:
+            record["translation_unit_protected_source_text"] = record.get("protected_source_text", "")
+            changed = True
+        if "translation_unit_formula_map" not in record:
+            record["translation_unit_formula_map"] = record.get("formula_map", [])
+            changed = True
+        if "translation_unit_protected_translated_text" not in record:
+            record["translation_unit_protected_translated_text"] = ""
+            changed = True
+        if "translation_unit_translated_text" not in record:
+            record["translation_unit_translated_text"] = ""
             changed = True
         if "continuation_group" not in record:
             record["continuation_group"] = ""

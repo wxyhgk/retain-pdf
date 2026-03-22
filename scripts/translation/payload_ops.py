@@ -12,16 +12,26 @@ RESETTABLE_LABEL_PREFIXES = (
 )
 
 
+def _translation_unit_id(item: dict) -> str:
+    return str(item.get("translation_unit_id") or item.get("item_id") or "")
+
+
+def _is_group_unit_id(unit_id: str) -> bool:
+    return unit_id.startswith(GROUP_ITEM_PREFIX)
+
+
 def _has_group_translation(item: dict) -> bool:
-    return bool((item.get("group_protected_translated_text") or "").strip())
+    return bool(
+        (item.get("translation_unit_protected_translated_text") or item.get("group_protected_translated_text") or "").strip()
+    )
 
 
 def _has_item_translation(item: dict) -> bool:
-    return bool((item.get("translated_text") or "").strip())
+    return bool((item.get("translation_unit_protected_translated_text") or item.get("protected_translated_text") or item.get("translated_text") or "").strip())
 
 
 def _has_any_translation(item: dict) -> bool:
-    if item.get("continuation_group"):
+    if _is_group_unit_id(_translation_unit_id(item)):
         return _has_group_translation(item)
     return _has_item_translation(item)
 
@@ -49,6 +59,8 @@ def apply_classification_labels(payload: list[dict], labels: dict[str, str]) -> 
         item["should_translate"] = label_value != "code"
         classified_items += 1
         if label_value == "code":
+            item["translation_unit_protected_translated_text"] = ""
+            item["translation_unit_translated_text"] = ""
             item["protected_translated_text"] = ""
             item["translated_text"] = ""
             item["group_protected_translated_text"] = ""
@@ -63,6 +75,8 @@ def apply_title_skip(payload: list[dict]) -> int:
             continue
         item["classification_label"] = item.get("classification_label") or "skip_title"
         item["should_translate"] = False
+        item["translation_unit_protected_translated_text"] = ""
+        item["translation_unit_translated_text"] = ""
         item["protected_translated_text"] = ""
         item["translated_text"] = ""
         item["group_protected_translated_text"] = ""
@@ -74,6 +88,8 @@ def apply_title_skip(payload: list[dict]) -> int:
 def _mark_item_skipped(item: dict, label: str) -> None:
     item["classification_label"] = label
     item["should_translate"] = False
+    item["translation_unit_protected_translated_text"] = ""
+    item["translation_unit_translated_text"] = ""
     item["protected_translated_text"] = ""
     item["translated_text"] = ""
     item["group_protected_translated_text"] = ""
@@ -164,20 +180,18 @@ def apply_metadata_fragment_skip(payload: list[dict], *, page_idx: int, max_page
 def pending_translation_items(payload: list[dict]) -> list[dict]:
     units: list[dict] = []
     groups: dict[str, list[dict]] = {}
-    grouped_item_ids: set[str] = set()
 
     for item in payload:
         if not item.get("should_translate", True):
             continue
-        group_id = item.get("continuation_group", "")
-        if group_id:
-            groups.setdefault(group_id, []).append(item)
-            grouped_item_ids.add(item.get("item_id", ""))
+        unit_id = _translation_unit_id(item)
+        if _is_group_unit_id(unit_id):
+            groups.setdefault(unit_id, []).append(item)
             continue
         if not _has_item_translation(item):
             units.append(item)
 
-    for group_id, items in groups.items():
+    for unit_id, items in groups.items():
         items = [item for item in items if item.get("should_translate", True)]
         if not items:
             continue
@@ -210,12 +224,17 @@ def pending_translation_items(payload: list[dict]) -> list[dict]:
             continue
 
         for item in items:
+            item["translation_unit_kind"] = "group"
+            item["translation_unit_member_ids"] = [member.get("item_id", "") for member in items]
+            item["translation_unit_protected_source_text"] = combined_source
+            item["translation_unit_formula_map"] = formula_map
             item["group_protected_source_text"] = combined_source
             item["group_formula_map"] = formula_map
 
         units.append(
             {
-                "item_id": f"{GROUP_ITEM_PREFIX}{group_id}",
+                "item_id": unit_id,
+                "translation_unit_id": unit_id,
                 "protected_source_text": combined_source,
             }
         )
@@ -226,24 +245,27 @@ def pending_translation_items(payload: list[dict]) -> list[dict]:
 def apply_translated_text_map(payload: list[dict], translated: dict[str, str]) -> None:
     group_items: dict[str, list[dict]] = {}
     for item in payload:
-        group_id = item.get("continuation_group", "")
-        if group_id:
-            group_items.setdefault(group_id, []).append(item)
+        unit_id = _translation_unit_id(item)
+        if _is_group_unit_id(unit_id):
+            group_items.setdefault(unit_id, []).append(item)
 
     for item_id, protected_translated_text in translated.items():
-        if not item_id.startswith(GROUP_ITEM_PREFIX):
+        if not _is_group_unit_id(item_id):
             continue
-        group_id = item_id[len(GROUP_ITEM_PREFIX) :]
-        items = group_items.get(group_id, [])
+        items = group_items.get(item_id, [])
         if not items:
             continue
-        formula_map = items[0].get("group_formula_map", [])
+        formula_map = items[0].get("translation_unit_formula_map") or items[0].get("group_formula_map", [])
         restored = restore_inline_formulas(protected_translated_text, formula_map)
         for item in items:
             if not item.get("should_translate", True):
+                item["translation_unit_protected_translated_text"] = ""
+                item["translation_unit_translated_text"] = ""
                 item["group_protected_translated_text"] = ""
                 item["group_translated_text"] = ""
                 continue
+            item["translation_unit_protected_translated_text"] = protected_translated_text
+            item["translation_unit_translated_text"] = restored
             item["group_protected_translated_text"] = protected_translated_text
             item["group_translated_text"] = restored
 
@@ -252,6 +274,11 @@ def apply_translated_text_map(payload: list[dict], translated: dict[str, str]) -
         if item_id not in translated:
             continue
         protected_translated_text = translated[item_id]
+        item["translation_unit_protected_translated_text"] = protected_translated_text
+        item["translation_unit_translated_text"] = restore_inline_formulas(
+            protected_translated_text,
+            item.get("translation_unit_formula_map") or item.get("formula_map", []),
+        )
         item["protected_translated_text"] = protected_translated_text
         item["translated_text"] = restore_inline_formulas(
             protected_translated_text,
