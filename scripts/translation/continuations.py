@@ -112,17 +112,19 @@ def _is_continuation_pair(prev_item: dict, next_item: dict) -> bool:
         return False
     prev_text = _normalize(prev_item.get("protected_source_text", ""))
     next_text = _normalize(next_item.get("protected_source_text", ""))
-    if not _ends_like_continuation(prev_text):
-        return False
     if not _starts_like_continuation(next_text):
+        return False
+
+    if next_page_idx != prev_page_idx:
+        stripped_prev = _normalize(prev_text)
+        return bool(stripped_prev) and not stripped_prev.endswith(TERMINAL_PUNCTUATION)
+
+    if not _ends_like_continuation(prev_text):
         return False
 
     prev_bbox = _bbox(prev_item)
     next_bbox = _bbox(next_item)
     if not prev_bbox or not next_bbox:
-        return True
-
-    if next_page_idx != prev_page_idx:
         return True
 
     cross_column = next_bbox[0] > prev_bbox[2] + 8
@@ -141,9 +143,28 @@ def annotate_continuation_context(payload: list[dict]) -> int:
     group_index = 0
     annotated = 0
     i = 0
+
+    def next_candidate_index(start: int) -> int | None:
+        if start >= len(payload):
+            return None
+        current_page_idx = payload[start - 1].get("page_idx", -1) if start > 0 else payload[start].get("page_idx", -1)
+        for idx in range(start, len(payload)):
+            item = payload[idx]
+            page_idx = item.get("page_idx", -1)
+            if page_idx < current_page_idx:
+                continue
+            if page_idx - current_page_idx > 1:
+                return None
+            if _eligible(item):
+                return idx
+        return None
+
     while i < len(payload) - 1:
         current = payload[i]
-        nxt = payload[i + 1]
+        next_idx = next_candidate_index(i + 1)
+        if next_idx is None:
+            break
+        nxt = payload[next_idx]
         if not _is_continuation_pair(current, nxt):
             i += 1
             continue
@@ -151,10 +172,13 @@ def annotate_continuation_context(payload: list[dict]) -> int:
         group_index += 1
         group_id = f"cg-{current.get('page_idx', 0) + 1:03d}-{group_index:03d}"
         chain = [current, nxt]
-        j = i + 1
-        while j < len(payload) - 1 and _is_continuation_pair(payload[j], payload[j + 1]):
-            chain.append(payload[j + 1])
-            j += 1
+        j = next_idx
+        while j < len(payload) - 1:
+            probe_idx = next_candidate_index(j + 1)
+            if probe_idx is None or not _is_continuation_pair(payload[j], payload[probe_idx]):
+                break
+            chain.append(payload[probe_idx])
+            j = probe_idx
 
         for pos, item in enumerate(chain):
             item["continuation_group"] = group_id

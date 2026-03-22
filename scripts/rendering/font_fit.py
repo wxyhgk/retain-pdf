@@ -1,4 +1,5 @@
 import re
+from math import ceil
 from statistics import median
 
 from common import config
@@ -13,6 +14,13 @@ DEFAULT_LEADING_EM = 0.40
 BODY_LEADING_MIN = 0.58
 BODY_LEADING_MAX = 0.82
 BODY_FORMULA_RATIO_MAX = 0.5
+LOCAL_BLOCK_SCALE_MIN = 0.94
+LOCAL_BLOCK_SCALE_MAX = 1.08
+NON_BODY_LEADING_MIN = 0.26
+NON_BODY_LEADING_MAX = 0.72
+MIN_TEXT_LINE_PITCH_PT = 10.8
+APPROX_TEXT_CHAR_WIDTH_PT = 5.2
+LOCAL_TEXTUAL_BLOCK_TYPES = {"text", "title", "image_caption", "table_caption", "table_footnote"}
 
 
 def line_height(line: dict) -> float:
@@ -85,6 +93,42 @@ def bbox_height(item: dict) -> float:
     return max(0.0, bbox[3] - bbox[1]) if len(bbox) == 4 else 0.0
 
 
+def visual_line_count(item: dict) -> int:
+    observed = len(item.get("lines", []))
+    if observed >= 2:
+        return observed
+
+    width = bbox_width(item)
+    block_height = bbox_height(item)
+    text_len = len(re.sub(r"\s+", "", item.get("source_text", "")))
+    if observed == 1 and width > 0 and block_height > 0 and text_len >= 80:
+        approx_chars_per_line = max(14.0, min(80.0, width / APPROX_TEXT_CHAR_WIDTH_PT))
+        inferred_by_text = ceil(text_len / (approx_chars_per_line * 1.35))
+        max_lines_by_height = max(1, int(block_height / MIN_TEXT_LINE_PITCH_PT))
+        if inferred_by_text >= 2 and max_lines_by_height >= 2:
+            inferred = min(max_lines_by_height, inferred_by_text)
+            return max(2, min(24, inferred))
+
+    return max(1, observed)
+
+
+def local_line_pitch(item: dict) -> float:
+    block_height = bbox_height(item)
+    lines = visual_line_count(item)
+    if block_height <= 0 or lines <= 0:
+        return 0.0
+    return block_height / lines
+
+
+def local_font_size_pt(item: dict) -> float:
+    if item.get("block_type") not in LOCAL_TEXTUAL_BLOCK_TYPES:
+        return config.DEFAULT_FONT_SIZE
+    metric = local_line_pitch(item) or median_line_height(item)
+    if metric <= 0:
+        return config.DEFAULT_FONT_SIZE
+    return round(clamp(metric * ZH_FONT_SCALE * config.BODY_FONT_SIZE_FACTOR, MIN_FONT_SIZE_PT, MAX_FONT_SIZE_PT), 2)
+
+
 def occupied_ratio(item: dict) -> float:
     block_height = bbox_height(item)
     if block_height <= 0:
@@ -150,7 +194,7 @@ def candidate_text_items(items: list[dict]) -> list[dict]:
     for item in items:
         if item.get("block_type") != "text":
             continue
-        if len(item.get("lines", [])) < 3:
+        if visual_line_count(item) < 3:
             continue
         if len(re.sub(r"\s+", "", item.get("source_text", ""))) < 40:
             continue
@@ -186,7 +230,7 @@ def is_default_text_block(item: dict) -> bool:
 
 def page_baseline_font_size(items: list[dict]) -> tuple[float, float, float, float]:
     candidates = candidate_text_items(items)
-    line_pitches = [median_line_pitch(item) for item in candidates]
+    line_pitches = [local_line_pitch(item) or median_line_pitch(item) for item in candidates]
     line_pitches = [pitch for pitch in line_pitches if pitch > 0]
     line_heights = [median_line_height(item) for item in candidates]
     line_heights = [height for height in line_heights if height > 0]
@@ -217,29 +261,37 @@ def estimate_font_size_pt(
     density_baseline: float,
 ) -> float:
     del density_baseline
-    if item.get("block_type") != "text":
+    if item.get("block_type") not in LOCAL_TEXTUAL_BLOCK_TYPES:
         return config.DEFAULT_FONT_SIZE
+    local_font = local_font_size_pt(item)
     if not item.get("_is_body_text_candidate", False):
-        return config.DEFAULT_FONT_SIZE
+        return local_font
+
     block_scale = 1.0
-    block_line_pitch = median_line_pitch(item)
+    block_line_pitch = local_line_pitch(item) or median_line_pitch(item)
     block_line_height = median_line_height(item)
     if page_line_pitch > 0 and block_line_pitch > 0:
-        block_scale = clamp(block_line_pitch / page_line_pitch, BLOCK_SCALE_MIN, BLOCK_SCALE_MAX)
+        block_scale = clamp(block_line_pitch / page_line_pitch, LOCAL_BLOCK_SCALE_MIN, LOCAL_BLOCK_SCALE_MAX)
     elif page_line_height > 0 and block_line_height > 0:
-        block_scale = clamp(block_line_height / page_line_height, BLOCK_SCALE_MIN, BLOCK_SCALE_MAX)
-    return round(
-        clamp(page_font_size * block_scale * config.BODY_FONT_SIZE_FACTOR, MIN_FONT_SIZE_PT, MAX_FONT_SIZE_PT),
-        2,
-    )
+        block_scale = clamp(block_line_height / page_line_height, LOCAL_BLOCK_SCALE_MIN, LOCAL_BLOCK_SCALE_MAX)
+
+    page_estimate = page_font_size * block_scale * config.BODY_FONT_SIZE_FACTOR if page_font_size > 0 else local_font
+    blended = (page_estimate * 0.72) + (local_font * 0.28)
+    return round(clamp(blended, MIN_FONT_SIZE_PT, MAX_FONT_SIZE_PT), 2)
 
 
 def estimate_leading_em(item: dict, page_line_pitch: float, font_size_pt: float) -> float:
+    block_pitch = local_line_pitch(item) or median_line_pitch(item)
     if item.get("_is_body_text_candidate", False):
-        if page_line_pitch > 0 and font_size_pt > 0:
-            ocr_estimated = (page_line_pitch / font_size_pt) - 1.0
+        pitch = block_pitch or page_line_pitch
+        if pitch > 0 and font_size_pt > 0:
+            ocr_estimated = (pitch / font_size_pt) - 1.0
             zh_target = 0.66
             mixed = (ocr_estimated * 0.35) + (zh_target * 0.65)
             return round(clamp(mixed * config.BODY_LEADING_FACTOR, BODY_LEADING_MIN, BODY_LEADING_MAX), 2)
         return round(clamp(0.66 * config.BODY_LEADING_FACTOR, BODY_LEADING_MIN, BODY_LEADING_MAX), 2)
-    return round(DEFAULT_LEADING_EM * config.BODY_LEADING_FACTOR, 2)
+    if block_pitch > 0 and font_size_pt > 0:
+        ocr_estimated = (block_pitch / font_size_pt) - 1.0
+        mixed = (ocr_estimated * 0.55) + (DEFAULT_LEADING_EM * 0.45)
+        return round(clamp(mixed * config.BODY_LEADING_FACTOR, NON_BODY_LEADING_MIN, NON_BODY_LEADING_MAX), 2)
+    return round(clamp(DEFAULT_LEADING_EM * config.BODY_LEADING_FACTOR, NON_BODY_LEADING_MIN, NON_BODY_LEADING_MAX), 2)

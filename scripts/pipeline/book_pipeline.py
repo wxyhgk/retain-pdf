@@ -5,6 +5,7 @@ import fitz
 
 from common.config import DEFAULT_FONT_PATH
 from common.config import TYPST_DEFAULT_FONT_FAMILY
+from ocr.json_extractor import extract_text_items
 from ocr.json_extractor import load_ocr_json
 from translation.domain_context import infer_domain_context
 from rendering.pdf_overlay import apply_translated_items_to_page
@@ -48,6 +49,17 @@ def is_editable_pdf(doc: fitz.Document, start_page: int, end_page: int) -> bool:
     return words >= 20
 
 
+def extract_ocr_preview_text(data: dict, max_pages: int = 2) -> str:
+    pages = data.get("pdf_info", [])
+    parts: list[str] = []
+    for page_idx in range(min(max_pages, len(pages))):
+        items = extract_text_items(data, page_idx=page_idx)
+        page_texts = [item.text.strip() for item in items if item.text.strip()]
+        if page_texts:
+            parts.append(f"[Page {page_idx + 1}]\n" + "\n".join(page_texts))
+    return "\n\n".join(parts).strip()
+
+
 def translate_book_pipeline(
     *,
     source_json_path: Path,
@@ -77,11 +89,13 @@ def translate_book_pipeline(
     if mode == "sci":
         sci_cutoff_page_idx, sci_cutoff_block_idx = find_last_title_cutoff(data)
         if source_pdf_path is not None:
+            ocr_preview_text = extract_ocr_preview_text(data, max_pages=2)
             domain_context = infer_domain_context(
                 source_pdf_path=source_pdf_path,
                 api_key=api_key,
                 model=model,
                 base_url=base_url,
+                preview_text_fallback=ocr_preview_text,
                 output_dir=output_dir,
             )
             if domain_context.get("domain") or domain_context.get("translation_guidance"):

@@ -9,6 +9,7 @@ from translation.deepseek_client import request_chat_content
 
 
 PLACEHOLDER_RE = re.compile(r"\[\[FORMULA_\d+]]")
+EN_WORD_RE = re.compile(r"[A-Za-z]+(?:[-'][A-Za-z]+)?")
 
 
 def _parse_translation_payload(content: str) -> dict[str, str]:
@@ -27,6 +28,25 @@ def _placeholders(text: str) -> set[str]:
     return set(PLACEHOLDER_RE.findall(text or ""))
 
 
+def _strip_placeholders(text: str) -> str:
+    return PLACEHOLDER_RE.sub(" ", text or "")
+
+
+def _looks_like_english_prose(text: str) -> bool:
+    cleaned = _strip_placeholders(text).strip()
+    if not cleaned:
+        return False
+    if "@" in cleaned or "http://" in cleaned or "https://" in cleaned:
+        return False
+    words = EN_WORD_RE.findall(cleaned)
+    if len(words) < 8:
+        return False
+    alpha_chars = sum(ch.isalpha() for ch in cleaned)
+    if alpha_chars < 30:
+        return False
+    return True
+
+
 def _validate_batch_result(batch: list[dict], result: dict[str, str]) -> None:
     expected_ids = {item["item_id"] for item in batch}
     actual_ids = set(result)
@@ -37,11 +57,15 @@ def _validate_batch_result(batch: list[dict], result: dict[str, str]) -> None:
 
     for item in batch:
         item_id = item["item_id"]
-        source_placeholders = _placeholders(item.get("protected_source_text", ""))
-        translated_placeholders = _placeholders(result.get(item_id, ""))
+        source_text = item.get("protected_source_text", "")
+        translated_text = result.get(item_id, "")
+        source_placeholders = _placeholders(source_text)
+        translated_placeholders = _placeholders(translated_text)
         if not translated_placeholders.issubset(source_placeholders):
             unexpected = sorted(translated_placeholders - source_placeholders)
             raise ValueError(f"{item_id}: unexpected placeholders in translation: {unexpected}")
+        if translated_text.strip() == source_text.strip() and _looks_like_english_prose(source_text):
+            raise ValueError(f"{item_id}: translation unchanged from English source")
 
 
 def _translate_single_item_plain_text(

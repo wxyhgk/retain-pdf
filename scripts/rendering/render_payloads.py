@@ -2,13 +2,12 @@ import re
 from copy import deepcopy
 from statistics import median
 
-from common.config import DEFAULT_FONT_SIZE
 from rendering.font_fit import bbox_width
 from rendering.font_fit import estimate_font_size_pt
 from rendering.font_fit import estimate_leading_em
 from rendering.font_fit import inner_bbox
 from rendering.font_fit import is_body_text_candidate
-from rendering.font_fit import is_default_text_block
+from rendering.font_fit import visual_line_count
 from rendering.font_fit import page_baseline_font_size
 from rendering.math_utils import build_markdown_from_parts
 from rendering.math_utils import build_markdown_paragraph
@@ -18,6 +17,11 @@ from rendering.models import RenderBlock
 
 
 TOKEN_RE = re.compile(r"(\[\[FORMULA_\d+]]|\s+|[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*|[\u4e00-\u9fff]|.)")
+WORD_RE = re.compile(r"[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*")
+ZH_CHAR_RE = re.compile(r"[\u4e00-\u9fff]")
+COMPACT_TRIGGER_RATIO = 0.9
+COMPACT_SCALE = 0.9
+HEAVY_COMPACT_RATIO = 1.0
 
 
 def _is_flag_like_plain_text_block(item: dict) -> bool:
@@ -46,14 +50,37 @@ def _block_metrics(item: dict, page_font_size: float, page_line_pitch: float, pa
         page_line_height,
         density_baseline,
     )
-    if is_default_text_block(item):
-        font_size_pt = DEFAULT_FONT_SIZE
     leading_em = estimate_leading_em(item, page_line_pitch, font_size_pt)
     return font_size_pt, leading_em
 
 
 def _tokenize_protected_text(text: str) -> list[str]:
     return TOKEN_RE.findall(text or "")
+
+
+def _strip_formula_placeholders(text: str) -> str:
+    return re.sub(r"\[\[FORMULA_\d+]]", " ", text or "")
+
+
+def _source_word_count(item: dict) -> int:
+    source_text = item.get("protected_source_text") or item.get("source_text") or ""
+    plain = _strip_formula_placeholders(source_text)
+    return len(WORD_RE.findall(plain))
+
+
+def _translated_zh_char_count(protected_text: str) -> int:
+    plain = _strip_formula_placeholders(protected_text)
+    return len(ZH_CHAR_RE.findall(plain))
+
+
+def _translation_density_ratio(item: dict, protected_text: str) -> float:
+    source_words = _source_word_count(item)
+    if source_words <= 0:
+        return 0.0
+    zh_chars = _translated_zh_char_count(protected_text)
+    if zh_chars <= 0:
+        return 0.0
+    return zh_chars / source_words
 
 
 def _token_units(token: str, formula_lookup: dict[str, str]) -> float:
@@ -72,13 +99,15 @@ def _token_units(token: str, formula_lookup: dict[str, str]) -> float:
     return 0.45
 
 
-def _box_capacity_units(inner: list[float], font_size_pt: float, leading_em: float) -> float:
+def _box_capacity_units(inner: list[float], font_size_pt: float, leading_em: float, visual_lines: int | None = None) -> float:
     if len(inner) != 4:
         return 0.0
     width = max(8.0, inner[2] - inner[0])
     height = max(8.0, inner[3] - inner[1])
     line_step = max(font_size_pt * 1.02, font_size_pt * (1.0 + leading_em))
     lines = max(1, int(height / line_step))
+    if visual_lines and visual_lines > 1:
+        lines = min(lines, max(1, visual_lines + 1))
     chars_per_line = max(4.0, width / max(font_size_pt * 0.92, 1.0))
     return lines * chars_per_line * 0.98
 
@@ -99,34 +128,49 @@ def _fit_translated_block_metrics(
     page_body_font_size_pt: float | None = None,
 ) -> tuple[float, float]:
     demand = _text_demand_units(protected_text, formula_map)
+    density_ratio = _translation_density_ratio(item, protected_text)
+    is_dense_block = density_ratio >= COMPACT_TRIGGER_RATIO
+    is_heavy_dense_block = density_ratio >= HEAVY_COMPACT_RATIO
+    visual_lines = visual_line_count(item)
     if item.get("_is_body_text_candidate", False) and page_body_font_size_pt is not None:
-        font_size_pt = round(max(font_size_pt, page_body_font_size_pt - 0.2), 2)
+        floor_gap = 0.85 if is_heavy_dense_block else (0.65 if is_dense_block else 0.45)
+        font_size_pt = round(max(font_size_pt, page_body_font_size_pt - floor_gap), 2)
     if demand <= 0:
         return font_size_pt, leading_em
 
     box = inner_bbox(item)
-    capacity = _box_capacity_units(box, font_size_pt, leading_em)
+    capacity = _box_capacity_units(box, font_size_pt, leading_em, visual_lines=visual_lines)
     if capacity <= 0 or demand <= capacity * 0.96:
         return font_size_pt, leading_em
 
     best_font = font_size_pt
     best_leading = leading_em
 
-    max_steps = 2 if item.get("_is_body_text_candidate", False) else 7
-    min_font = max(8.6, (page_body_font_size_pt - 0.35) if page_body_font_size_pt is not None else 8.2)
+    max_steps = 7 if (item.get("_is_body_text_candidate", False) and is_dense_block) else (4 if item.get("_is_body_text_candidate", False) else 7)
+    min_font = max(
+        8.8 if is_dense_block else 9.0,
+        (page_body_font_size_pt - (0.7 if is_heavy_dense_block else 0.55 if is_dense_block else 0.4))
+        if page_body_font_size_pt is not None
+        else (8.8 if is_dense_block else 9.0),
+    )
     for step in range(1, max_steps + 1):
         candidate_font = round(max(min_font, font_size_pt - step * 0.15), 2)
-        candidate_capacity = _box_capacity_units(box, candidate_font, leading_em)
+        candidate_capacity = _box_capacity_units(box, candidate_font, leading_em, visual_lines=visual_lines)
         if demand <= candidate_capacity * 0.98:
             return candidate_font, leading_em
         best_font = candidate_font
 
     if item.get("_is_body_text_candidate", False):
-        emergency_leading = round(max(0.52, leading_em - 0.06), 2)
-        emergency_min_font = max(8.45, (page_body_font_size_pt - 0.55) if page_body_font_size_pt is not None else 8.45)
-        for step in range(1, 5):
+        emergency_leading = round(max(0.42 if is_dense_block else 0.5, leading_em - (0.12 if is_dense_block else 0.08)), 2)
+        emergency_min_font = max(
+            8.6 if is_dense_block else 8.8,
+            (page_body_font_size_pt - (0.9 if is_heavy_dense_block else 0.75 if is_dense_block else 0.6))
+            if page_body_font_size_pt is not None
+            else (8.6 if is_dense_block else 8.8),
+        )
+        for step in range(1, 9 if is_dense_block else 6):
             candidate_font = round(max(emergency_min_font, best_font - step * 0.12), 2)
-            candidate_capacity = _box_capacity_units(box, candidate_font, emergency_leading)
+            candidate_capacity = _box_capacity_units(box, candidate_font, emergency_leading, visual_lines=visual_lines)
             if demand <= candidate_capacity * 0.98:
                 return candidate_font, emergency_leading
             best_font = candidate_font
@@ -287,8 +331,6 @@ def build_render_blocks(translated_items: list[dict]) -> list[RenderBlock]:
             page_line_height,
             density_baseline,
         )
-        if is_default_text_block(item):
-            font_size_pt = DEFAULT_FONT_SIZE
         leading_em = estimate_leading_em(item_with_flag, page_line_pitch, font_size_pt)
         base_metrics[index] = (font_size_pt, leading_em)
         if item_with_flag["_is_body_text_candidate"]:
@@ -302,8 +344,15 @@ def build_render_blocks(translated_items: list[dict]) -> list[RenderBlock]:
             continue
         font_size_pt, leading_em = base_metrics[index]
         formula_map = item.get("render_formula_map") or item.get("formula_map", [])
+        density_ratio = _translation_density_ratio(item, translated_text)
+        is_dense_block = density_ratio >= COMPACT_TRIGGER_RATIO
         if body_flags.get(index) and page_body_font_size_pt is not None:
-            font_size_pt = round(min(max(font_size_pt, page_body_font_size_pt - 0.15), page_body_font_size_pt + 0.15), 2)
+            down_band = 0.7 if is_dense_block else 0.45
+            up_band = 0.35 if is_dense_block else 0.3
+            font_size_pt = round(min(max(font_size_pt, page_body_font_size_pt - down_band), page_body_font_size_pt + up_band), 2)
+        if is_dense_block:
+            font_size_pt = round(font_size_pt * COMPACT_SCALE, 2)
+            leading_em = round(leading_em * COMPACT_SCALE, 2)
         font_size_pt, leading_em = _fit_translated_block_metrics(
             {**item, "_is_body_text_candidate": body_flags.get(index, False)},
             translated_text,

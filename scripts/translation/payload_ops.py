@@ -1,5 +1,5 @@
-import re
 from translation.formula_protection import restore_inline_formulas
+from translation.body_text_filter import find_narrow_body_noise_item_ids
 
 
 GROUP_ITEM_PREFIX = "__cg__:"
@@ -104,6 +104,22 @@ def apply_scientific_paper_skips(
         "title_skipped": title_skipped,
         "tail_skipped": tail_skipped,
     }
+
+
+def apply_narrow_body_text_skip(payload: list[dict]) -> int:
+    skip_ids = find_narrow_body_noise_item_ids(payload)
+    if not skip_ids:
+        return 0
+    skipped = 0
+    for item in payload:
+        item_id = item.get("item_id", "")
+        if item_id not in skip_ids:
+            continue
+        if not item.get("should_translate", True):
+            continue
+        _mark_item_skipped(item, "skip_narrow_body_noise")
+        skipped += 1
+    return skipped
 
 
 def pending_translation_items(payload: list[dict]) -> list[dict]:

@@ -33,15 +33,14 @@ def build_domain_inference_messages(preview_text: str) -> list[dict[str, str]]:
     ]
 
 
-def infer_domain_context(
+def infer_domain_context_from_preview_text(
     *,
-    source_pdf_path: Path,
+    preview_text: str,
     api_key: str,
     model: str,
     base_url: str,
     output_dir: Path | None = None,
 ) -> dict[str, str]:
-    preview_text = extract_pdf_preview_text(source_pdf_path, max_pages=2)
     if not preview_text:
         result = {
             "domain": "",
@@ -73,6 +72,27 @@ def infer_domain_context(
     if output_dir is not None:
         save_domain_context(output_dir, result)
     return result
+
+
+def infer_domain_context(
+    *,
+    source_pdf_path: Path | None,
+    api_key: str,
+    model: str,
+    base_url: str,
+    preview_text_fallback: str = "",
+    output_dir: Path | None = None,
+) -> dict[str, str]:
+    preview_text = extract_pdf_preview_text(source_pdf_path, max_pages=2) if source_pdf_path is not None else ""
+    if not preview_text:
+        preview_text = preview_text_fallback.strip()
+    return infer_domain_context_from_preview_text(
+        preview_text=preview_text,
+        api_key=api_key,
+        model=model,
+        base_url=base_url,
+        output_dir=output_dir,
+    )
 
 
 def save_domain_context(output_dir: Path, context: dict[str, str]) -> Path:
