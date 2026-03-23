@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from translation.payload_ops import GROUP_ITEM_PREFIX
+from translation.payload_parts.common import GROUP_ITEM_PREFIX
 
 
 def finalize_payload_orchestration_metadata(payload: list[dict]) -> None:

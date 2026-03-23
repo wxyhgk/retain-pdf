@@ -7,10 +7,10 @@ from orchestration.document_orchestrator import review_candidate_continuation_pa
 from ocr.json_extractor import extract_text_items
 from translation.continuations import annotate_continuation_context_global
 from translation.continuations import summarize_continuation_decisions
-from translation.payload_ops import GROUP_ITEM_PREFIX
 from translation.payload_ops import apply_translated_text_map
 from translation.payload_ops import pending_translation_items
 from translation.payload_ops import summarize_payload
+from translation.payload_parts.common import GROUP_ITEM_PREFIX
 from translation.policy_config import TranslationPolicyConfig
 from translation.policy_flow import apply_translation_policies
 from translation.retrying_translator import translate_batch
