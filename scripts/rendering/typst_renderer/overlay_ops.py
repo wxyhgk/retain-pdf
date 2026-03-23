@@ -6,7 +6,8 @@ from pathlib import Path
 
 import fitz
 
-from common.config import OUTPUT_DIR, TYPST_DEFAULT_FONT_FAMILY
+from config import fonts
+from config import paths
 from rendering.pdf_overlay import redact_translated_text_areas
 from rendering.pdf_overlay import strip_page_links
 from rendering.render_payloads import prepare_render_payloads_by_page
@@ -19,11 +20,11 @@ def overlay_translated_items_on_page(
     page: fitz.Page,
     translated_items: list[dict],
     stem: str,
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
 ) -> None:
     redact_translated_text_areas(page, translated_items)
-    with tempfile.TemporaryDirectory(prefix="typst-overlay-", dir=OUTPUT_DIR) as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="typst-overlay-", dir=paths.OUTPUT_DIR) as temp_dir:
         work_dir = Path(temp_dir)
         overlay_pdf = compile_overlay_pdf_resilient(
             page.rect.width,
@@ -46,10 +47,10 @@ def _compile_overlay_with_fallback(
     page_height: float,
     translated_items: list[dict],
     stem: str,
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
 ) -> Path:
-    work_dir = Path(tempfile.mkdtemp(prefix="typst-page-", dir=OUTPUT_DIR))
+    work_dir = Path(tempfile.mkdtemp(prefix="typst-page-", dir=paths.OUTPUT_DIR))
     return compile_overlay_pdf_resilient(
         page_width,
         page_height,
@@ -64,10 +65,10 @@ def _compile_overlay_with_fallback(
 def _compile_book_overlay_with_fallback(
     page_specs: list[tuple[float, float, list[dict]]],
     stem: str,
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
 ) -> Path:
-    work_dir = Path(tempfile.mkdtemp(prefix="typst-book-", dir=OUTPUT_DIR))
+    work_dir = Path(tempfile.mkdtemp(prefix="typst-book-", dir=paths.OUTPUT_DIR))
     return compile_typst_book_overlay_pdf(
         page_specs,
         stem=stem,
@@ -106,7 +107,7 @@ def _overlay_pages_via_page_fallback(
     page_specs: list[tuple[int, float, float, list[dict], str]],
     translated_pages: dict[int, list[dict]],
     compile_workers: int | None = None,
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
 ) -> None:
     overlay_paths: dict[int, Path] = {}
@@ -151,7 +152,7 @@ def overlay_translated_pages_on_doc(
     translated_pages: dict[int, list[dict]],
     stem: str,
     compile_workers: int | None = None,
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
 ) -> None:
     translated_pages = prepare_render_payloads_by_page(translated_pages)

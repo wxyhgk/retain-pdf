@@ -1,16 +1,10 @@
 import argparse
 from pathlib import Path
 
-from common.config import BODY_FONT_SIZE_FACTOR
-from common.config import BODY_LEADING_FACTOR
-from common.config import DEFAULT_PDF_COMPRESS_DPI
-from common.config import INNER_BBOX_DENSE_SHRINK_X
-from common.config import INNER_BBOX_DENSE_SHRINK_Y
-from common.config import INNER_BBOX_SHRINK_X
-from common.config import INNER_BBOX_SHRINK_Y
-from common.config import OUTPUT_DIR, SOURCE_PDF
-from common.config import TYPST_DEFAULT_FONT_FAMILY
-from common.config import apply_layout_tuning
+from config import fonts
+from config import layout
+from config import paths
+from config import runtime
 from pipeline.book_pipeline import build_book_pipeline
 
 
@@ -45,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source-pdf",
         type=str,
-        default=str(SOURCE_PDF),
+        default=str(paths.SOURCE_PDF),
         help="Source PDF path.",
     )
     parser.add_argument(
@@ -69,27 +63,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--typst-font-family",
         type=str,
-        default=TYPST_DEFAULT_FONT_FAMILY,
+        default=fonts.TYPST_DEFAULT_FONT_FAMILY,
         help="Base Typst font family name.",
     )
     parser.add_argument(
         "--pdf-compress-dpi",
         type=int,
-        default=DEFAULT_PDF_COMPRESS_DPI,
+        default=runtime.DEFAULT_PDF_COMPRESS_DPI,
         help="Final PDF image downsample DPI after rendering. 0 disables post-compression.",
     )
-    parser.add_argument("--body-font-size-factor", type=float, default=BODY_FONT_SIZE_FACTOR)
-    parser.add_argument("--body-leading-factor", type=float, default=BODY_LEADING_FACTOR)
-    parser.add_argument("--inner-bbox-shrink-x", type=float, default=INNER_BBOX_SHRINK_X)
-    parser.add_argument("--inner-bbox-shrink-y", type=float, default=INNER_BBOX_SHRINK_Y)
-    parser.add_argument("--inner-bbox-dense-shrink-x", type=float, default=INNER_BBOX_DENSE_SHRINK_X)
-    parser.add_argument("--inner-bbox-dense-shrink-y", type=float, default=INNER_BBOX_DENSE_SHRINK_Y)
+    parser.add_argument("--body-font-size-factor", type=float, default=layout.BODY_FONT_SIZE_FACTOR)
+    parser.add_argument("--body-leading-factor", type=float, default=layout.BODY_LEADING_FACTOR)
+    parser.add_argument("--inner-bbox-shrink-x", type=float, default=layout.INNER_BBOX_SHRINK_X)
+    parser.add_argument("--inner-bbox-shrink-y", type=float, default=layout.INNER_BBOX_SHRINK_Y)
+    parser.add_argument("--inner-bbox-dense-shrink-x", type=float, default=layout.INNER_BBOX_DENSE_SHRINK_X)
+    parser.add_argument("--inner-bbox-dense-shrink-y", type=float, default=layout.INNER_BBOX_DENSE_SHRINK_Y)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    apply_layout_tuning(
+    layout.apply_layout_tuning(
         body_font_size_factor=args.body_font_size_factor,
         body_leading_factor=args.body_leading_factor,
         inner_bbox_shrink_x=args.inner_bbox_shrink_x,
@@ -97,10 +91,10 @@ def main() -> None:
         inner_bbox_dense_shrink_x=args.inner_bbox_dense_shrink_x,
         inner_bbox_dense_shrink_y=args.inner_bbox_dense_shrink_y,
     )
-    output_pdf_path = OUTPUT_DIR / args.output
+    output_pdf_path = paths.OUTPUT_DIR / args.output
     summary = build_book_pipeline(
         source_pdf_path=Path(args.source_pdf),
-        translations_dir=OUTPUT_DIR / args.translations_dir,
+        translations_dir=paths.OUTPUT_DIR / args.translations_dir,
         output_pdf_path=output_pdf_path,
         start_page=args.start_page,
         end_page=args.end_page,

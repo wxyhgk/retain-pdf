@@ -2,17 +2,17 @@ from pathlib import Path
 
 import fitz
 
-from common.config import DEFAULT_FONT_SIZE, MIN_FONT_SIZE
+from config import fonts
 from rendering.pdf_overlay_parts.redaction import redact_translated_text_areas
 from rendering.pdf_overlay_parts.shared import TOKEN_RE, get_item_formula_map, iter_valid_translated_items
 from rendering.typst_formula_renderer import compile_formula_png
-from translation.formula_protection import re_protect_restored_formulas
+from translation.payload import re_protect_restored_formulas
 
 
 def insert_fitted_text(page: fitz.Page, rect: fitz.Rect, text: str, font_path: Path) -> None:
     expanded_rect = fitz.Rect(rect.x0, rect.y0, rect.x1, rect.y1 + max(8, rect.height * 1.0))
-    start_size = DEFAULT_FONT_SIZE
-    end_size = MIN_FONT_SIZE
+    start_size = fonts.DEFAULT_FONT_SIZE
+    end_size = fonts.MIN_FONT_SIZE
 
     current_size = start_size
     while current_size >= end_size:
@@ -33,7 +33,7 @@ def insert_fitted_text(page: fitz.Page, rect: fitz.Rect, text: str, font_path: P
         fitz.Point(rect.x0, rect.y1 - 1),
         text,
         fontname="noto_cjk",
-        fontsize=MIN_FONT_SIZE,
+        fontsize=fonts.MIN_FONT_SIZE,
         color=(0, 0, 0),
         overlay=True,
     )
@@ -62,11 +62,11 @@ def insert_reflowed_segments(
     tokens = tokenize_protected_text(protected_text)
     formulas = formula_lookup_map(formula_map)
 
-    text_size = DEFAULT_FONT_SIZE
-    formula_size = DEFAULT_FONT_SIZE
-    line_height = DEFAULT_FONT_SIZE * 1.45
+    text_size = fonts.DEFAULT_FONT_SIZE
+    formula_size = fonts.DEFAULT_FONT_SIZE
+    line_height = fonts.DEFAULT_FONT_SIZE * 1.45
     x = rect.x0
-    y = rect.y0 + DEFAULT_FONT_SIZE
+    y = rect.y0 + fonts.DEFAULT_FONT_SIZE
     max_x = rect.x1
 
     def token_width(token_text: str, size: float) -> float:

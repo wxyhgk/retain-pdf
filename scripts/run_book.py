@@ -1,20 +1,14 @@
 import argparse
 from pathlib import Path
 
-from common.config import BODY_FONT_SIZE_FACTOR
-from common.config import BODY_LEADING_FACTOR
-from common.config import DEFAULT_PDF_COMPRESS_DPI
-from common.config import INNER_BBOX_DENSE_SHRINK_X
-from common.config import INNER_BBOX_DENSE_SHRINK_Y
-from common.config import INNER_BBOX_SHRINK_X
-from common.config import INNER_BBOX_SHRINK_Y
-from common.config import OUTPUT_DIR, SOURCE_JSON, SOURCE_PDF
-from common.config import TYPST_DEFAULT_FONT_FAMILY
-from common.config import apply_layout_tuning
+from config import fonts
+from config import layout
+from config import paths
+from config import runtime
 from pipeline.book_pipeline import run_book_pipeline
-from translation.deepseek_client import DEFAULT_BASE_URL
-from translation.deepseek_client import get_api_key
-from translation.deepseek_client import normalize_base_url
+from translation.llm import DEFAULT_BASE_URL
+from translation.llm import get_api_key
+from translation.llm import normalize_base_url
 
 
 def parse_args() -> argparse.Namespace:
@@ -49,13 +43,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source-json",
         type=str,
-        default=str(SOURCE_JSON),
+        default=str(paths.SOURCE_JSON),
         help="OCR JSON source path.",
     )
     parser.add_argument(
         "--source-pdf",
         type=str,
-        default=str(SOURCE_PDF),
+        default=str(paths.SOURCE_PDF),
         help="Source PDF path.",
     )
     parser.add_argument(
@@ -86,27 +80,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--typst-font-family",
         type=str,
-        default=TYPST_DEFAULT_FONT_FAMILY,
+        default=fonts.TYPST_DEFAULT_FONT_FAMILY,
         help="Base Typst font family name.",
     )
     parser.add_argument(
         "--pdf-compress-dpi",
         type=int,
-        default=DEFAULT_PDF_COMPRESS_DPI,
+        default=runtime.DEFAULT_PDF_COMPRESS_DPI,
         help="Final PDF image downsample DPI after rendering. 0 disables post-compression.",
     )
-    parser.add_argument("--body-font-size-factor", type=float, default=BODY_FONT_SIZE_FACTOR)
-    parser.add_argument("--body-leading-factor", type=float, default=BODY_LEADING_FACTOR)
-    parser.add_argument("--inner-bbox-shrink-x", type=float, default=INNER_BBOX_SHRINK_X)
-    parser.add_argument("--inner-bbox-shrink-y", type=float, default=INNER_BBOX_SHRINK_Y)
-    parser.add_argument("--inner-bbox-dense-shrink-x", type=float, default=INNER_BBOX_DENSE_SHRINK_X)
-    parser.add_argument("--inner-bbox-dense-shrink-y", type=float, default=INNER_BBOX_DENSE_SHRINK_Y)
+    parser.add_argument("--body-font-size-factor", type=float, default=layout.BODY_FONT_SIZE_FACTOR)
+    parser.add_argument("--body-leading-factor", type=float, default=layout.BODY_LEADING_FACTOR)
+    parser.add_argument("--inner-bbox-shrink-x", type=float, default=layout.INNER_BBOX_SHRINK_X)
+    parser.add_argument("--inner-bbox-shrink-y", type=float, default=layout.INNER_BBOX_SHRINK_Y)
+    parser.add_argument("--inner-bbox-dense-shrink-x", type=float, default=layout.INNER_BBOX_DENSE_SHRINK_X)
+    parser.add_argument("--inner-bbox-dense-shrink-y", type=float, default=layout.INNER_BBOX_DENSE_SHRINK_Y)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    apply_layout_tuning(
+    layout.apply_layout_tuning(
         body_font_size_factor=args.body_font_size_factor,
         body_leading_factor=args.body_leading_factor,
         inner_bbox_shrink_x=args.inner_bbox_shrink_x,
@@ -121,8 +115,8 @@ def main() -> None:
     result = run_book_pipeline(
         source_json_path=Path(args.source_json),
         source_pdf_path=Path(args.source_pdf),
-        output_dir=OUTPUT_DIR / args.output_dir,
-        output_pdf_path=OUTPUT_DIR / args.output,
+        output_dir=paths.OUTPUT_DIR / args.output_dir,
+        output_pdf_path=paths.OUTPUT_DIR / args.output,
         api_key=api_key,
         start_page=args.start_page,
         end_page=args.end_page,

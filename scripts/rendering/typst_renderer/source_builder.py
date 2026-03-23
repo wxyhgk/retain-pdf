@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from common.config import DEFAULT_FONT_SIZE, TYPST_DEFAULT_FONT_FAMILY
+from config import fonts
 from rendering.models import RenderBlock
 from rendering.render_payloads import build_render_blocks
 from rendering.typst_renderer.shared import CMARKER_VERSION
@@ -67,17 +67,17 @@ def build_typst_overlay_source(
     page_width: float,
     page_height: float,
     translated_items: list[dict],
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
 ) -> str:
     return build_typst_book_overlay_source([(page_width, page_height, translated_items)], font_family=font_family)
 
 
 def build_typst_book_overlay_source(
     page_specs: list[tuple[float, float, list[dict]]],
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
 ) -> str:
     lines = [
-        f'#set text(font: "{font_family}", size: {DEFAULT_FONT_SIZE}pt)',
+        f'#set text(font: "{font_family}", size: {fonts.DEFAULT_FONT_SIZE}pt)',
         f'#import "@preview/cmarker:{CMARKER_VERSION}"',
         f'#import "@preview/mitex:{MITEX_VERSION}": mitex',
         '#show math.equation.where(block: false): set math.frac(style: "horizontal")',
@@ -98,11 +98,11 @@ def build_typst_book_background_source(
     source_pdf_path: Path,
     page_specs: list[tuple[int, float, float, list[dict]]],
     work_dir: Path,
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
 ) -> str:
     source_rel = os.path.relpath(source_pdf_path, work_dir)
     lines = [
-        f'#set text(font: "{font_family}", size: {DEFAULT_FONT_SIZE}pt)',
+        f'#set text(font: "{font_family}", size: {fonts.DEFAULT_FONT_SIZE}pt)',
         f'#import "@preview/cmarker:{CMARKER_VERSION}"',
         f'#import "@preview/mitex:{MITEX_VERSION}": mitex',
         '#show math.equation.where(block: false): set math.frac(style: "horizontal")',

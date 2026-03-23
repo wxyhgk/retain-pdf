@@ -1,28 +1,24 @@
-from pathlib import Path
-
-
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = ROOT_DIR / "en2zh" / "Data"
-OUTPUT_DIR = ROOT_DIR / "output"
-TRANSLATIONS_DIR = OUTPUT_DIR / "translations"
-TRANSLATION_UNIT_CACHE_DIR = OUTPUT_DIR / "_translation_unit_cache"
-
-SOURCE_PDF = DATA_DIR / "std2_manual.pdf"
-SOURCE_JSON = DATA_DIR / "std2_manual.json"
-
-DEFAULT_FONT_PATH = Path("/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf")
-DEFAULT_FONT_SIZE = 11.5
-MIN_FONT_SIZE = 8.5
-DEFAULT_PAGE_INDEX = 0
-DEFAULT_OUTPUT_NAME = "dev-1.pdf"
-TYPST_DEFAULT_FONT_FAMILY = "Noto Serif CJK SC"
-DEFAULT_PDF_COMPRESS_DPI = 200
-BODY_FONT_SIZE_FACTOR = 0.95
-BODY_LEADING_FACTOR = 1.08
-INNER_BBOX_SHRINK_X = 0.035
-INNER_BBOX_SHRINK_Y = 0.04
-INNER_BBOX_DENSE_SHRINK_X = 0.025
-INNER_BBOX_DENSE_SHRINK_Y = 0.03
+from config.fonts import DEFAULT_FONT_PATH
+from config.fonts import DEFAULT_FONT_SIZE
+from config.fonts import MIN_FONT_SIZE
+from config.fonts import TYPST_DEFAULT_FONT_FAMILY
+from config.layout import BODY_FONT_SIZE_FACTOR
+from config.layout import BODY_LEADING_FACTOR
+from config.layout import INNER_BBOX_DENSE_SHRINK_X
+from config.layout import INNER_BBOX_DENSE_SHRINK_Y
+from config.layout import INNER_BBOX_SHRINK_X
+from config.layout import INNER_BBOX_SHRINK_Y
+from config.layout import apply_layout_tuning as _apply_layout_tuning
+from config.paths import DATA_DIR
+from config.paths import OUTPUT_DIR
+from config.paths import ROOT_DIR
+from config.paths import SOURCE_JSON
+from config.paths import SOURCE_PDF
+from config.paths import TRANSLATION_UNIT_CACHE_DIR
+from config.paths import TRANSLATIONS_DIR
+from config.runtime import DEFAULT_OUTPUT_NAME
+from config.runtime import DEFAULT_PAGE_INDEX
+from config.runtime import DEFAULT_PDF_COMPRESS_DPI
 
 
 def apply_layout_tuning(
@@ -41,15 +37,20 @@ def apply_layout_tuning(
     global INNER_BBOX_DENSE_SHRINK_X
     global INNER_BBOX_DENSE_SHRINK_Y
 
-    if body_font_size_factor is not None:
-        BODY_FONT_SIZE_FACTOR = body_font_size_factor
-    if body_leading_factor is not None:
-        BODY_LEADING_FACTOR = body_leading_factor
-    if inner_bbox_shrink_x is not None:
-        INNER_BBOX_SHRINK_X = inner_bbox_shrink_x
-    if inner_bbox_shrink_y is not None:
-        INNER_BBOX_SHRINK_Y = inner_bbox_shrink_y
-    if inner_bbox_dense_shrink_x is not None:
-        INNER_BBOX_DENSE_SHRINK_X = inner_bbox_dense_shrink_x
-    if inner_bbox_dense_shrink_y is not None:
-        INNER_BBOX_DENSE_SHRINK_Y = inner_bbox_dense_shrink_y
+    _apply_layout_tuning(
+        body_font_size_factor=body_font_size_factor,
+        body_leading_factor=body_leading_factor,
+        inner_bbox_shrink_x=inner_bbox_shrink_x,
+        inner_bbox_shrink_y=inner_bbox_shrink_y,
+        inner_bbox_dense_shrink_x=inner_bbox_dense_shrink_x,
+        inner_bbox_dense_shrink_y=inner_bbox_dense_shrink_y,
+    )
+
+    from config import layout as _layout
+
+    BODY_FONT_SIZE_FACTOR = _layout.BODY_FONT_SIZE_FACTOR
+    BODY_LEADING_FACTOR = _layout.BODY_LEADING_FACTOR
+    INNER_BBOX_SHRINK_X = _layout.INNER_BBOX_SHRINK_X
+    INNER_BBOX_SHRINK_Y = _layout.INNER_BBOX_SHRINK_Y
+    INNER_BBOX_DENSE_SHRINK_X = _layout.INNER_BBOX_DENSE_SHRINK_X
+    INNER_BBOX_DENSE_SHRINK_Y = _layout.INNER_BBOX_DENSE_SHRINK_Y

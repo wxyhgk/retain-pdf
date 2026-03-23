@@ -39,20 +39,33 @@ Current status:
 - `run_case.py`
   Simplest one-command entry: point it at a folder containing exactly one `.json` and one `.pdf`, and it auto-discovers inputs, auto-names outputs, then runs the full pipeline.
 - `run_mineru_case.py`
-  Recommended one-command MinerU entry at the top level. Parse with MinerU, translate from `layout.json`, and render into one structured job directory by reusing `integrations/mineru/mineru_pipeline.py`.
-- `integrations/mineru/mineru_api.py`
+  Recommended one-command MinerU entry at the top level. Parse with MinerU, translate from `layout.json`, and render into one structured job directory by reusing `mineru/mineru_pipeline.py`.
+- `mineru/mineru_api.py`
   Minimal MinerU precise-API caller. Supports both remote URL task submission and local-file upload + polling.
-- `integrations/mineru/mineru_api_example.py`
+- `mineru/mineru_api_example.py`
   Lightweight URL-only MinerU example: submit a task and poll until done.
 
 ### `common/`
 
-- `config.py`
-  Shared paths and default settings.
 - `prompt_loader.py`
   Loads editable prompt files from `scripts/prompts/`.
+- `job_dirs.py`
+  Creates structured output directories such as `originPDF`, `jsonPDF`, and `transPDF`.
+- `local_env.py`
+  Loads local secrets and environment variables from `scripts/.env/`.
 
-### `ocr/`
+### `config/`
+
+- `paths.py`
+  Centralized path constants such as `OUTPUT_DIR`, `SOURCE_JSON`, and cache locations.
+- `fonts.py`
+  Font family, font path, and font-size defaults shared by the pipeline.
+- `layout.py`
+  Layout tuning defaults and the mutable `apply_layout_tuning(...)` entry.
+- `runtime.py`
+  Runtime defaults such as output names and PDF compression DPI.
+
+### `translation/ocr/`
 
 - `json_extractor.py`
   Reads OCR JSON and extracts page/block text items. Skips `interline_equation`, `code`, `table`, `ref_text`, `image`, `image_body`, `image_caption`, `table_caption`, and `table_footnote`.
@@ -74,7 +87,7 @@ Current status:
 - `continuations.py`
   Detects likely paragraph continuations, including cross-page continuation groups for full-book runs.
 
-### `orchestration/`
+### `translation/orchestration/`
 
 - `zones.py`
   Shared page-layout helpers. Detects single/double-column structure and annotates each payload item with a layout zone.
@@ -90,7 +103,7 @@ Current status:
 - `book_translation_flow.py`
   Full-book translation orchestration, including template loading, global continuation grouping, policy application, batched translation, and page JSON persistence.
 
-### `classification/`
+### `translation/classification/`
 
 - `page_classifier.py`
   Lightweight LLM classification for suspicious OCR blocks. The model returns line-based labels like `item_id => translate`.
@@ -238,12 +251,12 @@ This creates:
 Low-level MinerU implementation note:
 
 - `scripts/run_mineru_case.py` is the recommended public entry.
-- `scripts/integrations/mineru/mineru_pipeline.py` remains the stable implementation it delegates to.
+- `scripts/mineru/mineru_pipeline.py` remains the stable implementation it delegates to.
 
 MinerU middle-level job runner, only parse and unpack:
 
 ```bash
-python scripts/integrations/mineru/mineru_job.py \
+python scripts/mineru/mineru_job.py \
   --file-path Data/test9/test9.pdf \
   --model-version vlm \
   --job-id 202603212300-demo
@@ -252,7 +265,7 @@ python scripts/integrations/mineru/mineru_job.py \
 Migrate old `output/mineru/<case>` experiments into the new structured layout:
 
 ```bash
-python scripts/integrations/mineru/migrate_legacy_output.py \
+python scripts/mineru/migrate_legacy_output.py \
   --legacy-root output/mineru/test9 \
   --job-id 20260321-legacy-mineru-test9
 ```
@@ -279,7 +292,7 @@ python scripts/run_case.py \
 Low-level MinerU API script remains available when you only want the raw API response:
 
 ```bash
-python scripts/integrations/mineru/mineru_api.py \
+python scripts/mineru/mineru_api.py \
   --token "$MINERU_TOKEN" \
   --file-url "https://cdn-mineru.openxlab.org.cn/demo/example.pdf" \
   --model-version vlm \

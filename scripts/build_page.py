@@ -1,24 +1,18 @@
 import argparse
 from pathlib import Path
 
-from common.config import (
-    DEFAULT_FONT_PATH,
-    DEFAULT_OUTPUT_NAME,
-    DEFAULT_PAGE_INDEX,
-    OUTPUT_DIR,
-    SOURCE_JSON,
-    SOURCE_PDF,
-    TRANSLATIONS_DIR,
-)
-from ocr.json_extractor import extract_text_items, load_ocr_json
+from config import fonts
+from config import paths
+from config import runtime
+from translation.ocr.json_extractor import extract_text_items, load_ocr_json
 from rendering.pdf_overlay import build_dev_pdf, build_single_page_dev_pdf, extract_single_page_pdf
 from rendering.typst_page_renderer import build_single_page_typst_pdf
-from translation.translations import ensure_translation_template, load_translations
+from translation.payload import ensure_translation_template, load_translations
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build a layout-preserving translated PDF page.")
-    parser.add_argument("--page", type=int, default=DEFAULT_PAGE_INDEX, help="Zero-based page index.")
+    parser.add_argument("--page", type=int, default=runtime.DEFAULT_PAGE_INDEX, help="Zero-based page index.")
     parser.add_argument(
         "--translation-json",
         type=str,
@@ -28,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=str,
-        default=DEFAULT_OUTPUT_NAME,
+        default=runtime.DEFAULT_OUTPUT_NAME,
         help="Output PDF filename placed under output/.",
     )
     parser.add_argument(
@@ -51,13 +45,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source-json",
         type=str,
-        default=str(SOURCE_JSON),
+        default=str(paths.SOURCE_JSON),
         help="OCR JSON source path.",
     )
     parser.add_argument(
         "--source-pdf",
         type=str,
-        default=str(SOURCE_PDF),
+        default=str(paths.SOURCE_PDF),
         help="Source PDF path.",
     )
     return parser.parse_args()
@@ -72,14 +66,14 @@ def main() -> None:
     items = extract_text_items(data, page_idx=args.page)
 
     translation_path = (
-        TRANSLATIONS_DIR / f"page-{args.page + 1}.json"
+        paths.TRANSLATIONS_DIR / f"page-{args.page + 1}.json"
         if not args.translation_json
-        else OUTPUT_DIR / args.translation_json
+        else paths.OUTPUT_DIR / args.translation_json
     )
     ensure_translation_template(items, translation_path, page_idx=args.page)
 
     translated_items = load_translations(translation_path)
-    output_pdf_path = OUTPUT_DIR / args.output
+    output_pdf_path = paths.OUTPUT_DIR / args.output
     if args.extract_original_only:
         extract_single_page_pdf(
             source_pdf_path=source_pdf,
@@ -99,7 +93,7 @@ def main() -> None:
             output_pdf_path=output_pdf_path,
             translated_items=translated_items,
             page_idx=args.page,
-            font_path=DEFAULT_FONT_PATH,
+            font_path=fonts.DEFAULT_FONT_PATH,
         )
     else:
         build_dev_pdf(
@@ -107,7 +101,7 @@ def main() -> None:
             output_pdf_path=output_pdf_path,
             translated_items=translated_items,
             page_idx=args.page,
-            font_path=DEFAULT_FONT_PATH,
+            font_path=fonts.DEFAULT_FONT_PATH,
         )
     print(f"translation json: {translation_path}")
     print(f"output pdf: {output_pdf_path}")

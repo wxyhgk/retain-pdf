@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from common.config import TYPST_DEFAULT_FONT_FAMILY
+from config import fonts
 from rendering.typst_renderer.compiler import compile_typst_overlay_pdf
 from rendering.typst_renderer.shared import TYPST_OVERLAY_DIR
 from rendering.typst_renderer.shared import force_plain_text_item_at_index
@@ -15,7 +15,7 @@ def sanitize_items_for_typst_compile(
     page_height: float,
     translated_items: list[dict],
     stem: str,
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
     work_dir: Path | None = None,
 ) -> list[dict]:
@@ -103,7 +103,7 @@ def compile_overlay_pdf_resilient(
     page_height: float,
     translated_items: list[dict],
     stem: str,
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
     work_dir: Path | None = None,
 ) -> Path:
@@ -131,7 +131,7 @@ def compile_overlay_pdf_resilient(
 def sanitize_page_specs_for_typst_book_background(
     page_specs: list[tuple[int, float, float, list[dict]]],
     stem: str,
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
     work_dir: Path | None = None,
 ) -> list[tuple[int, float, float, list[dict]]]:

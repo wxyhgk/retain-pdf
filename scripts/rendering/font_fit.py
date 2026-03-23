@@ -2,7 +2,8 @@ import re
 from math import ceil
 from statistics import median
 
-from common import config
+from config import fonts
+from config import layout
 
 
 MIN_FONT_SIZE_PT = 8.4
@@ -122,11 +123,11 @@ def local_line_pitch(item: dict) -> float:
 
 def local_font_size_pt(item: dict) -> float:
     if item.get("block_type") not in LOCAL_TEXTUAL_BLOCK_TYPES:
-        return config.DEFAULT_FONT_SIZE
+        return fonts.DEFAULT_FONT_SIZE
     metric = local_line_pitch(item) or median_line_height(item)
     if metric <= 0:
-        return config.DEFAULT_FONT_SIZE
-    return round(clamp(metric * ZH_FONT_SCALE * config.BODY_FONT_SIZE_FACTOR, MIN_FONT_SIZE_PT, MAX_FONT_SIZE_PT), 2)
+        return fonts.DEFAULT_FONT_SIZE
+    return round(clamp(metric * ZH_FONT_SCALE * layout.BODY_FONT_SIZE_FACTOR, MIN_FONT_SIZE_PT, MAX_FONT_SIZE_PT), 2)
 
 
 def occupied_ratio(item: dict) -> float:
@@ -166,15 +167,15 @@ def inner_bbox(item: dict) -> list[float]:
     x0, y0, x1, y1 = bbox
     width = x1 - x0
     height = y1 - y0
-    shrink_x = width * config.INNER_BBOX_SHRINK_X
-    shrink_y = height * config.INNER_BBOX_SHRINK_Y
+    shrink_x = width * layout.INNER_BBOX_SHRINK_X
+    shrink_y = height * layout.INNER_BBOX_SHRINK_Y
 
     rho_x = occupied_ratio_x(item)
     rho_y = occupied_ratio(item)
     if rho_x > 0.82:
-        shrink_x = width * config.INNER_BBOX_DENSE_SHRINK_X
+        shrink_x = width * layout.INNER_BBOX_DENSE_SHRINK_X
     if rho_y > 0.82:
-        shrink_y = height * config.INNER_BBOX_DENSE_SHRINK_Y
+        shrink_y = height * layout.INNER_BBOX_DENSE_SHRINK_Y
 
     nx0 = x0 + shrink_x
     nx1 = x1 - shrink_x
@@ -238,7 +239,7 @@ def page_baseline_font_size(items: list[dict]) -> tuple[float, float, float, flo
     baseline_line_height = median(line_heights) if line_heights else 0.0
     metric = baseline_line_pitch or baseline_line_height
     if metric <= 0:
-        return config.DEFAULT_FONT_SIZE, 0.0, 0.0, 0.0
+        return fonts.DEFAULT_FONT_SIZE, 0.0, 0.0, 0.0
     page_font_size = max(
         MIN_FONT_SIZE_PT,
         min(MAX_FONT_SIZE_PT, metric * ZH_FONT_SCALE),
@@ -262,7 +263,7 @@ def estimate_font_size_pt(
 ) -> float:
     del density_baseline
     if item.get("block_type") not in LOCAL_TEXTUAL_BLOCK_TYPES:
-        return config.DEFAULT_FONT_SIZE
+        return fonts.DEFAULT_FONT_SIZE
     local_font = local_font_size_pt(item)
     if not item.get("_is_body_text_candidate", False):
         return local_font
@@ -275,7 +276,7 @@ def estimate_font_size_pt(
     elif page_line_height > 0 and block_line_height > 0:
         block_scale = clamp(block_line_height / page_line_height, LOCAL_BLOCK_SCALE_MIN, LOCAL_BLOCK_SCALE_MAX)
 
-    page_estimate = page_font_size * block_scale * config.BODY_FONT_SIZE_FACTOR if page_font_size > 0 else local_font
+    page_estimate = page_font_size * block_scale * layout.BODY_FONT_SIZE_FACTOR if page_font_size > 0 else local_font
     blended = (page_estimate * 0.72) + (local_font * 0.28)
     return round(clamp(blended, MIN_FONT_SIZE_PT, MAX_FONT_SIZE_PT), 2)
 
@@ -288,10 +289,10 @@ def estimate_leading_em(item: dict, page_line_pitch: float, font_size_pt: float)
             ocr_estimated = (pitch / font_size_pt) - 1.0
             zh_target = 0.66
             mixed = (ocr_estimated * 0.35) + (zh_target * 0.65)
-            return round(clamp(mixed * config.BODY_LEADING_FACTOR, BODY_LEADING_MIN, BODY_LEADING_MAX), 2)
-        return round(clamp(0.66 * config.BODY_LEADING_FACTOR, BODY_LEADING_MIN, BODY_LEADING_MAX), 2)
+            return round(clamp(mixed * layout.BODY_LEADING_FACTOR, BODY_LEADING_MIN, BODY_LEADING_MAX), 2)
+        return round(clamp(0.66 * layout.BODY_LEADING_FACTOR, BODY_LEADING_MIN, BODY_LEADING_MAX), 2)
     if block_pitch > 0 and font_size_pt > 0:
         ocr_estimated = (block_pitch / font_size_pt) - 1.0
         mixed = (ocr_estimated * 0.55) + (DEFAULT_LEADING_EM * 0.45)
-        return round(clamp(mixed * config.BODY_LEADING_FACTOR, NON_BODY_LEADING_MIN, NON_BODY_LEADING_MAX), 2)
-    return round(clamp(DEFAULT_LEADING_EM * config.BODY_LEADING_FACTOR, NON_BODY_LEADING_MIN, NON_BODY_LEADING_MAX), 2)
+        return round(clamp(mixed * layout.BODY_LEADING_FACTOR, NON_BODY_LEADING_MIN, NON_BODY_LEADING_MAX), 2)
+    return round(clamp(DEFAULT_LEADING_EM * layout.BODY_LEADING_FACTOR, NON_BODY_LEADING_MIN, NON_BODY_LEADING_MAX), 2)

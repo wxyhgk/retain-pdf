@@ -3,12 +3,12 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from common.config import OUTPUT_DIR
+from config import paths
 from rendering.math_utils import aggressively_simplify_formula_for_latex_math
 
 
 TYPST_BIN = "/snap/bin/typst"
-TYPST_OVERLAY_DIR = OUTPUT_DIR / "typst_overlay"
+TYPST_OVERLAY_DIR = paths.OUTPUT_DIR / "typst_overlay"
 CMARKER_VERSION = "0.1.8"
 MITEX_VERSION = "0.2.6"
 

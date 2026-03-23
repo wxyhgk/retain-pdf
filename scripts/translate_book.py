@@ -1,11 +1,11 @@
 import argparse
 from pathlib import Path
 
-from common.config import OUTPUT_DIR, SOURCE_JSON, SOURCE_PDF
+from config import paths
 from pipeline.book_pipeline import translate_book_pipeline
-from translation.deepseek_client import DEFAULT_BASE_URL
-from translation.deepseek_client import get_api_key
-from translation.deepseek_client import normalize_base_url
+from translation.llm import DEFAULT_BASE_URL
+from translation.llm import get_api_key
+from translation.llm import normalize_base_url
 
 
 def parse_args() -> argparse.Namespace:
@@ -44,13 +44,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source-json",
         type=str,
-        default=str(SOURCE_JSON),
+        default=str(paths.SOURCE_JSON),
         help="OCR JSON source path.",
     )
     parser.add_argument(
         "--source-pdf",
         type=str,
-        default=str(SOURCE_PDF),
+        default=str(paths.SOURCE_PDF),
         help="Source PDF path. In sci mode the first two pages are used for domain inference.",
     )
     return parser.parse_args()
@@ -64,7 +64,7 @@ def main() -> None:
     )
     summary = translate_book_pipeline(
         source_json_path=Path(args.source_json),
-        output_dir=OUTPUT_DIR / args.output_dir,
+        output_dir=paths.OUTPUT_DIR / args.output_dir,
         api_key=api_key,
         start_page=args.start_page,
         end_page=args.end_page,

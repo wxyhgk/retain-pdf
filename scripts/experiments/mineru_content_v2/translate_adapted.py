@@ -6,11 +6,11 @@ import sys
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
-from translation.formula_protection import protect_inline_formulas_in_segments
-from translation.policy_flow import apply_translation_policies
-from translation.payload_ops import apply_translated_text_map
-from translation.payload_ops import pending_translation_items
-from translation.retrying_translator import translate_batch
+from translation.payload import protect_inline_formulas_in_segments
+from translation.policy import apply_translation_policies
+from translation.payload import apply_translated_text_map
+from translation.payload import pending_translation_items
+from translation.llm import translate_batch
 
 
 def parse_args() -> argparse.Namespace:

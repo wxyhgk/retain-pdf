@@ -1,10 +1,10 @@
 import argparse
 from pathlib import Path
 
-from common.config import OUTPUT_DIR, SOURCE_JSON, TRANSLATIONS_DIR
-from ocr.json_extractor import extract_text_items, load_ocr_json
-from translation.deepseek_client import DEFAULT_BASE_URL, get_api_key, normalize_base_url
-from translation.translation_workflow import translate_items_to_path
+from config import paths
+from translation.ocr.json_extractor import extract_text_items, load_ocr_json
+from translation.llm import DEFAULT_BASE_URL, get_api_key, normalize_base_url
+from translation.workflow import translate_items_to_path
 
 
 def parse_args() -> argparse.Namespace:
@@ -42,7 +42,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source-json",
         type=str,
-        default=str(SOURCE_JSON),
+        default=str(paths.SOURCE_JSON),
         help="OCR JSON source path.",
     )
     return parser.parse_args()
@@ -58,9 +58,9 @@ def main() -> None:
     data = load_ocr_json(Path(args.source_json))
     items = extract_text_items(data, page_idx=args.page)
     translation_path = (
-        TRANSLATIONS_DIR / f"page-{args.page + 1}.json"
+        paths.TRANSLATIONS_DIR / f"page-{args.page + 1}.json"
         if not args.translation_json
-        else OUTPUT_DIR / args.translation_json
+        else paths.OUTPUT_DIR / args.translation_json
     )
     summary = translate_items_to_path(
         items=items,

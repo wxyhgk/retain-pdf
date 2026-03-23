@@ -5,7 +5,8 @@ from pathlib import Path
 
 import fitz
 
-from common.config import OUTPUT_DIR, TYPST_DEFAULT_FONT_FAMILY
+from config import fonts
+from config import paths
 from rendering.pdf_overlay import save_optimized_pdf
 from rendering.pdf_overlay import strip_page_links
 from rendering.render_payloads import prepare_render_payloads_by_page
@@ -20,7 +21,7 @@ def build_single_page_typst_pdf(
     output_pdf_path: Path,
     translated_items: list[dict],
     page_idx: int,
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
 ) -> None:
     source_doc = fitz.open(source_pdf_path)
@@ -45,7 +46,7 @@ def build_book_typst_pdf(
     output_pdf_path: Path,
     translated_pages: dict[int, list[dict]],
     compile_workers: int | None = None,
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
 ) -> None:
     doc = fitz.open(source_pdf_path)
@@ -70,7 +71,7 @@ def build_dual_book_pdf(
     start_page: int = 0,
     end_page: int = -1,
     compile_workers: int | None = None,
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
 ) -> None:
     source_doc = fitz.open(source_pdf_path)
@@ -122,7 +123,7 @@ def build_book_typst_background_pdf(
     source_pdf_path: Path,
     output_pdf_path: Path,
     translated_pages: dict[int, list[dict]],
-    font_family: str = TYPST_DEFAULT_FONT_FAMILY,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
 ) -> None:
     translated_pages = prepare_render_payloads_by_page(translated_pages)
@@ -141,7 +142,7 @@ def build_book_typst_background_pdf(
     finally:
         source_doc.close()
 
-    with tempfile.TemporaryDirectory(prefix="typst-background-", dir=OUTPUT_DIR) as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="typst-background-", dir=paths.OUTPUT_DIR) as temp_dir:
         work_dir = Path(temp_dir)
         try:
             background_pdf = compile_typst_book_background_pdf(

@@ -5,10 +5,10 @@ from pathlib import Path
 
 from PIL import Image
 
-from common.config import OUTPUT_DIR
+from config import paths
 
 
-FORMULA_CACHE_DIR = OUTPUT_DIR / "formula_cache"
+FORMULA_CACHE_DIR = paths.OUTPUT_DIR / "formula_cache"
 TYPST_BIN = "/snap/bin/typst"
 
 GREEK_MAP = {
