@@ -93,6 +93,7 @@ function resetUploadedFile() {
   state.uploadedBytes = 0;
   $("submit-btn").disabled = true;
   $("upload-status").textContent = "未上传文件";
+  $("file-label").title = "";
 }
 
 function updateDeveloperVisibility() {
@@ -249,6 +250,7 @@ async function handleFileSelected() {
   $("file-label").textContent = file ? file.name : "点击选择文件或拖到这里";
   resetUploadedFile();
   resetUploadProgress();
+  $("file-label").title = file ? file.name : "";
   if (!file) {
     return;
   }

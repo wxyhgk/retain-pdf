@@ -1,0 +1,475 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f5f1e8;
+  --paper: #fffdf8;
+  --ink: #1d1d1b;
+  --muted: #70685b;
+  --line: #d9d0c2;
+  --accent: #1c5d52;
+  --accent-weak: #d7ebe6;
+  --danger: #a12626;
+  --danger-weak: #f8e1e1;
+  --ok: #1b6f3a;
+  --ok-weak: #dff3e6;
+  --warn: #8a5a00;
+  --warn-weak: #f8e8c8;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at top left, rgba(28, 93, 82, 0.08) 0, transparent 26%),
+      radial-gradient(circle at bottom right, rgba(28, 93, 82, 0.05) 0, transparent 28%),
+      linear-gradient(180deg, #f7f6f2 0%, #efece3 100%);
+  }
+
+  h1,
+  h2 {
+    margin: 0;
+    font-family: theme(fontFamily.serif);
+    letter-spacing: -0.01em;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  input,
+  select,
+  button,
+  .button-link {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .page {
+    @apply mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-5 lg:px-6;
+  }
+
+  .hero {
+    @apply flex flex-col gap-3 rounded-3xl border border-line bg-paper p-5 shadow-soft;
+  }
+
+  @screen md {
+    .hero {
+      @apply flex-row items-end justify-between;
+    }
+  }
+
+  .hero-actions {
+    @apply flex flex-wrap items-end gap-2;
+  }
+
+  .card {
+    @apply min-w-0 rounded-3xl border border-line bg-paper p-5 shadow-soft;
+  }
+
+  .notice-card {
+    border-color: rgba(28, 93, 82, 0.18);
+    color: #4d564f;
+    background:
+      radial-gradient(circle at top right, rgba(28, 93, 82, 0.08) 0, transparent 30%),
+      linear-gradient(180deg, #fbfcfa 0%, #f2f5f1 100%);
+  }
+
+  .notice-links {
+    @apply mt-3 leading-7;
+  }
+
+  .notice-links a {
+    color: var(--accent);
+    word-break: break-all;
+  }
+
+  .panel-grid {
+    @apply grid items-start gap-4;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @screen lg {
+    .panel-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .panel-grid > * {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .panel {
+    @apply min-h-full min-w-0;
+  }
+
+  .form,
+  .grid {
+    display: grid;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .grid.two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @screen md {
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .grid.three {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @screen md {
+    .grid.three {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @screen xl {
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  label {
+    @apply grid min-w-0 gap-1.5 text-sm;
+  }
+
+  label > span {
+    color: var(--muted);
+  }
+
+  input,
+  select,
+  button,
+  .button-link {
+    font: inherit;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="number"],
+  input[type="file"],
+  select {
+    @apply w-full rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none transition;
+  }
+
+  input[type="text"]:focus,
+  input[type="password"]:focus,
+  input[type="number"]:focus,
+  input[type="file"]:focus,
+  select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(28, 93, 82, 0.14);
+  }
+
+  .checkbox-row {
+    @apply flex items-center gap-2.5;
+  }
+
+  .compact-check {
+    padding-top: 30px;
+  }
+
+  .actions {
+    @apply flex flex-wrap items-center gap-2.5;
+  }
+
+  .vertical-actions {
+    @apply items-stretch;
+  }
+
+  .vertical-actions > * {
+    width: 100%;
+  }
+
+  button,
+  .button-link {
+    @apply inline-flex min-h-10 items-center justify-center rounded-full border border-accent bg-accent px-4 py-0 text-sm font-semibold text-white no-underline transition;
+  }
+
+  button:hover,
+  .button-link:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.02);
+  }
+
+  button.secondary,
+  .button-link.secondary {
+    @apply border-accent bg-transparent text-accent;
+  }
+
+  .button-link.disabled {
+    @apply pointer-events-none opacity-50;
+  }
+
+  .upload-tile {
+    position: relative;
+    display: grid;
+    gap: 8px;
+    min-height: 180px;
+    min-width: 0;
+    padding: 18px;
+    border: 1.5px dashed rgba(28, 93, 82, 0.22);
+    border-radius: 24px;
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    background:
+      radial-gradient(circle at top right, rgba(28, 93, 82, 0.08) 0, transparent 34%),
+      linear-gradient(180deg, #fcfdfc 0%, #f5f7f5 100%);
+  }
+
+  .upload-tile:hover {
+    transform: translateY(-1px);
+    border-color: var(--accent);
+    box-shadow: 0 12px 28px rgba(28, 93, 82, 0.08);
+  }
+
+  .upload-tile input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .upload-kicker {
+    @apply inline-flex w-fit items-center rounded-full bg-accent-weak px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-accent;
+  }
+
+  .upload-tile strong {
+    @apply block max-w-full truncate text-xl font-medium text-ink;
+  }
+
+  .upload-tile em {
+    color: var(--muted);
+    font-style: normal;
+    @apply text-xs;
+  }
+
+  .upload-progress-panel {
+    @apply grid gap-2.5 rounded-2xl border border-line bg-white/85 p-3.5;
+  }
+
+  .upload-status,
+  .job-warning {
+    @apply w-full min-w-0 rounded-xl border px-3 py-2 text-sm leading-snug;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .upload-status {
+    border-color: var(--line);
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.82);
+  }
+
+  .job-warning {
+    border-color: #e1c48a;
+    color: var(--warn);
+    background: var(--warn-weak);
+  }
+
+  .progress-meta {
+    @apply flex items-center justify-between gap-2.5;
+  }
+
+  .progress-track {
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e8dfd1;
+  }
+
+  .progress-bar {
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #1c5d52 0%, #4f9f8d 100%);
+    transition: width 0.2s ease;
+  }
+
+  .status-head {
+    @apply flex flex-wrap items-start justify-between gap-3;
+  }
+
+  .simple-head {
+    @apply items-center;
+  }
+
+  .status-stack {
+    @apply mt-3.5 grid gap-3 min-w-0;
+  }
+
+  .top-gap {
+    margin-top: 14px;
+  }
+
+  .label {
+    margin-bottom: 4px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .compact-label {
+    margin-bottom: 0;
+  }
+
+  .mono {
+    @apply min-w-0;
+    font-family: "Iosevka", "JetBrains Mono", monospace;
+    word-break: break-all;
+  }
+
+  .badge {
+    @apply inline-flex min-w-24 items-center justify-center rounded-full px-3 py-1 text-sm font-semibold;
+  }
+
+  .badge.idle,
+  .badge.queued {
+    background: var(--warn-weak);
+    color: var(--warn);
+  }
+
+  .badge.running {
+    background: var(--accent-weak);
+    color: var(--accent);
+  }
+
+  .badge.succeeded {
+    background: var(--ok-weak);
+    color: var(--ok);
+  }
+
+  .badge.failed {
+    background: var(--danger-weak);
+    color: var(--danger);
+  }
+
+  .raw-panel {
+    @apply w-full overflow-hidden rounded-2xl border border-line bg-white/75;
+  }
+
+  .raw-panel summary {
+    @apply cursor-pointer px-4 py-2.5 font-semibold text-accent;
+    list-style: none;
+  }
+
+  .raw-panel summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .raw-panel[open] summary {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .advanced-body {
+    @apply grid gap-3 p-4;
+  }
+
+  .dev-dialog {
+    width: min(920px, calc(100vw - 24px));
+    border: none;
+    border-radius: 18px;
+    padding: 0;
+    background: transparent;
+  }
+
+  .dev-dialog::backdrop {
+    background: rgba(25, 24, 20, 0.42);
+  }
+
+  .dev-shell {
+    @apply overflow-hidden rounded-3xl border border-line bg-paper shadow-panel;
+  }
+
+  .dev-head {
+    @apply flex items-center justify-between gap-3 border-b border-line px-4 py-3.5;
+  }
+
+  .dev-head h2 {
+    margin: 0;
+  }
+
+  .auth-dialog {
+    width: min(420px, calc(100vw - 24px));
+  }
+
+  .auth-shell {
+    overflow: hidden;
+  }
+
+  .auth-error {
+    @apply rounded-xl border border-[#e4bcbc] px-3 py-2 text-sm;
+    background: var(--danger-weak);
+    color: var(--danger);
+  }
+
+  .artifacts {
+    @apply grid gap-2.5;
+    margin: 0;
+  }
+
+  .artifacts div {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .artifacts dt {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .artifacts dd {
+    margin: 0;
+    min-width: 0;
+    word-break: break-all;
+  }
+
+  .log {
+    @apply m-0 max-h-[280px] min-h-[72px] overflow-auto rounded-xl border border-line bg-white p-3 text-xs;
+    font-family: theme(fontFamily.mono);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .error-box {
+    color: var(--danger);
+  }
+
+  .muted {
+    @apply mb-3 text-muted text-[13px] leading-6;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  .status-stack > div {
+    @apply min-w-0 rounded-2xl border border-line bg-white/80 p-3.5;
+  }
+
+  .file-name {
+    @apply block max-w-full truncate text-xl font-medium text-ink;
+  }
+}

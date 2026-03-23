@@ -134,6 +134,8 @@ async def run_uploaded_mineru_case(request: RunUploadedMinerUCaseRequest) -> Sub
     file_path = str(uploaded.get("path", "") or "")
     if not file_path or not Path(file_path).exists():
         raise HTTPException(status_code=404, detail=f"uploaded file missing: {request.upload_id}")
+    resolved_job_id = request.job_id.strip() or request.upload_id.strip()
+    resolved_request = request.model_copy(update={"job_id": resolved_job_id})
     request_payload = request.model_dump()
     request_payload["uploaded_file"] = file_path
     request_payload["uploaded_filename"] = uploaded.get("filename", "")
@@ -141,9 +143,9 @@ async def run_uploaded_mineru_case(request: RunUploadedMinerUCaseRequest) -> Sub
     request_payload["bytes"] = uploaded.get("bytes")
     return submit_job(
         "run-mineru-case",
-        request.to_command(file_path=file_path),
+        resolved_request.to_command(file_path=file_path),
         request_payload,
-        job_id=request.job_id.strip() or None,
+        job_id=resolved_job_id,
     )
 
 
