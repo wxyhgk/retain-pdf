@@ -13,6 +13,7 @@ from rendering.pdf_compress import compress_pdf_with_ghostscript
 from rendering.pdf_overlay import strip_page_links
 from rendering.render_payloads import prepare_render_payloads_by_page
 from rendering.typst_page_renderer import build_dual_book_pdf
+from rendering.typst_page_renderer import build_book_typst_background_pdf
 from rendering.typst_page_renderer import build_book_typst_pdf
 from rendering.typst_page_renderer import overlay_translated_pages_on_doc
 from translation.deepseek_client import DEFAULT_BASE_URL
@@ -35,6 +36,7 @@ def is_editable_pdf(doc: fitz.Document, start_page: int, end_page: int) -> bool:
         if 0 <= page_idx < len(doc):
             words += len(doc[page_idx].get_text("words"))
     return words >= 20
+
 
 def translate_book_pipeline(
     *,
@@ -168,6 +170,28 @@ def build_book_from_translations(
             save_optimized_pdf(doc, output_pdf_path)
         finally:
             doc.close()
+        compress_pdf_with_ghostscript(output_pdf_path, dpi=pdf_compress_dpi)
+        return len(selected_pages)
+
+    if render_mode == "typst":
+        try:
+            print("typst background render selected", flush=True)
+            build_book_typst_background_pdf(
+                source_pdf_path=source_pdf_path,
+                output_pdf_path=output_pdf_path,
+                translated_pages=selected_pages,
+                font_family=typst_font_family,
+            )
+        except RuntimeError as exc:
+            print("typst background render failed; falling back to overlay route", flush=True)
+            print(str(exc), flush=True)
+            build_book_typst_pdf(
+                source_pdf_path=source_pdf_path,
+                output_pdf_path=output_pdf_path,
+                translated_pages=selected_pages,
+                compile_workers=compile_workers,
+                font_family=typst_font_family,
+            )
         compress_pdf_with_ghostscript(output_pdf_path, dpi=pdf_compress_dpi)
         return len(selected_pages)
 

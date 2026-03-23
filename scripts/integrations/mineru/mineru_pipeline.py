@@ -20,9 +20,6 @@ from common.config import INNER_BBOX_SHRINK_Y
 from common.config import OUTPUT_DIR
 from common.config import TYPST_DEFAULT_FONT_FAMILY
 from common.config import apply_layout_tuning
-from common.job_cleanup import prune_mineru_json_dir
-from common.job_cleanup import prune_origin_pdf_dir
-from common.job_cleanup import prune_trans_pdf_dir
 from common.job_dirs import create_job_dirs
 from integrations.mineru.mineru_api import MINERU_ENV_FILE
 from integrations.mineru.mineru_api import MINERU_TOKEN_ENV
@@ -287,10 +284,6 @@ def main() -> None:
             "pdf_compress_dpi": args.pdf_compress_dpi,
         },
     )
-
-    prune_origin_pdf_dir(job_root / "originPDF", source_pdf_path)
-    prune_trans_pdf_dir(job_root / "transPDF", output_pdf_path)
-    prune_mineru_json_dir(job_root / "jsonPDF")
 
     print(f"job root: {job_root}")
     print(f"source pdf: {source_pdf_path}")

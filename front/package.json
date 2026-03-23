@@ -1,0 +1,13 @@
+{
+  "name": "front-tailwind-ui",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i ./src/input.css -o ./styles.css --minify",
+    "watch:css": "tailwindcss -c tailwind.config.js -i ./src/input.css -o ./styles.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}
