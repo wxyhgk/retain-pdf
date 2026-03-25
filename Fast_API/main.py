@@ -15,13 +15,20 @@ from .executor import load_job
 from .executor import status_payload
 from .executor import submit_job
 from .models import JobStatus
+from .models import RuleProfileDetail
+from .models import RuleProfileSummary
 from .models import RunCaseRequest
 from .models import RunMinerUCaseRequest
 from .models import RunUploadedMinerUCaseRequest
 from .models import SubmitJobResponse
+from .models import UpsertRuleProfileRequest
 from .models import UploadPdfResponse
 from .models import UPLOADS_DIR
 from .models import build_timestamp_job_id
+from .rule_profile_store import init_rule_profile_db
+from .rule_profile_store import list_rule_profiles
+from .rule_profile_store import load_rule_profile
+from .rule_profile_store import save_rule_profile
 
 NORMAL_MAX_BYTES = 10 * 1024 * 1024
 NORMAL_MAX_PAGES = 30
@@ -41,10 +48,65 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+init_rule_profile_db()
+
 
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/v1/rule-profiles", response_model=list[RuleProfileSummary])
+async def get_rule_profiles() -> list[RuleProfileSummary]:
+    return [
+        RuleProfileSummary(
+            name=str(item["name"]),
+            display_name=str(item["display_name"]),
+            description=str(item.get("description", "") or ""),
+            built_in=bool(item.get("built_in", False)),
+            created_at=str(item.get("created_at", "") or ""),
+            updated_at=str(item.get("updated_at", "") or ""),
+        )
+        for item in list_rule_profiles()
+    ]
+
+
+@app.get("/v1/rule-profiles/{name}", response_model=RuleProfileDetail)
+async def get_rule_profile(name: str) -> RuleProfileDetail:
+    try:
+        item = load_rule_profile(name)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"rule profile not found: {name}") from exc
+    return RuleProfileDetail(
+        name=str(item["name"]),
+        display_name=str(item["display_name"]),
+        description=str(item.get("description", "") or ""),
+        built_in=bool(item.get("built_in", False)),
+        created_at=str(item.get("created_at", "") or ""),
+        updated_at=str(item.get("updated_at", "") or ""),
+        profile_text=str(item.get("profile_text", "") or ""),
+    )
+
+
+@app.post("/v1/rule-profiles", response_model=RuleProfileDetail)
+async def put_rule_profile(request: UpsertRuleProfileRequest) -> RuleProfileDetail:
+    try:
+        item = save_rule_profile(
+            request.name,
+            request.profile_text,
+            description=request.description,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return RuleProfileDetail(
+        name=str(item["name"]),
+        display_name=str(item["display_name"]),
+        description=str(item.get("description", "") or ""),
+        built_in=bool(item.get("built_in", False)),
+        created_at=str(item.get("created_at", "") or ""),
+        updated_at=str(item.get("updated_at", "") or ""),
+        profile_text=str(item.get("profile_text", "") or ""),
+    )
 
 
 @app.post("/v1/run-case", response_model=SubmitJobResponse)
@@ -172,6 +234,8 @@ async def upload_mineru_case(
     mode: str = Form("sci"),
     skip_title_translation: bool = Form(False),
     classify_batch_size: int = Form(12),
+    rule_profile_name: str = Form("general_sci"),
+    custom_rules_text: str = Form(""),
     api_key: str = Form(""),
     model: str = Form("deepseek-chat"),
     base_url: str = Form("https://api.deepseek.com/v1"),
@@ -224,6 +288,8 @@ async def upload_mineru_case(
             mode=mode,
             skip_title_translation=skip_title_translation,
             classify_batch_size=classify_batch_size,
+            rule_profile_name=rule_profile_name,
+            custom_rules_text=custom_rules_text,
             api_key=api_key,
             model=model,
             base_url=base_url,

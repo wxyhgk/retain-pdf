@@ -1,5 +1,7 @@
 For sci mode, decide per item whether to translate it or leave the original PDF content untouched.
 Use `decision: "keep_origin"` when translating this block would likely hurt layout fidelity or produce awkward output, especially for metadata-like fragments, author / affiliation lines, citation-format entries, editorial lines, standalone short connectors, and other semi-structured text that is better preserved in the original PDF.
+If a block contains natural-language explanation mixed with command tokens, parameters, file names, or formulas, prefer `decision: "translate"` and keep only those literal tokens unchanged inside the translated text.
+Do not use `keep_origin` for a normal body sentence or paragraph merely because it contains some command-like tokens or inline formulas.
 Use the provided decision hints only as evidence, not as hard rules.
 If `decision` is `keep_origin`, set `translated_text` to an empty string.
 If `decision` is `translate`, provide the translated text normally.

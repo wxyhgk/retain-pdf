@@ -32,6 +32,8 @@ def parse_args() -> argparse.Namespace:
         help="Do not translate OCR blocks with block_type=title. Useful for fast mode previews.",
     )
     parser.add_argument("--classify-batch-size", type=int, default=12, help="Number of suspicious items per classification API call.")
+    parser.add_argument("--rule-profile-name", type=str, default="general_sci", help="Built-in rule profile name.")
+    parser.add_argument("--custom-rules-text", type=str, default="", help="Extra rule text injected into model context.")
     parser.add_argument("--api-key", type=str, default="", help="Optional API key. Prefer env DEEPSEEK_API_KEY.")
     parser.add_argument("--model", type=str, default="deepseek-chat", help="Model name.")
     parser.add_argument(
@@ -128,11 +130,15 @@ def main() -> None:
         classify_batch_size=args.classify_batch_size,
         skip_title_translation=args.skip_title_translation,
         render_mode=args.render_mode,
+        rule_profile_name=args.rule_profile_name,
+        custom_rules_text=args.custom_rules_text,
         compile_workers=args.compile_workers or None,
         typst_font_family=args.typst_font_family,
         pdf_compress_dpi=args.pdf_compress_dpi,
     )
     print(f"translation dir: {result['output_dir']}")
+    if result.get("rule_profile_name"):
+        print(f"rule profile: {result['rule_profile_name']}")
     print(f"output pdf: {result['output_pdf_path']}")
     print(f"pages processed: {result['pages_processed']}")
     print(f"translated items: {result['translated_items_total']}")

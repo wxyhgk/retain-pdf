@@ -12,6 +12,7 @@ from translation.llm.decision_hints import build_decision_hints
 
 DEFAULT_BASE_URL = "https://api.deepseek.com/v1"
 DEFAULT_API_KEY_ENV = "DEEPSEEK_API_KEY"
+TRUST_ENV_PROXY_ENV = "PDF_TRANSLATOR_TRUST_ENV_PROXY"
 _THREAD_LOCAL = threading.local()
 
 
@@ -134,11 +135,20 @@ def build_headers(api_key: str) -> dict[str, str]:
     return headers
 
 
+def should_trust_env_proxy() -> bool:
+    value = os.environ.get(TRUST_ENV_PROXY_ENV, "")
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def get_session() -> requests.Session:
-    session = getattr(_THREAD_LOCAL, "session", None)
+    session_key = "session_trust_env" if should_trust_env_proxy() else "session_direct"
+    session = getattr(_THREAD_LOCAL, session_key, None)
     if session is None:
         session = requests.Session()
-        _THREAD_LOCAL.session = session
+        session.trust_env = should_trust_env_proxy()
+        if not session.trust_env:
+            session.proxies.clear()
+        setattr(_THREAD_LOCAL, session_key, session)
     return session
 
 

@@ -12,6 +12,10 @@ def _clip_rect(rect: fitz.Rect) -> fitz.Rect:
     return fitz.Rect(rect.x0 - 1, rect.y0 - 1, rect.x1 + 1, rect.y1 + 1)
 
 
+def _rect_area(rect: fitz.Rect) -> float:
+    return max(0.0, float(rect.x1) - float(rect.x0)) * max(0.0, float(rect.y1) - float(rect.y0))
+
+
 def _word_rect(entry: tuple) -> fitz.Rect | None:
     if len(entry) < 5:
         return None
@@ -61,8 +65,8 @@ def _item_vector_overlap_stats(rect: fitz.Rect, drawing_rects: list[fitz.Rect]) 
         if inter.is_empty:
             continue
         overlap_count += 1
-        overlap_area += inter.get_area()
-    rect_area = max(clip.get_area(), 1.0)
+        overlap_area += _rect_area(inter)
+    rect_area = max(_rect_area(clip), 1.0)
     return overlap_count, overlap_area / rect_area
 
 
@@ -154,11 +158,15 @@ def redact_translated_text_areas(
     redactions: list[tuple[fitz.Rect, tuple[float, float, float] | None]] = []
     cover_rects: list[fitz.Rect] = []
     for rect, item, _translated_text in valid_items:
-        if fill_background is None and _item_should_use_cover_only(rect, drawing_rects):
-            cover_rects.append(rect)
-            continue
         if fill_background is None:
-            fill = None if item_has_removable_text(page, item, rect, page_words=page_words) else (1, 1, 1)
+            removable = item_has_removable_text(page, item, rect, page_words=page_words)
+            if removable:
+                fill = None
+            elif _item_should_use_cover_only(rect, drawing_rects):
+                cover_rects.append(rect)
+                continue
+            else:
+                fill = (1, 1, 1)
         else:
             fill = (1, 1, 1) if fill_background else None
         redactions.append((rect, fill))

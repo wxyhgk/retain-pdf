@@ -80,24 +80,20 @@
 
           <div class="status-stack">
             <div>
-              <div class="label">job_id</div>
+              <div class="label">任务号</div>
               <div id="job-id" class="mono">-</div>
             </div>
             <div>
-              <div class="label">status</div>
+              <div class="label">状态</div>
               <div id="job-status" class="badge idle">idle</div>
             </div>
             <div>
-              <div class="label">job_type</div>
-              <div id="job-type" class="mono">-</div>
+              <div class="label">状态摘要</div>
+              <div id="job-summary" class="summary-text">等待提交任务</div>
             </div>
             <div>
-              <div class="label">stage</div>
-              <div id="job-stage" class="mono">-</div>
-            </div>
-            <div>
-              <div class="label">stage_detail</div>
-              <div id="job-stage-detail" class="mono">-</div>
+              <div class="label">当前提示</div>
+              <div id="job-stage-detail" class="summary-text">-</div>
             </div>
           </div>
 
@@ -111,18 +107,33 @@
             </div>
           </div>
 
-          <div id="developer-log-panel" class="top-gap hidden">
-            <div class="label">log_tail</div>
-            <pre id="log-tail" class="log">-</pre>
-          </div>
-
           <div class="top-gap">
-            <div class="label">错误信息</div>
+            <div class="label">提示 / 错误</div>
             <pre id="error-box" class="log error-box">-</pre>
           </div>
 
           <details id="developer-details-panel" class="raw-panel top-gap hidden">
             <summary>详细信息</summary>
+            <div class="advanced-body">
+              <div class="status-stack">
+                <div>
+                  <div class="label">job_type</div>
+                  <div id="job-type" class="mono">-</div>
+                </div>
+                <div>
+                  <div class="label">stage</div>
+                  <div id="job-stage" class="mono">-</div>
+                </div>
+                <div>
+                  <div class="label">stage_detail</div>
+                  <div id="job-stage-raw-detail" class="mono">-</div>
+                </div>
+              </div>
+            </div>
+            <div id="developer-log-panel" class="top-gap hidden">
+              <div class="label">log_tail</div>
+              <pre id="log-tail" class="log">-</pre>
+            </div>
             <div class="top-gap">
               <div class="label">关键产物</div>
               <dl id="artifacts" class="artifacts">
@@ -263,6 +274,21 @@
             <label class="checkbox-row compact-check">
               <input id="skip_title_translation" name="skip_title_translation" type="checkbox" />
               <span>skip_title_translation</span>
+            </label>
+          </div>
+
+          <div class="grid two">
+            <label>
+              <span>rule_profile</span>
+              <select id="rule_profile_name" name="rule_profile_name">
+                <option value="general_sci" selected>general_sci</option>
+                <option value="software_manual">software_manual</option>
+                <option value="computational_chemistry">computational_chemistry</option>
+              </select>
+            </label>
+            <label>
+              <span>custom_rules</span>
+              <textarea id="custom_rules_text" name="custom_rules_text" rows="6" placeholder="仅开发者可见的额外规则"></textarea>
             </label>
           </div>
         </div>

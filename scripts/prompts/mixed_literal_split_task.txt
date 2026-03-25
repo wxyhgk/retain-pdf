@@ -1,0 +1,9 @@
+Decide how to handle this OCR block.
+
+Choose:
+- keep_all: preserve the whole block as-is
+- translate_all: translate the whole block
+- translate_tail: keep a literal prefix and translate only the remaining tail
+
+The block may contain commands, flags, assignments, file names, or short parameter names followed by explanation text.
+If soft_hints suggest a command prefix plus prose tail, keep the literal prefix and translate the explanatory tail.

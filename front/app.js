@@ -21,6 +21,12 @@ const artifactsOrder = [
   "summary",
 ];
 
+const BUILTIN_RULE_PROFILES = [
+  { name: "general_sci", label: "general_sci" },
+  { name: "software_manual", label: "software_manual" },
+  { name: "computational_chemistry", label: "computational_chemistry" },
+];
+
 function apiBase() {
   return $("api-base").value.trim().replace(/\/$/, "");
 }
@@ -34,6 +40,91 @@ function setStatus(status) {
   const el = $("job-status");
   el.textContent = status || "idle";
   el.className = `badge ${status || "idle"}`;
+}
+
+function safeJsonClone(value) {
+  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+
+function redactCommandArray(command) {
+  if (!Array.isArray(command)) {
+    return command;
+  }
+  const redacted = [...command];
+  for (let i = 0; i < redacted.length; i += 1) {
+    if (redacted[i] === "--api-key" || redacted[i] === "--mineru-token") {
+      if (i + 1 < redacted.length) {
+        redacted[i + 1] = "***";
+      }
+    }
+  }
+  return redacted;
+}
+
+function redactSensitive(value) {
+  if (Array.isArray(value)) {
+    return redactCommandArray(value).map((item) => redactSensitive(item));
+  }
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+  const cloned = {};
+  for (const [key, raw] of Object.entries(value)) {
+    if (["api_key", "mineru_token"].includes(key)) {
+      cloned[key] = raw ? "***" : "";
+      continue;
+    }
+    if (key === "command" && Array.isArray(raw)) {
+      cloned[key] = redactCommandArray(raw);
+      continue;
+    }
+    cloned[key] = redactSensitive(raw);
+  }
+  return cloned;
+}
+
+function summarizeStatus(status) {
+  switch (status) {
+    case "queued":
+      return "任务已提交，等待后端开始处理。";
+    case "running":
+      return "任务正在处理中，请等待当前阶段完成。";
+    case "succeeded":
+      return "任务已完成，可以下载结果。";
+    case "failed":
+      return "任务已失败，可重试或进入开发者模式查看内部细节。";
+    default:
+      return "等待提交任务。";
+  }
+}
+
+function summarizeStageDetail(payload) {
+  const detail = (payload.stage_detail || "").trim();
+  if (detail) {
+    return detail;
+  }
+  switch (payload.status) {
+    case "queued":
+      return "排队中";
+    case "running":
+      return "后端正在处理当前文档";
+    case "succeeded":
+      return "处理完成";
+    case "failed":
+      return "处理失败";
+    default:
+      return "-";
+  }
+}
+
+function summarizePublicError(payload) {
+  if (payload.status === "failed") {
+    return "任务失败。可重试；如需定位内部原因，请进入开发者模式查看详细日志。";
+  }
+  if (payload.error) {
+    return "任务返回了错误信息。请稍后重试；如需内部细节，请进入开发者模式查看。";
+  }
+  return "-";
 }
 
 function setDownloadLink(jobId, enabled) {
@@ -108,10 +199,13 @@ function updateJobWarning(status) {
 }
 
 function renderJob(payload) {
+  const sanitizedPayload = redactSensitive(safeJsonClone(payload));
   $("job-id").textContent = payload.job_id || "-";
   $("job-type").textContent = payload.job_type || "-";
   $("job-stage").textContent = payload.stage || "-";
-  $("job-stage-detail").textContent = payload.stage_detail || "-";
+  $("job-stage-raw-detail").textContent = payload.stage_detail || "-";
+  $("job-summary").textContent = summarizeStatus(payload.status || "idle");
+  $("job-stage-detail").textContent = summarizeStageDetail(payload);
   $("job-id-input").value = payload.job_id || "";
   setStatus(payload.status || "idle");
   setLinearProgress(
@@ -124,8 +218,8 @@ function renderJob(payload) {
   $("log-tail").textContent = Array.isArray(payload.log_tail) && payload.log_tail.length
     ? payload.log_tail.join("\n")
     : "-";
-  $("error-box").textContent = payload.error || payload.result?.stderr || "-";
-  $("raw-json").textContent = JSON.stringify(payload, null, 2);
+  $("error-box").textContent = summarizePublicError(payload);
+  $("raw-json").textContent = JSON.stringify(sanitizedPayload, null, 2);
   renderArtifacts(payload.artifacts || {});
   setDownloadLink(payload.job_id, payload.status === "succeeded");
   updateJobWarning(payload.status || "idle");
@@ -141,7 +235,10 @@ function stopPolling() {
 async function fetchJob(jobId) {
   const resp = await fetch(`${apiBase()}/v1/jobs/${jobId}`);
   if (!resp.ok) {
-    throw new Error(`读取任务失败: ${resp.status}`);
+    if (resp.status === 404) {
+      throw new Error("未找到该任务，请检查 job_id 是否正确。");
+    }
+    throw new Error(`读取任务失败，请稍后重试。(${resp.status})`);
   }
   const payload = await resp.json();
   renderJob(payload);
@@ -194,6 +291,8 @@ function collectRunPayload() {
     model_version: $("model_version").value,
     language: $("language").value.trim(),
     page_ranges: $("page_ranges").value.trim(),
+    rule_profile_name: $("rule_profile_name").value,
+    custom_rules_text: $("custom_rules_text").value,
   };
 }
 
@@ -292,7 +391,9 @@ async function submitForm(event) {
     $("job-id").textContent = payload.job_id || "-";
     $("job-id-input").value = payload.job_id || "";
     setStatus(payload.status || "queued");
-    $("raw-json").textContent = JSON.stringify(payload, null, 2);
+    $("job-summary").textContent = summarizeStatus(payload.status || "queued");
+    $("job-stage-detail").textContent = payload.status === "queued" ? "任务已提交，等待后端开始处理。" : "-";
+    $("raw-json").textContent = JSON.stringify(redactSensitive(safeJsonClone(payload)), null, 2);
     setDownloadLink(payload.job_id, false);
     startPolling(payload.job_id);
   } catch (err) {
@@ -332,6 +433,48 @@ function submitDeveloperPassword() {
   $("developer-auth-error").classList.remove("hidden");
 }
 
+async function loadRuleProfiles() {
+  const select = $("rule_profile_name");
+  const current = select.value;
+  try {
+    const resp = await fetch(`${apiBase()}/v1/rule-profiles`);
+    if (!resp.ok) {
+      throw new Error("load failed");
+    }
+    const items = await resp.json();
+    const options = Array.isArray(items) && items.length
+      ? items.map((item) => ({
+        name: item.name,
+        label: item.name + (item.built_in ? " (builtin)" : ""),
+      }))
+      : BUILTIN_RULE_PROFILES;
+    select.innerHTML = "";
+    for (const item of options) {
+      const option = document.createElement("option");
+      option.value = item.name;
+      option.textContent = item.label;
+      if (item.name === current) {
+        option.selected = true;
+      }
+      select.appendChild(option);
+    }
+    if (![...select.options].some((option) => option.selected) && select.options.length) {
+      select.options[0].selected = true;
+    }
+  } catch (_err) {
+    select.innerHTML = "";
+    for (const item of BUILTIN_RULE_PROFILES) {
+      const option = document.createElement("option");
+      option.value = item.name;
+      option.textContent = item.label;
+      if (item.name === current) {
+        option.selected = true;
+      }
+      select.appendChild(option);
+    }
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   if (!$("api-base").value.trim()) {
     $("api-base").value = defaultApiBase();
@@ -351,8 +494,11 @@ document.addEventListener("DOMContentLoaded", () => {
   renderArtifacts({});
   setDownloadLink("", false);
   setLinearProgress("job-progress-bar", "job-progress-text", NaN, NaN, "-");
+  $("job-summary").textContent = summarizeStatus("idle");
+  $("job-stage-detail").textContent = "-";
   resetUploadProgress();
   resetUploadedFile();
   updateDeveloperVisibility();
   updateJobWarning("idle");
+  loadRuleProfiles().catch(() => {});
 });

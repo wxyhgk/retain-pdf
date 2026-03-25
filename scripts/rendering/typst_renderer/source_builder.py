@@ -31,8 +31,7 @@ def _build_typst_block(block_id: str, block: RenderBlock) -> str:
             f"  let base-size = measure({base_name})\n"
             f"  let scaled-font = if base-size.width > {width}pt {{ {font_size}pt * ({width}pt / base-size.width) }} else {{ {font_size}pt }}\n"
             f"  let {scaled_name} = box[#{{ set text(size: scaled-font); {text_name} }}]\n"
-            f"  let size = measure({scaled_name})\n"
-            f"  place(top + left, dx: {x0}pt, dy: {y0}pt + ({height}pt - size.height) / 2, {scaled_name})\n"
+            f"  place(top + left, dx: {x0}pt, dy: {y0}pt, {scaled_name})\n"
             "}"
         )
 
@@ -43,9 +42,7 @@ def _build_typst_block(block_id: str, block: RenderBlock) -> str:
         f'#let {markdown_name} = "{escape_typst_string(markdown)}"\n'
         f"#let {body_name} = block(width: {width}pt)[#{{ set text(size: {font_size}pt); set par(leading: {leading}em); cmarker.render({markdown_name}, math: mitex) }}]\n"
         "#context {\n"
-        f"  let size = measure({body_name})\n"
-        f"  let y = if size.height > {height}pt {{ {y0}pt }} else {{ {y0}pt + ({height}pt - size.height) / 2 }}\n"
-        f"  place(top + left, dx: {x0}pt, dy: y, {body_name})\n"
+        f"  place(top + left, dx: {x0}pt, dy: {y0}pt, {body_name})\n"
         "}"
     )
 

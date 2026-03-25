@@ -19,6 +19,7 @@ def apply_page_policies(
     page_payloads: dict[int, list[dict]],
     mode: str,
     classify_batch_size: int,
+    workers: int,
     api_key: str,
     model: str,
     base_url: str,
@@ -28,12 +29,19 @@ def apply_page_policies(
     policy_config: TranslationPolicyConfig | None = None,
 ) -> int:
     classified_items = 0
-    for page_idx in sorted(page_payloads):
+    ordered_pages = sorted(page_payloads)
+    total_pages = len(ordered_pages)
+    for order, page_idx in enumerate(ordered_pages, start=1):
+        print(
+            f"book: page policy page {order}/{total_pages} -> source page {page_idx + 1}",
+            flush=True,
+        )
         payload = page_payloads[page_idx]
         page_classified, _ = apply_translation_policies(
             payload=payload,
             mode=mode,
             classify_batch_size=classify_batch_size,
+            workers=workers,
             api_key=api_key,
             model=model,
             base_url=base_url,
@@ -44,6 +52,10 @@ def apply_page_policies(
             policy_config=policy_config,
         )
         classified_items += page_classified
+        print(
+            f"book: page policy done {order}/{total_pages} -> source page {page_idx + 1} classified={page_classified}",
+            flush=True,
+        )
     return classified_items
 
 

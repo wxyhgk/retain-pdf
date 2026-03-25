@@ -28,10 +28,13 @@ def export_translation_template(items: list[TextItem], output_path: Path, page_i
                 "layout_zone_size": 0,
                 "layout_boundary_role": "",
                 "protected_source_text": protected_source_text,
+                "mixed_original_protected_source_text": protected_source_text,
                 "formula_map": formula_map,
                 "classification_label": "",
                 "should_translate": True,
                 "skip_reason": "",
+                "mixed_literal_action": "",
+                "mixed_literal_prefix": "",
                 "translation_unit_id": item.item_id,
                 "translation_unit_kind": "single",
                 "translation_unit_member_ids": [item.item_id],
@@ -106,6 +109,15 @@ def ensure_translation_template(items: list[TextItem], output_path: Path, page_i
             changed = True
         if "classification_label" not in record:
             record["classification_label"] = ""
+            changed = True
+        if "mixed_original_protected_source_text" not in record:
+            record["mixed_original_protected_source_text"] = record.get("protected_source_text", "")
+            changed = True
+        if "mixed_literal_action" not in record:
+            record["mixed_literal_action"] = ""
+            changed = True
+        if "mixed_literal_prefix" not in record:
+            record["mixed_literal_prefix"] = ""
             changed = True
         if "layout_mode" not in record:
             record["layout_mode"] = ""

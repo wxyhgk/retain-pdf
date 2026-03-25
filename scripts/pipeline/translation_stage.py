@@ -24,6 +24,8 @@ def translate_book_pipeline(
     model: str = "deepseek-chat",
     base_url: str = DEFAULT_BASE_URL,
     source_pdf_path: Path | None = None,
+    rule_profile_name: str = "general_sci",
+    custom_rules_text: str = "",
 ) -> dict:
     data = load_ocr_json(source_json_path)
     pages = data.get("pdf_info", [])
@@ -41,12 +43,15 @@ def translate_book_pipeline(
         model=model,
         base_url=base_url,
         output_dir=output_dir,
+        rule_profile_name=rule_profile_name,
+        custom_rules_text=custom_rules_text,
     )
     if policy_config.domain_context.get("domain") or policy_config.domain_context.get("translation_guidance"):
         print(
             f"sci domain: {policy_config.domain_context.get('domain', '').strip() or 'unknown'}",
             flush=True,
         )
+    print(f"rule profile: {policy_config.rule_profile_name}", flush=True)
     translated_pages_map, summaries = translate_book_with_global_continuations(
         data=data,
         output_dir=output_dir,
@@ -76,4 +81,6 @@ def translate_book_pipeline(
         "translated_pages_map": translated_pages_map,
         "summaries": summaries,
         "domain_context": policy_config.domain_context,
+        "rule_profile_name": policy_config.rule_profile_name,
+        "custom_rules_text": policy_config.custom_rules_text,
     }

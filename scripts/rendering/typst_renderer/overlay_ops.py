@@ -77,7 +77,10 @@ def _compile_book_overlay_with_fallback(
 ) -> Path:
     base_dir = temp_root or paths.OUTPUT_DIR
     base_dir.mkdir(parents=True, exist_ok=True)
-    work_dir = prepare_typst_work_dir(base_dir, "book-overlays", stem)
+    # Keep book-level overlay artifacts directly under `typst/book-overlays/`
+    # so each job only has one stable overlay location instead of an extra
+    # nested `<stem>/` directory.
+    work_dir = prepare_typst_work_dir(base_dir, "book-overlays")
     return compile_typst_book_overlay_pdf(
         page_specs,
         stem=stem,

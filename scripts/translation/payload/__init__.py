@@ -6,8 +6,10 @@ from translation.payload.ops import GROUP_ITEM_PREFIX
 from translation.payload.ops import apply_after_last_title_skip
 from translation.payload.ops import apply_classification_labels
 from translation.payload.ops import apply_metadata_fragment_skip
+from translation.payload.ops import apply_mixed_literal_split_policy
 from translation.payload.ops import apply_narrow_body_text_skip
 from translation.payload.ops import apply_scientific_paper_skips
+from translation.payload.ops import apply_shared_literal_block_policy
 from translation.payload.ops import apply_title_skip
 from translation.payload.ops import apply_translated_text_map
 from translation.payload.ops import pending_translation_items
@@ -23,8 +25,10 @@ __all__ = [
     "apply_after_last_title_skip",
     "apply_classification_labels",
     "apply_metadata_fragment_skip",
+    "apply_mixed_literal_split_policy",
     "apply_narrow_body_text_skip",
     "apply_scientific_paper_skips",
+    "apply_shared_literal_block_policy",
     "apply_title_skip",
     "apply_translated_text_map",
     "ensure_translation_template",

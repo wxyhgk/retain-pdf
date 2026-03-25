@@ -28,6 +28,8 @@ def run_book_pipeline(
     classify_batch_size: int,
     skip_title_translation: bool,
     render_mode: str,
+    rule_profile_name: str = "general_sci",
+    custom_rules_text: str = "",
     compile_workers: int | None = None,
     typst_font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
@@ -47,6 +49,8 @@ def run_book_pipeline(
         model=model,
         base_url=base_url,
         source_pdf_path=source_pdf_path,
+        rule_profile_name=rule_profile_name,
+        custom_rules_text=custom_rules_text,
     )
     translate_elapsed = time.perf_counter() - total_started
 
@@ -76,6 +80,8 @@ def run_book_pipeline(
         "output_pdf_path": render_summary["output_pdf_path"],
         "pages_processed": translated_pages,
         "translated_items_total": translated_items_total,
+        "rule_profile_name": translation_summary.get("rule_profile_name", ""),
+        "custom_rules_text": translation_summary.get("custom_rules_text", ""),
         "translate_elapsed": translate_elapsed,
         "save_elapsed": save_elapsed,
         "total_elapsed": total_elapsed,

@@ -126,6 +126,7 @@ def main() -> None:
             payload=payload,
             mode=args.mode,
             classify_batch_size=max(1, args.classify_batch_size),
+            workers=1,
             api_key=args.api_key,
             model=args.model,
             base_url=args.base_url,

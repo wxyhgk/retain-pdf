@@ -1,0 +1,6 @@
+Software manual rule profile:
+- Translate explanatory prose, option descriptions, procedural steps, warning text, and natural-language parameter explanations.
+- Keep standalone commands, flags, config assignments, code snippets, shell examples, file paths, and template input lines unchanged.
+- If a block starts with a command/example and then continues with explanatory prose, keep the literal command prefix and translate the prose tail.
+- Do not mark a full explanation as untranslated merely because it mentions flags, placeholders, file names, or tokens like --help, config.yaml, KEY=value, or <input>.
+- Prefer translation for sentence-like paragraphs, even when they contain short command-like fragments.

@@ -27,6 +27,8 @@ def parse_args() -> argparse.Namespace:
         help="Do not translate OCR blocks with block_type=title.",
     )
     parser.add_argument("--classify-batch-size", type=int, default=12, help="Number of suspicious items per classification API call.")
+    parser.add_argument("--rule-profile-name", type=str, default="general_sci", help="Built-in rule profile name.")
+    parser.add_argument("--custom-rules-text", type=str, default="", help="Extra rule text injected into model context.")
     parser.add_argument("--api-key", type=str, default="", help="Optional API key. Prefer env DEEPSEEK_API_KEY.")
     parser.add_argument("--model", type=str, default="deepseek-chat", help="Model name.")
     parser.add_argument(
@@ -73,6 +75,8 @@ def main() -> None:
         mode=args.mode,
         classify_batch_size=max(1, args.classify_batch_size),
         skip_title_translation=args.skip_title_translation,
+        rule_profile_name=args.rule_profile_name,
+        custom_rules_text=args.custom_rules_text,
         model=args.model,
         base_url=args.base_url,
         source_pdf_path=Path(args.source_pdf),

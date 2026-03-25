@@ -51,6 +51,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mode", type=str, default="sci", choices=["fast", "precise", "sci"], help="Translation mode. Default is sci.")
     parser.add_argument("--skip-title-translation", action="store_true", help="Do not translate OCR title blocks.")
     parser.add_argument("--classify-batch-size", type=int, default=12, help="Classification batch size for precise mode.")
+    parser.add_argument("--rule-profile-name", type=str, default="general_sci", help="Built-in rule profile name.")
+    parser.add_argument("--custom-rules-text", type=str, default="", help="Extra rule text injected into model context.")
     parser.add_argument("--api-key", type=str, default="", help="Optional translation API key. Prefer env DEEPSEEK_API_KEY for DeepSeek.")
     parser.add_argument("--model", type=str, default="Q3.5-turbo", help="Translation model name.")
     parser.add_argument("--base-url", type=str, default="http://1.94.67.196:10001/v1", help="OpenAI-compatible translation API base URL.")
@@ -107,6 +109,8 @@ def main() -> None:
         classify_batch_size=args.classify_batch_size,
         skip_title_translation=args.skip_title_translation,
         render_mode=args.render_mode,
+        rule_profile_name=args.rule_profile_name,
+        custom_rules_text=args.custom_rules_text,
         compile_workers=args.compile_workers or None,
         typst_font_family=args.typst_font_family,
         pdf_compress_dpi=args.pdf_compress_dpi,

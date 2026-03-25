@@ -50,6 +50,7 @@ def apply_translation_policies(
     payload: list[dict],
     mode: str,
     classify_batch_size: int,
+    workers: int,
     api_key: str,
     model: str,
     base_url: str,
@@ -72,21 +73,40 @@ def apply_translation_policies(
 
     payload_ops.reset_policy_state(payload)
     classified_items = 0
-    metadata_fragment_skipped = (
-        payload_ops.apply_metadata_fragment_skip(
+    ref_text_skipped = payload_ops.apply_ref_text_skip(payload)
+    reference_zone_skipped = (
+        payload_ops.apply_reference_zone_skip(
             payload,
             page_idx=page_idx,
-            max_page_idx=policy_config.metadata_fragment_max_page_idx,
+            cutoff_page_idx=policy_config.sci_cutoff_page_idx,
+            cutoff_block_idx=policy_config.sci_cutoff_block_idx,
         )
-        if policy_config.enable_metadata_fragment_skip
+        if policy_config.enable_reference_zone_skip
         else 0
     )
-    narrow_body_skipped = payload_ops.apply_narrow_body_text_skip(payload) if policy_config.enable_narrow_body_noise_skip else 0
+    shared_literal_summary = {
+        "shared_literal_code_skipped": 0,
+        "shared_literal_translate_forced": 0,
+    }
+    mixed_literal_summary = {
+        "mixed_keep_all": 0,
+        "mixed_translate_all": 0,
+        "mixed_translate_tail": 0,
+    }
+    metadata_fragment_skipped = 0
+    narrow_body_skipped = 0
     skip_summary = {
         "title_skipped": 0,
         "tail_skipped": 0,
+        "ref_text_skipped": ref_text_skipped,
+        "reference_zone_skipped": reference_zone_skipped,
         "narrow_body_skipped": narrow_body_skipped,
         "metadata_fragment_skipped": metadata_fragment_skipped,
+        "shared_literal_code_skipped": shared_literal_summary["shared_literal_code_skipped"],
+        "shared_literal_translate_forced": shared_literal_summary["shared_literal_translate_forced"],
+        "mixed_keep_all": mixed_literal_summary["mixed_keep_all"],
+        "mixed_translate_all": mixed_literal_summary["mixed_translate_all"],
+        "mixed_translate_tail": mixed_literal_summary["mixed_translate_tail"],
     }
 
     if policy_config.mode == "precise":
@@ -96,6 +116,8 @@ def apply_translation_policies(
             model=model,
             base_url=base_url,
             batch_size=classify_batch_size,
+            rule_guidance=policy_config.rule_guidance,
+            request_label=f"classification page {page_idx + 1}",
         )
         classified_items = payload_ops.apply_classification_labels(payload, labels)
 
@@ -110,15 +132,29 @@ def apply_translation_policies(
         skip_summary = {
             "title_skipped": title_skipped,
             "tail_skipped": tail_skipped,
+            "ref_text_skipped": ref_text_skipped,
+            "reference_zone_skipped": reference_zone_skipped,
             "narrow_body_skipped": narrow_body_skipped,
             "metadata_fragment_skipped": metadata_fragment_skipped,
+            "shared_literal_code_skipped": shared_literal_summary["shared_literal_code_skipped"],
+            "shared_literal_translate_forced": shared_literal_summary["shared_literal_translate_forced"],
+            "mixed_keep_all": mixed_literal_summary["mixed_keep_all"],
+            "mixed_translate_all": mixed_literal_summary["mixed_translate_all"],
+            "mixed_translate_tail": mixed_literal_summary["mixed_translate_tail"],
         }
     elif policy_config.enable_title_skip:
         skip_summary = {
             "title_skipped": payload_ops.apply_title_skip(payload),
             "tail_skipped": 0,
+            "ref_text_skipped": ref_text_skipped,
+            "reference_zone_skipped": reference_zone_skipped,
             "narrow_body_skipped": skip_summary["narrow_body_skipped"],
             "metadata_fragment_skipped": metadata_fragment_skipped,
+            "shared_literal_code_skipped": shared_literal_summary["shared_literal_code_skipped"],
+            "shared_literal_translate_forced": shared_literal_summary["shared_literal_translate_forced"],
+            "mixed_keep_all": mixed_literal_summary["mixed_keep_all"],
+            "mixed_translate_all": mixed_literal_summary["mixed_translate_all"],
+            "mixed_translate_tail": mixed_literal_summary["mixed_translate_tail"],
         }
 
     return classified_items, skip_summary

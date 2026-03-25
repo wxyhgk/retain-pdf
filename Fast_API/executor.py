@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import re
 import sys
 import time
@@ -14,6 +13,10 @@ sys.path.append(str((Path(__file__).resolve().parent.parent / "scripts")))
 from config.output_layout import LEGACY_OCR_DIR_NAME
 from config.output_layout import OCR_DIR_NAME
 
+from .job_store import load_job
+from .job_store import save_job
+from .job_store import list_jobs
+from .job_store import init_db
 from .models import DOWNLOADS_DIR
 from .models import JobRecord
 from .models import JobStatus
@@ -53,9 +56,6 @@ RUN_MINERU_PATTERNS = {
     "total_time_seconds": re.compile(r"^total time:\s*([0-9.]+)s$", re.MULTILINE),
 }
 
-JOBS_DIR = PROJECT_ROOT / "Fast_API" / "jobs"
-JOBS_DIR.mkdir(parents=True, exist_ok=True)
-
 _JOB_TASKS: dict[str, asyncio.Task] = {}
 _LOG_TAIL_LIMIT = 40
 
@@ -64,11 +64,18 @@ _PENDING_BATCH_RE = re.compile(r"^book: pending items=(\d+) batches=(\d+) worker
 _PAGE_PROGRESS_RE = re.compile(r"^page (\d+): translated (\d+)/(\d+)$")
 _MINERU_BATCH_STATE_RE = re.compile(r"^batch ([^:]+): state=(.+)$")
 _OVERLAY_MERGE_RE = re.compile(r"^overlay merge page (\d+)/(\d+) -> source page (\d+)$")
-
-
-def _job_file(job_id: str) -> Path:
-    return JOBS_DIR / f"{job_id}.json"
-
+_FLUSH_PROGRESS_RE = re.compile(r"^book: flushed pages=(\d+) after (?:completed )?batch (\d+)/(\d+) in ([0-9.]+)s$")
+_FINAL_FLUSH_RE = re.compile(r"^book: final flush pages=(\d+) in ([0-9.]+)s$")
+_MIXED_LITERAL_PENDING_RE = re.compile(r"^book: mixed literal split candidates=(\d+) workers=(\d+)$")
+_CLASSIFIED_RE = re.compile(r"^book: classified (\d+) items$")
+_PAGE_POLICIES_MODE_RE = re.compile(r"^book: page policies mode=([a-z_]+) total_pages=(\d+)$")
+_PAGE_POLICY_PAGE_RE = re.compile(r"^book: page policy page (\d+)/(\d+) -> source page (\d+)$")
+_PAGE_POLICY_DONE_RE = re.compile(r"^book: page policy done (\d+)/(\d+) -> source page (\d+) classified=(\d+)$")
+_CLASSIFICATION_RE = re.compile(r"^classification page (\d+): review_items=(\d+) filtered=(\d+)$")
+_TRANSLATE_ATTEMPT_RE = re.compile(r"^book: batch (\d+)/(\d+): translate attempt (\d+)/(\d+) items=(\d+)$")
+_TRANSLATE_HTTP_ATTEMPT_RE = re.compile(r"^book: batch (\d+)/(\d+) req#(\d+): http attempt (\d+)/(\d+) -> .+$")
+_TRANSLATE_HTTP_FAIL_RE = re.compile(r"^book: batch (\d+)/(\d+) req#(\d+): http failed attempt (\d+)/(\d+) after ([0-9.]+)s: (.+)$")
+_TRANSLATE_PARSE_FAIL_RE = re.compile(r"^book: batch (\d+)/(\d+): parse failed attempt (\d+)/(\d+) after ([0-9.]+)s: .+$")
 
 def utc_now_iso() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -104,6 +111,40 @@ def parse_named_fields(stdout: str, patterns: dict[str, re.Pattern[str]]) -> dic
         else:
             result[key] = value
     return result
+
+
+def _parse_named_field_from_line(
+    line: str,
+    patterns: dict[str, re.Pattern[str]],
+) -> dict[str, str | int | float]:
+    stripped = line.strip()
+    result: dict[str, str | int | float] = {}
+    for key, pattern in patterns.items():
+        match = pattern.match(stripped)
+        if not match:
+            continue
+        value = match.group(1).strip()
+        if key.endswith("_seconds"):
+            parsed = _parse_float(value)
+        elif key in {"pages_processed", "translated_items"}:
+            parsed = _parse_int(value)
+        else:
+            parsed = value
+        if parsed is not None:
+            result[key] = parsed
+    return result
+
+
+def _artifact_model_for_job(job_type: str, payload: dict[str, str | int | float | None]):
+    if job_type == "run-mineru-case":
+        return RunMinerUCaseArtifacts(**payload)
+    return RunCaseArtifacts(**payload)
+
+
+def _artifact_patterns_for_job(job_type: str) -> dict[str, re.Pattern[str]]:
+    if job_type == "run-mineru-case":
+        return RUN_MINERU_PATTERNS
+    return RUN_CASE_PATTERNS
 
 
 def build_process_result(command: list[str], return_code: int, duration: float, stdout: str, stderr: str) -> ProcessResult:
@@ -180,6 +221,87 @@ def _update_progress_from_line(record: JobRecord, line: str) -> bool:
     if stripped.startswith("continuation-review "):
         _set_stage(record, stage="continuation_review", detail="正在判断跨栏/跨页连续段")
         return True
+    if stripped == "book: page policies start":
+        _set_stage(record, stage="page_policies", detail="正在执行块规则、分类和局部拆分")
+        return True
+    match = _PAGE_POLICIES_MODE_RE.match(stripped)
+    if match:
+        mode = match.group(1).strip()
+        total_pages = int(match.group(2))
+        detail = "正在执行块规则、分类和局部拆分" if mode == "precise" else "正在执行块规则和局部拆分"
+        _set_stage(
+            record,
+            stage="page_policies",
+            detail=detail,
+            progress_current=0,
+            progress_total=total_pages,
+        )
+        return True
+    match = _PAGE_POLICY_PAGE_RE.match(stripped)
+    if match:
+        current = int(match.group(1))
+        total = int(match.group(2))
+        source_page = int(match.group(3))
+        _set_stage(
+            record,
+            stage="page_policies",
+            detail=f"正在处理第 {current}/{total} 页策略，对应源文第 {source_page} 页",
+            progress_current=current - 1,
+            progress_total=total,
+        )
+        return True
+    match = _PAGE_POLICY_DONE_RE.match(stripped)
+    if match:
+        current = int(match.group(1))
+        total = int(match.group(2))
+        source_page = int(match.group(3))
+        classified = int(match.group(4))
+        _set_stage(
+            record,
+            stage="page_policies",
+            detail=f"第 {current}/{total} 页策略完成，对应源文第 {source_page} 页，分类 {classified} 个块",
+            progress_current=current,
+            progress_total=total,
+        )
+        return True
+    match = _CLASSIFICATION_RE.match(stripped)
+    if match:
+        page_no = int(match.group(1))
+        review_items = int(match.group(2))
+        filtered = int(match.group(3))
+        _set_stage(
+            record,
+            stage="page_policies",
+            detail=f"正在分类第 {page_no} 页，可疑块 {review_items} 个，候选块 {filtered} 个",
+        )
+        return True
+    if stripped.startswith("classification page ") and ": http attempt " in stripped:
+        page_no = stripped.split(":", 1)[0].split()[-1]
+        _set_stage(record, stage="page_policies", detail=f"正在等待第 {page_no} 页分类结果")
+        return True
+    if stripped.startswith("classification page ") and ": http ok in " in stripped:
+        page_no = stripped.split(":", 1)[0].split()[-1]
+        _set_stage(record, stage="page_policies", detail=f"第 {page_no} 页分类完成")
+        return True
+    match = _MIXED_LITERAL_PENDING_RE.match(stripped)
+    if match:
+        current = int(match.group(1))
+        _set_stage(
+            record,
+            stage="mixed_literal_split",
+            detail=f"正在拆分命令/说明混合块，共 {current} 个候选块",
+            progress_current=0,
+            progress_total=current,
+        )
+        return True
+    if stripped.startswith("mixed-split "):
+        _set_stage(record, stage="mixed_literal_split", detail="正在拆分命令/说明混合块")
+        return True
+    match = _CLASSIFIED_RE.match(stripped)
+    if match:
+        classified = int(match.group(1))
+        _set_stage(record, stage="page_policies", detail=f"块规则与分类完成，已处理 {classified} 个块")
+        return True
     match = _PENDING_BATCH_RE.match(stripped)
     if match:
         total_batches = int(match.group(2))
@@ -189,6 +311,62 @@ def _update_progress_from_line(record: JobRecord, line: str) -> bool:
             detail=f"正在翻译，批次数 {total_batches}",
             progress_current=0,
             progress_total=total_batches,
+        )
+        return True
+    match = _TRANSLATE_ATTEMPT_RE.match(stripped)
+    if match:
+        current = int(match.group(1))
+        total = int(match.group(2))
+        attempt = int(match.group(3))
+        _set_stage(
+            record,
+            stage="translation",
+            detail=f"正在翻译，第 {current}/{total} 批，第 {attempt} 次尝试",
+            progress_current=max(0, current - 1),
+            progress_total=total,
+        )
+        return True
+    match = _TRANSLATE_HTTP_ATTEMPT_RE.match(stripped)
+    if match:
+        current = int(match.group(1))
+        total = int(match.group(2))
+        req_no = int(match.group(3))
+        attempt = int(match.group(4))
+        _set_stage(
+            record,
+            stage="translation",
+            detail=f"第 {current}/{total} 批请求中，子请求 {req_no} 正在第 {attempt} 次联网尝试",
+            progress_current=max(0, current - 1),
+            progress_total=total,
+        )
+        return True
+    match = _TRANSLATE_HTTP_FAIL_RE.match(stripped)
+    if match:
+        current = int(match.group(1))
+        total = int(match.group(2))
+        req_no = int(match.group(3))
+        attempt = int(match.group(4))
+        error_text = match.group(7).strip()
+        short_error = error_text[:80] + "..." if len(error_text) > 80 else error_text
+        _set_stage(
+            record,
+            stage="translation",
+            detail=f"第 {current}/{total} 批子请求 {req_no} 第 {attempt} 次失败，正在重试: {short_error}",
+            progress_current=max(0, current - 1),
+            progress_total=total,
+        )
+        return True
+    match = _TRANSLATE_PARSE_FAIL_RE.match(stripped)
+    if match:
+        current = int(match.group(1))
+        total = int(match.group(2))
+        attempt = int(match.group(3))
+        _set_stage(
+            record,
+            stage="translation",
+            detail=f"第 {current}/{total} 批结果解析失败，正在第 {attempt + 1} 次重试",
+            progress_current=max(0, current - 1),
+            progress_total=total,
         )
         return True
     match = _BATCH_PROGRESS_RE.match(stripped)
@@ -202,6 +380,22 @@ def _update_progress_from_line(record: JobRecord, line: str) -> bool:
             progress_current=current,
             progress_total=total,
         )
+        return True
+    match = _FLUSH_PROGRESS_RE.match(stripped)
+    if match:
+        current = int(match.group(2))
+        total = int(match.group(3))
+        _set_stage(
+            record,
+            stage="translation",
+            detail=f"正在落盘中间翻译结果，第 {current}/{total} 批已写入",
+            progress_current=current,
+            progress_total=total,
+        )
+        return True
+    match = _FINAL_FLUSH_RE.match(stripped)
+    if match:
+        _set_stage(record, stage="render_prepare", detail="翻译结果已全部写入，准备进入渲染")
         return True
     match = _PAGE_PROGRESS_RE.match(stripped)
     if match:
@@ -253,8 +447,12 @@ async def run_command_streaming(job_id: str, command: list[str]) -> tuple[int, f
 
     stdout_chunks: list[str] = []
     stderr_chunks: list[str] = []
+    record = load_job(job_id)
+    artifact_payload: dict[str, str | int | float | None] = {}
+    artifact_patterns = _artifact_patterns_for_job(record.job_type)
 
     async def _consume_stdout() -> None:
+        nonlocal record
         assert proc.stdout is not None
         while True:
             line = await proc.stdout.readline()
@@ -262,18 +460,17 @@ async def run_command_streaming(job_id: str, command: list[str]) -> tuple[int, f
                 break
             text = line.decode("utf-8", errors="replace")
             stdout_chunks.append(text)
-            try:
-                record = load_job(job_id)
-            except KeyError:
-                continue
             if _update_progress_from_line(record, text):
                 record.updated_at = utc_now_iso()
             else:
                 record.updated_at = utc_now_iso()
-            try:
-                record.artifacts = _artifacts_for_job(record.job_type, "".join(stdout_chunks))
-            except Exception:
-                pass
+            updates = _parse_named_field_from_line(text, artifact_patterns)
+            if updates:
+                artifact_payload.update(updates)
+                try:
+                    record.artifacts = _artifact_model_for_job(record.job_type, artifact_payload)
+                except Exception:
+                    pass
             save_job(record)
 
     async def _consume_stderr() -> None:
@@ -289,41 +486,10 @@ async def run_command_streaming(job_id: str, command: list[str]) -> tuple[int, f
     duration = time.perf_counter() - started
     return return_code, duration, "".join(stdout_chunks), "".join(stderr_chunks)
 
-
-def _read_job(job_id: str) -> JobRecord:
-    path = _job_file(job_id)
-    if not path.exists():
-        raise KeyError(job_id)
-    return JobRecord.model_validate_json(path.read_text(encoding="utf-8"))
-
-
-def save_job(record: JobRecord) -> JobRecord:
-    _job_file(record.job_id).write_text(
-        json.dumps(record.model_dump(mode="json"), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    return record
-
-
-def load_job(job_id: str) -> JobRecord:
-    return _read_job(job_id)
-
-
-def list_jobs(limit: int = 50) -> list[JobRecord]:
-    files = sorted(JOBS_DIR.glob("*.json"), key=lambda path: path.stat().st_mtime, reverse=True)
-    records: list[JobRecord] = []
-    for path in files[: max(1, limit)]:
-        try:
-            records.append(JobRecord.model_validate_json(path.read_text(encoding="utf-8")))
-        except Exception:
-            continue
-    return records
-
-
 def create_job(job_type: str, command: list[str], request_payload: dict, job_id: str | None = None) -> JobRecord:
-    job_id = job_id or uuid.uuid4().hex[:12]
+    resolved_job_id = job_id or uuid.uuid4().hex[:12]
     record = JobRecord(
-        job_id=job_id,
+        job_id=resolved_job_id,
         job_type=job_type,
         status="queued",
         created_at=utc_now_iso(),
@@ -353,6 +519,9 @@ def _artifacts_for_job(job_type: str, stdout: str) -> RunCaseArtifacts | RunMine
         return RunMinerUCaseArtifacts(**parsed_raw)
     parsed_raw = parse_named_fields(stdout, RUN_CASE_PATTERNS)
     return RunCaseArtifacts(**parsed_raw)
+
+
+init_db()
 
 
 async def _run_job(job_id: str) -> None:

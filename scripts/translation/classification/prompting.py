@@ -1,4 +1,5 @@
 from common.prompt_loader import load_prompt
+from translation.policy.soft_hints import build_soft_rule_hints
 
 
 MAX_TEXT_CHARS = 320
@@ -18,8 +19,10 @@ def compact_bbox(bbox: list[float]) -> str:
     return f"[{ints[0]},{ints[1]},{ints[2]},{ints[3]}]"
 
 
-def build_prompt(page_items: list[dict], review_items: list[dict]) -> list[dict[str, str]]:
+def build_prompt(page_items: list[dict], review_items: list[dict], rule_guidance: str = "") -> list[dict[str, str]]:
     system_prompt = load_prompt("classification_system.txt")
+    if rule_guidance.strip():
+        system_prompt = f"{system_prompt}\n\nAdditional rule guidance:\n{rule_guidance.strip()}"
     blocks = []
     review_orders = {item["order"] for item in review_items}
     for item in page_items:
@@ -34,6 +37,7 @@ def build_prompt(page_items: list[dict], review_items: list[dict]) -> list[dict[
                     f"bbox: {compact_bbox(item['bbox'])}",
                     f"line_count: {item['line_count']}",
                     f"has_inline_formula: {str(item['has_inline_formula']).lower()}",
+                    f"soft_hints: {', '.join(build_soft_rule_hints(item)) or '-'}",
                     f"text: {short_text(item['source_text'])}",
                 ]
             )

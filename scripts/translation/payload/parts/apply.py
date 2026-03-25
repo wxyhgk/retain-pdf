@@ -23,6 +23,18 @@ def _mark_keep_origin(item: dict) -> None:
     clear_translation_fields(item)
 
 
+def _join_prefix_and_tail(prefix: str, tail: str) -> str:
+    left = prefix.rstrip()
+    right = tail.strip()
+    if not left:
+        return right
+    if not right:
+        return left
+    if right[:1] in ",.;:!?)]}":
+        return left + right
+    return f"{left} {right}"
+
+
 def apply_translated_text_map(payload: list[dict], translated: dict) -> None:
     group_items: dict[str, list[dict]] = {}
     for item in payload:
@@ -65,8 +77,22 @@ def apply_translated_text_map(payload: list[dict], translated: dict) -> None:
             protected_translated_text,
             item.get("translation_unit_formula_map") or item.get("formula_map", []),
         )
+        if str(item.get("mixed_literal_action", "") or "") == "translate_tail":
+            prefix = str(item.get("mixed_literal_prefix", "") or "")
+            item["translation_unit_protected_translated_text"] = _join_prefix_and_tail(
+                prefix,
+                item["translation_unit_protected_translated_text"],
+            )
+            item["translation_unit_translated_text"] = _join_prefix_and_tail(
+                prefix,
+                item["translation_unit_translated_text"],
+            )
         item["protected_translated_text"] = protected_translated_text
         item["translated_text"] = restore_inline_formulas(
             protected_translated_text,
             item.get("formula_map", []),
         )
+        if str(item.get("mixed_literal_action", "") or "") == "translate_tail":
+            prefix = str(item.get("mixed_literal_prefix", "") or "")
+            item["protected_translated_text"] = _join_prefix_and_tail(prefix, item["protected_translated_text"])
+            item["translated_text"] = _join_prefix_and_tail(prefix, item["translated_text"])

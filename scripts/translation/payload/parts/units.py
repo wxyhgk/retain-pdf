@@ -11,6 +11,7 @@ def _build_group_translation_unit(unit_id: str, items: list[dict]) -> dict | Non
     formula_map: list[dict] = []
     protected_chunks: list[str] = []
     next_formula_index = 1
+    first_item = items[0]
     for item in items:
         source = item.get("protected_source_text", "")
         local_map = item.get("formula_map", [])
@@ -45,6 +46,10 @@ def _build_group_translation_unit(unit_id: str, items: list[dict]) -> dict | Non
     return {
         "item_id": unit_id,
         "translation_unit_id": unit_id,
+        "block_type": first_item.get("block_type", "text"),
+        "metadata": dict(first_item.get("metadata", {}) or {}),
+        "formula_map": formula_map,
+        "continuation_group": str(first_item.get("continuation_group", "") or ""),
         "protected_source_text": combined_source,
     }
 

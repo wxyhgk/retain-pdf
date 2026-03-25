@@ -39,6 +39,8 @@ def translate_items_to_path(
     skip_title_translation: bool = False,
     sci_cutoff_page_idx: int | None = None,
     sci_cutoff_block_idx: int | None = None,
+    rule_profile_name: str = "general_sci",
+    custom_rules_text: str = "",
     policy_config: TranslationPolicyConfig | None = None,
 ) -> dict:
     ensure_translation_template(items, translation_path, page_idx=page_idx)
@@ -64,12 +66,15 @@ def translate_items_to_path(
             skip_title_translation=skip_title_translation,
             sci_cutoff_page_idx=sci_cutoff_page_idx,
             sci_cutoff_block_idx=sci_cutoff_block_idx,
+            rule_profile_name=rule_profile_name,
+            custom_rules_text=custom_rules_text,
         )
 
     classified_items, skip_summary = apply_translation_policies(
         payload=payload,
         mode=mode,
         classify_batch_size=classify_batch_size,
+        workers=max(1, workers),
         api_key=api_key,
         model=model,
         base_url=base_url,
@@ -101,6 +106,14 @@ def translate_items_to_path(
         finalize_payload_orchestration_metadata(payload)
         save_translations(translation_path, payload)
         print(f"{label}: skipped {skip_summary['metadata_fragment_skipped']} metadata fragments")
+    if skip_summary.get("ref_text_skipped"):
+        finalize_payload_orchestration_metadata(payload)
+        save_translations(translation_path, payload)
+        print(f"{label}: skipped {skip_summary['ref_text_skipped']} ref_text items")
+    if skip_summary.get("reference_zone_skipped"):
+        finalize_payload_orchestration_metadata(payload)
+        save_translations(translation_path, payload)
+        print(f"{label}: skipped {skip_summary['reference_zone_skipped']} reference-zone items")
 
     pending = pending_translation_items(payload)
     batches = chunked(pending, max(1, batch_size))

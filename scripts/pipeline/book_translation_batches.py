@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -13,6 +14,12 @@ from pipeline.book_translation_pages import save_pages
 
 def chunked(seq: list[dict], size: int) -> list[list[dict]]:
     return [seq[i : i + size] for i in range(0, len(seq), size)]
+
+
+def _save_flush_interval(*, workers: int, total_batches: int) -> int:
+    if total_batches <= 1:
+        return 1
+    return max(2, min(12, max(1, workers) * 2))
 
 
 def touched_pages_for_batch(
@@ -55,8 +62,12 @@ def translate_pending_units(
     pending = pending_translation_items(flat_payload)
     batches = chunked(pending, max(1, batch_size))
     total_batches = len(batches)
+    flush_interval = _save_flush_interval(workers=workers, total_batches=total_batches)
     print(f"book: pending items={len(pending)} batches={total_batches} workers={max(1, workers)}", flush=True)
+    if total_batches:
+        print(f"book: save flush interval={flush_interval} batches", flush=True)
     if workers <= 1:
+        dirty_pages: set[int] = set()
         for index, batch in enumerate(batches, start=1):
             batch_label = f"book: batch {index}/{total_batches}"
             translated = translate_batch(
@@ -69,11 +80,27 @@ def translate_pending_units(
                 mode=mode,
             )
             apply_translated_text_map(flat_payload, translated)
-            touched_pages = touched_pages_for_batch(translated, item_to_page, unit_to_pages)
-            save_pages(page_payloads, translation_paths, touched_pages)
+            dirty_pages.update(touched_pages_for_batch(translated, item_to_page, unit_to_pages))
+            if index % flush_interval == 0 and dirty_pages:
+                save_started = time.perf_counter()
+                save_pages(page_payloads, translation_paths, dirty_pages)
+                print(
+                    f"book: flushed pages={len(dirty_pages)} after batch {index}/{total_batches} in "
+                    f"{time.perf_counter() - save_started:.2f}s",
+                    flush=True,
+                )
+                dirty_pages.clear()
+        if dirty_pages:
+            save_started = time.perf_counter()
+            save_pages(page_payloads, translation_paths, dirty_pages)
+            print(
+                f"book: final flush pages={len(dirty_pages)} in {time.perf_counter() - save_started:.2f}s",
+                flush=True,
+            )
         return
 
     completed = 0
+    dirty_pages: set[int] = set()
     with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
         futures = {
             executor.submit(
@@ -92,6 +119,21 @@ def translate_pending_units(
             translated = future.result()
             apply_translated_text_map(flat_payload, translated)
             completed += 1
-            touched_pages = touched_pages_for_batch(translated, item_to_page, unit_to_pages)
-            save_pages(page_payloads, translation_paths, touched_pages)
+            dirty_pages.update(touched_pages_for_batch(translated, item_to_page, unit_to_pages))
+            if completed % flush_interval == 0 and dirty_pages:
+                save_started = time.perf_counter()
+                save_pages(page_payloads, translation_paths, dirty_pages)
+                print(
+                    f"book: flushed pages={len(dirty_pages)} after completed batch {completed}/{total_batches} in "
+                    f"{time.perf_counter() - save_started:.2f}s",
+                    flush=True,
+                )
+                dirty_pages.clear()
             print(f"book: completed batch {completed}/{total_batches}", flush=True)
+    if dirty_pages:
+        save_started = time.perf_counter()
+        save_pages(page_payloads, translation_paths, dirty_pages)
+        print(
+            f"book: final flush pages={len(dirty_pages)} in {time.perf_counter() - save_started:.2f}s",
+            flush=True,
+        )

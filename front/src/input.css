@@ -169,6 +169,7 @@
   input[type="password"],
   input[type="number"],
   input[type="file"],
+  textarea,
   select {
     @apply w-full rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none transition;
   }
@@ -177,9 +178,16 @@
   input[type="password"]:focus,
   input[type="number"]:focus,
   input[type="file"]:focus,
+  textarea:focus,
   select:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(28, 93, 82, 0.14);
+  }
+
+  textarea {
+    min-height: 132px;
+    resize: vertical;
+    line-height: 1.55;
   }
 
   .checkbox-row {
@@ -340,6 +348,14 @@
     word-break: break-all;
   }
 
+  .summary-text {
+    min-width: 0;
+    color: var(--ink);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
   .badge {
     @apply inline-flex min-w-24 items-center justify-center rounded-full px-3 py-1 text-sm font-semibold;
   }
@@ -459,6 +475,14 @@
 
   .muted {
     @apply mb-3 text-muted text-[13px] leading-6;
+  }
+
+  .summary-text {
+    min-height: 2.5rem;
+    line-height: 1.5;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .hidden {

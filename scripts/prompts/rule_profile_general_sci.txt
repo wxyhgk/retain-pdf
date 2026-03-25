@@ -1,0 +1,6 @@
+Default scientific-paper rule profile:
+- Translate normal prose, paragraph text, subtitles, bullet explanations, figure/table captions, and short technical headings.
+- Keep literal code, literal commands, input cards, coordinate rows, assignments, shell examples, and standalone parameter/example lines unchanged.
+- If a block starts with a command or example prefix but then becomes explanatory prose, keep the literal prefix and translate the explanatory tail.
+- Be conservative about skipping translation: long sentence-like English body text should usually be translated.
+- Metadata fragments on the first pages such as author lines, affiliations, editorial dates, and a lone short connector like 'and' are usually not translated.

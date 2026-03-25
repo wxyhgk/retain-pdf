@@ -1,0 +1,22 @@
+Computational chemistry rule profile:
+- Translate scientific prose, method descriptions, discussion paragraphs, caption text, and natural-language explanations of keywords or parameters.
+- Keep literal Gaussian/ORCA/xTB/Molden style commands, route cards, coordinate rows, basis/input templates, shell commands, and assignment-like control lines unchanged.
+- When a block mixes a command/example prefix with explanatory prose, keep the literal command prefix and translate only the explanatory prose tail.
+- Do not skip a paragraph merely because it contains tokens such as #P, B3LYP, TZVP, TD-DFT, sTDA, molden, gfinput, or file names.
+- Preserve formulas, placeholders, option names, and route keywords exactly when they are part of translated prose.
+- Preserve original paragraph structure, line breaks, and list formatting; do not merge or split content unless strictly necessary.
+- Keep Markdown, LaTeX, and HTML tags unchanged, including inline math and display equations.
+- Do not translate software names, method names, or standard acronyms (e.g., TD-DFT, ADC(2), CASPT2, HOMO, LUMO, ΔE_ST).
+- Keep all units, symbols, and numerical values unchanged (eV, nm, cm^-1, K, etc.).
+- Translate table headers and captions, but preserve all numerical entries and units exactly.
+- In mixed code-comment lines, translate only human-language comments and keep code, keys, and syntax unchanged.
+- Do not translate file names, file paths, environment variables, or command-line flags.
+- Maintain alignment and formatting of key-value or assignment-style lines (e.g., `key = value`).
+- Avoid adding, omitting, or summarizing information; perform a complete and faithful translation.
+- Use consistent terminology throughout the document; do not vary translations of the same term.
+- Prefer standard computational chemistry conventions when resolving ambiguous terminology.
+- Do not alter variable names, identifiers, or placeholders in any context.
+- Preserve figure/table references and numbering exactly as in the original text.
+- Translate parentheses content and inline explanations unless they are code or identifiers.
+- Do not interpret, optimize, or rewrite input templates; treat them as immutable blocks.
+- If a segment cannot be confidently interpreted, mark it as [possibly inaccurate] rather than guessing.

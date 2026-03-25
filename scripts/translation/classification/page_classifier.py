@@ -54,6 +54,8 @@ def classify_payload_items(
     model: str = "deepseek-chat",
     base_url: str = "https://api.deepseek.com/v1",
     batch_size: int = 12,
+    rule_guidance: str = "",
+    request_label: str = "",
 ) -> dict[str, str]:
     del batch_size
     page_items = [_candidate_record(item, order) for order, item in enumerate(payload, start=1)]
@@ -65,14 +67,17 @@ def classify_payload_items(
     review_items = [item for item in filtered if item["rule_label"] == "review"]
     labels = {item["item_id"]: item["rule_label"] for item in filtered if item["rule_label"] != "review"}
     if review_items:
+        if request_label:
+            print(f"{request_label}: review_items={len(review_items)} filtered={len(filtered)}", flush=True)
         content = request_chat_content(
-            build_prompt(filtered, review_items),
+            build_prompt(filtered, review_items, rule_guidance=rule_guidance),
             api_key=api_key,
             model=model,
             base_url=base_url,
             temperature=0.0,
             response_format=None,
             timeout=120,
+            request_label=request_label,
         )
         labels.update(parse_no_trans_response(content, review_items))
     return labels
@@ -84,6 +89,8 @@ def classify_text_items(
     model: str = "deepseek-chat",
     base_url: str = "https://api.deepseek.com/v1",
     batch_size: int = 12,
+    rule_guidance: str = "",
+    request_label: str = "",
 ) -> dict[str, str]:
     del batch_size
     page_items = [_candidate_text_item(item, order) for order, item in enumerate(items, start=1)]
@@ -95,14 +102,17 @@ def classify_text_items(
     review_items = [item for item in filtered if item["rule_label"] == "review"]
     labels = {item["item_id"]: item["rule_label"] for item in filtered if item["rule_label"] != "review"}
     if review_items:
+        if request_label:
+            print(f"{request_label}: review_items={len(review_items)} filtered={len(filtered)}", flush=True)
         content = request_chat_content(
-            build_prompt(filtered, review_items),
+            build_prompt(filtered, review_items, rule_guidance=rule_guidance),
             api_key=api_key,
             model=model,
             base_url=base_url,
             temperature=0.0,
             response_format=None,
             timeout=120,
+            request_label=request_label,
         )
         labels.update(parse_no_trans_response(content, review_items))
     return labels

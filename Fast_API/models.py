@@ -78,6 +78,8 @@ class TranslationRenderParams(BaseModel):
     mode: Literal["fast", "precise", "sci"] = Field(default="sci", description="Translation mode.")
     skip_title_translation: bool = Field(default=False, description="Skip title blocks.")
     classify_batch_size: int = Field(default=12, ge=1, description="Classification batch size.")
+    rule_profile_name: str = Field(default="general_sci", description="Built-in rule profile name.")
+    custom_rules_text: str = Field(default="", description="Optional extra rule text injected into model context.")
     api_key: str = Field(default="", description="Translation API key.")
     model: str = Field(default="deepseek-chat", description="Translation model name.")
     base_url: str = Field(default="https://api.deepseek.com/v1", description="OpenAI-compatible API base URL.")
@@ -149,6 +151,10 @@ class RunCaseRequest(TranslationRenderParams, LayoutTuningParams):
         cmd += [
             "--classify-batch-size",
             str(self.classify_batch_size),
+            "--rule-profile-name",
+            self.rule_profile_name,
+            "--custom-rules-text",
+            self.custom_rules_text,
             "--api-key",
             self.api_key,
             "--model",
@@ -297,6 +303,10 @@ class RunMinerUCaseRequest(TranslationRenderParams, LayoutTuningParams):
         cmd += [
             "--classify-batch-size",
             str(self.classify_batch_size),
+            "--rule-profile-name",
+            self.rule_profile_name,
+            "--custom-rules-text",
+            self.custom_rules_text,
             "--api-key",
             self.api_key,
             "--model",
@@ -380,6 +390,8 @@ class RunUploadedMinerUCaseRequest(TranslationRenderParams, LayoutTuningParams):
             mode=self.mode,
             skip_title_translation=self.skip_title_translation,
             classify_batch_size=self.classify_batch_size,
+            rule_profile_name=self.rule_profile_name,
+            custom_rules_text=self.custom_rules_text,
             api_key=self.api_key,
             model=self.model,
             base_url=self.base_url,
@@ -406,6 +418,25 @@ class UploadPdfResponse(BaseModel):
     bytes: int
     page_count: int
     uploaded_at: str
+
+
+class RuleProfileSummary(BaseModel):
+    name: str
+    display_name: str
+    description: str = ""
+    built_in: bool
+    created_at: str = ""
+    updated_at: str = ""
+
+
+class RuleProfileDetail(RuleProfileSummary):
+    profile_text: str
+
+
+class UpsertRuleProfileRequest(BaseModel):
+    name: str
+    profile_text: str
+    description: str = ""
 
 
 class ProcessResult(BaseModel):

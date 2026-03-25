@@ -28,6 +28,7 @@ def write_pipeline_summary(
             "output_pdf": str(result["output_pdf_path"]),
             "pages_processed": result["pages_processed"],
             "translated_items_total": result["translated_items_total"],
+            "rule_profile_name": result.get("rule_profile_name", ""),
             "translate_elapsed": result["translate_elapsed"],
             "save_elapsed": result["save_elapsed"],
             "total_elapsed": result["total_elapsed"],
@@ -53,6 +54,8 @@ def print_pipeline_summary(
     print(f"source pdf: {source_pdf_path}")
     print(f"layout json: {layout_json_path}")
     print(f"translations dir: {result['output_dir']}")
+    if result.get("rule_profile_name"):
+        print(f"rule profile: {result['rule_profile_name']}")
     print(f"output pdf: {result['output_pdf_path']}")
     print(f"summary: {summary_path}")
     print(f"pages processed: {result['pages_processed']}")
