@@ -8,7 +8,7 @@ from config.output_layout import LEGACY_TRANSLATED_DIR_NAME
 from config.output_layout import TYPST_DIR_NAME
 from config.output_layout import TRANSLATED_DIR_NAME
 from config import paths
-from rendering.math_utils import aggressively_simplify_formula_for_latex_math
+from rendering.formula_normalizer import aggressively_simplify_formula_for_latex_math
 
 
 TYPST_BIN = "/snap/bin/typst"

@@ -1,25 +1,6 @@
 import re
 
-
-STRUCTURAL_LATEX_COMMANDS = {
-    "begin",
-    "end",
-    "frac",
-    "sqrt",
-    "left",
-    "right",
-    "overline",
-    "underline",
-    "overset",
-    "underset",
-    "stackrel",
-    "operatorname",
-    "text",
-    "textbf",
-    "textit",
-    "boxed",
-    "binom",
-}
+from rendering.formula_normalizer import normalize_formula_for_latex_math
 
 
 def formula_map_lookup(formula_map: list[dict]) -> dict[str, str]:
@@ -43,73 +24,6 @@ def split_protected_text(protected_text: str) -> list[str]:
         parts.append(protected_text[start : end + 2])
         cursor = end + 2
     return [part for part in parts if part]
-
-
-def normalize_formula_for_latex_math(formula_text: str) -> str:
-    expr = " ".join(formula_text.strip().split())
-    if not expr:
-        return expr
-    expr = re.sub(r"\\begin\{array\}\s*\{[^{}]*\}\s*", "", expr)
-    expr = re.sub(r"\s*\\end\{array\}", "", expr)
-    expr = re.sub(r"\\cal\s+([A-Za-z])", r"\\mathcal{\1}", expr)
-    expr = re.sub(r"\\mathscr\b", r"\\mathcal", expr)
-    expr = re.sub(r"\\Breve\b", r"\\breve", expr)
-    expr = re.sub(r"\\bf\b", r"\\mathbf", expr)
-    expr = re.sub(r"\\rm\b", r"\\mathrm", expr)
-    expr = re.sub(r"\\it\b", r"\\mathit", expr)
-    expr = re.sub(r"\\sf\b", r"\\mathsf", expr)
-    expr = re.sub(r"\\tt\b", r"\\mathtt", expr)
-    expr = re.sub(r"\\textcircled\s*\{\s*\\times\s*\}", r"\\otimes", expr)
-    expr = re.sub(
-        r"\\textcircled\s*\{\s*\\scriptsize\s*\{\s*\\parallel\s*\}\s*\}",
-        r"\\circ",
-        expr,
-    )
-    expr = re.sub(r"\\textcircled\s*\{\s*\\parallel\s*\}", r"\\circ", expr)
-    expr = re.sub(r"\\textcircled\s*\{\s*([^{}]+?)\s*\}", r"\1", expr)
-    expr = re.sub(r"\\(?:scriptstyle|scriptscriptstyle|textstyle|displaystyle)\b", "", expr)
-
-    # MinerU / OCR often emits legacy style groups like "{ \\bf }" or
-    # "{ \\bf \\omega }". These break mitex in inline math, so unwrap them.
-    style_group_re = re.compile(r"\{\s*\\(?:bf|rm|it|tt|sf)\s*([^{}]*)\}")
-    prev = None
-    while expr != prev:
-        prev = expr
-        expr = style_group_re.sub(lambda m: m.group(1).strip(), expr)
-
-    expr = re.sub(r"\{\s*\\(?:bf|rm|it|tt|sf)\s*\}", "", expr)
-    expr = re.sub(r"(?<=\d)\s*\.\s*(?=\d)", ".", expr)
-    expr = re.sub(r"(?<=\d)\s+(?=\d)", "", expr)
-    expr = re.sub(r"\s*([=+\-*/<>:,;])\s*", r" \1 ", expr)
-    expr = re.sub(r"\s+", " ", expr).strip()
-    if expr.startswith(("_", "^")):
-        expr = "{} " + expr
-    return expr
-
-
-def aggressively_simplify_formula_for_latex_math(formula_text: str) -> str:
-    expr = normalize_formula_for_latex_math(formula_text)
-    if not expr:
-        return expr
-
-    single_arg_command_re = re.compile(r"\\([A-Za-z]+)\s*(?:\[[^\]]*])?\s*\{\s*([^{}]*)\s*\}(?!\s*\{)")
-    prev = None
-    while expr != prev:
-        prev = expr
-
-        def _unwrap(match: re.Match[str]) -> str:
-            command = match.group(1)
-            inner = match.group(2).strip()
-            if command in STRUCTURAL_LATEX_COMMANDS:
-                return match.group(0)
-            return inner
-
-        expr = single_arg_command_re.sub(_unwrap, expr)
-
-    expr = re.sub(r"\s+", " ", expr).strip()
-    if expr.startswith(("_", "^")):
-        expr = "{} " + expr
-    return expr
 
 
 def looks_like_citation(formula_text: str) -> bool:
