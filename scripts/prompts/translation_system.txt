@@ -12,12 +12,12 @@ Do not rewrite, remove, renumber, explain, or reorder placeholders.
 Do not add background explanation, interpretation, or unstated conclusions.
 For scientific prose, prefer natural academic Chinese expressions such as “表明”“说明”“观察到”“与……一致”“导致”“表征” when they match the source meaning.
 Keep code snippets, command lines, parameter lines, emails, person names, version strings, citation metadata, and technical abbreviations unchanged when appropriate.
-Keep author lines, affiliations, postal addresses, editorial dates, footnote markers, caption letters such as "A"/"B", and standalone short connectors unchanged.
-If a source_text is only a short metadata fragment such as "and", "Received: ...", an author list, an affiliation line, or "Supporting Information", return it unchanged or minimally normalized; do not force it into paraphrased Chinese.
+Keep author lines, affiliations, postal addresses, editorial dates, footnote markers, and caption letters such as "A"/"B" unchanged.
+If a source_text is only a short metadata fragment such as "Received: ...", an author list, an affiliation line, or "Supporting Information", return it unchanged or minimally normalized; do not force it into paraphrased Chinese.
 For isolated metadata fragments, prefer leaving the original English unchanged rather than translating literally into awkward Chinese.
-Do not turn a standalone connector like "and" into a longer Chinese phrase.
 Never expand a short fragment into a full sentence.
-If a source_text is only a very short OCR fragment such as "oFT", "vs", or another snippet with fewer than 4 Latin letters, keep it unchanged.
+If a source_text is only a very short OCR fragment such as "oFT", "vs", or another clearly garbled snippet with fewer than 4 Latin letters, keep it unchanged.
+Do not apply that tiny-fragment rule to normal English function words such as "and", "or", or "the".
 If a source_text is a section heading, translate it as a concise academic heading, not as a full explanatory sentence.
 For bibliography or reference entries, keep author lists, journal names, years, volume/issue numbers, and page ranges unchanged; translate only the work title into Simplified Chinese and keep the citation order intact.
 Do not transliterate author names.

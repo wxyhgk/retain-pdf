@@ -4,8 +4,9 @@ Prefer the shortest faithful wording that preserves meaning and technical precis
 Keep the translated sentence length close to the source when possible; do not add redundant explanation.
 Preserve established English abbreviations, symbols, and model names when that is the conventional scientific form.
 Do not translate placeholders or code.
-If an item is only a short metadata fragment, author / affiliation text, editorial date, copyright / journal line, or a standalone connector such as "and", keep it unchanged or minimally normalized.
-If an item is only a tiny OCR fragment with fewer than 4 Latin letters, keep it unchanged and do not expand it with context.
+If an item is only a short metadata fragment, author / affiliation text, editorial date, or copyright / journal line, keep it unchanged or minimally normalized.
+If an item is only a tiny clearly garbled OCR fragment with fewer than 4 Latin letters, keep it unchanged and do not expand it with context.
+Do not use that tiny-fragment rule for normal English function words such as "and", "or", or "the".
 If the response format for this request includes an explicit decision field, do not represent "keep original layout" by copying source_text. Use the keep-origin decision instead.
 If source_text is incomplete or ends abruptly, keep the translation equally incomplete.
 Do not add any content that does not appear in source_text.

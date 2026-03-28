@@ -2,11 +2,47 @@ import re
 
 
 SHORT_CONNECTOR_SET = {
-    "and",
-    "or",
     "vs",
     "vs.",
     "&",
+}
+COMMON_SHORT_WORD_SET = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "for",
+    "from",
+    "has",
+    "have",
+    "if",
+    "in",
+    "into",
+    "is",
+    "it",
+    "its",
+    "not",
+    "of",
+    "on",
+    "or",
+    "our",
+    "than",
+    "that",
+    "the",
+    "their",
+    "there",
+    "these",
+    "this",
+    "those",
+    "to",
+    "via",
+    "was",
+    "were",
+    "with",
 }
 
 EDITORIAL_PREFIX_RE = re.compile(
@@ -70,6 +106,20 @@ def _comma_count(text: str) -> int:
 def _looks_like_standalone_connector(text: str) -> bool:
     lowered = text.strip().lower()
     return lowered in SHORT_CONNECTOR_SET
+
+
+def _connector_is_metadata_like(item: dict, text: str) -> bool:
+    if not _looks_like_standalone_connector(text):
+        return False
+    structure_role = str((item.get("metadata") or {}).get("structure_role", "") or "").strip().lower()
+    if structure_role:
+        return structure_role != "body"
+    page_idx = item.get("page_idx")
+    try:
+        page_idx_value = int(page_idx)
+    except (TypeError, ValueError):
+        page_idx_value = -1
+    return page_idx_value in {0, 1} and _line_count(item) <= 1 and len(text) <= 8
 
 
 def _looks_like_editorial_metadata(text: str) -> bool:
@@ -150,6 +200,8 @@ def _looks_like_short_alpha_fragment(text: str) -> bool:
     stripped = text.strip()
     if not stripped:
         return False
+    if stripped.lower() in COMMON_SHORT_WORD_SET:
+        return False
     if SECTION_MARKER_START_RE.match(stripped):
         return False
     if any(ch.isspace() for ch in stripped):
@@ -193,7 +245,7 @@ def looks_like_nontranslatable_metadata(item: dict) -> bool:
     if not text:
         return False
 
-    if len(text) <= 16 and _looks_like_standalone_connector(text):
+    if len(text) <= 16 and _connector_is_metadata_like(item, text):
         return True
     if _looks_like_editorial_metadata(text):
         return True

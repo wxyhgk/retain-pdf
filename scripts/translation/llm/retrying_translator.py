@@ -18,6 +18,7 @@ from translation.policy.metadata_filter import should_skip_metadata_fragment
 PLACEHOLDER_RE = re.compile(r"\[\[FORMULA_\d+]]")
 EN_WORD_RE = re.compile(r"[A-Za-z]+(?:[-'][A-Za-z]+)?")
 KEEP_ORIGIN_LABEL = "keep_origin"
+INTERNAL_PLACEHOLDER_DEGRADED_REASON = "placeholder_unstable"
 SHORT_FRAGMENT_RE = re.compile(r"^[A-Za-z][A-Za-z0-9._/-]{0,7}$")
 TAGGED_ITEM_RE = re.compile(
     r"<<<ITEM\s+item_id=(?P<item_id>[^\s>]+)(?:\s+decision=(?P<decision>[A-Za-z_-]+))?\s*>>>\s*"
@@ -25,6 +26,13 @@ TAGGED_ITEM_RE = re.compile(
     r"\s*<<<END>>>",
     re.DOTALL,
 )
+TAGGED_SEGMENT_RE = re.compile(
+    r"<<<SEG(?:MENT)?(?:\s+id=|\s+)(?P<segment_id>\d+)\s*>>>\s*"
+    r"(?P<content>.*?)"
+    r"\s*<<<END>>>",
+    re.DOTALL,
+)
+MAX_FORMULA_SEGMENT_COUNT = 16
 
 
 class SuspiciousKeepOriginError(ValueError):
@@ -51,6 +59,10 @@ class PlaceholderInventoryError(ValueError):
         self.translated_sequence = translated_sequence
 
 
+class SegmentTranslationFormatError(ValueError):
+    pass
+
+
 def _normalize_decision(value: str) -> str:
     normalized = (value or "translate").strip().lower().replace("-", "_")
     if normalized in {"keep", "skip", "no_translate", "keeporigin"}:
@@ -66,6 +78,16 @@ def _result_entry(decision: str, translated_text: str) -> dict[str, str]:
         "decision": normalized_decision,
         "translated_text": "" if normalized_decision == KEEP_ORIGIN_LABEL else (translated_text or "").strip(),
     }
+
+
+def _internal_keep_origin_result(reason: str) -> dict[str, str]:
+    result = _result_entry(KEEP_ORIGIN_LABEL, "")
+    result["_internal_reason"] = reason
+    return result
+
+
+def _is_internal_placeholder_degraded(payload: dict[str, str]) -> bool:
+    return str(payload.get("_internal_reason", "") or "") == INTERNAL_PLACEHOLDER_DEGRADED_REASON
 
 
 def _parse_translation_payload(content: str) -> dict[str, dict[str, str]]:
@@ -88,6 +110,171 @@ def _parse_translation_payload(content: str) -> dict[str, dict[str, str]]:
         if item_id:
             result[item_id] = _result_entry(decision, translated_text)
     return result
+
+
+def _segment_translation_system_prompt(domain_guidance: str = "") -> str:
+    prompt = (
+        "You are translating fixed text segments extracted from one scientific OCR item.\n"
+        "Each segment is a natural-language span that sits between protected formulas or literal tokens.\n"
+        "Those protected formulas/literals are omitted from the request and will be reinserted automatically by software after translation.\n"
+        "You are NOT translating the whole item as one sentence. You are translating each provided segment independently while respecting the original segment order.\n"
+        "Use concise publication-style Simplified Chinese suitable for scientific writing.\n"
+        "Keep abbreviations, symbols, and standard model names in their normal technical form.\n"
+        "If a segment is only a connector or incomplete phrase, keep it equally short and incomplete in Chinese.\n"
+        "Do not repair truncated grammar by pulling content from neighboring segments.\n"
+        "Do not output any formula placeholders, formula markers, reconstructed full-item text, commentary, JSON, or code fences.\n"
+        "Return exactly one tagged block for every requested segment_id and nothing else.\n"
+        "Use this exact format:\n"
+        "<<<SEG id=SEGMENT_ID>>>\n"
+        "translated segment\n"
+        "<<<END>>>\n"
+        "Hard rules:\n"
+        "- Every requested segment_id must appear exactly once.\n"
+        "- Do not merge, split, omit, renumber, reorder, or invent segments.\n"
+        "- Do not copy hidden formulas back into the output in any form.\n"
+        "- Short connectors such as 'and', 'for', 'with', or 'by considering the possible' must stay terse rather than expanded into full sentences."
+    )
+    if domain_guidance.strip():
+        prompt = f"{prompt}\nDocument-specific translation guidance:\n{domain_guidance.strip()}"
+    return prompt
+
+
+def _normalize_inline_whitespace(text: str) -> str:
+    return re.sub(r"\s+", " ", text or "").strip()
+
+
+def _segment_context_text(text: str, *, limit: int = 280) -> str:
+    cleaned = _normalize_inline_whitespace(_strip_placeholders(text))
+    if not cleaned:
+        return ""
+    if len(cleaned) <= limit:
+        return cleaned
+    return f"{cleaned[: max(0, limit - 1)].rstrip()}…"
+
+
+def _segment_structure_outline(skeleton: list[tuple[str, str]]) -> list[str]:
+    outline: list[str] = []
+    for kind, value in skeleton:
+        if kind == "segment":
+            outline.append(f"segment:{value}")
+        elif kind == "placeholder":
+            outline.append("formula")
+        elif kind == "literal":
+            literal = _normalize_inline_whitespace(value)
+            if literal:
+                outline.append(f"literal:{literal}")
+    return outline
+
+
+def _segment_needs_translation(text: str) -> bool:
+    normalized = (text or "").strip()
+    if not normalized:
+        return False
+    return any(ch.isalpha() for ch in normalized)
+
+
+def _build_formula_segment_plan(source_text: str) -> tuple[list[tuple[str, str]], list[dict[str, str]]]:
+    skeleton: list[tuple[str, str]] = []
+    segments: list[dict[str, str]] = []
+    cursor = 0
+    for match in PLACEHOLDER_RE.finditer(source_text or ""):
+        text = (source_text or "")[cursor : match.start()]
+        if text:
+            if _segment_needs_translation(text):
+                segment_id = str(len(segments) + 1)
+                segments.append({"segment_id": segment_id, "source_text": text.strip()})
+                skeleton.append(("segment", segment_id))
+            else:
+                skeleton.append(("literal", text))
+        skeleton.append(("placeholder", match.group(0)))
+        cursor = match.end()
+    tail = (source_text or "")[cursor:]
+    if tail:
+        if _segment_needs_translation(tail):
+            segment_id = str(len(segments) + 1)
+            segments.append({"segment_id": segment_id, "source_text": tail.strip()})
+            skeleton.append(("segment", segment_id))
+        else:
+            skeleton.append(("literal", tail))
+    return skeleton, segments
+
+
+def _build_formula_segment_messages(
+    item: dict,
+    skeleton: list[tuple[str, str]],
+    segments: list[dict[str, str]],
+    *,
+    domain_guidance: str = "",
+) -> list[dict[str, str]]:
+    serialized_segments = [
+        {
+            "segment_id": segment["segment_id"],
+            "source_text": segment["source_text"],
+        }
+        for segment in segments
+    ]
+    user_payload: dict[str, object] = {
+        "item_id": item["item_id"],
+        "segment_count": len(serialized_segments),
+        "segment_structure": _segment_structure_outline(skeleton),
+        "segments": serialized_segments,
+    }
+    context_before = _segment_context_text(str(item.get("continuation_prev_text", "") or ""))
+    context_after = _segment_context_text(str(item.get("continuation_next_text", "") or ""))
+    if context_before:
+        user_payload["context_before"] = context_before
+    if context_after:
+        user_payload["context_after"] = context_after
+    if item.get("continuation_group"):
+        user_payload["continuation_group"] = item["continuation_group"]
+    return [
+        {"role": "system", "content": _segment_translation_system_prompt(domain_guidance=domain_guidance)},
+        {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
+    ]
+
+
+def _parse_segment_translation_payload(
+    content: str,
+    *,
+    expected_segments: list[dict[str, str]],
+) -> dict[str, str]:
+    expected_ids = {segment["segment_id"] for segment in expected_segments}
+    source_by_id = {segment["segment_id"]: segment["source_text"] for segment in expected_segments}
+    result: dict[str, str] = {}
+    for match in TAGGED_SEGMENT_RE.finditer(content or ""):
+        segment_id = (match.group("segment_id") or "").strip()
+        translated_text = (match.group("content") or "").strip()
+        if segment_id in result:
+            raise SegmentTranslationFormatError(f"duplicate segment_id: {segment_id}")
+        if segment_id:
+            result[segment_id] = translated_text
+    actual_ids = set(result)
+    if actual_ids != expected_ids:
+        missing = sorted(expected_ids - actual_ids)
+        extra = sorted(actual_ids - expected_ids)
+        raise SegmentTranslationFormatError(f"segment_id mismatch: missing={missing} extra={extra}")
+    for segment_id, translated_text in result.items():
+        if not translated_text and source_by_id.get(segment_id, "").strip():
+            raise SegmentTranslationFormatError(f"empty translated segment: {segment_id}")
+        if PLACEHOLDER_RE.search(translated_text):
+            raise SegmentTranslationFormatError(f"unexpected placeholder in segment output: {segment_id}")
+    return result
+
+
+def _rebuild_formula_segment_translation(
+    skeleton: list[tuple[str, str]],
+    translated_segments: dict[str, str],
+) -> str:
+    parts: list[str] = []
+    for kind, value in skeleton:
+        if kind == "segment":
+            parts.append((translated_segments.get(value, "") or "").strip())
+        else:
+            parts.append(value)
+    rebuilt = "".join(parts)
+    rebuilt = re.sub(r"[ \t]{2,}", " ", rebuilt)
+    rebuilt = re.sub(r"\s+([,.;:!?])", r"\1", rebuilt)
+    return rebuilt.strip()
 
 
 def _placeholders(text: str) -> set[str]:
@@ -149,6 +336,13 @@ def _repair_safe_duplicate_placeholders(source_text: str, translated_text: str) 
 
 def _has_formula_placeholders(item: dict) -> bool:
     return bool(_placeholders(_unit_source_text(item)))
+
+
+def _should_use_formula_segment_translation(item: dict) -> bool:
+    if not _has_formula_placeholders(item):
+        return False
+    _, segments = _build_formula_segment_plan(_unit_source_text(item))
+    return bool(segments) and len(segments) <= MAX_FORMULA_SEGMENT_COUNT
 
 
 def _placeholder_alias_maps(item: dict) -> tuple[dict[str, str], dict[str, str]]:
@@ -291,8 +485,10 @@ def _should_force_translate_body_text(item: dict) -> bool:
     return _looks_like_english_prose(source_text) and len(words) >= 8
 
 
-def _should_reject_keep_origin(item: dict, decision: str) -> bool:
+def _should_reject_keep_origin(item: dict, decision: str, payload: dict[str, str] | None = None) -> bool:
     if decision != KEEP_ORIGIN_LABEL:
+        return False
+    if payload and _is_internal_placeholder_degraded(payload):
         return False
     block_type = item.get("block_type")
     if block_type not in {"", None, "text"}:
@@ -339,7 +535,7 @@ def _validate_batch_result(batch: list[dict], result: dict[str, dict[str, str]])
         translated_result = result.get(item_id, {})
         translated_text = translated_result.get("translated_text", "")
         decision = _normalize_decision(translated_result.get("decision", "translate"))
-        if _should_reject_keep_origin(item, decision):
+        if _should_reject_keep_origin(item, decision, translated_result):
             raise SuspiciousKeepOriginError(item_id, result)
         if decision == KEEP_ORIGIN_LABEL:
             continue
@@ -442,6 +638,72 @@ def _translate_single_item_stable_placeholder_text(
     return restored
 
 
+def _translate_single_item_formula_segment_text_with_retries(
+    item: dict,
+    api_key: str = "",
+    model: str = "deepseek-chat",
+    base_url: str = "https://api.deepseek.com/v1",
+    request_label: str = "",
+    domain_guidance: str = "",
+) -> dict[str, dict[str, str]]:
+    source_text = _unit_source_text(item)
+    skeleton, segments = _build_formula_segment_plan(source_text)
+    if not segments:
+        raise SegmentTranslationFormatError(f"{item['item_id']}: no translatable formula segments")
+    if len(segments) > MAX_FORMULA_SEGMENT_COUNT:
+        raise SegmentTranslationFormatError(
+            f"{item['item_id']}: too many formula segments ({len(segments)} > {MAX_FORMULA_SEGMENT_COUNT})"
+        )
+
+    last_error: Exception | None = None
+    for attempt in range(1, 5):
+        started = time.perf_counter()
+        try:
+            if request_label:
+                print(
+                    f"{request_label}: segmented-formula attempt {attempt}/4 segments={len(segments)}",
+                    flush=True,
+                )
+            content = request_chat_content(
+                _build_formula_segment_messages(
+                    item,
+                    skeleton,
+                    segments,
+                    domain_guidance=domain_guidance,
+                ),
+                api_key=api_key,
+                model=model,
+                base_url=base_url,
+                temperature=0.0,
+                response_format=None,
+                timeout=120,
+                request_label=f"{request_label} seg#{attempt}" if request_label else "",
+            )
+            translated_segments = _parse_segment_translation_payload(content, expected_segments=segments)
+            rebuilt_text = _rebuild_formula_segment_translation(skeleton, translated_segments)
+            result = {item["item_id"]: _result_entry("translate", rebuilt_text)}
+            result = _canonicalize_batch_result([item], result)
+            _validate_batch_result([item], result)
+            if request_label:
+                elapsed = time.perf_counter() - started
+                print(f"{request_label}: segmented-formula ok in {elapsed:.2f}s", flush=True)
+            return result
+        except (ValueError, KeyError, json.JSONDecodeError) as exc:
+            last_error = exc
+            if request_label:
+                elapsed = time.perf_counter() - started
+                print(
+                    f"{request_label}: segmented-formula failed attempt {attempt}/4 after {elapsed:.2f}s: {type(exc).__name__}: {exc}",
+                    flush=True,
+                )
+            if attempt >= 4:
+                raise
+            time.sleep(min(8, 2 * attempt))
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError("Segmented formula translation failed without an exception.")
+
+
 def _translate_single_item_plain_text_with_retries(
     item: dict,
     api_key: str = "",
@@ -451,6 +713,22 @@ def _translate_single_item_plain_text_with_retries(
     domain_guidance: str = "",
     mode: str = "fast",
 ) -> dict[str, dict[str, str]]:
+    if _should_use_formula_segment_translation(item):
+        try:
+            return _translate_single_item_formula_segment_text_with_retries(
+                item,
+                api_key=api_key,
+                model=model,
+                base_url=base_url,
+                request_label=request_label,
+                domain_guidance=domain_guidance,
+            )
+        except Exception as exc:
+            if request_label:
+                print(
+                    f"{request_label}: segmented-formula route failed, fallback to plain-text path: {type(exc).__name__}: {exc}",
+                    flush=True,
+                )
     last_error: Exception | None = None
     for attempt in range(1, 5):
         started = time.perf_counter()
@@ -512,6 +790,13 @@ def _translate_single_item_plain_text_with_retries(
                             flush=True,
                         )
             if attempt >= 4:
+                if _has_formula_placeholders(item):
+                    if request_label:
+                        print(
+                            f"{request_label}: degraded to keep_origin after repeated placeholder instability",
+                            flush=True,
+                        )
+                    return {item["item_id"]: _internal_keep_origin_result(INTERNAL_PLACEHOLDER_DEGRADED_REASON)}
                 raise last_error
             time.sleep(min(8, 2 * attempt))
         except SuspiciousKeepOriginError as exc:
@@ -601,14 +886,16 @@ def _translate_items_plain_text(
             domain_guidance=domain_guidance,
             mode=mode,
         )
-        store_cached_batch(
-            [item],
-            result,
-            model=model,
-            base_url=base_url,
-            domain_guidance=domain_guidance,
-            mode=mode,
-        )
+        payload = result.get(item["item_id"], {})
+        if not _is_internal_placeholder_degraded(payload):
+            store_cached_batch(
+                [item],
+                result,
+                model=model,
+                base_url=base_url,
+                domain_guidance=domain_guidance,
+                mode=mode,
+            )
         merged.update(result)
     return merged
 
