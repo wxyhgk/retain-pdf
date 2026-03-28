@@ -115,6 +115,26 @@ def _encode_image(img: Image.Image) -> tuple[bytes, str]:
     return jpeg_bytes, "jpeg"
 
 
+def _pdf_bool(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).lower() == "true"
+
+
+def _should_skip_recompress_image(obj: pikepdf.Object, info: dict) -> tuple[bool, str]:
+    bits_per_component = int(info.get("bpc") or 0)
+    colorspace = info.get("colorspace")
+    if _pdf_bool(obj.get(Name("/ImageMask"))):
+        return True, "image-mask"
+    if bits_per_component == 1:
+        return True, "bitonal"
+    if not colorspace:
+        return True, "missing-colorspace"
+    return False, ""
+
+
 def _compress_pdf_images_only_impl(
     pdf_path: Path,
     *,
@@ -130,6 +150,7 @@ def _compress_pdf_images_only_impl(
     skipped_not_better = 0
     skipped_alpha = 0
     skipped_missing = 0
+    skipped_special = 0
     original_size = pdf_path.stat().st_size
     temp_path = pdf_path.with_name(f"{pdf_path.stem}.tmp-images-only.pdf")
     try:
@@ -150,6 +171,18 @@ def _compress_pdf_images_only_impl(
 
             try:
                 obj = pdf.objects[xref - 1]
+            except Exception:
+                skipped_missing += 1
+                continue
+            should_skip, skip_reason = _should_skip_recompress_image(obj, info)
+            if should_skip:
+                skipped_special += 1
+                print(
+                    f"image-only compress: skip xref={xref} reason={skip_reason}",
+                    flush=True,
+                )
+                continue
+            try:
                 image = PdfImage(obj).as_pil_image()
             except Exception:
                 skipped_missing += 1
@@ -182,7 +215,7 @@ def _compress_pdf_images_only_impl(
             print(
                 f"image-only compress: changed=0 skipped_small={skipped_small} "
                 f"skipped_not_better={skipped_not_better} skipped_alpha={skipped_alpha} "
-                f"skipped_missing={skipped_missing}",
+                f"skipped_missing={skipped_missing} skipped_special={skipped_special}",
                 flush=True,
             )
             return False
@@ -204,7 +237,7 @@ def _compress_pdf_images_only_impl(
                 f"image-only compress: rollback size {original_size}->{new_size} "
                 f"(no net savings, changed={changed}, skipped_small={skipped_small}, "
                 f"skipped_not_better={skipped_not_better}, skipped_alpha={skipped_alpha}, "
-                f"skipped_missing={skipped_missing})",
+                f"skipped_missing={skipped_missing}, skipped_special={skipped_special})",
                 flush=True,
             )
             return False
@@ -212,7 +245,8 @@ def _compress_pdf_images_only_impl(
         print(
             f"image-only compress: changed={changed} skipped_small={skipped_small} "
             f"skipped_not_better={skipped_not_better} skipped_alpha={skipped_alpha} "
-            f"skipped_missing={skipped_missing} size {original_size}->{new_size} "
+            f"skipped_missing={skipped_missing} skipped_special={skipped_special} "
+            f"size {original_size}->{new_size} "
             f"saved={original_size - new_size}",
             flush=True,
         )
