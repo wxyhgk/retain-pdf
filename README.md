@@ -37,13 +37,52 @@
 
 # 小白用户
 
-直接启动：
+如果你只是想把服务跑起来，按下面步骤做就够了。
+
+## 1. 先确认机器环境
+
+建议环境：
+
+- 系统：`Linux` 优先，推荐 `Ubuntu 22.04 / 24.04`
+- CPU：至少 `4 核`
+- 内存：至少 `8GB`，推荐 `16GB` 或更高
+- 磁盘：至少预留 `10GB` 可用空间
+- 网络：需要能访问 Docker Hub、MinerU 和你的模型 API
+
+说明：
+
+- 这个项目主要吃 CPU、内存和网络，不依赖独立显卡
+- 如果只是轻量自用，`4 核 + 8GB` 可以起服务
+- 如果你要多人同时用，建议从 `8 核 + 16GB` 起步
+
+## 2. 安装 Docker
+
+先确认系统里已经安装：
+
+- `docker`
+- `docker compose`
+
+安装完成后，先自检：
+
+```bash
+docker --version
+docker compose version
+```
+
+## 3. 拉取 GitHub 项目
+
+```bash
+git clone https://github.com/wxyhgk/retain-pdf.git
+cd retain-pdf
+```
+
+## 4. 启动服务
 
 ```bash
 docker compose up -d
 ```
 
-默认访问地址：
+启动完成后，默认访问地址：
 
 ```text
 http://127.0.0.1:40001
