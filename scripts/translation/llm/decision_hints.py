@@ -2,9 +2,6 @@ from __future__ import annotations
 
 import re
 
-from translation.policy.metadata_filter import should_skip_metadata_fragment
-
-
 YEAR_RE = re.compile(r"\b(?:19|20)\d{2}\b")
 REFERENCE_SIGNAL_RE = re.compile(
     r"\b(?:proc\.|proceedings|conference|journal|vol\.|volume|no\.|pp\.|pages?|doi|isbn|ifaamas|acm|ieee|springer|elsevier)\b",
@@ -42,7 +39,6 @@ def build_decision_hints(item: dict) -> dict[str, object]:
     return {
         "block_type": item.get("block_type", "unknown"),
         "structure_role": metadata.get("structure_role", "body"),
-        "metadata_fragment_like": should_skip_metadata_fragment(item),
         "reference_like": _looks_like_reference_entry(text),
         "short_fragment_like": _looks_like_short_fragment(text),
         "has_inline_formula": bool(item.get("formula_map") or item.get("translation_unit_formula_map")),

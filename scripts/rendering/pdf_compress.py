@@ -8,6 +8,7 @@ from pathlib import Path
 import fitz
 import pikepdf
 from PIL import Image
+from PIL import ImageFile
 from pikepdf import Name
 from pikepdf import Pdf
 from pikepdf import PdfImage
@@ -17,6 +18,8 @@ VECTOR_SKIP_PAGE_DRAWINGS_THRESHOLD = 100
 VECTOR_SKIP_TOTAL_DRAWINGS_THRESHOLD = 300
 IMAGE_RECOMPRESS_MIN_BYTES = 20_000
 IMAGE_JPEG_QUALITY = 78
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def _page_drawing_count(page: fitz.Page) -> int:
@@ -126,12 +129,20 @@ def _pdf_bool(value: object) -> bool:
 def _should_skip_recompress_image(obj: pikepdf.Object, info: dict) -> tuple[bool, str]:
     bits_per_component = int(info.get("bpc") or 0)
     colorspace = info.get("colorspace")
+    filters = obj.get(Name("/Filter"))
+    filter_names: set[str] = set()
+    if isinstance(filters, list):
+        filter_names = {str(value) for value in filters}
+    elif filters is not None:
+        filter_names = {str(filters)}
     if _pdf_bool(obj.get(Name("/ImageMask"))):
         return True, "image-mask"
     if bits_per_component == 1:
         return True, "bitonal"
     if not colorspace:
         return True, "missing-colorspace"
+    if "/JPXDecode" in filter_names:
+        return True, "jpxdecode"
     return False, ""
 
 
@@ -151,6 +162,7 @@ def _compress_pdf_images_only_impl(
     skipped_alpha = 0
     skipped_missing = 0
     skipped_special = 0
+    skipped_broken = 0
     original_size = pdf_path.stat().st_size
     temp_path = pdf_path.with_name(f"{pdf_path.stem}.tmp-images-only.pdf")
     try:
@@ -187,8 +199,16 @@ def _compress_pdf_images_only_impl(
             except Exception:
                 skipped_missing += 1
                 continue
-            resized = _resize_to_target(image, target_width=target_width, target_height=target_height)
-            encoded, encoded_ext = _encode_image(resized)
+            try:
+                resized = _resize_to_target(image, target_width=target_width, target_height=target_height)
+                encoded, encoded_ext = _encode_image(resized)
+            except OSError as exc:
+                skipped_broken += 1
+                print(
+                    f"image-only compress: skip xref={xref} reason=broken-image-data error={type(exc).__name__}: {exc}",
+                    flush=True,
+                )
+                continue
             if not encoded:
                 skipped_alpha += 1
                 continue
@@ -215,7 +235,8 @@ def _compress_pdf_images_only_impl(
             print(
                 f"image-only compress: changed=0 skipped_small={skipped_small} "
                 f"skipped_not_better={skipped_not_better} skipped_alpha={skipped_alpha} "
-                f"skipped_missing={skipped_missing} skipped_special={skipped_special}",
+                f"skipped_missing={skipped_missing} skipped_special={skipped_special} "
+                f"skipped_broken={skipped_broken}",
                 flush=True,
             )
             return False
@@ -237,7 +258,8 @@ def _compress_pdf_images_only_impl(
                 f"image-only compress: rollback size {original_size}->{new_size} "
                 f"(no net savings, changed={changed}, skipped_small={skipped_small}, "
                 f"skipped_not_better={skipped_not_better}, skipped_alpha={skipped_alpha}, "
-                f"skipped_missing={skipped_missing}, skipped_special={skipped_special})",
+                f"skipped_missing={skipped_missing}, skipped_special={skipped_special}, "
+                f"skipped_broken={skipped_broken})",
                 flush=True,
             )
             return False
@@ -246,6 +268,7 @@ def _compress_pdf_images_only_impl(
             f"image-only compress: changed={changed} skipped_small={skipped_small} "
             f"skipped_not_better={skipped_not_better} skipped_alpha={skipped_alpha} "
             f"skipped_missing={skipped_missing} skipped_special={skipped_special} "
+            f"skipped_broken={skipped_broken} "
             f"size {original_size}->{new_size} "
             f"saved={original_size - new_size}",
             flush=True,

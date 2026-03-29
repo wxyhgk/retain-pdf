@@ -10,11 +10,23 @@ from config.output_layout import TRANSLATED_DIR_NAME
 from config import paths
 from rendering.formula_normalizer import aggressively_simplify_formula_for_latex_math
 
-
-TYPST_BIN = "/snap/bin/typst"
 TYPST_OVERLAY_DIR = paths.OUTPUT_DIR / "typst_overlay"
 CMARKER_VERSION = "0.1.8"
 MITEX_VERSION = "0.2.6"
+DEFAULT_TYPST_BIN = "/snap/bin/typst"
+
+
+def _resolve_typst_bin() -> str:
+    explicit = os.environ.get("TYPST_BIN", "").strip()
+    if explicit:
+        return explicit
+    discovered = shutil.which("typst")
+    if discovered:
+        return discovered
+    return DEFAULT_TYPST_BIN
+
+
+TYPST_BIN = _resolve_typst_bin()
 
 
 def escape_typst_string(text: str) -> str:

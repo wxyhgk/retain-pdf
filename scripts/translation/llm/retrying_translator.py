@@ -10,9 +10,7 @@ from .deepseek_client import build_single_item_fallback_messages
 from .deepseek_client import extract_json_text
 from .deepseek_client import extract_single_item_translation_text
 from .deepseek_client import request_chat_content
-from translation.policy.metadata_filter import looks_like_nontranslatable_metadata
 from translation.policy.metadata_filter import looks_like_url_fragment
-from translation.policy.metadata_filter import should_skip_metadata_fragment
 from translation.policy.soft_hints import looks_like_code_literal_text_value
 
 
@@ -467,10 +465,6 @@ def _should_force_translate_body_text(item: dict) -> bool:
         return False
     if looks_like_code_literal_text_value(source_text):
         return False
-    if should_skip_metadata_fragment(item):
-        return False
-    if looks_like_nontranslatable_metadata(item):
-        return False
     if _looks_like_reference_entry(source_text):
         return False
     if _looks_like_garbled_fragment(source_text):
@@ -558,12 +552,10 @@ def _validate_batch_result(batch: list[dict], result: dict[str, dict[str, str]])
                 continue
             if _looks_like_reference_entry(source_text):
                 continue
-            if looks_like_nontranslatable_metadata(item):
-                continue
             if looks_like_code_literal_text_value(source_text):
                 continue
             if _looks_like_english_prose(source_text):
-                raise ValueError(f"{item_id}: translation unchanged from English source")
+                continue
 
 
 def _translate_single_item_plain_text(

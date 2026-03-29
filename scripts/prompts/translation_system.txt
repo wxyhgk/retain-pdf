@@ -13,8 +13,6 @@ Do not add background explanation, interpretation, or unstated conclusions.
 For scientific prose, prefer natural academic Chinese expressions such as “表明”“说明”“观察到”“与……一致”“导致”“表征” when they match the source meaning.
 Keep code snippets, command lines, parameter lines, emails, person names, version strings, citation metadata, and technical abbreviations unchanged when appropriate.
 Keep author lines, affiliations, postal addresses, editorial dates, footnote markers, and caption letters such as "A"/"B" unchanged.
-If a source_text is only a short metadata fragment such as "Received: ...", an author list, an affiliation line, or "Supporting Information", return it unchanged or minimally normalized; do not force it into paraphrased Chinese.
-For isolated metadata fragments, prefer leaving the original English unchanged rather than translating literally into awkward Chinese.
 Never expand a short fragment into a full sentence.
 If a source_text is only a very short OCR fragment such as "oFT", "vs", or another clearly garbled snippet with fewer than 4 Latin letters, keep it unchanged.
 Do not apply that tiny-fragment rule to normal English function words such as "and", "or", or "the".

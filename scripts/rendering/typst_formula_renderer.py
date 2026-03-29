@@ -1,5 +1,7 @@
 import hashlib
+import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -10,7 +12,7 @@ from rendering.formula_normalizer import normalize_formula_for_latex_math
 
 
 FORMULA_CACHE_DIR = paths.OUTPUT_DIR / "formula_cache"
-TYPST_BIN = "/snap/bin/typst"
+TYPST_BIN = os.environ.get("TYPST_BIN", "").strip() or shutil.which("typst") or "/snap/bin/typst"
 
 GREEK_MAP = {
     r"\Delta": "Δ",
@@ -84,6 +86,24 @@ def _unwrap_macro_group(text: str, macro: str) -> str:
     return "".join(out)
 
 
+def _unwrap_macro_group_superscript(text: str, macro: str) -> str:
+    out = []
+    i = 0
+    while i < len(text):
+        if text.startswith(macro, i):
+            j = i + len(macro)
+            while j < len(text) and text[j].isspace():
+                j += 1
+            if j < len(text) and text[j] == "{":
+                inner, end = _find_balanced_group(text, j)
+                out.append(f"^({convert_latexish_to_typst(inner)})")
+                i = end
+                continue
+        out.append(text[i])
+        i += 1
+    return "".join(out)
+
+
 def _replace_frac(text: str) -> str:
     out = []
     i = 0
@@ -143,7 +163,18 @@ def convert_latexish_to_typst(expr: str) -> str:
         text = text.replace(r"\end{array}", "")
 
     text = _replace_frac(text)
+    text = _unwrap_macro_group(text, r"\text")
+    text = _unwrap_macro_group(text, r"\textit")
+    text = _unwrap_macro_group(text, r"\textbf")
+    text = _unwrap_macro_group(text, r"\mathit")
+    text = _unwrap_macro_group(text, r"\mathsf")
+    text = _unwrap_macro_group(text, r"\mathtt")
     text = _unwrap_macro_group(text, r"\mathrm")
+    text = _unwrap_macro_group_superscript(text, r"\textsuperscript")
+    text = _unwrap_macro_group(text, r"\bf")
+    text = _unwrap_macro_group(text, r"\rm")
+    text = _unwrap_macro_group(text, r"\it")
+    text = _unwrap_macro_group(text, r"\pmb")
     text = _replace_macro_with_group(text, r"\mathbf", "bold")
     text = _replace_macro_with_group(text, r"\vec", "vec")
     text = _replace_macro_with_group(text, r"\hat", "hat")
