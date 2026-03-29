@@ -1,0 +1,7 @@
+{
+  "api_keys": [
+    "replace-with-your-backend-key"
+  ],
+  "max_running_jobs": 4,
+  "simple_port": 42000
+}
