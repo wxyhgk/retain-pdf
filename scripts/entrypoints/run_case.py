@@ -28,7 +28,12 @@ def parse_args() -> argparse.Namespace:
         default="",
         help="Optional folder containing exactly one .json OCR file and one .pdf source file.",
     )
-    parser.add_argument("--source-json", type=str, default="", help="Explicit OCR JSON source path.")
+    parser.add_argument(
+        "--source-json",
+        type=str,
+        default="",
+        help="Explicit OCR JSON source path. Prefer normalized document.v1.json; raw MinerU layout.json is auto-normalized on load.",
+    )
     parser.add_argument("--source-pdf", type=str, default="", help="Explicit source PDF path.")
     parser.add_argument("--start-page", type=int, default=0, help="Zero-based start page index. Default is the first page.")
     parser.add_argument("--end-page", type=int, default=-1, help="Zero-based end page index, inclusive. Default is the last page.")

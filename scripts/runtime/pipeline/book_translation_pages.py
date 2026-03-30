@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from services.translation.ocr.json_extractor import extract_text_items
+from services.translation.ocr.json_extractor import get_page_count
 from services.translation.policy import TranslationPolicyConfig
 from services.translation.workflow import default_page_translation_name
 from services.translation.workflow import translate_items_to_path
@@ -29,7 +30,7 @@ def translate_book_pages(
     sci_cutoff_block_idx: int | None = None,
     policy_config: TranslationPolicyConfig | None = None,
 ) -> tuple[dict[int, list[dict]], list[dict]]:
-    pages = data.get("pdf_info", [])
+    page_count = get_page_count(data)
     summaries: list[dict] = []
     translated_pages_map: dict[int, list[dict]] = {}
 
@@ -46,7 +47,7 @@ def translate_book_pages(
             workers=max(1, workers),
             model=model,
             base_url=base_url,
-            progress_label=f"{progress_prefix} {page_idx + 1}/{len(pages)}",
+            progress_label=f"{progress_prefix} {page_idx + 1}/{page_count}",
             mode=mode,
             classify_batch_size=max(1, classify_batch_size),
             skip_title_translation=skip_title_translation,

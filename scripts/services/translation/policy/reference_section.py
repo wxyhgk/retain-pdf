@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import re
 
+from services.translation.ocr.json_extractor import get_pages
+from services.translation.ocr.normalized_reader import is_normalized_document
+
 
 REFERENCE_HEADING_SET = {
     "reference",
@@ -51,8 +54,9 @@ def looks_like_reference_heading(text: str) -> bool:
 def _block_text(block: dict) -> str:
     parts: list[str] = []
     for line in block.get("lines", []) or []:
-        for span in line.get("spans", []) or []:
-            content = str(span.get("content", "") or "").strip()
+        spans = line.get("spans", []) or line.get("segments", [])
+        for span in spans:
+            content = str(span.get("content", span.get("text", "")) or "").strip()
             if content:
                 parts.append(content)
     if parts:
@@ -62,12 +66,21 @@ def _block_text(block: dict) -> str:
 
 
 def resolve_reference_cutoff(data: dict) -> tuple[int | None, int | None]:
-    for page_idx, page in enumerate(data.get("pdf_info", []) or []):
-        for block_idx, block in enumerate(page.get("para_blocks", []) or []):
+    if not is_normalized_document(data):
+        raise RuntimeError("resolve_reference_cutoff expects normalized_document_v1 data")
+
+    marker = (data.get("markers", {}) or {}).get("reference_start")
+    if marker:
+        return marker.get("page_index"), marker.get("order")
+
+    for page_idx, page in enumerate(get_pages(data)):
+        for block_idx, block in enumerate(page.get("blocks", []) or []):
             stack = [block]
             while stack:
                 current = stack.pop(0)
-                if str(current.get("type", "") or "") == "title":
+                current_type = str(current.get("type", "") or "")
+                current_sub_type = str(current.get("sub_type", "") or "")
+                if (current_type == "title") or (current_type == "text" and current_sub_type == "title"):
                     if looks_like_reference_heading(_block_text(current)):
                         return page_idx, block_idx
                 stack[0:0] = list(current.get("blocks", []) or [])

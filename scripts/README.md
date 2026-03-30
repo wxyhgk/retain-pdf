@@ -23,7 +23,7 @@
 
 更具体一点：
 
-1. 如果只有 PDF，先由 `services/mineru` 获取并解包 `layout.json`
+1. 如果只有 PDF，先由 `services/mineru` 获取并解包 OCR 结果，并生成统一中间层 `document.v1.json`
 2. `services/translation/ocr` 读取 OCR 结果并抽取页面块
 3. `services/translation/orchestration` 补齐布局区、continuation、translation_unit 元数据
 4. `services/translation` 生成每页翻译 JSON
@@ -87,10 +87,17 @@
 
 其中：
 
-- `ocr/unpacked/layout.json` 是翻译阶段默认 OCR 输入
+- `ocr/unpacked/layout.json` 保留原始 MinerU OCR 输出
+- `ocr/normalized/document.v1.json` 是当前翻译/渲染主链路使用的统一 OCR 输入
 - `translated/translations` 是中间翻译结果
 - `translated/*.pdf` 是最终输出 PDF
 - `typst/` 保留 Typst 中间产物，便于查错和回溯
+
+当前约定：
+
+- 主链路优先消费 `document.v1.json`
+- 如果入口给的是 raw `layout.json`，会先做一次显式规范化，再进入翻译主线
+- raw MinerU 结构保留给 adapter、调试和回溯，不再作为主链路的隐式数据契约
 
 兼容说明：
 

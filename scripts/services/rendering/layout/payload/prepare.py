@@ -14,6 +14,25 @@ from services.rendering.layout.typography.geometry import inner_bbox
 from services.rendering.layout.typography.measurement import bbox_width
 
 
+def _item_tags(item: dict) -> set[str]:
+    metadata = item.get("metadata", {}) or {}
+    return {str(tag or "") for tag in (metadata.get("tags", []) or [])}
+
+
+def _derived_role(item: dict) -> str:
+    metadata = item.get("metadata", {}) or {}
+    derived = metadata.get("derived", {}) or {}
+    return str(derived.get("role", "") or "")
+
+
+def _is_caption_like(item: dict) -> bool:
+    return (
+        _derived_role(item) == "caption"
+        or str(item.get("block_type", "") or "") in {"image_caption", "table_caption", "table_footnote"}
+        or "caption" in _item_tags(item)
+    )
+
+
 def prepare_render_payloads_by_page(translated_pages: dict[int, list[dict]]) -> dict[int, list[dict]]:
     prepared = {page_idx: deepcopy(items) for page_idx, items in translated_pages.items()}
     if not prepared:
@@ -24,7 +43,7 @@ def prepare_render_payloads_by_page(translated_pages: dict[int, list[dict]]) -> 
     for page_idx in sorted(prepared):
         items = prepared[page_idx]
         page_font_size, page_line_pitch, page_line_height, density_baseline = page_baseline_font_size(items)
-        text_widths = [bbox_width(item) for item in items if item.get("block_type") == "text"]
+        text_widths = [bbox_width(item) for item in items if item.get("block_type") == "text" and not _is_caption_like(item)]
         page_text_width_med = median(text_widths) if text_widths else 0.0
         page_metrics[page_idx] = (
             page_font_size,

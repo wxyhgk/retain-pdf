@@ -179,9 +179,25 @@ def apply_reference_zone_skip(
 
         text = " ".join((item.get("source_text") or "").split())
         block_type = str(item.get("block_type", "") or "")
+        metadata = item.get("metadata", {}) or {}
+        tags = {str(tag or "") for tag in (metadata.get("tags", []) or [])}
+        derived = metadata.get("derived", {}) or {}
+        derived_role = str(derived.get("role", "") or "")
         if not item.get("should_translate", True):
             if block_type == "ref_text" or str(item.get("skip_reason", "") or "").startswith("skip_ref"):
                 previous_reference_item = True
+            continue
+
+        if derived_role == "reference_heading" or "reference_heading" in tags:
+            _mark_item_skipped(item, "skip_reference_heading")
+            skipped += 1
+            previous_reference_item = True
+            continue
+
+        if derived_role == "reference_entry" or "reference_entry" in tags or "reference_zone" in tags:
+            _mark_item_skipped(item, "skip_reference_zone")
+            skipped += 1
+            previous_reference_item = True
             continue
 
         if block_type == "title" and looks_like_reference_heading(text):

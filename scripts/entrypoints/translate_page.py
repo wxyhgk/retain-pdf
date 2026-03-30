@@ -48,7 +48,7 @@ def parse_args() -> argparse.Namespace:
         "--source-json",
         type=str,
         default=str(paths.SOURCE_JSON),
-        help="OCR JSON source path.",
+        help="OCR JSON source path. Prefer normalized document.v1.json; raw MinerU layout.json is auto-normalized on load.",
     )
     return parser.parse_args()
 

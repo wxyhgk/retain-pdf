@@ -5,6 +5,7 @@ from dataclasses import field
 from pathlib import Path
 
 from services.translation.ocr.json_extractor import extract_text_items
+from services.translation.ocr.json_extractor import get_pages
 from services.translation.policy.reference_section import resolve_reference_cutoff
 from services.translation.policy.rule_profiles import DEFAULT_RULE_PROFILE_NAME
 from services.translation.policy.rule_profiles import build_rule_profile_context
@@ -87,7 +88,7 @@ def should_infer_domain_context(mode: str, source_pdf_path: Path | None) -> bool
 
 
 def extract_ocr_preview_text(data: dict, max_pages: int = 2) -> str:
-    pages = data.get("pdf_info", [])
+    pages = get_pages(data)
     parts: list[str] = []
     for page_idx in range(min(max_pages, len(pages))):
         items = extract_text_items(data, page_idx=page_idx)

@@ -11,6 +11,8 @@ def write_pipeline_summary(
     job_root: Path,
     source_pdf_path: Path,
     layout_json_path: Path,
+    normalized_json_path: Path,
+    source_json_path: Path,
     result: dict,
     mode: str,
     model: str,
@@ -24,6 +26,8 @@ def write_pipeline_summary(
             "job_root": str(job_root),
             "source_pdf": str(source_pdf_path),
             "layout_json": str(layout_json_path),
+            "normalized_document_json": str(normalized_json_path),
+            "source_json_used": str(source_json_path),
             "translations_dir": str(result["output_dir"]),
             "output_pdf": str(result["output_pdf_path"]),
             "pages_processed": result["pages_processed"],
@@ -47,12 +51,16 @@ def print_pipeline_summary(
     job_root: Path,
     source_pdf_path: Path,
     layout_json_path: Path,
+    normalized_json_path: Path,
+    source_json_path: Path,
     summary_path: Path,
     result: dict,
 ) -> None:
     print(f"job root: {job_root}")
     print(f"source pdf: {source_pdf_path}")
     print(f"layout json: {layout_json_path}")
+    print(f"normalized document json: {normalized_json_path}")
+    print(f"source json used: {source_json_path}")
     print(f"translations dir: {result['output_dir']}")
     if result.get("rule_profile_name"):
         print(f"rule profile: {result['rule_profile_name']}")

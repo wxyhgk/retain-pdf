@@ -33,11 +33,30 @@ SMALL_PAGE_BOX_RATIO = 0.06
 ULTRA_SMALL_PAGE_BOX_RATIO = 0.04
 
 
+def _item_tags(item: dict) -> set[str]:
+    metadata = item.get("metadata", {}) or {}
+    return {str(tag or "") for tag in (metadata.get("tags", []) or [])}
+
+
+def _derived_role(item: dict) -> str:
+    metadata = item.get("metadata", {}) or {}
+    derived = metadata.get("derived", {}) or {}
+    return str(derived.get("role", "") or "")
+
+
+def _is_caption_like(item: dict) -> bool:
+    return (
+        _derived_role(item) == "caption"
+        or str(item.get("block_type", "") or "") in {"image_caption", "table_caption", "table_footnote"}
+        or "caption" in _item_tags(item)
+    )
+
+
 def _collect_page_seed_metrics(
     translated_items: list[dict],
 ) -> tuple[float, float, float, float, float, dict[int, bool], dict[int, tuple[float, float]], float | None]:
     page_font_size, page_line_pitch, page_line_height, density_baseline = page_baseline_font_size(translated_items)
-    text_widths = [bbox_width(item) for item in translated_items if item.get("block_type") == "text"]
+    text_widths = [bbox_width(item) for item in translated_items if item.get("block_type") == "text" and not _is_caption_like(item)]
     page_text_width_med = median(text_widths) if text_widths else 0.0
     body_base_sizes: list[float] = []
     body_flags: dict[int, bool] = {}

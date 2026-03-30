@@ -60,19 +60,46 @@ BODY_ZH_TARGET_MIN = 0.61
 BODY_COMPACT_LEADING_TIGHTEN_MAX = 0.06
 
 
+def _item_tags(item: dict) -> set[str]:
+    metadata = item.get("metadata", {}) or {}
+    return {str(tag or "") for tag in (metadata.get("tags", []) or [])}
+
+
+def _derived_role(item: dict) -> str:
+    metadata = item.get("metadata", {}) or {}
+    derived = metadata.get("derived", {}) or {}
+    return str(derived.get("role", "") or "")
+
+
+def _is_caption_like(item: dict) -> bool:
+    return (
+        _derived_role(item) == "caption"
+        or item.get("block_type") in CAPTION_BLOCK_TYPES
+        or "caption" in _item_tags(item)
+    )
+
+
+def _is_local_textual_item(item: dict) -> bool:
+    if _is_caption_like(item):
+        return True
+    return item.get("block_type") in LOCAL_TEXTUAL_BLOCK_TYPES
+
+
 def local_font_size_pt(item: dict) -> float:
-    if item.get("block_type") not in LOCAL_TEXTUAL_BLOCK_TYPES:
+    if not _is_local_textual_item(item):
         return fonts.DEFAULT_FONT_SIZE
     metric = local_line_pitch(item) or median_line_height(item)
     if metric <= 0:
         return fonts.DEFAULT_FONT_SIZE
     base_size = metric * ZH_FONT_SCALE * layout.BODY_FONT_SIZE_FACTOR
-    if item.get("block_type") in CAPTION_BLOCK_TYPES:
+    if _is_caption_like(item):
         return round(clamp(base_size * CAPTION_FONT_SCALE, MIN_FONT_SIZE_PT, CAPTION_MAX_FONT_SIZE_PT), 2)
     return round(clamp(base_size, MIN_FONT_SIZE_PT, MAX_FONT_SIZE_PT), 2)
 
 
 def is_body_text_candidate(item: dict, page_text_width_med: float) -> bool:
+    if _is_caption_like(item):
+        return False
     if item.get("block_type") != "text":
         return False
     if formula_ratio(item) > BODY_FORMULA_RATIO_MAX:
@@ -140,7 +167,7 @@ def estimate_font_size_pt(
     density_baseline: float,
 ) -> float:
     del density_baseline
-    if item.get("block_type") not in LOCAL_TEXTUAL_BLOCK_TYPES:
+    if not _is_local_textual_item(item):
         return fonts.DEFAULT_FONT_SIZE
     local_font = local_font_size_pt(item)
     if not item.get("_is_body_text_candidate", False):
@@ -161,7 +188,7 @@ def estimate_font_size_pt(
     blended = (page_estimate * page_weight) + (local_font * local_weight)
     if compactness > 0:
         blended *= 1.0 - min(BODY_COMPACT_FONT_SCALE_MAX, compactness * 0.055)
-    if item.get("block_type") in CAPTION_BLOCK_TYPES:
+    if _is_caption_like(item):
         blended = min(blended * CAPTION_FONT_SCALE, CAPTION_MAX_FONT_SIZE_PT)
     return round(clamp(blended, MIN_FONT_SIZE_PT, MAX_FONT_SIZE_PT), 2)
 

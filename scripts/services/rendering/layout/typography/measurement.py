@@ -244,12 +244,33 @@ def source_compactness_score(item: dict) -> float:
     return clamp(score, 0.0, SOURCE_COMPACTNESS_MAX)
 
 
+def _item_tags(item: dict) -> set[str]:
+    metadata = item.get("metadata", {}) or {}
+    return {str(tag or "") for tag in (metadata.get("tags", []) or [])}
+
+
+def _derived_role(item: dict) -> str:
+    metadata = item.get("metadata", {}) or {}
+    derived = metadata.get("derived", {}) or {}
+    return str(derived.get("role", "") or "")
+
+
+def _is_caption_like(item: dict) -> bool:
+    return (
+        _derived_role(item) == "caption"
+        or str(item.get("block_type", "") or "") in {"image_caption", "table_caption", "table_footnote"}
+        or "caption" in _item_tags(item)
+    )
+
+
 def candidate_text_items(items: list[dict]) -> list[dict]:
     candidates: list[dict] = []
-    widths = [bbox_width(item) for item in items if item.get("block_type") == "text"]
+    widths = [bbox_width(item) for item in items if item.get("block_type") == "text" and not _is_caption_like(item)]
     page_text_width_med = median(widths) if widths else 0.0
     for item in items:
         if item.get("block_type") != "text":
+            continue
+        if _is_caption_like(item):
             continue
         if visual_line_count(item) < 3:
             continue

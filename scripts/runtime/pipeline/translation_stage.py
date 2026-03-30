@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from services.translation.ocr.json_extractor import get_page_count
 from services.translation.ocr.json_extractor import load_ocr_json
 from runtime.pipeline.render_mode import resolve_page_range
 from services.translation.llm import DEFAULT_BASE_URL
@@ -28,11 +29,11 @@ def translate_book_pipeline(
     custom_rules_text: str = "",
 ) -> dict:
     data = load_ocr_json(source_json_path)
-    pages = data.get("pdf_info", [])
-    if not pages:
+    page_count = get_page_count(data)
+    if not page_count:
         raise RuntimeError("No pages found in OCR JSON.")
 
-    start, stop = resolve_page_range(len(pages), start_page, end_page)
+    start, stop = resolve_page_range(page_count, start_page, end_page)
     page_indices = range(start, stop + 1)
     policy_config = build_book_translation_policy_config(
         data=data,

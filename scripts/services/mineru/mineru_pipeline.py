@@ -9,6 +9,7 @@ from foundation.config import layout
 from foundation.config import paths
 from foundation.config import runtime
 from foundation.shared.job_dirs import locate_translated_dir
+from services.mineru.artifacts import resolve_translation_source_json_path
 from services.mineru.job_flow import run_mineru_to_job_dir
 from services.mineru.summary import print_pipeline_summary
 from services.mineru.summary import write_pipeline_summary
@@ -21,7 +22,7 @@ from services.translation.llm import normalize_base_url
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="End-to-end MinerU pipeline: parse PDF with MinerU, then translate from layout.json into transPDF.",
+        description="End-to-end MinerU pipeline: parse PDF with MinerU, build document.v1.json, then translate and render.",
     )
     source_group = parser.add_mutually_exclusive_group(required=True)
     source_group.add_argument("--file-url", type=str, default="", help="Remote PDF URL for MinerU parsing.")
@@ -82,7 +83,14 @@ def main() -> None:
         inner_bbox_dense_shrink_y=args.inner_bbox_dense_shrink_y,
     )
 
-    job_root, source_pdf_path, layout_json_path = run_mineru_to_job_dir(args)
+    job_root, source_pdf_path, layout_json_path, normalized_json_path = run_mineru_to_job_dir(args)
+    # The runtime mainline should consume the normalized document.
+    # The raw MinerU layout remains available only for adapter/debug use.
+    translation_source_json_path = resolve_translation_source_json_path(
+        layout_json_path=layout_json_path,
+        normalized_json_path=normalized_json_path,
+        allow_layout_fallback=False,
+    )
     trans_pdf_dir = locate_translated_dir(job_root)
     translations_dir = trans_pdf_dir / "translations"
     translated_pdf_name = args.translated_pdf_name.strip() or f"{source_pdf_path.stem}-translated.pdf"
@@ -94,7 +102,7 @@ def main() -> None:
     )
 
     result = run_book_pipeline(
-        source_json_path=layout_json_path,
+        source_json_path=translation_source_json_path,
         source_pdf_path=source_pdf_path,
         output_dir=translations_dir,
         output_pdf_path=output_pdf_path,
@@ -122,6 +130,8 @@ def main() -> None:
         job_root=job_root,
         source_pdf_path=source_pdf_path,
         layout_json_path=layout_json_path,
+        normalized_json_path=normalized_json_path,
+        source_json_path=translation_source_json_path,
         result=result,
         mode=args.mode,
         model=args.model,
@@ -134,6 +144,8 @@ def main() -> None:
         job_root=job_root,
         source_pdf_path=source_pdf_path,
         layout_json_path=layout_json_path,
+        normalized_json_path=normalized_json_path,
+        source_json_path=translation_source_json_path,
         summary_path=summary_path,
         result=result,
     )

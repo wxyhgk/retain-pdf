@@ -7,7 +7,7 @@
 ## 子目录
 
 - `ocr/`
-  OCR JSON 读取和数据抽取。
+  OCR JSON 读取和数据抽取。主线优先读取 `normalized_document_v1`，raw provider JSON 只在入口处先适配再进入这里。
 - `orchestration/`
   布局区、continuation、translation unit 元数据。
 - `classification/`
@@ -25,12 +25,13 @@
 
 ## 主要流程
 
-1. `workflow/translation_workflow.py` 生成每页翻译模板并加载 payload
-2. `orchestration` 补齐布局区和编排元数据
-3. `continuation` 把跨行、跨页连续段落合并成统一 translation unit
-4. `policy` 根据模式决定跳过哪些块
-5. `llm` 按 batch 调模型翻译、缓存和重试
-6. `payload` 把翻译结果回填到 page payload，并保存最终 JSON
+1. `ocr/` 读取统一中间层 `document.v1.json` 并抽取页面块
+2. `workflow/translation_workflow.py` 生成每页翻译模板并加载 payload
+3. `orchestration` 补齐布局区和编排元数据
+4. `continuation` 把跨行、跨页连续段落合并成统一 translation unit
+5. `policy` 根据模式决定跳过哪些块
+6. `llm` 按 batch 调模型翻译、缓存和重试
+7. `payload` 把翻译结果回填到 page payload，并保存最终 JSON
 
 ## 模式说明
 

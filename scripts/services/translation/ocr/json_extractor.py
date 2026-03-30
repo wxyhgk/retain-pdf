@@ -2,12 +2,37 @@ import json
 import re
 from pathlib import Path
 
+from services.mineru.document_v1 import build_normalized_document_from_layout_path
 from services.translation.ocr.models import TextItem
+from services.translation.ocr.normalized_reader import (
+    block_children as _block_children,
+    block_sub_type as _block_sub_type,
+    ensure_normalized_document,
+    iter_page_blocks as _iter_page_blocks,
+    is_normalized_document,
+    normalized_block_kind as _normalized_block_kind,
+    raw_block_type as _raw_block_type,
+)
 
 
 def load_ocr_json(json_path: Path) -> dict:
     with json_path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    if is_normalized_document(data):
+        return data
+    return build_normalized_document_from_layout_path(
+        layout_json_path=json_path,
+        document_id=json_path.stem,
+    )
+
+
+def get_pages(data: dict) -> list[dict]:
+    normalized = ensure_normalized_document(data)
+    return normalized.get("pages", []) or []
+
+
+def get_page_count(data: dict) -> int:
+    return len(get_pages(data))
 
 
 _MATH_CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
@@ -47,15 +72,20 @@ def iter_block_lines(block: dict):
 def block_segments(block: dict) -> list[dict]:
     segments: list[dict] = []
     for line in iter_block_lines(block):
-        spans = line.get("spans", [])
+        spans = line.get("spans", []) or line.get("segments", [])
         for index, span in enumerate(spans):
-            content = span.get("content", "")
+            content = span.get("content", span.get("text", ""))
             if not content or not content.strip():
                 continue
-            next_content = spans[index + 1].get("content", "") if index + 1 < len(spans) else ""
+            next_content = (
+                spans[index + 1].get("content", spans[index + 1].get("text", ""))
+                if index + 1 < len(spans)
+                else ""
+            )
+            span_type = span.get("type", span.get("raw_type", "text"))
             segments.append(
                 {
-                    "type": span.get("type", "text"),
+                    "type": "inline_equation" if span_type == "formula" else span_type,
                     "content": normalize_span_text(content, next_content),
                 }
             )
@@ -66,15 +96,20 @@ def block_lines(block: dict) -> list[dict]:
     lines_out: list[dict] = []
     for line in iter_block_lines(block):
         spans_out = []
-        spans = line.get("spans", [])
+        spans = line.get("spans", []) or line.get("segments", [])
         for index, span in enumerate(spans):
-            content = span.get("content", "")
+            content = span.get("content", span.get("text", ""))
             if not content or not content.strip():
                 continue
-            next_content = spans[index + 1].get("content", "") if index + 1 < len(spans) else ""
+            next_content = (
+                spans[index + 1].get("content", spans[index + 1].get("text", ""))
+                if index + 1 < len(spans)
+                else ""
+            )
+            span_type = span.get("type", span.get("raw_type", "text"))
             spans_out.append(
                 {
-                    "type": span.get("type", "text"),
+                    "type": "inline_equation" if span_type == "formula" else span_type,
                     "content": normalize_span_text(content, next_content),
                     "bbox": span.get("bbox", []),
                 }
@@ -280,9 +315,9 @@ SKIP_BLOCK_TYPES = {
 }
 
 
-def should_translate_block(block: dict, text: str, *, inside_algorithm: bool = False) -> bool:
-    block_type = block.get("type", "unknown")
-    block_sub_type = str(block.get("sub_type", "") or "").strip().lower()
+def should_translate_block(block: dict, data: dict, text: str, *, inside_algorithm: bool = False) -> bool:
+    block_type = _normalized_block_kind(block, data)
+    block_sub_type = _block_sub_type(block, data).strip().lower()
     if inside_algorithm or block_sub_type == "algorithm":
         return False
     if block_type in SKIP_BLOCK_TYPES:
@@ -292,6 +327,7 @@ def should_translate_block(block: dict, text: str, *, inside_algorithm: bool = F
 
 def extract_block_item(
     block: dict,
+    data: dict,
     page_idx: int,
     block_idx: int,
     item_suffix: str = "",
@@ -302,34 +338,43 @@ def extract_block_item(
     text = merge_segments_text(segments)
     if not text:
         return None
-    if not should_translate_block(block, text, inside_algorithm=inside_algorithm):
+    if not should_translate_block(block, data, text, inside_algorithm=inside_algorithm):
         return None
+    block_type = _normalized_block_kind(block, data)
+    raw_type = _raw_block_type(block, data)
+    raw_sub_type = _block_sub_type(block, data)
     return TextItem(
         item_id=f"p{page_idx + 1:03d}-b{block_idx:03d}{item_suffix}",
         page_idx=page_idx,
         block_idx=block_idx,
-        block_type=block.get("type", "unknown"),
+        block_type=block_type,
         bbox=block.get("bbox", []),
         text=text,
         segments=segments,
         lines=lines,
         metadata={
-            "ocr_sub_type": str(block.get("sub_type", "") or ""),
+            "ocr_sub_type": raw_sub_type,
+            "normalized_sub_type": str(block.get("sub_type", "") or ""),
+            "raw_type": raw_type,
+            "tags": list(block.get("tags", []) or []),
+            "derived": dict(block.get("derived", {}) or {}),
+            "source": block.get("source", {}) or {},
         },
     )
 
 
 def extract_text_items(data: dict, page_idx: int) -> list[TextItem]:
-    pages = data.get("pdf_info", [])
+    pages = get_pages(data)
     if page_idx >= len(pages):
         raise IndexError(f"page_idx {page_idx} out of range; total pages={len(pages)}")
 
     page = pages[page_idx]
     items: list[TextItem] = []
     def visit_block(block: dict, block_idx: int, item_suffix: str = "", inside_algorithm: bool = False) -> None:
-        current_inside_algorithm = inside_algorithm or (str(block.get("sub_type", "") or "").strip().lower() == "algorithm")
+        current_inside_algorithm = inside_algorithm or (_block_sub_type(block, data).strip().lower() == "algorithm")
         item = extract_block_item(
             block,
+            data,
             page_idx=page_idx,
             block_idx=block_idx,
             item_suffix=item_suffix,
@@ -338,7 +383,7 @@ def extract_text_items(data: dict, page_idx: int) -> list[TextItem]:
         if item is not None:
             items.append(item)
 
-        for child_idx, child in enumerate(block.get("blocks", []) or []):
+        for child_idx, child in enumerate(_block_children(data, block)):
             visit_block(
                 child,
                 block_idx=block_idx,
@@ -346,6 +391,6 @@ def extract_text_items(data: dict, page_idx: int) -> list[TextItem]:
                 inside_algorithm=current_inside_algorithm,
             )
 
-    for block_idx, block in enumerate(page.get("para_blocks", [])):
+    for block_idx, block in enumerate(_iter_page_blocks(data, page)):
         visit_block(block, block_idx)
     return _apply_page_structure(items)
