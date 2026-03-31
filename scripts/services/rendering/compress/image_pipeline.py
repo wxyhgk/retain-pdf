@@ -56,6 +56,11 @@ def compress_pdf_images_only_impl(
             except Exception:
                 skipped_missing += 1
                 continue
+            try:
+                original_stream = bytes(obj.read_raw_bytes())
+            except Exception:
+                original_stream = b""
+            original_encoded_len = len(original_stream) if original_stream else len(raw)
 
             should_skip, skip_reason = should_skip_recompress_image(obj, info)
             if should_skip:
@@ -71,7 +76,7 @@ def compress_pdf_images_only_impl(
 
             try:
                 resized = resize_to_target(image, target_width=target_width, target_height=target_height)
-                encoded, encoded_ext = encode_image(resized)
+                encoded, encoded_ext, encoded_colorspace = encode_image(resized)
             except OSError as exc:
                 skipped_broken += 1
                 print(
@@ -83,7 +88,7 @@ def compress_pdf_images_only_impl(
             if not encoded:
                 skipped_alpha += 1
                 continue
-            if len(encoded) >= len(raw):
+            if len(encoded) >= original_encoded_len:
                 skipped_not_better += 1
                 continue
 
@@ -91,14 +96,14 @@ def compress_pdf_images_only_impl(
             obj[Name("/Width")] = resized.width
             obj[Name("/Height")] = resized.height
             obj[Name("/BitsPerComponent")] = 8
-            obj[Name("/ColorSpace")] = Name("/DeviceRGB")
+            obj[Name("/ColorSpace")] = Name(encoded_colorspace or "/DeviceRGB")
             for key in ("/SMask", "/Mask", "/DecodeParms"):
                 if Name(key) in obj:
                     del obj[Name(key)]
             changed += 1
             print(
                 f"image-only compress: xref={xref} ->{encoded_ext} "
-                f"{len(raw)}->{len(encoded)} bytes size={image.size}->{resized.size}",
+                f"{original_encoded_len}->{len(encoded)} bytes size={image.size}->{resized.size}",
                 flush=True,
             )
 
@@ -114,7 +119,7 @@ def compress_pdf_images_only_impl(
 
         pdf.save(
             temp_path,
-            object_stream_mode=pikepdf.ObjectStreamMode.generate,
+            object_stream_mode=pikepdf.ObjectStreamMode.preserve,
             compress_streams=True,
             recompress_flate=True,
         )

@@ -120,6 +120,34 @@ def build_book_from_translations(
             compress_pdf_images_only(output_pdf_path, dpi=pdf_compress_dpi)
             return len(selected_pages)
 
+        if extract_selected_pages:
+            source_doc = fitz.open(render_source_pdf_path)
+            temp_doc = fitz.open()
+            try:
+                temp_doc.insert_pdf(source_doc, from_page=start, to_page=stop)
+                remapped_pages = {
+                    page_idx - start: items
+                    for page_idx, items in selected_pages.items()
+                }
+                overlay_translated_pages_on_doc(
+                    temp_doc,
+                    remapped_pages,
+                    stem="book-overlay",
+                    compile_workers=compile_workers,
+                    api_key=api_key,
+                    model=model,
+                    base_url=base_url,
+                    font_family=typst_font_family,
+                    temp_root=default_typst_temp_root(output_pdf_path),
+                    cover_only=False,
+                )
+                save_optimized_pdf(temp_doc, output_pdf_path)
+            finally:
+                temp_doc.close()
+                source_doc.close()
+            compress_pdf_images_only(output_pdf_path, dpi=pdf_compress_dpi)
+            return stop - start + 1
+
         if render_mode in {"compact", "direct", "overlay"}:
             if render_mode in {"compact", "direct"}:
                 print(f"render mode '{render_mode}' is deprecated; using typst overlay instead", flush=True)
@@ -150,34 +178,6 @@ def build_book_from_translations(
             )
             compress_pdf_images_only(output_pdf_path, dpi=pdf_compress_dpi)
             return len(selected_pages)
-
-        if extract_selected_pages:
-            source_doc = fitz.open(render_source_pdf_path)
-            temp_doc = fitz.open()
-            try:
-                temp_doc.insert_pdf(source_doc, from_page=start, to_page=stop)
-                remapped_pages = {
-                    page_idx - start: items
-                    for page_idx, items in selected_pages.items()
-                }
-                overlay_translated_pages_on_doc(
-                    temp_doc,
-                    remapped_pages,
-                    stem="book-overlay",
-                    compile_workers=compile_workers,
-                    api_key=api_key,
-                    model=model,
-                    base_url=base_url,
-                    font_family=typst_font_family,
-                    temp_root=default_typst_temp_root(output_pdf_path),
-                    cover_only=False,
-                )
-                save_optimized_pdf(temp_doc, output_pdf_path)
-            finally:
-                temp_doc.close()
-                source_doc.close()
-            compress_pdf_images_only(output_pdf_path, dpi=pdf_compress_dpi)
-            return stop - start + 1
 
         build_book_typst_pdf(
             source_pdf_path=render_source_pdf_path,

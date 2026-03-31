@@ -11,6 +11,7 @@ from pikepdf import PdfImage
 
 IMAGE_RECOMPRESS_MIN_BYTES = 20_000
 IMAGE_JPEG_QUALITY = 78
+IMAGE_JPEG_QUALITY_CMYK = 56
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -27,10 +28,32 @@ def resize_to_target(img: Image.Image, *, target_width: int, target_height: int)
     return img.resize(new_size, Image.LANCZOS)
 
 
-def encode_image(img: Image.Image) -> tuple[bytes, str]:
+def encode_image(img: Image.Image) -> tuple[bytes, str, str]:
     has_alpha = "A" in img.getbands()
     if has_alpha:
-        return b"", "skip-alpha"
+        return b"", "skip-alpha", ""
+
+    if img.mode == "CMYK":
+        output = io.BytesIO()
+        img.save(
+            output,
+            format="JPEG",
+            quality=IMAGE_JPEG_QUALITY_CMYK,
+            optimize=True,
+            progressive=False,
+        )
+        return output.getvalue(), "jpeg", "/DeviceCMYK"
+
+    if img.mode == "L":
+        output = io.BytesIO()
+        img.save(
+            output,
+            format="JPEG",
+            quality=IMAGE_JPEG_QUALITY,
+            optimize=True,
+            progressive=False,
+        )
+        return output.getvalue(), "jpeg", "/DeviceGray"
 
     rgb = img.convert("RGB")
     output = io.BytesIO()
@@ -39,10 +62,10 @@ def encode_image(img: Image.Image) -> tuple[bytes, str]:
         format="JPEG",
         quality=IMAGE_JPEG_QUALITY,
         optimize=True,
-        progressive=True,
+        progressive=False,
     )
     jpeg_bytes = output.getvalue()
-    return jpeg_bytes, "jpeg"
+    return jpeg_bytes, "jpeg", "/DeviceRGB"
 
 
 def pdf_bool(value: object) -> bool:
@@ -55,21 +78,29 @@ def pdf_bool(value: object) -> bool:
 
 def should_skip_recompress_image(obj: pikepdf.Object, info: dict) -> tuple[bool, str]:
     bits_per_component = int(info.get("bpc") or 0)
-    colorspace = info.get("colorspace")
+    obj_colorspace = obj.get(Name("/ColorSpace"))
+    colorspace = str(obj_colorspace or info.get("cs-name") or info.get("colorspace") or "")
     filters = obj.get(Name("/Filter"))
     filter_names: set[str] = set()
     if isinstance(filters, list):
         filter_names = {str(value) for value in filters}
     elif filters is not None:
         filter_names = {str(filters)}
+    decode = obj.get(Name("/Decode"))
     if pdf_bool(obj.get(Name("/ImageMask"))):
         return True, "image-mask"
     if bits_per_component == 1:
         return True, "bitonal"
     if not colorspace:
         return True, "missing-colorspace"
+    if colorspace.startswith("/") and colorspace not in {"/DeviceRGB", "/DeviceCMYK", "/DeviceGray"}:
+        return True, "non-device-colorspace"
+    if "ICCBased" in colorspace or "Separation" in colorspace or "DeviceN" in colorspace:
+        return True, "complex-colorspace"
     if "/JPXDecode" in filter_names:
         return True, "jpxdecode"
+    if decode is not None:
+        return True, "decode-array"
     return False, ""
 
 
