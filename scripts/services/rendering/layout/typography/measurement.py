@@ -6,6 +6,8 @@ from statistics import median
 
 from foundation.config import fonts
 from foundation.config import layout
+from services.document_schema.semantics import is_body_like_structure_role
+from services.document_schema.semantics import is_caption_like_block
 
 
 MIN_FONT_SIZE_PT = 8.4
@@ -22,6 +24,8 @@ VISUAL_LINE_COUNT_MAX = 24
 LINE_COUNT_PREDICT_TRIGGER_CHARS = 48
 LINE_COUNT_GROW_THRESHOLD = 1.12
 FORMULA_CHARS_PER_LINE_PENALTY = 0.82
+SINGLE_LINE_GLUE_HEIGHT_TRIGGER_LINES = 3.2
+SINGLE_LINE_GLUE_WIDTH_CHAR_RATIO = 1.45
 SOURCE_COMPACTNESS_TEXT_TRIGGER = 52
 SOURCE_COMPACTNESS_LINE_TRIGGER = 3
 SOURCE_COMPACTNESS_X_TRIGGER = 0.76
@@ -142,11 +146,22 @@ def _predicted_wrapped_line_count(item: dict, *, width: float, text_len: int) ->
     if width <= 0 or text_len < LINE_COUNT_PREDICT_TRIGGER_CHARS:
         return 0
     observed_chars = plain_text_chars_per_line(item)
-    approx_chars_per_line = observed_chars or clamp(width / APPROX_TEXT_CHAR_WIDTH_PT, 10.0, 88.0)
+    geometric_chars_per_line = clamp(width / APPROX_TEXT_CHAR_WIDTH_PT, 10.0, 88.0)
+    approx_chars_per_line = observed_chars or geometric_chars_per_line
+    tall_single_line_glue = is_tall_single_line_glue(
+        item,
+        text_len=text_len,
+        observed_chars=observed_chars,
+        geometric_chars_per_line=geometric_chars_per_line,
+    )
+    if tall_single_line_glue:
+        # OCR occasionally glues an entire wrapped paragraph into one fake line
+        # while still giving a tall paragraph bbox. In that case the observed
+        # chars-per-line is unusable; fall back to geometry.
+        approx_chars_per_line = geometric_chars_per_line
     if formula_ratio(item) > 0:
         approx_chars_per_line *= FORMULA_CHARS_PER_LINE_PENALTY
-    structure_role = str((item.get("metadata", {}) or {}).get("structure_role", "") or "")
-    if structure_role in {"body", "example_line"}:
+    if is_body_like_structure_role(item.get("metadata", {}) or {}):
         approx_chars_per_line *= 0.96
     effective_chars_per_line = max(8.0, approx_chars_per_line * 1.02)
     return max(1, ceil(text_len / effective_chars_per_line))
@@ -174,9 +189,44 @@ def visual_line_count(item: dict) -> int:
     return min(VISUAL_LINE_COUNT_MAX, observed)
 
 
+def source_visual_line_count(item: dict) -> int:
+    observed = max(1, len(item.get("lines", [])))
+    if is_tall_single_line_glue(item):
+        return observed
+    return visual_line_count(item)
+
+
+def is_tall_single_line_glue(
+    item: dict,
+    *,
+    text_len: int | None = None,
+    observed_chars: float | None = None,
+    geometric_chars_per_line: float | None = None,
+) -> bool:
+    observed_line_count = len(item.get("lines", []))
+    if observed_line_count > 1:
+        return False
+    block_height = bbox_height(item)
+    if block_height <= 0:
+        return False
+    if text_len is None:
+        text_len = len(re.sub(r"\s+", "", item.get("source_text", "")))
+    if text_len < LINE_COUNT_PREDICT_TRIGGER_CHARS:
+        return False
+    if observed_chars is None:
+        observed_chars = plain_text_chars_per_line(item)
+    if geometric_chars_per_line is None:
+        geometric_chars_per_line = clamp(bbox_width(item) / APPROX_TEXT_CHAR_WIDTH_PT, 10.0, 88.0)
+    median_height = median_line_height(item)
+    return bool(
+        block_height >= max(MIN_TEXT_LINE_PITCH_PT * SINGLE_LINE_GLUE_HEIGHT_TRIGGER_LINES, median_height * 3.0)
+        or (observed_chars > 0 and observed_chars >= geometric_chars_per_line * SINGLE_LINE_GLUE_WIDTH_CHAR_RATIO)
+    )
+
+
 def local_line_pitch(item: dict) -> float:
     block_height = effective_text_height(item)
-    lines = visual_line_count(item)
+    lines = source_visual_line_count(item)
     if block_height <= 0 or lines <= 0:
         return 0.0
     return block_height / lines
@@ -225,7 +275,7 @@ def source_compactness_score(item: dict) -> float:
     if text_len < 36:
         return 0.0
 
-    lines = visual_line_count(item)
+    lines = source_visual_line_count(item)
     density_x = occupied_ratio_x(item)
     density_y = occupied_ratio(item)
     score = 0.0
@@ -244,23 +294,8 @@ def source_compactness_score(item: dict) -> float:
     return clamp(score, 0.0, SOURCE_COMPACTNESS_MAX)
 
 
-def _item_tags(item: dict) -> set[str]:
-    metadata = item.get("metadata", {}) or {}
-    return {str(tag or "") for tag in (metadata.get("tags", []) or [])}
-
-
-def _derived_role(item: dict) -> str:
-    metadata = item.get("metadata", {}) or {}
-    derived = metadata.get("derived", {}) or {}
-    return str(derived.get("role", "") or "")
-
-
 def _is_caption_like(item: dict) -> bool:
-    return (
-        _derived_role(item) == "caption"
-        or str(item.get("block_type", "") or "") in {"image_caption", "table_caption", "table_footnote"}
-        or "caption" in _item_tags(item)
-    )
+    return is_caption_like_block(item)
 
 
 def candidate_text_items(items: list[dict]) -> list[dict]:
@@ -272,7 +307,7 @@ def candidate_text_items(items: list[dict]) -> list[dict]:
             continue
         if _is_caption_like(item):
             continue
-        if visual_line_count(item) < 3:
+        if source_visual_line_count(item) < 3:
             continue
         if len(re.sub(r"\s+", "", item.get("source_text", ""))) < 40:
             continue

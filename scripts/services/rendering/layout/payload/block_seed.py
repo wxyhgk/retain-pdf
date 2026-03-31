@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from statistics import median
 
+from services.document_schema.semantics import is_caption_like_block
 from services.rendering.layout.font_fit import BODY_LEADING_FLOOR_MIN
 from services.rendering.layout.font_fit import BODY_LEADING_MAX
 from services.rendering.layout.font_fit import BODY_LEADING_MIN
@@ -29,27 +30,12 @@ from services.rendering.layout.typography.measurement import bbox_width
 
 
 BODY_PAGE_FONT_ANCHOR_PERCENTILE = 0.46
+BODY_PAGE_FONT_FLOOR_DELTA_PT = 0.38
 SMALL_PAGE_BOX_RATIO = 0.06
 ULTRA_SMALL_PAGE_BOX_RATIO = 0.04
 
-
-def _item_tags(item: dict) -> set[str]:
-    metadata = item.get("metadata", {}) or {}
-    return {str(tag or "") for tag in (metadata.get("tags", []) or [])}
-
-
-def _derived_role(item: dict) -> str:
-    metadata = item.get("metadata", {}) or {}
-    derived = metadata.get("derived", {}) or {}
-    return str(derived.get("role", "") or "")
-
-
 def _is_caption_like(item: dict) -> bool:
-    return (
-        _derived_role(item) == "caption"
-        or str(item.get("block_type", "") or "") in {"image_caption", "table_caption", "table_footnote"}
-        or "caption" in _item_tags(item)
-    )
+    return is_caption_like_block(item)
 
 
 def _collect_page_seed_metrics(
@@ -79,6 +65,8 @@ def _collect_page_seed_metrics(
             body_base_sizes.append(font_size_pt)
 
     page_body_font_size_pt = round(percentile_value(body_base_sizes, BODY_PAGE_FONT_ANCHOR_PERCENTILE), 2) if body_base_sizes else None
+    if page_body_font_size_pt is not None and page_font_size > 0:
+        page_body_font_size_pt = round(max(page_body_font_size_pt, page_font_size - BODY_PAGE_FONT_FLOOR_DELTA_PT), 2)
     return (
         page_font_size,
         page_line_pitch,

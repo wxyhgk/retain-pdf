@@ -2,6 +2,8 @@ import re
 
 from foundation.config import fonts
 from foundation.config import layout
+from services.document_schema.semantics import is_body_structure_role
+from services.document_schema.semantics import is_caption_like_block
 from services.rendering.layout.typography.geometry import cover_bbox
 from services.rendering.layout.typography.geometry import inner_bbox
 from services.rendering.layout.typography.measurement import bbox_height
@@ -18,6 +20,7 @@ from services.rendering.layout.typography.measurement import occupied_ratio_x
 from services.rendering.layout.typography.measurement import page_baseline_font_size
 from services.rendering.layout.typography.measurement import percentile_value
 from services.rendering.layout.typography.measurement import source_compactness_score
+from services.rendering.layout.typography.measurement import source_visual_line_count
 from services.rendering.layout.typography.measurement import source_text_height_limit_pt
 from services.rendering.layout.typography.measurement import visual_line_count
 
@@ -47,7 +50,6 @@ NON_BODY_LEADING_TIGHTEN_PER_PT = 0.07
 BODY_LEADING_TIGHTEN_RATIO_PER_PT = 0.12
 NON_BODY_LEADING_TIGHTEN_RATIO_PER_PT = 0.04
 LOCAL_TEXTUAL_BLOCK_TYPES = {"text", "title", "image_caption", "table_caption", "table_footnote"}
-CAPTION_BLOCK_TYPES = {"image_caption", "table_caption", "table_footnote"}
 CAPTION_FONT_SCALE = 0.92
 CAPTION_MAX_FONT_SIZE_PT = 10.6
 HIGH_DENSITY_LEADING_RATIO = 0.9
@@ -59,24 +61,8 @@ BODY_ZH_TARGET_BASE = 0.66
 BODY_ZH_TARGET_MIN = 0.61
 BODY_COMPACT_LEADING_TIGHTEN_MAX = 0.06
 
-
-def _item_tags(item: dict) -> set[str]:
-    metadata = item.get("metadata", {}) or {}
-    return {str(tag or "") for tag in (metadata.get("tags", []) or [])}
-
-
-def _derived_role(item: dict) -> str:
-    metadata = item.get("metadata", {}) or {}
-    derived = metadata.get("derived", {}) or {}
-    return str(derived.get("role", "") or "")
-
-
 def _is_caption_like(item: dict) -> bool:
-    return (
-        _derived_role(item) == "caption"
-        or item.get("block_type") in CAPTION_BLOCK_TYPES
-        or "caption" in _item_tags(item)
-    )
+    return is_caption_like_block(item)
 
 
 def _is_local_textual_item(item: dict) -> bool:
@@ -106,16 +92,15 @@ def is_body_text_candidate(item: dict, page_text_width_med: float) -> bool:
         return False
     text_len = len(re.sub(r"\s+", "", item.get("source_text", "")))
     width = bbox_width(item)
-    structure_role = str((item.get("metadata", {}) or {}).get("structure_role", "") or "")
     if page_text_width_med > 0 and width < page_text_width_med * 0.75:
         # Multi-column body text can be much narrower than the page-wide median.
         # If OCR already marks it as body and it has enough real text / lines,
         # keep it in the body bucket so page-level normalization does not shrink
         # it into caption-like sizing.
         if not (
-            structure_role == "body"
+            is_body_structure_role(item.get("metadata", {}) or {})
             and text_len >= 36
-            and visual_line_count(item) >= 2
+            and source_visual_line_count(item) >= 2
         ):
             return False
     return text_len >= 40

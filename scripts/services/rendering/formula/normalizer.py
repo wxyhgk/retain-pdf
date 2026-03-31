@@ -23,7 +23,7 @@ STRUCTURAL_LATEX_COMMANDS = {
     "binom",
 }
 
-STYLE_WRAPPER_MACROS = r"(?:bf|rm|it|sf|tt|pmb|mathbf|mathrm|mathit|mathsf|mathtt)"
+STYLE_WRAPPER_MACROS = r"(?:mathbf|mathrm|mathit|mathsf|mathtt|pmb|bf|rm|it|sf|tt)"
 LEGACY_LAYOUT_WRAPPER_MACROS = r"(?:smash|mbox|hbox|vbox|fbox|textnormal|textrm|textsf|texttt)"
 
 
@@ -34,8 +34,8 @@ def _unwrap_style_wrappers(expr: str) -> str:
     prev = None
     while expr != prev:
         prev = expr
-        expr = group_prefixed_re.sub(lambda m: m.group(1).strip(), expr)
-        expr = direct_group_re.sub(lambda m: m.group(1).strip(), expr)
+        expr = group_prefixed_re.sub(lambda m: "{" + m.group(1).strip() + "}", expr)
+        expr = direct_group_re.sub(lambda m: "{" + m.group(1).strip() + "}", expr)
     return expr
 
 
