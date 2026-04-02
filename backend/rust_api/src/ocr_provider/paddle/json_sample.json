@@ -1,0 +1,30 @@
+{
+  "layoutParsingResults": [
+      {},
+      {},
+      {}
+  ],
+  "preprocessedImages": [
+    "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/preprocessed_img_0.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A35Z%2F-1%2F%2Fdfa3d3165ba04715ddd18b0e0af45e6ddbc003095615fb153f1fdbae42c20833",
+    "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/preprocessed_img_1.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A36Z%2F-1%2F%2F1996ef9dfaf177f4d8569a993dc7168e7fbd3c54d6855b14aa12158146b2f68b",
+    "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/preprocessed_img_2.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A37Z%2F-1%2F%2F83a60d44624b4eaab3cb8f6c67ef53ef802dc8dd942837f97eb1e51cbd709d2c"
+  ],
+    "dataInfo": {
+    "type": "pdf",
+    "numPages": 3,
+    "pages": [
+      {
+        "width": 1191,
+        "height": 1684
+      },
+      {
+        "width": 1191,
+        "height": 1684
+      },
+      {
+        "width": 1191,
+        "height": 1684
+      }
+    ]
+  }
+}

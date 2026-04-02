@@ -1,6 +1,9 @@
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+*.log
+node_modules/
+target/
 
 output/
 scripts/.env/*.env
@@ -17,3 +20,15 @@ Fast_API/*.log
 Fast_API/downloads-check/
 Fast_API/downloads-check-*.zip
 front/http.server.log
+
+# Restructured workspace
+data/db/
+data/uploads/
+data/jobs/
+data/downloads/
+backend/rust_api/target/
+backend/rust_api/auth.local.json
+backend/scripts/.env/*.env
+frontend/node_modules/
+frontend/desktop_app/src-tauri/target/
+untitled.txt

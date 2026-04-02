@@ -1,3 +1,0 @@
-DOCUMENT_SCHEMA_NAME = "normalized_document_v1"
-DOCUMENT_SCHEMA_VERSION = "1.0"
-DOCUMENT_SCHEMA_FILE_NAME = "document.v1.json"

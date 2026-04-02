@@ -1,0 +1,2155 @@
+[
+  {
+    "item_id": "p003-b000",
+    "page_idx": 2,
+    "block_idx": 0,
+    "block_type": "text",
+    "bbox": [
+      35,
+      53,
+      64,
+      61
+    ],
+    "source_text": "Table 2",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          53,
+          64,
+          63
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Table 2",
+            "bbox": [
+              35,
+              53,
+              64,
+              63
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/0",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          35,
+          53,
+          64,
+          61
+        ],
+        "raw_text_excerpt": "Table 2"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "head",
+    "protected_source_text": "Table 2",
+    "mixed_original_protected_source_text": "Table 2",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-002-004",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p002-b018",
+      "p003-b000"
+    ],
+    "translation_unit_protected_source_text": "Subsequently, we applied the conditions from entry 1, which rep- resented the best reaction conditions, to investigate the substrate scope (Table 2). In a typical procedure, the biaryl compound (such as biaryl, diaryl ether, diaryl thioether, and diarylamine), a ketone (such as flu- orenone, acridinone, xanthenone, anthraquinone, and other diary- lketones), and an appropriate amount of solvent (e.g., 1,4-dioxane, acetic acid, DMF) were placed in a round-bottom flask or a Schlenk flask (wrapped in aluminum foil to avoid side reactions under light condi- tions) [26]. Then, the catalyst HNTf₂ [[FORMULA_1]] ) was added. The Table 2",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "( \\leq 1 0 \\mathrm { \\ m o l } \\%"
+      }
+    ],
+    "translation_unit_protected_translated_text": "随后，我们采用条目1中的最佳反应条件来考察底物适用范围（表2）。典型操作如下：将联芳化合物（如联芳烃、二芳基醚、二芳基硫醚和二芳胺）、酮类化合物（如芴酮、吖啶酮、呫吨酮、蒽醌及其他二芳基酮）与适量溶剂（例如1,4-二氧六环、乙酸、DMF）置于圆底烧瓶或施伦克烧瓶中（用铝箔包裹以避免光照条件下的副反应）[26]。随后加入催化剂HNTf₂[[FORMULA_1]]。表2",
+    "translation_unit_translated_text": "随后，我们采用条目1中的最佳反应条件来考察底物适用范围（表2）。典型操作如下：将联芳化合物（如联芳烃、二芳基醚、二芳基硫醚和二芳胺）、酮类化合物（如芴酮、吖啶酮、呫吨酮、蒽醌及其他二芳基酮）与适量溶剂（例如1,4-二氧六环、乙酸、DMF）置于圆底烧瓶或施伦克烧瓶中（用铝箔包裹以避免光照条件下的副反应）[26]。随后加入催化剂HNTf₂( \\leq 1 0 \\mathrm { \\ m o l } \\%。表2",
+    "protected_translated_text": "随后，我们采用条目1中的最佳反应条件来考察底物适用范围（表2）。典型操作如下：将联芳化合物（如联芳烃、二芳基醚、二芳基硫醚和二芳胺）、酮类化合物（如芴酮、吖啶酮、呫吨酮、蒽醌及其他二芳基酮）与适量溶剂（例如1,4-二氧六环、乙酸、DMF）置于圆底烧瓶或施伦克烧瓶中（用铝箔包裹以避免光照条件下的副反应）[26]。随后加入催化剂HNTf₂[[FORMULA_1]]。表2",
+    "translated_text": "随后，我们采用条目1中的最佳反应条件来考察底物适用范围（表2）。典型操作如下：将联芳化合物（如联芳烃、二芳基醚、二芳基硫醚和二芳胺）、酮类化合物（如芴酮、吖啶酮、呫吨酮、蒽醌及其他二芳基酮）与适量溶剂（例如1,4-二氧六环、乙酸、DMF）置于圆底烧瓶或施伦克烧瓶中（用铝箔包裹以避免光照条件下的副反应）[26]。随后加入催化剂HNTf₂( \\leq 1 0 \\mathrm { \\ m o l } \\%。表2",
+    "continuation_group": "cg-002-004",
+    "continuation_prev_text": "Subsequently, we applied the conditions from entry 1, which rep- resented the best reaction conditions, to investigate the substrate scope (Table 2). In a typical procedure, the biaryl compound (such as biaryl, diaryl ether, diaryl thioether, and diarylamine), a ketone (such as flu- orenone, acridinone, xanthenone, anthraquinone, and other diary- lketones), and an appropriate amount of solvent (e.g., 1,4-dioxane, acetic acid, DMF) were placed in a round-bottom flask or a Schlenk flask (wrapped in aluminum foil to avoid side reactions under light condi- tions) [26]. Then, the catalyst HNTf₂ [[FORMULA_1]] ) was added. The",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Subsequently, we applied the conditions from entry 1, which rep- resented the best reaction conditions, to investigate the substrate scope (Table 2). In a typical procedure, the biaryl compound (such as biaryl, diaryl ether, diaryl thioether, and diarylamine), a ketone (such as flu- orenone, acridinone, xanthenone, anthraquinone, and other diary- lketones), and an appropriate amount of solvent (e.g., 1,4-dioxane, acetic acid, DMF) were placed in a round-bottom flask or a Schlenk flask (wrapped in aluminum foil to avoid side reactions under light condi- tions) [26]. Then, the catalyst HNTf₂ [[FORMULA_1]] ) was added. The Table 2",
+    "group_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "( \\leq 1 0 \\mathrm { \\ m o l } \\%"
+      }
+    ],
+    "group_protected_translated_text": "随后，我们采用条目1中的最佳反应条件来考察底物适用范围（表2）。典型操作如下：将联芳化合物（如联芳烃、二芳基醚、二芳基硫醚和二芳胺）、酮类化合物（如芴酮、吖啶酮、呫吨酮、蒽醌及其他二芳基酮）与适量溶剂（例如1,4-二氧六环、乙酸、DMF）置于圆底烧瓶或施伦克烧瓶中（用铝箔包裹以避免光照条件下的副反应）[26]。随后加入催化剂HNTf₂[[FORMULA_1]]。表2",
+    "group_translated_text": "随后，我们采用条目1中的最佳反应条件来考察底物适用范围（表2）。典型操作如下：将联芳化合物（如联芳烃、二芳基醚、二芳基硫醚和二芳胺）、酮类化合物（如芴酮、吖啶酮、呫吨酮、蒽醌及其他二芳基酮）与适量溶剂（例如1,4-二氧六环、乙酸、DMF）置于圆底烧瓶或施伦克烧瓶中（用铝箔包裹以避免光照条件下的副反应）[26]。随后加入催化剂HNTf₂( \\leq 1 0 \\mathrm { \\ m o l } \\%。表2",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b001",
+    "page_idx": 2,
+    "block_idx": 1,
+    "block_type": "text",
+    "bbox": [
+      35,
+      62,
+      265,
+      72
+    ],
+    "source_text": "Products of the reactions between diaryl compounds and diarylketones.",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          61,
+          267,
+          73
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Products of the reactions between diaryl compounds and diarylketones.",
+            "bbox": [
+              35,
+              61,
+              267,
+              73
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/1",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          35,
+          62,
+          265,
+          72
+        ],
+        "raw_text_excerpt": "Products of the reactions between diaryl compounds and diarylketones."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "Products of the reactions between diaryl compounds and diarylketones.",
+    "mixed_original_protected_source_text": "Products of the reactions between diaryl compounds and diarylketones.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b001",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b001"
+    ],
+    "translation_unit_protected_source_text": "Products of the reactions between diaryl compounds and diarylketones.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "二芳基化合物与二芳基酮的反应产物。",
+    "translation_unit_translated_text": "二芳基化合物与二芳基酮的反应产物。",
+    "protected_translated_text": "二芳基化合物与二芳基酮的反应产物。",
+    "translated_text": "二芳基化合物与二芳基酮的反应产物。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b002",
+    "page_idx": 2,
+    "block_idx": 2,
+    "block_type": "text",
+    "bbox": [
+      208,
+      76,
+      386,
+      85
+    ],
+    "source_text": "1.Scope of the reaction of diaryl compounds with acridinones",
+    "lines": [
+      {
+        "bbox": [
+          209,
+          76,
+          386,
+          86
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "1.Scope of the reaction of diaryl compounds with acridinones",
+            "bbox": [
+              209,
+              76,
+              386,
+              86
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/2",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          208,
+          76,
+          386,
+          85
+        ],
+        "raw_text_excerpt": "1.Scope of the reaction of diaryl compounds with acridinones"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "1.Scope of the reaction of diaryl compounds with acridinones",
+    "mixed_original_protected_source_text": "1.Scope of the reaction of diaryl compounds with acridinones",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b002",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b002"
+    ],
+    "translation_unit_protected_source_text": "1.Scope of the reaction of diaryl compounds with acridinones",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "1. 二芳基化合物与吖啶酮反应的范围",
+    "translation_unit_translated_text": "1. 二芳基化合物与吖啶酮反应的范围",
+    "protected_translated_text": "1. 二芳基化合物与吖啶酮反应的范围",
+    "translated_text": "1. 二芳基化合物与吖啶酮反应的范围",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b007",
+    "page_idx": 2,
+    "block_idx": 7,
+    "block_type": "image_caption",
+    "bbox": [
+      222,
+      162,
+      241,
+      168
+    ],
+    "source_text": "SPA1, 88%",
+    "lines": [
+      {
+        "bbox": [
+          222,
+          162,
+          241,
+          168
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA1, 88%",
+            "bbox": [
+              222,
+              162,
+              241,
+              168
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/4/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          222,
+          162,
+          241,
+          168
+        ],
+        "raw_text_excerpt": "SPA1, 88%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA1, 88%",
+    "mixed_original_protected_source_text": "SPA1, 88%",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b007",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b007"
+    ],
+    "translation_unit_protected_source_text": "SPA1, 88%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "SPA1，88%",
+    "translation_unit_translated_text": "SPA1，88%",
+    "protected_translated_text": "SPA1，88%",
+    "translated_text": "SPA1，88%",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b010",
+    "page_idx": 2,
+    "block_idx": 10,
+    "block_type": "image_caption",
+    "bbox": [
+      263,
+      162,
+      284,
+      168
+    ],
+    "source_text": "SPA10, 81%",
+    "lines": [
+      {
+        "bbox": [
+          263,
+          162,
+          286,
+          168
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA10, 81%",
+            "bbox": [
+              263,
+              162,
+              286,
+              168
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/5/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          263,
+          162,
+          284,
+          168
+        ],
+        "raw_text_excerpt": "SPA10, 81%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA10, 81%",
+    "mixed_original_protected_source_text": "SPA10, 81%",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b010",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b010"
+    ],
+    "translation_unit_protected_source_text": "SPA10, 81%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "SPA10，81%",
+    "translation_unit_translated_text": "SPA10，81%",
+    "protected_translated_text": "SPA10，81%",
+    "translated_text": "SPA10，81%",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b013",
+    "page_idx": 2,
+    "block_idx": 13,
+    "block_type": "image_caption",
+    "bbox": [
+      310,
+      162,
+      329,
+      168
+    ],
+    "source_text": "SPA3,83%",
+    "lines": [
+      {
+        "bbox": [
+          309,
+          162,
+          329,
+          168
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA3,83%",
+            "bbox": [
+              309,
+              162,
+              329,
+              168
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/6/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          310,
+          162,
+          329,
+          168
+        ],
+        "raw_text_excerpt": "SPA3,83%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA3,83%",
+    "mixed_original_protected_source_text": "SPA3,83%",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b013",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b013"
+    ],
+    "translation_unit_protected_source_text": "SPA3,83%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "SPA3，83%",
+    "translation_unit_translated_text": "SPA3，83%",
+    "protected_translated_text": "SPA3，83%",
+    "translated_text": "SPA3，83%",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b016",
+    "page_idx": 2,
+    "block_idx": 16,
+    "block_type": "image_caption",
+    "bbox": [
+      355,
+      162,
+      374,
+      168
+    ],
+    "source_text": "SPA4,75%",
+    "lines": [
+      {
+        "bbox": [
+          354,
+          162,
+          374,
+          168
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA4,75%",
+            "bbox": [
+              354,
+              162,
+              374,
+              168
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/7/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          355,
+          162,
+          374,
+          168
+        ],
+        "raw_text_excerpt": "SPA4,75%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA4,75%",
+    "mixed_original_protected_source_text": "SPA4,75%",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b016",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b016"
+    ],
+    "translation_unit_protected_source_text": "SPA4,75%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "SPA4，75%",
+    "translation_unit_translated_text": "SPA4，75%",
+    "protected_translated_text": "SPA4，75%",
+    "translated_text": "SPA4，75%",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b019",
+    "page_idx": 2,
+    "block_idx": 19,
+    "block_type": "image_caption",
+    "bbox": [
+      220,
+      199,
+      241,
+      203
+    ],
+    "source_text": "SPA6,90%",
+    "lines": [
+      {
+        "bbox": [
+          221,
+          199,
+          241,
+          205
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA6,90%",
+            "bbox": [
+              221,
+              199,
+              241,
+              205
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/8/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          220,
+          199,
+          241,
+          203
+        ],
+        "raw_text_excerpt": "SPA6,90%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA6,90%",
+    "mixed_original_protected_source_text": "SPA6,90%",
+    "formula_map": [],
+    "classification_label": "skip_model_keep_origin",
+    "should_translate": false,
+    "skip_reason": "skip_model_keep_origin",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b019",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b019"
+    ],
+    "translation_unit_protected_source_text": "SPA6,90%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b022",
+    "page_idx": 2,
+    "block_idx": 22,
+    "block_type": "image_caption",
+    "bbox": [
+      263,
+      199,
+      283,
+      203
+    ],
+    "source_text": "SPA2, 90%",
+    "lines": [
+      {
+        "bbox": [
+          264,
+          198,
+          284,
+          205
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA2, 90%",
+            "bbox": [
+              264,
+              198,
+              284,
+              205
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/9/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          263,
+          199,
+          283,
+          203
+        ],
+        "raw_text_excerpt": "SPA2, 90%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA2, 90%",
+    "mixed_original_protected_source_text": "SPA2, 90%",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b022",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b022"
+    ],
+    "translation_unit_protected_source_text": "SPA2, 90%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "SPA2，90%",
+    "translation_unit_translated_text": "SPA2，90%",
+    "protected_translated_text": "SPA2，90%",
+    "translated_text": "SPA2，90%",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b028",
+    "page_idx": 2,
+    "block_idx": 28,
+    "block_type": "image_caption",
+    "bbox": [
+      356,
+      199,
+      373,
+      203
+    ],
+    "source_text": "SPA5,85%",
+    "lines": [
+      {
+        "bbox": [
+          355,
+          198,
+          373,
+          203
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA5,85%",
+            "bbox": [
+              355,
+              198,
+              373,
+              203
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/11/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          356,
+          199,
+          373,
+          203
+        ],
+        "raw_text_excerpt": "SPA5,85%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA5,85%",
+    "mixed_original_protected_source_text": "SPA5,85%",
+    "formula_map": [],
+    "classification_label": "skip_model_keep_origin",
+    "should_translate": false,
+    "skip_reason": "skip_model_keep_origin",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b028",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b028"
+    ],
+    "translation_unit_protected_source_text": "SPA5,85%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b031",
+    "page_idx": 2,
+    "block_idx": 31,
+    "block_type": "image_caption",
+    "bbox": [
+      221,
+      237,
+      240,
+      241
+    ],
+    "source_text": "SPA7,79%",
+    "lines": [
+      {
+        "bbox": [
+          221,
+          237,
+          240,
+          242
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA7,79%",
+            "bbox": [
+              221,
+              237,
+              240,
+              242
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/12/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          221,
+          237,
+          240,
+          241
+        ],
+        "raw_text_excerpt": "SPA7,79%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA7,79%",
+    "mixed_original_protected_source_text": "SPA7,79%",
+    "formula_map": [],
+    "classification_label": "skip_model_keep_origin",
+    "should_translate": false,
+    "skip_reason": "skip_model_keep_origin",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b031",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b031"
+    ],
+    "translation_unit_protected_source_text": "SPA7,79%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b034",
+    "page_idx": 2,
+    "block_idx": 34,
+    "block_type": "image_caption",
+    "bbox": [
+      265,
+      237,
+      285,
+      241
+    ],
+    "source_text": "SPA12,95%",
+    "lines": [
+      {
+        "bbox": [
+          265,
+          236,
+          286,
+          242
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA12,95%",
+            "bbox": [
+              265,
+              236,
+              286,
+              242
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/13/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          265,
+          237,
+          285,
+          241
+        ],
+        "raw_text_excerpt": "SPA12,95%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA12,95%",
+    "mixed_original_protected_source_text": "SPA12,95%",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b034",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b034"
+    ],
+    "translation_unit_protected_source_text": "SPA12,95%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "SPA12, 95%",
+    "translation_unit_translated_text": "SPA12, 95%",
+    "protected_translated_text": "SPA12, 95%",
+    "translated_text": "SPA12, 95%",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b037",
+    "page_idx": 2,
+    "block_idx": 37,
+    "block_type": "image_caption",
+    "bbox": [
+      310,
+      237,
+      329,
+      241
+    ],
+    "source_text": "SPA8 81%",
+    "lines": [
+      {
+        "bbox": [
+          310,
+          236,
+          329,
+          241
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA8 81%",
+            "bbox": [
+              310,
+              236,
+              329,
+              241
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/14/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          310,
+          237,
+          329,
+          241
+        ],
+        "raw_text_excerpt": "SPA8 81%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA8 81%",
+    "mixed_original_protected_source_text": "SPA8 81%",
+    "formula_map": [],
+    "classification_label": "skip_model_keep_origin",
+    "should_translate": false,
+    "skip_reason": "skip_model_keep_origin",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b037",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b037"
+    ],
+    "translation_unit_protected_source_text": "SPA8 81%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b040",
+    "page_idx": 2,
+    "block_idx": 40,
+    "block_type": "image_caption",
+    "bbox": [
+      355,
+      237,
+      374,
+      241
+    ],
+    "source_text": "SPA9 71%",
+    "lines": [
+      {
+        "bbox": [
+          356,
+          236,
+          375,
+          241
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA9 71%",
+            "bbox": [
+              356,
+              236,
+              375,
+              241
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/15/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          355,
+          237,
+          374,
+          241
+        ],
+        "raw_text_excerpt": "SPA9 71%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA9 71%",
+    "mixed_original_protected_source_text": "SPA9 71%",
+    "formula_map": [],
+    "classification_label": "skip_model_keep_origin",
+    "should_translate": false,
+    "skip_reason": "skip_model_keep_origin",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b040",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b040"
+    ],
+    "translation_unit_protected_source_text": "SPA9 71%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b043",
+    "page_idx": 2,
+    "block_idx": 43,
+    "block_type": "image_caption",
+    "bbox": [
+      218,
+      274,
+      240,
+      278
+    ],
+    "source_text": "SPA13,55%",
+    "lines": [
+      {
+        "bbox": [
+          218,
+          272,
+          240,
+          279
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA13,55%",
+            "bbox": [
+              218,
+              272,
+              240,
+              279
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/16/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          218,
+          274,
+          240,
+          278
+        ],
+        "raw_text_excerpt": "SPA13,55%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA13,55%",
+    "mixed_original_protected_source_text": "SPA13,55%",
+    "formula_map": [],
+    "classification_label": "skip_model_keep_origin",
+    "should_translate": false,
+    "skip_reason": "skip_model_keep_origin",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b043",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b043"
+    ],
+    "translation_unit_protected_source_text": "SPA13,55%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b046",
+    "page_idx": 2,
+    "block_idx": 46,
+    "block_type": "image_caption",
+    "bbox": [
+      264,
+      274,
+      285,
+      278
+    ],
+    "source_text": "SPA14, 46%",
+    "lines": [
+      {
+        "bbox": [
+          264,
+          272,
+          286,
+          279
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA14, 46%",
+            "bbox": [
+              264,
+              272,
+              286,
+              279
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/17/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          264,
+          274,
+          285,
+          278
+        ],
+        "raw_text_excerpt": "SPA14, 46%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA14, 46%",
+    "mixed_original_protected_source_text": "SPA14, 46%",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b046",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b046"
+    ],
+    "translation_unit_protected_source_text": "SPA14, 46%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "SPA14，46%",
+    "translation_unit_translated_text": "SPA14，46%",
+    "protected_translated_text": "SPA14，46%",
+    "translated_text": "SPA14，46%",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b049",
+    "page_idx": 2,
+    "block_idx": 49,
+    "block_type": "image_caption",
+    "bbox": [
+      310,
+      274,
+      332,
+      278
+    ],
+    "source_text": "SPA15,62%",
+    "lines": [
+      {
+        "bbox": [
+          310,
+          272,
+          332,
+          279
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "SPA15,62%",
+            "bbox": [
+              310,
+              272,
+              332,
+              279
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/18/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          310,
+          274,
+          332,
+          278
+        ],
+        "raw_text_excerpt": "SPA15,62%"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "SPA15,62%",
+    "mixed_original_protected_source_text": "SPA15,62%",
+    "formula_map": [],
+    "classification_label": "skip_model_keep_origin",
+    "should_translate": false,
+    "skip_reason": "skip_model_keep_origin",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b049",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b049"
+    ],
+    "translation_unit_protected_source_text": "SPA15,62%",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b050",
+    "page_idx": 2,
+    "block_idx": 50,
+    "block_type": "text",
+    "bbox": [
+      207,
+      280,
+      387,
+      289
+    ],
+    "source_text": "2.Scope of the reaction of diaryl compounds with xanthenones",
+    "lines": [
+      {
+        "bbox": [
+          207,
+          279,
+          387,
+          290
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "2.Scope of the reaction of diaryl compounds with xanthenones",
+            "bbox": [
+              207,
+              279,
+              387,
+              290
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/19",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          207,
+          280,
+          387,
+          289
+        ],
+        "raw_text_excerpt": "2.Scope of the reaction of diaryl compounds with xanthenones"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "2.Scope of the reaction of diaryl compounds with xanthenones",
+    "mixed_original_protected_source_text": "2.Scope of the reaction of diaryl compounds with xanthenones",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b050",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b050"
+    ],
+    "translation_unit_protected_source_text": "2.Scope of the reaction of diaryl compounds with xanthenones",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "2. 二芳基化合物与呫吨酮的反应范围",
+    "translation_unit_translated_text": "2. 二芳基化合物与呫吨酮的反应范围",
+    "protected_translated_text": "2. 二芳基化合物与呫吨酮的反应范围",
+    "translated_text": "2. 二芳基化合物与呫吨酮的反应范围",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b087",
+    "page_idx": 2,
+    "block_idx": 87,
+    "block_type": "text",
+    "bbox": [
+      208,
+      471,
+      386,
+      479
+    ],
+    "source_text": "3.Scope of the reaction of diaryl compounds with fluorenones",
+    "lines": [
+      {
+        "bbox": [
+          207,
+          470,
+          386,
+          481
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "3.Scope of the reaction of diaryl compounds with fluorenones",
+            "bbox": [
+              207,
+              470,
+              386,
+              481
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/38",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          208,
+          471,
+          386,
+          479
+        ],
+        "raw_text_excerpt": "3.Scope of the reaction of diaryl compounds with fluorenones"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "3.Scope of the reaction of diaryl compounds with fluorenones",
+    "mixed_original_protected_source_text": "3.Scope of the reaction of diaryl compounds with fluorenones",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b087",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b087"
+    ],
+    "translation_unit_protected_source_text": "3.Scope of the reaction of diaryl compounds with fluorenones",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "3. 二芳基化合物与芴酮的反应范围",
+    "translation_unit_translated_text": "3. 二芳基化合物与芴酮的反应范围",
+    "protected_translated_text": "3. 二芳基化合物与芴酮的反应范围",
+    "translated_text": "3. 二芳基化合物与芴酮的反应范围",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p003-b128",
+    "page_idx": 2,
+    "block_idx": 128,
+    "block_type": "text",
+    "bbox": [
+      205,
+      670,
+      394,
+      679
+    ],
+    "source_text": "4.Scope of the reaction of diaryl compounds with benzophenones",
+    "lines": [
+      {
+        "bbox": [
+          206,
+          670,
+          393,
+          681
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "4.Scope of the reaction of diaryl compounds with benzophenones",
+            "bbox": [
+              206,
+              670,
+              393,
+              681
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/59",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          205,
+          670,
+          394,
+          679
+        ],
+        "raw_text_excerpt": "4.Scope of the reaction of diaryl compounds with benzophenones"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 5,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "4.Scope of the reaction of diaryl compounds with benzophenones",
+    "mixed_original_protected_source_text": "4.Scope of the reaction of diaryl compounds with benzophenones",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b128",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b128"
+    ],
+    "translation_unit_protected_source_text": "4.Scope of the reaction of diaryl compounds with benzophenones",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "4. 二芳基化合物与二苯甲酮的反应范围",
+    "translation_unit_translated_text": "4. 二芳基化合物与二苯甲酮的反应范围",
+    "protected_translated_text": "4. 二芳基化合物与二苯甲酮的反应范围",
+    "translated_text": "4. 二芳基化合物与二苯甲酮的反应范围",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "candidate_break",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "p003-b129",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "p003-b129"
+  },
+  {
+    "item_id": "p003-b129",
+    "page_idx": 2,
+    "block_idx": 129,
+    "block_type": "text",
+    "bbox": [
+      483,
+      690,
+      552,
+      700
+    ],
+    "source_text": "(continued on next page)",
+    "lines": [
+      {
+        "bbox": [
+          483,
+          690,
+          552,
+          700
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(continued on next page)",
+            "bbox": [
+              483,
+              690,
+              552,
+              700
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 2,
+        "raw_path": "/pdf_info/2/para_blocks/60",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          483,
+          690,
+          552,
+          700
+        ],
+        "raw_text_excerpt": "(continued on next page)"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 6,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "tail",
+    "protected_source_text": "(continued on next page)",
+    "mixed_original_protected_source_text": "(continued on next page)",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b129",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b129"
+    ],
+    "translation_unit_protected_source_text": "(continued on next page)",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "（续下页）",
+    "translation_unit_translated_text": "（续下页）",
+    "protected_translated_text": "（续下页）",
+    "translated_text": "（续下页）",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "candidate_break",
+    "continuation_candidate_prev_id": "p003-b128",
+    "continuation_candidate_next_id": "p004-b000",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "p003-b128",
+    "candidate_pair_next_id": "p004-b000"
+  }
+]

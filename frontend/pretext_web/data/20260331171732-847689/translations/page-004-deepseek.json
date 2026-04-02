@@ -1,0 +1,2849 @@
+[
+  {
+    "item_id": "p004-b000",
+    "page_idx": 3,
+    "block_idx": 0,
+    "block_type": "text",
+    "bbox": [
+      35,
+      53,
+      101,
+      62
+    ],
+    "source_text": "Table 2 (continued )",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          52,
+          101,
+          64
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Table 2 (continued )",
+            "bbox": [
+              35,
+              52,
+              101,
+              64
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/0",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          35,
+          53,
+          101,
+          62
+        ],
+        "raw_text_excerpt": "Table 2 (continued )"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "head",
+    "protected_source_text": "Table 2 (continued )",
+    "mixed_original_protected_source_text": "Table 2 (continued )",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b000",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b000"
+    ],
+    "translation_unit_protected_source_text": "Table 2 (continued )",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "表 2（续）",
+    "translation_unit_translated_text": "表 2（续）",
+    "protected_translated_text": "表 2（续）",
+    "translated_text": "表 2（续）",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "candidate_break",
+    "continuation_candidate_prev_id": "p003-b129",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "p003-b129",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b003",
+    "page_idx": 3,
+    "block_idx": 3,
+    "block_type": "text",
+    "bbox": [
+      34,
+      242,
+      289,
+      315
+    ],
+    "source_text": "reaction mixture was heated at 8 0 ^ { \\circ } \\mathrm { C } for 6 h. After that, the solution was poured into a beaker containing a large amount of water. The crude product was collected by vacuum filtration, then purified by silica gel column chromatography (using petroleum ether/ethyl acetate, 10–5:1, v/v) to yield a solid. If the raw material contains functional groups (e.g., amino groups) that are easily oxidized, the reaction needs to be carried out under nitrogen protection.",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          242,
+          290,
+          253
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "reaction mixture was heated at",
+            "bbox": [
+              35,
+              242,
+              145,
+              253
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "8 0 ^ { \\circ } \\mathrm { C }",
+            "bbox": [
+              145,
+              243,
+              166,
+              252
+            ]
+          },
+          {
+            "type": "text",
+            "content": "for 6 h. After that, the solution was",
+            "bbox": [
+              166,
+              242,
+              290,
+              253
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          254,
+          289,
+          264
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "poured into a beaker containing a large amount of water. The crude",
+            "bbox": [
+              35,
+              254,
+              289,
+              264
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          264,
+          290,
+          275
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "product was collected by vacuum filtration, then purified by silica gel",
+            "bbox": [
+              35,
+              264,
+              290,
+              275
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          274,
+          290,
+          285
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "column chromatography (using petroleum ether/ethyl acetate, 10–5:1,",
+            "bbox": [
+              36,
+              274,
+              290,
+              285
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          284,
+          289,
+          296
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "v/v) to yield a solid. If the raw material contains functional groups (e.g.,",
+            "bbox": [
+              36,
+              284,
+              289,
+              296
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          295,
+          289,
+          305
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "amino groups) that are easily oxidized, the reaction needs to be carried",
+            "bbox": [
+              36,
+              295,
+              289,
+              305
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          306,
+          145,
+          317
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "out under nitrogen protection.",
+            "bbox": [
+              36,
+              306,
+              145,
+              317
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/2",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          242,
+          289,
+          315
+        ],
+        "raw_text_excerpt": "reaction mixture was heated at 8 0 ^ { \\circ } \\mathrm { C } for 6 h. After that, the solution was poured into a beaker containing a large amount of water. The crude product was collected by vacuum fi"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "reaction mixture was heated at [[FORMULA_1]] for 6 h. After that, the solution was poured into a beaker containing a large amount of water. The crude product was collected by vacuum filtration, then purified by silica gel column chromatography (using petroleum ether/ethyl acetate, 10–5:1, v/v) to yield a solid. If the raw material contains functional groups (e.g., amino groups) that are easily oxidized, the reaction needs to be carried out under nitrogen protection.",
+    "mixed_original_protected_source_text": "reaction mixture was heated at [[FORMULA_1]] for 6 h. After that, the solution was poured into a beaker containing a large amount of water. The crude product was collected by vacuum filtration, then purified by silica gel column chromatography (using petroleum ether/ethyl acetate, 10–5:1, v/v) to yield a solid. If the raw material contains functional groups (e.g., amino groups) that are easily oxidized, the reaction needs to be carried out under nitrogen protection.",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "8 0 ^ { \\circ } \\mathrm { C }"
+      }
+    ],
+    "classification_label": "translate_mixed_all",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "translate_all",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b003",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b003"
+    ],
+    "translation_unit_protected_source_text": "reaction mixture was heated at [[FORMULA_1]] for 6 h. After that, the solution was poured into a beaker containing a large amount of water. The crude product was collected by vacuum filtration, then purified by silica gel column chromatography (using petroleum ether/ethyl acetate, 10–5:1, v/v) to yield a solid. If the raw material contains functional groups (e.g., amino groups) that are easily oxidized, the reaction needs to be carried out under nitrogen protection.",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "8 0 ^ { \\circ } \\mathrm { C }"
+      }
+    ],
+    "translation_unit_protected_translated_text": "反应混合物加热至[[FORMULA_1]]反应6小时。之后，将溶液倒入装有大量水的烧杯中。粗产物通过真空过滤收集，然后通过硅胶柱色谱法（使用石油醚/乙酸乙酯，10–5:1，v/v）纯化得到固体。如果原料含有易被氧化的官能团（例如氨基），则反应需要在氮气保护下进行。",
+    "translation_unit_translated_text": "反应混合物加热至8 0 ^ { \\circ } \\mathrm { C }反应6小时。之后，将溶液倒入装有大量水的烧杯中。粗产物通过真空过滤收集，然后通过硅胶柱色谱法（使用石油醚/乙酸乙酯，10–5:1，v/v）纯化得到固体。如果原料含有易被氧化的官能团（例如氨基），则反应需要在氮气保护下进行。",
+    "protected_translated_text": "反应混合物加热至[[FORMULA_1]]反应6小时。之后，将溶液倒入装有大量水的烧杯中。粗产物通过真空过滤收集，然后通过硅胶柱色谱法（使用石油醚/乙酸乙酯，10–5:1，v/v）纯化得到固体。如果原料含有易被氧化的官能团（例如氨基），则反应需要在氮气保护下进行。",
+    "translated_text": "反应混合物加热至8 0 ^ { \\circ } \\mathrm { C }反应6小时。之后，将溶液倒入装有大量水的烧杯中。粗产物通过真空过滤收集，然后通过硅胶柱色谱法（使用石油醚/乙酸乙酯，10–5:1，v/v）纯化得到固体。如果原料含有易被氧化的官能团（例如氨基），则反应需要在氮气保护下进行。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b004",
+    "page_idx": 3,
+    "block_idx": 4,
+    "block_type": "text",
+    "bbox": [
+      34,
+      316,
+      289,
+      387
+    ],
+    "source_text": "The protocol exhibits notable functional group tolerance. Various substituents such as methyl \\left( \\mathrm { - C H } _ { 3 } \\right) , bromo \\mathbf { \\left( - B r \\right) } , hydroxyl (–OH), and amino (–NH₂) do not impede the successful completion of the reaction. This advantage is critical for advancing applications of SAM-based compounds, as these functional groups serve as versatile handles for further chemical modifications, molecular recognition, and interface engineering.",
+    "lines": [
+      {
+        "bbox": [
+          48,
+          316,
+          289,
+          327
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The protocol exhibits notable functional group tolerance. Various",
+            "bbox": [
+              48,
+              316,
+              289,
+              327
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          326,
+          289,
+          337
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "substituents such as methyl",
+            "bbox": [
+              36,
+              326,
+              135,
+              337
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\left( \\mathrm { - C H } _ { 3 } \\right)",
+            "bbox": [
+              136,
+              327,
+              159,
+              336
+            ]
+          },
+          {
+            "type": "text",
+            "content": ", bromo",
+            "bbox": [
+              160,
+              326,
+              188,
+              337
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\mathbf { \\left( - B r \\right) }",
+            "bbox": [
+              189,
+              327,
+              211,
+              336
+            ]
+          },
+          {
+            "type": "text",
+            "content": ", hydroxyl (–OH), and",
+            "bbox": [
+              211,
+              326,
+              289,
+              337
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          337,
+          289,
+          347
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "amino (–NH₂) do not impede the successful completion of the reaction.",
+            "bbox": [
+              36,
+              337,
+              289,
+              347
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          348,
+          289,
+          358
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "This advantage is critical for advancing applications of SAM-based",
+            "bbox": [
+              36,
+              348,
+              289,
+              358
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          358,
+          289,
+          367
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "compounds, as these functional groups serve as versatile handles for",
+            "bbox": [
+              36,
+              358,
+              289,
+              367
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          367,
+          289,
+          379
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "further chemical modifications, molecular recognition, and interface",
+            "bbox": [
+              35,
+              367,
+              289,
+              379
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          379,
+          82,
+          389
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "engineering.",
+            "bbox": [
+              36,
+              379,
+              82,
+              389
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/3",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          316,
+          289,
+          387
+        ],
+        "raw_text_excerpt": "The protocol exhibits notable functional group tolerance. Various substituents such as methyl \\left( \\mathrm { - C H } _ { 3 } \\right) , bromo \\mathbf { \\left( - B r \\right) } , hydroxyl (–OH), and am"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "The protocol exhibits notable functional group tolerance. Various substituents such as methyl [[FORMULA_1]] , bromo [[FORMULA_2]] , hydroxyl (–OH), and amino (–NH₂) do not impede the successful completion of the reaction. This advantage is critical for advancing applications of SAM-based compounds, as these functional groups serve as versatile handles for further chemical modifications, molecular recognition, and interface engineering.",
+    "mixed_original_protected_source_text": "The protocol exhibits notable functional group tolerance. Various substituents such as methyl [[FORMULA_1]] , bromo [[FORMULA_2]] , hydroxyl (–OH), and amino (–NH₂) do not impede the successful completion of the reaction. This advantage is critical for advancing applications of SAM-based compounds, as these functional groups serve as versatile handles for further chemical modifications, molecular recognition, and interface engineering.",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\left( \\mathrm { - C H } _ { 3 } \\right)"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\mathbf { \\left( - B r \\right) }"
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b004",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b004"
+    ],
+    "translation_unit_protected_source_text": "The protocol exhibits notable functional group tolerance. Various substituents such as methyl [[FORMULA_1]] , bromo [[FORMULA_2]] , hydroxyl (–OH), and amino (–NH₂) do not impede the successful completion of the reaction. This advantage is critical for advancing applications of SAM-based compounds, as these functional groups serve as versatile handles for further chemical modifications, molecular recognition, and interface engineering.",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\left( \\mathrm { - C H } _ { 3 } \\right)"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\mathbf { \\left( - B r \\right) }"
+      }
+    ],
+    "translation_unit_protected_translated_text": "该方案展现出显著的官能团耐受性。多种取代基如甲基[[FORMULA_1]]、溴代[[FORMULA_2]]、羟基（–OH）和氨基（–NH₂）均不会阻碍反应的顺利完成。这一优势对于推进SAM基化合物的应用至关重要，因为这些官能团可作为多功能位点，用于进一步的化学修饰、分子识别及界面工程。",
+    "translation_unit_translated_text": "该方案展现出显著的官能团耐受性。多种取代基如甲基\\left( \\mathrm { - C H } _ { 3 } \\right)、溴代\\mathbf { \\left( - B r \\right) }、羟基（–OH）和氨基（–NH₂）均不会阻碍反应的顺利完成。这一优势对于推进SAM基化合物的应用至关重要，因为这些官能团可作为多功能位点，用于进一步的化学修饰、分子识别及界面工程。",
+    "protected_translated_text": "该方案展现出显著的官能团耐受性。多种取代基如甲基[[FORMULA_1]]、溴代[[FORMULA_2]]、羟基（–OH）和氨基（–NH₂）均不会阻碍反应的顺利完成。这一优势对于推进SAM基化合物的应用至关重要，因为这些官能团可作为多功能位点，用于进一步的化学修饰、分子识别及界面工程。",
+    "translated_text": "该方案展现出显著的官能团耐受性。多种取代基如甲基\\left( \\mathrm { - C H } _ { 3 } \\right)、溴代\\mathbf { \\left( - B r \\right) }、羟基（–OH）和氨基（–NH₂）均不会阻碍反应的顺利完成。这一优势对于推进SAM基化合物的应用至关重要，因为这些官能团可作为多功能位点，用于进一步的化学修饰、分子识别及界面工程。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b005",
+    "page_idx": 3,
+    "block_idx": 5,
+    "block_type": "text",
+    "bbox": [
+      34,
+      389,
+      289,
+      430
+    ],
+    "source_text": "As a practical application, gram-scale synthesis can be performed. For example, diphenyl ether and fluorenone were added in amounts of 5.5 mmol (0.9351 g) and 5.0 mmol (0.9013 g) respectively, yielding 1 . 5 7 6 9 \\ g ( 9 5 ~ \\% yield) of SPF6.",
+    "lines": [
+      {
+        "bbox": [
+          47,
+          389,
+          289,
+          399
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "As a practical application, gram-scale synthesis can be performed.",
+            "bbox": [
+              47,
+              389,
+              289,
+              399
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          399,
+          290,
+          409
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "For example, diphenyl ether and fluorenone were added in amounts of",
+            "bbox": [
+              36,
+              399,
+              290,
+              409
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          409,
+          289,
+          421
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "5.5 mmol (0.9351 g) and 5.0 mmol (0.9013 g) respectively, yielding",
+            "bbox": [
+              35,
+              409,
+              289,
+              421
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          421,
+          148,
+          430
+        ],
+        "spans": [
+          {
+            "type": "inline_equation",
+            "content": "1 . 5 7 6 9 \\ g",
+            "bbox": [
+              36,
+              421,
+              69,
+              430
+            ]
+          },
+          {
+            "type": "text",
+            "content": "(",
+            "bbox": [
+              70,
+              421,
+              73,
+              430
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "9 5 ~ \\%",
+            "bbox": [
+              73,
+              421,
+              92,
+              430
+            ]
+          },
+          {
+            "type": "text",
+            "content": "yield) of SPF6.",
+            "bbox": [
+              93,
+              421,
+              148,
+              430
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/4",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          389,
+          289,
+          430
+        ],
+        "raw_text_excerpt": "As a practical application, gram-scale synthesis can be performed. For example, diphenyl ether and fluorenone were added in amounts of 5.5 mmol (0.9351 g) and 5.0 mmol (0.9013 g) respectively, yieldin"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "As a practical application, gram-scale synthesis can be performed. For example, diphenyl ether and fluorenone were added in amounts of 5.5 mmol (0.9351 g) and 5.0 mmol (0.9013 g) respectively, yielding [[FORMULA_1]] ( [[FORMULA_2]] yield) of SPF6.",
+    "mixed_original_protected_source_text": "As a practical application, gram-scale synthesis can be performed. For example, diphenyl ether and fluorenone were added in amounts of 5.5 mmol (0.9351 g) and 5.0 mmol (0.9013 g) respectively, yielding [[FORMULA_1]] ( [[FORMULA_2]] yield) of SPF6.",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "1 . 5 7 6 9 \\ g"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "9 5 ~ \\%"
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b005",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b005"
+    ],
+    "translation_unit_protected_source_text": "As a practical application, gram-scale synthesis can be performed. For example, diphenyl ether and fluorenone were added in amounts of 5.5 mmol (0.9351 g) and 5.0 mmol (0.9013 g) respectively, yielding [[FORMULA_1]] ( [[FORMULA_2]] yield) of SPF6.",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "1 . 5 7 6 9 \\ g"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "9 5 ~ \\%"
+      }
+    ],
+    "translation_unit_protected_translated_text": "作为实际应用，可进行克级合成。例如，分别加入5.5 mmol (0.9351 g) 二苯醚和5.0 mmol (0.9013 g) 芴酮，得到[[FORMULA_1]] ( [[FORMULA_2]]产率的SPF6。",
+    "translation_unit_translated_text": "作为实际应用，可进行克级合成。例如，分别加入5.5 mmol (0.9351 g) 二苯醚和5.0 mmol (0.9013 g) 芴酮，得到1 . 5 7 6 9 \\ g ( 9 5 ~ \\%产率的SPF6。",
+    "protected_translated_text": "作为实际应用，可进行克级合成。例如，分别加入5.5 mmol (0.9351 g) 二苯醚和5.0 mmol (0.9013 g) 芴酮，得到[[FORMULA_1]] ( [[FORMULA_2]]产率的SPF6。",
+    "translated_text": "作为实际应用，可进行克级合成。例如，分别加入5.5 mmol (0.9351 g) 二苯醚和5.0 mmol (0.9013 g) 芴酮，得到1 . 5 7 6 9 \\ g ( 9 5 ~ \\%产率的SPF6。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b006",
+    "page_idx": 3,
+    "block_idx": 6,
+    "block_type": "text",
+    "bbox": [
+      34,
+      431,
+      289,
+      556
+    ],
+    "source_text": "Based on literature precedents [3,10] and the verification of various substrates, a plausible reaction mechanism is proposed (Scheme 3). The diaryl compounds, such as diphenyl, diaryla-mine, diaryl ether, and diaryl thioether, that bear electron-donating or electron-withdrawing groups can form the corresponding spirocyclic/cyclic tetraaryl- methanes. Among them, electron-rich substrates exhibit better reaction performance (Table 2), which reflects the electrophilic substitution re- action mechanism of this process. For the proposed reaction pathway, we have confirmed its possibility through computational methods aimed at obtaining mechanistic details and energy distribution (Scheme 4). At the beginning of the reaction, the carbonyl oxygen of fluorenone is protonated by the proton provided by \\mathrm { H N T f } _ { 2 } , forming a carbocation",
+    "lines": [
+      {
+        "bbox": [
+          47,
+          431,
+          289,
+          442
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Based on literature precedents [3,10] and the verification of various",
+            "bbox": [
+              47,
+              431,
+              289,
+              442
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          441,
+          289,
+          452
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "substrates, a plausible reaction mechanism is proposed (Scheme 3). The",
+            "bbox": [
+              35,
+              441,
+              289,
+              452
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          452,
+          289,
+          463
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "diaryl compounds, such as diphenyl, diaryla-mine, diaryl ether, and",
+            "bbox": [
+              36,
+              452,
+              289,
+              463
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          462,
+          289,
+          474
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "diaryl thioether, that bear electron-donating or electron-withdrawing",
+            "bbox": [
+              35,
+              462,
+              289,
+              474
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          473,
+          289,
+          483
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "groups can form the corresponding spirocyclic/cyclic tetraaryl-",
+            "bbox": [
+              35,
+              473,
+              289,
+              483
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          483,
+          289,
+          494
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "methanes. Among them, electron-rich substrates exhibit better reaction",
+            "bbox": [
+              36,
+              483,
+              289,
+              494
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          494,
+          289,
+          505
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "performance (Table 2), which reflects the electrophilic substitution re-",
+            "bbox": [
+              35,
+              494,
+              289,
+              505
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          504,
+          289,
+          515
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "action mechanism of this process. For the proposed reaction pathway,",
+            "bbox": [
+              35,
+              504,
+              289,
+              515
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          514,
+          289,
+          524
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "we have confirmed its possibility through computational methods aimed",
+            "bbox": [
+              36,
+              514,
+              289,
+              524
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          524,
+          289,
+          536
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "at obtaining mechanistic details and energy distribution (Scheme 4). At",
+            "bbox": [
+              35,
+              524,
+              289,
+              536
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          535,
+          289,
+          547
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the beginning of the reaction, the carbonyl oxygen of fluorenone is",
+            "bbox": [
+              35,
+              535,
+              289,
+              547
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          546,
+          289,
+          557
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "protonated by the proton provided by",
+            "bbox": [
+              35,
+              546,
+              178,
+              557
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\mathrm { H N T f } _ { 2 }",
+            "bbox": [
+              179,
+              546,
+              202,
+              555
+            ]
+          },
+          {
+            "type": "text",
+            "content": ", forming a carbocation",
+            "bbox": [
+              203,
+              546,
+              289,
+              557
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/5",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          431,
+          289,
+          556
+        ],
+        "raw_text_excerpt": "Based on literature precedents [3,10] and the verification of various substrates, a plausible reaction mechanism is proposed (Scheme 3). The diaryl compounds, such as diphenyl, diaryla-mine, diaryl et"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "tail",
+    "protected_source_text": "Based on literature precedents [3,10] and the verification of various substrates, a plausible reaction mechanism is proposed (Scheme 3). The diaryl compounds, such as diphenyl, diaryla-mine, diaryl ether, and diaryl thioether, that bear electron-donating or electron-withdrawing groups can form the corresponding spirocyclic/cyclic tetraaryl- methanes. Among them, electron-rich substrates exhibit better reaction performance (Table 2), which reflects the electrophilic substitution re- action mechanism of this process. For the proposed reaction pathway, we have confirmed its possibility through computational methods aimed at obtaining mechanistic details and energy distribution (Scheme 4). At the beginning of the reaction, the carbonyl oxygen of fluorenone is protonated by the proton provided by [[FORMULA_1]] , forming a carbocation",
+    "mixed_original_protected_source_text": "Based on literature precedents [3,10] and the verification of various substrates, a plausible reaction mechanism is proposed (Scheme 3). The diaryl compounds, such as diphenyl, diaryla-mine, diaryl ether, and diaryl thioether, that bear electron-donating or electron-withdrawing groups can form the corresponding spirocyclic/cyclic tetraaryl- methanes. Among them, electron-rich substrates exhibit better reaction performance (Table 2), which reflects the electrophilic substitution re- action mechanism of this process. For the proposed reaction pathway, we have confirmed its possibility through computational methods aimed at obtaining mechanistic details and energy distribution (Scheme 4). At the beginning of the reaction, the carbonyl oxygen of fluorenone is protonated by the proton provided by [[FORMULA_1]] , forming a carbocation",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { H N T f } _ { 2 }"
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-004-005",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p004-b006",
+      "p004-b010"
+    ],
+    "translation_unit_protected_source_text": "Based on literature precedents [3,10] and the verification of various substrates, a plausible reaction mechanism is proposed (Scheme 3). The diaryl compounds, such as diphenyl, diaryla-mine, diaryl ether, and diaryl thioether, that bear electron-donating or electron-withdrawing groups can form the corresponding spirocyclic/cyclic tetraaryl- methanes. Among them, electron-rich substrates exhibit better reaction performance (Table 2), which reflects the electrophilic substitution re- action mechanism of this process. For the proposed reaction pathway, we have confirmed its possibility through computational methods aimed at obtaining mechanistic details and energy distribution (Scheme 4). At the beginning of the reaction, the carbonyl oxygen of fluorenone is protonated by the proton provided by [[FORMULA_1]] , forming a carbocation intermediate IM1. The energy barrier of its transition state (TS1) is 43.16 kcal/mol. Subsequently, the carbocation intermediate is attacked by the [[FORMULA_2]] -position carbon of the benzene ring in diphenylamine, resulting in the formation of an unstable compound IM2. The energy barrier of its transition state (TS2) is 32.36 kcal/mol. Then, a proton in the envi- ronment attacks the hydroxyl group on compound IM2, causing the hydroxyl group to leave as water and forming a new carbocation in- termediate IM3. The energy barrier of its transition state (TS3) is 5.19 kcal/mol. Finally, the benzene ring carbon in diphenylamine nucleo- philically attacks the intermediate.",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { H N T f } _ { 2 }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\alpha"
+      }
+    ],
+    "translation_unit_protected_translated_text": "基于文献先例[3,10]及多种底物的验证，提出了一个合理的反应机理（Scheme 3）。带有给电子或吸电子基团的二芳基化合物，如联苯、二芳胺、二芳醚和二芳硫醚，可以形成相应的螺环/环状四芳基甲烷。其中，富电子底物表现出更好的反应性能（Table 2），这反映了该过程的亲电取代反应机理。对于所提出的反应路径，我们已通过计算方法确认了其可能性，旨在获取机理细节和能量分布（Scheme 4）。反应开始时，芴酮的羰基氧被由[[FORMULA_1]]提供的质子质子化，形成碳正离子中间体IM1。其过渡态（TS1）的能垒为43.16 kcal/mol。随后，该碳正离子中间体受到二苯胺中苯环的[[FORMULA_2]]位碳的攻击，导致形成不稳定化合物IM2。其过渡态（TS2）的能垒为32.36 kcal/mol。接着，环境中的一个质子攻击化合物IM2上的羟基，导致羟基以水的形式离去，并形成新的碳正离子中间体IM3。其过渡态（TS3）的能垒为5.19 kcal/mol。最后，二苯胺中的苯环碳亲核攻击该中间体。",
+    "translation_unit_translated_text": "基于文献先例[3,10]及多种底物的验证，提出了一个合理的反应机理（Scheme 3）。带有给电子或吸电子基团的二芳基化合物，如联苯、二芳胺、二芳醚和二芳硫醚，可以形成相应的螺环/环状四芳基甲烷。其中，富电子底物表现出更好的反应性能（Table 2），这反映了该过程的亲电取代反应机理。对于所提出的反应路径，我们已通过计算方法确认了其可能性，旨在获取机理细节和能量分布（Scheme 4）。反应开始时，芴酮的羰基氧被由\\mathrm { H N T f } _ { 2 }提供的质子质子化，形成碳正离子中间体IM1。其过渡态（TS1）的能垒为43.16 kcal/mol。随后，该碳正离子中间体受到二苯胺中苯环的\\alpha位碳的攻击，导致形成不稳定化合物IM2。其过渡态（TS2）的能垒为32.36 kcal/mol。接着，环境中的一个质子攻击化合物IM2上的羟基，导致羟基以水的形式离去，并形成新的碳正离子中间体IM3。其过渡态（TS3）的能垒为5.19 kcal/mol。最后，二苯胺中的苯环碳亲核攻击该中间体。",
+    "protected_translated_text": "基于文献先例[3,10]及多种底物的验证，提出了一个合理的反应机理（Scheme 3）。带有给电子或吸电子基团的二芳基化合物，如联苯、二芳胺、二芳醚和二芳硫醚，可以形成相应的螺环/环状四芳基甲烷。其中，富电子底物表现出更好的反应性能（Table 2），这反映了该过程的亲电取代反应机理。对于所提出的反应路径，我们已通过计算方法确认了其可能性，旨在获取机理细节和能量分布（Scheme 4）。反应开始时，芴酮的羰基氧被由[[FORMULA_1]]提供的质子质子化，形成碳正离子中间体IM1。其过渡态（TS1）的能垒为43.16 kcal/mol。随后，该碳正离子中间体受到二苯胺中苯环的[[FORMULA_2]]位碳的攻击，导致形成不稳定化合物IM2。其过渡态（TS2）的能垒为32.36 kcal/mol。接着，环境中的一个质子攻击化合物IM2上的羟基，导致羟基以水的形式离去，并形成新的碳正离子中间体IM3。其过渡态（TS3）的能垒为5.19 kcal/mol。最后，二苯胺中的苯环碳亲核攻击该中间体。",
+    "translated_text": "基于文献先例[3,10]及多种底物的验证，提出了一个合理的反应机理（Scheme 3）。带有给电子或吸电子基团的二芳基化合物，如联苯、二芳胺、二芳醚和二芳硫醚，可以形成相应的螺环/环状四芳基甲烷。其中，富电子底物表现出更好的反应性能（Table 2），这反映了该过程的亲电取代反应机理。对于所提出的反应路径，我们已通过计算方法确认了其可能性，旨在获取机理细节和能量分布（Scheme 4）。反应开始时，芴酮的羰基氧被由\\mathrm { H N T f } _ { 2 }提供的质子质子化，形成碳正离子中间体IM1。其过渡态（TS1）的能垒为43.16 kcal/mol。随后，该碳正离子中间体受到二苯胺中苯环的\\alpha位碳的攻击，导致形成不稳定化合物IM2。其过渡态（TS2）的能垒为32.36 kcal/mol。接着，环境中的一个质子攻击化合物IM2上的羟基，导致羟基以水的形式离去，并形成新的碳正离子中间体IM3。其过渡态（TS3）的能垒为5.19 kcal/mol。最后，二苯胺中的苯环碳亲核攻击该中间体。",
+    "continuation_group": "cg-004-005",
+    "continuation_prev_text": "",
+    "continuation_next_text": "intermediate IM1. The energy barrier of its transition state (TS1) is 43.16 kcal/mol. Subsequently, the carbocation intermediate is attacked by the [[FORMULA_1]] -position carbon of the benzene ring in diphenylamine, resulting in the formation of an unstable compound IM2. The energy barrier of its transition state (TS2) is 32.36 kcal/mol. Then, a proton in the envi- ronment attacks the hydroxyl group on compound IM2, causing the hydroxyl group to leave as water and forming a new carbocation in- termediate IM3. The energy barrier of its transition state (TS3) is 5.19 kcal/mol. Finally, the benzene ring carbon in diphenylamine nucleo- philically attacks the intermediate.",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Based on literature precedents [3,10] and the verification of various substrates, a plausible reaction mechanism is proposed (Scheme 3). The diaryl compounds, such as diphenyl, diaryla-mine, diaryl ether, and diaryl thioether, that bear electron-donating or electron-withdrawing groups can form the corresponding spirocyclic/cyclic tetraaryl- methanes. Among them, electron-rich substrates exhibit better reaction performance (Table 2), which reflects the electrophilic substitution re- action mechanism of this process. For the proposed reaction pathway, we have confirmed its possibility through computational methods aimed at obtaining mechanistic details and energy distribution (Scheme 4). At the beginning of the reaction, the carbonyl oxygen of fluorenone is protonated by the proton provided by [[FORMULA_1]] , forming a carbocation intermediate IM1. The energy barrier of its transition state (TS1) is 43.16 kcal/mol. Subsequently, the carbocation intermediate is attacked by the [[FORMULA_2]] -position carbon of the benzene ring in diphenylamine, resulting in the formation of an unstable compound IM2. The energy barrier of its transition state (TS2) is 32.36 kcal/mol. Then, a proton in the envi- ronment attacks the hydroxyl group on compound IM2, causing the hydroxyl group to leave as water and forming a new carbocation in- termediate IM3. The energy barrier of its transition state (TS3) is 5.19 kcal/mol. Finally, the benzene ring carbon in diphenylamine nucleo- philically attacks the intermediate.",
+    "group_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { H N T f } _ { 2 }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\alpha"
+      }
+    ],
+    "group_protected_translated_text": "基于文献先例[3,10]及多种底物的验证，提出了一个合理的反应机理（Scheme 3）。带有给电子或吸电子基团的二芳基化合物，如联苯、二芳胺、二芳醚和二芳硫醚，可以形成相应的螺环/环状四芳基甲烷。其中，富电子底物表现出更好的反应性能（Table 2），这反映了该过程的亲电取代反应机理。对于所提出的反应路径，我们已通过计算方法确认了其可能性，旨在获取机理细节和能量分布（Scheme 4）。反应开始时，芴酮的羰基氧被由[[FORMULA_1]]提供的质子质子化，形成碳正离子中间体IM1。其过渡态（TS1）的能垒为43.16 kcal/mol。随后，该碳正离子中间体受到二苯胺中苯环的[[FORMULA_2]]位碳的攻击，导致形成不稳定化合物IM2。其过渡态（TS2）的能垒为32.36 kcal/mol。接着，环境中的一个质子攻击化合物IM2上的羟基，导致羟基以水的形式离去，并形成新的碳正离子中间体IM3。其过渡态（TS3）的能垒为5.19 kcal/mol。最后，二苯胺中的苯环碳亲核攻击该中间体。",
+    "group_translated_text": "基于文献先例[3,10]及多种底物的验证，提出了一个合理的反应机理（Scheme 3）。带有给电子或吸电子基团的二芳基化合物，如联苯、二芳胺、二芳醚和二芳硫醚，可以形成相应的螺环/环状四芳基甲烷。其中，富电子底物表现出更好的反应性能（Table 2），这反映了该过程的亲电取代反应机理。对于所提出的反应路径，我们已通过计算方法确认了其可能性，旨在获取机理细节和能量分布（Scheme 4）。反应开始时，芴酮的羰基氧被由\\mathrm { H N T f } _ { 2 }提供的质子质子化，形成碳正离子中间体IM1。其过渡态（TS1）的能垒为43.16 kcal/mol。随后，该碳正离子中间体受到二苯胺中苯环的\\alpha位碳的攻击，导致形成不稳定化合物IM2。其过渡态（TS2）的能垒为32.36 kcal/mol。接着，环境中的一个质子攻击化合物IM2上的羟基，导致羟基以水的形式离去，并形成新的碳正离子中间体IM3。其过渡态（TS3）的能垒为5.19 kcal/mol。最后，二苯胺中的苯环碳亲核攻击该中间体。",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b009",
+    "page_idx": 3,
+    "block_idx": 9,
+    "block_type": "image_caption",
+    "bbox": [
+      34,
+      723,
+      289,
+      742
+    ],
+    "source_text": "Scheme 4. DFT calculation for the possible reaction pathways of diphenyl- amine with fluorenone.",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          723,
+          289,
+          734
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Scheme 4. DFT calculation for the possible reaction pathways of diphenyl-",
+            "bbox": [
+              35,
+              723,
+              289,
+              734
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          733,
+          114,
+          743
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "amine with fluorenone.",
+            "bbox": [
+              36,
+              733,
+              114,
+              743
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/6/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          723,
+          289,
+          742
+        ],
+        "raw_text_excerpt": "Scheme 4. DFT calculation for the possible reaction pathways of diphenyl- amine with fluorenone."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "Scheme 4. DFT calculation for the possible reaction pathways of diphenyl- amine with fluorenone.",
+    "mixed_original_protected_source_text": "Scheme 4. DFT calculation for the possible reaction pathways of diphenyl- amine with fluorenone.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b009",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b009"
+    ],
+    "translation_unit_protected_source_text": "Scheme 4. DFT calculation for the possible reaction pathways of diphenyl- amine with fluorenone.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "图4. 二苯胺与芴酮可能反应途径的DFT计算。",
+    "translation_unit_translated_text": "图4. 二苯胺与芴酮可能反应途径的DFT计算。",
+    "protected_translated_text": "图4. 二苯胺与芴酮可能反应途径的DFT计算。",
+    "translated_text": "图4. 二苯胺与芴酮可能反应途径的DFT计算。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b010",
+    "page_idx": 3,
+    "block_idx": 10,
+    "block_type": "text",
+    "bbox": [
+      302,
+      242,
+      558,
+      346
+    ],
+    "source_text": "intermediate IM1. The energy barrier of its transition state (TS1) is 43.16 kcal/mol. Subsequently, the carbocation intermediate is attacked by the \\alpha -position carbon of the benzene ring in diphenylamine, resulting in the formation of an unstable compound IM2. The energy barrier of its transition state (TS2) is 32.36 kcal/mol. Then, a proton in the envi- ronment attacks the hydroxyl group on compound IM2, causing the hydroxyl group to leave as water and forming a new carbocation in- termediate IM3. The energy barrier of its transition state (TS3) is 5.19 kcal/mol. Finally, the benzene ring carbon in diphenylamine nucleo- philically attacks the intermediate.",
+    "lines": [
+      {
+        "bbox": [
+          305,
+          243,
+          558,
+          252
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "intermediate IM1. The energy barrier of its transition state (TS1) is",
+            "bbox": [
+              305,
+              243,
+              558,
+              252
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          253,
+          558,
+          263
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "43.16 kcal/mol. Subsequently, the carbocation intermediate is attacked",
+            "bbox": [
+              305,
+              253,
+              558,
+              263
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          263,
+          558,
+          275
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "by the",
+            "bbox": [
+              304,
+              263,
+              328,
+              275
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\alpha",
+            "bbox": [
+              329,
+              265,
+              334,
+              272
+            ]
+          },
+          {
+            "type": "text",
+            "content": "-position carbon of the benzene ring in diphenylamine, resulting",
+            "bbox": [
+              334,
+              263,
+              558,
+              275
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          274,
+          558,
+          285
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "in the formation of an unstable compound IM2. The energy barrier of its",
+            "bbox": [
+              304,
+              274,
+              558,
+              285
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          285,
+          558,
+          295
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "transition state (TS2) is 32.36 kcal/mol. Then, a proton in the envi-",
+            "bbox": [
+              305,
+              285,
+              558,
+              295
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          295,
+          558,
+          306
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "ronment attacks the hydroxyl group on compound IM2, causing the",
+            "bbox": [
+              304,
+              295,
+              558,
+              306
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          306,
+          558,
+          316
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "hydroxyl group to leave as water and forming a new carbocation in-",
+            "bbox": [
+              305,
+              306,
+              558,
+              316
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          316,
+          558,
+          326
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "termediate IM3. The energy barrier of its transition state (TS3) is 5.19",
+            "bbox": [
+              305,
+              316,
+              558,
+              326
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          327,
+          558,
+          337
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "kcal/mol. Finally, the benzene ring carbon in diphenylamine nucleo-",
+            "bbox": [
+              305,
+              327,
+              558,
+              337
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          337,
+          430,
+          347
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "philically attacks the intermediate.",
+            "bbox": [
+              305,
+              337,
+              430,
+              347
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/7",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          242,
+          558,
+          346
+        ],
+        "raw_text_excerpt": "intermediate IM1. The energy barrier of its transition state (TS1) is 43.16 kcal/mol. Subsequently, the carbocation intermediate is attacked by the \\alpha -position carbon of the benzene ring in diphe"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "head",
+    "protected_source_text": "intermediate IM1. The energy barrier of its transition state (TS1) is 43.16 kcal/mol. Subsequently, the carbocation intermediate is attacked by the [[FORMULA_1]] -position carbon of the benzene ring in diphenylamine, resulting in the formation of an unstable compound IM2. The energy barrier of its transition state (TS2) is 32.36 kcal/mol. Then, a proton in the envi- ronment attacks the hydroxyl group on compound IM2, causing the hydroxyl group to leave as water and forming a new carbocation in- termediate IM3. The energy barrier of its transition state (TS3) is 5.19 kcal/mol. Finally, the benzene ring carbon in diphenylamine nucleo- philically attacks the intermediate.",
+    "mixed_original_protected_source_text": "intermediate IM1. The energy barrier of its transition state (TS1) is 43.16 kcal/mol. Subsequently, the carbocation intermediate is attacked by the [[FORMULA_1]] -position carbon of the benzene ring in diphenylamine, resulting in the formation of an unstable compound IM2. The energy barrier of its transition state (TS2) is 32.36 kcal/mol. Then, a proton in the envi- ronment attacks the hydroxyl group on compound IM2, causing the hydroxyl group to leave as water and forming a new carbocation in- termediate IM3. The energy barrier of its transition state (TS3) is 5.19 kcal/mol. Finally, the benzene ring carbon in diphenylamine nucleo- philically attacks the intermediate.",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\alpha"
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-004-005",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p004-b006",
+      "p004-b010"
+    ],
+    "translation_unit_protected_source_text": "Based on literature precedents [3,10] and the verification of various substrates, a plausible reaction mechanism is proposed (Scheme 3). The diaryl compounds, such as diphenyl, diaryla-mine, diaryl ether, and diaryl thioether, that bear electron-donating or electron-withdrawing groups can form the corresponding spirocyclic/cyclic tetraaryl- methanes. Among them, electron-rich substrates exhibit better reaction performance (Table 2), which reflects the electrophilic substitution re- action mechanism of this process. For the proposed reaction pathway, we have confirmed its possibility through computational methods aimed at obtaining mechanistic details and energy distribution (Scheme 4). At the beginning of the reaction, the carbonyl oxygen of fluorenone is protonated by the proton provided by [[FORMULA_1]] , forming a carbocation intermediate IM1. The energy barrier of its transition state (TS1) is 43.16 kcal/mol. Subsequently, the carbocation intermediate is attacked by the [[FORMULA_2]] -position carbon of the benzene ring in diphenylamine, resulting in the formation of an unstable compound IM2. The energy barrier of its transition state (TS2) is 32.36 kcal/mol. Then, a proton in the envi- ronment attacks the hydroxyl group on compound IM2, causing the hydroxyl group to leave as water and forming a new carbocation in- termediate IM3. The energy barrier of its transition state (TS3) is 5.19 kcal/mol. Finally, the benzene ring carbon in diphenylamine nucleo- philically attacks the intermediate.",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { H N T f } _ { 2 }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\alpha"
+      }
+    ],
+    "translation_unit_protected_translated_text": "基于文献先例[3,10]及多种底物的验证，提出了一个合理的反应机理（Scheme 3）。带有给电子或吸电子基团的二芳基化合物，如联苯、二芳胺、二芳醚和二芳硫醚，可以形成相应的螺环/环状四芳基甲烷。其中，富电子底物表现出更好的反应性能（Table 2），这反映了该过程的亲电取代反应机理。对于所提出的反应路径，我们已通过计算方法确认了其可能性，旨在获取机理细节和能量分布（Scheme 4）。反应开始时，芴酮的羰基氧被由[[FORMULA_1]]提供的质子质子化，形成碳正离子中间体IM1。其过渡态（TS1）的能垒为43.16 kcal/mol。随后，该碳正离子中间体受到二苯胺中苯环的[[FORMULA_2]]位碳的攻击，导致形成不稳定化合物IM2。其过渡态（TS2）的能垒为32.36 kcal/mol。接着，环境中的一个质子攻击化合物IM2上的羟基，导致羟基以水的形式离去，并形成新的碳正离子中间体IM3。其过渡态（TS3）的能垒为5.19 kcal/mol。最后，二苯胺中的苯环碳亲核攻击该中间体。",
+    "translation_unit_translated_text": "基于文献先例[3,10]及多种底物的验证，提出了一个合理的反应机理（Scheme 3）。带有给电子或吸电子基团的二芳基化合物，如联苯、二芳胺、二芳醚和二芳硫醚，可以形成相应的螺环/环状四芳基甲烷。其中，富电子底物表现出更好的反应性能（Table 2），这反映了该过程的亲电取代反应机理。对于所提出的反应路径，我们已通过计算方法确认了其可能性，旨在获取机理细节和能量分布（Scheme 4）。反应开始时，芴酮的羰基氧被由\\mathrm { H N T f } _ { 2 }提供的质子质子化，形成碳正离子中间体IM1。其过渡态（TS1）的能垒为43.16 kcal/mol。随后，该碳正离子中间体受到二苯胺中苯环的\\alpha位碳的攻击，导致形成不稳定化合物IM2。其过渡态（TS2）的能垒为32.36 kcal/mol。接着，环境中的一个质子攻击化合物IM2上的羟基，导致羟基以水的形式离去，并形成新的碳正离子中间体IM3。其过渡态（TS3）的能垒为5.19 kcal/mol。最后，二苯胺中的苯环碳亲核攻击该中间体。",
+    "protected_translated_text": "基于文献先例[3,10]及多种底物的验证，提出了一个合理的反应机理（Scheme 3）。带有给电子或吸电子基团的二芳基化合物，如联苯、二芳胺、二芳醚和二芳硫醚，可以形成相应的螺环/环状四芳基甲烷。其中，富电子底物表现出更好的反应性能（Table 2），这反映了该过程的亲电取代反应机理。对于所提出的反应路径，我们已通过计算方法确认了其可能性，旨在获取机理细节和能量分布（Scheme 4）。反应开始时，芴酮的羰基氧被由[[FORMULA_1]]提供的质子质子化，形成碳正离子中间体IM1。其过渡态（TS1）的能垒为43.16 kcal/mol。随后，该碳正离子中间体受到二苯胺中苯环的[[FORMULA_2]]位碳的攻击，导致形成不稳定化合物IM2。其过渡态（TS2）的能垒为32.36 kcal/mol。接着，环境中的一个质子攻击化合物IM2上的羟基，导致羟基以水的形式离去，并形成新的碳正离子中间体IM3。其过渡态（TS3）的能垒为5.19 kcal/mol。最后，二苯胺中的苯环碳亲核攻击该中间体。",
+    "translated_text": "基于文献先例[3,10]及多种底物的验证，提出了一个合理的反应机理（Scheme 3）。带有给电子或吸电子基团的二芳基化合物，如联苯、二芳胺、二芳醚和二芳硫醚，可以形成相应的螺环/环状四芳基甲烷。其中，富电子底物表现出更好的反应性能（Table 2），这反映了该过程的亲电取代反应机理。对于所提出的反应路径，我们已通过计算方法确认了其可能性，旨在获取机理细节和能量分布（Scheme 4）。反应开始时，芴酮的羰基氧被由\\mathrm { H N T f } _ { 2 }提供的质子质子化，形成碳正离子中间体IM1。其过渡态（TS1）的能垒为43.16 kcal/mol。随后，该碳正离子中间体受到二苯胺中苯环的\\alpha位碳的攻击，导致形成不稳定化合物IM2。其过渡态（TS2）的能垒为32.36 kcal/mol。接着，环境中的一个质子攻击化合物IM2上的羟基，导致羟基以水的形式离去，并形成新的碳正离子中间体IM3。其过渡态（TS3）的能垒为5.19 kcal/mol。最后，二苯胺中的苯环碳亲核攻击该中间体。",
+    "continuation_group": "cg-004-005",
+    "continuation_prev_text": "Based on literature precedents [3,10] and the verification of various substrates, a plausible reaction mechanism is proposed (Scheme 3). The diaryl compounds, such as diphenyl, diaryla-mine, diaryl ether, and diaryl thioether, that bear electron-donating or electron-withdrawing groups can form the corresponding spirocyclic/cyclic tetraaryl- methanes. Among them, electron-rich substrates exhibit better reaction performance (Table 2), which reflects the electrophilic substitution re- action mechanism of this process. For the proposed reaction pathway, we have confirmed its possibility through computational methods aimed at obtaining mechanistic details and energy distribution (Scheme 4). At the beginning of the reaction, the carbonyl oxygen of fluorenone is protonated by the proton provided by [[FORMULA_1]] , forming a carbocation",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Based on literature precedents [3,10] and the verification of various substrates, a plausible reaction mechanism is proposed (Scheme 3). The diaryl compounds, such as diphenyl, diaryla-mine, diaryl ether, and diaryl thioether, that bear electron-donating or electron-withdrawing groups can form the corresponding spirocyclic/cyclic tetraaryl- methanes. Among them, electron-rich substrates exhibit better reaction performance (Table 2), which reflects the electrophilic substitution re- action mechanism of this process. For the proposed reaction pathway, we have confirmed its possibility through computational methods aimed at obtaining mechanistic details and energy distribution (Scheme 4). At the beginning of the reaction, the carbonyl oxygen of fluorenone is protonated by the proton provided by [[FORMULA_1]] , forming a carbocation intermediate IM1. The energy barrier of its transition state (TS1) is 43.16 kcal/mol. Subsequently, the carbocation intermediate is attacked by the [[FORMULA_2]] -position carbon of the benzene ring in diphenylamine, resulting in the formation of an unstable compound IM2. The energy barrier of its transition state (TS2) is 32.36 kcal/mol. Then, a proton in the envi- ronment attacks the hydroxyl group on compound IM2, causing the hydroxyl group to leave as water and forming a new carbocation in- termediate IM3. The energy barrier of its transition state (TS3) is 5.19 kcal/mol. Finally, the benzene ring carbon in diphenylamine nucleo- philically attacks the intermediate.",
+    "group_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { H N T f } _ { 2 }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\alpha"
+      }
+    ],
+    "group_protected_translated_text": "基于文献先例[3,10]及多种底物的验证，提出了一个合理的反应机理（Scheme 3）。带有给电子或吸电子基团的二芳基化合物，如联苯、二芳胺、二芳醚和二芳硫醚，可以形成相应的螺环/环状四芳基甲烷。其中，富电子底物表现出更好的反应性能（Table 2），这反映了该过程的亲电取代反应机理。对于所提出的反应路径，我们已通过计算方法确认了其可能性，旨在获取机理细节和能量分布（Scheme 4）。反应开始时，芴酮的羰基氧被由[[FORMULA_1]]提供的质子质子化，形成碳正离子中间体IM1。其过渡态（TS1）的能垒为43.16 kcal/mol。随后，该碳正离子中间体受到二苯胺中苯环的[[FORMULA_2]]位碳的攻击，导致形成不稳定化合物IM2。其过渡态（TS2）的能垒为32.36 kcal/mol。接着，环境中的一个质子攻击化合物IM2上的羟基，导致羟基以水的形式离去，并形成新的碳正离子中间体IM3。其过渡态（TS3）的能垒为5.19 kcal/mol。最后，二苯胺中的苯环碳亲核攻击该中间体。",
+    "group_translated_text": "基于文献先例[3,10]及多种底物的验证，提出了一个合理的反应机理（Scheme 3）。带有给电子或吸电子基团的二芳基化合物，如联苯、二芳胺、二芳醚和二芳硫醚，可以形成相应的螺环/环状四芳基甲烷。其中，富电子底物表现出更好的反应性能（Table 2），这反映了该过程的亲电取代反应机理。对于所提出的反应路径，我们已通过计算方法确认了其可能性，旨在获取机理细节和能量分布（Scheme 4）。反应开始时，芴酮的羰基氧被由\\mathrm { H N T f } _ { 2 }提供的质子质子化，形成碳正离子中间体IM1。其过渡态（TS1）的能垒为43.16 kcal/mol。随后，该碳正离子中间体受到二苯胺中苯环的\\alpha位碳的攻击，导致形成不稳定化合物IM2。其过渡态（TS2）的能垒为32.36 kcal/mol。接着，环境中的一个质子攻击化合物IM2上的羟基，导致羟基以水的形式离去，并形成新的碳正离子中间体IM3。其过渡态（TS3）的能垒为5.19 kcal/mol。最后，二苯胺中的苯环碳亲核攻击该中间体。",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b011",
+    "page_idx": 3,
+    "block_idx": 11,
+    "block_type": "text",
+    "bbox": [
+      302,
+      347,
+      558,
+      409
+    ],
+    "source_text": "IM3 to yield the final product IM4, with the energy barrier of its transition state (TS4) being 2.39 kcal/mol. Through calculations, we have verified the feasibility of the reaction pathway. In addition, the reactions between diaryl compounds (diarylamine, diaryl ether) and dialkyl ketones (such as 1,3-dibromopropan-2-one) were investigated and good yields were obtained (Supporting Information).",
+    "lines": [
+      {
+        "bbox": [
+          317,
+          347,
+          558,
+          358
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "IM3 to yield the final product IM4, with the energy barrier of its",
+            "bbox": [
+              317,
+              347,
+              558,
+              358
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          357,
+          558,
+          368
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "transition state (TS4) being 2.39 kcal/mol. Through calculations, we",
+            "bbox": [
+              304,
+              357,
+              558,
+              368
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          367,
+          558,
+          379
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "have verified the feasibility of the reaction pathway. In addition, the",
+            "bbox": [
+              304,
+              367,
+              558,
+              379
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          379,
+          558,
+          388
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "reactions between diaryl compounds (diarylamine, diaryl ether) and",
+            "bbox": [
+              305,
+              379,
+              558,
+              388
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          388,
+          558,
+          400
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "dialkyl ketones (such as 1,3-dibromopropan-2-one) were investigated",
+            "bbox": [
+              304,
+              388,
+              558,
+              400
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          399,
+          510,
+          409
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and good yields were obtained (Supporting Information).",
+            "bbox": [
+              305,
+              399,
+              510,
+              409
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/8",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          347,
+          558,
+          409
+        ],
+        "raw_text_excerpt": "IM3 to yield the final product IM4, with the energy barrier of its transition state (TS4) being 2.39 kcal/mol. Through calculations, we have verified the feasibility of the reaction pathway. In additi"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "IM3 to yield the final product IM4, with the energy barrier of its transition state (TS4) being 2.39 kcal/mol. Through calculations, we have verified the feasibility of the reaction pathway. In addition, the reactions between diaryl compounds (diarylamine, diaryl ether) and dialkyl ketones (such as 1,3-dibromopropan-2-one) were investigated and good yields were obtained (Supporting Information).",
+    "mixed_original_protected_source_text": "IM3 to yield the final product IM4, with the energy barrier of its transition state (TS4) being 2.39 kcal/mol. Through calculations, we have verified the feasibility of the reaction pathway. In addition, the reactions between diaryl compounds (diarylamine, diaryl ether) and dialkyl ketones (such as 1,3-dibromopropan-2-one) were investigated and good yields were obtained (Supporting Information).",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b011",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b011"
+    ],
+    "translation_unit_protected_source_text": "IM3 to yield the final product IM4, with the energy barrier of its transition state (TS4) being 2.39 kcal/mol. Through calculations, we have verified the feasibility of the reaction pathway. In addition, the reactions between diaryl compounds (diarylamine, diaryl ether) and dialkyl ketones (such as 1,3-dibromopropan-2-one) were investigated and good yields were obtained (Supporting Information).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "IM3反应生成最终产物IM4，其过渡态（TS4）的能垒为2.39 kcal/mol。通过计算，我们验证了该反应路径的可行性。此外，研究了二芳基化合物（二芳基胺、二芳基醚）与二烷基酮（如1,3-二溴丙酮）之间的反应，并获得了良好的产率（见支持信息）。",
+    "translation_unit_translated_text": "IM3反应生成最终产物IM4，其过渡态（TS4）的能垒为2.39 kcal/mol。通过计算，我们验证了该反应路径的可行性。此外，研究了二芳基化合物（二芳基胺、二芳基醚）与二烷基酮（如1,3-二溴丙酮）之间的反应，并获得了良好的产率（见支持信息）。",
+    "protected_translated_text": "IM3反应生成最终产物IM4，其过渡态（TS4）的能垒为2.39 kcal/mol。通过计算，我们验证了该反应路径的可行性。此外，研究了二芳基化合物（二芳基胺、二芳基醚）与二烷基酮（如1,3-二溴丙酮）之间的反应，并获得了良好的产率（见支持信息）。",
+    "translated_text": "IM3反应生成最终产物IM4，其过渡态（TS4）的能垒为2.39 kcal/mol。通过计算，我们验证了该反应路径的可行性。此外，研究了二芳基化合物（二芳基胺、二芳基醚）与二烷基酮（如1,3-二溴丙酮）之间的反应，并获得了良好的产率（见支持信息）。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b012",
+    "page_idx": 3,
+    "block_idx": 12,
+    "block_type": "text",
+    "bbox": [
+      302,
+      410,
+      558,
+      503
+    ],
+    "source_text": "In conclusion, we have developed a general one-step synthetic method for spirocyclic/cyclic tetraarylmethanes. These reactions are operationally straightforward under mild conditions. The protocol ex- hibits notable functional group tolerance, which is conducive to exploring the potential applications of spirocyclic/cyclic tetraaryl- methanes in the field of organic electronics. Experiments have demon- strated that this strategy is applicable to reactions on a gram scale or above, which holds significant importance in material synthesis and industrial production.",
+    "lines": [
+      {
+        "bbox": [
+          316,
+          409,
+          558,
+          421
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "In conclusion, we have developed a general one-step synthetic",
+            "bbox": [
+              316,
+              409,
+              558,
+              421
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          420,
+          559,
+          432
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "method for spirocyclic/cyclic tetraarylmethanes. These reactions are",
+            "bbox": [
+              304,
+              420,
+              559,
+              432
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          431,
+          558,
+          441
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "operationally straightforward under mild conditions. The protocol ex-",
+            "bbox": [
+              304,
+              431,
+              558,
+              441
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          440,
+          559,
+          452
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "hibits notable functional group tolerance, which is conducive to",
+            "bbox": [
+              304,
+              440,
+              559,
+              452
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          452,
+          558,
+          463
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "exploring the potential applications of spirocyclic/cyclic tetraaryl-",
+            "bbox": [
+              305,
+              452,
+              558,
+              463
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          462,
+          558,
+          473
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "methanes in the field of organic electronics. Experiments have demon-",
+            "bbox": [
+              304,
+              462,
+              558,
+              473
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          473,
+          558,
+          483
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "strated that this strategy is applicable to reactions on a gram scale or",
+            "bbox": [
+              305,
+              473,
+              558,
+              483
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          483,
+          558,
+          494
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "above, which holds significant importance in material synthesis and",
+            "bbox": [
+              305,
+              483,
+              558,
+              494
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          494,
+          384,
+          504
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "industrial production.",
+            "bbox": [
+              305,
+              494,
+              384,
+              504
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/9",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          410,
+          558,
+          503
+        ],
+        "raw_text_excerpt": "In conclusion, we have developed a general one-step synthetic method for spirocyclic/cyclic tetraarylmethanes. These reactions are operationally straightforward under mild conditions. The protocol ex-"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "In conclusion, we have developed a general one-step synthetic method for spirocyclic/cyclic tetraarylmethanes. These reactions are operationally straightforward under mild conditions. The protocol ex- hibits notable functional group tolerance, which is conducive to exploring the potential applications of spirocyclic/cyclic tetraaryl- methanes in the field of organic electronics. Experiments have demon- strated that this strategy is applicable to reactions on a gram scale or above, which holds significant importance in material synthesis and industrial production.",
+    "mixed_original_protected_source_text": "In conclusion, we have developed a general one-step synthetic method for spirocyclic/cyclic tetraarylmethanes. These reactions are operationally straightforward under mild conditions. The protocol ex- hibits notable functional group tolerance, which is conducive to exploring the potential applications of spirocyclic/cyclic tetraaryl- methanes in the field of organic electronics. Experiments have demon- strated that this strategy is applicable to reactions on a gram scale or above, which holds significant importance in material synthesis and industrial production.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b012",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b012"
+    ],
+    "translation_unit_protected_source_text": "In conclusion, we have developed a general one-step synthetic method for spirocyclic/cyclic tetraarylmethanes. These reactions are operationally straightforward under mild conditions. The protocol ex- hibits notable functional group tolerance, which is conducive to exploring the potential applications of spirocyclic/cyclic tetraaryl- methanes in the field of organic electronics. Experiments have demon- strated that this strategy is applicable to reactions on a gram scale or above, which holds significant importance in material synthesis and industrial production.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "总之，我们开发了一种通用的单步合成方法，用于制备螺环/环状四芳基甲烷。这些反应在温和条件下操作简便。该方法展现出显著的官能团耐受性，有助于探索螺环/环状四芳基甲烷在有机电子学领域的潜在应用。实验表明，该策略适用于克级或更大规模的反应，这在材料合成和工业生产中具有重要意义。",
+    "translation_unit_translated_text": "总之，我们开发了一种通用的单步合成方法，用于制备螺环/环状四芳基甲烷。这些反应在温和条件下操作简便。该方法展现出显著的官能团耐受性，有助于探索螺环/环状四芳基甲烷在有机电子学领域的潜在应用。实验表明，该策略适用于克级或更大规模的反应，这在材料合成和工业生产中具有重要意义。",
+    "protected_translated_text": "总之，我们开发了一种通用的单步合成方法，用于制备螺环/环状四芳基甲烷。这些反应在温和条件下操作简便。该方法展现出显著的官能团耐受性，有助于探索螺环/环状四芳基甲烷在有机电子学领域的潜在应用。实验表明，该策略适用于克级或更大规模的反应，这在材料合成和工业生产中具有重要意义。",
+    "translated_text": "总之，我们开发了一种通用的单步合成方法，用于制备螺环/环状四芳基甲烷。这些反应在温和条件下操作简便。该方法展现出显著的官能团耐受性，有助于探索螺环/环状四芳基甲烷在有机电子学领域的潜在应用。实验表明，该策略适用于克级或更大规模的反应，这在材料合成和工业生产中具有重要意义。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b013",
+    "page_idx": 3,
+    "block_idx": 13,
+    "block_type": "title",
+    "bbox": [
+      303,
+      514,
+      468,
+      524
+    ],
+    "source_text": "CRediT authorship contribution statement",
+    "lines": [
+      {
+        "bbox": [
+          305,
+          513,
+          470,
+          525
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "CRediT authorship contribution statement",
+            "bbox": [
+              305,
+              513,
+              470,
+              525
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "title",
+      "normalized_sub_type": "title",
+      "structure_role": "title",
+      "raw_type": "title",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/10",
+        "raw_type": "title",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          303,
+          514,
+          468,
+          524
+        ],
+        "raw_text_excerpt": "CRediT authorship contribution statement"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "CRediT authorship contribution statement",
+    "mixed_original_protected_source_text": "CRediT authorship contribution statement",
+    "formula_map": [],
+    "classification_label": "skip_title",
+    "should_translate": false,
+    "skip_reason": "skip_title",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b013",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b013"
+    ],
+    "translation_unit_protected_source_text": "CRediT authorship contribution statement",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b014",
+    "page_idx": 3,
+    "block_idx": 14,
+    "block_type": "text",
+    "bbox": [
+      302,
+      535,
+      558,
+      587
+    ],
+    "source_text": "Shuangping Liao: Writing – original draft, Investigation, Data curation. Yeshen Liu: Methodology, Investigation, Data curation. Bochao Jiang: Investigation, Formal analysis. Yufeng Hui: Resources, Formal analysis, Data curation. Haibo Xiao: Writing – review & editing, Supervision, Methodology, Funding acquisition, Conceptualization.",
+    "lines": [
+      {
+        "bbox": [
+          315,
+          535,
+          559,
+          547
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Shuangping Liao: Writing – original draft, Investigation, Data",
+            "bbox": [
+              315,
+              535,
+              559,
+              547
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          545,
+          558,
+          556
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "curation. Yeshen Liu: Methodology, Investigation, Data curation.",
+            "bbox": [
+              304,
+              545,
+              558,
+              556
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          555,
+          558,
+          568
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Bochao Jiang: Investigation, Formal analysis. Yufeng Hui: Resources,",
+            "bbox": [
+              304,
+              555,
+              558,
+              568
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          565,
+          558,
+          578
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Formal analysis, Data curation. Haibo Xiao: Writing – review & editing,",
+            "bbox": [
+              304,
+              565,
+              558,
+              578
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          577,
+          545,
+          588
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Supervision, Methodology, Funding acquisition, Conceptualization.",
+            "bbox": [
+              305,
+              577,
+              545,
+              588
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/11",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          535,
+          558,
+          587
+        ],
+        "raw_text_excerpt": "Shuangping Liao: Writing – original draft, Investigation, Data curation. Yeshen Liu: Methodology, Investigation, Data curation. Bochao Jiang: Investigation, Formal analysis. Yufeng Hui: Resources, For"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "Shuangping Liao: Writing – original draft, Investigation, Data curation. Yeshen Liu: Methodology, Investigation, Data curation. Bochao Jiang: Investigation, Formal analysis. Yufeng Hui: Resources, Formal analysis, Data curation. Haibo Xiao: Writing – review & editing, Supervision, Methodology, Funding acquisition, Conceptualization.",
+    "mixed_original_protected_source_text": "Shuangping Liao: Writing – original draft, Investigation, Data curation. Yeshen Liu: Methodology, Investigation, Data curation. Bochao Jiang: Investigation, Formal analysis. Yufeng Hui: Resources, Formal analysis, Data curation. Haibo Xiao: Writing – review & editing, Supervision, Methodology, Funding acquisition, Conceptualization.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b014",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b014"
+    ],
+    "translation_unit_protected_source_text": "Shuangping Liao: Writing – original draft, Investigation, Data curation. Yeshen Liu: Methodology, Investigation, Data curation. Bochao Jiang: Investigation, Formal analysis. Yufeng Hui: Resources, Formal analysis, Data curation. Haibo Xiao: Writing – review & editing, Supervision, Methodology, Funding acquisition, Conceptualization.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "廖双平：撰写初稿，调查，数据整理。刘业深：方法论，调查，数据整理。蒋博超：调查，形式分析。惠宇峰：资源，形式分析，数据整理。肖海波：撰写审阅与编辑，监督，方法论，资金获取，概念化。",
+    "translation_unit_translated_text": "廖双平：撰写初稿，调查，数据整理。刘业深：方法论，调查，数据整理。蒋博超：调查，形式分析。惠宇峰：资源，形式分析，数据整理。肖海波：撰写审阅与编辑，监督，方法论，资金获取，概念化。",
+    "protected_translated_text": "廖双平：撰写初稿，调查，数据整理。刘业深：方法论，调查，数据整理。蒋博超：调查，形式分析。惠宇峰：资源，形式分析，数据整理。肖海波：撰写审阅与编辑，监督，方法论，资金获取，概念化。",
+    "translated_text": "廖双平：撰写初稿，调查，数据整理。刘业深：方法论，调查，数据整理。蒋博超：调查，形式分析。惠宇峰：资源，形式分析，数据整理。肖海波：撰写审阅与编辑，监督，方法论，资金获取，概念化。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b015",
+    "page_idx": 3,
+    "block_idx": 15,
+    "block_type": "title",
+    "bbox": [
+      303,
+      598,
+      436,
+      609
+    ],
+    "source_text": "Declaration of competing interest",
+    "lines": [
+      {
+        "bbox": [
+          304,
+          597,
+          436,
+          610
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Declaration of competing interest",
+            "bbox": [
+              304,
+              597,
+              436,
+              610
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "title",
+      "normalized_sub_type": "title",
+      "structure_role": "title",
+      "raw_type": "title",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/12",
+        "raw_type": "title",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          303,
+          598,
+          436,
+          609
+        ],
+        "raw_text_excerpt": "Declaration of competing interest"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 5,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "Declaration of competing interest",
+    "mixed_original_protected_source_text": "Declaration of competing interest",
+    "formula_map": [],
+    "classification_label": "skip_title",
+    "should_translate": false,
+    "skip_reason": "skip_title",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b015",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b015"
+    ],
+    "translation_unit_protected_source_text": "Declaration of competing interest",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b016",
+    "page_idx": 3,
+    "block_idx": 16,
+    "block_type": "text",
+    "bbox": [
+      302,
+      619,
+      558,
+      650
+    ],
+    "source_text": "The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.",
+    "lines": [
+      {
+        "bbox": [
+          316,
+          618,
+          558,
+          630
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The authors declare that they have no known competing financial",
+            "bbox": [
+              316,
+              618,
+              558,
+              630
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          629,
+          558,
+          640
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "interests or personal relationships that could have appeared to influence",
+            "bbox": [
+              304,
+              629,
+              558,
+              640
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          639,
+          421,
+          651
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the work reported in this paper.",
+            "bbox": [
+              305,
+              639,
+              421,
+              651
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/13",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          619,
+          558,
+          650
+        ],
+        "raw_text_excerpt": "The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 6,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.",
+    "mixed_original_protected_source_text": "The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b016",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b016"
+    ],
+    "translation_unit_protected_source_text": "The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "作者声明，本文所报告的工作未受到任何已知的竞争性经济利益或个人关系的影响。",
+    "translation_unit_translated_text": "作者声明，本文所报告的工作未受到任何已知的竞争性经济利益或个人关系的影响。",
+    "protected_translated_text": "作者声明，本文所报告的工作未受到任何已知的竞争性经济利益或个人关系的影响。",
+    "translated_text": "作者声明，本文所报告的工作未受到任何已知的竞争性经济利益或个人关系的影响。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b017",
+    "page_idx": 3,
+    "block_idx": 17,
+    "block_type": "title",
+    "bbox": [
+      303,
+      661,
+      436,
+      671
+    ],
+    "source_text": "Appendix A. Supplementary data",
+    "lines": [
+      {
+        "bbox": [
+          304,
+          659,
+          436,
+          673
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Appendix A. Supplementary data",
+            "bbox": [
+              304,
+              659,
+              436,
+              673
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "title",
+      "normalized_sub_type": "title",
+      "structure_role": "title",
+      "raw_type": "title",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/14",
+        "raw_type": "title",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          303,
+          661,
+          436,
+          671
+        ],
+        "raw_text_excerpt": "Appendix A. Supplementary data"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 7,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "Appendix A. Supplementary data",
+    "mixed_original_protected_source_text": "Appendix A. Supplementary data",
+    "formula_map": [],
+    "classification_label": "skip_title",
+    "should_translate": false,
+    "skip_reason": "skip_title",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b017",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b017"
+    ],
+    "translation_unit_protected_source_text": "Appendix A. Supplementary data",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p004-b018",
+    "page_idx": 3,
+    "block_idx": 18,
+    "block_type": "text",
+    "bbox": [
+      302,
+      681,
+      557,
+      702
+    ],
+    "source_text": "Supplementary data to this article can be found online at https://doi. org/10.1016/j.tetlet.2025.155929.",
+    "lines": [
+      {
+        "bbox": [
+          317,
+          681,
+          558,
+          692
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Supplementary data to this article can be found online at https://doi.",
+            "bbox": [
+              317,
+              681,
+              558,
+              692
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          692,
+          430,
+          702
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "org/10.1016/j.tetlet.2025.155929.",
+            "bbox": [
+              304,
+              692,
+              430,
+              702
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 3,
+        "raw_path": "/pdf_info/3/para_blocks/15",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          681,
+          557,
+          702
+        ],
+        "raw_text_excerpt": "Supplementary data to this article can be found online at https://doi. org/10.1016/j.tetlet.2025.155929."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 265.5,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 8,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "tail",
+    "protected_source_text": "Supplementary data to this article can be found online at https://doi. org/10.1016/j.tetlet.2025.155929.",
+    "mixed_original_protected_source_text": "Supplementary data to this article can be found online at https://doi. org/10.1016/j.tetlet.2025.155929.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b018",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b018"
+    ],
+    "translation_unit_protected_source_text": "Supplementary data to this article can be found online at https://doi. org/10.1016/j.tetlet.2025.155929.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "本文的补充数据可在 https://doi.org/10.1016/j.tetlet.2025.155929 在线获取。",
+    "translation_unit_translated_text": "本文的补充数据可在 https://doi.org/10.1016/j.tetlet.2025.155929 在线获取。",
+    "protected_translated_text": "本文的补充数据可在 https://doi.org/10.1016/j.tetlet.2025.155929 在线获取。",
+    "translated_text": "本文的补充数据可在 https://doi.org/10.1016/j.tetlet.2025.155929 在线获取。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  }
+]

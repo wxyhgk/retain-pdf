@@ -1,0 +1,2436 @@
+[
+  {
+    "item_id": "p001-b000",
+    "page_idx": 0,
+    "block_idx": 0,
+    "block_type": "title",
+    "bbox": [
+      34,
+      164,
+      462,
+      214
+    ],
+    "source_text": "A general cyclization strategy of diaryl, diarylamine, diaryl ether, and diaryl thioether with diarylketone: one-step synthesis of spirocyclic/ cyclic tetraarylmethanes",
+    "lines": [
+      {
+        "bbox": [
+          33,
+          163,
+          462,
+          183
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "A general cyclization strategy of diaryl, diarylamine, diaryl ether, and",
+            "bbox": [
+              33,
+              163,
+              462,
+              183
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          34,
+          181,
+          450,
+          200
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "diaryl thioether with diarylketone: one-step synthesis of spirocyclic/",
+            "bbox": [
+              34,
+              181,
+              450,
+              200
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          199,
+          186,
+          218
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "cyclic tetraarylmethanes",
+            "bbox": [
+              35,
+              199,
+              186,
+              218
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "title",
+      "normalized_sub_type": "title",
+      "structure_role": "title",
+      "raw_type": "title",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 0,
+        "raw_path": "/pdf_info/0/para_blocks/0",
+        "raw_type": "title",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          164,
+          462,
+          214
+        ],
+        "raw_text_excerpt": "A general cyclization strategy of diaryl, diarylamine, diaryl ether, and diaryl thioether with diarylketone: one-step synthesis of spirocyclic/ cyclic tetraarylmethanes"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 363.0,
+    "layout_zone": "full_width",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 2,
+    "layout_boundary_role": "head",
+    "protected_source_text": "A general cyclization strategy of diaryl, diarylamine, diaryl ether, and diaryl thioether with diarylketone: one-step synthesis of spirocyclic/ cyclic tetraarylmethanes",
+    "mixed_original_protected_source_text": "A general cyclization strategy of diaryl, diarylamine, diaryl ether, and diaryl thioether with diarylketone: one-step synthesis of spirocyclic/ cyclic tetraarylmethanes",
+    "formula_map": [],
+    "classification_label": "skip_title",
+    "should_translate": false,
+    "skip_reason": "skip_title",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b000",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b000"
+    ],
+    "translation_unit_protected_source_text": "A general cyclization strategy of diaryl, diarylamine, diaryl ether, and diaryl thioether with diarylketone: one-step synthesis of spirocyclic/ cyclic tetraarylmethanes",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "A general cyclization strategy of diaryl, diarylamine, diaryl ether, and diaryl thioether with diarylketone: one-step synthesis of spirocyclic/ cyclic tetraarylmethanes",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p001-b003",
+    "page_idx": 0,
+    "block_idx": 3,
+    "block_type": "text",
+    "bbox": [
+      34,
+      225,
+      389,
+      239
+    ],
+    "source_text": "Shuangping Liao 1 , Yeshen Liu 1 , Bochao Jiang 1 , Yufeng Hui , Haibo Xiao *",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          224,
+          389,
+          241
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Shuangping Liao 1 , Yeshen Liu 1 , Bochao Jiang 1 , Yufeng Hui , Haibo Xiao *",
+            "bbox": [
+              35,
+              224,
+              389,
+              241
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 0,
+        "raw_path": "/pdf_info/0/para_blocks/2",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          225,
+          389,
+          239
+        ],
+        "raw_text_excerpt": "Shuangping Liao 1 , Yeshen Liu 1 , Bochao Jiang 1 , Yufeng Hui , Haibo Xiao *"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 363.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "head",
+    "protected_source_text": "Shuangping Liao 1 , Yeshen Liu 1 , Bochao Jiang 1 , Yufeng Hui , Haibo Xiao *",
+    "mixed_original_protected_source_text": "Shuangping Liao 1 , Yeshen Liu 1 , Bochao Jiang 1 , Yufeng Hui , Haibo Xiao *",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b003",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b003"
+    ],
+    "translation_unit_protected_source_text": "Shuangping Liao 1 , Yeshen Liu 1 , Bochao Jiang 1 , Yufeng Hui , Haibo Xiao *",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "廖双平 1 、刘业深 1 、蒋博超 1 、余峰辉 、肖海波 *",
+    "translation_unit_translated_text": "廖双平 1 、刘业深 1 、蒋博超 1 、余峰辉 、肖海波 *",
+    "protected_translated_text": "廖双平 1 、刘业深 1 、蒋博超 1 、余峰辉 、肖海波 *",
+    "translated_text": "廖双平 1 、刘业深 1 、蒋博超 1 、余峰辉 、肖海波 *",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "廖双平 1 、刘业深 1 、蒋博超 1 、余峰辉 、肖海波 *",
+    "render_source_text": "Shuangping Liao 1 , Yeshen Liu 1 , Bochao Jiang 1 , Yufeng Hui , Haibo Xiao *",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p001-b004",
+    "page_idx": 0,
+    "block_idx": 4,
+    "block_type": "text",
+    "bbox": [
+      34,
+      245,
+      312,
+      255
+    ],
+    "source_text": "Department of Chemistry, Shanghai Normal University, 100Guilin Road, Shanghai 200234, PR China",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          245,
+          313,
+          256
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Department of Chemistry, Shanghai Normal University, 100Guilin Road, Shanghai 200234, PR China",
+            "bbox": [
+              35,
+              245,
+              313,
+              256
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 0,
+        "raw_path": "/pdf_info/0/para_blocks/3",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          245,
+          312,
+          255
+        ],
+        "raw_text_excerpt": "Department of Chemistry, Shanghai Normal University, 100Guilin Road, Shanghai 200234, PR China"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 363.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "Department of Chemistry, Shanghai Normal University, 100Guilin Road, Shanghai 200234, PR China",
+    "mixed_original_protected_source_text": "Department of Chemistry, Shanghai Normal University, 100Guilin Road, Shanghai 200234, PR China",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b004",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b004"
+    ],
+    "translation_unit_protected_source_text": "Department of Chemistry, Shanghai Normal University, 100Guilin Road, Shanghai 200234, PR China",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "上海师范大学化学系，桂林路100号，上海 200234，中国",
+    "translation_unit_translated_text": "上海师范大学化学系，桂林路100号，上海 200234，中国",
+    "protected_translated_text": "上海师范大学化学系，桂林路100号，上海 200234，中国",
+    "translated_text": "上海师范大学化学系，桂林路100号，上海 200234，中国",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "上海师范大学化学系，桂林路100号，上海 200234，中国",
+    "render_source_text": "Department of Chemistry, Shanghai Normal University, 100Guilin Road, Shanghai 200234, PR China",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p001-b005",
+    "page_idx": 0,
+    "block_idx": 5,
+    "block_type": "title",
+    "bbox": [
+      34,
+      277,
+      96,
+      287
+    ],
+    "source_text": "A B S T R A C T",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          278,
+          96,
+          287
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "A B S T R A C T",
+            "bbox": [
+              35,
+              278,
+              96,
+              287
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "title",
+      "normalized_sub_type": "title",
+      "structure_role": "title",
+      "raw_type": "title",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 0,
+        "raw_path": "/pdf_info/0/para_blocks/4",
+        "raw_type": "title",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          277,
+          96,
+          287
+        ],
+        "raw_text_excerpt": "A B S T R A C T"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 363.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "A B S T R A C T",
+    "mixed_original_protected_source_text": "A B S T R A C T",
+    "formula_map": [],
+    "classification_label": "skip_title",
+    "should_translate": false,
+    "skip_reason": "skip_title",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b005",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b005"
+    ],
+    "translation_unit_protected_source_text": "A B S T R A C T",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "A B S T R A C T",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p001-b006",
+    "page_idx": 0,
+    "block_idx": 6,
+    "block_type": "text",
+    "bbox": [
+      34,
+      296,
+      558,
+      336
+    ],
+    "source_text": "A general method for preparing spirocyclic/cyclic tetraarylmethanes through one-step cyclization of diaryl compounds (diaryl, diarylamine, diaryl ether, and diaryl thioether) with diarylketones using triflimide (HNTf₂) as a catalyst has been developed. The key step involves a Friedel-Crafts reaction. This straightforward synthetic approach features wide substrate scope, mild reaction conditions, a low catalyst amount, good yield, and allows the synthesis of unusual spirocyclic compounds that are otherwise difficult to achieve.",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          298,
+          558,
+          307
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "A general method for preparing spirocyclic/cyclic tetraarylmethanes through one-step cyclization of diaryl compounds (diaryl, diarylamine, diaryl ether, and diaryl",
+            "bbox": [
+              35,
+              298,
+              558,
+              307
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          306,
+          559,
+          318
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "thioether) with diarylketones using triflimide (HNTf₂) as a catalyst has been developed. The key step involves a Friedel-Crafts reaction. This straightforward synthetic",
+            "bbox": [
+              35,
+              306,
+              559,
+              318
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          33,
+          316,
+          559,
+          328
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "approach features wide substrate scope, mild reaction conditions, a low catalyst amount, good yield, and allows the synthesis of unusual spirocyclic compounds that",
+            "bbox": [
+              33,
+              316,
+              559,
+              328
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          325,
+          146,
+          337
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "are otherwise difficult to achieve.",
+            "bbox": [
+              35,
+              325,
+              146,
+              337
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 0,
+        "raw_path": "/pdf_info/0/para_blocks/5",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          296,
+          558,
+          336
+        ],
+        "raw_text_excerpt": "A general method for preparing spirocyclic/cyclic tetraarylmethanes through one-step cyclization of diaryl compounds (diaryl, diarylamine, diaryl ether, and diaryl thioether) with diarylketones using "
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 363.0,
+    "layout_zone": "full_width",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 2,
+    "layout_boundary_role": "tail",
+    "protected_source_text": "A general method for preparing spirocyclic/cyclic tetraarylmethanes through one-step cyclization of diaryl compounds (diaryl, diarylamine, diaryl ether, and diaryl thioether) with diarylketones using triflimide (HNTf₂) as a catalyst has been developed. The key step involves a Friedel-Crafts reaction. This straightforward synthetic approach features wide substrate scope, mild reaction conditions, a low catalyst amount, good yield, and allows the synthesis of unusual spirocyclic compounds that are otherwise difficult to achieve.",
+    "mixed_original_protected_source_text": "A general method for preparing spirocyclic/cyclic tetraarylmethanes through one-step cyclization of diaryl compounds (diaryl, diarylamine, diaryl ether, and diaryl thioether) with diarylketones using triflimide (HNTf₂) as a catalyst has been developed. The key step involves a Friedel-Crafts reaction. This straightforward synthetic approach features wide substrate scope, mild reaction conditions, a low catalyst amount, good yield, and allows the synthesis of unusual spirocyclic compounds that are otherwise difficult to achieve.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b006",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b006"
+    ],
+    "translation_unit_protected_source_text": "A general method for preparing spirocyclic/cyclic tetraarylmethanes through one-step cyclization of diaryl compounds (diaryl, diarylamine, diaryl ether, and diaryl thioether) with diarylketones using triflimide (HNTf₂) as a catalyst has been developed. The key step involves a Friedel-Crafts reaction. This straightforward synthetic approach features wide substrate scope, mild reaction conditions, a low catalyst amount, good yield, and allows the synthesis of unusual spirocyclic compounds that are otherwise difficult to achieve.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "一种通过二芳基化合物（二芳基、二芳基胺、二芳基醚和二芳基硫醚）与二芳基酮在三氟甲磺酰亚胺（HNTf₂）催化下进行一步环化反应制备螺环/环状四芳基甲烷的通用方法已被开发。关键步骤涉及傅-克反应。这种简便的合成方法具有底物范围广、反应条件温和、催化剂用量低、产率良好等优点，并能合成其他方法难以获得的不寻常螺环化合物。",
+    "translation_unit_translated_text": "一种通过二芳基化合物（二芳基、二芳基胺、二芳基醚和二芳基硫醚）与二芳基酮在三氟甲磺酰亚胺（HNTf₂）催化下进行一步环化反应制备螺环/环状四芳基甲烷的通用方法已被开发。关键步骤涉及傅-克反应。这种简便的合成方法具有底物范围广、反应条件温和、催化剂用量低、产率良好等优点，并能合成其他方法难以获得的不寻常螺环化合物。",
+    "protected_translated_text": "一种通过二芳基化合物（二芳基、二芳基胺、二芳基醚和二芳基硫醚）与二芳基酮在三氟甲磺酰亚胺（HNTf₂）催化下进行一步环化反应制备螺环/环状四芳基甲烷的通用方法已被开发。关键步骤涉及傅-克反应。这种简便的合成方法具有底物范围广、反应条件温和、催化剂用量低、产率良好等优点，并能合成其他方法难以获得的不寻常螺环化合物。",
+    "translated_text": "一种通过二芳基化合物（二芳基、二芳基胺、二芳基醚和二芳基硫醚）与二芳基酮在三氟甲磺酰亚胺（HNTf₂）催化下进行一步环化反应制备螺环/环状四芳基甲烷的通用方法已被开发。关键步骤涉及傅-克反应。这种简便的合成方法具有底物范围广、反应条件温和、催化剂用量低、产率良好等优点，并能合成其他方法难以获得的不寻常螺环化合物。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "一种通过二芳基化合物（二芳基、二芳基胺、二芳基醚和二芳基硫醚）与二芳基酮在三氟甲磺酰亚胺（HNTf₂）催化下进行一步环化反应制备螺环/环状四芳基甲烷的通用方法已被开发。关键步骤涉及傅-克反应。这种简便的合成方法具有底物范围广、反应条件温和、催化剂用量低、产率良好等优点，并能合成其他方法难以获得的不寻常螺环化合物。",
+    "render_source_text": "A general method for preparing spirocyclic/cyclic tetraarylmethanes through one-step cyclization of diaryl compounds (diaryl, diarylamine, diaryl ether, and diaryl thioether) with diarylketones using triflimide (HNTf₂) as a catalyst has been developed. The key step involves a Friedel-Crafts reaction. This straightforward synthetic approach features wide substrate scope, mild reaction conditions, a low catalyst amount, good yield, and allows the synthesis of unusual spirocyclic compounds that are otherwise difficult to achieve.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p001-b007",
+    "page_idx": 0,
+    "block_idx": 7,
+    "block_type": "text",
+    "bbox": [
+      34,
+      366,
+      289,
+      469
+    ],
+    "source_text": "Spirocyclic/cyclic tetraarylmethanes (SAMs, Scheme 1) possess 9 0 ^ { ^ { \\circ } } - twisted rigid conformation and steric hindrance due to the \\mathsf { s p } ^ { 3 } . - hy- bridized carbon, which plays a pivotal role in suppressing the dye ag- gregation, enhancing their film-forming properties, photo/thermal stability, and optoelectronic performance [1–6]. The molecular struc- tures of SAMs provide crucial building blocks in the preparation of many organic functional materials such as thermally activated delayed fluo- rescent emitters, organic field-effect transistors, light-emitting diodes, solar cells, hole transport materials, fluorescence probes and others [4–13].",
+    "lines": [
+      {
+        "bbox": [
+          48,
+          365,
+          289,
+          377
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Spirocyclic/cyclic tetraarylmethanes (SAMs, Scheme 1) possess",
+            "bbox": [
+              48,
+              366,
+              273,
+              377
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "9 0 ^ { ^ { \\circ } }",
+            "bbox": [
+              273,
+              365,
+              286,
+              375
+            ]
+          },
+          {
+            "type": "text",
+            "content": "-",
+            "bbox": [
+              286,
+              366,
+              289,
+              377
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          375,
+          290,
+          389
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "twisted rigid conformation and steric hindrance due to the",
+            "bbox": [
+              35,
+              375,
+              257,
+              389
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\mathsf { s p } ^ { 3 } .",
+            "bbox": [
+              258,
+              375,
+              271,
+              386
+            ]
+          },
+          {
+            "type": "text",
+            "content": "- hy-",
+            "bbox": [
+              271,
+              375,
+              290,
+              389
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          386,
+          290,
+          399
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "bridized carbon, which plays a pivotal role in suppressing the dye ag-",
+            "bbox": [
+              35,
+              386,
+              290,
+              399
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          398,
+          290,
+          409
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "gregation, enhancing their film-forming properties, photo/thermal",
+            "bbox": [
+              35,
+              398,
+              290,
+              409
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          408,
+          290,
+          418
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "stability, and optoelectronic performance [1–6]. The molecular struc-",
+            "bbox": [
+              36,
+              408,
+              290,
+              418
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          417,
+          290,
+          430
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "tures of SAMs provide crucial building blocks in the preparation of many",
+            "bbox": [
+              35,
+              417,
+              290,
+              430
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          429,
+          290,
+          440
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "organic functional materials such as thermally activated delayed fluo-",
+            "bbox": [
+              35,
+              429,
+              290,
+              440
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          440,
+          289,
+          450
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "rescent emitters, organic field-effect transistors, light-emitting diodes,",
+            "bbox": [
+              35,
+              440,
+              289,
+              450
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          449,
+          290,
+          460
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "solar cells, hole transport materials, fluorescence probes and others",
+            "bbox": [
+              35,
+              449,
+              290,
+              460
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          459,
+          66,
+          471
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[4–13].",
+            "bbox": [
+              36,
+              459,
+              66,
+              471
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 0,
+        "raw_path": "/pdf_info/0/para_blocks/6",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          366,
+          289,
+          469
+        ],
+        "raw_text_excerpt": "Spirocyclic/cyclic tetraarylmethanes (SAMs, Scheme 1) possess 9 0 ^ { ^ { \\circ } } - twisted rigid conformation and steric hindrance due to the \\mathsf { s p } ^ { 3 } . - hy- bridized carbon, which "
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 363.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "Spirocyclic/cyclic tetraarylmethanes (SAMs, Scheme 1) possess [[FORMULA_1]] - twisted rigid conformation and steric hindrance due to the [[FORMULA_2]] - hy- bridized carbon, which plays a pivotal role in suppressing the dye ag- gregation, enhancing their film-forming properties, photo/thermal stability, and optoelectronic performance [1–6]. The molecular struc- tures of SAMs provide crucial building blocks in the preparation of many organic functional materials such as thermally activated delayed fluo- rescent emitters, organic field-effect transistors, light-emitting diodes, solar cells, hole transport materials, fluorescence probes and others [4–13].",
+    "mixed_original_protected_source_text": "Spirocyclic/cyclic tetraarylmethanes (SAMs, Scheme 1) possess [[FORMULA_1]] - twisted rigid conformation and steric hindrance due to the [[FORMULA_2]] - hy- bridized carbon, which plays a pivotal role in suppressing the dye ag- gregation, enhancing their film-forming properties, photo/thermal stability, and optoelectronic performance [1–6]. The molecular struc- tures of SAMs provide crucial building blocks in the preparation of many organic functional materials such as thermally activated delayed fluo- rescent emitters, organic field-effect transistors, light-emitting diodes, solar cells, hole transport materials, fluorescence probes and others [4–13].",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "9 0 ^ { ^ { \\circ } }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\mathsf { s p } ^ { 3 } ."
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b007",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b007"
+    ],
+    "translation_unit_protected_source_text": "Spirocyclic/cyclic tetraarylmethanes (SAMs, Scheme 1) possess [[FORMULA_1]] - twisted rigid conformation and steric hindrance due to the [[FORMULA_2]] - hy- bridized carbon, which plays a pivotal role in suppressing the dye ag- gregation, enhancing their film-forming properties, photo/thermal stability, and optoelectronic performance [1–6]. The molecular struc- tures of SAMs provide crucial building blocks in the preparation of many organic functional materials such as thermally activated delayed fluo- rescent emitters, organic field-effect transistors, light-emitting diodes, solar cells, hole transport materials, fluorescence probes and others [4–13].",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "9 0 ^ { ^ { \\circ } }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\mathsf { s p } ^ { 3 } ."
+      }
+    ],
+    "translation_unit_protected_translated_text": "螺环/环状四芳基甲烷（SAMs，方案1）具有[[FORMULA_1]]扭曲的刚性构象和由[[FORMULA_2]]杂化碳原子引起的空间位阻，这在抑制染料聚集、增强其成膜性能、光/热稳定性以及光电性能方面起着关键作用[1–6]。SAMs的分子结构为制备许多有机功能材料（如热激活延迟荧光发射体、有机场效应晶体管、发光二极管、太阳能电池、空穴传输材料、荧光探针等[4–13]）提供了关键的构建单元。",
+    "translation_unit_translated_text": "螺环/环状四芳基甲烷（SAMs，方案1）具有9 0 ^ { ^ { \\circ } }扭曲的刚性构象和由\\mathsf { s p } ^ { 3 } .杂化碳原子引起的空间位阻，这在抑制染料聚集、增强其成膜性能、光/热稳定性以及光电性能方面起着关键作用[1–6]。SAMs的分子结构为制备许多有机功能材料（如热激活延迟荧光发射体、有机场效应晶体管、发光二极管、太阳能电池、空穴传输材料、荧光探针等[4–13]）提供了关键的构建单元。",
+    "protected_translated_text": "螺环/环状四芳基甲烷（SAMs，方案1）具有[[FORMULA_1]]扭曲的刚性构象和由[[FORMULA_2]]杂化碳原子引起的空间位阻，这在抑制染料聚集、增强其成膜性能、光/热稳定性以及光电性能方面起着关键作用[1–6]。SAMs的分子结构为制备许多有机功能材料（如热激活延迟荧光发射体、有机场效应晶体管、发光二极管、太阳能电池、空穴传输材料、荧光探针等[4–13]）提供了关键的构建单元。",
+    "translated_text": "螺环/环状四芳基甲烷（SAMs，方案1）具有9 0 ^ { ^ { \\circ } }扭曲的刚性构象和由\\mathsf { s p } ^ { 3 } .杂化碳原子引起的空间位阻，这在抑制染料聚集、增强其成膜性能、光/热稳定性以及光电性能方面起着关键作用[1–6]。SAMs的分子结构为制备许多有机功能材料（如热激活延迟荧光发射体、有机场效应晶体管、发光二极管、太阳能电池、空穴传输材料、荧光探针等[4–13]）提供了关键的构建单元。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "螺环/环状四芳基甲烷（SAMs，方案1）具有[[FORMULA_1]]扭曲的刚性构象和由[[FORMULA_2]]杂化碳原子引起的空间位阻，这在抑制染料聚集、增强其成膜性能、光/热稳定性以及光电性能方面起着关键作用[1–6]。SAMs的分子结构为制备许多有机功能材料（如热激活延迟荧光发射体、有机场效应晶体管、发光二极管、太阳能电池、空穴传输材料、荧光探针等[4–13]）提供了关键的构建单元。",
+    "render_source_text": "Spirocyclic/cyclic tetraarylmethanes (SAMs, Scheme 1) possess [[FORMULA_1]] - twisted rigid conformation and steric hindrance due to the [[FORMULA_2]] - hy- bridized carbon, which plays a pivotal role in suppressing the dye ag- gregation, enhancing their film-forming properties, photo/thermal stability, and optoelectronic performance [1–6]. The molecular struc- tures of SAMs provide crucial building blocks in the preparation of many organic functional materials such as thermally activated delayed fluo- rescent emitters, organic field-effect transistors, light-emitting diodes, solar cells, hole transport materials, fluorescence probes and others [4–13].",
+    "render_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "9 0 ^ { ^ { \\circ } }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\mathsf { s p } ^ { 3 } ."
+      }
+    ]
+  },
+  {
+    "item_id": "p001-b008",
+    "page_idx": 0,
+    "block_idx": 8,
+    "block_type": "text",
+    "bbox": [
+      34,
+      470,
+      289,
+      637
+    ],
+    "source_text": "The conventional synthesis of SAMs still relies on complex, multistep synthesis routes and involves Grignard reagents or lithium reagents (Scheme 2) [2,5,9,14]. In general, the starting biaryl compound A (such as biaryl, diarylamine, diaryl ether, diaryl thioether) is metalated indi- rectly via stepwise halogenation and metalation or metalated directly. The metalation reaction generally requires harsh reaction conditions, such as an anhydrous and oxygen - free environment. The formed metalated intermediate B or Ar₁MgBr/ Ar₁Li is then coupled with dia- rylketone/fluorenone to form the corresponding alcohol E or F. Finally, the desired target molecule TM1 or TM2 is obtained through a Frie- del− Crafts reaction under the catalytic action of an acid. For the ^ { 9 , 9 ^ { \\prime } } - diarylfluorene compound with two identical substituents at the \\mathrm { C _ { 9 } } po- sition, the compound (TM3) can be prepared in one step [2]. However, the reaction requires a relatively high temperature, and it can only be used to introduce electron - rich aryl groups as substituents at the \\mathrm { C _ { 9 } } position of fluorene (Scheme 3, route III). The active N–H of",
+    "lines": [
+      {
+        "bbox": [
+          47,
+          469,
+          290,
+          482
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The conventional synthesis of SAMs still relies on complex, multistep",
+            "bbox": [
+              47,
+              469,
+              290,
+              482
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          480,
+          290,
+          492
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "synthesis routes and involves Grignard reagents or lithium reagents",
+            "bbox": [
+              35,
+              480,
+              290,
+              492
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          491,
+          289,
+          502
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(Scheme 2) [2,5,9,14]. In general, the starting biaryl compound A (such",
+            "bbox": [
+              36,
+              491,
+              289,
+              502
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          502,
+          289,
+          513
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "as biaryl, diarylamine, diaryl ether, diaryl thioether) is metalated indi-",
+            "bbox": [
+              35,
+              502,
+              289,
+              513
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          513,
+          289,
+          524
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "rectly via stepwise halogenation and metalation or metalated directly.",
+            "bbox": [
+              35,
+              513,
+              289,
+              524
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          523,
+          289,
+          533
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The metalation reaction generally requires harsh reaction conditions,",
+            "bbox": [
+              36,
+              523,
+              289,
+              533
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          534,
+          289,
+          543
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "such as an anhydrous and oxygen - free environment. The formed",
+            "bbox": [
+              36,
+              534,
+              289,
+              543
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          545,
+          289,
+          553
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "metalated intermediate B or Ar₁MgBr/ Ar₁Li is then coupled with dia-",
+            "bbox": [
+              36,
+              545,
+              289,
+              553
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          554,
+          290,
+          565
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "rylketone/fluorenone to form the corresponding alcohol E or F. Finally,",
+            "bbox": [
+              35,
+              554,
+              290,
+              565
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          564,
+          289,
+          575
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the desired target molecule TM1 or TM2 is obtained through a Frie-",
+            "bbox": [
+              35,
+              564,
+              289,
+              575
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          574,
+          290,
+          586
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "del− Crafts reaction under the catalytic action of an acid. For the",
+            "bbox": [
+              36,
+              574,
+              271,
+              586
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "^ { 9 , 9 ^ { \\prime } }",
+            "bbox": [
+              272,
+              575,
+              286,
+              585
+            ]
+          },
+          {
+            "type": "text",
+            "content": "-",
+            "bbox": [
+              286,
+              574,
+              290,
+              586
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          586,
+          290,
+          597
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "diarylfluorene compound with two identical substituents at the",
+            "bbox": [
+              35,
+              586,
+              264,
+              597
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\mathrm { C _ { 9 } }",
+            "bbox": [
+              264,
+              586,
+              275,
+              596
+            ]
+          },
+          {
+            "type": "text",
+            "content": "po-",
+            "bbox": [
+              275,
+              586,
+              290,
+              597
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          595,
+          290,
+          607
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "sition, the compound (TM3) can be prepared in one step [2]. However,",
+            "bbox": [
+              35,
+              595,
+              290,
+              607
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          607,
+          290,
+          617
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the reaction requires a relatively high temperature, and it can only be",
+            "bbox": [
+              36,
+              607,
+              290,
+              617
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          616,
+          289,
+          628
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "used to introduce electron - rich aryl groups as substituents at the",
+            "bbox": [
+              35,
+              616,
+              278,
+              628
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\mathrm { C _ { 9 } }",
+            "bbox": [
+              279,
+              617,
+              289,
+              627
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          628,
+          290,
+          638
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "position of fluorene (Scheme 3, route III). The active N–H of",
+            "bbox": [
+              35,
+              628,
+              290,
+              638
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 0,
+        "raw_path": "/pdf_info/0/para_blocks/7",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          470,
+          289,
+          637
+        ],
+        "raw_text_excerpt": "The conventional synthesis of SAMs still relies on complex, multistep synthesis routes and involves Grignard reagents or lithium reagents (Scheme 2) [2,5,9,14]. In general, the starting biaryl compoun"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 363.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "tail",
+    "protected_source_text": "The conventional synthesis of SAMs still relies on complex, multistep synthesis routes and involves Grignard reagents or lithium reagents (Scheme 2) [2,5,9,14]. In general, the starting biaryl compound A (such as biaryl, diarylamine, diaryl ether, diaryl thioether) is metalated indi- rectly via stepwise halogenation and metalation or metalated directly. The metalation reaction generally requires harsh reaction conditions, such as an anhydrous and oxygen - free environment. The formed metalated intermediate B or Ar₁MgBr/ Ar₁Li is then coupled with dia- rylketone/fluorenone to form the corresponding alcohol E or F. Finally, the desired target molecule TM1 or TM2 is obtained through a Frie- del− Crafts reaction under the catalytic action of an acid. For the [[FORMULA_1]] - diarylfluorene compound with two identical substituents at the [[FORMULA_2]] po- sition, the compound (TM3) can be prepared in one step [2]. However, the reaction requires a relatively high temperature, and it can only be used to introduce electron - rich aryl groups as substituents at the [[FORMULA_3]] position of fluorene (Scheme 3, route III). The active N–H of",
+    "mixed_original_protected_source_text": "The conventional synthesis of SAMs still relies on complex, multistep synthesis routes and involves Grignard reagents or lithium reagents (Scheme 2) [2,5,9,14]. In general, the starting biaryl compound A (such as biaryl, diarylamine, diaryl ether, diaryl thioether) is metalated indi- rectly via stepwise halogenation and metalation or metalated directly. The metalation reaction generally requires harsh reaction conditions, such as an anhydrous and oxygen - free environment. The formed metalated intermediate B or Ar₁MgBr/ Ar₁Li is then coupled with dia- rylketone/fluorenone to form the corresponding alcohol E or F. Finally, the desired target molecule TM1 or TM2 is obtained through a Frie- del− Crafts reaction under the catalytic action of an acid. For the [[FORMULA_1]] - diarylfluorene compound with two identical substituents at the [[FORMULA_2]] po- sition, the compound (TM3) can be prepared in one step [2]. However, the reaction requires a relatively high temperature, and it can only be used to introduce electron - rich aryl groups as substituents at the [[FORMULA_3]] position of fluorene (Scheme 3, route III). The active N–H of",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "^ { 9 , 9 ^ { \\prime } }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-001-001",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p001-b008",
+      "p001-b009"
+    ],
+    "translation_unit_protected_source_text": "The conventional synthesis of SAMs still relies on complex, multistep synthesis routes and involves Grignard reagents or lithium reagents (Scheme 2) [2,5,9,14]. In general, the starting biaryl compound A (such as biaryl, diarylamine, diaryl ether, diaryl thioether) is metalated indi- rectly via stepwise halogenation and metalation or metalated directly. The metalation reaction generally requires harsh reaction conditions, such as an anhydrous and oxygen - free environment. The formed metalated intermediate B or Ar₁MgBr/ Ar₁Li is then coupled with dia- rylketone/fluorenone to form the corresponding alcohol E or F. Finally, the desired target molecule TM1 or TM2 is obtained through a Frie- del− Crafts reaction under the catalytic action of an acid. For the [[FORMULA_1]] - diarylfluorene compound with two identical substituents at the [[FORMULA_2]] po- sition, the compound (TM3) can be prepared in one step [2]. However, the reaction requires a relatively high temperature, and it can only be used to introduce electron - rich aryl groups as substituents at the [[FORMULA_3]] position of fluorene (Scheme 3, route III). The active N–H of diarylamine generally needs protection before treatment with lithium or magnesium agents. Consequently, it is of great importance to develop efficient synthetic methodologies for spirocyclic/cyclic tetraaryl- methanes [10].",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "^ { 9 , 9 ^ { \\prime } }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      }
+    ],
+    "translation_unit_protected_translated_text": "传统合成SAMs的方法仍依赖于复杂、多步的合成路线，并涉及格氏试剂或锂试剂（方案2）[2,5,9,14]。通常，起始联芳基化合物A（如联芳烃、二芳胺、二芳醚、二芳硫醚）通过逐步卤化与金属化间接金属化，或直接金属化。金属化反应通常需要苛刻的反应条件，例如无水无氧环境。形成的金属化中间体B或Ar₁MgBr/Ar₁Li随后与二芳基酮/芴酮偶联，生成相应的醇E或F。最后，在酸催化下通过傅-克反应得到目标分子TM1或TM2。对于[[FORMULA_1]]- 在[[FORMULA_2]]位具有两个相同取代基的二芳基芴化合物，该化合物（TM3）可一步制备[2]。然而，该反应需要较高温度，且仅能用于在芴的[[FORMULA_3]]位引入富电子芳基作为取代基（方案3，路线III）。二芳胺的活性N–H在与锂或镁试剂处理前通常需要保护。因此，开发螺环/环状四芳基甲烷的高效合成方法具有重要意义[10]。",
+    "translation_unit_translated_text": "传统合成SAMs的方法仍依赖于复杂、多步的合成路线，并涉及格氏试剂或锂试剂（方案2）[2,5,9,14]。通常，起始联芳基化合物A（如联芳烃、二芳胺、二芳醚、二芳硫醚）通过逐步卤化与金属化间接金属化，或直接金属化。金属化反应通常需要苛刻的反应条件，例如无水无氧环境。形成的金属化中间体B或Ar₁MgBr/Ar₁Li随后与二芳基酮/芴酮偶联，生成相应的醇E或F。最后，在酸催化下通过傅-克反应得到目标分子TM1或TM2。对于^ { 9 , 9 ^ { \\prime } }- 在\\mathrm { C _ { 9 } }位具有两个相同取代基的二芳基芴化合物，该化合物（TM3）可一步制备[2]。然而，该反应需要较高温度，且仅能用于在芴的\\mathrm { C _ { 9 } }位引入富电子芳基作为取代基（方案3，路线III）。二芳胺的活性N–H在与锂或镁试剂处理前通常需要保护。因此，开发螺环/环状四芳基甲烷的高效合成方法具有重要意义[10]。",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "cg-001-001",
+    "continuation_prev_text": "",
+    "continuation_next_text": "diarylamine generally needs protection before treatment with lithium or magnesium agents. Consequently, it is of great importance to develop efficient synthetic methodologies for spirocyclic/cyclic tetraaryl- methanes [10].",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "The conventional synthesis of SAMs still relies on complex, multistep synthesis routes and involves Grignard reagents or lithium reagents (Scheme 2) [2,5,9,14]. In general, the starting biaryl compound A (such as biaryl, diarylamine, diaryl ether, diaryl thioether) is metalated indi- rectly via stepwise halogenation and metalation or metalated directly. The metalation reaction generally requires harsh reaction conditions, such as an anhydrous and oxygen - free environment. The formed metalated intermediate B or Ar₁MgBr/ Ar₁Li is then coupled with dia- rylketone/fluorenone to form the corresponding alcohol E or F. Finally, the desired target molecule TM1 or TM2 is obtained through a Frie- del− Crafts reaction under the catalytic action of an acid. For the [[FORMULA_1]] - diarylfluorene compound with two identical substituents at the [[FORMULA_2]] po- sition, the compound (TM3) can be prepared in one step [2]. However, the reaction requires a relatively high temperature, and it can only be used to introduce electron - rich aryl groups as substituents at the [[FORMULA_3]] position of fluorene (Scheme 3, route III). The active N–H of diarylamine generally needs protection before treatment with lithium or magnesium agents. Consequently, it is of great importance to develop efficient synthetic methodologies for spirocyclic/cyclic tetraaryl- methanes [10].",
+    "group_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "^ { 9 , 9 ^ { \\prime } }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      }
+    ],
+    "group_protected_translated_text": "传统合成SAMs的方法仍依赖于复杂、多步的合成路线，并涉及格氏试剂或锂试剂（方案2）[2,5,9,14]。通常，起始联芳基化合物A（如联芳烃、二芳胺、二芳醚、二芳硫醚）通过逐步卤化与金属化间接金属化，或直接金属化。金属化反应通常需要苛刻的反应条件，例如无水无氧环境。形成的金属化中间体B或Ar₁MgBr/Ar₁Li随后与二芳基酮/芴酮偶联，生成相应的醇E或F。最后，在酸催化下通过傅-克反应得到目标分子TM1或TM2。对于[[FORMULA_1]]- 在[[FORMULA_2]]位具有两个相同取代基的二芳基芴化合物，该化合物（TM3）可一步制备[2]。然而，该反应需要较高温度，且仅能用于在芴的[[FORMULA_3]]位引入富电子芳基作为取代基（方案3，路线III）。二芳胺的活性N–H在与锂或镁试剂处理前通常需要保护。因此，开发螺环/环状四芳基甲烷的高效合成方法具有重要意义[10]。",
+    "group_translated_text": "传统合成SAMs的方法仍依赖于复杂、多步的合成路线，并涉及格氏试剂或锂试剂（方案2）[2,5,9,14]。通常，起始联芳基化合物A（如联芳烃、二芳胺、二芳醚、二芳硫醚）通过逐步卤化与金属化间接金属化，或直接金属化。金属化反应通常需要苛刻的反应条件，例如无水无氧环境。形成的金属化中间体B或Ar₁MgBr/Ar₁Li随后与二芳基酮/芴酮偶联，生成相应的醇E或F。最后，在酸催化下通过傅-克反应得到目标分子TM1或TM2。对于^ { 9 , 9 ^ { \\prime } }- 在\\mathrm { C _ { 9 } }位具有两个相同取代基的二芳基芴化合物，该化合物（TM3）可一步制备[2]。然而，该反应需要较高温度，且仅能用于在芴的\\mathrm { C _ { 9 } }位引入富电子芳基作为取代基（方案3，路线III）。二芳胺的活性N–H在与锂或镁试剂处理前通常需要保护。因此，开发螺环/环状四芳基甲烷的高效合成方法具有重要意义[10]。",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "传统合成SAMs的方法仍依赖于复杂、多步的合成路线，并涉及格氏试剂或锂试剂（方案2）[2,5,9,14]。通常，起始联芳基化合物A（如联芳烃、二芳胺、二芳醚、二芳硫醚）通过逐步卤化与金属化间接金属化，或直接金属化。金属化反应通常需要苛刻的反应条件，例如无水无氧环境。形成的金属化中间体B或Ar₁MgBr/Ar₁Li随后与二芳基酮/芴酮偶联，生成相应的醇E或F。最后，在酸催化下通过傅-克反应得到目标分子TM1或TM2。对于[[FORMULA_1]]- 在[[FORMULA_2]]位具有两个相同取代基的二芳基芴化合物，该化合物（TM3）可一步制备[2]。然而，该反应需要较高温度，且仅能用于在芴的[[FORMULA_3]]位引入富电子芳基作为取代基（方案3，路线III）。",
+    "render_source_text": "The conventional synthesis of SAMs still relies on complex, multistep synthesis routes and involves Grignard reagents or lithium reagents (Scheme 2) [2,5,9,14]. In general, the starting biaryl compound A (such as biaryl, diarylamine, diaryl ether, diaryl thioether) is metalated indi- rectly via stepwise halogenation and metalation or metalated directly. The metalation reaction generally requires harsh reaction conditions, such as an anhydrous and oxygen - free environment. The formed metalated intermediate B or Ar₁MgBr/ Ar₁Li is then coupled with dia- rylketone/fluorenone to form the corresponding alcohol E or F. Finally, the desired target molecule TM1 or TM2 is obtained through a Frie- del− Crafts reaction under the catalytic action of an acid. For the [[FORMULA_1]] - diarylfluorene compound with two identical substituents at the [[FORMULA_2]] po- sition, the compound (TM3) can be prepared in one step [2]. However, the reaction requires a relatively high temperature, and it can only be used to introduce electron - rich aryl groups as substituents at the [[FORMULA_3]] position of fluorene (Scheme 3, route III). The active N–H of diarylamine generally",
+    "render_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "^ { 9 , 9 ^ { \\prime } }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      }
+    ]
+  },
+  {
+    "item_id": "p001-b009",
+    "page_idx": 0,
+    "block_idx": 9,
+    "block_type": "text",
+    "bbox": [
+      302,
+      366,
+      558,
+      407
+    ],
+    "source_text": "diarylamine generally needs protection before treatment with lithium or magnesium agents. Consequently, it is of great importance to develop efficient synthetic methodologies for spirocyclic/cyclic tetraaryl- methanes [10].",
+    "lines": [
+      {
+        "bbox": [
+          305,
+          366,
+          559,
+          378
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "diarylamine generally needs protection before treatment with lithium or",
+            "bbox": [
+              305,
+              366,
+              559,
+              378
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          376,
+          558,
+          388
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "magnesium agents. Consequently, it is of great importance to develop",
+            "bbox": [
+              304,
+              376,
+              558,
+              388
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          386,
+          558,
+          398
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "efficient synthetic methodologies for spirocyclic/cyclic tetraaryl-",
+            "bbox": [
+              304,
+              386,
+              558,
+              398
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          398,
+          361,
+          408
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "methanes [10].",
+            "bbox": [
+              305,
+              398,
+              361,
+              408
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 0,
+        "raw_path": "/pdf_info/0/para_blocks/8",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          366,
+          558,
+          407
+        ],
+        "raw_text_excerpt": "diarylamine generally needs protection before treatment with lithium or magnesium agents. Consequently, it is of great importance to develop efficient synthetic methodologies for spirocyclic/cyclic te"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 363.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "head",
+    "protected_source_text": "diarylamine generally needs protection before treatment with lithium or magnesium agents. Consequently, it is of great importance to develop efficient synthetic methodologies for spirocyclic/cyclic tetraaryl- methanes [10].",
+    "mixed_original_protected_source_text": "diarylamine generally needs protection before treatment with lithium or magnesium agents. Consequently, it is of great importance to develop efficient synthetic methodologies for spirocyclic/cyclic tetraaryl- methanes [10].",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-001-001",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p001-b008",
+      "p001-b009"
+    ],
+    "translation_unit_protected_source_text": "The conventional synthesis of SAMs still relies on complex, multistep synthesis routes and involves Grignard reagents or lithium reagents (Scheme 2) [2,5,9,14]. In general, the starting biaryl compound A (such as biaryl, diarylamine, diaryl ether, diaryl thioether) is metalated indi- rectly via stepwise halogenation and metalation or metalated directly. The metalation reaction generally requires harsh reaction conditions, such as an anhydrous and oxygen - free environment. The formed metalated intermediate B or Ar₁MgBr/ Ar₁Li is then coupled with dia- rylketone/fluorenone to form the corresponding alcohol E or F. Finally, the desired target molecule TM1 or TM2 is obtained through a Frie- del− Crafts reaction under the catalytic action of an acid. For the [[FORMULA_1]] - diarylfluorene compound with two identical substituents at the [[FORMULA_2]] po- sition, the compound (TM3) can be prepared in one step [2]. However, the reaction requires a relatively high temperature, and it can only be used to introduce electron - rich aryl groups as substituents at the [[FORMULA_3]] position of fluorene (Scheme 3, route III). The active N–H of diarylamine generally needs protection before treatment with lithium or magnesium agents. Consequently, it is of great importance to develop efficient synthetic methodologies for spirocyclic/cyclic tetraaryl- methanes [10].",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "^ { 9 , 9 ^ { \\prime } }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      }
+    ],
+    "translation_unit_protected_translated_text": "传统合成SAMs的方法仍依赖于复杂、多步的合成路线，并涉及格氏试剂或锂试剂（方案2）[2,5,9,14]。通常，起始联芳基化合物A（如联芳烃、二芳胺、二芳醚、二芳硫醚）通过逐步卤化与金属化间接金属化，或直接金属化。金属化反应通常需要苛刻的反应条件，例如无水无氧环境。形成的金属化中间体B或Ar₁MgBr/Ar₁Li随后与二芳基酮/芴酮偶联，生成相应的醇E或F。最后，在酸催化下通过傅-克反应得到目标分子TM1或TM2。对于[[FORMULA_1]]- 在[[FORMULA_2]]位具有两个相同取代基的二芳基芴化合物，该化合物（TM3）可一步制备[2]。然而，该反应需要较高温度，且仅能用于在芴的[[FORMULA_3]]位引入富电子芳基作为取代基（方案3，路线III）。二芳胺的活性N–H在与锂或镁试剂处理前通常需要保护。因此，开发螺环/环状四芳基甲烷的高效合成方法具有重要意义[10]。",
+    "translation_unit_translated_text": "传统合成SAMs的方法仍依赖于复杂、多步的合成路线，并涉及格氏试剂或锂试剂（方案2）[2,5,9,14]。通常，起始联芳基化合物A（如联芳烃、二芳胺、二芳醚、二芳硫醚）通过逐步卤化与金属化间接金属化，或直接金属化。金属化反应通常需要苛刻的反应条件，例如无水无氧环境。形成的金属化中间体B或Ar₁MgBr/Ar₁Li随后与二芳基酮/芴酮偶联，生成相应的醇E或F。最后，在酸催化下通过傅-克反应得到目标分子TM1或TM2。对于^ { 9 , 9 ^ { \\prime } }- 在\\mathrm { C _ { 9 } }位具有两个相同取代基的二芳基芴化合物，该化合物（TM3）可一步制备[2]。然而，该反应需要较高温度，且仅能用于在芴的\\mathrm { C _ { 9 } }位引入富电子芳基作为取代基（方案3，路线III）。二芳胺的活性N–H在与锂或镁试剂处理前通常需要保护。因此，开发螺环/环状四芳基甲烷的高效合成方法具有重要意义[10]。",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "cg-001-001",
+    "continuation_prev_text": "The conventional synthesis of SAMs still relies on complex, multistep synthesis routes and involves Grignard reagents or lithium reagents (Scheme 2) [2,5,9,14]. In general, the starting biaryl compound A (such as biaryl, diarylamine, diaryl ether, diaryl thioether) is metalated indi- rectly via stepwise halogenation and metalation or metalated directly. The metalation reaction generally requires harsh reaction conditions, such as an anhydrous and oxygen - free environment. The formed metalated intermediate B or Ar₁MgBr/ Ar₁Li is then coupled with dia- rylketone/fluorenone to form the corresponding alcohol E or F. Finally, the desired target molecule TM1 or TM2 is obtained through a Frie- del− Crafts reaction under the catalytic action of an acid. For the [[FORMULA_1]] - diarylfluorene compound with two identical substituents at the [[FORMULA_2]] po- sition, the compound (TM3) can be prepared in one step [2]. However, the reaction requires a relatively high temperature, and it can only be used to introduce electron - rich aryl groups as substituents at the [[FORMULA_3]] position of fluorene (Scheme 3, route III). The active N–H of",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "The conventional synthesis of SAMs still relies on complex, multistep synthesis routes and involves Grignard reagents or lithium reagents (Scheme 2) [2,5,9,14]. In general, the starting biaryl compound A (such as biaryl, diarylamine, diaryl ether, diaryl thioether) is metalated indi- rectly via stepwise halogenation and metalation or metalated directly. The metalation reaction generally requires harsh reaction conditions, such as an anhydrous and oxygen - free environment. The formed metalated intermediate B or Ar₁MgBr/ Ar₁Li is then coupled with dia- rylketone/fluorenone to form the corresponding alcohol E or F. Finally, the desired target molecule TM1 or TM2 is obtained through a Frie- del− Crafts reaction under the catalytic action of an acid. For the [[FORMULA_1]] - diarylfluorene compound with two identical substituents at the [[FORMULA_2]] po- sition, the compound (TM3) can be prepared in one step [2]. However, the reaction requires a relatively high temperature, and it can only be used to introduce electron - rich aryl groups as substituents at the [[FORMULA_3]] position of fluorene (Scheme 3, route III). The active N–H of diarylamine generally needs protection before treatment with lithium or magnesium agents. Consequently, it is of great importance to develop efficient synthetic methodologies for spirocyclic/cyclic tetraaryl- methanes [10].",
+    "group_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "^ { 9 , 9 ^ { \\prime } }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      }
+    ],
+    "group_protected_translated_text": "传统合成SAMs的方法仍依赖于复杂、多步的合成路线，并涉及格氏试剂或锂试剂（方案2）[2,5,9,14]。通常，起始联芳基化合物A（如联芳烃、二芳胺、二芳醚、二芳硫醚）通过逐步卤化与金属化间接金属化，或直接金属化。金属化反应通常需要苛刻的反应条件，例如无水无氧环境。形成的金属化中间体B或Ar₁MgBr/Ar₁Li随后与二芳基酮/芴酮偶联，生成相应的醇E或F。最后，在酸催化下通过傅-克反应得到目标分子TM1或TM2。对于[[FORMULA_1]]- 在[[FORMULA_2]]位具有两个相同取代基的二芳基芴化合物，该化合物（TM3）可一步制备[2]。然而，该反应需要较高温度，且仅能用于在芴的[[FORMULA_3]]位引入富电子芳基作为取代基（方案3，路线III）。二芳胺的活性N–H在与锂或镁试剂处理前通常需要保护。因此，开发螺环/环状四芳基甲烷的高效合成方法具有重要意义[10]。",
+    "group_translated_text": "传统合成SAMs的方法仍依赖于复杂、多步的合成路线，并涉及格氏试剂或锂试剂（方案2）[2,5,9,14]。通常，起始联芳基化合物A（如联芳烃、二芳胺、二芳醚、二芳硫醚）通过逐步卤化与金属化间接金属化，或直接金属化。金属化反应通常需要苛刻的反应条件，例如无水无氧环境。形成的金属化中间体B或Ar₁MgBr/Ar₁Li随后与二芳基酮/芴酮偶联，生成相应的醇E或F。最后，在酸催化下通过傅-克反应得到目标分子TM1或TM2。对于^ { 9 , 9 ^ { \\prime } }- 在\\mathrm { C _ { 9 } }位具有两个相同取代基的二芳基芴化合物，该化合物（TM3）可一步制备[2]。然而，该反应需要较高温度，且仅能用于在芴的\\mathrm { C _ { 9 } }位引入富电子芳基作为取代基（方案3，路线III）。二芳胺的活性N–H在与锂或镁试剂处理前通常需要保护。因此，开发螺环/环状四芳基甲烷的高效合成方法具有重要意义[10]。",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "二芳胺的活性N–H在与锂或镁试剂处理前通常需要保护。因此，开发螺环/环状四芳基甲烷的高效合成方法具有重要意义[10]。",
+    "render_source_text": "needs protection before treatment with lithium or magnesium agents. Consequently, it is of great importance to develop efficient synthetic methodologies for spirocyclic/cyclic tetraaryl- methanes [10].",
+    "render_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "^ { 9 , 9 ^ { \\prime } }"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "\\mathrm { C _ { 9 } }"
+      }
+    ]
+  },
+  {
+    "item_id": "p001-b010",
+    "page_idx": 0,
+    "block_idx": 10,
+    "block_type": "text",
+    "bbox": [
+      302,
+      407,
+      558,
+      449
+    ],
+    "source_text": "In 2006, Huang and colleagues pioneered a simple yet highly effec- tive one – pot synthesis method for spiro(fluorene - 9,9′-xanthene) (SFX) [4]. This approach utilized fluorenone and phenol as reactants in the presence of \\mathrm { M e S O _ { 3 } H } (catalyst).",
+    "lines": [
+      {
+        "bbox": [
+          316,
+          408,
+          558,
+          418
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "In 2006, Huang and colleagues pioneered a simple yet highly effec-",
+            "bbox": [
+              316,
+              408,
+              558,
+              418
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          418,
+          558,
+          429
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "tive one – pot synthesis method for spiro(fluorene - 9,9′-xanthene) (SFX)",
+            "bbox": [
+              305,
+              418,
+              558,
+              429
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          429,
+          559,
+          440
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[4]. This approach utilized fluorenone and phenol as reactants in the",
+            "bbox": [
+              305,
+              429,
+              559,
+              440
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          440,
+          417,
+          450
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "presence of",
+            "bbox": [
+              304,
+              440,
+              347,
+              450
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\mathrm { M e S O _ { 3 } H }",
+            "bbox": [
+              348,
+              440,
+              379,
+              449
+            ]
+          },
+          {
+            "type": "text",
+            "content": "(catalyst).",
+            "bbox": [
+              380,
+              440,
+              417,
+              450
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 0,
+        "raw_path": "/pdf_info/0/para_blocks/9",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          407,
+          558,
+          449
+        ],
+        "raw_text_excerpt": "In 2006, Huang and colleagues pioneered a simple yet highly effec- tive one – pot synthesis method for spiro(fluorene - 9,9′-xanthene) (SFX) [4]. This approach utilized fluorenone and phenol as reacta"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 363.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "In 2006, Huang and colleagues pioneered a simple yet highly effec- tive one – pot synthesis method for spiro(fluorene - 9,9′-xanthene) (SFX) [4]. This approach utilized fluorenone and phenol as reactants in the presence of [[FORMULA_1]] (catalyst).",
+    "mixed_original_protected_source_text": "In 2006, Huang and colleagues pioneered a simple yet highly effec- tive one – pot synthesis method for spiro(fluorene - 9,9′-xanthene) (SFX) [4]. This approach utilized fluorenone and phenol as reactants in the presence of [[FORMULA_1]] (catalyst).",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { M e S O _ { 3 } H }"
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b010",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b010"
+    ],
+    "translation_unit_protected_source_text": "In 2006, Huang and colleagues pioneered a simple yet highly effec- tive one – pot synthesis method for spiro(fluorene - 9,9′-xanthene) (SFX) [4]. This approach utilized fluorenone and phenol as reactants in the presence of [[FORMULA_1]] (catalyst).",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { M e S O _ { 3 } H }"
+      }
+    ],
+    "translation_unit_protected_translated_text": "2006年，黄及其同事开创了一种简单而高效的一锅法合成螺(芴-9,9′-呫吨)(SFX)的方法[4]。该方法以芴酮和苯酚为反应物，在[[FORMULA_1]]（催化剂）存在下进行。",
+    "translation_unit_translated_text": "2006年，黄及其同事开创了一种简单而高效的一锅法合成螺(芴-9,9′-呫吨)(SFX)的方法[4]。该方法以芴酮和苯酚为反应物，在\\mathrm { M e S O _ { 3 } H }（催化剂）存在下进行。",
+    "protected_translated_text": "2006年，黄及其同事开创了一种简单而高效的一锅法合成螺(芴-9,9′-呫吨)(SFX)的方法[4]。该方法以芴酮和苯酚为反应物，在[[FORMULA_1]]（催化剂）存在下进行。",
+    "translated_text": "2006年，黄及其同事开创了一种简单而高效的一锅法合成螺(芴-9,9′-呫吨)(SFX)的方法[4]。该方法以芴酮和苯酚为反应物，在\\mathrm { M e S O _ { 3 } H }（催化剂）存在下进行。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "2006年，黄及其同事开创了一种简单而高效的一锅法合成螺(芴-9,9′-呫吨)(SFX)的方法[4]。该方法以芴酮和苯酚为反应物，在[[FORMULA_1]]（催化剂）存在下进行。",
+    "render_source_text": "In 2006, Huang and colleagues pioneered a simple yet highly effec- tive one – pot synthesis method for spiro(fluorene - 9,9′-xanthene) (SFX) [4]. This approach utilized fluorenone and phenol as reactants in the presence of [[FORMULA_1]] (catalyst).",
+    "render_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { M e S O _ { 3 } H }"
+      }
+    ]
+  },
+  {
+    "item_id": "p001-b011",
+    "page_idx": 0,
+    "block_idx": 11,
+    "block_type": "text",
+    "bbox": [
+      302,
+      449,
+      558,
+      564
+    ],
+    "source_text": "M. Bhanuchandra et al. employed diarylsulfone and diarylmethane as starting materials and used bis(trimethylsilyl)potassium amide as a catalyst to synthesize fluorene - based spirocyclic tetraarylmethanes in a single step [1]. Wang and Yang proposed a related synthesis strategy for spiro - acridans from fluorenones, with p - TsOH serving as the activator [9]. In 2024, Hirano et al. reported a Tf₂O - mediated direct dehydrative coupling of biaryls and fluorenones [5]. In summary, each of the aforementioned one - pot methods has the disadvantage of a narrow substrate scope, along with other limitations, such as the need for high - temperature reactions [4,9], the requirement for specific [1] or large quantities of catalysts [5], or the occurrence of low yields [3].",
+    "lines": [
+      {
+        "bbox": [
+          315,
+          448,
+          558,
+          461
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "M. Bhanuchandra et al. employed diarylsulfone and diarylmethane",
+            "bbox": [
+              315,
+              448,
+              558,
+              461
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          460,
+          559,
+          471
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "as starting materials and used bis(trimethylsilyl)potassium amide as a",
+            "bbox": [
+              304,
+              460,
+              559,
+              471
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          471,
+          558,
+          481
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "catalyst to synthesize fluorene - based spirocyclic tetraarylmethanes in a",
+            "bbox": [
+              305,
+              471,
+              558,
+              481
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          481,
+          558,
+          491
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "single step [1]. Wang and Yang proposed a related synthesis strategy for",
+            "bbox": [
+              305,
+              481,
+              558,
+              491
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          492,
+          558,
+          502
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "spiro - acridans from fluorenones, with",
+            "bbox": [
+              305,
+              492,
+              442,
+              502
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "p",
+            "bbox": [
+              442,
+              493,
+              449,
+              501
+            ]
+          },
+          {
+            "type": "text",
+            "content": "- TsOH serving as the activator",
+            "bbox": [
+              449,
+              492,
+              558,
+              502
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          502,
+          559,
+          513
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[9]. In 2024, Hirano et al. reported a Tf₂O - mediated direct dehydrative",
+            "bbox": [
+              305,
+              502,
+              559,
+              513
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          513,
+          558,
+          523
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "coupling of biaryls and fluorenones [5]. In summary, each of the",
+            "bbox": [
+              305,
+              513,
+              558,
+              523
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          524,
+          559,
+          533
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "aforementioned one - pot methods has the disadvantage of a narrow",
+            "bbox": [
+              305,
+              524,
+              559,
+              533
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          534,
+          558,
+          544
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "substrate scope, along with other limitations, such as the need for high -",
+            "bbox": [
+              305,
+              534,
+              558,
+              544
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          543,
+          558,
+          555
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "temperature reactions [4,9], the requirement for specific [1] or large",
+            "bbox": [
+              304,
+              543,
+              558,
+              555
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          554,
+          528,
+          566
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "quantities of catalysts [5], or the occurrence of low yields [3].",
+            "bbox": [
+              304,
+              554,
+              528,
+              566
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 0,
+        "raw_path": "/pdf_info/0/para_blocks/10",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          449,
+          558,
+          564
+        ],
+        "raw_text_excerpt": "M. Bhanuchandra et al. employed diarylsulfone and diarylmethane as starting materials and used bis(trimethylsilyl)potassium amide as a catalyst to synthesize fluorene - based spirocyclic tetraarylmeth"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 363.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "M. Bhanuchandra et al. employed diarylsulfone and diarylmethane as starting materials and used bis(trimethylsilyl)potassium amide as a catalyst to synthesize fluorene - based spirocyclic tetraarylmethanes in a single step [1]. Wang and Yang proposed a related synthesis strategy for spiro - acridans from fluorenones, with [[FORMULA_1]] - TsOH serving as the activator [9]. In 2024, Hirano et al. reported a Tf₂O - mediated direct dehydrative coupling of biaryls and fluorenones [5]. In summary, each of the aforementioned one - pot methods has the disadvantage of a narrow substrate scope, along with other limitations, such as the need for high - temperature reactions [4,9], the requirement for specific [1] or large quantities of catalysts [5], or the occurrence of low yields [3].",
+    "mixed_original_protected_source_text": "M. Bhanuchandra et al. employed diarylsulfone and diarylmethane as starting materials and used bis(trimethylsilyl)potassium amide as a catalyst to synthesize fluorene - based spirocyclic tetraarylmethanes in a single step [1]. Wang and Yang proposed a related synthesis strategy for spiro - acridans from fluorenones, with [[FORMULA_1]] - TsOH serving as the activator [9]. In 2024, Hirano et al. reported a Tf₂O - mediated direct dehydrative coupling of biaryls and fluorenones [5]. In summary, each of the aforementioned one - pot methods has the disadvantage of a narrow substrate scope, along with other limitations, such as the need for high - temperature reactions [4,9], the requirement for specific [1] or large quantities of catalysts [5], or the occurrence of low yields [3].",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "p"
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b011",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b011"
+    ],
+    "translation_unit_protected_source_text": "M. Bhanuchandra et al. employed diarylsulfone and diarylmethane as starting materials and used bis(trimethylsilyl)potassium amide as a catalyst to synthesize fluorene - based spirocyclic tetraarylmethanes in a single step [1]. Wang and Yang proposed a related synthesis strategy for spiro - acridans from fluorenones, with [[FORMULA_1]] - TsOH serving as the activator [9]. In 2024, Hirano et al. reported a Tf₂O - mediated direct dehydrative coupling of biaryls and fluorenones [5]. In summary, each of the aforementioned one - pot methods has the disadvantage of a narrow substrate scope, along with other limitations, such as the need for high - temperature reactions [4,9], the requirement for specific [1] or large quantities of catalysts [5], or the occurrence of low yields [3].",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "p"
+      }
+    ],
+    "translation_unit_protected_translated_text": "M. Bhanuchandra等人以二芳基砜和二芳基甲烷为起始原料，采用双(三甲基硅基)氨基钾作为催化剂，一步合成了基于芴的螺环四芳基甲烷[1]。Wang和Yang提出了一种相关的螺吖啶合成策略，以芴酮为原料，[[FORMULA_1]]对甲苯磺酸作为活化剂[9]。2024年，Hirano等人报道了Tf₂O介导的二芳基化合物与芴酮的直接脱水偶联反应[5]。总之，上述每种一锅法都存在底物范围狭窄的缺点，以及其他局限性，例如需要高温反应[4,9]、需要使用特定的[1]或大量催化剂[5]，或产率较低[3]。",
+    "translation_unit_translated_text": "M. Bhanuchandra等人以二芳基砜和二芳基甲烷为起始原料，采用双(三甲基硅基)氨基钾作为催化剂，一步合成了基于芴的螺环四芳基甲烷[1]。Wang和Yang提出了一种相关的螺吖啶合成策略，以芴酮为原料，p对甲苯磺酸作为活化剂[9]。2024年，Hirano等人报道了Tf₂O介导的二芳基化合物与芴酮的直接脱水偶联反应[5]。总之，上述每种一锅法都存在底物范围狭窄的缺点，以及其他局限性，例如需要高温反应[4,9]、需要使用特定的[1]或大量催化剂[5]，或产率较低[3]。",
+    "protected_translated_text": "M. Bhanuchandra等人以二芳基砜和二芳基甲烷为起始原料，采用双(三甲基硅基)氨基钾作为催化剂，一步合成了基于芴的螺环四芳基甲烷[1]。Wang和Yang提出了一种相关的螺吖啶合成策略，以芴酮为原料，[[FORMULA_1]]对甲苯磺酸作为活化剂[9]。2024年，Hirano等人报道了Tf₂O介导的二芳基化合物与芴酮的直接脱水偶联反应[5]。总之，上述每种一锅法都存在底物范围狭窄的缺点，以及其他局限性，例如需要高温反应[4,9]、需要使用特定的[1]或大量催化剂[5]，或产率较低[3]。",
+    "translated_text": "M. Bhanuchandra等人以二芳基砜和二芳基甲烷为起始原料，采用双(三甲基硅基)氨基钾作为催化剂，一步合成了基于芴的螺环四芳基甲烷[1]。Wang和Yang提出了一种相关的螺吖啶合成策略，以芴酮为原料，p对甲苯磺酸作为活化剂[9]。2024年，Hirano等人报道了Tf₂O介导的二芳基化合物与芴酮的直接脱水偶联反应[5]。总之，上述每种一锅法都存在底物范围狭窄的缺点，以及其他局限性，例如需要高温反应[4,9]、需要使用特定的[1]或大量催化剂[5]，或产率较低[3]。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "M. Bhanuchandra等人以二芳基砜和二芳基甲烷为起始原料，采用双(三甲基硅基)氨基钾作为催化剂，一步合成了基于芴的螺环四芳基甲烷[1]。Wang和Yang提出了一种相关的螺吖啶合成策略，以芴酮为原料，[[FORMULA_1]]对甲苯磺酸作为活化剂[9]。2024年，Hirano等人报道了Tf₂O介导的二芳基化合物与芴酮的直接脱水偶联反应[5]。总之，上述每种一锅法都存在底物范围狭窄的缺点，以及其他局限性，例如需要高温反应[4,9]、需要使用特定的[1]或大量催化剂[5]，或产率较低[3]。",
+    "render_source_text": "M. Bhanuchandra et al. employed diarylsulfone and diarylmethane as starting materials and used bis(trimethylsilyl)potassium amide as a catalyst to synthesize fluorene - based spirocyclic tetraarylmethanes in a single step [1]. Wang and Yang proposed a related synthesis strategy for spiro - acridans from fluorenones, with [[FORMULA_1]] - TsOH serving as the activator [9]. In 2024, Hirano et al. reported a Tf₂O - mediated direct dehydrative coupling of biaryls and fluorenones [5]. In summary, each of the aforementioned one - pot methods has the disadvantage of a narrow substrate scope, along with other limitations, such as the need for high - temperature reactions [4,9], the requirement for specific [1] or large quantities of catalysts [5], or the occurrence of low yields [3].",
+    "render_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "p"
+      }
+    ]
+  },
+  {
+    "item_id": "p001-b012",
+    "page_idx": 0,
+    "block_idx": 12,
+    "block_type": "text",
+    "bbox": [
+      302,
+      564,
+      558,
+      638
+    ],
+    "source_text": "Triflimide (HNTf₂), also known as bis(trifluoromethanesulfonyl) imide, is a commercially accessible and highly versatile super Brønsted acid [15]. Its exceptional acidity and excellent compatibility with organic solvents have made it a valuable catalyst, promoter, and addi- tive in various organic reactions [16–20]. Unlike TfOH (a corrosive, fuming liquid), triflimide is much more user-friendly. A pioneering example of using triflimide to catalyze a Friedel-Crafts alkylation",
+    "lines": [
+      {
+        "bbox": [
+          316,
+          564,
+          558,
+          575
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Triflimide (HNTf₂), also known as bis(trifluoromethanesulfonyl)",
+            "bbox": [
+              316,
+              564,
+              558,
+              575
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          575,
+          558,
+          586
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "imide, is a commercially accessible and highly versatile super Brønsted",
+            "bbox": [
+              305,
+              575,
+              558,
+              586
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          586,
+          558,
+          596
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "acid [15]. Its exceptional acidity and excellent compatibility with",
+            "bbox": [
+              305,
+              586,
+              558,
+              596
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          596,
+          558,
+          606
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "organic solvents have made it a valuable catalyst, promoter, and addi-",
+            "bbox": [
+              304,
+              596,
+              558,
+              606
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          605,
+          558,
+          617
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "tive in various organic reactions [16–20]. Unlike TfOH (a corrosive,",
+            "bbox": [
+              304,
+              605,
+              558,
+              617
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          616,
+          559,
+          629
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "fuming liquid), triflimide is much more user-friendly. A pioneering",
+            "bbox": [
+              304,
+              616,
+              559,
+              629
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          627,
+          558,
+          638
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "example of using triflimide to catalyze a Friedel-Crafts alkylation",
+            "bbox": [
+              305,
+              627,
+              558,
+              638
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 0,
+        "raw_path": "/pdf_info/0/para_blocks/11",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          564,
+          558,
+          638
+        ],
+        "raw_text_excerpt": "Triflimide (HNTf₂), also known as bis(trifluoromethanesulfonyl) imide, is a commercially accessible and highly versatile super Brønsted acid [15]. Its exceptional acidity and excellent compatibility w"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 363.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "tail",
+    "protected_source_text": "Triflimide (HNTf₂), also known as bis(trifluoromethanesulfonyl) imide, is a commercially accessible and highly versatile super Brønsted acid [15]. Its exceptional acidity and excellent compatibility with organic solvents have made it a valuable catalyst, promoter, and addi- tive in various organic reactions [16–20]. Unlike TfOH (a corrosive, fuming liquid), triflimide is much more user-friendly. A pioneering example of using triflimide to catalyze a Friedel-Crafts alkylation",
+    "mixed_original_protected_source_text": "Triflimide (HNTf₂), also known as bis(trifluoromethanesulfonyl) imide, is a commercially accessible and highly versatile super Brønsted acid [15]. Its exceptional acidity and excellent compatibility with organic solvents have made it a valuable catalyst, promoter, and addi- tive in various organic reactions [16–20]. Unlike TfOH (a corrosive, fuming liquid), triflimide is much more user-friendly. A pioneering example of using triflimide to catalyze a Friedel-Crafts alkylation",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-001-002",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p001-b012",
+      "p002-b009"
+    ],
+    "translation_unit_protected_source_text": "Triflimide (HNTf₂), also known as bis(trifluoromethanesulfonyl) imide, is a commercially accessible and highly versatile super Brønsted acid [15]. Its exceptional acidity and excellent compatibility with organic solvents have made it a valuable catalyst, promoter, and addi- tive in various organic reactions [16–20]. Unlike TfOH (a corrosive, fuming liquid), triflimide is much more user-friendly. A pioneering example of using triflimide to catalyze a Friedel-Crafts alkylation reaction was first demonstrated in 1996 by Yamamoto and co-workers [21]. Subsequently, a series of Friedel- Crafts and related reactions catalyzed by triflimide have been reported [22–25]. However, no syn- thetic reaction of spirocyclic compounds catalyzed by triflimide has been investigated.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "三氟甲磺酰亚胺（HNTf₂），又称双(三氟甲磺酰)亚胺，是一种市售且用途广泛的超强布朗斯特酸[15]。其极高的酸性和与有机溶剂的良好相容性，使其成为多种有机反应中有价值的催化剂、促进剂和添加剂[16–20]。与TfOH（一种腐蚀性发烟液体）不同，三氟甲磺酰亚胺的使用更为便捷。1996年，Yamamoto及其同事首次报道了使用三氟甲磺酰亚胺催化Friedel-Crafts烷基化反应的开创性实例[21]。随后，一系列由三氟甲磺酰亚胺催化的Friedel-Crafts及相关反应相继被报道[22–25]。然而，目前尚未有关于三氟甲磺酰亚胺催化螺环化合物合成反应的研究。",
+    "translation_unit_translated_text": "三氟甲磺酰亚胺（HNTf₂），又称双(三氟甲磺酰)亚胺，是一种市售且用途广泛的超强布朗斯特酸[15]。其极高的酸性和与有机溶剂的良好相容性，使其成为多种有机反应中有价值的催化剂、促进剂和添加剂[16–20]。与TfOH（一种腐蚀性发烟液体）不同，三氟甲磺酰亚胺的使用更为便捷。1996年，Yamamoto及其同事首次报道了使用三氟甲磺酰亚胺催化Friedel-Crafts烷基化反应的开创性实例[21]。随后，一系列由三氟甲磺酰亚胺催化的Friedel-Crafts及相关反应相继被报道[22–25]。然而，目前尚未有关于三氟甲磺酰亚胺催化螺环化合物合成反应的研究。",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "cg-001-002",
+    "continuation_prev_text": "",
+    "continuation_next_text": "reaction was first demonstrated in 1996 by Yamamoto and co-workers [21]. Subsequently, a series of Friedel- Crafts and related reactions catalyzed by triflimide have been reported [22–25]. However, no syn- thetic reaction of spirocyclic compounds catalyzed by triflimide has been investigated.",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Triflimide (HNTf₂), also known as bis(trifluoromethanesulfonyl) imide, is a commercially accessible and highly versatile super Brønsted acid [15]. Its exceptional acidity and excellent compatibility with organic solvents have made it a valuable catalyst, promoter, and addi- tive in various organic reactions [16–20]. Unlike TfOH (a corrosive, fuming liquid), triflimide is much more user-friendly. A pioneering example of using triflimide to catalyze a Friedel-Crafts alkylation reaction was first demonstrated in 1996 by Yamamoto and co-workers [21]. Subsequently, a series of Friedel- Crafts and related reactions catalyzed by triflimide have been reported [22–25]. However, no syn- thetic reaction of spirocyclic compounds catalyzed by triflimide has been investigated.",
+    "group_formula_map": [],
+    "group_protected_translated_text": "三氟甲磺酰亚胺（HNTf₂），又称双(三氟甲磺酰)亚胺，是一种市售且用途广泛的超强布朗斯特酸[15]。其极高的酸性和与有机溶剂的良好相容性，使其成为多种有机反应中有价值的催化剂、促进剂和添加剂[16–20]。与TfOH（一种腐蚀性发烟液体）不同，三氟甲磺酰亚胺的使用更为便捷。1996年，Yamamoto及其同事首次报道了使用三氟甲磺酰亚胺催化Friedel-Crafts烷基化反应的开创性实例[21]。随后，一系列由三氟甲磺酰亚胺催化的Friedel-Crafts及相关反应相继被报道[22–25]。然而，目前尚未有关于三氟甲磺酰亚胺催化螺环化合物合成反应的研究。",
+    "group_translated_text": "三氟甲磺酰亚胺（HNTf₂），又称双(三氟甲磺酰)亚胺，是一种市售且用途广泛的超强布朗斯特酸[15]。其极高的酸性和与有机溶剂的良好相容性，使其成为多种有机反应中有价值的催化剂、促进剂和添加剂[16–20]。与TfOH（一种腐蚀性发烟液体）不同，三氟甲磺酰亚胺的使用更为便捷。1996年，Yamamoto及其同事首次报道了使用三氟甲磺酰亚胺催化Friedel-Crafts烷基化反应的开创性实例[21]。随后，一系列由三氟甲磺酰亚胺催化的Friedel-Crafts及相关反应相继被报道[22–25]。然而，目前尚未有关于三氟甲磺酰亚胺催化螺环化合物合成反应的研究。",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "三氟甲磺酰亚胺（HNTf₂），又称双(三氟甲磺酰)亚胺，是一种市售且用途广泛的超强布朗斯特酸[15]。其极高的酸性和与有机溶剂的良好相容性，使其成为多种有机反应中有价值的催化剂、促进剂和添加剂[16–20]。与TfOH（一种腐蚀性发烟液体）不同，三氟甲磺酰亚胺的使用更为便捷。1996年，Yamamoto及其同事首次报道了使用三氟甲磺酰亚胺催化",
+    "render_source_text": "Triflimide (HNTf₂), also known as bis(trifluoromethanesulfonyl) imide, is a commercially accessible and highly versatile super Brønsted acid [15]. Its exceptional acidity and excellent compatibility with organic solvents have made it a valuable catalyst, promoter, and addi- tive in various organic reactions [16–20]. Unlike TfOH (a corrosive, fuming liquid), triflimide is much more user-friendly. A pioneering example of using triflimide to catalyze a Friedel-Crafts alkylation",
+    "render_formula_map": []
+  }
+]

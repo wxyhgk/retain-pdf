@@ -1,0 +1,14 @@
+FROM nginx:1.27-alpine
+
+RUN apk add --no-cache bash gettext
+
+COPY frontend/index.html /usr/share/nginx/html/index.html
+COPY frontend/app.js /usr/share/nginx/html/app.js
+COPY frontend/styles.css /usr/share/nginx/html/styles.css
+COPY frontend/src /usr/share/nginx/html/src
+COPY docker/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY docker/entrypoint-web.sh /docker-entrypoint.d/99-runtime-config.sh
+
+RUN chmod +x /docker-entrypoint.d/99-runtime-config.sh
+
+EXPOSE 80

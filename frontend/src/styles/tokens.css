@@ -1,0 +1,15 @@
+:root {
+  --bg: #f5f1e8;
+  --paper: #fffdf8;
+  --ink: #1d1d1b;
+  --muted: #70685b;
+  --line: #d9d0c2;
+  --accent: #1c5d52;
+  --accent-weak: #d7ebe6;
+  --danger: #a12626;
+  --danger-weak: #f8e1e1;
+  --ok: #1b6f3a;
+  --ok-weak: #dff3e6;
+  --warn: #8a5a00;
+  --warn-weak: #f8e8c8;
+}

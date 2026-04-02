@@ -1,0 +1,49 @@
+<dialog id="desktop-setup-dialog" class="desktop-dialog">
+  <form method="dialog" class="desktop-shell">
+    <div class="desktop-head">
+      <h2>首次配置</h2>
+    </div>
+    <div class="desktop-body">
+      <p class="muted">首次使用前，请先填写 MinerU Token 和大模型 API Key。</p>
+      <div class="grid two">
+        <label>
+          <span>MinerU Token</span>
+          <input id="setup-mineru-token" type="password" autocomplete="off" />
+        </label>
+        <label>
+          <span>Model API Key</span>
+          <input id="setup-model-api-key" type="password" autocomplete="off" />
+        </label>
+      </div>
+      <div id="desktop-setup-error" class="upload-status hidden"></div>
+      <div class="actions">
+        <button id="desktop-setup-save-btn" type="button">保存并启动</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="desktop-settings-dialog" class="desktop-dialog">
+  <form method="dialog" class="desktop-shell">
+    <div class="desktop-head">
+      <h2>设置</h2>
+      <button id="desktop-settings-close-btn" type="submit" class="secondary">关闭</button>
+    </div>
+    <div class="desktop-body">
+      <div class="grid two">
+        <label>
+          <span>MinerU Token</span>
+          <input id="settings-mineru-token" type="password" autocomplete="off" />
+        </label>
+        <label>
+          <span>Model API Key</span>
+          <input id="settings-model-api-key" type="password" autocomplete="off" />
+        </label>
+      </div>
+      <div id="desktop-settings-error" class="upload-status hidden"></div>
+      <div class="actions">
+        <button id="desktop-settings-save-btn" type="button">保存设置</button>
+      </div>
+    </div>
+  </form>
+</dialog>

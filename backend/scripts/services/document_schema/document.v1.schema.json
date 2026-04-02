@@ -1,0 +1,287 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://retainpdf.local/schemas/document.v1.schema.json",
+  "title": "normalized_document_v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "schema_version",
+    "document_id",
+    "source",
+    "page_count",
+    "pages",
+    "derived",
+    "markers"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "schema": {
+      "const": "normalized_document_v1"
+    },
+    "schema_version": {
+      "const": "1.0"
+    },
+    "document_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "object"
+    },
+    "page_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/page"
+      }
+    },
+    "derived": {
+      "type": "object"
+    },
+    "markers": {
+      "type": "object",
+      "properties": {
+        "reference_start": {
+          "$ref": "#/$defs/reference_start"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "bbox": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "number"
+      }
+    },
+    "derived": {
+      "type": "object",
+      "required": [
+        "role",
+        "by",
+        "confidence"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "role": {
+          "type": "string"
+        },
+        "by": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      }
+    },
+    "segment": {
+      "type": "object",
+      "required": [
+        "type",
+        "raw_type",
+        "text",
+        "bbox"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "text",
+            "formula"
+          ]
+        },
+        "raw_type": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "bbox": {
+          "$ref": "#/$defs/bbox"
+        },
+        "score": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "line": {
+      "type": "object",
+      "required": [
+        "bbox",
+        "spans"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "bbox": {
+          "$ref": "#/$defs/bbox"
+        },
+        "spans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/segment"
+          }
+        }
+      }
+    },
+    "block": {
+      "type": "object",
+      "required": [
+        "block_id",
+        "page_index",
+        "order",
+        "type",
+        "sub_type",
+        "bbox",
+        "text",
+        "lines",
+        "segments",
+        "tags",
+        "derived",
+        "metadata",
+        "source"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "block_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "page_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "text",
+            "formula",
+            "image",
+            "table",
+            "code",
+            "unknown"
+          ]
+        },
+        "sub_type": {
+          "type": "string"
+        },
+        "bbox": {
+          "$ref": "#/$defs/bbox"
+        },
+        "text": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/segment"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "derived": {
+          "$ref": "#/$defs/derived"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "source": {
+          "type": "object",
+          "required": [
+            "provider"
+          ],
+          "additionalProperties": true,
+          "properties": {
+            "provider": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "page": {
+      "type": "object",
+      "required": [
+        "page_index",
+        "width",
+        "height",
+        "unit",
+        "blocks"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "page_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0
+        },
+        "unit": {
+          "type": "string",
+          "const": "pt"
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/block"
+          }
+        }
+      }
+    },
+    "reference_start": {
+      "type": "object",
+      "required": [
+        "page_index",
+        "block_id",
+        "order"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "page_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "block_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

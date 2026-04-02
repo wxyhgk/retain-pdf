@@ -1,0 +1,15 @@
+export const API_PREFIX = "/api/v1";
+export const DEFAULT_FILE_LABEL = "点击选择文件或拖到这里";
+export const DEFAULT_MODE = "sci";
+export const DEFAULT_MODEL = "deepseek-chat";
+export const DEFAULT_BASE_URL = "https://api.deepseek.com/v1";
+export const DEFAULT_LANGUAGE = "ch";
+export const DEFAULT_RULE_PROFILE = "general_sci";
+export const DEFAULT_RENDER_MODE = "auto";
+export const DEFAULT_MODEL_VERSION = "vlm";
+export const DEFAULT_WORKERS = 100;
+export const DEFAULT_BATCH_SIZE = 1;
+export const DEFAULT_CLASSIFY_BATCH_SIZE = 12;
+export const DEFAULT_COMPILE_WORKERS = 8;
+export const FRONT_MAX_BYTES = 200 * 1024 * 1024;
+export const BROWSER_CONFIG_STORAGE_KEY = "retainpdf.browser.config.v1";

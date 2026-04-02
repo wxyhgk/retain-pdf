@@ -1,0 +1,27 @@
+<svg width="600" height="230" viewBox="0 0 600 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PaddleOCR JSON split flow diagram">
+  <defs>
+    <linearGradient id="grad" x1="0%" x2="100%" y1="0%" y2="0%">
+      <stop offset="0%" stop-color="#266dd3"/>
+      <stop offset="100%" stop-color="#36c0a4"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="230" rx="18" fill="#fdfdfd" stroke="#cccccc" stroke-width="2"/>
+  <text x="30" y="40" font-family="JetBrains Mono" font-size="20" fill="#1a1a1a">PaddleOCR JSON Split</text>
+  <line x1="40" y1="70" x2="560" y2="70" stroke="url(#grad)" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="140" cy="110" r="30" fill="#266dd3" opacity="0.9"/>
+  <circle cx="300" cy="110" r="30" fill="#36c0a4" opacity="0.9"/>
+  <circle cx="460" cy="110" r="30" fill="#f4b740" opacity="0.95"/>
+  <text x="130" y="115" font-size="12" fill="#fff">layout</text>
+  <text x="130" y="130" font-size="10" fill="#fff">raw boxes</text>
+  <text x="280" y="115" font-size="12" fill="#fff">document</text>
+  <text x="280" y="130" font-size="10" fill="#fff">normalized</text>
+  <text x="440" y="115" font-size="12" fill="#fff">report</text>
+  <text x="440" y="130" font-size="10" fill="#fff">summary</text>
+  <path d="M 170 110 Q 220 90 270 110" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+  <path d="M 330 110 Q 380 130 430 110" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+  <text x="240" y="90" font-size="10" fill="#1a1a1a">normalize</text>
+  <text x="370" y="135" font-size="10" fill="#1a1a1a">summarize</text>
+  <rect x="25" y="150" width="550" height="60" rx="12" fill="#f8f8f8" stroke="#d5d5d5" stroke-width="1"/>
+  <text x="45" y="175" font-size="12" fill="#444"><tspan font-weight="bold">Shared helper</tspan> ensures each path is validated</text>
+  <text x="45" y="190" font-size="10" fill="#444">Regressions gate: fixtures → registry → normalization report</text>
+</svg>

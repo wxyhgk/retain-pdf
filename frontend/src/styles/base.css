@@ -1,0 +1,38 @@
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at top left, rgba(28, 93, 82, 0.08) 0, transparent 26%),
+      radial-gradient(circle at bottom right, rgba(28, 93, 82, 0.05) 0, transparent 28%),
+      linear-gradient(180deg, #f7f6f2 0%, #efece3 100%);
+  }
+
+  h1,
+  h2 {
+    margin: 0;
+    font-family: theme(fontFamily.serif);
+    letter-spacing: -0.01em;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  input,
+  select,
+  button,
+  .button-link {
+    font: inherit;
+  }
+}

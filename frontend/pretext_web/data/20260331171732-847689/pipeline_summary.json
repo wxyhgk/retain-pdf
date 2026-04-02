@@ -1,0 +1,82 @@
+{
+  "job_root": "output/20260331171732-847689",
+  "source_pdf": "/home/wxyhgk/tmp/Code/output/20260331171732-847689/source/6b7ef69f-41f4-45a4-864d-b8cadd36bcd6_A-general-cyclization-strategy-of-diaryl-diarylamine-diaryl-ether-and-diaryl-thioether-with_1_5.pdf",
+  "layout_json": "/home/wxyhgk/tmp/Code/output/20260331171732-847689/ocr/layout.json",
+  "normalized_document_json": "/home/wxyhgk/tmp/Code/output/20260331171732-847689/ocr/normalized/document.v1.json",
+  "normalization_report_json": "/home/wxyhgk/tmp/Code/output/20260331171732-847689/ocr/normalized/document.v1.report.json",
+  "normalization_report": {
+    "source_json_path": "/home/wxyhgk/tmp/Code/output/20260331171732-847689/ocr/layout.json",
+    "document_id": "20260331171732-847689",
+    "provider": "mineru",
+    "provider_version": "vlm",
+    "compat": {
+      "pages_seen": 5,
+      "blocks_seen": 215,
+      "document_defaults": {},
+      "page_defaults": {},
+      "block_defaults": {}
+    },
+    "validation": {
+      "valid": true,
+      "schema": "normalized_document_v1",
+      "schema_version": "1.0",
+      "page_count": 5,
+      "block_count": 215
+    },
+    "detected_provider": "mineru",
+    "detection": {
+      "matched": true,
+      "provider": "mineru",
+      "attempts": [
+        {
+          "provider": "generic_flat_ocr",
+          "matched": false
+        },
+        {
+          "provider": "mineru_content_list_v2",
+          "matched": false
+        },
+        {
+          "provider": "mineru",
+          "matched": true
+        }
+      ]
+    },
+    "provider_was_explicit": true
+  },
+  "normalization_summary": {
+    "provider": "mineru",
+    "detected_provider": "mineru",
+    "provider_was_explicit": true,
+    "compat_pages": 5,
+    "compat_blocks": 215,
+    "valid": true,
+    "page_count": 5,
+    "block_count": 215,
+    "detection_matched": true,
+    "detection_attempts": 3
+  },
+  "source_json_used": "/home/wxyhgk/tmp/Code/output/20260331171732-847689/ocr/normalized/document.v1.json",
+  "schema_validation": {
+    "valid": true,
+    "schema": "normalized_document_v1",
+    "schema_version": "1.0",
+    "page_count": 5,
+    "block_count": 215,
+    "path": "/home/wxyhgk/tmp/Code/output/20260331171732-847689/ocr/normalized/document.v1.json"
+  },
+  "translations_dir": "output/20260331171732-847689/translated/translations",
+  "output_pdf": "output/20260331171732-847689/translated/6b7ef69f-41f4-45a4-864d-b8cadd36bcd6_A-general-cyclization-strategy-of-diaryl-diarylamine-diaryl-ether-and-diaryl-thioether-with_1_5-translated.pdf",
+  "pages_processed": 5,
+  "translated_items_total": 48,
+  "rule_profile_name": "general_sci",
+  "translate_elapsed": 26.503865221515298,
+  "save_elapsed": 1.889901116490364,
+  "total_elapsed": 28.393779257312417,
+  "mode": "sci",
+  "model": "deepseek-chat",
+  "base_url": "https://api.deepseek.com/v1",
+  "render_mode": "auto",
+  "effective_render_mode": "overlay",
+  "pdf_compress_dpi": 200
+}

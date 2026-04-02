@@ -1,0 +1,152 @@
+<main class="page lab-ui">
+  <header class="hero">
+    <div>
+      <h1>保留排版翻译 by wxyhgk</h1>
+      <p class="muted">三步完成：上传 PDF、等待任务处理、下载译文结果。当前主要面向 sci 论文场景，其他类型文档的版面与公式效果不保证。</p>
+    </div>
+    <div class="hero-actions">
+      <button id="desktop-settings-btn" type="button" class="secondary hidden">设置</button>
+      <button id="open-output-btn" type="button" class="secondary hidden">打开输出目录</button>
+    </div>
+  </header>
+
+  <section class="card notice-card">
+    <strong>当前支持单个 PDF，文件大小不超过 200MB，页数不超过 600 页。</strong>
+    <p class="notice-links">
+      如需使用自有服务，可填写你自己的 Key。
+      <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer">申请 DeepSeek API</a>
+      <span>｜</span>
+      <a href="https://mineru.net/apiManage/token" target="_blank" rel="noopener noreferrer">申请 MinerU API</a>
+    </p>
+  </section>
+
+  <section class="panel-grid">
+    <section class="card panel">
+      <h2>提交</h2>
+      <p class="muted">建议优先上传结构清晰的论文 PDF。只需要准备 MinerU Token 和模型 API Key，其余参数已经固定。</p>
+      <div id="job-warning" class="job-warning hidden">检测到上一个任务仍在处理中。建议先等待当前任务结束，再提交新的 PDF。</div>
+      <form id="job-form" class="form" novalidate>
+        <div class="grid two">
+          <label>
+            <span>MinerU API key</span>
+            <input id="mineru_token" name="mineru_token" type="password" value="" autocomplete="off" placeholder="请输入 MinerU Token" />
+          </label>
+          <label>
+            <span>Model API key</span>
+            <input id="api_key" name="api_key" type="password" value="" autocomplete="off" placeholder="请输入 Model API Key" />
+          </label>
+        </div>
+
+        <label for="file" class="upload-tile">
+          <input id="file" name="file" type="file" accept="application/pdf,.pdf" />
+          <span class="upload-kicker">PDF 上传</span>
+          <strong id="file-label">点击选择文件或拖到这里</strong>
+          <em>仅支持单个 PDF；上传后会先完成文件校验，再进入任务处理</em>
+        </label>
+
+        <div id="upload-progress-panel" class="upload-progress-panel hidden" aria-live="polite">
+          <div class="progress-meta">
+            <span>上传进度</span>
+            <strong id="upload-progress-text">0%</strong>
+          </div>
+          <div class="progress-track">
+            <div id="upload-progress-bar" class="progress-bar"></div>
+          </div>
+        </div>
+
+        <div id="upload-status" class="upload-status">尚未选择文件</div>
+
+        <div class="actions vertical-actions">
+          <button id="submit-btn" type="submit" disabled>运行任务</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card panel">
+      <div class="status-head simple-head">
+        <h2>状态</h2>
+        <div class="status-head-actions">
+          <button id="cancel-btn" type="button" class="secondary" disabled>取消任务</button>
+          <button id="stop-btn" type="button" class="secondary">停止轮询</button>
+        </div>
+      </div>
+
+      <div class="status-stack dense two">
+        <div>
+          <div class="label">任务号</div>
+          <div id="job-id" class="mono clamp-text">-</div>
+        </div>
+        <div>
+          <div class="label">状态</div>
+          <div id="job-status" class="badge idle">idle</div>
+        </div>
+        <div>
+          <div class="label">状态摘要</div>
+          <div id="job-summary" class="summary-text clamp-text">等待提交任务</div>
+        </div>
+        <div>
+          <div class="label">当前阶段</div>
+          <div id="job-stage-detail" class="summary-text clamp-text">-</div>
+        </div>
+      </div>
+
+      <div class="status-meta-row top-gap">
+        <div class="status-meta-card">
+          <div class="label">完成时间</div>
+          <div id="job-finished-at" class="status-meta-value">-</div>
+        </div>
+      </div>
+
+      <div class="top-gap">
+        <div class="progress-meta">
+          <span class="label compact-label">任务进度</span>
+          <strong id="job-progress-text">-</strong>
+        </div>
+        <div class="progress-track">
+          <div id="job-progress-bar" class="progress-bar"></div>
+        </div>
+      </div>
+
+      <div class="top-gap">
+        <div class="label">提示 / 错误</div>
+        <pre id="error-box" class="log error-box">-</pre>
+      </div>
+
+      <div class="top-gap">
+        <div class="label">失败诊断</div>
+        <pre id="diagnostic-box" class="log error-box">-</pre>
+      </div>
+    </section>
+
+    <section class="card panel">
+      <h2>查询 / 下载</h2>
+      <p class="muted">输入已有任务号可继续查看状态。任务成功后，可直接打开译文 PDF、Markdown 或下载结果 ZIP。</p>
+
+      <div class="form">
+        <label>
+          <span>job_id</span>
+          <input id="job-id-input" type="text" placeholder="粘贴已有 job_id" />
+        </label>
+
+        <div class="actions action-matrix">
+          <button id="watch-btn" class="secondary" type="button">查询任务</button>
+          <a id="download-btn" class="button-link disabled" href="#" target="_blank" rel="noopener noreferrer">下载结果 ZIP</a>
+          <a id="pdf-btn" class="button-link secondary disabled" href="#" target="_blank" rel="noopener noreferrer">下载译文 PDF</a>
+          <a id="markdown-btn" class="button-link secondary disabled" href="#" target="_blank" rel="noopener noreferrer">下载 Markdown JSON</a>
+          <a id="markdown-raw-btn" class="button-link secondary disabled" href="#" target="_blank" rel="noopener noreferrer">下载 Markdown</a>
+        </div>
+
+        <div class="status-meta-row top-gap">
+          <div class="status-meta-card">
+            <div class="label">完成时间</div>
+            <div id="query-job-finished-at" class="status-meta-value">-</div>
+          </div>
+          <div class="status-meta-card">
+            <div class="label">用时</div>
+            <div id="query-job-duration" class="status-meta-value">-</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>

@@ -1,0 +1,2183 @@
+[
+  {
+    "item_id": "p002-b004",
+    "page_idx": 1,
+    "block_idx": 4,
+    "block_type": "image_caption",
+    "bbox": [
+      111,
+      140,
+      179,
+      149
+    ],
+    "source_text": "X, Y=NH, O,S, None",
+    "lines": [
+      {
+        "bbox": [
+          111,
+          139,
+          179,
+          150
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "X, Y=NH, O,S, None",
+            "bbox": [
+              111,
+              139,
+              179,
+              150
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 1,
+        "raw_path": "/pdf_info/1/para_blocks/1/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          111,
+          140,
+          179,
+          149
+        ],
+        "raw_text_excerpt": "X, Y=NH, O,S, None"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "X, Y=NH, O,S, None",
+    "mixed_original_protected_source_text": "X, Y=NH, O,S, None",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p002-b004",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p002-b004"
+    ],
+    "translation_unit_protected_source_text": "X, Y=NH, O,S, None",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "X, Y=NH, O, S, 无",
+    "translation_unit_translated_text": "X, Y=NH, O, S, 无",
+    "protected_translated_text": "X, Y=NH, O, S, 无",
+    "translated_text": "X, Y=NH, O, S, 无",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p002-b006",
+    "page_idx": 1,
+    "block_idx": 6,
+    "block_type": "image_caption",
+    "bbox": [
+      81,
+      168,
+      242,
+      180
+    ],
+    "source_text": "Scheme 1. Spirocyclic/Cyclic tetraarylmethanes.",
+    "lines": [
+      {
+        "bbox": [
+          82,
+          168,
+          243,
+          180
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Scheme 1. Spirocyclic/Cyclic tetraarylmethanes.",
+            "bbox": [
+              82,
+              168,
+              243,
+              180
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 1,
+        "raw_path": "/pdf_info/1/para_blocks/2/blocks/0",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          81,
+          168,
+          242,
+          180
+        ],
+        "raw_text_excerpt": "Scheme 1. Spirocyclic/Cyclic tetraarylmethanes."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "Scheme 1. Spirocyclic/Cyclic tetraarylmethanes.",
+    "mixed_original_protected_source_text": "Scheme 1. Spirocyclic/Cyclic tetraarylmethanes.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p002-b006",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p002-b006"
+    ],
+    "translation_unit_protected_source_text": "Scheme 1. Spirocyclic/Cyclic tetraarylmethanes.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "Scheme 1. 螺环/环状四芳基甲烷。",
+    "translation_unit_translated_text": "Scheme 1. 螺环/环状四芳基甲烷。",
+    "protected_translated_text": "Scheme 1. 螺环/环状四芳基甲烷。",
+    "translated_text": "Scheme 1. 螺环/环状四芳基甲烷。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p002-b008",
+    "page_idx": 1,
+    "block_idx": 8,
+    "block_type": "image_caption",
+    "bbox": [
+      34,
+      426,
+      289,
+      445
+    ],
+    "source_text": "Scheme 2. Traditional synthetic strategy for spirocyclic/cyclic tetraaryl- methanes.",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          425,
+          289,
+          436
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Scheme 2. Traditional synthetic strategy for spirocyclic/cyclic tetraaryl-",
+            "bbox": [
+              35,
+              425,
+              289,
+              436
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          435,
+          71,
+          446
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "methanes.",
+            "bbox": [
+              35,
+              435,
+              71,
+              446
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 1,
+        "raw_path": "/pdf_info/1/para_blocks/2/blocks/2",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          426,
+          289,
+          445
+        ],
+        "raw_text_excerpt": "Scheme 2. Traditional synthetic strategy for spirocyclic/cyclic tetraaryl- methanes."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "Scheme 2. Traditional synthetic strategy for spirocyclic/cyclic tetraaryl- methanes.",
+    "mixed_original_protected_source_text": "Scheme 2. Traditional synthetic strategy for spirocyclic/cyclic tetraaryl- methanes.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p002-b008",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p002-b008"
+    ],
+    "translation_unit_protected_source_text": "Scheme 2. Traditional synthetic strategy for spirocyclic/cyclic tetraaryl- methanes.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "方案2. 螺环/环状四芳基甲烷的传统合成策略。",
+    "translation_unit_translated_text": "方案2. 螺环/环状四芳基甲烷的传统合成策略。",
+    "protected_translated_text": "方案2. 螺环/环状四芳基甲烷的传统合成策略。",
+    "translated_text": "方案2. 螺环/环状四芳基甲烷的传统合成策略。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p002-b009",
+    "page_idx": 1,
+    "block_idx": 9,
+    "block_type": "text",
+    "bbox": [
+      34,
+      468,
+      289,
+      520
+    ],
+    "source_text": "reaction was first demonstrated in 1996 by Yamamoto and co-workers [21]. Subsequently, a series of Friedel- Crafts and related reactions catalyzed by triflimide have been reported [22–25]. However, no syn- thetic reaction of spirocyclic compounds catalyzed by triflimide has been investigated.",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          468,
+          289,
+          479
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "reaction was first demonstrated in 1996 by Yamamoto and co-workers",
+            "bbox": [
+              35,
+              468,
+              289,
+              479
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          479,
+          290,
+          490
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[21]. Subsequently, a series of Friedel- Crafts and related reactions",
+            "bbox": [
+              36,
+              479,
+              290,
+              490
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          489,
+          289,
+          501
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "catalyzed by triflimide have been reported [22–25]. However, no syn-",
+            "bbox": [
+              35,
+              489,
+              289,
+              501
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          499,
+          289,
+          510
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "thetic reaction of spirocyclic compounds catalyzed by triflimide has",
+            "bbox": [
+              35,
+              499,
+              289,
+              510
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          36,
+          510,
+          102,
+          521
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "been investigated.",
+            "bbox": [
+              36,
+              510,
+              102,
+              521
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 1,
+        "raw_path": "/pdf_info/1/para_blocks/3",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          468,
+          289,
+          520
+        ],
+        "raw_text_excerpt": "reaction was first demonstrated in 1996 by Yamamoto and co-workers [21]. Subsequently, a series of Friedel- Crafts and related reactions catalyzed by triflimide have been reported [22–25]. However, no"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 5,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "reaction was first demonstrated in 1996 by Yamamoto and co-workers [21]. Subsequently, a series of Friedel- Crafts and related reactions catalyzed by triflimide have been reported [22–25]. However, no syn- thetic reaction of spirocyclic compounds catalyzed by triflimide has been investigated.",
+    "mixed_original_protected_source_text": "reaction was first demonstrated in 1996 by Yamamoto and co-workers [21]. Subsequently, a series of Friedel- Crafts and related reactions catalyzed by triflimide have been reported [22–25]. However, no syn- thetic reaction of spirocyclic compounds catalyzed by triflimide has been investigated.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-001-002",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p001-b012",
+      "p002-b009"
+    ],
+    "translation_unit_protected_source_text": "Triflimide (HNTf₂), also known as bis(trifluoromethanesulfonyl) imide, is a commercially accessible and highly versatile super Brønsted acid [15]. Its exceptional acidity and excellent compatibility with organic solvents have made it a valuable catalyst, promoter, and addi- tive in various organic reactions [16–20]. Unlike TfOH (a corrosive, fuming liquid), triflimide is much more user-friendly. A pioneering example of using triflimide to catalyze a Friedel-Crafts alkylation reaction was first demonstrated in 1996 by Yamamoto and co-workers [21]. Subsequently, a series of Friedel- Crafts and related reactions catalyzed by triflimide have been reported [22–25]. However, no syn- thetic reaction of spirocyclic compounds catalyzed by triflimide has been investigated.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "三氟甲磺酰亚胺（HNTf₂），又称双(三氟甲磺酰)亚胺，是一种市售且用途广泛的超强布朗斯特酸[15]。其极高的酸性和与有机溶剂的良好相容性，使其成为多种有机反应中有价值的催化剂、促进剂和添加剂[16–20]。与TfOH（一种腐蚀性发烟液体）不同，三氟甲磺酰亚胺的使用更为便捷。1996年，Yamamoto及其同事首次报道了使用三氟甲磺酰亚胺催化Friedel-Crafts烷基化反应的开创性实例[21]。随后，一系列由三氟甲磺酰亚胺催化的Friedel-Crafts及相关反应相继被报道[22–25]。然而，目前尚未有关于三氟甲磺酰亚胺催化螺环化合物合成反应的研究。",
+    "translation_unit_translated_text": "三氟甲磺酰亚胺（HNTf₂），又称双(三氟甲磺酰)亚胺，是一种市售且用途广泛的超强布朗斯特酸[15]。其极高的酸性和与有机溶剂的良好相容性，使其成为多种有机反应中有价值的催化剂、促进剂和添加剂[16–20]。与TfOH（一种腐蚀性发烟液体）不同，三氟甲磺酰亚胺的使用更为便捷。1996年，Yamamoto及其同事首次报道了使用三氟甲磺酰亚胺催化Friedel-Crafts烷基化反应的开创性实例[21]。随后，一系列由三氟甲磺酰亚胺催化的Friedel-Crafts及相关反应相继被报道[22–25]。然而，目前尚未有关于三氟甲磺酰亚胺催化螺环化合物合成反应的研究。",
+    "protected_translated_text": "三氟甲磺酰亚胺（HNTf₂），又称双(三氟甲磺酰)亚胺，是一种市售且用途广泛的超强布朗斯特酸[15]。其极高的酸性和与有机溶剂的良好相容性，使其成为多种有机反应中有价值的催化剂、促进剂和添加剂[16–20]。与TfOH（一种腐蚀性发烟液体）不同，三氟甲磺酰亚胺的使用更为便捷。1996年，Yamamoto及其同事首次报道了使用三氟甲磺酰亚胺催化Friedel-Crafts烷基化反应的开创性实例[21]。随后，一系列由三氟甲磺酰亚胺催化的Friedel-Crafts及相关反应相继被报道[22–25]。然而，目前尚未有关于三氟甲磺酰亚胺催化螺环化合物合成反应的研究。",
+    "translated_text": "三氟甲磺酰亚胺（HNTf₂），又称双(三氟甲磺酰)亚胺，是一种市售且用途广泛的超强布朗斯特酸[15]。其极高的酸性和与有机溶剂的良好相容性，使其成为多种有机反应中有价值的催化剂、促进剂和添加剂[16–20]。与TfOH（一种腐蚀性发烟液体）不同，三氟甲磺酰亚胺的使用更为便捷。1996年，Yamamoto及其同事首次报道了使用三氟甲磺酰亚胺催化Friedel-Crafts烷基化反应的开创性实例[21]。随后，一系列由三氟甲磺酰亚胺催化的Friedel-Crafts及相关反应相继被报道[22–25]。然而，目前尚未有关于三氟甲磺酰亚胺催化螺环化合物合成反应的研究。",
+    "continuation_group": "cg-001-002",
+    "continuation_prev_text": "Triflimide (HNTf₂), also known as bis(trifluoromethanesulfonyl) imide, is a commercially accessible and highly versatile super Brønsted acid [15]. Its exceptional acidity and excellent compatibility with organic solvents have made it a valuable catalyst, promoter, and addi- tive in various organic reactions [16–20]. Unlike TfOH (a corrosive, fuming liquid), triflimide is much more user-friendly. A pioneering example of using triflimide to catalyze a Friedel-Crafts alkylation",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Triflimide (HNTf₂), also known as bis(trifluoromethanesulfonyl) imide, is a commercially accessible and highly versatile super Brønsted acid [15]. Its exceptional acidity and excellent compatibility with organic solvents have made it a valuable catalyst, promoter, and addi- tive in various organic reactions [16–20]. Unlike TfOH (a corrosive, fuming liquid), triflimide is much more user-friendly. A pioneering example of using triflimide to catalyze a Friedel-Crafts alkylation reaction was first demonstrated in 1996 by Yamamoto and co-workers [21]. Subsequently, a series of Friedel- Crafts and related reactions catalyzed by triflimide have been reported [22–25]. However, no syn- thetic reaction of spirocyclic compounds catalyzed by triflimide has been investigated.",
+    "group_formula_map": [],
+    "group_protected_translated_text": "三氟甲磺酰亚胺（HNTf₂），又称双(三氟甲磺酰)亚胺，是一种市售且用途广泛的超强布朗斯特酸[15]。其极高的酸性和与有机溶剂的良好相容性，使其成为多种有机反应中有价值的催化剂、促进剂和添加剂[16–20]。与TfOH（一种腐蚀性发烟液体）不同，三氟甲磺酰亚胺的使用更为便捷。1996年，Yamamoto及其同事首次报道了使用三氟甲磺酰亚胺催化Friedel-Crafts烷基化反应的开创性实例[21]。随后，一系列由三氟甲磺酰亚胺催化的Friedel-Crafts及相关反应相继被报道[22–25]。然而，目前尚未有关于三氟甲磺酰亚胺催化螺环化合物合成反应的研究。",
+    "group_translated_text": "三氟甲磺酰亚胺（HNTf₂），又称双(三氟甲磺酰)亚胺，是一种市售且用途广泛的超强布朗斯特酸[15]。其极高的酸性和与有机溶剂的良好相容性，使其成为多种有机反应中有价值的催化剂、促进剂和添加剂[16–20]。与TfOH（一种腐蚀性发烟液体）不同，三氟甲磺酰亚胺的使用更为便捷。1996年，Yamamoto及其同事首次报道了使用三氟甲磺酰亚胺催化Friedel-Crafts烷基化反应的开创性实例[21]。随后，一系列由三氟甲磺酰亚胺催化的Friedel-Crafts及相关反应相继被报道[22–25]。然而，目前尚未有关于三氟甲磺酰亚胺催化螺环化合物合成反应的研究。",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p002-b010",
+    "page_idx": 1,
+    "block_idx": 10,
+    "block_type": "text",
+    "bbox": [
+      34,
+      521,
+      289,
+      542
+    ],
+    "source_text": "Recently, our group developed a new method for the synthesis of spiro[acridine-9(10H),9′-[9H]fluorene] (SPF1) through one-step",
+    "lines": [
+      {
+        "bbox": [
+          47,
+          520,
+          290,
+          533
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Recently, our group developed a new method for the synthesis of",
+            "bbox": [
+              47,
+              520,
+              290,
+              533
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          35,
+          530,
+          290,
+          544
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "spiro[acridine-9(10H),9′-[9H]fluorene] (SPF1) through one-step",
+            "bbox": [
+              35,
+              530,
+              290,
+              544
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 1,
+        "raw_path": "/pdf_info/1/para_blocks/4",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          34,
+          521,
+          289,
+          542
+        ],
+        "raw_text_excerpt": "Recently, our group developed a new method for the synthesis of spiro[acridine-9(10H),9′-[9H]fluorene] (SPF1) through one-step"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 6,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "tail",
+    "protected_source_text": "Recently, our group developed a new method for the synthesis of spiro[acridine-9(10H),9′-[9H]fluorene] (SPF1) through one-step",
+    "mixed_original_protected_source_text": "Recently, our group developed a new method for the synthesis of spiro[acridine-9(10H),9′-[9H]fluorene] (SPF1) through one-step",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-002-003",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p002-b010",
+      "p002-b014"
+    ],
+    "translation_unit_protected_source_text": "Recently, our group developed a new method for the synthesis of spiro[acridine-9(10H),9′-[9H]fluorene] (SPF1) through one-step cyclization of diarylamine (1a) with fluorenone (2a) using [[FORMULA_1]] as a catalyst (Table 1).",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { H N T f } _ { 2 }"
+      }
+    ],
+    "translation_unit_protected_translated_text": "最近，我们课题组开发了一种合成螺[吖啶-9(10H),9′-[9H]芴]（SPF1）的新方法，该方法通过二芳胺（1a）与芴酮（2a）在一步环化反应中实现，使用[[FORMULA_1]]作为催化剂（表1）。",
+    "translation_unit_translated_text": "最近，我们课题组开发了一种合成螺[吖啶-9(10H),9′-[9H]芴]（SPF1）的新方法，该方法通过二芳胺（1a）与芴酮（2a）在一步环化反应中实现，使用\\mathrm { H N T f } _ { 2 }作为催化剂（表1）。",
+    "protected_translated_text": "最近，我们课题组开发了一种合成螺[吖啶-9(10H),9′-[9H]芴]（SPF1）的新方法，该方法通过二芳胺（1a）与芴酮（2a）在一步环化反应中实现，使用[[FORMULA_1]]作为催化剂（表1）。",
+    "translated_text": "最近，我们课题组开发了一种合成螺[吖啶-9(10H),9′-[9H]芴]（SPF1）的新方法，该方法通过二芳胺（1a）与芴酮（2a）在一步环化反应中实现，使用\\mathrm { H N T f } _ { 2 }作为催化剂（表1）。",
+    "continuation_group": "cg-002-003",
+    "continuation_prev_text": "",
+    "continuation_next_text": "cyclization of diarylamine (1a) with fluorenone (2a) using [[FORMULA_1]] as a catalyst (Table 1).",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Recently, our group developed a new method for the synthesis of spiro[acridine-9(10H),9′-[9H]fluorene] (SPF1) through one-step cyclization of diarylamine (1a) with fluorenone (2a) using [[FORMULA_1]] as a catalyst (Table 1).",
+    "group_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { H N T f } _ { 2 }"
+      }
+    ],
+    "group_protected_translated_text": "最近，我们课题组开发了一种合成螺[吖啶-9(10H),9′-[9H]芴]（SPF1）的新方法，该方法通过二芳胺（1a）与芴酮（2a）在一步环化反应中实现，使用[[FORMULA_1]]作为催化剂（表1）。",
+    "group_translated_text": "最近，我们课题组开发了一种合成螺[吖啶-9(10H),9′-[9H]芴]（SPF1）的新方法，该方法通过二芳胺（1a）与芴酮（2a）在一步环化反应中实现，使用\\mathrm { H N T f } _ { 2 }作为催化剂（表1）。",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p002-b013",
+    "page_idx": 1,
+    "block_idx": 13,
+    "block_type": "image_caption",
+    "bbox": [
+      35,
+      733,
+      289,
+      743
+    ],
+    "source_text": "Scheme 3. The possible reaction pathways of diphenylamine with fluorenone.",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          732,
+          290,
+          744
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Scheme 3. The possible reaction pathways of diphenylamine with fluorenone.",
+            "bbox": [
+              35,
+              732,
+              290,
+              744
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "image_caption",
+      "tags": [
+        "caption",
+        "image_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 1,
+        "raw_path": "/pdf_info/1/para_blocks/5/blocks/1",
+        "raw_type": "image_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          35,
+          733,
+          289,
+          743
+        ],
+        "raw_text_excerpt": "Scheme 3. The possible reaction pathways of diphenylamine with fluorenone."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "Scheme 3. The possible reaction pathways of diphenylamine with fluorenone.",
+    "mixed_original_protected_source_text": "Scheme 3. The possible reaction pathways of diphenylamine with fluorenone.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p002-b013",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p002-b013"
+    ],
+    "translation_unit_protected_source_text": "Scheme 3. The possible reaction pathways of diphenylamine with fluorenone.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "方案3. 二苯胺与芴酮可能的反应路径。",
+    "translation_unit_translated_text": "方案3. 二苯胺与芴酮可能的反应路径。",
+    "protected_translated_text": "方案3. 二苯胺与芴酮可能的反应路径。",
+    "translated_text": "方案3. 二苯胺与芴酮可能的反应路径。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p002-b014",
+    "page_idx": 1,
+    "block_idx": 14,
+    "block_type": "text",
+    "bbox": [
+      302,
+      52,
+      558,
+      72
+    ],
+    "source_text": "cyclization of diarylamine (1a) with fluorenone (2a) using \\mathrm { H N T f } _ { 2 } as a catalyst (Table 1).",
+    "lines": [
+      {
+        "bbox": [
+          304,
+          52,
+          559,
+          64
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "cyclization of diarylamine (1a) with fluorenone (2a) using",
+            "bbox": [
+              304,
+              52,
+              517,
+              64
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\mathrm { H N T f } _ { 2 }",
+            "bbox": [
+              517,
+              53,
+              541,
+              62
+            ]
+          },
+          {
+            "type": "text",
+            "content": "as a",
+            "bbox": [
+              542,
+              52,
+              559,
+              64
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          63,
+          371,
+          73
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "catalyst (Table 1).",
+            "bbox": [
+              305,
+              63,
+              371,
+              73
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 1,
+        "raw_path": "/pdf_info/1/para_blocks/6",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          52,
+          558,
+          72
+        ],
+        "raw_text_excerpt": "cyclization of diarylamine (1a) with fluorenone (2a) using \\mathrm { H N T f } _ { 2 } as a catalyst (Table 1)."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "head",
+    "protected_source_text": "cyclization of diarylamine (1a) with fluorenone (2a) using [[FORMULA_1]] as a catalyst (Table 1).",
+    "mixed_original_protected_source_text": "cyclization of diarylamine (1a) with fluorenone (2a) using [[FORMULA_1]] as a catalyst (Table 1).",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { H N T f } _ { 2 }"
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-002-003",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p002-b010",
+      "p002-b014"
+    ],
+    "translation_unit_protected_source_text": "Recently, our group developed a new method for the synthesis of spiro[acridine-9(10H),9′-[9H]fluorene] (SPF1) through one-step cyclization of diarylamine (1a) with fluorenone (2a) using [[FORMULA_1]] as a catalyst (Table 1).",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { H N T f } _ { 2 }"
+      }
+    ],
+    "translation_unit_protected_translated_text": "最近，我们课题组开发了一种合成螺[吖啶-9(10H),9′-[9H]芴]（SPF1）的新方法，该方法通过二芳胺（1a）与芴酮（2a）在一步环化反应中实现，使用[[FORMULA_1]]作为催化剂（表1）。",
+    "translation_unit_translated_text": "最近，我们课题组开发了一种合成螺[吖啶-9(10H),9′-[9H]芴]（SPF1）的新方法，该方法通过二芳胺（1a）与芴酮（2a）在一步环化反应中实现，使用\\mathrm { H N T f } _ { 2 }作为催化剂（表1）。",
+    "protected_translated_text": "最近，我们课题组开发了一种合成螺[吖啶-9(10H),9′-[9H]芴]（SPF1）的新方法，该方法通过二芳胺（1a）与芴酮（2a）在一步环化反应中实现，使用[[FORMULA_1]]作为催化剂（表1）。",
+    "translated_text": "最近，我们课题组开发了一种合成螺[吖啶-9(10H),9′-[9H]芴]（SPF1）的新方法，该方法通过二芳胺（1a）与芴酮（2a）在一步环化反应中实现，使用\\mathrm { H N T f } _ { 2 }作为催化剂（表1）。",
+    "continuation_group": "cg-002-003",
+    "continuation_prev_text": "Recently, our group developed a new method for the synthesis of spiro[acridine-9(10H),9′-[9H]fluorene] (SPF1) through one-step",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Recently, our group developed a new method for the synthesis of spiro[acridine-9(10H),9′-[9H]fluorene] (SPF1) through one-step cyclization of diarylamine (1a) with fluorenone (2a) using [[FORMULA_1]] as a catalyst (Table 1).",
+    "group_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { H N T f } _ { 2 }"
+      }
+    ],
+    "group_protected_translated_text": "最近，我们课题组开发了一种合成螺[吖啶-9(10H),9′-[9H]芴]（SPF1）的新方法，该方法通过二芳胺（1a）与芴酮（2a）在一步环化反应中实现，使用[[FORMULA_1]]作为催化剂（表1）。",
+    "group_translated_text": "最近，我们课题组开发了一种合成螺[吖啶-9(10H),9′-[9H]芴]（SPF1）的新方法，该方法通过二芳胺（1a）与芴酮（2a）在一步环化反应中实现，使用\\mathrm { H N T f } _ { 2 }作为催化剂（表1）。",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p002-b015",
+    "page_idx": 1,
+    "block_idx": 15,
+    "block_type": "text",
+    "bbox": [
+      302,
+      73,
+      558,
+      126
+    ],
+    "source_text": "As can be seen from Table 1, the yield reaches the highest when the feed ratio of 1a to 2a is 1.1:1 and the catalyst amount (relative to 2a) is 1 0 \\mathrm { m o l } \\% . For example, by employing 1.1 equiv. of 1a, 1.0 equiv. of 2a and 0.1 equiv. of HNTf₂ in 1,4 - dioxane, the reaction was carried out at 8 0 ~ ^ { \\circ } \\mathrm { C } for 6 h. SPF1 was obtained in 8 9 ~ \\% yield (Table 1, entrys 1–3).",
+    "lines": [
+      {
+        "bbox": [
+          316,
+          73,
+          558,
+          84
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "As can be seen from Table 1, the yield reaches the highest when the",
+            "bbox": [
+              316,
+              73,
+              558,
+              84
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          84,
+          558,
+          94
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "feed ratio of 1a to 2a is 1.1:1 and the catalyst amount (relative to 2a) is",
+            "bbox": [
+              305,
+              84,
+              558,
+              94
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          94,
+          559,
+          105
+        ],
+        "spans": [
+          {
+            "type": "inline_equation",
+            "content": "1 0 \\mathrm { m o l } \\%",
+            "bbox": [
+              305,
+              95,
+              337,
+              104
+            ]
+          },
+          {
+            "type": "text",
+            "content": ". For example, by employing 1.1 equiv. of 1a, 1.0 equiv. of 2a",
+            "bbox": [
+              338,
+              94,
+              559,
+              105
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          104,
+          559,
+          115
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and 0.1 equiv. of HNTf₂ in 1,4 - dioxane, the reaction was carried out at",
+            "bbox": [
+              304,
+              104,
+              559,
+              115
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          114,
+          554,
+          126
+        ],
+        "spans": [
+          {
+            "type": "inline_equation",
+            "content": "8 0 ~ ^ { \\circ } \\mathrm { C }",
+            "bbox": [
+              305,
+              115,
+              326,
+              125
+            ]
+          },
+          {
+            "type": "text",
+            "content": "for 6 h. SPF1 was obtained in",
+            "bbox": [
+              327,
+              114,
+              434,
+              126
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "8 9 ~ \\%",
+            "bbox": [
+              434,
+              115,
+              454,
+              125
+            ]
+          },
+          {
+            "type": "text",
+            "content": "yield (Table 1, entrys 1–3).",
+            "bbox": [
+              455,
+              114,
+              554,
+              126
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 1,
+        "raw_path": "/pdf_info/1/para_blocks/7",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          73,
+          558,
+          126
+        ],
+        "raw_text_excerpt": "As can be seen from Table 1, the yield reaches the highest when the feed ratio of 1a to 2a is 1.1:1 and the catalyst amount (relative to 2a) is 1 0 \\mathrm { m o l } \\% . For example, by employing 1.1"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "As can be seen from Table 1, the yield reaches the highest when the feed ratio of 1a to 2a is 1.1:1 and the catalyst amount (relative to 2a) is [[FORMULA_1]] . For example, by employing 1.1 equiv. of 1a, 1.0 equiv. of 2a and 0.1 equiv. of HNTf₂ in 1,4 - dioxane, the reaction was carried out at [[FORMULA_2]] for 6 h. SPF1 was obtained in [[FORMULA_3]] yield (Table 1, entrys 1–3).",
+    "mixed_original_protected_source_text": "As can be seen from Table 1, the yield reaches the highest when the feed ratio of 1a to 2a is 1.1:1 and the catalyst amount (relative to 2a) is [[FORMULA_1]] . For example, by employing 1.1 equiv. of 1a, 1.0 equiv. of 2a and 0.1 equiv. of HNTf₂ in 1,4 - dioxane, the reaction was carried out at [[FORMULA_2]] for 6 h. SPF1 was obtained in [[FORMULA_3]] yield (Table 1, entrys 1–3).",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "1 0 \\mathrm { m o l } \\%"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "8 0 ~ ^ { \\circ } \\mathrm { C }"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "8 9 ~ \\%"
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p002-b015",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p002-b015"
+    ],
+    "translation_unit_protected_source_text": "As can be seen from Table 1, the yield reaches the highest when the feed ratio of 1a to 2a is 1.1:1 and the catalyst amount (relative to 2a) is [[FORMULA_1]] . For example, by employing 1.1 equiv. of 1a, 1.0 equiv. of 2a and 0.1 equiv. of HNTf₂ in 1,4 - dioxane, the reaction was carried out at [[FORMULA_2]] for 6 h. SPF1 was obtained in [[FORMULA_3]] yield (Table 1, entrys 1–3).",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "1 0 \\mathrm { m o l } \\%"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "8 0 ~ ^ { \\circ } \\mathrm { C }"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "8 9 ~ \\%"
+      }
+    ],
+    "translation_unit_protected_translated_text": "如表1所示，当1a与2a的投料比为1.1:1且催化剂用量（相对于2a）为[[FORMULA_1]]时，产率达到最高。例如，使用1.1当量的1a、1.0当量的2a和0.1当量的HNTf₂在1,4-二氧六环中，反应于[[FORMULA_2]]进行6小时。得到SPF1的产率为[[FORMULA_3]]（表1，条目1–3）。",
+    "translation_unit_translated_text": "如表1所示，当1a与2a的投料比为1.1:1且催化剂用量（相对于2a）为1 0 \\mathrm { m o l } \\%时，产率达到最高。例如，使用1.1当量的1a、1.0当量的2a和0.1当量的HNTf₂在1,4-二氧六环中，反应于8 0 ~ ^ { \\circ } \\mathrm { C }进行6小时。得到SPF1的产率为8 9 ~ \\%（表1，条目1–3）。",
+    "protected_translated_text": "如表1所示，当1a与2a的投料比为1.1:1且催化剂用量（相对于2a）为[[FORMULA_1]]时，产率达到最高。例如，使用1.1当量的1a、1.0当量的2a和0.1当量的HNTf₂在1,4-二氧六环中，反应于[[FORMULA_2]]进行6小时。得到SPF1的产率为[[FORMULA_3]]（表1，条目1–3）。",
+    "translated_text": "如表1所示，当1a与2a的投料比为1.1:1且催化剂用量（相对于2a）为1 0 \\mathrm { m o l } \\%时，产率达到最高。例如，使用1.1当量的1a、1.0当量的2a和0.1当量的HNTf₂在1,4-二氧六环中，反应于8 0 ~ ^ { \\circ } \\mathrm { C }进行6小时。得到SPF1的产率为8 9 ~ \\%（表1，条目1–3）。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p002-b016",
+    "page_idx": 1,
+    "block_idx": 16,
+    "block_type": "text",
+    "bbox": [
+      302,
+      126,
+      558,
+      241
+    ],
+    "source_text": "The catalyst was screened using different types of acids, including common organic acids (such as formic acid, acetic acid, trifluoroacetic acid, p -toluenesulfonic acid, succinic acid, and benzenesulfonic acid) and common inorganic acids (such as hydrochloric acid, nitric acid, sulfuric acid, phosphoric acid, hydrobromic acid, phosphorous acid, sulfurous acid, and tetrafluoroboric acid), as well as catalyst Cat.I，Cat. II and Cat.III (Table 1). Under the given conditions ( 8 0 ^ { \\circ } \\mathrm { C } , 6 \\mathrm { h } , catalyst amount = 1 0 \\mathrm { m o l \\% } ), only HNTf₂ and its analogues Cat.I, Cat.II were able to catalyze the reaction, whereas common organic acids, inorganic acids, and Cat.III had no catalytic effect (Table 1). Compared with its analogues (Cat.I, Cat.II), HNTf₂ exhibited better catalytic performance.",
+    "lines": [
+      {
+        "bbox": [
+          316,
+          124,
+          558,
+          137
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The catalyst was screened using different types of acids, including",
+            "bbox": [
+              316,
+              124,
+              558,
+              137
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          136,
+          558,
+          146
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "common organic acids (such as formic acid, acetic acid, trifluoroacetic",
+            "bbox": [
+              305,
+              136,
+              558,
+              146
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          147,
+          558,
+          157
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "acid,",
+            "bbox": [
+              305,
+              147,
+              324,
+              157
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "p",
+            "bbox": [
+              324,
+              148,
+              330,
+              157
+            ]
+          },
+          {
+            "type": "text",
+            "content": "-toluenesulfonic acid, succinic acid, and benzenesulfonic acid)",
+            "bbox": [
+              331,
+              147,
+              558,
+              157
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          157,
+          558,
+          168
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and common inorganic acids (such as hydrochloric acid, nitric acid,",
+            "bbox": [
+              305,
+              157,
+              558,
+              168
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          168,
+          558,
+          178
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "sulfuric acid, phosphoric acid, hydrobromic acid, phosphorous acid,",
+            "bbox": [
+              305,
+              168,
+              558,
+              178
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          179,
+          558,
+          188
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "sulfurous acid, and tetrafluoroboric acid), as well as catalyst Cat.I，Cat.",
+            "bbox": [
+              305,
+              179,
+              558,
+              188
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          188,
+          558,
+          199
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "II and Cat.III (Table 1). Under the given conditions",
+            "bbox": [
+              305,
+              188,
+              487,
+              199
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "( 8 0 ^ { \\circ } \\mathrm { C } , 6 \\mathrm { h }",
+            "bbox": [
+              487,
+              189,
+              526,
+              199
+            ]
+          },
+          {
+            "type": "text",
+            "content": ", catalyst",
+            "bbox": [
+              526,
+              188,
+              558,
+              199
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          199,
+          558,
+          210
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "amount",
+            "bbox": [
+              305,
+              199,
+              333,
+              210
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "= 1 0 \\mathrm { m o l \\% }",
+            "bbox": [
+              333,
+              199,
+              374,
+              208
+            ]
+          },
+          {
+            "type": "text",
+            "content": "), only HNTf₂ and its analogues Cat.I, Cat.II were able",
+            "bbox": [
+              375,
+              199,
+              558,
+              210
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          209,
+          558,
+          221
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "to catalyze the reaction, whereas common organic acids, inorganic",
+            "bbox": [
+              305,
+              209,
+              558,
+              221
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          220,
+          558,
+          230
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "acids, and Cat.III had no catalytic effect (Table 1). Compared with its",
+            "bbox": [
+              305,
+              220,
+              558,
+              230
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          230,
+          558,
+          241
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "analogues (Cat.I, Cat.II), HNTf₂ exhibited better catalytic performance.",
+            "bbox": [
+              305,
+              230,
+              558,
+              241
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 1,
+        "raw_path": "/pdf_info/1/para_blocks/8",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          126,
+          558,
+          241
+        ],
+        "raw_text_excerpt": "The catalyst was screened using different types of acids, including common organic acids (such as formic acid, acetic acid, trifluoroacetic acid, p -toluenesulfonic acid, succinic acid, and benzenesul"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "The catalyst was screened using different types of acids, including common organic acids (such as formic acid, acetic acid, trifluoroacetic acid, [[FORMULA_1]] -toluenesulfonic acid, succinic acid, and benzenesulfonic acid) and common inorganic acids (such as hydrochloric acid, nitric acid, sulfuric acid, phosphoric acid, hydrobromic acid, phosphorous acid, sulfurous acid, and tetrafluoroboric acid), as well as catalyst Cat.I，Cat. II and Cat.III (Table 1). Under the given conditions [[FORMULA_2]] , catalyst amount [[FORMULA_3]] ), only HNTf₂ and its analogues Cat.I, Cat.II were able to catalyze the reaction, whereas common organic acids, inorganic acids, and Cat.III had no catalytic effect (Table 1). Compared with its analogues (Cat.I, Cat.II), HNTf₂ exhibited better catalytic performance.",
+    "mixed_original_protected_source_text": "The catalyst was screened using different types of acids, including common organic acids (such as formic acid, acetic acid, trifluoroacetic acid, [[FORMULA_1]] -toluenesulfonic acid, succinic acid, and benzenesulfonic acid) and common inorganic acids (such as hydrochloric acid, nitric acid, sulfuric acid, phosphoric acid, hydrobromic acid, phosphorous acid, sulfurous acid, and tetrafluoroboric acid), as well as catalyst Cat.I，Cat. II and Cat.III (Table 1). Under the given conditions [[FORMULA_2]] , catalyst amount [[FORMULA_3]] ), only HNTf₂ and its analogues Cat.I, Cat.II were able to catalyze the reaction, whereas common organic acids, inorganic acids, and Cat.III had no catalytic effect (Table 1). Compared with its analogues (Cat.I, Cat.II), HNTf₂ exhibited better catalytic performance.",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "p"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "( 8 0 ^ { \\circ } \\mathrm { C } , 6 \\mathrm { h }"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "= 1 0 \\mathrm { m o l \\% }"
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p002-b016",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p002-b016"
+    ],
+    "translation_unit_protected_source_text": "The catalyst was screened using different types of acids, including common organic acids (such as formic acid, acetic acid, trifluoroacetic acid, [[FORMULA_1]] -toluenesulfonic acid, succinic acid, and benzenesulfonic acid) and common inorganic acids (such as hydrochloric acid, nitric acid, sulfuric acid, phosphoric acid, hydrobromic acid, phosphorous acid, sulfurous acid, and tetrafluoroboric acid), as well as catalyst Cat.I，Cat. II and Cat.III (Table 1). Under the given conditions [[FORMULA_2]] , catalyst amount [[FORMULA_3]] ), only HNTf₂ and its analogues Cat.I, Cat.II were able to catalyze the reaction, whereas common organic acids, inorganic acids, and Cat.III had no catalytic effect (Table 1). Compared with its analogues (Cat.I, Cat.II), HNTf₂ exhibited better catalytic performance.",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "p"
+      },
+      {
+        "placeholder": "[[FORMULA_2]]",
+        "formula_text": "( 8 0 ^ { \\circ } \\mathrm { C } , 6 \\mathrm { h }"
+      },
+      {
+        "placeholder": "[[FORMULA_3]]",
+        "formula_text": "= 1 0 \\mathrm { m o l \\% }"
+      }
+    ],
+    "translation_unit_protected_translated_text": "催化剂筛选使用了多种类型的酸，包括常见有机酸（如甲酸、乙酸、三氟乙酸、[[FORMULA_1]]对甲苯磺酸、琥珀酸和苯磺酸）以及常见无机酸（如盐酸、硝酸、硫酸、磷酸、氢溴酸、亚磷酸、亚硫酸和四氟硼酸），以及催化剂 Cat.I、Cat.II 和 Cat.III（表 1）。在给定条件下[[FORMULA_2]]，催化剂用量[[FORMULA_3]]），只有 HNTf₂ 及其类似物 Cat.I、Cat.II 能够催化该反应，而常见有机酸、无机酸以及 Cat.III 均无催化效果（表 1）。与其类似物（Cat.I、Cat.II）相比，HNTf₂ 表现出更优的催化性能。",
+    "translation_unit_translated_text": "催化剂筛选使用了多种类型的酸，包括常见有机酸（如甲酸、乙酸、三氟乙酸、p对甲苯磺酸、琥珀酸和苯磺酸）以及常见无机酸（如盐酸、硝酸、硫酸、磷酸、氢溴酸、亚磷酸、亚硫酸和四氟硼酸），以及催化剂 Cat.I、Cat.II 和 Cat.III（表 1）。在给定条件下( 8 0 ^ { \\circ } \\mathrm { C } , 6 \\mathrm { h }，催化剂用量= 1 0 \\mathrm { m o l \\% }），只有 HNTf₂ 及其类似物 Cat.I、Cat.II 能够催化该反应，而常见有机酸、无机酸以及 Cat.III 均无催化效果（表 1）。与其类似物（Cat.I、Cat.II）相比，HNTf₂ 表现出更优的催化性能。",
+    "protected_translated_text": "催化剂筛选使用了多种类型的酸，包括常见有机酸（如甲酸、乙酸、三氟乙酸、[[FORMULA_1]]对甲苯磺酸、琥珀酸和苯磺酸）以及常见无机酸（如盐酸、硝酸、硫酸、磷酸、氢溴酸、亚磷酸、亚硫酸和四氟硼酸），以及催化剂 Cat.I、Cat.II 和 Cat.III（表 1）。在给定条件下[[FORMULA_2]]，催化剂用量[[FORMULA_3]]），只有 HNTf₂ 及其类似物 Cat.I、Cat.II 能够催化该反应，而常见有机酸、无机酸以及 Cat.III 均无催化效果（表 1）。与其类似物（Cat.I、Cat.II）相比，HNTf₂ 表现出更优的催化性能。",
+    "translated_text": "催化剂筛选使用了多种类型的酸，包括常见有机酸（如甲酸、乙酸、三氟乙酸、p对甲苯磺酸、琥珀酸和苯磺酸）以及常见无机酸（如盐酸、硝酸、硫酸、磷酸、氢溴酸、亚磷酸、亚硫酸和四氟硼酸），以及催化剂 Cat.I、Cat.II 和 Cat.III（表 1）。在给定条件下( 8 0 ^ { \\circ } \\mathrm { C } , 6 \\mathrm { h }，催化剂用量= 1 0 \\mathrm { m o l \\% }），只有 HNTf₂ 及其类似物 Cat.I、Cat.II 能够催化该反应，而常见有机酸、无机酸以及 Cat.III 均无催化效果（表 1）。与其类似物（Cat.I、Cat.II）相比，HNTf₂ 表现出更优的催化性能。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p002-b017",
+    "page_idx": 1,
+    "block_idx": 17,
+    "block_type": "text",
+    "bbox": [
+      302,
+      241,
+      558,
+      303
+    ],
+    "source_text": "With \\mathrm { H N T f } _ { 2 } as a promising catalyst, the solvent effect has been investigated. The reaction was conducted in a variety of solvents, including both polar and non-polar ones, such as 1,4-dioxane, DMF, DMSO, acetic acid, toluene, cyclohexane, and 1,2-dichloroethane. The results indicate that all these solvents are effective, and the polar sol- vents exhibit even better performance.",
+    "lines": [
+      {
+        "bbox": [
+          317,
+          240,
+          558,
+          251
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "With",
+            "bbox": [
+              317,
+              240,
+              337,
+              251
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\mathrm { H N T f } _ { 2 }",
+            "bbox": [
+              337,
+              241,
+              362,
+              251
+            ]
+          },
+          {
+            "type": "text",
+            "content": "as a promising catalyst, the solvent effect has been",
+            "bbox": [
+              362,
+              240,
+              558,
+              251
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          251,
+          558,
+          262
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "investigated. The reaction was conducted in a variety of solvents,",
+            "bbox": [
+              304,
+              251,
+              558,
+              262
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          261,
+          559,
+          272
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "including both polar and non-polar ones, such as 1,4-dioxane, DMF,",
+            "bbox": [
+              304,
+              261,
+              559,
+              272
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          271,
+          559,
+          282
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "DMSO, acetic acid, toluene, cyclohexane, and 1,2-dichloroethane. The",
+            "bbox": [
+              304,
+              271,
+              559,
+              282
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          283,
+          558,
+          292
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "results indicate that all these solvents are effective, and the polar sol-",
+            "bbox": [
+              305,
+              283,
+              558,
+              292
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          292,
+          445,
+          304
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "vents exhibit even better performance.",
+            "bbox": [
+              304,
+              292,
+              445,
+              304
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 1,
+        "raw_path": "/pdf_info/1/para_blocks/9",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          241,
+          558,
+          303
+        ],
+        "raw_text_excerpt": "With \\mathrm { H N T f } _ { 2 } as a promising catalyst, the solvent effect has been investigated. The reaction was conducted in a variety of solvents, including both polar and non-polar ones, such a"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "With [[FORMULA_1]] as a promising catalyst, the solvent effect has been investigated. The reaction was conducted in a variety of solvents, including both polar and non-polar ones, such as 1,4-dioxane, DMF, DMSO, acetic acid, toluene, cyclohexane, and 1,2-dichloroethane. The results indicate that all these solvents are effective, and the polar sol- vents exhibit even better performance.",
+    "mixed_original_protected_source_text": "With [[FORMULA_1]] as a promising catalyst, the solvent effect has been investigated. The reaction was conducted in a variety of solvents, including both polar and non-polar ones, such as 1,4-dioxane, DMF, DMSO, acetic acid, toluene, cyclohexane, and 1,2-dichloroethane. The results indicate that all these solvents are effective, and the polar sol- vents exhibit even better performance.",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { H N T f } _ { 2 }"
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p002-b017",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p002-b017"
+    ],
+    "translation_unit_protected_source_text": "With [[FORMULA_1]] as a promising catalyst, the solvent effect has been investigated. The reaction was conducted in a variety of solvents, including both polar and non-polar ones, such as 1,4-dioxane, DMF, DMSO, acetic acid, toluene, cyclohexane, and 1,2-dichloroethane. The results indicate that all these solvents are effective, and the polar sol- vents exhibit even better performance.",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "\\mathrm { H N T f } _ { 2 }"
+      }
+    ],
+    "translation_unit_protected_translated_text": "在[[FORMULA_1]]作为一种有前景的催化剂，溶剂效应已被研究。该反应在多种溶剂中进行，包括极性和非极性溶剂，如1,4-二氧六环、DMF、DMSO、乙酸、甲苯、环己烷和1,2-二氯乙烷。结果表明，所有这些溶剂均有效，且极性溶剂表现出更优的性能。",
+    "translation_unit_translated_text": "在\\mathrm { H N T f } _ { 2 }作为一种有前景的催化剂，溶剂效应已被研究。该反应在多种溶剂中进行，包括极性和非极性溶剂，如1,4-二氧六环、DMF、DMSO、乙酸、甲苯、环己烷和1,2-二氯乙烷。结果表明，所有这些溶剂均有效，且极性溶剂表现出更优的性能。",
+    "protected_translated_text": "在[[FORMULA_1]]作为一种有前景的催化剂，溶剂效应已被研究。该反应在多种溶剂中进行，包括极性和非极性溶剂，如1,4-二氧六环、DMF、DMSO、乙酸、甲苯、环己烷和1,2-二氯乙烷。结果表明，所有这些溶剂均有效，且极性溶剂表现出更优的性能。",
+    "translated_text": "在\\mathrm { H N T f } _ { 2 }作为一种有前景的催化剂，溶剂效应已被研究。该反应在多种溶剂中进行，包括极性和非极性溶剂，如1,4-二氧六环、DMF、DMSO、乙酸、甲苯、环己烷和1,2-二氯乙烷。结果表明，所有这些溶剂均有效，且极性溶剂表现出更优的性能。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p002-b018",
+    "page_idx": 1,
+    "block_idx": 18,
+    "block_type": "text",
+    "bbox": [
+      302,
+      303,
+      558,
+      398
+    ],
+    "source_text": "Subsequently, we applied the conditions from entry 1, which rep- resented the best reaction conditions, to investigate the substrate scope (Table 2). In a typical procedure, the biaryl compound (such as biaryl, diaryl ether, diaryl thioether, and diarylamine), a ketone (such as flu- orenone, acridinone, xanthenone, anthraquinone, and other diary- lketones), and an appropriate amount of solvent (e.g., 1,4-dioxane, acetic acid, DMF) were placed in a round-bottom flask or a Schlenk flask (wrapped in aluminum foil to avoid side reactions under light condi- tions) [26]. Then, the catalyst HNTf₂ ( \\leq 1 0 \\mathrm { \\ m o l } \\% ) was added. The",
+    "lines": [
+      {
+        "bbox": [
+          315,
+          302,
+          558,
+          315
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Subsequently, we applied the conditions from entry 1, which rep-",
+            "bbox": [
+              315,
+              302,
+              558,
+              315
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          313,
+          558,
+          325
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "resented the best reaction conditions, to investigate the substrate scope",
+            "bbox": [
+              304,
+              313,
+              558,
+              325
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          325,
+          558,
+          335
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(Table 2). In a typical procedure, the biaryl compound (such as biaryl,",
+            "bbox": [
+              305,
+              325,
+              558,
+              335
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          335,
+          558,
+          345
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "diaryl ether, diaryl thioether, and diarylamine), a ketone (such as flu-",
+            "bbox": [
+              305,
+              335,
+              558,
+              345
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          346,
+          558,
+          356
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "orenone, acridinone, xanthenone, anthraquinone, and other diary-",
+            "bbox": [
+              305,
+              346,
+              558,
+              356
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          304,
+          356,
+          558,
+          367
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "lketones), and an appropriate amount of solvent (e.g., 1,4-dioxane,",
+            "bbox": [
+              304,
+              356,
+              558,
+              367
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          367,
+          558,
+          376
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "acetic acid, DMF) were placed in a round-bottom flask or a Schlenk flask",
+            "bbox": [
+              305,
+              367,
+              558,
+              376
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          377,
+          558,
+          387
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(wrapped in aluminum foil to avoid side reactions under light condi-",
+            "bbox": [
+              305,
+              377,
+              558,
+              387
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          387,
+          558,
+          398
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "tions) [26]. Then, the catalyst HNTf₂",
+            "bbox": [
+              305,
+              387,
+              449,
+              398
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "( \\leq 1 0 \\mathrm { \\ m o l } \\%",
+            "bbox": [
+              450,
+              387,
+              492,
+              397
+            ]
+          },
+          {
+            "type": "text",
+            "content": ") was added. The",
+            "bbox": [
+              492,
+              387,
+              558,
+              398
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 1,
+        "raw_path": "/pdf_info/1/para_blocks/10",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          302,
+          303,
+          558,
+          398
+        ],
+        "raw_text_excerpt": "Subsequently, we applied the conditions from entry 1, which rep- resented the best reaction conditions, to investigate the substrate scope (Table 2). In a typical procedure, the biaryl compound (such "
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "Subsequently, we applied the conditions from entry 1, which rep- resented the best reaction conditions, to investigate the substrate scope (Table 2). In a typical procedure, the biaryl compound (such as biaryl, diaryl ether, diaryl thioether, and diarylamine), a ketone (such as flu- orenone, acridinone, xanthenone, anthraquinone, and other diary- lketones), and an appropriate amount of solvent (e.g., 1,4-dioxane, acetic acid, DMF) were placed in a round-bottom flask or a Schlenk flask (wrapped in aluminum foil to avoid side reactions under light condi- tions) [26]. Then, the catalyst HNTf₂ [[FORMULA_1]] ) was added. The",
+    "mixed_original_protected_source_text": "Subsequently, we applied the conditions from entry 1, which rep- resented the best reaction conditions, to investigate the substrate scope (Table 2). In a typical procedure, the biaryl compound (such as biaryl, diaryl ether, diaryl thioether, and diarylamine), a ketone (such as flu- orenone, acridinone, xanthenone, anthraquinone, and other diary- lketones), and an appropriate amount of solvent (e.g., 1,4-dioxane, acetic acid, DMF) were placed in a round-bottom flask or a Schlenk flask (wrapped in aluminum foil to avoid side reactions under light condi- tions) [26]. Then, the catalyst HNTf₂ [[FORMULA_1]] ) was added. The",
+    "formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "( \\leq 1 0 \\mathrm { \\ m o l } \\%"
+      }
+    ],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-002-004",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p002-b018",
+      "p003-b000"
+    ],
+    "translation_unit_protected_source_text": "Subsequently, we applied the conditions from entry 1, which rep- resented the best reaction conditions, to investigate the substrate scope (Table 2). In a typical procedure, the biaryl compound (such as biaryl, diaryl ether, diaryl thioether, and diarylamine), a ketone (such as flu- orenone, acridinone, xanthenone, anthraquinone, and other diary- lketones), and an appropriate amount of solvent (e.g., 1,4-dioxane, acetic acid, DMF) were placed in a round-bottom flask or a Schlenk flask (wrapped in aluminum foil to avoid side reactions under light condi- tions) [26]. Then, the catalyst HNTf₂ [[FORMULA_1]] ) was added. The Table 2",
+    "translation_unit_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "( \\leq 1 0 \\mathrm { \\ m o l } \\%"
+      }
+    ],
+    "translation_unit_protected_translated_text": "随后，我们采用条目1中的最佳反应条件来考察底物适用范围（表2）。典型操作如下：将联芳化合物（如联芳烃、二芳基醚、二芳基硫醚和二芳胺）、酮类化合物（如芴酮、吖啶酮、呫吨酮、蒽醌及其他二芳基酮）与适量溶剂（例如1,4-二氧六环、乙酸、DMF）置于圆底烧瓶或施伦克烧瓶中（用铝箔包裹以避免光照条件下的副反应）[26]。随后加入催化剂HNTf₂[[FORMULA_1]]。表2",
+    "translation_unit_translated_text": "随后，我们采用条目1中的最佳反应条件来考察底物适用范围（表2）。典型操作如下：将联芳化合物（如联芳烃、二芳基醚、二芳基硫醚和二芳胺）、酮类化合物（如芴酮、吖啶酮、呫吨酮、蒽醌及其他二芳基酮）与适量溶剂（例如1,4-二氧六环、乙酸、DMF）置于圆底烧瓶或施伦克烧瓶中（用铝箔包裹以避免光照条件下的副反应）[26]。随后加入催化剂HNTf₂( \\leq 1 0 \\mathrm { \\ m o l } \\%。表2",
+    "protected_translated_text": "随后，我们采用条目1中的最佳反应条件来考察底物适用范围（表2）。典型操作如下：将联芳化合物（如联芳烃、二芳基醚、二芳基硫醚和二芳胺）、酮类化合物（如芴酮、吖啶酮、呫吨酮、蒽醌及其他二芳基酮）与适量溶剂（例如1,4-二氧六环、乙酸、DMF）置于圆底烧瓶或施伦克烧瓶中（用铝箔包裹以避免光照条件下的副反应）[26]。随后加入催化剂HNTf₂[[FORMULA_1]]。表2",
+    "translated_text": "随后，我们采用条目1中的最佳反应条件来考察底物适用范围（表2）。典型操作如下：将联芳化合物（如联芳烃、二芳基醚、二芳基硫醚和二芳胺）、酮类化合物（如芴酮、吖啶酮、呫吨酮、蒽醌及其他二芳基酮）与适量溶剂（例如1,4-二氧六环、乙酸、DMF）置于圆底烧瓶或施伦克烧瓶中（用铝箔包裹以避免光照条件下的副反应）[26]。随后加入催化剂HNTf₂( \\leq 1 0 \\mathrm { \\ m o l } \\%。表2",
+    "continuation_group": "cg-002-004",
+    "continuation_prev_text": "",
+    "continuation_next_text": "Table 2",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Subsequently, we applied the conditions from entry 1, which rep- resented the best reaction conditions, to investigate the substrate scope (Table 2). In a typical procedure, the biaryl compound (such as biaryl, diaryl ether, diaryl thioether, and diarylamine), a ketone (such as flu- orenone, acridinone, xanthenone, anthraquinone, and other diary- lketones), and an appropriate amount of solvent (e.g., 1,4-dioxane, acetic acid, DMF) were placed in a round-bottom flask or a Schlenk flask (wrapped in aluminum foil to avoid side reactions under light condi- tions) [26]. Then, the catalyst HNTf₂ [[FORMULA_1]] ) was added. The Table 2",
+    "group_formula_map": [
+      {
+        "placeholder": "[[FORMULA_1]]",
+        "formula_text": "( \\leq 1 0 \\mathrm { \\ m o l } \\%"
+      }
+    ],
+    "group_protected_translated_text": "随后，我们采用条目1中的最佳反应条件来考察底物适用范围（表2）。典型操作如下：将联芳化合物（如联芳烃、二芳基醚、二芳基硫醚和二芳胺）、酮类化合物（如芴酮、吖啶酮、呫吨酮、蒽醌及其他二芳基酮）与适量溶剂（例如1,4-二氧六环、乙酸、DMF）置于圆底烧瓶或施伦克烧瓶中（用铝箔包裹以避免光照条件下的副反应）[26]。随后加入催化剂HNTf₂[[FORMULA_1]]。表2",
+    "group_translated_text": "随后，我们采用条目1中的最佳反应条件来考察底物适用范围（表2）。典型操作如下：将联芳化合物（如联芳烃、二芳基醚、二芳基硫醚和二芳胺）、酮类化合物（如芴酮、吖啶酮、呫吨酮、蒽醌及其他二芳基酮）与适量溶剂（例如1,4-二氧六环、乙酸、DMF）置于圆底烧瓶或施伦克烧瓶中（用铝箔包裹以避免光照条件下的副反应）[26]。随后加入催化剂HNTf₂( \\leq 1 0 \\mathrm { \\ m o l } \\%。表2",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  },
+  {
+    "item_id": "p002-b020",
+    "page_idx": 1,
+    "block_idx": 20,
+    "block_type": "table_caption",
+    "bbox": [
+      304,
+      413,
+      434,
+      432
+    ],
+    "source_text": "Table 1 Optimization of the reaction conditions.",
+    "lines": [
+      {
+        "bbox": [
+          304,
+          412,
+          333,
+          422
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Table 1",
+            "bbox": [
+              304,
+              412,
+              333,
+              422
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          305,
+          422,
+          434,
+          432
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Optimization of the reaction conditions.",
+            "bbox": [
+              305,
+              422,
+              434,
+              432
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "caption",
+      "raw_type": "table_caption",
+      "tags": [
+        "caption",
+        "table_caption"
+      ],
+      "derived": {
+        "role": "caption",
+        "by": "provider_rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 1,
+        "raw_path": "/pdf_info/1/para_blocks/11/blocks/0",
+        "raw_type": "table_caption",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          304,
+          413,
+          434,
+          432
+        ],
+        "raw_text_excerpt": "Table 1 Optimization of the reaction conditions."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "non_flow",
+    "layout_zone_rank": -1,
+    "layout_zone_size": 0,
+    "layout_boundary_role": "",
+    "protected_source_text": "Table 1 Optimization of the reaction conditions.",
+    "mixed_original_protected_source_text": "Table 1 Optimization of the reaction conditions.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p002-b020",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p002-b020"
+    ],
+    "translation_unit_protected_source_text": "Table 1 Optimization of the reaction conditions.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "表1 反应条件优化。",
+    "translation_unit_translated_text": "表1 反应条件优化。",
+    "protected_translated_text": "表1 反应条件优化。",
+    "translated_text": "表1 反应条件优化。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": ""
+  }
+]

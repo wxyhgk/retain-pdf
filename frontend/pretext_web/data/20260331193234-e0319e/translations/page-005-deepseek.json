@@ -1,0 +1,3310 @@
+[
+  {
+    "item_id": "p005-b000",
+    "page_idx": 4,
+    "block_idx": 0,
+    "block_type": "title",
+    "bbox": [
+      35,
+      52,
+      102,
+      62
+    ],
+    "source_text": "Data availability",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          50,
+          102,
+          65
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Data availability",
+            "bbox": [
+              35,
+              50,
+              102,
+              65
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "title",
+      "normalized_sub_type": "title",
+      "structure_role": "title",
+      "raw_type": "title",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/0",
+        "raw_type": "title",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          35,
+          52,
+          102,
+          62
+        ],
+        "raw_text_excerpt": "Data availability"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "head",
+    "protected_source_text": "Data availability",
+    "mixed_original_protected_source_text": "Data availability",
+    "formula_map": [],
+    "classification_label": "skip_title",
+    "should_translate": false,
+    "skip_reason": "skip_title",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b000",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b000"
+    ],
+    "translation_unit_protected_source_text": "Data availability",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "Data availability",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b001",
+    "page_idx": 4,
+    "block_idx": 1,
+    "block_type": "text",
+    "bbox": [
+      47,
+      73,
+      190,
+      84
+    ],
+    "source_text": "Data will be made available on request.",
+    "lines": [
+      {
+        "bbox": [
+          47,
+          72,
+          190,
+          84
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Data will be made available on request.",
+            "bbox": [
+              47,
+              72,
+              190,
+              84
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "body",
+      "normalized_sub_type": "body",
+      "structure_role": "body",
+      "raw_type": "text",
+      "tags": [],
+      "derived": {
+        "role": "",
+        "by": "",
+        "confidence": 0.0
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/1",
+        "raw_type": "text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          47,
+          73,
+          190,
+          84
+        ],
+        "raw_text_excerpt": "Data will be made available on request."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "Data will be made available on request.",
+    "mixed_original_protected_source_text": "Data will be made available on request.",
+    "formula_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b001",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b001"
+    ],
+    "translation_unit_protected_source_text": "Data will be made available on request.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "数据将根据要求提供。",
+    "translation_unit_translated_text": "数据将根据要求提供。",
+    "protected_translated_text": "数据将根据要求提供。",
+    "translated_text": "数据将根据要求提供。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "数据将根据要求提供。",
+    "render_source_text": "Data will be made available on request.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b002",
+    "page_idx": 4,
+    "block_idx": 2,
+    "block_type": "title",
+    "bbox": [
+      35,
+      94,
+      79,
+      103
+    ],
+    "source_text": "References",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          94,
+          80,
+          105
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "References",
+            "bbox": [
+              35,
+              94,
+              80,
+              105
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "title",
+      "normalized_sub_type": "title",
+      "structure_role": "title",
+      "raw_type": "title",
+      "tags": [
+        "reference_heading",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_heading",
+        "by": "rule",
+        "confidence": 0.98
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/2",
+        "raw_type": "title",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          35,
+          94,
+          79,
+          103
+        ],
+        "raw_text_excerpt": "References"
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "References",
+    "mixed_original_protected_source_text": "References",
+    "formula_map": [],
+    "classification_label": "skip_reference_heading",
+    "should_translate": false,
+    "skip_reason": "skip_reference_heading",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b002",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b002"
+    ],
+    "translation_unit_protected_source_text": "References",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "References",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b004",
+    "page_idx": 4,
+    "block_idx": 4,
+    "block_type": "text",
+    "bbox": [
+      39,
+      114,
+      250,
+      122
+    ],
+    "source_text": "[1] M. Bhanuchandra, H. Yorimitsu, A. Osuka, Org. Lett. 18 (2016) 384.",
+    "lines": [
+      {
+        "bbox": [
+          40,
+          114,
+          251,
+          122
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[1] M. Bhanuchandra, H. Yorimitsu, A. Osuka, Org. Lett. 18 (2016) 384.",
+            "bbox": [
+              40,
+              114,
+              251,
+              122
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/3/blocks/0",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          39,
+          114,
+          250,
+          122
+        ],
+        "raw_text_excerpt": "[1] M. Bhanuchandra, H. Yorimitsu, A. Osuka, Org. Lett. 18 (2016) 384."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[1] M. Bhanuchandra, H. Yorimitsu, A. Osuka, Org. Lett. 18 (2016) 384.",
+    "mixed_original_protected_source_text": "[1] M. Bhanuchandra, H. Yorimitsu, A. Osuka, Org. Lett. 18 (2016) 384.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b004",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b004"
+    ],
+    "translation_unit_protected_source_text": "[1] M. Bhanuchandra, H. Yorimitsu, A. Osuka, Org. Lett. 18 (2016) 384.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[1] M. Bhanuchandra, H. Yorimitsu, A. Osuka, Org. Lett. 18 (2016) 384.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b005",
+    "page_idx": 4,
+    "block_idx": 5,
+    "block_type": "text",
+    "bbox": [
+      39,
+      122,
+      287,
+      130
+    ],
+    "source_text": "[2] Y. Han, L. Bai, J. Lin, X. Ding, L. Xie, W. Huang, Funct. Mater. 31 (2021) 2105092.",
+    "lines": [
+      {
+        "bbox": [
+          40,
+          122,
+          286,
+          130
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[2] Y. Han, L. Bai, J. Lin, X. Ding, L. Xie, W. Huang, Funct. Mater. 31 (2021) 2105092.",
+            "bbox": [
+              40,
+              122,
+              286,
+              130
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/3/blocks/1",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          39,
+          122,
+          287,
+          130
+        ],
+        "raw_text_excerpt": "[2] Y. Han, L. Bai, J. Lin, X. Ding, L. Xie, W. Huang, Funct. Mater. 31 (2021) 2105092."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[2] Y. Han, L. Bai, J. Lin, X. Ding, L. Xie, W. Huang, Funct. Mater. 31 (2021) 2105092.",
+    "mixed_original_protected_source_text": "[2] Y. Han, L. Bai, J. Lin, X. Ding, L. Xie, W. Huang, Funct. Mater. 31 (2021) 2105092.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b005",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b005"
+    ],
+    "translation_unit_protected_source_text": "[2] Y. Han, L. Bai, J. Lin, X. Ding, L. Xie, W. Huang, Funct. Mater. 31 (2021) 2105092.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[2] Y. Han, L. Bai, J. Lin, X. Ding, L. Xie, W. Huang, Funct. Mater. 31 (2021) 2105092.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b006",
+    "page_idx": 4,
+    "block_idx": 6,
+    "block_type": "text",
+    "bbox": [
+      39,
+      130,
+      277,
+      137
+    ],
+    "source_text": "[3] L. Xie, J. Liang, J. Song, C. Yin, W. Huang, Curr. Org. Chem. 14 (2010) 2169.",
+    "lines": [
+      {
+        "bbox": [
+          39,
+          130,
+          277,
+          139
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[3] L. Xie, J. Liang, J. Song, C. Yin, W. Huang, Curr. Org. Chem. 14 (2010) 2169.",
+            "bbox": [
+              39,
+              130,
+              277,
+              139
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/3/blocks/2",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          39,
+          130,
+          277,
+          137
+        ],
+        "raw_text_excerpt": "[3] L. Xie, J. Liang, J. Song, C. Yin, W. Huang, Curr. Org. Chem. 14 (2010) 2169."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 5,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[3] L. Xie, J. Liang, J. Song, C. Yin, W. Huang, Curr. Org. Chem. 14 (2010) 2169.",
+    "mixed_original_protected_source_text": "[3] L. Xie, J. Liang, J. Song, C. Yin, W. Huang, Curr. Org. Chem. 14 (2010) 2169.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b006",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b006"
+    ],
+    "translation_unit_protected_source_text": "[3] L. Xie, J. Liang, J. Song, C. Yin, W. Huang, Curr. Org. Chem. 14 (2010) 2169.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[3] L. Xie, J. Liang, J. Song, C. Yin, W. Huang, Curr. Org. Chem. 14 (2010) 2169.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b007",
+    "page_idx": 4,
+    "block_idx": 7,
+    "block_type": "text",
+    "bbox": [
+      39,
+      138,
+      287,
+      153
+    ],
+    "source_text": "[4] L.-H. Xie, F. Liu, C. Tang, X.-Y. Hou, Y.-R. Hua, Q.-L. Fan, W. Huang, Org. Lett. 8 (2006) 2787.",
+    "lines": [
+      {
+        "bbox": [
+          39,
+          136,
+          288,
+          148
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[4] L.-H. Xie, F. Liu, C. Tang, X.-Y. Hou, Y.-R. Hua, Q.-L. Fan, W. Huang, Org. Lett. 8",
+            "bbox": [
+              39,
+              136,
+              288,
+              148
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          52,
+          145,
+          92,
+          155
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(2006) 2787.",
+            "bbox": [
+              52,
+              145,
+              92,
+              155
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/3/blocks/3",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          39,
+          138,
+          287,
+          153
+        ],
+        "raw_text_excerpt": "[4] L.-H. Xie, F. Liu, C. Tang, X.-Y. Hou, Y.-R. Hua, Q.-L. Fan, W. Huang, Org. Lett. 8 (2006) 2787."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 6,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[4] L.-H. Xie, F. Liu, C. Tang, X.-Y. Hou, Y.-R. Hua, Q.-L. Fan, W. Huang, Org. Lett. 8 (2006) 2787.",
+    "mixed_original_protected_source_text": "[4] L.-H. Xie, F. Liu, C. Tang, X.-Y. Hou, Y.-R. Hua, Q.-L. Fan, W. Huang, Org. Lett. 8 (2006) 2787.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b007",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b007"
+    ],
+    "translation_unit_protected_source_text": "[4] L.-H. Xie, F. Liu, C. Tang, X.-Y. Hou, Y.-R. Hua, Q.-L. Fan, W. Huang, Org. Lett. 8 (2006) 2787.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[4] L.-H. Xie, F. Liu, C. Tang, X.-Y. Hou, Y.-R. Hua, Q.-L. Fan, W. Huang, Org. Lett. 8 (2006) 2787.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b008",
+    "page_idx": 4,
+    "block_idx": 8,
+    "block_type": "text",
+    "bbox": [
+      39,
+      154,
+      258,
+      161
+    ],
+    "source_text": "[5] Y. Kato, K. Nishimura, Y. Nishii, K. Hirano, Chem. Sci. 15 (2024) 2112.",
+    "lines": [
+      {
+        "bbox": [
+          39,
+          153,
+          259,
+          162
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[5] Y. Kato, K. Nishimura, Y. Nishii, K. Hirano, Chem. Sci. 15 (2024) 2112.",
+            "bbox": [
+              39,
+              153,
+              259,
+              162
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/3/blocks/4",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          39,
+          154,
+          258,
+          161
+        ],
+        "raw_text_excerpt": "[5] Y. Kato, K. Nishimura, Y. Nishii, K. Hirano, Chem. Sci. 15 (2024) 2112."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 7,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[5] Y. Kato, K. Nishimura, Y. Nishii, K. Hirano, Chem. Sci. 15 (2024) 2112.",
+    "mixed_original_protected_source_text": "[5] Y. Kato, K. Nishimura, Y. Nishii, K. Hirano, Chem. Sci. 15 (2024) 2112.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b008",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b008"
+    ],
+    "translation_unit_protected_source_text": "[5] Y. Kato, K. Nishimura, Y. Nishii, K. Hirano, Chem. Sci. 15 (2024) 2112.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[5] Y. Kato, K. Nishimura, Y. Nishii, K. Hirano, Chem. Sci. 15 (2024) 2112.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b009",
+    "page_idx": 4,
+    "block_idx": 9,
+    "block_type": "text",
+    "bbox": [
+      39,
+      162,
+      286,
+      177
+    ],
+    "source_text": "[6] Y. Deng, Y. Li, X. Li, F. Yu, H. Li, S. Zhu, B. Wang, Z. Chen, Q. Feng, L. Xie, et al., Adv. Opt. Mater. 13 (2025) 2402464.",
+    "lines": [
+      {
+        "bbox": [
+          39,
+          160,
+          287,
+          172
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[6] Y. Deng, Y. Li, X. Li, F. Yu, H. Li, S. Zhu, B. Wang, Z. Chen, Q. Feng, L. Xie, et al.,",
+            "bbox": [
+              39,
+              160,
+              287,
+              172
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          52,
+          168,
+          162,
+          179
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Adv. Opt. Mater. 13 (2025) 2402464.",
+            "bbox": [
+              52,
+              168,
+              162,
+              179
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/3/blocks/5",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          39,
+          162,
+          286,
+          177
+        ],
+        "raw_text_excerpt": "[6] Y. Deng, Y. Li, X. Li, F. Yu, H. Li, S. Zhu, B. Wang, Z. Chen, Q. Feng, L. Xie, et al., Adv. Opt. Mater. 13 (2025) 2402464."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 8,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[6] Y. Deng, Y. Li, X. Li, F. Yu, H. Li, S. Zhu, B. Wang, Z. Chen, Q. Feng, L. Xie, et al., Adv. Opt. Mater. 13 (2025) 2402464.",
+    "mixed_original_protected_source_text": "[6] Y. Deng, Y. Li, X. Li, F. Yu, H. Li, S. Zhu, B. Wang, Z. Chen, Q. Feng, L. Xie, et al., Adv. Opt. Mater. 13 (2025) 2402464.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b009",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b009"
+    ],
+    "translation_unit_protected_source_text": "[6] Y. Deng, Y. Li, X. Li, F. Yu, H. Li, S. Zhu, B. Wang, Z. Chen, Q. Feng, L. Xie, et al., Adv. Opt. Mater. 13 (2025) 2402464.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[6] Y. Deng, Y. Li, X. Li, F. Yu, H. Li, S. Zhu, B. Wang, Z. Chen, Q. Feng, L. Xie, et al., Adv. Opt. Mater. 13 (2025) 2402464.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b010",
+    "page_idx": 4,
+    "block_idx": 10,
+    "block_type": "text",
+    "bbox": [
+      39,
+      178,
+      286,
+      193
+    ],
+    "source_text": "[7] Z. Zhou, S. Xie, X. Chen, Y. Tu, J. Xiang, J. Wang, Z. He, Z. Zeng, B.Z. Tang, J. Am. Chem. Soc. 141 (2019) 9803.",
+    "lines": [
+      {
+        "bbox": [
+          39,
+          176,
+          287,
+          187
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[7] Z. Zhou, S. Xie, X. Chen, Y. Tu, J. Xiang, J. Wang, Z. He, Z. Zeng, B.Z. Tang, J. Am.",
+            "bbox": [
+              39,
+              176,
+              287,
+              187
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          52,
+          184,
+          139,
+          195
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Chem. Soc. 141 (2019) 9803.",
+            "bbox": [
+              52,
+              184,
+              139,
+              195
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/3/blocks/6",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          39,
+          178,
+          286,
+          193
+        ],
+        "raw_text_excerpt": "[7] Z. Zhou, S. Xie, X. Chen, Y. Tu, J. Xiang, J. Wang, Z. He, Z. Zeng, B.Z. Tang, J. Am. Chem. Soc. 141 (2019) 9803."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 9,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[7] Z. Zhou, S. Xie, X. Chen, Y. Tu, J. Xiang, J. Wang, Z. He, Z. Zeng, B.Z. Tang, J. Am. Chem. Soc. 141 (2019) 9803.",
+    "mixed_original_protected_source_text": "[7] Z. Zhou, S. Xie, X. Chen, Y. Tu, J. Xiang, J. Wang, Z. He, Z. Zeng, B.Z. Tang, J. Am. Chem. Soc. 141 (2019) 9803.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b010",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b010"
+    ],
+    "translation_unit_protected_source_text": "[7] Z. Zhou, S. Xie, X. Chen, Y. Tu, J. Xiang, J. Wang, Z. He, Z. Zeng, B.Z. Tang, J. Am. Chem. Soc. 141 (2019) 9803.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[7] Z. Zhou, S. Xie, X. Chen, Y. Tu, J. Xiang, J. Wang, Z. He, Z. Zeng, B.Z. Tang, J. Am. Chem. Soc. 141 (2019) 9803.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b011",
+    "page_idx": 4,
+    "block_idx": 11,
+    "block_type": "text",
+    "bbox": [
+      39,
+      194,
+      254,
+      202
+    ],
+    "source_text": "[8] Z. Hawash, L.K. Ono, Y. Qi, Adv. Mater. Interfaces 5 (2018) 1870003.",
+    "lines": [
+      {
+        "bbox": [
+          39,
+          193,
+          255,
+          203
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[8] Z. Hawash, L.K. Ono, Y. Qi, Adv. Mater. Interfaces 5 (2018) 1870003.",
+            "bbox": [
+              39,
+              193,
+              255,
+              203
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/3/blocks/7",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          39,
+          194,
+          254,
+          202
+        ],
+        "raw_text_excerpt": "[8] Z. Hawash, L.K. Ono, Y. Qi, Adv. Mater. Interfaces 5 (2018) 1870003."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 10,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[8] Z. Hawash, L.K. Ono, Y. Qi, Adv. Mater. Interfaces 5 (2018) 1870003.",
+    "mixed_original_protected_source_text": "[8] Z. Hawash, L.K. Ono, Y. Qi, Adv. Mater. Interfaces 5 (2018) 1870003.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b011",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b011"
+    ],
+    "translation_unit_protected_source_text": "[8] Z. Hawash, L.K. Ono, Y. Qi, Adv. Mater. Interfaces 5 (2018) 1870003.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[8] Z. Hawash, L.K. Ono, Y. Qi, Adv. Mater. Interfaces 5 (2018) 1870003.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b012",
+    "page_idx": 4,
+    "block_idx": 12,
+    "block_type": "text",
+    "bbox": [
+      39,
+      202,
+      286,
+      217
+    ],
+    "source_text": "[9] H. Liu, Z. Liu, G. Li, H. Huang, C. Zhou, Z. Wang, C. Yang, Angew. Chem. Int. Ed. 60 (2021) 12376.",
+    "lines": [
+      {
+        "bbox": [
+          39,
+          201,
+          287,
+          210
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[9] H. Liu, Z. Liu, G. Li, H. Huang, C. Zhou, Z. Wang, C. Yang, Angew. Chem. Int. Ed. 60",
+            "bbox": [
+              39,
+              201,
+              287,
+              210
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          52,
+          209,
+          96,
+          218
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(2021) 12376.",
+            "bbox": [
+              52,
+              209,
+              96,
+              218
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/3/blocks/8",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          39,
+          202,
+          286,
+          217
+        ],
+        "raw_text_excerpt": "[9] H. Liu, Z. Liu, G. Li, H. Huang, C. Zhou, Z. Wang, C. Yang, Angew. Chem. Int. Ed. 60 (2021) 12376."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 11,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[9] H. Liu, Z. Liu, G. Li, H. Huang, C. Zhou, Z. Wang, C. Yang, Angew. Chem. Int. Ed. 60 (2021) 12376.",
+    "mixed_original_protected_source_text": "[9] H. Liu, Z. Liu, G. Li, H. Huang, C. Zhou, Z. Wang, C. Yang, Angew. Chem. Int. Ed. 60 (2021) 12376.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b012",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b012"
+    ],
+    "translation_unit_protected_source_text": "[9] H. Liu, Z. Liu, G. Li, H. Huang, C. Zhou, Z. Wang, C. Yang, Angew. Chem. Int. Ed. 60 (2021) 12376.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[9] H. Liu, Z. Liu, G. Li, H. Huang, C. Zhou, Z. Wang, C. Yang, Angew. Chem. Int. Ed. 60 (2021) 12376.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b013",
+    "page_idx": 4,
+    "block_idx": 13,
+    "block_type": "text",
+    "bbox": [
+      37,
+      218,
+      267,
+      226
+    ],
+    "source_text": "[10] X. Luo, G. Boschloo, L. Kloo, L. Sun, B. Xu, Acc. Mater. Res. 5 (2024) 220.",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          217,
+          267,
+          226
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[10] X. Luo, G. Boschloo, L. Kloo, L. Sun, B. Xu, Acc. Mater. Res. 5 (2024) 220.",
+            "bbox": [
+              35,
+              217,
+              267,
+              226
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/3/blocks/9",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          37,
+          218,
+          267,
+          226
+        ],
+        "raw_text_excerpt": "[10] X. Luo, G. Boschloo, L. Kloo, L. Sun, B. Xu, Acc. Mater. Res. 5 (2024) 220."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 12,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[10] X. Luo, G. Boschloo, L. Kloo, L. Sun, B. Xu, Acc. Mater. Res. 5 (2024) 220.",
+    "mixed_original_protected_source_text": "[10] X. Luo, G. Boschloo, L. Kloo, L. Sun, B. Xu, Acc. Mater. Res. 5 (2024) 220.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b013",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b013"
+    ],
+    "translation_unit_protected_source_text": "[10] X. Luo, G. Boschloo, L. Kloo, L. Sun, B. Xu, Acc. Mater. Res. 5 (2024) 220.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[10] X. Luo, G. Boschloo, L. Kloo, L. Sun, B. Xu, Acc. Mater. Res. 5 (2024) 220.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b014",
+    "page_idx": 4,
+    "block_idx": 14,
+    "block_type": "text",
+    "bbox": [
+      37,
+      226,
+      281,
+      241
+    ],
+    "source_text": "[11] X. Liang, C. Wang, M. Wu, Y. Wu, F. Zhang, Z. Han, X. Lu, K. Guo, Y.-M. Zhao, Tetrahedron 73 (2017) 7115.",
+    "lines": [
+      {
+        "bbox": [
+          35,
+          223,
+          282,
+          236
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[11] X. Liang, C. Wang, M. Wu, Y. Wu, F. Zhang, Z. Han, X. Lu, K. Guo, Y.-M. Zhao,",
+            "bbox": [
+              35,
+              223,
+              282,
+              236
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          52,
+          233,
+          138,
+          241
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Tetrahedron 73 (2017) 7115.",
+            "bbox": [
+              52,
+              233,
+              138,
+              241
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/3/blocks/10",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          37,
+          226,
+          281,
+          241
+        ],
+        "raw_text_excerpt": "[11] X. Liang, C. Wang, M. Wu, Y. Wu, F. Zhang, Z. Han, X. Lu, K. Guo, Y.-M. Zhao, Tetrahedron 73 (2017) 7115."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 13,
+    "layout_zone_size": 14,
+    "layout_boundary_role": "tail",
+    "protected_source_text": "[11] X. Liang, C. Wang, M. Wu, Y. Wu, F. Zhang, Z. Han, X. Lu, K. Guo, Y.-M. Zhao, Tetrahedron 73 (2017) 7115.",
+    "mixed_original_protected_source_text": "[11] X. Liang, C. Wang, M. Wu, Y. Wu, F. Zhang, Z. Han, X. Lu, K. Guo, Y.-M. Zhao, Tetrahedron 73 (2017) 7115.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b014",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b014"
+    ],
+    "translation_unit_protected_source_text": "[11] X. Liang, C. Wang, M. Wu, Y. Wu, F. Zhang, Z. Han, X. Lu, K. Guo, Y.-M. Zhao, Tetrahedron 73 (2017) 7115.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[11] X. Liang, C. Wang, M. Wu, Y. Wu, F. Zhang, Z. Han, X. Lu, K. Guo, Y.-M. Zhao, Tetrahedron 73 (2017) 7115.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b016",
+    "page_idx": 4,
+    "block_idx": 16,
+    "block_type": "text",
+    "bbox": [
+      305,
+      53,
+      536,
+      68
+    ],
+    "source_text": "[12] M.-L. Sun, F. Zhang, Y. Qian, C.-J. Ou, B. Liu, L.-H. Xie, Y. Wei, B.-Y. Ren, W. Huang, Tetrahedron 74 (2018) 2063.",
+    "lines": [
+      {
+        "bbox": [
+          304,
+          51,
+          537,
+          63
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[12] M.-L. Sun, F. Zhang, Y. Qian, C.-J. Ou, B. Liu, L.-H. Xie, Y. Wei, B.-Y. Ren,",
+            "bbox": [
+              304,
+              51,
+              537,
+              63
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          321,
+          61,
+          439,
+          69
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "W. Huang, Tetrahedron 74 (2018) 2063.",
+            "bbox": [
+              321,
+              61,
+              439,
+              69
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/0",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          53,
+          536,
+          68
+        ],
+        "raw_text_excerpt": "[12] M.-L. Sun, F. Zhang, Y. Qian, C.-J. Ou, B. Liu, L.-H. Xie, Y. Wei, B.-Y. Ren, W. Huang, Tetrahedron 74 (2018) 2063."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "head",
+    "protected_source_text": "[12] M.-L. Sun, F. Zhang, Y. Qian, C.-J. Ou, B. Liu, L.-H. Xie, Y. Wei, B.-Y. Ren, W. Huang, Tetrahedron 74 (2018) 2063.",
+    "mixed_original_protected_source_text": "[12] M.-L. Sun, F. Zhang, Y. Qian, C.-J. Ou, B. Liu, L.-H. Xie, Y. Wei, B.-Y. Ren, W. Huang, Tetrahedron 74 (2018) 2063.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b016",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b016"
+    ],
+    "translation_unit_protected_source_text": "[12] M.-L. Sun, F. Zhang, Y. Qian, C.-J. Ou, B. Liu, L.-H. Xie, Y. Wei, B.-Y. Ren, W. Huang, Tetrahedron 74 (2018) 2063.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[12] M.-L. Sun, F. Zhang, Y. Qian, C.-J. Ou, B. Liu, L.-H. Xie, Y. Wei, B.-Y. Ren, W. Huang, Tetrahedron 74 (2018) 2063.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b017",
+    "page_idx": 4,
+    "block_idx": 17,
+    "block_type": "text",
+    "bbox": [
+      305,
+      69,
+      552,
+      84
+    ],
+    "source_text": "[13] S. Kotha, R. Ali, N.R. Panguluri, A. Datta, K.K. Kannaujiya, Tetrahedron Lett. 59 (2018) 4080.",
+    "lines": [
+      {
+        "bbox": [
+          305,
+          68,
+          553,
+          78
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[13] S. Kotha, R. Ali, N.R. Panguluri, A. Datta, K.K. Kannaujiya, Tetrahedron Lett. 59",
+            "bbox": [
+              305,
+              68,
+              553,
+              78
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          321,
+          76,
+          361,
+          85
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(2018) 4080.",
+            "bbox": [
+              321,
+              76,
+              361,
+              85
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/1",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          69,
+          552,
+          84
+        ],
+        "raw_text_excerpt": "[13] S. Kotha, R. Ali, N.R. Panguluri, A. Datta, K.K. Kannaujiya, Tetrahedron Lett. 59 (2018) 4080."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[13] S. Kotha, R. Ali, N.R. Panguluri, A. Datta, K.K. Kannaujiya, Tetrahedron Lett. 59 (2018) 4080.",
+    "mixed_original_protected_source_text": "[13] S. Kotha, R. Ali, N.R. Panguluri, A. Datta, K.K. Kannaujiya, Tetrahedron Lett. 59 (2018) 4080.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b017",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b017"
+    ],
+    "translation_unit_protected_source_text": "[13] S. Kotha, R. Ali, N.R. Panguluri, A. Datta, K.K. Kannaujiya, Tetrahedron Lett. 59 (2018) 4080.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[13] S. Kotha, R. Ali, N.R. Panguluri, A. Datta, K.K. Kannaujiya, Tetrahedron Lett. 59 (2018) 4080.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b018",
+    "page_idx": 4,
+    "block_idx": 18,
+    "block_type": "text",
+    "bbox": [
+      305,
+      85,
+      549,
+      100
+    ],
+    "source_text": "[14] C.-Y. Chan, Y.-C. Wong, M.-Y. Chan, S.-H. Cheung, S.-K. So, V.W.-W. Yam, ACS Appl. Mater. Interfaces 8 (2016) 24782.",
+    "lines": [
+      {
+        "bbox": [
+          304,
+          84,
+          550,
+          94
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[14] C.-Y. Chan, Y.-C. Wong, M.-Y. Chan, S.-H. Cheung, S.-K. So, V.W.-W. Yam, ACS",
+            "bbox": [
+              304,
+              84,
+              550,
+              94
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          320,
+          92,
+          437,
+          101
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Appl. Mater. Interfaces 8 (2016) 24782.",
+            "bbox": [
+              320,
+              92,
+              437,
+              101
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/2",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          85,
+          549,
+          100
+        ],
+        "raw_text_excerpt": "[14] C.-Y. Chan, Y.-C. Wong, M.-Y. Chan, S.-H. Cheung, S.-K. So, V.W.-W. Yam, ACS Appl. Mater. Interfaces 8 (2016) 24782."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[14] C.-Y. Chan, Y.-C. Wong, M.-Y. Chan, S.-H. Cheung, S.-K. So, V.W.-W. Yam, ACS Appl. Mater. Interfaces 8 (2016) 24782.",
+    "mixed_original_protected_source_text": "[14] C.-Y. Chan, Y.-C. Wong, M.-Y. Chan, S.-H. Cheung, S.-K. So, V.W.-W. Yam, ACS Appl. Mater. Interfaces 8 (2016) 24782.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b018",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b018"
+    ],
+    "translation_unit_protected_source_text": "[14] C.-Y. Chan, Y.-C. Wong, M.-Y. Chan, S.-H. Cheung, S.-K. So, V.W.-W. Yam, ACS Appl. Mater. Interfaces 8 (2016) 24782.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[14] C.-Y. Chan, Y.-C. Wong, M.-Y. Chan, S.-H. Cheung, S.-K. So, V.W.-W. Yam, ACS Appl. Mater. Interfaces 8 (2016) 24782.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b019",
+    "page_idx": 4,
+    "block_idx": 19,
+    "block_type": "text",
+    "bbox": [
+      305,
+      101,
+      461,
+      109
+    ],
+    "source_text": "[15] W. Zhao, J. Sun, Chem. Rev. 118 (2018) 10349.",
+    "lines": [
+      {
+        "bbox": [
+          304,
+          100,
+          461,
+          109
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[15] W. Zhao, J. Sun, Chem. Rev. 118 (2018) 10349.",
+            "bbox": [
+              304,
+              100,
+              461,
+              109
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/3",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          101,
+          461,
+          109
+        ],
+        "raw_text_excerpt": "[15] W. Zhao, J. Sun, Chem. Rev. 118 (2018) 10349."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[15] W. Zhao, J. Sun, Chem. Rev. 118 (2018) 10349.",
+    "mixed_original_protected_source_text": "[15] W. Zhao, J. Sun, Chem. Rev. 118 (2018) 10349.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b019",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b019"
+    ],
+    "translation_unit_protected_source_text": "[15] W. Zhao, J. Sun, Chem. Rev. 118 (2018) 10349.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[15] W. Zhao, J. Sun, Chem. Rev. 118 (2018) 10349.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b020",
+    "page_idx": 4,
+    "block_idx": 20,
+    "block_type": "text",
+    "bbox": [
+      305,
+      110,
+      529,
+      116
+    ],
+    "source_text": "[16] B.-B. Huang, Z.-Y. Luo, J.-J. Zhang, Z.-L. Xie, RSC Adv. 7 (2017) 17941.",
+    "lines": [
+      {
+        "bbox": [
+          304,
+          108,
+          530,
+          117
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[16] B.-B. Huang, Z.-Y. Luo, J.-J. Zhang, Z.-L. Xie, RSC Adv. 7 (2017) 17941.",
+            "bbox": [
+              304,
+              108,
+              530,
+              117
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/4",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          110,
+          529,
+          116
+        ],
+        "raw_text_excerpt": "[16] B.-B. Huang, Z.-Y. Luo, J.-J. Zhang, Z.-L. Xie, RSC Adv. 7 (2017) 17941."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[16] B.-B. Huang, Z.-Y. Luo, J.-J. Zhang, Z.-L. Xie, RSC Adv. 7 (2017) 17941.",
+    "mixed_original_protected_source_text": "[16] B.-B. Huang, Z.-Y. Luo, J.-J. Zhang, Z.-L. Xie, RSC Adv. 7 (2017) 17941.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b020",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b020"
+    ],
+    "translation_unit_protected_source_text": "[16] B.-B. Huang, Z.-Y. Luo, J.-J. Zhang, Z.-L. Xie, RSC Adv. 7 (2017) 17941.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[16] B.-B. Huang, Z.-Y. Luo, J.-J. Zhang, Z.-L. Xie, RSC Adv. 7 (2017) 17941.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b021",
+    "page_idx": 4,
+    "block_idx": 21,
+    "block_type": "text",
+    "bbox": [
+      305,
+      117,
+      555,
+      131
+    ],
+    "source_text": "[17] F. Bausi, A. Schlierf, E. Treossi, M.G. Schwab, V. Palermo, F. Cacialli, Org. Electron. 18 (2015) 53.",
+    "lines": [
+      {
+        "bbox": [
+          304,
+          114,
+          556,
+          126
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[17] F. Bausi, A. Schlierf, E. Treossi, M.G. Schwab, V. Palermo, F. Cacialli, Org. Electron.",
+            "bbox": [
+              304,
+              114,
+              556,
+              126
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          321,
+          124,
+          363,
+          133
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "18 (2015) 53.",
+            "bbox": [
+              321,
+              124,
+              363,
+              133
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/5",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          117,
+          555,
+          131
+        ],
+        "raw_text_excerpt": "[17] F. Bausi, A. Schlierf, E. Treossi, M.G. Schwab, V. Palermo, F. Cacialli, Org. Electron. 18 (2015) 53."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 5,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[17] F. Bausi, A. Schlierf, E. Treossi, M.G. Schwab, V. Palermo, F. Cacialli, Org. Electron. 18 (2015) 53.",
+    "mixed_original_protected_source_text": "[17] F. Bausi, A. Schlierf, E. Treossi, M.G. Schwab, V. Palermo, F. Cacialli, Org. Electron. 18 (2015) 53.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b021",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b021"
+    ],
+    "translation_unit_protected_source_text": "[17] F. Bausi, A. Schlierf, E. Treossi, M.G. Schwab, V. Palermo, F. Cacialli, Org. Electron. 18 (2015) 53.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[17] F. Bausi, A. Schlierf, E. Treossi, M.G. Schwab, V. Palermo, F. Cacialli, Org. Electron. 18 (2015) 53.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b022",
+    "page_idx": 4,
+    "block_idx": 22,
+    "block_type": "text",
+    "bbox": [
+      305,
+      133,
+      524,
+      140
+    ],
+    "source_text": "[18] D. Kim, D. Lee, Y. Lee, D.Y. Jeon, Adv. Funct. Mater. 23 (2013) 5049.",
+    "lines": [
+      {
+        "bbox": [
+          304,
+          132,
+          524,
+          141
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[18] D. Kim, D. Lee, Y. Lee, D.Y. Jeon, Adv. Funct. Mater. 23 (2013) 5049.",
+            "bbox": [
+              304,
+              132,
+              524,
+              141
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/6",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          133,
+          524,
+          140
+        ],
+        "raw_text_excerpt": "[18] D. Kim, D. Lee, Y. Lee, D.Y. Jeon, Adv. Funct. Mater. 23 (2013) 5049."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 6,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[18] D. Kim, D. Lee, Y. Lee, D.Y. Jeon, Adv. Funct. Mater. 23 (2013) 5049.",
+    "mixed_original_protected_source_text": "[18] D. Kim, D. Lee, Y. Lee, D.Y. Jeon, Adv. Funct. Mater. 23 (2013) 5049.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b022",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b022"
+    ],
+    "translation_unit_protected_source_text": "[18] D. Kim, D. Lee, Y. Lee, D.Y. Jeon, Adv. Funct. Mater. 23 (2013) 5049.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[18] D. Kim, D. Lee, Y. Lee, D.Y. Jeon, Adv. Funct. Mater. 23 (2013) 5049.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b023",
+    "page_idx": 4,
+    "block_idx": 23,
+    "block_type": "text",
+    "bbox": [
+      305,
+      141,
+      555,
+      156
+    ],
+    "source_text": "[19] Y. Xiao, H. Wang, S. Zhou, K. Yan, Z. Guan, S.-W. Tsang, J. Xu, ACS Appl. Mater. Interfaces 7 (2015) 13415.",
+    "lines": [
+      {
+        "bbox": [
+          304,
+          139,
+          556,
+          150
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[19] Y. Xiao, H. Wang, S. Zhou, K. Yan, Z. Guan, S.-W. Tsang, J. Xu, ACS Appl. Mater.",
+            "bbox": [
+              304,
+              139,
+              556,
+              150
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          320,
+          147,
+          401,
+          157
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Interfaces 7 (2015) 13415.",
+            "bbox": [
+              320,
+              147,
+              401,
+              157
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/7",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          141,
+          555,
+          156
+        ],
+        "raw_text_excerpt": "[19] Y. Xiao, H. Wang, S. Zhou, K. Yan, Z. Guan, S.-W. Tsang, J. Xu, ACS Appl. Mater. Interfaces 7 (2015) 13415."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 7,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[19] Y. Xiao, H. Wang, S. Zhou, K. Yan, Z. Guan, S.-W. Tsang, J. Xu, ACS Appl. Mater. Interfaces 7 (2015) 13415.",
+    "mixed_original_protected_source_text": "[19] Y. Xiao, H. Wang, S. Zhou, K. Yan, Z. Guan, S.-W. Tsang, J. Xu, ACS Appl. Mater. Interfaces 7 (2015) 13415.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b023",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b023"
+    ],
+    "translation_unit_protected_source_text": "[19] Y. Xiao, H. Wang, S. Zhou, K. Yan, Z. Guan, S.-W. Tsang, J. Xu, ACS Appl. Mater. Interfaces 7 (2015) 13415.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[19] Y. Xiao, H. Wang, S. Zhou, K. Yan, Z. Guan, S.-W. Tsang, J. Xu, ACS Appl. Mater. Interfaces 7 (2015) 13415.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b024",
+    "page_idx": 4,
+    "block_idx": 24,
+    "block_type": "text",
+    "bbox": [
+      305,
+      157,
+      555,
+      164
+    ],
+    "source_text": "[20] Y. Xiao, S. Zhou, Y. Su, L. Ye, S. Tsang, F. Xie, J. Xu, Org. Electron. 15 (2014) 3702.",
+    "lines": [
+      {
+        "bbox": [
+          305,
+          156,
+          556,
+          165
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[20] Y. Xiao, S. Zhou, Y. Su, L. Ye, S. Tsang, F. Xie, J. Xu, Org. Electron. 15 (2014) 3702.",
+            "bbox": [
+              305,
+              156,
+              556,
+              165
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/8",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          157,
+          555,
+          164
+        ],
+        "raw_text_excerpt": "[20] Y. Xiao, S. Zhou, Y. Su, L. Ye, S. Tsang, F. Xie, J. Xu, Org. Electron. 15 (2014) 3702."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 8,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[20] Y. Xiao, S. Zhou, Y. Su, L. Ye, S. Tsang, F. Xie, J. Xu, Org. Electron. 15 (2014) 3702.",
+    "mixed_original_protected_source_text": "[20] Y. Xiao, S. Zhou, Y. Su, L. Ye, S. Tsang, F. Xie, J. Xu, Org. Electron. 15 (2014) 3702.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b024",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b024"
+    ],
+    "translation_unit_protected_source_text": "[20] Y. Xiao, S. Zhou, Y. Su, L. Ye, S. Tsang, F. Xie, J. Xu, Org. Electron. 15 (2014) 3702.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[20] Y. Xiao, S. Zhou, Y. Su, L. Ye, S. Tsang, F. Xie, J. Xu, Org. Electron. 15 (2014) 3702.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b025",
+    "page_idx": 4,
+    "block_idx": 25,
+    "block_type": "text",
+    "bbox": [
+      305,
+      165,
+      510,
+      172
+    ],
+    "source_text": "[21] K. Ishihara, M. Kubota, H. Yamamoto, Synlett 1996 (1996) 1045.",
+    "lines": [
+      {
+        "bbox": [
+          305,
+          164,
+          511,
+          173
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[21] K. Ishihara, M. Kubota, H. Yamamoto, Synlett 1996 (1996) 1045.",
+            "bbox": [
+              305,
+              164,
+              511,
+              173
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/9",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          165,
+          510,
+          172
+        ],
+        "raw_text_excerpt": "[21] K. Ishihara, M. Kubota, H. Yamamoto, Synlett 1996 (1996) 1045."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 9,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[21] K. Ishihara, M. Kubota, H. Yamamoto, Synlett 1996 (1996) 1045.",
+    "mixed_original_protected_source_text": "[21] K. Ishihara, M. Kubota, H. Yamamoto, Synlett 1996 (1996) 1045.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b025",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b025"
+    ],
+    "translation_unit_protected_source_text": "[21] K. Ishihara, M. Kubota, H. Yamamoto, Synlett 1996 (1996) 1045.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[21] K. Ishihara, M. Kubota, H. Yamamoto, Synlett 1996 (1996) 1045.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b026",
+    "page_idx": 4,
+    "block_idx": 26,
+    "block_type": "text",
+    "bbox": [
+      305,
+      173,
+      544,
+      187
+    ],
+    "source_text": "[22] J. Cossy, C. Menciu, H. Rakotoarisoa, P.H. Kahn, J.-R. Desmurs, Bioorg. Med. Chem. Lett. 9 (1999) 3439.",
+    "lines": [
+      {
+        "bbox": [
+          305,
+          172,
+          544,
+          181
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[22] J. Cossy, C. Menciu, H. Rakotoarisoa, P.H. Kahn, J.-R. Desmurs, Bioorg. Med.",
+            "bbox": [
+              305,
+              172,
+              544,
+              181
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          320,
+          179,
+          402,
+          189
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Chem. Lett. 9 (1999) 3439.",
+            "bbox": [
+              320,
+              179,
+              402,
+              189
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/10",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          173,
+          544,
+          187
+        ],
+        "raw_text_excerpt": "[22] J. Cossy, C. Menciu, H. Rakotoarisoa, P.H. Kahn, J.-R. Desmurs, Bioorg. Med. Chem. Lett. 9 (1999) 3439."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 10,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[22] J. Cossy, C. Menciu, H. Rakotoarisoa, P.H. Kahn, J.-R. Desmurs, Bioorg. Med. Chem. Lett. 9 (1999) 3439.",
+    "mixed_original_protected_source_text": "[22] J. Cossy, C. Menciu, H. Rakotoarisoa, P.H. Kahn, J.-R. Desmurs, Bioorg. Med. Chem. Lett. 9 (1999) 3439.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b026",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b026"
+    ],
+    "translation_unit_protected_source_text": "[22] J. Cossy, C. Menciu, H. Rakotoarisoa, P.H. Kahn, J.-R. Desmurs, Bioorg. Med. Chem. Lett. 9 (1999) 3439.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[22] J. Cossy, C. Menciu, H. Rakotoarisoa, P.H. Kahn, J.-R. Desmurs, Bioorg. Med. Chem. Lett. 9 (1999) 3439.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b027",
+    "page_idx": 4,
+    "block_idx": 27,
+    "block_type": "text",
+    "bbox": [
+      305,
+      188,
+      527,
+      196
+    ],
+    "source_text": "[23] J. Cossy, F. Lutz, V. Alauze, C. Meyer, Synlett 2002 (2002) 0045–0048.",
+    "lines": [
+      {
+        "bbox": [
+          305,
+          188,
+          527,
+          197
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[23] J. Cossy, F. Lutz, V. Alauze, C. Meyer, Synlett 2002 (2002) 0045–0048.",
+            "bbox": [
+              305,
+              188,
+              527,
+              197
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/11",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          188,
+          527,
+          196
+        ],
+        "raw_text_excerpt": "[23] J. Cossy, F. Lutz, V. Alauze, C. Meyer, Synlett 2002 (2002) 0045–0048."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 11,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[23] J. Cossy, F. Lutz, V. Alauze, C. Meyer, Synlett 2002 (2002) 0045–0048.",
+    "mixed_original_protected_source_text": "[23] J. Cossy, F. Lutz, V. Alauze, C. Meyer, Synlett 2002 (2002) 0045–0048.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b027",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b027"
+    ],
+    "translation_unit_protected_source_text": "[23] J. Cossy, F. Lutz, V. Alauze, C. Meyer, Synlett 2002 (2002) 0045–0048.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[23] J. Cossy, F. Lutz, V. Alauze, C. Meyer, Synlett 2002 (2002) 0045–0048.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b028",
+    "page_idx": 4,
+    "block_idx": 28,
+    "block_type": "text",
+    "bbox": [
+      305,
+      197,
+      523,
+      204
+    ],
+    "source_text": "[24] O. Mendoza, G. Rossey, L. Ghosez, Tetrahedron Lett. 52 (2011) 2235.",
+    "lines": [
+      {
+        "bbox": [
+          305,
+          196,
+          523,
+          205
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[24] O. Mendoza, G. Rossey, L. Ghosez, Tetrahedron Lett. 52 (2011) 2235.",
+            "bbox": [
+              305,
+              196,
+              523,
+              205
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/12",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          197,
+          523,
+          204
+        ],
+        "raw_text_excerpt": "[24] O. Mendoza, G. Rossey, L. Ghosez, Tetrahedron Lett. 52 (2011) 2235."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 12,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[24] O. Mendoza, G. Rossey, L. Ghosez, Tetrahedron Lett. 52 (2011) 2235.",
+    "mixed_original_protected_source_text": "[24] O. Mendoza, G. Rossey, L. Ghosez, Tetrahedron Lett. 52 (2011) 2235.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b028",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b028"
+    ],
+    "translation_unit_protected_source_text": "[24] O. Mendoza, G. Rossey, L. Ghosez, Tetrahedron Lett. 52 (2011) 2235.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[24] O. Mendoza, G. Rossey, L. Ghosez, Tetrahedron Lett. 52 (2011) 2235.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b029",
+    "page_idx": 4,
+    "block_idx": 29,
+    "block_type": "text",
+    "bbox": [
+      305,
+      205,
+      550,
+      219
+    ],
+    "source_text": "[25] D.V. Patil, S.W. Kim, Q.H. Nguyen, H. Kim, S. Wang, T. Hoang, S. Shin, Angew. Chem. Int. Ed. 56 (2017) 3670.",
+    "lines": [
+      {
+        "bbox": [
+          305,
+          203,
+          552,
+          214
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[25] D.V. Patil, S.W. Kim, Q.H. Nguyen, H. Kim, S. Wang, T. Hoang, S. Shin, Angew.",
+            "bbox": [
+              305,
+              203,
+              552,
+              214
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          321,
+          210,
+          414,
+          221
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Chem. Int. Ed. 56 (2017) 3670.",
+            "bbox": [
+              321,
+              210,
+              414,
+              221
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/13",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          205,
+          550,
+          219
+        ],
+        "raw_text_excerpt": "[25] D.V. Patil, S.W. Kim, Q.H. Nguyen, H. Kim, S. Wang, T. Hoang, S. Shin, Angew. Chem. Int. Ed. 56 (2017) 3670."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 13,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "middle",
+    "protected_source_text": "[25] D.V. Patil, S.W. Kim, Q.H. Nguyen, H. Kim, S. Wang, T. Hoang, S. Shin, Angew. Chem. Int. Ed. 56 (2017) 3670.",
+    "mixed_original_protected_source_text": "[25] D.V. Patil, S.W. Kim, Q.H. Nguyen, H. Kim, S. Wang, T. Hoang, S. Shin, Angew. Chem. Int. Ed. 56 (2017) 3670.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b029",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b029"
+    ],
+    "translation_unit_protected_source_text": "[25] D.V. Patil, S.W. Kim, Q.H. Nguyen, H. Kim, S. Wang, T. Hoang, S. Shin, Angew. Chem. Int. Ed. 56 (2017) 3670.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[25] D.V. Patil, S.W. Kim, Q.H. Nguyen, H. Kim, S. Wang, T. Hoang, S. Shin, Angew. Chem. Int. Ed. 56 (2017) 3670.",
+    "render_formula_map": []
+  },
+  {
+    "item_id": "p005-b030",
+    "page_idx": 4,
+    "block_idx": 30,
+    "block_type": "text",
+    "bbox": [
+      305,
+      220,
+      502,
+      228
+    ],
+    "source_text": "[26] E. Torti, S. Protti, M. Fagnoni, Chem. Comun. 54 (2018) 4144.",
+    "lines": [
+      {
+        "bbox": [
+          305,
+          220,
+          503,
+          229
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "[26] E. Torti, S. Protti, M. Fagnoni, Chem. Comun. 54 (2018) 4144.",
+            "bbox": [
+              305,
+              220,
+              503,
+              229
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "ocr_sub_type": "metadata",
+      "normalized_sub_type": "metadata",
+      "structure_role": "reference_entry",
+      "raw_type": "ref_text",
+      "tags": [
+        "reference_entry",
+        "reference_zone"
+      ],
+      "derived": {
+        "role": "reference_entry",
+        "by": "rule",
+        "confidence": 0.95
+      },
+      "source": {
+        "provider": "mineru",
+        "raw_page_index": 4,
+        "raw_path": "/pdf_info/4/para_blocks/4/blocks/14",
+        "raw_type": "ref_text",
+        "raw_sub_type": "",
+        "raw_bbox": [
+          305,
+          220,
+          502,
+          228
+        ],
+        "raw_text_excerpt": "[26] E. Torti, S. Protti, M. Fagnoni, Chem. Comun. 54 (2018) 4144."
+      },
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "layout_mode": "double",
+    "layout_split_x": 273.0,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 14,
+    "layout_zone_size": 15,
+    "layout_boundary_role": "tail",
+    "protected_source_text": "[26] E. Torti, S. Protti, M. Fagnoni, Chem. Comun. 54 (2018) 4144.",
+    "mixed_original_protected_source_text": "[26] E. Torti, S. Protti, M. Fagnoni, Chem. Comun. 54 (2018) 4144.",
+    "formula_map": [],
+    "classification_label": "skip_reference_zone",
+    "should_translate": false,
+    "skip_reason": "skip_reference_zone",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b030",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b030"
+    ],
+    "translation_unit_protected_source_text": "[26] E. Torti, S. Protti, M. Fagnoni, Chem. Comun. 54 (2018) 4144.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "render_protected_text": "",
+    "render_source_text": "[26] E. Torti, S. Protti, M. Fagnoni, Chem. Comun. 54 (2018) 4144.",
+    "render_formula_map": []
+  }
+]

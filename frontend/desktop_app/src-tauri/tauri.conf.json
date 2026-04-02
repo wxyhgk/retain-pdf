@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "保留排版翻译",
+  "version": "0.1.0",
+  "identifier": "com.wxyhgk.pdftranslate",
+  "build": {
+    "frontendDist": "../.."
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "保留排版翻译",
+        "width": 1440,
+        "height": 960,
+        "minWidth": 1200,
+        "minHeight": 860,
+        "resizable": true
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "resources": [
+      "../../../backend/scripts",
+      "../../../backend/python"
+    ]
+  }
+}

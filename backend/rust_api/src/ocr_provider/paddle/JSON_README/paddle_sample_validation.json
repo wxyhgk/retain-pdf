@@ -1,0 +1,67 @@
+{
+  "mode": "adapt",
+  "input_path": "/home/wxyhgk/tmp/Code/rust_api/src/ocr_provider/paddle/json_full.json",
+  "normalization": {
+    "source_json_path": "/home/wxyhgk/tmp/Code/rust_api/src/ocr_provider/paddle/json_full.json",
+    "document_id": "paddle-sample",
+    "provider": "paddle",
+    "provider_version": "",
+    "compat": {
+      "pages_seen": 3,
+      "blocks_seen": 59,
+      "document_defaults": {},
+      "page_defaults": {},
+      "block_defaults": {}
+    },
+    "validation": {
+      "valid": true,
+      "schema": "normalized_document_v1",
+      "schema_version": "1.0",
+      "page_count": 3,
+      "block_count": 59
+    },
+    "detected_provider": "paddle",
+    "detection": {
+      "matched": true,
+      "provider": "paddle",
+      "attempts": [
+        {
+          "provider": "generic_flat_ocr",
+          "matched": false
+        },
+        {
+          "provider": "mineru_content_list_v2",
+          "matched": false
+        },
+        {
+          "provider": "mineru",
+          "matched": false
+        },
+        {
+          "provider": "paddle",
+          "matched": true
+        }
+      ]
+    },
+    "provider_was_explicit": true
+  },
+  "normalization_summary": {
+    "provider": "paddle",
+    "detected_provider": "paddle",
+    "provider_was_explicit": true,
+    "compat_pages": 3,
+    "compat_blocks": 59,
+    "valid": true,
+    "page_count": 3,
+    "block_count": 59,
+    "detection_matched": true,
+    "detection_attempts": 4
+  },
+  "validation": {
+    "valid": true,
+    "schema": "normalized_document_v1",
+    "schema_version": "1.0",
+    "page_count": 3,
+    "block_count": 59
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "provider": "generic_flat_ocr",
+  "pages": [
+    {
+      "width": 600,
+      "height": 800,
+      "unit": "pt",
+      "blocks": [
+        {
+          "type": "text",
+          "sub_type": "body",
+          "bbox": [10, 10, 200, 40],
+          "text": "Generic OCR sample",
+          "lines": [],
+          "segments": []
+        }
+      ]
+    }
+  ]
+}

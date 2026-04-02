@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>保留排版预览</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <style id="print-page-style"></style>
+    <script>
+      window.__PREVIEW_CONFIG__ = window.__PREVIEW_CONFIG__ || null;
+    </script>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [["\\(", "\\)"], ["$", "$"]],
+          displayMath: [["\\[", "\\]"], ["$$", "$$"]],
+        },
+        svg: {
+          fontCache: "global",
+        },
+      };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <div>
+          <h1>保留排版预览</h1>
+          <p id="sample-summary" class="muted">正在读取预览数据…</p>
+        </div>
+        <div class="toolbar">
+          <button id="export-pdf-button" type="button" class="toolbar-button">导出预览 PDF</button>
+          <label>
+            <span>缩放</span>
+            <select id="scale-select">
+              <option value="0.5">50%</option>
+              <option value="0.75">75%</option>
+              <option value="1" selected>100%</option>
+              <option value="1.25">125%</option>
+            </select>
+          </label>
+          <label class="checkbox">
+            <input id="show-overlay-toggle" type="checkbox" checked />
+            <span>显示译文层</span>
+          </label>
+          <label class="checkbox">
+            <input id="show-bounds-toggle" type="checkbox" />
+            <span>显示块边框</span>
+          </label>
+        </div>
+      </header>
+
+      <section class="layout">
+        <section class="viewer-card">
+          <div id="pages-root" class="pages-root"></div>
+        </section>
+
+        <section class="inspectors">
+          <aside class="detail-card">
+            <h2>块信息</h2>
+            <div id="detail-empty" class="muted">点击页面中的一个文本块查看详情。</div>
+            <dl id="detail-panel" class="detail-panel hidden">
+              <div><dt>item_id</dt><dd id="detail-item-id">-</dd></div>
+              <div><dt>block_type</dt><dd id="detail-block-type">-</dd></div>
+              <div><dt>bbox</dt><dd id="detail-bbox">-</dd></div>
+              <div><dt>source_text</dt><dd id="detail-source-text">-</dd></div>
+              <div><dt>translated_text</dt><dd id="detail-translated-text">-</dd></div>
+            </dl>
+          </aside>
+
+          <aside class="detail-card debug-card">
+            <div class="debug-head">
+              <h2>同页链调试</h2>
+              <label>
+                <span>unit</span>
+                <select id="debug-unit-select"></select>
+              </label>
+            </div>
+            <div id="debug-empty" class="muted">当前没有可调试的同页跨块链。</div>
+            <div id="debug-panel" class="debug-panel hidden">
+              <div><dt>unit_id</dt><dd id="debug-unit-id">-</dd></div>
+              <div><dt>strategy</dt><dd id="debug-strategy">-</dd></div>
+              <div><dt>fit</dt><dd id="debug-fit">-</dd></div>
+              <div><dt>full_text</dt><dd id="debug-full-text">-</dd></div>
+              <div><dt>members</dt><dd id="debug-members"></dd></div>
+            </div>
+          </aside>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

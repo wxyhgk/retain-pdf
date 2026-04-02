@@ -1,0 +1,3968 @@
+{
+  "layoutParsingResults": [
+    {
+      "prunedResult": {
+        "page_count": 3,
+        "width": 1191,
+        "height": 1684,
+        "model_settings": {
+          "use_doc_preprocessor": false,
+          "use_layout_detection": true,
+          "use_chart_recognition": false,
+          "use_seal_recognition": true,
+          "use_ocr_for_image_block": false,
+          "format_block_content": true,
+          "merge_layout_blocks": true,
+          "markdown_ignore_labels": [
+            "number",
+            "footnote",
+            "header",
+            "header_image",
+            "footer",
+            "footer_image",
+            "aside_text"
+          ],
+          "return_layout_polygon_points": true
+        },
+        "parsing_res_list": [
+          {
+            "block_label": "header",
+            "block_content": "PaddleOCR JSON Split Research",
+            "block_bbox": [
+              97,
+              55,
+              342,
+              77
+            ],
+            "block_id": 0,
+            "block_order": null,
+            "group_id": 0,
+            "global_block_id": 0,
+            "global_group_id": 0,
+            "block_polygon_points": [
+              [
+                97,
+                55
+              ],
+              [
+                342,
+                55
+              ],
+              [
+                342,
+                77
+              ],
+              [
+                97,
+                77
+              ]
+            ]
+          },
+          {
+            "block_label": "header",
+            "block_content": "March 31, 2026 · Provider: Paddle",
+            "block_bbox": [
+              839,
+              55,
+              1091,
+              77
+            ],
+            "block_id": 1,
+            "block_order": null,
+            "group_id": 1,
+            "global_block_id": 1,
+            "global_group_id": 1,
+            "block_polygon_points": [
+              [
+                839,
+                55
+              ],
+              [
+                1091,
+                55
+              ],
+              [
+                1091,
+                77
+              ],
+              [
+                839,
+                77
+              ]
+            ]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "## 1. JSON Split Profile",
+            "block_bbox": [
+              98,
+              96,
+              399,
+              129
+            ],
+            "block_id": 2,
+            "block_order": 1,
+            "group_id": 2,
+            "global_block_id": 2,
+            "global_group_id": 2,
+            "block_polygon_points": [
+              [
+                98,
+                96
+              ],
+              [
+                399,
+                96
+              ],
+              [
+                399,
+                129
+              ],
+              [
+                98,
+                129
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "PaddleOCR 的 JSON 拆分调研文件，目标是让 layout、segments、metadata、table、formula、image 等层级在后续适配时更容易拆开。This document deliberately mixes English and 中文 to cover bilingual metadata, while the inline formula  $ \\lambda = 1.5 $ simulates the confidence bias used in split heuristics.",
+            "block_bbox": [
+              96,
+              134,
+              1084,
+              249
+            ],
+            "block_id": 3,
+            "block_order": 2,
+            "group_id": 3,
+            "global_block_id": 3,
+            "global_group_id": 3,
+            "block_polygon_points": [
+              [
+                96,
+                134
+              ],
+              [
+                1084,
+                134
+              ],
+              [
+                1084,
+                249
+              ],
+              [
+                96,
+                249
+              ]
+            ]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "### 1.1. 结构概览",
+            "block_bbox": [
+              97,
+              265,
+              256,
+              296
+            ],
+            "block_id": 4,
+            "block_order": 3,
+            "group_id": 4,
+            "global_block_id": 4,
+            "global_group_id": 4,
+            "block_polygon_points": [
+              [
+                97,
+                265
+              ],
+              [
+                256,
+                265
+              ],
+              [
+                256,
+                296
+              ],
+              [
+                97,
+                296
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "This paragraph mixes short English phrases and 中文短句 to imitate how OCR records title, body text, and side metadata in one page. 下面这一段包含行内公式  $ E = mc^{2} $，也包含简短提示文字，适合观察 PaddleOCR 对 text span 和 inline math 的切分行为。",
+            "block_bbox": [
+              95,
+              300,
+              1092,
+              386
+            ],
+            "block_id": 5,
+            "block_order": 4,
+            "group_id": 5,
+            "global_block_id": 5,
+            "global_group_id": 5,
+            "block_polygon_points": [
+              [
+                95,
+                300
+              ],
+              [
+                1092,
+                300
+              ],
+              [
+                1092,
+                386
+              ],
+              [
+                95,
+                386
+              ]
+            ]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "##### 调研步骤如下：",
+            "block_bbox": [
+              98,
+              399,
+              240,
+              425
+            ],
+            "block_id": 6,
+            "block_order": 5,
+            "group_id": 6,
+            "global_block_id": 6,
+            "global_group_id": 6,
+            "block_polygon_points": [
+              [
+                98,
+                399
+              ],
+              [
+                240,
+                399
+              ],
+              [
+                240,
+                425
+              ],
+              [
+                98,
+                425
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "1. Define the core JSON slice labels: layout, text_segments, and metadata.",
+            "block_bbox": [
+              96,
+              440,
+              827,
+              466
+            ],
+            "block_id": 7,
+            "block_order": 6,
+            "group_id": 7,
+            "global_block_id": 7,
+            "global_group_id": 7,
+            "block_polygon_points": [
+              [
+                96,
+                440
+              ],
+              [
+                827,
+                440
+              ],
+              [
+                827,
+                466
+              ],
+              [
+                96,
+                466
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "2. Map each slice to either the normalized document or the report cache.",
+            "block_bbox": [
+              96,
+              469,
+              854,
+              495
+            ],
+            "block_id": 8,
+            "block_order": 7,
+            "group_id": 8,
+            "global_block_id": 8,
+            "global_group_id": 8,
+            "block_polygon_points": [
+              [
+                96,
+                469
+              ],
+              [
+                854,
+                469
+              ],
+              [
+                854,
+                495
+              ],
+              [
+                96,
+                495
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "3. Document how downstream services consume these slices without re-parsing raw OCR.",
+            "block_bbox": [
+              96,
+              499,
+              1030,
+              525
+            ],
+            "block_id": 9,
+            "block_order": 8,
+            "group_id": 9,
+            "global_block_id": 9,
+            "global_group_id": 9,
+            "block_polygon_points": [
+              [
+                96,
+                499
+              ],
+              [
+                1030,
+                499
+              ],
+              [
+                1030,
+                525
+              ],
+              [
+                96,
+                525
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "注意事项：验证集采用 line-based text field，以便 benchmark 与离线调试可以复用同一批 JSON。",
+            "block_bbox": [
+              96,
+              538,
+              1033,
+              566
+            ],
+            "block_id": 10,
+            "block_order": 9,
+            "group_id": 10,
+            "global_block_id": 10,
+            "global_group_id": 10,
+            "block_polygon_points": [
+              [
+                96,
+                538
+              ],
+              [
+                1033,
+                538
+              ],
+              [
+                1033,
+                566
+              ],
+              [
+                96,
+                566
+              ]
+            ]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "### 1.2. 关键词与流程",
+            "block_bbox": [
+              98,
+              582,
+              309,
+              612
+            ],
+            "block_id": 11,
+            "block_order": 10,
+            "group_id": 11,
+            "global_block_id": 11,
+            "global_group_id": 11,
+            "block_polygon_points": [
+              [
+                98,
+                582
+              ],
+              [
+                309,
+                582
+              ],
+              [
+                309,
+                612
+              ],
+              [
+                98,
+                612
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "下列项目用于覆盖短项目符号列表、代码样式单词和中英文混排：",
+            "block_bbox": [
+              99,
+              617,
+              702,
+              644
+            ],
+            "block_id": 12,
+            "block_order": 11,
+            "group_id": 12,
+            "global_block_id": 12,
+            "global_group_id": 12,
+            "block_polygon_points": [
+              [
+                99,
+                617
+              ],
+              [
+                702,
+                617
+              ],
+              [
+                702,
+                644
+              ],
+              [
+                99,
+                644
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "- text_segments：用于翻译和渲染提示词。",
+            "block_bbox": [
+              102,
+              659,
+              509,
+              685
+            ],
+            "block_id": 13,
+            "block_order": 12,
+            "group_id": 13,
+            "global_block_id": 13,
+            "global_group_id": 13,
+            "block_polygon_points": [
+              [
+                102,
+                659
+              ],
+              [
+                509,
+                659
+              ],
+              [
+                509,
+                685
+              ],
+              [
+                102,
+                685
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "layout_hierarchy：只保留在规范化文档的结构层。",
+            "block_bbox": [
+              104,
+              688,
+              602,
+              715
+            ],
+            "block_id": 14,
+            "block_order": 13,
+            "group_id": 14,
+            "global_block_id": 14,
+            "global_group_id": 14,
+            "block_polygon_points": [
+              [
+                104,
+                688
+              ],
+              [
+                602,
+                688
+              ],
+              [
+                602,
+                715
+              ],
+              [
+                104,
+                715
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "• report_summary: 只能通过共享 helper 产生，不能在业务代码里重复推导。",
+            "block_bbox": [
+              101,
+              717,
+              827,
+              744
+            ],
+            "block_id": 15,
+            "block_order": 14,
+            "group_id": 15,
+            "global_block_id": 15,
+            "global_group_id": 15,
+            "block_polygon_points": [
+              [
+                101,
+                717
+              ],
+              [
+                827,
+                717
+              ],
+              [
+                827,
+                744
+              ],
+              [
+                101,
+                744
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "The visual cue in Figure 1 shows how the split occurs between layout and metadata. The inline formula  $ s_i = \\frac{e^{x_i}}{\\sum_i} e^{x_i} $ highlights the confidence distribution used for selecting segments.",
+            "block_bbox": [
+              96,
+              756,
+              1071,
+              817
+            ],
+            "block_id": 16,
+            "block_order": 15,
+            "group_id": 16,
+            "global_block_id": 16,
+            "global_group_id": 16,
+            "block_polygon_points": [
+              [
+                96,
+                756
+              ],
+              [
+                1071,
+                756
+              ],
+              [
+                1071,
+                817
+              ],
+              [
+                96,
+                817
+              ]
+            ]
+          },
+          {
+            "block_label": "image",
+            "block_content": "<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_256_840_937_1091.jpg\" alt=\"Image\" width=\"57%\" /></div>\n",
+            "block_bbox": [
+              256,
+              840,
+              937,
+              1091
+            ],
+            "block_id": 17,
+            "block_order": null,
+            "group_id": 17,
+            "global_block_id": 17,
+            "global_group_id": 17,
+            "block_polygon_points": [
+              [
+                256,
+                840
+              ],
+              [
+                937,
+                840
+              ],
+              [
+                937,
+                1091
+              ],
+              [
+                256,
+                1091
+              ]
+            ]
+          },
+          {
+            "block_label": "figure_title",
+            "block_content": "<div style=\"text-align: center;\"><div style=\"text-align: center;\">Figure 1: Figure 1. PaddleOCR JSON split flow between layout, text, and metadata.</div> </div>\n",
+            "block_bbox": [
+              174,
+              1108,
+              1017,
+              1136
+            ],
+            "block_id": 18,
+            "block_order": null,
+            "group_id": 18,
+            "global_block_id": 18,
+            "global_group_id": 18,
+            "block_polygon_points": [
+              [
+                174,
+                1108
+              ],
+              [
+                1017,
+                1108
+              ],
+              [
+                1017,
+                1136
+              ],
+              [
+                174,
+                1136
+              ]
+            ]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "### 1.3. 表格与脚注",
+            "block_bbox": [
+              97,
+              1151,
+              284,
+              1181
+            ],
+            "block_id": 19,
+            "block_order": 16,
+            "group_id": 19,
+            "global_block_id": 19,
+            "global_group_id": 19,
+            "block_polygon_points": [
+              [
+                97,
+                1151
+              ],
+              [
+                284,
+                1151
+              ],
+              [
+                284,
+                1181
+              ],
+              [
+                97,
+                1181
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "Use this table to keep downstream document consumers consistent with field semantics.",
+            "block_bbox": [
+              98,
+              1187,
+              1012,
+              1214
+            ],
+            "block_id": 20,
+            "block_order": 17,
+            "group_id": 20,
+            "global_block_id": 20,
+            "global_group_id": 20,
+            "block_polygon_points": [
+              [
+                98,
+                1187
+              ],
+              [
+                1012,
+                1187
+              ],
+              [
+                1012,
+                1214
+              ],
+              [
+                98,
+                1214
+              ]
+            ]
+          },
+          {
+            "block_label": "table",
+            "block_content": "\n\n<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>Field</td><td style='text-align: center; word-wrap: break-word;'>Description</td><td style='text-align: center; word-wrap: break-word;'>Example</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>layout.json</td><td style='text-align: center; word-wrap: break-word;'>Raw bounding boxes and tokens</td><td style='text-align: center; word-wrap: break-word;'>[[x, y, w, h, text]]</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>document.v1.json</td><td style='text-align: center; word-wrap: break-word;'>Normalized hierarchical document</td><td style='text-align: center; word-wrap: break-word;'>{&quot;pages&quot;: [...}]</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>report.json</td><td style='text-align: center; word-wrap: break-word;'>Summary and confidence statistics</td><td style='text-align: center; word-wrap: break-word;'>{&quot;summary&quot;: &quot;...&quot;, &quot;confidence&quot;: 0.96}</td></tr></table>",
+            "block_bbox": [
+              100,
+              1229,
+              1089,
+              1430
+            ],
+            "block_id": 21,
+            "block_order": null,
+            "group_id": 21,
+            "global_block_id": 21,
+            "global_group_id": 21,
+            "block_polygon_points": [
+              [
+                100,
+                1229
+              ],
+              [
+                1089,
+                1229
+              ],
+              [
+                1089,
+                1430
+              ],
+              [
+                100,
+                1430
+              ]
+            ]
+          },
+          {
+            "block_label": "figure_title",
+            "block_content": "<div style=\"text-align: center;\"><div style=\"text-align: center;\">Table 1: Table 1. Core JSON documents and their intended consumers.</div> </div>\n",
+            "block_bbox": [
+              233,
+              1441,
+              960,
+              1467
+            ],
+            "block_id": 22,
+            "block_order": null,
+            "group_id": 22,
+            "global_block_id": 22,
+            "global_group_id": 22,
+            "block_polygon_points": [
+              [
+                233,
+                1441
+              ],
+              [
+                960,
+                1441
+              ],
+              [
+                960,
+                1467
+              ],
+              [
+                233,
+                1467
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "表格脚注：这里假设共享 helper 统一负责命名，后续 provider 的扩展字段也应优先进入 report，而不是直接污染主 schema。",
+            "block_bbox": [
+              97,
+              1480,
+              1087,
+              1539
+            ],
+            "block_id": 23,
+            "block_order": 18,
+            "group_id": 23,
+            "global_block_id": 23,
+            "global_group_id": 23,
+            "block_polygon_points": [
+              [
+                97,
+                1480
+              ],
+              [
+                1087,
+                1480
+              ],
+              [
+                1087,
+                1539
+              ],
+              [
+                97,
+                1539
+              ]
+            ]
+          },
+          {
+            "block_label": "footer",
+            "block_content": "Confidential Draft",
+            "block_bbox": [
+              98,
+              1608,
+              238,
+              1630
+            ],
+            "block_id": 24,
+            "block_order": null,
+            "group_id": 24,
+            "global_block_id": 24,
+            "global_group_id": 24,
+            "block_polygon_points": [
+              [
+                98,
+                1608
+              ],
+              [
+                237,
+                1608
+              ],
+              [
+                237,
+                1629
+              ],
+              [
+                98,
+                1629
+              ]
+            ]
+          },
+          {
+            "block_label": "footer",
+            "block_content": "Page page.number / pages.count",
+            "block_bbox": [
+              848,
+              1608,
+              1091,
+              1631
+            ],
+            "block_id": 25,
+            "block_order": null,
+            "group_id": 25,
+            "global_block_id": 25,
+            "global_group_id": 25,
+            "block_polygon_points": [
+              [
+                848,
+                1608
+              ],
+              [
+                1091,
+                1608
+              ],
+              [
+                1091,
+                1631
+              ],
+              [
+                848,
+                1631
+              ]
+            ]
+          }
+        ],
+        "layout_det_res": {
+          "boxes": [
+            {
+              "cls_id": 12,
+              "label": "header",
+              "score": 0.8629352450370789,
+              "coordinate": [
+                97,
+                55,
+                342,
+                77
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  97,
+                  55
+                ],
+                [
+                  342,
+                  55
+                ],
+                [
+                  342,
+                  77
+                ],
+                [
+                  97,
+                  77
+                ]
+              ]
+            },
+            {
+              "cls_id": 12,
+              "label": "header",
+              "score": 0.880682647228241,
+              "coordinate": [
+                839,
+                55,
+                1091,
+                77
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  839,
+                  55
+                ],
+                [
+                  1091,
+                  55
+                ],
+                [
+                  1091,
+                  77
+                ],
+                [
+                  839,
+                  77
+                ]
+              ]
+            },
+            {
+              "cls_id": 17,
+              "label": "paragraph_title",
+              "score": 0.8924334049224854,
+              "coordinate": [
+                98,
+                96,
+                399,
+                129
+              ],
+              "order": 1,
+              "polygon_points": [
+                [
+                  98,
+                  96
+                ],
+                [
+                  399,
+                  96
+                ],
+                [
+                  399,
+                  129
+                ],
+                [
+                  98,
+                  129
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.9473484754562378,
+              "coordinate": [
+                96,
+                134,
+                1084,
+                249
+              ],
+              "order": 2,
+              "polygon_points": [
+                [
+                  96,
+                  134
+                ],
+                [
+                  1084,
+                  134
+                ],
+                [
+                  1084,
+                  249
+                ],
+                [
+                  96,
+                  249
+                ]
+              ]
+            },
+            {
+              "cls_id": 17,
+              "label": "paragraph_title",
+              "score": 0.8669065237045288,
+              "coordinate": [
+                97,
+                265,
+                256,
+                296
+              ],
+              "order": 3,
+              "polygon_points": [
+                [
+                  97,
+                  265
+                ],
+                [
+                  256,
+                  265
+                ],
+                [
+                  256,
+                  296
+                ],
+                [
+                  97,
+                  296
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.9339479207992554,
+              "coordinate": [
+                95,
+                300,
+                1092,
+                386
+              ],
+              "order": 4,
+              "polygon_points": [
+                [
+                  95,
+                  300
+                ],
+                [
+                  1092,
+                  300
+                ],
+                [
+                  1092,
+                  386
+                ],
+                [
+                  95,
+                  386
+                ]
+              ]
+            },
+            {
+              "cls_id": 15,
+              "label": "inline_formula",
+              "score": 0.4616001546382904,
+              "coordinate": [
+                710,
+                330,
+                793,
+                355
+              ],
+              "order": 5,
+              "polygon_points": [
+                [
+                  710,
+                  330
+                ],
+                [
+                  710,
+                  354
+                ],
+                [
+                  792,
+                  354
+                ],
+                [
+                  792,
+                  330
+                ]
+              ]
+            },
+            {
+              "cls_id": 17,
+              "label": "paragraph_title",
+              "score": 0.49421268701553345,
+              "coordinate": [
+                98,
+                399,
+                240,
+                425
+              ],
+              "order": 6,
+              "polygon_points": [
+                [
+                  98,
+                  399
+                ],
+                [
+                  240,
+                  399
+                ],
+                [
+                  240,
+                  425
+                ],
+                [
+                  98,
+                  425
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.8252363204956055,
+              "coordinate": [
+                96,
+                440,
+                827,
+                466
+              ],
+              "order": 7,
+              "polygon_points": [
+                [
+                  96,
+                  440
+                ],
+                [
+                  827,
+                  440
+                ],
+                [
+                  827,
+                  466
+                ],
+                [
+                  96,
+                  466
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.824653685092926,
+              "coordinate": [
+                96,
+                469,
+                854,
+                495
+              ],
+              "order": 8,
+              "polygon_points": [
+                [
+                  96,
+                  469
+                ],
+                [
+                  854,
+                  469
+                ],
+                [
+                  854,
+                  495
+                ],
+                [
+                  96,
+                  495
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.8173756003379822,
+              "coordinate": [
+                96,
+                499,
+                1030,
+                525
+              ],
+              "order": 9,
+              "polygon_points": [
+                [
+                  96,
+                  499
+                ],
+                [
+                  1030,
+                  499
+                ],
+                [
+                  1030,
+                  525
+                ],
+                [
+                  96,
+                  525
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.850387454032898,
+              "coordinate": [
+                96,
+                538,
+                1033,
+                566
+              ],
+              "order": 10,
+              "polygon_points": [
+                [
+                  96,
+                  538
+                ],
+                [
+                  1033,
+                  538
+                ],
+                [
+                  1033,
+                  566
+                ],
+                [
+                  96,
+                  566
+                ]
+              ]
+            },
+            {
+              "cls_id": 17,
+              "label": "paragraph_title",
+              "score": 0.8673183917999268,
+              "coordinate": [
+                98,
+                582,
+                309,
+                612
+              ],
+              "order": 11,
+              "polygon_points": [
+                [
+                  98,
+                  582
+                ],
+                [
+                  309,
+                  582
+                ],
+                [
+                  309,
+                  612
+                ],
+                [
+                  98,
+                  612
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.848425030708313,
+              "coordinate": [
+                99,
+                617,
+                702,
+                644
+              ],
+              "order": 12,
+              "polygon_points": [
+                [
+                  99,
+                  617
+                ],
+                [
+                  702,
+                  617
+                ],
+                [
+                  702,
+                  644
+                ],
+                [
+                  99,
+                  644
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.8109352588653564,
+              "coordinate": [
+                102,
+                659,
+                509,
+                685
+              ],
+              "order": 13,
+              "polygon_points": [
+                [
+                  102,
+                  659
+                ],
+                [
+                  509,
+                  659
+                ],
+                [
+                  509,
+                  685
+                ],
+                [
+                  102,
+                  685
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.7930942177772522,
+              "coordinate": [
+                104,
+                688,
+                602,
+                715
+              ],
+              "order": 14,
+              "polygon_points": [
+                [
+                  104,
+                  688
+                ],
+                [
+                  602,
+                  688
+                ],
+                [
+                  602,
+                  715
+                ],
+                [
+                  104,
+                  715
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.8164770603179932,
+              "coordinate": [
+                101,
+                717,
+                827,
+                744
+              ],
+              "order": 15,
+              "polygon_points": [
+                [
+                  101,
+                  717
+                ],
+                [
+                  827,
+                  717
+                ],
+                [
+                  827,
+                  744
+                ],
+                [
+                  101,
+                  744
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.9047191143035889,
+              "coordinate": [
+                96,
+                756,
+                1071,
+                817
+              ],
+              "order": 16,
+              "polygon_points": [
+                [
+                  96,
+                  756
+                ],
+                [
+                  1071,
+                  756
+                ],
+                [
+                  1071,
+                  817
+                ],
+                [
+                  96,
+                  817
+                ]
+              ]
+            },
+            {
+              "cls_id": 15,
+              "label": "inline_formula",
+              "score": 0.7939993739128113,
+              "coordinate": [
+                188,
+                785,
+                287,
+                821
+              ],
+              "order": 17,
+              "polygon_points": [
+                [
+                  188,
+                  785
+                ],
+                [
+                  188,
+                  813
+                ],
+                [
+                  213,
+                  820
+                ],
+                [
+                  231,
+                  820
+                ],
+                [
+                  238,
+                  820
+                ],
+                [
+                  286,
+                  820
+                ],
+                [
+                  286,
+                  785
+                ]
+              ]
+            },
+            {
+              "cls_id": 14,
+              "label": "image",
+              "score": 0.9485400319099426,
+              "coordinate": [
+                256,
+                840,
+                937,
+                1091
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  256,
+                  840
+                ],
+                [
+                  937,
+                  840
+                ],
+                [
+                  937,
+                  1091
+                ],
+                [
+                  256,
+                  1091
+                ]
+              ]
+            },
+            {
+              "cls_id": 7,
+              "label": "figure_title",
+              "score": 0.859534502029419,
+              "coordinate": [
+                174,
+                1108,
+                1017,
+                1136
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  174,
+                  1108
+                ],
+                [
+                  1017,
+                  1108
+                ],
+                [
+                  1017,
+                  1136
+                ],
+                [
+                  174,
+                  1136
+                ]
+              ]
+            },
+            {
+              "cls_id": 17,
+              "label": "paragraph_title",
+              "score": 0.8702707886695862,
+              "coordinate": [
+                97,
+                1151,
+                284,
+                1181
+              ],
+              "order": 18,
+              "polygon_points": [
+                [
+                  97,
+                  1151
+                ],
+                [
+                  284,
+                  1151
+                ],
+                [
+                  284,
+                  1181
+                ],
+                [
+                  97,
+                  1181
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.7908048629760742,
+              "coordinate": [
+                98,
+                1187,
+                1012,
+                1214
+              ],
+              "order": 19,
+              "polygon_points": [
+                [
+                  98,
+                  1187
+                ],
+                [
+                  1012,
+                  1187
+                ],
+                [
+                  1012,
+                  1214
+                ],
+                [
+                  98,
+                  1214
+                ]
+              ]
+            },
+            {
+              "cls_id": 21,
+              "label": "table",
+              "score": 0.9661862850189209,
+              "coordinate": [
+                100,
+                1229,
+                1089,
+                1430
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  100,
+                  1229
+                ],
+                [
+                  1089,
+                  1229
+                ],
+                [
+                  1089,
+                  1430
+                ],
+                [
+                  100,
+                  1430
+                ]
+              ]
+            },
+            {
+              "cls_id": 15,
+              "label": "inline_formula",
+              "score": 0.3054790794849396,
+              "coordinate": [
+                723,
+                1323,
+                886,
+                1351
+              ],
+              "order": 20,
+              "polygon_points": [
+                [
+                  723,
+                  1323
+                ],
+                [
+                  723,
+                  1350
+                ],
+                [
+                  885,
+                  1350
+                ],
+                [
+                  885,
+                  1323
+                ]
+              ]
+            },
+            {
+              "cls_id": 7,
+              "label": "figure_title",
+              "score": 0.8497879505157471,
+              "coordinate": [
+                233,
+                1441,
+                960,
+                1467
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  233,
+                  1441
+                ],
+                [
+                  960,
+                  1441
+                ],
+                [
+                  960,
+                  1467
+                ],
+                [
+                  233,
+                  1467
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.8781048655509949,
+              "coordinate": [
+                97,
+                1480,
+                1087,
+                1539
+              ],
+              "order": 21,
+              "polygon_points": [
+                [
+                  97,
+                  1480
+                ],
+                [
+                  1087,
+                  1480
+                ],
+                [
+                  1087,
+                  1539
+                ],
+                [
+                  97,
+                  1539
+                ]
+              ]
+            },
+            {
+              "cls_id": 8,
+              "label": "footer",
+              "score": 0.8309049010276794,
+              "coordinate": [
+                98,
+                1608,
+                238,
+                1630
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  98,
+                  1608
+                ],
+                [
+                  237,
+                  1608
+                ],
+                [
+                  237,
+                  1629
+                ],
+                [
+                  98,
+                  1629
+                ]
+              ]
+            },
+            {
+              "cls_id": 8,
+              "label": "footer",
+              "score": 0.853956937789917,
+              "coordinate": [
+                848,
+                1608,
+                1091,
+                1631
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  848,
+                  1608
+                ],
+                [
+                  1091,
+                  1608
+                ],
+                [
+                  1091,
+                  1631
+                ],
+                [
+                  848,
+                  1631
+                ]
+              ]
+            }
+          ]
+        }
+      },
+      "markdown": {
+        "text": "## 1. JSON Split Profile\n\nPaddleOCR 的 JSON 拆分调研文件，目标是让 layout、segments、metadata、table、formula、image 等层级在后续适配时更容易拆开。This document deliberately mixes English and 中文 to cover bilingual metadata, while the inline formula  $ \\lambda = 1.5 $ simulates the confidence bias used in split heuristics.\n\n### 1.1. 结构概览\n\nThis paragraph mixes short English phrases and 中文短句 to imitate how OCR records title, body text, and side metadata in one page. 下面这一段包含行内公式  $ E = mc^{2} $，也包含简短提示文字，适合观察 PaddleOCR 对 text span 和 inline math 的切分行为。\n\n##### 调研步骤如下：\n\n1. Define the core JSON slice labels: layout, text_segments, and metadata.\n\n2. Map each slice to either the normalized document or the report cache.\n\n3. Document how downstream services consume these slices without re-parsing raw OCR.\n\n注意事项：验证集采用 line-based text field，以便 benchmark 与离线调试可以复用同一批 JSON。\n\n### 1.2. 关键词与流程\n\n下列项目用于覆盖短项目符号列表、代码样式单词和中英文混排：\n\n- text_segments：用于翻译和渲染提示词。\n\nlayout_hierarchy：只保留在规范化文档的结构层。\n\n• report_summary: 只能通过共享 helper 产生，不能在业务代码里重复推导。\n\nThe visual cue in Figure 1 shows how the split occurs between layout and metadata. The inline formula  $ s_i = \\frac{e^{x_i}}{\\sum_i} e^{x_i} $ highlights the confidence distribution used for selecting segments.\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_256_840_937_1091.jpg\" alt=\"Image\" width=\"57%\" /></div>\n\n\n<div style=\"text-align: center;\"><div style=\"text-align: center;\">Figure 1: Figure 1. PaddleOCR JSON split flow between layout, text, and metadata.</div> </div>\n\n\n### 1.3. 表格与脚注\n\nUse this table to keep downstream document consumers consistent with field semantics.\n\n\n\n<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>Field</td><td style='text-align: center; word-wrap: break-word;'>Description</td><td style='text-align: center; word-wrap: break-word;'>Example</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>layout.json</td><td style='text-align: center; word-wrap: break-word;'>Raw bounding boxes and tokens</td><td style='text-align: center; word-wrap: break-word;'>[[x, y, w, h, text]]</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>document.v1.json</td><td style='text-align: center; word-wrap: break-word;'>Normalized hierarchical document</td><td style='text-align: center; word-wrap: break-word;'>{&quot;pages&quot;: [...}]</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>report.json</td><td style='text-align: center; word-wrap: break-word;'>Summary and confidence statistics</td><td style='text-align: center; word-wrap: break-word;'>{&quot;summary&quot;: &quot;...&quot;, &quot;confidence&quot;: 0.96}</td></tr></table>\n\n<div style=\"text-align: center;\"><div style=\"text-align: center;\">Table 1: Table 1. Core JSON documents and their intended consumers.</div> </div>\n\n\n表格脚注：这里假设共享 helper 统一负责命名，后续 provider 的扩展字段也应优先进入 report，而不是直接污染主 schema。",
+        "images": {
+          "imgs/img_in_image_box_256_840_937_1091.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/markdown_0/imgs/img_in_image_box_256_840_937_1091.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A34Z%2F-1%2F%2F74b6f017dbb4970a500a8eb50614aafa9aa95ac76dccedee5a7be63d59d6ea01"
+        }
+      },
+      "outputImages": {
+        "layout_det_res": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/layout_det_res_0.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A35Z%2F-1%2F%2F2f83dabd4454fd03b8596ba7898da0329d2e4ed8448804aad4f976d1744f2680"
+      },
+      "inputImage": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/input_img_0.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A35Z%2F-1%2F%2F08863b7f4a3e31fa84b927d189a3b532d90554300f420558818558b30265bf59"
+    },
+    {
+      "prunedResult": {
+        "page_count": 3,
+        "width": 1191,
+        "height": 1684,
+        "model_settings": {
+          "use_doc_preprocessor": false,
+          "use_layout_detection": true,
+          "use_chart_recognition": false,
+          "use_seal_recognition": true,
+          "use_ocr_for_image_block": false,
+          "format_block_content": true,
+          "merge_layout_blocks": true,
+          "markdown_ignore_labels": [
+            "number",
+            "footnote",
+            "header",
+            "header_image",
+            "footer",
+            "footer_image",
+            "aside_text"
+          ],
+          "return_layout_polygon_points": true
+        },
+        "parsing_res_list": [
+          {
+            "block_label": "header",
+            "block_content": "PaddleOCR JSON Split Research",
+            "block_bbox": [
+              97,
+              55,
+              342,
+              77
+            ],
+            "block_id": 0,
+            "block_order": null,
+            "group_id": 0,
+            "global_block_id": 26,
+            "global_group_id": 26,
+            "block_polygon_points": [
+              [
+                97,
+                55
+              ],
+              [
+                342,
+                55
+              ],
+              [
+                342,
+                77
+              ],
+              [
+                97,
+                77
+              ]
+            ]
+          },
+          {
+            "block_label": "header",
+            "block_content": "March 31, 2026 · Provider: Paddle",
+            "block_bbox": [
+              839,
+              55,
+              1091,
+              77
+            ],
+            "block_id": 1,
+            "block_order": null,
+            "group_id": 1,
+            "global_block_id": 27,
+            "global_group_id": 27,
+            "block_polygon_points": [
+              [
+                839,
+                55
+              ],
+              [
+                1091,
+                55
+              ],
+              [
+                1091,
+                77
+              ],
+              [
+                839,
+                77
+              ]
+            ]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "### 1.4. 代码块与引用",
+            "block_bbox": [
+              98,
+              95,
+              307,
+              126
+            ],
+            "block_id": 2,
+            "block_order": 1,
+            "group_id": 2,
+            "global_block_id": 28,
+            "global_group_id": 28,
+            "block_polygon_points": [
+              [
+                98,
+                95
+              ],
+              [
+                307,
+                95
+              ],
+              [
+                307,
+                126
+              ],
+              [
+                98,
+                126
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "下面的代码块用于测试 PaddleOCR 对 monospace、命令行参数和长横线的处理。",
+            "block_bbox": [
+              98,
+              130,
+              866,
+              158
+            ],
+            "block_id": 3,
+            "block_order": 2,
+            "group_id": 3,
+            "global_block_id": 29,
+            "global_group_id": 29,
+            "block_polygon_points": [
+              [
+                98,
+                130
+              ],
+              [
+                866,
+                130
+              ],
+              [
+                866,
+                158
+              ],
+              [
+                98,
+                158
+              ]
+            ]
+          },
+          {
+            "block_label": "algorithm",
+            "block_content": "python scripts/entrypoints/validate_document_schema.py \\\n--adapt sample_layout.json \\\n--write-report sample_report.json",
+            "block_bbox": [
+              99,
+              172,
+              671,
+              244
+            ],
+            "block_id": 4,
+            "block_order": 3,
+            "group_id": 4,
+            "global_block_id": 30,
+            "global_group_id": 30,
+            "block_polygon_points": [
+              [
+                99,
+                172
+              ],
+              [
+                671,
+                172
+              ],
+              [
+                671,
+                244
+              ],
+              [
+                99,
+                244
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "引用块用于观察 indentation、leading 和引用标记的检测：",
+            "block_bbox": [
+              97,
+              255,
+              656,
+              284
+            ],
+            "block_id": 5,
+            "block_order": 4,
+            "group_id": 5,
+            "global_block_id": 31,
+            "global_group_id": 31,
+            "block_polygon_points": [
+              [
+                97,
+                255
+              ],
+              [
+                656,
+                255
+              ],
+              [
+                656,
+                284
+              ],
+              [
+                97,
+                284
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "说明：请务必先触发 regression_check，确认 provider fixture 已登记在 registry，然后再比较 normalized document 与 raw provider JSON 的字段差异。",
+            "block_bbox": [
+              116,
+              322,
+              1035,
+              380
+            ],
+            "block_id": 6,
+            "block_order": 5,
+            "group_id": 6,
+            "global_block_id": 32,
+            "global_group_id": 32,
+            "block_polygon_points": [
+              [
+                116,
+                322
+              ],
+              [
+                1035,
+                322
+              ],
+              [
+                1035,
+                380
+              ],
+              [
+                116,
+                380
+              ]
+            ]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "### 1.5. 行间公式与总结",
+            "block_bbox": [
+              98,
+              403,
+              334,
+              433
+            ],
+            "block_id": 7,
+            "block_order": 6,
+            "group_id": 7,
+            "global_block_id": 33,
+            "global_group_id": 33,
+            "block_polygon_points": [
+              [
+                98,
+                403
+              ],
+              [
+                334,
+                403
+              ],
+              [
+                334,
+                433
+              ],
+              [
+                98,
+                433
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "下面的行间公式用于覆盖 display math 场景：",
+            "block_bbox": [
+              100,
+              438,
+              529,
+              466
+            ],
+            "block_id": 8,
+            "block_order": 7,
+            "group_id": 8,
+            "global_block_id": 34,
+            "global_group_id": 34,
+            "block_polygon_points": [
+              [
+                100,
+                438
+              ],
+              [
+                529,
+                438
+              ],
+              [
+                529,
+                466
+              ],
+              [
+                100,
+                466
+              ]
+            ]
+          },
+          {
+            "block_label": "display_formula",
+            "block_content": " $$ N=\\frac{\\sum_{i=1}^{n}c_{i}w_{i}}{\\sum_{i=1}^{n}w_{i}} $$ ",
+            "block_bbox": [
+              520,
+              480,
+              668,
+              547
+            ],
+            "block_id": 9,
+            "block_order": 8,
+            "group_id": 9,
+            "global_block_id": 35,
+            "global_group_id": 35,
+            "block_polygon_points": [
+              [
+                520,
+                480
+              ],
+              [
+                668,
+                480
+              ],
+              [
+                668,
+                547
+              ],
+              [
+                520,
+                547
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "为了让第一页内容自然结束，这里追加一段简短的中文和英文摘要。The first page intentionally contains mixed paragraph lengths, figure caption text, a table block, and a code block so that OCR can expose differences in block typing.",
+            "block_bbox": [
+              96,
+              563,
+              1055,
+              651
+            ],
+            "block_id": 10,
+            "block_order": 9,
+            "group_id": 10,
+            "global_block_id": 36,
+            "global_group_id": 36,
+            "block_polygon_points": [
+              [
+                96,
+                563
+              ],
+              [
+                1055,
+                563
+              ],
+              [
+                1055,
+                651
+              ],
+              [
+                96,
+                651
+              ]
+            ]
+          },
+          {
+            "block_label": "footer",
+            "block_content": "Confidential Draft",
+            "block_bbox": [
+              99,
+              1608,
+              238,
+              1629
+            ],
+            "block_id": 11,
+            "block_order": null,
+            "group_id": 11,
+            "global_block_id": 37,
+            "global_group_id": 37,
+            "block_polygon_points": [
+              [
+                99,
+                1608
+              ],
+              [
+                237,
+                1608
+              ],
+              [
+                237,
+                1628
+              ],
+              [
+                99,
+                1628
+              ]
+            ]
+          },
+          {
+            "block_label": "footer",
+            "block_content": "Page page.number / pages.count",
+            "block_bbox": [
+              848,
+              1609,
+              1090,
+              1631
+            ],
+            "block_id": 12,
+            "block_order": null,
+            "group_id": 12,
+            "global_block_id": 38,
+            "global_group_id": 38,
+            "block_polygon_points": [
+              [
+                848,
+                1609
+              ],
+              [
+                1090,
+                1609
+              ],
+              [
+                1090,
+                1631
+              ],
+              [
+                848,
+                1631
+              ]
+            ]
+          }
+        ],
+        "layout_det_res": {
+          "boxes": [
+            {
+              "cls_id": 12,
+              "label": "header",
+              "score": 0.8664733171463013,
+              "coordinate": [
+                97,
+                55,
+                342,
+                77
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  97,
+                  55
+                ],
+                [
+                  342,
+                  55
+                ],
+                [
+                  342,
+                  77
+                ],
+                [
+                  97,
+                  77
+                ]
+              ]
+            },
+            {
+              "cls_id": 12,
+              "label": "header",
+              "score": 0.8843494653701782,
+              "coordinate": [
+                839,
+                55,
+                1091,
+                77
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  839,
+                  55
+                ],
+                [
+                  1091,
+                  55
+                ],
+                [
+                  1091,
+                  77
+                ],
+                [
+                  839,
+                  77
+                ]
+              ]
+            },
+            {
+              "cls_id": 17,
+              "label": "paragraph_title",
+              "score": 0.8750315308570862,
+              "coordinate": [
+                98,
+                95,
+                307,
+                126
+              ],
+              "order": 1,
+              "polygon_points": [
+                [
+                  98,
+                  95
+                ],
+                [
+                  307,
+                  95
+                ],
+                [
+                  307,
+                  126
+                ],
+                [
+                  98,
+                  126
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.8254552483558655,
+              "coordinate": [
+                98,
+                130,
+                866,
+                158
+              ],
+              "order": 2,
+              "polygon_points": [
+                [
+                  98,
+                  130
+                ],
+                [
+                  866,
+                  130
+                ],
+                [
+                  866,
+                  158
+                ],
+                [
+                  98,
+                  158
+                ]
+              ]
+            },
+            {
+              "cls_id": 1,
+              "label": "algorithm",
+              "score": 0.8957933187484741,
+              "coordinate": [
+                99,
+                172,
+                671,
+                244
+              ],
+              "order": 3,
+              "polygon_points": [
+                [
+                  99,
+                  172
+                ],
+                [
+                  671,
+                  172
+                ],
+                [
+                  671,
+                  244
+                ],
+                [
+                  99,
+                  244
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.7474356889724731,
+              "coordinate": [
+                97,
+                255,
+                656,
+                284
+              ],
+              "order": 4,
+              "polygon_points": [
+                [
+                  97,
+                  255
+                ],
+                [
+                  656,
+                  255
+                ],
+                [
+                  656,
+                  284
+                ],
+                [
+                  97,
+                  284
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.9123371243476868,
+              "coordinate": [
+                116,
+                322,
+                1035,
+                380
+              ],
+              "order": 5,
+              "polygon_points": [
+                [
+                  116,
+                  322
+                ],
+                [
+                  1035,
+                  322
+                ],
+                [
+                  1035,
+                  380
+                ],
+                [
+                  116,
+                  380
+                ]
+              ]
+            },
+            {
+              "cls_id": 17,
+              "label": "paragraph_title",
+              "score": 0.8810796737670898,
+              "coordinate": [
+                98,
+                403,
+                334,
+                433
+              ],
+              "order": 6,
+              "polygon_points": [
+                [
+                  98,
+                  403
+                ],
+                [
+                  334,
+                  403
+                ],
+                [
+                  334,
+                  433
+                ],
+                [
+                  98,
+                  433
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.8572676181793213,
+              "coordinate": [
+                100,
+                438,
+                529,
+                466
+              ],
+              "order": 7,
+              "polygon_points": [
+                [
+                  100,
+                  438
+                ],
+                [
+                  529,
+                  438
+                ],
+                [
+                  529,
+                  466
+                ],
+                [
+                  100,
+                  466
+                ]
+              ]
+            },
+            {
+              "cls_id": 5,
+              "label": "display_formula",
+              "score": 0.9324895739555359,
+              "coordinate": [
+                520,
+                480,
+                668,
+                547
+              ],
+              "order": 8,
+              "polygon_points": [
+                [
+                  520,
+                  480
+                ],
+                [
+                  668,
+                  480
+                ],
+                [
+                  668,
+                  547
+                ],
+                [
+                  520,
+                  547
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.9407210350036621,
+              "coordinate": [
+                96,
+                563,
+                1055,
+                651
+              ],
+              "order": 9,
+              "polygon_points": [
+                [
+                  96,
+                  563
+                ],
+                [
+                  1055,
+                  563
+                ],
+                [
+                  1055,
+                  651
+                ],
+                [
+                  96,
+                  651
+                ]
+              ]
+            },
+            {
+              "cls_id": 8,
+              "label": "footer",
+              "score": 0.8775120377540588,
+              "coordinate": [
+                99,
+                1608,
+                238,
+                1629
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  99,
+                  1608
+                ],
+                [
+                  237,
+                  1608
+                ],
+                [
+                  237,
+                  1628
+                ],
+                [
+                  99,
+                  1628
+                ]
+              ]
+            },
+            {
+              "cls_id": 8,
+              "label": "footer",
+              "score": 0.858220636844635,
+              "coordinate": [
+                848,
+                1609,
+                1090,
+                1631
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  848,
+                  1609
+                ],
+                [
+                  1090,
+                  1609
+                ],
+                [
+                  1090,
+                  1631
+                ],
+                [
+                  848,
+                  1631
+                ]
+              ]
+            }
+          ]
+        }
+      },
+      "markdown": {
+        "text": "### 1.4. 代码块与引用\n\n下面的代码块用于测试 PaddleOCR 对 monospace、命令行参数和长横线的处理。\n\npython scripts/entrypoints/validate_document_schema.py \\\n--adapt sample_layout.json \\\n--write-report sample_report.json\n\n引用块用于观察 indentation、leading 和引用标记的检测：\n\n说明：请务必先触发 regression_check，确认 provider fixture 已登记在 registry，然后再比较 normalized document 与 raw provider JSON 的字段差异。\n\n### 1.5. 行间公式与总结\n\n下面的行间公式用于覆盖 display math 场景：\n\n $$ N=\\frac{\\sum_{i=1}^{n}c_{i}w_{i}}{\\sum_{i=1}^{n}w_{i}} $$ \n\n为了让第一页内容自然结束，这里追加一段简短的中文和英文摘要。The first page intentionally contains mixed paragraph lengths, figure caption text, a table block, and a code block so that OCR can expose differences in block typing.",
+        "images": {}
+      },
+      "outputImages": {
+        "layout_det_res": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/layout_det_res_1.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A35Z%2F-1%2F%2Fe7c19b431f2873b0cd94ce3ecc696b854325829296f435694cbb943bb4320016"
+      },
+      "inputImage": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/input_img_1.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A36Z%2F-1%2F%2Fd90d1fcdb6fb8b7194c235f7cc9896033ccf940f0798858f279725faf0c7ec6b"
+    },
+    {
+      "prunedResult": {
+        "page_count": 3,
+        "width": 1191,
+        "height": 1684,
+        "model_settings": {
+          "use_doc_preprocessor": false,
+          "use_layout_detection": true,
+          "use_chart_recognition": false,
+          "use_seal_recognition": true,
+          "use_ocr_for_image_block": false,
+          "format_block_content": true,
+          "merge_layout_blocks": true,
+          "markdown_ignore_labels": [
+            "number",
+            "footnote",
+            "header",
+            "header_image",
+            "footer",
+            "footer_image",
+            "aside_text"
+          ],
+          "return_layout_polygon_points": true
+        },
+        "parsing_res_list": [
+          {
+            "block_label": "header",
+            "block_content": "PaddleOCR JSON Split Research",
+            "block_bbox": [
+              97,
+              55,
+              342,
+              77
+            ],
+            "block_id": 0,
+            "block_order": null,
+            "group_id": 0,
+            "global_block_id": 39,
+            "global_group_id": 39,
+            "block_polygon_points": [
+              [
+                97,
+                55
+              ],
+              [
+                342,
+                55
+              ],
+              [
+                342,
+                77
+              ],
+              [
+                97,
+                77
+              ]
+            ]
+          },
+          {
+            "block_label": "header",
+            "block_content": "March 31, 2026 · Provider: Paddle",
+            "block_bbox": [
+              840,
+              55,
+              1091,
+              76
+            ],
+            "block_id": 1,
+            "block_order": null,
+            "group_id": 1,
+            "global_block_id": 40,
+            "global_group_id": 40,
+            "block_polygon_points": [
+              [
+                840,
+                55
+              ],
+              [
+                1090,
+                55
+              ],
+              [
+                1090,
+                75
+              ],
+              [
+                840,
+                75
+              ]
+            ]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "### 1.6. 第二页：综合示例",
+            "block_bbox": [
+              97,
+              95,
+              360,
+              125
+            ],
+            "block_id": 2,
+            "block_order": 1,
+            "group_id": 2,
+            "global_block_id": 41,
+            "global_group_id": 41,
+            "block_polygon_points": [
+              [
+                97,
+                95
+              ],
+              [
+                360,
+                95
+              ],
+              [
+                360,
+                125
+              ],
+              [
+                97,
+                125
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "本页继续覆盖图片标题、表格标题、编号列表、警示框样式文本，以及更长的正文块。A longer paragraph is useful because PaddleOCR often changes segmentation strategy once line count and punctuation density increase. 这也有助于后续拆分 paragraph -> line -> token 三层 JSON。",
+            "block_bbox": [
+              96,
+              131,
+              1058,
+              218
+            ],
+            "block_id": 3,
+            "block_order": 2,
+            "group_id": 3,
+            "global_block_id": 42,
+            "global_group_id": 42,
+            "block_polygon_points": [
+              [
+                96,
+                131
+              ],
+              [
+                1058,
+                131
+              ],
+              [
+                1058,
+                218
+              ],
+              [
+                96,
+                218
+              ]
+            ]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "#### 1.6.1. 小节 A：实验记录",
+            "block_bbox": [
+              97,
+              234,
+              335,
+              260
+            ],
+            "block_id": 4,
+            "block_order": 3,
+            "group_id": 4,
+            "global_block_id": 43,
+            "global_group_id": 43,
+            "block_polygon_points": [
+              [
+                97,
+                234
+              ],
+              [
+                335,
+                234
+              ],
+              [
+                335,
+                260
+              ],
+              [
+                97,
+                260
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "1. The experiment started at 08:30 with a synthetic document bundle.",
+            "block_bbox": [
+              98,
+              266,
+              819,
+              291
+            ],
+            "block_id": 5,
+            "block_order": 4,
+            "group_id": 5,
+            "global_block_id": 44,
+            "global_group_id": 44,
+            "block_polygon_points": [
+              [
+                98,
+                266
+              ],
+              [
+                819,
+                266
+              ],
+              [
+                819,
+                291
+              ],
+              [
+                98,
+                291
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "2. 第二步记录 layout 节点与 metadata 节点的边界位置。",
+            "block_bbox": [
+              96,
+              294,
+              639,
+              321
+            ],
+            "block_id": 6,
+            "block_order": 5,
+            "group_id": 6,
+            "global_block_id": 45,
+            "global_group_id": 45,
+            "block_polygon_points": [
+              [
+                96,
+                294
+              ],
+              [
+                639,
+                294
+              ],
+              [
+                639,
+                321
+              ],
+              [
+                96,
+                321
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "3. The final step compares raw provider spans against normalized segments.",
+            "block_bbox": [
+              96,
+              324,
+              889,
+              352
+            ],
+            "block_id": 7,
+            "block_order": 6,
+            "group_id": 7,
+            "global_block_id": 46,
+            "global_group_id": 46,
+            "block_polygon_points": [
+              [
+                96,
+                324
+              ],
+              [
+                889,
+                324
+              ],
+              [
+                889,
+                352
+              ],
+              [
+                96,
+                352
+              ]
+            ]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "#### 1.6.2. 小节 B：警示信息",
+            "block_bbox": [
+              98,
+              369,
+              336,
+              396
+            ],
+            "block_id": 8,
+            "block_order": 7,
+            "group_id": 8,
+            "global_block_id": 47,
+            "global_group_id": 47,
+            "block_polygon_points": [
+              [
+                98,
+                369
+              ],
+              [
+                336,
+                369
+              ],
+              [
+                336,
+                396
+              ],
+              [
+                98,
+                396
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "Warning. 如果某个 block 同时带有表格边框和文字内容，应先保留 raw geometry，再决定是否在 normalize 阶段把它拆成 table 与 caption 两个对象。",
+            "block_bbox": [
+              121,
+              419,
+              1069,
+              481
+            ],
+            "block_id": 9,
+            "block_order": 8,
+            "group_id": 9,
+            "global_block_id": 48,
+            "global_group_id": 48,
+            "block_polygon_points": [
+              [
+                121,
+                419
+              ],
+              [
+                1069,
+                419
+              ],
+              [
+                1069,
+                481
+              ],
+              [
+                121,
+                481
+              ]
+            ]
+          },
+          {
+            "block_label": "figure_title",
+            "block_content": "<div style=\"text-align: center;\"><div style=\"text-align: center;\">Listing 1: Figure 2. A warning-style block that behaves like a callout.</div> </div>\n",
+            "block_bbox": [
+              245,
+              499,
+              947,
+              526
+            ],
+            "block_id": 10,
+            "block_order": null,
+            "group_id": 10,
+            "global_block_id": 49,
+            "global_group_id": 49,
+            "block_polygon_points": [
+              [
+                245,
+                499
+              ],
+              [
+                947,
+                499
+              ],
+              [
+                947,
+                526
+              ],
+              [
+                245,
+                526
+              ]
+            ]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "#### 1.6.3. 小节 C: 小型数据表",
+            "block_bbox": [
+              98,
+              543,
+              357,
+              569
+            ],
+            "block_id": 11,
+            "block_order": 9,
+            "group_id": 11,
+            "global_block_id": 50,
+            "global_group_id": 50,
+            "block_polygon_points": [
+              [
+                98,
+                543
+              ],
+              [
+                357,
+                543
+              ],
+              [
+                357,
+                569
+              ],
+              [
+                98,
+                569
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "这里再放一个更学术一点的表，用于测试数字、单位、英文缩写和中文说明是否会被混成同一列。",
+            "block_bbox": [
+              96,
+              574,
+              996,
+              601
+            ],
+            "block_id": 12,
+            "block_order": 10,
+            "group_id": 12,
+            "global_block_id": 51,
+            "global_group_id": 51,
+            "block_polygon_points": [
+              [
+                96,
+                574
+              ],
+              [
+                996,
+                574
+              ],
+              [
+                996,
+                601
+              ],
+              [
+                96,
+                601
+              ]
+            ]
+          },
+          {
+            "block_label": "table",
+            "block_content": "\n\n<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>Sample</td><td style='text-align: center; word-wrap: break-word;'>Pages</td><td style='text-align: center; word-wrap: break-word;'>Confidence</td><td style='text-align: center; word-wrap: break-word;'>Comment</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>Doc-A</td><td style='text-align: center; word-wrap: break-word;'>12</td><td style='text-align: center; word-wrap: break-word;'>0.97</td><td style='text-align: center; word-wrap: break-word;'>Mostly clean scientific article with equations.</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>Doc-B</td><td style='text-align: center; word-wrap: break-word;'>2</td><td style='text-align: center; word-wrap: break-word;'>0.91</td><td style='text-align: center; word-wrap: break-word;'>Contains screenshots and heavy mixed language labels.</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>Doc-C</td><td style='text-align: center; word-wrap: break-word;'>36</td><td style='text-align: center; word-wrap: break-word;'>0.88</td><td style='text-align: center; word-wrap: break-word;'>Code block and table border overlap need special handling.</td></tr></table>",
+            "block_bbox": [
+              101,
+              616,
+              1089,
+              848
+            ],
+            "block_id": 13,
+            "block_order": null,
+            "group_id": 13,
+            "global_block_id": 52,
+            "global_group_id": 52,
+            "block_polygon_points": [
+              [
+                101,
+                616
+              ],
+              [
+                1089,
+                616
+              ],
+              [
+                1089,
+                848
+              ],
+              [
+                101,
+                848
+              ]
+            ]
+          },
+          {
+            "block_label": "figure_title",
+            "block_content": "<div style=\"text-align: center;\"><div style=\"text-align: center;\">Table 2: Table 2. Example benchmark summary for provider comparison.</div> </div>\n",
+            "block_bbox": [
+              216,
+              856,
+              975,
+              884
+            ],
+            "block_id": 14,
+            "block_order": null,
+            "group_id": 14,
+            "global_block_id": 53,
+            "global_group_id": 53,
+            "block_polygon_points": [
+              [
+                216,
+                856
+              ],
+              [
+                975,
+                856
+              ],
+              [
+                975,
+                884
+              ],
+              [
+                216,
+                884
+              ]
+            ]
+          },
+          {
+            "block_label": "vision_footnote",
+            "block_content": "表注：数值只是示意，不代表真实 benchmark 结论。",
+            "block_bbox": [
+              97,
+              897,
+              600,
+              925
+            ],
+            "block_id": 15,
+            "block_order": null,
+            "group_id": 15,
+            "global_block_id": 54,
+            "global_group_id": 54,
+            "block_polygon_points": [
+              [
+                97,
+                897
+              ],
+              [
+                600,
+                897
+              ],
+              [
+                600,
+                925
+              ],
+              [
+                97,
+                925
+              ]
+            ]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "#### 1.6.4. 小节 D：结尾段落",
+            "block_bbox": [
+              98,
+              942,
+              338,
+              970
+            ],
+            "block_id": 16,
+            "block_order": 11,
+            "group_id": 16,
+            "global_block_id": 55,
+            "global_group_id": 55,
+            "block_polygon_points": [
+              [
+                98,
+                942
+              ],
+              [
+                338,
+                942
+              ],
+              [
+                338,
+                970
+              ],
+              [
+                98,
+                970
+              ]
+            ]
+          },
+          {
+            "block_label": "text",
+            "block_content": "This closing paragraph keeps a natural reading flow while still covering mixed punctuation, abbreviations such as API, OCR, PDF, and a final inline formula  $ p(x) = ax + b $. 末尾再加入一句中文说明：结果仅供调研使用，方便你后续把 PDF 上传到 PaddleOCR 服务，再对照它的 JSON 结构做拆分设计。",
+            "block_bbox": [
+              96,
+              976,
+              1085,
+              1087
+            ],
+            "block_id": 17,
+            "block_order": 12,
+            "group_id": 17,
+            "global_block_id": 56,
+            "global_group_id": 56,
+            "block_polygon_points": [
+              [
+                96,
+                976
+              ],
+              [
+                1085,
+                976
+              ],
+              [
+                1085,
+                1087
+              ],
+              [
+                96,
+                1087
+              ]
+            ]
+          },
+          {
+            "block_label": "footer",
+            "block_content": "Confidential Draft",
+            "block_bbox": [
+              99,
+              1608,
+              238,
+              1629
+            ],
+            "block_id": 18,
+            "block_order": null,
+            "group_id": 18,
+            "global_block_id": 57,
+            "global_group_id": 57,
+            "block_polygon_points": [
+              [
+                99,
+                1608
+              ],
+              [
+                237,
+                1608
+              ],
+              [
+                237,
+                1628
+              ],
+              [
+                99,
+                1628
+              ]
+            ]
+          },
+          {
+            "block_label": "footer",
+            "block_content": "Page page.number / pages.count",
+            "block_bbox": [
+              848,
+              1609,
+              1090,
+              1630
+            ],
+            "block_id": 19,
+            "block_order": null,
+            "group_id": 19,
+            "global_block_id": 58,
+            "global_group_id": 58,
+            "block_polygon_points": [
+              [
+                848,
+                1609
+              ],
+              [
+                1089,
+                1609
+              ],
+              [
+                1089,
+                1629
+              ],
+              [
+                848,
+                1629
+              ]
+            ]
+          }
+        ],
+        "layout_det_res": {
+          "boxes": [
+            {
+              "cls_id": 12,
+              "label": "header",
+              "score": 0.8639702796936035,
+              "coordinate": [
+                97,
+                55,
+                342,
+                77
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  97,
+                  55
+                ],
+                [
+                  342,
+                  55
+                ],
+                [
+                  342,
+                  77
+                ],
+                [
+                  97,
+                  77
+                ]
+              ]
+            },
+            {
+              "cls_id": 12,
+              "label": "header",
+              "score": 0.8828428983688354,
+              "coordinate": [
+                840,
+                55,
+                1091,
+                76
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  840,
+                  55
+                ],
+                [
+                  1090,
+                  55
+                ],
+                [
+                  1090,
+                  75
+                ],
+                [
+                  840,
+                  75
+                ]
+              ]
+            },
+            {
+              "cls_id": 17,
+              "label": "paragraph_title",
+              "score": 0.8781381845474243,
+              "coordinate": [
+                97,
+                95,
+                360,
+                125
+              ],
+              "order": 1,
+              "polygon_points": [
+                [
+                  97,
+                  95
+                ],
+                [
+                  360,
+                  95
+                ],
+                [
+                  360,
+                  125
+                ],
+                [
+                  97,
+                  125
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.9306901097297668,
+              "coordinate": [
+                96,
+                131,
+                1058,
+                218
+              ],
+              "order": 2,
+              "polygon_points": [
+                [
+                  96,
+                  131
+                ],
+                [
+                  1058,
+                  131
+                ],
+                [
+                  1058,
+                  218
+                ],
+                [
+                  96,
+                  218
+                ]
+              ]
+            },
+            {
+              "cls_id": 17,
+              "label": "paragraph_title",
+              "score": 0.8580744862556458,
+              "coordinate": [
+                97,
+                234,
+                335,
+                260
+              ],
+              "order": 3,
+              "polygon_points": [
+                [
+                  97,
+                  234
+                ],
+                [
+                  335,
+                  234
+                ],
+                [
+                  335,
+                  260
+                ],
+                [
+                  97,
+                  260
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.8309260606765747,
+              "coordinate": [
+                98,
+                266,
+                819,
+                291
+              ],
+              "order": 4,
+              "polygon_points": [
+                [
+                  98,
+                  266
+                ],
+                [
+                  819,
+                  266
+                ],
+                [
+                  819,
+                  291
+                ],
+                [
+                  98,
+                  291
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.8376975655555725,
+              "coordinate": [
+                96,
+                294,
+                639,
+                321
+              ],
+              "order": 5,
+              "polygon_points": [
+                [
+                  96,
+                  294
+                ],
+                [
+                  639,
+                  294
+                ],
+                [
+                  639,
+                  321
+                ],
+                [
+                  96,
+                  321
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.8431040644645691,
+              "coordinate": [
+                96,
+                324,
+                889,
+                352
+              ],
+              "order": 6,
+              "polygon_points": [
+                [
+                  96,
+                  324
+                ],
+                [
+                  889,
+                  324
+                ],
+                [
+                  889,
+                  352
+                ],
+                [
+                  96,
+                  352
+                ]
+              ]
+            },
+            {
+              "cls_id": 17,
+              "label": "paragraph_title",
+              "score": 0.8596296310424805,
+              "coordinate": [
+                98,
+                369,
+                336,
+                396
+              ],
+              "order": 7,
+              "polygon_points": [
+                [
+                  98,
+                  369
+                ],
+                [
+                  336,
+                  369
+                ],
+                [
+                  336,
+                  396
+                ],
+                [
+                  98,
+                  396
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.8497565388679504,
+              "coordinate": [
+                121,
+                419,
+                1069,
+                481
+              ],
+              "order": 8,
+              "polygon_points": [
+                [
+                  121,
+                  419
+                ],
+                [
+                  1069,
+                  419
+                ],
+                [
+                  1069,
+                  481
+                ],
+                [
+                  121,
+                  481
+                ]
+              ]
+            },
+            {
+              "cls_id": 7,
+              "label": "figure_title",
+              "score": 0.7542815208435059,
+              "coordinate": [
+                245,
+                499,
+                947,
+                526
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  245,
+                  499
+                ],
+                [
+                  947,
+                  499
+                ],
+                [
+                  947,
+                  526
+                ],
+                [
+                  245,
+                  526
+                ]
+              ]
+            },
+            {
+              "cls_id": 17,
+              "label": "paragraph_title",
+              "score": 0.8666388392448425,
+              "coordinate": [
+                98,
+                543,
+                357,
+                569
+              ],
+              "order": 9,
+              "polygon_points": [
+                [
+                  98,
+                  543
+                ],
+                [
+                  357,
+                  543
+                ],
+                [
+                  357,
+                  569
+                ],
+                [
+                  98,
+                  569
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.8420497179031372,
+              "coordinate": [
+                96,
+                574,
+                996,
+                601
+              ],
+              "order": 10,
+              "polygon_points": [
+                [
+                  96,
+                  574
+                ],
+                [
+                  996,
+                  574
+                ],
+                [
+                  996,
+                  601
+                ],
+                [
+                  96,
+                  601
+                ]
+              ]
+            },
+            {
+              "cls_id": 21,
+              "label": "table",
+              "score": 0.9647886753082275,
+              "coordinate": [
+                101,
+                616,
+                1089,
+                848
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  101,
+                  616
+                ],
+                [
+                  1089,
+                  616
+                ],
+                [
+                  1089,
+                  848
+                ],
+                [
+                  101,
+                  848
+                ]
+              ]
+            },
+            {
+              "cls_id": 7,
+              "label": "figure_title",
+              "score": 0.7652699947357178,
+              "coordinate": [
+                216,
+                856,
+                975,
+                884
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  216,
+                  856
+                ],
+                [
+                  975,
+                  856
+                ],
+                [
+                  975,
+                  884
+                ],
+                [
+                  216,
+                  884
+                ]
+              ]
+            },
+            {
+              "cls_id": 24,
+              "label": "vision_footnote",
+              "score": 0.7026306986808777,
+              "coordinate": [
+                97,
+                897,
+                600,
+                925
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  97,
+                  897
+                ],
+                [
+                  600,
+                  897
+                ],
+                [
+                  600,
+                  925
+                ],
+                [
+                  97,
+                  925
+                ]
+              ]
+            },
+            {
+              "cls_id": 17,
+              "label": "paragraph_title",
+              "score": 0.8651078343391418,
+              "coordinate": [
+                98,
+                942,
+                338,
+                970
+              ],
+              "order": 11,
+              "polygon_points": [
+                [
+                  98,
+                  942
+                ],
+                [
+                  338,
+                  942
+                ],
+                [
+                  338,
+                  970
+                ],
+                [
+                  98,
+                  970
+                ]
+              ]
+            },
+            {
+              "cls_id": 22,
+              "label": "text",
+              "score": 0.9340922236442566,
+              "coordinate": [
+                96,
+                976,
+                1085,
+                1087
+              ],
+              "order": 12,
+              "polygon_points": [
+                [
+                  96,
+                  976
+                ],
+                [
+                  1085,
+                  976
+                ],
+                [
+                  1085,
+                  1087
+                ],
+                [
+                  96,
+                  1087
+                ]
+              ]
+            },
+            {
+              "cls_id": 8,
+              "label": "footer",
+              "score": 0.8409547209739685,
+              "coordinate": [
+                99,
+                1608,
+                238,
+                1629
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  99,
+                  1608
+                ],
+                [
+                  237,
+                  1608
+                ],
+                [
+                  237,
+                  1628
+                ],
+                [
+                  99,
+                  1628
+                ]
+              ]
+            },
+            {
+              "cls_id": 8,
+              "label": "footer",
+              "score": 0.832156777381897,
+              "coordinate": [
+                848,
+                1609,
+                1090,
+                1630
+              ],
+              "order": null,
+              "polygon_points": [
+                [
+                  848,
+                  1609
+                ],
+                [
+                  1089,
+                  1609
+                ],
+                [
+                  1089,
+                  1629
+                ],
+                [
+                  848,
+                  1629
+                ]
+              ]
+            }
+          ]
+        }
+      },
+      "markdown": {
+        "text": "### 1.6. 第二页：综合示例\n\n本页继续覆盖图片标题、表格标题、编号列表、警示框样式文本，以及更长的正文块。A longer paragraph is useful because PaddleOCR often changes segmentation strategy once line count and punctuation density increase. 这也有助于后续拆分 paragraph -> line -> token 三层 JSON。\n\n#### 1.6.1. 小节 A：实验记录\n\n1. The experiment started at 08:30 with a synthetic document bundle.\n\n2. 第二步记录 layout 节点与 metadata 节点的边界位置。\n\n3. The final step compares raw provider spans against normalized segments.\n\n#### 1.6.2. 小节 B：警示信息\n\nWarning. 如果某个 block 同时带有表格边框和文字内容，应先保留 raw geometry，再决定是否在 normalize 阶段把它拆成 table 与 caption 两个对象。\n\n<div style=\"text-align: center;\"><div style=\"text-align: center;\">Listing 1: Figure 2. A warning-style block that behaves like a callout.</div> </div>\n\n\n#### 1.6.3. 小节 C: 小型数据表\n\n这里再放一个更学术一点的表，用于测试数字、单位、英文缩写和中文说明是否会被混成同一列。\n\n\n\n<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>Sample</td><td style='text-align: center; word-wrap: break-word;'>Pages</td><td style='text-align: center; word-wrap: break-word;'>Confidence</td><td style='text-align: center; word-wrap: break-word;'>Comment</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>Doc-A</td><td style='text-align: center; word-wrap: break-word;'>12</td><td style='text-align: center; word-wrap: break-word;'>0.97</td><td style='text-align: center; word-wrap: break-word;'>Mostly clean scientific article with equations.</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>Doc-B</td><td style='text-align: center; word-wrap: break-word;'>2</td><td style='text-align: center; word-wrap: break-word;'>0.91</td><td style='text-align: center; word-wrap: break-word;'>Contains screenshots and heavy mixed language labels.</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>Doc-C</td><td style='text-align: center; word-wrap: break-word;'>36</td><td style='text-align: center; word-wrap: break-word;'>0.88</td><td style='text-align: center; word-wrap: break-word;'>Code block and table border overlap need special handling.</td></tr></table>\n\n<div style=\"text-align: center;\"><div style=\"text-align: center;\">Table 2: Table 2. Example benchmark summary for provider comparison.</div> </div>\n\n\n表注：数值只是示意，不代表真实 benchmark 结论。\n\n#### 1.6.4. 小节 D：结尾段落\n\nThis closing paragraph keeps a natural reading flow while still covering mixed punctuation, abbreviations such as API, OCR, PDF, and a final inline formula  $ p(x) = ax + b $. 末尾再加入一句中文说明：结果仅供调研使用，方便你后续把 PDF 上传到 PaddleOCR 服务，再对照它的 JSON 结构做拆分设计。",
+        "images": {}
+      },
+      "outputImages": {
+        "layout_det_res": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/layout_det_res_2.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A36Z%2F-1%2F%2F5107eb539080c67cf86b0ef67309258eca743ac376e23c54ae9d077b3515826f"
+      },
+      "inputImage": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/input_img_2.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A37Z%2F-1%2F%2F815dc7d96024ea562b4bacad0a938eeb72a37ab01fd9ecaf41b632427c195eeb"
+    }
+  ],
+  "preprocessedImages": [
+    "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/preprocessed_img_0.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A35Z%2F-1%2F%2Fdfa3d3165ba04715ddd18b0e0af45e6ddbc003095615fb153f1fdbae42c20833",
+    "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/preprocessed_img_1.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A36Z%2F-1%2F%2F1996ef9dfaf177f4d8569a993dc7168e7fbd3c54d6855b14aa12158146b2f68b",
+    "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//08136629-049d-43f2-8e0f-02d3e5afc588/preprocessed_img_2.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-31T06%3A57%3A37Z%2F-1%2F%2F83a60d44624b4eaab3cb8f6c67ef53ef802dc8dd942837f97eb1e51cbd709d2c"
+  ],
+  "dataInfo": {
+    "type": "pdf",
+    "numPages": 3,
+    "pages": [
+      {
+        "width": 1191,
+        "height": 1684
+      },
+      {
+        "width": 1191,
+        "height": 1684
+      },
+      {
+        "width": 1191,
+        "height": 1684
+      }
+    ]
+  }
+}

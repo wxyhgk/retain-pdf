@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+set -eu
+
+PROJECT_ROOT="${PROJECT_ROOT:-/app}"
+RUST_API_ROOT="${RUST_API_ROOT:-/app/backend/rust_api}"
+RUST_API_DATA_ROOT="${RUST_API_DATA_ROOT:-${RUST_API_DATA_DIR:-/data}}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-${RUST_API_OUTPUT_ROOT:-$RUST_API_DATA_ROOT/jobs}}"
+
+export RUST_API_PROJECT_ROOT="${RUST_API_PROJECT_ROOT:-$PROJECT_ROOT}"
+export RUST_API_ROOT="${RUST_API_ROOT:-$RUST_API_ROOT}"
+export RUST_API_SCRIPTS_DIR="${RUST_API_SCRIPTS_DIR:-$PROJECT_ROOT/backend/scripts}"
+export RUST_API_DATA_ROOT
+export OUTPUT_ROOT
+export RUST_API_OUTPUT_ROOT="$OUTPUT_ROOT"
+
+mkdir -p \
+  "$RUST_API_DATA_ROOT" \
+  "$RUST_API_DATA_ROOT/uploads" \
+  "$RUST_API_DATA_ROOT/downloads" \
+  "$RUST_API_DATA_ROOT/db" \
+  "$RUST_API_OUTPUT_ROOT"
+
+exec /usr/local/bin/rust_api
