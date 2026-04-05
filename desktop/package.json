@@ -63,8 +63,14 @@
         "deb"
       ],
       "category": "Utility",
-      "icon": "build/icon.png",
+      "icon": "build/icons",
       "maintainer": "wxyhgk <wxyhgk@qq.com>",
+      "desktop": {
+        "Name": "RetainPDF",
+        "Comment": "PDF retain-layout translation desktop application",
+        "Categories": "Office;Utility;",
+        "StartupWMClass": "RetainPDF"
+      },
       "artifactName": "RetainPDF-${version}-linux-${arch}.${ext}"
     },
     "nsis": {

@@ -20,6 +20,9 @@ const outputFrontendRoot = path.join(appRoot, "frontend");
 const outputBackendRoot = path.join(appRoot, "backend");
 const bundledFontsRoot = path.join(outputBackendRoot, "fonts");
 const bundledFontAssetsRoot = path.join(desktopRoot, "assets", "fonts");
+const buildRoot = path.join(desktopRoot, "build");
+const linuxIconsRoot = path.join(buildRoot, "icons");
+const desktopIconSource = path.join(desktopRoot, "assets", "RetainPDF-logo.png");
 const desktopPackagePath = path.join(desktopRoot, "package.json");
 const desktopPackage = JSON.parse(fs.readFileSync(desktopPackagePath, "utf8"));
 
@@ -93,6 +96,15 @@ if (desktopPackage.version !== releaseVersion) {
   desktopPackage.version = releaseVersion;
   fs.writeFileSync(`${desktopPackagePath}.tmp`, `${JSON.stringify(desktopPackage, null, 2)}\n`, "utf8");
   fs.renameSync(`${desktopPackagePath}.tmp`, desktopPackagePath);
+}
+
+fs.mkdirSync(buildRoot, { recursive: true });
+fs.rmSync(linuxIconsRoot, { recursive: true, force: true });
+fs.mkdirSync(linuxIconsRoot, { recursive: true });
+if (fs.existsSync(desktopIconSource)) {
+  for (const size of [16, 24, 32, 48, 64, 96, 128, 256, 512]) {
+    fs.cpSync(desktopIconSource, path.join(linuxIconsRoot, `${size}x${size}.png`), { force: true });
+  }
 }
 
 fs.rmSync(appRoot, { recursive: true, force: true });

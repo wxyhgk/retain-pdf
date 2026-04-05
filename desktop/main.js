@@ -1,6 +1,7 @@
 const { app, BrowserWindow, dialog, shell } = require("electron");
 const { spawn } = require("child_process");
 const fs = require("fs");
+const http = require("http");
 const net = require("net");
 const path = require("path");
 
@@ -9,6 +10,7 @@ let backendChild = null;
 let backendStopping = false;
 let splashWindow = null;
 let mainWindow = null;
+let usingExternalBackend = false;
 
 function updateSplashProgress(progress, title, detail) {
   if (!splashWindow || splashWindow.isDestroyed()) {
@@ -74,6 +76,66 @@ function waitForPort(host, port, timeoutMs) {
 
     tryConnect();
   });
+}
+
+function canConnectToPort(host, port, timeoutMs = 800) {
+  return new Promise((resolve) => {
+    const socket = net.connect({ host, port });
+    const done = (result) => {
+      socket.destroy();
+      resolve(result);
+    };
+    socket.setTimeout(timeoutMs);
+    socket.once("connect", () => done(true));
+    socket.once("timeout", () => done(false));
+    socket.once("error", () => done(false));
+  });
+}
+
+function requestJson(url, headers = {}, timeoutMs = 2000) {
+  return new Promise((resolve, reject) => {
+    const request = http.get(
+      url,
+      {
+        headers,
+        timeout: timeoutMs,
+      },
+      (response) => {
+        let body = "";
+        response.setEncoding("utf8");
+        response.on("data", (chunk) => {
+          body += chunk;
+        });
+        response.on("end", () => {
+          if (response.statusCode && response.statusCode >= 400) {
+            reject(new Error(`http ${response.statusCode}`));
+            return;
+          }
+          try {
+            resolve(JSON.parse(body));
+          } catch (error) {
+            reject(error);
+          }
+        });
+      },
+    );
+    request.on("timeout", () => {
+      request.destroy(new Error("request timeout"));
+    });
+    request.on("error", reject);
+  });
+}
+
+async function canReuseExistingBackend(apiPort) {
+  const healthUrl = `http://127.0.0.1:${apiPort}/health`;
+  try {
+    const payload = await requestJson(healthUrl, {
+      "x-api-key": DESKTOP_API_KEY,
+    });
+    return payload && payload.data && payload.data.status === "up";
+  } catch (error) {
+    return false;
+  }
 }
 
 function resolveBackendRoot() {
@@ -181,6 +243,8 @@ async function startBundledBackend() {
   const rustApiRoot = path.join(dataRoot, "rust_api");
   const typstPackagePath = path.join(backendRoot, "typst-packages");
   const typstPackageCachePath = path.join(dataRoot, "typst-package-cache");
+  const apiPort = 41000;
+  const simplePort = 42000;
 
   if (!fs.existsSync(backendBin)) {
     throw new Error(`missing bundled backend binary: ${backendBin}`);
@@ -197,11 +261,30 @@ async function startBundledBackend() {
   fs.mkdirSync(typstPackageCachePath, { recursive: true });
   updateSplashProgress(34, "正在准备工作目录", "正在初始化本地数据目录");
 
+  const apiPortBusy = await canConnectToPort("127.0.0.1", apiPort);
+  if (apiPortBusy) {
+    if (await canReuseExistingBackend(apiPort)) {
+      usingExternalBackend = true;
+      updateSplashProgress(52, "检测到已有本地服务", "桌面端将直接复用当前后端");
+      await waitForPort("127.0.0.1", apiPort, 5000);
+      updateSplashProgress(92, "本地服务已就绪", "正在加载主界面");
+      return;
+    }
+    throw new Error(
+      `端口 ${apiPort} 已被其他进程占用，且不是可复用的 RetainPDF 后端。请先关闭占用进程后再启动桌面端。`,
+    );
+  }
+
+  const simplePortBusy = await canConnectToPort("127.0.0.1", simplePort);
+  if (simplePortBusy) {
+    throw new Error(`端口 ${simplePort} 已被其他进程占用，请先释放后再启动桌面端。`);
+  }
+
   const env = {
     ...process.env,
     RUST_API_BIND_HOST: "127.0.0.1",
-    RUST_API_PORT: "41000",
-    RUST_API_SIMPLE_PORT: "42000",
+    RUST_API_PORT: String(apiPort),
+    RUST_API_SIMPLE_PORT: String(simplePort),
     RUST_API_KEYS: DESKTOP_API_KEY,
     RUST_API_DATA_ROOT: dataRoot,
     RUST_API_ROOT: rustApiRoot,
@@ -267,7 +350,7 @@ async function startBundledBackend() {
       "首次启动可能稍慢，请稍候",
     );
   }, 500);
-  await waitForPort("127.0.0.1", 41000, 30000);
+  await waitForPort("127.0.0.1", apiPort, 30000);
   clearInterval(waitingTimer);
   updateSplashProgress(92, "本地服务已就绪", "正在加载主界面");
 }
@@ -332,7 +415,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
-  if (backendChild && !backendChild.killed) {
+  if (!usingExternalBackend && backendChild && !backendChild.killed) {
     backendStopping = true;
     backendChild.kill();
   }
