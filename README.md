@@ -86,6 +86,11 @@
 - 如果你希望后续自己更新镜像、改配置、接自己的 API key，也优先选 Docker 部署
 - 如果你不想关心端口、容器、环境变量，优先选桌面版
 
+说明：
+
+- Windows 版本当前以安装版 `Setup.exe` 为主
+- GitHub Releases 里的 Windows `Setup.exe` 会内置桌面运行所需的 Python 运行时，不要求用户自己装 Python
+- macOS 版本当前先提供自动构建的测试包，主要用于验证打包链路和本机运行
 ### Docker 部署
 
 当前仓库提供了 Docker 交付目录：

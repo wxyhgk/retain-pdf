@@ -41,6 +41,12 @@ jobs:
           cache: "npm"
           cache-dependency-path: desktop/package-lock.json
 
+      - name: Setup Python runtime for desktop bundle
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          architecture: "x86"
+
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -50,17 +56,37 @@ jobs:
         shell: pwsh
         run: cargo build --release --target i686-pc-windows-msvc --manifest-path backend/rust_api/Cargo.toml
 
+      - name: Assemble bundled Python runtime
+        shell: pwsh
+        run: |
+          $pythonExe = (Get-Command python).Source
+          $pythonRoot = Split-Path -Parent $pythonExe
+          $bundleRoot = Join-Path $PWD "backend/python"
+          Write-Host "Using Python executable: $pythonExe"
+          Write-Host "Python runtime root: $pythonRoot"
+          if (Test-Path $bundleRoot) {
+            Remove-Item $bundleRoot -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $bundleRoot | Out-Null
+          robocopy $pythonRoot $bundleRoot /E /NFL /NDL /NJH /NJS /NP /XD "__pycache__" "Doc" "docs" "Tools"
+          if ($LASTEXITCODE -gt 7) {
+            exit $LASTEXITCODE
+          }
+          $sitePackages = Join-Path $bundleRoot "Lib/site-packages"
+          if (Test-Path $sitePackages) {
+            Remove-Item $sitePackages -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $sitePackages -Force | Out-Null
+          python -m pip install --upgrade pip
+          python -m pip install --target $sitePackages -r desktop/requirements-desktop-windows.txt
+          Get-ChildItem $bundleRoot | Select-Object Name, Length, LastWriteTime
+          $bundleSize = [Math]::Round(((Get-ChildItem $bundleRoot -Recurse -File | Measure-Object -Property Length -Sum).Sum / 1MB), 2)
+          Write-Host "Bundled Python size: ${bundleSize} MB"
+
       - name: Install desktop dependencies
         working-directory: desktop
         shell: pwsh
         run: npm ci
-
-      - name: Build Windows portable package
-        working-directory: desktop
-        shell: pwsh
-        env:
-          RETAIN_PDF_VERSION: ${{ steps.version.outputs.version }}
-        run: npm run dist:win32
 
       - name: Build Windows installer package
         working-directory: desktop
@@ -74,9 +100,7 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           files: |
-            desktop/win/RetainPDF-${{ steps.version.outputs.version }}.exe
             desktop/win/RetainPDF-${{ steps.version.outputs.version }}-Setup.exe
-            desktop/win/RetainPDF-${{ steps.version.outputs.version }}-Setup.exe.blockmap
 
   build-macos-release:
     runs-on: macos-latest

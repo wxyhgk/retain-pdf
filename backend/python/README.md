@@ -3,6 +3,12 @@
 桌面版打包时，这个目录用于携带内置 Python 运行时。
 当前目录位置为 `backend/python/`。
 
+当前仓库默认不跟踪完整运行时二进制，只保留这个说明文件。
+
+- 本地手工打包时：可以直接把完整可运行的 Windows Python 放进 `backend/python/`
+- GitHub Actions 打 Windows Release 时：会在 CI 上自动下载并组装一份可分发 Python 运行时，再打进 `Setup.exe`
+- 也就是说，GitHub 上的 Windows 安装包不依赖仓库里预提交的 `python.exe`
+
 约定结构：
 
 ```text
