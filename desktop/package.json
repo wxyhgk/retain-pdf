@@ -3,14 +3,18 @@
   "version": "4.0.2",
   "private": true,
   "description": "RetainPDF desktop wrapper",
-  "author": "wxyhgk",
+  "homepage": "https://github.com/wxyhgk/retain-pdf",
+  "author": {
+    "name": "wxyhgk",
+    "email": "wxyhgk@qq.com"
+  },
   "main": "main.js",
   "scripts": {
     "prepare-app": "node scripts/prepare-app.mjs",
     "dist:win32": "npm run prepare-app && electron-builder --win portable --ia32 --config.directories.output=win",
     "dist:win32-installer": "npm run prepare-app && electron-builder --win nsis --ia32 --config.directories.output=win",
-    "dist:mac": "npm run prepare-app && electron-builder --mac zip dmg --publish never --config.directories.output=mac",
-    "dist:linux": "npm run prepare-app && electron-builder --linux AppImage --publish never --config.directories.output=linux"
+    "dist:mac": "npm run prepare-app && electron-builder --mac dmg --publish never --config.directories.output=mac",
+    "dist:linux": "npm run prepare-app && electron-builder --linux deb --publish never --config.directories.output=linux"
   },
   "devDependencies": {
     "electron": "^33.3.1",
@@ -56,10 +60,11 @@
     },
     "linux": {
       "target": [
-        "AppImage"
+        "deb"
       ],
       "category": "Utility",
       "icon": "build/icon.png",
+      "maintainer": "wxyhgk <wxyhgk@qq.com>",
       "artifactName": "RetainPDF-${version}-linux-${arch}.${ext}"
     },
     "nsis": {

@@ -172,6 +172,7 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           files: |
             desktop/win/RetainPDF-${{ steps.version.outputs.version }}-Setup.exe
+            desktop/linux/RetainPDF-${{ steps.version.outputs.version }}-linux-amd64.deb
 
   build-macos-release:
     runs-on: macos-latest
@@ -322,8 +323,10 @@ jobs:
         shell: bash
         run: |
           iconset_dir="$PWD/desktop/build/icon.iconset"
-          source_png="$PWD/desktop/build/icon.png"
+          source_svg="$PWD/desktop/svg/mac_RetainPDF.svg"
+          source_png="$PWD/desktop/build/icon-mac.png"
           rm -rf "$iconset_dir" "$PWD/desktop/build/icon.icns"
+          sips -s format png "$source_svg" --out "$source_png" >/dev/null
           mkdir -p "$iconset_dir"
           for size in 16 32 64 128 256 512; do
             sips -z "$size" "$size" "$source_png" --out "$iconset_dir/icon_${size}x${size}.png" >/dev/null
@@ -350,5 +353,4 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           files: |
-            desktop/mac/RetainPDF-${{ steps.version.outputs.version }}-mac-*.zip
             desktop/mac/RetainPDF-${{ steps.version.outputs.version }}-mac-*.dmg
