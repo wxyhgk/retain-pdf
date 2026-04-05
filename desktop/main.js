@@ -83,13 +83,63 @@ function resolveBackendRoot() {
   return path.join(__dirname, "app", "backend");
 }
 
+function resolveBackendBinary(backendRoot) {
+  const candidates = process.platform === "win32"
+    ? [path.join(backendRoot, "bin", "rust_api.exe")]
+    : [path.join(backendRoot, "bin", "rust_api")];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return candidates[0];
+}
+
+function resolvePythonRuntime(backendRoot) {
+  const bundledWindows = path.join(backendRoot, "python", "python.exe");
+  if (fs.existsSync(bundledWindows)) {
+    return { command: bundledWindows, bundledHome: path.join(backendRoot, "python") };
+  }
+  if (process.platform === "darwin") {
+    const macCandidates = [
+      process.env.RETAIN_PDF_SYSTEM_PYTHON,
+      "/usr/bin/python3",
+      "/opt/homebrew/bin/python3",
+      "/usr/local/bin/python3",
+    ].filter(Boolean);
+    for (const candidate of macCandidates) {
+      if (fs.existsSync(candidate)) {
+        return { command: candidate, bundledHome: null };
+      }
+    }
+    return { command: "python3", bundledHome: null };
+  }
+  return { command: "python3", bundledHome: null };
+}
+
+function resolveTypstBinary(backendRoot) {
+  const candidates = process.platform === "win32"
+    ? [path.join(backendRoot, "typst", "bin", "typst.exe")]
+    : [
+        path.join(backendRoot, "typst", "bin", "typst"),
+        "/usr/local/bin/typst",
+        "/opt/homebrew/bin/typst",
+      ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return "";
+}
+
 async function startBundledBackend() {
   updateSplashProgress(18, "正在检查运行文件", "正在校验后端、Python 和脚本资源");
   const backendRoot = resolveBackendRoot();
-  const backendBin = path.join(backendRoot, "bin", "rust_api.exe");
-  const pythonBin = path.join(backendRoot, "python", "python.exe");
+  const backendBin = resolveBackendBinary(backendRoot);
+  const pythonRuntime = resolvePythonRuntime(backendRoot);
   const scriptsDir = path.join(backendRoot, "scripts");
-  const typstBin = path.join(backendRoot, "typst", "bin", "typst.exe");
+  const typstBin = resolveTypstBinary(backendRoot);
   const bundledFontPath = path.join(backendRoot, "fonts", "DroidSansFallbackFull.ttf");
   const bundledTypstFontDir = path.join(backendRoot, "fonts");
   const dataRoot = path.join(app.getPath("userData"), "data");
@@ -98,8 +148,8 @@ async function startBundledBackend() {
   if (!fs.existsSync(backendBin)) {
     throw new Error(`missing bundled backend binary: ${backendBin}`);
   }
-  if (!fs.existsSync(pythonBin)) {
-    throw new Error(`missing bundled python runtime: ${pythonBin}`);
+  if (!pythonRuntime.command) {
+    throw new Error("missing python runtime");
   }
   if (!fs.existsSync(scriptsDir)) {
     throw new Error(`missing bundled scripts directory: ${scriptsDir}`);
@@ -121,8 +171,7 @@ async function startBundledBackend() {
     RUST_API_NORMAL_MAX_PAGES: "600",
     RUST_API_PROJECT_ROOT: backendRoot,
     RUST_API_SCRIPTS_DIR: scriptsDir,
-    PYTHON_BIN: pythonBin,
-    PYTHONHOME: path.join(backendRoot, "python"),
+    PYTHON_BIN: pythonRuntime.command,
     PYTHONPATH: scriptsDir,
     PYTHONUNBUFFERED: "1",
     PYTHONUTF8: "1",
@@ -133,6 +182,9 @@ async function startBundledBackend() {
     RETAIN_PDF_TYPST_FONT_DIRS: bundledTypstFontDir,
     RETAIN_PDF_TYPST_FONT_FAMILY: "Source Han Serif SC",
   };
+  if (pythonRuntime.bundledHome) {
+    env.PYTHONHOME = pythonRuntime.bundledHome;
+  }
   if (fs.existsSync(typstBin)) {
     env.TYPST_BIN = typstBin;
   }
@@ -141,7 +193,7 @@ async function startBundledBackend() {
   backendChild = spawn(backendBin, [], {
     cwd: backendRoot,
     env,
-    windowsHide: true,
+    windowsHide: process.platform === "win32",
     stdio: ["ignore", "pipe", "pipe"],
   });
 

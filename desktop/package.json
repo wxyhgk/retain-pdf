@@ -7,8 +7,9 @@
   "main": "main.js",
   "scripts": {
     "prepare-app": "node scripts/prepare-app.mjs",
-    "dist:win32": "npm run prepare-app && electron-builder --win portable --ia32",
-    "dist:win32-installer": "npm run prepare-app && electron-builder --win nsis --ia32"
+    "dist:win32": "npm run prepare-app && electron-builder --win portable --ia32 --config.directories.output=win",
+    "dist:win32-installer": "npm run prepare-app && electron-builder --win nsis --ia32 --config.directories.output=win",
+    "dist:mac": "npm run prepare-app && electron-builder --mac zip dmg --publish never --config.directories.output=mac"
   },
   "devDependencies": {
     "electron": "^33.3.1",
@@ -18,7 +19,6 @@
     "appId": "com.wxyhgk.retainpdf",
     "productName": "RetainPDF",
     "directories": {
-      "output": "win",
       "buildResources": "build"
     },
     "files": [
@@ -47,6 +47,10 @@
         }
       ],
       "artifactName": "RetainPDF-${version}.${ext}"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "artifactName": "RetainPDF-${version}-mac-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,

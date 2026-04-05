@@ -11,6 +11,7 @@ const frontendRoot = path.join(repoRoot, "frontend");
 const backendRoot = path.join(repoRoot, "backend");
 const embeddedPythonRoot = path.join(backendRoot, "python");
 const typstWindowsRoot = path.join(backendRoot, "typst-win32");
+const targetPlatform = process.env.RETAIN_PDF_DESKTOP_PLATFORM || process.platform;
 const appRoot = path.join(desktopRoot, "app");
 const outputFrontendRoot = path.join(appRoot, "frontend");
 const outputBackendRoot = path.join(appRoot, "backend");
@@ -28,40 +29,59 @@ if (!releaseVersion) {
   );
 }
 
-function resolveRustApiWindowsBin() {
-  const overridePath = process.env.RUST_API_WINDOWS_BIN
-    ? path.resolve(process.env.RUST_API_WINDOWS_BIN)
+function resolveRustApiBinary() {
+  const overridePath = process.env.RUST_API_BINARY
+    ? path.resolve(process.env.RUST_API_BINARY)
     : "";
-  const candidates = [
-    overridePath,
-    path.join(
-      backendRoot,
-      "rust_api",
-      "target",
-      "i686-pc-windows-msvc",
-      "release",
-      "rust_api.exe",
-    ),
-    path.join(
-      backendRoot,
-      "rust_api",
-      "target",
-      "i686-pc-windows-gnu",
-      "release",
-      "rust_api.exe",
-    ),
-  ].filter(Boolean);
+  const candidates = [overridePath];
+
+  if (targetPlatform === "win32") {
+    candidates.push(
+      path.join(
+        backendRoot,
+        "rust_api",
+        "target",
+        "i686-pc-windows-msvc",
+        "release",
+        "rust_api.exe",
+      ),
+      path.join(
+        backendRoot,
+        "rust_api",
+        "target",
+        "i686-pc-windows-gnu",
+        "release",
+        "rust_api.exe",
+      ),
+    );
+  } else if (targetPlatform === "darwin") {
+    candidates.push(
+      path.join(backendRoot, "rust_api", "target", "release", "rust_api"),
+      path.join(backendRoot, "rust_api", "target", "x86_64-apple-darwin", "release", "rust_api"),
+      path.join(backendRoot, "rust_api", "target", "aarch64-apple-darwin", "release", "rust_api"),
+    );
+  } else {
+    candidates.push(
+      path.join(backendRoot, "rust_api", "target", "release", "rust_api"),
+    );
+  }
 
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) {
-      return candidate;
+      return {
+        path: candidate,
+        fileName: path.basename(candidate),
+      };
     }
   }
 
-  return candidates[0] || "";
+  return {
+    path: candidates[0] || "",
+    fileName: targetPlatform === "win32" ? "rust_api.exe" : "rust_api",
+  };
 }
 
-const rustApiWindowsBin = resolveRustApiWindowsBin();
+const rustApiBinary = resolveRustApiBinary();
 
 if (desktopPackage.version !== releaseVersion) {
   desktopPackage.version = releaseVersion;
@@ -132,21 +152,21 @@ fs.cpSync(path.join(backendRoot, "scripts"), path.join(outputBackendRoot, "scrip
   force: true,
 });
 
-if (fs.existsSync(rustApiWindowsBin)) {
+if (fs.existsSync(rustApiBinary.path)) {
   fs.mkdirSync(path.join(outputBackendRoot, "bin"), { recursive: true });
-  fs.cpSync(rustApiWindowsBin, path.join(outputBackendRoot, "bin", "rust_api.exe"), {
+  fs.cpSync(rustApiBinary.path, path.join(outputBackendRoot, "bin", rustApiBinary.fileName), {
     force: true,
   });
 }
 
-if (fs.existsSync(path.join(embeddedPythonRoot, "python.exe"))) {
+if (targetPlatform === "win32" && fs.existsSync(path.join(embeddedPythonRoot, "python.exe"))) {
   fs.cpSync(embeddedPythonRoot, path.join(outputBackendRoot, "python"), {
     recursive: true,
     force: true,
   });
 }
 
-if (fs.existsSync(typstWindowsRoot)) {
+if (targetPlatform === "win32" && fs.existsSync(typstWindowsRoot)) {
   fs.cpSync(typstWindowsRoot, path.join(outputBackendRoot, "typst"), {
     recursive: true,
     force: true,
@@ -173,7 +193,9 @@ for (const item of fontCandidates) {
 const manifest = {
   generatedAt: new Date().toISOString(),
   version: releaseVersion,
-  rustApiExeBundled: fs.existsSync(path.join(outputBackendRoot, "bin", "rust_api.exe")),
+  targetPlatform,
+  rustApiBinaryBundled: fs.existsSync(path.join(outputBackendRoot, "bin", rustApiBinary.fileName)),
+  rustApiBinaryName: rustApiBinary.fileName,
   pythonBundled: fs.existsSync(path.join(outputBackendRoot, "python", "python.exe")),
   typstBundled: fs.existsSync(path.join(outputBackendRoot, "typst")),
   bundledFonts: fs.readdirSync(bundledFontsRoot).sort(),

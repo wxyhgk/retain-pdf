@@ -77,3 +77,64 @@ jobs:
             desktop/win/RetainPDF-${{ steps.version.outputs.version }}.exe
             desktop/win/RetainPDF-${{ steps.version.outputs.version }}-Setup.exe
             desktop/win/RetainPDF-${{ steps.version.outputs.version }}-Setup.exe.blockmap
+
+  build-macos-release:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Derive version
+        id: version
+        shell: bash
+        run: |
+          tag="${{ github.ref_name }}"
+          if [ -z "$tag" ]; then
+            echo "github.ref_name is empty" >&2
+            exit 1
+          fi
+          version="${tag#v}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Write VERSION file
+        shell: bash
+        run: |
+          printf '%s\n' "${{ steps.version.outputs.version }}" > VERSION
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Rust API for macOS
+        shell: bash
+        run: cargo build --release --manifest-path backend/rust_api/Cargo.toml
+
+      - name: Install desktop dependencies
+        working-directory: desktop
+        shell: bash
+        run: npm ci
+
+      - name: Build macOS package
+        working-directory: desktop
+        shell: bash
+        env:
+          RETAIN_PDF_VERSION: ${{ steps.version.outputs.version }}
+          RETAIN_PDF_DESKTOP_PLATFORM: darwin
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run dist:mac
+
+      - name: Upload macOS release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: |
+            desktop/mac/RetainPDF-${{ steps.version.outputs.version }}-mac-*.zip
+            desktop/mac/RetainPDF-${{ steps.version.outputs.version }}-mac-*.dmg
