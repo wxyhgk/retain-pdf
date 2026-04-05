@@ -29,6 +29,11 @@ jobs:
           "tag=$tag" >> $env:GITHUB_OUTPUT
           "version=$version" >> $env:GITHUB_OUTPUT
 
+      - name: Write VERSION file
+        shell: pwsh
+        run: |
+          Set-Content -Path VERSION -Value "${{ steps.version.outputs.version }}"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -53,11 +58,15 @@ jobs:
       - name: Build Windows portable package
         working-directory: desktop
         shell: pwsh
+        env:
+          RETAIN_PDF_VERSION: ${{ steps.version.outputs.version }}
         run: npm run dist:win32
 
       - name: Build Windows installer package
         working-directory: desktop
         shell: pwsh
+        env:
+          RETAIN_PDF_VERSION: ${{ steps.version.outputs.version }}
         run: npm run dist:win32-installer
 
       - name: Upload release assets

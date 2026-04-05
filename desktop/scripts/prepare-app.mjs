@@ -15,13 +15,17 @@ const appRoot = path.join(desktopRoot, "app");
 const outputFrontendRoot = path.join(appRoot, "frontend");
 const outputBackendRoot = path.join(appRoot, "backend");
 const bundledFontsRoot = path.join(outputBackendRoot, "fonts");
+const desktopPackagePath = path.join(desktopRoot, "package.json");
+const desktopPackage = JSON.parse(fs.readFileSync(desktopPackagePath, "utf8"));
 
 const releaseVersion = fs.existsSync(versionFile)
   ? fs.readFileSync(versionFile, "utf8").trim()
-  : "";
+  : (process.env.RETAIN_PDF_VERSION || desktopPackage.version || "").trim();
 
 if (!releaseVersion) {
-  throw new Error(`Missing release version in ${versionFile}`);
+  throw new Error(
+    `Missing release version in ${versionFile}; fallback sources RETAIN_PDF_VERSION/package.json are also empty`,
+  );
 }
 
 function resolveRustApiWindowsBin() {
@@ -59,8 +63,6 @@ function resolveRustApiWindowsBin() {
 
 const rustApiWindowsBin = resolveRustApiWindowsBin();
 
-const desktopPackagePath = path.join(desktopRoot, "package.json");
-const desktopPackage = JSON.parse(fs.readFileSync(desktopPackagePath, "utf8"));
 if (desktopPackage.version !== releaseVersion) {
   desktopPackage.version = releaseVersion;
   fs.writeFileSync(`${desktopPackagePath}.tmp`, `${JSON.stringify(desktopPackage, null, 2)}\n`, "utf8");
