@@ -21,11 +21,20 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $tag = "${{ github.ref_name }}"
-          if ([string]::IsNullOrWhiteSpace($tag)) {
-            throw "github.ref_name is empty"
+          $refName = "${{ github.ref_name }}"
+          $version = ""
+          if (-not [string]::IsNullOrWhiteSpace($refName) -and $refName.StartsWith("v")) {
+            $version = $refName.TrimStart("v")
+          } elseif (Test-Path "VERSION") {
+            $version = (Get-Content VERSION -Raw).Trim()
+          } else {
+            $package = Get-Content "desktop/package.json" -Raw | ConvertFrom-Json
+            $version = "$($package.version)".Trim()
           }
-          $version = $tag.TrimStart("v")
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            throw "release version is empty"
+          }
+          $tag = "v$version"
           "tag=$tag" >> $env:GITHUB_OUTPUT
           "version=$version" >> $env:GITHUB_OUTPUT
 
@@ -113,12 +122,20 @@ jobs:
         id: version
         shell: bash
         run: |
-          tag="${{ github.ref_name }}"
-          if [ -z "$tag" ]; then
-            echo "github.ref_name is empty" >&2
+          ref_name="${{ github.ref_name }}"
+          version=""
+          if [ -n "$ref_name" ] && [[ "$ref_name" == v* ]]; then
+            version="${ref_name#v}"
+          elif [ -f VERSION ]; then
+            version="$(tr -d '\r\n' < VERSION)"
+          else
+            version="$(node -p "require('./desktop/package.json').version")"
+          fi
+          if [ -z "$version" ]; then
+            echo "release version is empty" >&2
             exit 1
           fi
-          version="${tag#v}"
+          tag="v$version"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
