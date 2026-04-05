@@ -201,13 +201,13 @@ jobs:
         run: |
           python_bin="$(python3 -c 'import sys; print(sys.executable)')"
           python_root="$(PYTHON_BIN="$python_bin" python3 - <<'PY'
-import os
-from pathlib import Path
+          import os
+          from pathlib import Path
 
-python_bin = Path(os.environ["PYTHON_BIN"]).resolve()
-print(python_bin.parent.parent)
-PY
-)"
+          python_bin = Path(os.environ["PYTHON_BIN"]).resolve()
+          print(python_bin.parent.parent)
+          PY
+          )"
           bundle_root="$PWD/backend/python"
           echo "Using Python executable: $python_bin"
           echo "Python runtime root: $python_root"
