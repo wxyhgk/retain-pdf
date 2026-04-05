@@ -196,9 +196,17 @@ jobs:
         shell: bash
         run: cargo build --release --manifest-path backend/rust_api/Cargo.toml
 
+      - name: Install qpdf build dependency
+        shell: bash
+        run: |
+          brew update
+          brew install qpdf
+          brew --prefix qpdf
+
       - name: Assemble bundled Python runtime
         shell: bash
         run: |
+          qpdf_prefix="$(brew --prefix qpdf)"
           python_bin="$(python3 -c 'import sys; print(sys.executable)')"
           python_root="$(PYTHON_BIN="$python_bin" python3 - <<'PY'
           import os
@@ -216,6 +224,9 @@ jobs:
           rsync -aL --delete \
             --exclude '__pycache__' \
             "$python_root"/ "$bundle_root"/
+          export CPPFLAGS="-I$qpdf_prefix/include ${CPPFLAGS:-}"
+          export LDFLAGS="-L$qpdf_prefix/lib ${LDFLAGS:-}"
+          export PKG_CONFIG_PATH="$qpdf_prefix/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
           "$bundle_root/bin/python3" -m pip install --upgrade pip
           "$bundle_root/bin/python3" -m pip install -r desktop/requirements-desktop-macos.txt
           du -sh "$bundle_root"
