@@ -61,6 +61,11 @@ BODY_COMPACT_FONT_SCALE_MAX = 0.04
 BODY_ZH_TARGET_BASE = 0.66
 BODY_ZH_TARGET_MIN = 0.61
 BODY_COMPACT_LEADING_TIGHTEN_MAX = 0.06
+WIDE_ASPECT_PAGE_BLEND_REDUCTION = 0.14
+WIDE_ASPECT_COMPACT_FONT_SCALE_MAX = 0.018
+WIDE_ASPECT_OCR_LEADING_WEIGHT = 0.5
+WIDE_ASPECT_ZH_LEADING_WEIGHT = 0.5
+WIDE_ASPECT_COMPACT_LEADING_TIGHTEN_MAX = 0.025
 
 def _is_caption_like(item: dict) -> bool:
     return is_caption_like_block(item)
@@ -168,12 +173,16 @@ def estimate_font_size_pt(
         block_scale = clamp(block_line_height / page_line_height, LOCAL_BLOCK_SCALE_MIN, LOCAL_BLOCK_SCALE_MAX)
 
     compactness = source_compactness_score(item)
+    wide_aspect_body_text = bool(item.get("_wide_aspect_body_text", False))
     page_estimate = page_font_size * block_scale * layout.BODY_FONT_SIZE_FACTOR if page_font_size > 0 else local_font
     page_weight = max(BODY_PAGE_BLEND_MIN, BODY_PAGE_BLEND_BASE - compactness * 0.18)
+    if wide_aspect_body_text:
+        page_weight = max(BODY_PAGE_BLEND_MIN - 0.1, page_weight - WIDE_ASPECT_PAGE_BLEND_REDUCTION)
     local_weight = 1.0 - page_weight
     blended = (page_estimate * page_weight) + (local_font * local_weight)
     if compactness > 0:
-        blended *= 1.0 - min(BODY_COMPACT_FONT_SCALE_MAX, compactness * 0.055)
+        compact_scale_max = WIDE_ASPECT_COMPACT_FONT_SCALE_MAX if wide_aspect_body_text else BODY_COMPACT_FONT_SCALE_MAX
+        blended *= 1.0 - min(compact_scale_max, compactness * 0.055)
     if _is_caption_like(item):
         blended = min(blended * CAPTION_FONT_SCALE, CAPTION_MAX_FONT_SIZE_PT)
     return round(clamp(blended, MIN_FONT_SIZE_PT, MAX_FONT_SIZE_PT), 2)
@@ -184,17 +193,22 @@ def estimate_leading_em(item: dict, page_line_pitch: float, font_size_pt: float)
     density_ratio_x = occupied_ratio_x(item)
     formula_weight = formula_ratio(item)
     compactness = source_compactness_score(item)
+    wide_aspect_body_text = bool(item.get("_wide_aspect_body_text", False))
     if item.get("_is_body_text_candidate", False):
         pitch = block_pitch or page_line_pitch
         zh_target = max(BODY_ZH_TARGET_MIN, BODY_ZH_TARGET_BASE - compactness * 0.07)
         if pitch > 0 and font_size_pt > 0:
             ocr_estimated = (pitch / font_size_pt) - 1.0
-            mixed = (ocr_estimated * 0.35) + (zh_target * 0.65)
+            if wide_aspect_body_text:
+                mixed = (ocr_estimated * WIDE_ASPECT_OCR_LEADING_WEIGHT) + (zh_target * WIDE_ASPECT_ZH_LEADING_WEIGHT)
+            else:
+                mixed = (ocr_estimated * 0.35) + (zh_target * 0.65)
             base = mixed * layout.BODY_LEADING_FACTOR
         else:
             base = zh_target * layout.BODY_LEADING_FACTOR
         if compactness > 0:
-            base *= 1.0 - min(BODY_COMPACT_LEADING_TIGHTEN_MAX, compactness * 0.07)
+            tighten_max = WIDE_ASPECT_COMPACT_LEADING_TIGHTEN_MAX if wide_aspect_body_text else BODY_COMPACT_LEADING_TIGHTEN_MAX
+            base *= 1.0 - min(tighten_max, compactness * 0.07)
         if density_ratio_x >= 0.86:
             base = max(base, BODY_LEADING_MIN / HIGH_DENSITY_LEADING_RATIO)
         if formula_weight >= 0.08:

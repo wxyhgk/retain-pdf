@@ -19,6 +19,7 @@ from services.rendering.layout.font_fit import normalize_leading_em_for_font_siz
 from services.rendering.layout.font_fit import page_baseline_font_size
 from services.rendering.layout.font_fit import percentile_value
 from services.rendering.layout.payload.body_context import page_box_area_ratio as compute_page_box_area_ratio
+from services.rendering.layout.payload.capacity import estimated_render_height_pt
 from services.rendering.layout.payload.metrics import fit_translated_block_metrics
 from services.rendering.layout.payload.shared import COMPACT_SCALE
 from services.rendering.layout.payload.shared import HEAVY_COMPACT_RATIO
@@ -26,6 +27,7 @@ from services.rendering.layout.payload.shared import get_render_protected_text
 from services.rendering.layout.payload.shared import is_flag_like_plain_text_block
 from services.rendering.layout.payload.shared import translation_density_ratio
 from services.rendering.layout.typography.geometry import inner_bbox
+from services.rendering.layout.typography.measurement import bbox_height
 from services.rendering.layout.typography.measurement import bbox_width
 
 
@@ -33,9 +35,34 @@ BODY_PAGE_FONT_ANCHOR_PERCENTILE = 0.46
 BODY_PAGE_FONT_FLOOR_DELTA_PT = 0.38
 SMALL_PAGE_BOX_RATIO = 0.06
 ULTRA_SMALL_PAGE_BOX_RATIO = 0.04
+WIDE_ASPECT_BODY_RATIO = 3.6
+WIDE_ASPECT_BODY_FONT_BOOST_PT = 0.28
+WIDE_ASPECT_BODY_LEADING_TARGET = 0.64
+WIDE_ASPECT_BODY_LEADING_STEP = 0.02
+WIDE_ASPECT_BODY_MIN_SLACK_PT = 2.8
 
 def _is_caption_like(item: dict) -> bool:
     return is_caption_like_block(item)
+
+
+def _relax_wide_aspect_body_leading(
+    inner: list[float],
+    translated_text: str,
+    formula_map: list[dict],
+    font_size_pt: float,
+    leading_em: float,
+) -> float:
+    if len(inner) != 4:
+        return leading_em
+    available_height_pt = max(8.0, inner[3] - inner[1])
+    candidate = leading_em
+    while candidate + WIDE_ASPECT_BODY_LEADING_STEP <= WIDE_ASPECT_BODY_LEADING_TARGET:
+        next_leading = round(candidate + WIDE_ASPECT_BODY_LEADING_STEP, 2)
+        next_height = estimated_render_height_pt(inner, translated_text, formula_map, font_size_pt, next_leading)
+        if next_height > available_height_pt - WIDE_ASPECT_BODY_MIN_SLACK_PT:
+            break
+        candidate = next_leading
+    return candidate
 
 
 def _collect_page_seed_metrics(
@@ -110,11 +137,20 @@ def build_block_payloads(
         page_box_area_ratio = compute_page_box_area_ratio(bbox, page_width, page_height)
         dense_small_box = density_ratio >= 0.9 and 0 < page_box_area_ratio <= SMALL_PAGE_BOX_RATIO
         heavy_dense_small_box = density_ratio >= HEAVY_COMPACT_RATIO and 0 < page_box_area_ratio <= ULTRA_SMALL_PAGE_BOX_RATIO
+        block_height = bbox_height(item)
+        block_width = bbox_width(item)
+        wide_aspect_body_text = bool(
+            body_flags.get(index, False)
+            and block_height > 0
+            and (block_width / block_height) >= WIDE_ASPECT_BODY_RATIO
+        )
 
         if body_flags.get(index) and page_body_font_size_pt is not None:
             down_band = 0.34 if heavy_dense_small_box else (0.2 if dense_small_box else 0.06)
             up_band = 0.18 if dense_small_box else 0.24
             font_size_pt = round(min(max(font_size_pt, page_body_font_size_pt - down_band), page_body_font_size_pt + up_band), 2)
+            if wide_aspect_body_text:
+                font_size_pt = round(min(page_body_font_size_pt + up_band, font_size_pt + WIDE_ASPECT_BODY_FONT_BOOST_PT), 2)
 
         if dense_small_box and not body_flags.get(index):
             font_size_pt = round(font_size_pt * COMPACT_SCALE, 2)
@@ -127,6 +163,7 @@ def build_block_payloads(
                 "_page_box_area_ratio": page_box_area_ratio,
                 "_dense_small_box": dense_small_box,
                 "_heavy_dense_small_box": heavy_dense_small_box,
+                "_wide_aspect_body_text": wide_aspect_body_text,
             },
             translated_text,
             formula_map,
@@ -157,6 +194,14 @@ def build_block_payloads(
             )
 
         item_inner_bbox = inner_bbox(item)
+        if wide_aspect_body_text:
+            leading_em = _relax_wide_aspect_body_leading(
+                item_inner_bbox,
+                translated_text,
+                formula_map,
+                font_size_pt,
+                leading_em,
+            )
         item_cover_bbox = resolve_cover_bbox(item)
         block_payloads.append(
             {
@@ -175,6 +220,7 @@ def build_block_payloads(
                 "page_box_area_ratio": page_box_area_ratio,
                 "dense_small_box": dense_small_box,
                 "heavy_dense_small_box": heavy_dense_small_box,
+                "wide_aspect_body_text": wide_aspect_body_text,
                 "prefer_typst_fit": bool(body_flags.get(index, False) and dense_small_box),
                 "adjacent_collision_risk": False,
                 "adjacent_available_height_pt": None,
