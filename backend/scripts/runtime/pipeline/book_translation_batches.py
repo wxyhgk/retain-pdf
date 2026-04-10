@@ -4,6 +4,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from services.translation.diagnostics import classify_provider_family
+from services.translation.llm.control_context import TranslationControlContext
 from services.translation.payload import apply_translated_text_map
 from services.translation.payload import pending_translation_items
 from services.translation.payload.parts.common import GROUP_ITEM_PREFIX
@@ -20,6 +22,15 @@ def _save_flush_interval(*, workers: int, total_batches: int) -> int:
     if total_batches <= 1:
         return 1
     return max(2, min(12, max(1, workers) * 2))
+
+
+def _effective_translation_batch_size(*, batch_size: int, model: str, base_url: str) -> int:
+    configured = max(1, batch_size)
+    if classify_provider_family(base_url=base_url, model=model) != "deepseek_official":
+        return 1
+    if configured <= 1:
+        return 3
+    return min(configured, 4)
 
 
 def touched_pages_for_batch(
@@ -47,7 +58,8 @@ def translate_pending_units(
     base_url: str,
     domain_guidance: str = "",
     mode: str = "fast",
-) -> None:
+    translation_context: TranslationControlContext | None = None,
+) -> dict[str, int]:
     flat_payload: list[dict] = []
     item_to_page: dict[str, int] = {}
     unit_to_pages: dict[str, set[int]] = {}
@@ -60,7 +72,11 @@ def translate_pending_units(
                 unit_to_pages.setdefault(unit_id, set()).add(page_idx)
 
     pending = pending_translation_items(flat_payload)
-    effective_batch_size = 1
+    effective_batch_size = _effective_translation_batch_size(
+        batch_size=batch_size,
+        model=model,
+        base_url=base_url,
+    )
     batches = chunked(pending, effective_batch_size)
     total_batches = len(batches)
     flush_interval = _save_flush_interval(workers=workers, total_batches=total_batches)
@@ -83,6 +99,7 @@ def translate_pending_units(
                 request_label=batch_label,
                 domain_guidance=domain_guidance,
                 mode=mode,
+                context=translation_context,
             )
             apply_translated_text_map(flat_payload, translated)
             dirty_pages.update(touched_pages_for_batch(translated, item_to_page, unit_to_pages))
@@ -102,7 +119,13 @@ def translate_pending_units(
                 f"book: final flush pages={len(dirty_pages)} in {time.perf_counter() - save_started:.2f}s",
                 flush=True,
             )
-        return
+        return {
+            "pending_items": len(pending),
+            "total_batches": total_batches,
+            "effective_batch_size": effective_batch_size,
+            "flush_interval": flush_interval,
+            "effective_workers": max(1, workers),
+        }
 
     completed = 0
     dirty_pages: set[int] = set()
@@ -117,6 +140,7 @@ def translate_pending_units(
                 request_label=f"book: batch {index}/{total_batches}",
                 domain_guidance=domain_guidance,
                 mode=mode,
+                context=translation_context,
             ): (index, batch)
             for index, batch in enumerate(batches, start=1)
         }
@@ -142,3 +166,10 @@ def translate_pending_units(
             f"book: final flush pages={len(dirty_pages)} in {time.perf_counter() - save_started:.2f}s",
             flush=True,
         )
+    return {
+        "pending_items": len(pending),
+        "total_batches": total_batches,
+        "effective_batch_size": effective_batch_size,
+        "flush_interval": flush_interval,
+        "effective_workers": max(1, workers),
+    }

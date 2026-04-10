@@ -5,10 +5,11 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from services.translation.llm.deepseek_client import DEFAULT_BASE_URL
-from services.translation.llm.deepseek_client import extract_json_text
 from services.translation.llm.deepseek_client import get_api_key
 from services.translation.llm.deepseek_client import normalize_base_url
 from services.translation.llm.deepseek_client import request_chat_content
+from services.translation.llm.structured_models import GARBLED_RECONSTRUCTION_RESPONSE_SCHEMA
+from services.translation.llm.structured_parsers import parse_garbled_reconstruction_response
 
 
 GARBLED_LEGACY_STYLE_RE = re.compile(r"\\(?:bf|rm|it|sf|tt|pmb)\b")
@@ -173,12 +174,11 @@ def _repair_item_translation(item: dict, *, api_key: str, model: str, base_url: 
         model=model,
         base_url=base_url,
         temperature=0.0,
-        response_format={"type": "json_object"},
+        response_format=GARBLED_RECONSTRUCTION_RESPONSE_SCHEMA,
         timeout=120,
         request_label=f"garbled-reconstruct {item.get('item_id', '')}",
     )
-    payload = json.loads(extract_json_text(content))
-    return str(payload.get("translated_text", "") or "").strip()
+    return parse_garbled_reconstruction_response(content)
 
 
 def _apply_reconstruction(items: list[dict], translated_text: str) -> None:

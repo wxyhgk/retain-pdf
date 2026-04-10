@@ -3,8 +3,9 @@ from __future__ import annotations
 import json
 
 from foundation.shared.prompt_loader import load_prompt
-from ..llm.deepseek_client import extract_json_text
 from ..llm.deepseek_client import request_chat_content
+from ..llm.structured_models import CONTINUATION_REVIEW_RESPONSE_SCHEMA
+from ..llm.structured_parsers import parse_continuation_review_response
 
 
 def _build_messages(pairs: list[dict]) -> list[dict[str, str]]:
@@ -34,17 +35,8 @@ def review_candidate_pairs(
         model=model,
         base_url=base_url,
         temperature=0.0,
-        response_format={"type": "json_object"},
+        response_format=CONTINUATION_REVIEW_RESPONSE_SCHEMA,
         timeout=120,
         request_label=request_label,
     )
-    payload = json.loads(extract_json_text(content))
-    decisions = payload.get("decisions", [])
-    result: dict[str, str] = {}
-    for item in decisions:
-        pair_id = str(item.get("pair_id", "") or "").strip()
-        decision = str(item.get("decision", "") or "").strip().lower()
-        if not pair_id:
-            continue
-        result[pair_id] = "join" if decision == "join" else "break"
-    return result
+    return parse_continuation_review_response(content)

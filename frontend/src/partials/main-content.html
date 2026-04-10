@@ -2,6 +2,7 @@
   <header class="topbar">
     <div class="brand-mark" aria-hidden="true"></div>
     <div class="hero-actions">
+      <button id="developer-btn" type="button" class="secondary">开发者</button>
       <button id="desktop-settings-btn" type="button" class="secondary hidden">设置</button>
       <button id="open-output-btn" type="button" class="secondary hidden">打开输出目录</button>
     </div>
@@ -71,6 +72,22 @@
         </div>
         <div id="page-range-summary" class="page-range-summary hidden">已选择页码：-</div>
       </div>
+
+      <section class="glossary-panel" aria-labelledby="glossary-title">
+        <div class="glossary-head">
+          <div>
+            <strong id="glossary-title">自定义术语表</strong>
+            <p>可选。每行一条，优先使用 `source<TAB>target<TAB>note`，也兼容 `source -> target`。</p>
+          </div>
+          <button id="glossary-clear-btn" type="button" class="secondary">清空</button>
+        </div>
+        <textarea
+          id="glossary-input"
+          class="glossary-input"
+          spellcheck="false"
+          placeholder="abstract\t导论\nband gap\t带隙\t材料学固定译法"
+        ></textarea>
+      </section>
     </form>
   </section>
 

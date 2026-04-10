@@ -21,6 +21,7 @@ from runtime.pipeline.book_pipeline import run_book_pipeline
 from services.translation.llm import DEFAULT_BASE_URL
 from services.translation.llm import get_api_key
 from services.translation.llm import normalize_base_url
+from services.translation.terms import parse_glossary_json
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,6 +57,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--classify-batch-size", type=int, default=12, help="Classification batch size for precise mode.")
     parser.add_argument("--rule-profile-name", type=str, default="general_sci", help="Built-in rule profile name.")
     parser.add_argument("--custom-rules-text", type=str, default="", help="Extra rule text injected into model context.")
+    parser.add_argument("--glossary-json", type=str, default="", help="JSON array of glossary entries.")
     parser.add_argument("--api-key", type=str, default="", help="Optional translation API key. Prefer env DEEPSEEK_API_KEY for DeepSeek.")
     parser.add_argument("--model", type=str, default="Q3.5-turbo", help="Translation model name.")
     parser.add_argument("--base-url", type=str, default="http://1.94.67.196:10001/v1", help="OpenAI-compatible translation API base URL.")
@@ -123,6 +125,7 @@ def main() -> None:
         render_mode=args.render_mode,
         rule_profile_name=args.rule_profile_name,
         custom_rules_text=args.custom_rules_text,
+        glossary_entries=parse_glossary_json(args.glossary_json),
         compile_workers=args.compile_workers or None,
         typst_font_family=args.typst_font_family,
         pdf_compress_dpi=args.pdf_compress_dpi,

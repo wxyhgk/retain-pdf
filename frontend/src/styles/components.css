@@ -93,14 +93,26 @@
     width: min(620px, calc(100vw - 24px));
   }
 
+  #developer-dialog {
+    width: min(520px, calc(100vw - 24px));
+  }
+
+  #developer-dialog .desktop-shell,
+  #developer-dialog .desktop-body,
+  #developer-dialog .developer-panels,
+  #developer-dialog .developer-panel,
+  #developer-dialog .compact-card {
+    overflow: visible;
+  }
+
   .desktop-dialog::backdrop {
     background: rgba(15, 23, 42, 0.3);
   }
 
   .desktop-shell {
-    @apply overflow-hidden rounded-[28px] border p-0 shadow-panel backdrop-blur-xl;
+    @apply overflow-hidden rounded-[28px] border p-0 shadow-panel;
     border-color: var(--line);
-    background: rgba(255, 255, 255, 0.88);
+    background: #ffffff;
   }
 
   .desktop-head {
@@ -131,6 +143,57 @@
     @apply grid gap-4 p-6;
   }
 
+  .glossary-panel {
+    width: 100%;
+    display: grid;
+    gap: 10px;
+    padding: 14px 16px;
+    border: 1px solid #ececf1;
+    border-radius: 20px;
+    background: #ffffff;
+  }
+
+  .glossary-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .glossary-head strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+  }
+
+  .glossary-head p {
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #6e6e73;
+  }
+
+  .glossary-input {
+    width: 100%;
+    min-height: 140px;
+    resize: vertical;
+    border: 1px solid #d2d2d7;
+    border-radius: 16px;
+    padding: 12px 14px;
+    background: #fbfbfd;
+    color: #1d1d1f;
+    font-size: 13px;
+    line-height: 1.6;
+    font-family: "SFMono-Regular", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+
+  .glossary-input:focus {
+    outline: none;
+    border-color: #1d1d1f;
+    background: #ffffff;
+  }
+
   #browser-credentials-dialog .desktop-body {
     gap: 12px;
     padding: 18px 20px 20px;
@@ -154,6 +217,11 @@
     gap: 14px;
   }
 
+  .developer-dialog-body {
+    gap: 12px;
+    padding-top: 16px;
+  }
+
   .credential-card-grid {
     display: grid;
     gap: 10px;
@@ -165,7 +233,116 @@
     padding: 13px 14px;
     border: 1px solid #ececf1;
     border-radius: 18px;
-    background: #fbfbfd;
+    background: #ffffff;
+  }
+
+  .compact-card {
+    gap: 9px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .developer-tabs {
+    @apply inline-flex items-center gap-1 rounded-full p-1;
+    width: fit-content;
+    background: #f5f5f7;
+  }
+
+  .developer-tab {
+    @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-full px-3 text-[12px] font-medium;
+    color: #6e6e73;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .developer-tab svg {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 auto;
+  }
+
+  .developer-tab.is-active {
+    background: #1d1d1f;
+    color: #ffffff;
+  }
+
+  .developer-panels {
+    min-height: 220px;
+  }
+
+  .developer-panel:not(.is-active) {
+    display: none;
+  }
+
+  .developer-grid {
+    gap: 10px 12px;
+  }
+
+  .developer-span-full {
+    grid-column: 1 / -1;
+  }
+
+  .developer-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .developer-hint {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    border-radius: 999px;
+    background: #1d1d1f;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    line-height: 1;
+    cursor: help;
+    user-select: none;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    min-height: 16px;
+  }
+
+  .developer-hint.is-open::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .developer-hint::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    transform: translateX(-50%) translateY(4px);
+    width: max-content;
+    max-width: 220px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: rgba(29, 29, 31, 0.96);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: inherit;
+    font-style: normal;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 40;
   }
 
   .credential-card-head {
@@ -187,6 +364,34 @@
     font-size: 12px;
     line-height: 1.5;
     color: #6e6e73;
+  }
+
+  #developer-dialog label {
+    gap: 6px;
+    font-size: 13px;
+  }
+
+  #developer-dialog label > span {
+    font-weight: 550;
+  }
+
+  #developer-dialog input[type="text"],
+  #developer-dialog input[type="number"] {
+    height: 42px;
+    min-height: 42px;
+    border-radius: 16px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+
+  #developer-dialog .credential-dialog-actions {
+    margin-top: 0;
+  }
+
+  #developer-dialog .credential-dialog-actions button {
+    min-height: 40px;
+    padding-inline: 16px;
+    font-size: 13px;
   }
 
   .credential-card-link {

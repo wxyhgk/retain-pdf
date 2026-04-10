@@ -4,6 +4,11 @@ from pathlib import Path
 
 from services.translation.ocr.json_extractor import get_page_count
 from services.translation.ocr.json_extractor import load_ocr_json
+from services.translation.diagnostics import TranslationRunDiagnostics
+from services.translation.diagnostics import classify_provider_family
+from services.translation.diagnostics import translation_run_diagnostics_scope
+from services.translation.session_context import build_translation_context_from_policy
+from services.translation.terms import GlossaryEntry
 from runtime.pipeline.render_mode import resolve_page_range
 from services.translation.llm import DEFAULT_BASE_URL
 from services.translation.policy import build_book_translation_policy_config
@@ -27,6 +32,7 @@ def translate_book_pipeline(
     source_pdf_path: Path | None = None,
     rule_profile_name: str = "general_sci",
     custom_rules_text: str = "",
+    glossary_entries: list[GlossaryEntry] | None = None,
 ) -> dict:
     data = load_ocr_json(source_json_path)
     page_count = get_page_count(data)
@@ -53,23 +59,45 @@ def translate_book_pipeline(
             flush=True,
         )
     print(f"rule profile: {policy_config.rule_profile_name}", flush=True)
-    translated_pages_map, summaries = translate_book_with_global_continuations(
-        data=data,
-        output_dir=output_dir,
-        page_indices=page_indices,
-        api_key=api_key,
-        batch_size=batch_size,
-        workers=max(1, workers),
+    translation_context = build_translation_context_from_policy(
+        policy_config,
+        glossary_entries=glossary_entries or [],
+    )
+    run_diagnostics = TranslationRunDiagnostics(
+        provider_family=classify_provider_family(base_url=base_url, model=model),
         model=model,
         base_url=base_url,
-        mode=mode,
-        classify_batch_size=max(1, classify_batch_size),
-        skip_title_translation=skip_title_translation,
-        sci_cutoff_page_idx=policy_config.sci_cutoff_page_idx,
-        sci_cutoff_block_idx=policy_config.sci_cutoff_block_idx,
-        policy_config=policy_config,
-        domain_guidance=policy_config.domain_guidance,
+        configured_workers=max(1, workers),
+        configured_batch_size=max(1, batch_size),
+        configured_classify_batch_size=max(1, classify_batch_size),
     )
+    run_diagnostics.set_effective_settings(
+        translation_workers=max(1, workers),
+        policy_workers=max(1, workers),
+        continuation_workers=min(max(1, workers), 8),
+        mixed_split_workers=min(max(1, workers), 4),
+        translation_batch_size=1,
+    )
+    with translation_run_diagnostics_scope(run_diagnostics):
+        translated_pages_map, summaries = translate_book_with_global_continuations(
+            data=data,
+            output_dir=output_dir,
+            page_indices=page_indices,
+            api_key=api_key,
+            batch_size=batch_size,
+            workers=max(1, workers),
+            model=model,
+            base_url=base_url,
+            mode=mode,
+            classify_batch_size=max(1, classify_batch_size),
+            skip_title_translation=skip_title_translation,
+            sci_cutoff_page_idx=policy_config.sci_cutoff_page_idx,
+            sci_cutoff_block_idx=policy_config.sci_cutoff_block_idx,
+            policy_config=policy_config,
+            domain_guidance=policy_config.domain_guidance,
+            translation_context=translation_context,
+            run_diagnostics=run_diagnostics,
+        )
     total_items = sum(item["total_items"] for item in summaries)
     translated_items = sum(item["translated_items"] for item in summaries)
     return {
@@ -84,4 +112,6 @@ def translate_book_pipeline(
         "domain_context": policy_config.domain_context,
         "rule_profile_name": policy_config.rule_profile_name,
         "custom_rules_text": policy_config.custom_rules_text,
+        "translation_context": translation_context,
+        "translation_run_diagnostics": run_diagnostics,
     }

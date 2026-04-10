@@ -4,12 +4,15 @@ from pathlib import Path
 
 from foundation.config import fonts
 from foundation.config import runtime
+from foundation.config.output_layout import ARTIFACTS_DIR_NAME
 from runtime.pipeline.render_mode import is_editable_pdf
 from runtime.pipeline.render_mode import resolve_page_range
 from runtime.pipeline.render_stage import build_book_from_translations
 from runtime.pipeline.render_stage import build_book_pipeline
 from runtime.pipeline.render_stage import run_render_stage
 from runtime.pipeline.translation_stage import translate_book_pipeline
+from services.translation.diagnostics import write_translation_diagnostics
+from services.translation.terms import GlossaryEntry
 
 
 def run_book_pipeline(
@@ -31,6 +34,7 @@ def run_book_pipeline(
     render_mode: str,
     rule_profile_name: str = "general_sci",
     custom_rules_text: str = "",
+    glossary_entries: list[GlossaryEntry] | None = None,
     compile_workers: int | None = None,
     typst_font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
@@ -52,8 +56,16 @@ def run_book_pipeline(
         source_pdf_path=source_pdf_path,
         rule_profile_name=rule_profile_name,
         custom_rules_text=custom_rules_text,
+        glossary_entries=glossary_entries or [],
     )
     translate_elapsed = time.perf_counter() - total_started
+    diagnostics_path = output_dir.parent / ARTIFACTS_DIR_NAME / "translation_diagnostics.json"
+    translation_run_diagnostics = translation_summary.get("translation_run_diagnostics")
+    diagnostics_summary = (
+        write_translation_diagnostics(diagnostics_path, translation_run_diagnostics)
+        if translation_run_diagnostics is not None
+        else {}
+    )
 
     translated_pages = translation_summary["page_count"]
     translated_items_total = translation_summary["translated_items"]
@@ -90,4 +102,12 @@ def run_book_pipeline(
         "save_elapsed": save_elapsed,
         "total_elapsed": total_elapsed,
         "effective_render_mode": render_summary["effective_render_mode"],
+        "translation_diagnostics_path": str(diagnostics_path) if diagnostics_summary else "",
+        "translation_provider_family": diagnostics_summary.get("provider_family", ""),
+        "translation_peak_inflight_requests": diagnostics_summary.get("concurrency_observed", {}).get(
+            "peak_inflight_all_llm_requests",
+            0,
+        ),
+        "translation_timeout_attempts": diagnostics_summary.get("request_counts", {}).get("timeout_attempts", 0),
+        "translation_retrying_items": diagnostics_summary.get("retry_summary", {}).get("retrying_request_labels", 0),
     }

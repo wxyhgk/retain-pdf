@@ -9,6 +9,8 @@ import {
   desktopInvoke,
   isDesktopMode,
   loadBrowserStoredConfig,
+  loadDeveloperStoredConfig,
+  saveDeveloperStoredConfig,
   saveBrowserStoredConfig,
 } from "./config.js";
 import {
@@ -213,6 +215,36 @@ function bindDialogBackdropClose(id) {
   });
 }
 
+function closeInfoBubbles(except = null) {
+  document.querySelectorAll(".developer-hint.is-open").forEach((node) => {
+    if (node !== except) {
+      node.classList.remove("is-open");
+    }
+  });
+}
+
+function bindInfoBubbles() {
+  document.querySelectorAll(".developer-hint").forEach((trigger) => {
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const willOpen = !trigger.classList.contains("is-open");
+      closeInfoBubbles(trigger);
+      trigger.classList.toggle("is-open", willOpen);
+    });
+  });
+
+  document.addEventListener("click", () => {
+    closeInfoBubbles();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeInfoBubbles();
+    }
+  });
+}
+
 function stopPolling() {
   if (state.timer) {
     clearInterval(state.timer);
@@ -286,8 +318,113 @@ function currentPageRanges() {
   return normalizePageRangeValue(start, end);
 }
 
+function developerConfigWithDefaults() {
+  const saved = state.developerConfig || {};
+  return {
+    model: saved.model || defaultModelName(),
+    baseUrl: saved.baseUrl || defaultModelBaseUrl(),
+    workers: Number(saved.workers || DEFAULT_WORKERS),
+    batchSize: Number(saved.batchSize || DEFAULT_BATCH_SIZE),
+    classifyBatchSize: Number(saved.classifyBatchSize || DEFAULT_CLASSIFY_BATCH_SIZE),
+    compileWorkers: Number(saved.compileWorkers || DEFAULT_COMPILE_WORKERS),
+    timeoutSeconds: Number(saved.timeoutSeconds || DEFAULT_TIMEOUT_SECONDS),
+  };
+}
+
+function parseGlossaryText(rawText = "") {
+  const lines = `${rawText || ""}`.split(/\r?\n/);
+  const entries = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const rawLine = lines[index];
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) {
+      continue;
+    }
+    let parts = [];
+    if (rawLine.includes("\t")) {
+      parts = rawLine.split("\t").map((item) => item.trim());
+    } else if (line.includes("->")) {
+      parts = line.split("->").map((item) => item.trim());
+    } else if (line.includes("=>")) {
+      parts = line.split("=>").map((item) => item.trim());
+    } else {
+      parts = line.split(/\s+/).map((item) => item.trim());
+    }
+    parts = parts.filter(Boolean);
+    if (parts.length < 2) {
+      throw new Error(`术语表第 ${index + 1} 行格式无效。请使用“源词<TAB>目标词”或“源词 -> 目标词”。`);
+    }
+    const [source, target, ...rest] = parts;
+    entries.push({
+      source,
+      target,
+      note: rest.join(" ").trim(),
+    });
+  }
+  return entries;
+}
+
+function syncDeveloperDialogFromState() {
+  const config = developerConfigWithDefaults();
+  $("developer-model").value = config.model;
+  $("developer-base-url").value = config.baseUrl;
+  $("developer-workers").value = `${config.workers}`;
+  $("developer-batch-size").value = `${config.batchSize}`;
+  $("developer-classify-batch-size").value = `${config.classifyBatchSize}`;
+  $("developer-compile-workers").value = `${config.compileWorkers}`;
+  $("developer-timeout-seconds").value = `${config.timeoutSeconds}`;
+}
+
+function openDeveloperDialog() {
+  syncDeveloperDialogFromState();
+  activateDeveloperTab("model");
+  $("developer-dialog")?.showModal();
+}
+
+function saveDeveloperDialog() {
+  state.developerConfig = {
+    model: $("developer-model")?.value?.trim() || defaultModelName(),
+    baseUrl: $("developer-base-url")?.value?.trim() || defaultModelBaseUrl(),
+    workers: Number($("developer-workers")?.value || DEFAULT_WORKERS),
+    batchSize: Number($("developer-batch-size")?.value || DEFAULT_BATCH_SIZE),
+    classifyBatchSize: Number($("developer-classify-batch-size")?.value || DEFAULT_CLASSIFY_BATCH_SIZE),
+    compileWorkers: Number($("developer-compile-workers")?.value || DEFAULT_COMPILE_WORKERS),
+    timeoutSeconds: Number($("developer-timeout-seconds")?.value || DEFAULT_TIMEOUT_SECONDS),
+  };
+  saveDeveloperStoredConfig(state.developerConfig);
+  $("developer-dialog")?.close();
+}
+
+function resetDeveloperDialog() {
+  state.developerConfig = {};
+  saveDeveloperStoredConfig({});
+  syncDeveloperDialogFromState();
+}
+
+function clearGlossaryInput() {
+  const input = $("glossary-input");
+  if (input) {
+    input.value = "";
+  }
+}
+
+function activateDeveloperTab(tabName = "model") {
+  document.querySelectorAll("[data-developer-tab]").forEach((tab) => {
+    const active = tab.dataset.developerTab === tabName;
+    tab.classList.toggle("is-active", active);
+    tab.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  document.querySelectorAll("[data-developer-panel]").forEach((panel) => {
+    const active = panel.dataset.developerPanel === tabName;
+    panel.classList.toggle("is-active", active);
+    panel.hidden = !active;
+  });
+}
+
 function collectRunPayload() {
   const pageRanges = currentPageRanges();
+  const developerConfig = developerConfigWithDefaults();
+  const glossaryEntries = parseGlossaryText($("glossary-input")?.value || "");
   return {
     workflow: "mineru",
     source: {
@@ -302,22 +439,23 @@ function collectRunPayload() {
     },
     translation: {
       mode: DEFAULT_MODE,
-      model: defaultModelName(),
-      base_url: defaultModelBaseUrl(),
+      model: developerConfig.model,
+      base_url: developerConfig.baseUrl,
       api_key: $("api_key").value || defaultModelApiKey(),
-      workers: DEFAULT_WORKERS,
-      batch_size: DEFAULT_BATCH_SIZE,
-      classify_batch_size: DEFAULT_CLASSIFY_BATCH_SIZE,
+      workers: developerConfig.workers,
+      batch_size: developerConfig.batchSize,
+      classify_batch_size: developerConfig.classifyBatchSize,
       rule_profile_name: DEFAULT_RULE_PROFILE,
       custom_rules_text: "",
+      glossary_entries: glossaryEntries,
       skip_title_translation: false,
     },
     render: {
       render_mode: DEFAULT_RENDER_MODE,
-      compile_workers: DEFAULT_COMPILE_WORKERS,
+      compile_workers: developerConfig.compileWorkers,
     },
     runtime: {
-      timeout_seconds: DEFAULT_TIMEOUT_SECONDS,
+      timeout_seconds: developerConfig.timeoutSeconds,
     },
   };
 }
@@ -948,18 +1086,21 @@ async function checkApiConnectivity() {
 
 function initializePage() {
   const browserStored = loadBrowserStoredConfig();
+  state.developerConfig = loadDeveloperStoredConfig();
   applyKeyInputs(
     browserStored.mineruToken || defaultMineruToken(),
     browserStored.modelApiKey || defaultModelApiKey(),
   );
   [
     "query-dialog",
+    "developer-dialog",
     "browser-credentials-dialog",
     "desktop-setup-dialog",
     "desktop-settings-dialog",
     "page-range-dialog",
     "status-detail-dialog",
   ].forEach(bindDialogBackdropClose);
+  bindInfoBubbles();
   document.querySelector(".upload-tile")?.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
@@ -979,7 +1120,16 @@ function initializePage() {
   $("mineru_token").addEventListener("input", saveBrowserStoredConfig);
   $("api_key").addEventListener("input", saveBrowserStoredConfig);
   $("job-form").addEventListener("submit", submitForm);
+  $("glossary-clear-btn")?.addEventListener("click", clearGlossaryInput);
+  $("developer-btn")?.addEventListener("click", openDeveloperDialog);
   $("open-query-btn").addEventListener("click", openQueryDialog);
+  $("developer-save-btn")?.addEventListener("click", saveDeveloperDialog);
+  $("developer-reset-btn")?.addEventListener("click", resetDeveloperDialog);
+  document.querySelectorAll("[data-developer-tab]").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      activateDeveloperTab(tab.dataset.developerTab || "model");
+    });
+  });
   $("refresh-jobs-btn")?.addEventListener("click", () => loadRecentJobs({ reset: true }));
   $("load-more-jobs-btn")?.addEventListener("click", () => loadRecentJobs({ reset: false }));
   $("recent-jobs-date")?.addEventListener("change", (event) => {

@@ -15,6 +15,7 @@ export const state = {
   recentJobsDate: "",
   validatedMineruToken: "",
   mineruValidationStatus: "",
+  developerConfig: {},
   desktopMode: false,
   desktopConfigured: false,
 };

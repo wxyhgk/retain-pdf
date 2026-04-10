@@ -57,6 +57,11 @@ def write_pipeline_summary(
             "translate_elapsed": result["translate_elapsed"],
             "save_elapsed": result["save_elapsed"],
             "total_elapsed": result["total_elapsed"],
+            "translation_diagnostics_path": result.get("translation_diagnostics_path", ""),
+            "translation_provider_family": result.get("translation_provider_family", ""),
+            "translation_peak_inflight_requests": result.get("translation_peak_inflight_requests", 0),
+            "translation_timeout_attempts": result.get("translation_timeout_attempts", 0),
+            "translation_retrying_items": result.get("translation_retrying_items", 0),
             "mode": mode,
             "model": model,
             "base_url": base_url,
@@ -113,5 +118,9 @@ def print_pipeline_summary(
     print(f"translate+render time: {result['translate_elapsed']:.2f}s")
     print(f"save time: {result['save_elapsed']:.2f}s")
     print(f"total time: {result['total_elapsed']:.2f}s")
+    if result.get("translation_diagnostics_path"):
+        print(f"translation diagnostics: {result['translation_diagnostics_path']}")
+    if result.get("translation_provider_family"):
+        print(f"translation provider family: {result['translation_provider_family']}")
     if result.get("effective_render_mode"):
         print(f"effective render mode: {result['effective_render_mode']}")

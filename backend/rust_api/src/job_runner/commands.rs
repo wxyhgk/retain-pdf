@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use anyhow::Result;
 use crate::models::ResolvedJobSpec;
 use crate::storage_paths::JobPaths;
 use crate::AppState;
@@ -77,6 +78,7 @@ enum TranslationArg {
     ClassifyBatchSize,
     RuleProfileName,
     CustomRulesText,
+    GlossaryJson,
     ApiKey,
     Model,
     BaseUrl,
@@ -136,10 +138,15 @@ const TRANSLATION_ARGS: &[(&str, TranslationArg)] = &[
     ("--classify-batch-size", TranslationArg::ClassifyBatchSize),
     ("--rule-profile-name", TranslationArg::RuleProfileName),
     ("--custom-rules-text", TranslationArg::CustomRulesText),
+    ("--glossary-json", TranslationArg::GlossaryJson),
     ("--api-key", TranslationArg::ApiKey),
     ("--model", TranslationArg::Model),
     ("--base-url", TranslationArg::BaseUrl),
 ];
+
+fn glossary_entries_json(request: &ResolvedJobSpec) -> Result<String> {
+    Ok(serde_json::to_string(&request.translation.glossary_entries)?)
+}
 
 const RENDER_ARGS: &[(&str, RenderArg)] = &[
     ("--render-mode", RenderArg::RenderMode),
@@ -214,6 +221,13 @@ fn push_translation_args(cmd: &mut CommandBuilder, request: &ResolvedJobSpec) {
             }
             TranslationArg::CustomRulesText => {
                 cmd.arg(name, &request.translation.custom_rules_text)
+            }
+            TranslationArg::GlossaryJson => {
+                if !request.translation.glossary_entries.is_empty() {
+                    if let Ok(payload) = glossary_entries_json(request) {
+                        cmd.arg(name, payload);
+                    }
+                }
             }
             TranslationArg::ApiKey => cmd.arg(name, &request.translation.api_key),
             TranslationArg::Model => cmd.arg(name, &request.translation.model),

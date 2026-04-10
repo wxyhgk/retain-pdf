@@ -95,6 +95,17 @@ impl Default for OcrInput {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
+pub struct GlossaryEntryInput {
+    #[serde(default)]
+    pub source: String,
+    #[serde(default)]
+    pub target: String,
+    #[serde(default)]
+    pub note: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct TranslationInput {
     #[serde(default = "default_mode")]
     pub mode: String,
@@ -106,6 +117,8 @@ pub struct TranslationInput {
     pub rule_profile_name: String,
     #[serde(default)]
     pub custom_rules_text: String,
+    #[serde(default)]
+    pub glossary_entries: Vec<GlossaryEntryInput>,
     #[serde(default)]
     pub api_key: String,
     #[serde(default)]
@@ -130,6 +143,7 @@ impl Default for TranslationInput {
             classify_batch_size: default_classify_batch_size(),
             rule_profile_name: default_rule_profile_name(),
             custom_rules_text: String::new(),
+            glossary_entries: Vec::new(),
             api_key: String::new(),
             model: String::new(),
             base_url: String::new(),

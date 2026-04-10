@@ -12,6 +12,8 @@ from urllib3.util.retry import Retry
 
 from foundation.shared.prompt_loader import load_prompt
 from foundation.shared.local_env import get_secret
+from services.translation.diagnostics import get_active_translation_run_diagnostics
+from services.translation.diagnostics import infer_stage_from_request_label
 from services.translation.llm.decision_hints import build_decision_hints
 from services.translation.llm.style_hints import structure_style_hint
 
@@ -262,6 +264,28 @@ def build_headers(api_key: str) -> dict[str, str]:
     return headers
 
 
+def _supports_response_schema_fallback(response_format: dict[str, Any] | None) -> bool:
+    if not isinstance(response_format, dict):
+        return False
+    return str(response_format.get("type", "") or "").strip().lower() == "json_schema"
+
+
+def _provider_supports_json_schema(*, model: str, base_url: str) -> bool:
+    normalized_base = normalize_base_url(base_url).lower()
+    normalized_model = (model or "").strip().lower()
+    if "api.deepseek.com" in normalized_base:
+        return False
+    if normalized_model.startswith("deepseek"):
+        return False
+    return True
+
+
+def _fallback_response_format(response_format: dict[str, Any] | None) -> dict[str, str] | None:
+    if not _supports_response_schema_fallback(response_format):
+        return response_format
+    return {"type": "json_object"}
+
+
 def should_use_stream_responses() -> bool:
     value = os.environ.get(STREAM_RESPONSES_ENV, "")
     return value.strip().lower() in {"1", "true", "yes", "on"}
@@ -277,7 +301,13 @@ def _build_session() -> requests.Session:
     session.trust_env = should_trust_env_proxy()
     if not session.trust_env:
         session.proxies.clear()
+    diagnostics = get_active_translation_run_diagnostics()
+    pool_size = 10
+    if diagnostics is not None and diagnostics.provider_family == "deepseek_official":
+        pool_size = min(256, max(32, int(diagnostics.configured_workers)))
     adapter = HTTPAdapter(
+        pool_connections=pool_size,
+        pool_maxsize=pool_size,
         max_retries=Retry(
             total=0,
             connect=0,
@@ -404,6 +434,15 @@ def request_chat_content(
     request_label: str = "",
 ) -> str:
     last_error: Exception | None = None
+    request_stage = infer_stage_from_request_label(request_label)
+    diagnostics = get_active_translation_run_diagnostics()
+    active_response_format = response_format
+    if _supports_response_schema_fallback(active_response_format) and not _provider_supports_json_schema(
+        model=model,
+        base_url=base_url,
+    ):
+        active_response_format = _fallback_response_format(active_response_format)
+    attempted_schema_fallback = False
     body: dict[str, Any] = {
         "model": model,
         "temperature": temperature,
@@ -412,12 +451,21 @@ def request_chat_content(
     use_stream = should_use_stream_responses()
     if use_stream:
         body["stream"] = True
-    if response_format is not None:
-        body["response_format"] = response_format
+    if active_response_format is not None:
+        body["response_format"] = active_response_format
 
     for attempt in range(1, HTTP_RETRY_ATTEMPTS + 1):
         started = time.perf_counter()
+        diagnostics_request_id: int | None = None
         try:
+            if diagnostics is not None:
+                diagnostics.acquire_request_slot()
+                diagnostics_request_id = diagnostics.record_request_start(
+                    stage=request_stage,
+                    request_label=request_label,
+                    timeout_s=timeout,
+                    attempt=attempt,
+                )
             if request_label:
                 print(
                     f"{request_label}: http attempt {attempt}/{HTTP_RETRY_ATTEMPTS} -> {model} {chat_completions_url(base_url)} timeout={timeout}s stream={use_stream}",
@@ -441,15 +489,56 @@ def request_chat_content(
             if request_label:
                 elapsed = time.perf_counter() - started
                 print(f"{request_label}: http ok in {elapsed:.2f}s", flush=True)
+            if diagnostics is not None and diagnostics_request_id is not None:
+                diagnostics.record_request_end(
+                    diagnostics_request_id,
+                    success=True,
+                    elapsed_ms=int(round((time.perf_counter() - started) * 1000)),
+                )
+                diagnostics.release_request_slot(
+                    success=True,
+                    elapsed_ms=int(round((time.perf_counter() - started) * 1000)),
+                )
             return content
         except (requests.RequestException, ValueError, KeyError, json.JSONDecodeError) as exc:
             last_error = exc
             elapsed = time.perf_counter() - started
+            status_code = exc.response.status_code if isinstance(exc, requests.HTTPError) and exc.response is not None else None
+            if diagnostics is not None and diagnostics_request_id is not None:
+                diagnostics.record_request_end(
+                    diagnostics_request_id,
+                    success=False,
+                    elapsed_ms=int(round(elapsed * 1000)),
+                    status_code=status_code,
+                    error_class=type(exc).__name__,
+                )
+                diagnostics.release_request_slot(
+                    success=False,
+                    elapsed_ms=int(round(elapsed * 1000)),
+                    status_code=status_code,
+                    error_class=type(exc).__name__,
+                )
             if request_label:
                 print(
                     f"{request_label}: http failed attempt {attempt}/{HTTP_RETRY_ATTEMPTS} after {elapsed:.2f}s: {type(exc).__name__}: {exc}",
                     flush=True,
                 )
+            if (
+                not attempted_schema_fallback
+                and _supports_response_schema_fallback(active_response_format)
+                and isinstance(exc, requests.HTTPError)
+                and exc.response is not None
+                and exc.response.status_code == 400
+            ):
+                attempted_schema_fallback = True
+                active_response_format = _fallback_response_format(active_response_format)
+                if active_response_format is None:
+                    body.pop("response_format", None)
+                else:
+                    body["response_format"] = active_response_format
+                if request_label:
+                    print(f"{request_label}: response_format fallback json_schema -> json_object after 400", flush=True)
+                continue
             if attempt >= HTTP_RETRY_ATTEMPTS or not _is_retryable_http_error(exc):
                 raise
             _drop_session(_request_session_key())

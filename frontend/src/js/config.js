@@ -1,6 +1,7 @@
 import { $ } from "./dom.js";
 import {
   BROWSER_CONFIG_STORAGE_KEY,
+  DEVELOPER_CONFIG_STORAGE_KEY,
   DEFAULT_BASE_URL,
   DEFAULT_MODEL,
 } from "./constants.js";
@@ -97,6 +98,33 @@ export function saveBrowserStoredConfig() {
     window.localStorage.setItem(BROWSER_CONFIG_STORAGE_KEY, JSON.stringify(payload));
   } catch (_err) {
     // Ignore storage quota / privacy mode failures.
+  }
+}
+
+export function loadDeveloperStoredConfig() {
+  if (isDesktopMode() || typeof window.localStorage === "undefined") {
+    return {};
+  }
+  try {
+    const raw = window.localStorage.getItem(DEVELOPER_CONFIG_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw);
+    return typeof parsed === "object" && parsed ? parsed : {};
+  } catch (_err) {
+    return {};
+  }
+}
+
+export function saveDeveloperStoredConfig(payload = {}) {
+  if (isDesktopMode() || typeof window.localStorage === "undefined") {
+    return;
+  }
+  try {
+    window.localStorage.setItem(DEVELOPER_CONFIG_STORAGE_KEY, JSON.stringify(payload));
+  } catch (_err) {
+    // Ignore storage failures.
   }
 }
 

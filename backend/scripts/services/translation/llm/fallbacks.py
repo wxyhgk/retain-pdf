@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import time
 
+from services.document_schema.semantics import is_body_structure_role
+from services.translation.diagnostics import classify_provider_family
 from services.translation.diagnostics import TranslationDiagnosticsCollector
 from services.translation.llm.cache import split_cached_batch
 from services.translation.llm.cache import store_cached_batch
@@ -20,10 +22,12 @@ from services.translation.llm.placeholder_guard import placeholder_alias_maps
 from services.translation.llm.placeholder_guard import placeholder_sequence
 from services.translation.llm.placeholder_guard import placeholder_stability_guidance
 from services.translation.llm.placeholder_guard import restore_placeholder_aliases
+from services.translation.llm.placeholder_guard import should_force_translate_body_text
 from services.translation.llm.placeholder_guard import validate_batch_result
 from services.translation.llm.segment_routing import formula_segment_translation_route
 from services.translation.llm.segment_routing import translate_single_item_formula_segment_text_with_retries
 from services.translation.llm.segment_routing import translate_single_item_formula_segment_windows_with_retries
+from services.translation.llm.translation_client import translate_batch_once
 from services.translation.llm.translation_client import translate_single_item_plain_text
 from services.translation.llm.translation_client import translate_single_item_tagged_text
 
@@ -272,6 +276,36 @@ def translate_items_plain_text(
     uncached_batch = validated_uncached
     if not uncached_batch:
         return merged
+    if _should_use_direct_deepseek_batch(uncached_batch, model=model, base_url=base_url):
+        try:
+            if request_label:
+                print(f"{request_label}: deepseek direct-batch path items={len(uncached_batch)}", flush=True)
+            result = translate_batch_once(
+                uncached_batch,
+                api_key=api_key,
+                model=model,
+                base_url=base_url,
+                request_label=request_label,
+                domain_guidance=context.merged_guidance,
+                mode=context.mode,
+                diagnostics=diagnostics,
+            )
+            store_cached_batch(
+                uncached_batch,
+                result,
+                model=model,
+                base_url=base_url,
+                domain_guidance=context.merged_guidance,
+                mode=context.mode,
+            )
+            merged.update(result)
+            return merged
+        except Exception as exc:
+            if request_label:
+                print(
+                    f"{request_label}: deepseek direct-batch fallback to single-item path: {type(exc).__name__}: {exc}",
+                    flush=True,
+                )
     total_items = len(uncached_batch)
     for index, item in enumerate(uncached_batch, start=1):
         item_label = f"{request_label} item {index}/{total_items} {item['item_id']}" if request_label else ""
@@ -296,3 +330,31 @@ def translate_items_plain_text(
             )
         merged.update(result)
     return merged
+
+
+def _should_use_direct_deepseek_batch(batch: list[dict], *, model: str, base_url: str) -> bool:
+    if len(batch) <= 1:
+        return False
+    if classify_provider_family(base_url=base_url, model=model) != "deepseek_official":
+        return False
+    return all(_is_low_risk_deepseek_batch_item(item) for item in batch)
+
+
+def _is_low_risk_deepseek_batch_item(item: dict) -> bool:
+    if str(item.get("block_type", "") or "") != "text":
+        return False
+    if not is_body_structure_role(item.get("metadata", {}) or {}):
+        return False
+    if item.get("continuation_group"):
+        return False
+    if item.get("formula_map") or item.get("translation_unit_formula_map"):
+        return False
+    if not should_force_translate_body_text(item):
+        return False
+    source_text = str(item.get("translation_unit_protected_source_text") or item.get("protected_source_text") or "").strip()
+    if not source_text:
+        return False
+    compact_len = len(source_text)
+    if compact_len < 40 or compact_len > 1200:
+        return False
+    return True
