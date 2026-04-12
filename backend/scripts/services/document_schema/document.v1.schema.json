@@ -19,7 +19,7 @@
       "const": "normalized_document_v1"
     },
     "schema_version": {
-      "const": "1.0"
+      "enum": ["1.0", "1.1"]
     },
     "document_id": {
       "type": "string",
@@ -74,6 +74,44 @@
         },
         "by": {
           "type": "string"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      }
+    },
+    "continuation_hint": {
+      "type": "object",
+      "required": [
+        "source",
+        "group_id",
+        "role",
+        "scope",
+        "reading_order",
+        "confidence"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": ["", "provider"]
+        },
+        "group_id": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["", "single", "head", "middle", "tail"]
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["", "intra_page", "cross_page"]
+        },
+        "reading_order": {
+          "type": "integer",
+          "minimum": -1
         },
         "confidence": {
           "type": "number",
@@ -206,6 +244,9 @@
         },
         "derived": {
           "$ref": "#/$defs/derived"
+        },
+        "continuation_hint": {
+          "$ref": "#/$defs/continuation_hint"
         },
         "metadata": {
           "type": "object"

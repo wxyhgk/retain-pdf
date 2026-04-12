@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 import traceback
 from dataclasses import asdict
@@ -57,6 +58,17 @@ def infer_failure_stage(*, default_stage: str, trace_text: str, detail: str) -> 
     return default_stage
 
 
+def _http_status_code(exc: BaseException, text: str) -> int | None:
+    response = getattr(exc, "response", None)
+    status_code = getattr(response, "status_code", None)
+    if isinstance(status_code, int):
+        return status_code
+    match = re.search(r"\b([45]\d{2})\s+Client Error\b", text)
+    if match:
+        return int(match.group(1))
+    return None
+
+
 def classify_exception(exc: BaseException, *, default_stage: str, provider: str = "") -> StructuredFailure:
     raw_traceback = traceback.format_exc()
     exc_type = type(exc).__name__
@@ -65,6 +77,7 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
     lowered = f"{exc_type}\n{detail}\n{raw_traceback}".lower()
     stage = infer_failure_stage(default_stage=default_stage, trace_text=raw_traceback, detail=detail)
     upstream_host = _extract_upstream_host(f"{detail}\n{raw_traceback}")
+    http_status_code = _http_status_code(exc, f"{detail}\n{raw_traceback}")
 
     error_type = "python_unhandled_exception"
     summary = "任务失败，但暂未识别出明确根因"
@@ -76,9 +89,23 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
     elif any(token in lowered for token in ("readtimeout", "connecttimeout", "timed out")):
         error_type = "upstream_timeout"
         summary = "外部服务请求超时"
-    elif any(token in lowered for token in ("401", "403", "unauthorized", "invalid api key", "token expired", "missing api key")):
+    elif http_status_code in {401, 403} or any(
+        token in lowered
+        for token in (
+            "unauthorized",
+            "forbidden",
+            "invalid api key",
+            "token expired",
+            "missing api key",
+            "missing or invalid x-api-key",
+        )
+    ):
         error_type = "auth_failed"
         summary = "鉴权失败"
+        retryable = False
+    elif http_status_code == 400:
+        error_type = "upstream_bad_request"
+        summary = "上游服务拒绝请求（400）"
         retryable = False
     elif any(
         token in lowered

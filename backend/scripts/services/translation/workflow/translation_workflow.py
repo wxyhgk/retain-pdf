@@ -57,6 +57,7 @@ def translate_items_to_path(
         save_translations(translation_path, payload)
         print(
             f"{label}: continuation joined={continuation_summary['joined_items']} "
+            f"provider_joined={continuation_summary.get('provider_joined_items', 0)} "
             f"candidate_break={continuation_summary['candidate_break_items']}",
             flush=True,
         )

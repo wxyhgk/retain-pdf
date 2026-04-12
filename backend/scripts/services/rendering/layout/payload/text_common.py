@@ -4,9 +4,13 @@ import re
 
 from services.document_schema.semantics import is_body_structure_role
 from services.rendering.formula.math_utils import build_plain_text
+from services.translation.payload.formula_protection import PROTECTED_TOKEN_RE
+from services.translation.payload.formula_protection import protected_map_from_formula_map
+from services.translation.payload.formula_protection import restore_protected_tokens
 
 
-TOKEN_RE = re.compile(r"(\[\[FORMULA_\d+]]|\s+|[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*|[\u4e00-\u9fff]|.)")
+FORMULA_TOKEN_PATTERN = r"<[futnvc]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]"
+TOKEN_RE = re.compile(rf"({FORMULA_TOKEN_PATTERN}|\s+|[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*|[\u4e00-\u9fff]|.)")
 WORD_RE = re.compile(r"[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*")
 ZH_CHAR_RE = re.compile(r"[\u4e00-\u9fff]")
 SPLIT_PUNCTUATION = (".", "。", "!", "！", "?", "？", ";", "；", ":", "：", ",", "，")
@@ -50,7 +54,7 @@ def tokenize_protected_text(text: str) -> list[str]:
 
 
 def strip_formula_placeholders(text: str) -> str:
-    return re.sub(r"\[\[FORMULA_\d+]]", " ", text or "")
+    return re.sub(FORMULA_TOKEN_PATTERN, " ", text or "")
 
 
 def normalize_render_text(text: str) -> str:
@@ -61,14 +65,39 @@ def same_meaningful_render_text(source_text: str, translated_text: str) -> bool:
     return normalize_render_text(source_text) == normalize_render_text(translated_text)
 
 
+def _render_protected_map(item: dict) -> list[dict]:
+    protected_map = (
+        item.get("translation_unit_protected_map")
+        or item.get("render_formula_map")
+        or item.get("translation_unit_formula_map")
+        or item.get("protected_map")
+        or item.get("formula_map")
+        or []
+    )
+    if protected_map and isinstance(protected_map, list) and any(isinstance(entry, dict) and "token_tag" in entry for entry in protected_map):
+        return list(protected_map)
+    return protected_map_from_formula_map(protected_map if isinstance(protected_map, list) else [])
+
+
+def restore_render_protected_text(text: str, item: dict) -> str:
+    current = str(text or "").strip()
+    if not current or not PROTECTED_TOKEN_RE.search(current):
+        return current
+    restored = restore_protected_tokens(current, _render_protected_map(item))
+    return str(restored or "").strip()
+
+
 def get_render_protected_text(item: dict) -> str:
     if "render_protected_text" in item:
-        return str(item.get("render_protected_text", "") or "").strip()
-    return str(
+        return restore_render_protected_text(str(item.get("render_protected_text", "") or "").strip(), item)
+    return restore_render_protected_text(
+        str(
         item.get("translation_unit_protected_translated_text")
         or item.get("protected_translated_text")
         or ""
-    ).strip()
+        ).strip(),
+        item,
+    )
 
 
 def source_word_count(item: dict) -> int:

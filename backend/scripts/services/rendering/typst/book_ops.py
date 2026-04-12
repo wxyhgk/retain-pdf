@@ -7,15 +7,18 @@ import fitz
 from foundation.config import fonts
 from services.rendering.api.pdf_overlay import save_optimized_pdf
 from services.rendering.api.pdf_overlay import strip_page_links
+from services.rendering.background.stage import build_clean_background_pdf
 from services.rendering.typst.book_helpers import build_dual_doc_pages
 from services.rendering.typst.book_helpers import collect_background_page_specs
-from services.rendering.typst.book_helpers import compile_background_pdf_resilient
 from services.rendering.typst.book_helpers import prepare_background_work_dir
 from services.rendering.typst.book_helpers import prepare_single_page_items
 from services.rendering.typst.book_helpers import resolve_typst_temp_root
 from services.rendering.typst.book_helpers import save_background_pdf_to_output
+from services.rendering.layout.render_model import build_render_page_specs
+from services.rendering.typst.compiler import compile_typst_render_pages_pdf
 from services.rendering.typst.overlay_ops import overlay_translated_items_on_page
 from services.rendering.typst.overlay_ops import overlay_translated_pages_on_doc
+from services.rendering.typst.sanitize import sanitize_page_specs_for_typst_book_background
 
 
 def _build_overlay_base_doc(source_pdf_path: Path) -> fitz.Document:
@@ -26,6 +29,57 @@ def _build_overlay_base_doc(source_pdf_path: Path) -> fitz.Document:
     finally:
         source_doc.close()
     return output_doc
+
+
+def _compile_render_pages_pdf_resilient(
+    *,
+    source_pdf_path: Path,
+    background_pdf_path: Path,
+    translated_pages: dict[int, list[dict]],
+    page_specs: list,
+    api_key: str = "",
+    model: str = "",
+    base_url: str = "",
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
+    font_paths: list[Path] | None = None,
+    work_dir: Path,
+) -> Path:
+    try:
+        return compile_typst_render_pages_pdf(
+            background_pdf_path=background_pdf_path,
+            page_specs=page_specs,
+            stem="book-background-overlay",
+            font_family=font_family,
+            font_paths=font_paths,
+            work_dir=work_dir,
+        )
+    except RuntimeError as exc:
+        print("typst background render compile failed; sanitizing pages", flush=True)
+        print(str(exc), flush=True)
+        background_page_specs = collect_background_page_specs(source_pdf_path, translated_pages)
+        sanitized_background_specs = sanitize_page_specs_for_typst_book_background(
+            background_page_specs,
+            stem="book-background-overlay",
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            font_family=font_family,
+            font_paths=font_paths,
+            work_dir=work_dir,
+        )
+        sanitized_pages = {page_idx: items for page_idx, _w, _h, items in sanitized_background_specs}
+        sanitized_render_page_specs = build_render_page_specs(
+            source_pdf_path=source_pdf_path,
+            translated_pages=sanitized_pages,
+        )
+        return compile_typst_render_pages_pdf(
+            background_pdf_path=background_pdf_path,
+            page_specs=sanitized_render_page_specs,
+            stem="book-background-overlay-sanitized",
+            font_family=font_family,
+            font_paths=font_paths,
+            work_dir=work_dir,
+        )
 
 
 def build_single_page_typst_pdf(
@@ -156,11 +210,21 @@ def build_book_typst_background_pdf(
     font_paths: list[Path] | None = None,
     temp_root: Path | None = None,
 ) -> None:
-    page_specs = collect_background_page_specs(source_pdf_path, translated_pages)
     work_dir = prepare_background_work_dir(output_pdf_path, temp_root)
-    background_pdf = compile_background_pdf_resilient(
-        source_pdf_path,
-        page_specs,
+    page_specs = build_render_page_specs(
+        source_pdf_path=source_pdf_path,
+        translated_pages=translated_pages,
+    )
+    cleaned_background_pdf = build_clean_background_pdf(
+        source_pdf_path=source_pdf_path,
+        translated_pages=translated_pages,
+        output_pdf_path=work_dir / "book-background-cleaned.pdf",
+    )
+    background_pdf = _compile_render_pages_pdf_resilient(
+        source_pdf_path=source_pdf_path,
+        background_pdf_path=cleaned_background_pdf,
+        translated_pages=translated_pages,
+        page_specs=page_specs,
         api_key=api_key,
         model=model,
         base_url=base_url,

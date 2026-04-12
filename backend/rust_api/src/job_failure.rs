@@ -41,9 +41,14 @@ pub fn classify_job_failure(job: &JobSnapshot) -> Option<JobFailureInfo> {
         .map(raw_diagnostic_from_structured)
         .or_else(|| raw_diagnostic_from_text(error, &haystack));
 
-    if let Some(structured_failure) =
-        classify_structured_failure(structured.as_ref(), diagnostics, &failed_stage, job, error, &haystack)
-    {
+    if let Some(structured_failure) = classify_structured_failure(
+        structured.as_ref(),
+        diagnostics,
+        &failed_stage,
+        job,
+        error,
+        &haystack,
+    ) {
         return Some(structured_failure);
     }
 
@@ -108,7 +113,12 @@ pub fn classify_job_failure(job: &JobSnapshot) -> Option<JobFailureInfo> {
             select_relevant_log_line(
                 job,
                 error,
-                &["ReadTimeout", "ConnectTimeout", "timed out", "api.deepseek.com"],
+                &[
+                    "ReadTimeout",
+                    "ConnectTimeout",
+                    "timed out",
+                    "api.deepseek.com",
+                ],
             ),
             first_error_excerpt(error, &haystack),
             raw_diagnostic.clone(),
@@ -159,7 +169,10 @@ pub fn classify_job_failure(job: &JobSnapshot) -> Option<JobFailureInfo> {
             false,
             None,
             provider_name(diagnostics),
-            Some("检查桌面端任务目录下的 source/ 是否存在源 PDF，并确认打包环境没有丢失文件复制步骤".to_string()),
+            Some(
+                "检查桌面端任务目录下的 source/ 是否存在源 PDF，并确认打包环境没有丢失文件复制步骤"
+                    .to_string(),
+            ),
             select_relevant_log_line(job, error, &["source pdf not found"]),
             first_error_excerpt(error, &haystack),
             raw_diagnostic.clone(),
@@ -224,11 +237,18 @@ pub fn classify_job_failure(job: &JobSnapshot) -> Option<JobFailureInfo> {
             true,
             extract_upstream_host(&haystack),
             provider_name(diagnostics),
-            Some("检查桌面包是否已内置 Typst packages，或确认运行环境可访问 packages.typst.org".to_string()),
+            Some(
+                "检查桌面包是否已内置 Typst packages，或确认运行环境可访问 packages.typst.org"
+                    .to_string(),
+            ),
             select_relevant_log_line(
                 job,
                 error,
-                &["failed to download package", "packages.typst.org", "downloading @preview/"],
+                &[
+                    "failed to download package",
+                    "packages.typst.org",
+                    "downloading @preview/",
+                ],
             ),
             first_error_excerpt(error, &haystack),
             raw_diagnostic.clone(),
@@ -433,7 +453,11 @@ fn raw_diagnostic_from_structured(structured: &PythonStructuredFailure) -> JobRa
 }
 
 fn raw_diagnostic_from_text(error: &str, haystack: &str) -> Option<JobRawDiagnostic> {
-    let source = if error.trim().is_empty() { haystack } else { error };
+    let source = if error.trim().is_empty() {
+        haystack
+    } else {
+        error
+    };
     let traceback = extract_traceback(source);
     let raw_exception_message = last_non_empty_line(source);
     if traceback.is_none() && raw_exception_message.is_none() {
@@ -564,7 +588,8 @@ fn infer_failed_stage(job: &JobSnapshot, haystack: &str) -> String {
     {
         return "render".to_string();
     }
-    if stage == "translation" || combined.contains("translation") || stage_detail.contains("翻译") {
+    if stage == "translation" || combined.contains("translation") || stage_detail.contains("翻译")
+    {
         return "translation".to_string();
     }
     if combined.contains("normaliz") || stage_detail.contains("标准化") {
@@ -651,9 +676,7 @@ mod tests {
             vec!["python".to_string()],
         );
         job.status = crate::models::JobStatusKind::Failed;
-        job.error = Some(
-            "PlaceholderInventoryError: placeholder inventory mismatch".to_string(),
-        );
+        job.error = Some("PlaceholderInventoryError: placeholder inventory mismatch".to_string());
         job.stage = Some("translation".to_string());
         job.stage_detail = Some("正在翻译".to_string());
         job.log_tail = vec![
@@ -739,9 +762,8 @@ mod tests {
         );
         job.status = crate::models::JobStatusKind::Failed;
         job.stage = Some("failed".to_string());
-        job.error = Some(
-            "RuntimeError: source pdf not found: /tmp/jobs/job/source/input.pdf".to_string(),
-        );
+        job.error =
+            Some("RuntimeError: source pdf not found: /tmp/jobs/job/source/input.pdf".to_string());
 
         let failure = classify_job_failure(&job).expect("failure");
         assert_eq!(failure.category, "source_pdf_missing");

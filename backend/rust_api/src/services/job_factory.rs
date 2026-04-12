@@ -43,6 +43,7 @@ fn build_job_snapshot(
         JobCommandKind::Ocr { upload_path } => {
             build_ocr_command(state, upload_path.as_deref(), &request, &job_paths)
         }
+        JobCommandKind::Deferred { label } => vec![(*label).to_string()],
     };
     let mut job = JobSnapshot::new(job_id, request, command);
     attach_job_paths(&mut job, &job_paths);
@@ -81,6 +82,7 @@ fn build_ocr_trace_id(job_id: &str) -> String {
 pub enum JobCommandKind {
     TranslationFromUpload { upload_path: PathBuf },
     Ocr { upload_path: Option<PathBuf> },
+    Deferred { label: &'static str },
 }
 
 #[derive(Default)]
@@ -100,6 +102,26 @@ impl JobInit {
             schema_version: Some("document.v1".to_string()),
             stage: Some("queued"),
             stage_detail: Some("OCR 任务已创建，等待可用执行槽位"),
+        }
+    }
+
+    pub fn translate_default() -> Self {
+        Self {
+            use_ocr_trace_id: false,
+            trace_id: None,
+            schema_version: None,
+            stage: Some("queued"),
+            stage_detail: Some("翻译任务已创建，等待 OCR 子任务"),
+        }
+    }
+
+    pub fn render_default() -> Self {
+        Self {
+            use_ocr_trace_id: false,
+            trace_id: None,
+            schema_version: None,
+            stage: Some("queued"),
+            stage_detail: Some("渲染任务已创建，等待可用执行槽位"),
         }
     }
 }
@@ -138,6 +160,8 @@ mod tests {
             run_ocr_job_script: scripts_dir.join("run_ocr_job.py"),
             run_normalize_ocr_script: scripts_dir.join("run_normalize_ocr.py"),
             run_translate_from_ocr_script: scripts_dir.join("run_translate_from_ocr.py"),
+            run_translate_only_script: scripts_dir.join("run_translate_only.py"),
+            run_render_only_script: scripts_dir.join("run_render_only.py"),
             run_failure_ai_diagnosis_script: scripts_dir.join("diagnose_failure_with_ai.py"),
             uploads_dir,
             downloads_dir,
@@ -230,5 +254,67 @@ mod tests {
             .job_root
             .as_deref()
             .is_some_and(|path| path.contains("job-translation-test")));
+    }
+
+    #[test]
+    fn build_job_snapshot_for_translate_workflow_can_defer_until_ocr_finishes() {
+        let state = test_state();
+        let mut input = build_input("job-translate-only-test");
+        input.workflow = WorkflowKind::Translate;
+        let mut spec = ResolvedJobSpec::from_input(input);
+        spec.workflow = WorkflowKind::Translate;
+
+        let job = build_job_snapshot(
+            &state,
+            spec,
+            JobCommandKind::Deferred {
+                label: "translate-workflow-pending-ocr",
+            },
+            JobInit::translate_default(),
+        )
+        .expect("build translate job snapshot");
+
+        assert_eq!(job.workflow, WorkflowKind::Translate);
+        assert_eq!(
+            job.command,
+            vec!["translate-workflow-pending-ocr".to_string()]
+        );
+        assert_eq!(job.stage.as_deref(), Some("queued"));
+        assert_eq!(
+            job.stage_detail.as_deref(),
+            Some("翻译任务已创建，等待 OCR 子任务")
+        );
+    }
+
+    #[test]
+    fn build_job_snapshot_for_render_workflow_can_defer_until_artifacts_resolve() {
+        let state = test_state();
+        let mut input = build_input("job-render-only-test");
+        input.workflow = WorkflowKind::Render;
+        input.source.artifact_job_id = "job-source".to_string();
+        let mut spec = ResolvedJobSpec::from_input(input);
+        spec.workflow = WorkflowKind::Render;
+
+        let job = build_job_snapshot(
+            &state,
+            spec,
+            JobCommandKind::Deferred {
+                label: "render-workflow-pending-artifacts",
+            },
+            JobInit::render_default(),
+        )
+        .expect("build render job snapshot");
+
+        assert_eq!(job.workflow, WorkflowKind::Render);
+        assert_eq!(
+            job.command,
+            vec!["render-workflow-pending-artifacts".to_string()]
+        );
+        assert_eq!(job.request_payload.source.artifact_job_id, "job-source");
+        assert_eq!(job.stage.as_deref(), Some("queued"));
+        assert_eq!(
+            job.stage_detail.as_deref(),
+            Some("渲染任务已创建，等待可用执行槽位")
+        );
     }
 }

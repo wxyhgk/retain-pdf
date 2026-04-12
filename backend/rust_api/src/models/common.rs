@@ -35,6 +35,8 @@ pub enum JobStatusKind {
 pub enum WorkflowKind {
     Mineru,
     Ocr,
+    Translate,
+    Render,
 }
 
 impl Default for WorkflowKind {

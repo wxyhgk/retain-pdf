@@ -120,7 +120,11 @@ Content-Type: application/json
     "model": "deepseek-chat",
     "mode": "sci",
     "workers": 50,
-    "batch_size": 1
+    "batch_size": 1,
+    "glossary_id": "glossary-20260411-abc123",
+    "glossary_entries": [
+      {"source": "band gap", "target": "带隙", "note": "materials"}
+    ]
   },
   "render": {
     "render_mode": "auto"
@@ -146,7 +150,9 @@ Content-Type: application/json
     "model": "Q3.5-turbo",
     "mode": "precise",
     "workers": 4,
-    "batch_size": 1
+    "batch_size": 1,
+    "glossary_id": "",
+    "glossary_entries": []
   },
   "render": {
     "render_mode": "auto"
@@ -176,6 +182,12 @@ type CreateJobPayload = {
     batch_size?: number;
     rule_profile_name?: string;
     custom_rules_text?: string;
+    glossary_id?: string;
+    glossary_entries?: Array<{
+      source: string;
+      target: string;
+      note?: string;
+    }>;
   };
   render?: {
     render_mode?: string;
@@ -214,6 +226,26 @@ async function createJob(payload: CreateJobPayload, backendKey: string) {
 另外：
 
 - `base_url` 必须以 `http://` 或 `https://` 开头
+
+### 4.4 术语表怎么传
+
+推荐做法：
+
+- 前端维护“命名术语表”列表时，先调用 `POST /api/v1/glossaries` 保存，任务里只传 `translation.glossary_id`
+- 如果只是单次任务临时术语，直接传 `translation.glossary_entries`
+- 如果用户上传的是 Excel，前端先解析成 JSON；后端不直接解析 Excel
+- 如果前端手里只有 CSV 文本，可以先调用 `POST /api/v1/glossaries/parse-csv` 转成标准条目
+
+合并规则：
+
+- 命名术语表是基础层
+- 任务内 `glossary_entries` 是覆盖层
+- 相同 `source` 以任务内条目为准
+
+当前行为边界：
+
+- 术语表 v1 只参与提示词注入和结果统计
+- 不做翻译完成后的强制文本替换
 
 ## 5. 轮询任务状态
 

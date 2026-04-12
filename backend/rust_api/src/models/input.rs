@@ -28,6 +28,8 @@ pub struct JobSourceInput {
     pub upload_id: String,
     #[serde(default)]
     pub source_url: String,
+    #[serde(default)]
+    pub artifact_job_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -93,7 +95,7 @@ impl Default for OcrInput {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct GlossaryEntryInput {
     #[serde(default)]
@@ -102,6 +104,12 @@ pub struct GlossaryEntryInput {
     pub target: String,
     #[serde(default)]
     pub note: String,
+    #[serde(default)]
+    pub level: String,
+    #[serde(default)]
+    pub match_mode: String,
+    #[serde(default)]
+    pub context: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -117,6 +125,16 @@ pub struct TranslationInput {
     pub rule_profile_name: String,
     #[serde(default)]
     pub custom_rules_text: String,
+    #[serde(default)]
+    pub glossary_id: String,
+    #[serde(default)]
+    pub glossary_name: String,
+    #[serde(default)]
+    pub glossary_resource_entry_count: i64,
+    #[serde(default)]
+    pub glossary_inline_entry_count: i64,
+    #[serde(default)]
+    pub glossary_overridden_entry_count: i64,
     #[serde(default)]
     pub glossary_entries: Vec<GlossaryEntryInput>,
     #[serde(default)]
@@ -143,6 +161,11 @@ impl Default for TranslationInput {
             classify_batch_size: default_classify_batch_size(),
             rule_profile_name: default_rule_profile_name(),
             custom_rules_text: String::new(),
+            glossary_id: String::new(),
+            glossary_name: String::new(),
+            glossary_resource_entry_count: 0,
+            glossary_inline_entry_count: 0,
+            glossary_overridden_entry_count: 0,
             glossary_entries: Vec::new(),
             api_key: String::new(),
             model: String::new(),
@@ -233,6 +256,7 @@ pub struct ResolvedJobSpec {
 pub struct ResolvedSourceSpec {
     pub upload_id: String,
     pub source_url: String,
+    pub artifact_job_id: String,
 }
 
 impl ResolvedJobSpec {
@@ -248,6 +272,7 @@ impl ResolvedJobSpec {
             source: ResolvedSourceSpec {
                 upload_id: input.source.upload_id.trim().to_string(),
                 source_url: input.source.source_url.trim().to_string(),
+                artifact_job_id: input.source.artifact_job_id.trim().to_string(),
             },
             ocr: input.ocr,
             translation: input.translation,
@@ -330,6 +355,81 @@ mod tests {
 
         let message = err.to_string();
         assert!(message.contains("unknown field") || message.contains("upload_id"));
+    }
+
+    #[test]
+    fn create_job_input_accepts_artifact_job_id() {
+        let input = CreateJobInput::from_api_value(json!({
+            "workflow": "render",
+            "source": { "artifact_job_id": "job-prev" },
+            "render": { "render_mode": "auto" }
+        }))
+        .expect("parse render payload");
+
+        assert_eq!(input.workflow, WorkflowKind::Render);
+        assert_eq!(input.source.artifact_job_id, "job-prev");
+    }
+
+    #[test]
+    fn create_job_input_accepts_translate_workflow() {
+        let input = CreateJobInput::from_api_value(json!({
+            "workflow": "translate",
+            "source": { "upload_id": "upload-translate" },
+            "translation": {
+                "model": "deepseek-chat",
+                "base_url": "https://api.deepseek.com/v1",
+                "api_key": "sk-test"
+            }
+        }))
+        .expect("parse translate payload");
+
+        assert_eq!(input.workflow, WorkflowKind::Translate);
+        assert_eq!(input.source.upload_id, "upload-translate");
+        assert_eq!(input.translation.model, "deepseek-chat");
+    }
+
+    #[test]
+    fn create_job_input_accepts_all_canonical_workflows() {
+        let mineru = CreateJobInput::from_api_value(json!({
+            "workflow": "mineru",
+            "source": { "upload_id": "upload-mineru" },
+            "ocr": { "mineru_token": "mineru-token" },
+            "translation": {
+                "model": "deepseek-chat",
+                "base_url": "https://api.deepseek.com/v1",
+                "api_key": "sk-test"
+            }
+        }))
+        .expect("parse mineru payload");
+        assert_eq!(mineru.workflow, WorkflowKind::Mineru);
+
+        let ocr = CreateJobInput::from_api_value(json!({
+            "workflow": "ocr",
+            "source": { "source_url": "https://example.com/paper.pdf" },
+            "ocr": { "provider": "mineru", "mineru_token": "mineru-token" }
+        }))
+        .expect("parse ocr payload");
+        assert_eq!(ocr.workflow, WorkflowKind::Ocr);
+
+        let translate = CreateJobInput::from_api_value(json!({
+            "workflow": "translate",
+            "source": { "upload_id": "upload-translate" },
+            "translation": {
+                "model": "deepseek-chat",
+                "base_url": "https://api.deepseek.com/v1",
+                "api_key": "sk-test"
+            }
+        }))
+        .expect("parse translate payload");
+        assert_eq!(translate.workflow, WorkflowKind::Translate);
+
+        let render = CreateJobInput::from_api_value(json!({
+            "workflow": "render",
+            "source": { "artifact_job_id": "job-prev" },
+            "render": { "render_mode": "auto" }
+        }))
+        .expect("parse render payload");
+        assert_eq!(render.workflow, WorkflowKind::Render);
     }
 
     #[test]

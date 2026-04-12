@@ -26,3 +26,4 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 lopdf = "0.32"
 fastrand = "2"
 libc = "0.2"
+csv = "1"

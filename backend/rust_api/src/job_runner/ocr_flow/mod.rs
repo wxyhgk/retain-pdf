@@ -257,7 +257,10 @@ mod tests {
 
         assert_eq!(job.status, JobStatusKind::Failed);
         assert_eq!(job.stage.as_deref(), Some("failed"));
-        assert_eq!(job.stage_detail.as_deref(), Some("OCR 已完成，但任务源 PDF 缺失"));
+        assert_eq!(
+            job.stage_detail.as_deref(),
+            Some("OCR 已完成，但任务源 PDF 缺失")
+        );
         let failure = job.failure.as_ref().expect("failure");
         assert_eq!(failure.category, "source_pdf_missing");
         assert_eq!(failure.summary, "源 PDF 缺失");

@@ -13,7 +13,6 @@ from services.translation.policy.config import should_apply_narrow_body_noise_sk
 from services.translation.policy.config import should_apply_reference_zone_skip
 from services.translation.policy.config import should_infer_domain_context
 from services.translation.policy.config import should_skip_title_translation
-from services.translation.policy.flow import apply_translation_policies
 from services.translation.policy.metadata_filter import find_metadata_fragment_item_ids
 from services.translation.policy.reference_section import resolve_reference_cutoff
 from services.translation.policy.metadata_filter import should_skip_metadata_fragment
@@ -37,3 +36,11 @@ __all__ = [
     "should_skip_metadata_fragment",
     "should_skip_title_translation",
 ]
+
+
+def __getattr__(name: str):
+    if name == "apply_translation_policies":
+        from services.translation.policy.flow import apply_translation_policies
+
+        return apply_translation_policies
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -49,6 +49,33 @@ def default_block_derived() -> dict:
     }
 
 
+def default_block_continuation_hint() -> dict:
+    return {
+        "source": "",
+        "group_id": "",
+        "role": "",
+        "scope": "",
+        "reading_order": -1,
+        "confidence": 0.0,
+    }
+
+
+def normalize_block_continuation_hint(value: dict | None) -> dict:
+    hint = default_block_continuation_hint()
+    if not isinstance(value, dict):
+        return hint
+    for key in ("source", "group_id", "role", "scope"):
+        raw = value.get(key, "")
+        hint[key] = raw.strip() if isinstance(raw, str) else ""
+    reading_order = value.get("reading_order", -1)
+    if isinstance(reading_order, int) and not isinstance(reading_order, bool):
+        hint["reading_order"] = max(-1, reading_order)
+    confidence = value.get("confidence", 0.0)
+    if isinstance(confidence, (int, float)) and not isinstance(confidence, bool):
+        hint["confidence"] = min(1.0, max(0.0, float(confidence)))
+    return hint
+
+
 def _increment(counter: dict[str, int], key: str) -> None:
     counter[key] = counter.get(key, 0) + 1
 
@@ -95,6 +122,16 @@ def _apply_block_defaults(block: dict, *, page_index: int, order: int, report: d
         block["derived"] = default_block_derived()
         if report is not None:
             _increment(report["block_defaults"], "derived")
+    if "continuation_hint" not in block:
+        block["continuation_hint"] = default_block_continuation_hint()
+        if report is not None:
+            _increment(report["block_defaults"], "continuation_hint")
+    else:
+        normalized = normalize_block_continuation_hint(block.get("continuation_hint"))
+        if block.get("continuation_hint") != normalized:
+            block["continuation_hint"] = normalized
+            if report is not None:
+                _increment(report["block_defaults"], "continuation_hint")
 
 
 def _build_empty_upgrade_report() -> dict:
@@ -140,7 +177,9 @@ __all__ = [
     "SOFT_DEFAULT_BLOCK_FIELDS",
     "SOFT_DEFAULT_DOCUMENT_FIELDS",
     "SOFT_DEFAULT_PAGE_FIELDS",
+    "default_block_continuation_hint",
     "default_block_derived",
+    "normalize_block_continuation_hint",
     "upgrade_document_payload",
     "upgrade_document_payload_with_report",
 ]

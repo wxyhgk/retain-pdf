@@ -243,8 +243,8 @@ mod tests {
         let source_dir = dir.join("source");
         build_test_pdf(&upload_path, 5);
 
-        let prepared = prepare_uploaded_source_pdf(&upload_path, &source_dir, "")
-            .expect("prepare full book");
+        let prepared =
+            prepare_uploaded_source_pdf(&upload_path, &source_dir, "").expect("prepare full book");
 
         assert!(!prepared.is_subset());
         assert_eq!(prepared.provider_page_ranges(), "all");

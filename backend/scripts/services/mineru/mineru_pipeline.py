@@ -57,6 +57,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--classify-batch-size", type=int, default=12, help="Classification batch size for precise mode.")
     parser.add_argument("--rule-profile-name", type=str, default="general_sci", help="Built-in rule profile name.")
     parser.add_argument("--custom-rules-text", type=str, default="", help="Extra rule text injected into model context.")
+    parser.add_argument("--glossary-id", type=str, default="", help="Optional named glossary resource id.")
+    parser.add_argument("--glossary-name", type=str, default="", help="Optional resolved glossary resource name.")
+    parser.add_argument("--glossary-resource-entry-count", type=int, default=0)
+    parser.add_argument("--glossary-inline-entry-count", type=int, default=0)
+    parser.add_argument("--glossary-overridden-entry-count", type=int, default=0)
     parser.add_argument("--glossary-json", type=str, default="", help="JSON array of glossary entries.")
     parser.add_argument("--api-key", type=str, default="", help="Optional translation API key. Prefer env DEEPSEEK_API_KEY for DeepSeek.")
     parser.add_argument("--model", type=str, default="Q3.5-turbo", help="Translation model name.")
@@ -125,6 +130,11 @@ def main() -> None:
         render_mode=args.render_mode,
         rule_profile_name=args.rule_profile_name,
         custom_rules_text=args.custom_rules_text,
+        glossary_id=args.glossary_id,
+        glossary_name=args.glossary_name,
+        glossary_resource_entry_count=args.glossary_resource_entry_count,
+        glossary_inline_entry_count=args.glossary_inline_entry_count,
+        glossary_overridden_entry_count=args.glossary_overridden_entry_count,
         glossary_entries=parse_glossary_json(args.glossary_json),
         compile_workers=args.compile_workers or None,
         typst_font_family=args.typst_font_family,

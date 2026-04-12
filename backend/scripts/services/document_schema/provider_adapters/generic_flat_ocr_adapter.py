@@ -5,6 +5,7 @@ from pathlib import Path
 from services.document_schema import DOCUMENT_SCHEMA_NAME
 from services.document_schema import DOCUMENT_SCHEMA_VERSION
 from services.document_schema import default_block_derived
+from services.document_schema import normalize_block_continuation_hint
 from services.document_schema.providers import PROVIDER_GENERIC_FLAT_OCR
 
 
@@ -40,6 +41,7 @@ def build_generic_flat_ocr_document(
                     "segments": list(block.get("segments", []) or []),
                     "tags": list(block.get("tags", []) or []),
                     "derived": dict(block.get("derived", {}) or default_block_derived()),
+                    "continuation_hint": normalize_block_continuation_hint(block.get("continuation_hint")),
                     "metadata": dict(block.get("metadata", {}) or {}),
                     "source": {
                         "provider": PROVIDER_GENERIC_FLAT_OCR,

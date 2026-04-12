@@ -13,6 +13,29 @@
 
 这份 JSON 现在已经是翻译/渲染主链路的标准 OCR 输入。
 
+## 阶段边界
+
+`document_schema` 这一层只负责 OCR / Normalize 阶段的交接，不向下游承担翻译或渲染职责。
+
+正式输入和输出固定为：
+
+- 输入：
+  provider 原始 OCR payload、provider raw 文件目录、源 PDF 的必要上下文
+- 输出：
+  `document.v1.json` 和 `document.v1.report.json`
+
+明确不负责的事情：
+
+- 不负责翻译策略、术语控制和翻译产物落盘
+- 不负责排版覆盖、Typst 编译和最终 PDF 输出
+- 不负责在下游阶段继续暴露 provider 私有字段作为主契约
+
+稳定交接点：
+
+- OCR 阶段到此结束时，下游应只依赖 `document.v1.json`
+- `document.v1.report.json` 只服务于校验、排错和兼容性摘要，不是翻译/渲染主输入
+- provider raw trace 保留用于回溯，但禁止变成 translation / rendering 主逻辑依赖
+
 ## 字段分层规范
 
 `document.v1` 里的字段，不应再被当成“一锅粥”。当前约定分成三层：
@@ -57,6 +80,7 @@
 - `segments`
 - `tags`
 - `derived`
+- `continuation_hint`
 
 原则：
 
@@ -249,7 +273,7 @@ Paddle 当前 rich-content trace 也已经继续拆分成三层：
 
 新 provider 可以参考：
 
-- `services/document_schema/provider_adapter_template.py`
+- `services/document_schema/provider_adapters/provider_adapter_template.py`
 - `services/document_schema/provider_adapters/paddle/`
 
 后续新增 OCR provider 时，正确做法是：
@@ -395,6 +419,7 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
   - `order -> 当前块顺序`
   - `tags -> []`
   - `derived -> {role:\"\", by:\"\", confidence:0.0}`
+  - `continuation_hint -> {source:\"\", group_id:\"\", role:\"\", scope:\"\", reading_order:-1, confidence:0.0}`
   - `metadata -> {}`
   - `source -> {}`
 
@@ -411,7 +436,8 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
 - `schema: str`
   固定为 `normalized_document_v1`
 - `schema_version: str`
-  当前固定为 `1.0`
+  当前最新版本为 `1.1`
+  validator 兼容接受 `1.0` 和 `1.1`，compat 会把旧版 `1.0` 补齐后再进入主线
 - `document_id: str`
   文档标识，通常对应 job 或输入文档
 - `source: dict`
@@ -430,7 +456,7 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
 ```json
 {
   "schema": "normalized_document_v1",
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "document_id": "20260330145544-14ab20",
   "source": {},
   "page_count": 1,
@@ -486,10 +512,38 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
   轻量派生标记
 - `derived: dict`
   更强的派生语义结论
+- `continuation_hint: dict`
+  provider 或上游结构层给出的段落连续性提示
 - `metadata: dict`
   调试/映射元数据
 - `source: dict`
   provider 原始来源信息
+
+## `continuation_hint` 约定
+
+`continuation_hint` 是 block 级稳定字段，用来承接 OCR provider 或后续结构层给出的“这些块本来属于同一段”的提示。
+
+当前字段：
+
+- `source`
+  目前保留 `"" | "provider"`
+- `group_id`
+  同一连续组的稳定 id
+- `role`
+  `"" | "single" | "head" | "middle" | "tail"`
+- `scope`
+  `"" | "intra_page" | "cross_page"`
+- `reading_order`
+  provider 给出的组内阅读顺序；未知时为 `-1`
+- `confidence`
+  `0.0 ~ 1.0`
+
+当前行为约束：
+
+- `document.v1` 只负责把提示稳定落盘，不在 schema 层硬编码某个 provider 的私有字段
+- translation 主线当前优先消费 `source="provider"` 且 `scope="intra_page"` 的提示
+- `cross_page` 提示只在 translation 层满足相邻页、顺序明确、layout zone 边界安全、文本长度足够等受控条件时消费；schema 层只负责定义和保存契约
+- 新 OCR provider 如果也能稳定产出连续组信息，应优先写入这个字段，而不是把私有 raw 字段直接暴露给下游
 
 ## `type / sub_type` 约定
 
@@ -738,7 +792,7 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
 
 - 顶层：`schema`, `schema_version`, `document_id`, `page_count`, `pages`, `markers`
 - 页面：`page_index`, `width`, `height`, `unit`, `blocks`
-- block：`block_id`, `page_index`, `order`, `type`, `sub_type`, `bbox`, `text`, `lines`, `segments`, `tags`, `derived`, `metadata`, `source`
+- block：`block_id`, `page_index`, `order`, `type`, `sub_type`, `bbox`, `text`, `lines`, `segments`, `tags`, `derived`, `continuation_hint`, `metadata`, `source`
 - `derived.role/by/confidence`
 
 当前不建议外部强绑定的部分：
@@ -809,3 +863,13 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
   - `markers`
 
 不要再把 MinerU 的原始 JSON 结构当成翻译/渲染主契约。
+
+## 协作规矩
+
+这一层是 OCR 和下游模块之间最重要的协议边界。
+
+- `document.v1.json` 是 translation / rendering 可以直接依赖的正式契约
+- `document.v1.report.json` 用于校验、排错和兼容摘要，不是下游主输入
+- 新增字段时，优先补到核心结构层或通用 trace 层，不要让下游长期依赖 raw trace
+- 如果修改 `document.v1` 结构、字段语义或默认文件名，必须同时更新 adapter、README、fixture、schema 校验和下游兼容测试
+- translation / rendering 负责人如果需要更多语义，应先在这里定义清楚，再进入各自模块实现，不能直接绕开这一层读取 provider 私有字段

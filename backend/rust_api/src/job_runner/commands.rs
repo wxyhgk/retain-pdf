@@ -1,9 +1,9 @@
 use std::path::Path;
 
-use anyhow::Result;
 use crate::models::ResolvedJobSpec;
 use crate::storage_paths::JobPaths;
 use crate::AppState;
+use anyhow::Result;
 
 struct CommandBuilder {
     parts: Vec<String>,
@@ -78,6 +78,11 @@ enum TranslationArg {
     ClassifyBatchSize,
     RuleProfileName,
     CustomRulesText,
+    GlossaryId,
+    GlossaryName,
+    GlossaryResourceEntryCount,
+    GlossaryInlineEntryCount,
+    GlossaryOverriddenEntryCount,
     GlossaryJson,
     ApiKey,
     Model,
@@ -138,6 +143,20 @@ const TRANSLATION_ARGS: &[(&str, TranslationArg)] = &[
     ("--classify-batch-size", TranslationArg::ClassifyBatchSize),
     ("--rule-profile-name", TranslationArg::RuleProfileName),
     ("--custom-rules-text", TranslationArg::CustomRulesText),
+    ("--glossary-id", TranslationArg::GlossaryId),
+    ("--glossary-name", TranslationArg::GlossaryName),
+    (
+        "--glossary-resource-entry-count",
+        TranslationArg::GlossaryResourceEntryCount,
+    ),
+    (
+        "--glossary-inline-entry-count",
+        TranslationArg::GlossaryInlineEntryCount,
+    ),
+    (
+        "--glossary-overridden-entry-count",
+        TranslationArg::GlossaryOverriddenEntryCount,
+    ),
     ("--glossary-json", TranslationArg::GlossaryJson),
     ("--api-key", TranslationArg::ApiKey),
     ("--model", TranslationArg::Model),
@@ -145,7 +164,9 @@ const TRANSLATION_ARGS: &[(&str, TranslationArg)] = &[
 ];
 
 fn glossary_entries_json(request: &ResolvedJobSpec) -> Result<String> {
-    Ok(serde_json::to_string(&request.translation.glossary_entries)?)
+    Ok(serde_json::to_string(
+        &request.translation.glossary_entries,
+    )?)
 }
 
 const RENDER_ARGS: &[(&str, RenderArg)] = &[
@@ -222,6 +243,25 @@ fn push_translation_args(cmd: &mut CommandBuilder, request: &ResolvedJobSpec) {
             TranslationArg::CustomRulesText => {
                 cmd.arg(name, &request.translation.custom_rules_text)
             }
+            TranslationArg::GlossaryId => {
+                if !request.translation.glossary_id.trim().is_empty() {
+                    cmd.arg(name, request.translation.glossary_id.trim());
+                }
+            }
+            TranslationArg::GlossaryName => {
+                if !request.translation.glossary_name.trim().is_empty() {
+                    cmd.arg(name, request.translation.glossary_name.trim());
+                }
+            }
+            TranslationArg::GlossaryResourceEntryCount => {
+                cmd.arg(name, request.translation.glossary_resource_entry_count)
+            }
+            TranslationArg::GlossaryInlineEntryCount => {
+                cmd.arg(name, request.translation.glossary_inline_entry_count)
+            }
+            TranslationArg::GlossaryOverriddenEntryCount => {
+                cmd.arg(name, request.translation.glossary_overridden_entry_count)
+            }
             TranslationArg::GlossaryJson => {
                 if !request.translation.glossary_entries.is_empty() {
                     if let Ok(payload) = glossary_entries_json(request) {
@@ -234,6 +274,14 @@ fn push_translation_args(cmd: &mut CommandBuilder, request: &ResolvedJobSpec) {
             TranslationArg::BaseUrl => cmd.arg(name, &request.translation.base_url),
         }
     }
+}
+
+fn push_render_only_translation_args(cmd: &mut CommandBuilder, request: &ResolvedJobSpec) {
+    cmd.arg("--start-page", request.translation.start_page);
+    cmd.arg("--end-page", request.translation.end_page);
+    cmd.arg("--api-key", &request.translation.api_key);
+    cmd.arg("--model", &request.translation.model);
+    cmd.arg("--base-url", &request.translation.base_url);
 }
 
 fn push_render_args(cmd: &mut CommandBuilder, request: &ResolvedJobSpec) {
@@ -302,7 +350,7 @@ pub(crate) fn build_ocr_command(
     cmd.finish()
 }
 
-pub(crate) fn build_translate_from_ocr_command(
+pub(crate) fn build_translate_only_command(
     state: &AppState,
     request: &ResolvedJobSpec,
     job_paths: &JobPaths,
@@ -312,7 +360,7 @@ pub(crate) fn build_translate_from_ocr_command(
 ) -> Vec<String> {
     let mut cmd = CommandBuilder::new(
         &state.config.python_bin,
-        &state.config.run_translate_from_ocr_script,
+        &state.config.run_translate_only_script,
         true,
     );
     cmd.path_arg("--source-json", source_json_path);
@@ -322,6 +370,25 @@ pub(crate) fn build_translate_from_ocr_command(
         cmd.path_arg("--layout-json", layout_json_path);
     }
     push_translation_args(&mut cmd, request);
+    cmd.finish()
+}
+
+pub(crate) fn build_render_only_command(
+    state: &AppState,
+    request: &ResolvedJobSpec,
+    job_paths: &JobPaths,
+    source_pdf_path: &Path,
+    translations_dir: &Path,
+) -> Vec<String> {
+    let mut cmd = CommandBuilder::new(
+        &state.config.python_bin,
+        &state.config.run_render_only_script,
+        true,
+    );
+    cmd.path_arg("--source-pdf", source_pdf_path);
+    cmd.path_arg("--translations-dir", translations_dir);
+    push_job_path_args(&mut cmd, job_paths);
+    push_render_only_translation_args(&mut cmd, request);
     push_render_args(&mut cmd, request);
     cmd.finish()
 }
@@ -357,4 +424,215 @@ pub(crate) fn build_normalize_ocr_command(
     cmd.path_arg("--provider-raw-dir", provider_raw_dir);
     push_job_path_args(&mut cmd, job_paths);
     cmd.finish()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::AppConfig;
+    use crate::db::Db;
+    use crate::models::{CreateJobInput, WorkflowKind};
+    use std::collections::HashSet;
+    use std::sync::Arc;
+    use tokio::sync::{Mutex, RwLock, Semaphore};
+
+    fn test_state() -> AppState {
+        let root =
+            std::env::temp_dir().join(format!("rust-api-command-tests-{}", fastrand::u64(..)));
+        let data_root = root.join("data");
+        let output_root = data_root.join("jobs");
+        let downloads_dir = data_root.join("downloads");
+        let uploads_dir = data_root.join("uploads");
+        let rust_api_root = root.join("rust_api");
+        let scripts_dir = root.join("scripts");
+        std::fs::create_dir_all(&output_root).expect("create output root");
+        std::fs::create_dir_all(&downloads_dir).expect("create downloads dir");
+        std::fs::create_dir_all(&uploads_dir).expect("create uploads dir");
+        std::fs::create_dir_all(&rust_api_root).expect("create rust_api root");
+        std::fs::create_dir_all(&scripts_dir).expect("create scripts dir");
+
+        let config = Arc::new(AppConfig {
+            project_root: root.clone(),
+            rust_api_root,
+            data_root: data_root.clone(),
+            scripts_dir: scripts_dir.clone(),
+            run_mineru_case_script: scripts_dir.join("run_mineru_case.py"),
+            run_ocr_job_script: scripts_dir.join("run_ocr_job.py"),
+            run_normalize_ocr_script: scripts_dir.join("run_normalize_ocr.py"),
+            run_translate_from_ocr_script: scripts_dir.join("run_translate_from_ocr.py"),
+            run_translate_only_script: scripts_dir.join("run_translate_only.py"),
+            run_render_only_script: scripts_dir.join("run_render_only.py"),
+            run_failure_ai_diagnosis_script: scripts_dir.join("diagnose_failure_with_ai.py"),
+            uploads_dir,
+            downloads_dir,
+            jobs_db_path: data_root.join("db").join("jobs.db"),
+            output_root,
+            python_bin: "python".to_string(),
+            bind_host: "127.0.0.1".to_string(),
+            port: 41000,
+            simple_port: 41001,
+            upload_max_bytes: 0,
+            upload_max_pages: 0,
+            api_keys: HashSet::new(),
+            max_running_jobs: 1,
+        });
+
+        AppState {
+            config: config.clone(),
+            db: Arc::new(Db::new(
+                config.jobs_db_path.clone(),
+                config.data_root.clone(),
+            )),
+            downloads_lock: Arc::new(Mutex::new(())),
+            canceled_jobs: Arc::new(RwLock::new(HashSet::new())),
+            job_slots: Arc::new(Semaphore::new(1)),
+        }
+    }
+
+    fn build_request(workflow: WorkflowKind) -> ResolvedJobSpec {
+        let mut input = CreateJobInput::default();
+        input.workflow = workflow;
+        input.translation.api_key = "sk-test".to_string();
+        input.translation.model = "deepseek-chat".to_string();
+        input.translation.base_url = "https://api.deepseek.com/v1".to_string();
+        input.translation.workers = 3;
+        input.render.render_mode = "auto".to_string();
+        input.render.translated_pdf_name = "out.pdf".to_string();
+        ResolvedJobSpec::from_input(input)
+    }
+
+    fn build_paths(state: &AppState) -> JobPaths {
+        JobPaths::for_job(&state.config.output_root, "job-command-test")
+    }
+
+    fn contains(cmd: &[String], value: &str) -> bool {
+        cmd.iter().any(|arg| arg == value)
+    }
+
+    fn arg_value<'a>(cmd: &'a [String], flag: &str) -> Option<&'a str> {
+        cmd.windows(2)
+            .find(|window| window[0] == flag)
+            .map(|window| window[1].as_str())
+    }
+
+    #[test]
+    fn translate_only_command_uses_translation_stage_script() {
+        let state = test_state();
+        let request = build_request(WorkflowKind::Translate);
+        let job_paths = build_paths(&state);
+        let cmd = build_translate_only_command(
+            &state,
+            &request,
+            &job_paths,
+            Path::new("/tmp/document.v1.json"),
+            Path::new("/tmp/source.pdf"),
+            Some(Path::new("/tmp/layout.json")),
+        );
+
+        assert!(contains(
+            &cmd,
+            &state
+                .config
+                .run_translate_only_script
+                .to_string_lossy()
+                .to_string()
+        ));
+        assert!(contains(&cmd, "--source-json"));
+        assert!(contains(&cmd, "/tmp/document.v1.json"));
+        assert!(contains(&cmd, "--layout-json"));
+        assert!(contains(&cmd, "--api-key"));
+        assert!(!contains(&cmd, "--render-mode"));
+    }
+
+    #[test]
+    fn render_only_command_uses_render_stage_script_and_artifacts() {
+        let state = test_state();
+        let request = build_request(WorkflowKind::Render);
+        let job_paths = build_paths(&state);
+        let cmd = build_render_only_command(
+            &state,
+            &request,
+            &job_paths,
+            Path::new("/tmp/source.pdf"),
+            Path::new("/tmp/translated"),
+        );
+
+        assert!(contains(
+            &cmd,
+            &state
+                .config
+                .run_render_only_script
+                .to_string_lossy()
+                .to_string()
+        ));
+        assert!(contains(&cmd, "--source-pdf"));
+        assert!(contains(&cmd, "/tmp/source.pdf"));
+        assert!(contains(&cmd, "--translations-dir"));
+        assert!(contains(&cmd, "/tmp/translated"));
+        assert!(contains(&cmd, "--render-mode"));
+        assert!(contains(&cmd, "auto"));
+        assert!(contains(&cmd, "--translated-pdf-name"));
+        assert!(contains(&cmd, "out.pdf"));
+        assert!(contains(&cmd, "--api-key"));
+        assert!(contains(&cmd, "--model"));
+        assert!(contains(&cmd, "--base-url"));
+        assert!(!contains(&cmd, "--mode"));
+        assert!(!contains(&cmd, "--batch-size"));
+        assert!(!contains(&cmd, "--classify-batch-size"));
+        assert!(!contains(&cmd, "--glossary-json"));
+    }
+
+    #[test]
+    fn translate_only_command_includes_glossary_metadata_and_payload() {
+        let state = test_state();
+        let mut request = build_request(WorkflowKind::Translate);
+        request.translation.glossary_id = "glossary-123".to_string();
+        request.translation.glossary_name = "semiconductor".to_string();
+        request.translation.glossary_resource_entry_count = 2;
+        request.translation.glossary_inline_entry_count = 1;
+        request.translation.glossary_overridden_entry_count = 1;
+        request.translation.glossary_entries = vec![
+            crate::models::GlossaryEntryInput {
+                source: "band gap".to_string(),
+                target: "带隙".to_string(),
+                note: String::new(),
+                level: "canonical".to_string(),
+                match_mode: "exact".to_string(),
+                context: String::new(),
+            },
+            crate::models::GlossaryEntryInput {
+                source: "DOS".to_string(),
+                target: "态密度".to_string(),
+                note: "physics".to_string(),
+                level: "preferred".to_string(),
+                match_mode: "case_insensitive".to_string(),
+                context: "materials".to_string(),
+            },
+        ];
+        let job_paths = build_paths(&state);
+        let cmd = build_translate_only_command(
+            &state,
+            &request,
+            &job_paths,
+            Path::new("/tmp/document.v1.json"),
+            Path::new("/tmp/source.pdf"),
+            None,
+        );
+
+        assert_eq!(arg_value(&cmd, "--glossary-id"), Some("glossary-123"));
+        assert_eq!(arg_value(&cmd, "--glossary-name"), Some("semiconductor"));
+        assert_eq!(
+            arg_value(&cmd, "--glossary-resource-entry-count"),
+            Some("2")
+        );
+        assert_eq!(arg_value(&cmd, "--glossary-inline-entry-count"), Some("1"));
+        assert_eq!(
+            arg_value(&cmd, "--glossary-overridden-entry-count"),
+            Some("1")
+        );
+        let glossary_json =
+            arg_value(&cmd, "--glossary-json").expect("glossary json argument present");
+        assert!(glossary_json.contains("\"source\":\"band gap\""));
+        assert!(glossary_json.contains("\"target\":\"态密度\""));
+    }
 }

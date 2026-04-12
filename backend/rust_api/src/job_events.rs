@@ -263,6 +263,8 @@ fn workflow_name(workflow: &WorkflowKind) -> &'static str {
     match workflow {
         WorkflowKind::Mineru => "mineru",
         WorkflowKind::Ocr => "ocr",
+        WorkflowKind::Translate => "translate",
+        WorkflowKind::Render => "render",
     }
 }
 
@@ -294,10 +296,32 @@ mod tests {
         current.status = JobStatusKind::Running;
         current.stage = Some("translating".to_string());
         current.stage_detail = Some("正在翻译".to_string());
+        current.started_at = Some("2026-04-11T00:00:00Z".to_string());
+        current.updated_at = "2026-04-11T00:00:05Z".to_string();
+        current.sync_runtime_state();
         let events = derive_events(Some(&previous), &current);
         assert!(events.iter().any(|item| item.event == "status_changed"));
         assert!(events.iter().any(|item| item.event == "stage_updated"));
         assert!(events.iter().any(|item| item.event == "stage_transition"));
+
+        let transition = events
+            .iter()
+            .find(|item| item.event == "stage_transition")
+            .expect("stage transition event");
+        let payload = transition
+            .payload
+            .as_ref()
+            .expect("stage transition payload");
+        assert_eq!(
+            payload.get("from_stage").and_then(Value::as_str),
+            Some("queued")
+        );
+        assert_eq!(
+            payload.get("to_stage").and_then(Value::as_str),
+            Some("translating")
+        );
+        assert!(payload.get("runtime").is_some());
+        assert!(payload.get("stage_history").is_some());
     }
 
     #[test]
@@ -328,5 +352,23 @@ mod tests {
         let events = derive_events(Some(&previous), &current);
         assert!(events.iter().any(|item| item.event == "job_terminal"));
         assert!(events.iter().any(|item| item.event == "failure_classified"));
+
+        let terminal = events
+            .iter()
+            .find(|item| item.event == "job_terminal")
+            .expect("terminal event");
+        let payload = terminal.payload.as_ref().expect("terminal payload");
+        assert_eq!(
+            payload.get("status").and_then(Value::as_str),
+            Some("failed")
+        );
+        assert_eq!(
+            payload.get("failure_category").and_then(Value::as_str),
+            Some("upstream_timeout")
+        );
+        assert_eq!(
+            payload.get("failure_summary").and_then(Value::as_str),
+            Some("外部服务请求超时")
+        );
     }
 }

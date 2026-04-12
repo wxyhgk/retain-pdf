@@ -3,6 +3,7 @@ from __future__ import annotations
 from services.translation.llm.control_context import RetrievalEvidence
 from services.translation.llm.control_context import TranslationControlContext
 from services.translation.llm.control_context import build_translation_control_context
+from services.translation.llm.control_context import resolve_engine_profile
 from services.translation.policy import TranslationPolicyConfig
 from services.translation.terms import AbbreviationEntry
 from services.translation.terms import GlossaryEntry
@@ -19,6 +20,8 @@ def build_translation_context(
     glossary_entries: list[GlossaryEntry] | None = None,
     abbreviation_entries: list[AbbreviationEntry] | None = None,
     retrieval_entries: list[RetrievalEvidence] | None = None,
+    model: str = "",
+    base_url: str = "",
 ) -> TranslationControlContext:
     return build_translation_control_context(
         mode=mode,
@@ -29,6 +32,7 @@ def build_translation_context(
         glossary_entries=glossary_entries,
         abbreviation_entries=abbreviation_entries,
         retrieval_entries=retrieval_entries,
+        engine_profile=resolve_engine_profile(model=model, base_url=base_url),
     )
 
 
@@ -40,6 +44,8 @@ def build_translation_context_from_policy(
     glossary_entries: list[GlossaryEntry] | None = None,
     abbreviation_entries: list[AbbreviationEntry] | None = None,
     retrieval_entries: list[RetrievalEvidence] | None = None,
+    model: str = "",
+    base_url: str = "",
 ) -> TranslationControlContext:
     return build_translation_context(
         mode=policy_config.mode,
@@ -50,6 +56,8 @@ def build_translation_context_from_policy(
         glossary_entries=normalize_glossary_entries(glossary_entries),
         abbreviation_entries=abbreviation_entries,
         retrieval_entries=retrieval_entries,
+        model=model,
+        base_url=base_url,
     )
 
 

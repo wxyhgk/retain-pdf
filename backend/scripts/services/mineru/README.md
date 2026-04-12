@@ -96,3 +96,12 @@
 兼容说明：
 
 - 老任务目录如果还是 `originPDF/jsonPDF/transPDF/typstPDF`，当前后端会直接拒绝详情/下载接口，请重新跑任务
+
+## 协作规矩
+
+如果 OCR 这块单独分人维护，这里只负责“拿到 provider 结果，并把它整理成主链路可消费的 OCR 输入”。
+
+- 允许在这里改 provider API 接入、下载解包、任务目录整理和 provider 侧兼容
+- 不要在这里直接补翻译规则、术语逻辑或 PDF 渲染逻辑
+- 如果发现下游需要的字段不够，优先通过 `document_schema` 提升成稳定字段，不要把 raw provider 字段直接泄漏给 translation / rendering
+- 如果改了 OCR 产物目录约定、stdout 标签或主链路输入位置，必须同步更新 `document_schema`、`runtime/pipeline` 和对应测试

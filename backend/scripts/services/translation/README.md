@@ -4,6 +4,38 @@
 
 这里不负责 PDF 读取和写回，也不负责 MinerU 解包。
 
+## 阶段边界
+
+Translation 阶段的正式输入和输出固定为：
+
+- 输入：
+  `document.v1.json`、翻译策略参数、翻译输出目录
+- 输出：
+  逐页 translation payload、翻译摘要、翻译诊断
+
+明确不负责的事情：
+
+- 不直接消费 provider raw JSON、zip 或 unpacked 目录
+- 不负责源 PDF 的页面写回、排版覆盖和最终 PDF 交付
+- 不负责 OCR provider 上传、轮询、下载和 normalize 产物生成
+
+当前稳定交接点：
+
+- 上游 OCR 阶段应先把 provider 结果收敛成 `document.v1.json`
+- 下游渲染阶段应只消费这里落盘的翻译产物，不应再回头理解 OCR provider 私有字段
+
+当前默认翻译产物协议：
+
+- `translation-manifest.json`
+  记录页索引到翻译 payload 文件的稳定映射，供渲染阶段优先读取
+- 逐页 translation payload
+  当前仍按每页一个 JSON 落盘，manifest 负责声明这些文件该如何被渲染阶段发现
+
+兼容约定：
+
+- 新任务目录应生成 `translation-manifest.json`
+- 旧任务目录没有 manifest 时，渲染阶段仍可回退读取历史 `page-*-deepseek.json`
+
 ## 子目录
 
 - `ocr/`
@@ -23,7 +55,7 @@
 - `payload/`
   payload 协议、公式占位、翻译 JSON 读写。
 - `terms/`
-  术语表、缩写表和术语注入骨架，供后续高精度模式/RAG 增强接入。
+  术语表归一化、提示词注入和术语命中统计。
 - `workflow/`
   单页翻译流程入口。
 
@@ -33,7 +65,7 @@
 2. 如果入口给的是 provider 原始 JSON，则先由 `document_schema/adapters.py` 转成 `document.v1`
 3. `workflow/translation_workflow.py` 生成每页翻译模板并加载 payload
 4. `orchestration` 补齐布局区和编排元数据
-5. `continuation` 把跨行、跨页连续段落合并成统一 translation unit
+5. `continuation` 先消费上游 `continuation_hint`，再用规则兜底，把连续段落合并成统一 translation unit
 6. `policy` 根据模式决定跳过哪些块
 7. `llm` 按 batch 调模型翻译、缓存和重试，并统一处理 placeholder/segment/fallback 控制
 8. `payload` 把翻译结果回填到 page payload，并保存最终 JSON
@@ -41,11 +73,39 @@
 补充约定：
 
 - translation 主线不应该直接理解某个 OCR provider 的 raw JSON 结构
+- translation 主线当前的默认落盘结果是“逐页 translation payload + translation-manifest.json”；这层负责产物内容和映射协议，不负责最终 PDF 文件名和渲染模式
 - `document.v1` 里凡是已经带 `skip_translation` tag 的块，必须在 `ocr/json_extractor.py` 抽取阶段就被挡掉，不能再漏进翻译候选
 - `abstract` 这类正文扩展语义可以继续进入翻译；`reference_entry`、`formula_number` 这类 provider 已明确标记跳过的块不应进入 payload
 - 抽取阶段会把 `derived.role / sub_type` 继续种成 `structure_role`；当前 `abstract/title/heading/image_caption/table_caption/table_footnote/...` 会进一步转成 `style_hint` 送给翻译提示层
+- 抽取阶段会把 block 上的 `continuation_hint` 展开成 payload 里的 `ocr_continuation_*` 字段
+- continuation 当前采用 provider-first 策略：优先消费同页 `intra_page` provider hint；跨页 `cross_page` hint 只在“相邻页 + 顺序明确 + layout_zone 命中页尾/页首阅读边界 + 文本长度足够”时受控消费，其余情况继续保留但不直接驱动拼接
 - 如果只想排查 OCR 规范化是否有问题，优先看 `document.v1.report.json`
 - Python 侧读取 report 摘要时，优先走 `document_schema/reporting.py`
+
+## 术语表 v1
+
+当前术语表链路分成两层输入：
+
+- 命名术语表资源：由 Rust API 先落库，再通过 `glossary_id` 引用
+- 任务内 inline 术语：直接随任务一起传入 `glossary_entries`
+
+进入 Python 之前，Rust 侧会先完成：
+
+- 术语条目归一化
+- 去重
+- 命名术语表与 inline 术语的合并
+- 相同 `source` 的覆盖统计
+
+Translation 阶段当前只做两件事：
+
+- 把合并后的术语表注入到 LLM 控制上下文，作为翻译偏好提示
+- 在翻译结束后统计术语命中情况，并写入 `translation-manifest.json`、诊断文件和 pipeline summary
+
+明确不做的事情：
+
+- 不做翻译后强制替换
+- 不保证每个术语一定命中
+- 不直接解析 Excel 文件
 
 ## 模式说明
 
@@ -55,3 +115,13 @@
   面向论文和技术文档，还会做领域推断。
 - `precise`
   启用 LLM 分类器，只对可疑 OCR 块做额外判断。
+
+## 协作规矩
+
+如果翻译模块单独分人维护，这里只负责“把 `document.v1.json` 变成稳定翻译产物”。
+
+- 允许在这里改策略、并发、术语表、LLM 调度、payload 落盘和翻译诊断
+- 不要在这里直接处理 provider raw OCR 结构，也不要把源 PDF 渲染逻辑塞回来
+- 当前正式输出协议是“逐页 translation payload + `translation-manifest.json`”；渲染层应只消费这套协议
+- 如果修改 payload 结构、manifest 字段语义或默认文件发现方式，必须同步更新 `runtime/pipeline`、`rendering`、README 和测试
+- 术语表当前是翻译提示约束，不是渲染层规则，也不是 OCR 层规则；不要把术语逻辑扩散到其他模块

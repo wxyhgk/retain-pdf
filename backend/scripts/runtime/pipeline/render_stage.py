@@ -6,6 +6,7 @@ import fitz
 
 from foundation.config import fonts
 from foundation.config import runtime
+from runtime.pipeline.render_inputs import resolve_render_inputs
 from runtime.pipeline.render_mode import resolve_effective_render_mode
 from runtime.pipeline.translation_loader import load_translated_pages
 from runtime.pipeline.translation_loader import select_translated_pages
@@ -103,8 +104,9 @@ def render_translated_pages_map(
 def build_book_from_translations(
     *,
     source_pdf_path: Path,
-    translations_dir: Path,
     output_pdf_path: Path,
+    translations_dir: Path | None = None,
+    translation_manifest_path: Path | None = None,
     start_page: int = 0,
     end_page: int = -1,
     compile_workers: int | None = None,
@@ -116,12 +118,20 @@ def build_book_from_translations(
     typst_font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
 ) -> int:
-    translated_pages = load_translated_pages(translations_dir)
+    render_inputs = resolve_render_inputs(
+        source_pdf_path=source_pdf_path,
+        translations_dir=translations_dir,
+        translation_manifest_path=translation_manifest_path,
+    )
+    translated_pages = load_translated_pages(
+        render_inputs.translations_dir,
+        manifest_path=render_inputs.translation_manifest_path,
+    )
     start = max(0, start_page)
     stop = max(translated_pages) if end_page < 0 else end_page
     selected_pages = select_translated_pages(translated_pages, start_page=start, end_page=stop)
     render_source_pdf_path, temp_source_paths = _prepare_render_source_pdf(
-        source_pdf_path=source_pdf_path,
+        source_pdf_path=render_inputs.source_pdf_path,
         output_pdf_path=output_pdf_path,
         pdf_compress_dpi=pdf_compress_dpi,
         start_page=start,
@@ -226,8 +236,9 @@ def build_book_from_translations(
 def build_book_pipeline(
     *,
     source_pdf_path: Path,
-    translations_dir: Path,
     output_pdf_path: Path,
+    translations_dir: Path | None = None,
+    translation_manifest_path: Path | None = None,
     start_page: int = 0,
     end_page: int = -1,
     compile_workers: int | None = None,
@@ -241,8 +252,9 @@ def build_book_pipeline(
 ) -> dict:
     pages_rendered = build_book_from_translations(
         source_pdf_path=source_pdf_path,
-        translations_dir=translations_dir,
         output_pdf_path=output_pdf_path,
+        translations_dir=translations_dir,
+        translation_manifest_path=translation_manifest_path,
         start_page=start_page,
         end_page=end_page,
         compile_workers=compile_workers,
@@ -264,8 +276,9 @@ def build_book_pipeline(
 def run_render_stage(
     *,
     source_pdf_path: Path,
-    translations_dir: Path,
     output_pdf_path: Path,
+    translations_dir: Path | None = None,
+    translation_manifest_path: Path | None = None,
     start_page: int,
     end_page: int,
     render_mode: str,
@@ -278,20 +291,29 @@ def run_render_stage(
     typst_font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
 ) -> dict:
+    render_inputs = resolve_render_inputs(
+        source_pdf_path=source_pdf_path,
+        translations_dir=translations_dir,
+        translation_manifest_path=translation_manifest_path,
+    )
     auto_pages_map = translated_pages_map
     if render_mode == "auto" and auto_pages_map is None:
-        auto_pages_map = load_translated_pages(translations_dir)
+        auto_pages_map = load_translated_pages(
+            render_inputs.translations_dir,
+            manifest_path=render_inputs.translation_manifest_path,
+        )
     effective_render_mode = resolve_effective_render_mode(
         render_mode=render_mode,
-        source_pdf_path=source_pdf_path,
+        source_pdf_path=render_inputs.source_pdf_path,
         start_page=start_page,
         end_page=end_page,
         translated_pages_map=auto_pages_map,
     )
     pages_rendered = build_book_from_translations(
-        source_pdf_path=source_pdf_path,
-        translations_dir=translations_dir,
+        source_pdf_path=render_inputs.source_pdf_path,
         output_pdf_path=output_pdf_path,
+        translations_dir=render_inputs.translations_dir,
+        translation_manifest_path=render_inputs.translation_manifest_path,
         start_page=start_page,
         end_page=end_page,
         compile_workers=compile_workers,

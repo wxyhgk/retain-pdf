@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use crate::models::CreateJobInput;
+use crate::models::{CreateJobInput, GlossaryEntryInput};
 use axum::extract::Multipart;
 
 pub struct ParsedTranslateBundle {
@@ -124,6 +124,7 @@ fn apply_multipart_request_field(
         "developer_mode" => *developer_mode = parse_bool_like(value),
         "workflow" => {}
         "upload_id" => request.source.upload_id = value.to_string(),
+        "artifact_job_id" => request.source.artifact_job_id = value.to_string(),
         "job_id" => request.runtime.job_id = value.to_string(),
         "mode" => request.translation.mode = value.to_string(),
         "skip_title_translation" => {
@@ -134,6 +135,10 @@ fn apply_multipart_request_field(
         }
         "rule_profile_name" => request.translation.rule_profile_name = value.to_string(),
         "custom_rules_text" => request.translation.custom_rules_text = value.to_string(),
+        "glossary_id" => request.translation.glossary_id = value.to_string(),
+        "glossary_json" | "glossary_entries" => {
+            request.translation.glossary_entries = parse_glossary_entries_field(value)?
+        }
         "api_key" => request.translation.api_key = value.to_string(),
         "model" => request.translation.model = value.to_string(),
         "base_url" => request.translation.base_url = value.to_string(),
@@ -178,6 +183,15 @@ fn apply_multipart_request_field(
         _ => {}
     }
     Ok(())
+}
+
+fn parse_glossary_entries_field(value: &str) -> Result<Vec<GlossaryEntryInput>, AppError> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return Ok(Vec::new());
+    }
+    serde_json::from_str::<Vec<GlossaryEntryInput>>(trimmed)
+        .map_err(|err| AppError::bad_request(format!("glossary_json must be a JSON array: {err}")))
 }
 
 fn parse_bool_like(value: &str) -> bool {
@@ -233,5 +247,41 @@ mod tests {
         assert_eq!(request.translation.api_key, "sk-test");
         assert_eq!(request.render.render_mode, "auto");
         assert_eq!(request.runtime.timeout_seconds, 600);
+    }
+
+    #[test]
+    fn apply_multipart_request_field_parses_glossary_fields() {
+        let mut request = CreateJobInput::default();
+        let mut developer_mode = false;
+
+        apply_multipart_request_field(
+            &mut request,
+            &mut developer_mode,
+            "glossary_id",
+            "glossary-123",
+        )
+        .expect("glossary_id");
+        apply_multipart_request_field(
+            &mut request,
+            &mut developer_mode,
+            "glossary_json",
+            r#"[{"source":"band gap","target":"带隙","note":"materials"}]"#,
+        )
+        .expect("glossary_json");
+
+        assert_eq!(request.translation.glossary_id, "glossary-123");
+        assert_eq!(request.translation.glossary_entries.len(), 1);
+        assert_eq!(request.translation.glossary_entries[0].source, "band gap");
+        assert_eq!(request.translation.glossary_entries[0].target, "带隙");
+        assert_eq!(request.translation.glossary_entries[0].note, "materials");
+    }
+
+    #[test]
+    fn parse_glossary_entries_field_rejects_non_array_payload() {
+        let err = parse_glossary_entries_field(r#"{"source":"band gap"}"#)
+            .expect_err("should reject non-array glossary payload");
+        assert!(err
+            .to_string()
+            .contains("glossary_json must be a JSON array"));
     }
 }

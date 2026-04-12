@@ -15,6 +15,8 @@ pub struct AppConfig {
     pub run_ocr_job_script: PathBuf,
     pub run_normalize_ocr_script: PathBuf,
     pub run_translate_from_ocr_script: PathBuf,
+    pub run_translate_only_script: PathBuf,
+    pub run_render_only_script: PathBuf,
     pub run_failure_ai_diagnosis_script: PathBuf,
     pub uploads_dir: PathBuf,
     pub downloads_dir: PathBuf,
@@ -65,6 +67,10 @@ impl AppConfig {
         let run_translate_from_ocr_script = scripts_dir
             .join("entrypoints")
             .join("run_translate_from_ocr.py");
+        let run_translate_only_script = scripts_dir
+            .join("entrypoints")
+            .join("run_translate_only.py");
+        let run_render_only_script = scripts_dir.join("entrypoints").join("run_render_only.py");
         let run_failure_ai_diagnosis_script = scripts_dir
             .join("entrypoints")
             .join("diagnose_failure_with_ai.py");
@@ -95,6 +101,8 @@ impl AppConfig {
             run_ocr_job_script,
             run_normalize_ocr_script,
             run_translate_from_ocr_script,
+            run_translate_only_script,
+            run_render_only_script,
             run_failure_ai_diagnosis_script,
             uploads_dir,
             downloads_dir,
@@ -154,6 +162,10 @@ impl AppConfig {
             run_translate_from_ocr_script: scripts_dir
                 .join("entrypoints")
                 .join("run_translate_from_ocr.py"),
+            run_translate_only_script: scripts_dir
+                .join("entrypoints")
+                .join("run_translate_only.py"),
+            run_render_only_script: scripts_dir.join("entrypoints").join("run_render_only.py"),
             run_failure_ai_diagnosis_script: scripts_dir
                 .join("entrypoints")
                 .join("diagnose_failure_with_ai.py"),

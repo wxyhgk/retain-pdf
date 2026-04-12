@@ -261,12 +261,20 @@ fn should_treat_shutdown_noise_as_success(job: &JobRuntimeState, stderr_text: &s
         .as_deref()
         .map(Path::new)
         .is_some_and(Path::exists);
+    let translations_ready = artifacts
+        .translations_dir
+        .as_deref()
+        .map(Path::new)
+        .is_some_and(Path::exists);
     let summary_ready = artifacts
         .summary
         .as_deref()
         .map(Path::new)
         .is_some_and(Path::exists);
-    output_pdf_ready && summary_ready
+    match job.workflow {
+        crate::models::WorkflowKind::Translate => translations_ready && summary_ready,
+        _ => output_pdf_ready && summary_ready,
+    }
 }
 
 async fn maybe_attach_ai_failure_diagnosis(state: &AppState, job: &mut JobRuntimeState) {
@@ -572,6 +580,8 @@ mod tests {
             run_ocr_job_script: scripts_dir.join("run_ocr_job.py"),
             run_normalize_ocr_script: scripts_dir.join("run_normalize_ocr.py"),
             run_translate_from_ocr_script: scripts_dir.join("run_translate_from_ocr.py"),
+            run_translate_only_script: scripts_dir.join("run_translate_only.py"),
+            run_render_only_script: scripts_dir.join("run_render_only.py"),
             run_failure_ai_diagnosis_script: scripts_dir.join("diagnose_failure_with_ai.py"),
             uploads_dir,
             downloads_dir,

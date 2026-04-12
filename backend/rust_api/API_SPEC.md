@@ -18,7 +18,8 @@ Its backend is now split into two layers:
 Current Python entrypoints used by the Rust layer:
 
 - `scripts/entrypoints/run_normalize_ocr.py`
-- `scripts/entrypoints/run_translate_from_ocr.py`
+- `scripts/entrypoints/run_translate_only.py`
+- `scripts/entrypoints/run_render_only.py`
 
 Goals:
 
@@ -31,8 +32,9 @@ Goals:
 Current scope:
 
 - Upload PDF
-- Create translation job from uploaded PDF
-- Internally create OCR child job first
+- Create `mineru` / `translate` / `render` jobs under `/api/v1/jobs`
+- Create `ocr` jobs under `/api/v1/ocr/jobs`
+- Internally create OCR child job first for `mineru` and `translate`
 - Poll job status
 - Fetch structured job events
 - List jobs
@@ -40,6 +42,7 @@ Current scope:
 - Fetch Markdown
 - Fetch Markdown images
 - Download combined bundle
+- Fetch artifact manifest
 - Fetch normalized OCR artifacts
 
 Planned but not fully implemented in this first pass:
@@ -49,7 +52,6 @@ Planned but not fully implemented in this first pass:
 - public/private artifact signing
 - SSE push updates
 - stronger cancel semantics
-- multiple workflows in one endpoint family
 
 ## Base
 
@@ -205,69 +207,105 @@ Response:
 }
 ```
 
-## 2. Create Translation Job
+## 2. Create Job
 
 `POST /api/v1/jobs`
 
-Request:
+Canonical JSON request:
 
 ```json
 {
   "workflow": "mineru",
-  "upload_id": "20260327190000-ab12cd",
-  "job_id": "",
-  "mode": "sci",
-  "render_mode": "auto",
-  "model": "deepseek-chat",
-  "base_url": "https://api.deepseek.com/v1",
-  "api_key": "sk-xxxx",
-  "mineru_token": "mineru-xxxx",
-  "batch_size": 1,
-  "workers": 0,
-  "classify_batch_size": 12,
-  "rule_profile_name": "general_sci",
-  "custom_rules_text": "",
-  "compile_workers": 0,
-  "typst_font_family": "Source Han Serif SC",
-  "pdf_compress_dpi": 200,
-  "translated_pdf_name": "",
-  "model_version": "vlm",
-  "is_ocr": false,
-  "disable_formula": false,
-  "disable_table": false,
-  "language": "ch",
-  "page_ranges": "",
-  "data_id": "",
-  "no_cache": false,
-  "cache_tolerance": 900,
-  "extra_formats": "",
-  "poll_interval": 5,
-  "poll_timeout": 1800,
-  "start_page": 0,
-  "end_page": -1,
-  "skip_title_translation": false,
-  "body_font_size_factor": 0.95,
-  "body_leading_factor": 1.08,
-  "inner_bbox_shrink_x": 0.035,
-  "inner_bbox_shrink_y": 0.04,
-  "inner_bbox_dense_shrink_x": 0.025,
-  "inner_bbox_dense_shrink_y": 0.03
+  "source": {
+    "upload_id": "20260327190000-ab12cd",
+    "source_url": "",
+    "artifact_job_id": ""
+  },
+  "ocr": {
+    "provider": "mineru",
+    "mineru_token": "mineru-xxxx",
+    "model_version": "vlm",
+    "is_ocr": false,
+    "disable_formula": false,
+    "disable_table": false,
+    "language": "ch",
+    "page_ranges": "",
+    "data_id": "",
+    "no_cache": false,
+    "cache_tolerance": 900,
+    "extra_formats": "",
+    "poll_interval": 5,
+    "poll_timeout": 1800
+  },
+  "translation": {
+    "mode": "sci",
+    "skip_title_translation": false,
+    "classify_batch_size": 12,
+    "rule_profile_name": "general_sci",
+    "custom_rules_text": "",
+    "glossary_id": "",
+    "glossary_entries": [],
+    "model": "deepseek-chat",
+    "base_url": "https://api.deepseek.com/v1",
+    "api_key": "sk-xxxx",
+    "start_page": 0,
+    "end_page": -1,
+    "batch_size": 1,
+    "workers": 0
+  },
+  "render": {
+    "render_mode": "auto",
+    "compile_workers": 0,
+    "typst_font_family": "Source Han Serif SC",
+    "pdf_compress_dpi": 200,
+    "translated_pdf_name": "",
+    "body_font_size_factor": 0.95,
+    "body_leading_factor": 1.08,
+    "inner_bbox_shrink_x": 0.035,
+    "inner_bbox_shrink_y": 0.04,
+    "inner_bbox_dense_shrink_x": 0.025,
+    "inner_bbox_dense_shrink_y": 0.03
+  },
+  "runtime": {
+    "job_id": "",
+    "timeout_seconds": 1800
+  }
 }
 ```
 
+Workflow contract:
+
+- `workflow=mineru`: complete OCR -> Normalize -> Translate -> Render chain
+- `workflow=translate`: OCR -> Normalize -> Translate; no render step
+- `workflow=render`: reuse `source.artifact_job_id`; rerun render only
+
+Endpoint boundary:
+
+- `/api/v1/jobs` is for `mineru`, `translate`, and `render`
+- `/api/v1/ocr/jobs` is for OCR-only jobs
+
 Required provider fields:
 
-- `mineru_token`
-- `base_url`
-- `api_key`
-- `model`
+- `ocr.mineru_token` when the workflow/provider needs MinerU
+- `translation.base_url`, `translation.api_key`, and `translation.model` when translation is required
 
 Validation:
 
-- `mineru_token` must not be a URL-like string
-- `base_url` must start with `http://` or `https://`
-- `api_key` must not be a URL-like string
+- `ocr.mineru_token` must not be a URL-like string
+- `translation.base_url` must start with `http://` or `https://`
+- `translation.api_key` must not be a URL-like string
 - Rust API no longer supplies default MinerU / LLM credentials for `create_job`
+- legacy flat JSON fields such as `upload_id`, `model`, and `api_key` are rejected by `/api/v1/jobs`; flat field mapping only remains in selected multipart helper endpoints
+
+Glossary v1 contract:
+
+- `translation.glossary_id`: optional named glossary resource ID
+- `translation.glossary_entries`: optional inline glossary array; each item is `{source, target, note}`
+- if both are provided, the backend loads the named glossary first and then overlays inline entries by normalized `source`
+- inline entries override resource entries with the same `source`
+- glossary usage is prompt/guidance only in v1; the pipeline does not force a post-translation find/replace pass
+- frontend should parse Excel itself and send JSON entries, or send CSV text to the helper parse endpoint below; backend does not add Excel parsing
+- translation outputs now include glossary usage summary in `translation-manifest.json`, diagnostics, and pipeline summary when glossary is enabled
 
 Response:
 
@@ -284,6 +322,10 @@ Response:
       "self_url": "http://127.0.0.1:41000/api/v1/jobs/20260327190500-ef3456",
       "artifacts_path": "/api/v1/jobs/20260327190500-ef3456/artifacts",
       "artifacts_url": "http://127.0.0.1:41000/api/v1/jobs/20260327190500-ef3456/artifacts",
+      "artifacts_manifest_path": "/api/v1/jobs/20260327190500-ef3456/artifacts-manifest",
+      "artifacts_manifest_url": "http://127.0.0.1:41000/api/v1/jobs/20260327190500-ef3456/artifacts-manifest",
+      "events_path": "/api/v1/jobs/20260327190500-ef3456/events",
+      "events_url": "http://127.0.0.1:41000/api/v1/jobs/20260327190500-ef3456/events",
       "cancel_path": "/api/v1/jobs/20260327190500-ef3456/cancel",
       "cancel_url": "http://127.0.0.1:41000/api/v1/jobs/20260327190500-ef3456/cancel"
     },
@@ -313,6 +355,48 @@ Execution model for `/api/v1/jobs`:
    - `provider_zip`
    - `provider_summary_json`
 5. parent job enters translation/render
+
+## 2.1 Glossary Resources
+
+Named glossary endpoints:
+
+- `POST /api/v1/glossaries`
+- `GET /api/v1/glossaries`
+- `GET /api/v1/glossaries/{glossary_id}`
+- `PUT /api/v1/glossaries/{glossary_id}`
+- `DELETE /api/v1/glossaries/{glossary_id}`
+- `POST /api/v1/glossaries/parse-csv`
+
+Create / update request body:
+
+```json
+{
+  "name": "semiconductor",
+  "entries": [
+    {"source": "band gap", "target": "带隙", "note": "materials"},
+    {"source": "density of states", "target": "态密度", "note": ""}
+  ]
+}
+```
+
+List item / detail fields:
+
+- `glossary_id`
+- `name`
+- `entry_count`
+- `entries`
+- `created_at`
+- `updated_at`
+
+CSV parse helper request:
+
+```json
+{
+  "csv_text": "source,target,note\nband gap,带隙,materials\n"
+}
+```
+
+CSV parse helper response returns normalized `entries` and `entry_count`. It accepts plain CSV text only; Excel files should be converted by the frontend first.
 
 ## 3. Get Job Detail
 
@@ -440,6 +524,19 @@ Response:
       "page_count": 12,
       "block_count": 428
     },
+    "glossary_summary": {
+      "enabled": true,
+      "glossary_id": "glossary-20260411-abc123",
+      "glossary_name": "semiconductor",
+      "entry_count": 12,
+      "resource_entry_count": 10,
+      "inline_entry_count": 3,
+      "overridden_entry_count": 1,
+      "source_hit_entry_count": 7,
+      "target_hit_entry_count": 6,
+      "unused_entry_count": 5,
+      "unapplied_source_hit_entry_count": 1
+    },
     "log_tail": [
       "batch 123: state=done",
       "layout json: output/..."
@@ -460,6 +557,9 @@ Main job detail now also includes OCR-child-facing fields in `artifacts` / detai
 
 `normalization_summary` is a lightweight view derived from `document.v1.report.json`.
 If a client needs the full adapter / compat / validation report, it should download `artifacts.normalization_report`.
+
+`glossary_summary` is loaded from `translation-manifest.json` when present, and falls back to the pipeline summary artifact.
+This means render-only jobs can still expose the original translation glossary summary as long as the translation artifacts are preserved.
 
 ## 4. List Jobs
 

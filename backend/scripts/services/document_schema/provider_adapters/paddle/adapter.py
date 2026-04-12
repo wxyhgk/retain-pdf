@@ -5,6 +5,7 @@ from pathlib import Path
 from services.document_schema.providers import PROVIDER_PADDLE
 from services.document_schema.provider_adapters.common import build_document_record
 from services.document_schema.provider_adapters.common import build_page_record
+from services.document_schema.provider_adapters.paddle.continuation import assign_paddle_continuation_hints
 from services.document_schema.provider_adapters.paddle.payload_reader import iter_page_specs
 
 
@@ -23,6 +24,7 @@ def build_paddle_document(
     provider_version: str,
 ) -> dict:
     pages = [build_page_record(page_spec) for page_spec in iter_page_specs(payload)]
+    assign_paddle_continuation_hints(pages)
     return build_document_record(
         document_id=document_id,
         provider=PROVIDER_PADDLE,

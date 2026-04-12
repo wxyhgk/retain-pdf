@@ -10,6 +10,8 @@ from services.document_schema.adapters import detect_ocr_provider
 from services.document_schema.adapters import detect_ocr_provider_with_report
 from services.document_schema.adapters import list_registered_ocr_adapters
 from services.document_schema.compat import default_block_derived
+from services.document_schema.compat import default_block_continuation_hint
+from services.document_schema.compat import normalize_block_continuation_hint
 from services.document_schema.compat import upgrade_document_payload
 from services.document_schema.compat import upgrade_document_payload_with_report
 from services.document_schema.reporting import build_normalization_summary
@@ -38,7 +40,9 @@ __all__ = [
     "detect_ocr_provider",
     "detect_ocr_provider_with_report",
     "list_registered_ocr_adapters",
+    "default_block_continuation_hint",
     "default_block_derived",
+    "normalize_block_continuation_hint",
     "upgrade_document_payload",
     "upgrade_document_payload_with_report",
     "build_normalization_summary",

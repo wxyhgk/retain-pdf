@@ -7,16 +7,37 @@ use crate::models::{now_iso, JobRuntimeState, JobSnapshot, JobStatusKind};
 use crate::storage_paths::build_job_paths;
 use crate::AppState;
 
-use super::commands::{build_ocr_command, build_translate_from_ocr_command};
+use super::commands::{build_ocr_command, build_translate_only_command};
 use super::ocr_flow::{execute_ocr_job, sync_parent_with_ocr_child};
 use super::{
-    attach_job_paths, clear_job_failure, execute_process_job, refresh_job_failure,
-    sync_runtime_state,
+    attach_job_paths, build_render_only_command, clear_job_failure, execute_process_job,
+    refresh_job_failure, sync_runtime_state,
 };
 
 pub(super) async fn run_translation_job_with_ocr(
     state: AppState,
+    parent_job: JobRuntimeState,
+) -> Result<JobRuntimeState> {
+    run_job_with_ocr(state, parent_job, OcrContinuation::FullPipeline).await
+}
+
+pub(super) async fn run_translate_only_job_with_ocr(
+    state: AppState,
+    parent_job: JobRuntimeState,
+) -> Result<JobRuntimeState> {
+    run_job_with_ocr(state, parent_job, OcrContinuation::TranslateOnly).await
+}
+
+#[derive(Clone, Copy)]
+enum OcrContinuation {
+    FullPipeline,
+    TranslateOnly,
+}
+
+async fn run_job_with_ocr(
+    state: AppState,
     mut parent_job: JobRuntimeState,
+    continuation: OcrContinuation,
 ) -> Result<JobRuntimeState> {
     let parent_job_paths = build_job_paths(&state.config.output_root, &parent_job.job_id)?;
     attach_job_paths(&mut parent_job, &parent_job_paths);
@@ -108,22 +129,66 @@ pub(super) async fn run_translation_job_with_ocr(
     }
 
     let translate_inputs = translation_inputs_from_artifacts(&parent_job)?;
+    let normalized_path = translate_inputs.normalized_path.to_path_buf();
+    let source_pdf_path = translate_inputs.source_pdf_path.to_path_buf();
+    let layout_json_path = translate_inputs.layout_json_path.map(Path::to_path_buf);
 
-    parent_job.command = build_translate_from_ocr_command(
+    parent_job.command = build_translate_only_command(
         &state,
         &parent_job.request_payload,
         &parent_job_paths,
-        translate_inputs.normalized_path,
-        translate_inputs.source_pdf_path,
-        translate_inputs.layout_json_path,
+        &normalized_path,
+        &source_pdf_path,
+        layout_json_path.as_deref(),
     );
     parent_job.stage = Some("translating".to_string());
-    parent_job.stage_detail = Some("OCR 完成，开始翻译与渲染".to_string());
+    parent_job.stage_detail = Some(match continuation {
+        OcrContinuation::FullPipeline => "OCR 完成，开始翻译".to_string(),
+        OcrContinuation::TranslateOnly => "OCR 完成，开始翻译".to_string(),
+    });
     parent_job.updated_at = now_iso();
     sync_runtime_state(&mut parent_job);
     persist_runtime_job(&state, &parent_job)?;
 
-    execute_process_job(state, parent_job, &[]).await
+    let translated_job = execute_process_job(state.clone(), parent_job, &[]).await?;
+    if !matches!(translated_job.status, JobStatusKind::Succeeded) {
+        return Ok(translated_job);
+    }
+    match continuation {
+        OcrContinuation::TranslateOnly => Ok(translated_job),
+        OcrContinuation::FullPipeline => {
+            run_render_stage_after_translation(
+                state,
+                translated_job,
+                &parent_job_paths,
+                &source_pdf_path,
+            )
+            .await
+        }
+    }
+}
+
+async fn run_render_stage_after_translation(
+    state: AppState,
+    mut job: JobRuntimeState,
+    job_paths: &crate::storage_paths::JobPaths,
+    source_pdf_path: &Path,
+) -> Result<JobRuntimeState> {
+    job.command = build_render_only_command(
+        &state,
+        &job.request_payload,
+        job_paths,
+        source_pdf_path,
+        &job_paths.translated_dir,
+    );
+    job.status = JobStatusKind::Running;
+    job.stage = Some("rendering".to_string());
+    job.stage_detail = Some("翻译完成，开始渲染".to_string());
+    job.updated_at = now_iso();
+    clear_job_failure(&mut job);
+    sync_runtime_state(&mut job);
+    persist_runtime_job(&state, &job)?;
+    execute_process_job(state, job, &[]).await
 }
 
 struct TranslationInputs<'a> {

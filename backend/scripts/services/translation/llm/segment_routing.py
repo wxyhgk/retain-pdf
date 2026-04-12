@@ -15,6 +15,7 @@ from services.translation.llm.placeholder_guard import result_entry
 from services.translation.llm.placeholder_guard import strip_placeholders
 from services.translation.llm.placeholder_guard import unit_source_text
 from services.translation.llm.placeholder_guard import validate_batch_result
+from services.translation.llm.structured_models import FORMULA_SEGMENT_RESPONSE_SCHEMA
 
 
 TAGGED_SEGMENT_RE = re.compile(
@@ -24,9 +25,72 @@ TAGGED_SEGMENT_RE = re.compile(
     re.DOTALL,
 )
 
+_OPTIONAL_CONNECTOR_SEGMENTS = {
+    "a",
+    "an",
+    "and",
+    "as",
+    "at",
+    "by",
+    "for",
+    "from",
+    "in",
+    "into",
+    "of",
+    "on",
+    "or",
+    "per",
+    "than",
+    "to",
+    "via",
+    "vs",
+    "with",
+}
+
+_SMALL_INLINE_TRIGGER_PHRASES = (
+    "abbreviated as",
+    "defined as",
+    "denoted as",
+    "is defined as",
+    "can be defined as",
+    "where ",
+)
+
+_SMALL_INLINE_SUPPORT_PHRASES = (
+    "represented by",
+    "expressed as",
+    "written as",
+    "calculated as",
+    "corresponds to",
+    "refers to",
+    "stands for",
+)
+
 
 class SegmentTranslationFormatError(ValueError):
     pass
+
+
+class SegmentTranslationParseError(SegmentTranslationFormatError):
+    pass
+
+
+class SegmentTranslationSemanticError(SegmentTranslationFormatError):
+    pass
+
+
+def _is_optional_empty_segment(source_text: str) -> bool:
+    normalized = normalize_inline_whitespace(source_text).strip().lower()
+    if not normalized:
+        return True
+    if len(normalized) > 12:
+        return False
+    words = re.findall(r"[a-z]+", normalized)
+    if not words or len(words) > 2:
+        return False
+    if " ".join(words) != normalized:
+        return False
+    return all(word in _OPTIONAL_CONNECTOR_SEGMENTS for word in words)
 
 
 def segment_context_text(text: str, *, limit: int = 280) -> str:
@@ -68,7 +132,7 @@ def build_formula_segment_plan(source_text: str) -> tuple[list[tuple[str, str]],
     skeleton: list[tuple[str, str]] = []
     segments: list[dict[str, str]] = []
     cursor = 0
-    for match in re.finditer(r"\[\[FORMULA_\d+]]", source_text or ""):
+    for match in re.finditer(r"<[ft]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]", source_text or ""):
         text = (source_text or "")[cursor : match.start()]
         if text:
             if segment_needs_translation(text):
@@ -100,17 +164,32 @@ def segment_translation_system_prompt(domain_guidance: str = "") -> str:
         "Keep abbreviations, symbols, and standard model names in their normal technical form.\n"
         "If a segment is only a connector or incomplete phrase, keep it equally short and incomplete in Chinese.\n"
         "Do not repair truncated grammar by pulling content from neighboring segments.\n"
-        "Do not output any formula placeholders, formula markers, reconstructed full-item text, commentary, JSON, or code fences.\n"
-        "Return exactly one tagged block for every requested segment_id and nothing else.\n"
-        "Use this exact format:\n"
-        "<<<SEG id=SEGMENT_ID>>>\n"
-        "translated segment\n"
-        "<<<END>>>\n"
+        "Do not output any formula placeholders, formula markers, reconstructed full-item text, commentary, markdown, or code fences.\n"
+        'Return only JSON matching {"segments":[{"segment_id":"1","translated_text":"..."}]}.\n'
         "Hard rules:\n"
         "- Every requested segment_id must appear exactly once.\n"
         "- Do not merge, split, omit, renumber, reorder, or invent segments.\n"
         "- Do not copy hidden formulas back into the output in any form.\n"
         "- Short connectors such as 'and', 'for', 'with', or 'by considering the possible' must stay terse rather than expanded into full sentences."
+    )
+    if domain_guidance.strip():
+        prompt = f"{prompt}\nDocument-specific translation guidance:\n{domain_guidance.strip()}"
+    return prompt
+
+
+def segment_translation_tagged_prompt(domain_guidance: str = "") -> str:
+    prompt = (
+        "You are translating fixed text segments extracted from one scientific OCR item.\n"
+        "Each segment is an independent natural-language span between protected formulas or literals.\n"
+        "Protected formulas are omitted and will be reinserted by software after translation.\n"
+        "Translate each segment independently into concise publication-style Simplified Chinese.\n"
+        "Do not merge, split, omit, reorder, or renumber segments.\n"
+        "Do not output formulas, markdown, commentary, code fences, or reconstructed full-item text.\n"
+        "Return one tagged block per segment using this exact format:\n"
+        "<<<SEG id=1>>>\n"
+        "translated text\n"
+        "<<<END>>>\n"
+        "Output one block for every requested segment_id exactly once."
     )
     if domain_guidance.strip():
         prompt = f"{prompt}\nDocument-specific translation guidance:\n{domain_guidance.strip()}"
@@ -125,6 +204,7 @@ def build_formula_segment_messages(
     domain_guidance: str = "",
     context_before: str | None = None,
     context_after: str | None = None,
+    response_style: str = "tagged",
 ) -> list[dict[str, str]]:
     serialized_segments = [
         {"segment_id": segment["segment_id"], "source_text": segment["source_text"]}
@@ -148,10 +228,82 @@ def build_formula_segment_messages(
         user_payload["context_after"] = resolved_context_after
     if item.get("continuation_group"):
         user_payload["continuation_group"] = item["continuation_group"]
+    system_prompt = (
+        segment_translation_system_prompt(domain_guidance=domain_guidance)
+        if response_style == "json"
+        else segment_translation_tagged_prompt(domain_guidance=domain_guidance)
+    )
     return [
-        {"role": "system", "content": segment_translation_system_prompt(domain_guidance=domain_guidance)},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
     ]
+
+
+def _request_formula_segment_translation(
+    item: dict,
+    skeleton: list[tuple[str, str]],
+    segments: list[dict[str, str]],
+    *,
+    api_key: str,
+    model: str,
+    base_url: str,
+    domain_guidance: str,
+    timeout_s: int,
+    request_label: str,
+    context_before: str | None = None,
+    context_after: str | None = None,
+) -> dict[str, str]:
+    tagged_error: Exception | None = None
+    tagged_request_label = f"{request_label} tagged" if request_label else ""
+    try:
+        content = request_chat_content(
+            build_formula_segment_messages(
+                item,
+                skeleton,
+                segments,
+                domain_guidance=domain_guidance,
+                context_before=context_before,
+                context_after=context_after,
+                response_style="tagged",
+            ),
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            temperature=0.0,
+            response_format=None,
+            timeout=timeout_s,
+            request_label=tagged_request_label,
+        )
+        return parse_segment_translation_payload(content, expected_segments=segments)
+    except SegmentTranslationSemanticError:
+        raise
+    except (ValueError, KeyError, json.JSONDecodeError) as exc:
+        tagged_error = exc
+
+    content = request_chat_content(
+        build_formula_segment_messages(
+            item,
+            skeleton,
+            segments,
+            domain_guidance=domain_guidance,
+            context_before=context_before,
+            context_after=context_after,
+            response_style="json",
+        ),
+        api_key=api_key,
+        model=model,
+        base_url=base_url,
+        temperature=0.0,
+        response_format=FORMULA_SEGMENT_RESPONSE_SCHEMA,
+        timeout=timeout_s,
+        request_label=f"{request_label} json" if request_label else "",
+    )
+    try:
+        return parse_segment_translation_payload(content, expected_segments=segments)
+    except (ValueError, KeyError, json.JSONDecodeError) as exc:
+        if tagged_error is not None:
+            raise SegmentTranslationFormatError(f"tagged_failed={tagged_error}; json_failed={exc}") from exc
+        raise
 
 
 def parse_segment_translation_payload(
@@ -169,16 +321,37 @@ def parse_segment_translation_payload(
             raise SegmentTranslationFormatError(f"duplicate segment_id: {segment_id}")
         if segment_id:
             result[segment_id] = translated_text
+    if not result:
+        try:
+            payload = json.loads(content)
+        except Exception:
+            try:
+                payload = json.loads(re.search(r"\{.*\}", content or "", re.DOTALL).group(0))  # type: ignore[union-attr]
+            except Exception as exc:
+                raise SegmentTranslationParseError(f"segment payload is not valid tagged text or JSON: {exc}") from exc
+        segments_payload = payload.get("segments", []) if isinstance(payload, dict) else []
+        for item in segments_payload:
+            if not isinstance(item, dict):
+                continue
+            segment_id = str(item.get("segment_id", "") or "").strip()
+            translated_text = str(item.get("translated_text", "") or "").strip()
+            if segment_id in result:
+                raise SegmentTranslationFormatError(f"duplicate segment_id: {segment_id}")
+            if segment_id:
+                result[segment_id] = translated_text
     actual_ids = set(result)
     if actual_ids != expected_ids:
         missing = sorted(expected_ids - actual_ids)
         extra = sorted(actual_ids - expected_ids)
-        raise SegmentTranslationFormatError(f"segment_id mismatch: missing={missing} extra={extra}")
+        raise SegmentTranslationParseError(f"segment_id mismatch: missing={missing} extra={extra}")
     for segment_id, translated_text in result.items():
         if not translated_text and source_by_id.get(segment_id, "").strip():
-            raise SegmentTranslationFormatError(f"empty translated segment: {segment_id}")
-        if re.search(r"\[\[FORMULA_\d+]]", translated_text):
-            raise SegmentTranslationFormatError(f"unexpected placeholder in segment output: {segment_id}")
+            if _is_optional_empty_segment(source_by_id.get(segment_id, "")):
+                result[segment_id] = ""
+                continue
+            raise SegmentTranslationSemanticError(f"empty translated segment: {segment_id}")
+        if re.search(r"<[ft]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]", translated_text):
+            raise SegmentTranslationSemanticError(f"unexpected placeholder in segment output: {segment_id}")
     return result
 
 
@@ -198,6 +371,77 @@ def rebuild_formula_segment_translation(
     return rebuilt.strip()
 
 
+def is_small_formula_inline_candidate(
+    item: dict,
+    *,
+    policy: SegmentationPolicy | None = None,
+) -> bool:
+    if policy is None:
+        policy = SegmentationPolicy()
+    if not policy.small_formula_inline_enabled:
+        return False
+    if item.get("continuation_group"):
+        return False
+    source_text = unit_source_text(item)
+    if not source_text:
+        return False
+    placeholder_count = len(re.findall(r"<[ft]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]", source_text))
+    if placeholder_count <= 0 or placeholder_count > policy.small_formula_inline_max_placeholders:
+        return False
+    normalized_chars = len(normalize_inline_whitespace(source_text))
+    if normalized_chars < policy.small_formula_inline_min_chars or normalized_chars > policy.small_formula_inline_max_chars:
+        return False
+    skeleton, segments = build_formula_segment_plan(source_text)
+    if not (0 < len(segments) <= policy.small_formula_inline_max_segments):
+        return False
+    return small_formula_risk_score(
+        source_text,
+        skeleton=skeleton,
+        segments=segments,
+        policy=policy,
+    ) >= policy.small_formula_inline_score_threshold
+
+
+def small_formula_risk_score(
+    source_text: str,
+    *,
+    skeleton: list[tuple[str, str]] | None = None,
+    segments: list[dict[str, str]] | None = None,
+    policy: SegmentationPolicy | None = None,
+) -> int:
+    if policy is None:
+        policy = SegmentationPolicy()
+    lowered = normalize_inline_whitespace(strip_placeholders(source_text)).lower()
+    resolved_skeleton = skeleton
+    resolved_segments = segments
+    if resolved_skeleton is None or resolved_segments is None:
+        resolved_skeleton, resolved_segments = build_formula_segment_plan(source_text)
+    score = 0
+    if any(phrase in lowered for phrase in _SMALL_INLINE_TRIGGER_PHRASES):
+        score += 3
+    if any(phrase in lowered for phrase in _SMALL_INLINE_SUPPORT_PHRASES):
+        score += 2
+    segment_texts = [normalize_inline_whitespace(segment["source_text"]).strip().lower() for segment in resolved_segments]
+    short_segments = [text for text in segment_texts if 0 < len(text) <= 32]
+    if short_segments:
+        score += 1
+    if any(text.startswith(("the ", "a ", "an ")) and len(text) <= 24 for text in segment_texts[:1]):
+        score += 1
+    if any(text.startswith(("which ", "where ", "that ", "is ", "are ", "can ")) for text in segment_texts[1:]):
+        score += 1
+    if len(resolved_segments) >= 3:
+        score += 1
+    placeholder_indexes = [index for index, entry in enumerate(resolved_skeleton) if entry[0] == "placeholder"]
+    if placeholder_indexes:
+        if min(placeholder_indexes) <= 1:
+            score += 1
+        if max(placeholder_indexes) < len(resolved_skeleton) - 1:
+            score += 1
+    if ")" in source_text and any(phrase in lowered for phrase in ("abbreviated as", "stands for", "denoted as")):
+        score += 1
+    return score
+
+
 def formula_segment_translation_route(item: dict, *, policy: SegmentationPolicy | None = None) -> str:
     if policy is None:
         policy = SegmentationPolicy()
@@ -206,9 +450,24 @@ def formula_segment_translation_route(item: dict, *, policy: SegmentationPolicy 
     _, segments = build_formula_segment_plan(unit_source_text(item))
     if not segments:
         return "none"
+    if is_small_formula_inline_candidate(item, policy=policy):
+        return "small_inline"
+    if policy.prefer_plain_when_segment_count_leq > 0 and len(segments) <= policy.prefer_plain_when_segment_count_leq:
+        return "none"
     if len(segments) <= policy.max_formula_segment_count:
         return "single"
     return "windowed"
+
+
+def formula_segment_window_count(item: dict, *, policy: SegmentationPolicy | None = None) -> int:
+    if policy is None:
+        policy = SegmentationPolicy()
+    if not has_formula_placeholders(item):
+        return 0
+    skeleton, segments = build_formula_segment_plan(unit_source_text(item))
+    if not segments:
+        return 0
+    return len(build_formula_segment_windows(skeleton, segments, policy=policy))
 
 
 def window_neighbor_context(
@@ -300,6 +559,8 @@ def translate_single_item_formula_segment_text_with_retries(
     domain_guidance: str = "",
     policy: SegmentationPolicy | None = None,
     diagnostics: TranslationDiagnosticsCollector | None = None,
+    attempt_limit: int = 4,
+    timeout_s: int = 120,
 ) -> dict[str, dict[str, str]]:
     if policy is None:
         policy = SegmentationPolicy()
@@ -313,22 +574,22 @@ def translate_single_item_formula_segment_text_with_retries(
         )
 
     last_error: Exception | None = None
-    for attempt in range(1, 5):
+    for attempt in range(1, max(1, attempt_limit) + 1):
         started = time.perf_counter()
         try:
             if request_label:
-                print(f"{request_label}: segmented-formula attempt {attempt}/4 segments={len(segments)}", flush=True)
-            content = request_chat_content(
-                build_formula_segment_messages(item, skeleton, segments, domain_guidance=domain_guidance),
+                print(f"{request_label}: segmented-formula attempt {attempt}/{max(1, attempt_limit)} segments={len(segments)}", flush=True)
+            translated_segments = _request_formula_segment_translation(
+                item,
+                skeleton,
+                segments,
                 api_key=api_key,
                 model=model,
                 base_url=base_url,
-                temperature=0.0,
-                response_format=None,
-                timeout=120,
+                domain_guidance=domain_guidance,
+                timeout_s=timeout_s,
                 request_label=f"{request_label} seg#{attempt}" if request_label else "",
             )
-            translated_segments = parse_segment_translation_payload(content, expected_segments=segments)
             rebuilt_text = rebuild_formula_segment_translation(skeleton, translated_segments)
             result = {item["item_id"]: result_entry("translate", rebuilt_text)}
             result = canonicalize_batch_result([item], result)
@@ -342,10 +603,10 @@ def translate_single_item_formula_segment_text_with_retries(
             if request_label:
                 elapsed = time.perf_counter() - started
                 print(
-                    f"{request_label}: segmented-formula failed attempt {attempt}/4 after {elapsed:.2f}s: {type(exc).__name__}: {exc}",
+                    f"{request_label}: segmented-formula failed attempt {attempt}/{max(1, attempt_limit)} after {elapsed:.2f}s: {type(exc).__name__}: {exc}",
                     flush=True,
                 )
-            if attempt >= 4:
+            if attempt >= max(1, attempt_limit):
                 raise
             time.sleep(min(8, 2 * attempt))
     if last_error is not None:
@@ -363,6 +624,8 @@ def translate_formula_segment_window_with_retries(
     base_url: str = "https://api.deepseek.com/v1",
     request_label: str = "",
     domain_guidance: str = "",
+    attempt_limit: int = 4,
+    timeout_s: int = 120,
 ) -> dict[str, str]:
     window_index = int(window["window_index"])
     window_segments = list(window["segments"])
@@ -374,32 +637,27 @@ def translate_formula_segment_window_with_retries(
     if bool(window.get("is_last_window")):
         context_after = merge_segment_contexts(context_after, str(item.get("continuation_next_text", "") or ""))
     last_error: Exception | None = None
-    for attempt in range(1, 5):
+    for attempt in range(1, max(1, attempt_limit) + 1):
         started = time.perf_counter()
         try:
             if request_label:
                 print(
-                    f"{request_label}: formula-window {window_index}/{total_windows} attempt {attempt}/4 segments={len(window_segments)} range={window_range}",
+                    f"{request_label}: formula-window {window_index}/{total_windows} attempt {attempt}/{max(1, attempt_limit)} segments={len(window_segments)} range={window_range}",
                     flush=True,
                 )
-            content = request_chat_content(
-                build_formula_segment_messages(
-                    item,
-                    list(window["skeleton"]),
-                    window_segments,
-                    domain_guidance=domain_guidance,
-                    context_before=context_before,
-                    context_after=context_after,
-                ),
+            translated_segments = _request_formula_segment_translation(
+                item,
+                list(window["skeleton"]),
+                window_segments,
                 api_key=api_key,
                 model=model,
                 base_url=base_url,
-                temperature=0.0,
-                response_format=None,
-                timeout=120,
+                domain_guidance=domain_guidance,
+                timeout_s=timeout_s,
                 request_label=f"{request_label} win{window_index}#{attempt}" if request_label else "",
+                context_before=context_before,
+                context_after=context_after,
             )
-            translated_segments = parse_segment_translation_payload(content, expected_segments=window_segments)
             if request_label:
                 elapsed = time.perf_counter() - started
                 print(f"{request_label}: formula-window {window_index}/{total_windows} ok in {elapsed:.2f}s", flush=True)
@@ -409,10 +667,10 @@ def translate_formula_segment_window_with_retries(
             if request_label:
                 elapsed = time.perf_counter() - started
                 print(
-                    f"{request_label}: formula-window {window_index}/{total_windows} failed attempt {attempt}/4 after {elapsed:.2f}s: {type(exc).__name__}: {exc}",
+                    f"{request_label}: formula-window {window_index}/{total_windows} failed attempt {attempt}/{max(1, attempt_limit)} after {elapsed:.2f}s: {type(exc).__name__}: {exc}",
                     flush=True,
                 )
-            if attempt >= 4:
+            if attempt >= max(1, attempt_limit):
                 raise
             time.sleep(min(8, 2 * attempt))
     if last_error is not None:
@@ -430,6 +688,8 @@ def translate_single_item_formula_segment_windows_with_retries(
     domain_guidance: str = "",
     policy: SegmentationPolicy | None = None,
     diagnostics: TranslationDiagnosticsCollector | None = None,
+    attempt_limit: int = 4,
+    timeout_s: int = 120,
 ) -> dict[str, dict[str, str]]:
     if policy is None:
         policy = SegmentationPolicy()
@@ -439,16 +699,25 @@ def translate_single_item_formula_segment_windows_with_retries(
         raise SegmentTranslationFormatError(f"{item['item_id']}: no translatable formula segments")
     windows = build_formula_segment_windows(skeleton, segments, policy=policy)
     if len(windows) <= 1:
-        return translate_single_item_formula_segment_text_with_retries(
+        translated_segments = translate_formula_segment_window_with_retries(
             item,
+            windows[0],
+            total_windows=1,
             api_key=api_key,
             model=model,
             base_url=base_url,
             request_label=request_label,
             domain_guidance=domain_guidance,
-            policy=policy,
-            diagnostics=diagnostics,
+            attempt_limit=attempt_limit,
+            timeout_s=timeout_s,
         )
+        rebuilt_text = rebuild_formula_segment_translation(skeleton, translated_segments)
+        result = {item["item_id"]: result_entry("translate", rebuilt_text)}
+        result = canonicalize_batch_result([item], result)
+        validate_batch_result([item], result, diagnostics=diagnostics)
+        if request_label:
+            print(f"{request_label}: single-window-formula rebuilt ok translated_windows=1/1", flush=True)
+        return result
 
     if request_label:
         print(f"{request_label}: route=windowed-formula windows={len(windows)} segments={len(segments)}", flush=True)
@@ -466,6 +735,8 @@ def translate_single_item_formula_segment_windows_with_retries(
                     base_url=base_url,
                     request_label=request_label,
                     domain_guidance=domain_guidance,
+                    attempt_limit=attempt_limit,
+                    timeout_s=timeout_s,
                 )
             )
             successful_windows += 1

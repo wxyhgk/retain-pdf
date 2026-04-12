@@ -15,8 +15,8 @@ use crate::storage_paths::{
     ARTIFACT_KEY_NORMALIZATION_REPORT_JSON, ARTIFACT_KEY_NORMALIZED_DOCUMENT_JSON,
     ARTIFACT_KEY_PIPELINE_SUMMARY, ARTIFACT_KEY_PROVIDER_BUNDLE_ZIP, ARTIFACT_KEY_PROVIDER_RAW_DIR,
     ARTIFACT_KEY_PROVIDER_RESULT_JSON, ARTIFACT_KEY_SOURCE_PDF, ARTIFACT_KEY_TRANSLATED_PDF,
-    ARTIFACT_KEY_TRANSLATIONS_DIR, ARTIFACT_KEY_TYPST_PDF, ARTIFACT_KEY_TYPST_SOURCE,
-    ARTIFACT_KIND_DIR,
+    ARTIFACT_KEY_TRANSLATIONS_DIR, ARTIFACT_KEY_TRANSLATION_MANIFEST_JSON, ARTIFACT_KEY_TYPST_PDF,
+    ARTIFACT_KEY_TYPST_SOURCE, ARTIFACT_KIND_DIR,
 };
 use crate::AppState;
 
@@ -72,7 +72,9 @@ pub fn resolve_registry_artifact(
 pub fn artifact_resource_path(job: &JobSnapshot, artifact_key: &str) -> Option<String> {
     let prefix = match job.workflow {
         crate::models::WorkflowKind::Ocr => "/api/v1/ocr/jobs",
-        crate::models::WorkflowKind::Mineru => "/api/v1/jobs",
+        crate::models::WorkflowKind::Mineru
+        | crate::models::WorkflowKind::Translate
+        | crate::models::WorkflowKind::Render => "/api/v1/jobs",
     };
     let job_prefix = format!("{prefix}/{}", job.job_id);
     match artifact_key {
@@ -90,6 +92,7 @@ pub fn artifact_resource_path(job: &JobSnapshot, artifact_key: &str) -> Option<S
         ARTIFACT_KEY_LAYOUT_JSON
         | ARTIFACT_KEY_PROVIDER_BUNDLE_ZIP
         | ARTIFACT_KEY_PROVIDER_RESULT_JSON
+        | ARTIFACT_KEY_TRANSLATION_MANIFEST_JSON
         | ARTIFACT_KEY_PIPELINE_SUMMARY
         | ARTIFACT_KEY_EVENTS_JSONL
         | ARTIFACT_KEY_PROVIDER_RAW_DIR

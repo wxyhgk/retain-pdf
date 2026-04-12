@@ -9,6 +9,7 @@ use crate::AppState;
 
 use super::{
     append_error_chain_log, format_error_chain, ocr_flow::execute_ocr_job,
+    render_flow::run_render_job_from_artifacts, translation_flow::run_translate_only_job_with_ocr,
     translation_flow::run_translation_job_with_ocr, QUEUE_POLL_INTERVAL_MS,
 };
 
@@ -68,6 +69,12 @@ async fn run_job(state: AppState, job_id: String) -> Result<()> {
         }
         crate::models::WorkflowKind::Mineru => {
             run_translation_job_with_ocr(state.clone(), job.into_runtime()).await?
+        }
+        crate::models::WorkflowKind::Translate => {
+            run_translate_only_job_with_ocr(state.clone(), job.into_runtime()).await?
+        }
+        crate::models::WorkflowKind::Render => {
+            run_render_job_from_artifacts(state.clone(), job.into_runtime()).await?
         }
     };
     persist_runtime_job(&state, &finished_job)?;

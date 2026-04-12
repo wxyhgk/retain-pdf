@@ -4,11 +4,14 @@ mod commands;
 mod lifecycle;
 mod ocr_flow;
 mod process_runner;
+mod render_flow;
 mod runtime_state;
 mod stdout_parser;
 mod translation_flow;
 
-pub(crate) use commands::{build_command, build_normalize_ocr_command, build_ocr_command};
+pub(crate) use commands::{
+    build_command, build_normalize_ocr_command, build_ocr_command, build_render_only_command,
+};
 pub use lifecycle::{clear_cancel_request, is_cancel_requested, request_cancel, spawn_job};
 pub(crate) use process_runner::execute_process_job;
 pub use process_runner::terminate_job_process_tree;

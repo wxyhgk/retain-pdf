@@ -16,7 +16,8 @@ from .deepseek_client import normalize_base_url
 _PROMPT_HASH = ""
 _CACHE_LOCK = threading.Lock()
 FORMULA_SEGMENT_STRATEGY_VERSION = "formula_segments_v2"
-PLAIN_TEXT_STRATEGY_VERSION = "plain_text_v1"
+PLAIN_TEXT_STRATEGY_VERSION = "plain_text_v2"
+TRANSLATION_PROTOCOL_VERSION = "translation_control_v3_tagged_body"
 
 
 def _prompt_hash(mode: str = "fast") -> str:
@@ -48,7 +49,7 @@ def _unit_source_text(item: dict) -> str:
 
 def _strategy_signature(item: dict) -> str:
     source_text = _unit_source_text(item)
-    if "[[FORMULA_" in source_text:
+    if "[[FORMULA_" in source_text or "<f" in source_text:
         return FORMULA_SEGMENT_STRATEGY_VERSION
     return PLAIN_TEXT_STRATEGY_VERSION
 
@@ -67,6 +68,7 @@ def cache_key_for_item(
         "domain_guidance": (domain_guidance or "").strip(),
         "mode": mode.strip() or "fast",
         "prompt_hash": _prompt_hash(mode=mode),
+        "translation_protocol_version": TRANSLATION_PROTOCOL_VERSION,
         "strategy_signature": _strategy_signature(item),
         "source_text": _unit_source_text(item),
     }

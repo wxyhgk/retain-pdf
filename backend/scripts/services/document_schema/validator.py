@@ -8,6 +8,8 @@ from services.document_schema.version import DOCUMENT_SCHEMA_FILE_NAME
 from services.document_schema.version import DOCUMENT_SCHEMA_NAME
 from services.document_schema.version import DOCUMENT_SCHEMA_VERSION
 
+SUPPORTED_DOCUMENT_SCHEMA_VERSIONS = ("1.0", DOCUMENT_SCHEMA_VERSION)
+
 
 class DocumentSchemaValidationError(ValueError):
     pass
@@ -41,6 +43,33 @@ def _validate_derived(path: str, derived: dict) -> None:
     _expect_type(f"{path}.by", derived["by"], str)
     confidence = derived["confidence"]
     if not isinstance(confidence, (int, float)):
+        _fail(f"{path}.confidence", f"expected number, got {type(confidence).__name__}")
+    if confidence < 0.0 or confidence > 1.0:
+        _fail(f"{path}.confidence", f"expected 0.0 <= confidence <= 1.0, got {confidence}")
+
+
+def _validate_continuation_hint(path: str, hint: dict) -> None:
+    _expect_type(path, hint, dict)
+    for key in ("source", "group_id", "role", "scope", "reading_order", "confidence"):
+        if key not in hint:
+            _fail(path, f"missing key '{key}'")
+    _expect_type(f"{path}.source", hint["source"], str)
+    if hint["source"] not in {"", "provider"}:
+        _fail(f"{path}.source", f"unexpected continuation source '{hint['source']}'")
+    _expect_type(f"{path}.group_id", hint["group_id"], str)
+    _expect_type(f"{path}.role", hint["role"], str)
+    if hint["role"] not in {"", "single", "head", "middle", "tail"}:
+        _fail(f"{path}.role", f"unexpected continuation role '{hint['role']}'")
+    _expect_type(f"{path}.scope", hint["scope"], str)
+    if hint["scope"] not in {"", "intra_page", "cross_page"}:
+        _fail(f"{path}.scope", f"unexpected continuation scope '{hint['scope']}'")
+    reading_order = hint["reading_order"]
+    if isinstance(reading_order, bool) or not isinstance(reading_order, int):
+        _fail(f"{path}.reading_order", f"expected integer, got {type(reading_order).__name__}")
+    if reading_order < -1:
+        _fail(f"{path}.reading_order", f"expected >= -1, got {reading_order}")
+    confidence = hint["confidence"]
+    if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
         _fail(f"{path}.confidence", f"expected number, got {type(confidence).__name__}")
     if confidence < 0.0 or confidence > 1.0:
         _fail(f"{path}.confidence", f"expected 0.0 <= confidence <= 1.0, got {confidence}")
@@ -85,6 +114,7 @@ def _validate_block(path: str, block: dict, *, page_index: int) -> None:
         "segments",
         "tags",
         "derived",
+        "continuation_hint",
         "metadata",
         "source",
     )
@@ -112,6 +142,7 @@ def _validate_block(path: str, block: dict, *, page_index: int) -> None:
     for index, tag in enumerate(block["tags"]):
         _expect_type(f"{path}.tags[{index}]", tag, str)
     _validate_derived(f"{path}.derived", block["derived"])
+    _validate_continuation_hint(f"{path}.continuation_hint", block["continuation_hint"])
     _expect_type(f"{path}.metadata", block["metadata"], dict)
     _expect_type(f"{path}.source", block["source"], dict)
     provider = block["source"].get("provider")
@@ -149,8 +180,11 @@ def validate_document_payload(data: dict) -> None:
             _fail("$", f"missing key '{key}'")
     if data["schema"] != DOCUMENT_SCHEMA_NAME:
         _fail("$.schema", f"expected '{DOCUMENT_SCHEMA_NAME}', got '{data['schema']}'")
-    if data["schema_version"] != DOCUMENT_SCHEMA_VERSION:
-        _fail("$.schema_version", f"expected '{DOCUMENT_SCHEMA_VERSION}', got '{data['schema_version']}'")
+    if data["schema_version"] not in SUPPORTED_DOCUMENT_SCHEMA_VERSIONS:
+        _fail(
+            "$.schema_version",
+            f"expected one of {SUPPORTED_DOCUMENT_SCHEMA_VERSIONS}, got '{data['schema_version']}'",
+        )
     _expect_type("$.document_id", data["document_id"], str)
     _expect_type("$.source", data["source"], dict)
     _expect_type("$.page_count", data["page_count"], int)

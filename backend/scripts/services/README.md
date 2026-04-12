@@ -41,3 +41,20 @@
 6. 跑 `devtools/tests/document_schema/regression_check.py`
 
 只有这条链跑通后，provider 才应该进入 translation/rendering 主线。
+
+## 协作规矩
+
+现在可以按模块拆分负责人，但边界必须按协议来守：
+
+- OCR / provider 负责人主要维护 `ocr_provider/`、`mineru/`、`document_schema/`
+- 翻译负责人主要维护 `translation/`
+- 渲染负责人主要维护 `rendering/`
+- 编排负责人主要维护 `runtime/pipeline/`
+
+默认原则：
+
+- 每个负责人优先在自己模块内解决问题，不把临时特判扩散到别的模块
+- `document.v1.json`、`translation-manifest.json`、render-only 输入协议属于稳定交接点，不能单边修改
+- 如果必须改交接协议，必须同时更新上下游 README、调用入口、兼容逻辑和测试
+- translation / rendering 主线禁止重新依赖 provider raw JSON
+- pipeline 只负责编排，不负责吸收 provider 特判、翻译细节或渲染补丁

@@ -44,10 +44,7 @@ pub async fn validate_mineru_token(
     }
 
     let base_url = payload.base_url.trim().to_string();
-    let model_version = payload
-        .model_version
-        .trim()
-        .to_string();
+    let model_version = payload.model_version.trim().to_string();
     let client = MineruClient::new(base_url.clone(), token.to_string());
     let checked_at = now_iso();
 
@@ -92,7 +89,11 @@ fn classify_probe_error(
     let trace_id = extract_provider_trace_id(&error_text);
 
     if let Some(code) = provider_code.as_deref() {
-        let mapped = map_provider_error_code(code, provider_message.clone().unwrap_or_default(), trace_id.as_deref());
+        let mapped = map_provider_error_code(
+            code,
+            provider_message.clone().unwrap_or_default(),
+            trace_id.as_deref(),
+        );
         return MineruTokenValidationView {
             ok: false,
             status: match mapped.category {
@@ -175,7 +176,8 @@ mod tests {
     #[test]
     fn classify_probe_error_maps_network_failure() {
         let view = classify_probe_error(
-            "POST https://mineru.net/api/v4/file-urls/batch failed: operation timed out".to_string(),
+            "POST https://mineru.net/api/v4/file-urls/batch failed: operation timed out"
+                .to_string(),
             "https://mineru.net".to_string(),
             "2026-04-06T00:00:00Z".to_string(),
         );

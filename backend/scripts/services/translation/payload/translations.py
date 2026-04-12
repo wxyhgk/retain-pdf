@@ -2,12 +2,59 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from services.document_schema.compat import normalize_block_continuation_hint
 from services.document_schema.semantics import is_algorithm_semantic
 from services.document_schema.semantics import is_reference_entry_semantic
 from services.translation.ocr.models import TextItem
 
 from .formula_protection import protect_inline_formulas_in_segments
+from .formula_protection import protected_map_from_formula_map
 from .formula_protection import re_protect_restored_formulas
+
+
+TRANSLATED_TEXT_FIELDS = (
+    "translation_unit_protected_translated_text",
+    "translation_unit_translated_text",
+    "protected_translated_text",
+    "translated_text",
+    "group_protected_translated_text",
+    "group_translated_text",
+)
+
+
+def _unwrap_json_translated_text(text: str) -> tuple[str, str] | None:
+    raw = str(text or "").strip()
+    if not raw.startswith("{") or ("translated_text" not in raw and "translations" not in raw):
+        return None
+    try:
+        payload = json.loads(raw)
+    except Exception:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    if "translated_text" in payload:
+        decision = str(payload.get("decision", "translate") or "translate").strip() or "translate"
+        translated_text = str(payload.get("translated_text", "") or "").strip()
+        return decision, translated_text
+    translations = payload.get("translations", [])
+    if not isinstance(translations, list) or len(translations) != 1 or not isinstance(translations[0], dict):
+        return None
+    decision = str(translations[0].get("decision", "translate") or "translate").strip() or "translate"
+    translated_text = str(translations[0].get("translated_text", "") or "").strip()
+    return decision, translated_text
+
+
+def _sanitize_loaded_translation_record(record: dict) -> bool:
+    changed = False
+    for field in TRANSLATED_TEXT_FIELDS:
+        current = str(record.get(field, "") or "").strip()
+        unwrapped = _unwrap_json_translated_text(current)
+        if unwrapped is None:
+            continue
+        decision, translated_text = unwrapped
+        record[field] = "" if decision == "keep_origin" else translated_text
+        changed = True
+    return changed
 
 
 def _is_algorithm_item(metadata: dict | None) -> bool:
@@ -26,11 +73,24 @@ def _default_translation_flags(block_type: str, metadata: dict | None = None) ->
     return "", True, ""
 
 
+def _ocr_continuation_fields(metadata: dict | None) -> dict:
+    hint = normalize_block_continuation_hint((metadata or {}).get("continuation_hint"))
+    return {
+        "ocr_continuation_source": hint["source"],
+        "ocr_continuation_group_id": hint["group_id"],
+        "ocr_continuation_role": hint["role"],
+        "ocr_continuation_scope": hint["scope"],
+        "ocr_continuation_reading_order": hint["reading_order"],
+        "ocr_continuation_confidence": hint["confidence"],
+    }
+
+
 def export_translation_template(items: list[TextItem], output_path: Path, page_idx: int) -> None:
     payload = []
     for item in items:
-        protected_source_text, formula_map = protect_inline_formulas_in_segments(item.segments)
+        protected_source_text, formula_map, protected_map = protect_inline_formulas_in_segments(item.segments)
         classification_label, should_translate, skip_reason = _default_translation_flags(item.block_type, item.metadata)
+        ocr_continuation_fields = _ocr_continuation_fields(item.metadata)
         payload.append(
             {
                 "item_id": item.item_id,
@@ -41,6 +101,7 @@ def export_translation_template(items: list[TextItem], output_path: Path, page_i
                 "source_text": item.text,
                 "lines": item.lines,
                 "metadata": item.metadata,
+                **ocr_continuation_fields,
                 "layout_mode": "",
                 "layout_split_x": 0.0,
                 "layout_zone": "",
@@ -50,6 +111,7 @@ def export_translation_template(items: list[TextItem], output_path: Path, page_i
                 "protected_source_text": protected_source_text,
                 "mixed_original_protected_source_text": protected_source_text,
                 "formula_map": formula_map,
+                "protected_map": protected_map,
                 "classification_label": classification_label,
                 "should_translate": should_translate,
                 "skip_reason": skip_reason,
@@ -60,6 +122,7 @@ def export_translation_template(items: list[TextItem], output_path: Path, page_i
                 "translation_unit_member_ids": [item.item_id],
                 "translation_unit_protected_source_text": protected_source_text,
                 "translation_unit_formula_map": formula_map,
+                "translation_unit_protected_map": protected_map,
                 "translation_unit_protected_translated_text": "",
                 "translation_unit_translated_text": "",
                 "protected_translated_text": "",
@@ -72,8 +135,11 @@ def export_translation_template(items: list[TextItem], output_path: Path, page_i
                 "continuation_candidate_next_id": "",
                 "group_protected_source_text": "",
                 "group_formula_map": [],
+                "group_protected_map": [],
                 "group_protected_translated_text": "",
                 "group_translated_text": "",
+                "final_status": "",
+                "translation_diagnostics": {},
             }
         )
 
@@ -83,7 +149,14 @@ def export_translation_template(items: list[TextItem], output_path: Path, page_i
 
 def load_translations(translation_path: Path) -> list[dict]:
     with translation_path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+        payload = json.load(f)
+    changed = False
+    for record in payload:
+        if isinstance(record, dict):
+            changed = _sanitize_loaded_translation_record(record) or changed
+    if changed:
+        save_translations(translation_path, payload)
+    return payload
 
 
 def save_translations(translation_path: Path, payload: list[dict]) -> None:
@@ -105,18 +178,21 @@ def ensure_translation_template(items: list[TextItem], output_path: Path, page_i
         if not item:
             continue
         classification_label, should_translate, skip_reason = _default_translation_flags(item.block_type, item.metadata)
+        ocr_continuation_fields = _ocr_continuation_fields(item.metadata)
         if (
             "protected_source_text" not in record
             or "formula_map" not in record
             or "protected_translated_text" not in record
             or "lines" not in record
         ):
-            protected_source_text, formula_map = protect_inline_formulas_in_segments(item.segments)
+            protected_source_text, formula_map, protected_map = protect_inline_formulas_in_segments(item.segments)
             record["source_text"] = item.text
             record["lines"] = item.lines
             record["metadata"] = item.metadata
+            record.update(ocr_continuation_fields)
             record["protected_source_text"] = protected_source_text
             record["formula_map"] = formula_map
+            record["protected_map"] = protected_map
             record.setdefault("classification_label", classification_label)
             record.setdefault("should_translate", should_translate)
             record.setdefault("protected_translated_text", "")
@@ -161,6 +237,10 @@ def ensure_translation_template(items: list[TextItem], output_path: Path, page_i
         if "metadata" not in record:
             record["metadata"] = item.metadata
             changed = True
+        for key, value in ocr_continuation_fields.items():
+            if record.get(key) != value:
+                record[key] = value
+                changed = True
         if "should_translate" not in record:
             record["should_translate"] = should_translate
             changed = True
@@ -210,6 +290,12 @@ def ensure_translation_template(items: list[TextItem], output_path: Path, page_i
         if "translation_unit_formula_map" not in record:
             record["translation_unit_formula_map"] = record.get("formula_map", [])
             changed = True
+        if "protected_map" not in record:
+            record["protected_map"] = protected_map_from_formula_map(record.get("formula_map", []))
+            changed = True
+        if "translation_unit_protected_map" not in record:
+            record["translation_unit_protected_map"] = record.get("protected_map", [])
+            changed = True
         if "translation_unit_protected_translated_text" not in record:
             record["translation_unit_protected_translated_text"] = ""
             changed = True
@@ -240,11 +326,20 @@ def ensure_translation_template(items: list[TextItem], output_path: Path, page_i
         if "group_formula_map" not in record:
             record["group_formula_map"] = []
             changed = True
+        if "group_protected_map" not in record:
+            record["group_protected_map"] = []
+            changed = True
         if "group_protected_translated_text" not in record:
             record["group_protected_translated_text"] = ""
             changed = True
         if "group_translated_text" not in record:
             record["group_translated_text"] = ""
+            changed = True
+        if "final_status" not in record:
+            record["final_status"] = ""
+            changed = True
+        if "translation_diagnostics" not in record:
+            record["translation_diagnostics"] = {}
             changed = True
         if not record.get("protected_translated_text") and record.get("translated_text"):
             record["protected_translated_text"] = re_protect_restored_formulas(

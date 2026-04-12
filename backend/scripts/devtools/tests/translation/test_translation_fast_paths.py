@@ -1,9 +1,11 @@
 import importlib.util
+import json
 import sys
 import tempfile
 import types
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 REPO_SCRIPTS_ROOT = Path("/home/wxyhgk/tmp/Code/backend/scripts")
@@ -62,6 +64,114 @@ def _install_minimal_continuation_stub():
 
 
 class TranslationFastPathTests(unittest.TestCase):
+    def test_editorial_metadata_token_is_treated_as_nontranslatable(self):
+        module = _load_module(
+            "services.translation.policy.metadata_filter",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "policy" / "metadata_filter.py",
+        )
+        self.assertTrue(
+            module.looks_like_nontranslatable_metadata(
+                {
+                    "block_type": "text",
+                    "source_text": "CrossMark",
+                    "should_translate": True,
+                    "metadata": {"structure_role": "body"},
+                    "page_idx": 0,
+                    "lines": [{"spans": [{"content": "CrossMark"}]}],
+                }
+            )
+        )
+
+    def test_short_first_page_header_fragment_is_treated_as_nontranslatable(self):
+        module = _load_module(
+            "services.translation.policy.metadata_filter",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "policy" / "metadata_filter.py",
+        )
+        self.assertTrue(
+            module.looks_like_nontranslatable_metadata(
+                {
+                    "block_type": "text",
+                    "source_text": "Energy property",
+                    "should_translate": True,
+                    "metadata": {"structure_role": "body"},
+                    "page_idx": 0,
+                    "bbox": [48, 421, 105, 431],
+                    "lines": [{"spans": [{"content": "Energy property"}]}],
+                }
+            )
+        )
+
+    def test_short_non_body_empty_translation_degrades_to_keep_origin(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        payload = module._keep_origin_payload_for_empty_translation(
+            {
+                "item_id": "p012-b022",
+                "page_idx": 11,
+                "block_type": "image_caption",
+                "layout_zone": "non_flow",
+                "metadata": {"structure_role": "caption"},
+            }
+        )
+        self.assertEqual(payload["p012-b022"]["decision"], "keep_origin")
+        self.assertEqual(payload["p012-b022"]["final_status"], "kept_origin")
+        self.assertEqual(
+            payload["p012-b022"]["translation_diagnostics"]["degradation_reason"],
+            "empty_translation_non_body_label",
+        )
+
+    def test_repeated_empty_translation_degrades_to_keep_origin(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        payload = module._keep_origin_payload_for_repeated_empty_translation(
+            {
+                "item_id": "p001-b017",
+                "page_idx": 0,
+                "block_type": "text",
+            }
+        )
+        self.assertEqual(payload["p001-b017"]["decision"], "keep_origin")
+        self.assertEqual(payload["p001-b017"]["final_status"], "kept_origin")
+        self.assertEqual(
+            payload["p001-b017"]["translation_diagnostics"]["degradation_reason"],
+            "empty_translation_repeated",
+        )
+
+    def test_single_item_extractor_returns_plain_text_when_not_json(self):
+        module = _load_module(
+            "services.translation.llm.deepseek_client",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "deepseek_client.py",
+        )
+        self.assertEqual(
+            module.extract_single_item_translation_text("这是直接返回的中文译文。", "p001-b019"),
+            "这是直接返回的中文译文。",
+        )
+
+    def test_english_residue_detector_rejects_long_body_that_stays_english(self):
+        module = _load_module(
+            "services.translation.llm.placeholder_guard",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "placeholder_guard.py",
+        )
+        item = {
+            "item_id": "p002-b001",
+            "block_type": "text",
+            "metadata": {"structure_role": "body"},
+            "translation_unit_protected_source_text": (
+                "The advancement of complex computer programs with faster computing power and material simulation methods "
+                "has become an important tool for material researchers, because it explains many properties."
+            ),
+        }
+        self.assertTrue(
+            module.looks_like_untranslated_english_output(
+                item,
+                "The advancement of complex computer programs with faster computing power and material simulation methods remains important.",
+            )
+        )
+
     def test_structured_output_repairs_trailing_commas_and_unquoted_keys(self):
         module = _load_module(
             "services.translation.llm.structured_output",
@@ -89,6 +199,166 @@ class TranslationFastPathTests(unittest.TestCase):
         self.assertEqual(result["domain"], "materials science")
         self.assertEqual(result["summary"], "photocatalysis paper")
         self.assertEqual(result["translation_guidance"], "preserve formulas")
+
+    def test_single_item_extractor_unwraps_nested_batch_json_shell(self):
+        module = _load_module(
+            "services.translation.llm.deepseek_client",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "deepseek_client.py",
+        )
+        nested = {
+            "translated_text": json.dumps(
+                {
+                    "translations": [
+                        {
+                            "item_id": "p030-b010",
+                            "translated_text": "计算效率、成本与精度。",
+                        }
+                    ]
+                },
+                ensure_ascii=False,
+            )
+        }
+        self.assertEqual(
+            module.extract_single_item_translation_text(json.dumps(nested, ensure_ascii=False), "p030-b010"),
+            "计算效率、成本与精度。",
+        )
+
+    def test_placeholder_guard_canonicalizes_nested_json_shell(self):
+        module = _load_module(
+            "services.translation.llm.placeholder_guard",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "placeholder_guard.py",
+        )
+        result = module.canonicalize_batch_result(
+            [{"item_id": "p030-b010", "translation_unit_protected_source_text": "Computational efficiency."}],
+            {
+                "p030-b010": {
+                    "decision": "translate",
+                    "translated_text": json.dumps(
+                        {
+                            "translations": [
+                                {
+                                    "item_id": "p030-b010",
+                                    "translated_text": "计算效率、成本与精度。",
+                                }
+                            ]
+                        },
+                        ensure_ascii=False,
+                    ),
+                }
+            },
+        )
+        self.assertEqual(result["p030-b010"]["translated_text"], "计算效率、成本与精度。")
+
+    def test_placeholder_guard_rejects_protocol_shell_output(self):
+        module = _load_module(
+            "services.translation.llm.placeholder_guard",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "placeholder_guard.py",
+        )
+        with self.assertRaises(module.TranslationProtocolError):
+            module.validate_batch_result(
+                [{"item_id": "p030-b010", "translation_unit_protected_source_text": "Computational efficiency."}],
+                {
+                    "p030-b010": {
+                        "decision": "translate",
+                        "translated_text": '{ "translations": [{"item_id":"p030-b010","translated_text":"计算效率"}] }',
+                    }
+                },
+            )
+
+    def test_translate_single_item_plain_text_uses_plain_text_protocol(self):
+        module = _load_module(
+            "services.translation.llm.translation_client",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "translation_client.py",
+        )
+        item = {
+            "item_id": "p001-b001",
+            "protected_source_text": "The advancement of complex computer programs.",
+            "translation_unit_protected_source_text": "The advancement of complex computer programs.",
+            "block_type": "text",
+            "metadata": {"structure_role": "body"},
+        }
+        captured: dict[str, object] = {}
+
+        def _fake_messages(*args, **kwargs):
+            captured["response_style"] = kwargs.get("response_style")
+            return [{"role": "system", "content": "stub"}]
+
+        def _fake_request(messages, **kwargs):
+            captured["messages"] = messages
+            captured["response_format"] = kwargs.get("response_format")
+            return "复杂计算机程序的发展。"
+
+        with mock.patch.object(module, "build_single_item_fallback_messages", side_effect=_fake_messages), mock.patch.object(
+            module, "request_chat_content", side_effect=_fake_request
+        ):
+            result = module.translate_single_item_plain_text(item)
+
+        self.assertEqual(captured["response_style"], "plain_text")
+        self.assertIsNone(captured["response_format"])
+        self.assertEqual(result["p001-b001"]["translated_text"], "复杂计算机程序的发展。")
+
+    def test_translate_batch_once_uses_tagged_protocol_without_schema(self):
+        module = _load_module(
+            "services.translation.llm.translation_client",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "translation_client.py",
+        )
+        batch = [
+            {
+                "item_id": "p001-b001",
+                "protected_source_text": "The advancement of complex computer programs.",
+                "translation_unit_protected_source_text": "The advancement of complex computer programs.",
+                "block_type": "text",
+                "metadata": {"structure_role": "body"},
+            },
+            {
+                "item_id": "p001-b002",
+                "protected_source_text": "Faster computing power improves simulation.",
+                "translation_unit_protected_source_text": "Faster computing power improves simulation.",
+                "block_type": "text",
+                "metadata": {"structure_role": "body"},
+            },
+        ]
+        captured: dict[str, object] = {}
+
+        def _fake_messages(*args, **kwargs):
+            captured["response_style"] = kwargs.get("response_style")
+            return [{"role": "system", "content": "stub"}]
+
+        def _fake_request(messages, **kwargs):
+            captured["messages"] = messages
+            captured["response_format"] = kwargs.get("response_format")
+            return (
+                "<<<ITEM item_id=p001-b001>>>\n复杂计算机程序的发展。\n<<<END>>>\n"
+                "<<<ITEM item_id=p001-b002>>>\n更快的算力提升了模拟能力。\n<<<END>>>"
+            )
+
+        with mock.patch.object(module, "build_messages", side_effect=_fake_messages), mock.patch.object(
+            module, "request_chat_content", side_effect=_fake_request
+        ):
+            result = module.translate_batch_once(batch, mode="fast")
+
+        self.assertEqual(captured["response_style"], "tagged")
+        self.assertIsNone(captured["response_format"])
+        self.assertEqual(result["p001-b001"]["translated_text"], "复杂计算机程序的发展。")
+        self.assertEqual(result["p001-b002"]["translated_text"], "更快的算力提升了模拟能力。")
+
+    def test_build_messages_sci_tagged_requires_decision_attribute(self):
+        module = _load_module(
+            "services.translation.llm.deepseek_client",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "deepseek_client.py",
+        )
+        messages = module.build_messages(
+            [
+                {
+                    "item_id": "p001-b001",
+                    "protected_source_text": "Experimentally test the mechanism.",
+                    "metadata": {"structure_role": "body"},
+                }
+            ],
+            mode="sci",
+            response_style="tagged",
+        )
+        self.assertIn("<<<ITEM item_id=ITEM_ID decision=translate>>>", messages[0]["content"])
 
     def test_domain_context_parser_salvages_fields_from_malformed_json(self):
         module = _load_module(
@@ -141,6 +411,34 @@ class TranslationFastPathTests(unittest.TestCase):
         self.assertTrue(schema["json_schema"]["strict"])
         self.assertEqual(schema["json_schema"]["schema"]["required"], ["translated_text"])
 
+    def test_translation_and_formula_outputs_use_strict_json_schema_format(self):
+        module = _load_module(
+            "services.translation.llm.structured_models",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "structured_models.py",
+        )
+        for schema in [
+            module.TRANSLATION_BATCH_RESPONSE_SCHEMA,
+            module.TRANSLATION_SINGLE_TEXT_RESPONSE_SCHEMA,
+            module.TRANSLATION_SINGLE_DECISION_RESPONSE_SCHEMA,
+            module.FORMULA_SEGMENT_RESPONSE_SCHEMA,
+        ]:
+            self.assertEqual(schema["type"], "json_schema")
+            self.assertTrue(schema["json_schema"]["strict"])
+
+    def test_formula_segment_parser_accepts_schema_json_payload(self):
+        module = _load_module(
+            "services.translation.llm.segment_routing",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "segment_routing.py",
+        )
+        result = module.parse_segment_translation_payload(
+            '{"segments":[{"segment_id":"1","translated_text":"第一段"},{"segment_id":"2","translated_text":"第二段"}]}',
+            expected_segments=[
+                {"segment_id": "1", "source_text": "first"},
+                {"segment_id": "2", "source_text": "second"},
+            ],
+        )
+        self.assertEqual(result, {"1": "第一段", "2": "第二段"})
+
     def test_domain_context_cache_round_trip(self):
         module = _load_module(
             "services.translation.llm.domain_context",
@@ -189,6 +487,10 @@ class TranslationFastPathTests(unittest.TestCase):
         self.assertIn("extra-guidance", merged)
 
     def test_build_translation_context_from_policy_uses_policy_guidance(self):
+        _load_module(
+            "services.translation.policy",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "policy" / "__init__.py",
+        )
         module = _load_module(
             "services.translation.session_context",
             REPO_SCRIPTS_ROOT / "services" / "translation" / "session_context.py",
@@ -209,6 +511,47 @@ class TranslationFastPathTests(unittest.TestCase):
         self.assertIn("rule-guidance", context.merged_guidance)
         self.assertIn("extra-guidance", context.merged_guidance)
         self.assertIn("snippet", context.merged_guidance)
+        self.assertEqual(context.engine_profile_name, "balanced")
+        self.assertEqual(context.batch_policy.plain_batch_size, 4)
+
+    def test_build_translation_context_uses_model_profile_overrides(self):
+        _load_module(
+            "services.translation.policy",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "policy" / "__init__.py",
+        )
+        module = _load_module(
+            "services.translation.session_context",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "session_context.py",
+        )
+
+        class _Policy:
+            mode = "sci"
+            domain_context = {"translation_guidance": "domain-guidance"}
+            rule_guidance = "rule-guidance"
+
+        context = module.build_translation_context_from_policy(
+            _Policy(),
+            model="qwen35-9b-q4km",
+            base_url="http://example.com/v1",
+        )
+        self.assertEqual(context.engine_profile_name, "qwen35_low_concurrency_fast")
+        self.assertEqual(context.fallback_policy.formula_segment_attempts, 2)
+        self.assertEqual(context.segmentation_policy.prefer_plain_when_segment_count_leq, 6)
+
+    def test_formula_segment_route_prefers_plain_for_small_segment_count(self):
+        module = _load_module(
+            "services.translation.llm.segment_routing",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "segment_routing.py",
+        )
+        item = {
+            "item_id": "p001-b001",
+            "protected_source_text": "After <f1-a7c/> hours, activity increased and <f2-b2d/> remained stable.",
+        }
+        policy = module.SegmentationPolicy(
+            prefer_plain_when_segment_count_leq=6,
+            small_formula_inline_enabled=False,
+        )
+        self.assertEqual(module.formula_segment_translation_route(item, policy=policy), "none")
 
     def test_continuation_review_short_circuits_high_confidence_pairs(self):
         _install_minimal_continuation_stub()

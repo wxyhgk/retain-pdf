@@ -6,6 +6,8 @@ from pathlib import Path
 
 from foundation.config import fonts
 from foundation.config import paths
+from services.rendering.core.models import RenderPageSpec
+from services.rendering.typst.emitter import build_typst_source_from_page_specs
 from services.rendering.typst.shared import TYPST_BIN
 from services.rendering.typst.shared import TYPST_OVERLAY_DIR
 from services.rendering.typst.source_builder import build_typst_book_background_source
@@ -105,6 +107,38 @@ def compile_typst_book_background_pdf(
     pdf_path = work_dir / f"{stem}.pdf"
     typ_path.write_text(
         build_typst_book_background_source(source_pdf_path, page_specs, work_dir, font_family=font_family),
+        encoding="utf-8",
+    )
+    command = [TYPST_BIN, "compile", "--root", str(paths.ROOT_DIR)]
+    for font_path in _resolved_font_paths(font_paths):
+        command.extend(["--font-path", str(font_path)])
+    command.extend([str(typ_path), str(pdf_path)])
+    proc = subprocess.run(command, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise RuntimeError((proc.stderr or proc.stdout).strip())
+    return pdf_path
+
+
+def compile_typst_render_pages_pdf(
+    *,
+    background_pdf_path: Path,
+    page_specs: list[RenderPageSpec],
+    stem: str,
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
+    font_paths: list[Path] | None = None,
+    work_dir: Path | None = None,
+) -> Path:
+    work_dir = work_dir or TYPST_OVERLAY_DIR
+    work_dir.mkdir(parents=True, exist_ok=True)
+    typ_path = work_dir / f"{stem}.typ"
+    pdf_path = work_dir / f"{stem}.pdf"
+    typ_path.write_text(
+        build_typst_source_from_page_specs(
+            background_pdf_path=background_pdf_path,
+            page_specs=page_specs,
+            work_dir=work_dir,
+            font_family=font_family,
+        ),
         encoding="utf-8",
     )
     command = [TYPST_BIN, "compile", "--root", str(paths.ROOT_DIR)]

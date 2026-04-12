@@ -1,0 +1,98 @@
+import sys
+import tempfile
+from pathlib import Path
+
+
+REPO_SCRIPTS_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
+
+
+from runtime.pipeline.book_translation_policies import finalize_page_payloads
+
+
+def _page_payload_item(
+    *,
+    item_id: str,
+    page_idx: int,
+    text: str,
+    bbox: list[float],
+    group_id: str,
+    order: int,
+) -> dict:
+    return {
+        "item_id": item_id,
+        "page_idx": page_idx,
+        "block_idx": 0,
+        "block_type": "text",
+        "bbox": bbox,
+        "source_text": text,
+        "protected_source_text": text,
+        "formula_map": [],
+        "classification_label": "",
+        "should_translate": True,
+        "ocr_continuation_source": "provider",
+        "ocr_continuation_group_id": group_id,
+        "ocr_continuation_role": "head" if order == 0 else "tail",
+        "ocr_continuation_scope": "cross_page",
+        "ocr_continuation_reading_order": order,
+        "layout_mode": "",
+        "layout_split_x": 0.0,
+        "layout_zone": "",
+        "layout_zone_rank": -1,
+        "layout_zone_size": 0,
+        "layout_boundary_role": "",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "translation_unit_id": item_id,
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [item_id],
+        "translation_unit_protected_source_text": text,
+        "translation_unit_formula_map": [],
+    }
+
+
+def test_finalize_page_payloads_annotates_layout_before_cross_page_provider_join() -> None:
+    group_id = "provider-generic-global-1"
+    page_payloads = {
+        0: [
+            _page_payload_item(
+                item_id="p001-b000",
+                page_idx=0,
+                text="This sentence continues with enough context",
+                bbox=[0, 0, 180, 20],
+                group_id=group_id,
+                order=0,
+            )
+        ],
+        1: [
+            _page_payload_item(
+                item_id="p002-b000",
+                page_idx=1,
+                text="and additional evidence from the next page.",
+                bbox=[0, 0, 180, 20],
+                group_id=group_id,
+                order=1,
+            )
+        ],
+    }
+
+    with tempfile.TemporaryDirectory() as tmp:
+        translation_paths = {
+            0: Path(tmp) / "page-001.json",
+            1: Path(tmp) / "page-002.json",
+        }
+        summary = finalize_page_payloads(
+            page_payloads=page_payloads,
+            translation_paths=translation_paths,
+        )
+
+    assert summary["provider_joined_items"] == 2
+    assert page_payloads[0][0]["layout_zone"] == "single_column"
+    assert page_payloads[1][0]["layout_zone"] == "single_column"
+    assert page_payloads[0][0]["continuation_decision"] == "provider_joined"
+    assert page_payloads[1][0]["continuation_decision"] == "provider_joined"
+    assert page_payloads[0][0]["continuation_group"] == group_id

@@ -52,6 +52,10 @@ EDITORIAL_PREFIX_RE = re.compile(
     r"^(received|revised|accepted|published|available online|online publication date|supporting information|editor|editors)\b",
     re.I,
 )
+EDITORIAL_TOKEN_RE = re.compile(
+    r"^(crossmark|open access|graphical abstract|highlights|supplementary data|supplemental data|corrigendum|erratum)$",
+    re.I,
+)
 COPYRIGHT_JOURNAL_RE = re.compile(
     r"(wiley|elsevier|springer|acs|american chemical society|journal|j\.?\s+[A-Za-z]|vol\.\s*\d+)",
     re.I,
@@ -88,6 +92,7 @@ URL_LIKE_RE = re.compile(
 )
 WORD_TOKEN_RE = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9]+(?:[.'`´/-][A-Za-zÀ-ÖØ-öø-ÿ0-9]+)*")
 MAX_METADATA_FRAGMENT_WORDS = 9
+SHORT_HEADER_FRAGMENT_RE = re.compile(r"^[A-Z][a-z]+(?:\s+[A-Z]?[a-z]+){0,2}$")
 
 
 def _normalized_text(item: dict) -> str:
@@ -126,7 +131,8 @@ def _connector_is_metadata_like(item: dict, text: str) -> bool:
 
 
 def _looks_like_editorial_metadata(text: str) -> bool:
-    return bool(EDITORIAL_PREFIX_RE.match(text))
+    stripped = text.strip()
+    return bool(EDITORIAL_PREFIX_RE.match(stripped) or EDITORIAL_TOKEN_RE.fullmatch(stripped))
 
 
 def _looks_like_author_or_affiliation(text: str) -> bool:
@@ -214,6 +220,36 @@ def _looks_like_short_alpha_fragment(text: str) -> bool:
     return _letter_count(stripped) < 4
 
 
+def _looks_like_short_header_fragment(item: dict, text: str) -> bool:
+    if _word_count(text) > 3 or len(text) > 32:
+        return False
+    if not SHORT_HEADER_FRAGMENT_RE.fullmatch(text.strip()):
+        return False
+    lowered = text.strip().lower()
+    if lowered in COMMON_SHORT_WORD_SET:
+        return False
+    bbox = item.get("bbox") or []
+    if isinstance(bbox, list) and len(bbox) >= 4:
+        try:
+            width = abs(float(bbox[2]) - float(bbox[0]))
+            height = abs(float(bbox[3]) - float(bbox[1]))
+        except (TypeError, ValueError):
+            width = 0.0
+            height = 0.0
+        if width > 140 or height > 24:
+            return False
+    metadata = item.get("metadata") or {}
+    if is_body_structure_role(metadata):
+        page_idx = item.get("page_idx")
+        try:
+            page_idx_value = int(page_idx)
+        except (TypeError, ValueError):
+            page_idx_value = -1
+        if page_idx_value not in {0, 1}:
+            return False
+    return _line_count(item) <= 1
+
+
 def looks_like_url_fragment(text: str) -> bool:
     stripped = text.strip().strip("()[]<>\"'“”‘’,;")
     if not stripped or any(ch.isspace() for ch in stripped):
@@ -261,6 +297,8 @@ def looks_like_nontranslatable_metadata(item: dict) -> bool:
     if looks_like_url_fragment(text):
         return True
     if _looks_like_short_alpha_fragment(text):
+        return True
+    if _looks_like_short_header_fragment(item, text):
         return True
 
     if _line_count(item) <= 2 and len(text) <= 64 and text.strip().lower() == "supporting information":

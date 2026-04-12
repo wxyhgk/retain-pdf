@@ -177,40 +177,125 @@ X-API-Key: your-rust-api-key
 
 `POST /api/v1/jobs`
 
-最常用请求体：
+当前 canonical JSON 请求体是分组结构，不再接受旧的扁平 JSON：
 
 ```json
 {
   "workflow": "mineru",
-  "upload_id": "20260402073151-a80618",
-  "mode": "sci",
-  "render_mode": "auto",
-  "model": "deepseek-chat",
-  "base_url": "https://api.deepseek.com/v1",
-  "api_key": "sk-xxxx",
-  "mineru_token": "mineru-xxxx",
-  "batch_size": 1,
-  "workers": 50,
-  "compile_workers": 8,
-  "rule_profile_name": "general_sci",
-  "custom_rules_text": "",
-  "page_ranges": ""
+  "source": {
+    "upload_id": "20260402073151-a80618"
+  },
+  "ocr": {
+    "provider": "mineru",
+    "mineru_token": "mineru-xxxx",
+    "page_ranges": ""
+  },
+  "translation": {
+    "mode": "sci",
+    "model": "deepseek-chat",
+    "base_url": "https://api.deepseek.com/v1",
+    "api_key": "sk-xxxx",
+    "batch_size": 1,
+    "workers": 50,
+    "rule_profile_name": "general_sci",
+    "custom_rules_text": "",
+    "glossary_id": "",
+    "glossary_entries": []
+  },
+  "render": {
+    "render_mode": "auto",
+    "compile_workers": 8
+  },
+  "runtime": {
+    "job_id": "",
+    "timeout_seconds": 1800
+  }
 }
 ```
 
-当前强制字段：
+当前支持的 `workflow`：
 
-- `upload_id`
-- `mineru_token`
-- `base_url`
-- `api_key`
-- `model`
+- `mineru`：完整链路，OCR -> Normalize -> Translate -> Render
+- `translate`：OCR -> Normalize -> Translate，不进入渲染
+- `render`：基于已有 job artifacts 重跑渲染
+
+接口边界：
+
+- `POST /api/v1/jobs` 面向 `mineru` / `translate` / `render`
+- `workflow=ocr` 使用独立入口 `POST /api/v1/ocr/jobs`
+
+不同 workflow 的 `source` 约定：
+
+- `mineru` / `translate`：通常使用 `source.upload_id`
+- `render`：使用 `source.artifact_job_id`
+
+当前强制字段按 workflow 和 provider 决定，常见要求：
+
+- `mineru` / `translate` 走 MinerU 时，需要 `ocr.mineru_token`
+- 需要大模型翻译时，需要 `translation.base_url`、`translation.api_key`、`translation.model`
+- `render` workflow 不要求 OCR 或翻译凭据
 
 当前校验规则：
 
-- `base_url` 必须以 `http://` 或 `https://` 开头
-- `api_key` 不能看起来像 URL
+- `translation.base_url` 必须以 `http://` 或 `https://` 开头
+- `translation.api_key` 不能看起来像 URL
 - 当 workflow / provider 走 MinerU 时，会额外校验 `200MB / 600 页` 限制
+
+术语表 v1 约定：
+
+- `translation.glossary_id`：可选，引用后端里已保存的命名术语表
+- `translation.glossary_entries`：可选，直接随任务提交的术语条目数组，元素结构是 `{source, target, note}`
+- 如果两者同时传，后端会先加载命名术语表，再用 inline 术语按 `source` 归一化覆盖
+- v1 只做提示词注入和结果记录，不做翻译后的强制替换
+- 前端如果让用户上传 Excel，应先在前端解析成 JSON，再传给后端；后端只接受 JSON 条目，或通过下面的 CSV 解析辅助接口接收 `csv_text`
+- 翻译完成后，`translation-manifest.json`、诊断文件和 pipeline summary 会附带术语表命中摘要
+
+兼容性说明：
+
+- `POST /api/v1/jobs` 的 JSON 入口只接受分组结构
+- 历史扁平字段只保留在少数 `multipart/form-data` 辅助入口的表单映射里，不再视为正式 JSON 契约
+
+### 5.2.1 术语表资源接口
+
+命名术语表接口：
+
+- `POST /api/v1/glossaries`
+- `GET /api/v1/glossaries`
+- `GET /api/v1/glossaries/{glossary_id}`
+- `PUT /api/v1/glossaries/{glossary_id}`
+- `DELETE /api/v1/glossaries/{glossary_id}`
+- `POST /api/v1/glossaries/parse-csv`
+
+创建或更新请求体：
+
+```json
+{
+  "name": "semiconductor",
+  "entries": [
+    {"source": "band gap", "target": "带隙", "note": "materials"},
+    {"source": "density of states", "target": "态密度", "note": ""}
+  ]
+}
+```
+
+返回字段：
+
+- `glossary_id`
+- `name`
+- `entry_count`
+- `entries`
+- `created_at`
+- `updated_at`
+
+CSV 解析辅助接口请求体：
+
+```json
+{
+  "csv_text": "source,target,note\nband gap,带隙,materials\n"
+}
+```
+
+这个接口只负责把 CSV 文本解析成标准 JSON 条目，不负责直接接收 Excel 文件。
 
 ### 5.3 查询任务详情
 
@@ -223,9 +308,13 @@ X-API-Key: your-rust-api-key
 - `stage_detail`
 - `progress`
 - `timestamps`
+- `request_payload`
 - `actions`
 - `artifacts`
+- `glossary_summary`
 - `ocr_job`
+- `runtime`
+- `failure`
 - `error`
 - `failure_diagnostic`
 - `normalization_summary`
@@ -235,6 +324,8 @@ X-API-Key: your-rust-api-key
 
 - 前端应以 `status` 判断任务是否结束
 - 前端应以 `actions.*.enabled` 和 `artifacts.*.ready` 判断下载按钮是否可用
+- `failure` 是结构化失败信息真源，`failure_diagnostic` 是兼容旧前端的简化视图
+- `runtime.stage_history` 回答“任务阶段如何演进、每阶段花了多久”
 - 不要用进度百分比推断任务已经完成
 
 ### 5.4 查询任务列表
@@ -244,11 +335,14 @@ X-API-Key: your-rust-api-key
 适合列表页。每项返回：
 
 - `job_id`
+- `display_name`
 - `workflow`
 - `status`
+- `trace_id`
 - `stage`
 - `created_at`
 - `updated_at`
+- `detail_path`
 - `detail_url`
 
 ### 5.5 查询事件流
@@ -271,11 +365,47 @@ X-API-Key: your-rust-api-key
 - `message`
 - `payload`
 
+事件契约：
+
+- 结果按 `seq` 升序返回
+- `seq` 是同一任务内的单调递增序号
+- `stage` 表示事件发生时的当前阶段
+- `/events` 是排障时的追加型事件真源
+- `runtime.stage_history` 是详情页里的阶段时间线真源
+
 事件流也会落盘到：
 
 - `DATA_ROOT/jobs/{job_id}/logs/events.jsonl`
 
-### 5.6 下载产物
+### 5.6 查询产物清单
+
+`GET /api/v1/jobs/{job_id}/artifacts-manifest`
+
+这个接口是正式的产物发现入口。每个条目至少包含：
+
+- `artifact_key`
+- `artifact_group`
+- `artifact_kind`
+- `ready`
+- `content_type`
+- `relative_path`
+- `source_stage`
+- `resource_path`
+- `resource_url`
+
+前端或脚本应优先：
+
+1. 查询 `artifacts-manifest`
+2. 找目标 `artifact_key`
+3. 判断 `ready`
+4. 再使用 `resource_path` / `resource_url`
+
+其中：
+
+- `artifacts` 详情块适合页面直接判断按钮状态
+- `artifacts-manifest` 适合做完整的机器发现和下载映射
+
+### 5.7 下载产物
 
 主任务下载接口：
 
@@ -297,9 +427,14 @@ X-API-Key: your-rust-api-key
 - `artifacts.markdown`
 - `artifacts.bundle`
 
+补充：
+
+- `artifacts.pdf` / `artifacts.markdown` / `artifacts.bundle` 这些嵌套对象是当前推荐读取字段
+- 同级的 `pdf_url` / `markdown_url` / `bundle_url` 等字段保留为兼容别名，语义上更接近 path alias，不建议作为新前端主读取字段
+
 如果 `ready=false` 或 `enabled=false`，不要自行拼接下载链接强行访问。
 
-### 5.7 取消任务
+### 5.8 取消任务
 
 `POST /api/v1/jobs/{job_id}/cancel`
 
@@ -318,6 +453,7 @@ X-API-Key: your-rust-api-key
 - `GET /api/v1/ocr/jobs/{job_id}`
 - `GET /api/v1/ocr/jobs/{job_id}/events`
 - `GET /api/v1/ocr/jobs/{job_id}/artifacts`
+- `GET /api/v1/ocr/jobs/{job_id}/artifacts-manifest`
 - `GET /api/v1/ocr/jobs/{job_id}/normalized-document`
 - `GET /api/v1/ocr/jobs/{job_id}/normalization-report`
 - `POST /api/v1/ocr/jobs/{job_id}/cancel`
@@ -384,13 +520,15 @@ X-API-Key: your-rust-api-key
 
 `GET /api/v1/jobs/{job_id}` 在失败时通常会返回：
 
+- `failure.stage`：结构化失败阶段
+- `failure.category`：结构化失败分类
+- `failure.summary`：结构化失败摘要
+- `failure.retryable`：是否建议重试
+- `failure.root_cause`：识别出的根因
+- `failure.suggestion`：建议动作
+- `failure_diagnostic.failed_stage`：兼容旧前端的失败阶段字段
+- `failure_diagnostic.error_kind`：兼容旧前端的失败类型字段
 - `error`：原始错误摘要
-- `failure_diagnostic.stage`：失败阶段
-- `failure_diagnostic.type`：归类后的错误类型
-- `failure_diagnostic.summary`：简短摘要
-- `failure_diagnostic.retryable`：是否建议重试
-- `failure_diagnostic.root_cause`：识别出的根因
-- `failure_diagnostic.suggestion`：建议动作
 - `log_tail`：最近日志尾部
 
 当前已重点覆盖的错误类型包括：
@@ -403,8 +541,9 @@ X-API-Key: your-rust-api-key
 
 前端建议：
 
-- 失败时先展示 `failure_diagnostic.summary`
-- 再展示 `suggestion`
+- 失败时先展示 `failure.summary`
+- 再展示 `failure.suggestion`
+- 如果前端还没切到新字段，可继续读 `failure_diagnostic.summary`
 - 开发模式下附带 `log_tail`
 
 ## 10. 常见排查点

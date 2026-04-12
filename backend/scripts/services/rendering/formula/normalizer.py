@@ -23,8 +23,54 @@ STRUCTURAL_LATEX_COMMANDS = {
     "binom",
 }
 
-STYLE_WRAPPER_MACROS = r"(?:mathbf|mathrm|mathit|mathsf|mathtt|pmb|bf|rm|it|sf|tt)"
+STYLE_WRAPPER_MACROS = r"(?:pmb|bf|rm|it|sf|tt)"
 LEGACY_LAYOUT_WRAPPER_MACROS = r"(?:smash|mbox|hbox|vbox|fbox|textnormal|textrm|textsf|texttt)"
+
+
+def _strip_trailing_formula_punctuation(expr: str) -> str:
+    return re.sub(r"\s*([,.;:])\s*$", "", expr)
+
+
+def _compact_mathrm_payload(expr: str) -> str:
+    def _collapse_mathrm_letters(match: re.Match[str]) -> str:
+        inner = match.group(1)
+        collapsed = re.sub(r"\s+", "", inner)
+        return f"\\mathrm{{{collapsed}}}"
+
+    expr = re.sub(
+        r"\\mathrm\s*\{\s*\{\s*([A-Za-z0-9](?:\s+[A-Za-z0-9])+)\s*\}\s*\}",
+        _collapse_mathrm_letters,
+        expr,
+    )
+    expr = re.sub(
+        r"\\mathrm\s*\{\s*([A-Za-z0-9](?:\s+[A-Za-z0-9])+)\s*\}",
+        _collapse_mathrm_letters,
+        expr,
+    )
+    return expr
+
+
+def _repair_common_ocr_formula_noise(expr: str) -> str:
+    expr = re.sub(r"\bC\s*0\s*0\s*H(?=\s*\^\s*\{\s*\*\s*\})", "COOH", expr)
+
+    def _compact_superscript_mathrm(match: re.Match[str]) -> str:
+        superscript = re.sub(r"\s+", "", match.group(2))
+        return rf"\mathrm{{{match.group(1)}^{{{superscript}}}}}"
+
+    expr = re.sub(
+        r"\\mathrm\s*\{\s*([A-Za-z0-9]+)\s*\^\s*\{\s*([^{}]+?)\s*\}\s*\}",
+        _compact_superscript_mathrm,
+        expr,
+    )
+    expr = re.sub(r"(?<=\d)\s*\.\s*(?=\d)", ".", expr)
+    expr = re.sub(r"(?<=\d)\s+(?=\d)", "", expr)
+    expr = re.sub(r"~\s*\\mathrm\s*\{\s*e\s*V\s*\}\s*\.?", r" \\mathrm{eV}", expr)
+    expr = re.sub(r"\\vec\s*\{\s*([A-Za-z])\s*\}", r"\1", expr)
+    expr = re.sub(r"\\bf\s*\{\s*([A-Za-z0-9\-+*/]+)\s*\}", r"\1", expr)
+    expr = re.sub(r"\{\s*\\bf\s+([^{}]+?)\s*\}", r"{\1}", expr)
+    expr = re.sub(r"^\{\s*([A-Za-z])\s*\}(?=\s+\{)", r"\1", expr)
+    expr = _strip_trailing_formula_punctuation(expr)
+    return expr
 
 
 def _unwrap_style_wrappers(expr: str) -> str:
@@ -98,23 +144,12 @@ def normalize_formula_for_latex_math(formula_text: str) -> str:
     if not expr:
         return expr
 
-    def _collapse_mathrm_letters(match: re.Match[str]) -> str:
-        inner = match.group(1)
-        collapsed = re.sub(r"\s+", "", inner)
-        return f"\\mathrm{{{collapsed}}}"
-
     expr = re.sub(r"\\begin\{array\}\s*\{[^{}]*\}\s*", "", expr)
     expr = re.sub(r"\s*\\end\{array\}", "", expr)
     expr = re.sub(r"\\cal\s+([A-Za-z])", r"\\mathcal{\1}", expr)
     expr = re.sub(r"\\mathscr\b", r"\\mathcal", expr)
     expr = re.sub(r"\\Breve\b", r"\\breve", expr)
     expr = re.sub(r"\\Vec\b", r"\\vec", expr)
-    expr = re.sub(r"\\bf\b", r"\\mathbf", expr)
-    expr = re.sub(r"\\pmb\b", r"\\mathbf", expr)
-    expr = re.sub(r"\\rm\b", r"\\mathrm", expr)
-    expr = re.sub(r"\\it\b", r"\\mathit", expr)
-    expr = re.sub(r"\\sf\b", r"\\mathsf", expr)
-    expr = re.sub(r"\\tt\b", r"\\mathtt", expr)
     expr = re.sub(r"\\textsuperscript\s*\{\s*([^{}]+?)\s*\}", r"^{\1}", expr)
     expr = re.sub(r"\\textcircled\s*\{\s*\\times\s*\}", r"\\otimes", expr)
     expr = re.sub(
@@ -126,16 +161,7 @@ def normalize_formula_for_latex_math(formula_text: str) -> str:
     expr = re.sub(r"\\textcircled\s*\{\s*([^{}]+?)\s*\}", r"\1", expr)
     expr = re.sub(r"\\(?:scriptstyle|scriptscriptstyle|textstyle|displaystyle)\b", "", expr)
 
-    expr = re.sub(
-        r"\\mathrm\s*\{\s*\{\s*([A-Za-z](?:\s+[A-Za-z])+)\s*\}\s*\}",
-        _collapse_mathrm_letters,
-        expr,
-    )
-    expr = re.sub(
-        r"\\mathrm\s*\{\s*([A-Za-z](?:\s+[A-Za-z])+)\s*\}",
-        _collapse_mathrm_letters,
-        expr,
-    )
+    expr = _compact_mathrm_payload(expr)
 
     expr = re.sub(r"(?<=\d)\s*\\dot\b(?=\s*$)", ".", expr)
     expr = re.sub(r"(?<=\d)\s*\\dot\b(?=\s*[\)\],;])", ".", expr)
@@ -143,21 +169,15 @@ def normalize_formula_for_latex_math(formula_text: str) -> str:
     expr = _unwrap_style_wrappers(expr)
     expr = _unwrap_legacy_layout_wrappers(expr)
     expr = re.sub(r"\{\s*\\(?:bf|rm|it|tt|sf|pmb)\s*\}", "", expr)
+    expr = re.sub(r"^\{\s*([^{}]+?)\s*\}$", r"\1", expr)
 
-    expr = re.sub(r"\\textcircled\s*\{\s*\\times\s*\}", r"\\otimes", expr)
-    expr = re.sub(
-        r"\\textcircled\s*\{\s*\\scriptsize\s*\{\s*\\parallel\s*\}\s*\}",
-        r"\\circ",
-        expr,
-    )
-    expr = re.sub(r"\\textcircled\s*\{\s*\\parallel\s*\}", r"\\circ", expr)
-    expr = re.sub(r"\\textcircled\s*\{\s*([^{}]+?)\s*\}", r"\1", expr)
-
+    expr = _repair_common_ocr_formula_noise(expr)
     expr = re.sub(r"\.\s+([\)\],;])", r".\1", expr)
     expr = re.sub(r"(?<=\d)\s*\.\s*(?=\d)", ".", expr)
     expr = re.sub(r"(?<=\d)\s+(?=\d)", "", expr)
     expr = re.sub(r"\s*([=+\-*/<>:,;])\s*", r" \1 ", expr)
     expr = re.sub(r"\s+", " ", expr).strip()
+    expr = re.sub(r"\\mathrm\s*\{\s*COOH\s*\^\s*\{\s*\*\s*\}\s*\}", r"\\mathrm{COOH^{*}}", expr)
     if expr.startswith(("_", "^")):
         expr = "{} " + expr
     return expr

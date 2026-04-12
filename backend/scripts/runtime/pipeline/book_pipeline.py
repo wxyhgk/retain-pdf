@@ -34,6 +34,11 @@ def run_book_pipeline(
     render_mode: str,
     rule_profile_name: str = "general_sci",
     custom_rules_text: str = "",
+    glossary_id: str = "",
+    glossary_name: str = "",
+    glossary_resource_entry_count: int = 0,
+    glossary_inline_entry_count: int = 0,
+    glossary_overridden_entry_count: int = 0,
     glossary_entries: list[GlossaryEntry] | None = None,
     compile_workers: int | None = None,
     typst_font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
@@ -56,13 +61,23 @@ def run_book_pipeline(
         source_pdf_path=source_pdf_path,
         rule_profile_name=rule_profile_name,
         custom_rules_text=custom_rules_text,
+        glossary_id=glossary_id,
+        glossary_name=glossary_name,
+        glossary_resource_entry_count=glossary_resource_entry_count,
+        glossary_inline_entry_count=glossary_inline_entry_count,
+        glossary_overridden_entry_count=glossary_overridden_entry_count,
         glossary_entries=glossary_entries or [],
     )
     translate_elapsed = time.perf_counter() - total_started
     diagnostics_path = output_dir.parent / ARTIFACTS_DIR_NAME / "translation_diagnostics.json"
     translation_run_diagnostics = translation_summary.get("translation_run_diagnostics")
     diagnostics_summary = (
-        write_translation_diagnostics(diagnostics_path, translation_run_diagnostics)
+        write_translation_diagnostics(
+            diagnostics_path,
+            translation_run_diagnostics,
+            glossary=translation_summary.get("glossary"),
+            translated_pages_map=translation_summary.get("translated_pages_map"),
+        )
         if translation_run_diagnostics is not None
         else {}
     )
@@ -98,6 +113,7 @@ def run_book_pipeline(
         "translated_items_total": translated_items_total,
         "rule_profile_name": translation_summary.get("rule_profile_name", ""),
         "custom_rules_text": translation_summary.get("custom_rules_text", ""),
+        "glossary": translation_summary.get("glossary", {}),
         "translate_elapsed": translate_elapsed,
         "save_elapsed": save_elapsed,
         "total_elapsed": total_elapsed,

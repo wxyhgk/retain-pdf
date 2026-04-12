@@ -1,21 +1,25 @@
 import re
 
 import fitz
+from services.rendering.layout.payload.text_common import restore_render_protected_text
 
 
-TOKEN_RE = re.compile(r"(\[\[FORMULA_\d+]]|\s+|[A-Za-z0-9_\-./]+|[\u4e00-\u9fff]|.)")
+TOKEN_RE = re.compile(r"(<[futnvc]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]|\s+|[A-Za-z0-9_\-./]+|[\u4e00-\u9fff]|.)")
 WORD_RE = re.compile(r"[A-Za-z0-9]+(?:[-./][A-Za-z0-9]+)*|[\u4e00-\u9fff]+")
 
 
 def get_item_translated_text(item: dict) -> str:
     if "render_protected_text" in item:
-        return str(item.get("render_protected_text", "") or "").strip()
-    return (
+        return restore_render_protected_text(str(item.get("render_protected_text", "") or "").strip(), item)
+    return restore_render_protected_text(
+        (
         item.get("translation_unit_translated_text")
         or item.get("group_translated_text")
         or item.get("translated_text")
         or ""
-    ).strip()
+        ).strip(),
+        item,
+    )
 
 
 def get_item_formula_map(item: dict) -> list[dict]:

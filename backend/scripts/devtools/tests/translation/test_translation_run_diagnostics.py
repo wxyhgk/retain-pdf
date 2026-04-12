@@ -14,6 +14,7 @@ import requests
 REPO_SCRIPTS_ROOT = Path("/home/wxyhgk/tmp/Code/backend/scripts")
 sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
+from foundation.shared.structured_errors import classify_exception
 from services.translation.diagnostics import TranslationRunDiagnostics
 from services.translation.diagnostics import classify_provider_family
 from services.translation.diagnostics import infer_stage_from_request_label
@@ -57,6 +58,9 @@ class _FakeResponse:
 
 class _SchemaRejectingResponse:
     status_code = 400
+    url = "https://example.com/v1/chat/completions"
+    reason = "Bad Request"
+    text = '{"error":"json_schema unsupported"}'
 
     def raise_for_status(self):
         raise requests.HTTPError("400 Client Error: Bad Request", response=self)
@@ -86,6 +90,28 @@ class _SchemaFallbackSession:
         if isinstance(response_format, dict) and response_format.get("type") == "json_schema":
             return _SchemaRejectingResponse()
         return _FakeResponse({"choices": [{"message": {"content": '{"ok": true}'}}]})
+
+
+class _AlwaysBadRequestResponse:
+    status_code = 400
+    url = "https://example.com/v1/chat/completions"
+    reason = "Bad Request"
+
+    def __init__(self, text: str):
+        self.text = text
+
+
+class _AlwaysBadRequestSession:
+    def __init__(self, text: str):
+        self.text = text
+
+    def post(self, *args, **kwargs):
+        return _AlwaysBadRequestResponse(self.text)
+
+
+class _StatusResponse:
+    def __init__(self, status_code: int):
+        self.status_code = status_code
 
 
 class TranslationRunDiagnosticsTests(unittest.TestCase):
@@ -248,6 +274,51 @@ class TranslationRunDiagnosticsTests(unittest.TestCase):
         self.assertEqual(content, '{"ok": true}')
         self.assertEqual(len(session.calls), 1)
         self.assertEqual(session.calls[0]["response_format"]["type"], "json_object")
+
+    def test_request_chat_content_includes_response_body_and_request_meta_on_400(self):
+        deepseek_client = load_deepseek_client()
+        session = _AlwaysBadRequestSession('{"error":{"message":"prompt too long"}}')
+        with patch.object(deepseek_client, "get_session", return_value=session):
+            with self.assertRaises(requests.HTTPError) as ctx:
+                deepseek_client.request_chat_content(
+                    [{"role": "user", "content": "hello"}],
+                    api_key="token",
+                    model="demo-model",
+                    base_url="https://example.com/v1",
+                    timeout=120,
+                    request_label="bad-request-test",
+                )
+        message = str(ctx.exception)
+        self.assertIn("prompt too long", message)
+        self.assertIn("request_meta=model=demo-model", message)
+        self.assertIn("message_chars=5", message)
+        self.assertIn("body_bytes=", message)
+
+
+class StructuredFailureClassificationTests(unittest.TestCase):
+    def test_classify_exception_maps_http_400_to_upstream_bad_request(self):
+        try:
+            raise requests.HTTPError(
+                "400 Client Error: Bad Request for url: http://1.94.67.196:18080/v1/chat/completions",
+                response=_StatusResponse(400),
+            )
+        except requests.HTTPError as exc:
+            failure = classify_exception(exc, default_stage="translation", provider="translation")
+        self.assertEqual(failure.error_type, "upstream_bad_request")
+        self.assertEqual(failure.summary, "上游服务拒绝请求（400）")
+        self.assertFalse(failure.retryable)
+
+    def test_classify_exception_keeps_http_401_as_auth_failed(self):
+        try:
+            raise requests.HTTPError(
+                "401 Client Error: Unauthorized for url: https://example.com/v1/chat/completions",
+                response=_StatusResponse(401),
+            )
+        except requests.HTTPError as exc:
+            failure = classify_exception(exc, default_stage="translation", provider="translation")
+        self.assertEqual(failure.error_type, "auth_failed")
+        self.assertEqual(failure.summary, "鉴权失败")
+        self.assertFalse(failure.retryable)
 
 
 if __name__ == "__main__":

@@ -6,8 +6,8 @@ use serde_json::Value;
 use crate::job_failure::classify_job_failure;
 use crate::ocr_provider::OcrProviderDiagnostics;
 use crate::storage_paths::{
-    resolve_markdown_path, resolve_normalization_report, resolve_normalized_document,
-    resolve_output_pdf,
+    resolve_data_path, resolve_markdown_path, resolve_normalization_report,
+    resolve_normalized_document, resolve_output_pdf, resolve_translation_manifest,
 };
 
 use super::common::{JobStatusKind, UploadRecord, UploadView, WorkflowKind};
@@ -167,6 +167,7 @@ pub struct JobDetailView {
     pub error: Option<String>,
     pub failure_diagnostic: Option<JobFailureDiagnosticView>,
     pub normalization_summary: Option<NormalizationSummaryView>,
+    pub glossary_summary: Option<GlossaryUsageSummaryView>,
     pub log_tail: Vec<String>,
 }
 
@@ -196,6 +197,32 @@ pub struct NormalizationSummaryView {
     pub schema_version: String,
     pub page_count: Option<i64>,
     pub block_count: Option<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq, Eq)]
+pub struct GlossaryUsageSummaryView {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default)]
+    pub glossary_id: String,
+    #[serde(default)]
+    pub glossary_name: String,
+    #[serde(default)]
+    pub entry_count: i64,
+    #[serde(default)]
+    pub resource_entry_count: i64,
+    #[serde(default)]
+    pub inline_entry_count: i64,
+    #[serde(default)]
+    pub overridden_entry_count: i64,
+    #[serde(default)]
+    pub source_hit_entry_count: i64,
+    #[serde(default)]
+    pub target_hit_entry_count: i64,
+    #[serde(default)]
+    pub unused_entry_count: i64,
+    #[serde(default)]
+    pub unapplied_source_hit_entry_count: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -297,7 +324,7 @@ pub fn build_job_links(job_id: &str, base_url: &str) -> JobLinksView {
 fn job_path_prefix(workflow: &WorkflowKind) -> &'static str {
     match workflow {
         WorkflowKind::Ocr => "/api/v1/ocr/jobs",
-        WorkflowKind::Mineru => "/api/v1/jobs",
+        WorkflowKind::Mineru | WorkflowKind::Translate | WorkflowKind::Render => "/api/v1/jobs",
     }
 }
 
@@ -566,11 +593,16 @@ pub fn job_to_detail(
         error: job.error.clone(),
         failure_diagnostic: failure.as_ref().map(job_failure_to_legacy_view),
         normalization_summary: load_normalization_summary(job, data_root),
+        glossary_summary: load_glossary_summary(job, data_root),
         log_tail: job.log_tail.clone(),
     }
 }
 
-pub fn job_to_list_item(job: &JobSnapshot, base_url: &str, display_name: String) -> JobListItemView {
+pub fn job_to_list_item(
+    job: &JobSnapshot,
+    base_url: &str,
+    display_name: String,
+) -> JobListItemView {
     let detail_path = format!("{}/{}", job_path_prefix(&job.workflow), job.job_id);
     JobListItemView {
         job_id: job.job_id.clone(),
@@ -677,6 +709,46 @@ pub fn load_normalization_summary(
     })
 }
 
+pub fn load_glossary_summary(
+    job: &JobSnapshot,
+    data_root: &Path,
+) -> Option<GlossaryUsageSummaryView> {
+    load_glossary_summary_from_manifest(job, data_root)
+        .or_else(|| load_glossary_summary_from_pipeline_summary(job, data_root))
+}
+
+fn load_glossary_summary_from_manifest(
+    job: &JobSnapshot,
+    data_root: &Path,
+) -> Option<GlossaryUsageSummaryView> {
+    let path = resolve_translation_manifest(job, data_root)?;
+    load_glossary_summary_from_json_path(&path)
+}
+
+fn load_glossary_summary_from_pipeline_summary(
+    job: &JobSnapshot,
+    data_root: &Path,
+) -> Option<GlossaryUsageSummaryView> {
+    let path = job.artifacts.as_ref()?.summary.as_ref()?;
+    let path = resolve_data_path(data_root, path).ok()?;
+    load_glossary_summary_from_json_path(&path)
+}
+
+fn load_glossary_summary_from_json_path(path: &Path) -> Option<GlossaryUsageSummaryView> {
+    let payload: Value = serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()?;
+    let summary: GlossaryUsageSummaryView =
+        serde_json::from_value(payload.get("glossary")?.clone()).ok()?;
+    if summary.enabled
+        || summary.entry_count > 0
+        || !summary.glossary_id.is_empty()
+        || !summary.glossary_name.is_empty()
+    {
+        Some(summary)
+    } else {
+        None
+    }
+}
+
 fn file_name_from_path(path: Option<&Path>) -> Option<String> {
     path.and_then(|p| p.file_name())
         .map(|v| v.to_string_lossy().to_string())
@@ -706,9 +778,43 @@ fn job_failure_to_legacy_view(failure: &JobFailureInfo) -> JobFailureDiagnosticV
 
 #[cfg(test)]
 mod tests {
-    use super::job_to_detail;
-    use crate::models::CreateJobInput;
-    use crate::models::JobSnapshot;
+    use std::fs;
+
+    use super::{
+        build_artifact_manifest, build_job_actions, build_job_links_with_workflow, job_to_detail,
+        job_to_list_item,
+    };
+    use crate::models::{
+        CreateJobInput, JobArtifactRecord, JobFailureInfo, JobSnapshot, JobStatusKind, WorkflowKind,
+    };
+    use crate::storage_paths::{
+        ARTIFACT_KEY_MARKDOWN_RAW, ARTIFACT_KEY_NORMALIZED_DOCUMENT_JSON,
+        ARTIFACT_KEY_TRANSLATED_PDF, ARTIFACT_KEY_TRANSLATION_MANIFEST_JSON,
+    };
+
+    fn build_job(job_id: &str, workflow: WorkflowKind) -> JobSnapshot {
+        let mut input = CreateJobInput::default();
+        input.workflow = workflow;
+        JobSnapshot::new(job_id.to_string(), input, vec!["python".to_string()])
+    }
+
+    fn artifact_record(job_id: &str, artifact_key: &str) -> JobArtifactRecord {
+        JobArtifactRecord {
+            job_id: job_id.to_string(),
+            artifact_key: artifact_key.to_string(),
+            artifact_group: "test".to_string(),
+            artifact_kind: "file".to_string(),
+            relative_path: format!("jobs/{job_id}/{artifact_key}"),
+            file_name: Some(format!("{artifact_key}.bin")),
+            content_type: "application/octet-stream".to_string(),
+            ready: true,
+            size_bytes: Some(42),
+            checksum: None,
+            source_stage: Some("test".to_string()),
+            created_at: "2026-04-11T00:00:00Z".to_string(),
+            updated_at: "2026-04-11T00:00:00Z".to_string(),
+        }
+    }
 
     #[test]
     fn job_detail_view_contains_request_payload() {
@@ -732,5 +838,225 @@ mod tests {
 
         assert_eq!(detail.request_payload.ocr.page_ranges, "1-5");
         assert_eq!(detail.request_payload.source.upload_id, "upload-1");
+    }
+
+    #[test]
+    fn workflow_contract_uses_expected_route_prefixes() {
+        let cases = [
+            (WorkflowKind::Mineru, "/api/v1/jobs"),
+            (WorkflowKind::Translate, "/api/v1/jobs"),
+            (WorkflowKind::Render, "/api/v1/jobs"),
+            (WorkflowKind::Ocr, "/api/v1/ocr/jobs"),
+        ];
+
+        for (workflow, prefix) in cases {
+            let job = build_job("job-contract", workflow.clone());
+            let links =
+                build_job_links_with_workflow("job-contract", &workflow, "https://api.example");
+            let pdf_ready = !matches!(workflow, WorkflowKind::Ocr);
+            let actions = build_job_actions(&job, "https://api.example", pdf_ready, false, false);
+            let item = job_to_list_item(&job, "https://api.example", "paper.pdf".to_string());
+
+            assert_eq!(links.self_path, format!("{prefix}/job-contract"));
+            assert_eq!(links.events_path, format!("{prefix}/job-contract/events"));
+            assert_eq!(actions.open_job.path, format!("{prefix}/job-contract"));
+            assert_eq!(
+                actions.open_artifacts.path,
+                format!("{prefix}/job-contract/artifacts")
+            );
+            assert_eq!(
+                actions.download_pdf.path,
+                format!("{prefix}/job-contract/pdf")
+            );
+            assert_eq!(actions.download_pdf.enabled, pdf_ready);
+            assert!(!actions.open_markdown.enabled);
+            assert_eq!(item.detail_path, format!("{prefix}/job-contract"));
+        }
+    }
+
+    #[test]
+    fn artifact_manifest_maps_canonical_resource_paths() {
+        let job = build_job("job-artifacts", WorkflowKind::Translate);
+        let manifest = build_artifact_manifest(
+            &job,
+            "https://api.example",
+            &[
+                artifact_record("job-artifacts", ARTIFACT_KEY_TRANSLATED_PDF),
+                artifact_record("job-artifacts", ARTIFACT_KEY_MARKDOWN_RAW),
+                artifact_record("job-artifacts", ARTIFACT_KEY_TRANSLATION_MANIFEST_JSON),
+            ],
+        );
+
+        let translated_pdf = manifest
+            .items
+            .iter()
+            .find(|item| item.artifact_key == ARTIFACT_KEY_TRANSLATED_PDF)
+            .expect("translated pdf item");
+        assert_eq!(
+            translated_pdf.resource_path.as_deref(),
+            Some("/api/v1/jobs/job-artifacts/pdf")
+        );
+        assert_eq!(
+            translated_pdf.resource_url.as_deref(),
+            Some("https://api.example/api/v1/jobs/job-artifacts/pdf")
+        );
+
+        let markdown_raw = manifest
+            .items
+            .iter()
+            .find(|item| item.artifact_key == ARTIFACT_KEY_MARKDOWN_RAW)
+            .expect("markdown raw item");
+        assert_eq!(
+            markdown_raw.resource_path.as_deref(),
+            Some("/api/v1/jobs/job-artifacts/markdown?raw=true")
+        );
+
+        let translation_manifest = manifest
+            .items
+            .iter()
+            .find(|item| item.artifact_key == ARTIFACT_KEY_TRANSLATION_MANIFEST_JSON)
+            .expect("translation manifest item");
+        assert_eq!(
+            translation_manifest.resource_path.as_deref(),
+            Some("/api/v1/jobs/job-artifacts/artifacts/translation_manifest_json")
+        );
+    }
+
+    #[test]
+    fn ocr_artifact_manifest_uses_ocr_route_family() {
+        let job = build_job("ocr-artifacts", WorkflowKind::Ocr);
+        let manifest = build_artifact_manifest(
+            &job,
+            "https://api.example",
+            &[artifact_record(
+                "ocr-artifacts",
+                ARTIFACT_KEY_NORMALIZED_DOCUMENT_JSON,
+            )],
+        );
+
+        let document = manifest.items.first().expect("normalized document item");
+        assert_eq!(
+            document.resource_path.as_deref(),
+            Some("/api/v1/ocr/jobs/ocr-artifacts/normalized-document")
+        );
+    }
+
+    #[test]
+    fn job_detail_view_exposes_runtime_and_failure_contract() {
+        let mut job = build_job("job-failure", WorkflowKind::Render);
+        job.status = JobStatusKind::Failed;
+        job.stage = Some("rendering".to_string());
+        job.stage_detail = Some("render failed".to_string());
+        job.error = Some("TypstCompileError".to_string());
+        job.updated_at = "2026-04-11T00:00:10Z".to_string();
+        job.replace_failure_info(Some(JobFailureInfo {
+            stage: "rendering".to_string(),
+            category: "render_failure".to_string(),
+            code: Some("typst_compile_error".to_string()),
+            summary: "渲染阶段失败".to_string(),
+            root_cause: Some("Typst syntax error".to_string()),
+            retryable: false,
+            upstream_host: None,
+            provider: None,
+            suggestion: Some("检查渲染输入".to_string()),
+            last_log_line: Some("compile error".to_string()),
+            raw_error_excerpt: Some("compile error".to_string()),
+            raw_diagnostic: None,
+            ai_diagnostic: None,
+        }));
+        job.sync_runtime_state();
+
+        let detail = job_to_detail(
+            &job,
+            "https://api.example",
+            std::path::Path::new("/tmp"),
+            false,
+            false,
+            false,
+        );
+
+        assert_eq!(detail.status, JobStatusKind::Failed);
+        assert_eq!(detail.workflow, WorkflowKind::Render);
+        assert_eq!(
+            detail.failure.as_ref().map(|item| item.category.as_str()),
+            Some("render_failure")
+        );
+        assert_eq!(
+            detail
+                .failure_diagnostic
+                .as_ref()
+                .map(|item| item.failed_stage.as_str()),
+            Some("rendering")
+        );
+        assert_eq!(
+            detail
+                .failure_diagnostic
+                .as_ref()
+                .map(|item| item.error_kind.as_str()),
+            Some("render_failure")
+        );
+        assert_eq!(detail.error.as_deref(), Some("TypstCompileError"));
+        assert_eq!(
+            detail
+                .runtime
+                .as_ref()
+                .and_then(|runtime| runtime.terminal_reason.as_deref()),
+            Some("failed")
+        );
+        assert_eq!(detail.actions.cancel.enabled, false);
+        assert_eq!(detail.artifacts.pdf.ready, false);
+    }
+
+    #[test]
+    fn job_detail_view_loads_glossary_summary_from_translation_manifest() {
+        let temp = std::env::temp_dir().join(format!("view-glossary-{}", fastrand::u64(..)));
+        let data_root = temp.join("data");
+        let translations_dir = data_root.join("jobs/job-glossary/translated");
+        fs::create_dir_all(&translations_dir).expect("create translations dir");
+        fs::write(
+            translations_dir.join("translation-manifest.json"),
+            r#"{
+              "schema": "translation_manifest_v1",
+              "schema_version": 1,
+              "pages": [],
+              "glossary": {
+                "enabled": true,
+                "glossary_id": "glossary-123",
+                "glossary_name": "materials",
+                "entry_count": 2,
+                "resource_entry_count": 1,
+                "inline_entry_count": 1,
+                "overridden_entry_count": 1,
+                "source_hit_entry_count": 2,
+                "target_hit_entry_count": 1,
+                "unused_entry_count": 0,
+                "unapplied_source_hit_entry_count": 1
+              }
+            }"#,
+        )
+        .expect("write manifest");
+
+        let mut job = build_job("job-glossary", WorkflowKind::Translate);
+        job.artifacts = Some(crate::models::JobArtifacts {
+            translations_dir: Some("jobs/job-glossary/translated".to_string()),
+            ..Default::default()
+        });
+
+        let detail = job_to_detail(&job, "https://api.example", &data_root, false, false, false);
+
+        assert_eq!(
+            detail
+                .glossary_summary
+                .as_ref()
+                .map(|item| item.glossary_id.as_str()),
+            Some("glossary-123")
+        );
+        assert_eq!(
+            detail
+                .glossary_summary
+                .as_ref()
+                .map(|item| item.target_hit_entry_count),
+            Some(1)
+        );
     }
 }

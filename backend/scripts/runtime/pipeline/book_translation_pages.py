@@ -10,6 +10,7 @@ from services.translation.workflow import translate_items_to_path
 from services.translation.payload import ensure_translation_template
 from services.translation.payload import load_translations
 from services.translation.payload import save_translations
+from services.translation.payload import write_translation_manifest
 
 
 def translate_book_pages(
@@ -57,6 +58,10 @@ def translate_book_pages(
         )
         summaries.append(summary)
         translated_pages_map[page_idx] = load_translations(translation_path)
+    write_translation_manifest(
+        output_dir,
+        {page_idx: output_dir / default_page_translation_name(page_idx) for page_idx in translated_pages_map},
+    )
     return translated_pages_map, summaries
 
 
@@ -75,6 +80,7 @@ def load_page_payloads(
         ensure_translation_template(items, translation_path, page_idx=page_idx)
         translation_paths[page_idx] = translation_path
         page_payloads[page_idx] = load_translations(translation_path)
+    write_translation_manifest(output_dir, translation_paths)
     return translation_paths, page_payloads
 
 

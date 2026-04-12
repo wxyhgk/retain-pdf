@@ -16,6 +16,7 @@ class NormalizedBlockSpec(TypedDict, total=False):
     segments: list[dict[str, Any]]
     tags: list[str]
     derived: dict[str, Any]
+    continuation_hint: dict[str, Any]
     metadata: dict[str, Any]
     source: dict[str, Any]
 

@@ -37,12 +37,14 @@ pub const ARTIFACT_KEY_MARKDOWN_BUNDLE_ZIP: &str = "markdown_bundle_zip";
 pub const ARTIFACT_KEY_NORMALIZED_DOCUMENT_JSON: &str = "normalized_document_json";
 pub const ARTIFACT_KEY_NORMALIZATION_REPORT_JSON: &str = "normalization_report_json";
 pub const ARTIFACT_KEY_LAYOUT_JSON: &str = "layout_json";
+pub const ARTIFACT_KEY_TRANSLATION_MANIFEST_JSON: &str = "translation_manifest_json";
 pub const ARTIFACT_KEY_PROVIDER_BUNDLE_ZIP: &str = "provider_bundle_zip";
 pub const ARTIFACT_KEY_PROVIDER_RESULT_JSON: &str = "provider_result_json";
 pub const ARTIFACT_KEY_PROVIDER_RAW_DIR: &str = "provider_raw_dir";
 pub const ARTIFACT_KEY_PIPELINE_SUMMARY: &str = "pipeline_summary";
 pub const ARTIFACT_KEY_TRANSLATIONS_DIR: &str = "translations_dir";
 pub const ARTIFACT_KEY_EVENTS_JSONL: &str = "events_jsonl";
+pub const TRANSLATION_MANIFEST_FILE_NAME: &str = "translation-manifest.json";
 
 #[derive(Clone, Debug)]
 pub struct JobPaths {
@@ -328,6 +330,17 @@ pub fn resolve_typst_pdf(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf>
     )
 }
 
+pub fn resolve_translation_manifest(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {
+    let translations_dir = job.artifacts.as_ref()?.translations_dir.as_ref()?;
+    let path = resolve_data_path(data_root, translations_dir)
+        .ok()?
+        .join(TRANSLATION_MANIFEST_FILE_NAME);
+    if path.exists() {
+        return Some(path);
+    }
+    None
+}
+
 pub fn resolve_registered_artifact_path(
     data_root: &Path,
     artifact: &JobArtifactRecord,
@@ -469,6 +482,20 @@ pub fn collect_job_artifact_entries(
         ARTIFACT_KIND_FILE,
         "application/json",
         Some("normalizing".to_string()),
+        &now,
+    )?;
+    push_optional_artifact(
+        &mut items,
+        data_root,
+        &job.job_id,
+        resolve_translation_manifest(job, data_root)
+            .as_ref()
+            .map(|path| path.as_path()),
+        ARTIFACT_KEY_TRANSLATION_MANIFEST_JSON,
+        ARTIFACT_GROUP_JSON,
+        ARTIFACT_KIND_FILE,
+        "application/json",
+        Some("translation".to_string()),
         &now,
     )?;
     push_optional_artifact(
@@ -754,8 +781,11 @@ mod tests {
         .expect("typst source");
         fs::write(job_root.join("md/full.md"), b"# doc").expect("markdown");
         fs::write(job_root.join("ocr/normalized/document.v1.json"), b"{}").expect("json");
-        fs::write(job_root.join("logs/events.jsonl"), b"{\"event\":\"job_created\"}\n")
-            .expect("events jsonl");
+        fs::write(
+            job_root.join("logs/events.jsonl"),
+            b"{\"event\":\"job_created\"}\n",
+        )
+        .expect("events jsonl");
 
         let mut job = JobSnapshot::new(
             "job-1".to_string(),

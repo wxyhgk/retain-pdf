@@ -5,8 +5,8 @@ use rusqlite::{params, Connection, Row};
 use serde_json::Value;
 
 use crate::models::{
-    now_iso, JobArtifactRecord, JobArtifacts, JobEventRecord, JobFailureInfo, JobRuntimeInfo,
-    JobSnapshot, JobStatusKind, ResolvedJobSpec, UploadRecord, WorkflowKind,
+    now_iso, GlossaryRecord, JobArtifactRecord, JobArtifacts, JobEventRecord, JobFailureInfo,
+    JobRuntimeInfo, JobSnapshot, JobStatusKind, ResolvedJobSpec, UploadRecord, WorkflowKind,
 };
 use crate::storage_paths::{
     collect_job_artifact_entries, normalize_job_artifacts_for_storage,
@@ -118,6 +118,17 @@ fn row_to_job_artifact_record(row: &Row<'_>) -> rusqlite::Result<JobArtifactReco
     })
 }
 
+fn row_to_glossary_record(row: &Row<'_>) -> rusqlite::Result<GlossaryRecord> {
+    let entries_json: String = row.get(2)?;
+    Ok(GlossaryRecord {
+        glossary_id: row.get(0)?,
+        name: row.get(1)?,
+        entries: serde_json::from_str(&entries_json).unwrap_or_default(),
+        created_at: row.get(3)?,
+        updated_at: row.get(4)?,
+    })
+}
+
 #[derive(Clone)]
 pub struct Db {
     path: PathBuf,
@@ -130,6 +141,10 @@ impl Db {
     }
 
     fn connect(&self) -> Result<Connection> {
+        if let Some(parent) = self.path.parent() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("failed to create db directory: {}", parent.display()))?;
+        }
         let conn = Connection::open(&self.path)?;
         conn.execute_batch(
             r#"
@@ -205,6 +220,14 @@ impl Db {
                 PRIMARY KEY(job_id, seq)
             );
             CREATE INDEX IF NOT EXISTS idx_events_job_seq ON events(job_id, seq);
+            CREATE TABLE IF NOT EXISTS glossaries (
+                glossary_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                entries_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_glossaries_updated_at ON glossaries(updated_at DESC);
             "#,
         )?;
         Ok(conn)
@@ -397,6 +420,63 @@ impl Db {
             )?;
         }
         tx.commit()?;
+        Ok(())
+    }
+
+    pub fn save_glossary(&self, glossary: &GlossaryRecord) -> Result<()> {
+        let conn = self.connect()?;
+        conn.execute(
+            r#"
+            INSERT INTO glossaries (glossary_id, name, entries_json, created_at, updated_at)
+            VALUES (?1, ?2, ?3, ?4, ?5)
+            ON CONFLICT(glossary_id) DO UPDATE SET
+                name=excluded.name,
+                entries_json=excluded.entries_json,
+                created_at=excluded.created_at,
+                updated_at=excluded.updated_at
+            "#,
+            params![
+                glossary.glossary_id,
+                glossary.name,
+                serde_json::to_string(&glossary.entries)?,
+                glossary.created_at,
+                glossary.updated_at,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_glossary(&self, glossary_id: &str) -> Result<GlossaryRecord> {
+        let conn = self.connect()?;
+        let glossary = conn
+            .query_row(
+                "SELECT glossary_id, name, entries_json, created_at, updated_at FROM glossaries WHERE glossary_id = ?1",
+                params![glossary_id],
+                row_to_glossary_record,
+            )
+            .with_context(|| format!("glossary not found: {glossary_id}"))?;
+        Ok(glossary)
+    }
+
+    pub fn list_glossaries(&self) -> Result<Vec<GlossaryRecord>> {
+        let conn = self.connect()?;
+        let mut stmt = conn.prepare(
+            "SELECT glossary_id, name, entries_json, created_at, updated_at FROM glossaries ORDER BY updated_at DESC",
+        )?;
+        let rows = stmt.query_map([], row_to_glossary_record)?;
+        let mut items = Vec::new();
+        for row in rows {
+            items.push(row?);
+        }
+        Ok(items)
+    }
+
+    pub fn delete_glossary(&self, glossary_id: &str) -> Result<()> {
+        let conn = self.connect()?;
+        conn.execute(
+            "DELETE FROM glossaries WHERE glossary_id = ?1",
+            params![glossary_id],
+        )?;
         Ok(())
     }
 

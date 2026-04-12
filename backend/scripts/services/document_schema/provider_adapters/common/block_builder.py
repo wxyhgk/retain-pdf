@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from services.document_schema.compat import normalize_block_continuation_hint
 from services.document_schema.provider_adapters.common.specs import NormalizedBlockSpec
 
 
@@ -16,6 +17,7 @@ def build_block_record(spec: NormalizedBlockSpec) -> dict:
         "segments": list(spec.get("segments", []) or []),
         "tags": list(spec.get("tags", []) or []),
         "derived": dict(spec.get("derived", {}) or {}),
+        "continuation_hint": normalize_block_continuation_hint(spec.get("continuation_hint")),
         "metadata": dict(spec.get("metadata", {}) or {}),
         "source": dict(spec.get("source", {}) or {}),
     }

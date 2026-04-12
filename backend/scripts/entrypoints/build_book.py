@@ -19,7 +19,13 @@ def parse_args() -> argparse.Namespace:
         "--translations-dir",
         type=str,
         default="translations/book",
-        help="Directory under output/ containing per-page translation JSON files.",
+        help="Directory under output/ containing translation-manifest.json or legacy per-page translation JSON files.",
+    )
+    parser.add_argument(
+        "--translation-manifest",
+        type=str,
+        default="",
+        help="Optional explicit translation manifest path. When set, it overrides --translations-dir discovery.",
     )
     parser.add_argument(
         "--output",
@@ -95,10 +101,12 @@ def main() -> None:
         inner_bbox_dense_shrink_y=args.inner_bbox_dense_shrink_y,
     )
     output_pdf_path = paths.OUTPUT_DIR / args.output
+    translation_manifest_path = Path(args.translation_manifest) if args.translation_manifest else None
     summary = build_book_pipeline(
         source_pdf_path=Path(args.source_pdf),
-        translations_dir=paths.OUTPUT_DIR / args.translations_dir,
         output_pdf_path=output_pdf_path,
+        translations_dir=paths.OUTPUT_DIR / args.translations_dir,
+        translation_manifest_path=translation_manifest_path,
         start_page=args.start_page,
         end_page=args.end_page,
         compile_workers=args.compile_workers or None,

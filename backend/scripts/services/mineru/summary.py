@@ -54,6 +54,7 @@ def write_pipeline_summary(
             "pages_processed": result["pages_processed"],
             "translated_items_total": result["translated_items_total"],
             "rule_profile_name": result.get("rule_profile_name", ""),
+            "glossary": result.get("glossary", {}),
             "translate_elapsed": result["translate_elapsed"],
             "save_elapsed": result["save_elapsed"],
             "total_elapsed": result["total_elapsed"],
@@ -111,6 +112,15 @@ def print_pipeline_summary(
     print(format_stdout_kv(STDOUT_LABEL_TRANSLATIONS_DIR, result["output_dir"]))
     if result.get("rule_profile_name"):
         print(f"rule profile: {result['rule_profile_name']}")
+    if result.get("glossary", {}).get("enabled"):
+        glossary = result["glossary"]
+        print(
+            "glossary: "
+            f"name={glossary.get('glossary_name') or glossary.get('glossary_id') or '<inline>'} "
+            f"entries={glossary.get('entry_count', 0)} "
+            f"source_hits={glossary.get('source_hit_entry_count', 0)} "
+            f"target_hits={glossary.get('target_hit_entry_count', 0)}"
+        )
     print(format_stdout_kv(STDOUT_LABEL_OUTPUT_PDF, result["output_pdf_path"]))
     print(format_stdout_kv(STDOUT_LABEL_SUMMARY, summary_path))
     print(f"pages processed: {result['pages_processed']}")

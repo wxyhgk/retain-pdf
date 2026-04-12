@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 from services.document_schema.compat import upgrade_document_payload
+from services.document_schema.compat import normalize_block_continuation_hint
 from services.document_schema.adapters import adapt_path_to_document_v1
 from services.document_schema.semantics import is_algorithm_semantic
 from services.document_schema.semantics import is_reference_entry_semantic
@@ -409,6 +410,7 @@ def extract_block_item(
             "raw_type": raw_type,
             "tags": list(block.get("tags", []) or []),
             "derived": dict(block.get("derived", {}) or {}),
+            "continuation_hint": normalize_block_continuation_hint(block.get("continuation_hint")),
             "source": block.get("source", {}) or {},
         },
     )

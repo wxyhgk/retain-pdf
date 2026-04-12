@@ -64,6 +64,7 @@ def finalize_page_payloads(
     page_payloads: dict[int, list[dict]],
     translation_paths: dict[int, Path],
 ) -> dict[str, int]:
+    annotate_layout_zones_by_page(page_payloads)
     continuation_items = annotate_continuation_context_global(page_payloads)
     flat_payload = [item for page_idx in sorted(page_payloads) for item in page_payloads[page_idx]]
     continuation_summary = summarize_continuation_decisions(flat_payload)
@@ -72,6 +73,7 @@ def finalize_page_payloads(
         save_pages(page_payloads, translation_paths)
         print(
             f"book: continuation joined={continuation_summary['joined_items']} "
+            f"provider_joined={continuation_summary.get('provider_joined_items', 0)} "
             f"candidate_break={continuation_summary['candidate_break_items']}",
             flush=True,
         )

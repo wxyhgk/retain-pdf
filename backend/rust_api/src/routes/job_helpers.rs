@@ -36,12 +36,14 @@ pub fn build_submission_view(
     workflow: WorkflowKind,
     base_url: &str,
 ) -> JobSubmissionView {
+    let mut view_job = job.clone();
+    view_job.workflow = workflow.clone();
     JobSubmissionView {
         job_id: job.job_id.clone(),
         status,
-        workflow,
-        links: build_job_links_with_workflow(&job.job_id, &job.workflow, base_url),
-        actions: build_job_actions(job, base_url, false, false, false),
+        workflow: workflow.clone(),
+        links: build_job_links_with_workflow(&job.job_id, &workflow, base_url),
+        actions: build_job_actions(&view_job, base_url, false, false, false),
     }
 }
 
@@ -211,6 +213,8 @@ mod tests {
             run_ocr_job_script: scripts_dir.join("run_ocr_job.py"),
             run_normalize_ocr_script: scripts_dir.join("run_normalize_ocr.py"),
             run_translate_from_ocr_script: scripts_dir.join("run_translate_from_ocr.py"),
+            run_translate_only_script: scripts_dir.join("run_translate_only.py"),
+            run_render_only_script: scripts_dir.join("run_render_only.py"),
             run_failure_ai_diagnosis_script: scripts_dir.join("diagnose_failure_with_ai.py"),
             uploads_dir,
             downloads_dir,
@@ -265,6 +269,26 @@ mod tests {
 
         let err = ensure_cancelable(&job).expect_err("should reject succeeded job");
         assert!(err.to_string().contains("not cancelable"));
+    }
+
+    #[test]
+    fn submission_view_uses_declared_workflow_for_contract_links() {
+        let job = build_job();
+
+        let view = build_submission_view(
+            &job,
+            JobStatusKind::Queued,
+            WorkflowKind::Ocr,
+            "https://api.example",
+        );
+
+        assert_eq!(view.workflow, WorkflowKind::Ocr);
+        assert_eq!(view.links.self_path, "/api/v1/ocr/jobs/job-helpers-test");
+        assert_eq!(
+            view.actions.open_job.path,
+            "/api/v1/ocr/jobs/job-helpers-test"
+        );
+        assert!(view.actions.cancel.enabled);
     }
 
     #[tokio::test]

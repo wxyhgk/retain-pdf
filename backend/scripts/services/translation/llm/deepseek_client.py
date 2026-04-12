@@ -26,6 +26,7 @@ STREAM_RESPONSES_ENV = "PDF_TRANSLATOR_DEEPSEEK_STREAM"
 _THREAD_LOCAL = threading.local()
 HTTP_RETRY_ATTEMPTS = 8
 HTTP_RETRY_BACKOFF_MAX_SECS = 20
+HTTP_RATE_LIMIT_WAIT_MAX_SECS = 300
 _JSON_QUOTE_TRANSLATION = str.maketrans(
     {
         "“": '"',
@@ -66,18 +67,31 @@ def _build_translation_system_prompt(
     return system_prompt
 
 
-def build_messages(batch: list[dict], domain_guidance: str = "", mode: str = "fast") -> list[dict[str, str]]:
+def build_messages(
+    batch: list[dict],
+    domain_guidance: str = "",
+    mode: str = "fast",
+    response_style: str = "tagged",
+) -> list[dict[str, str]]:
     system_prompt = _build_translation_system_prompt(
         domain_guidance=domain_guidance,
         mode=mode,
-        response_style="tagged",
+        response_style=response_style,
     )
-    if mode != "sci":
+    if response_style == "json":
+        system_prompt = (
+            f"{system_prompt}\n\n"
+            "Return only JSON matching this shape:\n"
+            '{"translations":[{"item_id":"ITEM_ID","translated_text":"translated text","decision":"translate"}]}.\n'
+            "Output one object for every requested item_id. Do not include markdown, code fences, or explanations."
+        )
+    else:
+        tagged_header = "<<<ITEM item_id=ITEM_ID decision=translate>>>" if mode == "sci" else "<<<ITEM item_id=ITEM_ID>>>"
         system_prompt = (
             f"{system_prompt}\n\n"
             "Return one tagged block per item and do not return JSON or markdown.\n"
             "Use this exact format:\n"
-            "<<<ITEM item_id=ITEM_ID>>>\n"
+            f"{tagged_header}\n"
             "translated text\n"
             "<<<END>>>\n"
             "Output one block for every requested item_id."
@@ -129,13 +143,20 @@ def build_single_item_fallback_messages(
     domain_guidance: str = "",
     mode: str = "fast",
     structured_decision: bool = False,
+    response_style: str = "plain_text",
 ) -> list[dict[str, str]]:
     if mode == "sci" and structured_decision:
         system_prompt = _build_translation_system_prompt(
             domain_guidance=domain_guidance,
             mode=mode,
-            response_style="tagged",
+            response_style="json" if response_style == "json" else "tagged",
         )
+        if response_style == "json":
+            system_prompt = (
+                f"{system_prompt}\n\n"
+                'Return only JSON matching {"decision":"translate","translated_text":"translated text"}. '
+                "Do not include markdown, code fences, or explanations."
+            )
         user_prompt = json.dumps(
             {
                 "task": load_prompt("translation_task.txt"),
@@ -161,15 +182,23 @@ def build_single_item_fallback_messages(
     system_prompt = _build_translation_system_prompt(
         domain_guidance=domain_guidance,
         mode=mode,
-        response_style="plain_text",
+        response_style="json" if response_style == "json" else "plain_text",
         include_sci_decision=False,
     )
-    fallback_system = (
-        f"{system_prompt}\n"
-        "You are translating exactly one item.\n"
-        "Return only the translated_text as plain text.\n"
-        "Do not return JSON, markdown, code fences, labels, or explanations."
-    )
+    if response_style == "json":
+        fallback_system = (
+            f"{system_prompt}\n"
+            "You are translating exactly one item.\n"
+            'Return only JSON matching {"translated_text":"translated text"}.\n'
+            "Do not return markdown, code fences, labels, or explanations."
+        )
+    else:
+        fallback_system = (
+            f"{system_prompt}\n"
+            "You are translating exactly one item.\n"
+            "Return only the translated_text as plain text.\n"
+            "Do not return JSON, markdown, code fences, labels, or explanations."
+        )
     user_payload: dict[str, Any] = {
         "task": load_prompt("translation_task.txt"),
         "item": {
@@ -228,15 +257,57 @@ def extract_single_item_translation_text(content: str, item_id: str) -> str:
     except Exception:
         return text
 
+    if isinstance(payload, dict) and "translated_text" in payload:
+        return unwrap_translation_shell(str(payload.get("translated_text", "") or "").strip(), item_id=item_id)
+
     translations = payload.get("translations", [])
     if not isinstance(translations, list):
         return text
     for item in translations:
         if str(item.get("item_id", "") or "").strip() == item_id:
-            return str(item.get("translated_text", "") or "").strip()
+            return unwrap_translation_shell(str(item.get("translated_text", "") or "").strip(), item_id=item_id)
     if len(translations) == 1:
-        return str(translations[0].get("translated_text", "") or "").strip()
+        return unwrap_translation_shell(str(translations[0].get("translated_text", "") or "").strip(), item_id=item_id)
     return text
+
+
+def unwrap_translation_shell(text: str, item_id: str = "") -> str:
+    current = str(text or "").strip()
+    for _ in range(3):
+        if not current or "translated_text" not in current or "{" not in current:
+            return current
+        try:
+            payload = json.loads(extract_json_text(current))
+        except Exception:
+            return current
+        if isinstance(payload, dict):
+            if "translated_text" in payload:
+                next_text = str(payload.get("translated_text", "") or "").strip()
+                if next_text == current:
+                    return current
+                current = next_text
+                continue
+            translations = payload.get("translations", [])
+            if isinstance(translations, list):
+                for item in translations:
+                    if not isinstance(item, dict):
+                        continue
+                    if item_id and str(item.get("item_id", "") or "").strip() == item_id:
+                        next_text = str(item.get("translated_text", "") or "").strip()
+                        if next_text == current:
+                            return current
+                        current = next_text
+                        break
+                else:
+                    if len(translations) != 1 or not isinstance(translations[0], dict):
+                        return current
+                    next_text = str(translations[0].get("translated_text", "") or "").strip()
+                    if next_text == current:
+                        return current
+                    current = next_text
+                continue
+        return current
+    return current
 
 
 def _normalize_loose_json_text(text: str) -> str:
@@ -262,6 +333,71 @@ def build_headers(api_key: str) -> dict[str, str]:
     if api_key.strip():
         headers["Authorization"] = f"Bearer {api_key.strip()}"
     return headers
+
+
+def _message_chars(messages: list[dict[str, str]]) -> int:
+    total = 0
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+        total += len(str(message.get("content", "") or ""))
+    return total
+
+
+def _body_bytes(body: dict[str, Any]) -> int:
+    return len(json.dumps(body, ensure_ascii=False).encode("utf-8"))
+
+
+def _response_text_excerpt(response: requests.Response, *, max_chars: int = 800) -> str:
+    try:
+        text = response.text or ""
+    except Exception as exc:  # noqa: BLE001
+        return f"<failed to read response body: {type(exc).__name__}: {exc}>"
+    compact = " ".join(text.strip().split())
+    if len(compact) > max_chars:
+        return f"{compact[:max_chars]}...<truncated>"
+    return compact
+
+
+def _request_meta_summary(
+    *,
+    model: str,
+    messages: list[dict[str, str]],
+    body: dict[str, Any],
+    use_stream: bool,
+) -> str:
+    response_format = body.get("response_format")
+    response_format_type = (
+        str(response_format.get("type", "") or "")
+        if isinstance(response_format, dict)
+        else ("present" if response_format is not None else "none")
+    )
+    return (
+        f"model={model} messages={len(messages)} message_chars={_message_chars(messages)} "
+        f"body_bytes={_body_bytes(body)} stream={use_stream} response_format={response_format_type or 'none'}"
+    )
+
+
+def _raise_for_status_with_context(
+    response: requests.Response,
+    *,
+    model: str,
+    messages: list[dict[str, str]],
+    body: dict[str, Any],
+    use_stream: bool,
+) -> None:
+    status_code = int(getattr(response, "status_code", 200) or 200)
+    if status_code < 400:
+        return
+    response_body = _response_text_excerpt(response) or "<empty>"
+    reason = getattr(response, "reason", "") or "Error"
+    url = getattr(response, "url", "") or "<unknown-url>"
+    raise requests.HTTPError(
+        f"{status_code} Client Error: {reason} for url: {url} | "
+        f"response_body={response_body} | "
+        f"request_meta={_request_meta_summary(model=model, messages=messages, body=body, use_stream=use_stream)}",
+        response=response,
+    )
 
 
 def _supports_response_schema_fallback(response_format: dict[str, Any] | None) -> bool:
@@ -380,6 +516,14 @@ def _retry_delay(attempt: int) -> int:
     return min(HTTP_RETRY_BACKOFF_MAX_SECS, 2 * attempt)
 
 
+def _retry_after_delay(exc: Exception, attempt: int) -> tuple[int, str]:
+    if isinstance(exc, requests.HTTPError) and exc.response is not None and exc.response.status_code == 429:
+        header = str(exc.response.headers.get("Retry-After", "") or "").strip()
+        if header.isdigit():
+            return max(1, int(header)), "retry_after"
+    return _retry_delay(attempt), "backoff"
+
+
 def _extract_stream_delta_text(data: dict[str, Any]) -> str:
     choices = data.get("choices")
     if not isinstance(choices, list):
@@ -443,6 +587,7 @@ def request_chat_content(
     ):
         active_response_format = _fallback_response_format(active_response_format)
     attempted_schema_fallback = False
+    accumulated_rate_limit_wait = 0
     body: dict[str, Any] = {
         "model": model,
         "temperature": temperature,
@@ -478,7 +623,13 @@ def request_chat_content(
                 timeout=timeout,
                 stream=use_stream,
             )
-            response.raise_for_status()
+            _raise_for_status_with_context(
+                response,
+                model=model,
+                messages=messages,
+                body=body,
+                use_stream=use_stream,
+            )
             if use_stream:
                 content = _read_streaming_chat_content(response)
                 if not content.strip():
@@ -542,10 +693,17 @@ def request_chat_content(
             if attempt >= HTTP_RETRY_ATTEMPTS or not _is_retryable_http_error(exc):
                 raise
             _drop_session(_request_session_key())
-            delay_secs = _retry_delay(attempt)
+            delay_secs, delay_kind = _retry_after_delay(exc, attempt)
+            if status_code == 429:
+                accumulated_rate_limit_wait += delay_secs
+                if accumulated_rate_limit_wait > HTTP_RATE_LIMIT_WAIT_MAX_SECS:
+                    raise requests.HTTPError(
+                        f"rate-limit wait budget exceeded ({accumulated_rate_limit_wait}s > {HTTP_RATE_LIMIT_WAIT_MAX_SECS}s)",
+                        response=exc.response if isinstance(exc, requests.HTTPError) else None,
+                    ) from exc
             if request_label:
                 print(
-                    f"{request_label}: retrying in {delay_secs}s",
+                    f"{request_label}: retrying in {delay_secs}s ({delay_kind})",
                     flush=True,
                 )
             time.sleep(delay_secs)
