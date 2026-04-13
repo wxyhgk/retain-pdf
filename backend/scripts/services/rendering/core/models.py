@@ -13,10 +13,16 @@ class RenderBlock:
     render_kind: str
     font_size_pt: float
     leading_em: float
+    font_weight: str = "regular"
     fit_to_box: bool = False
+    fit_single_line: bool = False
     fit_min_font_size_pt: float = 0.0
+    fit_max_font_size_pt: float = 0.0
     fit_min_leading_em: float = 0.0
     fit_max_height_pt: float = 0.0
+    fit_target_width_pt: float = 0.0
+    fit_target_height_pt: float = 0.0
+    fit_shift_up_pt: float = 0.0
 
 
 @dataclass
@@ -31,10 +37,16 @@ class RenderLayoutBlock:
     math_map: list[dict]
     font_size_pt: float
     leading_em: float
+    font_weight: str = "regular"
     fit_to_box: bool = False
+    fit_single_line: bool = False
     fit_min_font_size_pt: float = 0.0
+    fit_max_font_size_pt: float = 0.0
     fit_min_leading_em: float = 0.0
     fit_max_height_pt: float = 0.0
+    fit_target_width_pt: float = 0.0
+    fit_target_height_pt: float = 0.0
+    fit_shift_up_pt: float = 0.0
     skip_reason: str = ""
 
 

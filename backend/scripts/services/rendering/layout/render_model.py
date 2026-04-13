@@ -13,7 +13,11 @@ from services.rendering.core.models import RenderPageSpec
 from services.rendering.layout.font_fit import estimate_font_size_pt
 from services.rendering.layout.font_fit import estimate_leading_em
 from services.rendering.layout.font_fit import is_body_text_candidate
+from services.rendering.layout.font_fit import is_title_like_block
 from services.rendering.layout.font_fit import page_baseline_font_size
+from services.rendering.layout.font_fit import resolve_font_weight
+from services.rendering.layout.font_fit import resolve_title_fill_max_font_size_pt
+from services.rendering.layout.title_fit import apply_title_fit_budget_to_render_blocks
 from services.rendering.layout.typography.geometry import cover_bbox
 from services.rendering.layout.typography.geometry import inner_bbox
 from services.rendering.layout.typography.measurement import bbox_width
@@ -74,15 +78,18 @@ def _layout_block_from_item(
     content_kind = "plain" if item.get("_force_plain_line") or is_flag_like_plain_text_block(item) else "markdown"
     markdown_text = build_markdown_from_parts(protected_text, formula_map)
     plain_text = build_plain_text_from_text(markdown_text)
+    title_like = is_title_like_block(item)
     wrapped_markdown_candidate = content_kind == "markdown" and _should_fit_wrapped_markdown(
         item,
         markdown_text,
         font_size_pt=font_size_pt,
         leading_em=leading_em,
     )
-    fit_to_box = body_candidate or wrapped_markdown_candidate
-    fit_min_font_size_pt = max(7.2, round(font_size_pt - 0.8, 2))
-    fit_min_leading_em = max(0.22, round(leading_em - 0.08, 2))
+    fit_to_box = title_like or body_candidate or wrapped_markdown_candidate
+    fit_single_line = bool(title_like and content_kind == "markdown")
+    fit_min_font_size_pt = font_size_pt if title_like else max(7.2, round(font_size_pt - 0.8, 2))
+    fit_max_font_size_pt = resolve_title_fill_max_font_size_pt(item, font_size_pt) if title_like else font_size_pt
+    fit_min_leading_em = leading_em if title_like else max(0.22, round(leading_em - 0.08, 2))
     if wrapped_markdown_candidate and not body_candidate:
         fit_min_font_size_pt = max(7.2, round(font_size_pt - 2.2, 2))
         fit_min_leading_em = max(0.18, round(leading_em - 0.2, 2))
@@ -98,8 +105,11 @@ def _layout_block_from_item(
         math_map=list(formula_map),
         font_size_pt=font_size_pt,
         leading_em=leading_em,
+        font_weight=resolve_font_weight(item),
         fit_to_box=fit_to_box,
+        fit_single_line=fit_single_line,
         fit_min_font_size_pt=fit_min_font_size_pt,
+        fit_max_font_size_pt=fit_max_font_size_pt,
         fit_min_leading_em=fit_min_leading_em,
         fit_max_height_pt=max(8.0, inner_bbox(item)[3] - inner_bbox(item)[1]),
     )
@@ -155,12 +165,18 @@ def _layout_page_spec(
     items: list[dict],
     background_pdf_path: Path | None,
 ) -> RenderPageSpec:
+    blocks = _build_layout_blocks(_with_render_fields(items), page_index=page_index)
+    apply_title_fit_budget_to_render_blocks(
+        blocks,
+        page_width=page_width_pt,
+        page_height=page_height_pt,
+    )
     return RenderPageSpec(
         page_index=page_index,
         page_width_pt=page_width_pt,
         page_height_pt=page_height_pt,
         background_pdf_path=background_pdf_path,
-        blocks=_build_layout_blocks(_with_render_fields(items), page_index=page_index),
+        blocks=blocks,
     )
 
 

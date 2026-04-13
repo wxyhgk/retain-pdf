@@ -104,10 +104,21 @@ def _bad_formula_entries(item: dict) -> list[dict]:
     return [entry for entry in _formula_map(item) if _formula_is_garbled(entry.get("formula_text", ""))]
 
 
+def _has_formula_identity(item: dict) -> bool:
+    if _formula_map(item):
+        return True
+    protected_map = item.get("translation_unit_protected_map") or item.get("protected_map") or []
+    if not isinstance(protected_map, list):
+        return False
+    return any(str(entry.get("token_type", "") or "") == "formula" for entry in protected_map if isinstance(entry, dict))
+
+
 def should_reconstruct_garbled_item(item: dict) -> bool:
     if str(item.get("block_type", "") or "") != "text":
         return False
     if not item.get("should_translate", True):
+        return False
+    if _has_formula_identity(item):
         return False
 
     source_text = _source_text(item)
@@ -191,11 +202,6 @@ def _apply_reconstruction(items: list[dict], translated_text: str) -> None:
         item["translation_unit_translated_text"] = translated_text
         item["group_protected_translated_text"] = translated_text
         item["group_translated_text"] = translated_text
-        item["formula_map"] = []
-        item["translation_unit_formula_map"] = []
-        item["group_formula_map"] = []
-        if "render_formula_map" in item:
-            item["render_formula_map"] = []
         item["classification_label"] = "llm_reconstructed_garbled"
         item["skip_reason"] = ""
 

@@ -14,6 +14,78 @@ HEAVY_GROUP_MAX_MEMBERS = 3
 HEAVY_GROUP_MAX_SOURCE_CHARS = 1600
 FORMULA_SEGMENT_WINDOW_TARGET_COUNT = 8
 PROTECTED_FORMULA_RE = re.compile(r"<[ft]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]")
+_MICRO_CONNECTOR_SEGMENTS = {
+    "a",
+    "an",
+    "and",
+    "as",
+    "at",
+    "be",
+    "by",
+    "but",
+    "can",
+    "for",
+    "from",
+    "in",
+    "into",
+    "is",
+    "it",
+    "its",
+    "of",
+    "on",
+    "or",
+    "that",
+    "the",
+    "their",
+    "this",
+    "to",
+    "was",
+    "which",
+    "with",
+}
+
+
+def _segment_word_tokens(text: str) -> list[str]:
+    normalized = " ".join((text or "").split()).strip().lower()
+    if not normalized:
+        return []
+    return re.findall(r"[a-z]+(?:[-'][a-z]+)?", normalized)
+
+
+def _is_micro_formula_segment(text: str) -> bool:
+    normalized = " ".join((text or "").split()).strip().lower()
+    if not normalized:
+        return True
+    words = _segment_word_tokens(normalized)
+    if not words:
+        return True
+    if len(words) <= 2 and len(normalized) <= 20:
+        return True
+    if len(words) <= 3 and len(normalized) <= 24 and (
+        words[0] in _MICRO_CONNECTOR_SEGMENTS or words[-1] in _MICRO_CONNECTOR_SEGMENTS
+    ):
+        return True
+    if len(words) <= 4 and all(word in _MICRO_CONNECTOR_SEGMENTS for word in words):
+        return True
+    return False
+
+
+def _effective_formula_segment_count(source_text: str) -> int:
+    source = source_text or ""
+    segments: list[str] = []
+    cursor = 0
+    for match in PROTECTED_FORMULA_RE.finditer(source):
+        text = source[cursor : match.start()]
+        if any(ch.isalpha() for ch in text):
+            segments.append(text.strip())
+        cursor = match.end()
+    tail = source[cursor:]
+    if any(ch.isalpha() for ch in tail):
+        segments.append(tail.strip())
+    if not segments:
+        return 0
+    meaningful = [segment for segment in segments if not _is_micro_formula_segment(segment)]
+    return len(meaningful) or len(segments)
 
 
 def _reset_group_item_to_single(item: dict, *, reason: str) -> None:
@@ -34,7 +106,7 @@ def _formula_segment_count(source_text: str) -> int:
     placeholder_count = len(PROTECTED_FORMULA_RE.findall(source_text or ""))
     if placeholder_count <= 0:
         return 0
-    return placeholder_count + 1
+    return _effective_formula_segment_count(source_text or "")
 
 
 def _is_heavy_group(combined_source: str, items: list[dict]) -> tuple[bool, str]:

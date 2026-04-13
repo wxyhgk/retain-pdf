@@ -232,6 +232,7 @@ if (fs.existsSync(bundledFontAssetsRoot)) {
 const requiredBundledFonts = [
   "DroidSansFallbackFull.ttf",
   "SourceHanSerifSC-Regular.otf",
+  "SourceHanSerifSC-Bold.otf",
 ];
 for (const fileName of requiredBundledFonts) {
   const expectedPath = path.join(bundledFontsRoot, fileName);

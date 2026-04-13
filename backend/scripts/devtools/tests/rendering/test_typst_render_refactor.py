@@ -2,6 +2,7 @@ import sys
 import tempfile
 from pathlib import Path
 from unittest import mock
+import re
 
 import fitz
 
@@ -11,10 +12,12 @@ sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
 
 from services.rendering.background.stage import build_clean_background_pdf
+from foundation.config import fonts
 from services.rendering.core.models import RenderLayoutBlock
 from services.rendering.core.models import RenderPageSpec
 from services.rendering.layout.render_model import build_render_page_specs
 from services.rendering.typst.book_ops import _compile_render_pages_pdf_resilient
+from services.rendering.typst.compiler import _resolved_font_paths
 from services.rendering.typst.emitter import build_typst_source_from_page_specs
 
 
@@ -59,6 +62,60 @@ def test_typst_render_source_does_not_emit_white_cover_rects() -> None:
         assert 'fill: white' not in source
         assert 'image("background.pdf"' in source
         assert 'cmarker.render' in source
+
+
+def test_typst_compiler_defaults_include_backend_fonts_dir() -> None:
+    resolved = _resolved_font_paths()
+    assert fonts.BACKEND_FONTS_DIR in resolved
+
+
+def test_typst_render_source_keeps_title_fit_inside_rect_budget() -> None:
+    spec = RenderPageSpec(
+        page_index=0,
+        page_width_pt=200.0,
+        page_height_pt=300.0,
+        background_pdf_path=None,
+        blocks=[
+            RenderLayoutBlock(
+                block_id="title-1",
+                page_index=0,
+                background_rect=[10.0, 20.0, 160.0, 60.0],
+                content_rect=[12.0, 22.0, 158.0, 58.0],
+                content_kind="markdown",
+                content_text="引言",
+                plain_text="引言",
+                math_map=[],
+                font_size_pt=12.0,
+                leading_em=0.42,
+                font_weight="bold",
+                fit_to_box=True,
+                fit_single_line=True,
+                fit_min_font_size_pt=12.0,
+                fit_max_font_size_pt=24.0,
+                fit_min_leading_em=0.42,
+                fit_max_height_pt=36.0,
+            )
+        ],
+    )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        background_pdf = root / "background.pdf"
+        doc = fitz.open()
+        doc.new_page(width=200, height=300)
+        doc.save(background_pdf)
+        doc.close()
+
+        source = build_typst_source_from_page_specs(
+            background_pdf_path=background_pdf,
+            page_specs=[spec],
+            work_dir=root,
+        )
+
+    assert 'weight: "bold"' in source
+    assert "clip: false" in source
+    assert "fit_width: 146.0pt" in source
+    assert re.search(r"fit_height: 36(\.0+)?pt", source)
 
 
 def test_background_stage_creates_cleaned_pdf() -> None:

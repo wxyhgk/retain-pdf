@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from difflib import SequenceMatcher
 import re
 
 from services.document_schema.semantics import is_body_structure_role
@@ -312,8 +313,6 @@ def looks_like_english_prose(text: str) -> bool:
         return False
     if "@" in cleaned or "http://" in cleaned or "https://" in cleaned or looks_like_url_fragment(cleaned):
         return False
-    if looks_like_reference_entry_text(cleaned):
-        return False
     words = EN_WORD_RE.findall(cleaned)
     if len(words) < 8:
         return False
@@ -342,6 +341,25 @@ def _has_long_english_residue_span(text: str) -> bool:
     return False
 
 
+def _normalized_english_surface(text: str) -> str:
+    normalized = normalize_inline_whitespace(strip_placeholders(text)).lower()
+    normalized = re.sub(r"[^a-z0-9]+", " ", normalized)
+    return " ".join(normalized.split())
+
+
+def _looks_like_copy_dominant_english_output(source_text: str, translated_text: str) -> bool:
+    source_surface = _normalized_english_surface(source_text)
+    translated_surface = _normalized_english_surface(translated_text)
+    if not source_surface or not translated_surface:
+        return False
+    if source_surface == translated_surface:
+        return True
+    if min(len(source_surface), len(translated_surface)) < 32:
+        return False
+    similarity = SequenceMatcher(None, source_surface, translated_surface).ratio()
+    return similarity >= 0.82
+
+
 def _looks_like_author_name_list(text: str) -> bool:
     cleaned = strip_placeholders(text).strip()
     if not cleaned:
@@ -362,10 +380,28 @@ def _looks_like_author_name_list(text: str) -> bool:
     return name_like >= max(3, len(segments) - 1)
 
 
-def looks_like_untranslated_english_output(item: dict, translated_text: str) -> bool:
+def _is_reference_like_item(item: dict) -> bool:
+    metadata = item.get("metadata") or {}
+    source = metadata.get("source") or {}
+    raw_type = str(source.get("raw_type", metadata.get("raw_type", "")) or "").strip().lower()
+    if raw_type == "ref_text":
+        return True
+    ocr_sub_type = str(metadata.get("ocr_sub_type", "") or "").strip().lower()
+    normalized_sub_type = str(metadata.get("normalized_sub_type", "") or "").strip().lower()
+    if ocr_sub_type != "metadata" and normalized_sub_type != "metadata":
+        return False
+    source_text = strip_placeholders(unit_source_text(item)).strip()
+    if not source_text:
+        return False
+    return looks_like_reference_entry_text(source_text)
+
+
+def looks_like_predominantly_english_output(item: dict, translated_text: str) -> bool:
     source_text = unit_source_text(item).strip()
     translated = str(translated_text or "").strip()
     if not translated:
+        return False
+    if _is_reference_like_item(item):
         return False
     if not should_force_translate_body_text(item):
         return False
@@ -382,6 +418,16 @@ def looks_like_untranslated_english_output(item: dict, translated_text: str) -> 
     if zh_chars == 0:
         return True
     return english_words >= max(12, zh_chars // 2)
+
+
+def looks_like_untranslated_english_output(item: dict, translated_text: str) -> bool:
+    translated = str(translated_text or "").strip()
+    if not looks_like_predominantly_english_output(item, translated):
+        return False
+    if _zh_char_count(translated) > 0:
+        return False
+    source_text = unit_source_text(item).strip()
+    return _looks_like_copy_dominant_english_output(source_text, translated)
 
 
 def looks_like_short_fragment(text: str) -> bool:
@@ -409,8 +455,6 @@ def should_force_translate_body_text(item: dict) -> bool:
     if not source_text:
         return False
     if looks_like_code_literal_text_value(source_text):
-        return False
-    if looks_like_reference_entry_text(source_text):
         return False
     if looks_like_garbled_fragment(source_text):
         return False
@@ -551,6 +595,16 @@ def validate_batch_result(
                 source_text=source_text,
                 translated_text=translated_text,
             )
+        if looks_like_predominantly_english_output(item, translated_text):
+            if diagnostics is not None:
+                diagnostics.emit(
+                    kind="english_residue_warning",
+                    item_id=item_id,
+                    page_idx=item.get("page_idx"),
+                    severity="warning",
+                    message="Translated output still contains substantial English residue",
+                    retryable=False,
+                )
         source_placeholders = placeholders(source_text)
         translated_placeholders = placeholders(translated_text)
         if not translated_placeholders.issubset(source_placeholders):
@@ -609,8 +663,6 @@ def validate_batch_result(
             )
         if translated_text.strip() == source_text.strip():
             if looks_like_url_fragment(source_text):
-                continue
-            if looks_like_reference_entry_text(source_text):
                 continue
             if looks_like_code_literal_text_value(source_text):
                 continue

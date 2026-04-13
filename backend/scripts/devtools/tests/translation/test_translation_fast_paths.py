@@ -65,12 +65,12 @@ def _install_minimal_continuation_stub():
 
 
 class TranslationFastPathTests(unittest.TestCase):
-    def test_editorial_metadata_token_is_treated_as_nontranslatable(self):
+    def test_editorial_metadata_token_is_not_force_skipped_anymore(self):
         module = _load_module(
             "services.translation.policy.metadata_filter",
             REPO_SCRIPTS_ROOT / "services" / "translation" / "policy" / "metadata_filter.py",
         )
-        self.assertTrue(
+        self.assertFalse(
             module.looks_like_nontranslatable_metadata(
                 {
                     "block_type": "text",
@@ -148,12 +148,12 @@ class TranslationFastPathTests(unittest.TestCase):
             )
         )
 
-    def test_author_list_is_treated_as_safe_nontranslatable_metadata(self):
+    def test_author_list_is_not_force_skipped_by_metadata_filter(self):
         module = _load_module(
             "services.translation.policy.metadata_filter",
             REPO_SCRIPTS_ROOT / "services" / "translation" / "policy" / "metadata_filter.py",
         )
-        self.assertTrue(
+        self.assertFalse(
             module.looks_like_safe_nontranslatable_metadata(
                 {
                     "block_type": "text",
@@ -162,6 +162,46 @@ class TranslationFastPathTests(unittest.TestCase):
                     "metadata": {"structure_role": "metadata"},
                     "page_idx": 0,
                     "lines": [{"spans": [{"content": "authors"}]}],
+                }
+            )
+        )
+
+    def test_pure_email_fragment_is_treated_as_safe_nontranslatable_metadata(self):
+        module = _load_module(
+            "services.translation.policy.metadata_filter",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "policy" / "metadata_filter.py",
+        )
+        self.assertTrue(
+            module.looks_like_safe_nontranslatable_metadata(
+                {
+                    "block_type": "text",
+                    "source_text": "author@example.edu",
+                    "should_translate": True,
+                    "metadata": {"structure_role": "body"},
+                    "page_idx": 0,
+                    "lines": [{"spans": [{"content": "author@example.edu"}]}],
+                }
+            )
+        )
+
+    def test_section_symbol_body_text_is_not_treated_as_author_metadata(self):
+        module = _load_module(
+            "services.translation.policy.metadata_filter",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "policy" / "metadata_filter.py",
+        )
+        self.assertFalse(
+            module.looks_like_safe_nontranslatable_metadata(
+                {
+                    "block_type": "text",
+                    "source_text": (
+                        "To overcome these challenges, we propose a simple adaptation approach that bridges these "
+                        "discrepancies. We unify their modeling objectives (§3.2) and address the architectural "
+                        "differences by breaking the causal masking bias in AR models through attention mask annealing (§3.3)."
+                    ),
+                    "should_translate": True,
+                    "metadata": {"structure_role": "body", "normalized_sub_type": "body", "ocr_sub_type": "body"},
+                    "page_idx": 1,
+                    "lines": [{"spans": [{"content": "body"}]}],
                 }
             )
         )
@@ -209,6 +249,31 @@ class TranslationFastPathTests(unittest.TestCase):
             )
         )
 
+    def test_citation_rich_body_text_still_forces_translation(self):
+        module = _load_module(
+            "services.translation.llm.placeholder_guard",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "placeholder_guard.py",
+        )
+        source_text = (
+            "For infilling tasks, we attempt to query the LLaMA model with the prompt given the "
+            "<prefix> and <suffix>, please answer the <middle> part, which includes both prefix and "
+            "suffix information. However, this approach is no better than simply completing the prefix, "
+            "likely because the LLaMA model needs tuning for filling in the middle (FIM; Bavarian et al. "
+            "2022b). Additionally, Bavarian et al. (2022b) notes that using AR models for infilling "
+            "presents challenges, such as prompting difficulties and repetition. In contrast, DLMs are "
+            "naturally suited for this task, as they are trained to handle masked inputs, which is a key advantage."
+        )
+        item = {
+            "item_id": "p024-b008",
+            "block_type": "text",
+            "metadata": {"structure_role": "body"},
+            "translation_unit_protected_source_text": source_text,
+            "protected_source_text": source_text,
+        }
+
+        self.assertTrue(module.should_force_translate_body_text(item))
+        self.assertTrue(module.looks_like_untranslated_english_output(item, source_text))
+
     def test_repeated_empty_translation_degrades_to_keep_origin(self):
         module = _load_module(
             "services.translation.llm.fallbacks",
@@ -238,7 +303,7 @@ class TranslationFastPathTests(unittest.TestCase):
             "这是直接返回的中文译文。",
         )
 
-    def test_english_residue_detector_rejects_long_body_that_stays_english(self):
+    def test_english_residue_detector_only_blocks_copy_dominant_english_output(self):
         module = _load_module(
             "services.translation.llm.placeholder_guard",
             REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "placeholder_guard.py",
@@ -252,14 +317,14 @@ class TranslationFastPathTests(unittest.TestCase):
                 "has become an important tool for material researchers, because it explains many properties."
             ),
         }
-        self.assertTrue(
-            module.looks_like_untranslated_english_output(
-                item,
-                "The advancement of complex computer programs with faster computing power and material simulation methods remains important.",
-            )
+        translated = (
+            "The advancement of complex computer programs with faster computing power and material simulation methods "
+            "remains important."
         )
+        self.assertFalse(module.looks_like_untranslated_english_output(item, translated))
+        self.assertTrue(module.looks_like_predominantly_english_output(item, translated))
 
-    def test_english_residue_detector_rejects_long_mixed_output_with_english_span(self):
+    def test_english_residue_detector_only_warns_for_mixed_output_with_english_span(self):
         module = _load_module(
             "services.translation.llm.placeholder_guard",
             REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "placeholder_guard.py",
@@ -273,14 +338,18 @@ class TranslationFastPathTests(unittest.TestCase):
                 "tetrasubstituted carbons like tertiary alkyl bromides, which can be laborious to synthesize or unstable."
             ),
         }
-        self.assertTrue(
+        translated = (
+            "这是一个重要优势。 Olefins offer the unique benefit of starting from prochiral carbons rather than "
+            "preformed tetrasubstituted carbons like tertiary alkyl bromides, which can be laborious to synthesize or unstable. "
+            "后续底物也可以顺利偶联。"
+        )
+        self.assertFalse(
             module.looks_like_untranslated_english_output(
                 item,
-                "这是一个重要优势。 Olefins offer the unique benefit of starting from prochiral carbons rather than "
-                "preformed tetrasubstituted carbons like tertiary alkyl bromides, which can be laborious to synthesize or unstable. "
-                "后续底物也可以顺利偶联。",
+                translated,
             )
         )
+        self.assertTrue(module.looks_like_predominantly_english_output(item, translated))
 
     def test_english_residue_detector_ignores_author_name_list(self):
         module = _load_module(
@@ -733,6 +802,56 @@ class TranslationFastPathTests(unittest.TestCase):
         self.assertEqual(schema["type"], "json_schema")
         self.assertTrue(schema["json_schema"]["strict"])
         self.assertEqual(schema["json_schema"]["schema"]["required"], ["translated_text"])
+
+    def test_garbled_reconstruction_skips_formula_bearing_items(self):
+        module = _load_module(
+            "services.translation.postprocess.garbled_reconstruction",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "postprocess" / "garbled_reconstruction.py",
+        )
+        item = {
+            "item_id": "p003-b005",
+            "block_type": "text",
+            "should_translate": True,
+            "translation_unit_protected_source_text": "根据 <f1-e29/> 可得 Q_t。",
+            "translation_unit_protected_translated_text": "",
+            "translation_unit_formula_map": [
+                {"placeholder": "<f1-e29/>", "formula_text": r"Q _ { t } = (1 - \beta_t) I + \beta_t 1 m^\top"}
+            ],
+            "translation_unit_protected_map": [
+                {
+                    "token_tag": "<f1-e29/>",
+                    "token_type": "formula",
+                    "original_text": r"Q _ { t } = (1 - \beta_t) I + \beta_t 1 m^\top",
+                    "restore_text": r"Q _ { t } = (1 - \beta_t) I + \beta_t 1 m^\top",
+                    "source_offset": 3,
+                    "checksum": "e29",
+                }
+            ],
+        }
+        self.assertFalse(module.should_reconstruct_garbled_item(item))
+
+    def test_english_residue_guard_ignores_reference_like_entries(self):
+        module = _load_module(
+            "services.translation.llm.placeholder_guard",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "placeholder_guard.py",
+        )
+        item = {
+            "item_id": "p011-b009",
+            "block_type": "text",
+            "metadata": {
+                "structure_role": "body",
+                "source": {"raw_type": "ref_text"},
+            },
+            "translation_unit_protected_source_text": (
+                "Gregor Bachmann and Vaishnavh Nagarajan. The pitfalls of next-token prediction. "
+                "In Forty-first International Conference on Machine Learning, ICML, 2024."
+            ),
+        }
+        translated = (
+            "Gregor Bachmann and Vaishnavh Nagarajan. 下一个词预测的陷阱. "
+            "In Forty-first International Conference on Machine Learning, ICML, 2024."
+        )
+        self.assertFalse(module.looks_like_untranslated_english_output(item, translated))
 
     def test_translation_and_formula_outputs_use_strict_json_schema_format(self):
         module = _load_module(

@@ -28,6 +28,10 @@ from services.rendering.layout.typography.measurement import visual_line_count
 
 MIN_FONT_SIZE_PT = 8.4
 MAX_FONT_SIZE_PT = 11.6
+TITLE_FILL_MAX_FONT_SIZE_PT = 72.0
+TITLE_FILL_HEIGHT_TO_FONT_RATIO = 0.92
+TITLE_FILL_GROW_SCALE = 2.6
+TITLE_FILL_MAX_FONT_SCALE = 3.0
 ZH_FONT_SCALE = 0.91
 PAGE_BASELINE_PERCENTILE = 0.42
 BLOCK_SCALE_MIN = 0.985
@@ -120,6 +124,51 @@ def is_default_text_block(item: dict) -> bool:
     line_count = len(item.get("lines", []))
     text_len = len(re.sub(r"\s+", "", item.get("source_text", "")))
     return line_count <= 1 and text_len < 60
+
+
+def is_title_like_block(item: dict) -> bool:
+    if _is_caption_like(item):
+        return False
+    block_type = str(item.get("block_type", "") or "").strip().lower()
+    if block_type == "title":
+        return True
+    metadata = item.get("metadata", {}) or {}
+    normalized_sub_type = str(metadata.get("normalized_sub_type", "") or "").strip().lower()
+    structure_role = str(metadata.get("structure_role", "") or "").strip().lower()
+    tags = {str(tag or "").strip().lower() for tag in metadata.get("tags", []) if str(tag or "").strip()}
+    return (
+        normalized_sub_type in {"title", "heading"}
+        or structure_role in {"title", "heading", "section_heading"}
+        or bool(tags & {"title", "heading"})
+    )
+
+
+def resolve_font_weight(item: dict) -> str:
+    return "bold" if is_title_like_block(item) else "regular"
+
+
+def resolve_title_fill_max_font_size_pt(item: dict, base_font_size_pt: float) -> float:
+    if not is_title_like_block(item):
+        return round(base_font_size_pt, 2)
+    scaled_cap = max(base_font_size_pt, base_font_size_pt * TITLE_FILL_MAX_FONT_SCALE)
+    inner = inner_bbox(item)
+    if len(inner) != 4:
+        return round(
+            min(
+                TITLE_FILL_MAX_FONT_SIZE_PT,
+                scaled_cap,
+                base_font_size_pt,
+            ),
+            2,
+        )
+    height_pt = max(8.0, inner[3] - inner[1])
+    height_cap = height_pt * TITLE_FILL_HEIGHT_TO_FONT_RATIO
+    optimistic = min(
+        TITLE_FILL_MAX_FONT_SIZE_PT,
+        scaled_cap,
+        max(base_font_size_pt, min(base_font_size_pt * TITLE_FILL_GROW_SCALE, height_cap)),
+    )
+    return round(max(base_font_size_pt, optimistic), 2)
 
 
 def normalize_leading_em_for_font_size(

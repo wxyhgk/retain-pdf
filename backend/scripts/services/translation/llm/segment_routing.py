@@ -47,6 +47,38 @@ _OPTIONAL_CONNECTOR_SEGMENTS = {
     "with",
 }
 
+_MICRO_CONNECTOR_SEGMENTS = _OPTIONAL_CONNECTOR_SEGMENTS | {
+    "also",
+    "be",
+    "been",
+    "being",
+    "but",
+    "can",
+    "could",
+    "does",
+    "has",
+    "have",
+    "if",
+    "is",
+    "it",
+    "its",
+    "may",
+    "might",
+    "should",
+    "that",
+    "the",
+    "their",
+    "then",
+    "these",
+    "this",
+    "those",
+    "was",
+    "were",
+    "which",
+    "while",
+    "will",
+}
+
 _SMALL_INLINE_TRIGGER_PHRASES = (
     "abbreviated as",
     "defined as",
@@ -126,6 +158,42 @@ def segment_needs_translation(text: str) -> bool:
     if not normalized:
         return False
     return any(ch.isalpha() for ch in normalized)
+
+
+def _segment_word_tokens(text: str) -> list[str]:
+    normalized = normalize_inline_whitespace(text).strip().lower()
+    if not normalized:
+        return []
+    return re.findall(r"[a-z]+(?:[-'][a-z]+)?", normalized)
+
+
+def is_micro_formula_segment(text: str) -> bool:
+    normalized = normalize_inline_whitespace(text).strip().lower()
+    if not normalized:
+        return True
+    words = _segment_word_tokens(normalized)
+    if not words:
+        return True
+    if len(words) <= 2 and len(normalized) <= 20:
+        return True
+    if len(words) <= 3 and len(normalized) <= 24 and (
+        words[0] in _MICRO_CONNECTOR_SEGMENTS or words[-1] in _MICRO_CONNECTOR_SEGMENTS
+    ):
+        return True
+    if len(words) <= 4 and all(word in _MICRO_CONNECTOR_SEGMENTS for word in words):
+        return True
+    return False
+
+
+def effective_formula_segment_count(segments: list[dict[str, str]]) -> int:
+    if not segments:
+        return 0
+    meaningful = [
+        segment
+        for segment in segments
+        if not is_micro_formula_segment(str(segment.get("source_text", "") or ""))
+    ]
+    return len(meaningful) or len(segments)
 
 
 def build_formula_segment_plan(source_text: str) -> tuple[list[tuple[str, str]], list[dict[str, str]]]:
@@ -394,6 +462,8 @@ def is_small_formula_inline_candidate(
     skeleton, segments = build_formula_segment_plan(source_text)
     if not (0 < len(segments) <= policy.small_formula_inline_max_segments):
         return False
+    if effective_formula_segment_count(segments) > 3:
+        return False
     return small_formula_risk_score(
         source_text,
         skeleton=skeleton,
@@ -425,6 +495,11 @@ def small_formula_risk_score(
     short_segments = [text for text in segment_texts if 0 < len(text) <= 32]
     if short_segments:
         score += 1
+    micro_segment_count = sum(1 for text in segment_texts if is_micro_formula_segment(text))
+    if micro_segment_count >= max(2, len(segment_texts) - 1):
+        score -= 2
+    elif micro_segment_count:
+        score -= 1
     if any(text.startswith(("the ", "a ", "an ")) and len(text) <= 24 for text in segment_texts[:1]):
         score += 1
     if any(text.startswith(("which ", "where ", "that ", "is ", "are ", "can ")) for text in segment_texts[1:]):
@@ -447,14 +522,19 @@ def formula_segment_translation_route(item: dict, *, policy: SegmentationPolicy 
         policy = SegmentationPolicy()
     if not has_formula_placeholders(item):
         return "none"
-    _, segments = build_formula_segment_plan(unit_source_text(item))
+    source_text = unit_source_text(item)
+    _, segments = build_formula_segment_plan(source_text)
     if not segments:
         return "none"
+    effective_segments = effective_formula_segment_count(segments)
+    placeholder_count = len(re.findall(r"<[ft]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]", source_text))
     if is_small_formula_inline_candidate(item, policy=policy):
         return "small_inline"
-    if policy.prefer_plain_when_segment_count_leq > 0 and len(segments) <= policy.prefer_plain_when_segment_count_leq:
+    if placeholder_count <= 3 and effective_segments <= 2:
         return "none"
-    if len(segments) <= policy.max_formula_segment_count:
+    if policy.prefer_plain_when_segment_count_leq > 0 and effective_segments <= policy.prefer_plain_when_segment_count_leq:
+        return "none"
+    if effective_segments <= policy.max_formula_segment_count:
         return "single"
     return "windowed"
 

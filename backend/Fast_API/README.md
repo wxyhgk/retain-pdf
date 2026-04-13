@@ -182,6 +182,8 @@ Common form fields:
 - `file`
 - `mode`
 - `skip_title_translation`
+  - `false`: 翻译标题
+  - `true`: 跳过标题翻译
 - `start_page`
 - `end_page`
 - `classify_batch_size`

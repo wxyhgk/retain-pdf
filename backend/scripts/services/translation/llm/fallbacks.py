@@ -7,7 +7,7 @@ import time
 from services.document_schema.semantics import is_body_structure_role
 from services.translation.diagnostics import TranslationDiagnosticsCollector
 from services.translation.payload.formula_protection import restore_tokens_by_type
-from services.translation.policy.metadata_filter import looks_like_safe_nontranslatable_metadata
+from services.translation.policy.metadata_filter import looks_like_hard_nontranslatable_metadata
 from services.translation.llm.cache import split_cached_batch
 from services.translation.llm.cache import store_cached_batch
 from services.translation.llm.control_context import TranslationControlContext
@@ -15,6 +15,7 @@ from services.translation.llm.placeholder_guard import PlaceholderInventoryError
 from services.translation.llm.placeholder_guard import EmptyTranslationError
 from services.translation.llm.placeholder_guard import EnglishResidueError
 from services.translation.llm.placeholder_guard import SuspiciousKeepOriginError
+from services.translation.llm.placeholder_guard import TranslationProtocolError
 from services.translation.llm.placeholder_guard import UnexpectedPlaceholderError
 from services.translation.llm.placeholder_guard import canonicalize_batch_result
 from services.translation.llm.placeholder_guard import has_formula_placeholders
@@ -33,6 +34,7 @@ from services.translation.llm.placeholder_guard import validate_batch_result
 from services.translation.llm.segment_routing import formula_segment_translation_route
 from services.translation.llm.segment_routing import small_formula_risk_score
 from services.translation.llm.segment_routing import build_formula_segment_plan
+from services.translation.llm.segment_routing import effective_formula_segment_count
 from services.translation.llm.segment_routing import formula_segment_window_count
 from services.translation.llm.segment_routing import translate_single_item_formula_segment_text_with_retries
 from services.translation.llm.segment_routing import translate_single_item_formula_segment_windows_with_retries
@@ -77,6 +79,7 @@ def _formula_route_diagnostics(
         {
             "formula_placeholder_count": placeholder_count,
             "formula_segment_count": len(segments),
+            "effective_formula_segment_count": effective_formula_segment_count(segments),
             "formula_window_count": formula_segment_window_count(item, policy=policy),
             "formula_density": _formula_density(source_text, placeholder_count),
             "formula_route_decision": formula_segment_translation_route(item, policy=policy),
@@ -119,6 +122,22 @@ def _restore_runtime_term_tokens(
     return restored
 
 
+def _should_store_translation_result(payload: dict[str, str]) -> bool:
+    if not payload:
+        return False
+    if is_internal_placeholder_degraded(payload):
+        return False
+    final_status = str(payload.get("final_status", "") or "").strip().lower()
+    if final_status and final_status != "translated":
+        return False
+    diagnostics = payload.get("translation_diagnostics")
+    if isinstance(diagnostics, dict):
+        fallback_to = str(diagnostics.get("fallback_to", "") or "").strip().lower()
+        if fallback_to == "sentence_level":
+            return False
+    return True
+
+
 def _formula_placeholder_count(text: str) -> int:
     return len(FORMULA_PLACEHOLDER_RE.findall(text or ""))
 
@@ -129,7 +148,8 @@ def _heavy_formula_split_reason(item: dict, *, context: TranslationControlContex
     if placeholder_count < HEAVY_FORMULA_SPLIT_PLACEHOLDERS:
         return ""
     _, segments = build_formula_segment_plan(source_text)
-    if len(segments) >= HEAVY_FORMULA_SPLIT_SEGMENTS:
+    effective_segments = effective_formula_segment_count(segments)
+    if effective_segments >= HEAVY_FORMULA_SPLIT_SEGMENTS:
         return "heavy_formula_segment_count"
     if formula_segment_window_count(item, policy=context.segmentation_policy) >= HEAVY_FORMULA_SPLIT_WINDOWS:
         return "heavy_formula_window_count"
@@ -256,7 +276,7 @@ def _attach_result_metadata(
 
 
 def _should_keep_origin_on_empty_translation(item: dict) -> bool:
-    if looks_like_safe_nontranslatable_metadata(item):
+    if looks_like_hard_nontranslatable_metadata(item):
         return True
     source_text = str(item.get("translation_unit_protected_source_text") or item.get("protected_source_text") or "")
     compact = " ".join(source_text.split())
@@ -416,6 +436,7 @@ def _sentence_level_fallback(
         "latency_ms": 0,
         **_formula_route_diagnostics(item, context=context),
     }
+    validate_batch_result([item], {item["item_id"]: payload}, diagnostics=diagnostics)
     return {item["item_id"]: payload}
 
 
@@ -845,7 +866,16 @@ def translate_items_plain_text(
             canonical = canonicalize_batch_result([item], {item_id: cached_item_result})
             validate_batch_result([item], canonical, diagnostics=diagnostics)
             valid_cached.update(canonical)
-        except (ValueError, KeyError, json.JSONDecodeError) as exc:
+        except (
+            ValueError,
+            KeyError,
+            json.JSONDecodeError,
+            EnglishResidueError,
+            EmptyTranslationError,
+            UnexpectedPlaceholderError,
+            PlaceholderInventoryError,
+            TranslationProtocolError,
+        ) as exc:
             validated_uncached.append(item)
             if request_label:
                 print(
@@ -885,14 +915,18 @@ def translate_items_plain_text(
                     )
                 )
             result = restored_result
-            store_cached_batch(
-                uncached_batch,
-                result,
-                model=model,
-                base_url=base_url,
-                domain_guidance=context.cache_guidance,
-                mode=context.mode,
-            )
+            cacheable_batch = [
+                item for item in uncached_batch if _should_store_translation_result(result.get(item["item_id"], {}))
+            ]
+            if cacheable_batch:
+                store_cached_batch(
+                    cacheable_batch,
+                    result,
+                    model=model,
+                    base_url=base_url,
+                    domain_guidance=context.cache_guidance,
+                    mode=context.mode,
+                )
             merged.update(result)
             return merged
         except Exception as exc:
@@ -914,7 +948,7 @@ def translate_items_plain_text(
             diagnostics=diagnostics,
         )
         payload = result.get(item["item_id"], {})
-        if not is_internal_placeholder_degraded(payload):
+        if _should_store_translation_result(payload):
             store_cached_batch(
                 [item],
                 result,

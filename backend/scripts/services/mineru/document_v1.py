@@ -21,29 +21,6 @@ from services.document_schema.version import DOCUMENT_SCHEMA_NAME
 from services.document_schema.version import DOCUMENT_SCHEMA_VERSION
 
 _MATH_CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
-REFERENCE_HEADING_SET = {
-    "reference",
-    "references",
-    "references and notes",
-    "bibliography",
-    "works cited",
-    "literature cited",
-}
-YEAR_RE = re.compile(r"\b(?:18|19|20)\d{2}[a-z]?\b", re.I)
-DOI_RE = re.compile(r"\bdoi\b|10\.\d{4,9}/|https?://", re.I)
-JOURNAL_RE = re.compile(
-    r"\b(?:j\.|journal|chem|phys|soc|rev\.?|lett\.?|commun\.?|proc\.?|science|nature|"
-    r"acs|springer|elsevier|wiley|vol\.?|volume|pages?|pp\.?|issue|no\.?)\b",
-    re.I,
-)
-PAGE_RANGE_RE = re.compile(r"\b\d{1,4}\s*[-–]\s*\d{1,5}\b")
-REF_INDEX_RE = re.compile(r"^(?:\(?\[?\d{1,3}\]?\)?[.)]?\s+)")
-AUTHOR_START_RE = re.compile(
-    r"^(?:\(?\[?\d{1,3}\]?\)?[.)]?\s+)?"
-    r"(?:[A-Z][A-Za-z'`.-]+,\s*(?:[A-Z]\.\s*)+"
-    r"|[A-Z][A-Za-z'`.-]+(?:\s+[A-Z][A-Za-z'`.-]+){0,2}\s*,\s*(?:[A-Z]\.\s*)+)",
-)
-LOWER_CONTINUATION_RE = re.compile(r"^[a-z(\\[\"'`]")
 
 
 def _iter_layout_pages(layout_payload: dict) -> list[dict]:
@@ -141,64 +118,6 @@ def _merge_segments_text(segments: list[dict]) -> str:
     return " ".join(segment["text"] for segment in segments if segment.get("text")).strip()
 
 
-def _normalize_spaces(text: str) -> str:
-    return " ".join((text or "").split())
-
-
-def _normalize_reference_heading(text: str) -> str:
-    lowered = _normalize_spaces(text).lower().replace("&", " and ")
-    lowered = re.sub(r"[^a-z ]+", " ", lowered)
-    return " ".join(lowered.split())
-
-
-def _looks_like_reference_heading(text: str) -> bool:
-    normalized = _normalize_reference_heading(text)
-    if not normalized:
-        return False
-    if normalized in REFERENCE_HEADING_SET:
-        return True
-    return normalized.startswith("references ") and normalized in REFERENCE_HEADING_SET
-
-
-def _looks_like_reference_entry(text: str) -> bool:
-    normalized = _normalize_spaces(text)
-    if not normalized:
-        return False
-    comma_count = normalized.count(",") + normalized.count(";")
-    year = bool(YEAR_RE.search(normalized))
-    doi = bool(DOI_RE.search(normalized))
-    journal = bool(JOURNAL_RE.search(normalized))
-    page_range = bool(PAGE_RANGE_RE.search(normalized))
-    indexed = bool(REF_INDEX_RE.match(normalized))
-    author_start = bool(AUTHOR_START_RE.match(normalized))
-    if doi and (year or comma_count >= 1):
-        return True
-    if indexed and (year or doi or journal or page_range or comma_count >= 2):
-        return True
-    if author_start and (year or doi or journal or page_range or comma_count >= 2):
-        return True
-    if year and journal and comma_count >= 1:
-        return True
-    if year and page_range and comma_count >= 1:
-        return True
-    return False
-
-
-def _looks_like_reference_continuation(text: str) -> bool:
-    normalized = _normalize_spaces(text)
-    if not normalized:
-        return False
-    if LOWER_CONTINUATION_RE.match(normalized):
-        return True
-    if normalized[:1] in {")", "]", ",", ".", ";", ":"}:
-        return True
-    if DOI_RE.search(normalized) or JOURNAL_RE.search(normalized) or PAGE_RANGE_RE.search(normalized):
-        return True
-    if YEAR_RE.search(normalized) and (normalized.count(",") >= 1 or len(normalized) <= 240):
-        return True
-    return False
-
-
 def _map_block_kind(raw_type: str, raw_sub_type: str, has_text: bool) -> tuple[str, str]:
     normalized_sub = raw_sub_type.strip().lower()
     if raw_type == "title":
@@ -239,11 +158,6 @@ def _default_derived() -> dict:
         "by": "",
         "confidence": 0.0,
     }
-
-
-def _append_tag(tags: list[str], tag: str) -> None:
-    if tag and tag not in tags:
-        tags.append(tag)
 
 
 def _caption_derived(raw_type: str) -> tuple[list[str], dict]:
@@ -314,55 +228,6 @@ def _build_block_record(
         },
     }
 
-
-def _set_reference_marker(block: dict, tags: list[str], role: str, confidence: float) -> None:
-    _append_tag(tags, role)
-    _append_tag(tags, "reference_zone")
-    block["derived"] = {
-        "role": role,
-        "by": "rule",
-        "confidence": confidence,
-    }
-
-
-def _annotate_derived_markers(document: dict) -> None:
-    markers = document.setdefault("markers", {})
-    reference_start: dict | None = None
-    in_reference_zone = False
-    previous_reference_item = False
-    for page in document.get("pages", []) or []:
-        for block in page.get("blocks", []) or []:
-            text = _normalize_spaces(str(block.get("text", "") or ""))
-            tags = block.setdefault("tags", [])
-            is_textual = str(block.get("type", "") or "") == "text"
-            is_title_like = is_textual and str(block.get("sub_type", "") or "") == "title"
-            if not in_reference_zone and is_title_like and _looks_like_reference_heading(text):
-                _set_reference_marker(block, tags, "reference_heading", 0.98)
-                reference_start = {
-                    "page_index": block.get("page_index"),
-                    "block_id": block.get("block_id"),
-                    "order": block.get("order"),
-                }
-                markers["reference_start"] = reference_start
-                in_reference_zone = True
-                previous_reference_item = True
-                continue
-            if not in_reference_zone:
-                continue
-            if not is_textual:
-                previous_reference_item = False
-                continue
-            if _looks_like_reference_entry(text):
-                _set_reference_marker(block, tags, "reference_entry", 0.95)
-                previous_reference_item = True
-                continue
-            if previous_reference_item and _looks_like_reference_continuation(text):
-                _set_reference_marker(block, tags, "reference_entry", 0.82)
-                previous_reference_item = True
-                continue
-            previous_reference_item = False
-
-
 def _build_page_record(page: dict, *, page_idx: int) -> dict:
     page_size = page.get("page_size", []) or []
     width = page_size[0] if len(page_size) >= 1 else 0
@@ -423,7 +288,6 @@ def build_normalized_document(
             "notes": "This layer stores post-OCR semantic conclusions from provider rules, local rules, or later LLM judgment.",
         },
     }
-    _annotate_derived_markers(document)
     return document
 
 

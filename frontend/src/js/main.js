@@ -331,6 +331,7 @@ function developerConfigWithDefaults() {
     classifyBatchSize: Number(saved.classifyBatchSize || DEFAULT_CLASSIFY_BATCH_SIZE),
     compileWorkers: Number(saved.compileWorkers || DEFAULT_COMPILE_WORKERS),
     timeoutSeconds: Number(saved.timeoutSeconds || DEFAULT_TIMEOUT_SECONDS),
+    translateTitles: saved.translateTitles !== false,
   };
 }
 
@@ -343,6 +344,7 @@ function syncDeveloperDialogFromState() {
   $("developer-classify-batch-size").value = `${config.classifyBatchSize}`;
   $("developer-compile-workers").value = `${config.compileWorkers}`;
   $("developer-timeout-seconds").value = `${config.timeoutSeconds}`;
+  $("developer-translate-titles").checked = !!config.translateTitles;
 }
 
 function isDeveloperAuthorized() {
@@ -412,6 +414,7 @@ function saveDeveloperDialog() {
     classifyBatchSize: Number($("developer-classify-batch-size")?.value || DEFAULT_CLASSIFY_BATCH_SIZE),
     compileWorkers: Number($("developer-compile-workers")?.value || DEFAULT_COMPILE_WORKERS),
     timeoutSeconds: Number($("developer-timeout-seconds")?.value || DEFAULT_TIMEOUT_SECONDS),
+    translateTitles: $("developer-translate-titles")?.checked !== false,
   };
   saveDeveloperStoredConfig(state.developerConfig);
   $("developer-dialog")?.close();
@@ -461,7 +464,7 @@ function collectRunPayload() {
       classify_batch_size: developerConfig.classifyBatchSize,
       rule_profile_name: DEFAULT_RULE_PROFILE,
       custom_rules_text: "",
-      skip_title_translation: false,
+      skip_title_translation: !developerConfig.translateTitles,
     },
     render: {
       render_mode: DEFAULT_RENDER_MODE,

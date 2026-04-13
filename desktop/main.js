@@ -237,7 +237,8 @@ async function startBundledBackend() {
   const pythonRuntime = resolvePythonRuntime(backendRoot);
   const scriptsDir = path.join(backendRoot, "scripts");
   const typstBin = resolveTypstBinary(backendRoot);
-  const bundledFontPath = path.join(backendRoot, "fonts", "DroidSansFallbackFull.ttf");
+  const bundledFontPath = path.join(backendRoot, "fonts", "SourceHanSerifSC-Regular.otf");
+  const bundledTitleBoldFontPath = path.join(backendRoot, "fonts", "SourceHanSerifSC-Bold.otf");
   const bundledTypstFontDir = path.join(backendRoot, "fonts");
   const dataRoot = path.join(app.getPath("userData"), "data");
   const rustApiRoot = path.join(dataRoot, "rust_api");
@@ -303,6 +304,7 @@ async function startBundledBackend() {
     PYTHONDONTWRITEBYTECODE: "1",
     PDF_TRANSLATOR_TRUST_ENV_PROXY: "1",
     RETAIN_PDF_FONT_PATH: bundledFontPath,
+    RETAIN_PDF_TITLE_BOLD_FONT_PATH: bundledTitleBoldFontPath,
     RETAIN_PDF_TYPST_FONT_DIRS: bundledTypstFontDir,
     RETAIN_PDF_TYPST_FONT_FAMILY: "Source Han Serif SC",
     TYPST_PACKAGE_CACHE_PATH: typstPackageCachePath,

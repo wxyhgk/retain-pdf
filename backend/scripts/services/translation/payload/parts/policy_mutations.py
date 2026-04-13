@@ -5,9 +5,6 @@ from services.document_schema.semantics import is_reference_heading_semantic
 from services.translation.policy.literal_block_rules import shared_literal_block_label
 from services.translation.policy.mixed_literal_splitter import split_mixed_literal_items
 from services.translation.policy.metadata_filter import find_metadata_fragment_item_ids
-from services.translation.policy.reference_section import looks_like_reference_continuation_text
-from services.translation.policy.reference_section import looks_like_reference_entry_text
-from services.translation.policy.reference_section import looks_like_reference_heading
 
 from .common import RESETTABLE_LABEL_PREFIXES
 from .common import clear_translation_fields
@@ -143,9 +140,21 @@ def apply_shared_literal_block_policy(payload: list[dict]) -> dict[str, int]:
 
 
 def apply_ref_text_skip(payload: list[dict]) -> int:
+    def _is_ref_text_like(item: dict) -> bool:
+        if str(item.get("block_type", "") or "") == "ref_text":
+            return True
+        metadata = item.get("metadata") or {}
+        source = metadata.get("source") or {}
+        raw_type = str(source.get("raw_type", metadata.get("raw_type", "")) or "").strip().lower()
+        if raw_type == "ref_text":
+            return True
+        ocr_sub_type = str(metadata.get("ocr_sub_type", "") or "").strip().lower()
+        normalized_sub_type = str(metadata.get("normalized_sub_type", "") or "").strip().lower()
+        return ocr_sub_type == "ref_text" or normalized_sub_type == "ref_text"
+
     skipped = 0
     for item in payload:
-        if str(item.get("block_type", "") or "") != "ref_text":
+        if not _is_ref_text_like(item):
             continue
         if not item.get("should_translate", True):
             continue
@@ -167,11 +176,6 @@ def apply_reference_zone_skip(
         return 0
 
     skipped = 0
-    # Do not assume every page after the cutoff is still inside references.
-    # That causes chapter body lines like "where ..." / "and ..." to be
-    # misclassified as reference continuations once the book moves past the
-    # bibliography pages.
-    previous_reference_item = False
     for item in payload:
         item_page_idx = item.get("page_idx", page_idx)
         block_idx = item.get("block_idx", -1)
@@ -180,45 +184,18 @@ def apply_reference_zone_skip(
         if item_page_idx == cutoff_page_idx and block_idx < cutoff_block_idx:
             continue
 
-        text = " ".join((item.get("source_text") or "").split())
-        block_type = str(item.get("block_type", "") or "")
         metadata = item.get("metadata", {}) or {}
         if not item.get("should_translate", True):
-            if block_type == "ref_text" or str(item.get("skip_reason", "") or "").startswith("skip_ref"):
-                previous_reference_item = True
             continue
 
         if is_reference_heading_semantic(metadata):
             _mark_item_skipped(item, "skip_reference_heading")
             skipped += 1
-            previous_reference_item = True
             continue
 
         if is_reference_entry_semantic(metadata):
             _mark_item_skipped(item, "skip_reference_zone")
             skipped += 1
-            previous_reference_item = True
-            continue
-
-        if block_type == "title" and looks_like_reference_heading(text):
-            _mark_item_skipped(item, "skip_reference_heading")
-            skipped += 1
-            previous_reference_item = True
-            continue
-
-        if looks_like_reference_entry_text(text):
-            _mark_item_skipped(item, "skip_reference_zone")
-            skipped += 1
-            previous_reference_item = True
-            continue
-
-        if previous_reference_item and looks_like_reference_continuation_text(text):
-            _mark_item_skipped(item, "skip_reference_zone")
-            skipped += 1
-            previous_reference_item = True
-            continue
-
-        previous_reference_item = False
     return skipped
 
 

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import re
 
+from services.document_schema.semantics import is_reference_entry_semantic
 from services.document_schema.semantics import structure_role
-from services.translation.policy.reference_section import looks_like_reference_entry_text
 
 YEAR_RE = re.compile(r"\b(?:19|20)\d{2}\b")
 AUTHOR_TOKEN_RE = re.compile(r"\b[A-Z][a-z]+(?:[-'][A-Za-z]+)?\b")
@@ -26,7 +26,7 @@ def build_decision_hints(item: dict) -> dict[str, object]:
     return {
         "block_type": item.get("block_type", "unknown"),
         "structure_role": structure_role(metadata) or "body",
-        "reference_like": looks_like_reference_entry_text(text),
+        "reference_like": is_reference_entry_semantic(metadata),
         "short_fragment_like": _looks_like_short_fragment(text),
         "has_inline_formula": bool(item.get("formula_map") or item.get("translation_unit_formula_map")),
         "contains_year": bool(YEAR_RE.search(text)),

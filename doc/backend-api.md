@@ -195,6 +195,7 @@ X-API-Key: your-rust-api-key
     "model": "deepseek-chat",
     "base_url": "https://api.deepseek.com/v1",
     "api_key": "sk-xxxx",
+    "skip_title_translation": false,
     "batch_size": 1,
     "workers": 50,
     "rule_profile_name": "general_sci",
@@ -234,6 +235,11 @@ X-API-Key: your-rust-api-key
 - `mineru` / `translate` 走 MinerU 时，需要 `ocr.mineru_token`
 - 需要大模型翻译时，需要 `translation.base_url`、`translation.api_key`、`translation.model`
 - `render` workflow 不要求 OCR 或翻译凭据
+
+常用翻译控制字段：
+
+- `translation.skip_title_translation=false`：翻译标题
+- `translation.skip_title_translation=true`：跳过标题翻译，保留原文标题
 
 当前校验规则：
 

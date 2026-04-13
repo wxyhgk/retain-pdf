@@ -5,7 +5,14 @@ REPO_SCRIPTS_ROOT = Path("/home/wxyhgk/tmp/Code/backend/scripts")
 sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
 from services.rendering.formula.math_utils import build_markdown_from_parts
+from services.rendering.formula.math_utils import promote_inline_math_like_text
 from services.rendering.formula.normalizer import normalize_formula_for_latex_math
+from services.rendering.formula.typst_formula_renderer import compile_formula_png
+from services.rendering.formula.typst_formula_renderer import convert_latexish_to_typst
+from services.translation.payload.formula_protection import formula_map_from_protected_map
+from services.translation.payload.formula_protection import protect_inline_content
+from services.translation.payload.formula_protection import protect_inline_formulas
+from services.translation.payload.formula_protection import protect_inline_formulas_in_segments
 from services.translation.payload.formula_protection import re_protect_restored_formulas
 from services.translation.payload.formula_protection import restore_protected_tokens
 
@@ -74,8 +81,140 @@ def test_typst_markdown_compacts_bracket_citation_text() -> None:
 def test_formula_normalizer_repairs_low_risk_ocr_noise() -> None:
     assert normalize_formula_for_latex_math(r"\mathrm { C 0 0 H ^ { * } } ]") == r"\mathrm{COOH^{*}} ]"
     assert normalize_formula_for_latex_math(r"1 . 2 7 ~ \mathrm { e V } .") == r"1.27 \mathrm{eV}"
-    assert normalize_formula_for_latex_math(r"\mathrm { C H } _ { 4 } ,") == r"\mathrm{CH} _ { 4 }"
+    assert normalize_formula_for_latex_math(r"\mathrm { C H } _ { 4 } ,") == r"\mathrm{CH}_{4}"
 
 
 def test_formula_normalizer_drops_style_noise_without_guessing_structure() -> None:
-    assert normalize_formula_for_latex_math(r"\bf { g } { - } \vec { C } 3 N _ { 4 }") == r"g { - } C 3 N _ { 4 }"
+    assert normalize_formula_for_latex_math(r"\bf { g } { - } \vec { C } 3 N _ { 4 }") == r"g { - } C 3 N_{4}"
+
+
+def test_formula_normalizer_unwraps_nested_text_style_macros_in_scripts() -> None:
+    assert normalize_formula_for_latex_math(r"_ { \textbf { \em x } }") == r"{} _{{x}}"
+
+
+def test_formula_normalizer_compacts_subscript_and_superscript_groups() -> None:
+    assert normalize_formula_for_latex_math(r"x _ { i , j }") == r"x_{i , j}"
+    assert normalize_formula_for_latex_math(r"E _ { g } ^ { dir }") == r"E_{g}^{dir}"
+    assert normalize_formula_for_latex_math(r"\Delta G _ { H ^ * }") == r"\Delta G_{H^*}"
+
+
+def test_typst_formula_converter_preserves_subscript_structure() -> None:
+    assert convert_latexish_to_typst(r"\mathrm{CaO}_2") == "CaO_(2)"
+    assert convert_latexish_to_typst(r"C_3N_4") == "C_(3)N_(4)"
+    assert convert_latexish_to_typst(r"x_{i,j}") == "x_(i , j)"
+    assert convert_latexish_to_typst(r"E_{g}^{dir}") == "E_(g)^(dir)"
+    assert convert_latexish_to_typst(r"\Delta G_{H^*}") == "Δ G_(H^(*))"
+    assert convert_latexish_to_typst(r"\alpha _ { t } ^ { \prime }") == "α_(t)^(prime)"
+    assert convert_latexish_to_typst(r"\frac { - \alpha _ { t } ^ { \prime } } { 1 - \alpha _ { t } }") == "frac(- α_(t)^(prime), 1 - α_(t))"
+    assert convert_latexish_to_typst(r"\mathbf { \Delta } _ { \mathbf { \mathcal { X } } _ { t } }") == "bold(Δ)_(bold(X)_(t))"
+
+
+def test_formula_normalizer_preserves_structural_commands() -> None:
+    assert normalize_formula_for_latex_math(r"\frac { a _ { i } } { b ^ 2 }") == r"\frac { a_{i} } { b^2 }"
+    assert normalize_formula_for_latex_math(r"\sqrt { x _ { i , j } }") == r"\sqrt { x_{i , j} }"
+    assert normalize_formula_for_latex_math(r"\left ( x _ { i } + y ^ 2 \right )") == r"\left ( x_{i} + y^2 \right )"
+
+
+def test_formula_map_can_be_recovered_from_protected_map() -> None:
+    protected_map = [
+        {
+            "token_tag": "<f1-8f1/>",
+            "token_type": "formula",
+            "restore_text": "Q _ { t }",
+        }
+    ]
+    formula_map = formula_map_from_protected_map(protected_map)
+    assert formula_map == [{"placeholder": "<f1-8f1/>", "token_tag": "<f1-8f1/>", "formula_text": "Q _ { t }"}]
+
+
+def test_formula_protection_skips_standalone_greek_and_short_bond_tokens() -> None:
+    protected_text, protected_map = protect_inline_content(
+        r"The analogous structure for metal hydride \beta-diketonate 30 would involve \mathrm { C - H } tautomer and \mathrm { O - H } tautomer."
+    )
+
+    assert r"\beta" in protected_text
+    assert r"\mathrm { C - H }" in protected_text
+    assert r"\mathrm { O - H }" in protected_text
+    assert formula_map_from_protected_map(protected_map) == []
+
+
+def test_formula_protection_skips_citationish_pseudo_formula_runs() -> None:
+    protected_text, protected_map = protect_inline_content(
+        r"Only Herzon has 2 \mathrm { e } , \mathrm { f } , 3 \mathrm { e } , 4 \mathrm { a } , 6 \mathrm { b } explored the pathway."
+    )
+
+    assert "<f" not in protected_text
+    assert formula_map_from_protected_map(protected_map) == []
+
+
+def test_segment_formula_protection_skips_pseudo_inline_equations() -> None:
+    protected_text, formula_map, protected_map = protect_inline_formulas_in_segments(
+        [
+            {"type": "text", "content": "Only Herzon has"},
+            {"type": "inline_equation", "content": r"2 \mathrm { e } , \mathrm { f } , 3 \mathrm { e } , 4 \mathrm { a }"},
+            {"type": "text", "content": "explored the pathway."},
+        ]
+    )
+
+    assert "<f" not in protected_text
+    assert formula_map == []
+    assert protected_map == []
+
+
+def test_segment_formula_protection_degrades_merged_left_fragment_to_plain_text() -> None:
+    protected_text, formula_map, protected_map = protect_inline_formulas_in_segments(
+        [
+            {"type": "text", "content": "converted to"},
+            {"type": "text", "content": "Ph(i-"},
+            {"type": "inline_equation", "content": r"\mathrm { P r O } ) _ { 2 } S _ { \mathrm { i } } ^ { \mathrm { i } } \mathrm { H }"},
+            {"type": "text", "content": "(11), traces of"},
+        ]
+    )
+
+    assert protected_text == (
+        r"converted to Ph(i- \mathrm { P r O } ) _ { 2 } S _ { \mathrm { i } } ^ { \mathrm { i } } \mathrm { H } (11), traces of"
+    )
+    assert formula_map == []
+    assert protected_map == []
+
+
+def test_segment_formula_protection_keeps_left_right_latex_structures_protected() -> None:
+    protected_text, formula_map, _ = protect_inline_formulas_in_segments(
+        [
+            {"type": "text", "content": "The dimer was observed as"},
+            {
+                "type": "inline_equation",
+                "content": r"\left( \mathrm { P h } \left( i \mathrm { - } \mathrm { P r O } \right) _ { 2 } \mathrm { S i } \right) _ { 2 } \mathrm { O }",
+            },
+            {"type": "text", "content": "in solution."},
+        ]
+    )
+
+    assert protected_text.startswith("The dimer was observed as <f1-")
+    assert protected_text.endswith("/> in solution.")
+    assert len(formula_map) == 1
+    assert r"\left( \mathrm { P h }" in formula_map[0]["formula_text"]
+
+
+def test_typst_formula_compilation_handles_prime_and_mathcal_scripts() -> None:
+    for formula in (
+        r"\alpha _ { t } ^ { \prime }",
+        r"\frac { - \alpha _ { t } ^ { \prime } } { 1 - \alpha _ { t } }",
+        r"\mathbf { \Delta } _ { \mathbf { \mathcal { X } } _ { t } }",
+    ):
+        path, size = compile_formula_png(formula)
+        assert path.exists()
+        assert size[0] > 0 and size[1] > 0
+
+
+def test_promote_inline_math_like_text_for_garbled_reconstruction_blocks() -> None:
+    text = (
+        "转移矩阵Q_t表明，以概率1-β_t，x_t保持不变；"
+        "每个条目[Q_t]_ij表示从状态i到j的转移概率，且x_t∈{0,1}^K。"
+    )
+    markdown = promote_inline_math_like_text(text)
+    assert "$Q_t$" in markdown
+    assert "$1-β_t$" in markdown
+    assert "$x_t$" in markdown
+    assert "$[Q_t]_{ij}$" in markdown
+    assert "${0,1}^K$" in markdown

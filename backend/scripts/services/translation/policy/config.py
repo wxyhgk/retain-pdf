@@ -59,7 +59,8 @@ class TranslationPolicyConfig:
 
 
 def should_skip_title_translation(mode: str, skip_title_translation: bool) -> bool:
-    return True
+    del mode
+    return bool(skip_title_translation)
 
 
 def should_apply_reference_tail_skip(mode: str) -> bool:

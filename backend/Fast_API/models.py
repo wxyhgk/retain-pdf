@@ -80,7 +80,10 @@ class TranslationRenderParams(BaseModel):
     batch_size: int = Field(default=1, ge=1, description="Number of text items per translation batch.")
     workers: int = Field(default=0, ge=0, description="Concurrent translation requests. 0 means auto: DeepSeek=100, local-compatible APIs=4.")
     mode: Literal["fast", "precise", "sci"] = Field(default="sci", description="Translation mode.")
-    skip_title_translation: bool = Field(default=False, description="Skip title blocks.")
+    skip_title_translation: bool = Field(
+        default=False,
+        description="Whether to skip title blocks. false=translate titles, true=skip title translation.",
+    )
     classify_batch_size: int = Field(default=12, ge=1, description="Classification batch size.")
     rule_profile_name: str = Field(default="general_sci", description="Built-in rule profile name.")
     custom_rules_text: str = Field(default="", description="Optional extra rule text injected into model context.")

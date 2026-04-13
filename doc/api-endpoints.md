@@ -34,6 +34,7 @@ curl -X POST http://127.0.0.1:41000/api/v1/uploads \
   "model_version": "vlm",
   "language": "ch",
   "render_mode": "auto",
+  "skip_title_translation": false,
   "batch_size": 1,
   "workers": 100,
   "classify_batch_size": 12,
@@ -42,6 +43,11 @@ curl -X POST http://127.0.0.1:41000/api/v1/uploads \
   "custom_rules_text": ""
 }
 ```
+
+补充说明：
+
+- `skip_title_translation=false`：翻译标题
+- `skip_title_translation=true`：跳过标题翻译，保留原文标题
 
 ## 3. 查询任务详情
 

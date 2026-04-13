@@ -10,7 +10,7 @@ from services.translation.llm.control_context import TranslationControlContext
 from services.translation.llm.placeholder_guard import result_entry
 from services.translation.llm.placeholder_guard import should_force_translate_body_text
 from services.translation.llm.placeholder_guard import strip_placeholders
-from services.translation.policy.metadata_filter import looks_like_safe_nontranslatable_metadata
+from services.translation.policy.metadata_filter import looks_like_hard_nontranslatable_metadata
 from services.translation.payload import apply_translated_text_map
 from services.translation.payload import pending_translation_items
 from services.translation.payload.parts.common import GROUP_ITEM_PREFIX
@@ -152,8 +152,8 @@ def _is_fast_path_keep_origin_item(item: dict) -> tuple[bool, str]:
         return True, "empty_source_text"
     if not compact:
         return True, "placeholder_only"
-    if looks_like_safe_nontranslatable_metadata(item):
-        return True, "metadata_like_fragment"
+    if looks_like_hard_nontranslatable_metadata(item):
+        return True, "hard_metadata_fragment"
     if (
         len(compact) <= 4
         and compact.replace(" ", "").isalnum()
@@ -167,10 +167,6 @@ def _is_fast_path_keep_origin_item(item: dict) -> tuple[bool, str]:
         and layout_zone == "non_flow"
     ):
         return True, "short_non_body_label"
-    if len(compact) <= 12 and not any(ch.isalpha() for ch in compact):
-        return True, "short_non_linguistic_fragment"
-    if len(compact) <= 16 and compact.lower().startswith(("http://", "https://", "www.")):
-        return True, "url_fragment"
     return False, ""
 
 

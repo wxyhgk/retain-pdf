@@ -78,6 +78,14 @@ GREEK_COMMA_PAIR_RE = re.compile(
     """,
     re.VERBOSE,
 )
+SIMPLE_DISPLAY_COMMAND_RE = re.compile(r"\\(?:mathrm|mathit|mathbf|mathcal|text)\s*\{\s*([^{}]+?)\s*\}")
+STANDALONE_GREEK_RE = re.compile(r"^(?:\\[A-Za-z]+|[α-ωΑ-Ωωγβμφαζη∂])$")
+SHORT_BOND_LIKE_RE = re.compile(r"^[A-Za-z]{1,3}-[A-Za-z]{1,3}$")
+CITATIONISH_PSEUDO_FORMULA_RE = re.compile(r"^(?:\d+\s*[A-Za-z]|[A-Za-z])(?:\s*,\s*(?:\d+\s*[A-Za-z]|[A-Za-z])){2,}$")
+PROSE_HEAVY_WORD_RE = re.compile(r"[A-Za-z]{3,}")
+REFERENCE_TOKEN_RE = re.compile(r"^(?:\d+\s*[A-Za-z](?:\s*-\s*[A-Za-z])?|[A-Za-z](?:\s*-\s*[A-Za-z])?)$")
+FORMULA_NEIGHBOR_ALLOWED_RE = re.compile(r"^[A-Za-z0-9(){}\[\]_^\-+*/=~.,%\\:;]+$")
+FORMULA_NEIGHBOR_PUNCT_RE = re.compile(r"^[,.;:)\]}]+$")
 
 
 TOKEN_TYPE_PREFIX = {
@@ -112,6 +120,15 @@ class _Span:
     restore_text: str
 
 
+@dataclass(frozen=True)
+class _SegmentRecord:
+    index: int
+    segment_type: str
+    content: str
+    start: int
+    end: int
+
+
 def _prepare_text(text: str) -> str:
     return PROSE_BOUNDARY_RE.sub(r"\1 \2", text)
 
@@ -131,8 +148,104 @@ def _iter_formula_matches(text: str) -> Iterable[tuple[int, int, str]]:
             value = match.group(0).strip()
             if GREEK_COMMA_PAIR_RE.match(value):
                 continue
+            if _should_skip_formula_candidate(value):
+                continue
             if any(marker in value for marker in ("\\", "_", "^", "{", "}", "α", "β", "γ", "μ", "φ", "ζ", "η", "∂")):
                 yield match.start(), match.end(), value
+
+
+def _unwrap_display_commands(value: str) -> str:
+    previous = value
+    while True:
+        replaced = SIMPLE_DISPLAY_COMMAND_RE.sub(r"\1", previous)
+        if replaced == previous:
+            return replaced
+        previous = replaced
+
+
+def _normalize_formula_candidate(value: str) -> str:
+    text = _unwrap_display_commands(str(value or "").strip())
+    text = text.replace("{", "").replace("}", "")
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _looks_like_standalone_greek_symbol(value: str) -> bool:
+    normalized = _normalize_formula_candidate(value)
+    if any(marker in normalized for marker in ("_", "^", "(", ")", "[", "]", "+", "=", "/")):
+        return False
+    return bool(STANDALONE_GREEK_RE.fullmatch(normalized))
+
+
+def _looks_like_short_bond_token(value: str) -> bool:
+    normalized = _normalize_formula_candidate(value).replace(" ", "")
+    if any(marker in normalized for marker in ("_", "^", "+", "=", "/", "*")):
+        return False
+    return bool(SHORT_BOND_LIKE_RE.fullmatch(normalized))
+
+
+def _looks_like_citationish_pseudo_formula(value: str) -> bool:
+    normalized = _normalize_formula_candidate(value)
+    if any(marker in normalized for marker in ("_", "^", "(", ")", "[", "]", "+", "=", "/")):
+        return False
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    if CITATIONISH_PSEUDO_FORMULA_RE.fullmatch(normalized):
+        return True
+    parts = [part.strip() for part in normalized.split(",") if part.strip()]
+    if len(parts) < 4:
+        return False
+    return all(REFERENCE_TOKEN_RE.fullmatch(part) for part in parts)
+
+
+def _looks_like_prose_heavy_formula_candidate(value: str) -> bool:
+    command_stripped = re.sub(r"\\[A-Za-z]+", " ", str(value or ""))
+    normalized = _normalize_formula_candidate(command_stripped)
+    words = PROSE_HEAVY_WORD_RE.findall(normalized)
+    if len(words) < 4:
+        return False
+    lowercase_words = sum(1 for word in words if any(ch.islower() for ch in word))
+    return lowercase_words >= 3
+
+
+def _should_skip_formula_candidate(value: str) -> bool:
+    return (
+        _looks_like_prose_heavy_formula_candidate(value)
+        or _looks_like_citationish_pseudo_formula(value)
+        or _looks_like_standalone_greek_symbol(value)
+        or _looks_like_short_bond_token(value)
+    )
+
+
+def _looks_like_formula_neighbor_fragment(text: str) -> bool:
+    normalized = " ".join((text or "").split()).strip()
+    if not normalized or len(normalized) > 24:
+        return False
+    words = re.findall(r"[A-Za-z]+", normalized)
+    if " " in normalized:
+        if len(words) >= 2:
+            return False
+        if len(words) == 1 and len(normalized) > 8:
+            return False
+    compact = normalized.replace(" ", "")
+    if not compact:
+        return False
+    if compact.lower() in {"and", "or", "to", "of", "by", "with", "from", "for", "in", "at"}:
+        return False
+    if FORMULA_NEIGHBOR_PUNCT_RE.fullmatch(compact):
+        return False
+    if not FORMULA_NEIGHBOR_ALLOWED_RE.fullmatch(compact):
+        return False
+    if any(ch in compact for ch in "()[]{}_^-+*/=~.,%\\"):
+        return True
+    return bool(re.search(r"[A-Za-z]+\d|\d+[A-Za-z]|[A-Z][a-z]?[A-Z]", compact))
+
+
+def _should_protect_segment_formula_candidate(value: str, *, merged_left_fragment: bool = False) -> bool:
+    if merged_left_fragment:
+        return False
+    if "\ufffd" in value or "��" in value:
+        return False
+    return not _should_skip_formula_candidate(value)
 
 
 def _term_pattern(entry: GlossaryEntry) -> re.Pattern[str]:
@@ -310,9 +423,9 @@ def protect_inline_formulas_in_segments(
     glossary_entries: list[GlossaryEntry] | None = None,
 ) -> tuple[str, list[dict], list[dict]]:
     chunks: list[str] = []
-    formula_spans: list[_Span] = []
+    records: list[_SegmentRecord] = []
     cursor = 0
-    for segment in segments:
+    for index, segment in enumerate(segments):
         content = segment.get("content", "").strip()
         if not content:
             continue
@@ -322,9 +435,46 @@ def protect_inline_formulas_in_segments(
         start = cursor
         chunks.append(content)
         cursor += len(content)
-        if segment.get("type") == "inline_equation" and not GREEK_COMMA_PAIR_RE.match(content):
-            formula_spans.append(_Span(start, cursor, "formula", content, content))
+        records.append(
+            _SegmentRecord(
+                index=index,
+                segment_type=str(segment.get("type", "") or ""),
+                content=content,
+                start=start,
+                end=cursor,
+            )
+        )
     text = _prepare_text("".join(chunks))
+    formula_spans: list[_Span] = []
+    consumed_indexes: set[int] = set()
+    for position, record in enumerate(records):
+        if record.index in consumed_indexes:
+            continue
+        if record.segment_type != "inline_equation":
+            continue
+        if GREEK_COMMA_PAIR_RE.match(record.content):
+            continue
+        start_record = record
+        end_record = record
+        merged_left_fragment = False
+        if position > 0:
+            left = records[position - 1]
+            if (
+                left.index not in consumed_indexes
+                and left.segment_type == "text"
+                and _looks_like_formula_neighbor_fragment(left.content)
+            ):
+                start_record = left
+                consumed_indexes.add(left.index)
+                merged_left_fragment = True
+        merged_content = text[start_record.start:end_record.end]
+        if not _should_protect_segment_formula_candidate(
+            merged_content,
+            merged_left_fragment=merged_left_fragment,
+        ):
+            continue
+        consumed_indexes.add(record.index)
+        formula_spans.append(_Span(start_record.start, end_record.end, "formula", merged_content, merged_content))
     spans = formula_spans + _collect_term_spans(text, glossary_entries)
     protected_text, protected_map = _protect_spans(text, spans)
     return protected_text, _formula_map_from_protected_map(protected_map), protected_map
@@ -354,6 +504,31 @@ def protected_map_from_formula_map(formula_map: list[dict]) -> list[dict]:
             ).to_dict()
         )
     return protected_map
+
+
+def formula_map_from_protected_map(protected_map: list[dict]) -> list[dict]:
+    formula_map: list[dict] = []
+    if isinstance(protected_map, dict):
+        iterable = []
+    else:
+        iterable = list(protected_map or [])
+    for item in iterable:
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("token_type", "") or "") != "formula":
+            continue
+        placeholder = str(item.get("token_tag") or item.get("placeholder") or "")
+        formula_text = str(item.get("restore_text") or item.get("formula_text") or item.get("original_text") or "")
+        if not placeholder or not formula_text:
+            continue
+        formula_map.append(
+            {
+                "placeholder": placeholder,
+                "token_tag": placeholder,
+                "formula_text": formula_text,
+            }
+        )
+    return formula_map
 
 
 def wrap_formula_inline_math(formula_text: str) -> str:

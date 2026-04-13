@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 
-from services.translation.ocr.json_extractor import get_pages
 from services.translation.ocr.normalized_reader import is_normalized_document
 
 
@@ -73,7 +72,7 @@ def resolve_reference_cutoff(data: dict) -> tuple[int | None, int | None]:
     if marker:
         return marker.get("page_index"), marker.get("order")
 
-    for page_idx, page in enumerate(get_pages(data)):
+    for page_idx, page in enumerate(data.get("pages", []) or []):
         for block_idx, block in enumerate(page.get("blocks", []) or []):
             stack = [block]
             while stack:

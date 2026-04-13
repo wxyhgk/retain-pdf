@@ -102,7 +102,7 @@ export function saveBrowserStoredConfig() {
 }
 
 export function loadDeveloperStoredConfig() {
-  if (isDesktopMode() || typeof window.localStorage === "undefined") {
+  if (typeof window.localStorage === "undefined") {
     return {};
   }
   try {
@@ -118,7 +118,7 @@ export function loadDeveloperStoredConfig() {
 }
 
 export function saveDeveloperStoredConfig(payload = {}) {
-  if (isDesktopMode() || typeof window.localStorage === "undefined") {
+  if (typeof window.localStorage === "undefined") {
     return;
   }
   try {

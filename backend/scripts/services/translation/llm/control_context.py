@@ -23,7 +23,7 @@ class SegmentationPolicy:
     formula_segment_window_target_count: int = 8
     formula_segment_window_max_chars: int = 1200
     formula_segment_window_neighbor_context: int = 2
-    prefer_plain_when_segment_count_leq: int = 0
+    prefer_plain_when_segment_count_leq: int = 4
     small_formula_inline_enabled: bool = True
     small_formula_inline_max_placeholders: int = 3
     small_formula_inline_max_segments: int = 4

@@ -151,3 +151,13 @@ def test_policy_config_keeps_metadata_fragment_page_idx_contract() -> None:
 
     assert default_config.metadata_fragment_max_page_idx == 8
     assert overridden_config.metadata_fragment_max_page_idx == 3
+
+
+def test_policy_config_honors_skip_title_translation_false() -> None:
+    config = build_translation_policy_config(mode="sci", skip_title_translation=False)
+    assert config.enable_title_skip is False
+
+
+def test_policy_config_honors_skip_title_translation_true() -> None:
+    config = build_translation_policy_config(mode="sci", skip_title_translation=True)
+    assert config.enable_title_skip is True

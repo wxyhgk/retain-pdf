@@ -86,6 +86,39 @@ def test_heavy_continuation_group_is_split_back_to_single_units() -> None:
     assert all(not unit.get("group_protected_source_text") for unit in units)
 
 
+def test_fragmented_formula_continuation_group_stays_grouped() -> None:
+    def member(item_id: str, source: str, placeholders: list[str]):
+        return {
+            "item_id": item_id,
+            "translation_unit_id": "__cg__:light-fragmented",
+            "translation_unit_kind": "group",
+            "translation_unit_member_ids": ["a", "b"],
+            "block_type": "text",
+            "should_translate": True,
+            "protected_source_text": source,
+            "source_text": source,
+            "formula_map": [{"placeholder": token} for token in placeholders],
+            "protected_map": [
+                {"token_tag": token, "token_type": "formula", "checksum": "a7c"}
+                for token in placeholders
+            ],
+            "continuation_group": "cg-light-fragmented",
+            "metadata": {"structure_role": "body"},
+        }
+
+    payload = [
+        member("a", "the catalyst <f1-a7c/> and the surface <f2-a7c/> and", ["<f1-a7c/>", "<f2-a7c/>"]),
+        member("b", "the intermediate <f1-a7c/> and the product <f2-a7c/> show stable activity.", ["<f1-a7c/>", "<f2-a7c/>"]),
+    ]
+
+    units = pending_translation_items(payload)
+
+    assert [unit["item_id"] for unit in units] == ["__cg__:light-fragmented"]
+    assert units[0]["translation_unit_id"] == "__cg__:light-fragmented"
+    assert units[0]["continuation_group"] == "cg-light-fragmented"
+    assert "group_split_reason" not in payload[0] or not payload[0]["group_split_reason"]
+
+
 def test_smarter_batches_group_low_risk_items_and_keep_complex_items_single() -> None:
     context = build_translation_control_context()
     batchable_text = "This sentence describes antibacterial activity and provides enough body text for translation."
@@ -136,8 +169,8 @@ def test_fast_path_keep_origin_is_removed_from_network_batches() -> None:
         effective_batch_size=4,
         translation_context=context,
     )
-    assert [[item["item_id"] for item in batch] for batch in batches] == [["body"]]
-    assert [list(result)[0] for result in immediate] == ["placeholder-only", "short-number"]
+    assert [[item["item_id"] for item in batch] for batch in batches] == [["body"], ["short-number"]]
+    assert [list(result)[0] for result in immediate] == ["placeholder-only"]
     assert all(list(result.values())[0]["decision"] == "keep_origin" for result in immediate)
 
 
@@ -181,7 +214,29 @@ def test_fast_path_keep_origin_skips_editorial_metadata_tokens() -> None:
     )
     assert [[item["item_id"] for item in batch] for batch in batches] == [["body"]]
     assert [list(result)[0] for result in immediate] == ["crossmark"]
-    assert list(immediate[0].values())[0]["translation_diagnostics"]["degradation_reason"] == "metadata_like_fragment"
+    assert list(immediate[0].values())[0]["translation_diagnostics"]["degradation_reason"] == "hard_metadata_fragment"
+
+
+def test_fast_path_keep_origin_skips_pure_email_fragments_only() -> None:
+    context = build_translation_control_context()
+    batches, immediate = _build_translation_batches(
+        [
+            _item(
+                "email",
+                "author@example.edu",
+                block_type="text",
+                metadata={"structure_role": "body"},
+                page_idx=0,
+                lines=[{"spans": [{"content": "author@example.edu"}]}],
+            ),
+            _item("body", "This sentence describes antibacterial activity and provides enough body text for translation."),
+        ],
+        effective_batch_size=4,
+        translation_context=context,
+    )
+    assert [[item["item_id"] for item in batch] for batch in batches] == [["body"]]
+    assert [list(result)[0] for result in immediate] == ["email"]
+    assert list(immediate[0].values())[0]["translation_diagnostics"]["degradation_reason"] == "hard_metadata_fragment"
 
 
 def test_duplicate_plain_items_are_collapsed_and_expanded_with_item_diagnostics() -> None:

@@ -3,6 +3,7 @@ import json
 import sys
 import types
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 
@@ -75,6 +76,22 @@ def make_small_formula_inline_item() -> dict:
     }
 
 
+def make_fragmented_formula_item(formula_count: int = 5) -> dict:
+    parts = []
+    for index in range(1, formula_count + 1):
+        parts.append(f"the catalyst <f{index}-a7c/> and")
+    parts.append("shows stable activity in experiments.")
+    source = " ".join(parts)
+    return {
+        "item_id": f"fragmented-{formula_count}",
+        "block_type": "text",
+        "protected_source_text": source,
+        "translation_unit_protected_source_text": source,
+        "metadata": {"structure_role": "body"},
+        "formula_map": {"dummy": "dummy"},
+    }
+
+
 class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
     def test_formula_segment_messages_default_to_tagged_protocol(self):
         load_retrying_translator()
@@ -110,6 +127,18 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
         score = segment_routing.small_formula_risk_score(source)
 
         self.assertGreaterEqual(score, 4)
+
+    def test_fragmented_formula_segments_do_not_force_segmented_route(self):
+        module = load_retrying_translator()
+        import services.translation.llm.segment_routing as segment_routing
+
+        item = make_fragmented_formula_item()
+        skeleton, segments = segment_routing.build_formula_segment_plan(item["translation_unit_protected_source_text"])
+
+        self.assertGreater(len(segments), 4)
+        self.assertLessEqual(segment_routing.effective_formula_segment_count(segments), 4)
+        self.assertEqual(module._formula_segment_translation_route(item), "none")
+        self.assertFalse(module._should_use_formula_segment_translation(item))
 
     def test_plain_text_retry_uses_windowed_route_before_plain_text(self):
         module = load_retrying_translator()
@@ -256,6 +285,7 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
     def test_plain_text_retry_skips_windowed_fallback_for_single_window(self):
         module = load_retrying_translator()
         import services.translation.llm.fallbacks as fallbacks
+        from services.translation.llm.control_context import build_translation_control_context, SegmentationPolicy
 
         item = make_formula_item(2)
         calls: list[str] = []
@@ -279,7 +309,23 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
             fallbacks.translate_single_item_formula_segment_text_with_retries = fake_single
             fallbacks.translate_single_item_formula_segment_windows_with_retries = fake_windowed
             fallbacks.translate_single_item_plain_text = fake_plain
-            result = module._translate_single_item_plain_text_with_retries(item, request_label="unit")
+            context = build_translation_control_context(mode="sci")
+            context = replace(
+                context,
+                segmentation_policy=SegmentationPolicy(
+                    prefer_plain_when_segment_count_leq=0,
+                    small_formula_inline_enabled=False,
+                ),
+            )
+            result = fallbacks.translate_single_item_plain_text_with_retries(
+                item,
+                api_key="",
+                model="deepseek-chat",
+                base_url="https://api.deepseek.com/v1",
+                request_label="unit",
+                context=context,
+                diagnostics=None,
+            )
         finally:
             fallbacks.translate_single_item_formula_segment_text_with_retries = original_single
             fallbacks.translate_single_item_formula_segment_windows_with_retries = original_windowed
@@ -288,7 +334,7 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
         self.assertEqual(calls, ["single", "plain"])
         self.assertEqual(result[item["item_id"]]["decision"], "translate")
 
-    def test_windowed_formula_translation_rejects_local_english_keep_origin_window(self):
+    def test_windowed_formula_translation_allows_local_english_keep_origin_window(self):
         module = load_retrying_translator()
         import services.translation.llm.deepseek_client as deepseek_client
         import services.translation.llm.segment_routing as segment_routing
@@ -315,13 +361,14 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
         try:
             segment_routing.request_chat_content = fake_request
             deepseek_client.request_chat_content = fake_request
-            with self.assertRaisesRegex(ValueError, "predominantly English"):
-                module._translate_single_item_formula_segment_windows_with_retries(item, request_label="unit")
+            result = module._translate_single_item_formula_segment_windows_with_retries(item, request_label="unit")
         finally:
             segment_routing.request_chat_content = original_request
             deepseek_client.request_chat_content = original_deepseek_request
 
         self.assertGreaterEqual(len(calls), 3)
+        self.assertEqual(result[item["item_id"]]["final_status"], "translated")
+        self.assertIn("clause 9 explaining the result", result[item["item_id"]]["translated_text"])
 
     def test_segment_parser_allows_empty_optional_connector_segment(self):
         load_retrying_translator()
@@ -516,6 +563,91 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
 
         self.assertGreaterEqual(len(seen), 2)
         self.assertEqual(result[item["item_id"]]["final_status"], "partially_translated")
+
+    def test_sentence_fallback_revalidates_merged_partial_output_without_blocking_warning_only_english(self):
+        module = load_retrying_translator()
+        import services.translation.llm.fallbacks as fallbacks
+        from services.translation.llm.control_context import build_translation_control_context
+
+        item = {
+            "item_id": "p009-b018",
+            "block_type": "text",
+            "metadata": {"structure_role": "body"},
+            "translation_unit_protected_source_text": (
+                "Electrochemical oxidations of nickel(II)(aryl)halide complexes result in irreversible oxidation waves "
+                "ranging from <f1-2ff/> to <f2-05f/> (vs SCE). Perhaps more informative is looking at the study."
+            ),
+            "protected_source_text": (
+                "Electrochemical oxidations of nickel(II)(aryl)halide complexes result in irreversible oxidation waves "
+                "ranging from <f1-2ff/> to <f2-05f/> (vs SCE). Perhaps more informative is looking at the study."
+            ),
+            "formula_map": [{"placeholder": "<f1-2ff/>"}, {"placeholder": "<f2-05f/>"}],
+            "translation_unit_formula_map": [{"placeholder": "<f1-2ff/>"}, {"placeholder": "<f2-05f/>"}],
+        }
+
+        seen = {"count": 0}
+
+        def fake_plain(sentence_item, *args, **kwargs):
+            seen["count"] += 1
+            if seen["count"] == 1:
+                raise fallbacks.EnglishResidueError(item["item_id"])
+            return {item["item_id"]: module._result_entry("translate", "或许更具信息量的是查看该研究。")}
+
+        def fake_raw(sentence_item, *args, **kwargs):
+            return {
+                item["item_id"]: module._result_entry(
+                    "translate",
+                    "Electrochemical oxidations of nickel(II)(aryl)halide complexes result in irreversible oxidation waves ranging from <f1-2ff/> to <f2-05f/> (vs SCE).",
+                )
+            }
+
+        original_plain = fallbacks.translate_single_item_plain_text
+        original_raw = fallbacks.translate_single_item_plain_text_unstructured
+        try:
+            fallbacks.translate_single_item_plain_text = fake_plain
+            fallbacks.translate_single_item_plain_text_unstructured = fake_raw
+            result = fallbacks._sentence_level_fallback(
+                item,
+                api_key="",
+                model="deepseek-chat",
+                base_url="https://api.deepseek.com/v1",
+                request_label="unit",
+                context=build_translation_control_context(mode="sci"),
+                diagnostics=None,
+            )
+        finally:
+            fallbacks.translate_single_item_plain_text = original_plain
+            fallbacks.translate_single_item_plain_text_unstructured = original_raw
+
+        payload = result[item["item_id"]]
+        self.assertEqual(payload["final_status"], "partially_translated")
+        self.assertIn("Electrochemical oxidations of nickel(II)(aryl)halide complexes", payload["translated_text"])
+        self.assertIn("或许更具信息量的是查看该研究。", payload["translated_text"])
+
+    def test_partial_translation_payload_is_not_cacheable(self):
+        load_retrying_translator()
+        import services.translation.llm.fallbacks as fallbacks
+
+        self.assertFalse(
+            fallbacks._should_store_translation_result(
+                {
+                    "decision": "translate",
+                    "translated_text": "英文原文。或许更具",
+                    "final_status": "partially_translated",
+                    "translation_diagnostics": {"fallback_to": "sentence_level"},
+                }
+            )
+        )
+        self.assertTrue(
+            fallbacks._should_store_translation_result(
+                {
+                    "decision": "translate",
+                    "translated_text": "完整中文译文。",
+                    "final_status": "translated",
+                    "translation_diagnostics": {"route_path": ["block_level"]},
+                }
+            )
+        )
 
 if __name__ == "__main__":
     unittest.main()

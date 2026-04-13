@@ -17,12 +17,16 @@ from services.rendering.typst.source_builder import build_typst_overlay_source
 
 def _resolved_font_paths(font_paths: list[Path] | None = None) -> list[Path]:
     resolved: list[Path] = []
+    if fonts.BACKEND_FONTS_DIR.exists():
+        resolved.append(fonts.BACKEND_FONTS_DIR)
     raw = os.environ.get("RETAIN_PDF_TYPST_FONT_DIRS", "").strip()
     if raw:
         for item in raw.split(os.pathsep):
             value = item.strip()
             if value:
-                resolved.append(Path(value))
+                path = Path(value)
+                if path not in resolved:
+                    resolved.append(path)
     for item in font_paths or []:
         if item not in resolved:
             resolved.append(item)
