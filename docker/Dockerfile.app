@@ -27,6 +27,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHON_BIN=python3 \
     TYPST_BIN=/usr/local/bin/typst \
     RETAIN_PDF_FONT_PATH=/usr/local/share/fonts/source-han-serif/SourceHanSerifSC-Regular.otf \
+    RETAIN_PDF_TITLE_BOLD_FONT_PATH=/usr/local/share/fonts/source-han-serif/SourceHanSerifSC-Bold.otf \
     RETAIN_PDF_TYPST_FONT_FAMILY="Source Han Serif SC" \
     RUST_API_PORT=41000 \
     RUST_API_SIMPLE_PORT=42000
@@ -45,10 +46,12 @@ COPY --from=typstsrc /usr/local/bin/typst /usr/local/bin/typst
 
 RUN mkdir -p /usr/local/share/fonts/source-han-serif
 
-COPY desktop/assets/fonts/SourceHanSerifSC-Regular.otf /usr/local/share/fonts/source-han-serif/SourceHanSerifSC-Regular.otf
+COPY backend/fonts/SourceHanSerifSC-Regular.otf /usr/local/share/fonts/source-han-serif/SourceHanSerifSC-Regular.otf
+COPY backend/fonts/SourceHanSerifSC-Bold.otf /usr/local/share/fonts/source-han-serif/SourceHanSerifSC-Bold.otf
 COPY docker/fontconfig/65-source-han-serif-alias.conf /etc/fonts/conf.d/65-source-han-serif-alias.conf
 
 RUN fc-scan /usr/local/share/fonts/source-han-serif/SourceHanSerifSC-Regular.otf >/dev/null \
+    && fc-scan /usr/local/share/fonts/source-han-serif/SourceHanSerifSC-Bold.otf >/dev/null \
     && fc-cache -f
 
 COPY docker/requirements-app.txt /tmp/requirements-app.txt

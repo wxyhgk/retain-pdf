@@ -1,6 +1,6 @@
 {
   "name": "retain-pdf-desktop",
-  "version": "4.0.6-beta",
+  "version": "4.0.7",
   "private": true,
   "description": "RetainPDF desktop wrapper",
   "homepage": "https://github.com/wxyhgk/retain-pdf",
