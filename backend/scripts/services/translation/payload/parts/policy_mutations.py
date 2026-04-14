@@ -111,6 +111,15 @@ def _mark_item_skipped(item: dict, label: str) -> None:
     clear_translation_fields(item)
 
 
+def _preserve_source_as_translation(item: dict) -> None:
+    source_text = str(item.get("source_text", "") or "").strip()
+    protected_source_text = str(item.get("protected_source_text", "") or source_text).strip()
+    item["translation_unit_protected_translated_text"] = protected_source_text
+    item["translation_unit_translated_text"] = source_text
+    item["protected_translated_text"] = protected_source_text
+    item["translated_text"] = source_text
+
+
 def apply_shared_literal_block_policy(payload: list[dict]) -> dict[str, int]:
     code_skipped = 0
     code_region_skipped = 0
@@ -315,6 +324,7 @@ def apply_title_skip(payload: list[dict]) -> int:
         item["should_translate"] = False
         item["skip_reason"] = "skip_title"
         clear_translation_fields(item)
+        _preserve_source_as_translation(item)
         skipped += 1
     return skipped
 

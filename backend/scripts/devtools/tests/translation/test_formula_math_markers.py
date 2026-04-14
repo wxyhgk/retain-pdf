@@ -113,6 +113,22 @@ def test_typst_markdown_direct_typst_converts_existing_left_right_inline_math() 
     assert "$" in markdown
 
 
+def test_typst_markdown_escapes_literal_double_asterisk_in_plain_text() -> None:
+    markdown = build_markdown_from_direct_text(
+        r"使用 6-310** 基组及其对应优化几何结构计算。",
+        aggressive_math_promotion=False,
+    )
+    assert r"6-310\*\*" in markdown
+
+
+def test_direct_typst_passthrough_escapes_literal_double_asterisk_outside_math() -> None:
+    markdown = build_direct_typst_passthrough_text(
+        r"使用 6-310** 基组，并保留 $E=mc^2$ 不变。"
+    )
+    assert r"6-310\*\*" in markdown
+    assert r"$E=mc^2$" in markdown
+
+
 def test_build_markdown_from_parts_direct_typst_passthrough() -> None:
     markdown = build_direct_typst_passthrough_text(
         r"观察到 $\mathrm{Ph(i-PrO)SiH_2}$ (6) 的消耗速率快于其他硅烷。"

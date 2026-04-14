@@ -1,10 +1,11 @@
-Read the first two pages of this PDF and infer the document's academic or technical domain.
+请阅读这个 PDF 的前两页，判断其所属的学术或技术领域。
 
-Then write a concise translation guidance paragraph in Chinese for the later full-book translation.
+然后为后续整本书翻译写一段简洁的中文指导。
 
-The guidance should help the translation model:
-- preserve domain terminology
-- keep formulas, code, commands, file names, options, symbols, and abbreviations unchanged when appropriate
-- use natural but academically accurate Chinese
-- avoid over-free paraphrase
-- prefer established Chinese terminology for the inferred domain
+这段指导至少应帮助翻译模型做到：
+- 保持领域术语稳定一致
+- 在需要时保留英文缩写、模型名、符号、命令、文件名和代码
+- 使用自然、准确、符合学术语体的中文
+- 避免过度意译或无依据扩写
+- 优先采用该领域常见的中文术语
+- 当内容里出现数学表达式、变量、化学式、上下标、单位幂次时，先理解语义，再主动用 `$...$` 包裹应作为公式显示的部分

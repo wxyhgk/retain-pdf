@@ -150,3 +150,26 @@ def test_apply_standard_redaction_uses_bbox_for_continuation_items(monkeypatch) 
 
     assert diagnostics["raw_removable_rects"] == 0
     assert page.redact_annots == [(rect, None)]
+
+
+def test_apply_standard_redaction_uses_bbox_for_non_continuation_items(monkeypatch) -> None:
+    page = _FakePage()
+    rect = fitz.Rect(314, 296, 560, 451)
+    removable_rect = fitz.Rect(320, 320, 540, 430)
+    valid_items = [(rect, {"item_id": "p005-b010"}, "中文")]
+
+    monkeypatch.setattr(redaction_routes, "collect_page_drawing_rects", lambda _page: [])
+    monkeypatch.setattr(redaction_routes, "page_should_use_cover_only", lambda _rects: False)
+    monkeypatch.setattr(redaction_routes, "item_should_use_cover_only", lambda _rect, _drawing_rects: False)
+    monkeypatch.setattr(
+        redaction_routes,
+        "item_removable_text_rects",
+        lambda _page, _item, _rect: [removable_rect],
+    )
+    monkeypatch.setattr(redaction_routes, "resolved_fill_color", lambda _page, _rect, fill: fill)
+
+    diagnostics = redaction_routes.apply_standard_redaction(page, valid_items)
+
+    assert diagnostics["raw_removable_rects"] == 0
+    assert diagnostics["merged_removable_rects"] == 0
+    assert page.redact_annots == [(rect, None)]

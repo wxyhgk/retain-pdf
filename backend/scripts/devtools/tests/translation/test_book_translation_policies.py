@@ -9,6 +9,7 @@ sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
 from runtime.pipeline.book_translation_policies import finalize_page_payloads
 from services.translation.policy.config import build_translation_policy_config
+from services.translation.payload.parts.policy_mutations import apply_title_skip
 
 
 def _page_payload_item(
@@ -161,3 +162,31 @@ def test_policy_config_honors_skip_title_translation_false() -> None:
 def test_policy_config_honors_skip_title_translation_true() -> None:
     config = build_translation_policy_config(mode="sci", skip_title_translation=True)
     assert config.enable_title_skip is True
+
+
+def test_apply_title_skip_preserves_source_text_for_render_fallback() -> None:
+    payload = [
+        {
+            "item_id": "p001-b000",
+            "block_type": "title",
+            "source_text": "Introduction",
+            "protected_source_text": "Introduction",
+            "classification_label": "",
+            "should_translate": True,
+            "skip_reason": "",
+            "translation_unit_protected_translated_text": "",
+            "translation_unit_translated_text": "",
+            "protected_translated_text": "",
+            "translated_text": "",
+            "group_protected_translated_text": "",
+            "group_translated_text": "",
+        }
+    ]
+
+    skipped = apply_title_skip(payload)
+
+    assert skipped == 1
+    assert payload[0]["should_translate"] is False
+    assert payload[0]["skip_reason"] == "skip_title"
+    assert payload[0]["translated_text"] == "Introduction"
+    assert payload[0]["protected_translated_text"] == "Introduction"

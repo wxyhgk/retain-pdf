@@ -82,24 +82,14 @@ def _item_math_mode(item: dict) -> str:
 
 def _direct_math_guidance() -> str:
     return (
-        "Direct math output mode is enabled.\n"
-        "Translate the prose to Chinese and write mathematical expressions directly in the final answer.\n"
-        "You must mark inline mathematical expressions with `$...$` yourself; do not leave raw LaTeX-like math outside `$...$`.\n"
-        "If the source contains obvious OCR damage inside a formula or math-like expression, you may make a minimal local repair so the math is syntactically complete.\n"
-        "Allowed repairs are limited to obvious local math fixes such as restoring a missing brace, parenthesis, subscript/superscript attachment, or a clearly broken command token.\n"
-        "Do not invent new scientific content, do not complete missing prose, and do not expand beyond the visible source span.\n"
-        "Follow these normalization examples exactly when similar patterns appear:\n"
-        "- Source: ^{a} measured in duplicate.\n"
-        "  Output: $^{a}$ 重复测定。\n"
-        "- Source: performed on a {10\\mu }\\mathrm{mol} scale.\n"
-        "  Output: 在 $10\\,\\mu\\mathrm{mol}$ 规模下进行。\n"
-        "- Source: observed {2}^{\\prime }{2}^{\\prime }-substituted product.\n"
-        "  Output: 观察到 $2',2'$-取代产物。\n"
-        "- Source: Title {}^{a}\n"
-        "  Output: 标题 $^{a}$\n"
-        "- Source: a \\mathrm{X} signal was detected.\n"
-        "  Output: 检测到 $\\mathrm{X}$ 信号。\n"
-        "Do not emit placeholder tokens, JSON wrappers, labels, or explanations."
+        "当前启用 direct_typst 公式直出模式。\n"
+        "请先理解整句语义，再直接输出中文译文。\n"
+        "凡是语义上属于公式、变量、上下标、数学表达式、化学式、物理量符号、带上标或下标的单位与记号，请主动用 `$...$` 包裹。\n"
+        "不要把裸露的 LaTeX 风格数学片段直接留在正文里。\n"
+        "普通正文不要随意放进 `$...$`。\n"
+        "如果 OCR 造成公式存在明显且局部的错误，例如空格错乱、括号缺失、花括号缺失、上下标脱落或命令被截断，你可以按语义做最小修复后再输出，使其可以正常渲染。\n"
+        "不要补写缺失的正文内容，不要扩写原文，不要编造新的科学信息。\n"
+        "不要输出占位符、JSON、标签、代码块或解释，只输出最终译文。"
     )
 
 

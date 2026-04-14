@@ -7,6 +7,8 @@ TOP_BAND_RATIO = 0.14
 BOTTOM_BAND_RATIO = 0.08
 MIN_TOP_BAND_PT = 72.0
 MIN_BOTTOM_BAND_PT = 48.0
+MAX_MARGIN_BLOCK_HEIGHT_PT = 22.0
+MAX_MARGIN_BLOCK_LINES = 2
 
 
 def _band_limits(page: fitz.Page) -> tuple[float, float]:
@@ -38,6 +40,10 @@ def _candidate_margin_block_rects(page: fitz.Page) -> list[fitz.Rect]:
         text = str(entry[4] or "").strip()
         if block_type != 0 or rect.is_empty or not text:
             continue
+        if (rect.y1 - rect.y0) > MAX_MARGIN_BLOCK_HEIGHT_PT:
+            continue
+        if len([line for line in text.splitlines() if line.strip()]) > MAX_MARGIN_BLOCK_LINES:
+            continue
         center_y = (rect.y0 + rect.y1) / 2.0
         if center_y <= top_limit or center_y >= bottom_limit:
             rects.append(rect)
@@ -56,4 +62,3 @@ def cleanup_margin_text_blocks(page: fitz.Page) -> int:
         text=fitz.PDF_REDACT_TEXT_REMOVE,
     )
     return len(rects)
-

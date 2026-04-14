@@ -145,6 +145,10 @@ jobs:
           New-Item -ItemType Directory -Path $sitePackages -Force | Out-Null
           python -m pip install --upgrade pip
           python -m pip install --target $sitePackages -r desktop/requirements-desktop-windows.txt
+          $pythonBundleExe = Join-Path $bundleRoot "python.exe"
+          $env:PYTHONPATH = $sitePackages
+          & $pythonBundleExe -c "import requests, fitz, pikepdf, PIL; print('python_bundle_import_check=ok')"
+          Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
           Get-ChildItem $bundleRoot | Select-Object Name, Length, LastWriteTime
           $bundleSize = [Math]::Round(((Get-ChildItem $bundleRoot -Recurse -File | Measure-Object -Property Length -Sum).Sum / 1MB), 2)
           Write-Host "Bundled Python size: ${bundleSize} MB"
@@ -301,9 +305,9 @@ jobs:
           )"
           site_packages="$bundle_root/lib/python${py_minor}/site-packages"
           mkdir -p "$site_packages"
-          "$bundle_root/bin/python3" -m pip install --target "$site_packages" -r desktop/requirements-desktop-macos.txt
+          "$bundle_root/bin/python3" -m pip install --target "$site_packages" -r desktop/requirements-desktop-posix.txt
           "$bundle_root/bin/python3" - <<'PY'
-          import requests, fitz, pikepdf
+          import requests, fitz, pikepdf, PIL
           print("python_bundle_import_check=ok")
           PY
           ldd "$bundle_root/bin/python3"
@@ -453,9 +457,9 @@ jobs:
           export LDFLAGS="-L$qpdf_prefix/lib ${LDFLAGS:-}"
           export PKG_CONFIG_PATH="$qpdf_prefix/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
           "$bundle_root/bin/python3" -m pip install --upgrade pip
-          "$bundle_root/bin/python3" -m pip install -r desktop/requirements-desktop-macos.txt
+          "$bundle_root/bin/python3" -m pip install -r desktop/requirements-desktop-posix.txt
           "$bundle_root/bin/python3" - <<'PY'
-          import requests, fitz, pikepdf
+          import requests, fitz, pikepdf, PIL
           print("python_bundle_import_check=ok")
           PY
           du -sh "$bundle_root"

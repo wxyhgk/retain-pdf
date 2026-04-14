@@ -168,6 +168,10 @@ def _normalize_plain_segment_for_math(text: str) -> str:
     return re.sub(r"\\{2,}(?=[A-Za-z])", r"\\", text or "")
 
 
+def _escape_markdown_literal_asterisks(text: str) -> str:
+    return (text or "").replace("*", r"\*")
+
+
 def promote_inline_math_like_text(text: str) -> str:
     if not text:
         return ""
@@ -182,6 +186,7 @@ def promote_inline_math_like_text(text: str) -> str:
     promoted = _apply_to_non_math_segments(promoted, lambda plain: INLINE_EXPR_RE.sub(_wrap_raw_math_candidate, plain))
     promoted = _apply_to_non_math_segments(promoted, lambda plain: SUBSCRIPT_TOKEN_RE.sub(_wrap_raw_math_candidate, plain))
     promoted = _apply_to_non_math_segments(promoted, lambda plain: SET_POWER_TOKEN_RE.sub(_wrap_raw_math_candidate, plain))
+    promoted = _apply_to_non_math_segments(promoted, _escape_markdown_literal_asterisks)
     return promoted
 
 
@@ -195,7 +200,10 @@ def build_markdown_from_direct_text(
     if aggressive_math_promotion:
         markdown = promote_inline_math_like_text(markdown)
     else:
-        markdown = _normalize_plain_segment_for_math(markdown)
+        markdown = _apply_to_non_math_segments(
+            markdown,
+            lambda plain: _escape_markdown_literal_asterisks(_normalize_plain_segment_for_math(plain)),
+        )
     if normalize_existing_inline_math:
         markdown = _normalize_existing_inline_math_for_typst(markdown)
     markdown = _surround_inline_math_with_spaces(markdown)
@@ -220,7 +228,7 @@ def build_markdown_paragraph(item: dict) -> str:
 
 
 def build_direct_typst_passthrough_text(text: str) -> str:
-    return str(text or "").strip()
+    return _apply_to_non_math_segments(str(text or "").strip(), _escape_markdown_literal_asterisks)
 
 
 def build_markdown_from_parts(

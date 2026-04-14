@@ -1,0 +1,4 @@
+Pillow==10.4.0
+PyMuPDF==1.26.5
+pikepdf==7.2.0
+requests==2.32.5

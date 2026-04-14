@@ -8,7 +8,6 @@ import fitz
 from services.rendering.api.background_image_route import replace_background_image_page
 from services.rendering.api.pdf_overlay import redact_translated_text_areas
 from services.rendering.api.pdf_overlay import strip_page_links
-from services.rendering.redaction.margin_text_cleanup import cleanup_margin_text_blocks
 from services.rendering.redaction.shared import iter_valid_translated_items
 from services.rendering.redaction.vector_text_cleanup import collect_vector_text_rects
 from services.rendering.redaction.redaction_analysis import page_has_large_background_image
@@ -51,8 +50,6 @@ def apply_source_page_overlay(
         return redaction
 
     vector_cover_only = should_use_cover_only_for_vector_text(page, translated_items)
-    if not (cover_only or vector_cover_only):
-        cleanup_margin_text_blocks(page)
     redaction = redact_translated_text_areas(page, translated_items, cover_only=cover_only or vector_cover_only)
     redaction["elapsed_seconds"] = time.perf_counter() - started
     redaction["source_overlay_mode"] = "cover_only" if (cover_only or vector_cover_only) else "standard"

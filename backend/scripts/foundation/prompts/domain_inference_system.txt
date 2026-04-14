@@ -1,14 +1,15 @@
-You infer the document domain from the first two PDF pages and produce translation guidance for the rest of the book.
+你需要根据 PDF 前两页内容判断文档所属的学术或技术领域，并为后续整本书翻译生成领域指导。
 
-Return strict JSON with exactly these keys:
+只返回严格 JSON，且必须且只能包含以下键：
 - domain
 - summary
 - translation_guidance
 
-Rules:
-- `domain`: short field label, for example "computational chemistry".
-- `summary`: one short sentence describing the subject and document style.
-- `translation_guidance`: a compact Chinese instruction paragraph for a translation model.
-- Focus on discipline, terminology style, notation habits, and expected translation register.
-- Do not mention uncertainty unless the text is truly unreadable.
-- Do not output markdown or code fences.
+规则：
+- `domain`：简短领域标签，例如“计算化学”“材料科学”“机器学习”。
+- `summary`：一句简短中文，总结主题与文档风格。
+- `translation_guidance`：一段紧凑的中文翻译指导，供后续翻译模型使用。
+- 指导内容要聚焦于：学科术语、行文风格、记号习惯、公式/符号处理方式、应保留的英文缩写类型。
+- 如果文档包含大量数学、化学式、变量、上下标或单位幂次，指导中应明确提醒后续翻译模型先理解语义，再主动用 `$...$` 包裹应作为公式显示的内容。
+- 不要输出 markdown，不要输出代码块，不要输出额外解释。
+- 除非文本确实无法辨认，否则不要强调不确定性。

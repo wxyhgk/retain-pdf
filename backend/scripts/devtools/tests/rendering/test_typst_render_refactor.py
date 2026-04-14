@@ -215,13 +215,10 @@ def test_apply_source_page_overlay_uses_cover_only_when_vector_text_detected() -
     ), mock.patch(
         "services.rendering.typst.page_ops.redact_translated_text_areas",
     ) as redact_mock, mock.patch(
-        "services.rendering.typst.page_ops.cleanup_margin_text_blocks",
-    ) as margin_mock, mock.patch(
         "services.rendering.typst.page_ops.strip_page_links",
     ):
         apply_source_page_overlay(page, translated_items)
 
-    margin_mock.assert_not_called()
     redact_mock.assert_called_once()
     assert redact_mock.call_args.kwargs["cover_only"] is True
 

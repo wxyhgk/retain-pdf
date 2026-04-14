@@ -627,11 +627,11 @@ class TranslationFastPathTests(unittest.TestCase):
             response_style="tagged",
         )
         system_prompt = messages[0]["content"]
-        self.assertIn("You must mark inline mathematical expressions with `$...$` yourself", system_prompt)
-        self.assertIn("minimal local repair", system_prompt)
-        self.assertIn("Do not invent new scientific content", system_prompt)
-        self.assertIn("Source: ^{a} measured in duplicate.", system_prompt)
-        self.assertIn("Output: $^{a}$ 重复测定。", system_prompt)
+        self.assertIn("当前启用 direct_typst 公式直出模式", system_prompt)
+        self.assertIn("请先理解整句语义", system_prompt)
+        self.assertIn("请主动用 `$...$` 包裹", system_prompt)
+        self.assertIn("最小修复", system_prompt)
+        self.assertIn("不要补写缺失的正文内容", system_prompt)
         self.assertIn(r"\mu", messages[1]["content"])
         self.assertNotIn(r"\\mu", messages[1]["content"])
 
@@ -651,11 +651,11 @@ class TranslationFastPathTests(unittest.TestCase):
             response_style="plain_text",
         )
         system_prompt = messages[0]["content"]
-        self.assertIn("You must mark inline mathematical expressions with `$...$` yourself", system_prompt)
-        self.assertIn("minimal local repair", system_prompt)
-        self.assertIn("Do not invent new scientific content", system_prompt)
-        self.assertIn("Source: observed {2}^{\\prime }{2}^{\\prime }-substituted product.", system_prompt)
-        self.assertIn("Output: 观察到 $2',2'$-取代产物。", system_prompt)
+        self.assertIn("当前启用 direct_typst 公式直出模式", system_prompt)
+        self.assertIn("请先理解整句语义", system_prompt)
+        self.assertIn("请主动用 `$...$` 包裹", system_prompt)
+        self.assertIn("最小修复", system_prompt)
+        self.assertIn("不要补写缺失的正文内容", system_prompt)
         self.assertIn(r"\mu", messages[1]["content"])
         self.assertNotIn(r"\\mu", messages[1]["content"])
 

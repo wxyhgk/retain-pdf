@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { spawnSync } from "child_process";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -90,6 +91,83 @@ function resolveRustApiBinary() {
 function hasBundledPosixPython(root) {
   return fs.existsSync(path.join(root, "bin", "python3"))
     || fs.existsSync(path.join(root, "bin", "python"));
+}
+
+function resolveBundledPythonCommand(root) {
+  const candidates = targetPlatform === "win32"
+    ? [path.join(root, "python.exe")]
+    : [
+        path.join(root, "bin", "python3"),
+        path.join(root, "bin", "python"),
+      ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return "";
+}
+
+function bundledPythonSitePackages(root) {
+  if (!root || !fs.existsSync(root)) {
+    return [];
+  }
+  if (targetPlatform === "win32") {
+    const sitePackages = path.join(root, "Lib", "site-packages");
+    return fs.existsSync(sitePackages) ? [sitePackages] : [];
+  }
+  const libRoot = path.join(root, "lib");
+  if (!fs.existsSync(libRoot)) {
+    return [];
+  }
+  const matches = [];
+  for (const entry of fs.readdirSync(libRoot)) {
+    if (!/^python\d+\.\d+$/.test(entry)) {
+      continue;
+    }
+    const sitePackages = path.join(libRoot, entry, "site-packages");
+    if (fs.existsSync(sitePackages)) {
+      matches.push(sitePackages);
+    }
+  }
+  return matches;
+}
+
+function verifyBundledPythonRuntime(root) {
+  const pythonCommand = resolveBundledPythonCommand(root);
+  if (!pythonCommand) {
+    throw new Error(`Bundled Python runtime missing executable under ${root}`);
+  }
+  const env = {
+    ...process.env,
+    PYTHONUNBUFFERED: "1",
+    PYTHONUTF8: "1",
+    PYTHONDONTWRITEBYTECODE: "1",
+    PYTHONPATH: bundledPythonSitePackages(root).join(path.delimiter),
+  };
+  const probe = spawnSync(
+    pythonCommand,
+    [
+      "-c",
+      [
+        "import fitz, requests, pikepdf, PIL",
+        "print('python_bundle_import_check=ok')",
+      ].join("; "),
+    ],
+    {
+      env,
+      encoding: "utf8",
+    },
+  );
+  if (probe.status !== 0) {
+    const detail = [probe.stdout, probe.stderr].filter(Boolean).join("\n").trim();
+    throw new Error(`Bundled Python runtime import check failed: ${detail || "unknown error"}`);
+  }
+  return {
+    pythonCommand,
+    sitePackages: bundledPythonSitePackages(root),
+    importCheck: probe.stdout.trim() || "python_bundle_import_check=ok",
+  };
 }
 
 const rustApiBinary = resolveRustApiBinary();
@@ -205,6 +283,21 @@ if (targetPlatform === "darwin" && hasBundledPosixPython(embeddedPythonRoot)) {
   }
 }
 
+const outputPythonRoot = path.join(outputBackendRoot, "python");
+const pythonBundled = fs.existsSync(path.join(outputPythonRoot, "python.exe"))
+  || fs.existsSync(path.join(outputPythonRoot, "bin", "python3"))
+  || fs.existsSync(path.join(outputPythonRoot, "bin", "python"));
+const bundledPythonRequired = targetPlatform === "win32"
+  || targetPlatform === "linux"
+  || (targetPlatform === "darwin" && allowBundledMacPython);
+let bundledPythonDiagnostics = null;
+if (bundledPythonRequired && !pythonBundled) {
+  throw new Error(`Bundled Python runtime is required for ${targetPlatform} packaging but was not copied to ${outputPythonRoot}`);
+}
+if (pythonBundled) {
+  bundledPythonDiagnostics = verifyBundledPythonRuntime(outputPythonRoot);
+}
+
 if (targetPlatform === "win32" && fs.existsSync(typstWindowsRoot)) {
   fs.cpSync(typstWindowsRoot, path.join(outputBackendRoot, "typst"), {
     recursive: true,
@@ -261,9 +354,12 @@ const manifest = {
   targetPlatform,
   rustApiBinaryBundled: fs.existsSync(path.join(outputBackendRoot, "bin", rustApiBinary.fileName)),
   rustApiBinaryName: rustApiBinary.fileName,
-  pythonBundled: fs.existsSync(path.join(outputBackendRoot, "python", "python.exe"))
-    || fs.existsSync(path.join(outputBackendRoot, "python", "bin", "python3"))
-    || fs.existsSync(path.join(outputBackendRoot, "python", "bin", "python")),
+  pythonBundled,
+  bundledPythonExecutable: bundledPythonDiagnostics ? path.relative(outputBackendRoot, bundledPythonDiagnostics.pythonCommand) : null,
+  bundledPythonSitePackages: bundledPythonDiagnostics
+    ? bundledPythonDiagnostics.sitePackages.map((entry) => path.relative(outputBackendRoot, entry))
+    : [],
+  bundledPythonImportCheck: bundledPythonDiagnostics ? bundledPythonDiagnostics.importCheck : null,
   typstBundled: fs.existsSync(path.join(outputBackendRoot, "typst")),
   typstPackagesBundled: fs.existsSync(path.join(outputBackendRoot, "typst-packages")),
   bundledFonts: fs.readdirSync(bundledFontsRoot).sort(),
