@@ -1,9 +1,11 @@
-use std::path::Path;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 use crate::models::ResolvedJobSpec;
 use crate::storage_paths::JobPaths;
 use crate::AppState;
-use anyhow::Result;
+use anyhow::{Context, Result};
+use serde_json::json;
 
 struct CommandBuilder {
     parts: Vec<String>,
@@ -67,43 +69,6 @@ enum OcrArg {
     PollTimeout,
 }
 
-#[derive(Clone, Copy)]
-enum TranslationArg {
-    StartPage,
-    EndPage,
-    BatchSize,
-    Workers,
-    Mode,
-    SkipTitleTranslation,
-    ClassifyBatchSize,
-    RuleProfileName,
-    CustomRulesText,
-    GlossaryId,
-    GlossaryName,
-    GlossaryResourceEntryCount,
-    GlossaryInlineEntryCount,
-    GlossaryOverriddenEntryCount,
-    GlossaryJson,
-    ApiKey,
-    Model,
-    BaseUrl,
-}
-
-#[derive(Clone, Copy)]
-enum RenderArg {
-    RenderMode,
-    CompileWorkers,
-    TypstFontFamily,
-    PdfCompressDpi,
-    TranslatedPdfName,
-    BodyFontSizeFactor,
-    BodyLeadingFactor,
-    InnerBboxShrinkX,
-    InnerBboxShrinkY,
-    InnerBboxDenseShrinkX,
-    InnerBboxDenseShrinkY,
-}
-
 const JOB_PATH_ARGS: &[(&str, JobPathArg)] = &[
     ("--job-root", JobPathArg::JobRoot),
     ("--source-dir", JobPathArg::SourceDir),
@@ -130,64 +95,264 @@ const OCR_ARGS: &[(&str, OcrArg)] = &[
     ("--poll-timeout", OcrArg::PollTimeout),
 ];
 
-const TRANSLATION_ARGS: &[(&str, TranslationArg)] = &[
-    ("--start-page", TranslationArg::StartPage),
-    ("--end-page", TranslationArg::EndPage),
-    ("--batch-size", TranslationArg::BatchSize),
-    ("--workers", TranslationArg::Workers),
-    ("--mode", TranslationArg::Mode),
-    (
-        "--skip-title-translation",
-        TranslationArg::SkipTitleTranslation,
-    ),
-    ("--classify-batch-size", TranslationArg::ClassifyBatchSize),
-    ("--rule-profile-name", TranslationArg::RuleProfileName),
-    ("--custom-rules-text", TranslationArg::CustomRulesText),
-    ("--glossary-id", TranslationArg::GlossaryId),
-    ("--glossary-name", TranslationArg::GlossaryName),
-    (
-        "--glossary-resource-entry-count",
-        TranslationArg::GlossaryResourceEntryCount,
-    ),
-    (
-        "--glossary-inline-entry-count",
-        TranslationArg::GlossaryInlineEntryCount,
-    ),
-    (
-        "--glossary-overridden-entry-count",
-        TranslationArg::GlossaryOverriddenEntryCount,
-    ),
-    ("--glossary-json", TranslationArg::GlossaryJson),
-    ("--api-key", TranslationArg::ApiKey),
-    ("--model", TranslationArg::Model),
-    ("--base-url", TranslationArg::BaseUrl),
-];
+const NORMALIZE_STAGE_SCHEMA_VERSION: &str = "normalize.stage.v1";
+const TRANSLATE_STAGE_SCHEMA_VERSION: &str = "translate.stage.v1";
+const RENDER_STAGE_SCHEMA_VERSION: &str = "render.stage.v1";
+const MINERU_STAGE_SCHEMA_VERSION: &str = "mineru.stage.v1";
+const TRANSLATION_API_KEY_ENV_NAME: &str = "RETAIN_TRANSLATION_API_KEY";
+const MINERU_TOKEN_ENV_NAME: &str = "RETAIN_MINERU_API_TOKEN";
 
-fn glossary_entries_json(request: &ResolvedJobSpec) -> Result<String> {
-    Ok(serde_json::to_string(
-        &request.translation.glossary_entries,
-    )?)
+fn normalize_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
+    job_paths.specs_dir.join("normalize.spec.json")
 }
 
-const RENDER_ARGS: &[(&str, RenderArg)] = &[
-    ("--render-mode", RenderArg::RenderMode),
-    ("--compile-workers", RenderArg::CompileWorkers),
-    ("--typst-font-family", RenderArg::TypstFontFamily),
-    ("--pdf-compress-dpi", RenderArg::PdfCompressDpi),
-    ("--translated-pdf-name", RenderArg::TranslatedPdfName),
-    ("--body-font-size-factor", RenderArg::BodyFontSizeFactor),
-    ("--body-leading-factor", RenderArg::BodyLeadingFactor),
-    ("--inner-bbox-shrink-x", RenderArg::InnerBboxShrinkX),
-    ("--inner-bbox-shrink-y", RenderArg::InnerBboxShrinkY),
-    (
-        "--inner-bbox-dense-shrink-x",
-        RenderArg::InnerBboxDenseShrinkX,
-    ),
-    (
-        "--inner-bbox-dense-shrink-y",
-        RenderArg::InnerBboxDenseShrinkY,
-    ),
-];
+fn translate_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
+    job_paths.specs_dir.join("translate.spec.json")
+}
+
+fn render_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
+    job_paths.specs_dir.join("render.spec.json")
+}
+
+fn mineru_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
+    job_paths.specs_dir.join("mineru.spec.json")
+}
+
+fn write_normalize_stage_spec(
+    request: &ResolvedJobSpec,
+    job_paths: &JobPaths,
+    source_json_path: &Path,
+    source_pdf_path: &Path,
+    provider_result_json_path: &Path,
+    provider_zip_path: &Path,
+    provider_raw_dir: &Path,
+) -> Result<PathBuf> {
+    fs::create_dir_all(&job_paths.specs_dir)
+        .with_context(|| format!("create specs dir: {}", job_paths.specs_dir.display()))?;
+    let spec_path = normalize_stage_spec_path(job_paths);
+    let provider_version = if request.ocr.provider.trim().eq_ignore_ascii_case("paddle") {
+        request.ocr.paddle_model.trim().to_string()
+    } else {
+        request.ocr.model_version.trim().to_string()
+    };
+    let payload = json!({
+        "schema_version": NORMALIZE_STAGE_SCHEMA_VERSION,
+        "stage": "normalize",
+        "job": {
+            "job_id": request.job_id,
+            "job_root": job_paths.root,
+            "workflow": request.workflow,
+        },
+        "inputs": {
+            "provider": request.ocr.provider,
+            "source_json": source_json_path,
+            "source_pdf": source_pdf_path,
+            "provider_version": provider_version,
+            "provider_result_json": provider_result_json_path,
+            "provider_zip": provider_zip_path,
+            "provider_raw_dir": provider_raw_dir,
+        },
+        "params": {},
+    });
+    let content = serde_json::to_string_pretty(&payload)?;
+    fs::write(&spec_path, content)
+        .with_context(|| format!("write normalize stage spec: {}", spec_path.display()))?;
+    Ok(spec_path)
+}
+
+fn write_translate_stage_spec(
+    request: &ResolvedJobSpec,
+    job_paths: &JobPaths,
+    source_json_path: &Path,
+    source_pdf_path: &Path,
+    layout_json_path: Option<&Path>,
+) -> Result<PathBuf> {
+    fs::create_dir_all(&job_paths.specs_dir)
+        .with_context(|| format!("create specs dir: {}", job_paths.specs_dir.display()))?;
+    let spec_path = translate_stage_spec_path(job_paths);
+    let credential_ref = if request.translation.api_key.trim().is_empty() {
+        String::new()
+    } else {
+        format!("env:{TRANSLATION_API_KEY_ENV_NAME}")
+    };
+    let payload = json!({
+        "schema_version": TRANSLATE_STAGE_SCHEMA_VERSION,
+        "stage": "translate",
+        "job": {
+            "job_id": request.job_id,
+            "job_root": job_paths.root,
+            "workflow": request.workflow,
+        },
+        "inputs": {
+            "source_json": source_json_path,
+            "source_pdf": source_pdf_path,
+            "layout_json": layout_json_path,
+        },
+        "params": {
+            "start_page": request.translation.start_page,
+            "end_page": request.translation.end_page,
+            "batch_size": request.translation.batch_size,
+            "workers": request.resolved_workers(),
+            "mode": request.translation.mode,
+            "math_mode": request.translation.math_mode,
+            "skip_title_translation": request.translation.skip_title_translation,
+            "classify_batch_size": request.translation.classify_batch_size,
+            "rule_profile_name": request.translation.rule_profile_name,
+            "custom_rules_text": request.translation.custom_rules_text,
+            "glossary_id": request.translation.glossary_id,
+            "glossary_name": request.translation.glossary_name,
+            "glossary_resource_entry_count": request.translation.glossary_resource_entry_count,
+            "glossary_inline_entry_count": request.translation.glossary_inline_entry_count,
+            "glossary_overridden_entry_count": request.translation.glossary_overridden_entry_count,
+            "glossary_entries": request.translation.glossary_entries,
+            "model": request.translation.model,
+            "base_url": request.translation.base_url,
+            "credential_ref": credential_ref,
+        },
+    });
+    let content = serde_json::to_string_pretty(&payload)?;
+    fs::write(&spec_path, content)
+        .with_context(|| format!("write translate stage spec: {}", spec_path.display()))?;
+    Ok(spec_path)
+}
+
+fn write_render_stage_spec(
+    request: &ResolvedJobSpec,
+    job_paths: &JobPaths,
+    source_pdf_path: &Path,
+    translations_dir: &Path,
+) -> Result<PathBuf> {
+    fs::create_dir_all(&job_paths.specs_dir)
+        .with_context(|| format!("create specs dir: {}", job_paths.specs_dir.display()))?;
+    let spec_path = render_stage_spec_path(job_paths);
+    let credential_ref = if request.translation.api_key.trim().is_empty() {
+        String::new()
+    } else {
+        format!("env:{TRANSLATION_API_KEY_ENV_NAME}")
+    };
+    let payload = json!({
+        "schema_version": RENDER_STAGE_SCHEMA_VERSION,
+        "stage": "render",
+        "job": {
+            "job_id": request.job_id,
+            "job_root": job_paths.root,
+            "workflow": request.workflow,
+        },
+        "inputs": {
+            "source_pdf": source_pdf_path,
+            "translations_dir": translations_dir,
+            "translation_manifest": translations_dir.join("translation-manifest.json"),
+        },
+        "params": {
+            "start_page": request.translation.start_page,
+            "end_page": request.translation.end_page,
+            "render_mode": request.render.render_mode,
+            "compile_workers": request.render.compile_workers,
+            "typst_font_family": request.render.typst_font_family,
+            "pdf_compress_dpi": request.render.pdf_compress_dpi,
+            "translated_pdf_name": request.render.translated_pdf_name,
+            "body_font_size_factor": request.render.body_font_size_factor,
+            "body_leading_factor": request.render.body_leading_factor,
+            "inner_bbox_shrink_x": request.render.inner_bbox_shrink_x,
+            "inner_bbox_shrink_y": request.render.inner_bbox_shrink_y,
+            "inner_bbox_dense_shrink_x": request.render.inner_bbox_dense_shrink_x,
+            "inner_bbox_dense_shrink_y": request.render.inner_bbox_dense_shrink_y,
+            "model": request.translation.model,
+            "base_url": request.translation.base_url,
+            "credential_ref": credential_ref,
+        },
+    });
+    let content = serde_json::to_string_pretty(&payload)?;
+    fs::write(&spec_path, content)
+        .with_context(|| format!("write render stage spec: {}", spec_path.display()))?;
+    Ok(spec_path)
+}
+
+fn write_mineru_stage_spec(
+    request: &ResolvedJobSpec,
+    job_paths: &JobPaths,
+    upload_path: &Path,
+) -> Result<PathBuf> {
+    fs::create_dir_all(&job_paths.specs_dir)
+        .with_context(|| format!("create specs dir: {}", job_paths.specs_dir.display()))?;
+    let spec_path = mineru_stage_spec_path(job_paths);
+    let mineru_credential_ref = if request.ocr.mineru_token.trim().is_empty() {
+        String::new()
+    } else {
+        format!("env:{MINERU_TOKEN_ENV_NAME}")
+    };
+    let translation_credential_ref = if request.translation.api_key.trim().is_empty() {
+        String::new()
+    } else {
+        format!("env:{TRANSLATION_API_KEY_ENV_NAME}")
+    };
+    let payload = json!({
+        "schema_version": MINERU_STAGE_SCHEMA_VERSION,
+        "stage": "mineru",
+        "job": {
+            "job_id": request.job_id,
+            "job_root": job_paths.root,
+            "workflow": request.workflow,
+        },
+        "source": {
+            "file_url": request.source.source_url,
+            "file_path": upload_path,
+        },
+        "ocr": {
+            "credential_ref": mineru_credential_ref,
+            "model_version": request.ocr.model_version,
+            "is_ocr": request.ocr.is_ocr,
+            "disable_formula": request.ocr.disable_formula,
+            "disable_table": request.ocr.disable_table,
+            "language": request.ocr.language,
+            "page_ranges": request.ocr.page_ranges,
+            "data_id": request.ocr.data_id,
+            "no_cache": request.ocr.no_cache,
+            "cache_tolerance": request.ocr.cache_tolerance,
+            "extra_formats": request.ocr.extra_formats,
+            "poll_interval": request.ocr.poll_interval,
+            "poll_timeout": request.ocr.poll_timeout,
+        },
+        "translation": {
+            "start_page": request.translation.start_page,
+            "end_page": request.translation.end_page,
+            "batch_size": request.translation.batch_size,
+            "workers": request.resolved_workers(),
+            "mode": request.translation.mode,
+            "math_mode": request.translation.math_mode,
+            "skip_title_translation": request.translation.skip_title_translation,
+            "classify_batch_size": request.translation.classify_batch_size,
+            "rule_profile_name": request.translation.rule_profile_name,
+            "custom_rules_text": request.translation.custom_rules_text,
+            "glossary_id": request.translation.glossary_id,
+            "glossary_name": request.translation.glossary_name,
+            "glossary_resource_entry_count": request.translation.glossary_resource_entry_count,
+            "glossary_inline_entry_count": request.translation.glossary_inline_entry_count,
+            "glossary_overridden_entry_count": request.translation.glossary_overridden_entry_count,
+            "glossary_entries": request.translation.glossary_entries,
+            "model": request.translation.model,
+            "base_url": request.translation.base_url,
+            "credential_ref": translation_credential_ref,
+        },
+        "render": {
+            "render_mode": request.render.render_mode,
+            "compile_workers": request.render.compile_workers,
+            "typst_font_family": request.render.typst_font_family,
+            "pdf_compress_dpi": request.render.pdf_compress_dpi,
+            "translated_pdf_name": request.render.translated_pdf_name,
+            "body_font_size_factor": request.render.body_font_size_factor,
+            "body_leading_factor": request.render.body_leading_factor,
+            "inner_bbox_shrink_x": request.render.inner_bbox_shrink_x,
+            "inner_bbox_shrink_y": request.render.inner_bbox_shrink_y,
+            "inner_bbox_dense_shrink_x": request.render.inner_bbox_dense_shrink_x,
+            "inner_bbox_dense_shrink_y": request.render.inner_bbox_dense_shrink_y,
+        },
+    });
+    let content = serde_json::to_string_pretty(&payload)?;
+    fs::write(&spec_path, content)
+        .with_context(|| format!("write mineru stage spec: {}", spec_path.display()))?;
+    Ok(spec_path)
+}
 
 fn push_job_path_args(cmd: &mut CommandBuilder, job_paths: &JobPaths) {
     for (name, arg) in JOB_PATH_ARGS {
@@ -223,109 +388,20 @@ fn push_ocr_args(cmd: &mut CommandBuilder, request: &ResolvedJobSpec) {
     }
 }
 
-fn push_translation_args(cmd: &mut CommandBuilder, request: &ResolvedJobSpec) {
-    for (name, arg) in TRANSLATION_ARGS {
-        match arg {
-            TranslationArg::StartPage => cmd.arg(name, request.translation.start_page),
-            TranslationArg::EndPage => cmd.arg(name, request.translation.end_page),
-            TranslationArg::BatchSize => cmd.arg(name, request.translation.batch_size),
-            TranslationArg::Workers => cmd.arg(name, request.resolved_workers()),
-            TranslationArg::Mode => cmd.arg(name, &request.translation.mode),
-            TranslationArg::SkipTitleTranslation => {
-                cmd.flag(name, request.translation.skip_title_translation)
-            }
-            TranslationArg::ClassifyBatchSize => {
-                cmd.arg(name, request.translation.classify_batch_size)
-            }
-            TranslationArg::RuleProfileName => {
-                cmd.arg(name, &request.translation.rule_profile_name)
-            }
-            TranslationArg::CustomRulesText => {
-                cmd.arg(name, &request.translation.custom_rules_text)
-            }
-            TranslationArg::GlossaryId => {
-                if !request.translation.glossary_id.trim().is_empty() {
-                    cmd.arg(name, request.translation.glossary_id.trim());
-                }
-            }
-            TranslationArg::GlossaryName => {
-                if !request.translation.glossary_name.trim().is_empty() {
-                    cmd.arg(name, request.translation.glossary_name.trim());
-                }
-            }
-            TranslationArg::GlossaryResourceEntryCount => {
-                cmd.arg(name, request.translation.glossary_resource_entry_count)
-            }
-            TranslationArg::GlossaryInlineEntryCount => {
-                cmd.arg(name, request.translation.glossary_inline_entry_count)
-            }
-            TranslationArg::GlossaryOverriddenEntryCount => {
-                cmd.arg(name, request.translation.glossary_overridden_entry_count)
-            }
-            TranslationArg::GlossaryJson => {
-                if !request.translation.glossary_entries.is_empty() {
-                    if let Ok(payload) = glossary_entries_json(request) {
-                        cmd.arg(name, payload);
-                    }
-                }
-            }
-            TranslationArg::ApiKey => cmd.arg(name, &request.translation.api_key),
-            TranslationArg::Model => cmd.arg(name, &request.translation.model),
-            TranslationArg::BaseUrl => cmd.arg(name, &request.translation.base_url),
-        }
-    }
-}
-
-fn push_render_only_translation_args(cmd: &mut CommandBuilder, request: &ResolvedJobSpec) {
-    cmd.arg("--start-page", request.translation.start_page);
-    cmd.arg("--end-page", request.translation.end_page);
-    cmd.arg("--api-key", &request.translation.api_key);
-    cmd.arg("--model", &request.translation.model);
-    cmd.arg("--base-url", &request.translation.base_url);
-}
-
-fn push_render_args(cmd: &mut CommandBuilder, request: &ResolvedJobSpec) {
-    for (name, arg) in RENDER_ARGS {
-        match arg {
-            RenderArg::RenderMode => cmd.arg(name, &request.render.render_mode),
-            RenderArg::CompileWorkers => cmd.arg(name, request.render.compile_workers),
-            RenderArg::TypstFontFamily => cmd.arg(name, &request.render.typst_font_family),
-            RenderArg::PdfCompressDpi => cmd.arg(name, request.render.pdf_compress_dpi),
-            RenderArg::TranslatedPdfName => {
-                if !request.render.translated_pdf_name.trim().is_empty() {
-                    cmd.arg(name, request.render.translated_pdf_name.trim());
-                }
-            }
-            RenderArg::BodyFontSizeFactor => cmd.arg(name, request.render.body_font_size_factor),
-            RenderArg::BodyLeadingFactor => cmd.arg(name, request.render.body_leading_factor),
-            RenderArg::InnerBboxShrinkX => cmd.arg(name, request.render.inner_bbox_shrink_x),
-            RenderArg::InnerBboxShrinkY => cmd.arg(name, request.render.inner_bbox_shrink_y),
-            RenderArg::InnerBboxDenseShrinkX => {
-                cmd.arg(name, request.render.inner_bbox_dense_shrink_x)
-            }
-            RenderArg::InnerBboxDenseShrinkY => {
-                cmd.arg(name, request.render.inner_bbox_dense_shrink_y)
-            }
-        }
-    }
-}
-
 pub(crate) fn build_command(
     state: &AppState,
     upload_path: &Path,
     request: &ResolvedJobSpec,
     job_paths: &JobPaths,
 ) -> Vec<String> {
+    let spec_path = write_mineru_stage_spec(request, job_paths, upload_path)
+        .expect("write mineru stage spec");
     let mut cmd = CommandBuilder::new(
         &state.config.python_bin,
         &state.config.run_mineru_case_script,
         true,
     );
-    cmd.path_arg("--file-path", upload_path);
-    push_ocr_args(&mut cmd, request);
-    push_job_path_args(&mut cmd, job_paths);
-    push_translation_args(&mut cmd, request);
-    push_render_args(&mut cmd, request);
+    cmd.path_arg("--spec", &spec_path);
     cmd.finish()
 }
 
@@ -358,18 +434,20 @@ pub(crate) fn build_translate_only_command(
     source_pdf_path: &Path,
     layout_json_path: Option<&Path>,
 ) -> Vec<String> {
+    let spec_path = write_translate_stage_spec(
+        request,
+        job_paths,
+        source_json_path,
+        source_pdf_path,
+        layout_json_path,
+    )
+    .expect("write translate stage spec");
     let mut cmd = CommandBuilder::new(
         &state.config.python_bin,
         &state.config.run_translate_only_script,
         true,
     );
-    cmd.path_arg("--source-json", source_json_path);
-    cmd.path_arg("--source-pdf", source_pdf_path);
-    push_job_path_args(&mut cmd, job_paths);
-    if let Some(layout_json_path) = layout_json_path {
-        cmd.path_arg("--layout-json", layout_json_path);
-    }
-    push_translation_args(&mut cmd, request);
+    cmd.path_arg("--spec", &spec_path);
     cmd.finish()
 }
 
@@ -380,16 +458,19 @@ pub(crate) fn build_render_only_command(
     source_pdf_path: &Path,
     translations_dir: &Path,
 ) -> Vec<String> {
+    let spec_path = write_render_stage_spec(
+        request,
+        job_paths,
+        source_pdf_path,
+        translations_dir,
+    )
+    .expect("write render stage spec");
     let mut cmd = CommandBuilder::new(
         &state.config.python_bin,
         &state.config.run_render_only_script,
         true,
     );
-    cmd.path_arg("--source-pdf", source_pdf_path);
-    cmd.path_arg("--translations-dir", translations_dir);
-    push_job_path_args(&mut cmd, job_paths);
-    push_render_only_translation_args(&mut cmd, request);
-    push_render_args(&mut cmd, request);
+    cmd.path_arg("--spec", &spec_path);
     cmd.finish()
 }
 
@@ -403,26 +484,22 @@ pub(crate) fn build_normalize_ocr_command(
     provider_zip_path: &Path,
     provider_raw_dir: &Path,
 ) -> Vec<String> {
+    let spec_path = write_normalize_stage_spec(
+        request,
+        job_paths,
+        source_json_path,
+        source_pdf_path,
+        provider_result_json_path,
+        provider_zip_path,
+        provider_raw_dir,
+    )
+    .expect("write normalize stage spec");
     let mut cmd = CommandBuilder::new(
         &state.config.python_bin,
         &state.config.run_normalize_ocr_script,
         false,
     );
-    cmd.arg("--provider", &request.ocr.provider);
-    cmd.path_arg("--source-json", source_json_path);
-    cmd.path_arg("--source-pdf", source_pdf_path);
-    cmd.arg(
-        "--provider-version",
-        if request.ocr.provider.trim().eq_ignore_ascii_case("paddle") {
-            request.ocr.paddle_model.clone()
-        } else {
-            request.ocr.model_version.clone()
-        },
-    );
-    cmd.path_arg("--provider-result-json", provider_result_json_path);
-    cmd.path_arg("--provider-zip", provider_zip_path);
-    cmd.path_arg("--provider-raw-dir", provider_raw_dir);
-    push_job_path_args(&mut cmd, job_paths);
+    cmd.path_arg("--spec", &spec_path);
     cmd.finish()
 }
 
@@ -492,6 +569,7 @@ mod tests {
     fn build_request(workflow: WorkflowKind) -> ResolvedJobSpec {
         let mut input = CreateJobInput::default();
         input.workflow = workflow;
+        input.ocr.mineru_token = "mineru-token-test".to_string();
         input.translation.api_key = "sk-test".to_string();
         input.translation.model = "deepseek-chat".to_string();
         input.translation.base_url = "https://api.deepseek.com/v1".to_string();
@@ -537,11 +615,22 @@ mod tests {
                 .to_string_lossy()
                 .to_string()
         ));
-        assert!(contains(&cmd, "--source-json"));
-        assert!(contains(&cmd, "/tmp/document.v1.json"));
-        assert!(contains(&cmd, "--layout-json"));
-        assert!(contains(&cmd, "--api-key"));
+        assert!(contains(&cmd, "--spec"));
+        assert!(!contains(&cmd, "--source-json"));
+        assert!(!contains(&cmd, "--api-key"));
         assert!(!contains(&cmd, "--render-mode"));
+        let spec_path = arg_value(&cmd, "--spec").expect("translate spec path");
+        let spec_json =
+            std::fs::read_to_string(spec_path).expect("translate stage spec should be written");
+        let payload: serde_json::Value = serde_json::from_str(&spec_json).expect("valid json");
+        assert_eq!(payload["schema_version"], "translate.stage.v1");
+        assert_eq!(payload["stage"], "translate");
+        assert_eq!(payload["inputs"]["source_json"], "/tmp/document.v1.json");
+        assert_eq!(
+            payload["params"]["credential_ref"],
+            format!("env:{TRANSLATION_API_KEY_ENV_NAME}")
+        );
+        assert!(!spec_json.contains("sk-test"));
     }
 
     #[test]
@@ -565,21 +654,112 @@ mod tests {
                 .to_string_lossy()
                 .to_string()
         ));
-        assert!(contains(&cmd, "--source-pdf"));
-        assert!(contains(&cmd, "/tmp/source.pdf"));
-        assert!(contains(&cmd, "--translations-dir"));
-        assert!(contains(&cmd, "/tmp/translated"));
-        assert!(contains(&cmd, "--render-mode"));
-        assert!(contains(&cmd, "auto"));
-        assert!(contains(&cmd, "--translated-pdf-name"));
-        assert!(contains(&cmd, "out.pdf"));
-        assert!(contains(&cmd, "--api-key"));
-        assert!(contains(&cmd, "--model"));
-        assert!(contains(&cmd, "--base-url"));
+        assert!(contains(&cmd, "--spec"));
         assert!(!contains(&cmd, "--mode"));
         assert!(!contains(&cmd, "--batch-size"));
         assert!(!contains(&cmd, "--classify-batch-size"));
         assert!(!contains(&cmd, "--glossary-json"));
+        assert!(!contains(&cmd, "--api-key"));
+        assert!(!contains(&cmd, "--render-mode"));
+        let spec_path = arg_value(&cmd, "--spec").expect("render spec path");
+        let spec_json =
+            std::fs::read_to_string(spec_path).expect("render stage spec should be written");
+        let payload: serde_json::Value = serde_json::from_str(&spec_json).expect("valid json");
+        assert_eq!(payload["schema_version"], "render.stage.v1");
+        assert_eq!(payload["stage"], "render");
+        assert_eq!(payload["inputs"]["source_pdf"], "/tmp/source.pdf");
+        assert_eq!(payload["inputs"]["translations_dir"], "/tmp/translated");
+        assert_eq!(payload["params"]["render_mode"], "auto");
+        assert_eq!(
+            payload["params"]["credential_ref"],
+            format!("env:{TRANSLATION_API_KEY_ENV_NAME}")
+        );
+        assert!(!spec_json.contains("sk-test"));
+    }
+
+    #[test]
+    fn normalize_command_writes_stage_spec_and_uses_spec_flag() {
+        let state = test_state();
+        let mut request = build_request(WorkflowKind::Ocr);
+        request.job_id = "job-command-test".to_string();
+        request.ocr.provider = "mineru".to_string();
+        request.ocr.model_version = "v1".to_string();
+        let job_paths = build_paths(&state);
+        let cmd = build_normalize_ocr_command(
+            &state,
+            &request,
+            &job_paths,
+            Path::new("/tmp/layout.json"),
+            Path::new("/tmp/source.pdf"),
+            Path::new("/tmp/provider-result.json"),
+            Path::new("/tmp/provider.zip"),
+            Path::new("/tmp/provider-raw"),
+        );
+
+        assert!(contains(
+            &cmd,
+            &state
+                .config
+                .run_normalize_ocr_script
+                .to_string_lossy()
+                .to_string()
+        ));
+        assert!(contains(&cmd, "--spec"));
+        assert!(!contains(&cmd, "--provider"));
+        let spec_path = arg_value(&cmd, "--spec").expect("spec path");
+        assert!(spec_path.ends_with("/specs/normalize.spec.json"));
+        let spec_json =
+            std::fs::read_to_string(spec_path).expect("normalize stage spec should be written");
+        let payload: serde_json::Value = serde_json::from_str(&spec_json).expect("valid json");
+        assert_eq!(payload["schema_version"], "normalize.stage.v1");
+        assert_eq!(payload["stage"], "normalize");
+        assert_eq!(payload["job"]["job_id"], "job-command-test");
+        assert_eq!(payload["inputs"]["provider"], "mineru");
+        assert_eq!(payload["inputs"]["source_json"], "/tmp/layout.json");
+    }
+
+    #[test]
+    fn build_command_writes_mineru_stage_spec_and_hides_secrets() {
+        let state = test_state();
+        let mut request = build_request(WorkflowKind::Mineru);
+        request.job_id = "job-command-test".to_string();
+        let job_paths = build_paths(&state);
+        let cmd = build_command(
+            &state,
+            Path::new("/tmp/source/job.pdf"),
+            &request,
+            &job_paths,
+        );
+
+        assert!(contains(
+            &cmd,
+            &state
+                .config
+                .run_mineru_case_script
+                .to_string_lossy()
+                .to_string()
+        ));
+        assert!(contains(&cmd, "--spec"));
+        assert!(!contains(&cmd, "--file-path"));
+        assert!(!contains(&cmd, "--api-key"));
+        assert!(!contains(&cmd, "--mineru-token"));
+        let spec_path = arg_value(&cmd, "--spec").expect("mineru spec path");
+        let spec_json =
+            std::fs::read_to_string(spec_path).expect("mineru stage spec should be written");
+        let payload: serde_json::Value = serde_json::from_str(&spec_json).expect("valid json");
+        assert_eq!(payload["schema_version"], "mineru.stage.v1");
+        assert_eq!(payload["stage"], "mineru");
+        assert_eq!(payload["source"]["file_path"], "/tmp/source/job.pdf");
+        assert_eq!(
+            payload["ocr"]["credential_ref"],
+            format!("env:{MINERU_TOKEN_ENV_NAME}")
+        );
+        assert_eq!(
+            payload["translation"]["credential_ref"],
+            format!("env:{TRANSLATION_API_KEY_ENV_NAME}")
+        );
+        assert!(!spec_json.contains("sk-test"));
+        assert!(!spec_json.contains("mineru-token-test"));
     }
 
     #[test]
@@ -618,21 +798,16 @@ mod tests {
             Path::new("/tmp/source.pdf"),
             None,
         );
-
-        assert_eq!(arg_value(&cmd, "--glossary-id"), Some("glossary-123"));
-        assert_eq!(arg_value(&cmd, "--glossary-name"), Some("semiconductor"));
-        assert_eq!(
-            arg_value(&cmd, "--glossary-resource-entry-count"),
-            Some("2")
-        );
-        assert_eq!(arg_value(&cmd, "--glossary-inline-entry-count"), Some("1"));
-        assert_eq!(
-            arg_value(&cmd, "--glossary-overridden-entry-count"),
-            Some("1")
-        );
-        let glossary_json =
-            arg_value(&cmd, "--glossary-json").expect("glossary json argument present");
-        assert!(glossary_json.contains("\"source\":\"band gap\""));
-        assert!(glossary_json.contains("\"target\":\"态密度\""));
+        let spec_path = arg_value(&cmd, "--spec").expect("translate spec path");
+        let spec_json =
+            std::fs::read_to_string(spec_path).expect("translate stage spec should be written");
+        let payload: serde_json::Value = serde_json::from_str(&spec_json).expect("valid json");
+        assert_eq!(payload["params"]["glossary_id"], "glossary-123");
+        assert_eq!(payload["params"]["glossary_name"], "semiconductor");
+        assert_eq!(payload["params"]["glossary_resource_entry_count"], 2);
+        assert_eq!(payload["params"]["glossary_inline_entry_count"], 1);
+        assert_eq!(payload["params"]["glossary_overridden_entry_count"], 1);
+        assert!(payload["params"]["glossary_entries"].to_string().contains("band gap"));
+        assert!(payload["params"]["glossary_entries"].to_string().contains("态密度"));
     }
 }

@@ -4,6 +4,7 @@ import fitz
 
 from services.rendering.redaction.redaction_analysis import collect_page_drawing_rects
 from services.rendering.redaction.redaction_analysis import item_has_removable_text
+from services.rendering.redaction.redaction_analysis import item_removable_text_rects
 from services.rendering.redaction.redaction_analysis import item_should_use_cover_only
 from services.rendering.redaction.redaction_analysis import page_drawing_count
 from services.rendering.redaction.redaction_analysis import page_has_large_background_image
@@ -80,10 +81,14 @@ def apply_standard_redaction(
     cover_rects: list[fitz.Rect] = []
     for rect, item, _translated_text in valid_items:
         if fill_background is None:
-            if item_has_removable_text(page, item, rect):
-                redactions.append((rect, None))
+            removable_rects = item_removable_text_rects(page, item, rect)
+            removable = bool(removable_rects)
+            vector_overlap = item_should_use_cover_only(rect, drawing_rects)
+            if removable:
+                for removable_rect in removable_rects:
+                    redactions.append((removable_rect, None))
                 continue
-            if item_should_use_cover_only(rect, drawing_rects):
+            if vector_overlap:
                 cover_rects.append(rect)
                 continue
             fill = (1, 1, 1)

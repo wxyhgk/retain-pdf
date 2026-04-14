@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import fitz
 
@@ -11,6 +12,7 @@ sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from foundation.shared.job_dirs import add_explicit_job_dir_args
 from foundation.shared.job_dirs import job_dirs_from_explicit_args
+from foundation.shared.stage_specs import NormalizeStageSpec
 from services.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_NAME
 from services.document_schema import adapt_path_to_document_v1_with_report
 from services.document_schema import validate_saved_document_path
@@ -98,10 +100,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Normalize an already-downloaded OCR provider payload into document.v1 artifacts.",
     )
-    parser.add_argument("--provider", type=str, required=True, help="OCR provider name, e.g. mineru/paddle")
-    parser.add_argument("--source-json", type=str, required=True, help="Path to raw provider JSON")
-    parser.add_argument("--source-pdf", type=str, required=True, help="Path to source PDF")
-    add_explicit_job_dir_args(parser)
+    parser.add_argument("--spec", type=str, default="", help="Path to normalize stage spec JSON.")
+    parser.add_argument("--provider", type=str, default="", help="OCR provider name, e.g. mineru/paddle")
+    parser.add_argument("--source-json", type=str, default="", help="Path to raw provider JSON")
+    parser.add_argument("--source-pdf", type=str, default="", help="Path to source PDF")
+    add_explicit_job_dir_args(parser, required=False)
     parser.add_argument("--provider-version", type=str, default="", help="Optional provider version")
     parser.add_argument("--provider-result-json", type=str, default="", help="Existing provider result summary JSON path")
     parser.add_argument("--provider-zip", type=str, default="", help="Existing provider bundle zip path")
@@ -109,8 +112,31 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _args_from_spec(spec: NormalizeStageSpec) -> SimpleNamespace:
+    job_dirs = spec.job_dirs
+    return SimpleNamespace(
+        provider=spec.inputs.provider,
+        source_json=str(spec.inputs.source_json),
+        source_pdf=str(spec.inputs.source_pdf),
+        job_root=str(job_dirs.root),
+        source_dir=str(job_dirs.source_dir),
+        ocr_dir=str(job_dirs.ocr_dir),
+        translated_dir=str(job_dirs.translated_dir),
+        rendered_dir=str(job_dirs.rendered_dir),
+        artifacts_dir=str(job_dirs.artifacts_dir),
+        logs_dir=str(job_dirs.logs_dir),
+        provider_version=spec.inputs.provider_version,
+        provider_result_json=str(spec.inputs.provider_result_json or ""),
+        provider_zip=str(spec.inputs.provider_zip or ""),
+        provider_raw_dir=str(spec.inputs.provider_raw_dir or ""),
+    )
+
+
 def main() -> None:
     args = parse_args()
+    if not args.spec.strip():
+        raise RuntimeError("normalize worker now requires --spec <normalize.spec.json>")
+    args = _args_from_spec(NormalizeStageSpec.load(Path(args.spec)))
     provider = args.provider.strip().lower()
     source_json_path = Path(args.source_json).resolve()
     source_pdf_path = Path(args.source_pdf).resolve()
@@ -158,8 +184,8 @@ def main() -> None:
         "normalized document report: "
         f"provider={normalization_summary['provider']} "
         f"detected={normalization_summary['detected_provider']} "
-        f"compat_pages={normalization_summary['compat_pages']} "
-        f"compat_blocks={normalization_summary['compat_blocks']} "
+        f"defaults_pages={normalization_summary['defaults_pages']} "
+        f"defaults_blocks={normalization_summary['defaults_blocks']} "
         f"path={normalized_report_json_path}",
         flush=True,
     )

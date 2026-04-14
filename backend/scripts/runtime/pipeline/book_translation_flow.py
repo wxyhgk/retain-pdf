@@ -47,6 +47,7 @@ def translate_book_with_global_continuations(
         data=data,
         output_dir=output_dir,
         page_indices=page_indices,
+        math_mode=(policy_config.math_mode if policy_config is not None else "placeholder"),
     )
     stage_started = time.perf_counter()
     finalize_page_payloads(

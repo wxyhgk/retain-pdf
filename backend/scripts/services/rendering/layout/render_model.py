@@ -6,6 +6,7 @@ from pathlib import Path
 import fitz
 
 from services.rendering.api.render_payloads import prepare_render_payloads_by_page
+from services.rendering.formula.math_utils import build_direct_typst_passthrough_text
 from services.rendering.formula.math_utils import build_markdown_from_parts
 from services.rendering.formula.math_utils import build_plain_text_from_text
 from services.rendering.core.models import RenderLayoutBlock
@@ -76,7 +77,15 @@ def _layout_block_from_item(
     )
     leading_em = estimate_leading_em(item_with_flag, page_line_pitch, font_size_pt)
     content_kind = "plain" if item.get("_force_plain_line") or is_flag_like_plain_text_block(item) else "markdown"
-    markdown_text = build_markdown_from_parts(protected_text, formula_map)
+    direct_math_mode = str(item.get("math_mode", "placeholder") or "placeholder").strip() == "direct_typst"
+    markdown_text = (
+        build_direct_typst_passthrough_text(protected_text)
+        if direct_math_mode
+        else build_markdown_from_parts(
+            protected_text,
+            formula_map,
+        )
+    )
     plain_text = build_plain_text_from_text(markdown_text)
     title_like = is_title_like_block(item)
     wrapped_markdown_candidate = content_kind == "markdown" and _should_fit_wrapped_markdown(

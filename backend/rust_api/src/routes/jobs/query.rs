@@ -1,7 +1,8 @@
 use crate::error::AppError;
 use crate::models::{
-    job_to_list_item, ApiResponse, ArtifactLinksView, JobArtifactManifestView, JobDetailView,
-    JobEventListView, JobListView, ListJobEventsQuery, ListJobsQuery,
+    job_to_list_item, summarize_list_invocation, ApiResponse, ArtifactLinksView,
+    JobArtifactManifestView, JobDetailView, JobEventListView, JobListView, ListJobEventsQuery,
+    ListJobsQuery,
 };
 use crate::routes::job_helpers::{
     build_artifact_manifest_view, load_job_events_view, load_ocr_job_with_supported_layout,
@@ -22,11 +23,22 @@ pub async fn list_jobs(
 ) -> Result<Json<ApiResponse<JobListView>>, AppError> {
     let jobs = list_jobs_filtered(&state, &query)?;
     let base_url = request_base_url(&headers, &state);
-    let items = jobs
+    let items: Vec<_> = jobs
         .iter()
-        .map(|job| job_to_list_item(job, &base_url, derive_display_name(&state, job)))
+        .map(|job| {
+            job_to_list_item(
+                job,
+                &base_url,
+                derive_display_name(&state, job),
+                &state.config.data_root,
+            )
+        })
         .collect();
-    Ok(Json(ApiResponse::ok(JobListView { items })))
+    let invocation_summary = summarize_list_invocation(&items);
+    Ok(Json(ApiResponse::ok(JobListView {
+        items,
+        invocation_summary,
+    })))
 }
 
 pub async fn list_ocr_jobs(

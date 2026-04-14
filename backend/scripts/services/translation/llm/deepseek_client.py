@@ -76,6 +76,96 @@ def sanitize_prompt_context_text(text: str) -> str:
     return sanitized
 
 
+def _item_math_mode(item: dict) -> str:
+    return str(item.get("math_mode", "placeholder") or "placeholder").strip() or "placeholder"
+
+
+def _direct_math_guidance() -> str:
+    return (
+        "Direct math output mode is enabled.\n"
+        "Translate the prose to Chinese and write mathematical expressions directly in the final answer.\n"
+        "You must mark inline mathematical expressions with `$...$` yourself; do not leave raw LaTeX-like math outside `$...$`.\n"
+        "If the source contains obvious OCR damage inside a formula or math-like expression, you may make a minimal local repair so the math is syntactically complete.\n"
+        "Allowed repairs are limited to obvious local math fixes such as restoring a missing brace, parenthesis, subscript/superscript attachment, or a clearly broken command token.\n"
+        "Do not invent new scientific content, do not complete missing prose, and do not expand beyond the visible source span.\n"
+        "Follow these normalization examples exactly when similar patterns appear:\n"
+        "- Source: ^{a} measured in duplicate.\n"
+        "  Output: $^{a}$ 重复测定。\n"
+        "- Source: performed on a {10\\mu }\\mathrm{mol} scale.\n"
+        "  Output: 在 $10\\,\\mu\\mathrm{mol}$ 规模下进行。\n"
+        "- Source: observed {2}^{\\prime }{2}^{\\prime }-substituted product.\n"
+        "  Output: 观察到 $2',2'$-取代产物。\n"
+        "- Source: Title {}^{a}\n"
+        "  Output: 标题 $^{a}$\n"
+        "- Source: a \\mathrm{X} signal was detected.\n"
+        "  Output: 检测到 $\\mathrm{X}$ 信号。\n"
+        "Do not emit placeholder tokens, JSON wrappers, labels, or explanations."
+    )
+
+
+def _direct_typst_batch_user_prompt(
+    batch: list[dict],
+    *,
+    mode: str,
+) -> str:
+    lines: list[str] = [load_prompt("translation_task.txt"), "", "Items:"]
+    for item in batch:
+        lines.append(f"<<<SOURCE item_id={item['item_id']}>>>")
+        lines.append(str(item.get("protected_source_text", "") or ""))
+        style_hint = structure_style_hint(item.get("metadata", {}) or {})
+        if style_hint:
+            lines.append(f"[style_hint] {style_hint}")
+        if mode == "sci":
+            decision_hints = build_decision_hints(item)
+            if decision_hints:
+                lines.append(f"[decision_hints] {decision_hints}")
+        if item.get("continuation_group"):
+            lines.append(f"[continuation_group] {item['continuation_group']}")
+        if item.get("continuation_prev_text"):
+            context_before = sanitize_prompt_context_text(item["continuation_prev_text"])
+            if context_before:
+                lines.append(f"[context_before] {context_before}")
+        if item.get("continuation_next_text"):
+            context_after = sanitize_prompt_context_text(item["continuation_next_text"])
+            if context_after:
+                lines.append(f"[context_after] {context_after}")
+        lines.append("<<<END SOURCE>>>")
+        lines.append("")
+    return "\n".join(lines).strip()
+
+
+def _direct_typst_single_user_prompt(
+    item: dict,
+    *,
+    mode: str,
+) -> str:
+    lines: list[str] = [
+        load_prompt("translation_task.txt"),
+        "",
+        f"<<<SOURCE item_id={item['item_id']}>>>",
+        str(item.get("protected_source_text", "") or ""),
+    ]
+    style_hint = structure_style_hint(item.get("metadata", {}) or {})
+    if style_hint:
+        lines.append(f"[style_hint] {style_hint}")
+    if mode == "sci":
+        decision_hints = build_decision_hints(item)
+        if decision_hints:
+            lines.append(f"[decision_hints] {decision_hints}")
+    if item.get("continuation_group"):
+        lines.append(f"[continuation_group] {item['continuation_group']}")
+    if item.get("continuation_prev_text"):
+        context_before = sanitize_prompt_context_text(item["continuation_prev_text"])
+        if context_before:
+            lines.append(f"[context_before] {context_before}")
+    if item.get("continuation_next_text"):
+        context_after = sanitize_prompt_context_text(item["continuation_next_text"])
+        if context_after:
+            lines.append(f"[context_after] {context_after}")
+    lines.append("<<<END SOURCE>>>")
+    return "\n".join(lines).strip()
+
+
 def _build_translation_system_prompt(
     *,
     domain_guidance: str = "",
@@ -99,6 +189,7 @@ def build_messages(
     mode: str = "fast",
     response_style: str = "tagged",
 ) -> list[dict[str, str]]:
+    direct_typst_mode = any(_item_math_mode(item) == "direct_typst" for item in batch)
     system_prompt = _build_translation_system_prompt(
         domain_guidance=domain_guidance,
         mode=mode,
@@ -122,6 +213,8 @@ def build_messages(
             "<<<END>>>\n"
             "Output one block for every requested item_id."
         )
+    if direct_typst_mode:
+        system_prompt = f"{system_prompt}\n\n{_direct_math_guidance()}"
     groups: dict[str, dict[str, Any]] = {}
     items_payload = []
     for item in batch:
@@ -162,9 +255,14 @@ def build_messages(
             }
             for group in groups.values()
         ]
+    user_content = (
+        _direct_typst_batch_user_prompt(batch, mode=mode)
+        if direct_typst_mode
+        else json.dumps(user_payload, ensure_ascii=False)
+    )
     return [
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
+        {"role": "user", "content": user_content},
     ]
 
 
@@ -175,6 +273,7 @@ def build_single_item_fallback_messages(
     structured_decision: bool = False,
     response_style: str = "plain_text",
 ) -> list[dict[str, str]]:
+    direct_typst_mode = _item_math_mode(item) == "direct_typst"
     if mode == "sci" and structured_decision:
         system_prompt = _build_translation_system_prompt(
             domain_guidance=domain_guidance,
@@ -187,23 +286,27 @@ def build_single_item_fallback_messages(
                 'Return only JSON matching {"decision":"translate","translated_text":"translated text"}. '
                 "Do not include markdown, code fences, or explanations."
             )
-        user_prompt = json.dumps(
-            {
-                "task": load_prompt("translation_task.txt"),
-                "items": [
-                    {
-                        "item_id": item["item_id"],
-                        "source_text": item["protected_source_text"],
-                        **(
-                            {"style_hint": structure_style_hint(item.get("metadata", {}) or {})}
-                            if structure_style_hint(item.get("metadata", {}) or {})
-                            else {}
-                        ),
-                        "decision_hints": build_decision_hints(item),
-                    }
-                ],
-            },
-            ensure_ascii=False,
+        user_prompt = (
+            _direct_typst_single_user_prompt(item, mode=mode)
+            if direct_typst_mode
+            else json.dumps(
+                {
+                    "task": load_prompt("translation_task.txt"),
+                    "items": [
+                        {
+                            "item_id": item["item_id"],
+                            "source_text": item["protected_source_text"],
+                            **(
+                                {"style_hint": structure_style_hint(item.get("metadata", {}) or {})}
+                                if structure_style_hint(item.get("metadata", {}) or {})
+                                else {}
+                            ),
+                            "decision_hints": build_decision_hints(item),
+                        }
+                    ],
+                },
+                ensure_ascii=False,
+            )
         )
         return [
             {"role": "system", "content": system_prompt},
@@ -236,6 +339,8 @@ def build_single_item_fallback_messages(
             "source_text": item["protected_source_text"],
         },
     }
+    if direct_typst_mode:
+        fallback_system = f"{fallback_system}\n{_direct_math_guidance()}"
     style_hint = structure_style_hint(item.get("metadata", {}) or {})
     if style_hint:
         user_payload["item"]["style_hint"] = style_hint
@@ -249,7 +354,11 @@ def build_single_item_fallback_messages(
             user_payload["item"]["context_after"] = context_after
     if item.get("continuation_group"):
         user_payload["item"]["continuation_group"] = item["continuation_group"]
-    user_prompt = json.dumps(user_payload, ensure_ascii=False)
+    user_prompt = (
+        _direct_typst_single_user_prompt(item, mode=mode)
+        if direct_typst_mode
+        else json.dumps(user_payload, ensure_ascii=False)
+    )
     return [
         {"role": "system", "content": fallback_system},
         {"role": "user", "content": user_prompt},

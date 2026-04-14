@@ -6,6 +6,8 @@ import fitz
 
 from services.rendering.api.pdf_overlay import redact_translated_text_areas
 from services.rendering.api.pdf_overlay import save_optimized_pdf
+from services.rendering.redaction.shared import iter_valid_translated_items
+from services.rendering.redaction.vector_text_cleanup import collect_vector_text_rects
 
 
 def build_clean_background_pdf(
@@ -22,11 +24,14 @@ def build_clean_background_pdf(
             if not (0 <= page_index < len(output_doc)):
                 continue
             page = output_doc[page_index]
+            target_rects = [
+                rect for rect, _item, _translated_text in iter_valid_translated_items(translated_pages[page_index])
+            ]
             redact_translated_text_areas(
                 page,
                 translated_pages[page_index],
                 fill_background=None,
-                cover_only=False,
+                cover_only=bool(collect_vector_text_rects(page, target_rects)),
             )
         output_pdf_path.parent.mkdir(parents=True, exist_ok=True)
         save_optimized_pdf(output_doc, output_pdf_path)

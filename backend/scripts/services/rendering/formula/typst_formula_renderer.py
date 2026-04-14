@@ -26,6 +26,7 @@ GREEK_MAP = {
     r"\mu": "μ",
     r"\eta": "η",
     r"\partial": "∂",
+    r"\top": "⊤",
 }
 
 
@@ -152,7 +153,7 @@ def convert_latexish_to_typst(expr: str) -> str:
     text = text.replace(r"\lfloor", "floor.l")
     text = text.replace(r"\rfloor", "floor.r")
     text = text.replace(r"\cdot", " dot ")
-    text = text.replace(r"\to", " -> ")
+    text = re.sub(r"\\to\b", " -> ", text)
     text = text.replace(r"\prime", "prime")
 
     for latex, uni in GREEK_MAP.items():
@@ -167,6 +168,7 @@ def convert_latexish_to_typst(expr: str) -> str:
     text = _unwrap_macro_group(text, r"\textit")
     text = _unwrap_macro_group(text, r"\textbf")
     text = _unwrap_macro_group(text, r"\mathit")
+    text = _unwrap_macro_group(text, r"\mathcal")
     text = _unwrap_macro_group(text, r"\mathsf")
     text = _unwrap_macro_group(text, r"\mathtt")
     text = _unwrap_macro_group(text, r"\mathrm")
@@ -182,10 +184,17 @@ def convert_latexish_to_typst(expr: str) -> str:
     text = text.replace("| _", "|_")
     text = text.replace("^ { prime }", "^prime")
     text = text.replace(" ^ { prime }", "^prime")
+    text = re.sub(r"_(\d+)", r"_(\1)", text)
+    text = re.sub(r"_([A-Za-z])", r"_(\1)", text)
+    text = re.sub(r"\^(\d+)", r"^(\1)", text)
+    text = re.sub(r"\^([A-Za-z])", r"^(\1)", text)
+    text = re.sub(r"\^([*+\-])", r"^(\1)", text)
     text = text.replace(" _ {", "_(")
     text = text.replace(" ^ {", "^(")
     text = text.replace(" }", ")")
     text = text.replace("{", "(").replace("}", ")")
+    text = re.sub(r"(?<=[A-Za-z0-9\)])\s+_(?=\()", "_", text)
+    text = re.sub(r"(?<=[A-Za-z0-9\)])\s+\^(?=\()", "^", text)
     text = _collapse_token_spacing(text)
     return text
 

@@ -117,6 +117,8 @@ pub struct GlossaryEntryInput {
 pub struct TranslationInput {
     #[serde(default = "default_mode")]
     pub mode: String,
+    #[serde(default = "default_math_mode")]
+    pub math_mode: String,
     #[serde(default)]
     pub skip_title_translation: bool,
     #[serde(default = "default_classify_batch_size")]
@@ -157,6 +159,7 @@ impl Default for TranslationInput {
     fn default() -> Self {
         Self {
             mode: default_mode(),
+            math_mode: default_math_mode(),
             skip_title_translation: false,
             classify_batch_size: default_classify_batch_size(),
             rule_profile_name: default_rule_profile_name(),

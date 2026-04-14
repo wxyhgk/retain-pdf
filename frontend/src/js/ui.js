@@ -10,6 +10,8 @@ import {
   resolveJobActions,
   summarizeRuntimeField,
   summarizeDiagnostic,
+  summarizeInvocationProtocol,
+  summarizeInvocationSchemaVersion,
   summarizePublicError,
   summarizeStageDetail,
   summarizeStatus,
@@ -226,6 +228,7 @@ function updateRing(job) {
 function updateDetailDialog(job) {
   const stageText = summarizeStageDetail(job);
   safeSetHtml("status-detail-head-icon", stageIconMarkup(job.status, stageText));
+  safeSetText("status-detail-job-id", job.job_id || "-");
   safeSetText(
     "status-detail-head-note",
     job.status === "failed"
@@ -234,6 +237,17 @@ function updateDetailDialog(job) {
         ? "任务已完成，可查看概览与事件流"
         : "查看任务概览、失败原因与事件流",
   );
+}
+
+function summarizeMathMode(job) {
+  const mathMode = `${job?.request_payload_math_mode || ""}`.trim();
+  if (mathMode === "placeholder") {
+    return "placeholder - 公式占位保护";
+  }
+  if (mathMode === "direct_typst") {
+    return "direct_typst - 模型直出公式";
+  }
+  return mathMode || "-";
 }
 
 function renderRuntimeDetails(job) {
@@ -247,6 +261,9 @@ function renderRuntimeDetails(job) {
     job.last_stage_transition_at ? formatEventTimestamp(job.last_stage_transition_at) : "-",
   );
   safeSetText("runtime-terminal-reason", summarizeRuntimeField(job.terminal_reason));
+  safeSetText("runtime-input-protocol", summarizeInvocationProtocol(job));
+  safeSetText("runtime-stage-spec-version", summarizeInvocationSchemaVersion(job));
+  safeSetText("runtime-math-mode", summarizeMathMode(job));
 }
 
 function renderFailureDetails(job) {
@@ -430,7 +447,12 @@ function renderEvents(eventsPayload) {
           <span>${escapeHtml(item.level || "-")}</span>
         </div>
         <div class="event-title">${escapeHtml(item.message || "-")}</div>
-        ${payloadText ? `<pre class="event-payload">${escapeHtml(payloadText)}</pre>` : ""}
+        ${payloadText ? `
+          <details class="event-payload-wrap">
+            <summary class="event-payload-toggle">查看 payload</summary>
+            <pre class="event-payload">${escapeHtml(payloadText)}</pre>
+          </details>
+        ` : ""}
       </article>
     `;
   }).join("");

@@ -1,6 +1,7 @@
 import re
 
 from services.rendering.formula.normalizer import normalize_formula_for_latex_math
+from services.rendering.formula.typst_formula_renderer import convert_latexish_to_typst
 from services.translation.payload.formula_protection import re_protect_restored_formulas
 
 
@@ -83,8 +84,16 @@ def normalize_plain_citation(formula_text: str) -> str:
 INLINE_MATH_BLOCK_RE = re.compile(r"(?<!\\)\$(?:\\.|[^$\\\n])+(?<!\\)\$")
 BARE_LATEX_COMMAND_RE = re.compile(r"(?P<expr>\\[A-Za-z]+(?:\s*\{[^{}]+\})+)")
 BARE_SUPERSCRIPT_CITATION_RE = re.compile(r"(?P<expr>\^\{\s*\d+[A-Za-z]?(?:\s*[-,]\s*\d+[A-Za-z]?)*\s*\})")
+LEFT_RIGHT_LATEX_RE = re.compile(
+    r"(?P<expr>\\left\s*(?:\\lbrack|\\rbrack|\\lbrace|\\rbrace|\\langle|\\rangle|[\[\]()])"
+    r"(?:\\.|[^$\n])+?"
+    r"\\right\s*(?:\\lbrack|\\rbrack|\\lbrace|\\rbrace|\\langle|\\rangle|[\[\]()]))"
+)
 SCRIPTED_CHEMISTRY_RE = re.compile(
     r"(?P<expr>[A-Za-z][A-Za-z0-9]*(?:\([^()\n]+\)|\{[^{}\n]+\}|\^\{[^{}\n]+\}|_\{[^{}\n]+\}|[-/])+)"
+)
+BRACKETED_ION_PAIR_RE = re.compile(
+    r"(?P<expr>(?:\[(?=[A-Za-z])[A-Za-z][A-Za-z0-9+\-]*\]){2,})"
 )
 INDEXED_TOKEN_RE = re.compile(r"(?P<expr>\[[A-Za-z0-9_]+\]_[A-Za-z0-9]+)")
 SUBSCRIPT_TOKEN_RE = re.compile(
@@ -140,6 +149,21 @@ def _apply_to_non_math_segments(text: str, replacer) -> str:
     return "".join(chunks)
 
 
+def _normalize_existing_inline_math_for_typst(text: str) -> str:
+    def _replace(match: re.Match[str]) -> str:
+        expr = match.group(0)[1:-1].strip()
+        if not expr:
+            return match.group(0)
+        if looks_like_citation(expr):
+            return normalize_plain_citation(expr)
+        try:
+            return f"${convert_latexish_to_typst(expr)}$"
+        except Exception:
+            return f"${normalize_formula_for_latex_math(expr)}$"
+
+    return INLINE_MATH_BLOCK_RE.sub(_replace, text or "")
+
+
 def _normalize_plain_segment_for_math(text: str) -> str:
     return re.sub(r"\\{2,}(?=[A-Za-z])", r"\\", text or "")
 
@@ -150,8 +174,10 @@ def promote_inline_math_like_text(text: str) -> str:
 
     promoted = _apply_to_non_math_segments(text, _normalize_plain_segment_for_math)
     promoted = _apply_to_non_math_segments(promoted, lambda plain: BARE_SUPERSCRIPT_CITATION_RE.sub(_wrap_raw_math_candidate, plain))
+    promoted = _apply_to_non_math_segments(promoted, lambda plain: LEFT_RIGHT_LATEX_RE.sub(_wrap_math_candidate, plain))
     promoted = _apply_to_non_math_segments(promoted, lambda plain: BARE_LATEX_COMMAND_RE.sub(_wrap_math_candidate, plain))
     promoted = _apply_to_non_math_segments(promoted, lambda plain: SCRIPTED_CHEMISTRY_RE.sub(_wrap_math_candidate, plain))
+    promoted = _apply_to_non_math_segments(promoted, lambda plain: BRACKETED_ION_PAIR_RE.sub(_wrap_raw_math_candidate, plain))
     promoted = _apply_to_non_math_segments(promoted, lambda plain: INDEXED_TOKEN_RE.sub(_wrap_indexed_math_candidate, plain))
     promoted = _apply_to_non_math_segments(promoted, lambda plain: INLINE_EXPR_RE.sub(_wrap_raw_math_candidate, plain))
     promoted = _apply_to_non_math_segments(promoted, lambda plain: SUBSCRIPT_TOKEN_RE.sub(_wrap_raw_math_candidate, plain))
@@ -159,12 +185,52 @@ def promote_inline_math_like_text(text: str) -> str:
     return promoted
 
 
+def build_markdown_from_direct_text(
+    text: str,
+    *,
+    aggressive_math_promotion: bool = True,
+    normalize_existing_inline_math: bool = False,
+) -> str:
+    markdown = _normalize_text_chunk(text)
+    if aggressive_math_promotion:
+        markdown = promote_inline_math_like_text(markdown)
+    else:
+        markdown = _normalize_plain_segment_for_math(markdown)
+    if normalize_existing_inline_math:
+        markdown = _normalize_existing_inline_math_for_typst(markdown)
+    markdown = _surround_inline_math_with_spaces(markdown)
+    markdown = re.sub(
+        r"\\textcircled\s*\{\s*\\scriptsize\s*\{\s*\\parallel\s*\}\s*\}",
+        r"$\\circ$",
+        markdown,
+    )
+    markdown = re.sub(r"\\textcircled\s*\{\s*\\parallel\s*\}", r"$\\circ$", markdown)
+    markdown = re.sub(r"\\textcircled\s*\{\s*\\times\s*\}", r"$\\otimes$", markdown)
+    return markdown
+
+
 def build_markdown_paragraph(item: dict) -> str:
     protected = item.get("protected_translated_text") or item.get("protected_source_text", "")
-    return build_markdown_from_parts(protected, item.get("formula_map", []))
+    if str(item.get("math_mode", "placeholder") or "placeholder").strip() == "direct_typst":
+        return build_direct_typst_passthrough_text(protected)
+    return build_markdown_from_parts(
+        protected,
+        item.get("formula_map", []),
+    )
 
 
-def build_markdown_from_parts(protected: str, formula_map: list[dict]) -> str:
+def build_direct_typst_passthrough_text(text: str) -> str:
+    return str(text or "").strip()
+
+
+def build_markdown_from_parts(
+    protected: str,
+    formula_map: list[dict],
+) -> str:
+    if not formula_map:
+        return build_markdown_from_direct_text(
+            protected or "",
+        )
     protected = re_protect_restored_formulas(protected or "", formula_map)
     parts = split_protected_text(protected)
     formula_lookup = formula_map_lookup(formula_map)
@@ -183,16 +249,7 @@ def build_markdown_from_parts(protected: str, formula_map: list[dict]) -> str:
                 chunks.append(text)
 
     markdown = "".join(chunks).strip()
-    markdown = promote_inline_math_like_text(markdown)
-    markdown = _surround_inline_math_with_spaces(markdown)
-    markdown = re.sub(
-        r"\\textcircled\s*\{\s*\\scriptsize\s*\{\s*\\parallel\s*\}\s*\}",
-        r"$\\circ$",
-        markdown,
-    )
-    markdown = re.sub(r"\\textcircled\s*\{\s*\\parallel\s*\}", r"$\\circ$", markdown)
-    markdown = re.sub(r"\\textcircled\s*\{\s*\\times\s*\}", r"$\\otimes$", markdown)
-    return markdown
+    return build_markdown_from_direct_text(markdown)
 
 
 def build_plain_text(item: dict) -> str:

@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from services.document_schema.compat import normalize_block_continuation_hint
+from services.document_schema.defaults import normalize_block_continuation_hint
 from services.document_schema.semantics import is_algorithm_semantic
 from services.document_schema.semantics import is_reference_entry_semantic
 from services.translation.ocr.models import TextItem
@@ -85,10 +85,22 @@ def _ocr_continuation_fields(metadata: dict | None) -> dict:
     }
 
 
-def export_translation_template(items: list[TextItem], output_path: Path, page_idx: int) -> None:
+def _resolve_translation_item_payload(item: TextItem, *, math_mode: str) -> tuple[str, list[dict], list[dict]]:
+    if math_mode == "direct_typst":
+        return item.text, [], []
+    return protect_inline_formulas_in_segments(item.segments)
+
+
+def export_translation_template(
+    items: list[TextItem],
+    output_path: Path,
+    page_idx: int,
+    *,
+    math_mode: str = "placeholder",
+) -> None:
     payload = []
     for item in items:
-        protected_source_text, formula_map, protected_map = protect_inline_formulas_in_segments(item.segments)
+        protected_source_text, formula_map, protected_map = _resolve_translation_item_payload(item, math_mode=math_mode)
         classification_label, should_translate, skip_reason = _default_translation_flags(item.block_type, item.metadata)
         ocr_continuation_fields = _ocr_continuation_fields(item.metadata)
         payload.append(
@@ -108,6 +120,7 @@ def export_translation_template(items: list[TextItem], output_path: Path, page_i
                 "layout_zone_rank": -1,
                 "layout_zone_size": 0,
                 "layout_boundary_role": "",
+                "math_mode": math_mode,
                 "protected_source_text": protected_source_text,
                 "mixed_original_protected_source_text": protected_source_text,
                 "formula_map": formula_map,
@@ -164,10 +177,16 @@ def save_translations(translation_path: Path, payload: list[dict]) -> None:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
 
-def ensure_translation_template(items: list[TextItem], output_path: Path, page_idx: int) -> Path:
+def ensure_translation_template(
+    items: list[TextItem],
+    output_path: Path,
+    page_idx: int,
+    *,
+    math_mode: str = "placeholder",
+) -> Path:
     if not output_path.exists():
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        export_translation_template(items, output_path, page_idx=page_idx)
+        export_translation_template(items, output_path, page_idx=page_idx, math_mode=math_mode)
         return output_path
 
     payload = load_translations(output_path)
@@ -179,17 +198,18 @@ def ensure_translation_template(items: list[TextItem], output_path: Path, page_i
             continue
         classification_label, should_translate, skip_reason = _default_translation_flags(item.block_type, item.metadata)
         ocr_continuation_fields = _ocr_continuation_fields(item.metadata)
+        protected_source_text, formula_map, protected_map = _resolve_translation_item_payload(item, math_mode=math_mode)
         if (
             "protected_source_text" not in record
             or "formula_map" not in record
             or "protected_translated_text" not in record
             or "lines" not in record
         ):
-            protected_source_text, formula_map, protected_map = protect_inline_formulas_in_segments(item.segments)
             record["source_text"] = item.text
             record["lines"] = item.lines
             record["metadata"] = item.metadata
             record.update(ocr_continuation_fields)
+            record["math_mode"] = math_mode
             record["protected_source_text"] = protected_source_text
             record["formula_map"] = formula_map
             record["protected_map"] = protected_map
@@ -204,6 +224,31 @@ def ensure_translation_template(items: list[TextItem], output_path: Path, page_i
             record.setdefault("group_protected_translated_text", "")
             record.setdefault("group_translated_text", "")
             changed = True
+        if record.get("math_mode") != math_mode:
+            record["math_mode"] = math_mode
+            changed = True
+        if math_mode == "direct_typst":
+            if record.get("protected_source_text") != protected_source_text:
+                record["protected_source_text"] = protected_source_text
+                changed = True
+            if record.get("mixed_original_protected_source_text") != protected_source_text:
+                record["mixed_original_protected_source_text"] = protected_source_text
+                changed = True
+            if record.get("formula_map") != []:
+                record["formula_map"] = []
+                changed = True
+            if record.get("protected_map") != []:
+                record["protected_map"] = []
+                changed = True
+            if record.get("translation_unit_protected_source_text") != protected_source_text:
+                record["translation_unit_protected_source_text"] = protected_source_text
+                changed = True
+            if record.get("translation_unit_formula_map") != []:
+                record["translation_unit_formula_map"] = []
+                changed = True
+            if record.get("translation_unit_protected_map") != []:
+                record["translation_unit_protected_map"] = []
+                changed = True
         if "classification_label" not in record:
             record["classification_label"] = classification_label
             changed = True

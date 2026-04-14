@@ -21,6 +21,12 @@ Current Python entrypoints used by the Rust layer:
 - `scripts/entrypoints/run_translate_only.py`
 - `scripts/entrypoints/run_render_only.py`
 
+Current worker contract:
+
+- Rust now launches these worker entrypoints through `--spec <job_root>/specs/*.spec.json`
+- the worker layer no longer relies on legacy long CLI flag assembly
+- both Rust-owned workers and the maintained local job entrypoints are now treated as spec-driven execution paths
+
 Goals:
 
 - JSON-first API for frontend and third-party integration
@@ -239,6 +245,7 @@ Canonical JSON request:
   },
   "translation": {
     "mode": "sci",
+    "math_mode": "placeholder",
     "skip_title_translation": false,
     "classify_batch_size": 12,
     "rule_profile_name": "general_sci",
@@ -288,6 +295,12 @@ Required provider fields:
 
 - `ocr.mineru_token` when the workflow/provider needs MinerU
 - `translation.base_url`, `translation.api_key`, and `translation.model` when translation is required
+
+Translation options:
+
+- `translation.math_mode` is optional
+- `placeholder` is the default and keeps the legacy protected-formula pipeline
+- `direct_typst` is an experimental mode that asks the model to output translated prose with inline `$...$` math directly
 
 Validation:
 
@@ -520,7 +533,7 @@ Response:
       "page_defaults": 0,
       "block_defaults": 0,
       "schema": "normalized_document_v1",
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "page_count": 12,
       "block_count": 428
     },
@@ -536,6 +549,11 @@ Response:
       "target_hit_entry_count": 6,
       "unused_entry_count": 5,
       "unapplied_source_hit_entry_count": 1
+    },
+    "invocation": {
+      "stage": "mineru",
+      "input_protocol": "stage_spec",
+      "stage_spec_schema_version": "mineru.stage.v1"
     },
     "log_tail": [
       "batch 123: state=done",
@@ -556,9 +574,15 @@ Main job detail now also includes OCR-child-facing fields in `artifacts` / detai
 - `schema_version`
 
 `normalization_summary` is a lightweight view derived from `document.v1.report.json`.
-If a client needs the full adapter / compat / validation report, it should download `artifacts.normalization_report`.
+If a client needs the full adapter / defaults / validation report, it should download `artifacts.normalization_report`.
 
 `glossary_summary` is loaded from `translation-manifest.json` when present, and falls back to the pipeline summary artifact.
+
+`invocation` is loaded from `translation-manifest.json` when present, and falls back to the pipeline summary artifact.
+Current workers are spec-driven, so new tasks should report:
+
+- `input_protocol=stage_spec`
+- `stage_spec_schema_version`: the concrete stage schema version
 This means render-only jobs can still expose the original translation glossary summary as long as the translation artifacts are preserved.
 
 ## 4. List Jobs
@@ -578,12 +602,21 @@ Response:
         "workflow": "mineru",
         "status": "running",
         "stage": "translating",
+        "invocation": {
+          "stage": "mineru",
+          "input_protocol": "stage_spec",
+          "stage_spec_schema_version": "mineru.stage.v1"
+        },
         "created_at": "2026-03-27T11:05:00Z",
         "updated_at": "2026-03-27T11:05:30Z",
         "detail_path": "/api/v1/jobs/20260327190500-ef3456",
         "detail_url": "http://127.0.0.1:41000/api/v1/jobs/20260327190500-ef3456"
       }
-    ]
+    ],
+    "invocation_summary": {
+      "stage_spec_count": 12,
+      "unknown_count": 0
+    }
   }
 }
 ```
@@ -796,5 +829,5 @@ Legacy jobs using `originPDF/jsonPDF/transPDF/typstPDF` or absolute-path artifac
 
 - Rust API should not parse or manipulate PDF internals
 - Rust only orchestrates jobs and exposes resources
-- Python CLI remains the single worker implementation
+- Python worker remains the single execution implementation, driven by stage spec files
 - later migration to dedicated Python worker service is straightforward because the API contract is already stable

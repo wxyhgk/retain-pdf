@@ -134,7 +134,7 @@ def _apply_block_defaults(block: dict, *, page_index: int, order: int, report: d
                 _increment(report["block_defaults"], "continuation_hint")
 
 
-def _build_empty_upgrade_report() -> dict:
+def _build_empty_defaults_report() -> dict:
     return {
         "document_defaults": {},
         "page_defaults": {},
@@ -142,8 +142,8 @@ def _build_empty_upgrade_report() -> dict:
     }
 
 
-def _summarize_upgrade_report(report: dict, upgraded: dict) -> dict:
-    pages = upgraded.get("pages", []) or []
+def _summarize_defaults_report(report: dict, document: dict) -> dict:
+    pages = document.get("pages", []) or []
     return {
         "pages_seen": len(pages),
         "blocks_seen": sum(len(page.get("blocks", []) or []) for page in pages),
@@ -153,21 +153,21 @@ def _summarize_upgrade_report(report: dict, upgraded: dict) -> dict:
     }
 
 
-def upgrade_document_payload(data: dict) -> dict:
-    upgraded, _report = upgrade_document_payload_with_report(data)
-    return upgraded
+def apply_document_defaults(data: dict) -> dict:
+    document, _report = apply_document_defaults_with_report(data)
+    return document
 
 
-def upgrade_document_payload_with_report(data: dict) -> tuple[dict, dict]:
-    upgraded = deepcopy(data)
-    report = _build_empty_upgrade_report()
-    _apply_document_defaults(upgraded, report)
+def apply_document_defaults_with_report(data: dict) -> tuple[dict, dict]:
+    document = deepcopy(data)
+    report = _build_empty_defaults_report()
+    _apply_document_defaults(document, report)
 
-    for page_index, page in enumerate(upgraded.get("pages", []) or []):
+    for page_index, page in enumerate(document.get("pages", []) or []):
         _apply_page_defaults(page, page_index=page_index, report=report)
         for order, block in enumerate(page.get("blocks", []) or []):
             _apply_block_defaults(block, page_index=page_index, order=order, report=report)
-    return upgraded, _summarize_upgrade_report(report, upgraded)
+    return document, _summarize_defaults_report(report, document)
 
 
 __all__ = [
@@ -180,6 +180,6 @@ __all__ = [
     "default_block_continuation_hint",
     "default_block_derived",
     "normalize_block_continuation_hint",
-    "upgrade_document_payload",
-    "upgrade_document_payload_with_report",
+    "apply_document_defaults",
+    "apply_document_defaults_with_report",
 ]

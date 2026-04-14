@@ -8,11 +8,11 @@ REPO_SCRIPTS_ROOT = Path("/home/wxyhgk/tmp/Code/backend/scripts")
 sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
 from runtime.pipeline.book_translation_batches import _build_translation_batches
+from runtime.pipeline.book_translation_batches import _allocate_translation_queue_workers
+from runtime.pipeline.book_translation_batches import _classify_translation_batches
 from runtime.pipeline.book_translation_batches import _dedupe_pending_items
 from runtime.pipeline.book_translation_batches import _expand_duplicate_results
 from runtime.pipeline.book_translation_batches import _effective_translation_batch_size
-from runtime.pipeline.book_translation_batches import _slow_queue_workers
-from runtime.pipeline.book_translation_batches import _split_fast_and_slow_batches
 from runtime.pipeline.book_translation_batches import _translate_batch_or_keep_origin
 from services.translation.llm.control_context import build_translation_control_context
 from services.translation.llm.control_context import resolve_engine_profile
@@ -200,27 +200,93 @@ def test_smarter_batches_keep_continuation_group_with_placeholders_out_of_batche
     assert not batches[1][0].get("_batched_plain_candidate")
 
 
-def test_queue_split_moves_formula_and_continuation_singletons_to_slow_queue() -> None:
-    fast_batches, slow_batches = _split_fast_and_slow_batches(
+def test_queue_classification_routes_only_true_slow_blocks_to_single_slow() -> None:
+    batched_fast_batches, single_fast_batches, single_slow_batches = _classify_translation_batches(
         [
-            [_item("body-a", "This sentence describes antibacterial activity and provides enough body text for translation.", _batched_plain_candidate=True)],
-            [_item("__cg__:cg-1", "Continuation with <f1-a7c/> placeholder.", continuation_group="cg-1", translation_unit_id="__cg__:cg-1")],
-            [_item("formula-1", "Text with <f1-a7c/> formula marker.", formula_map=[{"placeholder": "<f1-a7c/>"}])],
             [
-                _item("body-b", "This sentence describes antibacterial activity and provides enough body text for translation.", _batched_plain_candidate=True),
-                _item("body-c", "This sentence describes antibacterial activity and provides enough body text for translation.", _batched_plain_candidate=True),
+                _item(
+                    "body-a",
+                    "This sentence describes antibacterial activity and provides enough body text for translation.",
+                    _batched_plain_candidate=True,
+                )
+            ],
+            [
+                _item(
+                    "__cg__:cg-1",
+                    "Continuation with <f1-a7c/> placeholder.",
+                    continuation_group="cg-1",
+                    translation_unit_id="__cg__:cg-1",
+                )
+            ],
+            [
+                _item(
+                    "formula-1",
+                    "Text with <f1-a7c/> formula marker.",
+                    formula_map=[{"placeholder": "<f1-a7c/>"}],
+                    math_mode="direct_typst",
+                )
+            ],
+            [
+                _item(
+                    "body-b",
+                    "This sentence describes antibacterial activity and provides enough body text for translation.",
+                    _batched_plain_candidate=True,
+                ),
+                _item(
+                    "body-c",
+                    "This sentence describes antibacterial activity and provides enough body text for translation.",
+                    _batched_plain_candidate=True,
+                ),
             ],
         ]
     )
-    assert [[item["item_id"] for item in batch] for batch in fast_batches] == [["body-a"], ["body-b", "body-c"]]
-    assert [[item["item_id"] for item in batch] for batch in slow_batches] == [["__cg__:cg-1"], ["formula-1"]]
+    assert [[item["item_id"] for item in batch] for batch in batched_fast_batches] == [["body-a"], ["body-b", "body-c"]]
+    assert [[item["item_id"] for item in batch] for batch in single_fast_batches] == [["formula-1"]]
+    assert [[item["item_id"] for item in batch] for batch in single_slow_batches] == [["__cg__:cg-1"]]
 
 
-def test_slow_queue_workers_reserve_small_pool() -> None:
-    assert _slow_queue_workers(1) == 1
-    assert _slow_queue_workers(4) == 1
-    assert _slow_queue_workers(12) == 3
-    assert _slow_queue_workers(100) == 12
+def test_queue_worker_allocation_reserves_small_tail_pool() -> None:
+    assert _allocate_translation_queue_workers(
+        1,
+        batched_fast_count=0,
+        single_fast_count=3,
+        single_slow_count=1,
+    ) == {"batched_fast": 0, "single_fast": 1, "single_slow": 0}
+    assert _allocate_translation_queue_workers(
+        8,
+        batched_fast_count=4,
+        single_fast_count=6,
+        single_slow_count=2,
+    ) == {"batched_fast": 3, "single_fast": 4, "single_slow": 1}
+    assert _allocate_translation_queue_workers(
+        24,
+        batched_fast_count=2,
+        single_fast_count=10,
+        single_slow_count=3,
+    ) == {"batched_fast": 4, "single_fast": 18, "single_slow": 2}
+    assert _allocate_translation_queue_workers(
+        12,
+        batched_fast_count=0,
+        single_fast_count=0,
+        single_slow_count=5,
+    ) == {"batched_fast": 0, "single_fast": 0, "single_slow": 12}
+
+
+def test_direct_typst_singleton_uses_single_fast_queue() -> None:
+    batched_fast_batches, single_fast_batches, single_slow_batches = _classify_translation_batches(
+        [
+            [
+                _item(
+                    "dt-1",
+                    "Observe $x_{i}$ under the boundary condition and translate directly.",
+                    math_mode="direct_typst",
+                )
+            ]
+        ]
+    )
+    assert batched_fast_batches == []
+    assert [[item["item_id"] for item in batch] for batch in single_fast_batches] == [["dt-1"]]
+    assert single_slow_batches == []
 
 
 def test_smarter_batches_leave_reference_like_text_as_single_batch_without_fast_skip() -> None:

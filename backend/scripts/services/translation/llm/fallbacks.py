@@ -22,6 +22,7 @@ from services.translation.llm.placeholder_guard import canonicalize_batch_result
 from services.translation.llm.placeholder_guard import has_formula_placeholders
 from services.translation.llm.placeholder_guard import internal_keep_origin_result
 from services.translation.llm.placeholder_guard import is_internal_placeholder_degraded
+from services.translation.llm.placeholder_guard import is_direct_math_mode
 from services.translation.llm.placeholder_guard import item_with_runtime_hard_glossary
 from services.translation.llm.placeholder_guard import item_with_placeholder_aliases
 from services.translation.llm.placeholder_guard import log_placeholder_failure
@@ -156,12 +157,16 @@ def _is_continuation_or_group_unit(item: dict) -> bool:
 
 
 def _single_item_http_retry_attempts(item: dict) -> int | None:
+    if is_direct_math_mode(item):
+        return None
     if has_formula_placeholders(item) or _is_continuation_or_group_unit(item):
         return 1
     return None
 
 
 def _should_prefer_tagged_placeholder_first(item: dict, *, context: TranslationControlContext) -> bool:
+    if is_direct_math_mode(item):
+        return False
     if not context.fallback_policy.allow_tagged_placeholder_retry:
         return False
     if not has_formula_placeholders(item):
@@ -172,6 +177,8 @@ def _should_prefer_tagged_placeholder_first(item: dict, *, context: TranslationC
 
 
 def _heavy_formula_split_reason(item: dict, *, context: TranslationControlContext) -> str:
+    if is_direct_math_mode(item):
+        return ""
     source_text = str(item.get("translation_unit_protected_source_text") or item.get("protected_source_text") or "")
     placeholder_count = _formula_placeholder_count(source_text)
     if placeholder_count < HEAVY_FORMULA_SPLIT_PLACEHOLDERS:
@@ -616,6 +623,191 @@ def translate_single_item_stable_placeholder_text(
     return restored
 
 
+def _keep_origin_payload_for_direct_typst_validation_failure(
+    item: dict,
+    *,
+    context: TranslationControlContext,
+    route_path: list[str],
+    degradation_reason: str,
+    error_code: str,
+) -> dict[str, dict[str, str]]:
+    payload = internal_keep_origin_result(degradation_reason)
+    payload["error_taxonomy"] = "validation"
+    payload["translation_diagnostics"] = {
+        "item_id": item.get("item_id", ""),
+        "page_idx": item.get("page_idx"),
+        "route_path": route_path,
+        "error_trace": [{"type": "validation", "code": error_code}],
+        "fallback_to": "keep_origin",
+        "degradation_reason": degradation_reason,
+        "final_status": "kept_origin",
+        **_formula_route_diagnostics(item, context=context),
+    }
+    return {item["item_id"]: payload}
+
+
+def _translate_direct_typst_plain_text_with_retries(
+    item: dict,
+    *,
+    api_key: str,
+    model: str,
+    base_url: str,
+    request_label: str,
+    context: TranslationControlContext,
+    diagnostics: TranslationDiagnosticsCollector | None,
+) -> dict[str, dict[str, str]]:
+    plain_attempts = context.fallback_policy.plain_text_attempts
+    plain_timeout_s = context.timeout_policy.plain_text_seconds
+    route_prefix = ["block_level", "direct_typst"]
+    last_error: Exception | None = None
+
+    for attempt in range(1, plain_attempts + 1):
+        started = time.perf_counter()
+        try:
+            if request_label:
+                print(
+                    f"{request_label}: direct_typst plain-text attempt {attempt}/{plain_attempts} item={item['item_id']}",
+                    flush=True,
+                )
+            result = translate_single_item_plain_text(
+                item,
+                api_key=api_key,
+                model=model,
+                base_url=base_url,
+                request_label=f"{request_label} req#{attempt}" if request_label else "",
+                domain_guidance=context.merged_guidance,
+                mode=context.mode,
+                diagnostics=diagnostics,
+                timeout_s=plain_timeout_s,
+                http_retry_attempts=_single_item_http_retry_attempts(item),
+            )
+            result = _restore_runtime_term_tokens(result, item=item)
+            result = _attach_result_metadata(
+                result,
+                item=item,
+                context=context,
+                route_path=route_prefix,
+                output_mode_path=["plain_text"],
+            )
+            if request_label:
+                elapsed = time.perf_counter() - started
+                print(f"{request_label}: direct_typst plain-text ok in {elapsed:.2f}s", flush=True)
+            return result
+        except (EmptyTranslationError, EnglishResidueError, TranslationProtocolError) as exc:
+            last_error = exc
+            elapsed = time.perf_counter() - started
+            if request_label:
+                print(
+                    f"{request_label}: direct_typst plain-text failed attempt {attempt}/{plain_attempts} after {elapsed:.2f}s: {type(exc).__name__}: {exc}",
+                    flush=True,
+                )
+            if attempt < plain_attempts:
+                time.sleep(min(8, 2 * attempt))
+                continue
+
+            raw_started = time.perf_counter()
+            try:
+                if request_label:
+                    print(f"{request_label}: direct_typst retrying with raw plain-text fallback", flush=True)
+                result = translate_single_item_plain_text_unstructured(
+                    item,
+                    api_key=api_key,
+                    model=model,
+                    base_url=base_url,
+                    request_label=f"{request_label} raw" if request_label else "",
+                    domain_guidance=context.merged_guidance,
+                    mode=context.mode,
+                    diagnostics=diagnostics,
+                    timeout_s=plain_timeout_s,
+                    http_retry_attempts=_single_item_http_retry_attempts(item),
+                )
+                result = _restore_runtime_term_tokens(result, item=item)
+                if request_label:
+                    raw_elapsed = time.perf_counter() - raw_started
+                    print(f"{request_label}: direct_typst raw plain-text ok in {raw_elapsed:.2f}s", flush=True)
+                return _attach_result_metadata(
+                    result,
+                    item=item,
+                    context=context,
+                    route_path=route_prefix + ["plain_text_raw"],
+                    output_mode_path=["plain_text"],
+                )
+            except (EmptyTranslationError, EnglishResidueError, TranslationProtocolError) as raw_exc:
+                last_error = raw_exc
+                if request_label:
+                    raw_elapsed = time.perf_counter() - raw_started
+                    print(
+                        f"{request_label}: direct_typst raw plain-text failed after {raw_elapsed:.2f}s: {type(raw_exc).__name__}: {raw_exc}",
+                        flush=True,
+                    )
+                if isinstance(last_error, EnglishResidueError):
+                    return _keep_origin_payload_for_direct_typst_validation_failure(
+                        item,
+                        context=context,
+                        route_path=route_prefix + ["keep_origin"],
+                        degradation_reason="english_residue_repeated",
+                        error_code="ENGLISH_RESIDUE",
+                    )
+                if isinstance(last_error, TranslationProtocolError):
+                    raise last_error
+                if isinstance(last_error, EmptyTranslationError):
+                    if _should_keep_origin_on_empty_translation(item) or not should_force_translate_body_text(item):
+                        return _keep_origin_payload_for_direct_typst_validation_failure(
+                            item,
+                            context=context,
+                            route_path=route_prefix + ["keep_origin"],
+                            degradation_reason="empty_translation_repeated",
+                            error_code="EMPTY_TRANSLATION",
+                        )
+                    raise last_error
+            except Exception as raw_exc:
+                if not is_transport_error(raw_exc):
+                    raise
+                if request_label:
+                    raw_elapsed = time.perf_counter() - raw_started
+                    print(
+                        f"{request_label}: direct_typst raw transport failure after {raw_elapsed:.2f}s, degrade to keep_origin: {type(raw_exc).__name__}: {raw_exc}",
+                        flush=True,
+                    )
+                return _keep_origin_payload_for_transport_error(
+                    item,
+                    context=context,
+                    route_path=route_prefix + ["plain_text_raw", "keep_origin"],
+                )
+        except SuspiciousKeepOriginError:
+            raise
+        except (ValueError, KeyError, json.JSONDecodeError) as exc:
+            last_error = exc
+            if request_label:
+                elapsed = time.perf_counter() - started
+                print(
+                    f"{request_label}: direct_typst plain-text parse failed attempt {attempt}/{plain_attempts} after {elapsed:.2f}s: {type(exc).__name__}: {exc}",
+                    flush=True,
+                )
+            if attempt >= plain_attempts:
+                raise
+            time.sleep(min(8, 2 * attempt))
+        except Exception as exc:
+            if not is_transport_error(exc):
+                raise
+            last_error = exc
+            elapsed = time.perf_counter() - started
+            if request_label:
+                print(
+                    f"{request_label}: direct_typst transport failure after {elapsed:.2f}s, degrade to keep_origin: {type(exc).__name__}: {exc}",
+                    flush=True,
+                )
+            return _keep_origin_payload_for_transport_error(
+                item,
+                context=context,
+                route_path=route_prefix + ["keep_origin"],
+            )
+
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError("Direct Typst plain-text translation failed without an exception.")
+
+
 def translate_single_item_plain_text_with_retries(
     item: dict,
     *,
@@ -627,6 +819,17 @@ def translate_single_item_plain_text_with_retries(
     diagnostics: TranslationDiagnosticsCollector | None = None,
 ) -> dict[str, dict[str, str]]:
     item = item_with_runtime_hard_glossary(item, context.glossary_entries)
+    direct_math_mode = is_direct_math_mode(item)
+    if direct_math_mode:
+        return _translate_direct_typst_plain_text_with_retries(
+            item,
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            request_label=request_label,
+            context=context,
+            diagnostics=diagnostics,
+        )
     if not item.get("_heavy_formula_split_applied"):
         split_reason = _heavy_formula_split_reason(item, context=context)
         if split_reason:
@@ -651,7 +854,7 @@ def translate_single_item_plain_text_with_retries(
                     output_mode_path=["plain_text"],
                     degradation_reason=split_reason,
                 )
-    formula_route = formula_segment_translation_route(item, policy=context.segmentation_policy)
+    formula_route = "plain" if direct_math_mode else formula_segment_translation_route(item, policy=context.segmentation_policy)
     dense_prose_route = formula_route == "formula_dense_prose"
     plain_attempts = 1 if dense_prose_route else context.fallback_policy.plain_text_attempts
     plain_timeout_s = min(context.timeout_policy.plain_text_seconds, 18) if dense_prose_route else context.timeout_policy.plain_text_seconds
@@ -1186,25 +1389,21 @@ def translate_items_plain_text(
                 if diagnostics is not None:
                     for item in uncached_batch:
                         diagnostics.emit(
-                            kind="batch_transport_degraded",
+                            kind="batch_transport_single_retry",
                             item_id=str(item.get("item_id", "") or ""),
                             page_idx=item.get("page_idx"),
                             severity="warning",
-                            message=f"Degraded batched request to keep_origin after transport failure: {type(exc).__name__}",
+                            message=f"Batched request transport failure, retry as single-item path: {type(exc).__name__}",
                             retryable=True,
                         )
                 if request_label:
                     print(
-                        f"{request_label}: batched plain transport failure, degrade whole batch to keep_origin: {type(exc).__name__}: {exc}",
+                        f"{request_label}: batched plain transport failure, fallback to single-item path: {type(exc).__name__}: {exc}",
                         flush=True,
                     )
-                merged.update(
-                    _keep_origin_results_for_batch_transport(
-                        uncached_batch,
-                        context=context,
-                    )
-                )
-                return merged
+                # Do not degrade the whole batch to keep_origin on transport errors.
+                # Fall through to the existing single-item retry path below so only
+                # persistently failing items degrade individually.
             if getattr(exc, "item_id", None) and isinstance(getattr(exc, "result", None), dict):
                 partial_result = getattr(exc, "result", {}) or {}
                 accepted_result, retry_batch = _split_batched_plain_result_for_partial_retry(

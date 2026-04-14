@@ -11,6 +11,7 @@ const OUTPUT_TRANSLATED_DIR_NAME: &str = "translated";
 const OUTPUT_RENDERED_DIR_NAME: &str = "rendered";
 const OUTPUT_ARTIFACTS_DIR_NAME: &str = "artifacts";
 const OUTPUT_LOGS_DIR_NAME: &str = "logs";
+const OUTPUT_SPECS_DIR_NAME: &str = "specs";
 const OUTPUT_TYPST_DIR_NAME: &str = "typst";
 const OUTPUT_TYPST_BOOK_OVERLAYS_DIR_NAME: &str = "book-overlays";
 const LEGACY_LAYOUT_DIR_NAMES: [&str; 4] = ["originPDF", "jsonPDF", "transPDF", "typstPDF"];
@@ -56,6 +57,7 @@ pub struct JobPaths {
     pub rendered_dir: PathBuf,
     pub artifacts_dir: PathBuf,
     pub logs_dir: PathBuf,
+    pub specs_dir: PathBuf,
 }
 
 impl JobPaths {
@@ -69,6 +71,7 @@ impl JobPaths {
             rendered_dir: root.join(OUTPUT_RENDERED_DIR_NAME),
             artifacts_dir: root.join(OUTPUT_ARTIFACTS_DIR_NAME),
             logs_dir: root.join(OUTPUT_LOGS_DIR_NAME),
+            specs_dir: root.join(OUTPUT_SPECS_DIR_NAME),
             root,
         }
     }
@@ -83,6 +86,7 @@ impl JobPaths {
             &self.rendered_dir,
             &self.artifacts_dir,
             &self.logs_dir,
+            &self.specs_dir,
         ] {
             std::fs::create_dir_all(path)?;
         }

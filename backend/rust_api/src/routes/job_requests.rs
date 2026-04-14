@@ -127,6 +127,7 @@ fn apply_multipart_request_field(
         "artifact_job_id" => request.source.artifact_job_id = value.to_string(),
         "job_id" => request.runtime.job_id = value.to_string(),
         "mode" => request.translation.mode = value.to_string(),
+        "math_mode" => request.translation.math_mode = value.to_string(),
         "skip_title_translation" => {
             request.translation.skip_title_translation = parse_bool_like(value)
         }

@@ -6,7 +6,7 @@
     "document_id": "paddle-sample",
     "provider": "paddle",
     "provider_version": "",
-    "compat": {
+    "defaults": {
       "pages_seen": 3,
       "blocks_seen": 59,
       "document_defaults": {},
@@ -16,7 +16,7 @@
     "validation": {
       "valid": true,
       "schema": "normalized_document_v1",
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "page_count": 3,
       "block_count": 59
     },
@@ -49,8 +49,8 @@
     "provider": "paddle",
     "detected_provider": "paddle",
     "provider_was_explicit": true,
-    "compat_pages": 3,
-    "compat_blocks": 59,
+    "defaults_pages": 3,
+    "defaults_blocks": 59,
     "valid": true,
     "page_count": 3,
     "block_count": 59,
@@ -60,7 +60,7 @@
   "validation": {
     "valid": true,
     "schema": "normalized_document_v1",
-    "schema_version": "1.0",
+    "schema_version": "1.1",
     "page_count": 3,
     "block_count": 59
   }

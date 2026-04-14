@@ -47,11 +47,21 @@ def build_translation_context_from_policy(
     model: str = "",
     base_url: str = "",
 ) -> TranslationControlContext:
+    extra_guidance_parts: list[str] = []
+    if extra_guidance.strip():
+        extra_guidance_parts.append(extra_guidance.strip())
+    if str(getattr(policy_config, "math_mode", "placeholder") or "placeholder").strip() == "direct_typst":
+        extra_guidance_parts.append(
+            "Math output mode: direct_typst.\n"
+            "When the source contains formulas, output the final translated text directly with inline math preserved "
+            "using `$...$` spans when needed.\n"
+            "Do not emit placeholder tokens, JSON shells, labels, or explanations."
+        )
     return build_translation_context(
         mode=policy_config.mode,
         domain_guidance=(policy_config.domain_context.get("translation_guidance") or "").strip(),
         rule_guidance=policy_config.rule_guidance,
-        extra_guidance=extra_guidance,
+        extra_guidance="\n\n".join(extra_guidance_parts).strip(),
         request_label=request_label,
         glossary_entries=normalize_glossary_entries(glossary_entries),
         abbreviation_entries=abbreviation_entries,

@@ -70,6 +70,7 @@ def load_page_payloads(
     data: dict,
     output_dir: Path,
     page_indices: range,
+    math_mode: str = "placeholder",
 ) -> tuple[dict[int, Path], dict[int, list[dict]]]:
     translation_paths: dict[int, Path] = {}
     page_payloads: dict[int, list[dict]] = {}
@@ -77,7 +78,7 @@ def load_page_payloads(
     for page_idx in page_indices:
         items = extract_text_items(data, page_idx=page_idx)
         translation_path = output_dir / default_page_translation_name(page_idx)
-        ensure_translation_template(items, translation_path, page_idx=page_idx)
+        ensure_translation_template(items, translation_path, page_idx=page_idx, math_mode=math_mode)
         translation_paths[page_idx] = translation_path
         page_payloads[page_idx] = load_translations(translation_path)
     write_translation_manifest(output_dir, translation_paths)

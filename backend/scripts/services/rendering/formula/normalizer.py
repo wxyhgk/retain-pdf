@@ -23,7 +23,7 @@ STRUCTURAL_LATEX_COMMANDS = {
     "binom",
 }
 
-STYLE_WRAPPER_MACROS = r"(?:pmb|bf|rm|it|sf|tt)"
+STYLE_WRAPPER_MACROS = r"(?:pmb|bf|rm|it|sf|tt|em)"
 LEGACY_LAYOUT_WRAPPER_MACROS = r"(?:smash|mbox|hbox|vbox|fbox|textnormal|textrm|textsf|texttt)"
 
 
@@ -139,6 +139,45 @@ def _unwrap_legacy_layout_wrappers(expr: str) -> str:
     )
 
 
+def _unwrap_inline_text_wrappers(expr: str) -> str:
+    return _unwrap_named_macros(expr, {"textbf", "textit", "emph", "em"})
+
+
+def _compact_script_groups(expr: str) -> str:
+    prev = None
+    while expr != prev:
+        prev = expr
+        expr = re.sub(
+            r"_\s*\{\s*([^{}]+?)\s*\}",
+            lambda m: "_{" + _compact_script_groups(m.group(1).strip()) + "}",
+            expr,
+        )
+        expr = re.sub(
+            r"\^\s*\{\s*([^{}]+?)\s*\}",
+            lambda m: "^{" + _compact_script_groups(m.group(1).strip()) + "}",
+            expr,
+        )
+        expr = re.sub(r"(?<=[A-Za-z0-9\}\)\]])\s*_\s*([A-Za-z0-9*+\-]+)", r"_\1", expr)
+        expr = re.sub(r"(?<=[A-Za-z0-9\}\)\]])\s*\^\s*([A-Za-z0-9*+\-]+)", r"^\1", expr)
+        expr = re.sub(r"(?<=[A-Za-z0-9\}\)\]])\s*\^\s*(\\[A-Za-z]+)", r"^\1", expr)
+        expr = re.sub(r"(\\[A-Za-z]+|[A-Za-z0-9\}\)\]])\s+(_\{[^{}]*\})", r"\1\2", expr)
+        expr = re.sub(r"(\\[A-Za-z]+|[A-Za-z0-9\}\)\]])\s+(\^\{[^{}]*\})", r"\1\2", expr)
+        expr = re.sub(r"\^\s+\*", r"^*", expr)
+    return expr
+
+
+def _compact_letter_hyphen_runs(expr: str) -> str:
+    prev = None
+    while expr != prev:
+        prev = expr
+        expr = re.sub(
+            r"(?P<left>(?:\\[A-Za-z]+|[A-Za-z])[A-Za-z0-9]*)\s*-\s*(?P<right>(?:\\[A-Za-z]+|[A-Za-z])[A-Za-z0-9]*)",
+            r"\g<left>-\g<right>",
+            expr,
+        )
+    return expr
+
+
 def normalize_formula_for_latex_math(formula_text: str) -> str:
     expr = " ".join(formula_text.strip().split())
     if not expr:
@@ -168,16 +207,28 @@ def normalize_formula_for_latex_math(formula_text: str) -> str:
 
     expr = _unwrap_style_wrappers(expr)
     expr = _unwrap_legacy_layout_wrappers(expr)
+    expr = _unwrap_inline_text_wrappers(expr)
     expr = re.sub(r"\{\s*\\(?:bf|rm|it|tt|sf|pmb)\s*\}", "", expr)
     expr = re.sub(r"^\{\s*([^{}]+?)\s*\}$", r"\1", expr)
 
     expr = _repair_common_ocr_formula_noise(expr)
+    expr = _compact_script_groups(expr)
+    expr = _compact_letter_hyphen_runs(expr)
     expr = re.sub(r"\.\s+([\)\],;])", r".\1", expr)
     expr = re.sub(r"(?<=\d)\s*\.\s*(?=\d)", ".", expr)
     expr = re.sub(r"(?<=\d)\s+(?=\d)", "", expr)
-    expr = re.sub(r"\s*([=+\-*/<>:,;])\s*", r" \1 ", expr)
+    expr = re.sub(r"\s*([=+*/<>:,;])\s*", r" \1 ", expr)
+    expr = re.sub(
+        r"(?P<left>(?:\d+|[)\]}]|\\[A-Za-z]+))\s*-\s*(?P<right>(?:\d+|[(\[{]|\\[A-Za-z]+))",
+        r"\g<left> - \g<right>",
+        expr,
+    )
+    expr = _compact_script_groups(expr)
+    expr = re.sub(r"(?<=\^)\s+([*+\-])", r"\1", expr)
+    expr = re.sub(r"\^([*+\-])\s+(?=[}\)])", r"^\1", expr)
     expr = re.sub(r"\s+", " ", expr).strip()
     expr = re.sub(r"\\mathrm\s*\{\s*COOH\s*\^\s*\{\s*\*\s*\}\s*\}", r"\\mathrm{COOH^{*}}", expr)
+    expr = re.sub(r"^([_^])\{([^{}]+)\}$", r"\1{{\2}}", expr)
     if expr.startswith(("_", "^")):
         expr = "{} " + expr
     return expr

@@ -67,8 +67,8 @@ def _materialize_normalized_document(
         "normalized document report: "
         f"provider={normalization_summary['provider']} "
         f"detected={normalization_summary['detected_provider']} "
-        f"compat_pages={normalization_summary['compat_pages']} "
-        f"compat_blocks={normalization_summary['compat_blocks']} "
+        f"defaults_pages={normalization_summary['defaults_pages']} "
+        f"defaults_blocks={normalization_summary['defaults_blocks']} "
         f"path={normalized_report_json_path}",
         flush=True,
     )

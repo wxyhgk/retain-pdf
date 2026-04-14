@@ -168,6 +168,7 @@ pub struct JobDetailView {
     pub failure_diagnostic: Option<JobFailureDiagnosticView>,
     pub normalization_summary: Option<NormalizationSummaryView>,
     pub glossary_summary: Option<GlossaryUsageSummaryView>,
+    pub invocation: Option<InvocationSummaryView>,
     pub log_tail: Vec<String>,
 }
 
@@ -225,6 +226,16 @@ pub struct GlossaryUsageSummaryView {
     pub unapplied_source_hit_entry_count: i64,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq, Eq)]
+pub struct InvocationSummaryView {
+    #[serde(default)]
+    pub stage: String,
+    #[serde(default)]
+    pub input_protocol: String,
+    #[serde(default)]
+    pub stage_spec_schema_version: String,
+}
+
 #[derive(Debug, Serialize)]
 pub struct JobListItemView {
     pub job_id: String,
@@ -233,10 +244,17 @@ pub struct JobListItemView {
     pub status: JobStatusKind,
     pub trace_id: Option<String>,
     pub stage: Option<String>,
+    pub invocation: Option<InvocationSummaryView>,
     pub created_at: String,
     pub updated_at: String,
     pub detail_path: String,
     pub detail_url: String,
+}
+
+#[derive(Debug, Serialize, Default)]
+pub struct JobListInvocationSummaryView {
+    pub stage_spec_count: usize,
+    pub unknown_count: usize,
 }
 
 #[derive(Debug, Serialize)]
@@ -252,6 +270,7 @@ pub struct OcrJobSummaryView {
 #[derive(Debug, Serialize)]
 pub struct JobListView {
     pub items: Vec<JobListItemView>,
+    pub invocation_summary: JobListInvocationSummaryView,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -594,6 +613,7 @@ pub fn job_to_detail(
         failure_diagnostic: failure.as_ref().map(job_failure_to_legacy_view),
         normalization_summary: load_normalization_summary(job, data_root),
         glossary_summary: load_glossary_summary(job, data_root),
+        invocation: load_invocation_summary(job, data_root),
         log_tail: job.log_tail.clone(),
     }
 }
@@ -602,6 +622,7 @@ pub fn job_to_list_item(
     job: &JobSnapshot,
     base_url: &str,
     display_name: String,
+    data_root: &Path,
 ) -> JobListItemView {
     let detail_path = format!("{}/{}", job_path_prefix(&job.workflow), job.job_id);
     JobListItemView {
@@ -614,11 +635,28 @@ pub fn job_to_list_item(
             .as_ref()
             .and_then(|item| item.trace_id.clone()),
         stage: job.stage.clone(),
+        invocation: load_invocation_summary(job, data_root),
         created_at: job.created_at.clone(),
         updated_at: job.updated_at.clone(),
         detail_url: to_absolute_url(base_url, &detail_path),
         detail_path,
     }
+}
+
+pub fn summarize_list_invocation(items: &[JobListItemView]) -> JobListInvocationSummaryView {
+    let mut summary = JobListInvocationSummaryView::default();
+    for item in items {
+        match item
+            .invocation
+            .as_ref()
+            .map(|value| value.input_protocol.as_str())
+            .unwrap_or("")
+        {
+            "stage_spec" => summary.stage_spec_count += 1,
+            _ => summary.unknown_count += 1,
+        }
+    }
+    summary
 }
 
 fn build_ocr_job_summary(job: &JobSnapshot, base_url: &str) -> Option<OcrJobSummaryView> {
@@ -652,7 +690,7 @@ pub fn load_normalization_summary(
     let path = resolve_normalization_report(job, data_root)?;
     let payload: Value = serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()?;
     let normalization = payload.get("normalization").unwrap_or(&payload);
-    let compat = normalization.get("compat");
+    let defaults = normalization.get("defaults");
     let validation = normalization.get("validation");
     Some(NormalizationSummaryView {
         provider: normalization
@@ -669,23 +707,23 @@ pub fn load_normalization_summary(
             .get("provider_was_explicit")
             .and_then(Value::as_bool)
             .unwrap_or(false),
-        pages_seen: compat
+        pages_seen: defaults
             .and_then(|v| v.get("pages_seen"))
             .and_then(Value::as_i64),
-        blocks_seen: compat
+        blocks_seen: defaults
             .and_then(|v| v.get("blocks_seen"))
             .and_then(Value::as_i64),
-        document_defaults: compat
+        document_defaults: defaults
             .and_then(|v| v.get("document_defaults"))
             .and_then(Value::as_object)
             .map(|m| m.len())
             .unwrap_or(0),
-        page_defaults: compat
+        page_defaults: defaults
             .and_then(|v| v.get("page_defaults"))
             .and_then(Value::as_object)
             .map(|m| m.len())
             .unwrap_or(0),
-        block_defaults: compat
+        block_defaults: defaults
             .and_then(|v| v.get("block_defaults"))
             .and_then(Value::as_object)
             .map(|m| m.len())
@@ -715,6 +753,45 @@ pub fn load_glossary_summary(
 ) -> Option<GlossaryUsageSummaryView> {
     load_glossary_summary_from_manifest(job, data_root)
         .or_else(|| load_glossary_summary_from_pipeline_summary(job, data_root))
+}
+
+pub fn load_invocation_summary(
+    job: &JobSnapshot,
+    data_root: &Path,
+) -> Option<InvocationSummaryView> {
+    load_invocation_summary_from_manifest(job, data_root)
+        .or_else(|| load_invocation_summary_from_pipeline_summary(job, data_root))
+}
+
+fn load_invocation_summary_from_manifest(
+    job: &JobSnapshot,
+    data_root: &Path,
+) -> Option<InvocationSummaryView> {
+    let path = resolve_translation_manifest(job, data_root)?;
+    load_invocation_summary_from_json_path(&path)
+}
+
+fn load_invocation_summary_from_pipeline_summary(
+    job: &JobSnapshot,
+    data_root: &Path,
+) -> Option<InvocationSummaryView> {
+    let path = job.artifacts.as_ref()?.summary.as_ref()?;
+    let path = resolve_data_path(data_root, path).ok()?;
+    load_invocation_summary_from_json_path(&path)
+}
+
+fn load_invocation_summary_from_json_path(path: &Path) -> Option<InvocationSummaryView> {
+    let payload: Value = serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()?;
+    let summary: InvocationSummaryView =
+        serde_json::from_value(payload.get("invocation")?.clone()).ok()?;
+    if !summary.stage.is_empty()
+        || !summary.input_protocol.is_empty()
+        || !summary.stage_spec_schema_version.is_empty()
+    {
+        Some(summary)
+    } else {
+        None
+    }
 }
 
 fn load_glossary_summary_from_manifest(
@@ -782,7 +859,7 @@ mod tests {
 
     use super::{
         build_artifact_manifest, build_job_actions, build_job_links_with_workflow, job_to_detail,
-        job_to_list_item,
+        job_to_list_item, summarize_list_invocation, InvocationSummaryView, JobListItemView,
     };
     use crate::models::{
         CreateJobInput, JobArtifactRecord, JobFailureInfo, JobSnapshot, JobStatusKind, WorkflowKind,
@@ -855,7 +932,12 @@ mod tests {
                 build_job_links_with_workflow("job-contract", &workflow, "https://api.example");
             let pdf_ready = !matches!(workflow, WorkflowKind::Ocr);
             let actions = build_job_actions(&job, "https://api.example", pdf_ready, false, false);
-            let item = job_to_list_item(&job, "https://api.example", "paper.pdf".to_string());
+            let item = job_to_list_item(
+                &job,
+                "https://api.example",
+                "paper.pdf".to_string(),
+                std::path::Path::new("/tmp"),
+            );
 
             assert_eq!(links.self_path, format!("{prefix}/job-contract"));
             assert_eq!(links.events_path, format!("{prefix}/job-contract/events"));
@@ -872,6 +954,47 @@ mod tests {
             assert!(!actions.open_markdown.enabled);
             assert_eq!(item.detail_path, format!("{prefix}/job-contract"));
         }
+    }
+
+    #[test]
+    fn summarize_list_invocation_counts_stage_spec_and_unknown() {
+        let items = vec![
+            JobListItemView {
+                job_id: "job-1".to_string(),
+                display_name: "a.pdf".to_string(),
+                workflow: WorkflowKind::Translate,
+                status: JobStatusKind::Succeeded,
+                trace_id: None,
+                stage: Some("done".to_string()),
+                invocation: Some(InvocationSummaryView {
+                    stage: "translate".to_string(),
+                    input_protocol: "stage_spec".to_string(),
+                    stage_spec_schema_version: "translate.stage.v1".to_string(),
+                }),
+                created_at: "2026-01-01T00:00:00Z".to_string(),
+                updated_at: "2026-01-01T00:00:00Z".to_string(),
+                detail_path: "/api/v1/jobs/job-1".to_string(),
+                detail_url: "https://api.example/api/v1/jobs/job-1".to_string(),
+            },
+            JobListItemView {
+                job_id: "job-2".to_string(),
+                display_name: "b.pdf".to_string(),
+                workflow: WorkflowKind::Mineru,
+                status: JobStatusKind::Queued,
+                trace_id: None,
+                stage: None,
+                invocation: None,
+                created_at: "2026-01-01T00:00:00Z".to_string(),
+                updated_at: "2026-01-01T00:00:00Z".to_string(),
+                detail_path: "/api/v1/jobs/job-2".to_string(),
+                detail_url: "https://api.example/api/v1/jobs/job-2".to_string(),
+            },
+        ];
+
+        let summary = summarize_list_invocation(&items);
+
+        assert_eq!(summary.stage_spec_count, 1);
+        assert_eq!(summary.unknown_count, 1);
     }
 
     #[test]
@@ -1057,6 +1180,102 @@ mod tests {
                 .as_ref()
                 .map(|item| item.target_hit_entry_count),
             Some(1)
+        );
+    }
+
+    #[test]
+    fn job_detail_view_loads_invocation_from_translation_manifest() {
+        let temp = std::env::temp_dir().join(format!("view-invocation-{}", fastrand::u64(..)));
+        let data_root = temp.join("data");
+        let translations_dir = data_root.join("jobs/job-invocation/translated");
+        fs::create_dir_all(&translations_dir).expect("create translations dir");
+        fs::write(
+            translations_dir.join("translation-manifest.json"),
+            r#"{
+              "schema": "translation_manifest_v1",
+              "schema_version": 1,
+              "pages": [],
+              "invocation": {
+                "stage": "translate",
+                "input_protocol": "stage_spec",
+                "stage_spec_schema_version": "translate.stage.v1"
+              }
+            }"#,
+        )
+        .expect("write manifest");
+
+        let mut job = build_job("job-invocation", WorkflowKind::Translate);
+        job.artifacts = Some(crate::models::JobArtifacts {
+            translations_dir: Some("jobs/job-invocation/translated".to_string()),
+            ..Default::default()
+        });
+
+        let detail = job_to_detail(&job, "https://api.example", &data_root, false, false, false);
+
+        assert_eq!(
+            detail.invocation.as_ref().map(|item| item.stage.as_str()),
+            Some("translate")
+        );
+        assert_eq!(
+            detail
+                .invocation
+                .as_ref()
+                .map(|item| item.input_protocol.as_str()),
+            Some("stage_spec")
+        );
+        assert_eq!(
+            detail
+                .invocation
+                .as_ref()
+                .map(|item| item.stage_spec_schema_version.as_str()),
+            Some("translate.stage.v1")
+        );
+    }
+
+    #[test]
+    fn job_detail_view_loads_invocation_from_pipeline_summary_fallback() {
+        let temp =
+            std::env::temp_dir().join(format!("view-invocation-summary-{}", fastrand::u64(..)));
+        let data_root = temp.join("data");
+        let artifacts_dir = data_root.join("jobs/job-invocation-summary/artifacts");
+        fs::create_dir_all(&artifacts_dir).expect("create artifacts dir");
+        fs::write(
+            artifacts_dir.join("pipeline_summary.json"),
+            r#"{
+              "invocation": {
+                "stage": "render",
+                "input_protocol": "stage_spec",
+                "stage_spec_schema_version": "render.stage.v1"
+              }
+            }"#,
+        )
+        .expect("write summary");
+
+        let mut job = build_job("job-invocation-summary", WorkflowKind::Render);
+        job.artifacts = Some(crate::models::JobArtifacts {
+            summary: Some("jobs/job-invocation-summary/artifacts/pipeline_summary.json".to_string()),
+            ..Default::default()
+        });
+
+        let detail = job_to_detail(&job, "https://api.example", &data_root, false, false, false);
+
+        assert_eq!(
+            detail.invocation.as_ref().map(|item| item.stage.as_str()),
+            Some("render")
+        );
+        assert_eq!(
+            detail
+                .invocation
+                .as_ref()
+                .map(|item| item.input_protocol.as_str()),
+            Some("stage_spec")
+        );
+        assert_eq!(
+            detail
+                .invocation
+                .as_ref()
+                .map(|item| item.stage_spec_schema_version.as_str()),
+            Some("render.stage.v1")
         );
     }
 }

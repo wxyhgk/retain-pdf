@@ -9,6 +9,10 @@ function arrayOrEmpty(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function objectOrNull(value) {
+  return value && typeof value === "object" ? value : null;
+}
+
 export function unwrapEnvelope(payload) {
   if (payload && typeof payload === "object" && "data" in payload && "code" in payload) {
     return payload.data;
@@ -53,6 +57,7 @@ export function normalizeJobPayload(payload) {
   const artifacts = unwrapped.artifacts || {};
   const runtime = unwrapped.runtime || {};
   const failure = unwrapped.failure || null;
+  const invocation = unwrapped.invocation || {};
   const status = unwrapped.status || "idle";
   let progressCurrent = numberOrNull(progress.current ?? unwrapped.progress_current);
   let progressTotal = numberOrNull(progress.total ?? unwrapped.progress_total);
@@ -74,6 +79,7 @@ export function normalizeJobPayload(payload) {
     raw_response: unwrapped,
     request_payload: unwrapped.request_payload || null,
     request_payload_page_ranges: firstNonEmpty(unwrapped.request_payload?.ocr?.page_ranges),
+    request_payload_math_mode: firstNonEmpty(unwrapped.request_payload?.translation?.math_mode),
     job_id: unwrapped.job_id || "",
     workflow: unwrapped.workflow || unwrapped.job_type || "",
     job_type: unwrapped.job_type || unwrapped.workflow || "",
@@ -92,7 +98,10 @@ export function normalizeJobPayload(payload) {
     actions: unwrapped.actions || {},
     artifacts,
     runtime,
+    invocation,
     failure,
+    normalization_summary: objectOrNull(unwrapped.normalization_summary),
+    glossary_summary: objectOrNull(unwrapped.glossary_summary),
     current_stage: firstNonEmpty(runtime.current_stage, unwrapped.stage),
     stage_started_at: firstNonEmpty(runtime.stage_started_at),
     last_stage_transition_at: firstNonEmpty(runtime.last_stage_transition_at),
@@ -111,6 +120,20 @@ export function normalizeJobPayload(payload) {
     markdown_ready: Boolean(artifacts.markdown_ready ?? artifacts.markdown?.ready),
     bundle_ready: Boolean(artifacts.bundle_ready ?? artifacts.bundle?.ready),
   };
+}
+
+export function summarizeInvocationProtocol(payload) {
+  const invocation = payload?.invocation || {};
+  const inputProtocol = firstNonEmpty(invocation.input_protocol);
+  if (inputProtocol === "stage_spec") {
+    return "Stage Spec";
+  }
+  return "-";
+}
+
+export function summarizeInvocationSchemaVersion(payload) {
+  const invocation = payload?.invocation || {};
+  return firstNonEmpty(invocation.stage_spec_schema_version) || "-";
 }
 
 export function resolveJobActions(job) {

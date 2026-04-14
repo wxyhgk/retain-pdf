@@ -154,6 +154,14 @@ def unit_source_text(item: dict) -> str:
     )
 
 
+def item_math_mode(item: dict) -> str:
+    return str(item.get("math_mode", "placeholder") or "placeholder").strip() or "placeholder"
+
+
+def is_direct_math_mode(item: dict) -> bool:
+    return item_math_mode(item) == "direct_typst"
+
+
 def strip_placeholders(text: str) -> str:
     return PLACEHOLDER_RE.sub(" ", text or "")
 
@@ -216,6 +224,8 @@ def repair_safe_duplicate_placeholders(source_text: str, translated_text: str) -
 
 
 def has_formula_placeholders(item: dict) -> bool:
+    if is_direct_math_mode(item):
+        return False
     return bool(FORMULA_TOKEN_RE.findall(unit_source_text(item)))
 
 
@@ -403,6 +413,8 @@ def looks_like_predominantly_english_output(item: dict, translated_text: str) ->
         return False
     if _is_reference_like_item(item):
         return False
+    if is_direct_math_mode(item) and (_zh_char_count(translated) > 0 or not looks_like_english_prose(source_text)):
+        return False
     if not should_force_translate_body_text(item):
         return False
     if not looks_like_english_prose(source_text):
@@ -467,7 +479,9 @@ def should_force_translate_body_text(item: dict) -> bool:
     words = EN_WORD_RE.findall(strip_placeholders(source_text))
     if item.get("continuation_group"):
         return len(words) >= 6 and looks_like_english_prose(source_text)
-    if item.get("block_type") == "text" and bool(item.get("formula_map") or item.get("translation_unit_formula_map")):
+    if item.get("block_type") == "text" and (
+        is_direct_math_mode(item) or bool(item.get("formula_map") or item.get("translation_unit_formula_map"))
+    ):
         return len(words) >= 5 and looks_like_english_prose(source_text)
     return looks_like_english_prose(source_text) and len(words) >= 8
 
@@ -607,6 +621,8 @@ def validate_batch_result(
                 )
         source_placeholders = placeholders(source_text)
         translated_placeholders = placeholders(translated_text)
+        if is_direct_math_mode(item):
+            continue
         if not translated_placeholders.issubset(source_placeholders):
             unexpected = sorted(translated_placeholders - source_placeholders)
             if diagnostics is not None:

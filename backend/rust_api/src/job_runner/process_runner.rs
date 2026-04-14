@@ -87,6 +87,18 @@ pub(crate) async fn execute_process_job(
         .current_dir(&state.config.project_root)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+    if !job.request_payload.translation.api_key.trim().is_empty() {
+        command.env(
+            "RETAIN_TRANSLATION_API_KEY",
+            job.request_payload.translation.api_key.trim(),
+        );
+    }
+    if !job.request_payload.ocr.mineru_token.trim().is_empty() {
+        command.env(
+            "RETAIN_MINERU_API_TOKEN",
+            job.request_payload.ocr.mineru_token.trim(),
+        );
+    }
     configure_child_process(&mut command);
 
     let program = job.command.first().cloned().unwrap_or_default();

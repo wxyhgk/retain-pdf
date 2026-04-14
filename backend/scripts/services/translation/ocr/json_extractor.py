@@ -3,8 +3,7 @@ import json
 import re
 from pathlib import Path
 
-from services.document_schema.compat import upgrade_document_payload
-from services.document_schema.compat import normalize_block_continuation_hint
+from services.document_schema.defaults import normalize_block_continuation_hint
 from services.document_schema.adapters import adapt_path_to_document_v1
 from services.document_schema.semantics import is_algorithm_semantic
 from services.document_schema.semantics import is_reference_entry_semantic
@@ -21,13 +20,15 @@ from services.translation.ocr.normalized_reader import (
     normalized_block_kind as _normalized_block_kind,
     raw_block_type as _raw_block_type,
 )
+from services.document_schema.validator import validate_document_payload
 
 
 def load_ocr_json(json_path: Path) -> dict:
     with json_path.open("r", encoding="utf-8") as f:
         data = json.load(f)
     if is_normalized_document(data):
-        return upgrade_document_payload(data)
+        validate_document_payload(data)
+        return data
     return adapt_path_to_document_v1(
         source_json_path=json_path,
         document_id=json_path.stem,

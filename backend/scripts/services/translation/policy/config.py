@@ -14,6 +14,7 @@ from services.translation.policy.rule_profiles import build_rule_profile_context
 @dataclass(frozen=True)
 class TranslationPolicyConfig:
     mode: str
+    math_mode: str = "placeholder"
     enable_title_skip: bool = False
     enable_reference_tail_skip: bool = False
     enable_reference_zone_skip: bool = False
@@ -105,6 +106,7 @@ def extract_ocr_preview_text(data: dict, max_pages: int = 2) -> str:
 def build_translation_policy_config(
     *,
     mode: str,
+    math_mode: str = "placeholder",
     skip_title_translation: bool,
     sci_cutoff_page_idx: int | None = None,
     sci_cutoff_block_idx: int | None = None,
@@ -135,6 +137,7 @@ def build_translation_policy_config(
     )
     return TranslationPolicyConfig(
         mode=mode,
+        math_mode=str(math_mode or "placeholder").strip() or "placeholder",
         enable_title_skip=should_skip_title_translation(mode, skip_title_translation)
         if enable_title_skip is None
         else enable_title_skip,
@@ -173,6 +176,7 @@ def build_book_translation_policy_config(
     *,
     data: dict,
     mode: str,
+    math_mode: str,
     skip_title_translation: bool,
     source_pdf_path: Path | None,
     api_key: str,
@@ -213,6 +217,7 @@ def build_book_translation_policy_config(
 
     return build_translation_policy_config(
         mode=mode,
+        math_mode=math_mode,
         skip_title_translation=skip_title_translation,
         sci_cutoff_page_idx=sci_cutoff_page_idx,
         sci_cutoff_block_idx=sci_cutoff_block_idx,

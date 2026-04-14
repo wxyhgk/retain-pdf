@@ -50,7 +50,7 @@ def test_load_translated_pages_prefers_manifest() -> None:
         assert pages[2][0]["translated_text"] == "manifest text"
 
 
-def test_load_translated_pages_falls_back_to_legacy_names() -> None:
+def test_load_translated_pages_falls_back_to_legacy_page_payloads() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         translations_dir = Path(tmp)
         legacy_path = translations_dir / "page-002-deepseek.json"
@@ -60,6 +60,18 @@ def test_load_translated_pages_falls_back_to_legacy_names() -> None:
 
         assert sorted(pages) == [1]
         assert pages[1][0]["translated_text"] == "legacy text"
+
+
+def test_load_translated_pages_requires_manifest_or_legacy_payloads() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        translations_dir = Path(tmp)
+
+        try:
+            load_translated_pages(translations_dir)
+        except RuntimeError as exc:
+            assert "Translation manifest not found" in str(exc)
+        else:
+            raise AssertionError("expected translation manifest error")
 
 
 def test_load_translation_manifest_file_supports_explicit_path() -> None:
@@ -102,3 +114,28 @@ def test_translation_manifest_can_store_glossary_summary_without_affecting_loade
         assert manifest_payload["glossary"]["target_hit_entry_count"] == 1
         assert manifest_payload["translation_protocol_version"] == "v2"
         assert manifest_payload["status_summary"]["translated"] == 1
+
+
+def test_translation_manifest_can_store_invocation_metadata_without_affecting_loader() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        translations_dir = Path(tmp)
+        payload_path = translations_dir / "custom-page-001.json"
+        _write_payload(payload_path, "manifest text")
+
+        manifest_path = write_translation_manifest(
+            translations_dir,
+            {0: payload_path},
+            summary={
+                "invocation": {
+                    "stage": "translate",
+                    "input_protocol": "stage_spec",
+                    "stage_spec_schema_version": "translate.stage.v1",
+                }
+            },
+        )
+        manifest_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        loaded = load_translation_manifest(translations_dir)
+
+        assert loaded == {0: payload_path}
+        assert manifest_payload["invocation"]["stage"] == "translate"
+        assert manifest_payload["invocation"]["input_protocol"] == "stage_spec"

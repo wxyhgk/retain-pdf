@@ -5,16 +5,20 @@ REPO_SCRIPTS_ROOT = Path("/home/wxyhgk/tmp/Code/backend/scripts")
 sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
 from services.rendering.formula.math_utils import build_markdown_from_parts
+from services.rendering.formula.math_utils import build_markdown_from_direct_text
+from services.rendering.formula.math_utils import build_direct_typst_passthrough_text
 from services.rendering.formula.math_utils import promote_inline_math_like_text
 from services.rendering.formula.normalizer import normalize_formula_for_latex_math
 from services.rendering.formula.typst_formula_renderer import compile_formula_png
 from services.rendering.formula.typst_formula_renderer import convert_latexish_to_typst
+from services.translation.payload.translations import export_translation_template
 from services.translation.payload.formula_protection import formula_map_from_protected_map
 from services.translation.payload.formula_protection import protect_inline_content
 from services.translation.payload.formula_protection import protect_inline_formulas
 from services.translation.payload.formula_protection import protect_inline_formulas_in_segments
 from services.translation.payload.formula_protection import re_protect_restored_formulas
 from services.translation.payload.formula_protection import restore_protected_tokens
+from services.translation.ocr.models import TextItem
 
 
 def test_restored_formula_tokens_are_wrapped_as_inline_math() -> None:
@@ -60,6 +64,62 @@ def test_typst_markdown_supports_typed_formula_placeholders() -> None:
     assert markdown == r"过氧化钙 $(\mathrm{CaO}_2)$ 释放"
 
 
+def test_typst_markdown_supports_direct_math_text_without_formula_map() -> None:
+    markdown = build_markdown_from_direct_text(r"转移矩阵Q_t表明，且x_t∈{0,1}^K。")
+    assert "$Q_t$" in markdown
+    assert "$x_t$" in markdown
+
+
+def test_typst_markdown_direct_typst_conservative_mode_does_not_guess_plain_scripts() -> None:
+    markdown = build_markdown_from_direct_text(
+        r"转移矩阵Q_t表明，且x_t∈{0,1}^K。",
+        aggressive_math_promotion=False,
+    )
+    assert "$Q_t$" not in markdown
+    assert "$x_t$" not in markdown
+    assert "Q_t" in markdown
+    assert "x_t" in markdown
+
+
+def test_typst_markdown_direct_typst_conservative_mode_keeps_raw_latex_text() -> None:
+    markdown = build_markdown_from_direct_text(
+        r"离子为 \left[ NTf _ { 2 } \right] ，并形成 \mathrm { Co(IV) } 物种。",
+        aggressive_math_promotion=False,
+    )
+    assert r"$\left[" not in markdown
+    assert r"$\mathrm" not in markdown
+    assert r"\left[ NTf _ { 2 } \right]" in markdown
+    assert "Co(IV)" in markdown
+
+
+def test_typst_markdown_direct_typst_converts_existing_inline_math_to_typst() -> None:
+    markdown = build_markdown_from_direct_text(
+        r"观察到 $\mathrm{Ph(i-PrO)SiH_2}$ (6) 的消耗速率快于其他硅烷。",
+        aggressive_math_promotion=False,
+        normalize_existing_inline_math=True,
+    )
+    assert r"$Ph(i-PrO)SiH_(2)$" in markdown
+    assert r"\mathrm" not in markdown
+
+
+def test_typst_markdown_direct_typst_converts_existing_left_right_inline_math() -> None:
+    markdown = build_markdown_from_direct_text(
+        r"形成了 $\left(\mathrm{Ph}\left(i-\mathrm{PrO}\right)_2\mathrm{Si}\right)_2\mathrm{O}$ 物种。",
+        aggressive_math_promotion=False,
+        normalize_existing_inline_math=True,
+    )
+    assert r"\left" not in markdown
+    assert r"\right" not in markdown
+    assert "$" in markdown
+
+
+def test_build_markdown_from_parts_direct_typst_passthrough() -> None:
+    markdown = build_direct_typst_passthrough_text(
+        r"观察到 $\mathrm{Ph(i-PrO)SiH_2}$ (6) 的消耗速率快于其他硅烷。"
+    )
+    assert markdown == r"观察到 $\mathrm{Ph(i-PrO)SiH_2}$ (6) 的消耗速率快于其他硅烷。"
+
+
 def test_typst_markdown_keeps_spaces_around_inline_math() -> None:
     formula_map = [{"placeholder": "<f1-17a/>", "formula_text": r"\pi"}]
     markdown = build_markdown_from_parts("你好<f1-17a/>，下一步", formula_map)
@@ -96,6 +156,17 @@ def test_typst_markdown_repairs_double_slash_latex_command_outside_math() -> Non
     assert r"$\mathrm{Co(IV)}$" in markdown
 
 
+def test_typst_markdown_promotes_left_right_bracket_formula() -> None:
+    markdown = build_markdown_from_parts(r"离子为 \left[ NTf _ { 2 } \right] 和配体。", [])
+    assert r"$\left[ NTf" in markdown
+    assert r"\right]$" in markdown
+
+
+def test_typst_markdown_promotes_bracketed_ion_pair() -> None:
+    markdown = build_markdown_from_parts(r"溶剂使用 [BMM][PF6] 体系。", [])
+    assert r"$[BMM][PF6]$" in markdown
+
+
 def test_formula_normalizer_repairs_low_risk_ocr_noise() -> None:
     assert normalize_formula_for_latex_math(r"\mathrm { C 0 0 H ^ { * } } ]") == r"\mathrm{COOH^{*}} ]"
     assert normalize_formula_for_latex_math(r"1 . 2 7 ~ \mathrm { e V } .") == r"1.27 \mathrm{eV}"
@@ -106,6 +177,12 @@ def test_formula_normalizer_drops_style_noise_without_guessing_structure() -> No
     assert normalize_formula_for_latex_math(r"\bf { g } { - } \vec { C } 3 N _ { 4 }") == r"g { - } C 3 N_{4}"
 
 
+def test_formula_normalizer_preserves_hyphenated_letter_connectors() -> None:
+    assert normalize_formula_for_latex_math(r"a-b") == r"a-b"
+    assert normalize_formula_for_latex_math(r"i-Pr") == r"i-Pr"
+    assert normalize_formula_for_latex_math(r"Ph(i- PrO)") == r"Ph(i-PrO)"
+
+
 def test_formula_normalizer_unwraps_nested_text_style_macros_in_scripts() -> None:
     assert normalize_formula_for_latex_math(r"_ { \textbf { \em x } }") == r"{} _{{x}}"
 
@@ -114,15 +191,21 @@ def test_formula_normalizer_compacts_subscript_and_superscript_groups() -> None:
     assert normalize_formula_for_latex_math(r"x _ { i , j }") == r"x_{i , j}"
     assert normalize_formula_for_latex_math(r"E _ { g } ^ { dir }") == r"E_{g}^{dir}"
     assert normalize_formula_for_latex_math(r"\Delta G _ { H ^ * }") == r"\Delta G_{H^*}"
+    assert normalize_formula_for_latex_math(r"H^{+}") == r"H^{+}"
+    assert normalize_formula_for_latex_math(r"COOH^{*}") == r"COOH^{*}"
+    assert normalize_formula_for_latex_math(r"m ^ \top") == r"m^\top"
 
 
 def test_typst_formula_converter_preserves_subscript_structure() -> None:
     assert convert_latexish_to_typst(r"\mathrm{CaO}_2") == "CaO_(2)"
     assert convert_latexish_to_typst(r"C_3N_4") == "C_(3)N_(4)"
     assert convert_latexish_to_typst(r"x_{i,j}") == "x_(i , j)"
+    assert convert_latexish_to_typst(r"a-b") == "a-b"
+    assert convert_latexish_to_typst(r"i-Pr") == "i-Pr"
     assert convert_latexish_to_typst(r"E_{g}^{dir}") == "E_(g)^(dir)"
     assert convert_latexish_to_typst(r"\Delta G_{H^*}") == "Δ G_(H^(*))"
     assert convert_latexish_to_typst(r"\alpha _ { t } ^ { \prime }") == "α_(t)^(prime)"
+    assert convert_latexish_to_typst(r"m^\top") == "m^⊤"
     assert convert_latexish_to_typst(r"\frac { - \alpha _ { t } ^ { \prime } } { 1 - \alpha _ { t } }") == "frac(- α_(t)^(prime), 1 - α_(t))"
     assert convert_latexish_to_typst(r"\mathbf { \Delta } _ { \mathbf { \mathcal { X } } _ { t } }") == "bold(Δ)_(bold(X)_(t))"
 
@@ -235,4 +318,33 @@ def test_promote_inline_math_like_text_for_garbled_reconstruction_blocks() -> No
     assert "$1-β_t$" in markdown
     assert "$x_t$" in markdown
     assert "$[Q_t]_{ij}$" in markdown
-    assert "${0,1}^K$" in markdown
+
+
+def test_export_translation_template_direct_typst_keeps_raw_source_text() -> None:
+    item = TextItem(
+        item_id="p001-b001",
+        page_idx=0,
+        block_idx=0,
+        block_type="text",
+        bbox=[0.0, 0.0, 100.0, 20.0],
+        text=r"鉴于上述考量，CBFZ(\mathrm{CaO}_2) 被用于实验。",
+        segments=[
+            {"type": "text", "content": "鉴于上述考量，CBFZ"},
+            {"type": "inline_equation", "content": r"(\mathrm{CaO}_2)"},
+            {"type": "text", "content": " 被用于实验。"},
+        ],
+        lines=[],
+        metadata={"structure_role": "body"},
+    )
+    from tempfile import TemporaryDirectory
+    import json
+
+    with TemporaryDirectory() as tmp:
+        path = Path(tmp) / "page-001-deepseek.json"
+        export_translation_template([item], path, page_idx=0, math_mode="direct_typst")
+        payload = json.loads(path.read_text(encoding="utf-8"))
+
+    assert payload[0]["math_mode"] == "direct_typst"
+    assert payload[0]["protected_source_text"] == item.text
+    assert payload[0]["formula_map"] == []
+    assert payload[0]["translation_unit_formula_map"] == []

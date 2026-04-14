@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from services.document_schema.compat import normalize_block_continuation_hint
+from services.document_schema.defaults import normalize_block_continuation_hint
 from services.document_schema.provider_adapters.common.specs import NormalizedBlockSpec
 
 

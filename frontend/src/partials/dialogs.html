@@ -108,6 +108,19 @@
         <section id="developer-panel-model" class="developer-panel is-active" data-developer-panel="model" role="tabpanel">
           <div class="credential-card compact-card">
             <label>
+              <span>任务工作流</span>
+              <select id="developer-workflow">
+                <option value="mineru">mineru · OCR + 翻译 + 渲染</option>
+                <option value="translate">translate · OCR + 翻译</option>
+                <option value="render">render · 复用已有任务产物重新渲染</option>
+              </select>
+            </label>
+            <label id="developer-render-source-wrap" class="hidden">
+              <span>Render 源任务 ID</span>
+              <input id="developer-render-source-job-id" type="text" autocomplete="off" placeholder="填写已有 job_id" />
+            </label>
+            <p id="developer-workflow-note" class="muted">`mineru` 会完整执行 OCR、翻译与 PDF 渲染。</p>
+            <label>
               <span>模型 Base URL</span>
               <input id="developer-base-url" type="text" autocomplete="off" placeholder="例如 https://api.deepseek.com/v1" />
             </label>
@@ -115,6 +128,17 @@
               <span>模型名称</span>
               <input id="developer-model" type="text" autocomplete="off" placeholder="例如 deepseek-chat" />
             </label>
+            <label>
+              <span class="developer-label">
+                <span>公式模式</span>
+                <button type="button" class="developer-hint" aria-label="公式模式说明" data-tooltip="placeholder 会先做公式占位保护；direct_typst 会让模型直接输出正文与 Typst 数学公式。">i</button>
+              </span>
+              <select id="developer-math-mode">
+                <option value="placeholder">placeholder · 公式占位保护</option>
+                <option value="direct_typst">direct_typst · 模型直出公式</option>
+              </select>
+            </label>
+            <p class="muted">`direct_typst` 只影响翻译阶段的公式处理策略，不改变整体工作流。</p>
           </div>
         </section>
 
@@ -260,8 +284,11 @@
     <div class="desktop-head">
       <div class="status-detail-headline">
         <span id="status-detail-head-icon" class="status-detail-head-icon" aria-hidden="true"></span>
-        <div>
-          <h2>任务详情</h2>
+        <div class="status-detail-head-copy">
+          <div class="status-detail-head-top">
+            <h2>任务详情</h2>
+            <p class="status-detail-job-meta">Job ID <span id="status-detail-job-id" class="status-detail-job-id mono">-</span></p>
+          </div>
           <p id="status-detail-head-note" class="status-panel-note">查看任务概览、失败原因与事件流</p>
         </div>
       </div>
@@ -304,6 +331,18 @@
               <span class="label">终态原因</span>
               <span id="runtime-terminal-reason" class="info-value">-</span>
             </div>
+            <div class="detail-item">
+              <span class="label">输入协议</span>
+              <span id="runtime-input-protocol" class="info-value">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Stage Schema</span>
+              <span id="runtime-stage-spec-version" class="info-value">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">公式模式</span>
+              <span id="runtime-math-mode" class="info-value">-</span>
+            </div>
           </div>
           <div class="status-panel detail-stage-panel">
             <div class="status-panel-head">
@@ -316,11 +355,15 @@
 
         <section id="detail-panel-failure" class="detail-tab-panel" data-panel="failure" role="tabpanel" hidden>
           <div class="status-panel">
-            <div class="info-list">
-              <div class="info-row">
-                <span class="label">摘要</span>
-                <span id="failure-summary" class="info-value">-</span>
-              </div>
+            <div class="status-panel-head">
+              <h3>失败诊断</h3>
+              <span class="status-panel-note">结构化失败摘要与排查建议</span>
+            </div>
+            <div class="failure-hero-card">
+              <span class="label">失败摘要</span>
+              <span id="failure-summary" class="info-value">-</span>
+            </div>
+            <div class="info-list detail-info-list">
               <div class="info-row">
                 <span class="label">分类</span>
                 <span id="failure-category" class="info-value">-</span>
@@ -355,6 +398,7 @@
               <h3>事件流</h3>
               <span id="events-status" class="status-panel-note">最近 50 条</span>
             </div>
+            <p class="events-lead">按时间倒序展示最近事件，适合定位任务卡在哪个阶段以及最后一次失败前发生了什么。</p>
             <div id="events-empty" class="events-empty">暂无事件</div>
             <div id="events-list" class="events-list hidden"></div>
           </div>

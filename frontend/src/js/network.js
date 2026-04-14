@@ -42,7 +42,17 @@ export async function fetchJobArtifactsManifest(jobId, apiPrefix) {
   return unwrapEnvelope(payloadJson);
 }
 
-export async function fetchJobList(apiPrefix, { limit = 20, offset = 0, status = "", workflow = "" } = {}) {
+export async function fetchJobList(
+  apiPrefix,
+  {
+    limit = 20,
+    offset = 0,
+    status = "",
+    workflow = "",
+    provider = "",
+    scope = "jobs",
+  } = {},
+) {
   const params = new URLSearchParams();
   params.set("limit", `${limit}`);
   params.set("offset", `${offset}`);
@@ -52,7 +62,11 @@ export async function fetchJobList(apiPrefix, { limit = 20, offset = 0, status =
   if (workflow) {
     params.set("workflow", workflow);
   }
-  const resp = await fetch(`${apiBase()}${apiPrefix}/jobs?${params.toString()}`, {
+  if (provider) {
+    params.set("provider", provider);
+  }
+  const normalizedScope = scope === "ocr" ? "ocr/jobs" : "jobs";
+  const resp = await fetch(`${apiBase()}${apiPrefix}/${normalizedScope}?${params.toString()}`, {
     headers: buildApiHeaders(),
   });
   if (!resp.ok) {

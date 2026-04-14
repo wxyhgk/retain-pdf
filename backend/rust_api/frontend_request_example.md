@@ -30,6 +30,12 @@
 - `api_key`：模型服务的 API Key
 - `model`：模型名字
 
+可选但建议前端同步支持的字段：
+
+- `translation.math_mode`：公式翻译模式
+  - `placeholder`：默认模式，沿用旧的公式保护链
+  - `direct_typst`：实验模式，不做公式 placeholder 保护，直接让模型输出正文 + `$...$` 数学
+
 ## 2. 调用顺序
 
 前端推荐顺序：
@@ -119,6 +125,7 @@ Content-Type: application/json
     "api_key": "your-deepseek-api-key",
     "model": "deepseek-chat",
     "mode": "sci",
+    "math_mode": "placeholder",
     "workers": 50,
     "batch_size": 1,
     "glossary_id": "glossary-20260411-abc123",
@@ -149,6 +156,7 @@ Content-Type: application/json
     "api_key": "your-openai-compatible-api-key",
     "model": "Q3.5-turbo",
     "mode": "precise",
+    "math_mode": "placeholder",
     "workers": 4,
     "batch_size": 1,
     "glossary_id": "",
@@ -178,6 +186,7 @@ type CreateJobPayload = {
     api_key: string;
     model: string;
     mode?: "sci" | "precise";
+    math_mode?: "placeholder" | "direct_typst";
     workers?: number;
     batch_size?: number;
     rule_profile_name?: string;
@@ -226,6 +235,12 @@ async function createJob(payload: CreateJobPayload, backendKey: string) {
 另外：
 
 - `base_url` 必须以 `http://` 或 `https://` 开头
+
+`translation.math_mode` 当前约定：
+
+- 不传时默认 `placeholder`
+- 前端若要开放实验开关，建议文案直接写成“公式直出实验模式”
+- `direct_typst` 只影响翻译阶段的公式处理链路，不改变渲染接口调用方式
 
 ### 4.4 术语表怎么传
 
@@ -287,11 +302,20 @@ async function pollJobUntilDone(jobId: string, backendKey: string) {
 }
 ```
 
+最近任务列表接口同样会返回协议聚合：
+
+- `items[].invocation`
+- `invocation_summary.stage_spec_count`
+- `invocation_summary.unknown_count`
+
 注意：
 
 - 不要用 `progress.percent >= 90` 判断完成
 - 必须用 `status` 判断是否结束
 - `queued` 表示任务已创建，但可能还在等待执行槽位
+- 任务详情里的 `invocation` 可直接用于展示当前任务使用的 stage spec 协议
+  - `invocation.input_protocol`
+  - `invocation.stage_spec_schema_version`
 
 ## 6. 下载结果
 
@@ -319,6 +343,7 @@ async function runPdfTranslateFlow(file: File, config: {
   modelApiKey: string;
   model: string;
   mode?: "sci" | "precise";
+  mathMode?: "placeholder" | "direct_typst";
 }) {
   const upload = await uploadPdf(file, config.backendKey, false);
 
@@ -336,6 +361,7 @@ async function runPdfTranslateFlow(file: File, config: {
       api_key: config.modelApiKey,
       model: config.model,
       mode: config.mode ?? "sci",
+      math_mode: config.mathMode ?? "placeholder",
       workers: 50,
       batch_size: 1,
     },
@@ -368,5 +394,14 @@ async function runPdfTranslateFlow(file: File, config: {
 - `modelBaseUrl`：模型服务 URL
 - `modelApiKey`：模型服务 key
 - `model`：模型名
+- `mathMode`：公式翻译模式，默认 `placeholder`
+
+## 9. `math_mode` 什么时候该开
+
+建议前端先按“高级选项 / 实验开关”处理，不要默认打开。
+
+- 普通任务：传 `placeholder` 或干脆不传
+- 高公式密度文档，且你想减少 placeholder 校验失败 / 长尾重试：可试 `direct_typst`
+- 如果后续前端要做开关，推荐直接传字符串，不要自己在前端推断文档是否“公式很多”
 
 这样后面接多服务商时不会乱。

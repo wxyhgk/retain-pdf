@@ -29,6 +29,7 @@ def translate_book_pipeline(
     batch_size: int = 8,
     workers: int = 1,
     mode: str = "fast",
+    math_mode: str = "placeholder",
     classify_batch_size: int = 12,
     skip_title_translation: bool = False,
     model: str = "deepseek-chat",
@@ -42,6 +43,7 @@ def translate_book_pipeline(
     glossary_inline_entry_count: int = 0,
     glossary_overridden_entry_count: int = 0,
     glossary_entries: list[GlossaryEntry] | None = None,
+    invocation: dict | None = None,
 ) -> dict:
     data = load_ocr_json(source_json_path)
     page_count = get_page_count(data)
@@ -53,6 +55,7 @@ def translate_book_pipeline(
     policy_config = build_book_translation_policy_config(
         data=data,
         mode=mode,
+        math_mode=math_mode,
         skip_title_translation=skip_title_translation,
         source_pdf_path=source_pdf_path,
         api_key=api_key,
@@ -128,7 +131,11 @@ def translate_book_pipeline(
             for page_idx in translated_pages_map
         },
         glossary=glossary_summary,
-        summary=diagnostics_summary,
+        summary={
+            "math_mode": math_mode,
+            **diagnostics_summary,
+            **({"invocation": invocation} if invocation else {}),
+        },
     )
     return {
         "output_dir": output_dir,
@@ -144,6 +151,8 @@ def translate_book_pipeline(
         "custom_rules_text": policy_config.custom_rules_text,
         "glossary": glossary_summary,
         "diagnostics_summary": diagnostics_summary,
+        "invocation": invocation or {},
+        "math_mode": math_mode,
         "translation_context": translation_context,
         "translation_run_diagnostics": run_diagnostics,
     }

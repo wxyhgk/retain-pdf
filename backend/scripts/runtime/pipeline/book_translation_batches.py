@@ -228,40 +228,96 @@ def _build_translation_batches(
     return batches, immediate_results
 
 
-def _is_slow_queue_batch(batch: list[dict]) -> bool:
-    if not batch:
-        return False
-    if len(batch) > 1:
+def _is_batched_fast_batch(batch: list[dict]) -> bool:
+    return bool(batch) and (
+        len(batch) > 1 or any(item.get("_batched_plain_candidate") for item in batch)
+    )
+
+
+def _is_single_slow_batch(batch: list[dict]) -> bool:
+    if len(batch) != 1:
         return False
     item = batch[0]
-    source = _source_text(item)
-    placeholder_count = len(placeholder_sequence(source))
     return bool(
         str(item.get("continuation_group", "") or "").strip()
         or str(item.get("translation_unit_id", "") or "").startswith(GROUP_ITEM_PREFIX)
         or item.get("_heavy_formula_split_applied")
-        or placeholder_count > 0
     )
 
 
-def _split_fast_and_slow_batches(batches: list[list[dict]]) -> tuple[list[list[dict]], list[list[dict]]]:
-    fast_batches: list[list[dict]] = []
-    slow_batches: list[list[dict]] = []
+def _classify_translation_batches(
+    batches: list[list[dict]],
+) -> tuple[list[list[dict]], list[list[dict]], list[list[dict]]]:
+    batched_fast_batches: list[list[dict]] = []
+    single_fast_batches: list[list[dict]] = []
+    single_slow_batches: list[list[dict]] = []
     for batch in batches:
-        if _is_slow_queue_batch(batch):
-            slow_batches.append(batch)
+        if _is_batched_fast_batch(batch):
+            batched_fast_batches.append(batch)
+        elif _is_single_slow_batch(batch):
+            single_slow_batches.append(batch)
         else:
-            fast_batches.append(batch)
-    return fast_batches, slow_batches
+            single_fast_batches.append(batch)
+    return batched_fast_batches, single_fast_batches, single_slow_batches
 
 
-def _slow_queue_workers(total_workers: int) -> int:
+def _allocate_translation_queue_workers(
+    total_workers: int,
+    *,
+    batched_fast_count: int,
+    single_fast_count: int,
+    single_slow_count: int,
+) -> dict[str, int]:
     workers = max(1, total_workers)
-    if workers <= 4:
-        return 1
-    if workers <= 16:
-        return max(2, workers // 4)
-    return min(12, max(4, workers // 8))
+    allocation = {
+        "batched_fast": 0,
+        "single_fast": 0,
+        "single_slow": 0,
+    }
+    if workers == 1:
+        if batched_fast_count > 0:
+            allocation["batched_fast"] = 1
+        elif single_fast_count > 0:
+            allocation["single_fast"] = 1
+        elif single_slow_count > 0:
+            allocation["single_slow"] = 1
+        return allocation
+
+    if single_slow_count > 0:
+        slow_cap = 1 if workers <= 8 else 2 if workers <= 24 else min(4, max(2, workers // 8))
+        allocation["single_slow"] = min(single_slow_count, slow_cap, max(1, workers - 1))
+
+    remaining = workers - allocation["single_slow"]
+    fast_targets: list[tuple[str, int]] = []
+    if batched_fast_count > 0:
+        fast_targets.append(("batched_fast", batched_fast_count))
+    if single_fast_count > 0:
+        fast_targets.append(("single_fast", single_fast_count))
+
+    if not fast_targets:
+        allocation["single_slow"] = workers
+        return allocation
+    if len(fast_targets) == 1:
+        allocation[fast_targets[0][0]] = remaining
+        return allocation
+
+    remaining_after_floor = remaining - len(fast_targets)
+    for name, _count in fast_targets:
+        allocation[name] = 1
+    total_fast_batches = sum(count for _, count in fast_targets)
+    if remaining_after_floor > 0 and total_fast_batches > 0:
+        extras: dict[str, int] = {}
+        assigned = 0
+        for index, (name, count) in enumerate(fast_targets):
+            if index == len(fast_targets) - 1:
+                extra = remaining_after_floor - assigned
+            else:
+                extra = (remaining_after_floor * count) // total_fast_batches
+                assigned += extra
+            extras[name] = extra
+        for name, extra in extras.items():
+            allocation[name] += extra
+    return allocation
 
 
 def _submit_parallel_translation_batches(
@@ -404,9 +460,15 @@ def translate_pending_units(
         effective_batch_size=effective_batch_size,
         translation_context=translation_context,
     )
-    fast_batches, slow_batches = _split_fast_and_slow_batches(batches)
+    batched_fast_batches, single_fast_batches, single_slow_batches = _classify_translation_batches(batches)
     total_batches = len(batches)
     flush_interval = _save_flush_interval(workers=workers, total_batches=total_batches)
+    queue_workers = _allocate_translation_queue_workers(
+        workers,
+        batched_fast_count=len(batched_fast_batches),
+        single_fast_count=len(single_fast_batches),
+        single_slow_count=len(single_slow_batches),
+    )
     print(
         f"book: pending items={len(pending)} batches={total_batches} workers={max(1, workers)} "
         f"mode={mode} effective_batch_size={effective_batch_size}",
@@ -420,8 +482,13 @@ def translate_pending_units(
     if total_batches:
         print(f"book: save flush interval={flush_interval} batches", flush=True)
         print(
-            f"book: queue split fast={len(fast_batches)} slow={len(slow_batches)} "
-            f"slow_workers={_slow_queue_workers(workers)}",
+            "book: queue split "
+            f"batched_fast={len(batched_fast_batches)} "
+            f"single_fast={len(single_fast_batches)} "
+            f"single_slow={len(single_slow_batches)} "
+            f"workers(batched_fast={queue_workers['batched_fast']}, "
+            f"single_fast={queue_workers['single_fast']}, "
+            f"single_slow={queue_workers['single_slow']})",
             flush=True,
         )
     dirty_pages: set[int] = set()
@@ -475,40 +542,55 @@ def translate_pending_units(
             "effective_batch_size": effective_batch_size,
             "flush_interval": flush_interval,
             "effective_workers": max(1, workers),
-            "fast_queue_batches": len(fast_batches),
-            "slow_queue_batches": len(slow_batches),
+            "fast_queue_batches": len(batched_fast_batches) + len(single_fast_batches),
+            "slow_queue_batches": len(single_slow_batches),
+            "batched_fast_batches": len(batched_fast_batches),
+            "single_fast_batches": len(single_fast_batches),
+            "single_slow_batches": len(single_slow_batches),
         }
 
-    slow_workers = _slow_queue_workers(workers)
-    fast_workers = max(1, workers - slow_workers)
     executors: list[ThreadPoolExecutor] = []
     futures: dict[object, tuple[str, list[dict]]] = {}
     futures.update(
         _submit_parallel_translation_batches(
-        fast_batches,
-        worker_count=fast_workers,
-        queue_name="fast",
-        api_key=api_key,
-        model=model,
-        base_url=base_url,
-        domain_guidance=domain_guidance,
-        mode=mode,
-        translation_context=translation_context,
-        executors=executors,
+            batched_fast_batches,
+            worker_count=queue_workers["batched_fast"],
+            queue_name="batched_fast",
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            domain_guidance=domain_guidance,
+            mode=mode,
+            translation_context=translation_context,
+            executors=executors,
         )
     )
     futures.update(
         _submit_parallel_translation_batches(
-        slow_batches,
-        worker_count=slow_workers,
-        queue_name="slow",
-        api_key=api_key,
-        model=model,
-        base_url=base_url,
-        domain_guidance=domain_guidance,
-        mode=mode,
-        translation_context=translation_context,
-        executors=executors,
+            single_fast_batches,
+            worker_count=queue_workers["single_fast"],
+            queue_name="single_fast",
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            domain_guidance=domain_guidance,
+            mode=mode,
+            translation_context=translation_context,
+            executors=executors,
+        )
+    )
+    futures.update(
+        _submit_parallel_translation_batches(
+            single_slow_batches,
+            worker_count=queue_workers["single_slow"],
+            queue_name="single_slow",
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            domain_guidance=domain_guidance,
+            mode=mode,
+            translation_context=translation_context,
+            executors=executors,
         )
     )
     completed = 0
@@ -545,6 +627,9 @@ def translate_pending_units(
         "effective_batch_size": effective_batch_size,
         "flush_interval": flush_interval,
         "effective_workers": max(1, workers),
-        "fast_queue_batches": len(fast_batches),
-        "slow_queue_batches": len(slow_batches),
+        "fast_queue_batches": len(batched_fast_batches) + len(single_fast_batches),
+        "slow_queue_batches": len(single_slow_batches),
+        "batched_fast_batches": len(batched_fast_batches),
+        "single_fast_batches": len(single_fast_batches),
+        "single_slow_batches": len(single_slow_batches),
     }

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from services.document_schema.compat import default_block_continuation_hint
+from services.document_schema.defaults import default_block_continuation_hint
 from services.document_schema.provider_adapters.common import assign_provider_group_continuation_hints
 
 

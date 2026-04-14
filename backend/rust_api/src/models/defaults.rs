@@ -1,6 +1,9 @@
 pub(crate) fn default_mode() -> String {
     "sci".to_string()
 }
+pub(crate) fn default_math_mode() -> String {
+    "placeholder".to_string()
+}
 pub(crate) fn default_ocr_provider() -> String {
     "mineru".to_string()
 }

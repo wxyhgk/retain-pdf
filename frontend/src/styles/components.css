@@ -525,6 +525,60 @@
     color: #6e6e73;
   }
 
+  .recent-jobs-dialog {
+    width: min(720px, calc(100vw - 24px));
+    max-height: calc(100vh - 24px);
+    padding: 0;
+    border: none;
+    overflow: hidden;
+  }
+
+  .recent-jobs-dialog-shell {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: min(720px, calc(100vh - 24px));
+    border-radius: 28px;
+    background: rgba(251, 251, 253, 0.94);
+    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.16);
+    backdrop-filter: blur(18px);
+    overflow: hidden;
+  }
+
+  .recent-jobs-sidebar-head {
+    @apply flex items-start justify-between gap-3;
+    padding: 22px 22px 16px;
+    border-bottom: 1px solid rgba(229, 229, 234, 0.9);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(251, 251, 253, 0.9) 100%);
+  }
+
+  .recent-jobs-sidebar-body {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 18px 22px 22px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(29, 29, 31, 0.22) transparent;
+  }
+
+  .recent-jobs-sidebar-body::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .recent-jobs-sidebar-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .recent-jobs-sidebar-body::-webkit-scrollbar-thumb {
+    background: rgba(29, 29, 31, 0.18);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+  }
+
+  .recent-jobs-sidebar-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(29, 29, 31, 0.28);
+    background-clip: padding-box;
+  }
+
   .status-detail-dialog {
     width: min(760px, calc(100vw - 24px));
   }
@@ -562,7 +616,7 @@
   }
 
   .status-detail-headline {
-    @apply flex items-center gap-3;
+    @apply flex items-start gap-3;
   }
 
   .status-detail-headline h2 {
@@ -571,8 +625,30 @@
     letter-spacing: -0.02em;
   }
 
-  .status-detail-headline p {
-    @apply mt-1;
+  .status-detail-head-copy {
+    @apply grid gap-1;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .status-detail-head-top {
+    @apply flex items-center justify-between gap-3;
+    flex-wrap: wrap;
+  }
+
+  .status-detail-job-meta {
+    @apply inline-flex items-center gap-2 rounded-full px-3 py-1;
+    margin: 0;
+    background: #f5f5f7;
+    border: 1px solid #e5e5ea;
+    color: #6e6e73;
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  .status-detail-job-id {
+    color: #1d1d1f;
+    font-size: 12px;
   }
 
   .status-detail-head-icon {
@@ -588,7 +664,7 @@
   }
 
   .status-detail-body {
-    gap: 16px;
+    gap: 18px;
   }
 
   .detail-tabs {
@@ -630,10 +706,36 @@
     height: 100%;
     overflow-y: auto;
     padding-right: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(29, 29, 31, 0.22) transparent;
   }
 
   .detail-tab-panel:not(.is-active) {
     display: none;
+  }
+
+  .detail-tab-panel::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .detail-tab-panel::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .detail-tab-panel::-webkit-scrollbar-thumb {
+    background: rgba(29, 29, 31, 0.18);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+  }
+
+  .detail-tab-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(29, 29, 31, 0.28);
+    background-clip: padding-box;
+  }
+
+  .detail-tab-panel::-webkit-scrollbar-corner {
+    background: transparent;
   }
 
   .card {
@@ -1347,9 +1449,26 @@
   }
 
   .detail-item {
-    @apply grid gap-1 rounded-[18px] px-3 py-3;
-    background: #fff;
-    border: 1px solid #efeff4;
+    @apply grid gap-2 rounded-[20px] px-4 py-4;
+    background: linear-gradient(180deg, #ffffff 0%, #fcfcfd 100%);
+    border: 1px solid #ececf1;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    align-content: start;
+    min-height: 92px;
+  }
+
+  .detail-item .label {
+    font-size: 12px;
+    letter-spacing: 0.01em;
+    color: #8b8b91;
+    text-transform: uppercase;
+  }
+
+  .detail-item .info-value {
+    font-size: 15px;
+    line-height: 1.45;
+    color: #1d1d1f;
+    word-break: break-word;
   }
 
   .detail-stage-panel {
@@ -1407,19 +1526,27 @@
     text-align: center;
   }
 
+  .events-lead {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #6e6e73;
+  }
+
   .events-list {
     @apply grid gap-3;
   }
 
   .event-item {
-    @apply rounded-[18px] border px-4 py-3;
-    border-color: #efeff4;
-    background: #fff;
+    @apply rounded-[20px] border px-4 py-4;
+    border-color: #ececf1;
+    background: linear-gradient(180deg, #ffffff 0%, #fcfcfd 100%);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
   }
 
   .event-meta {
     @apply flex flex-wrap items-center gap-2 text-[12px];
-    color: #6e6e73;
+    color: #7b7b83;
   }
 
   .event-badge {
@@ -1439,13 +1566,36 @@
   }
 
   .event-title {
-    @apply mt-2 text-[14px] font-medium leading-6;
+    @apply mt-3 text-[14px] font-medium leading-6;
+    color: #1d1d1f;
+  }
+
+  .event-payload-wrap {
+    margin-top: 10px;
+  }
+
+  .event-payload-toggle {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-[12px] font-medium;
+    cursor: pointer;
+    list-style: none;
+    color: #4a4a52;
+    background: #f5f5f7;
+    border: 1px solid #ececf1;
+  }
+
+  .event-payload-toggle::-webkit-details-marker {
+    display: none;
+  }
+
+  .event-payload-wrap[open] .event-payload-toggle {
+    background: #ececf1;
     color: #1d1d1f;
   }
 
   .event-payload {
-    @apply mt-2 rounded-[14px] px-3 py-3 text-[12px] leading-5;
+    @apply mt-3 rounded-[16px] px-3 py-3 text-[12px] leading-5;
     background: #f5f5f7;
+    border: 1px solid #ececf1;
     color: #3a3a3c;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -1551,18 +1701,60 @@
     background: transparent;
   }
 
+  .detail-info-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .failure-hero-card {
+    @apply grid gap-2 rounded-[22px] px-4 py-4;
+    margin-bottom: 12px;
+    background: linear-gradient(180deg, rgba(255, 59, 48, 0.06) 0%, rgba(255, 59, 48, 0.02) 100%);
+    border: 1px solid rgba(255, 59, 48, 0.12);
+  }
+
+  .failure-hero-card .label {
+    font-size: 12px;
+    letter-spacing: 0.01em;
+    color: #b24a44;
+    text-transform: uppercase;
+  }
+
+  .failure-hero-card .info-value {
+    font-size: 15px;
+    line-height: 1.55;
+    color: #1d1d1f;
+    word-break: break-word;
+  }
+
   .detail-tab-panel .status-panel {
     min-height: 100%;
   }
 
   .detail-tab-panel .detail-grid {
-    padding-right: 6px;
+    padding-right: 2px;
   }
 
   .info-row {
-    @apply grid gap-1 rounded-[18px] px-3 py-3;
-    background: #fff;
-    border: 1px solid #efeff4;
+    @apply grid gap-2 rounded-[20px] px-4 py-4;
+    background: linear-gradient(180deg, #ffffff 0%, #fcfcfd 100%);
+    border: 1px solid #ececf1;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    min-height: 92px;
+  }
+
+  .info-row .label {
+    font-size: 12px;
+    letter-spacing: 0.01em;
+    color: #8b8b91;
+    text-transform: uppercase;
+  }
+
+  .info-row .info-value {
+    font-size: 15px;
+    line-height: 1.45;
+    color: #1d1d1f;
+    word-break: break-word;
   }
 
   .status-card .progress-track {
@@ -1625,6 +1817,14 @@
 
   .error-box {
     color: var(--danger);
+  }
+
+  .inline-error-box {
+    width: 100%;
+    margin-top: 12px;
+    border-radius: 16px;
+    background: #fff6f5;
+    border-color: rgba(213, 70, 43, 0.18);
   }
 
   .muted {
@@ -1694,6 +1894,19 @@
       padding-inline: 1.25rem;
     }
 
+    .recent-jobs-dialog {
+      width: min(100vw - 16px, 680px);
+      max-height: calc(100vh - 16px);
+    }
+
+    .recent-jobs-sidebar-head {
+      padding: 18px 18px 14px;
+    }
+
+    .recent-jobs-sidebar-body {
+      padding: 16px 18px 18px;
+    }
+
     .hero h1 {
       font-size: 1.28rem;
     }
@@ -1719,6 +1932,15 @@
 
     .detail-grid {
       grid-template-columns: minmax(0, 1fr);
+    }
+
+    .detail-info-list {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .status-detail-head-top {
+      align-items: flex-start;
+      flex-direction: column;
     }
 
     .stage-history-item {

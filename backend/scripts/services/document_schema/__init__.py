@@ -9,11 +9,11 @@ from services.document_schema.adapters import adapt_payload_to_document_v1_with_
 from services.document_schema.adapters import detect_ocr_provider
 from services.document_schema.adapters import detect_ocr_provider_with_report
 from services.document_schema.adapters import list_registered_ocr_adapters
-from services.document_schema.compat import default_block_derived
-from services.document_schema.compat import default_block_continuation_hint
-from services.document_schema.compat import normalize_block_continuation_hint
-from services.document_schema.compat import upgrade_document_payload
-from services.document_schema.compat import upgrade_document_payload_with_report
+from services.document_schema.defaults import apply_document_defaults
+from services.document_schema.defaults import apply_document_defaults_with_report
+from services.document_schema.defaults import default_block_derived
+from services.document_schema.defaults import default_block_continuation_hint
+from services.document_schema.defaults import normalize_block_continuation_hint
 from services.document_schema.reporting import build_normalization_summary
 from services.document_schema.reporting import load_normalization_report
 from services.document_schema.providers import PROVIDER_GENERIC_FLAT_OCR
@@ -43,8 +43,8 @@ __all__ = [
     "default_block_continuation_hint",
     "default_block_derived",
     "normalize_block_continuation_hint",
-    "upgrade_document_payload",
-    "upgrade_document_payload_with_report",
+    "apply_document_defaults",
+    "apply_document_defaults_with_report",
     "build_normalization_summary",
     "load_normalization_report",
     "PROVIDER_GENERIC_FLAT_OCR",

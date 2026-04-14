@@ -1,5 +1,6 @@
 from services.rendering.formula.casebook import MATH_NORMALIZATION_CASES
 from services.rendering.formula.math_utils import (
+    build_direct_typst_passthrough_text,
     build_markdown_from_parts,
     build_markdown_paragraph,
     build_plain_text,
@@ -14,4 +15,3 @@ from services.rendering.formula.normalizer import (
     normalize_formula_for_latex_math,
 )
 from services.rendering.formula.typst_formula_renderer import compile_formula_png
-

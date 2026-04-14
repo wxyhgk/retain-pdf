@@ -5,12 +5,12 @@ use rusqlite::{params, Connection, Row};
 use serde_json::Value;
 
 use crate::models::{
-    now_iso, GlossaryRecord, JobArtifactRecord, JobArtifacts, JobEventRecord, JobFailureInfo,
-    JobRuntimeInfo, JobSnapshot, JobStatusKind, ResolvedJobSpec, UploadRecord, WorkflowKind,
+    now_iso, GlossaryRecord, JobArtifactRecord, JobEventRecord, JobFailureInfo, JobRuntimeInfo,
+    JobSnapshot, JobStatusKind, ResolvedJobSpec, UploadRecord, WorkflowKind,
 };
 use crate::storage_paths::{
-    collect_job_artifact_entries, normalize_job_artifacts_for_storage,
-    normalize_job_paths_for_storage, resolve_data_path, to_relative_data_path,
+    collect_job_artifact_entries, normalize_job_paths_for_storage, resolve_data_path,
+    to_relative_data_path,
 };
 
 const JOB_SELECT_SQL: &str = r#"
@@ -179,8 +179,7 @@ impl Db {
                 log_tail_json TEXT NOT NULL,
                 result_json TEXT,
                 runtime_json TEXT,
-                failure_json TEXT,
-                artifacts_json TEXT
+                failure_json TEXT
             );
             CREATE INDEX IF NOT EXISTS idx_jobs_updated_at ON jobs(updated_at DESC);
             CREATE INDEX IF NOT EXISTS idx_jobs_upload_id ON jobs(upload_id);
@@ -234,10 +233,10 @@ impl Db {
     }
 
     pub fn init(&self) -> Result<()> {
-        let mut conn = self.connect()?;
+        let conn = self.connect()?;
         ensure_jobs_column(&conn, "runtime_json", "TEXT")?;
         ensure_jobs_column(&conn, "failure_json", "TEXT")?;
-        migrate_legacy_artifacts(&mut conn, &self.data_root)?;
+        ensure_no_legacy_artifacts_json(&conn)?;
         Ok(())
     }
 
@@ -324,9 +323,8 @@ impl Db {
             INSERT INTO jobs (
                 job_id, workflow, status_json, created_at, updated_at, started_at, finished_at,
                 upload_id, pid, command_json, request_json, error, stage, stage_detail,
-                progress_current, progress_total, log_tail_json, result_json, runtime_json,
-                failure_json, artifacts_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                progress_current, progress_total, log_tail_json, result_json, runtime_json, failure_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(job_id) DO UPDATE SET
                 workflow=excluded.workflow,
                 status_json=excluded.status_json,
@@ -346,8 +344,7 @@ impl Db {
                 log_tail_json=excluded.log_tail_json,
                 result_json=excluded.result_json,
                 runtime_json=excluded.runtime_json,
-                failure_json=excluded.failure_json,
-                artifacts_json=excluded.artifacts_json
+                failure_json=excluded.failure_json
             "#,
             params![
                 stored_job.job_id,
@@ -370,7 +367,6 @@ impl Db {
                 serde_json::to_string(&stored_job.result)?,
                 runtime_json,
                 failure_json,
-                Option::<String>::None,
             ],
         )?;
         if let Some(artifacts_json) = artifacts_json {
@@ -647,59 +643,34 @@ impl Db {
     }
 }
 
-fn migrate_legacy_artifacts(conn: &mut Connection, data_root: &Path) -> Result<()> {
-    let legacy_rows = {
-        let mut stmt = conn.prepare(
-            r#"
-            SELECT job_id, artifacts_json
-            FROM jobs
-            WHERE artifacts_json IS NOT NULL AND TRIM(artifacts_json) <> ''
-            "#,
-        )?;
-        let rows = stmt.query_map([], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-        })?;
-        let mut rows_out = Vec::new();
-        for row in rows {
-            rows_out.push(row?);
+fn ensure_no_legacy_artifacts_json(conn: &Connection) -> Result<()> {
+    let mut stmt = conn.prepare("PRAGMA table_info(jobs)")?;
+    let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+    let mut has_legacy_column = false;
+    for row in rows {
+        if row? == "artifacts_json" {
+            has_legacy_column = true;
+            break;
         }
-        rows_out
-    };
-    if legacy_rows.is_empty() {
+    }
+    if !has_legacy_column {
         return Ok(());
     }
-
-    let tx = conn.transaction()?;
-    for (job_id, artifacts_json) in legacy_rows {
-        let artifacts = parse_legacy_artifacts_json(&artifacts_json)?;
-        if let Some(mut artifacts) = artifacts {
-            normalize_job_artifacts_for_storage(data_root, &mut artifacts)?;
-            tx.execute(
-                r#"
-                INSERT INTO artifacts (job_id, artifacts_json)
-                VALUES (?1, ?2)
-                ON CONFLICT(job_id) DO UPDATE SET
-                    artifacts_json=excluded.artifacts_json
-                "#,
-                params![job_id, serde_json::to_string(&artifacts)?],
-            )?;
-        } else {
-            tx.execute("DELETE FROM artifacts WHERE job_id = ?1", params![job_id])?;
-        }
-        tx.execute(
-            "UPDATE jobs SET artifacts_json = NULL WHERE job_id = ?1",
-            params![job_id],
-        )?;
+    let legacy_count: i64 = conn.query_row(
+        r#"
+        SELECT COUNT(*)
+        FROM jobs
+        WHERE artifacts_json IS NOT NULL AND TRIM(artifacts_json) <> ''
+        "#,
+        [],
+        |row| row.get(0),
+    )?;
+    if legacy_count > 0 {
+        anyhow::bail!(
+            "legacy jobs.artifacts_json storage is no longer supported; found {legacy_count} legacy rows, clear the DB or rerun those jobs"
+        );
     }
-    tx.commit()?;
     Ok(())
-}
-
-fn parse_legacy_artifacts_json(raw: &str) -> Result<Option<JobArtifacts>> {
-    if let Ok(artifacts) = serde_json::from_str::<Option<JobArtifacts>>(raw) {
-        return Ok(artifacts);
-    }
-    Ok(Some(serde_json::from_str::<JobArtifacts>(raw)?))
 }
 
 #[cfg(test)]
@@ -709,7 +680,7 @@ mod tests {
     use rusqlite::Connection;
 
     use super::*;
-    use crate::models::CreateJobInput;
+    use crate::models::{CreateJobInput, JobArtifacts};
 
     struct TestDbFs {
         root: PathBuf,
@@ -797,15 +768,6 @@ mod tests {
         db.save_job(&job).expect("save job");
 
         let conn = Connection::open(&fs.db_path).expect("open sqlite");
-        let legacy_artifacts_json: Option<String> = conn
-            .query_row(
-                "SELECT artifacts_json FROM jobs WHERE job_id = ?1",
-                params![job.job_id],
-                |row| row.get(0),
-            )
-            .expect("query legacy artifacts json");
-        assert!(legacy_artifacts_json.is_none());
-
         let split_artifacts_json: String = conn
             .query_row(
                 "SELECT artifacts_json FROM artifacts WHERE job_id = ?1",
@@ -890,7 +852,7 @@ mod tests {
     }
 
     #[test]
-    fn init_migrates_legacy_artifacts_json_into_split_table() {
+    fn init_rejects_legacy_artifacts_json_storage() {
         let fs = TestDbFs::new();
         let job = sample_job("job-legacy", &fs.data_root);
         let artifacts_json = serde_json::to_string(&job.artifacts).expect("serialize artifacts");
@@ -919,6 +881,8 @@ mod tests {
                 progress_total INTEGER,
                 log_tail_json TEXT NOT NULL,
                 result_json TEXT,
+                runtime_json TEXT,
+                failure_json TEXT,
                 artifacts_json TEXT
             );
             "#,
@@ -929,8 +893,8 @@ mod tests {
             INSERT INTO jobs (
                 job_id, workflow, status_json, created_at, updated_at, started_at, finished_at,
                 upload_id, pid, command_json, request_json, error, stage, stage_detail,
-                progress_current, progress_total, log_tail_json, result_json, artifacts_json
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
+                progress_current, progress_total, log_tail_json, result_json, runtime_json, failure_json, artifacts_json
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)
             "#,
             params![
                 job.job_id,
@@ -951,6 +915,8 @@ mod tests {
                 job.progress_total,
                 serde_json::to_string(&job.log_tail).expect("log tail json"),
                 Option::<String>::None,
+                Option::<String>::None,
+                Option::<String>::None,
                 artifacts_json,
             ],
         )
@@ -958,32 +924,9 @@ mod tests {
         drop(conn);
 
         let db = fs.db();
-        db.init().expect("init db with migration");
-
-        let conn = Connection::open(&fs.db_path).expect("reopen sqlite");
-        let migrated_artifacts_json: String = conn
-            .query_row(
-                "SELECT artifacts_json FROM artifacts WHERE job_id = ?1",
-                params!["job-legacy"],
-                |row| row.get(0),
-            )
-            .expect("query migrated artifacts");
-        assert!(migrated_artifacts_json.contains("jobs/job-legacy/rendered/out.pdf"));
-
-        let legacy_artifacts_json: Option<String> = conn
-            .query_row(
-                "SELECT artifacts_json FROM jobs WHERE job_id = ?1",
-                params!["job-legacy"],
-                |row| row.get(0),
-            )
-            .expect("query cleared legacy artifacts");
-        assert!(legacy_artifacts_json.is_none());
-
-        let loaded = db.get_job("job-legacy").expect("load migrated job");
-        let artifacts = loaded.artifacts.expect("artifacts");
-        assert_eq!(
-            artifacts.output_pdf.as_deref(),
-            Some("jobs/job-legacy/rendered/out.pdf")
-        );
+        let error = db.init().expect_err("legacy artifacts_json storage should be rejected");
+        let detail = format!("{error:#}");
+        assert!(detail.contains("legacy jobs.artifacts_json storage is no longer supported"));
+        assert!(detail.contains("clear the DB or rerun those jobs"));
     }
 }

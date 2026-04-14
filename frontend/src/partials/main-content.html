@@ -71,7 +71,9 @@
           </div>
         </div>
       <div id="page-range-summary" class="page-range-summary hidden">已选择页码：-</div>
+      <div id="math-mode-summary" class="page-range-summary hidden">当前公式模式：placeholder（公式占位保护）</div>
       </div>
+      <pre id="error-box-inline" class="log error-box inline-error-box hidden">-</pre>
     </form>
   </section>
 
@@ -127,20 +129,21 @@
     </button>
   </div>
 
-  <dialog id="query-dialog" class="desktop-dialog">
-    <form method="dialog" class="desktop-shell">
-      <div class="desktop-head">
+  <dialog id="query-dialog" class="desktop-dialog recent-jobs-dialog">
+    <form method="dialog" class="desktop-shell recent-jobs-dialog-shell">
+      <div class="recent-jobs-sidebar-head">
         <div class="recent-jobs-head">
           <h2>最近任务</h2>
           <p>按最近更新时间排序，点击后直接查看任务详情。</p>
         </div>
         <button id="query-dialog-close-btn" type="submit" class="dialog-close-btn" aria-label="关闭">×</button>
       </div>
-      <div class="desktop-body advanced-content">
+      <div class="recent-jobs-sidebar-body advanced-content">
         <div class="recent-jobs-toolbar">
           <input id="recent-jobs-date" type="date" aria-label="选择日期" />
           <button id="refresh-jobs-btn" class="secondary" type="button">刷新列表</button>
         </div>
+        <div id="recent-jobs-summary" class="status-panel-note">Stage Spec 0 · Legacy CLI 0 · Unknown 0</div>
         <div id="recent-jobs-empty" class="events-empty hidden">暂无最近任务</div>
         <div id="recent-jobs-list" class="recent-jobs-list hidden"></div>
         <div class="recent-jobs-more-row">

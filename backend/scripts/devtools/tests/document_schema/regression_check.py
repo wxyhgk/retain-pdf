@@ -16,7 +16,6 @@ from services.document_schema import adapt_path_to_document_v1_with_report
 from services.document_schema import build_normalization_summary
 from services.document_schema import build_validation_report
 from services.document_schema import list_registered_ocr_adapters
-from services.document_schema import upgrade_document_payload
 from services.document_schema import validate_document_path
 from services.document_schema import validate_document_payload
 from services.document_schema.providers import PROVIDER_PADDLE
@@ -38,13 +37,11 @@ from services.translation.payload.translations import _default_translation_flags
 # - provider raw trace layer: source.raw_*, metadata.raw_*, layout_det_*
 # New provider adapters should avoid promoting raw provider fields into core semantics.
 DEFAULT_NEW_DOCUMENT = Path("output/20260330145544-14ab20/ocr/normalized/document.v1.json")
-DEFAULT_LEGACY_DOCUMENT = Path("output/20260330115415-25fdae/ocr/normalized/document.v1.json")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run document.v1 schema regression checks on real samples.")
     parser.add_argument("--new-document", type=str, default=str(DEFAULT_NEW_DOCUMENT))
-    parser.add_argument("--legacy-document", type=str, default=str(DEFAULT_LEGACY_DOCUMENT))
     parser.add_argument("--write-report", type=str, default="", help="Optional path to save aggregated regression report.")
     return parser.parse_args()
 
@@ -84,26 +81,6 @@ def _check_validated_document(name: str, path: Path) -> dict:
     return summary
 
 
-def _check_legacy_upgrade(path: Path) -> dict:
-    legacy_payload = json.loads(path.read_text(encoding="utf-8"))
-    upgraded_legacy = upgrade_document_payload(legacy_payload)
-    _require("derived" in upgraded_legacy, "legacy_upgrade: top-level derived missing after compat upgrade")
-    _require(upgraded_legacy["pages"], "legacy_upgrade: expected non-empty pages")
-    _require(upgraded_legacy["pages"][0]["blocks"], "legacy_upgrade: expected non-empty first page blocks")
-    _require(
-        "derived" in upgraded_legacy["pages"][0]["blocks"][0],
-        "legacy_upgrade: first block derived missing after compat upgrade",
-    )
-    summary = _scenario_validation_summary(upgraded_legacy)
-    print(
-        "OK legacy_upgrade "
-        f"top_has_derived={'derived' in upgraded_legacy} "
-        f"block_has_derived={'derived' in upgraded_legacy['pages'][0]['blocks'][0]} "
-        f"pages={summary['page_count']} blocks={summary['block_count']}"
-    )
-    return summary
-
-
 def _check_adapted_document(name: str, path: Path, *, document_id: str, expected_provider: str) -> dict:
     adapted, report = adapt_path_to_document_v1_with_report(source_json_path=path, document_id=document_id)
     normalization_summary = build_normalization_summary(report)
@@ -119,7 +96,7 @@ def _check_adapted_document(name: str, path: Path, *, document_id: str, expected
         f"OK {name} "
         f"schema={adapted['schema']} provider={expected_provider} "
         f"pages={summary['page_count']} blocks={summary['block_count']} "
-        f"compat_pages={normalization_summary['compat_pages']} compat_blocks={normalization_summary['compat_blocks']}"
+        f"defaults_pages={normalization_summary['defaults_pages']} defaults_blocks={normalization_summary['defaults_blocks']}"
     )
     print(
         f"OK {name}_detect "
@@ -351,9 +328,7 @@ def _check_paddle_sci_extractor_policy(path: Path) -> dict:
 def main() -> None:
     args = parse_args()
     new_document = Path(args.new_document)
-    legacy_document = Path(args.legacy_document)
     validated_new = validate_document_path(new_document)
-    validated_legacy = validate_document_path(legacy_document)
     raw_layout_entry = next(entry for entry in PROVIDER_FIXTURES if entry["name"] == "raw_layout")
     adapted_raw_document, _ = adapt_path_to_document_v1_with_report(
         source_json_path=Path(raw_layout_entry["path"]),
@@ -373,10 +348,6 @@ def main() -> None:
         "registered_providers": _check_registered_providers(list_registered_ocr_adapters()),
         "validated_documents": {
             "new_document": _check_validated_document("new_document", new_document),
-            "legacy_document": _check_validated_document("legacy_document", legacy_document),
-        },
-        "compat_upgrade": {
-            "legacy_document": _check_legacy_upgrade(legacy_document),
         },
         "adapted_documents": adapted_reports,
         "explicit_provider": _check_explicit_provider(
@@ -386,7 +357,6 @@ def main() -> None:
         ),
         "extractor_smoke": {
             "new_document": _check_extractor_smoke("extractor_new_document", validated_new),
-            "legacy_document": _check_extractor_smoke("extractor_legacy_document", validated_legacy),
             "adapted_raw_layout": _check_extractor_smoke("extractor_adapted_raw_layout", adapted_raw_document),
         },
         "provider_semantics": {

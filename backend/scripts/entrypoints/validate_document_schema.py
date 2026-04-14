@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
         description="Validate normalized document.v1.json, or explicitly adapt raw OCR JSON and inspect the resulting normalization report. Mainline OCR input still prefers document.v1.json.",
     )
     parser.add_argument("json_path", nargs="?", default="", type=str, help="Path to normalized document.v1.json, or to raw OCR JSON when --adapt is explicitly used.")
-    parser.add_argument("--adapt", action="store_true", help="Treat input as raw OCR JSON and run adapter -> compat -> validation before inspecting the normalization report.")
+    parser.add_argument("--adapt", action="store_true", help="Treat input as raw OCR JSON and run adapter -> defaults -> validation before inspecting the normalization report.")
     parser.add_argument("--list-providers", action="store_true", help="Print registered OCR adapters and exit.")
     parser.add_argument("--document-id", type=str, default="", help="Explicit document_id when --adapt is used.")
     parser.add_argument("--provider", type=str, default="", help="Optional explicit provider when --adapt is used.")

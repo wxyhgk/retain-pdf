@@ -3,12 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 import json
 
-from services.document_schema.compat import upgrade_document_payload
 from services.document_schema.version import DOCUMENT_SCHEMA_FILE_NAME
 from services.document_schema.version import DOCUMENT_SCHEMA_NAME
 from services.document_schema.version import DOCUMENT_SCHEMA_VERSION
 
-SUPPORTED_DOCUMENT_SCHEMA_VERSIONS = ("1.0", DOCUMENT_SCHEMA_VERSION)
+SUPPORTED_DOCUMENT_SCHEMA_VERSIONS = (DOCUMENT_SCHEMA_VERSION,)
 
 
 class DocumentSchemaValidationError(ValueError):
@@ -204,7 +203,7 @@ def validate_document_payload(data: dict) -> None:
 
 
 def validate_document_path(path: Path) -> dict:
-    data = upgrade_document_payload(json.loads(path.read_text(encoding="utf-8")))
+    data = json.loads(path.read_text(encoding="utf-8"))
     validate_document_payload(data)
     return data
 

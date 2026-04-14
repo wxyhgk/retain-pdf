@@ -4,11 +4,14 @@ import argparse
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
-from foundation.shared.job_dirs import add_explicit_job_dir_args
 from foundation.shared.job_dirs import job_dirs_from_explicit_args
+from foundation.shared.stage_specs import build_stage_invocation_metadata
+from foundation.shared.stage_specs import resolve_credential_ref
+from foundation.shared.stage_specs import TranslateStageSpec
 from foundation.shared.tee_output import enable_job_log_capture
 from runtime.pipeline.translation_stage import translate_book_pipeline
 from services.document_schema import build_normalization_summary
@@ -37,33 +40,56 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Translate from normalized OCR document.v1.json and stop before rendering.",
     )
-    add_explicit_job_dir_args(parser)
-    parser.add_argument("--source-json", type=str, required=True, help="Path to normalized document.v1.json.")
-    parser.add_argument("--source-pdf", type=str, required=True, help="Path to source PDF.")
-    parser.add_argument("--layout-json", type=str, default="", help="Optional raw provider layout.json for summary/debug.")
-    parser.add_argument("--start-page", type=int, default=0)
-    parser.add_argument("--end-page", type=int, default=-1)
-    parser.add_argument("--batch-size", type=int, default=1)
-    parser.add_argument("--workers", type=int, default=100)
-    parser.add_argument("--mode", type=str, default="sci", choices=["fast", "precise", "sci"])
-    parser.add_argument("--skip-title-translation", action="store_true")
-    parser.add_argument("--classify-batch-size", type=int, default=12)
-    parser.add_argument("--rule-profile-name", type=str, default="general_sci")
-    parser.add_argument("--custom-rules-text", type=str, default="")
-    parser.add_argument("--glossary-id", type=str, default="")
-    parser.add_argument("--glossary-name", type=str, default="")
-    parser.add_argument("--glossary-resource-entry-count", type=int, default=0)
-    parser.add_argument("--glossary-inline-entry-count", type=int, default=0)
-    parser.add_argument("--glossary-overridden-entry-count", type=int, default=0)
-    parser.add_argument("--glossary-json", type=str, default="", help="JSON array of glossary entries.")
-    parser.add_argument("--api-key", type=str, default="")
-    parser.add_argument("--model", type=str, default="Q3.5-turbo")
-    parser.add_argument("--base-url", type=str, default="http://1.94.67.196:10001/v1")
+    parser.add_argument("--spec", type=str, required=True, help="Path to translate stage spec JSON.")
     return parser.parse_args()
+
+
+def _args_from_spec(spec: TranslateStageSpec) -> SimpleNamespace:
+    job_dirs = spec.job_dirs
+    return SimpleNamespace(
+        job_root=str(job_dirs.root),
+        source_dir=str(job_dirs.source_dir),
+        ocr_dir=str(job_dirs.ocr_dir),
+        translated_dir=str(job_dirs.translated_dir),
+        rendered_dir=str(job_dirs.rendered_dir),
+        artifacts_dir=str(job_dirs.artifacts_dir),
+        logs_dir=str(job_dirs.logs_dir),
+        source_json=str(spec.inputs.source_json),
+        source_pdf=str(spec.inputs.source_pdf),
+        layout_json=str(spec.inputs.layout_json or ""),
+        start_page=spec.params.start_page,
+        end_page=spec.params.end_page,
+        batch_size=spec.params.batch_size,
+        workers=spec.params.workers,
+        mode=spec.params.mode,
+        math_mode=spec.params.math_mode,
+        skip_title_translation=spec.params.skip_title_translation,
+        classify_batch_size=spec.params.classify_batch_size,
+        rule_profile_name=spec.params.rule_profile_name,
+        custom_rules_text=spec.params.custom_rules_text,
+        glossary_id=spec.params.glossary_id,
+        glossary_name=spec.params.glossary_name,
+        glossary_resource_entry_count=spec.params.glossary_resource_entry_count,
+        glossary_inline_entry_count=spec.params.glossary_inline_entry_count,
+        glossary_overridden_entry_count=spec.params.glossary_overridden_entry_count,
+        glossary_json=parse_glossary_json_json(spec.params.glossary_entries),
+        api_key=resolve_credential_ref(spec.params.credential_ref),
+        model=spec.params.model,
+        base_url=spec.params.base_url,
+    )
+
+
+def parse_glossary_json_json(entries: list[dict]) -> str:
+    import json
+
+    return json.dumps(entries, ensure_ascii=False)
 
 
 def main() -> None:
     args = parse_args()
+    spec = TranslateStageSpec.load(Path(args.spec))
+    stage_spec_schema_version = spec.schema_version
+    args = _args_from_spec(spec)
     job_dirs = job_dirs_from_explicit_args(args)
     enable_job_log_capture(job_dirs.logs_dir, prefix="translate-only")
 
@@ -88,6 +114,7 @@ def main() -> None:
         batch_size=args.batch_size,
         workers=args.workers,
         mode=args.mode,
+        math_mode=args.math_mode,
         classify_batch_size=args.classify_batch_size,
         skip_title_translation=args.skip_title_translation,
         model=args.model,
@@ -101,6 +128,10 @@ def main() -> None:
         glossary_inline_entry_count=args.glossary_inline_entry_count,
         glossary_overridden_entry_count=args.glossary_overridden_entry_count,
         glossary_entries=parse_glossary_json(args.glossary_json),
+        invocation=build_stage_invocation_metadata(
+            stage="translate",
+            stage_spec_schema_version=stage_spec_schema_version,
+        ),
     )
     elapsed = time.perf_counter() - started
     diagnostics_path = job_dirs.artifacts_dir / "translation_diagnostics.json"
@@ -148,8 +179,13 @@ def main() -> None:
                 0,
             ),
             "mode": args.mode,
+            "math_mode": args.math_mode,
             "model": args.model,
             "base_url": args.base_url,
+            "invocation": build_stage_invocation_metadata(
+                stage="translate",
+                stage_spec_schema_version=stage_spec_schema_version,
+            ),
         },
     )
 

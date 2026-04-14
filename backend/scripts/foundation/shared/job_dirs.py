@@ -112,29 +112,29 @@ def create_job_dirs(output_root: Path, job_id: str | None = None) -> JobDirs:
     return ensure_job_dirs(resolve_job_dirs(root))
 
 
-def add_explicit_job_dir_args(parser: ArgumentParser) -> None:
-    parser.add_argument("--job-root", type=str, required=True, help="Absolute job root directory.")
-    parser.add_argument("--source-dir", type=str, required=True, help="Absolute source directory under the job root.")
-    parser.add_argument("--ocr-dir", type=str, required=True, help="Absolute OCR directory under the job root.")
+def add_explicit_job_dir_args(parser: ArgumentParser, *, required: bool = True) -> None:
+    parser.add_argument("--job-root", type=str, required=required, help="Absolute job root directory.")
+    parser.add_argument("--source-dir", type=str, required=required, help="Absolute source directory under the job root.")
+    parser.add_argument("--ocr-dir", type=str, required=required, help="Absolute OCR directory under the job root.")
     parser.add_argument(
         "--translated-dir",
         type=str,
-        required=True,
+        required=required,
         help="Absolute translated artifact directory under the job root.",
     )
     parser.add_argument(
         "--rendered-dir",
         type=str,
-        required=True,
+        required=required,
         help="Absolute rendered artifact directory under the job root.",
     )
     parser.add_argument(
         "--artifacts-dir",
         type=str,
-        required=True,
+        required=required,
         help="Absolute downloadable artifacts directory under the job root.",
     )
-    parser.add_argument("--logs-dir", type=str, required=True, help="Absolute logs directory under the job root.")
+    parser.add_argument("--logs-dir", type=str, required=required, help="Absolute logs directory under the job root.")
 
 
 def job_dirs_from_explicit_args(args: Namespace, *, require_existing: bool = True) -> JobDirs:

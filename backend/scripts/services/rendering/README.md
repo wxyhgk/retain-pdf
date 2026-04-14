@@ -22,11 +22,13 @@ Rendering 阶段的正式输入和输出固定为：
 当前稳定交接点：
 
 - rendering 主线只接受“源 PDF + 翻译产物”这一组输入
-- 翻译产物发现顺序当前是：优先读取 `translation-manifest.json`，缺失时兼容回退旧的 `page-*-deepseek.json`
+- 渲染阶段固定读取 `translation-manifest.json`；没有 manifest 的旧翻译目录不再支持直接渲染
 - Render-only 调用协议固定为：`source_pdf_path + translations_dir` 或 `source_pdf_path + translation_manifest_path`
+- Render-only 入口已支持 `job_root/specs/render.spec.json`（`render.stage.v1`）
 - 如果输入不满足协议，入口统一抛出 `Render-only input error`，而不是在后续 Typst/PDF 阶段才报模糊错误
 - 如果怀疑 OCR 结构有问题，应该先回到 `document.v1.json` / `document.v1.report.json` 排查
 - 如果怀疑翻译内容或术语策略有问题，应该先回到 translation payload，而不是在 rendering 层补翻译逻辑
+- API 凭证不写入 render stage spec；spec 中使用 `credential_ref`，由运行时环境注入真实 key
 
 ## 当前目录结构
 

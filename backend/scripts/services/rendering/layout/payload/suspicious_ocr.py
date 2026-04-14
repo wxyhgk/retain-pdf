@@ -77,6 +77,12 @@ def detect_and_drop_suspicious_ocr_glued_blocks(
         next_inner = inner_bbox(nxt)
         if len(current_inner) != 4 or len(next_inner) != 4:
             continue
+        if current.get("continuation_group") or current.get("continuation_group_id"):
+            continue
+        if str(current.get("translation_unit_kind", "") or "") == "group":
+            continue
+        if str(current.get("math_mode", "placeholder") or "placeholder").strip() == "direct_typst":
+            continue
         if bool(current.get("render_formula_map")):
             continue
         source_text = (

@@ -1,20 +1,21 @@
 import argparse
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+import json
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
-from foundation.config import fonts
 from foundation.config import layout
-from foundation.config import runtime
-from foundation.shared.job_dirs import add_explicit_job_dir_args
 from foundation.shared.job_dirs import job_dirs_from_explicit_args
+from foundation.shared.stage_specs import build_stage_invocation_metadata
+from foundation.shared.stage_specs import MineruStageSpec
+from foundation.shared.stage_specs import resolve_credential_ref
 from foundation.shared.tee_output import enable_job_log_capture
 from services.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_NAME
 from services.mineru.artifacts import resolve_translation_source_json_path
 from services.mineru.contracts import MINERU_PIPELINE_SUMMARY_FILE_NAME
 from services.mineru.job_flow import run_mineru_to_job_dir
-from services.mineru.mineru_api import MINERU_ENV_FILE
 from services.mineru.summary import print_pipeline_summary
 from services.mineru.summary import write_pipeline_summary
 from runtime.pipeline.book_pipeline import run_book_pipeline
@@ -28,61 +29,76 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="End-to-end MinerU pipeline: parse PDF with MinerU, build document.v1.json, then translate and render.",
     )
-    source_group = parser.add_mutually_exclusive_group(required=True)
-    source_group.add_argument("--file-url", type=str, default="", help="Remote PDF URL for MinerU parsing.")
-    source_group.add_argument("--file-path", type=str, default="", help="Local PDF path for MinerU parsing.")
-
-    parser.add_argument("--mineru-token", type=str, default="", help=f"MinerU API token. Prefer scripts/.env/{MINERU_ENV_FILE}.")
-    parser.add_argument("--model-version", type=str, default="vlm", help="pipeline | vlm | MinerU-HTML")
-    parser.add_argument("--is-ocr", action="store_true", help="Enable OCR.")
-    parser.add_argument("--disable-formula", action="store_true", help="Disable formula recognition.")
-    parser.add_argument("--disable-table", action="store_true", help="Disable table recognition.")
-    parser.add_argument("--language", type=str, default="ch", help="Document language, for example ch or en.")
-    parser.add_argument("--page-ranges", type=str, default="", help='Optional page range, for example "2,4-6".')
-    parser.add_argument("--data-id", type=str, default="", help="Optional business data id.")
-    parser.add_argument("--no-cache", action="store_true", help="Bypass MinerU URL cache.")
-    parser.add_argument("--cache-tolerance", type=int, default=900, help="URL cache tolerance in seconds.")
-    parser.add_argument("--extra-formats", type=str, default="", help="Comma-separated extra export formats: docx,html,latex")
-    parser.add_argument("--poll-interval", type=int, default=5, help="Seconds between polling requests.")
-    parser.add_argument("--poll-timeout", type=int, default=1800, help="Max seconds to wait for completion.")
-
-    add_explicit_job_dir_args(parser)
-
-    parser.add_argument("--start-page", type=int, default=0, help="Zero-based start page index. Default is the first page.")
-    parser.add_argument("--end-page", type=int, default=-1, help="Zero-based end page index, inclusive. Default is the last page.")
-    parser.add_argument("--batch-size", type=int, default=1, help="Number of text items per API call.")
-    parser.add_argument("--workers", type=int, default=100, help="Concurrent translation requests.")
-    parser.add_argument("--mode", type=str, default="sci", choices=["fast", "precise", "sci"], help="Translation mode. Default is sci.")
-    parser.add_argument("--skip-title-translation", action="store_true", help="Do not translate OCR title blocks.")
-    parser.add_argument("--classify-batch-size", type=int, default=12, help="Classification batch size for precise mode.")
-    parser.add_argument("--rule-profile-name", type=str, default="general_sci", help="Built-in rule profile name.")
-    parser.add_argument("--custom-rules-text", type=str, default="", help="Extra rule text injected into model context.")
-    parser.add_argument("--glossary-id", type=str, default="", help="Optional named glossary resource id.")
-    parser.add_argument("--glossary-name", type=str, default="", help="Optional resolved glossary resource name.")
-    parser.add_argument("--glossary-resource-entry-count", type=int, default=0)
-    parser.add_argument("--glossary-inline-entry-count", type=int, default=0)
-    parser.add_argument("--glossary-overridden-entry-count", type=int, default=0)
-    parser.add_argument("--glossary-json", type=str, default="", help="JSON array of glossary entries.")
-    parser.add_argument("--api-key", type=str, default="", help="Optional translation API key. Prefer env DEEPSEEK_API_KEY for DeepSeek.")
-    parser.add_argument("--model", type=str, default="Q3.5-turbo", help="Translation model name.")
-    parser.add_argument("--base-url", type=str, default="http://1.94.67.196:10001/v1", help="OpenAI-compatible translation API base URL.")
-    parser.add_argument("--render-mode", type=str, default="typst", choices=["auto", "overlay", "typst", "dual", "direct", "compact"], help="Rendering mode for translated pages. auto chooses between typst overlay and typst background. direct/compact are compatibility aliases for typst overlay.")
-    parser.add_argument("--compile-workers", type=int, default=0, help="Parallel Typst overlay compilation workers. 0 means auto.")
-    parser.add_argument("--typst-font-family", type=str, default=fonts.TYPST_DEFAULT_FONT_FAMILY, help="Base Typst font family name.")
-    parser.add_argument("--pdf-compress-dpi", type=int, default=runtime.DEFAULT_PDF_COMPRESS_DPI, help="Final PDF image downsample DPI after rendering. 0 disables post-compression.")
-
-    parser.add_argument("--translated-pdf-name", type=str, default="", help="Optional final PDF name inside transPDF.")
-    parser.add_argument("--body-font-size-factor", type=float, default=layout.BODY_FONT_SIZE_FACTOR)
-    parser.add_argument("--body-leading-factor", type=float, default=layout.BODY_LEADING_FACTOR)
-    parser.add_argument("--inner-bbox-shrink-x", type=float, default=layout.INNER_BBOX_SHRINK_X)
-    parser.add_argument("--inner-bbox-shrink-y", type=float, default=layout.INNER_BBOX_SHRINK_Y)
-    parser.add_argument("--inner-bbox-dense-shrink-x", type=float, default=layout.INNER_BBOX_DENSE_SHRINK_X)
-    parser.add_argument("--inner-bbox-dense-shrink-y", type=float, default=layout.INNER_BBOX_DENSE_SHRINK_Y)
+    parser.add_argument("--spec", type=str, required=True, help="Path to mineru stage spec JSON.")
     return parser.parse_args()
+
+
+def _serialize_glossary_entries(entries: list[dict]) -> str:
+    return json.dumps(entries, ensure_ascii=False)
+
+
+def _args_from_spec(spec: MineruStageSpec) -> SimpleNamespace:
+    job_dirs = spec.job_dirs
+    return SimpleNamespace(
+        file_url=spec.source.file_url,
+        file_path=str(spec.source.file_path or ""),
+        mineru_token=resolve_credential_ref(spec.ocr.credential_ref),
+        model_version=spec.ocr.model_version,
+        is_ocr=spec.ocr.is_ocr,
+        disable_formula=spec.ocr.disable_formula,
+        disable_table=spec.ocr.disable_table,
+        language=spec.ocr.language,
+        page_ranges=spec.ocr.page_ranges,
+        data_id=spec.ocr.data_id,
+        no_cache=spec.ocr.no_cache,
+        cache_tolerance=spec.ocr.cache_tolerance,
+        extra_formats=spec.ocr.extra_formats,
+        poll_interval=spec.ocr.poll_interval,
+        poll_timeout=spec.ocr.poll_timeout,
+        job_root=str(job_dirs.root),
+        source_dir=str(job_dirs.source_dir),
+        ocr_dir=str(job_dirs.ocr_dir),
+        translated_dir=str(job_dirs.translated_dir),
+        rendered_dir=str(job_dirs.rendered_dir),
+        artifacts_dir=str(job_dirs.artifacts_dir),
+        logs_dir=str(job_dirs.logs_dir),
+        start_page=spec.translation.start_page,
+        end_page=spec.translation.end_page,
+        batch_size=spec.translation.batch_size,
+        workers=spec.translation.workers,
+        mode=spec.translation.mode,
+        skip_title_translation=spec.translation.skip_title_translation,
+        classify_batch_size=spec.translation.classify_batch_size,
+        rule_profile_name=spec.translation.rule_profile_name,
+        custom_rules_text=spec.translation.custom_rules_text,
+        glossary_id=spec.translation.glossary_id,
+        glossary_name=spec.translation.glossary_name,
+        glossary_resource_entry_count=spec.translation.glossary_resource_entry_count,
+        glossary_inline_entry_count=spec.translation.glossary_inline_entry_count,
+        glossary_overridden_entry_count=spec.translation.glossary_overridden_entry_count,
+        glossary_json=_serialize_glossary_entries(spec.translation.glossary_entries),
+        api_key=resolve_credential_ref(spec.translation.credential_ref),
+        model=spec.translation.model,
+        base_url=spec.translation.base_url,
+        render_mode=spec.render.render_mode,
+        compile_workers=spec.render.compile_workers,
+        typst_font_family=spec.render.typst_font_family,
+        pdf_compress_dpi=spec.render.pdf_compress_dpi,
+        translated_pdf_name=spec.render.translated_pdf_name,
+        body_font_size_factor=spec.render.body_font_size_factor,
+        body_leading_factor=spec.render.body_leading_factor,
+        inner_bbox_shrink_x=spec.render.inner_bbox_shrink_x,
+        inner_bbox_shrink_y=spec.render.inner_bbox_shrink_y,
+        inner_bbox_dense_shrink_x=spec.render.inner_bbox_dense_shrink_x,
+        inner_bbox_dense_shrink_y=spec.render.inner_bbox_dense_shrink_y,
+    )
 
 
 def main() -> None:
     args = parse_args()
+    spec = MineruStageSpec.load(Path(args.spec))
+    stage_spec_schema_version = spec.schema_version
+    args = _args_from_spec(spec)
     job_dirs = job_dirs_from_explicit_args(args)
     enable_job_log_capture(job_dirs.logs_dir, prefix="mineru-pipeline")
     layout.apply_layout_tuning(
@@ -139,6 +155,10 @@ def main() -> None:
         compile_workers=args.compile_workers or None,
         typst_font_family=args.typst_font_family,
         pdf_compress_dpi=args.pdf_compress_dpi,
+        invocation=build_stage_invocation_metadata(
+            stage="mineru",
+            stage_spec_schema_version=stage_spec_schema_version,
+        ),
     )
 
     summary_path = job_dirs.artifacts_dir / MINERU_PIPELINE_SUMMARY_FILE_NAME
@@ -156,6 +176,10 @@ def main() -> None:
         base_url=args.base_url,
         render_mode=args.render_mode,
         pdf_compress_dpi=args.pdf_compress_dpi,
+        invocation=build_stage_invocation_metadata(
+            stage="mineru",
+            stage_spec_schema_version=stage_spec_schema_version,
+        ),
     )
 
     print_pipeline_summary(

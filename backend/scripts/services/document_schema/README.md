@@ -5,7 +5,7 @@
 当前正式使用的是：
 
 - schema 名称：`normalized_document_v1`
-- schema 版本：`1.0`
+- schema 版本：`1.1`
 - 默认文件名：`document.v1.json`
 - 默认报告文件名：`document.v1.report.json`
 - 机器可读 schema：`document.v1.schema.json`
@@ -164,12 +164,15 @@
 - 原始 OCR：`ocr/unpacked/layout.json`
 - 统一中间层：`ocr/normalized/document.v1.json`
 - 归一化报告：`ocr/normalized/document.v1.report.json`
+- 阶段 spec：`specs/normalize.spec.json`（`normalize.stage.v1`）
 
 注意：
 
 - raw `layout.json` 保留给 adapter、调试和回溯
 - 翻译/渲染主链路优先消费 `document.v1.json`
-- `document.v1.report.json` 用于查 adapter 探测、compat 默认补齐和 schema 校验摘要
+- `document.v1.report.json` 用于查 adapter 探测、默认值补齐和 schema 校验摘要
+- Rust 主工作流调用的 normalize worker 现在要求 `--spec <job_root/specs/normalize.spec.json>`
+- 如果只是本地手动验证 schema / adapter，应该走 `scripts/entrypoints/validate_document_schema.py`
 
 ## Adapter 约定
 
@@ -306,7 +309,7 @@ Paddle 当前 rich-content trace 也已经继续拆分成三层：
 现在支持两种用法：
 
 1. 直接校验已经生成好的 `document.v1.json`
-2. 对 raw OCR JSON 执行 `adapter -> compat -> validation`，并输出 report
+2. 对 raw OCR JSON 执行 `adapter -> defaults -> validation`，并输出 report
 
 示例：
 
@@ -319,7 +322,7 @@ report 里当前会包含：
 
 - 输入路径
 - adapter/provider 探测结果
-- compat 默认补齐统计
+- 默认值补齐统计
 - schema 校验摘要
 
 `validate_document_schema.py --write-report` 当前约定：
@@ -335,7 +338,7 @@ report 里当前会包含：
 
 也就是说：
 
-- 完整 adapter / compat / detection 细节看 `normalization`
+- 完整 adapter / defaults / detection 细节看 `normalization`
 - 稳定轻量摘要优先看 `normalization_summary`
 - 顶层校验结果看 `validation`
 
@@ -347,8 +350,8 @@ report 里当前会包含：
 
 约定：
 
-- Python 侧如果只是想展示 provider / detected provider / compat pages / compat blocks / validation 摘要，优先走这两个 helper
-- 不要在 `mineru/summary.py`、排错脚本或后续 API 层里各自重新手写 `report['compat']['pages_seen']` 这类读取
+- Python 侧如果只是想展示 provider / detected provider / defaults pages / defaults blocks / validation 摘要，优先走这两个 helper
+- 不要在 `mineru/summary.py`、排错脚本或后续 API 层里各自重新手写 `report['defaults']['pages_seen']` 这类读取
 - 需要完整原始 report 时，再直接使用 report dict，本身不阻止保留原始字段
 
 回归 smoke 检查：
@@ -361,8 +364,7 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
 这个回归脚本现在不是简单打印日志，而是会硬校验：
 
 - adapter 注册表里必须包含当前正式 provider
-- 新旧 `document.v1.json` 都必须能通过 schema 校验
-- legacy 文档经过 compat 升级后，`derived` 等软字段必须被稳定补齐
+- 当前 `document.v1.json` 必须能通过 schema 校验
 - raw layout / `content_list_v2.json` / generic fixture / paddle fixture 都必须能被自动探测、适配并再次通过 schema 校验
 - 显式指定 provider 的路径也必须可用，防止“自动探测能过，显式调用反而退化”
 - Paddle 这类 provider 还要额外做语义断言，至少锁死：
@@ -376,9 +378,9 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
 - 新 provider 至少补一条“provider 语义断言”
 - 不要只看 `pages / blocks`，否则分类回归很容易漏掉
 
-## 兼容升级规则
+## 默认值补齐规则
 
-旧版 `document.v1.json` 进入主线前，会先经过 compat 升级。
+adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补齐稳定默认值。
 
 ### 硬字段
 
@@ -406,7 +408,7 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
 
 ### 软字段
 
-这些字段允许 compat 层补默认值：
+这些字段允许默认值收口层补默认值：
 
 - 文档级：
   - `derived -> {}`
@@ -425,8 +427,8 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
 
 原则：
 
-- compat 只补“稳定默认值明确”的字段
-- compat 不负责猜结构语义
+- 默认值收口层只补“稳定默认值明确”的字段
+- 默认值收口层不负责猜结构语义
 - 真正的结构错误仍然交给 validator 拦截
 
 ## 顶层结构
@@ -437,7 +439,7 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
   固定为 `normalized_document_v1`
 - `schema_version: str`
   当前最新版本为 `1.1`
-  validator 兼容接受 `1.0` 和 `1.1`，compat 会把旧版 `1.0` 补齐后再进入主线
+  validator 只接受当前版本 `1.1`
 - `document_id: str`
   文档标识，通常对应 job 或输入文档
 - `source: dict`
@@ -822,7 +824,7 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
 
 原因：
 
-- 当前主线刚完成 `raw -> adapter -> compat -> validator -> document.v1` 的收口，首要目标是把 `v1` 打磨稳定
+- 当前主线刚完成 `raw -> adapter -> defaults -> validator -> document.v1` 的收口，首要目标是把 `v1` 打磨稳定
 - 现有新增需求大多还属于 adapter 扩展、`tags/derived/markers` 语义沉淀和回归覆盖增强，还没有到必须破坏契约的程度
 - 如果过早开 `v2`，会把 provider 接入、翻译主线、渲染主线和历史任务兼容同时拉进来，收益不如先把 `v1` 做稳
 
@@ -843,7 +845,7 @@ python scripts/devtools/tests/document_schema/regression_check.py --write-report
 
 3. 历史兼容成本开始明显高于升级成本。
    例如：
-   - compat 默认补齐越来越像“半重写”
+   - 默认值收口层越来越像“半重写”
    - validator 和主链路需要长期维护两套相互冲突的假设
 
 ### 在此之前的默认策略

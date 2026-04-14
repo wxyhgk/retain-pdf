@@ -112,7 +112,7 @@
 
 - `ocr/unpacked/layout.json` 保留原始 MinerU OCR 输出
 - `ocr/normalized/document.v1.json` 是当前翻译/渲染主链路使用的统一 OCR 输入
-- `ocr/normalized/document.v1.report.json` 记录 adapter/provider 探测、compat 默认补齐和 schema 校验摘要
+- `ocr/normalized/document.v1.report.json` 记录 adapter/provider 探测、defaults 默认补齐和 schema 校验摘要
 - `translated/translations` 是中间翻译结果
 - `rendered/*.pdf` 是最终输出 PDF
 - `rendered/typst/` 保留 Typst 中间产物，便于查错和回溯
@@ -126,6 +126,44 @@
 - raw MinerU 结构保留给 adapter、调试和回溯，不再作为主链路的隐式数据契约
 - 如果只是做排错、状态展示或 API 输出摘要，优先消费 `document.v1.report.json`
 - Python 侧统一通过 `services/document_schema/reporting.py` 读取 report 和生成 normalization summary
+- `specs/` 保存阶段 spec JSON，当前已覆盖：
+  - `normalize.spec.json` -> `normalize.stage.v1`
+  - `translate.spec.json` -> `translate.stage.v1`
+  - `render.spec.json` -> `render.stage.v1`
+  - `mineru.spec.json` -> `mineru.stage.v1`
+  - `book.spec.json` -> `book.stage.v1`
+
+## Stage Spec 约定
+
+当前 Rust API 到 Python worker 的稳定协议，已经固定为：
+
+`python -u <entrypoint> --spec output/<job-id>/specs/<stage>.spec.json`
+
+约定如下：
+
+- spec 只保存阶段输入、参数和 job 引用，不再把 Python 内部实现细节暴露给 Rust
+- `job.job_root` 是路径推导锚点；各阶段内部通过 `job_dirs.py` 派生 `source/ocr/translated/rendered/artifacts/logs`
+- 密钥不明文写入 spec
+  - 翻译 key 通过 `credential_ref=env:RETAIN_TRANSLATION_API_KEY`
+  - MinerU token 通过 `credential_ref=env:RETAIN_MINERU_API_TOKEN`
+  - 运行时由 Rust 注入环境变量，Python 通过 `stage_specs.resolve_credential_ref(...)` 读取
+- Rust 主工作流和本地 book/translate 入口都已切到 spec-only
+  - `run_normalize_ocr.py`
+  - `run_translate_only.py`
+  - `run_render_only.py`
+  - `run_translate_from_ocr.py`
+  - `run_mineru_case.py`
+  - `run_book.py`
+  - `translate_book.py`
+
+本地开发入口当前也已统一到 stage spec 主路径：
+
+- `entrypoints/run_mineru_case.py` -> `mineru.stage.v1`
+- `services/document_schema/normalize_pipeline.py` -> `normalize.stage.v1`
+- `services/translation/translate_only_pipeline.py` -> `translate.stage.v1`
+- `services/rendering/render_only_pipeline.py` -> `render.stage.v1`
+- `services/translation/from_ocr_pipeline.py` -> `book.stage.v1`
+- `entrypoints/run_book.py` -> `book.stage.v1`
 
 兼容说明：
 

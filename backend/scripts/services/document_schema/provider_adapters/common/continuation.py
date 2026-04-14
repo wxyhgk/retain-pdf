@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from services.document_schema.compat import default_block_continuation_hint
-from services.document_schema.compat import normalize_block_continuation_hint
+from services.document_schema.defaults import default_block_continuation_hint
+from services.document_schema.defaults import normalize_block_continuation_hint
 
 
 def continuation_role_for(index: int, size: int) -> str:

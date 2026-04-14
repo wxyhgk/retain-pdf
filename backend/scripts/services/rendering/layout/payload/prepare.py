@@ -100,6 +100,10 @@ def prepare_render_payloads_by_page(translated_pages: dict[int, list[dict]]) -> 
         items = [item for item in items if (item.get("translation_unit_protected_translated_text") or "").strip()]
         if not items:
             continue
+        direct_math_mode = any(
+            str(item.get("math_mode", "placeholder") or "placeholder").strip() == "direct_typst"
+            for item in items
+        )
         unit_formula_map = items[0].get("translation_unit_formula_map") or items[0].get("group_formula_map", [])
         protected_unit_text = (
             items[0].get("translation_unit_protected_translated_text")
@@ -144,6 +148,7 @@ def prepare_render_payloads_by_page(translated_pages: dict[int, list[dict]]) -> 
             unit_formula_map,
             capacities,
             preferred_weights=source_weights if any(weight > 0 for weight in source_weights) else None,
+            direct_math_mode=direct_math_mode,
         )
         source_chunks = split_protected_text_for_boxes(
             protected_unit_source_text,

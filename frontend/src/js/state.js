@@ -13,6 +13,7 @@ export const state = {
   recentJobsOffset: 0,
   recentJobsHasMore: true,
   recentJobsDate: "",
+  recentJobsItems: [],
   validatedMineruToken: "",
   mineruValidationStatus: "",
   developerConfig: {},

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from services.rendering.layout.payload.formula_cost import token_units
 from services.rendering.layout.payload.text_common import SPLIT_PUNCTUATION
 from services.rendering.layout.payload.text_common import tokenize_protected_text
@@ -12,6 +14,13 @@ CONTINUATION_REBALANCE_TARGET_TOLERANCE = 3.5
 CONTINUATION_REBALANCE_IMBALANCE_TRIGGER = 12.0
 CONTINUATION_REBALANCE_PUNCTUATION_PENALTY = 1.75
 CONTINUATION_REBALANCE_NON_PUNCT_MIN_MOVE_UNITS = 18.0
+DIRECT_INLINE_MATH_TOKEN_RE = re.compile(r"(?<!\\)\$(?:\\.|[^$\\\n])+(?<!\\)\$|\s+|[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*|[\u4e00-\u9fff]|.")
+
+
+def _tokenize_for_continuation_split(text: str, *, direct_math_mode: bool) -> list[str]:
+    if not direct_math_mode:
+        return tokenize_protected_text(text)
+    return [token for token in DIRECT_INLINE_MATH_TOKEN_RE.findall(text or "") if token]
 
 
 def _range_cost(prefix_costs: list[float], start: int, end: int) -> float:
@@ -161,10 +170,11 @@ def split_protected_text_for_boxes(
     capacities: list[float],
     *,
     preferred_weights: list[float] | None = None,
+    direct_math_mode: bool = False,
 ) -> list[str]:
     if len(capacities) <= 1:
         return [protected_text.strip()]
-    tokens = tokenize_protected_text(protected_text)
+    tokens = _tokenize_for_continuation_split(protected_text, direct_math_mode=direct_math_mode)
     if not tokens:
         return [""] * len(capacities)
     formula_lookup = {entry["placeholder"]: entry["formula_text"] for entry in formula_map}

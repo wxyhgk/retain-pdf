@@ -36,8 +36,6 @@
   最底层 API 调用封装，只在需要直接调 MinerU 接口时使用。
 - `scripts/devtools/tools/mineru_api_example.py`
   最小示例，适合调通接口和查看返回结构。
-- `scripts/devtools/tools/migrate_legacy_output.py`
-  把旧输出目录迁移到新的 job 目录结构。
 
 ## 目录结构
 
@@ -57,7 +55,7 @@
 - 当前翻译/渲染主链路默认要求并优先使用 `ocr/normalized/document.v1.json`
 - `ocr/unpacked/layout.json` 保留给适配器、调试和回溯，不再作为主链路的隐式 fallback
 - `content_list_v2.json` 目前仅用于实验和适配，不是主路径
-- 如果只想做 provider / compat / validation 摘要展示，优先读取 `document.v1.report.json`
+- 如果只想做 provider / defaults / validation 摘要展示，优先读取 `document.v1.report.json`
 
 职责拆分：
 
@@ -92,6 +90,37 @@
 和 `normalization_summary`，避免外层再次自己解析 raw OCR。
 
 也就是说，这一层的职责是“把 PDF 变成主链路可消费的 OCR 输入”，而不是承担后续业务。
+
+## MinerU Stage Spec
+
+Rust API 侧当前会优先通过：
+
+`python -u scripts/entrypoints/run_mineru_case.py --spec <job_root>/specs/mineru.spec.json`
+
+驱动完整流程，对应 schema 为 `mineru.stage.v1`。
+
+当前约定：
+
+- `source`
+  只保存 `file_url` 或 `file_path`
+- `ocr`
+  保存 MinerU 请求参数与 `credential_ref`
+- `translation`
+  保存翻译参数、术语表元数据和翻译 `credential_ref`
+- `render`
+  保存渲染参数
+
+安全约定：
+
+- MinerU token 不直接落盘到 spec
+- spec 中使用 `credential_ref=env:RETAIN_MINERU_API_TOKEN`
+- 翻译 key 同样使用 `credential_ref=env:RETAIN_TRANSLATION_API_KEY`
+- 运行时由 Rust 注入环境变量，Python worker 再解析
+
+兼容说明：
+
+- Rust 主工作流调用的 MinerU worker 现在要求 `--spec`
+- 如果只是本地手动试跑，应继续走 `scripts/entrypoints/run_mineru_case.py` 的 stage spec 调用方式
 
 兼容说明：
 

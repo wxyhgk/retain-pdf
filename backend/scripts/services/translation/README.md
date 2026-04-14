@@ -27,19 +27,26 @@ Translation 阶段的正式输入和输出固定为：
 当前默认翻译产物协议：
 
 - `translation-manifest.json`
-  记录页索引到翻译 payload 文件的稳定映射，供渲染阶段优先读取
+记录页索引到翻译 payload 文件的稳定映射，供渲染阶段优先读取
+  还会附带轻量元数据，例如 glossary 摘要、诊断摘要，以及 `invocation` 字段
+  当前正式路径统一标记为 `stage_spec`
 - 逐页 translation payload
   当前仍按每页一个 JSON 落盘，manifest 负责声明这些文件该如何被渲染阶段发现
+- 阶段 spec
+  `translate-only` 入口已支持 `job_root/specs/translate.spec.json`（`translate.stage.v1`）
 
 兼容约定：
 
 - 新任务目录应生成 `translation-manifest.json`
-- 旧任务目录没有 manifest 时，渲染阶段仍可回退读取历史 `page-*-deepseek.json`
+- 翻译产物协议固定为 `translation-manifest.json` + 每页 payload，渲染阶段不再兼容旧的逐页 JSON 直扫模式
+- Rust 主工作流调用的 `translate-only` worker 现在要求 `--spec`
+- `scripts/entrypoints/translate_book.py` 现在也是 spec-only 包装入口
+- API 凭证不再要求写入 stage spec；spec 中使用 `credential_ref`，由运行时环境注入真实 key
 
 ## 子目录
 
 - `ocr/`
-  OCR JSON 读取和数据抽取。主线优先读取 `normalized_document_v1`，raw provider JSON 只在入口处先经过 adapter、compat 和 schema 校验，再进入这里。
+  OCR JSON 读取和数据抽取。主线优先读取 `normalized_document_v1`，raw provider JSON 只在入口处先经过 adapter、defaults 和 schema 校验，再进入这里。
 - `orchestration/`
   布局区、continuation、translation unit 元数据。
 - `classification/`

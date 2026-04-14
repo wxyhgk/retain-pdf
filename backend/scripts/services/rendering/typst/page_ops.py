@@ -7,6 +7,9 @@ import fitz
 from services.rendering.api.background_image_route import replace_background_image_page
 from services.rendering.api.pdf_overlay import redact_translated_text_areas
 from services.rendering.api.pdf_overlay import strip_page_links
+from services.rendering.redaction.margin_text_cleanup import cleanup_margin_text_blocks
+from services.rendering.redaction.shared import iter_valid_translated_items
+from services.rendering.redaction.vector_text_cleanup import collect_vector_text_rects
 from services.rendering.redaction.redaction_analysis import page_has_large_background_image
 
 
@@ -22,6 +25,13 @@ def should_redact_source_page(page: fitz.Page) -> bool:
     return not page_has_large_background_image(page)
 
 
+def should_use_cover_only_for_vector_text(page: fitz.Page, translated_items: list[dict]) -> bool:
+    target_rects = [rect for rect, _item, _translated_text in iter_valid_translated_items(translated_items)]
+    if not target_rects:
+        return False
+    return bool(collect_vector_text_rects(page, target_rects))
+
+
 def apply_source_page_overlay(
     page: fitz.Page,
     translated_items: list[dict],
@@ -29,10 +39,19 @@ def apply_source_page_overlay(
     cover_only: bool = False,
 ) -> None:
     strip_page_links(page)
-    if should_redact_source_page(page):
-        redact_translated_text_areas(page, translated_items, cover_only=cover_only)
-    else:
+    if not should_redact_source_page(page):
         replace_background_image_page(page, translated_items)
+        # Pseudo-scan pages can still carry visible vector text above the background image.
+        # After patching the image itself, remove any touched source text within translated rects.
+        redact_translated_text_areas(page, translated_items, cover_only=False)
+        return
+
+    vector_cover_only = should_use_cover_only_for_vector_text(page, translated_items)
+    if not (cover_only or vector_cover_only):
+        cleanup_margin_text_blocks(page)
+    redact_translated_text_areas(page, translated_items, cover_only=cover_only or vector_cover_only)
+    if cover_only or vector_cover_only:
+        return
 
 
 def overlay_pages_from_single_pdf(

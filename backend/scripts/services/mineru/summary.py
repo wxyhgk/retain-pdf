@@ -33,6 +33,7 @@ def write_pipeline_summary(
     base_url: str,
     render_mode: str,
     pdf_compress_dpi: int,
+    invocation: dict | None = None,
 ) -> None:
     schema_validation = build_validation_report_from_path(normalized_json_path)
     normalization_report = load_normalization_report(normalization_report_path)
@@ -69,6 +70,7 @@ def write_pipeline_summary(
             "render_mode": render_mode,
             "effective_render_mode": result.get("effective_render_mode", render_mode),
             "pdf_compress_dpi": pdf_compress_dpi,
+            "invocation": invocation or {},
         },
     )
 
@@ -105,8 +107,8 @@ def print_pipeline_summary(
             "normalization report: "
             f"provider={normalization_summary['provider']} "
             f"detected={normalization_summary['detected_provider']} "
-            f"compat_pages={normalization_summary['compat_pages']} "
-            f"compat_blocks={normalization_summary['compat_blocks']}"
+            f"defaults_pages={normalization_summary['defaults_pages']} "
+            f"defaults_blocks={normalization_summary['defaults_blocks']}"
         )
     print(format_stdout_kv(STDOUT_LABEL_SOURCE_JSON_USED, source_json_path))
     print(format_stdout_kv(STDOUT_LABEL_TRANSLATIONS_DIR, result["output_dir"]))

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from services.rendering.core.models import RenderBlock
+from services.rendering.formula.math_utils import build_direct_typst_passthrough_text
 from services.rendering.formula.math_utils import build_markdown_from_parts
 from services.rendering.formula.math_utils import build_plain_text_from_text
 from services.rendering.layout.payload.metrics import resolve_typst_binary_fit
@@ -28,7 +29,14 @@ def payload_to_render_block(payload: dict) -> RenderBlock:
         bbox=payload["bbox"],
         cover_bbox=payload["cover_bbox"],
         inner_bbox=payload["inner_bbox"],
-        markdown_text=build_markdown_from_parts(payload["translated_text"], payload["formula_map"]),
+        markdown_text=(
+            build_direct_typst_passthrough_text(payload["translated_text"])
+            if str(payload["item"].get("math_mode", "placeholder") or "placeholder").strip() == "direct_typst"
+            else build_markdown_from_parts(
+                payload["translated_text"],
+                payload["formula_map"],
+            )
+        ),
         plain_text=build_plain_text_from_text(payload["translated_text"]),
         render_kind=payload["render_kind"],
         font_size_pt=payload["font_size_pt"],

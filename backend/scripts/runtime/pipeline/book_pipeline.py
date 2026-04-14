@@ -29,7 +29,8 @@ def run_book_pipeline(
     model: str,
     base_url: str,
     mode: str,
-    classify_batch_size: int,
+    math_mode: str = "placeholder",
+    classify_batch_size: int = 12,
     skip_title_translation: bool,
     render_mode: str,
     rule_profile_name: str = "general_sci",
@@ -43,6 +44,7 @@ def run_book_pipeline(
     compile_workers: int | None = None,
     typst_font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
+    invocation: dict | None = None,
 ) -> dict:
     total_started = time.perf_counter()
     translation_summary = translate_book_pipeline(
@@ -54,6 +56,7 @@ def run_book_pipeline(
         batch_size=batch_size,
         workers=max(1, workers),
         mode=mode,
+        math_mode=math_mode,
         classify_batch_size=max(1, classify_batch_size),
         skip_title_translation=skip_title_translation,
         model=model,
@@ -67,6 +70,7 @@ def run_book_pipeline(
         glossary_inline_entry_count=glossary_inline_entry_count,
         glossary_overridden_entry_count=glossary_overridden_entry_count,
         glossary_entries=glossary_entries or [],
+        invocation=invocation,
     )
     translate_elapsed = time.perf_counter() - total_started
     diagnostics_path = output_dir.parent / ARTIFACTS_DIR_NAME / "translation_diagnostics.json"
@@ -126,4 +130,5 @@ def run_book_pipeline(
         ),
         "translation_timeout_attempts": diagnostics_summary.get("request_counts", {}).get("timeout_attempts", 0),
         "translation_retrying_items": diagnostics_summary.get("retry_summary", {}).get("retrying_request_labels", 0),
+        "invocation": translation_summary.get("invocation", invocation or {}),
     }

@@ -1,10 +1,17 @@
-from services.document_schema.compat import default_block_continuation_hint
-from services.document_schema.compat import upgrade_document_payload
+import sys
+from pathlib import Path
+
+REPO_SCRIPTS_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
+
+from services.document_schema.defaults import apply_document_defaults
+from services.document_schema.defaults import default_block_continuation_hint
 from services.document_schema.provider_adapters.paddle.continuation import assign_paddle_continuation_hints
+from services.document_schema.validator import DocumentSchemaValidationError
 from services.document_schema.validator import validate_document_payload
 
 
-def _minimal_document(*, schema_version: str = "1.0") -> dict:
+def _minimal_document(*, schema_version: str = "1.1") -> dict:
     return {
         "schema": "normalized_document_v1",
         "schema_version": schema_version,
@@ -41,11 +48,20 @@ def _minimal_document(*, schema_version: str = "1.0") -> dict:
     }
 
 
-def test_legacy_upgrade_adds_default_continuation_hint_and_validates() -> None:
-    upgraded = upgrade_document_payload(_minimal_document(schema_version="1.0"))
+def test_apply_document_defaults_adds_default_continuation_hint() -> None:
+    upgraded = apply_document_defaults(_minimal_document())
     block = upgraded["pages"][0]["blocks"][0]
     assert block["continuation_hint"] == default_block_continuation_hint()
     validate_document_payload(upgraded)
+
+
+def test_validate_document_payload_rejects_old_schema_version() -> None:
+    try:
+        validate_document_payload(_minimal_document(schema_version="1.0"))
+    except DocumentSchemaValidationError as exc:
+        assert "expected one of ('1.1',), got '1.0'" in str(exc)
+    else:
+        raise AssertionError("expected schema version validation failure")
 
 
 def test_paddle_continuation_hints_cover_intra_page_and_cross_page_groups() -> None:

@@ -609,6 +609,94 @@ class TranslationFastPathTests(unittest.TestCase):
         self.assertNotIn("<f1-2e5/>", messages[1]["content"])
         self.assertNotIn("<f2-9ad/>", messages[1]["content"])
 
+    def test_build_messages_direct_typst_includes_inline_math_and_local_ocr_repair_guidance(self):
+        module = _load_module(
+            "services.translation.llm.deepseek_client",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "deepseek_client.py",
+        )
+        messages = module.build_messages(
+            [
+                {
+                    "item_id": "p001-b001",
+                    "protected_source_text": r"^{a} reaction at {10\mu}mol scale",
+                    "math_mode": "direct_typst",
+                    "metadata": {"structure_role": "body"},
+                }
+            ],
+            mode="sci",
+            response_style="tagged",
+        )
+        system_prompt = messages[0]["content"]
+        self.assertIn("You must mark inline mathematical expressions with `$...$` yourself", system_prompt)
+        self.assertIn("minimal local repair", system_prompt)
+        self.assertIn("Do not invent new scientific content", system_prompt)
+        self.assertIn("Source: ^{a} measured in duplicate.", system_prompt)
+        self.assertIn("Output: $^{a}$ 重复测定。", system_prompt)
+        self.assertIn(r"\mu", messages[1]["content"])
+        self.assertNotIn(r"\\mu", messages[1]["content"])
+
+    def test_build_single_item_fallback_messages_direct_typst_includes_inline_math_and_local_ocr_repair_guidance(self):
+        module = _load_module(
+            "services.translation.llm.deepseek_client",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "deepseek_client.py",
+        )
+        messages = module.build_single_item_fallback_messages(
+            {
+                "item_id": "p001-b001",
+                "protected_source_text": r"^{a} reaction at {10\mu}mol scale",
+                "math_mode": "direct_typst",
+                "metadata": {"structure_role": "body"},
+            },
+            mode="sci",
+            response_style="plain_text",
+        )
+        system_prompt = messages[0]["content"]
+        self.assertIn("You must mark inline mathematical expressions with `$...$` yourself", system_prompt)
+        self.assertIn("minimal local repair", system_prompt)
+        self.assertIn("Do not invent new scientific content", system_prompt)
+        self.assertIn("Source: observed {2}^{\\prime }{2}^{\\prime }-substituted product.", system_prompt)
+        self.assertIn("Output: 观察到 $2',2'$-取代产物。", system_prompt)
+        self.assertIn(r"\mu", messages[1]["content"])
+        self.assertNotIn(r"\\mu", messages[1]["content"])
+
+    def test_build_messages_direct_typst_keeps_single_backslash_source_text_in_user_prompt(self):
+        module = _load_module(
+            "services.translation.llm.deepseek_client",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "deepseek_client.py",
+        )
+        messages = module.build_messages(
+            [
+                {
+                    "item_id": "p010-b002",
+                    "protected_source_text": r"strengthens the argument that a \mathrm{Ni(I) / Ni(III)} cycle is operative.",
+                    "math_mode": "direct_typst",
+                    "metadata": {"structure_role": "body"},
+                }
+            ],
+            mode="sci",
+            response_style="tagged",
+        )
+        self.assertIn(r"\mathrm{Ni(I) / Ni(III)}", messages[1]["content"])
+        self.assertNotIn(r"\\mathrm{Ni(I) / Ni(III)}", messages[1]["content"])
+
+    def test_build_single_item_fallback_messages_direct_typst_keeps_single_backslash_source_text_in_user_prompt(self):
+        module = _load_module(
+            "services.translation.llm.deepseek_client",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "deepseek_client.py",
+        )
+        messages = module.build_single_item_fallback_messages(
+            {
+                "item_id": "p010-b002",
+                "protected_source_text": r"strengthens the argument that a \mathrm{Ni(I) / Ni(III)} cycle is operative.",
+                "math_mode": "direct_typst",
+                "metadata": {"structure_role": "body"},
+            },
+            mode="sci",
+            response_style="plain_text",
+        )
+        self.assertIn(r"\mathrm{Ni(I) / Ni(III)}", messages[1]["content"])
+        self.assertNotIn(r"\\mathrm{Ni(I) / Ni(III)}", messages[1]["content"])
+
     def test_formula_english_residue_degrades_to_keep_origin_after_all_fallbacks_fail(self):
         module = _load_module(
             "services.translation.llm.fallbacks",
@@ -752,6 +840,132 @@ class TranslationFastPathTests(unittest.TestCase):
         self.assertEqual(payload["decision"], "keep_origin")
         self.assertEqual(payload["translation_diagnostics"]["degradation_reason"], "english_residue_repeated")
         self.assertEqual(payload["translation_diagnostics"]["final_status"], "kept_origin")
+
+    def test_direct_typst_skips_heavy_formula_split_entry(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        control_context = _load_module(
+            "services.translation.llm.control_context",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "control_context.py",
+        )
+        item = {
+            "item_id": "p001-b002",
+            "page_idx": 0,
+            "block_type": "text",
+            "math_mode": "direct_typst",
+            "metadata": {"structure_role": "body"},
+            "protected_source_text": r"Observe $\mathrm{Ph(i-PrO)SiH_2}$ and more text.",
+            "translation_unit_protected_source_text": r"Observe $\mathrm{Ph(i-PrO)SiH_2}$ and more text.",
+        }
+        context = control_context.build_translation_control_context(mode="sci")
+        plain_payload = {"p001-b002": {"decision": "translate", "translated_text": r"观察到 $\mathrm{Ph(i-PrO)SiH_2}$ 以及更多文本。"}}
+
+        with mock.patch.object(module, "_heavy_formula_split_reason", side_effect=AssertionError("should not be called")):
+            with mock.patch.object(module, "translate_single_item_plain_text", return_value=plain_payload):
+                result = module.translate_single_item_plain_text_with_retries(
+                    item,
+                    api_key="",
+                    model="deepseek-chat",
+                    base_url="https://api.deepseek.com/v1",
+                    request_label="test",
+                    context=context,
+                    diagnostics=None,
+                )
+
+        self.assertEqual(result["p001-b002"]["translated_text"], plain_payload["p001-b002"]["translated_text"])
+
+    def test_direct_typst_english_residue_does_not_enter_sentence_level_fallback(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        control_context = _load_module(
+            "services.translation.llm.control_context",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "control_context.py",
+        )
+        item = {
+            "item_id": "p001-b002",
+            "page_idx": 0,
+            "block_type": "text",
+            "math_mode": "direct_typst",
+            "metadata": {"structure_role": "body"},
+            "protected_source_text": "This is the first sentence. This is the second sentence.",
+            "translation_unit_protected_source_text": "This is the first sentence. This is the second sentence.",
+        }
+        context = control_context.build_translation_control_context(mode="sci")
+        context = replace(
+            context,
+            fallback_policy=replace(
+                context.fallback_policy,
+                plain_text_attempts=1,
+                allow_tagged_placeholder_retry=False,
+            ),
+        )
+        english_residue = module.EnglishResidueError("p001-b002")
+
+        with mock.patch.object(module, "translate_single_item_plain_text", side_effect=english_residue):
+            with mock.patch.object(module, "translate_single_item_plain_text_unstructured", side_effect=english_residue):
+                with mock.patch.object(module, "_sentence_level_fallback", side_effect=AssertionError("should not be called")):
+                    result = module.translate_single_item_plain_text_with_retries(
+                        item,
+                        api_key="",
+                        model="deepseek-chat",
+                        base_url="https://api.deepseek.com/v1",
+                        request_label="test",
+                        context=context,
+                        diagnostics=None,
+                    )
+
+        payload = result["p001-b002"]
+        self.assertEqual(payload["decision"], "keep_origin")
+        self.assertEqual(payload["translation_diagnostics"]["degradation_reason"], "english_residue_repeated")
+        self.assertEqual(payload["translation_diagnostics"]["route_path"], ["block_level", "direct_typst", "keep_origin"])
+
+    def test_direct_typst_validation_failure_does_not_enter_tagged_placeholder_retry(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        control_context = _load_module(
+            "services.translation.llm.control_context",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "control_context.py",
+        )
+        item = {
+            "item_id": "p001-b002",
+            "page_idx": 0,
+            "block_type": "text",
+            "math_mode": "direct_typst",
+            "metadata": {"structure_role": "body"},
+            "protected_source_text": "This is body text with inline math x.",
+            "translation_unit_protected_source_text": "This is body text with inline math x.",
+        }
+        context = control_context.build_translation_control_context(mode="sci")
+        context = replace(
+            context,
+            fallback_policy=replace(
+                context.fallback_policy,
+                plain_text_attempts=1,
+                allow_tagged_placeholder_retry=True,
+            ),
+        )
+        english_residue = module.EnglishResidueError("p001-b002")
+
+        with mock.patch.object(module, "translate_single_item_plain_text", side_effect=english_residue):
+            with mock.patch.object(module, "translate_single_item_plain_text_unstructured", side_effect=english_residue):
+                with mock.patch.object(module, "translate_single_item_stable_placeholder_text", side_effect=AssertionError("should not be called")):
+                    result = module.translate_single_item_plain_text_with_retries(
+                        item,
+                        api_key="",
+                        model="deepseek-chat",
+                        base_url="https://api.deepseek.com/v1",
+                        request_label="test",
+                        context=context,
+                        diagnostics=None,
+                    )
+
+        self.assertEqual(result["p001-b002"]["decision"], "keep_origin")
 
     def test_continuation_group_with_placeholders_prefers_tagged_first_path(self):
         module = _load_module(
@@ -1124,7 +1338,7 @@ class TranslationFastPathTests(unittest.TestCase):
             ["block_level", "plain_text", "keep_origin"],
         )
 
-    def test_batched_transport_failure_degrades_whole_batch_to_keep_origin(self):
+    def test_batched_transport_failure_falls_back_to_single_item_path(self):
         module = _load_module(
             "services.translation.llm.fallbacks",
             REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
@@ -1159,20 +1373,31 @@ class TranslationFastPathTests(unittest.TestCase):
                 "translate_batch_once",
                 side_effect=requests.ConnectionError("Read timed out"),
             ):
-                result = module.translate_items_plain_text(
-                    batch,
-                    api_key="sk-test",
-                    model="deepseek-chat",
-                    base_url="https://api.deepseek.com/v1",
-                    request_label="test batch transport",
-                    context=context,
-                )
+                with mock.patch.object(
+                    module,
+                    "translate_single_item_plain_text_with_retries",
+                    side_effect=[
+                        {"p001-b001": {"decision": "translate", "translated_text": "第一条已翻译", "final_status": "translated"}},
+                        {"p001-b002": {"decision": "translate", "translated_text": "第二条已翻译", "final_status": "translated"}},
+                    ],
+                ) as single_mock:
+                    result = module.translate_items_plain_text(
+                        batch,
+                        api_key="sk-test",
+                        model="deepseek-chat",
+                        base_url="https://api.deepseek.com/v1",
+                        request_label="test batch transport",
+                        context=context,
+                    )
 
-        self.assertEqual(result["p001-b001"]["decision"], "keep_origin")
-        self.assertEqual(result["p001-b002"]["decision"], "keep_origin")
+        self.assertEqual(result["p001-b001"]["decision"], "translate")
+        self.assertEqual(result["p001-b002"]["decision"], "translate")
+        self.assertEqual(result["p001-b001"]["translated_text"], "第一条已翻译")
+        self.assertEqual(result["p001-b002"]["translated_text"], "第二条已翻译")
+        self.assertEqual(single_mock.call_count, 2)
         self.assertEqual(
-            result["p001-b001"]["translation_diagnostics"]["route_path"],
-            ["block_level", "batched_plain", "keep_origin"],
+            single_mock.call_args_list[0].kwargs["request_label"],
+            "test batch transport item 1/2 p001-b001",
         )
 
     def test_batched_plain_suspicious_keep_origin_only_retries_flagged_items(self):

@@ -7,7 +7,7 @@
 - `ocr_provider/`
   OCR provider API 接入层的独立约定。这里只定义“第三方 OCR 服务怎么接进来”，不把 provider API 细节耦合到翻译/渲染工作流。
 - `document_schema/`
-  统一中间文档结构版本定义、adapter registry、compat 升级、schema 校验与 normalization report。
+  统一中间文档结构版本定义、adapter registry、defaults 收口、schema 校验与 normalization report。
 - `mineru/`
   MinerU 这个 provider 的具体实现：提交、轮询、下载、解包、任务产物整理。
 - `translation/`
@@ -22,7 +22,7 @@
 - `document_schema/` 负责定义统一中间层，不承载 provider 细节
 - OCR provider 原始 JSON 必须先经过 `document_schema/adapters.py` 转成 `document.v1`
 - 需要排查 raw -> normalized 转化时，优先看 `document.v1.report.json` 或 `validate_document_schema.py --adapt`
-- 如果只是消费 provider / compat / validation 摘要，优先走 `document_schema/reporting.py`
+- 如果只是消费 provider / defaults / validation 摘要，优先走 `document_schema/reporting.py`
 - `mineru/` 是一个 provider 实现，不是 OCR 总工作流本身
 - `translation/ocr` 主线优先读取 normalized document，而不是直接依赖某个 OCR provider 的原始 JSON
 - `runtime/pipeline` 只负责把这些能力串起来

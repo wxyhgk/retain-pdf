@@ -13,9 +13,9 @@ def get_item_translated_text(item: dict) -> str:
         return restore_render_protected_text(str(item.get("render_protected_text", "") or "").strip(), item)
     return restore_render_protected_text(
         (
-        item.get("translation_unit_translated_text")
+        item.get("translated_text")
+        or item.get("translation_unit_translated_text")
         or item.get("group_translated_text")
-        or item.get("translated_text")
         or ""
         ).strip(),
         item,
