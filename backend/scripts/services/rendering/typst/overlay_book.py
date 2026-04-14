@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 from pathlib import Path
+import time
 
 import fitz
 
@@ -61,9 +62,10 @@ def overlay_pages_via_page_fallback(
     temp_root: Path | None = None,
     cover_only: bool = False,
     apply_source_overlay: bool = True,
-) -> None:
+) -> dict[str, object]:
     overlay_paths: dict[int, Path] = {}
     max_workers = compile_workers or default_compile_workers(len(page_specs))
+    compile_started = time.perf_counter()
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_map = {
             executor.submit(
@@ -84,7 +86,17 @@ def overlay_pages_via_page_fallback(
         for future in as_completed(future_map):
             page_idx = future_map[future]
             overlay_paths[page_idx] = future.result()
-
+    diagnostics = {
+        "page_overlay_compile_elapsed_seconds": time.perf_counter() - compile_started,
+        "pages": [],
+        "source_overlay_elapsed_seconds": 0.0,
+        "overlay_merge_elapsed_seconds": 0.0,
+        "raw_removable_rects": 0,
+        "merged_removable_rects": 0,
+        "cover_rects": 0,
+        "item_fast_cover_count": 0,
+        "fast_page_cover_pages": 0,
+    }
     total_pages = len(ordered_page_indices)
     for overlay_page_idx, page_idx in enumerate(ordered_page_indices):
         print(
@@ -92,13 +104,32 @@ def overlay_pages_via_page_fallback(
             flush=True,
         )
         page = doc[page_idx]
+        page_diag = {
+            "page_index": page_idx,
+            "source_overlay_elapsed_seconds": 0.0,
+            "overlay_merge_elapsed_seconds": 0.0,
+        }
         if apply_source_overlay:
-            apply_source_page_overlay(page, translated_pages[page_idx], cover_only=cover_only)
+            redaction = apply_source_page_overlay(page, translated_pages[page_idx], cover_only=cover_only)
+            page_diag.update(redaction)
+            diagnostics["source_overlay_elapsed_seconds"] += float(redaction.get("elapsed_seconds", 0.0) or 0.0)
+            diagnostics["raw_removable_rects"] += int(redaction.get("raw_removable_rects", 0) or 0)
+            diagnostics["merged_removable_rects"] += int(redaction.get("merged_removable_rects", 0) or 0)
+            diagnostics["cover_rects"] += int(redaction.get("cover_rects", 0) or 0)
+            diagnostics["item_fast_cover_count"] += int(redaction.get("item_fast_cover_count", 0) or 0)
+            if bool(redaction.get("fast_page_cover_only")):
+                diagnostics["fast_page_cover_pages"] += 1
         overlay_doc = fitz.open(overlay_paths[page_idx])
         try:
+            merge_started = time.perf_counter()
             page.show_pdf_page(page.rect, overlay_doc, 0, overlay=True)
+            merge_elapsed = time.perf_counter() - merge_started
+            page_diag["overlay_merge_elapsed_seconds"] = merge_elapsed
+            diagnostics["overlay_merge_elapsed_seconds"] += merge_elapsed
         finally:
             overlay_doc.close()
+        diagnostics["pages"].append(page_diag)
+    return diagnostics
 
 
 def sanitize_overlay_page_specs(

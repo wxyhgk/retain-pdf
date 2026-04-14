@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import time
 
 import fitz
 
@@ -130,11 +131,12 @@ def build_book_typst_pdf(
     font_paths: list[Path] | None = None,
     temp_root: Path | None = None,
     cover_only: bool = False,
-) -> None:
+) -> dict[str, object]:
     doc = _build_overlay_base_doc(source_pdf_path)
     try:
         typst_temp_root = resolve_typst_temp_root(output_pdf_path, temp_root)
-        overlay_translated_pages_on_doc(
+        overlay_started = time.perf_counter()
+        overlay_diagnostics = overlay_translated_pages_on_doc(
             doc,
             translated_pages,
             stem="book-overlay",
@@ -147,7 +149,25 @@ def build_book_typst_pdf(
             temp_root=typst_temp_root,
             cover_only=cover_only,
         )
+        overlay_elapsed = time.perf_counter() - overlay_started
+        print(
+            "overlay diagnostics: "
+            f"mode={overlay_diagnostics.get('mode')} "
+            f"pages={overlay_diagnostics.get('page_count', 0)} "
+            f"sanitize={float(overlay_diagnostics.get('sanitize_elapsed_seconds', 0.0) or 0.0):.2f}s "
+            f"compile={float(overlay_diagnostics.get('compile_elapsed_seconds', 0.0) or 0.0):.2f}s "
+            f"source_cleanup={float(overlay_diagnostics.get('source_overlay_elapsed_seconds', 0.0) or 0.0):.2f}s "
+            f"merge={float(overlay_diagnostics.get('overlay_merge_elapsed_seconds', 0.0) or 0.0):.2f}s "
+            f"raw_rects={int(overlay_diagnostics.get('raw_removable_rects', 0) or 0)} "
+            f"merged_rects={int(overlay_diagnostics.get('merged_removable_rects', 0) or 0)} "
+            f"cover_rects={int(overlay_diagnostics.get('cover_rects', 0) or 0)} "
+            f"fast_cover_pages={int(overlay_diagnostics.get('fast_page_cover_pages', 0) or 0)} "
+            f"item_fast_cover={int(overlay_diagnostics.get('item_fast_cover_count', 0) or 0)} "
+            f"total={overlay_elapsed:.2f}s",
+            flush=True,
+        )
         save_optimized_pdf(doc, output_pdf_path)
+        return overlay_diagnostics
     finally:
         doc.close()
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import time
 
 import fitz
 
@@ -67,14 +68,28 @@ def overlay_translated_pages_on_doc(
     temp_root: Path | None = None,
     cover_only: bool = False,
     apply_source_overlay: bool = True,
-) -> None:
+) -> dict[str, object]:
     translated_pages = prepare_render_payloads_by_page(translated_pages)
     ordered_page_indices, translated_pages = prepare_overlay_doc_pages(doc, translated_pages)
     if not ordered_page_indices:
-        return
+        return {
+            "compile_elapsed_seconds": 0.0,
+            "sanitize_elapsed_seconds": 0.0,
+            "source_overlay_elapsed_seconds": 0.0,
+            "overlay_merge_elapsed_seconds": 0.0,
+            "raw_removable_rects": 0,
+            "merged_removable_rects": 0,
+            "cover_rects": 0,
+            "item_fast_cover_count": 0,
+            "fast_page_cover_pages": 0,
+            "page_count": 0,
+            "mode": "empty",
+            "pages": [],
+        }
 
     page_specs = build_overlay_page_specs(doc, ordered_page_indices, translated_pages, stem=stem)
     book_specs = [(page_width, page_height, items) for _, page_width, page_height, items, _ in page_specs]
+    compile_started = time.perf_counter()
     try:
         overlay_pdf = compile_book_overlay_pdf(
             book_specs,
@@ -83,7 +98,7 @@ def overlay_translated_pages_on_doc(
             font_paths=font_paths,
             temp_root=temp_root,
         )
-        overlay_pages_from_single_pdf(
+        diagnostics = overlay_pages_from_single_pdf(
             doc,
             ordered_page_indices,
             translated_pages,
@@ -91,11 +106,17 @@ def overlay_translated_pages_on_doc(
             cover_only=cover_only,
             apply_source_overlay=apply_source_overlay,
         )
-        return
+        diagnostics["compile_elapsed_seconds"] = time.perf_counter() - compile_started
+        diagnostics["sanitize_elapsed_seconds"] = 0.0
+        diagnostics["page_count"] = len(ordered_page_indices)
+        diagnostics["mode"] = "book_overlay"
+        return diagnostics
     except RuntimeError as exc:
+        first_compile_elapsed = time.perf_counter() - compile_started
         print("typst book compile failed; sanitizing pages before per-page fallback", flush=True)
         print(str(exc), flush=True)
 
+    sanitize_started = time.perf_counter()
     sanitized_book_specs, sanitized_translated_pages, sanitized_page_specs = sanitize_overlay_page_specs(
         page_specs,
         api_key=api_key,
@@ -104,6 +125,8 @@ def overlay_translated_pages_on_doc(
         font_family=font_family,
         font_paths=font_paths,
     )
+    sanitize_elapsed = time.perf_counter() - sanitize_started
+    sanitized_compile_started = time.perf_counter()
     try:
         overlay_pdf = compile_book_overlay_pdf(
             sanitized_book_specs,
@@ -112,7 +135,7 @@ def overlay_translated_pages_on_doc(
             font_paths=font_paths,
             temp_root=temp_root,
         )
-        overlay_pages_from_single_pdf(
+        diagnostics = overlay_pages_from_single_pdf(
             doc,
             ordered_page_indices,
             sanitized_translated_pages,
@@ -120,12 +143,16 @@ def overlay_translated_pages_on_doc(
             cover_only=cover_only,
             apply_source_overlay=apply_source_overlay,
         )
-        return
+        diagnostics["compile_elapsed_seconds"] = first_compile_elapsed + (time.perf_counter() - sanitized_compile_started)
+        diagnostics["sanitize_elapsed_seconds"] = sanitize_elapsed
+        diagnostics["page_count"] = len(ordered_page_indices)
+        diagnostics["mode"] = "book_overlay_sanitized"
+        return diagnostics
     except RuntimeError as exc:
         print("typst sanitized book compile failed; falling back to per-page compilation", flush=True)
         print(str(exc), flush=True)
 
-    overlay_pages_via_page_fallback(
+    diagnostics = overlay_pages_via_page_fallback(
         doc,
         ordered_page_indices,
         sanitized_page_specs,
@@ -140,3 +167,8 @@ def overlay_translated_pages_on_doc(
         cover_only=cover_only,
         apply_source_overlay=apply_source_overlay,
     )
+    diagnostics["compile_elapsed_seconds"] = first_compile_elapsed + diagnostics.get("page_overlay_compile_elapsed_seconds", 0.0)
+    diagnostics["sanitize_elapsed_seconds"] = sanitize_elapsed
+    diagnostics["page_count"] = len(ordered_page_indices)
+    diagnostics["mode"] = "page_overlay_fallback"
+    return diagnostics

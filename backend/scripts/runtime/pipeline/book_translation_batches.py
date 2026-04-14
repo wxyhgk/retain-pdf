@@ -175,6 +175,10 @@ def _is_fast_path_keep_origin_item(item: dict) -> tuple[bool, str]:
 def _is_low_risk_batchable_item(item: dict, *, translation_context: TranslationControlContext | None) -> bool:
     if translation_context is None:
         return False
+    if str(item.get("continuation_group", "") or "").strip():
+        return False
+    if str(item.get("translation_unit_id", "") or "").startswith(GROUP_ITEM_PREFIX):
+        return False
     if str(item.get("block_type", "") or "") != "text":
         return False
     if not should_force_translate_body_text(item):
@@ -189,11 +193,6 @@ def _is_low_risk_batchable_item(item: dict, *, translation_context: TranslationC
     ):
         return False
     placeholder_count = len(placeholder_sequence(source))
-    if placeholder_count > 0 and (
-        str(item.get("continuation_group", "") or "").strip()
-        or str(item.get("translation_unit_id", "") or "").startswith(GROUP_ITEM_PREFIX)
-    ):
-        return False
     if placeholder_count > translation_context.batch_policy.batch_low_risk_max_placeholders:
         return False
     return True

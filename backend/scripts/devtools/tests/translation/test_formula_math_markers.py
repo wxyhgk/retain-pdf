@@ -171,6 +171,7 @@ def test_formula_normalizer_repairs_low_risk_ocr_noise() -> None:
     assert normalize_formula_for_latex_math(r"\mathrm { C 0 0 H ^ { * } } ]") == r"\mathrm{COOH^{*}} ]"
     assert normalize_formula_for_latex_math(r"1 . 2 7 ~ \mathrm { e V } .") == r"1.27 \mathrm{eV}"
     assert normalize_formula_for_latex_math(r"\mathrm { C H } _ { 4 } ,") == r"\mathrm{CH}_{4}"
+    assert normalize_formula_for_latex_math(r"\langle A \rrangle") == r"\langle A \rangle"
 
 
 def test_formula_normalizer_drops_style_noise_without_guessing_structure() -> None:

@@ -124,6 +124,7 @@ def main() -> None:
             "render_mode": args.render_mode,
             "effective_render_mode": result.get("effective_render_mode", args.render_mode),
             "pdf_compress_dpi": args.pdf_compress_dpi,
+            "render_diagnostics": result.get("render_diagnostics", {}),
             "invocation": build_stage_invocation_metadata(
                 stage="render",
                 stage_spec_schema_version=stage_spec_schema_version,

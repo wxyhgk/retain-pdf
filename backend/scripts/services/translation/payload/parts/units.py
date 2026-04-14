@@ -111,11 +111,12 @@ def _formula_segment_count(source_text: str) -> int:
 
 def _is_heavy_group(combined_source: str, items: list[dict]) -> tuple[bool, str]:
     segment_count = _formula_segment_count(combined_source)
+    continuation_group = str(items[0].get("continuation_group", "") or "").strip() if items else ""
     if segment_count > HEAVY_GROUP_MAX_FORMULA_SEGMENTS:
         return True, "formula_heavy_group"
     if segment_count > FORMULA_SEGMENT_WINDOW_TARGET_COUNT:
         return True, "formula_windowed_group"
-    if len(combined_source) > HEAVY_GROUP_MAX_SOURCE_CHARS:
+    if len(combined_source) > HEAVY_GROUP_MAX_SOURCE_CHARS and not continuation_group:
         return True, "long_continuation_group"
     if len(items) > HEAVY_GROUP_MAX_MEMBERS:
         return True, "large_continuation_group"

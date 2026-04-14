@@ -15,13 +15,28 @@ def redact_translated_text_areas(
     translated_items: list[dict],
     fill_background: bool | None = None,
     cover_only: bool = False,
-) -> None:
+    diagnostics: dict[str, object] | None = None,
+) -> dict[str, object]:
     image_page = page_has_large_background_image(page)
     valid_items = iter_valid_redaction_items(translated_items, image_page=image_page)
     if not valid_items:
-        return
+        result = {
+            "items": 0,
+            "raw_removable_rects": 0,
+            "merged_removable_rects": 0,
+            "cover_rects": 0,
+            "fast_page_cover_only": False,
+            "item_fast_cover_count": 0,
+            "route": "empty",
+        }
+        if diagnostics is not None:
+            diagnostics.update(result)
+        return result
 
-    apply_redaction_route(page, valid_items, fill_background=fill_background, cover_only=cover_only)
+    result = apply_redaction_route(page, valid_items, fill_background=fill_background, cover_only=cover_only)
+    if diagnostics is not None:
+        diagnostics.update(result)
+    return result
 
 
 __all__ = [

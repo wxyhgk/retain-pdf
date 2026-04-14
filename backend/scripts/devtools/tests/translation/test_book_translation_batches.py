@@ -125,6 +125,32 @@ def test_fragmented_formula_continuation_group_stays_grouped() -> None:
     assert "group_split_reason" not in payload[0] or not payload[0]["group_split_reason"]
 
 
+def test_long_continuation_group_stays_grouped_when_not_formula_heavy() -> None:
+    def member(item_id: str, source: str):
+        return {
+            "item_id": item_id,
+            "translation_unit_id": "__cg__:long-continuation",
+            "translation_unit_kind": "group",
+            "translation_unit_member_ids": ["a", "b"],
+            "block_type": "text",
+            "should_translate": True,
+            "protected_source_text": source,
+            "source_text": source,
+            "continuation_group": "cg-long",
+            "metadata": {"structure_role": "body"},
+        }
+
+    text_a = " ".join(f"left segment {idx} discusses correlated quantum chemistry" for idx in range(40))
+    text_b = " ".join(f"right segment {idx} continues the same paragraph and should stay grouped" for idx in range(40))
+    payload = [member("a", text_a), member("b", text_b)]
+    units = pending_translation_items(payload)
+
+    assert [unit["item_id"] for unit in units] == ["__cg__:long-continuation"]
+    assert units[0]["continuation_group"] == "cg-long"
+    assert payload[0]["translation_unit_kind"] == "group"
+    assert payload[1]["translation_unit_kind"] == "group"
+
+
 def test_smarter_batches_group_low_risk_items_and_keep_complex_items_single() -> None:
     context = build_translation_control_context()
     batchable_text = "This sentence describes antibacterial activity and provides enough body text for translation."
@@ -148,7 +174,7 @@ def test_smarter_batches_group_low_risk_items_and_keep_complex_items_single() ->
     assert all(item.get("_batched_plain_candidate") for item in batches[0])
 
 
-def test_smarter_batches_allow_continuation_group_when_block_is_low_risk() -> None:
+def test_smarter_batches_keep_continuation_group_out_of_batched_plain_path_even_without_placeholders() -> None:
     context = build_translation_control_context()
     pending = [
         _item(
@@ -168,8 +194,8 @@ def test_smarter_batches_allow_continuation_group_when_block_is_low_risk() -> No
         translation_context=context,
     )
     assert immediate == []
-    assert [[item["item_id"] for item in batch] for batch in batches] == [["a", "b"]]
-    assert all(item.get("_batched_plain_candidate") for item in batches[0])
+    assert [[item["item_id"] for item in batch] for batch in batches] == [["a"], ["b"]]
+    assert all(not batch[0].get("_batched_plain_candidate") for batch in batches)
 
 
 def test_smarter_batches_keep_continuation_group_with_placeholders_out_of_batched_plain_path() -> None:

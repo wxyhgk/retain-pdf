@@ -138,6 +138,7 @@ def build_book_from_translations(
         end_page=stop,
     )
 
+    render_diagnostics: dict[str, object] = {}
     try:
         if render_mode == "dual":
             build_dual_book_pdf(
@@ -154,6 +155,7 @@ def build_book_from_translations(
                 cover_only=False,
             )
             compress_pdf_images_only(output_pdf_path, dpi=pdf_compress_dpi)
+            render_diagnostics = {"mode": "dual"}
             return len(selected_pages)
 
         if extract_selected_pages:
@@ -165,7 +167,7 @@ def build_book_from_translations(
                     page_idx - start: items
                     for page_idx, items in selected_pages.items()
                 }
-                overlay_translated_pages_on_doc(
+                overlay_diagnostics = overlay_translated_pages_on_doc(
                     temp_doc,
                     remapped_pages,
                     stem="book-overlay",
@@ -177,17 +179,19 @@ def build_book_from_translations(
                     temp_root=default_typst_temp_root(output_pdf_path),
                     cover_only=False,
                 )
+                render_diagnostics = dict(overlay_diagnostics)
                 save_optimized_pdf(temp_doc, output_pdf_path)
             finally:
                 temp_doc.close()
                 source_doc.close()
             compress_pdf_images_only(output_pdf_path, dpi=pdf_compress_dpi)
+            build_book_from_translations.last_render_diagnostics = render_diagnostics
             return stop - start + 1
 
         if render_mode in {"compact", "direct", "overlay"}:
             if render_mode in {"compact", "direct"}:
                 print(f"render mode '{render_mode}' is deprecated; using typst overlay instead", flush=True)
-            build_book_typst_pdf(
+            overlay_diagnostics = build_book_typst_pdf(
                 source_pdf_path=render_source_pdf_path,
                 output_pdf_path=output_pdf_path,
                 translated_pages=selected_pages,
@@ -198,7 +202,9 @@ def build_book_from_translations(
                 font_family=typst_font_family,
                 cover_only=False,
             )
+            render_diagnostics = dict(overlay_diagnostics)
             compress_pdf_images_only(output_pdf_path, dpi=pdf_compress_dpi)
+            build_book_from_translations.last_render_diagnostics = render_diagnostics
             return len(selected_pages)
 
         if render_mode == "typst":
@@ -213,9 +219,10 @@ def build_book_from_translations(
                 font_family=typst_font_family,
             )
             compress_pdf_images_only(output_pdf_path, dpi=pdf_compress_dpi)
+            build_book_from_translations.last_render_diagnostics = {"mode": "typst_background"}
             return len(selected_pages)
 
-        build_book_typst_pdf(
+        overlay_diagnostics = build_book_typst_pdf(
             source_pdf_path=render_source_pdf_path,
             output_pdf_path=output_pdf_path,
             translated_pages=selected_pages,
@@ -226,9 +233,13 @@ def build_book_from_translations(
             font_family=typst_font_family,
             cover_only=False,
         )
+        render_diagnostics = dict(overlay_diagnostics)
         compress_pdf_images_only(output_pdf_path, dpi=pdf_compress_dpi)
+        build_book_from_translations.last_render_diagnostics = render_diagnostics
         return len(selected_pages)
     finally:
+        if not hasattr(build_book_from_translations, "last_render_diagnostics"):
+            build_book_from_translations.last_render_diagnostics = render_diagnostics
         for temp_source_path in temp_source_paths:
             temp_source_path.unlink(missing_ok=True)
 
@@ -270,6 +281,7 @@ def build_book_pipeline(
         "output_pdf_path": output_pdf_path,
         "pages_rendered": pages_rendered,
         "extract_selected_pages": extract_selected_pages,
+        "render_diagnostics": dict(getattr(build_book_from_translations, "last_render_diagnostics", {}) or {}),
     }
 
 
@@ -330,4 +342,5 @@ def run_render_stage(
         "pages_rendered": pages_rendered,
         "effective_render_mode": effective_render_mode,
         "extract_selected_pages": extract_selected_pages,
+        "render_diagnostics": dict(getattr(build_book_from_translations, "last_render_diagnostics", {}) or {}),
     }

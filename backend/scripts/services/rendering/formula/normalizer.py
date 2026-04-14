@@ -187,6 +187,8 @@ def normalize_formula_for_latex_math(formula_text: str) -> str:
     expr = re.sub(r"\s*\\end\{array\}", "", expr)
     expr = re.sub(r"\\cal\s+([A-Za-z])", r"\\mathcal{\1}", expr)
     expr = re.sub(r"\\mathscr\b", r"\\mathcal", expr)
+    expr = re.sub(r"\\rrangle\b", r"\\rangle", expr)
+    expr = re.sub(r"\\llangle\b", r"\\langle", expr)
     expr = re.sub(r"\\Breve\b", r"\\breve", expr)
     expr = re.sub(r"\\Vec\b", r"\\vec", expr)
     expr = re.sub(r"\\textsuperscript\s*\{\s*([^{}]+?)\s*\}", r"^{\1}", expr)
