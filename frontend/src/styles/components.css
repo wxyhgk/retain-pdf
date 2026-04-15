@@ -170,6 +170,13 @@
     gap: 14px;
   }
 
+  .credential-dialog-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #6e6e73;
+  }
+
   .developer-dialog-body {
     gap: 12px;
     padding-top: 16px;
@@ -2648,7 +2655,6 @@
 }
 app-shell-header,
 browser-credentials-dialog,
-desktop-settings-dialog,
 desktop-setup-dialog,
 developer-auth-dialog,
 developer-settings-dialog,

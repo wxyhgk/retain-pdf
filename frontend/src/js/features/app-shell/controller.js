@@ -83,7 +83,6 @@ export function mountAppShellFeature({
       "developer-dialog",
       "browser-credentials-dialog",
       "desktop-setup-dialog",
-      "desktop-settings-dialog",
       "page-range-dialog",
       "status-detail-dialog",
       "reader-dialog",

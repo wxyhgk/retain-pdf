@@ -19,6 +19,7 @@ export function mountAppActionsFeature({
   collectRunPayload,
   getBrowserCredentialsFeature,
   getJobRuntimeFeature,
+  onDesktopConfigSaved,
 }) {
   async function submitForm(event) {
     event.preventDefault();
@@ -107,22 +108,7 @@ export function mountAppActionsFeature({
     setDesktopBusy("正在保存配置并启动服务…");
     try {
       await saveDesktopConfig(mineruToken, modelApiKey, checkApiConnectivity);
-      setDesktopBusy("");
-    } catch (err) {
-      setDesktopBusy(err.message || String(err));
-    }
-  }
-
-  async function handleDesktopSettingsSave() {
-    const mineruToken = $("settings-mineru-token").value.trim();
-    const modelApiKey = $("settings-model-api-key").value.trim();
-    if (!mineruToken || !modelApiKey) {
-      setDesktopBusy("请先填写完整的 Key。");
-      return;
-    }
-    setDesktopBusy("正在保存设置…");
-    try {
-      await saveDesktopConfig(mineruToken, modelApiKey, checkApiConnectivity);
+      onDesktopConfigSaved?.();
       setDesktopBusy("");
     } catch (err) {
       setDesktopBusy(err.message || String(err));
@@ -139,7 +125,6 @@ export function mountAppActionsFeature({
 
   return {
     checkApiConnectivity,
-    handleDesktopSettingsSave,
     handleDesktopSetupSave,
     handleOpenOutputDir,
     submitForm,
