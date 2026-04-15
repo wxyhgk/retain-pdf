@@ -1,4 +1,4 @@
-import { apiBase, buildApiHeaders, isMockMode } from "./config.js";
+import { apiBase, buildApiHeaders, buildFrontendPageUrl, isMockMode } from "./config.js";
 import { API_PREFIX } from "./constants.js";
 import { $ } from "./dom.js";
 import {
@@ -66,9 +66,9 @@ function buildReaderPageUrl(jobId) {
   if (!normalizedJobId) {
     return "";
   }
-  const url = new URL("./reader.html", window.location.href);
-  url.searchParams.set("job_id", normalizedJobId);
-  return url.toString();
+  return buildFrontendPageUrl("./reader.html", {
+    job_id: normalizedJobId,
+  });
 }
 
 function parseIsoTime(value) {

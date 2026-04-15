@@ -1,4 +1,5 @@
 import { $ } from "../../dom.js";
+import { buildFrontendPageUrl } from "../../config.js";
 
 export function mountStatusDetailFeature() {
   function buildDetailPageUrl(jobId) {
@@ -6,9 +7,9 @@ export function mountStatusDetailFeature() {
     if (!normalizedJobId) {
       return "";
     }
-    const url = new URL("./detail.html", window.location.href);
-    url.searchParams.set("job_id", normalizedJobId);
-    return url.toString();
+    return buildFrontendPageUrl("./detail.html", {
+      job_id: normalizedJobId,
+    });
   }
 
   function dialogComponent() {

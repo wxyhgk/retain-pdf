@@ -17,6 +17,37 @@ const desktopBridge = tauriInternals && typeof tauriInternals.invoke === "functi
     }
   : null;
 
+export function isFileProtocol() {
+  return window.location.protocol === "file:";
+}
+
+export function buildFrontendPageUrl(relativePath, params = {}) {
+  const url = new URL(relativePath, window.location.href);
+  for (const [key, value] of Object.entries(params || {})) {
+    const normalized = `${value ?? ""}`.trim();
+    if (!normalized) {
+      url.searchParams.delete(key);
+      continue;
+    }
+    url.searchParams.set(key, normalized);
+  }
+  return url.toString();
+}
+
+export function readerMessageTargetOrigin() {
+  return isFileProtocol() ? "*" : window.location.origin;
+}
+
+export function isTrustedWindowMessage(event, expectedSource = null) {
+  if (expectedSource && event.source !== expectedSource) {
+    return false;
+  }
+  if (isFileProtocol()) {
+    return event.origin === "null" || !event.origin;
+  }
+  return event.origin === window.location.origin;
+}
+
 export function apiBase() {
   if (typeof runtimeConfig.apiBase === "string" && runtimeConfig.apiBase.trim()) {
     return runtimeConfig.apiBase.trim().replace(/\/$/, "");

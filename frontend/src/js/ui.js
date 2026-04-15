@@ -1,4 +1,5 @@
 import { $ } from "./dom.js";
+import { buildFrontendPageUrl } from "./config.js";
 import { DEFAULT_FILE_LABEL } from "./constants.js";
 import { state } from "./state.js";
 import {
@@ -711,9 +712,9 @@ function buildReaderPageUrl(jobId) {
   if (!normalizedJobId) {
     return "";
   }
-  const url = new URL("./reader.html", window.location.href);
-  url.searchParams.set("job_id", normalizedJobId);
-  return url.toString();
+  return buildFrontendPageUrl("./reader.html", {
+    job_id: normalizedJobId,
+  });
 }
 
 export function updateActionButtons(job, manifestPayload = null) {

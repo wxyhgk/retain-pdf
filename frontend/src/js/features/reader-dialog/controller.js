@@ -1,4 +1,5 @@
 import { $ } from "../../dom.js";
+import { buildFrontendPageUrl, isTrustedWindowMessage } from "../../config.js";
 import { resolveJobActions } from "../../job.js";
 
 let pdfDocumentModulePromise = null;
@@ -259,9 +260,9 @@ export function mountReaderDialogFeature({
     if (!normalizedJobId) {
       return "";
     }
-    const url = new URL("./reader.html", window.location.href);
-    url.searchParams.set("job_id", normalizedJobId);
-    return url.toString();
+    return buildFrontendPageUrl("./reader.html", {
+      job_id: normalizedJobId,
+    });
   }
 
   function buildReaderRouteUrl(jobId) {
@@ -491,7 +492,8 @@ export function mountReaderDialogFeature({
       }, 1200);
     });
     window.addEventListener("message", (event) => {
-      if (event.origin !== window.location.origin) {
+      const frameWindow = $("reader-dialog-frame")?.contentWindow || null;
+      if (!isTrustedWindowMessage(event, frameWindow)) {
         return;
       }
       const data = event.data;
