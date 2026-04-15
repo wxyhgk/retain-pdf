@@ -1,0 +1,13 @@
+{
+  "name": "layout-fit-lab",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "extract-samples": "python3 scripts/extract_block_samples.py",
+    "serve": "python3 -m http.server 4173"
+  },
+  "dependencies": {
+    "@chenglou/pretext": "0.0.4",
+    "pdfjs-dist": "^4.8.69"
+  }
+}

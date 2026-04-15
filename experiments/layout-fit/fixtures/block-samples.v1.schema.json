@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "block-samples.v1.schema.json",
+  "title": "Layout Fit Block Samples",
+  "type": "object",
+  "required": ["schema", "schema_version", "source_job_id", "source_pdf_page_count", "samples"],
+  "properties": {
+    "schema": { "const": "layout_fit_block_samples" },
+    "schema_version": { "const": "1.0" },
+    "source_job_id": { "type": "string" },
+    "source_job_root": { "type": "string" },
+    "source_pdf_page_count": { "type": "integer", "minimum": 1 },
+    "samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sample_id",
+          "job_id",
+          "block_id",
+          "page_index",
+          "block_index",
+          "type",
+          "sub_type",
+          "page",
+          "target_box",
+          "source_text",
+          "fit_text",
+          "source_pdf_href",
+          "source_pdf_page_href"
+        ],
+        "properties": {
+          "sample_id": { "type": "string" },
+          "job_id": { "type": "string" },
+          "block_id": { "type": "string" },
+          "page_index": { "type": "integer", "minimum": 0 },
+          "block_index": { "type": "integer", "minimum": 0 },
+          "type": { "type": "string" },
+          "sub_type": { "type": "string" },
+          "page": {
+            "type": "object",
+            "required": ["width", "height", "unit"],
+            "properties": {
+              "width": { "type": "number" },
+              "height": { "type": "number" },
+              "unit": { "type": "string" }
+            }
+          },
+          "target_box": {
+            "type": "object",
+            "required": ["x", "y", "width", "height", "unit"],
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" },
+              "width": { "type": "number" },
+              "height": { "type": "number" },
+              "unit": { "type": "string" }
+            }
+          },
+          "source_text": { "type": "string" },
+          "translated_text": { "type": "string" },
+          "fit_text": { "type": "string" },
+          "source_pdf_href": { "type": "string" },
+          "source_pdf_page_href": { "type": "string" },
+          "source_line_count": { "type": "integer", "minimum": 0 },
+          "typst": {
+            "type": "object",
+            "properties": {
+              "body_name": { "type": "string" },
+              "body_expr": { "type": "string" },
+              "width_pt": { "type": "number" },
+              "height_pt": { "type": "number" },
+              "text_size_pt": { "type": "number" },
+              "leading_em": { "type": "number" },
+              "fit_height_pt": { "type": "number" },
+              "max_size_pt": { "type": "number" },
+              "min_size_pt": { "type": "number" },
+              "max_leading_em": { "type": "number" },
+              "min_leading_em": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

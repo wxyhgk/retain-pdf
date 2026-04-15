@@ -3,12 +3,15 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::job_failure::classify_job_failure;
 use crate::ocr_provider::OcrProviderDiagnostics;
 use crate::storage_paths::{
-    resolve_data_path, resolve_markdown_path, resolve_normalization_report,
-    resolve_normalized_document, resolve_output_pdf, resolve_translation_manifest,
+    resolve_markdown_path, resolve_normalization_report, resolve_normalized_document,
+    resolve_output_pdf,
 };
+#[cfg(test)]
+use crate::job_failure::classify_job_failure;
+#[cfg(test)]
+use crate::storage_paths::{resolve_data_path, resolve_translation_manifest};
 
 use super::common::{JobStatusKind, UploadRecord, UploadView, WorkflowKind};
 use super::defaults::{default_event_limit, default_limit};
@@ -548,6 +551,7 @@ pub fn build_artifact_manifest(
     }
 }
 
+#[cfg(test)]
 pub fn job_to_detail(
     job: &JobSnapshot,
     base_url: &str,
@@ -618,6 +622,7 @@ pub fn job_to_detail(
     }
 }
 
+#[cfg(test)]
 pub fn job_to_list_item(
     job: &JobSnapshot,
     base_url: &str,
@@ -659,6 +664,7 @@ pub fn summarize_list_invocation(items: &[JobListItemView]) -> JobListInvocation
     summary
 }
 
+#[cfg(test)]
 fn build_ocr_job_summary(job: &JobSnapshot, base_url: &str) -> Option<OcrJobSummaryView> {
     let artifacts = job.artifacts.as_ref()?;
     let ocr_job_id = artifacts.ocr_job_id.as_ref()?;
@@ -683,6 +689,7 @@ pub fn upload_to_response(upload: &UploadRecord) -> UploadView {
     }
 }
 
+#[cfg(test)]
 pub fn load_normalization_summary(
     job: &JobSnapshot,
     data_root: &Path,
@@ -747,6 +754,7 @@ pub fn load_normalization_summary(
     })
 }
 
+#[cfg(test)]
 pub fn load_glossary_summary(
     job: &JobSnapshot,
     data_root: &Path,
@@ -755,6 +763,7 @@ pub fn load_glossary_summary(
         .or_else(|| load_glossary_summary_from_pipeline_summary(job, data_root))
 }
 
+#[cfg(test)]
 pub fn load_invocation_summary(
     job: &JobSnapshot,
     data_root: &Path,
@@ -763,6 +772,7 @@ pub fn load_invocation_summary(
         .or_else(|| load_invocation_summary_from_pipeline_summary(job, data_root))
 }
 
+#[cfg(test)]
 fn load_invocation_summary_from_manifest(
     job: &JobSnapshot,
     data_root: &Path,
@@ -771,6 +781,7 @@ fn load_invocation_summary_from_manifest(
     load_invocation_summary_from_json_path(&path)
 }
 
+#[cfg(test)]
 fn load_invocation_summary_from_pipeline_summary(
     job: &JobSnapshot,
     data_root: &Path,
@@ -780,6 +791,7 @@ fn load_invocation_summary_from_pipeline_summary(
     load_invocation_summary_from_json_path(&path)
 }
 
+#[cfg(test)]
 fn load_invocation_summary_from_json_path(path: &Path) -> Option<InvocationSummaryView> {
     let payload: Value = serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()?;
     let summary: InvocationSummaryView =
@@ -794,6 +806,7 @@ fn load_invocation_summary_from_json_path(path: &Path) -> Option<InvocationSumma
     }
 }
 
+#[cfg(test)]
 fn load_glossary_summary_from_manifest(
     job: &JobSnapshot,
     data_root: &Path,
@@ -802,6 +815,7 @@ fn load_glossary_summary_from_manifest(
     load_glossary_summary_from_json_path(&path)
 }
 
+#[cfg(test)]
 fn load_glossary_summary_from_pipeline_summary(
     job: &JobSnapshot,
     data_root: &Path,
@@ -811,6 +825,7 @@ fn load_glossary_summary_from_pipeline_summary(
     load_glossary_summary_from_json_path(&path)
 }
 
+#[cfg(test)]
 fn load_glossary_summary_from_json_path(path: &Path) -> Option<GlossaryUsageSummaryView> {
     let payload: Value = serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()?;
     let summary: GlossaryUsageSummaryView =
@@ -840,6 +855,7 @@ pub fn to_absolute_url(base_url: &str, path: &str) -> String {
     format!("{}{}", base_url.trim_end_matches('/'), path)
 }
 
+#[cfg(test)]
 fn job_failure_to_legacy_view(failure: &JobFailureInfo) -> JobFailureDiagnosticView {
     JobFailureDiagnosticView {
         failed_stage: failure.stage.clone(),
@@ -1253,7 +1269,9 @@ mod tests {
 
         let mut job = build_job("job-invocation-summary", WorkflowKind::Render);
         job.artifacts = Some(crate::models::JobArtifacts {
-            summary: Some("jobs/job-invocation-summary/artifacts/pipeline_summary.json".to_string()),
+            summary: Some(
+                "jobs/job-invocation-summary/artifacts/pipeline_summary.json".to_string(),
+            ),
             ..Default::default()
         });
 

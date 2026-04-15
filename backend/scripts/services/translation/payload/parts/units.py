@@ -118,7 +118,7 @@ def _is_heavy_group(combined_source: str, items: list[dict]) -> tuple[bool, str]
         return True, "formula_windowed_group"
     if len(combined_source) > HEAVY_GROUP_MAX_SOURCE_CHARS and not continuation_group:
         return True, "long_continuation_group"
-    if len(items) > HEAVY_GROUP_MAX_MEMBERS:
+    if len(items) > HEAVY_GROUP_MAX_MEMBERS and not continuation_group:
         return True, "large_continuation_group"
     return False, ""
 
@@ -204,6 +204,7 @@ def _build_group_translation_unit(unit_id: str, items: list[dict]) -> dict | Non
         "item_id": unit_id,
         "translation_unit_id": unit_id,
         "block_type": first_item.get("block_type", "text"),
+        "math_mode": str(first_item.get("math_mode", "placeholder") or "placeholder"),
         "metadata": dict(first_item.get("metadata", {}) or {}),
         "formula_map": formula_map,
         "protected_map": protected_map,

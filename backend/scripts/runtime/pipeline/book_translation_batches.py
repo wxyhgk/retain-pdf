@@ -8,6 +8,7 @@ from pathlib import Path
 
 from services.translation.llm.control_context import TranslationControlContext
 from services.translation.llm.deepseek_client import is_transport_error
+from services.translation.llm.placeholder_guard import has_formula_placeholders
 from services.translation.llm.placeholder_guard import result_entry
 from services.translation.llm.placeholder_guard import placeholder_sequence
 from services.translation.llm.placeholder_guard import should_force_translate_body_text
@@ -175,6 +176,8 @@ def _is_fast_path_keep_origin_item(item: dict) -> tuple[bool, str]:
 def _is_low_risk_batchable_item(item: dict, *, translation_context: TranslationControlContext | None) -> bool:
     if translation_context is None:
         return False
+    if str(item.get("math_mode", "placeholder") or "placeholder").strip() == "direct_typst":
+        return False
     if str(item.get("continuation_group", "") or "").strip():
         return False
     if str(item.get("translation_unit_id", "") or "").startswith(GROUP_ITEM_PREFIX):
@@ -237,11 +240,7 @@ def _is_single_slow_batch(batch: list[dict]) -> bool:
     if len(batch) != 1:
         return False
     item = batch[0]
-    return bool(
-        str(item.get("continuation_group", "") or "").strip()
-        or str(item.get("translation_unit_id", "") or "").startswith(GROUP_ITEM_PREFIX)
-        or item.get("_heavy_formula_split_applied")
-    )
+    return bool(item.get("_heavy_formula_split_applied"))
 
 
 def _classify_translation_batches(

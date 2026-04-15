@@ -1,5 +1,6 @@
 use std::time::{Duration, Instant};
 
+use crate::db::Db;
 use crate::error::AppError;
 use crate::job_events::persist_job;
 use crate::job_runner::{request_cancel, terminate_job_process_tree};
@@ -10,7 +11,7 @@ use crate::AppState;
 const SYNC_BUNDLE_WAIT_INTERVAL_MS: u64 = 1500;
 
 pub async fn wait_for_terminal_job(
-    state: &AppState,
+    db: &Db,
     job_id: &str,
     timeout_seconds: i64,
 ) -> Result<JobSnapshot, AppError> {
@@ -21,7 +22,7 @@ pub async fn wait_for_terminal_job(
     };
     let started = Instant::now();
     loop {
-        let job = load_job_or_404(state, job_id)?;
+        let job = load_job_or_404(db, job_id)?;
         match job.status {
             JobStatusKind::Succeeded => return Ok(job),
             JobStatusKind::Failed => {
@@ -56,7 +57,7 @@ pub async fn cancel_job(
     job_id: &str,
     ocr_only: bool,
 ) -> Result<JobSnapshot, AppError> {
-    let mut job = load_job_or_404(state, job_id)?;
+    let mut job = load_job_or_404(state.db.as_ref(), job_id)?;
     if ocr_only && !matches!(job.workflow, crate::models::WorkflowKind::Ocr) {
         return Err(AppError::not_found(format!("ocr job not found: {job_id}")));
     }

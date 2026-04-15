@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::config::AppConfig;
 use crate::error::AppError;
 use crate::job_events::persist_job;
 use crate::job_runner::{build_command, build_ocr_command, spawn_job};
@@ -7,41 +8,20 @@ use crate::models::{JobSnapshot, ResolvedJobSpec, UploadRecord};
 use crate::storage_paths::{attach_job_paths, build_job_paths};
 use crate::AppState;
 
-pub fn build_and_start_job(
-    state: &AppState,
-    request: ResolvedJobSpec,
-    command_kind: JobCommandKind,
-    init: JobInit,
-) -> Result<JobSnapshot, AppError> {
-    let job = build_job_snapshot(state, request, command_kind, init)?;
-    persist_and_spawn_job(state, job)
-}
-
-pub fn require_upload_path(upload: &UploadRecord) -> Result<PathBuf, AppError> {
-    let upload_path = PathBuf::from(&upload.stored_path);
-    if !upload_path.exists() {
-        return Err(AppError::not_found(format!(
-            "uploaded file missing: {}",
-            upload.stored_path
-        )));
-    }
-    Ok(upload_path)
-}
-
-fn build_job_snapshot(
-    state: &AppState,
+pub fn build_job_snapshot(
+    config: &AppConfig,
     request: ResolvedJobSpec,
     command_kind: JobCommandKind,
     init: JobInit,
 ) -> Result<JobSnapshot, AppError> {
     let job_id = request.job_id.clone();
-    let job_paths = build_job_paths(&state.config.output_root, &job_id)?;
+    let job_paths = build_job_paths(&config.output_root, &job_id)?;
     let command = match &command_kind {
         JobCommandKind::TranslationFromUpload { upload_path } => {
-            build_command(state, upload_path, &request, &job_paths)
+            build_command(config, upload_path, &request, &job_paths)
         }
         JobCommandKind::Ocr { upload_path } => {
-            build_ocr_command(state, upload_path.as_deref(), &request, &job_paths)
+            build_ocr_command(config, upload_path.as_deref(), &request, &job_paths)
         }
         JobCommandKind::Deferred { label } => vec![(*label).to_string()],
     };
@@ -69,10 +49,31 @@ fn build_job_snapshot(
     Ok(job)
 }
 
-fn persist_and_spawn_job(state: &AppState, job: JobSnapshot) -> Result<JobSnapshot, AppError> {
+pub fn start_job_execution(state: &AppState, job: JobSnapshot) -> Result<JobSnapshot, AppError> {
     persist_job(state, &job)?;
     spawn_job(state.clone(), job.job_id.clone());
     Ok(job)
+}
+
+pub fn build_and_start_job(
+    state: &AppState,
+    request: ResolvedJobSpec,
+    command_kind: JobCommandKind,
+    init: JobInit,
+) -> Result<JobSnapshot, AppError> {
+    let job = build_job_snapshot(state.config.as_ref(), request, command_kind, init)?;
+    start_job_execution(state, job)
+}
+
+pub fn require_upload_path(upload: &UploadRecord) -> Result<PathBuf, AppError> {
+    let upload_path = PathBuf::from(&upload.stored_path);
+    if !upload_path.exists() {
+        return Err(AppError::not_found(format!(
+            "uploaded file missing: {}",
+            upload.stored_path
+        )));
+    }
+    Ok(upload_path)
 }
 
 fn build_ocr_trace_id(job_id: &str) -> String {
@@ -209,7 +210,7 @@ mod tests {
         spec.workflow = WorkflowKind::Ocr;
 
         let job = build_job_snapshot(
-            &state,
+            state.config.as_ref(),
             spec,
             JobCommandKind::Ocr { upload_path: None },
             JobInit::ocr_default(),
@@ -234,7 +235,7 @@ mod tests {
         let upload_path = state.config.data_root.join("uploads").join("input.pdf");
 
         let job = build_job_snapshot(
-            &state,
+            state.config.as_ref(),
             spec,
             JobCommandKind::TranslationFromUpload {
                 upload_path: upload_path.clone(),
@@ -244,11 +245,11 @@ mod tests {
         .expect("build translation job snapshot");
 
         assert_eq!(job.job_id, "job-translation-test");
-        assert!(job.command.iter().any(|arg| arg == "--file-path"));
+        assert!(job.command.iter().any(|arg| arg == "--spec"));
         assert!(job
             .command
             .iter()
-            .any(|arg| arg == &upload_path.to_string_lossy().to_string()));
+            .any(|arg| arg.ends_with("mineru.spec.json")));
         let artifacts = job.artifacts.as_ref().expect("artifacts");
         assert!(artifacts
             .job_root
@@ -265,7 +266,7 @@ mod tests {
         spec.workflow = WorkflowKind::Translate;
 
         let job = build_job_snapshot(
-            &state,
+            state.config.as_ref(),
             spec,
             JobCommandKind::Deferred {
                 label: "translate-workflow-pending-ocr",
@@ -296,7 +297,7 @@ mod tests {
         spec.workflow = WorkflowKind::Render;
 
         let job = build_job_snapshot(
-            &state,
+            state.config.as_ref(),
             spec,
             JobCommandKind::Deferred {
                 label: "render-workflow-pending-artifacts",

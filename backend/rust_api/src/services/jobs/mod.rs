@@ -4,10 +4,19 @@ use crate::models::{JobSnapshot, JobStatusKind};
 
 mod control;
 mod creation;
+mod presentation;
 mod query;
 
 pub use control::{cancel_job, wait_for_terminal_job};
-pub use creation::{create_ocr_job, create_translation_job};
+pub use creation::{
+    build_translation_bundle_artifact, create_ocr_job, create_ocr_job_from_upload,
+    create_translation_job, store_pdf_upload, BundleArtifact, UploadedPdfInput,
+};
+pub use presentation::{
+    build_job_artifact_links_view, build_job_artifact_manifest_view, build_job_detail_view,
+    build_job_events_view, build_job_list_view, load_ocr_job_or_404,
+    load_ocr_job_with_supported_layout, load_supported_job,
+};
 pub use query::{ensure_supported_job_layout, list_jobs_filtered, load_job_or_404};
 
 pub use crate::services::job_validation::{

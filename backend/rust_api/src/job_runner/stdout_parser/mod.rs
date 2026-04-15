@@ -146,6 +146,14 @@ mod tests {
     }
 
     #[test]
+    fn apply_line_keeps_upload_done_in_processing_stage() {
+        let mut job = build_job();
+        apply_line(&mut job, "upload done: /tmp/source.pdf");
+        assert_eq!(job.stage.as_deref(), Some("mineru_processing"));
+        assert_eq!(job.stage_detail.as_deref(), Some("文件上传完成，等待 MinerU 处理"));
+    }
+
+    #[test]
     fn apply_line_updates_provider_diagnostics_for_batch_state() {
         let mut job = build_job();
         apply_line(&mut job, "batch_id: batch-123");

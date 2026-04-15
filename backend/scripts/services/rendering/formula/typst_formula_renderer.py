@@ -143,6 +143,7 @@ def _collapse_token_spacing(text: str) -> str:
 def convert_latexish_to_typst(expr: str) -> str:
     text = normalize_formula_for_latex_math(expr.strip().rstrip(","))
     text = _collapse_token_spacing(text)
+    text = re.sub(r"\\angle(?=[A-Za-z])", r"\\angle ", text)
     text = text.replace(r"\big", "")
     text = text.replace(r"\left", "")
     text = text.replace(r"\right", "")
@@ -153,6 +154,7 @@ def convert_latexish_to_typst(expr: str) -> str:
     text = text.replace(r"\lfloor", "floor.l")
     text = text.replace(r"\rfloor", "floor.r")
     text = text.replace(r"\cdot", " dot ")
+    text = text.replace(r"\angle", " angle ")
     text = re.sub(r"\\to\b", " -> ", text)
     text = text.replace(r"\prime", "prime")
 

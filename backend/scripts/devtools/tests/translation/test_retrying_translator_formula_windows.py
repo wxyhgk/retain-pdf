@@ -139,17 +139,17 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
         self.assertIn("<<<SEG id=1>>>", messages[0]["content"])
         self.assertNotIn('{"segments"', messages[0]["content"])
 
-    def test_long_formula_block_prefers_windowed_route(self):
+    def test_long_formula_block_stays_plain_route(self):
         module = load_retrying_translator()
         item = make_formula_item(20)
-        self.assertEqual(module._formula_segment_translation_route(item), "windowed")
+        self.assertEqual(module._formula_segment_translation_route(item), "none")
         self.assertFalse(module._should_use_formula_segment_translation(item))
 
-    def test_small_formula_inline_prefers_segmented_route(self):
+    def test_small_formula_inline_stays_plain_route(self):
         module = load_retrying_translator()
         item = make_small_formula_inline_item()
-        self.assertEqual(module._formula_segment_translation_route(item), "small_inline")
-        self.assertTrue(module._should_use_formula_segment_translation(item))
+        self.assertEqual(module._formula_segment_translation_route(item), "none")
+        self.assertFalse(module._should_use_formula_segment_translation(item))
 
     def test_small_formula_inline_uses_risk_score_not_single_phrase_only(self):
         load_retrying_translator()
@@ -163,7 +163,7 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
 
         self.assertGreaterEqual(score, 4)
 
-    def test_fragmented_formula_segments_do_not_force_segmented_route(self):
+    def test_fragmented_formula_segments_can_use_segmented_route_when_risk_threshold_is_met(self):
         module = load_retrying_translator()
         import services.translation.llm.segment_routing as segment_routing
 
@@ -172,8 +172,8 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
 
         self.assertGreater(len(segments), 4)
         self.assertLessEqual(segment_routing.effective_formula_segment_count(segments), 4)
-        self.assertEqual(module._formula_segment_translation_route(item), "none")
-        self.assertFalse(module._should_use_formula_segment_translation(item))
+        self.assertEqual(module._formula_segment_translation_route(item), "single")
+        self.assertTrue(module._should_use_formula_segment_translation(item))
 
     def test_prose_heavy_low_density_formula_block_prefers_plain_route(self):
         module = load_retrying_translator()
@@ -181,41 +181,44 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
         self.assertEqual(module._formula_segment_translation_route(item), "none")
         self.assertFalse(module._should_use_formula_segment_translation(item))
 
-    def test_formula_dense_prose_uses_dedicated_plain_route(self):
+    def test_formula_dense_prose_prefers_plain_route(self):
         module = load_retrying_translator()
         item = make_formula_dense_prose_item()
-        self.assertEqual(module._formula_segment_translation_route(item), "formula_dense_prose")
+        self.assertEqual(module._formula_segment_translation_route(item), "none")
         self.assertFalse(module._should_use_formula_segment_translation(item))
 
-    def test_plain_text_retry_uses_windowed_route_before_plain_text(self):
+    def test_plain_text_retry_for_large_formula_block_uses_plain_route(self):
         module = load_retrying_translator()
         import services.translation.llm.fallbacks as fallbacks
+        from services.translation.llm.control_context import build_translation_control_context
 
         item = make_formula_item(20)
         item["_heavy_formula_split_applied"] = True
         calls: list[str] = []
 
-        def fake_windowed(*args, **kwargs):
-            calls.append("windowed")
-            return {item["item_id"]: module._result_entry("translate", "窗口化结果 [[FORMULA_1]]")}
-
         def fake_plain(*args, **kwargs):
-            raise AssertionError("plain-text path should not be reached for this test")
+            calls.append("plain")
+            return {item["item_id"]: module._result_entry("translate", "普通结果 [[FORMULA_1]]")}
 
-        original_windowed = fallbacks.translate_single_item_formula_segment_windows_with_retries
         original_plain = fallbacks.translate_single_item_plain_text
         try:
-            fallbacks.translate_single_item_formula_segment_windows_with_retries = fake_windowed
             fallbacks.translate_single_item_plain_text = fake_plain
-            result = module._translate_single_item_plain_text_with_retries(item, request_label="unit")
+            result = fallbacks.translate_single_item_plain_text_with_retries(
+                item,
+                api_key="",
+                model="deepseek-chat",
+                base_url="https://api.deepseek.com/v1",
+                request_label="unit",
+                context=build_translation_control_context(mode="sci"),
+                diagnostics=None,
+            )
         finally:
-            fallbacks.translate_single_item_formula_segment_windows_with_retries = original_windowed
             fallbacks.translate_single_item_plain_text = original_plain
 
-        self.assertEqual(calls, ["windowed"])
+        self.assertEqual(calls, ["plain"])
         self.assertEqual(result[item["item_id"]]["decision"], "translate")
 
-    def test_small_formula_inline_uses_segmented_before_plain_text(self):
+    def test_small_formula_inline_uses_plain_text_directly(self):
         module = load_retrying_translator()
         import services.translation.llm.fallbacks as fallbacks
         from services.translation.llm.control_context import build_translation_control_context
@@ -225,11 +228,16 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
 
         def fake_single(*args, **kwargs):
             calls.append("segmented")
-            return {item["item_id"]: module._result_entry("translate", "功函数 <f1-6a9/>，也缩写为 <f2-ef6/>，可定义为提取一个电子所需的最小能量。")}
+            raise AssertionError("segmented path should not be used for low-placeholder inline formulas")
 
         def fake_plain(*args, **kwargs):
             calls.append("plain")
-            raise AssertionError("plain-text path should not be reached for small inline formula route")
+            return {
+                item["item_id"]: module._result_entry(
+                    "translate",
+                    "功函数 <f1-6a9/>，也缩写为 <f2-ef6/>，可定义为提取一个电子所需的最小能量。",
+                )
+            }
 
         original_single = fallbacks.translate_single_item_formula_segment_text_with_retries
         original_plain = fallbacks.translate_single_item_plain_text
@@ -249,13 +257,17 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
             fallbacks.translate_single_item_formula_segment_text_with_retries = original_single
             fallbacks.translate_single_item_plain_text = original_plain
 
-        self.assertEqual(calls, ["segmented"])
+        self.assertEqual(calls, ["plain"])
         self.assertEqual(
             result[item["item_id"]]["translation_diagnostics"]["route_path"],
-            ["block_level", "small_formula_inline"],
+            ["block_level"],
+        )
+        self.assertEqual(
+            result[item["item_id"]]["translation_diagnostics"]["output_mode_path"],
+            ["plain_text"],
         )
 
-    def test_formula_dense_prose_prefers_tagged_before_plain_text(self):
+    def test_formula_dense_prose_uses_plain_text_before_segmented(self):
         module = load_retrying_translator()
         import services.translation.llm.fallbacks as fallbacks
         from services.translation.llm.control_context import build_translation_control_context
@@ -263,8 +275,12 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
         item = make_formula_dense_prose_item()
         calls: list[str] = []
 
-        def fake_tagged(*args, **kwargs):
-            calls.append("tagged")
+        def fake_segmented(*args, **kwargs):
+            calls.append("segmented")
+            raise AssertionError("formula_dense_prose should stay on plain-text path")
+
+        def fake_plain(*args, **kwargs):
+            calls.append("plain")
             return {
                 item["item_id"]: module._result_entry(
                     "translate",
@@ -272,14 +288,10 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
                 )
             }
 
-        def fake_plain(*args, **kwargs):
-            calls.append("plain")
-            raise AssertionError("formula_dense_prose should try tagged-first before plain-text")
-
-        original_tagged = fallbacks.translate_single_item_stable_placeholder_text
+        original_segmented = fallbacks.translate_single_item_formula_segment_text_with_retries
         original_plain = fallbacks.translate_single_item_plain_text
         try:
-            fallbacks.translate_single_item_stable_placeholder_text = fake_tagged
+            fallbacks.translate_single_item_formula_segment_text_with_retries = fake_segmented
             fallbacks.translate_single_item_plain_text = fake_plain
             result = fallbacks.translate_single_item_plain_text_with_retries(
                 item,
@@ -291,13 +303,13 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
                 diagnostics=None,
             )
         finally:
-            fallbacks.translate_single_item_stable_placeholder_text = original_tagged
+            fallbacks.translate_single_item_formula_segment_text_with_retries = original_segmented
             fallbacks.translate_single_item_plain_text = original_plain
 
-        self.assertEqual(calls, ["tagged"])
+        self.assertEqual(calls, ["plain"])
         self.assertEqual(
             result[item["item_id"]]["translation_diagnostics"]["route_path"],
-            ["block_level", "formula_dense_prose", "tagged_placeholder_first"],
+            ["block_level"],
         )
 
     def test_heavy_formula_split_skips_formula_dense_prose_blocks(self):
@@ -470,53 +482,38 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
         self.assertEqual(payload["translation_diagnostics"]["degraded_chunk_count"], 1)
         self.assertIn("Sentence", payload["translated_text"])
 
-    def test_plain_text_retry_skips_windowed_fallback_for_single_window(self):
+    def test_single_segmented_failure_falls_back_to_plain_text(self):
         module = load_retrying_translator()
         import services.translation.llm.fallbacks as fallbacks
-        from services.translation.llm.control_context import build_translation_control_context, SegmentationPolicy
+        from services.translation.llm.control_context import build_translation_control_context
 
-        item = make_formula_item(2)
+        item = make_fragmented_formula_item()
         calls: list[str] = []
 
         def fake_single(*args, **kwargs):
             calls.append("single")
             raise ValueError("single failed")
 
-        def fake_windowed(*args, **kwargs):
-            calls.append("windowed")
-            raise AssertionError("windowed fallback should be skipped when only one window exists")
-
         def fake_plain(*args, **kwargs):
             calls.append("plain")
             return {item["item_id"]: module._result_entry("translate", "普通结果 [[FORMULA_1]]")}
 
         original_single = fallbacks.translate_single_item_formula_segment_text_with_retries
-        original_windowed = fallbacks.translate_single_item_formula_segment_windows_with_retries
         original_plain = fallbacks.translate_single_item_plain_text
         try:
             fallbacks.translate_single_item_formula_segment_text_with_retries = fake_single
-            fallbacks.translate_single_item_formula_segment_windows_with_retries = fake_windowed
             fallbacks.translate_single_item_plain_text = fake_plain
-            context = build_translation_control_context(mode="sci")
-            context = replace(
-                context,
-                segmentation_policy=SegmentationPolicy(
-                    prefer_plain_when_segment_count_leq=0,
-                    small_formula_inline_enabled=False,
-                ),
-            )
             result = fallbacks.translate_single_item_plain_text_with_retries(
                 item,
                 api_key="",
                 model="deepseek-chat",
                 base_url="https://api.deepseek.com/v1",
                 request_label="unit",
-                context=context,
+                context=build_translation_control_context(mode="sci"),
                 diagnostics=None,
             )
         finally:
             fallbacks.translate_single_item_formula_segment_text_with_retries = original_single
-            fallbacks.translate_single_item_formula_segment_windows_with_retries = original_windowed
             fallbacks.translate_single_item_plain_text = original_plain
 
         self.assertEqual(calls, ["single", "plain"])
@@ -752,7 +749,7 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
         self.assertGreaterEqual(len(seen), 2)
         self.assertEqual(result[item["item_id"]]["final_status"], "partially_translated")
 
-    def test_sentence_fallback_revalidates_merged_partial_output_without_blocking_warning_only_english(self):
+    def test_sentence_fallback_rejects_merged_partial_output_with_long_english_residue(self):
         module = load_retrying_translator()
         import services.translation.llm.fallbacks as fallbacks
         from services.translation.llm.control_context import build_translation_control_context
@@ -794,23 +791,19 @@ class RetryingTranslatorFormulaWindowTests(unittest.TestCase):
         try:
             fallbacks.translate_single_item_plain_text = fake_plain
             fallbacks.translate_single_item_plain_text_unstructured = fake_raw
-            result = fallbacks._sentence_level_fallback(
-                item,
-                api_key="",
-                model="deepseek-chat",
-                base_url="https://api.deepseek.com/v1",
-                request_label="unit",
-                context=build_translation_control_context(mode="sci"),
-                diagnostics=None,
-            )
+            with self.assertRaises(fallbacks.EnglishResidueError):
+                fallbacks._sentence_level_fallback(
+                    item,
+                    api_key="",
+                    model="deepseek-chat",
+                    base_url="https://api.deepseek.com/v1",
+                    request_label="unit",
+                    context=build_translation_control_context(mode="sci"),
+                    diagnostics=None,
+                )
         finally:
             fallbacks.translate_single_item_plain_text = original_plain
             fallbacks.translate_single_item_plain_text_unstructured = original_raw
-
-        payload = result[item["item_id"]]
-        self.assertEqual(payload["final_status"], "partially_translated")
-        self.assertIn("Electrochemical oxidations of nickel(II)(aryl)halide complexes", payload["translated_text"])
-        self.assertIn("或许更具信息量的是查看该研究。", payload["translated_text"])
 
     def test_partial_translation_payload_is_not_cacheable(self):
         load_retrying_translator()

@@ -158,7 +158,7 @@ pub async fn execute_ocr_job(
     job_artifacts_mut(&mut job).source_pdf = Some(source_pdf_string);
 
     job.command = build_normalize_ocr_command(
-        &state,
+        state.config.as_ref(),
         &job.request_payload,
         &workspace.job_paths,
         &workspace.layout_json_path,

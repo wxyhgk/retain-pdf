@@ -1,21 +1,18 @@
 use std::collections::HashMap;
 
+use crate::db::Db;
 use crate::error::AppError;
 use crate::models::{
     build_glossary_id, now_iso, CreateJobInput, GlossaryCsvParseInput, GlossaryEntryInput,
     GlossaryRecord, GlossaryUpsertInput,
 };
-use crate::AppState;
 
 const MAX_GLOSSARY_ENTRIES: usize = 200;
 const MAX_GLOSSARY_NAME_LEN: usize = 120;
 const MAX_GLOSSARY_TERM_LEN: usize = 200;
 const MAX_GLOSSARY_NOTE_LEN: usize = 500;
 
-pub fn create_glossary(
-    state: &AppState,
-    input: &GlossaryUpsertInput,
-) -> Result<GlossaryRecord, AppError> {
+pub fn create_glossary(db: &Db, input: &GlossaryUpsertInput) -> Result<GlossaryRecord, AppError> {
     let name = normalize_glossary_name(&input.name)?;
     let entries = normalize_glossary_entries(&input.entries)?;
     let now = now_iso();
@@ -26,16 +23,16 @@ pub fn create_glossary(
         created_at: now.clone(),
         updated_at: now,
     };
-    state.db.save_glossary(&record)?;
+    db.save_glossary(&record)?;
     Ok(record)
 }
 
 pub fn update_glossary(
-    state: &AppState,
+    db: &Db,
     glossary_id: &str,
     input: &GlossaryUpsertInput,
 ) -> Result<GlossaryRecord, AppError> {
-    let previous = load_glossary_or_404(state, glossary_id)?;
+    let previous = load_glossary_or_404(db, glossary_id)?;
     let record = GlossaryRecord {
         glossary_id: previous.glossary_id,
         name: normalize_glossary_name(&input.name)?,
@@ -43,12 +40,12 @@ pub fn update_glossary(
         created_at: previous.created_at,
         updated_at: now_iso(),
     };
-    state.db.save_glossary(&record)?;
+    db.save_glossary(&record)?;
     Ok(record)
 }
 
-pub fn list_glossaries(state: &AppState) -> Result<Vec<GlossaryRecord>, AppError> {
-    let mut items = state.db.list_glossaries()?;
+pub fn list_glossaries(db: &Db) -> Result<Vec<GlossaryRecord>, AppError> {
+    let mut items = db.list_glossaries()?;
     items.sort_by(|a, b| {
         b.updated_at
             .cmp(&a.updated_at)
@@ -58,18 +55,17 @@ pub fn list_glossaries(state: &AppState) -> Result<Vec<GlossaryRecord>, AppError
 }
 
 pub fn load_glossary_or_404(
-    state: &AppState,
+    db: &Db,
     glossary_id: &str,
 ) -> Result<GlossaryRecord, AppError> {
-    state
-        .db
+    db
         .get_glossary(glossary_id)
         .map_err(|_| AppError::not_found(format!("glossary not found: {glossary_id}")))
 }
 
-pub fn delete_glossary(state: &AppState, glossary_id: &str) -> Result<(), AppError> {
-    load_glossary_or_404(state, glossary_id)?;
-    state.db.delete_glossary(glossary_id)?;
+pub fn delete_glossary(db: &Db, glossary_id: &str) -> Result<(), AppError> {
+    load_glossary_or_404(db, glossary_id)?;
+    db.delete_glossary(glossary_id)?;
     Ok(())
 }
 
@@ -80,7 +76,7 @@ pub fn parse_glossary_csv(
 }
 
 pub fn resolve_task_glossary_request(
-    state: &AppState,
+    db: &Db,
     input: &CreateJobInput,
 ) -> Result<CreateJobInput, AppError> {
     let mut resolved = input.clone();
@@ -95,7 +91,7 @@ pub fn resolve_task_glossary_request(
         return Ok(resolved);
     }
 
-    let glossary = load_glossary_or_404(state, glossary_id)?;
+    let glossary = load_glossary_or_404(db, glossary_id)?;
     let base_entries = normalize_glossary_entries(&glossary.entries)?;
     let overridden_entry_count = count_overridden_entries(&base_entries, &inline_entries);
     let merged_entries = merge_glossary_entries(&base_entries, &inline_entries);
@@ -382,6 +378,7 @@ mod tests {
     use crate::config::AppConfig;
     use crate::db::Db;
     use crate::models::{CreateJobInput, GlossaryEntryInput};
+    use crate::AppState;
 
     use super::*;
 
@@ -516,7 +513,7 @@ mod tests {
     fn resolve_task_glossary_request_merges_resource_and_inline_entries() {
         let state = test_state();
         let glossary = create_glossary(
-            &state,
+            state.db.as_ref(),
             &GlossaryUpsertInput {
                 name: "chemistry".to_string(),
                 entries: vec![entry("DNA", "脱氧核糖核酸"), entry("abstract", "摘要")],
@@ -527,7 +524,8 @@ mod tests {
         input.translation.glossary_id = glossary.glossary_id.clone();
         input.translation.glossary_entries = vec![entry("DNA", "DNA"), entry("band gap", "带隙")];
 
-        let resolved = resolve_task_glossary_request(&state, &input).expect("resolve glossary");
+        let resolved =
+            resolve_task_glossary_request(state.db.as_ref(), &input).expect("resolve glossary");
 
         assert_eq!(resolved.translation.glossary_id, glossary.glossary_id);
         assert_eq!(resolved.translation.glossary_name, "chemistry");
@@ -539,19 +537,20 @@ mod tests {
     fn glossary_crud_round_trip() {
         let state = test_state();
         let created = create_glossary(
-            &state,
+            state.db.as_ref(),
             &GlossaryUpsertInput {
                 name: "semiconductor".to_string(),
                 entries: vec![entry("band gap", "带隙")],
             },
         )
         .expect("create glossary");
-        let loaded = load_glossary_or_404(&state, &created.glossary_id).expect("load glossary");
+        let loaded =
+            load_glossary_or_404(state.db.as_ref(), &created.glossary_id).expect("load glossary");
         assert_eq!(loaded.name, "semiconductor");
-        assert_eq!(list_glossaries(&state).expect("list glossaries").len(), 1);
+        assert_eq!(list_glossaries(state.db.as_ref()).expect("list glossaries").len(), 1);
 
         let updated = update_glossary(
-            &state,
+            state.db.as_ref(),
             &created.glossary_id,
             &GlossaryUpsertInput {
                 name: "physics".to_string(),
@@ -562,8 +561,9 @@ mod tests {
         assert_eq!(updated.name, "physics");
         assert_eq!(updated.entries.len(), 2);
 
-        delete_glossary(&state, &created.glossary_id).expect("delete glossary");
-        let err = load_glossary_or_404(&state, &created.glossary_id).expect_err("deleted glossary");
+        delete_glossary(state.db.as_ref(), &created.glossary_id).expect("delete glossary");
+        let err = load_glossary_or_404(state.db.as_ref(), &created.glossary_id)
+            .expect_err("deleted glossary");
         assert!(err.to_string().contains("not found"));
     }
 
@@ -574,7 +574,7 @@ mod tests {
             .map(|index| entry(&format!("term-{index}"), &format!("词-{index}")))
             .collect();
         let glossary = create_glossary(
-            &state,
+            state.db.as_ref(),
             &GlossaryUpsertInput {
                 name: "large".to_string(),
                 entries: resource_entries,
@@ -586,7 +586,8 @@ mod tests {
         input.translation.glossary_id = glossary.glossary_id;
         input.translation.glossary_entries = vec![entry("extra-term", "额外词")];
 
-        let err = resolve_task_glossary_request(&state, &input).expect_err("should reject");
+        let err = resolve_task_glossary_request(state.db.as_ref(), &input)
+            .expect_err("should reject");
         assert!(err
             .to_string()
             .contains("merged glossary entry count exceeds"));

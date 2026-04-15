@@ -3,6 +3,7 @@ export const state = {
   elapsedTimer: null,
   currentJobId: "",
   currentJobSnapshot: null,
+  currentJobManifest: null,
   currentJobStartedAt: "",
   currentJobFinishedAt: "",
   uploadId: "",

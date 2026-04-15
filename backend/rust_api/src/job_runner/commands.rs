@@ -1,9 +1,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use crate::config::AppConfig;
 use crate::models::ResolvedJobSpec;
 use crate::storage_paths::JobPaths;
-use crate::AppState;
 use anyhow::{Context, Result};
 use serde_json::json;
 
@@ -389,33 +389,25 @@ fn push_ocr_args(cmd: &mut CommandBuilder, request: &ResolvedJobSpec) {
 }
 
 pub(crate) fn build_command(
-    state: &AppState,
+    config: &AppConfig,
     upload_path: &Path,
     request: &ResolvedJobSpec,
     job_paths: &JobPaths,
 ) -> Vec<String> {
-    let spec_path = write_mineru_stage_spec(request, job_paths, upload_path)
-        .expect("write mineru stage spec");
-    let mut cmd = CommandBuilder::new(
-        &state.config.python_bin,
-        &state.config.run_mineru_case_script,
-        true,
-    );
+    let spec_path =
+        write_mineru_stage_spec(request, job_paths, upload_path).expect("write mineru stage spec");
+    let mut cmd = CommandBuilder::new(&config.python_bin, &config.run_mineru_case_script, true);
     cmd.path_arg("--spec", &spec_path);
     cmd.finish()
 }
 
 pub(crate) fn build_ocr_command(
-    state: &AppState,
+    config: &AppConfig,
     upload_path: Option<&Path>,
     request: &ResolvedJobSpec,
     job_paths: &JobPaths,
 ) -> Vec<String> {
-    let mut cmd = CommandBuilder::new(
-        &state.config.python_bin,
-        &state.config.run_ocr_job_script,
-        true,
-    );
+    let mut cmd = CommandBuilder::new(&config.python_bin, &config.run_ocr_job_script, true);
     if let Some(upload_path) = upload_path {
         cmd.path_arg("--file-path", upload_path);
     } else {
@@ -427,7 +419,7 @@ pub(crate) fn build_ocr_command(
 }
 
 pub(crate) fn build_translate_only_command(
-    state: &AppState,
+    config: &AppConfig,
     request: &ResolvedJobSpec,
     job_paths: &JobPaths,
     source_json_path: &Path,
@@ -442,40 +434,28 @@ pub(crate) fn build_translate_only_command(
         layout_json_path,
     )
     .expect("write translate stage spec");
-    let mut cmd = CommandBuilder::new(
-        &state.config.python_bin,
-        &state.config.run_translate_only_script,
-        true,
-    );
+    let mut cmd =
+        CommandBuilder::new(&config.python_bin, &config.run_translate_only_script, true);
     cmd.path_arg("--spec", &spec_path);
     cmd.finish()
 }
 
 pub(crate) fn build_render_only_command(
-    state: &AppState,
+    config: &AppConfig,
     request: &ResolvedJobSpec,
     job_paths: &JobPaths,
     source_pdf_path: &Path,
     translations_dir: &Path,
 ) -> Vec<String> {
-    let spec_path = write_render_stage_spec(
-        request,
-        job_paths,
-        source_pdf_path,
-        translations_dir,
-    )
-    .expect("write render stage spec");
-    let mut cmd = CommandBuilder::new(
-        &state.config.python_bin,
-        &state.config.run_render_only_script,
-        true,
-    );
+    let spec_path = write_render_stage_spec(request, job_paths, source_pdf_path, translations_dir)
+        .expect("write render stage spec");
+    let mut cmd = CommandBuilder::new(&config.python_bin, &config.run_render_only_script, true);
     cmd.path_arg("--spec", &spec_path);
     cmd.finish()
 }
 
 pub(crate) fn build_normalize_ocr_command(
-    state: &AppState,
+    config: &AppConfig,
     request: &ResolvedJobSpec,
     job_paths: &JobPaths,
     source_json_path: &Path,
@@ -494,11 +474,8 @@ pub(crate) fn build_normalize_ocr_command(
         provider_raw_dir,
     )
     .expect("write normalize stage spec");
-    let mut cmd = CommandBuilder::new(
-        &state.config.python_bin,
-        &state.config.run_normalize_ocr_script,
-        false,
-    );
+    let mut cmd =
+        CommandBuilder::new(&config.python_bin, &config.run_normalize_ocr_script, false);
     cmd.path_arg("--spec", &spec_path);
     cmd.finish()
 }
@@ -506,14 +483,11 @@ pub(crate) fn build_normalize_ocr_command(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::AppConfig;
-    use crate::db::Db;
     use crate::models::{CreateJobInput, WorkflowKind};
     use std::collections::HashSet;
     use std::sync::Arc;
-    use tokio::sync::{Mutex, RwLock, Semaphore};
 
-    fn test_state() -> AppState {
+    fn test_config() -> Arc<AppConfig> {
         let root =
             std::env::temp_dir().join(format!("rust-api-command-tests-{}", fastrand::u64(..)));
         let data_root = root.join("data");
@@ -528,7 +502,7 @@ mod tests {
         std::fs::create_dir_all(&rust_api_root).expect("create rust_api root");
         std::fs::create_dir_all(&scripts_dir).expect("create scripts dir");
 
-        let config = Arc::new(AppConfig {
+        Arc::new(AppConfig {
             project_root: root.clone(),
             rust_api_root,
             data_root: data_root.clone(),
@@ -552,18 +526,7 @@ mod tests {
             upload_max_pages: 0,
             api_keys: HashSet::new(),
             max_running_jobs: 1,
-        });
-
-        AppState {
-            config: config.clone(),
-            db: Arc::new(Db::new(
-                config.jobs_db_path.clone(),
-                config.data_root.clone(),
-            )),
-            downloads_lock: Arc::new(Mutex::new(())),
-            canceled_jobs: Arc::new(RwLock::new(HashSet::new())),
-            job_slots: Arc::new(Semaphore::new(1)),
-        }
+        })
     }
 
     fn build_request(workflow: WorkflowKind) -> ResolvedJobSpec {
@@ -579,8 +542,8 @@ mod tests {
         ResolvedJobSpec::from_input(input)
     }
 
-    fn build_paths(state: &AppState) -> JobPaths {
-        JobPaths::for_job(&state.config.output_root, "job-command-test")
+    fn build_paths(config: &AppConfig) -> JobPaths {
+        JobPaths::for_job(&config.output_root, "job-command-test")
     }
 
     fn contains(cmd: &[String], value: &str) -> bool {
@@ -595,11 +558,11 @@ mod tests {
 
     #[test]
     fn translate_only_command_uses_translation_stage_script() {
-        let state = test_state();
+        let config = test_config();
         let request = build_request(WorkflowKind::Translate);
-        let job_paths = build_paths(&state);
+        let job_paths = build_paths(config.as_ref());
         let cmd = build_translate_only_command(
-            &state,
+            config.as_ref(),
             &request,
             &job_paths,
             Path::new("/tmp/document.v1.json"),
@@ -609,11 +572,7 @@ mod tests {
 
         assert!(contains(
             &cmd,
-            &state
-                .config
-                .run_translate_only_script
-                .to_string_lossy()
-                .to_string()
+            &config.run_translate_only_script.to_string_lossy().to_string()
         ));
         assert!(contains(&cmd, "--spec"));
         assert!(!contains(&cmd, "--source-json"));
@@ -635,11 +594,11 @@ mod tests {
 
     #[test]
     fn render_only_command_uses_render_stage_script_and_artifacts() {
-        let state = test_state();
+        let config = test_config();
         let request = build_request(WorkflowKind::Render);
-        let job_paths = build_paths(&state);
+        let job_paths = build_paths(config.as_ref());
         let cmd = build_render_only_command(
-            &state,
+            config.as_ref(),
             &request,
             &job_paths,
             Path::new("/tmp/source.pdf"),
@@ -648,11 +607,7 @@ mod tests {
 
         assert!(contains(
             &cmd,
-            &state
-                .config
-                .run_render_only_script
-                .to_string_lossy()
-                .to_string()
+            &config.run_render_only_script.to_string_lossy().to_string()
         ));
         assert!(contains(&cmd, "--spec"));
         assert!(!contains(&cmd, "--mode"));
@@ -679,14 +634,14 @@ mod tests {
 
     #[test]
     fn normalize_command_writes_stage_spec_and_uses_spec_flag() {
-        let state = test_state();
+        let config = test_config();
         let mut request = build_request(WorkflowKind::Ocr);
         request.job_id = "job-command-test".to_string();
         request.ocr.provider = "mineru".to_string();
         request.ocr.model_version = "v1".to_string();
-        let job_paths = build_paths(&state);
+        let job_paths = build_paths(config.as_ref());
         let cmd = build_normalize_ocr_command(
-            &state,
+            config.as_ref(),
             &request,
             &job_paths,
             Path::new("/tmp/layout.json"),
@@ -698,11 +653,7 @@ mod tests {
 
         assert!(contains(
             &cmd,
-            &state
-                .config
-                .run_normalize_ocr_script
-                .to_string_lossy()
-                .to_string()
+            &config.run_normalize_ocr_script.to_string_lossy().to_string()
         ));
         assert!(contains(&cmd, "--spec"));
         assert!(!contains(&cmd, "--provider"));
@@ -720,12 +671,12 @@ mod tests {
 
     #[test]
     fn build_command_writes_mineru_stage_spec_and_hides_secrets() {
-        let state = test_state();
+        let config = test_config();
         let mut request = build_request(WorkflowKind::Mineru);
         request.job_id = "job-command-test".to_string();
-        let job_paths = build_paths(&state);
+        let job_paths = build_paths(config.as_ref());
         let cmd = build_command(
-            &state,
+            config.as_ref(),
             Path::new("/tmp/source/job.pdf"),
             &request,
             &job_paths,
@@ -733,11 +684,7 @@ mod tests {
 
         assert!(contains(
             &cmd,
-            &state
-                .config
-                .run_mineru_case_script
-                .to_string_lossy()
-                .to_string()
+            &config.run_mineru_case_script.to_string_lossy().to_string()
         ));
         assert!(contains(&cmd, "--spec"));
         assert!(!contains(&cmd, "--file-path"));
@@ -764,7 +711,7 @@ mod tests {
 
     #[test]
     fn translate_only_command_includes_glossary_metadata_and_payload() {
-        let state = test_state();
+        let config = test_config();
         let mut request = build_request(WorkflowKind::Translate);
         request.translation.glossary_id = "glossary-123".to_string();
         request.translation.glossary_name = "semiconductor".to_string();
@@ -789,9 +736,9 @@ mod tests {
                 context: "materials".to_string(),
             },
         ];
-        let job_paths = build_paths(&state);
+        let job_paths = build_paths(config.as_ref());
         let cmd = build_translate_only_command(
-            &state,
+            config.as_ref(),
             &request,
             &job_paths,
             Path::new("/tmp/document.v1.json"),
@@ -807,7 +754,11 @@ mod tests {
         assert_eq!(payload["params"]["glossary_resource_entry_count"], 2);
         assert_eq!(payload["params"]["glossary_inline_entry_count"], 1);
         assert_eq!(payload["params"]["glossary_overridden_entry_count"], 1);
-        assert!(payload["params"]["glossary_entries"].to_string().contains("band gap"));
-        assert!(payload["params"]["glossary_entries"].to_string().contains("态密度"));
+        assert!(payload["params"]["glossary_entries"]
+            .to_string()
+            .contains("band gap"));
+        assert!(payload["params"]["glossary_entries"]
+            .to_string()
+            .contains("态密度"));
     }
 }

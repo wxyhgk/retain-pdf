@@ -7,6 +7,7 @@ import time
 from services.document_schema.semantics import is_body_structure_role
 from services.translation.diagnostics import TranslationDiagnosticsCollector
 from services.translation.llm.deepseek_client import is_transport_error
+from services.translation.llm.deepseek_client import unwrap_translation_shell
 from services.translation.payload.formula_protection import restore_tokens_by_type
 from services.translation.policy.metadata_filter import looks_like_hard_nontranslatable_metadata
 from services.translation.llm.cache import split_cached_batch
@@ -39,9 +40,7 @@ from services.translation.llm.segment_routing import small_formula_risk_score
 from services.translation.llm.segment_routing import build_formula_segment_plan
 from services.translation.llm.segment_routing import effective_formula_segment_count
 from services.translation.llm.segment_routing import formula_segment_window_count
-from services.translation.llm.segment_routing import is_formula_dense_prose_candidate
 from services.translation.llm.segment_routing import translate_single_item_formula_segment_text_with_retries
-from services.translation.llm.segment_routing import translate_single_item_formula_segment_windows_with_retries
 from services.translation.llm.translation_client import translate_batch_once
 from services.translation.llm.translation_client import translate_single_item_plain_text
 from services.translation.llm.translation_client import translate_single_item_plain_text_unstructured
@@ -50,12 +49,17 @@ from services.translation.llm.translation_client import translate_single_item_ta
 
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?;:])\s+")
 WORD_SPLIT_RE = re.compile(r"\S+")
+_CJK_CHAR_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
+_LATIN_CHAR_RE = re.compile(r"[A-Za-z]")
+_EN_WORD_RE = re.compile(r"[A-Za-z]+(?:[-'][A-Za-z]+)?")
 FORMULA_PLACEHOLDER_RE = re.compile(r"<[ft]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]")
 HEAVY_FORMULA_SPLIT_PLACEHOLDERS = 16
 HEAVY_FORMULA_SPLIT_SEGMENTS = 16
 HEAVY_FORMULA_SPLIT_WINDOWS = 3
 HEAVY_FORMULA_CHUNK_PLACEHOLDERS = 8
 HEAVY_FORMULA_CHUNK_CHARS = 900
+DIRECT_TYPTST_LONG_TEXT_MAX_CHARS = 4000
+DIRECT_TYPTST_LONG_TEXT_TARGET_CHARS = 2200
 
 
 def _formula_density(source_text: str, placeholder_count: int) -> float:
@@ -87,7 +91,7 @@ def _formula_route_diagnostics(
             "formula_window_count": formula_segment_window_count(item, policy=policy),
             "formula_density": _formula_density(source_text, placeholder_count),
             "formula_route_decision": formula_segment_translation_route(item, policy=policy),
-            "small_formula_risk_score": small_formula_risk_score(
+            "formula_risk_score": small_formula_risk_score(
                 source_text,
                 segments=segments,
                 policy=policy,
@@ -146,6 +150,10 @@ def _formula_placeholder_count(text: str) -> int:
     return len(FORMULA_PLACEHOLDER_RE.findall(text or ""))
 
 
+def _zh_char_count(text: str) -> int:
+    return len(_CJK_CHAR_RE.findall(text or ""))
+
+
 def _is_continuation_or_group_unit(item: dict) -> bool:
     item_id = str(item.get("item_id", "") or "")
     unit_id = str(item.get("translation_unit_id", "") or "")
@@ -171,26 +179,13 @@ def _should_prefer_tagged_placeholder_first(item: dict, *, context: TranslationC
         return False
     if not has_formula_placeholders(item):
         return False
-    if is_formula_dense_prose_candidate(item, policy=context.segmentation_policy):
-        return True
-    return _is_continuation_or_group_unit(item)
+    if _is_continuation_or_group_unit(item):
+        return False
+    source_text = str(item.get("translation_unit_protected_source_text") or item.get("protected_source_text") or "")
+    return len(placeholder_sequence(source_text)) >= 8
 
 
 def _heavy_formula_split_reason(item: dict, *, context: TranslationControlContext) -> str:
-    if is_direct_math_mode(item):
-        return ""
-    source_text = str(item.get("translation_unit_protected_source_text") or item.get("protected_source_text") or "")
-    placeholder_count = _formula_placeholder_count(source_text)
-    if placeholder_count < HEAVY_FORMULA_SPLIT_PLACEHOLDERS:
-        return ""
-    if is_formula_dense_prose_candidate(item, policy=context.segmentation_policy):
-        return ""
-    _, segments = build_formula_segment_plan(source_text)
-    effective_segments = effective_formula_segment_count(segments)
-    if effective_segments >= HEAVY_FORMULA_SPLIT_SEGMENTS:
-        return "heavy_formula_segment_count"
-    if formula_segment_window_count(item, policy=context.segmentation_policy) >= HEAVY_FORMULA_SPLIT_WINDOWS:
-        return "heavy_formula_window_count"
     return ""
 
 
@@ -224,6 +219,110 @@ def _split_heavy_formula_block(source_text: str) -> list[str]:
     if current:
         chunks.append(" ".join(current).strip())
     return [chunk for chunk in chunks if chunk.strip()]
+
+
+def _should_split_direct_typst_long_text(item: dict) -> bool:
+    if not is_direct_math_mode(item):
+        return False
+    if item.get("_direct_typst_long_split_applied"):
+        return False
+    if str(item.get("block_type", "") or "").strip().lower() != "text":
+        return False
+    source_text = str(item.get("translation_unit_protected_source_text") or item.get("protected_source_text") or "")
+    compact = " ".join(source_text.split())
+    if len(compact) <= DIRECT_TYPTST_LONG_TEXT_MAX_CHARS:
+        return False
+    return True
+
+
+def _split_direct_typst_long_text(source_text: str) -> list[str]:
+    sentences = [part.strip() for part in SENTENCE_SPLIT_RE.split(source_text) if part.strip()]
+    if len(sentences) <= 1:
+        return _chunk_source_text_fallback(source_text, words_per_chunk=120)
+    chunks: list[str] = []
+    current: list[str] = []
+    current_chars = 0
+    for sentence in sentences:
+        sentence_chars = len(sentence)
+        if current and current_chars + sentence_chars > DIRECT_TYPTST_LONG_TEXT_TARGET_CHARS:
+            chunks.append(" ".join(current).strip())
+            current = []
+            current_chars = 0
+        current.append(sentence)
+        current_chars += sentence_chars + 1
+    if current:
+        chunks.append(" ".join(current).strip())
+    return [chunk for chunk in chunks if chunk.strip()]
+
+
+def _translate_direct_typst_long_text_chunks(
+    item: dict,
+    *,
+    api_key: str,
+    model: str,
+    base_url: str,
+    request_label: str,
+    context: TranslationControlContext,
+    diagnostics: TranslationDiagnosticsCollector | None,
+) -> dict[str, dict[str, str]] | None:
+    source_text = str(item.get("translation_unit_protected_source_text") or item.get("protected_source_text") or "")
+    chunks = _split_direct_typst_long_text(source_text)
+    if len(chunks) <= 1:
+        return None
+
+    translated_parts: list[str] = []
+    degraded_chunks = 0
+    for index, chunk in enumerate(chunks):
+        chunk_item = dict(item)
+        chunk_item["_direct_typst_long_split_applied"] = True
+        chunk_item["translation_unit_protected_source_text"] = chunk
+        chunk_item["protected_source_text"] = chunk
+        chunk_item["continuation_prev_text"] = chunks[index - 1] if index > 0 else ""
+        chunk_item["continuation_next_text"] = chunks[index + 1] if index < len(chunks) - 1 else ""
+        try:
+            chunk_result = _translate_direct_typst_plain_text_with_retries(
+                chunk_item,
+                api_key=api_key,
+                model=model,
+                base_url=base_url,
+                request_label=f"{request_label} long#{index + 1}" if request_label else "",
+                context=context,
+                diagnostics=diagnostics,
+            )
+            payload = chunk_result.get(item["item_id"], {})
+            translated = str(payload.get("translated_text", "") or "").strip()
+            if str(payload.get("decision", "translate") or "translate") == "keep_origin":
+                translated = ""
+        except Exception:
+            translated = ""
+        if not translated:
+            degraded_chunks += 1
+            translated = chunk.strip()
+            if request_label:
+                print(
+                    f"{request_label} long#{index + 1}: long direct_typst chunk degraded to keep_origin chunk",
+                    flush=True,
+                )
+        translated_parts.append(translated)
+
+    payload = result_entry("translate", " ".join(part for part in translated_parts if part).strip())
+    payload["translation_diagnostics"] = {
+        "item_id": item.get("item_id", ""),
+        "page_idx": item.get("page_idx"),
+        "route_path": ["block_level", "direct_typst", "long_text_split"],
+        "output_mode_path": ["plain_text"],
+        "fallback_to": "keep_origin" if degraded_chunks else "",
+        "degradation_reason": "direct_typst_long_text_split_chunk_keep_origin" if degraded_chunks else "direct_typst_long_text_split",
+        "final_status": "partially_translated" if degraded_chunks else "translated",
+        "segment_stats": {
+            "expected": len(chunks),
+            "received": len(chunks),
+            "missing_ids": [],
+        },
+        "degraded_chunk_count": degraded_chunks,
+        **_formula_route_diagnostics(item, context=context),
+    }
+    return {item["item_id"]: payload}
 
 
 def _translate_heavy_formula_block(
@@ -340,6 +439,215 @@ def _should_keep_origin_on_empty_translation(item: dict) -> bool:
     if block_type in {"image_caption", "table_caption", "table_footnote"}:
         return True
     return structure_role in {"caption", "image_caption", "table_caption", "metadata"} and layout_zone == "non_flow"
+
+
+def _looks_like_cjk_dominant_body_text(item: dict) -> bool:
+    if str(item.get("block_type", "") or "").strip().lower() != "text":
+        return False
+    metadata = item.get("metadata", {}) or {}
+    if not is_body_structure_role(metadata):
+        return False
+    source_text = str(item.get("translation_unit_protected_source_text") or item.get("protected_source_text") or item.get("source_text") or "")
+    compact = " ".join(source_text.split())
+    if len(compact) < 16:
+        return False
+    cjk_chars = len(_CJK_CHAR_RE.findall(compact))
+    if cjk_chars < 10:
+        return False
+    latin_chars = len(_LATIN_CHAR_RE.findall(compact))
+    english_words = len(_EN_WORD_RE.findall(compact))
+    return cjk_chars >= max(10, latin_chars * 2, english_words * 2)
+
+
+def _should_keep_origin_on_protocol_shell(item: dict) -> bool:
+    if _looks_like_cjk_dominant_body_text(item):
+        return True
+    if is_direct_math_mode(item):
+        return True
+    if _is_continuation_or_group_unit(item):
+        return True
+    return not should_force_translate_body_text(item)
+
+
+def _sentence_level_fallback_allowed(item: dict) -> bool:
+    return not _is_continuation_or_group_unit(item)
+
+
+def _try_salvage_protocol_shell_error(
+    item: dict,
+    *,
+    exc: TranslationProtocolError,
+    context: TranslationControlContext,
+    diagnostics: TranslationDiagnosticsCollector | None,
+    route_path: list[str],
+    output_mode_path: list[str],
+) -> dict[str, dict[str, str]] | None:
+    raw_text = str(getattr(exc, "translated_text", "") or "").strip()
+    if not raw_text:
+        return None
+    unwrapped = unwrap_translation_shell(raw_text, item_id=str(item.get("item_id", "") or ""))
+    if not unwrapped or unwrapped == raw_text:
+        return None
+    try:
+        result = {str(item.get("item_id", "") or ""): result_entry("translate", unwrapped)}
+        result = canonicalize_batch_result([item], result)
+        validate_batch_result([item], result, diagnostics=diagnostics)
+        result = _restore_runtime_term_tokens(result, item=item)
+        return _attach_result_metadata(
+            result,
+            item=item,
+            context=context,
+            route_path=route_path,
+            output_mode_path=output_mode_path,
+        )
+    except Exception:
+        return None
+
+
+def _extract_direct_typst_protocol_text(raw_text: str, *, item_id: str) -> str:
+    current = str(raw_text or "").strip()
+    if not current:
+        return ""
+    unwrapped = unwrap_translation_shell(current, item_id=item_id)
+    if unwrapped and unwrapped != current:
+        current = unwrapped.strip()
+    if current and not current.startswith("{"):
+        return current
+
+    def _from_payload(payload: object) -> str:
+        if isinstance(payload, dict):
+            translated = payload.get("translated_text")
+            if isinstance(translated, str) and translated.strip():
+                return translated.strip()
+            translations = payload.get("translations")
+            if isinstance(translations, list):
+                matched: str = ""
+                for entry in translations:
+                    if not isinstance(entry, dict):
+                        continue
+                    candidate = str(entry.get("translated_text", "") or "").strip()
+                    if not candidate:
+                        continue
+                    if str(entry.get("item_id", "") or "").strip() == item_id:
+                        return candidate
+                    if not matched:
+                        matched = candidate
+                return matched
+        return ""
+
+    probe = current
+    for _ in range(3):
+        try:
+            payload = json.loads(probe)
+        except Exception:
+            try:
+                payload = json.loads(re.sub(r"^[^{]*", "", probe))
+            except Exception:
+                break
+        candidate = _from_payload(payload)
+        if not candidate:
+            break
+        if candidate == probe:
+            return candidate
+        probe = candidate
+        if not probe.startswith("{"):
+            return probe
+    return probe if probe != current else ""
+
+
+def _looks_like_direct_typst_partial_accept_text(item: dict, translated_text: str) -> bool:
+    translated = str(translated_text or "").strip()
+    if not translated:
+        return False
+    if _zh_char_count(translated) < 8:
+        return False
+    if translated.startswith("{") and "translated_text" in translated:
+        return False
+    source_text = str(item.get("translation_unit_protected_source_text") or item.get("protected_source_text") or "")
+    source_words = len(_EN_WORD_RE.findall(source_text))
+    translated_words = len(_EN_WORD_RE.findall(translated))
+    if translated_words >= max(16, source_words * 0.7) and _zh_char_count(translated) < translated_words:
+        return False
+    return True
+
+
+def _try_salvage_direct_typst_protocol_shell_error(
+    item: dict,
+    *,
+    exc: TranslationProtocolError,
+    context: TranslationControlContext,
+    diagnostics: TranslationDiagnosticsCollector | None,
+    route_path: list[str],
+    output_mode_path: list[str],
+    allow_partial_accept: bool,
+) -> dict[str, dict[str, str]] | None:
+    raw_text = str(getattr(exc, "translated_text", "") or "").strip()
+    if not raw_text:
+        return None
+    extracted = _extract_direct_typst_protocol_text(raw_text, item_id=str(item.get("item_id", "") or ""))
+    if not extracted:
+        return None
+    try:
+        result = {str(item.get("item_id", "") or ""): result_entry("translate", extracted)}
+        result = canonicalize_batch_result([item], result)
+        validate_batch_result([item], result, diagnostics=diagnostics)
+        result = _restore_runtime_term_tokens(result, item=item)
+        return _attach_result_metadata(
+            result,
+            item=item,
+            context=context,
+            route_path=route_path,
+            output_mode_path=output_mode_path,
+            degradation_reason="protocol_shell_salvaged",
+        )
+    except Exception:
+        if not allow_partial_accept or not _looks_like_direct_typst_partial_accept_text(item, extracted):
+            return None
+        result = canonicalize_batch_result(
+            [item],
+            {str(item.get("item_id", "") or ""): result_entry("translate", extracted)},
+        )
+        result = _restore_runtime_term_tokens(result, item=item)
+        return _attach_result_metadata(
+            result,
+            item=item,
+            context=context,
+            route_path=route_path,
+            output_mode_path=output_mode_path,
+            degradation_reason="protocol_shell_partial_accept",
+        )
+
+
+def _try_salvage_partial_english_residue(
+    item: dict,
+    *,
+    exc: EnglishResidueError,
+    context: TranslationControlContext,
+) -> dict[str, dict[str, str]] | None:
+    translated_text = str(getattr(exc, "translated_text", "") or "").strip()
+    if not translated_text:
+        return None
+    if _zh_char_count(translated_text) < 4:
+        return None
+    if not (
+        is_direct_math_mode(item)
+        or _is_continuation_or_group_unit(item)
+        or has_formula_placeholders(item)
+    ):
+        return None
+    result = canonicalize_batch_result(
+        [item],
+        {str(item.get("item_id", "") or ""): result_entry("translate", translated_text)},
+    )
+    result = _restore_runtime_term_tokens(result, item=item)
+    return _attach_result_metadata(
+        result,
+        item=item,
+        context=context,
+        route_path=["block_level", "english_residue_salvage"],
+        output_mode_path=["plain_text"],
+        degradation_reason="english_residue_partial_accept",
+    )
 
 
 def _keep_origin_payload_for_empty_translation(item: dict) -> dict[str, dict[str, str]]:
@@ -656,6 +964,29 @@ def _translate_direct_typst_plain_text_with_retries(
     context: TranslationControlContext,
     diagnostics: TranslationDiagnosticsCollector | None,
 ) -> dict[str, dict[str, str]]:
+    if _should_split_direct_typst_long_text(item):
+        if request_label:
+            print(f"{request_label}: direct_typst long-text split before remote translation", flush=True)
+        split_result = _translate_direct_typst_long_text_chunks(
+            item,
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            request_label=request_label,
+            context=context,
+            diagnostics=diagnostics,
+        )
+        if split_result is not None:
+            return _attach_result_metadata(
+                _restore_runtime_term_tokens(split_result, item=item),
+                item=item,
+                context=context,
+                route_path=["block_level", "direct_typst", "long_text_split"],
+                output_mode_path=["plain_text"],
+                degradation_reason=split_result[item["item_id"]]
+                .get("translation_diagnostics", {})
+                .get("degradation_reason", "direct_typst_long_text_split"),
+            )
     plain_attempts = context.fallback_policy.plain_text_attempts
     plain_timeout_s = context.timeout_policy.plain_text_seconds
     route_prefix = ["block_level", "direct_typst"]
@@ -701,6 +1032,20 @@ def _translate_direct_typst_plain_text_with_retries(
                     f"{request_label}: direct_typst plain-text failed attempt {attempt}/{plain_attempts} after {elapsed:.2f}s: {type(exc).__name__}: {exc}",
                     flush=True,
                 )
+            if isinstance(exc, TranslationProtocolError):
+                salvaged = _try_salvage_direct_typst_protocol_shell_error(
+                    item,
+                    exc=exc,
+                    context=context,
+                    diagnostics=diagnostics,
+                    route_path=route_prefix + ["protocol_shell_unwrap"],
+                    output_mode_path=["plain_text"],
+                    allow_partial_accept=_is_continuation_or_group_unit(item),
+                )
+                if salvaged is not None:
+                    if request_label:
+                        print(f"{request_label}: direct_typst protocol shell salvaged successfully", flush=True)
+                    return salvaged
             if attempt < plain_attempts:
                 time.sleep(min(8, 2 * attempt))
                 continue
@@ -749,6 +1094,35 @@ def _translate_direct_typst_plain_text_with_retries(
                         error_code="ENGLISH_RESIDUE",
                     )
                 if isinstance(last_error, TranslationProtocolError):
+                    salvaged = _try_salvage_direct_typst_protocol_shell_error(
+                        item,
+                        exc=last_error,
+                        context=context,
+                        diagnostics=diagnostics,
+                        route_path=route_prefix + ["plain_text_raw", "protocol_shell_unwrap"],
+                        output_mode_path=["plain_text"],
+                        allow_partial_accept=_is_continuation_or_group_unit(item),
+                    )
+                    if salvaged is not None:
+                        if request_label:
+                            print(f"{request_label}: direct_typst raw protocol shell salvaged successfully", flush=True)
+                        return salvaged
+                    if _looks_like_cjk_dominant_body_text(item) or not should_force_translate_body_text(item):
+                        return _keep_origin_payload_for_direct_typst_validation_failure(
+                            item,
+                            context=context,
+                            route_path=route_prefix + ["keep_origin"],
+                            degradation_reason="protocol_shell_repeated",
+                            error_code="PROTOCOL_SHELL",
+                        )
+                    if _is_continuation_or_group_unit(item):
+                        return _keep_origin_payload_for_direct_typst_validation_failure(
+                            item,
+                            context=context,
+                            route_path=route_prefix + ["keep_origin"],
+                            degradation_reason="protocol_shell_group_repeated",
+                            error_code="PROTOCOL_SHELL",
+                        )
                     raise last_error
                 if isinstance(last_error, EmptyTranslationError):
                     if _should_keep_origin_on_empty_translation(item) or not should_force_translate_body_text(item):
@@ -855,12 +1229,10 @@ def translate_single_item_plain_text_with_retries(
                     degradation_reason=split_reason,
                 )
     formula_route = "plain" if direct_math_mode else formula_segment_translation_route(item, policy=context.segmentation_policy)
-    dense_prose_route = formula_route == "formula_dense_prose"
-    plain_attempts = 1 if dense_prose_route else context.fallback_policy.plain_text_attempts
-    plain_timeout_s = min(context.timeout_policy.plain_text_seconds, 18) if dense_prose_route else context.timeout_policy.plain_text_seconds
-    route_prefix = ["block_level", "formula_dense_prose"] if dense_prose_route else ["block_level"]
-    if formula_route in {"single", "small_inline"}:
-        allow_windowed_fallback = formula_segment_window_count(item, policy=context.segmentation_policy) > 1
+    plain_attempts = context.fallback_policy.plain_text_attempts
+    plain_timeout_s = context.timeout_policy.plain_text_seconds
+    route_prefix = ["block_level"]
+    if formula_route == "single":
         try:
             segmented_result = translate_single_item_formula_segment_text_with_retries(
                 item,
@@ -878,7 +1250,7 @@ def translate_single_item_plain_text_with_retries(
                 _restore_runtime_term_tokens(segmented_result, item=item),
                 item=item,
                 context=context,
-                route_path=["block_level", "small_formula_inline" if formula_route == "small_inline" else "segmented"],
+                route_path=["block_level", "segmented"],
                 output_mode_path=["tagged"],
             )
         except Exception as exc:
@@ -893,98 +1265,20 @@ def translate_single_item_plain_text_with_retries(
                     context=context,
                     route_path=[
                         "block_level",
-                        "small_formula_inline" if formula_route == "small_inline" else "segmented",
+                        "segmented",
                         "keep_origin",
                     ],
                 )
             if request_label:
                 print(
-                    f"{request_label}: {'small-inline-formula' if formula_route == 'small_inline' else 'segmented-formula'} route failed, fallback to plain-text path: {type(exc).__name__}: {exc}",
-                    flush=True,
-                )
-            if allow_windowed_fallback:
-                try:
-                    windowed_result = translate_single_item_formula_segment_windows_with_retries(
-                        item,
-                        api_key=api_key,
-                        model=model,
-                        base_url=base_url,
-                        request_label=request_label,
-                        domain_guidance=context.merged_guidance,
-                        policy=context.segmentation_policy,
-                        diagnostics=diagnostics,
-                        attempt_limit=context.fallback_policy.formula_segment_attempts,
-                        timeout_s=context.timeout_policy.formula_window_seconds,
-                    )
-                    return _attach_result_metadata(
-                        _restore_runtime_term_tokens(windowed_result, item=item),
-                        item=item,
-                        context=context,
-                        route_path=["block_level", "windowed"],
-                        output_mode_path=["json_schema"],
-                    )
-                except Exception as windowed_exc:
-                    if is_transport_error(windowed_exc):
-                        if request_label:
-                            print(
-                                f"{request_label}: windowed-formula transport failure, degrade to keep_origin: {type(windowed_exc).__name__}: {windowed_exc}",
-                                flush=True,
-                            )
-                        return _keep_origin_payload_for_transport_error(
-                            item,
-                            context=context,
-                            route_path=["block_level", "windowed", "keep_origin"],
-                        )
-                    if request_label:
-                        print(
-                            f"{request_label}: windowed-formula fallback failed, continue to plain-text path: {type(windowed_exc).__name__}: {windowed_exc}",
-                            flush=True,
-                        )
-            elif request_label:
-                print(f"{request_label}: skip windowed-formula fallback because only one formula window is available", flush=True)
-    elif formula_route == "windowed":
-        try:
-            windowed_result = translate_single_item_formula_segment_windows_with_retries(
-                item,
-                api_key=api_key,
-                model=model,
-                base_url=base_url,
-                request_label=request_label,
-                domain_guidance=context.merged_guidance,
-                policy=context.segmentation_policy,
-                diagnostics=diagnostics,
-                attempt_limit=context.fallback_policy.formula_segment_attempts,
-                timeout_s=context.timeout_policy.formula_window_seconds,
-            )
-            return _attach_result_metadata(
-                _restore_runtime_term_tokens(windowed_result, item=item),
-                item=item,
-                context=context,
-                route_path=["block_level", "windowed"],
-                output_mode_path=["json_schema"],
-            )
-        except Exception as exc:
-            if is_transport_error(exc):
-                if request_label:
-                    print(
-                        f"{request_label}: windowed-formula transport failure, degrade to keep_origin: {type(exc).__name__}: {exc}",
-                        flush=True,
-                    )
-                return _keep_origin_payload_for_transport_error(
-                    item,
-                    context=context,
-                    route_path=["block_level", "windowed", "keep_origin"],
-                )
-            if request_label:
-                print(
-                    f"{request_label}: windowed-formula route failed, fallback to plain-text path: {type(exc).__name__}: {exc}",
+                    f"{request_label}: segmented-formula route failed, fallback to plain-text path: {type(exc).__name__}: {exc}",
                     flush=True,
                 )
     if _should_prefer_tagged_placeholder_first(item, context=context):
         tagged_started = time.perf_counter()
         try:
             if request_label:
-                reason = "formula-dense-prose" if dense_prose_route else "continuation/group placeholder stability"
+                reason = "placeholder stability"
                 print(f"{request_label}: direct tagged single-item path for {reason}", flush=True)
             result = translate_single_item_stable_placeholder_text(
                 item,
@@ -1057,7 +1351,13 @@ def translate_single_item_plain_text_with_retries(
                 elapsed = time.perf_counter() - started
                 print(f"{request_label}: plain-text ok in {elapsed:.2f}s", flush=True)
             return result
-        except (UnexpectedPlaceholderError, PlaceholderInventoryError, EmptyTranslationError, EnglishResidueError) as exc:
+        except (
+            UnexpectedPlaceholderError,
+            PlaceholderInventoryError,
+            EmptyTranslationError,
+            EnglishResidueError,
+            TranslationProtocolError,
+        ) as exc:
             last_error = exc
             elapsed = time.perf_counter() - started
             if request_label:
@@ -1066,11 +1366,19 @@ def translate_single_item_plain_text_with_retries(
                     flush=True,
                 )
                 log_placeholder_failure(request_label, item, exc, diagnostics=diagnostics)
-            if request_label and dense_prose_route:
-                print(
-                    f"{request_label}: formula-dense-prose route keeps single-item fallback chain short",
-                    flush=True,
+            if isinstance(exc, TranslationProtocolError):
+                salvaged = _try_salvage_protocol_shell_error(
+                    item,
+                    exc=exc,
+                    context=context,
+                    diagnostics=diagnostics,
+                    route_path=route_prefix + ["protocol_shell_unwrap"],
+                    output_mode_path=["plain_text"],
                 )
+                if salvaged is not None:
+                    if request_label:
+                        print(f"{request_label}: protocol shell unwrapped successfully", flush=True)
+                    return salvaged
             if has_formula_placeholders(item) and context.fallback_policy.allow_tagged_placeholder_retry:
                 tagged_started = time.perf_counter()
                 try:
@@ -1100,7 +1408,7 @@ def translate_single_item_plain_text_with_retries(
                             f"{request_label}: tagged single-item failed attempt {attempt}/{plain_attempts} after {tagged_elapsed:.2f}s: {type(tagged_exc).__name__}: {tagged_exc}",
                             flush=True,
                         )
-            if attempt >= plain_attempts and isinstance(last_error, (EmptyTranslationError, EnglishResidueError)):
+            if attempt >= plain_attempts and isinstance(last_error, (EmptyTranslationError, EnglishResidueError, TranslationProtocolError)):
                 raw_started = time.perf_counter()
                 try:
                     if request_label:
@@ -1127,7 +1435,14 @@ def translate_single_item_plain_text_with_retries(
                         route_path=route_prefix + ["plain_text_raw"],
                         output_mode_path=["plain_text"],
                     )
-                except (ValueError, KeyError, json.JSONDecodeError, EnglishResidueError, EmptyTranslationError) as raw_exc:
+                except (
+                    ValueError,
+                    KeyError,
+                    json.JSONDecodeError,
+                    EnglishResidueError,
+                    EmptyTranslationError,
+                    TranslationProtocolError,
+                ) as raw_exc:
                     last_error = raw_exc
                     if request_label:
                         raw_elapsed = time.perf_counter() - raw_started
@@ -1143,28 +1458,53 @@ def translate_single_item_plain_text_with_retries(
                             flush=True,
                         )
                     return _keep_origin_payload_for_empty_translation(item)
-                try:
-                    return _sentence_level_fallback(
-                        item,
-                        api_key=api_key,
-                        model=model,
-                        base_url=base_url,
-                        request_label=request_label,
-                        context=context,
-                        diagnostics=diagnostics,
-                    )
-                except Exception as sentence_exc:
-                    if request_label:
-                        print(
-                            f"{request_label}: sentence-level fallback failed: {type(sentence_exc).__name__}: {sentence_exc}",
-                            flush=True,
-                        )
-                    if is_transport_error(sentence_exc):
-                        return _keep_origin_payload_for_transport_error(
+                if _sentence_level_fallback_allowed(item):
+                    try:
+                        return _sentence_level_fallback(
                             item,
+                            api_key=api_key,
+                            model=model,
+                            base_url=base_url,
+                            request_label=request_label,
                             context=context,
-                            route_path=["block_level", "sentence_level", "keep_origin"],
+                            diagnostics=diagnostics,
                         )
+                    except Exception as sentence_exc:
+                        if request_label:
+                            print(
+                                f"{request_label}: sentence-level fallback failed: {type(sentence_exc).__name__}: {sentence_exc}",
+                                flush=True,
+                            )
+                        if is_transport_error(sentence_exc):
+                            return _keep_origin_payload_for_transport_error(
+                                item,
+                                context=context,
+                                route_path=["block_level", "sentence_level", "keep_origin"],
+                            )
+                elif request_label:
+                    print(f"{request_label}: skip sentence-level fallback for continuation/group unit", flush=True)
+                if isinstance(last_error, EnglishResidueError):
+                    salvaged = _try_salvage_partial_english_residue(
+                        item,
+                        exc=last_error,
+                        context=context,
+                    )
+                    if salvaged is not None:
+                        if diagnostics is not None:
+                            diagnostics.emit(
+                                kind="english_residue_salvaged",
+                                item_id=str(item.get("item_id", "") or ""),
+                                page_idx=item.get("page_idx"),
+                                severity="warning",
+                                message="Accepted partially translated output after repeated English-residue validation failure",
+                                retryable=False,
+                            )
+                        if request_label:
+                            print(
+                                f"{request_label}: accepted partially translated output after repeated English-residue validation failure",
+                                flush=True,
+                            )
+                        return salvaged
                 if isinstance(last_error, EnglishResidueError):
                     if diagnostics is not None:
                         diagnostics.emit(
@@ -1189,6 +1529,34 @@ def translate_single_item_plain_text_with_retries(
                         "error_trace": [{"type": "validation", "code": "ENGLISH_RESIDUE"}],
                         "fallback_to": "keep_origin",
                         "degradation_reason": "english_residue_repeated",
+                        "final_status": "kept_origin",
+                        **_formula_route_diagnostics(item, context=context),
+                    }
+                    return {item["item_id"]: payload}
+                if isinstance(last_error, TranslationProtocolError) and _should_keep_origin_on_protocol_shell(item):
+                    if diagnostics is not None:
+                        diagnostics.emit(
+                            kind="protocol_shell_degraded",
+                            item_id=str(item.get("item_id", "") or ""),
+                            page_idx=item.get("page_idx"),
+                            severity="warning",
+                            message="Degraded to keep_origin after repeated protocol/json shell output",
+                            retryable=True,
+                        )
+                    if request_label:
+                        print(
+                            f"{request_label}: degraded to keep_origin after repeated protocol/json shell output",
+                            flush=True,
+                        )
+                    payload = internal_keep_origin_result("protocol_shell_repeated")
+                    payload["error_taxonomy"] = "validation"
+                    payload["translation_diagnostics"] = {
+                        "item_id": item.get("item_id", ""),
+                        "page_idx": item.get("page_idx"),
+                        "route_path": route_prefix + ["keep_origin"],
+                        "error_trace": [{"type": "validation", "code": "PROTOCOL_SHELL"}],
+                        "fallback_to": "keep_origin",
+                        "degradation_reason": "protocol_shell_repeated",
                         "final_status": "kept_origin",
                         **_formula_route_diagnostics(item, context=context),
                     }

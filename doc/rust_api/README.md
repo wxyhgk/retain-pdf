@@ -12,6 +12,7 @@
 6. [06-产物清单与下载.md](/home/wxyhgk/tmp/Code/doc/rust_api/06-产物清单与下载.md)
 7. [07-任务列表接口.md](/home/wxyhgk/tmp/Code/doc/rust_api/07-任务列表接口.md)
 8. [08-Provider 校验接口.md](/home/wxyhgk/tmp/Code/doc/rust_api/08-Provider 校验接口.md)
+9. [09-协同开发约定.md](/home/wxyhgk/tmp/Code/doc/rust_api/09-协同开发约定.md)
 
 当前几个关键结论：
 
@@ -26,3 +27,21 @@
 - 事件流接口返回的 `items` 在 `data.items`，不在顶层
 - 历史老任务可能出现 `runtime = null`，这属于历史数据缺失，不是当前接口故障
 - 旧任务如果仍使用 `originPDF/jsonPDF/transPDF/typstPDF` 目录布局，或数据库里仍是绝对路径 artifact 存储，详情与下载接口会直接拒绝，必须重跑
+
+当前代码边界也有两个约定：
+
+- `routes/*` 只做 HTTP adapter，不负责聚合 view、不直接拼装 job command
+- `services/jobs/creation` 与 `services/job_factory` 现在已拆成“纯装配”和“启动执行”两层；纯装配逻辑默认只依赖 `Db`、`AppConfig` 和显式参数，不应继续透传整个 `AppState`
+- 多人协作时，新增代码默认遵守 [09-协同开发约定.md](/home/wxyhgk/tmp/Code/doc/rust_api/09-协同开发约定.md) 的落点与依赖规则
+
+`AppState` 目前允许存在的主要位置：
+
+- 路由入口
+- job lifecycle / process runner 这类真正需要运行态资源协同的执行层
+
+不建议再把 `AppState` 向下传到：
+
+- 命令构建
+- job snapshot 装配
+- 只读 view 聚合
+- 上传校验与纯输入装配

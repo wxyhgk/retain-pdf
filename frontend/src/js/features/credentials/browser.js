@@ -10,7 +10,9 @@ export function mountBrowserCredentialsFeature({
   defaultMineruToken,
   defaultModelApiKey,
   defaultModelBaseUrl,
+  getTaskOptions,
   openSettingsDialog,
+  saveTaskOptions,
   saveBrowserStoredConfig,
   validateMineruToken,
   onCredentialStateChange,
@@ -127,28 +129,51 @@ export function mountBrowserCredentialsFeature({
       dialog: $("browser-credentials-dialog"),
       mineruInput: $("browser-mineru-token"),
       apiKeyInput: $("browser-api-key"),
+      mathModeSelect: $("browser-job-math-mode"),
+      translateTitlesInput: $("browser-translate-titles"),
       trigger: $("credentials-btn"),
     };
   }
 
   function syncBrowserDialogFromHiddenInputs() {
-    const { mineruInput, apiKeyInput } = browserCredentialElements();
+    const {
+      mineruInput,
+      apiKeyInput,
+      mathModeSelect,
+      translateTitlesInput,
+    } = browserCredentialElements();
+    const taskOptions = getTaskOptions?.() || {};
     if (mineruInput) {
       mineruInput.value = $("mineru_token").value || "";
     }
     if (apiKeyInput) {
       apiKeyInput.value = $("api_key").value || "";
     }
+    if (mathModeSelect) {
+      mathModeSelect.value = taskOptions.mathMode === "direct_typst" ? "direct_typst" : "placeholder";
+    }
+    if (translateTitlesInput) {
+      translateTitlesInput.checked = taskOptions.translateTitles !== false;
+    }
     setMineruValidationMessage("", "");
     setDeepSeekValidationMessage("", "");
   }
 
   function persistBrowserCredentialsFromDialog() {
-    const { mineruInput, apiKeyInput } = browserCredentialElements();
+    const {
+      mineruInput,
+      apiKeyInput,
+      mathModeSelect,
+      translateTitlesInput,
+    } = browserCredentialElements();
     applyKeyInputs(
       mineruInput?.value?.trim() || "",
       apiKeyInput?.value?.trim() || "",
     );
+    saveTaskOptions?.({
+      mathMode: mathModeSelect?.value || "placeholder",
+      translateTitles: !!translateTitlesInput?.checked,
+    });
     saveBrowserStoredConfig();
   }
 

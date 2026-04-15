@@ -1,6 +1,7 @@
 from .apply import apply_translated_text_map
 from .common import GROUP_ITEM_PREFIX
 from .policy_mutations import (
+    apply_cjk_source_keep_origin,
     apply_after_last_title_skip,
     apply_classification_labels,
     apply_metadata_fragment_skip,
@@ -20,6 +21,7 @@ from .units import pending_translation_items
 
 __all__ = [
     "GROUP_ITEM_PREFIX",
+    "apply_cjk_source_keep_origin",
     "apply_after_last_title_skip",
     "apply_classification_labels",
     "apply_metadata_fragment_skip",

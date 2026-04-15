@@ -13,6 +13,8 @@ use super::polling::{should_stop_polling, wait_next_poll_or_timeout};
 use super::save_ocr_job;
 use super::status::{record_provider_trace, update_ocr_job_from_status};
 
+const MINERU_WAITING_FILE_GRACE_SECS: u64 = 90;
+
 pub(super) async fn poll_uploaded_batch_until_ready(
     state: &AppState,
     job: &mut JobRuntimeState,
@@ -55,6 +57,7 @@ pub(super) async fn poll_uploaded_batch_until_ready(
             file_name,
             batch,
             provider_result_json_path,
+            started.elapsed().as_secs(),
             parent_job_id,
         )
         .await?
@@ -129,6 +132,7 @@ async fn process_batch_status(
     file_name: &str,
     batch: MineruTrace<crate::ocr_provider::mineru::models::MineruBatchStatusData>,
     provider_result_json_path: &std::path::Path,
+    elapsed_secs: u64,
     parent_job_id: Option<&str>,
 ) -> Result<bool> {
     record_provider_trace(job, batch.trace_id.clone());
@@ -167,6 +171,14 @@ async fn process_batch_status(
     )
     .await?;
 
+    if item.state == "waiting-file" && elapsed_secs >= MINERU_WAITING_FILE_GRACE_SECS {
+        return Err(anyhow!(
+            "MinerU uploaded file was not acknowledged after {}s: batch={} file_name={}",
+            elapsed_secs,
+            batch_id,
+            file_name
+        ));
+    }
     if item.state == "done" {
         let result = serde_json::json!({
             "code": 0,
@@ -192,6 +204,16 @@ async fn process_batch_status(
         ));
     }
     Ok(false)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MINERU_WAITING_FILE_GRACE_SECS;
+
+    #[test]
+    fn waiting_file_grace_window_is_bounded() {
+        assert_eq!(MINERU_WAITING_FILE_GRACE_SECS, 90);
+    }
 }
 
 async fn process_remote_task_status(

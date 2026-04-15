@@ -2,9 +2,11 @@ from __future__ import annotations
 import json
 import os
 import re
+import socket
 import threading
 import time
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -25,6 +27,7 @@ TRUST_ENV_PROXY_ENV = "PDF_TRANSLATOR_TRUST_ENV_PROXY"
 STREAM_RESPONSES_ENV = "PDF_TRANSLATOR_DEEPSEEK_STREAM"
 _THREAD_LOCAL = threading.local()
 HTTP_RETRY_ATTEMPTS = 2
+DNS_RETRY_MIN_ATTEMPTS = 3
 HTTP_RETRY_BACKOFF_MAX_SECS = 20
 HTTP_RATE_LIMIT_WAIT_MAX_SECS = 300
 _JSON_QUOTE_TRANSLATION = str.maketrans(
@@ -68,6 +71,17 @@ _TRANSPORT_RETRY_MARKERS = (
     "too many requests",
 )
 _TRANSPORT_STATUS_CODES = {408, 429, 500, 502, 503, 504}
+_DNS_RETRY_MARKERS = (
+    "temporary failure in name resolution",
+    "name resolution",
+    "failed to resolve",
+    "nodename nor servname provided",
+    "no address associated with hostname",
+    "getaddrinfo failed",
+)
+_DNS_CACHE_TTL_SECS = 60
+_DNS_CACHE_LOCK = threading.Lock()
+_DNS_CACHE: dict[str, float] = {}
 
 
 def sanitize_prompt_context_text(text: str) -> str:
@@ -89,7 +103,8 @@ def _direct_math_guidance() -> str:
         "普通正文不要随意放进 `$...$`。\n"
         "如果 OCR 造成公式存在明显且局部的错误，例如空格错乱、括号缺失、花括号缺失、上下标脱落或命令被截断，你可以按语义做最小修复后再输出，使其可以正常渲染。\n"
         "不要补写缺失的正文内容，不要扩写原文，不要编造新的科学信息。\n"
-        "不要输出占位符、JSON、标签、代码块或解释，只输出最终译文。"
+        "不要输出占位符、JSON、标签、代码块或解释，只输出最终译文。\n"
+        "如果你脑中想返回 {\"translated_text\": ...} 或 {\"translations\": [...]}，请改成只输出其中的译文正文本身。"
     )
 
 
@@ -98,29 +113,33 @@ def _direct_typst_batch_user_prompt(
     *,
     mode: str,
 ) -> str:
-    lines: list[str] = [load_prompt("translation_task.txt"), "", "Items:"]
+    lines: list[str] = [
+        load_prompt("translation_task.txt"),
+        "",
+        "下面是若干段待翻译正文。",
+        "你只输出每段的最终中文译文，不要回写 item_id、group_id、decision、JSON 或标签。",
+    ]
     for item in batch:
-        lines.append(f"<<<SOURCE item_id={item['item_id']}>>>")
+        lines.append("")
+        lines.append(f"原文 {item['item_id']}:")
         lines.append(str(item.get("protected_source_text", "") or ""))
         style_hint = structure_style_hint(item.get("metadata", {}) or {})
         if style_hint:
-            lines.append(f"[style_hint] {style_hint}")
+            lines.append(f"风格提示：{style_hint}")
         if mode == "sci":
             decision_hints = build_decision_hints(item)
             if decision_hints:
-                lines.append(f"[decision_hints] {decision_hints}")
+                lines.append(f"翻译提示：{decision_hints}")
         if item.get("continuation_group"):
-            lines.append(f"[continuation_group] {item['continuation_group']}")
+            lines.append("这是跨栏或跨页续接正文的一部分，请结合上下文理解后直接输出这一整段的译文。")
         if item.get("continuation_prev_text"):
             context_before = sanitize_prompt_context_text(item["continuation_prev_text"])
             if context_before:
-                lines.append(f"[context_before] {context_before}")
+                lines.append(f"前文上下文：{context_before}")
         if item.get("continuation_next_text"):
             context_after = sanitize_prompt_context_text(item["continuation_next_text"])
             if context_after:
-                lines.append(f"[context_after] {context_after}")
-        lines.append("<<<END SOURCE>>>")
-        lines.append("")
+                lines.append(f"后文上下文：{context_after}")
     return "\n".join(lines).strip()
 
 
@@ -132,27 +151,29 @@ def _direct_typst_single_user_prompt(
     lines: list[str] = [
         load_prompt("translation_task.txt"),
         "",
-        f"<<<SOURCE item_id={item['item_id']}>>>",
+        "下面是一段待翻译正文。",
+        "你只输出最终中文译文正文，不要输出 item_id、group_id、decision、JSON、标签、代码块或解释。",
+        "",
+        "原文：",
         str(item.get("protected_source_text", "") or ""),
     ]
     style_hint = structure_style_hint(item.get("metadata", {}) or {})
     if style_hint:
-        lines.append(f"[style_hint] {style_hint}")
+        lines.append(f"风格提示：{style_hint}")
     if mode == "sci":
         decision_hints = build_decision_hints(item)
         if decision_hints:
-            lines.append(f"[decision_hints] {decision_hints}")
+            lines.append(f"翻译提示：{decision_hints}")
     if item.get("continuation_group"):
-        lines.append(f"[continuation_group] {item['continuation_group']}")
+        lines.append("这是跨栏或跨页续接正文的一部分，请结合上下文理解后直接输出这一整段的译文。")
     if item.get("continuation_prev_text"):
         context_before = sanitize_prompt_context_text(item["continuation_prev_text"])
         if context_before:
-            lines.append(f"[context_before] {context_before}")
+            lines.append(f"前文上下文：{context_before}")
     if item.get("continuation_next_text"):
         context_after = sanitize_prompt_context_text(item["continuation_next_text"])
         if context_after:
-            lines.append(f"[context_after] {context_after}")
-    lines.append("<<<END SOURCE>>>")
+            lines.append(f"后文上下文：{context_after}")
     return "\n".join(lines).strip()
 
 
@@ -457,6 +478,37 @@ def normalize_base_url(base_url: str) -> str:
     return normalized
 
 
+def _hostname_from_base_url(base_url: str) -> str:
+    parsed = urlparse(normalize_base_url(base_url))
+    return str(parsed.hostname or "").strip().lower()
+
+
+def is_dns_resolution_error(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return any(marker in text for marker in _DNS_RETRY_MARKERS)
+
+
+def _prewarm_dns(base_url: str, *, request_label: str = "") -> None:
+    hostname = _hostname_from_base_url(base_url)
+    if not hostname:
+        return
+    now = time.time()
+    with _DNS_CACHE_LOCK:
+        cached_until = _DNS_CACHE.get(hostname, 0.0)
+        if cached_until > now:
+            return
+    try:
+        socket.getaddrinfo(hostname, 443, proto=socket.IPPROTO_TCP)
+    except OSError as exc:
+        if request_label:
+            print(f"{request_label}: dns prewarm skipped host={hostname}: {type(exc).__name__}: {exc}", flush=True)
+        return
+    with _DNS_CACHE_LOCK:
+        _DNS_CACHE[hostname] = now + _DNS_CACHE_TTL_SECS
+    if request_label:
+        print(f"{request_label}: dns prewarm ok host={hostname}", flush=True)
+
+
 def chat_completions_url(base_url: str) -> str:
     return f"{normalize_base_url(base_url)}/chat/completions"
 
@@ -720,10 +772,13 @@ def request_chat_content(
         body["response_format"] = active_response_format
 
     attempt_limit = max(1, int(max_attempts or HTTP_RETRY_ATTEMPTS))
-    for attempt in range(1, attempt_limit + 1):
+    dns_retry_limit = max(attempt_limit, DNS_RETRY_MIN_ATTEMPTS)
+    attempt = 1
+    while attempt <= attempt_limit:
         started = time.perf_counter()
         diagnostics_request_id: int | None = None
         try:
+            _prewarm_dns(base_url, request_label=request_label)
             if diagnostics is not None:
                 diagnostics.acquire_request_slot()
                 diagnostics_request_id = diagnostics.record_request_start(
@@ -772,7 +827,7 @@ def request_chat_content(
                     elapsed_ms=int(round((time.perf_counter() - started) * 1000)),
                 )
             return content
-        except (requests.RequestException, ValueError, KeyError, json.JSONDecodeError) as exc:
+        except (requests.RequestException, ValueError, KeyError, json.JSONDecodeError, socket.gaierror) as exc:
             last_error = exc
             elapsed = time.perf_counter() - started
             status_code = exc.response.status_code if isinstance(exc, requests.HTTPError) and exc.response is not None else None
@@ -811,9 +866,15 @@ def request_chat_content(
                 if request_label:
                     print(f"{request_label}: response_format fallback json_schema -> json_object after 400", flush=True)
                 continue
+            dns_failure = is_dns_resolution_error(exc)
+            if dns_failure and attempt_limit < dns_retry_limit:
+                attempt_limit = dns_retry_limit
             if attempt >= attempt_limit or not _is_retryable_http_error(exc):
                 raise
             _drop_session(_request_session_key())
+            if dns_failure:
+                with _DNS_CACHE_LOCK:
+                    _DNS_CACHE.pop(_hostname_from_base_url(base_url), None)
             delay_secs, delay_kind = _retry_after_delay(exc, attempt)
             if status_code == 429:
                 accumulated_rate_limit_wait += delay_secs
@@ -828,6 +889,7 @@ def request_chat_content(
                     flush=True,
                 )
             time.sleep(delay_secs)
+        attempt += 1
 
     if last_error is not None:
         raise last_error

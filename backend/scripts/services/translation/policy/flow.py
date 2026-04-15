@@ -71,6 +71,7 @@ def apply_translation_policies(
         )
 
     payload_ops.reset_policy_state(payload)
+    payload_ops.apply_cjk_source_keep_origin(payload)
     classified_items = 0
     ref_text_skipped = payload_ops.apply_ref_text_skip(payload)
     reference_zone_skipped = (

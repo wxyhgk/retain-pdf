@@ -2,13 +2,12 @@ use crate::error::AppError;
 use crate::models::{
     ApiResponse, ArtifactDownloadQuery, JobStatusKind, MarkdownQuery, MarkdownView,
 };
-use crate::routes::job_helpers::{
-    load_ocr_job_with_supported_layout, load_supported_job, request_base_url, stream_file,
-};
+use crate::routes::job_helpers::{request_base_url, stream_file};
 use crate::services::artifacts::{
     artifact_is_direct_downloadable, attach_job_id_header, build_bundle_for_job,
     build_markdown_bundle_for_job, resolve_registry_artifact,
 };
+use crate::services::jobs::{load_ocr_job_with_supported_layout, load_supported_job};
 use crate::storage_paths::{
     resolve_markdown_images_dir, resolve_markdown_path, resolve_normalization_report,
     resolve_normalized_document, resolve_output_pdf,
@@ -25,7 +24,7 @@ pub async fn download_pdf(
     State(state): State<AppState>,
     AxumPath(job_id): AxumPath<String>,
 ) -> Result<Response, AppError> {
-    let job = load_supported_job(&state, &job_id)?;
+    let job = load_supported_job(state.db.as_ref(), &state.config.data_root, &job_id)?;
     download_job_file(
         &state,
         &job,
@@ -42,7 +41,7 @@ pub async fn download_artifact_by_key(
     AxumPath((job_id, artifact_key)): AxumPath<(String, String)>,
     Query(query): Query<ArtifactDownloadQuery>,
 ) -> Result<Response, AppError> {
-    let job = load_supported_job(&state, &job_id)?;
+    let job = load_supported_job(state.db.as_ref(), &state.config.data_root, &job_id)?;
     download_registered_artifact(&state, &job, &job_id, &artifact_key, &query).await
 }
 
@@ -51,7 +50,7 @@ pub async fn download_ocr_artifact_by_key(
     AxumPath((job_id, artifact_key)): AxumPath<(String, String)>,
     Query(query): Query<ArtifactDownloadQuery>,
 ) -> Result<Response, AppError> {
-    let job = load_ocr_job_with_supported_layout(&state, &job_id)?;
+    let job = load_ocr_job_with_supported_layout(state.db.as_ref(), &state.config.data_root, &job_id)?;
     download_registered_artifact(&state, &job, &job_id, &artifact_key, &query).await
 }
 
@@ -59,7 +58,7 @@ pub async fn download_normalized_document(
     State(state): State<AppState>,
     AxumPath(job_id): AxumPath<String>,
 ) -> Result<Response, AppError> {
-    let job = load_supported_job(&state, &job_id)?;
+    let job = load_supported_job(state.db.as_ref(), &state.config.data_root, &job_id)?;
     download_job_file(
         &state,
         &job,
@@ -75,7 +74,7 @@ pub async fn download_ocr_normalized_document(
     State(state): State<AppState>,
     AxumPath(job_id): AxumPath<String>,
 ) -> Result<Response, AppError> {
-    let job = load_ocr_job_with_supported_layout(&state, &job_id)?;
+    let job = load_ocr_job_with_supported_layout(state.db.as_ref(), &state.config.data_root, &job_id)?;
     download_job_file(
         &state,
         &job,
@@ -91,7 +90,7 @@ pub async fn download_normalization_report(
     State(state): State<AppState>,
     AxumPath(job_id): AxumPath<String>,
 ) -> Result<Response, AppError> {
-    let job = load_supported_job(&state, &job_id)?;
+    let job = load_supported_job(state.db.as_ref(), &state.config.data_root, &job_id)?;
     download_job_file(
         &state,
         &job,
@@ -107,7 +106,7 @@ pub async fn download_ocr_normalization_report(
     State(state): State<AppState>,
     AxumPath(job_id): AxumPath<String>,
 ) -> Result<Response, AppError> {
-    let job = load_ocr_job_with_supported_layout(&state, &job_id)?;
+    let job = load_ocr_job_with_supported_layout(state.db.as_ref(), &state.config.data_root, &job_id)?;
     download_job_file(
         &state,
         &job,
@@ -125,7 +124,7 @@ pub async fn download_markdown(
     headers: HeaderMap,
     Query(query): Query<MarkdownQuery>,
 ) -> Result<Response, AppError> {
-    let job = load_supported_job(&state, &job_id)?;
+    let job = load_supported_job(state.db.as_ref(), &state.config.data_root, &job_id)?;
     let markdown_path = resolve_markdown_path(&job, &state.config.data_root)
         .ok_or_else(|| AppError::not_found(format!("markdown not found: {job_id}")))?;
     let content = tokio::fs::read_to_string(&markdown_path).await?;
@@ -154,7 +153,7 @@ pub async fn download_markdown_image(
     State(state): State<AppState>,
     AxumPath((job_id, path)): AxumPath<(String, String)>,
 ) -> Result<Response, AppError> {
-    let job = load_supported_job(&state, &job_id)?;
+    let job = load_supported_job(state.db.as_ref(), &state.config.data_root, &job_id)?;
     let images_dir = resolve_markdown_images_dir(&job, &state.config.data_root)
         .ok_or_else(|| AppError::not_found(format!("markdown images not found: {job_id}")))?;
     let file_path = images_dir.join(&path);
@@ -172,11 +171,16 @@ pub async fn download_bundle(
     AxumPath(job_id): AxumPath<String>,
 ) -> Result<Response, AppError> {
     let _guard = state.downloads_lock.lock().await;
-    let job = load_supported_job(&state, &job_id)?;
+    let job = load_supported_job(state.db.as_ref(), &state.config.data_root, &job_id)?;
     if !matches!(job.status, JobStatusKind::Succeeded) {
         return Err(AppError::conflict("job is not finished successfully"));
     }
-    let zip_path = build_bundle_for_job(&state, &job)?;
+    let zip_path = build_bundle_for_job(
+        state.db.as_ref(),
+        &state.config.data_root,
+        &state.config.downloads_dir,
+        &job,
+    )?;
     let mut response =
         stream_file(zip_path, "application/zip", Some(format!("{job_id}.zip"))).await?;
     attach_job_id_header(&mut response, &job_id)?;
@@ -191,10 +195,20 @@ async fn download_registered_artifact(
     query: &ArtifactDownloadQuery,
 ) -> Result<Response, AppError> {
     if artifact_key == crate::storage_paths::ARTIFACT_KEY_MARKDOWN_BUNDLE_ZIP {
-        let (item, path) = build_markdown_bundle_for_job(state, job, query.include_job_dir)?;
+        let (item, path) = build_markdown_bundle_for_job(
+            state.db.as_ref(),
+            &state.config.data_root,
+            job,
+            query.include_job_dir,
+        )?;
         return stream_file(path, &item.content_type, item.file_name.clone()).await;
     }
-    let Some((item, path)) = resolve_registry_artifact(state, job, artifact_key)? else {
+    let Some((item, path)) = resolve_registry_artifact(
+        state.db.as_ref(),
+        &state.config.data_root,
+        job,
+        artifact_key,
+    )? else {
         return Err(AppError::not_found(format!(
             "artifact not found: {job_id}/{artifact_key}"
         )));

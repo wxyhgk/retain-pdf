@@ -14,7 +14,10 @@ use tokio::process::Command;
 use tokio::time::{sleep, timeout, Duration};
 use tracing::info;
 
-use crate::job_events::{persist_job, persist_runtime_job, record_custom_runtime_event};
+use crate::job_events::{
+    persist_job_with_resources, persist_runtime_job, persist_runtime_job_with_resources,
+    record_custom_runtime_event_with_resources,
+};
 #[cfg(test)]
 use crate::models::JobArtifacts;
 use crate::models::{now_iso, JobAiDiagnostic, JobRuntimeState, JobStatusKind, ProcessResult};
@@ -137,7 +140,12 @@ pub(crate) async fn execute_process_job(
                 }
                 let mut timed_out_job = state.db.get_job(&stdout_handle.await??.1.job_id)?;
                 apply_timeout_failure(&mut timed_out_job, now_iso());
-                persist_job(&state, &timed_out_job)?;
+                persist_job_with_resources(
+                    state.db.as_ref(),
+                    &state.config.data_root,
+                    &state.config.output_root,
+                    &timed_out_job,
+                )?;
                 return Ok(timed_out_job.into_runtime());
             }
         }
@@ -167,7 +175,12 @@ pub(crate) async fn execute_process_job(
         should_treat_shutdown_noise_as_success(&latest_job, &stderr_text),
     );
     apply_process_completion(&mut latest_job, completion, &stderr_text);
-    maybe_attach_ai_failure_diagnosis(&state, &mut latest_job).await;
+    maybe_attach_ai_failure_diagnosis(
+        state.db.as_ref(),
+        state.config.as_ref(),
+        &mut latest_job,
+    )
+    .await;
     Ok(latest_job)
 }
 
@@ -289,14 +302,18 @@ fn should_treat_shutdown_noise_as_success(job: &JobRuntimeState, stderr_text: &s
     }
 }
 
-async fn maybe_attach_ai_failure_diagnosis(state: &AppState, job: &mut JobRuntimeState) {
+async fn maybe_attach_ai_failure_diagnosis(
+    db: &crate::db::Db,
+    config: &crate::config::AppConfig,
+    job: &mut JobRuntimeState,
+) {
     let Some(failure_snapshot) = job.failure.clone() else {
         return;
     };
     if failure_snapshot.category != "unknown" || failure_snapshot.ai_diagnostic.is_some() {
         return;
     }
-    let script_path = &state.config.run_failure_ai_diagnosis_script;
+    let script_path = &config.run_failure_ai_diagnosis_script;
     if !script_path.exists() {
         return;
     }
@@ -305,8 +322,8 @@ async fn maybe_attach_ai_failure_diagnosis(state: &AppState, job: &mut JobRuntim
         .artifacts
         .as_ref()
         .and_then(|artifacts| artifacts.job_root.as_ref())
-        .and_then(|job_root| resolve_data_path(&state.config.data_root, job_root).ok())
-        .unwrap_or_else(|| state.config.output_root.join(&job.job_id));
+        .and_then(|job_root| resolve_data_path(&config.data_root, job_root).ok())
+        .unwrap_or_else(|| config.output_root.join(&job.job_id));
     let logs_dir = job_root.join("logs");
     let request_path = logs_dir.join("failure-ai-diagnosis.request.json");
     let response_path = logs_dir.join("failure-ai-diagnosis.response.json");
@@ -339,7 +356,7 @@ async fn maybe_attach_ai_failure_diagnosis(state: &AppState, job: &mut JobRuntim
         return;
     }
 
-    let mut command = Command::new(&state.config.python_bin);
+    let mut command = Command::new(&config.python_bin);
     command
         .arg("-u")
         .arg(script_path)
@@ -351,11 +368,11 @@ async fn maybe_attach_ai_failure_diagnosis(state: &AppState, job: &mut JobRuntim
         .arg(&job.request_payload.translation.model)
         .arg("--base-url")
         .arg(&job.request_payload.translation.base_url)
-        .env("RUST_API_DATA_ROOT", &state.config.data_root)
-        .env("RUST_API_OUTPUT_ROOT", &state.config.output_root)
-        .env("OUTPUT_ROOT", &state.config.output_root)
+        .env("RUST_API_DATA_ROOT", &config.data_root)
+        .env("RUST_API_OUTPUT_ROOT", &config.output_root)
+        .env("OUTPUT_ROOT", &config.output_root)
         .env("PYTHONUNBUFFERED", "1")
-        .current_dir(&state.config.project_root)
+        .current_dir(&config.project_root)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
@@ -406,9 +423,11 @@ async fn maybe_attach_ai_failure_diagnosis(state: &AppState, job: &mut JobRuntim
         "summary": failure_snapshot.summary,
         "ai_diagnostic": ai_diagnostic,
     });
-    record_custom_runtime_event(
-        state,
-        job,
+    record_custom_runtime_event_with_resources(
+        db,
+        &config.data_root,
+        &config.output_root,
+        &job.snapshot(),
         "info",
         "failure_ai_diagnosed",
         "AI 辅助诊断已生成",
@@ -452,7 +471,12 @@ async fn read_stdout(
             break;
         }
         job.updated_at = now_iso();
-        persist_runtime_job(&state, &job)?;
+        persist_runtime_job_with_resources(
+            state.db.as_ref(),
+            &state.config.data_root,
+            &state.config.output_root,
+            &job,
+        )?;
     }
     Ok((out, job))
 }
@@ -780,7 +804,7 @@ print(json.dumps({
         });
         persist_runtime_job(&state, &job).expect("persist runtime job");
 
-        maybe_attach_ai_failure_diagnosis(&state, &mut job).await;
+        maybe_attach_ai_failure_diagnosis(state.db.as_ref(), state.config.as_ref(), &mut job).await;
 
         let failure = job.failure.as_ref().expect("failure");
         assert_eq!(failure.category, "unknown");

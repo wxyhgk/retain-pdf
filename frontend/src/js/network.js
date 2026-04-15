@@ -1,7 +1,20 @@
-import { apiBase, buildApiHeaders, frontendApiKey } from "./config.js";
+import { apiBase, buildApiHeaders, frontendApiKey, isMockMode } from "./config.js";
 import { unwrapEnvelope } from "./job.js";
+import {
+  fetchMockProtected,
+  getMockJobArtifactsManifest,
+  getMockJobEvents,
+  getMockJobList,
+  getMockJobPayload,
+  submitMockJob,
+  submitMockUpload,
+} from "./mock.js";
 
 export async function fetchJobPayload(jobId, apiPrefix) {
+  if (isMockMode()) {
+    void apiPrefix;
+    return getMockJobPayload(jobId);
+  }
   const resp = await fetch(`${apiBase()}${apiPrefix}/jobs/${jobId}`, {
     headers: buildApiHeaders(),
   });
@@ -15,6 +28,12 @@ export async function fetchJobPayload(jobId, apiPrefix) {
 }
 
 export async function fetchJobEvents(jobId, apiPrefix, limit = 50, offset = 0) {
+  if (isMockMode()) {
+    void jobId;
+    void apiPrefix;
+    const payload = getMockJobEvents();
+    return { ...payload, limit, offset };
+  }
   const resp = await fetch(`${apiBase()}${apiPrefix}/jobs/${jobId}/events?limit=${limit}&offset=${offset}`, {
     headers: buildApiHeaders(),
   });
@@ -29,6 +48,11 @@ export async function fetchJobEvents(jobId, apiPrefix, limit = 50, offset = 0) {
 }
 
 export async function fetchJobArtifactsManifest(jobId, apiPrefix) {
+  if (isMockMode()) {
+    void jobId;
+    void apiPrefix;
+    return getMockJobArtifactsManifest();
+  }
   const resp = await fetch(`${apiBase()}${apiPrefix}/jobs/${jobId}/artifacts-manifest`, {
     headers: buildApiHeaders(),
   });
@@ -53,6 +77,10 @@ export async function fetchJobList(
     scope = "jobs",
   } = {},
 ) {
+  if (isMockMode()) {
+    void apiPrefix;
+    return getMockJobList();
+  }
   const params = new URLSearchParams();
   params.set("limit", `${limit}`);
   params.set("offset", `${offset}`);
@@ -77,6 +105,12 @@ export async function fetchJobList(
 }
 
 export function submitUploadRequest(url, form, onProgress) {
+  if (isMockMode()) {
+    void url;
+    void form;
+    onProgress?.(1, 1);
+    return Promise.resolve(submitMockUpload());
+  }
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
@@ -117,6 +151,15 @@ export function submitUploadRequest(url, form, onProgress) {
 }
 
 export async function submitJson(url, payload) {
+  if (isMockMode()) {
+    void payload;
+    if (/\/jobs(?:$|\?)/.test(url)) {
+      return submitMockJob();
+    }
+    if (/\/cancel(?:$|\?)/.test(url)) {
+      return { ok: true };
+    }
+  }
   const resp = await fetch(url, {
     method: "POST",
     headers: buildApiHeaders({
@@ -138,10 +181,22 @@ export async function submitJson(url, payload) {
 }
 
 export async function validateMineruToken(apiPrefix, payload) {
+  if (isMockMode()) {
+    void apiPrefix;
+    void payload;
+    return {
+      ok: true,
+      valid: true,
+      summary: "mock mode: token validation skipped",
+    };
+  }
   return submitJson(`${apiBase()}${apiPrefix}/providers/mineru/validate-token`, payload);
 }
 
 export async function fetchProtected(url, options = {}) {
+  if (isMockMode() && `${url || ""}`.startsWith("mock://")) {
+    return fetchMockProtected(url);
+  }
   const headers = buildApiHeaders(options.headers || {});
   return fetch(url, {
     ...options,

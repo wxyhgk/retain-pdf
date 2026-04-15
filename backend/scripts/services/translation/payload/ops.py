@@ -1,5 +1,6 @@
 from .parts import (
     GROUP_ITEM_PREFIX,
+    apply_cjk_source_keep_origin,
     apply_after_last_title_skip,
     apply_classification_labels,
     apply_metadata_fragment_skip,
@@ -20,6 +21,7 @@ from .parts import (
 
 __all__ = [
     "GROUP_ITEM_PREFIX",
+    "apply_cjk_source_keep_origin",
     "apply_after_last_title_skip",
     "apply_classification_labels",
     "apply_metadata_fragment_skip",

@@ -79,16 +79,13 @@ _MICRO_CONNECTOR_SEGMENTS = _OPTIONAL_CONNECTOR_SEGMENTS | {
     "will",
 }
 
-_SMALL_INLINE_TRIGGER_PHRASES = (
+_FORMULA_RISK_TRIGGER_PHRASES = (
     "abbreviated as",
     "defined as",
     "denoted as",
     "is defined as",
     "can be defined as",
     "where ",
-)
-
-_SMALL_INLINE_SUPPORT_PHRASES = (
     "represented by",
     "expressed as",
     "written as",
@@ -97,15 +94,9 @@ _SMALL_INLINE_SUPPORT_PHRASES = (
     "refers to",
     "stands for",
 )
-
-_PROSE_HEAVY_PLAIN_MAX_PLACEHOLDERS = 12
-_PROSE_HEAVY_PLAIN_MAX_SEGMENTS = 12
-_PROSE_HEAVY_PLAIN_MIN_PROSE_CHARS = 240
-_PROSE_HEAVY_PLAIN_MAX_DENSITY = 0.02
-_FORMULA_DENSE_PROSE_MIN_PLACEHOLDERS = 4
-_FORMULA_DENSE_PROSE_MIN_PROSE_CHARS = 180
-_FORMULA_DENSE_PROSE_MAX_DENSITY = 0.12
-_FORMULA_DENSE_PROSE_MAX_EFFECTIVE_SEGMENTS = 32
+_PLACEHOLDER_ROUTE_MIN_RISK = 6
+_PLACEHOLDER_ROUTE_MIN_PLACEHOLDERS = 4
+_PLACEHOLDER_ROUTE_MAX_SEGMENTS = 16
 
 
 class SegmentTranslationFormatError(ValueError):
@@ -448,40 +439,7 @@ def rebuild_formula_segment_translation(
     return rebuilt.strip()
 
 
-def is_small_formula_inline_candidate(
-    item: dict,
-    *,
-    policy: SegmentationPolicy | None = None,
-) -> bool:
-    if policy is None:
-        policy = SegmentationPolicy()
-    if not policy.small_formula_inline_enabled:
-        return False
-    if item.get("continuation_group"):
-        return False
-    source_text = unit_source_text(item)
-    if not source_text:
-        return False
-    placeholder_count = len(re.findall(r"<[ft]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]", source_text))
-    if placeholder_count <= 0 or placeholder_count > policy.small_formula_inline_max_placeholders:
-        return False
-    normalized_chars = len(normalize_inline_whitespace(source_text))
-    if normalized_chars < policy.small_formula_inline_min_chars or normalized_chars > policy.small_formula_inline_max_chars:
-        return False
-    skeleton, segments = build_formula_segment_plan(source_text)
-    if not (0 < len(segments) <= policy.small_formula_inline_max_segments):
-        return False
-    if effective_formula_segment_count(segments) > 3:
-        return False
-    return small_formula_risk_score(
-        source_text,
-        skeleton=skeleton,
-        segments=segments,
-        policy=policy,
-    ) >= policy.small_formula_inline_score_threshold
-
-
-def small_formula_risk_score(
+def formula_risk_score(
     source_text: str,
     *,
     skeleton: list[tuple[str, str]] | None = None,
@@ -496,13 +454,25 @@ def small_formula_risk_score(
     if resolved_skeleton is None or resolved_segments is None:
         resolved_skeleton, resolved_segments = build_formula_segment_plan(source_text)
     score = 0
-    if any(phrase in lowered for phrase in _SMALL_INLINE_TRIGGER_PHRASES):
+    placeholder_count = len(re.findall(r"<[ft]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]", source_text))
+    prose_chars = len(normalize_inline_whitespace(strip_placeholders(source_text)))
+    density = placeholder_count / max(1, len(source_text or ""))
+
+    if any(phrase in lowered for phrase in _FORMULA_RISK_TRIGGER_PHRASES):
         score += 3
-    if any(phrase in lowered for phrase in _SMALL_INLINE_SUPPORT_PHRASES):
-        score += 2
     segment_texts = [normalize_inline_whitespace(segment["source_text"]).strip().lower() for segment in resolved_segments]
     short_segments = [text for text in segment_texts if 0 < len(text) <= 32]
     if short_segments:
+        score += 1
+    if placeholder_count >= 4:
+        score += 2
+    if placeholder_count >= 8:
+        score += 2
+    if prose_chars >= 180:
+        score += 1
+    if density >= 0.015:
+        score += 1
+    if density >= 0.03:
         score += 1
     micro_segment_count = sum(1 for text in segment_texts if is_micro_formula_segment(text))
     if micro_segment_count >= max(2, len(segment_texts) - 1):
@@ -526,47 +496,27 @@ def small_formula_risk_score(
     return score
 
 
+def small_formula_risk_score(
+    source_text: str,
+    *,
+    skeleton: list[tuple[str, str]] | None = None,
+    segments: list[dict[str, str]] | None = None,
+    policy: SegmentationPolicy | None = None,
+) -> int:
+    return formula_risk_score(
+        source_text,
+        skeleton=skeleton,
+        segments=segments,
+        policy=policy,
+    )
+
+
 def is_formula_dense_prose_candidate(
     item: dict,
     *,
     policy: SegmentationPolicy | None = None,
 ) -> bool:
-    if policy is None:
-        policy = SegmentationPolicy()
-    if not has_formula_placeholders(item):
-        return False
-    if item.get("continuation_group"):
-        return False
-    source_text = unit_source_text(item)
-    if not source_text:
-        return False
-    skeleton, segments = build_formula_segment_plan(source_text)
-    if not segments:
-        return False
-    placeholder_count = len(re.findall(r"<[ft]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]", source_text))
-    if placeholder_count < _FORMULA_DENSE_PROSE_MIN_PLACEHOLDERS:
-        return False
-    effective_segments = effective_formula_segment_count(segments)
-    if effective_segments <= 2 or effective_segments > _FORMULA_DENSE_PROSE_MAX_EFFECTIVE_SEGMENTS:
-        return False
-    prose_chars = len(normalize_inline_whitespace(strip_placeholders(source_text)))
-    if prose_chars < _FORMULA_DENSE_PROSE_MIN_PROSE_CHARS:
-        return False
-    formula_density = placeholder_count / max(1, len(source_text))
-    if formula_density > _FORMULA_DENSE_PROSE_MAX_DENSITY:
-        return False
-    segment_texts = [normalize_inline_whitespace(segment["source_text"]).strip().lower() for segment in segments]
-    long_segment_count = sum(1 for text in segment_texts if len(text) >= 80)
-    short_segment_count = sum(1 for text in segment_texts if 0 < len(text) <= 40)
-    micro_segment_count = sum(1 for text in segment_texts if is_micro_formula_segment(text))
-    sentence_count = len(re.findall(r"[.!?;:]", normalize_inline_whitespace(strip_placeholders(source_text))))
-    if short_segment_count < 2:
-        return False
-    if long_segment_count == 0:
-        return False
-    if sentence_count < 2:
-        return False
-    return True
+    return formula_segment_translation_route(item, policy=policy) == "single"
 
 
 def formula_segment_translation_route(item: dict, *, policy: SegmentationPolicy | None = None) -> str:
@@ -574,32 +524,32 @@ def formula_segment_translation_route(item: dict, *, policy: SegmentationPolicy 
         policy = SegmentationPolicy()
     if not has_formula_placeholders(item):
         return "none"
+    if item.get("continuation_group"):
+        return "none"
     source_text = unit_source_text(item)
-    _, segments = build_formula_segment_plan(source_text)
+    skeleton, segments = build_formula_segment_plan(source_text)
     if not segments:
         return "none"
     effective_segments = effective_formula_segment_count(segments)
     placeholder_count = len(re.findall(r"<[ft]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]", source_text))
     prose_chars = len(normalize_inline_whitespace(strip_placeholders(source_text)))
-    formula_density = placeholder_count / max(1, len(source_text))
-    if is_small_formula_inline_candidate(item, policy=policy):
-        return "small_inline"
-    if is_formula_dense_prose_candidate(item, policy=policy):
-        return "formula_dense_prose"
-    if placeholder_count <= 3 and effective_segments <= 2:
+    risk_score = formula_risk_score(
+        source_text,
+        skeleton=skeleton,
+        segments=segments,
+        policy=policy,
+    )
+    if placeholder_count < _PLACEHOLDER_ROUTE_MIN_PLACEHOLDERS:
         return "none"
-    if (
-        placeholder_count <= _PROSE_HEAVY_PLAIN_MAX_PLACEHOLDERS
-        and effective_segments <= _PROSE_HEAVY_PLAIN_MAX_SEGMENTS
-        and prose_chars >= _PROSE_HEAVY_PLAIN_MIN_PROSE_CHARS
-        and formula_density <= _PROSE_HEAVY_PLAIN_MAX_DENSITY
-    ):
+    if risk_score < _PLACEHOLDER_ROUTE_MIN_RISK:
         return "none"
-    if policy.prefer_plain_when_segment_count_leq > 0 and effective_segments <= policy.prefer_plain_when_segment_count_leq:
+    if effective_segments <= 0 or effective_segments > _PLACEHOLDER_ROUTE_MAX_SEGMENTS:
         return "none"
-    if effective_segments <= policy.max_formula_segment_count:
-        return "single"
-    return "windowed"
+    if placeholder_count >= 24:
+        return "none"
+    if effective_segments >= 5 and prose_chars >= 180:
+        return "none"
+    return "single"
 
 
 def formula_segment_window_count(item: dict, *, policy: SegmentationPolicy | None = None) -> int:

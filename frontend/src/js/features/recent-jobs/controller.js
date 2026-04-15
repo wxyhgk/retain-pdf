@@ -44,6 +44,32 @@ function setDialogOpen(open) {
   $("open-query-btn")?.setAttribute("aria-expanded", open ? "true" : "false");
 }
 
+function dedupeRecentJobs(items) {
+  const seen = new Set();
+  const result = [];
+  for (const item of Array.isArray(items) ? items : []) {
+    const jobId = `${item?.job_id || ""}`.trim();
+    if (!jobId || seen.has(jobId)) {
+      continue;
+    }
+    seen.add(jobId);
+    result.push(item);
+  }
+  return result;
+}
+
+function isPrimaryRecentJob(item) {
+  const workflow = `${item?.workflow || item?.job_type || ""}`.trim();
+  const jobId = `${item?.job_id || ""}`.trim();
+  if (workflow === "ocr") {
+    return false;
+  }
+  if (jobId.endsWith("-ocr")) {
+    return false;
+  }
+  return true;
+}
+
 export function mountRecentJobsFeature({ fetchJobList, apiPrefix, startPolling }) {
   async function loadRecentJobs({ reset = false } = {}) {
     const list = $("recent-jobs-list");
@@ -80,6 +106,9 @@ export function mountRecentJobsFeature({ fetchJobList, apiPrefix, startPolling }
           }
           nextOffset += items.length;
           for (const item of items) {
+            if (!isPrimaryRecentJob(item)) {
+              continue;
+            }
             const dateKey = recentJobDateKey(item.updated_at || item.created_at);
             if (!dateKey) {
               continue;
@@ -108,10 +137,11 @@ export function mountRecentJobsFeature({ fetchJobList, apiPrefix, startPolling }
         const payload = await fetchJobList(apiPrefix, { limit: pageSize, offset: nextOffset });
         latestInvocationSummary = payload?.invocation_summary || latestInvocationSummary;
         const items = Array.isArray(payload?.items) ? payload.items : [];
+        const visibleItems = items.filter(isPrimaryRecentJob);
         if (items.length === 0) {
           hasMore = false;
         } else {
-          collected.push(...items);
+          collected.push(...visibleItems);
           nextOffset += items.length;
           hasMore = items.length === pageSize;
         }
@@ -129,15 +159,15 @@ export function mountRecentJobsFeature({ fetchJobList, apiPrefix, startPolling }
         return;
       }
 
-      const nextItems = reset ? collected : [...previousItems, ...collected];
+      const nextItems = dedupeRecentJobs(reset ? collected : [...previousItems, ...collected]);
       setRecentJobsOffset(nextOffset);
       setRecentJobsHasMore(hasMore);
       setRecentJobsItems(nextItems);
       renderRecentJobsList({
-        items: collected,
+        items: nextItems,
         allItems: nextItems,
         invocationSummary: latestInvocationSummary,
-        reset,
+        reset: true,
         hasMore,
         onSelect(jobId) {
           if (!jobId) {

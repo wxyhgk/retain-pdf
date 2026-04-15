@@ -1,21 +1,5 @@
 <main id="app-shell" class="page app-shell">
-  <header class="topbar">
-    <div class="brand-mark" aria-hidden="true"></div>
-    <div class="hero-actions">
-      <button id="developer-btn" type="button" class="secondary">开发者</button>
-      <button id="desktop-settings-btn" type="button" class="secondary hidden">设置</button>
-      <button id="open-output-btn" type="button" class="secondary hidden">打开输出目录</button>
-    </div>
-  </header>
-
-  <section class="hero hero-single">
-    <div class="hero-copy">
-      <a class="hero-repo-link" href="https://github.com/wxyhgk/retain-pdf" target="_blank" rel="noopener noreferrer">
-        <img class="hero-repo-logo" src="src/assets/RetainPDF-logo.svg" alt="RetainPDF logo" />
-        <span>RetainPDF</span>
-      </a>
-    </div>
-  </section>
+  <app-shell-header></app-shell-header>
 
   <section class="card workflow-card">
     <div id="job-warning" class="job-warning hidden">检测到上一个任务仍在处理中。建议先等待当前任务结束，再提交新的 PDF。</div>
@@ -70,54 +54,13 @@
             </button>
           </div>
         </div>
-      <div id="page-range-summary" class="page-range-summary hidden">已选择页码：-</div>
-      <div id="math-mode-summary" class="page-range-summary hidden">当前公式模式：placeholder（公式占位保护）</div>
+      <page-range-summary id="page-range-summary" class="hidden">已选择页码：-</page-range-summary>
       </div>
-      <pre id="error-box-inline" class="log error-box inline-error-box hidden">-</pre>
+      <inline-error-box id="error-box-inline" class="hidden">-</inline-error-box>
     </form>
   </section>
 
-  <section id="status-section" class="card status-card hidden">
-    <div class="status-head">
-      <div class="status-head-actions">
-        <button id="cancel-btn" type="button" class="secondary" disabled>取消任务</button>
-        <button id="stop-btn" type="button" class="secondary">停止轮询</button>
-        <button id="back-home-btn" type="button" class="secondary hidden">返回主页面</button>
-      </div>
-    </div>
-
-    <div class="status-ring-shell">
-      <div class="status-ring-wrap">
-        <svg class="status-ring" viewBox="0 0 160 160" aria-hidden="true">
-          <circle class="status-ring-track" cx="80" cy="80" r="62"></circle>
-          <circle id="status-ring-progress" class="status-ring-progress" cx="80" cy="80" r="62"></circle>
-        </svg>
-        <div class="status-ring-center">
-          <div id="status-stage-icon" class="status-stage-icon" aria-hidden="true"></div>
-          <div id="status-ring-label" class="status-ring-label">等待中</div>
-          <div id="status-ring-value" class="status-ring-value">准备中</div>
-          <div id="status-ring-elapsed" class="status-ring-elapsed">0秒</div>
-          <div class="status-ring-actions">
-            <button id="status-detail-btn" type="button" class="copy-job-btn secondary">详情</button>
-          </div>
-          <a id="pdf-btn" class="button-link disabled ring-download hidden" href="#" target="_blank" rel="noopener noreferrer">下载 PDF</a>
-        </div>
-      </div>
-    </div>
-
-    <div class="hidden">
-      <div id="job-id">-</div>
-      <div id="job-status">idle</div>
-      <div id="job-stage-detail">-</div>
-      <div id="query-job-duration">-</div>
-      <div id="job-progress-text">-</div>
-      <div class="progress-track"><div id="job-progress-bar" class="progress-bar"></div></div>
-      <div id="job-finished-at">-</div>
-      <a id="download-btn" class="button-link disabled" href="#" target="_blank" rel="noopener noreferrer">ZIP</a>
-      <a id="markdown-raw-btn" class="button-link secondary disabled" href="#" target="_blank" rel="noopener noreferrer">Markdown</a>
-      <a id="markdown-btn" class="button-link secondary disabled" href="#" target="_blank" rel="noopener noreferrer">JSON</a>
-    </div>
-  </section>
+  <job-status-card id="status-section"></job-status-card>
 
   <div class="query-entry">
     <button id="open-query-btn" type="button" class="secondary">最近任务</button>
@@ -129,37 +72,5 @@
     </button>
   </div>
 
-  <dialog id="query-dialog" class="desktop-dialog recent-jobs-dialog">
-    <form method="dialog" class="desktop-shell recent-jobs-dialog-shell">
-      <div class="recent-jobs-sidebar-head">
-        <div class="recent-jobs-head">
-          <h2>最近任务</h2>
-          <p>按最近更新时间排序，点击后直接查看任务详情。</p>
-        </div>
-        <button id="query-dialog-close-btn" type="submit" class="dialog-close-btn" aria-label="关闭">×</button>
-      </div>
-      <div class="recent-jobs-sidebar-body advanced-content">
-        <div class="recent-jobs-toolbar">
-          <input id="recent-jobs-date" type="date" aria-label="选择日期" />
-          <button id="refresh-jobs-btn" class="secondary" type="button">刷新列表</button>
-        </div>
-        <div id="recent-jobs-summary" class="status-panel-note">Stage Spec 0 · Legacy CLI 0 · Unknown 0</div>
-        <div id="recent-jobs-empty" class="events-empty hidden">暂无最近任务</div>
-        <div id="recent-jobs-list" class="recent-jobs-list hidden"></div>
-        <div class="recent-jobs-more-row">
-          <button id="load-more-jobs-btn" class="secondary hidden" type="button">更多</button>
-        </div>
-
-        <div class="top-gap">
-          <div class="label">提示 / 错误</div>
-          <pre id="error-box" class="log error-box">-</pre>
-        </div>
-
-        <div class="top-gap">
-          <div class="label">失败诊断</div>
-          <pre id="diagnostic-box" class="log">-</pre>
-        </div>
-      </div>
-    </form>
-  </dialog>
+  <recent-jobs-dialog></recent-jobs-dialog>
 </main>

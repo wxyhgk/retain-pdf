@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>任务详情</title>
+    <link rel="icon" type="image/svg+xml" href="./src/assets/RetainPDF-logo.svg" />
+    <link rel="shortcut icon" href="./src/assets/RetainPDF-logo.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      body.detail-body {
+        margin: 0;
+        background: #f5f6f8;
+        color: #1d1d1f;
+      }
+
+      .detail-page {
+        width: min(1120px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 20px 0 40px;
+        display: grid;
+        gap: 16px;
+      }
+
+      .detail-hero {
+        display: grid;
+        gap: 12px;
+        padding: 20px 22px;
+        border: 1px solid #e8e8ed;
+        border-radius: 28px;
+        background: #fff;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+      }
+
+      .detail-hero-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .detail-hero h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        letter-spacing: -0.03em;
+      }
+
+      .detail-hero p {
+        margin: 0;
+        color: #6e6e73;
+        font-size: 13px;
+      }
+
+      .detail-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .detail-card {
+        padding: 18px 18px 16px;
+        border: 1px solid #e8e8ed;
+        border-radius: 24px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+      }
+
+      .detail-card h2 {
+        margin: 0 0 12px;
+        font-size: 15px;
+      }
+
+      .detail-meta-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .detail-meta-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        font-size: 13px;
+      }
+
+      .detail-meta-row .label {
+        color: #6e6e73;
+      }
+
+      .detail-meta-row .value {
+        text-align: right;
+        color: #1d1d1f;
+      }
+
+      .detail-card-wide {
+        grid-column: 1 / -1;
+      }
+
+      .detail-modal-trigger {
+        display: grid;
+        gap: 10px;
+      }
+
+      .detail-trigger-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .detail-trigger-copy {
+        margin: 0;
+        color: #6e6e73;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .detail-trigger-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 0 16px;
+        border: 1px solid #d7d9e0;
+        border-radius: 999px;
+        background: #fff;
+        color: #1d1d1f;
+        font-size: 13px;
+        font-weight: 600;
+        transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+      }
+
+      .detail-trigger-btn:hover {
+        background: #f7f7fa;
+        border-color: #cfd2db;
+        transform: translateY(-1px);
+      }
+
+      .detail-log {
+        margin: 0;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: #f7f7fa;
+        color: #1d1d1f;
+        font-size: 12px;
+        line-height: 1.65;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .detail-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .detail-stage-item,
+      .detail-event-item {
+        padding: 14px 16px;
+        border: 1px solid #ececf1;
+        border-radius: 18px;
+        background: #fff;
+      }
+
+      .detail-stage-top,
+      .detail-event-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+      }
+
+      .detail-stage-title,
+      .detail-event-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .detail-stage-meta,
+      .detail-event-meta {
+        margin-top: 6px;
+        font-size: 12px;
+        color: #6e6e73;
+      }
+
+      .detail-event-payload {
+        margin: 10px 0 0;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: #111827;
+        color: #f9fafb;
+        font-size: 12px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .detail-empty {
+        padding: 20px;
+        border: 1px dashed #d8d9de;
+        border-radius: 18px;
+        color: #6e6e73;
+        text-align: center;
+        background: #fafafc;
+      }
+
+      .detail-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(15, 23, 42, 0.32);
+        backdrop-filter: blur(8px);
+      }
+
+      .detail-modal-panel {
+        width: min(920px, calc(100vw - 24px));
+        max-height: min(82vh, 920px);
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        border-radius: 28px;
+        background: #fff;
+        box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
+      }
+
+      .detail-modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        border-bottom: 1px solid #ececf1;
+      }
+
+      .detail-modal-title {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .detail-modal-subtitle {
+        margin: 4px 0 0;
+        color: #6e6e73;
+        font-size: 12px;
+      }
+
+      .detail-modal-close {
+        width: 34px;
+        height: 34px;
+        border: 1px solid #d5d7dd;
+        border-radius: 999px;
+        background: #fff;
+        color: #1d1d1f;
+        font-size: 20px;
+        line-height: 1;
+      }
+
+      .detail-modal-body {
+        overflow: auto;
+        padding: 18px 20px 20px;
+        background: #fbfbfd;
+      }
+
+      .detail-modal-status {
+        margin-bottom: 12px;
+        color: #6e6e73;
+        font-size: 13px;
+      }
+
+      @media (max-width: 900px) {
+        .detail-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+    <script src="./runtime-config.js"></script>
+    <script src="./runtime-config.local.js"></script>
+  </head>
+  <body class="detail-body">
+    <main class="detail-page">
+      <section class="detail-hero">
+        <div class="detail-hero-top">
+          <div>
+            <h1>任务详情</h1>
+            <p id="detail-head-note">通过 `detail.html?job_id=...` 可直接分享当前任务详情。</p>
+          </div>
+          <div class="detail-actions">
+            <a id="detail-reader-btn" class="button-link secondary disabled" href="#" target="_blank" rel="noopener noreferrer">对照阅读</a>
+            <a id="detail-pdf-btn" class="button-link secondary disabled" href="#" target="_blank" rel="noopener noreferrer">下载 PDF</a>
+          </div>
+        </div>
+        <div class="detail-meta-list">
+          <div class="detail-meta-row"><span class="label">Job ID</span><span id="detail-job-id" class="value mono">-</span></div>
+          <div class="detail-meta-row"><span class="label">状态摘要</span><span id="detail-status-summary" class="value">-</span></div>
+          <div class="detail-meta-row"><span class="label">当前阶段</span><span id="detail-stage-detail" class="value">-</span></div>
+          <div class="detail-meta-row"><span class="label">完成时间</span><span id="detail-finished-at" class="value">-</span></div>
+        </div>
+      </section>
+
+      <section class="detail-grid">
+        <article class="detail-card">
+          <h2>运行信息</h2>
+          <div class="detail-meta-list">
+            <div class="detail-meta-row"><span class="label">当前阶段</span><span id="detail-runtime-current-stage" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">当前阶段耗时</span><span id="detail-runtime-stage-elapsed" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">累计耗时</span><span id="detail-runtime-total-elapsed" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">重试次数</span><span id="detail-runtime-retry-count" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">最近切换</span><span id="detail-runtime-last-transition" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">终态原因</span><span id="detail-runtime-terminal-reason" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">输入协议</span><span id="detail-runtime-input-protocol" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">Stage Schema</span><span id="detail-runtime-stage-spec-version" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">公式模式</span><span id="detail-runtime-math-mode" class="value">-</span></div>
+          </div>
+        </article>
+
+        <article class="detail-card">
+          <h2>失败诊断</h2>
+          <div class="detail-meta-list">
+            <div class="detail-meta-row"><span class="label">摘要</span><span id="detail-failure-summary" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">分类</span><span id="detail-failure-category" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">阶段</span><span id="detail-failure-stage" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">根因</span><span id="detail-failure-root-cause" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">建议</span><span id="detail-failure-suggestion" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">最近日志</span><span id="detail-failure-last-log-line" class="value">-</span></div>
+            <div class="detail-meta-row"><span class="label">可重试</span><span id="detail-failure-retryable" class="value">-</span></div>
+          </div>
+        </article>
+
+        <article class="detail-card">
+          <h2>提示 / 错误</h2>
+          <pre id="detail-error-box" class="detail-log">-</pre>
+        </article>
+
+        <article class="detail-card">
+          <div class="detail-modal-trigger">
+            <div class="detail-trigger-head">
+              <h2>阶段时间线</h2>
+              <button id="detail-open-stage-history-btn" type="button" class="detail-trigger-btn">查看</button>
+            </div>
+            <p class="detail-trigger-copy">默认收起，不再把整页拉长。需要时再打开查看完整阶段切换记录。</p>
+          </div>
+        </article>
+
+        <article class="detail-card">
+          <div class="detail-modal-trigger">
+            <div class="detail-trigger-head">
+              <h2>事件流</h2>
+              <button id="detail-open-events-btn" type="button" class="detail-trigger-btn">按需加载</button>
+            </div>
+            <p class="detail-trigger-copy">默认不请求事件流。只有点击查看时才加载，避免分享页初次打开就消耗过多流量。</p>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <section id="detail-stage-history-modal" class="detail-modal hidden" aria-hidden="true">
+      <div class="detail-modal-panel" role="dialog" aria-modal="true" aria-labelledby="detail-stage-history-modal-title">
+        <div class="detail-modal-head">
+          <div>
+            <h2 id="detail-stage-history-modal-title" class="detail-modal-title">阶段时间线</h2>
+            <p class="detail-modal-subtitle">按阶段展示进入、退出与耗时。</p>
+          </div>
+          <button id="detail-close-stage-history-btn" type="button" class="detail-modal-close" aria-label="关闭">×</button>
+        </div>
+        <div class="detail-modal-body">
+          <div id="detail-stage-history-empty" class="detail-empty">暂无阶段记录</div>
+          <div id="detail-stage-history-list" class="detail-list hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="detail-events-modal" class="detail-modal hidden" aria-hidden="true">
+      <div class="detail-modal-panel" role="dialog" aria-modal="true" aria-labelledby="detail-events-modal-title">
+        <div class="detail-modal-head">
+          <div>
+            <h2 id="detail-events-modal-title" class="detail-modal-title">事件流</h2>
+            <p class="detail-modal-subtitle">只有打开时才会请求完整事件流，首次加载后会在当前页面缓存。</p>
+          </div>
+          <button id="detail-close-events-btn" type="button" class="detail-modal-close" aria-label="关闭">×</button>
+        </div>
+        <div class="detail-modal-body">
+          <div id="detail-events-status" class="detail-modal-status">尚未加载</div>
+          <div id="detail-events-empty" class="detail-empty">暂无事件</div>
+          <div id="detail-events-list" class="detail-list hidden"></div>
+        </div>
+      </div>
+    </section>
+    <script type="module" src="./src/js/job-detail.js"></script>
+  </body>
+</html>

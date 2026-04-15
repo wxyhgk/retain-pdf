@@ -1,4 +1,7 @@
 from __future__ import annotations
+import re
+
+from services.document_schema.semantics import is_body_structure_role
 from services.document_schema.semantics import is_algorithm_semantic
 from services.document_schema.semantics import is_reference_entry_semantic
 from services.document_schema.semantics import is_reference_heading_semantic
@@ -14,6 +17,9 @@ _FOUNDATIONAL_SKIP_BY_BLOCK_TYPE = {
     "image_body": ("skip_image_body", "skip_image_body"),
     "code_body": ("code", "code"),
 }
+_CJK_CHAR_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
+_LATIN_CHAR_RE = re.compile(r"[A-Za-z]")
+_EN_WORD_RE = re.compile(r"[A-Za-z]+(?:[-'][A-Za-z]+)?")
 
 
 def _bbox_tuple(item: dict) -> tuple[float, float, float, float] | None:
@@ -118,6 +124,41 @@ def _preserve_source_as_translation(item: dict) -> None:
     item["translation_unit_translated_text"] = source_text
     item["protected_translated_text"] = protected_source_text
     item["translated_text"] = source_text
+
+
+def looks_like_cjk_dominant_body_text(item: dict) -> bool:
+    if str(item.get("block_type", "") or "").strip().lower() != "text":
+        return False
+    metadata = item.get("metadata") or {}
+    if not is_body_structure_role(metadata):
+        return False
+    source_text = str(item.get("translation_unit_protected_source_text") or item.get("protected_source_text") or item.get("source_text") or "")
+    compact = " ".join(source_text.split())
+    if len(compact) < 16:
+        return False
+    cjk_chars = len(_CJK_CHAR_RE.findall(compact))
+    if cjk_chars < 10:
+        return False
+    latin_chars = len(_LATIN_CHAR_RE.findall(compact))
+    english_words = len(_EN_WORD_RE.findall(compact))
+    return cjk_chars >= max(10, latin_chars * 2, english_words * 2)
+
+
+def apply_cjk_source_keep_origin(payload: list[dict]) -> int:
+    skipped = 0
+    for item in payload:
+        if not item.get("should_translate", True):
+            continue
+        if not looks_like_cjk_dominant_body_text(item):
+            continue
+        item["classification_label"] = "skip_cjk_source_body"
+        item["should_translate"] = False
+        item["skip_reason"] = "skip_cjk_source_body"
+        clear_translation_fields(item)
+        _preserve_source_as_translation(item)
+        item["final_status"] = "kept_origin"
+        skipped += 1
+    return skipped
 
 
 def apply_shared_literal_block_policy(payload: list[dict]) -> dict[str, int]:

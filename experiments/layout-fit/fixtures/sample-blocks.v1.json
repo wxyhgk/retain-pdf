@@ -1,0 +1,2565 @@
+{
+  "schema": "layout_fit_block_samples",
+  "schema_version": "1.0",
+  "source_job_id": "20260407033349-ffe2e4",
+  "source_job_root": "/home/wxyhgk/tmp/Code/data/jobs/20260407033349-ffe2e4",
+  "source_pdf_page_count": 13,
+  "samples": [
+    {
+      "sample_id": "20260407033349-ffe2e4:p001-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p001-b0002",
+      "page_index": 0,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "title",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 67,
+        "y": 465,
+        "width": 408,
+        "height": 118,
+        "unit": "pt"
+      },
+      "source_text": "Industrial Policy for the Intelligence Age: Ideas to Keep People First",
+      "translated_text": "",
+      "translation_unit_text": "",
+      "fit_text": "Industrial Policy for the Intelligence Age: Ideas to Keep People First",
+      "text_source": "source_ocr",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-001.png",
+      "source_line_count": 3
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p001-b0003",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p001-b0003",
+      "page_index": 0,
+      "block_index": 3,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 68,
+        "y": 644,
+        "width": 67,
+        "height": 18,
+        "unit": "pt"
+      },
+      "source_text": "April 2026",
+      "translated_text": "2026年4月",
+      "translation_unit_text": "2026年4月",
+      "fit_text": "2026年4月",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-001.png",
+      "source_line_count": 1
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p002-b0000",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p002-b0000",
+      "page_index": 1,
+      "block_index": 0,
+      "type": "text",
+      "sub_type": "title",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 86,
+        "width": 160,
+        "height": 34,
+        "unit": "pt"
+      },
+      "source_text": "Let’s Talk",
+      "translated_text": "",
+      "translation_unit_text": "",
+      "fit_text": "Let’s Talk",
+      "text_source": "source_ocr",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-002.png",
+      "source_line_count": 1
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p002-b0001",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p002-b0001",
+      "page_index": 1,
+      "block_index": 1,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 212,
+        "width": 471,
+        "height": 119,
+        "unit": "pt"
+      },
+      "source_text": "The drive to understand has always powered human progress—creating a fl ywheel from science to technology, from technology to discovery, and from discovery onward to more science. That inexorable forward movement led us to melt sand, add impurities, structure it with atomic precision into computer chips, run energy through those chips, and build systems capable of creating increasingly powerful artifi cial intelligence.",
+      "translated_text": "理解世界的驱动力始终推动着人类进步——它创造了一个从科学到技术、从技术到发现、再从发现到更多科学的飞轮。这种不可阻挡的前进运动引领我们熔炼沙子、添加杂质、以原子精度将其结构化为计算机芯片、让能量流经这些芯片，并构建出能够创造日益强大的人工智能的系统。",
+      "translation_unit_text": "理解世界的驱动力始终推动着人类进步——它创造了一个从科学到技术、从技术到发现、再从发现到更多科学的飞轮。这种不可阻挡的前进运动引领我们熔炼沙子、添加杂质、以原子精度将其结构化为计算机芯片、让能量流经这些芯片，并构建出能够创造日益强大的人工智能的系统。",
+      "fit_text": "理解世界的驱动力始终推动着人类进步——它创造了一个从科学到技术、从技术到发现、再从发现到更多科学的飞轮。这种不可阻挡的前进运动引领我们熔炼沙子、添加杂质、以原子精度将其结构化为计算机芯片、让能量流经这些芯片，并构建出能够创造日益强大的人工智能的系统。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-002.png",
+      "source_line_count": 6,
+      "typst": {
+        "body_name": "p1_item_1_0_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.24pt); set par(leading: 0.7em); cmarker.render(p1_item_1_0_md, math: mitex) }]",
+        "markdown_text": "理解世界的驱动力始终推动着人类进步——它创造了一个从科学到技术、从技术到发现、再从发现到更多科学的飞轮。这种不可阻挡的前进运动引领我们熔炼沙子、添加杂质、以原子精度将其结构化为计算机芯片、让能量流经这些芯片，并构建出能够创造日益强大的人工智能的系统。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.24,
+        "leading_em": 0.7
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p002-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p002-b0002",
+      "page_index": 1,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 372,
+        "width": 471,
+        "height": 105,
+        "unit": "pt"
+      },
+      "source_text": "In just a few years, AI has progressed from systems capable of fast, narrow tasks to models that can perform general tasks people used to need hours to do. Now, we’re beginning a transition toward superintelligence: AI systems capable of outperforming the smartest humans even when they are assisted by AI. No one knows exactly how this transition will unfold. At OpenAI, we believe we should navigate it through a democratic process that gives people real power to shape the AI future they want, and prepare for a range of possible outcomes while building the capacity to adapt. That’s what this document is for—to start a conversation about governing advanced AI in ways that keep people fi rst.",
+      "translated_text": "短短几年内，人工智能已从仅能执行快速、特定任务的系统，发展为能够完成以往人们需要数小时才能处理的通用任务模型。如今，我们正开始向超级智能过渡：即能够超越最聪明人类（即使他们得到人工智能辅助）的人工智能系统。无人确切知晓这一过渡将如何展开。在OpenAI，我们认为应通过民主进程来引导这一过程，赋予人们真正的权力以塑造他们期望的人工智能未来，并在构建适应能力的同时，为一系列可能的结果做好准备。本文档的目的正在于此——开启一场关于以人为本地治理先进人工智能的讨论。",
+      "translation_unit_text": "短短几年内，人工智能已从仅能执行快速、特定任务的系统，发展为能够完成以往人们需要数小时才能处理的通用任务模型。如今，我们正开始向超级智能过渡：即能够超越最聪明人类（即使他们得到人工智能辅助）的人工智能系统。无人确切知晓这一过渡将如何展开。在OpenAI，我们认为应通过民主进程来引导这一过程，赋予人们真正的权力以塑造他们期望的人工智能未来，并在构建适应能力的同时，为一系列可能的结果做好准备。本文档的目的正在于此——开启一场关于以人为本地治理先进人工智能的讨论。",
+      "fit_text": "短短几年内，人工智能已从仅能执行快速、特定任务的系统，发展为能够完成以往人们需要数小时才能处理的通用任务模型。如今，我们正开始向超级智能过渡：即能够超越最聪明人类（即使他们得到人工智能辅助）的人工智能系统。无人确切知晓这一过渡将如何展开。在OpenAI，我们认为应通过民主进程来引导这一过程，赋予人们真正的权力以塑造他们期望的人工智能未来，并在构建适应能力的同时，为一系列可能的结果做好准备。本文档的目的正在于此——开启一场关于以人为本地治理先进人工智能的讨论。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-002.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p1_item_2_1_body",
+        "body_expr": "block(width: 447.45000000000005pt, height: 98.70000000000005pt)[#{ pdftr_fit_markdown(p1_item_2_1_md, max_size: 11.06pt, min_size: 10.91pt, max_leading: 0.6em, min_leading: 0.56em, fit_height: 98.7pt) }]",
+        "markdown_text": "短短几年内，人工智能已从仅能执行快速、特定任务的系统，发展为能够完成以往人们需要数小时才能处理的通用任务模型。如今，我们正开始向超级智能过渡：即能够超越最聪明人类（即使他们得到人工智能辅助）的人工智能系统。无人确切知晓这一过渡将如何展开。在OpenAI，我们认为应通过民主进程来引导这一过程，赋予人们真正的权力以塑造他们期望的人工智能未来，并在构建适应能力的同时，为一系列可能的结果做好准备。本文档的目的正在于此——开启一场关于以人为本地治理先进人工智能的讨论。",
+        "width_pt": 447.45000000000005,
+        "height_pt": 98.70000000000005,
+        "fit_height_pt": 98.7,
+        "max_size_pt": 11.06,
+        "min_size_pt": 10.91,
+        "max_leading_em": 0.6,
+        "min_leading_em": 0.56
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p002-b0003",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p002-b0003",
+      "page_index": 1,
+      "block_index": 3,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 491,
+        "width": 471,
+        "height": 74,
+        "unit": "pt"
+      },
+      "source_text": "The promise of superintelligence is extraordinary. Just as electricity transformed homes, the combustion engine remade mobility, and mass production lowered the cost of essential goods, superintelligence will speed up scientifi c and medical breakthroughs, signifi cantly increase productivity, lower costs for families by making essential goods cheaper, and open the way for entirely new forms of work, creativity, and entrepreneurship.",
+      "translated_text": "超级智能的前景是巨大的。正如电力改变了家庭生活、内燃机重塑了交通方式、大规模生产降低了必需品的成本一样，超级智能将加速科学和医学突破，显著提高生产力，通过降低必需品的价格来减少家庭开支，并为全新的工作形式、创造力和创业开辟道路。",
+      "translation_unit_text": "超级智能的前景是巨大的。正如电力改变了家庭生活、内燃机重塑了交通方式、大规模生产降低了必需品的成本一样，超级智能将加速科学和医学突破，显著提高生产力，通过降低必需品的价格来减少家庭开支，并为全新的工作形式、创造力和创业开辟道路。",
+      "fit_text": "超级智能的前景是巨大的。正如电力改变了家庭生活、内燃机重塑了交通方式、大规模生产降低了必需品的成本一样，超级智能将加速科学和医学突破，显著提高生产力，通过降低必需品的价格来减少家庭开支，并为全新的工作形式、创造力和创业开辟道路。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-002.png",
+      "source_line_count": 5,
+      "typst": {
+        "body_name": "p1_item_3_2_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p1_item_3_2_md, math: mitex) }]",
+        "markdown_text": "超级智能的前景是巨大的。正如电力改变了家庭生活、内燃机重塑了交通方式、大规模生产降低了必需品的成本一样，超级智能将加速科学和医学突破，显著提高生产力，通过降低必需品的价格来减少家庭开支，并为全新的工作形式、创造力和创业开辟道路。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p002-b0004",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p002-b0004",
+      "page_index": 1,
+      "block_index": 4,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 578,
+        "width": 471,
+        "height": 106,
+        "unit": "pt"
+      },
+      "source_text": "Today, AI’s impact on work is often measured by the time required for tasks that systems can reliably complete. Frontier systems have advanced from supporting tasks that take people minutes to complete, to tasks that take them hours to complete. If progress continues, we can expect systems to be capable of carrying out projects that currently take people months. This shift will reshape how organizations run, how knowledge is created, and how people fi nd meaning and opportunity. It will also highlight the limitations of today’s policy toolkit and the need for more ambitious ideas to keep people at the center of the transition to superintelligence.",
+      "translated_text": "如今，人工智能对工作的影响通常以系统能够可靠完成的任务所需时间来衡量。前沿系统已从支持人们需要数分钟完成的任务，发展到支持需要数小时完成的任务。如果进展持续，我们可以预期系统将能够执行当前人们需要数月才能完成的项目。这一转变将重塑组织的运行方式、知识的创造方式，以及人们寻找意义与机遇的方式。它也将突显当前政策工具的局限性，并强调需要更具雄心的构想，以确保人类在向超级智能过渡的过程中始终处于核心地位。",
+      "translation_unit_text": "如今，人工智能对工作的影响通常以系统能够可靠完成的任务所需时间来衡量。前沿系统已从支持人们需要数分钟完成的任务，发展到支持需要数小时完成的任务。如果进展持续，我们可以预期系统将能够执行当前人们需要数月才能完成的项目。这一转变将重塑组织的运行方式、知识的创造方式，以及人们寻找意义与机遇的方式。它也将突显当前政策工具的局限性，并强调需要更具雄心的构想，以确保人类在向超级智能过渡的过程中始终处于核心地位。",
+      "fit_text": "如今，人工智能对工作的影响通常以系统能够可靠完成的任务所需时间来衡量。前沿系统已从支持人们需要数分钟完成的任务，发展到支持需要数小时完成的任务。如果进展持续，我们可以预期系统将能够执行当前人们需要数月才能完成的项目。这一转变将重塑组织的运行方式、知识的创造方式，以及人们寻找意义与机遇的方式。它也将突显当前政策工具的局限性，并强调需要更具雄心的构想，以确保人类在向超级智能过渡的过程中始终处于核心地位。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-002.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p1_item_4_3_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p1_item_4_3_md, math: mitex) }]",
+        "markdown_text": "如今，人工智能对工作的影响通常以系统能够可靠完成的任务所需时间来衡量。前沿系统已从支持人们需要数分钟完成的任务，发展到支持需要数小时完成的任务。如果进展持续，我们可以预期系统将能够执行当前人们需要数月才能完成的项目。这一转变将重塑组织的运行方式、知识的创造方式，以及人们寻找意义与机遇的方式。它也将突显当前政策工具的局限性，并强调需要更具雄心的构想，以确保人类在向超级智能过渡的过程中始终处于核心地位。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p003-b0000",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p003-b0000",
+      "page_index": 2,
+      "block_index": 0,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 67,
+        "y": 72,
+        "width": 475,
+        "height": 135,
+        "unit": "pt"
+      },
+      "source_text": "While we strongly believe that AI’s benefi ts will far outweigh its challenges, we are clear-eyed about the risks—of jobs and entire industries being disrupted; bad actors misusing the technology; misaligned systems evading human control; governments or institutions deploying AI in ways that undermine democratic values; and power and wealth becoming more concentrated instead of more widely shared. Indeed, we highlight these risks here to raise awareness of the need for policy solutions to address them. Unless policy keeps pace with technological change, the institutions and safety nets needed to navigate this transition could fall behind. Ensuring that AI expands access, agency, and opportunity is a central challenge as we move towards superintelligence. We should aim for a future where superintelligence benefi ts everyone, and where we:",
+      "translated_text": "尽管我们坚信人工智能的益处将远超其挑战，但我们清醒地认识到其风险——工作岗位乃至整个行业可能被颠覆；恶意行为者可能滥用该技术；错位的系统可能逃避人类控制；政府或机构可能以损害民主价值观的方式部署AI；权力和财富可能变得更加集中而非更广泛地共享。事实上，我们在此强调这些风险，是为了提高人们对需要政策解决方案来应对这些风险的认识。除非政策跟上技术变革的步伐，否则驾驭这一转型所需的制度与安全网可能会落后。确保人工智能扩大获取渠道、增强能动性并创造机会，是我们迈向超级智能过程中的核心挑战。我们应致力于实现一个超级智能惠及所有人、并且我们能够：",
+      "translation_unit_text": "尽管我们坚信人工智能的益处将远超其挑战，但我们清醒地认识到其风险——工作岗位乃至整个行业可能被颠覆；恶意行为者可能滥用该技术；错位的系统可能逃避人类控制；政府或机构可能以损害民主价值观的方式部署AI；权力和财富可能变得更加集中而非更广泛地共享。事实上，我们在此强调这些风险，是为了提高人们对需要政策解决方案来应对这些风险的认识。除非政策跟上技术变革的步伐，否则驾驭这一转型所需的制度与安全网可能会落后。确保人工智能扩大获取渠道、增强能动性并创造机会，是我们迈向超级智能过程中的核心挑战。我们应致力于实现一个超级智能惠及所有人、并且我们能够：",
+      "fit_text": "尽管我们坚信人工智能的益处将远超其挑战，但我们清醒地认识到其风险——工作岗位乃至整个行业可能被颠覆；恶意行为者可能滥用该技术；错位的系统可能逃避人类控制；政府或机构可能以损害民主价值观的方式部署AI；权力和财富可能变得更加集中而非更广泛地共享。事实上，我们在此强调这些风险，是为了提高人们对需要政策解决方案来应对这些风险的认识。除非政策跟上技术变革的步伐，否则驾驭这一转型所需的制度与安全网可能会落后。确保人工智能扩大获取渠道、增强能动性并创造机会，是我们迈向超级智能过程中的核心挑战。我们应致力于实现一个超级智能惠及所有人、并且我们能够：",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-003.png",
+      "source_line_count": 9,
+      "typst": {
+        "body_name": "p2_item_0_0_body",
+        "body_expr": "block(width: 451.25pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p2_item_0_0_md, math: mitex) }]",
+        "markdown_text": "尽管我们坚信人工智能的益处将远超其挑战，但我们清醒地认识到其风险——工作岗位乃至整个行业可能被颠覆；恶意行为者可能滥用该技术；错位的系统可能逃避人类控制；政府或机构可能以损害民主价值观的方式部署AI；权力和财富可能变得更加集中而非更广泛地共享。事实上，我们在此强调这些风险，是为了提高人们对需要政策解决方案来应对这些风险的认识。除非政策跟上技术变革的步伐，否则驾驭这一转型所需的制度与安全网可能会落后。确保人工智能扩大获取渠道、增强能动性并创造机会，是我们迈向超级智能过程中的核心挑战。我们应致力于实现一个超级智能惠及所有人、并且我们能够：",
+        "width_pt": 451.25,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      },
+      "flow": {
+        "group_id": "flow-007",
+        "index": 0,
+        "count": 2,
+        "block_ids": [
+          "p003-b0000",
+          "p003-b0001"
+        ],
+        "prev_block_id": null,
+        "next_block_id": "p003-b0001"
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p003-b0001",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p003-b0001",
+      "page_index": 2,
+      "block_index": 1,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 69,
+        "y": 220,
+        "width": 469,
+        "height": 90,
+        "unit": "pt"
+      },
+      "source_text": "1. Share prosperity broadly. The promise of advanced AI is not just technological progress, but a higher quality of life for all. Everyone should have the opportunity to participate in the new opportunities AI creates. Living standards should rise and people should see material improvements through lower costs, better health and education, and more security and opportunity. If AI winds up controlled by, and benefi ting only a few, while most people lack agency and access to AI-driven opportunity, we will have failed to deliver on its promise.",
+      "translated_text": "1. 广泛共享繁荣。先进人工智能的承诺不仅是技术进步，更是为所有人带来更高的生活质量。每个人都应有机会参与人工智能创造的新机遇。生活水平应得到提升，人们应通过成本降低、医疗与教育改善以及更多安全保障和发展机遇，见证物质条件的进步。若人工智能最终仅由少数人控制并使其受益，而大多数人缺乏能动性且无法获取人工智能驱动的机遇，我们便未能兑现其承诺。",
+      "translation_unit_text": "1. 广泛共享繁荣。先进人工智能的承诺不仅是技术进步，更是为所有人带来更高的生活质量。每个人都应有机会参与人工智能创造的新机遇。生活水平应得到提升，人们应通过成本降低、医疗与教育改善以及更多安全保障和发展机遇，见证物质条件的进步。若人工智能最终仅由少数人控制并使其受益，而大多数人缺乏能动性且无法获取人工智能驱动的机遇，我们便未能兑现其承诺。",
+      "fit_text": "1. 广泛共享繁荣。先进人工智能的承诺不仅是技术进步，更是为所有人带来更高的生活质量。每个人都应有机会参与人工智能创造的新机遇。生活水平应得到提升，人们应通过成本降低、医疗与教育改善以及更多安全保障和发展机遇，见证物质条件的进步。若人工智能最终仅由少数人控制并使其受益，而大多数人缺乏能动性且无法获取人工智能驱动的机遇，我们便未能兑现其承诺。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-003.png",
+      "source_line_count": 6,
+      "typst": {
+        "body_name": "p2_item_1_1_body",
+        "body_expr": "block(width: 445.54999999999995pt)[#{ set text(size: 11.06pt); set par(leading: 0.6em); cmarker.render(p2_item_1_1_md, math: mitex) }]",
+        "markdown_text": "1. 广泛共享繁荣。先进人工智能的承诺不仅是技术进步，更是为所有人带来更高的生活质量。每个人都应有机会参与人工智能创造的新机遇。生活水平应得到提升，人们应通过成本降低、医疗与教育改善以及更多安全保障和发展机遇，见证物质条件的进步。若人工智能最终仅由少数人控制并使其受益，而大多数人缺乏能动性且无法获取人工智能驱动的机遇，我们便未能兑现其承诺。",
+        "width_pt": 445.54999999999995,
+        "text_size_pt": 11.06,
+        "leading_em": 0.6
+      },
+      "flow": {
+        "group_id": "flow-007",
+        "index": 1,
+        "count": 2,
+        "block_ids": [
+          "p003-b0000",
+          "p003-b0001"
+        ],
+        "prev_block_id": "p003-b0000",
+        "next_block_id": null
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p003-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p003-b0002",
+      "page_index": 2,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 67,
+        "y": 323,
+        "width": 471,
+        "height": 103,
+        "unit": "pt"
+      },
+      "source_text": "2. Mitigate risks. The transition toward superintelligence will come with serious risks—from economic disruption, to misuse in areas like cybersecurity and biology, to the loss of alignment or control over increasingly powerful systems. Without eff ective mitigation, people will be harmed. Avoiding these outcomes requires building new institutions, technical safeguards, and governance frameworks so that advanced systems remain safe, controllable, and aligned—reducing the risk of large-scale harm, protecting critical systems, and ensuring people can rely on AI in their daily lives. As capability scales, safety must scale with it.",
+      "translated_text": "2. 降低风险。向超级智能的过渡将伴随严重风险——从经济动荡，到网络安全和生物学等领域的滥用，再到对日益强大系统的对齐或控制失效。若缺乏有效缓解措施，人们将受到伤害。避免这些结果需要建立新的机构、技术保障和治理框架，以确保先进系统保持安全、可控和对齐——从而降低大规模伤害的风险，保护关键系统，并确保人们能在日常生活中信赖人工智能。随着能力提升，安全性必须同步增强。",
+      "translation_unit_text": "2. 降低风险。向超级智能的过渡将伴随严重风险——从经济动荡，到网络安全和生物学等领域的滥用，再到对日益强大系统的对齐或控制失效。若缺乏有效缓解措施，人们将受到伤害。避免这些结果需要建立新的机构、技术保障和治理框架，以确保先进系统保持安全、可控和对齐——从而降低大规模伤害的风险，保护关键系统，并确保人们能在日常生活中信赖人工智能。随着能力提升，安全性必须同步增强。",
+      "fit_text": "2. 降低风险。向超级智能的过渡将伴随严重风险——从经济动荡，到网络安全和生物学等领域的滥用，再到对日益强大系统的对齐或控制失效。若缺乏有效缓解措施，人们将受到伤害。避免这些结果需要建立新的机构、技术保障和治理框架，以确保先进系统保持安全、可控和对齐——从而降低大规模伤害的风险，保护关键系统，并确保人们能在日常生活中信赖人工智能。随着能力提升，安全性必须同步增强。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-003.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p2_item_2_2_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p2_item_2_2_md, math: mitex) }]",
+        "markdown_text": "2. 降低风险。向超级智能的过渡将伴随严重风险——从经济动荡，到网络安全和生物学等领域的滥用，再到对日益强大系统的对齐或控制失效。若缺乏有效缓解措施，人们将受到伤害。避免这些结果需要建立新的机构、技术保障和治理框架，以确保先进系统保持安全、可控和对齐——从而降低大规模伤害的风险，保护关键系统，并确保人们能在日常生活中信赖人工智能。随着能力提升，安全性必须同步增强。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p003-b0003",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p003-b0003",
+      "page_index": 2,
+      "block_index": 3,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 67,
+        "y": 441,
+        "width": 471,
+        "height": 88,
+        "unit": "pt"
+      },
+      "source_text": "3. Democratize access and agency. As capabilities advance, some systems may need to be controlled for safety. But broad participation in the AI economy should not depend on access to the most powerful models—it should depend on access to AI that is useful, aff ordable, preserves people’s privacy and expands their individual agency. Avoiding a concentration of wealth and control will require ensuring that people everywhere can use AI in ways that give them real infl uence at work, in markets, and through democratic processes.",
+      "translated_text": "3. 民主化获取与赋权。随着能力提升，部分系统可能需为安全而受控。但广泛参与人工智能经济不应依赖于获取最强大的模型，而应依赖于获取有用、可负担、保护个人隐私并增强个体能动性的人工智能。避免财富与控制的集中，需要确保各地人民能够以在工作、市场及民主进程中赋予其实际影响力的方式使用人工智能。",
+      "translation_unit_text": "3. 民主化获取与赋权。随着能力提升，部分系统可能需为安全而受控。但广泛参与人工智能经济不应依赖于获取最强大的模型，而应依赖于获取有用、可负担、保护个人隐私并增强个体能动性的人工智能。避免财富与控制的集中，需要确保各地人民能够以在工作、市场及民主进程中赋予其实际影响力的方式使用人工智能。",
+      "fit_text": "3. 民主化获取与赋权。随着能力提升，部分系统可能需为安全而受控。但广泛参与人工智能经济不应依赖于获取最强大的模型，而应依赖于获取有用、可负担、保护个人隐私并增强个体能动性的人工智能。避免财富与控制的集中，需要确保各地人民能够以在工作、市场及民主进程中赋予其实际影响力的方式使用人工智能。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-003.png",
+      "source_line_count": 6,
+      "typst": {
+        "body_name": "p2_item_3_3_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p2_item_3_3_md, math: mitex) }]",
+        "markdown_text": "3. 民主化获取与赋权。随着能力提升，部分系统可能需为安全而受控。但广泛参与人工智能经济不应依赖于获取最强大的模型，而应依赖于获取有用、可负担、保护个人隐私并增强个体能动性的人工智能。避免财富与控制的集中，需要确保各地人民能够以在工作、市场及民主进程中赋予其实际影响力的方式使用人工智能。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p003-b0004",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p003-b0004",
+      "page_index": 2,
+      "block_index": 4,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 67,
+        "y": 544,
+        "width": 471,
+        "height": 120,
+        "unit": "pt"
+      },
+      "source_text": "The Case for a New Industrial Policy. Society has navigated major technological transitions before, but not without real disruption and dislocation along the way. While those transitions ultimately created more prosperity, they required proactive political choices to ensure that growth translated into broader opportunity and greater security. For example, following the transition to the Industrial Age, the Progressive Era and the New Deal helped modernize the social contract for a world reshaped by electricity, the combustion engine, and mass production. They did so by building new public institutions, protections, and expectations about what a fair economy should provide, including labor protections, safety standards, social safety nets, and expanded access to education.",
+      "translated_text": "新型产业政策的必要性。社会曾经历过重大的技术转型，但转型过程不可避免地伴随着实际的动荡与错位。尽管这些转型最终创造了更多繁荣，但它们需要积极主动的政治选择，以确保增长转化为更广泛的机遇和更强的安全保障。例如，在向工业时代过渡后，进步时代和新政帮助重塑了被电力、内燃机和大规模生产改变的世界中的社会契约。它们通过建立新的公共机构、保护措施以及对公平经济应提供内容的期望来实现这一点，包括劳动保护、安全标准、社会安全网以及扩大教育机会。",
+      "translation_unit_text": "新型产业政策的必要性。社会曾经历过重大的技术转型，但转型过程不可避免地伴随着实际的动荡与错位。尽管这些转型最终创造了更多繁荣，但它们需要积极主动的政治选择，以确保增长转化为更广泛的机遇和更强的安全保障。例如，在向工业时代过渡后，进步时代和新政帮助重塑了被电力、内燃机和大规模生产改变的世界中的社会契约。它们通过建立新的公共机构、保护措施以及对公平经济应提供内容的期望来实现这一点，包括劳动保护、安全标准、社会安全网以及扩大教育机会。",
+      "fit_text": "新型产业政策的必要性。社会曾经历过重大的技术转型，但转型过程不可避免地伴随着实际的动荡与错位。尽管这些转型最终创造了更多繁荣，但它们需要积极主动的政治选择，以确保增长转化为更广泛的机遇和更强的安全保障。例如，在向工业时代过渡后，进步时代和新政帮助重塑了被电力、内燃机和大规模生产改变的世界中的社会契约。它们通过建立新的公共机构、保护措施以及对公平经济应提供内容的期望来实现这一点，包括劳动保护、安全标准、社会安全网以及扩大教育机会。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-003.png",
+      "source_line_count": 8,
+      "typst": {
+        "body_name": "p2_item_4_4_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p2_item_4_4_md, math: mitex) }]",
+        "markdown_text": "新型产业政策的必要性。社会曾经历过重大的技术转型，但转型过程不可避免地伴随着实际的动荡与错位。尽管这些转型最终创造了更多繁荣，但它们需要积极主动的政治选择，以确保增长转化为更广泛的机遇和更强的安全保障。例如，在向工业时代过渡后，进步时代和新政帮助重塑了被电力、内燃机和大规模生产改变的世界中的社会契约。它们通过建立新的公共机构、保护措施以及对公平经济应提供内容的期望来实现这一点，包括劳动保护、安全标准、社会安全网以及扩大教育机会。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p003-b0005",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p003-b0005",
+      "page_index": 2,
+      "block_index": 5,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 67,
+        "y": 677,
+        "width": 471,
+        "height": 29,
+        "unit": "pt"
+      },
+      "source_text": "History shows that democratic societies can respond to technological upheaval with ambition: reimagining the social contract, mediating between capital and labor, and encouraging broad",
+      "translated_text": "",
+      "translation_unit_text": "历史表明，民主社会能够以雄心应对技术剧变：重塑社会契约，调解资本与劳动的关系，在保持多元主义、宪法制衡和创新自由的同时，促进技术进步的成果广泛共享。向超级智能的过渡将需要一种更具雄心的产业政策形式，它应体现民主社会大规模集体行动的能力，以塑造其经济未来，从而使超级智能惠及所有人。",
+      "fit_text": "History shows that democratic societies can respond to technological upheaval with ambition: reimagining the social contract, mediating between capital and labor, and encouraging broad",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-003.png",
+      "source_line_count": 2,
+      "typst": {
+        "body_name": "p2_item_5_5_body",
+        "body_expr": "block(width: 447.45000000000005pt, height: 27.25999999999999pt)[#{ pdftr_fit_markdown(p2_item_5_5_md, max_size: 11.14pt, min_size: 10.64pt, max_leading: 0.6em, min_leading: 0.57em, fit_height: 27.25999999999999pt) }]",
+        "markdown_text": "历史表明，民主社会能够以雄心应对技术剧变：重塑社会契约，调解资本与劳动的关系，在保持多元",
+        "width_pt": 447.45000000000005,
+        "height_pt": 27.25999999999999,
+        "fit_height_pt": 27.25999999999999,
+        "max_size_pt": 11.14,
+        "min_size_pt": 10.64,
+        "max_leading_em": 0.6,
+        "min_leading_em": 0.57
+      },
+      "flow": {
+        "group_id": "flow-011",
+        "index": 0,
+        "count": 2,
+        "block_ids": [
+          "p003-b0005",
+          "p004-b0000"
+        ],
+        "prev_block_id": null,
+        "next_block_id": "p004-b0000"
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p004-b0000",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p004-b0000",
+      "page_index": 3,
+      "block_index": 0,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 72,
+        "width": 471,
+        "height": 57,
+        "unit": "pt"
+      },
+      "source_text": "distribution of the benefi ts of technological progress while preserving pluralism, constitutional checks and balances, and freedom to innovate. The transition to superintelligence will require an even more ambitious form of industrial policy, one that refl ects the ability of democratic societies to act collectively, at scale, to shape their economic future so that superintelligence benefi ts everyone.",
+      "translated_text": "",
+      "translation_unit_text": "历史表明，民主社会能够以雄心应对技术剧变：重塑社会契约，调解资本与劳动的关系，在保持多元主义、宪法制衡和创新自由的同时，促进技术进步的成果广泛共享。向超级智能的过渡将需要一种更具雄心的产业政策形式，它应体现民主社会大规模集体行动的能力，以塑造其经济未来，从而使超级智能惠及所有人。",
+      "fit_text": "distribution of the benefi ts of technological progress while preserving pluralism, constitutional checks and balances, and freedom to innovate. The transition to superintelligence will require an even more ambitious form of industrial policy, one that refl ects the ability of democratic societies to act collectively, at scale, to shape their economic future so that superintelligence benefi ts everyone.",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-004.png",
+      "source_line_count": 4,
+      "typst": {
+        "body_name": "p3_item_0_0_body",
+        "body_expr": "block(width: 447.45000000000005pt, height: 53.58000000000001pt)[#{ pdftr_fit_markdown(p3_item_0_0_md, max_size: 11.02pt, min_size: 10.64pt, max_leading: 0.6em, min_leading: 0.57em, fit_height: 53.58pt) }]",
+        "markdown_text": "主义、宪法制衡和创新自由的同时，促进技术进步的成果广泛共享。向超级智能的过渡将需要一种更具雄心的产业政策形式，它应体现民主社会大规模集体行动的能力，以塑造其经济未来，从而使超级智能惠及所有人。",
+        "width_pt": 447.45000000000005,
+        "height_pt": 53.58000000000001,
+        "fit_height_pt": 53.58,
+        "max_size_pt": 11.02,
+        "min_size_pt": 10.64,
+        "max_leading_em": 0.6,
+        "min_leading_em": 0.57
+      },
+      "flow": {
+        "group_id": "flow-011",
+        "index": 1,
+        "count": 2,
+        "block_ids": [
+          "p003-b0005",
+          "p004-b0000"
+        ],
+        "prev_block_id": "p003-b0005",
+        "next_block_id": null
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p004-b0001",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p004-b0001",
+      "page_index": 3,
+      "block_index": 1,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 144,
+        "width": 472,
+        "height": 104,
+        "unit": "pt"
+      },
+      "source_text": "On this path to superintelligence, there are clear steps we need to take today. People are already concerned about what AI will mean for their lives—whether their jobs and families will be safe, and whether data centers will disrupt their communities and raise energy prices. AI data centers should pay their own way on energy so that households aren’t subsidizing them; and they should generate local jobs and tax revenue. Governments should implement common-sense AI regulation—not to entrench incumbents through regulatory capture but to protect children, mitigate national security risks, and encourage innovation.",
+      "translated_text": "在通往超级智能的道路上，我们当下必须采取明确的步骤。人们已开始担忧人工智能将如何影响他们的生活——他们的工作和家庭是否安全，数据中心是否会扰乱社区并推高能源价格。人工智能数据中心应在能源方面实现自给自足，避免由家庭用户提供补贴；同时，它们应创造本地就业机会和税收收入。政府应实施常识性的人工智能监管——其目的不应是通过监管俘获来巩固现有企业的地位，而应是保护儿童、降低国家安全风险并鼓励创新。",
+      "translation_unit_text": "在通往超级智能的道路上，我们当下必须采取明确的步骤。人们已开始担忧人工智能将如何影响他们的生活——他们的工作和家庭是否安全，数据中心是否会扰乱社区并推高能源价格。人工智能数据中心应在能源方面实现自给自足，避免由家庭用户提供补贴；同时，它们应创造本地就业机会和税收收入。政府应实施常识性的人工智能监管——其目的不应是通过监管俘获来巩固现有企业的地位，而应是保护儿童、降低国家安全风险并鼓励创新。",
+      "fit_text": "在通往超级智能的道路上，我们当下必须采取明确的步骤。人们已开始担忧人工智能将如何影响他们的生活——他们的工作和家庭是否安全，数据中心是否会扰乱社区并推高能源价格。人工智能数据中心应在能源方面实现自给自足，避免由家庭用户提供补贴；同时，它们应创造本地就业机会和税收收入。政府应实施常识性的人工智能监管——其目的不应是通过监管俘获来巩固现有企业的地位，而应是保护儿童、降低国家安全风险并鼓励创新。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-004.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p3_item_1_1_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.58em); cmarker.render(p3_item_1_1_md, math: mitex) }]",
+        "markdown_text": "在通往超级智能的道路上，我们当下必须采取明确的步骤。人们已开始担忧人工智能将如何影响他们的生活——他们的工作和家庭是否安全，数据中心是否会扰乱社区并推高能源价格。人工智能数据中心应在能源方面实现自给自足，避免由家庭用户提供补贴；同时，它们应创造本地就业机会和税收收入。政府应实施常识性的人工智能监管——其目的不应是通过监管俘获来巩固现有企业的地位，而应是保护儿童、降低国家安全风险并鼓励创新。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.58
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p004-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p004-b0002",
+      "page_index": 3,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 263,
+        "width": 472,
+        "height": 89,
+        "unit": "pt"
+      },
+      "source_text": "But the magnitude of the changes we expect and the potential risks we foresee demand even more. We are entering a new phase of economic and social organization that will fundamentally reshape work, knowledge, and production. It requires not just incremental policy responses but ambitious policy ideas for tomorrow that we must start discussing today. This is the moment to start the conversation: to think boldly, explore new ideas, and collaboratively develop a new industrial policy agenda that ensures superintelligence benefi ts everyone.",
+      "translated_text": "但我们预期的变革规模与预见的潜在风险要求我们采取更多行动。我们正步入经济与社会组织的新阶段，它将从根本上重塑工作、知识与生产。这不仅需要渐进式的政策应对，更需要我们今天就必须开始讨论的、面向未来的雄心勃勃的政策构想。此刻正是开启对话的时机：大胆思考，探索新理念，并协作制定一项确保超级智能惠及所有人的新产业政策议程。",
+      "translation_unit_text": "但我们预期的变革规模与预见的潜在风险要求我们采取更多行动。我们正步入经济与社会组织的新阶段，它将从根本上重塑工作、知识与生产。这不仅需要渐进式的政策应对，更需要我们今天就必须开始讨论的、面向未来的雄心勃勃的政策构想。此刻正是开启对话的时机：大胆思考，探索新理念，并协作制定一项确保超级智能惠及所有人的新产业政策议程。",
+      "fit_text": "但我们预期的变革规模与预见的潜在风险要求我们采取更多行动。我们正步入经济与社会组织的新阶段，它将从根本上重塑工作、知识与生产。这不仅需要渐进式的政策应对，更需要我们今天就必须开始讨论的、面向未来的雄心勃勃的政策构想。此刻正是开启对话的时机：大胆思考，探索新理念，并协作制定一项确保超级智能惠及所有人的新产业政策议程。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-004.png",
+      "source_line_count": 6,
+      "typst": {
+        "body_name": "p3_item_2_2_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.58em); cmarker.render(p3_item_2_2_md, math: mitex) }]",
+        "markdown_text": "但我们预期的变革规模与预见的潜在风险要求我们采取更多行动。我们正步入经济与社会组织的新阶段，它将从根本上重塑工作、知识与生产。这不仅需要渐进式的政策应对，更需要我们今天就必须开始讨论的、面向未来的雄心勃勃的政策构想。此刻正是开启对话的时机：大胆思考，探索新理念，并协作制定一项确保超级智能惠及所有人的新产业政策议程。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.58
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p004-b0003",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p004-b0003",
+      "page_index": 3,
+      "block_index": 3,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 366,
+        "width": 472,
+        "height": 59,
+        "unit": "pt"
+      },
+      "source_text": "In normal times, the case for letting markets work on their own is strong. Historically, competition, entrepreneurship, and open economic participation have lifted living standards and expanded opportunity. Capitalism, imperfect as it is, remains an eff ective system for translating human ingenuity into shared prosperity.",
+      "translated_text": "在正常时期，让市场自行运作的理由是充分的。历史上，竞争、创业精神和开放的经济参与提升了生活水平并扩大了机会。资本主义尽管不完美，仍是将人类智慧转化为共同繁荣的有效体系。",
+      "translation_unit_text": "在正常时期，让市场自行运作的理由是充分的。历史上，竞争、创业精神和开放的经济参与提升了生活水平并扩大了机会。资本主义尽管不完美，仍是将人类智慧转化为共同繁荣的有效体系。",
+      "fit_text": "在正常时期，让市场自行运作的理由是充分的。历史上，竞争、创业精神和开放的经济参与提升了生活水平并扩大了机会。资本主义尽管不完美，仍是将人类智慧转化为共同繁荣的有效体系。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-004.png",
+      "source_line_count": 4,
+      "typst": {
+        "body_name": "p3_item_3_3_body",
+        "body_expr": "block(width: 448.40000000000003pt, height: 55.460000000000036pt)[#{ pdftr_fit_markdown(p3_item_3_3_md, max_size: 11.1pt, min_size: 10.64pt, max_leading: 0.6em, min_leading: 0.57em, fit_height: 55.46pt) }]",
+        "markdown_text": "在正常时期，让市场自行运作的理由是充分的。历史上，竞争、创业精神和开放的经济参与提升了生活水平并扩大了机会。资本主义尽管不完美，仍是将人类智慧转化为共同繁荣的有效体系。",
+        "width_pt": 448.40000000000003,
+        "height_pt": 55.460000000000036,
+        "fit_height_pt": 55.46,
+        "max_size_pt": 11.1,
+        "min_size_pt": 10.64,
+        "max_leading_em": 0.6,
+        "min_leading_em": 0.57
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p004-b0004",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p004-b0004",
+      "page_index": 3,
+      "block_index": 4,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 439,
+        "width": 472,
+        "height": 43,
+        "unit": "pt"
+      },
+      "source_text": "But industrial policy can play an important role when market forces alone aren’t suffi cient—when new technologies create opportunities and risks that existing institutions aren’t equipped to manage. It can help translate scientifi c breakthroughs into scaled industries and broad-based economic growth.",
+      "translated_text": "然而，当市场力量本身不足以应对时——即当新技术带来的机遇与风险超出既有机构的管理能力时——产业政策便能发挥重要作用。它有助于将科学突破转化为规模化产业和广泛的经济增长。",
+      "translation_unit_text": "然而，当市场力量本身不足以应对时——即当新技术带来的机遇与风险超出既有机构的管理能力时——产业政策便能发挥重要作用。它有助于将科学突破转化为规模化产业和广泛的经济增长。",
+      "fit_text": "然而，当市场力量本身不足以应对时——即当新技术带来的机遇与风险超出既有机构的管理能力时——产业政策便能发挥重要作用。它有助于将科学突破转化为规模化产业和广泛的经济增长。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-004.png",
+      "source_line_count": 3,
+      "typst": {
+        "body_name": "p3_item_4_4_body",
+        "body_expr": "block(width: 448.40000000000003pt, height: 40.41999999999996pt)[#{ pdftr_fit_markdown(p3_item_4_4_md, max_size: 11.02pt, min_size: 10.64pt, max_leading: 0.6em, min_leading: 0.57em, fit_height: 40.41999999999996pt) }]",
+        "markdown_text": "然而，当市场力量本身不足以应对时——即当新技术带来的机遇与风险超出既有机构的管理能力时——产业政策便能发挥重要作用。它有助于将科学突破转化为规模化产业和广泛的经济增长。",
+        "width_pt": 448.40000000000003,
+        "height_pt": 40.41999999999996,
+        "fit_height_pt": 40.41999999999996,
+        "max_size_pt": 11.02,
+        "min_size_pt": 10.64,
+        "max_leading_em": 0.6,
+        "min_leading_em": 0.57
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p004-b0005",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p004-b0005",
+      "page_index": 3,
+      "block_index": 5,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 497,
+        "width": 472,
+        "height": 119,
+        "unit": "pt"
+      },
+      "source_text": "A new industrial policy agenda should use government's existing toolbox for aligning public and private activities: research funding, workforce development, market-shaping tools, and targeted regulation. But governments should not act alone. Nongovernmental institutions should pilot new approaches, measure what works, and iterate quickly, then governments should reinforce successes by aligning incentives and scaling what works through procurement, regulation, and investment. This public-private collaboration should stave off regulatory capture and centralized control, instead preserving the freedom to innovate while ensuring that the onset of superintelligence isn’t dominated by the most powerful forces in society.",
+      "translated_text": "新的产业政策议程应利用政府现有的工具箱来协调公共与私营部门活动：研究资助、劳动力发展、市场塑造工具以及针对性监管。但政府不应单独行动。非政府机构应试点新方法、评估有效方案并快速迭代，随后政府应通过调整激励措施，并借助采购、监管和投资来推广有效方案，从而巩固成功。这种公私协作应避免监管俘获和集中控制，从而在确保超级智能的到来不被社会中最强大的力量所主导的同时，保持创新的自由。",
+      "translation_unit_text": "新的产业政策议程应利用政府现有的工具箱来协调公共与私营部门活动：研究资助、劳动力发展、市场塑造工具以及针对性监管。但政府不应单独行动。非政府机构应试点新方法、评估有效方案并快速迭代，随后政府应通过调整激励措施，并借助采购、监管和投资来推广有效方案，从而巩固成功。这种公私协作应避免监管俘获和集中控制，从而在确保超级智能的到来不被社会中最强大的力量所主导的同时，保持创新的自由。",
+      "fit_text": "新的产业政策议程应利用政府现有的工具箱来协调公共与私营部门活动：研究资助、劳动力发展、市场塑造工具以及针对性监管。但政府不应单独行动。非政府机构应试点新方法、评估有效方案并快速迭代，随后政府应通过调整激励措施，并借助采购、监管和投资来推广有效方案，从而巩固成功。这种公私协作应避免监管俘获和集中控制，从而在确保超级智能的到来不被社会中最强大的力量所主导的同时，保持创新的自由。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-004.png",
+      "source_line_count": 8,
+      "typst": {
+        "body_name": "p3_item_5_5_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.58em); cmarker.render(p3_item_5_5_md, math: mitex) }]",
+        "markdown_text": "新的产业政策议程应利用政府现有的工具箱来协调公共与私营部门活动：研究资助、劳动力发展、市场塑造工具以及针对性监管。但政府不应单独行动。非政府机构应试点新方法、评估有效方案并快速迭代，随后政府应通过调整激励措施，并借助采购、监管和投资来推广有效方案，从而巩固成功。这种公私协作应避免监管俘获和集中控制，从而在确保超级智能的到来不被社会中最强大的力量所主导的同时，保持创新的自由。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.58
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p004-b0006",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p004-b0006",
+      "page_index": 3,
+      "block_index": 6,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 630,
+        "width": 472,
+        "height": 59,
+        "unit": "pt"
+      },
+      "source_text": "We don’t have all, or even most of the answers. Diff erent paths will require diff erent policy responses, and no single set of tools will be enough in any scenario. But we should aim to build an AI economy that is both open and resilient through policies that expand participation, broaden access to opportunity, and ensure that society has the safeguards and institutions needed to manage risk.",
+      "translated_text": "我们并未掌握全部，甚至大部分答案。不同的路径需要不同的政策应对，且任何单一工具集在任一情境下都不足以应对。但我们的目标应是通过扩大参与、拓宽机会获取渠道、确保社会具备管理风险所需的保障措施与制度等政策，构建一个既开放又具韧性的AI经济。",
+      "translation_unit_text": "我们并未掌握全部，甚至大部分答案。不同的路径需要不同的政策应对，且任何单一工具集在任一情境下都不足以应对。但我们的目标应是通过扩大参与、拓宽机会获取渠道、确保社会具备管理风险所需的保障措施与制度等政策，构建一个既开放又具韧性的AI经济。",
+      "fit_text": "我们并未掌握全部，甚至大部分答案。不同的路径需要不同的政策应对，且任何单一工具集在任一情境下都不足以应对。但我们的目标应是通过扩大参与、拓宽机会获取渠道、确保社会具备管理风险所需的保障措施与制度等政策，构建一个既开放又具韧性的AI经济。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-004.png",
+      "source_line_count": 4,
+      "typst": {
+        "body_name": "p3_item_6_6_body",
+        "body_expr": "block(width: 448.40000000000003pt, height: 55.460000000000036pt)[#{ pdftr_fit_markdown(p3_item_6_6_md, max_size: 11.02pt, min_size: 10.64pt, max_leading: 0.6em, min_leading: 0.57em, fit_height: 55.46pt) }]",
+        "markdown_text": "我们并未掌握全部，甚至大部分答案。不同的路径需要不同的政策应对，且任何单一工具集在任一情境下都不足以应对。但我们的目标应是通过扩大参与、拓宽机会获取渠道、确保社会具备管理风险所需的保障措施与制度等政策，构建一个既开放又具韧性的AI经济。",
+        "width_pt": 448.40000000000003,
+        "height_pt": 55.460000000000036,
+        "fit_height_pt": 55.46,
+        "max_size_pt": 11.02,
+        "min_size_pt": 10.64,
+        "max_leading_em": 0.6,
+        "min_leading_em": 0.57
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p005-b0000",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p005-b0000",
+      "page_index": 4,
+      "block_index": 0,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 71,
+        "width": 471,
+        "height": 180,
+        "unit": "pt"
+      },
+      "source_text": "This document off ers initial ideas for an industrial policy agenda to keep people fi rst during the transition to superintelligence. It is organized in two sections: 1) building an open economy with broad access, participation, and shared prosperity; and 2) building a resilient society through accountability, alignment, and management of frontier risks. OpenAI is off ering these ideas to help start a broader conversation about the kinds of policies and institutions needed to navigate the transition, a conversation that needs to happen among governments, companies, civil society, communities, and families. These ideas are intentionally early and exploratory, off ered not as a comprehensive or fi nal set of recommendations, but as a starting point for discussion that we invite others to build on, refi ne, challenge, or choose among through the democratic process. They also focus on the United States as a starting point, but the conversation—and the solutions—must ultimately be global. The transition to superintelligence is not a distant possibility—it’s already underway, and the choices we make in the near term will shape how its benefi ts and risks are distributed for decades to come.",
+      "translated_text": "本文档提出了产业政策议程的初步构想，旨在确保向超级智能过渡的过程中以人为本。内容分为两部分：1）构建一个具有广泛接入、参与和共享繁荣的开放经济；2）通过问责、对齐和前沿风险管理来建设一个具有韧性的社会。OpenAI提出这些构想，旨在启动一场更广泛的讨论，探讨应对这一过渡所需的政策与制度类型——这场讨论需要在政府、企业、民间社会、社区和家庭之间展开。这些构想是早期且探索性的，并非一套全面或最终的建议，而是作为讨论的起点，我们邀请各方在此基础上进行完善、挑战，或通过民主进程进行选择。它们也以美国为起点，但讨论及其解决方案最终必须是全球性的。向超级智能的过渡并非遥远的可能性——它已在进程中，我们在近期做出的选择将决定未来数十年其收益与风险的分配方式。",
+      "translation_unit_text": "本文档提出了产业政策议程的初步构想，旨在确保向超级智能过渡的过程中以人为本。内容分为两部分：1）构建一个具有广泛接入、参与和共享繁荣的开放经济；2）通过问责、对齐和前沿风险管理来建设一个具有韧性的社会。OpenAI提出这些构想，旨在启动一场更广泛的讨论，探讨应对这一过渡所需的政策与制度类型——这场讨论需要在政府、企业、民间社会、社区和家庭之间展开。这些构想是早期且探索性的，并非一套全面或最终的建议，而是作为讨论的起点，我们邀请各方在此基础上进行完善、挑战，或通过民主进程进行选择。它们也以美国为起点，但讨论及其解决方案最终必须是全球性的。向超级智能的过渡并非遥远的可能性——它已在进程中，我们在近期做出的选择将决定未来数十年其收益与风险的分配方式。",
+      "fit_text": "本文档提出了产业政策议程的初步构想，旨在确保向超级智能过渡的过程中以人为本。内容分为两部分：1）构建一个具有广泛接入、参与和共享繁荣的开放经济；2）通过问责、对齐和前沿风险管理来建设一个具有韧性的社会。OpenAI提出这些构想，旨在启动一场更广泛的讨论，探讨应对这一过渡所需的政策与制度类型——这场讨论需要在政府、企业、民间社会、社区和家庭之间展开。这些构想是早期且探索性的，并非一套全面或最终的建议，而是作为讨论的起点，我们邀请各方在此基础上进行完善、挑战，或通过民主进程进行选择。它们也以美国为起点，但讨论及其解决方案最终必须是全球性的。向超级智能的过渡并非遥远的可能性——它已在进程中，我们在近期做出的选择将决定未来数十年其收益与风险的分配方式。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-005.png",
+      "source_line_count": 12,
+      "typst": {
+        "body_name": "p4_item_0_0_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p4_item_0_0_md, math: mitex) }]",
+        "markdown_text": "本文档提出了产业政策议程的初步构想，旨在确保向超级智能过渡的过程中以人为本。内容分为两部分：1）构建一个具有广泛接入、参与和共享繁荣的开放经济；2）通过问责、对齐和前沿风险管理来建设一个具有韧性的社会。OpenAI提出这些构想，旨在启动一场更广泛的讨论，探讨应对这一过渡所需的政策与制度类型——这场讨论需要在政府、企业、民间社会、社区和家庭之间展开。这些构想是早期且探索性的，并非一套全面或最终的建议，而是作为讨论的起点，我们邀请各方在此基础上进行完善、挑战，或通过民主进程进行选择。它们也以美国为起点，但讨论及其解决方案最终必须是全球性的。向超级智能的过渡并非遥远的可能性——它已在进程中，我们在近期做出的选择将决定未来数十年其收益与风险的分配方式。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p005-b0001",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p005-b0001",
+      "page_index": 4,
+      "block_index": 1,
+      "type": "text",
+      "sub_type": "title",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 300,
+        "width": 214,
+        "height": 19,
+        "unit": "pt"
+      },
+      "source_text": "1. Building an Open Economy",
+      "translated_text": "",
+      "translation_unit_text": "",
+      "fit_text": "1. Building an Open Economy",
+      "text_source": "source_ocr",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-005.png",
+      "source_line_count": 1
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p005-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p005-b0002",
+      "page_index": 4,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 334,
+        "width": 472,
+        "height": 105,
+        "unit": "pt"
+      },
+      "source_text": "The promise of advanced AI is that it can benefi t everyone by translating abundant intelligence into extraordinary progress. It can lower the cost of essential goods, expand opportunity, and give people more time for what is meaningful, relational, and community-building. It can help solve scientifi c challenges that still elude human eff ort: curing or preventing diseases, alleviating food scarcity, strengthening agriculture under climate stress, and speeding up breakthroughs in clean, reliable energy. The benefi ts of major investments in science could emerge within a single lifetime and reach communities far beyond traditional research hubs.",
+      "translated_text": "先进人工智能的承诺在于，它能够将丰富的智能转化为非凡的进步，从而惠及所有人。它可以降低必需品的成本，拓展机遇，并让人们有更多时间投入到有意义、促进人际关系和社区建设的事务中。它有助于解决人类努力尚未攻克的一些科学挑战：治愈或预防疾病、缓解粮食短缺、在气候压力下增强农业韧性，以及加速清洁可靠能源领域的突破。对科学的重大投资所带来的效益，可能在一代人的时间内显现，并惠及传统研究中心之外的广大社区。",
+      "translation_unit_text": "先进人工智能的承诺在于，它能够将丰富的智能转化为非凡的进步，从而惠及所有人。它可以降低必需品的成本，拓展机遇，并让人们有更多时间投入到有意义、促进人际关系和社区建设的事务中。它有助于解决人类努力尚未攻克的一些科学挑战：治愈或预防疾病、缓解粮食短缺、在气候压力下增强农业韧性，以及加速清洁可靠能源领域的突破。对科学的重大投资所带来的效益，可能在一代人的时间内显现，并惠及传统研究中心之外的广大社区。",
+      "fit_text": "先进人工智能的承诺在于，它能够将丰富的智能转化为非凡的进步，从而惠及所有人。它可以降低必需品的成本，拓展机遇，并让人们有更多时间投入到有意义、促进人际关系和社区建设的事务中。它有助于解决人类努力尚未攻克的一些科学挑战：治愈或预防疾病、缓解粮食短缺、在气候压力下增强农业韧性，以及加速清洁可靠能源领域的突破。对科学的重大投资所带来的效益，可能在一代人的时间内显现，并惠及传统研究中心之外的广大社区。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-005.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p4_item_2_1_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p4_item_2_1_md, math: mitex) }]",
+        "markdown_text": "先进人工智能的承诺在于，它能够将丰富的智能转化为非凡的进步，从而惠及所有人。它可以降低必需品的成本，拓展机遇，并让人们有更多时间投入到有意义、促进人际关系和社区建设的事务中。它有助于解决人类努力尚未攻克的一些科学挑战：治愈或预防疾病、缓解粮食短缺、在气候压力下增强农业韧性，以及加速清洁可靠能源领域的突破。对科学的重大投资所带来的效益，可能在一代人的时间内显现，并惠及传统研究中心之外的广大社区。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p005-b0003",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p005-b0003",
+      "page_index": 4,
+      "block_index": 3,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 453,
+        "width": 472,
+        "height": 58,
+        "unit": "pt"
+      },
+      "source_text": "Yet the same capabilities making this progress possible will also disrupt jobs and reshape entire industries at a speed and scale unlike any previous technological shift. Some jobs will disappear, others will evolve, and entirely new forms of work will emerge as organizations learn how to deploy advanced AI.",
+      "translated_text": "然而，正是这些推动进步的能力，也将以前所未有的速度和规模颠覆就业岗位、重塑整个产业。部分工作岗位将消失，另一些将演变，而随着各组织学会如何部署先进人工智能，全新的工作形态也将应运而生。",
+      "translation_unit_text": "然而，正是这些推动进步的能力，也将以前所未有的速度和规模颠覆就业岗位、重塑整个产业。部分工作岗位将消失，另一些将演变，而随着各组织学会如何部署先进人工智能，全新的工作形态也将应运而生。",
+      "fit_text": "然而，正是这些推动进步的能力，也将以前所未有的速度和规模颠覆就业岗位、重塑整个产业。部分工作岗位将消失，另一些将演变，而随着各组织学会如何部署先进人工智能，全新的工作形态也将应运而生。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-005.png",
+      "source_line_count": 4,
+      "typst": {
+        "body_name": "p4_item_3_2_body",
+        "body_expr": "block(width: 448.40000000000003pt, height: 54.51999999999998pt)[#{ pdftr_fit_markdown(p4_item_3_2_md, max_size: 11.06pt, min_size: 10.78pt, max_leading: 0.6em, min_leading: 0.57em, fit_height: 54.51999999999998pt) }]",
+        "markdown_text": "然而，正是这些推动进步的能力，也将以前所未有的速度和规模颠覆就业岗位、重塑整个产业。部分工作岗位将消失，另一些将演变，而随着各组织学会如何部署先进人工智能，全新的工作形态也将应运而生。",
+        "width_pt": 448.40000000000003,
+        "height_pt": 54.51999999999998,
+        "fit_height_pt": 54.51999999999998,
+        "max_size_pt": 11.06,
+        "min_size_pt": 10.78,
+        "max_leading_em": 0.6,
+        "min_leading_em": 0.57
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p005-b0004",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p005-b0004",
+      "page_index": 4,
+      "block_index": 4,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 525,
+        "width": 472,
+        "height": 90,
+        "unit": "pt"
+      },
+      "source_text": "These changes will not arrive evenly. Without thoughtful policies, AI could widen inequality by compounding advantages for those already positioned to capture the upside while communities that begin with fewer resources fall further behind, excluded from new tools, new industries, and new opportunities. There is also a risk that the economic gains concentrate within a small number of fi rms like OpenAI, even as the technology itself becomes more powerful and widely used. Workers using AI might well agree that it’s increasing their productivity without believing they’re seeing the benefi ts.",
+      "translated_text": "这些变化不会均匀到来。若无深思熟虑的政策，人工智能可能加剧不平等，使已具备优势者获得更多增益，而资源较少的社区则进一步落后，被排除在新工具、新产业和新机遇之外。还存在一种风险，即经济收益可能集中在少数像OpenAI这样的公司手中，即使技术本身变得更强大、应用更广泛。使用人工智能的工人很可能认同其提高了生产力，却未必认为自己从中获益。",
+      "translation_unit_text": "这些变化不会均匀到来。若无深思熟虑的政策，人工智能可能加剧不平等，使已具备优势者获得更多增益，而资源较少的社区则进一步落后，被排除在新工具、新产业和新机遇之外。还存在一种风险，即经济收益可能集中在少数像OpenAI这样的公司手中，即使技术本身变得更强大、应用更广泛。使用人工智能的工人很可能认同其提高了生产力，却未必认为自己从中获益。",
+      "fit_text": "这些变化不会均匀到来。若无深思熟虑的政策，人工智能可能加剧不平等，使已具备优势者获得更多增益，而资源较少的社区则进一步落后，被排除在新工具、新产业和新机遇之外。还存在一种风险，即经济收益可能集中在少数像OpenAI这样的公司手中，即使技术本身变得更强大、应用更广泛。使用人工智能的工人很可能认同其提高了生产力，却未必认为自己从中获益。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-005.png",
+      "source_line_count": 6,
+      "typst": {
+        "body_name": "p4_item_4_3_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p4_item_4_3_md, math: mitex) }]",
+        "markdown_text": "这些变化不会均匀到来。若无深思熟虑的政策，人工智能可能加剧不平等，使已具备优势者获得更多增益，而资源较少的社区则进一步落后，被排除在新工具、新产业和新机遇之外。还存在一种风险，即经济收益可能集中在少数像OpenAI这样的公司手中，即使技术本身变得更强大、应用更广泛。使用人工智能的工人很可能认同其提高了生产力，却未必认为自己从中获益。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p005-b0005",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p005-b0005",
+      "page_index": 4,
+      "block_index": 5,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 629,
+        "width": 472,
+        "height": 90,
+        "unit": "pt"
+      },
+      "source_text": "Maintaining an open economy that is easily accessed and participatory will require ambitious policymaking. The enclosed ideas include proposals to ensure that workers have a voice in the AI transition, since workers have deep knowledge about how work is actually performed and where AI can make work better and safer. Other proposals suggest new mechanisms to share returns from AI-driven growth by expanding access to capital, sharing economic gains more widely, and aligning the benefi ts of AI-enabled growth with higher living standards. And they aim to modernize economic security by",
+      "translated_text": "",
+      "translation_unit_text": "维持一个易于参与和开放的开放型经济将需要雄心勃勃的政策制定。所提出的构想包括确保工人在人工智能转型中拥有发言权的建议，因为工人对工作的实际执行方式以及人工智能如何使工作变得更好、更安全具有深刻了解。其他建议提出了通过扩大资本获取、更广泛地分享经济增长成果，以及将人工智能驱动的增长收益与更高的生活水平相结合，来分享人工智能驱动增长回报的新机制。这些建议还旨在通过帮助人们在转型中导航、获取新机遇并在工作变化中保持稳定，来提升经济安全。这些构想共同构成了一套雄心勃勃的初步方案，旨在应对超级智能转型可能引发的广泛经济情景，同时努力保持经济的开放性和广泛受益性。",
+      "fit_text": "Maintaining an open economy that is easily accessed and participatory will require ambitious policymaking. The enclosed ideas include proposals to ensure that workers have a voice in the AI transition, since workers have deep knowledge about how work is actually performed and where AI can make work better and safer. Other proposals suggest new mechanisms to share returns from AI-driven growth by expanding access to capital, sharing economic gains more widely, and aligning the benefi ts of AI-enabled growth with higher living standards. And they aim to modernize economic security by",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-005.png",
+      "source_line_count": 6,
+      "typst": {
+        "body_name": "p4_item_5_4_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.06pt); set par(leading: 0.6em); cmarker.render(p4_item_5_4_md, math: mitex) }]",
+        "markdown_text": "维持一个易于参与和开放的开放型经济将需要雄心勃勃的政策制定。所提出的构想包括确保工人在人工智能转型中拥有发言权的建议，因为工人对工作的实际执行方式以及人工智能如何使工作变得更好、更安全具有深刻了解。其他建议提出了通过扩大资本获取、更广泛地分享经济增长成果，以及将人工智能驱动的增长收益与更高的生活水平相结合，来分享人工智能驱动增长回报的新机制。这些建议",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.06,
+        "leading_em": 0.6
+      },
+      "flow": {
+        "group_id": "flow-023",
+        "index": 0,
+        "count": 2,
+        "block_ids": [
+          "p005-b0005",
+          "p006-b0000"
+        ],
+        "prev_block_id": null,
+        "next_block_id": "p006-b0000"
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p006-b0000",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p006-b0000",
+      "page_index": 5,
+      "block_index": 0,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 72,
+        "width": 471,
+        "height": 57,
+        "unit": "pt"
+      },
+      "source_text": "helping people navigate transitions, access new opportunities, and maintain stability as work changes. Together, they form a portfolio of ambitious, preliminary ideas for navigating a wide range of economic scenarios that the transition to superintelligence might create—all while striving to keep the economy open and broadly benefi cial.",
+      "translated_text": "",
+      "translation_unit_text": "维持一个易于参与和开放的开放型经济将需要雄心勃勃的政策制定。所提出的构想包括确保工人在人工智能转型中拥有发言权的建议，因为工人对工作的实际执行方式以及人工智能如何使工作变得更好、更安全具有深刻了解。其他建议提出了通过扩大资本获取、更广泛地分享经济增长成果，以及将人工智能驱动的增长收益与更高的生活水平相结合，来分享人工智能驱动增长回报的新机制。这些建议还旨在通过帮助人们在转型中导航、获取新机遇并在工作变化中保持稳定，来提升经济安全。这些构想共同构成了一套雄心勃勃的初步方案，旨在应对超级智能转型可能引发的广泛经济情景，同时努力保持经济的开放性和广泛受益性。",
+      "fit_text": "helping people navigate transitions, access new opportunities, and maintain stability as work changes. Together, they form a portfolio of ambitious, preliminary ideas for navigating a wide range of economic scenarios that the transition to superintelligence might create—all while striving to keep the economy open and broadly benefi cial.",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-006.png",
+      "source_line_count": 4,
+      "typst": {
+        "body_name": "p5_item_0_0_body",
+        "body_expr": "block(width: 447.45000000000005pt, height: 53.58000000000001pt)[#{ pdftr_fit_markdown(p5_item_0_0_md, max_size: 11.06pt, min_size: 10.78pt, max_leading: 0.6em, min_leading: 0.57em, fit_height: 53.58pt) }]",
+        "markdown_text": "还旨在通过帮助人们在转型中导航、获取新机遇并在工作变化中保持稳定，来提升经济安全。这些构想共同构成了一套雄心勃勃的初步方案，旨在应对超级智能转型可能引发的广泛经济情景，同时努力保持经济的开放性和广泛受益性。",
+        "width_pt": 447.45000000000005,
+        "height_pt": 53.58000000000001,
+        "fit_height_pt": 53.58,
+        "max_size_pt": 11.06,
+        "min_size_pt": 10.78,
+        "max_leading_em": 0.6,
+        "min_leading_em": 0.57
+      },
+      "flow": {
+        "group_id": "flow-023",
+        "index": 1,
+        "count": 2,
+        "block_ids": [
+          "p005-b0005",
+          "p006-b0000"
+        ],
+        "prev_block_id": "p005-b0005",
+        "next_block_id": null
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p006-b0001",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p006-b0001",
+      "page_index": 5,
+      "block_index": 1,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 144,
+        "width": 472,
+        "height": 135,
+        "unit": "pt"
+      },
+      "source_text": "Worker perspectives. Give workers a voice in the AI transition to make work better and safer, including a formal way to collaborate with management to make sure AI improves job quality, enhances safety, and respects labor rights. Workers have deep knowledge about how work is actually performed and where AI can improve outcomes. They will be critical voices in understanding how AI can be used in workplaces to ensure that technological change will not only lead to improved productivity, but also lead to better jobs and stronger, safer workplaces. Allow workers to prioritize AI deployments that improve job quality by eliminating dangerous, repetitive, administrative, or exhausting tasks so employees can focus on higher-value work. At the same time, set clear limits on harmful uses of AI that could erode job quality by intensifying workloads, narrowing autonomy, or undermining fair scheduling and pay.",
+      "translated_text": "工人视角。在人工智能转型中赋予工人发言权，以改善工作环境并提升安全性，包括建立与管理层协作的正式机制，确保人工智能能够提升工作质量、加强安全保障并尊重劳工权利。工人对实际工作流程及人工智能可优化之处具有深刻认知。在理解如何将人工智能应用于工作场所、确保技术变革不仅能提高生产力，还能创造更优质的岗位和更安全、更稳固的工作环境方面，工人将成为关键的声音。应允许工人优先部署那些能通过消除危险、重复性、行政性或繁重任务来提升工作质量的人工智能应用，使员工能够专注于更高价值的工作。同时，需明确限制可能损害工作质量的有害人工智能应用，例如加剧工作负荷、限制自主权或破坏公平排班与薪酬体系。",
+      "translation_unit_text": "工人视角。在人工智能转型中赋予工人发言权，以改善工作环境并提升安全性，包括建立与管理层协作的正式机制，确保人工智能能够提升工作质量、加强安全保障并尊重劳工权利。工人对实际工作流程及人工智能可优化之处具有深刻认知。在理解如何将人工智能应用于工作场所、确保技术变革不仅能提高生产力，还能创造更优质的岗位和更安全、更稳固的工作环境方面，工人将成为关键的声音。应允许工人优先部署那些能通过消除危险、重复性、行政性或繁重任务来提升工作质量的人工智能应用，使员工能够专注于更高价值的工作。同时，需明确限制可能损害工作质量的有害人工智能应用，例如加剧工作负荷、限制自主权或破坏公平排班与薪酬体系。",
+      "fit_text": "工人视角。在人工智能转型中赋予工人发言权，以改善工作环境并提升安全性，包括建立与管理层协作的正式机制，确保人工智能能够提升工作质量、加强安全保障并尊重劳工权利。工人对实际工作流程及人工智能可优化之处具有深刻认知。在理解如何将人工智能应用于工作场所、确保技术变革不仅能提高生产力，还能创造更优质的岗位和更安全、更稳固的工作环境方面，工人将成为关键的声音。应允许工人优先部署那些能通过消除危险、重复性、行政性或繁重任务来提升工作质量的人工智能应用，使员工能够专注于更高价值的工作。同时，需明确限制可能损害工作质量的有害人工智能应用，例如加剧工作负荷、限制自主权或破坏公平排班与薪酬体系。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-006.png",
+      "source_line_count": 9,
+      "typst": {
+        "body_name": "p5_item_1_1_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p5_item_1_1_md, math: mitex) }]",
+        "markdown_text": "工人视角。在人工智能转型中赋予工人发言权，以改善工作环境并提升安全性，包括建立与管理层协作的正式机制，确保人工智能能够提升工作质量、加强安全保障并尊重劳工权利。工人对实际工作流程及人工智能可优化之处具有深刻认知。在理解如何将人工智能应用于工作场所、确保技术变革不仅能提高生产力，还能创造更优质的岗位和更安全、更稳固的工作环境方面，工人将成为关键的声音。应允许工人优先部署那些能通过消除危险、重复性、行政性或繁重任务来提升工作质量的人工智能应用，使员工能够专注于更高价值的工作。同时，需明确限制可能损害工作质量的有害人工智能应用，例如加剧工作负荷、限制自主权或破坏公平排班与薪酬体系。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p006-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p006-b0002",
+      "page_index": 5,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 293,
+        "width": 472,
+        "height": 89,
+        "unit": "pt"
+      },
+      "source_text": "AI-fi rst entrepreneurs. Help workers turn domain expertise into new companies by using AI to handle the overhead that usually blocks entrepreneurship (e.g., accounting, marketing, procurement). Pair microgrants or revenue-based fi nancing with practical “startup-in-a-box” supports such as model contracts and shared back-offi ce infrastructure so that new small businesses can compete quickly. Worker organizations could serve as enablers by off ering training, providing shared services, and helping workers negotiate fair commercial terms and protect IP.",
+      "translated_text": "AI优先创业者。帮助劳动者利用AI处理通常阻碍创业的行政事务（例如会计、营销、采购），从而将领域专业知识转化为新公司。将小额赠款或基于收入的融资与实用的“一站式创业”支持（如标准合同和共享后台基础设施）相结合，使新创小型企业能够快速参与竞争。工人组织可以通过提供培训、共享服务以及协助劳动者协商公平商业条款和保护知识产权，发挥赋能作用。",
+      "translation_unit_text": "AI优先创业者。帮助劳动者利用AI处理通常阻碍创业的行政事务（例如会计、营销、采购），从而将领域专业知识转化为新公司。将小额赠款或基于收入的融资与实用的“一站式创业”支持（如标准合同和共享后台基础设施）相结合，使新创小型企业能够快速参与竞争。工人组织可以通过提供培训、共享服务以及协助劳动者协商公平商业条款和保护知识产权，发挥赋能作用。",
+      "fit_text": "AI优先创业者。帮助劳动者利用AI处理通常阻碍创业的行政事务（例如会计、营销、采购），从而将领域专业知识转化为新公司。将小额赠款或基于收入的融资与实用的“一站式创业”支持（如标准合同和共享后台基础设施）相结合，使新创小型企业能够快速参与竞争。工人组织可以通过提供培训、共享服务以及协助劳动者协商公平商业条款和保护知识产权，发挥赋能作用。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-006.png",
+      "source_line_count": 6,
+      "typst": {
+        "body_name": "p5_item_2_2_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p5_item_2_2_md, math: mitex) }]",
+        "markdown_text": "AI优先创业者。帮助劳动者利用AI处理通常阻碍创业的行政事务（例如会计、营销、采购），从而将领域专业知识转化为新公司。将小额赠款或基于收入的融资与实用的“一站式创业”支持（如标准合同和共享后台基础设施）相结合，使新创小型企业能够快速参与竞争。工人组织可以通过提供培训、共享服务以及协助劳动者协商公平商业条款和保护知识产权，发挥赋能作用。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p006-b0003",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p006-b0003",
+      "page_index": 5,
+      "block_index": 3,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 396,
+        "width": 472,
+        "height": 136,
+        "unit": "pt"
+      },
+      "source_text": "Right to AI. Treat access to AI as foundational for participation in the modern economy, similar to mass eff orts to increase global literacy, or to make sure that electricity and the internet reach remote parts of the globe. (The internet still isn’t fairly deployed across the globe or even the US; learn from this and seek to rectify those issues when it comes to AI.) Expand aff ordable, reliable access to foundational models—the building blocks of modern AI systems—and make a baseline level of capability broadly available, including through free or low-cost access points. Support the education, infrastructure, connectivity, and training needed to use these systems eff ectively, and make sure that workers, small businesses, schools, libraries, and underserved communities are not excluded from the capabilities that drive productivity and opportunity.",
+      "translated_text": "人工智能权利。将获取人工智能视为参与现代经济的基础，类似于提升全球识字率的大规模努力，或确保电力和互联网覆盖全球偏远地区。（互联网在全球乃至美国仍未实现公平部署；应从中吸取教训，并在人工智能领域努力纠正这些问题。）扩大对基础模型——现代人工智能系统的构建模块——的可负担、可靠访问，并通过免费或低成本接入点等方式，使基础能力水平广泛可用。支持有效使用这些系统所需的教育、基础设施、连接性和培训，并确保工人、小型企业、学校、图书馆和服务不足的社区不被驱动生产力和机遇的能力所排斥。",
+      "translation_unit_text": "人工智能权利。将获取人工智能视为参与现代经济的基础，类似于提升全球识字率的大规模努力，或确保电力和互联网覆盖全球偏远地区。（互联网在全球乃至美国仍未实现公平部署；应从中吸取教训，并在人工智能领域努力纠正这些问题。）扩大对基础模型——现代人工智能系统的构建模块——的可负担、可靠访问，并通过免费或低成本接入点等方式，使基础能力水平广泛可用。支持有效使用这些系统所需的教育、基础设施、连接性和培训，并确保工人、小型企业、学校、图书馆和服务不足的社区不被驱动生产力和机遇的能力所排斥。",
+      "fit_text": "人工智能权利。将获取人工智能视为参与现代经济的基础，类似于提升全球识字率的大规模努力，或确保电力和互联网覆盖全球偏远地区。（互联网在全球乃至美国仍未实现公平部署；应从中吸取教训，并在人工智能领域努力纠正这些问题。）扩大对基础模型——现代人工智能系统的构建模块——的可负担、可靠访问，并通过免费或低成本接入点等方式，使基础能力水平广泛可用。支持有效使用这些系统所需的教育、基础设施、连接性和培训，并确保工人、小型企业、学校、图书馆和服务不足的社区不被驱动生产力和机遇的能力所排斥。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-006.png",
+      "source_line_count": 9,
+      "typst": {
+        "body_name": "p5_item_3_3_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p5_item_3_3_md, math: mitex) }]",
+        "markdown_text": "人工智能权利。将获取人工智能视为参与现代经济的基础，类似于提升全球识字率的大规模努力，或确保电力和互联网覆盖全球偏远地区。（互联网在全球乃至美国仍未实现公平部署；应从中吸取教训，并在人工智能领域努力纠正这些问题。）扩大对基础模型——现代人工智能系统的构建模块——的可负担、可靠访问，并通过免费或低成本接入点等方式，使基础能力水平广泛可用。支持有效使用这些系统所需的教育、基础设施、连接性和培训，并确保工人、小型企业、学校、图书馆和服务不足的社区不被驱动生产力和机遇的能力所排斥。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p006-b0004",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p006-b0004",
+      "page_index": 5,
+      "block_index": 4,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 544,
+        "width": 472,
+        "height": 167,
+        "unit": "pt"
+      },
+      "source_text": "Modernize the tax base. As AI reshapes work and production, the composition of economic activity may shift—expanding corporate profi ts and capital gains while potentially reducing reliance on labor income and payroll taxes. This could erode the tax base that funds core programs like Social Security, Medicaid, SNAP, and housing assistance—putting them at risk. Tax policy should adapt to ensure these systems remain durable. Policymakers could rebalance the tax base by increasing reliance on capital-based revenues—such as higher taxes on capital gains at the top, corporate income, or targeted measures on sustained AI-driven returns—and by exploring new approaches such as taxes related to automated labor. These reforms should be paired with wage-linked incentives that encourage fi rms to retain, retrain, and invest in workers, similar to existing R&D-style credits. Together, these changes would help stabilize funding for essential programs while supporting workforce transitions in an AI-driven economy.",
+      "translated_text": "现代化税基。随着人工智能重塑工作与生产，经济活动的构成可能发生转变——企业利润与资本利得增加，而对劳动收入与工资税的依赖可能降低。这可能侵蚀为社会保障、医疗补助、补充营养援助计划及住房援助等核心项目提供资金的税基，使其面临风险。税收政策应进行调整，以确保这些体系保持可持续性。政策制定者可通过增加对资本性收入的依赖——例如提高对高收入群体资本利得、企业所得税的税率，或针对持续人工智能驱动收益采取定向措施——并探索与自动化劳动相关的新税种，来重新平衡税基。这些改革应与工资挂钩的激励措施相结合，鼓励企业保留、再培训并投资于员工，类似于现有的研发类税收抵免。这些变革共同有助于稳定关键项目的资金来源，同时支持人工智能驱动经济中的劳动力转型。",
+      "translation_unit_text": "现代化税基。随着人工智能重塑工作与生产，经济活动的构成可能发生转变——企业利润与资本利得增加，而对劳动收入与工资税的依赖可能降低。这可能侵蚀为社会保障、医疗补助、补充营养援助计划及住房援助等核心项目提供资金的税基，使其面临风险。税收政策应进行调整，以确保这些体系保持可持续性。政策制定者可通过增加对资本性收入的依赖——例如提高对高收入群体资本利得、企业所得税的税率，或针对持续人工智能驱动收益采取定向措施——并探索与自动化劳动相关的新税种，来重新平衡税基。这些改革应与工资挂钩的激励措施相结合，鼓励企业保留、再培训并投资于员工，类似于现有的研发类税收抵免。这些变革共同有助于稳定关键项目的资金来源，同时支持人工智能驱动经济中的劳动力转型。",
+      "fit_text": "现代化税基。随着人工智能重塑工作与生产，经济活动的构成可能发生转变——企业利润与资本利得增加，而对劳动收入与工资税的依赖可能降低。这可能侵蚀为社会保障、医疗补助、补充营养援助计划及住房援助等核心项目提供资金的税基，使其面临风险。税收政策应进行调整，以确保这些体系保持可持续性。政策制定者可通过增加对资本性收入的依赖——例如提高对高收入群体资本利得、企业所得税的税率，或针对持续人工智能驱动收益采取定向措施——并探索与自动化劳动相关的新税种，来重新平衡税基。这些改革应与工资挂钩的激励措施相结合，鼓励企业保留、再培训并投资于员工，类似于现有的研发类税收抵免。这些变革共同有助于稳定关键项目的资金来源，同时支持人工智能驱动经济中的劳动力转型。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-006.png",
+      "source_line_count": 11,
+      "typst": {
+        "body_name": "p5_item_4_4_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p5_item_4_4_md, math: mitex) }]",
+        "markdown_text": "现代化税基。随着人工智能重塑工作与生产，经济活动的构成可能发生转变——企业利润与资本利得增加，而对劳动收入与工资税的依赖可能降低。这可能侵蚀为社会保障、医疗补助、补充营养援助计划及住房援助等核心项目提供资金的税基，使其面临风险。税收政策应进行调整，以确保这些体系保持可持续性。政策制定者可通过增加对资本性收入的依赖——例如提高对高收入群体资本利得、企业所得税的税率，或针对持续人工智能驱动收益采取定向措施——并探索与自动化劳动相关的新税种，来重新平衡税基。这些改革应与工资挂钩的激励措施相结合，鼓励企业保留、再培训并投资于员工，类似于现有的研发类税收抵免。这些变革共同有助于稳定关键项目的资金来源，同时支持人工智能驱动经济中的劳动力转型。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p007-b0000",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p007-b0000",
+      "page_index": 6,
+      "block_index": 0,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 71,
+        "width": 471,
+        "height": 120,
+        "unit": "pt"
+      },
+      "source_text": "Public Wealth Fund. Create a Public Wealth Fund that provides every citizen—including those not invested in fi nancial markets—with a stake in AI-driven economic growth. While tax reforms help ensure governments can continue to fund essential programs, a Public Wealth Fund is designed to ensure that people directly share in the upside of that growth. Policymakers and AI companies should work together to determine how to best seed the Fund, which could invest in diversifi ed, long-term assets that capture growth in both AI companies and the broader set of fi rms adopting and deploying AI. Returns from the Fund could be distributed directly to citizens, allowing more people to participate directly in the upside of AI-driven growth, regardless of their starting wealth or access to capital.",
+      "translated_text": "公共财富基金。设立一个公共财富基金，让每位公民——包括那些未参与金融市场的公民——都能分享人工智能驱动的经济增长成果。虽然税收改革有助于确保政府能够持续资助基本项目，但公共财富基金旨在确保民众直接分享这种增长带来的收益。政策制定者与人工智能公司应共同合作，确定如何最优地启动该基金，该基金可投资于多元化的长期资产，以捕获人工智能公司及更广泛采用和部署人工智能的企业所带来的增长。基金的收益可直接分配给公民，使更多人无论其初始财富或资本获取能力如何，都能直接参与人工智能驱动增长带来的收益。",
+      "translation_unit_text": "公共财富基金。设立一个公共财富基金，让每位公民——包括那些未参与金融市场的公民——都能分享人工智能驱动的经济增长成果。虽然税收改革有助于确保政府能够持续资助基本项目，但公共财富基金旨在确保民众直接分享这种增长带来的收益。政策制定者与人工智能公司应共同合作，确定如何最优地启动该基金，该基金可投资于多元化的长期资产，以捕获人工智能公司及更广泛采用和部署人工智能的企业所带来的增长。基金的收益可直接分配给公民，使更多人无论其初始财富或资本获取能力如何，都能直接参与人工智能驱动增长带来的收益。",
+      "fit_text": "公共财富基金。设立一个公共财富基金，让每位公民——包括那些未参与金融市场的公民——都能分享人工智能驱动的经济增长成果。虽然税收改革有助于确保政府能够持续资助基本项目，但公共财富基金旨在确保民众直接分享这种增长带来的收益。政策制定者与人工智能公司应共同合作，确定如何最优地启动该基金，该基金可投资于多元化的长期资产，以捕获人工智能公司及更广泛采用和部署人工智能的企业所带来的增长。基金的收益可直接分配给公民，使更多人无论其初始财富或资本获取能力如何，都能直接参与人工智能驱动增长带来的收益。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-007.png",
+      "source_line_count": 8,
+      "typst": {
+        "body_name": "p6_item_0_0_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p6_item_0_0_md, math: mitex) }]",
+        "markdown_text": "公共财富基金。设立一个公共财富基金，让每位公民——包括那些未参与金融市场的公民——都能分享人工智能驱动的经济增长成果。虽然税收改革有助于确保政府能够持续资助基本项目，但公共财富基金旨在确保民众直接分享这种增长带来的收益。政策制定者与人工智能公司应共同合作，确定如何最优地启动该基金，该基金可投资于多元化的长期资产，以捕获人工智能公司及更广泛采用和部署人工智能的企业所带来的增长。基金的收益可直接分配给公民，使更多人无论其初始财富或资本获取能力如何，都能直接参与人工智能驱动增长带来的收益。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p007-b0001",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p007-b0001",
+      "page_index": 6,
+      "block_index": 1,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 205,
+        "width": 472,
+        "height": 165,
+        "unit": "pt"
+      },
+      "source_text": "Accelerate grid expansion. Establish new public-private partnership models to fi nance and accelerate the expansion of energy infrastructure required to power AI. Use these models to address fi nancing constraints, permitting delays, and siting risks that have limited high-voltage interstate and interregional transmission—and to deliver infrastructure at speed and scale, limit taxpayer risk, and share the upside with the public. Approaches could include reducing the cost of capital through targeted investment credits, direct and indirect fl exible subsidies, or equity stakes; removing market barriers to advanced technologies such as advanced conductors and high voltage direct current; and providing a narrow federal authority to accelerate the construction of interregional transmission when it is in the national interest. Partnerships should be structured to minimize taxpayer exposure to commercial losses and ensure that expanded energy infrastructure translates into lower energy costs for households and businesses.",
+      "translated_text": "加速电网扩建。建立新型公私合作伙伴关系模式，为支撑人工智能运行所需的能源基础设施扩建提供资金并加速其进程。利用这些模式应对融资约束、许可延迟和选址风险——这些因素限制了高压州际与区域间输电线路的发展——从而快速、大规模地交付基础设施，限制纳税人风险，并与公众共享收益。具体方法可包括：通过定向投资税收抵免、直接与间接的灵活补贴或股权投资降低资本成本；消除先进技术（如先进导线和高压直流输电）的市场壁垒；以及在符合国家利益时，授予有限的联邦权限以加速区域间输电线路建设。合作伙伴关系的构建应最大限度地减少纳税人面临的商业损失风险，并确保扩建的能源基础设施能够降低家庭和企业的能源成本。",
+      "translation_unit_text": "加速电网扩建。建立新型公私合作伙伴关系模式，为支撑人工智能运行所需的能源基础设施扩建提供资金并加速其进程。利用这些模式应对融资约束、许可延迟和选址风险——这些因素限制了高压州际与区域间输电线路的发展——从而快速、大规模地交付基础设施，限制纳税人风险，并与公众共享收益。具体方法可包括：通过定向投资税收抵免、直接与间接的灵活补贴或股权投资降低资本成本；消除先进技术（如先进导线和高压直流输电）的市场壁垒；以及在符合国家利益时，授予有限的联邦权限以加速区域间输电线路建设。合作伙伴关系的构建应最大限度地减少纳税人面临的商业损失风险，并确保扩建的能源基础设施能够降低家庭和企业的能源成本。",
+      "fit_text": "加速电网扩建。建立新型公私合作伙伴关系模式，为支撑人工智能运行所需的能源基础设施扩建提供资金并加速其进程。利用这些模式应对融资约束、许可延迟和选址风险——这些因素限制了高压州际与区域间输电线路的发展——从而快速、大规模地交付基础设施，限制纳税人风险，并与公众共享收益。具体方法可包括：通过定向投资税收抵免、直接与间接的灵活补贴或股权投资降低资本成本；消除先进技术（如先进导线和高压直流输电）的市场壁垒；以及在符合国家利益时，授予有限的联邦权限以加速区域间输电线路建设。合作伙伴关系的构建应最大限度地减少纳税人面临的商业损失风险，并确保扩建的能源基础设施能够降低家庭和企业的能源成本。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-007.png",
+      "source_line_count": 11,
+      "typst": {
+        "body_name": "p6_item_1_1_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p6_item_1_1_md, math: mitex) }]",
+        "markdown_text": "加速电网扩建。建立新型公私合作伙伴关系模式，为支撑人工智能运行所需的能源基础设施扩建提供资金并加速其进程。利用这些模式应对融资约束、许可延迟和选址风险——这些因素限制了高压州际与区域间输电线路的发展——从而快速、大规模地交付基础设施，限制纳税人风险，并与公众共享收益。具体方法可包括：通过定向投资税收抵免、直接与间接的灵活补贴或股权投资降低资本成本；消除先进技术（如先进导线和高压直流输电）的市场壁垒；以及在符合国家利益时，授予有限的联邦权限以加速区域间输电线路建设。合作伙伴关系的构建应最大限度地减少纳税人面临的商业损失风险，并确保扩建的能源基础设施能够降低家庭和企业的能源成本。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p007-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p007-b0002",
+      "page_index": 6,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 384,
+        "width": 471,
+        "height": 119,
+        "unit": "pt"
+      },
+      "source_text": "Effi ciency dividends. Convert effi ciency gains from AI into durable improvements in workers’ benefi ts when routine workload declines and operating costs fall, including incentivizing companies to increase retirement matches or contributions, cover a larger share of healthcare costs, and subsidize child and eldercare. Incentivize employers and unions to run time-bound 32-hour/four-day workweek pilots with no loss in pay that hold output and service levels constant, then convert reclaimed hours into a permanent shorter week, bankable paid time off , or both. Where helpful, fi rms could also off er predictable “benefi ts bonuses” tied to measured productivity improvements so the effi ciency dividend shows up both as long-term fi nancial security and as time back for workers.",
+      "translated_text": "效率红利。当常规工作量下降且运营成本降低时，将人工智能带来的效率提升转化为对工人福利的持久改善，包括激励企业提高退休金匹配或缴款比例、承担更大份额的医疗费用，以及补贴儿童和老人护理。激励雇主和工会开展有时限的32小时/四天工作周试点，保持产出和服务水平不变且不降低薪酬，然后将节省下来的工时转化为永久性的缩短工作周、可累积的带薪休假，或两者兼有。在适当情况下，企业还可提供与可衡量的生产率提升挂钩的、可预测的“福利奖金”，从而使效率红利既体现为工人的长期财务保障，也体现为工人可支配时间的增加。",
+      "translation_unit_text": "效率红利。当常规工作量下降且运营成本降低时，将人工智能带来的效率提升转化为对工人福利的持久改善，包括激励企业提高退休金匹配或缴款比例、承担更大份额的医疗费用，以及补贴儿童和老人护理。激励雇主和工会开展有时限的32小时/四天工作周试点，保持产出和服务水平不变且不降低薪酬，然后将节省下来的工时转化为永久性的缩短工作周、可累积的带薪休假，或两者兼有。在适当情况下，企业还可提供与可衡量的生产率提升挂钩的、可预测的“福利奖金”，从而使效率红利既体现为工人的长期财务保障，也体现为工人可支配时间的增加。",
+      "fit_text": "效率红利。当常规工作量下降且运营成本降低时，将人工智能带来的效率提升转化为对工人福利的持久改善，包括激励企业提高退休金匹配或缴款比例、承担更大份额的医疗费用，以及补贴儿童和老人护理。激励雇主和工会开展有时限的32小时/四天工作周试点，保持产出和服务水平不变且不降低薪酬，然后将节省下来的工时转化为永久性的缩短工作周、可累积的带薪休假，或两者兼有。在适当情况下，企业还可提供与可衡量的生产率提升挂钩的、可预测的“福利奖金”，从而使效率红利既体现为工人的长期财务保障，也体现为工人可支配时间的增加。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-007.png",
+      "source_line_count": 8,
+      "typst": {
+        "body_name": "p6_item_2_2_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p6_item_2_2_md, math: mitex) }]",
+        "markdown_text": "效率红利。当常规工作量下降且运营成本降低时，将人工智能带来的效率提升转化为对工人福利的持久改善，包括激励企业提高退休金匹配或缴款比例、承担更大份额的医疗费用，以及补贴儿童和老人护理。激励雇主和工会开展有时限的32小时/四天工作周试点，保持产出和服务水平不变且不降低薪酬，然后将节省下来的工时转化为永久性的缩短工作周、可累积的带薪休假，或两者兼有。在适当情况下，企业还可提供与可衡量的生产率提升挂钩的、可预测的“福利奖金”，从而使效率红利既体现为工人的长期财务保障，也体现为工人可支配时间的增加。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p007-b0003",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p007-b0003",
+      "page_index": 6,
+      "block_index": 3,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 518,
+        "width": 471,
+        "height": 74,
+        "unit": "pt"
+      },
+      "source_text": "Adaptive safety nets that work for everyone. Make sure the existing safety net works reliably, quickly, and at scale, because if the transition to superintelligence is going to benefi t everyone, the systems designed to provide economic and health security need to deliver without delay or gaps. That starts with unemployment insurance, SNAP, Social Security, Medicaid, and Medicare that are not just in place but fully functional, accessible, and responsive to the realities people will face during the transition.",
+      "translated_text": "适应所有人的安全网。确保现有安全网可靠、快速且大规模运行，因为如果向超级智能的转型要惠及所有人，那么旨在提供经济和健康保障的系统就必须无延迟、无漏洞地发挥作用。这始于失业保险、SNAP、社会保障、医疗补助和医疗保险——它们不仅存在，而且功能完备、易于获取，并能响应人们在转型期间将面临的现实。",
+      "translation_unit_text": "适应所有人的安全网。确保现有安全网可靠、快速且大规模运行，因为如果向超级智能的转型要惠及所有人，那么旨在提供经济和健康保障的系统就必须无延迟、无漏洞地发挥作用。这始于失业保险、SNAP、社会保障、医疗补助和医疗保险——它们不仅存在，而且功能完备、易于获取，并能响应人们在转型期间将面临的现实。",
+      "fit_text": "适应所有人的安全网。确保现有安全网可靠、快速且大规模运行，因为如果向超级智能的转型要惠及所有人，那么旨在提供经济和健康保障的系统就必须无延迟、无漏洞地发挥作用。这始于失业保险、SNAP、社会保障、医疗补助和医疗保险——它们不仅存在，而且功能完备、易于获取，并能响应人们在转型期间将面临的现实。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-007.png",
+      "source_line_count": 5,
+      "typst": {
+        "body_name": "p6_item_3_3_body",
+        "body_expr": "block(width: 447.45000000000005pt, height: 69.55999999999995pt)[#{ pdftr_fit_markdown(p6_item_3_3_md, max_size: 11.06pt, min_size: 10.92pt, max_leading: 0.6em, min_leading: 0.57em, fit_height: 69.55999999999995pt) }]",
+        "markdown_text": "适应所有人的安全网。确保现有安全网可靠、快速且大规模运行，因为如果向超级智能的转型要惠及所有人，那么旨在提供经济和健康保障的系统就必须无延迟、无漏洞地发挥作用。这始于失业保险、SNAP、社会保障、医疗补助和医疗保险——它们不仅存在，而且功能完备、易于获取，并能响应人们在转型期间将面临的现实。",
+        "width_pt": 447.45000000000005,
+        "height_pt": 69.55999999999995,
+        "fit_height_pt": 69.55999999999995,
+        "max_size_pt": 11.06,
+        "min_size_pt": 10.92,
+        "max_leading_em": 0.6,
+        "min_leading_em": 0.57
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p007-b0004",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p007-b0004",
+      "page_index": 6,
+      "block_index": 4,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 606,
+        "width": 471,
+        "height": 104,
+        "unit": "pt"
+      },
+      "source_text": "Next, invest in clear, real-time measurement of how AI is aff ecting work, wages, job quality, and sectoral dynamics, using public metrics such as unemployment rates and indicators of regional or industry-specifi c displacement. These systems should provide policymakers with timely visibility into where disruption is occurring and how severe it is. Then, defi ne a package of temporary, expanded safety nets (e.g., expanded or more fl exible unemployment benefi ts, fast cash assistance, wage insurance, training vouchers) that activates automatically when these metrics exceed pre-defi ned thresholds. When disruption rises above those levels, support would scale up; as conditions stabilize, it",
+      "translated_text": "",
+      "translation_unit_text": "其次，投资建立清晰、实时的测量系统，以评估人工智能如何影响就业、工资、工作质量和行业动态，采用失业率及区域或行业特定替代指标等公共度量标准。这些系统应使政策制定者能够及时了解干扰发生的领域及其严重程度。随后，制定一套临时性、扩大的安全网方案（例如扩大或更灵活的失业救济、快速现金援助、工资保险、培训券），当这些指标超过预设阈值时自动启动。当干扰水平超过这些阈值时，支持措施将相应增强；随着情况稳定，支持将逐步退出。这确保了援助具有针对性、时限性，并与干扰规模成比例，同时避免了项目的永久性扩张。",
+      "fit_text": "Next, invest in clear, real-time measurement of how AI is aff ecting work, wages, job quality, and sectoral dynamics, using public metrics such as unemployment rates and indicators of regional or industry-specifi c displacement. These systems should provide policymakers with timely visibility into where disruption is occurring and how severe it is. Then, defi ne a package of temporary, expanded safety nets (e.g., expanded or more fl exible unemployment benefi ts, fast cash assistance, wage insurance, training vouchers) that activates automatically when these metrics exceed pre-defi ned thresholds. When disruption rises above those levels, support would scale up; as conditions stabilize, it",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-007.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p6_item_4_4_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p6_item_4_4_md, math: mitex) }]",
+        "markdown_text": "其次，投资建立清晰、实时的测量系统，以评估人工智能如何影响就业、工资、工作质量和行业动态，采用失业率及区域或行业特定替代指标等公共度量标准。这些系统应使政策制定者能够及时了解干扰发生的领域及其严重程度。随后，制定一套临时性、扩大的安全网方案（例如扩大或更灵活的失业救济、快速现金援助、工资保险、培训券），当这些指标超过预设阈值时自动启动。当干扰水平超过这些阈值时，支持措施将相应增强；随着情况稳定，",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      },
+      "flow": {
+        "group_id": "flow-032",
+        "index": 0,
+        "count": 2,
+        "block_ids": [
+          "p007-b0004",
+          "p008-b0000"
+        ],
+        "prev_block_id": null,
+        "next_block_id": "p008-b0000"
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p008-b0000",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p008-b0000",
+      "page_index": 7,
+      "block_index": 0,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 72,
+        "width": 471,
+        "height": 27,
+        "unit": "pt"
+      },
+      "source_text": "would phase out. This ensures that assistance is targeted, time-bound, and proportional to the scale of disruption, and also avoids a permanent expansion of programs.",
+      "translated_text": "",
+      "translation_unit_text": "其次，投资建立清晰、实时的测量系统，以评估人工智能如何影响就业、工资、工作质量和行业动态，采用失业率及区域或行业特定替代指标等公共度量标准。这些系统应使政策制定者能够及时了解干扰发生的领域及其严重程度。随后，制定一套临时性、扩大的安全网方案（例如扩大或更灵活的失业救济、快速现金援助、工资保险、培训券），当这些指标超过预设阈值时自动启动。当干扰水平超过这些阈值时，支持措施将相应增强；随着情况稳定，支持将逐步退出。这确保了援助具有针对性、时限性，并与干扰规模成比例，同时避免了项目的永久性扩张。",
+      "fit_text": "would phase out. This ensures that assistance is targeted, time-bound, and proportional to the scale of disruption, and also avoids a permanent expansion of programs.",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-008.png",
+      "source_line_count": 2,
+      "typst": {
+        "body_name": "p7_item_0_0_body",
+        "body_expr": "block(width: 447.45000000000005pt, height: 25.379999999999995pt)[#{ pdftr_fit_markdown(p7_item_0_0_md, max_size: 11.06pt, min_size: 10.0pt, max_leading: 0.58em, min_leading: 0.52em, fit_height: 25.379999999999995pt) }]",
+        "markdown_text": "支持将逐步退出。这确保了援助具有针对性、时限性，并与干扰规模成比例，同时避免了项目的永久性扩张。",
+        "width_pt": 447.45000000000005,
+        "height_pt": 25.379999999999995,
+        "fit_height_pt": 25.379999999999995,
+        "max_size_pt": 11.06,
+        "min_size_pt": 10.0,
+        "max_leading_em": 0.58,
+        "min_leading_em": 0.52
+      },
+      "flow": {
+        "group_id": "flow-032",
+        "index": 1,
+        "count": 2,
+        "block_ids": [
+          "p007-b0004",
+          "p008-b0000"
+        ],
+        "prev_block_id": "p007-b0004",
+        "next_block_id": null
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p008-b0001",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p008-b0001",
+      "page_index": 7,
+      "block_index": 1,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 114,
+        "width": 471,
+        "height": 134,
+        "unit": "pt"
+      },
+      "source_text": "Portable benefi ts. Over time, build benefi t systems that are not tied to a single employer by expanding access to healthcare, retirement savings, and skills training through portable accounts that follow individuals across jobs, industries, education programs, and entrepreneurial ventures. Public programs can decouple key benefi ts from employment status by expanding access to retirement and training support regardless of where or how someone works. Implementation can run through portable benefi t platforms that pool contributions from multiple sources and route them into standardized accounts attached to the individual, not the job. Retirement systems can also be modernized through pooled structures that allow workers to accrue benefi ts continuously across employers, reducing gaps and preserving continuity over time.",
+      "translated_text": "便携式福利。逐步建立不依赖于单一雇主的福利体系，通过可随个人跨岗位、跨行业、跨教育项目和创业活动流转的便携账户，扩大医疗保健、退休储蓄和技能培训的覆盖范围。公共项目可通过扩大退休和培训支持的获取渠道，使关键福利与就业状态脱钩，无论个人在何处或以何种方式工作。实施可通过便携式福利平台进行，该平台汇集多方缴款，并将其转入与个人而非工作岗位绑定的标准化账户。退休体系亦可通过集合结构实现现代化，使劳动者能够在不同雇主间持续累积福利，减少福利中断并保持长期连续性。",
+      "translation_unit_text": "便携式福利。逐步建立不依赖于单一雇主的福利体系，通过可随个人跨岗位、跨行业、跨教育项目和创业活动流转的便携账户，扩大医疗保健、退休储蓄和技能培训的覆盖范围。公共项目可通过扩大退休和培训支持的获取渠道，使关键福利与就业状态脱钩，无论个人在何处或以何种方式工作。实施可通过便携式福利平台进行，该平台汇集多方缴款，并将其转入与个人而非工作岗位绑定的标准化账户。退休体系亦可通过集合结构实现现代化，使劳动者能够在不同雇主间持续累积福利，减少福利中断并保持长期连续性。",
+      "fit_text": "便携式福利。逐步建立不依赖于单一雇主的福利体系，通过可随个人跨岗位、跨行业、跨教育项目和创业活动流转的便携账户，扩大医疗保健、退休储蓄和技能培训的覆盖范围。公共项目可通过扩大退休和培训支持的获取渠道，使关键福利与就业状态脱钩，无论个人在何处或以何种方式工作。实施可通过便携式福利平台进行，该平台汇集多方缴款，并将其转入与个人而非工作岗位绑定的标准化账户。退休体系亦可通过集合结构实现现代化，使劳动者能够在不同雇主间持续累积福利，减少福利中断并保持长期连续性。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-008.png",
+      "source_line_count": 9,
+      "typst": {
+        "body_name": "p7_item_1_1_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p7_item_1_1_md, math: mitex) }]",
+        "markdown_text": "便携式福利。逐步建立不依赖于单一雇主的福利体系，通过可随个人跨岗位、跨行业、跨教育项目和创业活动流转的便携账户，扩大医疗保健、退休储蓄和技能培训的覆盖范围。公共项目可通过扩大退休和培训支持的获取渠道，使关键福利与就业状态脱钩，无论个人在何处或以何种方式工作。实施可通过便携式福利平台进行，该平台汇集多方缴款，并将其转入与个人而非工作岗位绑定的标准化账户。退休体系亦可通过集合结构实现现代化，使劳动者能够在不同雇主间持续累积福利，减少福利中断并保持长期连续性。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p008-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p008-b0002",
+      "page_index": 7,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 262,
+        "width": 471,
+        "height": 121,
+        "unit": "pt"
+      },
+      "source_text": "Pathways into human-centered work. Expand opportunities in the care and connection economy—childcare, eldercare, education, healthcare, and community services—as pathways for workers displaced by AI. Although AI can enhance these roles by reducing administrative burdens and enabling greater personalization, human connection will remain an essential part of the profession. As AI reshapes the labor market, these sectors can absorb transitioning workers if supported with investments in training, wages, and job quality. Governments can build training pipelines, support transitions into care roles, and incentivize employers to raise pay and improve conditions in fi elds facing chronic shortages.",
+      "translated_text": "进入以人为本工作的路径。拓展关怀与连接经济中的机会——儿童保育、老年护理、教育、医疗保健和社区服务——作为被人工智能取代的劳动者的转型路径。尽管人工智能可以通过减轻行政负担和实现更高程度的个性化来增强这些岗位，但人际连接仍将是这些职业的核心要素。随着人工智能重塑劳动力市场，如果得到培训、工资和工作质量方面的投资支持，这些行业可以吸纳转型中的劳动者。政府可以建立培训渠道，支持向关怀角色的过渡，并激励雇主提高面临长期短缺领域的薪酬和改善工作条件。",
+      "translation_unit_text": "进入以人为本工作的路径。拓展关怀与连接经济中的机会——儿童保育、老年护理、教育、医疗保健和社区服务——作为被人工智能取代的劳动者的转型路径。尽管人工智能可以通过减轻行政负担和实现更高程度的个性化来增强这些岗位，但人际连接仍将是这些职业的核心要素。随着人工智能重塑劳动力市场，如果得到培训、工资和工作质量方面的投资支持，这些行业可以吸纳转型中的劳动者。政府可以建立培训渠道，支持向关怀角色的过渡，并激励雇主提高面临长期短缺领域的薪酬和改善工作条件。",
+      "fit_text": "进入以人为本工作的路径。拓展关怀与连接经济中的机会——儿童保育、老年护理、教育、医疗保健和社区服务——作为被人工智能取代的劳动者的转型路径。尽管人工智能可以通过减轻行政负担和实现更高程度的个性化来增强这些岗位，但人际连接仍将是这些职业的核心要素。随着人工智能重塑劳动力市场，如果得到培训、工资和工作质量方面的投资支持，这些行业可以吸纳转型中的劳动者。政府可以建立培训渠道，支持向关怀角色的过渡，并激励雇主提高面临长期短缺领域的薪酬和改善工作条件。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-008.png",
+      "source_line_count": 8,
+      "typst": {
+        "body_name": "p7_item_2_2_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p7_item_2_2_md, math: mitex) }]",
+        "markdown_text": "进入以人为本工作的路径。拓展关怀与连接经济中的机会——儿童保育、老年护理、教育、医疗保健和社区服务——作为被人工智能取代的劳动者的转型路径。尽管人工智能可以通过减轻行政负担和实现更高程度的个性化来增强这些岗位，但人际连接仍将是这些职业的核心要素。随着人工智能重塑劳动力市场，如果得到培训、工资和工作质量方面的投资支持，这些行业可以吸纳转型中的劳动者。政府可以建立培训渠道，支持向关怀角色的过渡，并激励雇主提高面临长期短缺领域的薪酬和改善工作条件。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p008-b0003",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p008-b0003",
+      "page_index": 7,
+      "block_index": 3,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 396,
+        "width": 471,
+        "height": 74,
+        "unit": "pt"
+      },
+      "source_text": "These initiatives could be complemented with a family benefi t that recognizes caregiving as economically valuable work and supports evolving work patterns. This benefi t could help cover childcare, education, and healthcare while remaining compatible with part-time work, retraining, or entrepreneurship. Together, these eff orts would expand access to care, strengthen communities, and create meaningful, human-centered work.",
+      "translated_text": "这些举措可辅以一项家庭福利，将照护工作视为具有经济价值的劳动并支持不断演变的工作模式。该福利有助于覆盖育儿、教育和医疗保健支出，同时与兼职工作、再培训或创业保持兼容。这些努力共同作用，将扩大照护服务的可及性，增强社区凝聚力，并创造有意义、以人为本的工作。",
+      "translation_unit_text": "这些举措可辅以一项家庭福利，将照护工作视为具有经济价值的劳动并支持不断演变的工作模式。该福利有助于覆盖育儿、教育和医疗保健支出，同时与兼职工作、再培训或创业保持兼容。这些努力共同作用，将扩大照护服务的可及性，增强社区凝聚力，并创造有意义、以人为本的工作。",
+      "fit_text": "这些举措可辅以一项家庭福利，将照护工作视为具有经济价值的劳动并支持不断演变的工作模式。该福利有助于覆盖育儿、教育和医疗保健支出，同时与兼职工作、再培训或创业保持兼容。这些努力共同作用，将扩大照护服务的可及性，增强社区凝聚力，并创造有意义、以人为本的工作。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-008.png",
+      "source_line_count": 5,
+      "typst": {
+        "body_name": "p7_item_3_3_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p7_item_3_3_md, math: mitex) }]",
+        "markdown_text": "这些举措可辅以一项家庭福利，将照护工作视为具有经济价值的劳动并支持不断演变的工作模式。该福利有助于覆盖育儿、教育和医疗保健支出，同时与兼职工作、再培训或创业保持兼容。这些努力共同作用，将扩大照护服务的可及性，增强社区凝聚力，并创造有意义、以人为本的工作。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p008-b0004",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p008-b0004",
+      "page_index": 7,
+      "block_index": 4,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 484,
+        "width": 471,
+        "height": 135,
+        "unit": "pt"
+      },
+      "source_text": "Accelerate scientifi c discovery and scale the benefi ts. Build a distributed network of AI-enabled laboratories to dramatically expand the capacity to test and validate AI-generated hypotheses at scale. These labs would integrate AI systems directly into experimental workfl ows by automating routine processes, capturing high-quality data, and enabling rapid iteration between hypothesis generation and testing. Then, build the physical systems and infrastructure needed to translate validated discoveries into real-world use at scale. This includes expanding the capacity of organizations to deploy new technologies, upgrading facilities and systems required for implementation, and aligning fi nancing and incentives to support adoption. It also includes a sustained investment in people: training scientists, technicians, and operators to contribute to AI-enabled science.",
+      "translated_text": "加速科学发现并扩大其效益。建立一个由人工智能赋能实验室组成的分布式网络，以大幅扩展大规模测试和验证人工智能生成假设的能力。这些实验室将通过自动化常规流程、捕获高质量数据以及实现假设生成与测试之间的快速迭代，将人工智能系统直接整合到实验工作流中。随后，构建必要的物理系统和基础设施，将经过验证的发现大规模转化为实际应用。这包括提升组织部署新技术的能力、升级实施所需的设施和系统，以及调整融资和激励机制以支持采用。此外，还包括对人才的持续投入：培训科学家、技术人员和操作人员，使其能够为人工智能赋能的科学做出贡献。",
+      "translation_unit_text": "加速科学发现并扩大其效益。建立一个由人工智能赋能实验室组成的分布式网络，以大幅扩展大规模测试和验证人工智能生成假设的能力。这些实验室将通过自动化常规流程、捕获高质量数据以及实现假设生成与测试之间的快速迭代，将人工智能系统直接整合到实验工作流中。随后，构建必要的物理系统和基础设施，将经过验证的发现大规模转化为实际应用。这包括提升组织部署新技术的能力、升级实施所需的设施和系统，以及调整融资和激励机制以支持采用。此外，还包括对人才的持续投入：培训科学家、技术人员和操作人员，使其能够为人工智能赋能的科学做出贡献。",
+      "fit_text": "加速科学发现并扩大其效益。建立一个由人工智能赋能实验室组成的分布式网络，以大幅扩展大规模测试和验证人工智能生成假设的能力。这些实验室将通过自动化常规流程、捕获高质量数据以及实现假设生成与测试之间的快速迭代，将人工智能系统直接整合到实验工作流中。随后，构建必要的物理系统和基础设施，将经过验证的发现大规模转化为实际应用。这包括提升组织部署新技术的能力、升级实施所需的设施和系统，以及调整融资和激励机制以支持采用。此外，还包括对人才的持续投入：培训科学家、技术人员和操作人员，使其能够为人工智能赋能的科学做出贡献。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-008.png",
+      "source_line_count": 9,
+      "typst": {
+        "body_name": "p7_item_4_4_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p7_item_4_4_md, math: mitex) }]",
+        "markdown_text": "加速科学发现并扩大其效益。建立一个由人工智能赋能实验室组成的分布式网络，以大幅扩展大规模测试和验证人工智能生成假设的能力。这些实验室将通过自动化常规流程、捕获高质量数据以及实现假设生成与测试之间的快速迭代，将人工智能系统直接整合到实验工作流中。随后，构建必要的物理系统和基础设施，将经过验证的发现大规模转化为实际应用。这包括提升组织部署新技术的能力、升级实施所需的设施和系统，以及调整融资和激励机制以支持采用。此外，还包括对人才的持续投入：培训科学家、技术人员和操作人员，使其能够为人工智能赋能的科学做出贡献。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p008-b0005",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p008-b0005",
+      "page_index": 7,
+      "block_index": 5,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 633,
+        "width": 471,
+        "height": 74,
+        "unit": "pt"
+      },
+      "source_text": "These investments ensure that breakthroughs move beyond laboratories and into widespread use, while strengthening the workforce and operational systems required to build, maintain, and run the infrastructure that supports AI-enabled discovery. Both laboratory and production infrastructure should be deployed broadly across universities, community colleges, hospitals, and regional research hubs, not concentrated in a small number of elite institutions.",
+      "translated_text": "这些投资确保突破性成果从实验室走向广泛应用，同时强化构建、维护和运行支持AI驱动发现的基础设施所需的人才队伍与运营体系。实验室与生产基础设施应广泛部署于大学、社区学院、医院及区域研究中心，而非集中于少数精英机构。",
+      "translation_unit_text": "这些投资确保突破性成果从实验室走向广泛应用，同时强化构建、维护和运行支持AI驱动发现的基础设施所需的人才队伍与运营体系。实验室与生产基础设施应广泛部署于大学、社区学院、医院及区域研究中心，而非集中于少数精英机构。",
+      "fit_text": "这些投资确保突破性成果从实验室走向广泛应用，同时强化构建、维护和运行支持AI驱动发现的基础设施所需的人才队伍与运营体系。实验室与生产基础设施应广泛部署于大学、社区学院、医院及区域研究中心，而非集中于少数精英机构。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-008.png",
+      "source_line_count": 5,
+      "typst": {
+        "body_name": "p7_item_5_5_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p7_item_5_5_md, math: mitex) }]",
+        "markdown_text": "这些投资确保突破性成果从实验室走向广泛应用，同时强化构建、维护和运行支持AI驱动发现的基础设施所需的人才队伍与运营体系。实验室与生产基础设施应广泛部署于大学、社区学院、医院及区域研究中心，而非集中于少数精英机构。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p009-b0000",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p009-b0000",
+      "page_index": 8,
+      "block_index": 0,
+      "type": "text",
+      "sub_type": "title",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 72,
+        "width": 215,
+        "height": 19,
+        "unit": "pt"
+      },
+      "source_text": "2. Building a Resilient Society",
+      "translated_text": "",
+      "translation_unit_text": "",
+      "fit_text": "2. Building a Resilient Society",
+      "text_source": "source_ocr",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-009.png",
+      "source_line_count": 1
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p009-b0001",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p009-b0001",
+      "page_index": 8,
+      "block_index": 1,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 106,
+        "width": 471,
+        "height": 105,
+        "unit": "pt"
+      },
+      "source_text": "As AI systems become more capable and more embedded across the economy, they may introduce new vulnerabilities alongside new abundance. Some systems may be misused for cyber or biological harm. Others may create new pressures on social and emotional well-being, including for young people, if deployed without adequate safeguards. AI systems may act in ways that are misaligned with human intent or operate beyond meaningful human oversight. And as advanced AI reshapes how people, organizations, and governments operate, it may place new strain on the institutions and norms that societies rely on to remain stable, secure, and free.",
+      "translated_text": "随着人工智能系统能力日益增强并更广泛地融入经济体系，它们在带来新丰裕的同时，也可能引入新的脆弱性。部分系统可能被滥用于网络或生物危害。若部署时缺乏充分保障措施，其他系统可能对社会和情感福祉（包括对年轻人）造成新的压力。人工智能系统的行为方式可能与人类意图不一致，或在超出有效人类监督的范围内运行。随着先进人工智能重塑个人、组织和政府的运作方式，它可能对社会赖以保持稳定、安全和自由的制度与规范施加新的压力。",
+      "translation_unit_text": "随着人工智能系统能力日益增强并更广泛地融入经济体系，它们在带来新丰裕的同时，也可能引入新的脆弱性。部分系统可能被滥用于网络或生物危害。若部署时缺乏充分保障措施，其他系统可能对社会和情感福祉（包括对年轻人）造成新的压力。人工智能系统的行为方式可能与人类意图不一致，或在超出有效人类监督的范围内运行。随着先进人工智能重塑个人、组织和政府的运作方式，它可能对社会赖以保持稳定、安全和自由的制度与规范施加新的压力。",
+      "fit_text": "随着人工智能系统能力日益增强并更广泛地融入经济体系，它们在带来新丰裕的同时，也可能引入新的脆弱性。部分系统可能被滥用于网络或生物危害。若部署时缺乏充分保障措施，其他系统可能对社会和情感福祉（包括对年轻人）造成新的压力。人工智能系统的行为方式可能与人类意图不一致，或在超出有效人类监督的范围内运行。随着先进人工智能重塑个人、组织和政府的运作方式，它可能对社会赖以保持稳定、安全和自由的制度与规范施加新的压力。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-009.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p8_item_1_0_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p8_item_1_0_md, math: mitex) }]",
+        "markdown_text": "随着人工智能系统能力日益增强并更广泛地融入经济体系，它们在带来新丰裕的同时，也可能引入新的脆弱性。部分系统可能被滥用于网络或生物危害。若部署时缺乏充分保障措施，其他系统可能对社会和情感福祉（包括对年轻人）造成新的压力。人工智能系统的行为方式可能与人类意图不一致，或在超出有效人类监督的范围内运行。随着先进人工智能重塑个人、组织和政府的运作方式，它可能对社会赖以保持稳定、安全和自由的制度与规范施加新的压力。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p009-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p009-b0002",
+      "page_index": 8,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 224,
+        "width": 471,
+        "height": 75,
+        "unit": "pt"
+      },
+      "source_text": "We should be clear-eyed about the resilience required here. These new risks won’t be isolated or suitable for addressing one at a time—AI will reshape how work is performed, how decisions are made, how organizations operate, and how states interact. Building resilience therefore means making sure people and institutions can adapt quickly, maintain meaningful agency over how these systems are used, and preserve broadly shared prosperity even as economic and social structures evolve.",
+      "translated_text": "我们必须清醒地认识到此处所需的韧性。这些新风险不会是孤立的，也不适合逐一应对——人工智能将重塑工作执行方式、决策制定方式、组织运作方式以及国家互动方式。因此，构建韧性意味着确保人员和机构能够快速适应，在使用这些系统时保持有意义的能动性，并在经济和社会结构演变的同时，维持广泛共享的繁荣。",
+      "translation_unit_text": "我们必须清醒地认识到此处所需的韧性。这些新风险不会是孤立的，也不适合逐一应对——人工智能将重塑工作执行方式、决策制定方式、组织运作方式以及国家互动方式。因此，构建韧性意味着确保人员和机构能够快速适应，在使用这些系统时保持有意义的能动性，并在经济和社会结构演变的同时，维持广泛共享的繁荣。",
+      "fit_text": "我们必须清醒地认识到此处所需的韧性。这些新风险不会是孤立的，也不适合逐一应对——人工智能将重塑工作执行方式、决策制定方式、组织运作方式以及国家互动方式。因此，构建韧性意味着确保人员和机构能够快速适应，在使用这些系统时保持有意义的能动性，并在经济和社会结构演变的同时，维持广泛共享的繁荣。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-009.png",
+      "source_line_count": 5,
+      "typst": {
+        "body_name": "p8_item_2_1_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.06pt); set par(leading: 0.6em); cmarker.render(p8_item_2_1_md, math: mitex) }]",
+        "markdown_text": "我们必须清醒地认识到此处所需的韧性。这些新风险不会是孤立的，也不适合逐一应对——人工智能将重塑工作执行方式、决策制定方式、组织运作方式以及国家互动方式。因此，构建韧性意味着确保人员和机构能够快速适应，在使用这些系统时保持有意义的能动性，并在经济和社会结构演变的同时，维持广泛共享的繁荣。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.06,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p009-b0003",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p009-b0003",
+      "page_index": 8,
+      "block_index": 3,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 312,
+        "width": 471,
+        "height": 105,
+        "unit": "pt"
+      },
+      "source_text": "Over the past several years, leading AI developers including OpenAI have focused heavily on upstream safeguards: development of global standards, transparency around evaluations, mitigations, and risks, and investments in model testing, red teaming, and usage policies designed to identify and mitigate risks before deployment. Policymakers have also focused here, codifying requirements in the EU AI Act and in US state-based regulation. At the same time, training and literacy eff orts have expanded so that schools, nonprofi ts, small businesses, and communities can use AI tools more safely and eff ectively. These upstream eff orts should continue.",
+      "translated_text": "过去几年，包括OpenAI在内的领先AI开发者已大力关注上游保障措施：制定全球标准、围绕评估、缓解措施和风险提高透明度，并投资于模型测试、红队演练和使用政策，旨在部署前识别和缓解风险。政策制定者也聚焦于此，将相关要求编入欧盟《人工智能法案》及美国各州法规。与此同时，培训与素养提升工作已得到扩展，使学校、非营利组织、小型企业和社区能够更安全、有效地使用AI工具。这些上游努力应持续进行。",
+      "translation_unit_text": "过去几年，包括OpenAI在内的领先AI开发者已大力关注上游保障措施：制定全球标准、围绕评估、缓解措施和风险提高透明度，并投资于模型测试、红队演练和使用政策，旨在部署前识别和缓解风险。政策制定者也聚焦于此，将相关要求编入欧盟《人工智能法案》及美国各州法规。与此同时，培训与素养提升工作已得到扩展，使学校、非营利组织、小型企业和社区能够更安全、有效地使用AI工具。这些上游努力应持续进行。",
+      "fit_text": "过去几年，包括OpenAI在内的领先AI开发者已大力关注上游保障措施：制定全球标准、围绕评估、缓解措施和风险提高透明度，并投资于模型测试、红队演练和使用政策，旨在部署前识别和缓解风险。政策制定者也聚焦于此，将相关要求编入欧盟《人工智能法案》及美国各州法规。与此同时，培训与素养提升工作已得到扩展，使学校、非营利组织、小型企业和社区能够更安全、有效地使用AI工具。这些上游努力应持续进行。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-009.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p8_item_3_2_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p8_item_3_2_md, math: mitex) }]",
+        "markdown_text": "过去几年，包括OpenAI在内的领先AI开发者已大力关注上游保障措施：制定全球标准、围绕评估、缓解措施和风险提高透明度，并投资于模型测试、红队演练和使用政策，旨在部署前识别和缓解风险。政策制定者也聚焦于此，将相关要求编入欧盟《人工智能法案》及美国各州法规。与此同时，培训与素养提升工作已得到扩展，使学校、非营利组织、小型企业和社区能够更安全、有效地使用AI工具。这些上游努力应持续进行。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p009-b0004",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p009-b0004",
+      "page_index": 8,
+      "block_index": 4,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 431,
+        "width": 471,
+        "height": 44,
+        "unit": "pt"
+      },
+      "source_text": "But as AI systems become more capable and more widely deployed, resilience will also depend upon what happens after deployment—when systems must be monitored in real time, operate under uncertainty, and integrate into institutions not designed for agentic workfl ows.",
+      "translated_text": "但随着人工智能系统能力日益增强、部署范围日益扩大，其韧性也将取决于部署后的情况——即系统必须实时监控、在不确定性下运行，并融入并非为智能体工作流设计的机构之中。",
+      "translation_unit_text": "但随着人工智能系统能力日益增强、部署范围日益扩大，其韧性也将取决于部署后的情况——即系统必须实时监控、在不确定性下运行，并融入并非为智能体工作流设计的机构之中。",
+      "fit_text": "但随着人工智能系统能力日益增强、部署范围日益扩大，其韧性也将取决于部署后的情况——即系统必须实时监控、在不确定性下运行，并融入并非为智能体工作流设计的机构之中。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-009.png",
+      "source_line_count": 3,
+      "typst": {
+        "body_name": "p8_item_4_3_body",
+        "body_expr": "block(width: 447.45000000000005pt, height: 41.360000000000014pt)[#{ pdftr_fit_markdown(p8_item_4_3_md, max_size: 11.06pt, min_size: 10.78pt, max_leading: 0.6em, min_leading: 0.57em, fit_height: 41.36pt) }]",
+        "markdown_text": "但随着人工智能系统能力日益增强、部署范围日益扩大，其韧性也将取决于部署后的情况——即系统必须实时监控、在不确定性下运行，并融入并非为智能体工作流设计的机构之中。",
+        "width_pt": 447.45000000000005,
+        "height_pt": 41.360000000000014,
+        "fit_height_pt": 41.36,
+        "max_size_pt": 11.06,
+        "min_size_pt": 10.78,
+        "max_leading_em": 0.6,
+        "min_leading_em": 0.57
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p009-b0005",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p009-b0005",
+      "page_index": 8,
+      "block_index": 5,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 489,
+        "width": 471,
+        "height": 105,
+        "unit": "pt"
+      },
+      "source_text": "This is not a new challenge. When transformative technologies have reshaped society in the past, they have introduced new risks alongside new benefi ts, and new systems were built to manage them as they scaled. As electricity spread, societies built safety standards and regulatory institutions. As automobiles transformed mobility, safety systems reduced risk while preserving freedom of movement. In aviation, continuous monitoring and coordinated response systems made fl ying one of the safest forms of transportation. In food and medicine, testing and post-market surveillance helped ensure safety in everyday use. In each case, resilience was not automatic—it was built with the luxury of time.",
+      "translated_text": "这并非新挑战。历史上，变革性技术在重塑社会时，既带来新益处也引入新风险，而随着其规模扩大，新的管理体系也随之建立。电力普及之际，社会建立了安全标准与监管机构。汽车改变出行方式时，安全系统在保障行动自由的同时降低了风险。在航空领域，持续监测与协同响应系统使飞行成为最安全的交通方式之一。在食品与医药领域，测试与上市后监测确保了日常使用的安全性。这些案例中，韧性并非自动形成——而是在时间充裕的条件下逐步构建的。",
+      "translation_unit_text": "这并非新挑战。历史上，变革性技术在重塑社会时，既带来新益处也引入新风险，而随着其规模扩大，新的管理体系也随之建立。电力普及之际，社会建立了安全标准与监管机构。汽车改变出行方式时，安全系统在保障行动自由的同时降低了风险。在航空领域，持续监测与协同响应系统使飞行成为最安全的交通方式之一。在食品与医药领域，测试与上市后监测确保了日常使用的安全性。这些案例中，韧性并非自动形成——而是在时间充裕的条件下逐步构建的。",
+      "fit_text": "这并非新挑战。历史上，变革性技术在重塑社会时，既带来新益处也引入新风险，而随着其规模扩大，新的管理体系也随之建立。电力普及之际，社会建立了安全标准与监管机构。汽车改变出行方式时，安全系统在保障行动自由的同时降低了风险。在航空领域，持续监测与协同响应系统使飞行成为最安全的交通方式之一。在食品与医药领域，测试与上市后监测确保了日常使用的安全性。这些案例中，韧性并非自动形成——而是在时间充裕的条件下逐步构建的。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-009.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p8_item_5_4_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p8_item_5_4_md, math: mitex) }]",
+        "markdown_text": "这并非新挑战。历史上，变革性技术在重塑社会时，既带来新益处也引入新风险，而随着其规模扩大，新的管理体系也随之建立。电力普及之际，社会建立了安全标准与监管机构。汽车改变出行方式时，安全系统在保障行动自由的同时降低了风险。在航空领域，持续监测与协同响应系统使飞行成为最安全的交通方式之一。在食品与医药领域，测试与上市后监测确保了日常使用的安全性。这些案例中，韧性并非自动形成——而是在时间充裕的条件下逐步构建的。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p009-b0006",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p009-b0006",
+      "page_index": 8,
+      "block_index": 6,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 607,
+        "width": 471,
+        "height": 105,
+        "unit": "pt"
+      },
+      "source_text": "As we move toward superintelligence, building a resilient society will require a similar but speedier eff ort that kicks into gear now. The ideas below are a slate of ambitious approaches to building a more resilient society. They focus on building and scaling safety systems that operate in real-world conditions by establishing mechanisms for trust, accountability, and auditing. They suggest opportunities for strengthening governance so that advanced AI remains controllable, transparent, and aligned with democratic values. And they suggest approaches to improve coordination across companies, governments, and countries so that risks can be identifi ed early, information can be shared, and",
+      "translated_text": "",
+      "translation_unit_text": "随着我们迈向超级智能，构建一个具有韧性的社会需要类似但更快速的努力，这一努力现在就必须启动。以下构想是一系列旨在构建更具韧性社会的雄心勃勃的途径。它们侧重于通过建立信任、问责和审计机制，构建并扩展能在现实条件下运行的安全系统。这些构想提出了加强治理的机会，以确保先进人工智能保持可控、透明并与民主价值观相一致。同时，它们提出了改善公司、政府和国家间协调的方法，以便及早识别风险、共享信息，并在需要时迅速执行应对措施。总之，这些提案拓展了正在进行的重要安全工作，并代表了确保人工智能安全、可治理且符合民主价值观的初步构想。",
+      "fit_text": "As we move toward superintelligence, building a resilient society will require a similar but speedier eff ort that kicks into gear now. The ideas below are a slate of ambitious approaches to building a more resilient society. They focus on building and scaling safety systems that operate in real-world conditions by establishing mechanisms for trust, accountability, and auditing. They suggest opportunities for strengthening governance so that advanced AI remains controllable, transparent, and aligned with democratic values. And they suggest approaches to improve coordination across companies, governments, and countries so that risks can be identifi ed early, information can be shared, and",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-009.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p8_item_6_5_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p8_item_6_5_md, math: mitex) }]",
+        "markdown_text": "随着我们迈向超级智能，构建一个具有韧性的社会需要类似但更快速的努力，这一努力现在就必须启动。以下构想是一系列旨在构建更具韧性社会的雄心勃勃的途径。它们侧重于通过建立信任、问责和审计机制，构建并扩展能在现实条件下运行的安全系统。这些构想提出了加强治理的机会，以确保先进人工智能保持可控、透明并与民主价值观相一致。同时，它们提出了改善公司、政府和国家间协调的方法，",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      },
+      "flow": {
+        "group_id": "flow-044",
+        "index": 0,
+        "count": 2,
+        "block_ids": [
+          "p009-b0006",
+          "p010-b0000"
+        ],
+        "prev_block_id": null,
+        "next_block_id": "p010-b0000"
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p010-b0000",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p010-b0000",
+      "page_index": 9,
+      "block_index": 0,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 72,
+        "width": 468,
+        "height": 42,
+        "unit": "pt"
+      },
+      "source_text": "responses can be executed quickly when needed. Together, these proposals extend important safety work already underway and represent initial ideas to keep AI safe, governable, and aligned with democratic values.",
+      "translated_text": "",
+      "translation_unit_text": "随着我们迈向超级智能，构建一个具有韧性的社会需要类似但更快速的努力，这一努力现在就必须启动。以下构想是一系列旨在构建更具韧性社会的雄心勃勃的途径。它们侧重于通过建立信任、问责和审计机制，构建并扩展能在现实条件下运行的安全系统。这些构想提出了加强治理的机会，以确保先进人工智能保持可控、透明并与民主价值观相一致。同时，它们提出了改善公司、政府和国家间协调的方法，以便及早识别风险、共享信息，并在需要时迅速执行应对措施。总之，这些提案拓展了正在进行的重要安全工作，并代表了确保人工智能安全、可治理且符合民主价值观的初步构想。",
+      "fit_text": "responses can be executed quickly when needed. Together, these proposals extend important safety work already underway and represent initial ideas to keep AI safe, governable, and aligned with democratic values.",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-010.png",
+      "source_line_count": 3,
+      "typst": {
+        "body_name": "p9_item_0_0_body",
+        "body_expr": "block(width: 444.59999999999997pt, height: 39.47999999999999pt)[#{ pdftr_fit_markdown(p9_item_0_0_md, max_size: 11.06pt, min_size: 10.78pt, max_leading: 0.6em, min_leading: 0.57em, fit_height: 39.47999999999999pt) }]",
+        "markdown_text": "以便及早识别风险、共享信息，并在需要时迅速执行应对措施。总之，这些提案拓展了正在进行的重要安全工作，并代表了确保人工智能安全、可治理且符合民主价值观的初步构想。",
+        "width_pt": 444.59999999999997,
+        "height_pt": 39.47999999999999,
+        "fit_height_pt": 39.47999999999999,
+        "max_size_pt": 11.06,
+        "min_size_pt": 10.78,
+        "max_leading_em": 0.6,
+        "min_leading_em": 0.57
+      },
+      "flow": {
+        "group_id": "flow-044",
+        "index": 1,
+        "count": 2,
+        "block_ids": [
+          "p009-b0006",
+          "p010-b0000"
+        ],
+        "prev_block_id": "p009-b0006",
+        "next_block_id": null
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p010-b0001",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p010-b0001",
+      "page_index": 9,
+      "block_index": 1,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 129,
+        "width": 468,
+        "height": 164,
+        "unit": "pt"
+      },
+      "source_text": "Safety systems for emerging risks. Research and develop tools that protect models, detect risks, and prevent misuse across high-consequence domains, including cyber and biological risks as well as other pathways to large-scale harm. Expand the use of advanced AI systems for threat modeling, red teaming, net assessments, and robustness testing to identify and anticipate novel risks early and inform mitigation strategies. Develop and scale complementary protective systems; for example, rapid identifi cation and production of medical countermeasures in the event of an outbreak and expanded strategic stockpiles to prepare for future risks. Then, catalyze competitive safety markets by creating sustained demand for these capabilities through procurement, standards, insurance frameworks, and advance-purchase commitments. Over time, this approach can make safeguards an output of innovation and competition, ensuring that defenses improve as quickly as the risks they are designed to address.",
+      "translated_text": "应对新兴风险的安全系统。研发能够保护模型、检测风险并防止在高后果领域（包括网络与生物风险以及其他大规模危害途径）滥用的工具。扩大先进人工智能系统在威胁建模、红队演练、净评估和鲁棒性测试中的应用，以早期识别和预测新型风险，并为缓解策略提供信息。开发并规模化互补性防护系统；例如，在疫情暴发时快速识别和生产医疗对策，并扩大战略储备以应对未来风险。随后，通过采购、标准、保险框架和预购承诺等方式，为这些能力创造持续需求，从而催化竞争性安全市场。随着时间的推移，这一方法可使安全防护成为创新与竞争的产物，确保防御措施与其旨在应对的风险同步快速提升。",
+      "translation_unit_text": "应对新兴风险的安全系统。研发能够保护模型、检测风险并防止在高后果领域（包括网络与生物风险以及其他大规模危害途径）滥用的工具。扩大先进人工智能系统在威胁建模、红队演练、净评估和鲁棒性测试中的应用，以早期识别和预测新型风险，并为缓解策略提供信息。开发并规模化互补性防护系统；例如，在疫情暴发时快速识别和生产医疗对策，并扩大战略储备以应对未来风险。随后，通过采购、标准、保险框架和预购承诺等方式，为这些能力创造持续需求，从而催化竞争性安全市场。随着时间的推移，这一方法可使安全防护成为创新与竞争的产物，确保防御措施与其旨在应对的风险同步快速提升。",
+      "fit_text": "应对新兴风险的安全系统。研发能够保护模型、检测风险并防止在高后果领域（包括网络与生物风险以及其他大规模危害途径）滥用的工具。扩大先进人工智能系统在威胁建模、红队演练、净评估和鲁棒性测试中的应用，以早期识别和预测新型风险，并为缓解策略提供信息。开发并规模化互补性防护系统；例如，在疫情暴发时快速识别和生产医疗对策，并扩大战略储备以应对未来风险。随后，通过采购、标准、保险框架和预购承诺等方式，为这些能力创造持续需求，从而催化竞争性安全市场。随着时间的推移，这一方法可使安全防护成为创新与竞争的产物，确保防御措施与其旨在应对的风险同步快速提升。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-010.png",
+      "source_line_count": 11,
+      "typst": {
+        "body_name": "p9_item_1_1_body",
+        "body_expr": "block(width: 444.59999999999997pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p9_item_1_1_md, math: mitex) }]",
+        "markdown_text": "应对新兴风险的安全系统。研发能够保护模型、检测风险并防止在高后果领域（包括网络与生物风险以及其他大规模危害途径）滥用的工具。扩大先进人工智能系统在威胁建模、红队演练、净评估和鲁棒性测试中的应用，以早期识别和预测新型风险，并为缓解策略提供信息。开发并规模化互补性防护系统；例如，在疫情暴发时快速识别和生产医疗对策，并扩大战略储备以应对未来风险。随后，通过采购、标准、保险框架和预购承诺等方式，为这些能力创造持续需求，从而催化竞争性安全市场。随着时间的推移，这一方法可使安全防护成为创新与竞争的产物，确保防御措施与其旨在应对的风险同步快速提升。",
+        "width_pt": 444.59999999999997,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p010-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p010-b0002",
+      "page_index": 9,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 308,
+        "width": 468,
+        "height": 104,
+        "unit": "pt"
+      },
+      "source_text": "AI trust stack. Research and develop systems that help people trust and verify AI systems, the content they produce, and the actions they take—especially as these systems take on more real-world responsibilities. Advance the development of provenance and verifi cation standards and tools that can build trust in AI systems while preserving privacy. This could include enabling secure, verifi able signatures for actions such as generating content or issuing instructions, and developing privacy-preserving logging and audit systems capable of supporting investigation and accountability without enabling pervasive surveillance.",
+      "translated_text": "AI信任栈。研发有助于人们信任和验证AI系统、其生成内容及其所采取行动的系统——尤其是在这些系统承担更多现实世界责任的情况下。推进来源与验证标准及工具的开发，以建立对AI系统的信任，同时保护隐私。这可能包括为生成内容或发出指令等行为启用安全、可验证的签名，以及开发能够支持调查与问责、同时避免导致普遍监控的隐私保护型日志记录与审计系统。",
+      "translation_unit_text": "AI信任栈。研发有助于人们信任和验证AI系统、其生成内容及其所采取行动的系统——尤其是在这些系统承担更多现实世界责任的情况下。推进来源与验证标准及工具的开发，以建立对AI系统的信任，同时保护隐私。这可能包括为生成内容或发出指令等行为启用安全、可验证的签名，以及开发能够支持调查与问责、同时避免导致普遍监控的隐私保护型日志记录与审计系统。",
+      "fit_text": "AI信任栈。研发有助于人们信任和验证AI系统、其生成内容及其所采取行动的系统——尤其是在这些系统承担更多现实世界责任的情况下。推进来源与验证标准及工具的开发，以建立对AI系统的信任，同时保护隐私。这可能包括为生成内容或发出指令等行为启用安全、可验证的签名，以及开发能够支持调查与问责、同时避免导致普遍监控的隐私保护型日志记录与审计系统。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-010.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p9_item_2_2_body",
+        "body_expr": "block(width: 444.59999999999997pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p9_item_2_2_md, math: mitex) }]",
+        "markdown_text": "AI信任栈。研发有助于人们信任和验证AI系统、其生成内容及其所采取行动的系统——尤其是在这些系统承担更多现实世界责任的情况下。推进来源与验证标准及工具的开发，以建立对AI系统的信任，同时保护隐私。这可能包括为生成内容或发出指令等行为启用安全、可验证的签名，以及开发能够支持调查与问责、同时避免导致普遍监控的隐私保护型日志记录与审计系统。",
+        "width_pt": 444.59999999999997,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p010-b0003",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p010-b0003",
+      "page_index": 9,
+      "block_index": 3,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 427,
+        "width": 468,
+        "height": 119,
+        "unit": "pt"
+      },
+      "source_text": "These types of solutions should capture key information about system behavior and use while minimizing the collection of sensitive data, and be designed to support investigation or intervention under clearly defi ned legal or safety conditions. This work could also include developing and testing governance frameworks that clarify responsibility within organizations, including how accountability could be assigned to specifi c roles and how delegation, monitoring, and escalation processes could function as systems become more capable. Over time, these eff orts could establish a foundation for accountability by building trust in AI interactions and helping ensure that when harm occurs, responsibility can be appropriately allocated.",
+      "translated_text": "这类解决方案应能捕获系统行为与使用的关键信息，同时最大限度地减少敏感数据的收集，并设计为在明确界定的法律或安全条件下支持调查或干预。这项工作还可包括制定和测试治理框架，以明确组织内部的责任归属，包括如何将问责分配给特定角色，以及随着系统能力增强，授权、监督和升级流程应如何运作。长期来看，这些努力可通过建立对AI交互的信任，并帮助确保在损害发生时能够恰当地分配责任，从而为问责制奠定基础。",
+      "translation_unit_text": "这类解决方案应能捕获系统行为与使用的关键信息，同时最大限度地减少敏感数据的收集，并设计为在明确界定的法律或安全条件下支持调查或干预。这项工作还可包括制定和测试治理框架，以明确组织内部的责任归属，包括如何将问责分配给特定角色，以及随着系统能力增强，授权、监督和升级流程应如何运作。长期来看，这些努力可通过建立对AI交互的信任，并帮助确保在损害发生时能够恰当地分配责任，从而为问责制奠定基础。",
+      "fit_text": "这类解决方案应能捕获系统行为与使用的关键信息，同时最大限度地减少敏感数据的收集，并设计为在明确界定的法律或安全条件下支持调查或干预。这项工作还可包括制定和测试治理框架，以明确组织内部的责任归属，包括如何将问责分配给特定角色，以及随着系统能力增强，授权、监督和升级流程应如何运作。长期来看，这些努力可通过建立对AI交互的信任，并帮助确保在损害发生时能够恰当地分配责任，从而为问责制奠定基础。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-010.png",
+      "source_line_count": 8,
+      "typst": {
+        "body_name": "p9_item_3_3_body",
+        "body_expr": "block(width: 444.59999999999997pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p9_item_3_3_md, math: mitex) }]",
+        "markdown_text": "这类解决方案应能捕获系统行为与使用的关键信息，同时最大限度地减少敏感数据的收集，并设计为在明确界定的法律或安全条件下支持调查或干预。这项工作还可包括制定和测试治理框架，以明确组织内部的责任归属，包括如何将问责分配给特定角色，以及随着系统能力增强，授权、监督和升级流程应如何运作。长期来看，这些努力可通过建立对AI交互的信任，并帮助确保在损害发生时能够恰当地分配责任，从而为问责制奠定基础。",
+        "width_pt": 444.59999999999997,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p010-b0004",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p010-b0004",
+      "page_index": 9,
+      "block_index": 4,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 561,
+        "width": 468,
+        "height": 119,
+        "unit": "pt"
+      },
+      "source_text": "Auditing regimes. Strengthen institutions such as the Center for AI Standards and Innovation (CAISI) to develop auditing standards for frontier AI risks in coordination with national security agencies. Use tools such as government procurement, advance-purchase commitments, insurance frameworks, and standards-setting to create and scale a competitive market of auditors and evaluators capable of assessing AI systems and products for safety and security risks, building auditing capacity alongside the technology. Standards should be designed for international adoption to reduce fragmentation and avoid creating unnecessary compliance burdens for small companies, as well as those operating across jurisdictions.",
+      "translated_text": "审计制度。加强人工智能标准与创新中心（CAISI）等机构，与国家安全机构协调制定前沿人工智能风险的审计标准。利用政府采购、预购承诺、保险框架和标准制定等工具，创建并扩大一个具有竞争力的审计与评估机构市场，使其能够评估人工智能系统和产品的安全与安保风险，在技术发展的同时建设审计能力。标准的设计应便于国际采用，以减少碎片化，并避免为小型公司及跨司法管辖区运营的企业带来不必要的合规负担。",
+      "translation_unit_text": "审计制度。加强人工智能标准与创新中心（CAISI）等机构，与国家安全机构协调制定前沿人工智能风险的审计标准。利用政府采购、预购承诺、保险框架和标准制定等工具，创建并扩大一个具有竞争力的审计与评估机构市场，使其能够评估人工智能系统和产品的安全与安保风险，在技术发展的同时建设审计能力。标准的设计应便于国际采用，以减少碎片化，并避免为小型公司及跨司法管辖区运营的企业带来不必要的合规负担。",
+      "fit_text": "审计制度。加强人工智能标准与创新中心（CAISI）等机构，与国家安全机构协调制定前沿人工智能风险的审计标准。利用政府采购、预购承诺、保险框架和标准制定等工具，创建并扩大一个具有竞争力的审计与评估机构市场，使其能够评估人工智能系统和产品的安全与安保风险，在技术发展的同时建设审计能力。标准的设计应便于国际采用，以减少碎片化，并避免为小型公司及跨司法管辖区运营的企业带来不必要的合规负担。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-010.png",
+      "source_line_count": 8,
+      "typst": {
+        "body_name": "p9_item_4_4_body",
+        "body_expr": "block(width: 444.59999999999997pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p9_item_4_4_md, math: mitex) }]",
+        "markdown_text": "审计制度。加强人工智能标准与创新中心（CAISI）等机构，与国家安全机构协调制定前沿人工智能风险的审计标准。利用政府采购、预购承诺、保险框架和标准制定等工具，创建并扩大一个具有竞争力的审计与评估机构市场，使其能够评估人工智能系统和产品的安全与安保风险，在技术发展的同时建设审计能力。标准的设计应便于国际采用，以减少碎片化，并避免为小型公司及跨司法管辖区运营的企业带来不必要的合规负担。",
+        "width_pt": 444.59999999999997,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p011-b0000",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p011-b0000",
+      "page_index": 10,
+      "block_index": 0,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 71,
+        "width": 471,
+        "height": 119,
+        "unit": "pt"
+      },
+      "source_text": "As we progress toward superintelligence, there may come a point where a narrow set of highly capable models—particularly those that could materially advance chemical, biological, radiological, nuclear, or cyber risks—require stronger controls, including pre- and post-deployment audits using the standards developed in advance. Apply these requirements only to a small number of companies and the most advanced models, preserving a vibrant ecosystem of less powerful systems and the startups building on them. This approach maintains broad access to general-purpose AI while applying targeted safeguards where failures could create the greatest harm, avoiding unnecessary barriers that could limit competition or enable regulatory capture.",
+      "translated_text": "随着我们向超级智能迈进，可能会出现这样一个节点：一小部分能力极强的模型——尤其是那些可能实质性推进化学、生物、放射、核或网络风险的模型——需要更严格的控制，包括使用预先制定的标准进行部署前和部署后审计。这些要求仅适用于少数公司和最先进的模型，从而保留一个由能力较弱系统及其上构建的初创公司组成的充满活力的生态系统。这种方法在维持对通用人工智能广泛访问的同时，在故障可能造成最大危害的领域实施有针对性的保障措施，避免了可能限制竞争或导致监管俘获的不必要壁垒。",
+      "translation_unit_text": "随着我们向超级智能迈进，可能会出现这样一个节点：一小部分能力极强的模型——尤其是那些可能实质性推进化学、生物、放射、核或网络风险的模型——需要更严格的控制，包括使用预先制定的标准进行部署前和部署后审计。这些要求仅适用于少数公司和最先进的模型，从而保留一个由能力较弱系统及其上构建的初创公司组成的充满活力的生态系统。这种方法在维持对通用人工智能广泛访问的同时，在故障可能造成最大危害的领域实施有针对性的保障措施，避免了可能限制竞争或导致监管俘获的不必要壁垒。",
+      "fit_text": "随着我们向超级智能迈进，可能会出现这样一个节点：一小部分能力极强的模型——尤其是那些可能实质性推进化学、生物、放射、核或网络风险的模型——需要更严格的控制，包括使用预先制定的标准进行部署前和部署后审计。这些要求仅适用于少数公司和最先进的模型，从而保留一个由能力较弱系统及其上构建的初创公司组成的充满活力的生态系统。这种方法在维持对通用人工智能广泛访问的同时，在故障可能造成最大危害的领域实施有针对性的保障措施，避免了可能限制竞争或导致监管俘获的不必要壁垒。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-011.png",
+      "source_line_count": 8,
+      "typst": {
+        "body_name": "p10_item_0_0_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p10_item_0_0_md, math: mitex) }]",
+        "markdown_text": "随着我们向超级智能迈进，可能会出现这样一个节点：一小部分能力极强的模型——尤其是那些可能实质性推进化学、生物、放射、核或网络风险的模型——需要更严格的控制，包括使用预先制定的标准进行部署前和部署后审计。这些要求仅适用于少数公司和最先进的模型，从而保留一个由能力较弱系统及其上构建的初创公司组成的充满活力的生态系统。这种方法在维持对通用人工智能广泛访问的同时，在故障可能造成最大危害的领域实施有针对性的保障措施，避免了可能限制竞争或导致监管俘获的不必要壁垒。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p011-b0001",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p011-b0001",
+      "page_index": 10,
+      "block_index": 1,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 205,
+        "width": 472,
+        "height": 135,
+        "unit": "pt"
+      },
+      "source_text": "Model-containment playbooks. Develop and test coordinated playbooks to contain dangerous AI systems once they have been released into the world. As AI capabilities advance, societies may face scenarios where dangerous systems cannot be easily recalled—because model weights have been released, developers are unwilling or unable to limit access to dangerous capabilities, or the systems are autonomous and capable of replicating themselves. In these cases, the challenge is containment: limiting the spread of dangerous capabilities, reducing harm, and coordinating responses under real-world constraints. Experience from other high-consequence domains, such as cybersecurity and public health, shows that even when full containment is not possible, coordinated action can still meaningfully reduce impact.",
+      "translated_text": "模型遏制预案。制定并测试协调预案，以遏制已发布至现实世界的危险AI系统。随着AI能力的发展，社会可能面临危险系统无法轻易召回的情景——因为模型权重已公开、开发者不愿或无法限制对危险能力的访问，或者系统具有自主性且能够自我复制。在这些情况下，挑战在于遏制：限制危险能力的扩散、减少危害，并在现实约束下协调应对。来自其他高风险领域（如网络安全和公共卫生）的经验表明，即使无法实现完全遏制，协调行动仍能显著降低影响。",
+      "translation_unit_text": "模型遏制预案。制定并测试协调预案，以遏制已发布至现实世界的危险AI系统。随着AI能力的发展，社会可能面临危险系统无法轻易召回的情景——因为模型权重已公开、开发者不愿或无法限制对危险能力的访问，或者系统具有自主性且能够自我复制。在这些情况下，挑战在于遏制：限制危险能力的扩散、减少危害，并在现实约束下协调应对。来自其他高风险领域（如网络安全和公共卫生）的经验表明，即使无法实现完全遏制，协调行动仍能显著降低影响。",
+      "fit_text": "模型遏制预案。制定并测试协调预案，以遏制已发布至现实世界的危险AI系统。随着AI能力的发展，社会可能面临危险系统无法轻易召回的情景——因为模型权重已公开、开发者不愿或无法限制对危险能力的访问，或者系统具有自主性且能够自我复制。在这些情况下，挑战在于遏制：限制危险能力的扩散、减少危害，并在现实约束下协调应对。来自其他高风险领域（如网络安全和公共卫生）的经验表明，即使无法实现完全遏制，协调行动仍能显著降低影响。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-011.png",
+      "source_line_count": 9,
+      "typst": {
+        "body_name": "p10_item_1_1_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.24pt); set par(leading: 0.6em); cmarker.render(p10_item_1_1_md, math: mitex) }]",
+        "markdown_text": "模型遏制预案。制定并测试协调预案，以遏制已发布至现实世界的危险AI系统。随着AI能力的发展，社会可能面临危险系统无法轻易召回的情景——因为模型权重已公开、开发者不愿或无法限制对危险能力的访问，或者系统具有自主性且能够自我复制。在这些情况下，挑战在于遏制：限制危险能力的扩散、减少危害，并在现实约束下协调应对。来自其他高风险领域（如网络安全和公共卫生）的经验表明，即使无法实现完全遏制，协调行动仍能显著降低影响。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.24,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p011-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p011-b0002",
+      "page_index": 10,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 354,
+        "width": 472,
+        "height": 120,
+        "unit": "pt"
+      },
+      "source_text": "Mission-aligned corporate governance. Frontier AI companies should adopt governance structures that embed public-interest accountability into decision-making, such as Public Benefi t Corporations with mission-aligned governance. These structures should include explicit commitments to ensure that the benefi ts of AI are broadly shared, including through signifi cant, long-term philanthropic or charitable giving. At the same time, harden frontier systems against corporate or insider capture by securing model weights and training infrastructure, auditing models for manipulative behaviors or hidden loyalties, and monitoring high-risk deployments so no individual or internal faction can quietly use AI systems to concentrate power.",
+      "translated_text": "使命导向型公司治理。前沿人工智能公司应采用将公共利益问责制嵌入决策过程的治理结构，例如采用使命导向型治理的公益公司。这些结构应包含明确的承诺，以确保人工智能的惠益得到广泛共享，包括通过重大、长期的慈善捐赠。同时，应通过保护模型权重和训练基础设施、审计模型是否存在操纵行为或隐藏忠诚度、监控高风险部署等方式，强化前沿系统，防止其被公司或内部人员操控，确保没有任何个人或内部派系能够悄然利用人工智能系统来集中权力。",
+      "translation_unit_text": "使命导向型公司治理。前沿人工智能公司应采用将公共利益问责制嵌入决策过程的治理结构，例如采用使命导向型治理的公益公司。这些结构应包含明确的承诺，以确保人工智能的惠益得到广泛共享，包括通过重大、长期的慈善捐赠。同时，应通过保护模型权重和训练基础设施、审计模型是否存在操纵行为或隐藏忠诚度、监控高风险部署等方式，强化前沿系统，防止其被公司或内部人员操控，确保没有任何个人或内部派系能够悄然利用人工智能系统来集中权力。",
+      "fit_text": "使命导向型公司治理。前沿人工智能公司应采用将公共利益问责制嵌入决策过程的治理结构，例如采用使命导向型治理的公益公司。这些结构应包含明确的承诺，以确保人工智能的惠益得到广泛共享，包括通过重大、长期的慈善捐赠。同时，应通过保护模型权重和训练基础设施、审计模型是否存在操纵行为或隐藏忠诚度、监控高风险部署等方式，强化前沿系统，防止其被公司或内部人员操控，确保没有任何个人或内部派系能够悄然利用人工智能系统来集中权力。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-011.png",
+      "source_line_count": 8,
+      "typst": {
+        "body_name": "p10_item_2_2_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.24pt); set par(leading: 0.6em); cmarker.render(p10_item_2_2_md, math: mitex) }]",
+        "markdown_text": "使命导向型公司治理。前沿人工智能公司应采用将公共利益问责制嵌入决策过程的治理结构，例如采用使命导向型治理的公益公司。这些结构应包含明确的承诺，以确保人工智能的惠益得到广泛共享，包括通过重大、长期的慈善捐赠。同时，应通过保护模型权重和训练基础设施、审计模型是否存在操纵行为或隐藏忠诚度、监控高风险部署等方式，强化前沿系统，防止其被公司或内部人员操控，确保没有任何个人或内部派系能够悄然利用人工智能系统来集中权力。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.24,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p011-b0003",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p011-b0003",
+      "page_index": 10,
+      "block_index": 3,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 487,
+        "width": 472,
+        "height": 121,
+        "unit": "pt"
+      },
+      "source_text": "Guardrails for government use. Have policymakers establish clear rules for how governments can and cannot use AI, with especially high standards for reliability, alignment, and safety. These standards should be codifi ed in law and reinforced through technical safeguards. At the same time, use AI to strengthen democratic accountability. As more government decisions are made through AI-assisted workfl ows, these systems will create clearer digital records of government reasoning and action that can be logged alongside other public records. With appropriate safeguards, oversight institutions such as inspectors general, congressional committees, and courts could use AI-enabled auditing tools to detect abuse, identify harms, and improve accountability at scale.",
+      "translated_text": "政府使用护栏。政策制定者应确立明确的规则，规定政府可以及不可以如何使用人工智能，并设定特别高的可靠性、对齐性和安全性标准。这些标准应被编纂为法律，并通过技术保障措施加以强化。同时，利用人工智能加强民主问责。随着越来越多的政府决策通过人工智能辅助的工作流程做出，这些系统将创建更清晰的政府推理与行动数字记录，这些记录可与其他公共记录一同存档。在适当的保障措施下，监察长、国会委员会和法院等监督机构可以利用人工智能驱动的审计工具来检测滥用行为、识别危害，并大规模地提升问责制。",
+      "translation_unit_text": "政府使用护栏。政策制定者应确立明确的规则，规定政府可以及不可以如何使用人工智能，并设定特别高的可靠性、对齐性和安全性标准。这些标准应被编纂为法律，并通过技术保障措施加以强化。同时，利用人工智能加强民主问责。随着越来越多的政府决策通过人工智能辅助的工作流程做出，这些系统将创建更清晰的政府推理与行动数字记录，这些记录可与其他公共记录一同存档。在适当的保障措施下，监察长、国会委员会和法院等监督机构可以利用人工智能驱动的审计工具来检测滥用行为、识别危害，并大规模地提升问责制。",
+      "fit_text": "政府使用护栏。政策制定者应确立明确的规则，规定政府可以及不可以如何使用人工智能，并设定特别高的可靠性、对齐性和安全性标准。这些标准应被编纂为法律，并通过技术保障措施加以强化。同时，利用人工智能加强民主问责。随着越来越多的政府决策通过人工智能辅助的工作流程做出，这些系统将创建更清晰的政府推理与行动数字记录，这些记录可与其他公共记录一同存档。在适当的保障措施下，监察长、国会委员会和法院等监督机构可以利用人工智能驱动的审计工具来检测滥用行为、识别危害，并大规模地提升问责制。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-011.png",
+      "source_line_count": 8,
+      "typst": {
+        "body_name": "p10_item_3_3_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p10_item_3_3_md, math: mitex) }]",
+        "markdown_text": "政府使用护栏。政策制定者应确立明确的规则，规定政府可以及不可以如何使用人工智能，并设定特别高的可靠性、对齐性和安全性标准。这些标准应被编纂为法律，并通过技术保障措施加以强化。同时，利用人工智能加强民主问责。随着越来越多的政府决策通过人工智能辅助的工作流程做出，这些系统将创建更清晰的政府推理与行动数字记录，这些记录可与其他公共记录一同存档。在适当的保障措施下，监察长、国会委员会和法院等监督机构可以利用人工智能驱动的审计工具来检测滥用行为、识别危害，并大规模地提升问责制。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p011-b0004",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p011-b0004",
+      "page_index": 10,
+      "block_index": 4,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 621,
+        "width": 471,
+        "height": 59,
+        "unit": "pt"
+      },
+      "source_text": "Also, modernize transparency frameworks (including the Freedom of Information Act) to allow citizens and watchdog organizations to use AI to review targeted questions about government actions while protecting sensitive information. This could include clarifying when AI-interaction logs and agentic action logs constitute federal records that must be retained for specifi ed periods.",
+      "translated_text": "此外，应更新透明度框架（包括《信息自由法》），允许公民和监督组织利用人工智能审查有关政府行为的特定问题，同时保护敏感信息。这可能包括明确界定人工智能交互日志和智能体行动日志在何种情况下构成必须保留特定期限的联邦记录。",
+      "translation_unit_text": "此外，应更新透明度框架（包括《信息自由法》），允许公民和监督组织利用人工智能审查有关政府行为的特定问题，同时保护敏感信息。这可能包括明确界定人工智能交互日志和智能体行动日志在何种情况下构成必须保留特定期限的联邦记录。",
+      "fit_text": "此外，应更新透明度框架（包括《信息自由法》），允许公民和监督组织利用人工智能审查有关政府行为的特定问题，同时保护敏感信息。这可能包括明确界定人工智能交互日志和智能体行动日志在何种情况下构成必须保留特定期限的联邦记录。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-011.png",
+      "source_line_count": 4,
+      "typst": {
+        "body_name": "p10_item_4_4_body",
+        "body_expr": "block(width: 447.45000000000005pt, height: 55.460000000000036pt)[#{ pdftr_fit_markdown(p10_item_4_4_md, max_size: 11.06pt, min_size: 10.78pt, max_leading: 0.6em, min_leading: 0.57em, fit_height: 55.46pt) }]",
+        "markdown_text": "此外，应更新透明度框架（包括《信息自由法》），允许公民和监督组织利用人工智能审查有关政府行为的特定问题，同时保护敏感信息。这可能包括明确界定人工智能交互日志和智能体行动日志在何种情况下构成必须保留特定期限的联邦记录。",
+        "width_pt": 447.45000000000005,
+        "height_pt": 55.460000000000036,
+        "fit_height_pt": 55.46,
+        "max_size_pt": 11.06,
+        "min_size_pt": 10.78,
+        "max_leading_em": 0.6,
+        "min_leading_em": 0.57
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p012-b0000",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p012-b0000",
+      "page_index": 11,
+      "block_index": 0,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 71,
+        "width": 471,
+        "height": 166,
+        "unit": "pt"
+      },
+      "source_text": "Mechanisms for public input. Create structured ways for public input so that alignment isn’t defi ned only by engineers or executives behind closed doors. As advanced AI makes more decisions that aff ect people’s lives, societies need shared clarity about what these systems are supposed to do, what values should guide them, and how well they are performing. Make alignment more democratic, legible, and accountable through transparent specifi cations, evaluation frameworks, and representative input processes. Developers should publish model specifi cations that describe how systems are intended to behave and share information about how those systems are evaluated. Governments and public institutions should help shape these standards by anchoring them in democratic laws and values, while establishing mechanisms for representative public input to be considered alongside traditional business stakeholders. Together, these approaches help ensure that the advancement of AI refl ects the perspectives of the societies that must live with its consequences.",
+      "translated_text": "公众参与机制。建立结构化的公众参与途径，以确保对齐目标不仅由工程师或高管在闭门会议中定义。随着先进人工智能越来越多地做出影响人们生活的决策，社会需要就这些系统应实现何种功能、应以何种价值观为指导以及其表现如何达成共识。通过透明的规范、评估框架和具有代表性的参与流程，使对齐过程更加民主、透明和可问责。开发者应发布描述系统预期行为的模型规范，并共享有关这些系统如何被评估的信息。政府和公共机构应通过将标准植根于民主法律和价值观来帮助塑造这些标准，同时建立机制，确保具有代表性的公众意见能够与传统商业利益相关者的观点一同被考量。这些方法共同有助于确保人工智能的发展反映那些必须承受其后果的社会的视角。",
+      "translation_unit_text": "公众参与机制。建立结构化的公众参与途径，以确保对齐目标不仅由工程师或高管在闭门会议中定义。随着先进人工智能越来越多地做出影响人们生活的决策，社会需要就这些系统应实现何种功能、应以何种价值观为指导以及其表现如何达成共识。通过透明的规范、评估框架和具有代表性的参与流程，使对齐过程更加民主、透明和可问责。开发者应发布描述系统预期行为的模型规范，并共享有关这些系统如何被评估的信息。政府和公共机构应通过将标准植根于民主法律和价值观来帮助塑造这些标准，同时建立机制，确保具有代表性的公众意见能够与传统商业利益相关者的观点一同被考量。这些方法共同有助于确保人工智能的发展反映那些必须承受其后果的社会的视角。",
+      "fit_text": "公众参与机制。建立结构化的公众参与途径，以确保对齐目标不仅由工程师或高管在闭门会议中定义。随着先进人工智能越来越多地做出影响人们生活的决策，社会需要就这些系统应实现何种功能、应以何种价值观为指导以及其表现如何达成共识。通过透明的规范、评估框架和具有代表性的参与流程，使对齐过程更加民主、透明和可问责。开发者应发布描述系统预期行为的模型规范，并共享有关这些系统如何被评估的信息。政府和公共机构应通过将标准植根于民主法律和价值观来帮助塑造这些标准，同时建立机制，确保具有代表性的公众意见能够与传统商业利益相关者的观点一同被考量。这些方法共同有助于确保人工智能的发展反映那些必须承受其后果的社会的视角。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-012.png",
+      "source_line_count": 11,
+      "typst": {
+        "body_name": "p11_item_0_0_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p11_item_0_0_md, math: mitex) }]",
+        "markdown_text": "公众参与机制。建立结构化的公众参与途径，以确保对齐目标不仅由工程师或高管在闭门会议中定义。随着先进人工智能越来越多地做出影响人们生活的决策，社会需要就这些系统应实现何种功能、应以何种价值观为指导以及其表现如何达成共识。通过透明的规范、评估框架和具有代表性的参与流程，使对齐过程更加民主、透明和可问责。开发者应发布描述系统预期行为的模型规范，并共享有关这些系统如何被评估的信息。政府和公共机构应通过将标准植根于民主法律和价值观来帮助塑造这些标准，同时建立机制，确保具有代表性的公众意见能够与传统商业利益相关者的观点一同被考量。这些方法共同有助于确保人工智能的发展反映那些必须承受其后果的社会的视角。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p012-b0001",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p012-b0001",
+      "page_index": 11,
+      "block_index": 1,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 251,
+        "width": 472,
+        "height": 104,
+        "unit": "pt"
+      },
+      "source_text": "Incident reporting. Establish a mechanism for companies to share information about incidents, misuse, and near-misses with a designated public authority. The system should emphasize learning and prevention over punishment, with appropriately scoped public disclosures that ensure transparency and democratic oversight while protecting sensitive technical, national security, and competitive information. Near-miss reporting could include cases where models exhibited concerning internal reasoning, unexpected capabilities, or other warning signals—even if safeguards ultimately prevented harm—so the ecosystem can learn from close calls before they become real incidents.",
+      "translated_text": "事件报告。建立一种机制，使公司能够与指定的公共机构共享有关事件、误用和未遂事件的信息。该系统应强调学习和预防而非惩罚，并辅以适当范围的公开披露，以确保透明度和民主监督，同时保护敏感的技术、国家安全和竞争信息。未遂事件报告可包括模型表现出令人担忧的内部推理、意外能力或其他预警信号的情况——即使安全措施最终防止了危害——以便生态系统能在这些情况演变为真实事件之前，从险情中吸取教训。",
+      "translation_unit_text": "事件报告。建立一种机制，使公司能够与指定的公共机构共享有关事件、误用和未遂事件的信息。该系统应强调学习和预防而非惩罚，并辅以适当范围的公开披露，以确保透明度和民主监督，同时保护敏感的技术、国家安全和竞争信息。未遂事件报告可包括模型表现出令人担忧的内部推理、意外能力或其他预警信号的情况——即使安全措施最终防止了危害——以便生态系统能在这些情况演变为真实事件之前，从险情中吸取教训。",
+      "fit_text": "事件报告。建立一种机制，使公司能够与指定的公共机构共享有关事件、误用和未遂事件的信息。该系统应强调学习和预防而非惩罚，并辅以适当范围的公开披露，以确保透明度和民主监督，同时保护敏感的技术、国家安全和竞争信息。未遂事件报告可包括模型表现出令人担忧的内部推理、意外能力或其他预警信号的情况——即使安全措施最终防止了危害——以便生态系统能在这些情况演变为真实事件之前，从险情中吸取教训。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-012.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p11_item_1_1_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p11_item_1_1_md, math: mitex) }]",
+        "markdown_text": "事件报告。建立一种机制，使公司能够与指定的公共机构共享有关事件、误用和未遂事件的信息。该系统应强调学习和预防而非惩罚，并辅以适当范围的公开披露，以确保透明度和民主监督，同时保护敏感的技术、国家安全和竞争信息。未遂事件报告可包括模型表现出令人担忧的内部推理、意外能力或其他预警信号的情况——即使安全措施最终防止了危害——以便生态系统能在这些情况演变为真实事件之前，从险情中吸取教训。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p012-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p012-b0002",
+      "page_index": 11,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 369,
+        "width": 472,
+        "height": 89,
+        "unit": "pt"
+      },
+      "source_text": "International information-sharing around AI capabilities, risks, and mitigations. Strengthen national evaluation institutions as the foundation for international coordination, beginning with expanding the role of the CAISI as a trusted technical body for evaluating frontier systems, assessing safeguards, and informing government understanding of advanced AI capabilities. Building on this foundation, develop a global network of AI Institutes that collaborate through shared protocols for information exchange, joint evaluations, and coordinated mitigation measures.",
+      "translated_text": "围绕人工智能能力、风险及缓解措施的国际信息共享。强化国家评估机构作为国际协调的基础，首先应扩大CAISI作为可信技术机构的作用，负责评估前沿系统、审查安全防护措施，并为政府理解先进AI能力提供信息支持。在此基础上，构建一个全球性的AI研究所网络，通过共享信息交换协议、联合评估及协调缓解措施开展合作。",
+      "translation_unit_text": "围绕人工智能能力、风险及缓解措施的国际信息共享。强化国家评估机构作为国际协调的基础，首先应扩大CAISI作为可信技术机构的作用，负责评估前沿系统、审查安全防护措施，并为政府理解先进AI能力提供信息支持。在此基础上，构建一个全球性的AI研究所网络，通过共享信息交换协议、联合评估及协调缓解措施开展合作。",
+      "fit_text": "围绕人工智能能力、风险及缓解措施的国际信息共享。强化国家评估机构作为国际协调的基础，首先应扩大CAISI作为可信技术机构的作用，负责评估前沿系统、审查安全防护措施，并为政府理解先进AI能力提供信息支持。在此基础上，构建一个全球性的AI研究所网络，通过共享信息交换协议、联合评估及协调缓解措施开展合作。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-012.png",
+      "source_line_count": 6,
+      "typst": {
+        "body_name": "p11_item_2_2_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p11_item_2_2_md, math: mitex) }]",
+        "markdown_text": "围绕人工智能能力、风险及缓解措施的国际信息共享。强化国家评估机构作为国际协调的基础，首先应扩大CAISI作为可信技术机构的作用，负责评估前沿系统、审查安全防护措施，并为政府理解先进AI能力提供信息支持。在此基础上，构建一个全球性的AI研究所网络，通过共享信息交换协议、联合评估及协调缓解措施开展合作。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p012-b0003",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p012-b0003",
+      "page_index": 11,
+      "block_index": 3,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 472,
+        "width": 472,
+        "height": 136,
+        "unit": "pt"
+      },
+      "source_text": "Over time, this network could evolve into an international framework akin to the other multilateral institutions focused on safety and standards, one that gives trusted public authorities visibility into frontier AI development; and creates secure cross-lab and cross-country channels for sharing evaluation results, alignment fi ndings, and emerging risks; and likewise supports communicating during crises. To enable eff ective collaboration, policymakers should ensure that companies can share safety- and risk-related information through these channels without running afoul of antitrust or competition constraints, using clear safe harbors and narrowly scoped information-sharing rules. This system should expand beyond a narrow focus on national security to include a broader range of societal risks, including impacts on youth safety and well-being.",
+      "translated_text": "随着时间的推移，这一网络可发展成为一个类似于其他专注于安全与标准的多边机构的国际框架，使可信的公共机构能够了解前沿人工智能的发展动态；建立安全的跨实验室与跨国渠道，用于共享评估结果、对齐发现及新兴风险；并同样支持危机期间的沟通。为实现有效协作，政策制定者应确保企业能够通过这些渠道共享安全与风险相关信息，而无需担心违反反垄断或竞争限制，为此需设立明确的安全港和范围严格限定的信息共享规则。该体系应超越狭隘的国家安全关注，纳入更广泛的社会风险，包括对青少年安全与福祉的影响。",
+      "translation_unit_text": "随着时间的推移，这一网络可发展成为一个类似于其他专注于安全与标准的多边机构的国际框架，使可信的公共机构能够了解前沿人工智能的发展动态；建立安全的跨实验室与跨国渠道，用于共享评估结果、对齐发现及新兴风险；并同样支持危机期间的沟通。为实现有效协作，政策制定者应确保企业能够通过这些渠道共享安全与风险相关信息，而无需担心违反反垄断或竞争限制，为此需设立明确的安全港和范围严格限定的信息共享规则。该体系应超越狭隘的国家安全关注，纳入更广泛的社会风险，包括对青少年安全与福祉的影响。",
+      "fit_text": "随着时间的推移，这一网络可发展成为一个类似于其他专注于安全与标准的多边机构的国际框架，使可信的公共机构能够了解前沿人工智能的发展动态；建立安全的跨实验室与跨国渠道，用于共享评估结果、对齐发现及新兴风险；并同样支持危机期间的沟通。为实现有效协作，政策制定者应确保企业能够通过这些渠道共享安全与风险相关信息，而无需担心违反反垄断或竞争限制，为此需设立明确的安全港和范围严格限定的信息共享规则。该体系应超越狭隘的国家安全关注，纳入更广泛的社会风险，包括对青少年安全与福祉的影响。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-012.png",
+      "source_line_count": 9,
+      "typst": {
+        "body_name": "p11_item_3_3_body",
+        "body_expr": "block(width: 448.40000000000003pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p11_item_3_3_md, math: mitex) }]",
+        "markdown_text": "随着时间的推移，这一网络可发展成为一个类似于其他专注于安全与标准的多边机构的国际框架，使可信的公共机构能够了解前沿人工智能的发展动态；建立安全的跨实验室与跨国渠道，用于共享评估结果、对齐发现及新兴风险；并同样支持危机期间的沟通。为实现有效协作，政策制定者应确保企业能够通过这些渠道共享安全与风险相关信息，而无需担心违反反垄断或竞争限制，为此需设立明确的安全港和范围严格限定的信息共享规则。该体系应超越狭隘的国家安全关注，纳入更广泛的社会风险，包括对青少年安全与福祉的影响。",
+        "width_pt": 448.40000000000003,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p013-b0000",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p013-b0000",
+      "page_index": 12,
+      "block_index": 0,
+      "type": "text",
+      "sub_type": "title",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 71,
+        "y": 72,
+        "width": 183,
+        "height": 19,
+        "unit": "pt"
+      },
+      "source_text": "Starting the Conversation",
+      "translated_text": "",
+      "translation_unit_text": "",
+      "fit_text": "Starting the Conversation",
+      "text_source": "source_ocr",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-013.png",
+      "source_line_count": 1
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p013-b0001",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p013-b0001",
+      "page_index": 12,
+      "block_index": 1,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 106,
+        "width": 471,
+        "height": 88,
+        "unit": "pt"
+      },
+      "source_text": "We off er these ideas not as fi xed answers but as a starting point for a broader conversation about how to ensure that AI benefi ts everyone. That conversation should be inclusive and ongoing—engaging governments, companies, researchers, civil society, communities, and families—and should be mediated through democratic processes that give people real power to shape the AI future they want. It also needs to expand globally—bringing in the perspectives of cultures, societies, and governments around the world.",
+      "translated_text": "我们提出这些想法并非作为固定答案，而是作为更广泛对话的起点，探讨如何确保人工智能惠及所有人。这场对话应具有包容性且持续进行——让政府、企业、研究者、公民社会、社区和家庭都参与进来——并应通过民主进程来协调，赋予人们塑造其理想AI未来的实际权力。对话还需在全球范围内扩展——吸纳世界各地不同文化、社会和政府的观点。",
+      "translation_unit_text": "我们提出这些想法并非作为固定答案，而是作为更广泛对话的起点，探讨如何确保人工智能惠及所有人。这场对话应具有包容性且持续进行——让政府、企业、研究者、公民社会、社区和家庭都参与进来——并应通过民主进程来协调，赋予人们塑造其理想AI未来的实际权力。对话还需在全球范围内扩展——吸纳世界各地不同文化、社会和政府的观点。",
+      "fit_text": "我们提出这些想法并非作为固定答案，而是作为更广泛对话的起点，探讨如何确保人工智能惠及所有人。这场对话应具有包容性且持续进行——让政府、企业、研究者、公民社会、社区和家庭都参与进来——并应通过民主进程来协调，赋予人们塑造其理想AI未来的实际权力。对话还需在全球范围内扩展——吸纳世界各地不同文化、社会和政府的观点。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-013.png",
+      "source_line_count": 6,
+      "typst": {
+        "body_name": "p12_item_1_0_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p12_item_1_0_md, math: mitex) }]",
+        "markdown_text": "我们提出这些想法并非作为固定答案，而是作为更广泛对话的起点，探讨如何确保人工智能惠及所有人。这场对话应具有包容性且持续进行——让政府、企业、研究者、公民社会、社区和家庭都参与进来——并应通过民主进程来协调，赋予人们塑造其理想AI未来的实际权力。对话还需在全球范围内扩展——吸纳世界各地不同文化、社会和政府的观点。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    },
+    {
+      "sample_id": "20260407033349-ffe2e4:p013-b0002",
+      "job_id": "20260407033349-ffe2e4",
+      "block_id": "p013-b0002",
+      "page_index": 12,
+      "block_index": 2,
+      "type": "text",
+      "sub_type": "body",
+      "page": {
+        "width": 612.0,
+        "height": 792.0,
+        "unit": "pt"
+      },
+      "target_box": {
+        "x": 70,
+        "y": 209,
+        "width": 471,
+        "height": 106,
+        "unit": "pt"
+      },
+      "source_text": "These ideas are our fi rst contribution to that eff ort, but only the beginning. Progress will depend on continued iteration, experimentation, and collaboration across institutions and sectors. To help sustain momentum, OpenAI is: (1) welcoming and organizing feedback through newindustrialpolicy@openai.com; (2) establishing a pilot program of fellowships and focused research grants of up to \\$ 100,000 and up to \\$ 1 million in API credits for work that builds on these and related policy ideas; and (3) convening discussions at our new OpenAI Workshop opening in May in Washington, DC.",
+      "translated_text": "这些构想是我们对该项努力的初步贡献，但仅仅是开端。进展将依赖于跨机构与跨领域的持续迭代、实验和协作。为保持发展势头，OpenAI将采取以下措施：(1) 通过newindustrialpolicy@openai.com邮箱接收并整合反馈意见；(2) 启动试点项目，设立最高额度为\\$ 100,000以及最高额度为\\$ 1百万美元API积分的研究资助与专项研究奖金，用于推进此类及相关政策构想的研究工作；(3) 于五月在华盛顿特区新开设的OpenAI研讨中心举办系列讨论会。",
+      "translation_unit_text": "这些构想是我们对该项努力的初步贡献，但仅仅是开端。进展将依赖于跨机构与跨领域的持续迭代、实验和协作。为保持发展势头，OpenAI将采取以下措施：(1) 通过newindustrialpolicy@openai.com邮箱接收并整合反馈意见；(2) 启动试点项目，设立最高额度为\\$ 100,000以及最高额度为\\$ 1百万美元API积分的研究资助与专项研究奖金，用于推进此类及相关政策构想的研究工作；(3) 于五月在华盛顿特区新开设的OpenAI研讨中心举办系列讨论会。",
+      "fit_text": "这些构想是我们对该项努力的初步贡献，但仅仅是开端。进展将依赖于跨机构与跨领域的持续迭代、实验和协作。为保持发展势头，OpenAI将采取以下措施：(1) 通过newindustrialpolicy@openai.com邮箱接收并整合反馈意见；(2) 启动试点项目，设立最高额度为\\$ 100,000以及最高额度为\\$ 1百万美元API积分的研究资助与专项研究奖金，用于推进此类及相关政策构想的研究工作；(3) 于五月在华盛顿特区新开设的OpenAI研讨中心举办系列讨论会。",
+      "text_source": "translated_json",
+      "source_pdf_href": "../fixtures/source-pdfs/20260407033349-ffe2e4.pdf",
+      "source_pdf_page_href": "../fixtures/pdf-pages/20260407033349-ffe2e4/page-013.png",
+      "source_line_count": 7,
+      "typst": {
+        "body_name": "p12_item_2_1_body",
+        "body_expr": "block(width: 447.45000000000005pt)[#{ set text(size: 11.16pt); set par(leading: 0.6em); cmarker.render(p12_item_2_1_md, math: mitex) }]",
+        "markdown_text": "这些构想是我们对该项努力的初步贡献，但仅仅是开端。进展将依赖于跨机构与跨领域的持续迭代、实验和协作。为保持发展势头，OpenAI将采取以下措施：(1) 通过newindustrialpolicy@openai.com邮箱接收并整合反馈意见；(2) 启动试点项目，设立最高额度为$\\\\$ 100 , 000$以及最高额度为$\\\\$ 1$百万美元API积分的研究资助与专项研究奖金，用于推进此类及相关政策构想的研究工作；(3) 于五月在华盛顿特区新开设的OpenAI研讨中心举办系列讨论会。",
+        "width_pt": 447.45000000000005,
+        "text_size_pt": 11.16,
+        "leading_em": 0.6
+      }
+    }
+  ]
+}

@@ -35,6 +35,14 @@ Goals:
   - Rust API: upload, job orchestration, status, download, auth/rate-limit extension point
   - Python worker: MinerU, translation, Typst, PDF rendering, post-processing
 
+Current internal boundary conventions:
+
+- `routes/*` only adapts HTTP requests/responses
+- `services/jobs/*` owns job query, presentation, creation orchestration, and control logic
+- `services/job_factory` owns job snapshot assembly vs execution start as two separate steps
+- `job_runner/*` owns runtime execution, process lifecycle, OCR-child chaining, and cancellation
+- `AppState` should stay at route entrypoints and runtime coordination layers; pure assembly helpers should prefer `&Db`, `&AppConfig`, and explicit arguments
+
 Current scope:
 
 - Upload PDF

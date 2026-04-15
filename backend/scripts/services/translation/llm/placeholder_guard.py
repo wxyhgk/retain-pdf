@@ -25,6 +25,7 @@ INTERNAL_PLACEHOLDER_DEGRADED_REASON = "placeholder_unstable"
 SHORT_FRAGMENT_RE = re.compile(r"^[A-Za-z][A-Za-z0-9._/-]{0,7}$")
 EN_RESIDUE_SEGMENT_RE = re.compile(r"[A-Za-z][A-Za-z0-9\s,;:()'./%+-]{30,}")
 AUTHOR_NAME_TOKEN_RE = re.compile(r"\b(?:[A-Z]\.\s*)?[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ'`´.-]{1,}\b")
+EN_CHUNK_RE = re.compile(r"[A-Za-z][A-Za-z0-9'./%+\-]*(?:\s+[A-Za-z][A-Za-z0-9'./%+\-]*)*")
 
 
 class SuspiciousKeepOriginError(ValueError):
@@ -351,6 +352,18 @@ def _has_long_english_residue_span(text: str) -> bool:
     return False
 
 
+def _long_english_residue_spans(text: str) -> list[str]:
+    cleaned = strip_placeholders(text)
+    if not cleaned:
+        return []
+    spans: list[str] = []
+    for match in EN_RESIDUE_SEGMENT_RE.finditer(cleaned):
+        segment = " ".join((match.group(0) or "").split())
+        if len(EN_WORD_RE.findall(segment)) >= 10 and looks_like_english_prose(segment):
+            spans.append(segment)
+    return spans
+
+
 def _normalized_english_surface(text: str) -> str:
     normalized = normalize_inline_whitespace(strip_placeholders(text)).lower()
     normalized = re.sub(r"[^a-z0-9]+", " ", normalized)
@@ -406,6 +419,65 @@ def _is_reference_like_item(item: dict) -> bool:
     return looks_like_reference_entry_text(source_text)
 
 
+def _is_formula_dense_body_item(item: dict) -> bool:
+    source_text = unit_source_text(item).strip()
+    if not source_text:
+        return False
+    if not should_force_translate_body_text(item):
+        return False
+    has_formula_context = bool(
+        item.get("continuation_group")
+        or item.get("formula_map")
+        or item.get("translation_unit_formula_map")
+    )
+    if not has_formula_context:
+        return False
+    formula_token_count = len(FORMULA_TOKEN_RE.findall(source_text))
+    if formula_token_count >= 3:
+        return True
+    if item.get("continuation_group") and formula_token_count >= 1:
+        return True
+    return False
+
+
+def _english_chunk_word_lengths(text: str) -> list[int]:
+    cleaned = strip_placeholders(text)
+    lengths: list[int] = []
+    for match in EN_CHUNK_RE.finditer(cleaned):
+        segment = " ".join((match.group(0) or "").split())
+        if not segment:
+            continue
+        word_count = len(EN_WORD_RE.findall(segment))
+        if word_count > 0:
+            lengths.append(word_count)
+    return lengths
+
+
+def _looks_like_term_preserving_mixed_output(item: dict, translated_text: str) -> bool:
+    translated = str(translated_text or "").strip()
+    if not translated:
+        return False
+    zh_chars = _zh_char_count(translated)
+    if zh_chars < 6:
+        return False
+    if _has_long_english_residue_span(translated):
+        return False
+    chunk_lengths = _english_chunk_word_lengths(translated)
+    if not chunk_lengths:
+        return False
+    if max(chunk_lengths) > 6:
+        return False
+    english_words = _english_word_count(translated)
+    if english_words > max(24, zh_chars * 2):
+        return False
+    return bool(
+        is_direct_math_mode(item)
+        or item.get("continuation_group")
+        or item.get("formula_map")
+        or item.get("translation_unit_formula_map")
+    )
+
+
 def looks_like_predominantly_english_output(item: dict, translated_text: str) -> bool:
     source_text = unit_source_text(item).strip()
     translated = str(translated_text or "").strip()
@@ -423,12 +495,16 @@ def looks_like_predominantly_english_output(item: dict, translated_text: str) ->
         return False
     english_words = _english_word_count(translated)
     zh_chars = _zh_char_count(translated)
+    if _looks_like_term_preserving_mixed_output(item, translated):
+        return False
     if _has_long_english_residue_span(translated):
         return True
     if english_words < 12:
         return False
     if zh_chars == 0:
         return True
+    if _is_formula_dense_body_item(item):
+        return False
     return english_words >= max(12, zh_chars // 2)
 
 
@@ -440,6 +516,31 @@ def looks_like_untranslated_english_output(item: dict, translated_text: str) -> 
         return False
     source_text = unit_source_text(item).strip()
     return _looks_like_copy_dominant_english_output(source_text, translated)
+
+
+def looks_like_mixed_english_residue_output(item: dict, translated_text: str) -> bool:
+    translated = str(translated_text or "").strip()
+    if not translated:
+        return False
+    if _is_reference_like_item(item):
+        return False
+    if not should_force_translate_body_text(item):
+        return False
+    if _is_formula_dense_body_item(item):
+        return False
+    if _looks_like_term_preserving_mixed_output(item, translated):
+        return False
+    if _zh_char_count(translated) <= 0:
+        return False
+    source_text = unit_source_text(item).strip()
+    if not looks_like_english_prose(source_text):
+        return False
+    for segment in _long_english_residue_spans(translated):
+        if len(EN_WORD_RE.findall(segment)) < 12:
+            continue
+        if _looks_like_copy_dominant_english_output(source_text, segment):
+            return True
+    return False
 
 
 def looks_like_short_fragment(text: str) -> bool:
@@ -602,6 +703,21 @@ def validate_batch_result(
                     page_idx=item.get("page_idx"),
                     severity="error",
                     message="Translated output still looks predominantly English",
+                    retryable=True,
+                )
+            raise EnglishResidueError(
+                item_id,
+                source_text=source_text,
+                translated_text=translated_text,
+            )
+        if looks_like_mixed_english_residue_output(item, translated_text):
+            if diagnostics is not None:
+                diagnostics.emit(
+                    kind="mixed_english_residue",
+                    item_id=item_id,
+                    page_idx=item.get("page_idx"),
+                    severity="error",
+                    message="Translated output still contains long copied English residue spans",
                     retryable=True,
                 )
             raise EnglishResidueError(

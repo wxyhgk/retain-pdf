@@ -69,7 +69,12 @@ async fn run_job_with_ocr(
     let mut ocr_child = JobSnapshot::new(
         ocr_job_id.clone(),
         ocr_request.clone(),
-        build_ocr_command(&state, Some(upload_path), &ocr_request, &parent_job_paths),
+        build_ocr_command(
+            state.config.as_ref(),
+            Some(upload_path),
+            &ocr_request,
+            &parent_job_paths,
+        ),
     )
     .into_runtime();
     attach_job_paths(&mut ocr_child, &parent_job_paths);
@@ -134,7 +139,7 @@ async fn run_job_with_ocr(
     let layout_json_path = translate_inputs.layout_json_path.map(Path::to_path_buf);
 
     parent_job.command = build_translate_only_command(
-        &state,
+        state.config.as_ref(),
         &parent_job.request_payload,
         &parent_job_paths,
         &normalized_path,
@@ -175,7 +180,7 @@ async fn run_render_stage_after_translation(
     source_pdf_path: &Path,
 ) -> Result<JobRuntimeState> {
     job.command = build_render_only_command(
-        &state,
+        state.config.as_ref(),
         &job.request_payload,
         job_paths,
         source_pdf_path,

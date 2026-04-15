@@ -119,8 +119,7 @@ fn apply_stage_prefix_rule(job: &mut JobSnapshot, line: &str) -> bool {
 fn apply_stage_prefix(job: &mut JobSnapshot, rule: StagePrefixRule) {
     match rule {
         StagePrefixRule::UploadDone => {
-            sync_provider_status_to_job(job, "waiting-file", None, None);
-            job.stage = Some("mineru_upload".to_string());
+            job.stage = Some("mineru_processing".to_string());
             job.stage_detail = Some("文件上传完成，等待 MinerU 处理".to_string());
         }
         StagePrefixRule::LayoutReady => {

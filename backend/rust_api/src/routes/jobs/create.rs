@@ -2,11 +2,10 @@ use crate::error::AppError;
 use crate::models::{ApiResponse, CreateJobInput, JobStatusKind, JobSubmissionView};
 use crate::routes::job_helpers::{build_submission_view, request_base_url, stream_file};
 use crate::routes::job_requests::{parse_ocr_job_request, parse_translate_bundle_request};
-use crate::routes::uploads::store_upload;
-use crate::services::artifacts::{attach_job_id_header, build_bundle_for_job};
+use crate::services::artifacts::attach_job_id_header;
 use crate::services::jobs::{
-    create_ocr_job as create_ocr_job_service, create_translation_job,
-    validate_mineru_upload_limits, wait_for_terminal_job,
+    build_translation_bundle_artifact, create_ocr_job_from_upload, create_translation_job,
+    UploadedPdfInput,
 };
 use crate::AppState;
 use axum::extract::{Multipart, State};
@@ -39,17 +38,17 @@ pub async fn create_ocr_job(
     mut multipart: Multipart,
 ) -> Result<Json<ApiResponse<JobSubmissionView>>, AppError> {
     let parsed = parse_ocr_job_request(&mut multipart).await?;
-    let upload = match (parsed.filename, parsed.file_bytes) {
-        (Some(filename), Some(bytes)) => {
-            let upload = store_upload(&state, filename, bytes, parsed.developer_mode).await?;
-            state.db.save_upload(&upload)?;
-            Some(upload)
-        }
-        (None, None) => None,
+    let upload = match (parsed.filename, parsed.file_bytes, parsed.developer_mode) {
+        (Some(filename), Some(bytes), developer_mode) => Some(UploadedPdfInput {
+            filename,
+            bytes,
+            developer_mode,
+        }),
+        (None, None, _) => None,
         _ => return Err(AppError::bad_request("file upload is incomplete")),
     };
 
-    let job = create_ocr_job_service(&state, &parsed.request, upload.as_ref())?;
+    let job = create_ocr_job_from_upload(&state, &parsed.request, upload).await?;
     let base_url = request_base_url(&headers, &state);
     Ok(Json(ApiResponse::ok(build_submission_view(
         &job,
@@ -64,29 +63,22 @@ pub async fn translate_bundle(
     mut multipart: Multipart,
 ) -> Result<Response, AppError> {
     let parsed = parse_translate_bundle_request(&mut multipart).await?;
-    let upload = store_upload(
+    let bundle = build_translation_bundle_artifact(
         &state,
-        parsed.filename,
-        parsed.file_bytes,
-        parsed.developer_mode,
+        parsed.request,
+        UploadedPdfInput {
+            filename: parsed.filename,
+            bytes: parsed.file_bytes,
+            developer_mode: parsed.developer_mode,
+        },
     )
     .await?;
-    state.db.save_upload(&upload)?;
-
-    let mut request = parsed.request;
-    request.source.upload_id = upload.upload_id.clone();
-    validate_mineru_upload_limits(&request, &upload)?;
-    let job = create_translation_job(&state, &request)?;
-    let finished_job = wait_for_terminal_job(&state, &job.job_id, request.ocr.poll_timeout).await?;
-
-    let _guard = state.downloads_lock.lock().await;
-    let zip_path = build_bundle_for_job(&state, &finished_job)?;
     let mut response = stream_file(
-        zip_path,
+        bundle.zip_path,
         "application/zip",
-        Some(format!("{}.zip", finished_job.job_id)),
+        Some(format!("{}.zip", bundle.job_id)),
     )
     .await?;
-    attach_job_id_header(&mut response, &finished_job.job_id)?;
+    attach_job_id_header(&mut response, &bundle.job_id)?;
     Ok(response)
 }

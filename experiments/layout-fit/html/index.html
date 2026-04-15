@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Layout Fit Lab</title>
+    <style>
+      :root {
+        --paper: #f7f2e8;
+        --ink: #171717;
+        --muted: #645d55;
+        --accent: #004e64;
+        --accent-soft: #cde7ec;
+        --panel: rgba(255, 252, 247, 0.9);
+        --line: rgba(23, 23, 23, 0.12);
+        --shadow: 0 18px 48px rgba(31, 38, 39, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        font-family: "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(0, 78, 100, 0.16), transparent 24rem),
+          radial-gradient(circle at bottom right, rgba(238, 155, 0, 0.18), transparent 20rem),
+          linear-gradient(180deg, #f4efe6 0%, #efe7db 100%);
+      }
+
+      .shell {
+        min-height: 100vh;
+        padding: 24px;
+      }
+
+      .hero {
+        max-width: 1280px;
+        margin: 0 auto 18px;
+        padding: 24px 28px;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: rgba(255, 251, 245, 0.74);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+      }
+
+      .hero h1 {
+        margin: 0 0 8px;
+        font-family: "Source Han Serif SC", "Noto Serif CJK SC", serif;
+        font-size: clamp(2rem, 4vw, 3.6rem);
+        letter-spacing: 0.02em;
+      }
+
+      .hero p {
+        margin: 0;
+        max-width: 70ch;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(360px, 420px) 1fr;
+        gap: 18px;
+        max-width: 1280px;
+        margin: 0 auto;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+      }
+
+      .controls {
+        padding: 20px;
+      }
+
+      .section + .section {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+      }
+
+      .section h2 {
+        margin: 0 0 12px;
+        font-size: 0.95rem;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      label,
+      .metric dt {
+        display: block;
+        font-size: 0.86rem;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      input,
+      select,
+      textarea,
+      button {
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid rgba(23, 23, 23, 0.15);
+        background: rgba(255, 255, 255, 0.85);
+        color: var(--ink);
+        font: inherit;
+      }
+
+      input,
+      select,
+      button {
+        min-height: 42px;
+        padding: 0 12px;
+      }
+
+      textarea {
+        min-height: 190px;
+        padding: 12px;
+        resize: vertical;
+        line-height: 1.5;
+      }
+
+      button {
+        cursor: pointer;
+        background: linear-gradient(135deg, #0a5d73 0%, #004e64 100%);
+        color: white;
+        font-weight: 600;
+      }
+
+      button.secondary {
+        background: rgba(255, 255, 255, 0.85);
+        color: var(--ink);
+      }
+
+      .grid2,
+      .grid3 {
+        display: grid;
+        gap: 10px;
+      }
+
+      .grid2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .actions {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .workspace {
+        display: grid;
+        gap: 18px;
+        padding: 20px;
+      }
+
+      .card {
+        padding: 18px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.62);
+      }
+
+      .card h2 {
+        margin: 0 0 12px;
+        font-size: 1rem;
+      }
+
+      .preview-wrap {
+        position: relative;
+        min-height: 420px;
+        border-radius: 20px;
+        overflow: auto;
+        background:
+          linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0, rgba(0, 0, 0, 0.04) 1px, transparent 1px) 0 0 / 100% 24px,
+          linear-gradient(90deg, rgba(0, 0, 0, 0.04) 0, rgba(0, 0, 0, 0.04) 1px, transparent 1px) 0 0 / 24px 100%,
+          #fbf8f3;
+      }
+
+      .target-box {
+        position: relative;
+        border: 2px solid var(--accent);
+        background: rgba(0, 78, 100, 0.08);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+      }
+
+      .preview-text {
+        padding: 0;
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+
+      .preview-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 251, 245, 0.92);
+        border: 1px solid var(--line);
+        font-size: 0.8rem;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .metric {
+        margin: 0;
+        padding: 12px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid var(--line);
+      }
+
+      .metric dd {
+        margin: 6px 0 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+
+      .status {
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.8);
+        color: var(--muted);
+      }
+
+      .status.error {
+        color: #8b1e3f;
+        border-color: rgba(139, 30, 63, 0.2);
+        background: rgba(139, 30, 63, 0.06);
+      }
+
+      #measure-sandbox {
+        position: absolute;
+        left: -10000px;
+        top: -10000px;
+        visibility: hidden;
+        pointer-events: none;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+
+      @media (max-width: 980px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .metric-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <h1>Layout Fit Lab</h1>
+        <p>
+          面向块级拟合的最小 HTML/DOM 测量器。它读取 `fixtures` 样本，允许你切换文本块、调整字体参数、
+          观察目标框与实际测量结果，并扫描一组更贴近目标高度的参数。
+        </p>
+      </header>
+
+      <main class="layout">
+        <aside class="panel controls">
+          <section class="section">
+            <h2>数据</h2>
+            <div class="grid2">
+              <button id="load-default">加载默认样本</button>
+              <label>
+                <span>从本地 JSON 载入</span>
+                <input id="file-input" type="file" accept=".json,application/json" />
+              </label>
+            </div>
+            <label for="sample-select">样本</label>
+            <select id="sample-select"></select>
+          </section>
+
+          <section class="section">
+            <h2>排版参数</h2>
+            <label for="font-family">字体</label>
+            <input id="font-family" value="Source Han Serif SC, Noto Serif CJK SC, serif" />
+            <div class="grid3">
+              <label>
+                <span>字号 (pt)</span>
+                <input id="font-size" type="number" min="4" max="48" step="0.01" value="11.16" />
+              </label>
+              <label>
+                <span>行高 (em)</span>
+                <input id="line-height" type="number" min="0.4" max="2" step="0.01" value="0.6" />
+              </label>
+              <label>
+                <span>字距 (pt)</span>
+                <input id="letter-spacing" type="number" min="-1" max="2" step="0.01" value="0" />
+              </label>
+            </div>
+            <div class="grid2">
+              <label>
+                <span>目标宽度 (pt)</span>
+                <input id="target-width" type="number" min="1" step="0.01" value="447.45" />
+              </label>
+              <label>
+                <span>目标高度 (pt)</span>
+                <input id="target-height" type="number" min="1" step="0.01" value="98.7" />
+              </label>
+            </div>
+            <div class="actions">
+              <button id="apply-typst" class="secondary">应用 Typst 参数</button>
+              <button id="measure-now">立即测量</button>
+            </div>
+          </section>
+
+          <section class="section">
+            <h2>扫描</h2>
+            <div class="grid3">
+              <label>
+                <span>最小字号</span>
+                <input id="scan-font-min" type="number" min="4" max="48" step="0.01" value="9.5" />
+              </label>
+              <label>
+                <span>最大字号</span>
+                <input id="scan-font-max" type="number" min="4" max="48" step="0.01" value="12" />
+              </label>
+              <label>
+                <span>字号步长</span>
+                <input id="scan-font-step" type="number" min="0.01" max="4" step="0.01" value="0.05" />
+              </label>
+            </div>
+            <div class="grid3">
+              <label>
+                <span>最小行高</span>
+                <input id="scan-leading-min" type="number" min="0.4" max="2" step="0.01" value="0.55" />
+              </label>
+              <label>
+                <span>最大行高</span>
+                <input id="scan-leading-max" type="number" min="0.4" max="2" step="0.01" value="0.72" />
+              </label>
+              <label>
+                <span>行高步长</span>
+                <input id="scan-leading-step" type="number" min="0.01" max="0.5" step="0.01" value="0.01" />
+              </label>
+            </div>
+            <button id="scan-now">扫描最优参数</button>
+          </section>
+
+          <section class="section">
+            <h2>文本</h2>
+            <label for="fit-text">拟合文本</label>
+            <textarea id="fit-text"></textarea>
+          </section>
+        </aside>
+
+        <section class="panel workspace">
+          <section class="card">
+            <h2>目标框预览</h2>
+            <div class="preview-wrap">
+              <div id="target-box" class="target-box">
+                <div id="preview-text" class="preview-text"></div>
+                <div id="preview-badge" class="preview-badge">未测量</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>测量结果</h2>
+            <div class="metric-grid">
+              <dl class="metric"><dt>估算行数</dt><dd id="metric-lines">0</dd></dl>
+              <dl class="metric"><dt>测量高度</dt><dd id="metric-height">0pt</dd></dl>
+              <dl class="metric"><dt>最大行宽</dt><dd id="metric-width">0pt</dd></dl>
+              <dl class="metric"><dt>评分</dt><dd id="metric-score">0</dd></dl>
+            </div>
+            <div class="metric-grid" style="margin-top: 10px;">
+              <dl class="metric"><dt>高度误差</dt><dd id="metric-height-error">0pt</dd></dl>
+              <dl class="metric"><dt>宽度溢出</dt><dd id="metric-overflow-x">否</dd></dl>
+              <dl class="metric"><dt>高度溢出</dt><dd id="metric-overflow-y">否</dd></dl>
+              <dl class="metric"><dt>当前样本</dt><dd id="metric-sample">无</dd></dl>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>样本信息</h2>
+            <div id="sample-meta" class="status">还没有载入样本。</div>
+          </section>
+
+          <section class="card">
+            <h2>运行状态</h2>
+            <div id="status" class="status">点击“加载默认样本”或选择本地 JSON 开始。</div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div id="measure-sandbox"></div>
+
+    <script>
+      const state = {
+        payload: null,
+        sample: null,
+      };
+
+      const els = {
+        sampleSelect: document.getElementById("sample-select"),
+        fileInput: document.getElementById("file-input"),
+        loadDefault: document.getElementById("load-default"),
+        applyTypst: document.getElementById("apply-typst"),
+        measureNow: document.getElementById("measure-now"),
+        scanNow: document.getElementById("scan-now"),
+        fontFamily: document.getElementById("font-family"),
+        fontSize: document.getElementById("font-size"),
+        lineHeight: document.getElementById("line-height"),
+        letterSpacing: document.getElementById("letter-spacing"),
+        targetWidth: document.getElementById("target-width"),
+        targetHeight: document.getElementById("target-height"),
+        fitText: document.getElementById("fit-text"),
+        previewText: document.getElementById("preview-text"),
+        targetBox: document.getElementById("target-box"),
+        previewBadge: document.getElementById("preview-badge"),
+        status: document.getElementById("status"),
+        sampleMeta: document.getElementById("sample-meta"),
+        sandbox: document.getElementById("measure-sandbox"),
+        scanFontMin: document.getElementById("scan-font-min"),
+        scanFontMax: document.getElementById("scan-font-max"),
+        scanFontStep: document.getElementById("scan-font-step"),
+        scanLeadingMin: document.getElementById("scan-leading-min"),
+        scanLeadingMax: document.getElementById("scan-leading-max"),
+        scanLeadingStep: document.getElementById("scan-leading-step"),
+        metricLines: document.getElementById("metric-lines"),
+        metricHeight: document.getElementById("metric-height"),
+        metricWidth: document.getElementById("metric-width"),
+        metricScore: document.getElementById("metric-score"),
+        metricHeightError: document.getElementById("metric-height-error"),
+        metricOverflowX: document.getElementById("metric-overflow-x"),
+        metricOverflowY: document.getElementById("metric-overflow-y"),
+        metricSample: document.getElementById("metric-sample"),
+      };
+
+      function setStatus(message, isError = false) {
+        els.status.textContent = message;
+        els.status.classList.toggle("error", isError);
+      }
+
+      function round(value) {
+        return Math.round(value * 100) / 100;
+      }
+
+      function parseNumber(input) {
+        return Number.parseFloat(input.value || "0");
+      }
+
+      function createOption(sample) {
+        const option = document.createElement("option");
+        option.value = sample.sample_id;
+        option.textContent = `${sample.block_id} · ${sample.sub_type} · ${sample.target_box.width}×${sample.target_box.height}pt`;
+        return option;
+      }
+
+      function loadPayload(payload) {
+        if (!payload || !Array.isArray(payload.samples) || payload.samples.length === 0) {
+          setStatus("样本 JSON 为空，或不符合 block samples 结构。", true);
+          return;
+        }
+        state.payload = payload;
+        els.sampleSelect.innerHTML = "";
+        payload.samples.forEach((sample) => {
+          els.sampleSelect.append(createOption(sample));
+        });
+        els.sampleSelect.value = payload.samples[0].sample_id;
+        applySampleById(payload.samples[0].sample_id);
+        setStatus(`已载入 ${payload.samples.length} 个样本。`);
+      }
+
+      function applySampleById(sampleId) {
+        if (!state.payload) {
+          return;
+        }
+        const sample = state.payload.samples.find((item) => item.sample_id === sampleId);
+        if (!sample) {
+          return;
+        }
+        state.sample = sample;
+        els.fitText.value = sample.fit_text || sample.translated_text || sample.source_text || "";
+        els.targetWidth.value = sample.typst?.width_pt ?? sample.target_box.width;
+        els.targetHeight.value = sample.typst?.fit_height_pt ?? sample.target_box.height;
+
+        if (sample.typst?.text_size_pt) {
+          els.fontSize.value = sample.typst.text_size_pt;
+        } else if (sample.typst?.max_size_pt) {
+          els.fontSize.value = sample.typst.max_size_pt;
+        }
+        if (sample.typst?.leading_em) {
+          els.lineHeight.value = sample.typst.leading_em;
+        } else if (sample.typst?.max_leading_em) {
+          els.lineHeight.value = sample.typst.max_leading_em;
+        }
+
+        els.metricSample.textContent = sample.block_id;
+        renderSampleMeta(sample);
+        measureAndRender();
+      }
+
+      function renderSampleMeta(sample) {
+        const lines = [
+          `job: ${sample.job_id}`,
+          `page_index: ${sample.page_index}`,
+          `block_id: ${sample.block_id}`,
+          `sub_type: ${sample.sub_type}`,
+          `target_box: ${sample.target_box.width} × ${sample.target_box.height} ${sample.target_box.unit}`,
+        ];
+        if (sample.typst) {
+          lines.push(
+            `typst: width ${sample.typst.width_pt ?? "-"}pt, size ${sample.typst.text_size_pt ?? sample.typst.max_size_pt ?? "-"}pt, leading ${sample.typst.leading_em ?? sample.typst.max_leading_em ?? "-"}em`
+          );
+        }
+        els.sampleMeta.textContent = lines.join(" | ");
+      }
+
+      function applyStyles(node, widthPt, fontSizePt, lineHeightEm, letterSpacingPt, fontFamily) {
+        node.style.width = `${widthPt}pt`;
+        node.style.fontFamily = fontFamily;
+        node.style.fontSize = `${fontSizePt}pt`;
+        node.style.lineHeight = String(lineHeightEm);
+        node.style.letterSpacing = `${letterSpacingPt}pt`;
+      }
+
+      function computeScore(metrics, targetHeight) {
+        const heightError = Math.abs(metrics.height - targetHeight);
+        const overflowPenalty = (metrics.overflowX ? 1200 : 0) + (metrics.overflowY ? 1200 : 0);
+        const readabilityPenalty = metrics.fontSize < 9 ? (9 - metrics.fontSize) * 80 : 0;
+        const leadingPenalty = metrics.lineHeight < 0.55 ? (0.55 - metrics.lineHeight) * 200 : 0;
+        return round(heightError * 8 + overflowPenalty + readabilityPenalty + leadingPenalty);
+      }
+
+      function measureCurrentParams() {
+        const widthPt = parseNumber(els.targetWidth);
+        const heightPt = parseNumber(els.targetHeight);
+        const fontSizePt = parseNumber(els.fontSize);
+        const lineHeightEm = parseNumber(els.lineHeight);
+        const letterSpacingPt = parseNumber(els.letterSpacing);
+        const fontFamily = els.fontFamily.value.trim();
+        const text = els.fitText.value;
+
+        applyStyles(els.sandbox, widthPt, fontSizePt, lineHeightEm, letterSpacingPt, fontFamily);
+        els.sandbox.textContent = text;
+
+        const height = els.sandbox.getBoundingClientRect().height;
+        const maxLineWidth = els.sandbox.scrollWidth;
+        const overflowX = maxLineWidth - 0.5 > widthPt;
+        const overflowY = height - 0.5 > heightPt;
+        const lineHeightPt = fontSizePt * lineHeightEm;
+        const lineCount = lineHeightPt > 0 ? Math.max(1, Math.round(height / lineHeightPt)) : 0;
+        const score = computeScore(
+          {
+            height,
+            overflowX,
+            overflowY,
+            fontSize: fontSizePt,
+            lineHeight: lineHeightEm,
+          },
+          heightPt
+        );
+
+        return {
+          widthPt,
+          targetHeightPt: heightPt,
+          fontSizePt,
+          lineHeightEm,
+          letterSpacingPt,
+          height: round(height),
+          maxLineWidth: round(maxLineWidth),
+          overflowX,
+          overflowY,
+          lineCount,
+          score,
+        };
+      }
+
+      function renderMetrics(metrics) {
+        applyStyles(
+          els.previewText,
+          metrics.widthPt,
+          metrics.fontSizePt,
+          metrics.lineHeightEm,
+          metrics.letterSpacingPt,
+          els.fontFamily.value.trim()
+        );
+        els.previewText.textContent = els.fitText.value;
+        els.targetBox.style.width = `${metrics.widthPt}pt`;
+        els.targetBox.style.minHeight = `${metrics.targetHeightPt}pt`;
+        els.targetBox.style.height = `${metrics.targetHeightPt}pt`;
+        els.previewBadge.textContent = metrics.overflowY || metrics.overflowX ? "超出目标框" : "在目标框内";
+
+        els.metricLines.textContent = String(metrics.lineCount);
+        els.metricHeight.textContent = `${metrics.height}pt`;
+        els.metricWidth.textContent = `${metrics.maxLineWidth}pt`;
+        els.metricScore.textContent = String(metrics.score);
+        els.metricHeightError.textContent = `${round(Math.abs(metrics.height - metrics.targetHeightPt))}pt`;
+        els.metricOverflowX.textContent = metrics.overflowX ? "是" : "否";
+        els.metricOverflowY.textContent = metrics.overflowY ? "是" : "否";
+      }
+
+      function measureAndRender() {
+        if (!state.sample) {
+          setStatus("先加载样本。", true);
+          return;
+        }
+        const metrics = measureCurrentParams();
+        renderMetrics(metrics);
+        setStatus(`已测量 ${state.sample.block_id}。评分越低越接近目标高度，overflow 会被重罚。`);
+      }
+
+      function scanBest() {
+        if (!state.sample) {
+          setStatus("先加载样本。", true);
+          return;
+        }
+
+        const fontMin = parseNumber(els.scanFontMin);
+        const fontMax = parseNumber(els.scanFontMax);
+        const fontStep = parseNumber(els.scanFontStep);
+        const leadingMin = parseNumber(els.scanLeadingMin);
+        const leadingMax = parseNumber(els.scanLeadingMax);
+        const leadingStep = parseNumber(els.scanLeadingStep);
+
+        let best = null;
+        for (let font = fontMin; font <= fontMax + 1e-9; font += fontStep) {
+          for (let leading = leadingMin; leading <= leadingMax + 1e-9; leading += leadingStep) {
+            els.fontSize.value = round(font);
+            els.lineHeight.value = round(leading);
+            const metrics = measureCurrentParams();
+            if (!best || metrics.score < best.score) {
+              best = metrics;
+            }
+          }
+        }
+
+        if (!best) {
+          setStatus("扫描失败。请检查扫描范围。", true);
+          return;
+        }
+
+        els.fontSize.value = best.fontSizePt;
+        els.lineHeight.value = best.lineHeightEm;
+        renderMetrics(best);
+        setStatus(
+          `扫描完成：字号 ${best.fontSizePt}pt，行高 ${best.lineHeightEm}em，测量高度 ${best.height}pt，评分 ${best.score}。`
+        );
+      }
+
+      async function loadDefaultSamples() {
+        try {
+          const response = await fetch("../fixtures/sample-blocks.v1.json");
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const payload = await response.json();
+          loadPayload(payload);
+        } catch (error) {
+          setStatus(
+            "默认样本加载失败。直接打开 HTML 时浏览器可能会拦截本地 fetch，这时请用右上文件选择器手动载入 fixtures/sample-blocks.v1.json。",
+            true
+          );
+        }
+      }
+
+      async function runFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+        if (!params.get("autoload")) {
+          return;
+        }
+        await loadDefaultSamples();
+        if (params.get("sample")) {
+          applySampleById(params.get("sample"));
+        }
+        if (params.get("autorun")) {
+          measureAndRender();
+        }
+        if (params.get("autoscan")) {
+          scanBest();
+        }
+      }
+
+      els.loadDefault.addEventListener("click", loadDefaultSamples);
+      els.sampleSelect.addEventListener("change", (event) => applySampleById(event.target.value));
+      els.measureNow.addEventListener("click", measureAndRender);
+      els.scanNow.addEventListener("click", scanBest);
+      els.applyTypst.addEventListener("click", () => {
+        if (!state.sample?.typst) {
+          setStatus("当前样本没有 Typst 参数。", true);
+          return;
+        }
+        const typst = state.sample.typst;
+        if (typst.width_pt) {
+          els.targetWidth.value = typst.width_pt;
+        }
+        if (typst.fit_height_pt) {
+          els.targetHeight.value = typst.fit_height_pt;
+        }
+        if (typst.text_size_pt) {
+          els.fontSize.value = typst.text_size_pt;
+        } else if (typst.max_size_pt) {
+          els.fontSize.value = typst.max_size_pt;
+        }
+        if (typst.leading_em) {
+          els.lineHeight.value = typst.leading_em;
+        } else if (typst.max_leading_em) {
+          els.lineHeight.value = typst.max_leading_em;
+        }
+        measureAndRender();
+      });
+
+      els.fileInput.addEventListener("change", async (event) => {
+        const [file] = event.target.files || [];
+        if (!file) {
+          return;
+        }
+        try {
+          const payload = JSON.parse(await file.text());
+          loadPayload(payload);
+        } catch (error) {
+          setStatus("读取本地 JSON 失败。请确认文件是有效的 block samples JSON。", true);
+        }
+      });
+
+      runFromQuery();
+    </script>
+  </body>
+</html>

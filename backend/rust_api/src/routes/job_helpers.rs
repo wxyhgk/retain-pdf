@@ -1,13 +1,10 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::error::AppError;
 use crate::models::{
-    build_artifact_links, build_job_actions, build_job_links_with_workflow, job_to_detail,
-    ArtifactLinksView, JobArtifactManifestView, JobDetailView, JobEventListView, JobSnapshot,
-    JobStatusKind, JobSubmissionView, ListJobEventsQuery, WorkflowKind,
+    build_job_actions, build_job_links_with_workflow, JobSnapshot, JobStatusKind,
+    JobSubmissionView, WorkflowKind,
 };
-use crate::services::artifacts::list_registry_for_job;
-use crate::services::jobs::{ensure_supported_job_layout, load_job_or_404};
 use crate::AppState;
 use axum::body::Body;
 use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
@@ -45,90 +42,6 @@ pub fn build_submission_view(
         links: build_job_links_with_workflow(&job.job_id, &workflow, base_url),
         actions: build_job_actions(&view_job, base_url, false, false, false),
     }
-}
-
-pub fn build_job_detail_view(
-    job: &JobSnapshot,
-    base_url: &str,
-    data_root: &Path,
-    pdf_ready: bool,
-    markdown_ready: bool,
-    bundle_ready: bool,
-) -> JobDetailView {
-    job_to_detail(
-        job,
-        base_url,
-        data_root,
-        pdf_ready,
-        markdown_ready,
-        bundle_ready,
-    )
-}
-
-pub fn build_artifact_links_view(
-    job: &JobSnapshot,
-    base_url: &str,
-    data_root: &Path,
-    pdf_ready: bool,
-    markdown_ready: bool,
-    bundle_ready: bool,
-) -> ArtifactLinksView {
-    build_artifact_links(
-        job,
-        base_url,
-        data_root,
-        pdf_ready,
-        markdown_ready,
-        bundle_ready,
-    )
-}
-
-pub fn build_artifact_manifest_view(
-    state: &AppState,
-    job: &JobSnapshot,
-    base_url: &str,
-) -> Result<JobArtifactManifestView, AppError> {
-    let items = list_registry_for_job(state, job)?;
-    Ok(crate::models::build_artifact_manifest(
-        job, base_url, &items,
-    ))
-}
-
-pub fn load_job_events_view(
-    state: &AppState,
-    job_id: &str,
-    query: &ListJobEventsQuery,
-) -> Result<JobEventListView, AppError> {
-    let limit = query.limit.clamp(1, 500);
-    let items = state.db.list_job_events(job_id, limit, query.offset)?;
-    Ok(JobEventListView {
-        items,
-        limit,
-        offset: query.offset,
-    })
-}
-
-pub fn load_supported_job(state: &AppState, job_id: &str) -> Result<JobSnapshot, AppError> {
-    let job = load_job_or_404(state, job_id)?;
-    ensure_supported_job_layout(state, &job)?;
-    Ok(job)
-}
-
-pub fn load_ocr_job_or_404(state: &AppState, job_id: &str) -> Result<JobSnapshot, AppError> {
-    let job = load_job_or_404(state, job_id)?;
-    if !matches!(job.workflow, WorkflowKind::Ocr) {
-        return Err(AppError::not_found(format!("ocr job not found: {job_id}")));
-    }
-    Ok(job)
-}
-
-pub fn load_ocr_job_with_supported_layout(
-    state: &AppState,
-    job_id: &str,
-) -> Result<JobSnapshot, AppError> {
-    let job = load_ocr_job_or_404(state, job_id)?;
-    ensure_supported_job_layout(state, &job)?;
-    Ok(job)
 }
 
 pub fn ensure_cancelable(job: &JobSnapshot) -> Result<(), AppError> {

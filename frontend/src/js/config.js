@@ -26,6 +26,15 @@ export function apiBase() {
   return `${protocol}//${host}:41000`;
 }
 
+export function mockScenario() {
+  const value = new URLSearchParams(window.location.search).get("mock")?.trim().toLowerCase() || "";
+  return ["queued", "running", "succeeded", "failed"].includes(value) ? value : "";
+}
+
+export function isMockMode() {
+  return !!mockScenario();
+}
+
 export function frontendApiKey() {
   return typeof runtimeConfig.xApiKey === "string" ? runtimeConfig.xApiKey.trim() : "";
 }

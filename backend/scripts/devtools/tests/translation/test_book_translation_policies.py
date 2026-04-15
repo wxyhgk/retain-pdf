@@ -9,6 +9,7 @@ sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
 from runtime.pipeline.book_translation_policies import finalize_page_payloads
 from services.translation.policy.config import build_translation_policy_config
+from services.translation.payload.parts.policy_mutations import apply_cjk_source_keep_origin
 from services.translation.payload.parts.policy_mutations import apply_title_skip
 
 
@@ -190,3 +191,37 @@ def test_apply_title_skip_preserves_source_text_for_render_fallback() -> None:
     assert payload[0]["skip_reason"] == "skip_title"
     assert payload[0]["translated_text"] == "Introduction"
     assert payload[0]["protected_translated_text"] == "Introduction"
+
+
+def test_apply_cjk_source_keep_origin_skips_cjk_body_text() -> None:
+    payload = [
+        {
+            "item_id": "p036-b015",
+            "page_idx": 35,
+            "block_idx": 15,
+            "block_type": "text",
+            "source_text": "综上，本文系统综述了DFT计算在光催化领域中的广泛应用，并为未来开发高效稳定催化剂提供参考。",
+            "protected_source_text": "综上，本文系统综述了DFT计算在光催化领域中的广泛应用，并为未来开发高效稳定催化剂提供参考。",
+            "metadata": {"structure_role": "body"},
+            "classification_label": "",
+            "should_translate": True,
+            "skip_reason": "",
+            "translation_unit_protected_translated_text": "",
+            "translation_unit_translated_text": "",
+            "protected_translated_text": "",
+            "translated_text": "",
+            "group_protected_translated_text": "",
+            "group_translated_text": "",
+            "final_status": "",
+        }
+    ]
+
+    skipped = apply_cjk_source_keep_origin(payload)
+
+    assert skipped == 1
+    assert payload[0]["classification_label"] == "skip_cjk_source_body"
+    assert payload[0]["should_translate"] is False
+    assert payload[0]["skip_reason"] == "skip_cjk_source_body"
+    assert payload[0]["translated_text"] == payload[0]["source_text"]
+    assert payload[0]["protected_translated_text"] == payload[0]["protected_source_text"]
+    assert payload[0]["final_status"] == "kept_origin"

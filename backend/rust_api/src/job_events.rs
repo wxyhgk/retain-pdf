@@ -1,10 +1,12 @@
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::path::Path;
 
 use anyhow::Result;
 use serde_json::{json, Value};
 use tracing::warn;
 
+use crate::db::Db;
 use crate::models::{JobEventRecord, JobRuntimeState, JobSnapshot, JobStatusKind, WorkflowKind};
 use crate::storage_paths::resolve_data_path;
 use crate::AppState;
@@ -21,21 +23,77 @@ struct PendingJobEvent {
 }
 
 pub fn persist_job(state: &AppState, job: &JobSnapshot) -> Result<()> {
-    let previous = state.db.get_job(&job.job_id).ok();
+    persist_job_with_resources(
+        state.db.as_ref(),
+        &state.config.data_root,
+        &state.config.output_root,
+        job,
+    )
+}
+
+pub fn persist_job_with_resources(
+    db: &Db,
+    data_root: &Path,
+    output_root: &Path,
+    job: &JobSnapshot,
+) -> Result<()> {
+    let previous = db.get_job(&job.job_id).ok();
     let mut current = job.clone();
     current.sync_runtime_state();
-    state.db.save_job(&current)?;
-    emit_job_events_best_effort(state, previous.as_ref(), &current);
+    db.save_job(&current)?;
+    emit_job_events_best_effort(
+        db,
+        data_root,
+        output_root,
+        previous.as_ref(),
+        &current,
+    );
     Ok(())
 }
 
 pub fn persist_runtime_job(state: &AppState, job: &JobRuntimeState) -> Result<()> {
+    persist_runtime_job_with_resources(
+        state.db.as_ref(),
+        &state.config.data_root,
+        &state.config.output_root,
+        job,
+    )
+}
+
+pub fn persist_runtime_job_with_resources(
+    db: &Db,
+    data_root: &Path,
+    output_root: &Path,
+    job: &JobRuntimeState,
+) -> Result<()> {
     let snapshot = job.snapshot();
-    persist_job(state, &snapshot)
+    persist_job_with_resources(db, data_root, output_root, &snapshot)
 }
 
 pub fn record_custom_job_event(
     state: &AppState,
+    job: &JobSnapshot,
+    level: &str,
+    event: &str,
+    message: impl Into<String>,
+    payload: Option<Value>,
+) {
+    record_custom_job_event_with_resources(
+        state.db.as_ref(),
+        &state.config.data_root,
+        &state.config.output_root,
+        job,
+        level,
+        event,
+        message,
+        payload,
+    );
+}
+
+pub fn record_custom_job_event_with_resources(
+    db: &Db,
+    data_root: &Path,
+    output_root: &Path,
     job: &JobSnapshot,
     level: &str,
     event: &str,
@@ -49,7 +107,13 @@ pub fn record_custom_job_event(
         message: message.into(),
         payload,
     };
-    if let Err(err) = append_pending_event(state, job, pending) {
+    if let Err(err) = append_pending_event(
+        db,
+        data_root,
+        output_root,
+        job,
+        pending,
+    ) {
         warn!("failed to append job event for {}: {}", job.job_id, err);
     }
 }
@@ -63,27 +127,53 @@ pub fn record_custom_runtime_event(
     payload: Option<Value>,
 ) {
     let snapshot = job.snapshot();
-    record_custom_job_event(state, &snapshot, level, event, message, payload);
+    record_custom_runtime_event_with_resources(
+        state.db.as_ref(),
+        &state.config.data_root,
+        &state.config.output_root,
+        &snapshot,
+        level,
+        event,
+        message,
+        payload,
+    );
+}
+
+pub fn record_custom_runtime_event_with_resources(
+    db: &Db,
+    data_root: &Path,
+    output_root: &Path,
+    job: &JobSnapshot,
+    level: &str,
+    event: &str,
+    message: impl Into<String>,
+    payload: Option<Value>,
+) {
+    record_custom_job_event_with_resources(db, data_root, output_root, job, level, event, message, payload);
 }
 
 fn emit_job_events_best_effort(
-    state: &AppState,
+    db: &Db,
+    data_root: &Path,
+    output_root: &Path,
     previous: Option<&JobSnapshot>,
     current: &JobSnapshot,
 ) {
     for pending in derive_events(previous, current) {
-        if let Err(err) = append_pending_event(state, current, pending) {
+        if let Err(err) = append_pending_event(db, data_root, output_root, current, pending) {
             warn!("failed to append job event for {}: {}", current.job_id, err);
         }
     }
 }
 
 fn append_pending_event(
-    state: &AppState,
+    db: &Db,
+    data_root: &Path,
+    output_root: &Path,
     job: &JobSnapshot,
     pending: PendingJobEvent,
 ) -> Result<JobEventRecord> {
-    let event = state.db.append_event(
+    let event = db.append_event(
         &job.job_id,
         &pending.level,
         pending.stage.clone(),
@@ -91,18 +181,23 @@ fn append_pending_event(
         &pending.message,
         pending.payload.clone(),
     )?;
-    append_event_jsonl(state, job, &event)?;
+    append_event_jsonl(data_root, output_root, job, &event)?;
     Ok(event)
 }
 
-fn append_event_jsonl(state: &AppState, job: &JobSnapshot, event: &JobEventRecord) -> Result<()> {
+fn append_event_jsonl(
+    data_root: &Path,
+    output_root: &Path,
+    job: &JobSnapshot,
+    event: &JobEventRecord,
+) -> Result<()> {
     let logs_dir = job
         .artifacts
         .as_ref()
         .and_then(|artifacts| artifacts.job_root.as_ref())
-        .and_then(|job_root| resolve_data_path(&state.config.data_root, job_root).ok())
+        .and_then(|job_root| resolve_data_path(data_root, job_root).ok())
         .map(|root| root.join("logs"))
-        .unwrap_or_else(|| state.config.output_root.join(&job.job_id).join("logs"));
+        .unwrap_or_else(|| output_root.join(&job.job_id).join("logs"));
     std::fs::create_dir_all(&logs_dir)?;
     let path = logs_dir.join(EVENTS_FILE_NAME);
     let mut file = OpenOptions::new().create(true).append(true).open(path)?;

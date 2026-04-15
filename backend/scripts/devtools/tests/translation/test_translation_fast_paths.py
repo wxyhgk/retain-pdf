@@ -185,6 +185,48 @@ class TranslationFastPathTests(unittest.TestCase):
             )
         )
 
+    def test_short_copyright_tail_is_treated_as_safe_nontranslatable_metadata(self):
+        module = _load_module(
+            "services.translation.policy.metadata_filter",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "policy" / "metadata_filter.py",
+        )
+        self.assertTrue(
+            module.looks_like_safe_nontranslatable_metadata(
+                {
+                    "block_type": "text",
+                    "source_text": "© UBS 2026. The key symbol and UBS are among the registered and unregistered trademarks of UBS. All rights reserved.",
+                    "should_translate": True,
+                    "metadata": {"structure_role": "body"},
+                    "page_idx": 22,
+                    "lines": [{"spans": [{"content": "copyright"}]}],
+                }
+            )
+        )
+
+    def test_long_disclaimer_with_all_rights_reserved_is_not_treated_as_hard_metadata(self):
+        module = _load_module(
+            "services.translation.policy.metadata_filter",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "policy" / "metadata_filter.py",
+        )
+        self.assertFalse(
+            module.looks_like_hard_nontranslatable_metadata(
+                {
+                    "block_type": "text",
+                    "source_text": (
+                        "UBS specifically prohibits the redistribution of this document in whole or in part without the written permission of UBS "
+                        "and in any event UBS accepts no liability whatsoever for any redistribution of this document or its contents or the "
+                        "actions of third parties in this respect. Images may depict objects or elements that are protected by third party "
+                        "copyright, trademarks and other intellectual property rights. © UBS 2026. The key symbol and UBS are among the "
+                        "registered and unregistered trademarks of UBS. All rights reserved."
+                    ),
+                    "should_translate": True,
+                    "metadata": {"structure_role": "body"},
+                    "page_idx": 18,
+                    "lines": [{"spans": [{"content": "disclaimer"}]}],
+                }
+            )
+        )
+
     def test_section_symbol_body_text_is_not_treated_as_author_metadata(self):
         module = _load_module(
             "services.translation.policy.metadata_filter",
@@ -249,6 +291,419 @@ class TranslationFastPathTests(unittest.TestCase):
                 }
             )
         )
+
+    def test_direct_typst_protocol_shell_degrades_for_cjk_body_text(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        context_module = _load_module(
+            "services.translation.llm.control_context",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "control_context.py",
+        )
+        context = context_module.build_translation_control_context(mode="sci")
+        item = {
+            "item_id": "p036-b015",
+            "page_idx": 35,
+            "block_type": "text",
+            "metadata": {"structure_role": "body"},
+            "math_mode": "direct_typst",
+            "translation_unit_protected_source_text": (
+                "综上，本文系统综述了DFT计算在光催化领域中的广泛应用，并为未来开发高效稳定催化剂提供参考。"
+            ),
+            "protected_source_text": (
+                "综上，本文系统综述了DFT计算在光催化领域中的广泛应用，并为未来开发高效稳定催化剂提供参考。"
+            ),
+        }
+
+        protocol_exc = module.TranslationProtocolError(
+            "p036-b015",
+            translated_text='{"translations":[{"item_id":"p036-b015","translated_text":"综上，本文系统综述了DFT计算在光催化领域中的广泛应用。"}]}',
+        )
+        with mock.patch.object(
+            module,
+            "translate_single_item_plain_text",
+            side_effect=protocol_exc,
+        ), mock.patch.object(
+            module,
+            "translate_single_item_plain_text_unstructured",
+            side_effect=protocol_exc,
+        ):
+            result = module._translate_direct_typst_plain_text_with_retries(
+                item,
+                api_key="",
+                model="deepseek-chat",
+                base_url="https://api.deepseek.com/v1",
+                request_label="test",
+                context=context,
+                diagnostics=None,
+            )
+
+        payload = result["p036-b015"]
+        self.assertEqual(payload["decision"], "translate")
+        self.assertEqual(payload["final_status"], "translated")
+        self.assertEqual(
+            payload["translation_diagnostics"]["degradation_reason"],
+            "protocol_shell_salvaged",
+        )
+
+    def test_continuation_group_protocol_shell_degrades_to_keep_origin(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        context_module = _load_module(
+            "services.translation.llm.control_context",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "control_context.py",
+        )
+        context = context_module.build_translation_control_context(mode="sci")
+        item = {
+            "item_id": "__cg__:cg-028-037",
+            "translation_unit_id": "__cg__:cg-028-037",
+            "page_idx": 27,
+            "block_type": "text",
+            "metadata": {"structure_role": "body"},
+            "math_mode": "placeholder",
+            "continuation_group": "cg-028-037",
+            "translation_unit_protected_source_text": (
+                "Among the conversion reactions containing nitrogen, the oxidation of nitric oxide (NO) "
+                "has received extensive attention in photocatalysis based on theoretical investigations as well."
+            ),
+            "protected_source_text": (
+                "Among the conversion reactions containing nitrogen, the oxidation of nitric oxide (NO) "
+                "has received extensive attention in photocatalysis based on theoretical investigations as well."
+            ),
+        }
+
+        with mock.patch.object(
+            module,
+            "translate_single_item_plain_text",
+            side_effect=module.TranslationProtocolError("__cg__:cg-028-037"),
+        ), mock.patch.object(
+            module,
+            "translate_single_item_plain_text_unstructured",
+            side_effect=module.TranslationProtocolError("__cg__:cg-028-037"),
+        ), mock.patch.object(
+            module,
+            "_sentence_level_fallback",
+            side_effect=module.TranslationProtocolError("__cg__:cg-028-037"),
+        ) as sentence_mock:
+            result = module.translate_single_item_plain_text_with_retries(
+                item,
+                api_key="",
+                model="deepseek-chat",
+                base_url="https://api.deepseek.com/v1",
+                request_label="test",
+                context=context,
+                diagnostics=None,
+            )
+
+        payload = result["__cg__:cg-028-037"]
+        sentence_mock.assert_not_called()
+        self.assertEqual(payload["decision"], "keep_origin")
+        self.assertEqual(payload["final_status"], "kept_origin")
+        self.assertEqual(
+            payload["translation_diagnostics"]["degradation_reason"],
+            "protocol_shell_repeated",
+        )
+
+    def test_direct_typst_continuation_group_protocol_shell_is_salvaged(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        context_module = _load_module(
+            "services.translation.llm.control_context",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "control_context.py",
+        )
+        context = context_module.build_translation_control_context(mode="sci")
+        item = {
+            "item_id": "__cg__:cg-007-003",
+            "translation_unit_id": "__cg__:cg-007-003",
+            "page_idx": 6,
+            "block_type": "text",
+            "metadata": {"structure_role": "body"},
+            "math_mode": "direct_typst",
+            "continuation_group": "cg-007-003",
+            "translation_unit_protected_source_text": (
+                "Anthropic and OpenAI: Conversely, the clear message was that the AI model providers were grabbing more enterprise wallet share."
+            ),
+            "protected_source_text": (
+                "Anthropic and OpenAI: Conversely, the clear message was that the AI model providers were grabbing more enterprise wallet share."
+            ),
+        }
+        protocol_exc = module.TranslationProtocolError(
+            "__cg__:cg-007-003",
+            translated_text=(
+                '{"translations":[{"item_id":"__cg__:cg-007-003","translated_text":"Anthropic与OpenAI：相反，一个明确的信息是，AI模型提供商正在攫取更多的企业钱包份额。"}]}'
+            ),
+        )
+
+        with mock.patch.object(module, "translate_single_item_plain_text", side_effect=protocol_exc), mock.patch.object(
+            module,
+            "translate_single_item_plain_text_unstructured",
+            side_effect=protocol_exc,
+        ):
+            result = module._translate_direct_typst_plain_text_with_retries(
+                item,
+                api_key="",
+                model="deepseek-chat",
+                base_url="https://api.deepseek.com/v1",
+                request_label="test",
+                context=context,
+                diagnostics=None,
+            )
+
+        payload = result["__cg__:cg-007-003"]
+        self.assertEqual(payload["decision"], "translate")
+        self.assertIn("Anthropic与OpenAI", payload["translated_text"])
+        self.assertEqual(payload["translation_diagnostics"]["degradation_reason"], "protocol_shell_salvaged")
+
+    def test_direct_typst_continuation_group_protocol_shell_partial_accepts_body_text(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        context_module = _load_module(
+            "services.translation.llm.control_context",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "control_context.py",
+        )
+        context = context_module.build_translation_control_context(mode="sci")
+        item = {
+            "item_id": "__cg__:cg-008-004",
+            "translation_unit_id": "__cg__:cg-008-004",
+            "page_idx": 7,
+            "block_type": "text",
+            "metadata": {"structure_role": "body"},
+            "math_mode": "direct_typst",
+            "continuation_group": "cg-008-004",
+            "translation_unit_protected_source_text": "COBOL Code Modernization: It was just one data point so we’re highlighting it last.",
+            "protected_source_text": "COBOL Code Modernization: It was just one data point so we’re highlighting it last.",
+        }
+        protocol_exc = module.TranslationProtocolError(
+            "__cg__:cg-008-004",
+            translated_text=(
+                '{"translations":[{"item_id":"wrong-id","translated_text":"COBOL代码现代化：这只是一个数据点，因此我们最后才重点提及。"}]}'
+            ),
+        )
+
+        with mock.patch.object(module, "translate_single_item_plain_text", side_effect=protocol_exc), mock.patch.object(
+            module,
+            "translate_single_item_plain_text_unstructured",
+            side_effect=protocol_exc,
+        ), mock.patch.object(
+            module,
+            "validate_batch_result",
+            side_effect=module.TranslationProtocolError(
+                "__cg__:cg-008-004",
+                translated_text="COBOL代码现代化：这只是一个数据点，因此我们最后才重点提及。",
+            ),
+        ):
+            result = module._translate_direct_typst_plain_text_with_retries(
+                item,
+                api_key="",
+                model="deepseek-chat",
+                base_url="https://api.deepseek.com/v1",
+                request_label="test",
+                context=context,
+                diagnostics=None,
+            )
+
+        payload = result["__cg__:cg-008-004"]
+        self.assertEqual(payload["decision"], "translate")
+        self.assertEqual(payload["translation_diagnostics"]["degradation_reason"], "protocol_shell_partial_accept")
+
+    def test_direct_typst_long_text_is_split_before_remote_translation(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        context_module = _load_module(
+            "services.translation.llm.control_context",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "control_context.py",
+        )
+        context = context_module.build_translation_control_context(mode="sci")
+        long_source = " ".join(f"This is sentence {i} describing a long legal disclaimer." for i in range(1, 180))
+        item = {
+            "item_id": "__cg__:cg-long-001",
+            "translation_unit_id": "__cg__:cg-long-001",
+            "page_idx": 17,
+            "block_type": "text",
+            "metadata": {"structure_role": "body"},
+            "math_mode": "direct_typst",
+            "continuation_group": "cg-long-001",
+            "translation_unit_protected_source_text": long_source,
+            "protected_source_text": long_source,
+        }
+
+        def _fake_plain_text(chunk_item, **_kwargs):
+            text = str(chunk_item.get("translation_unit_protected_source_text", "") or "")
+            return {
+                chunk_item["item_id"]: {
+                    "decision": "translate",
+                    "translated_text": f"已翻译:{text[:24]}",
+                    "final_status": "translated",
+                }
+            }
+
+        with mock.patch.object(module, "translate_single_item_plain_text", side_effect=_fake_plain_text) as plain_mock:
+            result = module._translate_direct_typst_plain_text_with_retries(
+                item,
+                api_key="",
+                model="deepseek-chat",
+                base_url="https://api.deepseek.com/v1",
+                request_label="test",
+                context=context,
+                diagnostics=None,
+            )
+
+        payload = result[item["item_id"]]
+        self.assertEqual(payload["decision"], "translate")
+        self.assertGreater(plain_mock.call_count, 1)
+        self.assertEqual(payload["translation_diagnostics"]["route_path"], ["block_level", "direct_typst", "long_text_split"])
+
+    def test_continuation_group_english_residue_does_not_enter_sentence_level_fallback(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        control_context = _load_module(
+            "services.translation.llm.control_context",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "control_context.py",
+        )
+        item = {
+            "item_id": "__cg__:cg-001-001",
+            "translation_unit_id": "__cg__:cg-001-001",
+            "page_idx": 0,
+            "block_type": "text",
+            "continuation_group": "cg-001-001",
+            "metadata": {"structure_role": "body"},
+            "protected_source_text": "This is the first sentence. This is the second sentence.",
+            "translation_unit_protected_source_text": "This is the first sentence. This is the second sentence.",
+        }
+        context = control_context.build_translation_control_context(mode="sci")
+        context = replace(
+            context,
+            fallback_policy=replace(
+                context.fallback_policy,
+                plain_text_attempts=1,
+                allow_tagged_placeholder_retry=False,
+            ),
+        )
+        english_residue = module.EnglishResidueError(item["item_id"])
+
+        with mock.patch.object(module, "translate_single_item_plain_text", side_effect=english_residue):
+            with mock.patch.object(module, "translate_single_item_plain_text_unstructured", side_effect=english_residue):
+                with mock.patch.object(module, "_sentence_level_fallback", side_effect=AssertionError("should not be called")):
+                    result = module.translate_single_item_plain_text_with_retries(
+                        item,
+                        api_key="",
+                        model="deepseek-chat",
+                        base_url="https://api.deepseek.com/v1",
+                        request_label="test",
+                        context=context,
+                        diagnostics=None,
+                    )
+
+        payload = result[item["item_id"]]
+        self.assertEqual(payload["decision"], "keep_origin")
+        self.assertEqual(payload["translation_diagnostics"]["degradation_reason"], "english_residue_repeated")
+
+    def test_continuation_group_english_residue_with_partial_chinese_is_salvaged(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        control_context = _load_module(
+            "services.translation.llm.control_context",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "control_context.py",
+        )
+        item = {
+            "item_id": "__cg__:cg-001-002",
+            "translation_unit_id": "__cg__:cg-001-002",
+            "page_idx": 0,
+            "block_type": "text",
+            "continuation_group": "cg-001-002",
+            "metadata": {"structure_role": "body"},
+            "protected_source_text": "This is the first sentence. This is the second sentence with reaction details.",
+            "translation_unit_protected_source_text": "This is the first sentence. This is the second sentence with reaction details.",
+        }
+        context = control_context.build_translation_control_context(mode="sci")
+        context = replace(
+            context,
+            fallback_policy=replace(
+                context.fallback_policy,
+                plain_text_attempts=1,
+                allow_tagged_placeholder_retry=False,
+            ),
+        )
+        english_residue = module.EnglishResidueError(
+            item["item_id"],
+            source_text=item["translation_unit_protected_source_text"],
+            translated_text="这是第一句话。This is the second sentence with reaction details.",
+        )
+
+        with mock.patch.object(module, "translate_single_item_plain_text", side_effect=english_residue):
+            with mock.patch.object(module, "translate_single_item_plain_text_unstructured", side_effect=english_residue):
+                with mock.patch.object(module, "_sentence_level_fallback", side_effect=AssertionError("should not be called")):
+                    result = module.translate_single_item_plain_text_with_retries(
+                        item,
+                        api_key="",
+                        model="deepseek-chat",
+                        base_url="https://api.deepseek.com/v1",
+                        request_label="test",
+                        context=context,
+                        diagnostics=None,
+                    )
+
+        payload = result[item["item_id"]]
+        self.assertEqual(payload["decision"], "translate")
+        self.assertIn("这是第一句话", payload["translated_text"])
+        self.assertEqual(payload["translation_diagnostics"]["degradation_reason"], "english_residue_partial_accept")
+        self.assertEqual(payload["translation_diagnostics"]["route_path"], ["block_level", "english_residue_salvage"])
+
+    def test_protocol_shell_unwrap_salvages_continuation_group_without_sentence_fallback(self):
+        module = _load_module(
+            "services.translation.llm.fallbacks",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
+        )
+        control_context = _load_module(
+            "services.translation.llm.control_context",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "control_context.py",
+        )
+        item = {
+            "item_id": "__cg__:cg-005-007",
+            "translation_unit_id": "__cg__:cg-005-007",
+            "page_idx": 4,
+            "block_type": "text",
+            "continuation_group": "cg-005-007",
+            "metadata": {"structure_role": "body"},
+            "protected_source_text": "Orbital interactions provide only one of several factors. The transition state is significantly stabilized by electrostatic interactions.",
+            "translation_unit_protected_source_text": "Orbital interactions provide only one of several factors. The transition state is significantly stabilized by electrostatic interactions.",
+        }
+        context = control_context.build_translation_control_context(mode="sci")
+        shell_exc = module.TranslationProtocolError(
+            item["item_id"],
+            source_text=item["translation_unit_protected_source_text"],
+            translated_text='{"translations":[{"item_id":"__cg__:cg-005-007","translated_text":"轨道相互作用仅是若干因素之一。该反应的过渡态因静电相互作用而显著稳定。"}]}',
+        )
+
+        with mock.patch.object(module, "translate_single_item_plain_text", side_effect=shell_exc):
+            with mock.patch.object(module, "_sentence_level_fallback", side_effect=AssertionError("should not be called")):
+                result = module.translate_single_item_plain_text_with_retries(
+                    item,
+                    api_key="",
+                    model="deepseek-chat",
+                    base_url="https://api.deepseek.com/v1",
+                    request_label="test",
+                    context=context,
+                    diagnostics=None,
+                )
+
+        payload = result[item["item_id"]]
+        self.assertEqual(payload["decision"], "translate")
+        self.assertIn("轨道相互作用仅是若干因素之一", payload["translated_text"])
+        self.assertEqual(payload["translation_diagnostics"]["route_path"], ["block_level", "protocol_shell_unwrap"])
 
     def test_citation_rich_body_text_still_forces_translation(self):
         module = _load_module(
@@ -350,6 +805,7 @@ class TranslationFastPathTests(unittest.TestCase):
                 translated,
             )
         )
+        self.assertTrue(module.looks_like_mixed_english_residue_output(item, translated))
         self.assertTrue(module.looks_like_predominantly_english_output(item, translated))
 
     def test_english_residue_detector_ignores_author_name_list(self):
@@ -967,7 +1423,7 @@ class TranslationFastPathTests(unittest.TestCase):
 
         self.assertEqual(result["p001-b002"]["decision"], "keep_origin")
 
-    def test_continuation_group_with_placeholders_prefers_tagged_first_path(self):
+    def test_continuation_group_with_placeholders_uses_plain_path_first(self):
         module = _load_module(
             "services.translation.llm.fallbacks",
             REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "fallbacks.py",
@@ -990,15 +1446,19 @@ class TranslationFastPathTests(unittest.TestCase):
         }
         context = control_context.build_translation_control_context(mode="sci")
 
-        with mock.patch.object(module, "translate_single_item_stable_placeholder_text") as tagged_mock:
-            tagged_mock.return_value = {
-                item["item_id"]: {
-                    "decision": "translate",
-                    "translated_text": "该连续段落已经稳定保留占位符 <f1-c1b/> 与 <f2-a77/>。",
-                    "final_status": "translated",
+        with mock.patch.object(
+            module,
+            "translate_single_item_stable_placeholder_text",
+            side_effect=AssertionError("tagged-first should not run"),
+        ) as tagged_mock:
+            with mock.patch.object(module, "translate_single_item_plain_text") as plain_mock:
+                plain_mock.return_value = {
+                    item["item_id"]: {
+                        "decision": "translate",
+                        "translated_text": "该连续段落提到 <f1-c1b/> 与 <f2-a77/>。",
+                        "final_status": "translated",
+                    }
                 }
-            }
-            with mock.patch.object(module, "translate_single_item_plain_text", side_effect=AssertionError("plain path should not run first")):
                 result = module.translate_single_item_plain_text_with_retries(
                     item,
                     api_key="",
@@ -1008,9 +1468,11 @@ class TranslationFastPathTests(unittest.TestCase):
                     context=context,
                     diagnostics=None,
                 )
-        tagged_mock.assert_called_once()
+        tagged_mock.assert_not_called()
+        plain_mock.assert_called_once()
         payload = result[item["item_id"]]
-        self.assertEqual(payload["translation_diagnostics"]["route_path"], ["block_level", "tagged_placeholder_first"])
+        self.assertEqual(payload["translation_diagnostics"]["route_path"], ["block_level"])
+        self.assertEqual(payload["translation_diagnostics"]["output_mode_path"], ["plain_text"])
 
     def test_domain_context_parser_salvages_fields_from_malformed_json(self):
         module = _load_module(
@@ -1112,6 +1574,53 @@ class TranslationFastPathTests(unittest.TestCase):
             "In Forty-first International Conference on Machine Learning, ICML, 2024."
         )
         self.assertFalse(module.looks_like_untranslated_english_output(item, translated))
+
+    def test_formula_dense_body_with_partial_chinese_is_not_treated_as_english_residue(self):
+        module = _load_module(
+            "services.translation.llm.placeholder_guard",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "placeholder_guard.py",
+        )
+        item = {
+            "item_id": "p003-b011",
+            "block_type": "text",
+            "metadata": {"structure_role": "body"},
+            "translation_unit_protected_source_text": (
+                "For the diffusion process <f1-a11/>, the transition matrix <f2-b22/> governs token updates, "
+                "while the marginal probability <f3-c33/> controls the corruption level and the posterior estimator "
+                "<f4-d44/> is combined with <f5-e55/> to stabilize training."
+            ),
+            "formula_map": [{"placeholder": "<f1-a11/>"}],
+            "translation_unit_formula_map": [{"placeholder": "<f1-a11/>"}],
+        }
+        translated = (
+            "对于扩散过程 <f1-a11/>，transition matrix <f2-b22/> 控制 token 更新，"
+            "而 marginal probability <f3-c33/> 与 posterior estimator <f4-d44/> 共同稳定训练。"
+        )
+        self.assertFalse(module.looks_like_predominantly_english_output(item, translated))
+        self.assertFalse(module.looks_like_mixed_english_residue_output(item, translated))
+
+    def test_term_preserving_formula_body_is_not_treated_as_english_residue(self):
+        module = _load_module(
+            "services.translation.llm.placeholder_guard",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "llm" / "placeholder_guard.py",
+        )
+        item = {
+            "item_id": "p007-b014",
+            "block_type": "text",
+            "metadata": {"structure_role": "body"},
+            "translation_unit_protected_source_text": (
+                "The barrier from B3LYP/6-311G** is reported as <f1-a11/>, while GC-FID and MP2/6-311G "
+                "measurements provide <f2-b22/> for comparison."
+            ),
+            "formula_map": [{"placeholder": "<f1-a11/>"}, {"placeholder": "<f2-b22/>"}],
+            "translation_unit_formula_map": [{"placeholder": "<f1-a11/>"}, {"placeholder": "<f2-b22/>"}],
+        }
+        translated = (
+            "B3LYP/6-311G** 计算给出的势垒为 <f1-a11/>，而 GC-FID 与 MP2/6-311G 测量结果提供了 "
+            "<f2-b22/> 用于比较。"
+        )
+        self.assertFalse(module.looks_like_predominantly_english_output(item, translated))
+        self.assertFalse(module.looks_like_mixed_english_residue_output(item, translated))
 
     def test_translation_and_formula_outputs_use_strict_json_schema_format(self):
         module = _load_module(
@@ -1298,6 +1807,35 @@ class TranslationFastPathTests(unittest.TestCase):
         auto_join, review = module._split_high_confidence_continuation_pairs(flat_payload, pairs)
         self.assertEqual(auto_join, [("a", "b")])
         self.assertEqual(review, [])
+
+    def test_continuation_review_keeps_mid_confidence_pairs_for_review(self):
+        _install_minimal_continuation_stub()
+        module = _load_module(
+            "services.translation.orchestration.document_orchestrator",
+            REPO_SCRIPTS_ROOT / "services" / "translation" / "orchestration" / "document_orchestrator.py",
+        )
+        flat_payload = [
+            {
+                "item_id": "a",
+                "page_idx": 0,
+                "block_type": "text",
+                "protected_source_text": "This paragraph ends with a complete noun phrase",
+                "bbox": [10, 10, 220, 30],
+            },
+            {
+                "item_id": "b",
+                "page_idx": 1,
+                "block_type": "text",
+                "protected_source_text": "Results are summarized below.",
+                "bbox": [10, 10, 240, 30],
+            },
+        ]
+        pairs = [{"prev_item_id": "a", "next_item_id": "b"}]
+
+        auto_join, review = module._split_high_confidence_continuation_pairs(flat_payload, pairs)
+
+        self.assertEqual(auto_join, [])
+        self.assertEqual(review, pairs)
 
     def test_single_item_transport_failure_degrades_to_keep_origin(self):
         module = _load_module(

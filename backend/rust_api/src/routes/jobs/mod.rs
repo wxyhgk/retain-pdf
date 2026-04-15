@@ -2,12 +2,8 @@ use crate::error::AppError;
 use crate::models::{
     ApiResponse, ArtifactLinksView, JobDetailView, JobStatusKind, JobSubmissionView,
 };
-use crate::routes::job_helpers::{
-    build_artifact_links_view, build_job_detail_view, build_submission_view, request_base_url,
-    stream_file,
-};
-use crate::services::jobs::readiness;
-use crate::storage_paths::{resolve_markdown_path, resolve_output_pdf};
+use crate::routes::job_helpers::{build_submission_view, request_base_url, stream_file};
+use crate::services::jobs::{build_job_artifact_links_view, build_job_detail_view};
 use crate::AppState;
 use axum::http::HeaderMap;
 use axum::response::Response;
@@ -36,20 +32,11 @@ fn build_job_detail_response(
     headers: &HeaderMap,
     job: &crate::models::JobSnapshot,
 ) -> Result<Json<ApiResponse<JobDetailView>>, AppError> {
-    let (pdf_ready, markdown_ready, bundle_ready) = readiness(
-        job,
-        &state.config.data_root,
-        resolve_output_pdf,
-        resolve_markdown_path,
-    );
     let base_url = request_base_url(headers, state);
     Ok(Json(ApiResponse::ok(build_job_detail_view(
+        &state.config.data_root,
         job,
         &base_url,
-        &state.config.data_root,
-        pdf_ready,
-        markdown_ready,
-        bundle_ready,
     ))))
 }
 
@@ -58,20 +45,11 @@ fn build_job_artifacts_response(
     headers: &HeaderMap,
     job: &crate::models::JobSnapshot,
 ) -> Result<Json<ApiResponse<ArtifactLinksView>>, AppError> {
-    let (pdf_ready, markdown_ready, bundle_ready) = readiness(
-        job,
-        &state.config.data_root,
-        resolve_output_pdf,
-        resolve_markdown_path,
-    );
     let base_url = request_base_url(headers, state);
-    Ok(Json(ApiResponse::ok(build_artifact_links_view(
+    Ok(Json(ApiResponse::ok(build_job_artifact_links_view(
+        &state.config.data_root,
         job,
         &base_url,
-        &state.config.data_root,
-        pdf_ready,
-        markdown_ready,
-        bundle_ready,
     ))))
 }
 

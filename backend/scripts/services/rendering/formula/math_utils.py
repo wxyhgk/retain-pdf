@@ -1,7 +1,6 @@
 import re
 
 from services.rendering.formula.normalizer import normalize_formula_for_latex_math
-from services.rendering.formula.typst_formula_renderer import convert_latexish_to_typst
 from services.translation.payload.formula_protection import re_protect_restored_formulas
 
 
@@ -111,9 +110,27 @@ def _normalize_text_chunk(text: str) -> str:
 
 def _surround_inline_math_with_spaces(markdown: str) -> str:
     text = markdown or ""
-    text = INLINE_MATH_BLOCK_RE.sub(lambda m: f" {m.group(0)} ", text)
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
+    if not text:
+        return ""
+    chunks: list[str] = []
+    last_end = 0
+    left_no_space = set("([{\"'“‘")
+    right_no_space = set(".,;:!?)]}，。！？；：、）】」』")
+    for match in INLINE_MATH_BLOCK_RE.finditer(text):
+        chunks.append(text[last_end:match.start()])
+        expr = match.group(0)
+        prev_char = text[match.start() - 1] if match.start() > 0 else ""
+        next_char = text[match.end()] if match.end() < len(text) else ""
+        prefix = ""
+        suffix = ""
+        if prev_char and not prev_char.isspace() and prev_char not in left_no_space:
+            prefix = " "
+        if next_char and not next_char.isspace() and next_char not in right_no_space:
+            suffix = " "
+        chunks.append(f"{prefix}{expr}{suffix}")
+        last_end = match.end()
+    chunks.append(text[last_end:])
+    return re.sub(r"[ \t]{2,}", " ", "".join(chunks)).strip()
 
 
 def _normalize_math_candidate(expr: str) -> str:
@@ -149,17 +166,16 @@ def _apply_to_non_math_segments(text: str, replacer) -> str:
     return "".join(chunks)
 
 
-def _normalize_existing_inline_math_for_typst(text: str) -> str:
+def _sanitize_existing_inline_math_for_markdown(text: str) -> str:
     def _replace(match: re.Match[str]) -> str:
         expr = match.group(0)[1:-1].strip()
         if not expr:
             return match.group(0)
         if looks_like_citation(expr):
             return normalize_plain_citation(expr)
-        try:
-            return f"${convert_latexish_to_typst(expr)}$"
-        except Exception:
-            return f"${normalize_formula_for_latex_math(expr)}$"
+        expr = re.sub(r"\\angle(?=[A-Za-z])", r"\\angle ", expr)
+        expr = re.sub(r"\\mathscr\b", r"\\mathcal", expr)
+        return f"${expr}$"
 
     return INLINE_MATH_BLOCK_RE.sub(_replace, text or "")
 
@@ -205,7 +221,7 @@ def build_markdown_from_direct_text(
             lambda plain: _escape_markdown_literal_asterisks(_normalize_plain_segment_for_math(plain)),
         )
     if normalize_existing_inline_math:
-        markdown = _normalize_existing_inline_math_for_typst(markdown)
+        markdown = _sanitize_existing_inline_math_for_markdown(markdown)
     markdown = _surround_inline_math_with_spaces(markdown)
     markdown = re.sub(
         r"\\textcircled\s*\{\s*\\scriptsize\s*\{\s*\\parallel\s*\}\s*\}",
@@ -228,7 +244,9 @@ def build_markdown_paragraph(item: dict) -> str:
 
 
 def build_direct_typst_passthrough_text(text: str) -> str:
-    return _apply_to_non_math_segments(str(text or "").strip(), _escape_markdown_literal_asterisks)
+    markdown = _apply_to_non_math_segments(str(text or "").strip(), _escape_markdown_literal_asterisks)
+    markdown = _sanitize_existing_inline_math_for_markdown(markdown)
+    return _surround_inline_math_with_spaces(markdown)
 
 
 def build_markdown_from_parts(

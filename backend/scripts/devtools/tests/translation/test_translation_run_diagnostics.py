@@ -80,6 +80,21 @@ class _RetryingSession:
         return _FakeResponse({"choices": [{"message": {"content": "ok"}}]})
 
 
+class _DnsRetryingSession:
+    def __init__(self):
+        self.calls = 0
+
+    def post(self, *args, **kwargs):
+        self.calls += 1
+        if self.calls <= 2:
+            raise requests.ConnectionError(
+                "HTTPSConnectionPool(host='api.deepseek.com', port=443): Max retries exceeded with url: /v1/chat/completions "
+                "(Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x0>: Failed to resolve "
+                "'api.deepseek.com' ([Errno -3] Temporary failure in name resolution)\"))"
+            )
+        return _FakeResponse({"choices": [{"message": {"content": "ok"}}]})
+
+
 class _SchemaFallbackSession:
     def __init__(self):
         self.calls = []
@@ -226,6 +241,25 @@ class TranslationRunDiagnosticsTests(unittest.TestCase):
         self.assertEqual(summary["request_counts"]["succeeded_attempts"], 1)
         self.assertEqual(summary["retry_summary"]["max_http_attempt"], 2)
         self.assertLess(summary["adaptive_concurrency"]["current_limit"], 16)
+
+    def test_request_chat_content_retries_dns_failures_even_when_max_attempts_is_one(self):
+        deepseek_client = load_deepseek_client()
+        session = _DnsRetryingSession()
+        with patch.object(deepseek_client, "get_session", return_value=session):
+            with patch.object(deepseek_client, "_drop_session", return_value=None):
+                with patch.object(deepseek_client.time, "sleep", return_value=None):
+                    with patch.object(deepseek_client, "_prewarm_dns", return_value=None):
+                        content = deepseek_client.request_chat_content(
+                            [{"role": "user", "content": "hello"}],
+                            api_key="token",
+                            model="deepseek-chat",
+                            base_url="https://api.deepseek.com/v1",
+                            timeout=120,
+                            request_label="dns-retry-test",
+                            max_attempts=1,
+                        )
+        self.assertEqual(content, "ok")
+        self.assertEqual(session.calls, 3)
 
     def test_request_chat_content_falls_back_from_json_schema_on_400(self):
         deepseek_client = load_deepseek_client()

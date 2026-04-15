@@ -1,9 +1,15 @@
+use std::collections::HashSet;
+use std::sync::Arc;
+
 use anyhow::{anyhow, Result};
-use tokio::sync::{OwnedSemaphorePermit, TryAcquireError};
+use tokio::sync::{OwnedSemaphorePermit, RwLock, Semaphore, TryAcquireError};
 use tokio::time::{sleep, Duration};
 use tracing::error;
 
-use crate::job_events::{persist_job, persist_runtime_job};
+use crate::db::Db;
+use crate::job_events::{
+    persist_job_with_resources, persist_runtime_job_with_resources,
+};
 use crate::models::{now_iso, JobStatusKind};
 use crate::AppState;
 
@@ -19,7 +25,7 @@ pub fn spawn_job(state: AppState, job_id: String) {
             error!("job {} failed to run: {}", job_id, err);
             if let Ok(mut job) = state.db.get_job(&job_id) {
                 if matches!(job.status, JobStatusKind::Canceled) {
-                    clear_cancel_request(&state, &job_id).await;
+                    clear_cancel_request_with_registry(state.canceled_jobs.as_ref(), &job_id).await;
                     return;
                 }
                 let detail = format_error_chain(&err);
@@ -32,17 +38,24 @@ pub fn spawn_job(state: AppState, job_id: String) {
                 job.finished_at = Some(now_iso());
                 job.sync_runtime_state();
                 job.replace_failure_info(crate::job_failure::classify_job_failure(&job));
-                let _ = persist_job(&state, &job);
+                let _ = persist_job_with_resources(
+                    state.db.as_ref(),
+                    &state.config.data_root,
+                    &state.config.output_root,
+                    &job,
+                );
             }
-            clear_cancel_request(&state, &job_id).await;
+            clear_cancel_request_with_registry(state.canceled_jobs.as_ref(), &job_id).await;
         }
     });
 }
 
 async fn run_job(state: AppState, job_id: String) -> Result<()> {
     let mut job = state.db.get_job(&job_id)?;
-    if is_cancel_requested(&state, &job_id).await || matches!(job.status, JobStatusKind::Canceled) {
-        clear_cancel_request(&state, &job_id).await;
+    if is_cancel_requested_with_registry(state.canceled_jobs.as_ref(), &job_id).await
+        || matches!(job.status, JobStatusKind::Canceled)
+    {
+        clear_cancel_request_with_registry(state.canceled_jobs.as_ref(), &job_id).await;
         return Ok(());
     }
     job.status = JobStatusKind::Queued;
@@ -51,16 +64,30 @@ async fn run_job(state: AppState, job_id: String) -> Result<()> {
     job.updated_at = now_iso();
     job.sync_runtime_state();
     job.replace_failure_info(None);
-    persist_job(&state, &job)?;
+    persist_job_with_resources(
+        state.db.as_ref(),
+        &state.config.data_root,
+        &state.config.output_root,
+        &job,
+    )?;
 
-    let _permit = match wait_for_execution_slot(&state, &job_id).await? {
+    let _permit = match wait_for_execution_slot(
+        state.db.as_ref(),
+        state.canceled_jobs.as_ref(),
+        &state.job_slots,
+        &job_id,
+    )
+    .await?
+    {
         Some(permit) => permit,
         None => return Ok(()),
     };
 
     let job = state.db.get_job(&job_id)?;
-    if is_cancel_requested(&state, &job_id).await || matches!(job.status, JobStatusKind::Canceled) {
-        clear_cancel_request(&state, &job_id).await;
+    if is_cancel_requested_with_registry(state.canceled_jobs.as_ref(), &job_id).await
+        || matches!(job.status, JobStatusKind::Canceled)
+    {
+        clear_cancel_request_with_registry(state.canceled_jobs.as_ref(), &job_id).await;
         return Ok(());
     }
     let finished_job = match job.workflow {
@@ -77,23 +104,43 @@ async fn run_job(state: AppState, job_id: String) -> Result<()> {
             run_render_job_from_artifacts(state.clone(), job.into_runtime()).await?
         }
     };
-    persist_runtime_job(&state, &finished_job)?;
-    clear_cancel_request(&state, &job_id).await;
+    persist_runtime_job_with_resources(
+        state.db.as_ref(),
+        &state.config.data_root,
+        &state.config.output_root,
+        &finished_job,
+    )?;
+    clear_cancel_request_with_registry(state.canceled_jobs.as_ref(), &job_id).await;
     Ok(())
 }
 
 pub async fn request_cancel(state: &AppState, job_id: &str) {
-    let mut canceled_jobs = state.canceled_jobs.write().await;
+    request_cancel_with_registry(state.canceled_jobs.as_ref(), job_id).await;
+}
+
+async fn request_cancel_with_registry(canceled_jobs: &RwLock<HashSet<String>>, job_id: &str) {
+    let mut canceled_jobs = canceled_jobs.write().await;
     canceled_jobs.insert(job_id.to_string());
 }
 
 pub async fn clear_cancel_request(state: &AppState, job_id: &str) {
-    let mut canceled_jobs = state.canceled_jobs.write().await;
+    clear_cancel_request_with_registry(state.canceled_jobs.as_ref(), job_id).await;
+}
+
+async fn clear_cancel_request_with_registry(canceled_jobs: &RwLock<HashSet<String>>, job_id: &str) {
+    let mut canceled_jobs = canceled_jobs.write().await;
     canceled_jobs.remove(job_id);
 }
 
 pub async fn is_cancel_requested(state: &AppState, job_id: &str) -> bool {
-    let canceled_jobs = state.canceled_jobs.read().await;
+    is_cancel_requested_with_registry(state.canceled_jobs.as_ref(), job_id).await
+}
+
+async fn is_cancel_requested_with_registry(
+    canceled_jobs: &RwLock<HashSet<String>>,
+    job_id: &str,
+) -> bool {
+    let canceled_jobs = canceled_jobs.read().await;
     canceled_jobs.contains(job_id)
 }
 
@@ -102,7 +149,7 @@ pub(super) async fn is_cancel_requested_any(
     job_id: &str,
     extra_cancel_job_ids: &[String],
 ) -> bool {
-    if is_cancel_requested(state, job_id).await {
+    if is_cancel_requested_with_registry(state.canceled_jobs.as_ref(), job_id).await {
         return true;
     }
     let canceled_jobs = state.canceled_jobs.read().await;
@@ -112,20 +159,22 @@ pub(super) async fn is_cancel_requested_any(
 }
 
 pub(super) async fn wait_for_execution_slot(
-    state: &AppState,
+    db: &Db,
+    canceled_jobs: &RwLock<HashSet<String>>,
+    job_slots: &Arc<Semaphore>,
     job_id: &str,
 ) -> Result<Option<OwnedSemaphorePermit>> {
     loop {
-        if is_cancel_requested(state, job_id).await {
-            clear_cancel_request(state, job_id).await;
+        if is_cancel_requested_with_registry(canceled_jobs, job_id).await {
+            clear_cancel_request_with_registry(canceled_jobs, job_id).await;
             return Ok(None);
         }
-        let current_job = state.db.get_job(job_id)?;
+        let current_job = db.get_job(job_id)?;
         if matches!(current_job.status, JobStatusKind::Canceled) {
-            clear_cancel_request(state, job_id).await;
+            clear_cancel_request_with_registry(canceled_jobs, job_id).await;
             return Ok(None);
         }
-        match state.job_slots.clone().try_acquire_owned() {
+        match job_slots.clone().try_acquire_owned() {
             Ok(permit) => return Ok(Some(permit)),
             Err(TryAcquireError::NoPermits) => {
                 sleep(Duration::from_millis(QUEUE_POLL_INTERVAL_MS)).await

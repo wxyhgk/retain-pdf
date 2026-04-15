@@ -1,13 +1,33 @@
-use std::path::PathBuf;
-
 use axum::extract::{Multipart, State};
 use axum::Json;
-use lopdf::Document;
-use tokio::io::AsyncWriteExt;
 
+use crate::config::AppConfig;
+use crate::db::Db;
 use crate::error::AppError;
-use crate::models::{build_job_id, now_iso, upload_to_response, ApiResponse, UploadRecord};
+use crate::models::{upload_to_response, ApiResponse, UploadRecord};
+use crate::services::jobs::{store_pdf_upload, UploadedPdfInput};
 use crate::AppState;
+
+async fn store_upload_with_resources(
+    db: &Db,
+    config: &AppConfig,
+    filename: String,
+    bytes: Vec<u8>,
+    developer_mode: bool,
+) -> Result<UploadRecord, AppError> {
+    store_pdf_upload(
+        db,
+        &config.uploads_dir,
+        config.upload_max_bytes,
+        config.upload_max_pages,
+        UploadedPdfInput {
+            filename,
+            bytes,
+            developer_mode,
+        },
+    )
+    .await
+}
 
 pub async fn upload_pdf(
     State(state): State<AppState>,
@@ -43,8 +63,9 @@ pub async fn upload_pdf(
     let filename =
         file_name.ok_or_else(|| AppError::bad_request("missing multipart field: file"))?;
     let bytes = file_bytes.ok_or_else(|| AppError::bad_request("empty upload"))?;
-    let upload = store_upload(&state, filename, bytes, developer_mode).await?;
-    state.db.save_upload(&upload)?;
+    let upload =
+        store_upload_with_resources(state.db.as_ref(), state.config.as_ref(), filename, bytes, developer_mode)
+            .await?;
     Ok(Json(ApiResponse::ok(upload_to_response(&upload))))
 }
 
@@ -54,42 +75,12 @@ pub async fn store_upload(
     bytes: Vec<u8>,
     developer_mode: bool,
 ) -> Result<UploadRecord, AppError> {
-    if !filename.to_lowercase().ends_with(".pdf") {
-        return Err(AppError::bad_request("uploaded file must be a PDF"));
-    }
-    let byte_count = bytes.len() as u64;
-    let upload_id = build_job_id();
-    let upload_dir = state.config.uploads_dir.join(&upload_id);
-    tokio::fs::create_dir_all(&upload_dir).await?;
-    let upload_path: PathBuf = upload_dir.join(&filename);
-    let mut f = tokio::fs::File::create(&upload_path).await?;
-    f.write_all(&bytes).await?;
-    f.flush().await?;
-
-    let page_count = Document::load(&upload_path)
-        .map(|doc| doc.get_pages().len() as u32)
-        .map_err(|e| AppError::bad_request(format!("invalid pdf: {e}")))?;
-
-    if state.config.upload_max_bytes > 0 && byte_count > state.config.upload_max_bytes {
-        return Err(AppError::bad_request(format!(
-            "当前服务限制：PDF 文件大小必须不超过 {:.2}MB",
-            state.config.upload_max_bytes as f64 / 1024.0 / 1024.0
-        )));
-    }
-    if state.config.upload_max_pages > 0 && page_count > state.config.upload_max_pages {
-        return Err(AppError::bad_request(format!(
-            "当前服务限制：PDF 页数必须不超过 {} 页",
-            state.config.upload_max_pages
-        )));
-    }
-
-    Ok(UploadRecord {
-        upload_id: upload_id.clone(),
+    store_upload_with_resources(
+        state.db.as_ref(),
+        state.config.as_ref(),
         filename,
-        stored_path: upload_path.to_string_lossy().to_string(),
-        bytes: byte_count,
-        page_count,
-        uploaded_at: now_iso(),
+        bytes,
         developer_mode,
-    })
+    )
+    .await
 }

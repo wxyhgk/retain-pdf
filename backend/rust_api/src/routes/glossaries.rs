@@ -16,14 +16,14 @@ pub async fn create_glossary_route(
     State(state): State<AppState>,
     Json(payload): Json<GlossaryUpsertInput>,
 ) -> Result<Json<ApiResponse<GlossaryDetailView>>, AppError> {
-    let record = create_glossary(&state, &payload)?;
+    let record = create_glossary(state.db.as_ref(), &payload)?;
     Ok(Json(ApiResponse::ok(glossary_to_detail(&record))))
 }
 
 pub async fn list_glossaries_route(
     State(state): State<AppState>,
 ) -> Result<Json<ApiResponse<GlossaryListView>>, AppError> {
-    let items = list_glossaries(&state)?
+    let items = list_glossaries(state.db.as_ref())?
         .iter()
         .map(glossary_to_summary)
         .collect();
@@ -34,7 +34,7 @@ pub async fn get_glossary_route(
     State(state): State<AppState>,
     AxumPath(glossary_id): AxumPath<String>,
 ) -> Result<Json<ApiResponse<GlossaryDetailView>>, AppError> {
-    let record = load_glossary_or_404(&state, &glossary_id)?;
+    let record = load_glossary_or_404(state.db.as_ref(), &glossary_id)?;
     Ok(Json(ApiResponse::ok(glossary_to_detail(&record))))
 }
 
@@ -43,7 +43,7 @@ pub async fn update_glossary_route(
     AxumPath(glossary_id): AxumPath<String>,
     Json(payload): Json<GlossaryUpsertInput>,
 ) -> Result<Json<ApiResponse<GlossaryDetailView>>, AppError> {
-    let record = update_glossary(&state, &glossary_id, &payload)?;
+    let record = update_glossary(state.db.as_ref(), &glossary_id, &payload)?;
     Ok(Json(ApiResponse::ok(glossary_to_detail(&record))))
 }
 
@@ -51,8 +51,8 @@ pub async fn delete_glossary_route(
     State(state): State<AppState>,
     AxumPath(glossary_id): AxumPath<String>,
 ) -> Result<Json<ApiResponse<GlossaryDetailView>>, AppError> {
-    let record = load_glossary_or_404(&state, &glossary_id)?;
-    delete_glossary(&state, &glossary_id)?;
+    let record = load_glossary_or_404(state.db.as_ref(), &glossary_id)?;
+    delete_glossary(state.db.as_ref(), &glossary_id)?;
     Ok(Json(ApiResponse::ok(glossary_to_detail(&record))))
 }
 

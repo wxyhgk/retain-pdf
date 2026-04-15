@@ -48,7 +48,7 @@ def _formula_segment_translation_route(item: dict) -> str:
 
 
 def _should_use_formula_segment_translation(item: dict) -> bool:
-    return _formula_segment_translation_route(item) in {"single", "small_inline"}
+    return _formula_segment_translation_route(item) == "single"
 
 
 def _translate_single_item_formula_segment_text_with_retries(

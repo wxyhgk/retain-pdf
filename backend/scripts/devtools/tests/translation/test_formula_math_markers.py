@@ -9,6 +9,7 @@ from services.rendering.formula.math_utils import build_markdown_from_direct_tex
 from services.rendering.formula.math_utils import build_direct_typst_passthrough_text
 from services.rendering.formula.math_utils import promote_inline_math_like_text
 from services.rendering.formula.normalizer import normalize_formula_for_latex_math
+from services.rendering.formula.typst_formula_renderer import convert_latexish_to_typst
 from services.rendering.formula.typst_formula_renderer import compile_formula_png
 from services.rendering.formula.typst_formula_renderer import convert_latexish_to_typst
 from services.translation.payload.translations import export_translation_template
@@ -92,24 +93,23 @@ def test_typst_markdown_direct_typst_conservative_mode_keeps_raw_latex_text() ->
     assert "Co(IV)" in markdown
 
 
-def test_typst_markdown_direct_typst_converts_existing_inline_math_to_typst() -> None:
+def test_typst_markdown_direct_typst_keeps_existing_inline_math_latex() -> None:
     markdown = build_markdown_from_direct_text(
         r"观察到 $\mathrm{Ph(i-PrO)SiH_2}$ (6) 的消耗速率快于其他硅烷。",
         aggressive_math_promotion=False,
         normalize_existing_inline_math=True,
     )
-    assert r"$Ph(i-PrO)SiH_(2)$" in markdown
-    assert r"\mathrm" not in markdown
+    assert r"$\mathrm{Ph(i-PrO)SiH_2}$" in markdown
 
 
-def test_typst_markdown_direct_typst_converts_existing_left_right_inline_math() -> None:
+def test_typst_markdown_direct_typst_keeps_existing_left_right_inline_math_latex() -> None:
     markdown = build_markdown_from_direct_text(
         r"形成了 $\left(\mathrm{Ph}\left(i-\mathrm{PrO}\right)_2\mathrm{Si}\right)_2\mathrm{O}$ 物种。",
         aggressive_math_promotion=False,
         normalize_existing_inline_math=True,
     )
-    assert r"\left" not in markdown
-    assert r"\right" not in markdown
+    assert r"\left" in markdown
+    assert r"\right" in markdown
     assert "$" in markdown
 
 
@@ -139,7 +139,28 @@ def test_build_markdown_from_parts_direct_typst_passthrough() -> None:
 def test_typst_markdown_keeps_spaces_around_inline_math() -> None:
     formula_map = [{"placeholder": "<f1-17a/>", "formula_text": r"\pi"}]
     markdown = build_markdown_from_parts("你好<f1-17a/>，下一步", formula_map)
-    assert markdown == r"你好 $\pi$ ，下一步"
+    assert markdown == r"你好 $\pi$，下一步"
+
+
+def test_typst_markdown_adds_spaces_between_cjk_text_and_inline_math() -> None:
+    markdown = build_direct_typst_passthrough_text(r"积分$\int f(x) dx$值")
+    assert markdown == r"积分 $\int f(x) dx$ 值"
+
+
+def test_direct_typst_passthrough_keeps_existing_inline_math_latex_shape() -> None:
+    markdown = build_direct_typst_passthrough_text(
+        r"$ \mathbf{f}_{\alpha}^{IJ}(\mathbf{R}) $ 是理解单态 Born-Oppenheimer 近似局限性的关键。"
+    )
+    assert markdown.startswith(r"$\mathbf{f}_{\alpha}^{IJ}(\mathbf{R})$ 是理解")
+
+
+def test_convert_latexish_to_typst_splits_attached_angle_command() -> None:
+    assert convert_latexish_to_typst(r"\angleCSH") == "angle CSH"
+
+
+def test_direct_typst_passthrough_rewrites_mathscr_for_mitex_compatibility() -> None:
+    markdown = build_direct_typst_passthrough_text(r"$\mathscr{P}$ 空间")
+    assert markdown == r"$\mathcal{P}$ 空间"
 
 
 def test_typst_markdown_renders_superscript_citation_as_text() -> None:

@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Layout Fit Lab · Pretext PoC</title>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [["$", "$"], ["\\(", "\\)"]],
+          displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+          processEscapes: true,
+        },
+        svg: {
+          fontCache: "global",
+        },
+      };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <style>
+      :root {
+        --bg: #f4efe7;
+        --panel: rgba(255, 251, 245, 0.88);
+        --line: rgba(20, 20, 20, 0.12);
+        --text: #1a1a1a;
+        --muted: #635b53;
+        --accent: #004e64;
+        --accent-soft: rgba(0, 78, 100, 0.08);
+        --shadow: 0 18px 44px rgba(25, 31, 35, 0.12);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: var(--text);
+        font-family: "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(0, 78, 100, 0.15), transparent 24rem),
+          radial-gradient(circle at bottom right, rgba(238, 155, 0, 0.14), transparent 22rem),
+          linear-gradient(180deg, #f7f1e8 0%, #ede5d8 100%);
+      }
+
+      .shell { padding: 24px; min-height: 100vh; }
+      .hero, .panel {
+        max-width: 1280px;
+        margin: 0 auto 18px;
+        border-radius: 28px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+      }
+      .hero { padding: 24px 28px; }
+      .hero h1 {
+        margin: 0 0 10px;
+        font-family: "Source Han Serif SC", "Noto Serif CJK SC", serif;
+        font-size: clamp(2rem, 3.8vw, 3.4rem);
+      }
+      .hero p { margin: 0; color: var(--muted); line-height: 1.6; max-width: 76ch; }
+
+      .panel {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 18px;
+        padding: 20px;
+      }
+
+      .card {
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.64);
+        padding: 16px;
+      }
+
+      h2 { margin: 0 0 12px; font-size: 1rem; }
+      label { display: block; font-size: 0.86rem; color: var(--muted); margin-bottom: 8px; }
+      input, select, textarea, button {
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid rgba(20, 20, 20, 0.14);
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--text);
+        font: inherit;
+      }
+      input, select, button { min-height: 42px; padding: 0 12px; }
+      textarea { min-height: 210px; padding: 12px; resize: vertical; }
+      button {
+        cursor: pointer;
+        background: linear-gradient(135deg, #0a5d73 0%, #004e64 100%);
+        color: #fff;
+        font-weight: 600;
+      }
+      button.secondary { background: rgba(255,255,255,0.9); color: var(--text); }
+      .stack > * + * { margin-top: 12px; }
+      .grid2, .grid3 {
+        display: grid;
+        gap: 10px;
+      }
+      .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .actions { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+      .workspace { display: grid; gap: 18px; }
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .metric {
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,0.8);
+      }
+      .metric .name { font-size: 0.82rem; color: var(--muted); }
+      .metric .value { margin-top: 6px; font-size: 1.02rem; font-weight: 700; }
+      .compare {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .result-box {
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.82);
+        padding: 14px;
+      }
+      .result-box h3 { margin: 0 0 10px; font-size: 0.98rem; }
+      .status {
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,0.82);
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .status.error {
+        color: #8b1e3f;
+        background: rgba(139, 30, 63, 0.06);
+        border-color: rgba(139, 30, 63, 0.2);
+      }
+      .preview {
+        min-height: 240px;
+        border-radius: 18px;
+        border: 1px dashed rgba(0, 78, 100, 0.3);
+        background: var(--accent-soft);
+        overflow: auto;
+        padding: 16px;
+      }
+      .pdf-toolbar {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 120px 1fr 120px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .pdf-page-label {
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .pdf-stage {
+        position: relative;
+        min-height: 680px;
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(248, 244, 238, 0.96);
+        padding: 16px;
+      }
+      .pdf-stack {
+        position: relative;
+        width: fit-content;
+        margin: 0 auto;
+      }
+      .pdf-image {
+        display: block;
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 12px 30px rgba(20, 20, 20, 0.12);
+      }
+      .pdf-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .pdf-box {
+        position: absolute;
+        border: 1.5px solid rgba(0, 78, 100, 0.4);
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 2px 8px rgba(20, 20, 20, 0.08);
+        overflow: hidden;
+      }
+      .pdf-box.current {
+        border-color: rgba(208, 59, 28, 0.9);
+        background: rgba(255, 250, 247, 0.96);
+        box-shadow: 0 0 0 2px rgba(208, 59, 28, 0.18), 0 4px 12px rgba(20, 20, 20, 0.1);
+      }
+      .pdf-lines {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        color: #111;
+        font-family: "Source Han Serif SC", "Noto Serif CJK SC", serif;
+        overflow: hidden;
+      }
+      .pdf-text-block {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        color: inherit;
+        text-align: justify;
+        text-justify: inter-character;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+      .pdf-text-block.current {
+        color: #7f1d1d;
+      }
+      .pdf-lines.current {
+        color: #7f1d1d;
+      }
+      .pdf-lines.empty {
+        opacity: 0.35;
+      }
+      .pdf-line {
+        position: absolute;
+        left: 0;
+        white-space: pre;
+        overflow: hidden;
+        letter-spacing: 0;
+      }
+      .pdf-line mjx-container[jax="SVG"],
+      .pdf-text-block mjx-container[jax="SVG"] {
+        display: inline-block;
+        vertical-align: -0.08em;
+      }
+      .pdf-line.justified {
+        text-align: justify;
+        text-justify: inter-character;
+      }
+      .pdf-line.last {
+        text-align: left;
+      }
+      .preview-block {
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        background: rgba(255,255,255,0.75);
+        border: 2px solid var(--accent);
+        margin-bottom: 12px;
+      }
+      .preview-block mjx-container[jax="SVG"] {
+        display: inline-block;
+        vertical-align: -0.08em;
+      }
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.82rem;
+      }
+      #measure-sandbox {
+        position: absolute;
+        left: -10000px;
+        top: -10000px;
+        visibility: hidden;
+        pointer-events: none;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+
+      @media (max-width: 1024px) {
+        .panel { grid-template-columns: 1fr; }
+        .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .compare { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <h1>Pretext PoC</h1>
+        <p>
+          使用同一批 `fixtures` 比较 DOM 测量与 `@chenglou/pretext`。这页只关注块级文本：同一段文本、同一宽度、
+          同一行高下，对比两条测量路径的 `height`、`lineCount`、`maxLineWidth` 和逐行文本。
+        </p>
+      </header>
+
+      <main class="panel">
+        <aside class="card stack">
+          <div>
+            <h2>数据</h2>
+            <div class="actions">
+              <button id="load-default">加载默认样本</button>
+              <label>
+                <span>从本地 JSON 载入</span>
+                <input id="file-input" type="file" accept=".json,application/json" />
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label for="sample-select">样本</label>
+            <select id="sample-select"></select>
+          </div>
+
+          <div>
+            <h2>参数</h2>
+            <label for="font-family">字体族</label>
+            <input id="font-family" value="Source Han Serif SC, Noto Serif CJK SC, serif" />
+            <div class="grid3">
+              <label><span>字号 (pt)</span><input id="font-size" type="number" min="4" max="48" step="0.01" value="11.16" /></label>
+              <label><span>行高倍率</span><input id="line-height" type="number" min="0.6" max="2.4" step="0.01" value="1" /></label>
+              <label><span>宽度 (pt)</span><input id="target-width" type="number" min="1" step="0.01" value="447.45" /></label>
+            </div>
+            <label><span>目标高度 (pt)</span><input id="fit-height" type="number" min="1" step="0.01" value="98.7" /></label>
+          </div>
+
+          <div class="actions">
+            <button id="apply-typst" class="secondary">应用 Typst 参考值</button>
+            <button id="measure-both">比较 DOM / Pretext</button>
+            <button id="auto-fit" class="secondary">自动拟合</button>
+          </div>
+
+          <div>
+            <h2>文本</h2>
+            <textarea id="fit-text"></textarea>
+          </div>
+
+          <div id="status" class="status">
+            这页依赖本地安装的 `@chenglou/pretext`。先在 `layout-fit/` 下执行 `npm install --registry=https://registry.npmmirror.com`，再用 `npm run serve` 打开。
+          </div>
+        </aside>
+
+        <section class="workspace">
+          <section class="card">
+            <h2>样本概览</h2>
+            <div id="sample-meta" class="status">尚未载入样本。</div>
+          </section>
+
+          <section class="card">
+            <h2>核心指标</h2>
+            <div class="metric-grid">
+              <div class="metric"><div class="name">DOM 高度</div><div class="value" id="dom-height">-</div></div>
+              <div class="metric"><div class="name">Pretext 高度</div><div class="value" id="pretext-height">-</div></div>
+              <div class="metric"><div class="name">高度差</div><div class="value" id="height-diff">-</div></div>
+              <div class="metric"><div class="name">目标高度</div><div class="value" id="target-height">-</div></div>
+            </div>
+            <div class="metric-grid" style="margin-top: 10px;">
+              <div class="metric"><div class="name">DOM 行数</div><div class="value" id="dom-lines">-</div></div>
+              <div class="metric"><div class="name">Pretext 行数</div><div class="value" id="pretext-lines">-</div></div>
+              <div class="metric"><div class="name">DOM 最宽行</div><div class="value" id="dom-width">-</div></div>
+              <div class="metric"><div class="name">Pretext 最宽行</div><div class="value" id="pretext-width">-</div></div>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>逐行对照</h2>
+            <div class="compare">
+              <div class="result-box">
+                <h3>DOM 预览</h3>
+                <div class="preview"><div id="dom-preview" class="preview-block"></div></div>
+                <pre id="dom-lines-text"></pre>
+              </div>
+              <div class="result-box">
+                <h3>Pretext 行输出</h3>
+                <div class="preview"><div id="pretext-preview" class="preview-block"></div></div>
+                <pre id="pretext-lines-text"></pre>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>PDF 译文覆盖预览</h2>
+            <div class="result-box">
+              <h3 id="pdf-title">源 PDF</h3>
+              <div class="pdf-toolbar">
+                <button id="pdf-prev" class="secondary">上一页</button>
+                <div id="pdf-page-label" class="pdf-page-label">第 - / - 页</div>
+                <button id="pdf-next" class="secondary">下一页</button>
+              </div>
+              <div id="pdf-stage" class="pdf-stage">
+                <div id="pdf-stack" class="pdf-stack">
+                  <img id="pdf-image" class="pdf-image" alt="PDF page preview" />
+                  <div id="pdf-overlay" class="pdf-overlay"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div id="measure-sandbox"></div>
+
+    <script type="module" src="./pretext-app.js"></script>
+  </body>
+</html>

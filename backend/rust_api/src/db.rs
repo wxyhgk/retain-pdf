@@ -924,7 +924,9 @@ mod tests {
         drop(conn);
 
         let db = fs.db();
-        let error = db.init().expect_err("legacy artifacts_json storage should be rejected");
+        let error = db
+            .init()
+            .expect_err("legacy artifacts_json storage should be rejected");
         let detail = format!("{error:#}");
         assert!(detail.contains("legacy jobs.artifacts_json storage is no longer supported"));
         assert!(detail.contains("clear the DB or rerun those jobs"));

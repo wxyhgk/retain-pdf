@@ -125,6 +125,42 @@ def test_fragmented_formula_continuation_group_stays_grouped() -> None:
     assert "group_split_reason" not in payload[0] or not payload[0]["group_split_reason"]
 
 
+def test_direct_typst_continuation_group_preserves_math_mode_on_group_unit() -> None:
+    payload = [
+        {
+            "item_id": "a",
+            "translation_unit_id": "__cg__:direct-typst",
+            "translation_unit_kind": "group",
+            "translation_unit_member_ids": ["a", "b"],
+            "block_type": "text",
+            "should_translate": True,
+            "math_mode": "direct_typst",
+            "protected_source_text": "Anthropic and OpenAI: the providers captured more wallet share and",
+            "source_text": "Anthropic and OpenAI: the providers captured more wallet share and",
+            "continuation_group": "cg-direct-typst",
+            "metadata": {"structure_role": "body"},
+        },
+        {
+            "item_id": "b",
+            "translation_unit_id": "__cg__:direct-typst",
+            "translation_unit_kind": "group",
+            "translation_unit_member_ids": ["a", "b"],
+            "block_type": "text",
+            "should_translate": True,
+            "math_mode": "direct_typst",
+            "protected_source_text": "investors increasingly viewed them as application software firms.",
+            "source_text": "investors increasingly viewed them as application software firms.",
+            "continuation_group": "cg-direct-typst",
+            "metadata": {"structure_role": "body"},
+        },
+    ]
+
+    units = pending_translation_items(payload)
+
+    assert [unit["item_id"] for unit in units] == ["__cg__:direct-typst"]
+    assert units[0]["math_mode"] == "direct_typst"
+
+
 def test_long_continuation_group_stays_grouped_when_not_formula_heavy() -> None:
     def member(item_id: str, source: str):
         return {
@@ -149,6 +185,33 @@ def test_long_continuation_group_stays_grouped_when_not_formula_heavy() -> None:
     assert units[0]["continuation_group"] == "cg-long"
     assert payload[0]["translation_unit_kind"] == "group"
     assert payload[1]["translation_unit_kind"] == "group"
+
+
+def test_large_continuation_group_stays_grouped_even_when_member_count_exceeds_limit() -> None:
+    payload = []
+    for idx in range(4):
+        text = f"segment {idx} continues the same paragraph across columns and should stay grouped for coherent translation."
+        payload.append(
+            {
+                "item_id": f"m{idx}",
+                "translation_unit_id": "__cg__:wide-continuation",
+                "translation_unit_kind": "group",
+                "translation_unit_member_ids": [f"m{i}" for i in range(4)],
+                "block_type": "text",
+                "should_translate": True,
+                "protected_source_text": text,
+                "source_text": text,
+                "continuation_group": "cg-wide",
+                "metadata": {"structure_role": "body"},
+            }
+        )
+
+    units = pending_translation_items(payload)
+
+    assert [unit["item_id"] for unit in units] == ["__cg__:wide-continuation"]
+    assert units[0]["continuation_group"] == "cg-wide"
+    assert all(item["translation_unit_kind"] == "group" for item in payload)
+    assert all(not item.get("group_split_reason") for item in payload)
 
 
 def test_smarter_batches_group_low_risk_items_and_keep_complex_items_single() -> None:
@@ -254,6 +317,14 @@ def test_queue_classification_routes_only_true_slow_blocks_to_single_slow() -> N
             ],
             [
                 _item(
+                    "formula-heavy",
+                    "Heavy split chunk with <f1-a7c/> and <f2-b2d/> markers.",
+                    formula_map=[{"placeholder": "<f1-a7c/>"}, {"placeholder": "<f2-b2d/>"}],
+                    _heavy_formula_split_applied=True,
+                )
+            ],
+            [
+                _item(
                     "body-b",
                     "This sentence describes antibacterial activity and provides enough body text for translation.",
                     _batched_plain_candidate=True,
@@ -267,8 +338,8 @@ def test_queue_classification_routes_only_true_slow_blocks_to_single_slow() -> N
         ]
     )
     assert [[item["item_id"] for item in batch] for batch in batched_fast_batches] == [["body-a"], ["body-b", "body-c"]]
-    assert [[item["item_id"] for item in batch] for batch in single_fast_batches] == [["formula-1"]]
-    assert [[item["item_id"] for item in batch] for batch in single_slow_batches] == [["__cg__:cg-1"]]
+    assert [[item["item_id"] for item in batch] for batch in single_fast_batches] == [["__cg__:cg-1"], ["formula-1"]]
+    assert [[item["item_id"] for item in batch] for batch in single_slow_batches] == [["formula-heavy"]]
 
 
 def test_queue_worker_allocation_reserves_small_tail_pool() -> None:

@@ -17,8 +17,6 @@ import {
   summarizeStatus,
 } from "./job.js";
 
-const STATUS_RING_CIRCUMFERENCE = 2 * Math.PI * 62;
-
 function stageIconMarkup(status, stageText) {
   const text = `${stageText || ""}`.toLowerCase();
   if (status === "succeeded") {
@@ -166,14 +164,23 @@ function stopElapsedTicker() {
 
 function renderElapsed() {
   const snapshot = state.currentJobSnapshot;
+  const statusCard = document.querySelector("job-status-card");
   if (!snapshot) {
     safeSetText("query-job-duration", "-");
-    safeSetText("status-ring-elapsed", "-");
+    if (statusCard?.setElapsed) {
+      statusCard.setElapsed("-");
+    } else {
+      safeSetText("status-ring-elapsed", "-");
+    }
     return;
   }
   const durations = resolveLiveDurations(snapshot);
   safeSetText("query-job-duration", durations.totalElapsedText);
-  safeSetText("status-ring-elapsed", durations.totalElapsedText);
+  if (statusCard?.setElapsed && !statusCard?.renderSnapshot) {
+    statusCard.setElapsed(durations.totalElapsedText);
+  } else {
+    safeSetText("status-ring-elapsed", durations.totalElapsedText);
+  }
   safeSetText("runtime-stage-elapsed", durations.stageElapsedText);
   safeSetText("runtime-total-elapsed", durations.totalElapsedText);
 }
@@ -191,52 +198,68 @@ function startElapsedTicker() {
 }
 
 function updateRing(job) {
-  const progressCircle = $("status-ring-progress");
   const ringLabel = $("status-ring-label");
   const ringValue = $("status-ring-value");
   const ringElapsed = $("status-ring-elapsed");
   const stageIcon = $("status-stage-icon");
   const pdfBtn = $("pdf-btn");
-  if (!progressCircle || !ringLabel || !ringValue || !ringElapsed || !stageIcon || !pdfBtn) {
+  const readerBtn = $("reader-btn");
+  const actionRow = document.querySelector(".status-ring-downloads");
+  if (!ringLabel || !ringValue || !ringElapsed || !stageIcon || !pdfBtn || !readerBtn || !actionRow) {
     return;
   }
   const stageText = summarizeStageDetail(job);
-  const percent = Number.isFinite(job.progress_percent)
-    ? Math.max(0, Math.min(100, job.progress_percent))
-    : Number.isFinite(job.progress_current) && Number.isFinite(job.progress_total) && job.progress_total > 0
-      ? Math.max(0, Math.min(100, (job.progress_current / job.progress_total) * 100))
-      : 0;
-  progressCircle.style.strokeDasharray = `${STATUS_RING_CIRCUMFERENCE}`;
-  progressCircle.style.strokeDashoffset = `${STATUS_RING_CIRCUMFERENCE * (1 - percent / 100)}`;
-  ringLabel.textContent = job.status === "succeeded"
+  const ringLabelText = job.status === "succeeded"
     ? "处理完成"
     : job.status === "failed"
       ? "处理失败"
       : job.status === "queued"
       ? "排队中"
         : "处理中";
-  ringValue.textContent = stageText || "准备中";
-  stageIcon.innerHTML = stageIconMarkup(job.status, stageText);
+  const ringValueText = stageText || "准备中";
+  const iconMarkup = stageIconMarkup(job.status, stageText);
+  const statusCard = document.querySelector("job-status-card");
+  if (statusCard?.setStagePresentation && !statusCard?.renderSnapshot) {
+    statusCard.setStagePresentation({
+      label: ringLabelText,
+      value: ringValueText,
+      iconMarkup,
+    });
+  } else {
+    ringLabel.textContent = ringLabelText;
+    ringValue.textContent = ringValueText;
+    stageIcon.innerHTML = iconMarkup;
+  }
   const pdfReady = !pdfBtn.classList.contains("disabled") && job.status === "succeeded";
-  pdfBtn.classList.toggle("hidden", !pdfReady);
-  stageIcon.classList.toggle("hidden", pdfReady);
-  ringLabel.classList.toggle("hidden", pdfReady);
-  ringValue.classList.toggle("hidden", pdfReady);
-  ringElapsed.classList.toggle("hidden", pdfReady);
+  const readerReady = !readerBtn.classList.contains("disabled") && job.status === "succeeded";
+  if (statusCard?.syncPrimaryActions && !statusCard?.renderSnapshot) {
+    statusCard.syncPrimaryActions({ pdfReady, readerReady });
+  } else {
+    pdfBtn.classList.toggle("hidden", !pdfReady);
+    readerBtn.classList.toggle("hidden", !readerReady);
+    actionRow.classList.remove("hidden");
+  }
 }
 
 function updateDetailDialog(job) {
   const stageText = summarizeStageDetail(job);
+  const note = job.status === "failed"
+    ? "查看失败原因、建议与事件流"
+    : job.status === "succeeded"
+      ? "任务已完成，可查看概览与事件流"
+      : "查看任务概览、失败原因与事件流";
+  const component = document.querySelector("status-detail-dialog");
+  if (component?.setHeadline) {
+    component.setHeadline({
+      iconMarkup: stageIconMarkup(job.status, stageText),
+      jobId: job.job_id || "-",
+      note,
+    });
+    return;
+  }
   safeSetHtml("status-detail-head-icon", stageIconMarkup(job.status, stageText));
   safeSetText("status-detail-job-id", job.job_id || "-");
-  safeSetText(
-    "status-detail-head-note",
-    job.status === "failed"
-      ? "查看失败原因、建议与事件流"
-      : job.status === "succeeded"
-        ? "任务已完成，可查看概览与事件流"
-        : "查看任务概览、失败原因与事件流",
-  );
+  safeSetText("status-detail-head-note", note);
 }
 
 function summarizeMathMode(job) {
@@ -252,43 +275,70 @@ function summarizeMathMode(job) {
 
 function renderRuntimeDetails(job) {
   const durations = resolveLiveDurations(job);
-  safeSetText("runtime-current-stage", summarizeRuntimeField(job.current_stage || job.stage_detail));
-  safeSetText("runtime-stage-elapsed", durations.stageElapsedText);
-  safeSetText("runtime-total-elapsed", durations.totalElapsedText);
-  safeSetText("runtime-retry-count", `${job.retry_count ?? 0}`);
-  safeSetText(
-    "runtime-last-transition",
-    job.last_stage_transition_at ? formatEventTimestamp(job.last_stage_transition_at) : "-",
-  );
-  safeSetText("runtime-terminal-reason", summarizeRuntimeField(job.terminal_reason));
-  safeSetText("runtime-input-protocol", summarizeInvocationProtocol(job));
-  safeSetText("runtime-stage-spec-version", summarizeInvocationSchemaVersion(job));
-  safeSetText("runtime-math-mode", summarizeMathMode(job));
+  const component = document.querySelector("status-detail-dialog");
+  const details = {
+    currentStage: summarizeRuntimeField(job.current_stage || job.stage_detail),
+    stageElapsed: durations.stageElapsedText,
+    totalElapsed: durations.totalElapsedText,
+    retryCount: `${job.retry_count ?? 0}`,
+    lastTransition: job.last_stage_transition_at ? formatEventTimestamp(job.last_stage_transition_at) : "-",
+    terminalReason: summarizeRuntimeField(job.terminal_reason),
+    inputProtocol: summarizeInvocationProtocol(job),
+    stageSpecVersion: summarizeInvocationSchemaVersion(job),
+    mathMode: summarizeMathMode(job),
+  };
+  if (component?.setRuntimeDetails && !component?.renderSnapshot) {
+    component.setRuntimeDetails(details);
+    return;
+  }
+  safeSetText("runtime-current-stage", details.currentStage);
+  safeSetText("runtime-stage-elapsed", details.stageElapsed);
+  safeSetText("runtime-total-elapsed", details.totalElapsed);
+  safeSetText("runtime-retry-count", details.retryCount);
+  safeSetText("runtime-last-transition", details.lastTransition);
+  safeSetText("runtime-terminal-reason", details.terminalReason);
+  safeSetText("runtime-input-protocol", details.inputProtocol);
+  safeSetText("runtime-stage-spec-version", details.stageSpecVersion);
+  safeSetText("runtime-math-mode", details.mathMode);
 }
 
 function renderFailureDetails(job) {
   const failure = job.failure || {};
   const failureDiagnostic = job.failure_diagnostic || {};
-  safeSetText("failure-summary", summarizeRuntimeField(
-    failure.summary || job.final_failure_summary || failureDiagnostic.summary,
-  ));
-  safeSetText("failure-category", summarizeRuntimeField(
-    failure.category || job.final_failure_category || failureDiagnostic.type || failureDiagnostic.error_kind,
-  ));
-  safeSetText("failure-stage", summarizeRuntimeField(
-    failure.stage || failureDiagnostic.stage || failureDiagnostic.failed_stage,
-  ));
-  safeSetText("failure-root-cause", summarizeRuntimeField(
-    failure.root_cause || failureDiagnostic.root_cause,
-  ));
-  safeSetText("failure-suggestion", summarizeRuntimeField(
-    failure.suggestion || failureDiagnostic.suggestion,
-  ));
-  safeSetText("failure-last-log-line", summarizeRuntimeField(
-    failure.last_log_line || failureDiagnostic.last_log_line,
-  ));
+  const details = {
+    summary: summarizeRuntimeField(
+      failure.summary || job.final_failure_summary || failureDiagnostic.summary,
+    ),
+    category: summarizeRuntimeField(
+      failure.category || job.final_failure_category || failureDiagnostic.type || failureDiagnostic.error_kind,
+    ),
+    stage: summarizeRuntimeField(
+      failure.stage || failureDiagnostic.stage || failureDiagnostic.failed_stage,
+    ),
+    rootCause: summarizeRuntimeField(
+      failure.root_cause || failureDiagnostic.root_cause,
+    ),
+    suggestion: summarizeRuntimeField(
+      failure.suggestion || failureDiagnostic.suggestion,
+    ),
+    lastLogLine: summarizeRuntimeField(
+      failure.last_log_line || failureDiagnostic.last_log_line,
+    ),
+  };
   const retryable = failure.retryable ?? failureDiagnostic.retryable;
-  safeSetText("failure-retryable", typeof retryable === "boolean" ? (retryable ? "是" : "否") : "-");
+  details.retryable = typeof retryable === "boolean" ? (retryable ? "是" : "否") : "-";
+  const component = document.querySelector("status-detail-dialog");
+  if (component?.setFailureDetails && !component?.renderSnapshot) {
+    component.setFailureDetails(details);
+    return;
+  }
+  safeSetText("failure-summary", details.summary);
+  safeSetText("failure-category", details.category);
+  safeSetText("failure-stage", details.stage);
+  safeSetText("failure-root-cause", details.rootCause);
+  safeSetText("failure-suggestion", details.suggestion);
+  safeSetText("failure-last-log-line", details.lastLogLine);
+  safeSetText("failure-retryable", details.retryable);
 }
 
 function eventBadgeTone(item) {
@@ -371,22 +421,29 @@ function resolveStageHistory(job) {
 }
 
 function renderStageHistory(job) {
-  const list = $("overview-stage-list");
-  const empty = $("overview-stage-empty");
-  if (!list || !empty) {
-    return;
-  }
   const history = resolveStageHistory(job);
   if (history.length === 0) {
+    const component = document.querySelector("status-detail-dialog");
+    if (component?.renderStageHistory) {
+      component.renderStageHistory({
+        markup: "",
+        emptyText: "后端未返回 runtime.stage_history",
+        hasItems: false,
+      });
+      return;
+    }
+    const list = $("overview-stage-list");
+    const empty = $("overview-stage-empty");
+    if (!list || !empty) {
+      return;
+    }
     list.innerHTML = "";
     list.classList.add("hidden");
     empty.textContent = "后端未返回 runtime.stage_history";
     empty.classList.remove("hidden");
     return;
   }
-  empty.classList.add("hidden");
-  list.classList.remove("hidden");
-  list.innerHTML = history.map((entry, index) => {
+  const markup = history.map((entry, index) => {
     const duration = resolveStageHistoryDuration(entry, job);
     const enterAt = entry?.enter_at ? formatEventTimestamp(entry.enter_at) : "-";
     const exitAt = entry?.exit_at ? formatEventTimestamp(entry.exit_at) : (isTerminalStatus(job.status) ? "-" : "进行中");
@@ -405,6 +462,23 @@ function renderStageHistory(job) {
       </article>
     `;
   }).join("");
+  const component = document.querySelector("status-detail-dialog");
+  if (component?.renderStageHistory) {
+    component.renderStageHistory({
+      markup,
+      emptyText: "后端未返回 runtime.stage_history",
+      hasItems: true,
+    });
+    return;
+  }
+  const list = $("overview-stage-list");
+  const empty = $("overview-stage-empty");
+  if (!list || !empty) {
+    return;
+  }
+  empty.classList.add("hidden");
+  list.classList.remove("hidden");
+  list.innerHTML = markup;
 }
 
 function formatEventPayload(payload) {
@@ -420,22 +494,30 @@ function formatEventPayload(payload) {
 
 function renderEvents(eventsPayload) {
   const items = Array.isArray(eventsPayload?.items) ? eventsPayload.items : [];
-  const list = $("events-list");
-  const empty = $("events-empty");
-  const status = $("events-status");
-  if (!list || !empty || !status) {
-    return;
-  }
-  status.textContent = items.length > 0 ? `最近 ${items.length} 条` : "暂无事件";
   if (items.length === 0) {
+    const component = document.querySelector("status-detail-dialog");
+    if (component?.renderEvents) {
+      component.renderEvents({
+        markup: "",
+        count: 0,
+        emptyText: "暂无事件",
+        hasItems: false,
+      });
+      return;
+    }
+    const list = $("events-list");
+    const empty = $("events-empty");
+    const status = $("events-status");
+    if (!list || !empty || !status) {
+      return;
+    }
+    status.textContent = "暂无事件";
     list.innerHTML = "";
     list.classList.add("hidden");
     empty.classList.remove("hidden");
     return;
   }
-  empty.classList.add("hidden");
-  list.classList.remove("hidden");
-  list.innerHTML = items.map((item) => {
+  const markup = items.map((item) => {
     const tone = eventBadgeTone(item);
     const payloadText = formatEventPayload(item.payload);
     return `
@@ -456,6 +538,132 @@ function renderEvents(eventsPayload) {
       </article>
     `;
   }).join("");
+  const component = document.querySelector("status-detail-dialog");
+  if (component?.renderEvents) {
+    component.renderEvents({
+      markup,
+      count: items.length,
+      emptyText: "暂无事件",
+      hasItems: true,
+    });
+    return;
+  }
+  const list = $("events-list");
+  const empty = $("events-empty");
+  const status = $("events-status");
+  if (!list || !empty || !status) {
+    return;
+  }
+  status.textContent = `最近 ${items.length} 条`;
+  empty.classList.add("hidden");
+  list.classList.remove("hidden");
+  list.innerHTML = markup;
+}
+
+function buildStatusDetailSnapshot(job, eventsPayload) {
+  const stageText = summarizeStageDetail(job);
+  const note = job.status === "failed"
+    ? "查看失败原因、建议与事件流"
+    : job.status === "succeeded"
+      ? "任务已完成，可查看概览与事件流"
+      : "查看任务概览、失败原因与事件流";
+  const runtimeDurations = resolveLiveDurations(job);
+  const failure = job.failure || {};
+  const failureDiagnostic = job.failure_diagnostic || {};
+  const retryable = failure.retryable ?? failureDiagnostic.retryable;
+  const history = resolveStageHistory(job);
+  const stageHistoryMarkup = history.map((entry, index) => {
+    const duration = resolveStageHistoryDuration(entry, job);
+    const enterAt = entry?.enter_at ? formatEventTimestamp(entry.enter_at) : "-";
+    const exitAt = entry?.exit_at ? formatEventTimestamp(entry.exit_at) : (isTerminalStatus(job.status) ? "-" : "进行中");
+    const stageName = summarizeStageName(entry?.stage, entry?.detail);
+    const terminalText = entry?.terminal_status ? ` · ${entry.terminal_status}` : "";
+    return `
+      <article class="stage-history-item">
+        <div class="stage-history-main">
+          <span class="stage-history-index">${index + 1}</span>
+          <div class="stage-history-copy">
+            <div class="stage-history-title">${escapeHtml(stageName)}</div>
+            <div class="stage-history-meta">${escapeHtml(enterAt)} → ${escapeHtml(exitAt)}${escapeHtml(terminalText)}</div>
+          </div>
+        </div>
+        <div class="stage-history-duration">${escapeHtml(formatRuntimeDuration(duration))}</div>
+      </article>
+    `;
+  }).join("");
+  const events = Array.isArray(eventsPayload?.items) ? eventsPayload.items : [];
+  const eventsMarkup = events.map((item) => {
+    const tone = eventBadgeTone(item);
+    const payloadText = formatEventPayload(item.payload);
+    return `
+      <article class="event-item">
+        <div class="event-meta">
+          <span class="event-badge ${tone}">${escapeHtml(item.event || "-")}</span>
+          <span>${formatEventTimestamp(item.ts)}</span>
+          <span>${escapeHtml(item.stage || "-")}</span>
+          <span>${escapeHtml(item.level || "-")}</span>
+        </div>
+        <div class="event-title">${escapeHtml(item.message || "-")}</div>
+        ${payloadText ? `
+          <details class="event-payload-wrap">
+            <summary class="event-payload-toggle">查看 payload</summary>
+            <pre class="event-payload">${escapeHtml(payloadText)}</pre>
+          </details>
+        ` : ""}
+      </article>
+    `;
+  }).join("");
+
+  return {
+    headline: {
+      iconMarkup: stageIconMarkup(job.status, stageText),
+      jobId: job.job_id || "-",
+      note,
+    },
+    runtime: {
+      currentStage: summarizeRuntimeField(job.current_stage || job.stage_detail),
+      stageElapsed: runtimeDurations.stageElapsedText,
+      totalElapsed: runtimeDurations.totalElapsedText,
+      retryCount: `${job.retry_count ?? 0}`,
+      lastTransition: job.last_stage_transition_at ? formatEventTimestamp(job.last_stage_transition_at) : "-",
+      terminalReason: summarizeRuntimeField(job.terminal_reason),
+      inputProtocol: summarizeInvocationProtocol(job),
+      stageSpecVersion: summarizeInvocationSchemaVersion(job),
+      mathMode: summarizeMathMode(job),
+    },
+    failure: {
+      summary: summarizeRuntimeField(
+        failure.summary || job.final_failure_summary || failureDiagnostic.summary,
+      ),
+      category: summarizeRuntimeField(
+        failure.category || job.final_failure_category || failureDiagnostic.type || failureDiagnostic.error_kind,
+      ),
+      stage: summarizeRuntimeField(
+        failure.stage || failureDiagnostic.stage || failureDiagnostic.failed_stage,
+      ),
+      rootCause: summarizeRuntimeField(
+        failure.root_cause || failureDiagnostic.root_cause,
+      ),
+      suggestion: summarizeRuntimeField(
+        failure.suggestion || failureDiagnostic.suggestion,
+      ),
+      lastLogLine: summarizeRuntimeField(
+        failure.last_log_line || failureDiagnostic.last_log_line,
+      ),
+      retryable: typeof retryable === "boolean" ? (retryable ? "是" : "否") : "-",
+    },
+    stageHistory: {
+      markup: stageHistoryMarkup,
+      emptyText: "后端未返回 runtime.stage_history",
+      hasItems: history.length > 0,
+    },
+    events: {
+      markup: eventsMarkup,
+      count: events.length,
+      emptyText: "暂无事件",
+      hasItems: events.length > 0,
+    },
+  };
 }
 
 export function setStatus(status) {
@@ -493,6 +701,21 @@ function resolveManifestArtifactUrl(manifestPayload, artifactKey) {
   return `${rawUrl}${separator}include_job_dir=true`;
 }
 
+function hasManifestArtifact(manifestPayload, artifactKey) {
+  const items = Array.isArray(manifestPayload?.items) ? manifestPayload.items : [];
+  return items.some((entry) => entry?.artifact_key === artifactKey && entry?.ready);
+}
+
+function buildReaderPageUrl(jobId) {
+  const normalizedJobId = `${jobId || ""}`.trim();
+  if (!normalizedJobId) {
+    return "";
+  }
+  const url = new URL("./reader.html", window.location.href);
+  url.searchParams.set("job_id", normalizedJobId);
+  return url.toString();
+}
+
 export function updateActionButtons(job, manifestPayload = null) {
   const actions = resolveJobActions(job);
   setActionLink("download-btn", actions.bundle, actions.bundleEnabled && !!actions.bundle);
@@ -501,27 +724,64 @@ export function updateActionButtons(job, manifestPayload = null) {
   setActionLink("pdf-btn", actions.pdf, actions.pdfEnabled && !!actions.pdf);
   setActionLink("markdown-btn", actions.markdownJson, actions.markdownJsonEnabled && !!actions.markdownJson);
   setActionLink("markdown-raw-btn", actions.markdownRaw, actions.markdownRawEnabled && !!actions.markdownRaw);
-  $("cancel-btn").disabled = !(actions.cancelEnabled && !!actions.cancel);
+  const readerEnabled = Boolean(
+    job?.job_id
+    && hasManifestArtifact(manifestPayload, "source_pdf")
+    && (hasManifestArtifact(manifestPayload, "pdf")
+      || hasManifestArtifact(manifestPayload, "translated_pdf")
+      || hasManifestArtifact(manifestPayload, "result_pdf")
+      || actions.pdfEnabled),
+  );
+  setActionLink("reader-btn", buildReaderPageUrl(job?.job_id), readerEnabled);
+  setActionLink("compare-reader-btn", buildReaderPageUrl(job?.job_id), readerEnabled);
+  const statusCard = document.querySelector("job-status-card");
+  if (statusCard?.setCancelEnabled && !statusCard?.renderSnapshot) {
+    statusCard.setCancelEnabled(actions.cancelEnabled && !!actions.cancel);
+  } else {
+    $("cancel-btn").disabled = !(actions.cancelEnabled && !!actions.cancel);
+  }
 }
 
 export function setWorkflowSections(job = null) {
   const normalized = job ? normalizeJobPayload(job) : null;
   const hasJob = Boolean(normalized && normalized.job_id);
   const shell = $("app-shell");
-  $("status-section").classList.toggle("hidden", !hasJob);
+  $("status-section")?.classList.toggle("hidden", !hasJob);
   if (!hasJob) {
     shell?.classList.remove("processing-mode", "result-mode");
     stopElapsedTicker();
-    $("back-home-btn")?.classList.add("hidden");
+    const statusCard = document.querySelector("job-status-card");
+    if (statusCard?.setBackHomeVisible && !statusCard?.renderSnapshot) {
+      statusCard.setBackHomeVisible(false);
+    } else {
+      $("back-home-btn")?.classList.add("hidden");
+    }
     return;
   }
   const processing = !isTerminalStatus(normalized.status);
   shell?.classList.toggle("processing-mode", processing);
   shell?.classList.toggle("result-mode", !processing);
-  $("back-home-btn")?.classList.toggle("hidden", processing);
+  const statusCard = document.querySelector("job-status-card");
+  if (statusCard?.setBackHomeVisible && !statusCard?.renderSnapshot) {
+    statusCard.setBackHomeVisible(!processing);
+  } else {
+    $("back-home-btn")?.classList.toggle("hidden", processing);
+  }
 }
 
 export function setLinearProgress(barId, textId, current, total, fallbackText = "-", percentOverride = null) {
+  if (barId === "job-progress-bar" && textId === "job-progress-text") {
+    const statusCard = document.querySelector("job-status-card");
+    if (statusCard?.setProgress && !statusCard?.renderSnapshot) {
+      statusCard.setProgress({
+        current,
+        total,
+        fallbackText,
+        percent: percentOverride,
+      });
+      return;
+    }
+  }
   const bar = $(barId);
   const text = $(textId);
   const hasNumbers = Number.isFinite(current) && Number.isFinite(total) && total > 0;
@@ -607,6 +867,7 @@ export function updateJobWarning(status) {
 export function renderJob(payload, eventsPayload = null, manifestPayload = null) {
   const job = normalizeJobPayload(payload);
   state.currentJobSnapshot = job;
+  state.currentJobManifest = manifestPayload || null;
   state.currentJobId = job.job_id || state.currentJobId;
   state.currentJobStartedAt = resolveElapsedStart(job);
   state.currentJobFinishedAt = (job.finished_at || job.updated_at || "").trim();
@@ -620,23 +881,62 @@ export function renderJob(payload, eventsPayload = null, manifestPayload = null)
     $("job-id-input").value = job.job_id || "";
   }
   setStatus(job.status || "idle");
-  setLinearProgress(
-    "job-progress-bar",
-    "job-progress-text",
-    job.progress_current,
-    job.progress_total,
-    "-",
-    job.progress_percent,
-  );
   safeSetText("error-box", summarizePublicError(job));
   safeSetText("diagnostic-box", summarizeDiagnostic(job));
   updateActionButtons(job, manifestPayload);
-  updateRing(job);
-  updateDetailDialog(job);
-  renderRuntimeDetails(job);
-  renderStageHistory(job);
-  renderFailureDetails(job);
-  renderEvents(eventsPayload);
+  const actions = resolveJobActions(job);
+  const readerEnabled = Boolean(
+    job?.job_id
+    && hasManifestArtifact(manifestPayload, "source_pdf")
+    && (hasManifestArtifact(manifestPayload, "pdf")
+      || hasManifestArtifact(manifestPayload, "translated_pdf")
+      || hasManifestArtifact(manifestPayload, "result_pdf")
+      || actions.pdfEnabled),
+  );
+  const stageText = summarizeStageDetail(job);
+  const statusCard = document.querySelector("job-status-card");
+  if (statusCard?.renderSnapshot) {
+    statusCard.renderSnapshot({
+      label: job.status === "succeeded"
+        ? "处理完成"
+        : job.status === "failed"
+          ? "处理失败"
+          : job.status === "queued"
+            ? "排队中"
+            : "处理中",
+      value: stageText || "准备中",
+      iconMarkup: stageIconMarkup(job.status, stageText),
+      elapsed: resolveLiveDurations(job).totalElapsedText,
+      progressCurrent: job.progress_current,
+      progressTotal: job.progress_total,
+      progressFallbackText: "-",
+      progressPercent: job.progress_percent,
+      pdfReady: actions.pdfEnabled && !!actions.pdf && job.status === "succeeded",
+      readerReady: readerEnabled && job.status === "succeeded",
+      cancelEnabled: actions.cancelEnabled && !!actions.cancel,
+      backHomeVisible: isTerminalStatus(job.status),
+    });
+  } else {
+    setLinearProgress(
+      "job-progress-bar",
+      "job-progress-text",
+      job.progress_current,
+      job.progress_total,
+      "-",
+      job.progress_percent,
+    );
+    updateRing(job);
+  }
+  const statusDetailDialog = document.querySelector("status-detail-dialog");
+  if (statusDetailDialog?.renderSnapshot) {
+    statusDetailDialog.renderSnapshot(buildStatusDetailSnapshot(job, eventsPayload));
+  } else {
+    updateDetailDialog(job);
+    renderRuntimeDetails(job);
+    renderStageHistory(job);
+    renderFailureDetails(job);
+    renderEvents(eventsPayload);
+  }
   startElapsedTicker();
   updateJobWarning(job.status || "idle");
 }

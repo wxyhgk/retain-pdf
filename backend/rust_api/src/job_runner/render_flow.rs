@@ -62,7 +62,7 @@ pub(super) async fn run_render_job_from_artifacts(
     artifacts.translations_dir = source_artifacts.translations_dir.clone();
 
     job.command = build_render_only_command(
-        &state,
+        state.config.as_ref(),
         &job.request_payload,
         &job_paths,
         &source_pdf_path,

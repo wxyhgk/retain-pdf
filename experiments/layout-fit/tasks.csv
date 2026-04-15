@@ -1,0 +1,19 @@
+阶段,任务,状态,备注
+阶段 0：pretext 第一层评估,阅读 pretext README 和状态文档,done,确认其定位是可编程文本布局与测量内核候选
+阶段 0：pretext 第一层评估,梳理可复用 API 和能力边界,done,重点关注 prepare/layout/prepareWithSegments/layoutWithLines/measureLineStats
+阶段 0：pretext 第一层评估,形成 layout-fit 内部评估结论,done,见 notes/pretext-first-pass.md
+阶段 0：pretext 第一层评估,决定后续是否做小样本 PoC,done,已决定走 DOM 与 pretext 双轨；pretext PoC 放浏览器侧
+阶段 1：样本准备,选择 5 到 10 个代表性文本块样本,done,已从 20260407033349-ffe2e4 抽取 5 个块样本
+阶段 1：样本准备,定义 fixtures 样本最小字段,done,见 fixtures/block-samples.v1.schema.json
+阶段 1：样本准备,把小样本放入 fixtures,done,见 fixtures/sample-blocks.v1.json
+阶段 2：HTML/DOM 基线,建立最小 HTML 排版实验页,done,见 html/index.html
+阶段 2：HTML/DOM 基线,实现浏览器侧参数扫描,done,当前支持字号和行高网格扫描
+阶段 2：HTML/DOM 基线,显示拟合结果和溢出情况,done,输出行数估计、高度误差、overflow 和 score
+阶段 3：pretext PoC,建立 pretext 测量器小样本 PoC,done,见 html/pretext.html；依赖本地安装的 @chenglou/pretext
+阶段 3：pretext PoC,记录 pretext 与 DOM 的行数和高度差异,done,首个样本 p002-b0002 已验证；见 notes/pretext-poc-results.md
+阶段 4：评分脚本,建立基础评分脚本,todo,按高度误差、溢出、可读性惩罚计算 score
+阶段 4：评分脚本,生成 output 下的评分结果,todo,结果文件不进 Git
+阶段 5：Typst 对照,选取少量样本做 Typst 对照,todo,验证 HTML/pretext 得出的参数是否能迁回 Typst
+阶段 5：Typst 对照,记录 HTML/pretext 与 Typst 的差异,todo,重点看高度、行数、溢出和视觉密度差异
+阶段 6：总结,在 notes 写阶段总结,todo,说明容易拟合/难拟合的块、敏感参数和接入建议
+阶段 6：总结,给主工程提出是否接入的建议,todo,明确接入层级、收益和风险

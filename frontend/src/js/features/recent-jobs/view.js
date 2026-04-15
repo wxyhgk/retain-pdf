@@ -1,5 +1,9 @@
 import { $ } from "../../dom.js";
 
+function recentJobsDialogComponent() {
+  return document.querySelector("recent-jobs-dialog");
+}
+
 function recentJobStatusLabel(status) {
   switch (`${status || ""}`.trim()) {
     case "queued":
@@ -41,6 +45,27 @@ function truncateRecentJobName(value) {
   return text.length > 30 ? `${text.slice(0, 30)}...` : text;
 }
 
+function recentJobTitle(item) {
+  return truncateRecentJobName(item.display_name || item.job_id || "-");
+}
+
+function recentJobKindLabel(item) {
+  const workflow = `${item?.workflow || item?.job_type || ""}`.trim();
+  if (workflow === "render") {
+    return "render";
+  }
+  if (workflow === "translate") {
+    return "translate";
+  }
+  if (workflow === "ocr") {
+    return "ocr";
+  }
+  if ((item?.job_id || "").endsWith("-ocr")) {
+    return "ocr-subtask";
+  }
+  return workflow || "job";
+}
+
 function summarizeInvocationCounts(items) {
   let stageSpecCount = 0;
   let unknownCount = 0;
@@ -56,19 +81,29 @@ function summarizeInvocationCounts(items) {
 }
 
 export function renderRecentJobsSummary(invocationSummary, items) {
-  const summaryEl = $("recent-jobs-summary");
-  if (!summaryEl) {
-    return;
-  }
   const stageSpecCountValue = Number(invocationSummary?.stage_spec_count);
   const unknownCountValue = Number(invocationSummary?.unknown_count);
   const counts = Number.isFinite(stageSpecCountValue) && Number.isFinite(unknownCountValue)
     ? { stageSpecCount: stageSpecCountValue, unknownCount: unknownCountValue }
     : summarizeInvocationCounts(items);
-  summaryEl.textContent = `Stage Spec ${counts.stageSpecCount} · Unknown ${counts.unknownCount}`;
+  const text = `Stage Spec ${counts.stageSpecCount} · Unknown ${counts.unknownCount}`;
+  const component = recentJobsDialogComponent();
+  if (component?.renderSummary) {
+    component.renderSummary(text);
+    return;
+  }
+  const summaryEl = $("recent-jobs-summary");
+  if (summaryEl) {
+    summaryEl.textContent = text;
+  }
 }
 
 export function renderRecentJobsLoading() {
+  const component = recentJobsDialogComponent();
+  if (component?.renderLoading) {
+    component.renderLoading();
+    return;
+  }
   const list = $("recent-jobs-list");
   const empty = $("recent-jobs-empty");
   const loadMoreButton = $("load-more-jobs-btn");
@@ -82,13 +117,18 @@ export function renderRecentJobsLoading() {
 }
 
 export function renderRecentJobsEmpty(message, invocationSummary = null) {
+  const component = recentJobsDialogComponent();
   const list = $("recent-jobs-list");
   const empty = $("recent-jobs-empty");
   const loadMoreButton = $("load-more-jobs-btn");
-  if (!list || !empty || !loadMoreButton) {
+  if (!component?.renderEmpty && (!list || !empty || !loadMoreButton)) {
     return;
   }
   renderRecentJobsSummary(invocationSummary, []);
+  if (component?.renderEmpty) {
+    component.renderEmpty(message);
+    return;
+  }
   list.innerHTML = "";
   list.classList.add("hidden");
   empty.textContent = message || "暂无最近任务";
@@ -99,6 +139,11 @@ export function renderRecentJobsEmpty(message, invocationSummary = null) {
 }
 
 export function renderRecentJobsError(message, { reset = false } = {}) {
+  const component = recentJobsDialogComponent();
+  if (component?.renderError) {
+    component.renderError(message, { reset });
+    return;
+  }
   const list = $("recent-jobs-list");
   const empty = $("recent-jobs-empty");
   const loadMoreButton = $("load-more-jobs-btn");
@@ -121,10 +166,14 @@ function buildRecentJobsMarkup(items) {
   return items.map((item) => `
     <button type="button" class="recent-job-item" data-job-id="${item.job_id || ""}">
       <div class="recent-job-top">
-        <span class="recent-job-id" title="${(item.display_name || item.job_id || "-").replaceAll('"', "&quot;")}">${truncateRecentJobName(item.display_name || item.job_id || "-")}</span>
+        <div class="recent-job-title-wrap">
+          <span class="recent-job-id" title="${(item.display_name || item.job_id || "-").replaceAll('"', "&quot;")}">${recentJobTitle(item)}</span>
+          <span class="recent-job-real-id mono">${item.job_id || "-"}</span>
+        </div>
         <span class="recent-job-status">${recentJobStatusLabel(item.status)}</span>
       </div>
       <div class="recent-job-meta">
+        <span>类型: ${recentJobKindLabel(item)}</span>
         <span>阶段: ${item.stage || "-"}</span>
         <span>更新: ${item.updated_at || "-"}</span>
         <span class="recent-job-protocol ${recentJobProtocolClass(item)}">${recentJobProtocolLabel(item)}</span>
@@ -141,14 +190,19 @@ export function renderRecentJobsList({
   hasMore = false,
   onSelect,
 }) {
+  const component = recentJobsDialogComponent();
   const list = $("recent-jobs-list");
   const empty = $("recent-jobs-empty");
   const loadMoreButton = $("load-more-jobs-btn");
-  if (!list || !empty || !loadMoreButton) {
+  if (!component?.renderList && (!list || !empty || !loadMoreButton)) {
     return;
   }
   renderRecentJobsSummary(invocationSummary, allItems);
   const markup = buildRecentJobsMarkup(items);
+  if (component?.renderList) {
+    component.renderList(markup, { reset, hasMore, onSelect });
+    return;
+  }
   list.classList.remove("hidden");
   empty.classList.add("hidden");
   list.innerHTML = reset ? markup : `${list.innerHTML}${markup}`;
@@ -163,6 +217,11 @@ export function renderRecentJobsList({
 }
 
 export function setRecentJobsLoadMoreLoading() {
+  const component = recentJobsDialogComponent();
+  if (component?.setLoadMoreLoading) {
+    component.setLoadMoreLoading();
+    return;
+  }
   const loadMoreButton = $("load-more-jobs-btn");
   if (!loadMoreButton) {
     return;
