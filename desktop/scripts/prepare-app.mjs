@@ -194,6 +194,7 @@ fs.mkdirSync(bundledFontsRoot, { recursive: true });
 const copyEntries = [
   ".gitignore",
   "index.html",
+  "reader.html",
   "app.js",
   "styles.css",
   "runtime-config.js",
@@ -208,6 +209,35 @@ for (const entry of copyEntries) {
   const to = path.join(outputFrontendRoot, entry);
   fs.cpSync(from, to, { recursive: true, force: true });
 }
+
+function copyFrontendRuntimeDependency(packageName, entries) {
+  const packageRoot = path.join(frontendRoot, "node_modules", packageName);
+  if (!fs.existsSync(packageRoot)) {
+    throw new Error(`Missing frontend runtime dependency: ${packageRoot}`);
+  }
+  const targetRoot = path.join(outputFrontendRoot, "node_modules", packageName);
+  for (const entry of entries) {
+    const from = path.join(packageRoot, entry);
+    if (!fs.existsSync(from)) {
+      throw new Error(`Missing frontend runtime dependency asset: ${from}`);
+    }
+    fs.cpSync(from, path.join(targetRoot, entry), { recursive: true, force: true });
+  }
+}
+
+copyFrontendRuntimeDependency("pdf-lib", [
+  "dist/pdf-lib.esm.js",
+]);
+
+copyFrontendRuntimeDependency("pdfjs-dist", [
+  "build/pdf.mjs",
+  "build/pdf.worker.mjs",
+  "cmaps",
+  "standard_fonts",
+  "web/images",
+  "web/pdf_viewer.css",
+  "web/pdf_viewer.mjs",
+]);
 
 const desktopPartialsRoot = path.join(outputFrontendRoot, "src", "partials");
 const desktopTemplatesPath = path.join(outputFrontendRoot, "src", "js", "templates.js");
