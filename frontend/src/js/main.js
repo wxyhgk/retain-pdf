@@ -52,7 +52,6 @@ import { mountArtifactDownloadsFeature } from "./features/artifact-downloads/con
 import { mountBrowserCredentialsFeature } from "./features/credentials/browser.js";
 import { mountDeveloperFeature } from "./features/developer/controller.js";
 import { mountJobRuntimeFeature } from "./features/job-runtime/controller.js";
-import { mountReaderDialogFeature } from "./features/reader-dialog/controller.js";
 import { mountRecentJobsFeature } from "./features/recent-jobs/controller.js";
 import { mountStatusDetailFeature } from "./features/status-detail/controller.js";
 import { mountUploadFeature } from "./features/upload/controller.js";
@@ -82,7 +81,9 @@ let artifactDownloadsFeature = null;
 let appActionsFeature = null;
 let appShellFeature = null;
 let jobRuntimeFeature = null;
+let readerDialogComponentPromise = null;
 let readerDialogFeature = null;
+let readerDialogFeaturePromise = null;
 let statusDetailFeature = null;
 let uploadFeature = null;
 let workflowFeature = null;
@@ -97,6 +98,45 @@ function normalizeWorkflow(value) {
 
 function normalizeMathMode(value) {
   return `${value || ""}`.trim() === "direct_typst" ? "direct_typst" : "placeholder";
+}
+
+function getRequestedReaderJobIdFromLocation() {
+  const url = new URL(window.location.href);
+  const view = `${url.searchParams.get("view") || ""}`.trim();
+  const jobId = `${url.searchParams.get("job_id") || ""}`.trim();
+  return view === "reader" && jobId ? jobId : "";
+}
+
+async function ensureReaderDialogFeature() {
+  if (readerDialogFeature) {
+    return readerDialogFeature;
+  }
+  if (!readerDialogFeaturePromise) {
+    if (!readerDialogComponentPromise) {
+      readerDialogComponentPromise = import("./components/dialogs/reader-dialog.js")
+        .catch((error) => {
+          readerDialogComponentPromise = null;
+          throw error;
+        });
+    }
+    readerDialogFeaturePromise = readerDialogComponentPromise
+      .then(() => import("./features/reader-dialog/controller.js"))
+      .then(({ mountReaderDialogFeature }) => {
+        const feature = mountReaderDialogFeature({
+          state,
+          fetchProtected,
+          setText,
+        });
+        feature.bindEvents();
+        readerDialogFeature = feature;
+        return feature;
+      })
+      .catch((error) => {
+        readerDialogFeaturePromise = null;
+        throw error;
+      });
+  }
+  return readerDialogFeaturePromise;
 }
 
 function setText(id, value) {
@@ -285,12 +325,6 @@ function initializePage() {
     onReaderDialogSync: () => readerDialogFeature?.syncToolbarActions(),
     onReaderDialogClose: () => readerDialogFeature?.close(),
   });
-  readerDialogFeature = mountReaderDialogFeature({
-    state,
-    fetchProtected,
-    setText,
-  });
-  readerDialogFeature.bindEvents();
   developerFeature.bindEvents();
   artifactDownloadsFeature.bindEvents();
   statusDetailFeature.bindEvents();
@@ -304,7 +338,34 @@ function initializePage() {
   $("page-range-clear-btn")?.addEventListener("click", () => uploadFeature?.clearPageRanges());
   $("cancel-btn")?.addEventListener("click", () => jobRuntimeFeature?.cancelCurrentJob());
   $("stop-btn")?.addEventListener("click", () => jobRuntimeFeature?.stopPolling());
-  $("reader-btn")?.addEventListener("click", (event) => readerDialogFeature?.open(event));
+  $("reader-btn")?.addEventListener("click", async (event) => {
+    event.preventDefault();
+    const currentTarget = event.currentTarget;
+    const url = `${currentTarget?.dataset?.url || ""}`.trim();
+    const disabled = currentTarget?.classList?.contains("disabled")
+      || currentTarget?.getAttribute?.("aria-disabled") === "true";
+    let jobId = "";
+    if (url) {
+      try {
+        jobId = new URL(url, window.location.href).searchParams.get("job_id")?.trim() || "";
+      } catch (_err) {
+        jobId = "";
+      }
+    }
+    if (!jobId) {
+      jobId = `${state.currentJobId || ""}`.trim();
+    }
+    try {
+      const feature = await ensureReaderDialogFeature();
+      feature.open({
+        url,
+        jobId,
+        disabled,
+      });
+    } catch (error) {
+      setText("error-box", error.message || String(error));
+    }
+  });
   $("back-home-btn")?.addEventListener("click", () => jobRuntimeFeature?.returnToHome());
   $("desktop-settings-btn")?.addEventListener("click", openSettingsDialog);
   $("desktop-settings-save-btn")?.addEventListener("click", handleDesktopSettingsSave);
@@ -317,11 +378,16 @@ function initializePage() {
     startPolling: (jobId) => jobRuntimeFeature?.startPolling(jobId),
   });
 
-  const startupReaderJobId = readerDialogFeature?.getRequestedJobIdFromLocation?.() || "";
+  const startupReaderJobId = getRequestedReaderJobIdFromLocation();
   if (startupReaderJobId) {
     jobRuntimeFeature?.startPolling(startupReaderJobId);
-    window.setTimeout(() => {
-      readerDialogFeature?.open({ jobId: startupReaderJobId });
+    window.setTimeout(async () => {
+      try {
+        const feature = await ensureReaderDialogFeature();
+        feature.open({ jobId: startupReaderJobId });
+      } catch (error) {
+        setText("error-box", error.message || String(error));
+      }
     }, 0);
   }
 }

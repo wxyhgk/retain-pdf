@@ -20,6 +20,7 @@ const allowBundledMacPython = process.env.RETAIN_PDF_BUNDLE_MAC_PYTHON === "1";
 const appRoot = path.join(desktopRoot, "app");
 const outputFrontendRoot = path.join(appRoot, "frontend");
 const outputBackendRoot = path.join(appRoot, "backend");
+const outputFrontendVendorRoot = path.join(outputFrontendRoot, "vendor");
 const bundledFontsRoot = path.join(outputBackendRoot, "fonts");
 const bundledFontAssetsRoot = path.join(desktopRoot, "assets", "fonts");
 const buildRoot = path.join(desktopRoot, "build");
@@ -188,6 +189,7 @@ if (fs.existsSync(desktopIconSource)) {
 
 fs.rmSync(appRoot, { recursive: true, force: true });
 fs.mkdirSync(outputFrontendRoot, { recursive: true });
+fs.mkdirSync(outputFrontendVendorRoot, { recursive: true });
 fs.mkdirSync(outputBackendRoot, { recursive: true });
 fs.mkdirSync(bundledFontsRoot, { recursive: true });
 
@@ -210,7 +212,7 @@ for (const entry of copyEntries) {
   fs.cpSync(from, to, { recursive: true, force: true });
 }
 
-function copyFrontendRuntimeDependency(packageName, entries) {
+function copyFrontendRuntimeDependency(packageName, entries, targetDirName = packageName) {
   const candidateRoots = [
     path.join(frontendRoot, "node_modules", packageName),
     path.join(outputFrontendRoot, "node_modules", packageName),
@@ -222,7 +224,7 @@ function copyFrontendRuntimeDependency(packageName, entries) {
       `Missing frontend runtime dependency: ${candidateRoots.join(" | ")}`,
     );
   }
-  const targetRoot = path.join(outputFrontendRoot, "node_modules", packageName);
+  const targetRoot = path.join(outputFrontendVendorRoot, targetDirName);
   for (const entry of entries) {
     const from = path.join(packageRoot, entry);
     if (!fs.existsSync(from)) {
@@ -245,6 +247,48 @@ copyFrontendRuntimeDependency("pdfjs-dist", [
   "web/pdf_viewer.css",
   "web/pdf_viewer.mjs",
 ]);
+
+function rewriteDesktopFrontendRuntimeImports() {
+  const readerHtmlPath = path.join(outputFrontendRoot, "reader.html");
+  if (fs.existsSync(readerHtmlPath)) {
+    let readerHtml = fs.readFileSync(readerHtmlPath, "utf8");
+    readerHtml = readerHtml.replace('\n    <script src="./runtime-config.local.js"></script>', "");
+    readerHtml = readerHtml.replaceAll(
+      "./node_modules/pdfjs-dist/web/pdf_viewer.css",
+      "./vendor/pdfjs-dist/web/pdf_viewer.css",
+    );
+    fs.writeFileSync(readerHtmlPath, readerHtml, "utf8");
+  }
+
+  const readerJsPath = path.join(outputFrontendRoot, "src", "js", "reader.js");
+  if (fs.existsSync(readerJsPath)) {
+    let readerJs = fs.readFileSync(readerJsPath, "utf8");
+    readerJs = readerJs.replaceAll(
+      "../../node_modules/pdfjs-dist/",
+      "../../vendor/pdfjs-dist/",
+    );
+    fs.writeFileSync(readerJsPath, readerJs, "utf8");
+  }
+
+  const readerDialogControllerPath = path.join(
+    outputFrontendRoot,
+    "src",
+    "js",
+    "features",
+    "reader-dialog",
+    "controller.js",
+  );
+  if (fs.existsSync(readerDialogControllerPath)) {
+    let controllerJs = fs.readFileSync(readerDialogControllerPath, "utf8");
+    controllerJs = controllerJs.replaceAll(
+      "../../../../node_modules/pdf-lib/",
+      "../../../../vendor/pdf-lib/",
+    );
+    fs.writeFileSync(readerDialogControllerPath, controllerJs, "utf8");
+  }
+}
+
+rewriteDesktopFrontendRuntimeImports();
 
 const desktopPartialsRoot = path.join(outputFrontendRoot, "src", "partials");
 const desktopTemplatesPath = path.join(outputFrontendRoot, "src", "js", "templates.js");

@@ -1,6 +1,15 @@
-import { PDFDocument } from "../../../../node_modules/pdf-lib/dist/pdf-lib.esm.js";
 import { $ } from "../../dom.js";
 import { resolveJobActions } from "../../job.js";
+
+let pdfDocumentModulePromise = null;
+
+async function loadPdfDocument() {
+  if (!pdfDocumentModulePromise) {
+    pdfDocumentModulePromise = import("../../../../node_modules/pdf-lib/dist/pdf-lib.esm.js")
+      .then((module) => module.PDFDocument);
+  }
+  return pdfDocumentModulePromise;
+}
 
 function fileNameFromDisposition(disposition, fallback) {
   if (!disposition || typeof disposition !== "string") {
@@ -16,6 +25,18 @@ function fileNameFromDisposition(disposition, fallback) {
   }
   const plainMatch = disposition.match(/filename=\"?([^\";]+)\"?/i);
   return plainMatch && plainMatch[1] ? plainMatch[1] : fallback;
+}
+
+function jobIdFromReaderUrl(url) {
+  const raw = `${url || ""}`.trim();
+  if (!raw) {
+    return "";
+  }
+  try {
+    return new URL(raw, window.location.href).searchParams.get("job_id")?.trim() || "";
+  } catch (_err) {
+    return "";
+  }
 }
 
 function stripExtension(filename) {
@@ -175,6 +196,7 @@ async function fetchProtectedBytes(fetchProtected, url, label) {
 }
 
 async function buildMergedComparePdf(sourceBytes, translatedBytes) {
+  const PDFDocument = await loadPdfDocument();
   const mergedDoc = await PDFDocument.create();
   const sourceDoc = await PDFDocument.load(sourceBytes);
   const translatedDoc = await PDFDocument.load(translatedBytes);
@@ -374,12 +396,12 @@ export function mountReaderDialogFeature({
         disabled: false,
       };
     }
-    if (input?.jobId || input?.url) {
-      const jobId = `${input?.jobId || ""}`.trim();
+    if (input?.jobId || input?.url || typeof input?.disabled === "boolean") {
+      const jobId = `${input?.jobId || ""}`.trim() || jobIdFromReaderUrl(input?.url);
       return {
         url: `${input?.url || buildReaderPageUrl(jobId)}`.trim(),
         jobId,
-        disabled: false,
+        disabled: !!input?.disabled,
       };
     }
     const link = input?.currentTarget;
