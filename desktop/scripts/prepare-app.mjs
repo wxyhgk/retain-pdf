@@ -211,9 +211,16 @@ for (const entry of copyEntries) {
 }
 
 function copyFrontendRuntimeDependency(packageName, entries) {
-  const packageRoot = path.join(frontendRoot, "node_modules", packageName);
-  if (!fs.existsSync(packageRoot)) {
-    throw new Error(`Missing frontend runtime dependency: ${packageRoot}`);
+  const candidateRoots = [
+    path.join(frontendRoot, "node_modules", packageName),
+    path.join(outputFrontendRoot, "node_modules", packageName),
+    path.join(desktopRoot, "node_modules", packageName),
+  ];
+  const packageRoot = candidateRoots.find((candidate) => fs.existsSync(candidate));
+  if (!packageRoot) {
+    throw new Error(
+      `Missing frontend runtime dependency: ${candidateRoots.join(" | ")}`,
+    );
   }
   const targetRoot = path.join(outputFrontendRoot, "node_modules", packageName);
   for (const entry of entries) {
