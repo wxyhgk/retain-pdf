@@ -10,11 +10,12 @@ class BrowserCredentialsDialog extends HTMLElement {
           <div class="desktop-head">
             <div class="credential-dialog-head">
               <h2>接口设置</h2>
-              <p>填写后会保存在当前浏览器中，可随时回来修改和检测。</p>
+              <p id="browser-credentials-mode-hint">填写后会保存在当前浏览器中，可随时回来修改和检测。</p>
             </div>
             <button id="browser-credentials-close-btn" type="submit" class="dialog-close-btn" aria-label="关闭">×</button>
           </div>
           <div class="desktop-body credential-dialog-body">
+            <p id="browser-credentials-storage-hint" class="credential-dialog-note">填写后会保存在当前浏览器中，可随时回来修改和检测。</p>
             <div class="credential-card-grid">
               <section class="credential-card">
                 <div class="credential-card-head">

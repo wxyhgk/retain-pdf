@@ -177,12 +177,6 @@ export function applyKeyInputs(mineruToken, modelApiKey) {
   if ($("setup-model-api-key")) {
     $("setup-model-api-key").value = modelApiKey || "";
   }
-  if ($("settings-mineru-token")) {
-    $("settings-mineru-token").value = mineruToken || "";
-  }
-  if ($("settings-model-api-key")) {
-    $("settings-model-api-key").value = modelApiKey || "";
-  }
 }
 
 export async function desktopInvoke(command, args = {}) {

@@ -8,7 +8,7 @@ export function showDesktopUi() {
 }
 
 export function setDesktopBusy(message = "") {
-  const targetIds = ["desktop-setup-error", "desktop-settings-error"];
+  const targetIds = ["desktop-setup-error"];
   for (const id of targetIds) {
     const el = $(id);
     if (!el) {
@@ -32,12 +32,6 @@ export function closeSetupDialog() {
   if ($("desktop-setup-dialog").open) {
     $("desktop-setup-dialog").close();
   }
-}
-
-export function openSettingsDialog() {
-  $("settings-mineru-token").value = $("mineru_token").value;
-  $("settings-model-api-key").value = $("api_key").value;
-  $("desktop-settings-dialog").showModal();
 }
 
 export async function bootstrapDesktop() {
@@ -65,9 +59,6 @@ export async function saveDesktopConfig(mineruToken, modelApiKey, afterSave) {
   applyKeyInputs(payload.runtimeConfig.mineruToken, payload.runtimeConfig.modelApiKey);
   state.desktopConfigured = !!payload.firstRunCompleted;
   closeSetupDialog();
-  if ($("desktop-settings-dialog").open) {
-    $("desktop-settings-dialog").close();
-  }
   $("error-box").textContent = "-";
   if (afterSave) {
     await afterSave();

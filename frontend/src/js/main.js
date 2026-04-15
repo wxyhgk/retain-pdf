@@ -31,7 +31,6 @@ import {
 } from "./constants.js";
 import {
   bootstrapDesktop,
-  openSettingsDialog,
   openSetupDialog,
   saveDesktopConfig,
   setDesktopBusy,
@@ -172,10 +171,6 @@ async function handleDesktopSetupSave() {
   await appActionsFeature?.handleDesktopSetupSave();
 }
 
-async function handleDesktopSettingsSave() {
-  await appActionsFeature?.handleDesktopSettingsSave();
-}
-
 async function handleOpenOutputDir() {
   await appActionsFeature?.handleOpenOutputDir();
 }
@@ -266,7 +261,6 @@ function initializePage() {
     defaultModelApiKey,
     defaultModelBaseUrl,
     getTaskOptions: () => workflowFeature?.developerConfigWithDefaults() || {},
-    openSettingsDialog,
     saveTaskOptions: ({ mathMode, translateTitles }) => {
       state.developerConfig = {
         ...(state.developerConfig || {}),
@@ -276,6 +270,8 @@ function initializePage() {
       saveDeveloperStoredConfig(state.developerConfig);
     },
     saveBrowserStoredConfig,
+    saveDesktopConfig,
+    checkApiConnectivity: () => appActionsFeature?.checkApiConnectivity(),
     validateMineruToken,
     onCredentialStateChange: () => workflowFeature?.applyWorkflowMode(),
   });
@@ -303,6 +299,7 @@ function initializePage() {
     collectRunPayload: () => workflowFeature?.collectRunPayload() || {},
     getBrowserCredentialsFeature: () => browserCredentialsFeature,
     getJobRuntimeFeature: () => jobRuntimeFeature,
+    onDesktopConfigSaved: () => workflowFeature?.applyWorkflowMode(),
   });
   statusDetailFeature = mountStatusDetailFeature();
   jobRuntimeFeature = mountJobRuntimeFeature({
@@ -367,8 +364,9 @@ function initializePage() {
     }
   });
   $("back-home-btn")?.addEventListener("click", () => jobRuntimeFeature?.returnToHome());
-  $("desktop-settings-btn")?.addEventListener("click", openSettingsDialog);
-  $("desktop-settings-save-btn")?.addEventListener("click", handleDesktopSettingsSave);
+  $("desktop-settings-btn")?.addEventListener("click", () => {
+    browserCredentialsFeature?.openBrowserCredentialsDialog();
+  });
   $("desktop-setup-save-btn")?.addEventListener("click", handleDesktopSetupSave);
   $("open-output-btn")?.addEventListener("click", handleOpenOutputDir);
   appShellFeature.initializeIdleView();
@@ -395,9 +393,13 @@ function initializePage() {
 export function initializeApp() {
   initializePage();
   if (isDesktopMode()) {
-    bootstrapDesktop().catch((err) => {
-      setText("error-box", err.message || String(err));
-    });
+    bootstrapDesktop()
+      .then(() => {
+        workflowFeature?.applyWorkflowMode();
+      })
+      .catch((err) => {
+        setText("error-box", err.message || String(err));
+      });
   } else {
     checkApiConnectivity().catch(() => {});
     workflowFeature?.updateCredentialGate();

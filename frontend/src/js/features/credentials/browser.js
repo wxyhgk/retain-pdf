@@ -11,9 +11,10 @@ export function mountBrowserCredentialsFeature({
   defaultModelApiKey,
   defaultModelBaseUrl,
   getTaskOptions,
-  openSettingsDialog,
   saveTaskOptions,
   saveBrowserStoredConfig,
+  saveDesktopConfig,
+  checkApiConnectivity,
   validateMineruToken,
   onCredentialStateChange,
 }) {
@@ -127,6 +128,8 @@ export function mountBrowserCredentialsFeature({
   function browserCredentialElements() {
     return {
       dialog: $("browser-credentials-dialog"),
+      modeHint: $("browser-credentials-mode-hint"),
+      storageHint: $("browser-credentials-storage-hint"),
       mineruInput: $("browser-mineru-token"),
       apiKeyInput: $("browser-api-key"),
       mathModeSelect: $("browser-job-math-mode"),
@@ -137,6 +140,8 @@ export function mountBrowserCredentialsFeature({
 
   function syncBrowserDialogFromHiddenInputs() {
     const {
+      modeHint,
+      storageHint,
       mineruInput,
       apiKeyInput,
       mathModeSelect,
@@ -154,6 +159,16 @@ export function mountBrowserCredentialsFeature({
     }
     if (translateTitlesInput) {
       translateTitlesInput.checked = taskOptions.translateTitles !== false;
+    }
+    if (modeHint) {
+      modeHint.textContent = state.desktopMode
+        ? "桌面端会把接口配置保存到本机，同时保留任务选项。"
+        : "填写后会保存在当前浏览器中，可随时回来修改和检测。";
+    }
+    if (storageHint) {
+      storageHint.textContent = state.desktopMode
+        ? "当前保存会写入桌面端本地配置，并同步到当前任务表单。"
+        : "填写后会保存在当前浏览器中，可随时回来修改和检测。";
     }
     setMineruValidationMessage("", "");
     setDeepSeekValidationMessage("", "");
@@ -175,6 +190,29 @@ export function mountBrowserCredentialsFeature({
       translateTitles: !!translateTitlesInput?.checked,
     });
     saveBrowserStoredConfig();
+  }
+
+  async function persistDesktopCredentialsFromDialog() {
+    const {
+      mineruInput,
+      apiKeyInput,
+      mathModeSelect,
+      translateTitlesInput,
+    } = browserCredentialElements();
+    const mineruToken = mineruInput?.value?.trim() || "";
+    const modelApiKey = apiKeyInput?.value?.trim() || "";
+    await saveDesktopConfig?.(
+      mineruToken,
+      modelApiKey,
+      async () => {
+        await checkApiConnectivity?.();
+      },
+    );
+    applyKeyInputs(mineruToken, modelApiKey);
+    saveTaskOptions?.({
+      mathMode: mathModeSelect?.value || "placeholder",
+      translateTitles: !!translateTitlesInput?.checked,
+    });
   }
 
   function hasBrowserCredentials() {
@@ -223,11 +261,22 @@ export function mountBrowserCredentialsFeature({
     const uploadMeta = document.querySelector(".upload-meta");
     const uploadStatus = $("upload-status");
 
-    if (!gate || !tile || !fileInput || state.desktopMode) {
+    if (!gate || !tile || !fileInput) {
+      return;
+    }
+    const uploadEnabled = workflowNeedsUpload();
+    if (state.desktopMode) {
+      gate.classList.add("hidden");
+      trigger?.classList.remove("is-nudged");
+      tile.classList.toggle("is-locked", !uploadEnabled);
+      fileInput.disabled = !uploadEnabled;
+      uploadGlyph?.classList.toggle("hidden", !uploadEnabled);
+      uploadMeta?.classList.toggle("hidden", !uploadEnabled);
+      tile.classList.toggle("is-ready", uploadEnabled && !!state.uploadId);
+      refreshSubmitControls();
       return;
     }
     const show = workflowNeedsCredentials() && !hasBrowserCredentials();
-    const uploadEnabled = workflowNeedsUpload();
     gate.classList.toggle("hidden", !show);
     trigger?.classList.toggle("is-nudged", show);
     tile.classList.toggle("is-locked", show || !uploadEnabled);
@@ -254,12 +303,32 @@ export function mountBrowserCredentialsFeature({
   }
 
   async function handleBrowserCredentialSave() {
-    const { mineruInput } = browserCredentialElements();
+    const { mineruInput, apiKeyInput } = browserCredentialElements();
+    const mineruToken = mineruInput?.value?.trim() || "";
+    const modelApiKey = apiKeyInput?.value?.trim() || "";
+    if (!mineruToken || !modelApiKey) {
+      if (!mineruToken) {
+        setMineruValidationMessage("请先填写 MinerU Token。", "error");
+      }
+      if (!modelApiKey) {
+        setDeepSeekValidationMessage("请先填写 DeepSeek Key。", "error");
+      }
+      return;
+    }
     const validation = await runMineruTokenValidation(mineruInput?.value || "", { showResult: true });
     if (!validation.ok) {
       return;
     }
-    persistBrowserCredentialsFromDialog();
+    try {
+      if (state.desktopMode) {
+        await persistDesktopCredentialsFromDialog();
+      } else {
+        persistBrowserCredentialsFromDialog();
+      }
+    } catch (error) {
+      setDeepSeekValidationMessage(error?.message || String(error), "error");
+      return;
+    }
     onCredentialStateChange?.();
     $("browser-credentials-dialog")?.close();
   }
@@ -274,18 +343,12 @@ export function mountBrowserCredentialsFeature({
   $("browser-mineru-validate-btn")?.addEventListener("click", handleBrowserMineruValidate);
   $("browser-deepseek-validate-btn")?.addEventListener("click", handleBrowserDeepSeekValidate);
   $("browser-credentials-save-btn")?.addEventListener("click", handleBrowserCredentialSave);
-  $("credentials-btn")?.addEventListener("click", () => {
-    if (state.desktopMode) {
-      openSettingsDialog();
-      return;
-    }
-    openBrowserCredentialsDialog();
-  });
+  $("credentials-btn")?.addEventListener("click", openBrowserCredentialsDialog);
 
-    return {
-      ensureMineruTokenReady,
-      hasBrowserCredentials,
-      openBrowserCredentialsDialog,
-      updateCredentialGate,
-    };
+  return {
+    ensureMineruTokenReady,
+    hasBrowserCredentials,
+    openBrowserCredentialsDialog,
+    updateCredentialGate,
+  };
 }
