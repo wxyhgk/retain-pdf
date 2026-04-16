@@ -11,7 +11,10 @@ import { resolveJobActions } from "./job.js";
 import { getMockJobId } from "./mock.js";
 import { fetchJobArtifactsManifest, fetchJobPayload, fetchProtected } from "./network.js";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = "../../node_modules/pdfjs-dist/build/pdf.worker.mjs";
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "../../node_modules/pdfjs-dist/build/pdf.worker.mjs",
+  import.meta.url,
+).toString();
 const PDFJS_CMAP_URL = new URL("../../node_modules/pdfjs-dist/cmaps/", import.meta.url).toString();
 const PDFJS_STANDARD_FONT_DATA_URL = new URL("../../node_modules/pdfjs-dist/standard_fonts/", import.meta.url).toString();
 
