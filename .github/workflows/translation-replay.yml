@@ -1,0 +1,96 @@
+name: Translation Replay
+
+"on":
+  pull_request:
+    paths:
+      - ".github/workflows/translation-replay.yml"
+      - "backend/scripts/devtools/promptfoo/**"
+      - "backend/scripts/devtools/replay_translation_item.py"
+      - "backend/scripts/devtools/tests/translation/**"
+      - "backend/scripts/services/translation/**"
+      - "backend/scripts/foundation/**"
+      - "docker/requirements-app.txt"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - ".github/workflows/translation-replay.yml"
+      - "backend/scripts/devtools/promptfoo/**"
+      - "backend/scripts/devtools/replay_translation_item.py"
+      - "backend/scripts/devtools/tests/translation/**"
+      - "backend/scripts/services/translation/**"
+      - "backend/scripts/foundation/**"
+      - "docker/requirements-app.txt"
+  workflow_dispatch: {}
+
+concurrency:
+  group: translation-replay-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  promptfoo-current-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONPATH: backend/scripts
+      RETAIN_TRANSLATION_API_KEY: ${{ secrets.RETAIN_TRANSLATION_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.0"
+
+      - name: Install Python dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r docker/requirements-app.txt pytest
+
+      - name: Run promptfoo toolchain unit tests
+        shell: bash
+        run: |
+          python -m pytest -q \
+            backend/scripts/devtools/tests/translation/test_promptfoo_case_tools.py \
+            backend/scripts/devtools/tests/translation/test_promptfoo_harness_regressions.py \
+            backend/scripts/devtools/tests/translation/test_translation_debug_tools.py
+
+      - name: Note missing replay secret on fork PRs
+        if: env.RETAIN_TRANSLATION_API_KEY == '' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        shell: bash
+        run: |
+          echo "Skipping current-replay promptfoo eval because RETAIN_TRANSLATION_API_KEY is unavailable on forked pull requests."
+
+      - name: Fail when replay secret is missing
+        if: env.RETAIN_TRANSLATION_API_KEY == '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        shell: bash
+        run: |
+          echo "RETAIN_TRANSLATION_API_KEY secret is required for translation replay CI." >&2
+          exit 1
+
+      - name: Run promptfoo current-replay eval
+        if: env.RETAIN_TRANSLATION_API_KEY != ''
+        shell: bash
+        run: |
+          mkdir -p backend/scripts/devtools/promptfoo/.ci
+          python backend/scripts/devtools/promptfoo/run_eval.py -- --output "$GITHUB_WORKSPACE/backend/scripts/devtools/promptfoo/.ci/current-replay.json" --no-table
+
+      - name: Upload promptfoo artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: translation-replay-${{ github.run_id }}
+          if-no-files-found: ignore
+          path: |
+            backend/scripts/devtools/promptfoo/.ci/*.json
+            backend/scripts/devtools/promptfoo/fixtures/cases.csv
+            backend/scripts/devtools/promptfoo/fixtures/cases/*.json
+            ${{ env.HOME }}/.promptfoo/logs/*.log

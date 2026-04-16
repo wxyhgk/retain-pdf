@@ -1,0 +1,2961 @@
+{
+  "schema": "translation_case_bundle_v1",
+  "captured_at": "2026-04-16T08:11:51Z",
+  "fixture": {
+    "job_root": "20260416034152-d12925",
+    "item_id": "p008-b009",
+    "description": "heteroatom substitution emission shift paragraph kept_origin drift",
+    "case_artifact": "cases/20260416034152-d12925--p008-b009.json",
+    "expected_contains": [],
+    "required_terms": [],
+    "forbidden_substrings": [],
+    "require_cjk": true,
+    "min_cjk_chars": 1,
+    "min_output_chars": null,
+    "notes": ""
+  },
+  "saved": {
+    "snapshot": {
+      "job_root": "20260416034152-d12925",
+      "job_id": "20260416034152-d12925",
+      "item_id": "p008-b009",
+      "page_idx": 7,
+      "page_number": 8,
+      "page_path": "translated/page-008-deepseek.json",
+      "block_idx": 9,
+      "block_type": "text",
+      "math_mode": "direct_typst",
+      "source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+      "translated_text": "",
+      "source_preview": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substit…",
+      "translated_preview": "",
+      "classification_label": "skip_model_keep_origin",
+      "should_translate": false,
+      "skip_reason": "skip_model_keep_origin",
+      "final_status": "kept_origin",
+      "translation_diagnostics": {
+        "item_id": "p008-b009",
+        "page_idx": 7,
+        "route_path": [
+          "block_level",
+          "direct_typst",
+          "keep_origin"
+        ],
+        "error_trace": [
+          {
+            "type": "transport",
+            "code": "TRANSPORT_ERROR"
+          }
+        ],
+        "fallback_to": "keep_origin",
+        "degradation_reason": "transport_timeout_budget_exceeded",
+        "final_status": "kept_origin"
+      }
+    },
+    "item": {
+      "item_id": "p008-b009",
+      "page_idx": 7,
+      "block_idx": 9,
+      "block_type": "text",
+      "bbox": [
+        300,
+        123,
+        549,
+        399
+      ],
+      "source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+      "lines": [
+        {
+          "bbox": [
+            300,
+            123,
+            549,
+            399
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "inline_equation",
+              "content": "562\\mathrm{nm}",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "text",
+              "content": "to",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "inline_equation",
+              "content": "528\\mathrm{nm}",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "text",
+              "content": ".[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "inline_equation",
+              "content": "648\\mathrm{nm}",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "text",
+              "content": ", despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "inline_equation",
+              "content": "911\\mathrm{nm}",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "text",
+              "content": ".[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "ocr_sub_type": "body",
+        "normalized_sub_type": "body",
+        "structure_role": "body",
+        "raw_type": "text",
+        "tags": [],
+        "derived": {
+          "role": "",
+          "by": "",
+          "confidence": 0.0
+        },
+        "continuation_hint": {
+          "source": "",
+          "group_id": "",
+          "role": "",
+          "scope": "",
+          "reading_order": -1,
+          "confidence": 0.0
+        },
+        "source": {
+          "provider": "mineru",
+          "raw_page_index": 7,
+          "raw_path": "/pdf_info/7/para_blocks/9",
+          "raw_type": "text",
+          "raw_sub_type": "",
+          "raw_bbox": [
+            300,
+            123,
+            549,
+            399
+          ],
+          "raw_text_excerpt": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less ele"
+        },
+        "structure_group": "",
+        "pair_with": ""
+      },
+      "ocr_continuation_source": "",
+      "ocr_continuation_group_id": "",
+      "ocr_continuation_role": "",
+      "ocr_continuation_scope": "",
+      "ocr_continuation_reading_order": -1,
+      "ocr_continuation_confidence": 0.0,
+      "layout_mode": "double",
+      "layout_split_x": 289.5,
+      "layout_zone": "right_column",
+      "layout_zone_rank": 1,
+      "layout_zone_size": 5,
+      "layout_boundary_role": "middle",
+      "math_mode": "direct_typst",
+      "protected_source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+      "mixed_original_protected_source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+      "formula_map": [],
+      "protected_map": [],
+      "classification_label": "skip_model_keep_origin",
+      "should_translate": false,
+      "skip_reason": "skip_model_keep_origin",
+      "mixed_literal_action": "",
+      "mixed_literal_prefix": "",
+      "translation_unit_id": "p008-b009",
+      "translation_unit_kind": "single",
+      "translation_unit_member_ids": [
+        "p008-b009"
+      ],
+      "translation_unit_protected_source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+      "translation_unit_formula_map": [],
+      "translation_unit_protected_map": [],
+      "translation_unit_protected_translated_text": "",
+      "translation_unit_translated_text": "",
+      "protected_translated_text": "",
+      "translated_text": "",
+      "continuation_group": "",
+      "continuation_prev_text": "",
+      "continuation_next_text": "",
+      "continuation_decision": "",
+      "continuation_candidate_prev_id": "",
+      "continuation_candidate_next_id": "",
+      "group_protected_source_text": "",
+      "group_formula_map": [],
+      "group_protected_map": [],
+      "group_protected_translated_text": "",
+      "group_translated_text": "",
+      "final_status": "kept_origin",
+      "translation_diagnostics": {
+        "item_id": "p008-b009",
+        "page_idx": 7,
+        "route_path": [
+          "block_level",
+          "direct_typst",
+          "keep_origin"
+        ],
+        "error_trace": [
+          {
+            "type": "transport",
+            "code": "TRANSPORT_ERROR"
+          }
+        ],
+        "fallback_to": "keep_origin",
+        "degradation_reason": "transport_timeout_budget_exceeded",
+        "final_status": "kept_origin"
+      },
+      "candidate_pair_prev_id": "",
+      "candidate_pair_next_id": ""
+    }
+  },
+  "replay_input": {
+    "job_root": "20260416034152-d12925",
+    "job_id": "20260416034152-d12925",
+    "item_id": "p008-b009",
+    "page_idx": 7,
+    "page_path": "translated/page-008-deepseek.json",
+    "spec": {
+      "mode": "sci",
+      "math_mode": "direct_typst",
+      "skip_title_translation": true,
+      "rule_profile_name": "general_sci",
+      "custom_rules_text": "",
+      "classify_batch_size": 12,
+      "workers": 100,
+      "model": "deepseek-chat",
+      "base_url": "https://api.deepseek.com/v1",
+      "glossary_entries": [],
+      "credential_ref": "env:RETAIN_TRANSLATION_API_KEY"
+    },
+    "page_payload": [
+      {
+        "item_id": "p008-b000",
+        "page_idx": 7,
+        "block_idx": 0,
+        "block_type": "text",
+        "bbox": [
+          43,
+          63,
+          291,
+          134
+        ],
+        "source_text": "(HOMO-LUMO gap) is relatively larger. On the other hand, in a molecule with an extended \\pi -conjugated system, more p-orbitals are involved in the overlapping. As a result, the energy difference between the bonding and anti-bonding orbitals becomes smaller, causing a decrease in the HOMO-LUMO gap (butadiene, Figure 8a).",
+        "lines": [
+          {
+            "bbox": [
+              43,
+              63,
+              291,
+              134
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "(HOMO-LUMO gap) is relatively larger. On the other hand, in a molecule with an extended",
+                "bbox": [
+                  43,
+                  63,
+                  291,
+                  134
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\pi",
+                "bbox": [
+                  43,
+                  63,
+                  291,
+                  134
+                ]
+              },
+              {
+                "type": "text",
+                "content": "-conjugated system, more p-orbitals are involved in the overlapping. As a result, the energy difference between the bonding and anti-bonding orbitals becomes smaller, causing a decrease in the HOMO-LUMO gap (butadiene, Figure 8a).",
+                "bbox": [
+                  43,
+                  63,
+                  291,
+                  134
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/0",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              43,
+              63,
+              291,
+              134
+            ],
+            "raw_text_excerpt": "(HOMO-LUMO gap) is relatively larger. On the other hand, in a molecule with an extended \\pi -conjugated system, more p-orbitals are involved in the overlapping. As a result, the energy difference betw"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "left_column",
+        "layout_zone_rank": 0,
+        "layout_zone_size": 8,
+        "layout_boundary_role": "head",
+        "math_mode": "direct_typst",
+        "protected_source_text": "(HOMO-LUMO gap) is relatively larger. On the other hand, in a molecule with an extended \\pi -conjugated system, more p-orbitals are involved in the overlapping. As a result, the energy difference between the bonding and anti-bonding orbitals becomes smaller, causing a decrease in the HOMO-LUMO gap (butadiene, Figure 8a).",
+        "mixed_original_protected_source_text": "(HOMO-LUMO gap) is relatively larger. On the other hand, in a molecule with an extended \\pi -conjugated system, more p-orbitals are involved in the overlapping. As a result, the energy difference between the bonding and anti-bonding orbitals becomes smaller, causing a decrease in the HOMO-LUMO gap (butadiene, Figure 8a).",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "__cg__:cg-review-1001",
+        "translation_unit_kind": "group",
+        "translation_unit_member_ids": [
+          "p007-b007",
+          "p008-b000"
+        ],
+        "translation_unit_protected_source_text": "Consider ethene and butadiene LCAO, shown in Figure 8a. When a molecule has a shorter \\pi -conjugated system, there are fewer p-orbitals involved in the overlapping, and the energy difference between the bonding and anti-bonding orbitals (HOMO-LUMO gap) is relatively larger. On the other hand, in a molecule with an extended \\pi -conjugated system, more p-orbitals are involved in the overlapping. As a result, the energy difference between the bonding and anti-bonding orbitals becomes smaller, causing a decrease in the HOMO-LUMO gap (butadiene, Figure 8a).",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "考虑图8a所示的乙烯和丁二烯的LCAO。当分子的$\\pi$共轭体系较短时，参与重叠的p轨道较少，成键轨道与反键轨道之间的能量差（HOMO-LUMO能隙）相对较大。另一方面，在具有扩展$\\pi$共轭体系的分子中，更多的p轨道参与重叠。因此，成键轨道与反键轨道之间的能量差变小，导致HOMO-LUMO能隙减小（丁二烯，图8a）。",
+        "translation_unit_translated_text": "考虑图8a所示的乙烯和丁二烯的LCAO。当分子的$\\pi$共轭体系较短时，参与重叠的p轨道较少，成键轨道与反键轨道之间的能量差（HOMO-LUMO能隙）相对较大。另一方面，在具有扩展$\\pi$共轭体系的分子中，更多的p轨道参与重叠。因此，成键轨道与反键轨道之间的能量差变小，导致HOMO-LUMO能隙减小（丁二烯，图8a）。",
+        "protected_translated_text": "HOMO-LUMO能隙）相对较大。另一方面，在具有扩展$\\pi$共轭体系的分子中，更多的p轨道参与重叠。因此，成键轨道与反键轨道之间的能量差变小，导致HOMO-LUMO能隙减小（丁二烯，图8a）。",
+        "translated_text": "HOMO-LUMO能隙）相对较大。另一方面，在具有扩展$\\pi$共轭体系的分子中，更多的p轨道参与重叠。因此，成键轨道与反键轨道之间的能量差变小，导致HOMO-LUMO能隙减小（丁二烯，图8a）。",
+        "continuation_group": "cg-review-1001",
+        "continuation_prev_text": "Consider ethene and butadiene LCAO, shown in Figure 8a. When a molecule has a shorter \\pi -conjugated system, there are fewer p-orbitals involved in the overlapping, and the energy difference between the bonding and anti-bonding orbitals",
+        "continuation_next_text": "",
+        "continuation_decision": "review_joined",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "Consider ethene and butadiene LCAO, shown in Figure 8a. When a molecule has a shorter \\pi -conjugated system, there are fewer p-orbitals involved in the overlapping, and the energy difference between the bonding and anti-bonding orbitals (HOMO-LUMO gap) is relatively larger. On the other hand, in a molecule with an extended \\pi -conjugated system, more p-orbitals are involved in the overlapping. As a result, the energy difference between the bonding and anti-bonding orbitals becomes smaller, causing a decrease in the HOMO-LUMO gap (butadiene, Figure 8a).",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "考虑图8a所示的乙烯和丁二烯的LCAO。当分子的$\\pi$共轭体系较短时，参与重叠的p轨道较少，成键轨道与反键轨道之间的能量差（HOMO-LUMO能隙）相对较大。另一方面，在具有扩展$\\pi$共轭体系的分子中，更多的p轨道参与重叠。因此，成键轨道与反键轨道之间的能量差变小，导致HOMO-LUMO能隙减小（丁二烯，图8a）。",
+        "group_translated_text": "考虑图8a所示的乙烯和丁二烯的LCAO。当分子的$\\pi$共轭体系较短时，参与重叠的p轨道较少，成键轨道与反键轨道之间的能量差（HOMO-LUMO能隙）相对较大。另一方面，在具有扩展$\\pi$共轭体系的分子中，更多的p轨道参与重叠。因此，成键轨道与反键轨道之间的能量差变小，导致HOMO-LUMO能隙减小（丁二烯，图8a）。",
+        "final_status": "translated",
+        "translation_diagnostics": {},
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p008-b001",
+        "page_idx": 7,
+        "block_idx": 1,
+        "block_type": "text",
+        "bbox": [
+          43,
+          135,
+          291,
+          206
+        ],
+        "source_text": "Addition of benzofusions on coumarin shifts the fluorescence from 445\\mathrm{nm} (6) to 570\\mathrm{nm} (54) or 623\\mathrm{nm} (55), depending on the fusion location.[65] Alternatively, aryl ethynylene moieties can shift the emission as well (56). There have also been coumarin-cyanine hybrids (57) synthesized that shift the fluorescence to 663\\mathrm{nm} .[57]",
+        "lines": [
+          {
+            "bbox": [
+              43,
+              135,
+              291,
+              206
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Addition of benzofusions on coumarin shifts the fluorescence from",
+                "bbox": [
+                  43,
+                  135,
+                  291,
+                  206
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "445\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  135,
+                  291,
+                  206
+                ]
+              },
+              {
+                "type": "text",
+                "content": "(6) to",
+                "bbox": [
+                  43,
+                  135,
+                  291,
+                  206
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "570\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  135,
+                  291,
+                  206
+                ]
+              },
+              {
+                "type": "text",
+                "content": "(54) or",
+                "bbox": [
+                  43,
+                  135,
+                  291,
+                  206
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "623\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  135,
+                  291,
+                  206
+                ]
+              },
+              {
+                "type": "text",
+                "content": "(55), depending on the fusion location.[65] Alternatively, aryl ethynylene moieties can shift the emission as well (56). There have also been coumarin-cyanine hybrids (57) synthesized that shift the fluorescence to",
+                "bbox": [
+                  43,
+                  135,
+                  291,
+                  206
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "663\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  135,
+                  291,
+                  206
+                ]
+              },
+              {
+                "type": "text",
+                "content": ".[57]",
+                "bbox": [
+                  43,
+                  135,
+                  291,
+                  206
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/1",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              43,
+              135,
+              291,
+              206
+            ],
+            "raw_text_excerpt": "Addition of benzofusions on coumarin shifts the fluorescence from 445\\mathrm{nm} (6) to 570\\mathrm{nm} (54) or 623\\mathrm{nm} (55), depending on the fusion location.[65] Alternatively, aryl ethynylene"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "left_column",
+        "layout_zone_rank": 1,
+        "layout_zone_size": 8,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Addition of benzofusions on coumarin shifts the fluorescence from 445\\mathrm{nm} (6) to 570\\mathrm{nm} (54) or 623\\mathrm{nm} (55), depending on the fusion location.[65] Alternatively, aryl ethynylene moieties can shift the emission as well (56). There have also been coumarin-cyanine hybrids (57) synthesized that shift the fluorescence to 663\\mathrm{nm} .[57]",
+        "mixed_original_protected_source_text": "Addition of benzofusions on coumarin shifts the fluorescence from 445\\mathrm{nm} (6) to 570\\mathrm{nm} (54) or 623\\mathrm{nm} (55), depending on the fusion location.[65] Alternatively, aryl ethynylene moieties can shift the emission as well (56). There have also been coumarin-cyanine hybrids (57) synthesized that shift the fluorescence to 663\\mathrm{nm} .[57]",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b001",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b001"
+        ],
+        "translation_unit_protected_source_text": "Addition of benzofusions on coumarin shifts the fluorescence from 445\\mathrm{nm} (6) to 570\\mathrm{nm} (54) or 623\\mathrm{nm} (55), depending on the fusion location.[65] Alternatively, aryl ethynylene moieties can shift the emission as well (56). There have also been coumarin-cyanine hybrids (57) synthesized that shift the fluorescence to 663\\mathrm{nm} .[57]",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "在香豆素上引入苯并稠合结构，可将荧光从445 nm（化合物6）红移至570 nm（化合物54）或623 nm（化合物55），具体取决于稠合位置。[65] 此外，芳基乙炔基单元也能实现发射波长的红移（化合物56）。亦有研究合成了香豆素-花菁杂合体（化合物57），其荧光可红移至663 nm。[57]",
+        "translation_unit_translated_text": "在香豆素上引入苯并稠合结构，可将荧光从445 nm（化合物6）红移至570 nm（化合物54）或623 nm（化合物55），具体取决于稠合位置。[65] 此外，芳基乙炔基单元也能实现发射波长的红移（化合物56）。亦有研究合成了香豆素-花菁杂合体（化合物57），其荧光可红移至663 nm。[57]",
+        "protected_translated_text": "在香豆素上引入苯并稠合结构，可将荧光从445 nm（化合物6）红移至570 nm（化合物54）或623 nm（化合物55），具体取决于稠合位置。[65] 此外，芳基乙炔基单元也能实现发射波长的红移（化合物56）。亦有研究合成了香豆素-花菁杂合体（化合物57），其荧光可红移至663 nm。[57]",
+        "translated_text": "在香豆素上引入苯并稠合结构，可将荧光从445 nm（化合物6）红移至570 nm（化合物54）或623 nm（化合物55），具体取决于稠合位置。[65] 此外，芳基乙炔基单元也能实现发射波长的红移（化合物56）。亦有研究合成了香豆素-花菁杂合体（化合物57），其荧光可红移至663 nm。[57]",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p008-b001",
+          "page_idx": 7,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p008-b002",
+        "page_idx": 7,
+        "block_idx": 2,
+        "block_type": "text",
+        "bbox": [
+          43,
+          206,
+          291,
+          266
+        ],
+        "source_text": "Benzofusions on fluorescein and rhodamine yield napthofluorescein and naphthohodamine, which shift the emission by 154\\mathrm{nm} to 668\\mathrm{nm} (58-60).[59,60] However, the pKa of napthofluorescein 60 is 8, therefore at physiological pH it is not in the highly fluorescent dianion form, limiting its usage.[6]",
+        "lines": [
+          {
+            "bbox": [
+              43,
+              206,
+              291,
+              266
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Benzofusions on fluorescein and rhodamine yield napthofluorescein and naphthohodamine, which shift the emission by",
+                "bbox": [
+                  43,
+                  206,
+                  291,
+                  266
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "154\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  206,
+                  291,
+                  266
+                ]
+              },
+              {
+                "type": "text",
+                "content": "to",
+                "bbox": [
+                  43,
+                  206,
+                  291,
+                  266
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "668\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  206,
+                  291,
+                  266
+                ]
+              },
+              {
+                "type": "text",
+                "content": "(58-60).[59,60] However, the pKa of napthofluorescein 60 is 8, therefore at physiological pH it is not in the highly fluorescent dianion form, limiting its usage.[6]",
+                "bbox": [
+                  43,
+                  206,
+                  291,
+                  266
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/2",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              43,
+              206,
+              291,
+              266
+            ],
+            "raw_text_excerpt": "Benzofusions on fluorescein and rhodamine yield napthofluorescein and naphthohodamine, which shift the emission by 154\\mathrm{nm} to 668\\mathrm{nm} (58-60).[59,60] However, the pKa of napthofluorescei"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "left_column",
+        "layout_zone_rank": 2,
+        "layout_zone_size": 8,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Benzofusions on fluorescein and rhodamine yield napthofluorescein and naphthohodamine, which shift the emission by 154\\mathrm{nm} to 668\\mathrm{nm} (58-60).[59,60] However, the pKa of napthofluorescein 60 is 8, therefore at physiological pH it is not in the highly fluorescent dianion form, limiting its usage.[6]",
+        "mixed_original_protected_source_text": "Benzofusions on fluorescein and rhodamine yield napthofluorescein and naphthohodamine, which shift the emission by 154\\mathrm{nm} to 668\\mathrm{nm} (58-60).[59,60] However, the pKa of napthofluorescein 60 is 8, therefore at physiological pH it is not in the highly fluorescent dianion form, limiting its usage.[6]",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b002",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b002"
+        ],
+        "translation_unit_protected_source_text": "Benzofusions on fluorescein and rhodamine yield napthofluorescein and naphthohodamine, which shift the emission by 154\\mathrm{nm} to 668\\mathrm{nm} (58-60).[59,60] However, the pKa of napthofluorescein 60 is 8, therefore at physiological pH it is not in the highly fluorescent dianion form, limiting its usage.[6]",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "苯并稠合于荧光素和罗丹明得到萘并荧光素和萘并罗丹明，其发射波长红移至$668\\,\\mathrm{nm}$（偏移$154\\,\\mathrm{nm}$）(58-60)。[59,60] 然而，萘并荧光素60的pKa为8，因此在生理pH下它不处于高荧光的双阴离子形式，限制了其应用。[6]",
+        "translation_unit_translated_text": "苯并稠合于荧光素和罗丹明得到萘并荧光素和萘并罗丹明，其发射波长红移至$668\\,\\mathrm{nm}$（偏移$154\\,\\mathrm{nm}$）(58-60)。[59,60] 然而，萘并荧光素60的pKa为8，因此在生理pH下它不处于高荧光的双阴离子形式，限制了其应用。[6]",
+        "protected_translated_text": "苯并稠合于荧光素和罗丹明得到萘并荧光素和萘并罗丹明，其发射波长红移至$668\\,\\mathrm{nm}$（偏移$154\\,\\mathrm{nm}$）(58-60)。[59,60] 然而，萘并荧光素60的pKa为8，因此在生理pH下它不处于高荧光的双阴离子形式，限制了其应用。[6]",
+        "translated_text": "苯并稠合于荧光素和罗丹明得到萘并荧光素和萘并罗丹明，其发射波长红移至$668\\,\\mathrm{nm}$（偏移$154\\,\\mathrm{nm}$）(58-60)。[59,60] 然而，萘并荧光素60的pKa为8，因此在生理pH下它不处于高荧光的双阴离子形式，限制了其应用。[6]",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p008-b002",
+          "page_idx": 7,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p008-b003",
+        "page_idx": 7,
+        "block_idx": 3,
+        "block_type": "text",
+        "bbox": [
+          43,
+          267,
+          291,
+          386
+        ],
+        "source_text": "Red-shifting cyanine emission through conjugation extension is well established. Either the methylene bridge is extended, or aryl fusions are added to the phenyl ring. Cy3 (61) has an emission of 575\\mathrm{nm} . Extension of the bridge to Cy5 (62) shifts the fluorescence to 677\\mathrm{nm} .[58] Further bridge extension to Cy7 (63) affords emission at 789\\mathrm{nm} .[61] Unfortunately, bridge extension and red-shifting cyanine fluorescence comes at the cost of diminished quantum yields. Additional benzofusions to Cy3 and Cy5 shifts the fluorescence 27\\mathrm{nm} to the red (64 vs 61 and 65 vs 62).[61]",
+        "lines": [
+          {
+            "bbox": [
+              43,
+              267,
+              291,
+              386
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Red-shifting cyanine emission through conjugation extension is well established. Either the methylene bridge is extended, or aryl fusions are added to the phenyl ring. Cy3 (61) has an emission of",
+                "bbox": [
+                  43,
+                  267,
+                  291,
+                  386
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "575\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  267,
+                  291,
+                  386
+                ]
+              },
+              {
+                "type": "text",
+                "content": ". Extension of the bridge to Cy5 (62) shifts the fluorescence to",
+                "bbox": [
+                  43,
+                  267,
+                  291,
+                  386
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "677\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  267,
+                  291,
+                  386
+                ]
+              },
+              {
+                "type": "text",
+                "content": ".[58] Further bridge extension to Cy7 (63) affords emission at",
+                "bbox": [
+                  43,
+                  267,
+                  291,
+                  386
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "789\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  267,
+                  291,
+                  386
+                ]
+              },
+              {
+                "type": "text",
+                "content": ".[61] Unfortunately, bridge extension and red-shifting cyanine fluorescence comes at the cost of diminished quantum yields. Additional benzofusions to Cy3 and Cy5 shifts the fluorescence",
+                "bbox": [
+                  43,
+                  267,
+                  291,
+                  386
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "27\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  267,
+                  291,
+                  386
+                ]
+              },
+              {
+                "type": "text",
+                "content": "to the red (64 vs 61 and 65 vs 62).[61]",
+                "bbox": [
+                  43,
+                  267,
+                  291,
+                  386
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/3",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              43,
+              267,
+              291,
+              386
+            ],
+            "raw_text_excerpt": "Red-shifting cyanine emission through conjugation extension is well established. Either the methylene bridge is extended, or aryl fusions are added to the phenyl ring. Cy3 (61) has an emission of 575\\"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "left_column",
+        "layout_zone_rank": 3,
+        "layout_zone_size": 8,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Red-shifting cyanine emission through conjugation extension is well established. Either the methylene bridge is extended, or aryl fusions are added to the phenyl ring. Cy3 (61) has an emission of 575\\mathrm{nm} . Extension of the bridge to Cy5 (62) shifts the fluorescence to 677\\mathrm{nm} .[58] Further bridge extension to Cy7 (63) affords emission at 789\\mathrm{nm} .[61] Unfortunately, bridge extension and red-shifting cyanine fluorescence comes at the cost of diminished quantum yields. Additional benzofusions to Cy3 and Cy5 shifts the fluorescence 27\\mathrm{nm} to the red (64 vs 61 and 65 vs 62).[61]",
+        "mixed_original_protected_source_text": "Red-shifting cyanine emission through conjugation extension is well established. Either the methylene bridge is extended, or aryl fusions are added to the phenyl ring. Cy3 (61) has an emission of 575\\mathrm{nm} . Extension of the bridge to Cy5 (62) shifts the fluorescence to 677\\mathrm{nm} .[58] Further bridge extension to Cy7 (63) affords emission at 789\\mathrm{nm} .[61] Unfortunately, bridge extension and red-shifting cyanine fluorescence comes at the cost of diminished quantum yields. Additional benzofusions to Cy3 and Cy5 shifts the fluorescence 27\\mathrm{nm} to the red (64 vs 61 and 65 vs 62).[61]",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b003",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b003"
+        ],
+        "translation_unit_protected_source_text": "Red-shifting cyanine emission through conjugation extension is well established. Either the methylene bridge is extended, or aryl fusions are added to the phenyl ring. Cy3 (61) has an emission of 575\\mathrm{nm} . Extension of the bridge to Cy5 (62) shifts the fluorescence to 677\\mathrm{nm} .[58] Further bridge extension to Cy7 (63) affords emission at 789\\mathrm{nm} .[61] Unfortunately, bridge extension and red-shifting cyanine fluorescence comes at the cost of diminished quantum yields. Additional benzofusions to Cy3 and Cy5 shifts the fluorescence 27\\mathrm{nm} to the red (64 vs 61 and 65 vs 62).[61]",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "通过共轭延伸实现花青染料发射红移是成熟的方法。通常通过延长亚甲基桥或在苯环上引入芳环稠合来实现。Cy3 (61) 的发射波长为 575 nm。将桥延长至 Cy5 (62) 可将荧光移至 677 nm。[58] 进一步将桥延长至 Cy7 (63) 可获得 789 nm 的发射。[61] 然而，桥的延长和花青荧光的红移是以量子产率降低为代价的。在 Cy3 和 Cy5 上额外进行苯并稠合可使荧光红移 27 nm（64 对比 61，以及 65 对比 62）。[61]",
+        "translation_unit_translated_text": "通过共轭延伸实现花青染料发射红移是成熟的方法。通常通过延长亚甲基桥或在苯环上引入芳环稠合来实现。Cy3 (61) 的发射波长为 575 nm。将桥延长至 Cy5 (62) 可将荧光移至 677 nm。[58] 进一步将桥延长至 Cy7 (63) 可获得 789 nm 的发射。[61] 然而，桥的延长和花青荧光的红移是以量子产率降低为代价的。在 Cy3 和 Cy5 上额外进行苯并稠合可使荧光红移 27 nm（64 对比 61，以及 65 对比 62）。[61]",
+        "protected_translated_text": "通过共轭延伸实现花青染料发射红移是成熟的方法。通常通过延长亚甲基桥或在苯环上引入芳环稠合来实现。Cy3 (61) 的发射波长为 575 nm。将桥延长至 Cy5 (62) 可将荧光移至 677 nm。[58] 进一步将桥延长至 Cy7 (63) 可获得 789 nm 的发射。[61] 然而，桥的延长和花青荧光的红移是以量子产率降低为代价的。在 Cy3 和 Cy5 上额外进行苯并稠合可使荧光红移 27 nm（64 对比 61，以及 65 对比 62）。[61]",
+        "translated_text": "通过共轭延伸实现花青染料发射红移是成熟的方法。通常通过延长亚甲基桥或在苯环上引入芳环稠合来实现。Cy3 (61) 的发射波长为 575 nm。将桥延长至 Cy5 (62) 可将荧光移至 677 nm。[58] 进一步将桥延长至 Cy7 (63) 可获得 789 nm 的发射。[61] 然而，桥的延长和花青荧光的红移是以量子产率降低为代价的。在 Cy3 和 Cy5 上额外进行苯并稠合可使荧光红移 27 nm（64 对比 61，以及 65 对比 62）。[61]",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p008-b003",
+          "page_idx": 7,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p008-b004",
+        "page_idx": 7,
+        "block_idx": 4,
+        "block_type": "text",
+        "bbox": [
+          43,
+          387,
+          291,
+          553
+        ],
+        "source_text": "Aryl ethenylene addition on the BODIPY scaffold can dramatically shift the spectral properties. The more aryl ethenylenes incorporated, the further red the fluorescence.[62] For instance, one aryl ethenylene extends emission to 587~\\mathrm{nm} (66), while four of them push it even further to 709~\\mathrm{nm} (67).[62] In contrast, without this \\pi -extension, the emission occurs at 519~\\mathrm{nm} (34).[36] Combining EDG and extending BODIPY conjugation can shift the emission to the near-infrared ( 780~\\mathrm{nm} ).[66] Furthermore, conjugation can be extended off the pyrroles (68 or 69).[63] However, addition of aryl or ethenylene substituents at the meso-position does not result in significant red-shifting. The \\pi -system in the meso-position is perpendicular to the \\pi -system of the BODIPY core, therefore, is not in conjugation with the rest of the molecule (62 versus 63).[63]",
+        "lines": [
+          {
+            "bbox": [
+              43,
+              387,
+              291,
+              553
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Aryl ethenylene addition on the BODIPY scaffold can dramatically shift the spectral properties. The more aryl ethenylenes incorporated, the further red the fluorescence.[62] For instance, one aryl ethenylene extends emission to",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "587~\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "text",
+                "content": "(66), while four of them push it even further to",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "709~\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "text",
+                "content": "(67).[62] In contrast, without this",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\pi",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "text",
+                "content": "-extension, the emission occurs at",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "519~\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "text",
+                "content": "(34).[36] Combining EDG and extending BODIPY conjugation can shift the emission to the near-infrared (",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "780~\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "text",
+                "content": ").[66] Furthermore, conjugation can be extended off the pyrroles (68 or 69).[63] However, addition of aryl or ethenylene substituents at the meso-position does not result in significant red-shifting. The",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\pi",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "text",
+                "content": "-system in the meso-position is perpendicular to the",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\pi",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              },
+              {
+                "type": "text",
+                "content": "-system of the BODIPY core, therefore, is not in conjugation with the rest of the molecule (62 versus 63).[63]",
+                "bbox": [
+                  43,
+                  387,
+                  291,
+                  553
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/4",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              43,
+              387,
+              291,
+              553
+            ],
+            "raw_text_excerpt": "Aryl ethenylene addition on the BODIPY scaffold can dramatically shift the spectral properties. The more aryl ethenylenes incorporated, the further red the fluorescence.[62] For instance, one aryl eth"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "left_column",
+        "layout_zone_rank": 4,
+        "layout_zone_size": 8,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Aryl ethenylene addition on the BODIPY scaffold can dramatically shift the spectral properties. The more aryl ethenylenes incorporated, the further red the fluorescence.[62] For instance, one aryl ethenylene extends emission to 587~\\mathrm{nm} (66), while four of them push it even further to 709~\\mathrm{nm} (67).[62] In contrast, without this \\pi -extension, the emission occurs at 519~\\mathrm{nm} (34).[36] Combining EDG and extending BODIPY conjugation can shift the emission to the near-infrared ( 780~\\mathrm{nm} ).[66] Furthermore, conjugation can be extended off the pyrroles (68 or 69).[63] However, addition of aryl or ethenylene substituents at the meso-position does not result in significant red-shifting. The \\pi -system in the meso-position is perpendicular to the \\pi -system of the BODIPY core, therefore, is not in conjugation with the rest of the molecule (62 versus 63).[63]",
+        "mixed_original_protected_source_text": "Aryl ethenylene addition on the BODIPY scaffold can dramatically shift the spectral properties. The more aryl ethenylenes incorporated, the further red the fluorescence.[62] For instance, one aryl ethenylene extends emission to 587~\\mathrm{nm} (66), while four of them push it even further to 709~\\mathrm{nm} (67).[62] In contrast, without this \\pi -extension, the emission occurs at 519~\\mathrm{nm} (34).[36] Combining EDG and extending BODIPY conjugation can shift the emission to the near-infrared ( 780~\\mathrm{nm} ).[66] Furthermore, conjugation can be extended off the pyrroles (68 or 69).[63] However, addition of aryl or ethenylene substituents at the meso-position does not result in significant red-shifting. The \\pi -system in the meso-position is perpendicular to the \\pi -system of the BODIPY core, therefore, is not in conjugation with the rest of the molecule (62 versus 63).[63]",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b004",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b004"
+        ],
+        "translation_unit_protected_source_text": "Aryl ethenylene addition on the BODIPY scaffold can dramatically shift the spectral properties. The more aryl ethenylenes incorporated, the further red the fluorescence.[62] For instance, one aryl ethenylene extends emission to 587~\\mathrm{nm} (66), while four of them push it even further to 709~\\mathrm{nm} (67).[62] In contrast, without this \\pi -extension, the emission occurs at 519~\\mathrm{nm} (34).[36] Combining EDG and extending BODIPY conjugation can shift the emission to the near-infrared ( 780~\\mathrm{nm} ).[66] Furthermore, conjugation can be extended off the pyrroles (68 or 69).[63] However, addition of aryl or ethenylene substituents at the meso-position does not result in significant red-shifting. The \\pi -system in the meso-position is perpendicular to the \\pi -system of the BODIPY core, therefore, is not in conjugation with the rest of the molecule (62 versus 63).[63]",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "在BODIPY骨架上引入芳基乙烯基可显著改变其光谱性质。引入的芳基乙烯基越多，荧光发射波长红移越显著。[62] 例如，引入一个芳基乙烯基可将发射波长延伸至587 nm（66），而引入四个则可进一步推至709 nm（67）。[62] 相比之下，若无此$\\pi$扩展，发射波长位于519 nm（34）。[36] 结合给电子基团（EDG）并扩展BODIPY共轭体系，可将发射波长移至近红外区（780 nm）。[66] 此外，共轭体系可从吡咯环向外延伸（68或69）。[63] 然而，在中位引入芳基或乙烯基取代基并不会导致显著的红移。中位$\\pi$体系与BODIPY核心的$\\pi$体系垂直，因此不与分子的其余部分共轭（62与63对比）。[63]",
+        "translation_unit_translated_text": "在BODIPY骨架上引入芳基乙烯基可显著改变其光谱性质。引入的芳基乙烯基越多，荧光发射波长红移越显著。[62] 例如，引入一个芳基乙烯基可将发射波长延伸至587 nm（66），而引入四个则可进一步推至709 nm（67）。[62] 相比之下，若无此$\\pi$扩展，发射波长位于519 nm（34）。[36] 结合给电子基团（EDG）并扩展BODIPY共轭体系，可将发射波长移至近红外区（780 nm）。[66] 此外，共轭体系可从吡咯环向外延伸（68或69）。[63] 然而，在中位引入芳基或乙烯基取代基并不会导致显著的红移。中位$\\pi$体系与BODIPY核心的$\\pi$体系垂直，因此不与分子的其余部分共轭（62与63对比）。[63]",
+        "protected_translated_text": "在BODIPY骨架上引入芳基乙烯基可显著改变其光谱性质。引入的芳基乙烯基越多，荧光发射波长红移越显著。[62] 例如，引入一个芳基乙烯基可将发射波长延伸至587 nm（66），而引入四个则可进一步推至709 nm（67）。[62] 相比之下，若无此$\\pi$扩展，发射波长位于519 nm（34）。[36] 结合给电子基团（EDG）并扩展BODIPY共轭体系，可将发射波长移至近红外区（780 nm）。[66] 此外，共轭体系可从吡咯环向外延伸（68或69）。[63] 然而，在中位引入芳基或乙烯基取代基并不会导致显著的红移。中位$\\pi$体系与BODIPY核心的$\\pi$体系垂直，因此不与分子的其余部分共轭（62与63对比）。[63]",
+        "translated_text": "在BODIPY骨架上引入芳基乙烯基可显著改变其光谱性质。引入的芳基乙烯基越多，荧光发射波长红移越显著。[62] 例如，引入一个芳基乙烯基可将发射波长延伸至587 nm（66），而引入四个则可进一步推至709 nm（67）。[62] 相比之下，若无此$\\pi$扩展，发射波长位于519 nm（34）。[36] 结合给电子基团（EDG）并扩展BODIPY共轭体系，可将发射波长移至近红外区（780 nm）。[66] 此外，共轭体系可从吡咯环向外延伸（68或69）。[63] 然而，在中位引入芳基或乙烯基取代基并不会导致显著的红移。中位$\\pi$体系与BODIPY核心的$\\pi$体系垂直，因此不与分子的其余部分共轭（62与63对比）。[63]",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p008-b004",
+          "page_idx": 7,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p008-b005",
+        "page_idx": 7,
+        "block_idx": 5,
+        "block_type": "text",
+        "bbox": [
+          43,
+          555,
+          291,
+          614
+        ],
+        "source_text": "Red-shifting perylene emission is easily achieved through aromatic core extension. Perylene 48 emits at 536\\mathrm{nm} , naphthalene addition to the core gives terrylene 71 emission at 667\\mathrm{nm} .[64] Spectral shifting is also achieved via aryl fusions on the terrylene core (71 vs 70).[64]",
+        "lines": [
+          {
+            "bbox": [
+              43,
+              555,
+              291,
+              614
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Red-shifting perylene emission is easily achieved through aromatic core extension. Perylene 48 emits at",
+                "bbox": [
+                  43,
+                  555,
+                  291,
+                  614
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "536\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  555,
+                  291,
+                  614
+                ]
+              },
+              {
+                "type": "text",
+                "content": ", naphthalene addition to the core gives terrylene 71 emission at",
+                "bbox": [
+                  43,
+                  555,
+                  291,
+                  614
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "667\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  555,
+                  291,
+                  614
+                ]
+              },
+              {
+                "type": "text",
+                "content": ".[64] Spectral shifting is also achieved via aryl fusions on the terrylene core (71 vs 70).[64]",
+                "bbox": [
+                  43,
+                  555,
+                  291,
+                  614
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/5",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              43,
+              555,
+              291,
+              614
+            ],
+            "raw_text_excerpt": "Red-shifting perylene emission is easily achieved through aromatic core extension. Perylene 48 emits at 536\\mathrm{nm} , naphthalene addition to the core gives terrylene 71 emission at 667\\mathrm{nm} "
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "left_column",
+        "layout_zone_rank": 5,
+        "layout_zone_size": 8,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Red-shifting perylene emission is easily achieved through aromatic core extension. Perylene 48 emits at 536\\mathrm{nm} , naphthalene addition to the core gives terrylene 71 emission at 667\\mathrm{nm} .[64] Spectral shifting is also achieved via aryl fusions on the terrylene core (71 vs 70).[64]",
+        "mixed_original_protected_source_text": "Red-shifting perylene emission is easily achieved through aromatic core extension. Perylene 48 emits at 536\\mathrm{nm} , naphthalene addition to the core gives terrylene 71 emission at 667\\mathrm{nm} .[64] Spectral shifting is also achieved via aryl fusions on the terrylene core (71 vs 70).[64]",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b005",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b005"
+        ],
+        "translation_unit_protected_source_text": "Red-shifting perylene emission is easily achieved through aromatic core extension. Perylene 48 emits at 536\\mathrm{nm} , naphthalene addition to the core gives terrylene 71 emission at 667\\mathrm{nm} .[64] Spectral shifting is also achieved via aryl fusions on the terrylene core (71 vs 70).[64]",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "通过芳香核扩展可以轻松实现苝类化合物发射光谱的红移。苝48的发射波长为$536\\,\\mathrm{nm}$，在核上添加萘结构得到的三亚苯71的发射波长为$667\\,\\mathrm{nm}$。[64] 通过在三亚苯核上进行芳环稠合（71与70对比）也能实现光谱位移。[64]",
+        "translation_unit_translated_text": "通过芳香核扩展可以轻松实现苝类化合物发射光谱的红移。苝48的发射波长为$536\\,\\mathrm{nm}$，在核上添加萘结构得到的三亚苯71的发射波长为$667\\,\\mathrm{nm}$。[64] 通过在三亚苯核上进行芳环稠合（71与70对比）也能实现光谱位移。[64]",
+        "protected_translated_text": "通过芳香核扩展可以轻松实现苝类化合物发射光谱的红移。苝48的发射波长为$536\\,\\mathrm{nm}$，在核上添加萘结构得到的三亚苯71的发射波长为$667\\,\\mathrm{nm}$。[64] 通过在三亚苯核上进行芳环稠合（71与70对比）也能实现光谱位移。[64]",
+        "translated_text": "通过芳香核扩展可以轻松实现苝类化合物发射光谱的红移。苝48的发射波长为$536\\,\\mathrm{nm}$，在核上添加萘结构得到的三亚苯71的发射波长为$667\\,\\mathrm{nm}$。[64] 通过在三亚苯核上进行芳环稠合（71与70对比）也能实现光谱位移。[64]",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p008-b005",
+          "page_idx": 7,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p008-b006",
+        "page_idx": 7,
+        "block_idx": 6,
+        "block_type": "title",
+        "bbox": [
+          44,
+          639,
+          286,
+          650
+        ],
+        "source_text": "2.3. Heteroatom incorporation within the conjugated system",
+        "lines": [
+          {
+            "bbox": [
+              44,
+              639,
+              286,
+              650
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "2.3. Heteroatom incorporation within the conjugated system",
+                "bbox": [
+                  44,
+                  639,
+                  286,
+                  650
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "title",
+          "normalized_sub_type": "title",
+          "structure_role": "title",
+          "raw_type": "title",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/6",
+            "raw_type": "title",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              44,
+              639,
+              286,
+              650
+            ],
+            "raw_text_excerpt": "2.3. Heteroatom incorporation within the conjugated system"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "left_column",
+        "layout_zone_rank": 6,
+        "layout_zone_size": 8,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "2.3. Heteroatom incorporation within the conjugated system",
+        "mixed_original_protected_source_text": "2.3. Heteroatom incorporation within the conjugated system",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_title",
+        "should_translate": false,
+        "skip_reason": "skip_title",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b006",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b006"
+        ],
+        "translation_unit_protected_source_text": "2.3. Heteroatom incorporation within the conjugated system",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "2.3. Heteroatom incorporation within the conjugated system",
+        "translation_unit_translated_text": "2.3. Heteroatom incorporation within the conjugated system",
+        "protected_translated_text": "2.3. Heteroatom incorporation within the conjugated system",
+        "translated_text": "2.3. Heteroatom incorporation within the conjugated system",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "",
+        "translation_diagnostics": {},
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p008-b007",
+        "page_idx": 7,
+        "block_idx": 7,
+        "block_type": "text",
+        "bbox": [
+          43,
+          662,
+          292,
+          745
+        ],
+        "source_text": "Heteroatom incorporation into fluorescein, rhodamine, and BODIPY cores can also red-shift emissions where the more electronegative the atom, the better the electron withdrawing effect. BODIPY has significant LUMO density on the mesoposition. Nitrogen incorporation in the meso-position of BODIPY 72 affords aza-BODIPY 73. The fluorescence of 72 is shifted from 585\\mathrm{nm} to 680\\mathrm{nm} for 73.[67] Here, the electronegative",
+        "lines": [
+          {
+            "bbox": [
+              43,
+              662,
+              292,
+              745
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Heteroatom incorporation into fluorescein, rhodamine, and BODIPY cores can also red-shift emissions where the more electronegative the atom, the better the electron withdrawing effect. BODIPY has significant LUMO density on the mesoposition. Nitrogen incorporation in the meso-position of BODIPY 72 affords aza-BODIPY 73. The fluorescence of 72 is shifted from",
+                "bbox": [
+                  43,
+                  662,
+                  292,
+                  745
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "585\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  662,
+                  292,
+                  745
+                ]
+              },
+              {
+                "type": "text",
+                "content": "to",
+                "bbox": [
+                  43,
+                  662,
+                  292,
+                  745
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "680\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  662,
+                  292,
+                  745
+                ]
+              },
+              {
+                "type": "text",
+                "content": "for 73.[67] Here, the electronegative",
+                "bbox": [
+                  43,
+                  662,
+                  292,
+                  745
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/7",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              43,
+              662,
+              292,
+              745
+            ],
+            "raw_text_excerpt": "Heteroatom incorporation into fluorescein, rhodamine, and BODIPY cores can also red-shift emissions where the more electronegative the atom, the better the electron withdrawing effect. BODIPY has sign"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "left_column",
+        "layout_zone_rank": 7,
+        "layout_zone_size": 8,
+        "layout_boundary_role": "tail",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Heteroatom incorporation into fluorescein, rhodamine, and BODIPY cores can also red-shift emissions where the more electronegative the atom, the better the electron withdrawing effect. BODIPY has significant LUMO density on the mesoposition. Nitrogen incorporation in the meso-position of BODIPY 72 affords aza-BODIPY 73. The fluorescence of 72 is shifted from 585\\mathrm{nm} to 680\\mathrm{nm} for 73.[67] Here, the electronegative",
+        "mixed_original_protected_source_text": "Heteroatom incorporation into fluorescein, rhodamine, and BODIPY cores can also red-shift emissions where the more electronegative the atom, the better the electron withdrawing effect. BODIPY has significant LUMO density on the mesoposition. Nitrogen incorporation in the meso-position of BODIPY 72 affords aza-BODIPY 73. The fluorescence of 72 is shifted from 585\\mathrm{nm} to 680\\mathrm{nm} for 73.[67] Here, the electronegative",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_model_keep_origin",
+        "should_translate": false,
+        "skip_reason": "skip_model_keep_origin",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b007",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b007"
+        ],
+        "translation_unit_protected_source_text": "Heteroatom incorporation into fluorescein, rhodamine, and BODIPY cores can also red-shift emissions where the more electronegative the atom, the better the electron withdrawing effect. BODIPY has significant LUMO density on the mesoposition. Nitrogen incorporation in the meso-position of BODIPY 72 affords aza-BODIPY 73. The fluorescence of 72 is shifted from 585\\mathrm{nm} to 680\\mathrm{nm} for 73.[67] Here, the electronegative",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "",
+        "translation_unit_translated_text": "",
+        "protected_translated_text": "",
+        "translated_text": "",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "kept_origin",
+        "translation_diagnostics": {
+          "item_id": "p008-b007",
+          "page_idx": 7,
+          "route_path": [
+            "block_level",
+            "direct_typst",
+            "keep_origin"
+          ],
+          "error_trace": [
+            {
+              "type": "transport",
+              "code": "TRANSPORT_ERROR"
+            }
+          ],
+          "fallback_to": "keep_origin",
+          "degradation_reason": "transport_timeout_budget_exceeded",
+          "final_status": "kept_origin"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p008-b008",
+        "page_idx": 7,
+        "block_idx": 8,
+        "block_type": "text",
+        "bbox": [
+          300,
+          63,
+          549,
+          122
+        ],
+        "source_text": "atom lowers the LUMO significantly, which is responsible for the red-shift seen. Emission trends in rhodamine[68-77] and coumarins[78] follow a similar pattern, albeit with a few exceptions, highlighting the importance of other influencing factors.",
+        "lines": [
+          {
+            "bbox": [
+              300,
+              63,
+              549,
+              122
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "atom lowers the LUMO significantly, which is responsible for the red-shift seen. Emission trends in rhodamine[68-77] and coumarins[78] follow a similar pattern, albeit with a few exceptions, highlighting the importance of other influencing factors.",
+                "bbox": [
+                  300,
+                  63,
+                  549,
+                  122
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/8",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              300,
+              63,
+              549,
+              122
+            ],
+            "raw_text_excerpt": "atom lowers the LUMO significantly, which is responsible for the red-shift seen. Emission trends in rhodamine[68-77] and coumarins[78] follow a similar pattern, albeit with a few exceptions, highlight"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "right_column",
+        "layout_zone_rank": 0,
+        "layout_zone_size": 5,
+        "layout_boundary_role": "head",
+        "math_mode": "direct_typst",
+        "protected_source_text": "atom lowers the LUMO significantly, which is responsible for the red-shift seen. Emission trends in rhodamine[68-77] and coumarins[78] follow a similar pattern, albeit with a few exceptions, highlighting the importance of other influencing factors.",
+        "mixed_original_protected_source_text": "atom lowers the LUMO significantly, which is responsible for the red-shift seen. Emission trends in rhodamine[68-77] and coumarins[78] follow a similar pattern, albeit with a few exceptions, highlighting the importance of other influencing factors.",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b008",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b008"
+        ],
+        "translation_unit_protected_source_text": "atom lowers the LUMO significantly, which is responsible for the red-shift seen. Emission trends in rhodamine[68-77] and coumarins[78] follow a similar pattern, albeit with a few exceptions, highlighting the importance of other influencing factors.",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "引入氮原子显著降低了LUMO能级，这是导致观察到的红移的原因。罗丹明[68-77]和香豆素[78]的发射趋势遵循类似的规律，尽管存在少数例外，这突显了其他影响因素的重要性。",
+        "translation_unit_translated_text": "引入氮原子显著降低了LUMO能级，这是导致观察到的红移的原因。罗丹明[68-77]和香豆素[78]的发射趋势遵循类似的规律，尽管存在少数例外，这突显了其他影响因素的重要性。",
+        "protected_translated_text": "引入氮原子显著降低了LUMO能级，这是导致观察到的红移的原因。罗丹明[68-77]和香豆素[78]的发射趋势遵循类似的规律，尽管存在少数例外，这突显了其他影响因素的重要性。",
+        "translated_text": "引入氮原子显著降低了LUMO能级，这是导致观察到的红移的原因。罗丹明[68-77]和香豆素[78]的发射趋势遵循类似的规律，尽管存在少数例外，这突显了其他影响因素的重要性。",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p008-b008",
+          "page_idx": 7,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p008-b009",
+        "page_idx": 7,
+        "block_idx": 9,
+        "block_type": "text",
+        "bbox": [
+          300,
+          123,
+          549,
+          399
+        ],
+        "source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+        "lines": [
+          {
+            "bbox": [
+              300,
+              123,
+              549,
+              399
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from",
+                "bbox": [
+                  300,
+                  123,
+                  549,
+                  399
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "562\\mathrm{nm}",
+                "bbox": [
+                  300,
+                  123,
+                  549,
+                  399
+                ]
+              },
+              {
+                "type": "text",
+                "content": "to",
+                "bbox": [
+                  300,
+                  123,
+                  549,
+                  399
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "528\\mathrm{nm}",
+                "bbox": [
+                  300,
+                  123,
+                  549,
+                  399
+                ]
+              },
+              {
+                "type": "text",
+                "content": ".[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at",
+                "bbox": [
+                  300,
+                  123,
+                  549,
+                  399
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "648\\mathrm{nm}",
+                "bbox": [
+                  300,
+                  123,
+                  549,
+                  399
+                ]
+              },
+              {
+                "type": "text",
+                "content": ", despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at",
+                "bbox": [
+                  300,
+                  123,
+                  549,
+                  399
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "911\\mathrm{nm}",
+                "bbox": [
+                  300,
+                  123,
+                  549,
+                  399
+                ]
+              },
+              {
+                "type": "text",
+                "content": ".[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+                "bbox": [
+                  300,
+                  123,
+                  549,
+                  399
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/9",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              300,
+              123,
+              549,
+              399
+            ],
+            "raw_text_excerpt": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less ele"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "right_column",
+        "layout_zone_rank": 1,
+        "layout_zone_size": 5,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+        "mixed_original_protected_source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_model_keep_origin",
+        "should_translate": false,
+        "skip_reason": "skip_model_keep_origin",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b009",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b009"
+        ],
+        "translation_unit_protected_source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "",
+        "translation_unit_translated_text": "",
+        "protected_translated_text": "",
+        "translated_text": "",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "kept_origin",
+        "translation_diagnostics": {
+          "item_id": "p008-b009",
+          "page_idx": 7,
+          "route_path": [
+            "block_level",
+            "direct_typst",
+            "keep_origin"
+          ],
+          "error_trace": [
+            {
+              "type": "transport",
+              "code": "TRANSPORT_ERROR"
+            }
+          ],
+          "fallback_to": "keep_origin",
+          "degradation_reason": "transport_timeout_budget_exceeded",
+          "final_status": "kept_origin"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p008-b010",
+        "page_idx": 7,
+        "block_idx": 10,
+        "block_type": "title",
+        "bbox": [
+          302,
+          421,
+          521,
+          434
+        ],
+        "source_text": "3. Enhancing Fluorescence Quantum Yield",
+        "lines": [
+          {
+            "bbox": [
+              302,
+              421,
+              521,
+              434
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "3. Enhancing Fluorescence Quantum Yield",
+                "bbox": [
+                  302,
+                  421,
+                  521,
+                  434
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "title",
+          "normalized_sub_type": "title",
+          "structure_role": "title",
+          "raw_type": "title",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/10",
+            "raw_type": "title",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              302,
+              421,
+              521,
+              434
+            ],
+            "raw_text_excerpt": "3. Enhancing Fluorescence Quantum Yield"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "right_column",
+        "layout_zone_rank": 2,
+        "layout_zone_size": 5,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "3. Enhancing Fluorescence Quantum Yield",
+        "mixed_original_protected_source_text": "3. Enhancing Fluorescence Quantum Yield",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_title",
+        "should_translate": false,
+        "skip_reason": "skip_title",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b010",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b010"
+        ],
+        "translation_unit_protected_source_text": "3. Enhancing Fluorescence Quantum Yield",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "3. Enhancing Fluorescence Quantum Yield",
+        "translation_unit_translated_text": "3. Enhancing Fluorescence Quantum Yield",
+        "protected_translated_text": "3. Enhancing Fluorescence Quantum Yield",
+        "translated_text": "3. Enhancing Fluorescence Quantum Yield",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "",
+        "translation_diagnostics": {},
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p008-b011",
+        "page_idx": 7,
+        "block_idx": 11,
+        "block_type": "text",
+        "bbox": [
+          300,
+          446,
+          549,
+          493
+        ],
+        "source_text": "Quantum yield is a key factor in determining fluorophore brightness. Molecules that are not sufficiently bright are limited in their applications. To increase quantum yield, non-radiative decay pathways must be decreased.",
+        "lines": [
+          {
+            "bbox": [
+              300,
+              446,
+              549,
+              493
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Quantum yield is a key factor in determining fluorophore brightness. Molecules that are not sufficiently bright are limited in their applications. To increase quantum yield, non-radiative decay pathways must be decreased.",
+                "bbox": [
+                  300,
+                  446,
+                  549,
+                  493
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/11",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              300,
+              446,
+              549,
+              493
+            ],
+            "raw_text_excerpt": "Quantum yield is a key factor in determining fluorophore brightness. Molecules that are not sufficiently bright are limited in their applications. To increase quantum yield, non-radiative decay pathwa"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "right_column",
+        "layout_zone_rank": 3,
+        "layout_zone_size": 5,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Quantum yield is a key factor in determining fluorophore brightness. Molecules that are not sufficiently bright are limited in their applications. To increase quantum yield, non-radiative decay pathways must be decreased.",
+        "mixed_original_protected_source_text": "Quantum yield is a key factor in determining fluorophore brightness. Molecules that are not sufficiently bright are limited in their applications. To increase quantum yield, non-radiative decay pathways must be decreased.",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b011",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b011"
+        ],
+        "translation_unit_protected_source_text": "Quantum yield is a key factor in determining fluorophore brightness. Molecules that are not sufficiently bright are limited in their applications. To increase quantum yield, non-radiative decay pathways must be decreased.",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "量子产率是决定荧光团亮度的关键因素。亮度不足的分子其应用会受到限制。为了提高量子产率，必须减少非辐射衰变途径。",
+        "translation_unit_translated_text": "量子产率是决定荧光团亮度的关键因素。亮度不足的分子其应用会受到限制。为了提高量子产率，必须减少非辐射衰变途径。",
+        "protected_translated_text": "量子产率是决定荧光团亮度的关键因素。亮度不足的分子其应用会受到限制。为了提高量子产率，必须减少非辐射衰变途径。",
+        "translated_text": "量子产率是决定荧光团亮度的关键因素。亮度不足的分子其应用会受到限制。为了提高量子产率，必须减少非辐射衰变途径。",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p008-b011",
+          "page_idx": 7,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p008-b012",
+        "page_idx": 7,
+        "block_idx": 12,
+        "block_type": "text",
+        "bbox": [
+          300,
+          495,
+          549,
+          543
+        ],
+        "source_text": "Fluorophores with significant conformational flexibility exhibit non-radiative energy loss after excitation and, therefore, low quantum yields. Scaffold rigidification reduces non-radiative decay and has been very successful for the cyanine scaffold.[80]",
+        "lines": [
+          {
+            "bbox": [
+              300,
+              495,
+              549,
+              543
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Fluorophores with significant conformational flexibility exhibit non-radiative energy loss after excitation and, therefore, low quantum yields. Scaffold rigidification reduces non-radiative decay and has been very successful for the cyanine scaffold.[80]",
+                "bbox": [
+                  300,
+                  495,
+                  549,
+                  543
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/12",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              300,
+              495,
+              549,
+              543
+            ],
+            "raw_text_excerpt": "Fluorophores with significant conformational flexibility exhibit non-radiative energy loss after excitation and, therefore, low quantum yields. Scaffold rigidification reduces non-radiative decay and "
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "right_column",
+        "layout_zone_rank": 4,
+        "layout_zone_size": 5,
+        "layout_boundary_role": "tail",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Fluorophores with significant conformational flexibility exhibit non-radiative energy loss after excitation and, therefore, low quantum yields. Scaffold rigidification reduces non-radiative decay and has been very successful for the cyanine scaffold.[80]",
+        "mixed_original_protected_source_text": "Fluorophores with significant conformational flexibility exhibit non-radiative energy loss after excitation and, therefore, low quantum yields. Scaffold rigidification reduces non-radiative decay and has been very successful for the cyanine scaffold.[80]",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b012",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b012"
+        ],
+        "translation_unit_protected_source_text": "Fluorophores with significant conformational flexibility exhibit non-radiative energy loss after excitation and, therefore, low quantum yields. Scaffold rigidification reduces non-radiative decay and has been very successful for the cyanine scaffold.[80]",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "具有显著构象柔性的荧光团在激发后表现出非辐射能量损失，因此量子产率较低。骨架刚性化可减少非辐射衰变，这在花菁类骨架中已取得显著成功。[80]",
+        "translation_unit_translated_text": "具有显著构象柔性的荧光团在激发后表现出非辐射能量损失，因此量子产率较低。骨架刚性化可减少非辐射衰变，这在花菁类骨架中已取得显著成功。[80]",
+        "protected_translated_text": "具有显著构象柔性的荧光团在激发后表现出非辐射能量损失，因此量子产率较低。骨架刚性化可减少非辐射衰变，这在花菁类骨架中已取得显著成功。[80]",
+        "translated_text": "具有显著构象柔性的荧光团在激发后表现出非辐射能量损失，因此量子产率较低。骨架刚性化可减少非辐射衰变，这在花菁类骨架中已取得显著成功。[80]",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "candidate_break",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "p009-b000",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p008-b012",
+          "page_idx": 7,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": "p009-b000"
+      },
+      {
+        "item_id": "p008-b015",
+        "page_idx": 7,
+        "block_idx": 15,
+        "block_type": "image_caption",
+        "bbox": [
+          301,
+          699,
+          545,
+          745
+        ],
+        "source_text": "Figure 9. a) Heteroatom incorporation to red-shift BODIPY fluorescence. b) Valence orbital energy level diagram to demonstrate they must be considered as they directly influence the energy gap. c) Red-shifting rhodamine fluorescence through modifying the heteroatom. 72-73^{[67]} are in 2-methyltetrahydrofuran. 74-80 full structures and solvents found here.[69]",
+        "lines": [
+          {
+            "bbox": [
+              301,
+              699,
+              545,
+              745
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Figure 9. a) Heteroatom incorporation to red-shift BODIPY fluorescence. b) Valence orbital energy level diagram to demonstrate they must be considered as they directly influence the energy gap. c) Red-shifting rhodamine fluorescence through modifying the heteroatom.",
+                "bbox": [
+                  301,
+                  699,
+                  545,
+                  745
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "72-73^{[67]}",
+                "bbox": [
+                  301,
+                  699,
+                  545,
+                  745
+                ]
+              },
+              {
+                "type": "text",
+                "content": "are in 2-methyltetrahydrofuran. 74-80 full structures and solvents found here.[69]",
+                "bbox": [
+                  301,
+                  699,
+                  545,
+                  745
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "metadata",
+          "normalized_sub_type": "metadata",
+          "structure_role": "caption",
+          "raw_type": "image_caption",
+          "tags": [
+            "caption",
+            "image_caption"
+          ],
+          "derived": {
+            "role": "caption",
+            "by": "provider_rule",
+            "confidence": 0.98
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 7,
+            "raw_path": "/pdf_info/7/para_blocks/13/blocks/1",
+            "raw_type": "image_caption",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              301,
+              699,
+              545,
+              745
+            ],
+            "raw_text_excerpt": "Figure 9. a) Heteroatom incorporation to red-shift BODIPY fluorescence. b) Valence orbital energy level diagram to demonstrate they must be considered as they directly influence the energy gap. c) Red"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 289.5,
+        "layout_zone": "non_flow",
+        "layout_zone_rank": -1,
+        "layout_zone_size": 0,
+        "layout_boundary_role": "",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Figure 9. a) Heteroatom incorporation to red-shift BODIPY fluorescence. b) Valence orbital energy level diagram to demonstrate they must be considered as they directly influence the energy gap. c) Red-shifting rhodamine fluorescence through modifying the heteroatom. 72-73^{[67]} are in 2-methyltetrahydrofuran. 74-80 full structures and solvents found here.[69]",
+        "mixed_original_protected_source_text": "Figure 9. a) Heteroatom incorporation to red-shift BODIPY fluorescence. b) Valence orbital energy level diagram to demonstrate they must be considered as they directly influence the energy gap. c) Red-shifting rhodamine fluorescence through modifying the heteroatom. 72-73^{[67]} are in 2-methyltetrahydrofuran. 74-80 full structures and solvents found here.[69]",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p008-b015",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p008-b015"
+        ],
+        "translation_unit_protected_source_text": "Figure 9. a) Heteroatom incorporation to red-shift BODIPY fluorescence. b) Valence orbital energy level diagram to demonstrate they must be considered as they directly influence the energy gap. c) Red-shifting rhodamine fluorescence through modifying the heteroatom. 72-73^{[67]} are in 2-methyltetrahydrofuran. 74-80 full structures and solvents found here.[69]",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "图 9. a) 通过引入杂原子使 BODIPY 荧光红移。b) 价轨道能级图，表明必须考虑杂原子，因为它们直接影响能隙。c) 通过修饰杂原子使罗丹明荧光红移。72-73^{[67]} 在 2-甲基四氢呋喃中。74-80 的完整结构及溶剂见此处。[69]",
+        "translation_unit_translated_text": "图 9. a) 通过引入杂原子使 BODIPY 荧光红移。b) 价轨道能级图，表明必须考虑杂原子，因为它们直接影响能隙。c) 通过修饰杂原子使罗丹明荧光红移。72-73^{[67]} 在 2-甲基四氢呋喃中。74-80 的完整结构及溶剂见此处。[69]",
+        "protected_translated_text": "图 9. a) 通过引入杂原子使 BODIPY 荧光红移。b) 价轨道能级图，表明必须考虑杂原子，因为它们直接影响能隙。c) 通过修饰杂原子使罗丹明荧光红移。72-73^{[67]} 在 2-甲基四氢呋喃中。74-80 的完整结构及溶剂见此处。[69]",
+        "translated_text": "图 9. a) 通过引入杂原子使 BODIPY 荧光红移。b) 价轨道能级图，表明必须考虑杂原子，因为它们直接影响能隙。c) 通过修饰杂原子使罗丹明荧光红移。72-73^{[67]} 在 2-甲基四氢呋喃中。74-80 的完整结构及溶剂见此处。[69]",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p008-b015",
+          "page_idx": 7,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      }
+    ]
+  },
+  "replay": {
+    "job_root": "20260416034152-d12925",
+    "job_id": "20260416034152-d12925",
+    "item_id": "p008-b009",
+    "page_idx": 7,
+    "page_path": "translated/page-008-deepseek.json",
+    "source_preview": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon…",
+    "saved_item": {
+      "item_id": "p008-b009",
+      "page_idx": 7,
+      "block_idx": 9,
+      "block_type": "text",
+      "bbox": [
+        300,
+        123,
+        549,
+        399
+      ],
+      "source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+      "lines": [
+        {
+          "bbox": [
+            300,
+            123,
+            549,
+            399
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "inline_equation",
+              "content": "562\\mathrm{nm}",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "text",
+              "content": "to",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "inline_equation",
+              "content": "528\\mathrm{nm}",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "text",
+              "content": ".[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "inline_equation",
+              "content": "648\\mathrm{nm}",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "text",
+              "content": ", despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "inline_equation",
+              "content": "911\\mathrm{nm}",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            },
+            {
+              "type": "text",
+              "content": ".[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+              "bbox": [
+                300,
+                123,
+                549,
+                399
+              ]
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "ocr_sub_type": "body",
+        "normalized_sub_type": "body",
+        "structure_role": "body",
+        "raw_type": "text",
+        "tags": [],
+        "derived": {
+          "role": "",
+          "by": "",
+          "confidence": 0.0
+        },
+        "continuation_hint": {
+          "source": "",
+          "group_id": "",
+          "role": "",
+          "scope": "",
+          "reading_order": -1,
+          "confidence": 0.0
+        },
+        "source": {
+          "provider": "mineru",
+          "raw_page_index": 7,
+          "raw_path": "/pdf_info/7/para_blocks/9",
+          "raw_type": "text",
+          "raw_sub_type": "",
+          "raw_bbox": [
+            300,
+            123,
+            549,
+            399
+          ],
+          "raw_text_excerpt": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less ele"
+        },
+        "structure_group": "",
+        "pair_with": ""
+      },
+      "ocr_continuation_source": "",
+      "ocr_continuation_group_id": "",
+      "ocr_continuation_role": "",
+      "ocr_continuation_scope": "",
+      "ocr_continuation_reading_order": -1,
+      "ocr_continuation_confidence": 0.0,
+      "layout_mode": "double",
+      "layout_split_x": 289.5,
+      "layout_zone": "right_column",
+      "layout_zone_rank": 1,
+      "layout_zone_size": 5,
+      "layout_boundary_role": "middle",
+      "math_mode": "direct_typst",
+      "protected_source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+      "mixed_original_protected_source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+      "formula_map": [],
+      "protected_map": [],
+      "classification_label": "skip_model_keep_origin",
+      "should_translate": false,
+      "skip_reason": "skip_model_keep_origin",
+      "mixed_literal_action": "",
+      "mixed_literal_prefix": "",
+      "translation_unit_id": "p008-b009",
+      "translation_unit_kind": "single",
+      "translation_unit_member_ids": [
+        "p008-b009"
+      ],
+      "translation_unit_protected_source_text": "Replacing oxygen with a less electronegative nitrogen (74) leads to an expected blue-shift in the emission wavelength, from 562\\mathrm{nm} to 528\\mathrm{nm} .[70] However, substituting with a less electronegative carbon atom (76) surprisingly causes a red-shift in the emission. This is because nitrogen and oxygen have lone pairs that can donate into the pi-system, reducing their ability to stabilize the LUMO compared to carbon, despite being more electronegative. Interestingly, substituting carbon with silicon results in an even further red-shift for silicon-rhodamine 77, with an emission at 648\\mathrm{nm} , despite silicon's lower electronegativity.[71] This is because the energy levels of atom's p-orbitals (Figure 9b) must be considered, since the FMOs are derived from the linear combination of atomic orbitals (LCAOs).[79] Silicon possesses 3p orbitals, while carbon has 2p orbitals, leading to a larger energy gap in silicon's atomic orbitals. Phosphorous (78) and sulfur (79), both with 3p orbitals and more electronegative than silicon, exhibit expected redshifted emissions.[74,75] In the case of ketone addition in this position (80), it is highly electron-withdrawing, therefore, resulting in emission at 911\\mathrm{nm} .[69] Therefore, when predicting HOMO-LUMO gap for heteroatom substitution within the conjugated core, one must consider electronegativity and compare the heteroatom's FMOs (3p vs 2p).",
+      "translation_unit_formula_map": [],
+      "translation_unit_protected_map": [],
+      "translation_unit_protected_translated_text": "",
+      "translation_unit_translated_text": "",
+      "protected_translated_text": "",
+      "translated_text": "",
+      "continuation_group": "",
+      "continuation_prev_text": "",
+      "continuation_next_text": "",
+      "continuation_decision": "",
+      "continuation_candidate_prev_id": "",
+      "continuation_candidate_next_id": "",
+      "group_protected_source_text": "",
+      "group_formula_map": [],
+      "group_protected_map": [],
+      "group_protected_translated_text": "",
+      "group_translated_text": "",
+      "final_status": "kept_origin",
+      "translation_diagnostics": {
+        "item_id": "p008-b009",
+        "page_idx": 7,
+        "route_path": [
+          "block_level",
+          "direct_typst",
+          "keep_origin"
+        ],
+        "error_trace": [
+          {
+            "type": "transport",
+            "code": "TRANSPORT_ERROR"
+          }
+        ],
+        "fallback_to": "keep_origin",
+        "degradation_reason": "transport_timeout_budget_exceeded",
+        "final_status": "kept_origin"
+      },
+      "candidate_pair_prev_id": "",
+      "candidate_pair_next_id": ""
+    },
+    "policy_before": {
+      "item_id": "p008-b009",
+      "page_idx": 7,
+      "block_idx": 9,
+      "classification_label": "skip_model_keep_origin",
+      "should_translate": false,
+      "skip_reason": "skip_model_keep_origin",
+      "mixed_literal_action": "",
+      "mixed_literal_prefix": "",
+      "final_status": "kept_origin",
+      "route_path": [
+        "block_level",
+        "direct_typst",
+        "keep_origin"
+      ],
+      "fallback_to": "keep_origin",
+      "degradation_reason": "transport_timeout_budget_exceeded"
+    },
+    "policy_after": {
+      "item_id": "p008-b009",
+      "page_idx": 7,
+      "block_idx": 9,
+      "classification_label": "",
+      "should_translate": true,
+      "skip_reason": "",
+      "mixed_literal_action": "",
+      "mixed_literal_prefix": "",
+      "final_status": "kept_origin",
+      "route_path": [
+        "block_level",
+        "direct_typst",
+        "keep_origin"
+      ],
+      "fallback_to": "keep_origin",
+      "degradation_reason": "transport_timeout_budget_exceeded"
+    },
+    "replay_result": {
+      "decision": "translate",
+      "translated_text": "用电负性较低的氮原子（74）取代氧原子，预计会导致发射波长蓝移，从 $562\\mathrm{nm}$ 变为 $528\\mathrm{nm}$。[70] 然而，用电负性更低的碳原子（76）取代却出人意料地导致了发射红移。这是因为氮和氧具有孤对电子，可以贡献到 $\\pi$ 体系中，与碳相比，尽管它们电负性更强，但其稳定 LUMO 的能力反而降低了。 有趣的是，尽管硅的电负性较低，但用硅取代碳会导致硅罗丹明77发生更显著的红移，其发射波长位于648 nm。[71] 这是因为必须考虑原子p轨道的能级（图9b），因为前线分子轨道源自原子轨道的线性组合（LCAO）。[79] 硅具有3p轨道，而碳具有2p轨道，这导致硅原子轨道的能隙更大。 磷（78）和硫（79）均具有 3p 轨道且电负性高于硅，表现出预期的红移发射。[74,75] 在此位置引入酮基（80）时，由于其强吸电子性，导致发射位于 911 nm。[69] 因此，在预测共轭核心内杂原子取代的 HOMO-LUMO 能隙时，必须考虑电负性并比较杂原子的前线分子轨道（3p 与 2p）。",
+      "final_status": "translated"
+    },
+    "replay_error": null
+  },
+  "drift": {
+    "saved_final_status": "kept_origin",
+    "replay_policy_final_status": "kept_origin",
+    "replay_result_final_status": "translated",
+    "saved_should_translate": false,
+    "replay_should_translate": true,
+    "saved_skip_reason": "skip_model_keep_origin",
+    "replay_skip_reason": "",
+    "saved_classification_label": "skip_model_keep_origin",
+    "replay_classification_label": "",
+    "saved_has_translation": false,
+    "replay_has_translation": true,
+    "replay_error_type": "",
+    "policy_changed": true,
+    "drifted": true,
+    "reason_tags": [
+      "policy_changed",
+      "should_translate_changed",
+      "classification_changed",
+      "skip_reason_changed",
+      "final_status_changed",
+      "translation_presence_changed"
+    ]
+  }
+}

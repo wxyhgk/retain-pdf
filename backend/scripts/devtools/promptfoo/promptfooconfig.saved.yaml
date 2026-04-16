@@ -1,0 +1,10 @@
+description: RetainPDF saved-artifact-only evals
+prompts:
+  - |
+      [job {{job_root}} / item {{item_id}}]
+      Source:
+      {{source_text}}
+providers:
+  - id: file://provider.py:load_saved_output
+    label: saved-artifact
+tests: file://tests.py:generate_tests

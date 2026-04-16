@@ -34,6 +34,9 @@ Translation 阶段的正式输入和输出固定为：
   当前仍按每页一个 JSON 落盘，manifest 负责声明这些文件该如何被渲染阶段发现
 - 阶段 spec
   `translate-only` 入口已支持 `job_root/specs/translate.spec.json`（`translate.stage.v1`）
+- 调试产物
+  - `artifacts/translation_diagnostics.json`
+  - `artifacts/translation_debug_index.json`
 
 兼容约定：
 
@@ -42,6 +45,26 @@ Translation 阶段的正式输入和输出固定为：
 - Rust 主工作流调用的 `translate-only` worker 现在要求 `--spec`
 - `scripts/entrypoints/translate_book.py` 现在也是 spec-only 包装入口
 - API 凭证不再要求写入 stage spec；spec 中使用 `credential_ref`，由运行时环境注入真实 key
+
+## 调试闭环
+
+现在有一套最小可复现链路，专门用来定位“某个 item 为什么没翻 / 降级 / 保留原文”：
+
+1. 先看调试产物
+   - `translation_diagnostics.json` 看全局统计
+   - `translation_debug_index.json` 看 item 级索引
+2. 再看单 item
+   - `backend/scripts/devtools/replay_translation_item.py`
+3. 需要批量回归时再接 promptfoo
+   - `backend/scripts/devtools/promptfoo/`
+   - 先用 `scan_drift.py` 找 saved vs replay 漂移项，再用 `capture_case.py` 固化成 case artifact
+
+Rust API 对应暴露了：
+
+- `GET /api/v1/jobs/{job_id}/translation/diagnostics`
+- `GET /api/v1/jobs/{job_id}/translation/items`
+- `GET /api/v1/jobs/{job_id}/translation/items/{item_id}`
+- `POST /api/v1/jobs/{job_id}/translation/items/{item_id}/replay`
 
 ## 子目录
 

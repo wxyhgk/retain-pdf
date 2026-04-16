@@ -1,0 +1,2874 @@
+{
+  "schema": "translation_case_bundle_v1",
+  "captured_at": "2026-04-16T08:11:51Z",
+  "fixture": {
+    "job_root": "20260416034152-d12925",
+    "item_id": "p011-b000",
+    "description": "squaraine quantum yields paragraph kept_origin drift",
+    "case_artifact": "cases/20260416034152-d12925--p011-b000.json",
+    "expected_contains": [
+      "量子产率",
+      "方酸菁",
+      "羰基"
+    ],
+    "required_terms": [
+      "0.45",
+      "0.58"
+    ],
+    "forbidden_substrings": [],
+    "require_cjk": true,
+    "min_cjk_chars": 1,
+    "min_output_chars": 100,
+    "notes": ""
+  },
+  "saved": {
+    "snapshot": {
+      "job_root": "20260416034152-d12925",
+      "job_id": "20260416034152-d12925",
+      "item_id": "p011-b000",
+      "page_idx": 10,
+      "page_number": 11,
+      "page_path": "translated/page-011-deepseek.json",
+      "block_idx": 0,
+      "block_type": "text",
+      "math_mode": "direct_typst",
+      "source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+      "translated_text": "",
+      "source_preview": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of sub…",
+      "translated_preview": "",
+      "classification_label": "skip_model_keep_origin",
+      "should_translate": false,
+      "skip_reason": "skip_model_keep_origin",
+      "final_status": "kept_origin",
+      "translation_diagnostics": {
+        "item_id": "p011-b000",
+        "page_idx": 10,
+        "route_path": [
+          "block_level",
+          "direct_typst",
+          "keep_origin"
+        ],
+        "error_trace": [
+          {
+            "type": "transport",
+            "code": "TRANSPORT_ERROR"
+          }
+        ],
+        "fallback_to": "keep_origin",
+        "degradation_reason": "transport_timeout_budget_exceeded",
+        "final_status": "kept_origin"
+      }
+    },
+    "item": {
+      "item_id": "p011-b000",
+      "page_idx": 10,
+      "block_idx": 0,
+      "block_type": "text",
+      "bbox": [
+        43,
+        63,
+        291,
+        158
+      ],
+      "source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+      "lines": [
+        {
+          "bbox": [
+            43,
+            63,
+            291,
+            158
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+              "bbox": [
+                43,
+                63,
+                291,
+                158
+              ]
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "ocr_sub_type": "body",
+        "normalized_sub_type": "body",
+        "structure_role": "body",
+        "raw_type": "text",
+        "tags": [],
+        "derived": {
+          "role": "",
+          "by": "",
+          "confidence": 0.0
+        },
+        "continuation_hint": {
+          "source": "",
+          "group_id": "",
+          "role": "",
+          "scope": "",
+          "reading_order": -1,
+          "confidence": 0.0
+        },
+        "source": {
+          "provider": "mineru",
+          "raw_page_index": 10,
+          "raw_path": "/pdf_info/10/para_blocks/0",
+          "raw_type": "text",
+          "raw_sub_type": "",
+          "raw_bbox": [
+            43,
+            63,
+            291,
+            158
+          ],
+          "raw_text_excerpt": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restri"
+        },
+        "structure_group": "",
+        "pair_with": ""
+      },
+      "ocr_continuation_source": "",
+      "ocr_continuation_group_id": "",
+      "ocr_continuation_role": "",
+      "ocr_continuation_scope": "",
+      "ocr_continuation_reading_order": -1,
+      "ocr_continuation_confidence": 0.0,
+      "layout_mode": "double",
+      "layout_split_x": 257.0,
+      "layout_zone": "left_column",
+      "layout_zone_rank": 0,
+      "layout_zone_size": 4,
+      "layout_boundary_role": "head",
+      "math_mode": "direct_typst",
+      "protected_source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+      "mixed_original_protected_source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+      "formula_map": [],
+      "protected_map": [],
+      "classification_label": "skip_model_keep_origin",
+      "should_translate": false,
+      "skip_reason": "skip_model_keep_origin",
+      "mixed_literal_action": "",
+      "mixed_literal_prefix": "",
+      "translation_unit_id": "p011-b000",
+      "translation_unit_kind": "single",
+      "translation_unit_member_ids": [
+        "p011-b000"
+      ],
+      "translation_unit_protected_source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+      "translation_unit_formula_map": [],
+      "translation_unit_protected_map": [],
+      "translation_unit_protected_translated_text": "",
+      "translation_unit_translated_text": "",
+      "protected_translated_text": "",
+      "translated_text": "",
+      "continuation_group": "",
+      "continuation_prev_text": "",
+      "continuation_next_text": "",
+      "continuation_decision": "",
+      "continuation_candidate_prev_id": "",
+      "continuation_candidate_next_id": "",
+      "group_protected_source_text": "",
+      "group_formula_map": [],
+      "group_protected_map": [],
+      "group_protected_translated_text": "",
+      "group_translated_text": "",
+      "final_status": "kept_origin",
+      "translation_diagnostics": {
+        "item_id": "p011-b000",
+        "page_idx": 10,
+        "route_path": [
+          "block_level",
+          "direct_typst",
+          "keep_origin"
+        ],
+        "error_trace": [
+          {
+            "type": "transport",
+            "code": "TRANSPORT_ERROR"
+          }
+        ],
+        "fallback_to": "keep_origin",
+        "degradation_reason": "transport_timeout_budget_exceeded",
+        "final_status": "kept_origin"
+      },
+      "candidate_pair_prev_id": "",
+      "candidate_pair_next_id": ""
+    }
+  },
+  "replay_input": {
+    "job_root": "20260416034152-d12925",
+    "job_id": "20260416034152-d12925",
+    "item_id": "p011-b000",
+    "page_idx": 10,
+    "page_path": "translated/page-011-deepseek.json",
+    "spec": {
+      "mode": "sci",
+      "math_mode": "direct_typst",
+      "skip_title_translation": true,
+      "rule_profile_name": "general_sci",
+      "custom_rules_text": "",
+      "classify_batch_size": 12,
+      "workers": 100,
+      "model": "deepseek-chat",
+      "base_url": "https://api.deepseek.com/v1",
+      "glossary_entries": [],
+      "credential_ref": "env:RETAIN_TRANSLATION_API_KEY"
+    },
+    "page_payload": [
+      {
+        "item_id": "p011-b000",
+        "page_idx": 10,
+        "block_idx": 0,
+        "block_type": "text",
+        "bbox": [
+          43,
+          63,
+          291,
+          158
+        ],
+        "source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+        "lines": [
+          {
+            "bbox": [
+              43,
+              63,
+              291,
+              158
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+                "bbox": [
+                  43,
+                  63,
+                  291,
+                  158
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/0",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              43,
+              63,
+              291,
+              158
+            ],
+            "raw_text_excerpt": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restri"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "left_column",
+        "layout_zone_rank": 0,
+        "layout_zone_size": 4,
+        "layout_boundary_role": "head",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+        "mixed_original_protected_source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_model_keep_origin",
+        "should_translate": false,
+        "skip_reason": "skip_model_keep_origin",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b000",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b000"
+        ],
+        "translation_unit_protected_source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "",
+        "translation_unit_translated_text": "",
+        "protected_translated_text": "",
+        "translated_text": "",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "kept_origin",
+        "translation_diagnostics": {
+          "item_id": "p011-b000",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst",
+            "keep_origin"
+          ],
+          "error_trace": [
+            {
+              "type": "transport",
+              "code": "TRANSPORT_ERROR"
+            }
+          ],
+          "fallback_to": "keep_origin",
+          "degradation_reason": "transport_timeout_budget_exceeded",
+          "final_status": "kept_origin"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b001",
+        "page_idx": 10,
+        "block_idx": 1,
+        "block_type": "text",
+        "bbox": [
+          43,
+          159,
+          291,
+          278
+        ],
+        "source_text": "Squaraine-rotaxanes are increasingly being utilized in biological imaging applications and are now available for purchase from SETA. These fluorophores have demonstrated low quenching effects when conjugated to biomolecules, along with exceptional photo- and chemical stability, particularly in single molecule microscopy.[110] Despite the progress made, there is still significant potential for exploring and fine-tuning the photophysical properties of squaraine-rotaxanes. As a result, we anticipate a growing surge in their usage and further advancements in this field.",
+        "lines": [
+          {
+            "bbox": [
+              43,
+              159,
+              291,
+              278
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Squaraine-rotaxanes are increasingly being utilized in biological imaging applications and are now available for purchase from SETA. These fluorophores have demonstrated low quenching effects when conjugated to biomolecules, along with exceptional photo- and chemical stability, particularly in single molecule microscopy.[110] Despite the progress made, there is still significant potential for exploring and fine-tuning the photophysical properties of squaraine-rotaxanes. As a result, we anticipate a growing surge in their usage and further advancements in this field.",
+                "bbox": [
+                  43,
+                  159,
+                  291,
+                  278
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/1",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              43,
+              159,
+              291,
+              278
+            ],
+            "raw_text_excerpt": "Squaraine-rotaxanes are increasingly being utilized in biological imaging applications and are now available for purchase from SETA. These fluorophores have demonstrated low quenching effects when con"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "left_column",
+        "layout_zone_rank": 1,
+        "layout_zone_size": 4,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Squaraine-rotaxanes are increasingly being utilized in biological imaging applications and are now available for purchase from SETA. These fluorophores have demonstrated low quenching effects when conjugated to biomolecules, along with exceptional photo- and chemical stability, particularly in single molecule microscopy.[110] Despite the progress made, there is still significant potential for exploring and fine-tuning the photophysical properties of squaraine-rotaxanes. As a result, we anticipate a growing surge in their usage and further advancements in this field.",
+        "mixed_original_protected_source_text": "Squaraine-rotaxanes are increasingly being utilized in biological imaging applications and are now available for purchase from SETA. These fluorophores have demonstrated low quenching effects when conjugated to biomolecules, along with exceptional photo- and chemical stability, particularly in single molecule microscopy.[110] Despite the progress made, there is still significant potential for exploring and fine-tuning the photophysical properties of squaraine-rotaxanes. As a result, we anticipate a growing surge in their usage and further advancements in this field.",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b001",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b001"
+        ],
+        "translation_unit_protected_source_text": "Squaraine-rotaxanes are increasingly being utilized in biological imaging applications and are now available for purchase from SETA. These fluorophores have demonstrated low quenching effects when conjugated to biomolecules, along with exceptional photo- and chemical stability, particularly in single molecule microscopy.[110] Despite the progress made, there is still significant potential for exploring and fine-tuning the photophysical properties of squaraine-rotaxanes. As a result, we anticipate a growing surge in their usage and further advancements in this field.",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "方酰胺-轮烷正越来越多地应用于生物成像领域，目前可通过SETA公司购买。这些荧光团在与生物分子偶联时表现出较低的猝灭效应，并具有优异的光稳定性和化学稳定性，尤其在单分子显微镜技术中表现突出。[110]尽管已取得进展，方酰胺-轮烷的光物理性质仍有巨大的探索和精细调控潜力。因此，我们预计其应用将日益广泛，并推动该领域进一步发展。",
+        "translation_unit_translated_text": "方酰胺-轮烷正越来越多地应用于生物成像领域，目前可通过SETA公司购买。这些荧光团在与生物分子偶联时表现出较低的猝灭效应，并具有优异的光稳定性和化学稳定性，尤其在单分子显微镜技术中表现突出。[110]尽管已取得进展，方酰胺-轮烷的光物理性质仍有巨大的探索和精细调控潜力。因此，我们预计其应用将日益广泛，并推动该领域进一步发展。",
+        "protected_translated_text": "方酰胺-轮烷正越来越多地应用于生物成像领域，目前可通过SETA公司购买。这些荧光团在与生物分子偶联时表现出较低的猝灭效应，并具有优异的光稳定性和化学稳定性，尤其在单分子显微镜技术中表现突出。[110]尽管已取得进展，方酰胺-轮烷的光物理性质仍有巨大的探索和精细调控潜力。因此，我们预计其应用将日益广泛，并推动该领域进一步发展。",
+        "translated_text": "方酰胺-轮烷正越来越多地应用于生物成像领域，目前可通过SETA公司购买。这些荧光团在与生物分子偶联时表现出较低的猝灭效应，并具有优异的光稳定性和化学稳定性，尤其在单分子显微镜技术中表现突出。[110]尽管已取得进展，方酰胺-轮烷的光物理性质仍有巨大的探索和精细调控潜力。因此，我们预计其应用将日益广泛，并推动该领域进一步发展。",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p011-b001",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b002",
+        "page_idx": 10,
+        "block_idx": 2,
+        "block_type": "title",
+        "bbox": [
+          44,
+          302,
+          244,
+          314
+        ],
+        "source_text": "5.2. Cycloparaphenylenes and Related Nanohoops",
+        "lines": [
+          {
+            "bbox": [
+              44,
+              302,
+              244,
+              314
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "5.2. Cycloparaphenylenes and Related Nanohoops",
+                "bbox": [
+                  44,
+                  302,
+                  244,
+                  314
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "title",
+          "normalized_sub_type": "title",
+          "structure_role": "title",
+          "raw_type": "title",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/2",
+            "raw_type": "title",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              44,
+              302,
+              244,
+              314
+            ],
+            "raw_text_excerpt": "5.2. Cycloparaphenylenes and Related Nanohoops"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "left_column",
+        "layout_zone_rank": 2,
+        "layout_zone_size": 4,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "5.2. Cycloparaphenylenes and Related Nanohoops",
+        "mixed_original_protected_source_text": "5.2. Cycloparaphenylenes and Related Nanohoops",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_title",
+        "should_translate": false,
+        "skip_reason": "skip_title",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b002",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b002"
+        ],
+        "translation_unit_protected_source_text": "5.2. Cycloparaphenylenes and Related Nanohoops",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "5.2. Cycloparaphenylenes and Related Nanohoops",
+        "translation_unit_translated_text": "5.2. Cycloparaphenylenes and Related Nanohoops",
+        "protected_translated_text": "5.2. Cycloparaphenylenes and Related Nanohoops",
+        "translated_text": "5.2. Cycloparaphenylenes and Related Nanohoops",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "",
+        "translation_diagnostics": {},
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b003",
+        "page_idx": 10,
+        "block_idx": 3,
+        "block_type": "text",
+        "bbox": [
+          43,
+          327,
+          291,
+          565
+        ],
+        "source_text": "Cycloparaphenylenes (CPPs) are cyclic arrangements of paralinked phenylenes, resembling a slice of a carbon nanotube (Figure 14). Their cyclic structure provides enhanced solubility and distinct optical properties, setting them apart from linear fluorophores. All sizes of CPPs share a common absorption, making them ideal candidates as multiplexing dyes. Unlike planar fluorophores, CPPs exhibit a red-shift in fluorescence by reducing the number of phenylenes in the hoop. For example, [12]CPP (103) emits at 450\\mathrm{nm} , whereas [7]CPP (101) emits at 587\\mathrm{nm} . For these strained aromatic macrocycles, the important factors controlling the HOMO and LUMO levels are torsion angles between neighboring phenylenes and phenylene bending.[111] The smaller the CPP, the more bent the phenylene rings become, resulting in destabilization of the HOMO and stabilization of the LUMO. As CPP size is reduced, the torsion angle between neighboring benzene rings decreases. This results in an increase in \\pi -conjugation, therefore, stabilizing the LUMO and destabilizing the HOMO. Together, bending and torsion effects result in a red-shift in fluorescence as the CPP size decreases.",
+        "lines": [
+          {
+            "bbox": [
+              43,
+              327,
+              291,
+              565
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Cycloparaphenylenes (CPPs) are cyclic arrangements of paralinked phenylenes, resembling a slice of a carbon nanotube (Figure 14). Their cyclic structure provides enhanced solubility and distinct optical properties, setting them apart from linear fluorophores. All sizes of CPPs share a common absorption, making them ideal candidates as multiplexing dyes. Unlike planar fluorophores, CPPs exhibit a red-shift in fluorescence by reducing the number of phenylenes in the hoop. For example, [12]CPP (103) emits at",
+                "bbox": [
+                  43,
+                  327,
+                  291,
+                  565
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "450\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  327,
+                  291,
+                  565
+                ]
+              },
+              {
+                "type": "text",
+                "content": ", whereas [7]CPP (101) emits at",
+                "bbox": [
+                  43,
+                  327,
+                  291,
+                  565
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "587\\mathrm{nm}",
+                "bbox": [
+                  43,
+                  327,
+                  291,
+                  565
+                ]
+              },
+              {
+                "type": "text",
+                "content": ". For these strained aromatic macrocycles, the important factors controlling the HOMO and LUMO levels are torsion angles between neighboring phenylenes and phenylene bending.[111] The smaller the CPP, the more bent the phenylene rings become, resulting in destabilization of the HOMO and stabilization of the LUMO. As CPP size is reduced, the torsion angle between neighboring benzene rings decreases. This results in an increase in",
+                "bbox": [
+                  43,
+                  327,
+                  291,
+                  565
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\pi",
+                "bbox": [
+                  43,
+                  327,
+                  291,
+                  565
+                ]
+              },
+              {
+                "type": "text",
+                "content": "-conjugation, therefore, stabilizing the LUMO and destabilizing the HOMO. Together, bending and torsion effects result in a red-shift in fluorescence as the CPP size decreases.",
+                "bbox": [
+                  43,
+                  327,
+                  291,
+                  565
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/3",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              43,
+              327,
+              291,
+              565
+            ],
+            "raw_text_excerpt": "Cycloparaphenylenes (CPPs) are cyclic arrangements of paralinked phenylenes, resembling a slice of a carbon nanotube (Figure 14). Their cyclic structure provides enhanced solubility and distinct optic"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "left_column",
+        "layout_zone_rank": 3,
+        "layout_zone_size": 4,
+        "layout_boundary_role": "tail",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Cycloparaphenylenes (CPPs) are cyclic arrangements of paralinked phenylenes, resembling a slice of a carbon nanotube (Figure 14). Their cyclic structure provides enhanced solubility and distinct optical properties, setting them apart from linear fluorophores. All sizes of CPPs share a common absorption, making them ideal candidates as multiplexing dyes. Unlike planar fluorophores, CPPs exhibit a red-shift in fluorescence by reducing the number of phenylenes in the hoop. For example, [12]CPP (103) emits at 450\\mathrm{nm} , whereas [7]CPP (101) emits at 587\\mathrm{nm} . For these strained aromatic macrocycles, the important factors controlling the HOMO and LUMO levels are torsion angles between neighboring phenylenes and phenylene bending.[111] The smaller the CPP, the more bent the phenylene rings become, resulting in destabilization of the HOMO and stabilization of the LUMO. As CPP size is reduced, the torsion angle between neighboring benzene rings decreases. This results in an increase in \\pi -conjugation, therefore, stabilizing the LUMO and destabilizing the HOMO. Together, bending and torsion effects result in a red-shift in fluorescence as the CPP size decreases.",
+        "mixed_original_protected_source_text": "Cycloparaphenylenes (CPPs) are cyclic arrangements of paralinked phenylenes, resembling a slice of a carbon nanotube (Figure 14). Their cyclic structure provides enhanced solubility and distinct optical properties, setting them apart from linear fluorophores. All sizes of CPPs share a common absorption, making them ideal candidates as multiplexing dyes. Unlike planar fluorophores, CPPs exhibit a red-shift in fluorescence by reducing the number of phenylenes in the hoop. For example, [12]CPP (103) emits at 450\\mathrm{nm} , whereas [7]CPP (101) emits at 587\\mathrm{nm} . For these strained aromatic macrocycles, the important factors controlling the HOMO and LUMO levels are torsion angles between neighboring phenylenes and phenylene bending.[111] The smaller the CPP, the more bent the phenylene rings become, resulting in destabilization of the HOMO and stabilization of the LUMO. As CPP size is reduced, the torsion angle between neighboring benzene rings decreases. This results in an increase in \\pi -conjugation, therefore, stabilizing the LUMO and destabilizing the HOMO. Together, bending and torsion effects result in a red-shift in fluorescence as the CPP size decreases.",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b003",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b003"
+        ],
+        "translation_unit_protected_source_text": "Cycloparaphenylenes (CPPs) are cyclic arrangements of paralinked phenylenes, resembling a slice of a carbon nanotube (Figure 14). Their cyclic structure provides enhanced solubility and distinct optical properties, setting them apart from linear fluorophores. All sizes of CPPs share a common absorption, making them ideal candidates as multiplexing dyes. Unlike planar fluorophores, CPPs exhibit a red-shift in fluorescence by reducing the number of phenylenes in the hoop. For example, [12]CPP (103) emits at 450\\mathrm{nm} , whereas [7]CPP (101) emits at 587\\mathrm{nm} . For these strained aromatic macrocycles, the important factors controlling the HOMO and LUMO levels are torsion angles between neighboring phenylenes and phenylene bending.[111] The smaller the CPP, the more bent the phenylene rings become, resulting in destabilization of the HOMO and stabilization of the LUMO. As CPP size is reduced, the torsion angle between neighboring benzene rings decreases. This results in an increase in \\pi -conjugation, therefore, stabilizing the LUMO and destabilizing the HOMO. Together, bending and torsion effects result in a red-shift in fluorescence as the CPP size decreases.",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "环对苯撑（CPPs）是由对位连接的苯撑单元构成的环状结构，类似于碳纳米管的一个切片（图14）。其环状结构提供了更高的溶解性和独特的光学性质，使其区别于线性荧光团。所有尺寸的CPPs都具有共同的吸收特征，使其成为多重荧光染料的理想候选。与平面荧光团不同，CPPs通过减少环中苯撑单元的数量而表现出荧光红移。例如，[12]CPP（103）的发射波长为450 nm，而[7]CPP（101）的发射波长为587 nm。对于这些具有张力的芳香大环，控制HOMO和LUMO能级的关键因素是相邻苯撑单元之间的扭转角以及苯撑单元的弯曲程度。[111] CPP尺寸越小，苯撑环的弯曲程度越大，导致HOMO能级升高而LUMO能级降低。随着CPP尺寸减小，相邻苯环之间的扭转角减小。这导致$\\pi$共轭增强，从而稳定LUMO并升高HOMO。弯曲效应与扭转效应共同作用，使得CPP尺寸减小时荧光发生红移。",
+        "translation_unit_translated_text": "环对苯撑（CPPs）是由对位连接的苯撑单元构成的环状结构，类似于碳纳米管的一个切片（图14）。其环状结构提供了更高的溶解性和独特的光学性质，使其区别于线性荧光团。所有尺寸的CPPs都具有共同的吸收特征，使其成为多重荧光染料的理想候选。与平面荧光团不同，CPPs通过减少环中苯撑单元的数量而表现出荧光红移。例如，[12]CPP（103）的发射波长为450 nm，而[7]CPP（101）的发射波长为587 nm。对于这些具有张力的芳香大环，控制HOMO和LUMO能级的关键因素是相邻苯撑单元之间的扭转角以及苯撑单元的弯曲程度。[111] CPP尺寸越小，苯撑环的弯曲程度越大，导致HOMO能级升高而LUMO能级降低。随着CPP尺寸减小，相邻苯环之间的扭转角减小。这导致$\\pi$共轭增强，从而稳定LUMO并升高HOMO。弯曲效应与扭转效应共同作用，使得CPP尺寸减小时荧光发生红移。",
+        "protected_translated_text": "环对苯撑（CPPs）是由对位连接的苯撑单元构成的环状结构，类似于碳纳米管的一个切片（图14）。其环状结构提供了更高的溶解性和独特的光学性质，使其区别于线性荧光团。所有尺寸的CPPs都具有共同的吸收特征，使其成为多重荧光染料的理想候选。与平面荧光团不同，CPPs通过减少环中苯撑单元的数量而表现出荧光红移。例如，[12]CPP（103）的发射波长为450 nm，而[7]CPP（101）的发射波长为587 nm。对于这些具有张力的芳香大环，控制HOMO和LUMO能级的关键因素是相邻苯撑单元之间的扭转角以及苯撑单元的弯曲程度。[111] CPP尺寸越小，苯撑环的弯曲程度越大，导致HOMO能级升高而LUMO能级降低。随着CPP尺寸减小，相邻苯环之间的扭转角减小。这导致$\\pi$共轭增强，从而稳定LUMO并升高HOMO。弯曲效应与扭转效应共同作用，使得CPP尺寸减小时荧光发生红移。",
+        "translated_text": "环对苯撑（CPPs）是由对位连接的苯撑单元构成的环状结构，类似于碳纳米管的一个切片（图14）。其环状结构提供了更高的溶解性和独特的光学性质，使其区别于线性荧光团。所有尺寸的CPPs都具有共同的吸收特征，使其成为多重荧光染料的理想候选。与平面荧光团不同，CPPs通过减少环中苯撑单元的数量而表现出荧光红移。例如，[12]CPP（103）的发射波长为450 nm，而[7]CPP（101）的发射波长为587 nm。对于这些具有张力的芳香大环，控制HOMO和LUMO能级的关键因素是相邻苯撑单元之间的扭转角以及苯撑单元的弯曲程度。[111] CPP尺寸越小，苯撑环的弯曲程度越大，导致HOMO能级升高而LUMO能级降低。随着CPP尺寸减小，相邻苯环之间的扭转角减小。这导致$\\pi$共轭增强，从而稳定LUMO并升高HOMO。弯曲效应与扭转效应共同作用，使得CPP尺寸减小时荧光发生红移。",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p011-b003",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b006",
+        "page_idx": 10,
+        "block_idx": 6,
+        "block_type": "image_caption",
+        "bbox": [
+          61,
+          636,
+          83,
+          645
+        ],
+        "source_text": "[n]CPP",
+        "lines": [
+          {
+            "bbox": [
+              61,
+              636,
+              83,
+              645
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "[n]CPP",
+                "bbox": [
+                  61,
+                  636,
+                  83,
+                  645
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "metadata",
+          "normalized_sub_type": "metadata",
+          "structure_role": "caption",
+          "raw_type": "image_caption",
+          "tags": [
+            "caption",
+            "image_caption"
+          ],
+          "derived": {
+            "role": "caption",
+            "by": "provider_rule",
+            "confidence": 0.98
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/4/blocks/1",
+            "raw_type": "image_caption",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              61,
+              636,
+              83,
+              645
+            ],
+            "raw_text_excerpt": "[n]CPP"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "non_flow",
+        "layout_zone_rank": -1,
+        "layout_zone_size": 0,
+        "layout_boundary_role": "",
+        "math_mode": "direct_typst",
+        "protected_source_text": "[n]CPP",
+        "mixed_original_protected_source_text": "[n]CPP",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_model_keep_origin",
+        "should_translate": false,
+        "skip_reason": "skip_model_keep_origin",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b006",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b006"
+        ],
+        "translation_unit_protected_source_text": "[n]CPP",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "",
+        "translation_unit_translated_text": "",
+        "protected_translated_text": "",
+        "translated_text": "",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "kept_origin",
+        "translation_diagnostics": {
+          "item_id": "p011-b006",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b011",
+        "page_idx": 10,
+        "block_idx": 11,
+        "block_type": "image_caption",
+        "bbox": [
+          112,
+          636,
+          151,
+          645
+        ],
+        "source_text": "meta-[n]CPP",
+        "lines": [
+          {
+            "bbox": [
+              112,
+              636,
+              151,
+              645
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "meta-[n]CPP",
+                "bbox": [
+                  112,
+                  636,
+                  151,
+                  645
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "metadata",
+          "normalized_sub_type": "metadata",
+          "structure_role": "caption",
+          "raw_type": "image_caption",
+          "tags": [
+            "caption",
+            "image_caption"
+          ],
+          "derived": {
+            "role": "caption",
+            "by": "provider_rule",
+            "confidence": 0.98
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/6/blocks/1",
+            "raw_type": "image_caption",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              112,
+              636,
+              151,
+              645
+            ],
+            "raw_text_excerpt": "meta-[n]CPP"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "non_flow",
+        "layout_zone_rank": -1,
+        "layout_zone_size": 0,
+        "layout_boundary_role": "",
+        "math_mode": "direct_typst",
+        "protected_source_text": "meta-[n]CPP",
+        "mixed_original_protected_source_text": "meta-[n]CPP",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b011",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b011"
+        ],
+        "translation_unit_protected_source_text": "meta-[n]CPP",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "间位-[n]环对苯撑",
+        "translation_unit_translated_text": "间位-[n]环对苯撑",
+        "protected_translated_text": "间位-[n]环对苯撑",
+        "translated_text": "间位-[n]环对苯撑",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p011-b011",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b014",
+        "page_idx": 10,
+        "block_idx": 14,
+        "block_type": "image_caption",
+        "bbox": [
+          174,
+          668,
+          205,
+          691
+        ],
+        "source_text": "105 \\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 33 \\phi = 0.0",
+        "lines": [
+          {
+            "bbox": [
+              174,
+              668,
+              205,
+              691
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "105",
+                "bbox": [
+                  174,
+                  668,
+                  205,
+                  691
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 33",
+                "bbox": [
+                  174,
+                  668,
+                  205,
+                  691
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\phi = 0.0",
+                "bbox": [
+                  174,
+                  668,
+                  205,
+                  691
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "metadata",
+          "normalized_sub_type": "metadata",
+          "structure_role": "caption",
+          "raw_type": "image_caption",
+          "tags": [
+            "caption",
+            "image_caption"
+          ],
+          "derived": {
+            "role": "caption",
+            "by": "provider_rule",
+            "confidence": 0.98
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/7/blocks/1",
+            "raw_type": "image_caption",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              174,
+              668,
+              205,
+              691
+            ],
+            "raw_text_excerpt": "105 \\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 33 \\phi = 0.0"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "non_flow",
+        "layout_zone_rank": -1,
+        "layout_zone_size": 0,
+        "layout_boundary_role": "",
+        "math_mode": "direct_typst",
+        "protected_source_text": "105 \\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 33 \\phi = 0.0",
+        "mixed_original_protected_source_text": "105 \\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 33 \\phi = 0.0",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b014",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b014"
+        ],
+        "translation_unit_protected_source_text": "105 \\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 33 \\phi = 0.0",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "$\\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 33$，$\\phi = 0.0$",
+        "translation_unit_translated_text": "$\\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 33$，$\\phi = 0.0$",
+        "protected_translated_text": "$\\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 33$，$\\phi = 0.0$",
+        "translated_text": "$\\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 33$，$\\phi = 0.0$",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p011-b014",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b017",
+        "page_idx": 10,
+        "block_idx": 17,
+        "block_type": "image_caption",
+        "bbox": [
+          239,
+          666,
+          289,
+          691
+        ],
+        "source_text": "106 \\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 334 / 571 \\phi = 0.59",
+        "lines": [
+          {
+            "bbox": [
+              239,
+              666,
+              289,
+              691
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "106",
+                "bbox": [
+                  239,
+                  666,
+                  289,
+                  691
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 334 / 571",
+                "bbox": [
+                  239,
+                  666,
+                  289,
+                  691
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\phi = 0.59",
+                "bbox": [
+                  239,
+                  666,
+                  289,
+                  691
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "metadata",
+          "normalized_sub_type": "metadata",
+          "structure_role": "caption",
+          "raw_type": "image_caption",
+          "tags": [
+            "caption",
+            "image_caption"
+          ],
+          "derived": {
+            "role": "caption",
+            "by": "provider_rule",
+            "confidence": 0.98
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/8/blocks/1",
+            "raw_type": "image_caption",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              239,
+              666,
+              289,
+              691
+            ],
+            "raw_text_excerpt": "106 \\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 334 / 571 \\phi = 0.59"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "non_flow",
+        "layout_zone_rank": -1,
+        "layout_zone_size": 0,
+        "layout_boundary_role": "",
+        "math_mode": "direct_typst",
+        "protected_source_text": "106 \\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 334 / 571 \\phi = 0.59",
+        "mixed_original_protected_source_text": "106 \\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 334 / 571 \\phi = 0.59",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b017",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b017"
+        ],
+        "translation_unit_protected_source_text": "106 \\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 334 / 571 \\phi = 0.59",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "$\\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 334 / 571$，$\\phi = 0.59$",
+        "translation_unit_translated_text": "$\\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 334 / 571$，$\\phi = 0.59$",
+        "protected_translated_text": "$\\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 334 / 571$，$\\phi = 0.59$",
+        "translated_text": "$\\lambda_{\\mathrm{ex}} / \\lambda_{\\mathrm{em}} = 334 / 571$，$\\phi = 0.59$",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p011-b017",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b018",
+        "page_idx": 10,
+        "block_idx": 18,
+        "block_type": "image_caption",
+        "bbox": [
+          44,
+          725,
+          276,
+          745
+        ],
+        "source_text": "Figure 14. Cycloparaphenylene structures. 100^{[113]} in chloroform; 101^{[114]} 102^{[115]} 103^{[115]} 104^{[116]} 106^{[115]} in dichloromethane; 105^{[117]} in benzene.",
+        "lines": [
+          {
+            "bbox": [
+              44,
+              725,
+              276,
+              745
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Figure 14. Cycloparaphenylene structures.",
+                "bbox": [
+                  44,
+                  725,
+                  276,
+                  745
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "100^{[113]}",
+                "bbox": [
+                  44,
+                  725,
+                  276,
+                  745
+                ]
+              },
+              {
+                "type": "text",
+                "content": "in chloroform;",
+                "bbox": [
+                  44,
+                  725,
+                  276,
+                  745
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "101^{[114]}",
+                "bbox": [
+                  44,
+                  725,
+                  276,
+                  745
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "102^{[115]}",
+                "bbox": [
+                  44,
+                  725,
+                  276,
+                  745
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "103^{[115]}",
+                "bbox": [
+                  44,
+                  725,
+                  276,
+                  745
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "104^{[116]}",
+                "bbox": [
+                  44,
+                  725,
+                  276,
+                  745
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "106^{[115]}",
+                "bbox": [
+                  44,
+                  725,
+                  276,
+                  745
+                ]
+              },
+              {
+                "type": "text",
+                "content": "in dichloromethane;",
+                "bbox": [
+                  44,
+                  725,
+                  276,
+                  745
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "105^{[117]}",
+                "bbox": [
+                  44,
+                  725,
+                  276,
+                  745
+                ]
+              },
+              {
+                "type": "text",
+                "content": "in benzene.",
+                "bbox": [
+                  44,
+                  725,
+                  276,
+                  745
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "metadata",
+          "normalized_sub_type": "metadata",
+          "structure_role": "caption",
+          "raw_type": "image_caption",
+          "tags": [
+            "caption",
+            "image_caption"
+          ],
+          "derived": {
+            "role": "caption",
+            "by": "provider_rule",
+            "confidence": 0.98
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/8/blocks/2",
+            "raw_type": "image_caption",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              44,
+              725,
+              276,
+              745
+            ],
+            "raw_text_excerpt": "Figure 14. Cycloparaphenylene structures. 100^{[113]} in chloroform; 101^{[114]} 102^{[115]} 103^{[115]} 104^{[116]} 106^{[115]} in dichloromethane; 105^{[117]} in benzene."
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "non_flow",
+        "layout_zone_rank": -1,
+        "layout_zone_size": 0,
+        "layout_boundary_role": "",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Figure 14. Cycloparaphenylene structures. 100^{[113]} in chloroform; 101^{[114]} 102^{[115]} 103^{[115]} 104^{[116]} 106^{[115]} in dichloromethane; 105^{[117]} in benzene.",
+        "mixed_original_protected_source_text": "Figure 14. Cycloparaphenylene structures. 100^{[113]} in chloroform; 101^{[114]} 102^{[115]} 103^{[115]} 104^{[116]} 106^{[115]} in dichloromethane; 105^{[117]} in benzene.",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b018",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b018"
+        ],
+        "translation_unit_protected_source_text": "Figure 14. Cycloparaphenylene structures. 100^{[113]} in chloroform; 101^{[114]} 102^{[115]} 103^{[115]} 104^{[116]} 106^{[115]} in dichloromethane; 105^{[117]} in benzene.",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "图14. 环对苯撑结构。100^{[113]} 在氯仿中；101^{[114]} 102^{[115]} 103^{[115]} 104^{[116]} 106^{[115]} 在二氯甲烷中；105^{[117]} 在苯中。",
+        "translation_unit_translated_text": "图14. 环对苯撑结构。100^{[113]} 在氯仿中；101^{[114]} 102^{[115]} 103^{[115]} 104^{[116]} 106^{[115]} 在二氯甲烷中；105^{[117]} 在苯中。",
+        "protected_translated_text": "图14. 环对苯撑结构。100^{[113]} 在氯仿中；101^{[114]} 102^{[115]} 103^{[115]} 104^{[116]} 106^{[115]} 在二氯甲烷中；105^{[117]} 在苯中。",
+        "translated_text": "图14. 环对苯撑结构。100^{[113]} 在氯仿中；101^{[114]} 102^{[115]} 103^{[115]} 104^{[116]} 106^{[115]} 在二氯甲烷中；105^{[117]} 在苯中。",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p011-b018",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b019",
+        "page_idx": 10,
+        "block_idx": 19,
+        "block_type": "text",
+        "bbox": [
+          301,
+          63,
+          549,
+          122
+        ],
+        "source_text": "However, when CPPs become too small, they are no longer fluorescent due to symmetry rules.[112] Disrupting the centrosymmetry by introducing a kink into the structure, meta[n]CPPs, allows fluorescence in all sizes. [6]CPP is nonfluorescent, whereas m[6] CPP (102) fluoresces at 510 \\mathrm{~nm} .",
+        "lines": [
+          {
+            "bbox": [
+              301,
+              63,
+              549,
+              122
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "However, when CPPs become too small, they are no longer fluorescent due to symmetry rules.[112] Disrupting the centrosymmetry by introducing a kink into the structure, meta[n]CPPs, allows fluorescence in all sizes. [6]CPP is nonfluorescent, whereas",
+                "bbox": [
+                  301,
+                  63,
+                  549,
+                  122
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "m[6]",
+                "bbox": [
+                  301,
+                  63,
+                  549,
+                  122
+                ]
+              },
+              {
+                "type": "text",
+                "content": "CPP (102) fluoresces at",
+                "bbox": [
+                  301,
+                  63,
+                  549,
+                  122
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "510 \\mathrm{~nm}",
+                "bbox": [
+                  301,
+                  63,
+                  549,
+                  122
+                ]
+              },
+              {
+                "type": "text",
+                "content": ".",
+                "bbox": [
+                  301,
+                  63,
+                  549,
+                  122
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/9",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              301,
+              63,
+              549,
+              122
+            ],
+            "raw_text_excerpt": "However, when CPPs become too small, they are no longer fluorescent due to symmetry rules.[112] Disrupting the centrosymmetry by introducing a kink into the structure, meta[n]CPPs, allows fluorescence"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "right_column",
+        "layout_zone_rank": 0,
+        "layout_zone_size": 7,
+        "layout_boundary_role": "head",
+        "math_mode": "direct_typst",
+        "protected_source_text": "However, when CPPs become too small, they are no longer fluorescent due to symmetry rules.[112] Disrupting the centrosymmetry by introducing a kink into the structure, meta[n]CPPs, allows fluorescence in all sizes. [6]CPP is nonfluorescent, whereas m[6] CPP (102) fluoresces at 510 \\mathrm{~nm} .",
+        "mixed_original_protected_source_text": "However, when CPPs become too small, they are no longer fluorescent due to symmetry rules.[112] Disrupting the centrosymmetry by introducing a kink into the structure, meta[n]CPPs, allows fluorescence in all sizes. [6]CPP is nonfluorescent, whereas m[6] CPP (102) fluoresces at 510 \\mathrm{~nm} .",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b019",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b019"
+        ],
+        "translation_unit_protected_source_text": "However, when CPPs become too small, they are no longer fluorescent due to symmetry rules.[112] Disrupting the centrosymmetry by introducing a kink into the structure, meta[n]CPPs, allows fluorescence in all sizes. [6]CPP is nonfluorescent, whereas m[6] CPP (102) fluoresces at 510 \\mathrm{~nm} .",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "然而，当环对苯撑（CPPs）尺寸过小时，由于对称性规则，它们不再具有荧光性。通过在结构中引入扭结来破坏中心对称性，即间位取代的[n]CPPs，使得所有尺寸的CPPs都能产生荧光。例如，[6]CPP不发光，而间位[6]CPP（102）在510 nm处发出荧光。",
+        "translation_unit_translated_text": "然而，当环对苯撑（CPPs）尺寸过小时，由于对称性规则，它们不再具有荧光性。通过在结构中引入扭结来破坏中心对称性，即间位取代的[n]CPPs，使得所有尺寸的CPPs都能产生荧光。例如，[6]CPP不发光，而间位[6]CPP（102）在510 nm处发出荧光。",
+        "protected_translated_text": "然而，当环对苯撑（CPPs）尺寸过小时，由于对称性规则，它们不再具有荧光性。通过在结构中引入扭结来破坏中心对称性，即间位取代的[n]CPPs，使得所有尺寸的CPPs都能产生荧光。例如，[6]CPP不发光，而间位[6]CPP（102）在510 nm处发出荧光。",
+        "translated_text": "然而，当环对苯撑（CPPs）尺寸过小时，由于对称性规则，它们不再具有荧光性。通过在结构中引入扭结来破坏中心对称性，即间位取代的[n]CPPs，使得所有尺寸的CPPs都能产生荧光。例如，[6]CPP不发光，而间位[6]CPP（102）在510 nm处发出荧光。",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p011-b019",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b020",
+        "page_idx": 10,
+        "block_idx": 20,
+        "block_type": "text",
+        "bbox": [
+          301,
+          123,
+          549,
+          301
+        ],
+        "source_text": "CPPs are essentially unaffected by electron donating and withdrawing group incorporation on their scaffold, since their HOMO and LUMO orbitals are evenly distributed. For CPPs, electron accepting moieties must instead be incorporated into the backbone.[118] Adding a tetracyanoanthraquinone unit (105) to [10]CPP (103) shifts fluorescence dramatically to 642\\mathrm{nm} , though with a decreased quantum yield.[117] However, if the electron acceptor is switched to a benzothiadiazole (106) the fluorescence is shifted to 571\\mathrm{nm} and the quantum yield is retained.[115] Furthermore, multiple benzothiadiazole units can further shift the fluorescence.[119] Numerous alternative and promising acceptors, as well as donors, have the potential to shift fluorescence into the near-infrared range; nevertheless, further synthesis is required to substantiate these possibilities.[118]",
+        "lines": [
+          {
+            "bbox": [
+              301,
+              123,
+              549,
+              301
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "CPPs are essentially unaffected by electron donating and withdrawing group incorporation on their scaffold, since their HOMO and LUMO orbitals are evenly distributed. For CPPs, electron accepting moieties must instead be incorporated into the backbone.[118] Adding a tetracyanoanthraquinone unit (105) to [10]CPP (103) shifts fluorescence dramatically to",
+                "bbox": [
+                  301,
+                  123,
+                  549,
+                  301
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "642\\mathrm{nm}",
+                "bbox": [
+                  301,
+                  123,
+                  549,
+                  301
+                ]
+              },
+              {
+                "type": "text",
+                "content": ", though with a decreased quantum yield.[117] However, if the electron acceptor is switched to a benzothiadiazole (106) the fluorescence is shifted to",
+                "bbox": [
+                  301,
+                  123,
+                  549,
+                  301
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "571\\mathrm{nm}",
+                "bbox": [
+                  301,
+                  123,
+                  549,
+                  301
+                ]
+              },
+              {
+                "type": "text",
+                "content": "and the quantum yield is retained.[115] Furthermore, multiple benzothiadiazole units can further shift the fluorescence.[119] Numerous alternative and promising acceptors, as well as donors, have the potential to shift fluorescence into the near-infrared range; nevertheless, further synthesis is required to substantiate these possibilities.[118]",
+                "bbox": [
+                  301,
+                  123,
+                  549,
+                  301
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/10",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              301,
+              123,
+              549,
+              301
+            ],
+            "raw_text_excerpt": "CPPs are essentially unaffected by electron donating and withdrawing group incorporation on their scaffold, since their HOMO and LUMO orbitals are evenly distributed. For CPPs, electron accepting moie"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "right_column",
+        "layout_zone_rank": 1,
+        "layout_zone_size": 7,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "CPPs are essentially unaffected by electron donating and withdrawing group incorporation on their scaffold, since their HOMO and LUMO orbitals are evenly distributed. For CPPs, electron accepting moieties must instead be incorporated into the backbone.[118] Adding a tetracyanoanthraquinone unit (105) to [10]CPP (103) shifts fluorescence dramatically to 642\\mathrm{nm} , though with a decreased quantum yield.[117] However, if the electron acceptor is switched to a benzothiadiazole (106) the fluorescence is shifted to 571\\mathrm{nm} and the quantum yield is retained.[115] Furthermore, multiple benzothiadiazole units can further shift the fluorescence.[119] Numerous alternative and promising acceptors, as well as donors, have the potential to shift fluorescence into the near-infrared range; nevertheless, further synthesis is required to substantiate these possibilities.[118]",
+        "mixed_original_protected_source_text": "CPPs are essentially unaffected by electron donating and withdrawing group incorporation on their scaffold, since their HOMO and LUMO orbitals are evenly distributed. For CPPs, electron accepting moieties must instead be incorporated into the backbone.[118] Adding a tetracyanoanthraquinone unit (105) to [10]CPP (103) shifts fluorescence dramatically to 642\\mathrm{nm} , though with a decreased quantum yield.[117] However, if the electron acceptor is switched to a benzothiadiazole (106) the fluorescence is shifted to 571\\mathrm{nm} and the quantum yield is retained.[115] Furthermore, multiple benzothiadiazole units can further shift the fluorescence.[119] Numerous alternative and promising acceptors, as well as donors, have the potential to shift fluorescence into the near-infrared range; nevertheless, further synthesis is required to substantiate these possibilities.[118]",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b020",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b020"
+        ],
+        "translation_unit_protected_source_text": "CPPs are essentially unaffected by electron donating and withdrawing group incorporation on their scaffold, since their HOMO and LUMO orbitals are evenly distributed. For CPPs, electron accepting moieties must instead be incorporated into the backbone.[118] Adding a tetracyanoanthraquinone unit (105) to [10]CPP (103) shifts fluorescence dramatically to 642\\mathrm{nm} , though with a decreased quantum yield.[117] However, if the electron acceptor is switched to a benzothiadiazole (106) the fluorescence is shifted to 571\\mathrm{nm} and the quantum yield is retained.[115] Furthermore, multiple benzothiadiazole units can further shift the fluorescence.[119] Numerous alternative and promising acceptors, as well as donors, have the potential to shift fluorescence into the near-infrared range; nevertheless, further synthesis is required to substantiate these possibilities.[118]",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "由于CPPs的HOMO和LUMO轨道均匀分布，其骨架引入给电子或吸电子基团基本不受影响。对于CPPs，必须将电子接受单元整合到主链中。[118] 在[10]CPP (103)上添加四氰基蒽醌单元 (105) 可将荧光显著红移至642 nm，但量子产率有所降低。[117] 然而，若将电子受体换为苯并噻二唑 (106)，荧光则移至571 nm，且量子产率得以保持。[115] 此外，引入多个苯并噻二唑单元可进一步移动荧光发射。[119] 众多其他有前景的受体和供体单元有望将荧光移至近红外区域；但需进一步合成工作来验证这些可能性。[118]",
+        "translation_unit_translated_text": "由于CPPs的HOMO和LUMO轨道均匀分布，其骨架引入给电子或吸电子基团基本不受影响。对于CPPs，必须将电子接受单元整合到主链中。[118] 在[10]CPP (103)上添加四氰基蒽醌单元 (105) 可将荧光显著红移至642 nm，但量子产率有所降低。[117] 然而，若将电子受体换为苯并噻二唑 (106)，荧光则移至571 nm，且量子产率得以保持。[115] 此外，引入多个苯并噻二唑单元可进一步移动荧光发射。[119] 众多其他有前景的受体和供体单元有望将荧光移至近红外区域；但需进一步合成工作来验证这些可能性。[118]",
+        "protected_translated_text": "由于CPPs的HOMO和LUMO轨道均匀分布，其骨架引入给电子或吸电子基团基本不受影响。对于CPPs，必须将电子接受单元整合到主链中。[118] 在[10]CPP (103)上添加四氰基蒽醌单元 (105) 可将荧光显著红移至642 nm，但量子产率有所降低。[117] 然而，若将电子受体换为苯并噻二唑 (106)，荧光则移至571 nm，且量子产率得以保持。[115] 此外，引入多个苯并噻二唑单元可进一步移动荧光发射。[119] 众多其他有前景的受体和供体单元有望将荧光移至近红外区域；但需进一步合成工作来验证这些可能性。[118]",
+        "translated_text": "由于CPPs的HOMO和LUMO轨道均匀分布，其骨架引入给电子或吸电子基团基本不受影响。对于CPPs，必须将电子接受单元整合到主链中。[118] 在[10]CPP (103)上添加四氰基蒽醌单元 (105) 可将荧光显著红移至642 nm，但量子产率有所降低。[117] 然而，若将电子受体换为苯并噻二唑 (106)，荧光则移至571 nm，且量子产率得以保持。[115] 此外，引入多个苯并噻二唑单元可进一步移动荧光发射。[119] 众多其他有前景的受体和供体单元有望将荧光移至近红外区域；但需进一步合成工作来验证这些可能性。[118]",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p011-b020",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b021",
+        "page_idx": 10,
+        "block_idx": 21,
+        "block_type": "text",
+        "bbox": [
+          301,
+          302,
+          549,
+          494
+        ],
+        "source_text": "To enhance quantum yields in CPPs, different methods than those above are required. Deviating CPPs from their centrosymmetric nature allows LUMO to HOMO fluorescence transitions, resulting in higher quantum yields. Therefore, the larger and less strained the [n] CPP, the higher the quantum yield (100 vs 101). Additionally, disrupting the centrosymmetry, as in meta[n]CPPs, increases the fluorescence by 5—65 fold.[116] [7]CPP (101) is minimally fluorescent, with a quantum yield of 0.007. Changing one phenylene connection from para- to metaconnectivity yields m[7] CPP (104) with a quantum yield of 0.45.[116] Lastly, it is important to avoid ICT as it dramatically decreases nanohoop quantum yield.[115] While the quantum yield of 106 remains the same as the parent compound (103) because they fluoresce through the same mechanism, 105, on the other hand, experiences ICT, resulting in a decrease in the quantum yield.",
+        "lines": [
+          {
+            "bbox": [
+              301,
+              302,
+              549,
+              494
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "To enhance quantum yields in CPPs, different methods than those above are required. Deviating CPPs from their centrosymmetric nature allows LUMO to HOMO fluorescence transitions, resulting in higher quantum yields. Therefore, the larger and less strained the",
+                "bbox": [
+                  301,
+                  302,
+                  549,
+                  494
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "[n]",
+                "bbox": [
+                  301,
+                  302,
+                  549,
+                  494
+                ]
+              },
+              {
+                "type": "text",
+                "content": "CPP, the higher the quantum yield (100 vs 101). Additionally, disrupting the centrosymmetry, as in meta[n]CPPs, increases the fluorescence by 5—65 fold.[116] [7]CPP (101) is minimally fluorescent, with a quantum yield of 0.007. Changing one phenylene connection from para- to metaconnectivity yields",
+                "bbox": [
+                  301,
+                  302,
+                  549,
+                  494
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "m[7]",
+                "bbox": [
+                  301,
+                  302,
+                  549,
+                  494
+                ]
+              },
+              {
+                "type": "text",
+                "content": "CPP (104) with a quantum yield of 0.45.[116] Lastly, it is important to avoid ICT as it dramatically decreases nanohoop quantum yield.[115] While the quantum yield of 106 remains the same as the parent compound (103) because they fluoresce through the same mechanism, 105, on the other hand, experiences ICT, resulting in a decrease in the quantum yield.",
+                "bbox": [
+                  301,
+                  302,
+                  549,
+                  494
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/11",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              301,
+              302,
+              549,
+              494
+            ],
+            "raw_text_excerpt": "To enhance quantum yields in CPPs, different methods than those above are required. Deviating CPPs from their centrosymmetric nature allows LUMO to HOMO fluorescence transitions, resulting in higher q"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "right_column",
+        "layout_zone_rank": 2,
+        "layout_zone_size": 7,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "To enhance quantum yields in CPPs, different methods than those above are required. Deviating CPPs from their centrosymmetric nature allows LUMO to HOMO fluorescence transitions, resulting in higher quantum yields. Therefore, the larger and less strained the [n] CPP, the higher the quantum yield (100 vs 101). Additionally, disrupting the centrosymmetry, as in meta[n]CPPs, increases the fluorescence by 5—65 fold.[116] [7]CPP (101) is minimally fluorescent, with a quantum yield of 0.007. Changing one phenylene connection from para- to metaconnectivity yields m[7] CPP (104) with a quantum yield of 0.45.[116] Lastly, it is important to avoid ICT as it dramatically decreases nanohoop quantum yield.[115] While the quantum yield of 106 remains the same as the parent compound (103) because they fluoresce through the same mechanism, 105, on the other hand, experiences ICT, resulting in a decrease in the quantum yield.",
+        "mixed_original_protected_source_text": "To enhance quantum yields in CPPs, different methods than those above are required. Deviating CPPs from their centrosymmetric nature allows LUMO to HOMO fluorescence transitions, resulting in higher quantum yields. Therefore, the larger and less strained the [n] CPP, the higher the quantum yield (100 vs 101). Additionally, disrupting the centrosymmetry, as in meta[n]CPPs, increases the fluorescence by 5—65 fold.[116] [7]CPP (101) is minimally fluorescent, with a quantum yield of 0.007. Changing one phenylene connection from para- to metaconnectivity yields m[7] CPP (104) with a quantum yield of 0.45.[116] Lastly, it is important to avoid ICT as it dramatically decreases nanohoop quantum yield.[115] While the quantum yield of 106 remains the same as the parent compound (103) because they fluoresce through the same mechanism, 105, on the other hand, experiences ICT, resulting in a decrease in the quantum yield.",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b021",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b021"
+        ],
+        "translation_unit_protected_source_text": "To enhance quantum yields in CPPs, different methods than those above are required. Deviating CPPs from their centrosymmetric nature allows LUMO to HOMO fluorescence transitions, resulting in higher quantum yields. Therefore, the larger and less strained the [n] CPP, the higher the quantum yield (100 vs 101). Additionally, disrupting the centrosymmetry, as in meta[n]CPPs, increases the fluorescence by 5—65 fold.[116] [7]CPP (101) is minimally fluorescent, with a quantum yield of 0.007. Changing one phenylene connection from para- to metaconnectivity yields m[7] CPP (104) with a quantum yield of 0.45.[116] Lastly, it is important to avoid ICT as it dramatically decreases nanohoop quantum yield.[115] While the quantum yield of 106 remains the same as the parent compound (103) because they fluoresce through the same mechanism, 105, on the other hand, experiences ICT, resulting in a decrease in the quantum yield.",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "为提高环对苯撑（CPPs）的量子产率，需要采用不同于上述方法的新策略。使CPPs偏离其中心对称性，可实现从LUMO到HOMO的荧光跃迁，从而获得更高的量子产率。因此，[n]CPP的尺寸越大、环张力越小，其量子产率越高（如100与101的对比）。此外，破坏中心对称性（如在间位[n]CPPs中）可使荧光增强5至65倍。[116] [7]CPP（101）的荧光极弱，量子产率仅为0.007。若将一个苯环的连接方式从对位改为间位，则得到m[7]CPP（104），其量子产率提升至0.45。[116] 最后，应避免分子内电荷转移（ICT），因为它会显著降低纳米环的量子产率。[115] 虽然106的量子产率与其母体化合物103相同（因其荧光机制一致），但105却发生了ICT，导致量子产率下降。",
+        "translation_unit_translated_text": "为提高环对苯撑（CPPs）的量子产率，需要采用不同于上述方法的新策略。使CPPs偏离其中心对称性，可实现从LUMO到HOMO的荧光跃迁，从而获得更高的量子产率。因此，[n]CPP的尺寸越大、环张力越小，其量子产率越高（如100与101的对比）。此外，破坏中心对称性（如在间位[n]CPPs中）可使荧光增强5至65倍。[116] [7]CPP（101）的荧光极弱，量子产率仅为0.007。若将一个苯环的连接方式从对位改为间位，则得到m[7]CPP（104），其量子产率提升至0.45。[116] 最后，应避免分子内电荷转移（ICT），因为它会显著降低纳米环的量子产率。[115] 虽然106的量子产率与其母体化合物103相同（因其荧光机制一致），但105却发生了ICT，导致量子产率下降。",
+        "protected_translated_text": "为提高环对苯撑（CPPs）的量子产率，需要采用不同于上述方法的新策略。使CPPs偏离其中心对称性，可实现从LUMO到HOMO的荧光跃迁，从而获得更高的量子产率。因此，[n]CPP的尺寸越大、环张力越小，其量子产率越高（如100与101的对比）。此外，破坏中心对称性（如在间位[n]CPPs中）可使荧光增强5至65倍。[116] [7]CPP（101）的荧光极弱，量子产率仅为0.007。若将一个苯环的连接方式从对位改为间位，则得到m[7]CPP（104），其量子产率提升至0.45。[116] 最后，应避免分子内电荷转移（ICT），因为它会显著降低纳米环的量子产率。[115] 虽然106的量子产率与其母体化合物103相同（因其荧光机制一致），但105却发生了ICT，导致量子产率下降。",
+        "translated_text": "为提高环对苯撑（CPPs）的量子产率，需要采用不同于上述方法的新策略。使CPPs偏离其中心对称性，可实现从LUMO到HOMO的荧光跃迁，从而获得更高的量子产率。因此，[n]CPP的尺寸越大、环张力越小，其量子产率越高（如100与101的对比）。此外，破坏中心对称性（如在间位[n]CPPs中）可使荧光增强5至65倍。[116] [7]CPP（101）的荧光极弱，量子产率仅为0.007。若将一个苯环的连接方式从对位改为间位，则得到m[7]CPP（104），其量子产率提升至0.45。[116] 最后，应避免分子内电荷转移（ICT），因为它会显著降低纳米环的量子产率。[115] 虽然106的量子产率与其母体化合物103相同（因其荧光机制一致），但105却发生了ICT，导致量子产率下降。",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p011-b021",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b022",
+        "page_idx": 10,
+        "block_idx": 22,
+        "block_type": "text",
+        "bbox": [
+          301,
+          495,
+          549,
+          602
+        ],
+        "source_text": "CPPs have shown potential as fluorophores for biological applications.[120-122] With recent advancements in functionalization, synthesis, and understanding of their photophysical properties, we expect that these distinctive structures to be further explored and adopted as fluorophores for fluorescence imaging. Their unique structure opens exciting opportunities, such as utilizing their cavities for supramolecular recognition and creating rotaxane dyes. CPPs hold promise as candidates for various imaging techniques in biological contexts.",
+        "lines": [
+          {
+            "bbox": [
+              301,
+              495,
+              549,
+              602
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "CPPs have shown potential as fluorophores for biological applications.[120-122] With recent advancements in functionalization, synthesis, and understanding of their photophysical properties, we expect that these distinctive structures to be further explored and adopted as fluorophores for fluorescence imaging. Their unique structure opens exciting opportunities, such as utilizing their cavities for supramolecular recognition and creating rotaxane dyes. CPPs hold promise as candidates for various imaging techniques in biological contexts.",
+                "bbox": [
+                  301,
+                  495,
+                  549,
+                  602
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/12",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              301,
+              495,
+              549,
+              602
+            ],
+            "raw_text_excerpt": "CPPs have shown potential as fluorophores for biological applications.[120-122] With recent advancements in functionalization, synthesis, and understanding of their photophysical properties, we expect"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "right_column",
+        "layout_zone_rank": 3,
+        "layout_zone_size": 7,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "CPPs have shown potential as fluorophores for biological applications.[120-122] With recent advancements in functionalization, synthesis, and understanding of their photophysical properties, we expect that these distinctive structures to be further explored and adopted as fluorophores for fluorescence imaging. Their unique structure opens exciting opportunities, such as utilizing their cavities for supramolecular recognition and creating rotaxane dyes. CPPs hold promise as candidates for various imaging techniques in biological contexts.",
+        "mixed_original_protected_source_text": "CPPs have shown potential as fluorophores for biological applications.[120-122] With recent advancements in functionalization, synthesis, and understanding of their photophysical properties, we expect that these distinctive structures to be further explored and adopted as fluorophores for fluorescence imaging. Their unique structure opens exciting opportunities, such as utilizing their cavities for supramolecular recognition and creating rotaxane dyes. CPPs hold promise as candidates for various imaging techniques in biological contexts.",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b022",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b022"
+        ],
+        "translation_unit_protected_source_text": "CPPs have shown potential as fluorophores for biological applications.[120-122] With recent advancements in functionalization, synthesis, and understanding of their photophysical properties, we expect that these distinctive structures to be further explored and adopted as fluorophores for fluorescence imaging. Their unique structure opens exciting opportunities, such as utilizing their cavities for supramolecular recognition and creating rotaxane dyes. CPPs hold promise as candidates for various imaging techniques in biological contexts.",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "环对苯撑（CPPs）作为生物应用中的荧光团已显示出潜力。[120-122] 随着其功能化、合成方法及其光物理性质理解方面的最新进展，我们预期这些独特的结构将被进一步探索并作为荧光成像的荧光团加以应用。其独特的结构带来了令人兴奋的机遇，例如利用其空腔进行超分子识别以及构建轮烷染料。CPPs有望成为生物背景下多种成像技术的候选材料。",
+        "translation_unit_translated_text": "环对苯撑（CPPs）作为生物应用中的荧光团已显示出潜力。[120-122] 随着其功能化、合成方法及其光物理性质理解方面的最新进展，我们预期这些独特的结构将被进一步探索并作为荧光成像的荧光团加以应用。其独特的结构带来了令人兴奋的机遇，例如利用其空腔进行超分子识别以及构建轮烷染料。CPPs有望成为生物背景下多种成像技术的候选材料。",
+        "protected_translated_text": "环对苯撑（CPPs）作为生物应用中的荧光团已显示出潜力。[120-122] 随着其功能化、合成方法及其光物理性质理解方面的最新进展，我们预期这些独特的结构将被进一步探索并作为荧光成像的荧光团加以应用。其独特的结构带来了令人兴奋的机遇，例如利用其空腔进行超分子识别以及构建轮烷染料。CPPs有望成为生物背景下多种成像技术的候选材料。",
+        "translated_text": "环对苯撑（CPPs）作为生物应用中的荧光团已显示出潜力。[120-122] 随着其功能化、合成方法及其光物理性质理解方面的最新进展，我们预期这些独特的结构将被进一步探索并作为荧光成像的荧光团加以应用。其独特的结构带来了令人兴奋的机遇，例如利用其空腔进行超分子识别以及构建轮烷染料。CPPs有望成为生物背景下多种成像技术的候选材料。",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p011-b022",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b023",
+        "page_idx": 10,
+        "block_idx": 23,
+        "block_type": "title",
+        "bbox": [
+          301,
+          624,
+          432,
+          638
+        ],
+        "source_text": "6. Summary and Outlook",
+        "lines": [
+          {
+            "bbox": [
+              301,
+              624,
+              432,
+              638
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "6. Summary and Outlook",
+                "bbox": [
+                  301,
+                  624,
+                  432,
+                  638
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "title",
+          "normalized_sub_type": "title",
+          "structure_role": "title",
+          "raw_type": "title",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/13",
+            "raw_type": "title",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              301,
+              624,
+              432,
+              638
+            ],
+            "raw_text_excerpt": "6. Summary and Outlook"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "right_column",
+        "layout_zone_rank": 4,
+        "layout_zone_size": 7,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "6. Summary and Outlook",
+        "mixed_original_protected_source_text": "6. Summary and Outlook",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_title",
+        "should_translate": false,
+        "skip_reason": "skip_title",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b023",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b023"
+        ],
+        "translation_unit_protected_source_text": "6. Summary and Outlook",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "6. Summary and Outlook",
+        "translation_unit_translated_text": "6. Summary and Outlook",
+        "protected_translated_text": "6. Summary and Outlook",
+        "translated_text": "6. Summary and Outlook",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "",
+        "translation_diagnostics": {},
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b024",
+        "page_idx": 10,
+        "block_idx": 24,
+        "block_type": "text",
+        "bbox": [
+          301,
+          650,
+          548,
+          722
+        ],
+        "source_text": "Fluorophores play a critical role in biology and biochemistry. Small molecule fluorophores are advantageous because precise manipulation of their structure alters their photophysical properties. We explored various methods for tuning fluorescence and examined fundamental physical organic chemistry concepts that govern these properties.",
+        "lines": [
+          {
+            "bbox": [
+              301,
+              650,
+              548,
+              722
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Fluorophores play a critical role in biology and biochemistry. Small molecule fluorophores are advantageous because precise manipulation of their structure alters their photophysical properties. We explored various methods for tuning fluorescence and examined fundamental physical organic chemistry concepts that govern these properties.",
+                "bbox": [
+                  301,
+                  650,
+                  548,
+                  722
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/14",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              301,
+              650,
+              548,
+              722
+            ],
+            "raw_text_excerpt": "Fluorophores play a critical role in biology and biochemistry. Small molecule fluorophores are advantageous because precise manipulation of their structure alters their photophysical properties. We ex"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "right_column",
+        "layout_zone_rank": 5,
+        "layout_zone_size": 7,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Fluorophores play a critical role in biology and biochemistry. Small molecule fluorophores are advantageous because precise manipulation of their structure alters their photophysical properties. We explored various methods for tuning fluorescence and examined fundamental physical organic chemistry concepts that govern these properties.",
+        "mixed_original_protected_source_text": "Fluorophores play a critical role in biology and biochemistry. Small molecule fluorophores are advantageous because precise manipulation of their structure alters their photophysical properties. We explored various methods for tuning fluorescence and examined fundamental physical organic chemistry concepts that govern these properties.",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b024",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b024"
+        ],
+        "translation_unit_protected_source_text": "Fluorophores play a critical role in biology and biochemistry. Small molecule fluorophores are advantageous because precise manipulation of their structure alters their photophysical properties. We explored various methods for tuning fluorescence and examined fundamental physical organic chemistry concepts that govern these properties.",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "荧光团在生物学和生物化学中发挥着关键作用。小分子荧光团具有优势，因为对其结构的精确调控可以改变其光物理性质。我们探索了多种调控荧光的方法，并研究了支配这些性质的基本物理有机化学概念。",
+        "translation_unit_translated_text": "荧光团在生物学和生物化学中发挥着关键作用。小分子荧光团具有优势，因为对其结构的精确调控可以改变其光物理性质。我们探索了多种调控荧光的方法，并研究了支配这些性质的基本物理有机化学概念。",
+        "protected_translated_text": "荧光团在生物学和生物化学中发挥着关键作用。小分子荧光团具有优势，因为对其结构的精确调控可以改变其光物理性质。我们探索了多种调控荧光的方法，并研究了支配这些性质的基本物理有机化学概念。",
+        "translated_text": "荧光团在生物学和生物化学中发挥着关键作用。小分子荧光团具有优势，因为对其结构的精确调控可以改变其光物理性质。我们探索了多种调控荧光的方法，并研究了支配这些性质的基本物理有机化学概念。",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p011-b024",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p011-b025",
+        "page_idx": 10,
+        "block_idx": 25,
+        "block_type": "text",
+        "bbox": [
+          302,
+          734,
+          392,
+          745
+        ],
+        "source_text": "The key guidelines are:",
+        "lines": [
+          {
+            "bbox": [
+              302,
+              734,
+              392,
+              745
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "The key guidelines are:",
+                "bbox": [
+                  302,
+                  734,
+                  392,
+                  745
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 10,
+            "raw_path": "/pdf_info/10/para_blocks/15",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              302,
+              734,
+              392,
+              745
+            ],
+            "raw_text_excerpt": "The key guidelines are:"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "double",
+        "layout_split_x": 257.0,
+        "layout_zone": "right_column",
+        "layout_zone_rank": 6,
+        "layout_zone_size": 7,
+        "layout_boundary_role": "tail",
+        "math_mode": "direct_typst",
+        "protected_source_text": "The key guidelines are:",
+        "mixed_original_protected_source_text": "The key guidelines are:",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p011-b025",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p011-b025"
+        ],
+        "translation_unit_protected_source_text": "The key guidelines are:",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "关键指导原则如下：",
+        "translation_unit_translated_text": "关键指导原则如下：",
+        "protected_translated_text": "关键指导原则如下：",
+        "translated_text": "关键指导原则如下：",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p011-b025",
+          "page_idx": 10,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      }
+    ]
+  },
+  "replay": {
+    "job_root": "20260416034152-d12925",
+    "job_id": "20260416034152-d12925",
+    "item_id": "p011-b000",
+    "page_idx": 10,
+    "page_path": "translated/page-011-deepseek.json",
+    "source_preview": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motion…",
+    "saved_item": {
+      "item_id": "p011-b000",
+      "page_idx": 10,
+      "block_idx": 0,
+      "block_type": "text",
+      "bbox": [
+        43,
+        63,
+        291,
+        158
+      ],
+      "source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+      "lines": [
+        {
+          "bbox": [
+            43,
+            63,
+            291,
+            158
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+              "bbox": [
+                43,
+                63,
+                291,
+                158
+              ]
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "ocr_sub_type": "body",
+        "normalized_sub_type": "body",
+        "structure_role": "body",
+        "raw_type": "text",
+        "tags": [],
+        "derived": {
+          "role": "",
+          "by": "",
+          "confidence": 0.0
+        },
+        "continuation_hint": {
+          "source": "",
+          "group_id": "",
+          "role": "",
+          "scope": "",
+          "reading_order": -1,
+          "confidence": 0.0
+        },
+        "source": {
+          "provider": "mineru",
+          "raw_page_index": 10,
+          "raw_path": "/pdf_info/10/para_blocks/0",
+          "raw_type": "text",
+          "raw_sub_type": "",
+          "raw_bbox": [
+            43,
+            63,
+            291,
+            158
+          ],
+          "raw_text_excerpt": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restri"
+        },
+        "structure_group": "",
+        "pair_with": ""
+      },
+      "ocr_continuation_source": "",
+      "ocr_continuation_group_id": "",
+      "ocr_continuation_role": "",
+      "ocr_continuation_scope": "",
+      "ocr_continuation_reading_order": -1,
+      "ocr_continuation_confidence": 0.0,
+      "layout_mode": "double",
+      "layout_split_x": 257.0,
+      "layout_zone": "left_column",
+      "layout_zone_rank": 0,
+      "layout_zone_size": 4,
+      "layout_boundary_role": "head",
+      "math_mode": "direct_typst",
+      "protected_source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+      "mixed_original_protected_source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+      "formula_map": [],
+      "protected_map": [],
+      "classification_label": "skip_model_keep_origin",
+      "should_translate": false,
+      "skip_reason": "skip_model_keep_origin",
+      "mixed_literal_action": "",
+      "mixed_literal_prefix": "",
+      "translation_unit_id": "p011-b000",
+      "translation_unit_kind": "single",
+      "translation_unit_member_ids": [
+        "p011-b000"
+      ],
+      "translation_unit_protected_source_text": "Encapsulation of squaraines within macrocycles improves their quantum yields, increasing the quantum yield from 0.45 to 0.58 for 94.[102,107-109] Additionally, introduction of substituents that restrict torsional motions around the squaraine single bonds, as seen with 99, increases quantum yields. Phenols likely form hydrogen-bonds with the squaraine carbonyl groups, reducing the nonradiative decay, and increasing the quantum yield from 0.041 to 0.415.",
+      "translation_unit_formula_map": [],
+      "translation_unit_protected_map": [],
+      "translation_unit_protected_translated_text": "",
+      "translation_unit_translated_text": "",
+      "protected_translated_text": "",
+      "translated_text": "",
+      "continuation_group": "",
+      "continuation_prev_text": "",
+      "continuation_next_text": "",
+      "continuation_decision": "",
+      "continuation_candidate_prev_id": "",
+      "continuation_candidate_next_id": "",
+      "group_protected_source_text": "",
+      "group_formula_map": [],
+      "group_protected_map": [],
+      "group_protected_translated_text": "",
+      "group_translated_text": "",
+      "final_status": "kept_origin",
+      "translation_diagnostics": {
+        "item_id": "p011-b000",
+        "page_idx": 10,
+        "route_path": [
+          "block_level",
+          "direct_typst",
+          "keep_origin"
+        ],
+        "error_trace": [
+          {
+            "type": "transport",
+            "code": "TRANSPORT_ERROR"
+          }
+        ],
+        "fallback_to": "keep_origin",
+        "degradation_reason": "transport_timeout_budget_exceeded",
+        "final_status": "kept_origin"
+      },
+      "candidate_pair_prev_id": "",
+      "candidate_pair_next_id": ""
+    },
+    "policy_before": {
+      "item_id": "p011-b000",
+      "page_idx": 10,
+      "block_idx": 0,
+      "classification_label": "skip_model_keep_origin",
+      "should_translate": false,
+      "skip_reason": "skip_model_keep_origin",
+      "mixed_literal_action": "",
+      "mixed_literal_prefix": "",
+      "final_status": "kept_origin",
+      "route_path": [
+        "block_level",
+        "direct_typst",
+        "keep_origin"
+      ],
+      "fallback_to": "keep_origin",
+      "degradation_reason": "transport_timeout_budget_exceeded"
+    },
+    "policy_after": {
+      "item_id": "p011-b000",
+      "page_idx": 10,
+      "block_idx": 0,
+      "classification_label": "",
+      "should_translate": true,
+      "skip_reason": "",
+      "mixed_literal_action": "",
+      "mixed_literal_prefix": "",
+      "final_status": "kept_origin",
+      "route_path": [
+        "block_level",
+        "direct_typst",
+        "keep_origin"
+      ],
+      "fallback_to": "keep_origin",
+      "degradation_reason": "transport_timeout_budget_exceeded"
+    },
+    "replay_result": {
+      "decision": "translate",
+      "translated_text": "将方酸菁染料封装于大环内可提高其量子产率，例如化合物94的量子产率从0.45提升至0.58。[102,107-109] 此外，引入能够限制方酸菁单键周围扭转运动的取代基（如化合物99所示）亦可提高量子产率。酚类化合物可能与方酸菁的羰基形成氢键，从而减少非辐射衰变，使量子产率从0.041增至0.415。",
+      "final_status": "translated"
+    },
+    "replay_error": null
+  },
+  "drift": {
+    "saved_final_status": "kept_origin",
+    "replay_policy_final_status": "kept_origin",
+    "replay_result_final_status": "translated",
+    "saved_should_translate": false,
+    "replay_should_translate": true,
+    "saved_skip_reason": "skip_model_keep_origin",
+    "replay_skip_reason": "",
+    "saved_classification_label": "skip_model_keep_origin",
+    "replay_classification_label": "",
+    "saved_has_translation": false,
+    "replay_has_translation": true,
+    "replay_error_type": "",
+    "policy_changed": true,
+    "drifted": true,
+    "reason_tags": [
+      "policy_changed",
+      "should_translate_changed",
+      "classification_changed",
+      "skip_reason_changed",
+      "final_status_changed",
+      "translation_presence_changed"
+    ]
+  }
+}

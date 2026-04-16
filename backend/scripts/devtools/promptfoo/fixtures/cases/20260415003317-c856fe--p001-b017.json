@@ -1,0 +1,4733 @@
+{
+  "schema": "translation_case_bundle_v1",
+  "captured_at": "2026-04-16T08:11:51Z",
+  "fixture": {
+    "job_root": "20260415003317-c856fe",
+    "item_id": "p001-b017",
+    "description": "zora geometry optimization paragraph kept_origin",
+    "case_artifact": "cases/20260415003317-c856fe--p001-b017.json",
+    "expected_contains": [],
+    "required_terms": [],
+    "forbidden_substrings": [],
+    "require_cjk": true,
+    "min_cjk_chars": 1,
+    "min_output_chars": 80,
+    "notes": ""
+  },
+  "saved": {
+    "snapshot": {
+      "job_root": "20260415003317-c856fe",
+      "job_id": "20260415003317-c856fe",
+      "item_id": "p001-b017",
+      "page_idx": 0,
+      "page_number": 1,
+      "page_path": "translated/page-001-deepseek.json",
+      "block_idx": 17,
+      "block_type": "text",
+      "math_mode": "direct_typst",
+      "source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and",
+      "translated_text": "",
+      "source_preview": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and…",
+      "translated_preview": "",
+      "classification_label": "skip_model_keep_origin",
+      "should_translate": false,
+      "skip_reason": "skip_model_keep_origin",
+      "final_status": "kept_origin",
+      "translation_diagnostics": {}
+    },
+    "item": {
+      "item_id": "p001-b017",
+      "page_idx": 0,
+      "block_idx": 17,
+      "block_type": "text",
+      "bbox": [
+        313,
+        575,
+        559,
+        730
+      ],
+      "source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and",
+      "lines": [
+        {
+          "bbox": [
+            326,
+            575,
+            559,
+            587
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "Geometry Optimization and Energy Calculation. The",
+              "bbox": [
+                326,
+                575,
+                559,
+                587
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            586,
+            558,
+            597
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "molecules and transition states were optimized at the gradient-",
+              "bbox": [
+                315,
+                586,
+                558,
+                597
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            597,
+            559,
+            609
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "corrected DFT level using the exchange functional of Becke27",
+              "bbox": [
+                315,
+                597,
+                559,
+                609
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            608,
+            558,
+            620
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "and the correlation functional of Perdew28 (BP86). Relativistic",
+              "bbox": [
+                315,
+                608,
+                558,
+                620
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            619,
+            558,
+            632
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "effects were considered using the zeroth-order regular ap-",
+              "bbox": [
+                315,
+                619,
+                558,
+                632
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            629,
+            559,
+            643
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs)",
+              "bbox": [
+                315,
+                629,
+                559,
+                643
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            641,
+            559,
+            653
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "were used as basis functions for the SCF calculations.30 The",
+              "bbox": [
+                315,
+                641,
+                559,
+                653
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            652,
+            559,
+            665
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "basis functions at the metal have triple-",
+              "bbox": [
+                315,
+                652,
+                474,
+                665
+              ]
+            },
+            {
+              "type": "inline_equation",
+              "content": "\\xi",
+              "bbox": [
+                474,
+                653,
+                480,
+                664
+              ]
+            },
+            {
+              "type": "text",
+              "content": "quality, augmented",
+              "bbox": [
+                481,
+                652,
+                559,
+                665
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            663,
+            559,
+            675
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "with a set of 6p functions. The basis set at the other atoms has",
+              "bbox": [
+                315,
+                663,
+                559,
+                675
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            673,
+            559,
+            686
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "double-",
+              "bbox": [
+                315,
+                673,
+                345,
+                686
+              ]
+            },
+            {
+              "type": "inline_equation",
+              "content": "\\xi",
+              "bbox": [
+                346,
+                675,
+                352,
+                685
+              ]
+            },
+            {
+              "type": "text",
+              "content": "quality, augmented with a set of d-type polarization",
+              "bbox": [
+                353,
+                673,
+                559,
+                686
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            685,
+            559,
+            697
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "functions. The (1s)2 core electrons of C and O and the",
+              "bbox": [
+                315,
+                685,
+                559,
+                697
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            318,
+            696,
+            559,
+            708
+          ],
+          "spans": [
+            {
+              "type": "inline_equation",
+              "content": "\\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } }",
+              "bbox": [
+                318,
+                696,
+                412,
+                708
+              ]
+            },
+            {
+              "type": "text",
+              "content": "inner shells of Re were treated within",
+              "bbox": [
+                412,
+                696,
+                559,
+                708
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            706,
+            559,
+            720
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "the frozen-core approximation.31 An auxiliary basis set of s, p,",
+              "bbox": [
+                315,
+                706,
+                559,
+                720
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            718,
+            559,
+            730
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "d, f, and g STOs was utilized to fit the molecular densities and",
+              "bbox": [
+                315,
+                718,
+                559,
+                730
+              ]
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "ocr_sub_type": "body",
+        "normalized_sub_type": "body",
+        "structure_role": "body",
+        "raw_type": "text",
+        "tags": [],
+        "derived": {
+          "role": "",
+          "by": "",
+          "confidence": 0.0
+        },
+        "continuation_hint": {
+          "source": "",
+          "group_id": "",
+          "role": "",
+          "scope": "",
+          "reading_order": -1,
+          "confidence": 0.0
+        },
+        "source": {
+          "provider": "mineru",
+          "raw_page_index": 0,
+          "raw_path": "/pdf_info/0/para_blocks/12",
+          "raw_type": "text",
+          "raw_sub_type": "",
+          "raw_bbox": [
+            313,
+            575,
+            559,
+            730
+          ],
+          "raw_text_excerpt": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation funct"
+        },
+        "structure_group": "",
+        "pair_with": ""
+      },
+      "ocr_continuation_source": "",
+      "ocr_continuation_group_id": "",
+      "ocr_continuation_role": "",
+      "ocr_continuation_scope": "",
+      "ocr_continuation_reading_order": -1,
+      "ocr_continuation_confidence": 0.0,
+      "layout_mode": "single",
+      "layout_split_x": 0.0,
+      "layout_zone": "single_column",
+      "layout_zone_rank": 10,
+      "layout_zone_size": 11,
+      "layout_boundary_role": "tail",
+      "math_mode": "direct_typst",
+      "protected_source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and",
+      "mixed_original_protected_source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and",
+      "formula_map": [],
+      "protected_map": [],
+      "classification_label": "skip_model_keep_origin",
+      "should_translate": false,
+      "skip_reason": "skip_model_keep_origin",
+      "mixed_literal_action": "",
+      "mixed_literal_prefix": "",
+      "translation_unit_id": "__cg__:cg-001-001",
+      "translation_unit_kind": "group",
+      "translation_unit_member_ids": [
+        "p001-b017",
+        "p002-b000"
+      ],
+      "translation_unit_protected_source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and to represent the Coulomb and exchange potentials in each SCF cycle.32 This basis-set combination is denoted \\mathrm { I I I } \\sim . 22,23 Unless otherwise stated, energies reported refer to the BP86/III∼ level. The calculations were carried out using the ADF 2000 program package.34",
+      "translation_unit_formula_map": [],
+      "translation_unit_protected_map": [],
+      "translation_unit_protected_translated_text": "",
+      "translation_unit_translated_text": "",
+      "protected_translated_text": "",
+      "translated_text": "",
+      "continuation_group": "cg-001-001",
+      "continuation_prev_text": "",
+      "continuation_next_text": "to represent the Coulomb and exchange potentials in each SCF cycle.32 This basis-set combination is denoted \\mathrm { I I I } \\sim . 22,23 Unless otherwise stated, energies reported refer to the BP86/III∼ level. The calculations were carried out using the ADF 2000 program package.34",
+      "continuation_decision": "joined",
+      "continuation_candidate_prev_id": "",
+      "continuation_candidate_next_id": "",
+      "group_protected_source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and to represent the Coulomb and exchange potentials in each SCF cycle.32 This basis-set combination is denoted \\mathrm { I I I } \\sim . 22,23 Unless otherwise stated, energies reported refer to the BP86/III∼ level. The calculations were carried out using the ADF 2000 program package.34",
+      "group_formula_map": [],
+      "group_protected_map": [],
+      "group_protected_translated_text": "",
+      "group_translated_text": "",
+      "final_status": "kept_origin",
+      "translation_diagnostics": {},
+      "candidate_pair_prev_id": "",
+      "candidate_pair_next_id": ""
+    }
+  },
+  "replay_input": {
+    "job_root": "20260415003317-c856fe",
+    "job_id": "20260415003317-c856fe",
+    "item_id": "p001-b017",
+    "page_idx": 0,
+    "page_path": "translated/page-001-deepseek.json",
+    "spec": {
+      "mode": "sci",
+      "math_mode": "direct_typst",
+      "skip_title_translation": true,
+      "rule_profile_name": "general_sci",
+      "custom_rules_text": "",
+      "classify_batch_size": 12,
+      "workers": 100,
+      "model": "deepseek-chat",
+      "base_url": "https://api.deepseek.com/v1",
+      "glossary_entries": [],
+      "credential_ref": "env:RETAIN_TRANSLATION_API_KEY"
+    },
+    "page_payload": [
+      {
+        "item_id": "p001-b000",
+        "page_idx": 0,
+        "block_idx": 0,
+        "block_type": "title",
+        "bbox": [
+          52,
+          53,
+          538,
+          85
+        ],
+        "source_text": "Transition States for the [ 2 + 2 ] Addition of \\mathbf { C H } _ { 2 } { = } \\mathbf { C H } _ { 2 } , \\mathbf { C H } _ { 2 } { = } \\mathbf { 0 } , and [ \\mathbf { M } ] { = } \\mathbf { 0 } across the \\mathbf { C } { = } \\mathbf { C } + Double Bond of Ketene: Electronic Structure and Energy Decomposition",
+        "lines": [
+          {
+            "bbox": [
+              53,
+              55,
+              537,
+              69
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Transition States for the",
+                "bbox": [
+                  53,
+                  55,
+                  190,
+                  69
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "[ 2 + 2 ]",
+                "bbox": [
+                  190,
+                  55,
+                  231,
+                  69
+                ]
+              },
+              {
+                "type": "text",
+                "content": "Addition of",
+                "bbox": [
+                  231,
+                  55,
+                  299,
+                  69
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathbf { C H } _ { 2 } { = } \\mathbf { C H } _ { 2 }",
+                "bbox": [
+                  299,
+                  55,
+                  357,
+                  69
+                ]
+              },
+              {
+                "type": "text",
+                "content": ",",
+                "bbox": [
+                  357,
+                  55,
+                  362,
+                  69
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathbf { C H } _ { 2 } { = } \\mathbf { 0 }",
+                "bbox": [
+                  362,
+                  55,
+                  406,
+                  69
+                ]
+              },
+              {
+                "type": "text",
+                "content": ", and",
+                "bbox": [
+                  407,
+                  55,
+                  436,
+                  69
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "[ \\mathbf { M } ] { = } \\mathbf { 0 }",
+                "bbox": [
+                  436,
+                  55,
+                  479,
+                  69
+                ]
+              },
+              {
+                "type": "text",
+                "content": "across the",
+                "bbox": [
+                  479,
+                  55,
+                  537,
+                  69
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              68,
+              486,
+              84
+            ],
+            "spans": [
+              {
+                "type": "inline_equation",
+                "content": "\\mathbf { C } { = } \\mathbf { C }",
+                "bbox": [
+                  52,
+                  69,
+                  83,
+                  83
+                ]
+              },
+              {
+                "type": "text",
+                "content": "+ Double Bond of Ketene: Electronic Structure and Energy Decomposition",
+                "bbox": [
+                  84,
+                  68,
+                  486,
+                  84
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "title",
+          "normalized_sub_type": "title",
+          "structure_role": "title",
+          "raw_type": "title",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/0",
+            "raw_type": "title",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              52,
+              53,
+              538,
+              85
+            ],
+            "raw_text_excerpt": "Transition States for the [ 2 + 2 ] Addition of \\mathbf { C H } _ { 2 } { = } \\mathbf { C H } _ { 2 } , \\mathbf { C H } _ { 2 } { = } \\mathbf { 0 } , and [ \\mathbf { M } ] { = } \\mathbf { 0 } across t"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "single_column",
+        "layout_zone_rank": 0,
+        "layout_zone_size": 11,
+        "layout_boundary_role": "head",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Transition States for the [ 2 + 2 ] Addition of \\mathbf { C H } _ { 2 } { = } \\mathbf { C H } _ { 2 } , \\mathbf { C H } _ { 2 } { = } \\mathbf { 0 } , and [ \\mathbf { M } ] { = } \\mathbf { 0 } across the \\mathbf { C } { = } \\mathbf { C } + Double Bond of Ketene: Electronic Structure and Energy Decomposition",
+        "mixed_original_protected_source_text": "Transition States for the [ 2 + 2 ] Addition of \\mathbf { C H } _ { 2 } { = } \\mathbf { C H } _ { 2 } , \\mathbf { C H } _ { 2 } { = } \\mathbf { 0 } , and [ \\mathbf { M } ] { = } \\mathbf { 0 } across the \\mathbf { C } { = } \\mathbf { C } + Double Bond of Ketene: Electronic Structure and Energy Decomposition",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_title",
+        "should_translate": false,
+        "skip_reason": "skip_title",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b000",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b000"
+        ],
+        "translation_unit_protected_source_text": "Transition States for the [ 2 + 2 ] Addition of \\mathbf { C H } _ { 2 } { = } \\mathbf { C H } _ { 2 } , \\mathbf { C H } _ { 2 } { = } \\mathbf { 0 } , and [ \\mathbf { M } ] { = } \\mathbf { 0 } across the \\mathbf { C } { = } \\mathbf { C } + Double Bond of Ketene: Electronic Structure and Energy Decomposition",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "Transition States for the [ 2 + 2 ] Addition of \\mathbf { C H } _ { 2 } { = } \\mathbf { C H } _ { 2 } , \\mathbf { C H } _ { 2 } { = } \\mathbf { 0 } , and [ \\mathbf { M } ] { = } \\mathbf { 0 } across the \\mathbf { C } { = } \\mathbf { C } + Double Bond of Ketene: Electronic Structure and Energy Decomposition",
+        "translation_unit_translated_text": "Transition States for the [ 2 + 2 ] Addition of \\mathbf { C H } _ { 2 } { = } \\mathbf { C H } _ { 2 } , \\mathbf { C H } _ { 2 } { = } \\mathbf { 0 } , and [ \\mathbf { M } ] { = } \\mathbf { 0 } across the \\mathbf { C } { = } \\mathbf { C } + Double Bond of Ketene: Electronic Structure and Energy Decomposition",
+        "protected_translated_text": "Transition States for the [ 2 + 2 ] Addition of \\mathbf { C H } _ { 2 } { = } \\mathbf { C H } _ { 2 } , \\mathbf { C H } _ { 2 } { = } \\mathbf { 0 } , and [ \\mathbf { M } ] { = } \\mathbf { 0 } across the \\mathbf { C } { = } \\mathbf { C } + Double Bond of Ketene: Electronic Structure and Energy Decomposition",
+        "translated_text": "Transition States for the [ 2 + 2 ] Addition of \\mathbf { C H } _ { 2 } { = } \\mathbf { C H } _ { 2 } , \\mathbf { C H } _ { 2 } { = } \\mathbf { 0 } , and [ \\mathbf { M } ] { = } \\mathbf { 0 } across the \\mathbf { C } { = } \\mathbf { C } + Double Bond of Ketene: Electronic Structure and Energy Decomposition",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "",
+        "translation_diagnostics": {},
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p001-b001",
+        "page_idx": 0,
+        "block_idx": 1,
+        "block_type": "text",
+        "bbox": [
+          116,
+          98,
+          196,
+          109
+        ],
+        "source_text": "Dirk V. Deubel*",
+        "lines": [
+          {
+            "bbox": [
+              119,
+              98,
+              197,
+              110
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Dirk V. Deubel*",
+                "bbox": [
+                  119,
+                  98,
+                  197,
+                  110
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/1",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              116,
+              98,
+              196,
+              109
+            ],
+            "raw_text_excerpt": "Dirk V. Deubel*"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "single_column",
+        "layout_zone_rank": 1,
+        "layout_zone_size": 11,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Dirk V. Deubel*",
+        "mixed_original_protected_source_text": "Dirk V. Deubel*",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_model_keep_origin",
+        "should_translate": false,
+        "skip_reason": "skip_model_keep_origin",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b001",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b001"
+        ],
+        "translation_unit_protected_source_text": "Dirk V. Deubel*",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "",
+        "translation_unit_translated_text": "",
+        "protected_translated_text": "",
+        "translated_text": "",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "kept_origin",
+        "translation_diagnostics": {
+          "item_id": "p001-b001",
+          "page_idx": 0,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p001-b002",
+        "page_idx": 0,
+        "block_idx": 2,
+        "block_type": "text",
+        "bbox": [
+          116,
+          113,
+          457,
+          125
+        ],
+        "source_text": "Department of Chemistry, Uni ersity of Calgary, Calgary, Alberta, Canada T2N 1N41",
+        "lines": [
+          {
+            "bbox": [
+              118,
+              113,
+              458,
+              126
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Department of Chemistry, Uni ersity of Calgary, Calgary, Alberta, Canada T2N 1N41",
+                "bbox": [
+                  118,
+                  113,
+                  458,
+                  126
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/2",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              116,
+              113,
+              457,
+              125
+            ],
+            "raw_text_excerpt": "Department of Chemistry, Uni ersity of Calgary, Calgary, Alberta, Canada T2N 1N41"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "single_column",
+        "layout_zone_rank": 2,
+        "layout_zone_size": 11,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Department of Chemistry, Uni ersity of Calgary, Calgary, Alberta, Canada T2N 1N41",
+        "mixed_original_protected_source_text": "Department of Chemistry, Uni ersity of Calgary, Calgary, Alberta, Canada T2N 1N41",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_model_keep_origin",
+        "should_translate": false,
+        "skip_reason": "skip_model_keep_origin",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b002",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b002"
+        ],
+        "translation_unit_protected_source_text": "Department of Chemistry, Uni ersity of Calgary, Calgary, Alberta, Canada T2N 1N41",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "",
+        "translation_unit_translated_text": "",
+        "protected_translated_text": "",
+        "translated_text": "",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "kept_origin",
+        "translation_diagnostics": {
+          "item_id": "p001-b002",
+          "page_idx": 0,
+          "route_path": [
+            "block_level",
+            "direct_typst",
+            "keep_origin"
+          ],
+          "error_trace": [
+            {
+              "type": "validation",
+              "code": "ENGLISH_RESIDUE"
+            }
+          ],
+          "fallback_to": "keep_origin",
+          "degradation_reason": "english_residue_repeated",
+          "final_status": "kept_origin"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p001-b003",
+        "page_idx": 0,
+        "block_idx": 3,
+        "block_type": "text",
+        "bbox": [
+          116,
+          129,
+          364,
+          141
+        ],
+        "source_text": "Recei ed: August 29, 2001; In Final Form: No ember 1, 2001",
+        "lines": [
+          {
+            "bbox": [
+              118,
+              129,
+              364,
+              142
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Recei ed: August 29, 2001; In Final Form: No ember 1, 2001",
+                "bbox": [
+                  118,
+                  129,
+                  364,
+                  142
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/3",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              116,
+              129,
+              364,
+              141
+            ],
+            "raw_text_excerpt": "Recei ed: August 29, 2001; In Final Form: No ember 1, 2001"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "single_column",
+        "layout_zone_rank": 3,
+        "layout_zone_size": 11,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Recei ed: August 29, 2001; In Final Form: No ember 1, 2001",
+        "mixed_original_protected_source_text": "Recei ed: August 29, 2001; In Final Form: No ember 1, 2001",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b003",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b003"
+        ],
+        "translation_unit_protected_source_text": "Recei ed: August 29, 2001; In Final Form: No ember 1, 2001",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "收稿日期：2001年8月29日；最终定稿日期：2001年11月1日",
+        "translation_unit_translated_text": "收稿日期：2001年8月29日；最终定稿日期：2001年11月1日",
+        "protected_translated_text": "收稿日期：2001年8月29日；最终定稿日期：2001年11月1日",
+        "translated_text": "收稿日期：2001年8月29日；最终定稿日期：2001年11月1日",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p001-b003",
+          "page_idx": 0,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p001-b004",
+        "page_idx": 0,
+        "block_idx": 4,
+        "block_type": "text",
+        "bbox": [
+          116,
+          170,
+          559,
+          298
+        ],
+        "source_text": "Organic molecules with double bonds, such as ethylene and formaldehyde, are well-known to undergo [ 2 + 2] cycloadditions across the \\mathrm { C } { = } \\mathrm { C } + moiety of ketene. Surprisingly, the same pathway was recently predicted to be kinetically favored in the reaction of \\mathrm { C p R e O } _ { 3 } with ketene, in contrast to the additions of other metal oxides to the heterocumulene. Since the origin of the activation energies of [ 2 + 2 ] cycloadditions was poorly understood, a comparative density-functional study on the [ 2 + 2 ] + addition of \\mathrm { X = Y } \\mathrm { C H } _ { 2 } { = } \\mathrm { C H } _ { 2 } , \\mathrm { C H } _ { 2 } { = } \\mathrm { O } , and \\mathrm { C p O } _ { 2 } \\mathrm { R e } { = } \\mathrm { O } ) across the \\mathrm { C } { = } \\mathrm { C } + bond of ketene has been carried out. The electronic structure of the transition states has been analyzed in terms of interactions between the ketene and \\mathrm { X = Y } fragments. The analysis reveals that, besides stabilizing orbital interactions, additional contributions such as electrostatics and repulsion due to the Pauli principle determine the activation energies of cycloadditions. The stabilization arising from orbital interactions is weakest in the transition state for the metal oxide addition to the heterocumulene, although this reaction has the lowest activation barrier.",
+        "lines": [
+          {
+            "bbox": [
+              118,
+              170,
+              558,
+              183
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Organic molecules with double bonds, such as ethylene and formaldehyde, are well-known to undergo",
+                "bbox": [
+                  118,
+                  170,
+                  537,
+                  183
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "[ 2 +",
+                "bbox": [
+                  537,
+                  171,
+                  558,
+                  182
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              118,
+              182,
+              559,
+              195
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "2] cycloadditions across the",
+                "bbox": [
+                  118,
+                  182,
+                  235,
+                  195
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { C } { = } \\mathrm { C }",
+                "bbox": [
+                  235,
+                  182,
+                  259,
+                  193
+                ]
+              },
+              {
+                "type": "text",
+                "content": "+ moiety of ketene. Surprisingly, the same pathway was recently predicted",
+                "bbox": [
+                  259,
+                  182,
+                  559,
+                  195
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              118,
+              194,
+              559,
+              206
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "to be kinetically favored in the reaction of",
+                "bbox": [
+                  118,
+                  194,
+                  296,
+                  206
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { C p R e O } _ { 3 }",
+                "bbox": [
+                  296,
+                  194,
+                  331,
+                  205
+                ]
+              },
+              {
+                "type": "text",
+                "content": "with ketene, in contrast to the additions of other metal",
+                "bbox": [
+                  331,
+                  194,
+                  559,
+                  206
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              118,
+              205,
+              558,
+              217
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "oxides to the heterocumulene. Since the origin of the activation energies of",
+                "bbox": [
+                  118,
+                  205,
+                  419,
+                  217
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "[ 2 + 2 ]",
+                "bbox": [
+                  420,
+                  205,
+                  451,
+                  217
+                ]
+              },
+              {
+                "type": "text",
+                "content": "cycloadditions was poorly",
+                "bbox": [
+                  451,
+                  205,
+                  558,
+                  217
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              118,
+              217,
+              558,
+              229
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "understood, a comparative density-functional study on the",
+                "bbox": [
+                  118,
+                  217,
+                  360,
+                  229
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "[ 2 + 2 ]",
+                "bbox": [
+                  361,
+                  217,
+                  394,
+                  228
+                ]
+              },
+              {
+                "type": "text",
+                "content": "+ addition of",
+                "bbox": [
+                  394,
+                  217,
+                  443,
+                  229
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { X = Y }",
+                "bbox": [
+                  443,
+                  217,
+                  468,
+                  227
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { C H } _ { 2 } { = } \\mathrm { C H } _ { 2 }",
+                "bbox": [
+                  472,
+                  217,
+                  517,
+                  228
+                ]
+              },
+              {
+                "type": "text",
+                "content": ",",
+                "bbox": [
+                  517,
+                  217,
+                  520,
+                  229
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { C H } _ { 2 } { = } \\mathrm { O }",
+                "bbox": [
+                  521,
+                  217,
+                  555,
+                  228
+                ]
+              },
+              {
+                "type": "text",
+                "content": ",",
+                "bbox": [
+                  555,
+                  217,
+                  558,
+                  229
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              117,
+              228,
+              559,
+              240
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "and",
+                "bbox": [
+                  117,
+                  228,
+                  135,
+                  240
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { C p O } _ { 2 } \\mathrm { R e } { = } \\mathrm { O } )",
+                "bbox": [
+                  135,
+                  228,
+                  186,
+                  239
+                ]
+              },
+              {
+                "type": "text",
+                "content": "across the",
+                "bbox": [
+                  187,
+                  228,
+                  230,
+                  240
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { C } { = } \\mathrm { C }",
+                "bbox": [
+                  230,
+                  228,
+                  253,
+                  239
+                ]
+              },
+              {
+                "type": "text",
+                "content": "+ bond of ketene has been carried out. The electronic structure of the transition",
+                "bbox": [
+                  254,
+                  228,
+                  559,
+                  240
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              117,
+              239,
+              559,
+              252
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "states has been analyzed in terms of interactions between the ketene and",
+                "bbox": [
+                  117,
+                  239,
+                  406,
+                  252
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { X = Y }",
+                "bbox": [
+                  406,
+                  239,
+                  430,
+                  250
+                ]
+              },
+              {
+                "type": "text",
+                "content": "fragments. The analysis reveals",
+                "bbox": [
+                  431,
+                  239,
+                  559,
+                  252
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              118,
+              251,
+              559,
+              264
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "that, besides stabilizing orbital interactions, additional contributions such as electrostatics and repulsion due",
+                "bbox": [
+                  118,
+                  251,
+                  559,
+                  264
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              118,
+              263,
+              558,
+              274
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "to the Pauli principle determine the activation energies of cycloadditions. The stabilization arising from orbital",
+                "bbox": [
+                  118,
+                  263,
+                  558,
+                  274
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              117,
+              274,
+              558,
+              287
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "interactions is weakest in the transition state for the metal oxide addition to the heterocumulene, although",
+                "bbox": [
+                  117,
+                  274,
+                  558,
+                  287
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              118,
+              285,
+              308,
+              297
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "this reaction has the lowest activation barrier.",
+                "bbox": [
+                  118,
+                  285,
+                  308,
+                  297
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/4",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              116,
+              170,
+              559,
+              298
+            ],
+            "raw_text_excerpt": "Organic molecules with double bonds, such as ethylene and formaldehyde, are well-known to undergo [ 2 + 2] cycloadditions across the \\mathrm { C } { = } \\mathrm { C } + moiety of ketene. Surprisingly,"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "single_column",
+        "layout_zone_rank": 4,
+        "layout_zone_size": 11,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Organic molecules with double bonds, such as ethylene and formaldehyde, are well-known to undergo [ 2 + 2] cycloadditions across the \\mathrm { C } { = } \\mathrm { C } + moiety of ketene. Surprisingly, the same pathway was recently predicted to be kinetically favored in the reaction of \\mathrm { C p R e O } _ { 3 } with ketene, in contrast to the additions of other metal oxides to the heterocumulene. Since the origin of the activation energies of [ 2 + 2 ] cycloadditions was poorly understood, a comparative density-functional study on the [ 2 + 2 ] + addition of \\mathrm { X = Y } \\mathrm { C H } _ { 2 } { = } \\mathrm { C H } _ { 2 } , \\mathrm { C H } _ { 2 } { = } \\mathrm { O } , and \\mathrm { C p O } _ { 2 } \\mathrm { R e } { = } \\mathrm { O } ) across the \\mathrm { C } { = } \\mathrm { C } + bond of ketene has been carried out. The electronic structure of the transition states has been analyzed in terms of interactions between the ketene and \\mathrm { X = Y } fragments. The analysis reveals that, besides stabilizing orbital interactions, additional contributions such as electrostatics and repulsion due to the Pauli principle determine the activation energies of cycloadditions. The stabilization arising from orbital interactions is weakest in the transition state for the metal oxide addition to the heterocumulene, although this reaction has the lowest activation barrier.",
+        "mixed_original_protected_source_text": "Organic molecules with double bonds, such as ethylene and formaldehyde, are well-known to undergo [ 2 + 2] cycloadditions across the \\mathrm { C } { = } \\mathrm { C } + moiety of ketene. Surprisingly, the same pathway was recently predicted to be kinetically favored in the reaction of \\mathrm { C p R e O } _ { 3 } with ketene, in contrast to the additions of other metal oxides to the heterocumulene. Since the origin of the activation energies of [ 2 + 2 ] cycloadditions was poorly understood, a comparative density-functional study on the [ 2 + 2 ] + addition of \\mathrm { X = Y } \\mathrm { C H } _ { 2 } { = } \\mathrm { C H } _ { 2 } , \\mathrm { C H } _ { 2 } { = } \\mathrm { O } , and \\mathrm { C p O } _ { 2 } \\mathrm { R e } { = } \\mathrm { O } ) across the \\mathrm { C } { = } \\mathrm { C } + bond of ketene has been carried out. The electronic structure of the transition states has been analyzed in terms of interactions between the ketene and \\mathrm { X = Y } fragments. The analysis reveals that, besides stabilizing orbital interactions, additional contributions such as electrostatics and repulsion due to the Pauli principle determine the activation energies of cycloadditions. The stabilization arising from orbital interactions is weakest in the transition state for the metal oxide addition to the heterocumulene, although this reaction has the lowest activation barrier.",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b004",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b004"
+        ],
+        "translation_unit_protected_source_text": "Organic molecules with double bonds, such as ethylene and formaldehyde, are well-known to undergo [ 2 + 2] cycloadditions across the \\mathrm { C } { = } \\mathrm { C } + moiety of ketene. Surprisingly, the same pathway was recently predicted to be kinetically favored in the reaction of \\mathrm { C p R e O } _ { 3 } with ketene, in contrast to the additions of other metal oxides to the heterocumulene. Since the origin of the activation energies of [ 2 + 2 ] cycloadditions was poorly understood, a comparative density-functional study on the [ 2 + 2 ] + addition of \\mathrm { X = Y } \\mathrm { C H } _ { 2 } { = } \\mathrm { C H } _ { 2 } , \\mathrm { C H } _ { 2 } { = } \\mathrm { O } , and \\mathrm { C p O } _ { 2 } \\mathrm { R e } { = } \\mathrm { O } ) across the \\mathrm { C } { = } \\mathrm { C } + bond of ketene has been carried out. The electronic structure of the transition states has been analyzed in terms of interactions between the ketene and \\mathrm { X = Y } fragments. The analysis reveals that, besides stabilizing orbital interactions, additional contributions such as electrostatics and repulsion due to the Pauli principle determine the activation energies of cycloadditions. The stabilization arising from orbital interactions is weakest in the transition state for the metal oxide addition to the heterocumulene, although this reaction has the lowest activation barrier.",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "含有双键的有机分子，例如乙烯和甲醛，已知会与烯酮的$\\mathrm{C}{=}\\mathrm{C}+$部分发生$[2+2]$环加成反应。令人惊讶的是，最近预测$\\mathrm{CpReO}_{3}$与烯酮的反应也以动力学上更有利的相同途径进行，这与其他金属氧化物对该杂累积烯的加成反应形成对比。由于对$[2+2]$环加成反应活化能的起源理解不足，我们进行了一项比较性密度泛函研究，考察了$\\mathrm{X=Y}$（$\\mathrm{CH}_{2}{=}\\mathrm{CH}_{2}$、$\\mathrm{CH}_{2}{=}\\mathrm{O}$和$\\mathrm{CpO}_{2}\\mathrm{Re}{=}\\mathrm{O}$）与烯酮的$\\mathrm{C}{=}\\mathrm{C}+$键的$[2+2]+$加成。从烯酮与$\\mathrm{X=Y}$片段间的相互作用角度分析了过渡态的电子结构。分析表明，除了稳定的轨道相互作用外，静电作用和Pauli原理导致的排斥等额外贡献也决定了环加成反应的活化能。尽管金属氧化物与杂累积烯加成的反应具有最低的活化能垒，但其过渡态中轨道相互作用产生的稳定化作用最弱。",
+        "translation_unit_translated_text": "含有双键的有机分子，例如乙烯和甲醛，已知会与烯酮的$\\mathrm{C}{=}\\mathrm{C}+$部分发生$[2+2]$环加成反应。令人惊讶的是，最近预测$\\mathrm{CpReO}_{3}$与烯酮的反应也以动力学上更有利的相同途径进行，这与其他金属氧化物对该杂累积烯的加成反应形成对比。由于对$[2+2]$环加成反应活化能的起源理解不足，我们进行了一项比较性密度泛函研究，考察了$\\mathrm{X=Y}$（$\\mathrm{CH}_{2}{=}\\mathrm{CH}_{2}$、$\\mathrm{CH}_{2}{=}\\mathrm{O}$和$\\mathrm{CpO}_{2}\\mathrm{Re}{=}\\mathrm{O}$）与烯酮的$\\mathrm{C}{=}\\mathrm{C}+$键的$[2+2]+$加成。从烯酮与$\\mathrm{X=Y}$片段间的相互作用角度分析了过渡态的电子结构。分析表明，除了稳定的轨道相互作用外，静电作用和Pauli原理导致的排斥等额外贡献也决定了环加成反应的活化能。尽管金属氧化物与杂累积烯加成的反应具有最低的活化能垒，但其过渡态中轨道相互作用产生的稳定化作用最弱。",
+        "protected_translated_text": "含有双键的有机分子，例如乙烯和甲醛，已知会与烯酮的$\\mathrm{C}{=}\\mathrm{C}+$部分发生$[2+2]$环加成反应。令人惊讶的是，最近预测$\\mathrm{CpReO}_{3}$与烯酮的反应也以动力学上更有利的相同途径进行，这与其他金属氧化物对该杂累积烯的加成反应形成对比。由于对$[2+2]$环加成反应活化能的起源理解不足，我们进行了一项比较性密度泛函研究，考察了$\\mathrm{X=Y}$（$\\mathrm{CH}_{2}{=}\\mathrm{CH}_{2}$、$\\mathrm{CH}_{2}{=}\\mathrm{O}$和$\\mathrm{CpO}_{2}\\mathrm{Re}{=}\\mathrm{O}$）与烯酮的$\\mathrm{C}{=}\\mathrm{C}+$键的$[2+2]+$加成。从烯酮与$\\mathrm{X=Y}$片段间的相互作用角度分析了过渡态的电子结构。分析表明，除了稳定的轨道相互作用外，静电作用和Pauli原理导致的排斥等额外贡献也决定了环加成反应的活化能。尽管金属氧化物与杂累积烯加成的反应具有最低的活化能垒，但其过渡态中轨道相互作用产生的稳定化作用最弱。",
+        "translated_text": "含有双键的有机分子，例如乙烯和甲醛，已知会与烯酮的$\\mathrm{C}{=}\\mathrm{C}+$部分发生$[2+2]$环加成反应。令人惊讶的是，最近预测$\\mathrm{CpReO}_{3}$与烯酮的反应也以动力学上更有利的相同途径进行，这与其他金属氧化物对该杂累积烯的加成反应形成对比。由于对$[2+2]$环加成反应活化能的起源理解不足，我们进行了一项比较性密度泛函研究，考察了$\\mathrm{X=Y}$（$\\mathrm{CH}_{2}{=}\\mathrm{CH}_{2}$、$\\mathrm{CH}_{2}{=}\\mathrm{O}$和$\\mathrm{CpO}_{2}\\mathrm{Re}{=}\\mathrm{O}$）与烯酮的$\\mathrm{C}{=}\\mathrm{C}+$键的$[2+2]+$加成。从烯酮与$\\mathrm{X=Y}$片段间的相互作用角度分析了过渡态的电子结构。分析表明，除了稳定的轨道相互作用外，静电作用和Pauli原理导致的排斥等额外贡献也决定了环加成反应的活化能。尽管金属氧化物与杂累积烯加成的反应具有最低的活化能垒，但其过渡态中轨道相互作用产生的稳定化作用最弱。",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p001-b004",
+          "page_idx": 0,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p001-b005",
+        "page_idx": 0,
+        "block_idx": 5,
+        "block_type": "title",
+        "bbox": [
+          52,
+          321,
+          107,
+          332
+        ],
+        "source_text": "Introduction",
+        "lines": [
+          {
+            "bbox": [
+              53,
+              321,
+              107,
+              333
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Introduction",
+                "bbox": [
+                  53,
+                  321,
+                  107,
+                  333
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "title",
+          "normalized_sub_type": "title",
+          "structure_role": "title",
+          "raw_type": "title",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/5",
+            "raw_type": "title",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              52,
+              321,
+              107,
+              332
+            ],
+            "raw_text_excerpt": "Introduction"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "single_column",
+        "layout_zone_rank": 5,
+        "layout_zone_size": 11,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Introduction",
+        "mixed_original_protected_source_text": "Introduction",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_title",
+        "should_translate": false,
+        "skip_reason": "skip_title",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b005",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b005"
+        ],
+        "translation_unit_protected_source_text": "Introduction",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "Introduction",
+        "translation_unit_translated_text": "Introduction",
+        "protected_translated_text": "Introduction",
+        "translated_text": "Introduction",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "",
+        "translation_diagnostics": {},
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p001-b006",
+        "page_idx": 0,
+        "block_idx": 6,
+        "block_type": "text",
+        "bbox": [
+          53,
+          336,
+          295,
+          534
+        ],
+        "source_text": "The concepts developed by Woodward and Hoffmann to classify pericyclic reactions belong to the tools of every chemist.2 However, simple cycloadditions that are of consider- able industrial importance3 challenge these concepts: the thermal [ 2 ~ + ~ 2 ] additions of ketenophiles such as ethylene4 and +formaldehyde5 across the \\mathrm { C } { = } \\mathrm { C } moiety of ketene.6 Whether a [ 2 \\pi _ { \\mathrm { s } } + 2 \\pi _ { \\mathrm { a } } ] topology (Figure 1, left) or a [ 2 \\pi \\mathrm { _ s } + ( 2 \\pi \\mathrm { _ s } + 2 \\pi \\mathrm { _ s } ) ] +topology7 involving the \\mathrm { C } { = } \\mathrm { O } + + moiety of ketene (Figure 1, right) describes the transition states (TS) best has controversially been discussed.8,9 Theoretically predicted transition structures4,5 and a recent frontier-orbital study8,10 on the reactions give evidence for the latter topology model. Common fragment-based charge- and energy-decomposition schemes11,12 have not yet been used to analyze these reactions. These methods11,12 characterize molecules of the type \\mathrm { A } ^ { - } \\mathrm { B } in terms of interactions between -the fragments A and B,13 and they should become valuable tools of organic chemists to gain insight into the electronic structure of transition states for cycloadditions.",
+        "lines": [
+          {
+            "bbox": [
+              62,
+              336,
+              296,
+              349
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "The concepts developed by Woodward and Hoffmann to",
+                "bbox": [
+                  62,
+                  336,
+                  296,
+                  349
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              348,
+              296,
+              360
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "classify pericyclic reactions belong to the tools of every",
+                "bbox": [
+                  52,
+                  348,
+                  296,
+                  360
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              358,
+              296,
+              370
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "chemist.2 However, simple cycloadditions that are of consider-",
+                "bbox": [
+                  52,
+                  358,
+                  296,
+                  370
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              369,
+              296,
+              382
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "able industrial importance3 challenge these concepts: the thermal",
+                "bbox": [
+                  52,
+                  369,
+                  296,
+                  382
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              53,
+              380,
+              296,
+              392
+            ],
+            "spans": [
+              {
+                "type": "inline_equation",
+                "content": "[ 2 ~ + ~ 2 ]",
+                "bbox": [
+                  53,
+                  380,
+                  89,
+                  392
+                ]
+              },
+              {
+                "type": "text",
+                "content": "additions of ketenophiles such as ethylene4 and",
+                "bbox": [
+                  89,
+                  380,
+                  296,
+                  392
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              392,
+              296,
+              403
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "+formaldehyde5 across the",
+                "bbox": [
+                  52,
+                  392,
+                  154,
+                  403
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { C } { = } \\mathrm { C }",
+                "bbox": [
+                  154,
+                  392,
+                  176,
+                  402
+                ]
+              },
+              {
+                "type": "text",
+                "content": "moiety of ketene.6 Whether a",
+                "bbox": [
+                  176,
+                  392,
+                  296,
+                  403
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              53,
+              403,
+              294,
+              415
+            ],
+            "spans": [
+              {
+                "type": "inline_equation",
+                "content": "[ 2 \\pi _ { \\mathrm { s } } + 2 \\pi _ { \\mathrm { a } } ]",
+                "bbox": [
+                  53,
+                  403,
+                  100,
+                  414
+                ]
+              },
+              {
+                "type": "text",
+                "content": "topology (Figure 1, left) or a",
+                "bbox": [
+                  100,
+                  403,
+                  214,
+                  415
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "[ 2 \\pi \\mathrm { _ s } + ( 2 \\pi \\mathrm { _ s } + 2 \\pi \\mathrm { _ s } ) ]",
+                "bbox": [
+                  215,
+                  403,
+                  294,
+                  414
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              413,
+              296,
+              426
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "+topology7 involving the",
+                "bbox": [
+                  52,
+                  413,
+                  143,
+                  426
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { C } { = } \\mathrm { O }",
+                "bbox": [
+                  144,
+                  414,
+                  167,
+                  424
+                ]
+              },
+              {
+                "type": "text",
+                "content": "+ + moiety of ketene (Figure 1, right)",
+                "bbox": [
+                  167,
+                  413,
+                  296,
+                  426
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              424,
+              296,
+              436
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "describes the transition states (TS) best has controversially been",
+                "bbox": [
+                  52,
+                  424,
+                  296,
+                  436
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              434,
+              296,
+              447
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "discussed.8,9 Theoretically predicted transition structures4,5 and",
+                "bbox": [
+                  52,
+                  434,
+                  296,
+                  447
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              445,
+              296,
+              458
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "a recent frontier-orbital study8,10 on the reactions give evidence",
+                "bbox": [
+                  52,
+                  445,
+                  296,
+                  458
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              456,
+              296,
+              470
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "for the latter topology model. Common fragment-based charge-",
+                "bbox": [
+                  52,
+                  456,
+                  296,
+                  470
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              468,
+              296,
+              480
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "and energy-decomposition schemes11,12 have not yet been used",
+                "bbox": [
+                  52,
+                  468,
+                  296,
+                  480
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              51,
+              478,
+              296,
+              491
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "to analyze these reactions. These methods11,12 characterize",
+                "bbox": [
+                  51,
+                  478,
+                  296,
+                  491
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              491,
+              296,
+              502
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "molecules of the type",
+                "bbox": [
+                  52,
+                  491,
+                  141,
+                  502
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { A } ^ { - } \\mathrm { B }",
+                "bbox": [
+                  141,
+                  491,
+                  164,
+                  501
+                ]
+              },
+              {
+                "type": "text",
+                "content": "in terms of interactions between",
+                "bbox": [
+                  164,
+                  491,
+                  296,
+                  502
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              501,
+              296,
+              513
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "-the fragments A and B,13 and they should become valuable tools",
+                "bbox": [
+                  52,
+                  501,
+                  296,
+                  513
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              513,
+              296,
+              524
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "of organic chemists to gain insight into the electronic structure",
+                "bbox": [
+                  52,
+                  513,
+                  296,
+                  524
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              523,
+              202,
+              535
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "of transition states for cycloadditions.",
+                "bbox": [
+                  52,
+                  523,
+                  202,
+                  535
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/6",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              53,
+              336,
+              295,
+              534
+            ],
+            "raw_text_excerpt": "The concepts developed by Woodward and Hoffmann to classify pericyclic reactions belong to the tools of every chemist.2 However, simple cycloadditions that are of consider- able industrial importance3"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "single_column",
+        "layout_zone_rank": 6,
+        "layout_zone_size": 11,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "The concepts developed by Woodward and Hoffmann to classify pericyclic reactions belong to the tools of every chemist.2 However, simple cycloadditions that are of consider- able industrial importance3 challenge these concepts: the thermal [ 2 ~ + ~ 2 ] additions of ketenophiles such as ethylene4 and +formaldehyde5 across the \\mathrm { C } { = } \\mathrm { C } moiety of ketene.6 Whether a [ 2 \\pi _ { \\mathrm { s } } + 2 \\pi _ { \\mathrm { a } } ] topology (Figure 1, left) or a [ 2 \\pi \\mathrm { _ s } + ( 2 \\pi \\mathrm { _ s } + 2 \\pi \\mathrm { _ s } ) ] +topology7 involving the \\mathrm { C } { = } \\mathrm { O } + + moiety of ketene (Figure 1, right) describes the transition states (TS) best has controversially been discussed.8,9 Theoretically predicted transition structures4,5 and a recent frontier-orbital study8,10 on the reactions give evidence for the latter topology model. Common fragment-based charge- and energy-decomposition schemes11,12 have not yet been used to analyze these reactions. These methods11,12 characterize molecules of the type \\mathrm { A } ^ { - } \\mathrm { B } in terms of interactions between -the fragments A and B,13 and they should become valuable tools of organic chemists to gain insight into the electronic structure of transition states for cycloadditions.",
+        "mixed_original_protected_source_text": "The concepts developed by Woodward and Hoffmann to classify pericyclic reactions belong to the tools of every chemist.2 However, simple cycloadditions that are of consider- able industrial importance3 challenge these concepts: the thermal [ 2 ~ + ~ 2 ] additions of ketenophiles such as ethylene4 and +formaldehyde5 across the \\mathrm { C } { = } \\mathrm { C } moiety of ketene.6 Whether a [ 2 \\pi _ { \\mathrm { s } } + 2 \\pi _ { \\mathrm { a } } ] topology (Figure 1, left) or a [ 2 \\pi \\mathrm { _ s } + ( 2 \\pi \\mathrm { _ s } + 2 \\pi \\mathrm { _ s } ) ] +topology7 involving the \\mathrm { C } { = } \\mathrm { O } + + moiety of ketene (Figure 1, right) describes the transition states (TS) best has controversially been discussed.8,9 Theoretically predicted transition structures4,5 and a recent frontier-orbital study8,10 on the reactions give evidence for the latter topology model. Common fragment-based charge- and energy-decomposition schemes11,12 have not yet been used to analyze these reactions. These methods11,12 characterize molecules of the type \\mathrm { A } ^ { - } \\mathrm { B } in terms of interactions between -the fragments A and B,13 and they should become valuable tools of organic chemists to gain insight into the electronic structure of transition states for cycloadditions.",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b006",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b006"
+        ],
+        "translation_unit_protected_source_text": "The concepts developed by Woodward and Hoffmann to classify pericyclic reactions belong to the tools of every chemist.2 However, simple cycloadditions that are of consider- able industrial importance3 challenge these concepts: the thermal [ 2 ~ + ~ 2 ] additions of ketenophiles such as ethylene4 and +formaldehyde5 across the \\mathrm { C } { = } \\mathrm { C } moiety of ketene.6 Whether a [ 2 \\pi _ { \\mathrm { s } } + 2 \\pi _ { \\mathrm { a } } ] topology (Figure 1, left) or a [ 2 \\pi \\mathrm { _ s } + ( 2 \\pi \\mathrm { _ s } + 2 \\pi \\mathrm { _ s } ) ] +topology7 involving the \\mathrm { C } { = } \\mathrm { O } + + moiety of ketene (Figure 1, right) describes the transition states (TS) best has controversially been discussed.8,9 Theoretically predicted transition structures4,5 and a recent frontier-orbital study8,10 on the reactions give evidence for the latter topology model. Common fragment-based charge- and energy-decomposition schemes11,12 have not yet been used to analyze these reactions. These methods11,12 characterize molecules of the type \\mathrm { A } ^ { - } \\mathrm { B } in terms of interactions between -the fragments A and B,13 and they should become valuable tools of organic chemists to gain insight into the electronic structure of transition states for cycloadditions.",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "Woodward和Hoffmann为分类周环反应所发展的概念已成为每位化学家的必备工具。然而，具有重要工业意义的简单环加成反应对这些概念提出了挑战：例如乙烯和甲醛等亲烯体与烯酮的$\\mathrm{C}=\\mathrm{C}$单元之间的热[2+2]加成反应。过渡态（TS）究竟最好用[2$\\pi_{\\mathrm{s}}$ + 2$\\pi_{\\mathrm{a}}$]拓扑（图1左）来描述，还是用涉及烯酮$\\mathrm{C}=\\mathrm{O}$单元的[2$\\pi_{\\mathrm{s}}$ + (2$\\pi_{\\mathrm{s}}$ + 2$\\pi_{\\mathrm{s}}$)]拓扑来描述，一直存在争议。理论预测的过渡态结构以及最近对这些反应的前线轨道研究为后一种拓扑模型提供了证据。目前尚未使用常见的基于片段的电荷和能量分解方案来分析这些反应。这些方法通过片段A和B之间的相互作用来描述$\\mathrm{A}-\\mathrm{B}$型分子，它们应成为有机化学家深入了解环加成反应过渡态电子结构的有价值工具。",
+        "translation_unit_translated_text": "Woodward和Hoffmann为分类周环反应所发展的概念已成为每位化学家的必备工具。然而，具有重要工业意义的简单环加成反应对这些概念提出了挑战：例如乙烯和甲醛等亲烯体与烯酮的$\\mathrm{C}=\\mathrm{C}$单元之间的热[2+2]加成反应。过渡态（TS）究竟最好用[2$\\pi_{\\mathrm{s}}$ + 2$\\pi_{\\mathrm{a}}$]拓扑（图1左）来描述，还是用涉及烯酮$\\mathrm{C}=\\mathrm{O}$单元的[2$\\pi_{\\mathrm{s}}$ + (2$\\pi_{\\mathrm{s}}$ + 2$\\pi_{\\mathrm{s}}$)]拓扑来描述，一直存在争议。理论预测的过渡态结构以及最近对这些反应的前线轨道研究为后一种拓扑模型提供了证据。目前尚未使用常见的基于片段的电荷和能量分解方案来分析这些反应。这些方法通过片段A和B之间的相互作用来描述$\\mathrm{A}-\\mathrm{B}$型分子，它们应成为有机化学家深入了解环加成反应过渡态电子结构的有价值工具。",
+        "protected_translated_text": "Woodward和Hoffmann为分类周环反应所发展的概念已成为每位化学家的必备工具。然而，具有重要工业意义的简单环加成反应对这些概念提出了挑战：例如乙烯和甲醛等亲烯体与烯酮的$\\mathrm{C}=\\mathrm{C}$单元之间的热[2+2]加成反应。过渡态（TS）究竟最好用[2$\\pi_{\\mathrm{s}}$ + 2$\\pi_{\\mathrm{a}}$]拓扑（图1左）来描述，还是用涉及烯酮$\\mathrm{C}=\\mathrm{O}$单元的[2$\\pi_{\\mathrm{s}}$ + (2$\\pi_{\\mathrm{s}}$ + 2$\\pi_{\\mathrm{s}}$)]拓扑来描述，一直存在争议。理论预测的过渡态结构以及最近对这些反应的前线轨道研究为后一种拓扑模型提供了证据。目前尚未使用常见的基于片段的电荷和能量分解方案来分析这些反应。这些方法通过片段A和B之间的相互作用来描述$\\mathrm{A}-\\mathrm{B}$型分子，它们应成为有机化学家深入了解环加成反应过渡态电子结构的有价值工具。",
+        "translated_text": "Woodward和Hoffmann为分类周环反应所发展的概念已成为每位化学家的必备工具。然而，具有重要工业意义的简单环加成反应对这些概念提出了挑战：例如乙烯和甲醛等亲烯体与烯酮的$\\mathrm{C}=\\mathrm{C}$单元之间的热[2+2]加成反应。过渡态（TS）究竟最好用[2$\\pi_{\\mathrm{s}}$ + 2$\\pi_{\\mathrm{a}}$]拓扑（图1左）来描述，还是用涉及烯酮$\\mathrm{C}=\\mathrm{O}$单元的[2$\\pi_{\\mathrm{s}}$ + (2$\\pi_{\\mathrm{s}}$ + 2$\\pi_{\\mathrm{s}}$)]拓扑来描述，一直存在争议。理论预测的过渡态结构以及最近对这些反应的前线轨道研究为后一种拓扑模型提供了证据。目前尚未使用常见的基于片段的电荷和能量分解方案来分析这些反应。这些方法通过片段A和B之间的相互作用来描述$\\mathrm{A}-\\mathrm{B}$型分子，它们应成为有机化学家深入了解环加成反应过渡态电子结构的有价值工具。",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p001-b006",
+          "page_idx": 0,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p001-b007",
+        "page_idx": 0,
+        "block_idx": 7,
+        "block_type": "text",
+        "bbox": [
+          53,
+          535,
+          295,
+          710
+        ],
+        "source_text": "Tremendous research efforts focus on transition-metal oxide -additions across unsaturated carbon carbon bonds,14 since there -is a considerable industrial interest in the activation of double bonds by readily accessible metal oxides, beyond the common methods for cis dihydroxylation using osmium tetraoxide and permanganate.3 Several density-functional studies on these reactions were recently reported because their mechanisms provide some academic challenges.15 23 While transition-metal oxide additions to ethylene follow a [ 3 + 2 ] - pathway only,15-24 cyclopentadienyltrioxorhenium ( \\mathrm { V I I } ) ^ { 2 5 } +kinetically favors the [2 + \\ 2 ] addition across the \\mathrm { C } { = } \\mathrm { C } bond of ketene.26 The [ 3 + 2 ] + +activation energies can easily be predicted from frontier-orbital analysis21,22 or even from thermochemical data using Marcus theory.23 However, in our recent computational study, we were unable to rationalize the activation energies of [ 2 ~ + ~ 2 ] additions.22",
+        "lines": [
+          {
+            "bbox": [
+              63,
+              534,
+              294,
+              545
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Tremendous research efforts focus on transition-metal oxide",
+                "bbox": [
+                  63,
+                  534,
+                  294,
+                  545
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              544,
+              296,
+              557
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "-additions across unsaturated carbon carbon bonds,14 since there",
+                "bbox": [
+                  52,
+                  544,
+                  296,
+                  557
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              556,
+              294,
+              567
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "-is a considerable industrial interest in the activation of double",
+                "bbox": [
+                  52,
+                  556,
+                  294,
+                  567
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              567,
+              294,
+              578
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "bonds by readily accessible metal oxides, beyond the common",
+                "bbox": [
+                  52,
+                  567,
+                  294,
+                  578
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              578,
+              296,
+              590
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "methods for cis dihydroxylation using osmium tetraoxide and",
+                "bbox": [
+                  52,
+                  578,
+                  296,
+                  590
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              589,
+              296,
+              601
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "permanganate.3 Several density-functional studies on these",
+                "bbox": [
+                  52,
+                  589,
+                  296,
+                  601
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              601,
+              296,
+              613
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "reactions were recently reported because their mechanisms",
+                "bbox": [
+                  52,
+                  601,
+                  296,
+                  613
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              610,
+              295,
+              622
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "provide some academic challenges.15 23 While transition-metal",
+                "bbox": [
+                  52,
+                  610,
+                  295,
+                  622
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              51,
+              621,
+              296,
+              634
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "oxide additions to ethylene follow a",
+                "bbox": [
+                  51,
+                  621,
+                  191,
+                  634
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "[ 3 + 2 ]",
+                "bbox": [
+                  192,
+                  623,
+                  220,
+                  633
+                ]
+              },
+              {
+                "type": "text",
+                "content": "- pathway only,15-24",
+                "bbox": [
+                  220,
+                  621,
+                  296,
+                  634
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              633,
+              296,
+              645
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "cyclopentadienyltrioxorhenium",
+                "bbox": [
+                  52,
+                  633,
+                  172,
+                  645
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "( \\mathrm { V I I } ) ^ { 2 5 }",
+                "bbox": [
+                  173,
+                  633,
+                  199,
+                  644
+                ]
+              },
+              {
+                "type": "text",
+                "content": "+kinetically favors the [2",
+                "bbox": [
+                  200,
+                  633,
+                  296,
+                  645
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              643,
+              294,
+              656
+            ],
+            "spans": [
+              {
+                "type": "inline_equation",
+                "content": "+ \\ 2 ]",
+                "bbox": [
+                  52,
+                  645,
+                  73,
+                  655
+                ]
+              },
+              {
+                "type": "text",
+                "content": "addition across the",
+                "bbox": [
+                  74,
+                  643,
+                  150,
+                  656
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { C } { = } \\mathrm { C }",
+                "bbox": [
+                  151,
+                  645,
+                  173,
+                  654
+                ]
+              },
+              {
+                "type": "text",
+                "content": "bond of ketene.26 The",
+                "bbox": [
+                  174,
+                  643,
+                  263,
+                  656
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "[ 3 + 2 ]",
+                "bbox": [
+                  263,
+                  644,
+                  294,
+                  655
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              655,
+              296,
+              666
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "+ +activation energies can easily be predicted from frontier-orbital",
+                "bbox": [
+                  52,
+                  655,
+                  296,
+                  666
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              51,
+              665,
+              296,
+              679
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "analysis21,22 or even from thermochemical data using Marcus",
+                "bbox": [
+                  51,
+                  665,
+                  296,
+                  679
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              677,
+              296,
+              689
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "theory.23 However, in our recent computational study, we were",
+                "bbox": [
+                  52,
+                  677,
+                  296,
+                  689
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              687,
+              294,
+              700
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "unable to rationalize the activation energies of",
+                "bbox": [
+                  52,
+                  687,
+                  257,
+                  700
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "[ 2 ~ + ~ 2 ]",
+                "bbox": [
+                  257,
+                  689,
+                  294,
+                  700
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              52,
+              698,
+              100,
+              709
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "additions.22",
+                "bbox": [
+                  52,
+                  698,
+                  100,
+                  709
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/7",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              53,
+              535,
+              295,
+              710
+            ],
+            "raw_text_excerpt": "Tremendous research efforts focus on transition-metal oxide -additions across unsaturated carbon carbon bonds,14 since there -is a considerable industrial interest in the activation of double bonds by"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "single_column",
+        "layout_zone_rank": 8,
+        "layout_zone_size": 11,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Tremendous research efforts focus on transition-metal oxide -additions across unsaturated carbon carbon bonds,14 since there -is a considerable industrial interest in the activation of double bonds by readily accessible metal oxides, beyond the common methods for cis dihydroxylation using osmium tetraoxide and permanganate.3 Several density-functional studies on these reactions were recently reported because their mechanisms provide some academic challenges.15 23 While transition-metal oxide additions to ethylene follow a [ 3 + 2 ] - pathway only,15-24 cyclopentadienyltrioxorhenium ( \\mathrm { V I I } ) ^ { 2 5 } +kinetically favors the [2 + \\ 2 ] addition across the \\mathrm { C } { = } \\mathrm { C } bond of ketene.26 The [ 3 + 2 ] + +activation energies can easily be predicted from frontier-orbital analysis21,22 or even from thermochemical data using Marcus theory.23 However, in our recent computational study, we were unable to rationalize the activation energies of [ 2 ~ + ~ 2 ] additions.22",
+        "mixed_original_protected_source_text": "Tremendous research efforts focus on transition-metal oxide -additions across unsaturated carbon carbon bonds,14 since there -is a considerable industrial interest in the activation of double bonds by readily accessible metal oxides, beyond the common methods for cis dihydroxylation using osmium tetraoxide and permanganate.3 Several density-functional studies on these reactions were recently reported because their mechanisms provide some academic challenges.15 23 While transition-metal oxide additions to ethylene follow a [ 3 + 2 ] - pathway only,15-24 cyclopentadienyltrioxorhenium ( \\mathrm { V I I } ) ^ { 2 5 } +kinetically favors the [2 + \\ 2 ] addition across the \\mathrm { C } { = } \\mathrm { C } bond of ketene.26 The [ 3 + 2 ] + +activation energies can easily be predicted from frontier-orbital analysis21,22 or even from thermochemical data using Marcus theory.23 However, in our recent computational study, we were unable to rationalize the activation energies of [ 2 ~ + ~ 2 ] additions.22",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b007",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b007"
+        ],
+        "translation_unit_protected_source_text": "Tremendous research efforts focus on transition-metal oxide -additions across unsaturated carbon carbon bonds,14 since there -is a considerable industrial interest in the activation of double bonds by readily accessible metal oxides, beyond the common methods for cis dihydroxylation using osmium tetraoxide and permanganate.3 Several density-functional studies on these reactions were recently reported because their mechanisms provide some academic challenges.15 23 While transition-metal oxide additions to ethylene follow a [ 3 + 2 ] - pathway only,15-24 cyclopentadienyltrioxorhenium ( \\mathrm { V I I } ) ^ { 2 5 } +kinetically favors the [2 + \\ 2 ] addition across the \\mathrm { C } { = } \\mathrm { C } bond of ketene.26 The [ 3 + 2 ] + +activation energies can easily be predicted from frontier-orbital analysis21,22 or even from thermochemical data using Marcus theory.23 However, in our recent computational study, we were unable to rationalize the activation energies of [ 2 ~ + ~ 2 ] additions.22",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "大量研究工作聚焦于过渡金属氧化物对不饱和碳碳键的加成反应，$^{14}$ 因为除了使用四氧化锇和高锰酸盐进行顺式二羟基化的常规方法外，$^{3}$ 利用易得的金属氧化物活化双键具有相当大的工业意义。最近报道了关于这些反应的几项密度泛函研究，因为其机理带来了一些学术挑战。$^{15-23}$ 虽然过渡金属氧化物与乙烯的加成仅遵循 $[3+2]$ 途径，$^{15-24}$ 但环戊二烯基三氧化铼($\\mathrm{VII}$)$^{25}$ 在动力学上更倾向于与乙烯酮的 $\\mathrm{C=C}$ 键发生 $[2+2]$ 加成。$^{26}$ $[3+2]$ 反应的活化能可以很容易地通过前线轨道分析$^{21,22}$ 或甚至使用马库斯理论的热化学数据来预测。$^{23}$ 然而，在我们最近的计算研究中，我们无法合理化 $[2+2]$ 加成反应的活化能。$^{22}$",
+        "translation_unit_translated_text": "大量研究工作聚焦于过渡金属氧化物对不饱和碳碳键的加成反应，$^{14}$ 因为除了使用四氧化锇和高锰酸盐进行顺式二羟基化的常规方法外，$^{3}$ 利用易得的金属氧化物活化双键具有相当大的工业意义。最近报道了关于这些反应的几项密度泛函研究，因为其机理带来了一些学术挑战。$^{15-23}$ 虽然过渡金属氧化物与乙烯的加成仅遵循 $[3+2]$ 途径，$^{15-24}$ 但环戊二烯基三氧化铼($\\mathrm{VII}$)$^{25}$ 在动力学上更倾向于与乙烯酮的 $\\mathrm{C=C}$ 键发生 $[2+2]$ 加成。$^{26}$ $[3+2]$ 反应的活化能可以很容易地通过前线轨道分析$^{21,22}$ 或甚至使用马库斯理论的热化学数据来预测。$^{23}$ 然而，在我们最近的计算研究中，我们无法合理化 $[2+2]$ 加成反应的活化能。$^{22}$",
+        "protected_translated_text": "大量研究工作聚焦于过渡金属氧化物对不饱和碳碳键的加成反应，$^{14}$ 因为除了使用四氧化锇和高锰酸盐进行顺式二羟基化的常规方法外，$^{3}$ 利用易得的金属氧化物活化双键具有相当大的工业意义。最近报道了关于这些反应的几项密度泛函研究，因为其机理带来了一些学术挑战。$^{15-23}$ 虽然过渡金属氧化物与乙烯的加成仅遵循 $[3+2]$ 途径，$^{15-24}$ 但环戊二烯基三氧化铼($\\mathrm{VII}$)$^{25}$ 在动力学上更倾向于与乙烯酮的 $\\mathrm{C=C}$ 键发生 $[2+2]$ 加成。$^{26}$ $[3+2]$ 反应的活化能可以很容易地通过前线轨道分析$^{21,22}$ 或甚至使用马库斯理论的热化学数据来预测。$^{23}$ 然而，在我们最近的计算研究中，我们无法合理化 $[2+2]$ 加成反应的活化能。$^{22}$",
+        "translated_text": "大量研究工作聚焦于过渡金属氧化物对不饱和碳碳键的加成反应，$^{14}$ 因为除了使用四氧化锇和高锰酸盐进行顺式二羟基化的常规方法外，$^{3}$ 利用易得的金属氧化物活化双键具有相当大的工业意义。最近报道了关于这些反应的几项密度泛函研究，因为其机理带来了一些学术挑战。$^{15-23}$ 虽然过渡金属氧化物与乙烯的加成仅遵循 $[3+2]$ 途径，$^{15-24}$ 但环戊二烯基三氧化铼($\\mathrm{VII}$)$^{25}$ 在动力学上更倾向于与乙烯酮的 $\\mathrm{C=C}$ 键发生 $[2+2]$ 加成。$^{26}$ $[3+2]$ 反应的活化能可以很容易地通过前线轨道分析$^{21,22}$ 或甚至使用马库斯理论的热化学数据来预测。$^{23}$ 然而，在我们最近的计算研究中，我们无法合理化 $[2+2]$ 加成反应的活化能。$^{22}$",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "candidate_break",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "p001-b015",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p001-b007",
+          "page_idx": 0,
+          "route_path": [
+            "block_level",
+            "batched_plain"
+          ],
+          "output_mode_path": [
+            "tagged"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": "p001-b015"
+      },
+      {
+        "item_id": "p001-b010",
+        "page_idx": 0,
+        "block_idx": 10,
+        "block_type": "image_caption",
+        "bbox": [
+          339,
+          410,
+          383,
+          423
+        ],
+        "source_text": "[2πs+2πa]",
+        "lines": [
+          {
+            "bbox": [
+              337,
+              407,
+              386,
+              427
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "[2πs+2πa]",
+                "bbox": [
+                  337,
+                  407,
+                  386,
+                  427
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "metadata",
+          "normalized_sub_type": "metadata",
+          "structure_role": "caption",
+          "raw_type": "image_caption",
+          "tags": [
+            "caption",
+            "image_caption"
+          ],
+          "derived": {
+            "role": "caption",
+            "by": "provider_rule",
+            "confidence": 0.98
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/8/blocks/1",
+            "raw_type": "image_caption",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              339,
+              410,
+              383,
+              423
+            ],
+            "raw_text_excerpt": "[2πs+2πa]"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "non_flow",
+        "layout_zone_rank": -1,
+        "layout_zone_size": 0,
+        "layout_boundary_role": "",
+        "math_mode": "direct_typst",
+        "protected_source_text": "[2πs+2πa]",
+        "mixed_original_protected_source_text": "[2πs+2πa]",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_model_keep_origin",
+        "should_translate": false,
+        "skip_reason": "skip_model_keep_origin",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b010",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b010"
+        ],
+        "translation_unit_protected_source_text": "[2πs+2πa]",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "",
+        "translation_unit_translated_text": "",
+        "protected_translated_text": "",
+        "translated_text": "",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "kept_origin",
+        "translation_diagnostics": {
+          "item_id": "p001-b010",
+          "page_idx": 0,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p001-b013",
+        "page_idx": 0,
+        "block_idx": 13,
+        "block_type": "image_caption",
+        "bbox": [
+          456,
+          410,
+          527,
+          423
+        ],
+        "source_text": "\\left[ { { 2 { \\pi } _ { \\mathfrak { s } } } + \\left( { { 2 { \\pi } _ { \\mathfrak { s } } } + { _ { 2 } } { \\pi } _ { \\mathfrak { s } } } \\right) } \\right]",
+        "lines": [
+          {
+            "bbox": [
+              455,
+              410,
+              528,
+              424
+            ],
+            "spans": [
+              {
+                "type": "inline_equation",
+                "content": "\\left[ { { 2 { \\pi } _ { \\mathfrak { s } } } + \\left( { { 2 { \\pi } _ { \\mathfrak { s } } } + { _ { 2 } } { \\pi } _ { \\mathfrak { s } } } \\right) } \\right]",
+                "bbox": [
+                  455,
+                  410,
+                  528,
+                  424
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "metadata",
+          "normalized_sub_type": "metadata",
+          "structure_role": "caption",
+          "raw_type": "image_caption",
+          "tags": [
+            "caption",
+            "image_caption"
+          ],
+          "derived": {
+            "role": "caption",
+            "by": "provider_rule",
+            "confidence": 0.98
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/9/blocks/1",
+            "raw_type": "image_caption",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              456,
+              410,
+              527,
+              423
+            ],
+            "raw_text_excerpt": "\\left[ { { 2 { \\pi } _ { \\mathfrak { s } } } + \\left( { { 2 { \\pi } _ { \\mathfrak { s } } } + { _ { 2 } } { \\pi } _ { \\mathfrak { s } } } \\right) } \\right]"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "non_flow",
+        "layout_zone_rank": -1,
+        "layout_zone_size": 0,
+        "layout_boundary_role": "",
+        "math_mode": "direct_typst",
+        "protected_source_text": "\\left[ { { 2 { \\pi } _ { \\mathfrak { s } } } + \\left( { { 2 { \\pi } _ { \\mathfrak { s } } } + { _ { 2 } } { \\pi } _ { \\mathfrak { s } } } \\right) } \\right]",
+        "mixed_original_protected_source_text": "\\left[ { { 2 { \\pi } _ { \\mathfrak { s } } } + \\left( { { 2 { \\pi } _ { \\mathfrak { s } } } + { _ { 2 } } { \\pi } _ { \\mathfrak { s } } } \\right) } \\right]",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b013",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b013"
+        ],
+        "translation_unit_protected_source_text": "\\left[ { { 2 { \\pi } _ { \\mathfrak { s } } } + \\left( { { 2 { \\pi } _ { \\mathfrak { s } } } + { _ { 2 } } { \\pi } _ { \\mathfrak { s } } } \\right) } \\right]",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "$\\left[ { { 2 { \\pi } _ { \\mathfrak { s } } } + \\left( { { 2 { \\pi } _ { \\mathfrak { s } } } + { _ { 2 } } { \\pi } _ { \\mathfrak { s } } } \\right) } \\right]$",
+        "translation_unit_translated_text": "$\\left[ { { 2 { \\pi } _ { \\mathfrak { s } } } + \\left( { { 2 { \\pi } _ { \\mathfrak { s } } } + { _ { 2 } } { \\pi } _ { \\mathfrak { s } } } \\right) } \\right]$",
+        "protected_translated_text": "$\\left[ { { 2 { \\pi } _ { \\mathfrak { s } } } + \\left( { { 2 { \\pi } _ { \\mathfrak { s } } } + { _ { 2 } } { \\pi } _ { \\mathfrak { s } } } \\right) } \\right]$",
+        "translated_text": "$\\left[ { { 2 { \\pi } _ { \\mathfrak { s } } } + \\left( { { 2 { \\pi } _ { \\mathfrak { s } } } + { _ { 2 } } { \\pi } _ { \\mathfrak { s } } } \\right) } \\right]$",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p001-b013",
+          "page_idx": 0,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p001-b014",
+        "page_idx": 0,
+        "block_idx": 14,
+        "block_type": "image_caption",
+        "bbox": [
+          314,
+          427,
+          558,
+          448
+        ],
+        "source_text": "Figure 1. Suggested models for the topology of the transition state for the [ 2 + 2 ] addition of ethylene to ketene.",
+        "lines": [
+          {
+            "bbox": [
+              315,
+              426,
+              558,
+              438
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Figure 1. Suggested models for the topology of the transition state",
+                "bbox": [
+                  315,
+                  426,
+                  558,
+                  438
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              436,
+              480,
+              448
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "for the",
+                "bbox": [
+                  315,
+                  436,
+                  342,
+                  448
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "[ 2 + 2 ]",
+                "bbox": [
+                  343,
+                  437,
+                  370,
+                  447
+                ]
+              },
+              {
+                "type": "text",
+                "content": "addition of ethylene to ketene.",
+                "bbox": [
+                  370,
+                  436,
+                  480,
+                  448
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "metadata",
+          "normalized_sub_type": "metadata",
+          "structure_role": "caption",
+          "raw_type": "image_caption",
+          "tags": [
+            "caption",
+            "image_caption"
+          ],
+          "derived": {
+            "role": "caption",
+            "by": "provider_rule",
+            "confidence": 0.98
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/9/blocks/2",
+            "raw_type": "image_caption",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              314,
+              427,
+              558,
+              448
+            ],
+            "raw_text_excerpt": "Figure 1. Suggested models for the topology of the transition state for the [ 2 + 2 ] addition of ethylene to ketene."
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "non_flow",
+        "layout_zone_rank": -1,
+        "layout_zone_size": 0,
+        "layout_boundary_role": "",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Figure 1. Suggested models for the topology of the transition state for the [ 2 + 2 ] addition of ethylene to ketene.",
+        "mixed_original_protected_source_text": "Figure 1. Suggested models for the topology of the transition state for the [ 2 + 2 ] addition of ethylene to ketene.",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b014",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b014"
+        ],
+        "translation_unit_protected_source_text": "Figure 1. Suggested models for the topology of the transition state for the [ 2 + 2 ] addition of ethylene to ketene.",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "图1. 乙烯与乙烯酮发生[2+2]加成反应过渡态拓扑结构的建议模型。",
+        "translation_unit_translated_text": "图1. 乙烯与乙烯酮发生[2+2]加成反应过渡态拓扑结构的建议模型。",
+        "protected_translated_text": "图1. 乙烯与乙烯酮发生[2+2]加成反应过渡态拓扑结构的建议模型。",
+        "translated_text": "图1. 乙烯与乙烯酮发生[2+2]加成反应过渡态拓扑结构的建议模型。",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p001-b014",
+          "page_idx": 0,
+          "route_path": [
+            "block_level",
+            "direct_typst"
+          ],
+          "output_mode_path": [
+            "plain_text"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p001-b015",
+        "page_idx": 0,
+        "block_idx": 15,
+        "block_type": "text",
+        "bbox": [
+          313,
+          457,
+          559,
+          546
+        ],
+        "source_text": "We have performed a comparative density-functional (DFT) study on the electronic structure of the transition states for the addition of \\mathrm { X = Y } \\mathrm { C H } _ { 2 } { = } \\mathrm { C H } _ { 2 } , \\mathrm { C H } _ { 2 } { = } \\mathrm { O } , and { \\mathrm { C p R e O } } _ { 3 } ) across the \\mathrm { C } { = } \\mathrm { C } moiety of ketene. We use two state-of-the-art decomposition schemes based on the interactions between the \\mathrm { X = Y } and ketene fragments in the TS: charge decomposition analysis (CDA)11 and the Extended Transition State (ETS) method.12",
+        "lines": [
+          {
+            "bbox": [
+              325,
+              457,
+              558,
+              471
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "We have performed a comparative density-functional (DFT)",
+                "bbox": [
+                  325,
+                  457,
+                  558,
+                  471
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              316,
+              470,
+              559,
+              480
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "study on the electronic structure of the transition states for the",
+                "bbox": [
+                  316,
+                  470,
+                  559,
+                  480
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              479,
+              559,
+              492
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "addition of",
+                "bbox": [
+                  315,
+                  479,
+                  363,
+                  492
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { X = Y }",
+                "bbox": [
+                  363,
+                  480,
+                  386,
+                  491
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { C H } _ { 2 } { = } \\mathrm { C H } _ { 2 }",
+                "bbox": [
+                  392,
+                  480,
+                  433,
+                  491
+                ]
+              },
+              {
+                "type": "text",
+                "content": ",",
+                "bbox": [
+                  434,
+                  479,
+                  438,
+                  492
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { C H } _ { 2 } { = } \\mathrm { O }",
+                "bbox": [
+                  438,
+                  480,
+                  471,
+                  491
+                ]
+              },
+              {
+                "type": "text",
+                "content": ", and",
+                "bbox": [
+                  471,
+                  479,
+                  493,
+                  492
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "{ \\mathrm { C p R e O } } _ { 3 }",
+                "bbox": [
+                  493,
+                  480,
+                  527,
+                  491
+                ]
+              },
+              {
+                "type": "text",
+                "content": ") across",
+                "bbox": [
+                  528,
+                  479,
+                  559,
+                  492
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              491,
+              559,
+              502
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "the",
+                "bbox": [
+                  315,
+                  491,
+                  333,
+                  502
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { C } { = } \\mathrm { C }",
+                "bbox": [
+                  334,
+                  491,
+                  357,
+                  502
+                ]
+              },
+              {
+                "type": "text",
+                "content": "moiety of ketene. We use two state-of-the-art",
+                "bbox": [
+                  358,
+                  491,
+                  559,
+                  502
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              316,
+              502,
+              559,
+              514
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "decomposition schemes based on the interactions between the",
+                "bbox": [
+                  316,
+                  502,
+                  559,
+                  514
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              316,
+              513,
+              559,
+              525
+            ],
+            "spans": [
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { X = Y }",
+                "bbox": [
+                  316,
+                  514,
+                  340,
+                  523
+                ]
+              },
+              {
+                "type": "text",
+                "content": "and ketene fragments in the TS: charge decomposition",
+                "bbox": [
+                  340,
+                  513,
+                  559,
+                  525
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              524,
+              559,
+              536
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "analysis (CDA)11 and the Extended Transition State (ETS)",
+                "bbox": [
+                  315,
+                  524,
+                  559,
+                  536
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              534,
+              358,
+              546
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "method.12",
+                "bbox": [
+                  315,
+                  534,
+                  358,
+                  546
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/10",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              313,
+              457,
+              559,
+              546
+            ],
+            "raw_text_excerpt": "We have performed a comparative density-functional (DFT) study on the electronic structure of the transition states for the addition of \\mathrm { X = Y } \\mathrm { C H } _ { 2 } { = } \\mathrm { C H } "
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "single_column",
+        "layout_zone_rank": 7,
+        "layout_zone_size": 11,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "We have performed a comparative density-functional (DFT) study on the electronic structure of the transition states for the addition of \\mathrm { X = Y } \\mathrm { C H } _ { 2 } { = } \\mathrm { C H } _ { 2 } , \\mathrm { C H } _ { 2 } { = } \\mathrm { O } , and { \\mathrm { C p R e O } } _ { 3 } ) across the \\mathrm { C } { = } \\mathrm { C } moiety of ketene. We use two state-of-the-art decomposition schemes based on the interactions between the \\mathrm { X = Y } and ketene fragments in the TS: charge decomposition analysis (CDA)11 and the Extended Transition State (ETS) method.12",
+        "mixed_original_protected_source_text": "We have performed a comparative density-functional (DFT) study on the electronic structure of the transition states for the addition of \\mathrm { X = Y } \\mathrm { C H } _ { 2 } { = } \\mathrm { C H } _ { 2 } , \\mathrm { C H } _ { 2 } { = } \\mathrm { O } , and { \\mathrm { C p R e O } } _ { 3 } ) across the \\mathrm { C } { = } \\mathrm { C } moiety of ketene. We use two state-of-the-art decomposition schemes based on the interactions between the \\mathrm { X = Y } and ketene fragments in the TS: charge decomposition analysis (CDA)11 and the Extended Transition State (ETS) method.12",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "",
+        "should_translate": true,
+        "skip_reason": "",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b015",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b015"
+        ],
+        "translation_unit_protected_source_text": "We have performed a comparative density-functional (DFT) study on the electronic structure of the transition states for the addition of \\mathrm { X = Y } \\mathrm { C H } _ { 2 } { = } \\mathrm { C H } _ { 2 } , \\mathrm { C H } _ { 2 } { = } \\mathrm { O } , and { \\mathrm { C p R e O } } _ { 3 } ) across the \\mathrm { C } { = } \\mathrm { C } moiety of ketene. We use two state-of-the-art decomposition schemes based on the interactions between the \\mathrm { X = Y } and ketene fragments in the TS: charge decomposition analysis (CDA)11 and the Extended Transition State (ETS) method.12",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "我们对 $\\mathrm{X=Y}$ ($\\mathrm{CH_2=CH_2}$、$\\mathrm{CH_2=O}$ 和 $\\mathrm{CpReO_3}$) 与乙烯酮的 $\\mathrm{C=C}$ 部分加成的过渡态电子结构进行了比较性密度泛函(DFT)研究。我们使用了两种基于过渡态中 $\\mathrm{X=Y}$ 片段与乙烯酮片段相互作用的先进分解方案：电荷分解分析(CDA)$^{11}$ 和扩展过渡态(ETS)方法。$^{12}$",
+        "translation_unit_translated_text": "我们对 $\\mathrm{X=Y}$ ($\\mathrm{CH_2=CH_2}$、$\\mathrm{CH_2=O}$ 和 $\\mathrm{CpReO_3}$) 与乙烯酮的 $\\mathrm{C=C}$ 部分加成的过渡态电子结构进行了比较性密度泛函(DFT)研究。我们使用了两种基于过渡态中 $\\mathrm{X=Y}$ 片段与乙烯酮片段相互作用的先进分解方案：电荷分解分析(CDA)$^{11}$ 和扩展过渡态(ETS)方法。$^{12}$",
+        "protected_translated_text": "我们对 $\\mathrm{X=Y}$ ($\\mathrm{CH_2=CH_2}$、$\\mathrm{CH_2=O}$ 和 $\\mathrm{CpReO_3}$) 与乙烯酮的 $\\mathrm{C=C}$ 部分加成的过渡态电子结构进行了比较性密度泛函(DFT)研究。我们使用了两种基于过渡态中 $\\mathrm{X=Y}$ 片段与乙烯酮片段相互作用的先进分解方案：电荷分解分析(CDA)$^{11}$ 和扩展过渡态(ETS)方法。$^{12}$",
+        "translated_text": "我们对 $\\mathrm{X=Y}$ ($\\mathrm{CH_2=CH_2}$、$\\mathrm{CH_2=O}$ 和 $\\mathrm{CpReO_3}$) 与乙烯酮的 $\\mathrm{C=C}$ 部分加成的过渡态电子结构进行了比较性密度泛函(DFT)研究。我们使用了两种基于过渡态中 $\\mathrm{X=Y}$ 片段与乙烯酮片段相互作用的先进分解方案：电荷分解分析(CDA)$^{11}$ 和扩展过渡态(ETS)方法。$^{12}$",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "candidate_break",
+        "continuation_candidate_prev_id": "p001-b007",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "translated",
+        "translation_diagnostics": {
+          "item_id": "p001-b015",
+          "page_idx": 0,
+          "route_path": [
+            "block_level",
+            "batched_plain"
+          ],
+          "output_mode_path": [
+            "tagged"
+          ],
+          "fallback_to": "",
+          "degradation_reason": "",
+          "final_status": "translated"
+        },
+        "candidate_pair_prev_id": "p001-b007",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p001-b016",
+        "page_idx": 0,
+        "block_idx": 16,
+        "block_type": "title",
+        "bbox": [
+          315,
+          558,
+          354,
+          569
+        ],
+        "source_text": "Methods",
+        "lines": [
+          {
+            "bbox": [
+              315,
+              558,
+              354,
+              570
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Methods",
+                "bbox": [
+                  315,
+                  558,
+                  354,
+                  570
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "title",
+          "normalized_sub_type": "title",
+          "structure_role": "title",
+          "raw_type": "title",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/11",
+            "raw_type": "title",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              315,
+              558,
+              354,
+              569
+            ],
+            "raw_text_excerpt": "Methods"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "single_column",
+        "layout_zone_rank": 9,
+        "layout_zone_size": 11,
+        "layout_boundary_role": "middle",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Methods",
+        "mixed_original_protected_source_text": "Methods",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_title",
+        "should_translate": false,
+        "skip_reason": "skip_title",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "p001-b016",
+        "translation_unit_kind": "single",
+        "translation_unit_member_ids": [
+          "p001-b016"
+        ],
+        "translation_unit_protected_source_text": "Methods",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "Methods",
+        "translation_unit_translated_text": "Methods",
+        "protected_translated_text": "Methods",
+        "translated_text": "Methods",
+        "continuation_group": "",
+        "continuation_prev_text": "",
+        "continuation_next_text": "",
+        "continuation_decision": "",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "",
+        "translation_diagnostics": {},
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      },
+      {
+        "item_id": "p001-b017",
+        "page_idx": 0,
+        "block_idx": 17,
+        "block_type": "text",
+        "bbox": [
+          313,
+          575,
+          559,
+          730
+        ],
+        "source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and",
+        "lines": [
+          {
+            "bbox": [
+              326,
+              575,
+              559,
+              587
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "Geometry Optimization and Energy Calculation. The",
+                "bbox": [
+                  326,
+                  575,
+                  559,
+                  587
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              586,
+              558,
+              597
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "molecules and transition states were optimized at the gradient-",
+                "bbox": [
+                  315,
+                  586,
+                  558,
+                  597
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              597,
+              559,
+              609
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "corrected DFT level using the exchange functional of Becke27",
+                "bbox": [
+                  315,
+                  597,
+                  559,
+                  609
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              608,
+              558,
+              620
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "and the correlation functional of Perdew28 (BP86). Relativistic",
+                "bbox": [
+                  315,
+                  608,
+                  558,
+                  620
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              619,
+              558,
+              632
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "effects were considered using the zeroth-order regular ap-",
+                "bbox": [
+                  315,
+                  619,
+                  558,
+                  632
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              629,
+              559,
+              643
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs)",
+                "bbox": [
+                  315,
+                  629,
+                  559,
+                  643
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              641,
+              559,
+              653
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "were used as basis functions for the SCF calculations.30 The",
+                "bbox": [
+                  315,
+                  641,
+                  559,
+                  653
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              652,
+              559,
+              665
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "basis functions at the metal have triple-",
+                "bbox": [
+                  315,
+                  652,
+                  474,
+                  665
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\xi",
+                "bbox": [
+                  474,
+                  653,
+                  480,
+                  664
+                ]
+              },
+              {
+                "type": "text",
+                "content": "quality, augmented",
+                "bbox": [
+                  481,
+                  652,
+                  559,
+                  665
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              663,
+              559,
+              675
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "with a set of 6p functions. The basis set at the other atoms has",
+                "bbox": [
+                  315,
+                  663,
+                  559,
+                  675
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              673,
+              559,
+              686
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "double-",
+                "bbox": [
+                  315,
+                  673,
+                  345,
+                  686
+                ]
+              },
+              {
+                "type": "inline_equation",
+                "content": "\\xi",
+                "bbox": [
+                  346,
+                  675,
+                  352,
+                  685
+                ]
+              },
+              {
+                "type": "text",
+                "content": "quality, augmented with a set of d-type polarization",
+                "bbox": [
+                  353,
+                  673,
+                  559,
+                  686
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              685,
+              559,
+              697
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "functions. The (1s)2 core electrons of C and O and the",
+                "bbox": [
+                  315,
+                  685,
+                  559,
+                  697
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              318,
+              696,
+              559,
+              708
+            ],
+            "spans": [
+              {
+                "type": "inline_equation",
+                "content": "\\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } }",
+                "bbox": [
+                  318,
+                  696,
+                  412,
+                  708
+                ]
+              },
+              {
+                "type": "text",
+                "content": "inner shells of Re were treated within",
+                "bbox": [
+                  412,
+                  696,
+                  559,
+                  708
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              706,
+              559,
+              720
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "the frozen-core approximation.31 An auxiliary basis set of s, p,",
+                "bbox": [
+                  315,
+                  706,
+                  559,
+                  720
+                ]
+              }
+            ]
+          },
+          {
+            "bbox": [
+              315,
+              718,
+              559,
+              730
+            ],
+            "spans": [
+              {
+                "type": "text",
+                "content": "d, f, and g STOs was utilized to fit the molecular densities and",
+                "bbox": [
+                  315,
+                  718,
+                  559,
+                  730
+                ]
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "ocr_sub_type": "body",
+          "normalized_sub_type": "body",
+          "structure_role": "body",
+          "raw_type": "text",
+          "tags": [],
+          "derived": {
+            "role": "",
+            "by": "",
+            "confidence": 0.0
+          },
+          "continuation_hint": {
+            "source": "",
+            "group_id": "",
+            "role": "",
+            "scope": "",
+            "reading_order": -1,
+            "confidence": 0.0
+          },
+          "source": {
+            "provider": "mineru",
+            "raw_page_index": 0,
+            "raw_path": "/pdf_info/0/para_blocks/12",
+            "raw_type": "text",
+            "raw_sub_type": "",
+            "raw_bbox": [
+              313,
+              575,
+              559,
+              730
+            ],
+            "raw_text_excerpt": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation funct"
+          },
+          "structure_group": "",
+          "pair_with": ""
+        },
+        "ocr_continuation_source": "",
+        "ocr_continuation_group_id": "",
+        "ocr_continuation_role": "",
+        "ocr_continuation_scope": "",
+        "ocr_continuation_reading_order": -1,
+        "ocr_continuation_confidence": 0.0,
+        "layout_mode": "single",
+        "layout_split_x": 0.0,
+        "layout_zone": "single_column",
+        "layout_zone_rank": 10,
+        "layout_zone_size": 11,
+        "layout_boundary_role": "tail",
+        "math_mode": "direct_typst",
+        "protected_source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and",
+        "mixed_original_protected_source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and",
+        "formula_map": [],
+        "protected_map": [],
+        "classification_label": "skip_model_keep_origin",
+        "should_translate": false,
+        "skip_reason": "skip_model_keep_origin",
+        "mixed_literal_action": "",
+        "mixed_literal_prefix": "",
+        "translation_unit_id": "__cg__:cg-001-001",
+        "translation_unit_kind": "group",
+        "translation_unit_member_ids": [
+          "p001-b017",
+          "p002-b000"
+        ],
+        "translation_unit_protected_source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and to represent the Coulomb and exchange potentials in each SCF cycle.32 This basis-set combination is denoted \\mathrm { I I I } \\sim . 22,23 Unless otherwise stated, energies reported refer to the BP86/III∼ level. The calculations were carried out using the ADF 2000 program package.34",
+        "translation_unit_formula_map": [],
+        "translation_unit_protected_map": [],
+        "translation_unit_protected_translated_text": "",
+        "translation_unit_translated_text": "",
+        "protected_translated_text": "",
+        "translated_text": "",
+        "continuation_group": "cg-001-001",
+        "continuation_prev_text": "",
+        "continuation_next_text": "to represent the Coulomb and exchange potentials in each SCF cycle.32 This basis-set combination is denoted \\mathrm { I I I } \\sim . 22,23 Unless otherwise stated, energies reported refer to the BP86/III∼ level. The calculations were carried out using the ADF 2000 program package.34",
+        "continuation_decision": "joined",
+        "continuation_candidate_prev_id": "",
+        "continuation_candidate_next_id": "",
+        "group_protected_source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and to represent the Coulomb and exchange potentials in each SCF cycle.32 This basis-set combination is denoted \\mathrm { I I I } \\sim . 22,23 Unless otherwise stated, energies reported refer to the BP86/III∼ level. The calculations were carried out using the ADF 2000 program package.34",
+        "group_formula_map": [],
+        "group_protected_map": [],
+        "group_protected_translated_text": "",
+        "group_translated_text": "",
+        "final_status": "kept_origin",
+        "translation_diagnostics": {},
+        "candidate_pair_prev_id": "",
+        "candidate_pair_next_id": ""
+      }
+    ]
+  },
+  "replay": {
+    "job_root": "20260415003317-c856fe",
+    "job_id": "20260415003317-c856fe",
+    "item_id": "p001-b017",
+    "page_idx": 0,
+    "page_path": "translated/page-001-deepseek.json",
+    "source_preview": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (…",
+    "saved_item": {
+      "item_id": "p001-b017",
+      "page_idx": 0,
+      "block_idx": 17,
+      "block_type": "text",
+      "bbox": [
+        313,
+        575,
+        559,
+        730
+      ],
+      "source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and",
+      "lines": [
+        {
+          "bbox": [
+            326,
+            575,
+            559,
+            587
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "Geometry Optimization and Energy Calculation. The",
+              "bbox": [
+                326,
+                575,
+                559,
+                587
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            586,
+            558,
+            597
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "molecules and transition states were optimized at the gradient-",
+              "bbox": [
+                315,
+                586,
+                558,
+                597
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            597,
+            559,
+            609
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "corrected DFT level using the exchange functional of Becke27",
+              "bbox": [
+                315,
+                597,
+                559,
+                609
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            608,
+            558,
+            620
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "and the correlation functional of Perdew28 (BP86). Relativistic",
+              "bbox": [
+                315,
+                608,
+                558,
+                620
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            619,
+            558,
+            632
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "effects were considered using the zeroth-order regular ap-",
+              "bbox": [
+                315,
+                619,
+                558,
+                632
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            629,
+            559,
+            643
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs)",
+              "bbox": [
+                315,
+                629,
+                559,
+                643
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            641,
+            559,
+            653
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "were used as basis functions for the SCF calculations.30 The",
+              "bbox": [
+                315,
+                641,
+                559,
+                653
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            652,
+            559,
+            665
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "basis functions at the metal have triple-",
+              "bbox": [
+                315,
+                652,
+                474,
+                665
+              ]
+            },
+            {
+              "type": "inline_equation",
+              "content": "\\xi",
+              "bbox": [
+                474,
+                653,
+                480,
+                664
+              ]
+            },
+            {
+              "type": "text",
+              "content": "quality, augmented",
+              "bbox": [
+                481,
+                652,
+                559,
+                665
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            663,
+            559,
+            675
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "with a set of 6p functions. The basis set at the other atoms has",
+              "bbox": [
+                315,
+                663,
+                559,
+                675
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            673,
+            559,
+            686
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "double-",
+              "bbox": [
+                315,
+                673,
+                345,
+                686
+              ]
+            },
+            {
+              "type": "inline_equation",
+              "content": "\\xi",
+              "bbox": [
+                346,
+                675,
+                352,
+                685
+              ]
+            },
+            {
+              "type": "text",
+              "content": "quality, augmented with a set of d-type polarization",
+              "bbox": [
+                353,
+                673,
+                559,
+                686
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            685,
+            559,
+            697
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "functions. The (1s)2 core electrons of C and O and the",
+              "bbox": [
+                315,
+                685,
+                559,
+                697
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            318,
+            696,
+            559,
+            708
+          ],
+          "spans": [
+            {
+              "type": "inline_equation",
+              "content": "\\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } }",
+              "bbox": [
+                318,
+                696,
+                412,
+                708
+              ]
+            },
+            {
+              "type": "text",
+              "content": "inner shells of Re were treated within",
+              "bbox": [
+                412,
+                696,
+                559,
+                708
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            706,
+            559,
+            720
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "the frozen-core approximation.31 An auxiliary basis set of s, p,",
+              "bbox": [
+                315,
+                706,
+                559,
+                720
+              ]
+            }
+          ]
+        },
+        {
+          "bbox": [
+            315,
+            718,
+            559,
+            730
+          ],
+          "spans": [
+            {
+              "type": "text",
+              "content": "d, f, and g STOs was utilized to fit the molecular densities and",
+              "bbox": [
+                315,
+                718,
+                559,
+                730
+              ]
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "ocr_sub_type": "body",
+        "normalized_sub_type": "body",
+        "structure_role": "body",
+        "raw_type": "text",
+        "tags": [],
+        "derived": {
+          "role": "",
+          "by": "",
+          "confidence": 0.0
+        },
+        "continuation_hint": {
+          "source": "",
+          "group_id": "",
+          "role": "",
+          "scope": "",
+          "reading_order": -1,
+          "confidence": 0.0
+        },
+        "source": {
+          "provider": "mineru",
+          "raw_page_index": 0,
+          "raw_path": "/pdf_info/0/para_blocks/12",
+          "raw_type": "text",
+          "raw_sub_type": "",
+          "raw_bbox": [
+            313,
+            575,
+            559,
+            730
+          ],
+          "raw_text_excerpt": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation funct"
+        },
+        "structure_group": "",
+        "pair_with": ""
+      },
+      "ocr_continuation_source": "",
+      "ocr_continuation_group_id": "",
+      "ocr_continuation_role": "",
+      "ocr_continuation_scope": "",
+      "ocr_continuation_reading_order": -1,
+      "ocr_continuation_confidence": 0.0,
+      "layout_mode": "single",
+      "layout_split_x": 0.0,
+      "layout_zone": "single_column",
+      "layout_zone_rank": 10,
+      "layout_zone_size": 11,
+      "layout_boundary_role": "tail",
+      "math_mode": "direct_typst",
+      "protected_source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and",
+      "mixed_original_protected_source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and",
+      "formula_map": [],
+      "protected_map": [],
+      "classification_label": "skip_model_keep_origin",
+      "should_translate": false,
+      "skip_reason": "skip_model_keep_origin",
+      "mixed_literal_action": "",
+      "mixed_literal_prefix": "",
+      "translation_unit_id": "__cg__:cg-001-001",
+      "translation_unit_kind": "group",
+      "translation_unit_member_ids": [
+        "p001-b017",
+        "p002-b000"
+      ],
+      "translation_unit_protected_source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and to represent the Coulomb and exchange potentials in each SCF cycle.32 This basis-set combination is denoted \\mathrm { I I I } \\sim . 22,23 Unless otherwise stated, energies reported refer to the BP86/III∼ level. The calculations were carried out using the ADF 2000 program package.34",
+      "translation_unit_formula_map": [],
+      "translation_unit_protected_map": [],
+      "translation_unit_protected_translated_text": "",
+      "translation_unit_translated_text": "",
+      "protected_translated_text": "",
+      "translated_text": "",
+      "continuation_group": "cg-001-001",
+      "continuation_prev_text": "",
+      "continuation_next_text": "to represent the Coulomb and exchange potentials in each SCF cycle.32 This basis-set combination is denoted \\mathrm { I I I } \\sim . 22,23 Unless otherwise stated, energies reported refer to the BP86/III∼ level. The calculations were carried out using the ADF 2000 program package.34",
+      "continuation_decision": "joined",
+      "continuation_candidate_prev_id": "",
+      "continuation_candidate_next_id": "",
+      "group_protected_source_text": "Geometry Optimization and Energy Calculation. The molecules and transition states were optimized at the gradient- corrected DFT level using the exchange functional of Becke27 and the correlation functional of Perdew28 (BP86). Relativistic effects were considered using the zeroth-order regular ap- proximation (ZORA).29 Uncontracted Slater-type orbitals (STOs) were used as basis functions for the SCF calculations.30 The basis functions at the metal have triple- \\xi quality, augmented with a set of 6p functions. The basis set at the other atoms has double- \\xi quality, augmented with a set of d-type polarization functions. The (1s)2 core electrons of C and O and the \\mathrm { ( 1 s 2 s 2 p 3 s 3 p 3 d 4 s 4 p 4 d ) ^ { 4 6 } } inner shells of Re were treated within the frozen-core approximation.31 An auxiliary basis set of s, p, d, f, and g STOs was utilized to fit the molecular densities and to represent the Coulomb and exchange potentials in each SCF cycle.32 This basis-set combination is denoted \\mathrm { I I I } \\sim . 22,23 Unless otherwise stated, energies reported refer to the BP86/III∼ level. The calculations were carried out using the ADF 2000 program package.34",
+      "group_formula_map": [],
+      "group_protected_map": [],
+      "group_protected_translated_text": "",
+      "group_translated_text": "",
+      "final_status": "kept_origin",
+      "translation_diagnostics": {},
+      "candidate_pair_prev_id": "",
+      "candidate_pair_next_id": ""
+    },
+    "policy_before": {
+      "item_id": "p001-b017",
+      "page_idx": 0,
+      "block_idx": 17,
+      "classification_label": "skip_model_keep_origin",
+      "should_translate": false,
+      "skip_reason": "skip_model_keep_origin",
+      "mixed_literal_action": "",
+      "mixed_literal_prefix": "",
+      "final_status": "kept_origin",
+      "route_path": [],
+      "fallback_to": "",
+      "degradation_reason": ""
+    },
+    "policy_after": {
+      "item_id": "p001-b017",
+      "page_idx": 0,
+      "block_idx": 17,
+      "classification_label": "",
+      "should_translate": true,
+      "skip_reason": "",
+      "mixed_literal_action": "",
+      "mixed_literal_prefix": "",
+      "final_status": "kept_origin",
+      "route_path": [],
+      "fallback_to": "",
+      "degradation_reason": ""
+    },
+    "replay_result": {
+      "decision": "translate",
+      "translated_text": "几何优化与能量计算。分子与过渡态在梯度校正的密度泛函理论（DFT）水平下进行优化，使用了Becke的交换泛函27和Perdew的相关泛函28（BP86）。相对论效应采用零阶正则近似（ZORA）29处理。自洽场（SCF）计算使用非收缩的Slater型轨道（STOs）作为基函数30。金属原子的基函数具有三$\\xi$精度，并增加了一组6p函数。其他原子的基组具有双$\\xi$精度，并增加了一组d型极化函数。 C和O的(1s)$^2$芯电子以及Re的$\\mathrm{(1s2s2p3s3p3d4s4p4d)^{46}}$内层电子在冻结核近似下处理$^{31}$。采用一组s、p、d、f和g型STO辅助基组来拟合分子密度并在每个SCF循环中表示库仑势和交换势$^{32}$。该基组组合记为$\\mathrm{III}\\sim$$^{22,23}$。除非另有说明，报告的能量均指BP86/III∼水平。计算使用ADF 2000程序包完成$^{34}$。",
+      "final_status": "translated"
+    },
+    "replay_error": null
+  },
+  "drift": {
+    "saved_final_status": "kept_origin",
+    "replay_policy_final_status": "kept_origin",
+    "replay_result_final_status": "translated",
+    "saved_should_translate": false,
+    "replay_should_translate": true,
+    "saved_skip_reason": "skip_model_keep_origin",
+    "replay_skip_reason": "",
+    "saved_classification_label": "skip_model_keep_origin",
+    "replay_classification_label": "",
+    "saved_has_translation": false,
+    "replay_has_translation": true,
+    "replay_error_type": "",
+    "policy_changed": true,
+    "drifted": true,
+    "reason_tags": [
+      "policy_changed",
+      "should_translate_changed",
+      "classification_changed",
+      "skip_reason_changed",
+      "final_status_changed",
+      "translation_presence_changed"
+    ]
+  }
+}

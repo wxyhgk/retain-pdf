@@ -1,0 +1,11 @@
+description: RetainPDF translation replay evals
+prompts:
+  - |
+      [job {{job_root}} / item {{item_id}}]
+      Source:
+      {{source_text}}
+providers:
+  - id: file://provider.py:call_api
+    label: current-replay
+tests: file://tests.py:generate_tests
+

@@ -25,6 +25,11 @@ _PROSE_CUE_RE = re.compile(
     r"\b(if|when|then|thus|are|is|was|were|seen|rules?|vertices?|order|bump|more|governed)\b",
     re.I,
 )
+_NUMBERED_SUMMARY_RE = re.compile(r"^\s*\d+\.\s+[A-Z]")
+_REFERENCE_ENTRY_RE = re.compile(r"^\s*(?:\[\d+]|[A-Z][^,]{0,40},\s+[A-Z])")
+_NUMBERED_REFERENCE_ENTRY_RE = re.compile(
+    r"^\s*\d+\.\s+(?:[A-Z][A-Za-z'`-]+,\s+[A-Z]|[A-Z][A-Za-z'`-]+(?:\s+[A-Z]\.){1,3}(?:\s+[A-Z][A-Za-z'`-]+)?)"
+)
 
 
 def _bbox_tuple(item: dict) -> tuple[float, float, float, float] | None:
@@ -227,6 +232,29 @@ def apply_shared_literal_block_policy(payload: list[dict]) -> dict[str, int]:
 
 
 def apply_ref_text_skip(payload: list[dict]) -> int:
+    def _should_preserve_ref_text_for_translation(item: dict) -> bool:
+        source_text = str(item.get("protected_source_text") or item.get("source_text") or "").strip()
+        if not source_text:
+            return False
+        if _REFERENCE_ENTRY_RE.match(source_text):
+            return False
+        if _NUMBERED_REFERENCE_ENTRY_RE.match(source_text):
+            return False
+        if source_text.lower().startswith(("references", "bibliography")):
+            return False
+        if " et al." in source_text or re.search(r"\b\d{4}\b", source_text):
+            return False
+        word_count = len(_EN_WORD_RE.findall(source_text))
+        if word_count < 12:
+            return False
+        if _NUMBERED_SUMMARY_RE.match(source_text):
+            # Numbered bibliography entries often slip past OCR without year/et al.
+            # Only preserve numbered ref_text when it still shows clear prose cues.
+            return bool(_PROSE_CUE_RE.search(source_text))
+        if source_text.endswith((".", "。", "!", "?", ";", "；", ":")) and natural_word_count(source_text) >= 12:
+            return True
+        return False
+
     def _is_ref_text_like(item: dict) -> bool:
         if str(item.get("block_type", "") or "") == "ref_text":
             return True
@@ -244,6 +272,8 @@ def apply_ref_text_skip(payload: list[dict]) -> int:
         if not _is_ref_text_like(item):
             continue
         if not item.get("should_translate", True):
+            continue
+        if _should_preserve_ref_text_for_translation(item):
             continue
         _mark_item_skipped(item, "skip_ref_text")
         skipped += 1
