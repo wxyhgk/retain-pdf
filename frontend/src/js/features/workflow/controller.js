@@ -34,6 +34,7 @@ export function mountWorkflowFeature({
 
   let refreshSubmitControlsRef = null;
   let applyWorkflowModeRef = null;
+  const hasAppliedPageRange = () => workflowNeedsUpload() && `${state.appliedPageRange || ""}`.trim().length > 0;
 
   function developerConfigWithDefaults() {
     const saved = state.developerConfig || {};
@@ -92,8 +93,10 @@ export function mountWorkflowFeature({
         return "开始渲染";
       case WORKFLOW_TRANSLATE:
         return "开始翻译";
+      case WORKFLOW_MINERU:
+        return hasAppliedPageRange() ? "开始翻译" : "全书翻译";
       default:
-        return "开始处理";
+        return hasAppliedPageRange() ? "开始翻译" : "全书翻译";
     }
   }
 
@@ -124,11 +127,12 @@ export function mountWorkflowFeature({
 
   function refreshSubmitControls() {
     const workflow = currentWorkflow();
+    const showPageRangeButton = workflowNeedsUpload(workflow) && !hasAppliedPageRange();
     if (isMockMode()) {
       $("submit-btn").disabled = false;
       $("submit-btn").textContent = workflowSubmitLabel(workflow);
       $("upload-action-slot")?.classList.remove("hidden");
-      $("page-range-btn")?.classList.toggle("hidden", !workflowNeedsUpload(workflow));
+      $("page-range-btn")?.classList.toggle("hidden", !showPageRangeButton);
       return;
     }
     const needsUpload = workflowNeedsUpload(workflow);
@@ -142,7 +146,7 @@ export function mountWorkflowFeature({
     $("submit-btn").disabled = credentialsMissing || !canSubmit;
     $("submit-btn").textContent = workflowSubmitLabel(workflow);
     $("upload-action-slot")?.classList.toggle("hidden", credentialsMissing || (needsUpload ? !uploadReady : false));
-    $("page-range-btn")?.classList.toggle("hidden", !needsUpload);
+    $("page-range-btn")?.classList.toggle("hidden", !showPageRangeButton);
   }
 
   function updateCredentialGate() {
@@ -183,7 +187,7 @@ export function mountWorkflowFeature({
         uploadHelp.classList.remove("hidden");
       }
       if (uploadStatus) {
-        uploadStatus.textContent = "Mock 模式已启用，可直接点击开始处理。";
+        uploadStatus.textContent = "Mock 模式已启用，可直接点击开始翻译。";
         uploadStatus.classList.remove("hidden");
       }
       renderPageRangeSummary();

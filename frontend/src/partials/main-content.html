@@ -32,8 +32,8 @@
         <em id="upload-help">上传后会先完成文件校验，再进入任务处理。</em>
         <div class="upload-meta upload-meta-inline">
           <span>单个 PDF</span>
-          <span>最大 200MB</span>
-          <span>最多 600 页</span>
+          <span>最大 100MB</span>
+          <span>最多 100 页</span>
         </div>
         <div id="upload-status" class="upload-status hidden">尚未选择文件</div>
         <div id="upload-progress-panel" class="upload-progress-panel hidden" aria-live="polite">
@@ -41,17 +41,8 @@
         </div>
         <div id="upload-action-slot" class="upload-action-slot hidden">
           <div class="upload-action-group">
-            <button id="submit-btn" type="submit" disabled>开始翻译</button>
-            <button id="page-range-btn" type="button" class="page-range-mini secondary" aria-label="分页翻译" title="分页翻译">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 5v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-                <path d="M12 10c0 2.8-2.1 4.2-4.5 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-                <path d="M12 10c0 2.8 2.1 4.2 4.5 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-                <circle cx="12" cy="4.5" r="1.5" fill="currentColor"/>
-                <circle cx="7" cy="16.5" r="1.5" fill="currentColor"/>
-                <circle cx="17" cy="16.5" r="1.5" fill="currentColor"/>
-              </svg>
-            </button>
+            <button id="page-range-btn" type="button" class="page-range-mini secondary" aria-label="分页翻译" title="分页翻译">分页翻译</button>
+            <button id="submit-btn" type="submit" disabled>全书翻译</button>
           </div>
         </div>
       <page-range-summary id="page-range-summary" class="hidden">已选择页码：-</page-range-summary>

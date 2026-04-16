@@ -10,56 +10,62 @@ class BrowserCredentialsDialog extends HTMLElement {
           <div class="desktop-head">
             <div class="credential-dialog-head">
               <h2>接口设置</h2>
-              <p id="browser-credentials-mode-hint">填写后会保存在当前浏览器中，可随时回来修改和检测。</p>
             </div>
             <button id="browser-credentials-close-btn" type="submit" class="dialog-close-btn" aria-label="关闭">×</button>
           </div>
           <div class="desktop-body credential-dialog-body">
-            <p id="browser-credentials-storage-hint" class="credential-dialog-note">填写后会保存在当前浏览器中，可随时回来修改和检测。</p>
-            <div class="credential-card-grid">
-              <section class="credential-card">
-                <div class="credential-card-head">
-                  <div>
-                    <h3>MinerU</h3>
-                    <p>用于 OCR 解析和版面识别。</p>
-                  </div>
-                  <a class="credential-card-link" href="https://mineru.net/apiManage/docs?openApplyModal=true" target="_blank" rel="noopener noreferrer">获取 Token</a>
-                </div>
-                <label>
-                  <span class="developer-label">
-                    <span>MinerU Token</span>
-                    <button type="button" class="developer-hint" aria-label="MinerU Token 说明" data-tooltip="MinerU Token 用于 OCR 解析和版面识别。可通过右上角获取 Token 链接前往 MinerU 控制台申请。">i</button>
-                  </span>
-                  <input id="browser-mineru-token" type="text" autocomplete="off" placeholder="填写 MinerU Token" />
-                </label>
-                <div class="credential-card-actions">
-                  <button id="browser-mineru-validate-btn" type="button" class="secondary">检测 MinerU</button>
-                  <span id="browser-mineru-validation" class="token-inline-status hidden">保存前会自动检测 MinerU Token。</span>
+            <div class="developer-tabs credential-tabs" role="tablist" aria-label="接口设置">
+              <button id="browser-credential-tab-api" type="button" class="developer-tab credential-tab is-active" data-credential-tab="api" role="tab" aria-selected="true">API 设置</button>
+              <button id="browser-credential-tab-task" type="button" class="developer-tab credential-tab" data-credential-tab="task" role="tab" aria-selected="false">任务选项</button>
+            </div>
+            <div class="credential-card-grid credential-panels">
+              <section class="credential-panel is-active" data-credential-panel="api" role="tabpanel">
+                <div class="credential-card-grid">
+                  <section class="credential-card">
+                    <div class="credential-card-head">
+                      <div>
+                        <h3>MinerU</h3>
+                        <p>用于 OCR 解析和版面识别。</p>
+                      </div>
+                      <a class="credential-card-link" href="https://mineru.net/apiManage/docs?openApplyModal=true" target="_blank" rel="noopener noreferrer">获取 Token</a>
+                    </div>
+                    <label>
+                      <span class="developer-label">
+                        <span>MinerU Token</span>
+                        <button type="button" class="developer-hint" aria-label="MinerU Token 说明" data-tooltip="MinerU Token 用于 OCR 解析和版面识别。可通过右上角获取 Token 链接前往 MinerU 控制台申请。">i</button>
+                      </span>
+                      <input id="browser-mineru-token" type="text" autocomplete="off" placeholder="填写 MinerU Token" />
+                    </label>
+                    <div class="credential-card-actions">
+                      <button id="browser-mineru-validate-btn" type="button" class="secondary">检测 MinerU</button>
+                      <span id="browser-mineru-validation" class="token-inline-status hidden">保存前会自动检测 MinerU Token。</span>
+                    </div>
+                  </section>
+
+                  <section class="credential-card">
+                    <div class="credential-card-head">
+                      <div>
+                        <h3>DeepSeek</h3>
+                        <p>用于正文翻译和模型调用。</p>
+                      </div>
+                      <a class="credential-card-link" href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer">获取 Key</a>
+                    </div>
+                    <label>
+                      <span class="developer-label">
+                        <span>DeepSeek Key</span>
+                        <button type="button" class="developer-hint" aria-label="DeepSeek Key 说明" data-tooltip="DeepSeek Key 用于正文翻译和模型调用。可通过右上角获取 Key 链接前往 DeepSeek 平台创建。">i</button>
+                      </span>
+                      <input id="browser-api-key" type="text" autocomplete="off" placeholder="填写 DeepSeek API Key" />
+                    </label>
+                    <div class="credential-card-actions">
+                      <button id="browser-deepseek-validate-btn" type="button" class="secondary">检测 DeepSeek</button>
+                      <span id="browser-deepseek-validation" class="token-inline-status hidden">可检测 DeepSeek 接口是否连通。</span>
+                    </div>
+                  </section>
                 </div>
               </section>
 
-              <section class="credential-card">
-                <div class="credential-card-head">
-                  <div>
-                    <h3>DeepSeek</h3>
-                    <p>用于正文翻译和模型调用。</p>
-                  </div>
-                  <a class="credential-card-link" href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer">获取 Key</a>
-                </div>
-                <label>
-                  <span class="developer-label">
-                    <span>DeepSeek Key</span>
-                    <button type="button" class="developer-hint" aria-label="DeepSeek Key 说明" data-tooltip="DeepSeek Key 用于正文翻译和模型调用。可通过右上角获取 Key 链接前往 DeepSeek 平台创建。">i</button>
-                  </span>
-                  <input id="browser-api-key" type="text" autocomplete="off" placeholder="填写 DeepSeek API Key" />
-                </label>
-                <div class="credential-card-actions">
-                  <button id="browser-deepseek-validate-btn" type="button" class="secondary">检测 DeepSeek</button>
-                  <span id="browser-deepseek-validation" class="token-inline-status hidden">可检测 DeepSeek 接口是否连通。</span>
-                </div>
-              </section>
-
-              <section class="credential-card">
+              <section class="credential-card credential-panel" data-credential-panel="task" role="tabpanel" hidden>
                 <div class="credential-card-head">
                   <div>
                     <h3>任务选项</h3>

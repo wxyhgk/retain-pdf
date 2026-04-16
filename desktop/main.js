@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, Menu, Tray, dialog, ipcMain, shell } = require("electron");
 const { spawn } = require("child_process");
 const fs = require("fs");
 const http = require("http");
@@ -11,6 +11,9 @@ let backendStopping = false;
 let splashWindow = null;
 let mainWindow = null;
 let usingExternalBackend = false;
+let tray = null;
+let isQuitting = false;
+let closeToTrayHintShown = false;
 
 function resolveDesktopConfigPath() {
   return path.join(app.getPath("userData"), "desktop-config.json");
@@ -23,6 +26,7 @@ function loadDesktopConfig() {
       firstRunCompleted: false,
       mineruToken: "",
       modelApiKey: "",
+      closeToTrayHintShown: false,
     };
   }
   try {
@@ -32,6 +36,7 @@ function loadDesktopConfig() {
       firstRunCompleted: !!parsed.firstRunCompleted,
       mineruToken: typeof parsed.mineruToken === "string" ? parsed.mineruToken : "",
       modelApiKey: typeof parsed.modelApiKey === "string" ? parsed.modelApiKey : "",
+      closeToTrayHintShown: !!parsed.closeToTrayHintShown,
     };
   } catch (error) {
     console.error(`[desktop] failed to load desktop config: ${error?.message || error}`);
@@ -39,6 +44,7 @@ function loadDesktopConfig() {
       firstRunCompleted: false,
       mineruToken: "",
       modelApiKey: "",
+      closeToTrayHintShown: false,
     };
   }
 }
@@ -48,6 +54,7 @@ function saveDesktopConfig(payload = {}) {
     firstRunCompleted: true,
     mineruToken: typeof payload.mineruToken === "string" ? payload.mineruToken.trim() : "",
     modelApiKey: typeof payload.modelApiKey === "string" ? payload.modelApiKey.trim() : "",
+    closeToTrayHintShown: !!payload.closeToTrayHintShown,
   };
   const configPath = resolveDesktopConfigPath();
   fs.mkdirSync(path.dirname(configPath), { recursive: true });
@@ -83,6 +90,97 @@ function resolveWindowIcon() {
   }
   return path.join(__dirname, "assets", "RetainPDF-logo.png");
 }
+
+function resolveTrayIcon() {
+  return resolveWindowIcon();
+}
+
+function showMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+function hideMainWindowToTray() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+  mainWindow.hide();
+  maybeShowCloseToTrayHint();
+}
+
+function persistCloseToTrayHintShown() {
+  const current = loadDesktopConfig();
+  saveDesktopConfig({
+    ...current,
+    closeToTrayHintShown: true,
+  });
+  closeToTrayHintShown = true;
+}
+
+function maybeShowCloseToTrayHint() {
+  if (closeToTrayHintShown || !tray) {
+    return;
+  }
+  if (process.platform === "win32" && typeof tray.displayBalloon === "function") {
+    tray.displayBalloon({
+      iconType: "info",
+      title: "RetainPDF 正在后台运行",
+      content: "窗口已隐藏到系统托盘，本地 API 仍可继续使用。右键托盘图标可退出。",
+    });
+  }
+  persistCloseToTrayHintShown();
+}
+
+function createTray() {
+  if (tray) {
+    return tray;
+  }
+  tray = new Tray(resolveTrayIcon());
+  tray.setToolTip("RetainPDF");
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      {
+        label: "显示主窗口",
+        click: () => {
+          showMainWindow();
+        },
+      },
+      {
+        label: "退出",
+        click: () => {
+          isQuitting = true;
+          app.quit();
+        },
+      },
+    ]),
+  );
+  tray.on("click", () => {
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) {
+      hideMainWindowToTray();
+      return;
+    }
+    showMainWindow();
+  });
+  tray.on("double-click", () => {
+    showMainWindow();
+  });
+  return tray;
+}
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+
+app.on("second-instance", () => {
+  showMainWindow();
+});
 
 async function createSplashWindow() {
   splashWindow = new BrowserWindow({
@@ -539,6 +637,14 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(frontendRoot, "index.html"));
 
+  mainWindow.on("close", (event) => {
+    if (isQuitting) {
+      return;
+    }
+    event.preventDefault();
+    hideMainWindowToTray();
+  });
+
   mainWindow.webContents.on("console-message", (_event, level, message, line, sourceId) => {
     console.log(
       `[desktop][renderer][level=${level}] ${sourceId || "unknown"}:${line || 0} ${message || ""}`,
@@ -573,14 +679,18 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  closeToTrayHintShown = loadDesktopConfig().closeToTrayHintShown;
   createSplashWindow()
     .then(() => startBundledBackend())
     .then(() => {
+      createTray();
       createWindow();
       app.on("activate", () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
+        if (!mainWindow || mainWindow.isDestroyed()) {
           createWindow();
+          return;
         }
+        showMainWindow();
       });
     })
     .catch((error) => {
@@ -590,12 +700,13 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
+  if (process.platform !== "darwin" && isQuitting) {
     app.quit();
   }
 });
 
 app.on("before-quit", () => {
+  isQuitting = true;
   if (!usingExternalBackend && backendChild && !backendChild.killed) {
     backendStopping = true;
     backendChild.kill();

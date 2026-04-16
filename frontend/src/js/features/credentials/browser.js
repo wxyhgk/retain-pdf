@@ -18,6 +18,27 @@ export function mountBrowserCredentialsFeature({
   validateMineruToken,
   onCredentialStateChange,
 }) {
+  function credentialDialog() {
+    return $("browser-credentials-dialog");
+  }
+
+  function activateCredentialTab(tabName = "api") {
+    const dialog = credentialDialog();
+    if (!dialog) {
+      return;
+    }
+    dialog.querySelectorAll("[data-credential-tab]").forEach((tab) => {
+      const active = tab.dataset.credentialTab === tabName;
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    dialog.querySelectorAll("[data-credential-panel]").forEach((panel) => {
+      const active = panel.dataset.credentialPanel === tabName;
+      panel.classList.toggle("is-active", active);
+      panel.hidden = !active;
+    });
+  }
+
   function setMineruValidationMessage(message, tone = "") {
     const el = $("browser-mineru-validation");
     if (!el) {
@@ -128,8 +149,6 @@ export function mountBrowserCredentialsFeature({
   function browserCredentialElements() {
     return {
       dialog: $("browser-credentials-dialog"),
-      modeHint: $("browser-credentials-mode-hint"),
-      storageHint: $("browser-credentials-storage-hint"),
       mineruInput: $("browser-mineru-token"),
       apiKeyInput: $("browser-api-key"),
       mathModeSelect: $("browser-job-math-mode"),
@@ -140,8 +159,6 @@ export function mountBrowserCredentialsFeature({
 
   function syncBrowserDialogFromHiddenInputs() {
     const {
-      modeHint,
-      storageHint,
       mineruInput,
       apiKeyInput,
       mathModeSelect,
@@ -159,16 +176,6 @@ export function mountBrowserCredentialsFeature({
     }
     if (translateTitlesInput) {
       translateTitlesInput.checked = taskOptions.translateTitles !== false;
-    }
-    if (modeHint) {
-      modeHint.textContent = state.desktopMode
-        ? "桌面端会把接口配置保存到本机，同时保留任务选项。"
-        : "填写后会保存在当前浏览器中，可随时回来修改和检测。";
-    }
-    if (storageHint) {
-      storageHint.textContent = state.desktopMode
-        ? "当前保存会写入桌面端本地配置，并同步到当前任务表单。"
-        : "填写后会保存在当前浏览器中，可随时回来修改和检测。";
     }
     setMineruValidationMessage("", "");
     setDeepSeekValidationMessage("", "");
@@ -225,6 +232,7 @@ export function mountBrowserCredentialsFeature({
       return;
     }
     syncBrowserDialogFromHiddenInputs();
+    activateCredentialTab("api");
     dialog.showModal();
   }
 
@@ -344,8 +352,14 @@ export function mountBrowserCredentialsFeature({
   $("browser-deepseek-validate-btn")?.addEventListener("click", handleBrowserDeepSeekValidate);
   $("browser-credentials-save-btn")?.addEventListener("click", handleBrowserCredentialSave);
   $("credentials-btn")?.addEventListener("click", openBrowserCredentialsDialog);
+  credentialDialog()?.querySelectorAll("[data-credential-tab]").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        activateCredentialTab(tab.dataset.credentialTab || "api");
+      });
+    });
 
   return {
+    activateCredentialTab,
     ensureMineruTokenReady,
     hasBrowserCredentials,
     openBrowserCredentialsDialog,

@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+set -eu
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
+
+if [ -z "$STAGED_FILES" ]; then
+  exit 0
+fi
+
+if ! printf '%s\n' "$STAGED_FILES" | grep -Eq '^(frontend/|desktop/scripts/prepare-app\.mjs|desktop/package\.json)'; then
+  exit 0
+fi
+
+printf '%s\n' "[pre-commit] syncing desktop Windows frontend..."
+npm --prefix desktop run sync:win-frontend
+

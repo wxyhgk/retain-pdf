@@ -1,4 +1,5 @@
 import { $ } from "./dom.js";
+import * as pdfjsLib from "../../node_modules/pdfjs-dist/build/pdf.mjs";
 import {
   apiBase,
   applyKeyInputs,
@@ -28,6 +29,7 @@ import {
   DEFAULT_TIMEOUT_SECONDS,
   DEFAULT_WORKERS,
   FRONT_MAX_BYTES,
+  FRONT_MAX_PAGE_COUNT,
 } from "./constants.js";
 import {
   bootstrapDesktop,
@@ -74,6 +76,12 @@ const DEVELOPER_PASSWORD = "Gk265157!";
 const WORKFLOW_MINERU = "mineru";
 const WORKFLOW_TRANSLATE = "translate";
 const WORKFLOW_RENDER = "render";
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "../../node_modules/pdfjs-dist/build/pdf.worker.mjs",
+  import.meta.url,
+).toString();
+const PDFJS_CMAP_URL = new URL("../../node_modules/pdfjs-dist/cmaps/", import.meta.url).toString();
+const PDFJS_STANDARD_FONT_DATA_URL = new URL("../../node_modules/pdfjs-dist/standard_fonts/", import.meta.url).toString();
 let browserCredentialsFeature = null;
 let developerFeature = null;
 let artifactDownloadsFeature = null;
@@ -159,6 +167,28 @@ function collectUploadFormData(file) {
   return form;
 }
 
+async function countPdfPages(file) {
+  if (!file) {
+    return 0;
+  }
+  const doc = await pdfjsLib.getDocument({
+    data: await file.arrayBuffer(),
+    cMapUrl: PDFJS_CMAP_URL,
+    cMapPacked: true,
+    standardFontDataUrl: PDFJS_STANDARD_FONT_DATA_URL,
+    disableFontFace: true,
+    disableRange: true,
+    disableStream: true,
+  }).promise;
+  try {
+    return Number(doc?.numPages || 0);
+  } finally {
+    if (doc?.destroy) {
+      await doc.destroy().catch(() => {});
+    }
+  }
+}
+
 async function handleFileSelected() {
   await uploadFeature?.handleFileSelected();
 }
@@ -242,6 +272,8 @@ function initializePage() {
     apiBase,
     apiPrefix: API_PREFIX,
     frontMaxBytes: FRONT_MAX_BYTES,
+    frontMaxPageCount: FRONT_MAX_PAGE_COUNT,
+    countPdfPages,
     defaultFileLabel: DEFAULT_FILE_LABEL,
     collectUploadFormData,
     submitUploadRequest,
@@ -331,6 +363,7 @@ function initializePage() {
   $("api_key")?.addEventListener("input", saveBrowserStoredConfig);
   $("job-form")?.addEventListener("submit", submitForm);
   $("page-range-btn")?.addEventListener("click", () => uploadFeature?.openPageRangeDialog());
+  $("page-range-summary")?.addEventListener("click", () => uploadFeature?.openPageRangeDialog());
   $("page-range-apply-btn")?.addEventListener("click", () => uploadFeature?.applyPageRanges());
   $("page-range-clear-btn")?.addEventListener("click", () => uploadFeature?.clearPageRanges());
   $("cancel-btn")?.addEventListener("click", () => jobRuntimeFeature?.cancelCurrentJob());

@@ -93,6 +93,13 @@
     width: min(620px, calc(100vw - 24px));
   }
 
+  #browser-credentials-dialog .desktop-shell {
+    min-height: 728px;
+    max-height: min(728px, calc(100vh - 24px));
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
   #developer-dialog {
     width: min(520px, calc(100vw - 24px));
   }
@@ -150,6 +157,8 @@
   #browser-credentials-dialog .desktop-body {
     gap: 12px;
     padding: 18px 20px 20px;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
   .credential-dialog-head h2 {
@@ -175,6 +184,31 @@
     font-size: 12px;
     line-height: 1.55;
     color: #6e6e73;
+  }
+
+  .credential-tabs {
+    margin-top: 2px;
+  }
+
+  .credential-panels {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .credential-panel {
+    width: 100%;
+    min-height: 0;
+  }
+
+  .credential-panel[hidden],
+  .credential-panel:not(.is-active) {
+    display: none !important;
+  }
+
+  .credential-panel.is-active {
+    display: grid;
+    align-content: start;
+    overflow: auto;
   }
 
   .developer-dialog-body {
@@ -1418,27 +1452,36 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0 24px;
     pointer-events: none;
   }
 
   .upload-action-slot > button {
-    min-width: 180px;
-    min-height: 54px;
-    background: #1d1d1f;
-    color: #fff;
-    border-color: #1d1d1f;
+    min-height: 52px;
     box-shadow: 0 18px 36px rgba(29, 29, 31, 0.16);
     pointer-events: auto;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .upload-action-group {
     position: relative;
-    @apply flex items-center justify-center;
+    @apply flex items-center justify-center gap-3;
+    width: min(680px, 100%);
     pointer-events: auto;
   }
 
   .upload-action-group #submit-btn {
-    min-width: 196px;
+    order: 1;
+    min-width: 0;
+    background: #1d1d1f;
+    color: #fff;
+    border-color: #1d1d1f;
+  }
+
+  .upload-action-group #page-range-btn {
+    order: 0;
+    min-width: 0;
   }
 
   .math-mode-inline {
@@ -1479,27 +1522,17 @@
   }
 
   .page-range-mini {
-    position: absolute;
-    right: -16px;
-    top: -10px;
-    width: 32px;
-    min-width: 32px;
-    height: 32px;
-    min-height: 32px;
-    padding: 0;
-    border-radius: 11px;
-    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
-  }
-
-  .page-range-mini svg {
-    width: 14px;
-    height: 14px;
+    position: static;
+    border-radius: 999px;
   }
 
   .page-range-summary {
     @apply text-[12px];
     color: #6e6e73;
     margin-top: 4px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
   .upload-tile.is-ready #upload-glyph,
@@ -2503,6 +2536,10 @@
       gap: 10px;
     }
 
+    .upload-action-group > button {
+      flex: 1 1 210px;
+    }
+
     .reader-markdown,
     .reader-markdown-raw,
     .reader-pdf-frame {
@@ -2510,9 +2547,6 @@
       min-height: 56vh;
     }
 
-    .page-range-mini {
-      position: static;
-    }
   }
 
   .muted {

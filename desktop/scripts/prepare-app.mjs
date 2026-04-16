@@ -17,6 +17,7 @@ const typstLinuxRoot = path.join(backendRoot, "typst-linux");
 const typstPackagesRoot = path.join(backendRoot, "typst-packages");
 const targetPlatform = process.env.RETAIN_PDF_DESKTOP_PLATFORM || process.platform;
 const allowBundledMacPython = process.env.RETAIN_PDF_BUNDLE_MAC_PYTHON === "1";
+const skipBundledRuntimeVerification = process.env.RETAIN_PDF_SKIP_BUNDLED_RUNTIME_VERIFICATION === "1";
 const appRoot = path.join(desktopRoot, "app");
 const outputFrontendRoot = path.join(appRoot, "frontend");
 const outputBackendRoot = path.join(appRoot, "backend");
@@ -407,7 +408,7 @@ let bundledPythonDiagnostics = null;
 if (bundledPythonRequired && !pythonBundled) {
   throw new Error(`Bundled Python runtime is required for ${targetPlatform} packaging but was not copied to ${outputPythonRoot}`);
 }
-if (pythonBundled) {
+if (pythonBundled && !skipBundledRuntimeVerification) {
   bundledPythonDiagnostics = verifyBundledPythonRuntime(outputPythonRoot);
 }
 

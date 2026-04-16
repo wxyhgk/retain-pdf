@@ -1,6 +1,6 @@
 {
   "name": "retain-pdf-desktop",
-  "version": "4.0.9-beta-hotfix10",
+  "version": "4.0.9-beta2",
   "private": true,
   "description": "RetainPDF desktop wrapper",
   "homepage": "https://github.com/wxyhgk/retain-pdf",
@@ -10,6 +10,8 @@
   },
   "main": "main.js",
   "scripts": {
+    "sync:win-frontend": "node scripts/sync-win-frontend.mjs",
+    "install-git-hooks": "sh scripts/install-git-hooks.sh",
     "prepare-app": "npm --prefix ../frontend run build:css && node scripts/prepare-app.mjs",
     "dist:win32": "npm run prepare-app && electron-builder --win portable --ia32 --config.directories.output=win",
     "dist:win32-installer": "npm run prepare-app && electron-builder --win nsis --ia32 --config.directories.output=win",
