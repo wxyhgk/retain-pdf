@@ -1,6 +1,8 @@
+use std::io::{Error as IoError, ErrorKind};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
+use rusqlite::types::Type;
 use rusqlite::{params, Connection, Row};
 use serde_json::Value;
 
@@ -30,11 +32,14 @@ fn row_to_job_snapshot(row: &Row<'_>) -> rusqlite::Result<JobSnapshot> {
     let runtime_json: Option<String> = row.get(18)?;
     let failure_json: Option<String> = row.get(19)?;
     let artifacts_json: Option<String> = row.get(20)?;
+    let workflow_json: String = row.get(1)?;
+    let status_json: String = row.get(2)?;
+    let request_json: String = row.get(10)?;
     Ok(JobSnapshot {
         record: crate::models::JobRecord {
             job_id: row.get(0)?,
-            workflow: serde_json::from_str::<_>(&row.get::<_, String>(1)?).unwrap(),
-            status: serde_json::from_str::<_>(&row.get::<_, String>(2)?).unwrap(),
+            workflow: parse_json_column(1, "workflow", &workflow_json)?,
+            status: parse_json_column(2, "status_json", &status_json)?,
             created_at: row.get(3)?,
             updated_at: row.get(4)?,
             started_at: row.get(5)?,
@@ -42,7 +47,7 @@ fn row_to_job_snapshot(row: &Row<'_>) -> rusqlite::Result<JobSnapshot> {
             upload_id: row.get(7)?,
             pid: row.get::<_, Option<i64>>(8)?.map(|v| v as u32),
             command: serde_json::from_str(&row.get::<_, String>(9)?).unwrap_or_default(),
-            request_payload: deserialize_request_spec(&row.get::<_, String>(10)?).unwrap(),
+            request_payload: deserialize_request_spec_column(10, &request_json)?,
             error: row.get(11)?,
             stage: row.get(12)?,
             stage_detail: row.get(13)?,
@@ -61,6 +66,34 @@ fn row_to_job_snapshot(row: &Row<'_>) -> rusqlite::Result<JobSnapshot> {
             .and_then(|text| serde_json::from_str(&text).ok())
             .unwrap_or(None),
     })
+}
+
+fn json_column_decode_error(
+    column_idx: usize,
+    column_name: &str,
+    error: impl std::fmt::Display,
+) -> rusqlite::Error {
+    rusqlite::Error::FromSqlConversionFailure(
+        column_idx,
+        Type::Text,
+        Box::new(IoError::new(
+            ErrorKind::InvalidData,
+            format!("failed to decode {column_name}: {error}"),
+        )),
+    )
+}
+
+fn parse_json_column<T>(column_idx: usize, column_name: &str, raw: &str) -> rusqlite::Result<T>
+where
+    T: serde::de::DeserializeOwned,
+{
+    serde_json::from_str::<T>(raw)
+        .map_err(|error| json_column_decode_error(column_idx, column_name, error))
+}
+
+fn deserialize_request_spec_column(column_idx: usize, raw: &str) -> rusqlite::Result<ResolvedJobSpec> {
+    deserialize_request_spec(raw)
+        .map_err(|error| json_column_decode_error(column_idx, "request_json", error))
 }
 
 fn deserialize_request_spec(raw: &str) -> Result<ResolvedJobSpec> {
@@ -525,7 +558,12 @@ impl Db {
         };
         let mut jobs = Vec::new();
         for row in rows {
-            jobs.push(row?);
+            match row {
+                Ok(job) => jobs.push(job),
+                Err(error) => {
+                    eprintln!("[db] skipping malformed job row during list_jobs: {error}");
+                }
+            }
         }
         Ok(jobs)
     }
@@ -930,5 +968,54 @@ mod tests {
         let detail = format!("{error:#}");
         assert!(detail.contains("legacy jobs.artifacts_json storage is no longer supported"));
         assert!(detail.contains("clear the DB or rerun those jobs"));
+    }
+
+    #[test]
+    fn list_jobs_skips_malformed_rows_instead_of_failing() {
+        let fs = TestDbFs::new();
+        let db = fs.db();
+        db.init().expect("init db");
+
+        let valid_job = sample_job("job-valid", &fs.data_root);
+        db.save_job(&valid_job).expect("save valid job");
+
+        let conn = Connection::open(&fs.db_path).expect("open sqlite");
+        conn.execute(
+            r#"
+            INSERT INTO jobs (
+                job_id, workflow, status_json, created_at, updated_at, started_at, finished_at,
+                upload_id, pid, command_json, request_json, error, stage, stage_detail,
+                progress_current, progress_total, log_tail_json, result_json, runtime_json, failure_json
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
+            "#,
+            params![
+                "job-bad",
+                serde_json::to_string(&WorkflowKind::Mineru).expect("workflow json"),
+                serde_json::to_string(&JobStatusKind::Succeeded).expect("status json"),
+                now_iso(),
+                now_iso(),
+                Option::<String>::None,
+                Option::<String>::None,
+                Option::<String>::None,
+                Option::<i64>::None,
+                "[]",
+                "{\"invalid\":true}",
+                Option::<String>::None,
+                Option::<String>::None,
+                Option::<String>::None,
+                Option::<i64>::None,
+                Option::<i64>::None,
+                "[]",
+                Option::<String>::None,
+                Option::<String>::None,
+                Option::<String>::None,
+            ],
+        )
+        .expect("insert malformed row");
+        drop(conn);
+
+        let jobs = db.list_jobs(20, 0, None, None).expect("list jobs");
+        assert_eq!(jobs.len(), 1);
+        assert_eq!(jobs[0].job_id, "job-valid");
     }
 }
