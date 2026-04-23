@@ -3,268 +3,128 @@
 <p align="center">
   <img src="image/RetainPDF-github.svg" alt="RetainPDF" width="320" />
 </p>
+# 对原作者的2次修改
+  # 翻译链路修复说明（2026-04-17）
+
+## 背景
+
+本次排查包含两类问题：
+
+1. 某些 PDF 已经可以跑通，但生成结果存在英文残留、中英叠字、版面覆盖等问题。
+2. 修复版面问题之后，出现了“之前能翻译的文件现在整单失败”的回归现象。
+
+本说明记录本轮定位、修复、线上同步和验证结果，方便后续留档与交接。
 
 
-开源社区做保留排版的项目不少，但是都围绕可复制，可编辑的 PDF，以及行内公式不复杂的场景.
+1. 接入自定义 OpenAI 兼容大模型 API。
+2. 修复标题不翻译的问题。
+3. 修复前端下载按钮、在线浏览入口、运行时配置加载异常。
+4. 修复翻译结果中混入模型英文思考过程、点评语句、目录污染、短标题污染的问题。
+5. 增强渲染兼容性，处理字体路径、Typst project root、标题适配相关问题。
+6. 给任务产物增加自动清理能力，避免服务器长期堆积 PDF、ZIP 与任务目录。
+7. 将修复同步到线上服务器，并用真实 PDF 重跑验证。
 
-RetainPDF 从一开始就是要解决各类 PDF 的保留排版翻译问题，尤其是图片型/扫描版 PDF，以及行内公式的渲染问题.
-
-在保留排版翻译这个领域，正面硬刚闭源模型,并且在一些场景下做得更好，比如翻译后的 PDF 体积、整体速度和字体大小控制。
-
-此外本项目是前后端分离、OCR、翻译、排版与交付打通的全栈项目，整体结构尽量解耦，既能直接使用，也方便后续开发者继续扩展、替换模块和二次开发。
 
 
-简单对比：
+### 2. 标题不翻译问题修复
 
-| 项目 | 扫描型 PDF | 复杂行内公式 | 代码不误翻 | 表格控制 | 自定义翻译策略 | 排版保留 | PDF 压缩优化 | API 自动化 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| PDFMathTranslate | ❌ | ❌ | ❌ | 弱 | 弱 | 一般 | 一般 | ✅ |
-| PolyglotPDF | ❌ | ❌ | ❌ | 弱 | 弱 | 一般 | 一般 | ✅ |
-| Doc2X | ✅ | ✅ | ❌ | 中 | 弱 | 强 | 弱 | ❌ 不开放 |
-| RetainPDF | ✅ | ✅ | ✅ | ✅ 可开关 | ✅ 可按规则配置 | 强 | ✅ 持续优化 | ✅ |
+问题现象：
 
-## 效果图
+- 正文会翻译，但标题没有进入翻译队列。
+- 即便设置 `skip_title_translation=false`，标题仍然被跳过。
 
-### SCI 论文
+处理结果：
 
-<p align="center">
-  <img src="image/image%201.png" alt="SCI 示例 1" width="860" />
-</p>
+- 修复了标题策略判断。
+- 现在 `skip_title_translation=false` 时，标题会正常参与翻译。
 
-<p align="center">
-  <img src="image/image%202.png" alt="SCI 示例 2" width="860" />
-</p>
 
-### 图片型 / 扫描版 PDF
+验证方式：
 
-<p align="center">
-  <img src="image/image%203.png" alt="扫描版示例 1" width="860" />
-</p>
+- 本地测试通过。
+- 线上重跑后，标题确实已进入翻译结果。
 
-<p align="center">
-  <img src="image/image%207.png" alt="扫描版示例 2" width="860" />
-</p>
-
-### 图书类
-
-<p align="center">
-  <img src="image/image%204.png" alt="图书示例 1" width="860" />
-</p>
-
-<p align="center">
-  <img src="image/image%205.png" alt="图书示例 2" width="860" />
-</p>
-
-<p align="center">
-  <img src="image/image%206.png" alt="图书示例 3" width="860" />
-</p>
-
-## 快速开始
-
-如果你只是想直接使用，先去 [GitHub Releases](https://github.com/wxyhgk/retain-pdf/releases) 下载对应平台的发布包：
-
-- Windows：优先下载 `Setup.exe`
-- macOS：下载 `.dmg`
-- Linux：下载 `.deb`
-
-如果你想给局域网、团队或多台设备一起用，优先选 Docker 部署。
-
-### Windows 桌面端
-
-<p align="center">
-  <img src="image/RetainPDF-desktop.png" alt="RetainPDF Windows 桌面端" width="860" />
-</p>
-
-### macOS 提示
-
-由于当前没有 Apple 开发者账号，macOS 版本第一次打开时可能会提示应用“已损坏”。这不是文件真的损坏，而是系统的签名校验导致的。把应用拖到 `/Applications` 后，执行：
-
-```bash
-sudo xattr -r -d com.apple.quarantine /Applications/RetainPDF.app
-```
-
-然后再重新打开应用即可。
-
-### Docker 部署
-
-当前仓库提供了 Docker 交付目录：
-
-- [docker/delivery/README.md](docker/delivery/README.md)
-- [docker/delivery/docker-compose.yml](docker/delivery/docker-compose.yml)
-
-基本步骤：
-
-```bash
-git clone https://github.com/wxyhgk/retain-pdf.git
-cd retain-pdf/docker/delivery
-docker compose up -d
-```
-
-启动后默认访问：
-
-```text
-http://127.0.0.1:40001
-```
-
-默认端口：
-
-- `40001`：前端页面
-- `41000`：Rust API
-- `42000`：简便同步接口
-
-### Docker 更新
-
-如果只是更新到最新镜像版本：
-
-```bash
-cd retain-pdf/docker/delivery
-docker compose pull
-docker compose up -d
-```
-
-如果你要切换到指定镜像版本，也可以这样：
-
-```bash
-cd retain-pdf/docker/delivery
-APP_IMAGE=wxyhgk/retainpdf-app:latest \
-WEB_IMAGE=wxyhgk/retainpdf-web:latest \
-docker compose up -d
-```
-
-更新后建议执行一次状态检查：
-
-```bash
-docker compose ps
-```
-
-当前镜像地址：
-
-- [wxyhgk/retainpdf-app](https://hub.docker.com/r/wxyhgk/retainpdf-app)
-- [wxyhgk/retainpdf-web](https://hub.docker.com/r/wxyhgk/retainpdf-web)
-
-## 最近更新
-
-下面这批改动是围绕“扫描版 / 复杂排版 PDF 能稳定跑通、结果更干净、线上部署更省心”做的一轮系统性修复。
-
-### 1. 自定义大模型 API 兼容
-
-- 已兼容 OpenAI 风格的自定义模型 API。
-- 支持自定义 `base_url`、`api_key`、`model`，可直接接入兼容 `/v1/chat/completions` 的服务。
-- 已验证 `gpt-5.4` + 自定义 OpenAI 兼容接口可用于翻译流程。
-
-### 2. 标题翻译策略修复
-
-- 修复了标题被错误跳过翻译的问题。
-- 现在 `skip_title_translation=false` 时，标题会正常进入翻译队列。
-- 补充了对应回归测试，避免后续再出现“正文翻了、标题没翻”的情况。
+---
 
 ### 3. 翻译结果清洗增强
 
-针对一类很常见的模型污染问题做了通用处理，不再只是针对单个 PDF 打补丁：
+目标是把“模型把解释过程、推理语句、英文点评混进正文/标题/目录”的问题做成通用清洗规则，而不是只针对某一个 PDF 临时打补丁。
 
-- 清理模型把“思考过程 / 解释语句”混进标题、目录项、短文本块的情况。
-- 清理诸如 `This feels like a good translation`、`I'm wondering if`、`could also work`、`which gives the title` 这类英文点评残留。
-- 修复 OCR 噪声导致的短标题、目录项重复、半截标题、前缀脏文本等问题。
-- 增强标题上下文补全，避免清洗后只剩“主要用例”这类半截标题。
+#### 3.1 主要修复的污染类型
 
-这部分已经加入专门的回归测试，覆盖：
+- 目录项后面跟着英文推理：
+  - 半截标题
+  - 标题前面多出英文垃圾前缀
+  - 目录项重复
+  - 目录编号、页码被模型解释打断
 
-- 标题推理串清洗
-- 目录项污染恢复
-- 内联英文点评清洗
-- 短标题上下文补全
-- 防止误补单词级英文前缀
+#### 3.2 实际增强的处理能力
+
+- 增加短目录项/短标题恢复逻辑。
+- 增加标题推理串清洗逻辑。
+- 增加英文点评短语识别。
+- 增加标题上下文补全。
+- 增加短文本块候选片段打分。
+- 增加相邻重复 token / clause 折叠。
+- 增加对“短中文成品 + 英文解释 + 短中文成品”模式的恢复。
+- 防止把单个英文词误补到中文标题前面。
+
+#### 3.3 主要涉及文件
+
+#### 3.4 本地回归情况
+
+- 最终本地回归：
+
+这说明本轮不是单一特例修复，而是已经覆盖了一批明确可复现的污染模式。
+
 
 ### 4. 渲染与字体路径兼容增强
 
-- 同步并兼容了上游近期与标题适配、字体路径、Typst project root 相关的渲染改动。
-- 修复了部分环境下 `source file must be contained in project root` 一类渲染失败问题。
-- 增强了 Docker / 服务器环境中的字体定位与渲染稳定性。
+问题背景：
 
-### 5. 前端任务页与下载体验修复
+- 部分 PDF 渲染失败不是翻译内容本身有问题，而是渲染环境、字体路径或 Typst project root 处理不稳。
+- 之前还出现过：
+  - `error: source file must be contained in project root`
 
-- 修复任务详情页下载按钮、在线浏览入口、运行时配置加载异常等问题。
-- 修复部分前端乱码与交互无响应问题。
-- 现在任务完成后，PDF / Markdown ZIP / 在线查看链路更完整。
+处理结果：
 
-### 6. 任务产物自动清理
-
-- 新增任务文件保留策略：默认保留 30 天。
-- 超过 30 天后自动清理任务目录、下载 ZIP 与数据库记录。
-- 避免服务器长期堆积历史 PDF、ZIP 与任务元数据。
-
-### 7. 线上验证状态
-
-这轮不是只做本地修补，已经实际同步到线上 Docker 容器并做过多轮真实文件回归：
-
-- `article.pdf`：目录项英文点评污染已清掉。
-- `how-anthropic-uses-claude-code.pdf`：标题解释串、短标题缺上下文、标题污染等问题已明显改善。
-
-当前这套规则仍在持续迭代，但已经从“针对单个文件修 bug”提升为“面向一类 PDF 异常的通用清洗与恢复策略”。
-
-## 开发者
+- 增强了 Typst 编译路径处理。
+- 加强了字体定位与加载。
+- 同步并兼容了上游近期与标题适配、字体路径、渲染相关的改动。
 
 
-### 文档入口
+### 5. 前端下载与在线浏览问题修复
 
-建议按下面顺序阅读。
+问题现象：
 
-- [当前 API 文档](doc/API.md)
-- [文档目录](doc/README.md)
-- [工程评价与后续执行计划](doc/工程评价与后续执行计划.md)
-- [架构解耦任务台账](doc/architecture_tasks.csv)
-- [Pipeline 阶段契约](backend/scripts/runtime/pipeline/README.md)
-- [Rust API 任务生命周期](doc/rust_api/04-任务生命周期.md)
-- [产物清单与下载](doc/rust_api/06-产物清单与下载.md)
-- [服务总览](doc/api-overview.md)
-- [本地启动与配置](doc/api-dev.md)
-- [接口说明](doc/api-endpoints.md)
-- [存储结构](doc/api-storage.md)
-- [错误排查](doc/api-troubleshooting.md)
+- 任务完成后按钮点了没反应。
+- 在线浏览入口不清晰。
+- 前端曾出现运行时配置文件加载失败。
+- 浏览器控制台出现 `runtime-config.local.js:1 Unexpected token '<'` 一类异常。
 
-### 代码与子模块说明
+处理结果：
 
-- [后端脚本说明](backend/scripts/README.md)
-- [旧 FastAPI 包装层](backend/Fast_API/README.md)
-- `frontend/`：当前浏览器前端静态资源与桌面端打包输入目录
+- 修复下载按钮触发链路。
+- 修复在线浏览入口与实际 PDF 跳转链路。
+- 修复前端运行时配置加载异常。
+- 修复部分前端乱码和无响应问题。
 
-### 当前目录结构
+主要涉及文件：
 
-- `frontend/`
-  浏览器前端、桌面壳、预览实验页面。
-- `backend/`
-  Rust API、Python 脚本、嵌入式 Python、旧 FastAPI 包装层、历史工作区。
-- `docker/`
-  Dockerfile、发布脚本、交付用 compose 配置。
-- `data/`
-  本地运行输出、任务目录、历史样本数据。
 
-### 当前工程判断
 
-RetainPDF 目前已经可以完成从 PDF 上传、OCR、翻译、排版重建到产物下载的完整链路。
+### 6. 任务产物 30 天自动清理
 
-接下来我的重点不是盲目堆功能，而是继续把下面几件事做稳：
+目标：
 
-- 工程一致性
-- API 与产物契约稳定性
-- 构建可复现性
-- 长文块与公式场景下的翻译稳定性
+- 让服务器不会长期积累历史任务目录、PDF、ZIP、数据库记录。
 
-如果你想了解我接下来准备怎么推进，可以看：
+处理结果：
 
-- [工程评价与后续执行计划](doc/工程评价与后续执行计划.md)
+- 新增任务保留策略。
+- 默认保留 30 天。
+- 超过 30 天后自动清理：
 
-### 欢迎一起参与
 
-如果你也对下面这些方向感兴趣，欢迎一起把这个项目继续往前做：
 
-- 高精度 OCR / 疑难版面解析
-- 长文块与公式场景下的翻译稳定性
-- 排版回填、字体自适应与 PDF 渲染
-- 桌面端、Docker 交付与工程化完善
 
-不管你更擅长算法、前端、后端还是部署，只要你也想把“真正能用的 PDF 保留排版翻译”这件事做深，欢迎进来一起搞。
-
-## License
-
-This project is distributed under the MIT License. See [LICENSE](LICENSE) for the full text.
