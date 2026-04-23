@@ -3,8 +3,8 @@
 <p align="center">
   <img src="image/RetainPDF-github.svg" alt="RetainPDF" width="320" />
 </p>
-# 对原作者的2次修改
-  # 翻译链路修复说明（2026-04-17）
+# 对原作者的优化修改
+  
 
 ## 背景
 
