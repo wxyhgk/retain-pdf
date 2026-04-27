@@ -121,6 +121,21 @@ def _typst_compile_command(typ_path: Path, pdf_path: Path, font_paths: list[Path
     return command
 
 
+def _resolved_common_root(paths_to_cover: list[Path]) -> Path:
+    normalized: list[str] = []
+    fallback_root: Path | None = None
+    for entry in paths_to_cover:
+        path = Path(entry).resolve(strict=False)
+        fallback_root = fallback_root or path.parent
+        normalized.append(str(path))
+    if not normalized:
+        raise ValueError("paths_to_cover must not be empty")
+    try:
+        return Path(os.path.commonpath(normalized))
+    except ValueError:
+        return fallback_root or paths.ROOT_DIR
+
+
 def compile_typst_overlay_pdf(
     page_width: float,
     page_height: float,
@@ -207,7 +222,8 @@ def compile_typst_book_background_pdf(
         build_typst_book_background_source(source_pdf_path, page_specs, work_dir, font_family=font_family),
         encoding="utf-8",
     )
-    command = [TYPST_BIN, "compile", "--root", str(paths.ROOT_DIR)]
+    project_root = _resolved_common_root([typ_path, pdf_path, source_pdf_path])
+    command = [TYPST_BIN, "compile", "--root", str(project_root)]
     for font_path in _resolved_font_paths(font_paths):
         command.extend(["--font-path", str(font_path)])
     command.extend([str(typ_path), str(pdf_path)])
@@ -218,7 +234,11 @@ def compile_typst_book_background_pdf(
         phase="background_book",
         stem=stem,
         work_dir=work_dir,
-        extra={"page_count": len(page_specs), "source_pdf_path": str(source_pdf_path)},
+        extra={
+            "page_count": len(page_specs),
+            "source_pdf_path": str(source_pdf_path),
+            "project_root": str(project_root),
+        },
     )
     return pdf_path
 
@@ -245,7 +265,8 @@ def compile_typst_render_pages_pdf(
         ),
         encoding="utf-8",
     )
-    command = [TYPST_BIN, "compile", "--root", str(paths.ROOT_DIR)]
+    project_root = _resolved_common_root([typ_path, pdf_path, background_pdf_path])
+    command = [TYPST_BIN, "compile", "--root", str(project_root)]
     for font_path in _resolved_font_paths(font_paths):
         command.extend(["--font-path", str(font_path)])
     command.extend([str(typ_path), str(pdf_path)])
@@ -256,6 +277,10 @@ def compile_typst_render_pages_pdf(
         phase="render_pages",
         stem=stem,
         work_dir=work_dir,
-        extra={"page_count": len(page_specs), "background_pdf_path": str(background_pdf_path)},
+        extra={
+            "page_count": len(page_specs),
+            "background_pdf_path": str(background_pdf_path),
+            "project_root": str(project_root),
+        },
     )
     return pdf_path

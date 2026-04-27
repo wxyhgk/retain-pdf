@@ -19,6 +19,7 @@ export function mountBrowserCredentialsFeature({
   saveDesktopConfig,
   checkApiConnectivity,
   validateOcrToken,
+  validateDeepSeekToken,
   onCredentialStateChange,
 }) {
   function credentialDialog() {
@@ -159,26 +160,20 @@ export function mountBrowserCredentialsFeature({
     if (showResult) {
       setDeepSeekValidationMessage("正在检测 DeepSeek 接口…");
     }
-    const baseUrl = defaultModelBaseUrl().replace(/\/$/, "");
     try {
-      const resp = await fetch(`${baseUrl}/models`, {
-        headers: {
-          Authorization: `Bearer ${modelApiKey}`,
-        },
+      const result = await validateDeepSeekToken(API_PREFIX, {
+        api_key: modelApiKey,
+        base_url: defaultModelBaseUrl(),
       });
-      if (resp.ok) {
-        if (showResult) {
-          setDeepSeekValidationMessage(TRANSLATION_PROVIDER_DEFINITION.validationSuccessMessage, "valid");
-        }
-        return { ok: true, status: resp.status };
-      }
-      const summary = resp.status === 401
-        ? TRANSLATION_PROVIDER_DEFINITION.validationUnauthorizedMessage
-        : `DeepSeek 接口返回 ${resp.status}。`;
       if (showResult) {
-        setDeepSeekValidationMessage(summary, "error");
+        setDeepSeekValidationMessage(
+          result.summary || (result.ok
+            ? TRANSLATION_PROVIDER_DEFINITION.validationSuccessMessage
+            : TRANSLATION_PROVIDER_DEFINITION.validationNetworkMessage),
+          result.ok ? "valid" : "error",
+        );
       }
-      return { ok: false, status: resp.status, summary };
+      return result;
     } catch (_err) {
       if (showResult) {
         setDeepSeekValidationMessage(TRANSLATION_PROVIDER_DEFINITION.validationNetworkMessage, "error");

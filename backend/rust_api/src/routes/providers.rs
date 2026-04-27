@@ -1,5 +1,6 @@
 use axum::Json;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::error::AppError;
 use crate::models::{now_iso, ApiResponse};
@@ -36,6 +37,13 @@ pub struct MineruTokenValidationView {
 #[derive(Debug, Deserialize)]
 pub struct PaddleTokenValidationRequest {
     pub paddle_token: String,
+    #[serde(default)]
+    pub base_url: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DeepSeekTokenValidationRequest {
+    pub api_key: String,
     #[serde(default)]
     pub base_url: String,
 }
@@ -115,6 +123,167 @@ pub async fn validate_paddle_token(
     };
 
     Ok(Json(ApiResponse::ok(view)))
+}
+
+pub async fn validate_deepseek_token(
+    Json(payload): Json<DeepSeekTokenValidationRequest>,
+) -> Result<Json<ApiResponse<MineruTokenValidationView>>, AppError> {
+    let api_key = payload.api_key.trim();
+    if api_key.is_empty() {
+        return Err(AppError::bad_request("api_key is required"));
+    }
+
+    let base_url = normalize_deepseek_base_url(&payload.base_url);
+    let checked_at = now_iso();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(20))
+        .build()
+        .map_err(|err| AppError::internal(format!("build deepseek probe client failed: {err}")))?;
+    let models_url = format!("{}/models", base_url.trim_end_matches('/'));
+
+    let response = client.get(&models_url).bearer_auth(api_key).send().await;
+    let view = match response {
+        Ok(resp) => classify_deepseek_probe_response(resp, base_url.clone(), checked_at).await,
+        Err(err) => classify_deepseek_probe_transport_error(err, base_url.clone(), checked_at),
+    };
+
+    Ok(Json(ApiResponse::ok(view)))
+}
+
+fn normalize_deepseek_base_url(raw: &str) -> String {
+    let trimmed = raw.trim().trim_end_matches('/');
+    if trimmed.is_empty() {
+        "https://api.deepseek.com/v1".to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+async fn classify_deepseek_probe_response(
+    response: reqwest::Response,
+    base_url: String,
+    checked_at: String,
+) -> MineruTokenValidationView {
+    let status_code = response.status();
+    let trace_id = response
+        .headers()
+        .get("x-request-id")
+        .and_then(|value| value.to_str().ok())
+        .map(|value| value.to_string());
+    let body_text = response.text().await.unwrap_or_default();
+
+    if status_code.is_success() {
+        return MineruTokenValidationView {
+            ok: true,
+            status: "valid",
+            summary: "DeepSeek API Key 可用".to_string(),
+            retryable: false,
+            provider_code: Some(status_code.as_u16().to_string()),
+            provider_message: summarize_deepseek_models_payload(&body_text),
+            operator_hint: None,
+            trace_id,
+            base_url,
+            checked_at,
+        };
+    }
+
+    let status = if status_code == reqwest::StatusCode::UNAUTHORIZED
+        || status_code == reqwest::StatusCode::FORBIDDEN
+    {
+        "unauthorized"
+    } else if status_code.is_server_error() {
+        "network_error"
+    } else {
+        "provider_error"
+    };
+    let summary = if status == "unauthorized" {
+        "DeepSeek API Key 无效".to_string()
+    } else if status == "network_error" {
+        "DeepSeek 连通性校验失败".to_string()
+    } else {
+        format!("DeepSeek 接口返回 {}", status_code.as_u16())
+    };
+
+    MineruTokenValidationView {
+        ok: false,
+        status,
+        summary,
+        retryable: status != "unauthorized",
+        provider_code: Some(status_code.as_u16().to_string()),
+        provider_message: summarize_deepseek_error_payload(&body_text),
+        operator_hint: None,
+        trace_id,
+        base_url,
+        checked_at,
+    }
+}
+
+fn classify_deepseek_probe_transport_error(
+    err: reqwest::Error,
+    base_url: String,
+    checked_at: String,
+) -> MineruTokenValidationView {
+    let error_text = err.to_string();
+    let lowered = error_text.to_lowercase();
+    let (status, summary) = if lowered.contains("timed out")
+        || lowered.contains("timeout")
+        || lowered.contains("failed to resolve")
+        || lowered.contains("dns")
+        || lowered.contains("connection")
+        || lowered.contains("connect")
+    {
+        ("network_error", "DeepSeek 连通性校验失败")
+    } else {
+        ("provider_error", "DeepSeek API Key 校验失败")
+    };
+
+    MineruTokenValidationView {
+        ok: false,
+        status,
+        summary: summary.to_string(),
+        retryable: true,
+        provider_code: None,
+        provider_message: Some(error_text),
+        operator_hint: None,
+        trace_id: None,
+        base_url,
+        checked_at,
+    }
+}
+
+fn summarize_deepseek_models_payload(body_text: &str) -> Option<String> {
+    let parsed: Value = serde_json::from_str(body_text).ok()?;
+    let data = parsed.get("data")?.as_array()?;
+    let models = data
+        .iter()
+        .filter_map(|item| item.get("id").and_then(|value| value.as_str()))
+        .take(3)
+        .collect::<Vec<_>>();
+    if models.is_empty() {
+        Some("models probe ok".to_string())
+    } else {
+        Some(format!("models probe ok: {}", models.join(", ")))
+    }
+}
+
+fn summarize_deepseek_error_payload(body_text: &str) -> Option<String> {
+    let parsed: Value = serde_json::from_str(body_text).ok()?;
+    if let Some(message) = parsed
+        .get("error")
+        .and_then(|error| error.get("message"))
+        .and_then(|value| value.as_str())
+    {
+        return Some(message.to_string());
+    }
+    if let Some(message) = parsed.get("message").and_then(|value| value.as_str()) {
+        return Some(message.to_string());
+    }
+    let trimmed = body_text.trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
+    }
 }
 
 fn classify_probe_error(

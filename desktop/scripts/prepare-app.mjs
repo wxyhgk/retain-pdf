@@ -18,6 +18,7 @@ const typstPackagesRoot = path.join(backendRoot, "typst-packages");
 const targetPlatform = process.env.RETAIN_PDF_DESKTOP_PLATFORM || process.platform;
 const allowBundledMacPython = process.env.RETAIN_PDF_BUNDLE_MAC_PYTHON === "1";
 const skipBundledRuntimeVerification = process.env.RETAIN_PDF_SKIP_BUNDLED_RUNTIME_VERIFICATION === "1";
+const frontendOnly = process.argv.includes("--frontend-only");
 const appRoot = path.join(desktopRoot, "app");
 const outputFrontendRoot = path.join(appRoot, "frontend");
 const outputBackendRoot = path.join(appRoot, "backend");
@@ -188,11 +189,18 @@ if (fs.existsSync(desktopIconSource)) {
   }
 }
 
-fs.rmSync(appRoot, { recursive: true, force: true });
-fs.mkdirSync(outputFrontendRoot, { recursive: true });
-fs.mkdirSync(outputFrontendVendorRoot, { recursive: true });
-fs.mkdirSync(outputBackendRoot, { recursive: true });
-fs.mkdirSync(bundledFontsRoot, { recursive: true });
+if (frontendOnly) {
+  fs.rmSync(outputFrontendRoot, { recursive: true, force: true });
+  fs.mkdirSync(appRoot, { recursive: true });
+  fs.mkdirSync(outputFrontendRoot, { recursive: true });
+  fs.mkdirSync(outputFrontendVendorRoot, { recursive: true });
+} else {
+  fs.rmSync(appRoot, { recursive: true, force: true });
+  fs.mkdirSync(outputFrontendRoot, { recursive: true });
+  fs.mkdirSync(outputFrontendVendorRoot, { recursive: true });
+  fs.mkdirSync(outputBackendRoot, { recursive: true });
+  fs.mkdirSync(bundledFontsRoot, { recursive: true });
+}
 
 const excludedFrontendEntries = new Set([
   "node_modules",
@@ -366,33 +374,35 @@ let desktopIndexHtml = fs.readFileSync(desktopIndexPath, "utf8");
 desktopIndexHtml = desktopIndexHtml.replace('\n    <script src="./runtime-config.local.js"></script>', "");
 fs.writeFileSync(desktopIndexPath, desktopIndexHtml, "utf8");
 
-fs.cpSync(path.join(backendRoot, "scripts"), path.join(outputBackendRoot, "scripts"), {
-  recursive: true,
-  force: true,
-});
+if (!frontendOnly) {
+  fs.cpSync(path.join(backendRoot, "scripts"), path.join(outputBackendRoot, "scripts"), {
+    recursive: true,
+    force: true,
+  });
+}
 
-if (fs.existsSync(rustApiBinary.path)) {
+if (!frontendOnly && fs.existsSync(rustApiBinary.path)) {
   fs.mkdirSync(path.join(outputBackendRoot, "bin"), { recursive: true });
   fs.cpSync(rustApiBinary.path, path.join(outputBackendRoot, "bin", rustApiBinary.fileName), {
     force: true,
   });
 }
 
-if (targetPlatform === "win32" && fs.existsSync(path.join(embeddedPythonRoot, "python.exe"))) {
+if (!frontendOnly && targetPlatform === "win32" && fs.existsSync(path.join(embeddedPythonRoot, "python.exe"))) {
   fs.cpSync(embeddedPythonRoot, path.join(outputBackendRoot, "python"), {
     recursive: true,
     force: true,
   });
 }
 
-if (targetPlatform === "linux" && hasBundledPosixPython(embeddedPythonRoot)) {
+if (!frontendOnly && targetPlatform === "linux" && hasBundledPosixPython(embeddedPythonRoot)) {
   fs.cpSync(embeddedPythonRoot, path.join(outputBackendRoot, "python"), {
     recursive: true,
     force: true,
   });
 }
 
-if (targetPlatform === "darwin" && hasBundledPosixPython(embeddedPythonRoot)) {
+if (!frontendOnly && targetPlatform === "darwin" && hasBundledPosixPython(embeddedPythonRoot)) {
   if (allowBundledMacPython) {
     fs.cpSync(embeddedPythonRoot, path.join(outputBackendRoot, "python"), {
       recursive: true,
@@ -413,42 +423,42 @@ const bundledPythonRequired = targetPlatform === "win32"
   || targetPlatform === "linux"
   || (targetPlatform === "darwin" && allowBundledMacPython);
 let bundledPythonDiagnostics = null;
-if (bundledPythonRequired && !pythonBundled) {
+if (!frontendOnly && bundledPythonRequired && !pythonBundled) {
   throw new Error(`Bundled Python runtime is required for ${targetPlatform} packaging but was not copied to ${outputPythonRoot}`);
 }
-if (pythonBundled && !skipBundledRuntimeVerification) {
+if (!frontendOnly && pythonBundled && !skipBundledRuntimeVerification) {
   bundledPythonDiagnostics = verifyBundledPythonRuntime(outputPythonRoot);
 }
 
-if (targetPlatform === "win32" && fs.existsSync(typstWindowsRoot)) {
+if (!frontendOnly && targetPlatform === "win32" && fs.existsSync(typstWindowsRoot)) {
   fs.cpSync(typstWindowsRoot, path.join(outputBackendRoot, "typst"), {
     recursive: true,
     force: true,
   });
 }
 
-if (targetPlatform === "darwin" && fs.existsSync(typstDarwinRoot)) {
+if (!frontendOnly && targetPlatform === "darwin" && fs.existsSync(typstDarwinRoot)) {
   fs.cpSync(typstDarwinRoot, path.join(outputBackendRoot, "typst"), {
     recursive: true,
     force: true,
   });
 }
 
-if (targetPlatform === "linux" && fs.existsSync(typstLinuxRoot)) {
+if (!frontendOnly && targetPlatform === "linux" && fs.existsSync(typstLinuxRoot)) {
   fs.cpSync(typstLinuxRoot, path.join(outputBackendRoot, "typst"), {
     recursive: true,
     force: true,
   });
 }
 
-if (fs.existsSync(typstPackagesRoot)) {
+if (!frontendOnly && fs.existsSync(typstPackagesRoot)) {
   fs.cpSync(typstPackagesRoot, path.join(outputBackendRoot, "typst-packages"), {
     recursive: true,
     force: true,
   });
 }
 
-if (fs.existsSync(bundledFontAssetsRoot)) {
+if (!frontendOnly && fs.existsSync(bundledFontAssetsRoot)) {
   for (const entry of fs.readdirSync(bundledFontAssetsRoot)) {
     const from = path.join(bundledFontAssetsRoot, entry);
     const to = path.join(bundledFontsRoot, entry);
@@ -463,10 +473,12 @@ const requiredBundledFonts = [
   "SourceHanSerifSC-Regular.otf",
   "SourceHanSerifSC-Bold.otf",
 ];
-for (const fileName of requiredBundledFonts) {
-  const expectedPath = path.join(bundledFontsRoot, fileName);
-  if (!fs.existsSync(expectedPath)) {
-    throw new Error(`Missing bundled font asset: ${expectedPath}`);
+if (!frontendOnly) {
+  for (const fileName of requiredBundledFonts) {
+    const expectedPath = path.join(bundledFontsRoot, fileName);
+    if (!fs.existsSync(expectedPath)) {
+      throw new Error(`Missing bundled font asset: ${expectedPath}`);
+    }
   }
 }
 

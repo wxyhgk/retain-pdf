@@ -684,7 +684,7 @@ async function startBundledBackend() {
 }
 
 function createWindow() {
-  const frontendRoot = path.join(__dirname, "app", "frontend");
+  const frontendRoot = resolveFrontendRoot();
 
   mainWindow = new BrowserWindow({
     width: 1480,
@@ -743,6 +743,21 @@ function createWindow() {
     shell.openExternal(url);
     return { action: "deny" };
   });
+}
+
+function resolveFrontendRoot() {
+  const generatedFrontendRoot = path.join(__dirname, "app", "frontend");
+  if (app.isPackaged) {
+    return generatedFrontendRoot;
+  }
+  if (fs.existsSync(path.join(generatedFrontendRoot, "index.html"))) {
+    return generatedFrontendRoot;
+  }
+  const sourceFrontendRoot = path.resolve(__dirname, "..", "frontend");
+  if (fs.existsSync(path.join(sourceFrontendRoot, "index.html"))) {
+    return sourceFrontendRoot;
+  }
+  return generatedFrontendRoot;
 }
 
 app.whenReady().then(() => {

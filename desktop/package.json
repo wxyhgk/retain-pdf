@@ -12,6 +12,8 @@
   "scripts": {
     "sync:win-frontend": "node scripts/sync-win-frontend.mjs",
     "install-git-hooks": "sh scripts/install-git-hooks.sh",
+    "smoke:frontend-bundle": "node scripts/check-frontend-bundle.mjs",
+    "sync-frontend": "npm --prefix ../frontend run build:css && node scripts/prepare-app.mjs --frontend-only && npm run smoke:frontend-bundle",
     "prepare-app": "npm --prefix ../frontend run build:css && node scripts/prepare-app.mjs",
     "dist:win32": "npm run prepare-app && electron-builder --win portable --ia32 --config.directories.output=win",
     "dist:win32-installer": "npm run prepare-app && electron-builder --win nsis --ia32 --config.directories.output=win",
@@ -53,12 +55,12 @@
           ]
         }
       ],
-      "artifactName": "RetainPDF-${version}.${ext}"
+      "artifactName": "RetainPDF-Windows-${version}.${ext}"
     },
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "build/icon.icns",
-      "artifactName": "RetainPDF-${version}-mac-${arch}.${ext}"
+      "artifactName": "RetainPDF-Mac-${version}.${ext}"
     },
     "linux": {
       "target": [
@@ -73,12 +75,12 @@
         "Categories": "Office;Utility;",
         "StartupWMClass": "RetainPDF"
       },
-      "artifactName": "RetainPDF-${version}-linux-${arch}.${ext}"
+      "artifactName": "RetainPDF-Linux-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "RetainPDF-${version}-Setup.${ext}",
+      "artifactName": "RetainPDF-Windows-${version}-Setup.${ext}",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "installerHeaderIcon": "build/icon.ico"

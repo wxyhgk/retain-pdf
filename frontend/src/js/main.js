@@ -53,6 +53,7 @@ import {
   submitJobRequest,
   submitJson,
   submitUploadRequest,
+  validateDeepSeekToken,
   validatePaddleToken,
   validateMineruToken,
 } from "./network.js";
@@ -80,8 +81,6 @@ import {
   updateJobWarning,
 } from "./ui.js";
 
-const DEVELOPER_AUTH_SESSION_KEY = "retainpdf.developer.auth.v1";
-const DEVELOPER_PASSWORD = "Gk265157!";
 const WORKFLOW_BOOK = "book";
 const WORKFLOW_TRANSLATE = "translate";
 const WORKFLOW_RENDER = "render";
@@ -276,8 +275,6 @@ async function initializePage() {
     getBrowserCredentialsFeature: () => browserCredentialsFeature,
   });
   developerFeature = mountDeveloperFeature({
-    developerPassword: DEVELOPER_PASSWORD,
-    developerAuthSessionKey: DEVELOPER_AUTH_SESSION_KEY,
     syncDeveloperDialogFromState: () => workflowFeature?.syncDeveloperDialogFromState(),
     updateDeveloperWorkflowFormState: () => workflowFeature?.updateDeveloperWorkflowFormState(),
     saveDeveloperDialog: () => workflowFeature?.saveDeveloperDialog(),
@@ -334,6 +331,7 @@ async function initializePage() {
         model_version: DEFAULT_MODEL_VERSION,
       });
     },
+    validateDeepSeekToken,
     onCredentialStateChange: () => workflowFeature?.applyWorkflowMode(),
   });
   artifactDownloadsFeature = mountArtifactDownloadsFeature({

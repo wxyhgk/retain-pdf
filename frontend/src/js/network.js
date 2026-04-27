@@ -419,8 +419,18 @@ export async function submitJson(url, payload) {
     const text = await resp.text();
     throw new Error(`提交失败: ${resp.status} ${text}${requestContext}`);
   }
-  const payloadJson = await resp.json();
-  return unwrapEnvelope(payloadJson);
+  if (resp.status === 204) {
+    return { ok: true };
+  }
+  const contentType = (resp.headers.get("content-type") || "").toLowerCase();
+  const text = await resp.text();
+  if (!text.trim()) {
+    return { ok: true };
+  }
+  if (!contentType.includes("application/json")) {
+    return text;
+  }
+  return unwrapEnvelope(JSON.parse(text));
 }
 
 export async function validateMineruToken(apiPrefix, payload) {
@@ -447,6 +457,19 @@ export async function validatePaddleToken(apiPrefix, payload) {
     };
   }
   return submitJson(buildApiEndpoint(apiPrefix, "providers/paddle/validate-token"), payload);
+}
+
+export async function validateDeepSeekToken(apiPrefix, payload) {
+  if (isMockMode()) {
+    void apiPrefix;
+    void payload;
+    return {
+      ok: true,
+      valid: true,
+      summary: "mock mode: token validation skipped",
+    };
+  }
+  return submitJson(buildApiEndpoint(apiPrefix, "providers/deepseek/validate-token"), payload);
 }
 
 export async function fetchProtected(url, options = {}) {

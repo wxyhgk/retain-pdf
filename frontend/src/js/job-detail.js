@@ -85,13 +85,33 @@ function resolveLiveDurations(job) {
   const now = isTerminalStatus(job.status) ? finishedAt || updatedAt || new Date() : new Date();
   const stageStartedAt = parseIsoTime(job.stage_started_at || job.last_stage_transition_at);
   const jobStartedAt = parseIsoTime(job.started_at || job.created_at);
+  const latestStage = Array.isArray(job.stage_history) && job.stage_history.length > 0
+    ? job.stage_history[job.stage_history.length - 1]
+    : null;
+  const snapshotDeltaMs = !isTerminalStatus(job.status) && updatedAt
+    ? Math.max(0, now.getTime() - updatedAt.getTime())
+    : 0;
   let stageElapsedMs = Number(job.active_stage_elapsed_ms);
   let totalElapsedMs = Number(job.total_elapsed_ms);
 
-  if (!Number.isFinite(stageElapsedMs) && stageStartedAt) {
+  if (isTerminalStatus(job.status)) {
+    if (!Number.isFinite(stageElapsedMs) && Number.isFinite(Number(latestStage?.duration_ms))) {
+      stageElapsedMs = Number(latestStage.duration_ms);
+    }
+  } else if (Number.isFinite(stageElapsedMs)) {
+    stageElapsedMs += snapshotDeltaMs;
+  } else if (stageStartedAt) {
     stageElapsedMs = Math.max(0, now.getTime() - stageStartedAt.getTime());
+  } else if (Number.isFinite(Number(latestStage?.duration_ms))) {
+    stageElapsedMs = Number(latestStage.duration_ms) + snapshotDeltaMs;
   }
-  if (!Number.isFinite(totalElapsedMs) && jobStartedAt) {
+  if (isTerminalStatus(job.status)) {
+    if (!Number.isFinite(totalElapsedMs) && jobStartedAt) {
+      totalElapsedMs = Math.max(0, now.getTime() - jobStartedAt.getTime());
+    }
+  } else if (Number.isFinite(totalElapsedMs)) {
+    totalElapsedMs += snapshotDeltaMs;
+  } else if (jobStartedAt) {
     totalElapsedMs = Math.max(0, now.getTime() - jobStartedAt.getTime());
   }
 

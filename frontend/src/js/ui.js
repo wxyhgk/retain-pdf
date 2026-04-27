@@ -307,24 +307,29 @@ function renderRuntimeDetails(job) {
 function renderFailureDetails(job) {
   const failure = job.failure || {};
   const failureDiagnostic = job.failure_diagnostic || {};
+  const failureLastLogLine = failure.last_log_line
+    || failureDiagnostic.last_log_line
+    || failure.raw_excerpt
+    || failure.raw_exception_message
+    || (Array.isArray(job.log_tail) && job.log_tail.length ? job.log_tail[job.log_tail.length - 1] : "");
   const details = {
     summary: summarizeRuntimeField(
-      failure.summary || job.final_failure_summary || failureDiagnostic.summary,
+      failure.summary || failure.detail || job.final_failure_summary || failureDiagnostic.summary || failureDiagnostic.detail || failure.raw_excerpt,
     ),
     category: summarizeRuntimeField(
-      failure.category || job.final_failure_category || failureDiagnostic.type || failureDiagnostic.error_kind,
+      failure.category || failure.failure_category || job.final_failure_category || failureDiagnostic.type || failureDiagnostic.error_kind || failure.error_type || failure.failure_code,
     ),
     stage: summarizeRuntimeField(
-      failure.stage || failureDiagnostic.stage || failureDiagnostic.failed_stage,
+      failure.stage || failure.failed_stage || failure.provider_stage || failureDiagnostic.stage || failureDiagnostic.failed_stage,
     ),
     rootCause: summarizeRuntimeField(
-      failure.root_cause || failureDiagnostic.root_cause,
+      failure.root_cause || failureDiagnostic.root_cause || failure.raw_exception_type || failure.upstream_host,
     ),
     suggestion: summarizeRuntimeField(
-      failure.suggestion || failureDiagnostic.suggestion,
+      failure.suggestion || failureDiagnostic.suggestion || failure.failure_code,
     ),
     lastLogLine: summarizeRuntimeField(
-      failure.last_log_line || failureDiagnostic.last_log_line,
+      failureLastLogLine,
     ),
   };
   const retryable = failure.retryable ?? failureDiagnostic.retryable;
@@ -574,6 +579,11 @@ function buildStatusDetailSnapshot(job, eventsPayload) {
   const failure = job.failure || {};
   const failureDiagnostic = job.failure_diagnostic || {};
   const retryable = failure.retryable ?? failureDiagnostic.retryable;
+  const failureLastLogLine = failure.last_log_line
+    || failureDiagnostic.last_log_line
+    || failure.raw_excerpt
+    || failure.raw_exception_message
+    || (Array.isArray(job.log_tail) && job.log_tail.length ? job.log_tail[job.log_tail.length - 1] : "");
   const history = resolveStageHistory(job);
   const stageHistoryMarkup = history.map((entry, index) => {
     const duration = resolveStageHistoryDuration(entry, job);
@@ -636,22 +646,22 @@ function buildStatusDetailSnapshot(job, eventsPayload) {
     },
     failure: {
       summary: summarizeRuntimeField(
-        failure.summary || job.final_failure_summary || failureDiagnostic.summary,
+        failure.summary || failure.detail || job.final_failure_summary || failureDiagnostic.summary || failureDiagnostic.detail || failure.raw_excerpt,
       ),
       category: summarizeRuntimeField(
-        failure.category || job.final_failure_category || failureDiagnostic.type || failureDiagnostic.error_kind,
+        failure.category || failure.failure_category || job.final_failure_category || failureDiagnostic.type || failureDiagnostic.error_kind || failure.error_type || failure.failure_code,
       ),
       stage: summarizeRuntimeField(
-        failure.stage || failureDiagnostic.stage || failureDiagnostic.failed_stage,
+        failure.stage || failure.failed_stage || failure.provider_stage || failureDiagnostic.stage || failureDiagnostic.failed_stage,
       ),
       rootCause: summarizeRuntimeField(
-        failure.root_cause || failureDiagnostic.root_cause,
+        failure.root_cause || failureDiagnostic.root_cause || failure.raw_exception_type || failure.upstream_host,
       ),
       suggestion: summarizeRuntimeField(
-        failure.suggestion || failureDiagnostic.suggestion,
+        failure.suggestion || failureDiagnostic.suggestion || failure.failure_code,
       ),
       lastLogLine: summarizeRuntimeField(
-        failure.last_log_line || failureDiagnostic.last_log_line,
+        failureLastLogLine,
       ),
       retryable: typeof retryable === "boolean" ? (retryable ? "是" : "否") : "-",
     },

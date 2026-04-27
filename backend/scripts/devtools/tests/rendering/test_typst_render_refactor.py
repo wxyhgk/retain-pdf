@@ -26,8 +26,11 @@ from services.rendering.redaction.text_draw import _fit_segment_layout
 from services.rendering.layout.payload.suspicious_ocr import detect_and_drop_suspicious_ocr_glued_blocks
 from services.rendering.typst.book_ops import _compile_render_pages_pdf_resilient
 from services.rendering.typst.compiler import _resolved_font_paths
+from services.rendering.typst.compiler import _resolved_common_root
 from services.rendering.typst.compiler import TypstCompileError
+from services.rendering.typst.compiler import compile_typst_book_background_pdf
 from services.rendering.typst.compiler import compile_typst_overlay_pdf
+from services.rendering.typst.compiler import compile_typst_render_pages_pdf
 from services.rendering.typst.emitter import build_typst_source_from_page_specs
 from services.rendering.typst.page_ops import apply_source_page_overlay
 from services.rendering.typst.sanitize import sanitize_items_for_typst_compile
@@ -81,6 +84,18 @@ def test_typst_compiler_defaults_include_backend_fonts_dir() -> None:
     assert fonts.BACKEND_FONTS_DIR in resolved
 
 
+def test_resolved_common_root_uses_shared_ancestor() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp) / "job-1"
+        typ_path = root / "rendered" / "typst" / "background-book" / "page.typ"
+        pdf_path = root / "rendered" / "typst" / "background-book" / "page.pdf"
+        source_pdf = root / "source" / "input.pdf"
+
+        common_root = _resolved_common_root([typ_path, pdf_path, source_pdf])
+
+        assert common_root == root
+
+
 def test_typst_compile_error_carries_structured_context() -> None:
     completed = mock.Mock(returncode=1, stdout="", stderr="syntax error")
     with tempfile.TemporaryDirectory() as tmp:
@@ -101,6 +116,66 @@ def test_typst_compile_error_carries_structured_context() -> None:
     assert payload["return_code"] == 1
     assert payload["stderr"] == "syntax error"
     assert payload["typ_path"].endswith("probe.typ")
+
+
+def test_render_pages_compile_uses_dynamic_project_root() -> None:
+    completed = mock.Mock(returncode=0, stdout="", stderr="")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp) / "job-1"
+        work_dir = root / "rendered" / "typst" / "background-book"
+        work_dir.mkdir(parents=True, exist_ok=True)
+        background_pdf = work_dir / "book-background-cleaned.pdf"
+        doc = fitz.open()
+        doc.new_page(width=200, height=300)
+        doc.save(background_pdf)
+        doc.close()
+
+        with mock.patch("services.rendering.typst.compiler.subprocess.run", return_value=completed) as run_mock:
+            compile_typst_render_pages_pdf(
+                background_pdf_path=background_pdf,
+                page_specs=[_page_spec(background_pdf)],
+                stem="book-background-overlay-sanitized",
+                work_dir=work_dir,
+            )
+
+        command = run_mock.call_args.args[0]
+        root_index = command.index("--root")
+        assert Path(command[root_index + 1]) == work_dir
+
+
+def test_background_book_compile_uses_job_root_as_project_root() -> None:
+    completed = mock.Mock(returncode=0, stdout="", stderr="")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp) / "job-1"
+        work_dir = root / "rendered" / "typst" / "background-book"
+        work_dir.mkdir(parents=True, exist_ok=True)
+        source_pdf = root / "source" / "input.pdf"
+        source_pdf.parent.mkdir(parents=True, exist_ok=True)
+        doc = fitz.open()
+        doc.new_page(width=200, height=300)
+        doc.save(source_pdf)
+        doc.close()
+
+        page_specs = [
+            (
+                0,
+                200.0,
+                300.0,
+                [{"item_id": "b1", "bbox": [0, 0, 40, 20], "translated_text": "x", "protected_translated_text": "x"}],
+            )
+        ]
+
+        with mock.patch("services.rendering.typst.compiler.subprocess.run", return_value=completed) as run_mock:
+            compile_typst_book_background_pdf(
+                source_pdf_path=source_pdf,
+                page_specs=page_specs,
+                stem="book-background-overlay-sanitized",
+                work_dir=work_dir,
+            )
+
+        command = run_mock.call_args.args[0]
+        root_index = command.index("--root")
+        assert Path(command[root_index + 1]) == root
 
 
 def test_sanitize_items_collects_compile_diagnostics() -> None:

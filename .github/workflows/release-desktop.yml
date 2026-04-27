@@ -190,7 +190,7 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           files: |
-            desktop/win/RetainPDF-${{ steps.version.outputs.version }}-Setup.exe
+            desktop/win/RetainPDF-Windows-${{ steps.version.outputs.version }}-Setup.exe
 
   build-linux-release:
     runs-on: ubuntu-latest
@@ -376,7 +376,7 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           files: |
-            desktop/linux/RetainPDF-${{ steps.version.outputs.version }}-linux-amd64.deb
+            desktop/linux/RetainPDF-Linux-${{ steps.version.outputs.version }}.deb
 
   build-macos-release:
     runs-on: macos-latest
@@ -557,4 +557,4 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           files: |
-            desktop/mac/RetainPDF-${{ steps.version.outputs.version }}-mac-*.dmg
+            desktop/mac/RetainPDF-Mac-${{ steps.version.outputs.version }}.dmg
