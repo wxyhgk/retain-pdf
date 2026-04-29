@@ -10,6 +10,11 @@ set -eu
 : "${FRONT_MODEL:=deepseek-v4-flash}"
 : "${FRONT_BASE_URL:=https://api.deepseek.com/v1}"
 
+# The frontend always loads runtime-config.local.js first.
+# If the file is missing, nginx falls back to index.html and the browser
+# tries to execute HTML as JavaScript, which whitescreens the page.
+: > /usr/share/nginx/html/runtime-config.local.js
+
 if [ -n "$FRONT_API_BASE" ]; then
   API_BASE_VALUE="\"$FRONT_API_BASE\""
 else
