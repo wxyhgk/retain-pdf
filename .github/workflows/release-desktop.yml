@@ -490,18 +490,51 @@ jobs:
         run: |
           qpdf_prefix="$(brew --prefix qpdf)"
           bundle_root="$PWD/desktop/src/runtime/mac/python"
-          echo "Using Python executable: $(python3 -c 'import sys; print(sys.executable)')"
+          python_executable="$(python3 -c 'import sys; print(sys.executable)')"
+          framework_python="$(python3 -c 'import sysconfig; print(sysconfig.get_config_var("PYTHONFRAMEWORK"))')"
+          framework_prefix="$(python3 -c 'import sysconfig; print(sysconfig.get_config_var("PYTHONFRAMEWORKPREFIX"))')"
+          framework_version="$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+          framework_root="$framework_prefix/$framework_python.framework"
+          framework_version_root="$framework_root/Versions/$framework_version"
+          framework_bundle_root="$bundle_root/Frameworks/$framework_python.framework/Versions/$framework_version"
+          framework_binary_name="$framework_python"
+          bundle_python3="$bundle_root/bin/python3"
+          bundle_python="$bundle_root/bin/python"
+          echo "Using Python executable: $python_executable"
           rm -rf "$bundle_root"
           python3 -m venv --copies "$bundle_root"
+          if [ ! -d "$framework_version_root" ]; then
+            echo "Missing Python.framework runtime at $framework_version_root" >&2
+            exit 1
+          fi
+          mkdir -p "$framework_bundle_root"
+          rsync -a \
+            --exclude '__pycache__' \
+            --exclude 'Resources' \
+            "$framework_version_root/" "$framework_bundle_root/"
+          install_name_tool \
+            -change "$framework_version_root/$framework_binary_name" \
+            "@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/$framework_binary_name" \
+            "$bundle_python3"
+          if [ -e "$bundle_python" ]; then
+            install_name_tool \
+              -change "$framework_version_root/$framework_binary_name" \
+              "@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/$framework_binary_name" \
+              "$bundle_python"
+          fi
+          install_name_tool \
+            -id "@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/$framework_binary_name" \
+            "$framework_bundle_root/$framework_binary_name"
           export CPPFLAGS="-I$qpdf_prefix/include ${CPPFLAGS:-}"
           export LDFLAGS="-L$qpdf_prefix/lib ${LDFLAGS:-}"
           export PKG_CONFIG_PATH="$qpdf_prefix/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
-          "$bundle_root/bin/python3" -m pip install --upgrade pip
-          "$bundle_root/bin/python3" -m pip install -r desktop/requirements-desktop-posix.txt
-          "$bundle_root/bin/python3" - <<'PY'
+          "$bundle_python3" -m pip install --upgrade pip
+          "$bundle_python3" -m pip install -r desktop/requirements-desktop-posix.txt
+          "$bundle_python3" - <<'PY'
           import requests, fitz, pikepdf, PIL, urllib3
           print("python_bundle_import_check=ok")
           PY
+          otool -L "$bundle_python3"
           du -sh "$bundle_root"
 
       - name: Install desktop dependencies
