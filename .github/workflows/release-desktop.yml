@@ -4,7 +4,6 @@ name: Release Desktop
   push:
     tags:
       - "v*"
-  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -27,26 +26,16 @@ jobs:
         shell: pwsh
         run: |
           $refName = "${{ github.ref_name }}"
-          $version = ""
-          if (-not [string]::IsNullOrWhiteSpace($refName) -and $refName.StartsWith("v")) {
-            $version = $refName.TrimStart("v")
-          } elseif (Test-Path "VERSION") {
-            $version = (Get-Content VERSION -Raw).Trim()
-          } else {
-            $package = Get-Content "desktop/package.json" -Raw | ConvertFrom-Json
-            $version = "$($package.version)".Trim()
+          if ([string]::IsNullOrWhiteSpace($refName) -or -not $refName.StartsWith("v")) {
+            throw "release workflow must be triggered by a version tag"
           }
+          $version = $refName.TrimStart("v")
           if ([string]::IsNullOrWhiteSpace($version)) {
             throw "release version is empty"
           }
           $tag = "v$version"
           "tag=$tag" >> $env:GITHUB_OUTPUT
           "version=$version" >> $env:GITHUB_OUTPUT
-
-      - name: Write VERSION file
-        shell: pwsh
-        run: |
-          Set-Content -Path VERSION -Value "${{ steps.version.outputs.version }}"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -204,14 +193,11 @@ jobs:
         shell: bash
         run: |
           ref_name="${{ github.ref_name }}"
-          version=""
-          if [ -n "$ref_name" ] && [[ "$ref_name" == v* ]]; then
-            version="${ref_name#v}"
-          elif [ -f VERSION ]; then
-            version="$(tr -d '\r\n' < VERSION)"
-          else
-            version="$(node -p "require('./desktop/package.json').version")"
+          if [ -z "$ref_name" ] || [[ "$ref_name" != v* ]]; then
+            echo "release workflow must be triggered by a version tag" >&2
+            exit 1
           fi
+          version="${ref_name#v}"
           if [ -z "$version" ]; then
             echo "release version is empty" >&2
             exit 1
@@ -219,11 +205,6 @@ jobs:
           tag="v$version"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Write VERSION file
-        shell: bash
-        run: |
-          printf '%s\n' "${{ steps.version.outputs.version }}" > VERSION
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -390,14 +371,11 @@ jobs:
         shell: bash
         run: |
           ref_name="${{ github.ref_name }}"
-          version=""
-          if [ -n "$ref_name" ] && [[ "$ref_name" == v* ]]; then
-            version="${ref_name#v}"
-          elif [ -f VERSION ]; then
-            version="$(tr -d '\r\n' < VERSION)"
-          else
-            version="$(node -p "require('./desktop/package.json').version")"
+          if [ -z "$ref_name" ] || [[ "$ref_name" != v* ]]; then
+            echo "release workflow must be triggered by a version tag" >&2
+            exit 1
           fi
+          version="${ref_name#v}"
           if [ -z "$version" ]; then
             echo "release version is empty" >&2
             exit 1
@@ -405,11 +383,6 @@ jobs:
           tag="v$version"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Write VERSION file
-        shell: bash
-        run: |
-          printf '%s\n' "${{ steps.version.outputs.version }}" > VERSION
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

@@ -40,5 +40,6 @@ data/
 *.AppImage
 backend/python/
 backend/typst-win32/bin/
+VERSION
 .codex
 .codex/
