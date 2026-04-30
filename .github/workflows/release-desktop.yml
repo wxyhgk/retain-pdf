@@ -485,6 +485,17 @@ jobs:
           rsync -a \
             --exclude '__pycache__' \
             "$framework_root/" "$framework_bundle_framework_root/"
+          rm -f \
+            "$framework_bundle_framework_root/Headers" \
+            "$framework_bundle_framework_root/Python" \
+            "$framework_bundle_framework_root/Resources"
+          ln -s "Versions/Current/Headers" "$framework_bundle_framework_root/Headers"
+          ln -s "Versions/Current/Python" "$framework_bundle_framework_root/Python"
+          ln -s "Versions/Current/Resources" "$framework_bundle_framework_root/Resources"
+          if [ ! -L "$framework_bundle_framework_root/Versions/Current" ]; then
+            rm -rf "$framework_bundle_framework_root/Versions/Current"
+            ln -s "$framework_version" "$framework_bundle_framework_root/Versions/Current"
+          fi
           install_name_tool \
             -change "$framework_version_root/$framework_binary_name" \
             "@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/$framework_binary_name" \
@@ -567,6 +578,12 @@ jobs:
           python_bin="$app_root/Contents/Resources/backend/python/bin/python3"
           if [ ! -x "$python_bin" ]; then
             echo "Packaged Python binary not found: $python_bin" >&2
+            exit 1
+          fi
+          framework_root="$app_root/Contents/Resources/backend/python/Frameworks/Python.framework"
+          find "$framework_root" -maxdepth 2 -type l -exec ls -l {} \;
+          if find "$framework_root" -maxdepth 2 -type l -exec readlink {} \; | grep -q '^/Users/runner/'; then
+            echo "Packaged Python.framework still contains runner-local absolute symlinks" >&2
             exit 1
           fi
           otool -L "$python_bin"
