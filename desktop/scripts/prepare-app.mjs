@@ -180,6 +180,7 @@ function pruneBundledMacPythonRuntime(root) {
     ? fs.readdirSync(libRoot).find((entry) => /^python\d+\.\d+$/.test(entry))
     : null;
   const removalTargets = [
+    path.join(root, "Frameworks", "Python.framework", "Headers"),
     path.join(root, "Frameworks", "Python.framework", "Versions", "Current", "Frameworks", "Tk.framework"),
     path.join(root, "Frameworks", "Python.framework", "Versions", "Current", "Frameworks", "Tcl.framework"),
     path.join(root, "Frameworks", "Python.framework", "Versions", "Current", "Headers"),
