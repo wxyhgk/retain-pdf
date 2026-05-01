@@ -17,6 +17,8 @@ from services.translation.policy.metadata_filter import looks_like_hard_nontrans
 
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?;:])\s+")
 WORD_SPLIT_RE = re.compile(r"\S+")
+INLINE_MATH_SPAN_RE = re.compile(r"(?<!\\)\$(?:\\.|[^$\\\n])+(?<!\\)\$")
+FALLBACK_TOKEN_RE = re.compile(rf"{INLINE_MATH_SPAN_RE.pattern}|\S+")
 _CJK_CHAR_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
 _LATIN_CHAR_RE = re.compile(r"[A-Za-z]")
 _EN_WORD_RE = re.compile(r"[A-Za-z]+(?:[-'][A-Za-z]+)?")
@@ -32,8 +34,17 @@ def zh_char_count(text: str) -> int:
     return len(_CJK_CHAR_RE.findall(text or ""))
 
 
+def _fallback_tokens(source_text: str) -> list[str]:
+    text = str(source_text or "")
+    if not text:
+        return []
+    if "$" not in text:
+        return WORD_SPLIT_RE.findall(text)
+    return FALLBACK_TOKEN_RE.findall(text)
+
+
 def chunk_source_text_fallback(source_text: str, *, words_per_chunk: int = 48) -> list[str]:
-    words = WORD_SPLIT_RE.findall(source_text or "")
+    words = _fallback_tokens(source_text)
     if len(words) <= words_per_chunk:
         return [str(source_text or "").strip()] if str(source_text or "").strip() else []
     return [" ".join(words[i : i + words_per_chunk]).strip() for i in range(0, len(words), words_per_chunk)]

@@ -12,6 +12,8 @@ from .translation_units import refresh_payload_translation_units
 
 KEEP_ORIGIN_LABEL = "skip_model_keep_origin"
 TOKEN_RE = re.compile(r"(<[futnvc]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]|\s+|[A-Za-z0-9_\-./]+|[\u4e00-\u9fff]|.)")
+INLINE_MATH_SPAN_RE = re.compile(r"(?<!\\)\$(?:\\.|[^$\\\n])+(?<!\\)\$")
+MATH_AWARE_TOKEN_RE = re.compile(rf"(<[futnvc]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]|\s+|{INLINE_MATH_SPAN_RE.pattern}|[A-Za-z0-9_\-./]+|[\u4e00-\u9fff]|.)")
 SPLIT_PUNCTUATION = "。！？；，、,.!?;:)]}）】」』"
 
 
@@ -108,6 +110,10 @@ def _text_units(text: str) -> float:
     return sum(_token_units(token) for token in TOKEN_RE.findall(str(text or "")))
 
 
+def _tokenize_group_translation(text: str) -> list[str]:
+    return MATH_AWARE_TOKEN_RE.findall(str(text or "").strip())
+
+
 def _join_tokens(tokens: list[str]) -> str:
     return "".join(tokens).strip()
 
@@ -115,7 +121,7 @@ def _join_tokens(tokens: list[str]) -> str:
 def _split_group_protected_translation(protected_text: str, items: list[dict]) -> list[str]:
     if len(items) <= 1:
         return [str(protected_text or "").strip()]
-    tokens = TOKEN_RE.findall(str(protected_text or "").strip())
+    tokens = _tokenize_group_translation(protected_text)
     if not tokens:
         return [""] * len(items)
 

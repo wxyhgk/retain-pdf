@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import threading
 from pathlib import Path
 
@@ -18,6 +19,7 @@ _CACHE_LOCK = threading.Lock()
 FORMULA_SEGMENT_STRATEGY_VERSION = "formula_segments_v2"
 PLAIN_TEXT_STRATEGY_VERSION = "plain_text_v2"
 TRANSLATION_PROTOCOL_VERSION = "translation_control_v3_tagged_body"
+UNESCAPED_INLINE_DOLLAR_RE = re.compile(r"(?<!\\)\$")
 
 
 def _prompt_hash(mode: str = "fast") -> str:
@@ -52,6 +54,10 @@ def _strategy_signature(item: dict) -> str:
     if "[[FORMULA_" in source_text or "<f" in source_text:
         return FORMULA_SEGMENT_STRATEGY_VERSION
     return PLAIN_TEXT_STRATEGY_VERSION
+
+
+def _has_balanced_inline_math_delimiters(text: str) -> bool:
+    return len(UNESCAPED_INLINE_DOLLAR_RE.findall(text or "")) % 2 == 0
 
 
 def cache_key_for_item(
@@ -105,6 +111,8 @@ def load_cached_translation(
     decision = str(payload.get("decision", "translate") or "translate").strip() or "translate"
     raw_translated_text = str(payload.get("translated_text", "") or "").strip()
     translated_text = extract_single_item_translation_text(raw_translated_text, str(item.get("item_id", "") or ""))
+    if str(item.get("math_mode", "") or "").strip() == "direct_typst" and translated_text and not _has_balanced_inline_math_delimiters(translated_text):
+        return {}
     if translated_text != raw_translated_text:
         healed_payload = {
             "cache_key": cache_key,

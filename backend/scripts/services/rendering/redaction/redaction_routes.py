@@ -5,6 +5,7 @@ from typing import Literal
 import fitz
 
 from services.rendering.formula.mode_router import is_direct_typst_math_mode
+from services.rendering.formula.complexity import item_has_complex_inline_math
 from services.rendering.redaction.redaction_analysis import collect_page_drawing_rects
 from services.rendering.redaction.redaction_analysis import collect_page_math_protection_rects
 from services.rendering.redaction.redaction_analysis import collect_page_non_math_span_heights
@@ -124,6 +125,10 @@ def _resolve_redaction_strategy(
 
 def _should_force_bbox_redaction(item: dict) -> bool:
     return bool(item.get("continuation_group"))
+
+
+def _should_force_visual_cover(item: dict) -> bool:
+    return item_has_complex_inline_math(item)
 
 
 def _new_redaction_diagnostics(valid_items: list[tuple[fitz.Rect, dict, str]]) -> dict[str, object]:
@@ -279,6 +284,10 @@ def apply_standard_redaction(
     removable_counts: list[int] = []
     for rect, item, _translated_text in valid_items:
         if fill_background is None:
+            if _should_force_visual_cover(item):
+                cover_rects.append(rect)
+                diagnostics["item_fast_cover_count"] = int(diagnostics["item_fast_cover_count"]) + 1
+                continue
             if _should_force_bbox_redaction(item):
                 redactions.append((rect, None))
                 continue

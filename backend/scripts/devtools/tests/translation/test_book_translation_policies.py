@@ -112,6 +112,100 @@ def test_finalize_page_payloads_annotates_layout_before_cross_page_provider_join
     assert page_payloads[0][0]["continuation_group"] == group_id
 
 
+def test_finalize_page_payloads_does_not_join_figure_caption_with_body_text() -> None:
+    page_payloads = {
+        2: [
+            {
+                "item_id": "p003-b008",
+                "page_idx": 2,
+                "block_idx": 8,
+                "block_type": "text",
+                "block_kind": "text",
+                "layout_role": "paragraph",
+                "semantic_role": "body",
+                "structure_role": "body",
+                "policy_translate": True,
+                "raw_block_type": "text",
+                "normalized_sub_type": "",
+                "bbox": [60, 240, 270, 360],
+                "source_text": "This is a body paragraph that ends with the",
+                "protected_source_text": "This is a body paragraph that ends with the",
+                "formula_map": [],
+                "classification_label": "",
+                "should_translate": True,
+                "layout_mode": "double",
+                "layout_split_x": 300.0,
+                "layout_zone": "",
+                "layout_zone_rank": -1,
+                "layout_zone_size": 0,
+                "layout_boundary_role": "",
+                "continuation_group": "",
+                "continuation_prev_text": "",
+                "continuation_next_text": "",
+                "continuation_decision": "",
+                "continuation_candidate_prev_id": "",
+                "continuation_candidate_next_id": "",
+                "translation_unit_id": "p003-b008",
+                "translation_unit_kind": "single",
+                "translation_unit_member_ids": ["p003-b008"],
+                "translation_unit_protected_source_text": "This is a body paragraph that ends with the",
+                "translation_unit_formula_map": [],
+            },
+            {
+                "item_id": "p003-b010",
+                "page_idx": 2,
+                "block_idx": 10,
+                "block_type": "text",
+                "block_kind": "text",
+                "layout_role": "caption",
+                "semantic_role": "caption",
+                "structure_role": "figure_caption",
+                "policy_translate": True,
+                "raw_block_type": "figure_title",
+                "normalized_sub_type": "figure_caption",
+                "bbox": [330, 240, 550, 300],
+                "source_text": "FIG. 3. Final electronic structure spectrum.",
+                "protected_source_text": "FIG. 3. Final electronic structure spectrum.",
+                "formula_map": [],
+                "classification_label": "",
+                "should_translate": True,
+                "layout_mode": "double",
+                "layout_split_x": 300.0,
+                "layout_zone": "",
+                "layout_zone_rank": -1,
+                "layout_zone_size": 0,
+                "layout_boundary_role": "",
+                "continuation_group": "",
+                "continuation_prev_text": "",
+                "continuation_next_text": "",
+                "continuation_decision": "",
+                "continuation_candidate_prev_id": "",
+                "continuation_candidate_next_id": "",
+                "translation_unit_id": "p003-b010",
+                "translation_unit_kind": "single",
+                "translation_unit_member_ids": ["p003-b010"],
+                "translation_unit_protected_source_text": "FIG. 3. Final electronic structure spectrum.",
+                "translation_unit_formula_map": [],
+            },
+        ],
+    }
+
+    with tempfile.TemporaryDirectory() as tmp:
+        translation_paths = {2: Path(tmp) / "page-003.json"}
+        summary = finalize_page_payloads(
+            page_payloads=page_payloads,
+            translation_paths=translation_paths,
+        )
+
+    body, caption = page_payloads[2]
+    assert summary["joined_items"] == 0
+    assert body["continuation_group"] == ""
+    assert body["continuation_candidate_next_id"] == ""
+    assert caption["continuation_group"] == ""
+    assert caption["continuation_candidate_prev_id"] == ""
+    assert caption["translation_unit_id"] == "p003-b010"
+
+
 def test_policy_config_defaults_keep_legacy_skip_rules_disabled() -> None:
     config = build_translation_policy_config(mode="sci", skip_title_translation=False)
 

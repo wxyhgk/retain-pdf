@@ -8,6 +8,7 @@ sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
 from services.rendering.layout.font_fit import estimate_font_size_pt
 from services.rendering.layout.font_fit import estimate_leading_em
+from services.rendering.layout.font_fit import local_font_size_pt
 from services.rendering.layout.payload.block_seed import _relax_wide_aspect_body_leading
 
 
@@ -32,6 +33,32 @@ def _sample_item(*, wide_aspect: bool) -> dict:
 
 
 class WideAspectBodyFitTests(unittest.TestCase):
+    def test_local_font_size_uses_glyph_height_not_loose_line_pitch(self):
+        item = {
+            "block_type": "text",
+            "source_text": "Line one with normal glyphs. Line two has very loose leading.",
+            "bbox": [40, 100, 420, 160],
+            "lines": [
+                {"bbox": [40, 100, 410, 112], "spans": [{"type": "text", "content": "Line one with normal glyphs."}]},
+                {"bbox": [40, 140, 410, 152], "spans": [{"type": "text", "content": "Line two has very loose leading."}]},
+            ],
+        }
+
+        self.assertLess(local_font_size_pt(item), 12.0)
+
+    def test_local_font_size_can_grow_for_large_source_glyphs(self):
+        item = {
+            "block_type": "text",
+            "source_text": "Large source text should not be capped at small body defaults.",
+            "bbox": [40, 100, 420, 150],
+            "lines": [
+                {"bbox": [40, 100, 410, 116], "spans": [{"type": "text", "content": "Large source text should not"}]},
+                {"bbox": [40, 124, 410, 140], "spans": [{"type": "text", "content": "be capped at small body defaults."}]},
+            ],
+        }
+
+        self.assertGreater(local_font_size_pt(item), 12.0)
+
     def test_wide_aspect_body_keeps_font_closer_to_local_ocr(self):
         base_item = _sample_item(wide_aspect=False)
         wide_item = _sample_item(wide_aspect=True)

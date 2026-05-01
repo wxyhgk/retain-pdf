@@ -1,6 +1,7 @@
 import re
 
 from services.translation.item_reader import item_block_kind
+from services.translation.item_reader import item_is_caption_like
 
 
 TERMINAL_PUNCTUATION = (".", "!", "?", ":", ";")
@@ -73,6 +74,7 @@ SUSPICIOUS_END_WORDS = {
     "will",
     "shall",
 }
+UNESCAPED_INLINE_DOLLAR_RE = re.compile(r"(?<!\\)\$")
 
 
 def normalize_text(text: str) -> str:
@@ -125,6 +127,14 @@ def last_token_is_suspicious(text: str) -> bool:
     return last_word(text) in SUSPICIOUS_END_WORDS
 
 
+def inline_math_delimiter_balance(text: str) -> int:
+    return len(UNESCAPED_INLINE_DOLLAR_RE.findall(normalize_text(text)))
+
+
+def has_balanced_inline_math_delimiters(text: str) -> bool:
+    return inline_math_delimiter_balance(text) % 2 == 0
+
+
 def bbox(item: dict) -> list[float]:
     item_bbox = item.get("bbox", [])
     return item_bbox if len(item_bbox) == 4 else []
@@ -147,7 +157,12 @@ def same_page(a: dict, b: dict) -> bool:
 
 
 def eligible(item: dict) -> bool:
-    return item_block_kind(item) == "text" and bool(normalize_text(item.get("protected_source_text", "")))
+    return (
+        item_block_kind(item) == "text"
+        and not item_is_caption_like(item)
+        and has_balanced_inline_math_delimiters(item.get("protected_source_text", ""))
+        and bool(normalize_text(item.get("protected_source_text", "")))
+    )
 
 
 def same_column(prev_bbox: list[float], next_bbox: list[float]) -> bool:

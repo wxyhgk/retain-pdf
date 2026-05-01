@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 
 TRANSLATED_TEXT_FIELDS = (
@@ -11,6 +12,7 @@ TRANSLATED_TEXT_FIELDS = (
     "group_protected_translated_text",
     "group_translated_text",
 )
+UNESCAPED_INLINE_DOLLAR_RE = re.compile(r"(?<!\\)\$")
 REQUIRED_CONTRACT_FIELDS = (
     "block_kind",
     "layout_role",
@@ -48,6 +50,10 @@ def unwrap_json_translated_text(text: str) -> tuple[str, str] | None:
     return decision, translated_text
 
 
+def has_balanced_inline_math_delimiters(text: str) -> bool:
+    return len(UNESCAPED_INLINE_DOLLAR_RE.findall(text or "")) % 2 == 0
+
+
 def sanitize_loaded_translation_record(record: dict) -> bool:
     changed = False
     for field in TRANSLATED_TEXT_FIELDS:
@@ -58,6 +64,22 @@ def sanitize_loaded_translation_record(record: dict) -> bool:
         decision, translated_text = unwrapped
         record[field] = "" if decision == "keep_origin" else translated_text
         changed = True
+    if str(record.get("math_mode", "") or "").strip() == "direct_typst":
+        translated_text = str(
+            record.get("translation_unit_protected_translated_text")
+            or record.get("group_protected_translated_text")
+            or record.get("protected_translated_text")
+            or record.get("translated_text")
+            or ""
+        ).strip()
+        if translated_text and not has_balanced_inline_math_delimiters(translated_text):
+            for field in TRANSLATED_TEXT_FIELDS:
+                if record.get(field):
+                    record[field] = ""
+                    changed = True
+            if record.get("final_status"):
+                record["final_status"] = ""
+                changed = True
     return changed
 
 

@@ -14,7 +14,11 @@ from services.translation.item_reader import item_semantic_role
 
 MIN_FONT_SIZE_PT = 8.4
 MAX_FONT_SIZE_PT = 11.6
+MAX_LOCAL_FONT_SIZE_PT = 14.2
 ZH_FONT_SCALE = 0.91
+LINE_HEIGHT_TO_FONT_SCALE = 0.98
+LINE_PITCH_TO_FONT_SCALE = 0.82
+LOOSE_LINE_PITCH_RATIO = 1.35
 PAGE_BASELINE_PERCENTILE = 0.42
 MIN_TEXT_LINE_PITCH_PT = 10.8
 APPROX_TEXT_CHAR_WIDTH_PT = 5.2
@@ -70,6 +74,23 @@ def median_line_pitch(item: dict) -> float:
     diffs = [centers[i + 1] - centers[i] for i in range(len(centers) - 1)]
     diffs = [diff for diff in diffs if diff > 0]
     return median(diffs) if diffs else 0.0
+
+
+def local_glyph_height(item: dict) -> float:
+    height = median_line_height(item)
+    return height if height > 0 else 0.0
+
+
+def local_font_metric(item: dict) -> float:
+    glyph_height = local_glyph_height(item)
+    pitch = median_line_pitch(item)
+    if glyph_height > 0:
+        if pitch > 0 and pitch / glyph_height >= LOOSE_LINE_PITCH_RATIO:
+            return glyph_height * LINE_HEIGHT_TO_FONT_SCALE
+        return glyph_height * LINE_HEIGHT_TO_FONT_SCALE
+    if pitch > 0:
+        return pitch * LINE_PITCH_TO_FONT_SCALE
+    return 0.0
 
 
 def percentile_value(values: list[float], q: float) -> float:
@@ -328,14 +349,18 @@ def page_baseline_font_size(items: list[dict]) -> tuple[float, float, float, flo
     line_pitches = [pitch for pitch in line_pitches if pitch > 0]
     line_heights = [median_line_height(item) for item in candidates]
     line_heights = [height for height in line_heights if height > 0]
+    font_metrics = [local_font_metric(item) for item in candidates]
+    font_metrics = [metric for metric in font_metrics if metric > 0]
     baseline_line_pitch = percentile_value(line_pitches, PAGE_BASELINE_PERCENTILE) if line_pitches else 0.0
     baseline_line_height = percentile_value(line_heights, PAGE_BASELINE_PERCENTILE) if line_heights else 0.0
-    metric = baseline_line_pitch or baseline_line_height
+    metric = percentile_value(font_metrics, PAGE_BASELINE_PERCENTILE) if font_metrics else 0.0
+    if metric <= 0:
+        metric = (baseline_line_height * LINE_HEIGHT_TO_FONT_SCALE) if baseline_line_height > 0 else baseline_line_pitch * LINE_PITCH_TO_FONT_SCALE
     if metric <= 0:
         return fonts.DEFAULT_FONT_SIZE, 0.0, 0.0, 0.0
     page_font_size = max(
         MIN_FONT_SIZE_PT,
-        min(MAX_FONT_SIZE_PT, metric * ZH_FONT_SCALE),
+        min(MAX_LOCAL_FONT_SIZE_PT, metric * layout.BODY_FONT_SIZE_FACTOR),
     )
     chars_per_line = [plain_text_chars_per_line(item) for item in candidates]
     chars_per_line = [value for value in chars_per_line if value > 0]

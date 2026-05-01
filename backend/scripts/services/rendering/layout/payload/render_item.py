@@ -5,6 +5,7 @@ import re
 
 from services.rendering.layout.payload.text_common import get_render_formula_map
 from services.rendering.layout.payload.text_common import same_meaningful_render_text
+from services.rendering.core.render_text import should_skip_display_math_render
 
 MATH_SOURCE_RE = re.compile(r"\$[^$]+\$|\\(?:begin|end|frac|lim|sum|int|mathrm|left|right|cdot|epsilon|forall|in)\b")
 
@@ -17,8 +18,16 @@ def render_translation_unit_id(item: dict) -> str:
     return str(item.get("translation_unit_id", "") or "")
 
 
+def render_continuation_group_id(item: dict) -> str:
+    return str(item.get("continuation_group") or item.get("continuation_group_id") or "")
+
+
+def _render_should_use_unit_translation(item: dict) -> bool:
+    return render_unit_kind(item) == "group" or bool(render_continuation_group_id(item))
+
+
 def render_protected_translation_text(item: dict) -> str:
-    if render_unit_kind(item) != "group":
+    if not _render_should_use_unit_translation(item):
         text = (
             item.get("protected_translated_text")
             or item.get("translated_text")
@@ -46,6 +55,8 @@ def should_render_source_when_untranslated(item: dict) -> bool:
 
 
 def should_render_source_block(item: dict) -> bool:
+    if should_skip_display_math_render(item):
+        return False
     source_text = render_protected_source_text(item)
     if not source_text:
         return False
@@ -79,6 +90,10 @@ def render_protected_source_text(item: dict) -> str:
 
 
 def seed_render_fields(item: dict) -> None:
+    if should_skip_display_math_render(item):
+        clear_render_fields(item)
+        item["render_source_text"] = render_protected_source_text(item)
+        return
     render_text = render_protected_translation_text(item)
     source_text = render_protected_source_text(item)
     if not render_text and should_render_source_block(item):
@@ -95,8 +110,8 @@ def seed_render_fields(item: dict) -> None:
 def group_render_unit_items(items: Iterable[dict]) -> dict[str, list[dict]]:
     units: dict[str, list[dict]] = {}
     for item in items:
-        unit_id = render_translation_unit_id(item)
-        if render_unit_kind(item) == "group" and unit_id:
+        unit_id = render_continuation_group_id(item) or render_translation_unit_id(item)
+        if _render_should_use_unit_translation(item) and unit_id:
             units.setdefault(unit_id, []).append(item)
     return units
 
@@ -114,13 +129,13 @@ def group_unit_formula_map(items: list[dict]) -> list[dict]:
 def group_unit_protected_text(items: list[dict]) -> str:
     if not items:
         return ""
-    return render_protected_translation_text(items[0])
+    return max((render_protected_translation_text(item) for item in items), key=len, default="")
 
 
 def group_unit_source_text(items: list[dict]) -> str:
     if not items:
         return ""
-    return render_protected_source_text(items[0])
+    return max((render_protected_source_text(item) for item in items), key=len, default="")
 
 
 def clear_render_fields(item: dict) -> None:

@@ -815,7 +815,7 @@ def test_prepare_render_payloads_preserves_direct_typst_formula_at_group_boundar
     assert sum("$\\mathrm{Ph(i-PrO)SiH_2}$" in chunk for chunk in chunks) == 1
 
 
-def test_build_render_blocks_keeps_skip_origin_formula_blocks() -> None:
+def test_build_render_blocks_skips_display_formula_blocks() -> None:
     items = [
         {
             "item_id": "p005-b004",
@@ -842,6 +842,121 @@ def test_build_render_blocks_keeps_skip_origin_formula_blocks() -> None:
 
     blocks = build_render_blocks(items, page_width=362.8349914550781, page_height=272.1260070800781)
 
-    assert len(blocks) == 1
-    assert blocks[0].plain_text
-    assert "Y_i(0)" in blocks[0].markdown_text or "\\lim" not in blocks[0].markdown_text
+    assert blocks == []
+
+
+def test_build_render_blocks_skips_keep_origin_display_math_text_blocks() -> None:
+    items = [
+        {
+            "item_id": "p005-b004",
+            "page_idx": 4,
+            "bbox": [25.988, 94.87, 352.34, 133.75],
+            "block_type": "text",
+            "block_kind": "text",
+            "normalized_sub_type": "body",
+            "source_text": "$$ \\lim_{\\epsilon\\to0^+} f(x) $$ $$ \\lim_{\\epsilon\\to0^+} g(x) $$",
+            "protected_source_text": "$$ \\lim_{\\epsilon\\to0^+} f(x) $$ $$ \\lim_{\\epsilon\\to0^+} g(x) $$",
+            "translated_text": "",
+            "protected_translated_text": "",
+            "should_translate": False,
+            "classification_label": "skip_model_keep_origin",
+            "skip_reason": "skip_model_keep_origin",
+            "math_mode": "direct_typst",
+            "formula_map": [],
+            "translation_unit_kind": "single",
+            "translation_unit_protected_source_text": "$$ \\lim_{\\epsilon\\to0^+} f(x) $$ $$ \\lim_{\\epsilon\\to0^+} g(x) $$",
+            "translation_unit_protected_translated_text": "",
+            "translation_unit_formula_map": [],
+        }
+    ]
+
+    blocks = build_render_blocks(items, page_width=362.8349914550781, page_height=272.1260070800781)
+
+    assert blocks == []
+
+
+def test_continuation_group_member_prefers_unit_translation_for_rendering() -> None:
+    from services.rendering.layout.payload.render_item import render_protected_translation_text
+
+    item = {
+        "translation_unit_kind": "single",
+        "continuation_group": "cg-002-004",
+        "protected_translated_text": "$来表征，所有这些量均可通过拟合不同温度及$Q_{0}$值下的激发谱获得。",
+        "translated_text": "$来表征，所有这些量均可通过拟合不同温度及$Q_{0}$值下的激发谱获得。",
+        "translation_unit_protected_translated_text": (
+            "激发谱的每个模式$i$可通过其色散关系$\\omega^i(\\mathbf{Q})$、"
+            "寿命$\\tau_{\\mathrm{SW}}^i$以及强度$I_0$来表征，所有这些量均可通过拟合不同温度及$Q_{0}$值下的激发谱获得。"
+            "假设磁激发具有洛伦兹线型，则散射函数可写为"
+        ),
+        "translation_unit_translated_text": (
+            "激发谱的每个模式$i$可通过其色散关系$\\omega^i(\\mathbf{Q})$、"
+            "寿命$\\tau_{\\mathrm{SW}}^i$以及强度$I_0$来表征，所有这些量均可通过拟合不同温度及$Q_{0}$值下的激发谱获得。"
+            "假设磁激发具有洛伦兹线型，则散射函数可写为"
+        ),
+    }
+
+    assert render_protected_translation_text(item).startswith("激发谱的每个模式")
+
+
+def test_prepare_render_payloads_splits_single_kind_continuation_group_members() -> None:
+    translated_pages = {
+        1: [
+            {
+                "item_id": "p002-b011",
+                "page_idx": 1,
+                "bbox": [300, 520, 560, 575],
+                "block_type": "text",
+                "math_mode": "direct_typst",
+                "translation_unit_id": "p003-b005",
+                "translation_unit_kind": "single",
+                "continuation_group": "cg-002-004",
+                "protected_source_text": "Each mode $i$ of the excitation spectrum can be characterized by its dispersion relation.",
+                "translation_unit_protected_source_text": (
+                    "Each mode $i$ of the excitation spectrum can be characterized by its dispersion relation. "
+                    "accessible by fitting the excitation spectrum."
+                ),
+                "translation_unit_protected_translated_text": (
+                    "激发谱的每个模式$i$可通过其色散关系$\\omega^i(\\mathbf{Q})$、寿命$\\tau_{\\mathrm{SW}}^i$"
+                    "以及强度$I_0$来表征，所有这些量均可通过拟合不同温度及$Q_{0}$值下的激发谱获得。"
+                    "假设磁激发具有洛伦兹线型，则散射函数可写为"
+                ),
+                "protected_translated_text": "局部旧文本",
+                "translation_unit_formula_map": [],
+            }
+        ],
+        2: [
+            {
+                "item_id": "p003-b005",
+                "page_idx": 2,
+                "bbox": [40, 80, 300, 135],
+                "block_type": "text",
+                "math_mode": "direct_typst",
+                "translation_unit_id": "p003-b005",
+                "translation_unit_kind": "single",
+                "continuation_group": "cg-002-004",
+                "protected_source_text": "accessible by fitting the excitation spectrum.",
+                "translation_unit_protected_source_text": (
+                    "Each mode $i$ of the excitation spectrum can be characterized by its dispersion relation. "
+                    "accessible by fitting the excitation spectrum."
+                ),
+                "translation_unit_protected_translated_text": (
+                    "激发谱的每个模式$i$可通过其色散关系$\\omega^i(\\mathbf{Q})$、寿命$\\tau_{\\mathrm{SW}}^i$"
+                    "以及强度$I_0$来表征，所有这些量均可通过拟合不同温度及$Q_{0}$值下的激发谱获得。"
+                    "假设磁激发具有洛伦兹线型，则散射函数可写为"
+                ),
+                "protected_translated_text": "$来表征，所有这些量均可通过拟合不同温度及$Q_{0}$值下的激发谱获得。",
+                "translation_unit_formula_map": [],
+            }
+        ],
+    }
+
+    prepared = prepare_render_payloads_by_page(translated_pages)
+    first = prepared[1][0]["render_protected_text"]
+    second = prepared[2][0]["render_protected_text"]
+
+    assert first
+    assert second
+    assert first != second
+    assert first + second != first
+    assert "激发谱的每个模式" in first
+    assert not second.startswith("$来表征")

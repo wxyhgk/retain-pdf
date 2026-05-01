@@ -5,6 +5,8 @@ from services.rendering.layout.typography.measurement import bbox_width
 from services.rendering.layout.typography.measurement import effective_text_height
 from services.rendering.layout.typography.measurement import formula_ratio
 from services.rendering.layout.typography.measurement import local_line_pitch
+from services.rendering.layout.typography.measurement import local_font_metric
+from services.rendering.layout.typography.measurement import local_glyph_height
 from services.rendering.layout.typography.measurement import median_line_height
 from services.rendering.layout.typography.measurement import median_line_pitch
 from services.rendering.layout.typography.measurement import occupied_ratio

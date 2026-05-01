@@ -151,6 +151,43 @@ def test_apply_standard_redaction_uses_bbox_for_continuation_items(monkeypatch) 
     assert page.redact_annots == [(rect, None)]
 
 
+def test_apply_standard_redaction_uses_visual_cover_for_complex_inline_math(monkeypatch) -> None:
+    page = _FakePage()
+    rect = fitz.Rect(10, 10, 160, 46)
+    item = {
+        "item_id": "p003-b004",
+        "source_text": r"signal $\sqrt{x_i}$ remains stable",
+        "translated_text": r"信号 $\sqrt{x_i}$ 保持稳定",
+    }
+    valid_items = [(rect, item, item["translated_text"])]
+    covered_rects: list[fitz.Rect] = []
+    removable_calls = 0
+
+    def _unexpected_removable_call(_page, _item, _rect):
+        nonlocal removable_calls
+        removable_calls += 1
+        return [fitz.Rect(12, 12, 80, 30)]
+
+    monkeypatch.setattr(redaction_routes, "collect_page_drawing_rects", lambda _page: [])
+    monkeypatch.setattr(redaction_routes, "page_should_use_cover_only", lambda _rects: False)
+    monkeypatch.setattr(redaction_routes, "item_removable_text_rects", _unexpected_removable_call)
+    monkeypatch.setattr(
+        redaction_routes,
+        "draw_white_covers",
+        lambda _page, rects: covered_rects.extend(rects),
+    )
+
+    diagnostics = redaction_routes.apply_standard_redaction(page, valid_items)
+
+    assert diagnostics["route"] == "standard_redaction"
+    assert diagnostics["item_fast_cover_count"] == 1
+    assert diagnostics["cover_rects"] == 1
+    assert covered_rects == [rect]
+    assert removable_calls == 0
+    assert page.redact_annots == []
+    assert page.redaction_calls == []
+
+
 def test_apply_standard_redaction_uses_bbox_for_non_continuation_items(monkeypatch) -> None:
     page = _FakePage()
     rect = fitz.Rect(314, 296, 560, 451)

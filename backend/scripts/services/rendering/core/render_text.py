@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 
 MATH_SOURCE_RE = re.compile(r"\$[^$]+\$|\\(?:begin|end|frac|lim|sum|int|mathrm|left|right|cdot|epsilon|forall|in)\b")
+DISPLAY_MATH_RE = re.compile(r"^\s*\$\$[\s\S]+?\$\$\s*(?:\$\$[\s\S]+?\$\$\s*)*$")
 
 
 def _protected_map_from_formula_map(formula_map: list[dict]) -> list[dict]:
@@ -49,6 +50,11 @@ def _render_protected_map(item: dict) -> list[dict]:
     return _protected_map_from_formula_map(protected_map if isinstance(protected_map, list) else [])
 
 
+def _should_use_unit_translation(item: dict) -> bool:
+    unit_kind = str(item.get("translation_unit_kind", "") or "").strip().lower()
+    return unit_kind == "group" or bool(item.get("continuation_group") or item.get("continuation_group_id"))
+
+
 def restore_render_protected_text(text: str, item: dict) -> str:
     current = str(text or "").strip()
     if not current or not _has_protected_token(current):
@@ -58,10 +64,11 @@ def restore_render_protected_text(text: str, item: dict) -> str:
 
 
 def get_render_protected_text(item: dict) -> str:
+    if should_skip_display_math_render(item):
+        return ""
     if "render_protected_text" in item:
         return restore_render_protected_text(str(item.get("render_protected_text", "") or "").strip(), item)
-    unit_kind = str(item.get("translation_unit_kind", "") or "").strip().lower()
-    if unit_kind != "group":
+    if not _should_use_unit_translation(item):
         translated = str(
             item.get("protected_translated_text")
             or item.get("translated_text")
@@ -117,7 +124,25 @@ def _should_render_source_when_untranslated(item: dict) -> bool:
     return _should_render_source_block(item)
 
 
+def should_skip_display_math_render(item: dict) -> bool:
+    if item.get("should_translate", True):
+        return False
+    source_text = _render_source_text(item)
+    if not source_text:
+        return False
+    block_kind = str(item.get("block_kind", item.get("block_type", "")) or "").strip().lower()
+    sub_type = str(item.get("normalized_sub_type", "") or "").strip().lower()
+    skip_reason = str(item.get("skip_reason", "") or item.get("classification_label", "") or "").strip().lower()
+    if block_kind == "formula" or sub_type == "display_formula":
+        return True
+    if skip_reason in {"skip_display_formula", "skip_model_keep_origin"} and DISPLAY_MATH_RE.fullmatch(source_text):
+        return True
+    return False
+
+
 def _should_render_source_block(item: dict) -> bool:
+    if should_skip_display_math_render(item):
+        return False
     source_text = _render_source_text(item)
     if not source_text:
         return False

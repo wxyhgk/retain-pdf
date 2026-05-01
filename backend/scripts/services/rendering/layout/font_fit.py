@@ -11,6 +11,7 @@ from services.rendering.layout.typography.measurement import candidate_text_item
 from services.rendering.layout.typography.measurement import clamp
 from services.rendering.layout.typography.measurement import effective_text_height
 from services.rendering.layout.typography.measurement import formula_ratio
+from services.rendering.layout.typography.measurement import local_font_metric
 from services.rendering.layout.typography.measurement import local_line_pitch
 from services.rendering.layout.typography.measurement import median_line_height
 from services.rendering.layout.typography.measurement import median_line_pitch
@@ -34,6 +35,7 @@ from services.translation.item_reader import item_semantic_role
 
 MIN_FONT_SIZE_PT = 8.4
 MAX_FONT_SIZE_PT = 11.6
+MAX_LOCAL_FONT_SIZE_PT = 14.2
 TITLE_FILL_MAX_FONT_SIZE_PT = 72.0
 TITLE_FILL_HEIGHT_TO_FONT_RATIO = 0.92
 TITLE_FILL_GROW_SCALE = 2.6
@@ -101,13 +103,13 @@ def _is_local_textual_item(item: dict) -> bool:
 def local_font_size_pt(item: dict) -> float:
     if not _is_local_textual_item(item):
         return fonts.DEFAULT_FONT_SIZE
-    metric = local_line_pitch(item) or median_line_height(item)
+    metric = local_font_metric(item)
     if metric <= 0:
         return fonts.DEFAULT_FONT_SIZE
-    base_size = metric * ZH_FONT_SCALE * layout.BODY_FONT_SIZE_FACTOR
+    base_size = metric * layout.BODY_FONT_SIZE_FACTOR
     if _is_caption_like(item):
         return round(clamp(base_size * CAPTION_FONT_SCALE, MIN_FONT_SIZE_PT, CAPTION_MAX_FONT_SIZE_PT), 2)
-    return round(clamp(base_size, MIN_FONT_SIZE_PT, MAX_FONT_SIZE_PT), 2)
+    return round(clamp(base_size, MIN_FONT_SIZE_PT, MAX_LOCAL_FONT_SIZE_PT), 2)
 
 
 def is_body_text_candidate(item: dict, page_text_width_med: float) -> bool:
@@ -243,7 +245,7 @@ def estimate_font_size_pt(
         blended *= 1.0 - min(compact_scale_max, compactness * 0.055)
     if _is_caption_like(item):
         blended = min(blended * CAPTION_FONT_SCALE, CAPTION_MAX_FONT_SIZE_PT)
-    return round(clamp(blended, MIN_FONT_SIZE_PT, MAX_FONT_SIZE_PT), 2)
+    return round(clamp(blended, MIN_FONT_SIZE_PT, MAX_LOCAL_FONT_SIZE_PT), 2)
 
 
 def estimate_leading_em(item: dict, page_line_pitch: float, font_size_pt: float) -> float:

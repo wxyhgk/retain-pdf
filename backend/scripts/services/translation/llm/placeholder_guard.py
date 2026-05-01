@@ -23,6 +23,7 @@ FORMAL_PLACEHOLDER_RE = re.compile(r"<f\d+-[0-9a-z]{3}/>|<t\d+-[0-9a-z]{3}/>|\[\
 ALIAS_PLACEHOLDER_RE = re.compile(r"@@P\d+@@")
 PLACEHOLDER_RE = re.compile(rf"{PROTECTED_TOKEN_RE.pattern}|@@P\d+@@")
 FORMULA_TOKEN_RE = re.compile(r"<f\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]|@@P\d+@@")
+UNESCAPED_INLINE_DOLLAR_RE = re.compile(r"(?<!\\)\$")
 EN_WORD_RE = re.compile(r"[A-Za-z]+(?:[-'][A-Za-z]+)?")
 KEEP_ORIGIN_LABEL = "keep_origin"
 INTERNAL_PLACEHOLDER_DEGRADED_REASON = "placeholder_unstable"
@@ -177,6 +178,10 @@ def placeholders(text: str) -> set[str]:
 
 def placeholder_sequence(text: str) -> list[str]:
     return PLACEHOLDER_RE.findall(text or "")
+
+
+def has_balanced_inline_math_delimiters(text: str) -> bool:
+    return len(UNESCAPED_INLINE_DOLLAR_RE.findall(text or "")) % 2 == 0
 
 
 def repair_safe_duplicate_placeholders(source_text: str, translated_text: str) -> str | None:
@@ -681,6 +686,21 @@ def validate_batch_result(
                     retryable=True,
                 )
             raise EmptyTranslationError(item_id)
+        if is_direct_math_mode(item) and not has_balanced_inline_math_delimiters(translated_text):
+            if diagnostics is not None:
+                diagnostics.emit(
+                    kind="math_delimiter_unbalanced",
+                    item_id=item_id,
+                    page_idx=item.get("page_idx"),
+                    severity="error",
+                    message="Translated output has unbalanced inline math delimiters",
+                    retryable=True,
+                )
+            raise TranslationProtocolError(
+                item_id,
+                source_text=source_text,
+                translated_text=translated_text,
+            )
         if looks_like_protocol_shell_output(translated_text):
             if diagnostics is not None:
                 diagnostics.emit(
