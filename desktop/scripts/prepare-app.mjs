@@ -270,9 +270,9 @@ function resolveGitVersion() {
 }
 
 const releaseVersion = (process.env.RETAIN_PDF_VERSION || "").trim()
+  || (desktopPackage.version || "").trim()
   || resolveGitVersion()
-  || (fs.existsSync(versionFile) ? fs.readFileSync(versionFile, "utf8").trim() : "")
-  || (desktopPackage.version || "").trim();
+  || (fs.existsSync(versionFile) ? fs.readFileSync(versionFile, "utf8").trim() : "");
 
 if (!releaseVersion) {
   throw new Error(
