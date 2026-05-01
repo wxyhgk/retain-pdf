@@ -471,11 +471,16 @@ jobs:
           framework_version_root="$framework_root/Versions/$framework_version"
           framework_bundle_framework_root="$bundle_root/Frameworks/$framework_python.framework"
           framework_bundle_root="$framework_bundle_framework_root/Versions/$framework_version"
+          framework_launcher_dep="@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/$framework_python"
+          framework_bundle_lib_prefix="@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/lib"
           framework_binary_name="$framework_python"
           bundle_python3="$bundle_root/bin/python3"
           bundle_python="$bundle_root/bin/python"
           bundle_python_versioned="$bundle_root/bin/python$framework_version"
           bundle_python_app="$framework_bundle_root/Resources/Python.app/Contents/MacOS/Python"
+          loader_path_to() {
+            python3 -c 'import os, sys; loader, target = sys.argv[1:3]; rel = os.path.relpath(target, os.path.dirname(loader)); print("@loader_path/" + rel)' "$1" "$2"
+          }
           echo "Using Python executable: $python_executable"
           rm -rf "$bundle_root"
           python3 -m venv --copies "$bundle_root"
@@ -500,18 +505,18 @@ jobs:
           fi
           install_name_tool \
             -change "$framework_version_root/$framework_binary_name" \
-            "@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/$framework_binary_name" \
+            "$framework_launcher_dep" \
             "$bundle_python3"
           if [ -e "$bundle_python" ]; then
             install_name_tool \
               -change "$framework_version_root/$framework_binary_name" \
-              "@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/$framework_binary_name" \
+              "$framework_launcher_dep" \
               "$bundle_python"
           fi
           if [ -e "$bundle_python_versioned" ]; then
             install_name_tool \
               -change "$framework_version_root/$framework_binary_name" \
-              "@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/$framework_binary_name" \
+              "$framework_launcher_dep" \
               "$bundle_python_versioned"
           fi
           while IFS= read -r framework_bin; do
@@ -519,6 +524,9 @@ jobs:
               continue
             fi
             case "$framework_bin" in
+              "$bundle_python_app")
+                continue
+                ;;
               *.a|*.o)
                 continue
                 ;;
@@ -526,18 +534,32 @@ jobs:
             if ! file "$framework_bin" | grep -q 'Mach-O'; then
               continue
             fi
-            install_name_tool \
-              -change "$framework_version_root/$framework_binary_name" \
-              "@executable_path/../Python" \
-              "$framework_bin"
+            case "$framework_bin" in
+              "$framework_bundle_root/lib/"*.dylib)
+                install_name_tool \
+                  -id "$framework_bundle_lib_prefix/$(basename "$framework_bin")" \
+                  "$framework_bin"
+                ;;
+            esac
+            while IFS= read -r dep; do
+              case "$dep" in
+                "$framework_version_root/"*)
+                  bundled_dep="$framework_bundle_root/${dep#"$framework_version_root/"}"
+                  install_name_tool \
+                    -change "$dep" \
+                    "$(loader_path_to "$framework_bin" "$bundled_dep")" \
+                    "$framework_bin"
+                  ;;
+              esac
+            done < <(otool -L "$framework_bin" | tail -n +2 | awk '{print $1}')
           done < <(find "$framework_bundle_root" -type f -perm -111 -print)
           install_name_tool \
-            -id "@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/$framework_binary_name" \
+            -id "$framework_launcher_dep" \
             "$framework_bundle_root/$framework_binary_name"
           if [ -e "$bundle_python_app" ]; then
             install_name_tool \
-              -change "$framework_version_root/$framework_binary_name" \
-              "@executable_path/../../../../$framework_binary_name" \
+              -change "@executable_path/../Python" \
+              "$(loader_path_to "$bundle_python_app" "$framework_bundle_root/$framework_binary_name")" \
               "$bundle_python_app"
             codesign --force --sign - "$bundle_python_app"
           fi
@@ -664,6 +686,10 @@ jobs:
           if [ -e "$python_app_bin" ]; then
             echo "checking Python.app launcher dependencies: $python_app_bin"
             otool -L "$python_app_bin"
+            if otool -L "$python_app_bin" | grep -Fq '@executable_path/../Python'; then
+              echo "Packaged Python.app launcher still has an invalid self-relative dependency: $python_app_bin" >&2
+              exit 1
+            fi
             if otool -L "$python_app_bin" | grep -q '/Library/Frameworks/Python.framework'; then
               echo "Packaged Python.app launcher still references system Python.framework: $python_app_bin" >&2
               exit 1
