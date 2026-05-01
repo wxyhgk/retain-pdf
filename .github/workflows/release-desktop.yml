@@ -474,6 +474,7 @@ jobs:
           framework_binary_name="$framework_python"
           bundle_python3="$bundle_root/bin/python3"
           bundle_python="$bundle_root/bin/python"
+          bundle_python_versioned="$bundle_root/bin/python$framework_version"
           bundle_python_app="$framework_bundle_root/Resources/Python.app/Contents/MacOS/Python"
           echo "Using Python executable: $python_executable"
           rm -rf "$bundle_root"
@@ -507,6 +508,12 @@ jobs:
               "@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/$framework_binary_name" \
               "$bundle_python"
           fi
+          if [ -e "$bundle_python_versioned" ]; then
+            install_name_tool \
+              -change "$framework_version_root/$framework_binary_name" \
+              "@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/$framework_binary_name" \
+              "$bundle_python_versioned"
+          fi
           install_name_tool \
             -id "@executable_path/../Frameworks/$framework_python.framework/Versions/$framework_version/$framework_binary_name" \
             "$framework_bundle_root/$framework_binary_name"
@@ -522,6 +529,9 @@ jobs:
           if [ -e "$bundle_python" ]; then
             codesign --force --sign - "$bundle_python"
           fi
+          if [ -e "$bundle_python_versioned" ]; then
+            codesign --force --sign - "$bundle_python_versioned"
+          fi
           export CPPFLAGS="-I$qpdf_prefix/include ${CPPFLAGS:-}"
           export LDFLAGS="-L$qpdf_prefix/lib ${LDFLAGS:-}"
           export PKG_CONFIG_PATH="$qpdf_prefix/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
@@ -532,6 +542,9 @@ jobs:
           print("python_bundle_import_check=ok")
           PY
           otool -L "$bundle_python3"
+          if [ -e "$bundle_python_versioned" ]; then
+            otool -L "$bundle_python_versioned"
+          fi
           if [ -e "$bundle_python_app" ]; then
             otool -L "$bundle_python_app"
           fi
