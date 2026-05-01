@@ -515,7 +515,10 @@ jobs:
               "$bundle_python_versioned"
           fi
           while IFS= read -r framework_bin; do
-            if [ ! -f "$framework_bin" ] || ! file "$framework_bin" | grep -q 'Mach-O'; then
+            if [ ! -f "$framework_bin" ]; then
+              continue
+            fi
+            if ! file "$framework_bin" | grep -q 'Mach-O'; then
               continue
             fi
             install_name_tool \
@@ -542,7 +545,10 @@ jobs:
             codesign --force --sign - "$bundle_python_versioned"
           fi
           while IFS= read -r framework_bin; do
-            if [ ! -f "$framework_bin" ] || ! file "$framework_bin" | grep -q 'Mach-O'; then
+            if [ ! -f "$framework_bin" ]; then
+              continue
+            fi
+            if ! file "$framework_bin" | grep -q 'Mach-O'; then
               continue
             fi
             codesign --force --sign - "$framework_bin"
@@ -561,7 +567,10 @@ jobs:
             otool -L "$bundle_python_versioned"
           fi
           while IFS= read -r framework_bin; do
-            if [ ! -f "$framework_bin" ] || ! file "$framework_bin" | grep -q 'Mach-O'; then
+            if [ ! -f "$framework_bin" ]; then
+              continue
+            fi
+            if ! file "$framework_bin" | grep -q 'Mach-O'; then
               continue
             fi
             otool -L "$framework_bin"
