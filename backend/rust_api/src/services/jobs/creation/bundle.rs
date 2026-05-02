@@ -34,6 +34,7 @@ async fn build_translation_bundle_artifact_with_resources(
         ctx.submit.uploads.uploads_dir,
         ctx.submit.uploads.upload_max_bytes,
         ctx.submit.uploads.upload_max_pages,
+        ctx.submit.uploads.python_bin,
         upload,
     )
     .await?;

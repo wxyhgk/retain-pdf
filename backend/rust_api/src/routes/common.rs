@@ -16,6 +16,7 @@ pub struct UploadRouteDeps<'a> {
     pub uploads_dir: &'a Path,
     pub upload_max_bytes: u64,
     pub upload_max_pages: u32,
+    pub python_bin: &'a str,
 }
 
 pub fn build_upload_route_deps(state: &AppState) -> UploadRouteDeps<'_> {
@@ -24,6 +25,7 @@ pub fn build_upload_route_deps(state: &AppState) -> UploadRouteDeps<'_> {
         uploads_dir: &state.config.uploads_dir,
         upload_max_bytes: state.config.upload_max_bytes,
         upload_max_pages: state.config.upload_max_pages,
+        python_bin: &state.config.python_bin,
     }
 }
 

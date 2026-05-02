@@ -85,6 +85,7 @@ fn submit_context<'a>(state: &'a AppState) -> JobSubmitDeps<'a> {
             &state.config.uploads_dir,
             state.config.upload_max_bytes,
             state.config.upload_max_pages,
+            &state.config.python_bin,
         ),
         JobLaunchDeps::new(
             state.db.as_ref(),
@@ -143,6 +144,36 @@ fn build_test_pdf_bytes() -> Vec<u8> {
     doc.compress();
     doc.save(&path).expect("save test pdf");
     std::fs::read(path).expect("read test pdf")
+}
+
+fn build_pdf_with_bad_xref_bytes() -> Vec<u8> {
+    let mut bytes = build_test_pdf_bytes();
+    let marker = b"startxref\n";
+    let startxref_pos = bytes
+        .windows(marker.len())
+        .rposition(|window| window == marker)
+        .expect("startxref marker");
+    let value_start = startxref_pos + marker.len();
+    let value_end = value_start
+        + bytes[value_start..]
+            .iter()
+            .position(|byte| *byte == b'\n')
+            .expect("startxref newline");
+    let original_startxref = std::str::from_utf8(&bytes[value_start..value_end])
+        .expect("utf8 startxref")
+        .trim()
+        .parse::<usize>()
+        .expect("parse startxref");
+    let replacement = format!(
+        "{:0width$}",
+        original_startxref.saturating_sub(4),
+        width = value_end - value_start
+    );
+    bytes.splice(value_start..value_end, replacement.bytes());
+    if bytes.ends_with(b"%%EOF\n") {
+        bytes.truncate(bytes.len() - 2);
+    }
+    bytes
 }
 
 fn base_translation_input(workflow: WorkflowKind) -> CreateJobInput {
@@ -221,6 +252,7 @@ async fn store_pdf_upload_rejects_non_pdf_filename() {
         &state.config.uploads_dir,
         0,
         0,
+        &state.config.python_bin,
         UploadedPdfInput {
             filename: "notes.txt".to_string(),
             bytes: b"not a pdf".to_vec(),
@@ -235,6 +267,29 @@ async fn store_pdf_upload_rejects_non_pdf_filename() {
         }
         other => panic!("unexpected error: {other:?}"),
     }
+}
+
+#[tokio::test]
+async fn store_pdf_upload_repairs_bad_xref_pdf() {
+    let state = test_state("store-upload-repair-bad-xref");
+    let upload = store_pdf_upload(
+        state.db.as_ref(),
+        &state.config.uploads_dir,
+        0,
+        0,
+        &state.config.python_bin,
+        UploadedPdfInput {
+            filename: "bad-xref.pdf".to_string(),
+            bytes: build_pdf_with_bad_xref_bytes(),
+            developer_mode: false,
+        },
+    )
+    .await
+    .expect("bad xref pdf should be repaired");
+
+    assert_eq!(upload.page_count, 1);
+    let repaired_doc = Document::load(&upload.stored_path).expect("repaired pdf is valid");
+    assert_eq!(repaired_doc.get_pages().len(), 1);
 }
 
 #[test]

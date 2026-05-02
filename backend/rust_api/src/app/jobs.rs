@@ -35,6 +35,7 @@ pub fn build_jobs_facade_from_state(state: &AppState) -> JobsFacade<'_> {
         &state.config.uploads_dir,
         state.config.upload_max_bytes,
         state.config.upload_max_pages,
+        &state.config.python_bin,
     );
     let submit = JobSubmitDeps::new(snapshot, uploads, launcher);
     let control = ControlDeps::new(
