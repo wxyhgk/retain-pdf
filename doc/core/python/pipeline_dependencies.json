@@ -1,0 +1,235 @@
+{
+  "repo_root": "/home/wxyhgk/tmp/Code",
+  "scripts_root": "/home/wxyhgk/tmp/Code/backend/scripts",
+  "runtime_python_packages": [
+    "Pillow",
+    "PyMuPDF",
+    "pikepdf",
+    "requests",
+    "urllib3"
+  ],
+  "test_only_python_packages": [
+    "pytest"
+  ],
+  "external_commands": {
+    "typst": [
+      "devtools/check_pipeline_architecture.py",
+      "devtools/experiments/mineru_content_v2/render_translated.py",
+      "devtools/job_debug_runner.py",
+      "devtools/replay_translation_item.py",
+      "devtools/tests/document_schema/test_normalize_stage_spec.py",
+      "devtools/tests/document_schema/test_provider_pipeline_entry.py",
+      "devtools/tests/rendering/test_typst_render_refactor.py",
+      "devtools/tests/translation/test_book_translation_batches.py",
+      "devtools/tests/translation/test_formula_math_markers.py",
+      "devtools/tests/translation/test_promptfoo_case_tools.py",
+      "devtools/tests/translation/test_translation_contract_fields.py",
+      "devtools/tests/translation/test_translation_debug_tools.py",
+      "devtools/tests/translation/test_translation_fast_paths.py",
+      "entrypoints/build_book.py",
+      "entrypoints/build_page.py",
+      "entrypoints/run_document_flow.py",
+      "foundation/config/output_layout.py",
+      "foundation/shared/job_dirs.py",
+      "foundation/shared/stage_specs.py",
+      "foundation/shared/structured_errors.py",
+      "runtime/pipeline/book_pipeline.py",
+      "runtime/pipeline/book_translation_batches.py",
+      "runtime/pipeline/book_translation_pages.py",
+      "runtime/pipeline/render_mode.py",
+      "runtime/pipeline/render_stage.py",
+      "runtime/pipeline/translation_stage.py",
+      "services/mineru/mineru_job.py",
+      "services/mineru/mineru_pipeline.py",
+      "services/ocr_provider/provider_pipeline.py",
+      "services/rendering/__init__.py",
+      "services/rendering/api/typst_page_renderer.py",
+      "services/rendering/formula/__init__.py",
+      "services/rendering/formula/core/inline_math.py",
+      "services/rendering/formula/core/markdown.py",
+      "services/rendering/formula/fallback/png_renderer.py",
+      "services/rendering/formula/mode_router.py",
+      "services/rendering/layout/payload/block_seed.py",
+      "services/rendering/layout/payload/body_context.py",
+      "services/rendering/layout/payload/body_pipeline.py",
+      "services/rendering/layout/payload/emit.py",
+      "services/rendering/layout/payload/fit.py",
+      "services/rendering/layout/payload/metrics.py",
+      "services/rendering/layout/payload/prepare.py",
+      "services/rendering/layout/payload/suspicious_ocr.py",
+      "services/rendering/redaction/redaction_routes.py",
+      "services/rendering/redaction/text_draw.py",
+      "services/rendering/render_only_pipeline.py",
+      "services/rendering/typst/__init__.py",
+      "services/rendering/typst/book_helpers.py",
+      "services/rendering/typst/book_ops.py",
+      "services/rendering/typst/compiler.py",
+      "services/rendering/typst/emitter.py",
+      "services/rendering/typst/overlay_book.py",
+      "services/rendering/typst/overlay_compile.py",
+      "services/rendering/typst/overlay_ops.py",
+      "services/rendering/typst/repair.py",
+      "services/rendering/typst/sanitize.py",
+      "services/rendering/typst/sanitize_steps.py",
+      "services/rendering/typst/shared.py",
+      "services/rendering/typst/source_builder.py",
+      "services/translation/diagnostics/aggregator.py",
+      "services/translation/from_ocr_pipeline.py",
+      "services/translation/llm/placeholder_guard.py",
+      "services/translation/llm/shared/cache.py",
+      "services/translation/llm/shared/orchestration/common.py",
+      "services/translation/llm/shared/orchestration/direct_typst.py",
+      "services/translation/llm/shared/orchestration/direct_typst_long_text.py",
+      "services/translation/llm/shared/orchestration/direct_typst_salvage.py",
+      "services/translation/llm/shared/orchestration/fallbacks.py",
+      "services/translation/llm/shared/orchestration/keep_origin.py",
+      "services/translation/llm/shared/prompt_building.py",
+      "services/translation/payload/template_contract.py",
+      "services/translation/payload/template_records.py",
+      "services/translation/payload/template_sync.py",
+      "services/translation/policy/config.py",
+      "services/translation/session_context.py"
+    ],
+    "gs": [
+      "services/rendering/compress/ghostscript.py"
+    ]
+  },
+  "packages": [
+    {
+      "import_name": "PIL",
+      "package_name": "Pillow",
+      "runtime_files": [
+        "services/rendering/background/extract.py",
+        "services/rendering/background/patch.py",
+        "services/rendering/compress/image_ops.py",
+        "services/rendering/compress/image_pipeline.py",
+        "services/rendering/formula/fallback/png_renderer.py"
+      ],
+      "devtool_files": [],
+      "test_files": [
+        "devtools/tests/rendering/test_typst_render_refactor.py"
+      ],
+      "runtime_required": true,
+      "devtool_required": false
+    },
+    {
+      "import_name": "fitz",
+      "package_name": "PyMuPDF",
+      "runtime_files": [
+        "runtime/pipeline/render_mode.py",
+        "runtime/pipeline/render_stage.py",
+        "services/document_schema/normalize_pipeline.py",
+        "services/ocr_provider/paddle_normalize.py",
+        "services/rendering/api/background_image_route.py",
+        "services/rendering/background/detect.py",
+        "services/rendering/background/extract.py",
+        "services/rendering/background/patch.py",
+        "services/rendering/background/stage.py",
+        "services/rendering/compress/analysis.py",
+        "services/rendering/compress/image_pipeline.py",
+        "services/rendering/layout/render_model.py",
+        "services/rendering/preprocess/hidden_text_strip.py",
+        "services/rendering/redaction/builders.py",
+        "services/rendering/redaction/document_ops.py",
+        "services/rendering/redaction/margin_text_cleanup.py",
+        "services/rendering/redaction/math_protection.py",
+        "services/rendering/redaction/redaction.py",
+        "services/rendering/redaction/redaction_fill.py",
+        "services/rendering/redaction/redaction_geometry.py",
+        "services/rendering/redaction/redaction_routes.py",
+        "services/rendering/redaction/shared.py",
+        "services/rendering/redaction/text_analysis.py",
+        "services/rendering/redaction/text_draw.py",
+        "services/rendering/redaction/vector_analysis.py",
+        "services/rendering/redaction/vector_text_cleanup.py",
+        "services/rendering/typst/book_helpers.py",
+        "services/rendering/typst/book_ops.py",
+        "services/rendering/typst/overlay_book.py",
+        "services/rendering/typst/overlay_ops.py",
+        "services/rendering/typst/page_ops.py",
+        "services/translation/llm/domain_context.py"
+      ],
+      "devtool_files": [],
+      "test_files": [
+        "devtools/tests/document_schema/test_provider_pipeline_entry.py",
+        "devtools/tests/rendering/test_margin_text_cleanup.py",
+        "devtools/tests/rendering/test_redaction_routes.py",
+        "devtools/tests/rendering/test_render_input_protocol.py",
+        "devtools/tests/rendering/test_typst_render_refactor.py",
+        "devtools/tests/rendering/test_vector_text_cleanup.py"
+      ],
+      "runtime_required": true,
+      "devtool_required": false
+    },
+    {
+      "import_name": "pikepdf",
+      "package_name": "pikepdf",
+      "runtime_files": [
+        "services/rendering/compress/image_ops.py",
+        "services/rendering/compress/image_pipeline.py",
+        "services/rendering/preprocess/hidden_text_strip.py"
+      ],
+      "devtool_files": [],
+      "test_files": [],
+      "runtime_required": true,
+      "devtool_required": false
+    },
+    {
+      "import_name": "pytest",
+      "package_name": "pytest",
+      "runtime_files": [],
+      "devtool_files": [],
+      "test_files": [
+        "devtools/tests/rendering/test_typst_render_refactor.py",
+        "devtools/tests/translation/test_formula_math_markers.py"
+      ],
+      "runtime_required": false,
+      "devtool_required": false
+    },
+    {
+      "import_name": "requests",
+      "package_name": "requests",
+      "runtime_files": [
+        "services/mineru/artifacts.py",
+        "services/mineru/mineru_api.py",
+        "services/mineru/mineru_job.py",
+        "services/ocr_provider/paddle_api.py",
+        "services/ocr_provider/paddle_markdown.py",
+        "services/ocr_provider/provider_pipeline.py",
+        "services/translation/llm/providers/deepseek/client.py",
+        "services/translation/llm/shared/provider_registry.py"
+      ],
+      "devtool_files": [
+        "devtools/tools/mineru_api_example.py"
+      ],
+      "test_files": [
+        "devtools/tests/translation/test_book_translation_batches.py",
+        "devtools/tests/translation/test_translation_fast_paths.py",
+        "devtools/tests/translation/test_translation_run_diagnostics.py"
+      ],
+      "runtime_required": true,
+      "devtool_required": true
+    },
+    {
+      "import_name": "urllib3",
+      "package_name": "urllib3",
+      "runtime_files": [
+        "services/translation/llm/providers/deepseek/client.py"
+      ],
+      "devtool_files": [],
+      "test_files": [],
+      "runtime_required": true,
+      "devtool_required": false
+    }
+  ],
+  "existing_requirement_files": [
+    "docker/requirements-app.txt",
+    "desktop/requirements-desktop-posix.txt",
+    "desktop/requirements-desktop-windows.txt",
+    "desktop/requirements-desktop-macos.txt"
+  ],
+  "notes": [
+    "runtime_required=true means imported from runtime or devtool code, not just tests",
+    "external_commands are non-Python binary dependencies detected by marker scan"
+  ]
+}

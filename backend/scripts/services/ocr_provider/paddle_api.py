@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from foundation.shared.local_env import get_secret
 
@@ -13,6 +16,10 @@ from foundation.shared.local_env import get_secret
 PADDLE_BASE_URL = "https://paddleocr.aistudio-app.com"
 PADDLE_TOKEN_ENV = "RETAIN_PADDLE_API_TOKEN"
 PADDLE_ENV_FILE = "paddle.env"
+PADDLE_RETRY_ATTEMPTS_ENV = "RETAIN_PADDLE_RETRY_ATTEMPTS"
+PADDLE_RETRY_BACKOFF_ENV = "RETAIN_PADDLE_RETRY_BACKOFF_SECONDS"
+
+_SESSION: requests.Session | None = None
 
 
 def get_paddle_token(*, explicit_value: str = "") -> str:
@@ -40,6 +47,68 @@ def build_headers(token: str) -> dict[str, str]:
         "Authorization": f"bearer {token.strip()}",
         "Accept": "application/json",
     }
+
+
+def _retry_attempts() -> int:
+    raw = os.environ.get(PADDLE_RETRY_ATTEMPTS_ENV, "").strip()
+    try:
+        value = int(raw) if raw else 3
+    except ValueError:
+        value = 3
+    return max(1, value)
+
+
+def _retry_backoff_seconds() -> float:
+    raw = os.environ.get(PADDLE_RETRY_BACKOFF_ENV, "").strip()
+    try:
+        value = float(raw) if raw else 0.5
+    except ValueError:
+        value = 0.5
+    return max(0.1, value)
+
+
+def _build_session() -> requests.Session:
+    session = requests.Session()
+    session.trust_env = False
+    session.proxies.clear()
+    retry = Retry(
+        total=0,
+        connect=0,
+        read=0,
+        redirect=0,
+        status=0,
+        backoff_factor=0,
+    )
+    adapter = HTTPAdapter(max_retries=retry, pool_connections=8, pool_maxsize=8)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
+
+def _get_session() -> requests.Session:
+    global _SESSION
+    if _SESSION is None:
+        _SESSION = _build_session()
+    return _SESSION
+
+
+def _request_with_retry(method: str, url: str, *, timeout: int, **kwargs: Any) -> requests.Response:
+    attempts = _retry_attempts()
+    backoff_seconds = _retry_backoff_seconds()
+    last_error: Exception | None = None
+    session = _get_session()
+    for attempt in range(1, attempts + 1):
+        try:
+            response = session.request(method, url, timeout=timeout, **kwargs)
+            response.raise_for_status()
+            return response
+        except (requests.Timeout, requests.ConnectionError, requests.RequestException) as err:
+            last_error = err
+            if attempt >= attempts:
+                break
+            time.sleep(backoff_seconds * attempt)
+    assert last_error is not None
+    raise last_error
 
 
 def build_optional_payload(model: str) -> dict[str, Any]:
@@ -136,18 +205,18 @@ def submit_local_file(
     base_url: str = "",
 ) -> tuple[str, str]:
     resolved_base = (base_url or PADDLE_BASE_URL).strip().rstrip("/")
-    with file_path.open("rb") as handle:
-        response = requests.post(
-            f"{resolved_base}/api/v2/ocr/jobs",
-            headers=build_headers(token),
-            data={
-                "model": model,
-                "optionalPayload": json.dumps(optional_payload, ensure_ascii=False),
-            },
-            files={"file": (file_path.name, handle)},
-            timeout=120,
-        )
-    response.raise_for_status()
+    file_bytes = file_path.read_bytes()
+    response = _request_with_retry(
+        "post",
+        f"{resolved_base}/api/v2/ocr/jobs",
+        headers=build_headers(token),
+        data={
+            "model": model,
+            "optionalPayload": json.dumps(optional_payload, ensure_ascii=False),
+        },
+        files={"file": (file_path.name, file_bytes)},
+        timeout=120,
+    )
     envelope = _check_envelope(response.json(), stage="submit")
     data = dict(envelope.get("data") or {})
     job_id = str(data.get("jobId", "") or "").strip()
@@ -165,7 +234,8 @@ def submit_remote_url(
     base_url: str = "",
 ) -> tuple[str, str]:
     resolved_base = (base_url or PADDLE_BASE_URL).strip().rstrip("/")
-    response = requests.post(
+    response = _request_with_retry(
+        "post",
         f"{resolved_base}/api/v2/ocr/jobs",
         headers={**build_headers(token), "Content-Type": "application/json"},
         json={
@@ -175,7 +245,6 @@ def submit_remote_url(
         },
         timeout=120,
     )
-    response.raise_for_status()
     envelope = _check_envelope(response.json(), stage="submit")
     data = dict(envelope.get("data") or {})
     job_id = str(data.get("jobId", "") or "").strip()
@@ -186,19 +255,18 @@ def submit_remote_url(
 
 def query_job(*, token: str, job_id: str, base_url: str = "") -> dict[str, Any]:
     resolved_base = (base_url or PADDLE_BASE_URL).strip().rstrip("/")
-    response = requests.get(
+    response = _request_with_retry(
+        "get",
         f"{resolved_base}/api/v2/ocr/jobs/{job_id}",
         headers=build_headers(token),
         timeout=120,
     )
-    response.raise_for_status()
     envelope = _check_envelope(response.json(), stage="poll")
     return dict(envelope.get("data") or {})
 
 
 def download_jsonl_result(*, jsonl_url: str) -> dict[str, Any]:
-    response = requests.get(jsonl_url, timeout=300)
-    response.raise_for_status()
+    response = _request_with_retry("get", jsonl_url, timeout=300)
     layout_results: list[Any] = []
     data_info: dict[str, Any] = {}
     line_count = 0

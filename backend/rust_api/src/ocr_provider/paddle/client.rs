@@ -1,9 +1,11 @@
+use std::future::Future;
 use std::path::Path;
+use std::result::Result as StdResult;
 use std::time::Duration;
 
 use anyhow::{anyhow, Context, Result};
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
-use reqwest::{multipart, Client};
+use reqwest::{multipart, Client, Response};
 use serde_json::{json, Value};
 
 use crate::ocr_provider::paddle::errors::PaddleProviderError;
@@ -15,6 +17,8 @@ use crate::ocr_provider::types::OcrProviderCapabilities;
 const DEFAULT_BASE_URL: &str = "https://paddleocr.aistudio-app.com";
 const REQUEST_TIMEOUT_SECS: u64 = 120;
 const DOWNLOAD_TIMEOUT_SECS: u64 = 300;
+const REQUEST_RETRY_ATTEMPTS: usize = 3;
+const REQUEST_RETRY_BASE_DELAY_MILLIS: u64 = 500;
 
 #[derive(Debug, Clone)]
 pub struct PaddleClient {
@@ -45,11 +49,7 @@ impl PaddleClient {
                 trimmed.trim_end_matches('/').to_string()
             }
         };
-        let http = Client::builder()
-            .connect_timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS))
-            .timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS))
-            .build()
-            .expect("reqwest client");
+        let http = build_http_client();
         Self {
             base_url,
             token: token.into(),
@@ -71,21 +71,27 @@ impl PaddleClient {
         let file_bytes = tokio::fs::read(file_path)
             .await
             .with_context(|| format!("failed to read upload file {}", file_path.display()))?;
-        let file_part = multipart::Part::bytes(file_bytes).file_name(file_name);
-        let form = multipart::Form::new()
-            .text("model", model.to_string())
-            .text("optionalPayload", serde_json::to_string(optional_payload)?)
-            .part("file", file_part);
+        let optional_payload_json = serde_json::to_string(optional_payload)?;
+        let url = format!("{}/api/v2/ocr/jobs", self.base_url);
+        let file_name_for_retry = file_name.clone();
+        let file_bytes_for_retry = file_bytes.clone();
+        let optional_payload_for_retry = optional_payload_json.clone();
+        let model_for_retry = model.to_string();
         let response = self
-            .http
-            .post(format!("{}/api/v2/ocr/jobs", self.base_url))
-            .header(AUTHORIZATION, self.auth_header())
-            .multipart(form)
-            .send()
-            .await
-            .map_err(|err| {
-                anyhow::Error::new(PaddleProviderError::request_failed("submit", &err, None))
-            })?;
+            .send_with_retry("submit", move || {
+                let file_part = multipart::Part::bytes(file_bytes_for_retry.clone())
+                    .file_name(file_name_for_retry.clone());
+                let form = multipart::Form::new()
+                    .text("model", model_for_retry.clone())
+                    .text("optionalPayload", optional_payload_for_retry.clone())
+                    .part("file", file_part);
+                self.http
+                    .post(&url)
+                    .header(AUTHORIZATION, self.auth_header())
+                    .multipart(form)
+                    .send()
+            })
+            .await?;
         let envelope = parse_json_response::<PaddleSubmitEnvelope>("submit", response).await?;
         if envelope.error_code != 0 {
             return Err(anyhow::Error::new(PaddleProviderError::provider_error(
@@ -126,17 +132,17 @@ impl PaddleClient {
             "model": model,
             "optionalPayload": optional_payload,
         });
+        let url = format!("{}/api/v2/ocr/jobs", self.base_url);
         let response = self
-            .http
-            .post(format!("{}/api/v2/ocr/jobs", self.base_url))
-            .header(AUTHORIZATION, self.auth_header())
-            .header(CONTENT_TYPE, "application/json")
-            .json(&payload)
-            .send()
-            .await
-            .map_err(|err| {
-                anyhow::Error::new(PaddleProviderError::request_failed("submit", &err, None))
-            })?;
+            .send_with_retry("submit", || {
+                self.http
+                    .post(&url)
+                    .header(AUTHORIZATION, self.auth_header())
+                    .header(CONTENT_TYPE, "application/json")
+                    .json(&payload)
+                    .send()
+            })
+            .await?;
         let envelope = parse_json_response::<PaddleSubmitEnvelope>("submit", response).await?;
         if envelope.error_code != 0 {
             return Err(anyhow::Error::new(PaddleProviderError::provider_error(
@@ -167,15 +173,15 @@ impl PaddleClient {
     }
 
     pub async fn query_job(&self, job_id: &str) -> Result<PaddleTrace<PaddlePollData>> {
+        let url = format!("{}/api/v2/ocr/jobs/{}", self.base_url, job_id);
         let response = self
-            .http
-            .get(format!("{}/api/v2/ocr/jobs/{}", self.base_url, job_id))
-            .header(AUTHORIZATION, self.auth_header())
-            .send()
-            .await
-            .map_err(|err| {
-                anyhow::Error::new(PaddleProviderError::request_failed("poll", &err, None))
-            })?;
+            .send_with_retry("poll", || {
+                self.http
+                    .get(&url)
+                    .header(AUTHORIZATION, self.auth_header())
+                    .send()
+            })
+            .await?;
         let envelope = parse_json_response::<PaddlePollEnvelope>("poll", response).await?;
         if envelope.error_code != 0 {
             return Err(anyhow::Error::new(PaddleProviderError::provider_error(
@@ -193,18 +199,15 @@ impl PaddleClient {
 
     pub async fn probe_token(&self) -> Result<PaddleTrace<()>> {
         let probe_job_id = format!("retain-pdf-token-probe-{}", fastrand::u64(..));
+        let url = format!("{}/api/v2/ocr/jobs/{}", self.base_url, probe_job_id);
         let response = self
-            .http
-            .get(format!(
-                "{}/api/v2/ocr/jobs/{}",
-                self.base_url, probe_job_id
-            ))
-            .header(AUTHORIZATION, self.auth_header())
-            .send()
-            .await
-            .map_err(|err| {
-                anyhow::Error::new(PaddleProviderError::request_failed("probe", &err, None))
-            })?;
+            .send_with_retry("probe", || {
+                self.http
+                    .get(&url)
+                    .header(AUTHORIZATION, self.auth_header())
+                    .send()
+            })
+            .await?;
         let status = response.status();
         let bytes = response.bytes().await.map_err(|err| {
             anyhow::Error::new(PaddleProviderError::request_failed("probe", &err, None))
@@ -253,14 +256,13 @@ impl PaddleClient {
 
     pub async fn download_jsonl_result(&self, jsonl_url: &str) -> Result<PaddleResultPayload> {
         let text = self
-            .http
-            .get(jsonl_url)
-            .timeout(Duration::from_secs(DOWNLOAD_TIMEOUT_SECS))
-            .send()
-            .await
-            .map_err(|err| {
-                anyhow::Error::new(PaddleProviderError::request_failed("download", &err, None))
-            })?
+            .send_with_retry("download", || {
+                self.http
+                    .get(jsonl_url)
+                    .timeout(Duration::from_secs(DOWNLOAD_TIMEOUT_SECS))
+                    .send()
+            })
+            .await?
             .error_for_status()
             .map_err(|err| {
                 let status = err.status().map(|value| value.as_u16());
@@ -282,6 +284,46 @@ impl PaddleClient {
     fn auth_header(&self) -> String {
         format!("bearer {}", self.token.trim())
     }
+
+    async fn send_with_retry<F, Fut>(&self, stage: &'static str, mut action: F) -> Result<Response>
+    where
+        F: FnMut() -> Fut,
+        Fut: Future<Output = StdResult<Response, reqwest::Error>>,
+    {
+        let mut last_error: Option<reqwest::Error> = None;
+        for attempt in 1..=REQUEST_RETRY_ATTEMPTS {
+            match action().await {
+                Ok(response) => return Ok(response),
+                Err(err) => {
+                    let retryable = is_retryable_transport_error(&err);
+                    last_error = Some(err);
+                    if !retryable || attempt >= REQUEST_RETRY_ATTEMPTS {
+                        break;
+                    }
+                    let delay =
+                        Duration::from_millis(REQUEST_RETRY_BASE_DELAY_MILLIS * attempt as u64);
+                    tokio::time::sleep(delay).await;
+                }
+            }
+        }
+        let err = last_error.expect("Paddle request retry loop should capture last error");
+        Err(anyhow::Error::new(PaddleProviderError::request_failed(
+            stage, &err, None,
+        )))
+    }
+}
+
+fn build_http_client() -> Client {
+    Client::builder()
+        .connect_timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS))
+        .timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS))
+        .no_proxy()
+        .build()
+        .expect("reqwest client")
+}
+
+fn is_retryable_transport_error(err: &reqwest::Error) -> bool {
+    err.is_connect() || err.is_timeout() || err.is_body()
 }
 
 pub fn normalize_model_name(model: &str) -> String {

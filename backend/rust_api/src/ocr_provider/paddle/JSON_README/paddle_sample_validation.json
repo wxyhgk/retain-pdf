@@ -1,8 +1,8 @@
 {
   "mode": "adapt",
-  "input_path": "/home/wxyhgk/tmp/Code/rust_api/src/ocr_provider/paddle/json_full.json",
+  "input_path": "/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/json_full.json",
   "normalization": {
-    "source_json_path": "/home/wxyhgk/tmp/Code/rust_api/src/ocr_provider/paddle/json_full.json",
+    "source_json_path": "/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/json_full.json",
     "document_id": "paddle-sample",
     "provider": "paddle",
     "provider_version": "",

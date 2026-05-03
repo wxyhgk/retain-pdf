@@ -19,7 +19,7 @@
 - stage 运行时契约：
   [`STAGE_EXECUTION_CONTRACT.md`](/home/wxyhgk/tmp/Code/backend/rust_api/STAGE_EXECUTION_CONTRACT.md)
 - Rust 侧 artifact boundary：
-  [`doc/rust_api/10-Rust 侧 Artifact Boundary.md`](/home/wxyhgk/tmp/Code/doc/rust_api/10-Rust%20%E4%BE%A7%20Artifact%20Boundary.md)
+  [`doc/core/rust_api/10-Rust 侧 Artifact Boundary.md`](/home/wxyhgk/tmp/Code/doc/core/rust_api/10-Rust%20%E4%BE%A7%20Artifact%20Boundary.md)
 - 外部 API 协议：
   [`API_SPEC.md`](/home/wxyhgk/tmp/Code/backend/rust_api/API_SPEC.md)
 

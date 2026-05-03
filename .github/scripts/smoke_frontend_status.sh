@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 FRONTEND_DIR="$ROOT_DIR/frontend"
 DEFAULT_FILE="$ROOT_DIR/data/temPDF/test1.pdf"
-REPORT_FILE="$ROOT_DIR/doc/reports/frontend-status-smoke-latest.json"
+REPORT_FILE="$ROOT_DIR/doc/ops/reports/frontend-status-smoke-latest.json"
 
 PDF_FILE="${1:-$DEFAULT_FILE}"
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then

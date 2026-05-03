@@ -31,6 +31,7 @@ class ImportHit:
 
 
 def parse_args() -> argparse.Namespace:
+    default_output_dir = Path("doc") / "python"
     parser = argparse.ArgumentParser(
         description="Extract Python/runtime dependency signals from backend/scripts.",
     )
@@ -43,25 +44,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--json-out",
         type=Path,
-        default=None,
+        default=default_output_dir / "pipeline_dependencies.json",
         help="Optional JSON output path.",
     )
     parser.add_argument(
         "--markdown-out",
         type=Path,
-        default=None,
+        default=default_output_dir / "pipeline_dependencies.md",
         help="Optional Markdown output path.",
     )
     parser.add_argument(
         "--runtime-req-out",
         type=Path,
-        default=None,
+        default=default_output_dir / "pipeline_runtime_requirements.in",
         help="Optional runtime requirements output path.",
     )
     parser.add_argument(
         "--test-req-out",
         type=Path,
-        default=None,
+        default=default_output_dir / "pipeline_test_requirements.in",
         help="Optional test requirements output path.",
     )
     return parser.parse_args()
@@ -77,6 +78,7 @@ def _stdlib_modules() -> set[str]:
     names.update(
         {
             "__future__",
+            "tomllib",
             "typing_extensions",
         }
     )
@@ -219,12 +221,13 @@ def _build_report(repo_root: Path) -> dict[str, object]:
 
 
 def _render_markdown(report: dict[str, object]) -> str:
+    output_dir = Path("doc") / "python"
     lines = [
         "# Python Pipeline Dependencies",
         "",
         "This file is generated from static import scanning under `backend/scripts`.",
         "Regenerate with:",
-        "`python backend/scripts/devtools/extract_pipeline_requirements.py --repo-root . --json-out doc/python_pipeline_dependencies.json --markdown-out doc/python_pipeline_dependencies.md --runtime-req-out doc/python_pipeline_runtime_requirements.in --test-req-out doc/python_pipeline_test_requirements.in`",
+        "`python backend/scripts/devtools/extract_pipeline_requirements.py --repo-root . --json-out doc/core/python/pipeline_dependencies.json --markdown-out doc/core/python/pipeline_dependencies.md --runtime-req-out doc/core/python/pipeline_runtime_requirements.in --test-req-out doc/core/python/pipeline_test_requirements.in`",
         "",
         "## Runtime Python Packages",
         "",
@@ -281,6 +284,17 @@ def _render_markdown(report: dict[str, object]) -> str:
     )
     for path in report["existing_requirement_files"]:
         lines.append(f"- `{path}`")
+    lines.extend(
+        [
+            "",
+            "## Generated Outputs",
+            "",
+            f"- `{output_dir / 'pipeline_dependencies.json'}`",
+            f"- `{output_dir / 'pipeline_dependencies.md'}`",
+            f"- `{output_dir / 'pipeline_runtime_requirements.in'}`",
+            f"- `{output_dir / 'pipeline_test_requirements.in'}`",
+        ]
+    )
     lines.append("")
     return "\n".join(lines)
 

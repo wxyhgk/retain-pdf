@@ -1,6 +1,6 @@
 # Paddle block_label 首版映射表
 
-这份文档基于 [json_full.json](/home/wxyhgk/tmp/Code/rust_api/src/ocr_provider/paddle/json_full.json) 的 `layoutParsingResults[*].prunedResult.parsing_res_list[*].block_label` 实际枚举结果整理，目标是给后续 `Paddle -> document.v1` adapter 提供第一版稳定映射。
+这份文档基于 [json_full.json](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/json_full.json) 的 `layoutParsingResults[*].prunedResult.parsing_res_list[*].block_label` 实际枚举结果整理，目标是给后续 `Paddle -> document.v1` adapter 提供第一版稳定映射。
 
 ## 1. 当前样本中观察到的 block_label
 
