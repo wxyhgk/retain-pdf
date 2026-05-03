@@ -37,6 +37,7 @@ RECT_MERGE_GAP_Y_PT = 2.0
 RECT_MERGE_MAX_VERTICAL_MISALIGN_PT = 6.0
 RECT_MERGE_MAX_AREA_GROWTH_RATIO = 2.4
 RECT_MERGE_MIN_COLUMN_X_OVERLAP_RATIO = 0.6
+RECT_MERGE_MIN_OVERLAP_RATIO = 0.8
 RedactionStrategy = Literal["auto", "visual_only", "visual_and_text", "text_redaction"]
 DEFAULT_REDACTION_STRATEGY: RedactionStrategy = "auto"
 
@@ -61,22 +62,21 @@ def _rects_should_merge(left: fitz.Rect, right: fitz.Rect) -> bool:
     if combined_area <= 0.0:
         return False
     area_growth_ratio = rect_area(union) / combined_area
-    if not ((left & right).is_empty):
-        return area_growth_ratio <= RECT_MERGE_MAX_AREA_GROWTH_RATIO
     same_row = (
         abs(left.y0 - right.y0) <= RECT_MERGE_MAX_VERTICAL_MISALIGN_PT
         and abs(left.y1 - right.y1) <= RECT_MERGE_MAX_VERTICAL_MISALIGN_PT
     )
     horizontal_gap = max(0.0, max(left.x0, right.x0) - min(left.x1, right.x1))
-    vertical_gap = max(0.0, max(left.y0, right.y0) - min(left.y1, right.y1))
     x_overlap = max(0.0, min(left.x1, right.x1) - max(left.x0, right.x0))
     min_width = max(1.0, min(left.width, right.width))
-    same_column = x_overlap / min_width >= RECT_MERGE_MIN_COLUMN_X_OVERLAP_RATIO
     if area_growth_ratio > RECT_MERGE_MAX_AREA_GROWTH_RATIO:
         return False
+    inter = left & right
+    if not inter.is_empty:
+        min_area = max(1.0, min(rect_area(left), rect_area(right)))
+        overlap_ratio = rect_area(inter) / min_area
+        return same_row or overlap_ratio >= RECT_MERGE_MIN_OVERLAP_RATIO
     if same_row and horizontal_gap <= RECT_MERGE_GAP_X_PT:
-        return True
-    if same_column and vertical_gap <= RECT_MERGE_GAP_Y_PT:
         return True
     return False
 
