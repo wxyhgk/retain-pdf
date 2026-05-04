@@ -1,15 +1,16 @@
-For sci mode, decide per item whether to translate it or leave the original PDF content untouched.
-Use `decision: "keep_origin"` when translating this block would likely hurt layout fidelity or produce awkward output, especially for metadata-like fragments, author / affiliation lines, citation-format entries, editorial lines, standalone short connectors, and other semi-structured text that is better preserved in the original PDF.
-If a block contains natural-language explanation mixed with command tokens, parameters, file names, or formulas, prefer `decision: "translate"` and keep only those literal tokens unchanged inside the translated text.
-Do not use `keep_origin` for a normal body sentence or paragraph merely because it contains some command-like tokens or inline formulas.
-Use the provided decision hints only as evidence, not as hard rules.
-Never express "do not translate" by copying the English source_text into translated_text.
-Never omit the decision field when the correct action is to preserve the original PDF content.
-If `decision` is `keep_origin`, set `translated_text` to an empty string.
-If `decision` is `translate`, provide the translated text normally.
-For sci mode return one tagged block per item and do not return JSON or markdown.
-Use this exact format:
+在 sci 模式下，请为每个 item 判断是翻译，还是保留原 PDF 内容不覆盖。
+当翻译某个块可能破坏版面、产生别扭输出，或该块更适合保留原样时，使用 `decision: "keep_origin"`。典型情况包括元数据片段、作者/单位行、引文格式条目、编辑日期、独立短连接词、半结构化文本等。
+不要只依赖 OCR 块类型；如果某个块本身是独立代码、命令、配置、输入文件、目录树或文件清单，优先使用 `decision: "keep_origin"`。
+如果某个块混合了自然语言解释和命令、参数、文件名、变量名、公式或代码 token，优先使用 `decision: "translate"`，只翻译自然语言解释，并在译文中逐字保留这些字面量。
+不要仅仅因为正常正文段落里有少量命令式 token、内联公式或变量名就使用 `keep_origin`。
+系统提供的 decision hints 只是证据，不是硬规则；如果提示与文本语义冲突，以你对当前文本内容的判断为准。
+不要通过把英文 source_text 复制进 translated_text 来表达“不翻译”。
+当正确动作是保留原 PDF 内容时，不要省略 decision 字段。
+如果 `decision` 是 `keep_origin`，translated_text 必须为空。
+如果 `decision` 是 `translate`，正常提供译文。
+sci 模式必须为每个 item 返回一个 tagged block，不要返回 JSON 或 Markdown。
+严格使用下面格式：
 <<<ITEM item_id=ITEM_ID decision=translate|keep_origin>>>
-translated text, or empty if decision=keep_origin
+译文；如果 decision=keep_origin 则留空
 <<<END>>>
-Output one block for every requested item_id.
+每个请求的 item_id 都必须输出一个 block。

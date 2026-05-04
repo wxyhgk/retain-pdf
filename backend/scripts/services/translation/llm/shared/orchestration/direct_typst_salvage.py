@@ -21,21 +21,46 @@ def extract_direct_typst_protocol_text(raw_text: str, *, item_id: str) -> str:
     unwrapped = unwrap_translation_shell(current, item_id=item_id)
     if unwrapped and unwrapped != current:
         current = unwrapped.strip()
+    if current.startswith("```"):
+        lines = current.splitlines()
+        if lines and lines[0].strip().startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]
+        current = "\n".join(lines).strip()
     if current and not current.startswith("{"):
         return current
 
     def _from_payload(payload: object) -> str:
         if isinstance(payload, dict):
-            translated = payload.get("translated_text")
-            if isinstance(translated, str) and translated.strip():
-                return translated.strip()
+            for key in (
+                "translated_text",
+                "translation",
+                "text",
+                "target",
+                "content",
+                "answer",
+                "result",
+                "output",
+            ):
+                translated = payload.get(key)
+                if isinstance(translated, str) and translated.strip():
+                    return translated.strip()
+            if item_id:
+                translated = payload.get(item_id)
+                if isinstance(translated, str) and translated.strip():
+                    return translated.strip()
             translations = payload.get("translations")
             if isinstance(translations, list):
                 matched: str = ""
                 for entry in translations:
                     if not isinstance(entry, dict):
                         continue
-                    candidate = str(entry.get("translated_text", "") or "").strip()
+                    candidate = ""
+                    for key in ("translated_text", "translation", "text", "target", "content", "answer", "result", "output"):
+                        candidate = str(entry.get(key, "") or "").strip()
+                        if candidate:
+                            break
                     if not candidate:
                         continue
                     if str(entry.get("item_id", "") or "").strip() == item_id:
@@ -43,6 +68,9 @@ def extract_direct_typst_protocol_text(raw_text: str, *, item_id: str) -> str:
                     if not matched:
                         matched = candidate
                 return matched
+            items = payload.get("items")
+            if isinstance(items, list):
+                return _from_payload({"translations": items})
         return ""
 
     probe = current

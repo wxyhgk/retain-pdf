@@ -5,6 +5,7 @@ import json
 from services.translation.diagnostics import TranslationDiagnosticsCollector
 from services.translation.llm.placeholder_guard import EmptyTranslationError
 from services.translation.llm.placeholder_guard import EnglishResidueError
+from services.translation.llm.placeholder_guard import MathDelimiterError
 from services.translation.llm.placeholder_guard import PlaceholderInventoryError
 from services.translation.llm.placeholder_guard import SuspiciousKeepOriginError
 from services.translation.llm.placeholder_guard import TranslationProtocolError
@@ -83,6 +84,7 @@ def split_batched_plain_result_for_partial_retry(
             json.JSONDecodeError,
             EnglishResidueError,
             EmptyTranslationError,
+            MathDelimiterError,
             UnexpectedPlaceholderError,
             PlaceholderInventoryError,
             TranslationProtocolError,
@@ -134,6 +136,7 @@ def translate_items_plain_text(
             json.JSONDecodeError,
             EnglishResidueError,
             EmptyTranslationError,
+            MathDelimiterError,
             UnexpectedPlaceholderError,
             PlaceholderInventoryError,
             TranslationProtocolError,

@@ -6,6 +6,7 @@ import time
 from services.translation.diagnostics import TranslationDiagnosticsCollector
 from services.translation.llm.placeholder_guard import EmptyTranslationError
 from services.translation.llm.placeholder_guard import EnglishResidueError
+from services.translation.llm.placeholder_guard import MathDelimiterError
 from services.translation.llm.placeholder_guard import PlaceholderInventoryError
 from services.translation.llm.placeholder_guard import SuspiciousKeepOriginError
 from services.translation.llm.placeholder_guard import TranslationProtocolError
@@ -310,6 +311,7 @@ def translate_single_item_plain_text_with_retries(
             PlaceholderInventoryError,
             EmptyTranslationError,
             EnglishResidueError,
+            MathDelimiterError,
             TranslationProtocolError,
         ) as exc:
             last_error = exc
@@ -362,7 +364,7 @@ def translate_single_item_plain_text_with_retries(
                             f"{request_label}: tagged single-item failed attempt {attempt}/{plain_attempts} after {time.perf_counter() - tagged_started:.2f}s: {type(tagged_exc).__name__}: {tagged_exc}",
                             flush=True,
                         )
-            if attempt >= plain_attempts and isinstance(last_error, (EmptyTranslationError, EnglishResidueError, TranslationProtocolError)):
+            if attempt >= plain_attempts and isinstance(last_error, (EmptyTranslationError, EnglishResidueError, MathDelimiterError, TranslationProtocolError)):
                 raw_started = time.perf_counter()
                 try:
                     if request_label:
@@ -394,6 +396,7 @@ def translate_single_item_plain_text_with_retries(
                     json.JSONDecodeError,
                     EnglishResidueError,
                     EmptyTranslationError,
+                    MathDelimiterError,
                     TranslationProtocolError,
                 ) as raw_exc:
                     last_error = raw_exc

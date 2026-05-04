@@ -1,19 +1,10 @@
 from __future__ import annotations
 
+from services.translation.context import TranslationDocumentContext
 from services.translation.payload import ops as payload_ops
 from services.translation.policy.config import TranslationPolicyConfig
 from services.translation.policy.config import build_translation_policy_config
-
-
-def _load_classifier():
-    try:
-        from services.translation.classification.page_classifier import classify_payload_items
-
-        return classify_payload_items
-    except Exception:
-        from services.translation.classification.page_classifier import classify_payload_items
-
-        return classify_payload_items
+from services.translation.policy.planner import TranslationPlanner
 
 
 def _build_skip_summary(
@@ -55,8 +46,6 @@ def apply_translation_policies(
     sci_cutoff_block_idx: int | None,
     policy_config: TranslationPolicyConfig | None = None,
 ) -> tuple[int, dict[str, int]]:
-    classify_payload_items = _load_classifier()
-
     if policy_config is None:
         policy_config = build_translation_policy_config(
             mode=mode,
@@ -72,16 +61,28 @@ def apply_translation_policies(
         reference_tail_skipped=0,
     )
 
-    if policy_config.mode == "precise":
-        labels = classify_payload_items(
-            payload,
-            api_key=api_key,
-            model=model,
-            base_url=base_url,
-            batch_size=classify_batch_size,
-            rule_guidance=policy_config.rule_guidance,
-            request_label=f"classification page {page_idx + 1}",
-        )
+    if policy_config.enable_page_no_trans_classification:
+        try:
+            planner = TranslationPlanner(
+                TranslationDocumentContext(
+                    mode=mode,
+                    rule_guidance=policy_config.rule_guidance,
+                )
+            )
+            labels = planner.classify_no_trans(
+                payload,
+                api_key=api_key,
+                model=model,
+                base_url=base_url,
+                batch_size=classify_batch_size,
+                request_label=f"classification page {page_idx + 1}",
+            )
+        except Exception as exc:
+            print(
+                f"classification page {page_idx + 1}: skipped after {type(exc).__name__}: {exc}",
+                flush=True,
+            )
+            labels = {}
         classified_items = payload_ops.apply_classification_labels(payload, labels)
 
     if policy_config.enable_reference_tail_skip:

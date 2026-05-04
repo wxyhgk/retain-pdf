@@ -7,6 +7,7 @@ import fitz
 
 from foundation.config import fonts
 from services.rendering.api.render_payloads import prepare_render_payloads_by_page
+from services.rendering.typst.color_adapt import apply_adaptive_overlay_colors
 from services.rendering.typst.compiler import TypstCompileError
 from services.rendering.typst.overlay_book import build_overlay_page_specs
 from services.rendering.typst.overlay_book import overlay_pages_via_page_fallback
@@ -97,6 +98,10 @@ def overlay_translated_pages_on_doc(
             "sanitize_page_diagnostics": [],
         }
 
+    translated_pages = {
+        page_idx: apply_adaptive_overlay_colors(doc[page_idx], translated_pages[page_idx])
+        for page_idx in ordered_page_indices
+    }
     page_specs = build_overlay_page_specs(doc, ordered_page_indices, translated_pages, stem=stem)
     book_specs = [(page_width, page_height, items) for _, page_width, page_height, items, _ in page_specs]
     compile_started = time.perf_counter()

@@ -8,6 +8,7 @@ from services.rendering.layout.payload.text_common import same_meaningful_render
 from services.rendering.core.render_text import should_skip_display_math_render
 
 MATH_SOURCE_RE = re.compile(r"\$[^$]+\$|\\(?:begin|end|frac|lim|sum|int|mathrm|left|right|cdot|epsilon|forall|in)\b")
+MODEL_KEEP_ORIGIN_REASONS = {"skip_model_keep_origin"}
 
 
 def render_unit_kind(item: dict) -> str:
@@ -51,11 +52,15 @@ def render_protected_translation_text(item: dict) -> str:
 def should_render_source_when_untranslated(item: dict) -> bool:
     if item.get("should_translate", True):
         return False
+    if _skip_reason(item) in MODEL_KEEP_ORIGIN_REASONS:
+        return False
     return should_render_source_block(item)
 
 
 def should_render_source_block(item: dict) -> bool:
     if should_skip_display_math_render(item):
+        return False
+    if not item.get("should_translate", True) and _skip_reason(item) in MODEL_KEEP_ORIGIN_REASONS:
         return False
     source_text = render_protected_source_text(item)
     if not source_text:
@@ -65,6 +70,10 @@ def should_render_source_block(item: dict) -> bool:
     if block_kind == "formula" or sub_type in {"formula", "display_formula"}:
         return True
     return bool(MATH_SOURCE_RE.search(source_text))
+
+
+def _skip_reason(item: dict) -> str:
+    return str(item.get("skip_reason", "") or item.get("classification_label", "") or "").strip().lower()
 
 
 def render_protected_source_text(item: dict) -> str:

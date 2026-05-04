@@ -5,6 +5,7 @@ import fitz
 
 from foundation.config import fonts
 from services.rendering.redaction.redaction import redact_translated_text_areas
+from services.rendering.redaction.redaction_fill import sample_local_background_fill
 from services.rendering.redaction.shared import TOKEN_RE, get_item_formula_map, iter_valid_translated_items
 from services.rendering.formula.fallback.png_renderer import compile_formula_png
 from services.rendering.formula.mode_router import is_direct_typst_math_mode
@@ -16,12 +17,33 @@ FORMULA_HEIGHT_SCALE = 1.35
 LINE_HEIGHT_SCALE = 1.45
 FONT_STEP_PT = 0.5
 HEIGHT_BUDGET_SCALE = 1.0
+DARK_BACKGROUND_BRIGHTNESS_MAX = 0.42
 
 
-def insert_fitted_text(page: fitz.Page, rect: fitz.Rect, text: str, font_path: Path) -> None:
+def _relative_brightness(color: tuple[float, float, float]) -> float:
+    r, g, b = color
+    return 0.299 * r + 0.587 * g + 0.114 * b
+
+
+def text_color_for_background(page: fitz.Page, rect: fitz.Rect) -> tuple[float, float, float]:
+    fill = sample_local_background_fill(page, rect)
+    if _relative_brightness(fill) <= DARK_BACKGROUND_BRIGHTNESS_MAX:
+        return (1, 1, 1)
+    return (0, 0, 0)
+
+
+def insert_fitted_text(
+    page: fitz.Page,
+    rect: fitz.Rect,
+    text: str,
+    font_path: Path,
+    *,
+    color: tuple[float, float, float] | None = None,
+) -> None:
     expanded_rect = fitz.Rect(rect.x0, rect.y0, rect.x1, rect.y1 + max(8, rect.height * 1.0))
     start_size = fonts.DEFAULT_FONT_SIZE
     end_size = fonts.MIN_FONT_SIZE
+    draw_color = color or text_color_for_background(page, rect)
 
     current_size = start_size
     while current_size >= end_size:
@@ -30,7 +52,7 @@ def insert_fitted_text(page: fitz.Page, rect: fitz.Rect, text: str, font_path: P
             text,
             fontname="noto_cjk",
             fontsize=current_size,
-            color=(0, 0, 0),
+            color=draw_color,
             align=0,
             overlay=True,
         )
@@ -43,7 +65,7 @@ def insert_fitted_text(page: fitz.Page, rect: fitz.Rect, text: str, font_path: P
         text,
         fontname="noto_cjk",
         fontsize=fonts.MIN_FONT_SIZE,
-        color=(0, 0, 0),
+        color=draw_color,
         overlay=True,
     )
 
@@ -191,7 +213,7 @@ def _fit_segment_layout(
     return best_size, best_layout
 
 
-def _render_segment_layout(page: fitz.Page, placements: list[dict]) -> None:
+def _render_segment_layout(page: fitz.Page, placements: list[dict], *, color: tuple[float, float, float]) -> None:
     for placement in placements:
         token = placement["token"]
         font_size = placement["font_size"]
@@ -210,7 +232,7 @@ def _render_segment_layout(page: fitz.Page, placements: list[dict]) -> None:
             token["text"],
             fontname="noto_cjk",
             fontsize=font_size,
-            color=(0, 0, 0),
+            color=color,
             overlay=True,
         )
 
@@ -229,7 +251,7 @@ def insert_reflowed_segments(
     tokens = _build_protected_draw_tokens(translated_text, formula_map, font)
     _font_size, placements = _fit_segment_layout(rect, tokens, font)
     if placements:
-        _render_segment_layout(page, placements)
+        _render_segment_layout(page, placements, color=text_color_for_background(page, rect))
 
 
 def insert_direct_math_segments(
@@ -247,7 +269,7 @@ def insert_direct_math_segments(
     tokens = _build_direct_draw_tokens(direct_text, font)
     _font_size, placements = _fit_segment_layout(rect, tokens, font)
     if placements:
-        _render_segment_layout(page, placements)
+        _render_segment_layout(page, placements, color=text_color_for_background(page, rect))
 
 
 def apply_translated_items_to_page(

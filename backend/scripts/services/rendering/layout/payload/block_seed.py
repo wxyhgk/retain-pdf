@@ -228,6 +228,8 @@ def build_block_payloads(
                 "prefer_typst_fit": bool(body_flags.get(index, False) and dense_small_box),
                 "adjacent_collision_risk": False,
                 "adjacent_available_height_pt": None,
+                "text_color": item.get("_render_text_color", (0, 0, 0)),
+                "cover_fill": item.get("_render_cover_fill", (1, 1, 1)),
             }
         )
 

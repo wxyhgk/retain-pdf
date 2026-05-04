@@ -1,0 +1,3 @@
+Return only JSON matching this shape:
+{"translations":[{"item_id":"ITEM_ID","translated_text":"translated text","decision":"translate"}]}.
+Output one object for every requested item_id. Do not include markdown, code fences, or explanations.

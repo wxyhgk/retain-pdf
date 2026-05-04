@@ -875,6 +875,36 @@ def test_build_render_blocks_skips_keep_origin_display_math_text_blocks() -> Non
     assert blocks == []
 
 
+def test_build_render_blocks_skips_model_keep_origin_shell_commands_with_dollars() -> None:
+    items = [
+        {
+            "item_id": "p006-b004",
+            "page_idx": 5,
+            "bbox": [125.9785, 254.1719, 278.8715, 276.2591],
+            "block_type": "text",
+            "block_kind": "text",
+            "normalized_sub_type": "body",
+            "source_text": "$ uv venv deeph --python=3.13 $ source deeph/bin/activate",
+            "protected_source_text": "$ uv venv deeph --python=3.13 $ source deeph/bin/activate",
+            "translated_text": "",
+            "protected_translated_text": "",
+            "should_translate": False,
+            "classification_label": "skip_model_keep_origin",
+            "skip_reason": "skip_model_keep_origin",
+            "math_mode": "direct_typst",
+            "formula_map": [],
+            "translation_unit_kind": "single",
+            "translation_unit_protected_source_text": "$ uv venv deeph --python=3.13 $ source deeph/bin/activate",
+            "translation_unit_protected_translated_text": "",
+            "translation_unit_formula_map": [],
+        }
+    ]
+
+    blocks = build_render_blocks(items, page_width=595.28, page_height=841.89)
+
+    assert blocks == []
+
+
 def test_continuation_group_member_prefers_unit_translation_for_rendering() -> None:
     from services.rendering.layout.payload.render_item import render_protected_translation_text
 

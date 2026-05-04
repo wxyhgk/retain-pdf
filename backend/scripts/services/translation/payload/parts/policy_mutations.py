@@ -116,12 +116,17 @@ def apply_classification_labels(payload: list[dict], labels: dict[str, str]) -> 
             continue
         item_id = item.get("item_id")
         label_value = labels.get(item_id, "translate")
+        if label_value == "translate":
+            continue
+        if label_value in {"code", "no_trans", "keep_origin"}:
+            label_value = "skip_model_keep_origin"
         item["classification_label"] = label_value
-        item["should_translate"] = label_value != "code"
+        item["should_translate"] = not label_value.startswith("skip_")
         classified_items += 1
-        if label_value == "code":
-            item["skip_reason"] = "code"
+        if not item["should_translate"]:
+            item["skip_reason"] = label_value
             clear_translation_fields(item)
+            item["final_status"] = "kept_origin"
     return classified_items
 
 

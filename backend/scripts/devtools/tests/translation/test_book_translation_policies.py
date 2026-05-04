@@ -15,6 +15,8 @@ from services.translation.payload.parts.legacy_policy_mutations import apply_cjk
 from services.translation.payload.parts.legacy_policy_mutations import apply_ref_text_skip
 from services.translation.payload.parts.policy_mutations import apply_reference_zone_skip
 from services.translation.payload.parts.policy_mutations import apply_title_skip
+from services.translation.context import TranslationDocumentContext
+from services.translation.policy.planner import TranslationPlanner
 
 
 def _page_payload_item(
@@ -110,6 +112,50 @@ def test_finalize_page_payloads_annotates_layout_before_cross_page_provider_join
     assert page_payloads[0][0]["continuation_decision"] == "provider_joined"
     assert page_payloads[1][0]["continuation_decision"] == "provider_joined"
     assert page_payloads[0][0]["continuation_group"] == group_id
+
+
+def test_translation_planner_reuses_page_context_for_no_trans_classification(monkeypatch) -> None:
+    captured = {}
+
+    def _fake_request(messages, **kwargs):
+        captured["messages"] = messages
+        return "no-trans: 1"
+
+    monkeypatch.setattr(
+        "services.translation.classification.page_classifier.request_chat_content",
+        _fake_request,
+    )
+    payload = [
+        {
+            "item_id": "p008-b003",
+            "block_type": "text",
+            "block_kind": "text",
+            "layout_role": "paragraph",
+            "semantic_role": "body",
+            "structure_role": "body",
+            "bbox": [10, 20, 300, 80],
+            "source_text": "$ source deeph/bin/activate",
+            "protected_source_text": "$ source deeph/bin/activate",
+            "formula_map": [],
+            "lines": [{"spans": [{"content": "$ source deeph/bin/activate"}]}],
+            "metadata": {"structure_role": "body"},
+        }
+    ]
+
+    labels = TranslationPlanner(
+        TranslationDocumentContext(mode="sci", rule_guidance="technical manual")
+    ).classify_no_trans(
+        payload,
+        api_key="",
+        model="deepseek-chat",
+        base_url="https://api.deepseek.com/v1",
+        batch_size=8,
+        request_label="classification page 8",
+    )
+
+    assert labels == {"p008-b003": "code"}
+    assert "technical manual" in captured["messages"][0]["content"]
+    assert "$ source deeph/bin/activate" in captured["messages"][1]["content"]
 
 
 def test_finalize_page_payloads_does_not_join_figure_caption_with_body_text() -> None:
@@ -268,6 +314,26 @@ def test_policy_config_honors_skip_title_translation_false() -> None:
 def test_policy_config_honors_skip_title_translation_true() -> None:
     config = build_translation_policy_config(mode="sci", skip_title_translation=True)
     assert config.enable_title_skip is True
+
+
+def test_policy_config_enables_page_no_trans_classification_for_sci_and_precise() -> None:
+    sci_config = build_translation_policy_config(mode="sci", skip_title_translation=False)
+    precise_config = build_translation_policy_config(mode="precise", skip_title_translation=False)
+    fast_config = build_translation_policy_config(mode="fast", skip_title_translation=False)
+
+    assert sci_config.enable_page_no_trans_classification is True
+    assert precise_config.enable_page_no_trans_classification is True
+    assert fast_config.enable_page_no_trans_classification is False
+
+
+def test_policy_config_honors_page_no_trans_classification_override() -> None:
+    config = build_translation_policy_config(
+        mode="sci",
+        skip_title_translation=False,
+        enable_page_no_trans_classification=False,
+    )
+
+    assert config.enable_page_no_trans_classification is False
 
 
 def test_apply_title_skip_preserves_source_text_for_render_fallback() -> None:
@@ -472,6 +538,39 @@ def test_apply_translation_policies_does_not_skip_cjk_body_text_by_default() -> 
     assert payload[0]["should_translate"] is True
     assert payload[0]["skip_reason"] == ""
     assert payload[0]["classification_label"] == ""
+
+
+def test_apply_classification_labels_marks_model_no_trans_as_keep_origin() -> None:
+    from services.translation.payload.parts.policy_mutations import apply_classification_labels
+
+    payload = [
+        {
+            "item_id": "p008-b005",
+            "block_type": "text",
+            "block_kind": "text",
+            "source_text": "|- POSCAR\n|- info.json\n|- overlap.h5",
+            "protected_source_text": "|- POSCAR\n|- info.json\n|- overlap.h5",
+            "classification_label": "",
+            "should_translate": True,
+            "skip_reason": "",
+            "translation_unit_protected_translated_text": "旧译文",
+            "translation_unit_translated_text": "旧译文",
+            "protected_translated_text": "旧译文",
+            "translated_text": "旧译文",
+            "group_protected_translated_text": "旧译文",
+            "group_translated_text": "旧译文",
+            "final_status": "",
+        }
+    ]
+
+    classified = apply_classification_labels(payload, {"p008-b005": "code"})
+
+    assert classified == 1
+    assert payload[0]["classification_label"] == "skip_model_keep_origin"
+    assert payload[0]["should_translate"] is False
+    assert payload[0]["skip_reason"] == "skip_model_keep_origin"
+    assert payload[0]["translated_text"] == ""
+    assert payload[0]["final_status"] == "kept_origin"
 
 
 def test_apply_translation_policies_skips_table_body_by_default() -> None:

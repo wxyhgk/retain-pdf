@@ -14,29 +14,37 @@ from services.translation.llm.shared.provider_runtime import extract_single_item
 from services.translation.llm.shared.provider_runtime import normalize_base_url
 
 
-_PROMPT_HASH = ""
+_PROMPT_HASHES: dict[str, str] = {}
 _CACHE_LOCK = threading.Lock()
 FORMULA_SEGMENT_STRATEGY_VERSION = "formula_segments_v2"
 PLAIN_TEXT_STRATEGY_VERSION = "plain_text_v2"
 TRANSLATION_PROTOCOL_VERSION = "translation_control_v3_tagged_body"
 UNESCAPED_INLINE_DOLLAR_RE = re.compile(r"(?<!\\)\$")
+TRANSLATION_PROMPT_FILES = (
+    "translation_system.txt",
+    "translation_task.txt",
+    "translation_task_plain_text.txt",
+    "translation_output_json.txt",
+    "translation_output_plain_text.txt",
+    "translation_output_single_json.txt",
+    "translation_output_tagged.txt",
+)
 
 
 def _prompt_hash(mode: str = "fast") -> str:
-    global _PROMPT_HASH
     cache_key = mode.strip() or "fast"
-    if _PROMPT_HASH and cache_key == "fast":
-        return _PROMPT_HASH
+    cached = _PROMPT_HASHES.get(cache_key)
+    if cached:
+        return cached
     digest = hashlib.sha256()
-    digest.update(load_prompt("translation_system.txt").encode("utf-8"))
-    digest.update(b"\n---\n")
-    digest.update(load_prompt("translation_task.txt").encode("utf-8"))
+    for prompt_name in TRANSLATION_PROMPT_FILES:
+        digest.update(f"\n--- {prompt_name} ---\n".encode("utf-8"))
+        digest.update(load_prompt(prompt_name).encode("utf-8"))
     if cache_key == "sci":
         digest.update(b"\n---\n")
         digest.update(b"SCI_LOCAL_DECISION_PLAIN_TEXT_V1")
     result = digest.hexdigest()
-    if cache_key == "fast":
-        _PROMPT_HASH = result
+    _PROMPT_HASHES[cache_key] = result
     return result
 
 

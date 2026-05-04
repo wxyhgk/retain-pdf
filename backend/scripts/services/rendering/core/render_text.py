@@ -4,6 +4,7 @@ import re
 
 MATH_SOURCE_RE = re.compile(r"\$[^$]+\$|\\(?:begin|end|frac|lim|sum|int|mathrm|left|right|cdot|epsilon|forall|in)\b")
 DISPLAY_MATH_RE = re.compile(r"^\s*\$\$[\s\S]+?\$\$\s*(?:\$\$[\s\S]+?\$\$\s*)*$")
+MODEL_KEEP_ORIGIN_REASONS = {"skip_model_keep_origin"}
 
 
 def _protected_map_from_formula_map(formula_map: list[dict]) -> list[dict]:
@@ -121,6 +122,8 @@ def _render_source_text(item: dict) -> str:
 def _should_render_source_when_untranslated(item: dict) -> bool:
     if item.get("should_translate", True):
         return False
+    if _skip_reason(item) in MODEL_KEEP_ORIGIN_REASONS:
+        return False
     return _should_render_source_block(item)
 
 
@@ -132,7 +135,7 @@ def should_skip_display_math_render(item: dict) -> bool:
         return False
     block_kind = str(item.get("block_kind", item.get("block_type", "")) or "").strip().lower()
     sub_type = str(item.get("normalized_sub_type", "") or "").strip().lower()
-    skip_reason = str(item.get("skip_reason", "") or item.get("classification_label", "") or "").strip().lower()
+    skip_reason = _skip_reason(item)
     if block_kind == "formula" or sub_type == "display_formula":
         return True
     if skip_reason in {"skip_display_formula", "skip_model_keep_origin"} and DISPLAY_MATH_RE.fullmatch(source_text):
@@ -143,6 +146,8 @@ def should_skip_display_math_render(item: dict) -> bool:
 def _should_render_source_block(item: dict) -> bool:
     if should_skip_display_math_render(item):
         return False
+    if not item.get("should_translate", True) and _skip_reason(item) in MODEL_KEEP_ORIGIN_REASONS:
+        return False
     source_text = _render_source_text(item)
     if not source_text:
         return False
@@ -151,3 +156,7 @@ def _should_render_source_block(item: dict) -> bool:
     if block_kind == "formula" or sub_type in {"formula", "display_formula"}:
         return True
     return bool(MATH_SOURCE_RE.search(source_text))
+
+
+def _skip_reason(item: dict) -> str:
+    return str(item.get("skip_reason", "") or item.get("classification_label", "") or "").strip().lower()

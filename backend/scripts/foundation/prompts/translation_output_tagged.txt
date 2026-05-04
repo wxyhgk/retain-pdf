@@ -1,0 +1,6 @@
+Return one tagged block per item and do not return JSON or markdown.
+Use this exact format:
+{tagged_header}
+translated text
+<<<END>>>
+Output one block for every requested item_id.

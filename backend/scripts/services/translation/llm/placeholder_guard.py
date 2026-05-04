@@ -31,6 +31,14 @@ SHORT_FRAGMENT_RE = re.compile(r"^[A-Za-z][A-Za-z0-9._/-]{0,7}$")
 EN_RESIDUE_SEGMENT_RE = re.compile(r"[A-Za-z][A-Za-z0-9\s,;:()'./%+-]{30,}")
 AUTHOR_NAME_TOKEN_RE = re.compile(r"\b(?:[A-Z]\.\s*)?[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ'`´.-]{1,}\b")
 EN_CHUNK_RE = re.compile(r"[A-Za-z][A-Za-z0-9'./%+\-]*(?:\s+[A-Za-z][A-Za-z0-9'./%+\-]*)*")
+MODEL_REQUEST_PROMPT_RE = re.compile(
+    r"^(?:"
+    r"请\s*(?:提供|输入|给出|粘贴|发送)\s*(?:待翻译的?)?\s*(?:原文|文本|内容|source)(?:[。.!！?？\s]*)|"
+    r"(?:please\s+)?(?:provide|send|enter|paste)\s+(?:the\s+)?(?:source\s+)?(?:text|content)(?:\s+to\s+translate)?(?:[。.!！?？\s]*)"
+    r")$",
+    re.I,
+)
+MODEL_REQUEST_PROMPT_MAX_CHARS = 48
 
 
 class SuspiciousKeepOriginError(ValueError):
@@ -105,6 +113,20 @@ class TranslationProtocolError(ValueError):
         translated_text: str = "",
     ) -> None:
         super().__init__(f"{item_id}: translated output still contains protocol/json shell")
+        self.item_id = item_id
+        self.source_text = source_text
+        self.translated_text = translated_text
+
+
+class MathDelimiterError(ValueError):
+    def __init__(
+        self,
+        item_id: str,
+        *,
+        source_text: str = "",
+        translated_text: str = "",
+    ) -> None:
+        super().__init__(f"{item_id}: translated output has unbalanced inline math delimiters")
         self.item_id = item_id
         self.source_text = source_text
         self.translated_text = translated_text
@@ -633,7 +655,11 @@ def canonicalize_batch_result(batch: list[dict], result: dict[str, dict[str, str
 
 def looks_like_protocol_shell_output(translated_text: str) -> bool:
     text = str(translated_text or "").strip()
-    if not text or not text.startswith("{"):
+    if not text:
+        return False
+    if len(text) <= MODEL_REQUEST_PROMPT_MAX_CHARS and MODEL_REQUEST_PROMPT_RE.fullmatch(text):
+        return True
+    if not text.startswith("{"):
         return False
     return (
         '"translated_text"' in text
@@ -696,7 +722,7 @@ def validate_batch_result(
                     message="Translated output has unbalanced inline math delimiters",
                     retryable=True,
                 )
-            raise TranslationProtocolError(
+            raise MathDelimiterError(
                 item_id,
                 source_text=source_text,
                 translated_text=translated_text,

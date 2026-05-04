@@ -73,6 +73,11 @@ def _fit_markdown_typst_helpers() -> list[str]:
     ]
 
 
+def _typst_rgb(color: tuple[float, float, float]) -> str:
+    r, g, b = color
+    return f"rgb({int(max(0, min(1, r)) * 255)}, {int(max(0, min(1, g)) * 255)}, {int(max(0, min(1, b)) * 255)})"
+
+
 def _build_typst_block(block_id: str, block: RenderBlock) -> str:
     var_prefix = block_id.replace("-", "_")
     x0, y0, x1, y1 = block.inner_bbox
@@ -81,6 +86,7 @@ def _build_typst_block(block_id: str, block: RenderBlock) -> str:
     font_size = max(1.0, block.font_size_pt)
     leading = max(0.1, block.leading_em)
     font_weight = block.font_weight if str(block.font_weight or "").strip() else "regular"
+    text_fill = _typst_rgb(block.text_color)
 
     if block.render_kind == "plain_line":
         text_name = f"{var_prefix}_txt"
@@ -89,11 +95,11 @@ def _build_typst_block(block_id: str, block: RenderBlock) -> str:
         plain_text = block.plain_text
         return (
             f'#let {text_name} = "{escape_typst_string(plain_text)}"\n'
-            f'#let {base_name} = box[#{{ set text(size: {font_size}pt, weight: "{font_weight}"); {text_name} }}]\n'
+            f'#let {base_name} = box[#{{ set text(size: {font_size}pt, weight: "{font_weight}", fill: {text_fill}); {text_name} }}]\n'
             "#context {\n"
             f"  let base-size = measure({base_name})\n"
             f"  let scaled-font = if base-size.width > {width}pt {{ {font_size}pt * ({width}pt / base-size.width) }} else {{ {font_size}pt }}\n"
-            f'  let {scaled_name} = box[#{{ set text(size: scaled-font, weight: "{font_weight}"); {text_name} }}]\n'
+            f'  let {scaled_name} = box[#{{ set text(size: scaled-font, weight: "{font_weight}", fill: {text_fill}); {text_name} }}]\n'
             f"  place(top + left, dx: {x0}pt, dy: {y0}pt, {scaled_name})\n"
             "}"
         )
@@ -107,14 +113,14 @@ def _build_typst_block(block_id: str, block: RenderBlock) -> str:
         fit_height = max(8.0, min(height, block.fit_max_height_pt or height))
         return (
             f'#let {markdown_name} = "{escape_typst_string(markdown)}"\n'
-            f'#let {body_name} = block(width: {width}pt, height: {fit_height}pt)[#{{ pdftr_fit_markdown({markdown_name}, max_size: {font_size}pt, min_size: {fit_min_font}pt, max_leading: {leading}em, min_leading: {fit_min_leading}em, fit_height: {fit_height}pt, weight: "{font_weight}") }}]\n'
+            f'#let {body_name} = block(width: {width}pt, height: {fit_height}pt)[#{{ set text(fill: {text_fill}); pdftr_fit_markdown({markdown_name}, max_size: {font_size}pt, min_size: {fit_min_font}pt, max_leading: {leading}em, min_leading: {fit_min_leading}em, fit_height: {fit_height}pt, weight: "{font_weight}") }}]\n'
             "#context {\n"
             f"  place(top + left, dx: {x0}pt, dy: {y0}pt, {body_name})\n"
             "}"
         )
     return (
         f'#let {markdown_name} = "{escape_typst_string(markdown)}"\n'
-        f'#let {body_name} = block(width: {width}pt)[#{{ set text(size: {font_size}pt, weight: "{font_weight}"); set par(leading: {leading}em); cmarker.render({markdown_name}, math: mitex) }}]\n'
+        f'#let {body_name} = block(width: {width}pt)[#{{ set text(size: {font_size}pt, weight: "{font_weight}", fill: {text_fill}); set par(leading: {leading}em); cmarker.render({markdown_name}, math: mitex) }}]\n'
         "#context {\n"
         f"  place(top + left, dx: {x0}pt, dy: {y0}pt, {body_name})\n"
         "}"
@@ -126,8 +132,9 @@ def _build_cover_rect(block_id: str, block: RenderBlock) -> str:
     x0, y0, x1, y1 = block.cover_bbox
     width = max(8.0, x1 - x0)
     height = max(8.0, y1 - y0)
+    cover_fill = _typst_rgb(block.cover_fill)
     return (
-        f"#let {rect_name} = rect(width: {width}pt, height: {height}pt, fill: white)\n"
+        f"#let {rect_name} = rect(width: {width}pt, height: {height}pt, fill: {cover_fill})\n"
         "#context {\n"
         f"  place(top + left, dx: {x0}pt, dy: {y0}pt, {rect_name})\n"
         "}"

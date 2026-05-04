@@ -23,6 +23,7 @@ class TranslationPolicyConfig:
     enable_metadata_fragment_skip: bool = False
     metadata_fragment_max_page_idx: int = 1
     enable_candidate_continuation_review: bool = True
+    enable_page_no_trans_classification: bool = False
     enable_domain_inference: bool = False
     sci_cutoff_page_idx: int | None = None
     sci_cutoff_block_idx: int | None = None
@@ -119,6 +120,7 @@ def build_translation_policy_config(
     enable_metadata_fragment_skip: bool | None = None,
     metadata_fragment_max_page_idx: int | None = None,
     enable_candidate_continuation_review: bool | None = None,
+    enable_page_no_trans_classification: bool | None = None,
     enable_domain_inference: bool | None = None,
 ) -> TranslationPolicyConfig:
     rule_profile = build_rule_profile_context(rule_profile_name, custom_rules_text)
@@ -158,6 +160,9 @@ def build_translation_policy_config(
         enable_candidate_continuation_review=should_apply_candidate_continuation_review()
         if enable_candidate_continuation_review is None
         else enable_candidate_continuation_review,
+        enable_page_no_trans_classification=(mode in {"sci", "precise"})
+        if enable_page_no_trans_classification is None
+        else enable_page_no_trans_classification,
         enable_domain_inference=(mode == "sci")
         if enable_domain_inference is None
         else enable_domain_inference,

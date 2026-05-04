@@ -3,6 +3,7 @@ from __future__ import annotations
 from services.translation.diagnostics import TranslationDiagnosticsCollector
 from services.translation.llm.placeholder_guard import EnglishResidueError
 from services.translation.llm.placeholder_guard import EmptyTranslationError
+from services.translation.llm.placeholder_guard import MathDelimiterError
 from services.translation.llm.placeholder_guard import TranslationProtocolError
 from services.translation.llm.placeholder_guard import UnexpectedPlaceholderError
 from services.translation.llm.placeholder_guard import PlaceholderInventoryError
@@ -159,6 +160,26 @@ def finalize_plain_text_validation_failure(
             route_path=route_prefix + ["keep_origin"],
             degradation_reason="protocol_shell_repeated",
             error_code="PROTOCOL_SHELL",
+        )
+
+    if _is_named_exception(last_error, "MathDelimiterError") and not should_force_translate_body_text_fn(item):
+        if diagnostics is not None:
+            diagnostics.emit(
+                kind="math_delimiter_degraded",
+                item_id=str(item.get("item_id", "") or ""),
+                page_idx=item.get("page_idx"),
+                severity="warning",
+                message="Degraded to keep_origin after repeated inline math delimiter failure",
+                retryable=True,
+            )
+        if request_label:
+            print(f"{request_label}: degraded to keep_origin after repeated inline math delimiter failure", flush=True)
+        return keep_origin_payload_for_validation(
+            item,
+            context=context,
+            route_path=route_prefix + ["keep_origin"],
+            degradation_reason="math_delimiter_unbalanced",
+            error_code="MATH_DELIMITER_UNBALANCED",
         )
 
     if _is_named_exception(last_error, "EmptyTranslationError") and not should_force_translate_body_text_fn(item):

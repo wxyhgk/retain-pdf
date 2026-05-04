@@ -11,6 +11,7 @@ from services.translation.llm.shared.orchestration.common import sentence_level_
 from services.translation.llm.shared.orchestration.common import should_keep_origin_on_empty_translation
 from services.translation.llm.shared.orchestration.direct_typst_long_text import should_split_direct_typst_long_text
 from services.translation.llm.shared.orchestration.direct_typst_long_text import translate_direct_typst_long_text_chunks
+from services.translation.llm.shared.orchestration.direct_typst_repair import try_repair_direct_typst_math_delimiters
 from services.translation.llm.shared.orchestration.direct_typst_salvage import try_salvage_direct_typst_protocol_shell_error
 from services.translation.llm.shared.orchestration.keep_origin import keep_origin_payload_for_direct_typst_validation_failure
 from services.translation.llm.shared.orchestration.keep_origin import keep_origin_payload_for_transport_error
@@ -42,6 +43,7 @@ def _sentence_level_fallback_or_keep_origin(
     translate_plain,
     translate_unstructured,
     sentence_level_fallback_fn,
+    keep_origin_on_failure_fn=keep_origin_payload_for_transport_error,
 ) -> dict[str, dict[str, str]]:
     try:
         fallback_impl = sentence_level_fallback_fn or sentence_level_fallback
@@ -62,7 +64,7 @@ def _sentence_level_fallback_or_keep_origin(
                 f"{request_label}: sentence-level fallback failed, degrade to keep_origin: {type(sentence_exc).__name__}: {sentence_exc}",
                 flush=True,
             )
-        return keep_origin_payload_for_transport_error(
+        return keep_origin_on_failure_fn(
             item,
             context=context,
             route_path=route_path,
@@ -82,6 +84,7 @@ def _handle_direct_typst_validation_failure(
     translate_plain,
     translate_unstructured,
     sentence_level_fallback_fn,
+    repair_math_delimiters_fn,
     api_key: str,
     model: str,
     base_url: str,
@@ -107,6 +110,32 @@ def _handle_direct_typst_validation_failure(
             if request_label:
                 print(f"{request_label}: direct_typst protocol shell salvaged successfully", flush=True)
             return salvaged, last_error
+    if _is_named_validation_exception(exc, "MathDelimiterError"):
+        try:
+            repaired = repair_math_delimiters_fn(
+                item,
+                exc=exc,
+                api_key=api_key,
+                model=model,
+                base_url=base_url,
+                request_label=request_label,
+                context=context,
+                diagnostics=diagnostics,
+                route_path=route_prefix + ["typst_repair"],
+                output_mode_path=["plain_text"],
+                timeout_s=plain_text_timeout_seconds(item, context=context, transport_tail_retry=not allow_transport_tail_defer),
+                validate_batch_result_fn=validate_batch_result_fn,
+            )
+            if repaired is not None:
+                if request_label:
+                    print(f"{request_label}: direct_typst math delimiter repaired successfully", flush=True)
+                return repaired, last_error
+        except Exception as repair_exc:
+            if request_label:
+                print(
+                    f"{request_label}: direct_typst math delimiter repair failed: {type(repair_exc).__name__}: {repair_exc}",
+                    flush=True,
+                )
 
     raw_started = time.perf_counter()
     try:
@@ -138,6 +167,7 @@ def _handle_direct_typst_validation_failure(
             raw_exc,
             "EmptyTranslationError",
             "EnglishResidueError",
+            "MathDelimiterError",
             "TranslationProtocolError",
         ):
             if not is_transport_error(raw_exc):
@@ -189,6 +219,60 @@ def _handle_direct_typst_validation_failure(
                 degradation_reason="english_residue_repeated",
                 error_code="ENGLISH_RESIDUE",
             ), last_error
+        if _is_named_validation_exception(last_error, "MathDelimiterError"):
+            try:
+                repaired = repair_math_delimiters_fn(
+                    item,
+                    exc=last_error,
+                    api_key=api_key,
+                    model=model,
+                    base_url=base_url,
+                    request_label=request_label,
+                    context=context,
+                    diagnostics=diagnostics,
+                    route_path=route_prefix + ["plain_text_raw", "typst_repair"],
+                    output_mode_path=["plain_text"],
+                    timeout_s=plain_text_timeout_seconds(item, context=context, transport_tail_retry=not allow_transport_tail_defer),
+                    validate_batch_result_fn=validate_batch_result_fn,
+                )
+                if repaired is not None:
+                    if request_label:
+                        print(f"{request_label}: direct_typst raw math delimiter repaired successfully", flush=True)
+                    return repaired, last_error
+            except Exception as repair_exc:
+                if request_label:
+                    print(
+                        f"{request_label}: direct_typst raw math delimiter repair failed: {type(repair_exc).__name__}: {repair_exc}",
+                        flush=True,
+                    )
+            if should_force_translate_body_text(item) and sentence_level_fallback_allowed(item):
+                return _sentence_level_fallback_or_keep_origin(
+                    item,
+                    api_key=api_key,
+                    model=model,
+                    base_url=base_url,
+                    request_label=request_label,
+                    context=context,
+                    diagnostics=diagnostics,
+                    route_path=route_prefix + ["validation", "sentence_level", "keep_origin"],
+                    translate_plain=translate_plain,
+                    translate_unstructured=translate_unstructured,
+                    sentence_level_fallback_fn=sentence_level_fallback_fn,
+                    keep_origin_on_failure_fn=lambda fallback_item, *, context, route_path: keep_origin_payload_for_direct_typst_validation_failure(
+                        fallback_item,
+                        context=context,
+                        route_path=route_path,
+                        degradation_reason="math_delimiter_unbalanced",
+                        error_code="MATH_DELIMITER_UNBALANCED",
+                    ),
+                ), last_error
+            return keep_origin_payload_for_direct_typst_validation_failure(
+                item,
+                context=context,
+                route_path=route_prefix + ["keep_origin"],
+                degradation_reason="math_delimiter_unbalanced",
+                error_code="MATH_DELIMITER_UNBALANCED",
+            ), last_error
         if _is_named_validation_exception(last_error, "TranslationProtocolError"):
             salvaged = try_salvage_direct_typst_protocol_shell_error(
                 item,
@@ -204,6 +288,27 @@ def _handle_direct_typst_validation_failure(
                 if request_label:
                     print(f"{request_label}: direct_typst raw protocol shell salvaged successfully", flush=True)
                 return salvaged, last_error
+            if should_force_translate_body_text(item) and sentence_level_fallback_allowed(item):
+                return _sentence_level_fallback_or_keep_origin(
+                    item,
+                    api_key=api_key,
+                    model=model,
+                    base_url=base_url,
+                    request_label=request_label,
+                    context=context,
+                    diagnostics=diagnostics,
+                    route_path=route_prefix + ["validation", "sentence_level", "keep_origin"],
+                    translate_plain=translate_plain,
+                    translate_unstructured=translate_unstructured,
+                    sentence_level_fallback_fn=sentence_level_fallback_fn,
+                    keep_origin_on_failure_fn=lambda fallback_item, *, context, route_path: keep_origin_payload_for_direct_typst_validation_failure(
+                        fallback_item,
+                        context=context,
+                        route_path=route_path,
+                        degradation_reason="protocol_shell_repeated",
+                        error_code="PROTOCOL_SHELL",
+                    ),
+                ), last_error
             if looks_like_cjk_dominant_body_text(item) or not should_force_translate_body_text(item):
                 return keep_origin_payload_for_direct_typst_validation_failure(
                     item,
@@ -220,7 +325,13 @@ def _handle_direct_typst_validation_failure(
                     degradation_reason="protocol_shell_group_repeated",
                     error_code="PROTOCOL_SHELL",
                 ), last_error
-            raise last_error
+            return keep_origin_payload_for_direct_typst_validation_failure(
+                item,
+                context=context,
+                route_path=route_prefix + ["keep_origin"],
+                degradation_reason="protocol_shell_repeated",
+                error_code="PROTOCOL_SHELL",
+            ), last_error
         if _is_named_validation_exception(last_error, "EmptyTranslationError"):
             if should_keep_origin_on_empty_translation(item) or not should_force_translate_body_text(item):
                 return keep_origin_payload_for_direct_typst_validation_failure(
@@ -248,6 +359,7 @@ def translate_direct_typst_plain_text_with_retries(
     translate_plain_fn=None,
     translate_unstructured_fn=None,
     sentence_level_fallback_fn=None,
+    repair_math_delimiters_fn=try_repair_direct_typst_math_delimiters,
     validate_batch_result_fn=validate_batch_result,
 ) -> dict[str, dict[str, str]]:
     translate_plain = translate_plain_fn or translate_single_item_plain_text
@@ -322,6 +434,7 @@ def translate_direct_typst_plain_text_with_retries(
                 exc,
                 "EmptyTranslationError",
                 "EnglishResidueError",
+                "MathDelimiterError",
                 "TranslationProtocolError",
             ):
                 if isinstance(exc, (ValueError, KeyError, json.JSONDecodeError)):
@@ -393,6 +506,32 @@ def translate_direct_typst_plain_text_with_retries(
                         if request_label:
                             print(f"{request_label}: direct_typst protocol shell salvaged successfully", flush=True)
                         return salvaged
+                if _is_named_validation_exception(exc, "MathDelimiterError"):
+                    try:
+                        repaired = repair_math_delimiters_fn(
+                            item,
+                            exc=exc,
+                            api_key=api_key,
+                            model=model,
+                            base_url=base_url,
+                            request_label=request_label,
+                            context=context,
+                            diagnostics=diagnostics,
+                            route_path=route_prefix + ["typst_repair"],
+                            output_mode_path=["plain_text"],
+                            timeout_s=plain_timeout_s,
+                            validate_batch_result_fn=validate_batch_result_fn,
+                        )
+                        if repaired is not None:
+                            if request_label:
+                                print(f"{request_label}: direct_typst math delimiter repaired successfully", flush=True)
+                            return repaired
+                    except Exception as repair_exc:
+                        if request_label:
+                            print(
+                                f"{request_label}: direct_typst math delimiter repair failed attempt {attempt}/{plain_attempts}: {type(repair_exc).__name__}: {repair_exc}",
+                                flush=True,
+                            )
                 time.sleep(min(8, 2 * attempt))
                 continue
 
@@ -408,6 +547,7 @@ def translate_direct_typst_plain_text_with_retries(
                 translate_plain=translate_plain,
                 translate_unstructured=translate_unstructured,
                 sentence_level_fallback_fn=sentence_level_fallback_fn,
+                repair_math_delimiters_fn=repair_math_delimiters_fn,
                 api_key=api_key,
                 model=model,
                 base_url=base_url,

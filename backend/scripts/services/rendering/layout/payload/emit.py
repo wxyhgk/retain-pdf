@@ -38,6 +38,8 @@ def payload_to_render_block(payload: dict) -> RenderBlock:
         fit_min_font_size_pt=fit_min_font_size_pt,
         fit_min_leading_em=fit_min_leading_em,
         fit_max_height_pt=fit_max_height_pt,
+        text_color=tuple(payload.get("text_color", (0, 0, 0))),
+        cover_fill=tuple(payload.get("cover_fill", (1, 1, 1))),
     )
 
 

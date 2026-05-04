@@ -23,6 +23,8 @@ class RenderBlock:
     fit_target_width_pt: float = 0.0
     fit_target_height_pt: float = 0.0
     fit_shift_up_pt: float = 0.0
+    text_color: tuple[float, float, float] = (0, 0, 0)
+    cover_fill: tuple[float, float, float] = (1, 1, 1)
 
 
 @dataclass
