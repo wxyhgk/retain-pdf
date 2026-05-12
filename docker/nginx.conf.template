@@ -10,7 +10,7 @@ map $http_x_forwarded_host $retainpdf_forwarded_host {
 
 map $http_x_forwarded_port $retainpdf_forwarded_port {
   default $http_x_forwarded_port;
-  "" $server_port;
+  "" "";
 }
 
 server {
