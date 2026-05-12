@@ -4,15 +4,11 @@ use anyhow::{anyhow, Result};
 
 #[cfg(test)]
 use crate::models::{JobArtifacts, JobSnapshot};
-use crate::models::{JobRuntimeState, JobStatusKind};
+use crate::models::{
+    job_stage_detail, job_stage_str, JobRuntimeState, JobStage, JobStatusKind,
+};
 
 use crate::job_runner::{clear_job_failure, refresh_job_failure, sync_runtime_state};
-
-#[derive(Clone, Copy)]
-pub(super) enum OcrContinuation {
-    FullPipeline,
-    TranslateOnly,
-}
 
 pub(super) struct TranslationInputs<'a> {
     pub(super) normalized_path: &'a Path,
@@ -29,8 +25,8 @@ pub(super) fn finalize_parent_after_ocr(
         JobStatusKind::Succeeded => Ok(false),
         JobStatusKind::Canceled => {
             parent_job.status = JobStatusKind::Canceled;
-            parent_job.stage = Some("canceled".to_string());
-            parent_job.stage_detail = Some("OCR 子任务已取消".to_string());
+            parent_job.stage = Some(job_stage_str(JobStage::Canceled).to_string());
+            parent_job.stage_detail = Some(job_stage_detail(JobStage::Canceled).to_string());
             parent_job.finished_at = Some(timestamp.clone());
             parent_job.updated_at = timestamp;
             clear_job_failure(parent_job);
@@ -39,8 +35,8 @@ pub(super) fn finalize_parent_after_ocr(
         }
         _ => {
             parent_job.status = JobStatusKind::Failed;
-            parent_job.stage = Some("failed".to_string());
-            parent_job.stage_detail = Some("OCR 子任务失败".to_string());
+            parent_job.stage = Some(job_stage_str(JobStage::Failed).to_string());
+            parent_job.stage_detail = Some(job_stage_detail(JobStage::Failed).to_string());
             parent_job.error = ocr_finished
                 .error
                 .clone()
@@ -57,23 +53,20 @@ pub(super) fn finalize_parent_after_ocr(
 pub(super) fn translation_inputs_from_artifacts(
     job: &JobRuntimeState,
 ) -> Result<TranslationInputs<'_>> {
-    let normalized_path = job
+    let artifacts = job
         .artifacts
         .as_ref()
-        .and_then(|item| item.normalized_document_json.as_deref())
+        .ok_or_else(|| anyhow!("OCR succeeded but artifacts are missing"))?;
+    let checkpoint = artifacts.ocr_checkpoint();
+    let normalized_path = checkpoint
+        .normalized_document_json
         .map(Path::new)
         .ok_or_else(|| anyhow!("OCR succeeded but normalized_document_json is missing"))?;
-    let source_pdf_path = job
-        .artifacts
-        .as_ref()
-        .and_then(|item| item.source_pdf.as_deref())
+    let source_pdf_path = checkpoint
+        .source_pdf
         .map(Path::new)
         .ok_or_else(|| anyhow!("OCR succeeded but source_pdf is missing"))?;
-    let layout_json_path = job
-        .artifacts
-        .as_ref()
-        .and_then(|item| item.layout_json.as_deref())
-        .map(Path::new);
+    let layout_json_path = checkpoint.layout_json.map(Path::new);
     Ok(TranslationInputs {
         normalized_path,
         source_pdf_path,

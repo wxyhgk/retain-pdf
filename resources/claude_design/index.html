@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>保留排版翻译 · 进度动画</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  html, body { margin: 0; padding: 0; background: #0a0a0a; height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+                 "Helvetica Neue", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: #f6f4ef;
+  }
+  #root { position: absolute; inset: 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="application/json" id="speaker-notes">[]</script>
+
+<!-- React + Babel pinned -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Tweaks defaults persisted by host -->
+<script>
+window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "speed": 2,
+  "mode": "sequence"
+}/*EDITMODE-END*/;
+</script>
+
+<!-- Animation engine + tweaks shell -->
+<script type="text/babel" src="animations.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<!-- Shared primitives + scene files -->
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="scene-ocr.jsx"></script>
+<script type="text/babel" src="scene-translate.jsx"></script>
+<script type="text/babel" src="scene-render.jsx"></script>
+<script type="text/babel" src="scene-complete.jsx"></script>
+
+<!-- Main app shell -->
+<script type="text/babel" src="app.jsx"></script>
+</body>
+</html>

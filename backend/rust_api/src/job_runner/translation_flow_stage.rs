@@ -5,7 +5,9 @@ use anyhow::Result;
 use crate::job_events::{
     persist_runtime_job_with_resources, record_custom_runtime_event_with_resources,
 };
-use crate::models::{now_iso, JobRuntimeState, JobStatusKind};
+use crate::models::{
+    job_stage_detail, job_stage_str, now_iso, JobRuntimeState, JobStage, JobStatusKind,
+};
 use crate::services::job_command_factory::build_translate_only_command;
 use crate::storage_paths::JobPaths;
 
@@ -88,8 +90,10 @@ fn prepare_translation_stage(
         source_pdf_path,
         layout_json_path,
     );
-    parent_job.stage = Some("translating".to_string());
-    parent_job.stage_detail = Some("OCR 完成，开始翻译".to_string());
+    parent_job.stage = Some(job_stage_str(JobStage::Translating).to_string());
+    parent_job.stage_detail = Some(job_stage_detail(JobStage::Translating).to_string());
+    parent_job.progress_current = None;
+    parent_job.progress_total = None;
     parent_job.updated_at = now_iso();
     sync_runtime_state(parent_job);
     persist_runtime_job_with_resources(
@@ -116,8 +120,8 @@ pub(super) async fn run_render_stage_after_translation(
         &job_paths.translated_dir,
     );
     job.status = JobStatusKind::Running;
-    job.stage = Some("rendering".to_string());
-    job.stage_detail = Some("翻译完成，开始渲染".to_string());
+    job.stage = Some(job_stage_str(JobStage::Rendering).to_string());
+    job.stage_detail = Some(job_stage_detail(JobStage::Rendering).to_string());
     job.updated_at = now_iso();
     clear_job_failure(&mut job);
     sync_runtime_state(&mut job);

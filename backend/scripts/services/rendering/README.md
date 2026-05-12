@@ -36,23 +36,26 @@ Rendering 阶段的正式输入和输出固定为：
 scripts/services/rendering/
   __init__.py
   README.md
-  api/
-  background/
-  compress/
-  core/
-  formula/
-  layout/
-    payload/
-    typography/
-  redaction/
-  typst/
+  legacy/          旧调用方兼容入口；新逻辑不要放这里
+  workflow/        渲染阶段编排，只调度，不做具体 PDF/Typst 细节
+  analysis/        页面画像、页面分类和页面路线决策
+  document/        源 PDF、页码映射、书签/目录等文档级辅助
+  source/          原 PDF 准备、清理、背景重建和压缩
+  layout/          翻译块到渲染块的排版计算
+  output/          Typst 源码生成、编译、overlay 合成和 PDF 写出
 ```
+
+推荐理解顺序：
+
+`workflow -> document/analysis -> source/layout -> output`
+
+`legacy/` 是旧调用方兼容门面，不应该继续堆业务逻辑。
 
 ## 渲染主路径
 
 当前主路径可以概括为：
 
-`translation JSON -> layout/payload -> typst -> PDF`
+`translation JSON -> layout/payload -> output/typst -> PDF`
 
 上层通常通过 [render_stage.py](/home/wxyhgk/tmp/Code/backend/scripts/runtime/pipeline/render_stage.py) 调用这里的能力。
 
@@ -66,29 +69,104 @@ scripts/services/rendering/
 
 ## 模块分工
 
-- `api/`
-  对内稳定入口。
+- `legacy/`
+  旧调用方兼容门面。新业务逻辑不要写在这里，只转发到具体模块。
+- `workflow/`
+  编排渲染流程，负责选择模式、串联 Typst/背景/redaction，不直接写复杂算法。
+- `workflow/render_only.py`
+  render-only worker 包装入口。
+- `analysis/profile/`
+  单页事实采集层。只回答“这一页是什么样”，不决定怎么渲染。
+- `analysis/route/`
+  单页路线决策层。只根据 profile 决定路线，不直接操作 PDF。
 - `layout/payload/`
   把翻译后的 OCR payload 转成可渲染块。
 - `layout/typography/`
   排版测量和几何工具层。
-- `redaction/`
+- `layout/inline_content/`
+  公式、Markdown、Typst inline 文本归一化。
+- `source/render_source.py`
+  源 PDF 渲染前准备，包括隐藏文本剥离和压缩副本选择。
+- `source/cleanup/`
   直接操作 PDF 页面对象，负责删字、盖底和写回。
-- `typst/`
-  负责把渲染块变成 Typst 源码并编译成 PDF。
-- `formula/`
-  公式归一化、公式坏例库、公式文本拼装。
-- `background/`
+- `source/background/`
   大背景图页面的局部背景重建。
-- `compress/`
+- `source/compression/`
   PDF 图片型压缩。
-- `core/`
-  渲染层公共数据结构。
+- `output/typst/`
+  负责把渲染块变成 Typst 源码并编译成 PDF。
+- `output/pdf_writer.py`
+  兼容旧 import 的 re-export；新代码优先使用 `document/pdf_ops.py`。
+- `document/pdf_ops.py`
+  通用 PDF 保存和页面链接处理辅助。它属于文档级基础能力，不属于 Typst 输出层。
+- `layout/model/`
+  渲染层公共数据结构和排版文本 helper。
+- `layout/page_specs.py`
+  页面级渲染规格组装，连接翻译 payload、页面几何和输出层。
+
+## 背景遮盖策略
+
+Typst overlay 路径优先使用“文本容器自带背景”：
+
+```typst
+place(...,
+  block(width: ..., height: ..., fill: ...)[
+    译文内容
+  ]
+)
+```
+
+不要再为普通译文块单独输出一层 `rect(...)` 白块再输出文字。文本容器自带背景可以让白底和文字天然绑定，减少层级、错位和覆盖顺序问题。
+
+需要区分两件事：
+
+- 视觉遮盖：由 Typst block 的 `fill` 或 Word 白底文本框完成。
+- 文本层清理：仍由 `source/cleanup` 和 redaction 策略处理，不能只靠视觉遮盖替代。
+
+## 真实 PDF 回归
+
+真实样本放在 [resources/samples/golden-pdfs](/home/wxyhgk/tmp/Code/resources/samples/golden-pdfs)。
+
+常用命令：
+
+```bash
+python3 backend/scripts/devtools/run_golden_flow.py --check-manifest
+python3 backend/scripts/devtools/run_golden_flow.py --list-samples
+python3 backend/scripts/devtools/run_golden_flow.py \
+  --job-root data/jobs/golden-fullflow-book-20260511170519 \
+  --render-only \
+  --bbox-item p001-b013
+python3 backend/scripts/devtools/run_golden_flow.py \
+  --job-root data/jobs/golden-pseudo-20260512-full \
+  --render-only \
+  --bbox-item p001-b013
+```
+
+当前最小回归集：
+
+- `editable-paper-formula`：可编辑论文 PDF，覆盖文本层、公式和常规 Typst 背景渲染。
+- `pseudo-editable`：伪可编辑 PDF，覆盖扫描/背景图风险和文本层保留风险。
+
+回归脚本会检查：
+
+- 样本清单合法。
+- 最终 PDF 页数与源 PDF 一致。
+- 翻译诊断没有 unresolved 项。
+- 抽样 block 的 Typst 放置坐标与 OCR bbox 左上角一致。
+
+## Import 边界
+
+- runtime/pipeline 只应调用 `workflow/` 的稳定入口。
+- `analysis/route/` 可以依赖 `analysis/profile/`，但 `analysis/profile/` 不应反向依赖 `analysis/route/`。
+- `layout/` 不应直接调用 source cleanup；它只生成排版/渲染块。
+- `output/typst/` 不应重新做 OCR/翻译判断；需要页面事实时从 profile/route 传入。
+- `source/cleanup/` 可以操作 PDF 页面对象，但不应生成 Typst 源码。
+- 新代码优先 import 具体模块，不要依赖包根 `__init__.py` 的 re-export。
 
 ## 推荐入口
 
 - [render_stage.py](/home/wxyhgk/tmp/Code/backend/scripts/runtime/pipeline/render_stage.py)
-- [services/rendering/api](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/api)
+- [services/rendering/workflow](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/workflow)
 
 ## 公式回归
 

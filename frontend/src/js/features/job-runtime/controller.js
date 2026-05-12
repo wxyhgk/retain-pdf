@@ -1,5 +1,17 @@
-import { $ } from "../../dom.js";
-import { normalizeJobPayload, summarizeStatus, isTerminalStatus } from "../../job.js";
+import { normalizeJobPayload, isTerminalStatus } from "../../job.js";
+import { resetJobSecondaryState } from "../../state.js";
+import { isReaderDialogOpen, setCancelButtonDisabled } from "../app-shell/view.js";
+import {
+  cachedEventsFor,
+  cachedManifestFor,
+  fetchAllJobEvents,
+  JOB_EVENTS_REFRESH_MS,
+  JOB_MANIFEST_REFRESH_MS,
+  JOB_POLL_INTERVAL_MS,
+  shouldRefreshSecondary,
+  stopPolling,
+} from "./runtime-state.js";
+import { returnJobRuntimeToHome } from "./runtime-reset.js";
 
 export function mountJobRuntimeFeature({
   state,
@@ -21,61 +33,12 @@ export function mountJobRuntimeFeature({
   onReaderDialogSync,
   onReaderDialogClose,
 }) {
-  const JOB_EVENTS_PAGE_SIZE = 200;
-  const JOB_POLL_INTERVAL_MS = 1000;
-  const JOB_EVENTS_REFRESH_MS = 3000;
-  const JOB_MANIFEST_REFRESH_MS = 5000;
-
-  function stopPolling() {
-    if (state.timer) {
-      clearInterval(state.timer);
-      state.timer = null;
-    }
-  }
-
-  async function fetchAllJobEvents(jobId) {
-    const items = [];
-    let offset = 0;
-    while (true) {
-      const payload = await fetchJobEvents(jobId, apiPrefix, JOB_EVENTS_PAGE_SIZE, offset);
-      const batch = Array.isArray(payload?.items) ? payload.items : [];
-      items.push(...batch);
-      if (batch.length < JOB_EVENTS_PAGE_SIZE) {
-        return {
-          ...payload,
-          items,
-          offset: 0,
-          limit: items.length,
-        };
-      }
-      offset += batch.length;
-    }
-  }
-
-  function cachedEventsFor(jobId) {
-    return state.currentJobEventsJobId === jobId ? state.currentJobEvents : null;
-  }
-
-  function cachedManifestFor(jobId) {
-    return state.currentJobManifestJobId === jobId ? state.currentJobManifest : null;
-  }
-
-  function shouldRefreshSecondary(lastFetchedAt, refreshMs, force) {
-    if (force) {
-      return true;
-    }
-    if (!Number.isFinite(lastFetchedAt) || lastFetchedAt <= 0) {
-      return true;
-    }
-    return (Date.now() - lastFetchedAt) >= refreshMs;
-  }
-
   async function fetchJob(jobId) {
     const payload = await fetchJobPayload(jobId, apiPrefix);
-    const cachedEvents = cachedEventsFor(jobId);
-    const cachedManifest = cachedManifestFor(jobId);
+    const cachedEvents = cachedEventsFor(state, jobId);
+    const cachedManifest = cachedManifestFor(state, jobId);
     renderJob(payload, cachedEvents, cachedManifest);
-    if ($("reader-dialog")?.open) {
+    if (isReaderDialogOpen()) {
       onReaderDialogSync?.();
     }
     const job = normalizeJobPayload(payload);
@@ -84,7 +47,7 @@ export function mountJobRuntimeFeature({
       stopPolling();
     }
     if (shouldRefreshSecondary(state.currentJobEventsFetchedAt, JOB_EVENTS_REFRESH_MS, terminal || !cachedEvents)) {
-      void fetchAllJobEvents(jobId)
+      void fetchAllJobEvents({ fetchJobEvents, apiPrefix, jobId })
         .then((eventsPayload) => {
           if (state.currentJobId !== jobId) {
             return;
@@ -92,7 +55,7 @@ export function mountJobRuntimeFeature({
           state.currentJobEvents = eventsPayload;
           state.currentJobEventsJobId = jobId;
           state.currentJobEventsFetchedAt = Date.now();
-          renderJob(payload, eventsPayload, cachedManifestFor(jobId));
+          renderJob(payload, eventsPayload, cachedManifestFor(state, jobId));
         })
         .catch(() => {
           // Event stream is secondary; keep main status usable even if events fail.
@@ -107,7 +70,7 @@ export function mountJobRuntimeFeature({
           state.currentJobManifest = manifestPayload;
           state.currentJobManifestJobId = jobId;
           state.currentJobManifestFetchedAt = Date.now();
-          renderJob(payload, cachedEventsFor(jobId), manifestPayload);
+          renderJob(payload, cachedEventsFor(state, jobId), manifestPayload);
         })
         .catch(() => {
           // Artifacts manifest is secondary; keep main status usable even if manifest fails.
@@ -118,12 +81,7 @@ export function mountJobRuntimeFeature({
   function startPolling(jobId) {
     stopPolling();
     state.currentJobId = jobId;
-    state.currentJobEvents = null;
-    state.currentJobEventsJobId = "";
-    state.currentJobEventsFetchedAt = 0;
-    state.currentJobManifest = null;
-    state.currentJobManifestJobId = "";
-    state.currentJobManifestFetchedAt = 0;
+    resetJobSecondaryState(state);
     if (!state.currentJobStartedAt) {
       state.currentJobStartedAt = new Date().toISOString();
     }
@@ -139,56 +97,18 @@ export function mountJobRuntimeFeature({
   }
 
   function returnToHome() {
-    stopPolling();
-    $("status-detail-dialog")?.close();
-    onReaderDialogClose?.();
-    $("page-range-dialog")?.close();
-    state.currentJobId = "";
-    state.currentJobSnapshot = null;
-    state.currentJobManifest = null;
-    state.currentJobManifestJobId = "";
-    state.currentJobManifestFetchedAt = 0;
-    state.currentJobEvents = null;
-    state.currentJobEventsJobId = "";
-    state.currentJobEventsFetchedAt = 0;
-    state.currentJobStartedAt = "";
-    state.currentJobFinishedAt = "";
-    state.appliedPageRange = "";
-    setWorkflowSections(null);
-    resetUploadProgress();
-    resetUploadedFile();
-    applyWorkflowMode();
-    setText("job-summary", summarizeStatus("idle"));
-    setText("job-stage-detail", "-");
-    setText("job-id", "-");
-    setText("query-job-duration", "-");
-    setText("job-finished-at", "-");
-    clearPageRanges();
-    setText("runtime-current-stage", "-");
-    setText("runtime-stage-elapsed", "-");
-    setText("runtime-total-elapsed", "-");
-    setText("runtime-retry-count", "0");
-    setText("runtime-last-transition", "-");
-    setText("runtime-terminal-reason", "-");
-    setText("runtime-input-protocol", "-");
-    setText("runtime-stage-spec-version", "-");
-    setText("runtime-math-mode", "-");
-    setText("status-detail-job-id", "-");
-    setText("failure-summary", "-");
-    setText("failure-category", "-");
-    setText("failure-stage", "-");
-    setText("failure-root-cause", "-");
-    setText("failure-suggestion", "-");
-    setText("failure-last-log-line", "-");
-    setText("failure-retryable", "-");
-    setText("events-status", "全部事件");
-    $("events-empty")?.classList.remove("hidden");
-    $("events-list")?.classList.add("hidden");
-    if ($("events-list")) {
-      $("events-list").innerHTML = "";
-    }
-    activateDetailTab("overview");
-    updateJobWarning("idle");
+    returnJobRuntimeToHome({
+      state,
+      onReaderDialogClose,
+      setWorkflowSections,
+      resetUploadProgress,
+      resetUploadedFile,
+      applyWorkflowMode,
+      clearPageRanges,
+      setText,
+      updateJobWarning,
+      activateDetailTab,
+    });
   }
 
   async function cancelCurrentJob() {
@@ -197,7 +117,7 @@ export function mountJobRuntimeFeature({
       setText("error-box", "当前没有可取消的任务");
       return;
     }
-    $("cancel-btn").disabled = true;
+    setCancelButtonDisabled(true);
     try {
       await submitJson(`${buildJobDetailEndpoint(jobId, apiPrefix)}/cancel`, {});
       await fetchJob(jobId);

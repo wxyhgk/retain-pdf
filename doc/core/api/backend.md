@@ -1,6 +1,6 @@
 # 后端 API 主文档
 
-本文档面向前端接入、第三方调用和后端联调。完整路由清单见 [接口说明](./endpoints.md)。
+本文档面向前端接入、第三方调用和后端联调。更细的任务详情、事件流、生命周期、失败协议，请看 [Rust API 说明](../rust_api/README.md)。
 
 ## 基础规则
 
@@ -77,119 +77,6 @@ OCR-only 不走这个 JSON 入口，使用 `POST /api/v1/ocr/jobs`。
 `rerun` 的自动选择策略：如果源任务有 `translations_dir + source_pdf`，创建 `workflow=render`；否则如果有 `normalized_document_json + source_pdf`，创建 `workflow=book`；否则返回不可恢复错误。
 
 OCR checkpoint 要求源任务已有 `source_pdf` 和 `normalized_document_json` artifact。渲染恢复要求源任务已有 `source_pdf` 和 `translations_dir` artifact。从 artifact 恢复时仍需要 `translation.base_url` / `translation.api_key` / `translation.model`，但不再要求 OCR provider token。
-
-## 任务详情契约
-
-`GET /api/v1/jobs/{job_id}` 是前端轮询主接口。关键字段：
-
-- `job_id`
-- `workflow`
-- `status`
-- `stage`
-- `stage_detail`
-- `progress`
-- `timestamps`
-- `links`
-- `actions`
-- `artifacts`
-- `ocr_job`
-- `runtime`
-- `failure`
-- `failure_diagnostic`
-- `normalization_summary`
-- `glossary_summary`
-- `invocation`
-- `log_tail`
-
-前端规则：
-
-- 终态判断看 `status`。
-- 阶段展示看 `stage_detail`。
-- 时间线看 `runtime.stage_history`。
-- 按钮可用性看 `actions.*.enabled`。
-- 产物可用性看 `artifacts.*.ready` 或 `artifacts-manifest.items[].ready`。
-- 失败详情优先看 `failure`，旧 UI 可继续读 `failure_diagnostic`。
-
-## Actions 与 Artifacts
-
-常用 actions：
-
-- `actions.download_pdf`
-- `actions.open_markdown`
-- `actions.open_markdown_raw`
-- `actions.download_bundle`
-- `actions.cancel`
-
-常用 artifacts：
-
-- `artifacts.pdf`
-- `artifacts.markdown`
-- `artifacts.bundle`
-- `artifacts.normalized_document`
-- `artifacts.normalization_report`
-
-`artifacts.markdown` 会包含：
-
-- `json_url` / `json_path`
-- `raw_url` / `raw_path`
-- `images_base_url` / `images_base_path`
-- `ready`
-- `file_name`
-- `size_bytes`
-
-兼容字段如 `pdf_url`、`markdown_url`、`bundle_url`、`pdf_ready`、`markdown_ready`、`bundle_ready` 仍可能存在，但新前端不应只依赖这些别名。
-
-## Artifacts Manifest
-
-正式机器发现入口：
-
-- `GET /api/v1/jobs/{job_id}/artifacts-manifest`
-- `GET /api/v1/ocr/jobs/{job_id}/artifacts-manifest`
-
-item 字段：
-
-- `artifact_key`
-- `artifact_group`
-- `artifact_kind`
-- `ready`
-- `file_name`
-- `content_type`
-- `size_bytes`
-- `relative_path`
-- `checksum`
-- `source_stage`
-- `updated_at`
-- `resource_path`
-- `resource_url`
-
-调用方应先查 manifest，确认 `ready=true`，再使用 `resource_path` 或 `resource_url`。
-
-## 事件流
-
-接口：
-
-- `GET /api/v1/jobs/{job_id}/events`
-- `GET /api/v1/ocr/jobs/{job_id}/events`
-
-事件字段：
-
-- `seq`
-- `ts`
-- `level`
-- `stage`
-- `stage_detail`
-- `provider`
-- `provider_stage`
-- `event_type`
-- `event`
-- `message`
-- `progress_current`
-- `progress_total`
-- `retry_count`
-- `elapsed_ms`
-- `payload`
-
-`seq` 在单个任务内递增。新前端应优先看 `event_type`，`event` 保留兼容语义。
 
 ## 术语表
 

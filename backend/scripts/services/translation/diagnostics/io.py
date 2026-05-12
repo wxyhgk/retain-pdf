@@ -8,6 +8,31 @@ from .aggregator import TranslationRunDiagnostics
 from .models import FinalStatus
 
 
+ALLOWED_UNTRANSLATED_ROUTE_NAMES = {
+    "fast_path_keep_origin",
+}
+ALLOWED_UNTRANSLATED_REASONS = {
+    "code",
+    "keep_origin",
+    "no_trans",
+    "skip_display_formula",
+    "skip_model_keep_origin",
+}
+
+
+def _is_allowed_untranslated(item: dict, payload: dict, route_path: list) -> bool:
+    route_names = {str(route or "").strip() for route in route_path}
+    if route_names & ALLOWED_UNTRANSLATED_ROUTE_NAMES:
+        return True
+    reasons = {
+        str(item.get("skip_reason", "") or "").strip(),
+        str(item.get("classification_label", "") or "").strip(),
+        str(payload.get("degradation_reason", "") or "").strip(),
+        str(payload.get("fallback_to", "") or "").strip(),
+    }
+    return bool(reasons & ALLOWED_UNTRANSLATED_REASONS)
+
+
 def write_translation_diagnostics(
     path: Path,
     run: TranslationRunDiagnostics,
@@ -81,9 +106,10 @@ def aggregate_payload_diagnostics(translated_pages_map: dict[int, list[dict]]) -
                         "reason": payload.get("degradation_reason", "") or "dead_letter_queue",
                     }
                 )
-            blocking_untranslated = final_status in {FinalStatus.KEPT_ORIGIN.value, FinalStatus.FAILED.value} and (
-                "fast_path_keep_origin" not in route_path
-            )
+            blocking_untranslated = final_status in {
+                FinalStatus.KEPT_ORIGIN.value,
+                FinalStatus.FAILED.value,
+            } and not _is_allowed_untranslated(item, payload, route_path)
             if blocking_untranslated:
                 unresolved_items.append(
                     {

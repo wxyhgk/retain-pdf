@@ -504,6 +504,50 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn job_events_route_keeps_rendering_page_progress_events() {
+        let state = test_state("events-render-progress");
+        let mut job = JobSnapshot::new(
+            "job-route-render-progress".to_string(),
+            CreateJobInput::default(),
+            vec!["python".to_string()],
+        );
+        let job_root: PathBuf = state.config.data_root.join("jobs").join(&job.job_id);
+        fs::create_dir_all(job_root.join("logs")).expect("create logs dir");
+        job.artifacts
+            .get_or_insert_with(crate::models::JobArtifacts::default)
+            .job_root = Some(job_root.to_string_lossy().to_string());
+        state.db.save_job(&job).expect("save job");
+        fs::write(
+            job_root.join("logs").join("pipeline_events.jsonl"),
+            concat!(
+                r#"{"job_id":"job-route-render-progress","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"rendering","stage_detail":"正在渲染第 1/3 页","provider":"","provider_stage":"","event_type":"stage_progress","message":"正在渲染第 1/3 页","progress_current":1,"progress_total":3,"retry_count":0,"elapsed_ms":1000,"payload":{"page_index":0,"render_stage":"book_overlay"}}"#,
+                "\n",
+                r#"{"job_id":"job-route-render-progress","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"saving","stage_detail":"最终 PDF 已发布","provider":"","provider_stage":"","event_type":"artifact_published","message":"最终 PDF 已发布","progress_current":null,"progress_total":null,"retry_count":0,"elapsed_ms":1100,"payload":{"artifact_key":"output_pdf"}}"#,
+                "\n"
+            ),
+        )
+        .expect("write pipeline events");
+
+        let app = build_app(state.clone());
+        let detail_response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/v1/jobs/{}", job.job_id))
+                    .header("X-API-Key", "test-key")
+                    .body(Body::empty())
+                    .expect("detail request"),
+            )
+            .await
+            .expect("detail response");
+        assert_eq!(detail_response.status(), StatusCode::OK);
+        let detail_json = read_json(detail_response).await;
+        assert_eq!(detail_json["data"]["stage"], "rendering");
+        assert_eq!(detail_json["data"]["stage_detail"], "正在渲染第 1/3 页");
+        assert_eq!(detail_json["data"]["progress"]["current"], 1);
+        assert_eq!(detail_json["data"]["progress"]["total"], 3);
+    }
+
+    #[tokio::test]
     async fn job_events_route_prefers_formal_failure_fields() {
         let state = test_state("events-formal-failure");
         let mut job = JobSnapshot::new(

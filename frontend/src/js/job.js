@@ -1,11 +1,4 @@
 import { resolveJobMarkdownContract, toAbsoluteApiUrl } from "./job-artifacts.js";
-import {
-  summarizeStageDetail,
-  summarizeStageKey,
-  summarizeStageLabel,
-  summarizeStageProgressText,
-} from "./job-status-summary.js";
-
 export {
   summarizeStageDetail,
   summarizeStageKey,
@@ -28,6 +21,9 @@ function objectOrNull(value) {
 
 export function unwrapEnvelope(payload) {
   if (payload && typeof payload === "object" && "data" in payload && "code" in payload) {
+    if (payload.code !== 0) {
+      throw new Error(payload.message || `API returned code ${payload.code}`);
+    }
     return payload.data;
   }
   return payload;
@@ -198,23 +194,31 @@ export function resolveJobActions(job) {
     )),
     bundle: toAbsoluteApiUrl(firstNonEmpty(
       actions.download_bundle?.url,
+      actions.download_bundle?.path,
       artifactActions.download_bundle?.url,
+      artifactActions.download_bundle?.path,
       artifacts.bundle?.url,
       artifacts.bundle?.path,
     )),
     pdf: toAbsoluteApiUrl(firstNonEmpty(
       actions.download_pdf?.url,
+      actions.download_pdf?.path,
       artifactActions.download_pdf?.url,
+      artifactActions.download_pdf?.path,
       artifacts.pdf?.url,
       artifacts.pdf?.path,
     )),
     markdownJson: markdownContract.jsonUrl || toAbsoluteApiUrl(firstNonEmpty(
       actions.open_markdown?.url,
+      actions.open_markdown?.path,
       artifactActions.open_markdown?.url,
+      artifactActions.open_markdown?.path,
     )),
     markdownRaw: markdownContract.rawUrl || toAbsoluteApiUrl(firstNonEmpty(
       actions.open_markdown_raw?.url,
+      actions.open_markdown_raw?.path,
       artifactActions.open_markdown_raw?.url,
+      artifactActions.open_markdown_raw?.path,
     )),
   };
 }

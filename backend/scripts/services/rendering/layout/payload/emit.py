@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from services.rendering.core.models import RenderBlock
-from services.rendering.formula.core.markdown import build_plain_text_from_text
-from services.rendering.formula.mode_router import build_item_render_markdown
+from services.rendering.layout.model.models import RenderBlock
+from services.rendering.layout.inline_content.core.markdown import build_plain_text_from_text
+from services.rendering.layout.inline_content.mode_router import build_item_render_markdown
 from services.rendering.layout.payload.metrics import resolve_typst_binary_fit
 
 

@@ -8,13 +8,18 @@ mod lifecycle;
 mod process;
 #[path = "job/record.rs"]
 mod record;
+#[path = "job/stage.rs"]
+mod stage;
 #[path = "job/runtime.rs"]
 mod runtime;
 
-pub use artifacts::{JobArtifactRecord, JobArtifacts};
+pub use artifacts::{
+    JobArtifactRecord, JobArtifacts, OcrCheckpointArtifacts, RenderArtifacts, TranslationArtifacts,
+};
 pub use failure::{JobAiDiagnostic, JobFailureInfo, JobRawDiagnostic};
 pub use process::ProcessResult;
 pub use record::{JobRecord, JobRuntimeState, JobSnapshot};
+pub use stage::{job_stage_detail, job_stage_str, normalize_job_stage, JobStage};
 pub use runtime::{JobRuntimeInfo, JobStageTiming};
 
 #[cfg(test)]

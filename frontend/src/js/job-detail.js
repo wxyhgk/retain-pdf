@@ -10,10 +10,7 @@ import {
   rerunJob,
 } from "./network.js";
 import {
-  collectMarkdownImageRefs,
   hasReadyManifestArtifact,
-  resolveJobMarkdownContract,
-  resolveMarkdownAssetUrl,
 } from "./job-artifacts.js";
 import {
   formatEventTimestamp,
@@ -29,8 +26,26 @@ import {
   summarizeStageDetail,
   summarizeStatus,
 } from "./job.js";
+import {
+  renderArtifactsManifest,
+  renderMarkdownContract as renderMarkdownContractView,
+  renderMarkdownImagePreview as renderMarkdownImagePreviewView,
+  resolveMarkdownImagesBaseUrl,
+  isMarkdownReady,
+  revokeMarkdownImageUrls as revokeMarkdownImageUrlsView,
+} from "./job-detail-artifacts.js";
+import {
+  bindDetailModalDismiss,
+  closeAllDetailModals,
+  setDetailActionLink,
+  setDetailEventsStatus,
+  setDetailText,
+} from "./job-detail-view.js";
+import {
+  bindEventsLauncher,
+  bindStageHistoryLauncher,
+} from "./job-detail-events.js";
 
-const JOB_EVENTS_PAGE_SIZE = 200;
 const detailPageState = {
   job: null,
   manifestPayload: null,
@@ -46,20 +61,11 @@ function getJobIdFromQuery() {
 }
 
 function setText(id, value) {
-  const el = $(id);
-  if (el) {
-    el.textContent = value ?? "-";
-  }
+  setDetailText(id, value);
 }
 
 function setActionLink(id, url, enabled) {
-  const el = $(id);
-  if (!el) {
-    return;
-  }
-  el.href = enabled && url ? url : "#";
-  el.classList.toggle("disabled", !enabled);
-  el.setAttribute("aria-disabled", enabled ? "false" : "true");
+  setDetailActionLink(id, url, enabled);
 }
 
 function firstJobIdFromPayload(payload) {
@@ -228,87 +234,6 @@ function renderFailureDebugContext(job) {
   `).join("");
 }
 
-function numberOrNull(value) {
-  const num = Number(value);
-  return Number.isFinite(num) ? num : null;
-}
-
-function summarizeArtifactLabel(key) {
-  switch (`${key || ""}`.trim()) {
-    case "source_pdf":
-      return "源 PDF";
-    case "translated_pdf":
-      return "译后 PDF";
-    case "typst_render_pdf":
-      return "Typst 渲染 PDF";
-    case "markdown_raw":
-      return "Markdown Raw";
-    case "markdown_images_dir":
-      return "Markdown 图片目录";
-    case "markdown_bundle_zip":
-      return "Markdown Bundle";
-    case "normalized_document_json":
-      return "Normalized Document";
-    case "normalization_report_json":
-      return "Normalization Report";
-    case "translation_manifest_json":
-      return "Translation Manifest";
-    case "translation_diagnostics_json":
-      return "Translation Diagnostics";
-    case "translation_debug_index_json":
-      return "Translation Debug Index";
-    case "provider_result_json":
-      return "Provider Result";
-    case "provider_bundle_zip":
-      return "Provider Bundle";
-    case "provider_raw_dir":
-      return "Provider Raw Dir";
-    case "pipeline_summary":
-      return "Pipeline Summary";
-    case "events_jsonl":
-      return "Events JSONL";
-    default:
-      return `${key || "-"}`.trim() || "-";
-  }
-}
-
-function summarizeStageName(stage, detail) {
-  const detailText = `${detail || ""}`.trim();
-  return detailText || `${stage || "-"}`.trim() || "-";
-}
-
-function resolveStageHistoryDuration(entry, job) {
-  const explicit = Number(entry?.duration_ms);
-  if (Number.isFinite(explicit) && explicit >= 0) {
-    return explicit;
-  }
-  const enterAt = parseIsoTime(entry?.enter_at);
-  const exitAt = parseIsoTime(entry?.exit_at);
-  if (enterAt && exitAt) {
-    return Math.max(0, exitAt.getTime() - enterAt.getTime());
-  }
-  if (enterAt && !exitAt) {
-    const endAt = isTerminalStatus(job.status)
-      ? parseIsoTime(job.finished_at || job.updated_at)
-      : new Date();
-    if (endAt) {
-      return Math.max(0, endAt.getTime() - enterAt.getTime());
-    }
-  }
-  return NaN;
-}
-
-function formatEventPayload(payload) {
-  if (!payload || typeof payload !== "object") {
-    return "";
-  }
-  try {
-    return JSON.stringify(payload, null, 2);
-  } catch (_err) {
-    return "";
-  }
-}
-
 function fileNameFromDisposition(disposition, fallback) {
   if (!disposition || typeof disposition !== "string") {
     return fallback;
@@ -336,350 +261,31 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
 }
 
-function formatSizeBytes(value) {
-  const size = Number(value);
-  if (!Number.isFinite(size) || size < 0) {
-    return "-";
-  }
-  if (size < 1024) {
-    return `${size} B`;
-  }
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(1)} KB`;
-  }
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function truncatePreview(value, maxChars = 4000) {
-  const text = `${value || ""}`;
-  if (text.length <= maxChars) {
-    return text;
-  }
-  return `${text.slice(0, maxChars)}\n\n...（预览已截断）`;
-}
-
 function revokeMarkdownImageUrls() {
-  for (const url of detailPageState.markdownImageUrls) {
-    try {
-      URL.revokeObjectURL(url);
-    } catch (_err) {
-      // Ignore stale object URLs.
-    }
-  }
-  detailPageState.markdownImageUrls = [];
-}
-
-function renderArtifactsManifest(manifestPayload) {
-  const summary = $("detail-artifacts-summary");
-  const container = $("detail-artifacts-list");
-  if (!summary || !container) {
-    return;
-  }
-  const items = Array.isArray(manifestPayload?.items) ? [...manifestPayload.items] : [];
-  summary.textContent = items.length > 0 ? `共 ${items.length} 项` : "暂无已登记产物";
-  if (items.length === 0) {
-    container.innerHTML = '<div class="detail-empty">暂无产物清单</div>';
-    return;
-  }
-  const preferredOrder = [
-    "source_pdf",
-    "translated_pdf",
-    "pdf",
-    "typst_render_pdf",
-    "markdown_raw",
-    "markdown_images_dir",
-    "markdown_bundle_zip",
-    "normalized_document_json",
-    "normalization_report_json",
-    "translation_manifest_json",
-    "translation_diagnostics_json",
-    "translation_debug_index_json",
-    "provider_result_json",
-    "provider_bundle_zip",
-    "provider_raw_dir",
-    "pipeline_summary",
-    "events_jsonl",
-  ];
-  const orderMap = new Map(preferredOrder.map((key, index) => [key, index]));
-  items.sort((left, right) => {
-    const leftOrder = orderMap.has(left?.artifact_key) ? orderMap.get(left.artifact_key) : 999;
-    const rightOrder = orderMap.has(right?.artifact_key) ? orderMap.get(right.artifact_key) : 999;
-    if (leftOrder !== rightOrder) {
-      return leftOrder - rightOrder;
-    }
-    return `${left?.artifact_key || ""}`.localeCompare(`${right?.artifact_key || ""}`);
-  });
-  container.innerHTML = items.map((item) => {
-    const resource = firstNonEmptyText(item?.resource_url, item?.resource_path, item?.relative_path) || "-";
-    const readyLabel = item?.ready ? "ready" : "pending";
-    const readyClass = item?.ready ? "is-ready" : "is-pending";
-    const topLabel = summarizeArtifactLabel(item?.artifact_key);
-    const metaBits = [
-      firstNonEmptyText(item?.artifact_group) || "-",
-      firstNonEmptyText(item?.artifact_kind) || "-",
-      formatSizeBytes(item?.size_bytes),
-    ];
-    const extraBits = [
-      firstNonEmptyText(item?.source_stage),
-      firstNonEmptyText(item?.content_type),
-    ].filter(Boolean);
-    return `
-      <article class="detail-artifact-row">
-        <div class="detail-artifact-top">
-          <div class="detail-artifact-key mono">${escapeHtml(topLabel)}</div>
-          <span class="detail-artifact-chip ${readyClass}">${escapeHtml(readyLabel)}</span>
-        </div>
-        <div class="detail-artifact-meta">${escapeHtml(metaBits.join(" · "))}</div>
-        ${extraBits.length ? `<div class="detail-artifact-meta">${escapeHtml(extraBits.join(" · "))}</div>` : ""}
-        <div class="detail-artifact-meta mono">${escapeHtml(item?.artifact_key || "-")}</div>
-        <div class="detail-artifact-meta mono">${escapeHtml(resource)}</div>
-      </article>
-    `;
-  }).join("");
+  revokeMarkdownImageUrlsView(detailPageState.markdownImageUrls);
 }
 
 function renderMarkdownContract(job, markdownPayload = null) {
-  const contract = resolveJobMarkdownContract(job);
-  const markdownArtifact = job?.artifacts?.markdown || {};
-  const rawUrl = firstNonEmptyText(
-    markdownPayload?.raw_url,
-    markdownPayload?.raw_path,
-    markdownArtifact.raw_url,
-    markdownArtifact.raw_path,
-    job?.actions?.open_markdown_raw?.url,
-    job?.actions?.open_markdown_raw?.path,
-    contract.rawUrl,
-  );
-  const jsonUrl = firstNonEmptyText(
-    markdownPayload?.json_url,
-    markdownPayload?.json_path,
-    markdownArtifact.json_url,
-    markdownArtifact.json_path,
-    job?.actions?.open_markdown?.url,
-    job?.actions?.open_markdown?.path,
-    contract.jsonUrl,
-  );
-  const imagesBaseUrl = firstNonEmptyText(
-    markdownPayload?.images_base_url,
-    markdownPayload?.images_base_path,
-    markdownArtifact.images_base_url,
-    markdownArtifact.images_base_path,
-    job?.artifacts?.markdown_images_base_url,
-    contract.imagesBaseUrl,
-  );
-  const content = typeof markdownPayload?.content === "string" ? markdownPayload.content : "";
-  setText("detail-markdown-json-url", jsonUrl || "-");
-  setText("detail-markdown-raw-url", rawUrl || "-");
-  setText("detail-markdown-images-base-url", imagesBaseUrl || "-");
-  setActionLink("detail-markdown-json-btn", jsonUrl, contract.ready && !!jsonUrl);
-  setActionLink("detail-markdown-raw-btn", rawUrl, contract.ready && !!rawUrl);
-  if (!contract.ready) {
-    revokeMarkdownImageUrls();
-    setText("detail-markdown-status", "当前任务没有已发布 Markdown");
-    setText("detail-markdown-image-count", "0");
-    setText("detail-markdown-preview", "-");
-    const grid = $("detail-markdown-image-grid");
-    grid?.classList.add("hidden");
-    if (grid) {
-      grid.innerHTML = "";
-    }
-    $("detail-markdown-image-empty")?.classList.remove("hidden");
-    return;
-  }
-  if (!markdownPayload) {
-    setText("detail-markdown-status", "已发布，正在读取内容…");
-    return;
-  }
-  const refs = collectMarkdownImageRefs(content);
-  const fileName = firstNonEmptyText(markdownPayload?.file_name, markdownArtifact.file_name);
-  const sizeText = formatSizeBytes(markdownPayload?.size_bytes ?? markdownArtifact.size_bytes);
-  const statusBits = ["已加载 /markdown JSON"];
-  if (fileName) {
-    statusBits.push(fileName);
-  }
-  if (sizeText !== "-") {
-    statusBits.push(sizeText);
-  }
-  setText("detail-markdown-status", statusBits.join(" · "));
-  setText("detail-markdown-image-count", `${refs.length}`);
-  setText("detail-markdown-preview", truncatePreview(content));
+  renderMarkdownContractView({
+    job,
+    markdownPayload,
+    markdownImageUrls: detailPageState.markdownImageUrls,
+    setText,
+    setActionLink,
+  });
 }
 
 async function renderMarkdownImagePreview(markdownPayload, imagesBaseUrl) {
-  const grid = $("detail-markdown-image-grid");
-  const empty = $("detail-markdown-image-empty");
-  if (!grid || !empty) {
-    return;
-  }
-  revokeMarkdownImageUrls();
-  const refs = collectMarkdownImageRefs(markdownPayload?.content);
-  if (refs.length === 0 || !imagesBaseUrl) {
-    grid.innerHTML = "";
-    grid.classList.add("hidden");
-    empty.classList.remove("hidden");
-    return;
-  }
-  const previewRefs = refs.slice(0, 4);
-  const previews = await Promise.all(previewRefs.map(async (ref) => {
-    const absoluteUrl = resolveMarkdownAssetUrl(imagesBaseUrl, ref);
-    if (!absoluteUrl) {
-      return { ref, absoluteUrl: "", objectUrl: "", error: "无法解析图片地址" };
-    }
-    try {
-      const resp = await fetchProtected(absoluteUrl);
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}`);
-      }
-      const blob = await resp.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      detailPageState.markdownImageUrls.push(objectUrl);
-      return { ref, absoluteUrl, objectUrl, error: "" };
-    } catch (error) {
-      return { ref, absoluteUrl, objectUrl: "", error: error.message || "图片读取失败" };
-    }
-  }));
-  grid.innerHTML = previews.map((item) => `
-    <article class="detail-markdown-image-card">
-      <div class="detail-artifact-meta mono">${escapeHtml(item.ref)}</div>
-      ${item.objectUrl
-        ? `<img class="detail-markdown-image" src="${escapeHtml(item.objectUrl)}" alt="${escapeHtml(item.ref)}" />`
-        : `<div class="detail-empty">${escapeHtml(item.error || "图片不可用")}</div>`}
-      <div class="detail-artifact-meta mono">${escapeHtml(item.absoluteUrl || "-")}</div>
-    </article>
-  `).join("");
-  grid.classList.remove("hidden");
-  empty.classList.add("hidden");
-}
-
-function renderStageHistory(job) {
-  const list = $("detail-stage-history-list");
-  const empty = $("detail-stage-history-empty");
-  if (!list || !empty) {
-    return;
-  }
-  const history = Array.isArray(job.stage_history) ? job.stage_history : [];
-  if (history.length === 0) {
-    list.innerHTML = "";
-    list.classList.add("hidden");
-    empty.classList.remove("hidden");
-    return;
-  }
-  empty.classList.add("hidden");
-  list.classList.remove("hidden");
-  list.innerHTML = history.map((entry, index) => {
-    const enterAt = entry?.enter_at ? formatEventTimestamp(entry.enter_at) : "-";
-    const exitAt = entry?.exit_at ? formatEventTimestamp(entry.exit_at) : (isTerminalStatus(job.status) ? "-" : "进行中");
-    const terminalText = entry?.terminal_status ? ` · ${entry.terminal_status}` : "";
-    return `
-      <article class="detail-stage-item">
-        <div class="detail-stage-top">
-          <div class="detail-stage-title">${index + 1}. ${escapeHtml(summarizeStageName(entry?.stage, entry?.detail))}</div>
-          <div class="detail-stage-title">${escapeHtml(formatRuntimeDuration(resolveStageHistoryDuration(entry, job)))}</div>
-        </div>
-        <div class="detail-stage-meta">${escapeHtml(enterAt)} → ${escapeHtml(exitAt)}${escapeHtml(terminalText)}</div>
-      </article>
-    `;
-  }).join("");
-}
-
-function renderEvents(eventsPayload) {
-  const list = $("detail-events-list");
-  const empty = $("detail-events-empty");
-  const status = $("detail-events-status");
-  if (!list || !empty || !status) {
-    return;
-  }
-  const items = Array.isArray(eventsPayload?.items) ? eventsPayload.items : [];
-  status.textContent = items.length > 0 ? `全部事件 · ${items.length} 条` : "全部事件";
-  if (items.length === 0) {
-    list.innerHTML = "";
-    list.classList.add("hidden");
-    empty.classList.remove("hidden");
-    return;
-  }
-  empty.classList.add("hidden");
-  list.classList.remove("hidden");
-  list.innerHTML = items.map((item) => {
-    const payloadText = formatEventPayload(item.payload);
-    const metaBits = [
-      `#${item?.seq ?? "-"}`,
-      formatEventTimestamp(item.ts),
-      firstNonEmptyText(item?.stage_detail, item?.stage) || "-",
-    ];
-    const contextBits = [
-      firstNonEmptyText(item?.provider),
-      firstNonEmptyText(item?.provider_stage),
-      firstNonEmptyText(item?.event_type),
-    ].filter(Boolean);
-    const statsBits = [];
-    const progressCurrent = numberOrNull(item?.progress_current);
-    const progressTotal = numberOrNull(item?.progress_total);
-    if (progressCurrent !== null || progressTotal !== null) {
-      statsBits.push(`progress ${progressCurrent ?? "-"} / ${progressTotal ?? "-"}`);
-    }
-    const retryCount = numberOrNull(item?.retry_count);
-    if (retryCount !== null) {
-      statsBits.push(`retry ${retryCount}`);
-    }
-    const elapsedMs = numberOrNull(item?.elapsed_ms);
-    if (elapsedMs !== null) {
-      statsBits.push(`elapsed ${formatRuntimeDuration(elapsedMs)}`);
-    }
-    return `
-      <article class="detail-event-item">
-        <div class="detail-event-top">
-          <div class="detail-event-title">${escapeHtml(item.event || "-")}</div>
-          <div class="detail-event-title">${escapeHtml(item.level || "-")}</div>
-        </div>
-        <div class="detail-event-meta">${escapeHtml(metaBits.join(" · "))}</div>
-        ${contextBits.length ? `<div class="detail-event-meta">${escapeHtml(contextBits.join(" · "))}</div>` : ""}
-        <div class="detail-event-meta">${escapeHtml(item.message || "-")}</div>
-        ${statsBits.length ? `<div class="detail-event-meta">${escapeHtml(statsBits.join(" · "))}</div>` : ""}
-        ${payloadText ? `<pre class="detail-event-payload">${escapeHtml(payloadText)}</pre>` : ""}
-      </article>
-    `;
-  }).join("");
-}
-
-function setModalOpen(modalId, open) {
-  const modal = $(modalId);
-  if (!modal) {
-    return;
-  }
-  modal.classList.toggle("hidden", !open);
-  modal.setAttribute("aria-hidden", open ? "false" : "true");
-  const hasOpenModal = ["detail-stage-history-modal", "detail-events-modal"].some((id) => !$(id)?.classList.contains("hidden"));
-  document.body.style.overflow = hasOpenModal ? "hidden" : "";
+  await renderMarkdownImagePreviewView({
+    markdownPayload,
+    imagesBaseUrl,
+    markdownImageUrls: detailPageState.markdownImageUrls,
+    fetchProtected,
+  });
 }
 
 function bindModalDismiss(modalId, closeButtonId) {
-  $(closeButtonId)?.addEventListener("click", () => {
-    setModalOpen(modalId, false);
-  });
-  $(modalId)?.addEventListener("click", (event) => {
-    if (event.target === $(modalId)) {
-      setModalOpen(modalId, false);
-    }
-  });
-}
-
-async function fetchAllJobEvents(jobId) {
-  const items = [];
-  let offset = 0;
-  while (true) {
-    const payload = await fetchJobEvents(jobId, API_PREFIX, JOB_EVENTS_PAGE_SIZE, offset);
-    const batch = Array.isArray(payload?.items) ? payload.items : [];
-    items.push(...batch);
-    if (batch.length < JOB_EVENTS_PAGE_SIZE) {
-      return {
-        ...payload,
-        items,
-        offset: 0,
-        limit: items.length,
-      };
-    }
-    offset += batch.length;
-  }
+  bindDetailModalDismiss(modalId, closeButtonId);
 }
 
 function bindDetailModals() {
@@ -690,53 +296,12 @@ function bindDetailModals() {
     if (event.key !== "Escape") {
       return;
     }
-    setModalOpen("detail-stage-history-modal", false);
-    setModalOpen("detail-events-modal", false);
-  });
-}
-
-function bindStageHistoryLauncher() {
-  $("detail-open-stage-history-btn")?.addEventListener("click", () => {
-    if (detailPageState.job) {
-      renderStageHistory(detailPageState.job);
-    }
-    setModalOpen("detail-stage-history-modal", true);
+    closeAllDetailModals();
   });
 }
 
 function setEventsStatus(text) {
-  const status = $("detail-events-status");
-  if (status) {
-    status.textContent = text;
-  }
-}
-
-async function ensureEventsLoaded() {
-  if (detailPageState.eventsPayload) {
-    setEventsStatus(`全部事件 · ${Array.isArray(detailPageState.eventsPayload.items) ? detailPageState.eventsPayload.items.length : 0} 条`);
-    renderEvents(detailPageState.eventsPayload);
-    return detailPageState.eventsPayload;
-  }
-  if (!detailPageState.job?.job_id) {
-    throw new Error("缺少 job_id，无法加载事件流。");
-  }
-  if (!detailPageState.eventsLoadingPromise) {
-    setEventsStatus("正在加载全部事件...");
-    detailPageState.eventsLoadingPromise = fetchAllJobEvents(detailPageState.job.job_id)
-      .then((payload) => {
-        detailPageState.eventsPayload = payload;
-        renderEvents(payload);
-        return payload;
-      })
-      .catch((error) => {
-        setEventsStatus(error.message || "读取事件流失败。");
-        throw error;
-      })
-      .finally(() => {
-        detailPageState.eventsLoadingPromise = null;
-      });
-  }
-  return detailPageState.eventsLoadingPromise;
+  setDetailEventsStatus(text);
 }
 
 function bindProtectedDownloadLink(id, fallbackNameFactory) {
@@ -764,18 +329,6 @@ function bindProtectedDownloadLink(id, fallbackNameFactory) {
       downloadBlob(blob, fileNameFromDisposition(disposition, fallbackName));
     } catch (error) {
       setText("detail-head-note", error.message || "下载失败");
-    }
-  });
-}
-
-function bindEventsLauncher() {
-  $("detail-open-events-btn")?.addEventListener("click", async () => {
-    setModalOpen("detail-events-modal", true);
-    try {
-      await ensureEventsLoaded();
-      $("detail-open-events-btn").textContent = "查看";
-    } catch (_error) {
-      // Status text already updated in ensureEventsLoaded.
     }
   });
 }
@@ -810,8 +363,8 @@ function bindRerunButton() {
 
 async function initializePage() {
   bindDetailModals();
-  bindStageHistoryLauncher();
-  bindEventsLauncher();
+  bindStageHistoryLauncher({ detailPageState });
+  bindEventsLauncher({ detailPageState, fetchJobEvents });
   bindRerunButton();
   bindProtectedDownloadLink("detail-pdf-btn", (jobId) => `${jobId}.pdf`);
   bindProtectedDownloadLink("detail-markdown-raw-btn", (jobId) => `${jobId}.md`);
@@ -911,9 +464,9 @@ async function initializePage() {
     if (markdownPayload) {
       await renderMarkdownImagePreview(
         markdownPayload,
-        `${markdownPayload.images_base_url || markdownPayload.images_base_path || resolveJobMarkdownContract(job).imagesBaseUrl || ""}`.trim(),
+        resolveMarkdownImagesBaseUrl(job, markdownPayload),
       );
-    } else if (resolveJobMarkdownContract(job).ready) {
+    } else if (isMarkdownReady(job)) {
       setText("detail-markdown-status", "Markdown 已标记 ready，但 /markdown 暂未返回内容");
     }
   } catch (error) {

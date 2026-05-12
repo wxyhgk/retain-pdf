@@ -11,8 +11,8 @@ REPO_SCRIPTS_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
 
-from services.rendering.redaction.vector_text_cleanup import collect_vector_text_rects
-from services.rendering.redaction.vector_text_cleanup import cleanup_vector_text_drawings
+from services.rendering.source.cleanup.vector_text_cleanup import collect_vector_text_rects
+from services.rendering.source.cleanup.vector_text_cleanup import cleanup_vector_text_drawings
 
 
 def test_collect_vector_text_rects_detects_black_filled_glyph_drawings() -> None:
@@ -69,13 +69,13 @@ def test_cleanup_vector_text_drawings_uses_background_covers_instead_of_redactio
     vector_rect = fitz.Rect(252, 46, 430, 55)
 
     with patch(
-        "services.rendering.redaction.vector_text_cleanup.collect_vector_text_rects",
+        "services.rendering.source.cleanup.vector_text_cleanup.collect_vector_text_rects",
         return_value=[vector_rect],
     ), patch(
-        "services.rendering.redaction.vector_text_cleanup.prepare_background_covers",
+        "services.rendering.source.cleanup.vector_text_cleanup.prepare_background_covers",
         return_value=["cover"],
     ) as prepare_mock, patch(
-        "services.rendering.redaction.vector_text_cleanup.apply_prepared_background_covers",
+        "services.rendering.source.cleanup.vector_text_cleanup.apply_prepared_background_covers",
     ) as apply_mock:
         count = cleanup_vector_text_drawings(page, [target_rect])
 

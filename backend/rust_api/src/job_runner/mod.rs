@@ -4,6 +4,7 @@ mod cancel_registry;
 mod execution_queue;
 mod lifecycle;
 mod ocr_flow;
+mod pipeline_plan;
 mod process_runner;
 mod render_flow;
 mod runtime_deps;

@@ -91,18 +91,21 @@ pub(super) fn should_treat_shutdown_noise_as_success(
     let Some(artifacts) = job.artifacts.as_ref() else {
         return false;
     };
-    let output_pdf_ready = artifacts
+    let render_outputs = artifacts.render_outputs();
+    let translation_outputs = artifacts.translation_outputs();
+    let output_pdf_ready = render_outputs
         .output_pdf
         .as_deref()
         .map(Path::new)
         .is_some_and(Path::exists);
-    let translations_ready = artifacts
+    let translations_ready = translation_outputs
         .translations_dir
         .as_deref()
         .map(Path::new)
         .is_some_and(Path::exists);
-    let summary_ready = artifacts
+    let summary_ready = render_outputs
         .summary
+        .or(translation_outputs.summary)
         .as_deref()
         .map(Path::new)
         .is_some_and(Path::exists);

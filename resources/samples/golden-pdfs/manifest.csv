@@ -1,0 +1,7 @@
+id,file,category,pages,focus,notes
+editable-paper-formula,1.pdf,editable-paper,13,redaction/layout/formula,"可编辑 PDF；有文本层和图片，无大背景图"
+pseudo-editable,2.pdf,pseudo-editable,29,visual-only/background/text-layer,"伪可编辑 PDF；有文本层但按扫描/伪可编辑风险回归"
+dark-background,,dark-background,,text-color/background,
+programming-manual,,technical-manual,,code-block/preserve-layout,
+bookmarks,,editable-book,,toc/bookmarks-preservation,
+multi-column-paper,,multi-column-paper,,ocr-order/layout,

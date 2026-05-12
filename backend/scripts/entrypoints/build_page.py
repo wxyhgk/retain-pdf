@@ -9,8 +9,8 @@ from foundation.config import paths
 from foundation.config import runtime
 from foundation.shared.schema_cli import SOURCE_JSON_MAINLINE_HELP
 from services.translation.ocr.json_extractor import extract_text_items, load_ocr_json
-from services.rendering.api.pdf_overlay import build_dev_pdf, build_single_page_dev_pdf, extract_single_page_pdf
-from services.rendering.api.typst_page_renderer import build_single_page_typst_pdf
+from services.rendering.legacy.pdf_overlay import build_dev_pdf, build_single_page_dev_pdf, extract_single_page_pdf
+from services.rendering.legacy.typst_page_renderer import build_single_page_typst_pdf
 from services.translation.payload import ensure_translation_template, load_translations
 
 

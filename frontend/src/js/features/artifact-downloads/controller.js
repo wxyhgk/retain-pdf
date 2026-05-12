@@ -1,3 +1,9 @@
+import {
+  bindProtectedArtifactLinks,
+  downloadBlob,
+  isActionLinkDisabled,
+} from "./view.js";
+
 export function mountArtifactDownloadsFeature({
   state,
   fetchProtected,
@@ -19,20 +25,9 @@ export function mountArtifactDownloadsFeature({
     return plainMatch && plainMatch[1] ? plainMatch[1] : fallback;
   }
 
-  function downloadBlob(blob, filename) {
-    const objectUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = objectUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
-  }
-
   async function handleProtectedArtifactClick(event) {
     const link = event.currentTarget;
-    const disabled = link.classList.contains("disabled") || link.getAttribute("aria-disabled") === "true";
+    const disabled = isActionLinkDisabled(link);
     const url = link.dataset.url || "";
     if (disabled || !url) {
       event.preventDefault();
@@ -68,10 +63,7 @@ export function mountArtifactDownloadsFeature({
   }
 
   function bindEvents() {
-    document.querySelectorAll("#download-btn, #markdown-bundle-btn, #pdf-btn, #markdown-btn, #markdown-raw-btn")
-      .forEach((node) => {
-        node.addEventListener("click", handleProtectedArtifactClick);
-      });
+    bindProtectedArtifactLinks(handleProtectedArtifactClick);
   }
 
   return {

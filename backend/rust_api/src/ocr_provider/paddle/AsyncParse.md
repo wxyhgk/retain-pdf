@@ -228,7 +228,7 @@ import sys
 import time
 
 JOB_URL = "https://paddleocr.aistudio-app.com/api/v2/ocr/jobs"
-TOKEN = "6e580446746aea4dc442c02f59d1575809d5f77b"
+TOKEN = "<PADDLEOCR_API_TOKEN>"
 MODEL = "PaddleOCR-VL"
 
 file_path = "<local file path or file url>"

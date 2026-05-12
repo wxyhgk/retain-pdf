@@ -13,31 +13,32 @@ REPO_SCRIPTS_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
 
-from services.rendering.background.stage import build_clean_background_pdf
+from services.rendering.source.background.stage import build_clean_background_pdf
 from foundation.config import fonts
 from services.rendering.layout.payload.blocks import build_render_blocks
 from services.rendering.layout.payload.body_pipeline import apply_body_payload_pipeline
-from services.rendering.core.models import RenderLayoutBlock
-from services.rendering.core.models import RenderPageSpec
-from services.rendering.layout.render_model import build_render_page_specs
+from services.rendering.layout.model.models import RenderLayoutBlock
+from services.rendering.layout.model.models import RenderPageSpec
+from services.rendering.layout.page_specs import build_render_page_specs
 from services.rendering.layout.payload.continuation_split import split_protected_text_for_boxes
 from services.rendering.layout.payload.prepare import prepare_render_payloads_by_page
-from services.rendering.redaction.shared import get_item_translated_text
-from services.rendering.redaction.text_draw import _build_direct_draw_tokens
-from services.rendering.redaction.text_draw import _fit_segment_layout
+from services.rendering.source.cleanup.shared import get_item_translated_text
+from services.rendering.source.cleanup.text_draw import _build_direct_draw_tokens
+from services.rendering.source.cleanup.text_draw import _fit_segment_layout
 from services.rendering.layout.payload.suspicious_ocr import detect_and_drop_suspicious_ocr_glued_blocks
-from services.rendering.typst.book_ops import _compile_render_pages_pdf_resilient
-from services.rendering.typst.compiler import _resolved_font_paths
-from services.rendering.typst.compiler import _resolved_common_root
-from services.rendering.typst.compiler import TypstCompileError
-from services.rendering.typst.compiler import compile_typst_book_background_pdf
-from services.rendering.typst.compiler import compile_typst_overlay_pdf
-from services.rendering.typst.compiler import compile_typst_render_pages_pdf
-from services.rendering.typst.emitter import build_typst_source_from_page_specs
-from services.rendering.typst.source_builder import build_typst_overlay_source
-from services.rendering.typst.page_ops import apply_source_page_overlay
-from services.rendering.typst.page_ops import redaction_items_from_render_blocks
-from services.rendering.typst.sanitize import sanitize_items_for_typst_compile
+from services.rendering.output.typst.book_renderer import _compile_render_pages_pdf_resilient
+from services.rendering.output.typst.compiler import _resolved_font_paths
+from services.rendering.output.typst.compiler import _resolved_common_root
+from services.rendering.output.typst.compiler import TypstCompileError
+from services.rendering.output.typst.compiler import compile_typst_book_background_pdf
+from services.rendering.output.typst.compiler import compile_typst_overlay_pdf
+from services.rendering.output.typst.compiler import compile_typst_render_pages_pdf
+from services.rendering.output.typst.emitter import build_typst_source_from_page_specs
+from services.rendering.output.typst.source_builder import build_typst_overlay_source
+from services.rendering.output.typst.source_page_overlay import apply_source_page_overlay
+from services.rendering.source.background.redaction_items import redaction_items_from_layout_blocks
+from services.rendering.output.typst.source_page_overlay import redaction_items_from_render_blocks
+from services.rendering.output.typst.sanitize import sanitize_items_for_typst_compile
 
 
 def _page_spec(background_pdf_path: Path | None = None) -> RenderPageSpec:
@@ -104,7 +105,7 @@ def test_typst_compile_error_carries_structured_context() -> None:
     completed = mock.Mock(returncode=1, stdout="", stderr="syntax error")
     with tempfile.TemporaryDirectory() as tmp:
         work_dir = Path(tmp)
-        with mock.patch("services.rendering.typst.compiler.subprocess.run", return_value=completed):
+        with mock.patch("services.rendering.output.typst.compiler.subprocess.run", return_value=completed):
             with pytest.raises(TypstCompileError) as exc_info:
                 compile_typst_overlay_pdf(
                     200.0,
@@ -134,7 +135,7 @@ def test_render_pages_compile_uses_dynamic_project_root() -> None:
         doc.save(background_pdf)
         doc.close()
 
-        with mock.patch("services.rendering.typst.compiler.subprocess.run", return_value=completed) as run_mock:
+        with mock.patch("services.rendering.output.typst.compiler.subprocess.run", return_value=completed) as run_mock:
             compile_typst_render_pages_pdf(
                 background_pdf_path=background_pdf,
                 page_specs=[_page_spec(background_pdf)],
@@ -169,7 +170,7 @@ def test_background_book_compile_uses_job_root_as_project_root() -> None:
             )
         ]
 
-        with mock.patch("services.rendering.typst.compiler.subprocess.run", return_value=completed) as run_mock:
+        with mock.patch("services.rendering.output.typst.compiler.subprocess.run", return_value=completed) as run_mock:
             compile_typst_book_background_pdf(
                 source_pdf_path=source_pdf,
                 page_specs=page_specs,
@@ -202,8 +203,8 @@ def test_sanitize_items_collects_compile_diagnostics() -> None:
         )
 
     diagnostics: dict = {}
-    with mock.patch("services.rendering.typst.sanitize.compile_typst_overlay_pdf", side_effect=_fake_compile), mock.patch(
-        "services.rendering.typst.sanitize_steps.compile_typst_overlay_pdf",
+    with mock.patch("services.rendering.output.typst.sanitize.compile_typst_overlay_pdf", side_effect=_fake_compile), mock.patch(
+        "services.rendering.output.typst.sanitize_steps.compile_typst_overlay_pdf",
         side_effect=_fake_compile,
     ):
         sanitized = sanitize_items_for_typst_compile(
@@ -270,6 +271,51 @@ def test_typst_render_source_keeps_title_fit_inside_rect_budget() -> None:
     assert re.search(r"fit_height: 36(\.0+)?pt", source)
 
 
+def test_typst_render_source_does_not_shrink_multiline_markdown_fit_height() -> None:
+    spec = RenderPageSpec(
+        page_index=0,
+        page_width_pt=200.0,
+        page_height_pt=300.0,
+        background_pdf_path=None,
+        blocks=[
+            RenderLayoutBlock(
+                block_id="body-1",
+                page_index=0,
+                background_rect=[10.0, 20.0, 160.0, 70.0],
+                content_rect=[10.0, 20.0, 160.0, 70.0],
+                content_kind="markdown",
+                content_text=r"正文 $\\frac{\\partial E}{\\partial R}$ 继续说明。",
+                plain_text="正文继续说明。",
+                math_map=[],
+                font_size_pt=10.0,
+                leading_em=0.6,
+                fit_to_box=True,
+                fit_single_line=False,
+                fit_min_font_size_pt=9.2,
+                fit_min_leading_em=0.52,
+                fit_max_height_pt=24.0,
+            )
+        ],
+    )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        background_pdf = root / "background.pdf"
+        doc = fitz.open()
+        doc.new_page(width=200, height=300)
+        doc.save(background_pdf)
+        doc.close()
+
+        source = build_typst_source_from_page_specs(
+            background_pdf_path=background_pdf,
+            page_specs=[spec],
+            work_dir=root,
+        )
+
+    assert "height: 50.0pt" in source
+    assert "fit_height: 24.0pt" in source
+
+
 def test_background_stage_creates_cleaned_pdf() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
@@ -314,12 +360,12 @@ def test_background_stage_uses_cover_only_redaction_for_vector_text() -> None:
         doc.close()
 
         with mock.patch(
-            "services.rendering.background.stage.collect_vector_text_rects",
+            "services.rendering.source.background.stage.collect_vector_text_rects",
             return_value=[fitz.Rect(10, 20, 80, 60)],
         ), mock.patch(
-            "services.rendering.background.stage.redact_translated_text_areas",
+            "services.rendering.source.background.stage.redact_translated_text_areas",
         ) as redact_mock, mock.patch(
-            "services.rendering.background.stage.save_optimized_pdf",
+            "services.rendering.source.background.stage.save_optimized_pdf",
         ):
             build_clean_background_pdf(
                 source_pdf_path=source_pdf,
@@ -354,12 +400,12 @@ def test_apply_source_page_overlay_uses_cover_only_when_vector_text_detected() -
     ]
 
     with mock.patch(
-        "services.rendering.typst.page_ops.collect_vector_text_rects",
+        "services.rendering.source.background.redaction_plan.collect_vector_text_rects",
         return_value=[fitz.Rect(10, 20, 80, 60)],
     ), mock.patch(
-        "services.rendering.typst.page_ops.redact_translated_text_areas",
+        "services.rendering.source.background.source_overlay.redact_translated_text_areas",
     ) as redact_mock, mock.patch(
-        "services.rendering.typst.page_ops.strip_page_links",
+        "services.rendering.source.background.source_overlay.strip_page_links",
     ):
         apply_source_page_overlay(page, translated_items)
 
@@ -400,6 +446,36 @@ def test_redaction_items_from_render_blocks_preserve_source_item_metadata() -> N
     assert len(item["bbox"]) == 4
 
 
+def test_redaction_items_from_layout_blocks_use_background_rect() -> None:
+    translated_items = [
+        {
+            "item_id": "p001-b001",
+            "block_type": "text",
+            "source_text": "source text",
+            "translated_text": "译文",
+            "protected_translated_text": "译文",
+            "bbox": [20.0, 40.0, 180.0, 70.0],
+        }
+    ]
+    block = RenderLayoutBlock(
+        block_id="item-p001-b001",
+        page_index=0,
+        background_rect=[10.0, 30.0, 190.0, 80.0],
+        content_rect=[20.0, 40.0, 180.0, 70.0],
+        content_kind="markdown",
+        content_text="译文",
+        plain_text="译文",
+        math_map=[],
+        font_size_pt=10.0,
+        leading_em=0.6,
+    )
+
+    redaction_items = redaction_items_from_layout_blocks(translated_items, [block])
+
+    assert redaction_items[0]["bbox"] == [10.0, 30.0, 190.0, 80.0]
+    assert redaction_items[0]["source_item_id"] == "p001-b001"
+
+
 def test_redaction_shared_prefers_local_translated_text_over_group_text() -> None:
     item = {
         "translated_text": "当前框自己的文本",
@@ -410,7 +486,7 @@ def test_redaction_shared_prefers_local_translated_text_over_group_text() -> Non
     assert get_item_translated_text(item) == "当前框自己的文本"
 
 
-def test_apply_source_page_overlay_visual_and_text_redacts_text_on_image_page() -> None:
+def test_apply_source_page_overlay_visual_cover_and_remove_text_redacts_text_on_image_page() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         image_path = root / "bg.png"
@@ -436,7 +512,7 @@ def test_apply_source_page_overlay_visual_and_text_redacts_text_on_image_page() 
         ]
 
         before = page.get_text("text")
-        apply_source_page_overlay(page, translated_items, redaction_strategy="visual_and_text")
+        apply_source_page_overlay(page, translated_items, redaction_strategy="visual_cover_and_remove_text")
         after = page.get_text("text")
 
         assert "Intermolecular Heck Coupling" in before
@@ -444,7 +520,7 @@ def test_apply_source_page_overlay_visual_and_text_redacts_text_on_image_page() 
         doc.close()
 
 
-def test_build_clean_background_pdf_visual_only_keeps_hidden_text_layer() -> None:
+def test_build_clean_background_pdf_visual_cover_keeps_hidden_text_layer() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         source_pdf = root / "source.pdf"
@@ -477,7 +553,7 @@ def test_build_clean_background_pdf_visual_only_keeps_hidden_text_layer() -> Non
             source_pdf_path=source_pdf,
             translated_pages=translated_pages,
             output_pdf_path=output_pdf,
-            redaction_strategy="visual_only",
+            redaction_strategy="visual_cover",
         )
 
         cleaned = fitz.open(output_pdf)
@@ -560,6 +636,26 @@ def test_typst_overlay_fit_respects_python_min_font_and_leading() -> None:
     assert "fallback_min_size - 1.2pt" not in source
     assert "min_leading - 0.12em" not in source
     assert "fallback_min_leading - 0.08em" not in source
+
+
+def test_typst_overlay_uses_filled_text_blocks_instead_of_cover_rects() -> None:
+    translated_items = [
+        {
+            "item_id": "p001-b001",
+            "page_idx": 0,
+            "block_type": "text",
+            "bbox": [10.0, 20.0, 120.0, 62.0],
+            "translated_text": "白底文本块",
+            "protected_translated_text": "白底文本块",
+            "formula_map": [],
+        }
+    ]
+
+    source = build_typst_overlay_source(200.0, 300.0, translated_items, include_cover_rect=True)
+
+    assert "rect(" not in source
+    assert "block(width:" in source
+    assert "fill: rgb(255, 255, 255)" in source
 
 
 def test_dense_body_pressure_tightening_does_not_increase_leading() -> None:
@@ -748,10 +844,11 @@ def test_build_render_page_specs_uses_cover_bbox_gap_for_tight_stacked_blocks() 
 
         upper, lower = page_specs[0].blocks
         upper_height = upper.content_rect[3] - upper.content_rect[1]
-        assert upper.fit_to_box is True
-        assert upper.skip_reason == "adjacent_collision_risk"
-        assert upper.fit_max_height_pt <= upper_height - 10.0
-        assert lower.content_rect[1] >= 120.0
+    assert upper.fit_to_box is True
+    assert upper.skip_reason == "adjacent_collision_risk"
+    assert upper.fit_max_height_pt < upper_height
+    assert upper.fit_max_height_pt >= upper_height - 8.0
+    assert lower.content_rect[1] == 109.7
 
 
 def test_background_render_resilient_compile_sanitizes_on_failure() -> None:
@@ -801,13 +898,13 @@ def test_background_render_resilient_compile_sanitizes_on_failure() -> None:
         }
 
         with mock.patch(
-            "services.rendering.typst.book_ops.compile_typst_render_pages_pdf",
+            "services.rendering.output.typst.book_renderer.compile_typst_render_pages_pdf",
             side_effect=[RuntimeError("mitex failed"), root / "sanitized.pdf"],
         ) as compile_mock, mock.patch(
-            "services.rendering.typst.book_ops.collect_background_page_specs",
+            "services.rendering.output.typst.book_renderer.collect_background_page_specs",
             return_value=[(0, 200.0, 300.0, translated_pages[0])],
         ), mock.patch(
-            "services.rendering.typst.book_ops.sanitize_page_specs_for_typst_book_background",
+            "services.rendering.output.typst.book_renderer.sanitize_page_specs_for_typst_book_background",
             return_value=[(0, 200.0, 300.0, sanitized_pages[0])],
         ):
             result = _compile_render_pages_pdf_resilient(

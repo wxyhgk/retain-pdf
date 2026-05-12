@@ -9,7 +9,15 @@ const MOCK_MARKDOWN_CONTENT = [
 
 function currentMockScenario() {
   const value = new URLSearchParams(window.location.search).get("mock")?.trim().toLowerCase() || "";
-  return ["queued", "running", "succeeded", "failed"].includes(value) ? value : "";
+  const aliases = {
+    queued: "upload",
+    running: "translate",
+    succeeded: "done",
+    complete: "done",
+    completed: "done",
+  };
+  const normalized = aliases[value] || value;
+  return ["upload", "ocr", "translate", "render", "done", "failed"].includes(normalized) ? normalized : "";
 }
 
 function isoOffsetMinutes(minutes) {
@@ -17,26 +25,88 @@ function isoOffsetMinutes(minutes) {
 }
 
 function buildMockJobPayload(scenario = currentMockScenario()) {
-  const normalized = scenario || "running";
-  const progressMap = {
-    queued: { current: 0, total: 100, percent: 0, stage: "排队中" },
-    running: { current: 62, total: 100, percent: 62, stage: "正在翻译正文与公式" },
-    succeeded: { current: 100, total: 100, percent: 100, stage: "处理完成" },
-    failed: { current: 78, total: 100, percent: 78, stage: "渲染阶段失败" },
+  const normalized = scenario || "translate";
+  const scenarioMap = {
+    upload: {
+      status: "queued",
+      stage: "queued",
+      currentStage: "queued",
+      current: 2,
+      total: 12,
+      percent: 17,
+      stageDetail: "正在上传 PDF，准备提交 OCR 任务",
+      activeMs: 18_000,
+      totalMs: 18_000,
+    },
+    ocr: {
+      status: "running",
+      stage: "ocr_processing",
+      currentStage: "ocr_processing",
+      current: 5,
+      total: 12,
+      percent: 42,
+      stageDetail: "正在执行 OCR，第 5/12 页",
+      activeMs: 126_000,
+      totalMs: 144_000,
+    },
+    translate: {
+      status: "running",
+      stage: "translating",
+      currentStage: "translating",
+      current: 18,
+      total: 55,
+      percent: 33,
+      stageDetail: "正在翻译正文与公式，第 18/55 批",
+      activeMs: 214_000,
+      totalMs: 358_000,
+    },
+    render: {
+      status: "running",
+      stage: "rendering",
+      currentStage: "rendering",
+      current: 8,
+      total: 12,
+      percent: 67,
+      stageDetail: "正在渲染第 8/12 页",
+      activeMs: 74_000,
+      totalMs: 512_000,
+    },
+    done: {
+      status: "succeeded",
+      stage: "finished",
+      currentStage: "finished",
+      current: 12,
+      total: 12,
+      percent: 100,
+      stageDetail: "处理完成，可以下载结果",
+      activeMs: 28_000,
+      totalMs: 540_000,
+    },
+    failed: {
+      status: "failed",
+      stage: "rendering",
+      currentStage: "rendering",
+      current: 9,
+      total: 12,
+      percent: 75,
+      stageDetail: "渲染阶段失败",
+      activeMs: 96_000,
+      totalMs: 496_000,
+    },
   };
-  const progress = progressMap[normalized];
-  const status = normalized;
+  const scenarioConfig = scenarioMap[normalized] || scenarioMap.translate;
+  const status = scenarioConfig.status;
   return {
     job_id: MOCK_JOB_ID,
     workflow: "book",
     job_type: "book",
     status,
-    stage: normalized === "queued" ? "queued" : normalized === "failed" ? "render" : "translate",
-    stage_detail: progress.stage,
+    stage: scenarioConfig.stage,
+    stage_detail: scenarioConfig.stageDetail,
     progress: {
-      current: progress.current,
-      total: progress.total,
-      percent: progress.percent,
+      current: scenarioConfig.current,
+      total: scenarioConfig.total,
+      percent: scenarioConfig.percent,
     },
     timestamps: {
       created_at: isoOffsetMinutes(-12),
@@ -46,11 +116,12 @@ function buildMockJobPayload(scenario = currentMockScenario()) {
       duration_seconds: status === "succeeded" ? 540 : status === "failed" ? 496 : null,
     },
     runtime: {
-      current_stage: progress.stage,
-      active_stage_elapsed_ms: status === "queued" ? 42_000 : 214_000,
-      total_elapsed_ms: status === "queued" ? 42_000 : 536_000,
+      current_stage: scenarioConfig.currentStage,
+      active_stage_elapsed_ms: scenarioConfig.activeMs,
+      total_elapsed_ms: scenarioConfig.totalMs,
       retry_count: status === "failed" ? 1 : 0,
       terminal_reason: status === "failed" ? "渲染器退出码非零" : status === "succeeded" ? "completed" : "",
+      stage_history: buildMockStageHistory(normalized),
     },
     invocation: {
       input_protocol: "stage_spec",
@@ -72,7 +143,7 @@ function buildMockJobPayload(scenario = currentMockScenario()) {
     },
     actions: {
       cancel: {
-        enabled: status === "queued" || status === "running",
+        enabled: false,
         url: "mock://cancel",
       },
       rerun: {
@@ -123,8 +194,30 @@ function buildMockJobPayload(scenario = currentMockScenario()) {
   };
 }
 
+function buildMockStageHistory(scenario) {
+  const stages = [
+    { key: "queued", detail: "上传 PDF", duration_ms: scenario === "upload" ? null : 18_000 },
+    { key: "ocr_processing", detail: "OCR 解析", duration_ms: scenario === "ocr" ? null : 126_000 },
+    { key: "translating", detail: "翻译正文", duration_ms: scenario === "translate" ? null : 214_000 },
+    { key: "rendering", detail: "渲染 PDF", duration_ms: scenario === "render" || scenario === "failed" ? null : 74_000 },
+    { key: "finished", detail: "产物发布", duration_ms: scenario === "done" ? 28_000 : null },
+  ];
+  const order = ["upload", "ocr", "translate", "render", "failed", "done"];
+  const currentIndex = order.indexOf(scenario);
+  return stages
+    .slice(0, scenario === "done" ? stages.length : Math.max(1, currentIndex + 1))
+    .map((stage, index) => ({
+      stage: stage.key,
+      detail: stage.detail,
+      enter_at: isoOffsetMinutes(-12 + index * 2),
+      exit_at: stage.duration_ms === null ? "" : isoOffsetMinutes(-11 + index * 2),
+      duration_ms: stage.duration_ms,
+      terminal_status: stage.duration_ms === null ? "" : "completed",
+    }));
+}
+
 function buildMockManifest(scenario = currentMockScenario()) {
-  if (scenario !== "succeeded") {
+  if (scenario !== "done") {
     return { items: [] };
   }
   return {
@@ -141,37 +234,93 @@ function buildMockManifest(scenario = currentMockScenario()) {
 function buildMockEvents(scenario = currentMockScenario()) {
   const items = [
     {
-      timestamp: isoOffsetMinutes(-10),
+      seq: 1,
+      ts: isoOffsetMinutes(-10),
       level: "info",
       stage: "queued",
-      title: "任务已进入队列",
+      stage_detail: "PDF 上传完成，任务已进入队列",
+      event_type: "stage_progress",
+      event: "stage_progress",
+      message: "PDF 上传完成，任务已进入队列",
+      progress_current: 2,
+      progress_total: 12,
       payload: { scenario },
     },
   ];
-  if (scenario !== "queued") {
+  if (["ocr", "translate", "render", "done", "failed"].includes(scenario)) {
     items.push({
-      timestamp: isoOffsetMinutes(-8),
+      seq: 2,
+      ts: isoOffsetMinutes(-8),
       level: "info",
-      stage: "translate",
-      title: "翻译阶段已开始",
-      payload: { progress_percent: scenario === "running" ? 62 : 100 },
+      stage: "ocr_processing",
+      stage_detail: "正在执行 OCR，第 5/12 页",
+      provider: "paddle",
+      provider_stage: "paddle_running",
+      event_type: "stage_progress",
+      event: "stage_progress",
+      message: "正在执行 OCR，第 5/12 页",
+      progress_current: scenario === "ocr" ? 5 : 12,
+      progress_total: 12,
+      payload: { origin: "mock" },
     });
   }
-  if (scenario === "succeeded") {
+  if (["translate", "render", "done", "failed"].includes(scenario)) {
     items.push({
-      timestamp: isoOffsetMinutes(-1),
+      seq: 3,
+      ts: isoOffsetMinutes(-6),
       level: "info",
-      stage: "render",
-      title: "PDF 已生成",
+      stage: "translating",
+      stage_detail: "正在翻译正文与公式，第 18/55 批",
+      event_type: "stage_progress",
+      event: "stage_progress",
+      message: "正在翻译正文与公式，第 18/55 批",
+      progress_current: scenario === "translate" ? 18 : 55,
+      progress_total: 55,
+      payload: { origin: "mock" },
+    });
+  }
+  if (["render", "done", "failed"].includes(scenario)) {
+    items.push({
+      seq: 4,
+      ts: isoOffsetMinutes(-4),
+      level: "info",
+      stage: "rendering",
+      stage_detail: scenario === "failed" ? "正在渲染第 9/12 页" : "正在渲染第 8/12 页",
+      event_type: "stage_progress",
+      event: "stage_progress",
+      message: scenario === "failed" ? "正在渲染第 9/12 页" : "正在渲染第 8/12 页",
+      progress_current: scenario === "render" ? 8 : scenario === "failed" ? 9 : 12,
+      progress_total: 12,
+      payload: { origin: "mock" },
+    });
+  }
+  if (scenario === "done") {
+    items.push({
+      seq: 5,
+      ts: isoOffsetMinutes(-1),
+      level: "info",
+      stage: "finished",
+      stage_detail: "PDF 已生成，可以下载",
+      event_type: "artifact_published",
+      event: "artifact_published",
+      message: "PDF 已生成，可以下载",
+      progress_current: 12,
+      progress_total: 12,
       payload: { artifact_key: "pdf" },
     });
   }
   if (scenario === "failed") {
     items.push({
-      timestamp: isoOffsetMinutes(-1),
+      seq: 5,
+      ts: isoOffsetMinutes(-1),
       level: "error",
-      stage: "render",
-      title: "渲染失败",
+      stage: "rendering",
+      stage_detail: "渲染阶段失败",
+      event_type: "job_failed",
+      event: "job_failed",
+      message: "渲染阶段失败",
+      progress_current: 9,
+      progress_total: 12,
       payload: { message: "mock render failure" },
     });
   }

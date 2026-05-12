@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from services.rendering.formula.mode_router import is_direct_typst_math_mode
+from services.rendering.layout.inline_content.mode_router import is_direct_typst_math_mode
 from services.rendering.layout.payload.metrics import VERTICAL_COLLISION_GAP_PT
 from services.rendering.layout.payload.metrics import block_metrics
 from services.rendering.layout.payload.metrics import estimated_render_height_pt

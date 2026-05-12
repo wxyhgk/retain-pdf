@@ -1,4 +1,4 @@
-use crate::models::JobSnapshot;
+use crate::models::{job_stage_str, JobSnapshot, JobStage};
 use crate::ocr_provider::mineru::map_task_status;
 
 use super::{job_artifacts_mut, ocr_provider_diagnostics_mut};
@@ -37,7 +37,7 @@ fn apply_provider_stage_prefix_rule(job: &mut JobSnapshot, line: &str) -> bool {
 fn apply_provider_stage_prefix(job: &mut JobSnapshot, rule: ProviderStagePrefixRule) {
     match rule {
         ProviderStagePrefixRule::UploadDone => {
-            job.stage = Some("mineru_processing".to_string());
+            job.stage = Some(job_stage_str(JobStage::MineruProcessing).to_string());
             job.stage_detail = Some("文件上传完成，等待 MinerU 处理".to_string());
         }
     }

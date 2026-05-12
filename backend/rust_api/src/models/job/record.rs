@@ -3,8 +3,8 @@ use std::ops::{Deref, DerefMut};
 use serde::{Deserialize, Serialize};
 
 use crate::models::{
-    now_iso, JobArtifacts, JobFailureInfo, JobRuntimeInfo, JobStatusKind, ProcessResult,
-    ResolvedJobSpec, WorkflowKind,
+    job_stage_detail, job_stage_str, now_iso, JobArtifacts, JobFailureInfo, JobRuntimeInfo,
+    JobStage, JobStatusKind, ProcessResult, ResolvedJobSpec, WorkflowKind,
 };
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -91,8 +91,8 @@ impl JobSnapshot {
                 command,
                 request_payload,
                 error: None,
-                stage: Some("queued".to_string()),
-                stage_detail: Some("任务已创建，等待可用执行槽位".to_string()),
+                stage: Some(job_stage_str(JobStage::Queued).to_string()),
+                stage_detail: Some(job_stage_detail(JobStage::Queued).to_string()),
                 progress_current: Some(0),
                 progress_total: None,
                 log_tail: Vec::new(),

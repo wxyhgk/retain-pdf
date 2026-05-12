@@ -4,7 +4,6 @@ import argparse
 import sys
 from pathlib import Path
 from types import SimpleNamespace
-import json
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
@@ -14,10 +13,8 @@ from foundation.shared.stage_specs import build_stage_invocation_metadata
 from foundation.shared.stage_specs import BookStageSpec
 from foundation.shared.stage_specs import resolve_credential_ref
 from foundation.shared.tee_output import enable_job_log_capture
-from runtime.pipeline.book_pipeline import run_book_pipeline
 from services.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_NAME
 from services.pipeline_shared.contracts import PIPELINE_SUMMARY_FILE_NAME
-from services.pipeline_shared.contracts import PIPELINE_EVENTS_FILE_NAME
 from services.pipeline_shared.contracts import STDOUT_LABEL_EVENTS_JSONL
 from services.pipeline_shared.events import emit_artifact_published
 from services.pipeline_shared.events import emit_stage_transition
@@ -28,7 +25,8 @@ from services.pipeline_shared.summary import write_pipeline_summary
 from services.translation.llm.shared.provider_runtime import DEFAULT_BASE_URL
 from services.translation.llm.shared.provider_runtime import get_api_key
 from services.translation.llm.shared.provider_runtime import normalize_base_url
-from services.translation.terms import parse_glossary_json
+from services.translation.workflow import BookRequest
+from services.translation.workflow import run_book
 
 
 def parse_args() -> argparse.Namespace:
@@ -37,10 +35,6 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--spec", type=str, required=True, help="Path to book stage spec JSON.")
     return parser.parse_args()
-
-
-def _serialize_glossary_entries(entries: list[dict]) -> str:
-    return json.dumps(entries, ensure_ascii=False)
 
 
 def _args_from_spec(spec: BookStageSpec) -> SimpleNamespace:
@@ -71,7 +65,6 @@ def _args_from_spec(spec: BookStageSpec) -> SimpleNamespace:
         glossary_resource_entry_count=spec.translation.glossary_resource_entry_count,
         glossary_inline_entry_count=spec.translation.glossary_inline_entry_count,
         glossary_overridden_entry_count=spec.translation.glossary_overridden_entry_count,
-        glossary_json=_serialize_glossary_entries(spec.translation.glossary_entries),
         api_key=resolve_credential_ref(spec.translation.credential_ref),
         model=spec.translation.model,
         base_url=spec.translation.base_url,
@@ -130,41 +123,43 @@ def main() -> None:
             required=normalize_base_url(args.base_url) == normalize_base_url(DEFAULT_BASE_URL),
         )
         emit_stage_transition(
-            stage="translation_prepare",
+            stage="translating",
             message="开始准备翻译和渲染阶段",
         )
-        result = run_book_pipeline(
-            source_json_path=source_json_path,
-            source_pdf_path=source_pdf_path,
-            output_dir=translations_dir,
-            output_pdf_path=output_pdf_path,
-            api_key=api_key,
-            start_page=args.start_page,
-            end_page=args.end_page,
-            batch_size=args.batch_size,
-            workers=args.workers,
-            model=args.model,
-            base_url=args.base_url,
-            mode=args.mode,
-            math_mode=args.math_mode,
-            classify_batch_size=args.classify_batch_size,
-            skip_title_translation=args.skip_title_translation,
-            render_mode=args.render_mode,
-            rule_profile_name=args.rule_profile_name,
-            custom_rules_text=args.custom_rules_text,
-            glossary_id=args.glossary_id,
-            glossary_name=args.glossary_name,
-            glossary_resource_entry_count=args.glossary_resource_entry_count,
-            glossary_inline_entry_count=args.glossary_inline_entry_count,
-            glossary_overridden_entry_count=args.glossary_overridden_entry_count,
-            glossary_entries=parse_glossary_json(args.glossary_json),
-            compile_workers=args.compile_workers or None,
-            typst_font_family=args.typst_font_family,
-            pdf_compress_dpi=args.pdf_compress_dpi,
-            invocation=build_stage_invocation_metadata(
-                stage="book",
-                stage_spec_schema_version=stage_spec_schema_version,
-            ),
+        result = run_book(
+            BookRequest(
+                source_json_path=source_json_path,
+                source_pdf_path=source_pdf_path,
+                output_dir=translations_dir,
+                output_pdf_path=output_pdf_path,
+                api_key=api_key,
+                start_page=args.start_page,
+                end_page=args.end_page,
+                batch_size=args.batch_size,
+                workers=args.workers,
+                model=args.model,
+                base_url=args.base_url,
+                mode=args.mode,
+                math_mode=args.math_mode,
+                classify_batch_size=args.classify_batch_size,
+                skip_title_translation=args.skip_title_translation,
+                render_mode=args.render_mode,
+                rule_profile_name=args.rule_profile_name,
+                custom_rules_text=args.custom_rules_text,
+                glossary_id=args.glossary_id,
+                glossary_name=args.glossary_name,
+                glossary_resource_entry_count=args.glossary_resource_entry_count,
+                glossary_inline_entry_count=args.glossary_inline_entry_count,
+                glossary_overridden_entry_count=args.glossary_overridden_entry_count,
+                glossary_entries=spec.translation.glossary_entries,
+                compile_workers=args.compile_workers or None,
+                typst_font_family=args.typst_font_family,
+                pdf_compress_dpi=args.pdf_compress_dpi,
+                invocation=build_stage_invocation_metadata(
+                    stage="book",
+                    stage_spec_schema_version=stage_spec_schema_version,
+                ),
+            )
         )
 
         summary_path = job_dirs.artifacts_dir / PIPELINE_SUMMARY_FILE_NAME

@@ -1,4 +1,3 @@
-import { $ } from "./dom.js";
 import {
   apiBase,
   applyKeyInputs,
@@ -64,11 +63,22 @@ import { mountArtifactDownloadsFeature } from "./features/artifact-downloads/con
 import { mountBrowserCredentialsFeature } from "./features/credentials/browser.js";
 import { mountDeveloperFeature } from "./features/developer/controller.js";
 import { mountJobRuntimeFeature } from "./features/job-runtime/controller.js";
-import { mountRecentJobsFeature } from "./features/recent-jobs/controller.js";
 import { mountStatusDetailFeature } from "./features/status-detail/controller.js";
 import { mountUploadFeature } from "./features/upload/controller.js";
 import { mountWorkflowFeature } from "./features/workflow/controller.js";
+import { bindMainEvents } from "./main-events.js";
+import {
+  bootstrapStartupRoute,
+  initializeIdleAndRecentJobs,
+} from "./main-startup.js";
 import { state } from "./state.js";
+import {
+  collectUploadFormData,
+  countPdfPages,
+  normalizeMathMode,
+  normalizeWorkflow,
+  setText,
+} from "./main-helpers.js";
 import {
   clearFileInputValue,
   prepareFilePicker,
@@ -85,193 +95,18 @@ import {
 const WORKFLOW_BOOK = "book";
 const WORKFLOW_TRANSLATE = "translate";
 const WORKFLOW_RENDER = "render";
-const PDFJS_CMAP_URL = new URL("../../vendor/pdfjs-dist/cmaps/", import.meta.url).toString();
-const PDFJS_STANDARD_FONT_DATA_URL = new URL("../../vendor/pdfjs-dist/standard_fonts/", import.meta.url).toString();
-const PDFJS_WORKER_URL = new URL("../../vendor/pdfjs-dist/build/pdf.worker.mjs", import.meta.url).toString();
 let browserCredentialsFeature = null;
 let developerFeature = null;
 let artifactDownloadsFeature = null;
 let appActionsFeature = null;
 let appShellFeature = null;
 let jobRuntimeFeature = null;
-let readerDialogComponentPromise = null;
 let readerDialogFeature = null;
-let readerDialogFeaturePromise = null;
 let statusDetailFeature = null;
 let uploadFeature = null;
 let workflowFeature = null;
-let pdfjsPromise = null;
 
-function normalizeWorkflow(value) {
-  const workflow = `${value || ""}`.trim();
-  if (workflow === WORKFLOW_TRANSLATE || workflow === WORKFLOW_RENDER) {
-    return workflow;
-  }
-  return WORKFLOW_BOOK;
-}
-
-function normalizeMathMode(value) {
-  return `${value || ""}`.trim() === "placeholder" ? "placeholder" : "direct_typst";
-}
-
-function getRequestedReaderJobIdFromLocation() {
-  const url = new URL(window.location.href);
-  const view = `${url.searchParams.get("view") || ""}`.trim();
-  const jobId = `${url.searchParams.get("job_id") || ""}`.trim();
-  return view === "reader" && jobId ? jobId : "";
-}
-
-async function ensureReaderDialogFeature() {
-  if (readerDialogFeature) {
-    return readerDialogFeature;
-  }
-  if (!readerDialogFeaturePromise) {
-    if (!readerDialogComponentPromise) {
-      readerDialogComponentPromise = import("./components/dialogs/reader-dialog.js")
-        .catch((error) => {
-          readerDialogComponentPromise = null;
-          throw error;
-        });
-    }
-    readerDialogFeaturePromise = readerDialogComponentPromise
-      .then(() => import("./features/reader-dialog/controller.js"))
-      .then(({ mountReaderDialogFeature }) => {
-        const feature = mountReaderDialogFeature({
-          state,
-          fetchProtected,
-          setText,
-        });
-        feature.bindEvents();
-        readerDialogFeature = feature;
-        return feature;
-      })
-      .catch((error) => {
-        readerDialogFeaturePromise = null;
-        throw error;
-      });
-  }
-  return readerDialogFeaturePromise;
-}
-
-async function loadPdfjs() {
-  if (!pdfjsPromise) {
-    pdfjsPromise = import("../../vendor/pdfjs-dist/build/pdf.mjs")
-      .then((module) => {
-        module.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
-        return module;
-      })
-      .catch((error) => {
-        pdfjsPromise = null;
-        throw error;
-      });
-  }
-  return pdfjsPromise;
-}
-
-function setText(id, value) {
-  const el = $(id);
-  if (el) {
-    el.textContent = value;
-  }
-  if (id === "error-box") {
-    const inlineError = $("error-box-inline");
-    if (inlineError) {
-      const text = `${value ?? ""}`.trim();
-      inlineError.textContent = value;
-      inlineError.classList.toggle("hidden", !text || text === "-");
-    }
-  }
-}
-
-function collectUploadFormData(file) {
-  const form = new FormData();
-  form.append("file", file);
-  return form;
-}
-
-async function countPdfPages(file) {
-  if (!file) {
-    return 0;
-  }
-  const pdfjsLib = await loadPdfjs();
-  const doc = await pdfjsLib.getDocument({
-    data: await file.arrayBuffer(),
-    cMapUrl: PDFJS_CMAP_URL,
-    cMapPacked: true,
-    standardFontDataUrl: PDFJS_STANDARD_FONT_DATA_URL,
-    disableFontFace: true,
-    disableRange: true,
-    disableStream: true,
-  }).promise;
-  try {
-    return Number(doc?.numPages || 0);
-  } finally {
-    if (doc?.destroy) {
-      await doc.destroy().catch(() => {});
-    }
-  }
-}
-
-async function handleFileSelected() {
-  await uploadFeature?.handleFileSelected();
-}
-
-async function submitForm(event) {
-  await appActionsFeature?.submitForm(event);
-}
-
-async function handleOpenOutputDir() {
-  await appActionsFeature?.handleOpenOutputDir();
-}
-
-async function checkApiConnectivity() {
-  await appActionsFeature?.checkApiConnectivity();
-}
-
-async function openReaderFromButton(button) {
-  const url = `${button?.dataset?.url || ""}`.trim();
-  const disabled = button?.classList?.contains("disabled")
-    || button?.getAttribute?.("aria-disabled") === "true";
-  let jobId = "";
-  if (url) {
-    try {
-      jobId = new URL(url, window.location.href).searchParams.get("job_id")?.trim() || "";
-    } catch (_err) {
-      jobId = "";
-    }
-  }
-  if (!jobId) {
-    jobId = `${state.currentJobId || ""}`.trim();
-  }
-  const feature = await ensureReaderDialogFeature();
-  feature.open({
-    url,
-    jobId,
-    disabled,
-  });
-}
-
-function bindDynamicPrimaryActions() {
-  document.addEventListener("click", (event) => {
-    const detailButton = event.target?.closest?.("#status-detail-btn");
-    if (detailButton) {
-      event.preventDefault();
-      statusDetailFeature?.openStatusDetailDialog("overview");
-      return;
-    }
-
-    const readerButton = event.target?.closest?.("#reader-btn");
-    if (readerButton) {
-      event.preventDefault();
-      void openReaderFromButton(readerButton).catch((error) => {
-        setText("error-box", error.message || String(error));
-      });
-    }
-  });
-}
-
-async function initializePage() {
-  const persistedConfig = await loadPersistedConfig();
+function applyPersistedConfig(persistedConfig) {
   const browserStored = persistedConfig.browserConfig || {};
   state.developerConfig = persistedConfig.developerConfig || {};
   applyKeyInputs(
@@ -282,6 +117,31 @@ async function initializePage() {
       modelApiKey: browserStored.modelApiKey || defaultModelApiKey(),
     },
   );
+}
+
+function workflowConstants() {
+  return {
+    DEFAULT_WORKERS,
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_CLASSIFY_BATCH_SIZE,
+    DEFAULT_COMPILE_WORKERS,
+    DEFAULT_TIMEOUT_SECONDS,
+    DEFAULT_MODEL_VERSION,
+    DEFAULT_LANGUAGE,
+    DEFAULT_MODE,
+    DEFAULT_RULE_PROFILE,
+    DEFAULT_RENDER_MODE,
+    WORKFLOW_BOOK,
+    WORKFLOW_TRANSLATE,
+    WORKFLOW_RENDER,
+  };
+}
+
+async function checkApiConnectivity() {
+  await appActionsFeature?.checkApiConnectivity();
+}
+
+function mountCoreFeatures() {
   appShellFeature = mountAppShellFeature({
     isMockMode,
     prepareFilePicker,
@@ -296,6 +156,9 @@ async function initializePage() {
     updateJobWarning,
     activateDetailTab: (name) => statusDetailFeature?.activateDetailTab(name),
   });
+}
+
+function mountUploadWorkflowFeatures() {
   workflowFeature = mountWorkflowFeature({
     state,
     isMockMode,
@@ -308,21 +171,7 @@ async function initializePage() {
     defaultModelApiKey,
     normalizeWorkflow,
     normalizeMathMode,
-    constants: {
-      DEFAULT_WORKERS,
-      DEFAULT_BATCH_SIZE,
-      DEFAULT_CLASSIFY_BATCH_SIZE,
-      DEFAULT_COMPILE_WORKERS,
-      DEFAULT_TIMEOUT_SECONDS,
-      DEFAULT_MODEL_VERSION,
-      DEFAULT_LANGUAGE,
-      DEFAULT_MODE,
-      DEFAULT_RULE_PROFILE,
-      DEFAULT_RENDER_MODE,
-      WORKFLOW_BOOK,
-      WORKFLOW_TRANSLATE,
-      WORKFLOW_RENDER,
-    },
+    constants: workflowConstants(),
     currentPageRanges: () => uploadFeature?.currentPageRanges() || "",
     renderPageRangeSummary: () => uploadFeature?.renderPageRangeSummary(),
     getBrowserCredentialsFeature: () => browserCredentialsFeature,
@@ -352,6 +201,9 @@ async function initializePage() {
     refreshSubmitControls: () => workflowFeature?.refreshSubmitControls(),
     workflowNeedsUpload: (workflow) => workflowFeature?.workflowNeedsUpload(workflow) ?? (workflow !== WORKFLOW_RENDER),
   });
+}
+
+function mountCredentialAndActionFeatures() {
   browserCredentialsFeature = mountBrowserCredentialsFeature({
     state,
     applyKeyInputs,
@@ -417,6 +269,9 @@ async function initializePage() {
     getJobRuntimeFeature: () => jobRuntimeFeature,
     onDesktopConfigSaved: () => workflowFeature?.applyWorkflowMode(),
   });
+}
+
+function mountJobFeatures() {
   statusDetailFeature = mountStatusDetailFeature({
     state,
     apiPrefix: API_PREFIX,
@@ -448,48 +303,42 @@ async function initializePage() {
     onReaderDialogSync: () => readerDialogFeature?.syncToolbarActions(),
     onReaderDialogClose: () => readerDialogFeature?.close(),
   });
-  developerFeature.bindEvents();
-  artifactDownloadsFeature.bindEvents();
-  statusDetailFeature.bindEvents();
-  appShellFeature.bindChrome();
-  $("file")?.addEventListener("change", handleFileSelected);
-  $("credential-gate-action")?.addEventListener("click", (event) => {
-    event.preventDefault();
-    document.dispatchEvent(new CustomEvent("retainpdf:open-browser-credentials"));
-  });
-  $("ocr_provider")?.addEventListener("input", saveBrowserStoredConfig);
-  $("mineru_token")?.addEventListener("input", saveBrowserStoredConfig);
-  $("paddle_token")?.addEventListener("input", saveBrowserStoredConfig);
-  $("api_key")?.addEventListener("input", saveBrowserStoredConfig);
-  $("job-form")?.addEventListener("submit", submitForm);
-  $("page-range-btn")?.addEventListener("click", () => uploadFeature?.openPageRangeDialog());
-  $("page-range-summary")?.addEventListener("click", () => uploadFeature?.openPageRangeDialog());
-  $("page-range-apply-btn")?.addEventListener("click", () => uploadFeature?.applyPageRanges());
-  $("page-range-clear-btn")?.addEventListener("click", () => uploadFeature?.clearPageRanges());
-  $("cancel-btn")?.addEventListener("click", () => jobRuntimeFeature?.cancelCurrentJob());
-  $("stop-btn")?.addEventListener("click", () => jobRuntimeFeature?.stopPolling());
-  bindDynamicPrimaryActions();
-  $("back-home-btn")?.addEventListener("click", () => jobRuntimeFeature?.returnToHome());
-  $("open-output-btn")?.addEventListener("click", handleOpenOutputDir);
-  appShellFeature.initializeIdleView();
-  mountRecentJobsFeature({
-    fetchJobList,
-    apiPrefix: API_PREFIX,
-    startPolling: (jobId) => jobRuntimeFeature?.startPolling(jobId),
-  });
+}
 
-  const startupReaderJobId = getRequestedReaderJobIdFromLocation();
-  if (startupReaderJobId) {
-    jobRuntimeFeature?.startPolling(startupReaderJobId);
-    window.setTimeout(async () => {
-      try {
-        const feature = await ensureReaderDialogFeature();
-        feature.open({ jobId: startupReaderJobId });
-      } catch (error) {
-        setText("error-box", error.message || String(error));
-      }
-    }, 0);
-  }
+function bindFeatureEvents() {
+  bindMainEvents({
+    developerFeature,
+    artifactDownloadsFeature,
+    statusDetailFeature,
+    appShellFeature,
+    uploadFeature,
+    appActionsFeature,
+    jobRuntimeFeature,
+    state,
+    fetchProtected,
+    setText,
+  });
+}
+
+async function initializePage() {
+  const persistedConfig = await loadPersistedConfig();
+  applyPersistedConfig(persistedConfig);
+  mountCoreFeatures();
+  mountUploadWorkflowFeatures();
+  mountCredentialAndActionFeatures();
+  mountJobFeatures();
+  bindFeatureEvents();
+  initializeIdleAndRecentJobs({
+    appShellFeature,
+    fetchJobList,
+    jobRuntimeFeature,
+  });
+  bootstrapStartupRoute({
+    state,
+    fetchProtected,
+    jobRuntimeFeature,
+    setText,
+  });
   return persistedConfig;
 }
 

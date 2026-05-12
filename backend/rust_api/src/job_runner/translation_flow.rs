@@ -6,6 +6,8 @@ use crate::storage_paths::{build_job_paths, resolve_data_path};
 
 #[path = "translation_flow_child.rs"]
 mod translation_flow_child;
+#[path = "translation_flow_executor.rs"]
+mod translation_flow_executor;
 #[path = "translation_flow_stage.rs"]
 mod translation_flow_stage;
 #[path = "translation_flow_support.rs"]
@@ -17,9 +19,11 @@ use self::translation_flow_child::{
 use self::translation_flow_stage::{
     record_ocr_child_finished, run_render_stage_after_translation, run_translation_stage,
 };
-use self::translation_flow_support::{finalize_parent_after_ocr, OcrContinuation};
+use self::translation_flow_support::finalize_parent_after_ocr;
 use super::ocr_flow::{execute_ocr_job, sync_parent_with_ocr_child};
+use super::pipeline_plan::PipelinePlan;
 use super::{attach_job_paths, ProcessRuntimeDeps};
+use translation_flow_executor::run_after_translation_stage;
 
 pub(super) async fn run_translation_job_with_ocr(
     deps: ProcessRuntimeDeps,
@@ -34,7 +38,7 @@ pub(super) async fn run_translation_job_with_ocr(
     {
         return run_book_job_from_artifacts(deps, parent_job).await;
     }
-    run_job_with_ocr(deps, parent_job, OcrContinuation::FullPipeline).await
+    run_job_with_ocr(deps, parent_job, PipelinePlan::book_with_ocr()).await
 }
 
 pub(super) async fn run_translate_only_job_with_ocr(
@@ -50,7 +54,7 @@ pub(super) async fn run_translate_only_job_with_ocr(
     {
         return run_translate_only_job_from_artifacts(deps, parent_job).await;
     }
-    run_job_with_ocr(deps, parent_job, OcrContinuation::TranslateOnly).await
+    run_job_with_ocr(deps, parent_job, PipelinePlan::translate_with_ocr()).await
 }
 
 async fn run_translate_only_job_from_artifacts(
@@ -104,21 +108,19 @@ async fn prepare_job_from_ocr_artifacts(
         .artifacts
         .as_ref()
         .ok_or_else(|| anyhow!("artifact source job has no artifacts: {source_job_id}"))?;
-    let source_pdf_path = source_artifacts
+    let checkpoint = source_artifacts.ocr_checkpoint();
+    let source_pdf_path = checkpoint
         .source_pdf
-        .as_deref()
         .ok_or_else(|| anyhow!("artifact source job is missing source_pdf: {source_job_id}"))
         .and_then(|raw| resolve_data_path(&deps.config.data_root, raw))?;
-    let normalized_path = source_artifacts
+    let normalized_path = checkpoint
         .normalized_document_json
-        .as_deref()
         .ok_or_else(|| {
             anyhow!("artifact source job is missing normalized_document_json: {source_job_id}")
         })
         .and_then(|raw| resolve_data_path(&deps.config.data_root, raw))?;
-    let layout_json_path = source_artifacts
+    let layout_json_path = checkpoint
         .layout_json
-        .as_deref()
         .map(|raw| resolve_data_path(&deps.config.data_root, raw))
         .transpose()?;
     if !source_pdf_path.exists() {
@@ -138,6 +140,7 @@ async fn prepare_job_from_ocr_artifacts(
     attach_job_paths(&mut job, &job_paths);
     copy_ocr_checkpoint_artifacts(&mut job, &source_job_id, source_artifacts);
     if let Some(artifacts) = job.artifacts.as_mut() {
+        artifacts.copy_translation_inputs_from(source_artifacts);
         artifacts.source_pdf = Some(source_pdf_path.to_string_lossy().to_string());
         artifacts.normalized_document_json = Some(normalized_path.to_string_lossy().to_string());
         artifacts.layout_json = layout_json_path
@@ -162,33 +165,13 @@ fn copy_ocr_checkpoint_artifacts(
     source_artifacts: &JobArtifacts,
 ) {
     let artifacts = job.artifacts.get_or_insert_with(JobArtifacts::default);
-    artifacts.ocr_job_id = source_artifacts
-        .ocr_job_id
-        .clone()
-        .or_else(|| Some(source_job_id.to_string()));
-    artifacts.ocr_status = source_artifacts.ocr_status.clone();
-    artifacts.ocr_trace_id = source_artifacts.ocr_trace_id.clone();
-    artifacts.ocr_provider_trace_id = source_artifacts.ocr_provider_trace_id.clone();
-    artifacts.source_pdf = source_artifacts.source_pdf.clone();
-    artifacts.layout_json = source_artifacts.layout_json.clone();
-    artifacts.normalized_document_json = source_artifacts.normalized_document_json.clone();
-    artifacts.normalization_report_json = source_artifacts.normalization_report_json.clone();
-    artifacts.provider_raw_dir = source_artifacts.provider_raw_dir.clone();
-    artifacts.provider_zip = source_artifacts.provider_zip.clone();
-    artifacts.provider_summary_json = source_artifacts.provider_summary_json.clone();
-    artifacts.schema_version = source_artifacts.schema_version.clone();
-    artifacts.trace_id = artifacts
-        .trace_id
-        .clone()
-        .or(source_artifacts.trace_id.clone());
-    artifacts.provider_trace_id = source_artifacts.provider_trace_id.clone();
-    artifacts.ocr_provider_diagnostics = source_artifacts.ocr_provider_diagnostics.clone();
+    artifacts.copy_ocr_checkpoint_from(source_job_id, source_artifacts);
 }
 
 async fn run_job_with_ocr(
     deps: ProcessRuntimeDeps,
     mut parent_job: JobRuntimeState,
-    continuation: OcrContinuation,
+    plan: PipelinePlan,
 ) -> Result<JobRuntimeState> {
     let parent_job_paths = build_job_paths(&deps.config.output_root, &parent_job.job_id)?;
     attach_job_paths(&mut parent_job, &parent_job_paths);
@@ -223,16 +206,12 @@ async fn run_job_with_ocr(
     if !matches!(translated_job.status, JobStatusKind::Succeeded) {
         return Ok(translated_job);
     }
-    match continuation {
-        OcrContinuation::TranslateOnly => Ok(translated_job),
-        OcrContinuation::FullPipeline => {
-            run_render_stage_after_translation(
-                deps,
-                translated_job,
-                &parent_job_paths,
-                &source_pdf_path,
-            )
-            .await
-        }
-    }
+    run_after_translation_stage(
+        deps,
+        &plan,
+        translated_job,
+        &parent_job_paths,
+        &source_pdf_path,
+    )
+    .await
 }

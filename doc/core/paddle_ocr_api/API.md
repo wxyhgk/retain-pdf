@@ -6,7 +6,7 @@ import os
 import requests
 
 API_URL = "https://qeld1abdddg4e2k7.aistudio-app.com/layout-parsing"
-TOKEN = "6e580446746aea4dc442c02f59d1575809d5f77b"
+TOKEN = "<PADDLEOCR_API_TOKEN>"
 
 file_path = "<local file path>"
 
@@ -74,7 +74,7 @@ import sys
 import time
 
 JOB_URL = "https://paddleocr.aistudio-app.com/api/v2/ocr/jobs"
-TOKEN = "6e580446746aea4dc442c02f59d1575809d5f77b"
+TOKEN = "<PADDLEOCR_API_TOKEN>"
 MODEL = "PaddleOCR-VL-1.5"
 
 file_path = "<local file path or file url>"

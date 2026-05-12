@@ -4,7 +4,7 @@ from services.rendering.layout.payload.block_seed import build_block_payloads
 from services.rendering.layout.payload.body_pipeline import apply_body_payload_pipeline
 from services.rendering.layout.payload.collision import mark_adjacent_collision_risk
 from services.rendering.layout.payload.emit import emit_render_blocks
-from services.rendering.core.models import RenderBlock
+from services.rendering.layout.model.models import RenderBlock
 
 
 def build_render_blocks(

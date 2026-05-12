@@ -7,7 +7,7 @@
 - [API 与联调](./api/README.md)
 - [Rust API](./rust_api/README.md)
 - [OCR / 文档解析 Provider](./paddle_ocr_api/README.md)
-- [Python 依赖](./python/README.md)
+- [Python 后端](./python/README.md)
 - [前端文档](./frontend/README.md)
 
 ## 读法

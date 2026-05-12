@@ -15,8 +15,8 @@ fn stage_and_detail(raw_state: &str, state: &OcrTaskState) -> (&'static str, Str
         OcrTaskState::Queued => ("ocr_upload", "Paddle 已接收任务，等待排队".to_string()),
         OcrTaskState::Running => ("ocr_processing", "Paddle 正在解析文件".to_string()),
         OcrTaskState::Succeeded => (
-            "translation_prepare",
-            "Paddle 结果已就绪，准备翻译".to_string(),
+            "ocr_result_ready",
+            "Paddle 结果已就绪，准备标准化".to_string(),
         ),
         OcrTaskState::Failed => ("failed", "Paddle 处理失败".to_string()),
         OcrTaskState::WaitingUpload | OcrTaskState::Converting | OcrTaskState::Unknown => (
@@ -51,7 +51,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn done_maps_to_succeeded_translation_prepare() {
+    fn done_maps_to_succeeded_ocr_result_ready() {
         let mapped = map_task_status(
             "done",
             OcrTaskHandle::default(),
@@ -60,7 +60,7 @@ mod tests {
         );
 
         assert_eq!(mapped.state, OcrTaskState::Succeeded);
-        assert_eq!(mapped.stage.as_deref(), Some("translation_prepare"));
+        assert_eq!(mapped.stage.as_deref(), Some("ocr_result_ready"));
         assert_eq!(mapped.trace_id.as_deref(), Some("trace-1"));
     }
 

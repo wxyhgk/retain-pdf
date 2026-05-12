@@ -31,8 +31,10 @@ pub use input::{
     ResolvedSourceSpec, RuntimeInput, TranslationInput,
 };
 pub use job::{
-    JobAiDiagnostic, JobArtifactRecord, JobArtifacts, JobFailureInfo, JobRawDiagnostic, JobRecord,
-    JobRuntimeInfo, JobRuntimeState, JobSnapshot, JobStageTiming, ProcessResult,
+    job_stage_detail, job_stage_str, normalize_job_stage, JobAiDiagnostic, JobArtifactRecord,
+    JobArtifacts, JobFailureInfo, JobRawDiagnostic, JobRecord, JobRuntimeInfo, JobRuntimeState,
+    JobSnapshot, JobStage, JobStageTiming, OcrCheckpointArtifacts, ProcessResult,
+    RenderArtifacts, TranslationArtifacts,
 };
 pub use ocr::{
     OcrArtifactSet, OcrErrorCategory, OcrProviderCapabilities, OcrProviderDiagnostics,

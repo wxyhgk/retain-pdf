@@ -2,7 +2,7 @@ use anyhow::Result;
 use tracing::info;
 
 use crate::job_events::persist_runtime_job_with_resources;
-use crate::models::{now_iso, JobRuntimeState, JobStatusKind};
+use crate::models::{job_stage_detail, job_stage_str, now_iso, JobRuntimeState, JobStage, JobStatusKind};
 
 use super::super::cancel_registry::is_cancel_requested_any;
 use super::super::{
@@ -16,8 +16,8 @@ fn prepare_job_for_spawn(job: &mut JobRuntimeState) {
         job.started_at = Some(now_iso());
     }
     if job.stage.is_none() || matches!(job.stage.as_deref(), Some("queued")) {
-        job.stage = Some("running".to_string());
-        job.stage_detail = Some("正在启动 Python worker".to_string());
+        job.stage = Some(job_stage_str(JobStage::Running).to_string());
+        job.stage_detail = Some(job_stage_detail(JobStage::Running).to_string());
     }
     job.updated_at = now_iso();
     sync_runtime_state(job);

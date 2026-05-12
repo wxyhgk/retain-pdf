@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import re
 
-from services.rendering.formula.core.markdown import build_plain_text
-from services.rendering.core.render_text import get_render_formula_map
-from services.rendering.core.render_text import get_render_protected_text
-from services.rendering.core.render_text import restore_render_protected_text
+from services.rendering.layout.inline_content.core.markdown import build_plain_text
+from services.rendering.layout.model.render_text import get_render_formula_map
+from services.rendering.layout.model.render_text import get_render_protected_text
+from services.rendering.layout.model.render_text import restore_render_protected_text
 from services.translation.item_reader import item_is_bodylike
 
 
-FORMULA_TOKEN_PATTERN = r"<[futnvc]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]"
+FORMULA_TOKEN_PATTERN = r"<[futnvc]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]|\$(?!\s)(?:\\.|[^$\n]){1,240}?\$"
 TOKEN_RE = re.compile(rf"({FORMULA_TOKEN_PATTERN}|\s+|[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*|[\u4e00-\u9fff]|.)")
 WORD_RE = re.compile(r"[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*")
 ZH_CHAR_RE = re.compile(r"[\u4e00-\u9fff]")

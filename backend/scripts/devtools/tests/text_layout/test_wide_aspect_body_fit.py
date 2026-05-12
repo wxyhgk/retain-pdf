@@ -11,7 +11,6 @@ from services.rendering.layout.font_fit import estimate_leading_em
 from services.rendering.layout.font_fit import local_font_size_pt
 from services.rendering.layout.payload.blocks import build_render_blocks
 from services.rendering.layout.payload.block_seed import _relax_wide_aspect_body_leading
-from services.rendering.layout.typography.geometry import inner_bbox
 from services.rendering.layout.typography.measurement import source_visual_line_count
 from services.rendering.layout.typography.measurement import visual_line_count
 
@@ -87,6 +86,39 @@ class WideAspectBodyFitTests(unittest.TestCase):
 
         self.assertGreaterEqual(font, 10.5)
 
+    def test_caption_font_is_visibly_smaller_than_body_font(self):
+        body = _sample_item(wide_aspect=False)
+        caption = {
+            "block_kind": "text",
+            "raw_block_type": "figure_title",
+            "layout_role": "caption",
+            "semantic_role": "metadata",
+            "structure_role": "figure_caption",
+            "normalized_sub_type": "figure_caption",
+            "source_text": "FIG. 1. Cross sections of surfaces of revolution.",
+            "bbox": [311.5, 529.5, 562.0, 587.0],
+            "lines": [
+                {
+                    "bbox": [311.5, 529.5, 562.0, 541.5],
+                    "spans": [{"type": "text", "content": "FIG. 1. Cross sections of surfaces"}],
+                },
+                {
+                    "bbox": [311.5, 545.5, 562.0, 557.5],
+                    "spans": [{"type": "text", "content": "of revolution."}],
+                },
+            ],
+        }
+        page_font_size = 10.8
+        page_line_pitch = 14.0
+        page_line_height = 12.0
+        density_baseline = 28.0
+
+        body_font = estimate_font_size_pt(body, page_font_size, page_line_pitch, page_line_height, density_baseline)
+        caption_font = estimate_font_size_pt(caption, page_font_size, page_line_pitch, page_line_height, density_baseline)
+
+        self.assertLessEqual(caption_font, 9.8)
+        self.assertLess(caption_font, body_font - 0.5)
+
     def test_source_visual_line_count_uses_observed_ocr_lines_not_text_length(self):
         item = {
             "block_type": "text",
@@ -106,7 +138,7 @@ class WideAspectBodyFitTests(unittest.TestCase):
         self.assertEqual(source_visual_line_count(item), 1)
         self.assertGreater(visual_line_count(item), 1)
 
-    def test_small_single_line_body_uses_original_inner_bbox(self):
+    def test_small_single_line_body_uses_original_bbox(self):
         items = [
             _sample_item(wide_aspect=False),
             {
@@ -132,9 +164,9 @@ class WideAspectBodyFitTests(unittest.TestCase):
         blocks = build_render_blocks(items, page_width=612.0, page_height=792.0)
         body_block = next(block for block in blocks if block.block_id == "item-1")
 
-        self.assertEqual(body_block.inner_bbox, inner_bbox(items[1]))
+        self.assertEqual(body_block.inner_bbox, items[1]["bbox"])
 
-    def test_narrow_single_line_body_uses_original_inner_bbox(self):
+    def test_narrow_single_line_body_uses_original_bbox(self):
         items = [
             _sample_item(wide_aspect=False),
             {
@@ -181,7 +213,7 @@ class WideAspectBodyFitTests(unittest.TestCase):
         blocks = build_render_blocks(items, page_width=612.0, page_height=792.0)
         narrow_block = next(block for block in blocks if block.block_id == "item-2")
 
-        self.assertEqual(narrow_block.inner_bbox, inner_bbox(items[2]))
+        self.assertEqual(narrow_block.inner_bbox, items[2]["bbox"])
         self.assertEqual(narrow_block.cover_bbox, [40, 240, 250, 255])
 
     def test_wide_aspect_body_preserves_more_ocr_line_pitch_signal(self):

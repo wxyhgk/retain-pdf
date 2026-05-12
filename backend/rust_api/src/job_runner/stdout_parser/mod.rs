@@ -8,10 +8,11 @@ mod state;
 
 pub use failure::attach_provider_failure;
 pub use labels::{
-    STDOUT_LABEL_JOB_ROOT, STDOUT_LABEL_LAYOUT_JSON, STDOUT_LABEL_NORMALIZATION_REPORT_JSON,
-    STDOUT_LABEL_NORMALIZED_DOCUMENT_JSON, STDOUT_LABEL_OUTPUT_PDF, STDOUT_LABEL_PROVIDER_RAW_DIR,
-    STDOUT_LABEL_PROVIDER_SUMMARY_JSON, STDOUT_LABEL_PROVIDER_ZIP, STDOUT_LABEL_SCHEMA_VERSION,
-    STDOUT_LABEL_SOURCE_PDF, STDOUT_LABEL_SUMMARY, STDOUT_LABEL_TRANSLATIONS_DIR,
+    STDOUT_LABEL_EVENTS_JSONL, STDOUT_LABEL_JOB_ROOT, STDOUT_LABEL_LAYOUT_JSON,
+    STDOUT_LABEL_NORMALIZATION_REPORT_JSON, STDOUT_LABEL_NORMALIZED_DOCUMENT_JSON,
+    STDOUT_LABEL_OUTPUT_PDF, STDOUT_LABEL_PROVIDER_RAW_DIR, STDOUT_LABEL_PROVIDER_SUMMARY_JSON,
+    STDOUT_LABEL_PROVIDER_ZIP, STDOUT_LABEL_SCHEMA_VERSION, STDOUT_LABEL_SOURCE_PDF,
+    STDOUT_LABEL_SUMMARY, STDOUT_LABEL_TRANSLATIONS_DIR,
 };
 pub(crate) use state::{job_artifacts_mut, ocr_provider_diagnostics_mut, parse_labeled_value};
 
@@ -30,7 +31,7 @@ pub fn apply_line(job: &mut JobSnapshot, line: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::CreateJobInput;
+    use crate::models::{job_stage_str, CreateJobInput, JobStage};
 
     fn build_job() -> JobSnapshot {
         JobSnapshot::new(
@@ -72,6 +73,10 @@ mod tests {
             &mut job,
             &format!("{STDOUT_LABEL_SUMMARY}: /tmp/pipeline_summary.json"),
         );
+        apply_line(
+            &mut job,
+            &format!("{STDOUT_LABEL_EVENTS_JSONL}: /tmp/pipeline_events.jsonl"),
+        );
 
         let artifacts = job.artifacts.as_ref().expect("artifacts");
         assert_eq!(artifacts.job_root.as_deref(), Some("/tmp/job"));
@@ -94,16 +99,34 @@ mod tests {
             artifacts.summary.as_deref(),
             Some("/tmp/pipeline_summary.json")
         );
+        assert_eq!(
+            artifacts.events_jsonl.as_deref(),
+            Some("/tmp/pipeline_events.jsonl")
+        );
     }
 
     #[test]
     fn apply_line_moves_to_normalizing_on_normalization_report_marker() {
         let mut job = build_job();
+        job.stage = Some(job_stage_str(JobStage::OcrProcessing).to_string());
         apply_line(
             &mut job,
             &format!("{STDOUT_LABEL_NORMALIZATION_REPORT_JSON}: /tmp/document.v1.report.json"),
         );
         assert_eq!(job.stage.as_deref(), Some("normalizing"));
+    }
+
+    #[test]
+    fn apply_line_does_not_move_translation_back_to_normalizing_on_report_marker() {
+        let mut job = build_job();
+        job.stage = Some(job_stage_str(JobStage::Translating).to_string());
+        job.stage_detail = Some("OCR 完成，开始翻译".to_string());
+        apply_line(
+            &mut job,
+            &format!("{STDOUT_LABEL_NORMALIZATION_REPORT_JSON}: /tmp/document.v1.report.json"),
+        );
+        assert_eq!(job.stage.as_deref(), Some("translating"));
+        assert_eq!(job.stage_detail.as_deref(), Some("OCR 完成，开始翻译"));
     }
 
     #[test]
@@ -152,7 +175,7 @@ mod tests {
     #[test]
     fn attach_provider_failure_surfaces_expired_token_detail() {
         let mut job = build_job();
-        job.stage = Some("mineru_processing".to_string());
+        job.stage = Some(job_stage_str(JobStage::MineruProcessing).to_string());
         attach_provider_failure(
             &mut job,
             r#"{"code":"A0211","msg":"token expired","trace_id":"trace-1"}"#,
@@ -167,7 +190,7 @@ mod tests {
     #[test]
     fn attach_provider_failure_surfaces_invalid_token_detail() {
         let mut job = build_job();
-        job.stage = Some("mineru_processing".to_string());
+        job.stage = Some(job_stage_str(JobStage::MineruProcessing).to_string());
         attach_provider_failure(
             &mut job,
             r#"{"code":"A0202","msg":"invalid token","trace_id":"trace-1"}"#,
@@ -182,7 +205,7 @@ mod tests {
     #[test]
     fn attach_provider_failure_preserves_expired_token_detail_against_generic_fallback() {
         let mut job = build_job();
-        job.stage = Some("mineru_processing".to_string());
+        job.stage = Some(job_stage_str(JobStage::MineruProcessing).to_string());
         attach_provider_failure(
             &mut job,
             r#"MinerU task failed {"code":"A0211","msg":"token expired","trace_id":"trace-1"} HTTP 401 Unauthorized"#,
@@ -197,7 +220,7 @@ mod tests {
     #[test]
     fn attach_provider_failure_preserves_invalid_token_detail_against_generic_fallback() {
         let mut job = build_job();
-        job.stage = Some("mineru_processing".to_string());
+        job.stage = Some(job_stage_str(JobStage::MineruProcessing).to_string());
         attach_provider_failure(
             &mut job,
             r#"MinerU task failed {"code":"A0202","msg":"invalid api key","trace_id":"trace-1"} HTTP 401 Unauthorized"#,

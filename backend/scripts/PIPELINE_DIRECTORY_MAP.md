@@ -58,7 +58,7 @@ entrypoints/run_translate_only.py
 
 ```text
 entrypoints/run_render_only.py
-  -> services/rendering/render_only_pipeline.py
+  -> services/rendering/workflow/render_only.py
      -> runtime/pipeline/render_stage.py
         -> services/rendering/*
 ```
@@ -161,12 +161,12 @@ entrypoints/run_render_only.py
 - 进入条件：
   改 overlay、Typst、背景修复、压缩、render-only 协议时进这里。
 - 关键文件：
-  - [`render_only_pipeline.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/render_only_pipeline.py)
+  - [`workflow/render_only.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/workflow/render_only.py)
     render-only worker 包装入口。
-  - [`api/`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/api)
-    渲染稳定入口。
-  - [`typst/`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/typst)
-    Typst 主链。
+  - [`workflow/`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/workflow)
+    渲染流程编排入口。
+  - [`output/typst/`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/output/typst)
+    Typst 输出主链。
 
 ### `services/pipeline_shared/`
 

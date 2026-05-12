@@ -22,8 +22,8 @@ fn stage_and_detail(raw_state: &str, state: &OcrTaskState) -> (&'static str, Str
         OcrTaskState::Running => ("mineru_processing", "MinerU 正在解析文件".to_string()),
         OcrTaskState::Converting => ("mineru_processing", "MinerU 正在转换文件".to_string()),
         OcrTaskState::Succeeded => (
-            "translation_prepare",
-            "MinerU 结果已就绪，准备翻译".to_string(),
+            "ocr_result_ready",
+            "MinerU 结果已就绪，准备标准化".to_string(),
         ),
         OcrTaskState::Failed => ("failed", "MinerU 处理失败".to_string()),
         OcrTaskState::Unknown => (

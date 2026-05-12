@@ -1,6 +1,4 @@
-import { $ } from "../../dom.js";
-import { buildJobsEndpoint } from "../../network.js";
-import { getOcrProviderDefinition } from "../../provider-config.js";
+import { resetMissingUploadState, setSubmitBusy } from "./view.js";
 
 export function mountAppActionsFeature({
   state,
@@ -11,10 +9,7 @@ export function mountAppActionsFeature({
   openSetupDialog,
   renderJob,
   setText,
-  submitJson,
   submitJobRequest,
-  saveDesktopConfig,
-  setDesktopBusy,
   openDesktopOutputDirectory,
   resetUploadedFile,
   currentWorkflow,
@@ -24,7 +19,6 @@ export function mountAppActionsFeature({
   collectRunPayload,
   getBrowserCredentialsFeature,
   getJobRuntimeFeature,
-  onDesktopConfigSaved,
 }) {
   function isMissingUploadError(error) {
     const message = `${error?.message || error || ""}`;
@@ -32,19 +26,14 @@ export function mountAppActionsFeature({
   }
 
   function handleMissingUploadError() {
-    state.uploadId = "";
-    state.uploadedFileName = "";
-    state.uploadedPageCount = 0;
-    state.uploadedBytes = 0;
-    resetUploadedFile?.();
-    setText("error-box", "当前上传文件已失效，请重新上传 PDF 后再提交。");
+    resetMissingUploadState({ state, resetUploadedFile, setText });
   }
 
   async function submitForm(event) {
     event.preventDefault();
     const workflow = currentWorkflow();
     if (isMockMode()) {
-      $("submit-btn").disabled = true;
+      setSubmitBusy(true);
       setText("error-box", "-");
       try {
         const payload = await submitJobRequest(apiPrefix, { workflow, source: {}, mock: true });
@@ -55,7 +44,7 @@ export function mountAppActionsFeature({
       } catch (err) {
         setText("error-box", err.message);
       } finally {
-        $("submit-btn").disabled = false;
+        setSubmitBusy(false);
       }
       return;
     }
@@ -89,7 +78,7 @@ export function mountAppActionsFeature({
       return;
     }
 
-    $("submit-btn").disabled = true;
+    setSubmitBusy(true);
     setText("error-box", "-");
 
     try {
@@ -106,7 +95,7 @@ export function mountAppActionsFeature({
       }
       setText("error-box", err.message);
     } finally {
-      $("submit-btn").disabled = false;
+      setSubmitBusy(false);
     }
   }
 

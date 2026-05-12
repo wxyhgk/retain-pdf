@@ -1,152 +1,33 @@
 import { $ } from "../../dom.js";
 import { buildFrontendPageUrl } from "../../config.js";
 import { resolveJobActions } from "../../job.js";
-
-function escapeHtml(value) {
-  return `${value ?? ""}`
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function stringifyPretty(value) {
-  if (value == null || value === "") {
-    return "-";
-  }
-  if (typeof value === "string") {
-    return value;
-  }
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch (_error) {
-    return String(value);
-  }
-}
-
-function boolLabel(value) {
-  if (value === true) {
-    return "true";
-  }
-  if (value === false) {
-    return "false";
-  }
-  return "-";
-}
-
-function previewText(value) {
-  const text = `${value ?? ""}`.trim();
-  if (!text) {
-    return "-";
-  }
-  if (text.length <= 180) {
-    return text;
-  }
-  return `${text.slice(0, 177)}...`;
-}
-
-function normalizeRoutePath(value) {
-  if (Array.isArray(value)) {
-    return value.filter(Boolean).join(" -> ");
-  }
-  return `${value ?? ""}`.trim();
-}
-
-function firstNonEmptyText(...values) {
-  for (const value of values) {
-    if (typeof value === "string" && value.trim()) {
-      return value.trim();
-    }
-  }
-  return "";
-}
-
-function diagnosticsOf(value) {
-  const item = value && typeof value === "object" ? value : {};
-  const nested = item.translation_diagnostics;
-  return nested && typeof nested === "object" ? nested : {};
-}
-
-function pageNumberOf(value, fallback = "-") {
-  const pageNumber = Number(value?.page_number);
-  if (Number.isFinite(pageNumber) && pageNumber > 0) {
-    return `${pageNumber}`;
-  }
-  const pageIdx = Number(value?.page_idx);
-  if (Number.isFinite(pageIdx) && pageIdx >= 0) {
-    return `${pageIdx + 1}`;
-  }
-  return fallback;
-}
-
-function finalStatusOf(value) {
-  const diagnostics = diagnosticsOf(value);
-  return firstNonEmptyText(value?.final_status, diagnostics.final_status);
-}
-
-function fallbackToOf(value) {
-  const diagnostics = diagnosticsOf(value);
-  return firstNonEmptyText(value?.fallback_to, diagnostics.fallback_to);
-}
-
-function degradationReasonOf(value) {
-  const diagnostics = diagnosticsOf(value);
-  return firstNonEmptyText(value?.degradation_reason, diagnostics.degradation_reason);
-}
-
-function routePathOf(value) {
-  const diagnostics = diagnosticsOf(value);
-  return value?.route_path ?? diagnostics.route_path ?? [];
-}
-
-function errorTypesOf(value) {
-  if (Array.isArray(value?.error_types) && value.error_types.length) {
-    return value.error_types;
-  }
-  const diagnostics = diagnosticsOf(value);
-  if (Array.isArray(diagnostics.error_types) && diagnostics.error_types.length) {
-    return diagnostics.error_types;
-  }
-  if (Array.isArray(diagnostics.error_trace) && diagnostics.error_trace.length) {
-    return diagnostics.error_trace
-      .map((entry) => firstNonEmptyText(entry?.type, entry?.error_type))
-      .filter(Boolean);
-  }
-  return [];
-}
-
-function finalStatusLabel(value) {
-  switch (`${value || ""}`.trim()) {
-    case "translated":
-      return "已翻译";
-    case "kept_origin":
-      return "保留原文";
-    case "skipped":
-      return "已跳过";
-    default:
-      return `${value || "-"}`;
-  }
-}
-
-function finalStatusClass(value) {
-  switch (`${value || ""}`.trim()) {
-    case "translated":
-      return "is-translated";
-    case "kept_origin":
-      return "is-kept-origin";
-    case "skipped":
-      return "is-skipped";
-    default:
-      return "is-neutral";
-  }
-}
-
-function summarizeTranslationFilter(query = {}) {
-  const finalStatus = `${query.finalStatus || ""}`.trim() || "全部";
-  const search = `${query.q || ""}`.trim() || "无检索词";
-  return `final_status=${finalStatus}，q=${search}`;
-}
+import {
+  boolLabel,
+  degradationReasonOf,
+  diagnosticsOf,
+  errorTypesOf,
+  escapeHtml,
+  fallbackToOf,
+  finalStatusClass,
+  finalStatusLabel,
+  finalStatusOf,
+  firstNonEmptyText,
+  normalizeRoutePath,
+  pageNumberOf,
+  previewText,
+  renderField,
+  renderTextBlock,
+  routePathOf,
+  summarizeTranslationFilter,
+} from "./formatters.js";
+import {
+  activateDetailTabView,
+  bindStatusDetailEvents,
+  dialogComponent,
+  openStatusDetailDialogView,
+  readTranslationFilterQuery,
+  setRerunButtonDisabled,
+} from "./view.js";
 
 export function mountStatusDetailFeature({
   state,
@@ -186,10 +67,6 @@ export function mountStatusDetailFeature({
     });
   }
 
-  function dialogComponent() {
-    return document.querySelector("status-detail-dialog");
-  }
-
   function getCurrentJobId() {
     return `${state?.currentJobId || ""}`.trim();
   }
@@ -219,10 +96,7 @@ export function mountStatusDetailFeature({
 
   async function rerunCurrentJob() {
     const actionUrl = syncRerunAction("正在提交恢复任务...");
-    const button = $("failure-rerun-btn");
-    if (button) {
-      button.disabled = true;
-    }
+    setRerunButtonDisabled(true);
     if (!actionUrl) {
       syncRerunAction("当前任务暂不可从断点恢复。");
       return;
@@ -243,42 +117,17 @@ export function mountStatusDetailFeature({
   }
 
   function activateDetailTab(name = "overview") {
-    const component = dialogComponent();
-    if (component?.activateTab) {
-      component.activateTab(name);
-      if (name === "translation") {
-        void ensureTranslationData();
-      }
-      return;
-    }
-    const tabs = document.querySelectorAll(".detail-tab");
-    const panels = document.querySelectorAll(".detail-tab-panel");
-    tabs.forEach((tab) => {
-      const active = tab.dataset.tab === name;
-      tab.classList.toggle("is-active", active);
-      tab.setAttribute("aria-selected", active ? "true" : "false");
-    });
-    panels.forEach((panel) => {
-      const active = panel.dataset.panel === name;
-      panel.classList.toggle("is-active", active);
-      panel.hidden = !active;
-    });
+    activateDetailTabView(name);
     if (name === "translation") {
       void ensureTranslationData();
     }
   }
 
   function openStatusDetailDialog(tabName = "overview") {
-    const component = dialogComponent();
-    if (component?.open) {
-      component.open(tabName);
-      if (tabName === "translation") {
-        void ensureTranslationData();
-      }
-      return;
+    openStatusDetailDialogView(tabName);
+    if (tabName === "translation") {
+      void ensureTranslationData();
     }
-    activateDetailTab(tabName);
-    $("status-detail-dialog")?.showModal();
   }
 
   function resetTranslationState(jobId = "") {
@@ -389,26 +238,6 @@ export function mountStatusDetailFeature({
       canPrev: offset > 0,
       canNext: offset + list.length < total,
     });
-  }
-
-  function renderField(label, value) {
-    return `
-      <div class="info-row translation-detail-row">
-        <span class="label">${escapeHtml(label)}</span>
-        <span class="info-value">${escapeHtml(value)}</span>
-      </div>
-    `;
-  }
-
-  function renderTextBlock(label, value) {
-    return `
-      <section class="translation-text-block">
-        <div class="translation-debug-subhead">
-          <h4>${escapeHtml(label)}</h4>
-        </div>
-        <pre>${escapeHtml(stringifyPretty(value))}</pre>
-      </section>
-    `;
   }
 
   function renderTranslationItemDetail({ loading = false, emptyText = "请选择左侧 item" } = {}) {
@@ -587,8 +416,9 @@ export function mountStatusDetailFeature({
   }
 
   async function handleTranslationApply() {
-    translationState.query.finalStatus = `${$("translation-filter-final-status")?.value || ""}`.trim();
-    translationState.query.q = `${$("translation-filter-query")?.value || ""}`.trim();
+    const query = readTranslationFilterQuery();
+    translationState.query.finalStatus = query.finalStatus;
+    translationState.query.q = query.q;
     translationState.query.offset = 0;
     translationState.loaded = true;
     renderTranslationSummary();
@@ -624,52 +454,18 @@ export function mountStatusDetailFeature({
   }
 
   function bindEvents() {
-    $("status-detail-btn")?.addEventListener("click", () => openStatusDetailDialog("overview"));
-    document.querySelectorAll(".detail-tab").forEach((tab) => {
-      tab.addEventListener("click", () => {
-        activateDetailTab(tab.dataset.tab || "overview");
-      });
-    });
-    $("translation-filter-apply")?.addEventListener("click", () => {
-      void handleTranslationApply();
-    });
-    $("translation-filter-query")?.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        void handleTranslationApply();
-      }
-    });
-    $("translation-items-prev")?.addEventListener("click", () => {
-      void changeTranslationPage("prev");
-    });
-    $("translation-items-next")?.addEventListener("click", () => {
-      void changeTranslationPage("next");
-    });
-    $("translation-items-list")?.addEventListener("click", (event) => {
-      const button = event.target?.closest?.("[data-translation-item-id]");
-      const itemId = `${button?.dataset?.translationItemId || ""}`.trim();
-      if (!itemId) {
-        return;
-      }
-      void loadTranslationItem(getCurrentJobId(), itemId).catch((error) => {
-        renderTranslationItemDetail({
-          emptyText: error.message || String(error),
-        });
-      });
-    });
-    $("translation-item-replay")?.addEventListener("click", () => {
-      void replayCurrentItem().catch((error) => {
-        dialogComponent()?.renderTranslationReplay({
-          hasResult: true,
-          status: "重放失败",
-          markup: renderTextBlock("replay_error", {
-            message: error.message || String(error),
-          }),
-        });
-      });
-    });
-    $("failure-rerun-btn")?.addEventListener("click", () => {
-      void rerunCurrentJob();
+    bindStatusDetailEvents({
+      openStatusDetailDialog,
+      activateDetailTab,
+      handleTranslationApply,
+      changeTranslationPage,
+      loadTranslationItem,
+      replayCurrentItem,
+      rerunCurrentJob,
+      currentJobId: getCurrentJobId,
+      renderTranslationItemDetail,
+      renderTranslationReplay: (payload) => dialogComponent()?.renderTranslationReplay(payload),
+      renderTextBlock,
     });
   }
 

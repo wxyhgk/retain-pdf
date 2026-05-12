@@ -126,12 +126,13 @@ def test_run_render_stage_uses_manifest_backed_pdf_inputs() -> None:
         manifest_path = write_translation_manifest(translations_dir, {0: payload_path})
 
         with mock.patch(
-            "runtime.pipeline.render_stage.resolve_effective_render_mode",
-            return_value="overlay",
-        ) as resolve_mode_mock, mock.patch(
-            "runtime.pipeline.render_stage.build_book_from_translations",
+            "runtime.pipeline.render_stage.build_render_plan",
+        ) as build_plan_mock, mock.patch(
+            "runtime.pipeline.render_stage.execute_render_plan",
             return_value=1,
-        ) as build_mock:
+        ) as execute_mock:
+            build_plan_mock.return_value.effective_render_mode = "overlay"
+            build_plan_mock.return_value.render_total = 1
             result = run_render_stage(
                 source_pdf_path=source_pdf_path,
                 translations_dir=translations_dir,
@@ -145,9 +146,10 @@ def test_run_render_stage_uses_manifest_backed_pdf_inputs() -> None:
         assert result["output_pdf_path"] == output_pdf_path
         assert result["pages_rendered"] == 1
         assert result["effective_render_mode"] == "overlay"
-        resolve_mode_mock.assert_called_once()
-        build_mock.assert_called_once()
-        assert build_mock.call_args.kwargs["source_pdf_path"] == source_pdf_path
-        assert build_mock.call_args.kwargs["translations_dir"] == translations_dir
-        assert build_mock.call_args.kwargs["translation_manifest_path"] == manifest_path
-        assert build_mock.call_args.kwargs["render_mode"] == "overlay"
+        build_plan_mock.assert_called_once()
+        execute_mock.assert_called_once()
+        assert build_plan_mock.call_args.kwargs["source_pdf_path"] == source_pdf_path
+        assert build_plan_mock.call_args.kwargs["translations_dir"] == translations_dir
+        assert build_plan_mock.call_args.kwargs["translation_manifest_path"] == manifest_path
+        assert build_plan_mock.call_args.kwargs["render_mode"] == "auto"
+        assert execute_mock.call_args.kwargs["render_plan"] is build_plan_mock.return_value

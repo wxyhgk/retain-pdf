@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import re
 
-from services.rendering.formula.fallback.latex_normalizer import aggressively_simplify_formula_for_latex_math
+from services.rendering.layout.inline_content.fallback.latex_normalizer import aggressively_simplify_formula_for_latex_math
 
 
-FORMULA_TOKEN_RE = re.compile(r"<[futnvc]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]")
+FORMULA_TOKEN_RE = re.compile(r"<[futnvc]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]|\$(?!\s)(?:\\.|[^$\n]){1,240}?\$")
 STYLE_ONLY_LATEX_COMMAND_RE = re.compile(
     r"\\(?:left|right|mathrm|mathbf|mathit|mathsf|mathtt|text|operatorname|displaystyle|textstyle|scriptstyle|scriptscriptstyle)\b"
 )
@@ -30,7 +30,7 @@ def token_units(token: str, formula_lookup: dict[str, str]) -> float:
     if token.isspace():
         return max(0.2, len(token) * 0.25)
     if FORMULA_TOKEN_RE.fullmatch(token):
-        formula_text = formula_lookup.get(token, token)
+        formula_text = formula_lookup.get(token, token.strip("$"))
         normalized = approx_formula_visible_text(formula_text)
         if not normalized:
             normalized = re.sub(r"\s+", "", formula_text)

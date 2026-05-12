@@ -4,6 +4,9 @@ name: Rust API Architecture
   pull_request:
     paths:
       - "backend/rust_api/**"
+      - "backend/scripts/**"
+      - "doc/adr/**"
+      - "doc/core/python/**"
       - ".github/workflows/rust-api-architecture.yml"
   push:
     branches:
@@ -11,6 +14,9 @@ name: Rust API Architecture
       - master
     paths:
       - "backend/rust_api/**"
+      - "backend/scripts/**"
+      - "doc/adr/**"
+      - "doc/core/python/**"
       - ".github/workflows/rust-api-architecture.yml"
 
 jobs:
@@ -25,6 +31,9 @@ jobs:
 
       - name: Architecture Check
         run: python3 backend/rust_api/scripts/check_architecture.py
+
+      - name: Python Pipeline Architecture Check
+        run: python3 backend/scripts/devtools/check_pipeline_architecture.py
 
       - name: Cargo Build
         run: cargo build --manifest-path backend/rust_api/Cargo.toml

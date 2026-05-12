@@ -15,6 +15,7 @@
     "tailwindcss": "^3.4.17"
   },
   "dependencies": {
+    "lottie-web": "^5.13.0",
     "mathjax-full": "^3.2.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.8.69"

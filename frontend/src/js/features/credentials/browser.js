@@ -5,6 +5,22 @@ import {
   normalizeOcrProvider,
   TRANSLATION_PROVIDER_DEFINITION,
 } from "../../provider-config.js";
+import {
+  activateCredentialTabView,
+  bindCredentialViewEvents,
+  browserCredentialElements,
+  closeCredentialDialog,
+  credentialDialog,
+  currentCredentialDialogSetupMode,
+  openCredentialDialog,
+  setCredentialDialogModeView,
+  setDeepSeekAccountStatus,
+  setDeepSeekValidationMessage,
+  setDialogStatus,
+  setOcrValidationMessage,
+  syncOcrProviderControlsView,
+  updateCredentialGateView,
+} from "./view.js";
 
 export function mountBrowserCredentialsFeature({
   state,
@@ -23,63 +39,12 @@ export function mountBrowserCredentialsFeature({
   queryDeepSeekBalance,
   onCredentialStateChange,
 }) {
-  function credentialDialog() {
-    return $("browser-credentials-dialog");
-  }
-
-  function currentCredentialDialogSetupMode() {
-    return credentialDialog()?.dataset?.setupMode === "1";
-  }
-
   function setCredentialDialogMode(setupMode = false) {
-    const dialog = credentialDialog();
-    if (!dialog) {
-      return;
-    }
-    dialog.dataset.setupMode = setupMode ? "1" : "0";
-    $("browser-credentials-title").textContent = setupMode ? "首次配置" : "接口设置";
-    const subtitle = $("browser-credentials-subtitle");
-    if (subtitle) {
-      const text = setupMode
-        ? "填写 OCR Token 和 DeepSeek Key，检测通过后保存。"
-        : "";
-      subtitle.textContent = text;
-      subtitle.classList.toggle("hidden", !text);
-    }
-    $("browser-credentials-save-btn").textContent = setupMode ? "保存并启动" : "保存";
-    $("browser-credentials-tabs")?.classList.toggle("hidden", setupMode);
-    if (setupMode) {
-      activateCredentialTab("api");
-    }
-  }
-
-  function setDialogStatus(message = "", tone = "") {
-    const el = $("browser-credentials-status");
-    if (!el) {
-      return;
-    }
-    const content = `${message || ""}`.trim();
-    el.textContent = content;
-    el.classList.toggle("hidden", !content);
-    el.classList.toggle("is-valid", tone === "valid");
-    el.classList.toggle("is-error", tone === "error");
+    setCredentialDialogModeView({ setupMode, activateCredentialTab });
   }
 
   function activateCredentialTab(tabName = "api") {
-    const dialog = credentialDialog();
-    if (!dialog) {
-      return;
-    }
-    dialog.querySelectorAll("[data-credential-tab]").forEach((tab) => {
-      const active = tab.dataset.credentialTab === tabName;
-      tab.classList.toggle("is-active", active);
-      tab.setAttribute("aria-selected", active ? "true" : "false");
-    });
-    dialog.querySelectorAll("[data-credential-panel]").forEach((panel) => {
-      const active = panel.dataset.credentialPanel === tabName;
-      panel.classList.toggle("is-active", active);
-      panel.hidden = !active;
-    });
+    activateCredentialTabView(tabName);
   }
 
   function currentOcrProvider() {
@@ -88,59 +53,7 @@ export function mountBrowserCredentialsFeature({
 
   function syncOcrProviderControls(providerId = currentOcrProvider()) {
     const activeProvider = normalizeOcrProvider(providerId);
-    const dialog = credentialDialog();
-    if (!dialog) {
-      return;
-    }
-    const apiSelect = $("browser-ocr-provider-select");
-    if (apiSelect) {
-      apiSelect.value = activeProvider;
-    }
-    dialog.querySelectorAll("[data-ocr-provider-panel]").forEach((panel) => {
-      const active = panel.dataset.ocrProviderPanel === activeProvider;
-      panel.classList.toggle("is-active", active);
-      panel.hidden = !active;
-    });
-  }
-
-  function setOcrValidationMessage(message, tone = "", providerId = currentOcrProvider()) {
-    const definition = getOcrProviderDefinition(providerId);
-    const el = $(`browser-${definition.id}-validation`);
-    if (!el) {
-      return;
-    }
-    const content = `${message || ""}`.trim();
-    el.textContent = content || definition.validationIdleMessage;
-    el.classList.toggle("hidden", !content);
-    el.classList.toggle("is-valid", tone === "valid");
-    el.classList.toggle("is-error", tone === "error");
-  }
-
-  function setDeepSeekValidationMessage(message, tone = "") {
-    const el = $("browser-deepseek-validation");
-    if (!el) {
-      return;
-    }
-    const content = `${message || ""}`.trim();
-    el.textContent = content || TRANSLATION_PROVIDER_DEFINITION.validationIdleMessage;
-    el.classList.toggle("hidden", !content);
-    el.classList.toggle("is-valid", tone === "valid");
-    el.classList.toggle("is-error", tone === "error");
-  }
-
-  function setDeepSeekAccountStatus(summary = "", tone = "", checkedAt = "") {
-    const box = $("browser-deepseek-account-status");
-    const summaryEl = $("browser-deepseek-account-summary");
-    const timeEl = $("browser-deepseek-account-time");
-    const content = `${summary || ""}`.trim();
-    if (!box || !summaryEl || !timeEl) {
-      return;
-    }
-    box.classList.toggle("hidden", !content);
-    box.classList.toggle("is-valid", tone === "valid");
-    box.classList.toggle("is-error", tone === "error");
-    summaryEl.textContent = content || "未检测";
-    timeEl.textContent = checkedAt ? `检测时间 ${checkedAt}` : "-";
+    syncOcrProviderControlsView(activeProvider);
   }
 
   function currentTimeLabel() {
@@ -273,17 +186,6 @@ export function mountBrowserCredentialsFeature({
     }
   }
 
-  function browserCredentialElements() {
-    return {
-      dialog: $("browser-credentials-dialog"),
-      mineruInput: $("browser-mineru-token"),
-      paddleInput: $("browser-paddle-token"),
-      apiKeyInput: $("browser-api-key"),
-      mathModeSelect: $("browser-job-math-mode"),
-      trigger: $("credentials-btn"),
-    };
-  }
-
   function syncBrowserDialogFromHiddenInputs() {
     const {
       mineruInput,
@@ -374,7 +276,7 @@ export function mountBrowserCredentialsFeature({
     syncBrowserDialogFromHiddenInputs();
     setCredentialDialogMode(!!options.setupMode);
     activateCredentialTab("api");
-    dialog.showModal();
+    openCredentialDialog();
   }
 
   async function ensureOcrCredentialsReady({ onMissingToken, onInvalidToken } = {}) {
@@ -405,45 +307,29 @@ export function mountBrowserCredentialsFeature({
     workflowNeedsUpload,
     refreshSubmitControls,
   }) {
-    const trigger = $("credentials-btn");
-    const gate = $("credential-gate");
-    const tile = $("file")?.closest(".upload-tile");
-    const fileInput = $("file");
-    const uploadGlyph = $("upload-glyph");
-    const fileLabel = $("file-label");
-    const uploadHelp = $("upload-help");
-    const uploadMeta = document.querySelector(".upload-meta");
-    const uploadStatus = $("upload-status");
-
-    if (!gate || !tile || !fileInput) {
-      return;
-    }
     const uploadEnabled = workflowNeedsUpload();
     if (state.desktopMode) {
-      gate.classList.add("hidden");
-      trigger?.classList.remove("is-nudged");
-      tile.classList.toggle("is-locked", !uploadEnabled);
-      fileInput.disabled = !uploadEnabled;
-      uploadGlyph?.classList.toggle("hidden", !uploadEnabled);
-      uploadMeta?.classList.toggle("hidden", !uploadEnabled);
-      tile.classList.toggle("is-ready", uploadEnabled && !!state.uploadId);
+      if (!updateCredentialGateView({
+        desktopMode: true,
+        show: false,
+        uploadEnabled,
+        uploadReady: !!state.uploadId,
+      })) {
+        return;
+      }
       refreshSubmitControls();
       return;
     }
     const show = workflowNeedsCredentials() && !hasBrowserCredentials();
-    gate.classList.toggle("hidden", !show);
-    trigger?.classList.toggle("is-nudged", show);
-    tile.classList.toggle("is-locked", show || !uploadEnabled);
-    fileInput.disabled = show || !uploadEnabled;
-    uploadGlyph?.classList.toggle("hidden", show || !uploadEnabled);
-    fileLabel?.classList.toggle("hidden", show);
-    uploadHelp?.classList.toggle("hidden", false);
-    uploadMeta?.classList.toggle("hidden", show || !uploadEnabled);
-    if (show) {
-      uploadStatus?.classList.add("hidden");
+    if (!updateCredentialGateView({
+      desktopMode: false,
+      show,
+      uploadEnabled,
+      uploadReady: !!state.uploadId,
+    })) {
+      return;
     }
     refreshSubmitControls();
-    tile.classList.toggle("is-ready", !show && uploadEnabled && !!state.uploadId);
   }
 
   function currentProviderInputValue() {
@@ -517,49 +403,31 @@ export function mountBrowserCredentialsFeature({
     }
     onCredentialStateChange?.();
     setDialogStatus("", "");
-    $("browser-credentials-dialog")?.close();
+    closeCredentialDialog();
   }
 
-  $("browser-mineru-token")?.addEventListener("input", () => {
-    resetOcrValidationCache();
-    setOcrValidationMessage("", "", "mineru");
-  });
-  $("browser-paddle-token")?.addEventListener("input", () => {
-    resetOcrValidationCache();
-    setOcrValidationMessage("", "", "paddle");
-  });
-  $("browser-api-key")?.addEventListener("input", () => {
-    setDeepSeekValidationMessage("", "");
-  });
-  $("browser-mineru-validate-btn")?.addEventListener("click", handleBrowserOcrValidate);
-  $("browser-paddle-validate-btn")?.addEventListener("click", handleBrowserOcrValidate);
-  $("browser-deepseek-validate-btn")?.addEventListener("click", handleBrowserDeepSeekValidate);
-  $("browser-credentials-save-btn")?.addEventListener("click", handleBrowserCredentialSave);
-  $("credentials-btn")?.addEventListener("click", openBrowserCredentialsDialog);
-  credentialDialog()?.querySelectorAll("[data-toggle-secret]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const input = $(button.dataset.toggleSecret || "");
-      if (!input) {
-        return;
-      }
-      const showing = input.type === "text";
-      input.type = showing ? "password" : "text";
-      button.classList.toggle("is-revealed", !showing);
-      button.setAttribute("aria-pressed", !showing ? "true" : "false");
-    });
-  });
-  document.addEventListener("retainpdf:open-browser-credentials", (event) => {
-    openBrowserCredentialsDialog(event?.detail || {});
-  });
-  credentialDialog()?.querySelectorAll("[data-credential-tab]").forEach((tab) => {
-    tab.addEventListener("click", () => {
-      activateCredentialTab(tab.dataset.credentialTab || "api");
-    });
-  });
-  $("browser-ocr-provider-select")?.addEventListener("change", (event) => {
-    const provider = normalizeOcrProvider(event.currentTarget?.value);
-    $("ocr_provider").value = provider;
-    syncOcrProviderControls(provider);
+  bindCredentialViewEvents({
+    resetMineruValidation: () => {
+      resetOcrValidationCache();
+      setOcrValidationMessage("", "", "mineru");
+    },
+    resetPaddleValidation: () => {
+      resetOcrValidationCache();
+      setOcrValidationMessage("", "", "paddle");
+    },
+    resetDeepSeekValidation: () => {
+      setDeepSeekValidationMessage("", "");
+    },
+    validateOcr: handleBrowserOcrValidate,
+    validateDeepSeek: handleBrowserDeepSeekValidate,
+    save: handleBrowserCredentialSave,
+    open: openBrowserCredentialsDialog,
+    activateCredentialTab,
+    changeProvider: (event) => {
+      const provider = normalizeOcrProvider(event.currentTarget?.value);
+      $("ocr_provider").value = provider;
+      syncOcrProviderControls(provider);
+    },
   });
 
   return {

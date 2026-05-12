@@ -4,6 +4,68 @@ function recentJobsDialogComponent() {
   return document.querySelector("recent-jobs-dialog");
 }
 
+export function hasRecentJobsView() {
+  const component = recentJobsDialogComponent();
+  if (component) {
+    return true;
+  }
+  return Boolean($("recent-jobs-list") && $("recent-jobs-empty") && $("load-more-jobs-btn"));
+}
+
+export function setRecentJobsDialogOpen(open) {
+  const component = recentJobsDialogComponent();
+  if (component?.setOpen) {
+    component.setOpen(open);
+  } else {
+    const dialog = $("query-dialog");
+    if (!dialog) {
+      return;
+    }
+    if (open) {
+      dialog.showModal();
+    } else {
+      dialog.close();
+    }
+  }
+  $("open-query-btn")?.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+export function setRecentJobsDateInput(value) {
+  const component = recentJobsDialogComponent();
+  if (component?.setDateValue) {
+    component.setDateValue(value);
+    return;
+  }
+  const input = $("recent-jobs-date");
+  if (input instanceof HTMLInputElement) {
+    input.value = value || "";
+  }
+}
+
+export function bindRecentJobsEvents({
+  onOpen,
+  onRefresh,
+  onLoadMore,
+  onDateChange,
+} = {}) {
+  $("open-query-btn")?.addEventListener("click", () => onOpen?.());
+
+  const component = recentJobsDialogComponent();
+  if (component?.bindEvents) {
+    component.bindEvents({ onRefresh, onLoadMore, onDateChange });
+    return;
+  }
+
+  $("refresh-jobs-btn")?.addEventListener("click", () => onRefresh?.());
+  $("load-more-jobs-btn")?.addEventListener("click", () => onLoadMore?.());
+  $("recent-jobs-date")?.addEventListener("change", (event) => {
+    const target = event.currentTarget;
+    if (target instanceof HTMLInputElement) {
+      onDateChange?.(target.value || "");
+    }
+  });
+}
+
 function recentJobStatusLabel(status) {
   switch (`${status || ""}`.trim()) {
     case "queued":
@@ -205,15 +267,22 @@ export function renderRecentJobsList({
   }
   list.classList.remove("hidden");
   empty.classList.add("hidden");
+  list.__retainPdfRecentJobSelect = onSelect;
+  if (!list.__retainPdfRecentJobBound) {
+    list.__retainPdfRecentJobBound = true;
+    list.addEventListener("click", (event) => {
+      const button = event.target?.closest?.(".recent-job-item");
+      if (!button || !list.contains(button)) {
+        return;
+      }
+      event.preventDefault();
+      list.__retainPdfRecentJobSelect?.(button.dataset.jobId || "");
+    });
+  }
   list.innerHTML = reset ? markup : `${list.innerHTML}${markup}`;
   loadMoreButton.classList.toggle("hidden", !hasMore);
   loadMoreButton.disabled = false;
   loadMoreButton.textContent = "更多";
-  list.querySelectorAll(".recent-job-item").forEach((button) => {
-    button.addEventListener("click", () => {
-      onSelect?.(button.dataset.jobId || "");
-    });
-  });
 }
 
 export function setRecentJobsLoadMoreLoading() {

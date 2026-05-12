@@ -191,6 +191,22 @@ def emit_stage_progress(
     )
 
 
+def emit_render_page_progress(
+    *,
+    current: int,
+    total: int,
+    message: str,
+    payload: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    return emit_stage_progress(
+        stage="rendering",
+        message=message,
+        progress_current=current,
+        progress_total=total,
+        payload=payload,
+    )
+
+
 def emit_artifact_published(
     *,
     artifact_key: str,

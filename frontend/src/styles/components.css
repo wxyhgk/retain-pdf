@@ -677,7 +677,6 @@
   }
 
   .status-head {
-    @apply flex justify-center;
     margin-bottom: 10px;
   }
 
@@ -879,6 +878,11 @@
   .stage-history-title {
     @apply text-[14px] font-medium leading-5;
     color: #1d1d1f;
+  }
+
+  .stage-history-stage {
+    @apply text-[12px] leading-5;
+    color: #6e6e73;
   }
 
   .stage-history-meta {
@@ -1175,11 +1179,36 @@
     @apply mx-auto mt-3 flex w-full items-center justify-center gap-2;
     max-width: min(620px, calc(100vw - 2rem));
     text-align: center;
+    position: relative;
+    z-index: 4;
   }
 
   .app-shell:not(.processing-mode):not(.result-mode) .query-entry {
     margin-top: 0.75rem;
     padding-bottom: 0;
+  }
+
+  @media (max-height: 760px) {
+    .app-shell:not(.processing-mode):not(.result-mode) {
+      justify-content: flex-start;
+      padding-top: 12px;
+      padding-bottom: 24px;
+    }
+
+    .app-shell:not(.processing-mode):not(.result-mode) .workflow-card {
+      margin-top: 0;
+    }
+
+    .app-shell:not(.processing-mode):not(.result-mode) .query-entry {
+      position: fixed;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      width: min(620px, calc(100vw - 24px));
+      margin-top: 0;
+      padding: 0;
+      z-index: 30;
+    }
   }
 
   .advanced-content {

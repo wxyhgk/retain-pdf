@@ -1,4 +1,4 @@
-import { $ } from "./dom.js";
+import { renderStatusDetailSnapshotSections } from "./features/status-detail/view.js";
 import { resolveDisplayedStagePresentation } from "./job-stage-presentation.js";
 import { state } from "./state.js";
 import {
@@ -49,20 +49,6 @@ function parseIsoTime(value) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function safeSetText(id, value) {
-  const el = $(id);
-  if (el) {
-    el.textContent = value;
-  }
-}
-
-function safeSetHtml(id, value) {
-  const el = $(id);
-  if (el) {
-    el.innerHTML = value;
-  }
-}
-
 function latestStageHistoryEntry(job) {
   const history = Array.isArray(job?.stage_history) ? job.stage_history : [];
   if (history.length === 0) {
@@ -87,7 +73,7 @@ export function resolveLiveDurations(job) {
     };
   }
 
-  const status = job.status || $("status-section")?.getAttribute("data-status") || "";
+  const status = job.status || "";
   const terminal = isTerminalStatus(status);
   const updatedAt = parseIsoTime(job.updated_at);
   const finishedAt = parseIsoTime(job.finished_at || state.currentJobFinishedAt);
@@ -162,7 +148,7 @@ function buildRuntimeDetails(job, eventsPayload) {
   const durations = resolveLiveDurations(job);
   const presentation = resolveDisplayedStagePresentation(job, eventsPayload);
   return {
-    currentStage: presentation.detail,
+    currentStage: summarizeStageName(job.current_stage || job.stage, presentation.detail),
     stageElapsed: durations.stageElapsedText,
     totalElapsed: durations.totalElapsedText,
     retryCount: `${job.retry_count ?? 0}`,
@@ -221,7 +207,43 @@ function summarizeStageName(stage, detail) {
   if (detailText) {
     return detailText;
   }
-  switch (`${stage || ""}`.trim()) {
+  const normalizedStage = `${stage || ""}`.trim().toLowerCase();
+  if (
+    normalizedStage.includes("upload")
+    || normalizedStage.includes("submit")
+    || normalizedStage.includes("queued")
+  ) {
+    return "上传 PDF";
+  }
+  if (
+    normalizedStage.includes("ocr_processing")
+    || normalizedStage.includes("ocr")
+    || normalizedStage.includes("mineru")
+    || normalizedStage.includes("paddle")
+    || normalizedStage.includes("parsing")
+    || normalizedStage.includes("normalization")
+    || normalizedStage.includes("normaliz")
+  ) {
+    return "云端 OCR / 标准化";
+  }
+  if (
+    normalizedStage.includes("translation_prepare")
+    || normalizedStage.includes("continuation_review")
+    || normalizedStage.includes("page_policies")
+    || normalizedStage.includes("garbled")
+    || normalizedStage.includes("translat")
+  ) {
+    return "翻译准备 / 跨栏跨页判断";
+  }
+  if (
+    normalizedStage.includes("render")
+    || normalizedStage.includes("saving")
+    || normalizedStage.includes("compile")
+    || normalizedStage.includes("overlay")
+  ) {
+    return "渲染 PDF";
+  }
+  switch (normalizedStage) {
     case "queued":
       return "排队中";
     case "running":
@@ -231,6 +253,8 @@ function summarizeStageName(stage, detail) {
     case "parsing":
     case "ocr":
       return "解析 / OCR";
+    case "translation_prepare":
+      return "翻译准备";
     case "rendering":
       return "渲染";
     case "succeeded":
@@ -253,7 +277,7 @@ function resolveStageHistoryDuration(entry, job) {
     return Math.max(0, exitAt.getTime() - enterAt.getTime());
   }
   if (enterAt && !exitAt) {
-    const status = job.status || $("status-section")?.getAttribute("data-status") || "";
+    const status = job.status || "";
     const terminal = isTerminalStatus(status);
     const endAt = terminal
       ? parseIsoTime(job.finished_at || state.currentJobFinishedAt || job.updated_at)
@@ -292,6 +316,7 @@ function buildStageHistoryPresentation(job) {
     const enterAt = entry?.enter_at ? formatEventTimestamp(entry.enter_at) : "-";
     const exitAt = entry?.exit_at ? formatEventTimestamp(entry.exit_at) : (isTerminalStatus(job.status) ? "-" : "进行中");
     const stageName = summarizeStageName(entry?.stage, entry?.detail);
+    const stageKey = summarizeStageName(entry?.stage, "");
     const terminalText = entry?.terminal_status ? ` · ${entry.terminal_status}` : "";
     return `
       <article class="stage-history-item">
@@ -299,6 +324,7 @@ function buildStageHistoryPresentation(job) {
           <span class="stage-history-index">${index + 1}</span>
           <div class="stage-history-copy">
             <div class="stage-history-title">${escapeHtml(stageName)}</div>
+            <div class="stage-history-stage">${escapeHtml(stageKey)}</div>
             <div class="stage-history-meta">${escapeHtml(enterAt)} → ${escapeHtml(exitAt)}${escapeHtml(terminalText)}</div>
           </div>
         </div>
@@ -375,102 +401,7 @@ export function buildStatusDetailSnapshot(job, eventsPayload) {
   };
 }
 
-function renderHeadline(headline) {
-  const component = document.querySelector("status-detail-dialog");
-  if (component?.setHeadline) {
-    component.setHeadline(headline);
-    return;
-  }
-  safeSetHtml("status-detail-head-icon", headline.iconMarkup);
-  safeSetText("status-detail-job-id", headline.jobId);
-  safeSetText("status-detail-head-note", headline.note);
-}
-
-function renderRuntimeDetails(details) {
-  const component = document.querySelector("status-detail-dialog");
-  if (component?.setRuntimeDetails && !component?.renderSnapshot) {
-    component.setRuntimeDetails(details);
-    return;
-  }
-  safeSetText("runtime-current-stage", details.currentStage);
-  safeSetText("runtime-stage-elapsed", details.stageElapsed);
-  safeSetText("runtime-total-elapsed", details.totalElapsed);
-  safeSetText("runtime-retry-count", details.retryCount);
-  safeSetText("runtime-last-transition", details.lastTransition);
-  safeSetText("runtime-terminal-reason", details.terminalReason);
-  safeSetText("runtime-input-protocol", details.inputProtocol);
-  safeSetText("runtime-stage-spec-version", details.stageSpecVersion);
-  safeSetText("runtime-math-mode", details.mathMode);
-}
-
-function renderFailureDetails(details) {
-  const component = document.querySelector("status-detail-dialog");
-  if (component?.setFailureDetails && !component?.renderSnapshot) {
-    component.setFailureDetails(details);
-    return;
-  }
-  safeSetText("failure-summary", details.summary);
-  safeSetText("failure-category", details.category);
-  safeSetText("failure-stage", details.stage);
-  safeSetText("failure-root-cause", details.rootCause);
-  safeSetText("failure-suggestion", details.suggestion);
-  safeSetText("failure-last-log-line", details.lastLogLine);
-  safeSetText("failure-retryable", details.retryable);
-}
-
-function renderStageHistory(stageHistory) {
-  const component = document.querySelector("status-detail-dialog");
-  if (component?.renderStageHistory) {
-    component.renderStageHistory(stageHistory);
-    return;
-  }
-  const list = $("overview-stage-list");
-  const empty = $("overview-stage-empty");
-  if (!list || !empty) {
-    return;
-  }
-  if (!stageHistory.hasItems) {
-    list.innerHTML = "";
-    list.classList.add("hidden");
-    empty.textContent = stageHistory.emptyText;
-    empty.classList.remove("hidden");
-    return;
-  }
-  empty.classList.add("hidden");
-  list.classList.remove("hidden");
-  list.innerHTML = stageHistory.markup;
-}
-
-function renderEvents(events) {
-  const component = document.querySelector("status-detail-dialog");
-  if (component?.renderEvents) {
-    component.renderEvents(events);
-    return;
-  }
-  const list = $("events-list");
-  const empty = $("events-empty");
-  const status = $("events-status");
-  if (!list || !empty || !status) {
-    return;
-  }
-  if (!events.hasItems) {
-    status.textContent = events.emptyText;
-    list.innerHTML = "";
-    list.classList.add("hidden");
-    empty.classList.remove("hidden");
-    return;
-  }
-  status.textContent = `最近 ${events.count} 条`;
-  empty.classList.add("hidden");
-  list.classList.remove("hidden");
-  list.innerHTML = events.markup;
-}
-
 export function renderStatusDetailSections(job, eventsPayload) {
   const snapshot = buildStatusDetailSnapshot(job, eventsPayload);
-  renderHeadline(snapshot.headline);
-  renderRuntimeDetails(snapshot.runtime);
-  renderStageHistory(snapshot.stageHistory);
-  renderFailureDetails(snapshot.failure);
-  renderEvents(snapshot.events);
+  renderStatusDetailSnapshotSections(snapshot);
 }

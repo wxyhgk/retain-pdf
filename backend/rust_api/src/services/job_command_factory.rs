@@ -272,6 +272,19 @@ mod tests {
             .map(|window| window[1].as_str())
     }
 
+    fn read_spec_from_command(cmd: &[String]) -> serde_json::Value {
+        let spec_path = arg_value(cmd, "--spec").expect("stage spec path");
+        let spec_json = std::fs::read_to_string(spec_path).expect("stage spec should be written");
+        serde_json::from_str(&spec_json).expect("valid stage spec json")
+    }
+
+    fn assert_object_has_keys(value: &serde_json::Value, keys: &[&str]) {
+        let object = value.as_object().expect("stage spec section is object");
+        for key in keys {
+            assert!(object.contains_key(*key), "missing stage spec key: {key}");
+        }
+    }
+
     #[test]
     fn translate_only_command_uses_translation_stage_script() {
         let config = test_config();
@@ -538,5 +551,202 @@ mod tests {
         assert_eq!(payload["params"]["glossary_inline_entry_count"], 1);
         assert_eq!(payload["params"]["glossary_overridden_entry_count"], 1);
         assert_eq!(payload["params"]["glossary_entries"][0]["source"], "bond");
+    }
+
+    #[test]
+    fn stage_specs_keep_python_loader_contract_keys() {
+        let config = test_config();
+        let mut request = build_request(WorkflowKind::Book);
+        request.job_id = "job-command-test".to_string();
+        request.ocr.provider = "paddle".to_string();
+        request.ocr.paddle_token = "paddle-secret".to_string();
+        let job_paths = build_paths(config.as_ref());
+
+        let provider = read_spec_from_command(&build_command(
+            config.as_ref(),
+            Path::new("/tmp/source/job.pdf"),
+            &request,
+            &job_paths,
+        ));
+        assert_object_has_keys(
+            &provider,
+            &[
+                "schema_version",
+                "stage",
+                "job",
+                "source",
+                "ocr",
+                "translation",
+                "render",
+            ],
+        );
+        assert_object_has_keys(&provider["job"], &["job_id", "job_root", "workflow"]);
+        assert_object_has_keys(&provider["source"], &["file_url", "file_path"]);
+        assert_object_has_keys(
+            &provider["ocr"],
+            &[
+                "provider",
+                "credential_ref",
+                "model_version",
+                "paddle_api_url",
+                "paddle_model",
+                "is_ocr",
+                "disable_formula",
+                "disable_table",
+                "language",
+                "page_ranges",
+                "data_id",
+                "no_cache",
+                "cache_tolerance",
+                "extra_formats",
+                "poll_interval",
+                "poll_timeout",
+            ],
+        );
+        assert_object_has_keys(
+            &provider["translation"],
+            &[
+                "start_page",
+                "end_page",
+                "batch_size",
+                "workers",
+                "mode",
+                "math_mode",
+                "skip_title_translation",
+                "classify_batch_size",
+                "rule_profile_name",
+                "custom_rules_text",
+                "glossary_id",
+                "glossary_name",
+                "glossary_resource_entry_count",
+                "glossary_inline_entry_count",
+                "glossary_overridden_entry_count",
+                "glossary_entries",
+                "model",
+                "base_url",
+                "credential_ref",
+            ],
+        );
+        assert_object_has_keys(
+            &provider["render"],
+            &[
+                "render_mode",
+                "compile_workers",
+                "typst_font_family",
+                "pdf_compress_dpi",
+                "translated_pdf_name",
+                "body_font_size_factor",
+                "body_leading_factor",
+                "inner_bbox_shrink_x",
+                "inner_bbox_shrink_y",
+                "inner_bbox_dense_shrink_x",
+                "inner_bbox_dense_shrink_y",
+            ],
+        );
+
+        let normalize = read_spec_from_command(&build_normalize_ocr_command(
+            config.as_ref(),
+            &request,
+            &job_paths,
+            Path::new("/tmp/layout.json"),
+            Path::new("/tmp/source.pdf"),
+            Path::new("/tmp/provider-result.json"),
+            Path::new("/tmp/provider.zip"),
+            Path::new("/tmp/provider-raw"),
+        ));
+        assert_object_has_keys(
+            &normalize,
+            &["schema_version", "stage", "job", "inputs", "params"],
+        );
+        assert_object_has_keys(
+            &normalize["inputs"],
+            &[
+                "provider",
+                "source_json",
+                "source_pdf",
+                "provider_version",
+                "provider_result_json",
+                "provider_zip",
+                "provider_raw_dir",
+            ],
+        );
+
+        let translate = read_spec_from_command(&build_translate_only_command(
+            config.as_ref(),
+            &request,
+            &job_paths,
+            Path::new("/tmp/document.v1.json"),
+            Path::new("/tmp/source.pdf"),
+            Some(Path::new("/tmp/layout.json")),
+        ));
+        assert_object_has_keys(
+            &translate,
+            &["schema_version", "stage", "job", "inputs", "params"],
+        );
+        assert_object_has_keys(
+            &translate["inputs"],
+            &["source_json", "source_pdf", "layout_json"],
+        );
+        assert_object_has_keys(
+            &translate["params"],
+            &[
+                "start_page",
+                "end_page",
+                "batch_size",
+                "workers",
+                "mode",
+                "math_mode",
+                "skip_title_translation",
+                "classify_batch_size",
+                "rule_profile_name",
+                "custom_rules_text",
+                "glossary_id",
+                "glossary_name",
+                "glossary_resource_entry_count",
+                "glossary_inline_entry_count",
+                "glossary_overridden_entry_count",
+                "glossary_entries",
+                "model",
+                "base_url",
+                "credential_ref",
+            ],
+        );
+
+        let render = read_spec_from_command(&build_render_only_command(
+            config.as_ref(),
+            &request,
+            &job_paths,
+            Path::new("/tmp/source.pdf"),
+            Path::new("/tmp/translated"),
+        ));
+        assert_object_has_keys(
+            &render,
+            &["schema_version", "stage", "job", "inputs", "params"],
+        );
+        assert_object_has_keys(
+            &render["inputs"],
+            &["source_pdf", "translations_dir", "translation_manifest"],
+        );
+        assert_object_has_keys(
+            &render["params"],
+            &[
+                "start_page",
+                "end_page",
+                "render_mode",
+                "compile_workers",
+                "typst_font_family",
+                "pdf_compress_dpi",
+                "translated_pdf_name",
+                "body_font_size_factor",
+                "body_leading_factor",
+                "inner_bbox_shrink_x",
+                "inner_bbox_shrink_y",
+                "inner_bbox_dense_shrink_x",
+                "inner_bbox_dense_shrink_y",
+                "model",
+                "base_url",
+                "credential_ref",
+            ],
+        );
     }
 }

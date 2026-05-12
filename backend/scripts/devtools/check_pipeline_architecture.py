@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 import re
 import sys
@@ -14,6 +15,7 @@ ENTRYPOINTS_ROOT = SCRIPTS_ROOT / "entrypoints"
 OCR_PROVIDER_ROOT = SCRIPTS_ROOT / "services" / "ocr_provider"
 TRANSLATION_ROOT = SCRIPTS_ROOT / "services" / "translation"
 RENDERING_ROOT = SCRIPTS_ROOT / "services" / "rendering"
+STAGE_SPEC_CONTRACT_CHECK = SCRIPTS_ROOT / "devtools" / "check_stage_specs_contract.py"
 
 PROVIDER_PRIVATE_IMPORT_PATTERNS = (
     "from services.ocr_provider",
@@ -40,6 +42,7 @@ OCR_PROVIDER_FORBIDDEN_IMPORT_PATTERNS = (
 )
 OCR_PROVIDER_STABLE_ENTRYPOINT = SCRIPTS_ROOT / "services" / "ocr_provider" / "provider_pipeline.py"
 OCR_PROVIDER_PACKAGE_INIT = SCRIPTS_ROOT / "services" / "ocr_provider" / "__init__.py"
+MINERU_PROVIDER_FLOW_IMPORT = "from services.mineru.job_flow import run_mineru_to_job_dir"
 OCR_PROVIDER_COMPAT_SYMBOLS = (
     "adapt_path_to_document_v1_with_report",
     "validate_saved_document_path",
@@ -49,13 +52,105 @@ OCR_PROVIDER_COMPAT_SYMBOLS = (
 )
 TRANSLATE_ONLY_ENTRYPOINT = SCRIPTS_ROOT / "services" / "translation" / "translate_only_pipeline.py"
 FROM_OCR_ENTRYPOINT = SCRIPTS_ROOT / "services" / "translation" / "from_ocr_pipeline.py"
+TRANSLATION_STAGE_PIPELINE = PIPELINE_ROOT / "translation_stage.py"
+RENDER_STAGE_PIPELINE = PIPELINE_ROOT / "render_stage.py"
+RENDER_EXECUTION_PIPELINE = PIPELINE_ROOT / "render_execution.py"
+RENDERING_WORKFLOW_ROOT = RENDERING_ROOT / "workflow"
+RENDERING_ANALYSIS_ROOT = RENDERING_ROOT / "analysis"
+RENDERING_PROFILE_ROOT = RENDERING_ANALYSIS_ROOT / "profile"
+RENDERING_ROUTE_ROOT = RENDERING_ANALYSIS_ROOT / "route"
+RENDERING_TYPST_ROOT = RENDERING_ROOT / "output" / "typst"
+RENDERING_LAYOUT_ROOT = RENDERING_ROOT / "layout"
+RENDERING_SOURCE_ROOT = RENDERING_ROOT / "source"
+RENDERING_SOURCE_CLEANUP_ROOT = RENDERING_SOURCE_ROOT / "cleanup"
+RENDERING_ALLOWED_ROOT_DIRS = {
+    "analysis",
+    "document",
+    "layout",
+    "legacy",
+    "output",
+    "source",
+    "workflow",
+}
+RENDERING_ALLOWED_ROOT_FILES = {
+    "__init__.py",
+    "README.md",
+}
+RENDERING_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
+    "workflow": (
+        "services.rendering.workflow",
+        "services.rendering.analysis",
+        "services.rendering.document",
+        "services.rendering.source",
+        "services.rendering.layout",
+        "services.rendering.output",
+        "services.rendering.legacy",
+    ),
+    "analysis": (
+        "services.rendering.analysis",
+        # Page profiling may inspect source image metadata, but must not execute cleanup/output.
+        "services.rendering.source.background.detect",
+    ),
+    "document": (
+        "services.rendering.document",
+        "services.rendering.layout.model",
+    ),
+    "source": (
+        "services.rendering.source",
+        "services.rendering.document",
+        "services.rendering.layout.inline_content",
+        # Existing source preparation still reuses the PDF compressor facade and Typst temp-root helper.
+        "services.rendering.legacy.pdf_compress",
+        "services.rendering.output.typst.shared",
+    ),
+    "layout": (
+        "services.rendering.layout",
+    ),
+    "output": (
+        "services.rendering.output",
+        "services.rendering.layout",
+        "services.rendering.document",
+        # Output owns overlay composition and may sample/rebuild source backgrounds.
+        "services.rendering.source.background",
+    ),
+    "legacy": (
+        "services.rendering.workflow",
+        "services.rendering.analysis",
+        "services.rendering.document",
+        "services.rendering.source",
+        "services.rendering.layout",
+        "services.rendering.output",
+        "services.rendering.legacy",
+    ),
+}
+RENDERING_LAYER_IMPORT_EXCEPTIONS: dict[Path, tuple[str, ...]] = {
+    # Existing source/background overlay code still bridges source cleanup, layout blocks,
+    # and overlay diagnostics. Keep this exception narrow so new cross-layer imports fail.
+    Path("source/background/page_overlay.py"): (
+        "services.rendering.output.typst.overlay_diagnostics",
+    ),
+    Path("source/background/redaction_plan.py"): (
+        "services.rendering.layout.model.block_view",
+        "services.rendering.layout.model.models",
+    ),
+    Path("source/background/redaction_items.py"): (
+        "services.rendering.layout.model.block_view",
+        "services.rendering.layout.model.models",
+    ),
+    Path("source/background/stage.py"): (
+        "services.rendering.layout.model.models",
+    ),
+    Path("source/cleanup/shared.py"): (
+        "services.rendering.layout.model.render_text",
+    ),
+}
 
 ENTRYPOINT_IMPORT_ALLOWLIST: dict[Path, tuple[str, ...]] = {
     Path("build_book.py"): ("from runtime.pipeline.book_pipeline import",),
     Path("build_page.py"): (
         "from services.translation.ocr.json_extractor import",
-        "from services.rendering.api.pdf_overlay import",
-        "from services.rendering.api.typst_page_renderer import",
+        "from services.rendering.legacy.pdf_overlay import",
+        "from services.rendering.legacy.typst_page_renderer import",
         "from services.translation.payload import",
     ),
     Path("diagnose_failure_with_ai.py"): (
@@ -70,7 +165,7 @@ ENTRYPOINT_IMPORT_ALLOWLIST: dict[Path, tuple[str, ...]] = {
     Path("run_normalize_ocr.py"): ("from services.document_schema.normalize_pipeline import main",),
     Path("run_provider_case.py"): ("from services.ocr_provider.provider_pipeline import main",),
     Path("run_provider_ocr.py"): ("from services.ocr_provider.provider_pipeline import main",),
-    Path("run_render_only.py"): ("from services.rendering.render_only_pipeline import main",),
+    Path("run_render_only.py"): ("from services.rendering.workflow.render_only import main",),
     Path("run_translate_from_ocr.py"): ("from services.translation.from_ocr_pipeline import main",),
     Path("run_translate_only.py"): ("from services.translation.translate_only_pipeline import main",),
     Path("translate_book.py"): ("from services.translation.translate_only_pipeline import main",),
@@ -101,6 +196,35 @@ def rel(path: Path) -> Path:
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def imported_modules(path: Path) -> list[str]:
+    modules: list[str] = []
+    try:
+        tree = ast.parse(read_text(path), filename=str(path))
+    except SyntaxError:
+        return modules
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            modules.extend(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            modules.append(node.module)
+    return modules
+
+
+def rendering_layer_for(path: Path) -> str | None:
+    try:
+        parts = path.relative_to(RENDERING_ROOT).parts
+    except ValueError:
+        return None
+    if not parts:
+        return None
+    first = parts[0]
+    return first if first in RENDERING_ALLOWED_ROOT_DIRS else None
+
+
+def module_allowed(module: str, allowed_prefixes: tuple[str, ...]) -> bool:
+    return any(module == prefix or module.startswith(f"{prefix}.") for prefix in allowed_prefixes)
 
 
 def check_pipeline_provider_leaks(errors: list[str]) -> None:
@@ -192,10 +316,21 @@ def check_ocr_provider_boundaries(errors: list[str]) -> None:
         errors.append(
             "services/ocr_provider/provider_pipeline.py: stable provider entry must own the handoff to run_book_pipeline"
         )
+    if MINERU_PROVIDER_FLOW_IMPORT not in entry_text:
+        errors.append(
+            "services/ocr_provider/provider_pipeline.py: stable provider entry must own MinerU provider handoff"
+        )
     for symbol in OCR_PROVIDER_COMPAT_SYMBOLS:
         if f"{symbol}" not in entry_text:
             errors.append(
                 f"services/ocr_provider/provider_pipeline.py: stable provider entry must preserve compat symbol '{symbol}'"
+            )
+
+    for path in scan_py_files(SCRIPTS_ROOT / "entrypoints"):
+        text = read_text(path)
+        if MINERU_PROVIDER_FLOW_IMPORT in text:
+            errors.append(
+                f"{rel(path)}: entrypoints must route MinerU through services/ocr_provider/provider_pipeline.py"
             )
 
 
@@ -237,6 +372,280 @@ def check_translation_worker_protocol(errors: list[str]) -> None:
         )
 
 
+def check_stage_spec_contract_checker(errors: list[str]) -> None:
+    if not STAGE_SPEC_CONTRACT_CHECK.exists():
+        errors.append(
+            "devtools/check_stage_specs_contract.py: Rust/Python stage spec contract checker is missing"
+        )
+        return
+    text = read_text(STAGE_SPEC_CONTRACT_CHECK)
+    for loader_name in (
+        "BookStageSpec",
+        "NormalizeStageSpec",
+        "ProviderStageSpec",
+        "RenderStageSpec",
+        "TranslateStageSpec",
+    ):
+        if loader_name not in text:
+            errors.append(
+                f"devtools/check_stage_specs_contract.py: missing Python loader coverage for {loader_name}"
+            )
+    if "stage_spec_contract=ok" not in text:
+        errors.append(
+            "devtools/check_stage_specs_contract.py: checker must emit a stable success marker"
+        )
+
+
+def check_translation_pipeline_facade_boundary(errors: list[str]) -> None:
+    text = read_text(TRANSLATION_STAGE_PIPELINE)
+    required = (
+        "from services.translation.workflow import TranslationExecutionRequest",
+        "from services.translation.workflow import execute_translation_request",
+    )
+    for item in required:
+        if item not in text:
+            errors.append(
+                f"runtime/pipeline/translation_stage.py: must call translation workflow facade via '{item}'"
+            )
+    forbidden = (
+        "from services.translation.policy import",
+        "from services.translation.session_context import",
+        "from services.translation.diagnostics import",
+        "from runtime.pipeline.book_translation_flow import",
+    )
+    for item in forbidden:
+        if item in text:
+            errors.append(
+                f"runtime/pipeline/translation_stage.py: must not import workflow internals directly: '{item}'"
+            )
+
+
+def check_render_pipeline_facade_boundary(errors: list[str]) -> None:
+    stage_text = read_text(RENDER_STAGE_PIPELINE)
+    execution_text = read_text(RENDER_EXECUTION_PIPELINE)
+    if "from services.rendering.workflow import execute_render_plan" not in execution_text:
+        errors.append(
+            "runtime/pipeline/render_execution.py: must delegate to services.rendering.workflow.execute_render_plan"
+        )
+    forbidden = (
+        "import fitz",
+        "from services.rendering.source.render_source import",
+        "from services.rendering.source.preparation.hidden_text_strip import",
+        "from services.rendering.output.typst",
+        "from services.rendering.source.cleanup",
+        "from services.rendering.layout",
+        "from services.rendering.legacy.typst_page_renderer import",
+        "from services.rendering.legacy.pdf_overlay import",
+        "from services.rendering.legacy.pdf_compress import build_image_compressed_pdf_copy",
+        "from services.rendering.legacy.pdf_compress import compress_pdf_images_only",
+    )
+    for item in forbidden:
+        if item in stage_text or item in execution_text:
+            errors.append(
+                f"runtime/pipeline render facade must not import rendering internals directly: '{item}'"
+            )
+
+
+def check_rendering_internal_boundaries(errors: list[str]) -> None:
+    for path in RENDERING_ROOT.iterdir():
+        if path.name == "__pycache__":
+            continue
+        if path.is_dir() and path.name not in RENDERING_ALLOWED_ROOT_DIRS:
+            errors.append(
+                f"services/rendering/{path.name}: unexpected rendering root directory; use workflow/analysis/document/source/layout/output/legacy"
+            )
+        if path.is_file() and path.name not in RENDERING_ALLOWED_ROOT_FILES:
+            errors.append(
+                f"services/rendering/{path.name}: unexpected rendering root file; place entrypoints inside a named layer"
+            )
+
+    legacy_rendering_imports = (
+        "from services.rendering.core",
+        "import services.rendering.core",
+        "from services.rendering.orchestrator",
+        "import services.rendering.orchestrator",
+        "from services.rendering.page_profile",
+        "import services.rendering.page_profile",
+        "from services.rendering.page_route",
+        "import services.rendering.page_route",
+        "from services.rendering.page_classifier",
+        "import services.rendering.page_classifier",
+        "from services.rendering.typst",
+        "import services.rendering.typst",
+        "from services.rendering.formula",
+        "import services.rendering.formula",
+        "from services.rendering.preprocess",
+        "import services.rendering.preprocess",
+        "from services.rendering.redaction",
+        "import services.rendering.redaction",
+        "from services.rendering.background",
+        "import services.rendering.background",
+        "from services.rendering.compress",
+        "import services.rendering.compress",
+        "from services.rendering.source_pdf",
+        "import services.rendering.source_pdf",
+    )
+    legacy_rendering_wrappers = set()
+    legacy_rendering_wrappers.update((RENDERING_ROOT / "core").glob("*.py"))
+    legacy_rendering_wrappers.update((RENDERING_ROOT / "orchestrator").glob("*.py"))
+    legacy_rendering_wrappers.update((RENDERING_ROOT / "page_profile").glob("*.py"))
+    legacy_rendering_wrappers.update((RENDERING_ROOT / "page_route").glob("*.py"))
+    legacy_rendering_wrappers.update((RENDERING_ROOT / "typst").glob("*.py"))
+    legacy_rendering_wrappers.update((RENDERING_ROOT / "formula").glob("*.py"))
+    legacy_rendering_wrappers.update((RENDERING_ROOT / "formula" / "core").glob("*.py"))
+    legacy_rendering_wrappers.update((RENDERING_ROOT / "formula" / "fallback").glob("*.py"))
+    legacy_rendering_wrappers.update((RENDERING_ROOT / "preprocess").glob("*.py"))
+    legacy_rendering_wrappers.update((RENDERING_ROOT / "redaction").glob("*.py"))
+    legacy_rendering_wrappers.update((RENDERING_ROOT / "background").glob("*.py"))
+    legacy_rendering_wrappers.update((RENDERING_ROOT / "compress").glob("*.py"))
+    legacy_rendering_wrappers.add(RENDERING_ROOT / "page_classifier.py")
+    legacy_rendering_wrappers.add(RENDERING_ROOT / "source_pdf.py")
+    for path in scan_py_files(RENDERING_ROOT):
+        if path in legacy_rendering_wrappers:
+            continue
+        text = read_text(path)
+        rel_path = rel(path)
+        for item in legacy_rendering_imports:
+            if item in text:
+                errors.append(
+                    f"{rel_path}: import new rendering modules directly instead of legacy compatibility wrappers"
+                )
+                break
+
+    legacy_document_imports = (
+        "from services.rendering.page_map",
+        "import services.rendering.page_map",
+        "from services.rendering.pdf_metadata",
+        "import services.rendering.pdf_metadata",
+    )
+    legacy_document_wrappers = {
+        RENDERING_ROOT / "page_map.py",
+        RENDERING_ROOT / "pdf_metadata.py",
+        RENDERING_ROOT / "source_pdf.py",
+    }
+    for path in scan_py_files(RENDERING_ROOT):
+        if path in legacy_document_wrappers:
+            continue
+        text = read_text(path)
+        rel_path = rel(path)
+        for item in legacy_document_imports:
+            if item in text:
+                errors.append(
+                    f"{rel_path}: import document helpers from services.rendering.document.* instead of rendering root wrappers"
+                )
+                break
+
+    for path in scan_py_files(RENDERING_PROFILE_ROOT):
+        text = read_text(path)
+        rel_path = rel(path)
+        forbidden = (
+            "from services.rendering.analysis.route",
+            "import services.rendering.analysis.route",
+            "from services.rendering.source.cleanup",
+            "import services.rendering.source.cleanup",
+            "from services.rendering.output.typst",
+            "import services.rendering.output.typst",
+            "from services.rendering.layout",
+            "import services.rendering.layout",
+        )
+        for item in forbidden:
+            if item in text:
+                errors.append(
+                    f"{rel_path}: page_profile must collect facts only and must not depend on route/redaction/typst/layout"
+                )
+                break
+
+    for path in scan_py_files(RENDERING_ROUTE_ROOT):
+        text = read_text(path)
+        rel_path = rel(path)
+        forbidden = (
+            "import fitz",
+            "from services.rendering.source.cleanup",
+            "import services.rendering.source.cleanup",
+            "from services.rendering.output.typst",
+            "import services.rendering.output.typst",
+            "from services.rendering.layout",
+            "import services.rendering.layout",
+        )
+        for item in forbidden:
+            if item in text:
+                errors.append(
+                    f"{rel_path}: page_route must decide routes only and must not scan pages or call redaction/typst/layout"
+                )
+                break
+
+    for path in scan_py_files(RENDERING_TYPST_ROOT):
+        text = read_text(path)
+        rel_path = rel(path)
+        forbidden = (
+            "from services.rendering.source.cleanup",
+            "import services.rendering.source.cleanup",
+        )
+        for item in forbidden:
+            if item in text:
+                errors.append(
+                    f"{rel_path}: typst layer must not import redaction directly; route background cleanup through rendering/background or orchestrator"
+                )
+                break
+
+    for path in scan_py_files(RENDERING_LAYOUT_ROOT):
+        text = read_text(path)
+        rel_path = rel(path)
+        forbidden = (
+            "from services.rendering.source.cleanup",
+            "import services.rendering.source.cleanup",
+            "from services.rendering.output.typst",
+            "import services.rendering.output.typst",
+            "from services.rendering.source.render_source",
+            "import services.rendering.source.render_source",
+        )
+        for item in forbidden:
+            if item in text:
+                errors.append(
+                    f"{rel_path}: layout layer must not import redaction/typst/source_pdf"
+                )
+                break
+
+    for path in scan_py_files(RENDERING_SOURCE_CLEANUP_ROOT):
+        text = read_text(path)
+        rel_path = rel(path)
+        forbidden = (
+            "from services.rendering.output.typst",
+            "import services.rendering.output.typst",
+            "import services.rendering.layout",
+        )
+        for item in forbidden:
+            if item in text:
+                errors.append(
+                    f"{rel_path}: redaction layer must not import typst/layout"
+                )
+                break
+
+    for path in scan_py_files(RENDERING_ROOT):
+        layer = rendering_layer_for(path)
+        if layer is None:
+            continue
+        allowed_prefixes = RENDERING_LAYER_IMPORT_RULES[layer]
+        exception_prefixes = RENDERING_LAYER_IMPORT_EXCEPTIONS.get(path.relative_to(RENDERING_ROOT), ())
+        for module in imported_modules(path):
+            if not module.startswith("services.rendering."):
+                continue
+            if module_allowed(module, allowed_prefixes) or module_allowed(module, exception_prefixes):
+                continue
+            errors.append(
+                f"{rel(path)}: rendering layer '{layer}' must not import '{module}' directly"
+            )
+
+
+def check_translation_rendering_separation(errors: list[str]) -> None:
+    for path in scan_py_files(TRANSLATION_ROOT):
+        text = read_text(path)
+        if "from services.rendering" in text or "import services.rendering" in text:
+            errors.append(
+                f"{rel(path)}: translation layer must not import rendering services"
+            )
+
+
 def main() -> int:
     errors: list[str] = []
     check_pipeline_provider_leaks(errors)
@@ -244,6 +653,11 @@ def main() -> int:
     check_entrypoint_stable_imports(errors)
     check_ocr_provider_boundaries(errors)
     check_translation_worker_protocol(errors)
+    check_stage_spec_contract_checker(errors)
+    check_translation_pipeline_facade_boundary(errors)
+    check_render_pipeline_facade_boundary(errors)
+    check_rendering_internal_boundaries(errors)
+    check_translation_rendering_separation(errors)
     if errors:
         print("pipeline architecture check failed:", file=sys.stderr)
         for item in errors:

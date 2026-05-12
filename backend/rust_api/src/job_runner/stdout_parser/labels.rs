@@ -10,3 +10,4 @@ pub const STDOUT_LABEL_SCHEMA_VERSION: &str = "schema version";
 pub const STDOUT_LABEL_TRANSLATIONS_DIR: &str = "translations dir";
 pub const STDOUT_LABEL_OUTPUT_PDF: &str = "output pdf";
 pub const STDOUT_LABEL_SUMMARY: &str = "summary";
+pub const STDOUT_LABEL_EVENTS_JSONL: &str = "events jsonl";

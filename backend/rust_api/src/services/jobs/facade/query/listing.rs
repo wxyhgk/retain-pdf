@@ -11,7 +11,6 @@ use super::super::super::presentation::{
     build_job_events_view, build_job_list_view, load_ocr_job_with_supported_layout,
     load_supported_job,
 };
-use super::super::super::query::load_job_or_404;
 use super::super::JobsFacade;
 
 impl<'a> JobsFacade<'a> {
@@ -78,16 +77,13 @@ impl<'a> JobsFacade<'a> {
         query: &ListJobEventsQuery,
         ocr_only: bool,
     ) -> Result<JobEventListView, AppError> {
-        if ocr_only {
-            let _ = load_ocr_job_with_supported_layout(
-                self.query.db,
-                &self.query.config.data_root,
-                job_id,
-            )?;
-        } else {
-            let _ = load_job_or_404(self.query.db, job_id)?;
-        }
+        self.ensure_job_query_scope(job_id, ocr_only)?;
         build_job_events_view(self.query.db, &self.query.config.data_root, job_id, query)
+    }
+
+    pub fn ensure_job_query_scope(&self, job_id: &str, ocr_only: bool) -> Result<(), AppError> {
+        let _ = self.load_supported_job_snapshot(job_id, ocr_only)?;
+        Ok(())
     }
 
     pub fn load_supported_job_snapshot(

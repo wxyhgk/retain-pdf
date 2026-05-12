@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from services.rendering.core.models import RenderLayoutBlock
+from services.rendering.layout.model.models import RenderLayoutBlock
 
 
 TITLE_FIT_GAP_PT = 2.0

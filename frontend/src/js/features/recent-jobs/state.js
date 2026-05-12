@@ -1,4 +1,4 @@
-import { state } from "../../state.js";
+import { resetRecentJobsListState, state } from "../../state.js";
 
 export function getRecentJobsState() {
   return {
@@ -26,7 +26,5 @@ export function setRecentJobsItems(items) {
 }
 
 export function resetRecentJobsPagination() {
-  state.recentJobsOffset = 0;
-  state.recentJobsHasMore = true;
-  state.recentJobsItems = [];
+  resetRecentJobsListState(state);
 }

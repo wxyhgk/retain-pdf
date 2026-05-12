@@ -8,7 +8,7 @@ from services.rendering.layout.font_fit import page_baseline_font_size
 from services.rendering.layout.payload.metrics import block_metrics
 from services.rendering.layout.payload.metrics import box_capacity_units
 from services.rendering.layout.payload.metrics import text_demand_units
-from services.rendering.formula.mode_router import is_direct_typst_math_mode
+from services.rendering.layout.inline_content.mode_router import is_direct_typst_math_mode
 from services.rendering.layout.payload.render_item import clear_render_fields
 from services.rendering.layout.payload.render_item import group_render_unit_items
 from services.rendering.layout.payload.render_item import group_unit_formula_map

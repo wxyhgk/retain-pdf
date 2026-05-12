@@ -1,9 +1,28 @@
 from __future__ import annotations
 
 from math import ceil
+from math import exp
+import re
 
 from services.rendering.layout.payload.shared import tokenize_protected_text
 from services.rendering.layout.payload.shared import token_units
+
+
+COMPLEX_FORMULA_COMMAND_RE = re.compile(r"\\(?:frac|dfrac|tfrac|sqrt|sum|prod|int|begin|delta|Delta|partial|mathbf|overline|underline)")
+
+
+def formula_estimate_discount(protected_text: str, formula_map: list[dict]) -> float:
+    tokens = tokenize_protected_text(protected_text)
+    formula_lookup = {entry["placeholder"]: entry["formula_text"] for entry in formula_map}
+    formula_tokens = [token for token in tokens if token in formula_lookup or (token.startswith("$") and token.endswith("$"))]
+    if not formula_tokens:
+        return 1.0
+    visible_tokens = [token for token in tokens if token.strip()]
+    formula_count = len(formula_tokens)
+    complex_count = sum(1 for token in formula_tokens if COMPLEX_FORMULA_COMMAND_RE.search(formula_lookup.get(token, token.strip("$"))))
+    count_ratio = formula_count / max(1.0, len(visible_tokens))
+    uncertainty = formula_count * 0.06 + complex_count * 0.06 + count_ratio * 0.9
+    return round(1.0 - 0.14 * (1.0 - exp(-1.7 * max(0.0, uncertainty))), 3)
 
 
 def box_capacity_units(
@@ -58,7 +77,7 @@ def estimated_render_height_pt(
         return 0.0
     line_step = max(font_size_pt * 1.02, font_size_pt * (1.0 + leading_em))
     required_lines = estimated_required_lines(inner, protected_text, formula_map, font_size_pt)
-    return required_lines * line_step
+    return required_lines * line_step * formula_estimate_discount(protected_text, formula_map)
 
 
 def source_layout_density_reference(

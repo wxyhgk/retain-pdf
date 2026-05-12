@@ -68,9 +68,9 @@ if (!readerHtml.includes("./vendor/pdfjs-dist/web/pdf_viewer.css")) {
   fail("Desktop reader.html did not rewrite pdfjs viewer CSS to vendor path");
 }
 
-const mainJs = readFile("src/js/main.js");
-if (!mainJs.includes("../../vendor/pdfjs-dist/build/pdf.mjs")) {
-  fail("Desktop main.js did not rewrite pdfjs import to vendor path");
+const mainHelpersJs = readFile("src/js/main-helpers.js");
+if (!mainHelpersJs.includes("../../vendor/pdfjs-dist/build/pdf.mjs")) {
+  fail("Desktop main-helpers.js did not rewrite pdfjs import to vendor path");
 }
 
 const readerJs = readFile("src/js/reader.js");

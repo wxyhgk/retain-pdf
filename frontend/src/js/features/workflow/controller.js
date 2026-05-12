@@ -1,6 +1,19 @@
 import { $ } from "../../dom.js";
 import { DEFAULT_FILE_LABEL } from "../../constants.js";
 import { getOcrProviderDefinition, normalizeOcrProvider } from "../../provider-config.js";
+import {
+  applyMockUploadView,
+  applyWorkflowUploadView,
+  closeDeveloperDialog,
+  readDeveloperDialogValues,
+  readDeveloperWorkflowValue,
+  readModelApiKey,
+  readOcrProviderValue,
+  readOcrTokenValue,
+  setDeveloperDialogValues,
+  setDeveloperWorkflowFormState,
+  setSubmitControls,
+} from "./view.js";
 
 export function mountWorkflowFeature({
   state,
@@ -58,15 +71,7 @@ export function mountWorkflowFeature({
 
   function syncDeveloperDialogFromState() {
     const config = developerConfigWithDefaults();
-    $("developer-workflow").value = config.workflow;
-    $("developer-render-source-job-id").value = config.renderSourceJobId;
-    $("developer-model").value = config.model;
-    $("developer-base-url").value = config.baseUrl;
-    $("developer-workers").value = `${config.workers}`;
-    $("developer-batch-size").value = `${config.batchSize}`;
-    $("developer-classify-batch-size").value = `${config.classifyBatchSize}`;
-    $("developer-compile-workers").value = `${config.compileWorkers}`;
-    $("developer-timeout-seconds").value = `${config.timeoutSeconds}`;
+    setDeveloperDialogValues(config);
     updateDeveloperWorkflowFormState();
   }
 
@@ -115,27 +120,24 @@ export function mountWorkflowFeature({
   }
 
   function updateDeveloperWorkflowFormState() {
-    const workflow = normalizeWorkflow($("developer-workflow")?.value);
-    const renderWrap = $("developer-render-source-wrap");
-    const note = $("developer-workflow-note");
-    renderWrap?.classList.toggle("hidden", workflow !== WORKFLOW_RENDER);
-    if (note) {
-      note.textContent = workflow === WORKFLOW_RENDER
-        ? "render 会跳过 OCR 与翻译，直接复用已有任务产物重新渲染 PDF。"
-        : workflow === WORKFLOW_TRANSLATE
-          ? "translate 会执行 OCR 与翻译，但不会进入最终 PDF 渲染。"
-          : "book 会完整执行 OCR、翻译与 PDF 渲染。";
-    }
+    const workflow = normalizeWorkflow(readDeveloperWorkflowValue());
+    setDeveloperWorkflowFormState({
+      workflow,
+      workflowRender: WORKFLOW_RENDER,
+      workflowTranslate: WORKFLOW_TRANSLATE,
+    });
   }
 
   function refreshSubmitControls() {
     const workflow = currentWorkflow();
     const showPageRangeButton = workflowNeedsUpload(workflow) && !hasAppliedPageRange();
     if (isMockMode()) {
-      $("submit-btn").disabled = false;
-      $("submit-btn").textContent = workflowSubmitLabel(workflow);
-      $("upload-action-slot")?.classList.remove("hidden");
-      $("page-range-btn")?.classList.toggle("hidden", !showPageRangeButton);
+      setSubmitControls({
+        disabled: false,
+        label: workflowSubmitLabel(workflow),
+        actionVisible: true,
+        pageRangeVisible: showPageRangeButton,
+      });
       return;
     }
     const needsUpload = workflowNeedsUpload(workflow);
@@ -146,10 +148,12 @@ export function mountWorkflowFeature({
     const renderReady = Boolean(currentRenderSourceJobId());
     const uploadReady = Boolean(state.uploadId);
     const canSubmit = needsUpload ? uploadReady : renderReady;
-    $("submit-btn").disabled = credentialsMissing || !canSubmit;
-    $("submit-btn").textContent = workflowSubmitLabel(workflow);
-    $("upload-action-slot")?.classList.toggle("hidden", credentialsMissing || (needsUpload ? !uploadReady : false));
-    $("page-range-btn")?.classList.toggle("hidden", !showPageRangeButton);
+    setSubmitControls({
+      disabled: credentialsMissing || !canSubmit,
+      label: workflowSubmitLabel(workflow),
+      actionVisible: !(credentialsMissing || (needsUpload ? !uploadReady : false)),
+      pageRangeVisible: showPageRangeButton,
+    });
   }
 
   function updateCredentialGate() {
@@ -165,63 +169,25 @@ export function mountWorkflowFeature({
 
   function applyWorkflowMode() {
     const workflow = currentWorkflow();
-    const fileInput = $("file");
-    const tile = fileInput?.closest(".upload-tile");
-    const uploadGlyph = $("upload-glyph");
-    const fileLabel = $("file-label");
-    const uploadHelp = $("upload-help");
-    const uploadMeta = document.querySelector(".upload-meta");
-    const uploadStatus = $("upload-status");
     const needsUpload = workflowNeedsUpload(workflow);
+    const showPageRangeButton = workflowNeedsUpload(workflow) && !hasAppliedPageRange();
     if (isMockMode()) {
-      if (fileInput) {
-        fileInput.disabled = true;
-      }
-      tile?.classList.add("is-locked");
-      uploadGlyph?.classList.add("hidden");
-      uploadMeta?.classList.add("hidden");
-      if (fileLabel) {
-        fileLabel.textContent = "Mock 模式";
-        fileLabel.title = "";
-        fileLabel.classList.remove("hidden");
-      }
-      if (uploadHelp) {
-        uploadHelp.textContent = `当前为 mock 模式：${new URLSearchParams(window.location.search).get("mock") || "running"}。不会上传文件，也不会请求真实后端。`;
-        uploadHelp.classList.remove("hidden");
-      }
-      if (uploadStatus) {
-        uploadStatus.textContent = "Mock 模式已启用，可直接点击开始翻译。";
-        uploadStatus.classList.remove("hidden");
-      }
+      applyMockUploadView({
+        mockScenario: new URLSearchParams(window.location.search).get("mock") || "running",
+        submitLabel: workflowSubmitLabel(workflow),
+        showPageRangeButton,
+      });
       renderPageRangeSummary();
-      refreshSubmitControls();
       updateCredentialGate();
       return;
     }
-    if (fileInput) {
-      fileInput.disabled = !needsUpload;
-    }
-    tile?.classList.toggle("is-locked", !needsUpload);
-    uploadGlyph?.classList.toggle("hidden", !needsUpload);
-    uploadMeta?.classList.toggle("hidden", !needsUpload);
-    if (fileLabel && !state.uploadId) {
-      fileLabel.textContent = needsUpload ? DEFAULT_FILE_LABEL : "复用已有任务产物";
-      fileLabel.title = "";
-      fileLabel.classList.remove("hidden");
-    }
-    if (uploadHelp) {
-      uploadHelp.textContent = workflowHeadline(workflow);
-      uploadHelp.classList.remove("hidden");
-    }
-    if (!needsUpload && uploadStatus) {
-      const renderSourceJobId = currentRenderSourceJobId();
-      uploadStatus.textContent = renderSourceJobId
-        ? `当前将复用任务: ${renderSourceJobId}`
-        : "请先在开发者设置里填写 Render 源任务 ID。";
-      uploadStatus.classList.remove("hidden");
-    } else if (!state.uploadId) {
-      uploadStatus?.classList.add("hidden");
-    }
+    applyWorkflowUploadView({
+      needsUpload,
+      uploadReady: Boolean(state.uploadId),
+      defaultFileLabel: DEFAULT_FILE_LABEL,
+      headline: workflowHeadline(workflow),
+      renderSourceJobId: currentRenderSourceJobId(),
+    });
     renderPageRangeSummary();
     refreshSubmitControls();
     updateCredentialGate();
@@ -229,22 +195,31 @@ export function mountWorkflowFeature({
 
   function saveDeveloperDialog() {
     const currentConfig = developerConfigWithDefaults();
+    const values = readDeveloperDialogValues({
+      model: defaultModelName(),
+      baseUrl: defaultModelBaseUrl(),
+      workers: DEFAULT_WORKERS,
+      batchSize: DEFAULT_BATCH_SIZE,
+      classifyBatchSize: DEFAULT_CLASSIFY_BATCH_SIZE,
+      compileWorkers: DEFAULT_COMPILE_WORKERS,
+      timeoutSeconds: DEFAULT_TIMEOUT_SECONDS,
+    });
     state.developerConfig = {
-      workflow: normalizeWorkflow($("developer-workflow")?.value),
-      renderSourceJobId: $("developer-render-source-job-id")?.value?.trim() || "",
+      workflow: normalizeWorkflow(values.workflow),
+      renderSourceJobId: values.renderSourceJobId,
       mathMode: currentConfig.mathMode,
-      model: $("developer-model")?.value?.trim() || defaultModelName(),
-      baseUrl: $("developer-base-url")?.value?.trim() || defaultModelBaseUrl(),
-      workers: Number($("developer-workers")?.value || DEFAULT_WORKERS),
-      batchSize: Number($("developer-batch-size")?.value || DEFAULT_BATCH_SIZE),
-      classifyBatchSize: Number($("developer-classify-batch-size")?.value || DEFAULT_CLASSIFY_BATCH_SIZE),
-      compileWorkers: Number($("developer-compile-workers")?.value || DEFAULT_COMPILE_WORKERS),
-      timeoutSeconds: Number($("developer-timeout-seconds")?.value || DEFAULT_TIMEOUT_SECONDS),
+      model: values.model,
+      baseUrl: values.baseUrl,
+      workers: values.workers,
+      batchSize: values.batchSize,
+      classifyBatchSize: values.classifyBatchSize,
+      compileWorkers: values.compileWorkers,
+      timeoutSeconds: values.timeoutSeconds,
       translateTitles: currentConfig.translateTitles,
     };
     void saveDeveloperStoredConfig(state.developerConfig);
     applyWorkflowMode();
-    $("developer-dialog")?.close();
+    closeDeveloperDialog();
   }
 
   function resetDeveloperDialog() {
@@ -261,11 +236,13 @@ export function mountWorkflowFeature({
   }
 
   function buildOcrPayload(pageRanges) {
-    const provider = normalizeOcrProvider($("ocr_provider")?.value || defaultOcrProvider());
+    const provider = normalizeOcrProvider(readOcrProviderValue(defaultOcrProvider()));
     const definition = getOcrProviderDefinition(provider);
-    const token = definition.id === "paddle"
-      ? ($("paddle_token")?.value || defaultPaddleToken())
-      : ($("mineru_token")?.value || defaultMineruToken());
+    const token = readOcrTokenValue({
+      providerId: definition.id,
+      defaultPaddleToken: defaultPaddleToken(),
+      defaultMineruToken: defaultMineruToken(),
+    });
     return {
       provider,
       [definition.tokenField]: token,
@@ -281,7 +258,7 @@ export function mountWorkflowFeature({
       math_mode: developerConfig.mathMode,
       model: developerConfig.model,
       base_url: developerConfig.baseUrl,
-      api_key: $("api_key").value || defaultModelApiKey(),
+      api_key: readModelApiKey(defaultModelApiKey()),
       workers: developerConfig.workers,
       batch_size: developerConfig.batchSize,
       classify_batch_size: developerConfig.classifyBatchSize,

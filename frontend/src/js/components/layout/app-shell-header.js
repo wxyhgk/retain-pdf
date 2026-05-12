@@ -9,7 +9,7 @@ class AppShellHeader extends HTMLElement {
       <header class="topbar">
         <div class="brand-mark" aria-hidden="true"></div>
         <div class="hero-actions">
-          <button id="developer-btn" type="button" class="secondary">开发者</button>
+          <button id="developer-btn" type="button" class="secondary hidden" aria-hidden="true">开发者</button>
           <button id="open-output-btn" type="button" class="secondary hidden">打开输出目录</button>
         </div>
       </header>

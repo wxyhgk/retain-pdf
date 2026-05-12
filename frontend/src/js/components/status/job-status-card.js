@@ -1,4 +1,34 @@
+import {
+  DOWNLOAD_ANIMATION_PATH,
+  OCR_ANIMATION_PATH,
+  RENDER_ANIMATION_PATH,
+  STAGE_ANIMATIONS,
+  STAGE_LABELS,
+  TRANSLATION_ANIMATION_PATH,
+  UPLOAD_ANIMATION_PATH,
+} from "./job-status-card-presets.js";
+import {
+  resolveVisualStageKeyForSnapshot,
+} from "./job-status-card-visuals.js";
+import { createStatusStageAnimationController } from "./job-status-card-animation.js";
+import {
+  setBackHomeVisible,
+  setCancelEnabled,
+  setElapsed,
+  setProgress,
+  syncPrimaryActions,
+} from "./job-status-card-rendering.js";
+import { resolveSelectedStage, syncStageFlow } from "./job-status-card-stage-flow.js";
+import { syncTranslationSubstageStates } from "./job-status-card-substages.js";
+import { jobStatusCardTemplate } from "./job-status-card-template.js";
+
 class JobStatusCard extends HTMLElement {
+  #stageAnimationController = null;
+  #currentStageKey = "";
+  #selectedStageKey = "";
+  #manualStageSelection = false;
+  #lastSnapshot = null;
+
   connectedCallback() {
     if (this.dataset.hydrated === "1") {
       return;
@@ -6,117 +36,83 @@ class JobStatusCard extends HTMLElement {
     this.dataset.hydrated = "1";
     this.id = this.id || "status-section";
     this.classList.add("card", "status-card", "hidden");
-    this.innerHTML = `
-      <div class="status-head">
-        <status-task-toolbar variant="head"></status-task-toolbar>
-      </div>
-
-      <div class="status-ring-shell">
-        <div class="status-focus-card">
-          <div id="status-stage-flow" class="status-stage-flow" aria-label="任务流程">
-            <span class="status-stage-step" data-stage-key="ocr">OCR</span>
-            <span class="status-stage-step" data-stage-key="translate">翻译</span>
-            <span class="status-stage-step" data-stage-key="render">渲染</span>
-            <span class="status-stage-step" data-stage-key="done">完成</span>
-          </div>
-          <div id="status-ring-label" class="status-ring-label">等待中</div>
-          <div id="status-ring-value" class="status-ring-value">准备中</div>
-          <div id="status-ring-elapsed" class="status-ring-elapsed">0秒</div>
-          <div class="status-progress-block">
-            <div class="progress-track"><div id="job-progress-bar" class="progress-bar"></div></div>
-            <div id="job-progress-text" class="status-progress-text">-</div>
-          </div>
-        </div>
-        <div class="status-action-stack">
-          <status-task-toolbar variant="downloads"></status-task-toolbar>
-        </div>
-      </div>
-
-      <div class="hidden">
-        <div id="job-id">-</div>
-        <div id="job-status">idle</div>
-        <div id="job-stage-detail">-</div>
-        <div id="query-job-duration">-</div>
-        <div id="job-finished-at">-</div>
-        <a id="download-btn" class="button-link disabled" href="#" target="_blank" rel="noopener noreferrer">ZIP</a>
-        <a id="markdown-raw-btn" class="button-link secondary disabled" href="#" target="_blank" rel="noopener noreferrer">Markdown</a>
-        <a id="markdown-btn" class="button-link secondary disabled" href="#" target="_blank" rel="noopener noreferrer">JSON</a>
-      </div>
-    `;
+    this.#stageAnimationController = createStatusStageAnimationController(this);
+    this.innerHTML = jobStatusCardTemplate({
+      translationAnimationPath: TRANSLATION_ANIMATION_PATH,
+      ocrAnimationPath: OCR_ANIMATION_PATH,
+      uploadAnimationPath: UPLOAD_ANIMATION_PATH,
+      downloadAnimationPath: DOWNLOAD_ANIMATION_PATH,
+      renderAnimationPath: RENDER_ANIMATION_PATH,
+    });
+    this.querySelector("#status-stage-flow")?.addEventListener("click", (event) => {
+      const button = event.target?.closest?.(".status-stage-step");
+      const stageKey = button?.dataset?.stageKey || "";
+      if (!stageKey || button.disabled) {
+        return;
+      }
+      this.#manualStageSelection = true;
+      this.#selectedStageKey = stageKey;
+      this.#renderSelectedStage();
+    });
   }
 
   setStagePresentation({ label = "等待中", value = "准备中", stageKey = "" } = {}) {
     const labelEl = this.querySelector("#status-ring-label");
     const valueEl = this.querySelector("#status-ring-value");
-    this.setStageFlow(stageKey);
+    const detailEl = this.querySelector("#status-stage-detail");
+    const previousCurrentStageKey = this.#currentStageKey;
+    this.#currentStageKey = `${stageKey || ""}`.trim();
+    if (previousCurrentStageKey && previousCurrentStageKey !== this.#currentStageKey) {
+      this.#manualStageSelection = false;
+    }
+    const selection = resolveSelectedStage({
+      currentStageKey: this.#currentStageKey,
+      selectedStageKey: this.#selectedStageKey,
+      manualStageSelection: this.#manualStageSelection,
+    });
+    this.#selectedStageKey = selection.selectedStageKey;
+    this.#manualStageSelection = selection.manualStageSelection;
+    this.setStageFlow(this.#currentStageKey, this.#selectedStageKey);
+    const selectedIsCurrent = !this.#selectedStageKey || this.#selectedStageKey === this.#currentStageKey;
+    const visualStageKey = selectedIsCurrent ? resolveVisualStageKeyForSnapshot(this.#lastSnapshot, this.#currentStageKey) : this.#selectedStageKey;
+    this.#stageAnimationController?.setStageVisualMode(visualStageKey);
     if (labelEl) {
-      labelEl.textContent = label;
+      labelEl.textContent = selectedIsCurrent ? label : `${STAGE_LABELS[this.#selectedStageKey] || "阶段"} 阶段`;
     }
     if (valueEl) {
       valueEl.textContent = value;
     }
+    if (detailEl) {
+      detailEl.textContent = value;
+    }
   }
 
-  setStageFlow(stageKey = "") {
-    const flowOrder = ["ocr", "translate", "render", "done"];
-    const normalized = `${stageKey || ""}`.trim();
-    const activeIndex = flowOrder.indexOf(normalized);
-    this.querySelectorAll(".status-stage-step").forEach((step) => {
-      const stepIndex = flowOrder.indexOf(step.dataset.stageKey || "");
-      const isDone = activeIndex >= 0 && stepIndex >= 0 && stepIndex < activeIndex;
-      const isActive = activeIndex >= 0 && stepIndex === activeIndex;
-      step.classList.toggle("is-done", isDone);
-      step.classList.toggle("is-active", isActive);
-    });
+  setStageFlow(stageKey = "", selectedStageKey = "") {
+    syncStageFlow(this, stageKey, selectedStageKey);
   }
 
   syncPrimaryActions({ pdfReady = false, readerReady = false } = {}) {
-    const pdfBtn = this.querySelector("#pdf-btn");
-    const readerBtn = this.querySelector("#reader-btn");
-    const actionRow = this.querySelector(".status-ring-downloads");
-    if (pdfBtn) {
-      pdfBtn.classList.toggle("hidden", !pdfReady);
-    }
-    if (readerBtn) {
-      readerBtn.classList.toggle("hidden", !readerReady);
-    }
-    actionRow?.classList.remove("hidden");
+    syncPrimaryActions(this, { pdfReady, readerReady });
+  }
+
+  #syncTranslationSubstages(selectedStageKey, selectedIsCurrent) {
+    syncTranslationSubstageStates(this.querySelector(".status-substage-flow"), selectedStageKey, selectedIsCurrent, this.#lastSnapshot);
   }
 
   setElapsed(value = "-") {
-    const elapsed = this.querySelector("#status-ring-elapsed");
-    if (elapsed) {
-      elapsed.textContent = value;
-    }
+    setElapsed(this, value);
   }
 
-  setProgress({ current = NaN, total = NaN, fallbackText = "-", percent = NaN, progressText = "" } = {}) {
-    const bar = this.querySelector("#job-progress-bar");
-    const text = this.querySelector("#job-progress-text");
-    if (!bar || !text) {
-      return;
-    }
-    const hasNumbers = Number.isFinite(current) && Number.isFinite(total) && total > 0;
-    if (!hasNumbers) {
-      bar.style.width = "0%";
-      text.textContent = fallbackText;
-      return;
-    }
-    const computedPercent = (current / total) * 100;
-    const safePercent = Math.max(0, Math.min(100, Number.isFinite(percent) ? percent : computedPercent));
-    bar.style.width = `${safePercent}%`;
-    text.textContent = progressText || `${current} / ${total} (${safePercent.toFixed(0)}%)`;
+  setProgress(options = {}) {
+    setProgress(this, options);
   }
 
   setCancelEnabled(enabled) {
-    const button = this.querySelector("#cancel-btn");
-    if (button) {
-      button.disabled = !enabled;
-    }
+    setCancelEnabled(this, enabled);
   }
 
   setBackHomeVisible(visible) {
-    this.querySelector("#back-home-btn")?.classList.toggle("hidden", !visible);
+    setBackHomeVisible(this, visible);
   }
 
   renderSnapshot({
@@ -129,23 +125,64 @@ class JobStatusCard extends HTMLElement {
     progressFallbackText = "-",
     progressPercent = NaN,
     progressText = "",
+    visualStageKey = "",
     pdfReady = false,
     readerReady = false,
     cancelEnabled = false,
     backHomeVisible = false,
   } = {}) {
+    this.#lastSnapshot = {
+      label,
+      value,
+      stageKey,
+      elapsed,
+      progressCurrent,
+      progressTotal,
+      progressFallbackText,
+      progressPercent,
+      progressText,
+      visualStageKey,
+      pdfReady,
+      readerReady,
+      cancelEnabled,
+      backHomeVisible,
+    };
     this.setStagePresentation({ label, value, stageKey });
     this.setElapsed(elapsed);
-    this.setProgress({
-      current: progressCurrent,
-      total: progressTotal,
-      fallbackText: progressFallbackText,
-      percent: progressPercent,
-      progressText,
-    });
-    this.syncPrimaryActions({ pdfReady, readerReady });
+    this.#renderSelectedStage();
     this.setCancelEnabled(cancelEnabled);
     this.setBackHomeVisible(backHomeVisible);
+  }
+
+  #renderSelectedStage() {
+    const snapshot = this.#lastSnapshot;
+    if (!snapshot) {
+      return;
+    }
+    const selected = this.#selectedStageKey || snapshot.stageKey;
+    const selectedIsCurrent = selected === snapshot.stageKey || !selected;
+    this.setStageFlow(snapshot.stageKey, selected);
+    this.#syncTranslationSubstages(selected, selectedIsCurrent);
+    this.#stageAnimationController?.setStageVisualMode(resolveVisualStageKeyForSnapshot(snapshot, selected));
+    const labelEl = this.querySelector("#status-ring-label");
+    if (labelEl && !selectedIsCurrent) {
+      labelEl.textContent = `${STAGE_LABELS[selected] || "阶段"} 阶段`;
+    } else if (labelEl) {
+      labelEl.textContent = snapshot.label;
+    }
+    this.setProgress({
+      current: snapshot.progressCurrent,
+      total: snapshot.progressTotal,
+      fallbackText: snapshot.progressFallbackText,
+      percent: snapshot.progressPercent,
+      progressText: snapshot.progressText,
+      stageKey: snapshot.stageKey,
+      forceVisible: selectedIsCurrent && ["ocr", "translate", "render"].includes(snapshot.stageKey),
+    });
+    this.syncPrimaryActions({
+      pdfReady: selected === "done" && snapshot.pdfReady,
+      readerReady: selected === "done" && snapshot.readerReady,
+    });
   }
 }
 

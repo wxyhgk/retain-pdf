@@ -56,16 +56,16 @@ pub(crate) fn default_body_leading_factor() -> f64 {
     1.08
 }
 pub(crate) fn default_inner_bbox_shrink_x() -> f64 {
-    0.035
+    0.0
 }
 pub(crate) fn default_inner_bbox_shrink_y() -> f64 {
-    0.04
+    0.0
 }
 pub(crate) fn default_inner_bbox_dense_shrink_x() -> f64 {
-    0.025
+    0.0
 }
 pub(crate) fn default_inner_bbox_dense_shrink_y() -> f64 {
-    0.03
+    0.0
 }
 pub(crate) fn default_limit() -> u32 {
     20

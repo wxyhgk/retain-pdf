@@ -427,7 +427,7 @@ fn event_elapsed_ms(job: &JobSnapshot) -> Option<i64> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::CreateJobInput;
+    use crate::models::{job_stage_str, CreateJobInput, JobStage};
 
     fn job() -> JobSnapshot {
         JobSnapshot::new(
@@ -450,7 +450,7 @@ mod tests {
         let previous = job();
         let mut current = previous.clone();
         current.status = JobStatusKind::Running;
-        current.stage = Some("translating".to_string());
+        current.stage = Some(job_stage_str(JobStage::Translating).to_string());
         current.stage_detail = Some("正在翻译".to_string());
         current.request_payload.ocr.provider = "paddle".to_string();
         current.started_at = Some("2026-04-11T00:00:00Z".to_string());
@@ -489,7 +489,7 @@ mod tests {
         let previous = job();
         let mut current = previous.clone();
         current.status = JobStatusKind::Failed;
-        current.stage = Some("failed".to_string());
+        current.stage = Some(job_stage_str(JobStage::Failed).to_string());
         current.stage_detail = Some("provider timeout".to_string());
         current.error = Some("ReadTimeout".to_string());
         current.replace_failure_info(Some(crate::models::JobFailureInfo {

@@ -1,22 +1,22 @@
 import { buildFrontendPageUrl } from "./config.js";
-import { DEFAULT_FILE_LABEL } from "./constants.js";
-import { $ } from "./dom.js";
 import {
   hasReadyManifestArtifact,
   resolveManifestArtifactUrl,
 } from "./job-artifacts.js";
 import { resolveJobActions } from "./job.js";
-import { state } from "./state.js";
+import {
+  clearFileInputValueView,
+  resetUploadedFileView,
+  resetUploadProgressView,
+  setActionLinkView,
+  setLinearProgressView,
+  setStatusCardCancelEnabled,
+  setUploadProgressView,
+} from "./job-ui-actions-view.js";
+import { resetUploadState, state } from "./state.js";
 
 export function setActionLink(id, url, enabled) {
-  const el = $(id);
-  if (!el) {
-    return;
-  }
-  el.href = enabled && url ? url : "#";
-  el.dataset.url = enabled && url ? url : "";
-  el.classList.toggle("disabled", !enabled);
-  el.setAttribute("aria-disabled", enabled ? "false" : "true");
+  setActionLinkView(id, url, enabled);
 }
 
 export function buildReaderPageUrl(jobId) {
@@ -54,97 +54,30 @@ export function updateActionButtons(job, manifestPayload = null) {
   const readerEnabled = isReaderActionEnabled(job, manifestPayload);
   setActionLink("reader-btn", buildReaderPageUrl(job?.job_id), readerEnabled);
   setActionLink("compare-reader-btn", buildReaderPageUrl(job?.job_id), readerEnabled);
-  const statusCard = document.querySelector("job-status-card");
-  if (statusCard?.setCancelEnabled && !statusCard?.renderSnapshot) {
-    statusCard.setCancelEnabled(actions.cancelEnabled && !!actions.cancel);
-  } else {
-    $("cancel-btn").disabled = !(actions.cancelEnabled && !!actions.cancel);
-  }
+  setStatusCardCancelEnabled(actions.cancelEnabled && !!actions.cancel);
 }
 
 export function setLinearProgress(barId, textId, current, total, fallbackText = "-", percentOverride = null) {
-  if (barId === "job-progress-bar" && textId === "job-progress-text") {
-    const statusCard = document.querySelector("job-status-card");
-    if (statusCard?.setProgress && !statusCard?.renderSnapshot) {
-      statusCard.setProgress({
-        current,
-        total,
-        fallbackText,
-        percent: percentOverride,
-      });
-      return;
-    }
-  }
-  const bar = $(barId);
-  const text = $(textId);
-  const hasNumbers = Number.isFinite(current) && Number.isFinite(total) && total > 0;
-  if (!hasNumbers) {
-    bar.style.width = "0%";
-    text.textContent = fallbackText;
-    return;
-  }
-  const computedPercent = (current / total) * 100;
-  const percent = Math.max(0, Math.min(100, Number.isFinite(percentOverride) ? percentOverride : computedPercent));
-  bar.style.width = `${percent}%`;
-  text.textContent = `${current} / ${total} (${percent.toFixed(0)}%)`;
+  setLinearProgressView(barId, textId, current, total, fallbackText, percentOverride);
 }
 
 export function setUploadProgress(loaded, total) {
-  const panel = $("upload-progress-panel");
-  panel.classList.remove("hidden");
-  const tile = $("file")?.closest(".upload-tile");
-  tile?.classList.add("is-uploading");
-  tile?.classList.remove("is-ready");
-  $("upload-action-slot")?.classList.add("hidden");
-  const hasNumbers = Number.isFinite(loaded) && Number.isFinite(total) && total > 0;
-  const fill = $("upload-fill");
-  if (hasNumbers) {
-    const percent = Math.max(0, Math.min(100, (loaded / total) * 100));
-    if (fill) {
-      fill.style.width = `${percent}%`;
-    }
-    $("upload-progress-text").textContent = `上传中 ${percent.toFixed(0)}%`;
-    return;
-  }
-  if (fill) {
-    fill.style.width = "18%";
-  }
-  $("upload-progress-text").textContent = "上传中";
+  setUploadProgressView(loaded, total);
 }
 
 export function resetUploadProgress() {
-  $("upload-progress-panel").classList.add("hidden");
-  const tile = $("file")?.closest(".upload-tile");
-  tile?.classList.remove("is-uploading");
-  const fill = $("upload-fill");
-  if (fill) {
-    fill.style.width = "0%";
-  }
-  $("upload-progress-text").textContent = "上传中";
+  resetUploadProgressView();
 }
 
 export function clearFileInputValue() {
-  const input = $("file");
-  if (input) {
-    input.value = "";
-  }
+  clearFileInputValueView();
 }
 
 export function resetUploadedFile() {
-  state.uploadId = "";
-  state.uploadedFileName = "";
-  state.uploadedPageCount = 0;
-  state.uploadedBytes = 0;
+  resetUploadState(state, { includePageRange: false });
   state.currentJobStartedAt = "";
   state.currentJobFinishedAt = "";
-  $("file").value = "";
-  $("submit-btn").disabled = true;
-  $("upload-action-slot")?.classList.add("hidden");
-  $("file")?.closest(".upload-tile")?.classList.remove("is-ready");
-  $("upload-status").textContent = "未上传文件";
-  $("upload-status")?.classList.add("hidden");
-  $("file-label").textContent = DEFAULT_FILE_LABEL;
-  $("file-label").title = "";
+  resetUploadedFileView();
 }
 
 export function prepareFilePicker() {

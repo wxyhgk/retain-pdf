@@ -11,7 +11,7 @@ REPO_SCRIPTS_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
 
-from services.rendering.redaction.margin_text_cleanup import cleanup_margin_text_blocks
+from services.rendering.source.cleanup.margin_text_cleanup import cleanup_margin_text_blocks
 
 
 def test_cleanup_margin_text_blocks_removes_header_and_footer_only() -> None:

@@ -2,6 +2,8 @@
 
 除 `GET /health` 外，下面接口都需要 `X-API-Key`。
 
+更完整的后端读法和字段语义，请看 [Rust API 说明](../rust_api/README.md)。
+
 ## 健康检查
 
 - `GET /health`

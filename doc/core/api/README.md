@@ -1,23 +1,24 @@
 # API 文档
 
-这里记录 RetainPDF 当前真实对外 API。文档口径以 Rust 路由、前端实际调用和 Docker 交付配置为准。
+这里放 Rust 后端的对外接口总索引。真正详细的联调口径优先看 [Rust API 说明](../rust_api/README.md)。
 
 ## 阅读顺序
 
 1. [服务总览](./overview.md)
-2. [本地启动与配置](./local-dev.md)
-3. [接口说明](./endpoints.md)
-4. [后端 API 主文档](./backend.md)
-5. [存储结构](./storage.md)
-6. [错误排查](./troubleshooting.md)
-7. [Rust API 联调说明](../rust_api/README.md)
+2. [接口说明](./endpoints.md)
+3. [后端 API 主文档](./backend.md)
+4. [存储结构](./storage.md)
+5. [错误排查](./troubleshooting.md)
+6. [本地启动与配置](./local-dev.md)
+7. [Rust API 说明](../rust_api/README.md)
 
-## 当前核心约定
+## 核心约定
 
-- 除 `GET /health` 外，`/api/v1/*` 默认都需要 `X-API-Key`。
-- `POST /api/v1/jobs` 只接受 grouped JSON：`source / ocr / translation / render / runtime`。
-- 旧扁平字段只保留在 multipart 辅助入口，例如 OCR-only 和 `POST /api/v1/translate/bundle`。
-- 前端状态和下载按钮应优先读取 `actions`、`artifacts`、`artifacts-manifest`，不要只靠 `status` 推断文件是否可用。
+- 除 `GET /health` 外，业务接口默认都需要 `X-API-Key`
+- `POST /api/v1/jobs` 只接受 grouped JSON
+- 旧扁平字段只保留在少数 multipart 辅助入口
+- 前端按钮状态优先读 `actions` 和 `artifacts`
+- 任务详情和事件流的详细语义优先看 `doc/core/rust_api`
 
 ## 实现参考
 

@@ -5,12 +5,12 @@ import math
 
 import fitz
 
-from services.rendering.compress.analysis import source_pdf_has_vector_graphics
-from services.rendering.redaction.redaction import item_has_removable_text
-from services.rendering.redaction.document_ops import page_has_editable_text
-from services.rendering.redaction.document_ops import page_is_pseudo_editable_scan
-from services.rendering.redaction.shared import iter_valid_translated_items
-from services.rendering.redaction.shared import normalize_words
+from services.rendering.source.compression.analysis import source_pdf_has_vector_graphics
+from services.rendering.source.cleanup.redaction import item_has_removable_text
+from services.rendering.source.cleanup.document_ops import page_has_editable_text
+from services.rendering.source.cleanup.document_ops import page_is_pseudo_editable_scan
+from services.rendering.source.cleanup.shared import iter_valid_translated_items
+from services.rendering.source.cleanup.shared import normalize_words
 
 
 AUTO_OVERLAY_MIN_ITEMS = 8

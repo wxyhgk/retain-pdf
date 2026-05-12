@@ -1,193 +1,27 @@
 from __future__ import annotations
 
 import json
-import re
 import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-
-MEMORY_VERSION = 1
-MAX_SUMMARY_TERMS = 20
-MAX_SUMMARY_PRESERVE_HINTS = 8
-MAX_RETRIEVED_SUMMARY_TERMS = 8
-MAX_RETRIEVED_PRESERVE_HINTS = 2
-MAX_TERM_RECORDS = 160
-MAX_PRESERVE_HINT_RECORDS = 80
-MIN_TERM_HITS_FOR_PROMPT = 1
-MAX_TRANSLATED_TERM_VALUE_CHARS = 12
-MAX_TRANSLATED_TERM_VALUE_CJK = 8
-MAX_TERM_KEY_WORDS_FOR_PROMPT = 4
-TERM_VALUE_BLOCKLIST_WORDS = {"的", "已", "将", "被", "从", "在", "这", "其"}
-
-TERM_PAIR_PATTERNS = (
-    re.compile(r"(?P<zh>[\u4e00-\u9fff][\u4e00-\u9fffA-Za-z0-9·\-]{1,24})（(?:或称|又称|简称)?(?P<en>[A-Za-z][A-Za-z0-9 ._+/\-]{1,48})）"),
-    re.compile(r"(?P<zh>[\u4e00-\u9fff][\u4e00-\u9fffA-Za-z0-9·\-]{1,24})\((?:or |also known as )?(?P<en>[A-Za-z][A-Za-z0-9 ._+/\-]{1,48})\)"),
-    re.compile(r"(?P<zh>[\u4e00-\u9fff][\u4e00-\u9fffA-Za-z0-9·\-]{1,24})（(?P<en>[A-Za-z][A-Za-z0-9 ._+/\-]{1,48})）"),
-)
-TECH_TOKEN_RE = re.compile(r"\b[A-Z][A-Za-z0-9]*(?:[-_/][A-Za-z0-9]+)*(?:\s+[A-Z][A-Za-z0-9]*(?:[-_/][A-Za-z0-9]+)*){0,3}\b")
-
-
-def _normalize_space(text: object) -> str:
-    return re.sub(r"\s+", " ", str(text or "")).strip()
-
-
-def _source_text_from_item(item: dict[str, Any]) -> str:
-    return _normalize_space(
-        item.get("translation_unit_protected_source_text")
-        or item.get("protected_source_text")
-        or item.get("source_text")
-        or item.get("text")
-        or ""
-    )
-
-
-def _source_text_for_batch(batch: list[dict]) -> str:
-    return "\n".join(_source_text_from_item(item) for item in batch if _source_text_from_item(item)).strip()
-
-
-def _term_key_matches_source(key: str, source_text: str) -> bool:
-    cleaned_key = _clean_term_key(key)
-    cleaned_source = _normalize_space(source_text)
-    if not cleaned_key or not cleaned_source:
-        return False
-    if not re.search(r"[A-Za-z0-9]", cleaned_key):
-        return cleaned_key.lower() in cleaned_source.lower()
-    escaped_key = re.escape(cleaned_key).replace(r"\ ", r"\s+")
-    pattern = re.compile(
-        rf"(?<![A-Za-z0-9]){escaped_key}(?![A-Za-z0-9])",
-        re.IGNORECASE,
-    )
-    return bool(pattern.search(cleaned_source))
-
-
-def _preserve_hint_matches_source(hint: str, source_text: str) -> bool:
-    cleaned_hint = _normalize_space(hint).lower()
-    cleaned_source = _normalize_space(source_text).lower()
-    if not cleaned_hint or not cleaned_source:
-        return False
-    if cleaned_hint in cleaned_source or cleaned_source in cleaned_hint:
-        return True
-    hint_lines = [line.strip().lower() for line in str(hint or "").splitlines() if len(line.strip()) >= 8]
-    source_lines = {line.strip().lower() for line in str(source_text or "").splitlines() if len(line.strip()) >= 8}
-    return any(line in source_lines for line in hint_lines)
-
-
-def _clean_term_key(text: str) -> str:
-    cleaned = _normalize_space(text)
-    cleaned = cleaned.strip(" ,.;:()[]{}，。；：（）【】")
-    return cleaned[:80]
-
-
-def _clean_term_value(text: str) -> str:
-    cleaned = _normalize_space(text)
-    cleaned = cleaned.strip(" ,.;:()[]{}，。；：（）【】")
-    return cleaned[:80]
-
-
-def _looks_like_useful_term_key(key: str) -> bool:
-    if len(key) < 2:
-        return False
-    if key.lower() in {"or", "and", "the", "from", "with", "for", "this", "that"}:
-        return False
-    return any(ch.isalpha() for ch in key)
-
-
-def _looks_like_useful_term_value(value: str) -> bool:
-    return bool(value and re.search(r"[\u4e00-\u9fff]", value))
-
-
-def _cjk_count(text: str) -> int:
-    return len(re.findall(r"[\u4e00-\u9fff]", text or ""))
-
-
-def _is_identity_term(key: str, value: str) -> bool:
-    return _clean_term_key(key).lower() == _clean_term_value(value).lower()
-
-
-def _looks_like_noun_phrase(value: str) -> bool:
-    cleaned = _clean_term_value(value)
-    if not _fallback_looks_like_noun_phrase(cleaned):
-        return False
-    if any(word in cleaned for word in TERM_VALUE_BLOCKLIST_WORDS):
-        return False
-    return True
-
-
-def _fallback_looks_like_noun_phrase(value: str) -> bool:
-    cleaned = _clean_term_value(value)
-    if not cleaned:
-        return False
-    if re.search(r"[，。；：、,.!?！？]", cleaned):
-        return False
-    return len(cleaned) <= MAX_TRANSLATED_TERM_VALUE_CHARS and _cjk_count(cleaned) <= MAX_TRANSLATED_TERM_VALUE_CJK
-
-
-def _term_key_allowed_in_prompt(key: str) -> bool:
-    cleaned = _clean_term_key(key)
-    if not _looks_like_useful_term_key(cleaned):
-        return False
-    if len(cleaned.split()) > MAX_TERM_KEY_WORDS_FOR_PROMPT:
-        return False
-    return True
-
-
-def _translated_value_allowed_in_prompt(value: str) -> bool:
-    cleaned = _clean_term_value(value)
-    if not _looks_like_useful_term_value(cleaned):
-        return False
-    if len(cleaned) > MAX_TRANSLATED_TERM_VALUE_CHARS:
-        return False
-    if _cjk_count(cleaned) > MAX_TRANSLATED_TERM_VALUE_CJK:
-        return False
-    return _looks_like_noun_phrase(cleaned)
-
-
-def _term_record_allowed_in_prompt(record: dict[str, Any]) -> bool:
-    key = _clean_term_key(str(record.get("key") or ""))
-    value = _clean_term_value(str(record.get("value") or ""))
-    if not _term_key_allowed_in_prompt(key) or not value:
-        return False
-    if _is_identity_term(key, value):
-        return True
-    return _translated_value_allowed_in_prompt(value)
-
-
-def _is_preserve_candidate(source_text: str) -> bool:
-    text = source_text.strip()
-    if not text:
-        return False
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    if len(lines) >= 2:
-        symbolic_lines = sum(1 for line in lines if re.search(r"^(?:[$>#]|[-*]\s+|\|[-\w .]+|[A-Za-z_][\w.-]*\s*=)", line))
-        if symbolic_lines >= max(1, len(lines) // 2):
-            return True
-    if re.search(r"^\s*(?:[$>#]\s*\w+|[A-Za-z_][\w.-]*\s*=\s*\S+)", text):
-        return True
-    if re.search(r"\b(?:Default|Type|Input|Output|Usage|Example)\s*:\s*\\?<?[A-Z0-9_./-]+>?$", text):
-        return True
-    return False
-
-
-def _extract_term_candidates(source_text: str, translated_text: str) -> list[tuple[str, str]]:
-    translated = _normalize_space(translated_text)
-    candidates: list[tuple[str, str]] = []
-    for pattern in TERM_PAIR_PATTERNS:
-        for match in pattern.finditer(translated):
-            key = _clean_term_key(match.group("en"))
-            value = _clean_term_value(match.group("zh"))
-            if _looks_like_useful_term_key(key) and _looks_like_useful_term_value(value):
-                candidates.append((key, value))
-
-    source_tokens = [_clean_term_key(match.group(0)) for match in TECH_TOKEN_RE.finditer(source_text or "")]
-    translated_lower = translated.lower()
-    for token in source_tokens[:24]:
-        if not _looks_like_useful_term_key(token):
-            continue
-        if token.lower() in translated_lower:
-            candidates.append((token, token))
-    return candidates
+from services.translation.memory.candidates import extract_term_candidates
+from services.translation.memory.constants import MAX_PRESERVE_HINT_RECORDS
+from services.translation.memory.constants import MAX_RETRIEVED_PRESERVE_HINTS
+from services.translation.memory.constants import MAX_RETRIEVED_SUMMARY_TERMS
+from services.translation.memory.constants import MAX_TERM_RECORDS
+from services.translation.memory.constants import MEMORY_VERSION
+from services.translation.memory.filters import is_preserve_candidate
+from services.translation.memory.filters import looks_like_useful_term_key
+from services.translation.memory.filters import looks_like_useful_term_value
+from services.translation.memory.filters import term_record_allowed_in_prompt
+from services.translation.memory.summary import build_prompt_summary
+from services.translation.memory.summary import build_prompt_summary_for_source
+from services.translation.memory.text import clean_term_key
+from services.translation.memory.text import clean_term_value
+from services.translation.memory.text import normalize_space
+from services.translation.memory.text import source_text_for_batch
 
 
 @dataclass
@@ -219,9 +53,9 @@ class JobMemory:
         }
 
     def add_term(self, *, key: str, value: str, source: str) -> bool:
-        normalized_key = _clean_term_key(key)
-        normalized_value = _clean_term_value(value)
-        if not _looks_like_useful_term_key(normalized_key) or not normalized_value:
+        normalized_key = clean_term_key(key)
+        normalized_value = clean_term_value(value)
+        if not looks_like_useful_term_key(normalized_key) or not normalized_value:
             return False
         record = self.terms.setdefault(
             normalized_key,
@@ -232,19 +66,19 @@ class JobMemory:
                 "sources": [],
             },
         )
-        existing_value = _clean_term_value(str(record.get("value") or ""))
-        if _looks_like_useful_term_value(normalized_value) or not _looks_like_useful_term_value(existing_value):
+        existing_value = clean_term_value(str(record.get("value") or ""))
+        if looks_like_useful_term_value(normalized_value) or not looks_like_useful_term_value(existing_value):
             record["value"] = normalized_value
         record["hits"] = int(record.get("hits") or 0) + 1
         sources = list(record.get("sources") or [])
         if source and source not in sources:
             sources.append(source)
         record["sources"] = sources[-8:]
-        record["prompt_eligible"] = _term_record_allowed_in_prompt(record)
+        record["prompt_eligible"] = term_record_allowed_in_prompt(record)
         return True
 
     def add_preserve_hint(self, *, key: str, source: str) -> bool:
-        normalized_key = _normalize_space(key)[:120]
+        normalized_key = normalize_space(key)[:120]
         if not normalized_key:
             return False
         record = self.preserve_hints.setdefault(
@@ -279,31 +113,7 @@ class JobMemory:
         )
 
     def prompt_summary(self) -> str:
-        lines: list[str] = []
-        term_records = [
-            record
-            for record in self.terms.values()
-            if int(record.get("hits") or 0) >= MIN_TERM_HITS_FOR_PROMPT
-            and _term_record_allowed_in_prompt(record)
-        ]
-        term_records = sorted(term_records, key=lambda record: (-int(record.get("hits") or 0), str(record.get("key") or "")))
-        if term_records:
-            lines.append("当前文档记忆：术语保持一致。")
-            for record in term_records[:MAX_SUMMARY_TERMS]:
-                key = _clean_term_key(str(record.get("key") or ""))
-                value = _clean_term_value(str(record.get("value") or ""))
-                if key and value:
-                    lines.append(f"- {key} => {value}")
-
-        preserve_records = sorted(
-            self.preserve_hints.values(),
-            key=lambda record: (-int(record.get("hits") or 0), str(record.get("key") or "")),
-        )
-        if preserve_records:
-            lines.append("当前文档记忆：以下类型更可能是技术原文/代码/参数块，应优先保留排版和符号。")
-            for record in preserve_records[:MAX_SUMMARY_PRESERVE_HINTS]:
-                lines.append(f"- {str(record.get('key') or '')}")
-        return "\n".join(lines).strip()
+        return build_prompt_summary(self.terms, self.preserve_hints)
 
     def prompt_summary_for_source(
         self,
@@ -312,49 +122,13 @@ class JobMemory:
         max_terms: int = MAX_RETRIEVED_SUMMARY_TERMS,
         max_preserve_hints: int = MAX_RETRIEVED_PRESERVE_HINTS,
     ) -> str:
-        source = _normalize_space(source_text)
-        if not source:
-            return ""
-
-        matched_terms = [
-            record
-            for record in self.terms.values()
-            if int(record.get("hits") or 0) >= MIN_TERM_HITS_FOR_PROMPT
-            and _term_record_allowed_in_prompt(record)
-            and _term_key_matches_source(str(record.get("key") or ""), source)
-        ]
-        matched_terms = sorted(
-            matched_terms,
-            key=lambda record: (
-                -int(record.get("hits") or 0),
-                -len(_clean_term_key(str(record.get("key") or ""))),
-                str(record.get("key") or ""),
-            ),
+        return build_prompt_summary_for_source(
+            self.terms,
+            self.preserve_hints,
+            source_text,
+            max_terms=max_terms,
+            max_preserve_hints=max_preserve_hints,
         )
-
-        lines: list[str] = []
-        if matched_terms:
-            lines.append("当前块相关文档记忆：术语保持一致。")
-            for record in matched_terms[:max_terms]:
-                key = _clean_term_key(str(record.get("key") or ""))
-                value = _clean_term_value(str(record.get("value") or ""))
-                if key and value:
-                    lines.append(f"- {key} => {value}")
-
-        matched_preserve_hints = [
-            record
-            for record in self.preserve_hints.values()
-            if _preserve_hint_matches_source(str(record.get("key") or ""), source)
-        ]
-        matched_preserve_hints = sorted(
-            matched_preserve_hints,
-            key=lambda record: (-int(record.get("hits") or 0), str(record.get("key") or "")),
-        )
-        if matched_preserve_hints:
-            lines.append("当前块相关文档记忆：以下内容此前更适合保留技术排版。")
-            for record in matched_preserve_hints[:max_preserve_hints]:
-                lines.append(f"- {str(record.get('key') or '')}")
-        return "\n".join(lines).strip()
 
 
 class JobMemoryStore:
@@ -392,7 +166,7 @@ class JobMemoryStore:
             return self.load().prompt_summary_for_source(source_text)
 
     def summary_for_batch(self, batch: list[dict]) -> str:
-        return self.summary_for_source(_source_text_for_batch(batch))
+        return self.summary_for_source(source_text_for_batch(batch))
 
     def update_from_batch(self, batch: list[dict], translated: dict[str, dict[str, Any]]) -> int:
         with self._lock:
@@ -413,14 +187,14 @@ def update_job_memory_from_batch(
     for item in batch:
         item_id = str(item.get("item_id") or "")
         result = translated.get(item_id) or {}
-        translated_text = _normalize_space(
+        translated_text = normalize_space(
             result.get("protected_translated_text")
             or result.get("translated_text")
             or item.get("protected_translated_text")
             or item.get("translated_text")
             or ""
         )
-        source_text = _normalize_space(
+        source_text = normalize_space(
             item.get("translation_unit_protected_source_text")
             or item.get("protected_source_text")
             or item.get("source_text")
@@ -428,10 +202,10 @@ def update_job_memory_from_batch(
         )
         if not source_text or not translated_text:
             continue
-        for key, value in _extract_term_candidates(source_text, translated_text):
+        for key, value in extract_term_candidates(source_text, translated_text):
             if memory.add_term(key=key, value=value, source=item_id):
                 changed += 1
-        if _is_preserve_candidate(source_text):
+        if is_preserve_candidate(source_text):
             hint = source_text if len(source_text) <= 80 else f"{source_text[:77]}..."
             if memory.add_preserve_hint(key=hint, source=item_id):
                 changed += 1

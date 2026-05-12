@@ -38,7 +38,7 @@ pub(super) async fn download_and_unpack_after_success(
         .clone()
         .ok_or_else(|| anyhow!("provider_raw_dir path missing"))?;
     ocr_provider_diagnostics_mut(job).artifacts.full_zip_url = Some(full_zip_url.to_string());
-    job.stage = Some("translation_prepare".to_string());
+    job.stage = Some("ocr_result_ready".to_string());
     job.stage_detail = Some("OCR provider 结果已就绪，正在下载原始 bundle".to_string());
     job.updated_at = crate::models::now_iso();
     save_ocr_job(deps, job, parent_job_id).await?;
@@ -56,7 +56,7 @@ pub(super) async fn download_and_unpack_after_success(
         job.append_log(&format!(
             "MinerU bundle readiness probe degraded for {full_zip_url}, switching to direct download retries"
         ));
-        job.stage = Some("translation_prepare".to_string());
+        job.stage = Some("ocr_result_ready".to_string());
         job.stage_detail =
             Some("OCR provider bundle 可达性探测未稳定，通过真实下载继续兜底".to_string());
         job.updated_at = crate::models::now_iso();
@@ -104,7 +104,7 @@ async fn wait_for_mineru_bundle_ready(
                         "MinerU bundle readiness probe degraded after {attempt} attempts and {elapsed_secs}s: {full_zip_url}; fallback to direct download. error: {}",
                         err
                     ));
-                    job.stage = Some("translation_prepare".to_string());
+                    job.stage = Some("ocr_result_ready".to_string());
                     job.stage_detail = Some(
                         "OCR provider bundle 探测连续异常，改为直接下载并按下载重试策略兜底"
                             .to_string(),
@@ -141,7 +141,7 @@ async fn wait_for_mineru_bundle_ready(
                     "MinerU bundle readiness wait {attempt}/{MINERU_BUNDLE_READY_RETRY_LIMIT}: {full_zip_url} after error: {}",
                     err
                 ));
-                job.stage = Some("translation_prepare".to_string());
+                job.stage = Some("ocr_result_ready".to_string());
                 job.stage_detail = Some(format!(
                     "OCR provider 已返回 done，bundle 尚未就绪，{delay_secs}s 后重试（第 {attempt}/{MINERU_BUNDLE_READY_RETRY_LIMIT} 次）"
                 ));
@@ -201,7 +201,7 @@ async fn download_mineru_bundle_with_retry(
                     "MinerU download bundle retry {attempt}/{MINERU_BUNDLE_DOWNLOAD_RETRY_LIMIT}: {full_zip_url} after error: {}",
                     err
                 ));
-                job.stage = Some("translation_prepare".to_string());
+                job.stage = Some("ocr_result_ready".to_string());
                 job.stage_detail = Some(format!(
                     "OCR provider bundle 下载异常，{delay_secs}s 后重试（第 {attempt}/{MINERU_BUNDLE_DOWNLOAD_RETRY_LIMIT} 次）"
                 ));

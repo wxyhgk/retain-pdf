@@ -1,8 +1,8 @@
 @layer components {
   .status-ring-shell {
-    @apply mt-1 flex flex-col items-center;
+    @apply flex flex-col items-center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
     min-height: 100%;
     height: 100%;
@@ -10,18 +10,42 @@
 
   .status-focus-card {
     width: min(100%, 520px);
-    min-height: 210px;
-    height: 210px;
-    display: flex;
-    flex-direction: column;
+    min-height: 308px;
+    height: 308px;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
     align-items: center;
-    justify-content: flex-start;
     gap: 8px;
-    padding: 18px 18px 14px;
+    padding: 16px 18px 12px;
     border-radius: 28px;
     background: #fff;
     border: 1px solid #f1f1f4;
     text-align: center;
+  }
+
+  .status-focus-top,
+  .status-focus-body {
+    width: 100%;
+  }
+
+  .status-focus-top {
+    display: grid;
+    justify-items: center;
+  }
+
+  .status-focus-body {
+    min-height: 0;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 7px;
+  }
+
+  .status-card-footer {
+    width: min(100%, 520px);
+    min-height: 34px;
+    display: grid;
+    place-items: center;
   }
 
   .status-stage-flow {
@@ -32,6 +56,8 @@
   }
 
   .status-stage-step {
+    appearance: none;
+    border: 0;
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -44,11 +70,12 @@
     font-weight: 650;
     letter-spacing: -0.01em;
     transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
   }
 
   .status-stage-step.is-done {
-    background: #1d1d1f;
-    color: #fff;
+    background: #ececf1;
+    color: #3a3a3c;
   }
 
   .status-stage-step.is-active {
@@ -57,10 +84,20 @@
     box-shadow: 0 8px 18px rgba(29, 29, 31, 0.14);
   }
 
+  .status-stage-step.is-selected {
+    outline: 2px solid rgba(29, 29, 31, 0.24);
+    outline-offset: 2px;
+  }
+
+  .status-stage-step.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.52;
+  }
+
   .status-ring-label {
-    @apply text-[13px] font-semibold;
+    @apply text-[14px] font-semibold;
     color: #1d1d1f;
-    min-height: 20px;
+    min-height: 22px;
     display: flex;
     align-items: center;
   }
@@ -69,7 +106,18 @@
     @apply max-w-[340px] text-[15px] font-medium leading-6;
     color: var(--muted);
     letter-spacing: -0.01em;
-    min-height: 48px;
+    min-height: 24px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .status-stage-detail {
+    @apply text-[12px] font-medium;
+    color: #6e6e73;
+    min-height: 18px;
+    max-width: 340px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -77,11 +125,49 @@
   }
 
   .status-ring-elapsed {
-    @apply text-[13px] font-medium;
-    color: var(--muted);
-    min-height: 20px;
+    @apply text-[13px] font-semibold;
+    color: #1d1d1f;
+    min-height: 34px;
     display: flex;
     align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .status-stage-animation {
+    width: min(100%, 380px);
+    height: 132px;
+    display: grid;
+    place-items: center;
+    overflow: visible;
+  }
+
+  .status-stage-animation.hidden {
+    display: none;
+  }
+
+  .status-stage-lottie {
+    width: 236px;
+    height: 140px;
+  }
+
+  .status-stage-lottie.is-fallback {
+    width: 84px;
+    height: 84px;
+    border-radius: 999px;
+    border: 2px solid rgba(29, 29, 31, 0.12);
+    border-top-color: #1d1d1f;
+    animation: status-translation-spin 0.9s linear infinite;
+  }
+
+  .status-card.has-stage-animation .status-focus-card {
+    gap: 7px;
+  }
+
+  .status-card.has-stage-animation .status-progress-block {
+    width: min(100%, 380px);
+    min-height: 38px;
+    margin-top: 0;
   }
 
   .status-progress-block {
@@ -91,6 +177,10 @@
     margin-top: 2px;
     min-height: 40px;
     align-content: start;
+  }
+
+  .status-progress-block.hidden {
+    display: none;
   }
 
   .status-progress-text {
@@ -112,31 +202,92 @@
     width: 0%;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #8fd3ff 0%, #41a1ff 35%, #0071e3 100%);
+    background: linear-gradient(90deg, #6e6e73 0%, #3a3a3c 45%, #1d1d1f 100%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
     transition: width 0.25s ease;
   }
 
-  .status-action-stack {
+  @keyframes status-translation-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .status-head {
     display: grid;
-    justify-items: center;
-    gap: 6px;
-    width: 100%;
-    min-height: 44px;
-    height: 44px;
+    grid-template-columns: minmax(92px, 1fr) auto minmax(92px, 1fr);
+    align-items: center;
+    gap: 10px;
+    width: min(100%, 520px);
+    margin: 0 auto 8px;
+  }
+
+  .status-head-btn {
+    min-height: 34px;
+    padding-inline: 12px;
+    font-size: 12px;
+  }
+
+  .status-head-cancel {
+    justify-self: start;
+  }
+
+  .status-head-home {
+    justify-self: end;
   }
 
   .status-ring-actions {
     @apply flex flex-wrap items-center justify-center;
   }
 
-  .status-ring-downloads {
-    @apply flex flex-wrap items-center justify-center;
-    min-height: 44px;
+  .status-result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 38px;
+    width: 100%;
   }
 
-  .status-ring-actions .task-toolbar,
-  .status-ring-downloads.task-toolbar {
+  .status-substage-flow {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    width: min(100%, 380px);
+  }
+
+  .status-substage-flow.hidden {
+    display: none;
+  }
+
+  .status-substage-step {
+    min-height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #f5f5f7;
+    color: #8a8a90;
+    font-size: 11px;
+    font-weight: 650;
+  }
+
+  .status-substage-step.is-done {
+    background: #ececf1;
+    color: #3a3a3c;
+  }
+
+  .status-substage-step.is-active {
+    background: #1d1d1f;
+    color: #fff;
+  }
+
+  .status-result-actions.hidden {
+    display: none;
+  }
+
+  .status-ring-actions .task-toolbar {
     gap: 4px;
   }
 
@@ -145,22 +296,22 @@
   }
 
   .status-ring-actions .task-toolbar-btn,
-  .status-ring-downloads .task-toolbar-btn,
-  .status-ring-downloads .button-link {
+  .status-result-actions .task-toolbar-btn,
+  .status-result-actions .button-link {
     min-height: 34px;
     padding-inline: 12px;
     font-size: 12px;
   }
 
-  .status-ring-downloads .task-toolbar-btn,
-  .status-ring-downloads .button-link {
+  .status-result-actions .task-toolbar-btn,
+  .status-result-actions .button-link {
     background: #fff;
     color: #1d1d1f;
     border-color: #d2d2d7;
     box-shadow: none;
   }
 
-  .status-ring-downloads #status-detail-btn {
+  .status-card-footer #status-detail-btn {
     min-height: 30px;
     padding-inline: 10px;
     color: #6e6e73;
@@ -168,17 +319,26 @@
     background: transparent;
   }
 
-  .status-ring-downloads .task-toolbar-btn-result {
+  .status-card-footer {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .status-card-footer .status-result-actions {
+    justify-self: center;
+  }
+
+  .status-result-actions .task-toolbar-btn-result {
     min-height: 38px;
     padding-inline: 14px;
     font-weight: 650;
     border-color: #1d1d1f;
   }
 
-  .status-ring-downloads .task-toolbar-btn:active:not(:disabled),
-  .status-ring-downloads .button-link:active:not(.disabled),
-  .status-ring-downloads .task-toolbar-btn.is-active,
-  .status-ring-downloads .button-link.is-active {
+  .status-result-actions .task-toolbar-btn:active:not(:disabled),
+  .status-result-actions .button-link:active:not(.disabled),
+  .status-result-actions .task-toolbar-btn.is-active,
+  .status-result-actions .button-link.is-active {
     background: #1d1d1f;
     color: #fff;
     border-color: #1d1d1f;
@@ -187,9 +347,9 @@
   @media (max-width: 767px) {
     .status-focus-card {
       width: min(100%, 360px, calc(100vw - 3rem));
-      padding: 14px 14px 12px;
-      min-height: 216px;
-      height: 216px;
+      padding: 14px 14px 10px;
+      min-height: 308px;
+      height: 308px;
     }
   }
 }

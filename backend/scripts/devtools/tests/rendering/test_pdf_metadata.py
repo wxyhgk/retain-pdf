@@ -10,7 +10,9 @@ REPO_SCRIPTS_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
 
-from services.rendering.pdf_metadata import copy_toc
+from services.rendering.document.metadata import copy_toc
+from services.rendering.document.metadata import copy_toc_for_page_map
+from services.rendering.document.page_map import RenderPageMap
 
 
 def _make_doc_with_toc() -> fitz.Document:
@@ -72,6 +74,25 @@ def test_copy_toc_keeps_single_page_bookmark() -> None:
 
         assert copied == 1
         assert target.get_toc() == [[1, "Chapter 2", 1]]
+    finally:
+        target.close()
+        source.close()
+
+
+def test_copy_toc_for_page_map_preserves_non_contiguous_selected_pages() -> None:
+    source = _make_doc_with_toc()
+    target = fitz.open()
+    try:
+        target.insert_pdf(source, from_page=0, to_page=0)
+        target.insert_pdf(source, from_page=2, to_page=2)
+
+        copied = copy_toc_for_page_map(source, target, page_map=RenderPageMap(source_page_indices=[0, 2]))
+
+        assert copied == 2
+        assert target.get_toc() == [
+            [1, "Chapter 1", 1],
+            [1, "Chapter 2", 2],
+        ]
     finally:
         target.close()
         source.close()

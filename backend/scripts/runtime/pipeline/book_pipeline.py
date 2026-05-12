@@ -16,6 +16,31 @@ from services.translation.diagnostics import write_translation_diagnostics
 from services.translation.terms import GlossaryEntry
 
 
+ALLOWED_UNTRANSLATED_ROUTE_NAMES = {
+    "fast_path_keep_origin",
+}
+ALLOWED_UNTRANSLATED_REASONS = {
+    "code",
+    "keep_origin",
+    "no_trans",
+    "skip_display_formula",
+    "skip_model_keep_origin",
+}
+
+
+def _item_allowed_untranslated(item: dict, diagnostics: dict) -> bool:
+    route_path = {str(route or "").strip() for route in diagnostics.get("route_path") or []}
+    if route_path & ALLOWED_UNTRANSLATED_ROUTE_NAMES:
+        return True
+    reasons = {
+        str(item.get("skip_reason", "") or "").strip(),
+        str(item.get("classification_label", "") or "").strip(),
+        str(diagnostics.get("degradation_reason", "") or "").strip(),
+        str(diagnostics.get("fallback_to", "") or "").strip(),
+    }
+    return bool(reasons & ALLOWED_UNTRANSLATED_REASONS)
+
+
 def _blocking_untranslated_items(translated_pages_map: dict[int, list[dict]]) -> list[dict[str, object]]:
     blocked: list[dict[str, object]] = []
     for page_idx, items in sorted(translated_pages_map.items()):
@@ -24,8 +49,7 @@ def _blocking_untranslated_items(translated_pages_map: dict[int, list[dict]]) ->
             if final_status not in {"kept_origin", "failed"}:
                 continue
             diagnostics = dict(item.get("translation_diagnostics") or {})
-            route_path = list(diagnostics.get("route_path") or [])
-            if "fast_path_keep_origin" in route_path:
+            if _item_allowed_untranslated(item, diagnostics):
                 continue
             blocked.append(
                 {

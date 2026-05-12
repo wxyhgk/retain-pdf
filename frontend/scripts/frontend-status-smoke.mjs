@@ -5,6 +5,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
+import { resolveDisplayedStagePresentation } from "../src/js/job-stage-presentation.js";
 import { summarizeStageDetail, summarizeStageLabel } from "../src/js/job-status-summary.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -12,7 +13,12 @@ const __dirname = path.dirname(__filename);
 const FRONTEND_ROOT = path.resolve(__dirname, "..");
 const REPO_ROOT = path.resolve(FRONTEND_ROOT, "..");
 const DEFAULT_API_BASE = "http://127.0.0.1:41000";
-const DEFAULT_EXPECTED_LABELS = ["OCR 中", "翻译中", "渲染中", "处理完成"];
+const DEFAULT_EXPECTED_LABELS = [
+  "第 1/4 步 · OCR 解析",
+  "第 2/4 步 · 翻译",
+  "第 3/4 步 · 渲染",
+  "完成",
+];
 
 function printUsage() {
   console.log(`Usage:
@@ -32,7 +38,7 @@ Options:
   --timeout-seconds <n>      Job runtime timeout payload field, default 1800
   --poll-ms <n>              Detail polling interval, default 1000
   --max-wait-ms <n>          Max local wait before abort, default 1800000
-  --expect-labels <csv>      Expected labels, default OCR 中,翻译中,渲染中,处理完成
+  --expect-labels <csv>      Expected labels, default current 4-stage labels
   --report-file <path>       Optional JSON report output path
   --json                     Print final JSON summary
   --help                     Show this help
@@ -166,6 +172,20 @@ async function resolveFrontendRuntimeConfig() {
     apiBase: parseJsConfigValue(merged, "apiBase"),
     xApiKey: parseJsConfigValue(merged, "xApiKey"),
   };
+}
+
+async function resolveBackendLocalApiKey() {
+  const authText = await readTextIfExists(path.join(REPO_ROOT, "backend/rust_api/auth.local.json"));
+  if (!authText) {
+    return "";
+  }
+  try {
+    const parsed = JSON.parse(authText);
+    const firstKey = Array.isArray(parsed?.api_keys) ? parsed.api_keys[0] : "";
+    return typeof firstKey === "string" ? firstKey.trim() : "";
+  } catch (_err) {
+    return "";
+  }
 }
 
 function parseEnvAssignment(content, key) {
@@ -356,15 +376,17 @@ function isTerminalStatus(status) {
   return status === "succeeded" || status === "failed" || status === "canceled";
 }
 
-function snapshotSummary(job) {
+function snapshotSummary(job, eventsPayload = null) {
+  const presentation = resolveDisplayedStagePresentation(job, eventsPayload);
   return {
     ts: new Date().toISOString(),
     status: `${job.status || ""}`.trim(),
     stage: `${job.current_stage || job.stage || job.runtime?.current_stage || ""}`.trim(),
-    label: summarizeStageLabel(job),
-    detail: summarizeStageDetail(job),
-    progressCurrent: Number(job.progress_current ?? job.progress?.current ?? NaN),
-    progressTotal: Number(job.progress_total ?? job.progress?.total ?? NaN),
+    label: presentation.label,
+    detail: presentation.detail,
+    progressCurrent: Number(presentation.progressCurrent ?? NaN),
+    progressTotal: Number(presentation.progressTotal ?? NaN),
+    progressText: presentation.progressText,
   };
 }
 
@@ -456,7 +478,8 @@ async function main() {
 
   const frontendConfig = await resolveFrontendRuntimeConfig();
   const apiBase = normalizeApiBase(args.apiBase || frontendConfig.apiBase || DEFAULT_API_BASE);
-  const xApiKey = `${args.xApiKey || frontendConfig.xApiKey || process.env.RETAIN_FRONTEND_X_API_KEY || ""}`.trim();
+  const localApiKey = await resolveBackendLocalApiKey();
+  const xApiKey = `${args.xApiKey || frontendConfig.xApiKey || process.env.RETAIN_FRONTEND_X_API_KEY || localApiKey || ""}`.trim();
   const ocrToken = `${args.ocrToken || await resolveEnvBackedSecret(
     args.ocrProvider === "paddle" ? "paddleToken" : "mineruToken",
     args.ocrProvider === "paddle" ? ["RETAIN_PADDLE_API_TOKEN", "PADDLE_API_TOKEN"] : ["RETAIN_MINERU_API_TOKEN", "MINERU_API_TOKEN"],
@@ -492,9 +515,11 @@ async function main() {
 
   const observations = [];
   let latest = null;
+  let latestEvents = null;
   while (true) {
     const current = await fetchJob(apiBase, xApiKey, job.job_id);
-    latest = snapshotSummary(current);
+    latestEvents = await fetchAllEvents(apiBase, xApiKey, job.job_id);
+    latest = snapshotSummary(current, latestEvents);
     if (shouldRecordObservation(observations[observations.length - 1], latest)) {
       observations.push(latest);
       console.log(formatObservation(latest));

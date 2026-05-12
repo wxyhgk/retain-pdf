@@ -1,10 +1,25 @@
-import { $ } from "../../dom.js";
 import { buildFrontendPageUrl, isTrustedWindowMessage } from "../../config.js";
 import {
   findReadyManifestArtifact,
   resolveManifestArtifactUrl,
 } from "../../job-artifacts.js";
 import { resolveJobActions } from "../../job.js";
+import {
+  bindReaderDialogEvents,
+  closeReaderDialog,
+  downloadReaderBlob,
+  getReaderFrameWindow,
+  getReaderLinkOpenState,
+  getReaderToolbarButtonUrl,
+  hasLoadedReaderFrame,
+  openReaderDialog,
+  restoreReaderButton,
+  setReaderButtonBusy,
+  setReaderFrameSource,
+  setReaderLoadingProgress,
+  setReaderLoadingVisible,
+  setReaderToolbarButtonState,
+} from "./view.js";
 
 let pdfDocumentModulePromise = null;
 
@@ -103,60 +118,6 @@ function resolveOriginalPdfName(state) {
   return sanitizeFilenamePart(stripExtension(originalName));
 }
 
-function downloadBlob(blob, filename) {
-  const objectUrl = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = objectUrl;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
-}
-
-function easeOutCubic(value) {
-  return 1 - ((1 - value) ** 3);
-}
-
-function animateProgressValue(progressState, element, nextValue) {
-  if (!element) {
-    return;
-  }
-  const target = Math.max(0, Math.min(100, Number(nextValue) || 0));
-  const from = Number(progressState.value) || 0;
-  if (Math.abs(from - target) < 0.1) {
-    progressState.value = target;
-    progressState.target = target;
-    element.style.width = `${target}%`;
-    return;
-  }
-  progressState.target = target;
-  if (progressState.rafId) {
-    cancelAnimationFrame(progressState.rafId);
-    progressState.rafId = 0;
-  }
-  const duration = Math.max(220, Math.min(520, Math.abs(target - from) * 10));
-  const startedAt = performance.now();
-
-  const tick = (now) => {
-    const elapsed = now - startedAt;
-    const t = Math.max(0, Math.min(1, elapsed / duration));
-    const eased = easeOutCubic(t);
-    const value = from + ((target - from) * eased);
-    progressState.value = value;
-    element.style.width = `${value}%`;
-    if (t < 1) {
-      progressState.rafId = requestAnimationFrame(tick);
-      return;
-    }
-    progressState.value = target;
-    progressState.rafId = 0;
-    element.style.width = `${target}%`;
-  };
-
-  progressState.rafId = requestAnimationFrame(tick);
-}
-
 function currentReaderArtifactUrls(state) {
   const manifest = state.currentJobManifest;
   const job = state.currentJobSnapshot;
@@ -177,7 +138,7 @@ async function downloadProtectedResource(fetchProtected, url, fallbackName, pref
   const blob = await resp.blob();
   const disposition = resp.headers.get("content-disposition") || "";
   const finalName = `${preferredName || ""}`.trim() || fileNameFromDisposition(disposition, fallbackName);
-  downloadBlob(blob, finalName);
+  downloadReaderBlob(blob, finalName);
 }
 
 async function fetchProtectedBytes(fetchProtected, url, label) {
@@ -244,10 +205,6 @@ export function mountReaderDialogFeature({
     rafId: 0,
   };
 
-  function readerDialogComponent() {
-    return document.querySelector("reader-dialog");
-  }
-
   function buildReaderPageUrl(jobId) {
     const normalizedJobId = `${jobId || ""}`.trim();
     if (!normalizedJobId) {
@@ -275,59 +232,23 @@ export function mountReaderDialogFeature({
     window.history.replaceState(window.history.state, "", buildReaderRouteUrl(jobId));
   }
 
-  function setToolbarButtonState(id, enabled, url = "") {
-    const component = readerDialogComponent();
-    if (component?.setToolbarButtonState) {
-      component.setToolbarButtonState(id, { enabled, url });
-    } else {
-      const button = $(id);
-      if (!button) {
-        return;
-      }
-      button.disabled = !enabled;
-      button.dataset.url = enabled ? url : "";
-    }
-  }
-
   function setLoading(loading) {
-    const component = readerDialogComponent();
-    if (component?.setLoadingVisible) {
-      component.setLoadingVisible(loading);
-      return;
-    }
-    $("reader-dialog-loading")?.classList.toggle("hidden", !loading);
+    setReaderLoadingVisible(loading);
   }
 
   function setLoadingProgress(percent = 0, text = "正在准备对照阅读…") {
-    const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
-    const textEl = $("reader-dialog-loading-text");
-    const barEl = $("reader-dialog-loading-bar");
-    if (textEl) {
-      textEl.textContent = text;
-    }
-    if (barEl) {
-      animateProgressValue(progressState, barEl, safePercent);
-    }
-    const component = readerDialogComponent();
-    if (component?.setLoadingProgress) {
-      component.setLoadingProgress({
-        text,
-        percent: safePercent,
-        widthPercent: progressState.value,
-      });
-    }
+    setReaderLoadingProgress(progressState, percent, text);
   }
 
   function syncToolbarActions() {
     const { sourcePdf, translatedPdf } = currentReaderArtifactUrls(state);
-    setToolbarButtonState("reader-source-download-btn", !!sourcePdf, sourcePdf);
-    setToolbarButtonState("reader-translated-download-btn", !!translatedPdf, translatedPdf);
-    setToolbarButtonState("reader-merged-download-btn", !!sourcePdf && !!translatedPdf);
+    setReaderToolbarButtonState("reader-source-download-btn", !!sourcePdf, sourcePdf);
+    setReaderToolbarButtonState("reader-translated-download-btn", !!translatedPdf, translatedPdf);
+    setReaderToolbarButtonState("reader-merged-download-btn", !!sourcePdf && !!translatedPdf);
   }
 
   async function handleSourceDownload() {
-    const button = $("reader-source-download-btn");
-    const url = button?.dataset.url || "";
+    const url = getReaderToolbarButtonUrl("reader-source-download-btn");
     if (!url) {
       return;
     }
@@ -339,8 +260,7 @@ export function mountReaderDialogFeature({
   }
 
   async function handleTranslatedDownload() {
-    const button = $("reader-translated-download-btn");
-    const url = button?.dataset.url || "";
+    const url = getReaderToolbarButtonUrl("reader-translated-download-btn");
     if (!url) {
       return;
     }
@@ -359,25 +279,22 @@ export function mountReaderDialogFeature({
   }
 
   async function handleMergedDownload() {
-    const button = $("reader-merged-download-btn");
     const { sourcePdf, translatedPdf } = currentReaderArtifactUrls(state);
-    if (!button || !sourcePdf || !translatedPdf) {
+    if (!sourcePdf || !translatedPdf) {
       return;
     }
-    const previousMarkup = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = "<span>生成中…</span>";
+    const previousMarkup = setReaderButtonBusy("reader-merged-download-btn", true, "生成中…");
     try {
       const [sourceBytes, translatedBytes] = await Promise.all([
         fetchProtectedBytes(fetchProtected, sourcePdf, "原始 PDF"),
         fetchProtectedBytes(fetchProtected, translatedPdf, "译文 PDF"),
       ]);
       const mergedBytes = await buildMergedComparePdf(sourceBytes, translatedBytes);
-      downloadBlob(new Blob([mergedBytes], { type: "application/pdf" }), `${state.currentJobId || "result"}-compare.pdf`);
+      downloadReaderBlob(new Blob([mergedBytes], { type: "application/pdf" }), `${state.currentJobId || "result"}-compare.pdf`);
     } catch (err) {
       setText("error-box", err.message);
     } finally {
-      button.innerHTML = previousMarkup;
+      restoreReaderButton("reader-merged-download-btn", previousMarkup);
       syncToolbarActions();
     }
   }
@@ -398,8 +315,7 @@ export function mountReaderDialogFeature({
         disabled: !!input?.disabled,
       };
     }
-    const link = input?.currentTarget;
-    const url = `${link?.dataset?.url || ""}`.trim();
+    const { url, disabled } = getReaderLinkOpenState(input);
     let jobId = `${state.currentJobId || ""}`.trim();
     if (!jobId && url) {
       try {
@@ -411,7 +327,7 @@ export function mountReaderDialogFeature({
     return {
       url,
       jobId,
-      disabled: link?.classList?.contains("disabled") || link?.getAttribute?.("aria-disabled") === "true",
+      disabled,
     };
   }
 
@@ -424,69 +340,40 @@ export function mountReaderDialogFeature({
       return;
     }
     syncReaderRoute(jobId);
-    const frame = $("reader-dialog-frame");
-    if (frame) {
-      setLoading(true);
-      setLoadingProgress(8, "正在准备对照阅读…");
-      const component = readerDialogComponent();
-      if (component?.setFrameSource) {
-        component.setFrameSource(url);
-      } else {
-        frame.src = url;
-      }
-    }
+    setLoading(true);
+    setLoadingProgress(8, "正在准备对照阅读…");
+    setReaderFrameSource(url);
     syncToolbarActions();
-    const component = readerDialogComponent();
-    if (component?.open) {
-      component.open();
-    } else {
-      $("reader-dialog")?.showModal();
-    }
+    openReaderDialog();
   }
 
   function close() {
-    const component = readerDialogComponent();
-    if (component?.close) {
-      component.close();
-    } else {
-      $("reader-dialog")?.close();
-    }
+    closeReaderDialog();
     setLoading(false);
     setLoadingProgress(0, "正在准备对照阅读…");
-    setToolbarButtonState("reader-source-download-btn", false);
-    setToolbarButtonState("reader-translated-download-btn", false);
-    setToolbarButtonState("reader-merged-download-btn", false);
+    setReaderToolbarButtonState("reader-source-download-btn", false);
+    setReaderToolbarButtonState("reader-translated-download-btn", false);
+    setReaderToolbarButtonState("reader-merged-download-btn", false);
     syncReaderRoute("");
-    const frame = $("reader-dialog-frame");
-    if (frame) {
-      if (component?.setFrameSource) {
-        component.setFrameSource("about:blank");
-      } else {
-        frame.src = "about:blank";
-      }
-    }
-  }
-
-  function bindToolbarEvents() {
-    $("reader-source-download-btn")?.addEventListener("click", handleSourceDownload);
-    $("reader-merged-download-btn")?.addEventListener("click", handleMergedDownload);
-    $("reader-translated-download-btn")?.addEventListener("click", handleTranslatedDownload);
+    setReaderFrameSource("about:blank");
   }
 
   function bindEvents() {
-    bindToolbarEvents();
-    $("reader-dialog-close-btn")?.addEventListener("click", close);
-    $("reader-dialog-frame")?.addEventListener("load", () => {
-      window.setTimeout(() => {
-        const frame = $("reader-dialog-frame");
-        if (frame?.src && frame.src !== "about:blank") {
-          setLoading(false);
-        }
-      }, 1200);
+    bindReaderDialogEvents({
+      onClose: close,
+      onSourceDownload: handleSourceDownload,
+      onMergedDownload: handleMergedDownload,
+      onTranslatedDownload: handleTranslatedDownload,
+      onFrameLoad() {
+        window.setTimeout(() => {
+          if (hasLoadedReaderFrame()) {
+            setLoading(false);
+          }
+        }, 1200);
+      },
     });
     window.addEventListener("message", (event) => {
-      const frameWindow = $("reader-dialog-frame")?.contentWindow || null;
-      if (!isTrustedWindowMessage(event, frameWindow)) {
+      if (!isTrustedWindowMessage(event, getReaderFrameWindow())) {
         return;
       }
       const data = event.data;

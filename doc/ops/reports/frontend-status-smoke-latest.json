@@ -3,651 +3,221 @@
   "apiBase": "http://127.0.0.1:41000",
   "workflow": "book",
   "ocrProvider": "paddle",
-  "file": "/home/wxyhgk/tmp/Code/data/temPDF/test1.pdf",
-  "uploadId": "20260425141726-42b198",
-  "jobId": "20260425141726-2c40e0",
+  "file": "/home/wxyhgk/tmp/Code/data/20260418-strict-contract-smoke/source/test1.pdf",
+  "uploadId": "20260510173313-602be4",
+  "jobId": "20260510173313-ed54c4",
   "finalStatus": "succeeded",
   "observedLabels": [
     "排队中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "OCR 中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "处理中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "翻译中",
-    "渲染中",
-    "渲染中",
-    "渲染中",
-    "渲染中",
-    "渲染中",
-    "处理完成"
+    "第 1/4 步 · OCR 解析",
+    "第 1/4 步 · OCR 解析",
+    "第 2/4 步 · 翻译",
+    "第 2/4 步 · 翻译",
+    "第 2/4 步 · 翻译",
+    "第 2/4 步 · 翻译",
+    "第 3/4 步 · 渲染",
+    "第 3/4 步 · 渲染",
+    "完成"
   ],
   "missingLabels": [],
   "observations": [
     {
-      "ts": "2026-04-25T14:17:26.301Z",
+      "ts": "2026-05-10T17:33:14.009Z",
       "status": "queued",
       "stage": "queued",
       "label": "排队中",
-      "detail": "任务已创建，等待可用执行槽位",
+      "detail": "排队中，等待可用执行槽位",
       "progressCurrent": 0,
-      "progressTotal": null
+      "progressTotal": 0,
+      "progressText": ""
     },
     {
-      "ts": "2026-04-25T14:17:27.307Z",
+      "ts": "2026-05-10T17:33:15.023Z",
       "status": "running",
       "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
+      "label": "第 1/4 步 · OCR 解析",
+      "detail": "正在上传 PDF",
       "progressCurrent": 0,
-      "progressTotal": null
+      "progressTotal": 0,
+      "progressText": "OCR 准备中"
     },
     {
-      "ts": "2026-04-25T14:17:28.313Z",
+      "ts": "2026-05-10T17:33:17.055Z",
       "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
+      "stage": "ocr_result_ready",
+      "label": "第 1/4 步 · OCR 解析",
+      "detail": "Paddle 结果已就绪，准备标准化",
+      "progressCurrent": 1,
+      "progressTotal": 1,
+      "progressText": "第 1/1 页"
     },
     {
-      "ts": "2026-04-25T14:17:29.319Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:30.324Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:31.330Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:32.336Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:33.342Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:34.349Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:35.356Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:36.361Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:37.367Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:38.372Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:39.377Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:40.382Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:41.387Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:42.393Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:43.398Z",
-      "status": "running",
-      "stage": "ocr_upload",
-      "label": "OCR 中",
-      "detail": "OCR 子任务：OCR provider transport 启动中",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:44.403Z",
-      "status": "running",
-      "stage": "translation_prepare",
-      "label": "翻译中",
-      "detail": "OCR 子任务：Paddle 结果已就绪，准备翻译 · 已完成第 11/11 批翻译",
-      "progressCurrent": 11,
-      "progressTotal": 11
-    },
-    {
-      "ts": "2026-04-25T14:17:54.448Z",
+      "ts": "2026-05-10T17:33:18.071Z",
       "status": "running",
       "stage": "translating",
-      "label": "翻译中",
-      "detail": "OCR 完成，开始翻译",
+      "label": "第 2/4 步 · 翻译",
+      "detail": "正在翻译正文内容",
       "progressCurrent": 0,
-      "progressTotal": null
+      "progressTotal": 0,
+      "progressText": ""
     },
     {
-      "ts": "2026-04-25T14:17:55.451Z",
-      "status": "running",
-      "stage": "translation_prepare",
-      "label": "翻译中",
-      "detail": "开始准备纯翻译阶段",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:56.457Z",
-      "status": "running",
-      "stage": "translation_prepare",
-      "label": "翻译中",
-      "detail": "开始准备纯翻译阶段",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:57.462Z",
-      "status": "running",
-      "stage": "translation_prepare",
-      "label": "翻译中",
-      "detail": "开始准备纯翻译阶段",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:58.466Z",
-      "status": "running",
-      "stage": "translation_prepare",
-      "label": "翻译中",
-      "detail": "开始准备纯翻译阶段",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:17:59.471Z",
-      "status": "running",
-      "stage": "continuation_review",
-      "label": "处理中",
-      "detail": "开始复核跨栏/跨页连续段",
-      "progressCurrent": 0,
-      "progressTotal": 11
-    },
-    {
-      "ts": "2026-04-25T14:18:03.491Z",
+      "ts": "2026-05-10T17:33:31.233Z",
       "status": "running",
       "stage": "translating",
-      "label": "翻译中",
-      "detail": "开始批量翻译",
-      "progressCurrent": 0,
-      "progressTotal": null
+      "label": "第 2/4 步 · 翻译",
+      "detail": "正在翻译正文内容",
+      "progressCurrent": 1,
+      "progressTotal": 5,
+      "progressText": "第 1/5 批"
     },
     {
-      "ts": "2026-04-25T14:18:04.496Z",
+      "ts": "2026-05-10T17:33:32.245Z",
       "status": "running",
       "stage": "translating",
-      "label": "翻译中",
-      "detail": "开始批量翻译",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:18:05.500Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "开始批量翻译",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:18:06.505Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "开始批量翻译",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:18:07.510Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 2/39 批翻译（最近页: 4）",
-      "progressCurrent": 2,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:08.515Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 3/39 批翻译（最近页: 10）",
+      "label": "第 2/4 步 · 翻译",
+      "detail": "正在翻译正文内容",
       "progressCurrent": 3,
-      "progressTotal": 39
+      "progressTotal": 5,
+      "progressText": "第 3/5 批"
     },
     {
-      "ts": "2026-04-25T14:18:09.521Z",
+      "ts": "2026-05-10T17:33:33.259Z",
       "status": "running",
       "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 8/39 批翻译（最近页: 3）",
-      "progressCurrent": 8,
-      "progressTotal": 39
+      "label": "第 2/4 步 · 翻译",
+      "detail": "正在翻译正文内容",
+      "progressCurrent": 4,
+      "progressTotal": 5,
+      "progressText": "第 4/5 批"
     },
     {
-      "ts": "2026-04-25T14:18:10.524Z",
+      "ts": "2026-05-10T17:33:35.283Z",
       "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 12/39 批翻译（最近页: 4,5）",
-      "progressCurrent": 12,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:11.529Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 14/39 批翻译（最近页: 6）",
-      "progressCurrent": 14,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:12.534Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 16/39 批翻译（最近页: 3）",
-      "progressCurrent": 16,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:13.539Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 19/39 批翻译（最近页: 9,10）",
-      "progressCurrent": 19,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:14.544Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 21/39 批翻译（最近页: 2）",
-      "progressCurrent": 21,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:15.549Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 23/39 批翻译（最近页: 3）",
-      "progressCurrent": 23,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:16.556Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 25/39 批翻译（最近页: 8）",
-      "progressCurrent": 25,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:17.559Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 28/39 批翻译（最近页: 2,3）",
-      "progressCurrent": 28,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:18.563Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 29/39 批翻译（最近页: 2）",
-      "progressCurrent": 29,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:19.568Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 30/39 批翻译（最近页: 5）",
-      "progressCurrent": 30,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:20.573Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 31/39 批翻译（最近页: 7）",
-      "progressCurrent": 31,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:22.583Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 32/39 批翻译（最近页: 6,7）",
-      "progressCurrent": 32,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:23.588Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 35/39 批翻译（最近页: 3,4）",
-      "progressCurrent": 35,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:24.592Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 36/39 批翻译（最近页: 7,8）",
-      "progressCurrent": 36,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:26.602Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "已完成第 37/39 批翻译（最近页: 2）",
-      "progressCurrent": 37,
-      "progressTotal": 39
-    },
-    {
-      "ts": "2026-04-25T14:18:36.649Z",
-      "status": "running",
-      "stage": "translating",
-      "label": "翻译中",
-      "detail": "乱码候选段修复完成",
+      "stage": "finished",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
       "progressCurrent": 0,
-      "progressTotal": null
+      "progressTotal": 0,
+      "progressText": ""
     },
     {
-      "ts": "2026-04-25T14:18:37.655Z",
+      "ts": "2026-05-10T17:33:36.293Z",
       "status": "running",
-      "stage": "render_prepare",
-      "label": "渲染中",
-      "detail": "开始准备纯渲染阶段",
+      "stage": "rendering",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
       "progressCurrent": 0,
-      "progressTotal": null
+      "progressTotal": 1,
+      "progressText": "第 0/1 页"
     },
     {
-      "ts": "2026-04-25T14:18:38.660Z",
-      "status": "running",
-      "stage": "render_prepare",
-      "label": "渲染中",
-      "detail": "开始准备纯渲染阶段",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:18:39.666Z",
-      "status": "running",
-      "stage": "render_prepare",
-      "label": "渲染中",
-      "detail": "开始准备纯渲染阶段",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:18:40.671Z",
-      "status": "running",
-      "stage": "render_prepare",
-      "label": "渲染中",
-      "detail": "开始准备纯渲染阶段",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:18:41.677Z",
-      "status": "running",
-      "stage": "render_prepare",
-      "label": "渲染中",
-      "detail": "开始准备纯渲染阶段",
-      "progressCurrent": 0,
-      "progressTotal": null
-    },
-    {
-      "ts": "2026-04-25T14:18:42.682Z",
+      "ts": "2026-05-10T17:33:37.307Z",
       "status": "succeeded",
       "stage": "finished",
-      "label": "处理完成",
-      "detail": "render-only 阶段完成",
+      "label": "完成",
+      "detail": "翻译 PDF 已生成",
       "progressCurrent": 0,
-      "progressTotal": null
+      "progressTotal": 0,
+      "progressText": ""
     }
   ],
-  "eventCount": 85,
+  "eventCount": 51,
   "eventSamples": [
     {
-      "ts": "2026-04-25T14:18:36Z",
+      "ts": "2026-05-10T17:33:35.552208Z",
       "status": "running",
-      "stage": "normalizing",
-      "label": "标准化中",
-      "detail": "正在生成标准化 OCR 文档",
+      "stage": "render_prepare",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
       "event": "stage_transition"
     },
     {
-      "ts": "2026-04-25T14:18:36Z",
+      "ts": "2026-05-10T17:33:35.777971Z",
       "status": "running",
       "stage": "rendering",
-      "label": "渲染中",
-      "detail": "翻译完成，开始渲染",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
+      "event": "stage_transition"
+    },
+    {
+      "ts": "2026-05-10T17:33:35Z",
+      "status": "running",
+      "stage": "rendering",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
       "event": "stage_updated"
     },
     {
-      "ts": "2026-04-25T14:18:36Z",
+      "ts": "2026-05-10T17:33:35Z",
       "status": "running",
       "stage": "rendering",
-      "label": "渲染中",
-      "detail": "翻译完成，开始渲染",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
       "event": "stage_transition"
     },
     {
-      "ts": "2026-04-25T14:18:37.216027Z",
+      "ts": "2026-05-10T17:33:36.751537Z",
       "status": "running",
-      "stage": "startup",
-      "label": "处理中",
-      "detail": "render-only worker 已启动",
-      "event": "stage_transition"
+      "stage": "rendering",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
+      "event": "stage_progress"
     },
     {
-      "ts": "2026-04-25T14:18:37.216168Z",
-      "status": "running",
-      "stage": "render_prepare",
-      "label": "渲染中",
-      "detail": "开始准备纯渲染阶段",
-      "event": "stage_transition"
-    },
-    {
-      "ts": "2026-04-25T14:18:41.811320Z",
+      "ts": "2026-05-10T17:33:36.752031Z",
       "status": "running",
       "stage": "saving",
-      "label": "保存中",
-      "detail": "统一事件流已写出",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
       "event": "artifact_published"
     },
     {
-      "ts": "2026-04-25T14:18:41.811508Z",
+      "ts": "2026-05-10T17:33:36.752185Z",
       "status": "running",
       "stage": "saving",
-      "label": "保存中",
-      "detail": "render-only 输出 PDF 已发布",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
       "event": "artifact_published"
     },
     {
-      "ts": "2026-04-25T14:18:41.811583Z",
+      "ts": "2026-05-10T17:33:36.752253Z",
       "status": "running",
       "stage": "finished",
-      "label": "处理中",
-      "detail": "render-only 阶段完成",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
       "event": "stage_transition"
     },
     {
-      "ts": "2026-04-25T14:18:41Z",
+      "ts": "2026-05-10T17:33:36Z",
       "status": "running",
       "stage": "finished",
-      "label": "处理中",
-      "detail": "任务完成",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
       "event": "status_changed"
     },
     {
-      "ts": "2026-04-25T14:18:41Z",
+      "ts": "2026-05-10T17:33:36Z",
       "status": "succeeded",
       "stage": "finished",
-      "label": "处理完成",
-      "detail": "任务完成",
+      "label": "完成",
+      "detail": "翻译 PDF 已生成",
       "event": "job_terminal"
     },
     {
-      "ts": "2026-04-25T14:18:41Z",
+      "ts": "2026-05-10T17:33:36Z",
       "status": "running",
       "stage": "finished",
-      "label": "处理中",
-      "detail": "任务完成",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
       "event": "stage_updated"
     },
     {
-      "ts": "2026-04-25T14:18:41Z",
+      "ts": "2026-05-10T17:33:36Z",
       "status": "running",
       "stage": "finished",
-      "label": "处理中",
-      "detail": "任务完成",
+      "label": "第 3/4 步 · 渲染",
+      "detail": "正在生成翻译后的 PDF",
       "event": "stage_transition"
     }
   ]

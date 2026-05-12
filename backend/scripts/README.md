@@ -209,7 +209,7 @@
 - `entrypoints/run_provider_ocr.py` -> 当前 OCR-only provider flow 的本地通用入口名
 - `services/document_schema/normalize_pipeline.py` -> `normalize.stage.v1`
 - `services/translation/translate_only_pipeline.py` -> `translate.stage.v1`
-- `services/rendering/render_only_pipeline.py` -> `render.stage.v1`
+- `services/rendering/workflow/render_only.py` -> `render.stage.v1`
 - `services/translation/from_ocr_pipeline.py` -> `book.stage.v1`
 - `entrypoints/run_book.py` -> `book.stage.v1`
 

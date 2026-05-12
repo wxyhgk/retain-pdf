@@ -1,12 +1,13 @@
 """Rendering package.
 
 Use domain modules directly:
-- services.rendering.api
+- services.rendering.workflow
+- services.rendering.legacy
 - services.rendering.layout
-- services.rendering.redaction
-- services.rendering.typst
-- services.rendering.formula
-- services.rendering.compress
-- services.rendering.background
-- services.rendering.core
+- services.rendering.source.cleanup
+- services.rendering.output.typst
+- services.rendering.layout.inline_content
+- services.rendering.source.compression
+- services.rendering.source.background
+- services.rendering.layout
 """

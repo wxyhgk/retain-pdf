@@ -1,4 +1,3 @@
-import { $ } from "../../dom.js";
 import {
   getRecentJobsState,
   resetRecentJobsPagination,
@@ -8,10 +7,14 @@ import {
   setRecentJobsOffset,
 } from "./state.js";
 import {
+  bindRecentJobsEvents,
+  hasRecentJobsView,
   renderRecentJobsEmpty,
   renderRecentJobsError,
   renderRecentJobsList,
   renderRecentJobsLoading,
+  setRecentJobsDateInput,
+  setRecentJobsDialogOpen,
   setRecentJobsLoadMoreLoading,
 } from "./view.js";
 
@@ -36,19 +39,6 @@ function recentJobDateKey(value) {
     return "";
   }
   return formatDateKey(parsed);
-}
-
-function setDialogOpen(open) {
-  const dialog = $("query-dialog");
-  if (!dialog) {
-    return;
-  }
-  if (open) {
-    dialog.showModal();
-  } else {
-    dialog.close();
-  }
-  $("open-query-btn")?.setAttribute("aria-expanded", open ? "true" : "false");
 }
 
 function dedupeRecentJobs(items) {
@@ -139,10 +129,7 @@ async function collectRecentJobsPage(fetchJobList, apiPrefix, startOffset, selec
 
 export function mountRecentJobsFeature({ fetchJobList, apiPrefix, startPolling }) {
   async function loadRecentJobs({ reset = false } = {}) {
-    const list = $("recent-jobs-list");
-    const empty = $("recent-jobs-empty");
-    const loadMoreButton = $("load-more-jobs-btn");
-    if (!list || !empty || !loadMoreButton) {
+    if (!hasRecentJobsView()) {
       return;
     }
     if (reset) {
@@ -208,26 +195,23 @@ export function mountRecentJobsFeature({ fetchJobList, apiPrefix, startPolling }
   }
 
   function openRecentJobsDialog() {
-    if ($("recent-jobs-date")) {
-      $("recent-jobs-date").value = getRecentJobsState().date;
-    }
+    setRecentJobsDateInput(getRecentJobsState().date);
     loadRecentJobs({ reset: true });
-    setDialogOpen(true);
+    setRecentJobsDialogOpen(true);
   }
 
   function closeRecentJobsDialog() {
-    setDialogOpen(false);
+    setRecentJobsDialogOpen(false);
   }
 
-  $("open-query-btn")?.addEventListener("click", openRecentJobsDialog);
-  $("refresh-jobs-btn")?.addEventListener("click", () => loadRecentJobs({ reset: true }));
-  $("load-more-jobs-btn")?.addEventListener("click", () => loadRecentJobs({ reset: false }));
-  $("recent-jobs-date")?.addEventListener("change", (event) => {
-    const target = event.currentTarget;
-    if (target instanceof HTMLInputElement) {
-      setRecentJobsDate(target.value || "");
+  bindRecentJobsEvents({
+    onOpen: openRecentJobsDialog,
+    onRefresh: () => loadRecentJobs({ reset: true }),
+    onLoadMore: () => loadRecentJobs({ reset: false }),
+    onDateChange(value) {
+      setRecentJobsDate(value || "");
       loadRecentJobs({ reset: true });
-    }
+    },
   });
 
   return {

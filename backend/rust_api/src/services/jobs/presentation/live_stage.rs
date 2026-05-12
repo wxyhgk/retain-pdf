@@ -3,7 +3,7 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 
 use crate::error::AppError;
-use crate::models::{JobEventRecord, JobSnapshot};
+use crate::models::{JobEventRecord, JobSnapshot, JobStage};
 use crate::storage_paths::resolve_events_jsonl;
 use serde::Deserialize;
 use serde_json::Value;
@@ -18,6 +18,8 @@ pub struct LiveStageSnapshot {
 
 #[derive(Debug, Deserialize)]
 struct PipelineEventJsonlRecord {
+    #[serde(default)]
+    job_id: Option<String>,
     #[serde(default)]
     ts: Option<String>,
     #[serde(default)]
@@ -100,6 +102,15 @@ fn load_pipeline_events_jsonl(job_id: &str, path: &Path, base_seq: i64) -> Vec<J
                 return None;
             }
             let parsed = serde_json::from_str::<PipelineEventJsonlRecord>(trimmed).ok()?;
+            if parsed
+                .job_id
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty() && *value != job_id)
+                .is_some()
+            {
+                return None;
+            }
             let event = normalized_event_name(&parsed);
             Some(JobEventRecord {
                 job_id: job_id.to_string(),
@@ -126,11 +137,16 @@ fn load_pipeline_events_jsonl(job_id: &str, path: &Path, base_seq: i64) -> Vec<J
 fn select_live_stage_snapshot(items: &[JobEventRecord]) -> Option<LiveStageSnapshot> {
     items
         .iter()
-        .rev()
-        .find(|item| {
+        .filter(|item| {
             let event_type = item.event_type.as_deref().map(str::trim).unwrap_or("");
             let stage = item.stage.as_deref().map(str::trim).unwrap_or("");
             event_type != "artifact_published" && !stage.is_empty()
+        })
+        .max_by(|left, right| {
+            user_stage_rank(left.stage.as_deref())
+                .cmp(&user_stage_rank(right.stage.as_deref()))
+                .then_with(|| left.ts.cmp(&right.ts))
+                .then_with(|| left.seq.cmp(&right.seq))
         })
         .map(|item| LiveStageSnapshot {
             stage: item.stage.clone(),
@@ -138,6 +154,49 @@ fn select_live_stage_snapshot(items: &[JobEventRecord]) -> Option<LiveStageSnaps
             progress_current: item.progress_current,
             progress_total: item.progress_total,
         })
+}
+
+fn user_stage_rank(stage: Option<&str>) -> i32 {
+    match stage.and_then(JobStage::from_str) {
+        Some(JobStage::Queued) => 0,
+        Some(JobStage::Rendering | JobStage::Finished) => 3,
+        Some(JobStage::Translating) => 2,
+        Some(
+            JobStage::OcrSubmitting
+            | JobStage::OcrUpload
+            | JobStage::MineruUpload
+            | JobStage::OcrProcessing
+            | JobStage::MineruProcessing
+            | JobStage::OcrResultReady
+            | JobStage::Normalizing,
+        ) => 1,
+        Some(JobStage::Running) => 0,
+        Some(JobStage::Canceled | JobStage::Failed) => 0,
+        None => {
+            let normalized = stage.unwrap_or_default().trim();
+            if normalized.contains("render") {
+                return 3;
+            }
+            if normalized == "succeeded" {
+                return 3;
+            }
+            if normalized.contains("translat")
+                || normalized == "domain_inference"
+                || normalized == "continuation_review"
+                || normalized == "page_policies"
+            {
+                return 2;
+            }
+            if normalized.contains("ocr")
+                || normalized.contains("mineru")
+                || normalized.contains("paddle")
+                || normalized.contains("normaliz")
+            {
+                return 1;
+            }
+            0
+        }
+    }
 }
 
 fn normalized_event_name(parsed: &PipelineEventJsonlRecord) -> String {

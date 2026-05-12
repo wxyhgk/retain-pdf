@@ -1,11 +1,11 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-use crate::models::JobSnapshot;
+use crate::models::{job_stage_detail, job_stage_str, JobSnapshot, JobStage};
 
 use super::{
     job_artifacts_mut, ocr_provider_diagnostics_mut, parse_labeled_value, STDOUT_LABEL_JOB_ROOT,
-    STDOUT_LABEL_LAYOUT_JSON, STDOUT_LABEL_NORMALIZATION_REPORT_JSON,
+    STDOUT_LABEL_EVENTS_JSONL, STDOUT_LABEL_LAYOUT_JSON, STDOUT_LABEL_NORMALIZATION_REPORT_JSON,
     STDOUT_LABEL_NORMALIZED_DOCUMENT_JSON, STDOUT_LABEL_OUTPUT_PDF, STDOUT_LABEL_PROVIDER_RAW_DIR,
     STDOUT_LABEL_PROVIDER_SUMMARY_JSON, STDOUT_LABEL_PROVIDER_ZIP, STDOUT_LABEL_SCHEMA_VERSION,
     STDOUT_LABEL_SOURCE_PDF, STDOUT_LABEL_SUMMARY, STDOUT_LABEL_TRANSLATIONS_DIR,
@@ -25,6 +25,7 @@ enum ArtifactField {
     TranslationsDir,
     OutputPdf,
     Summary,
+    EventsJsonl,
     BatchId,
     TaskId,
     FullZipUrl,
@@ -55,6 +56,7 @@ const ARTIFACT_LABEL_RULES: &[(&str, ArtifactField)] = &[
     ),
     (STDOUT_LABEL_OUTPUT_PDF, ArtifactField::OutputPdf),
     (STDOUT_LABEL_SUMMARY, ArtifactField::Summary),
+    (STDOUT_LABEL_EVENTS_JSONL, ArtifactField::EventsJsonl),
     ("batch_id", ArtifactField::BatchId),
     ("task_id", ArtifactField::TaskId),
     ("full_zip_url", ArtifactField::FullZipUrl),
@@ -119,8 +121,10 @@ fn apply_artifact_field(job: &mut JobSnapshot, field: ArtifactField, value: &str
             ocr_provider_diagnostics_mut(job)
                 .artifacts
                 .normalization_report_json = Some(value);
-            job.stage = Some("normalizing".to_string());
-            job.stage_detail = Some("正在生成标准化 OCR 文档".to_string());
+            if is_ocr_stage(job.stage.as_deref()) {
+                job.stage = Some(job_stage_str(JobStage::Normalizing).to_string());
+                job.stage_detail = Some(job_stage_detail(JobStage::Normalizing).to_string());
+            }
         }
         ArtifactField::ProviderRawDir => {
             job_artifacts_mut(job).provider_raw_dir = Some(value.to_string())
@@ -143,6 +147,9 @@ fn apply_artifact_field(job: &mut JobSnapshot, field: ArtifactField, value: &str
         }
         ArtifactField::OutputPdf => job_artifacts_mut(job).output_pdf = Some(value.to_string()),
         ArtifactField::Summary => job_artifacts_mut(job).summary = Some(value.to_string()),
+        ArtifactField::EventsJsonl => {
+            job_artifacts_mut(job).events_jsonl = Some(value.to_string())
+        }
         ArtifactField::BatchId => {
             ocr_provider_diagnostics_mut(job).handle.batch_id = Some(value.to_string())
         }
@@ -151,6 +158,28 @@ fn apply_artifact_field(job: &mut JobSnapshot, field: ArtifactField, value: &str
         }
         ArtifactField::FullZipUrl => {
             ocr_provider_diagnostics_mut(job).artifacts.full_zip_url = Some(value.to_string())
+        }
+    }
+}
+
+fn is_ocr_stage(stage: Option<&str>) -> bool {
+    match stage.and_then(JobStage::from_str) {
+        Some(
+            JobStage::Queued
+            | JobStage::OcrSubmitting
+            | JobStage::OcrUpload
+            | JobStage::OcrProcessing
+            | JobStage::OcrResultReady
+            | JobStage::Normalizing
+            | JobStage::MineruUpload
+            | JobStage::MineruProcessing,
+        ) => true,
+        Some(JobStage::Running | JobStage::Translating | JobStage::Rendering | JobStage::Finished | JobStage::Canceled | JobStage::Failed) => false,
+        None => {
+            let normalized = stage.unwrap_or_default().trim();
+            normalized.is_empty()
+                || normalized == "translation_prepare"
+                || normalized.starts_with("mineru_")
         }
     }
 }

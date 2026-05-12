@@ -44,4 +44,8 @@ copyPackageAssets("pdfjs-dist", [
   "web/pdf_viewer.mjs",
 ]);
 
+copyPackageAssets("lottie-web", [
+  "build/player/lottie.min.js",
+]);
+
 console.log("frontend runtime deps prepared");

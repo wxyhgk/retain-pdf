@@ -5,7 +5,7 @@ import re
 
 from services.rendering.layout.payload.text_common import get_render_formula_map
 from services.rendering.layout.payload.text_common import same_meaningful_render_text
-from services.rendering.core.render_text import should_skip_display_math_render
+from services.rendering.layout.model.render_text import should_skip_display_math_render
 
 MATH_SOURCE_RE = re.compile(r"\$[^$]+\$|\\(?:begin|end|frac|lim|sum|int|mathrm|left|right|cdot|epsilon|forall|in)\b")
 MODEL_KEEP_ORIGIN_REASONS = {"skip_model_keep_origin"}
