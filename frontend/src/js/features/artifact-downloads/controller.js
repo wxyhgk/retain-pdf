@@ -56,6 +56,8 @@ export function mountArtifactDownloadsFeature({
       ? `${jobId}.zip`
       : link.id === "markdown-bundle-btn"
         ? `${jobId}-markdown.zip`
+        : link.id === "source-pdf-btn"
+          ? `${jobId}-source.pdf`
         : link.id === "pdf-btn"
           ? `${jobId}.pdf`
           : link.id === "markdown-raw-btn"
@@ -106,7 +108,7 @@ export function mountArtifactDownloadsFeature({
   }
 
   function bindEvents() {
-    document.querySelectorAll("#download-btn, #markdown-bundle-btn, #pdf-btn, #markdown-btn, #markdown-raw-btn")
+    document.querySelectorAll("#download-btn, #markdown-bundle-btn, #source-pdf-btn, #pdf-btn, #markdown-btn, #markdown-raw-btn")
       .forEach((node) => {
         node.addEventListener("click", handleProtectedArtifactClick);
       });

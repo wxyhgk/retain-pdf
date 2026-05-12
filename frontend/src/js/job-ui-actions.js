@@ -43,11 +43,13 @@ export function isReaderActionEnabled(job, manifestPayload = null) {
 
 export function updateActionButtons(job, manifestPayload = null) {
   const actions = resolveJobActions(job);
+  const sourcePdfUrl = resolveManifestArtifactUrl(manifestPayload, "source_pdf");
   setActionLink("download-btn", actions.bundle, actions.bundleEnabled && !!actions.bundle);
   const markdownBundleUrl = resolveManifestArtifactUrl(manifestPayload, "markdown_bundle_zip", {
     includeJobDir: true,
   });
   setActionLink("markdown-bundle-btn", markdownBundleUrl, !!markdownBundleUrl);
+  setActionLink("source-pdf-btn", sourcePdfUrl, !!sourcePdfUrl);
   setActionLink("pdf-btn", actions.pdf, actions.pdfEnabled && !!actions.pdf);
   setActionLink("markdown-btn", actions.markdownJson, actions.markdownJsonEnabled && !!actions.markdownJson);
   setActionLink("markdown-raw-btn", actions.markdownRaw, actions.markdownRawEnabled && !!actions.markdownRaw);

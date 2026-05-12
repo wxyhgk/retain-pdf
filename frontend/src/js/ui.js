@@ -89,9 +89,10 @@ function updateRing(job) {
   const ringValue = $("status-ring-value");
   const ringElapsed = $("status-ring-elapsed");
   const pdfBtn = $("pdf-btn");
+  const sourceBtn = $("source-pdf-btn");
   const readerBtn = $("reader-btn");
   const actionRow = document.querySelector(".status-ring-downloads");
-  if (!ringLabel || !ringValue || !ringElapsed || !pdfBtn || !readerBtn || !actionRow) {
+  if (!ringLabel || !ringValue || !ringElapsed || !pdfBtn || !sourceBtn || !readerBtn || !actionRow) {
     return;
   }
   const presentation = resolveDisplayedStagePresentation(job, state.currentJobEvents);
@@ -110,11 +111,13 @@ function updateRing(job) {
     ringValue.textContent = ringValueText;
   }
   const pdfReady = !pdfBtn.classList.contains("disabled") && job.status === "succeeded";
+  const sourceReady = !sourceBtn.classList.contains("disabled") && job.status === "succeeded";
   const readerReady = !readerBtn.classList.contains("disabled") && job.status === "succeeded";
   if (statusCard?.syncPrimaryActions && !statusCard?.renderSnapshot) {
-    statusCard.syncPrimaryActions({ pdfReady, readerReady });
+    statusCard.syncPrimaryActions({ pdfReady, readerReady, sourceReady });
   } else {
     pdfBtn.classList.toggle("hidden", !pdfReady);
+    sourceBtn.classList.toggle("hidden", !sourceReady);
     readerBtn.classList.toggle("hidden", !readerReady);
     actionRow.classList.remove("hidden");
   }

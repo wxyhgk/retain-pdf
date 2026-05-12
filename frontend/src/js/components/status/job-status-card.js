@@ -70,12 +70,16 @@ class JobStatusCard extends HTMLElement {
     });
   }
 
-  syncPrimaryActions({ pdfReady = false, readerReady = false } = {}) {
+  syncPrimaryActions({ pdfReady = false, readerReady = false, sourceReady = false } = {}) {
     const pdfBtn = this.querySelector("#pdf-btn");
+    const sourceBtn = this.querySelector("#source-pdf-btn");
     const readerBtn = this.querySelector("#reader-btn");
     const actionRow = this.querySelector(".status-ring-downloads");
     if (pdfBtn) {
       pdfBtn.classList.toggle("hidden", !pdfReady);
+    }
+    if (sourceBtn) {
+      sourceBtn.classList.toggle("hidden", !sourceReady);
     }
     if (readerBtn) {
       readerBtn.classList.toggle("hidden", !readerReady);
@@ -130,6 +134,7 @@ class JobStatusCard extends HTMLElement {
     progressPercent = NaN,
     progressText = "",
     pdfReady = false,
+    sourceReady = false,
     readerReady = false,
     cancelEnabled = false,
     backHomeVisible = false,
@@ -143,7 +148,7 @@ class JobStatusCard extends HTMLElement {
       percent: progressPercent,
       progressText,
     });
-    this.syncPrimaryActions({ pdfReady, readerReady });
+    this.syncPrimaryActions({ pdfReady, readerReady, sourceReady });
     this.setCancelEnabled(cancelEnabled);
     this.setBackHomeVisible(backHomeVisible);
   }

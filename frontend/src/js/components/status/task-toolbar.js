@@ -23,13 +23,21 @@ class StatusTaskToolbar extends HTMLElement {
           </svg>
           <span>对照阅读</span>
         </a>
+        <a id="source-pdf-btn" class="button-link secondary disabled task-toolbar-btn task-toolbar-btn-result hidden" href="#" target="_blank" rel="noopener noreferrer" aria-label="下载原文" title="下载原文">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 6v8.1" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
+            <path d="M9.15 11.35 12 14.2l2.85-2.85" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7.1 17.85h9.8" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
+          </svg>
+          <span>下载原文</span>
+        </a>
         <a id="pdf-btn" class="button-link secondary disabled task-toolbar-btn task-toolbar-btn-result hidden" href="#" target="_blank" rel="noopener noreferrer" aria-label="下载 PDF" title="下载 PDF">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12 6v8.1" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
             <path d="M9.15 11.35 12 14.2l2.85-2.85" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M7.1 17.85h9.8" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
           </svg>
-          <span>下载 PDF</span>
+          <span>下载译文</span>
         </a>
       `;
       return;
