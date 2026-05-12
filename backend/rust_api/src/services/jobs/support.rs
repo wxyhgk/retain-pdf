@@ -15,7 +15,7 @@ pub(crate) fn request_base_url(headers: &HeaderMap, default_port: u16) -> String
     let forwarded_port = forwarded_header(headers, "x-forwarded-port")
         .filter(|value| !value.is_empty());
     let (hostname, host_port) = split_host_port(&host);
-    let candidate_port = forwarded_port.or(host_port);
+    let candidate_port = host_port.or(forwarded_port);
     let normalized_host = match candidate_port {
         Some(port) if should_omit_port_for_scheme(&scheme, &port) => hostname,
         Some(port) => format!("{hostname}:{port}"),
@@ -166,6 +166,18 @@ mod tests {
 
         let base_url = request_base_url(&headers, state.config.port);
         assert_eq!(base_url, "https://example.com:8443");
+    }
+
+    #[test]
+    fn request_base_url_prefers_port_embedded_in_forwarded_host() {
+        let state = test_state();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-proto", HeaderValue::from_static("http"));
+        headers.insert("x-forwarded-host", HeaderValue::from_static("qzlab:40001"));
+        headers.insert("x-forwarded-port", HeaderValue::from_static("80"));
+
+        let base_url = request_base_url(&headers, state.config.port);
+        assert_eq!(base_url, "http://qzlab:40001");
     }
 
     #[test]
