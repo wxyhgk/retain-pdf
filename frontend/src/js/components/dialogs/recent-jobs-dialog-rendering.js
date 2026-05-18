@@ -1,4 +1,4 @@
-import { buildApiHeaders, buildApiUrl } from "../../config.js";
+import { buildApiHeaders, buildApiUrl, isFileProtocol } from "../../config.js";
 
 const recentJobImageCache = new Map();
 
@@ -11,7 +11,8 @@ function normalizeRecentJobImageUrl(value) {
     try {
       const parsed = new URL(raw);
       if ((parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") && parsed.pathname.startsWith("/api/v1/")) {
-        return `${parsed.pathname}${parsed.search}`;
+        const path = `${parsed.pathname}${parsed.search}`;
+        return isFileProtocol() ? buildApiUrl("", path.replace(/^\/+/, "")) : path;
       }
     } catch {
       return raw;
@@ -19,7 +20,7 @@ function normalizeRecentJobImageUrl(value) {
     return raw;
   }
   if (raw.startsWith("/api/v1/")) {
-    return raw;
+    return isFileProtocol() ? buildApiUrl("", raw.replace(/^\/+/, "")) : raw;
   }
   return buildApiUrl("", raw.replace(/^\/+/, ""));
 }
