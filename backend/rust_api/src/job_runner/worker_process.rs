@@ -12,19 +12,22 @@ use anyhow::{Context, Result};
 use tokio::process::{Child, Command};
 use tokio::time::{sleep, Duration};
 
-use crate::config::AppConfig;
+use crate::config::WorkerProcessRuntimeConfig;
 use crate::models::JobRuntimeState;
 use crate::ocr_provider::{provider_token, provider_token_env_name, require_supported_provider};
 
-pub(super) fn spawn_worker_process(config: &AppConfig, job: &JobRuntimeState) -> Result<Child> {
+pub(super) fn spawn_worker_process(
+    config: &WorkerProcessRuntimeConfig<'_>,
+    job: &JobRuntimeState,
+) -> Result<Child> {
     let mut command = Command::new(&job.command[0]);
     command
         .args(&job.command[1..])
-        .env("RUST_API_DATA_ROOT", &config.data_root)
-        .env("RUST_API_OUTPUT_ROOT", &config.output_root)
-        .env("OUTPUT_ROOT", &config.output_root)
+        .env("RUST_API_DATA_ROOT", config.data_root)
+        .env("RUST_API_OUTPUT_ROOT", config.output_root)
+        .env("OUTPUT_ROOT", config.output_root)
         .env("PYTHONUNBUFFERED", "1")
-        .current_dir(&config.project_root)
+        .current_dir(config.project_root)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     apply_job_credentials(&mut command, job);
@@ -79,7 +82,11 @@ pub(crate) fn worker_process_exists(_pid: u32) -> bool {
     false
 }
 
-pub async fn terminate_job_process_tree(pid: u32) -> Result<()> {
+pub async fn terminate_job_process_tree(
+    pid: u32,
+    grace_secs: u64,
+    poll_interval_ms: u64,
+) -> Result<()> {
     #[cfg(windows)]
     {
         let status = StdCommand::new("taskkill")
@@ -97,13 +104,14 @@ pub async fn terminate_job_process_tree(pid: u32) -> Result<()> {
     #[cfg(unix)]
     {
         let group_pid = -(pid as i32);
-        let deadline = Instant::now() + Duration::from_secs(3);
+        let deadline = Instant::now() + Duration::from_secs(grace_secs);
+        let poll_interval = Duration::from_millis(poll_interval_ms);
         let _ = unsafe { libc::kill(group_pid, libc::SIGTERM) };
         while Instant::now() < deadline {
             if !worker_process_exists(pid) {
                 return Ok(());
             }
-            sleep(Duration::from_millis(100)).await;
+            sleep(poll_interval).await;
         }
         let _ = unsafe { libc::kill(group_pid, libc::SIGKILL) };
         Ok(())

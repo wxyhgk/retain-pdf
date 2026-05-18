@@ -63,7 +63,7 @@ pub struct JobActionsView {
     pub download_bundle: ActionLinkView,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct ListJobsQuery {
     #[serde(default = "default_limit")]
     pub limit: u32,

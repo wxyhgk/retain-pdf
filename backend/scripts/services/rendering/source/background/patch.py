@@ -6,11 +6,11 @@ import fitz
 from PIL import Image
 from PIL import ImageDraw
 
-from services.rendering.source.cleanup.config import COVER_LIGHT_BG_MEDIAN_MIN
-from services.rendering.source.cleanup.config import COVER_LIGHT_BG_P90_MIN
-from services.rendering.source.cleanup.config import COVER_TEXT_CONTAMINATION_DARK_RATIO
-from services.rendering.source.cleanup.config import COVER_TEXT_CONTAMINATION_DARK_VALUE
-from services.rendering.source.cleanup.fill import quantile
+from services.rendering.source.background.config import BACKGROUND_PATCH_LIGHT_BG_MEDIAN_MIN
+from services.rendering.source.background.config import BACKGROUND_PATCH_LIGHT_BG_P90_MIN
+from services.rendering.source.background.config import BACKGROUND_PATCH_TEXT_CONTAMINATION_DARK_RATIO
+from services.rendering.source.background.config import BACKGROUND_PATCH_TEXT_CONTAMINATION_DARK_VALUE
+from services.rendering.source.background.sampling import quantile
 
 
 STRICT_VERTICAL_MERGE_GAP_PT = 2.0
@@ -30,11 +30,11 @@ def looks_like_text_contaminated_light_patch(pixels: list[tuple[int, int, int]])
     brightness = sorted(int((r + g + b) / 3) for r, g, b in pixels)
     median = quantile(brightness, 1, 2)
     p90 = quantile(brightness, 9, 10)
-    if median < COVER_LIGHT_BG_MEDIAN_MIN or p90 < COVER_LIGHT_BG_P90_MIN:
+    if median < BACKGROUND_PATCH_LIGHT_BG_MEDIAN_MIN or p90 < BACKGROUND_PATCH_LIGHT_BG_P90_MIN:
         return False
-    dark_pixels = sum(1 for value in brightness if value < COVER_TEXT_CONTAMINATION_DARK_VALUE)
+    dark_pixels = sum(1 for value in brightness if value < BACKGROUND_PATCH_TEXT_CONTAMINATION_DARK_VALUE)
     dark_ratio = dark_pixels / max(len(brightness), 1)
-    return dark_ratio >= COVER_TEXT_CONTAMINATION_DARK_RATIO
+    return dark_ratio >= BACKGROUND_PATCH_TEXT_CONTAMINATION_DARK_RATIO
 
 
 def map_rect_to_image(image_rect: fitz.Rect, image_size: tuple[int, int], rect: fitz.Rect) -> tuple[int, int, int, int] | None:

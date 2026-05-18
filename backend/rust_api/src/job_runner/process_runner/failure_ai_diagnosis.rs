@@ -38,7 +38,7 @@ struct FailureAiDiagnosisResponse {
 
 pub(super) async fn maybe_attach_ai_failure_diagnosis(
     db: &crate::db::Db,
-    config: &crate::config::AppConfig,
+    config: &crate::config::FailureAiDiagnosisRuntimeConfig<'_>,
     job: &mut JobRuntimeState,
 ) {
     let Some(failure_snapshot) = job.failure.clone() else {
@@ -47,7 +47,7 @@ pub(super) async fn maybe_attach_ai_failure_diagnosis(
     if failure_snapshot.category != "unknown" || failure_snapshot.ai_diagnostic.is_some() {
         return;
     }
-    let script_path = &config.run_failure_ai_diagnosis_script;
+    let script_path = config.script_path;
     if !script_path.exists() {
         return;
     }
@@ -56,7 +56,7 @@ pub(super) async fn maybe_attach_ai_failure_diagnosis(
         .artifacts
         .as_ref()
         .and_then(|artifacts| artifacts.job_root.as_ref())
-        .and_then(|job_root| resolve_data_path(&config.data_root, job_root).ok())
+        .and_then(|job_root| resolve_data_path(config.data_root, job_root).ok())
         .unwrap_or_else(|| config.output_root.join(&job.job_id));
     let logs_dir = job_root.join("logs");
     let request_path = logs_dir.join("failure-ai-diagnosis.request.json");
@@ -91,7 +91,7 @@ pub(super) async fn maybe_attach_ai_failure_diagnosis(
         return;
     }
 
-    let mut command = Command::new(&config.python_bin);
+    let mut command = Command::new(config.python_bin);
     command
         .arg("-u")
         .arg(script_path)
@@ -101,11 +101,11 @@ pub(super) async fn maybe_attach_ai_failure_diagnosis(
         .arg(&job.request_payload.translation.model)
         .arg("--base-url")
         .arg(&job.request_payload.translation.base_url)
-        .env("RUST_API_DATA_ROOT", &config.data_root)
-        .env("RUST_API_OUTPUT_ROOT", &config.output_root)
-        .env("OUTPUT_ROOT", &config.output_root)
+        .env("RUST_API_DATA_ROOT", config.data_root)
+        .env("RUST_API_OUTPUT_ROOT", config.output_root)
+        .env("OUTPUT_ROOT", config.output_root)
         .env("PYTHONUNBUFFERED", "1")
-        .current_dir(&config.project_root)
+        .current_dir(config.project_root)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     if !job.request_payload.translation.api_key.trim().is_empty() {
@@ -115,7 +115,7 @@ pub(super) async fn maybe_attach_ai_failure_diagnosis(
         );
     }
 
-    let output = match timeout(Duration::from_secs(60), command.output()).await {
+    let output = match timeout(Duration::from_secs(config.timeout_secs), command.output()).await {
         Ok(Ok(value)) => value,
         _ => return,
     };
@@ -164,8 +164,8 @@ pub(super) async fn maybe_attach_ai_failure_diagnosis(
     });
     record_custom_runtime_event_with_resources(
         db,
-        &config.data_root,
-        &config.output_root,
+        config.data_root,
+        config.output_root,
         &job.snapshot(),
         "info",
         "failure_ai_diagnosed",

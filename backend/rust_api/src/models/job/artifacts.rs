@@ -50,7 +50,13 @@ pub struct JobArtifacts {
     pub provider_trace_id: Option<String>,
     pub translations_dir: Option<String>,
     pub output_pdf: Option<String>,
+    #[serde(default)]
+    pub cover_image_path: Option<String>,
+    #[serde(default)]
+    pub thumbnail_image_path: Option<String>,
     pub summary: Option<String>,
+    #[serde(default)]
+    pub render_config_json: Option<String>,
     pub events_jsonl: Option<String>,
     pub pages_processed: Option<i64>,
     pub translated_items: Option<i64>,

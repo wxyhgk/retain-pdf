@@ -99,6 +99,8 @@ scripts/services/rendering/
   兼容旧 import 的 re-export；新代码优先使用 `document/pdf_ops.py`。
 - `document/pdf_ops.py`
   通用 PDF 保存和页面链接处理辅助。它属于文档级基础能力，不属于 Typst 输出层。
+- `document/pikepdf_overlay.py` / `document/pikepdf_pages.py`
+  正式 PDF 结构写入优先入口。用于内容流级 overlay 合并、整本/选页复制和路径级优化。
 - `layout/model/`
   渲染层公共数据结构和排版文本 helper。
 - `layout/page_specs.py`
@@ -122,6 +124,37 @@ place(...,
 
 - 视觉遮盖：由 Typst block 的 `fill` 或 Word 白底文本框完成。
 - 文本层清理：仍由 `source/cleanup` 和 redaction 策略处理，不能只靠视觉遮盖替代。
+
+## PDF 写入原则
+
+正式产物的 PDF 结构修改优先走 `pikepdf`：
+
+- content stream text-op 删除
+- hidden text strip
+- 整本 Typst overlay 合并
+- 无源页清理需求的逐页 Typst fallback overlay 合并
+- 无源页修改需求的 single-PDF overlay 合并
+- 路径级 bbox rect text-op 删除
+- PDF 复制、选页抽取和结构重写
+- 图片对象压缩 / 替换
+
+PyMuPDF 主要保留在读和分析场景：
+
+- 页面尺寸、文字、bbox、drawing 分析
+- 截图和调试预览
+- 颜色采样、首行缩进检测等视觉辅助
+
+不要在新主链中继续新增 PyMuPDF destructive write：
+
+- 不新增 `apply_redactions`
+- 不新增 `show_pdf_page` 作为正式 overlay 合并
+- 不新增 `insert_pdf + doc.save` 作为结构复制路径
+
+现有 PyMuPDF 写入只作为 legacy/fallback 保留，迁移时优先用 `document/pikepdf_*` 中的路径级工具替代。
+页内 `remove_text_under_rects_with_pymupdf_redaction` 属于 legacy redaction 边界；新增文本层清理优先使用 `source/preparation/bbox_text_strip.py` 的路径级 pikepdf rect-strip 能力。pikepdf text strip 只删除可翻译文本块，`formula` / `display_formula` bbox 作为保护区保留原 PDF 公式；公式页中的其他正文/图注仍可删除，不再因为一页存在公式而整页跳过。
+渲染前处理会向 workflow 传递 `source_text_precleaned_page_indices`，其中包括实际删除过 text-op 的页面和检测到无原文重叠的页面；overlay 阶段用它判断是否可以跳过旧的页内 visual cover/redaction。
+`source_cleanup_strategy=pikepdf_text_strip` 是新的显式策略名；旧的 `bbox_text_strip` 和 `legacy` 作为兼容别名保留，后续新配置应优先使用 `pikepdf_text_strip`。
+渲染 diagnostics 会记录 `legacy_pymupdf_redaction_pages`、`legacy_pymupdf_overlay_pages` 和 `legacy_pdf_write_reasons`；真实样本回归时优先观察这些值是否仍非零。
 
 ## 真实 PDF 回归
 

@@ -4,6 +4,7 @@ use crate::models::JobRuntimeState;
 use anyhow::Result;
 
 use super::cancel_registry::is_cancel_requested_any;
+use super::process_contract::validate_successful_worker_outputs;
 use super::ProcessRuntimeDeps;
 
 mod completion;
@@ -14,11 +15,12 @@ mod result_support;
 mod startup;
 mod timeout_support;
 
+#[cfg(test)]
+use self::completion::is_shutdown_noise;
 use self::completion::{
     apply_process_completion, classify_process_completion, should_treat_shutdown_noise_as_success,
+    ProcessCompletionKind,
 };
-#[cfg(test)]
-use self::completion::{is_shutdown_noise, ProcessCompletionKind};
 use self::execution::{collect_process_execution, ProcessExecution};
 use self::failure_ai_diagnosis::maybe_attach_ai_failure_diagnosis;
 #[cfg(test)]
@@ -35,8 +37,24 @@ pub(crate) async fn execute_process_job(
     job: JobRuntimeState,
     extra_cancel_job_ids: &[String],
 ) -> Result<JobRuntimeState> {
-    let (job, child) = spawn_started_process(&deps, job, extra_cancel_job_ids).await?;
-    let execution = collect_process_execution(&deps, child, job, extra_cancel_job_ids).await?;
+    let worker_runtime = deps.worker_process_runtime();
+    let (job, child) = spawn_started_process(
+        &deps.persist,
+        &deps.canceled_jobs,
+        &worker_runtime,
+        job,
+        extra_cancel_job_ids,
+    )
+    .await?;
+    let execution = collect_process_execution(
+        &deps.persist,
+        &deps.canceled_jobs,
+        &worker_runtime,
+        child,
+        job,
+        extra_cancel_job_ids,
+    )
+    .await?;
     let completed = match execution {
         ProcessExecution::Completed(completed) => completed,
         ProcessExecution::TimedOut(timed_out_job) => return Ok(timed_out_job),
@@ -48,10 +66,10 @@ pub(crate) async fn execute_process_job(
         completed.started,
         completed.stdout_text,
         &completed.stderr_text,
-        &deps.config.project_root,
+        worker_runtime.project_root,
     );
 
-    let completion = classify_process_completion(
+    let mut completion = classify_process_completion(
         is_cancel_requested_any(
             &deps.canceled_jobs,
             &latest_job.job_id,
@@ -61,9 +79,24 @@ pub(crate) async fn execute_process_job(
         completed.status.success(),
         should_treat_shutdown_noise_as_success(&latest_job, &completed.stderr_text),
     );
+    if matches!(
+        completion,
+        ProcessCompletionKind::Succeeded | ProcessCompletionKind::SucceededWithShutdownNoise
+    ) {
+        if let Err(err) = validate_successful_worker_outputs(&latest_job, &deps.persist.data_root) {
+            latest_job.append_log(&format!("ERROR: worker output contract failed: {err}"));
+            latest_job.stage_detail =
+                Some(format!("Python worker 成功退出，但必需产物缺失：{err}"));
+            completion = ProcessCompletionKind::Failed;
+        }
+    }
     apply_process_completion(&mut latest_job, completion, &completed.stderr_text);
-    maybe_attach_ai_failure_diagnosis(deps.db.as_ref(), deps.config.as_ref(), &mut latest_job)
-        .await;
+    maybe_attach_ai_failure_diagnosis(
+        deps.db.as_ref(),
+        &deps.failure_ai_diagnosis_runtime(),
+        &mut latest_job,
+    )
+    .await;
     Ok(latest_job)
 }
 
@@ -135,6 +168,9 @@ mod tests {
             upload_max_pages: 0,
             api_keys: HashSet::new(),
             max_running_jobs: 1,
+            provider_limits: crate::config::ProviderLimitsConfig::default(),
+            provider_runtime: crate::config::ProviderRuntimeConfig::default(),
+            job_runner: crate::config::JobRunnerConfig::default(),
         });
 
         let db = Arc::new(Db::new(
@@ -391,7 +427,12 @@ print(json.dumps({
         )
         .expect("persist runtime job");
 
-        maybe_attach_ai_failure_diagnosis(state.db.as_ref(), state.config.as_ref(), &mut job).await;
+        maybe_attach_ai_failure_diagnosis(
+            state.db.as_ref(),
+            &state.config.failure_ai_diagnosis_runtime(),
+            &mut job,
+        )
+        .await;
 
         let failure = job.failure.as_ref().expect("failure");
         assert_eq!(failure.category, "unknown");

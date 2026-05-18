@@ -3,6 +3,8 @@ import {
   summarizeStageKey,
   summarizeStageLabel,
   summarizeStageProgressText,
+  progressFromText,
+  stageSubtypeOf,
 } from "./job-status-summary.js";
 import {
   ocrProgressFallbackForRawStage,
@@ -125,6 +127,59 @@ function progressFromEvent(event) {
   return { current, total };
 }
 
+function stagePayloadFromEvent(job, item, progress) {
+  return {
+    ...job,
+    status: item?.status || "running",
+    user_stage: item?.user_stage || item?.payload?.user_stage || "",
+    current_stage: item?.stage || item?.provider_stage || "",
+    stage: item?.stage || "",
+    substage: item?.substage || item?.payload?.substage || "",
+    stage_detail: item?.stage_detail || item?.message || "",
+    progress_unit: item?.progress_unit || item?.payload?.progress_unit || "",
+    progress_current: progress.current,
+    progress_total: progress.total,
+  };
+}
+
+function progressUnitPriority(unit = "") {
+  switch (`${unit || ""}`.trim()) {
+    case "page":
+    case "batch":
+      return 3;
+    case "percent":
+      return 2;
+    case "step":
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+function visualStageKeyForEventPayload(payload = {}, stageKey = "") {
+  return visualStageKeyForRawStage(rawStageOfPayload(payload), stageKey);
+}
+
+function shouldReplaceStageProgress(previous, next) {
+  if (!previous) {
+    return true;
+  }
+  if (
+    next.current > 0
+    && next.total > 0
+    && next.current >= next.total
+    && (next.progressUnit === "page" || next.progressUnit === "none" || next.visualStageKey === "ocr_result_ready")
+  ) {
+    return true;
+  }
+  const previousPriority = progressUnitPriority(previous.progressUnit);
+  const nextPriority = progressUnitPriority(next.progressUnit);
+  if (nextPriority !== previousPriority) {
+    return nextPriority > previousPriority;
+  }
+  return true;
+}
+
 export function collectStageProgressByKey(job, eventsPayload) {
   const items = Array.isArray(eventsPayload?.items) ? eventsPayload.items : [];
   const progressByKey = {};
@@ -137,31 +192,45 @@ export function collectStageProgressByKey(job, eventsPayload) {
     if (progress.current === null || progress.total === null || progress.total <= 0) {
       continue;
     }
-    const payload = {
-      ...job,
-      status: item.status || "running",
-      current_stage: itemStage,
-      stage_detail: item.stage_detail || item.message || "",
-      progress_current: progress.current,
-      progress_total: progress.total,
-    };
+    const payload = stagePayloadFromEvent(job, { ...item, stage: itemStage }, progress);
     const stageKey = summarizeStageKey(payload);
     if (!["ocr", "translate", "render"].includes(stageKey)) {
       continue;
     }
-    progressByKey[stageKey] = {
+    const visualStageKey = visualStageKeyForEventPayload(payload, stageKey);
+    const progressUnit = stageKey === "ocr"
+      && visualStageKey === "ocr_result_ready"
+      && progress.current > 0
+      && progress.total > 0
+      ? "page"
+      : payload.progress_unit;
+    const displayPayload = {
+      ...payload,
+      progress_unit: progressUnit,
+    };
+    const nextProgress = {
       current: progress.current,
       total: progress.total,
-      progressText: summarizeStageProgressText(payload),
+      progressText: summarizeStageProgressText(displayPayload),
+      progressUnit,
+      visualStageKey,
+      substageKey: stageSubtypeOf(displayPayload),
+      indeterminate: stageKey === "ocr" && progress.current <= 0 && progress.total > 0,
     };
+    if (shouldReplaceStageProgress(progressByKey[stageKey], nextProgress)) {
+      progressByKey[stageKey] = nextProgress;
+    }
   }
   return progressByKey;
 }
 
 function jobProgress(job = {}) {
+  const textProgress = progressFromText(job);
+  const current = firstNumber(job?.progress_current, job?.progress?.current);
+  const total = firstNumber(job?.progress_total, job?.progress?.total);
   return {
-    current: firstNumber(job?.progress_current, job?.progress?.current),
-    total: firstNumber(job?.progress_total, job?.progress?.total),
+    current: current ?? textProgress.current,
+    total: total ?? textProgress.total,
   };
 }
 
@@ -189,6 +258,7 @@ export function resolveDisplayedStagePresentation(job, eventsPayload) {
     progressText: summarizeStageProgressText(job) || stageFallback?.text || "",
     progressCurrent: fallbackProgress.current ?? stageFallback?.current ?? null,
     progressTotal: fallbackProgress.total ?? stageFallback?.total ?? null,
+    substageKey: stageSubtypeOf(job),
     progressIndeterminate: fallbackProgress.current === null && fallbackProgress.total === null && Boolean(stageFallback),
   };
   const event = latestStageEvent(job, eventsPayload);
@@ -199,8 +269,11 @@ export function resolveDisplayedStagePresentation(job, eventsPayload) {
   const rawEventPayload = {
     ...job,
     status: job.status,
+    user_stage: event.user_stage || event.payload?.user_stage || "",
     current_stage: event.stage || event.provider_stage || job.current_stage || job.stage || "",
+    substage: event.substage || event.payload?.substage || "",
     stage_detail: event.stage_detail || event.message || job.stage_detail || "",
+    progress_unit: event.progress_unit || event.payload?.progress_unit || "",
     progress_current: eventProgress.current,
     progress_total: eventProgress.total,
   };
@@ -224,6 +297,7 @@ export function resolveDisplayedStagePresentation(job, eventsPayload) {
     progressText: eventProgressText || stageFallback?.text || "",
     progressCurrent: eventPayload.progress_current,
     progressTotal: eventPayload.progress_total,
+    substageKey: stageSubtypeOf(eventPayload),
     progressIndeterminate: eventProgress.current === null && eventProgress.total === null && Boolean(stageFallback),
   };
 }

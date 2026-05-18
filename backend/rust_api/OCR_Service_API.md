@@ -4,7 +4,7 @@
 
 说明：
 
-- 这是一份 OCR-only 专项说明，正式总入口先看 [README](/home/wxyhgk/tmp/Code/backend/rust_api/README.md)、[API_SPEC](/home/wxyhgk/tmp/Code/backend/rust_api/API_SPEC.md) 和 [CURRENT_API_MAP](/home/wxyhgk/tmp/Code/backend/rust_api/CURRENT_API_MAP.md)
+- 这是一份 OCR-only 专项说明，正式 API 总入口先看 [RetainPDF 后端 API 总入口](/home/wxyhgk/tmp/Code/doc/core/api/index.md)，运行主链看 [CURRENT_API_MAP](/home/wxyhgk/tmp/Code/backend/rust_api/CURRENT_API_MAP.md)
 - 当前 provider 选择看请求里的 `provider` / `ocr.provider`，实际支持集以健康检查和 `OCR_PROVIDER_CONTRACT.md` 为准
 
 它的目标很明确：

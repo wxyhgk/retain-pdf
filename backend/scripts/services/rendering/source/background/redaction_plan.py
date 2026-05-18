@@ -5,8 +5,8 @@ import fitz
 from services.rendering.layout.model.block_view import render_block_protected_text
 from services.rendering.layout.model.models import RenderBlock
 from services.rendering.source.background import page_has_large_background_image
-from services.rendering.source.cleanup.shared import iter_valid_translated_items
-from services.rendering.source.cleanup.vector_text_cleanup import collect_vector_text_rects
+from services.rendering.source.items import iter_valid_translated_items
+from services.rendering.source.vector_text import collect_vector_text_rects
 
 
 def should_redact_source_page(page: fitz.Page) -> bool:

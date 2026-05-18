@@ -11,9 +11,10 @@ use super::constants::{
     ARTIFACT_KEY_MARKDOWN_BUNDLE_ZIP, ARTIFACT_KEY_MARKDOWN_IMAGES_DIR, ARTIFACT_KEY_MARKDOWN_RAW,
     ARTIFACT_KEY_NORMALIZATION_REPORT_JSON, ARTIFACT_KEY_NORMALIZED_DOCUMENT_JSON,
     ARTIFACT_KEY_PIPELINE_SUMMARY, ARTIFACT_KEY_PROVIDER_BUNDLE_ZIP, ARTIFACT_KEY_PROVIDER_RAW_DIR,
-    ARTIFACT_KEY_PROVIDER_RESULT_JSON, ARTIFACT_KEY_SOURCE_PDF, ARTIFACT_KEY_TRANSLATED_PDF,
-    ARTIFACT_KEY_TRANSLATIONS_DIR, ARTIFACT_KEY_TRANSLATION_MANIFEST_JSON, ARTIFACT_KEY_TYPST_PDF,
-    ARTIFACT_KEY_TYPST_SOURCE, ARTIFACT_KIND_DIR, ARTIFACT_KIND_FILE,
+    ARTIFACT_KEY_PROVIDER_RESULT_JSON, ARTIFACT_KEY_RENDER_CONFIG_JSON, ARTIFACT_KEY_SOURCE_PDF,
+    ARTIFACT_KEY_TRANSLATED_PDF, ARTIFACT_KEY_TRANSLATIONS_DIR,
+    ARTIFACT_KEY_TRANSLATION_MANIFEST_JSON, ARTIFACT_KEY_TYPST_PDF, ARTIFACT_KEY_TYPST_SOURCE,
+    ARTIFACT_KIND_DIR, ARTIFACT_KIND_FILE,
 };
 use super::path_ops::{resolve_data_path, to_relative_data_path};
 use super::resolvers::{
@@ -223,6 +224,18 @@ pub fn collect_job_artifact_entries(
         ARTIFACT_KIND_FILE,
         "application/json",
         Some("rendering".to_string()),
+        &now,
+    )?;
+    push_optional_artifact(
+        &mut items,
+        data_root,
+        &job.job_id,
+        artifacts.render_config_json.as_deref(),
+        ARTIFACT_KEY_RENDER_CONFIG_JSON,
+        ARTIFACT_GROUP_DEBUG,
+        ARTIFACT_KIND_FILE,
+        "application/json",
+        Some("runtime".to_string()),
         &now,
     )?;
     push_optional_artifact(

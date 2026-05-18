@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from services.document_schema.provider_adapters.common import NormalizedBlockSpec
 from services.document_schema.provider_adapters.common import normalize_bbox
 from services.document_schema.provider_adapters.paddle.content_extract import build_lines
@@ -14,89 +16,121 @@ from services.document_schema.provider_adapters.paddle.trace import build_metada
 from services.document_schema.provider_adapters.paddle.trace import build_source
 
 
-_TEXT_LAYOUT_ROLE_BY_SUBTYPE = {
-    "title": "title",
-    "heading": "heading",
-    "body": "paragraph",
-    "header": "header",
-    "footer": "footer",
-    "page_number": "page_number",
-    "footnote": "footnote",
-    "image_footnote": "footnote",
-    "table_footnote": "footnote",
-    "figure_caption": "caption",
-    "metadata": "unknown",
-    "reference_entry": "unknown",
-    "formula_number": "unknown",
-    "table_caption": "caption",
-    "image_caption": "caption",
-    "caption": "caption",
-}
-_TEXT_SEMANTIC_ROLE_BY_SUBTYPE = {
-    "body": "body",
-    "header": "metadata",
-    "footer": "metadata",
-    "page_number": "metadata",
-    "metadata": "metadata",
-    "formula_number": "metadata",
-    "reference_entry": "reference",
-}
-_TEXT_STRUCTURE_ROLE_BY_SUBTYPE = {
-    "body": "body",
-    "figure_caption": "figure_caption",
-    "heading": "heading",
-    "title": "title",
-    "reference_entry": "reference_entry",
-    "caption": "caption",
-    "image_caption": "caption",
-    "table_caption": "caption",
-    "code_caption": "caption",
-    "footnote": "footnote",
-    "image_footnote": "footnote",
-    "table_footnote": "footnote",
-}
-_TEXT_TRANSLATE_REASON_BY_SUBTYPE = {
-    "title": "provider_title_candidate",
-    "heading": "provider_heading_candidate",
-    "body": "provider_body_whitelist:body",
-    "figure_caption": "provider_caption_whitelist:figure_caption",
-    "footnote": "provider_footnote_whitelist",
-    "image_footnote": "provider_footnote_whitelist:image_footnote",
-    "table_footnote": "provider_footnote_whitelist:table_footnote",
-}
+@dataclass(frozen=True)
+class PaddleTextRoleRule:
+    layout_role: str = "unknown"
+    semantic_role: str = "unknown"
+    structure_role: str = ""
+    translate: bool = False
+    translate_reason: str = ""
 
 
-def _paddle_layout_role(*, block_type: str, sub_type: str) -> str:
+_TEXT_ROLE_BY_SUBTYPE = {
+    "title": PaddleTextRoleRule(
+        layout_role="title",
+        structure_role="title",
+        translate=True,
+        translate_reason="provider_title_candidate",
+    ),
+    "heading": PaddleTextRoleRule(
+        layout_role="heading",
+        structure_role="heading",
+        translate=True,
+        translate_reason="provider_heading_candidate",
+    ),
+    "body": PaddleTextRoleRule(
+        layout_role="paragraph",
+        semantic_role="body",
+        structure_role="body",
+        translate=True,
+        translate_reason="provider_body_whitelist:body",
+    ),
+    "header": PaddleTextRoleRule(layout_role="header", semantic_role="metadata"),
+    "footer": PaddleTextRoleRule(layout_role="footer", semantic_role="metadata"),
+    "page_number": PaddleTextRoleRule(layout_role="page_number", semantic_role="metadata"),
+    "metadata": PaddleTextRoleRule(semantic_role="metadata"),
+    "formula_number": PaddleTextRoleRule(semantic_role="metadata"),
+    "reference_entry": PaddleTextRoleRule(semantic_role="reference", structure_role="reference_entry"),
+    "figure_caption": PaddleTextRoleRule(
+        layout_role="caption",
+        structure_role="figure_caption",
+        translate=True,
+        translate_reason="provider_caption_whitelist:figure_caption",
+    ),
+    "caption": PaddleTextRoleRule(layout_role="caption", structure_role="caption"),
+    "image_caption": PaddleTextRoleRule(layout_role="caption", structure_role="caption"),
+    "table_caption": PaddleTextRoleRule(layout_role="caption", structure_role="caption"),
+    "code_caption": PaddleTextRoleRule(structure_role="caption"),
+    "footnote": PaddleTextRoleRule(layout_role="footnote", structure_role="footnote"),
+    "image_footnote": PaddleTextRoleRule(
+        layout_role="footnote",
+        structure_role="footnote",
+        translate=True,
+        translate_reason="provider_footnote_whitelist:image_footnote",
+    ),
+    "table_footnote": PaddleTextRoleRule(
+        layout_role="footnote",
+        structure_role="footnote",
+        translate=True,
+        translate_reason="provider_footnote_whitelist:table_footnote",
+    ),
+}
+_TEXT_ROLE_BY_RAW_LABEL = {
+    "abstract": PaddleTextRoleRule(
+        layout_role="paragraph",
+        semantic_role="abstract",
+        structure_role="body",
+        translate=True,
+        translate_reason="provider_body_whitelist:abstract",
+    ),
+    "footnote": PaddleTextRoleRule(
+        layout_role="footnote",
+        structure_role="footnote",
+        translate=False,
+        translate_reason="provider_non_body:footnote",
+    ),
+}
+_VISION_FOOTNOTE_FALLBACK_RULE = PaddleTextRoleRule(
+    layout_role="footnote",
+    structure_role="footnote",
+    translate=True,
+    translate_reason="provider_footnote_whitelist:vision_footnote",
+)
+
+
+def _merge_role_rule(base: PaddleTextRoleRule, override: PaddleTextRoleRule | None) -> PaddleTextRoleRule:
+    if override is None:
+        return base
+    return PaddleTextRoleRule(
+        layout_role=override.layout_role if override.layout_role != "unknown" else base.layout_role,
+        semantic_role=override.semantic_role if override.semantic_role != "unknown" else base.semantic_role,
+        structure_role=override.structure_role or base.structure_role,
+        translate=override.translate,
+        translate_reason=override.translate_reason or base.translate_reason,
+    )
+
+
+def _paddle_text_role_rule(*, raw_label: str, block_type: str, sub_type: str) -> PaddleTextRoleRule:
     if block_type != "text":
-        return "unknown"
-    return _TEXT_LAYOUT_ROLE_BY_SUBTYPE.get(sub_type, "unknown")
-
-
-def _paddle_semantic_role(*, raw_label: str, block_type: str, sub_type: str) -> str:
+        return PaddleTextRoleRule(
+            translate=False,
+            translate_reason=f"provider_non_text:{block_type or 'unknown'}",
+        )
     label = raw_label.strip().lower()
-    if block_type != "text":
-        return "unknown"
-    if label == "abstract":
-        return "abstract"
-    return _TEXT_SEMANTIC_ROLE_BY_SUBTYPE.get(sub_type, "unknown")
-
-
-def _paddle_structure_role(*, block_type: str, sub_type: str) -> str:
-    if block_type != "text":
-        return ""
-    return _TEXT_STRUCTURE_ROLE_BY_SUBTYPE.get(sub_type, "")
-
-
-def _paddle_translate_policy(*, raw_label: str, block_type: str, sub_type: str) -> dict:
-    label = raw_label.strip().lower()
-    if block_type != "text":
-        return {"translate": False, "translate_reason": f"provider_non_text:{block_type or 'unknown'}"}
-    if label == "abstract":
-        return {"translate": True, "translate_reason": "provider_body_whitelist:abstract"}
-    reason = _TEXT_TRANSLATE_REASON_BY_SUBTYPE.get(sub_type)
-    if reason is not None:
-        return {"translate": True, "translate_reason": reason}
-    return {"translate": False, "translate_reason": f"provider_non_body:{sub_type or label or 'unknown'}"}
+    base = _TEXT_ROLE_BY_SUBTYPE.get(sub_type, PaddleTextRoleRule())
+    override = _TEXT_ROLE_BY_RAW_LABEL.get(label)
+    if label == "vision_footnote" and sub_type == "footnote":
+        override = _VISION_FOOTNOTE_FALLBACK_RULE
+    rule = _merge_role_rule(base, override)
+    if not rule.translate_reason:
+        rule = PaddleTextRoleRule(
+            layout_role=rule.layout_role,
+            semantic_role=rule.semantic_role,
+            structure_role=rule.structure_role,
+            translate=False,
+            translate_reason=f"provider_non_body:{sub_type or label or 'unknown'}",
+        )
+    return rule
 
 
 def _build_provenance(*, source: dict, raw_label: str) -> dict:
@@ -210,18 +244,18 @@ def build_block_spec(
         text=block_context["text"],
         order=order,
     )
-    layout_role = _paddle_layout_role(block_type=block_type, sub_type=sub_type)
-    semantic_role = _paddle_semantic_role(
+    role_rule = _paddle_text_role_rule(
         raw_label=block_context["raw_label"],
         block_type=block_type,
         sub_type=sub_type,
     )
-    structure_role = _paddle_structure_role(block_type=block_type, sub_type=sub_type)
-    policy = _paddle_translate_policy(
-        raw_label=block_context["raw_label"],
-        block_type=block_type,
-        sub_type=sub_type,
-    )
+    layout_role = role_rule.layout_role
+    semantic_role = role_rule.semantic_role
+    structure_role = role_rule.structure_role
+    policy = {
+        "translate": role_rule.translate,
+        "translate_reason": role_rule.translate_reason,
+    }
     metadata["structure_role"] = structure_role
     metadata["layout_role"] = layout_role
     metadata["semantic_role"] = semantic_role

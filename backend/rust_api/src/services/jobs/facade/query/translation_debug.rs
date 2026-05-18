@@ -16,8 +16,8 @@ impl<'a> JobsFacade<'a> {
         &self,
         job_id: &str,
     ) -> Result<TranslationDiagnosticsView, AppError> {
-        let job = load_supported_job(self.query.db, &self.query.config.data_root, job_id)?;
-        load_translation_diagnostics_view(&self.query.config.data_root, &job)
+        let job = load_supported_job(self.query.db, self.query.data_root, job_id)?;
+        load_translation_diagnostics_view(self.query.data_root, &job)
     }
 
     pub fn translation_items_view(
@@ -25,8 +25,8 @@ impl<'a> JobsFacade<'a> {
         job_id: &str,
         query: &ListTranslationItemsQuery,
     ) -> Result<TranslationDebugListView, AppError> {
-        let job = load_supported_job(self.query.db, &self.query.config.data_root, job_id)?;
-        load_translation_debug_list_view(&self.query.config.data_root, &job, query)
+        let job = load_supported_job(self.query.db, self.query.data_root, job_id)?;
+        load_translation_debug_list_view(self.query.data_root, &job, query)
     }
 
     pub fn translation_item_view(
@@ -34,8 +34,8 @@ impl<'a> JobsFacade<'a> {
         job_id: &str,
         item_id: &str,
     ) -> Result<TranslationDebugItemView, AppError> {
-        let job = load_supported_job(self.query.db, &self.query.config.data_root, job_id)?;
-        load_translation_debug_item_view(&self.query.config.data_root, &job, item_id)
+        let job = load_supported_job(self.query.db, self.query.data_root, job_id)?;
+        load_translation_debug_item_view(self.query.data_root, &job, item_id)
     }
 
     pub async fn replay_translation_item(
@@ -43,7 +43,7 @@ impl<'a> JobsFacade<'a> {
         job_id: &str,
         item_id: &str,
     ) -> Result<TranslationReplayView, AppError> {
-        let job = load_supported_job(self.query.db, &self.query.config.data_root, job_id)?;
+        let job = load_supported_job(self.query.db, self.query.data_root, job_id)?;
         replay_translation_item(&self.query.replay, &job, item_id).await
     }
 }

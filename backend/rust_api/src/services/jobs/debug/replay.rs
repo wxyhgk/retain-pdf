@@ -14,7 +14,6 @@ pub(crate) async fn replay_translation_item(
     let job_root = resolve_job_root(job, deps.data_root)
         .ok_or_else(|| AppError::not_found(format!("job root not found: {}", job.job_id)))?;
     let script_path = deps
-        .config
         .scripts_dir
         .join("devtools")
         .join("replay_translation_item.py");
@@ -25,14 +24,14 @@ pub(crate) async fn replay_translation_item(
         )));
     }
 
-    let mut command = Command::new(&deps.config.python_bin);
+    let mut command = Command::new(deps.python_bin);
     command
         .arg(&script_path)
         .arg("--job-root")
         .arg(&job_root)
         .arg("--item-id")
         .arg(item_id)
-        .current_dir(&deps.config.project_root)
+        .current_dir(deps.project_root)
         .env("PYTHONUNBUFFERED", "1");
     if !job.request_payload.translation.api_key.trim().is_empty() {
         command.env(

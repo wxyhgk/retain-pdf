@@ -72,7 +72,7 @@ def extract_item_word_entries(
     rect: fitz.Rect,
     page_words: list[tuple] | None = None,
 ) -> list[tuple[fitz.Rect, str]]:
-    from services.rendering.source.cleanup.geometry import clip_rect
+    from services.rendering.source.rects import clip_rect
 
     clip = clip_rect(rect)
     raw_words = page.get_text("words", clip=clip) if page_words is None else page_words

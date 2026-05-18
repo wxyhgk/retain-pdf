@@ -14,13 +14,6 @@ use super::markdown_bundle::export_markdown_bundle;
 use super::mineru_retry::{mineru_error_chain_text, should_retry_mineru_poll_error};
 use super::save_ocr_job;
 
-const MINERU_BUNDLE_DOWNLOAD_RETRY_LIMIT: usize = 8;
-const MINERU_BUNDLE_DOWNLOAD_BASE_DELAY_SECS: u64 = 2;
-const MINERU_BUNDLE_READY_RETRY_LIMIT: usize = 8;
-const MINERU_BUNDLE_READY_BASE_DELAY_SECS: u64 = 2;
-const MINERU_BUNDLE_READY_TIMEOUT_CAP_SECS: u64 = 120;
-const MINERU_BUNDLE_RETRY_MAX_DELAY_SECS: u64 = 12;
-
 pub(super) async fn download_and_unpack_after_success(
     deps: &ProcessRuntimeDeps,
     job: &mut JobRuntimeState,
@@ -42,7 +35,11 @@ pub(super) async fn download_and_unpack_after_success(
     job.stage_detail = Some("OCR provider 结果已就绪，正在下载原始 bundle".to_string());
     job.updated_at = crate::models::now_iso();
     save_ocr_job(deps, job, parent_job_id).await?;
-    let bundle_timeout_secs = bundle_ready_timeout_secs(job.request_payload.ocr.poll_timeout);
+    let runtime = deps.mineru_runtime();
+    let bundle_timeout_secs = bundle_ready_timeout_secs(
+        job.request_payload.ocr.poll_timeout,
+        runtime.bundle_ready_timeout_cap_secs,
+    );
     let bundle_ready = wait_for_mineru_bundle_ready(
         deps,
         job,
@@ -99,7 +96,14 @@ async fn wait_for_mineru_bundle_ready(
                 if !should_retry_mineru_bundle_ready_error(&err) {
                     return Err(err);
                 }
-                if should_fallback_to_direct_download(&err, attempt, elapsed_secs, timeout_secs) {
+                let runtime = deps.mineru_runtime();
+                if should_fallback_to_direct_download(
+                    &err,
+                    attempt,
+                    elapsed_secs,
+                    timeout_secs,
+                    runtime.bundle_ready_retry_limit,
+                ) {
                     job.append_log(&format!(
                         "MinerU bundle readiness probe degraded after {attempt} attempts and {elapsed_secs}s: {full_zip_url}; fallback to direct download. error: {}",
                         err
@@ -113,8 +117,8 @@ async fn wait_for_mineru_bundle_ready(
                     register_job_retry(job);
                     record_custom_runtime_event_with_resources(
                         deps.db.as_ref(),
-                        &deps.config.data_root,
-                        &deps.config.output_root,
+                        &deps.persist.data_root,
+                        &deps.persist.output_root,
                         &job.snapshot(),
                         "warn",
                         "retry_degraded",
@@ -122,7 +126,7 @@ async fn wait_for_mineru_bundle_ready(
                         Some(serde_json::json!({
                             "scope": "mineru_bundle_ready_wait",
                             "attempt": attempt,
-                            "max_attempts": MINERU_BUNDLE_READY_RETRY_LIMIT,
+                            "max_attempts": runtime.bundle_ready_retry_limit,
                             "elapsed_seconds": elapsed_secs,
                             "timeout_seconds": timeout_secs,
                             "reason": err.to_string(),
@@ -133,24 +137,26 @@ async fn wait_for_mineru_bundle_ready(
                     save_ocr_job(deps, job, parent_job_id).await?;
                     return Ok(false);
                 }
+                let runtime = deps.mineru_runtime();
                 let delay_secs = std::cmp::min(
-                    MINERU_BUNDLE_READY_BASE_DELAY_SECS * attempt as u64,
-                    MINERU_BUNDLE_RETRY_MAX_DELAY_SECS,
+                    runtime.bundle_ready_base_delay_secs * attempt as u64,
+                    runtime.bundle_retry_max_delay_secs,
                 );
                 job.append_log(&format!(
-                    "MinerU bundle readiness wait {attempt}/{MINERU_BUNDLE_READY_RETRY_LIMIT}: {full_zip_url} after error: {}",
-                    err
+                    "MinerU bundle readiness wait {attempt}/{}: {full_zip_url} after error: {}",
+                    runtime.bundle_ready_retry_limit, err
                 ));
                 job.stage = Some("ocr_result_ready".to_string());
                 job.stage_detail = Some(format!(
-                    "OCR provider 已返回 done，bundle 尚未就绪，{delay_secs}s 后重试（第 {attempt}/{MINERU_BUNDLE_READY_RETRY_LIMIT} 次）"
+                    "OCR provider 已返回 done，bundle 尚未就绪，{delay_secs}s 后重试（第 {attempt}/{} 次）",
+                    runtime.bundle_ready_retry_limit
                 ));
                 job.updated_at = crate::models::now_iso();
                 register_job_retry(job);
                 record_custom_runtime_event_with_resources(
                     deps.db.as_ref(),
-                    &deps.config.data_root,
-                    &deps.config.output_root,
+                    &deps.persist.data_root,
+                    &deps.persist.output_root,
                     &job.snapshot(),
                     "warn",
                     "retry_scheduled",
@@ -158,7 +164,7 @@ async fn wait_for_mineru_bundle_ready(
                     Some(serde_json::json!({
                         "scope": "mineru_bundle_ready_wait",
                         "attempt": attempt,
-                        "max_attempts": MINERU_BUNDLE_READY_RETRY_LIMIT,
+                        "max_attempts": runtime.bundle_ready_retry_limit,
                         "delay_seconds": delay_secs,
                         "reason": err.to_string(),
                         "url": full_zip_url,
@@ -189,28 +195,35 @@ async fn download_mineru_bundle_with_retry(
                 attempt += 1;
                 if !should_retry_mineru_poll_error(&err)
                     || started.elapsed().as_secs() >= timeout_secs
-                    || attempt >= MINERU_BUNDLE_DOWNLOAD_RETRY_LIMIT
+                    || attempt
+                        >= deps
+                            .config
+                            .provider_runtime
+                            .mineru
+                            .bundle_download_retry_limit
                 {
                     return Err(err);
                 }
+                let runtime = deps.mineru_runtime();
                 let delay_secs = std::cmp::min(
-                    MINERU_BUNDLE_DOWNLOAD_BASE_DELAY_SECS * attempt as u64,
-                    MINERU_BUNDLE_RETRY_MAX_DELAY_SECS,
+                    runtime.bundle_download_base_delay_secs * attempt as u64,
+                    runtime.bundle_retry_max_delay_secs,
                 );
                 job.append_log(&format!(
-                    "MinerU download bundle retry {attempt}/{MINERU_BUNDLE_DOWNLOAD_RETRY_LIMIT}: {full_zip_url} after error: {}",
-                    err
+                    "MinerU download bundle retry {attempt}/{}: {full_zip_url} after error: {}",
+                    runtime.bundle_download_retry_limit, err
                 ));
                 job.stage = Some("ocr_result_ready".to_string());
                 job.stage_detail = Some(format!(
-                    "OCR provider bundle 下载异常，{delay_secs}s 后重试（第 {attempt}/{MINERU_BUNDLE_DOWNLOAD_RETRY_LIMIT} 次）"
+                    "OCR provider bundle 下载异常，{delay_secs}s 后重试（第 {attempt}/{} 次）",
+                    runtime.bundle_download_retry_limit
                 ));
                 job.updated_at = crate::models::now_iso();
                 register_job_retry(job);
                 record_custom_runtime_event_with_resources(
                     deps.db.as_ref(),
-                    &deps.config.data_root,
-                    &deps.config.output_root,
+                    &deps.persist.data_root,
+                    &deps.persist.output_root,
                     &job.snapshot(),
                     "warn",
                     "retry_scheduled",
@@ -218,7 +231,7 @@ async fn download_mineru_bundle_with_retry(
                     Some(serde_json::json!({
                         "scope": "mineru_bundle_download",
                         "attempt": attempt,
-                        "max_attempts": MINERU_BUNDLE_DOWNLOAD_RETRY_LIMIT,
+                        "max_attempts": runtime.bundle_download_retry_limit,
                         "delay_seconds": delay_secs,
                         "reason": err.to_string(),
                         "url": full_zip_url,
@@ -236,11 +249,8 @@ fn should_retry_mineru_bundle_ready_error(err: &anyhow::Error) -> bool {
     should_retry_mineru_poll_error(err) || text.contains("404") || text.contains("not found")
 }
 
-fn bundle_ready_timeout_secs(poll_timeout_secs: i64) -> u64 {
-    std::cmp::min(
-        std::cmp::max(poll_timeout_secs, 1) as u64,
-        MINERU_BUNDLE_READY_TIMEOUT_CAP_SECS,
-    )
+fn bundle_ready_timeout_secs(poll_timeout_secs: i64, timeout_cap_secs: u64) -> u64 {
+    std::cmp::min(std::cmp::max(poll_timeout_secs, 1) as u64, timeout_cap_secs)
 }
 
 fn should_fallback_to_direct_download(
@@ -248,17 +258,17 @@ fn should_fallback_to_direct_download(
     attempt: usize,
     elapsed_secs: u64,
     timeout_secs: u64,
+    ready_retry_limit: usize,
 ) -> bool {
     should_retry_mineru_bundle_ready_error(err)
-        && (elapsed_secs >= timeout_secs || attempt >= MINERU_BUNDLE_READY_RETRY_LIMIT)
+        && (elapsed_secs >= timeout_secs || attempt >= ready_retry_limit)
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
         bundle_ready_timeout_secs, should_fallback_to_direct_download,
-        should_retry_mineru_bundle_ready_error, MINERU_BUNDLE_READY_RETRY_LIMIT,
-        MINERU_BUNDLE_READY_TIMEOUT_CAP_SECS,
+        should_retry_mineru_bundle_ready_error,
     };
 
     #[test]
@@ -278,12 +288,9 @@ mod tests {
 
     #[test]
     fn bundle_ready_timeout_uses_wider_cap() {
-        assert_eq!(bundle_ready_timeout_secs(0), 1);
-        assert_eq!(bundle_ready_timeout_secs(45), 45);
-        assert_eq!(
-            bundle_ready_timeout_secs(999),
-            MINERU_BUNDLE_READY_TIMEOUT_CAP_SECS
-        );
+        assert_eq!(bundle_ready_timeout_secs(0, 120), 1);
+        assert_eq!(bundle_ready_timeout_secs(45, 120), 45);
+        assert_eq!(bundle_ready_timeout_secs(999, 120), 120);
     }
 
     #[test]
@@ -291,17 +298,12 @@ mod tests {
         let err = anyhow::anyhow!("Connection reset by peer (os error 104)")
             .context("client error (Connect)")
             .context("MinerU bundle readiness probe failed");
-        assert!(should_fallback_to_direct_download(
-            &err,
-            MINERU_BUNDLE_READY_RETRY_LIMIT,
-            12,
-            60,
-        ));
+        assert!(should_fallback_to_direct_download(&err, 8, 12, 60, 8,));
     }
 
     #[test]
     fn non_retryable_probe_error_never_falls_back() {
         let err = anyhow::anyhow!("401 unauthorized");
-        assert!(!should_fallback_to_direct_download(&err, 99, 120, 60));
+        assert!(!should_fallback_to_direct_download(&err, 99, 120, 60, 8));
     }
 }

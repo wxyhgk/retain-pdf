@@ -1,9 +1,10 @@
+mod contracts;
 mod detail;
 mod helpers;
 mod listing;
-mod live_stage;
+pub(crate) mod live_stage;
 mod security;
-mod summary_loaders;
+pub(crate) mod summary_loaders;
 mod views;
 
 use std::path::Path;

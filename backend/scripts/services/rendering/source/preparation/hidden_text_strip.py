@@ -7,7 +7,7 @@ import fitz
 import pikepdf
 from pikepdf import Name
 
-from services.rendering.source.cleanup.analysis import page_has_large_background_image
+from services.rendering.source.background.detect import page_has_large_background_image
 
 
 TEXT_SHOW_OPERATORS = {"Tj", "TJ", "'", '"'}

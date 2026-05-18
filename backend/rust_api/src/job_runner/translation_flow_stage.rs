@@ -8,15 +8,17 @@ use crate::job_events::{
 use crate::models::{
     job_stage_detail, job_stage_str, now_iso, JobRuntimeState, JobStage, JobStatusKind,
 };
-use crate::services::job_command_factory::build_translate_only_command;
 use crate::storage_paths::JobPaths;
+use crate::worker_command::build_translate_only_command;
 
 use crate::job_runner::{
     build_render_only_command, clear_job_failure, execute_process_job, sync_runtime_state,
     ProcessRuntimeDeps,
 };
 
-use super::translation_flow_support::translation_inputs_from_artifacts;
+use crate::job_runner::stage_contract::{
+    ensure_translations_dir_ready, ocr_ready_inputs_for_translation,
+};
 
 pub(super) struct TranslationStageResult {
     pub(super) job: JobRuntimeState,
@@ -53,12 +55,10 @@ pub(super) async fn run_translation_stage(
     mut parent_job: JobRuntimeState,
     parent_job_paths: &JobPaths,
 ) -> Result<TranslationStageResult> {
-    let translate_inputs = translation_inputs_from_artifacts(&parent_job)?;
-    let normalized_path = translate_inputs.normalized_path.to_path_buf();
-    let source_pdf_path = translate_inputs.source_pdf_path.to_path_buf();
-    let layout_json_path = translate_inputs
-        .layout_json_path
-        .map(|path| path.to_path_buf());
+    let translate_inputs = ocr_ready_inputs_for_translation(&parent_job, &deps.persist.data_root)?;
+    let normalized_path = translate_inputs.normalized_path;
+    let source_pdf_path = translate_inputs.source_pdf_path;
+    let layout_json_path = translate_inputs.layout_json_path;
     prepare_translation_stage(
         deps,
         &mut parent_job,
@@ -83,7 +83,7 @@ fn prepare_translation_stage(
     layout_json_path: Option<&Path>,
 ) -> Result<()> {
     parent_job.command = build_translate_only_command(
-        deps.config.as_ref(),
+        &deps.worker_command_runtime(),
         &parent_job.request_payload,
         parent_job_paths,
         normalized_path,
@@ -112,8 +112,9 @@ pub(super) async fn run_render_stage_after_translation(
     job_paths: &JobPaths,
     source_pdf_path: &Path,
 ) -> Result<JobRuntimeState> {
+    ensure_translations_dir_ready(&job_paths.translated_dir, &job.job_id)?;
     job.command = build_render_only_command(
-        deps.config.as_ref(),
+        &deps.worker_command_runtime(),
         &job.request_payload,
         job_paths,
         source_pdf_path,

@@ -6,8 +6,14 @@ import {
 } from "./job-artifacts.js";
 import { resolveJobActions } from "./job.js";
 import { getMockJobId } from "./mock.js";
-import { fetchJobArtifactsManifest, fetchJobPayload, fetchProtected } from "./network.js";
 import {
+  fetchJobArtifactsManifest,
+  fetchJobPayload,
+  fetchProtected,
+  fetchReaderRegions,
+} from "./network.js";
+import {
+  bindReaderRegionHover,
   bindPrimaryViewer,
   bindResizeRefresh,
   mountPdfViewer,
@@ -130,9 +136,10 @@ async function initializeReader() {
 
   try {
     applyReaderBootProgress(14, progressCopy.metadata, "metadata");
-    const [jobPayload, manifestPayload] = await Promise.all([
+    const [jobPayload, manifestPayload, regionsPayload] = await Promise.all([
       fetchJobPayload(jobId, API_PREFIX),
       fetchJobArtifactsManifest(jobId, API_PREFIX),
+      fetchReaderRegions(jobId, API_PREFIX).catch(() => ({ items: [] })),
     ]);
     progressState.metadataReady = true;
     syncReaderBootProgress();
@@ -184,6 +191,11 @@ async function initializeReader() {
     bindPrimaryViewer(primary.controller, (pageNumber) => {
       readerState.currentPage = pageNumber || 1;
       setPageIndicator(readerState.currentPage, readerState.totalPages);
+    });
+    bindReaderRegionHover({
+      regions: regionsPayload?.items || [],
+      sourceController: sourceReady?.controller,
+      translatedController: translatedReady?.controller,
     });
     setPageIndicator(1, readerState.totalPages);
     scheduleScaleRefresh();

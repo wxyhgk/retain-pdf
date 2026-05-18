@@ -73,7 +73,11 @@ pub(super) fn apply_process_completion(
             {
                 job.stage_detail = Some("Python worker 执行失败".to_string());
             }
-            job.error = Some(stderr_text.to_string());
+            if stderr_text.trim().is_empty() {
+                job.error = job.stage_detail.clone();
+            } else {
+                job.error = Some(stderr_text.to_string());
+            }
             refresh_job_failure(job);
         }
     }

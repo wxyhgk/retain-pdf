@@ -18,10 +18,8 @@ MAX_FONT_SIZE_PT = 11.6
 MAX_LOCAL_FONT_SIZE_PT = 14.2
 LOCAL_BLOCK_SCALE_MIN = 0.97
 LOCAL_BLOCK_SCALE_MAX = 1.03
-CAPTION_FONT_SCALE = 0.86
-CAPTION_MAX_FONT_SIZE_PT = 9.8
+CAPTION_FONT_SCALE = 0.92
 FOOTNOTE_FONT_SCALE = 0.78
-FOOTNOTE_MAX_FONT_SIZE_PT = 8.8
 FOOTNOTE_MIN_FONT_SIZE_PT = 6.6
 BODY_PAGE_BLEND_BASE = 0.86
 BODY_PAGE_BLEND_MIN = 0.74
@@ -38,9 +36,9 @@ def local_font_size_pt(item: dict) -> float:
         return fonts.DEFAULT_FONT_SIZE
     base_size = metric * layout.BODY_FONT_SIZE_FACTOR
     if is_footnote_like_block(item):
-        return round(clamp(base_size * FOOTNOTE_FONT_SCALE, FOOTNOTE_MIN_FONT_SIZE_PT, FOOTNOTE_MAX_FONT_SIZE_PT), 2)
+        return round(clamp(base_size * FOOTNOTE_FONT_SCALE, FOOTNOTE_MIN_FONT_SIZE_PT, MAX_LOCAL_FONT_SIZE_PT), 2)
     if is_caption_like_block(item):
-        return round(clamp(base_size * CAPTION_FONT_SCALE, MIN_FONT_SIZE_PT, CAPTION_MAX_FONT_SIZE_PT), 2)
+        return round(clamp(base_size * CAPTION_FONT_SCALE, MIN_FONT_SIZE_PT, MAX_LOCAL_FONT_SIZE_PT), 2)
     return round(clamp(base_size, MIN_FONT_SIZE_PT, MAX_LOCAL_FONT_SIZE_PT), 2)
 
 
@@ -77,8 +75,6 @@ def estimate_font_size_pt(
     if compactness > 0:
         compact_scale_max = WIDE_ASPECT_COMPACT_FONT_SCALE_MAX if wide_aspect_body_text else BODY_COMPACT_FONT_SCALE_MAX
         blended *= 1.0 - min(compact_scale_max, compactness * 0.055)
-    if is_caption_like_block(item):
-        blended = min(blended * CAPTION_FONT_SCALE, CAPTION_MAX_FONT_SIZE_PT)
     return round(clamp(blended, MIN_FONT_SIZE_PT, MAX_LOCAL_FONT_SIZE_PT), 2)
 
 
@@ -87,9 +83,7 @@ __all__ = [
     "BODY_PAGE_BLEND_BASE",
     "BODY_PAGE_BLEND_MIN",
     "CAPTION_FONT_SCALE",
-    "CAPTION_MAX_FONT_SIZE_PT",
     "FOOTNOTE_FONT_SCALE",
-    "FOOTNOTE_MAX_FONT_SIZE_PT",
     "FOOTNOTE_MIN_FONT_SIZE_PT",
     "LOCAL_BLOCK_SCALE_MAX",
     "LOCAL_BLOCK_SCALE_MIN",

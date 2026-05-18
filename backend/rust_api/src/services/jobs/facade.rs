@@ -1,12 +1,10 @@
 mod command;
 mod query;
 
-use axum::http::HeaderMap;
-
 use crate::models::{JobSnapshot, JobStatusKind, JobSubmissionView, WorkflowKind};
 
 use super::creation::context::{CommandJobsDeps, QueryJobsDeps};
-use super::support::{build_submission_view, request_base_url};
+use super::support::build_submission_view;
 
 #[derive(Clone)]
 pub struct JobsFacade<'a> {
@@ -19,18 +17,14 @@ impl<'a> JobsFacade<'a> {
         Self { command, query }
     }
 
-    fn base_url(&self, headers: &HeaderMap) -> String {
-        request_base_url(headers, self.query.config.port)
-    }
-
     fn build_submission_view(
         &self,
-        headers: &HeaderMap,
+        base_url: &str,
         job: &JobSnapshot,
         status: JobStatusKind,
         workflow: WorkflowKind,
     ) -> JobSubmissionView {
-        build_submission_view(job, status, workflow, &self.base_url(headers))
+        build_submission_view(job, status, workflow, base_url)
     }
 }
 

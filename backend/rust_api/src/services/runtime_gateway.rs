@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use tokio::sync::RwLock;
 
+use crate::config::JobRunnerConfig;
 use crate::error::AppError;
 use crate::job_runner::{request_cancel_with_registry, terminate_job_process_tree};
 
@@ -36,8 +37,12 @@ impl<'a> RuntimeControl<'a> {
     }
 }
 
-pub async fn terminate_runtime_process(pid: u32) -> Result<(), AppError> {
-    terminate_job_process_tree(pid)
-        .await
-        .map_err(|e| AppError::internal(format!("failed to terminate job process tree: {e}")))
+pub async fn terminate_runtime_process(pid: u32, config: &JobRunnerConfig) -> Result<(), AppError> {
+    terminate_job_process_tree(
+        pid,
+        config.worker_terminate_grace_secs,
+        config.worker_terminate_poll_ms,
+    )
+    .await
+    .map_err(|e| AppError::internal(format!("failed to terminate job process tree: {e}")))
 }

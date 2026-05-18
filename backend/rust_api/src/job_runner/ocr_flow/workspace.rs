@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 
-use crate::config::AppConfig;
 use crate::models::JobRuntimeState;
 use crate::ocr_provider::OcrProviderKind;
 use crate::storage_paths::{build_job_paths, JobPaths};
@@ -23,13 +22,13 @@ pub(super) struct OcrWorkspace {
 
 impl OcrWorkspace {
     pub(super) fn prepare(
-        config: &AppConfig,
+        output_root: &std::path::Path,
         job: &mut JobRuntimeState,
         provider_kind: &OcrProviderKind,
         output_job_id_override: Option<String>,
     ) -> Result<Self> {
         let output_job_id = output_job_id_override.unwrap_or_else(|| job.job_id.clone());
-        let job_paths = build_job_paths(&config.output_root, &output_job_id)?;
+        let job_paths = build_job_paths(output_root, &output_job_id)?;
         attach_job_paths(job, &job_paths);
 
         let source_dir = job_paths.source_dir.clone();

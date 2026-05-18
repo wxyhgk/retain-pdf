@@ -20,7 +20,7 @@ def tighten_body_payloads(
     body_pressure_median: float,
 ) -> None:
     for payload in body_payloads:
-        smooth_floor = body_font_median - BODY_FONT_SMOOTH_BAND_PT
+        smooth_floor = payload["font_size_pt"]
         smooth_cap = body_font_median + BODY_FONT_SMOOTH_BAND_PT
         if payload["heavy_dense_small_box"]:
             smooth_cap = min(smooth_cap, BODY_HEAVY_DENSE_FONT_MAX_PT)

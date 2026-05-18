@@ -40,6 +40,7 @@ pub const ARTIFACT_KEY_PROVIDER_BUNDLE_ZIP: &str = "provider_bundle_zip";
 pub const ARTIFACT_KEY_PROVIDER_RESULT_JSON: &str = "provider_result_json";
 pub const ARTIFACT_KEY_PROVIDER_RAW_DIR: &str = "provider_raw_dir";
 pub const ARTIFACT_KEY_PIPELINE_SUMMARY: &str = "pipeline_summary";
+pub const ARTIFACT_KEY_RENDER_CONFIG_JSON: &str = "render_config_json";
 pub const ARTIFACT_KEY_TRANSLATIONS_DIR: &str = "translations_dir";
 pub const ARTIFACT_KEY_EVENTS_JSONL: &str = "events_jsonl";
 pub const TRANSLATION_MANIFEST_FILE_NAME: &str = "translation-manifest.json";

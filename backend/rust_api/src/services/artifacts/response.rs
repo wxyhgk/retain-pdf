@@ -1,7 +1,3 @@
-use axum::http::HeaderValue;
-use axum::response::Response;
-
-use crate::error::AppError;
 use crate::models::{JobArtifactRecord, JobSnapshot};
 use crate::storage_paths::ARTIFACT_KIND_DIR;
 
@@ -24,12 +20,4 @@ pub fn artifact_resource_path(job: &JobSnapshot, artifact_key: &str) -> Option<S
 
 pub fn artifact_is_direct_downloadable(item: &JobArtifactRecord) -> bool {
     item.artifact_kind != ARTIFACT_KIND_DIR
-}
-
-pub fn attach_job_id_header(response: &mut Response, job_id: &str) -> Result<(), AppError> {
-    response.headers_mut().insert(
-        "X-Job-Id",
-        HeaderValue::from_str(job_id).map_err(|e| AppError::internal(e.to_string()))?,
-    );
-    Ok(())
 }

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import lru_cache
 import re
 
 
@@ -178,10 +179,13 @@ def _compact_letter_hyphen_runs(expr: str) -> str:
     return expr
 
 
+@lru_cache(maxsize=20000)
 def normalize_formula_for_latex_math(formula_text: str) -> str:
     expr = " ".join(formula_text.strip().split())
     if not expr:
         return expr
+    if expr in {"^®", "^{®}", r"^\circled{R}", r"^\textcircled{R}"}:
+        return r"\text{®}"
 
     expr = re.sub(r"\\begin\{array\}\s*\{[^{}]*\}\s*", "", expr)
     expr = re.sub(r"\s*\\end\{array\}", "", expr)
@@ -189,9 +193,13 @@ def normalize_formula_for_latex_math(formula_text: str) -> str:
     expr = re.sub(r"\\mathscr\b", r"\\mathcal", expr)
     expr = re.sub(r"\\rrangle\b", r"\\rangle", expr)
     expr = re.sub(r"\\llangle\b", r"\\langle", expr)
+    expr = re.sub(r"\\langlen\b", r"\\langle n", expr)
     expr = re.sub(r"\\Breve\b", r"\\breve", expr)
     expr = re.sub(r"\\Vec\b", r"\\vec", expr)
     expr = re.sub(r"\\textsuperscript\s*\{\s*([^{}]+?)\s*\}", r"^{\1}", expr)
+    expr = re.sub(r"\\circled\s*\{\s*\\times\s*\}", r"\\otimes", expr)
+    expr = re.sub(r"\\circled\s*\{\s*\\parallel\s*\}", r"\\circ", expr)
+    expr = re.sub(r"\\circled\s*\{\s*([^{}]+?)\s*\}", r"\1", expr)
     expr = re.sub(r"\\textcircled\s*\{\s*\\times\s*\}", r"\\otimes", expr)
     expr = re.sub(
         r"\\textcircled\s*\{\s*\\scriptsize\s*\{\s*\\parallel\s*\}\s*\}",
@@ -236,6 +244,7 @@ def normalize_formula_for_latex_math(formula_text: str) -> str:
     return expr
 
 
+@lru_cache(maxsize=20000)
 def aggressively_simplify_formula_for_latex_math(formula_text: str) -> str:
     expr = normalize_formula_for_latex_math(formula_text)
     if not expr:

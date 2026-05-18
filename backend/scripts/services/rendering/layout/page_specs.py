@@ -5,10 +5,17 @@ from pathlib import Path
 import fitz
 
 from services.rendering.layout.payload.prepare import prepare_render_payloads_by_page
-from services.rendering.layout.payload.blocks import build_render_blocks
+from services.rendering.layout.payload.blocks import build_render_block_payloads
+from services.rendering.layout.payload.blocks import resolve_book_body_font_target_from_payloads
+from services.rendering.layout.payload.body_pipeline import apply_body_payload_pipeline
+from services.rendering.layout.payload.annotation_font_policy import unify_annotation_fonts
+from services.rendering.layout.payload.collision import mark_adjacent_collision_risk
+from services.rendering.layout.payload.emit import emit_render_blocks
 from services.rendering.layout.model.models import RenderLayoutBlock
 from services.rendering.layout.model.models import RenderPageSpec
 from services.rendering.layout.title_fit import apply_title_fit_budget_to_render_blocks
+from services.rendering.policy import apply_render_pages_policy_fields
+from foundation.config import layout
 
 
 def _layout_block_from_render_block(block, *, page_index: int) -> RenderLayoutBlock:
@@ -35,6 +42,7 @@ def _layout_block_from_render_block(block, *, page_index: int) -> RenderLayoutBl
         fit_shift_up_pt=block.fit_shift_up_pt,
         first_line_indent_pt=block.first_line_indent_pt,
         justify_text=block.justify_text,
+        use_cover_fill=block.use_cover_fill,
         skip_reason=block.skip_reason,
     )
 
@@ -44,12 +52,23 @@ def _layout_page_spec(
     page_index: int,
     page_width_pt: float,
     page_height_pt: float,
-    items: list[dict],
+    block_payloads: list[dict],
+    page_text_width_med: float,
+    book_body_font_target: float | None,
     background_pdf_path: Path | None,
 ) -> RenderPageSpec:
+    ordered_payloads = sorted(block_payloads, key=lambda payload: (payload["inner_bbox"][1], payload["inner_bbox"][0]))
+    apply_body_payload_pipeline(
+        ordered_payloads,
+        page_text_width_med=page_text_width_med,
+        book_body_font_target=book_body_font_target,
+    )
+    if layout.FONT_UNIFY_MODE != "off":
+        unify_annotation_fonts(ordered_payloads)
+    mark_adjacent_collision_risk(ordered_payloads)
     blocks = [
         _layout_block_from_render_block(block, page_index=page_index)
-        for block in build_render_blocks(items, page_width=page_width_pt, page_height=page_height_pt)
+        for block in emit_render_blocks(block_payloads)
     ]
     apply_title_fit_budget_to_render_blocks(
         blocks,
@@ -72,18 +91,34 @@ def build_render_page_specs(
     background_pdf_path: Path | None = None,
     prepared: bool = False,
 ) -> list[RenderPageSpec]:
-    prepared_pages = translated_pages if prepared else prepare_render_payloads_by_page(translated_pages)
+    prepared_pages = (
+        apply_render_pages_policy_fields(translated_pages)
+        if prepared
+        else apply_render_pages_policy_fields(prepare_render_payloads_by_page(translated_pages))
+    )
     source_doc = fitz.open(source_pdf_path)
     try:
-        page_specs: list[RenderPageSpec] = []
+        page_payloads: dict[int, tuple[list[dict], float]] = {}
         for page_index in sorted(page_idx for page_idx in prepared_pages if 0 <= page_idx < len(source_doc)):
             page = source_doc[page_index]
+            page_payloads[page_index] = build_render_block_payloads(
+                prepared_pages[page_index],
+                page_width=page.rect.width,
+                page_height=page.rect.height,
+            )
+        book_body_font_target = resolve_book_body_font_target_from_payloads(list(page_payloads.values()))
+        page_specs: list[RenderPageSpec] = []
+        for page_index in sorted(page_payloads):
+            page = source_doc[page_index]
+            block_payloads, page_text_width_med = page_payloads[page_index]
             page_specs.append(
                 _layout_page_spec(
                     page_index=page_index,
                     page_width_pt=page.rect.width,
                     page_height_pt=page.rect.height,
-                    items=prepared_pages[page_index],
+                    block_payloads=block_payloads,
+                    page_text_width_med=page_text_width_med,
+                    book_body_font_target=book_body_font_target,
                     background_pdf_path=background_pdf_path,
                 )
             )

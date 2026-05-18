@@ -101,6 +101,9 @@ mod tests {
             upload_max_pages: 0,
             api_keys: HashSet::from(["test-key".to_string()]),
             max_running_jobs: 1,
+            provider_limits: crate::config::ProviderLimitsConfig::default(),
+            provider_runtime: crate::config::ProviderRuntimeConfig::default(),
+            job_runner: crate::config::JobRunnerConfig::default(),
         }))
         .expect("build state")
     }

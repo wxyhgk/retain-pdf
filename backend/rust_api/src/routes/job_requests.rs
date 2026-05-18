@@ -175,6 +175,8 @@ fn apply_multipart_request_field(
         "inner_bbox_dense_shrink_y" => {
             request.render.inner_bbox_dense_shrink_y = parse_f64_like(name, value)?
         }
+        "font_unify_mode" => request.render.font_unify_mode = value.to_string(),
+        "source_cleanup_strategy" => request.render.source_cleanup_strategy = value.to_string(),
         _ => {}
     }
     Ok(())

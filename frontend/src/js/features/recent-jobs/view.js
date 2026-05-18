@@ -83,22 +83,6 @@ function recentJobStatusLabel(status) {
   }
 }
 
-function recentJobProtocolLabel(item) {
-  const protocol = `${item?.invocation?.input_protocol || ""}`.trim();
-  if (protocol === "stage_spec") {
-    return "Stage Spec";
-  }
-  return "Unknown";
-}
-
-function recentJobProtocolClass(item) {
-  const protocol = `${item?.invocation?.input_protocol || ""}`.trim();
-  if (protocol === "stage_spec") {
-    return "is-valid";
-  }
-  return "";
-}
-
 function truncateRecentJobName(value) {
   const text = `${value || ""}`.trim();
   if (!text) {
@@ -108,24 +92,7 @@ function truncateRecentJobName(value) {
 }
 
 function recentJobTitle(item) {
-  return truncateRecentJobName(item.display_name || item.job_id || "-");
-}
-
-function recentJobKindLabel(item) {
-  const workflow = `${item?.workflow || item?.job_type || ""}`.trim();
-  if (workflow === "render") {
-    return "render";
-  }
-  if (workflow === "translate") {
-    return "translate";
-  }
-  if (workflow === "ocr") {
-    return "ocr";
-  }
-  if ((item?.job_id || "").endsWith("-ocr")) {
-    return "ocr-subtask";
-  }
-  return workflow || "job";
+  return truncateRecentJobName(item.title || item.display_name || item.source_file_name || item.job_id || "-");
 }
 
 function summarizeInvocationCounts(items) {
@@ -226,22 +193,40 @@ export function renderRecentJobsError(message, { reset = false } = {}) {
 
 function buildRecentJobsMarkup(items) {
   return items.map((item) => `
-    <button type="button" class="recent-job-item" data-job-id="${item.job_id || ""}">
-      <div class="recent-job-top">
-        <div class="recent-job-title-wrap">
-          <span class="recent-job-id" title="${(item.display_name || item.job_id || "-").replaceAll('"', "&quot;")}">${recentJobTitle(item)}</span>
-          <span class="recent-job-real-id mono">${item.job_id || "-"}</span>
+    <article class="recent-job-item" role="button" tabindex="0" data-job-id="${item.job_id || ""}">
+      <div class="recent-job-cover-wrap">
+        <div class="recent-job-cover" data-image-url="${recentJobImageUrl(item)}">
+          <span class="recent-job-cover-fallback">${recentJobTitle(item).slice(0, 1)}</span>
         </div>
         <span class="recent-job-status">${recentJobStatusLabel(item.status)}</span>
+        <button type="button" class="recent-job-delete" aria-label="删除任务" title="删除">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h16M10 11v6M14 11v6M9 7l1-2h4l1 2M6 7l1 14h10l1-14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="recent-job-delete-popover" role="group" aria-label="确认删除">
+          <div>删除这本书？</div>
+          <div class="recent-job-delete-actions">
+            <button type="button" class="recent-job-delete-cancel">取消</button>
+            <button type="button" class="recent-job-delete-confirm">删除</button>
+          </div>
+        </div>
       </div>
-      <div class="recent-job-meta">
-        <span>类型: ${recentJobKindLabel(item)}</span>
-        <span>阶段: ${item.stage || "-"}</span>
-        <span>更新: ${item.updated_at || "-"}</span>
-        <span class="recent-job-protocol ${recentJobProtocolClass(item)}">${recentJobProtocolLabel(item)}</span>
+      <div class="recent-job-title-wrap">
+        <span class="recent-job-id" title="${(item.title || item.display_name || item.job_id || "-").replaceAll('"', "&quot;")}">${recentJobTitle(item)}</span>
+        <span class="recent-job-real-id mono">${item.page_count || "-"} 页 · ${item.updated_at || "-"}</span>
       </div>
-    </button>
+    </article>
   `).join("");
+}
+
+function recentJobImageUrl(item) {
+  const direct = `${item?.thumbnail_url || item?.cover_url || ""}`.trim();
+  if (direct) {
+    return direct.replaceAll('"', "&quot;");
+  }
+  const jobId = `${item?.job_id || ""}`.trim();
+  return jobId ? `/api/v1/library/books/${encodeURIComponent(jobId)}/thumbnail` : "";
 }
 
 export function renderRecentJobsList({
@@ -251,6 +236,7 @@ export function renderRecentJobsList({
   reset = false,
   hasMore = false,
   onSelect,
+  onDelete,
 }) {
   const component = recentJobsDialogComponent();
   const list = $("recent-jobs-list");
@@ -262,21 +248,68 @@ export function renderRecentJobsList({
   renderRecentJobsSummary(invocationSummary, allItems);
   const markup = buildRecentJobsMarkup(items);
   if (component?.renderList) {
-    component.renderList(markup, { reset, hasMore, onSelect });
+    component.renderList(markup, { reset, hasMore, onSelect, onDelete });
     return;
   }
   list.classList.remove("hidden");
   empty.classList.add("hidden");
   list.__retainPdfRecentJobSelect = onSelect;
+  list.__retainPdfRecentJobDelete = onDelete;
   if (!list.__retainPdfRecentJobBound) {
     list.__retainPdfRecentJobBound = true;
     list.addEventListener("click", (event) => {
+      const cancelButton = event.target?.closest?.(".recent-job-delete-cancel");
+      if (cancelButton && list.contains(cancelButton)) {
+        event.preventDefault();
+        event.stopPropagation();
+        cancelButton.closest(".recent-job-item")?.classList.remove("is-confirming-delete");
+        return;
+      }
+      const confirmButton = event.target?.closest?.(".recent-job-delete-confirm");
+      if (confirmButton && list.contains(confirmButton)) {
+        event.preventDefault();
+        event.stopPropagation();
+        const item = confirmButton.closest(".recent-job-item");
+        item?.classList.remove("is-confirming-delete");
+        list.__retainPdfRecentJobDelete?.(item?.dataset.jobId || "");
+        return;
+      }
+      const deleteButton = event.target?.closest?.(".recent-job-delete");
+      if (deleteButton && list.contains(deleteButton)) {
+        event.preventDefault();
+        event.stopPropagation();
+        const item = deleteButton.closest(".recent-job-item");
+        list.querySelectorAll(".recent-job-item.is-confirming-delete").forEach((node) => {
+          if (node !== item) {
+            node.classList.remove("is-confirming-delete");
+          }
+        });
+        item?.classList.toggle("is-confirming-delete");
+        return;
+      }
       const button = event.target?.closest?.(".recent-job-item");
       if (!button || !list.contains(button)) {
+        list.querySelectorAll(".recent-job-item.is-confirming-delete").forEach((node) => {
+          node.classList.remove("is-confirming-delete");
+        });
         return;
       }
       event.preventDefault();
+      list.querySelectorAll(".recent-job-item.is-confirming-delete").forEach((node) => {
+        node.classList.remove("is-confirming-delete");
+      });
       list.__retainPdfRecentJobSelect?.(button.dataset.jobId || "");
+    });
+    list.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const item = event.target?.closest?.(".recent-job-item");
+      if (!item || !list.contains(item)) {
+        return;
+      }
+      event.preventDefault();
+      list.__retainPdfRecentJobSelect?.(item.dataset.jobId || "");
     });
   }
   list.innerHTML = reset ? markup : `${list.innerHTML}${markup}`;

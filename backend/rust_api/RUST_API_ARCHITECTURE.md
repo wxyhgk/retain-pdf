@@ -144,7 +144,43 @@ app -> routes -> application services -> internal services -> job_runner / ocr_p
 - 任何从内部对象直接序列化到 HTTP 的改动，都默认视为错误
 - 新增 secret 字段时，必须同步更新 redaction 模块，而不是在路由里局部打补丁
 
-## 1.3 架构门禁
+## 1.3 配置层边界
+
+`src/config.rs` 是兼容 facade，保留当前 `AppConfig` 字段给既有调用方使用。真实配置分组在 `src/config/*`：
+
+- `paths.rs`
+  只处理 root/data/scripts/jobs/uploads/downloads 这类路径和 runtime 目录创建。
+- `auth.rs`
+  只处理 `auth.local.json`、API keys、并发数和 simple port。
+- `server.rs`
+  只处理 bind host、API port、Python binary。
+- `upload.rs`
+  只处理全局上传大小/页数限制。
+- `provider.rs`
+  只处理 MinerU / Paddle / DeepSeek provider runtime、HTTP timeout、retry 和 provider 上传门槛。
+- `job_runner.rs`
+  只处理队列轮询、worker terminate、AI failure diagnosis、同步等待这类 runner 运行参数。
+- `env_vars.rs`
+  只放 env 读取 helper。
+
+新增部署可调参数时，先判断属于哪个子模块，不要继续把 env 解析写回 `config.rs`。`config.rs` 只负责：
+
+1. `from_env()` 解析服务端环境来源
+2. `from_desktop()` 解析桌面端来源
+3. 通过内部 `AppConfigParts` 组装兼容的 `AppConfig`
+
+不要把以下内容配置化：
+
+- API path
+- stage 名
+- artifact key / artifact group
+- schema version
+- stdout label
+- 对外 JSON 字段名
+
+这些是协议常量，不是部署参数。把它们做成 env 会让前端、Python worker、测试和历史 job 解释同时失去稳定锚点。
+
+## 1.4 架构门禁
 
 这套边界不只靠文档约定，还靠硬性检查：
 
@@ -461,8 +497,8 @@ Rust 侧关键落点：
   取消请求注册表
 - `execution_queue`
   并发槽位等待
-- `services/job_command_factory`
-  stage command / stage spec / worker 入口命令统一工厂；`job_runner` 不再自己维护 command builder
+- `worker_command`
+  stage command / stage spec / worker 入口命令统一工厂；这是 `services` 和 `job_runner` 共同依赖的中性契约层
 - `worker_process`
   进程启动、环境注入、进程树终止
 - `process_runner`
@@ -492,7 +528,7 @@ Rust 侧关键落点：
 - `ocr_flow/support.rs`
   OCR job 保存、parent OCR 状态镜像、transport/source-pdf 失败处理、`sync_parent_with_ocr_child(...)`
 - `ocr_flow/workspace.rs`
-  只负责 OCR workspace 路径与目录准备；现在只拿 `&AppConfig`
+  只负责 OCR workspace 路径与目录准备；现在只拿 `output_root`
 - `ocr_flow/polling.rs`
   只负责轮询等待与 cancel 检查；`should_stop_polling(...)` 现在只拿 cancel handle
 - `stdout_parser`
@@ -500,11 +536,11 @@ Rust 侧关键落点：
 - `stdout_parser/labels.rs` / `state.rs` / `stage_rules.rs` / `artifact_rules.rs` / `failure.rs`
   stdout 行标签、共享解析状态、stage/artifact/failure 规则
 
-#### `services/job_command_factory`
+#### `worker_command`
 
 目录：
 
-- [src/services/job_command_factory](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/job_command_factory)
+- [src/worker_command](/home/wxyhgk/tmp/Code/backend/rust_api/src/worker_command)
 
 职责：
 
@@ -514,7 +550,7 @@ Rust 侧关键落点：
   选 Python 脚本入口，拼入口参数
 - `command_builder.rs`
   只做命令行构建细节
-- [src/services/job_command_factory.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/job_command_factory.rs)
+- [src/worker_command.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/worker_command.rs)
   只保留对外 `build_*` facade
 
 规则：
@@ -528,6 +564,8 @@ Rust 侧关键落点：
 文件：
 
 - [src/job_runner/process_runner.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_runner.rs)
+- [src/job_runner/process_runner/startup.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_runner/startup.rs)
+- [src/job_runner/process_runner/execution.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_runner/execution.rs)
 - [src/job_runner/process_runner/completion.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_runner/completion.rs)
 - [src/job_runner/process_runner/timeout_support.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_runner/timeout_support.rs)
 - [src/job_runner/process_runner/failure_ai_diagnosis.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_runner/failure_ai_diagnosis.rs)
@@ -537,10 +575,14 @@ Rust 侧关键落点：
 
 - `process_runner.rs`
   只保留 worker 执行 orchestrator
+- `startup.rs`
+  处理 worker 启动、pid 持久化和启动后取消短路；只拿 `JobPersistDeps + canceled_jobs + WorkerProcessRuntimeConfig`
+- `execution.rs`
+  处理 stdout/stderr task、进程等待和 timeout 分流；只拿 `JobPersistDeps + canceled_jobs + WorkerProcessRuntimeConfig`
 - `completion.rs`
   处理 timeout 之外的完成态归类、shutdown noise 成功判定、failure 回填
 - `timeout_support.rs`
-  处理 timeout 失败落态
+  处理 timeout 失败落态；只拿 `JobPersistDeps + project_root`
 - `failure_ai_diagnosis.rs`
   处理 AI 辅助失败诊断
 - `io_support.rs`
@@ -552,8 +594,8 @@ Rust 侧关键落点：
 - 不在这里维护取消注册表
 - 不在这里决定执行槽策略
 - `execute_process_job(...)`
-  可以保留整包 `ProcessRuntimeDeps`
-- `spawn_worker_process(...)` / `read_stdout(...)`
+  可以保留整包 `ProcessRuntimeDeps`，但下传到叶子 helper 前必须转换成 `persist`、cancel handle 或窄 config projection
+- `spawn_worker_process(...)` / `spawn_started_process(...)` / `collect_process_execution(...)` / `read_stdout(...)`
   这类叶子 helper 应只拿自己真正需要的 config / persist / cancel 依赖
 
 #### `job_runner` Stop Line
@@ -561,7 +603,7 @@ Rust 侧关键落点：
 最后一轮去耦合做到这里就应该停止：
 
 - orchestrator 级入口继续拿 `ProcessRuntimeDeps`
-- 叶子 helper 改拿 `JobPersistDeps`、`&Db`、`&AppConfig` 或 cancel handle
+- 叶子 helper 改拿 `JobPersistDeps`、`&Db`、窄 config projection 或 cancel handle
 - 不再继续把 orchestrator 再拆成更多跨文件小函数
 - 不再为了少传 1-2 个字段继续引入 trait / wrapper / facade
 
@@ -661,7 +703,7 @@ Rust 侧关键落点：
 5. `services/job_snapshot_factory.rs`
 6. `services/job_launcher.rs`
 7. `job_runner/lifecycle.rs`
-8. `services/job_command_factory.rs`
+8. `worker_command.rs`
 9. `job_runner/process_runner.rs`
 10. Python worker
 
@@ -738,7 +780,7 @@ Rust 侧关键落点：
 
 改动顺序：
 
-1. `services/job_command_factory/stage_specs.rs`
+1. `worker_command/stage_specs.rs`
 2. Python `stage_specs` loader
 3. 对应 worker 消费逻辑
 

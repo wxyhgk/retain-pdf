@@ -14,6 +14,10 @@
   [`src/job_runner`](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner)
 - 改 OCR provider 分发和适配：
   [`src/ocr_provider`](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider)
+- 改后端运行参数、provider 超时/重试、路径和认证配置：
+  [`src/config`](/home/wxyhgk/tmp/Code/backend/rust_api/src/config)
+- 改 Python worker 入口命令或 stage spec：
+  [`src/worker_command`](/home/wxyhgk/tmp/Code/backend/rust_api/src/worker_command)
 
 ## 目录地图
 
@@ -30,6 +34,33 @@
     axum 路由总挂载点。
   - [`src/app/jobs.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/app/jobs.rs)
     jobs facade 组合根。这里负责把 `AppState` 装成 `JobsFacade`，`routes` 不再直接碰 `job_runner`。
+
+### `src/config.rs` + `src/config/*`
+
+- 作用：
+  运行时配置入口。`config.rs` 是兼容 facade，继续暴露原来的 `AppConfig` 字段；`src/config/*` 才是实际配置分组。
+- 进入条件：
+  改 env、部署参数、provider timeout/retry、路径、auth、上传限制、worker 运行参数时进这里。
+- 当前子边界：
+  - `config.rs`
+    `AppConfig` 兼容层；`from_env()` / `from_desktop()` 只解析来源，统一通过内部 `AppConfigParts` 组装。不要继续往这里堆具体 env 解析。
+  - `config/env_vars.rs`
+    env 读取 helper；统一处理空字符串和正整数 fallback。
+  - `config/paths.rs`
+    project root、rust_api root、data root、scripts、jobs/uploads/downloads 路径和 runtime 目录创建。
+  - `config/auth.rs`
+    `auth.local.json`、`RUST_API_KEYS`、`RUST_API_MAX_RUNNING_JOBS`、`RUST_API_SIMPLE_PORT`。
+  - `config/server.rs`
+    `PYTHON_BIN`、`RUST_API_BIND_HOST`、`RUST_API_PORT`。
+  - `config/upload.rs`
+    `RUST_API_UPLOAD_MAX_BYTES`、`RUST_API_UPLOAD_MAX_PAGES`。
+  - `config/provider.rs`
+    MinerU / Paddle / DeepSeek 的 base URL、HTTP timeout、retry、provider 上传门槛和 Paddle input image limit。
+  - `config/job_runner.rs`
+    队列轮询、worker terminate grace、AI failure diagnosis timeout、同步 bundle 等待间隔。
+- 规则：
+  新增部署可调参数时，优先放进上述子模块；只有需要保持现有调用方兼容时，才在 `AppConfig` 上暴露字段。
+  stage 名、artifact key、API path、schema version、stdout label 这类协议常量不要配置化。
 
 ### `src/routes`
 
@@ -98,6 +129,24 @@
 - [`src/services/runtime_gateway.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/runtime_gateway.rs)
   services 访问 runtime 能力的收口层。
 
+### `src/worker_command.rs` + `src/worker_command/*`
+
+- 作用：
+  Python worker 命令、worker 入口脚本和 stage spec 文件构造。
+- 进入条件：
+  改 `normalize/translate/render/provider` spec 字段、Python entrypoint、命令行参数时进这里。
+- 边界：
+  这是 `services` 和 `job_runner` 共同依赖的中性契约层，不属于 `services`，避免 `job_runner -> services` 的反向依赖。
+- 当前子边界：
+  - `worker_command.rs`
+    对外 `build_ocr_command` / `build_translate_only_command` / `build_render_only_command` / `build_normalize_ocr_command` facade。
+  - `worker_command/stage_specs.rs`
+    写 stage spec JSON。
+  - `worker_command/entrypoints.rs`
+    选择 Python 脚本入口并拼入口参数。
+  - `worker_command/command_builder.rs`
+    命令行拼装细节。
+
 ### `src/job_runner`
 
 - 作用：
@@ -110,7 +159,7 @@
   - `lifecycle.rs`
     任务排队、执行槽、workflow 分发。
   - `process_runner.rs` + `process_runner/*`
-    真实 worker 执行器；`process_runner.rs` 只保留 orchestrator，`completion.rs` 负责完成态归类与 shutdown-noise 判定，`timeout_support.rs` 负责超时落态，`failure_ai_diagnosis.rs` 负责失败 AI 诊断，`io_support.rs` 负责 stdout/stderr 消费，并只依赖 `JobPersistDeps + canceled_jobs`。
+    真实 worker 执行器；`process_runner.rs` 只保留 orchestrator，并通过 `ProcessRuntimeDeps` 的窄 accessor 下传依赖。`startup.rs` 负责 worker 启动和 pid 持久化，`execution.rs` 负责进程等待和 timeout 分流，`completion.rs` 负责完成态归类与 shutdown-noise 判定，`timeout_support.rs` 负责超时落态，`failure_ai_diagnosis.rs` 负责失败 AI 诊断，`io_support.rs` 负责 stdout/stderr 消费。叶子 helper 只拿 `JobPersistDeps`、cancel handle 或 `WorkerProcessRuntimeConfig` 这类窄依赖。
   - `translation_flow.rs` + `translation_flow_*.rs`
     OCR 后续的翻译/渲染父任务编排；`translation_flow.rs` 保留 orchestrator，`translation_flow_child.rs` 负责 upload source 读取、父任务进入 `ocr_submitting`、OCR child 创建，`translation_flow_stage.rs` 负责 translate/render stage 准备和 `ocr_child_finished` 事件，`translation_flow_support.rs` 负责 OCR 终态判定和翻译输入提取。
   - `ocr_flow/*`
@@ -120,7 +169,7 @@
   - `runtime_state.rs`
     runtime snapshot / failure / artifact 的统一更新工具。
   - `worker_process.rs`
-    子进程启动、env 注入、进程树终止；现在只拿 `&AppConfig + job`，不再依赖整包 runtime deps。
+    子进程启动、env 注入、进程树终止；现在只拿 `WorkerProcessRuntimeConfig + job`，不再依赖整包 runtime deps。
 
 ### `src/ocr_provider`
 

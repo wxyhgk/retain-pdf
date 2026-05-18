@@ -4,7 +4,10 @@ use std::sync::Arc;
 
 use tokio::sync::{RwLock, Semaphore};
 
-use crate::config::AppConfig;
+use crate::config::{
+    AppConfig, FailureAiDiagnosisRuntimeConfig, JobRunnerConfig, MineruRuntimeConfig,
+    PaddleRuntimeConfig, WorkerCommandRuntimeConfig, WorkerProcessRuntimeConfig,
+};
 use crate::db::Db;
 
 #[derive(Clone)]
@@ -52,5 +55,29 @@ impl ProcessRuntimeDeps {
             canceled_jobs,
             job_slots,
         }
+    }
+
+    pub(crate) fn worker_command_runtime(&self) -> WorkerCommandRuntimeConfig<'_> {
+        self.config.worker_command_runtime()
+    }
+
+    pub(crate) fn worker_process_runtime(&self) -> WorkerProcessRuntimeConfig<'_> {
+        self.config.worker_process_runtime()
+    }
+
+    pub(crate) fn failure_ai_diagnosis_runtime(&self) -> FailureAiDiagnosisRuntimeConfig<'_> {
+        self.config.failure_ai_diagnosis_runtime()
+    }
+
+    pub(crate) fn job_runner_config(&self) -> &JobRunnerConfig {
+        &self.config.job_runner
+    }
+
+    pub(crate) fn mineru_runtime(&self) -> &MineruRuntimeConfig {
+        &self.config.provider_runtime.mineru
+    }
+
+    pub(crate) fn paddle_runtime(&self) -> &PaddleRuntimeConfig {
+        &self.config.provider_runtime.paddle
     }
 }

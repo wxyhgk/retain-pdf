@@ -20,6 +20,8 @@
   [`STAGE_EXECUTION_CONTRACT.md`](/home/wxyhgk/tmp/Code/backend/rust_api/STAGE_EXECUTION_CONTRACT.md)
 - 只看外部 API 协议：
   [`API_SPEC.md`](/home/wxyhgk/tmp/Code/backend/rust_api/API_SPEC.md)
+- 只看渲染参数规范：
+  [`RENDER_OPTIONS_CONTRACT.md`](/home/wxyhgk/tmp/Code/backend/rust_api/RENDER_OPTIONS_CONTRACT.md)
 
 ## 1. 当前系统分层
 
@@ -99,9 +101,13 @@
 关键代码：
 
 - Rust 写 spec：
-  - [`src/services/job_command_factory.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/job_command_factory.rs)
+  - [`src/worker_command.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/worker_command.rs)
 - Python 按 provider 分发：
   - [`backend/scripts/services/ocr_provider/provider_pipeline.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/ocr_provider/provider_pipeline.py)
+
+注意：生产主链的 `book` job 不再以 `run_provider_case.py` 作为初始命令。`book` job 创建时只保存
+`book-workflow-rust-orchestrated` 占位命令，真正执行由 Rust `job_runner` 串联 OCR child、normalize、
+translate、render stage。
 
 ## 4. 当前正式协议：Stage Spec
 
@@ -113,10 +119,13 @@ python -u <entrypoint> --spec <job_root>/specs/<stage>.spec.json
 
 当前正式 stage：
 
-- `provider.stage.v1`
 - `normalize.stage.v1`
 - `translate.stage.v1`
 - `render.stage.v1`
+
+legacy/local helper stage：
+
+- `provider.stage.v1`
 - `book.stage.v1`
 
 对应 Python loader：
@@ -159,38 +168,40 @@ Rust 路由：
 - `jobs` 相关用例已经统一先经过 `JobsFacade`
 - `uploads` / `glossaries` 也分别经过 `upload_api` / `glossary_api`
 
-### 第三步：Rust 组装 stage 命令和 spec
+### 第三步：Rust 组装 workflow plan
 
-Rust 根据 workflow 组装命令：
+Rust 根据 workflow 选择运行计划：
 
-- `book` -> `run_provider_case.py`
-- `ocr` -> `run_provider_ocr.py`
-- `translate` -> `run_translate_only.py`
-- `render` -> `run_render_only.py`
+- `book` -> Rust 编排 `OCR child -> normalize -> translate -> render`
+- `translate` -> Rust 编排 `OCR child -> normalize -> translate`
+- `render` -> Rust 复用 artifact 后启动 `render`
+- `ocr` -> Rust 编排 `provider transport -> normalize`
 
 主要代码：
 
-- [`src/services/job_command_factory.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/job_command_factory.rs)
-- [`src/services/job_command_factory/entrypoints.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/job_command_factory/entrypoints.rs)
-- [`src/services/job_command_factory/stage_specs.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/job_command_factory/stage_specs.rs)
+- [`src/job_runner/lifecycle.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/lifecycle.rs)
+- [`src/job_runner/translation_flow.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/translation_flow.rs)
+- [`src/job_runner/ocr_flow/mod.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/ocr_flow/mod.rs)
+- [`src/job_runner/render_flow.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/render_flow.rs)
 
-### 第四步：Rust 写 stage spec
+### 第四步：Rust 按 stage 写 spec 并启动 worker
 
-例如 `book` 会写：
+`book` 主链会按阶段写：
 
-- `DATA_ROOT/jobs/<job_id>/specs/provider.spec.json`
+- OCR child/provider transport：Rust 内部 provider transport，不通过 `provider.stage.v1`
+- `DATA_ROOT/jobs/<job_id>/specs/normalize.spec.json`
+- `DATA_ROOT/jobs/<job_id>/specs/translate.spec.json`
+- `DATA_ROOT/jobs/<job_id>/specs/render.spec.json`
 
-里面会包含：
+`provider.spec.json` / `provider.stage.v1` 只保留给 legacy provider-case/local helper，不是当前生产主链的
+`book` orchestrator contract。
 
-- `job`
-- `source`
-- `ocr`
-- `translation`
-- `render`
+渲染策略也在 `render` 中集中配置。当前默认：
 
-其中 OCR provider 就在：
-
-- `ocr.provider`
+- `render.source_cleanup_strategy = "pikepdf_text_strip"`
+- 含义：默认先用 pikepdf 按 bbox 删除原 PDF content-stream text-op，再由 Typst 翻译块自带背景色做视觉覆盖
+- 可选值：`typst_fill | pikepdf_text_strip | bbox_text_strip | legacy | redact_restore_formulas`
+- `pikepdf_text_strip` 表示渲染前用 pikepdf 做路径级 content-stream text-op 删除，再由 Typst 背景块做视觉覆盖；`bbox_text_strip` / `legacy` 是兼容别名；`redact_restore_formulas` 用于公式密集 PDF 的实验性内容流文本删除，公式 bbox 作为保护区，不走 PyMuPDF redaction
 
 ### 第五步：job_runner 进入运行时主链
 
@@ -216,23 +227,16 @@ Rust 根据 workflow 组装命令：
 - [`src/job_runner/process_runner/execution.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_runner/execution.rs)
 - [`src/job_runner/worker_process.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/worker_process.rs)
 
-### 第七步：Python worker 执行
+### 第七步：Python stage worker 执行
 
-`run_provider_case.py` -> `provider_pipeline.main()`
+当前生产主链使用这些 stage worker：
 
-然后：
+- `run_normalize_ocr.py --spec specs/normalize.spec.json`
+- `run_translate_only.py --spec specs/translate.spec.json`
+- `run_render_only.py --spec specs/render.spec.json`
 
-- 读取 `provider.spec.json`
-- 看 `ocr.provider`
-- `mineru` 走 MinerU 分支
-- `paddle` 走 Paddle 分支
-- 统一产出 normalized `document.v1.json`
-- 再调用 `run_book_pipeline(...)`
-
-主要代码：
-
-- [`backend/scripts/entrypoints/run_provider_case.py`](/home/wxyhgk/tmp/Code/backend/scripts/entrypoints/run_provider_case.py)
-- [`backend/scripts/services/ocr_provider/provider_pipeline.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/ocr_provider/provider_pipeline.py)
+`run_provider_case.py` 仍保留为 legacy/local wrapper，用于本地一次性验证 provider-backed 全流程；不要把它当成
+Rust API 生产主链入口。
 
 ## 6. 当前最重要的产物目录
 
@@ -248,11 +252,14 @@ Rust 根据 workflow 组装命令：
 
 最重要的几个文件：
 
-- `specs/provider.spec.json`
+- `specs/normalize.spec.json`
+- `specs/translate.spec.json`
+- `specs/render.spec.json`
 - `ocr/result.json`
 - `ocr/normalized/document.v1.json`
 - `ocr/normalized/document.v1.report.json`
 - `translated/translation-manifest.json`
+- `artifacts/render_config.json`
 - `artifacts/pipeline_summary.json`
 - `rendered/*.pdf`
 
@@ -283,16 +290,21 @@ Rust 根据 workflow 组装命令：
 
 ## 8. 现在的入口口径
 
-当前入口只保留中性命名：
+生产主链入口：
+
+- Rust job_runner 按 workflow 编排
+- Python stage worker 只执行单 stage
+
+保留的 local / legacy wrapper：
 
 - `run_provider_case.py`
-- `run_provider_ocr.py`
 - `run_document_flow.py`
 
 当前原则：
 
-- 主入口认 `run_provider_case.py`
-- 主协议认 `provider.stage.v1`
+- 主入口认 Rust `job_runner`
+- 主协议认 `normalize.stage.v1`、`translate.stage.v1`、`render.stage.v1`
+- `provider.stage.v1` 仅作为 legacy provider-case/local helper 契约
 - 主 summary 文件认 `pipeline_summary.json`
 
 ## 9. 当前事件与失败收口
@@ -301,7 +313,31 @@ Rust 根据 workflow 组装命令：
 
 - Python worker 写 `DATA_ROOT/jobs/<job_id>/logs/pipeline_events.jsonl`
 - Rust 查询层合并 DB events 和 `pipeline_events.jsonl`
+- 对 `book` / `translate` 这类会创建 OCR child 的主任务，`GET /api/v1/jobs/<job_id>/events` 还会合并 `{job_id}-ocr` 的 OCR 子任务事件
+- OCR 子任务事件会映射成主任务 `job_id`；原始来源放在 `payload.source_job_id` 和 `payload.source_event`
 - Rust detail/list 优先使用 live pipeline stage 快照，而不是陈旧的 DB `job.stage`
+
+前端进度展示的推荐入口：
+
+- 全流程任务只轮询 `GET /api/v1/jobs/<job_id>/events`
+- 不需要额外轮询 `{job_id}-ocr`
+- OCR / 翻译 / 渲染统一看事件里的：
+  - `user_stage`
+  - `stage`
+  - `substage`
+  - `stage_detail`
+  - `event_type`
+  - `progress_unit`
+  - `progress_current`
+  - `progress_total`
+
+当前推荐的进度单位：
+
+- OCR provider 页进度：`user_stage=ocr`, `stage=ocr_processing`, `progress_unit=page`
+- 翻译批次进度：`user_stage=translate`, `stage=translating`, `progress_unit=batch`
+- 翻译页级子阶段：`continuation_review`, `page_policies`, `domain_inference`, `garbled_repair`, `progress_unit=page`
+- 渲染页进度：`user_stage=render`, `stage=rendering`, `progress_unit=page`
+- Typst compile / overlay / saving：无法按页汇报时使用 `progress_unit=step`
 
 当前正式失败口径已经是：
 
@@ -337,7 +373,7 @@ Rust 根据 workflow 组装命令：
 
 ### 看 Rust 到底起了哪个 Python 脚本
 
-- [`src/services/job_command_factory.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/job_command_factory.rs)
+- [`src/worker_command.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/worker_command.rs)
 
 ### 看 Python provider 总入口怎么分发
 

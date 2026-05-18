@@ -65,7 +65,10 @@ def payload_estimated_density(
     font_size_pt: float | None = None,
     leading_em: float | None = None,
 ) -> float:
-    inner_height = payload_inner_height(payload)
+    inner_height = max(
+        8.0,
+        float(payload.get("density_effective_height_pt") or 0.0) or payload_inner_height(payload),
+    )
     estimated_height = estimated_render_height_pt(
         payload["inner_bbox"],
         payload["translated_text"],
@@ -183,6 +186,40 @@ def normalize_body_payload_leading(payload: dict) -> None:
     )
 
 
+def _source_line_pitch_pressure(payload: dict) -> float:
+    lines = (payload.get("item") or {}).get("lines") or []
+    if not isinstance(lines, list) or len(lines) < 2:
+        return 0.0
+    pitches: list[float] = []
+    for previous, current in zip(lines, lines[1:]):
+        previous_bbox = previous.get("bbox") if isinstance(previous, dict) else None
+        current_bbox = current.get("bbox") if isinstance(current, dict) else None
+        if not isinstance(previous_bbox, list) or not isinstance(current_bbox, list):
+            continue
+        if len(previous_bbox) != 4 or len(current_bbox) != 4:
+            continue
+        pitch = float(current_bbox[1]) - float(previous_bbox[1])
+        if pitch > 0:
+            pitches.append(pitch)
+    if not pitches:
+        return 0.0
+    pitch = sorted(pitches)[len(pitches) // 2]
+    font_size = max(0.1, float(payload.get("font_size_pt") or 0.0))
+    return max(0.0, pitch / font_size - 1.0)
+
+
+def _source_line_count_pressure(payload: dict) -> float:
+    lines = (payload.get("item") or {}).get("lines") or []
+    source_lines = len(lines) if isinstance(lines, list) else 0
+    if source_lines <= 0:
+        return 0.0
+    return min(4.0, float(source_lines) / 4.0)
+
+
+def _source_vertical_pressure(payload: dict) -> float:
+    return max(_source_line_pitch_pressure(payload), _source_line_count_pressure(payload))
+
+
 def smooth_adjacent_body_pair(current: dict, nxt: dict) -> None:
     current_density = payload_estimated_density(current)
     next_density = payload_estimated_density(nxt)
@@ -233,7 +270,8 @@ def smooth_adjacent_body_pair(current: dict, nxt: dict) -> None:
         larger_leading_payload = current
 
     leading_delta = larger_leading_payload["leading_em"] - smaller_leading_payload["leading_em"]
-    if leading_delta > max_leading_delta:
+    source_pressure_delta = abs(_source_vertical_pressure(current) - _source_vertical_pressure(nxt))
+    if leading_delta > max_leading_delta and source_pressure_delta <= 0.9:
         excess = leading_delta - max_leading_delta
         grow_allowed = (
             not smaller_leading_payload["prefer_typst_fit"]

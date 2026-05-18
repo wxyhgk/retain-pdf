@@ -69,7 +69,10 @@ pub fn normalize_job_artifacts_for_storage(
     normalize_optional_path(data_root, &mut artifacts.provider_summary_json)?;
     normalize_optional_path(data_root, &mut artifacts.translations_dir)?;
     normalize_optional_path(data_root, &mut artifacts.output_pdf)?;
+    normalize_optional_path(data_root, &mut artifacts.cover_image_path)?;
+    normalize_optional_path(data_root, &mut artifacts.thumbnail_image_path)?;
     normalize_optional_path(data_root, &mut artifacts.summary)?;
+    normalize_optional_path(data_root, &mut artifacts.render_config_json)?;
     if let Some(diagnostics) = artifacts.ocr_provider_diagnostics.as_mut() {
         normalize_optional_path(data_root, &mut diagnostics.artifacts.provider_result_json)?;
         normalize_optional_path(data_root, &mut diagnostics.artifacts.provider_bundle_zip)?;
@@ -117,6 +120,8 @@ pub fn job_uses_legacy_path_storage(job: &JobSnapshot) -> bool {
         artifacts.provider_summary_json.as_deref(),
         artifacts.translations_dir.as_deref(),
         artifacts.output_pdf.as_deref(),
+        artifacts.cover_image_path.as_deref(),
+        artifacts.thumbnail_image_path.as_deref(),
         artifacts.summary.as_deref(),
     ];
     if top_level_paths

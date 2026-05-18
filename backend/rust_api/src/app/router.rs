@@ -10,6 +10,7 @@ use crate::auth;
 use crate::routes::glossaries;
 use crate::routes::health;
 use crate::routes::jobs;
+use crate::routes::library;
 use crate::routes::providers;
 use crate::routes::uploads;
 
@@ -68,9 +69,27 @@ pub fn build_app(state: AppState) -> Router {
                 .put(glossaries::update_glossary_route)
                 .delete(glossaries::delete_glossary_route),
         )
+        .route("/api/v1/library/books", get(library::list_books))
+        .route("/api/v1/library/books/delete", post(library::delete_books))
+        .route(
+            "/api/v1/library/books/:job_id",
+            get(library::get_book).delete(library::delete_book),
+        )
+        .route(
+            "/api/v1/library/books/:job_id/cover",
+            get(library::download_book_cover),
+        )
+        .route(
+            "/api/v1/library/books/:job_id/thumbnail",
+            get(library::download_book_thumbnail),
+        )
         .route("/api/v1/jobs", post(jobs::create_job).get(jobs::list_jobs))
         .route("/api/v1/jobs/:job_id", get(jobs::get_job))
         .route("/api/v1/jobs/:job_id/events", get(jobs::get_job_events))
+        .route(
+            "/api/v1/jobs/:job_id/reader/regions",
+            get(jobs::get_reader_regions),
+        )
         .route(
             "/api/v1/jobs/:job_id/translation/diagnostics",
             get(jobs::get_translation_diagnostics),
@@ -100,6 +119,15 @@ pub fn build_app(state: AppState) -> Router {
             get(jobs::download_artifact_by_key),
         )
         .route("/api/v1/jobs/:job_id/pdf", get(jobs::download_pdf))
+        .route("/api/v1/jobs/:job_id/cover", get(jobs::download_cover))
+        .route(
+            "/api/v1/jobs/:job_id/thumbnail",
+            get(jobs::download_thumbnail),
+        )
+        .route(
+            "/api/v1/jobs/:job_id/preview/pages/:page",
+            get(jobs::download_page_preview),
+        )
         .route(
             "/api/v1/jobs/:job_id/normalized-document",
             get(jobs::download_normalized_document),

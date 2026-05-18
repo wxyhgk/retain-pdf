@@ -130,6 +130,8 @@ def _args_from_spec(spec: ProviderStageSpec) -> SimpleNamespace:
         inner_bbox_shrink_y=spec.render.inner_bbox_shrink_y,
         inner_bbox_dense_shrink_x=spec.render.inner_bbox_dense_shrink_x,
         inner_bbox_dense_shrink_y=spec.render.inner_bbox_dense_shrink_y,
+        font_unify_mode=spec.render.font_unify_mode,
+        source_cleanup_strategy=spec.render.source_cleanup_strategy,
     )
 
 
@@ -235,6 +237,8 @@ def main() -> None:
         inner_bbox_shrink_y=args.inner_bbox_shrink_y,
         inner_bbox_dense_shrink_x=args.inner_bbox_dense_shrink_x,
         inner_bbox_dense_shrink_y=args.inner_bbox_dense_shrink_y,
+        font_unify_mode=args.font_unify_mode,
+        source_cleanup_strategy=args.source_cleanup_strategy,
     )
     with pipeline_event_writer_scope(event_writer):
         emit_stage_transition(
@@ -267,7 +271,7 @@ def main() -> None:
         translated_pdf_name = args.translated_pdf_name.strip() or f"{source_pdf_path.stem}-translated.pdf"
         output_pdf_path = job_dirs.rendered_dir / translated_pdf_name
         emit_stage_progress(
-            stage="normalization",
+            stage="normalizing",
             message="OCR provider 已完成，标准化文档已就绪",
             provider=provider,
         )
@@ -308,6 +312,7 @@ def main() -> None:
             compile_workers=args.compile_workers or None,
             typst_font_family=args.typst_font_family,
             pdf_compress_dpi=args.pdf_compress_dpi,
+            source_cleanup_strategy=args.source_cleanup_strategy,
             invocation=build_stage_invocation_metadata(
                 stage="provider",
                 stage_spec_schema_version=stage_spec_schema_version,

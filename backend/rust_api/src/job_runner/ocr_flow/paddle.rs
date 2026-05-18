@@ -34,7 +34,7 @@ pub(super) async fn run_local_ocr_transport_paddle(
         .submit_local_file(
             upload_path,
             &model_name,
-            &build_paddle_optional_payload(&model_name),
+            &build_paddle_optional_payload(&model_name, deps.paddle_runtime().max_input_images),
         )
         .await
         .map_err(|err| attach_paddle_runtime_error(job, err, "submit"))?;
@@ -66,7 +66,7 @@ pub(super) async fn run_remote_ocr_transport_paddle(
         .submit_remote_url(
             &job.request_payload.source.source_url,
             &model_name,
-            &build_paddle_optional_payload(&model_name),
+            &build_paddle_optional_payload(&model_name, deps.paddle_runtime().max_input_images),
         )
         .await
         .map_err(|err| attach_paddle_runtime_error(job, err, "submit"))?;
@@ -245,10 +245,11 @@ fn apply_paddle_error(job: &mut JobRuntimeState, info: OcrProviderErrorInfo, sta
     }
 }
 
-fn build_paddle_optional_payload(model: &str) -> serde_json::Value {
+fn build_paddle_optional_payload(model: &str, max_input_images: u16) -> serde_json::Value {
     let normalized = model.trim().to_ascii_lowercase();
     if normalized.contains("pp-structurev3") {
         return json!({
+            "max_num_input_imgs": max_input_images,
             "markdownIgnoreLabels": [
                 "header",
                 "header_image",
@@ -293,6 +294,7 @@ fn build_paddle_optional_payload(model: &str) -> serde_json::Value {
     }
 
     json!({
+        "max_num_input_imgs": max_input_images,
         "mergeLayoutBlocks": false,
         "markdownIgnoreLabels": [
             "header",
@@ -322,4 +324,18 @@ fn build_paddle_optional_payload(model: &str) -> serde_json::Value {
         "restructurePages": true,
         "visualize": false
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn paddle_optional_payload_sets_page_limit() {
+        let payload = build_paddle_optional_payload("PaddleOCR-VL-1.5", 888);
+        assert_eq!(payload["max_num_input_imgs"], 888);
+
+        let structure_payload = build_paddle_optional_payload("PP-StructureV3", 777);
+        assert_eq!(structure_payload["max_num_input_imgs"], 777);
+    }
 }

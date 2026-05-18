@@ -83,12 +83,8 @@ pub(super) fn raw_diagnostic_from_process_result(job: &JobSnapshot) -> Option<Jo
         job.error.as_deref().unwrap_or("")
     };
     let traceback = extract_traceback(source);
-    let raw_exception_message = last_non_empty_line(source).or_else(|| {
-        Some(format!(
-            "process exited with code {}",
-            result.return_code
-        ))
-    });
+    let raw_exception_message = last_non_empty_line(source)
+        .or_else(|| Some(format!("process exited with code {}", result.return_code)));
     Some(JobRawDiagnostic {
         structured_error_type: None,
         raw_exception_type: raw_exception_message

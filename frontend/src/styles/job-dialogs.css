@@ -33,7 +33,9 @@
 
   .recent-jobs-list {
     display: grid;
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    align-items: start;
+    gap: 22px 18px;
     width: 100%;
   }
 
@@ -44,18 +46,67 @@
 
   .recent-job-item {
     display: grid;
-    gap: 8px;
+    gap: 10px;
     width: 100%;
-    padding: 12px 14px;
-    border: 1px solid #ececf1;
-    border-radius: 16px;
-    background: #fbfbfd;
-    text-align: left;
+    min-height: 0;
+    padding: 0;
+    border: none;
+    border-radius: 18px;
+    background: transparent;
+    color: #1d1d1f;
+    text-align: center;
     box-shadow: none;
     justify-content: stretch;
     justify-items: stretch;
     align-content: start;
     align-items: stretch;
+    cursor: pointer;
+  }
+
+  .recent-job-item:hover {
+    filter: none;
+  }
+
+  .recent-job-item:focus-visible {
+    outline: 2px solid rgba(29, 29, 31, 0.58);
+    outline-offset: 4px;
+  }
+
+  .recent-job-cover-wrap {
+    position: relative;
+    width: 100%;
+  }
+
+  .recent-job-cover {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 3 / 4;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    background:
+      linear-gradient(145deg, rgba(255,255,255,.24), rgba(255,255,255,0)),
+      linear-gradient(180deg, #f4f4f6, #d9dbe1);
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.13);
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+
+  .recent-job-item:hover .recent-job-cover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 42px rgba(15, 23, 42, 0.18);
+  }
+
+  .recent-job-cover.has-image .recent-job-cover-fallback {
+    opacity: 0;
+  }
+
+  .recent-job-cover-fallback {
+    font-size: 32px;
+    font-weight: 700;
+    color: rgba(29, 29, 31, .42);
   }
 
   .recent-job-top {
@@ -68,7 +119,7 @@
   .recent-job-title-wrap {
     min-width: 0;
     display: grid;
-    gap: 2px;
+    gap: 3px;
   }
 
   .recent-job-id {
@@ -91,30 +142,118 @@
   }
 
   .recent-job-status {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-height: 24px;
-    padding: 0 10px;
+    padding: 0 9px;
     border-radius: 999px;
-    background: #1d1d1f;
+    background: rgba(255,255,255,.94);
     color: #fff;
+    color: #1d1d1f;
     font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
   }
 
-  .recent-job-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 12px;
+  .recent-job-delete {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .94);
+    color: #1d1d1f;
+    opacity: 0;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, .12);
+    transition: opacity .16s ease, transform .16s ease, background .16s ease, color .16s ease;
+  }
+
+  .recent-job-delete svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .recent-job-item:hover .recent-job-delete,
+  .recent-job-delete:focus-visible {
+    opacity: 1;
+  }
+
+  .recent-job-delete:hover {
+    transform: scale(1.04);
+    background: #1d1d1f;
+    color: #fff;
+    filter: none;
+  }
+
+  .recent-job-delete-popover {
+    position: absolute;
+    left: 8px;
+    top: 44px;
+    z-index: 3;
+    width: min(136px, calc(100% - 16px));
+    padding: 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .96);
+    color: #1d1d1f;
     font-size: 12px;
-    color: #6e6e73;
+    font-weight: 600;
+    text-align: left;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, .18);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity .16s ease, transform .16s ease;
+  }
+
+  .recent-job-item.is-confirming-delete .recent-job-delete-popover {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .recent-job-delete-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .recent-job-delete-actions button {
+    min-width: 0;
+    min-height: 0;
+    height: 26px;
+    padding: 0 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(29, 29, 31, .12);
+    background: #fff;
+    color: #1d1d1f;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .recent-job-delete-actions .recent-job-delete-confirm {
+    border-color: #1d1d1f;
+    background: #1d1d1f;
+    color: #fff;
   }
 
   .recent-jobs-dialog {
-    width: min(720px, calc(100vw - 24px));
-    max-height: calc(100vh - 24px);
+    width: calc(100vw - 4px);
+    height: calc(100vh - 4px);
+    max-width: none;
+    max-height: none;
     padding: 0;
     border: none;
     overflow: hidden;
@@ -123,17 +262,18 @@
   .recent-jobs-dialog-shell {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
-    height: min(720px, calc(100vh - 24px));
-    border-radius: 28px;
-    background: rgba(251, 251, 253, 0.94);
-    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.16);
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    background: rgba(245, 245, 247, 0.98);
+    box-shadow: none;
     backdrop-filter: blur(18px);
     overflow: hidden;
   }
 
   .recent-jobs-sidebar-head {
     @apply flex items-start justify-between gap-3;
-    padding: 22px 22px 16px;
+    padding: 16px 22px 14px;
     border-bottom: 1px solid rgba(229, 229, 234, 0.9);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(251, 251, 253, 0.9) 100%);
   }
@@ -141,7 +281,7 @@
   .recent-jobs-sidebar-body {
     min-height: 0;
     overflow-y: auto;
-    padding: 18px 22px 22px;
+    padding: 22px clamp(18px, 5vw, 72px) 28px;
     scrollbar-width: thin;
     scrollbar-color: rgba(29, 29, 31, 0.22) transparent;
   }
@@ -338,8 +478,9 @@
     }
 
     .recent-jobs-dialog {
-      width: min(100vw - 16px, 680px);
-      max-height: calc(100vh - 16px);
+      width: 100vw;
+      height: 100vh;
+      max-height: none;
     }
 
     .recent-jobs-sidebar-head {

@@ -84,6 +84,10 @@ function rawStageOf(payload) {
 }
 
 function stageKeyOf(payload) {
+  const explicitUserStage = firstNonEmpty(payload.user_stage, payload.payload?.user_stage).toLowerCase();
+  if (["ocr", "translate", "render", "done"].includes(explicitUserStage)) {
+    return explicitUserStage;
+  }
   const raw = rawStageOf(payload);
   const status = `${payload.status || ""}`.trim();
   const workflow = firstNonEmpty(payload.workflow, payload.job_type, payload.raw_response?.workflow);
@@ -91,6 +95,27 @@ function stageKeyOf(payload) {
 }
 
 function stageSubtypeOf(payload) {
+  const explicitSubstage = firstNonEmpty(payload.substage, payload.payload?.substage).toLowerCase();
+  if (explicitSubstage) {
+    if (explicitSubstage.includes("continuation")) {
+      return "continuation_review";
+    }
+    if (explicitSubstage.includes("page_policies")) {
+      return "page_policies";
+    }
+    if (explicitSubstage.includes("domain")) {
+      return "domain_inference";
+    }
+    if (explicitSubstage.includes("garbled")) {
+      return "garbled";
+    }
+    if (explicitSubstage.includes("prepare")) {
+      return "translation_prepare";
+    }
+    if (explicitSubstage.includes("batch") || explicitSubstage.includes("translating")) {
+      return "translation_batches";
+    }
+  }
   const raw = rawStageOf(payload);
   const detail = firstNonEmpty(payload.stage_detail, payload.runtime?.current_stage).toLowerCase();
   const text = `${raw} ${detail}`;

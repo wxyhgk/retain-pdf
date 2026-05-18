@@ -11,13 +11,12 @@ use crate::models::JobStatusKind;
 use super::cancel_registry::{
     clear_cancel_request_with_registry, is_cancel_requested_with_registry,
 };
-use super::QUEUE_POLL_INTERVAL_MS;
-
 pub(super) async fn wait_for_execution_slot(
     db: &Db,
     canceled_jobs: &RwLock<HashSet<String>>,
     job_slots: &Arc<Semaphore>,
     job_id: &str,
+    queue_poll_interval_ms: u64,
 ) -> Result<Option<OwnedSemaphorePermit>> {
     loop {
         if is_cancel_requested_with_registry(canceled_jobs, job_id).await {
@@ -32,7 +31,7 @@ pub(super) async fn wait_for_execution_slot(
         match job_slots.clone().try_acquire_owned() {
             Ok(permit) => return Ok(Some(permit)),
             Err(TryAcquireError::NoPermits) => {
-                sleep(Duration::from_millis(QUEUE_POLL_INTERVAL_MS)).await
+                sleep(Duration::from_millis(queue_poll_interval_ms)).await
             }
             Err(TryAcquireError::Closed) => return Err(anyhow!("job execution slots are closed")),
         }

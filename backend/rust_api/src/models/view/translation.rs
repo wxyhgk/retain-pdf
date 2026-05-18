@@ -7,30 +7,30 @@ pub struct JobEventRecord {
     pub seq: i64,
     pub ts: String,
     pub level: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub user_stage: Option<String>,
     pub stage: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub substage: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub stage_detail: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub provider: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub provider_stage: Option<String>,
     pub event: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub event_type: Option<String>,
     pub message: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub progress_current: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub progress_total: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub progress_unit: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub retry_count: Option<u32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub elapsed_ms: Option<i64>,
     pub payload: Option<Value>,
 }

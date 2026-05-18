@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-import os
 import time
 
 from services.rendering.source.compression.pdf_copy import build_image_compressed_pdf_copy
 from services.rendering.source.preparation.bbox_text_strip import build_bbox_text_stripped_pdf_copy
-from services.rendering.source.preparation.bbox_text_strip import BBoxTextStripCandidates
+from services.rendering.source.preparation.bbox_text_strip_types import BBoxTextStripCandidates
 from services.rendering.source.preparation.hidden_text_strip import build_hidden_text_stripped_pdf_copy
+from services.rendering.source.preparation.redact_restore_formula import build_redact_restore_formula_pdf_copy
 from services.rendering.output.typst.shared import default_typst_temp_root
+from foundation.config import layout
 
 
 @dataclass(frozen=True)
@@ -19,6 +20,7 @@ class RenderSourcePdf:
     image_compressed: bool = False
     bbox_text_stripped_page_indices: frozenset[int] = frozenset()
     bbox_text_strip_skipped_page_indices: frozenset[int] = frozenset()
+    source_text_precleaned_page_indices: frozenset[int] = frozenset()
 
 
 def build_render_source_pdf(
@@ -32,7 +34,7 @@ def build_render_source_pdf(
     end_page: int = -1,
     artifact_mode: bool = False,
     bbox_text_strip_candidates: BBoxTextStripCandidates | None = None,
-    bbox_text_op_mode: str | None = None,
+    source_cleanup_strategy: str = "pikepdf_text_strip",
 ) -> RenderSourcePdf:
     temp_paths: list[Path] = []
     render_source_path = source_pdf_path
@@ -40,6 +42,7 @@ def build_render_source_pdf(
     work_root = output_pdf_path.parent if artifact_mode else typst_temp_root
     bbox_text_stripped_page_indices: frozenset[int] = frozenset()
     bbox_text_strip_skipped_page_indices: frozenset[int] = frozenset()
+    source_text_precleaned_page_indices: frozenset[int] = frozenset()
 
     if strip_hidden_text:
         hidden_started = time.perf_counter()
@@ -61,24 +64,22 @@ def build_render_source_pdf(
     else:
         print("render source pdf: hidden-text strip skipped", flush=True)
 
-    if translated_pages:
+    if translated_pages and layout.use_bbox_text_strip_cleanup(source_cleanup_strategy):
         bbox_started = time.perf_counter()
         bbox_text_stripped_path = work_root / f"{output_pdf_path.stem}.source-bbox-text-stripped.pdf"
-        effective_bbox_text_op_mode = (
-            bbox_text_op_mode
-            or os.environ.get("RETAIN_PDF_BBOX_TEXT_OP_MODE", "").strip()
-            or "strip"
-        )
         bbox_text_result = build_bbox_text_stripped_pdf_copy(
             source_pdf_path=render_source_path,
             output_pdf_path=bbox_text_stripped_path,
             translated_pages=translated_pages,
             candidates=bbox_text_strip_candidates,
-            op_mode=effective_bbox_text_op_mode,
+            skip_formula_pages=False,
         )
         print(f"render source pdf: bbox-text strip elapsed={time.perf_counter() - bbox_started:.2f}s", flush=True)
         bbox_text_stripped_page_indices = bbox_text_result.changed_page_indices
         bbox_text_strip_skipped_page_indices = bbox_text_result.skipped_complex_page_indices
+        source_text_precleaned_page_indices = (
+            bbox_text_result.changed_page_indices | bbox_text_result.skipped_no_text_overlap_page_indices
+        )
         if bbox_text_result.changed and bbox_text_result.output_pdf_path is not None:
             render_source_path = bbox_text_result.output_pdf_path
             if not artifact_mode:
@@ -90,12 +91,35 @@ def build_render_source_pdf(
         else:
             bbox_text_stripped_path.unlink(missing_ok=True)
 
+    if translated_pages and layout.use_redact_restore_formula_cleanup(source_cleanup_strategy):
+        restore_started = time.perf_counter()
+        restored_source_path = work_root / f"{output_pdf_path.stem}.source-redact-restore-formulas.pdf"
+        restored_result = build_redact_restore_formula_pdf_copy(
+            source_pdf_path=render_source_path,
+            output_pdf_path=restored_source_path,
+            translated_pages=translated_pages,
+        )
+        print(f"render source pdf: redact-restore formulas elapsed={time.perf_counter() - restore_started:.2f}s", flush=True)
+        if restored_result.changed and restored_result.output_pdf_path is not None:
+            render_source_path = restored_result.output_pdf_path
+            bbox_text_stripped_page_indices = restored_result.changed_page_indices
+            source_text_precleaned_page_indices = restored_result.changed_page_indices
+            if not artifact_mode:
+                temp_paths.append(render_source_path)
+            print(
+                f"render source pdf: using redact-restore formula copy {render_source_path}",
+                flush=True,
+            )
+        else:
+            restored_source_path.unlink(missing_ok=True)
+
     if pdf_compress_dpi <= 0:
         return RenderSourcePdf(
             path=render_source_path,
             temp_paths=temp_paths,
             bbox_text_stripped_page_indices=bbox_text_stripped_page_indices,
             bbox_text_strip_skipped_page_indices=bbox_text_strip_skipped_page_indices,
+            source_text_precleaned_page_indices=source_text_precleaned_page_indices,
         )
     compress_started = time.perf_counter()
     compressed_source_path = (
@@ -112,6 +136,7 @@ def build_render_source_pdf(
             image_compressed=True,
             bbox_text_stripped_page_indices=bbox_text_stripped_page_indices,
             bbox_text_strip_skipped_page_indices=bbox_text_strip_skipped_page_indices,
+            source_text_precleaned_page_indices=source_text_precleaned_page_indices,
         )
     compressed_source_path.unlink(missing_ok=True)
     print("render source pdf: source image compression skipped", flush=True)
@@ -120,6 +145,7 @@ def build_render_source_pdf(
         temp_paths=temp_paths,
         bbox_text_stripped_page_indices=bbox_text_stripped_page_indices,
         bbox_text_strip_skipped_page_indices=bbox_text_strip_skipped_page_indices,
+        source_text_precleaned_page_indices=source_text_precleaned_page_indices,
     )
 
 

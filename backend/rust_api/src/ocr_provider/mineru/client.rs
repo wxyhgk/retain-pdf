@@ -11,6 +11,7 @@ use serde::Serialize;
 use serde_json::{json, Value};
 use zip::ZipArchive;
 
+use crate::config::MineruRuntimeConfig;
 use crate::ocr_provider::mineru::errors::{
     extract_provider_error_code, extract_provider_message, extract_provider_trace_id,
 };
@@ -20,16 +21,12 @@ use crate::ocr_provider::mineru::models::{
 };
 use crate::ocr_provider::types::OcrProviderCapabilities;
 
-const DEFAULT_BASE_URL: &str = "https://mineru.net";
-const REQUEST_TIMEOUT_SECS: u64 = 120;
-const UPLOAD_TIMEOUT_SECS: u64 = 300;
-const DOWNLOAD_TIMEOUT_SECS: u64 = 300;
-
 #[derive(Debug, Clone)]
 pub struct MineruClient {
     pub base_url: String,
     pub token: String,
     http: Client,
+    runtime: MineruRuntimeConfig,
 }
 
 #[derive(Debug, Clone)]
@@ -53,24 +50,33 @@ pub struct MineruCreatedTask {
 
 impl MineruClient {
     pub fn new(base_url: impl Into<String>, token: impl Into<String>) -> Self {
+        Self::with_runtime(base_url, token, MineruRuntimeConfig::from_env())
+    }
+
+    pub fn with_runtime(
+        base_url: impl Into<String>,
+        token: impl Into<String>,
+        runtime: MineruRuntimeConfig,
+    ) -> Self {
         let base_url = {
             let raw = base_url.into();
             let trimmed = raw.trim();
             if trimmed.is_empty() {
-                DEFAULT_BASE_URL.to_string()
+                runtime.default_base_url.trim_end_matches('/').to_string()
             } else {
                 trimmed.trim_end_matches('/').to_string()
             }
         };
         let http = Client::builder()
-            .connect_timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS))
-            .timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS))
+            .connect_timeout(Duration::from_secs(runtime.request_timeout_secs))
+            .timeout(Duration::from_secs(runtime.request_timeout_secs))
             .build()
             .expect("reqwest client");
         Self {
             base_url,
             token: token.into(),
             http,
+            runtime,
         }
     }
 
@@ -107,7 +113,7 @@ impl MineruClient {
             .with_context(|| format!("failed to read upload file {}", file_path.display()))?;
         self.http
             .put(upload_url)
-            .timeout(Duration::from_secs(UPLOAD_TIMEOUT_SECS))
+            .timeout(Duration::from_secs(self.runtime.upload_timeout_secs))
             .body(bytes)
             .send()
             .await
@@ -192,7 +198,7 @@ impl MineruClient {
             .get(full_zip_url)
             .header(AUTHORIZATION, self.auth_header())
             .header(ACCEPT, "*/*")
-            .timeout(Duration::from_secs(DOWNLOAD_TIMEOUT_SECS))
+            .timeout(Duration::from_secs(self.runtime.download_timeout_secs))
             .send()
             .await
             .context("MinerU download bundle request failed")?
@@ -218,7 +224,7 @@ impl MineruClient {
             .header(ACCEPT, "*/*")
             // Probe only the first byte so we can cheaply wait for CDN availability.
             .header(RANGE, "bytes=0-0")
-            .timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS))
+            .timeout(Duration::from_secs(self.runtime.request_timeout_secs))
             .send()
             .await
             .context("MinerU bundle readiness probe failed")?

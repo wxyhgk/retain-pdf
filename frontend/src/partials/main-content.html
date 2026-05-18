@@ -5,7 +5,7 @@
     <div id="job-warning" class="job-warning hidden">检测到上一个任务仍在处理中。建议先等待当前任务结束，再提交新的 PDF。</div>
 
     <form id="job-form" class="form" novalidate>
-      <input id="ocr_provider" name="ocr_provider" type="hidden" value="mineru" />
+      <input id="ocr_provider" name="ocr_provider" type="hidden" value="paddle" />
       <input id="mineru_token" name="mineru_token" type="hidden" value="" />
       <input id="paddle_token" name="paddle_token" type="hidden" value="" />
       <input id="api_key" name="api_key" type="hidden" value="" />
@@ -36,7 +36,7 @@
         <div class="upload-meta upload-meta-inline">
           <span>单个 PDF</span>
           <span>最大 100MB</span>
-          <span>最多 300 页</span>
+          <span>最多 999 页</span>
         </div>
         <div id="upload-status" class="upload-status hidden">尚未选择文件</div>
         <div id="upload-progress-panel" class="upload-progress-panel hidden" aria-live="polite">

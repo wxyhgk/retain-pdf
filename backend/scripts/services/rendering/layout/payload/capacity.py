@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import lru_cache
 from math import ceil
 from math import exp
 import re
@@ -9,11 +10,23 @@ from services.rendering.layout.payload.shared import token_units
 
 
 COMPLEX_FORMULA_COMMAND_RE = re.compile(r"\\(?:frac|dfrac|tfrac|sqrt|sum|prod|int|begin|delta|Delta|partial|mathbf|overline|underline)")
+FormulaMapKey = tuple[tuple[str, str], ...]
 
 
-def formula_estimate_discount(protected_text: str, formula_map: list[dict]) -> float:
+def _formula_map_key(formula_map: list[dict]) -> FormulaMapKey:
+    return tuple(
+        (
+            str(entry.get("placeholder", "")),
+            str(entry.get("formula_text", "")),
+        )
+        for entry in formula_map
+    )
+
+
+@lru_cache(maxsize=50000)
+def _formula_estimate_discount_cached(protected_text: str, formula_key: FormulaMapKey) -> float:
     tokens = tokenize_protected_text(protected_text)
-    formula_lookup = {entry["placeholder"]: entry["formula_text"] for entry in formula_map}
+    formula_lookup = dict(formula_key)
     formula_tokens = [token for token in tokens if token in formula_lookup or (token.startswith("$") and token.endswith("$"))]
     if not formula_tokens:
         return 1.0
@@ -23,6 +36,18 @@ def formula_estimate_discount(protected_text: str, formula_map: list[dict]) -> f
     count_ratio = formula_count / max(1.0, len(visible_tokens))
     uncertainty = formula_count * 0.06 + complex_count * 0.06 + count_ratio * 0.9
     return round(1.0 - 0.14 * (1.0 - exp(-1.7 * max(0.0, uncertainty))), 3)
+
+
+@lru_cache(maxsize=50000)
+def _text_demand_units_cached(protected_text: str, formula_key: FormulaMapKey) -> float:
+    if not protected_text:
+        return 0.0
+    formula_lookup = dict(formula_key)
+    return sum(token_units(token, formula_lookup) for token in tokenize_protected_text(protected_text))
+
+
+def formula_estimate_discount(protected_text: str, formula_map: list[dict]) -> float:
+    return _formula_estimate_discount_cached(protected_text, _formula_map_key(formula_map))
 
 
 def box_capacity_units(
@@ -44,10 +69,20 @@ def box_capacity_units(
 
 
 def text_demand_units(protected_text: str, formula_map: list[dict]) -> float:
-    if not protected_text:
-        return 0.0
-    formula_lookup = {entry["placeholder"]: entry["formula_text"] for entry in formula_map}
-    return sum(token_units(token, formula_lookup) for token in tokenize_protected_text(protected_text))
+    return _text_demand_units_cached(protected_text, _formula_map_key(formula_map))
+
+
+def text_demand_units_cache_info():
+    return _text_demand_units_cached.cache_info()
+
+
+def formula_estimate_discount_cache_info():
+    return _formula_estimate_discount_cached.cache_info()
+
+
+def clear_capacity_caches() -> None:
+    _text_demand_units_cached.cache_clear()
+    _formula_estimate_discount_cached.cache_clear()
 
 
 def estimated_required_lines(

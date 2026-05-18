@@ -54,8 +54,8 @@ fn persist_queued_job(deps: &ProcessRuntimeDeps, job: &mut JobSnapshot) -> Resul
     job.replace_failure_info(None);
     persist_job_with_resources(
         deps.db.as_ref(),
-        &deps.config.data_root,
-        &deps.config.output_root,
+        &deps.persist.data_root,
+        &deps.persist.output_root,
         job,
     )?;
     Ok(())
@@ -90,8 +90,8 @@ fn persist_failed_job(
     job.replace_failure_info(crate::job_failure::classify_job_failure(&job));
     persist_job_with_resources(
         deps.db.as_ref(),
-        &deps.config.data_root,
-        &deps.config.output_root,
+        &deps.persist.data_root,
+        &deps.persist.output_root,
         &job,
     )?;
     Ok(())
@@ -109,6 +109,7 @@ async fn run_job(deps: ProcessRuntimeDeps, job_id: String) -> Result<()> {
         deps.canceled_jobs.as_ref(),
         &deps.job_slots,
         &job_id,
+        deps.job_runner_config().queue_poll_interval_ms,
     )
     .await?
     {
@@ -123,8 +124,8 @@ async fn run_job(deps: ProcessRuntimeDeps, job_id: String) -> Result<()> {
         dispatch_workflow(deps.clone(), deps.db.get_job(&job_id)?.into_runtime()).await?;
     persist_runtime_job_with_resources(
         deps.db.as_ref(),
-        &deps.config.data_root,
-        &deps.config.output_root,
+        &deps.persist.data_root,
+        &deps.persist.output_root,
         &finished_job,
     )?;
     clear_job_cancel_request(&deps, &job_id).await;

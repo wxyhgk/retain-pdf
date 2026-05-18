@@ -3,6 +3,7 @@ from __future__ import annotations
 from services.rendering.layout.model.block_view import layout_block_to_render_block
 from services.rendering.layout.model.block_view import render_block_protected_text
 from services.rendering.layout.model.models import RenderLayoutBlock
+from services.rendering.policy.formula_guard import protect_formula_regions_in_redaction_items
 from services.rendering.source.background.redaction_plan import redaction_item_from_render_block
 
 

@@ -6,7 +6,7 @@ use crate::error::AppError;
 use crate::models::{JobEventRecord, JobSnapshot, JobStage};
 use crate::storage_paths::resolve_events_jsonl;
 use serde::Deserialize;
-use serde_json::Value;
+use serde_json::{json, Value};
 
 #[derive(Debug, Clone)]
 pub struct LiveStageSnapshot {
@@ -81,6 +81,7 @@ pub fn list_combined_job_events(
     let base_seq = items.iter().map(|item| item.seq).max().unwrap_or(0);
     let mut file_items = load_pipeline_event_records(job, data_root, base_seq);
     items.append(&mut file_items);
+    append_ocr_child_events(db, data_root, job, &mut items)?;
     items.sort_by(|left, right| {
         left.ts
             .cmp(&right.ts)
@@ -91,6 +92,55 @@ pub fn list_combined_job_events(
         item.seq = (index + 1) as i64;
     }
     Ok(items)
+}
+
+fn append_ocr_child_events(
+    db: &crate::db::Db,
+    data_root: &Path,
+    parent_job: &JobSnapshot,
+    items: &mut Vec<JobEventRecord>,
+) -> Result<(), AppError> {
+    let Some(ocr_job_id) = parent_job
+        .artifacts
+        .as_ref()
+        .and_then(|artifacts| artifacts.ocr_job_id.as_ref())
+        .map(String::as_str)
+        .filter(|value| !value.trim().is_empty() && *value != parent_job.job_id)
+    else {
+        return Ok(());
+    };
+    let Ok(ocr_job) = db.get_job(ocr_job_id) else {
+        return Ok(());
+    };
+    let base_seq = items.iter().map(|item| item.seq).max().unwrap_or(0);
+    let mut child_items = db.list_job_events(ocr_job_id, 10_000, 0)?;
+    let mut child_file_items =
+        load_pipeline_event_records(&ocr_job, data_root, base_seq + child_items.len() as i64);
+    child_items.append(&mut child_file_items);
+    items.extend(
+        child_items
+            .into_iter()
+            .map(|item| mirror_child_event(parent_job, ocr_job_id, item)),
+    );
+    Ok(())
+}
+
+fn mirror_child_event(
+    parent_job: &JobSnapshot,
+    source_job_id: &str,
+    mut item: JobEventRecord,
+) -> JobEventRecord {
+    let original_payload = item
+        .payload
+        .take()
+        .unwrap_or(Value::Object(Default::default()));
+    item.job_id = parent_job.job_id.clone();
+    item.user_stage = item.user_stage.or_else(|| Some("ocr".to_string()));
+    item.payload = Some(json!({
+        "source_job_id": source_job_id,
+        "source_event": original_payload,
+    }));
+    item
 }
 
 fn load_pipeline_events_jsonl(job_id: &str, path: &Path, base_seq: i64) -> Vec<JobEventRecord> {
@@ -123,9 +173,16 @@ fn load_pipeline_events_jsonl(job_id: &str, path: &Path, base_seq: i64) -> Vec<J
                 seq: base_seq + index as i64 + 1,
                 ts: parsed.ts.unwrap_or_default(),
                 level: parsed.level.unwrap_or_else(|| "info".to_string()),
-                user_stage: parsed.user_stage.or_else(|| user_stage_for_event(parsed.stage.as_deref())),
-                substage: parsed.substage.clone().or_else(|| parsed.provider_stage.clone()),
-                progress_unit: parsed.progress_unit.or_else(|| progress_unit_for_event(parsed.stage.as_deref(), &event)),
+                user_stage: parsed
+                    .user_stage
+                    .or_else(|| user_stage_for_event(parsed.stage.as_deref())),
+                substage: parsed
+                    .substage
+                    .clone()
+                    .or_else(|| parsed.provider_stage.clone()),
+                progress_unit: parsed
+                    .progress_unit
+                    .or_else(|| progress_unit_for_event(parsed.stage.as_deref(), &event)),
                 stage: parsed.stage,
                 stage_detail: parsed.stage_detail,
                 provider: parsed.provider,
@@ -145,10 +202,19 @@ fn load_pipeline_events_jsonl(job_id: &str, path: &Path, base_seq: i64) -> Vec<J
 
 fn user_stage_for_event(stage: Option<&str>) -> Option<String> {
     match stage.map(str::trim).unwrap_or_default() {
-        "ocr_upload" | "ocr_processing" | "ocr_result_ready" | "normalizing" => Some("ocr".to_string()),
-        "translation_prepare" | "translating" | "translation_batches" | "continuation_review" | "page_policies"
-        | "domain_inference" | "garbled_repair" => Some("translate".to_string()),
-        "render_prepare" | "rendering" | "compile" | "overlay" | "saving" => Some("render".to_string()),
+        "ocr_upload" | "ocr_processing" | "ocr_result_ready" | "normalizing" => {
+            Some("ocr".to_string())
+        }
+        "translation_prepare"
+        | "translating"
+        | "translation_batches"
+        | "continuation_review"
+        | "page_policies"
+        | "domain_inference"
+        | "garbled_repair" => Some("translate".to_string()),
+        "render_prepare" | "rendering" | "compile" | "overlay" | "saving" => {
+            Some("render".to_string())
+        }
         "finished" | "done" => Some("done".to_string()),
         _ => None,
     }
@@ -157,8 +223,18 @@ fn user_stage_for_event(stage: Option<&str>) -> Option<String> {
 fn progress_unit_for_event(stage: Option<&str>, event: &str) -> Option<String> {
     let unit = match stage.map(str::trim).unwrap_or_default() {
         "translating" | "translation_batches" => "batch",
-        "ocr_processing" | "continuation_review" | "page_policies" | "domain_inference" | "garbled_repair" | "rendering" => "page",
-        "compile" | "overlay" | "saving" | "render_prepare" | "translation_prepare" | "normalizing" => "step",
+        "ocr_processing"
+        | "continuation_review"
+        | "page_policies"
+        | "domain_inference"
+        | "garbled_repair"
+        | "rendering" => "page",
+        "compile"
+        | "overlay"
+        | "saving"
+        | "render_prepare"
+        | "translation_prepare"
+        | "normalizing" => "step",
         _ if event == "stage_progress" => "step",
         _ => "none",
     };

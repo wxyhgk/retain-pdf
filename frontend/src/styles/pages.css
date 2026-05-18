@@ -442,12 +442,57 @@
   border: none;
   box-shadow: none;
   background: var(--paper);
+  box-sizing: border-box;
 }
 
 .reader-viewer-host .pdfViewer .canvasWrapper {
   overflow: hidden;
   border: none;
   box-shadow: none;
+}
+
+.reader-viewer-host .pdfViewer .page canvas {
+  display: block;
+}
+
+.reader-translated-region-layer,
+.reader-source-highlight-layer,
+.reader-translated-highlight-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+}
+
+.reader-source-highlight-layer,
+.reader-translated-highlight-layer {
+  pointer-events: none;
+}
+
+.reader-translated-region-target {
+  position: absolute;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: transparent;
+  cursor: crosshair;
+  opacity: 0;
+}
+
+.reader-translated-region-target:focus-visible {
+  opacity: 1;
+  outline: 1px dashed rgba(255, 0, 0, 0.65);
+  outline-offset: 0;
+}
+
+.reader-region-highlight-box {
+  position: absolute;
+  border: 2px dashed rgba(255, 0, 0, 0.9);
+  background: rgba(255, 0, 0, 0.04);
+  box-sizing: border-box;
+  pointer-events: none;
 }
 
 .reader-viewer-host .pdfViewer.removePageBorders .page {

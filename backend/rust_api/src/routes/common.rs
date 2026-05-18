@@ -4,8 +4,10 @@ use std::path::Path;
 use axum::Json;
 
 use crate::app::AppState;
+use crate::config::{DeepSeekRuntimeConfig, MineruRuntimeConfig, PaddleRuntimeConfig};
 use crate::db::Db;
 use crate::models::ApiResponse;
+use crate::services::library::LibraryDeps;
 
 pub fn ok_json<T>(value: T) -> Json<ApiResponse<T>> {
     Json(ApiResponse::ok(value))
@@ -39,6 +41,23 @@ pub fn build_glossary_route_deps(state: &AppState) -> GlossaryRouteDeps<'_> {
     }
 }
 
+pub struct LibraryRouteDeps<'a> {
+    pub library: LibraryDeps<'a>,
+    pub default_port: u16,
+}
+
+pub fn build_library_route_deps(state: &AppState) -> LibraryRouteDeps<'_> {
+    LibraryRouteDeps {
+        library: LibraryDeps {
+            db: state.db.as_ref(),
+            data_root: &state.config.data_root,
+            output_root: &state.config.output_root,
+            downloads_dir: &state.config.downloads_dir,
+        },
+        default_port: state.config.port,
+    }
+}
+
 pub struct HealthRouteDeps<'a> {
     pub db: &'a Db,
 }
@@ -56,5 +75,19 @@ pub struct AuthRouteDeps<'a> {
 pub fn build_auth_route_deps(state: &AppState) -> AuthRouteDeps<'_> {
     AuthRouteDeps {
         api_keys: &state.config.api_keys,
+    }
+}
+
+pub struct ProviderRouteDeps {
+    pub mineru_runtime: MineruRuntimeConfig,
+    pub paddle_runtime: PaddleRuntimeConfig,
+    pub deepseek_runtime: DeepSeekRuntimeConfig,
+}
+
+pub fn build_provider_route_deps(state: &AppState) -> ProviderRouteDeps {
+    ProviderRouteDeps {
+        mineru_runtime: state.config.provider_runtime.mineru.clone(),
+        paddle_runtime: state.config.provider_runtime.paddle.clone(),
+        deepseek_runtime: state.config.provider_runtime.deepseek.clone(),
     }
 }

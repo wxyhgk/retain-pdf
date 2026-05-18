@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
+import re
 from typing import Callable
 
 from services.translation.diagnostics import TranslationDiagnosticsCollector
@@ -42,6 +43,8 @@ class _ValidationItemState:
 
 
 ValidationRule = Callable[[_ValidationItemState, TranslationDiagnosticsCollector | None], None]
+INLINE_MATH_SPAN_RE = re.compile(r"(?<!\\)\$(?:\\.|[^$\\\n])+(?<!\\)\$")
+SOURCE_TERMINAL_RE = re.compile(r"[.!?。！？；;:：)\]）】”’\"']\s*$")
 
 
 def should_reject_keep_origin(item: dict, decision: str, payload: dict[str, str] | None = None) -> bool:
@@ -129,6 +132,50 @@ def _validate_protocol_shell(
         severity="error",
         message="Translated output still contains JSON/protocol shell",
         retryable=True,
+    )
+    raise TranslationProtocolError(
+        state.item_id,
+        source_text=state.source_text,
+        translated_text=state.translated_text,
+    )
+
+
+def _math_spans(text: str) -> list[str]:
+    return [match.group(0).strip() for match in INLINE_MATH_SPAN_RE.finditer(str(text or "")) if match.group(0).strip()]
+
+
+def _source_looks_incomplete(text: str) -> bool:
+    source = str(text or "").strip()
+    if not source:
+        return False
+    return SOURCE_TERMINAL_RE.search(source) is None
+
+
+def _validate_direct_math_context_bleed(
+    state: _ValidationItemState,
+    diagnostics: TranslationDiagnosticsCollector | None,
+) -> None:
+    if not is_direct_math_mode(state.item) or not _source_looks_incomplete(state.source_text):
+        return
+    context_after = str(state.item.get("translation_context_after") or state.item.get("continuation_next_text") or "")
+    if not context_after:
+        return
+    source_math = set(_math_spans(state.source_text))
+    leaked = [
+        expr
+        for expr in _math_spans(context_after)
+        if expr not in source_math and expr in state.translated_text
+    ]
+    if not leaked:
+        return
+    _emit_validation_diagnostic(
+        diagnostics,
+        state,
+        kind="context_bleed",
+        severity="error",
+        message="Translated output appears to include following context not present in current source",
+        retryable=True,
+        details={"leaked_math": leaked[:5]},
     )
     raise TranslationProtocolError(
         state.item_id,
@@ -290,6 +337,7 @@ _TRANSLATED_TEXT_VALIDATORS: tuple[ValidationRule, ...] = (
     _validate_non_empty_translation,
     _validate_direct_math_delimiters,
     _validate_protocol_shell,
+    _validate_direct_math_context_bleed,
     _validate_untranslated_english,
     _validate_mixed_english_residue,
     _warn_predominantly_english,

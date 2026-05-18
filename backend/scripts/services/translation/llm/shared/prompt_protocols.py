@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from foundation.shared.prompt_loader import load_prompt
@@ -14,6 +15,7 @@ LEGACY_JSON_ONLY_INSTRUCTION_ZH = (
     '{"translations":[{"item_id":"...","translated_text":"..."}]}'
 )
 DEFAULT_TARGET_LANGUAGE_NAME = "简体中文"
+SOURCE_TERMINAL_RE = re.compile(r"[.!?。！？；;:：)\]）】”’\"']\s*$")
 
 
 def _target_language_name(value: str = "") -> str:
@@ -22,6 +24,24 @@ def _target_language_name(value: str = "") -> str:
 
 def _prompt_context(*, target_language_name: str = DEFAULT_TARGET_LANGUAGE_NAME) -> dict[str, str]:
     return {"target_language_name": _target_language_name(target_language_name)}
+
+
+def _source_looks_incomplete(text: str) -> bool:
+    source = str(text or "").strip()
+    if not source:
+        return False
+    return SOURCE_TERMINAL_RE.search(source) is None
+
+
+def _append_context_lines(lines: list[str], item: TranslationItemContext) -> None:
+    context_before = item.context_before_for_prompt()
+    if context_before:
+        lines.append(f"前文上下文（仅供理解，禁止翻译进输出）：{context_before}")
+    context_after = item.context_after_for_prompt()
+    if context_after:
+        if _source_looks_incomplete(item.source_for_prompt()):
+            lines.append("当前原文是不完整片段；译文必须保持同等不完整，不要用后文上下文补全。")
+        lines.append(f"后文上下文（仅供理解，禁止翻译进输出）：{context_after}")
 
 
 def direct_math_guidance(*, target_language_name: str = DEFAULT_TARGET_LANGUAGE_NAME) -> str:
@@ -76,12 +96,7 @@ def direct_typst_batch_user_prompt(
             lines.append(f"风格提示：{item.style_hint}")
         if item.continuation_group:
             lines.append("这是跨栏或跨页续接正文的一部分，请结合上下文理解后直接输出这一整段的译文。")
-        context_before = item.context_before_for_prompt()
-        if context_before:
-            lines.append(f"前文上下文：{context_before}")
-        context_after = item.context_after_for_prompt()
-        if context_after:
-            lines.append(f"后文上下文：{context_after}")
+        _append_context_lines(lines, item)
     return "\n".join(lines).strip()
 
 
@@ -97,19 +112,15 @@ def direct_typst_single_user_prompt(
         "下面是一段待翻译正文。",
         f"你只输出最终{_target_language_name(target_language_name)}译文正文，不要输出编号、决策字段、结构化数据、标签、代码块或解释。",
         "",
-        "原文：",
+        "【当前原文开始】",
         item.source_for_prompt(),
+        "【当前原文结束】",
     ]
     if item.style_hint:
         lines.append(f"风格提示：{item.style_hint}")
     if item.continuation_group:
         lines.append("这是跨栏或跨页续接正文的一部分，请结合上下文理解后直接输出这一整段的译文。")
-    context_before = item.context_before_for_prompt()
-    if context_before:
-        lines.append(f"前文上下文：{context_before}")
-    context_after = item.context_after_for_prompt()
-    if context_after:
-        lines.append(f"后文上下文：{context_after}")
+    _append_context_lines(lines, item)
     return "\n".join(lines).strip()
 
 
@@ -125,19 +136,15 @@ def plain_text_single_user_prompt(
         "下面是一段待翻译正文。",
         f"只输出这一段的最终{_target_language_name(target_language_name)}译文正文，不要输出编号、决策字段、结构化数据、标签、代码块或解释。",
         "",
-        "原文：",
+        "【当前原文开始】",
         item.source_for_prompt(),
+        "【当前原文结束】",
     ]
     if item.style_hint:
         lines.append(f"风格提示：{item.style_hint}")
     if item.continuation_group:
         lines.append("这是跨栏或跨页续接正文的一部分，请结合上下文理解后直接输出这一整段的译文。")
-    context_before = item.context_before_for_prompt()
-    if context_before:
-        lines.append(f"前文上下文：{context_before}")
-    context_after = item.context_after_for_prompt()
-    if context_after:
-        lines.append(f"后文上下文：{context_after}")
+    _append_context_lines(lines, item)
     return "\n".join(lines).strip()
 
 

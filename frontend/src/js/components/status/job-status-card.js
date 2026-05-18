@@ -108,8 +108,27 @@ class JobStatusCard extends HTMLElement {
     syncPrimaryActions(this, { pdfReady, readerReady });
   }
 
-  #syncTranslationSubstages(selectedStageKey, selectedIsCurrent) {
-    syncTranslationSubstageStates(this.querySelector(".status-substage-flow"), selectedStageKey, selectedIsCurrent, this.#lastSnapshot);
+  #syncTranslationSubstages(selectedStageKey, selectedIsCurrent, selectedProgress = null) {
+    syncTranslationSubstageStates(
+      this.querySelector(".status-substage-flow"),
+      selectedStageKey,
+      selectedIsCurrent,
+      this.#lastSnapshot,
+      selectedProgress,
+    );
+  }
+
+  #normalizeSelectedProgress(progress = {}, fallback = {}) {
+    const current = Number(progress?.current ?? progress?.progressCurrent ?? fallback?.current ?? fallback?.progressCurrent);
+    const total = Number(progress?.total ?? progress?.progressTotal ?? fallback?.total ?? fallback?.progressTotal);
+    return {
+      current: Number.isFinite(current) ? current : NaN,
+      total: Number.isFinite(total) ? total : NaN,
+      progressText: progress?.progressText || fallback?.progressText || "",
+      indeterminate: Boolean(progress?.indeterminate ?? progress?.progressIndeterminate ?? fallback?.indeterminate ?? fallback?.progressIndeterminate),
+      substageKey: progress?.substageKey || fallback?.substageKey || "",
+      visualStageKey: progress?.visualStageKey || fallback?.visualStageKey || "",
+    };
   }
 
   setElapsed(value = "-") {
@@ -139,6 +158,8 @@ class JobStatusCard extends HTMLElement {
     progressPercent = NaN,
     progressText = "",
     progressIndeterminate = false,
+    substageKey = "",
+    errorText = "",
     visualStageKey = "",
     stageProgressByKey = {},
     pdfReady = false,
@@ -157,6 +178,8 @@ class JobStatusCard extends HTMLElement {
       progressPercent,
       progressText,
       progressIndeterminate,
+      substageKey,
+      errorText,
       visualStageKey,
       stageProgressByKey,
       pdfReady,
@@ -178,29 +201,35 @@ class JobStatusCard extends HTMLElement {
     }
     const flowStageKey = this.#effectiveFlowStageKey(snapshot);
     const selected = this.#selectedStageKey || flowStageKey || snapshot.stageKey;
-    const selectedIsCurrent = selected === snapshot.stageKey || (!this.#selectedStageKey && selected === flowStageKey);
+    const selectedIsCurrent = selected === snapshot.stageKey;
     this.setStageFlow(flowStageKey || snapshot.stageKey, selected);
-    this.#syncTranslationSubstages(selected, selectedIsCurrent);
-    this.#stageAnimationController?.setStageVisualMode(resolveVisualStageKeyForSnapshot(snapshot, selected));
-    const labelEl = this.querySelector("#status-ring-label");
-    const progressSummaryEl = this.querySelector("#status-stage-progress-summary");
-    if (labelEl && !selectedIsCurrent) {
-      labelEl.textContent = `${STAGE_LABELS[selected] || "阶段"} 阶段`;
-    } else if (labelEl) {
-      labelEl.textContent = snapshot.label;
-    }
+    const selectedHistoricalProgress = selectedIsCurrent ? null : snapshot.stageProgressByKey?.[selected];
+    this.#stageAnimationController?.setStageVisualMode(
+      selectedHistoricalProgress?.visualStageKey || resolveVisualStageKeyForSnapshot(snapshot, selected),
+    );
+    const errorSummaryEl = this.querySelector("#status-stage-error-summary");
+    const errorText = `${snapshot.errorText || ""}`.trim();
+    const selectedIsError = snapshot.stageKey === "failed" || snapshot.stageKey === "canceled";
+    const currentProgress = {
+      current: snapshot.progressCurrent,
+      total: snapshot.progressTotal,
+      progressText: snapshot.progressText,
+      indeterminate: snapshot.progressIndeterminate,
+      substageKey: snapshot.substageKey,
+      visualStageKey: snapshot.visualStageKey,
+    };
     const selectedProgress = selectedIsCurrent
-      ? {
-          current: snapshot.progressCurrent,
-          total: snapshot.progressTotal,
-          progressText: snapshot.progressText,
-          indeterminate: snapshot.progressIndeterminate,
-        }
-      : snapshot.stageProgressByKey?.[selected];
-    if (progressSummaryEl) {
-      const summaryText = selectedProgress?.progressText || "";
-      progressSummaryEl.textContent = summaryText;
-      progressSummaryEl.classList.toggle("hidden", !summaryText || selected === "done");
+      ? this.#normalizeSelectedProgress(currentProgress, snapshot.stageProgressByKey?.[selected])
+      : this.#normalizeSelectedProgress(selectedHistoricalProgress);
+    this.#syncTranslationSubstages(selected, selectedIsCurrent, selectedProgress);
+    this.#stageAnimationController?.syncProgressSpeed({
+      stageKey: selected,
+      current: selectedProgress?.current,
+      total: selectedProgress?.total,
+    });
+    if (errorSummaryEl) {
+      errorSummaryEl.textContent = errorText;
+      errorSummaryEl.classList.toggle("hidden", !selectedIsError || !errorText);
     }
     this.setProgress({
       current: selectedProgress?.current,

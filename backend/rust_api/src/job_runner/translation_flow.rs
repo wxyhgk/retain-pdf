@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 
 use crate::job_events::persist_runtime_job_with_resources;
 use crate::models::{now_iso, JobArtifacts, JobRuntimeState, JobStatusKind};
-use crate::storage_paths::{build_job_paths, resolve_data_path};
+use crate::storage_paths::build_job_paths;
 
 #[path = "translation_flow_child.rs"]
 mod translation_flow_child;
@@ -22,6 +22,7 @@ use self::translation_flow_stage::{
 use self::translation_flow_support::finalize_parent_after_ocr;
 use super::ocr_flow::{execute_ocr_job, sync_parent_with_ocr_child};
 use super::pipeline_plan::PipelinePlan;
+use super::stage_contract::ocr_ready_inputs_for_translation;
 use super::{attach_job_paths, ProcessRuntimeDeps};
 use translation_flow_executor::run_after_translation_stage;
 
@@ -69,7 +70,7 @@ async fn run_translate_only_job_from_artifacts(
         .to_string();
     let (job, _source_pdf_path) =
         prepare_job_from_ocr_artifacts(&deps, job, &source_job_id, "继续翻译").await?;
-    let job_paths = build_job_paths(&deps.config.output_root, &job.job_id)?;
+    let job_paths = build_job_paths(&deps.persist.output_root, &job.job_id)?;
     run_translation_stage(&deps, job, &job_paths)
         .await
         .map(|result| result.job)
@@ -87,7 +88,7 @@ async fn run_book_job_from_artifacts(
         .to_string();
     let (job, _source_pdf_path) =
         prepare_job_from_ocr_artifacts(&deps, job, &source_job_id, "继续翻译并渲染").await?;
-    let job_paths = build_job_paths(&deps.config.output_root, &job.job_id)?;
+    let job_paths = build_job_paths(&deps.persist.output_root, &job.job_id)?;
     let translation_stage = run_translation_stage(&deps, job, &job_paths).await?;
     let translated_job = translation_stage.job;
     let source_pdf_path = translation_stage.source_pdf_path;
@@ -108,35 +109,13 @@ async fn prepare_job_from_ocr_artifacts(
         .artifacts
         .as_ref()
         .ok_or_else(|| anyhow!("artifact source job has no artifacts: {source_job_id}"))?;
-    let checkpoint = source_artifacts.ocr_checkpoint();
-    let source_pdf_path = checkpoint
-        .source_pdf
-        .ok_or_else(|| anyhow!("artifact source job is missing source_pdf: {source_job_id}"))
-        .and_then(|raw| resolve_data_path(&deps.config.data_root, raw))?;
-    let normalized_path = checkpoint
-        .normalized_document_json
-        .ok_or_else(|| {
-            anyhow!("artifact source job is missing normalized_document_json: {source_job_id}")
-        })
-        .and_then(|raw| resolve_data_path(&deps.config.data_root, raw))?;
-    let layout_json_path = checkpoint
-        .layout_json
-        .map(|raw| resolve_data_path(&deps.config.data_root, raw))
-        .transpose()?;
-    if !source_pdf_path.exists() {
-        return Err(anyhow!(
-            "source_pdf not found for artifact job {source_job_id}: {}",
-            source_pdf_path.display()
-        ));
-    }
-    if !normalized_path.exists() {
-        return Err(anyhow!(
-            "normalized_document_json not found for artifact job {source_job_id}: {}",
-            normalized_path.display()
-        ));
-    }
+    let source_runtime = source_job.clone().into_runtime();
+    let ocr_inputs = ocr_ready_inputs_for_translation(&source_runtime, &deps.persist.data_root)?;
+    let source_pdf_path = ocr_inputs.source_pdf_path;
+    let normalized_path = ocr_inputs.normalized_path;
+    let layout_json_path = ocr_inputs.layout_json_path;
 
-    let job_paths = build_job_paths(&deps.config.output_root, &job.job_id)?;
+    let job_paths = build_job_paths(&deps.persist.output_root, &job.job_id)?;
     attach_job_paths(&mut job, &job_paths);
     copy_ocr_checkpoint_artifacts(&mut job, &source_job_id, source_artifacts);
     if let Some(artifacts) = job.artifacts.as_mut() {
@@ -152,8 +131,8 @@ async fn prepare_job_from_ocr_artifacts(
     ));
     persist_runtime_job_with_resources(
         deps.db.as_ref(),
-        &deps.config.data_root,
-        &deps.config.output_root,
+        &deps.persist.data_root,
+        &deps.persist.output_root,
         &job,
     )?;
     Ok((job, source_pdf_path))
@@ -173,7 +152,7 @@ async fn run_job_with_ocr(
     mut parent_job: JobRuntimeState,
     plan: PipelinePlan,
 ) -> Result<JobRuntimeState> {
-    let parent_job_paths = build_job_paths(&deps.config.output_root, &parent_job.job_id)?;
+    let parent_job_paths = build_job_paths(&deps.persist.output_root, &parent_job.job_id)?;
     attach_job_paths(&mut parent_job, &parent_job_paths);
     let source = load_translation_upload_source(deps.db.as_ref(), &parent_job)?;
     mark_parent_ocr_submitting(&deps, &mut parent_job)?;
@@ -188,8 +167,8 @@ async fn run_job_with_ocr(
     .await?;
     persist_runtime_job_with_resources(
         deps.db.as_ref(),
-        &deps.config.data_root,
-        &deps.config.output_root,
+        &deps.persist.data_root,
+        &deps.persist.output_root,
         &ocr_finished,
     )?;
     sync_parent_with_ocr_child(&mut parent_job, &ocr_finished);

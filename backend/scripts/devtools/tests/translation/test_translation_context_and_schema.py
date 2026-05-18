@@ -163,4 +163,4 @@ def test_translation_item_context_normalizes_prompt_context() -> None:
     assert context.effective_role == "paragraph"
     assert context.context_before_for_prompt() == "before context"
     assert context.context_after_for_prompt() == "after context"
-    assert context.as_batch_payload()["context_after"] == "after context"
+    assert context.as_batch_payload()["context_after"] == "仅供理解，禁止翻译进输出：after context"

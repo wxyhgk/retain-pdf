@@ -9,11 +9,15 @@ import {
 export function initializeIdleAndRecentJobs({
   appShellFeature,
   fetchJobList,
+  fetchLibraryBookList,
+  deleteLibraryBook,
   jobRuntimeFeature,
 }) {
   appShellFeature?.initializeIdleView();
   mountRecentJobsFeature({
     fetchJobList,
+    fetchLibraryBookList,
+    deleteLibraryBook,
     apiPrefix: API_PREFIX,
     startPolling: (jobId) => jobRuntimeFeature?.startPolling(jobId),
   });

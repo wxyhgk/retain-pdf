@@ -57,6 +57,7 @@ class RenderLayoutBlock:
     fit_shift_up_pt: float = 0.0
     first_line_indent_pt: float = 0.0
     justify_text: bool = False
+    use_cover_fill: bool = False
     skip_reason: str = ""
 
 

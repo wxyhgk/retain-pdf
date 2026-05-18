@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from statistics import median
 
+from services.document_schema.semantics import is_bodylike_block
 from services.rendering.layout.font_roles import is_title_like_block
+from services.rendering.layout.payload.render_item import get_render_inner_bbox
 from services.rendering.layout.typography.geometry import inner_bbox
+from services.translation.item_reader import item_block_kind
 
 
 BODY_TIGHT_GAP_MAX_INSET_RATIO = 0.03
@@ -12,6 +15,13 @@ BODY_TIGHT_GAP_MIN_TARGET_PT = 1.2
 BODY_TIGHT_GAP_MAX_TARGET_PT = 4.0
 TITLE_BODY_LEFT_TOLERANCE_PT = 18.0
 TITLE_BODY_WIDTH_MAX_SCALE = 1.18
+SHORT_BODY_REGION_MIN_ANCHORS = 2
+SHORT_BODY_REGION_X_TOLERANCE_PAGE_RATIO = 0.10
+SHORT_BODY_REGION_MAX_HEIGHT_RATIO = 0.72
+SHORT_BODY_REGION_MAX_WIDTH_RATIO = 0.78
+SHORT_BODY_REGION_TOP_EXPAND_RATIO = 0.05
+SHORT_BODY_REGION_RIGHT_EXPAND_RATIO = 0.30
+SHORT_BODY_REGION_MIN_GAP_PT = 1.0
 
 
 def build_effective_inner_bboxes(
@@ -35,6 +45,13 @@ def build_effective_inner_bboxes(
         if _cached_render_inner_bbox(item) is not None
     }
     _apply_body_tight_gap_inset(effective, body_flags=body_flags, page_width=page_width, locked_indices=locked_indices)
+    _apply_short_body_region_expansion(
+        effective,
+        translated_items,
+        body_flags=body_flags,
+        page_width=page_width,
+        locked_indices=locked_indices,
+    )
     _apply_title_body_width_alignment(
         effective,
         translated_items,
@@ -46,13 +63,7 @@ def build_effective_inner_bboxes(
 
 
 def _cached_render_inner_bbox(item: dict) -> list[float] | None:
-    bbox = item.get("_render_inner_bbox")
-    if isinstance(bbox, list) and len(bbox) == 4:
-        try:
-            return [float(value) for value in bbox]
-        except Exception:
-            return None
-    return None
+    return get_render_inner_bbox(item)
 
 
 def _apply_body_tight_gap_inset(
@@ -95,6 +106,106 @@ def _apply_body_tight_gap_inset(
         if inset_each_side > 0.0 and current_height - inset_each_side * 2.0 >= 8.0:
             current[1] = round(current[1] + inset_each_side, 3)
             current[3] = round(current[3] - inset_each_side, 3)
+
+
+def _apply_short_body_region_expansion(
+    effective: dict[int, list[float]],
+    translated_items: list[dict],
+    *,
+    body_flags: dict[int, bool],
+    page_width: float | None,
+    locked_indices: set[int],
+) -> None:
+    anchor_indices = [index for index in effective if body_flags.get(index)]
+    candidate_indices = [
+        index
+        for index in effective
+        if body_flags.get(index) or _is_body_region_text_item(translated_items[index])
+    ]
+    if len(anchor_indices) < SHORT_BODY_REGION_MIN_ANCHORS or len(candidate_indices) < SHORT_BODY_REGION_MIN_ANCHORS + 1:
+        return
+
+    body_boxes = [effective[index] for index in anchor_indices]
+    heights = [max(0.0, box[3] - box[1]) for box in body_boxes]
+    widths = [max(0.0, box[2] - box[0]) for box in body_boxes]
+    median_height = median([height for height in heights if height > 0.0] or [0.0])
+    median_width = median([width for width in widths if width > 0.0] or [0.0])
+    if median_height <= 0.0 or median_width <= 0.0:
+        return
+
+    ordered = sorted(candidate_indices, key=lambda index: (effective[index][1], effective[index][0]))
+    anchor_set = set(anchor_indices)
+    for position, current_index in enumerate(ordered):
+        if current_index in locked_indices:
+            continue
+        if current_index in anchor_set:
+            continue
+        current = effective[current_index]
+        current_height = max(0.0, current[3] - current[1])
+        current_width = max(0.0, current[2] - current[0])
+        if current_height <= 0.0 or current_width <= 0.0:
+            continue
+        if current_height > median_height * SHORT_BODY_REGION_MAX_HEIGHT_RATIO:
+            continue
+        if current_width > median_width * SHORT_BODY_REGION_MAX_WIDTH_RATIO:
+            continue
+
+        anchors = _previous_region_anchors(
+            current,
+            [index for index in ordered[:position] if index in anchor_set],
+            effective,
+            page_width=page_width,
+        )
+        if len(anchors) < SHORT_BODY_REGION_MIN_ANCHORS:
+            continue
+
+        previous_bottom = max(anchor[3] for anchor in anchors if anchor[3] <= current[1])
+        max_up = max(0.0, current[1] - previous_bottom - SHORT_BODY_REGION_MIN_GAP_PT)
+        top_expand = min(current_height * SHORT_BODY_REGION_TOP_EXPAND_RATIO, max_up)
+        if top_expand > 0.0:
+            current[1] = round(current[1] - top_expand, 3)
+
+        anchor_right = max(anchor[2] for anchor in anchors)
+        page_right = (page_width - 4.0) if page_width and page_width > 0 else anchor_right
+        target_right = min(anchor_right, page_right, current[2] + current_width * SHORT_BODY_REGION_RIGHT_EXPAND_RATIO)
+        if target_right > current[2] + 0.5:
+            current[2] = round(target_right, 3)
+
+
+def _previous_region_anchors(
+    current: list[float],
+    previous_indices: list[int],
+    effective: dict[int, list[float]],
+    *,
+    page_width: float | None,
+) -> list[list[float]]:
+    x_tolerance = max(18.0, (page_width or 0.0) * SHORT_BODY_REGION_X_TOLERANCE_PAGE_RATIO)
+    anchors: list[list[float]] = []
+    for index in reversed(previous_indices):
+        candidate = effective[index]
+        if candidate[3] > current[1]:
+            continue
+        if abs(candidate[0] - current[0]) > x_tolerance:
+            continue
+        if candidate[2] <= current[2]:
+            continue
+        if not _same_text_column(candidate, current, page_width=page_width):
+            continue
+        anchors.append(candidate)
+        if len(anchors) >= SHORT_BODY_REGION_MIN_ANCHORS:
+            break
+    return anchors
+
+
+def _is_body_region_text_item(item: dict) -> bool:
+    if is_title_like_block(item):
+        return False
+    block_kind = item_block_kind(item)
+    if block_kind != "text" and not is_bodylike_block(item):
+        return False
+    layout_role = str(item.get("layout_role", "") or "").strip().lower()
+    semantic_role = str(item.get("semantic_role", "") or "").strip().lower()
+    return layout_role in {"", "paragraph", "list_item"} and semantic_role in {"", "body", "abstract"}
 
 
 def _next_same_column_box(

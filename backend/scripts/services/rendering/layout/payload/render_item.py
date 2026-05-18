@@ -9,6 +9,8 @@ from services.rendering.layout.model.render_text import should_skip_display_math
 
 MATH_SOURCE_RE = re.compile(r"\$[^$]+\$|\\(?:begin|end|frac|lim|sum|int|mathrm|left|right|cdot|epsilon|forall|in)\b")
 MODEL_KEEP_ORIGIN_REASONS = {"skip_model_keep_origin"}
+RENDER_FIRST_LINE_INDENT_KEY = "_render_first_line_indent_pt"
+RENDER_INNER_BBOX_KEY = "_render_inner_bbox"
 
 
 def render_unit_kind(item: dict) -> str:
@@ -150,3 +152,31 @@ def group_unit_source_text(items: list[dict]) -> str:
 def clear_render_fields(item: dict) -> None:
     item["render_protected_text"] = ""
     item["render_formula_map"] = []
+
+
+def set_render_first_line_indent_pt(item: dict, value: float) -> None:
+    indent = max(0.0, float(value or 0.0))
+    if indent > 0:
+        item[RENDER_FIRST_LINE_INDENT_KEY] = indent
+
+
+def get_render_first_line_indent_pt(item: dict) -> float:
+    try:
+        return max(0.0, float(item.get(RENDER_FIRST_LINE_INDENT_KEY) or 0.0))
+    except Exception:
+        return 0.0
+
+
+def set_render_inner_bbox(item: dict, bbox: list[float]) -> None:
+    if isinstance(bbox, list) and len(bbox) == 4:
+        item[RENDER_INNER_BBOX_KEY] = [float(value) for value in bbox]
+
+
+def get_render_inner_bbox(item: dict) -> list[float] | None:
+    bbox = item.get(RENDER_INNER_BBOX_KEY)
+    if isinstance(bbox, list) and len(bbox) == 4:
+        try:
+            return [float(value) for value in bbox]
+        except Exception:
+            return None
+    return None

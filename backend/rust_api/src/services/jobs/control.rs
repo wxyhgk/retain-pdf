@@ -9,12 +9,11 @@ use crate::services::runtime_gateway::terminate_runtime_process;
 use super::creation::context::ControlDeps;
 use super::query::load_job_or_404;
 
-const SYNC_BUNDLE_WAIT_INTERVAL_MS: u64 = 1500;
-
 pub async fn wait_for_terminal_job(
     db: &Db,
     job_id: &str,
     timeout_seconds: i64,
+    wait_interval_ms: u64,
 ) -> Result<JobSnapshot, AppError> {
     let timeout_seconds = if timeout_seconds > 0 {
         timeout_seconds as u64
@@ -49,7 +48,7 @@ pub async fn wait_for_terminal_job(
                 timeout_seconds
             )));
         }
-        tokio::time::sleep(Duration::from_millis(SYNC_BUNDLE_WAIT_INTERVAL_MS)).await;
+        tokio::time::sleep(Duration::from_millis(wait_interval_ms)).await;
     }
 }
 
@@ -71,7 +70,7 @@ pub(crate) async fn cancel_job(
     deps.runtime.request_cancel(job_id).await;
     if !ocr_only || !matches!(job.stage.as_deref(), Some("normalizing")) {
         if let Some(pid) = job.pid {
-            terminate_runtime_process(pid).await?;
+            terminate_runtime_process(pid, deps.job_runner).await?;
         }
     }
     if ocr_only {

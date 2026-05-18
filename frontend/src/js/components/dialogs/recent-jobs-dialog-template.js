@@ -5,7 +5,7 @@ export function recentJobsDialogTemplate() {
         <div class="recent-jobs-sidebar-head">
           <div class="recent-jobs-head">
             <h2>最近任务</h2>
-            <p>按最近更新时间排序，点击后直接切换到该任务。</p>
+            <p>按最近更新时间排序，点击封面直接切换到该任务。</p>
           </div>
           <button id="query-dialog-close-btn" type="submit" class="dialog-close-btn" aria-label="关闭">×</button>
         </div>

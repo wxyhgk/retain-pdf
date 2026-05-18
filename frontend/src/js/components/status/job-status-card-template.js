@@ -42,8 +42,7 @@ export function jobStatusCardTemplate({
           </div>
         </div>
         <div class="status-focus-body">
-          <div id="status-ring-label" class="status-ring-label">等待中</div>
-          <div id="status-stage-progress-summary" class="status-stage-progress-summary hidden"></div>
+          <div id="status-stage-error-summary" class="status-stage-error-summary hidden"></div>
           <div id="status-ring-value" class="status-ring-value hidden">准备中</div>
           <div id="status-stage-detail" class="status-stage-detail hidden">-</div>
           <div id="status-stage-animation" class="status-stage-animation hidden" aria-label="任务阶段动画">

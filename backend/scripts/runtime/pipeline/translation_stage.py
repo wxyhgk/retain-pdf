@@ -38,6 +38,7 @@ def translate_book_pipeline(
     render_prewarm_artifacts_dir: Path | None = None,
     render_prewarm_mode: str = "auto",
     render_prewarm_pdf_compress_dpi: int = 0,
+    render_prewarm_source_cleanup_strategy: str = "pikepdf_text_strip",
 ) -> dict:
     return execute_translation_request(
         TranslationExecutionRequest(
@@ -68,5 +69,6 @@ def translate_book_pipeline(
             render_prewarm_artifacts_dir=render_prewarm_artifacts_dir,
             render_prewarm_mode=render_prewarm_mode,
             render_prewarm_pdf_compress_dpi=render_prewarm_pdf_compress_dpi,
+            render_prewarm_source_cleanup_strategy=render_prewarm_source_cleanup_strategy,
         )
     )

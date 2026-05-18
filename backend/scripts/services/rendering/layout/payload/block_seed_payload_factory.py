@@ -28,6 +28,8 @@ from services.rendering.layout.payload.shared import get_render_protected_text
 from services.rendering.layout.payload.shared import is_flag_like_plain_text_block
 from services.rendering.layout.payload.shared import layout_density_ratio
 from services.rendering.layout.payload.shared import translation_density_ratio
+from services.rendering.layout.payload.render_item import get_render_first_line_indent_pt
+from services.rendering.layout.payload.render_item import set_render_inner_bbox
 from services.rendering.layout.title_binary_fit import solve_title_fit
 from services.rendering.layout.typography.geometry import inner_bbox
 from services.rendering.layout.typography.measurement import bbox_height
@@ -93,8 +95,10 @@ def build_seed_payload_for_item(
 
     title_like = is_title_like_block(item)
     if title_like:
+        title_item = dict(item)
+        set_render_inner_bbox(title_item, item_inner_bbox)
         title_fit = solve_title_fit(
-            {**item, "_render_inner_bbox": item_inner_bbox},
+            title_item,
             translated_text,
             formula_map,
             base_font_size_pt=font_size_pt,
@@ -110,16 +114,17 @@ def build_seed_payload_for_item(
         leading_em = round(leading_em * COMPACT_SCALE, 2)
 
     if not title_like:
+        fit_item = {
+            **item,
+            "_is_body_text_candidate": body_like_single_line,
+            "_page_box_area_ratio": page_box_area_ratio,
+            "_dense_small_box": dense_small_box,
+            "_heavy_dense_small_box": heavy_dense_small_box,
+            "_wide_aspect_body_text": wide_aspect_body_text,
+        }
+        set_render_inner_bbox(fit_item, item_inner_bbox)
         font_size_pt, leading_em = fit_translated_block_metrics(
-            {
-                **item,
-                "_render_inner_bbox": item_inner_bbox,
-                "_is_body_text_candidate": body_like_single_line,
-                "_page_box_area_ratio": page_box_area_ratio,
-                "_dense_small_box": dense_small_box,
-                "_heavy_dense_small_box": heavy_dense_small_box,
-                "_wide_aspect_body_text": wide_aspect_body_text,
-            },
+            fit_item,
             translated_text,
             formula_map,
             font_size_pt,
@@ -168,7 +173,7 @@ def build_seed_payload_for_item(
         "render_kind": "plain_line" if item.get("_force_plain_line") or is_flag_like_plain_text_block(item) else "markdown",
         "font_size_pt": font_size_pt,
         "leading_em": leading_em,
-        "first_line_indent_pt": max(0.0, float(item.get("_render_first_line_indent_pt") or 0.0)),
+        "first_line_indent_pt": get_render_first_line_indent_pt(item),
         "font_weight": resolve_font_weight(item),
         "page_body_font_size_pt": metrics.page_body_font_size_pt if body_like_single_line else None,
         "is_body": body_like_single_line,

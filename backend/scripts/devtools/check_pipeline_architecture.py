@@ -203,6 +203,13 @@ TRANSLATION_LAYER_IMPORT_EXCEPTIONS: dict[Path, tuple[str, ...]] = {
         "services.translation.postprocess",
     ),
 }
+TRANSLATION_RENDERING_IMPORT_EXCEPTIONS: dict[Path, tuple[str, ...]] = {
+    # Translation can start render-source prewarm in parallel with LLM work, but
+    # must not reach into broader rendering internals.
+    Path("workflow/execution_runner.py"): (
+        "services.rendering.source.prewarm",
+    ),
+}
 TRANSLATION_SHARED_COMPAT_IMPORTS = (
     "services.translation.item_reader",
     "services.translation.session_context",
@@ -224,6 +231,7 @@ RENDERING_ALLOWED_ROOT_DIRS = {
     "layout",
     "legacy",
     "output",
+    "policy",
     "source",
     "workflow",
 }
@@ -236,6 +244,7 @@ RENDERING_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
         "services.rendering.workflow",
         "services.rendering.analysis",
         "services.rendering.document",
+        "services.rendering.policy",
         "services.rendering.source",
         "services.rendering.layout",
         "services.rendering.output",
@@ -253,6 +262,8 @@ RENDERING_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
     "source": (
         "services.rendering.source",
         "services.rendering.document",
+        "services.rendering.policy",
+        "services.rendering.layout",
         "services.rendering.layout.inline_content",
         # Existing source preparation still reuses the PDF compressor facade and Typst temp-root helper.
         "services.rendering.legacy.pdf_compress",
@@ -260,13 +271,18 @@ RENDERING_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
     ),
     "layout": (
         "services.rendering.layout",
+        "services.rendering.policy",
     ),
     "output": (
         "services.rendering.output",
         "services.rendering.layout",
         "services.rendering.document",
+        "services.rendering.policy",
         # Output owns overlay composition and may sample/rebuild source backgrounds.
         "services.rendering.source.background",
+    ),
+    "policy": (
+        "services.rendering.policy",
     ),
     "legacy": (
         "services.rendering.workflow",
@@ -295,7 +311,7 @@ RENDERING_LAYER_IMPORT_EXCEPTIONS: dict[Path, tuple[str, ...]] = {
     Path("source/background/stage.py"): (
         "services.rendering.layout.model.models",
     ),
-    Path("source/cleanup/shared.py"): (
+    Path("source/items.py"): (
         "services.rendering.layout.model.render_text",
     ),
 }
@@ -787,6 +803,85 @@ def check_rendering_internal_boundaries(errors: list[str]) -> None:
                 )
                 break
 
+    removed_cleanup_modules = (
+        "services.rendering.source.cleanup.analysis",
+        "services.rendering.source.cleanup.document_ops",
+        "services.rendering.source.cleanup.fill",
+        "services.rendering.source.cleanup.geometry",
+        "services.rendering.source.cleanup.math_protection",
+        "services.rendering.source.cleanup.ops",
+        "services.rendering.source.cleanup.plan",
+        "services.rendering.source.cleanup.route_selection",
+        "services.rendering.source.cleanup.shared",
+        "services.rendering.source.cleanup.text_analysis",
+        "services.rendering.source.cleanup.text_layer",
+        "services.rendering.source.cleanup.text_match",
+        "services.rendering.source.cleanup.vector_analysis",
+        "services.rendering.source.cleanup.visual_cover",
+    )
+    for path in scan_py_files(RENDERING_ROOT):
+        rel_path = rel(path)
+        for module in imported_modules(path):
+            if module in removed_cleanup_modules:
+                errors.append(
+                    f"{rel_path}: cleanup compatibility module '{module}' was removed; import the concrete implementation or source primitive"
+                )
+                break
+
+    source_background_root = RENDERING_SOURCE_ROOT / "background"
+    for path in scan_py_files(source_background_root):
+        text = read_text(path)
+        rel_path = rel(path)
+        forbidden = (
+            "from services.rendering.source.cleanup",
+            "import services.rendering.source.cleanup",
+        )
+        for item in forbidden:
+            if item in text:
+                errors.append(
+                    f"{rel_path}: source/background must not import source.cleanup directly; use source-level facades"
+                )
+                break
+
+    source_preparation_root = RENDERING_SOURCE_ROOT / "preparation"
+    preparation_compat_imports = (
+        "services.rendering.source.cleanup.analysis",
+        "services.rendering.source.cleanup.document_ops",
+        "services.rendering.source.cleanup.fill",
+        "services.rendering.source.cleanup.geometry",
+        "services.rendering.source.cleanup.math_protection",
+        "services.rendering.source.cleanup.ops",
+        "services.rendering.source.cleanup.plan",
+        "services.rendering.source.cleanup.route_selection",
+        "services.rendering.source.cleanup.shared",
+        "services.rendering.source.cleanup.text_analysis",
+        "services.rendering.source.cleanup.text_layer",
+        "services.rendering.source.cleanup.text_match",
+        "services.rendering.source.cleanup.vector_analysis",
+        "services.rendering.source.cleanup.visual_cover",
+    )
+    for path in scan_py_files(source_preparation_root):
+        rel_path = rel(path)
+        for module in imported_modules(path):
+            if module in preparation_compat_imports:
+                errors.append(
+                    f"{rel_path}: source/preparation must import source primitives or concrete cleanup modules, not compatibility facade '{module}'"
+                )
+                break
+
+    dev_overlay_compat_imports = (
+        "services.rendering.source.cleanup.builders",
+        "services.rendering.source.cleanup.text_draw",
+    )
+    for path in scan_py_files(RENDERING_ROOT):
+        rel_path = rel(path)
+        for module in imported_modules(path):
+            if module in dev_overlay_compat_imports:
+                errors.append(
+                    f"{rel_path}: cleanup dev overlay compatibility path was removed; import from services.rendering.source.dev_overlay instead of '{module}'"
+                )
+                break
+
     for path in scan_py_files(RENDERING_ROOT):
         layer = rendering_layer_for(path)
         if layer is None:
@@ -805,11 +900,16 @@ def check_rendering_internal_boundaries(errors: list[str]) -> None:
 
 def check_translation_rendering_separation(errors: list[str]) -> None:
     for path in scan_py_files(TRANSLATION_ROOT):
-        text = read_text(path)
-        if "from services.rendering" in text or "import services.rendering" in text:
+        exception_prefixes = TRANSLATION_RENDERING_IMPORT_EXCEPTIONS.get(path.relative_to(TRANSLATION_ROOT), ())
+        for module in imported_modules(path):
+            if not module.startswith("services.rendering"):
+                continue
+            if module_allowed(module, exception_prefixes):
+                continue
             errors.append(
-                f"{rel(path)}: translation layer must not import rendering services"
+                f"{rel(path)}: translation layer must not import rendering services directly: '{module}'"
             )
+            break
 
 
 def check_translation_internal_boundaries(errors: list[str]) -> None:

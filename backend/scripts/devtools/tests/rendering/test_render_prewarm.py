@@ -16,6 +16,7 @@ from services.rendering.source.prewarm import RenderPrewarmSpec
 from services.rendering.source.prewarm import prewarm_manifest_path_from_artifacts_dir
 from services.rendering.source.prewarm import start_render_source_prewarm
 from services.rendering.source.prewarm import try_load_render_payload_prewarm
+from services.rendering.source.prewarm import try_load_prewarmed_render_source_pdf
 from services.rendering.source.prewarm import _pages_for_prewarm_mode_probe
 from services.rendering.workflow.executor import execute_render_plan
 
@@ -52,6 +53,26 @@ def _translated_page_payload() -> dict[int, list[dict]]:
     pages = _page_payload()
     pages[0][0]["protected_translated_text"] = "内部来源"
     return pages
+
+
+def _empty_region_page_payload() -> dict[int, list[dict]]:
+    return {
+        0: [
+            {
+                "item_id": "p001-b001",
+                "page_idx": 0,
+                "block_kind": "text",
+                "block_type": "text",
+                "layout_role": "paragraph",
+                "semantic_role": "body",
+                "structure_role": "body",
+                "policy_translate": True,
+                "bbox": [10.0, 120.0, 150.0, 170.0],
+                "protected_source_text": "source outside",
+                "protected_translated_text": "无重叠区域",
+            }
+        ]
+    }
 
 
 def _tight_gap_page_payload() -> dict[int, list[dict]]:
@@ -120,6 +141,7 @@ def test_render_source_prewarm_manifest_is_reused_without_temp_cleanup() -> None
                 start_page=0,
                 end_page=0,
                 pdf_compress_dpi=0,
+                source_cleanup_strategy="bbox_text_strip",
             )
         )
         manifest_path = handle.wait()
@@ -154,6 +176,7 @@ def test_render_source_prewarm_manifest_is_reused_without_temp_cleanup() -> None
                 start_page=0,
                 end_page=0,
                 pdf_compress_dpi=0,
+                source_cleanup_strategy="bbox_text_strip",
                 render_prewarm_manifest_path=manifest_path,
             )
 
@@ -190,6 +213,126 @@ def test_payload_prewarm_manifest_exposes_bbox_candidates() -> None:
                 start_page=0,
                 end_page=0,
                 pdf_compress_dpi=0,
+                source_cleanup_strategy="bbox_text_strip",
+            )
+        )
+        manifest_path = handle.wait()
+
+        payload_prewarm = try_load_render_payload_prewarm(
+            manifest_path=manifest_path,
+            source_pdf_path=source_pdf,
+            translated_pages=_translated_page_payload(),
+            effective_render_mode="overlay",
+            start_page=0,
+            end_page=0,
+            pdf_compress_dpi=0,
+            source_cleanup_strategy="bbox_text_strip",
+        )
+
+        assert payload_prewarm is not None
+        assert payload_prewarm.bbox_text_strip_candidates is not None
+        assert payload_prewarm.bbox_text_strip_candidates.page_rects
+
+
+def test_payload_prewarm_pikepdf_text_strip_exposes_bbox_candidates() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source_pdf = root / "source.pdf"
+        output_pdf = root / "rendered" / "out.pdf"
+        artifacts_dir = root / "artifacts"
+        output_pdf.parent.mkdir()
+        _source_pdf(source_pdf)
+
+        handle = start_render_source_prewarm(
+            RenderPrewarmSpec(
+                source_pdf_path=source_pdf,
+                output_pdf_path=output_pdf,
+                artifacts_dir=artifacts_dir,
+                translated_pages=_page_payload(),
+                render_mode="overlay",
+                start_page=0,
+                end_page=0,
+                pdf_compress_dpi=0,
+                source_cleanup_strategy="pikepdf_text_strip",
+            )
+        )
+        manifest_path = handle.wait()
+
+        payload_prewarm = try_load_render_payload_prewarm(
+            manifest_path=manifest_path,
+            source_pdf_path=source_pdf,
+            translated_pages=_translated_page_payload(),
+            effective_render_mode="overlay",
+            start_page=0,
+            end_page=0,
+            pdf_compress_dpi=0,
+            source_cleanup_strategy="pikepdf_text_strip",
+        )
+
+        assert payload_prewarm is not None
+        assert payload_prewarm.bbox_text_strip_candidates is not None
+        assert payload_prewarm.bbox_text_strip_candidates.page_rects
+
+
+def test_render_source_prewarm_keeps_no_text_overlap_pages_as_precleaned() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source_pdf = root / "source.pdf"
+        output_pdf = root / "rendered" / "out.pdf"
+        artifacts_dir = root / "artifacts"
+        output_pdf.parent.mkdir()
+        _source_pdf(source_pdf)
+
+        handle = start_render_source_prewarm(
+            RenderPrewarmSpec(
+                source_pdf_path=source_pdf,
+                output_pdf_path=output_pdf,
+                artifacts_dir=artifacts_dir,
+                translated_pages=_empty_region_page_payload(),
+                render_mode="overlay",
+                start_page=0,
+                end_page=0,
+                pdf_compress_dpi=0,
+                source_cleanup_strategy="bbox_text_strip",
+            )
+        )
+        manifest_path = handle.wait()
+
+        prepared = try_load_prewarmed_render_source_pdf(
+            manifest_path=manifest_path,
+            source_pdf_path=source_pdf,
+            translated_pages=_empty_region_page_payload(),
+            effective_render_mode="overlay",
+            start_page=0,
+            end_page=0,
+            pdf_compress_dpi=0,
+            source_cleanup_strategy="bbox_text_strip",
+        )
+
+        assert prepared is not None
+        assert prepared.bbox_text_stripped_page_indices == frozenset()
+        assert prepared.source_text_precleaned_page_indices == frozenset({0})
+
+
+def test_payload_prewarm_default_pikepdf_text_strip_exposes_bbox_candidates() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source_pdf = root / "source.pdf"
+        output_pdf = root / "rendered" / "out.pdf"
+        artifacts_dir = root / "artifacts"
+        output_pdf.parent.mkdir()
+        _source_pdf(source_pdf)
+
+        handle = start_render_source_prewarm(
+            RenderPrewarmSpec(
+                source_pdf_path=source_pdf,
+                output_pdf_path=output_pdf,
+                artifacts_dir=artifacts_dir,
+                translated_pages=_page_payload(),
+                render_mode="overlay",
+                start_page=0,
+                end_page=0,
+                pdf_compress_dpi=0,
             )
         )
         manifest_path = handle.wait()
@@ -207,6 +350,45 @@ def test_payload_prewarm_manifest_exposes_bbox_candidates() -> None:
         assert payload_prewarm is not None
         assert payload_prewarm.bbox_text_strip_candidates is not None
         assert payload_prewarm.bbox_text_strip_candidates.page_rects
+
+
+def test_payload_prewarm_explicit_typst_fill_skips_bbox_candidates() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source_pdf = root / "source.pdf"
+        output_pdf = root / "rendered" / "out.pdf"
+        artifacts_dir = root / "artifacts"
+        output_pdf.parent.mkdir()
+        _source_pdf(source_pdf)
+
+        handle = start_render_source_prewarm(
+            RenderPrewarmSpec(
+                source_pdf_path=source_pdf,
+                output_pdf_path=output_pdf,
+                artifacts_dir=artifacts_dir,
+                translated_pages=_page_payload(),
+                render_mode="overlay",
+                start_page=0,
+                end_page=0,
+                pdf_compress_dpi=0,
+                source_cleanup_strategy="typst_fill",
+            )
+        )
+        manifest_path = handle.wait()
+
+        payload_prewarm = try_load_render_payload_prewarm(
+            manifest_path=manifest_path,
+            source_pdf_path=source_pdf,
+            translated_pages=_translated_page_payload(),
+            effective_render_mode="overlay",
+            start_page=0,
+            end_page=0,
+            pdf_compress_dpi=0,
+            source_cleanup_strategy="typst_fill",
+        )
+
+        assert payload_prewarm is not None
+        assert payload_prewarm.bbox_text_strip_candidates is None
 
 
 def test_payload_prewarm_manifest_exposes_geometry_adjustments() -> None:

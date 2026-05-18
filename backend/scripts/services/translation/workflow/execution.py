@@ -41,6 +41,7 @@ class TranslationExecutionRequest:
     render_prewarm_artifacts_dir: Path | None = None
     render_prewarm_mode: str = "auto"
     render_prewarm_pdf_compress_dpi: int = 0
+    render_prewarm_source_cleanup_strategy: str = "pikepdf_text_strip"
 
 
 def execute_translation_request(request: TranslationExecutionRequest) -> dict:

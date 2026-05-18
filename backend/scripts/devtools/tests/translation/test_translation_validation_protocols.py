@@ -254,6 +254,29 @@ def test_placeholder_guard_rejects_unbalanced_direct_typst_math_delimiters() -> 
         )
 
 
+def test_placeholder_guard_rejects_direct_typst_following_context_math_bleed() -> None:
+    item = {
+        "item_id": "p125-b018",
+        "math_mode": "direct_typst",
+        "translation_unit_protected_source_text": (
+            r"For simplicity, consider a homonuclear neutral diatomic molecule AB. "
+            r"We wish to prove that the binding energy"
+        ),
+        "translation_context_after": r"is positive for $ \lambda = 1 $. To do this we shall use",
+    }
+
+    with pytest.raises(placeholder_guard.TranslationProtocolError):
+        placeholder_guard.validate_batch_result(
+            [item],
+            {
+                "p125-b018": {
+                    "decision": "translate",
+                    "translated_text": r"为简化起见，考虑一个同核中性双原子分子AB。我们欲证明结合能在$ \lambda = 1 $时为正。",
+                }
+            },
+        )
+
+
 def test_placeholder_guard_rejects_model_request_prompt_output() -> None:
     with pytest.raises(placeholder_guard.TranslationProtocolError):
         placeholder_guard.validate_batch_result(

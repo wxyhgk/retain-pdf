@@ -1,9 +1,7 @@
 use anyhow::Result;
 
 use crate::job_events::persist_runtime_job_with_resources;
-use crate::models::{
-    job_stage_str, now_iso, JobRuntimeState, JobStage, JobStatusKind,
-};
+use crate::models::{job_stage_str, now_iso, JobRuntimeState, JobStage, JobStatusKind};
 
 use super::super::{
     append_error_chain_log, attach_job_provider_failure, format_error_chain, job_artifacts_mut,

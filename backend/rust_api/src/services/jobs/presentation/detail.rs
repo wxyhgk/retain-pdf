@@ -12,14 +12,23 @@ use crate::services::artifacts::list_registry_for_job;
 use crate::storage_paths::{resolve_markdown_path, resolve_output_pdf};
 
 use super::super::readiness;
-use super::helpers::{build_ocr_job_summary, job_failure_to_legacy_view};
+use super::contracts::build_job_contracts_view;
+use super::helpers::{
+    build_book_summary, build_ocr_job_summary, derive_display_name, job_failure_to_legacy_view,
+};
 use super::live_stage::load_live_stage_snapshot;
 use super::security::{redacted_error, redacted_log_tail};
 use super::summary_loaders::{
     load_glossary_summary, load_invocation_summary, load_normalization_summary,
 };
+use crate::services::book_projection::build_artifacts_display;
 
-pub fn build_job_detail_view(data_root: &Path, job: &JobSnapshot, base_url: &str) -> JobDetailView {
+pub fn build_job_detail_view(
+    db: &Db,
+    data_root: &Path,
+    job: &JobSnapshot,
+    base_url: &str,
+) -> JobDetailView {
     let live_stage = load_live_stage_snapshot(job, data_root);
     let (pdf_ready, markdown_ready, bundle_ready) =
         readiness(job, data_root, resolve_output_pdf, resolve_markdown_path);
@@ -54,6 +63,17 @@ pub fn build_job_detail_view(data_root: &Path, job: &JobSnapshot, base_url: &str
         .or_else(|| {
             classify_job_failure(job).map(crate::models::JobFailureInfo::with_formal_fields)
         });
+    let display_name = derive_display_name(db, job);
+    let cover_url = super::helpers::cover_url(job, data_root, base_url);
+    let artifacts = build_artifact_links(
+        job,
+        base_url,
+        data_root,
+        pdf_ready,
+        markdown_ready,
+        bundle_ready,
+    );
+    let artifacts_display = build_artifacts_display(&artifacts);
     JobDetailView {
         job_id: job.job_id.clone(),
         workflow: job.workflow.clone(),
@@ -83,14 +103,11 @@ pub fn build_job_detail_view(data_root: &Path, job: &JobSnapshot, base_url: &str
         },
         links: build_job_links_with_workflow(&job.job_id, &job.workflow, base_url),
         actions: build_job_actions(job, base_url, pdf_ready, markdown_ready, bundle_ready),
-        artifacts: build_artifact_links(
-            job,
-            base_url,
-            data_root,
-            pdf_ready,
-            markdown_ready,
-            bundle_ready,
-        ),
+        artifacts,
+        artifacts_display,
+        book_summary: build_book_summary(db, job, data_root, base_url, &display_name)
+            .with_cover_url(cover_url.clone()),
+        contracts: build_job_contracts_view(job, data_root),
         ocr_job: build_ocr_job_summary(job, base_url),
         ocr_provider_diagnostics: job
             .artifacts

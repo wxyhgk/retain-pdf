@@ -329,6 +329,22 @@ pub fn job_to_detail(
             markdown_ready,
             bundle_ready,
         ),
+        artifacts_display: Vec::new(),
+        book_summary: BookSummaryView {
+            title: job.job_id.clone(),
+            authors: None,
+            page_count: None,
+            source_language: Some(job.request_payload.ocr.language.clone())
+                .filter(|value| !value.trim().is_empty()),
+            target_language: None,
+            source_file_name: None,
+            cover_url: None,
+            file_size_bytes: None,
+        },
+        contracts: JobContractsView {
+            schema_version: "job_stage_contracts.v1".to_string(),
+            stages: Vec::new(),
+        },
         ocr_job: build_ocr_job_summary(job, base_url),
         ocr_provider_diagnostics: job
             .artifacts
@@ -363,6 +379,27 @@ pub fn job_to_list_item(
             .as_ref()
             .and_then(|item| item.trace_id.clone()),
         stage: job.stage.clone(),
+        stage_detail: job.stage_detail.clone(),
+        progress: JobProgressView {
+            current: job.progress_current,
+            total: job.progress_total,
+            percent: match (job.progress_current, job.progress_total) {
+                (Some(current), Some(total)) if total > 0 => {
+                    Some((current as f64 / total as f64) * 100.0)
+                }
+                _ => None,
+            },
+        },
+        page_count: job
+            .artifacts
+            .as_ref()
+            .and_then(|artifacts| artifacts.pages_processed),
+        source_file_name: None,
+        cover_url: None,
+        thumbnail_url: None,
+        output_pdf_ready: false,
+        markdown_ready: false,
+        bundle_ready: false,
         invocation: load_invocation_summary(job, data_root),
         created_at: job.created_at.clone(),
         updated_at: job.updated_at.clone(),

@@ -286,7 +286,7 @@ def emit_artifact_published(
     payload: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     artifact_path = path.resolve()
-    return emit_pipeline_event(
+    record = emit_pipeline_event(
         level="info",
         stage=stage,
         event_type="artifact_published",
@@ -298,3 +298,6 @@ def emit_artifact_published(
             **(payload or {}),
         },
     )
+    if record is not None:
+        print(json.dumps(record, ensure_ascii=False), flush=True)
+    return record

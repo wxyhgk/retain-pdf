@@ -17,15 +17,16 @@ from services.rendering.source.background.stage import build_clean_background_pd
 from foundation.config import fonts
 from services.rendering.layout.payload.blocks import build_render_blocks
 from services.rendering.layout.payload.body_pipeline import apply_body_payload_pipeline
+from services.rendering.layout.payload.collision import mark_adjacent_collision_risk
 from services.rendering.layout.payload.first_line_indent import detect_first_line_indent_pt
 from services.rendering.layout.model.models import RenderLayoutBlock
 from services.rendering.layout.model.models import RenderPageSpec
 from services.rendering.layout.page_specs import build_render_page_specs
 from services.rendering.layout.payload.continuation_split import split_protected_text_for_boxes
 from services.rendering.layout.payload.prepare import prepare_render_payloads_by_page
-from services.rendering.source.cleanup.shared import get_item_translated_text
-from services.rendering.source.cleanup.text_draw import _build_direct_draw_tokens
-from services.rendering.source.cleanup.text_draw import _fit_segment_layout
+from services.rendering.source.items import get_item_translated_text
+from services.rendering.source.dev_overlay.text_draw import _build_direct_draw_tokens
+from services.rendering.source.dev_overlay.text_draw import _fit_segment_layout
 from services.rendering.layout.payload.suspicious_ocr import detect_and_drop_suspicious_ocr_glued_blocks
 from services.rendering.output.typst.book_renderer import _compile_render_pages_pdf_resilient
 from services.rendering.output.typst.compiler import _resolved_font_paths
@@ -36,13 +37,33 @@ from services.rendering.output.typst.compiler import compile_typst_overlay_pdf
 from services.rendering.output.typst.compiler import compile_typst_render_pages_pdf
 from services.rendering.output.typst.emitter import build_typst_source_from_page_specs
 from services.rendering.output.typst.source_builder import build_typst_overlay_source
+from services.rendering.policy import apply_render_page_policy_fields
+from services.rendering.policy import build_render_page_policy
+from services.rendering.policy import formula_neighbor_text_item_ids
+from services.rendering.policy import item_render_policy
+from services.rendering.policy import item_render_policy_reason
+from services.rendering.policy import item_requires_visual_cover_only
+from services.rendering.policy import item_uses_white_overlay_fill
+from services.rendering.policy import protect_formula_regions_in_redaction_items
 from services.rendering.output.typst.source_page_overlay import apply_source_page_overlay
+from services.rendering.output.typst.overlay_diagnostics import apply_redaction_diagnostics
+from services.rendering.output.typst.overlay_diagnostics import new_overlay_merge_diagnostics
 from services.rendering.source.background.redaction_items import redaction_items_from_layout_blocks
+from services.rendering.source.cleanup.item_rects import cover_rects_from_valid_items
+from services.rendering.output.typst.source_page_overlay import overlay_pages_from_single_pdf
 from services.rendering.output.typst.source_page_overlay import redaction_items_from_render_blocks
 from services.rendering.output.typst.sanitize import sanitize_items_for_typst_compile
+from services.rendering.output.typst.overlay_ops import _extract_failed_overlay_indices
+from services.rendering.output.typst.overlay_ops import _can_use_pikepdf_book_overlay
+from services.rendering.workflow.executor import _typst_cover_fallback_page_indices
 from services.rendering.workflow.context import RenderExecutionContext
 from services.rendering.workflow.modes import _compress_final_pdf_if_needed
 from services.rendering.source.preparation.bbox_text_strip import build_bbox_text_stripped_pdf_copy
+from services.rendering.source.preparation.bbox_text_strip import strip_bbox_text_rects_from_pdf_copy
+from services.rendering.source.preparation.redact_restore_formula import build_redact_restore_formula_pdf_copy
+from services.rendering.document.pikepdf_overlay import overlay_pdf_pages_with_pikepdf
+from services.rendering.document.pikepdf_overlay import overlay_page_pdfs_with_pikepdf
+from services.rendering.document.pikepdf_pages import extract_pages_with_pikepdf
 
 
 def _page_spec(background_pdf_path: Path | None = None) -> RenderPageSpec:
@@ -65,6 +86,210 @@ def _page_spec(background_pdf_path: Path | None = None) -> RenderPageSpec:
                 leading_em=0.6,
             )
         ],
+    )
+
+
+def test_pikepdf_overlay_merges_overlay_page_without_pymupdf_write() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source_pdf = root / "source.pdf"
+        overlay_pdf = root / "overlay.pdf"
+        output_pdf = root / "merged.pdf"
+
+        doc = fitz.open()
+        page = doc.new_page(width=200, height=120)
+        page.insert_text((20, 40), "source text", fontsize=12)
+        doc.save(source_pdf)
+        doc.close()
+
+        doc = fitz.open()
+        page = doc.new_page(width=200, height=120)
+        page.insert_text((20, 80), "overlay text", fontsize=12)
+        doc.save(overlay_pdf)
+        doc.close()
+
+        result = overlay_pdf_pages_with_pikepdf(
+            source_pdf_path=source_pdf,
+            overlay_pdf_path=overlay_pdf,
+            output_pdf_path=output_pdf,
+        )
+
+        assert result.pages_merged == 1
+        merged = fitz.open(output_pdf)
+        try:
+            text = merged[0].get_text()
+        finally:
+            merged.close()
+        assert "source text" in text
+        assert "overlay text" in text
+
+
+def test_pikepdf_overlay_merges_single_page_pdfs_by_source_page() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source_pdf = root / "source.pdf"
+        page_two_overlay = root / "page-two-overlay.pdf"
+        output_pdf = root / "merged.pdf"
+
+        doc = fitz.open()
+        for index in range(3):
+            page = doc.new_page(width=200, height=120)
+            page.insert_text((20, 40), f"source page {index + 1}", fontsize=12)
+        doc.save(source_pdf)
+        doc.close()
+
+        doc = fitz.open()
+        page = doc.new_page(width=200, height=120)
+        page.insert_text((20, 80), "page two overlay", fontsize=12)
+        doc.save(page_two_overlay)
+        doc.close()
+
+        result = overlay_page_pdfs_with_pikepdf(
+            source_pdf_path=source_pdf,
+            overlay_paths_by_page_index={1: page_two_overlay},
+            output_pdf_path=output_pdf,
+        )
+
+        assert result.pages_merged == 1
+        merged = fitz.open(output_pdf)
+        try:
+            assert "page two overlay" not in merged[0].get_text()
+            assert "page two overlay" in merged[1].get_text()
+            assert "page two overlay" not in merged[2].get_text()
+        finally:
+            merged.close()
+
+
+def test_single_pdf_overlay_can_write_final_pdf_with_pikepdf() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source_pdf = root / "source.pdf"
+        overlay_pdf = root / "overlay.pdf"
+        output_pdf = root / "merged.pdf"
+
+        doc = fitz.open()
+        for index in range(2):
+            page = doc.new_page(width=200, height=120)
+            page.insert_text((20, 40), f"source page {index + 1}", fontsize=12)
+        doc.save(source_pdf)
+        doc.close()
+
+        doc = fitz.open()
+        for index in range(2):
+            page = doc.new_page(width=200, height=120)
+            page.insert_text((20, 80), f"overlay page {index + 1}", fontsize=12)
+        doc.save(overlay_pdf)
+        doc.close()
+
+        source_doc = fitz.open(source_pdf)
+        try:
+            diagnostics = overlay_pages_from_single_pdf(
+                source_doc,
+                [0, 1],
+                {
+                    0: [{"item_id": "p001-b001", "bbox": [10.0, 10.0, 50.0, 30.0]}],
+                    1: [{"item_id": "p002-b001", "bbox": [10.0, 10.0, 50.0, 30.0]}],
+                },
+                overlay_pdf,
+                apply_source_overlay=False,
+                skip_visual_cover=True,
+                source_base_pdf_path=source_pdf,
+                pikepdf_output_pdf_path=output_pdf,
+            )
+        finally:
+            source_doc.close()
+
+        assert diagnostics["mode"] == "single_pdf_overlay_pikepdf"
+        assert diagnostics["pikepdf_overlay_pages"] == 2
+        merged = fitz.open(output_pdf)
+        try:
+            assert "source page 1" in merged[0].get_text()
+            assert "overlay page 1" in merged[0].get_text()
+            assert "source page 2" in merged[1].get_text()
+            assert "overlay page 2" in merged[1].get_text()
+        finally:
+            merged.close()
+
+
+def test_pikepdf_extract_pages_copies_selected_page() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source_pdf = root / "source.pdf"
+        output_pdf = root / "selected.pdf"
+        doc = fitz.open()
+        for index in range(3):
+            page = doc.new_page(width=200, height=120)
+            page.insert_text((20, 40), f"page {index + 1}", fontsize=12)
+        doc.save(source_pdf)
+        doc.close()
+
+        extract_pages_with_pikepdf(
+            source_pdf_path=source_pdf,
+            output_pdf_path=output_pdf,
+            start_page=1,
+            end_page=1,
+        )
+
+        selected = fitz.open(output_pdf)
+        try:
+            assert selected.page_count == 1
+            text = selected[0].get_text()
+        finally:
+            selected.close()
+        assert "page 2" in text
+        assert "page 1" not in text
+
+
+def test_overlay_diagnostics_count_legacy_pymupdf_redaction_pages() -> None:
+    diagnostics = new_overlay_merge_diagnostics()
+    page_diag = {"page_index": 0}
+
+    apply_redaction_diagnostics(
+        diagnostics,
+        page_diag,
+        {
+            "elapsed_seconds": 0.1,
+            "raw_removable_rects": 2,
+            "merged_removable_rects": 1,
+            "cover_rects": 0,
+            "item_fast_cover_count": 0,
+            "fast_page_cover_only": False,
+            "route": "standard_redaction",
+            "uses_pymupdf_redaction": True,
+            "legacy_pdf_write_reason": "standard_redaction",
+        },
+    )
+
+    assert page_diag["uses_pymupdf_redaction"] is True
+    assert diagnostics["legacy_pymupdf_redaction_pages"] == 1
+    assert diagnostics["legacy_pdf_write_reasons"] == {"standard_redaction": 1}
+
+
+def test_pikepdf_text_strip_marks_unprecleaned_pages_for_typst_cover_fallback() -> None:
+    translated_pages = {
+        0: [{"item_id": "p001-b001"}],
+        1: [{"item_id": "p002-b001"}],
+        2: [{"item_id": "p003-b001"}],
+    }
+
+    page_indices = _typst_cover_fallback_page_indices(
+        translated_pages=translated_pages,
+        cleanup_strategy="pikepdf_text_strip",
+        precleaned_page_indices=frozenset({0}),
+        skipped_page_indices=frozenset({2}),
+    )
+
+    assert page_indices == frozenset({1, 2})
+
+
+def test_pikepdf_text_strip_allows_book_overlay_pikepdf_merge() -> None:
+    assert _can_use_pikepdf_book_overlay(
+        apply_source_overlay=False,
+        use_typst_overlay_fill_only=False,
+        source_cleanup_strategy="pikepdf_text_strip",
+        source_text_precleaned_page_indices=frozenset({0}),
+        ordered_page_indices=[0, 1, 2],
+        translated_pages={0: [{}], 1: [{}], 2: [{}]},
     )
 
 
@@ -307,6 +532,55 @@ def test_sanitize_items_collects_compile_diagnostics() -> None:
     assert diagnostics["probe_failures"][0]["item_id"] == "b1"
 
 
+def test_extract_failed_overlay_indices_from_typst_error() -> None:
+    page_specs = [
+        (page_idx, 200.0, 300.0, [{"item_id": f"p{page_idx + 1:03d}-b001"}], f"book-overlay-{page_idx:03d}")
+        for page_idx in range(20)
+    ]
+    exc = TypstCompileError(
+        phase="overlay_book",
+        stem="book-overlay",
+        typ_path=Path("/tmp/book-overlay.typ"),
+        pdf_path=Path("/tmp/book-overlay.pdf"),
+        command=["typst", "compile"],
+        return_code=1,
+        stdout="",
+        stderr=(
+            "error: plugin errored\n"
+            "help: error occurred in this call\n"
+            "610 │ #let p14_item_0_0_body = block(...)[cmarker.render(p14_item_0_0_md, math: mitex)]\n"
+            "typst selective fallback: book-overlay-014 block_indices=[0]"
+        ),
+    )
+
+    assert _extract_failed_overlay_indices(exc, page_specs) == {14}
+
+
+def test_sanitize_book_overlay_can_limit_to_candidate_pages() -> None:
+    from services.rendering.output.typst.sanitize import sanitize_page_specs_for_typst_book_overlay
+
+    page_specs = [
+        (0, 200.0, 300.0, [{"item_id": "p001-b001", "protected_translated_text": "page 1"}], "book-overlay-000"),
+        (1, 200.0, 300.0, [{"item_id": "p002-b001", "protected_translated_text": "page 2"}], "book-overlay-001"),
+        (2, 200.0, 300.0, [{"item_id": "p003-b001", "protected_translated_text": "page 3"}], "book-overlay-002"),
+    ]
+
+    def _fake_sanitize(_width, _height, items, *, stem, **_kwargs):
+        return [{**item, "protected_translated_text": f"sanitized {stem}"} for item in items]
+
+    with mock.patch(
+        "services.rendering.output.typst.sanitize.sanitize_items_for_typst_compile",
+        side_effect=_fake_sanitize,
+    ) as sanitize_mock:
+        sanitized_specs = sanitize_page_specs_for_typst_book_overlay(page_specs, overlay_indices={1})
+
+    assert sanitize_mock.call_count == 1
+    assert sanitize_mock.call_args.kwargs["stem"] == "book-overlay-001"
+    assert sanitized_specs[0][3][0]["protected_translated_text"] == "page 1"
+    assert sanitized_specs[1][3][0]["protected_translated_text"] == "sanitized book-overlay-001"
+    assert sanitized_specs[2][3][0]["protected_translated_text"] == "page 3"
+
+
 def test_typst_render_source_keeps_title_fit_inside_rect_budget() -> None:
     spec = RenderPageSpec(
         page_index=0,
@@ -379,6 +653,7 @@ def test_typst_render_source_does_not_shrink_multiline_markdown_fit_height() -> 
                 fit_min_font_size_pt=9.2,
                 fit_min_leading_em=0.52,
                 fit_max_height_pt=24.0,
+                use_cover_fill=True,
             )
         ],
     )
@@ -399,6 +674,7 @@ def test_typst_render_source_does_not_shrink_multiline_markdown_fit_height() -> 
 
     assert "height: 50.0pt" in source
     assert "fit_height: 24.0pt" in source
+    assert "fill: rgb(255, 255, 255)" in source
 
 
 def test_background_stage_creates_cleaned_pdf() -> None:
@@ -448,7 +724,7 @@ def test_background_stage_uses_cover_only_redaction_for_vector_text() -> None:
             "services.rendering.source.background.stage.collect_vector_text_rects",
             return_value=[fitz.Rect(10, 20, 80, 60)],
         ), mock.patch(
-            "services.rendering.source.background.stage.redact_translated_text_areas",
+            "services.rendering.source.background.stage.redact_source_text_areas",
         ) as redact_mock, mock.patch(
             "services.rendering.source.background.stage.save_optimized_pdf",
         ):
@@ -472,6 +748,50 @@ def test_background_stage_uses_cover_only_redaction_for_vector_text() -> None:
         assert redact_mock.call_args.kwargs["cover_only"] is True
 
 
+def test_background_stage_uses_visual_cover_for_formula_pages_by_default() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source_pdf = root / "source.pdf"
+        output_pdf = root / "cleaned.pdf"
+
+        doc = fitz.open()
+        doc.new_page(width=200, height=300)
+        doc.save(source_pdf)
+        doc.close()
+
+        with mock.patch(
+            "services.rendering.source.background.stage.redact_source_text_areas",
+        ) as redact_mock, mock.patch(
+            "services.rendering.source.background.stage.save_optimized_pdf",
+        ):
+            build_clean_background_pdf(
+                source_pdf_path=source_pdf,
+                translated_pages={
+                    0: [
+                        {
+                            "item_id": "p001-b001",
+                            "block_type": "text",
+                            "block_kind": "text",
+                            "bbox": [10.0, 20.0, 180.0, 60.0],
+                            "translated_text": "hello",
+                            "protected_translated_text": "hello",
+                        },
+                        {
+                            "item_id": "p001-b002",
+                            "block_type": "formula",
+                            "block_kind": "formula",
+                            "normalized_sub_type": "display_formula",
+                            "bbox": [60.0, 70.0, 140.0, 95.0],
+                        },
+                    ]
+                },
+                output_pdf_path=output_pdf,
+            )
+
+        redact_mock.assert_called_once()
+        assert redact_mock.call_args.kwargs["strategy"] == "visual_cover"
+
+
 def test_apply_source_page_overlay_uses_cover_only_when_vector_text_detected() -> None:
     page = fitz.open().new_page(width=300, height=400)
     translated_items = [
@@ -488,7 +808,7 @@ def test_apply_source_page_overlay_uses_cover_only_when_vector_text_detected() -
         "services.rendering.source.background.redaction_plan.collect_vector_text_rects",
         return_value=[fitz.Rect(10, 20, 80, 60)],
     ), mock.patch(
-        "services.rendering.source.background.source_overlay.redact_translated_text_areas",
+        "services.rendering.source.background.source_overlay.redact_source_text_areas",
     ) as redact_mock, mock.patch(
         "services.rendering.source.background.source_overlay.strip_page_links",
     ):
@@ -559,6 +879,136 @@ def test_redaction_items_from_layout_blocks_use_background_rect() -> None:
 
     assert redaction_items[0]["bbox"] == [10.0, 30.0, 190.0, 80.0]
     assert redaction_items[0]["source_item_id"] == "p001-b001"
+
+
+def test_background_redaction_items_split_around_display_formula_guard() -> None:
+    translated_items = [
+        {
+            "item_id": "p001-b001",
+            "block_type": "text",
+            "block_kind": "text",
+            "source_text": "source above",
+            "translated_text": "上文",
+            "bbox": [40.0, 40.0, 260.0, 70.0],
+        },
+        {
+            "item_id": "p001-b002",
+            "block_type": "formula",
+            "block_kind": "formula",
+            "normalized_sub_type": "display_formula",
+            "bbox": [96.0, 76.0, 224.0, 104.0],
+        },
+        {
+            "item_id": "p001-b003",
+            "block_type": "text",
+            "block_kind": "text",
+            "source_text": "source below",
+            "translated_text": "下文",
+            "bbox": [42.0, 112.0, 258.0, 142.0],
+        },
+    ]
+    redaction_items = [
+        {
+            "item_id": "item-p001-b001",
+            "source_item_id": "p001-b001",
+            "block_kind": "render_block",
+            "block_type": "render_block",
+            "translated_text": "译文",
+            "bbox": [36.0, 34.0, 264.0, 148.0],
+        }
+    ]
+
+    protected = protect_formula_regions_in_redaction_items(redaction_items, translated_items)
+
+    assert len(protected) == 2
+    rects = [fitz.Rect(item["bbox"]) for item in protected]
+    formula = fitz.Rect(translated_items[1]["bbox"])
+    assert all((rect & formula).is_empty for rect in rects)
+    assert rects[0].y1 <= 70.0
+    assert rects[1].y0 >= 112.0
+    assert all(item.get("_formula_guard_fragment") for item in protected)
+    cover_rects = cover_rects_from_valid_items([(rect, item, "译文") for rect, item in zip(rects, protected)])
+    assert len(cover_rects) == 2
+    assert all((rect & formula).is_empty for rect in cover_rects)
+
+
+def test_render_policy_marks_formula_pages_for_visual_cover_and_white_fill() -> None:
+    items = [
+        {
+            "item_id": "p001-b001",
+            "block_type": "text",
+            "block_kind": "text",
+            "bbox": [40.0, 40.0, 260.0, 70.0],
+            "translated_text": "上文",
+        },
+        {
+            "item_id": "p001-b002",
+            "block_type": "formula",
+            "block_kind": "formula",
+            "normalized_sub_type": "display_formula",
+            "bbox": [96.0, 76.0, 224.0, 104.0],
+        },
+    ]
+
+    policy = build_render_page_policy(items)
+    patched = apply_render_page_policy_fields(items)
+
+    assert policy.page_has_formula_region is True
+    assert policy.item_policy("p001-b001").cleanup_mode == "visual_cover"
+    assert policy.item_policy("p001-b001").overlay_fill == "white"
+    assert item_render_policy(patched[0])["cleanup_mode"] == "visual_cover"
+    assert item_uses_white_overlay_fill(patched[0]) is True
+
+
+def test_display_formula_neighbors_use_visual_cover_policy() -> None:
+    translated_items = [
+        {
+            "item_id": "p001-b001",
+            "block_type": "text",
+            "block_kind": "text",
+            "source_text": "source above",
+            "translated_text": "上文",
+            "bbox": [40.0, 40.0, 260.0, 70.0],
+        },
+        {
+            "item_id": "p001-b002",
+            "block_type": "formula",
+            "block_kind": "formula",
+            "normalized_sub_type": "display_formula",
+            "bbox": [96.0, 76.0, 224.0, 104.0],
+        },
+        {
+            "item_id": "p001-b003",
+            "block_type": "text",
+            "block_kind": "text",
+            "source_text": "source below",
+            "translated_text": "下文",
+            "bbox": [42.0, 112.0, 258.0, 142.0],
+        },
+    ]
+    redaction_items = [
+        {
+            "source_item_id": "p001-b001",
+            "block_kind": "render_block",
+            "block_type": "render_block",
+            "translated_text": "上文",
+            "bbox": [36.0, 34.0, 264.0, 74.0],
+        },
+        {
+            "source_item_id": "p001-b003",
+            "block_kind": "render_block",
+            "block_type": "render_block",
+            "translated_text": "下文",
+            "bbox": [36.0, 108.0, 264.0, 148.0],
+        },
+    ]
+
+    protected = protect_formula_regions_in_redaction_items(redaction_items, translated_items)
+
+    assert formula_neighbor_text_item_ids(translated_items) == {"p001-b001", "p001-b003"}
+    assert len(protected) == 2
+    assert all(item_requires_visual_cover_only(item) for item in protected)
+    assert all(item_render_policy_reason(item) == "display_formula_neighbor" for item in protected)
 
 
 def test_redaction_shared_prefers_local_translated_text_over_group_text() -> None:
@@ -833,7 +1283,7 @@ def test_typst_overlay_can_use_block_cover_fill_as_fallback() -> None:
             "translated_text": "白底文本块",
             "protected_translated_text": "白底文本块",
             "formula_map": [],
-            "_render_use_cover_fill": True,
+            "_render_policy": {"overlay_fill": "white"},
         }
     ]
 
@@ -920,6 +1370,46 @@ def test_normal_body_leading_recovers_when_vertical_slack_exists() -> None:
     assert payload["leading_em"] >= 0.56
 
 
+def test_underfilled_body_density_recovery_has_floor_and_safe_target() -> None:
+    from services.rendering.layout.payload.body_common import payload_density
+
+    def make_payload(height: float) -> dict:
+        return {
+            "inner_bbox": [10.0, 0.0, 260.0, height],
+            "translated_text": "普通正文段落用于测试密度下限恢复。" * 2,
+            "formula_map": [],
+            "font_size_pt": 10.2,
+            "leading_em": 0.54,
+            "dense_small_box": False,
+            "heavy_dense_small_box": False,
+            "is_body": True,
+            "render_kind": "markdown",
+            "prefer_typst_fit": False,
+            "item": {
+                "source_text": "normal body words enough",
+                "lines": [{"bbox": [10.0, index * 10.0, 260.0, index * 10.0 + 8.0]} for index in range(4)],
+            },
+        }
+
+    already_ok = make_payload(50.0)
+    recoverable = make_payload(55.0)
+    too_tall = make_payload(140.0)
+
+    before_ok = (already_ok["font_size_pt"], already_ok["leading_em"], payload_density(already_ok))
+    before_recoverable_density = payload_density(recoverable)
+    before_tall_density = payload_density(too_tall)
+
+    apply_body_payload_pipeline([already_ok, recoverable, too_tall], page_text_width_med=220.0)
+
+    assert before_ok[2] >= 0.60
+    assert (already_ok["font_size_pt"], already_ok["leading_em"]) == before_ok[:2]
+    assert before_recoverable_density < 0.60
+    assert payload_density(recoverable) >= 0.60
+    assert payload_density(recoverable) < 1.0
+    assert before_tall_density < 0.60
+    assert before_tall_density < payload_density(too_tall) < 1.0
+
+
 def test_normal_body_leading_uses_more_slack_when_available() -> None:
     payload = {
         "inner_bbox": [10.0, 10.0, 300.0, 220.0],
@@ -945,7 +1435,7 @@ def test_normal_body_leading_uses_more_slack_when_available() -> None:
 
     apply_body_payload_pipeline([payload], page_text_width_med=180.0)
 
-    assert payload["leading_em"] >= 0.66
+    assert 0.58 <= payload["leading_em"] <= 0.74
 
 
 def test_normal_body_leading_stays_bounded_when_height_is_tight() -> None:
@@ -985,7 +1475,7 @@ def test_normal_body_leading_spends_available_line_space() -> None:
 
     apply_body_payload_pipeline([payload], page_text_width_med=160.0)
 
-    assert payload["leading_em"] >= 0.64
+    assert 0.58 <= payload["leading_em"] <= 0.70
 
 
 def test_long_normal_body_leading_can_use_high_dynamic_cap() -> None:
@@ -1005,7 +1495,7 @@ def test_long_normal_body_leading_can_use_high_dynamic_cap() -> None:
 
     apply_body_payload_pipeline([payload], page_text_width_med=180.0)
 
-    assert payload["leading_em"] >= 0.68
+    assert 0.54 <= payload["leading_em"] <= 0.76
 
 
 def test_source_line_rich_body_grows_font_before_expanding_chinese_leading() -> None:
@@ -1096,6 +1586,463 @@ def test_source_line_rich_body_font_growth_survives_adjacent_smoothing() -> None
     assert second["font_size_pt"] > 10.7
     assert first["leading_em"] <= 1.38
     assert second["leading_em"] <= 1.38
+
+
+def test_font_growth_pairs_with_body_leading_growth() -> None:
+    payload = {
+        "inner_bbox": [10.0, 10.0, 300.0, 235.0],
+        "translated_text": "这是一个字号已经明显增长的正文段落，行距也需要同步增长，否则视觉上会显得字大而行距过挤。" * 3,
+        "formula_map": [],
+        "font_size_pt": 11.3,
+        "leading_em": 0.56,
+        "dense_small_box": False,
+        "heavy_dense_small_box": False,
+        "is_body": True,
+        "render_kind": "markdown",
+        "prefer_typst_fit": False,
+        "_body_font_growth_decision": {
+            "seed_font_pt": 10.0,
+            "target_font_pt": 11.3,
+            "grew_pt": 1.3,
+            "slack_ratio": 0.8,
+            "reason": "underfilled_body",
+        },
+        "item": {
+            "source_text": "body text with visible font growth and enough vertical slack",
+            "bbox": [10.0, 10.0, 300.0, 235.0],
+            "lines": [
+                {"bbox": [10.0, 10.0 + index * 13.0, 300.0, 20.0 + index * 13.0]}
+                for index in range(12)
+            ],
+        },
+    }
+
+    apply_body_payload_pipeline([payload], page_text_width_med=250.0)
+
+    assert payload["font_size_pt"] >= 11.2
+    assert payload["leading_em"] >= 0.58
+    assert payload["leading_em"] > 0.56
+
+
+def test_body_font_unify_then_leading_refit_preserves_page_font_consistency() -> None:
+    def make_payload(y0: float, y1: float, font_size: float, source_lines: int) -> dict:
+        return {
+            "inner_bbox": [10.0, y0, 260.0, y1],
+            "translated_text": "这是一个用于测试页面级字体统一和行距二次拟合的正文段落。" * 2,
+            "formula_map": [],
+            "font_size_pt": font_size,
+            "leading_em": 0.54,
+            "dense_small_box": False,
+            "heavy_dense_small_box": False,
+            "is_body": True,
+            "render_kind": "markdown",
+            "prefer_typst_fit": False,
+            "item": {
+                "source_text": "body text with enough words for smoothing and refit",
+                "bbox": [10.0, y0, 260.0, y1],
+                "lines": [
+                    {"bbox": [10.0, y0 + index * 12.0, 260.0, y0 + 10.0 + index * 12.0]}
+                    for index in range(source_lines)
+                ],
+            },
+        }
+
+    compact = make_payload(10.0, 100.0, 10.0, 5)
+    loose = make_payload(120.0, 300.0, 10.6, 12)
+
+    apply_body_payload_pipeline([compact, loose], page_text_width_med=220.0)
+
+    assert compact["font_size_pt"] == loose["font_size_pt"]
+    assert loose["leading_em"] > compact["leading_em"] + 0.2
+    assert loose["leading_em"] <= 1.02
+
+
+def test_page_long_body_anchors_do_not_raise_single_line_body_font() -> None:
+    def make_payload(y0: float, y1: float, font_size: float, text: str, source_lines: int) -> dict:
+        return {
+            "inner_bbox": [10.0, y0, 280.0, y1],
+            "translated_text": text,
+            "formula_map": [],
+            "font_size_pt": font_size,
+            "leading_em": 0.54,
+            "dense_small_box": False,
+            "heavy_dense_small_box": False,
+            "is_body": True,
+            "render_kind": "markdown",
+            "prefer_typst_fit": False,
+            "item": {
+                "source_text": "body text with enough words for page anchor policy",
+                "bbox": [10.0, y0, 280.0, y1],
+                "lines": [
+                    {"bbox": [10.0, y0 + index * 12.0, 280.0, y0 + 10.0 + index * 12.0]}
+                    for index in range(source_lines)
+                ],
+            },
+        }
+
+    long_a = make_payload(10.0, 112.0, 10.8, "这是一个较长正文段落，用于稳定页面字体基准。" * 5, 8)
+    long_b = make_payload(130.0, 232.0, 10.9, "这是另一个较长正文段落，用于稳定页面字体基准。" * 5, 8)
+    short = make_payload(248.0, 262.0, 9.4, "短正文也应该继承页面字体。", 1)
+
+    apply_body_payload_pipeline([long_a, long_b, short], page_text_width_med=240.0)
+
+    assert short["font_size_pt"] == 9.4
+    assert short.get("page_body_font_size_pt", 0.0) <= 9.7
+
+
+def test_body_font_unify_shrinks_large_body_fonts_to_low_page_anchor() -> None:
+    def make_payload(y0: float, y1: float, font_size: float, text: str, source_lines: int) -> dict:
+        return {
+            "inner_bbox": [45.0, y0, 385.0, y1],
+            "translated_text": text,
+            "formula_map": [],
+            "font_size_pt": font_size,
+            "leading_em": 0.56,
+            "dense_small_box": False,
+            "heavy_dense_small_box": False,
+            "is_body": True,
+            "render_kind": "markdown",
+            "prefer_typst_fit": False,
+            "item": {
+                "source_text": "body text with enough words for page font unification",
+                "bbox": [45.0, y0, 385.0, y1],
+                "lines": [
+                    {"bbox": [45.0, y0 + index * 12.0, 385.0, y0 + 10.0 + index * 12.0]}
+                    for index in range(source_lines)
+                ],
+            },
+        }
+
+    long_a = make_payload(60.0, 116.0, 11.27, "这是稳定页面字号的长正文段落。" * 4, 5)
+    long_b = make_payload(150.0, 212.0, 11.19, "这是另一个稳定页面字号的长正文段落。" * 5, 6)
+    compact = make_payload(490.0, 525.0, 9.67, "这是较短但仍属于正文的段落，不能在同页显著小一圈。" * 3, 3)
+
+    apply_body_payload_pipeline([long_a, long_b, compact], page_text_width_med=340.0)
+
+    assert compact["font_size_pt"] <= 9.86
+    assert max(payload["font_size_pt"] for payload in [long_a, long_b, compact]) / compact["font_size_pt"] < 1.08
+    assert long_a["font_size_pt"] <= 10.5
+
+
+def test_body_font_unify_locks_page_candidates_to_single_target() -> None:
+    def make_payload(y0: float, y1: float, font_size: float, text: str, source_lines: int) -> dict:
+        return {
+            "inner_bbox": [45.0, y0, 385.0, y1],
+            "translated_text": text,
+            "formula_map": [],
+            "font_size_pt": font_size,
+            "leading_em": 0.56,
+            "dense_small_box": False,
+            "heavy_dense_small_box": False,
+            "is_body": True,
+            "render_kind": "markdown",
+            "prefer_typst_fit": False,
+            "item": {
+                "source_text": "body text with enough words for page font unification",
+                "bbox": [45.0, y0, 385.0, y1],
+                "lines": [
+                    {"bbox": [45.0, y0 + index * 12.0, 385.0, y0 + 10.0 + index * 12.0]}
+                    for index in range(source_lines)
+                ],
+            },
+        }
+
+    top = make_payload(60.0, 86.0, 11.17, "这是顶部正文段落，用于模拟视觉字号偏大的短段。" * 2, 2)
+    middle = make_payload(110.0, 160.0, 11.19, "这是中部正文段落，用于模拟视觉字号偏大的多行段。" * 3, 4)
+    low = make_payload(190.0, 226.0, 9.57, "这是同栏正文段落，应该作为低字号统一目标。" * 2, 3)
+
+    apply_body_payload_pipeline([top, middle, low], page_text_width_med=340.0)
+
+    fonts = {payload["font_size_pt"] for payload in (top, middle, low)}
+    assert len(fonts) == 1
+    assert fonts == {9.57}
+
+
+def test_collision_keeps_unified_body_font_and_only_compresses_leading() -> None:
+    current = {
+        "inner_bbox": [45.0, 490.0, 384.0, 525.0],
+        "translated_text": "这里乘积函数是一个新的高斯函数，中心位于某处，并包含多个较长说明。" * 3,
+        "formula_map": [],
+        "font_size_pt": 11.17,
+        "page_body_font_size_pt": 11.17,
+        "leading_em": 0.72,
+        "dense_small_box": False,
+        "heavy_dense_small_box": False,
+        "is_body": True,
+        "render_kind": "markdown",
+        "prefer_typst_fit": False,
+        "adjacent_collision_risk": False,
+        "item": {
+            "source_text": "body text with nearby next block",
+            "bbox": [45.0, 490.0, 384.0, 525.0],
+            "lines": [{"bbox": [45.0, 490.0, 384.0, 502.0]}],
+        },
+    }
+    nxt = {
+        "inner_bbox": [45.0, 526.0, 384.0, 610.0],
+        "translated_text": "下一段正文。",
+        "formula_map": [],
+        "font_size_pt": 11.17,
+        "page_body_font_size_pt": 11.17,
+        "leading_em": 0.72,
+        "dense_small_box": False,
+        "heavy_dense_small_box": False,
+        "is_body": True,
+        "render_kind": "markdown",
+        "prefer_typst_fit": False,
+        "adjacent_collision_risk": False,
+        "item": {"source_text": "next body", "bbox": [45.0, 526.0, 384.0, 610.0], "lines": []},
+    }
+
+    mark_adjacent_collision_risk([current, nxt])
+
+    assert current["font_size_pt"] == 11.17
+    assert current["leading_em"] == 0.56
+    assert current["prefer_typst_fit"] is False
+    assert current["adjacent_collision_risk"] is False
+    assert current["_body_collision_leading_only"] is True
+
+
+def test_body_font_unify_includes_short_dense_body_without_typst_fit() -> None:
+    def make_payload(
+        y0: float,
+        y1: float,
+        font_size: float,
+        text: str,
+        *,
+        dense: bool = False,
+        heavy: bool = False,
+        prefer_fit: bool = False,
+    ) -> dict:
+        return {
+            "inner_bbox": [45.0, y0, 385.0, y1],
+            "translated_text": text,
+            "formula_map": [],
+            "font_size_pt": font_size,
+            "leading_em": 0.56,
+            "dense_small_box": dense,
+            "heavy_dense_small_box": heavy,
+            "is_body": True,
+            "render_kind": "markdown",
+            "prefer_typst_fit": prefer_fit,
+            "item": {
+                "source_text": "body text",
+                "bbox": [45.0, y0, 385.0, y1],
+                "lines": [{"bbox": [45.0, y0, 385.0, y0 + 10.0]}],
+            },
+        }
+
+    anchor_a = make_payload(60.0, 112.0, 11.17, "这是稳定页面字号的长正文段落。" * 4)
+    anchor_b = make_payload(132.0, 190.0, 11.17, "这是另一个稳定页面字号的长正文段落。" * 4)
+    short_dense = make_payload(
+        210.0,
+        223.0,
+        10.2,
+        "这里，变量 r 是从高斯球原点起测量的。",
+        dense=True,
+        heavy=True,
+        prefer_fit=True,
+    )
+
+    apply_body_payload_pipeline([anchor_a, anchor_b, short_dense], page_text_width_med=340.0)
+
+    assert short_dense["font_size_pt"] == anchor_a["font_size_pt"] == anchor_b["font_size_pt"]
+    assert short_dense["prefer_typst_fit"] is False
+    assert short_dense["_body_font_unified"] is True
+
+
+def test_caption_and_footnote_fonts_use_low_role_anchor() -> None:
+    from services.rendering.layout.payload.annotation_font_policy import unify_annotation_fonts
+
+    caption_a = {
+        "item": {"layout_role": "caption", "semantic_role": "caption"},
+        "render_kind": "markdown",
+        "font_size_pt": 9.7,
+    }
+    caption_b = {
+        "item": {"layout_role": "caption", "semantic_role": "caption"},
+        "render_kind": "markdown",
+        "font_size_pt": 8.9,
+    }
+    footnote_a = {
+        "item": {"layout_role": "footnote", "semantic_role": "footnote"},
+        "render_kind": "markdown",
+        "font_size_pt": 8.7,
+    }
+    footnote_b = {
+        "item": {"layout_role": "footnote", "semantic_role": "footnote"},
+        "render_kind": "markdown",
+        "font_size_pt": 7.8,
+    }
+
+    unify_annotation_fonts([caption_a, caption_b, footnote_a, footnote_b])
+
+    assert caption_a["font_size_pt"] == 8.96
+    assert caption_b["font_size_pt"] == 8.96
+    assert footnote_a["font_size_pt"] == 7.84
+    assert footnote_b["font_size_pt"] == 7.8
+    assert footnote_a["font_size_pt"] < caption_a["font_size_pt"]
+
+
+def test_role_font_unify_ignores_extreme_small_font_outlier() -> None:
+    from services.rendering.layout.payload.annotation_font_policy import unify_annotation_fonts
+
+    tiny = {
+        "item": {"layout_role": "caption", "semantic_role": "caption"},
+        "render_kind": "markdown",
+        "font_size_pt": 5.2,
+    }
+    normal_a = {
+        "item": {"layout_role": "caption", "semantic_role": "caption"},
+        "render_kind": "markdown",
+        "font_size_pt": 9.1,
+    }
+    normal_b = {
+        "item": {"layout_role": "caption", "semantic_role": "caption"},
+        "render_kind": "markdown",
+        "font_size_pt": 9.4,
+    }
+
+    unify_annotation_fonts([tiny, normal_a, normal_b])
+
+    assert normal_a["font_size_pt"] >= 9.1
+    assert normal_b["font_size_pt"] >= 9.1
+
+
+def test_caption_and_footnote_density_recovery_uses_same_floor_rule() -> None:
+    from services.rendering.layout.payload.annotation_font_policy import recover_underfilled_annotation_density
+    from services.rendering.layout.payload.body_common import payload_density
+
+    def make_payload(role: str, height: float) -> dict:
+        return {
+            "item": {"layout_role": role, "semantic_role": role},
+            "inner_bbox": [10.0, 0.0, 220.0, height],
+            "translated_text": "注释文字用于测试密度恢复。" * 2,
+            "formula_map": [],
+            "render_kind": "markdown",
+            "font_size_pt": 8.4 if role == "caption" else 7.4,
+            "leading_em": 0.46,
+        }
+
+    caption_ok = make_payload("caption", 20.0)
+    caption_low = make_payload("caption", 48.0)
+    footnote_low = make_payload("footnote", 46.0)
+
+    before_caption_ok = (caption_ok["font_size_pt"], caption_ok["leading_em"], payload_density(caption_ok))
+    before_caption_low = payload_density(caption_low)
+    before_footnote_low = payload_density(footnote_low)
+
+    recover_underfilled_annotation_density([caption_ok, caption_low, footnote_low])
+
+    assert before_caption_ok[2] >= 0.60
+    assert (caption_ok["font_size_pt"], caption_ok["leading_em"]) == before_caption_ok[:2]
+    assert before_caption_low < 0.60
+    assert before_caption_low < payload_density(caption_low) < 1.0
+    assert before_footnote_low < 0.60
+    assert before_footnote_low < payload_density(footnote_low) < 1.0
+    assert footnote_low["font_size_pt"] - 7.4 <= caption_low["font_size_pt"] - 8.4
+
+
+def test_caption_and_footnote_recovery_do_not_exceed_body_font_reference() -> None:
+    from services.rendering.layout.payload.annotation_font_policy import recover_underfilled_annotation_density
+
+    body = {
+        "item": {"layout_role": "paragraph", "semantic_role": "body"},
+        "inner_bbox": [10.0, 0.0, 220.0, 30.0],
+        "translated_text": "正文。",
+        "formula_map": [],
+        "render_kind": "markdown",
+        "font_size_pt": 9.0,
+        "leading_em": 0.56,
+        "dense_small_box": False,
+        "heavy_dense_small_box": False,
+        "is_body": True,
+    }
+    caption = {
+        "item": {"layout_role": "caption", "semantic_role": "caption"},
+        "inner_bbox": [10.0, 40.0, 220.0, 100.0],
+        "translated_text": "图题文字用于测试字号不能超过正文。" * 2,
+        "formula_map": [],
+        "render_kind": "markdown",
+        "font_size_pt": 8.8,
+        "leading_em": 0.46,
+    }
+    footnote = {
+        "item": {"layout_role": "footnote", "semantic_role": "footnote"},
+        "inner_bbox": [10.0, 110.0, 220.0, 170.0],
+        "translated_text": "脚注文字用于测试字号低于正文。" * 2,
+        "formula_map": [],
+        "render_kind": "markdown",
+        "font_size_pt": 8.2,
+        "leading_em": 0.44,
+    }
+
+    recover_underfilled_annotation_density([body, caption, footnote])
+
+    assert caption["font_size_pt"] <= round(body["font_size_pt"] * 0.95, 2)
+    assert footnote["font_size_pt"] <= round(body["font_size_pt"] * 0.82, 2)
+
+
+def test_page_leading_baseline_only_weakly_dampens_normal_body_leading_jumps() -> None:
+    def make_payload(height: float, source_lines: int) -> dict:
+        return {
+            "inner_bbox": [10.0, 0.0, 260.0, height],
+            "translated_text": "普通正文段落用于测试页面行距基准。" * 2,
+            "formula_map": [],
+            "font_size_pt": 10.2,
+            "leading_em": 0.54,
+            "dense_small_box": False,
+            "heavy_dense_small_box": False,
+            "is_body": True,
+            "render_kind": "markdown",
+            "prefer_typst_fit": False,
+            "item": {
+                "source_text": "normal body words enough",
+                "lines": [
+                    {"bbox": [10.0, index * 10.0, 260.0, index * 10.0 + 8.0]}
+                    for index in range(source_lines)
+                ],
+            },
+        }
+
+    compact = make_payload(90.0, 4)
+    loose = make_payload(180.0, 7)
+
+    apply_body_payload_pipeline([compact, loose], page_text_width_med=220.0)
+
+    assert loose["leading_em"] >= compact["leading_em"]
+    assert loose["leading_em"] - compact["leading_em"] <= 0.32
+
+
+def test_loose_source_pitch_can_override_page_leading_baseline() -> None:
+    def make_payload(height: float, source_lines: int, pitch: float) -> dict:
+        return {
+            "inner_bbox": [10.0, 0.0, 260.0, height],
+            "translated_text": "普通正文段落用于测试很宽松英文原文对应的动态行距。" * 2,
+            "formula_map": [],
+            "font_size_pt": 10.2,
+            "leading_em": 0.54,
+            "dense_small_box": False,
+            "heavy_dense_small_box": False,
+            "is_body": True,
+            "render_kind": "markdown",
+            "prefer_typst_fit": False,
+            "item": {
+                "source_text": "normal body words enough",
+                "lines": [
+                    {"bbox": [10.0, index * pitch, 260.0, index * pitch + 8.0]}
+                    for index in range(source_lines)
+                ],
+            },
+        }
+
+    compact = make_payload(90.0, 4, 10.0)
+    loose = make_payload(210.0, 11, 18.0)
+
+    apply_body_payload_pipeline([compact, loose], page_text_width_med=220.0)
+
+    assert loose["leading_em"] >= compact["leading_em"] + 0.20
+    assert loose["leading_em"] <= 1.02
 
 
 def test_build_render_page_specs_restores_leaked_formula_tokens_before_render() -> None:
@@ -1363,6 +2310,58 @@ def test_build_render_blocks_insets_tight_body_vertical_gap() -> None:
     assert upper.cover_bbox[1] < 40.0
     assert upper.cover_bbox[2] > 220.0
     assert upper.cover_bbox[3] > 92.0
+
+
+def test_build_render_blocks_expands_short_body_region_up_and_right_only() -> None:
+    items = [
+        {
+            "item_id": "p001-b001",
+            "page_idx": 0,
+            "block_type": "text",
+            "block_kind": "text",
+            "layout_role": "paragraph",
+            "semantic_role": "body",
+            "bbox": [30.0, 40.0, 230.0, 92.0],
+            "lines": [{"text": "raw"}],
+            "source_text": "This body paragraph has enough source text to be treated as body text.",
+            "protected_source_text": "This body paragraph has enough source text to be treated as body text.",
+            "protected_translated_text": "这是第一段正文，用于建立同一区域的宽正文参照。",
+        },
+        {
+            "item_id": "p001-b002",
+            "page_idx": 0,
+            "block_type": "text",
+            "block_kind": "text",
+            "layout_role": "paragraph",
+            "semantic_role": "body",
+            "bbox": [31.0, 106.0, 231.0, 158.0],
+            "lines": [{"text": "raw"}],
+            "source_text": "This second body paragraph has enough source text to be treated as body text.",
+            "protected_source_text": "This second body paragraph has enough source text to be treated as body text.",
+            "protected_translated_text": "这是第二段正文，用于确认同列正文区域的宽度和位置。",
+        },
+        {
+            "item_id": "p001-b003",
+            "page_idx": 0,
+            "block_type": "text",
+            "block_kind": "text",
+            "layout_role": "paragraph",
+            "semantic_role": "body",
+            "bbox": [34.0, 172.0, 144.0, 192.0],
+            "lines": [{"text": "raw"}],
+            "source_text": "Short but body-like text that belongs to the same paragraph region.",
+            "protected_source_text": "Short but body-like text that belongs to the same paragraph region.",
+            "protected_translated_text": "这是较短的第三段正文，翻译后需要更多宽度避免异常换行。",
+        },
+    ]
+
+    blocks = build_render_blocks(items, page_width=260.0, page_height=320.0)
+
+    short = blocks[2]
+    assert short.inner_bbox[1] < 172.0
+    assert short.inner_bbox[3] <= 192.0
+    assert short.inner_bbox[2] > 144.0
+    assert short.inner_bbox[2] <= 177.0
 
 
 def test_build_render_blocks_expands_title_width_toward_body_column() -> None:
@@ -1965,7 +2964,7 @@ def test_bbox_text_strip_accepts_untranslated_template_source_text() -> None:
         assert "outside source" in text
 
 
-def test_bbox_text_strip_skips_pages_with_formula_blocks() -> None:
+def test_bbox_text_strip_skips_formula_pages() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         source_pdf = root / "source.pdf"
@@ -1999,3 +2998,76 @@ def test_bbox_text_strip_skips_pages_with_formula_blocks() -> None:
         assert result.changed is False
         assert output_pdf.exists() is False
         assert result.skipped_complex_page_indices == frozenset({0})
+
+
+def test_redact_restore_formula_uses_pikepdf_text_strip_for_all_rendered_blocks() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source_pdf = root / "source.pdf"
+        output_pdf = root / "redact-restore.pdf"
+        doc = fitz.open()
+        page = doc.new_page(width=240, height=180)
+        page.insert_text((30, 50), "body text", fontsize=12)
+        page.insert_text((80, 90), "I/I0 = A1 + A2", fontsize=12)
+        doc.save(source_pdf)
+        doc.close()
+
+        result = build_redact_restore_formula_pdf_copy(
+            source_pdf_path=source_pdf,
+            output_pdf_path=output_pdf,
+            translated_pages={
+                0: [
+                    {
+                        "block_kind": "text",
+                        "block_type": "text",
+                        "bbox": [20.0, 30.0, 150.0, 65.0],
+                        "protected_translated_text": "正文",
+                    },
+                    {
+                        "block_kind": "formula",
+                        "block_type": "formula",
+                        "bbox": [70.0, 70.0, 200.0, 105.0],
+                        "protected_translated_text": "",
+                    },
+                ]
+            },
+        )
+
+        assert result.changed is True
+        assert result.redaction_rects == 1
+        assert result.formula_rects_restored == 0
+        restored = fitz.open(output_pdf)
+        try:
+            text = restored[0].get_text()
+        finally:
+            restored.close()
+        assert "body text" not in text
+        assert "I/I0 = A1 + A2" in text
+
+
+def test_strip_bbox_text_rects_from_pdf_copy_removes_text_without_translated_pages() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source_pdf = root / "source.pdf"
+        output_pdf = root / "stripped.pdf"
+        doc = fitz.open()
+        page = doc.new_page(width=240, height=180)
+        page.insert_text((30, 50), "remove me", fontsize=12)
+        page.insert_text((30, 100), "keep me", fontsize=12)
+        doc.save(source_pdf)
+        doc.close()
+
+        result = strip_bbox_text_rects_from_pdf_copy(
+            source_pdf_path=source_pdf,
+            output_pdf_path=output_pdf,
+            page_rects={0: [fitz.Rect(20.0, 115.0, 120.0, 150.0)]},
+        )
+
+        assert result.changed is True
+        stripped = fitz.open(output_pdf)
+        try:
+            text = stripped[0].get_text()
+        finally:
+            stripped.close()
+        assert "remove me" not in text
+        assert "keep me" in text

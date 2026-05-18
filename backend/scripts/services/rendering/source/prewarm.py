@@ -11,20 +11,23 @@ from typing import Any
 
 import fitz
 
+from foundation.config import layout
 from runtime.pipeline.render_mode import resolve_effective_render_mode
 from services.rendering.source.render_source import RenderSourcePdf
 from services.rendering.source.render_source import build_render_source_pdf
-from services.rendering.source.preparation.bbox_text_strip import BBoxTextStripCandidates
-from services.rendering.source.preparation.bbox_text_strip import build_bbox_text_strip_candidates
+from services.rendering.source.preparation.bbox_text_strip_candidates import build_bbox_text_strip_candidates
+from services.rendering.source.preparation.bbox_text_strip_types import BBoxTextStripCandidates
 from services.rendering.layout.payload.block_seed_metrics import collect_page_seed_metrics
 from services.rendering.layout.payload.prepare import prepare_render_payloads_by_page
+from services.rendering.layout.payload.render_item import get_render_first_line_indent_pt
+from services.rendering.policy import apply_render_pages_policy_fields
 from services.translation.item_reader import item_block_kind
 
 
 RENDER_PREWARM_DIR_NAME = "render_prewarm"
 RENDER_PREWARM_MANIFEST_NAME = "render_source_prewarm_manifest.json"
 RENDER_PREWARM_SCHEMA = "render_source_prewarm_v1"
-BBOX_TEXT_STRIP_ALGORITHM_VERSION = "bbox_text_strip_v7_skip_formula_pages"
+BBOX_TEXT_STRIP_ALGORITHM_VERSION = "bbox_text_strip_v10_formula_guarded_pages"
 HIDDEN_TEXT_STRIP_ALGORITHM_VERSION = "hidden_text_strip_v1"
 IMAGE_COMPRESSION_ALGORITHM_VERSION = "image_only_compress_v1"
 FIRST_LINE_INDENT_ALGORITHM_VERSION = "first_line_indent_v1"
@@ -41,6 +44,7 @@ class RenderPrewarmSpec:
     start_page: int
     end_page: int
     pdf_compress_dpi: int
+    source_cleanup_strategy: str = "pikepdf_text_strip"
 
 
 @dataclass(frozen=True)
@@ -135,10 +139,12 @@ def build_render_prewarm_fingerprint(
     start_page: int,
     end_page: int,
     pdf_compress_dpi: int,
+    source_cleanup_strategy: str = "pikepdf_text_strip",
 ) -> dict[str, Any]:
     source_pdf_path = Path(source_pdf_path).resolve()
     stat = source_pdf_path.stat()
-    selected_pages = _bbox_text_strip_page_indexes(translated_pages)
+    cleanup_strategy = layout.normalize_source_cleanup_strategy(source_cleanup_strategy)
+    selected_pages = _bbox_text_strip_page_indexes(translated_pages) if layout.use_bbox_text_strip_cleanup(cleanup_strategy) else []
     return {
         "source_pdf_path": str(source_pdf_path),
         "source_pdf_size": int(stat.st_size),
@@ -148,6 +154,7 @@ def build_render_prewarm_fingerprint(
         "effective_render_mode": str(effective_render_mode),
         "strip_hidden_text": bool(effective_render_mode != "overlay"),
         "pdf_compress_dpi": int(pdf_compress_dpi),
+        "source_cleanup_strategy": cleanup_strategy,
         "payload_structure_hash": build_payload_structure_hash(translated_pages),
         "bbox_text_strip_algorithm": BBOX_TEXT_STRIP_ALGORITHM_VERSION,
         "hidden_text_strip_algorithm": HIDDEN_TEXT_STRIP_ALGORITHM_VERSION,
@@ -172,6 +179,7 @@ def try_load_prewarmed_render_source_pdf(
     start_page: int,
     end_page: int,
     pdf_compress_dpi: int,
+    source_cleanup_strategy: str = "pikepdf_text_strip",
 ) -> RenderSourcePdf | None:
     manifest = _load_matching_manifest(
         manifest_path=manifest_path,
@@ -181,6 +189,7 @@ def try_load_prewarmed_render_source_pdf(
         start_page=start_page,
         end_page=end_page,
         pdf_compress_dpi=pdf_compress_dpi,
+        source_cleanup_strategy=source_cleanup_strategy,
     )
     if manifest is None:
         return None
@@ -197,6 +206,7 @@ def try_load_prewarmed_render_source_pdf(
             image_compressed=bool(render_source.get("image_compressed")),
             bbox_text_stripped_page_indices=frozenset(_int_list(render_source.get("bbox_text_stripped_page_indices"))),
             bbox_text_strip_skipped_page_indices=frozenset(_int_list(render_source.get("bbox_text_strip_skipped_page_indices"))),
+            source_text_precleaned_page_indices=frozenset(_int_list(render_source.get("source_text_precleaned_page_indices"))),
         )
     except Exception as exc:
         print(f"render prewarm: load failed {type(exc).__name__}: {exc}; fallback", flush=True)
@@ -212,6 +222,7 @@ def try_load_render_payload_prewarm(
     start_page: int,
     end_page: int,
     pdf_compress_dpi: int,
+    source_cleanup_strategy: str = "pikepdf_text_strip",
 ) -> RenderPayloadPrewarm | None:
     manifest = _load_matching_manifest(
         manifest_path=manifest_path,
@@ -221,6 +232,7 @@ def try_load_render_payload_prewarm(
         start_page=start_page,
         end_page=end_page,
         pdf_compress_dpi=pdf_compress_dpi,
+        source_cleanup_strategy=source_cleanup_strategy,
     )
     if manifest is None:
         return None
@@ -236,7 +248,11 @@ def try_load_render_payload_prewarm(
         if (bbox := _bbox_list_from_value(value)) is not None
     }
     bbox_candidates = _bbox_candidates_from_manifest(payload.get("bbox_text_strip_candidates"))
-    if not first_line_indent_lookup and not effective_inner_bbox_lookup and bbox_candidates is None:
+    if (
+        not first_line_indent_lookup
+        and not effective_inner_bbox_lookup
+        and bbox_candidates is None
+    ):
         return None
     print(
         f"render payload prewarm: hit indents={len(first_line_indent_lookup)} "
@@ -260,6 +276,7 @@ def _load_matching_manifest(
     start_page: int,
     end_page: int,
     pdf_compress_dpi: int,
+    source_cleanup_strategy: str = "pikepdf_text_strip",
 ) -> dict[str, Any] | None:
     if manifest_path is None or not Path(manifest_path).exists():
         return None
@@ -275,6 +292,7 @@ def _load_matching_manifest(
             start_page=start_page,
             end_page=end_page,
             pdf_compress_dpi=pdf_compress_dpi,
+            source_cleanup_strategy=source_cleanup_strategy,
         )
         if manifest.get("fingerprint") != expected:
             print("render prewarm: manifest fingerprint mismatch; fallback to synchronous render source prep", flush=True)
@@ -306,10 +324,13 @@ def _run_render_source_prewarm(spec: RenderPrewarmSpec, manifest_path: Path) -> 
             start_page=spec.start_page,
             end_page=spec.end_page,
             artifact_mode=True,
+            source_cleanup_strategy=spec.source_cleanup_strategy,
         )
         payload_prewarm = _build_payload_prewarm(
             source_pdf_path=spec.source_pdf_path,
             translated_pages=spec.translated_pages,
+            manifest_path=manifest_path,
+            source_cleanup_strategy=spec.source_cleanup_strategy,
         )
         manifest = _build_manifest(
             manifest_path=manifest_path,
@@ -321,6 +342,7 @@ def _run_render_source_prewarm(spec: RenderPrewarmSpec, manifest_path: Path) -> 
                 start_page=spec.start_page,
                 end_page=spec.end_page,
                 pdf_compress_dpi=spec.pdf_compress_dpi,
+                source_cleanup_strategy=spec.source_cleanup_strategy,
             ),
             elapsed=time.perf_counter() - started,
             payload_prewarm=payload_prewarm,
@@ -349,6 +371,7 @@ def _build_manifest(
             "image_compressed": prepared.image_compressed,
             "bbox_text_stripped_page_indices": sorted(prepared.bbox_text_stripped_page_indices),
             "bbox_text_strip_skipped_page_indices": sorted(prepared.bbox_text_strip_skipped_page_indices),
+            "source_text_precleaned_page_indices": sorted(prepared.source_text_precleaned_page_indices),
         },
         "payload_prewarm": payload_prewarm or {},
         "elapsed_seconds": round(float(elapsed), 3),
@@ -359,15 +382,19 @@ def _build_payload_prewarm(
     *,
     source_pdf_path: Path,
     translated_pages: dict[int, list[dict]],
+    manifest_path: Path,
+    source_cleanup_strategy: str = "pikepdf_text_strip",
 ) -> dict[str, Any]:
     started = time.perf_counter()
-    prepared_pages = prepare_render_payloads_by_page(translated_pages, source_pdf_path=source_pdf_path)
+    prepared_pages = apply_render_pages_policy_fields(
+        prepare_render_payloads_by_page(translated_pages, source_pdf_path=source_pdf_path)
+    )
     first_line_indent_by_item_id: dict[str, float] = {}
     effective_inner_bbox_by_item_id: dict[str, list[float]] = {}
     for items in prepared_pages.values():
         for item in items:
             item_id = str(item.get("item_id", "") or "")
-            indent_pt = _float_or_none(item.get("_render_first_line_indent_pt"))
+            indent_pt = get_render_first_line_indent_pt(item)
             if item_id and indent_pt is not None and indent_pt > 0:
                 first_line_indent_by_item_id[item_id] = round(indent_pt, 2)
     page_widths = _page_widths_by_index(source_pdf_path)
@@ -384,14 +411,18 @@ def _build_payload_prewarm(
             item_id = str(items[index].get("item_id", "") or "")
             if item_id:
                 effective_inner_bbox_by_item_id[item_id] = [round(float(value), 3) for value in bbox]
-    try:
-        bbox_candidates = build_bbox_text_strip_candidates(
-            source_pdf_path=source_pdf_path,
-            translated_pages=translated_pages,
-        )
-        bbox_payload = _bbox_candidates_to_manifest(bbox_candidates)
-    except Exception as exc:
-        print(f"render payload prewarm: bbox candidate build failed {type(exc).__name__}: {exc}", flush=True)
+    if layout.use_bbox_text_strip_cleanup(source_cleanup_strategy):
+        try:
+            bbox_candidates = build_bbox_text_strip_candidates(
+                source_pdf_path=source_pdf_path,
+                translated_pages=translated_pages,
+                skip_formula_pages=False,
+            )
+            bbox_payload = _bbox_candidates_to_manifest(bbox_candidates)
+        except Exception as exc:
+            print(f"render payload prewarm: bbox candidate build failed {type(exc).__name__}: {exc}", flush=True)
+            bbox_payload = {}
+    else:
         bbox_payload = {}
     print(
         f"render payload prewarm: ready indents={len(first_line_indent_by_item_id)} "
@@ -412,6 +443,14 @@ def _page_widths_by_index(source_pdf_path: Path) -> dict[int, float]:
     try:
         with fitz.open(source_pdf_path) as doc:
             return {index: float(page.rect.width) for index, page in enumerate(doc)}
+    except Exception:
+        return {}
+
+
+def _page_sizes_by_index(source_pdf_path: Path) -> dict[int, tuple[float, float]]:
+    try:
+        with fitz.open(source_pdf_path) as doc:
+            return {index: (float(page.rect.width), float(page.rect.height)) for index, page in enumerate(doc)}
     except Exception:
         return {}
 

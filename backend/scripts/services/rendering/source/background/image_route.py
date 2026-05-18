@@ -13,7 +13,7 @@ from services.rendering.source.background.patch import merge_close_vertical_rect
 from services.rendering.source.background.patch import rebuilt_image_bytes
 from services.rendering.source.background.patch import rewrite_background_image
 from services.rendering.source.background.patch import rewrite_raw_stream_image
-from services.rendering.source.cleanup.shared import iter_valid_translated_items
+from services.rendering.source.items import iter_valid_translated_items
 
 
 def replace_background_image_page(

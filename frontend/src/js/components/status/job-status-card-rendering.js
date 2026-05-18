@@ -43,22 +43,25 @@ export function setProgress(host, {
     text.textContent = "";
     return;
   }
+  const numericCurrent = Number(current);
+  const numericTotal = Number(total);
+  const numericPercent = Number(percent);
   bar.classList.toggle("is-indeterminate", Boolean(indeterminate));
   if (indeterminate) {
     bar.style.width = "42%";
     text.textContent = progressText || fallbackText;
     return;
   }
-  const hasNumbers = Number.isFinite(current) && Number.isFinite(total) && total > 0;
+  const hasNumbers = Number.isFinite(numericCurrent) && Number.isFinite(numericTotal) && numericTotal > 0;
   if (!hasNumbers) {
     bar.style.width = "0%";
     text.textContent = fallbackText;
     return;
   }
-  const computedPercent = (current / total) * 100;
-  const safePercent = Math.max(0, Math.min(100, Number.isFinite(percent) ? percent : computedPercent));
+  const computedPercent = (numericCurrent / numericTotal) * 100;
+  const safePercent = Math.max(0, Math.min(100, Number.isFinite(numericPercent) ? numericPercent : computedPercent));
   bar.style.width = `${safePercent}%`;
-  text.textContent = progressText || `${current} / ${total} (${safePercent.toFixed(0)}%)`;
+  text.textContent = progressText || `${numericCurrent} / ${numericTotal} (${safePercent.toFixed(0)}%)`;
 }
 
 export function setCancelEnabled(host, enabled) {

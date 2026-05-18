@@ -55,6 +55,12 @@ pub(crate) fn default_body_font_size_factor() -> f64 {
 pub(crate) fn default_body_leading_factor() -> f64 {
     1.08
 }
+pub(crate) fn default_font_unify_mode() -> String {
+    "role_min".to_string()
+}
+pub(crate) fn default_source_cleanup_strategy() -> String {
+    super::DEFAULT_SOURCE_CLEANUP_STRATEGY.to_string()
+}
 pub(crate) fn default_inner_bbox_shrink_x() -> f64 {
     0.0
 }

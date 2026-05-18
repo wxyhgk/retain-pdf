@@ -106,6 +106,34 @@ mod tests {
     }
 
     #[test]
+    fn apply_line_extracts_artifacts_from_structured_stdout_event() {
+        let mut job = build_job();
+        apply_line(
+            &mut job,
+            r#"{"event_type":"artifact_published","payload":{"artifact_key":"pipeline_summary_json","path":"/tmp/pipeline_summary.json"}}"#,
+        );
+        apply_line(
+            &mut job,
+            r#"{"event_type":"artifact_published","payload":{"artifact_key":"output_pdf","path":"/tmp/output.pdf"}}"#,
+        );
+        apply_line(
+            &mut job,
+            r#"{"event_type":"artifact_published","payload":{"artifact_key":"translations_dir","path":"/tmp/translated"}}"#,
+        );
+
+        let artifacts = job.artifacts.as_ref().expect("artifacts");
+        assert_eq!(
+            artifacts.summary.as_deref(),
+            Some("/tmp/pipeline_summary.json")
+        );
+        assert_eq!(artifacts.output_pdf.as_deref(), Some("/tmp/output.pdf"));
+        assert_eq!(
+            artifacts.translations_dir.as_deref(),
+            Some("/tmp/translated")
+        );
+    }
+
+    #[test]
     fn apply_line_moves_to_normalizing_on_normalization_report_marker() {
         let mut job = build_job();
         job.stage = Some(job_stage_str(JobStage::OcrProcessing).to_string());

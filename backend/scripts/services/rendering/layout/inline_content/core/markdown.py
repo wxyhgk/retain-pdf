@@ -136,8 +136,7 @@ def _sanitize_existing_inline_math_for_markdown(text: str) -> str:
             return match.group(0)
         if looks_like_citation(expr):
             return normalize_plain_citation(expr)
-        expr = re.sub(r"\\angle(?=[A-Za-z])", r"\\angle ", expr)
-        expr = re.sub(r"\\mathscr\b", r"\\mathcal", expr)
+        expr = normalize_formula_for_latex_math(expr)
         return f"${expr}$"
 
     from services.rendering.layout.inline_content.core.inline_math import INLINE_MATH_BLOCK_RE

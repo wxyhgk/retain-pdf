@@ -211,7 +211,14 @@ def test_provider_pipeline_dispatches_to_paddle_and_writes_standard_artifacts(
 
     monkeypatch.setattr(provider_pipeline, "get_paddle_token", lambda **_: "paddle-token")
     monkeypatch.setattr(provider_pipeline, "submit_local_paddle_file", lambda **_: ("job-1", "trace-1"))
-    monkeypatch.setattr(provider_pipeline, "poll_paddle_until_done", lambda **_: ({}, "https://example.test/result.jsonl"))
+    def _fake_poll_paddle_until_done(**kwargs: object) -> tuple[dict, str]:
+        progress_callback = kwargs.get("progress_callback")
+        if callable(progress_callback):
+            progress_callback("running", {"logId": "poll-trace-1"})
+            progress_callback("done", {"logId": "poll-trace-2"})
+        return {}, "https://example.test/result.jsonl"
+
+    monkeypatch.setattr(provider_pipeline, "poll_paddle_until_done", _fake_poll_paddle_until_done)
     monkeypatch.setattr(
         provider_pipeline,
         "download_jsonl_result",
@@ -289,6 +296,17 @@ def test_provider_pipeline_dispatches_to_paddle_and_writes_standard_artifacts(
     assert summary_payload["output_pdf"] == str(output_pdf_path)
     assert events_payload[0]["event_type"] == "stage_transition"
     assert events_payload[0]["stage"] == "startup"
+    ocr_progress_events = [
+        item
+        for item in events_payload
+        if item["stage"] == "ocr_processing" and item["event_type"] == "stage_progress"
+    ]
+    assert ocr_progress_events
+    assert any(item["progress_total"] == 1 for item in ocr_progress_events)
+    assert any(item["progress_current"] == 1 for item in ocr_progress_events)
+    assert all(item["user_stage"] == "ocr" for item in ocr_progress_events)
+    assert all(item["progress_unit"] == "page" for item in ocr_progress_events)
+    assert any(item["stage"] == "normalizing" for item in events_payload)
     assert any(item["event_type"] == "artifact_published" for item in events_payload)
 
 

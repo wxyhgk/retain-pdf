@@ -22,3 +22,7 @@ class RenderExecutionContext:
     indent_detection_pdf_path: Path | None = None
     first_line_indent_lookup: dict[str, float] | None = None
     effective_inner_bbox_lookup: dict[str, list[float]] | None = None
+    bbox_text_stripped_page_indices: frozenset[int] = frozenset()
+    bbox_text_strip_skipped_page_indices: frozenset[int] = frozenset()
+    source_text_precleaned_page_indices: frozenset[int] = frozenset()
+    source_cleanup_strategy: str = "pikepdf_text_strip"

@@ -60,6 +60,9 @@ fn test_state(test_name: &str) -> AppState {
         upload_max_pages: 0,
         api_keys: HashSet::new(),
         max_running_jobs: 1,
+        provider_limits: crate::config::ProviderLimitsConfig::default(),
+        provider_runtime: crate::config::ProviderRuntimeConfig::default(),
+        job_runner: crate::config::JobRunnerConfig::default(),
     });
 
     AppState {
@@ -75,7 +78,7 @@ fn test_state(test_name: &str) -> AppState {
 }
 
 fn snapshot_context<'a>(state: &'a AppState) -> SnapshotBuildDeps<'a> {
-    SnapshotBuildDeps::new(state.db.as_ref(), state.config.as_ref())
+    SnapshotBuildDeps::new(state.db.as_ref(), state.config.job_snapshot_runtime())
 }
 
 fn submit_context<'a>(state: &'a AppState) -> JobSubmitDeps<'a> {
@@ -380,12 +383,27 @@ fn build_translation_job_snapshot_for_full_pipeline_succeeds() {
         .expect("build full pipeline snapshot");
 
     assert_eq!(job.workflow, WorkflowKind::Book);
-    assert!(job.command.iter().any(|arg| arg == "--spec"));
-    assert!(job
+    assert_eq!(
+        job.command,
+        vec!["book-workflow-rust-orchestrated".to_string()]
+    );
+    assert_eq!(job.stage.as_deref(), Some("queued"));
+    let render_config_path = job
         .artifacts
         .as_ref()
-        .and_then(|a| a.job_root.as_ref())
-        .is_some());
+        .and_then(|a| a.render_config_json.as_ref())
+        .expect("render config path");
+    let render_config: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(render_config_path).expect("read render config"),
+    )
+    .expect("parse render config");
+    assert_eq!(render_config["schema_version"], "render_config.v1");
+    assert_eq!(render_config["source"], "rust_api_resolved_job_spec");
+    assert_eq!(render_config["render"]["render_mode"], "auto");
+    assert_eq!(
+        render_config["render"]["source_cleanup_strategy"],
+        "pikepdf_text_strip"
+    );
 }
 
 #[test]

@@ -28,6 +28,7 @@ def build_book_from_translations(
     base_url: str = "",
     typst_font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
+    source_cleanup_strategy: str | None = None,
     render_prewarm_manifest_path: Path | None = None,
 ) -> int:
     render_plan = build_render_plan(
@@ -54,6 +55,7 @@ def build_book_from_translations(
         base_url=base_url,
         typst_font_family=typst_font_family,
         pdf_compress_dpi=pdf_compress_dpi,
+        source_cleanup_strategy=source_cleanup_strategy,
         render_prewarm_manifest_path=prewarm_manifest_path,
     )
     build_book_from_translations.last_render_diagnostics = dict(
@@ -78,6 +80,7 @@ def build_book_pipeline(
     base_url: str = "",
     typst_font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
+    source_cleanup_strategy: str | None = None,
     render_prewarm_manifest_path: Path | None = None,
 ) -> dict:
     pages_rendered = build_book_from_translations(
@@ -95,6 +98,7 @@ def build_book_pipeline(
         base_url=base_url,
         typst_font_family=typst_font_family,
         pdf_compress_dpi=pdf_compress_dpi,
+        source_cleanup_strategy=source_cleanup_strategy,
         render_prewarm_manifest_path=render_prewarm_manifest_path,
     )
     return {
@@ -122,6 +126,7 @@ def run_render_stage(
     base_url: str = "",
     typst_font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
+    source_cleanup_strategy: str | None = None,
     render_prewarm_manifest_path: Path | None = None,
 ) -> dict:
     render_plan = build_render_plan(
@@ -156,6 +161,7 @@ def run_render_stage(
         base_url=base_url,
         typst_font_family=typst_font_family,
         pdf_compress_dpi=pdf_compress_dpi,
+        source_cleanup_strategy=source_cleanup_strategy,
         render_prewarm_manifest_path=prewarm_manifest_path,
     )
     emit_stage_progress(

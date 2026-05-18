@@ -48,9 +48,11 @@ import {
 import {
   buildApiEndpoint,
   buildJobDetailEndpoint,
+  deleteLibraryBook,
   fetchJobEvents,
   fetchJobArtifactsManifest,
   fetchJobList,
+  fetchLibraryBookList,
   fetchJobPayload,
   fetchProtected,
   fetchTranslationDiagnostics,
@@ -348,7 +350,9 @@ async function initializePage() {
   bindFeatureEvents();
   initializeIdleAndRecentJobs({
     appShellFeature,
+    deleteLibraryBook,
     fetchJobList,
+    fetchLibraryBookList,
     jobRuntimeFeature,
   });
   bootstrapStartupRoute({

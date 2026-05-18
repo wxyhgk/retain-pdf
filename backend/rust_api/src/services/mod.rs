@@ -1,10 +1,13 @@
 pub mod artifacts;
+pub(crate) mod book_projection;
 pub mod glossaries;
 pub mod glossary_api;
-pub mod job_command_factory;
 pub mod job_launcher;
 pub mod job_snapshot_factory;
 pub mod job_validation;
 pub mod jobs;
+pub mod library;
+pub mod library_api;
+pub mod provider_probe;
 pub mod runtime_gateway;
 pub mod upload_api;

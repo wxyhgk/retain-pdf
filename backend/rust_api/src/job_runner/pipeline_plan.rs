@@ -13,7 +13,11 @@ pub(super) struct PipelinePlan {
 impl PipelinePlan {
     pub(super) fn book_with_ocr() -> Self {
         Self {
-            stages: vec![PipelineStage::Ocr, PipelineStage::Translate, PipelineStage::Render],
+            stages: vec![
+                PipelineStage::Ocr,
+                PipelineStage::Translate,
+                PipelineStage::Render,
+            ],
         }
     }
 

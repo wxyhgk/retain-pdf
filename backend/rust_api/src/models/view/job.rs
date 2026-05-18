@@ -10,8 +10,12 @@ pub use builders::{
 #[cfg(test)]
 pub use builders::{job_to_detail, job_to_list_item};
 pub use types::{
-    ArtifactLinksView, GlossaryUsageSummaryView, InvocationSummaryView, JobArtifactItemView,
-    JobArtifactManifestView, JobDetailView, JobFailureDiagnosticView, JobListInvocationSummaryView,
-    JobListItemView, JobListView, MarkdownArtifactView, NormalizationSummaryView,
-    OcrJobSummaryView, ResourceLinkView,
+    ArtifactDisplayItemView, ArtifactLinksView, BookSummaryView, GlossaryUsageSummaryView,
+    InvocationSummaryView, JobArtifactItemView, JobArtifactManifestView, JobContractsView,
+    JobDetailView, JobFailureDiagnosticView, JobListInvocationSummaryView, JobListItemView,
+    JobListView, JobStageContractArtifactView, JobStageContractView, LibraryBatchDeleteInput,
+    LibraryBatchDeleteResultView, LibraryBookDetailView, LibraryBookListItemView,
+    LibraryBookListView, LibraryDeleteQuery, LibraryDeleteResultView, MarkdownArtifactView,
+    NormalizationSummaryView, OcrJobSummaryView, PagePreviewQuery, ReaderRegionBoxView,
+    ReaderRegionItemView, ReaderRegionsView, ResourceLinkView,
 };

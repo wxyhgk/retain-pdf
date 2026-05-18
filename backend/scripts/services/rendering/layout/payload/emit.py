@@ -4,6 +4,7 @@ from services.rendering.layout.model.models import RenderBlock
 from services.rendering.layout.inline_content.core.markdown import build_plain_text_from_text
 from services.rendering.layout.inline_content.mode_router import build_item_render_markdown
 from services.rendering.layout.payload.metrics import resolve_typst_binary_fit
+from services.rendering.policy import item_uses_white_overlay_fill
 
 
 def payload_to_render_block(payload: dict) -> RenderBlock:
@@ -37,6 +38,11 @@ def payload_to_render_block(payload: dict) -> RenderBlock:
             adjacent_collision_risk=payload["adjacent_collision_risk"],
             adjacent_available_height_pt=payload["adjacent_available_height_pt"],
         )
+        if payload.get("_body_font_unified") and not payload.get("prefer_typst_fit"):
+            fit_to_box = False
+            fit_min_font_size_pt = 0.0
+            fit_min_leading_em = 0.0
+            fit_max_height_pt = 0.0
         fit_single_line = False
         fit_max_font_size_pt = 0.0
         fit_target_width_pt = 0.0
@@ -64,7 +70,7 @@ def payload_to_render_block(payload: dict) -> RenderBlock:
         fit_target_height_pt=fit_target_height_pt,
         text_color=tuple(payload.get("text_color", (0, 0, 0))),
         cover_fill=tuple(payload.get("cover_fill", (1, 1, 1))),
-        use_cover_fill=bool(payload["item"].get("_render_use_cover_fill", False)),
+        use_cover_fill=item_uses_white_overlay_fill(payload["item"]),
         math_map=list(payload["formula_map"]),
         skip_reason="adjacent_collision_risk" if payload.get("adjacent_collision_risk") else "",
         source_item_id=str(payload["item"].get("item_id") or ""),

@@ -91,6 +91,8 @@ def _args_from_spec(spec: ProviderStageSpec) -> SimpleNamespace:
         inner_bbox_shrink_y=spec.render.inner_bbox_shrink_y,
         inner_bbox_dense_shrink_x=spec.render.inner_bbox_dense_shrink_x,
         inner_bbox_dense_shrink_y=spec.render.inner_bbox_dense_shrink_y,
+        font_unify_mode=spec.render.font_unify_mode,
+        source_cleanup_strategy=spec.render.source_cleanup_strategy,
     )
 
 
@@ -108,6 +110,8 @@ def main() -> None:
         inner_bbox_shrink_y=args.inner_bbox_shrink_y,
         inner_bbox_dense_shrink_x=args.inner_bbox_dense_shrink_x,
         inner_bbox_dense_shrink_y=args.inner_bbox_dense_shrink_y,
+        font_unify_mode=args.font_unify_mode,
+        source_cleanup_strategy=args.source_cleanup_strategy,
     )
 
     job_dirs, source_pdf_path, layout_json_path, normalized_json_path = run_mineru_to_job_dir(args)
@@ -155,6 +159,7 @@ def main() -> None:
         compile_workers=args.compile_workers or None,
         typst_font_family=args.typst_font_family,
         pdf_compress_dpi=args.pdf_compress_dpi,
+        source_cleanup_strategy=args.source_cleanup_strategy,
         invocation=build_stage_invocation_metadata(
             stage="provider",
             stage_spec_schema_version=stage_spec_schema_version,

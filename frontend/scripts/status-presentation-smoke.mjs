@@ -12,6 +12,7 @@ function assertEqual(actual, expected, label) {
   }
 }
 
+
 function checkOcrPresentationUsesPageProgress() {
   const job = {
     status: "running",
@@ -381,6 +382,22 @@ function checkCompletedStageHasDoneKeyAndNoProgressTextRequirement() {
   assertEqual(presentation.label, "完成", "Completed label");
 }
 
+function checkFailedStageUsesFailureSummary() {
+  const job = {
+    status: "failed",
+    stage: "rendering",
+    current_stage: "rendering",
+    stage_detail: "渲染阶段失败",
+    failure: {
+      summary: "Typst 渲染失败：页面 9 文本溢出",
+    },
+  };
+  const presentation = resolveDisplayedStagePresentation(job, { items: [] });
+  assertEqual(presentation.stageKey, "failed", "Failed stage");
+  assertEqual(presentation.label, "失败", "Failed label");
+  assertEqual(presentation.detail, "Typst 渲染失败：页面 9 文本溢出", "Failed detail uses failure summary");
+}
+
 function checkRunningFinishedStageStaysInRenderUntilTerminal() {
   const job = {
     status: "running",
@@ -473,6 +490,212 @@ function checkHistoricalOcrProgressCanBeRecoveredFromEvents() {
   assertEqual(progressByKey.translate.progressText, "第 2/9 批", "Historical translate progress text");
 }
 
+function checkFormalEventContractProgressUnits() {
+  const progressByKey = collectStageProgressByKey(
+    {
+      status: "running",
+      stage: "rendering",
+      current_stage: "rendering",
+      stage_detail: "正在渲染",
+    },
+    {
+      items: [
+        {
+          user_stage: "ocr",
+          stage: "ocr_processing",
+          substage: "provider_processing",
+          stage_detail: "Paddle 正在解析文件",
+          event_type: "stage_progress",
+          progress_unit: "page",
+          progress_current: 12,
+          progress_total: 34,
+        },
+        {
+          user_stage: "translate",
+          stage: "translating",
+          stage_detail: "正在翻译",
+          event_type: "stage_progress",
+          progress_unit: "batch",
+          progress_current: 8,
+          progress_total: 42,
+        },
+        {
+          user_stage: "render",
+          stage: "rendering",
+          stage_detail: "正在渲染",
+          event_type: "stage_progress",
+          progress_unit: "page",
+          progress_current: 18,
+          progress_total: 34,
+        },
+      ],
+    },
+  );
+  assertEqual(progressByKey.ocr.progressText, "第 12/34 页", "Formal OCR page progress");
+  assertEqual(progressByKey.translate.progressText, "第 8/42 批", "Formal translate batch progress");
+  assertEqual(progressByKey.render.progressText, "第 18/34 页", "Formal render page progress");
+}
+
+function checkOcrZeroPageProgressIsVisibleIndeterminate() {
+  const progressByKey = collectStageProgressByKey(
+    {
+      status: "running",
+      stage: "ocr_processing",
+      current_stage: "ocr_processing",
+      stage_detail: "Paddle 正在解析文件，第 0/33 页",
+    },
+    {
+      items: [
+        {
+          user_stage: "ocr",
+          stage: "ocr_processing",
+          substage: "running",
+          stage_detail: "Paddle 正在解析文件，第 0/33 页",
+          event_type: "stage_progress",
+          progress_unit: "page",
+          progress_current: 0,
+          progress_total: 33,
+        },
+      ],
+    },
+  );
+  assertEqual(progressByKey.ocr.progressText, "OCR 处理中，共 33 页", "OCR zero page progress text");
+  assertEqual(progressByKey.ocr.indeterminate, true, "OCR zero page indeterminate progress");
+  assertEqual(progressByKey.ocr.visualStageKey, "ocr_processing", "OCR zero page animation stage");
+}
+
+function checkPageProgressBeatsLaterStepProgress() {
+  const progressByKey = collectStageProgressByKey(
+    {
+      status: "running",
+      stage: "translating",
+      current_stage: "translating",
+      stage_detail: "OCR 完成，开始翻译",
+    },
+    {
+      items: [
+        {
+          user_stage: "ocr",
+          stage: "ocr_processing",
+          stage_detail: "Paddle 正在解析文件，第 4/9 页",
+          progress_unit: "page",
+          progress_current: 4,
+          progress_total: 9,
+        },
+        {
+          user_stage: "ocr",
+          stage: "normalizing",
+          stage_detail: "OCR 完成，开始标准化",
+          progress_unit: "step",
+          progress_current: 9,
+          progress_total: 9,
+        },
+      ],
+    },
+  );
+  assertEqual(progressByKey.ocr.progressText, "第 4/9 页", "OCR page progress beats later step progress");
+}
+
+function checkCompletedOcrPageProgressBeatsPartialPageProgress() {
+  const progressByKey = collectStageProgressByKey(
+    {
+      status: "succeeded",
+      stage: "finished",
+      current_stage: "finished",
+      stage_detail: "任务完成",
+    },
+    {
+      items: [
+        {
+          user_stage: "ocr",
+          stage: "ocr_processing",
+          stage_detail: "Paddle 正在解析文件，第 28/33 页",
+          progress_unit: "page",
+          progress_current: 28,
+          progress_total: 33,
+        },
+        {
+          user_stage: "ocr",
+          stage: "ocr_result_ready",
+          stage_detail: "Paddle 正在解析文件，第 33/33 页",
+          progress_unit: "none",
+          progress_current: 33,
+          progress_total: 33,
+        },
+      ],
+    },
+  );
+  assertEqual(progressByKey.ocr.progressText, "第 33/33 页", "Completed OCR progress beats partial page progress");
+}
+
+function checkFormalCurrentEventWinsStageAndUnit() {
+  const presentation = resolveDisplayedStagePresentation(
+    {
+      status: "running",
+      stage: "translating",
+      current_stage: "translating",
+      stage_detail: "正在翻译",
+    },
+    {
+      items: [
+        {
+          user_stage: "translate",
+          stage: "continuation_review",
+          substage: "continuation_review",
+          stage_detail: "跨栏/跨页判断",
+          event_type: "stage_progress",
+          progress_unit: "page",
+          progress_current: 4,
+          progress_total: 18,
+        },
+      ],
+    },
+  );
+  assertEqual(presentation.stageKey, "translate", "Formal translate substage");
+  assertEqual(presentation.progressText, "第 4/18 页", "Formal translate page unit");
+}
+
+function checkTranslateProgressTextFallbackParsesStageDetail() {
+  const presentation = resolveDisplayedStagePresentation(
+    {
+      status: "running",
+      stage: "translating",
+      stage_detail: "已完成第 1292/5216 批翻译（最近页: 132）",
+    },
+    { items: [] },
+  );
+  assertEqual(presentation.stageKey, "translate", "Translate stage detail fallback stage");
+  assertEqual(presentation.progressText, "第 1292/5216 批", "Translate stage detail fallback progress text");
+  assertEqual(presentation.progressCurrent, 1292, "Translate stage detail fallback current");
+  assertEqual(presentation.progressTotal, 5216, "Translate stage detail fallback total");
+}
+
+function checkRenderZeroPageProgressShowsUsefulText() {
+  const presentation = resolveDisplayedStagePresentation(
+    {
+      status: "running",
+      stage: "rendering",
+      stage_detail: "开始渲染翻译 PDF",
+    },
+    {
+      items: [
+        {
+          user_stage: "render",
+          stage: "rendering",
+          stage_detail: "开始渲染翻译 PDF",
+          progress_unit: "page",
+          progress_current: 0,
+          progress_total: 533,
+        },
+      ],
+    },
+  );
+  assertEqual(presentation.stageKey, "render", "Render zero page stage");
+  assertEqual(presentation.progressText, "渲染准备中，共 533 页", "Render zero page progress text");
+  assertEqual(presentation.progressCurrent, 0, "Render zero page current");
+  assertEqual(presentation.progressTotal, 533, "Render zero page total");
+}
+
 checkOcrPresentationUsesPageProgress();
 checkOcrPresentationIgnoresFutureStageEvents();
 checkOcrPresentationFallsBackToJobProgress();
@@ -490,10 +713,18 @@ checkOcrResultReadyStaysInOcrStage();
 checkOcrUploadWaitingDoesNotLookQueued();
 checkTranslationSubstageOrderDoesNotPreferBatchWhenReviewing();
 checkCompletedStageHasDoneKeyAndNoProgressTextRequirement();
+checkFailedStageUsesFailureSummary();
 checkRunningFinishedStageStaysInRenderUntilTerminal();
 checkStartupStageUsesWorkflowContext();
 checkRenderPrepareDoesNotLookLikeOcr();
 checkSelectedFutureStageUsesSelectedAnimation();
 checkHistoricalOcrProgressCanBeRecoveredFromEvents();
+checkFormalEventContractProgressUnits();
+checkOcrZeroPageProgressIsVisibleIndeterminate();
+checkPageProgressBeatsLaterStepProgress();
+checkCompletedOcrPageProgressBeatsPartialPageProgress();
+checkFormalCurrentEventWinsStageAndUnit();
+checkTranslateProgressTextFallbackParsesStageDetail();
+checkRenderZeroPageProgressShowsUsefulText();
 
 console.log("status presentation smoke passed");

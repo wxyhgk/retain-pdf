@@ -11,7 +11,7 @@ use axum::Json;
 use super::common::build_jobs_route_deps;
 use super::query_adapter::{
     job_artifact_manifest_response, job_artifacts_response, job_detail_response,
-    job_events_response, list_jobs_response, rerun_job_response,
+    job_events_response, list_jobs_response, reader_regions_response, rerun_job_response,
 };
 
 pub async fn list_jobs(
@@ -77,6 +77,13 @@ pub async fn get_job_events(
     Query(query): Query<ListJobEventsQuery>,
 ) -> Result<Json<ApiResponse<JobEventListView>>, AppError> {
     job_events_response(build_jobs_route_deps(&state), &job_id, &query, false)
+}
+
+pub async fn get_reader_regions(
+    State(state): State<AppState>,
+    AxumPath(job_id): AxumPath<String>,
+) -> Result<Json<ApiResponse<crate::models::ReaderRegionsView>>, AppError> {
+    reader_regions_response(build_jobs_route_deps(&state), &job_id)
 }
 
 pub async fn rerun_job(
@@ -160,6 +167,9 @@ mod tests {
             upload_max_pages: 0,
             api_keys: HashSet::from(["test-key".to_string()]),
             max_running_jobs: 1,
+            provider_limits: crate::config::ProviderLimitsConfig::default(),
+            provider_runtime: crate::config::ProviderRuntimeConfig::default(),
+            job_runner: crate::config::JobRunnerConfig::default(),
         }))
         .expect("build state")
     }
@@ -187,7 +197,7 @@ mod tests {
     #[tokio::test]
     async fn rerun_route_prefers_render_when_translations_are_available() {
         let state = test_state("rerun-render");
-        let source_job = source_job_with_artifacts(
+        let mut source_job = source_job_with_artifacts(
             "job-rerun-render-source",
             JobArtifacts {
                 source_pdf: Some("jobs/source/source/input.pdf".to_string()),
@@ -196,6 +206,7 @@ mod tests {
                 ..JobArtifacts::default()
             },
         );
+        source_job.status = JobStatusKind::Succeeded;
         state.db.save_job(&source_job).expect("save source job");
 
         let response = build_app(state.clone())
@@ -214,13 +225,18 @@ mod tests {
         let payload = read_json(response).await;
         assert_eq!(payload["data"]["workflow"], "render");
         let rerun_job_id = payload["data"]["job_id"].as_str().expect("job id");
+        assert_eq!(rerun_job_id, "job-rerun-render-source");
         let rerun_job = state.db.get_job(rerun_job_id).expect("rerun job");
         assert_eq!(rerun_job.workflow, crate::models::WorkflowKind::Render);
+        assert_eq!(rerun_job.status, JobStatusKind::Queued);
         assert_eq!(
             rerun_job.request_payload.source.artifact_job_id,
             "job-rerun-render-source"
         );
-        assert!(rerun_job.request_payload.runtime.job_id.is_empty());
+        assert_eq!(
+            rerun_job.request_payload.runtime.job_id,
+            "job-rerun-render-source"
+        );
     }
 
     #[tokio::test]
@@ -503,6 +519,22 @@ mod tests {
         assert_eq!(pipeline_item["progress_unit"], "batch");
         assert_eq!(pipeline_item["progress_current"], 2);
         assert_eq!(pipeline_item["payload"]["origin"], "python");
+        let db_item = items
+            .iter()
+            .find(|item| item["event"] == "job_created")
+            .expect("db event item");
+        assert!(db_item
+            .as_object()
+            .expect("db event object")
+            .contains_key("user_stage"));
+        assert!(db_item
+            .as_object()
+            .expect("db event object")
+            .contains_key("progress_unit"));
+        assert!(db_item
+            .as_object()
+            .expect("db event object")
+            .contains_key("progress_total"));
     }
 
     #[tokio::test]
@@ -547,6 +579,167 @@ mod tests {
         assert_eq!(detail_json["data"]["stage_detail"], "正在渲染第 1/3 页");
         assert_eq!(detail_json["data"]["progress"]["current"], 1);
         assert_eq!(detail_json["data"]["progress"]["total"], 3);
+    }
+
+    #[tokio::test]
+    async fn main_job_events_include_ocr_child_page_progress() {
+        let state = test_state("events-ocr-child-progress");
+        let mut parent = JobSnapshot::new(
+            "job-route-parent-progress".to_string(),
+            CreateJobInput::default(),
+            vec!["python".to_string()],
+        );
+        let parent_root: PathBuf = state.config.data_root.join("jobs").join(&parent.job_id);
+        fs::create_dir_all(parent_root.join("logs")).expect("create parent logs dir");
+        parent
+            .artifacts
+            .get_or_insert_with(crate::models::JobArtifacts::default)
+            .job_root = Some(parent_root.to_string_lossy().to_string());
+        parent.artifacts.as_mut().unwrap().ocr_job_id =
+            Some("job-route-parent-progress-ocr".to_string());
+        state.db.save_job(&parent).expect("save parent job");
+
+        let mut child_input = CreateJobInput::default();
+        child_input.workflow = crate::models::WorkflowKind::Ocr;
+        let mut child = JobSnapshot::new(
+            "job-route-parent-progress-ocr".to_string(),
+            child_input,
+            vec!["python".to_string()],
+        );
+        let child_root: PathBuf = state.config.data_root.join("jobs").join(&child.job_id);
+        fs::create_dir_all(child_root.join("logs")).expect("create child logs dir");
+        child
+            .artifacts
+            .get_or_insert_with(crate::models::JobArtifacts::default)
+            .job_root = Some(child_root.to_string_lossy().to_string());
+        state.db.save_job(&child).expect("save child job");
+        fs::write(
+            child_root.join("logs").join("pipeline_events.jsonl"),
+            r#"{"job_id":"job-route-parent-progress-ocr","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","user_stage":"ocr","stage":"ocr_processing","substage":"provider_processing","stage_detail":"Paddle 正在解析文件，第 12/34 页","provider":"paddle","provider_stage":"provider_processing","event_type":"stage_progress","message":"Paddle 正在解析文件，第 12/34 页","progress_current":12,"progress_total":34,"progress_unit":"page","payload":{"provider_task_id":"task-1"}}"#,
+        )
+        .expect("write child pipeline events");
+
+        let app = build_app(state.clone());
+        let events_response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/v1/jobs/{}/events", parent.job_id))
+                    .header("X-API-Key", "test-key")
+                    .body(Body::empty())
+                    .expect("events request"),
+            )
+            .await
+            .expect("events response");
+        assert_eq!(events_response.status(), StatusCode::OK);
+        let events_json = read_json(events_response).await;
+        let items = events_json["data"]["items"]
+            .as_array()
+            .expect("events items");
+        let ocr_progress = items
+            .iter()
+            .find(|item| {
+                item["stage"] == "ocr_processing" && item["event_type"] == "stage_progress"
+            })
+            .expect("ocr child progress event");
+        assert_eq!(ocr_progress["job_id"], parent.job_id);
+        assert_eq!(ocr_progress["user_stage"], "ocr");
+        assert_eq!(ocr_progress["progress_unit"], "page");
+        assert_eq!(ocr_progress["progress_current"], 12);
+        assert_eq!(ocr_progress["progress_total"], 34);
+        assert_eq!(
+            ocr_progress["payload"]["source_job_id"],
+            "job-route-parent-progress-ocr"
+        );
+    }
+
+    #[tokio::test]
+    async fn reader_regions_route_maps_translated_items_to_source_blocks() {
+        let state = test_state("reader-regions");
+        let job_root = state.config.output_root.join("reader-region-job");
+        let normalized_path = job_root.join("ocr/normalized/document.v1.json");
+        let translated_dir = job_root.join("translated");
+        fs::create_dir_all(normalized_path.parent().unwrap()).expect("normalized dir");
+        fs::create_dir_all(&translated_dir).expect("translated dir");
+        fs::write(
+            &normalized_path,
+            serde_json::to_vec(&json!({
+                "pages": [{
+                    "page_index": 7,
+                    "blocks": [{
+                        "block_id": "p008-b0009",
+                        "bbox": [72.1, 132.4, 310.8, 186.2]
+                    }]
+                }]
+            }))
+            .expect("normalized json"),
+        )
+        .expect("write normalized");
+        fs::write(
+            translated_dir.join("page-008-deepseek.json"),
+            serde_json::to_vec(&json!([
+                {
+                    "item_id": "p008-b009",
+                    "page_idx": 7,
+                    "bbox": [74.0, 130.0, 330.0, 190.0]
+                }
+            ]))
+            .expect("page json"),
+        )
+        .expect("write translation page");
+        fs::write(
+            translated_dir.join("translation-manifest.json"),
+            serde_json::to_vec(&json!({
+                "pages": [{
+                    "page_index": 7,
+                    "path": "page-008-deepseek.json"
+                }]
+            }))
+            .expect("manifest json"),
+        )
+        .expect("write manifest");
+
+        let mut input = CreateJobInput::default();
+        input.runtime.job_id = "reader-region-job".to_string();
+        let mut job = JobSnapshot::new(
+            "reader-region-job".to_string(),
+            input,
+            vec!["python".to_string()],
+        );
+        job.artifacts = Some(JobArtifacts {
+            job_root: Some("jobs/reader-region-job".to_string()),
+            normalized_document_json: Some(
+                "jobs/reader-region-job/ocr/normalized/document.v1.json".to_string(),
+            ),
+            translations_dir: Some("jobs/reader-region-job/translated".to_string()),
+            ..JobArtifacts::default()
+        });
+        state.db.save_job(&job).expect("save job");
+
+        let response = build_app(state)
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/api/v1/jobs/reader-region-job/reader/regions")
+                    .header("X-API-Key", "test-key")
+                    .body(Body::empty())
+                    .expect("regions request"),
+            )
+            .await
+            .expect("regions response");
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let payload = read_json(response).await;
+        assert_eq!(payload["data"]["items"][0]["item_id"], "p008-b009");
+        assert_eq!(payload["data"]["items"][0]["source"]["page"], 8);
+        assert_eq!(payload["data"]["items"][0]["translated"]["page"], 8);
+        assert_eq!(
+            payload["data"]["items"][0]["source"]["bbox"],
+            json!([72.1, 132.4, 310.8, 186.2])
+        );
+        assert_eq!(
+            payload["data"]["items"][0]["translated"]["bbox"],
+            json!([74.0, 130.0, 330.0, 190.0])
+        );
     }
 
     #[tokio::test]
@@ -675,6 +868,91 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn failed_job_events_include_contract_readiness_payload() {
+        let state = test_state("events-contracts");
+        let job_id = "job-route-events-contracts";
+        let job_root: PathBuf = state.config.data_root.join("jobs").join(job_id);
+        let source_pdf = job_root.join("source/input.pdf");
+        let translations_dir = job_root.join("translated");
+        fs::create_dir_all(source_pdf.parent().expect("source parent")).expect("source dir");
+        fs::create_dir_all(&translations_dir).expect("translations dir");
+        fs::write(&source_pdf, b"%PDF").expect("source pdf");
+
+        let mut job = JobSnapshot::new(
+            job_id.to_string(),
+            CreateJobInput::default(),
+            vec!["python".to_string()],
+        );
+        job.status = JobStatusKind::Failed;
+        job.stage = Some("failed".to_string());
+        job.artifacts = Some(JobArtifacts {
+            job_root: Some(job_root.to_string_lossy().to_string()),
+            source_pdf: Some(source_pdf.to_string_lossy().to_string()),
+            translations_dir: Some(translations_dir.to_string_lossy().to_string()),
+            ..JobArtifacts::default()
+        });
+        state.db.save_job(&job).expect("save job");
+        state
+            .db
+            .append_event(
+                &job.job_id,
+                "error",
+                Some("failed".to_string()),
+                None,
+                None,
+                None,
+                "job_terminal",
+                Some("job_terminal".to_string()),
+                "任务进入终态 failed",
+                None,
+                None,
+                Some(json!({"status": "failed"})),
+                Some(0),
+                Some(120),
+            )
+            .expect("append terminal event");
+
+        let app = build_app(state.clone());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/v1/jobs/{job_id}/events"))
+                    .header("X-API-Key", "test-key")
+                    .body(Body::empty())
+                    .expect("events request"),
+            )
+            .await
+            .expect("events response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let events_json = read_json(response).await;
+        let terminal_item = events_json["data"]["items"]
+            .as_array()
+            .expect("items")
+            .iter()
+            .find(|item| item["event"] == "job_terminal")
+            .expect("terminal event");
+        assert_eq!(
+            terminal_item["payload"]["contracts"]["schema_version"],
+            "job_stage_contracts.v1"
+        );
+        let stages = terminal_item["payload"]["contracts"]["stages"]
+            .as_array()
+            .expect("contract stages");
+        let translation_stage = stages
+            .iter()
+            .find(|item| item["stage"] == "translation_ready_for_render")
+            .expect("translation stage");
+        assert_eq!(translation_stage["ready"], false);
+        let manifest = translation_stage["artifacts"]
+            .as_array()
+            .expect("artifacts")
+            .iter()
+            .find(|item| item["artifact_key"] == "translation_manifest_json")
+            .expect("manifest artifact");
+        assert_eq!(manifest["ready"], false);
+    }
+
+    #[tokio::test]
     async fn job_detail_route_prefers_live_pipeline_stage_snapshot() {
         let state = test_state("detail-live-stage");
         let mut job = JobSnapshot::new(
@@ -718,6 +996,65 @@ mod tests {
         assert_eq!(detail_json["data"]["stage_detail"], "已完成第 2/5 批翻译");
         assert_eq!(detail_json["data"]["progress"]["current"], 2);
         assert_eq!(detail_json["data"]["progress"]["total"], 5);
+    }
+
+    #[tokio::test]
+    async fn job_detail_route_exposes_stage_contract_readiness() {
+        let state = test_state("detail-stage-contracts");
+        let job_id = "job-route-stage-contracts";
+        let job_root: PathBuf = state.config.data_root.join("jobs").join(job_id);
+        let source_pdf = job_root.join("source/input.pdf");
+        let translations_dir = job_root.join("translated");
+        fs::create_dir_all(source_pdf.parent().expect("source parent")).expect("source dir");
+        fs::create_dir_all(&translations_dir).expect("translations dir");
+        fs::write(&source_pdf, b"%PDF").expect("source pdf");
+
+        let mut job = JobSnapshot::new(
+            job_id.to_string(),
+            CreateJobInput::default(),
+            vec!["python".to_string()],
+        );
+        job.artifacts = Some(JobArtifacts {
+            job_root: Some(job_root.to_string_lossy().to_string()),
+            source_pdf: Some(source_pdf.to_string_lossy().to_string()),
+            translations_dir: Some(translations_dir.to_string_lossy().to_string()),
+            ..JobArtifacts::default()
+        });
+        state.db.save_job(&job).expect("save job");
+
+        let app = build_app(state.clone());
+        let detail_response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/v1/jobs/{job_id}"))
+                    .header("X-API-Key", "test-key")
+                    .body(Body::empty())
+                    .expect("detail request"),
+            )
+            .await
+            .expect("detail response");
+        assert_eq!(detail_response.status(), StatusCode::OK);
+        let detail_json = read_json(detail_response).await;
+        assert_eq!(
+            detail_json["data"]["contracts"]["schema_version"],
+            "job_stage_contracts.v1"
+        );
+        let stages = detail_json["data"]["contracts"]["stages"]
+            .as_array()
+            .expect("contract stages");
+        let translation_stage = stages
+            .iter()
+            .find(|item| item["stage"] == "translation_ready_for_render")
+            .expect("translation contract");
+        assert_eq!(translation_stage["ready"], false);
+        let manifest = translation_stage["artifacts"]
+            .as_array()
+            .expect("artifacts")
+            .iter()
+            .find(|item| item["artifact_key"] == "translation_manifest_json")
+            .expect("manifest artifact");
+        assert_eq!(manifest["required"], true);
+        assert_eq!(manifest["ready"], false);
     }
 
     #[tokio::test]

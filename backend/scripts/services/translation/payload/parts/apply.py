@@ -16,6 +16,20 @@ TOKEN_RE = re.compile(r"(<[futnvc]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]|\s+|[A-Za-
 INLINE_MATH_SPAN_RE = re.compile(r"(?<!\\)\$(?:\\.|[^$\\\n])+(?<!\\)\$")
 MATH_AWARE_TOKEN_RE = re.compile(rf"(<[futnvc]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]|\s+|{INLINE_MATH_SPAN_RE.pattern}|[A-Za-z0-9_\-./]+|[\u4e00-\u9fff]|.)")
 SPLIT_PUNCTUATION = "。！？；，、,.!?;:)]}）】」』"
+SOURCE_TERMINAL_RE = re.compile(r"[.!?。！？；;:：)\]）】”’\"']\s*$")
+TRANSLATION_SENTENCE_START_RE = re.compile(r"(?<=[。！？；])")
+REASONING_LEAK_MARKERS = (
+    "保持简洁",
+    "按照规则",
+    "因此输出",
+    "综上，输出",
+    "注意：原文",
+    "译文也应保留",
+)
+REASONING_LEAK_FINAL_PATTERNS = (
+    re.compile(r"(?:综上，输出。?|因此输出：?)\s*(?P<text>.+?)\s*$", re.S),
+    re.compile(r"输出[:：]\s*(?P<text>.+?)\s*$", re.S),
+)
 
 
 def _unwrap_json_translated_text(text: str) -> tuple[str, str] | None:
@@ -52,6 +66,23 @@ def _normalize_result_entry(value) -> tuple[str, str]:
     return "translate", text
 
 
+def _salvage_reasoning_leak(text: str) -> tuple[str, bool]:
+    raw = str(text or "").strip()
+    if not raw:
+        return raw, False
+    if sum(1 for marker in REASONING_LEAK_MARKERS if marker in raw) < 2:
+        return raw, False
+    for pattern in REASONING_LEAK_FINAL_PATTERNS:
+        match = pattern.search(raw)
+        if not match:
+            continue
+        candidate = str(match.group("text") or "").strip()
+        candidate = candidate.splitlines()[0].strip()
+        if candidate and len(candidate) < max(180, len(raw) * 0.35):
+            return candidate, True
+    return raw, False
+
+
 def _extract_result_metadata(value) -> dict:
     if isinstance(value, dict):
         return dict(value)
@@ -73,6 +104,83 @@ def _result_diagnostics_for_item(metadata: dict, item: dict) -> dict:
     if item.get("page_idx") is not None:
         diagnostics["page_idx"] = item.get("page_idx")
     return diagnostics
+
+
+def _with_sanitized_translation(
+    protected_translated_text: str,
+    metadata: dict,
+) -> tuple[str, dict]:
+    sanitized, changed = _salvage_reasoning_leak(protected_translated_text)
+    if not changed:
+        return protected_translated_text, metadata
+    metadata = dict(metadata)
+    diagnostics = dict(metadata.get("translation_diagnostics") or {})
+    diagnostics["degradation_reason"] = "reasoning_leak_salvaged"
+    diagnostics["final_status"] = "partially_translated"
+    metadata["translation_diagnostics"] = diagnostics
+    metadata["final_status"] = "partially_translated"
+    return sanitized, metadata
+
+
+def _math_spans(text: str) -> list[str]:
+    return [match.group(0).strip() for match in INLINE_MATH_SPAN_RE.finditer(str(text or "")) if match.group(0).strip()]
+
+
+def _source_looks_incomplete(text: str) -> bool:
+    source = str(text or "").strip()
+    if not source:
+        return False
+    return SOURCE_TERMINAL_RE.search(source) is None
+
+
+def _sentence_start_before(text: str, index: int) -> int:
+    starts = [0]
+    for match in TRANSLATION_SENTENCE_START_RE.finditer(text[: max(0, index)]):
+        starts.append(match.end())
+    return max(starts)
+
+
+def _sanitize_neighbor_continuation_leak(
+    protected_translated_text: str,
+    metadata: dict,
+    item: dict,
+    next_item: dict | None,
+) -> tuple[str, dict]:
+    if next_item is None or not protected_translated_text:
+        return protected_translated_text, metadata
+    source_text = str(item.get("protected_source_text") or item.get("source_text") or "")
+    if not _source_looks_incomplete(source_text):
+        return protected_translated_text, metadata
+    next_source_text = str(next_item.get("protected_source_text") or next_item.get("source_text") or "")
+    if not next_source_text:
+        return protected_translated_text, metadata
+
+    current_math = set(_math_spans(source_text))
+    leaked_math = [
+        expr
+        for expr in _math_spans(next_source_text)
+        if expr not in current_math and expr in protected_translated_text
+    ]
+    if not leaked_math:
+        return protected_translated_text, metadata
+
+    first_hit = min(protected_translated_text.find(expr) for expr in leaked_math if protected_translated_text.find(expr) >= 0)
+    candidate = protected_translated_text[:first_hit].rstrip()
+    candidate = re.sub(r"[，,、\s]*(?:在|为|是|等于|对于)\s*$", "", candidate).rstrip()
+    if len(candidate) < 8:
+        trim_at = _sentence_start_before(protected_translated_text, first_hit)
+        candidate = protected_translated_text[:trim_at].rstrip()
+    if not candidate or len(candidate) < 8:
+        return protected_translated_text, metadata
+
+    metadata = dict(metadata)
+    diagnostics = dict(metadata.get("translation_diagnostics") or {})
+    diagnostics["degradation_reason"] = "neighbor_continuation_leak_trimmed"
+    diagnostics["final_status"] = "partially_translated"
+    diagnostics["trimmed_next_math"] = leaked_math[:3]
+    metadata["translation_diagnostics"] = diagnostics
+    metadata["final_status"] = "partially_translated"
+    return candidate, metadata
 
 
 def _mark_keep_origin(item: dict) -> None:
@@ -177,6 +285,10 @@ def _split_group_protected_translation(protected_text: str, items: list[dict]) -
 
 
 def apply_translated_text_map(payload: list[dict], translated: dict) -> None:
+    next_item_by_id = {
+        str(item.get("item_id", "") or ""): payload[index + 1] if index + 1 < len(payload) else None
+        for index, item in enumerate(payload)
+    }
     preserved_group_units = {
         str(item.get("item_id", "") or ""): existing_group_unit_id(item)
         for item in payload
@@ -198,6 +310,7 @@ def apply_translated_text_map(payload: list[dict], translated: dict) -> None:
         raw_result = protected_translated_text
         metadata = _extract_result_metadata(raw_result)
         decision, protected_translated_text = _normalize_result_entry(raw_result)
+        protected_translated_text, metadata = _with_sanitized_translation(protected_translated_text, metadata)
         if decision == "keep_origin":
             for item in items:
                 _mark_keep_origin(item)
@@ -231,6 +344,13 @@ def apply_translated_text_map(payload: list[dict], translated: dict) -> None:
         raw_result = translated[item_id]
         metadata = _extract_result_metadata(raw_result)
         decision, protected_translated_text = _normalize_result_entry(raw_result)
+        protected_translated_text, metadata = _with_sanitized_translation(protected_translated_text, metadata)
+        protected_translated_text, metadata = _sanitize_neighbor_continuation_leak(
+            protected_translated_text,
+            metadata,
+            item,
+            next_item_by_id.get(str(item_id or "")),
+        )
         if decision == "keep_origin":
             _mark_keep_origin(item)
             diagnostics = _result_diagnostics_for_item(metadata, item)

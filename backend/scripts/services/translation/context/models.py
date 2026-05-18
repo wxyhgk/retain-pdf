@@ -91,9 +91,9 @@ class TranslationItemContext:
             context_before = self.context_before_for_prompt()
             context_after = self.context_after_for_prompt()
             if context_before:
-                payload["context_before"] = context_before
+                payload["context_before"] = f"仅供理解，禁止翻译进输出：{context_before}"
             if context_after:
-                payload["context_after"] = context_after
+                payload["context_after"] = f"仅供理解，禁止翻译进输出：{context_after}"
         return payload
 
     def as_classification_record(self, *, rule_label: str = "") -> dict[str, Any]:

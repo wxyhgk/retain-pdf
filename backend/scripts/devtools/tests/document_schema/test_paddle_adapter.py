@@ -255,7 +255,7 @@ def test_paddle_page_spec_marks_empty_bbox_and_absorber_blocks() -> None:
     assert page_metadata["body_repair_block_ids"] == ["p001-b0001", "p001-b0002"]
 
 
-def test_paddle_page_spec_marks_text_title_and_footnote_translation_candidates() -> None:
+def test_paddle_page_spec_marks_text_title_and_vision_footnote_translation_candidates() -> None:
     page_payload = {
         "prunedResult": {
             "width": 1200,
@@ -282,6 +282,11 @@ def test_paddle_page_spec_marks_text_title_and_footnote_translation_candidates()
                     "block_bbox": [100, 320, 420, 360],
                 },
                 {
+                    "block_label": "footnote",
+                    "block_content": "Ordinary provider footnote.",
+                    "block_bbox": [100, 380, 420, 420],
+                },
+                {
                     "block_label": "footer",
                     "block_content": "Page footer",
                     "block_bbox": [100, 1480, 420, 1520],
@@ -300,7 +305,7 @@ def test_paddle_page_spec_marks_text_title_and_footnote_translation_candidates()
         preprocessed_image="",
     )
 
-    text_block, abstract_block, heading_block, footnote_block, footer_block = page_spec["blocks"]
+    text_block, abstract_block, heading_block, vision_footnote_block, footnote_block, footer_block = page_spec["blocks"]
     assert text_block["policy"] == {"translate": True, "translate_reason": "provider_body_whitelist:body"}
     assert text_block["structure_role"] == "body"
     assert text_block["semantic_role"] == "body"
@@ -309,7 +314,12 @@ def test_paddle_page_spec_marks_text_title_and_footnote_translation_candidates()
     assert abstract_block["semantic_role"] == "abstract"
     assert heading_block["policy"] == {"translate": True, "translate_reason": "provider_heading_candidate"}
     assert heading_block["structure_role"] == "heading"
-    assert footnote_block["policy"] == {"translate": True, "translate_reason": "provider_footnote_whitelist"}
+    assert vision_footnote_block["policy"] == {
+        "translate": True,
+        "translate_reason": "provider_footnote_whitelist:vision_footnote",
+    }
+    assert vision_footnote_block["structure_role"] == "footnote"
+    assert footnote_block["policy"] == {"translate": False, "translate_reason": "provider_non_body:footnote"}
     assert footnote_block["structure_role"] == "footnote"
     assert footer_block["policy"]["translate"] is False
 

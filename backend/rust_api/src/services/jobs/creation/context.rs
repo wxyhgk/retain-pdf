@@ -5,7 +5,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
 
-use crate::config::AppConfig;
+use crate::config::{JobRunnerConfig, JobSnapshotRuntimeConfig};
 use crate::db::Db;
 use crate::services::job_launcher::JobLaunchDeps;
 use crate::services::runtime_gateway::RuntimeControl;
@@ -13,11 +13,11 @@ use crate::services::runtime_gateway::RuntimeControl;
 #[derive(Clone)]
 pub(crate) struct SnapshotBuildDeps<'a> {
     pub(crate) db: &'a Db,
-    pub(crate) config: &'a AppConfig,
+    pub(crate) config: JobSnapshotRuntimeConfig<'a>,
 }
 
 impl<'a> SnapshotBuildDeps<'a> {
-    pub(crate) fn new(db: &'a Db, config: &'a AppConfig) -> Self {
+    pub(crate) fn new(db: &'a Db, config: JobSnapshotRuntimeConfig<'a>) -> Self {
         Self { db, config }
     }
 }
@@ -80,6 +80,7 @@ impl<'a> BundleBuildDeps<'a> {}
 #[derive(Clone)]
 pub(crate) struct ControlDeps<'a> {
     pub(crate) db: &'a Db,
+    pub(crate) job_runner: &'a JobRunnerConfig,
     pub(crate) data_root: &'a Path,
     pub(crate) output_root: &'a Path,
     pub(crate) runtime: RuntimeControl<'a>,
@@ -88,12 +89,14 @@ pub(crate) struct ControlDeps<'a> {
 impl<'a> ControlDeps<'a> {
     pub(crate) fn new(
         db: &'a Db,
+        job_runner: &'a JobRunnerConfig,
         data_root: &'a Path,
         output_root: &'a Path,
         canceled_jobs: &'a RwLock<HashSet<String>>,
     ) -> Self {
         Self {
             db,
+            job_runner,
             data_root,
             output_root,
             runtime: RuntimeControl::new(canceled_jobs),
@@ -103,20 +106,33 @@ impl<'a> ControlDeps<'a> {
 
 #[derive(Clone)]
 pub(crate) struct ReplayDeps<'a> {
-    pub(crate) config: &'a AppConfig,
+    pub(crate) project_root: &'a Path,
+    pub(crate) scripts_dir: &'a Path,
+    pub(crate) python_bin: &'a str,
     pub(crate) data_root: &'a Path,
 }
 
 impl<'a> ReplayDeps<'a> {
-    pub(crate) fn new(config: &'a AppConfig, data_root: &'a Path) -> Self {
-        Self { config, data_root }
+    pub(crate) fn new(
+        project_root: &'a Path,
+        scripts_dir: &'a Path,
+        python_bin: &'a str,
+        data_root: &'a Path,
+    ) -> Self {
+        Self {
+            project_root,
+            scripts_dir,
+            python_bin,
+            data_root,
+        }
     }
 }
 
 #[derive(Clone)]
 pub(crate) struct QueryJobsDeps<'a> {
     pub(crate) db: &'a Db,
-    pub(crate) config: &'a AppConfig,
+    pub(crate) data_root: &'a Path,
+    pub(crate) downloads_dir: &'a Path,
     pub(crate) downloads_lock: &'a Arc<Mutex<()>>,
     pub(crate) replay: ReplayDeps<'a>,
 }
@@ -124,13 +140,15 @@ pub(crate) struct QueryJobsDeps<'a> {
 impl<'a> QueryJobsDeps<'a> {
     pub(crate) fn new(
         db: &'a Db,
-        config: &'a AppConfig,
+        data_root: &'a Path,
+        downloads_dir: &'a Path,
         downloads_lock: &'a Arc<Mutex<()>>,
         replay: ReplayDeps<'a>,
     ) -> Self {
         Self {
             db,
-            config,
+            data_root,
+            downloads_dir,
             downloads_lock,
             replay,
         }

@@ -13,8 +13,6 @@ use super::polling::{should_stop_polling, wait_next_poll_or_timeout};
 use super::save_ocr_job;
 use super::status::{record_provider_trace, update_ocr_job_from_status};
 
-const MINERU_WAITING_FILE_GRACE_SECS: u64 = 90;
-
 pub(super) async fn poll_uploaded_batch_until_ready(
     deps: &ProcessRuntimeDeps,
     job: &mut JobRuntimeState,
@@ -171,7 +169,8 @@ async fn process_batch_status(
     )
     .await?;
 
-    if item.state == "waiting-file" && elapsed_secs >= MINERU_WAITING_FILE_GRACE_SECS {
+    if item.state == "waiting-file" && elapsed_secs >= deps.mineru_runtime().waiting_file_grace_secs
+    {
         return Err(anyhow!(
             "MinerU uploaded file was not acknowledged after {}s: batch={} file_name={}",
             elapsed_secs,
@@ -208,11 +207,11 @@ async fn process_batch_status(
 
 #[cfg(test)]
 mod tests {
-    use super::MINERU_WAITING_FILE_GRACE_SECS;
+    use crate::config::MineruRuntimeConfig;
 
     #[test]
     fn waiting_file_grace_window_is_bounded() {
-        assert_eq!(MINERU_WAITING_FILE_GRACE_SECS, 90);
+        assert_eq!(MineruRuntimeConfig::from_env().waiting_file_grace_secs, 90);
     }
 }
 

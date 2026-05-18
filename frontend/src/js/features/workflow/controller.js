@@ -52,6 +52,7 @@ export function mountWorkflowFeature({
     DEFAULT_INNER_BBOX_SHRINK_Y,
     DEFAULT_INNER_BBOX_DENSE_SHRINK_X,
     DEFAULT_INNER_BBOX_DENSE_SHRINK_Y,
+    DEFAULT_FONT_UNIFY_MODE,
     WORKFLOW_BOOK,
     WORKFLOW_TRANSLATE,
     WORKFLOW_RENDER,
@@ -305,6 +306,7 @@ export function mountWorkflowFeature({
       inner_bbox_shrink_y: DEFAULT_INNER_BBOX_SHRINK_Y,
       inner_bbox_dense_shrink_x: DEFAULT_INNER_BBOX_DENSE_SHRINK_X,
       inner_bbox_dense_shrink_y: DEFAULT_INNER_BBOX_DENSE_SHRINK_Y,
+      font_unify_mode: DEFAULT_FONT_UNIFY_MODE,
     };
   }
 

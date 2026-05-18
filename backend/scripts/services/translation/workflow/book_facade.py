@@ -38,6 +38,7 @@ class BookRequest:
     compile_workers: int | None = None
     typst_font_family: str = ""
     pdf_compress_dpi: int = 144
+    source_cleanup_strategy: str = "pikepdf_text_strip"
     invocation: dict[str, Any] | None = None
 
 
@@ -137,6 +138,7 @@ class TranslationRequest:
     render_prewarm_artifacts_dir: Path | None = None
     render_prewarm_mode: str = "auto"
     render_prewarm_pdf_compress_dpi: int = 0
+    render_prewarm_source_cleanup_strategy: str = "pikepdf_text_strip"
 
 
 @dataclass(frozen=True)
@@ -236,6 +238,7 @@ def translate_book(request: TranslationRequest) -> TranslationResult:
             render_prewarm_artifacts_dir=request.render_prewarm_artifacts_dir,
             render_prewarm_mode=request.render_prewarm_mode,
             render_prewarm_pdf_compress_dpi=request.render_prewarm_pdf_compress_dpi,
+            render_prewarm_source_cleanup_strategy=request.render_prewarm_source_cleanup_strategy,
         )
     )
 
@@ -273,6 +276,7 @@ def run_book(request: BookRequest) -> BookResult:
             compile_workers=request.compile_workers,
             typst_font_family=request.typst_font_family,
             pdf_compress_dpi=request.pdf_compress_dpi,
+            source_cleanup_strategy=request.source_cleanup_strategy,
             invocation=request.invocation,
         )
     )

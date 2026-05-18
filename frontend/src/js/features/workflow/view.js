@@ -149,7 +149,7 @@ export function readOcrProviderValue(defaultOcrProvider) {
 export function readOcrTokenValue({ providerId, defaultPaddleToken, defaultMineruToken }) {
   return providerId === "paddle"
     ? ($("paddle_token")?.value || defaultPaddleToken)
-    : ($("mineru_token")?.value || defaultMineruToken);
+    : ($("paddle_token")?.value || defaultPaddleToken || defaultMineruToken);
 }
 
 export function readModelApiKey(defaultModelApiKey) {

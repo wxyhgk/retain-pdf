@@ -28,13 +28,14 @@ pub use glossary::{
 };
 pub use input::{
     CreateJobInput, GlossaryEntryInput, JobSourceInput, OcrInput, RenderInput, ResolvedJobSpec,
-    ResolvedSourceSpec, RuntimeInput, TranslationInput,
+    ResolvedSourceSpec, RuntimeInput, TranslationInput, DEFAULT_SOURCE_CLEANUP_STRATEGY,
+    SOURCE_CLEANUP_STRATEGIES,
 };
 pub use job::{
     job_stage_detail, job_stage_str, normalize_job_stage, JobAiDiagnostic, JobArtifactRecord,
     JobArtifacts, JobFailureInfo, JobRawDiagnostic, JobRecord, JobRuntimeInfo, JobRuntimeState,
-    JobSnapshot, JobStage, JobStageTiming, OcrCheckpointArtifacts, ProcessResult,
-    RenderArtifacts, TranslationArtifacts,
+    JobSnapshot, JobStage, JobStageTiming, OcrCheckpointArtifacts, ProcessResult, RenderArtifacts,
+    TranslationArtifacts,
 };
 pub use ocr::{
     OcrArtifactSet, OcrErrorCategory, OcrProviderCapabilities, OcrProviderDiagnostics,
@@ -47,13 +48,18 @@ pub use redaction::{redact_json_value, redact_optional_text, redact_text, sensit
 pub use view::{
     build_artifact_links, build_artifact_manifest, build_job_actions, build_job_links,
     build_job_links_with_workflow, summarize_list_invocation, to_absolute_url, upload_to_response,
-    ActionLinkView, ArtifactDownloadQuery, ArtifactLinksView, GlossaryUsageSummaryView,
-    InvocationSummaryView, JobActionsView, JobArtifactItemView, JobArtifactManifestView,
-    JobDetailView, JobEventListView, JobEventRecord, JobFailureDiagnosticView, JobLinksView,
-    JobListInvocationSummaryView, JobListItemView, JobListView, JobProgressView, JobSubmissionView,
-    JobTimestampsView, ListJobEventsQuery, ListJobsQuery, ListTranslationItemsQuery,
-    MarkdownArtifactView, MarkdownQuery, MarkdownView, NormalizationSummaryView, OcrJobSummaryView,
-    ResourceLinkView, TranslationDebugIndexView, TranslationDebugItemView,
-    TranslationDebugListItemView, TranslationDebugListView, TranslationDiagnosticsView,
+    ActionLinkView, ArtifactDisplayItemView, ArtifactDownloadQuery, ArtifactLinksView,
+    BookSummaryView, GlossaryUsageSummaryView, InvocationSummaryView, JobActionsView,
+    JobArtifactItemView, JobArtifactManifestView, JobContractsView, JobDetailView,
+    JobEventListView, JobEventRecord, JobFailureDiagnosticView, JobLinksView,
+    JobListInvocationSummaryView, JobListItemView, JobListView, JobProgressView,
+    JobStageContractArtifactView, JobStageContractView, JobSubmissionView, JobTimestampsView,
+    LibraryBatchDeleteInput, LibraryBatchDeleteResultView, LibraryBookDetailView,
+    LibraryBookListItemView, LibraryBookListView, LibraryDeleteQuery, LibraryDeleteResultView,
+    ListJobEventsQuery, ListJobsQuery, ListTranslationItemsQuery, MarkdownArtifactView,
+    MarkdownQuery, MarkdownView, NormalizationSummaryView, OcrJobSummaryView, PagePreviewQuery,
+    ReaderRegionBoxView, ReaderRegionItemView, ReaderRegionsView, ResourceLinkView,
+    TranslationDebugIndexView, TranslationDebugItemView, TranslationDebugListItemView,
+    TranslationDebugListView, TranslationDiagnosticsView,
     TranslationReplayView,
 };

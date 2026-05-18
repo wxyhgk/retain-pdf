@@ -64,6 +64,14 @@ def test_paddle_request_does_not_retry_auth_failures(monkeypatch: pytest.MonkeyP
     assert session.calls == 1
 
 
+def test_paddle_optional_payload_sets_page_limit() -> None:
+    payload = paddle_api.build_optional_payload("PaddleOCR-VL-1.5")
+    assert payload["max_num_input_imgs"] == 999
+
+    structure_payload = paddle_api.build_optional_payload("PP-StructureV3")
+    assert structure_payload["max_num_input_imgs"] == 999
+
+
 def test_mineru_request_retries_429_and_raises_rate_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     session = _Session(_Response(429, headers={"Retry-After": "1"}))
     sleeps: list[float] = []

@@ -12,8 +12,6 @@ sys.path.insert(0, str(REPO_SCRIPTS_ROOT))
 
 from services.rendering.source.cleanup import routes
 from services.rendering.source.cleanup import standard
-from services.rendering.source.cleanup import text_layer
-from services.rendering.source.cleanup import visual_cover
 
 
 class _FakePage:
@@ -248,7 +246,7 @@ def test_apply_redaction_route_cover_only_defaults_to_visual_cover(monkeypatch) 
     covered_rects: list[fitz.Rect] = []
 
     monkeypatch.setattr(
-        visual_cover,
+        routes,
         "draw_flat_white_covers",
         lambda _page, rects: covered_rects.extend(rects),
     )
@@ -270,7 +268,7 @@ def test_apply_redaction_route_legacy_visual_and_text_removes_text_layer(monkeyp
     covered_rects: list[fitz.Rect] = []
 
     monkeypatch.setattr(
-        visual_cover,
+        routes,
         "draw_white_covers",
         lambda _page, rects: covered_rects.extend(rects),
     )
@@ -297,7 +295,7 @@ def test_apply_redaction_route_accepts_stable_strategy_names(monkeypatch) -> Non
     covered_rects: list[fitz.Rect] = []
 
     monkeypatch.setattr(
-        visual_cover,
+        routes,
         "draw_white_covers",
         lambda _page, rects: covered_rects.extend(rects),
     )
@@ -505,8 +503,8 @@ def test_apply_image_page_redaction_never_redacts_pixels_or_line_art(monkeypatch
     prepared: list[fitz.Rect] = []
     applied: list[list[fitz.Rect]] = []
 
-    monkeypatch.setattr(text_layer, "prepare_background_covers", lambda _page, rects: prepared.extend(rects) or ["cover"])
-    monkeypatch.setattr(text_layer, "apply_prepared_background_covers", lambda _page, covers: applied.append(covers))
+    monkeypatch.setattr(routes, "prepare_background_covers", lambda _page, rects: prepared.extend(rects) or ["cover"])
+    monkeypatch.setattr(routes, "apply_prepared_background_covers", lambda _page, covers: applied.append(covers))
 
     diagnostics = routes.apply_image_page_redaction(page, valid_items)
 
@@ -529,7 +527,7 @@ def test_apply_vector_heavy_redaction_never_redacts_pixels_or_line_art(monkeypat
     valid_items = [(rect, {"item_id": "p010-b002"}, "中文")]
     covered_rects: list[fitz.Rect] = []
 
-    monkeypatch.setattr(text_layer, "draw_white_covers", lambda _page, rects: covered_rects.extend(rects))
+    monkeypatch.setattr(routes, "draw_white_covers", lambda _page, rects: covered_rects.extend(rects))
 
     diagnostics = routes.apply_vector_heavy_redaction(page, valid_items)
 

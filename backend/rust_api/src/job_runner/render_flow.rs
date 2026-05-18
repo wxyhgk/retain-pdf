@@ -5,8 +5,9 @@ use crate::models::{
     job_stage_detail, job_stage_str, now_iso, JobArtifacts, JobRuntimeState, JobStage,
     JobStatusKind,
 };
-use crate::storage_paths::{build_job_paths, resolve_data_path};
+use crate::storage_paths::build_job_paths;
 
+use super::stage_contract::translation_ready_inputs_for_render;
 use super::{
     attach_job_paths, build_render_only_command, clear_job_failure, execute_process_job,
     sync_runtime_state, ProcessRuntimeDeps,
@@ -31,39 +32,24 @@ pub(super) async fn run_render_job_from_artifacts(
         .as_ref()
         .ok_or_else(|| anyhow!("artifact source job has no artifacts: {source_job_id}"))?;
     let translation_outputs = source_artifacts.translation_outputs();
-    let source_pdf_path = translation_outputs
-        .source_pdf
-        .ok_or_else(|| anyhow!("artifact source job is missing source_pdf: {source_job_id}"))
-        .and_then(|raw| resolve_data_path(&deps.config.data_root, raw))?;
-    let translations_dir = translation_outputs
-        .translations_dir
-        .ok_or_else(|| anyhow!("artifact source job is missing translations_dir: {source_job_id}"))
-        .and_then(|raw| resolve_data_path(&deps.config.data_root, raw))?;
-    if !source_pdf_path.exists() {
-        return Err(anyhow!(
-            "source_pdf not found for artifact job {source_job_id}: {}",
-            source_pdf_path.display()
-        ));
-    }
-    if !translations_dir.exists() {
-        return Err(anyhow!(
-            "translations_dir not found for artifact job {source_job_id}: {}",
-            translations_dir.display()
-        ));
-    }
+    let render_inputs = translation_ready_inputs_for_render(
+        source_artifacts,
+        &deps.persist.data_root,
+        &source_job_id,
+    )?;
 
-    let job_paths = build_job_paths(&deps.config.output_root, &job.job_id)?;
+    let job_paths = build_job_paths(&deps.persist.output_root, &job.job_id)?;
     attach_job_paths(&mut job, &job_paths);
     let artifacts = job.artifacts.get_or_insert_with(JobArtifacts::default);
     artifacts.copy_translation_inputs_from(source_artifacts);
     artifacts.translations_dir = translation_outputs.translations_dir.map(str::to_string);
 
     job.command = build_render_only_command(
-        deps.config.as_ref(),
+        &deps.worker_command_runtime(),
         &job.request_payload,
         &job_paths,
-        &source_pdf_path,
-        &translations_dir,
+        &render_inputs.source_pdf_path,
+        &render_inputs.translations_dir,
     );
     job.status = JobStatusKind::Running;
     job.started_at = Some(now_iso());
@@ -74,8 +60,8 @@ pub(super) async fn run_render_job_from_artifacts(
     sync_runtime_state(&mut job);
     persist_runtime_job_with_resources(
         deps.db.as_ref(),
-        &deps.config.data_root,
-        &deps.config.output_root,
+        &deps.persist.data_root,
+        &deps.persist.output_root,
         &job,
     )?;
 

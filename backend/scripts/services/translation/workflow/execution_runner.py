@@ -60,6 +60,7 @@ def run_translation_execution_plan(
                         start_page=plan.start,
                         end_page=plan.stop,
                         pdf_compress_dpi=request.render_prewarm_pdf_compress_dpi,
+                        source_cleanup_strategy=request.render_prewarm_source_cleanup_strategy,
                     )
                 )
                 if request.source_pdf_path is not None

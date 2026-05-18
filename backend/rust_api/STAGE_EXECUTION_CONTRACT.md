@@ -36,17 +36,19 @@
 
 当前运行链分成 4 类：
 
-1. `provider`
+1. OCR provider transport
 2. `normalize`
 3. `translate`
 4. `render`
 
 对应正式 spec：
 
-- `provider.stage.v1`
 - `normalize.stage.v1`
 - `translate.stage.v1`
 - `render.stage.v1`
+
+`provider.stage.v1` 仍保留给 legacy/local `run_provider_case.py` wrapper；当前生产主链的 OCR provider
+transport 由 Rust `ocr_flow` 直接编排，然后只把 normalize 交给 Python worker。
 
 ## 3. workflow 到 stage chain 的映射
 
@@ -62,6 +64,8 @@ parent job
   -> translate
   -> render
 ```
+
+这里的 provider transport 是 Rust 运行时逻辑，不是 `run_provider_case.py`。
 
 入口代码：
 
@@ -159,9 +163,9 @@ provider transport
 
 文件：
 
-- [job_command_factory.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/job_command_factory.rs)
-- [job_command_factory/stage_specs.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/job_command_factory/stage_specs.rs)
-- [job_command_factory/entrypoints.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/job_command_factory/entrypoints.rs)
+- [worker_command.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/worker_command.rs)
+- [worker_command/stage_specs.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/worker_command/stage_specs.rs)
+- [worker_command/entrypoints.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/worker_command/entrypoints.rs)
 
 职责：
 
@@ -345,6 +349,23 @@ Python worker 通过 stdout 回传运行线索。
 
 - stage 切换时，尽量通过 artifacts 传递下游输入
 - 不要让下游重新猜路径
+- Rust 侧 readiness 判断集中在：
+  - [stage_contract.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/stage_contract.rs)
+  - [process_contract.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_contract.rs)
+- `stage_contract.rs` 决定跨 stage 是否可以继续：
+  - OCR -> translate 需要 `source_pdf`、`normalized_document_json`
+  - translate -> render 需要 `source_pdf`、`translations_dir`、`translation-manifest.json`
+- `process_contract.rs` 决定 Python worker 成功退出后是否真的成功：
+  - normalize worker 需要 `normalized_document_json`、`normalization_report_json`
+  - translate worker 需要 `translations_dir`、`translation-manifest.json`、`summary`
+  - render worker 需要 `output_pdf`、`summary`
+- job detail API 会通过 `data.contracts` 暴露这些 readiness 检查，供前端展示和调试。
+- job events API 会在失败态 `failure_classified` / `job_terminal` 事件的 `payload.contracts`
+  中附带同一份 readiness 结构，避免前端在失败展示时额外请求 detail。
+- Python worker 发布 artifact 时应优先输出结构化 stdout JSON：
+  `{"event_type":"artifact_published","payload":{"artifact_key":"...","path":"..."}}`。
+  Rust `stdout_parser` 会消费该结构化事件并更新 `JobArtifacts`；旧的 `xxx: path`
+  标签仍保留为兼容路径。
 
 ## 10. 团队协作红线
 

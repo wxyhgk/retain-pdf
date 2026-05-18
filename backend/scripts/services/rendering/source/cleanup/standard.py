@@ -4,33 +4,23 @@ from typing import TYPE_CHECKING
 
 import fitz
 
-from services.rendering.layout.inline_content.complexity import item_has_complex_inline_math
-from services.rendering.source.cleanup.analysis import collect_page_drawing_rects
-from services.rendering.source.cleanup.analysis import item_removable_text_rects
-from services.rendering.source.cleanup.analysis import page_should_use_cover_only
-from services.rendering.source.cleanup.fill import draw_white_covers
-from services.rendering.source.cleanup.fill import resolved_fill_color
-from services.rendering.source.cleanup.ops import cover_rects_from_valid_items
-from services.rendering.source.cleanup.ops import merge_rects
-from services.rendering.source.cleanup.ops import new_redaction_diagnostics
-from services.rendering.source.cleanup.ops import remove_text_under_rects
+from services.rendering.source.background.fill import draw_white_covers
+from services.rendering.source.background.fill import resolved_fill_color
+from services.rendering.source.cleanup.diagnostics import new_redaction_diagnostics
+from services.rendering.source.cleanup.standard_execution import apply_page_cover_text_cleanup
+from services.rendering.source.cleanup.standard_execution import apply_redaction_annotations
+from services.rendering.source.cleanup.standard_policy import should_force_bbox_redaction
+from services.rendering.source.cleanup.standard_policy import should_force_visual_cover
+from services.rendering.source.cleanup.standard_policy import should_use_fast_page_cover_for_removable_counts
+from services.rendering.source.cleanup.standard_thresholds import ITEM_REMOVABLE_RECTS_FAST_COVER_THRESHOLD
+from services.rendering.source.cleanup.text_matching import item_removable_text_rects
+from services.rendering.source.rects import merge_rects
+from services.rendering.source.text_redaction import remove_text_under_rects_with_pymupdf_redaction
+from services.rendering.source.vector_profile import collect_page_drawing_rects
+from services.rendering.source.vector_profile import page_should_use_cover_only
 
 if TYPE_CHECKING:
-    from services.rendering.source.cleanup.plan import RedactionPlan
-
-
-ITEM_REMOVABLE_RECTS_FAST_COVER_THRESHOLD = 24
-PAGE_REMOVABLE_RECTS_FAST_COVER_THRESHOLD = 180
-PAGE_AVG_REMOVABLE_RECTS_FAST_COVER_THRESHOLD = 24.0
-PAGE_ITEM_REMOVABLE_RECTS_FAST_COVER_COUNT = 8
-
-
-def should_force_bbox_redaction(item: dict) -> bool:
-    return bool(item.get("continuation_group"))
-
-
-def should_force_visual_cover(item: dict) -> bool:
-    return item_has_complex_inline_math(item)
+    from services.rendering.source.cleanup.plan_types import RedactionPlan
 
 
 def apply_standard_redaction(
@@ -44,13 +34,15 @@ def apply_standard_redaction(
     diagnostics["strategy"] = "text_layer_only"
     drawing_rects = plan.drawing_rects if plan is not None else collect_page_drawing_rects(page)
     if fill_background is None and page_should_use_cover_only(drawing_rects):
-        cover_rects = cover_rects_from_valid_items(valid_items)
-        draw_white_covers(page, cover_rects)
-        remove_text_under_rects(page, cover_rects)
-        diagnostics["cover_rects"] = len(cover_rects)
-        diagnostics["fast_page_cover_only"] = True
-        diagnostics["route"] = "cover_only_page"
-        return diagnostics
+        return apply_page_cover_text_cleanup(
+            page,
+            valid_items,
+            diagnostics,
+            route="cover_only_page",
+            reason="cover_only_page_text_cleanup",
+            draw_covers=draw_white_covers,
+            remove_text=remove_text_under_rects_with_pymupdf_redaction,
+        )
 
     redactions: list[tuple[fitz.Rect, tuple[float, float, float] | None]] = []
     cover_rects: list[fitz.Rect] = []
@@ -85,34 +77,26 @@ def apply_standard_redaction(
         fill = (1, 1, 1) if fill_background else None
         redactions.append((rect, fill))
 
-    if fill_background is None and removable_counts:
-        total_raw_rects = sum(removable_counts)
-        avg_raw_rects = total_raw_rects / max(len(removable_counts), 1)
-        if (
-            total_raw_rects >= PAGE_REMOVABLE_RECTS_FAST_COVER_THRESHOLD
-            or avg_raw_rects >= PAGE_AVG_REMOVABLE_RECTS_FAST_COVER_THRESHOLD
-            or len([count for count in removable_counts if count >= ITEM_REMOVABLE_RECTS_FAST_COVER_THRESHOLD])
-            >= PAGE_ITEM_REMOVABLE_RECTS_FAST_COVER_COUNT
-        ):
-            page_cover_rects = cover_rects_from_valid_items(valid_items)
-            draw_white_covers(page, page_cover_rects)
-            remove_text_under_rects(page, page_cover_rects)
-            diagnostics["cover_rects"] = len(page_cover_rects)
-            diagnostics["fast_page_cover_only"] = True
-            diagnostics["route"] = "fast_page_cover_only"
-            return diagnostics
+    if fill_background is None and should_use_fast_page_cover_for_removable_counts(removable_counts):
+        return apply_page_cover_text_cleanup(
+            page,
+            valid_items,
+            diagnostics,
+            route="fast_page_cover_only",
+            reason="fast_page_cover_only_text_cleanup",
+            draw_covers=draw_white_covers,
+            remove_text=remove_text_under_rects_with_pymupdf_redaction,
+        )
 
     merged_cover_rects = merge_rects(cover_rects)
     diagnostics["cover_rects"] = len(merged_cover_rects)
     draw_white_covers(page, merged_cover_rects)
 
-    for rect, fill in redactions:
-        page.add_redact_annot(rect, fill=resolved_fill_color(page, rect, fill))
-    if redactions:
-        page.apply_redactions(
-            images=fitz.PDF_REDACT_IMAGE_NONE,
-            graphics=fitz.PDF_REDACT_LINE_ART_NONE,
-            text=fitz.PDF_REDACT_TEXT_REMOVE,
-        )
+    apply_redaction_annotations(
+        page,
+        redactions,
+        diagnostics,
+        resolve_fill=resolved_fill_color,
+    )
     diagnostics["route"] = "standard_redaction"
     return diagnostics

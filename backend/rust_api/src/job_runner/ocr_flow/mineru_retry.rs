@@ -10,9 +10,6 @@ use crate::ocr_provider::mineru::{client::MineruUploadTarget, MineruClient};
 
 use super::save_ocr_job;
 
-const MINERU_POLL_RETRY_LIMIT: usize = 5;
-const MINERU_POLL_RETRY_BASE_DELAY_SECS: u64 = 2;
-
 pub(super) fn mineru_error_chain_text(err: &anyhow::Error) -> String {
     err.chain()
         .map(|cause| cause.to_string().to_ascii_lowercase())
@@ -28,6 +25,7 @@ pub(super) async fn acquire_upload_target_with_retry(
     timeout_secs: u64,
     parent_job_id: Option<&str>,
 ) -> Result<MineruUploadTarget> {
+    let runtime = deps.mineru_runtime();
     let started = Instant::now();
     let mut attempt = 0usize;
     loop {
@@ -45,26 +43,29 @@ pub(super) async fn acquire_upload_target_with_retry(
                 attempt += 1;
                 if !should_retry_mineru_poll_error(&err)
                     || started.elapsed().as_secs() >= timeout_secs
-                    || attempt >= MINERU_POLL_RETRY_LIMIT
+                    || attempt >= runtime.poll_retry_limit
                 {
                     return Err(err);
                 }
-                let delay_secs =
-                    std::cmp::min(MINERU_POLL_RETRY_BASE_DELAY_SECS * attempt as u64, 10);
+                let delay_secs = std::cmp::min(
+                    runtime.poll_retry_base_delay_secs * attempt as u64,
+                    runtime.poll_retry_max_delay_secs,
+                );
                 job.append_log(&format!(
-                    "MinerU apply upload url retry {attempt}/{MINERU_POLL_RETRY_LIMIT}: {file_name} after error: {}",
-                    err
+                    "MinerU apply upload url retry {attempt}/{}: {file_name} after error: {}",
+                    runtime.poll_retry_limit, err
                 ));
                 job.stage = Some("ocr_upload".to_string());
                 job.stage_detail = Some(format!(
-                    "OCR provider 上传地址申请异常，{delay_secs}s 后重试（第 {attempt}/{MINERU_POLL_RETRY_LIMIT} 次）"
+                    "OCR provider 上传地址申请异常，{delay_secs}s 后重试（第 {attempt}/{} 次）",
+                    runtime.poll_retry_limit
                 ));
                 job.updated_at = now_iso();
                 register_job_retry(job);
                 record_custom_runtime_event_with_resources(
                     deps.db.as_ref(),
-                    &deps.config.data_root,
-                    &deps.config.output_root,
+                    &deps.persist.data_root,
+                    &deps.persist.output_root,
                     &job.snapshot(),
                     "warn",
                     "retry_scheduled",
@@ -72,7 +73,7 @@ pub(super) async fn acquire_upload_target_with_retry(
                     Some(serde_json::json!({
                         "scope": "mineru_apply_upload_url",
                         "attempt": attempt,
-                        "max_attempts": MINERU_POLL_RETRY_LIMIT,
+                        "max_attempts": runtime.poll_retry_limit,
                         "delay_seconds": delay_secs,
                         "reason": err.to_string(),
                     })),
@@ -97,6 +98,7 @@ where
     F: FnMut() -> Fut,
     Fut: std::future::Future<Output = Result<T>>,
 {
+    let runtime = deps.mineru_runtime();
     let started = Instant::now();
     let mut attempt = 0usize;
     loop {
@@ -109,7 +111,7 @@ where
                 {
                     return Err(err);
                 }
-                if attempt >= MINERU_POLL_RETRY_LIMIT {
+                if attempt >= runtime.poll_retry_limit {
                     job.append_log(&format!(
                         "MinerU {resource_label} poll degraded after {attempt} retries, keep waiting next cycle: {resource_id} error: {}",
                         err
@@ -121,8 +123,8 @@ where
                     register_job_retry(job);
                     record_custom_runtime_event_with_resources(
                         deps.db.as_ref(),
-                        &deps.config.data_root,
-                        &deps.config.output_root,
+                        &deps.persist.data_root,
+                        &deps.persist.output_root,
                         &job.snapshot(),
                         "warn",
                         "retry_scheduled",
@@ -130,7 +132,7 @@ where
                         Some(serde_json::json!({
                             "scope": format!("mineru_{resource_label}_poll"),
                             "attempt": attempt,
-                            "max_attempts": MINERU_POLL_RETRY_LIMIT,
+                            "max_attempts": runtime.poll_retry_limit,
                             "resource_id": resource_id,
                             "degraded": true,
                             "reason": err.to_string(),
@@ -139,22 +141,26 @@ where
                     save_ocr_job(deps, job, parent_job_id).await?;
                     return Ok(None);
                 }
-                let delay_secs =
-                    std::cmp::min(MINERU_POLL_RETRY_BASE_DELAY_SECS * attempt as u64, 10);
+                let delay_secs = std::cmp::min(
+                    runtime.poll_retry_base_delay_secs * attempt as u64,
+                    runtime.poll_retry_max_delay_secs,
+                );
                 job.append_log(&format!(
-                    "MinerU {resource_label} poll retry {attempt}/{MINERU_POLL_RETRY_LIMIT}: {resource_id} after error: {}",
+                    "MinerU {resource_label} poll retry {attempt}/{}: {resource_id} after error: {}",
+                    runtime.poll_retry_limit,
                     err
                 ));
                 job.stage = Some("mineru_processing".to_string());
                 job.stage_detail = Some(format!(
-                    "OCR provider 状态查询异常，{delay_secs}s 后重试（第 {attempt}/{MINERU_POLL_RETRY_LIMIT} 次）"
+                    "OCR provider 状态查询异常，{delay_secs}s 后重试（第 {attempt}/{} 次）",
+                    runtime.poll_retry_limit
                 ));
                 job.updated_at = now_iso();
                 register_job_retry(job);
                 record_custom_runtime_event_with_resources(
                     deps.db.as_ref(),
-                    &deps.config.data_root,
-                    &deps.config.output_root,
+                    &deps.persist.data_root,
+                    &deps.persist.output_root,
                     &job.snapshot(),
                     "warn",
                     "retry_scheduled",
@@ -162,7 +168,7 @@ where
                     Some(serde_json::json!({
                         "scope": format!("mineru_{resource_label}_poll"),
                         "attempt": attempt,
-                        "max_attempts": MINERU_POLL_RETRY_LIMIT,
+                        "max_attempts": runtime.poll_retry_limit,
                         "delay_seconds": delay_secs,
                         "resource_id": resource_id,
                         "reason": err.to_string(),

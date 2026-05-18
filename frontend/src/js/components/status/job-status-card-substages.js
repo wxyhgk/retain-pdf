@@ -20,12 +20,12 @@ export function translationSubstageKeyForSnapshot(snapshot = null) {
   return "";
 }
 
-export function syncTranslationSubstageStates(container, selectedStageKey, selectedIsCurrent, snapshot) {
+export function syncTranslationSubstageStates(container, selectedStageKey, selectedIsCurrent, snapshot, selectedProgress = null) {
   if (!container) {
     return;
   }
-  const activeKey = selectedIsCurrent && selectedStageKey === "translate"
-    ? translationSubstageKeyForSnapshot(snapshot)
+  const activeKey = selectedStageKey === "translate"
+    ? selectedProgress?.substageKey || (selectedIsCurrent ? translationSubstageKeyForSnapshot(snapshot) : "")
     : "";
   container.classList.toggle("hidden", selectedStageKey !== "translate");
   container.querySelectorAll(".status-substage-step").forEach((step) => {

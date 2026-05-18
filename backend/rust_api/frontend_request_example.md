@@ -4,13 +4,13 @@
 
 配合主文档使用：
 
+- [RetainPDF 后端 API 总入口](/home/wxyhgk/tmp/Code/doc/core/api/index.md)
 - [Rust API README](/home/wxyhgk/tmp/Code/backend/rust_api/README.md)
-- [API_SPEC](/home/wxyhgk/tmp/Code/backend/rust_api/API_SPEC.md)
 - [CURRENT_API_MAP](/home/wxyhgk/tmp/Code/backend/rust_api/CURRENT_API_MAP.md)
 
 文档约定：
 
-- 这份文档是前端接入示例，不是协议规范源头；正式口径以 `API_SPEC.md` 为准
+- 这份文档是前端接入示例，不是协议规范源头；正式口径以 `doc/core/api/index.md` 为准
 - 前端请求示例统一以分组后的正式请求结构为准
 - 旧版扁平字段已经移除，不再接受
 - 前端只需要关心接口契约，不需要依赖 Rust 内部模块名
@@ -114,7 +114,7 @@ Content-Type: application/json
 - 这里的 `workflow: "book"` 才是当前完整主链路的正式协议值
 - OCR provider 选择看 `ocr.provider`，而不是看 `workflow`
 - 如果你只想跑 OCR-only，请走 `POST /api/v1/ocr/jobs`，不要向 `/api/v1/jobs` 传 `workflow="ocr"`
-- 本地人工调用时，优先使用中性入口名 `run_provider_case.py`
+- 本地人工一次性调试时可以使用 legacy wrapper `run_provider_case.py`；生产 API 主链由 Rust job_runner 编排
 - 如果输入已经是 OCR JSON + PDF，优先使用 `run_document_flow.py`
 - 如果只想跑 OCR-only，优先使用 `run_provider_ocr.py`
 

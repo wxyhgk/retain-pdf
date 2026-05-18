@@ -420,6 +420,9 @@ mod tests {
             upload_max_pages: 0,
             api_keys: HashSet::new(),
             max_running_jobs: 1,
+            provider_limits: crate::config::ProviderLimitsConfig::default(),
+            provider_runtime: crate::config::ProviderRuntimeConfig::default(),
+            job_runner: crate::config::JobRunnerConfig::default(),
         });
 
         let db = Arc::new(Db::new(

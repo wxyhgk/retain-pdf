@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Callable
+
+import fitz
 
 from foundation.shared.job_dirs import job_dirs_from_explicit_args
 from services.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_NAME
@@ -16,6 +19,8 @@ from services.ocr_provider.paddle_api import submit_local_file
 from services.ocr_provider.paddle_api import submit_remote_url
 from services.ocr_provider.paddle_markdown import materialize_paddle_markdown_artifacts
 from services.ocr_provider.paddle_normalize import save_normalized_document_for_paddle
+from services.pipeline_shared.events import emit_stage_progress
+from services.pipeline_shared.events import emit_stage_transition
 from services.pipeline_shared.io import save_json
 
 DownloadSourcePdfFn = Callable[[str, Path], Path]
@@ -29,6 +34,69 @@ SaveNormalizedFn = Callable[..., None]
 SaveJsonFn = Callable[[Path, object], None]
 NormalizeModelNameFn = Callable[[str], str]
 BuildOptionalPayloadFn = Callable[[str], dict]
+
+
+def _pdf_page_count(path: Path) -> int | None:
+    try:
+        with fitz.open(path) as doc:
+            return len(doc)
+    except Exception:
+        return None
+
+
+def _emit_paddle_poll_progress(
+    *,
+    state: str,
+    payload: dict,
+    task_id: str,
+    page_total: int | None,
+) -> None:
+    current = page_total if state == "done" and page_total is not None else None
+    detail = f"Paddle 正在解析文件，共 {page_total} 页" if page_total else "Paddle 正在解析文件"
+    if state == "done" and page_total:
+        detail = f"Paddle 解析完成，共 {page_total} 页"
+    emit_stage_progress(
+        stage="ocr_processing",
+        message=detail,
+        stage_detail=detail,
+        provider="paddle",
+        provider_stage="provider_processing",
+        progress_current=current,
+        progress_total=page_total,
+        payload={
+            "substage": "provider_processing",
+            "provider_task_id": task_id,
+            "provider_state": state,
+            "provider_log_id": str(payload.get("logId", "") or "").strip(),
+        },
+    )
+
+
+def _poll_until_complete_with_optional_progress(
+    poll_until_complete: PollFn,
+    *,
+    token: str,
+    job_id: str,
+    poll_interval: int,
+    poll_timeout: int,
+    base_url: str,
+    progress_callback: Callable[[str, dict], None],
+) -> tuple[dict, str]:
+    kwargs = {
+        "token": token,
+        "job_id": job_id,
+        "poll_interval": poll_interval,
+        "poll_timeout": poll_timeout,
+        "base_url": base_url,
+    }
+    signature = inspect.signature(poll_until_complete)
+    accepts_kwargs = any(
+        parameter.kind == inspect.Parameter.VAR_KEYWORD
+        for parameter in signature.parameters.values()
+    )
+    if "progress_callback" in signature.parameters or accepts_kwargs:
+        kwargs["progress_callback"] = progress_callback
+    return poll_until_complete(**kwargs)
 
 
 def run_paddle_to_job_dir(
@@ -79,12 +147,34 @@ def run_paddle_to_job_dir(
     print(f"task_id: {task_id}", flush=True)
     if trace_id:
         print(f"trace_id: {trace_id}", flush=True)
-    _, jsonl_url = poll_until_complete(
+    page_total = _pdf_page_count(source_pdf_path)
+    if page_total:
+        emit_stage_transition(
+            stage="ocr_processing",
+            message=f"OCR 正在解析，共 {page_total} 页",
+            stage_detail=f"OCR 正在解析，共 {page_total} 页",
+            provider="paddle",
+            provider_stage="provider_processing",
+            progress_current=None,
+            progress_total=page_total,
+            payload={
+                "substage": "provider_processing",
+                "provider_task_id": task_id,
+            },
+        )
+    _, jsonl_url = _poll_until_complete_with_optional_progress(
+        poll_until_complete,
         token=paddle_token,
         job_id=task_id,
         poll_interval=args.poll_interval,
         poll_timeout=args.poll_timeout,
         base_url=base_url,
+        progress_callback=lambda state, payload: _emit_paddle_poll_progress(
+            state=state,
+            payload=payload,
+            task_id=task_id,
+            page_total=page_total,
+        ),
     )
     payload = download_jsonl(jsonl_url=jsonl_url)
     meta = dict(payload.get("_meta") or {})

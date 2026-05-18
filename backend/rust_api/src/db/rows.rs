@@ -93,10 +93,19 @@ pub(super) fn row_to_job_event(row: &Row<'_>) -> rusqlite::Result<JobEventRecord
 
 fn user_stage_for_event(stage: Option<&str>) -> Option<String> {
     match stage.map(str::trim).unwrap_or_default() {
-        "ocr_upload" | "ocr_processing" | "ocr_result_ready" | "normalizing" => Some("ocr".to_string()),
-        "translation_prepare" | "translating" | "translation_batches" | "continuation_review" | "page_policies"
-        | "domain_inference" | "garbled_repair" => Some("translate".to_string()),
-        "render_prepare" | "rendering" | "compile" | "overlay" | "saving" => Some("render".to_string()),
+        "ocr_upload" | "ocr_processing" | "ocr_result_ready" | "normalizing" => {
+            Some("ocr".to_string())
+        }
+        "translation_prepare"
+        | "translating"
+        | "translation_batches"
+        | "continuation_review"
+        | "page_policies"
+        | "domain_inference"
+        | "garbled_repair" => Some("translate".to_string()),
+        "render_prepare" | "rendering" | "compile" | "overlay" | "saving" => {
+            Some("render".to_string())
+        }
         "finished" | "done" => Some("done".to_string()),
         _ => None,
     }
@@ -105,8 +114,18 @@ fn user_stage_for_event(stage: Option<&str>) -> Option<String> {
 fn progress_unit_for_event(stage: Option<&str>, event: &str) -> Option<String> {
     let unit = match stage.map(str::trim).unwrap_or_default() {
         "translating" | "translation_batches" => "batch",
-        "ocr_processing" | "continuation_review" | "page_policies" | "domain_inference" | "garbled_repair" | "rendering" => "page",
-        "compile" | "overlay" | "saving" | "render_prepare" | "translation_prepare" | "normalizing" => "step",
+        "ocr_processing"
+        | "continuation_review"
+        | "page_policies"
+        | "domain_inference"
+        | "garbled_repair"
+        | "rendering" => "page",
+        "compile"
+        | "overlay"
+        | "saving"
+        | "render_prepare"
+        | "translation_prepare"
+        | "normalizing" => "step",
         _ if event == "stage_progress" => "step",
         _ => "none",
     };

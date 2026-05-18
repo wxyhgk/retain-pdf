@@ -92,6 +92,7 @@ def run_book_pipeline(
     compile_workers: int | None = None,
     typst_font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
+    source_cleanup_strategy: str = "pikepdf_text_strip",
     invocation: dict | None = None,
 ) -> dict:
     total_started = time.perf_counter()
@@ -123,6 +124,7 @@ def run_book_pipeline(
         render_prewarm_artifacts_dir=output_dir.parent / ARTIFACTS_DIR_NAME,
         render_prewarm_mode=render_mode,
         render_prewarm_pdf_compress_dpi=pdf_compress_dpi,
+        render_prewarm_source_cleanup_strategy=source_cleanup_strategy,
     )
     translate_elapsed = time.perf_counter() - total_started
     diagnostics_path = output_dir.parent / ARTIFACTS_DIR_NAME / "translation_diagnostics.json"
@@ -173,6 +175,7 @@ def run_book_pipeline(
         base_url=base_url,
         typst_font_family=typst_font_family,
         pdf_compress_dpi=pdf_compress_dpi,
+        source_cleanup_strategy=source_cleanup_strategy,
         render_prewarm_manifest_path=prewarm_manifest_path_from_artifacts_dir(output_dir.parent / ARTIFACTS_DIR_NAME),
     )
     save_elapsed = time.perf_counter() - save_started

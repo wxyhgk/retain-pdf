@@ -10,7 +10,7 @@ export function summarizeStageProgressText(payload) {
   const rawCurrent = numberOrNull(payload.progress_current ?? payload.progress?.current);
   const rawTotal = numberOrNull(payload.progress_total ?? payload.progress?.total);
   const textProgress = progressFromText(payload);
-  const current = rawCurrent === 0 && Number.isFinite(textProgress.current) && textProgress.current > 0
+  const current = (rawCurrent === null || (rawCurrent === 0 && Number.isFinite(textProgress.current) && textProgress.current > 0))
     ? textProgress.current
     : rawCurrent;
   const total = rawTotal === null ? textProgress.total : rawTotal;
@@ -20,6 +20,25 @@ export function summarizeStageProgressText(payload) {
   const stageKey = stageKeyOf(payload);
   const subtype = stageSubtypeOf(payload);
   const stage = userStageFor(payload);
+  const progressUnit = firstNonEmpty(payload.progress_unit, payload.payload?.progress_unit).toLowerCase();
+  if (progressUnit === "page") {
+    if (stage.key === "ocr" && current <= 0) {
+      return `OCR 处理中，共 ${total} 页`;
+    }
+    if (stage.key === "render" && current <= 0) {
+      return `渲染准备中，共 ${total} 页`;
+    }
+    return `第 ${current}/${total} 页`;
+  }
+  if (progressUnit === "batch") {
+    return `第 ${current}/${total} 批`;
+  }
+  if (progressUnit === "step") {
+    return `进度 ${current}/${total}`;
+  }
+  if (progressUnit === "percent") {
+    return current > 0 ? `进度 ${current}%` : "处理中";
+  }
   if (subtype === "continuation_review" || subtype === "page_policies") {
     return `第 ${current}/${total} 页`;
   }

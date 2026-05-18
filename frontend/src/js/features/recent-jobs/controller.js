@@ -67,7 +67,7 @@ function isPrimaryRecentJob(item) {
   return true;
 }
 
-async function collectRecentJobsPage(fetchJobList, apiPrefix, startOffset, selectedDate, pageSize) {
+async function collectRecentJobsPage(fetchJobList, fetchLibraryBookList, apiPrefix, startOffset, selectedDate, pageSize) {
   const fetchLimit = Math.max(pageSize, 20);
   const collected = [];
   let latestInvocationSummary = null;
@@ -75,7 +75,9 @@ async function collectRecentJobsPage(fetchJobList, apiPrefix, startOffset, selec
   let hasMore = true;
 
   while (collected.length < pageSize) {
-    const payload = await fetchJobList(apiPrefix, { limit: fetchLimit, offset: nextOffset });
+    const payload = fetchLibraryBookList
+      ? await fetchLibraryBookList(apiPrefix, { limit: fetchLimit, offset: nextOffset })
+      : await fetchJobList(apiPrefix, { limit: fetchLimit, offset: nextOffset });
     latestInvocationSummary = payload?.invocation_summary || latestInvocationSummary;
     const items = Array.isArray(payload?.items) ? payload.items : [];
     if (items.length === 0) {
@@ -127,7 +129,59 @@ async function collectRecentJobsPage(fetchJobList, apiPrefix, startOffset, selec
   };
 }
 
-export function mountRecentJobsFeature({ fetchJobList, apiPrefix, startPolling }) {
+export function mountRecentJobsFeature({ fetchJobList, fetchLibraryBookList, deleteLibraryBook, apiPrefix, startPolling }) {
+  function renderCurrentRecentJobs({ reset = true, invocationSummary = null } = {}) {
+    const { items, hasMore } = getRecentJobsState();
+    renderRecentJobsList({
+      items,
+      allItems: items,
+      invocationSummary,
+      reset,
+      hasMore,
+      onSelect: handleSelectRecentJob,
+      onDelete: handleDeleteRecentJob,
+    });
+  }
+
+  function handleSelectRecentJob(jobId) {
+    const normalizedJobId = `${jobId || ""}`.trim();
+    if (!normalizedJobId) {
+      renderRecentJobsError("该任务缺少 job_id，无法打开。", { reset: false });
+      return;
+    }
+    closeRecentJobsDialog();
+    startPolling(normalizedJobId);
+  }
+
+  async function handleDeleteRecentJob(jobId) {
+    const normalizedJobId = `${jobId || ""}`.trim();
+    if (!normalizedJobId || !deleteLibraryBook) {
+      return;
+    }
+    try {
+      await deleteLibraryBook(apiPrefix, normalizedJobId);
+    } catch (error) {
+      const message = error?.message || String(error);
+      if (message.includes("(409)")) {
+        await deleteLibraryBook(apiPrefix, normalizedJobId, { force: true });
+      } else {
+        renderRecentJobsError(message || "删除失败", { reset: false });
+        return;
+      }
+    }
+    const rootJobId = normalizedJobId.replace(/-ocr$/, "");
+    const nextItems = getRecentJobsState().items.filter((item) => {
+      const itemJobId = `${item?.job_id || ""}`.trim();
+      return itemJobId !== rootJobId && itemJobId !== `${rootJobId}-ocr`;
+    });
+    setRecentJobsItems(nextItems);
+    if (nextItems.length === 0) {
+      renderRecentJobsEmpty("暂无最近任务");
+      return;
+    }
+    renderCurrentRecentJobs({ reset: true });
+  }
+
   async function loadRecentJobs({ reset = false } = {}) {
     if (!hasRecentJobsView()) {
       return;
@@ -142,7 +196,7 @@ export function mountRecentJobsFeature({ fetchJobList, apiPrefix, startPolling }
     try {
       const { date, offset, items: previousItems } = getRecentJobsState();
       const selectedDate = `${date || ""}`.trim();
-      const pageSize = 5;
+      const pageSize = 24;
       const {
         collected,
         hasMore,
@@ -150,6 +204,7 @@ export function mountRecentJobsFeature({ fetchJobList, apiPrefix, startPolling }
         nextOffset,
       } = await collectRecentJobsPage(
         fetchJobList,
+        fetchLibraryBookList,
         apiPrefix,
         reset ? 0 : offset,
         selectedDate,
@@ -178,15 +233,8 @@ export function mountRecentJobsFeature({ fetchJobList, apiPrefix, startPolling }
         invocationSummary: latestInvocationSummary,
         reset,
         hasMore,
-        onSelect(jobId) {
-          const normalizedJobId = `${jobId || ""}`.trim();
-          if (!normalizedJobId) {
-            renderRecentJobsError("该任务缺少 job_id，无法打开。", { reset: false });
-            return;
-          }
-          closeRecentJobsDialog();
-          startPolling(normalizedJobId);
-        },
+        onSelect: handleSelectRecentJob,
+        onDelete: handleDeleteRecentJob,
       });
     } catch (err) {
       if (!reset) {

@@ -268,6 +268,37 @@ def test_direct_typst_passthrough_keeps_existing_inline_math_latex_shape() -> No
     assert markdown.startswith(r"$\mathbf{f}_{\alpha}^{IJ}(\mathbf{R})$ 是理解")
 
 
+def test_direct_typst_passthrough_separates_adjacent_inline_math_blocks() -> None:
+    markdown = build_direct_typst_passthrough_text(
+        r"该阻尼函数相关。$^{86}$$a_{n}$ 是调整后的全局参数。"
+    )
+    assert r"$^{86}$ $a_{n}$ 是调整后的全局参数。" in markdown
+    assert "$$a" not in markdown
+
+
+def test_direct_typst_passthrough_wraps_parenthesized_inline_math_boundary() -> None:
+    markdown = build_direct_typst_passthrough_text(
+        r"而 $R_{0}^{AB} = 0.5$ ($R_{0}^{A'} + R_{0}^{B'}$) 决定阻尼。"
+    )
+    assert r"而 $R_{0}^{AB} = 0.5$ $(R_{0}^{A'} + R_{0}^{B'})$ 决定阻尼。" == markdown
+
+
+def test_direct_typst_passthrough_does_not_wrap_cjk_parenthesized_inline_math() -> None:
+    markdown = build_direct_typst_passthrough_text(
+        r"$ w_j $ 是积分权重，由网格点 $j$（$ j \in [1, 23] $）之间的梯形分割得到。"
+    )
+    assert r"$j$$（" not in markdown
+    assert r"$w_j$ 是积分权重，由网格点 $j$（$j \in [1, 23]$）之间的梯形分割得到。" == markdown
+
+
+def test_direct_typst_passthrough_normalizes_display_math_delimiters() -> None:
+    markdown = build_direct_typst_passthrough_text(
+        r"$$ \delta E _{ \mathrm{c} }^{ \mathrm{MP2} }/ \delta\phi_{k}^{\dagger}(\boldsymbol{r}) $$ 的衰减速度"
+    )
+    assert "$ $" not in markdown
+    assert r"$\delta E _{ \mathrm{c} }^{ \mathrm{MP2} } / \delta\phi_{k}^{\dagger}(\boldsymbol{r})$ 的衰减速度" == markdown
+
+
 def test_convert_latexish_to_typst_splits_attached_angle_command() -> None:
     assert convert_latexish_to_typst(r"\angleCSH") == "angle CSH"
 
@@ -285,6 +316,11 @@ def test_direct_typst_sanitizer_keeps_only_inline_math_compat_cleanup() -> None:
 def test_direct_typst_sanitizer_normalizes_double_backslash_math_commands() -> None:
     markdown = sanitize_direct_typst_inline_math(r"浓度 $2.5~\\mu\\text{g}~\\text{ml}^{-1}$ 保持")
     assert markdown == r"浓度 $2.5~\mu\text{g}~\text{ml}^{-1}$ 保持"
+
+
+def test_direct_typst_sanitizer_rewrites_unsupported_circled_command() -> None:
+    markdown = sanitize_direct_typst_inline_math(r"路径 $\circled{\times}$ 与 $\circled{A}$ 保持")
+    assert markdown == r"路径 $\otimes$ 与 $A$ 保持"
 
 
 def test_direct_typst_boundary_module_matches_legacy_passthrough_behavior() -> None:
@@ -338,6 +374,8 @@ def test_formula_normalizer_repairs_low_risk_ocr_noise() -> None:
     assert normalize_formula_for_latex_math(r"1 . 2 7 ~ \mathrm { e V } .") == r"1.27 \mathrm{eV}"
     assert normalize_formula_for_latex_math(r"\mathrm { C H } _ { 4 } ,") == r"\mathrm{CH}_{4}"
     assert normalize_formula_for_latex_math(r"\langle A \rrangle") == r"\langle A \rangle"
+    assert normalize_formula_for_latex_math(r"\circled{\times}") == r"\otimes"
+    assert normalize_formula_for_latex_math(r"\circled{A}") == "A"
 
 
 def test_formula_normalizer_drops_style_noise_without_guessing_structure() -> None:

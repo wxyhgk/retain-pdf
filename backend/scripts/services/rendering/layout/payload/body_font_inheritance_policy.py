@@ -17,12 +17,10 @@ from services.translation.item_reader import item_block_kind
 
 SHORT_BODY_INHERIT_MIN_ANCHORS = 2
 SHORT_BODY_INHERIT_MAX_WIDTH_RATIO = 1.18
-SHORT_BODY_INHERIT_DENSITY_LIMIT = 1.18
 SHORT_BODY_INHERIT_FONT_FLOOR_DELTA_PT = 0.75
 LOW_HEIGHT_BODY_INHERIT_MAX_HEIGHT_RATIO = 0.72
 LOW_HEIGHT_BODY_INHERIT_MAX_LINES = 8
 LOW_HEIGHT_BODY_INHERIT_DENSITY_LIMIT = 1.08
-LOW_HEIGHT_BODY_INHERIT_TARGET_BONUS_PT = 0.28
 
 
 def inherit_short_body_fonts(
@@ -51,28 +49,7 @@ def inherit_short_body_fonts(
             max(7.6, min(payload["font_size_pt"], target_font, page_anchor_font - SHORT_BODY_INHERIT_FONT_FLOOR_DELTA_PT)),
             2,
         )
-        if target_font <= payload["font_size_pt"] + 0.1:
-            payload["page_body_font_size_pt"] = round(page_anchor_font, 2)
-            continue
-        low = payload["font_size_pt"]
-        high = target_font
-        best = low
-        for _ in range(8):
-            mid = (low + high) / 2.0
-            if payload_density(payload, font_size_pt=mid) <= SHORT_BODY_INHERIT_DENSITY_LIMIT:
-                best = mid
-                low = mid
-            else:
-                high = mid
-        if best <= payload["font_size_pt"] + 0.08:
-            continue
-        payload["font_size_pt"] = round(best, 2)
         payload["page_body_font_size_pt"] = round(page_anchor_font, 2)
-        payload["_short_body_inherited_font_floor_pt"] = round(
-            max(7.6, min(payload["font_size_pt"], target_font, page_anchor_font - SHORT_BODY_INHERIT_FONT_FLOOR_DELTA_PT)),
-            2,
-        )
-        payload["prefer_typst_fit"] = True
 
 
 def inherit_low_height_body_fonts(
@@ -109,28 +86,6 @@ def inherit_low_height_body_fonts(
         height_ref = max(page_tall_height, local_height, 1.0)
         if payload_height(payload) > height_ref * LOW_HEIGHT_BODY_INHERIT_MAX_HEIGHT_RATIO:
             continue
-        target_font = median(float(anchor["font_size_pt"]) for anchor in local_anchors)
-        target_font = min(target_font + LOW_HEIGHT_BODY_INHERIT_TARGET_BONUS_PT, max(float(anchor["font_size_pt"]) for anchor in local_anchors))
-        if target_font <= float(payload["font_size_pt"]) + 0.08:
-            continue
-        previous_font = float(payload["font_size_pt"])
-        best = previous_font
-        low = previous_font
-        high = target_font
-        for _ in range(9):
-            mid = (low + high) / 2.0
-            if payload_density(payload, font_size_pt=mid) <= LOW_HEIGHT_BODY_INHERIT_DENSITY_LIMIT:
-                best = mid
-                low = mid
-            else:
-                high = mid
-        if best <= previous_font + 0.08:
-            continue
-        payload["_low_height_body_inherited_font_pt"] = round(best, 2)
-        payload["dense_small_box"] = False
-        payload["heavy_dense_small_box"] = False
-        payload["prefer_typst_fit"] = False
-        payload["font_size_pt"] = round(best, 2)
         payload["page_body_font_size_pt"] = round(median(float(anchor["font_size_pt"]) for anchor in tall_anchors), 2)
 
 

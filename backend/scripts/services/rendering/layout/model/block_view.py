@@ -27,6 +27,7 @@ def layout_block_to_render_block(block: RenderLayoutBlock) -> RenderBlock:
         fit_shift_up_pt=block.fit_shift_up_pt,
         first_line_indent_pt=block.first_line_indent_pt,
         justify_text=block.justify_text,
+        use_cover_fill=block.use_cover_fill,
         skip_reason=block.skip_reason,
     )
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from services.rendering.layout.payload.render_item import get_render_inner_bbox
 from services.rendering.layout.typography.geometry import inner_bbox
 
 VERTICAL_COLLISION_GAP_PT = 0.9
@@ -17,7 +18,7 @@ TYPST_BINARY_SOURCE_HEIGHT_TRIGGER = 1.01
 
 
 def fit_inner_bbox(item: dict) -> list[float]:
-    bbox = item.get("_render_inner_bbox")
-    if isinstance(bbox, list) and len(bbox) == 4:
+    bbox = get_render_inner_bbox(item)
+    if bbox is not None:
         return bbox
     return inner_bbox(item)

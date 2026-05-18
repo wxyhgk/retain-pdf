@@ -1,8 +1,12 @@
+use std::path::Path;
+
 use crate::job_failure::classify_job_failure;
 use crate::models::{
     redact_json_value, redact_optional_text, redact_text, sensitive_values, JobEventRecord,
     JobFailureInfo, JobSnapshot,
 };
+
+use super::contracts::build_job_contracts_view;
 
 pub fn redacted_error(job: &JobSnapshot) -> Option<String> {
     let secrets = sensitive_values(&job.request_payload);
@@ -17,7 +21,11 @@ pub fn redacted_log_tail(job: &JobSnapshot) -> Vec<String> {
         .collect()
 }
 
-pub fn redact_job_events(job: &JobSnapshot, items: Vec<JobEventRecord>) -> Vec<JobEventRecord> {
+pub fn redact_job_events(
+    job: &JobSnapshot,
+    data_root: &Path,
+    items: Vec<JobEventRecord>,
+) -> Vec<JobEventRecord> {
     let secrets = sensitive_values(&job.request_payload);
     let resolved_failure = job
         .failure
@@ -28,6 +36,7 @@ pub fn redact_job_events(job: &JobSnapshot, items: Vec<JobEventRecord>) -> Vec<J
         .into_iter()
         .map(|mut item| {
             normalize_failure_event(&mut item, resolved_failure.as_ref());
+            attach_contracts_to_failure_event(job, data_root, &mut item);
             item.message = redact_text(&item.message, &secrets);
             item.stage_detail = item
                 .stage_detail
@@ -40,6 +49,51 @@ pub fn redact_job_events(job: &JobSnapshot, items: Vec<JobEventRecord>) -> Vec<J
             item
         })
         .collect()
+}
+
+fn attach_contracts_to_failure_event(
+    job: &JobSnapshot,
+    data_root: &Path,
+    item: &mut JobEventRecord,
+) {
+    if !should_attach_contracts(item) {
+        return;
+    }
+    let contracts = build_job_contracts_view(job, data_root);
+    let Ok(contracts_value) = serde_json::to_value(contracts) else {
+        return;
+    };
+    let mut payload = item
+        .payload
+        .take()
+        .unwrap_or_else(|| serde_json::Value::Object(Default::default()));
+    if let Some(object) = payload.as_object_mut() {
+        object
+            .entry("contracts".to_string())
+            .or_insert(contracts_value);
+        item.payload = Some(payload);
+    } else {
+        item.payload = Some(serde_json::json!({
+            "value": payload,
+            "contracts": contracts_value,
+        }));
+    }
+}
+
+fn should_attach_contracts(item: &JobEventRecord) -> bool {
+    let event = item.event.as_str();
+    let event_type = item.event_type.as_deref();
+    let is_failure_event =
+        matches!(event, "failure_classified") || matches!(event_type, Some("failure_classified"));
+    let is_failed_terminal = (matches!(event, "job_terminal")
+        || matches!(event_type, Some("job_terminal")))
+        && item
+            .payload
+            .as_ref()
+            .and_then(|payload| payload.get("status"))
+            .and_then(|status| status.as_str())
+            .is_some_and(|status| status == "failed");
+    is_failure_event || is_failed_terminal
 }
 
 fn normalize_failure_event(item: &mut JobEventRecord, resolved_failure: Option<&JobFailureInfo>) {

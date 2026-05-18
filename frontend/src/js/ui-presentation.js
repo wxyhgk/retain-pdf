@@ -59,6 +59,13 @@ function keepDisplayedStageForward(stageKey, jobId = "") {
   }
   const previous = `${state.currentJobDisplayedStageKey || ""}`.trim();
   const next = `${stageKey || ""}`.trim();
+  if (next === "failed" || next === "canceled") {
+    state.currentJobDisplayedStageKey = next;
+    return {
+      stageKey: next,
+      keptPrevious: false,
+    };
+  }
   if (!previous || stageRank(next) >= stageRank(previous)) {
     state.currentJobDisplayedStageKey = next;
     return {
@@ -235,7 +242,8 @@ export function renderJob(payload, eventsPayload = null, manifestPayload = null)
   setTextView("query-job-finished-at", formatJobFinishedAt(job));
   setInputValueView("job-id-input", job.job_id || "");
   setStatus(job.status || "idle");
-  setTextView("error-box", summarizePublicError(job));
+  const publicErrorText = summarizePublicError(job);
+  setTextView("error-box", publicErrorText);
   updateActionButtons(job, manifestPayload);
   const actions = resolveJobActions(job);
   const readerEnabled = isReaderActionEnabled(job, manifestPayload);
@@ -252,6 +260,7 @@ export function renderJob(payload, eventsPayload = null, manifestPayload = null)
       progressPercent: job.progress_percent,
       progressText: stagePresentation.progressText,
       progressIndeterminate: stagePresentation.progressIndeterminate,
+      errorText: publicErrorText === "-" ? "" : publicErrorText,
       stageProgressByKey: collectStageProgressByKey(
         job,
         eventsPayload !== null ? eventsPayload : state.currentJobEvents,

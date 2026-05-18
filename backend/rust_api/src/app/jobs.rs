@@ -29,7 +29,7 @@ pub fn build_jobs_facade_from_state(state: &AppState) -> JobsFacade<'_> {
             spawn_job(build_process_runtime_deps(&runtime_state), job_id)
         })),
     );
-    let snapshot = SnapshotBuildDeps::new(state.db.as_ref(), state.config.as_ref());
+    let snapshot = SnapshotBuildDeps::new(state.db.as_ref(), state.config.job_snapshot_runtime());
     let uploads = UploadStoreDeps::new(
         state.db.as_ref(),
         &state.config.uploads_dir,
@@ -40,16 +40,23 @@ pub fn build_jobs_facade_from_state(state: &AppState) -> JobsFacade<'_> {
     let submit = JobSubmitDeps::new(snapshot, uploads, launcher);
     let control = ControlDeps::new(
         state.db.as_ref(),
+        &state.config.job_runner,
         &state.config.data_root,
         &state.config.output_root,
         &state.canceled_jobs,
     );
-    let replay = ReplayDeps::new(state.config.as_ref(), &state.config.data_root);
+    let replay = ReplayDeps::new(
+        &state.config.project_root,
+        &state.config.scripts_dir,
+        &state.config.python_bin,
+        &state.config.data_root,
+    );
     build_jobs_facade(
         CommandJobsDeps::new(state.db.as_ref(), submit, control),
         QueryJobsDeps::new(
             state.db.as_ref(),
-            state.config.as_ref(),
+            &state.config.data_root,
+            &state.config.downloads_dir,
             &state.downloads_lock,
             replay,
         ),

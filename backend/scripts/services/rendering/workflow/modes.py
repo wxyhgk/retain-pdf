@@ -7,12 +7,11 @@ import fitz
 from services.rendering.legacy.pdf_compress import compress_pdf_images_only
 from services.rendering.document.pdf_ops import save_fast_pdf
 from services.rendering.document.pdf_ops import save_optimized_pdf
+from services.rendering.document.pikepdf_pages import extract_pages_with_pikepdf
 from services.rendering.output.typst.book_renderer import build_book_typst_background_pdf
 from services.rendering.output.typst.book_renderer import build_book_typst_pdf
 from services.rendering.output.typst.book_renderer import build_dual_book_pdf
-from services.rendering.output.typst.overlay_ops import overlay_translated_pages_on_doc
 from services.rendering.workflow.context import RenderExecutionContext
-from services.rendering.document.metadata import copy_toc
 from services.rendering.output.typst.shared import default_typst_temp_root
 
 
@@ -67,37 +66,40 @@ def run_selected_pages_overlay_render(
     translated_pages: dict[int, list[dict]],
     context: RenderExecutionContext,
 ) -> tuple[int, dict[str, object]]:
-    source_doc = fitz.open(source_pdf_path)
-    temp_doc = fitz.open()
-    try:
-        temp_doc.insert_pdf(source_doc, from_page=context.start_page, to_page=context.end_page)
-        copy_toc(source_doc, temp_doc, start_page=context.start_page, end_page=context.end_page)
-        remapped_pages = {
-            page_idx - context.start_page: items
-            for page_idx, items in translated_pages.items()
-        }
-        overlay_diagnostics = overlay_translated_pages_on_doc(
-            temp_doc,
-            remapped_pages,
-            stem="book-overlay",
-            compile_workers=context.compile_workers,
-            api_key=context.api_key,
-            model=context.model,
-            base_url=context.base_url,
-            font_family=context.typst_font_family,
-            temp_root=default_typst_temp_root(context.output_pdf_path),
-            cover_only=False,
-            source_pdf_path=_indent_detection_pdf_path(context, source_pdf_path),
-            first_line_indent_lookup=context.first_line_indent_lookup,
-            effective_inner_bbox_lookup=context.effective_inner_bbox_lookup,
-        )
-        if _should_fast_save(context):
-            save_fast_pdf(temp_doc, context.output_pdf_path)
-        else:
-            save_optimized_pdf(temp_doc, context.output_pdf_path)
-    finally:
-        temp_doc.close()
-        source_doc.close()
+    selected_source_path = default_typst_temp_root(context.output_pdf_path) / f"{context.output_pdf_path.stem}.selected-source.pdf"
+    extract_pages_with_pikepdf(
+        source_pdf_path=source_pdf_path,
+        output_pdf_path=selected_source_path,
+        start_page=context.start_page,
+        end_page=context.end_page,
+    )
+    remapped_pages = {
+        page_idx - context.start_page: items
+        for page_idx, items in translated_pages.items()
+        if context.start_page <= page_idx <= context.end_page
+    }
+    remapped_precleaned_pages = frozenset(
+        page_idx - context.start_page
+        for page_idx in context.source_text_precleaned_page_indices
+        if context.start_page <= page_idx <= context.end_page
+    )
+    overlay_diagnostics = build_book_typst_pdf(
+        source_pdf_path=selected_source_path,
+        output_pdf_path=context.output_pdf_path,
+        translated_pages=remapped_pages,
+        compile_workers=context.compile_workers,
+        api_key=context.api_key,
+        model=context.model,
+        base_url=context.base_url,
+        font_family=context.typst_font_family,
+        cover_only=False,
+        fast_save=_should_fast_save(context),
+        indent_detection_pdf_path=_indent_detection_pdf_path(context, source_pdf_path),
+        first_line_indent_lookup=context.first_line_indent_lookup,
+        effective_inner_bbox_lookup=context.effective_inner_bbox_lookup,
+        source_text_precleaned_page_indices=remapped_precleaned_pages,
+        source_cleanup_strategy=context.source_cleanup_strategy,
+    )
     final_compressed = _compress_final_pdf_if_needed(context, mode="selected_pages_overlay")
     diagnostics = dict(overlay_diagnostics)
     diagnostics["final_image_compressed"] = final_compressed
@@ -124,6 +126,8 @@ def run_overlay_render(
         indent_detection_pdf_path=_indent_detection_pdf_path(context, source_pdf_path),
         first_line_indent_lookup=context.first_line_indent_lookup,
         effective_inner_bbox_lookup=context.effective_inner_bbox_lookup,
+        source_text_precleaned_page_indices=context.source_text_precleaned_page_indices,
+        source_cleanup_strategy=context.source_cleanup_strategy,
     )
     final_compressed = _compress_final_pdf_if_needed(context, mode="overlay")
     diagnostics = dict(overlay_diagnostics)

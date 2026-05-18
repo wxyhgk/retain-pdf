@@ -9,6 +9,8 @@ from foundation.config.layout import INNER_BBOX_DENSE_SHRINK_X
 from foundation.config.layout import INNER_BBOX_DENSE_SHRINK_Y
 from foundation.config.layout import INNER_BBOX_SHRINK_X
 from foundation.config.layout import INNER_BBOX_SHRINK_Y
+from foundation.config.layout import FONT_UNIFY_MODE
+from foundation.config.layout import SOURCE_CLEANUP_STRATEGY
 from foundation.config.layout import apply_layout_tuning as _apply_layout_tuning
 from foundation.config.paths import DATA_DIR
 from foundation.config.paths import OUTPUT_DIR
@@ -30,6 +32,8 @@ def apply_layout_tuning(
     inner_bbox_shrink_y: float | None = None,
     inner_bbox_dense_shrink_x: float | None = None,
     inner_bbox_dense_shrink_y: float | None = None,
+    font_unify_mode: str | None = None,
+    source_cleanup_strategy: str | None = None,
 ) -> None:
     global BODY_FONT_SIZE_FACTOR
     global BODY_LEADING_FACTOR
@@ -37,6 +41,8 @@ def apply_layout_tuning(
     global INNER_BBOX_SHRINK_Y
     global INNER_BBOX_DENSE_SHRINK_X
     global INNER_BBOX_DENSE_SHRINK_Y
+    global FONT_UNIFY_MODE
+    global SOURCE_CLEANUP_STRATEGY
 
     _apply_layout_tuning(
         body_font_size_factor=body_font_size_factor,
@@ -45,6 +51,8 @@ def apply_layout_tuning(
         inner_bbox_shrink_y=inner_bbox_shrink_y,
         inner_bbox_dense_shrink_x=inner_bbox_dense_shrink_x,
         inner_bbox_dense_shrink_y=inner_bbox_dense_shrink_y,
+        font_unify_mode=font_unify_mode,
+        source_cleanup_strategy=source_cleanup_strategy,
     )
 
     from foundation.config import layout as _layout
@@ -55,3 +63,5 @@ def apply_layout_tuning(
     INNER_BBOX_SHRINK_Y = _layout.INNER_BBOX_SHRINK_Y
     INNER_BBOX_DENSE_SHRINK_X = _layout.INNER_BBOX_DENSE_SHRINK_X
     INNER_BBOX_DENSE_SHRINK_Y = _layout.INNER_BBOX_DENSE_SHRINK_Y
+    FONT_UNIFY_MODE = _layout.FONT_UNIFY_MODE
+    SOURCE_CLEANUP_STRATEGY = _layout.SOURCE_CLEANUP_STRATEGY

@@ -87,6 +87,7 @@ def _args_from_spec(spec: TranslateStageSpec) -> SimpleNamespace:
         render_prewarm_artifacts_dir=job_dirs.artifacts_dir,
         render_prewarm_mode=spec.params.render_prewarm_mode,
         render_prewarm_pdf_compress_dpi=spec.params.render_prewarm_pdf_compress_dpi,
+        render_prewarm_source_cleanup_strategy=spec.params.render_prewarm_source_cleanup_strategy,
     )
 
 
@@ -164,6 +165,7 @@ def main() -> None:
                 render_prewarm_artifacts_dir=args.render_prewarm_artifacts_dir,
                 render_prewarm_mode=args.render_prewarm_mode,
                 render_prewarm_pdf_compress_dpi=args.render_prewarm_pdf_compress_dpi,
+                render_prewarm_source_cleanup_strategy=args.render_prewarm_source_cleanup_strategy,
             )
         ).to_mapping()
         elapsed = time.perf_counter() - started

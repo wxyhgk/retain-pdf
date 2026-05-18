@@ -245,6 +245,7 @@ def test_render_stage_spec_loads_and_resolves_paths(tmp_path: Path) -> None:
                     "inner_bbox_shrink_y": 0.0,
                     "inner_bbox_dense_shrink_x": 0.0,
                     "inner_bbox_dense_shrink_y": 0.0,
+                    "font_unify_mode": "off",
                     "model": "deepseek-v4-flash",
                     "base_url": "https://api.deepseek.com/v1",
                     "credential_ref": "",
@@ -616,6 +617,7 @@ def test_stage_spec_loaders_preserve_zero_end_page(tmp_path: Path) -> None:
         "inner_bbox_shrink_y": 0.0,
         "inner_bbox_dense_shrink_x": 0.0,
         "inner_bbox_dense_shrink_y": 0.0,
+        "font_unify_mode": "off",
         "model": "deepseek-chat",
         "base_url": "https://api.deepseek.com/v1",
         "credential_ref": "",
@@ -687,8 +689,11 @@ def test_stage_spec_loaders_preserve_zero_end_page(tmp_path: Path) -> None:
 
     assert TranslateStageSpec.load(translate_path).params.end_page == 0
     assert RenderStageSpec.load(render_path).params.end_page == 0
+    assert RenderStageSpec.load(render_path).params.font_unify_mode == "off"
     assert ProviderStageSpec.load(provider_path).translation.end_page == 0
+    assert ProviderStageSpec.load(provider_path).render.font_unify_mode == "off"
     assert BookStageSpec.load(book_path).translation.end_page == 0
+    assert BookStageSpec.load(book_path).render.font_unify_mode == "off"
 
 
 def test_build_stage_invocation_metadata_is_always_stage_spec() -> None:

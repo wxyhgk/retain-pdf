@@ -5,6 +5,7 @@ import os
 import time
 from pathlib import Path
 from typing import Any
+from typing import Callable
 
 import requests
 
@@ -20,6 +21,7 @@ PADDLE_TOKEN_ENV = "RETAIN_PADDLE_API_TOKEN"
 PADDLE_ENV_FILE = "paddle.env"
 PADDLE_RETRY_ATTEMPTS_ENV = "RETAIN_PADDLE_RETRY_ATTEMPTS"
 PADDLE_RETRY_BACKOFF_ENV = "RETAIN_PADDLE_RETRY_BACKOFF_SECONDS"
+PADDLE_MAX_INPUT_IMAGES = 999
 _SESSION: requests.Session | None = None
 
 
@@ -109,6 +111,7 @@ def build_optional_payload(model: str) -> dict[str, Any]:
     normalized = normalize_model_name(model).lower()
     if "pp-structurev3" in normalized:
         return {
+            "max_num_input_imgs": PADDLE_MAX_INPUT_IMAGES,
             "markdownIgnoreLabels": [
                 "header",
                 "header_image",
@@ -151,6 +154,7 @@ def build_optional_payload(model: str) -> dict[str, Any]:
             "visualize": False,
         }
     return {
+        "max_num_input_imgs": PADDLE_MAX_INPUT_IMAGES,
         "mergeLayoutBlocks": False,
         "markdownIgnoreLabels": [
             "header",
@@ -293,12 +297,15 @@ def poll_until_done(
     poll_interval: int,
     poll_timeout: int,
     base_url: str = "",
+    progress_callback: Callable[[str, dict[str, Any]], None] | None = None,
 ) -> tuple[dict[str, Any], str]:
     started = time.time()
     while True:
         payload = query_job(token=token, job_id=job_id, base_url=base_url)
         state = str(payload.get("state", "") or "").strip()
         print(f"paddle task {job_id}: state={state}", flush=True)
+        if progress_callback is not None:
+            progress_callback(state, payload)
         if state == "done":
             result_url = dict(payload.get("resultUrl") or {})
             jsonl_url = str(result_url.get("jsonUrl", "") or "").strip()

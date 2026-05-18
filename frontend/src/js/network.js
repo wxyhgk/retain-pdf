@@ -149,6 +149,25 @@ export async function fetchJobArtifactsManifest(jobId, apiPrefix) {
   return unwrapEnvelope(payloadJson);
 }
 
+export async function fetchReaderRegions(jobId, apiPrefix) {
+  if (isMockMode()) {
+    void jobId;
+    void apiPrefix;
+    return { items: [] };
+  }
+  const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/reader/regions`, {
+    headers: buildApiHeaders(),
+  });
+  if (!resp.ok) {
+    if (resp.status === 404) {
+      return { items: [] };
+    }
+    throw new Error(`读取阅读区域失败，请稍后重试。(${resp.status})`);
+  }
+  const payloadJson = await resp.json();
+  return unwrapEnvelope(payloadJson);
+}
+
 export async function fetchJobMarkdown(jobId, apiPrefix) {
   if (isMockMode()) {
     void jobId;
@@ -353,6 +372,38 @@ export async function fetchJobList(
   }
   const payloadJson = await resp.json();
   return unwrapEnvelope(payloadJson);
+}
+
+export async function fetchLibraryBookList(apiPrefix, { limit = 40, offset = 0 } = {}) {
+  if (isMockMode()) {
+    return getMockJobList();
+  }
+  const params = new URLSearchParams();
+  params.set("limit", `${limit}`);
+  params.set("offset", `${offset}`);
+  const resp = await fetch(`${buildApiEndpoint(apiPrefix, "library/books")}?${params.toString()}`, {
+    headers: buildApiHeaders(),
+  });
+  if (!resp.ok) {
+    throw new Error(`读取图书馆失败，请稍后重试。(${resp.status})`);
+  }
+  return unwrapEnvelope(await resp.json());
+}
+
+export async function deleteLibraryBook(apiPrefix, jobId, { force = false } = {}) {
+  const normalizedJobId = `${jobId || ""}`.trim().replace(/-ocr$/, "");
+  if (!normalizedJobId) {
+    throw new Error("删除失败: 缺少 job_id");
+  }
+  const params = force ? "?force=true" : "";
+  const resp = await fetch(`${buildApiEndpoint(apiPrefix, `library/books/${encodeURIComponent(normalizedJobId)}`)}${params}`, {
+    method: "DELETE",
+    headers: buildApiHeaders(),
+  });
+  if (!resp.ok) {
+    throw new Error(`删除任务失败，请稍后重试。(${resp.status})`);
+  }
+  return unwrapEnvelope(await resp.json());
 }
 
 export function submitUploadRequest(url, form, onProgress) {

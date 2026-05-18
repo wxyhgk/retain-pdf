@@ -67,16 +67,16 @@ pub fn record_custom_job_event_with_resources(
     message: impl Into<String>,
     payload: Option<Value>,
 ) {
-        let pending = PendingJobEvent {
-            level: level.to_string(),
-            stage: job.stage.clone(),
-            stage_detail: job.stage_detail.clone(),
-            provider: event_provider(job),
-            provider_stage: event_provider_stage(job),
-            user_stage: user_stage_for_event(job.stage.as_deref()),
-            substage: event_provider_stage(job),
-            progress_unit: progress_unit_for_event(job.stage.as_deref(), event),
-            event: event.to_string(),
+    let pending = PendingJobEvent {
+        level: level.to_string(),
+        stage: job.stage.clone(),
+        stage_detail: job.stage_detail.clone(),
+        provider: event_provider(job),
+        provider_stage: event_provider_stage(job),
+        user_stage: user_stage_for_event(job.stage.as_deref()),
+        substage: event_provider_stage(job),
+        progress_unit: progress_unit_for_event(job.stage.as_deref(), event),
+        event: event.to_string(),
         message: message.into(),
         progress_current: job.progress_current,
         progress_total: job.progress_total,
@@ -390,7 +390,10 @@ fn derive_events(previous: Option<&JobSnapshot>, current: &JobSnapshot) -> Vec<P
                     .provider_stage
                     .clone()
                     .or_else(|| event_provider_stage(current)),
-                progress_unit: progress_unit_for_event(current.stage.as_deref(), "failure_classified"),
+                progress_unit: progress_unit_for_event(
+                    current.stage.as_deref(),
+                    "failure_classified",
+                ),
                 event: "failure_classified".to_string(),
                 message: failure.summary.clone(),
                 progress_current: current.progress_current,
@@ -468,10 +471,19 @@ fn event_retry_count(job: &JobSnapshot) -> Option<u32> {
 
 fn user_stage_for_event(stage: Option<&str>) -> Option<String> {
     match stage.map(str::trim).unwrap_or_default() {
-        "ocr_upload" | "ocr_processing" | "ocr_result_ready" | "normalizing" => Some("ocr".to_string()),
-        "translation_prepare" | "translating" | "translation_batches" | "continuation_review" | "page_policies"
-        | "domain_inference" | "garbled_repair" => Some("translate".to_string()),
-        "render_prepare" | "rendering" | "compile" | "overlay" | "saving" => Some("render".to_string()),
+        "ocr_upload" | "ocr_processing" | "ocr_result_ready" | "normalizing" => {
+            Some("ocr".to_string())
+        }
+        "translation_prepare"
+        | "translating"
+        | "translation_batches"
+        | "continuation_review"
+        | "page_policies"
+        | "domain_inference"
+        | "garbled_repair" => Some("translate".to_string()),
+        "render_prepare" | "rendering" | "compile" | "overlay" | "saving" => {
+            Some("render".to_string())
+        }
         "finished" | "done" => Some("done".to_string()),
         _ => None,
     }
@@ -480,8 +492,18 @@ fn user_stage_for_event(stage: Option<&str>) -> Option<String> {
 fn progress_unit_for_event(stage: Option<&str>, event: &str) -> Option<String> {
     let unit = match stage.map(str::trim).unwrap_or_default() {
         "translating" | "translation_batches" => "batch",
-        "ocr_processing" | "continuation_review" | "page_policies" | "domain_inference" | "garbled_repair" | "rendering" => "page",
-        "compile" | "overlay" | "saving" | "render_prepare" | "translation_prepare" | "normalizing" => "step",
+        "ocr_processing"
+        | "continuation_review"
+        | "page_policies"
+        | "domain_inference"
+        | "garbled_repair"
+        | "rendering" => "page",
+        "compile"
+        | "overlay"
+        | "saving"
+        | "render_prepare"
+        | "translation_prepare"
+        | "normalizing" => "step",
         _ if event == "stage_progress" => "step",
         _ => "none",
     };

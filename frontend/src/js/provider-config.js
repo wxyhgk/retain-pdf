@@ -1,4 +1,4 @@
-export const DEFAULT_OCR_PROVIDER = "mineru";
+export const DEFAULT_OCR_PROVIDER = "paddle";
 
 export const OCR_PROVIDER_DEFINITIONS = [
   {
@@ -14,22 +14,6 @@ export const OCR_PROVIDER_DEFINITIONS = [
     validationMissingMessage: "请先填写 Paddle Access Token。",
     validationUnavailableMessage: "",
     docsUrl: "https://aistudio.baidu.com/account/accessToken",
-    docsLabel: "获取 Token",
-    supportsValidation: true,
-  },
-  {
-    id: "mineru",
-    label: "MinerU",
-    description: "OCR 和版面识别。",
-    tokenField: "mineru_token",
-    runtimeConfigKey: "mineruToken",
-    tokenLabel: "MinerU Token",
-    tokenPlaceholder: "MinerU Token",
-    validationButtonLabel: "检测 MinerU",
-    validationIdleMessage: "未检测",
-    validationMissingMessage: "请先填写 MinerU Token。",
-    validationUnavailableMessage: "",
-    docsUrl: "https://mineru.net/apiManage/docs?openApplyModal=true",
     docsLabel: "获取 Token",
     supportsValidation: true,
   },

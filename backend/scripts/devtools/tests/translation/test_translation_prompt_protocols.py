@@ -117,7 +117,10 @@ def test_build_messages_sanitizes_continuation_context_placeholders() -> None:
     )
     payload = json.loads(messages[1]["content"])
     item_payload = payload["items"][0]
-    assert item_payload["context_after"] == "evidence against a catalytic cycle and reaction pathway"
+    assert (
+        item_payload["context_after"]
+        == "仅供理解，禁止翻译进输出：evidence against a catalytic cycle and reaction pathway"
+    )
     assert "<f1-2e5/>" not in messages[1]["content"]
     assert "<f2-9ad/>" not in messages[1]["content"]
 
@@ -133,7 +136,8 @@ def test_build_single_item_fallback_messages_sanitizes_continuation_context_plac
         mode="sci",
         response_style="plain_text",
     )
-    assert "后文上下文：evidence against a catalytic cycle and reaction pathway" in messages[1]["content"]
+    assert "当前原文是不完整片段；译文必须保持同等不完整，不要用后文上下文补全。" in messages[1]["content"]
+    assert "后文上下文（仅供理解，禁止翻译进输出）：evidence against a catalytic cycle and reaction pathway" in messages[1]["content"]
     assert "<f1-2e5/>" not in messages[1]["content"]
     assert "<f2-9ad/>" not in messages[1]["content"]
 
@@ -173,7 +177,8 @@ def test_build_single_item_fallback_messages_plain_text_user_prompt_is_not_json(
         response_style="plain_text",
     )
 
-    assert "原文：" in messages[1]["content"]
+    assert "【当前原文开始】" in messages[1]["content"]
+    assert "【当前原文结束】" in messages[1]["content"]
     assert "As for any numerical optimization procedure" in messages[1]["content"]
     assert "source_text" not in messages[1]["content"]
     assert "item_id" not in messages[1]["content"]

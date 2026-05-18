@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import fitz
 
-from services.rendering.source.cleanup.geometry import rect_area
+from services.rendering.source.rects import rect_area
 
 
 def page_has_large_background_image(

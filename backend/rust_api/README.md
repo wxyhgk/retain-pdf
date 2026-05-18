@@ -6,16 +6,16 @@
 
 ## 建议阅读顺序
 
-1. 当前系统到底怎么跑：
+1. 对外 HTTP API、图书馆接口和前端接入：
+   [`../doc/core/api/index.md`](../../doc/core/api/index.md)
+2. 当前系统到底怎么跑：
    [`CURRENT_API_MAP.md`](CURRENT_API_MAP.md)
-2. 先看目录，知道改哪里：
+3. 先看目录，知道改哪里：
    [`RUST_API_DIRECTORY_MAP.md`](RUST_API_DIRECTORY_MAP.md)
-3. 团队协作边界和分层规则：
+4. 团队协作边界和分层规则：
    [`RUST_API_ARCHITECTURE.md`](RUST_API_ARCHITECTURE.md)
-4. Rust 侧 artifact 四层边界：
+5. Rust 侧 artifact 四层边界：
    [`10-Rust 侧 Artifact Boundary.md`](../../doc/core/rust_api/10-Rust%20%E4%BE%A7%20Artifact%20Boundary.md)
-5. 对外 HTTP API 协议：
-   [`API_SPEC.md`](API_SPEC.md)
 6. Rust 和 Python stage spec 契约：
    [`STAGE_EXECUTION_CONTRACT.md`](STAGE_EXECUTION_CONTRACT.md)
 7. 阶段事件与失败协议：
@@ -37,8 +37,10 @@
   只看当前团队协作边界，重点回答“改哪里才对，哪些层不能乱穿透”。
 - [`10-Rust 侧 Artifact Boundary.md`](../../doc/core/rust_api/10-Rust%20%E4%BE%A7%20Artifact%20Boundary.md)
   只看 Rust 侧 artifact boundary，重点回答“provider raw / normalized / published artifact / download API 四层各负责什么”。
-- [`API_SPEC.md`](API_SPEC.md)
+- [`../doc/core/api/index.md`](../../doc/core/api/index.md)
   只看外部 HTTP 行为，重点回答“接口怎么调、返回什么、哪些字段是正式契约”。
+- [`API_SPEC.md`](API_SPEC.md)
+  保留为历史和实现参考，不再作为前端首读文档。
 - [`STAGE_EXECUTION_CONTRACT.md`](STAGE_EXECUTION_CONTRACT.md)
   只看 stage worker 的 spec 协议，重点回答“Rust 如何给 Python 传执行输入”。
 - [`../doc/core/rust_api/11-阶段事件与失败协议.md`](../../doc/core/rust_api/11-%E9%98%B6%E6%AE%B5%E4%BA%8B%E4%BB%B6%E4%B8%8E%E5%A4%B1%E8%B4%A5%E5%8D%8F%E8%AE%AE.md)
@@ -57,7 +59,7 @@
 - 想改后端代码：
   `RUST_API_DIRECTORY_MAP -> RUST_API_ARCHITECTURE -> 10-Rust 侧 Artifact Boundary -> CURRENT_API_MAP -> 对应源码`
 - 想接前端或第三方：
-  `API_SPEC -> CURRENT_API_MAP`
+  `doc/core/api/index.md -> CURRENT_API_MAP`
 
 ## 架构门禁
 

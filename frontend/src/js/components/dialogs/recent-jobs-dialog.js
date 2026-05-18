@@ -76,8 +76,8 @@ class RecentJobsDialog extends HTMLElement {
     renderRecentJobsError(this, message, { reset });
   }
 
-  renderList(markup, { reset = false, hasMore = false, onSelect } = {}) {
-    renderRecentJobsList(this, markup, { reset, hasMore, onSelect });
+  renderList(markup, { reset = false, hasMore = false, onSelect, onDelete } = {}) {
+    renderRecentJobsList(this, markup, { reset, hasMore, onSelect, onDelete });
   }
 
   setLoadMoreLoading() {

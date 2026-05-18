@@ -2,6 +2,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::defaults::*;
 
+pub const DEFAULT_SOURCE_CLEANUP_STRATEGY: &str = "pikepdf_text_strip";
+pub const SOURCE_CLEANUP_STRATEGIES: &[&str] = &[
+    DEFAULT_SOURCE_CLEANUP_STRATEGY,
+    "pikepdf_text_strip",
+    "bbox_text_strip",
+    "legacy",
+    "redact_restore_formulas",
+];
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RenderInput {
@@ -27,6 +36,10 @@ pub struct RenderInput {
     pub inner_bbox_dense_shrink_x: f64,
     #[serde(default = "default_inner_bbox_dense_shrink_y")]
     pub inner_bbox_dense_shrink_y: f64,
+    #[serde(default = "default_font_unify_mode")]
+    pub font_unify_mode: String,
+    #[serde(default = "default_source_cleanup_strategy")]
+    pub source_cleanup_strategy: String,
 }
 
 impl Default for RenderInput {
@@ -43,6 +56,8 @@ impl Default for RenderInput {
             inner_bbox_shrink_y: default_inner_bbox_shrink_y(),
             inner_bbox_dense_shrink_x: default_inner_bbox_dense_shrink_x(),
             inner_bbox_dense_shrink_y: default_inner_bbox_dense_shrink_y(),
+            font_unify_mode: default_font_unify_mode(),
+            source_cleanup_strategy: default_source_cleanup_strategy(),
         }
     }
 }

@@ -14,9 +14,11 @@ from services.rendering.layout.page_fit import should_fit_wrapped_markdown
 from services.rendering.layout.payload.text_common import get_render_formula_map
 from services.rendering.layout.payload.text_common import get_render_protected_text
 from services.rendering.layout.payload.text_common import is_flag_like_plain_text_block
+from services.rendering.layout.payload.render_item import get_render_first_line_indent_pt
 from services.rendering.layout.title_binary_fit import solve_title_fit
 from services.rendering.layout.typography.geometry import cover_bbox
 from services.rendering.layout.typography.geometry import inner_bbox
+from services.rendering.policy import item_uses_white_overlay_fill
 
 
 def layout_block_from_item(
@@ -103,7 +105,7 @@ def layout_block_from_item(
         math_map=list(formula_map),
         font_size_pt=font_size_pt,
         leading_em=leading_em,
-        first_line_indent_pt=max(0.0, float(item.get("_render_first_line_indent_pt") or 0.0)),
+        first_line_indent_pt=get_render_first_line_indent_pt(item),
         font_weight=resolve_font_weight(item),
         fit_to_box=fit_to_box,
         fit_single_line=fit_single_line,
@@ -113,6 +115,7 @@ def layout_block_from_item(
         fit_max_height_pt=title_fit.fit_max_height_pt if title_fit is not None else max(8.0, item_inner_bbox[3] - item_inner_bbox[1]),
         fit_target_width_pt=title_fit.fit_target_width_pt if title_fit is not None else 0.0,
         fit_target_height_pt=title_fit.fit_target_height_pt if title_fit is not None else 0.0,
+        use_cover_fill=item_uses_white_overlay_fill(item),
     )
     return block
 

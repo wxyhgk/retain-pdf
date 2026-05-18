@@ -7,10 +7,10 @@ import fitz
 from foundation.config import fonts
 from foundation.config import runtime
 from services.rendering.legacy.pdf_compress import compress_pdf_images_only
-from services.rendering.source.cleanup.text_draw import apply_translated_items_to_page
+from services.rendering.source.dev_overlay.text_draw import apply_translated_items_to_page
 from services.rendering.document.pdf_ops import save_optimized_pdf
 from services.rendering.document.pdf_ops import strip_page_links
-from services.rendering.layout.payload.prepare import prepare_render_payloads_by_page
+from services.rendering.output.typst.book_support import prepare_translated_pages_for_render
 from services.rendering.source.render_source import build_render_source_pdf
 
 
@@ -31,7 +31,7 @@ def render_translated_pages_map(
     )
     doc = fitz.open(render_source_pdf.path)
     try:
-        render_pages_map = prepare_render_payloads_by_page(translated_pages_map, source_pdf_path=render_source_pdf.path)
+        render_pages_map = prepare_translated_pages_for_render(render_source_pdf.path, translated_pages_map)
         for page_idx in sorted(render_pages_map):
             if 0 <= page_idx < len(doc):
                 page = doc[page_idx]

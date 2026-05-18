@@ -67,6 +67,8 @@ def _args_from_spec(spec: RenderStageSpec) -> SimpleNamespace:
         inner_bbox_shrink_y=spec.params.inner_bbox_shrink_y,
         inner_bbox_dense_shrink_x=spec.params.inner_bbox_dense_shrink_x,
         inner_bbox_dense_shrink_y=spec.params.inner_bbox_dense_shrink_y,
+        font_unify_mode=spec.params.font_unify_mode,
+        source_cleanup_strategy=spec.params.source_cleanup_strategy,
     )
 
 
@@ -82,6 +84,8 @@ def main() -> None:
         inner_bbox_shrink_y=args.inner_bbox_shrink_y,
         inner_bbox_dense_shrink_x=args.inner_bbox_dense_shrink_x,
         inner_bbox_dense_shrink_y=args.inner_bbox_dense_shrink_y,
+        font_unify_mode=args.font_unify_mode,
+        source_cleanup_strategy=args.source_cleanup_strategy,
     )
 
     job_dirs = job_dirs_from_explicit_args(args)
@@ -129,6 +133,7 @@ def main() -> None:
             base_url=args.base_url,
             typst_font_family=args.typst_font_family,
             pdf_compress_dpi=args.pdf_compress_dpi,
+            source_cleanup_strategy=args.source_cleanup_strategy,
         )
         elapsed = time.perf_counter() - started
         save_json(

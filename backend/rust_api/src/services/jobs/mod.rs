@@ -5,9 +5,11 @@ use crate::models::{JobSnapshot, JobStatusKind};
 mod control;
 mod creation;
 mod debug;
+mod downloads;
 mod facade;
-mod presentation;
+pub(crate) mod presentation;
 mod query;
+mod reader_regions;
 mod support;
 
 pub use control::wait_for_terminal_job;
@@ -16,6 +18,7 @@ pub(crate) use creation::context::{
     UploadStoreDeps,
 };
 pub(crate) use creation::{store_pdf_upload, UploadedPdfInput};
+pub(crate) use downloads::{FileDownload, MarkdownDownload};
 pub(crate) use facade::build_jobs_facade;
 pub use facade::JobsFacade;
 

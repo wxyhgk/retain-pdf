@@ -7,8 +7,8 @@ use crate::job_events::{
     persist_runtime_job_with_resources, record_custom_runtime_event_with_resources,
 };
 use crate::models::{now_iso, JobRuntimeState, JobSnapshot, JobStatusKind, WorkflowKind};
-use crate::services::job_command_factory::build_ocr_command;
 use crate::storage_paths::JobPaths;
+use crate::worker_command::build_ocr_command;
 
 use crate::job_runner::{
     attach_job_paths, clear_job_failure, sync_runtime_state, ProcessRuntimeDeps,
@@ -75,7 +75,7 @@ pub(super) fn create_ocr_child_job(
         ocr_job_id.clone(),
         ocr_request.clone(),
         build_ocr_command(
-            deps.config.as_ref(),
+            &deps.worker_command_runtime(),
             Some(Path::new(&source.upload_path)),
             &ocr_request,
             parent_job_paths,

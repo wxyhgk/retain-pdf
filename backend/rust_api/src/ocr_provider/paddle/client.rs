@@ -8,23 +8,19 @@ use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use reqwest::{multipart, Client, Response};
 use serde_json::{json, Value};
 
+use crate::config::PaddleRuntimeConfig;
 use crate::ocr_provider::paddle::errors::PaddleProviderError;
 use crate::ocr_provider::paddle::models::{
     PaddleJsonlLine, PaddlePollData, PaddlePollEnvelope, PaddleSubmitEnvelope,
 };
 use crate::ocr_provider::types::OcrProviderCapabilities;
 
-const DEFAULT_BASE_URL: &str = "https://paddleocr.aistudio-app.com";
-const REQUEST_TIMEOUT_SECS: u64 = 120;
-const DOWNLOAD_TIMEOUT_SECS: u64 = 300;
-const REQUEST_RETRY_ATTEMPTS: usize = 3;
-const REQUEST_RETRY_BASE_DELAY_MILLIS: u64 = 500;
-
 #[derive(Debug, Clone)]
 pub struct PaddleClient {
     pub base_url: String,
     pub token: String,
     http: Client,
+    runtime: PaddleRuntimeConfig,
 }
 
 #[derive(Debug, Clone)]
@@ -40,20 +36,29 @@ pub struct PaddleResultPayload {
 
 impl PaddleClient {
     pub fn new(base_url: impl Into<String>, token: impl Into<String>) -> Self {
+        Self::with_runtime(base_url, token, PaddleRuntimeConfig::from_env())
+    }
+
+    pub fn with_runtime(
+        base_url: impl Into<String>,
+        token: impl Into<String>,
+        runtime: PaddleRuntimeConfig,
+    ) -> Self {
         let base_url = {
             let raw = base_url.into();
             let trimmed = raw.trim();
             if trimmed.is_empty() {
-                DEFAULT_BASE_URL.to_string()
+                runtime.default_base_url.trim_end_matches('/').to_string()
             } else {
                 trimmed.trim_end_matches('/').to_string()
             }
         };
-        let http = build_http_client();
+        let http = build_http_client(&runtime);
         Self {
             base_url,
             token: token.into(),
             http,
+            runtime,
         }
     }
 
@@ -259,7 +264,7 @@ impl PaddleClient {
             .send_with_retry("download", || {
                 self.http
                     .get(jsonl_url)
-                    .timeout(Duration::from_secs(DOWNLOAD_TIMEOUT_SECS))
+                    .timeout(Duration::from_secs(self.runtime.download_timeout_secs))
                     .send()
             })
             .await?
@@ -291,17 +296,18 @@ impl PaddleClient {
         Fut: Future<Output = StdResult<Response, reqwest::Error>>,
     {
         let mut last_error: Option<reqwest::Error> = None;
-        for attempt in 1..=REQUEST_RETRY_ATTEMPTS {
+        for attempt in 1..=self.runtime.request_retry_attempts {
             match action().await {
                 Ok(response) => return Ok(response),
                 Err(err) => {
                     let retryable = is_retryable_transport_error(&err);
                     last_error = Some(err);
-                    if !retryable || attempt >= REQUEST_RETRY_ATTEMPTS {
+                    if !retryable || attempt >= self.runtime.request_retry_attempts {
                         break;
                     }
-                    let delay =
-                        Duration::from_millis(REQUEST_RETRY_BASE_DELAY_MILLIS * attempt as u64);
+                    let delay = Duration::from_millis(
+                        self.runtime.request_retry_base_delay_millis * attempt as u64,
+                    );
                     tokio::time::sleep(delay).await;
                 }
             }
@@ -313,10 +319,10 @@ impl PaddleClient {
     }
 }
 
-fn build_http_client() -> Client {
+fn build_http_client(runtime: &PaddleRuntimeConfig) -> Client {
     Client::builder()
-        .connect_timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS))
-        .timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS))
+        .connect_timeout(Duration::from_secs(runtime.request_timeout_secs))
+        .timeout(Duration::from_secs(runtime.request_timeout_secs))
         .no_proxy()
         .build()
         .expect("reqwest client")

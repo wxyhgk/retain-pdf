@@ -54,6 +54,9 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     Path("src/routes/glossaries.rs"): (
         "crate::services::glossary_api::",
     ),
+    Path("src/routes/library.rs"): (
+        "crate::services::library_api::",
+    ),
     Path("src/routes/uploads.rs"): (
         "crate::services::upload_api::",
     ),
@@ -63,6 +66,15 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
         "crate::services::jobs::{",
         "crate::services::job_launcher::",
         "crate::services::runtime_gateway::",
+    ),
+    Path("src/routes/common.rs"): (
+        "crate::services::library::LibraryDeps",
+    ),
+    Path("src/routes/jobs/download_adapter.rs"): (
+        "crate::services::jobs::{FileDownload, MarkdownDownload}",
+    ),
+    Path("src/routes/providers.rs"): (
+        "crate::services::provider_probe::",
     ),
 }
 
@@ -190,7 +202,10 @@ def check_job_persist_deps_usage(errors: list[str]) -> None:
     allowed = {
         Path("src/job_runner/mod.rs"),
         Path("src/job_runner/runtime_deps.rs"),
+        Path("src/job_runner/process_runner/execution.rs"),
         Path("src/job_runner/process_runner/io_support.rs"),
+        Path("src/job_runner/process_runner/startup.rs"),
+        Path("src/job_runner/process_runner/timeout_support.rs"),
     }
     for path in scan_rs_files(SRC_ROOT):
         rel_path = rel(path)

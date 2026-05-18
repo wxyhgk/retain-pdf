@@ -51,7 +51,7 @@ pub async fn execute_ocr_job(
     save_ocr_job(&deps, &job, parent_job_id.as_deref()).await?;
 
     let workspace = OcrWorkspace::prepare(
-        deps.config.as_ref(),
+        &deps.persist.output_root,
         &mut job,
         &provider_kind,
         output_job_id_override,
@@ -97,7 +97,7 @@ pub async fn execute_ocr_job(
     job_artifacts_mut(&mut job).source_pdf = Some(source_pdf_string);
 
     job.command = build_normalize_ocr_command(
-        deps.config.as_ref(),
+        &deps.worker_command_runtime(),
         &job.request_payload,
         &workspace.job_paths,
         &workspace.layout_json_path,
@@ -127,7 +127,11 @@ async fn execute_provider_transport(
     {
         match provider_kind {
             OcrProviderKind::Mineru => {
-                let client = MineruClient::new("", job.request_payload.ocr.mineru_token.clone());
+                let client = MineruClient::with_runtime(
+                    "",
+                    job.request_payload.ocr.mineru_token.clone(),
+                    deps.mineru_runtime().clone(),
+                );
                 mineru::run_local_ocr_transport_mineru(
                     deps,
                     job,
@@ -139,9 +143,10 @@ async fn execute_provider_transport(
                 .await?;
             }
             OcrProviderKind::Paddle => {
-                let client = PaddleClient::new(
+                let client = PaddleClient::with_runtime(
                     job.request_payload.ocr.paddle_api_url.clone(),
                     job.request_payload.ocr.paddle_token.clone(),
+                    deps.paddle_runtime().clone(),
                 );
                 paddle::run_local_ocr_transport_paddle(
                     deps,
@@ -161,7 +166,11 @@ async fn execute_provider_transport(
 
     match provider_kind {
         OcrProviderKind::Mineru => {
-            let client = MineruClient::new("", job.request_payload.ocr.mineru_token.clone());
+            let client = MineruClient::with_runtime(
+                "",
+                job.request_payload.ocr.mineru_token.clone(),
+                deps.mineru_runtime().clone(),
+            );
             mineru::run_remote_ocr_transport_mineru(
                 deps,
                 job,
@@ -172,9 +181,10 @@ async fn execute_provider_transport(
             .await?;
         }
         OcrProviderKind::Paddle => {
-            let client = PaddleClient::new(
+            let client = PaddleClient::with_runtime(
                 job.request_payload.ocr.paddle_api_url.clone(),
                 job.request_payload.ocr.paddle_token.clone(),
+                deps.paddle_runtime().clone(),
             );
             paddle::run_remote_ocr_transport_paddle(
                 deps,

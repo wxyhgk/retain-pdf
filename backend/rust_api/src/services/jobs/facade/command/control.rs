@@ -1,5 +1,3 @@
-use axum::http::HeaderMap;
-
 use crate::error::AppError;
 use crate::models::{JobStatusKind, JobSubmissionView};
 
@@ -12,7 +10,7 @@ use super::super::JobsFacade;
 impl<'a> JobsFacade<'a> {
     pub async fn cancel_submission(
         &self,
-        headers: &HeaderMap,
+        base_url: &str,
         job_id: &str,
         ocr_only: bool,
     ) -> Result<JobSubmissionView, AppError> {
@@ -28,6 +26,6 @@ impl<'a> JobsFacade<'a> {
         } else {
             JobStatusKind::Canceled
         };
-        Ok(self.build_submission_view(headers, &job, status, job.workflow.clone()))
+        Ok(self.build_submission_view(base_url, &job, status, job.workflow.clone()))
     }
 }

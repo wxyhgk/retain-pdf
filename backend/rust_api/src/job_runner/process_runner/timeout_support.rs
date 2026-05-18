@@ -5,7 +5,7 @@ use std::time::Instant;
 use crate::job_events::persist_job_with_resources;
 use crate::models::{JobStatusKind, ProcessResult};
 
-use super::super::ProcessRuntimeDeps;
+use super::super::JobPersistDeps;
 
 pub(super) fn timeout_detail_for_stage(stage: Option<&str>) -> &'static str {
     match stage {
@@ -61,26 +61,27 @@ fn append_timeout_stderr_tail(job: &mut crate::models::JobSnapshot, stderr_text:
 }
 
 pub(super) fn persist_timeout_failure(
-    deps: &ProcessRuntimeDeps,
+    persist: &JobPersistDeps,
+    project_root: &Path,
     stdout_job: crate::models::JobRuntimeState,
     started: Instant,
     stdout_text: String,
     stderr_text: String,
 ) -> Result<crate::models::JobRuntimeState> {
-    let mut timed_out_job = deps.db.get_job(&stdout_job.job_id)?;
+    let mut timed_out_job = persist.db.get_job(&stdout_job.job_id)?;
     append_timeout_stderr_tail(&mut timed_out_job, &stderr_text);
     attach_timeout_process_result(
         &mut timed_out_job,
         started,
         stdout_text,
         stderr_text,
-        &deps.config.project_root,
+        project_root,
     );
     apply_timeout_failure(&mut timed_out_job, crate::models::now_iso());
     persist_job_with_resources(
-        deps.db.as_ref(),
-        &deps.config.data_root,
-        &deps.config.output_root,
+        persist.db.as_ref(),
+        &persist.data_root,
+        &persist.output_root,
         &timed_out_job,
     )?;
     Ok(timed_out_job.into_runtime())
