@@ -28,10 +28,15 @@ def build_typst_source_from_page_specs(
 
     total_pages = len(page_specs)
     for page_offset, spec in enumerate(page_specs):
-        lines.append(f"#set page(width: {spec.page_width_pt}pt, height: {spec.page_height_pt}pt, margin: 0pt, fill: none)")
+        background_page_index = spec.background_page_index if spec.background_page_index is not None else spec.page_index
+        page_fill = "white" if spec.is_flow_continuation or background_page_index < 0 else "none"
         lines.append(
-            f'#place(top + left, dx: 0pt, dy: 0pt, image("{source_rel}", page: {spec.page_index + 1}, width: {spec.page_width_pt}pt))'
+            f"#set page(width: {spec.page_width_pt}pt, height: {spec.page_height_pt}pt, margin: 0pt, fill: {page_fill})"
         )
+        if background_page_index >= 0:
+            lines.append(
+                f'#place(top + left, dx: 0pt, dy: 0pt, image("{source_rel}", page: {background_page_index + 1}, width: {spec.page_width_pt}pt))'
+            )
         for block_index, block in enumerate(spec.blocks):
             block_id = f"rp{page_offset}_{block.block_id}_{block_index}"
             lines.append(build_typst_block(block_id, layout_block_to_render_block(block), include_fill=True))
@@ -43,8 +48,9 @@ def build_typst_source_from_page_specs(
             message=f"正在生成 Typst 页面，第 {page_offset + 1}/{total_pages} 页",
             payload={
                 "render_stage": "typst_source_build",
-                "page_index": spec.page_index,
+                "page_index": spec.source_page_index if spec.source_page_index is not None else spec.page_index,
                 "substage": "render_pages",
+                "flow_continuation": spec.is_flow_continuation,
             },
         )
     return "\n".join(lines) + "\n"

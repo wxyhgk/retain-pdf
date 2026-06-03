@@ -91,3 +91,6 @@ class RenderPageSpec:
     page_height_pt: float
     background_pdf_path: Path | None
     blocks: list[RenderLayoutBlock]
+    source_page_index: int | None = None
+    background_page_index: int | None = None
+    is_flow_continuation: bool = False

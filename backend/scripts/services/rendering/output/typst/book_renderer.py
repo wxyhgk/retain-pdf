@@ -22,6 +22,7 @@ from services.rendering.output.typst.book_support import prepare_translated_page
 from services.rendering.output.typst.book_support import resolve_typst_temp_root
 from services.rendering.output.typst.book_support import save_background_pdf_to_output
 from services.rendering.layout.page_specs import build_render_page_specs
+from services.rendering.layout.page_specs import expand_page_specs_for_flow_rebuild
 from services.rendering.layout.model.models import RenderPageSpec
 from services.rendering.output.typst.compiler import compile_typst_render_pages_pdf
 from services.rendering.output.typst.color_adapt import apply_adaptive_overlay_colors
@@ -152,6 +153,7 @@ def _compile_render_pages_pdf_resilient(
     font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     font_paths: list[Path] | None = None,
     work_dir: Path,
+    flow_rebuild_page_indices: frozenset[int] = frozenset(),
     request_chat_content_fn: TypstRepairRequestFn | None = None,
 ) -> tuple[Path, dict[str, object]]:
     diagnostics: dict[str, object] = {
@@ -161,6 +163,10 @@ def _compile_render_pages_pdf_resilient(
         "background_sanitize_elapsed_seconds": 0.0,
         "background_sanitized_compile_elapsed_seconds": 0.0,
     }
+    page_specs = expand_page_specs_for_flow_rebuild(
+        page_specs,
+        flow_rebuild_page_indices=flow_rebuild_page_indices,
+    )
     compile_started = time.perf_counter()
     try:
         emit_render_compile_progress(
@@ -255,6 +261,7 @@ def _compile_render_pages_pdf_resilient(
             source_pdf_path=source_pdf_path,
             translated_pages=sanitized_pages,
             prepared=True,
+            flow_rebuild_page_indices=flow_rebuild_page_indices,
             on_page_spec_built=_emit_page_spec_progress,
         )
         sanitized_compile_started = time.perf_counter()
@@ -345,6 +352,7 @@ def build_book_typst_pdf(
     source_text_precleaned_page_indices: frozenset[int] = frozenset(),
     prebuilt_source_path: Path | None = None,
     source_cleanup_strategy: str = "typst_fill",
+    extra_cover_fallback_page_indices: frozenset[int] = frozenset(),
     precomputed_colors_by_item_id: dict[str, dict[str, tuple[float, float, float]]] | None = None,
     request_chat_content_fn: TypstRepairRequestFn | None = None,
 ) -> dict[str, object]:
@@ -375,6 +383,7 @@ def build_book_typst_pdf(
             precomputed_colors_by_item_id=precomputed_colors_by_item_id,
             pikepdf_output_pdf_path=output_pdf_path,
             source_cleanup_strategy=source_cleanup_strategy,
+            extra_cover_fallback_page_indices=extra_cover_fallback_page_indices,
             request_chat_content_fn=request_chat_content_fn,
         )
         overlay_elapsed = time.perf_counter() - overlay_started
@@ -485,6 +494,7 @@ def build_book_typst_background_pdf(
     compile_workers: int | None = None,
     source_text_precleaned_page_indices: frozenset[int] = frozenset(),
     prebuilt_page_specs: list[RenderPageSpec] | None = None,
+    flow_rebuild_page_indices: frozenset[int] = frozenset(),
     precomputed_colors_by_item_id: dict[str, dict[str, tuple[float, float, float]]] | None = None,
     request_chat_content_fn: TypstRepairRequestFn | None = None,
 ) -> dict[str, object]:
@@ -520,10 +530,19 @@ def build_book_typst_background_pdf(
             source_pdf_path=source_pdf_path,
             translated_pages=translated_pages,
             prepared=True,
+            flow_rebuild_page_indices=flow_rebuild_page_indices,
             on_page_spec_built=_emit_page_spec_progress,
         )
         diagnostics["background_page_specs_elapsed_seconds"] = time.perf_counter() - specs_started
         diagnostics["background_page_specs_prewarm_hit"] = False
+    page_specs = expand_page_specs_for_flow_rebuild(
+        page_specs,
+        flow_rebuild_page_indices=flow_rebuild_page_indices,
+    )
+    flow_continuation_page_count = sum(1 for spec in page_specs if spec.is_flow_continuation)
+    diagnostics["flow_rebuild_page_indices"] = sorted(flow_rebuild_page_indices)
+    diagnostics["flow_rebuild_pages"] = len(flow_rebuild_page_indices)
+    diagnostics["flow_continuation_pages"] = flow_continuation_page_count
     page_map = RenderPageMap.from_page_specs(page_specs)
     cleanup_started = time.perf_counter()
     cleaned_background_pdf = build_clean_background_pdf(
@@ -547,6 +566,7 @@ def build_book_typst_background_pdf(
         font_family=font_family,
         font_paths=font_paths,
         work_dir=work_dir,
+        flow_rebuild_page_indices=flow_rebuild_page_indices,
         request_chat_content_fn=request_chat_content_fn,
     )
     diagnostics.update(compile_diagnostics)

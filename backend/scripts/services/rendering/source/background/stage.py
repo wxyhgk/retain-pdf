@@ -31,7 +31,12 @@ def build_clean_background_pdf(
     copy_pdf_with_pikepdf(source_pdf_path=source_pdf_path, output_pdf_path=working_pdf_path)
     source_doc = fitz.open(source_pdf_path)
     output_doc = fitz.open(working_pdf_path)
-    specs_by_page = {spec.page_index: spec for spec in page_specs or []}
+    specs_by_page: dict[int, RenderPageSpec] = {}
+    for spec in page_specs or []:
+        if spec.is_flow_continuation:
+            continue
+        source_page_index = spec.source_page_index if spec.source_page_index is not None else spec.page_index
+        specs_by_page.setdefault(source_page_index, spec)
     try:
         copy_toc(source_doc, output_doc)
         ordered_page_indices = sorted(translated_pages)

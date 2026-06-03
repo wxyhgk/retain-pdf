@@ -105,6 +105,7 @@ def overlay_translated_pages_on_doc(
     precomputed_colors_by_item_id: dict[str, dict[str, tuple[float, float, float]]] | None = None,
     pikepdf_output_pdf_path: Path | None = None,
     source_cleanup_strategy: str = "typst_fill",
+    extra_cover_fallback_page_indices: frozenset[int] = frozenset(),
     request_chat_content_fn: TypstRepairRequestFn | None = None,
 ) -> dict[str, object]:
     prepare_started = time.perf_counter()
@@ -122,6 +123,11 @@ def overlay_translated_pages_on_doc(
         if source_cleanup_strategy == "pikepdf_text_strip"
         and page_idx not in source_text_precleaned_page_indices
         and translated_pages.get(page_idx)
+    )
+    cover_fallback_page_indices = cover_fallback_page_indices | frozenset(
+        page_idx
+        for page_idx in extra_cover_fallback_page_indices
+        if page_idx in ordered_page_indices and translated_pages.get(page_idx)
     )
     if cover_fallback_page_indices:
         translated_pages = apply_typst_cover_fallback_fields(

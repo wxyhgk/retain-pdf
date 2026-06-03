@@ -11,7 +11,12 @@ class RenderPageMap:
 
     @classmethod
     def from_page_specs(cls, page_specs: list[RenderPageSpec]) -> "RenderPageMap":
-        return cls(source_page_indices=[spec.page_index for spec in page_specs])
+        return cls(
+            source_page_indices=[
+                spec.source_page_index if spec.source_page_index is not None else spec.page_index
+                for spec in page_specs
+            ]
+        )
 
     def target_page_for_source(self, source_page_index: int) -> int | None:
         try:

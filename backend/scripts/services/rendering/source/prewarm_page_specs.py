@@ -51,6 +51,9 @@ def render_page_spec_to_manifest(spec: RenderPageSpec) -> dict[str, Any]:
         "page_index": spec.page_index,
         "page_width_pt": spec.page_width_pt,
         "page_height_pt": spec.page_height_pt,
+        "source_page_index": spec.source_page_index,
+        "background_page_index": spec.background_page_index,
+        "is_flow_continuation": spec.is_flow_continuation,
         "blocks": [render_layout_block_to_manifest(block) for block in spec.blocks],
     }
 
@@ -128,6 +131,17 @@ def render_page_spec_from_manifest(value: object) -> RenderPageSpec | None:
             page_height_pt=float(value.get("page_height_pt")),
             background_pdf_path=None,
             blocks=blocks,
+            source_page_index=(
+                int(value.get("source_page_index"))
+                if value.get("source_page_index") is not None
+                else None
+            ),
+            background_page_index=(
+                int(value.get("background_page_index"))
+                if value.get("background_page_index") is not None
+                else None
+            ),
+            is_flow_continuation=bool(value.get("is_flow_continuation")),
         )
     except Exception:
         return None

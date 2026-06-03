@@ -27,5 +27,7 @@ class RenderExecutionContext:
     bbox_text_strip_skipped_page_indices: frozenset[int] = frozenset()
     source_text_precleaned_page_indices: frozenset[int] = frozenset()
     source_cleanup_strategy: str = "pikepdf_text_strip"
+    cover_fallback_page_indices: frozenset[int] = frozenset()
+    flow_rebuild_page_indices: frozenset[int] = frozenset()
     background_render_page_specs: list[RenderPageSpec] | None = None
     render_colors_by_item_id: dict[str, dict[str, tuple[float, float, float]]] | None = None

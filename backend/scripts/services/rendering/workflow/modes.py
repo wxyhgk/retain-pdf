@@ -85,6 +85,11 @@ def run_selected_pages_overlay_render(
         for page_idx in context.source_text_precleaned_page_indices
         if context.start_page <= page_idx <= context.end_page
     )
+    remapped_cover_fallback_pages = frozenset(
+        page_idx - context.start_page
+        for page_idx in context.cover_fallback_page_indices
+        if context.start_page <= page_idx <= context.end_page
+    )
     overlay_diagnostics = build_book_typst_pdf(
         source_pdf_path=selected_source_path,
         output_pdf_path=context.output_pdf_path,
@@ -101,6 +106,7 @@ def run_selected_pages_overlay_render(
         effective_inner_bbox_lookup=context.effective_inner_bbox_lookup,
         source_text_precleaned_page_indices=remapped_precleaned_pages,
         source_cleanup_strategy=context.source_cleanup_strategy,
+        extra_cover_fallback_page_indices=remapped_cover_fallback_pages,
         precomputed_colors_by_item_id=context.render_colors_by_item_id,
         request_chat_content_fn=request_chat_content,
     )
@@ -132,6 +138,7 @@ def run_overlay_render(
         effective_inner_bbox_lookup=context.effective_inner_bbox_lookup,
         source_text_precleaned_page_indices=context.source_text_precleaned_page_indices,
         source_cleanup_strategy=context.source_cleanup_strategy,
+        extra_cover_fallback_page_indices=context.cover_fallback_page_indices,
         precomputed_colors_by_item_id=context.render_colors_by_item_id,
         request_chat_content_fn=request_chat_content,
     )
@@ -167,6 +174,7 @@ def run_background_typst_render(
         effective_inner_bbox_lookup=context.effective_inner_bbox_lookup,
         source_text_precleaned_page_indices=context.source_text_precleaned_page_indices,
         prebuilt_page_specs=context.background_render_page_specs,
+        flow_rebuild_page_indices=context.flow_rebuild_page_indices,
         precomputed_colors_by_item_id=context.render_colors_by_item_id,
         request_chat_content_fn=request_chat_content,
     )

@@ -61,6 +61,8 @@ from services.rendering.output.typst.sanitize import sanitize_items_for_typst_co
 from services.rendering.output.typst.overlay_ops import _extract_failed_overlay_indices
 from services.rendering.output.typst.overlay_ops import _can_use_pikepdf_book_overlay
 from services.rendering.workflow.executor import _typst_cover_fallback_page_indices
+from services.rendering.workflow.executor import _prepare_translated_pages_for_source_cleanup
+from services.rendering.workflow.executor import _risk_cover_fallback_page_indices_from_diagnostics
 from services.rendering.workflow.context import RenderExecutionContext
 from services.rendering.workflow.modes import _compress_final_pdf_if_needed
 from services.rendering.document.pikepdf_overlay import overlay_pdf_pages_with_pikepdf
@@ -131,6 +133,33 @@ def test_pikepdf_text_strip_marks_unprecleaned_pages_for_typst_cover_fallback() 
     )
 
     assert page_indices == frozenset({1, 2})
+
+
+def test_render_risk_diagnostics_select_cover_fallback_pages() -> None:
+    page_indices = _risk_cover_fallback_page_indices_from_diagnostics(
+        {"render_risk_cover_fallback_page_indices": [0, "2", "bad", None]}
+    )
+
+    assert page_indices == frozenset({0, 2})
+
+
+def test_source_cleanup_prepare_applies_explicit_cover_fallback_pages() -> None:
+    translated_pages = {
+        0: [{"item_id": "p001-b001", "block_kind": "text"}],
+        1: [{"item_id": "p002-b001", "block_kind": "text"}],
+    }
+
+    prepared = _prepare_translated_pages_for_source_cleanup(
+        translated_pages=translated_pages,
+        cleanup_strategy="typst_fill",
+        precleaned_page_indices=frozenset(),
+        skipped_page_indices=frozenset(),
+        fallback_page_indices=frozenset({1}),
+    )
+
+    assert item_render_policy(prepared[0][0]) == {}
+    assert item_render_policy(prepared[1][0])["overlay_fill"] == "white"
+    assert item_render_policy(prepared[1][0])["reason"] == "typst_cover_fallback"
 
 
 def test_pikepdf_text_strip_allows_book_overlay_pikepdf_merge() -> None:

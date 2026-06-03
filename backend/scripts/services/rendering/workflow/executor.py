@@ -21,6 +21,9 @@ from services.rendering.source.prewarm_fingerprint import build_render_prewarm_f
 from services.rendering.source.prewarm_manifest import write_json_atomic
 from services.rendering.source.prewarm_manifest_io import build_prewarm_manifest
 from services.rendering.policy import apply_typst_cover_fallback_fields
+from services.rendering.analysis.risk.report import default_render_risk_report_path
+from services.rendering.analysis.risk.report import write_render_risk_report
+from services.rendering.analysis.risk.scanner import scan_render_risk
 
 
 def execute_render_plan(
@@ -107,12 +110,38 @@ def execute_render_plan(
             elapsed=time.perf_counter() - sync_prepare_started,
         )
 
-    fallback_page_indices = _typst_cover_fallback_page_indices(
+    render_risk_diagnostics = _scan_and_write_render_risk_report(
+        source_pdf_path=render_plan.render_inputs.source_pdf_path,
+        output_pdf_path=output_pdf_path,
+        translated_pages=render_plan.selected_pages,
+        start_page=start,
+        end_page=stop,
+        source_text_precleaned_page_indices=render_source_pdf.source_text_precleaned_page_indices,
+        bbox_text_strip_skipped_page_indices=render_source_pdf.bbox_text_strip_skipped_page_indices,
+    )
+    risk_cover_fallback_page_indices = _risk_cover_fallback_page_indices_from_diagnostics(render_risk_diagnostics)
+    flow_rebuild_page_indices = _flow_rebuild_page_indices_from_diagnostics(render_risk_diagnostics)
+    source_cleanup_fallback_page_indices = _typst_cover_fallback_page_indices(
         translated_pages=render_plan.selected_pages,
         cleanup_strategy=cleanup_strategy,
         precleaned_page_indices=render_source_pdf.source_text_precleaned_page_indices,
         skipped_page_indices=render_source_pdf.bbox_text_strip_skipped_page_indices,
     )
+    fallback_page_indices = source_cleanup_fallback_page_indices | risk_cover_fallback_page_indices
+    if risk_cover_fallback_page_indices:
+        print(
+            "render risk fallback: "
+            f"cover_pages={len(risk_cover_fallback_page_indices)} "
+            f"pages={sorted(risk_cover_fallback_page_indices)}",
+            flush=True,
+        )
+    if flow_rebuild_page_indices:
+        print(
+            "render risk flow rebuild: "
+            f"pages={len(flow_rebuild_page_indices)} "
+            f"indices={sorted(flow_rebuild_page_indices)}",
+            flush=True,
+        )
     context = RenderExecutionContext(
         output_pdf_path=output_pdf_path,
         start_page=start,
@@ -139,6 +168,8 @@ def execute_render_plan(
         bbox_text_strip_skipped_page_indices=render_source_pdf.bbox_text_strip_skipped_page_indices,
         source_text_precleaned_page_indices=render_source_pdf.source_text_precleaned_page_indices,
         source_cleanup_strategy=cleanup_strategy,
+        cover_fallback_page_indices=fallback_page_indices,
+        flow_rebuild_page_indices=flow_rebuild_page_indices,
         background_render_page_specs=(
             _apply_cover_fallback_to_page_specs(
                 payload_prewarm.background_render_page_specs,
@@ -163,6 +194,7 @@ def execute_render_plan(
                 cleanup_strategy=cleanup_strategy,
                 precleaned_page_indices=render_source_pdf.source_text_precleaned_page_indices,
                 skipped_page_indices=render_source_pdf.bbox_text_strip_skipped_page_indices,
+                fallback_page_indices=fallback_page_indices,
             ),
             context=context,
             extract_selected_pages=extract_selected_pages,
@@ -179,9 +211,110 @@ def execute_render_plan(
             "source_text_precleaned_pages": len(render_source_pdf.source_text_precleaned_page_indices),
             "bbox_text_stripped_pages": len(render_source_pdf.bbox_text_stripped_page_indices),
             "bbox_text_strip_skipped_pages": len(render_source_pdf.bbox_text_strip_skipped_page_indices),
+            "source_cleanup_cover_fallback_pages": len(source_cleanup_fallback_page_indices),
+            "render_cover_fallback_page_indices": sorted(fallback_page_indices),
+            "render_cover_fallback_pages": len(fallback_page_indices),
+            "render_flow_rebuild_page_indices": sorted(flow_rebuild_page_indices),
+            "render_flow_rebuild_pages": len(flow_rebuild_page_indices),
+            **render_risk_diagnostics,
         }
         for temp_source_path in render_source_pdf.temp_paths:
             temp_source_path.unlink(missing_ok=True)
+
+
+def _scan_and_write_render_risk_report(
+    *,
+    source_pdf_path: Path,
+    output_pdf_path: Path,
+    translated_pages: dict[int, list[dict]],
+    start_page: int,
+    end_page: int,
+    source_text_precleaned_page_indices: frozenset[int],
+    bbox_text_strip_skipped_page_indices: frozenset[int],
+) -> dict[str, object]:
+    try:
+        report = scan_render_risk(
+            source_pdf_path=source_pdf_path,
+            translated_pages=translated_pages,
+            start_page=start_page,
+            end_page=end_page,
+            source_text_precleaned_page_indices=source_text_precleaned_page_indices,
+            bbox_text_strip_skipped_page_indices=bbox_text_strip_skipped_page_indices,
+        )
+        report_path = write_render_risk_report(default_render_risk_report_path(output_pdf_path), report)
+        summary = report.summary()
+        risk_cover_fallback_page_indices = _risk_cover_fallback_page_indices_from_report(report)
+        hard_trigger_page_indices = frozenset(
+            page.page_index
+            for page in report.pages
+            if page.hard_triggers
+        )
+        flow_rebuild_page_indices = frozenset(
+            page.page_index
+            for page in report.pages
+            if page.suggested_action in {"partial_reflow", "full_rebuild"}
+        )
+        print(
+            "render risk scan: "
+            f"pages={summary['page_count']} high_or_hard={summary['high_or_hard_page_count']} "
+            f"hard_triggers={summary['hard_trigger_count']} "
+            f"risk_cover_pages={len(risk_cover_fallback_page_indices)} "
+            f"flow_rebuild_pages={len(flow_rebuild_page_indices)} report={report_path}",
+            flush=True,
+        )
+        return {
+            "render_risk_report_path": str(report_path),
+            "render_risk_summary": summary,
+            "render_risk_cover_fallback_page_indices": sorted(risk_cover_fallback_page_indices),
+            "render_risk_cover_fallback_pages": len(risk_cover_fallback_page_indices),
+            "render_risk_hard_trigger_page_indices": sorted(hard_trigger_page_indices),
+            "render_risk_flow_rebuild_page_indices": sorted(flow_rebuild_page_indices),
+            "render_risk_flow_rebuild_pages": len(flow_rebuild_page_indices),
+        }
+    except Exception as exc:
+        print(f"render risk scan: failed {type(exc).__name__}: {exc}", flush=True)
+        return {
+            "render_risk_scan_failed": True,
+            "render_risk_scan_error": f"{type(exc).__name__}: {exc}",
+        }
+
+
+def _risk_cover_fallback_page_indices_from_report(report) -> frozenset[int]:
+    return frozenset(
+        page.page_index
+        for page in report.pages
+        if page.risk_level in {"high", "extreme"}
+        or bool(page.hard_triggers)
+        or page.suggested_action == "full_rebuild"
+    )
+
+
+def _risk_cover_fallback_page_indices_from_diagnostics(diagnostics: dict[str, object]) -> frozenset[int]:
+    values = diagnostics.get("render_risk_cover_fallback_page_indices")
+    if not isinstance(values, (list, tuple, set, frozenset)):
+        return frozenset()
+    page_indices: set[int] = set()
+    for value in values:
+        try:
+            page_indices.add(int(value))
+        except (TypeError, ValueError):
+            continue
+    return frozenset(page_indices)
+
+
+def _flow_rebuild_page_indices_from_diagnostics(diagnostics: dict[str, object]) -> frozenset[int]:
+    values = diagnostics.get("render_risk_flow_rebuild_page_indices")
+    if values is None:
+        values = diagnostics.get("render_risk_full_rebuild_page_indices")
+    if not isinstance(values, (list, tuple, set, frozenset)):
+        return frozenset()
+    page_indices: set[int] = set()
+    for value in values:
+        try:
+            page_indices.add(int(value))
+        except (TypeError, ValueError):
+            continue
+    return frozenset(page_indices)
 
 
 def _persist_sync_render_source_prewarm(
@@ -241,15 +374,21 @@ def _prepare_translated_pages_for_source_cleanup(
     cleanup_strategy: str,
     precleaned_page_indices: frozenset[int],
     skipped_page_indices: frozenset[int],
+    fallback_page_indices: frozenset[int] | None = None,
 ) -> dict[int, list[dict]]:
-    prepared = apply_typst_cover_fallback_fields(
-        translated_pages,
-        _typst_cover_fallback_page_indices(
+    page_indices = (
+        fallback_page_indices
+        if fallback_page_indices is not None
+        else _typst_cover_fallback_page_indices(
             translated_pages=translated_pages,
             cleanup_strategy=cleanup_strategy,
             precleaned_page_indices=precleaned_page_indices,
             skipped_page_indices=skipped_page_indices,
-        ),
+        )
+    )
+    prepared = apply_typst_cover_fallback_fields(
+        translated_pages,
+        page_indices,
     )
     return prepared
 
@@ -281,6 +420,9 @@ def _apply_cover_fallback_to_page_specs(
                     )
                     for block in spec.blocks
                 ],
+                source_page_index=spec.source_page_index,
+                background_page_index=spec.background_page_index,
+                is_flow_continuation=spec.is_flow_continuation,
             )
         )
     return patched_specs
@@ -299,6 +441,18 @@ def _dispatch_render_mode(
             source_pdf_path=source_pdf_path,
             translated_pages=translated_pages,
             context=context,
+        )
+
+    if context.flow_rebuild_page_indices and mode not in {"typst", "typst_visual"}:
+        print(
+            "render mode upgrade: flow rebuild requires typst_visual background render",
+            flush=True,
+        )
+        return run_background_typst_render(
+            source_pdf_path=source_pdf_path,
+            translated_pages=translated_pages,
+            context=context,
+            visual_only_background=True,
         )
 
     if extract_selected_pages:
