@@ -36,6 +36,7 @@ def translate_book_pipeline(
     context_mode: str = "needed",
     glossary_mode: str = "matched",
     memory_mode: str = "matched",
+    target_language_name: str = "Simplified Chinese",
     invocation: dict | None = None,
     render_prewarm_output_pdf_path: Path | None = None,
     render_prewarm_artifacts_dir: Path | None = None,
@@ -70,6 +71,7 @@ def translate_book_pipeline(
             context_mode=context_mode,
             glossary_mode=glossary_mode,
             memory_mode=memory_mode,
+            target_language_name=target_language_name,
             invocation=invocation,
         )
     )

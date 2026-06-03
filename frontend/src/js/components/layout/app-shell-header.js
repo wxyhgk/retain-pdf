@@ -21,6 +21,9 @@ class AppShellHeader extends HTMLElement {
           <button id="glossary-btn" type="button" class="home-action-btn secondary" aria-label="术语表" title="术语表">
             <span>术语表</span>
           </button>
+          <button id="language-btn" type="button" class="home-action-btn secondary" aria-label="语言设置" title="语言设置">
+            <span>语言</span>
+          </button>
           <div class="app-update-wrapper">
             <button id="app-update-btn" type="button" class="home-action-btn secondary app-update-btn" aria-label="检查更新" title="检查更新" data-update-state="idle">
               <span>更新</span>

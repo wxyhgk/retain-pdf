@@ -59,6 +59,7 @@ export function mountUploadWorkflowFeatures(features) {
     apiPrefix: API_PREFIX,
     setText,
   });
+  features.workflowFeature?.bindLanguageEvents();
   features.developerFeature = mountDeveloperFeature({
     syncDeveloperDialogFromState: () => features.workflowFeature?.syncDeveloperDialogFromState(),
     updateDeveloperWorkflowFormState: () => features.workflowFeature?.updateDeveloperWorkflowFormState(),

@@ -66,6 +66,12 @@ pub struct TranslationInput {
     pub batch_size: i64,
     #[serde(default)]
     pub workers: i64,
+    #[serde(default = "default_target_language_name")]
+    pub target_language_name: String,
+}
+
+pub fn default_target_language_name() -> String {
+    "Simplified Chinese".to_string()
 }
 
 impl Default for TranslationInput {
@@ -93,6 +99,7 @@ impl Default for TranslationInput {
             end_page: default_end_page(),
             batch_size: default_batch_size(),
             workers: 0,
+            target_language_name: default_target_language_name(),
         }
     }
 }

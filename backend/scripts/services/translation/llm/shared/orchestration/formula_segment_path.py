@@ -32,6 +32,7 @@ def try_formula_segment_path(
             base_url=base_url,
             request_label=request_label,
             domain_guidance=context.merged_guidance,
+            target_language_name=context.target_language_name,
             policy=context.segmentation_policy,
             diagnostics=diagnostics,
             attempt_limit=context.fallback_policy.formula_segment_attempts,

@@ -4,8 +4,11 @@ import {
   applyMockUploadView,
   applyWorkflowUploadView,
   closeDeveloperDialog,
+  closeLanguageDialog,
+  openLanguageDialog,
   readDeveloperDialogValues,
   readDeveloperWorkflowValue,
+  readLanguageDialogTargetLanguage,
   readModelApiKey,
   readOcrProviderValue,
   readOcrTokenValue,
@@ -99,7 +102,7 @@ export function mountWorkflowFeature({
   function syncDeveloperDialogFromState() {
     const config = developerConfigWithDefaults();
     glossaryOptionsLoader.applyOptions(config.glossaryId);
-    setDeveloperDialogValues(config);
+    setDeveloperDialogValues(config, constants.TARGET_LANGUAGE_OPTIONS);
     updateDeveloperWorkflowFormState();
     void loadGlossaryOptions();
   }
@@ -220,6 +223,7 @@ export function mountWorkflowFeature({
       defaultModelName,
       defaultModelBaseUrl,
       defaults: {
+        targetLanguage: constants.DEFAULT_TARGET_LANGUAGE || "",
         workers: DEFAULT_WORKERS,
         batchSize: DEFAULT_BATCH_SIZE,
         classifyBatchSize: DEFAULT_CLASSIFY_BATCH_SIZE,
@@ -232,7 +236,7 @@ export function mountWorkflowFeature({
       values,
       normalizeWorkflow,
     });
-    setDeveloperDialogValues(developerConfigWithDefaults());
+    setDeveloperDialogValues(developerConfigWithDefaults(), constants.TARGET_LANGUAGE_OPTIONS);
     void saveDeveloperStoredConfig(state.developerConfig);
     applyWorkflowMode();
     closeDeveloperDialog();
@@ -305,7 +309,32 @@ export function mountWorkflowFeature({
     return payload;
   }
 
+  function openLanguageSettings() {
+    openLanguageDialog(
+      developerConfigWithDefaults().targetLanguage,
+      constants.TARGET_LANGUAGE_OPTIONS,
+    );
+  }
+
+  function saveLanguageSettings() {
+    const targetLanguage = readLanguageDialogTargetLanguage();
+    state.developerConfig = {
+      ...state.developerConfig,
+      targetLanguage,
+    };
+    void saveDeveloperStoredConfig(state.developerConfig);
+    closeLanguageDialog();
+  }
+
+  function bindLanguageEvents() {
+    $("language-btn")?.addEventListener("click", openLanguageSettings);
+    $("language-save-btn")?.addEventListener("click", saveLanguageSettings);
+    $("language-cancel-btn")?.addEventListener("click", closeLanguageDialog);
+  }
+
   return {
+    applyWorkflowMode,
+    bindLanguageEvents,
     applyWorkflowMode,
     collectRunPayload,
     currentRenderSourceJobId,

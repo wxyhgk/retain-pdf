@@ -177,6 +177,7 @@ class TranslateStageParams:
     context_mode: str
     glossary_mode: str
     memory_mode: str
+    target_language_name: str
     model: str
     base_url: str
     credential_ref: str
@@ -248,6 +249,7 @@ class TranslateStageSpec:
             context_mode=str(params_payload.get("context_mode", "needed") or "needed").strip().lower(),
             glossary_mode=str(params_payload.get("glossary_mode", "matched") or "matched").strip().lower(),
             memory_mode=str(params_payload.get("memory_mode", "matched") or "matched").strip().lower(),
+            target_language_name=str(params_payload.get("target_language_name", "Simplified Chinese") or "Simplified Chinese"),
             model=str(params_payload.get("model", "") or ""),
             base_url=str(params_payload.get("base_url", "") or ""),
             credential_ref=str(params_payload.get("credential_ref", "") or ""),

@@ -12,11 +12,26 @@ function positiveInteger(value, fallback) {
   return Math.floor(number);
 }
 
-export function setDeveloperDialogValues(config) {
+export function populateTargetLanguageOptions(languageOptions = [], selectId = "developer-target-language") {
+  const select = $(selectId);
+  if (!select) {
+    return;
+  }
+  select.replaceChildren();
+  for (const option of languageOptions) {
+    select.append(new Option(option.label, option.value));
+  }
+}
+
+export function setDeveloperDialogValues(config, languageOptions = []) {
   $("developer-workflow").value = config.workflow;
   $("developer-render-source-job-id").value = config.renderSourceJobId;
   $("developer-model").value = config.model;
   $("developer-base-url").value = config.baseUrl;
+  if ($("developer-target-language")) {
+    populateTargetLanguageOptions(languageOptions);
+    $("developer-target-language").value = config.targetLanguage || "";
+  }
   if ($("developer-glossary-id")) {
     $("developer-glossary-id").value = config.glossaryId || "";
   }
@@ -59,6 +74,7 @@ export function readDeveloperDialogValues(defaults) {
     renderSourceJobId: $("developer-render-source-job-id")?.value?.trim() || "",
     model: $("developer-model")?.value?.trim() || defaults.model,
     baseUrl: $("developer-base-url")?.value?.trim() || defaults.baseUrl,
+    targetLanguage: $("developer-target-language")?.value || defaults.targetLanguage || "",
     glossaryId: $("job-glossary-id")?.value?.trim() || $("developer-glossary-id")?.value?.trim() || "",
     workers: positiveInteger($("developer-workers")?.value, defaults.workers),
     batchSize: positiveInteger($("developer-batch-size")?.value, defaults.batchSize),
@@ -191,6 +207,26 @@ export function applyWorkflowUploadView({
   } else if (!uploadReady) {
     uploadStatus?.classList.add("hidden");
   }
+}
+
+export function openLanguageDialog(targetLanguage = "", languageOptions = []) {
+  const dialog = $("language-dialog");
+  if (!dialog) {
+    return;
+  }
+  populateTargetLanguageOptions(languageOptions, "target-language-select");
+  if ($("target-language-select")) {
+    $("target-language-select").value = targetLanguage || "";
+  }
+  dialog.showModal();
+}
+
+export function closeLanguageDialog() {
+  $("language-dialog")?.close();
+}
+
+export function readLanguageDialogTargetLanguage() {
+  return $("target-language-select")?.value || "";
 }
 
 export function closeDeveloperDialog() {

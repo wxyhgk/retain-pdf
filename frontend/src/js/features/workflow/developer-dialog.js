@@ -9,6 +9,7 @@ export function buildDeveloperConfigFromDialog({
     mathMode: currentConfig.mathMode,
     model: values.model,
     baseUrl: values.baseUrl,
+    targetLanguage: values.targetLanguage || currentConfig.targetLanguage || "",
     glossaryId: values.glossaryId,
     workers: values.workers,
     batchSize: values.batchSize,
@@ -27,6 +28,7 @@ export function defaultDeveloperDialogReadOptions({
   return {
     model: defaultModelName(),
     baseUrl: defaultModelBaseUrl(),
+    targetLanguage: defaults.targetLanguage || "",
     workers: defaults.workers,
     batchSize: defaults.batchSize,
     classifyBatchSize: defaults.classifyBatchSize,

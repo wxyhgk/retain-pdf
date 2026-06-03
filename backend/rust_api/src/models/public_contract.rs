@@ -64,6 +64,7 @@ pub struct PublicTranslationInput {
     pub end_page: i64,
     pub batch_size: i64,
     pub workers: i64,
+    pub target_language_name: String,
 }
 
 pub fn public_request_payload(spec: &ResolvedJobSpec) -> PublicResolvedJobSpec {
@@ -116,6 +117,7 @@ pub fn public_request_payload(spec: &ResolvedJobSpec) -> PublicResolvedJobSpec {
             end_page: spec.translation.end_page,
             batch_size: spec.translation.batch_size,
             workers: spec.translation.workers,
+            target_language_name: spec.translation.target_language_name.clone(),
         },
         render: spec.render.clone(),
         runtime: spec.runtime.clone(),

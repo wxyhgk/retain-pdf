@@ -1,6 +1,7 @@
 import "./dialogs/browser-credentials-dialog.js";
 import "./dialogs/glossary-manager-dialog.js";
 import "./dialogs/developer-auth-dialog.js";
+import "./dialogs/language-settings-dialog.js";
 import "./dialogs/developer-settings-dialog.js";
 import "./dialogs/page-range-dialog.js";
 import "./dialogs/recent-jobs-dialog.js";

@@ -32,6 +32,7 @@ export function buildDeveloperConfigWithDefaults({
     compileWorkers: positiveInteger(source.compileWorkers, defaults.compileWorkers),
     timeoutSeconds: positiveInteger(source.timeoutSeconds, defaults.timeoutSeconds),
     translateTitles: source.translateTitles !== false,
+    targetLanguage: source.targetLanguage || "",
   };
 }
 

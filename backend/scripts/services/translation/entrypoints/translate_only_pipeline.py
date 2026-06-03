@@ -83,6 +83,7 @@ def _args_from_spec(spec: TranslateStageSpec) -> SimpleNamespace:
         context_mode=spec.params.context_mode,
         glossary_mode=spec.params.glossary_mode,
         memory_mode=spec.params.memory_mode,
+        target_language_name=spec.params.target_language_name,
         api_key=resolve_credential_ref(spec.params.credential_ref),
         model=spec.params.model,
         base_url=spec.params.base_url,
@@ -158,6 +159,7 @@ def main() -> None:
             context_mode=args.context_mode,
             glossary_mode=args.glossary_mode,
             memory_mode=args.memory_mode,
+            target_language_name=args.target_language_name,
             invocation=build_stage_invocation_metadata(
                 stage="translate",
                 stage_spec_schema_version=stage_spec_schema_version,

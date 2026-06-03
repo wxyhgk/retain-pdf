@@ -61,6 +61,7 @@ def build_translation_context_from_policy(
     context_mode: str = "needed",
     glossary_mode: str = "matched",
     memory_mode: str = "matched",
+    target_language_name: str = "简体中文",
 ) -> TranslationControlContext:
     extra_guidance_parts: list[str] = []
     if extra_guidance.strip():
@@ -86,6 +87,7 @@ def build_translation_context_from_policy(
         context_mode=context_mode,
         glossary_mode=glossary_mode,
         memory_mode=memory_mode,
+        target_language_name=target_language_name,
     )
 
 

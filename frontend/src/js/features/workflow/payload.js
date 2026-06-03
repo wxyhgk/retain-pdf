@@ -55,6 +55,7 @@ export function buildTranslationPayload({
     workers: developerConfig.workers,
     batch_size: developerConfig.batchSize,
     classify_batch_size: developerConfig.classifyBatchSize,
+    target_language_name: developerConfig.targetLanguage || constants.DEFAULT_TARGET_LANGUAGE,
     rule_profile_name: constants.DEFAULT_RULE_PROFILE,
     custom_rules_text: "",
     glossary_id: selectedGlossaryId,

@@ -39,6 +39,7 @@ class TranslationExecutionRequest:
     context_mode: str = "needed"
     glossary_mode: str = "matched"
     memory_mode: str = "matched"
+    target_language_name: str = "Simplified Chinese"
     invocation: dict[str, Any] | None = None
 
 

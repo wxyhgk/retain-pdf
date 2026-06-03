@@ -70,6 +70,7 @@ def build_translation_execution_plan(request: TranslationExecutionRequest) -> Tr
         context_mode=request.context_mode,
         glossary_mode=request.glossary_mode,
         memory_mode=request.memory_mode,
+        target_language_name=request.target_language_name,
     )
     provider_family = classify_provider_family(base_url=request.base_url, model=request.model)
     run_diagnostics = TranslationRunDiagnostics(
