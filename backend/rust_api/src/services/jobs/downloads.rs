@@ -77,7 +77,11 @@ pub fn document_download(
     } else {
         path
     };
-    Ok(FileDownload::new(path, content_type, None))
+    let download_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .map(|s| s.to_string());
+    Ok(FileDownload::new(path, content_type, download_name))
 }
 
 pub fn page_preview_download(

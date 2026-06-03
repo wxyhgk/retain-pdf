@@ -13,6 +13,28 @@ function sanitizeSuggestedName(filename) {
   return normalized.replace(/[\\/:*?"<>|]+/g, "_");
 }
 
+function acceptTypesForName(filename) {
+  const sanitized = sanitizeSuggestedName(filename);
+  const dot = sanitized.lastIndexOf(".");
+  if (dot <= 0 || dot === sanitized.length - 1) {
+    return null;
+  }
+  const ext = sanitized.slice(dot).toLowerCase();
+  if (ext === ".pdf") {
+    return [{ description: "PDF 文件", accept: { "application/pdf": [".pdf"] } }];
+  }
+  if (ext === ".zip") {
+    return [{ description: "ZIP 压缩包", accept: { "application/zip": [".zip"] } }];
+  }
+  if (ext === ".md") {
+    return [{ description: "Markdown 文件", accept: { "text/markdown": [".md"] } }];
+  }
+  if (ext === ".json") {
+    return [{ description: "JSON 文件", accept: { "application/json": [".json"] } }];
+  }
+  return null;
+}
+
 function normalizeTotalBytes(response) {
   const headerValue = response?.headers?.get?.("content-length") || "";
   const totalBytes = Number(headerValue);
@@ -158,9 +180,14 @@ export async function prepareDownloadTarget(suggestedName) {
     return { kind: "blob" };
   }
   try {
-    const handle = await window.showSaveFilePicker({
+    const pickerOpts = {
       suggestedName: sanitizeSuggestedName(suggestedName),
-    });
+    };
+    const types = acceptTypesForName(suggestedName);
+    if (types) {
+      pickerOpts.types = types;
+    }
+    const handle = await window.showSaveFilePicker(pickerOpts);
     return { kind: "file-system", handle };
   } catch (error) {
     if (isAbortError(error)) {
