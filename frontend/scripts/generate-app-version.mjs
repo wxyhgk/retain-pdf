@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 const frontendRoot = path.resolve(__dirname, "..");
 const repoRoot = path.resolve(frontendRoot, "..");
 const desktopPackagePath = path.resolve(frontendRoot, "../desktop/package.json");
+const versionFilePath = path.resolve(repoRoot, "VERSION");
 const outputPath = path.join(frontendRoot, "src/js/generated/app-version.js");
 
 function repoFromHomepage(homepage = "") {
@@ -38,8 +39,21 @@ function readGitVersion() {
   }
 }
 
+function readVersionFile() {
+  try {
+    return fs.readFileSync(versionFilePath, "utf8").trim();
+  } catch (_err) {
+    return "";
+  }
+}
+
 const desktopPackage = JSON.parse(fs.readFileSync(desktopPackagePath, "utf8"));
-const appVersion = desktopPackage.version || readGitVersion() || "0.0.0";
+const packageVersion = `${desktopPackage.version || ""}`.trim();
+const appVersion = (process.env.RETAIN_PDF_VERSION || "").trim()
+  || packageVersion
+  || readGitVersion()
+  || readVersionFile()
+  || "0.0.0";
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(
   outputPath,
