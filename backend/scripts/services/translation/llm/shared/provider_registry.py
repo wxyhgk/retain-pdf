@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
+from services.translation.llm.providers.atlascloud.client import DEFAULT_API_KEY_ENV as ATLASCLOUD_DEFAULT_API_KEY_ENV
+from services.translation.llm.providers.atlascloud.client import DEFAULT_BASE_URL as ATLASCLOUD_DEFAULT_BASE_URL
+from services.translation.llm.providers.atlascloud.client import DEFAULT_MODEL as ATLASCLOUD_DEFAULT_MODEL
+from services.translation.llm.providers.atlascloud.client import get_api_key as atlascloud_get_api_key
 from services.translation.llm.providers.deepseek.client import DEFAULT_API_KEY_ENV as DEEPSEEK_DEFAULT_API_KEY_ENV
 from services.translation.llm.providers.deepseek.client import DEFAULT_BASE_URL as DEEPSEEK_DEFAULT_BASE_URL
 from services.translation.llm.providers.deepseek.client import DEFAULT_MODEL as DEEPSEEK_DEFAULT_MODEL
@@ -85,12 +90,59 @@ DEEPSEEK_RUNTIME = TranslationProviderRuntime(
 )
 
 
+# Atlas Cloud exposes an OpenAI-compatible chat completions endpoint, so it
+# reuses the same provider-neutral transport and translation handlers as the
+# DeepSeek runtime and only overrides provider identity and defaults.
+ATLASCLOUD_RUNTIME = TranslationProviderRuntime(
+    provider_id="atlascloud",
+    provider_family="openai_compatible",
+    default_api_key_env=ATLASCLOUD_DEFAULT_API_KEY_ENV,
+    default_model=ATLASCLOUD_DEFAULT_MODEL,
+    default_base_url=ATLASCLOUD_DEFAULT_BASE_URL,
+    capabilities=TranslationProviderCapabilities(),
+    build_headers=deepseek_build_headers,
+    chat_completions_url=deepseek_chat_completions_url,
+    get_api_key=atlascloud_get_api_key,
+    get_session=deepseek_get_session,
+    is_transport_error=deepseek_is_transport_error,
+    normalize_base_url=deepseek_normalize_base_url,
+    request_chat_content=deepseek_request_chat_content,
+    parse_translation_payload=deepseek_parse_translation_payload,
+    translate_batch_once=deepseek_translate_batch_once,
+    translate_single_item_plain_text=deepseek_translate_single_item_plain_text,
+    translate_single_item_plain_text_unstructured=deepseek_translate_single_item_plain_text_unstructured,
+    translate_continuation_group_members=deepseek_translate_continuation_group_members,
+    translate_single_item_tagged_text=deepseek_translate_single_item_tagged_text,
+    translate_single_item_with_decision=deepseek_translate_single_item_with_decision,
+)
+
+
+PROVIDER_SELECTION_ENV = "RETAIN_TRANSLATION_PROVIDER"
+DEFAULT_PROVIDER_ID = "deepseek"
+_PROVIDER_RUNTIMES: dict[str, TranslationProviderRuntime] = {
+    DEEPSEEK_RUNTIME.provider_id: DEEPSEEK_RUNTIME,
+    ATLASCLOUD_RUNTIME.provider_id: ATLASCLOUD_RUNTIME,
+}
+
+
 def resolve_active_provider_runtime() -> TranslationProviderRuntimeProtocol:
-    return DEEPSEEK_RUNTIME
+    selected = os.environ.get(PROVIDER_SELECTION_ENV, "").strip().lower()
+    if not selected:
+        return _PROVIDER_RUNTIMES[DEFAULT_PROVIDER_ID]
+    runtime = _PROVIDER_RUNTIMES.get(selected)
+    if runtime is None:
+        known = ", ".join(sorted(_PROVIDER_RUNTIMES))
+        raise ValueError(
+            f"Unknown translation provider '{selected}' from {PROVIDER_SELECTION_ENV}. Known providers: {known}."
+        )
+    return runtime
 
 
 __all__ = [
+    "ATLASCLOUD_RUNTIME",
     "DEEPSEEK_RUNTIME",
+    "DEFAULT_PROVIDER_ID",
+    "PROVIDER_SELECTION_ENV",
     "TranslationProviderRuntime",
     "TranslationProviderCapabilities",
     "TranslationProviderRuntimeProtocol",

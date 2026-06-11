@@ -10,6 +10,8 @@
   `shared/provider_runtime.py`
 - 想看 provider registry/capability 装配：
   `shared/provider_registry.py`
+- 想切换激活 provider（默认 `deepseek`，可选 `atlascloud`）：
+  设环境变量 `RETAIN_TRANSLATION_PROVIDER`，在 `shared/provider_registry.py` 解析
 - 想看 provider 侧翻译实现：
   `providers/deepseek/translation_client.py`
 - 想看翻译控制上下文、术语和提示拼装入口：
@@ -58,6 +60,8 @@
 
 - `providers/deepseek/`
   放 DeepSeek 专属 API 适配、默认值、请求/响应处理
+- `providers/atlascloud/`
+  放 Atlas Cloud 默认值（base_url、默认模型、API key env），复用 DeepSeek 的 OpenAI 兼容 transport
 - `shared/`
   放跨 provider 的缓存、控制上下文、结构化 schema 与解析器
 - `shared/prompt_building.py`

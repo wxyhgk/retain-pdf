@@ -62,6 +62,35 @@ Docker 中 `docker/delivery/docker/auth.local.json` 的 `api_keys` 必须和 `do
 - `RUST_API_UPLOAD_MAX_PAGES`：普通上传页数限制，`0` 表示不限制。
 - `RUST_API_MAX_RUNNING_JOBS`：最大并发任务数。
 
+## 翻译 provider
+
+翻译走 OpenAI 兼容的 chat completions 接口，`base_url` / `model` / `api_key` 可以从请求参数或环境变量传入。激活的 provider 由 `RETAIN_TRANSLATION_PROVIDER` 决定，默认 `deepseek`，运行时不传时行为不变。
+
+- `RETAIN_TRANSLATION_PROVIDER`：激活的翻译 provider，取值 `deepseek`（默认）或 `atlascloud`。
+
+### DeepSeek（默认）
+
+- 默认 `base_url`：`https://api.deepseek.com/v1`
+- 默认 `model`：`deepseek-v4-flash`
+- API key：环境变量 `DEEPSEEK_API_KEY` 或 `backend/scripts/.env/deepseek.env`
+
+### Atlas Cloud（可选，OpenAI 兼容）
+
+[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=retain-pdf) 通过统一的 OpenAI 兼容接口提供多种模型，可作为翻译后端直接接入。
+
+- 默认 `base_url`：`https://api.atlascloud.ai/v1`
+- 默认 `model`：`deepseek-ai/DeepSeek-V3-0324`
+- API key：环境变量 `ATLASCLOUD_API_KEY` 或 `backend/scripts/.env/atlascloud.env`（模板见 `backend/scripts/.env/atlascloud.env.example`）
+
+启用方式：
+
+```bash
+export RETAIN_TRANSLATION_PROVIDER=atlascloud
+export ATLASCLOUD_API_KEY=your-atlascloud-api-key
+```
+
+启用后，CLI 入口（如 `translate_page.py`、`run_document_flow.py`）的 `--base-url` / `--model` 默认值会自动切到 Atlas Cloud；也可以在单次调用时显式传 `--base-url https://api.atlascloud.ai/v1 --model deepseek-ai/DeepSeek-V3-0324`。
+
 ## Docker 配置位置
 
 Compose 实际读取的是：
