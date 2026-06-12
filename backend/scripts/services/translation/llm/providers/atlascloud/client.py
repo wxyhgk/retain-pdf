@@ -23,7 +23,11 @@ from services.translation.llm.providers.deepseek.client import request_chat_cont
 
 
 DEFAULT_BASE_URL = "https://api.atlascloud.ai/v1"
-DEFAULT_MODEL = "deepseek-ai/DeepSeek-V3-0324"
+# Atlas Cloud's recommended default chat model. ``deepseek-v4-pro`` is a
+# reasoning model, so callers should give it enough ``max_tokens`` (>= 512),
+# otherwise the token budget is spent on the reasoning trace and ``content``
+# comes back empty with ``finish_reason=length``.
+DEFAULT_MODEL = "deepseek-ai/deepseek-v4-pro"
 DEFAULT_API_KEY_ENV = "ATLASCLOUD_API_KEY"
 DEFAULT_API_KEY_FILE = "atlascloud.env"
 

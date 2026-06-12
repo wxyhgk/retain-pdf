@@ -79,8 +79,10 @@ Docker 中 `docker/delivery/docker/auth.local.json` 的 `api_keys` 必须和 `do
 [Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=retain-pdf) 通过统一的 OpenAI 兼容接口提供多种模型，可作为翻译后端直接接入。
 
 - 默认 `base_url`：`https://api.atlascloud.ai/v1`
-- 默认 `model`：`deepseek-ai/DeepSeek-V3-0324`
+- 默认 `model`：`deepseek-ai/deepseek-v4-pro`
 - API key：环境变量 `ATLASCLOUD_API_KEY` 或 `backend/scripts/.env/atlascloud.env`（模板见 `backend/scripts/.env/atlascloud.env.example`）
+
+> `deepseek-ai/deepseek-v4-pro` 是带推理（reasoning）的模型，调用时要给足 `max_tokens`（建议 ≥ 512），否则 token 可能先耗在思维链上，出现 `finish_reason=length` 且 `content` 为空。
 
 启用方式：
 
@@ -89,7 +91,7 @@ export RETAIN_TRANSLATION_PROVIDER=atlascloud
 export ATLASCLOUD_API_KEY=your-atlascloud-api-key
 ```
 
-启用后，CLI 入口（如 `translate_page.py`、`run_document_flow.py`）的 `--base-url` / `--model` 默认值会自动切到 Atlas Cloud；也可以在单次调用时显式传 `--base-url https://api.atlascloud.ai/v1 --model deepseek-ai/DeepSeek-V3-0324`。
+启用后，CLI 入口（如 `translate_page.py`、`run_document_flow.py`）的 `--base-url` / `--model` 默认值会自动切到 Atlas Cloud；也可以在单次调用时显式传 `--base-url https://api.atlascloud.ai/v1 --model deepseek-ai/deepseek-v4-pro`。Atlas Cloud 还提供 DeepSeek、Qwen、GLM、Kimi、MiniMax 等多家模型，完整清单见下方 README 或 [atlascloud.ai/models](https://www.atlascloud.ai/models)。
 
 ## Docker 配置位置
 

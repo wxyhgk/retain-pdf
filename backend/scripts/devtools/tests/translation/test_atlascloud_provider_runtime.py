@@ -27,7 +27,7 @@ def test_atlascloud_runtime_declares_openai_compatible_defaults() -> None:
     assert ATLASCLOUD_RUNTIME.provider_id == "atlascloud"
     assert ATLASCLOUD_RUNTIME.provider_family == "openai_compatible"
     assert ATLASCLOUD_RUNTIME.default_base_url == "https://api.atlascloud.ai/v1"
-    assert ATLASCLOUD_RUNTIME.default_model == "deepseek-ai/DeepSeek-V3-0324"
+    assert ATLASCLOUD_RUNTIME.default_model == "deepseek-ai/deepseek-v4-pro"
     assert ATLASCLOUD_RUNTIME.default_api_key_env == "ATLASCLOUD_API_KEY"
 
 
