@@ -93,6 +93,28 @@ export ATLASCLOUD_API_KEY=your-atlascloud-api-key
 
 启用后，CLI 入口（如 `translate_page.py`、`run_document_flow.py`）的 `--base-url` / `--model` 默认值会自动切到 Atlas Cloud；也可以在单次调用时显式传 `--base-url https://api.atlascloud.ai/v1 --model deepseek-ai/deepseek-v4-pro`。Atlas Cloud 还提供 DeepSeek、Qwen、GLM、Kimi、MiniMax 等多家模型，完整清单见下方 README 或 [atlascloud.ai/models](https://www.atlascloud.ai/models)。
 
+#### 错误码处理
+
+Atlas Cloud 复用 DeepSeek 那套 OpenAI 兼容 transport（`backend/scripts/services/translation/llm/providers/deepseek/client.py` 的 `request_chat_content`），因此自动继承同一套错误码处理：
+
+- 瞬时错误 `408 / 429 / 500 / 502 / 503 / 504` 会按**指数退避 + 抖动**自动重试（`HTTP_RETRY_ATTEMPTS`，退避上限 `HTTP_RETRY_BACKOFF_MAX_SECS=20s`）；连接/超时类网络错误同样重试。
+- `429` 优先读响应头的 `Retry-After` 作为等待时长，并设有累计等待预算 `HTTP_RATE_LIMIT_WAIT_MAX_SECS=300s`，超过即放弃并抛出，避免无限等待。
+- `4xx` 客户端错误（`400 / 401 / 403 / 404 / 422` 等）**不重试**，直接抛出，且异常信息会附带响应体摘要与请求元信息便于定位。
+- Atlas 网关的错误体形如 `{"code":401,"msg":"unauthorized"}`、`{"code":400,"msg":"bad request"}`，会原样收进异常文本。
+
+Atlas provider 另提供两个 transport-only 辅助（`backend/scripts/services/translation/llm/providers/atlascloud/client.py`），便于上层对失败分类：`is_rate_limited(exc)` 判断是否 429；`describe_api_error(exc)` 给出稳定、不含密钥的失败原因（如 `HTTP 429: rate limited ... [retryable]`）。
+
+#### 余额与用量
+
+- **用量**：Atlas Cloud 是 OpenAI 兼容接口，每次非流式 chat completion 都会在响应里回传 `usage`（`prompt_tokens` / `completion_tokens` / `total_tokens`）。`atlascloud.extract_usage(response_json)` 可从响应取用量；`atlascloud.fetch_usage(messages, api_key=..., model=...)` 会发一次最小请求并返回用量，可用作连通性 + 计量探针。
+- **余额**：Atlas Cloud 未提供 OpenAI 风格的 `/v1/dashboard/billing/*` 余额查询接口（这些路由返回 404），剩余额度请在 [Atlas Cloud 控制台](https://www.atlascloud.ai/console/coding-plan) 查看。
+
+#### 并发与稳定性
+
+transport 层为并发做了准备：按配置的 worker 数设置连接池（`pool_maxsize`，上限 `RETAIN_TRANSLATION_HTTP_POOL_MAX`）、每线程独立 `requests.Session`、DNS 预热与 60s 缓存，配合上面的重试/退避，使翻译流水线在多并发下保持稳定。
+
+实测（`deepseek-ai/deepseek-v4-pro`，并发 8、24 个请求，`max_tokens=512`）：成功率 24/24（0 失败），延迟 p50 ≈ 3.6s、p95 ≈ 5.4s，吞吐 ≈ 1.9 req/s。生产中实际并发量请按账户的 rate limit 调整 worker 数；遇到 429 会按上面的退避策略自动让路。
+
 ## Docker 配置位置
 
 Compose 实际读取的是：
