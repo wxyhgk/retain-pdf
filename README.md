@@ -4,6 +4,43 @@
   <img src="resources/brand/RetainPDF-github.svg" alt="RetainPDF" width="320" />
 </p>
 
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=retain-pdf">
+    <img src="resources/brand/atlas-cloud-logo.svg" alt="Atlas Cloud" width="200" />
+  </a>
+</p>
+
+> 🎁 **[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=retain-pdf)** 为 RetainPDF 的翻译环节提供了一个可选的、OpenAI 兼容的推理后端：一个 API 即可调用 DeepSeek、Qwen、GLM、Kimi、MiniMax 等多家模型，无需维护多个厂商的接入。设 `RETAIN_TRANSLATION_PROVIDER=atlascloud` 即可把翻译切到 Atlas Cloud（默认仍是 DeepSeek，行为不变）。
+>
+> 接入只需把翻译的 OpenAI 兼容入口指向 Atlas：`base_url=https://api.atlascloud.ai/v1`、`model=deepseek-ai/deepseek-v4-pro`（key 用占位符，从环境变量读取）。`deepseek-ai/deepseek-v4-pro` 是带推理（reasoning）的模型，调用时把 `max_tokens` 给足（≥ 512），否则 token 可能先耗在思维链上、`content` 返回为空。
+>
+> 预算友好：[coding plan](https://www.atlascloud.ai/console/coding-plan)。接入细节见 [doc/core/api/local-dev.md](doc/core/api/local-dev.md#翻译-provider)。
+
+```env
+# 可选：把翻译切到 Atlas Cloud（OpenAI 兼容）
+RETAIN_TRANSLATION_PROVIDER=atlascloud
+ATLASCLOUD_API_KEY=<atlascloud-api-key>
+# base_url=https://api.atlascloud.ai/v1
+# model=deepseek-ai/deepseek-v4-pro
+```
+
+<details>
+<summary>Atlas Cloud 全部 LLM 模型（59 个，来源 <code>api.md</code> / <code>/zh/models/list/llm</code>）</summary>
+
+- Anthropic (Claude): `anthropic/claude-haiku-4.5-20251001`, `anthropic/claude-opus-4.8`, `anthropic/claude-sonnet-4.6`
+- OpenAI (GPT): `openai/gpt-5.4`, `openai/gpt-5.5`
+- Google (Gemini): `google/gemini-3.1-flash-lite`, `google/gemini-3.1-pro-preview`, `google/gemini-3.5-flash`
+- 阿里 Qwen: `qwen/qwen2.5-7b-instruct`, `Qwen/Qwen3-235B-A22B-Instruct-2507`, `qwen/qwen3-235b-a22b-thinking-2507`, `qwen/qwen3-30b-a3b`, `Qwen/Qwen3-30B-A3B-Instruct-2507`, `qwen/qwen3-30b-a3b-thinking-2507`, `qwen/qwen3-32b`, `qwen/qwen3-8b`, `Qwen/Qwen3-Coder`, `qwen/qwen3-coder-next`, `qwen/qwen3-max-2026-01-23`, `Qwen/Qwen3-Next-80B-A3B-Instruct`, `Qwen/Qwen3-Next-80B-A3B-Thinking`, `Qwen/Qwen3-VL-235B-A22B-Instruct`, `qwen/qwen3-vl-235b-a22b-thinking`, `qwen/qwen3-vl-30b-a3b-instruct`, `qwen/qwen3-vl-30b-a3b-thinking`, `qwen/qwen3-vl-8b-instruct`, `qwen/qwen3.5-122b-a10b`, `qwen/qwen3.5-27b`, `qwen/qwen3.5-35b-a3b`, `qwen/qwen3.5-397b-a17b`, `qwen/qwen3.6-35b-a3b`, `qwen/qwen3.6-plus`
+- DeepSeek: `deepseek-ai/deepseek-ocr`, `deepseek-ai/deepseek-r1-0528`, `deepseek-ai/DeepSeek-V3-0324`, `deepseek-ai/DeepSeek-V3.1`, `deepseek-ai/DeepSeek-V3.1-Terminus`, `deepseek-ai/deepseek-v3.2`, `deepseek-ai/DeepSeek-V3.2-Exp`, `deepseek-ai/deepseek-v4-flash`, `deepseek-ai/deepseek-v4-pro`
+- Moonshot (Kimi): `moonshotai/Kimi-K2-Instruct`, `moonshotai/Kimi-K2-Instruct-0905`, `moonshotai/Kimi-K2-Thinking`, `moonshotai/kimi-k2.5`, `moonshotai/kimi-k2.6`
+- 智谱 GLM: `zai-org/GLM-4.6`, `zai-org/glm-4.7`, `zai-org/glm-5`, `zai-org/glm-5-turbo`, `zai-org/glm-5.1`, `zai-org/glm-5v-turbo`
+- MiniMax: `MiniMaxAI/MiniMax-M2`, `minimaxai/minimax-m2.1`, `minimaxai/minimax-m2.5`, `minimaxai/minimax-m2.7`
+- xAI: `xai/grok-4.3`
+- 快手 KAT: `kwaipilot/kat-coder-pro-v2`
+- 其他: `owl`
+
+</details>
+
 
 开源社区做保留排版的项目不少，但是都围绕可复制，可编辑的 PDF，以及行内公式不复杂的场景.
 
