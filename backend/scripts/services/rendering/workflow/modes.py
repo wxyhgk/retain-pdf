@@ -13,6 +13,7 @@ from services.rendering.output.typst.book_renderer import build_book_typst_pdf
 from services.rendering.output.typst.book_renderer import build_dual_book_pdf
 from services.rendering.workflow.context import RenderExecutionContext
 from services.rendering.output.typst.shared import default_typst_temp_root
+from services.rendering.source.intermediate_paths import intermediate_pdf_path
 
 
 def _compress_final_pdf_if_needed(context: RenderExecutionContext, *, mode: str) -> bool:
@@ -67,7 +68,11 @@ def run_selected_pages_overlay_render(
     translated_pages: dict[int, list[dict]],
     context: RenderExecutionContext,
 ) -> tuple[int, dict[str, object]]:
-    selected_source_path = default_typst_temp_root(context.output_pdf_path) / f"{context.output_pdf_path.stem}.selected-source.pdf"
+    selected_source_path = intermediate_pdf_path(
+        work_root=default_typst_temp_root(context.output_pdf_path),
+        output_pdf_path=context.output_pdf_path,
+        suffix=".selected-source.pdf",
+    )
     extract_pages_with_pikepdf(
         source_pdf_path=source_pdf_path,
         output_pdf_path=selected_source_path,
