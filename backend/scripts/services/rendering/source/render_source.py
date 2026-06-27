@@ -6,6 +6,7 @@ import time
 
 from services.rendering.source.compression.pdf_copy import build_image_compressed_pdf_copy
 from services.rendering.contracts import RenderDocumentAnalysis
+from services.rendering.source.intermediate_paths import intermediate_pdf_path
 from services.rendering.source_cleanup.types import BBoxTextStripCandidates
 from services.rendering.source.preparation.hidden_text_strip import build_hidden_text_stripped_pdf_copy
 from services.rendering.source.preparation.xobject_sanitize import build_invalid_xobject_sanitized_pdf_copy
@@ -55,7 +56,11 @@ def build_render_source_pdf(
     source_text_precleaned_page_indices: frozenset[int] = frozenset()
     source_cleanup_cover_fallback_page_indices: frozenset[int] = frozenset()
     sanitize_started = time.perf_counter()
-    sanitized_source_path = work_root / f"{output_pdf_path.stem}.source-xobject-sanitized.pdf"
+    sanitized_source_path = intermediate_pdf_path(
+        work_root=work_root,
+        output_pdf_path=output_pdf_path,
+        suffix=".source-xobject-sanitized.pdf",
+    )
     sanitize_result = build_invalid_xobject_sanitized_pdf_copy(
         source_pdf_path=render_source_path,
         output_pdf_path=sanitized_source_path,
@@ -75,7 +80,11 @@ def build_render_source_pdf(
     hidden_text_page_indices = document_analysis.hidden_text_strip_page_indices if document_analysis is not None else frozenset()
     if strip_hidden_text and hidden_text_page_indices:
         hidden_started = time.perf_counter()
-        hidden_text_stripped_path = work_root / f"{output_pdf_path.stem}.source-hidden-text-stripped.pdf"
+        hidden_text_stripped_path = intermediate_pdf_path(
+            work_root=work_root,
+            output_pdf_path=output_pdf_path,
+            suffix=".source-hidden-text-stripped.pdf",
+        )
         hidden_text_result = build_hidden_text_stripped_pdf_copy(
             render_source_path,
             hidden_text_stripped_path,
@@ -110,7 +119,11 @@ def build_render_source_pdf(
             )
         else:
             bbox_started = time.perf_counter()
-            bbox_text_stripped_path = work_root / f"{output_pdf_path.stem}.source-bbox-text-stripped.pdf"
+            bbox_text_stripped_path = intermediate_pdf_path(
+                work_root=work_root,
+                output_pdf_path=output_pdf_path,
+                suffix=".source-bbox-text-stripped.pdf",
+            )
             source_cleanup_result = execute_source_cleanup(
                 SourceCleanupRequest(
                     source_pdf_path=render_source_path,
@@ -167,8 +180,10 @@ def build_render_source_pdf(
             document_analysis=document_analysis,
         )
     compress_started = time.perf_counter()
-    compressed_source_path = (
-        work_root / f"{output_pdf_path.stem}.source-compressed.pdf"
+    compressed_source_path = intermediate_pdf_path(
+        work_root=work_root,
+        output_pdf_path=output_pdf_path,
+        suffix=".source-compressed.pdf",
     )
     if build_image_compressed_pdf_copy(render_source_path, compressed_source_path, dpi=pdf_compress_dpi):
         print(f"render source pdf: image compression elapsed={time.perf_counter() - compress_started:.2f}s", flush=True)
