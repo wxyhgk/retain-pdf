@@ -12,6 +12,8 @@ services:
     volumes:
       - app_data:/data
       - ./docker/auth.local.json:/app/backend/rust_api/auth.local.json:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:41000/health"]
       interval: 30s

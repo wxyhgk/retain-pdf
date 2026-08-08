@@ -16,6 +16,7 @@ import {
   CREDENTIAL_DOM_SELECTORS,
 } from "../src/js/features/credentials/credentials-dom-contract.js";
 import { mountBrowserCredentialsFeature } from "../src/js/features/credentials/browser.js";
+import { ensureOcrCredentialValidationReady } from "../src/js/features/credentials/ocr-readiness-flow.js";
 import {
   createCredentialsStatePort,
   hasCompleteCredentials,
@@ -238,6 +239,52 @@ test("credentials state port owns credential source of truth and token helpers",
   assert.equal(port.getCredentials().ocrProvider, "paddle");
   assert.equal(port.getCredentials().paddleToken, "");
   assert.equal(mirrored.length, 1);
+});
+
+test("credential-free provider (local) is treated as ready without any token", () => {
+  const port = createCredentialsStatePort({
+    initialState: {
+      ocrProvider: "local",
+      paddleToken: "",
+      modelApiKey: "sk-test",
+    },
+  });
+
+  // ocrTokenFromCredentials/hasCompleteCredentials must key off the provider's
+  // supportsValidation flag, not just "is there a paddleToken".
+  assert.equal(port.getOcrToken(), "");
+  assert.equal(ocrTokenFromCredentials({ ocrProvider: "local" }), "");
+  assert.equal(port.hasComplete(), true);
+  assert.equal(hasCompleteCredentials({ ocrProvider: "local", modelApiKey: "sk-test" }), true);
+  // No modelApiKey still blocks readiness — local only waives the OCR token.
+  assert.equal(hasCompleteCredentials({ ocrProvider: "local", modelApiKey: "" }), false);
+  // An explicit providerId override (candidate provider not yet in credentials)
+  // must win over whatever credentials.ocrProvider currently says.
+  assert.equal(hasCompleteCredentials({ ocrProvider: "paddle", modelApiKey: "sk-test" }, {
+    providerId: "local",
+  }), true);
+});
+
+test("ensureOcrCredentialValidationReady short-circuits to ready for a credential-free provider", async () => {
+  let validateCalled = false;
+  const result = await ensureOcrCredentialValidationReady({
+    apiPrefix: "/api",
+    providerId: "local",
+    credentials: { ocrProvider: "local", paddleToken: "" },
+    defaultPaddleToken: () => "",
+    validateOcrToken: async () => {
+      validateCalled = true;
+      return { ok: true };
+    },
+    setOcrValidationMessage: () => {},
+    showResult: true,
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "not_required");
+  assert.equal(result.definition.id, "local");
+  assert.equal(result.token, "");
+  assert.equal(validateCalled, false);
 });
 
 test("credentials state port owns validation and balance runtime state", () => {
@@ -497,6 +544,83 @@ test("browser credentials controller routes UI operations through view port", ()
   const controlsProvider = calls.find(([kind]) => kind === "controls")?.[1] || "";
   assert.equal(Boolean(hiddenProvider), true);
   assert.equal(controlsProvider, hiddenProvider);
+});
+
+test("handleBrowserCredentialSave does not block save for a credential-free provider (local)", async () => {
+  const previousWindow = global.window;
+  global.window = {};
+  try {
+    const calls = [];
+    const credentialsStatePort = createCredentialsStatePort({
+      initialState: {
+        ocrProvider: "local",
+        paddleToken: "",
+        modelApiKey: "",
+      },
+    });
+    let boundHandlers = null;
+    mountBrowserCredentialsFeature({
+      apiPrefix: "api/v1",
+      state: {},
+      credentialsStatePort,
+      applyHiddenCredentialInputs() {},
+      defaultPaddleToken: () => "",
+      defaultModelApiKey: () => "",
+      defaultModelBaseUrl: () => "",
+      getTaskOptions: () => ({}),
+      saveTaskOptions() {},
+      saveBrowserStoredConfig: (payload) => calls.push(["save-browser-config", payload]),
+      readHiddenCredentialInputs: () => credentialsStatePort.getCredentials(),
+      saveDesktopConfig() {},
+      checkApiConnectivity: async () => true,
+      validateOcrToken: async () => ({ ok: true }),
+      validateDeepSeekToken: async () => ({ ok: true }),
+      queryDeepSeekBalance: async () => ({ ok: true }),
+      onCredentialStateChange() {},
+      viewPort: {
+        activateTab() {},
+        bindEvents: (handlers) => {
+          boundHandlers = handlers;
+        },
+        closeDialog: () => calls.push(["close"]),
+        dialogElements: () => ({ dialog: {} }),
+        openDialog() {},
+        setDeepSeekTopUpVisible() {},
+        setDeepSeekValidationMessage: (message, tone) => calls.push(["deepseek-message", message, tone]),
+        setDialogMode() {},
+        setDialogStatus: (message, tone) => calls.push(["status", message, tone]),
+        setHiddenOcrProvider() {},
+        setOcrValidationMessage: (message, tone, provider) => calls.push(["ocr-message", message, tone, provider]),
+        syncOcrProviderControls() {},
+        updateCredentialGate: () => true,
+      },
+      dialogElementsPort: {
+        elements: () => ({
+          // local 没有可见 token 输入框：paddleInput 恒为 null（对照
+          // credentials-view-store.js#elements() 的 tokenInputs.paddle 兜底）。
+          paddleInput: null,
+          apiKeyInput: createCredentialNode({ value: "sk-new" }),
+          modelBaseUrlInput: createCredentialNode(),
+          modelNameInput: createCredentialNode(),
+          mathModeSelect: createCredentialNode(),
+        }),
+        syncOcrProviderControls() {},
+      },
+    });
+
+    await boundHandlers.save();
+
+    assert.equal(
+      calls.some(([kind, , tone]) => kind === "ocr-message" && tone === "error"),
+      false,
+      "local 不该报 OCR token 缺失",
+    );
+    assert.equal(calls.some(([kind, message]) => kind === "status" && message === "已保存"), true);
+    assert.equal(calls.some(([kind, payload]) => kind === "save-browser-config" && payload.modelApiKey === "sk-new"), true);
+    assert.equal(credentialsStatePort.getCredentials().modelApiKey, "sk-new");
+  } finally {
+    global.window = previousWindow;
+  }
 });
 
 test("browser credentials controller reads runtime and balance state through ports", async () => {

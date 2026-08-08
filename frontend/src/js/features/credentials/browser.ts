@@ -386,8 +386,11 @@ export function mountBrowserCredentialsFeature({
     };
     const ocrToken = ocrTokenFromDialogValues(values);
     const modelApiKey = `${values.modelApiKey || ""}`.trim();
-    if (!ocrToken || !modelApiKey) {
-      if (!ocrToken) {
+    // 免凭据 provider（如 local）没有可见/必填的 token 输入框，
+    // ocrTokenFromDialogValues 读到的空值不该拦住保存。
+    const ocrTokenMissing = definition.supportsValidation && !ocrToken;
+    if (ocrTokenMissing || !modelApiKey) {
+      if (ocrTokenMissing) {
         viewPort.setOcrValidationMessage(definition.validationMissingMessage, "error", definition.id);
       }
       if (!modelApiKey) {

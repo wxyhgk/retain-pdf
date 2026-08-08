@@ -176,7 +176,7 @@ def _legacy_provider_definitions() -> dict[str, dict[str, Any]]:
                 "raw_provider": {
                     "type": "string",
                     "env": "RETAIN_OCR_RAW_PROVIDER",
-                    "default": "generic_flat_ocr",
+                    "default": "",
                 },
             },
         },

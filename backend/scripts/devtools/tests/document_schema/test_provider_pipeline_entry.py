@@ -750,3 +750,106 @@ target.write_text(json.dumps({
     assert summary_payload["source_pdf"] == str(source_pdf_path)
     normalized_payload = json.loads(normalized_json_path.read_text(encoding="utf-8"))
     assert normalized_payload["pages"][0]["blocks"][0]["text"] == "remote command pipeline smoke"
+
+
+def test_provider_pipeline_local_provider_resolves_raw_provider_from_env_when_spec_omits_it(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """Regression test for the Task 7 bug: the `local` provider's stage-spec `ocr.options`
+    must NOT bake in a `raw_provider` default that shadows RETAIN_OCR_RAW_PROVIDER. This
+    drives the real provider_pipeline.main() spec-loading path (not a hand-built
+    SimpleNamespace) so it actually exercises the seam where that bug lived.
+    """
+    job_root = tmp_path / "20260808-provider-local-env-raw-provider"
+    job_dirs = resolve_job_dirs(job_root)
+    ensure_job_dirs(job_dirs)
+    source_pdf = job_dirs.source_dir / "book.pdf"
+    _write_source_pdf(source_pdf)
+    local_script = tmp_path / "fake_local_paddle_shaped_ocr.py"
+    local_script.write_text(
+        """
+import json
+import os
+from pathlib import Path
+
+target = Path(os.environ["RETAIN_OCR_RAW_PAYLOAD_JSON"])
+target.parent.mkdir(parents=True, exist_ok=True)
+target.write_text(json.dumps({
+    "layoutParsingResults": [
+        {
+            "prunedResult": {
+                "page_count": 1,
+                "width": 320,
+                "height": 480,
+                "model_settings": {},
+                "parsing_res_list": [
+                    {
+                        "block_label": "body",
+                        "block_content": "local env raw_provider smoke",
+                        "block_bbox": [72, 60, 220, 90],
+                        "block_id": 0,
+                        "block_order": None,
+                        "group_id": 0,
+                        "global_block_id": 0,
+                        "global_group_id": 0,
+                        "block_polygon_points": [[72, 60], [220, 60], [220, 90], [72, 90]],
+                    }
+                ],
+                "layout_det_res": {"boxes": []},
+            },
+            "markdown": {"text": "", "images": {}},
+            "outputImages": {},
+            "inputImage": "",
+        }
+    ],
+    "preprocessedImages": [],
+    "dataInfo": {"type": "pdf", "numPages": 1, "pages": [{"width": 320, "height": 480}]},
+}, ensure_ascii=False), encoding="utf-8")
+""".strip(),
+        encoding="utf-8",
+    )
+    spec_path = job_root / "specs" / "provider.spec.json"
+    spec_path.parent.mkdir(parents=True, exist_ok=True)
+    spec_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "provider.stage.v1",
+                "stage": "provider",
+                "job": {
+                    "job_id": job_root.name,
+                    "job_root": str(job_root),
+                    "workflow": "ocr",
+                },
+                "source": {"file_url": "", "file_path": str(source_pdf)},
+                "ocr": {
+                    "provider": "local",
+                    "credential_ref": "",
+                    "options": {
+                        "command": f"{sys.executable} {local_script}",
+                    },
+                },
+                "translation": {"credential_ref": "", "glossary_entries": []},
+                "render": {},
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    def _unexpected_run_book_pipeline(**_: object) -> dict:
+        raise AssertionError("ocr workflow must not run translation/render pipeline")
+
+    monkeypatch.setenv("RETAIN_OCR_RAW_PROVIDER", "paddle")
+    monkeypatch.setattr(provider_pipeline, "run_book_pipeline", _unexpected_run_book_pipeline)
+    monkeypatch.setattr(provider_pipeline, "enable_job_log_capture", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(sys, "argv", ["run_provider_local_env_raw_provider.py", "--spec", str(spec_path)])
+
+    provider_pipeline.main()
+
+    normalized_json_path = job_dirs.ocr_dir / "normalized" / "document.v1.json"
+    assert normalized_json_path.exists()
+    normalized_payload = json.loads(normalized_json_path.read_text(encoding="utf-8"))
+    assert normalized_payload["source"]["provider"] == "paddle"
+    assert normalized_payload["pages"][0]["blocks"][0]["text"] == "local env raw_provider smoke"

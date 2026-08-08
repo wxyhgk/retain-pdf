@@ -67,7 +67,7 @@
         "raw_provider": {
           "type": "string",
           "env": "RETAIN_OCR_RAW_PROVIDER",
-          "default": "generic_flat_ocr"
+          "default": ""
         }
       }
     }

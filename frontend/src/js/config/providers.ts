@@ -17,6 +17,22 @@ export const OCR_PROVIDER_DEFINITIONS = [
     docsLabel: "获取 Token",
     supportsValidation: true,
   },
+  {
+    id: "local",
+    label: "自托管 OCR",
+    description: "本地 / 自托管 OCR（local_command），无需在此填写凭据。",
+    tokenField: "local_token",
+    runtimeConfigKey: "localToken",
+    tokenLabel: "",
+    tokenPlaceholder: "本地 OCR 无需凭据",
+    validationButtonLabel: "",
+    validationIdleMessage: "",
+    validationMissingMessage: "",
+    validationUnavailableMessage: "",
+    docsUrl: "",
+    docsLabel: "",
+    supportsValidation: false,
+  },
 ];
 
 export const TRANSLATION_PROVIDER_DEFINITION = {

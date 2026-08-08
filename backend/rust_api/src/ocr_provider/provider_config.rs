@@ -184,7 +184,7 @@ fn legacy_provider_definitions() -> serde_json::Map<String, Value> {
             "credential": null,
             "options": {
                 "command": {"type": "string", "env": "RETAIN_LOCAL_OCR_COMMAND", "default": ""},
-                "raw_provider": {"type": "string", "env": "RETAIN_OCR_RAW_PROVIDER", "default": "generic_flat_ocr"}
+                "raw_provider": {"type": "string", "env": "RETAIN_OCR_RAW_PROVIDER", "default": ""}
             }
         }),
     );
