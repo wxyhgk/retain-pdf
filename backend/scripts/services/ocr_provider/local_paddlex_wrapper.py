@@ -43,3 +43,52 @@ def extract_layout_result(response_json: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(result, dict) or not isinstance(result.get("layoutParsingResults"), list):
         raise RuntimeError("PaddleX layout-parsing response missing result.layoutParsingResults")
     return result
+
+
+def _paddlex_base_url() -> str:
+    return (os.environ.get(PADDLEX_URL_ENV, "") or DEFAULT_PADDLEX_URL).strip().rstrip("/")
+
+
+def _paddlex_timeout_seconds() -> float:
+    raw = os.environ.get(PADDLEX_TIMEOUT_ENV, "").strip()
+    if not raw:
+        return DEFAULT_PADDLEX_TIMEOUT_SECONDS
+    try:
+        return float(raw)
+    except ValueError:
+        return DEFAULT_PADDLEX_TIMEOUT_SECONDS
+
+
+def run(source_pdf_path: Path, raw_payload_json_path: Path) -> None:
+    request_payload = build_request_payload(source_pdf_path)
+    response = requests.post(
+        f"{_paddlex_base_url()}/layout-parsing",
+        json=request_payload,
+        timeout=_paddlex_timeout_seconds(),
+    )
+    response.raise_for_status()
+    result = extract_layout_result(response.json())
+    raw_payload_json_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_payload_json_path.write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
+
+
+def main() -> int:
+    source_pdf = os.environ.get("RETAIN_OCR_SOURCE_PDF", "").strip()
+    raw_payload_json = os.environ.get("RETAIN_OCR_RAW_PAYLOAD_JSON", "").strip()
+    if not source_pdf:
+        print("local_paddlex_wrapper: RETAIN_OCR_SOURCE_PDF is empty", file=sys.stderr)
+        return 1
+    if not raw_payload_json:
+        print("local_paddlex_wrapper: RETAIN_OCR_RAW_PAYLOAD_JSON is empty", file=sys.stderr)
+        return 1
+    try:
+        run(Path(source_pdf), Path(raw_payload_json))
+    except Exception as exc:
+        print(f"local_paddlex_wrapper: {exc}", file=sys.stderr)
+        return 1
+    print(f"local_paddlex_wrapper: wrote {raw_payload_json}", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
