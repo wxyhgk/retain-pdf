@@ -80,6 +80,8 @@ cd retain-pdf/docker/delivery
 
 ## 4. 启动服务
 
+默认 OCR provider 是自托管 `local`（走 `docker/app.env` 里的 `RETAIN_LOCAL_*` 系列变量），需要你自己先在有 GPU 的机器上启动一个 PaddleX serving（`RETAIN_LOCAL_PADDLEX_URL` 默认指向 `http://host.docker.internal:8080`），否则 OCR 任务会失败。启动方式和踩坑点见下方 [docker/app.env](#dockerappenv) 一节；如果暂时没有自托管环境，把 `docker/web.env` 的 `FRONT_OCR_PROVIDER` 改回 `paddle` 即可继续用云端 PaddleOCR。
+
 ```bash
 docker compose up -d
 ```
@@ -97,7 +99,7 @@ http://127.0.0.1:40001
 - `docker-compose.yml`
   Docker 编排入口。默认直接拉取 Docker Hub 镜像并启动 `app` + `web`。
 - `docker/app.env`
-  后端运行参数。控制容器内路径、字体、端口、并发和上传限制。
+  后端运行参数。控制容器内路径、字体、端口、并发、上传限制，以及自托管 PaddleX OCR 的 `RETAIN_LOCAL_*` 系列变量。
 - `docker/web.env`
   Docker 公共版前端运行参数。控制前端默认注入的后端 key、模型默认值等。
 - `docker/auth.local.json`
@@ -121,17 +123,19 @@ http://127.0.0.1:40001
 - `FRONT_X_API_KEY`
   前端自动附带给后端的 `X-API-Key`。必须和 `docker/auth.local.json` 中某个值一致。
 - `FRONT_OCR_PROVIDER`
-  前端默认 OCR provider。当前建议填 `paddle`，也可以切成 `mineru`。
+  前端默认 OCR provider。默认 `local`（自托管 PaddleX，见上方 [启动服务](#4-启动服务)），也可以填 `paddle`（云端 PaddleOCR）。
+
+  **注意（老用户升级）：** 这个默认值只在浏览器从未保存过设置时生效。之前已经用过本项目、`localStorage` 里已经存过 `paddle` 选择的浏览器，不会自动切到 `local`——需要清一下站点数据（或手动清 `localStorage` 里的 `retainpdf.browserConfig` 之类的 key），或者等页面加上 provider 切换 UI 之后再改。
 - `FRONT_PADDLE_TOKEN`
-  前端默认带出的 Paddle token。留空时，最终用户自己在页面弹窗里填写。
+  前端默认带出的 Paddle token。留空时，最终用户自己在页面弹窗里填写。`FRONT_OCR_PROVIDER=local` 时不需要这个。
 - `FRONT_MINERU_TOKEN`
   前端默认带出的 MinerU token。留空时，最终用户自己在页面弹窗里填写。
 - `FRONT_MODEL_API_KEY`
   前端默认带出的模型 API key。留空时由最终用户自己填写。
 - `FRONT_MODEL`
-  前端默认模型名，例如 `deepseek-v4-flash`。
+  前端默认模型名。默认走 OpenRouter，例如 `deepseek/deepseek-chat`。
 - `FRONT_BASE_URL`
-  前端默认模型服务地址，例如 `https://api.deepseek.com/v1`。
+  前端默认模型服务地址。默认 `https://openrouter.ai/api/v1`（OpenRouter），也可以填 `https://api.deepseek.com/v1` 直连 DeepSeek。
 
 ### docker/app.env
 
