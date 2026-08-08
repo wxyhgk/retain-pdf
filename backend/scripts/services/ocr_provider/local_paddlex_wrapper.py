@@ -1,9 +1,21 @@
 from __future__ import annotations
 
-import base64
-import json
 import os
 import sys
+
+# When this module is invoked directly as a script (`python local_paddlex_wrapper.py`,
+# exactly how local_command_driver spawns it), the interpreter auto-inserts this
+# script's own directory at sys.path[0]. That directory also contains a sibling
+# `types.py` module, which then shadows the stdlib `types` module and breaks
+# further stdlib imports (enum/dataclasses/weakref all import from stdlib `types`).
+# Drop that auto-inserted entry before importing anything from the stdlib that
+# could pull in `types` transitively (e.g. base64 -> re -> enum -> types).
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if sys.path and sys.path[0] == _SCRIPT_DIR:
+    sys.path.pop(0)
+
+import base64
+import json
 from pathlib import Path
 from typing import Any
 
