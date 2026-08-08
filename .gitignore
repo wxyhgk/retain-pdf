@@ -49,3 +49,6 @@ backend/typst-win32/bin/
 VERSION
 .codex
 .codex/
+
+# Local worktrees for isolated feature/plan execution
+.worktrees/
