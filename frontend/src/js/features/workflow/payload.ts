@@ -86,11 +86,15 @@ export function buildOcrPayload({
   const definition = getOcrProviderDefinition(provider);
   const payload: Record<string, unknown> = {
     provider,
-    [definition.tokenField]: ocrToken || "",
     model_version: constants.DEFAULT_MODEL_VERSION,
     language: constants.DEFAULT_LANGUAGE,
     page_ranges: pageRanges,
   };
+  if (definition.supportsValidation) {
+    // 免凭据 provider（如 local）没有 tokenField 对应的后端字段——
+    // backend OcrInput 上的 #[serde(deny_unknown_fields)] 会拒绝多余的 key。
+    payload[definition.tokenField] = ocrToken || "";
+  }
   if (definition.id === "paddle") {
     payload.paddle_api_url = defaultPaddleApiUrl() || "https://paddleocr.aistudio-app.com";
   }

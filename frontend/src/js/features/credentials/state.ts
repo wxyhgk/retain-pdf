@@ -4,7 +4,7 @@ import {
   type Store,
   type StoreListener,
 } from "../../app-framework/store.js";
-import { DEFAULT_OCR_PROVIDER } from "../../config/providers.js";
+import { DEFAULT_OCR_PROVIDER, getOcrProviderDefinition } from "../../config/providers.js";
 import { normalizeBrowserStoredConfig } from "../../config/storage.js";
 
 export interface CredentialsFields {
@@ -37,6 +37,7 @@ export interface DeepSeekBalanceState {
 
 export interface OcrTokenOptions {
   defaultPaddleToken?: () => string;
+  providerId?: string;
 }
 
 export interface OcrValidationCachePayload {
@@ -215,8 +216,15 @@ export function createCredentialsStore(
 
 export function ocrTokenFromCredentials(
   credentials: Partial<CredentialsFields> = {},
-  { defaultPaddleToken }: OcrTokenOptions = {},
+  { defaultPaddleToken, providerId }: OcrTokenOptions = {},
 ): string {
+  // credentials.ocrProvider 是每次调用方都已经在手的字段（store 快照自带），
+  // providerId 仅用于「调用方持有一个尚未落盘的候选 provider」这类场景覆盖它。
+  const definition = getOcrProviderDefinition(providerId ?? credentials.ocrProvider);
+  if (!definition.supportsValidation) {
+    // 自托管 / 免凭据 provider（如 local）：门禁不应该要求 token。
+    return "";
+  }
   const token = credentials.paddleToken;
   if (token) {
     return token;
@@ -228,6 +236,10 @@ export function hasCompleteCredentials(
   credentials: Partial<CredentialsFields> = {},
   options: OcrTokenOptions = {},
 ): boolean {
+  const definition = getOcrProviderDefinition(options.providerId ?? credentials.ocrProvider);
+  if (!definition.supportsValidation) {
+    return Boolean(credentials.modelApiKey);
+  }
   return Boolean(ocrTokenFromCredentials(credentials, options) && credentials.modelApiKey);
 }
 

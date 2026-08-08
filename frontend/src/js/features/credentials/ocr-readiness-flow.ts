@@ -17,6 +17,18 @@ export async function ensureOcrCredentialValidationReady({
   credentialsStatePort = defaultCredentialsStatePort,
 }: any) {
   const definition = getOcrProviderDefinition(providerId);
+
+  if (!definition.supportsValidation) {
+    // 自托管 / 免凭据 provider（如 local）：无需 token 即视为就绪。
+    return {
+      ok: true,
+      status: "not_required",
+      definition,
+      token: "",
+      result: null,
+    };
+  }
+
   const token = credentialOcrToken(credentials, {
     providerId: definition.id,
     defaultPaddleToken,

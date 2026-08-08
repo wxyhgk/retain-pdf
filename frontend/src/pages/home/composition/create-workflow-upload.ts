@@ -89,8 +89,12 @@ export function createWorkflowAndUpload({
   } = {}) {
     const credentials = credentialsStatePort.getCredentials();
     const ocrProvider = credentials?.ocrProvider || ocrProviderFallback;
-    // providerId 仅作历史调用透传；getOcrToken 实现只读 defaultPaddleToken。
+    // providerId 显式透传（而非依赖 credentials.ocrProvider）：当 store 里还没
+    // 落盘 ocrProvider 时，上面已经算出的 ocrProviderFallback 才是真正生效的
+    // provider，getOcrToken 内部要按它（而不是 credentials.ocrProvider）判断
+    // 是否需要 token（如 local 免凭据）。
     const ocrToken = credentialsStatePort.getOcrToken({
+      providerId: ocrProvider,
       defaultPaddleToken: () => paddleTokenFallback || "",
     }) || "";
     return {

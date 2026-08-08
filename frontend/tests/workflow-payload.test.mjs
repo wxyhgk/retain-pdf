@@ -99,6 +99,22 @@ test("buildOcrPayload maps provider token field and paddle api url", () => {
   assert.equal(payload.page_ranges, "1-3");
 });
 
+test("buildOcrPayload omits the token field entirely for a credential-free provider (local)", () => {
+  const payload = buildOcrPayload({
+    pageRanges: "1-3",
+    ocrProvider: "local",
+    ocrToken: "",
+    defaultPaddleApiUrl: () => "https://paddle.example/v1",
+    constants,
+  });
+
+  assert.equal(payload.provider, "local");
+  assert.equal("local_token" in payload, false);
+  assert.equal("paddle_token" in payload, false);
+  assert.equal("paddle_api_url" in payload, false);
+  assert.equal(payload.page_ranges, "1-3");
+});
+
 test("buildSourcePayload and buildRenderPayload preserve render-only inputs", () => {
   const source = buildSourcePayload({
     workflow: "render",
