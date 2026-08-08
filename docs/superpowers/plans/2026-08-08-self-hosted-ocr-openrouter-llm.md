@@ -13,7 +13,7 @@
 - Reference spec: `docs/superpowers/specs/2026-08-08-self-hosted-ocr-openrouter-llm-design.md`.
 - No new third-party dependency: use `requests==2.32.5`, already declared in `pyproject.toml`.
 - Python target: `>=3.11,<3.12` per `pyproject.toml`.
-- Do not modify the translation stage, rendering stage, Rust job runner, or the `mineru` provider — out of scope per the spec.
+- Do not modify the translation stage, rendering stage, or the `mineru` provider — out of scope per the spec. (Amended 2026-08-08 after final review: the Rust job-request layer and the frontend OCR-provider UI are now in scope for Tasks 7-8 only, narrowly, to fix two Critical bugs the final whole-branch review found — see those tasks for exact scope.)
 - Do not add a new document-schema adapter — reuse the existing `paddle` adapter (`backend/scripts/services/document_schema/provider_adapters/paddle/adapter.py`) via `RETAIN_OCR_RAW_PROVIDER=paddle`.
 - Follow the `local_command` plugin contract exactly as documented in `doc/api/03-OCR/04-local-command插件.md`: read `RETAIN_OCR_SOURCE_PDF` / `RETAIN_OCR_RAW_PAYLOAD_JSON` from env, exit 0 on success having written the raw payload, exit non-zero with a diagnosable stderr message on any failure.
 - Tests run with `PYTHONPATH=backend/scripts python -m pytest backend/scripts/devtools/tests -q` (documented in `backend/scripts/runtime/pipeline/README.md`); new tests go under `backend/scripts/devtools/tests/document_schema/` next to the existing `paddle`/`local_command` tests.
@@ -671,8 +671,189 @@ If any step fails, capture the job's `logs/` directory contents before filing a 
 
 ---
 
+### Task 7: Fix `RETAIN_OCR_RAW_PROVIDER` precedence for the `local` provider
+
+**Why (added after final review):** The final whole-branch review found that `RETAIN_OCR_RAW_PROVIDER=paddle` (set in Task 4) is dead configuration in production. The Rust job-request layer (`backend/rust_api/src/worker_command/stage_specs.rs:314-333`, `provider_options_for_stage`) eagerly bakes every non-null provider option default from `ocr_provider_definitions()` into the written stage spec, *before* the job ever reaches the Python `local_command_driver.py`. Since `ocr_providers.json`'s `local.options.raw_provider.default` is `"generic_flat_ocr"` (not empty), the stage spec always carries `raw_provider="generic_flat_ocr"`, and `local_command_driver.py`'s `_configured_text()` (`backend/scripts/services/ocr_provider/local_command_driver.py:191-202`) checks `args.local_ocr_raw_provider` *before* the `RETAIN_OCR_RAW_PROVIDER` env var — so the env var set in `app.env` never gets consulted. The failure is silent: the payload gets routed through `generic_flat_ocr` instead of `paddle`, producing a valid-but-empty (0-page) `document.v1.json` with no error. There is a second copy of the same wrong default compiled into the Rust binary at `backend/rust_api/src/ocr_provider/provider_config.rs`'s `legacy_provider_definitions()` (used when `backend/config/ocr_providers.json` isn't present at runtime, e.g. the current `docker/Dockerfile.app` doesn't copy `backend/config/` into the image) — both copies must change together, plus the Python-side fallback for consistency.
+
+The fix restores the documented precedence order (`doc/api/03-OCR/04-local-command插件.md:75-79`: request options → JSON config default → env var) by making the JSON-config-level default empty, so it's no longer treated as "set" and the env var becomes reachable again. This does not change behavior for any other provider or any deployment that already explicitly configures `raw_provider` (via `ocr_options` in the job request, or via a non-empty entry in `ocr_providers.json`).
+
+**Files:**
+- Modify: `backend/config/ocr_providers.json`
+- Modify: `backend/rust_api/src/ocr_provider/provider_config.rs`
+- Modify: `backend/rust_api/src/ocr_provider/catalog.rs` (add test)
+- Modify: `backend/scripts/foundation/shared/ocr_provider_config.py`
+
+**Interfaces:**
+- Consumes: nothing new — this is a data-only fix to existing config/fallback structures.
+- Produces: `local.options.raw_provider.default == ""` everywhere it's defined, so `RETAIN_OCR_RAW_PROVIDER` (set in `app.env` by Task 4) actually takes effect.
+
+- [ ] **Step 1: Change the JSON config default**
+
+In `backend/config/ocr_providers.json`, inside `providers.local.options.raw_provider`, change:
+
+```json
+        "raw_provider": {
+          "type": "string",
+          "env": "RETAIN_OCR_RAW_PROVIDER",
+          "default": "generic_flat_ocr"
+        }
+```
+
+to:
+
+```json
+        "raw_provider": {
+          "type": "string",
+          "env": "RETAIN_OCR_RAW_PROVIDER",
+          "default": ""
+        }
+```
+
+- [ ] **Step 2: Change the Rust compiled-in fallback default**
+
+In `backend/rust_api/src/ocr_provider/provider_config.rs`, inside `legacy_provider_definitions()`, find the `"local"` block:
+
+```rust
+    providers.insert(
+        "local".to_string(),
+        serde_json::json!({
+            "display_name": "Local OCR",
+            "kind": "local_command",
+            "credential": null,
+            "options": {
+                "command": {"type": "string", "env": "RETAIN_LOCAL_OCR_COMMAND", "default": ""},
+                "raw_provider": {"type": "string", "env": "RETAIN_OCR_RAW_PROVIDER", "default": "generic_flat_ocr"}
+            }
+        }),
+    );
+```
+
+Change the `raw_provider` default to `""`:
+
+```rust
+    providers.insert(
+        "local".to_string(),
+        serde_json::json!({
+            "display_name": "Local OCR",
+            "kind": "local_command",
+            "credential": null,
+            "options": {
+                "command": {"type": "string", "env": "RETAIN_LOCAL_OCR_COMMAND", "default": ""},
+                "raw_provider": {"type": "string", "env": "RETAIN_OCR_RAW_PROVIDER", "default": ""}
+            }
+        }),
+    );
+```
+
+- [ ] **Step 3: Change the Python compiled-in fallback default**
+
+In `backend/scripts/foundation/shared/ocr_provider_config.py`, inside `_legacy_provider_definitions()`, find the `"local"` block's `raw_provider` option and change its `"default"` value from `"generic_flat_ocr"` to `""`, matching the same edit made in Steps 1-2.
+
+- [ ] **Step 4: Add a Rust test proving the fix**
+
+In `backend/rust_api/src/ocr_provider/catalog.rs`, inside `mod tests`, add (near `provider_public_definitions_expose_credentials_and_options`):
+
+```rust
+    #[test]
+    fn local_provider_raw_provider_default_is_empty_so_env_var_precedence_applies() {
+        let definitions = provider_public_definitions();
+        let local = definitions
+            .iter()
+            .find(|definition| definition.key == "local")
+            .expect("local public definition");
+        assert_eq!(
+            local
+                .options
+                .get("raw_provider")
+                .map(|option| option.default.as_str()),
+            Some(Some(""))
+        );
+    }
+```
+
+(Note: `option.default` is `serde_json::Value`; `.as_str()` returns `Option<&str>`, so the assertion compares against `Some(Some(""))` — a `Value::String("")` case, distinct from `Value::Null`. If this doesn't compile as written, adjust to match the actual `Value` variant produced — the requirement is that the default is the empty string, not null and not `"generic_flat_ocr"`.)
+
+- [ ] **Step 5: Run the Rust test suite to verify no regressions and the new test passes**
+
+Run: `cd backend/rust_api && cargo test -q`
+Expected: all tests pass, including the new `local_provider_raw_provider_default_is_empty_so_env_var_precedence_applies`.
+
+- [ ] **Step 6: Run the Python test suite to verify no regressions**
+
+Run: `PYTHONPATH=backend/scripts /home/thuandn/miniconda3/envs/retain-pdf-vi/bin/python -m pytest backend/scripts/devtools/tests/document_schema -q`
+Expected: same pass/fail counts as this plan's established baseline (pre-existing `DEEPSEEK_API_KEY`-related failures aside) — no new failures caused by the config default change. `test_ocr_provider_registry.py`'s tests use their own inline fixture (not `backend/config/ocr_providers.json`), so they are unaffected by this change.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add backend/config/ocr_providers.json backend/rust_api/src/ocr_provider/provider_config.rs backend/rust_api/src/ocr_provider/catalog.rs backend/scripts/foundation/shared/ocr_provider_config.py
+git commit -m "fix(ocr): stop local provider's raw_provider default from shadowing RETAIN_OCR_RAW_PROVIDER"
+```
+
+---
+
+### Task 8: Make the self-hosted `local` OCR provider selectable in the web UI
+
+**Why (added after final review):** The final whole-branch review found that `FRONT_OCR_PROVIDER=local` (set in Task 4) is silently discarded by the frontend. `frontend/src/js/config/providers.ts` hardcodes `OCR_PROVIDER_DEFINITIONS` to a single `"paddle"` entry, and `normalizeOcrProvider()` falls back to `DEFAULT_OCR_PROVIDER` (`"paddle"`) for any id not in that list — so every job submission from the web UI is sent with `provider: "paddle"` regardless of the env default. The Rust `GET /api/v1/providers/ocr` endpoint (which does read the dynamic provider list) is never called by any frontend code — confirmed by grepping `frontend/src` and `frontend-react/src` for `providers/ocr` (zero matches). `frontend/src/pages/home/composition/external.ts` re-exports `OCR_PROVIDER_DEFINITIONS` from this same `frontend/src/js/config/providers.ts` file, so it is the single source of truth for both the legacy and React UI trees — one file to fix.
+
+**Files:**
+- Modify: `frontend/src/js/config/providers.ts`
+- Test: check `frontend/tests/` for an existing test file covering `OCR_PROVIDER_DEFINITIONS` / `normalizeOcrProvider` / `getOcrProviderDefinition`; add a test there if one exists, or create `frontend/tests/providers.test.mjs` following the existing test file conventions in that directory if none does.
+
+**Interfaces:**
+- Consumes: nothing new.
+- Produces: `OCR_PROVIDER_DEFINITIONS` now contains a `"local"` entry; `normalizeOcrProvider("local")` returns `"local"` instead of falling back to `"paddle"`.
+
+- [ ] **Step 1: Add a `local` entry to `OCR_PROVIDER_DEFINITIONS`**
+
+In `frontend/src/js/config/providers.ts`, add a second entry to the `OCR_PROVIDER_DEFINITIONS` array (after the existing `"paddle"` entry):
+
+```javascript
+  {
+    id: "local",
+    label: "自托管 OCR",
+    description: "本地 / 自托管 OCR（local_command），无需在此填写凭据。",
+    tokenField: "local_token",
+    runtimeConfigKey: "localToken",
+    tokenLabel: "",
+    tokenPlaceholder: "本地 OCR 无需凭据",
+    validationButtonLabel: "",
+    validationIdleMessage: "",
+    validationMissingMessage: "",
+    validationUnavailableMessage: "",
+    docsUrl: "",
+    docsLabel: "",
+    supportsValidation: false,
+  },
+```
+
+This matches the existing `"paddle"` entry's shape exactly (so `OcrProviderPanels.tsx` and `payload.ts` — which read `tokenField`, `tokenPlaceholder`, `docsUrl`, `docsLabel`, `supportsValidation` — render/behave correctly without needing changes to either of those files). `supportsValidation: false` hides the validate button per `OcrProviderPanels.tsx:80-89`. `tokenField: "local_token"` gives `payload.ts:89`'s `payload[definition.tokenField] = ocrToken || ""` a harmless, unused key to write to, since the `local` provider's `credential` is `null` server-side and ignores it.
+
+- [ ] **Step 2: Run any existing frontend provider-related tests**
+
+Run: `cd frontend && grep -rl "OCR_PROVIDER_DEFINITIONS\|normalizeOcrProvider\|getOcrProviderDefinition" tests/ 2>/dev/null`
+
+If this finds an existing test file, read it, add a case asserting `normalizeOcrProvider("local") === "local"` and that `getOcrProviderDefinition("local").id === "local"`, following that file's existing style and test runner (check `package.json`'s `"scripts"` for the test command — likely `node --test` or similar given `.mjs` test files elsewhere in this repo's Python tests; use whatever this frontend actually uses, found via `cat frontend/package.json`).
+
+If no existing test file covers this module, add a minimal one at `frontend/tests/providers.test.mjs` (following the naming/structure of whatever other `.test.mjs` files already exist in `frontend/tests/`) with exactly these two assertions, and wire it into whatever command `npm test` (or equivalent) already runs in this repo.
+
+- [ ] **Step 3: Run the frontend test suite to verify no regressions**
+
+Run: `cd frontend && npm test` (or the exact test command found in Step 2 — use what the repo actually has, not a guessed command)
+Expected: all tests pass, including the new provider test.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add frontend/src/js/config/providers.ts frontend/tests/
+git commit -m "fix(frontend): register local OCR provider so FRONT_OCR_PROVIDER=local is selectable"
+```
+
+---
+
 ## Self-Review Notes
 
-- **Spec coverage:** OCR self-hosting via `local_command` + reused `paddle` adapter → Tasks 1-3. Page-limit trap → Tasks 4 (config comment) and 6 (manual verification). OpenRouter LLM switch → Task 5. Testing/verification plan from the spec → Tasks 1-3 (automated) and Task 6 (manual, since it requires real GPU hardware unavailable to an automated executor).
+- **Spec coverage:** OCR self-hosting via `local_command` + reused `paddle` adapter → Tasks 1-3. Page-limit trap → Tasks 4 (config comment) and 6 (manual verification). OpenRouter LLM switch → Task 5. Testing/verification plan from the spec → Tasks 1-3 (automated) and Task 6 (manual, since it requires real GPU hardware unavailable to an automated executor). Tasks 7-8 were added post-hoc after the final whole-branch review found the OCR path was unreachable end-to-end despite Tasks 1-5 being individually correct — a cross-task integration gap no single task's review could have caught, only the final review.
 - **No new adapter code**: confirmed Tasks 1-3 only add the wrapper script and tests; `provider_adapters/paddle/` is untouched, matching the spec's Approach A.
 - **Type/name consistency**: `local_paddlex_wrapper.PADDLEX_URL_ENV`, `.build_request_payload`, `.extract_layout_result`, `.run`, `.main` are used identically across Tasks 1, 2, and 3's integration test import.
+- **Task 7/8 scope boundary**: both tasks are narrowly scoped to the exact two config/definition defaults the final review identified as broken — no unrelated Rust or frontend refactoring.
