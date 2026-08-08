@@ -427,6 +427,22 @@ mod tests {
     }
 
     #[test]
+    fn local_provider_raw_provider_default_is_empty_so_env_var_precedence_applies() {
+        let definitions = provider_public_definitions();
+        let local = definitions
+            .iter()
+            .find(|definition| definition.key == "local")
+            .expect("local public definition");
+        assert_eq!(
+            local
+                .options
+                .get("raw_provider")
+                .map(|option| option.default.as_str()),
+            Some(Some(""))
+        );
+    }
+
+    #[test]
     fn ensure_provider_diagnostics_initializes_capabilities() {
         let mut artifacts = JobArtifacts::default();
         let diagnostics = ensure_provider_diagnostics(&mut artifacts, OcrProviderKind::Paddle);
