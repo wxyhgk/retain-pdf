@@ -851,9 +851,173 @@ git commit -m "fix(frontend): register local OCR provider so FRONT_OCR_PROVIDER=
 
 ---
 
+### Task 9: Make the `local` OCR provider actually usable end-to-end from the web UI
+
+**Why (added after final review round 2):** Task 8 fixed `normalizeOcrProvider("local")`, but a second review round found the web UI still cannot use the `local` provider, for three independent, stacked reasons — fixing any one alone just relocates the failure to the next:
+
+1. **Boot-time seeding never reads the env default.** `frontend/src/js/config/persisted-config.ts`'s `loadBrowserStoredConfig()` calls `normalizeBrowserStoredConfig(readBrowserStoredConfig())` (`frontend/src/js/config/storage.ts:75-84`). With empty localStorage (fresh browser), `readBrowserStoredConfig()` returns `{}`, so `source.ocrProvider` is `undefined`, and `normalizeOcrProvider(undefined)` (`frontend/src/js/config/providers.ts`) falls back to the hardcoded `DEFAULT_OCR_PROVIDER = "paddle"` — never consulting `defaultOcrProvider()` (`frontend/src/js/config/runtime.ts:131`), which is the function that actually reads `FRONT_OCR_PROVIDER` (via `window.__FRONT_RUNTIME_CONFIG__.ocrProvider`). So `FRONT_OCR_PROVIDER=local` never reaches the app's initial state at all.
+2. **The credential-readiness gate is hardcoded to `paddleToken`.** `frontend/src/js/features/credentials/state.ts`'s `ocrTokenFromCredentials(credentials, { defaultPaddleToken })` reads only `credentials.paddleToken`, ignoring which provider is active. `hasCompleteCredentials()` and `ensureOcrCredentialValidationReady()` (`frontend/src/js/features/credentials/ocr-readiness-flow.ts`) both route through it, so the submit flow blocks with `status: "missing_token"` for the `local` provider even though it needs no credential (`supportsValidation: false`, set in Task 8).
+3. **The submitted payload would carry a field the backend rejects.** `frontend/src/js/features/workflow/payload.ts`'s `buildOcrPayload()` unconditionally sets `payload[definition.tokenField] = ocrToken || ""` (line 89) — for `local` that's `local_token`, an unrecognized field. `backend/rust_api/src/models/input/ocr.rs` has `#[serde(deny_unknown_fields)]` on `OcrInput`, so once (1) and (2) are fixed, submission would 400.
+
+**Files:**
+- Modify: `frontend/src/js/config/persisted-config.ts`
+- Modify: `frontend/src/js/features/credentials/state.ts`
+- Modify: `frontend/src/js/features/credentials/ocr-readiness-flow.ts`
+- Modify: `frontend/src/js/features/workflow/payload.ts`
+- Test: extend/add to whatever existing test files in `frontend/tests/` already cover `persisted-config`, `credentials/state`, and `workflow/payload` (discover exact filenames the same way Task 8 did — `grep -rl` for the function names in `frontend/tests/`)
+
+**Interfaces:**
+- Consumes: `getOcrProviderDefinition(providerId)` and the `supportsValidation` field on each `OCR_PROVIDER_DEFINITIONS` entry (already present from Task 8) — this is the signal to use for "does this provider need a credential," not a new flag.
+- Produces: no new exported names; existing functions change behavior as described below.
+
+- [ ] **Step 1: Fix boot-time provider seeding in `loadBrowserStoredConfig()`**
+
+In `frontend/src/js/config/persisted-config.ts`, import `defaultOcrProvider` from `./runtime.js` (safe — `runtime.ts` only imports from `model-constants.js` and `providers.js`, no circular risk) and change `loadBrowserStoredConfig()` so that when the raw stored payload has no `ocrProvider` key at all, it seeds from `defaultOcrProvider()` instead of letting `normalizeBrowserStoredConfig` silently fall back to the hardcoded `DEFAULT_OCR_PROVIDER`. A previously-saved explicit choice (even `"paddle"`) must still be respected — only the "never saved anything" case should pick up the env default. Apply the same seeded value in both the desktop-mode and non-desktop-mode return paths of the function.
+
+- [ ] **Step 2: Skip the credential requirement for providers that don't need one**
+
+In `frontend/src/js/features/credentials/state.ts`, change `ocrTokenFromCredentials` and/or `hasCompleteCredentials` so that when `getOcrProviderDefinition(providerId).supportsValidation` is `false`, no token is required (treat the gate as satisfied without needing a token value). You will need to thread `providerId` through to wherever these are called if it isn't already available in scope — check call sites in `frontend/src/js/features/credentials/selectors-port.ts` and `frontend/src/js/features/credentials/ocr-readiness-flow.ts`.
+
+In `frontend/src/js/features/credentials/ocr-readiness-flow.ts`'s `ensureOcrCredentialValidationReady`, add an early return before the `if (!token)` check: when `!definition.supportsValidation`, return `{ ok: true, status: "not_required", definition, token: "", result: null }` (or equivalent — match whatever shape the existing `ok: true` returns use, e.g. the `"cached"` branch just below it).
+
+Also check `frontend/src/pages/home/features/credentials/credentials-view-store.ts` (around line 141, the `elements()` function's `paddleInput: elementsRef.tokenInputs.paddle || null`) and whatever save-flow function reads `elements().paddleInput.value` to persist the token — confirm this doesn't throw or misbehave for a provider with no visible/required token input. `elementsRef.tokenInputs` is already a generic per-provider map (`tokenInputRef(providerId)` in the same file already stores into it correctly per-provider), so this is likely just a legacy accessor read by the save path; trace its consumer(s) and fix only if you find an actual bug (e.g. it throwing on `null`, or blocking save for `local`). Don't do unrelated refactoring here — this codebase is mid-migration between a legacy vanilla-JS credentials system and a newer per-provider one, and the fix should be the minimal change that makes `local` work, not a cleanup pass.
+
+- [ ] **Step 3: Stop sending a token field the backend doesn't recognize**
+
+In `frontend/src/js/features/workflow/payload.ts`'s `buildOcrPayload()`, change the payload construction so `payload[definition.tokenField] = ocrToken || ""` is only set when `definition.supportsValidation` is `true`. For `local`, the payload should have no `local_token` key at all.
+
+- [ ] **Step 4: Write one end-to-end test tying all three fixes together**
+
+This is the acceptance criterion the final review specifically called for — a single test proving the whole chain, not three isolated unit tests that could each individually pass while the seam between them stays broken (this is exactly the shape of bug that slipped through Task 8's own review). Using whatever test file(s) you extended in Step 1-3 (or a new one if none fits), write a test that:
+1. Simulates a fresh boot with no persisted browser config and `runtimeConfig.ocrProvider` (or the equivalent test seam — check how existing tests mock `window.__FRONT_RUNTIME_CONFIG__` or the `runtime.js` module, e.g. via `frontend/tests/workflow-payload.test.mjs`'s conventions if it mocks similar things) set to `"local"`.
+2. Asserts the resulting effective OCR provider is `"local"`.
+3. Asserts `hasCompleteCredentials`/the readiness gate reports ready without any token being set.
+4. Asserts `buildOcrPayload({ ocrProvider: "local", ocrToken: "", ... })` produces a payload object with `provider: "local"` and no `local_token` (or any token) key.
+
+- [ ] **Step 5: Run the frontend test suite**
+
+Run: `cd frontend && npm test`
+Expected: all tests pass, including the new ones from Step 4, with the same 2 pre-existing CSS-ratchet failures as the baseline (confirm they're the same two, not new ones).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add frontend/src/js/config/persisted-config.ts frontend/src/js/features/credentials/state.ts frontend/src/js/features/credentials/ocr-readiness-flow.ts frontend/src/js/features/workflow/payload.ts frontend/tests/
+git commit -m "fix(frontend): make local OCR provider selectable, credential-free, and submittable end-to-end"
+```
+
+(If Step 2 required a change to `credentials-view-store.ts`, add that file to the commit too.)
+
+---
+
+### Task 10: Fix deployment-config Important findings (Linux Docker networking, page-limit trap, undocumented timeout)
+
+**Why (added after final review round 2):** Three Important findings from the first review round were never addressed by Tasks 7-8, which were scoped only to the two Critical bugs:
+
+1. `docker/delivery/docker-compose.yml`'s `app` service has no `extra_hosts`, so `RETAIN_LOCAL_PADDLEX_URL=http://host.docker.internal:8080` (set in `app.env` by Task 4) fails DNS resolution on native Linux Docker — the most likely host for a self-hosted GPU PaddleX box. Docker has supported `host-gateway` as the resolution target since 20.10.
+2. `docker/delivery/docker/app.env`'s comment tells operators to run `paddlex --serve --pipeline PP-StructureV3 ...` — the stock pipeline, which caps at 10 pages by default. The design spec explicitly calls this a "silent-truncation trap" and specifies the two-step `--get_pipeline_config` + edit + `--pipeline <path>` form, but the comment never got updated to match.
+3. `local_paddlex_wrapper.py`'s `RETAIN_LOCAL_PADDLEX_TIMEOUT_SECONDS` (default 900s) is not documented anywhere in `app.env`, so an operator who raises the outer `RETAIN_LOCAL_OCR_COMMAND_TIMEOUT_SECONDS` (default 1800s) for a long paper still hits a silent 900s wall from the inner HTTP request first.
+
+**Files:**
+- Modify: `docker/delivery/docker-compose.yml`
+- Modify: `docker/delivery/docker/app.env`
+
+**Interfaces:** none — config-only.
+
+- [ ] **Step 1: Add `extra_hosts` to the `app` service**
+
+In `docker/delivery/docker-compose.yml`, add to the `app` service (after `volumes:`, before `healthcheck:`):
+
+```yaml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+```
+
+- [ ] **Step 2: Fix the PaddleX start command comment to include the page-limit override**
+
+In `docker/delivery/docker/app.env`, replace the comment line:
+
+```
+# 部署前需要单独启动: paddlex --serve --pipeline PP-StructureV3 --device gpu:0 --port 8080
+```
+
+with:
+
+```
+# 部署前需要单独启动 PaddleX serving，并解除默认 10 页限制:
+#   paddlex --get_pipeline_config PP-StructureV3 --save_path ./pp_structurev3.yaml
+#   # 编辑 ./pp_structurev3.yaml 解除页数限制后再启动:
+#   paddlex --serve --pipeline ./pp_structurev3.yaml --device gpu:0 --port 8080
+```
+
+- [ ] **Step 3: Document the wrapper's own HTTP timeout**
+
+In `docker/delivery/docker/app.env`, add a commented-out line after `RETAIN_LOCAL_PADDLEX_URL`:
+
+```
+# 可选：PaddleX 请求超时（秒），默认 900。如果调大 RETAIN_LOCAL_OCR_COMMAND_TIMEOUT_SECONDS
+# 处理长论文，这个值也要一起调大，否则会先在这里超时。
+# RETAIN_LOCAL_PADDLEX_TIMEOUT_SECONDS=900
+```
+
+- [ ] **Step 4: Verify the compose file is still valid YAML**
+
+Run: `python3 -c "import yaml; yaml.safe_load(open('docker/delivery/docker-compose.yml'))" && echo "valid"`
+Expected: `valid` (use whatever Python is on PATH — this doesn't need the project's pinned interpreter, it's just a YAML syntax check).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add docker/delivery/docker-compose.yml docker/delivery/docker/app.env
+git commit -m "fix(docker): resolve host.docker.internal on Linux, fix PaddleX page-limit trap in docs, document inner timeout"
+```
+
+---
+
+### Task 11: Strengthen the Python integration test to cover the production args-construction path
+
+**Why (added after final review round 2):** Every Critical bug found across both review rounds lived in a seam between layers that no single existing test covered: Task 3's integration test hand-builds a `SimpleNamespace` directly, bypassing `provider_pipeline.py`'s stage-spec-to-args translation — exactly the layer where the round-1 `RETAIN_OCR_RAW_PROVIDER` bug lived. Task 7 fixed that bug and added a narrow Rust test for the definition default, but nothing exercises the full Python-side spec-loading path for the `local`+`paddle` combination end-to-end. `test_provider_pipeline_entry.py::test_provider_pipeline_discovers_configured_local_provider` is the existing precedent for testing a `local`-kind provider through the real spec loader.
+
+**Files:**
+- Modify: `backend/scripts/devtools/tests/document_schema/test_provider_pipeline_entry.py`
+
+**Interfaces:**
+- Consumes: `services.ocr_provider.provider_pipeline` (existing, unchanged), `services.ocr_provider.local_paddlex_wrapper` (Tasks 1-2, unchanged)
+
+- [ ] **Step 1: Read the existing local-provider test in this file for its exact spec-loading pattern**
+
+Read `test_provider_pipeline_discovers_configured_local_provider` in this file fully (find it with `grep -n "def test_provider_pipeline_discovers_configured_local_provider" backend/scripts/devtools/tests/document_schema/test_provider_pipeline_entry.py`) to see exactly how it constructs a `provider.stage.v1` spec JSON and invokes the real `provider_pipeline` entry point — your new test should follow the same pattern, not invent a new one.
+
+- [ ] **Step 2: Write a new test using that pattern, with `provider: "local"` and `raw_provider` left unset in the spec's `ocr.options`, relying on `RETAIN_OCR_RAW_PROVIDER=paddle` from the environment**
+
+The test should:
+1. Write a `provider.stage.v1` spec JSON with `ocr.provider = "local"` and `ocr.options = {"command": "<path to a Python one-liner that writes a minimal paddle-shaped raw payload, or reuses the local_paddlex_wrapper.py pattern from Task 3's integration test>"}` — critically, `ocr.options` must NOT include `"raw_provider"` at all (that's the point: proving the env var is what supplies it, matching production where the stage spec now carries an empty string default rather than a baked-in `"generic_flat_ocr"`).
+2. `monkeypatch.setenv("RETAIN_OCR_RAW_PROVIDER", "paddle")`.
+3. Invoke the real `provider_pipeline` entry point the same way `test_provider_pipeline_discovers_configured_local_provider` does.
+4. Assert the resulting `document.v1.json`'s `source.provider == "paddle"` (not `"generic_flat_ocr"`) — this is the actual regression this test guards against.
+
+- [ ] **Step 3: Run the test and the full document_schema suite**
+
+Run: `PYTHONPATH=backend/scripts /home/thuandn/miniconda3/envs/retain-pdf-vi/bin/python -m pytest backend/scripts/devtools/tests/document_schema/test_provider_pipeline_entry.py -v`
+Expected: new test PASSES.
+
+Run: `PYTHONPATH=backend/scripts /home/thuandn/miniconda3/envs/retain-pdf-vi/bin/python -m pytest backend/scripts/devtools/tests/document_schema -q`
+Expected: same pre-existing failure count as this plan's established baseline, no new failures.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add backend/scripts/devtools/tests/document_schema/test_provider_pipeline_entry.py
+git commit -m "test(ocr): cover local+paddle raw_provider resolution through the real spec-loading path"
+```
+
+---
+
 ## Self-Review Notes
 
-- **Spec coverage:** OCR self-hosting via `local_command` + reused `paddle` adapter → Tasks 1-3. Page-limit trap → Tasks 4 (config comment) and 6 (manual verification). OpenRouter LLM switch → Task 5. Testing/verification plan from the spec → Tasks 1-3 (automated) and Task 6 (manual, since it requires real GPU hardware unavailable to an automated executor). Tasks 7-8 were added post-hoc after the final whole-branch review found the OCR path was unreachable end-to-end despite Tasks 1-5 being individually correct — a cross-task integration gap no single task's review could have caught, only the final review.
+- **Spec coverage:** OCR self-hosting via `local_command` + reused `paddle` adapter → Tasks 1-3. Page-limit trap → Tasks 4 (config comment, later corrected by Task 10) and 6 (manual verification). OpenRouter LLM switch → Task 5. Testing/verification plan from the spec → Tasks 1-3 (automated) and Task 6 (manual, since it requires real GPU hardware unavailable to an automated executor). Tasks 7-8 were added post-hoc after the first final-review round found the OCR path was unreachable end-to-end despite Tasks 1-5 being individually correct. Tasks 9-11 were added after a second final-review round found Task 8's frontend fix was itself incomplete (3 more stacked layers) and that 4 Important findings from round 1 were never addressed.
 - **No new adapter code**: confirmed Tasks 1-3 only add the wrapper script and tests; `provider_adapters/paddle/` is untouched, matching the spec's Approach A.
 - **Type/name consistency**: `local_paddlex_wrapper.PADDLEX_URL_ENV`, `.build_request_payload`, `.extract_layout_result`, `.run`, `.main` are used identically across Tasks 1, 2, and 3's integration test import.
-- **Task 7/8 scope boundary**: both tasks are narrowly scoped to the exact two config/definition defaults the final review identified as broken — no unrelated Rust or frontend refactoring.
+- **Task 7/8 scope boundary**: both tasks are narrowly scoped to the exact two config/definition defaults the first final review identified as broken — no unrelated Rust or frontend refactoring.
+- **Task 9 scope boundary**: touches only the credential-gate and payload-construction seam for provider-specific credential requirements; explicitly told not to do unrelated cleanup of the legacy/new credentials-system split.
+- **Structural lesson applied**: Task 11 exists specifically because both review rounds found bugs in the seam between the stage-spec builder and the Python driver that no per-file unit test covered — it adds the missing layer-crossing test rather than more unit tests at either end.
