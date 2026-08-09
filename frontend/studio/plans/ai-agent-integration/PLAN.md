@@ -16,7 +16,8 @@ blog/<slug>/
 ├── img/
 ├── assets/
 ├── ai/
-└── article.config.yaml
+├── article.config.yaml
+└── article.views.json
 ```
 
 AI 可以读取正文和科学文件、提出修改、生成摘要或解释计算结果，但不能绕过 Studio 的保存与审核流程。
@@ -40,7 +41,7 @@ Grok Build Agent
 ### 阶段 1：只读验证
 
 - Agent 工作目录锁定到当前 `blog/<slug>/`。
-- 只能读取 `index.md`、`img/`、`assets/`、`ai/` 和 `article.config.yaml`。
+- 只能读取 `index.md`、`img/`、`assets/`、`ai/`、`article.config.yaml` 和 `article.views.json`。
 - Studio 展示流式回答，不允许 Agent 写文件或执行 shell。
 - 验证认证、会话恢复、取消和事件映射。
 

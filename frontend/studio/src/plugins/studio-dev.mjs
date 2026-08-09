@@ -1,12 +1,11 @@
-import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createMarkdownProcessor } from '@astrojs/markdown-remark';
 import remarkMath from 'remark-math';
+import { ArticleRepository } from '../studio/server/article-repository.mjs';
+import { articleBundlePaths, StudioPathError } from '../studio/server/bundle-paths.mjs';
+import { FileRepository } from '../studio/server/file-repository.mjs';
 import rehypeKatexMhchem from './rehype-katex-mhchem.mjs';
-
-const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function json(response, status, data) {
 	response.statusCode = status;
@@ -26,34 +25,26 @@ async function readJson(request) {
 	return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
 }
 
-function hash(content) {
-	return createHash('sha256').update(content).digest('hex');
-}
-
-function articleTitle(content, fallback) {
-	const frontmatter = content.match(/^---\s*\n([\s\S]*?)\n---/u)?.[1] ?? '';
-	const rawTitle = frontmatter.match(/^title:\s*(.+)$/mu)?.[1]?.trim();
-	return rawTitle?.replace(/^['"]|['"]$/g, '') || fallback;
-}
-
 function markdownBody(content) {
 	return content.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/u, '');
 }
 
-async function listFiles(directory, prefix = '') {
+function decodePathComponent(component) {
 	try {
-		const entries = await readdir(directory, { withFileTypes: true });
-		const files = [];
-		for (const entry of entries) {
-			if (entry.name === '.gitkeep') continue;
-			const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
-			if (entry.isDirectory()) files.push(...await listFiles(join(directory, entry.name), relative));
-			else files.push(relative);
-		}
-		return files;
+		return decodeURIComponent(component);
 	} catch {
-		return [];
+		throw new StudioPathError('资源 URL 编码无效');
 	}
+}
+
+function file(response, resource) {
+	response.statusCode = 200;
+	response.setHeader('Content-Type', resource.contentType);
+	response.setHeader('Content-Length', resource.size);
+	response.setHeader('Cache-Control', 'no-store');
+	response.setHeader('X-Content-Type-Options', 'nosniff');
+	response.setHeader('Content-Security-Policy', 'sandbox');
+	response.end(resource.body);
 }
 
 export default function studioDev({ chemistryLanguages }) {
@@ -62,6 +53,8 @@ export default function studioDev({ chemistryLanguages }) {
 		apply: 'serve',
 		configureServer(server) {
 			const blogRoot = resolve(server.config.root, 'blog');
+			const articles = new ArticleRepository(blogRoot);
+			const files = new FileRepository(blogRoot);
 			const processorPromise = createMarkdownProcessor({
 				remarkPlugins: [remarkMath],
 				rehypePlugins: [rehypeKatexMhchem],
@@ -69,7 +62,21 @@ export default function studioDev({ chemistryLanguages }) {
 			});
 
 			server.middlewares.use(async (request, response, next) => {
+				const rawPathname = (request.url ?? '/').split('?', 1)[0];
 				const url = new URL(request.url ?? '/', 'http://localhost');
+				const publicFileMatch = rawPathname.match(/^\/article-assets\/([^/]+)\/([^/]+)\/(.+)$/u);
+				if (publicFileMatch && request.method === 'GET') {
+					try {
+						const slug = decodePathComponent(publicFileMatch[1]);
+						const root = decodePathComponent(publicFileMatch[2]);
+						const resourcePath = decodePathComponent(publicFileMatch[3]);
+						return file(response, await files.read(slug, root, resourcePath));
+					} catch (error) {
+						const message = error instanceof Error ? error.message : '文章资源读取失败';
+						const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
+						return json(response, status, { error: message });
+					}
+				}
 				if (!url.pathname.startsWith('/api/studio/')) return next();
 				const remoteAddress = request.socket.remoteAddress ?? '';
 				const isLoopback = remoteAddress === '::1' || remoteAddress === '127.0.0.1' || remoteAddress.startsWith('::ffff:127.');
@@ -81,83 +88,57 @@ export default function studioDev({ chemistryLanguages }) {
 
 				try {
 					if (url.pathname === '/api/studio/articles' && request.method === 'GET') {
-						const entries = await readdir(blogRoot, { withFileTypes: true });
-						const articles = [];
-						for (const entry of entries) {
-							if (!entry.isDirectory() || !slugPattern.test(entry.name)) continue;
-							try {
-								const content = await readFile(join(blogRoot, entry.name, 'index.md'), 'utf8');
-								articles.push({ slug: entry.name, title: articleTitle(content, entry.name) });
-							} catch { /* Ignore directories without an article. */ }
-						}
-						articles.sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'));
-						return json(response, 200, { articles });
+						return json(response, 200, { articles: await articles.list() });
 					}
 
 					if (url.pathname === '/api/studio/articles' && request.method === 'POST') {
-						const { slug, title } = await readJson(request);
-						if (!slugPattern.test(slug ?? '')) return json(response, 400, { error: 'slug 只能包含小写字母、数字和连字符' });
-						if (typeof title !== 'string' || !title.trim()) return json(response, 400, { error: '文章标题不能为空' });
-						const articleDirectory = join(blogRoot, slug);
-						try {
-							await stat(articleDirectory);
-							return json(response, 409, { error: '该文章目录已经存在' });
-						} catch { /* Expected for a new article. */ }
-						await Promise.all(['img', 'assets', 'ai'].map((name) => mkdir(join(articleDirectory, name), { recursive: true })));
-						const today = new Date().toISOString().slice(0, 10);
-						const content = `---\ntitle: '${title.trim().replaceAll("'", "''")}'\ndescription: ''\npubDate: '${today}'\ntags: []\ndraft: true\n---\n\n从这里开始写作。\n`;
-						await Promise.all([
-							writeFile(join(articleDirectory, 'index.md'), content, { flag: 'wx' }),
-							writeFile(join(articleDirectory, 'article.config.yaml'), 'render:\n  toc: true\n  math: true\n  chemistry: true\n', { flag: 'wx' }),
-						]);
-						return json(response, 201, { slug });
+						const created = await articles.create(await readJson(request));
+						return json(response, 201, created);
 					}
 
 					if (url.pathname === '/api/studio/preview' && request.method === 'POST') {
 						const { content = '', slug = 'preview' } = await readJson(request);
 						const processor = await processorPromise;
 						const result = await processor.render(markdownBody(String(content)), {
-							fileURL: pathToFileURL(join(blogRoot, slug, 'index.md')),
+							fileURL: pathToFileURL(articleBundlePaths(blogRoot, slug).markdown),
 						});
 						return json(response, 200, { html: result.code });
 					}
 
-					const match = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)$/);
+					// Match the raw path so URL normalization cannot erase an attempted `..` traversal.
+					const fileMatch = rawPathname.match(/^\/api\/studio\/articles\/([^/]+)\/files\/([^/]+)\/(.+)$/u);
+					if (fileMatch && request.method === 'GET') {
+						const slug = decodePathComponent(fileMatch[1]);
+						const root = decodePathComponent(fileMatch[2]);
+						const resourcePath = decodePathComponent(fileMatch[3]);
+						return file(response, await files.read(slug, root, resourcePath));
+					}
+
+					const match = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)$/u);
 					if (match) {
-						const slug = decodeURIComponent(match[1]);
-						if (!slugPattern.test(slug)) return json(response, 400, { error: '无效的文章 slug' });
-						const articleDirectory = join(blogRoot, slug);
-						const articlePath = join(articleDirectory, 'index.md');
+						const slug = decodePathComponent(match[1]);
 
 						if (request.method === 'GET') {
-							const content = await readFile(articlePath, 'utf8');
-							const [img, assets, ai] = await Promise.all(['img', 'assets', 'ai'].map((name) => listFiles(join(articleDirectory, name))));
-							return json(response, 200, {
-								slug,
-								content,
-								hash: hash(content),
-								files: { img, assets, ai },
-							});
+							return json(response, 200, await articles.read(slug));
 						}
 
 						if (request.method === 'PUT') {
-							const { content, expectedHash } = await readJson(request);
-							if (typeof content !== 'string') return json(response, 400, { error: '文章内容必须是文本' });
-							const current = await readFile(articlePath, 'utf8');
-							if (expectedHash && hash(current) !== expectedHash) {
-								return json(response, 409, { error: '文件已被其他程序修改，请重新载入后再保存' });
-							}
-							const temporaryPath = `${articlePath}.${randomUUID()}.tmp`;
-							await writeFile(temporaryPath, content, 'utf8');
-							await rename(temporaryPath, articlePath);
-							return json(response, 200, { hash: hash(content) });
+							return json(response, 200, await articles.save(slug, await readJson(request)));
 						}
+					}
+
+					const viewMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/chemistry-views\/([^/]+)$/u);
+					if (viewMatch && request.method === 'PUT') {
+						const slug = decodePathComponent(viewMatch[1]);
+						const key = decodePathComponent(viewMatch[2]);
+						return json(response, 200, await articles.saveMoleculeView(slug, key, await readJson(request)));
 					}
 
 					return json(response, 404, { error: 'Studio API 不存在' });
 				} catch (error) {
 					const message = error instanceof Error ? error.message : 'Studio 操作失败';
-					return json(response, 500, { error: message });
+					const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
+					return json(response, status, { error: message });
 				}
 			});
 		},

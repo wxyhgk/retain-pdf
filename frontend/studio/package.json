@@ -9,7 +9,11 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "npm run test:document && npm run test:data && npm run test:science",
+    "test:document": "node --experimental-strip-types --test tests/studio-document*.test.ts",
+    "test:data": "node --test src/studio/server/*.test.mjs",
+    "test:science": "node --experimental-strip-types --test tests/science*.test.ts"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.2.2",
@@ -19,8 +23,11 @@
     "@codemirror/autocomplete": "^6.20.3",
     "@codemirror/commands": "^6.10.4",
     "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/language-data": "^6.5.2",
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.8",
+    "@milkdown/crepe": "^7.22.0",
     "@rdkit/rdkit": "^2025.3.4-1.0.0",
     "3dmol": "^2.5.5",
     "astro": "^7.2.0",
@@ -28,11 +35,25 @@
     "hast-util-from-html-isomorphic": "^2.0.0",
     "hast-util-to-text": "^4.0.2",
     "katex": "^0.18.2",
+    "markdown-it": "^14.3.0",
+    "markdown-it-texmath": "^1.0.0",
+    "prosemirror-commands": "^1.7.2",
+    "prosemirror-history": "^1.5.0",
+    "prosemirror-inputrules": "^1.5.1",
+    "prosemirror-keymap": "^1.2.3",
+    "prosemirror-markdown": "^1.13.5",
+    "prosemirror-model": "^1.25.11",
+    "prosemirror-schema-list": "^1.5.1",
+    "prosemirror-state": "^1.4.4",
+    "prosemirror-view": "^1.42.2",
     "remark-math": "^6.0.0",
+    "remark-parse": "^11.0.0",
     "sharp": "^0.35.0",
+    "unified": "^11.0.5",
     "unist-util-visit-parents": "^6.0.2"
   },
   "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
     "typescript": "^7.0.2"
   }
 }
