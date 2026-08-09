@@ -1,0 +1,194 @@
+/*
+  The CSS in this style tag is based off of Bear Blog's default CSS.
+  https://github.com/HermanMartinus/bearblog/blob/297026a877bc2ab2b3bdfbd6b9f7961c350917dd/templates/styles/blog/default.css
+  License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
+ */
+
+:root {
+	--accent: #0b6b58;
+	--accent-dark: #06483c;
+	--black: 22, 32, 30;
+	--gray: 92, 108, 104;
+	--gray-light: 222, 230, 227;
+	--gray-dark: 44, 59, 55;
+	--gray-gradient: rgba(235, 242, 239, 0.75), #fff;
+	--surface: #ffffff;
+	--surface-soft: #f1f3f1;
+	--surface-hover: #fafaf8;
+	--code-bg: #16201e;
+	--code-text: #f4f7f6;
+	--box-shadow:
+		0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 33%),
+		0 16px 32px rgba(var(--gray), 33%);
+}
+html[data-theme='dark'] {
+	color-scheme: dark;
+	--accent: #67c7b0;
+	--accent-dark: #93ddcb;
+	--black: 236, 242, 239;
+	--gray: 151, 164, 159;
+	--gray-light: 54, 64, 61;
+	--gray-dark: 204, 214, 210;
+	--gray-gradient: #181c1b, #181c1b;
+	--surface: #181c1b;
+	--surface-soft: #252b29;
+	--surface-hover: #202624;
+	--code-bg: #0e1211;
+	--code-text: #e9efec;
+	--box-shadow: 0 12px 38px rgba(0, 0, 0, 0.34);
+}
+body {
+	font-family: var(--font-atkinson), -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+	margin: 0;
+	padding: 0;
+	text-align: left;
+	background: var(--surface);
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	color: rgb(var(--gray-dark));
+	font-size: 19px;
+	line-height: 1.7;
+}
+body,
+header,
+footer,
+nav,
+article,
+details {
+	transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+main {
+	width: 720px;
+	max-width: calc(100% - 2em);
+	margin: auto;
+	padding: 3em 1em;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	margin: 0 0 0.5rem 0;
+	color: rgb(var(--black));
+	line-height: 1.2;
+}
+h1 {
+	font-size: 3.052em;
+	letter-spacing: -0.035em;
+}
+h2 {
+	font-size: 2.441em;
+}
+h3 {
+	font-size: 1.953em;
+}
+h4 {
+	font-size: 1.563em;
+}
+h5 {
+	font-size: 1.25em;
+}
+strong,
+b {
+	font-weight: 700;
+}
+a {
+	color: var(--accent);
+}
+a:hover {
+	color: var(--accent-dark);
+}
+a:focus-visible,
+summary:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 3px;
+}
+::selection {
+	background: rgba(11, 107, 88, 0.16);
+}
+p {
+	margin-bottom: 1em;
+}
+.prose p {
+	margin-bottom: 1.35em;
+}
+textarea {
+	width: 100%;
+	font-size: 16px;
+}
+input {
+	font-size: 16px;
+}
+table {
+	width: 100%;
+}
+img {
+	max-width: 100%;
+	height: auto;
+	border-radius: 8px;
+}
+code {
+	padding: 2px 5px;
+	background-color: rgb(var(--gray-light));
+	border-radius: 2px;
+}
+pre {
+	padding: 1.5em;
+	border-radius: 8px;
+	background: var(--code-bg);
+	color: var(--code-text);
+	overflow-x: auto;
+}
+pre > code {
+	all: unset;
+}
+blockquote {
+	border-left: 4px solid var(--accent);
+	padding: 0 0 0 20px;
+	margin: 0;
+	font-size: 1.333em;
+}
+.katex-display {
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding: 0.75em 0;
+}
+hr {
+	border: none;
+	border-top: 1px solid rgb(var(--gray-light));
+}
+@media (max-width: 720px) {
+	body {
+		font-size: 18px;
+	}
+	main {
+		padding: 1em;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		scroll-behavior: auto !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+.sr-only {
+	border: 0;
+	padding: 0;
+	margin: 0;
+	position: absolute !important;
+	height: 1px;
+	width: 1px;
+	overflow: hidden;
+	/* IE6, IE7 - a 0 height clip, off to the bottom right of the visible 1px box */
+	clip: rect(1px 1px 1px 1px);
+	/* maybe deprecated but we need to support legacy browsers */
+	clip: rect(1px, 1px, 1px, 1px);
+	/* modern browsers, clip-path works inwards from each corner */
+	clip-path: inset(50%);
+	/* added line to stop words getting smushed together (as they go onto separate lines and some screen readers do not understand line feeds as a space */
+	white-space: nowrap;
+}
