@@ -1,4 +1,4 @@
-import type { ArticlePayload } from '../types.ts';
+import type { ArticlePayload, ArticleProperties } from '../types.ts';
 
 export type ArticleSnapshot = {
 	article: ArticlePayload | null;
@@ -33,9 +33,14 @@ export class ArticleStore {
 		this.emit();
 	}
 
-	markSaved(revision: string): void {
+	markSaved(revision: string, properties?: ArticleProperties): void {
 		if (!this.snapshot.article) return;
-		const article = { ...this.snapshot.article, source: this.snapshot.source, revision };
+		const article = {
+			...this.snapshot.article,
+			source: this.snapshot.source,
+			revision,
+			properties: properties ?? this.snapshot.article.properties,
+		};
 		this.snapshot = { article, source: this.snapshot.source, revision, dirty: false };
 		this.emit();
 	}

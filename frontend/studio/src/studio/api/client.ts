@@ -31,6 +31,7 @@ export function getArticle(slug: string): Promise<ArticlePayload> {
 		...article,
 		source: article.source ?? article.content ?? '',
 		revision: article.revision ?? article.hash ?? '',
+		properties: article.properties,
 		chemistryViews: article.chemistryViews ?? {},
 	}));
 }

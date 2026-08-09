@@ -41,6 +41,13 @@ test('repository preserves the legacy API while supporting revision aliases', as
 	assert.equal(initial.content, initial.source);
 	assert.equal(initial.hash, initial.revision);
 	assert.match(initial.content, /draft: true/u);
+	assert.deepEqual(initial.properties, {
+		title: "研究者的 '草稿'",
+		description: '',
+		pubDate: new Date().toISOString().slice(0, 10),
+		tags: [],
+		draft: true,
+	});
 
 	const saved = await repository.save('first-note', {
 		source: `${initial.source}\nNew paragraph.\n`,

@@ -12,10 +12,19 @@ export type ArticleFiles = {
 	ai: string[];
 };
 
+export type ArticleProperties = {
+	title: string;
+	description: string;
+	pubDate: string;
+	tags: string[];
+	draft: boolean;
+};
+
 export type ArticlePayload = {
 	slug: string;
 	source: string;
 	revision: string;
+	properties: ArticleProperties;
 	/** Temporary compatibility fields returned by the first Studio API. */
 	content?: string;
 	hash?: string;

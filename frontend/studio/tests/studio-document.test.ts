@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { parseStudioDocument, serializeStudioDocument } from '../src/studio/document/index.ts';
+import { mergeMarkdownBody, parseStudioDocument, serializeStudioDocument, updateStudioFrontmatter } from '../src/studio/document/index.ts';
 
 const losslessCases = [
 	{
@@ -77,4 +77,78 @@ test('records contiguous top-level mdast slices with absolute source ranges', ()
 	for (const block of blocks) {
 		assert.equal(source.slice(block.start, block.end), block.raw);
 	}
+});
+
+test('restores original bytes when Crepe only normalizes Markdown formatting', () => {
+	const original = [
+		'\r\nIntro paragraph.\r\n\r\n',
+		'- one\r\n- two\r\n\r\n',
+		'~~~cube title=orbital\r\n@file ./assets/orbital.cube\r\n~~~\r\n\r\n',
+		'$$\r\nE = mc^2\r\n$$\r\n',
+	].join('');
+	const normalized = [
+		'Intro paragraph.\n\n',
+		'* one\n* two\n\n',
+		'```cube title=orbital\n@file ./assets/orbital.cube\n```\n\n',
+		'$$\nE = mc^2\n$$\n',
+	].join('');
+
+	const result = mergeMarkdownBody(original, normalized);
+	assert.equal(result.body, original);
+	assert.equal(result.changedBlocks, 0);
+	assert.equal(result.retainedBlocks, 4);
+});
+
+test('accepts edited blocks while retaining untouched scientific blocks', () => {
+	const original = [
+		'Original introduction.\r\n\r\n',
+		'```smiles keep=exact\r\nCCO\r\n```\r\n\r\n',
+		'$$\r\n\\ce{2 H2 + O2 -> 2 H2O}\r\n$$\r\n',
+	].join('');
+	const edited = [
+		'Updated introduction.\n\n',
+		'```smiles keep=exact\nCCO\n```\n\n',
+		'$$\n\\ce{2 H2 + O2 -> 2 H2O}\n$$\n',
+	].join('');
+
+	const result = mergeMarkdownBody(original, edited);
+	assert.match(result.body, /^Updated introduction\.\n\n/u);
+	assert.match(result.body, /```smiles keep=exact\r\nCCO\r\n```\r\n\r\n/u);
+	assert.match(result.body, /\$\$\r\n\\ce\{2 H2 \+ O2 -> 2 H2O\}\r\n\$\$\r\n$/u);
+	assert.equal(result.changedBlocks, 1);
+	assert.equal(result.retainedBlocks, 2);
+});
+
+test('updates article properties without rewriting unknown YAML or comments', () => {
+	const source = [
+		'---\r\n',
+		'# project metadata\r\n',
+		'title: old # visible title\r\n',
+		'description: old\r\n',
+		'custom: &settings\r\n',
+		'  basis: def2-SVP\r\n',
+		'copy: *settings\r\n',
+		'pubDate: 2026-08-09\r\n',
+		'tags:\r\n',
+		'  - old\r\n',
+		'# publication state\r\n',
+		'draft: true\r\n',
+		'---\r\n',
+		'Body remains byte exact.\r\n',
+	].join('');
+
+	const updated = updateStudioFrontmatter(source, {
+		title: 'New: title',
+		description: 'A # literal value',
+		pubDate: '2026-08-10',
+		tags: ['HF', '量子化学'],
+		draft: false,
+	});
+
+	assert.match(updated, /# project metadata\r\n/u);
+	assert.match(updated, /title: "New: title" # visible title\r\n/u);
+	assert.match(updated, /description: "A # literal value"\r\n/u);
+	assert.match(updated, /custom: &settings\r\n  basis: def2-SVP\r\ncopy: \*settings\r\n/u);
+	assert.match(updated, /tags: \["HF", "量子化学"\]\r\n# publication state\r\n/u);
+	assert.match(updated, /draft: false\r\n---\r\nBody remains byte exact\.\r\n$/u);
 });

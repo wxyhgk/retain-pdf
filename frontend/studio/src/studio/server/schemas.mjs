@@ -33,6 +33,18 @@ export function articleSummary(source, fallbackSlug) {
 	};
 }
 
+export function articleProperties(source, fallbackSlug = '') {
+	const { frontmatter } = parseArticleSource(source);
+	const date = frontmatter.pubDate instanceof Date ? frontmatter.pubDate : new Date(frontmatter.pubDate);
+	return {
+		title: typeof frontmatter.title === 'string' && frontmatter.title.trim() ? frontmatter.title.trim() : fallbackSlug,
+		description: typeof frontmatter.description === 'string' ? frontmatter.description : '',
+		pubDate: Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10),
+		tags: Array.isArray(frontmatter.tags) ? frontmatter.tags.filter((tag) => typeof tag === 'string') : [],
+		draft: frontmatter.draft === true,
+	};
+}
+
 export function validateArticleSource(source) {
 	const { frontmatter } = parseArticleSource(source);
 	return studioArticleFrontmatterSchema.safeParse(frontmatter);

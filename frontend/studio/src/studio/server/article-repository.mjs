@@ -11,7 +11,7 @@ import {
 	StudioPathError,
 } from './bundle-paths.mjs';
 import { FileRepository } from './file-repository.mjs';
-import { ArticleValidationError, articleSummary, createArticleSource } from './schemas.mjs';
+import { ArticleValidationError, articleProperties, articleSummary, createArticleSource } from './schemas.mjs';
 
 function bundleRevision(source, configSource, viewsSource) {
 	return contentRevision(`${source}\0${configSource}\0${viewsSource}`);
@@ -94,6 +94,7 @@ export class ArticleRepository {
 			source,
 			revision,
 			files,
+			properties: articleProperties(source, slug),
 			chemistryViews: readMoleculeViews(viewsSource),
 		};
 	}

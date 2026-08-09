@@ -95,6 +95,7 @@ test('ArticleStore is the single source and revision state for both editor modes
 		slug: 'example',
 		source: 'Original',
 		revision: 'rev-1',
+		properties: { title: 'Example', description: '', pubDate: '2026-08-09', tags: [], draft: true },
 		files: { img: [], assets: [], ai: [] },
 		chemistryViews: {},
 	});

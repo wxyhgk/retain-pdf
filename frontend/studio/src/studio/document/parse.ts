@@ -1,4 +1,5 @@
 import remarkParse from 'remark-parse';
+import remarkMath from 'remark-math';
 import { unified } from 'unified';
 
 import type { FrontmatterSlice, MarkdownBlockSlice, StudioDocument } from './types.ts';
@@ -17,7 +18,7 @@ type PositionedNode = {
 	};
 };
 
-const markdownParser = unified().use(remarkParse);
+const markdownParser = unified().use(remarkParse).use(remarkMath);
 
 function readLines(source: string, start: number): SourceLine[] {
 	const lines: SourceLine[] = [];
@@ -100,6 +101,11 @@ function sliceBody(bodyRaw: string, bodyStart: number): MarkdownBlockSlice[] {
 			raw: bodyRaw.slice(start, end),
 		};
 	});
+}
+
+/** Parses a body without treating a leading thematic break as frontmatter. */
+export function parseMarkdownBodyBlocks(body: string): MarkdownBlockSlice[] {
+	return sliceBody(body, 0);
 }
 
 /**
