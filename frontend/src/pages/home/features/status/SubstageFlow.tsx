@@ -1,7 +1,7 @@
-// 子阶段流程条(蓝图 §2 features/status/;数据源 buildSubstageViewModel 是
-// job-status/substage-view-model.js 纯 VM,原样 import——镜像
-// job-status-card-substages.js 的 syncStageSubstageStates DOM 结构,
-// --status-substage-count CSS 变量契约保留)。
+// Thanh quy trình giai đoạn con (bản thiết kế §2 features/status/; nguồn dữ
+// liệu buildSubstageViewModel là VM thuần của job-status/substage-view-model.js,
+// import nguyên trạng — phản chiếu cấu trúc DOM syncStageSubstageStates của
+// job-status-card-substages.js, giữ hợp đồng biến CSS --status-substage-count).
 
 import type { StatusCardSnapshot, StatusCardStageProgress } from "./status-card-store.js";
 import type { CSSProperties } from "react";
@@ -20,7 +20,7 @@ export function SubstageFlow({ selectedStageKey, selectedIsCurrent, snapshot, se
   return (
     <div
       className={`status-substage-flow${viewModel.hidden ? " hidden" : ""}`}
-      aria-label="任务子阶段"
+       aria-label="Giai đoạn con của tác vụ"
       style={{ ["--status-substage-count"]: `${viewModel.cssCount}` } as CSSProperties}
     >
       {viewModel.items.map((item) => (

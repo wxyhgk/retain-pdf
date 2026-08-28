@@ -111,17 +111,17 @@
     <main class="shell">
       <img class="logo" src="./assets/RetainPDF-logo.png" alt="RetainPDF Logo" />
       <h1>RetainPDF</h1>
-      <p>正在启动桌面环境。首次启动或大文件环境准备会稍慢一些。</p>
+      <p>Đang khởi động môi trường desktop. Lần khởi động đầu tiên hoặc chuẩn bị tệp lớn có thể chậm hơn một chút.</p>
 
       <section class="status" aria-live="polite">
         <div class="status-head">
-          <div id="status-title" class="status-title">正在准备运行环境</div>
+          <div id="status-title" class="status-title">Đang chuẩn bị môi trường chạy</div>
           <div id="status-value" class="status-value">0%</div>
         </div>
         <div class="track">
           <div id="status-bar" class="bar"></div>
         </div>
-        <div id="status-detail" class="detail">正在加载启动组件</div>
+        <div id="status-detail" class="detail">Đang tải các thành phần khởi động</div>
       </section>
     </main>
 
@@ -133,7 +133,7 @@
 
       function applyProgress(payload = {}) {
         const progress = Math.max(0, Math.min(100, Number(payload.progress || 0)));
-        titleEl.textContent = payload.title || "正在启动";
+        titleEl.textContent = payload.title || "Đang khởi động";
         detailEl.textContent = payload.detail || "";
         valueEl.textContent = `${Math.round(progress)}%`;
         barEl.style.width = `${progress}%`;

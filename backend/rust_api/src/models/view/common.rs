@@ -102,9 +102,9 @@ pub struct ListJobsQuery {
     pub provider: Option<String>,
     #[serde(default)]
     pub q: Option<String>,
-    /// 逗号分隔的 job_id 白名单(可选)。分类文件夹展开时用它把
-    /// `GET /api/v1/documents?collection_id=` 解出的 active_job_id 集合
-    /// 转成图书馆卡片数据——不传时行为与现状完全一致。
+    /// Phân cách bằng dấu phẩy job_id Danh sách trắng(TÃ¹y chá»n)。Khi thư mục danh mục được mở rộng, hãy sử dụng nó để
+    /// `GET /api/v1/documents?collection_id=` Đã giải quyết active_job_id tập hợp
+    /// Chuyển đổi sang dữ liệu thẻ thư viện——Hành vi không truyền tải hoàn toàn phù hợp với hiện trạng。
     #[serde(default)]
     pub job_ids: Option<String>,
 }

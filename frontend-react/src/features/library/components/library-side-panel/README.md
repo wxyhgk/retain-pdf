@@ -1,20 +1,20 @@
-# Library Side Panel 组件族
+# Nhóm component Library Side Panel
 
-## 边界
+## Ranh giới
 
-`library-side-panel` 负责主页左侧的可折叠功能入口。它只展示入口和轻量操作面板，真实动作通过回调交给页面容器处理。
+`library-side-panel` phụ trách lối vào chức năng có thể thu gọn bên trái trang chủ. Nó chỉ hiển thị lối vào và panel thao tác nhẹ, hành động thực tế được giao cho container trang qua callback.
 
-## 文件
+## Tệp
 
-- `library-side-panel.tsx`：展开/收起组合层。
-- `library-side-panel-trigger.tsx`：收起状态的小按钮。
-- `library-side-panel-item.tsx`：展开状态的单个功能项，支持激活态和点击回调。
-- `library-side-panel-config.ts`：布局 class。
-- `library-side-panel-types.ts`：组件族类型。
-- `index.ts`：公共出口。
+- `library-side-panel.tsx`: Tầng tổ hợp mở/thu gọn.
+- `library-side-panel-trigger.tsx`: Nút nhỏ trạng thái thu gọn.
+- `library-side-panel-item.tsx`: Mục chức năng đơn trạng thái mở rộng, hỗ trợ trạng thái kích hoạt và callback nhấp.
+- `library-side-panel-config.ts`: Class bố cục.
+- `library-side-panel-types.ts`: Kiểu nhóm component.
+- `index.ts`: Xuất khẩu công khai.
 
-## 规则
+## Quy tắc
 
-- 功能文案和图标列表来自 `library-config.ts`。
-- 真实功能通过回调传入，不在 item 组件里直接请求 API。
-- 多选模式只在这里展示选择数量和批量操作按钮，选择集合由页面容器维护。
+- Văn bản chức năng và danh sách biểu tượng đến từ `library-config.ts`.
+- Chức năng thực tế truyền qua callback, không yêu cầu API trực tiếp trong component item.
+- Chế độ đa chọn chỉ hiển thị số lượng chọn và nút thao tác hàng loạt ở đây, tập hợp chọn do container trang duy trì.

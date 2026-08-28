@@ -1,6 +1,6 @@
-/* FAB 下载区：三列 chip / empty */
+/* Vùng tải FAB: chip ba cột / trống */
 
-/* 下载区：三列 chip */
+/* Vùng tải: chip ba cột */
 .reader-fab-section {
   display: grid;
   gap: 8px;
@@ -113,4 +113,3 @@
     transition: none;
   }
 }
-

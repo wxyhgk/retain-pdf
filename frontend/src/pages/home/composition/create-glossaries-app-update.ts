@@ -70,7 +70,7 @@ export function createGlossariesAndAppUpdate({
   glossariesFeature.bindEvents();
 
   const appUpdateView = createAppUpdateViewFeature();
-  // viewPort 无默认值，被 `= {}` 默认参从公开类型里吞掉；运行时必传。
+  // viewPort Không có giá trị mặc định，bị `= {}` Đã nuốt thông số mặc định từ loại công khai；Phải vượt qua trong thời gian chạy。
   const appUpdateFeature = mountAppUpdateFeature({
     enabled: appUpdateAutoCheckEnabled,
     cachePort: appUpdateCachePort,

@@ -64,7 +64,7 @@ async fn markdown_document_route_returns_content_and_direct_image_links() {
         ),
         "absolute markdown unexpected: {abs_md:?}"
     );
-    // 不得出现双 images 前缀
+    // Không nhân đôi images Tiền tố
     assert!(!abs_md.contains("/markdown/images/images/"));
     assert_eq!(
         payload["data"]["raw_path"],

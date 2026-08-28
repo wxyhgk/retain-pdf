@@ -1,82 +1,82 @@
-# LLM 目录约定
+# Quy ước thư mục LLM
 
-当前目录按“provider 专属实现”和“跨 provider 公共逻辑”拆分。
+Thư mục hiện tại được chia theo "triển khai dành riêng cho provider" và "logic chung giữa các provider".
 
-## 新人先读
+## Đọc trước đối với người mới
 
-- 想看 provider API 请求和默认模型：
+- Muốn xem yêu cầu API provider và mô hình mặc định:
   `providers/deepseek/client.py`
-- 想看“当前激活 provider”的统一运行时入口：
+- Muốn xem điểm vào runtime thống nhất của "provider đang kích hoạt":
   `shared/provider_runtime.py`
-- 想看 provider registry/capability 装配：
+- Muốn xem registry/capability của provider:
   `shared/provider_registry.py`
-- 想看 provider 侧翻译实现：
+- Muốn xem triển khai dịch phía provider:
   `providers/deepseek/translation_client.py`
-- 想看翻译控制上下文、术语和提示拼装入口：
+- Muốn xem ngữ cảnh điều khiển dịch, thuật ngữ và điểm vào ghép gợi ý:
   `shared/control_context.py`
-- 想看翻译 prompt/message 构造：
+- Muốn xem xây dựng prompt/message dịch:
   `shared/prompt_building.py`
-- 想看主翻译编排和 batch 重试：
+- Muốn xem điều phối dịch chính và retry batch:
   `shared/orchestration/retrying_translator.py`
-- 想看 plain-text 降级、placeholder 稳定策略：
+- Muốn xem degrade plain-text, chiến lược ổn định placeholder:
   `shared/orchestration/single_item_flow.py`
-- 想看单条 direct-typst/heavy-formula/tagged-placeholder 路由包装：
+- Muốn xem wrapper định tuyến direct-typst/heavy-formula/tagged-placeholder đơn:
   `shared/orchestration/single_item_routes.py`
-- 想看 fallback facade：
+- Muốn xem facade fallback:
   `shared/orchestration/fallbacks.py`
-- 想看编排目录的完整职责地图：
+- Muốn xem bản đồ trách nhiệm đầy đủ của thư mục điều phối:
   `shared/orchestration/README.md`
-- 想看公式切窗、segment 路由：
+- Muốn xem chia cửa sổ công thức, định tuyến segment:
   `shared/orchestration/segment_routing.py`
-- 想看占位符校验与降级原因：
+- Muốn xem kiểm tra placeholder và lý do degrade:
   `placeholder_guard.py`
 
-## 目录地图
+## Bản đồ thư mục
 
 - `providers/`
-  只放 provider 专属 API 适配、请求/响应处理、provider 默认值。
-  不应该承载跨 provider 的重试编排、公共结构化解析规则、页面级 workflow、policy 决策、memory 状态和渲染/落盘。
+  Chỉ chứa API adapter dành riêng cho provider, xử lý yêu cầu/phản hồi, giá trị mặc định của provider.
+  Không nên chứa điều phối retry giữa các provider, quy tắc phân tích cấu trúc chung, workflow cấp trang, quyết định policy, trạng thái memory và render/lưu trữ.
 - `shared/`
-  只放跨 provider 共用能力，例如控制上下文、缓存、结构化 schema 与解析器。
+  Chỉ chứa các khả năng dùng chung giữa các provider, ví dụ ngữ cảnh điều khiển, cache, schema có cấu trúc và parser.
 - `shared/prompt_building.py`
-  放跨 provider 的 prompt/message 构造逻辑，不再堆在 provider transport 文件里。
+  Chứa logic xây dựng prompt/message dùng chung giữa các provider, không còn nhét vào tệp transport của provider.
 - `shared/provider_runtime.py`
-  是 shared 层访问当前激活 provider 的稳定适配口。
+  Là giao diện adapter ổn định để lớp shared truy cập provider đang kích hoạt.
 - `shared/provider_registry.py`
-  放 provider runtime 定义、provider family/default model/base url 和 transport/translation 能力装配。
+  Chứa định nghĩa runtime của provider, family/default model/base url của provider và lắp ráp khả năng transport/dịch.
 - `shared/provider_protocol.py`
-  放 provider runtime 的协议类型和 capability 描述。Provider 新增能力时先扩这里，再让 registry 装配。
+  Chứa kiểu giao thức và mô tả capability của runtime provider. Khi provider thêm khả năng mới, trước tiên mở rộng ở đây, sau đó để registry lắp ráp.
 - `shared/orchestration/`
-  只放跨 provider 的翻译编排、fallback、segment routing。
-  这里应优先依赖 `shared/provider_runtime.py`，不要直接 import `providers/deepseek/*`。
-  目录内更细的模块边界说明见 `shared/orchestration/README.md`。
-- 顶层 `llm/`
-  现在只保留稳定聚合入口和少量顶层公共模块。
-  新代码应优先直接依赖 `providers/` 或 `shared/` 下的真实实现。
+  Chỉ chứa điều phối dịch, fallback, segment routing dùng chung giữa các provider.
+  Ở đây nên ưu tiên phụ thuộc vào `shared/provider_runtime.py`, không import trực tiếp `providers/deepseek/*`.
+  Giải thích chi tiết hơn về ranh giới module trong thư mục xem tại `shared/orchestration/README.md`.
+- Thư mục cấp cao nhất `llm/`
+  Hiện chỉ giữ lại điểm vào tổng hợp ổn định và một số module chung cấp cao.
+  Mã mới nên ưu tiên phụ thuộc trực tiếp vào triển khai thực tế trong `providers/` hoặc `shared/`.
 
-## 目录
+## Thư mục
 
 - `providers/deepseek/`
-  放 DeepSeek 专属 API 适配、默认值、请求/响应处理
+  Chứa API adapter, giá trị mặc định, xử lý yêu cầu/phản hồi dành riêng cho DeepSeek
 - `shared/`
-  放跨 provider 的缓存、控制上下文、结构化 schema 与解析器
+  Chứa cache, ngữ cảnh điều khiển, schema có cấu trúc và parser dùng chung giữa các provider
 - `shared/prompt_building.py`
-  放 prompt 与 message builder
+  Chứa prompt và message builder
 - `shared/provider_runtime.py`
-  放 shared 到当前 active provider 的运行时适配层
+  Chứa lớp adapter runtime từ shared đến provider đang kích hoạt
 - `shared/provider_registry.py`
-  放 active provider registry 与 capability runtime
+  Chứa registry của provider đang kích hoạt và runtime capability
 - `shared/orchestration/`
-  放跨 provider 的翻译编排、fallback、公式分段路由
-- 顶层 `llm/`
-  保留稳定聚合入口与少量顶层公共逻辑
+  Chứa điều phối dịch, fallback, định tuyến phân đoạn công thức dùng chung giữa các provider
+- Thư mục cấp cao nhất `llm/`
+  Giữ lại điểm vào tổng hợp ổn định và một số logic chung cấp cao
 
-## 当前分层
+## Phân tầng hiện tại
 
-- provider 专属
+- Dành riêng cho provider
   - `providers/deepseek/client.py`
   - `providers/deepseek/translation_client.py`
-- shared 公共层
+- Lớp chung shared
   - `shared/control_context.py`
   - `shared/cache.py`
   - `shared/prompt_building.py`
@@ -85,7 +85,7 @@
   - `shared/structured_models.py`
   - `shared/structured_output.py`
   - `shared/structured_parsers.py`
-- shared 编排层
+- Lớp điều phối shared
   - `shared/orchestration/README.md`
   - `shared/orchestration/retrying_translator.py`
   - `shared/orchestration/single_item_flow.py`
@@ -108,68 +108,68 @@
   - `shared/orchestration/metadata.py`
   - `shared/orchestration/common.py`
   - `shared/orchestration/segment_routing.py`
-- 公共逻辑
+- Logic chung
   - `placeholder_guard.py`
   - `domain_context.py`
 
-## 稳定入口与兼容入口
+## Điểm vào ổn định và tương thích
 
-- 稳定聚合入口
+- Điểm vào tổng hợp ổn định
   - `llm/__init__.py`
   - `providers/deepseek/__init__.py`
   - `shared/__init__.py`
   - `shared/orchestration/__init__.py`
 
-## Provider 运行时分层
+## Phân tầng runtime Provider
 
 - `providers/<provider>/`
-  只关心 provider 专属 transport、默认值和 provider 自己的翻译细节
+  Chỉ quan tâm đến transport dành riêng cho provider, giá trị mặc định và chi tiết dịch của chính provider
 - `shared/provider_registry.py`
-  把 provider 专属能力装配成 `TranslationProviderRuntimeProtocol`
+  Lắp ráp khả năng dành riêng của provider thành `TranslationProviderRuntimeProtocol`
 - `shared/provider_runtime.py`
-  暴露“当前 active provider”的稳定别名给业务层和 orchestration 层
-- 业务层
-  默认只依赖 `shared/provider_runtime.py`，不直接 import `providers/deepseek/*`
+  Để lộ bí danh ổn định của "provider đang kích hoạt hiện tại" cho lớp nghiệp vụ và lớp orchestration
+- Lớp nghiệp vụ
+  Mặc định chỉ phụ thuộc vào `shared/provider_runtime.py`, không import trực tiếp `providers/deepseek/*`
 
-## 关键调用链
+## Chuỗi gọi chính
 
-- 主翻译链：
+- Chuỗi dịch chính:
   `workflow/translation_workflow.py`
   -> `services.translation.llm.translate_batch`
   -> `shared/orchestration/retrying_translator.py`
   -> `shared/orchestration/single_item_flow.py`
   -> `providers/deepseek/translation_client.py`
   -> `providers/deepseek/client.py`
-- 领域提示链：
+- Chuỗi gợi ý lĩnh vực:
   `domain_context.py`
   -> `shared/control_context.py`
   -> `providers/deepseek/client.py`
-- 公式降级链：
+- Chuỗi degrade công thức:
   `shared/orchestration/retrying_translator.py`
   -> `shared/orchestration/segment_routing.py`
   -> `shared/orchestration/single_item_flow.py`
   -> `placeholder_guard.py`
 
-## 排错入口
+## Điểm vào gỡ lỗi
 
-- placeholder 异常、keep-origin 降级：
+- Ngoại lệ placeholder, degrade keep-origin:
   `placeholder_guard.py`
-- 批次重试、单 item 降级：
+- Retry batch, degrade đơn item:
   `shared/orchestration/retrying_translator.py`
   `shared/orchestration/single_item_flow.py`
   `shared/orchestration/fallbacks.py`
   `shared/orchestration/README.md`
-- 结构化输出解析失败：
+- Phân tích đầu ra có cấu trúc thất bại:
   `shared/structured_output.py`
   `shared/structured_parsers.py`
-- 调试与 replay：
+- Gỡ lỗi và replay:
   `backend/scripts/devtools/replay_translation_item.py`
   `backend/scripts/devtools/tests/translation/`
 
-## 后续约定
+## Quy ước sau này
 
-- 新增 provider 时，优先在 `providers/<provider>/` 下新增实现
-- 新增 provider 时，同时在 `shared/provider_protocol.py` 声明能力，在 `shared/provider_registry.py` 注册 runtime
-- 公共能力优先放 `shared/`
-- 顶层 `llm/` 只保留稳定聚合入口与少量顶层公共模块，不继续堆 provider 特例
-- 业务代码默认经由 `shared/provider_runtime.py` 访问默认模型、base_url、api_key 解析和通用 chat transport
+- Khi thêm provider mới, ưu tiên thêm triển khai trong `providers/<provider>/`
+- Khi thêm provider mới, đồng thời khai báo khả năng trong `shared/provider_protocol.py`, đăng ký runtime trong `shared/provider_registry.py`
+- Khả năng chung ưu tiên đặt trong `shared/`
+- Thư mục cấp cao nhất `llm/` chỉ giữ lại điểm vào tổng hợp ổn định và một số module chung cấp cao, không tiếp tục nhét các trường hợp đặc biệt của provider
+- Mã nghiệp vụ mặc định truy cập mô hình mặc định, base_url, phân giải api_key và transport chat chung thông qua `shared/provider_runtime.py`

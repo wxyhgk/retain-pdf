@@ -1,15 +1,15 @@
-# API 文档
+# Tài liệu API
 
-当前统一入口是：
+Đầu vào thống nhất hiện tại là:
 
-- [RetainPDF 后端 API 总入口](./index.md)
+- [Tổng quan API backend RetainPDF](./index.md)
 
-以后新增或修改对外 API，优先更新 `index.md`。其它文件只作为专题页或历史兼容入口。
+Sau này khi thêm hoặc sửa API đối ngoại, ưu tiên cập nhật `index.md`. Các tệp khác chỉ là trang chuyên đề hoặc đầu vào tương thích lịch sử.
 
-## 专题页
+## Trang chuyên đề
 
-- [本地启动与配置](./local-dev.md)
-- [存储结构](./storage.md)
+- [Khởi động và cấu hình cục bộ](./local-dev.md)
+- [Cấu trúc lưu trữ](./storage.md)
 - [Reader AI Chat](./reader-ai-chat.md)
-- [错误排查](./troubleshooting.md)
-- [Rust API 架构边界](../rust_api/README.md)
+- [Xử lý lỗi](./troubleshooting.md)
+- [Ranh giới kiến trúc Rust API](../rust_api/README.md)

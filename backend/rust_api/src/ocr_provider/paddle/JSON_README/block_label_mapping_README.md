@@ -1,156 +1,156 @@
-# Paddle block_label 首版映射表
+# Bảng ánh xạ block_label phiên bản đầu của Paddle
 
-这份文档基于 [json_full.json](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/json_full.json) 的 `layoutParsingResults[*].prunedResult.parsing_res_list[*].block_label` 实际枚举结果整理，目标是给后续 `Paddle -> document.v1` adapter 提供第一版稳定映射。
+Tài liệu này được tổng hợp dựa trên kết quả liệt kê thực tế của `layoutParsingResults[*].prunedResult.parsing_res_list[*].block_label` từ [json_full.json](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/json_full.json), nhằm cung cấp ánh xạ ổn định phiên bản đầu cho bộ chuyển đổi `Paddle -> document.v1` sau này.
 
-## 1. 当前样本中观察到的 block_label
+## 1. Các block_label quan sát được trong mẫu hiện tại
 
-从当前三页样本里枚举到的 label 如下：
+Từ mẫu ba trang hiện tại, các label liệt kê được như sau:
 
-| block_label | 次数 | 说明 |
+| block_label | Số lần | Mô tả |
 | --- | ---: | --- |
-| `text` | 25 | 普通正文段落 |
-| `paragraph_title` | 12 | 段落标题/小节标题 |
-| `header` | 6 | 页眉 |
-| `footer` | 6 | 页脚 |
-| `figure_title` | 4 | 图片标题或表格标题 |
-| `table` | 2 | 表格主体，内容是 HTML table |
-| `image` | 1 | 图片主体，内容通常是 `<img>` HTML |
-| `algorithm` | 1 | 代码/算法块 |
-| `display_formula` | 1 | 行间公式 |
-| `vision_footnote` | 1 | 视觉脚注/表注/附注 |
+| `text` | 25 | Đoạn văn bản thông thường |
+| `paragraph_title` | 12 | Tiêu đề đoạn/tiêu đề tiểu mục |
+| `header` | 6 | Tiêu đề trang |
+| `footer` | 6 | Chân trang |
+| `figure_title` | 4 | Tiêu đề hình ảnh hoặc tiêu đề bảng |
+| `table` | 2 | Phần thân bảng, nội dung là bảng HTML |
+| `image` | 1 | Phần thân hình ảnh, nội dung thường là `<img>` HTML |
+| `algorithm` | 1 | Khối mã/thuật toán |
+| `display_formula` | 1 | Công thức giữa dòng |
+| `vision_footnote` | 1 | Chú thích hình ảnh/chú thích bảng/chú thích |
 
-## 2. 实际样例摘录
+## 2. Trích dẫn ví dụ thực tế
 
 ### `text`
-- 页 1 / block 4
-  正文中英混排的大段文字
-- 页 1 / block 6
-  带行内公式和解释文字的普通正文
+- Trang 1 / block 4
+  Đoạn văn bản lớn pha trộn tiếng Trung và Anh
+- Trang 1 / block 6
+  Văn bản thông thường có công thức nội dòng và chữ giải thích
 
-建议：
-- 直接作为 normalized 的正文块主入口。
+Gợi ý:
+- Sử dụng trực tiếp làm điểm nhập chính cho khối văn bản đã chuẩn hóa.
 
 ### `paragraph_title`
-- 页 1 / block 3
+- Trang 1 / block 3
   `## 1. JSON Split Profile`
-- 页 1 / block 5
-  `### 1.1. 结构概览`
+- Trang 1 / block 5
+  `### 1.1. Cấu trúc tổng quan`
 
-建议：
-- 作为标题类块，不要并入普通 `text`。
+Gợi ý:
+- Dùng làm khối loại tiêu đề, không gộp vào `text` thông thường.
 
 ### `header`
 - `PaddleOCR JSON Split Research`
-- `March 31, 2026 · Provider: Paddle`
+- `March 31, 2026 · Nhà cung cấp: Paddle`
 
-建议：
-- 默认保留为结构块，但翻译主链路通常应跳过。
+Gợi ý:
+- Mặc định giữ lại như khối cấu trúc, nhưng thường bỏ qua trong luồng dịch chính.
 
 ### `footer`
 - `Confidential Draft`
-- `Page page.number / pages.count`
+- `Trang page.number / pages.count`
 
-建议：
-- 默认保留为结构块，翻译主链路通常也应跳过。
+Gợi ý:
+- Mặc định giữ lại như khối cấu trúc, luồng dịch chính thường cũng nên bỏ qua.
 
 ### `figure_title`
 - Figure caption
 - Table caption
 
-注意：
-- 这个 label 在 Paddle 样本里同时覆盖了“图片标题”和“表格标题”，不能简单等价成 `image_caption`。
+Lưu ý:
+- Nhãn này trong mẫu Paddle đồng thời bao gồm cả "tiêu đề hình ảnh" và "tiêu đề bảng", không thể đơn giản coi là `image_caption`.
 
 ### `table`
-- 内容是完整 HTML table 字符串
+- Nội dung là chuỗi HTML table hoàn chỉnh
 
-建议：
-- 先保留原始 HTML 内容
-- 后续再决定是否把单元格进一步拆成结构化 table schema
+Gợi ý:
+- Trước tiên giữ lại nội dung HTML gốc
+- Sau này mới quyết định có tách các ô thành lược đồ bảng có cấu trúc hay không
 
 ### `image`
-- 内容通常是 `<img src=...>` 片段
+- Nội dung thường là đoạn `<img src=...>`
 
-建议：
-- 视为图片区主块，不要拿 `block_content` 当正文文本
+Gợi ý:
+- Coi là khối chính vùng ảnh, không lấy `block_content` làm văn bản thân văn bản
 
 ### `algorithm`
-- 当前样本里是代码块/命令行块
+- Trong mẫu hiện tại là khối mã/dòng lệnh
 
-建议：
-- 先统一映射到 `code`
-- 后续如果 Paddle 里还有真正算法伪代码，再决定是否细分 `algorithm_block`
+Gợi ý:
+- Trước tiên ánh xạ thống nhất sang `code`
+- Sau này nếu Paddle còn pseudocode thuật toán thực sự, mới quyết định có chia nhỏ `algorithm_block` hay không
 
 ### `display_formula`
-- 内容是 `$$ ... $$`
+- Nội dung là `$$ ... $$`
 
-建议：
-- 直接映射到 `formula`
-- 保留原始 LaTeX/Math 字符串
+Gợi ý:
+- Ánh xạ trực tiếp sang `formula`
+- Giữ nguyên chuỗi LaTeX/Math gốc
 
 ### `vision_footnote`
-- 当前样本是 `表注：数值只是示意，不代表真实 benchmark 结论。`
+- Mẫu hiện tại là `Ghi chú bảng: số liệu chỉ mang tính minh họa, không đại diện cho kết quả benchmark thực tế.`
 
-建议：
-- 先统一看成 footnote/caption_note 类
-- 这类字段常在图表附近出现，应保留相邻关系线索
+Gợi ý:
+- Trước tiên thống nhất coi là loại footnote/caption_note
+- Loại trường này thường xuất hiện gần biểu đồ/hình ảnh, nên giữ manh mối kề cận
 
-## 3. 首版 normalized_document_v1 映射建议
+## 3. Gợi ý ánh xạ normalized_document_v1 phiên bản đầu
 
-这里先给“保守、稳定”的映射，不追求一次到位。
+Ở đây đưa ra ánh xạ "bảo thủ, ổn định" trước, không đòi hỏi hoàn hảo ngay.
 
-| Paddle block_label | normalized type | normalized sub_type | 备注 |
+| Paddle block_label | normalized type | normalized sub_type | Ghi chú |
 | --- | --- | --- | --- |
-| `text` | `text` | `body` | 主体正文 |
-| `paragraph_title` | `text` | `heading` | 后续可根据编号/层级再细分 |
-| `header` | `text` | `header` | 通常跳过翻译 |
-| `footer` | `text` | `footer` | 通常跳过翻译 |
-| `figure_title` | `text` | `caption` | 先统一 caption，再通过邻接块判断图/表标题 |
-| `table` | `table` | `table_html` | 保留 HTML 原文 |
-| `image` | `image` | `image_body` | 不以文本逻辑处理 |
-| `algorithm` | `code` | `code_block` | 先统一到代码块 |
-| `display_formula` | `formula` | `display_formula` | 行间公式 |
-| `vision_footnote` | `text` | `footnote` | 图注/表注/脚注先统一入这一类 |
+| `text` | `text` | `body` | Văn bản chính |
+| `paragraph_title` | `text` | `heading` | Sau này có thể chia nhỏ theo số/thứ bậc |
+| `header` | `text` | `header` | Thường bỏ qua dịch |
+| `footer` | `text` | `footer` | Thường bỏ qua dịch |
+| `figure_title` | `text` | `caption` | Thống nhất caption trước, sau đó phán đoán tiêu đề hình/bảng qua khối kề |
+| `table` | `table` | `table_html` | Giữ nguyên HTML |
+| `image` | `image` | `image_body` | Không xử lý theo logic văn bản |
+| `algorithm` | `code` | `code_block` | Thống nhất vào khối mã trước |
+| `display_formula` | `formula` | `display_formula` | Công thức giữa dòng |
+| `vision_footnote` | `text` | `footnote` | Chú thích hình/bảng/chân trang thống nhất vào loại này trước |
 
-## 4. 哪些字段需要额外保留到 raw trace
+## 4. Những trường nào cần giữ thêm vào raw trace
 
-建议每个 normalized block 都保留以下 provider trace：
+Gợi ý mỗi normalized block đều giữ provider trace sau:
 
 - `provider = "paddle"`
 - `source_page_index`
 - `source_block_index`
 - `source_block_label`
-- `source_block_id`（如果有）
-- `source_group_id`（如果有）
+- `source_block_id` (nếu có)
+- `source_group_id` (nếu có)
 - `source_bbox`
 - `source_polygon`
 
-原因：
-- `figure_title` 需要靠邻接关系区分图标题还是表格标题
-- `vision_footnote` 后续可能要再分成 `table_footnote` / `image_footnote`
-- `table` 当前是 HTML 字符串，后续若做结构化拆表，需要追溯到原始块
+Lý do:
+- `figure_title` cần dựa vào quan hệ kề cận để phân biệt tiêu đề hình hay tiêu đề bảng
+- `vision_footnote` sau này có thể cần chia thành `table_footnote` / `image_footnote`
+- `table` hiện là chuỗi HTML, sau này nếu tách bảng có cấu trúc thì cần truy ngược về khối gốc
 
-## 5. 当前最值得先做的三件事
+## 5. Ba việc đáng làm nhất hiện tại
 
-1. 先写 `block_label -> normalized type/sub_type` 的纯映射函数
-2. 先把 `figure_title` 和 `vision_footnote` 保守落到 `caption/footnote`
-3. 不要立刻把 `table` 和 `image` 深拆，先稳定把它们作为块保留下来
+1. Viết hàm ánh xạ thuần `block_label -> normalized type/sub_type` trước
+2. Đưa `figure_title` và `vision_footnote` bảo thủ vào `caption/footnote` trước
+3. Không vội tách sâu `table` và `image`, giữ chúng như khối ổn định trước
 
-## 6. 当前样本暴露出的几个工程结论
+## 6. Một số kết luận kỹ thuật từ mẫu hiện tại
 
-- Paddle 的 `figure_title` 明显是混合类标签，后面必须结合前后块关系判断“图标题/表格标题”。
-- `table` 和 `image` 的 `block_content` 更像“富文本或嵌入片段”，不能直接走普通正文抽取逻辑。
-- `algorithm` 目前更像代码块，不要单独再开一套复杂分支。
-- `display_formula` 单独有标签，这比 MinerU 更直接，应该优先利用。
+- `figure_title` của Paddle rõ ràng là nhãn hỗn hợp, sau này phải kết hợp quan hệ khối trước/sau để phán đoán "tiêu đề hình/tiêu đề bảng".
+- `block_content` của `table` và `image` giống "đoạn văn bản giàu định dạng hoặc nhúng", không thể đi thẳng vào logic trích xuất văn bản thông thường.
+- `algorithm` hiện giống khối mã hơn, không mở riêng nhánh phức tạp.
+- `display_formula` có nhãn riêng, trực tiếp hơn MinerU, nên ưu tiên tận dụng.
 
-## 7. 建议的后续文件
+## 7. Tệp gợi ý tiếp theo
 
-如果下一步开始写 adapter，建议直接新增：
+Nếu bước tiếp theo bắt đầu viết adapter, gợi ý thêm trực tiếp:
 
 - `paddle/block_labels.py`
-  只管 label 映射和标签判定
+  Chỉ lo ánh xạ label và phán đoán nhãn
 - `paddle/adapter.py`
-  只管 `json_full -> document.v1`
+  Chỉ lo `json_full -> document.v1`
 - `paddle/trace.py`
-  只管 provider raw trace 的落点
+  Chỉ lo điểm lưu provider raw trace
 
-这样后面遇到新 label，只改 `block_labels.py`，不会污染主 adapter。
+Như vậy sau này gặp label mới, chỉ sửa `block_labels.py`, không làm nhiễm adapter chính.

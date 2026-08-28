@@ -1,6 +1,6 @@
-/* AI 悬浮窗 · 正文 [n] 角标与精简来源条 */
+/* Cửa sổ nổi AI · huy hiệu [n] trong nội dung và thanh nguồn rút gọn */
 
-/* 正文内 [n] 角标 — 轻量角标，少描边 */
+/* Huy hiệu [n] trong nội dung — nhẹ, ít đường viền */
 .reader-float-ai .reader-ai-citation-ref {
   display: inline;
   margin: 0 1px;
@@ -20,7 +20,7 @@
   background: color-mix(in srgb, var(--ink) 10%, var(--paper));
   color: var(--ink);
 }
-/* 精简来源条 */
+/* Thanh nguồn rút gọn */
 .reader-float-ai .reader-ai-citations {
   display: grid;
   gap: 6px;
@@ -65,7 +65,7 @@
     background-color 150ms var(--ease-out),
     transform 160ms var(--ease-out);
 }
-/* 微错峰进场（装饰性，30ms 步进，不阻塞交互） */
+/* Vào lệch nhẹ (trang trí, bước 30ms, không chặn tương tác) */
 .reader-float-ai .reader-ai-citation-item:nth-child(2) { animation-delay: 30ms; }
 .reader-float-ai .reader-ai-citation-item:nth-child(3) { animation-delay: 60ms; }
 .reader-float-ai .reader-ai-citation-item:nth-child(4) { animation-delay: 90ms; }
@@ -82,7 +82,8 @@
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
-/* [n] 徽章化：chip 内唯一的强标识，编号+页码一眼可扫 */
+/* Biến [n] thành huy hiệu: dấu hiệu mạnh duy nhất trong chip, quét nhanh số +
+   trang */
 .reader-float-ai .reader-ai-citation-refno {
   display: inline-flex;
   align-items: center;

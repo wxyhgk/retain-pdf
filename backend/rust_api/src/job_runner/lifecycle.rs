@@ -48,7 +48,7 @@ async fn should_skip_job_execution(deps: &ProcessRuntimeDeps, job_id: &str) -> R
 fn persist_queued_job(deps: &ProcessRuntimeDeps, job: &mut JobSnapshot) -> Result<()> {
     job.status = JobStatusKind::Queued;
     job.stage = Some("queued".to_string());
-    job.stage_detail = Some("任务排队中，等待可用执行槽位".to_string());
+    job.stage_detail = Some("Đang xếp hàng, đang chờ khe thực thi khả dụng".to_string());
     job.updated_at = now_iso();
     job.sync_runtime_state();
     job.replace_failure_info(None);
@@ -133,9 +133,9 @@ async fn run_job(deps: ProcessRuntimeDeps, job_id: String) -> Result<()> {
     Ok(())
 }
 
-/// 任务终态后的图书馆维护:job 归属 document、置 active_job_id、重建
-/// 该文档的 FTS 全文索引。全部尽力而为——FTS 是可重建的派生索引,
-/// 这里失败只记日志,绝不影响任务状态。
+/// Bảo trì thư viện sau trạng thái kết thúc nhiệm vụ:job thuộc về document、đưa active_job_id、xây lại
+/// của tài liệu này FTS Lập chỉ mục toàn văn bản。Làm hết sức mình——FTS Chỉ số dẫn xuất có thể xây dựng lại,
+/// Lỗi ở đây chỉ được ghi lại,Không bao giờ ảnh hưởng đến trạng thái tác vụ。
 fn update_document_after_job(deps: &ProcessRuntimeDeps, job: &JobRuntimeState) {
     let Some(upload_id) = job.upload_id.as_deref().filter(|id| !id.is_empty()) else {
         return;

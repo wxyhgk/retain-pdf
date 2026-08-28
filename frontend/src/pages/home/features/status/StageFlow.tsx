@@ -1,9 +1,10 @@
-// 阶段流程条(蓝图 §2 features/status/;镜像 job-status-card-stage-flow.js
-// 的 syncStageFlow 语义,DOM 契约逐 id/class 保留——smoke 依赖
-// .status-stage-step[data-stage-key][aria-selected])。
+// Thanh quy trình giai đoạn (bản thiết kế §2 features/status/, phản chiếu ngữ
+// nghĩa syncStageFlow của job-status-card-stage-flow.js; giữ nguyên hợp đồng
+// DOM theo từng id/class — smoke test phụ thuộc .status-stage-step
+// [data-stage-key][aria-selected]).
 //
-// 重试操作不放在阶段 pill 上（拥挤、易顶歪布局），由 StatusCardEmbedded
-// 在进度文案行右侧按「当前选中阶段」单独渲染。
+// Thao tác thử lại không đặt trên pill giai đoạn (dễ chật và lệch bố cục), mà
+// StatusCardEmbedded render riêng bên phải dòng tiến trình theo "giai đoạn đang chọn".
 
 import { useStatusCardIds } from "./status-card-ids-context.js";
 import {
@@ -13,7 +14,7 @@ import {
   statusStageIndex,
 } from "../../composition/external.js";
 
-/** @deprecated 重试已迁出 StageFlow；保留类型以免旧 import 断裂 */
+/** @deprecated Thử lại đã chuyển khỏi StageFlow; giữ kiểu để import cũ không hỏng. */
 export type StageFlowRetryAction = {
   label: string;
   enabled: boolean;
@@ -25,9 +26,9 @@ type StageFlowProps = {
   currentStageKey?: string;
   selectedStageKey?: string;
   onSelectStage?: (stageKey: string) => void;
-  /** 覆盖上下文 id；默认走 StatusCardIdsContext */
+  /** Ghi đè id ngữ cảnh; mặc định dùng StatusCardIdsContext. */
   id?: string;
-  /** @deprecated 忽略；重试由外层进度区渲染 */
+  /** @deprecated Bỏ qua; thử lại được render bởi vùng tiến trình bên ngoài. */
   stageRetries?: Partial<Record<string, StageFlowRetryAction | null | undefined>>;
 };
 
@@ -44,7 +45,7 @@ export function StageFlow({
   const activeIndex = statusStageIndex(normalized);
 
   return (
-    <div id={flowId || undefined} className="status-stage-flow" role="tablist" aria-label="任务流程">
+    <div id={flowId || undefined} className="status-stage-flow" role="tablist" aria-label="Quy trình tác vụ">
       {STATUS_STAGE_FLOW.map((stageKey) => {
         const stepIndex = statusStageIndex(stageKey);
         const isDone = activeIndex >= 0 && stepIndex >= 0 && stepIndex < activeIndex;

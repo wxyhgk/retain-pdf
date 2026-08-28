@@ -128,10 +128,10 @@ impl Db {
         self.get_conversation(conversation_id)
     }
 
-    /// 返回会话内全部消息(按 seq 升序),供前端重建分支树。
+    /// Quay lại tất cả tin nhắn đang diễn ra(án seq Tăng dần),Để tái tạo mặt trước của cây nhánh。
     pub fn list_messages(&self, conversation_id: &str, limit: u32) -> Result<Vec<MessageRecord>> {
         let conn = self.connect()?;
-        // 分支树需要全量(或大窗口);仍按 seq 正序,便于 fromBranchableArray 父先于子。
+        // Cây nhánh cần toàn bộ số tiền(hoặc cửa sổ lớn);Vẫn nhấn seq Trực giao,Thuận tiện fromBranchableArray Cha trước con。
         let mut stmt = conn.prepare(&format!(
             r#"
             SELECT {MESSAGE_COLUMNS}
@@ -168,7 +168,7 @@ impl Db {
         Ok(record)
     }
 
-    /// 追加消息:seq 自增、刷新会话时间与 head;会话标题为空时取首条 user 消息前缀。
+    /// Thêm tin nhắn:seq Tự động tăng、Làm mới thời gian phiên so với head;Mục nhập đầu tiên khi tiêu đề phiên trống user Tiền tố tin nhắn。
     pub fn append_message(
         &self,
         conversation_id: &str,

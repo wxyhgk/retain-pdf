@@ -1,180 +1,180 @@
 
 
-**痛点**
+**Điểm đau**
 
-外文论文、教材、技术文档信息密度高，但读起来费劲：
+Bài báo, giáo trình, tài liệu kỹ thuật tiếng nước ngoài có mật độ thông tin cao nhưng đọc rất mất công:
 
-- 原文阅读门槛高，效率低
-- 普通翻译工具只吐纯文本，公式、图片、排版基本全崩
-- 译后结果难整理、难分享、难归档
+- Ngưỡng đọc bản gốc cao, hiệu quả thấp
+- Công cụ dịch thông thường chỉ xuất văn bản thuần, công thức, hình ảnh, bố cục gần như hỏng hoàn toàn
+- Kết quả sau dịch khó sắp xếp, khó chia sẻ, khó lưu trữ
 
-**RetainPDF 做的事**
+**RetainPDF làm gì**
 
-上传 PDF，一键拿到保留原始排版的中文译文。
+Tải lên PDF, một cú nhấp chuột nhận bản dịch tiếng Việt giữ nguyên bố cục gốc.
 
-- 输出译文 PDF、Markdown、ZIP 打包，按需取用
-- 网页端直接操作，也支持命令行和 API 接入
-- 图片型 PDF（扫描件、截图版）同样能处理，不只限于可编辑 PDF
+- Xuất bản dịch PDF, Markdown, ZIP đóng gói, lấy theo nhu cầu
+- Thao tác trực tiếp trên giao diện web, cũng hỗ trợ CLI và API
+- PDF dạng hình ảnh (bản scan, bản chụp màn hình) cũng xử lý được, không chỉ giới hạn ở PDF có thể chỉnh sửa
 
-**翻译效果示意**
+**Minh họa hiệu quả dịch**
 
-普通 SCI 论文翻译效果：
+Hiệu quả dịch bài báo SCI thông thường:
 
-![普通 SCI 论文翻译效果](./g-1.png)
+![Hiệu quả dịch bài báo SCI thông thường](./g-1.png)
 
-图片型 PDF 翻译对比效果：
+So sánh hiệu quả dịch PDF dạng ảnh:
 
-![图片型 PDF 翻译对比效果](./g-2.png)
+![So sánh hiệu quả dịch PDF dạng ảnh](./g-2.png)
 
-**和同类方案比，好在哪**
+**So với các giải pháp cùng loại, ưu điểm ở đâu**
 
-- 对比 [PDFMathTranslate](https://github.com/PDFMathTranslate/PDFMathTranslate)：补上了图片型 PDF 的短板，行内公式与正文的衔接更自然，排版崩掉的概率明显低
-- 对比 Doc2X 等闭源方案：可自主部署、自己掌控接口和结果文件；实测整体效果也更好
-- 实测产出接近直接可用，不需要再手工修排版
-
-
+- So với [PDFMathTranslate](https://github.com/PDFMathTranslate/PDFMathTranslate): Bổ sung điểm yếu của PDF dạng hình ảnh, công thức nội tuyến kết nối với văn bản chính tự nhiên hơn, xác suất hỏng bố cục thấp hơn rõ rệt
+- So với các giải pháp đóng như Doc2X: Có thể tự triển khai, tự kiểm soát API và tệp kết quả; hiệu quả tổng thể thực tế cũng tốt hơn
+- Sản phẩm đầu ra gần như có thể dùng ngay, không cần chỉnh sửa bố cục thủ công
 
 
-# 小白用户
 
-如果你只是想把服务跑起来，按下面步骤做就够了。
 
-## 1. 先确认机器环境
+# Người dùng cơ bản
 
-建议环境：
+Nếu bạn chỉ muốn chạy dịch vụ, làm theo các bước dưới đây là đủ.
 
-- 系统：`Linux` 优先，推荐 `Ubuntu 22.04 / 24.04`
-- CPU 架构：当前镜像按 `x86_64 / amd64` 构建，不是 ARM 版本
-- CPU：至少 `4 核`
-- 内存：至少 `8GB`，推荐 `16GB` 或更高
-- 磁盘：至少预留 `10GB` 可用空间
-- 网络：需要能访问 Docker Hub、MinerU 和你的模型 API
+## 1. Xác nhận môi trường máy trước
 
-说明：
+Môi trường khuyến nghị:
 
-- 这个项目主要吃 CPU、内存和网络，不依赖独立显卡
-- 如果你的机器是 `Mac M`、树莓派、ARM 服务器，请先确认是否具备 `x86_64` 兼容运行环境
-- 如果只是轻量自用，`4 核 + 8GB` 可以起服务
-- 如果你要多人同时用，建议从 `8 核 + 16GB` 起步
+- Hệ thống: Ưu tiên `Linux`, khuyến nghị `Ubuntu 22.04 / 24.04`
+- Kiến trúc CPU: Hiện tại image được xây dựng cho `x86_64 / amd64`, không phải phiên bản ARM
+- CPU: Ít nhất `4 nhân`
+- Bộ nhớ: Ít nhất `8GB`, khuyến nghị `16GB` hoặc cao hơn
+- Đĩa: Dự trữ ít nhất `10GB` dung lượng trống
+- Mạng: Cần truy cập được Docker Hub, MinerU và API mô hình của bạn
 
-## 2. 安装 Docker
+Giải thích:
 
-先确认系统里已经安装：
+- Dự án này chủ yếu tiêu tốn CPU, bộ nhớ và mạng, không phụ thuộc vào card đồ họa riêng
+- Nếu máy của bạn là `Mac M`, Raspberry Pi, máy chủ ARM, hãy xác nhận trước có môi trường chạy tương thích `x86_64` không
+- Nếu chỉ dùng cá nhân nhẹ nhàng, `4 nhân + 8GB` có thể khởi động dịch vụ
+- Nếu bạn muốn nhiều người dùng đồng thời, khuyến nghị bắt đầu từ `8 nhân + 16GB`
+
+## 2. Cài đặt Docker
+
+Xác nhận hệ thống đã cài đặt:
 
 - `docker`
 - `docker compose`
 
-安装完成后，先自检：
+Sau khi cài đặt xong, tự kiểm tra:
 
 ```bash
 docker --version
 docker compose version
 ```
 
-## 3. 拉取 GitHub 项目
+## 3. Tải dự án từ GitHub
 
 ```bash
 git clone https://github.com/wxyhgk/retain-pdf.git
 cd retain-pdf/docker/delivery
 ```
 
-## 4. 启动服务
+## 4. Khởi động dịch vụ
 
 ```bash
 docker compose up -d
 ```
 
-启动完成后，默认访问地址：
+Sau khi khởi động xong, địa chỉ truy cập mặc định:
 
 ```text
 http://127.0.0.1:40001
 ```
 
-# 专业用户
+# Người dùng chuyên nghiệp
 
-## 文件作用
+## Tác dụng của các file
 
 - `docker-compose.yml`
-  Docker 编排入口。默认直接拉取 Docker Hub 镜像并启动 `app` + `web`。
+  Điểm vào điều phối Docker. Mặc định trực tiếp kéo image từ Docker Hub và khởi động `app` + `web`.
 - `docker/app.env`
-  后端运行参数。控制容器内路径、字体、端口、并发和上传限制。
+  Tham số chạy backend. Kiểm soát đường dẫn, font chữ, cổng, đồng thời và giới hạn tải lên trong container.
 - `docker/web.env`
-  Docker 公共版前端运行参数。控制前端默认注入的后端 key、模型默认值等。
+  Tham số chạy frontend cho phiên bản Docker công cộng. Kiểm soát backend key, giá trị mặc định của mô hình mà frontend tự động điền.
 - `docker/auth.local.json`
-  Rust API 鉴权白名单。前端和 CLI 都需要用这里配置的后端 key 才能访问接口。
+  Danh sách trắng xác thực Rust API. Frontend và CLI đều cần dùng backend key được cấu hình ở đây để truy cập API.
 
-## 常见修改项
+## Các mục thường sửa
 
 ### docker/auth.local.json
 
 - `api_keys`
-  Rust API 允许访问的后端 key 列表。前端请求头里的 `X-API-Key` 必须命中这里的某一个值。
+  Danh sách backend key mà Rust API cho phép truy cập. `X-API-Key` trong header của frontend phải khớp với một trong các giá trị ở đây.
 - `max_running_jobs`
-  后端允许同时运行的任务数上限。
+  Giới hạn trên của số lượng tác vụ chạy đồng thời trên backend.
 - `simple_port`
-  multipart 扁平字段提交接口在容器内监听的端口，默认 `42000`。对外通常不直接暴露。
+  Cổng mà giao diện multipart nộp trường phẳng lắng nghe bên trong container, mặc định `42000`. Thường không công khai ra ngoài.
 
 ### docker/web.env
 
 - `FRONT_API_BASE`
-  前端内部使用的 API 基地址。通常留空，让前端自动走同源代理。
+  Địa chỉ cơ sở API mà frontend sử dụng nội bộ. Thường để trống, để frontend tự động dùng proxy cùng nguồn.
 - `FRONT_X_API_KEY`
-  前端自动附带给后端的 `X-API-Key`。必须和 `docker/auth.local.json` 中某个值一致。
+  `X-API-Key` mà frontend tự động đính kèm cho backend. Phải khớp với một giá trị trong `docker/auth.local.json`.
 - `FRONT_OCR_PROVIDER`
-  前端默认 OCR provider。当前建议填 `paddle`，也可以切成 `mineru`。
+  OCR provider mặc định của frontend. Hiện tại khuyến nghị điền `paddle`, cũng có thể đổi thành `mineru`.
 - `FRONT_PADDLE_TOKEN`
-  前端默认带出的 Paddle token。留空时，最终用户自己在页面弹窗里填写。
+  Paddle token mặc định mà frontend điền sẵn. Để trống thì người dùng cuối tự điền trong popup trang.
 - `FRONT_MINERU_TOKEN`
-  前端默认带出的 MinerU token。留空时，最终用户自己在页面弹窗里填写。
+  MinerU token mặc định mà frontend điền sẵn. Để trống thì người dùng cuối tự điền trong popup trang.
 - `FRONT_MODEL_API_KEY`
-  前端默认带出的模型 API key。留空时由最终用户自己填写。
+  API key mô hình mặc định mà frontend điền sẵn. Để trống thì người dùng cuối tự điền.
 - `FRONT_MODEL`
-  前端默认模型名，例如 `deepseek-v4-flash`。
+  Tên mô hình mặc định của frontend, ví dụ `deepseek-v4-flash`.
 - `FRONT_BASE_URL`
-  前端默认模型服务地址，例如 `https://api.deepseek.com/v1`。
+  Địa chỉ dịch vụ mô hình mặc định của frontend, ví dụ `https://api.deepseek.com/v1`.
 
 ### docker/app.env
 
 - `PROJECT_ROOT`
-  容器内项目根目录。
+  Thư mục gốc dự án bên trong container.
 - `RUST_API_ROOT`
-  容器内 Rust API 目录。
+  Thư mục Rust API bên trong container.
 - `RUST_API_DATA_ROOT`
-  Rust API 运行时数据根目录，主要放上传文件、任务目录、下载缓存和数据库。`RUST_API_DATA_DIR` 仅作为旧别名兼容。
+  Thư mục gốc dữ liệu runtime của Rust API, chủ yếu chứa tệp tải lên, thư mục tác vụ, bộ nhớ đệm tải xuống và cơ sở dữ liệu. `RUST_API_DATA_DIR` chỉ là bí danh cũ để tương thích.
 - `OUTPUT_ROOT`
-  任务输出目录。
+  Thư mục đầu ra của tác vụ.
 - `PYTHON_BIN`
-  后端调用 Python 脚本使用的解释器。
+  Trình thông dịch Python mà backend dùng để gọi script.
 - `TYPST_BIN`
-  Typst 可执行文件路径。
+  Đường dẫn đến tệp thực thi Typst.
 - `RETAIN_PDF_FONT_PATH`
-  默认中文字体文件路径。
+  Đường dẫn đến tệp font chữ tiếng Trung mặc định.
 - `RETAIN_PDF_TYPST_FONT_FAMILY`
-  Typst 默认字体族名称。
+  Tên họ font mặc định của Typst.
 - `RUST_API_PORT`
-  完整 API 在容器内监听的端口，默认 `41000`。
+  Cổng mà API đầy đủ lắng nghe bên trong container, mặc định `41000`.
 - `RUST_API_SIMPLE_PORT`
-  multipart 扁平字段提交接口在容器内监听的端口，默认 `42000`。
+  Cổng mà giao diện multipart nộp trường phẳng lắng nghe bên trong container, mặc định `42000`.
 - `RUST_API_MAX_RUNNING_JOBS`
-  最大并发运行任务数。
+  Số lượng tác vụ chạy đồng thời tối đa.
 - `RUST_API_UPLOAD_MAX_BYTES`
-  后端普通上传大小限制，`0` 表示不限制；当前交付包建议写成 `209715200`。
+  Giới hạn kích thước tải lên thông thường của backend, `0` là không giới hạn; gói giao hàng hiện tại khuyến nghị đặt là `209715200`.
 - `RUST_API_UPLOAD_MAX_PAGES`
-  后端普通上传页数限制，`0` 表示不限制；当前交付包建议写成 `300`。
+  Giới hạn số trang tải lên thông thường của backend, `0` là không giới hạn; gói giao hàng hiện tại khuyến nghị đặt là `300`.
 
-## 说明
+## Giải thích
 
-- 当前 compose 默认暴露：
-  - `40001`：前端页面
-  - `41000`：完整 Rust API
-  - `42000`：multipart 扁平字段提交接口，只提供 `/health` 和 `POST /api/v1/translate/bundle`
-- 前端通过同源代理访问后端；普通用户通常不需要手工理解 `API Base`
-- 当前主线前端默认 OCR provider 是 `paddle`
-- 页面里显示的大小 / 页数限制来自当前后端运行配置，不应再按旧的 MinerU 固定上游限制理解
+- compose hiện tại mặc định công khai:
+  - `40001`: Trang frontend
+  - `41000`: API Rust đầy đủ
+  - `42000`: Giao diện multipart nộp trường phẳng, chỉ cung cấp `/health` và `POST /api/v1/translate/bundle`
+- Frontend truy cập backend qua proxy cùng nguồn; người dùng thông thường thường không cần hiểu thủ công `API Base`
+- OCR provider mặc định hiện tại của frontend dòng chính là `paddle`
+- Giới hạn kích thước / số trang hiển thị trong trang đến từ cấu hình chạy backend hiện tại, không nên hiểu theo giới hạn upstream cố định cũ của MinerU
 
-## 可选默认值
+## Giá trị mặc định tùy chọn
 
-如果你想让前端默认带出下游配置，可以继续填写：
+Nếu bạn muốn frontend tự động điền cấu hình downstream, có thể tiếp tục điền:
 
 - `FRONT_OCR_PROVIDER`
 - `FRONT_PADDLE_TOKEN`
@@ -183,11 +183,11 @@ http://127.0.0.1:40001
 - `FRONT_MODEL`
 - `FRONT_BASE_URL`
 
-如果留空，最终用户需要在页面右上角的“API 配置”弹窗中自己填写。
+Nếu để trống, người dùng cuối cần tự điền trong popup "Cấu hình API" ở góc trên bên phải của trang.
 
-## 如果要换成你自己的镜像版本
+## Nếu muốn đổi sang phiên bản image của riêng bạn
 
-也可以这样启动：
+Cũng có thể khởi động như sau:
 
 ```bash
 APP_IMAGE=wxyhgk/retainpdf-app:<version> \
@@ -195,11 +195,11 @@ WEB_IMAGE=wxyhgk/retainpdf-web:<version> \
 docker compose up -d
 ```
 
-# 开发者
+# Nhà phát triển
 
-如果你想直接用 CLI 调接口，而不是走前端页面，可以按下面方式调用。
+Nếu bạn muốn gọi API trực tiếp bằng CLI thay vì qua giao diện frontend, có thể gọi theo cách dưới đây.
 
-先约定几个变量：
+Quy ước trước một số biến:
 
 ```bash
 export HOST="http://127.0.0.1:40001"
@@ -212,13 +212,13 @@ export MODEL="deepseek-v4-flash"
 export BASE_URL="https://api.deepseek.com/v1"
 ```
 
-## 健康检查
+## Kiểm tra sức khỏe
 
 ```bash
 curl "$HOST/health"
 ```
 
-## 上传 PDF
+## Tải lên PDF
 
 ```bash
 curl -X POST "$HOST/api/v1/uploads" \
@@ -226,15 +226,15 @@ curl -X POST "$HOST/api/v1/uploads" \
   -F "file=@/absolute/path/to/your.pdf"
 ```
 
-返回里会拿到：
+Phản hồi sẽ trả về:
 
 - `upload_id`
 - `filename`
 - `page_count`
 
-## 创建异步任务
+## Tạo tác vụ bất đồng bộ
 
-先把上一步返回的 `upload_id` 填进去：
+Điền `upload_id` nhận được từ bước trước vào:
 
 ```bash
 curl -X POST "$HOST/api/v1/jobs" \
@@ -269,19 +269,19 @@ curl -X POST "$HOST/api/v1/jobs" \
   }'
 ```
 
-返回里会拿到：
+Phản hồi sẽ trả về:
 
 - `job_id`
 - `status`
 
-## 查询任务状态
+## Truy vấn trạng thái tác vụ
 
 ```bash
 curl -H "X-API-Key: $X_API_KEY" \
   "$HOST/api/v1/jobs/your-job-id"
 ```
 
-重点看这些字段：
+Chú ý các trường sau:
 
 - `status`
 - `stage`
@@ -289,15 +289,15 @@ curl -H "X-API-Key: $X_API_KEY" \
 - `progress`
 - `actions`
 
-任务终态通常是：
+Trạng thái cuối của tác vụ thường là:
 
 - `succeeded`
 - `failed`
 - `canceled`
 
-## 下载结果
+## Tải xuống kết quả
 
-下载 PDF：
+Tải xuống PDF:
 
 ```bash
 curl -L -H "X-API-Key: $X_API_KEY" \
@@ -305,7 +305,7 @@ curl -L -H "X-API-Key: $X_API_KEY" \
   -o translated.pdf
 ```
 
-下载 Markdown：
+Tải xuống Markdown:
 
 ```bash
 curl -L -H "X-API-Key: $X_API_KEY" \
@@ -313,7 +313,7 @@ curl -L -H "X-API-Key: $X_API_KEY" \
   -o translated.md
 ```
 
-下载 ZIP：
+Tải xuống ZIP:
 
 ```bash
 curl -L -H "X-API-Key: $X_API_KEY" \
@@ -321,24 +321,24 @@ curl -L -H "X-API-Key: $X_API_KEY" \
   -o result.zip
 ```
 
-## 取消任务
+## Hủy tác vụ
 
 ```bash
 curl -X POST -H "X-API-Key: $X_API_KEY" \
   "$HOST/api/v1/jobs/your-job-id/cancel"
 ```
 
-## multipart 扁平提交接口
+## Giao diện nộp multipart phẳng
 
-如果你不想自己先调用 `/api/v1/uploads`，可以直接上传 PDF 并创建异步任务。
+Nếu bạn không muốn tự gọi `/api/v1/uploads` trước, có thể tải lên PDF và tạo tác vụ bất đồng bộ trực tiếp.
 
-注意：
+Lưu ý:
 
-- 这个接口是由前端同源代理转发的
-- 默认路径是 `/api/v1/translate/bundle`
-- 请求返回 `ApiResponse<JobSubmissionView>`，其中包含 `job_id` 和初始 `status`
-- 接口不会等待 OCR / 翻译 / 渲染完成，也不会直接返回 ZIP
-- 后续仍需轮询 `GET /api/v1/jobs/{job_id}`，完成后再下载 `/api/v1/jobs/{job_id}/download`
+- Giao diện này được frontend proxy cùng nguồn chuyển tiếp
+- Đường dẫn mặc định là `/api/v1/translate/bundle`
+- Phản hồi trả về `ApiResponse<JobSubmissionView>`, chứa `job_id` và `status` ban đầu
+- Giao diện không đợi OCR / dịch / kết xuất xong, cũng không trả về ZIP trực tiếp
+- Sau đó vẫn cần polling `GET /api/v1/jobs/{job_id}`, sau khi hoàn thành mới tải `/api/v1/jobs/{job_id}/download`
 
 ```bash
 curl -X POST "$HOST/api/v1/translate/bundle" \
@@ -355,7 +355,7 @@ curl -X POST "$HOST/api/v1/translate/bundle" \
   -F "batch_size=1"
 ```
 
-说明：
+Giải thích:
 
-- `provider` 建议显式传 `paddle` 或 `mineru`
-- `paddle_token` / `mineru_token` 只需要传当前 `provider` 对应的那个
+- `provider` khuyến nghị truyền rõ ràng `paddle` hoặc `mineru`
+- `paddle_token` / `mineru_token` chỉ cần truyền cái tương ứng với `provider` hiện tại

@@ -1,5 +1,5 @@
-// detail 页 React 入口:挂载到 detail.html 的 #detail-root。
-// 打包产物为 dist/detail.bundle.js(见 scripts/build-js-bundle.mjs)。
+// Entry React của trang detail: mount vào #detail-root trong detail.html.
+// Bundle đầu ra là dist/detail.bundle.js (xem scripts/build-js-bundle.mjs).
 
 import { createRoot } from "react-dom/client";
 import { bootTheme } from "../../shared/theme/theme.js";

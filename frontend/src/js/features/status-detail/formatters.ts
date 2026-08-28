@@ -115,15 +115,15 @@ export function errorTypesOf(value) {
 export function finalStatusLabel(value) {
   switch (`${value || ""}`.trim()) {
     case "translated":
-      return "已翻译";
+      return "Đã dịch";
     case "partially_translated":
-      return "部分翻译";
+      return "Dịch một phần";
     case "kept_origin":
-      return "保留原文";
+      return "Giữ nguyên bản";
     case "failed":
-      return "失败";
+      return "Thất bại";
     case "skipped":
-      return "已跳过";
+      return "Đã bỏ qua";
     default:
       return `${value || "-"}`;
   }
@@ -148,9 +148,9 @@ export function finalStatusClass(value) {
 
 export function summarizeTranslationFilter(query: any = {}) {
   const finalStatus = `${query.finalStatus || ""}`.trim();
-  const statusText = finalStatus ? finalStatusLabel(finalStatus) : "全部";
+  const statusText = finalStatus ? finalStatusLabel(finalStatus) : "Tất cả";
   const search = `${query.q || ""}`.trim();
-  return `状态 ${statusText}，检索 ${search || "无"}`;
+  return `Trạng thái ${statusText}, tìm kiếm ${search || "không có"}`;
 }
 
 export function renderField(label, value) {

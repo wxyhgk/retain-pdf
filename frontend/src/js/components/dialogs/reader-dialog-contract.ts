@@ -35,8 +35,8 @@ export const READER_DIALOG_CLASSES = {
 };
 
 export const READER_DIALOG_COPY = {
-  preparing: "正在准备对照阅读…",
-  busyGenerating: "生成中…",
+  preparing: "Đang chuẩn bị đối chiếu đọc…",
+  busyGenerating: "Đang tạo…",
 };
 
 export const READER_FRAME_PLACEHOLDER = "<style>html,body{margin:0;min-height:100%;background:#f3f4f6;color:#1d1d1f}</style>";

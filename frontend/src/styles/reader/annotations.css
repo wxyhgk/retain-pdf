@@ -1,5 +1,5 @@
 @utility reader-annotations-panel {
-  /* ===== 阅读器批注面板(抽屉内容区) ===== */
+  /* ===== Bảng chú thích trình đọc (vùng nội dung ngăn kéo) ===== */
   display: grid;
   align-content: start;
   gap: 10px;
@@ -123,7 +123,7 @@
 }
 
 @utility reader-annotations-kind {
-  /* kind 徽章:小圆角胶囊,三种批注类型三种色调 */
+  /* Huy hiệu kind: pill bo góc nhỏ, ba tông màu cho ba loại chú thích */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -203,7 +203,7 @@
 }
 
 @utility reader-annotations-note-add {
-  /* 轻量文本按钮:透明底、无阴影、hover 变 ink */
+  /* Nút chữ nhẹ: nền trong suốt, không bóng, hover chuyển sang ink */
   min-height: 22px;
   padding: 0 6px;
   border: 0;

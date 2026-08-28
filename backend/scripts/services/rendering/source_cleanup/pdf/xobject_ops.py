@@ -183,8 +183,8 @@ def _clone_form_xobject(pdf: pikepdf.Pdf, xobject: pikepdf.Object) -> pikepdf.Ob
     for key, value in xobject.items():
         if key in {Name("/Length"), Name("/Filter"), Name("/DecodeParms")}:
             continue
-        # 值为 PDF null 的键(如出版社图章 form 上的 `/StampId null`)按
-        # 规范等同于键不存在;pikepdf 也拒绝把字典键设为 None,直接跳过。
+        # Giá trị là PDF null Khóa của(chẳng hạn như tem của nhà xuất bản form vào `/StampId null`)án
+        # Thông số kỹ thuật bằng khóa không tồn tại;pikepdf cũng từ chối đặt khóa từ điển thành None,Bỏ qua Trực tiếp。
         if value is None:
             continue
         if key == Name("/Resources"):

@@ -1,30 +1,30 @@
-# MinerU Provider Rust 重构任务
+# Nhiệm vụ tái cấu trúc MinerU Provider Rust
 
-目标：
+Mục tiêu:
 
-- 在 `rust_api` 内建立独立的 OCR provider API 层
-- 先实现 `MinerU` 这个 provider
-- 不要把 MinerU API 细节继续耦合到当前翻译/渲染工作流
-- 把 provider 的状态、错误、原始产物信息整理成稳定的 Rust 结构，方便排错和后续接别的 OCR API
+- Xây dựng tầng API OCR provider độc lập trong `rust_api`
+- Trước tiên triển khai provider `MinerU`
+- Không tiếp tục gắn chi tiết API MinerU vào quy trình làm việc dịch/kết xuất hiện tại
+- Chuyển đổi trạng thái, lỗi và thông tin sản phẩm thô của provider thành cấu trúc Rust ổn định, thuận tiện cho việc gỡ lỗi và tích hợp các OCR API khác sau này
 
-## 范围
+## Phạm vi
 
-这次只改 `rust_api`。
+Lần này chỉ sửa `rust_api`.
 
-允许改动：
+Cho phép sửa:
 
 - `rust_api/src/**`
-- 必要时补 `rust_api/api.md` / `rust_api/API_SPEC.md`
+- Cần thiết thì bổ sung `rust_api/api.md` / `rust_api/API_SPEC.md`
 
-不要改：
+Không sửa:
 
-- Python 翻译主线
-- Python 渲染主线
-- `document_schema` 主契约
+- Luồng chính Python dịch
+- Luồng chính Python kết xuất
+- Hợp đồng chính `document_schema`
 
-## 目录目标
+## Mục tiêu thư mục
 
-在 `rust_api/src/` 下新增独立 provider 层，建议形态：
+Tạo tầng provider độc lập mới trong `rust_api/src/`, hình dạng khuyến nghị:
 
 - `ocr_provider/mod.rs`
 - `ocr_provider/types.rs`
@@ -34,18 +34,18 @@
 - `ocr_provider/mineru/status.rs`
 - `ocr_provider/mineru/errors.rs`
 
-可以根据实现微调，但要求：
+Có thể điều chỉnh theo triển khai, nhưng yêu cầu:
 
-- MinerU API 代码放进独立文件夹
-- 状态映射独立
-- 错误映射独立
-- 不要把 MinerU HTTP 调用继续堆在 `routes/` 或 `job_runner.rs`
+- Mã API MinerU được đặt trong thư mục riêng
+- Ánh xạ trạng thái riêng
+- Ánh xạ lỗi riêng
+- Không tiếp tục chất các lệnh gọi HTTP MinerU trong `routes/` hoặc `job_runner.rs`
 
-## 必做目标
+## Mục tiêu bắt buộc
 
-### 1. 定义 OCR provider 层基础类型
+### 1. Định nghĩa các kiểu cơ bản của tầng OCR provider
 
-至少需要这些类型：
+Ít nhất cần các kiểu:
 
 - `OcrProviderKind`
 - `OcrTaskState`
@@ -54,12 +54,12 @@
 - `OcrArtifactSet`
 - `OcrProviderCapabilities`
 
-要求：
+Yêu cầu:
 
-- `OcrTaskState` 是内部统一状态，不直接暴露 MinerU 原始状态字面值
-- 但 `OcrTaskStatus` 要保留 provider 原始状态字段，方便排错
+- `OcrTaskState` là trạng thái thống nhất nội bộ, không lộ trực tiếp giá trị trạng thái thô của MinerU
+- Nhưng `OcrTaskStatus` phải giữ trường trạng thái thô của provider để tiện gỡ lỗi
 
-建议统一状态至少包括：
+Trạng thái thống nhất khuyến nghị ít nhất bao gồm:
 
 - `Queued`
 - `WaitingUpload`
@@ -69,9 +69,9 @@
 - `Failed`
 - `Unknown`
 
-### 2. 实现 MinerU 原始状态 -> 内部状态映射
+### 2. Triển khai ánh xạ trạng thái thô MinerU -> trạng thái nội bộ
 
-要覆盖 README 里已经明确出现的状态：
+Cần bao phủ các trạng thái đã xuất hiện rõ ràng trong README:
 
 - `waiting-file`
 - `pending`
@@ -80,104 +80,104 @@
 - `done`
 - `failed`
 
-要求：
+Yêu cầu:
 
-- 保留原始状态字符串
-- 同时给出内部统一状态
-- 提供人类可读的 stage/detail 文案生成入口
+- Giữ nguyên chuỗi trạng thái thô
+- Đồng thời cung cấp trạng thái thống nhất nội bộ
+- Cung cấp điểm vào tạo văn bản stage/detail có thể đọc được
 
-### 3. 实现 MinerU 原始错误 -> 内部错误分类
+### 3. Triển khai ánh xạ lỗi thô MinerU -> phân loại lỗi nội bộ
 
-至少要能承接：
+Ít nhất phải xử lý được:
 
-- HTTP 状态错误
-- 授权错误
-- 上传链接申请失败
-- 上传失败
-- 轮询超时
-- provider 返回 failed
-- 结果下载失败
-- 结果解包失败
-- provider 返回结构缺字段
+- Lỗi HTTP status
+- Lỗi xác thực
+- Yêu cầu tạo liên kết tải lên thất bại
+- Tải lên thất bại
+- Polling timeout
+- Provider trả về failed
+- Tải kết quả thất bại
+- Giải nén kết quả thất bại
+- Cấu trúc provider trả về thiếu trường
 
-要求：
+Yêu cầu:
 
-- 错误类型不要只是字符串
-- 需要保留 provider 原始 message / code / trace_id 等上下文
-- 要便于 API 层直接返回清晰错误
+- Loại lỗi không chỉ là chuỗi
+- Cần giữ lại message/code/trace_id thô của provider và các ngữ cảnh khác
+- Dễ dàng để tầng API trả về lỗi rõ ràng
 
-### 4. 把 MinerU API 调用抽成独立 client
+### 4. Tách các lệnh gọi API MinerU thành client độc lập
 
-至少整理出：
+Ít nhất tổ chức được:
 
-- 申请上传链接
-- 上传文件
-- 查询 batch / task 状态
-- 下载结果
+- Yêu cầu tạo liên kết tải lên
+- Tải tệp lên
+- Truy vấn trạng thái batch/task
+- Tải kết quả
 
-要求：
+Yêu cầu:
 
-- `job_runner.rs` 不再直接承担 MinerU API 语义
-- 路由层只负责接请求和返回响应
-- provider client 负责 HTTP 调用和响应解析
+- `job_runner.rs` không còn trực tiếp đảm nhận ngữ nghĩa API MinerU
+- Tầng route chỉ tiếp nhận yêu cầu và trả về phản hồi
+- Client provider chịu trách nhiệm gọi HTTP và phân tích phản hồi
 
-### 5. 为排错补状态与原始信息输出
+### 5. Bổ sung đầu ra trạng thái và thông tin thô để gỡ lỗi
 
-这是重点，不能只做“能跑”。
+Đây là điểm quan trọng, không chỉ làm "chạy được".
 
-至少要有：
+Ít nhất phải có:
 
-- provider 原始状态
-- provider task_id / batch_id
+- Trạng thái thô của provider
+- task_id / batch_id của provider
 - trace_id
-- 原始错误码 / 错误信息
-- full_zip_url 是否可用
-- 上传链接申请阶段、上传阶段、轮询阶段分别处于什么状态
+- Mã lỗi / thông báo lỗi thô
+- full_zip_url có sẵn không
+- Trạng thái các giai đoạn: yêu cầu tạo liên kết tải lên, tải lên, polling
 
-如果合适，可以挂到：
+Nếu phù hợp, có thể gắn vào:
 
-- job 的扩展 artifacts / diagnostics 字段
-- 或新增 provider diagnostics 结构
+- Trường mở rộng artifacts / diagnostics của job
+- Hoặc cấu trúc provider diagnostics mới
 
-要求：
+Yêu cầu:
 
-- 后续前端和排错接口能直接消费
-- 避免以后再靠读长日志排错
+- Frontend và giao diện gỡ lỗi sau này có thể tiêu thụ trực tiếp
+- Tránh phải đọc nhật ký dài để gỡ lỗi sau này
 
-### 6. 补最小测试
+### 6. Bổ sung kiểm thử tối thiểu
 
-至少补：
+Ít nhất bổ sung:
 
-- 状态映射测试
-- 错误映射测试
-- 关键响应解析测试
+- Kiểm thử ánh xạ trạng thái
+- Kiểm thử ánh xạ lỗi
+- Kiểm thử phân tích phản hồi quan trọng
 
-如果时间够，再补：
+Nếu có thời gian, bổ sung thêm:
 
-- provider 状态文案测试
+- Kiểm thử văn bản trạng thái provider
 
-## 非目标
+## Không phải mục tiêu
 
-这次不要做：
+Lần này không làm:
 
-- 不要改 Python `services/mineru/`
-- 不要改 `document_schema`
-- 不要把整个工作流搬到 Rust
-- 不要开始接第二个 OCR provider
+- Không sửa Python `services/mineru/`
+- Không sửa `document_schema`
+- Không chuyển toàn bộ quy trình làm việc sang Rust
+- Không bắt đầu tích hợp OCR provider thứ hai
 
-## 工程原则
+## Nguyên tắc kỹ thuật
 
-- 这只是 provider API 层，不是业务工作流层
-- MinerU 是一个 provider 实现，不是系统主契约
-- 后续别的 OCR API 也应能复用这一层的抽象
-- 你不只在写“MinerU 支持”，你是在写“多 OCR provider 的第一版骨架”
+- Đây chỉ là tầng API provider, không phải tầng quy trình làm việc nghiệp vụ
+- MinerU là một triển khai provider, không phải hợp đồng chính của hệ thống
+- Các OCR API khác sau này cũng nên tái sử dụng được trừu tượng của tầng này
+- Bạn không chỉ đang viết "hỗ trợ MinerU", bạn đang viết "bộ khung đa OCR provider đầu tiên"
 
-## 交付要求
+## Yêu cầu bàn giao
 
-完成后请给出：
+Sau khi hoàn thành, vui lòng cung cấp:
 
-1. 新增/修改了哪些文件
-2. 当前 provider 层有哪些稳定类型
-3. 已覆盖哪些 MinerU 状态
-4. 已覆盖哪些错误分类
-5. 跑了哪些测试 / `cargo check`
+1. Các tệp đã thêm/sửa
+2. Các kiểu ổn định hiện có của tầng provider
+3. Các trạng thái MinerU đã bao phủ
+4. Các phân loại lỗi đã bao phủ
+5. Đã chạy những kiểm thử nào / `cargo check`

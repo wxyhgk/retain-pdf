@@ -1,298 +1,298 @@
 # Rust API Directory Map
 
-这份文档只回答一个问题：
+Tài liệu này chỉ trả lời một câu hỏi:
 
-**现在要改 `rust_api`，应该先进哪个目录。**
+**Hiện tại khi muốn sửa `rust_api`, nên vào thư mục nào trước.**
 
-## 最常见入口
+## Các điểm vào phổ biến nhất
 
-- 改 HTTP 接口：
+- Sửa HTTP interface:
   [`src/routes`](src/routes)
-- 改 jobs 用例编排：
+- Sửa điều phối use case jobs:
   [`src/services/jobs`](src/services/jobs)
-- 改图书馆域（文档/收藏/检索/资产/会话/合集）：
+- Sửa domain thư viện (tài liệu / yêu thích / truy xuất / tài sản / hội thoại / bộ sưu tập):
   [`src/services/library_api.rs`](src/services/library_api.rs) +
   [`src/services/library`](src/services/library)
-- 改 worker 运行链路：
+- Sửa chuỗi chạy worker:
   [`src/job_runner`](src/job_runner)
-- 改 OCR provider 分发和适配：
+- Sửa phân phối và điều chỉnh OCR provider:
   [`src/ocr_provider`](src/ocr_provider)
-- 改后端运行参数、provider 超时/重试、路径和认证配置：
+- Sửa tham số chạy backend, provider timeout/retry, đường dẫn và cấu hình xác thực:
   [`src/config`](src/config)
-- 改 Python worker 入口命令或 stage spec：
+- Sửa lệnh vào Python worker hoặc stage spec:
   [`src/worker_command`](src/worker_command)
 
-## 目录地图
+## Bản đồ thư mục
 
 ### `src/app`
 
-- 作用：
-  应用启动、`AppState` 组装、router 挂载、服务启动。
-- 进入条件：
-  只有在改全局资源、启动逻辑、路由挂载时才进这里。
-- 关键文件：
+- Vai trò:
+  Khởi động ứng dụng, lắp ráp `AppState`, gắn router, khởi động dịch vụ.
+- Điều kiện vào:
+  Chỉ vào đây khi sửa tài nguyên toàn cục, logic khởi động, gắn route.
+- Tệp chính:
   - [`src/app/state.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/app/state.rs)
-    `AppState` 和全局资源初始化。
+    `AppState` và khởi tạo tài nguyên toàn cục.
   - [`src/app/router.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/app/router.rs)
-    axum 路由总挂载点。
+    Điểm gắn tổng hợp router axum.
   - [`src/app/jobs.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/app/jobs.rs)
-    jobs facade 组合根。这里负责把 `AppState` 装成 `JobsFacade`，`routes` 不再直接碰 `job_runner`。
+    Gốc tổ hợp jobs facade. Nơi này chịu trách nhiệm biến `AppState` thành `JobsFacade`, `routes` không còn trực tiếp chạm `job_runner`.
 
 ### `src/config.rs` + `src/config/*`
 
-- 作用：
-  运行时配置入口。`config.rs` 是兼容 facade，继续暴露原来的 `AppConfig` 字段；`src/config/*` 才是实际配置分组。
-- 进入条件：
-  改 env、部署参数、provider timeout/retry、路径、auth、上传限制、worker 运行参数时进这里。
-- 当前子边界：
+- Vai trò:
+  Điểm vào cấu hình runtime. `config.rs` là facade tương thích, tiếp tục lộ các trường `AppConfig` cũ; `src/config/*` là phân nhóm cấu hình thực tế.
+- Điều kiện vào:
+  Vào đây khi sửa env, tham số triển khai, provider timeout/retry, đường dẫn, auth, giới hạn upload, tham số runtime worker.
+- Các ranh giới con hiện tại:
   - `config.rs`
-    `AppConfig` 兼容层；`from_env()` / `from_desktop()` 只解析来源，统一通过内部 `AppConfigParts` 组装。不要继续往这里堆具体 env 解析。
+    Lớp tương thích `AppConfig`; `from_env()` / `from_desktop()` chỉ phân tích nguồn, thống nhất lắp ráp qua `AppConfigParts` nội bộ. Không tiếp tục chất phân tích env cụ thể vào đây.
   - `config/env_vars.rs`
-    env 读取 helper；统一处理空字符串和正整数 fallback。
+    Helper đọc env; xử lý thống nhất chuỗi rỗng và fallback số nguyên dương.
   - `config/paths.rs`
-    project root、rust_api root、data root、scripts、jobs/uploads/downloads 路径和 runtime 目录创建。
+    Project root, rust_api root, data root, scripts, đường dẫn jobs/uploads/downloads và tạo thư mục runtime.
   - `config/auth.rs`
-    `auth.local.json`、`RUST_API_KEYS`、`RUST_API_MAX_RUNNING_JOBS`、`RUST_API_SIMPLE_PORT`。
+    `auth.local.json`, `RUST_API_KEYS`, `RUST_API_MAX_RUNNING_JOBS`, `RUST_API_SIMPLE_PORT`.
   - `config/server.rs`
-    `PYTHON_BIN`、`RUST_API_BIND_HOST`、`RUST_API_PORT`。
+    `PYTHON_BIN`, `RUST_API_BIND_HOST`, `RUST_API_PORT`.
   - `config/upload.rs`
-    `RUST_API_UPLOAD_MAX_BYTES`、`RUST_API_UPLOAD_MAX_PAGES`。
+    `RUST_API_UPLOAD_MAX_BYTES`, `RUST_API_UPLOAD_MAX_PAGES`.
   - `config/provider.rs`
-    MinerU / Paddle / DeepSeek 的 base URL、HTTP timeout、retry、provider 上传门槛和 Paddle input image limit。
+    Base URL, HTTP timeout, retry, ngưỡng upload provider và giới hạn input image Paddle cho MinerU / Paddle / DeepSeek.
   - `config/job_runner.rs`
-    队列轮询、worker terminate grace、AI failure diagnosis timeout、同步 bundle 等待间隔。
-- 规则：
-  新增部署可调参数时，优先放进上述子模块；只有需要保持现有调用方兼容时，才在 `AppConfig` 上暴露字段。
-  stage 名、artifact key、API path、schema version、stdout label 这类协议常量不要配置化。
+    Poll queue, worker terminate grace, AI failure diagnosis timeout, khoảng chờ đồng bộ bundle.
+- Quy tắc:
+  Khi thêm tham số có thể điều chỉnh theo triển khai, ưu tiên đưa vào các mô-đun con trên; chỉ khi cần giữ tương thích với caller hiện có mới lộ trường trên `AppConfig`.
+  Các hằng số giao thức như tên stage, artifact key, API path, schema version, stdout label không được cấu hình hóa.
 
 ### `src/routes`
 
-- 作用：
-  HTTP 参数提取、请求转发、统一响应封装。
-- 不该做的事：
-  不直接碰 `job_runner`，不自己拼底层业务逻辑，不 `state.db` / 内部 service，
-  models 只经 `models::api` / `domain` / `request`。
+- Vai trò:
+  Trích xuất tham số HTTP, chuyển tiếp yêu cầu, đóng gói phản hồi thống nhất.
+- Không nên làm:
+  Không trực tiếp chạm `job_runner`, không tự ghép logic nghiệp vụ cấp thấp, không `state.db` / service nội bộ,
+  models chỉ qua `models::api` / `domain` / `request`.
 
 #### `src/routes/jobs`
 
 - `json_response/`
-  jobs JSON 查询 / detail / cancel / retry 的响应出口，只调用 `JobsFacade`
-  并封装 `ApiResponse`。
+  Cổng ra phản hồi cho truy vấn JSON jobs / detail / cancel / retry, chỉ gọi `JobsFacade`
+  và đóng gói `ApiResponse`.
 - `create.rs` / `download.rs` / `query.rs` / `control.rs` / `translation_debug.rs`
-  真正的 axum route 入口。
+  Điểm vào axum route thực tế.
 
-#### `src/routes` library 面
+#### Mặt `src/routes` library
 
 - `library.rs`
-  books 投影 API；只调 `library_api`；cover/thumbnail 走 `download_response`。
+  API chiếu books; chỉ gọi `library_api`; cover/thumbnail đi qua `download_response`.
 - `library_data.rs`
-  documents / media / translate-from-library / favorites / search；只调 `library_api`。
+  documents / media / translate-from-library / favorites / search; chỉ gọi `library_api`.
 - `library_extras.rs`
-  assets / conversations；multipart 解包留在 route，业务进 `library_api`。
+  assets / conversations; giải nén multipart giữ ở route, nghiệp vụ vào `library_api`.
 - `collections.rs`
-  合集 CRUD 与成员关系；只调 `library_api`。
-- deps：`routes/common.rs::build_library_route_deps`（`LibraryDeps` + `JobsFacade`）。
+  CRUD bộ sưu tập và quan hệ thành viên; chỉ gọi `library_api`.
+- deps: `routes/common.rs::build_library_route_deps` (`LibraryDeps` + `JobsFacade`).
 
 #### `src/routes/download_response`
 
-- 作用：
-  文件下载、markdown、preview、cover、thumbnail 的响应出口。
-- 使用方：
-  `routes/jobs/*` 和 `routes/library.rs` 都可以调用它；route 模块之间不要互相复用私有 helper。
+- Vai trò:
+  Cổng ra phản hồi cho tải xuống tệp, markdown, preview, cover, thumbnail.
+- Người dùng:
+  `routes/jobs/*` và `routes/library.rs` đều có thể gọi nó; các mô-đun route không được tái sử dụng helper private lẫn nhau.
 
 ### `src/services`
 
-- 作用：
-  application service 入口和内部业务实现。
+- Vai trò:
+  Điểm vào application service và triển khai nghiệp vụ nội bộ.
 
 #### `src/services/jobs/facade`
 
-- 作用：
-  给 route 提供统一 jobs 入口。
+- Vai trò:
+  Cung cấp điểm vào jobs thống nhất cho route.
 - `command/*`
-  创建、取消、同步 bundle 这类命令型能力。
+  Các khả năng dạng lệnh như tạo, hủy, bundle đồng bộ.
 - `query/*`
-  列表、详情、下载、artifacts、translation debug 这类查询型能力。
+  Các khả năng dạng truy vấn như danh sách, chi tiết, tải xuống, artifacts, translation debug.
 
 #### `src/services/library_api.rs` + `src/services/library/*`
 
-- 作用：
-  给 route 提供统一 **Library** 入口（与 `JobsFacade` / `glossary_api` 同级）。
-- 进入条件：
-  改文档、馆藏翻译入口、收藏、全文检索、资产、会话、合集业务时进这里；
-  **不要** 把逻辑写回 `routes/library_*`。
-- 子模块：
-  - `books.rs` — library books 列表/详情/删除（投影委托 `book_projection`）
-  - `documents.rs` / `media.rs` — 文档 CRUD 与 source.pdf/cover/thumbnail
-  - `translate.rs` — 绑定文档 upload 后调 `JobsFacade::create_submission`
-  - `favorites.rs` / `search.rs` — 锚点收藏与 blocks FTS
-  - `assets.rs` / `conversations.rs` / `collections.rs` — 资产、会话、合集
-- 规则：
-  route 只 import `library_api::`；`derived_artifacts` 只允许在 service 内部使用。
+- Vai trò:
+  Cung cấp điểm vào **Library** thống nhất cho route (ngang hàng với `JobsFacade` / `glossary_api`).
+- Điều kiện vào:
+  Vào đây khi sửa tài liệu, điểm vào dịch từ thư viện, yêu thích, tìm kiếm toàn văn, tài sản, hội thoại, nghiệp vụ bộ sưu tập;
+  **không** viết logic trở lại `routes/library_*`.
+- Mô-đun con:
+  - `books.rs` — danh sách/chi tiết/xóa library books (ủy quyền chiếu cho `book_projection`)
+  - `documents.rs` / `media.rs` — CRUD tài liệu và source.pdf/cover/thumbnail
+  - `translate.rs` — gắn upload tài liệu rồi gọi `JobsFacade::create_submission`
+  - `favorites.rs` / `search.rs` — yêu thích anchor và FTS blocks
+  - `assets.rs` / `conversations.rs` / `collections.rs` — tài sản, hội thoại, bộ sưu tập
+- Quy tắc:
+  route chỉ import `library_api::`; `derived_artifacts` chỉ được phép dùng trong service nội bộ.
 
 #### `src/services/jobs/creation`
 
 - `submit.rs`
-  创建并启动任务。
+  Tạo và khởi động tác vụ.
 - `bundle.rs`
-  同步跑完整链路并产出 bundle。
+  Chạy đồng bộ toàn bộ chuỗi và tạo bundle.
 - `prepare.rs`
-  输入解析、存在性检查、前置校验，只产出 `Prepared*` 输入，不生成 `JobSnapshot`。
+  Phân tích đầu vào, kiểm tra tồn tại, tiền xác thực, chỉ tạo đầu vào `Prepared*`, không tạo `JobSnapshot`.
 - `job_builders.rs`
-  workflow 级快照编排；只消费 `Prepared*` 输入并调用 snapshot factory，不再自己做前置校验。
+  Điều phối snapshot cấp workflow; chỉ tiêu thụ đầu vào `Prepared*` và gọi snapshot factory, không tự làm tiền xác thực.
 - `upload.rs`
-  upload 持久化和 upload record 读取。
+  Lưu trữ upload và đọc bản ghi upload.
 - `context.rs`
-  creation 侧显式 deps。
+  deps rõ ràng phía creation.
 
 #### `src/services/jobs/presentation`
 
-- 作用：
-  对外 view 组装、摘要读取、响应投影。
-- 进入条件：
-  改 API 返回结构、摘要字段、脱敏展示时进这里。
+- Vai trò:
+  Lắp ráp view bên ngoài, đọc tóm tắt, chiếu phản hồi.
+- Điều kiện vào:
+  Vào đây khi sửa cấu trúc trả về API, trường tóm tắt, hiển thị làm sạch.
 
-#### 其他 service 入口
+#### Các điểm vào service khác
 
 - [`src/services/upload_api.rs`](src/services/upload_api.rs)
-  上传接口入口。
+  Điểm vào interface upload.
 - [`src/services/glossary_api.rs`](src/services/glossary_api.rs)
-  术语表接口入口。
+  Điểm vào interface bảng thuật ngữ.
 - [`src/services/library_api.rs`](src/services/library_api.rs)
-  图书馆接口入口（见上）。
+  Điểm vào interface thư viện (xem trên).
 - [`src/services/job_snapshot_factory.rs`](src/services/job_snapshot_factory.rs)
-  job snapshot/command 构造边界。
+  Ranh giới xây dựng job snapshot/command.
 - [`src/services/job_launcher.rs`](src/services/job_launcher.rs)
-  job 持久化与启动边界。
+  Ranh giới lưu trữ và khởi động job.
 - [`src/services/runtime_gateway.rs`](src/services/runtime_gateway.rs)
-  services 访问 runtime 能力的收口层。
+  Lớp thu gọn cho services truy cập khả năng runtime.
 
 ### `src/worker_command.rs` + `src/worker_command/*`
 
-- 作用：
-  Python worker 命令、worker 入口脚本和 stage spec 文件构造。
-- 进入条件：
-  改 `normalize/translate/render/provider` spec 字段、Python entrypoint、命令行参数时进这里。
-- 边界：
-  这是 `services` 和 `job_runner` 共同依赖的中性契约层，不属于 `services`，避免 `job_runner -> services` 的反向依赖。
-- 当前子边界：
+- Vai trò:
+  Lệnh Python worker, script vào worker và xây dựng tệp stage spec.
+- Điều kiện vào:
+  Vào đây khi sửa trường spec `normalize/translate/render/provider`, entrypoint Python, tham số dòng lệnh.
+- Ranh giới:
+  Đây là lớp hợp đồng trung lập mà `services` và `job_runner` cùng phụ thuộc, không thuộc `services`, tránh phụ thuộc ngược `job_runner -> services`.
+- Các ranh giới con hiện tại:
   - `worker_command.rs`
-    对外 `build_ocr_command` / `build_translate_only_command` / `build_render_only_command` / `build_normalize_ocr_command` facade。
+    Facade bên ngoài `build_ocr_command` / `build_translate_only_command` / `build_render_only_command` / `build_normalize_ocr_command`.
   - `worker_command/stage_specs.rs`
-    写 stage spec JSON。
+    Viết JSON stage spec.
   - `worker_command/entrypoints.rs`
-    选择 Python 脚本入口并拼入口参数。
+    Chọn script vào Python và ghép tham số vào.
   - `worker_command/command_builder.rs`
-    命令行拼装细节。
+    Chi tiết ghép dòng lệnh.
 
 ### `src/job_runner`
 
-- 作用：
-  任务排队、worker 启动、stdout/stderr 消费、失败归因、取消、超时。
-- 快速判断：
-  改 stage 执行顺序、并发槽位、进程控制、运行态同步时进这里。
-- 详细边界：
-  [`doc/core/rust_api/12-job_runner 边界.md`](/home/wxyhgk/tmp/Code/doc/core/rust_api/12-job_runner%20%E8%BE%B9%E7%95%8C.md)
-- 当前目录地图：
+- Vai trò:
+  Xếp hàng tác vụ, khởi động worker, tiêu thụ stdout/stderr, gán nguyên nhân thất bại, hủy, timeout.
+- Nhận định nhanh:
+  Vào đây khi sửa thứ tự thực thi stage, vị trí đồng thời, điều khiển tiến trình, đồng bộ trạng thái runtime.
+- Ranh giới chi tiết:
+   [`doc/core/rust_api/12-ranh-gioi-job-runner.md`](/home/wxyhgk/tmp/Code/doc/core/rust_api/12-ranh-gioi-job-runner.md)
+- Bản đồ thư mục hiện tại:
   - `mod.rs`
-    runner facade、公共 deps、对外导出；这里的 `ProcessRuntimeDeps` 只给 orchestrator 用，`JobPersistDeps` 是叶子 helper 的持久化资源边界。
+    Facade runner, deps công khai, xuất bên ngoài; `ProcessRuntimeDeps` ở đây chỉ dùng cho orchestrator, `JobPersistDeps` là ranh giới tài nguyên lưu trữ cho helper lá.
   - `lifecycle.rs`
-    任务排队、执行槽、workflow 分发。
+    Xếp hàng tác vụ, vị trí thực thi, phân phối workflow.
   - `process_runner.rs` + `process_runner/*`
-    真实 worker 执行器；`process_runner.rs` 只保留 orchestrator，并通过 `ProcessRuntimeDeps` 的窄 accessor 下传依赖。`startup.rs` 负责 worker 启动和 pid 持久化，`execution.rs` 负责进程等待和 timeout 分流，`completion.rs` 负责完成态归类与 shutdown-noise 判定，`timeout_support.rs` 负责超时落态，`failure_ai_diagnosis.rs` 负责失败 AI 诊断，`io_support.rs` 负责 stdout/stderr 消费。叶子 helper 只拿 `JobPersistDeps`、cancel handle 或 `WorkerProcessRuntimeConfig` 这类窄依赖。
+    Bộ thực thi worker thực tế; `process_runner.rs` chỉ giữ orchestrator và truyền phụ thuộc xuống qua accessor hẹp của `ProcessRuntimeDeps`. `startup.rs` chịu trách nhiệm khởi động worker và lưu pid, `execution.rs` chịu trách nhiệm chờ tiến trình và phân luồng timeout, `completion.rs` chịu trách nhiệm phân loại trạng thái hoàn thành và xác định shutdown-noise, `timeout_support.rs` chịu trách nhiệm lưu trạng thái timeout, `failure_ai_diagnosis.rs` chịu trách nhiệm chẩn đoán AI thất bại, `io_support.rs` chịu trách nhiệm tiêu thụ stdout/stderr. Helper lá chỉ nhận `JobPersistDeps`, cancel handle hoặc `WorkerProcessRuntimeConfig` dạng phụ thuộc hẹp.
   - `translation_flow.rs` + `translation_flow_*.rs`
-    OCR 后续的翻译/渲染父任务编排；`translation_flow.rs` 保留 orchestrator，`translation_flow_child.rs` 负责 upload source 读取、父任务进入 `ocr_submitting`、OCR child 创建，`translation_flow_stage.rs` 负责 translate/render stage 准备和 `ocr_child_finished` 事件，`translation_flow_support.rs` 负责 OCR 终态判定和翻译输入提取。
+    Điều phối tác vụ cha dịch/kết xuất sau OCR; `translation_flow.rs` giữ orchestrator, `translation_flow_child.rs` chịu trách nhiệm đọc upload source, đưa tác vụ cha vào `ocr_submitting`, tạo OCR child, `translation_flow_stage.rs` chịu trách nhiệm chuẩn bị stage translate/render và sự kiện `ocr_child_finished`, `translation_flow_support.rs` chịu trách nhiệm xác định trạng thái cuối OCR và trích xuất đầu vào dịch.
   - `ocr_flow/*`
-    OCR child job 执行链路、provider 轮询/下载/markdown materialize；其中 `ocr_flow/mod.rs` 是 orchestrator，`ocr_flow/support.rs` 负责 OCR job 保存、parent OCR 状态镜像、transport/source-pdf 失败处理和 `sync_parent_with_ocr_child(...)`，`workspace.rs` 只管路径和目录，`polling.rs` 只管轮询等待和 cancel 检查。
+    Chuỗi thực thi job con OCR, provider polling/tải xuống/materialize markdown; trong đó `ocr_flow/mod.rs` là orchestrator, `ocr_flow/support.rs` chịu trách nhiệm lưu job OCR, phản chiếu trạng thái OCR parent, xử lý thất bại transport/source-pdf và `sync_parent_with_ocr_child(...)`, `workspace.rs` chỉ quản lý đường dẫn và thư mục, `polling.rs` chỉ quản lý chờ poll và kiểm tra cancel.
   - `stdout_parser/*`
-    stdout 行级规则解析；`mod.rs` 是 facade，`labels.rs` 管 stdout 标签常量，`state.rs` 管解析共享状态，`stage_rules.rs` / `artifact_rules.rs` 管行级规则，`failure.rs` 管 provider failure 归因。
+    Phân tích quy tắc dòng stdout; `mod.rs` là facade, `labels.rs` quản lý hằng số nhãn stdout, `state.rs` quản lý trạng thái chia sẻ phân tích, `stage_rules.rs` / `artifact_rules.rs` quản lý quy tắc dòng, `failure.rs` quản lý gán nguyên nhân failure provider.
   - `runtime_state.rs`
-    runtime snapshot / failure / artifact 的统一更新工具。
+    Công cụ cập nhật thống nhất cho runtime snapshot / failure / artifact.
   - `worker_process.rs`
-    子进程启动、env 注入、进程树终止；现在只拿 `WorkerProcessRuntimeConfig + job`，不再依赖整包 runtime deps。
+    Khởi động tiến trình con, tiêm env, kết thúc cây tiến trình; hiện chỉ nhận `WorkerProcessRuntimeConfig + job`, không còn phụ thuộc toàn bộ deps runtime.
 
 ### `src/ocr_provider`
 
-- 作用：
-  OCR provider 分发、provider 特定协议转换、provider 输出收口。
-- 快速判断：
-  改 MinerU / Paddle 接入细节时进这里。
+- Vai trò:
+  Phân phối OCR provider, chuyển đổi giao thức provider cụ thể, thu gọn đầu ra provider.
+- Nhận định nhanh:
+  Vào đây khi sửa chi tiết tích hợp MinerU / Paddle.
 
 ### `src/storage_paths.rs` + `src/storage_paths/*`
 
-- 作用：
-  artifact key、路径归一化、路径解析、artifact registry 收集。
-- 现在的子边界：
+- Vai trò:
+  Artifact key, chuẩn hóa đường dẫn, phân giải đường dẫn, thu thập registry artifact.
+- Các ranh giới con hiện tại:
   - `constants.rs`
-    artifact key / group / kind 常量。
+    Hằng số artifact key / group / kind.
   - `job_paths.rs`
-    `JobPaths` 和任务目录创建。
+    `JobPaths` và tạo thư mục tác vụ.
   - `path_ops.rs`
-    相对路径规范化、存储归一化、legacy 判定。
+    Chuẩn hóa đường dẫn tương đối, chuẩn hóa lưu trữ, xác định legacy.
   - `resolvers.rs`
-    各类 published artifact 路径解析。
+    Phân giải đường dẫn cho các published artifact khác nhau.
   - `registry.rs`
-    把任务文件投影成 artifact entry 列表。
+    Chiếu các tệp tác vụ thành danh sách artifact entry.
 
 ### `src/db.rs` + `src/db/*`
 
-- 作用：
-  SQLite 持久化入口。
-- 现在的子边界：
+- Vai trò:
+  Điểm vào lưu trữ SQLite.
+- Các ranh giới con hiện tại:
   - `rows.rs`
-    SQLite row -> 领域模型解码。
+    Giải mã SQLite row -> domain model.
   - `schema.rs`
-    schema 检查和启动期迁移保护。
+    Kiểm tra schema và bảo vệ migration khi khởi động.
   - `db.rs`
-    主 `Db` facade 和具体读写用例。
+    Facade `Db` chính và các use case đọc/ghi cụ thể.
 
-## 三条快速判断
+## Ba nhận định nhanh
 
-- “这是 HTTP 行为变化吗？”
-  先看 `src/routes`
-- “这是 jobs 用例编排变化吗？”
-  先看 `src/services/jobs/facade` 和 `src/services/jobs/creation`
-- “这是 worker / Python 执行变化吗？”
-  先看 `src/job_runner`
+- "Đây có phải thay đổi hành vi HTTP không?"
+  Xem `src/routes` trước.
+- "Đây có phải thay đổi điều phối use case jobs không?"
+  Xem `src/services/jobs/facade` và `src/services/jobs/creation` trước.
+- "Đây có phải thay đổi worker / thực thi Python không?"
+  Xem `src/job_runner` trước.
 
-## 一张更直观的目录地图
+## Bản đồ thư mục trực quan hơn
 
-当前建议按这条线理解后端：
+Hiện tại khuyến nghị hiểu backend theo dòng này:
 
 1. `src/routes`
-   HTTP 适配层，只做参数提取和响应封装。
+   Lớp thích ứng HTTP, chỉ làm trích xuất tham số và đóng gói phản hồi.
 2. `src/services/jobs/facade`
-   jobs 用例总入口，route 只和 facade 说话。
+   Tổng điểm vào use case jobs, route chỉ giao tiếp với facade.
 3. `src/services/jobs/creation` / `src/services/jobs/presentation`
-   前者负责创建与提交，后者负责 detail/list/events 对外投影。
+   Cái trước chịu trách nhiệm tạo và gửi, cái sau chịu trách nhiệm chiếu ngoài detail/list/events.
 4. `src/job_runner`
-   运行态编排、子进程、OCR flow、translation/render flow。
+   Điều phối runtime, tiến trình con, OCR flow, translation/render flow.
 5. `src/ocr_provider`
-   provider 协议和 provider 输出归一化。
+   Giao thức provider và chuẩn hóa đầu ra provider.
 
-新人如果只想快速定位修改入口，可以先问自己是在改：
+Người mới nếu chỉ muốn nhanh chóng xác định điểm vào sửa, có thể tự hỏi mình đang sửa:
 
-- HTTP 适配
-- 用例编排
-- 展示投影
-- 运行时执行
-- provider 协议
+- Thích ứng HTTP
+- Điều phối use case
+- Chiếu hiển thị
+- Thực thi runtime
+- Giao thức provider
 
-然后再进对应目录，不要一上来横跨 `routes -> services -> job_runner` 多层同时改。
+Rồi mới vào thư mục tương ứng, không nên sửa đồng thời nhiều lớp `routes -> services -> job_runner` ngay từ đầu.
 
-## 新人阅读顺序
+## Thứ tự đọc cho người mới
 
-如果第一次进这个后端，建议按这个顺序看：
+Nếu lần đầu vào backend này, khuyến nghị xem theo thứ tự:
 
 1. [`src/app/router.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/app/router.rs)
-   先知道有哪些 HTTP 入口。
+   Biết có những HTTP entry nào trước.
 2. [`src/app/jobs.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/app/jobs.rs)
-   再看 jobs 相关依赖是怎么装起来的。
+   Xem các phụ thuộc liên quan đến jobs được lắp ráp thế nào.
 3. [`src/routes/jobs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/routes/jobs)
-   看 route 只是怎么转发。
+   Xem route chỉ chuyển tiếp thế nào.
 4. [`src/services/jobs/facade`](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/jobs/facade)
-   看 command/query 用例入口。
+   Xem điểm vào use case command/query.
 5. [`src/services/jobs/creation`](/home/wxyhgk/tmp/Code/backend/rust_api/src/services/jobs/creation)
-   看创建链路的准备、快照、提交、bundle。
+   Xem chuỗi tạo: chuẩn bị, snapshot, gửi, bundle.
 6. [`src/job_runner`](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner)
-   最后再进 runtime 执行层。
+   Cuối cùng mới vào lớp thực thi runtime.

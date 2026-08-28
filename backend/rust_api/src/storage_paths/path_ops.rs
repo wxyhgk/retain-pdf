@@ -31,13 +31,13 @@ pub fn normalize_relative_data_path(path: &Path) -> Result<String> {
 }
 
 pub fn to_relative_data_path(data_root: &Path, path: &Path) -> Result<String> {
-    // path 可能是三种形态之一:
-    //   (a) DATA_ROOT 下的绝对文件系统路径(如 /abs/data/jobs/x);
-    //   (b) 由 data_root 拼出来、但本身仍是相对的路径——当 DATA_ROOT 配成相对
-    //       值(如 dev 环境的 `../../data`)时, uploads_dir.join(...) 会得到
-    //       `../../data/uploads/x` 这种带 `..` 的相对路径;
-    //   (c) 已经是作业相对路径(如 jobs/x/source.pdf)。
-    // 先无条件尝试剥掉 data_root 前缀:(a)(b) 都会因此收敛成作业相对形态。
+    // path Có thể là một trong ba hình thức:
+    //   (a) DATA_ROOT Đường dẫn hệ thống tập tin tuyệt đối theo(Là /abs/data/jobs/x);
+    //   (b) GIỮA data_root Đánh vần nó ra、nhưng nó vẫn là một con đường tương đối.——làm DATA_ROOT Phù hợp với người thân
+    //       đáng giá(Là dev Môi trường `../../data`)thì, uploads_dir.join(...) sẽ nhận được
+    //       `../../data/uploads/x` Thắt lưng này `..` Đường dẫn tương đối;
+    //   (c) Đã có đường dẫn tương đối công việc(Là jobs/x/source.pdf)。
+    // Cố gắng bóc nó ra vô điều kiện trước data_root Tiền tố:(a)(b) sẽ hội tụ về hình thức tương đối của công việc.。
     if let Ok(relative) = path.strip_prefix(data_root) {
         return normalize_relative_data_path(relative);
     }

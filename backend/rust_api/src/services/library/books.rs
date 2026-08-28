@@ -45,7 +45,7 @@ pub fn delete_library_book(
     }
     for job in &jobs {
         ensure_deletable(job, force)?;
-        // 锚点块空间保护:被收藏引用的 run 删除后所有锚点断链,拒绝删除
+        // Bảo vệ không gian khối neo:Được trích dẫn bởi mục ưa thích run Tất cả các ngắt neo sau khi xóa,Từ chối xóa
         let referencing = deps
             .db
             .favorites_referencing_job(&job.job_id)
@@ -58,8 +58,8 @@ pub fn delete_library_book(
         }
     }
 
-    // 删 job 前先记住它所属文档,删后 reconcile 其 active_job_id,
-    // 否则文档行会悬空指向已删 job,前端 join 不到而渲染成僵尸卡。
+    // xóa job Hãy nhớ giấy tờ trước đây thuộc về,xóaxong reconcile hắn active_job_id,
+    // Nếu không, dòng tài liệu sẽ treo lủng lẳng để trỏ đến mục đã xóa job,Frontend join cho đến khi nó biến thành một lá bài zombie.。
     let affected_document = deps
         .db
         .get_document_by_job_id(job_id)
@@ -78,8 +78,8 @@ pub fn delete_library_book(
     }
 
     if let Some(document_id) = affected_document {
-        // reconcile 失败不阻断删除(job 已删),仅记录——文档最坏保持悬空,
-        // 下次任一 job 删除或启动回填会再修。
+        // reconcile Lỗi không chặn xóa(job Đã xóa),Chỉ ghi——Tài liệu bị treo lơ lửng ở mức tồi tệ nhất,
+        // Bất kỳ lần tiếp theo nào job Xóa hoặc bắt đầu san lấp sẽ khắc phục lại。
         if let Err(error) = deps.db.reconcile_document_active_job(&document_id) {
             eprintln!(
                 "[library] reconcile active_job for {document_id} after deleting {job_id} failed: {error}"

@@ -1,4 +1,4 @@
-// assistant-ui 阅读器问答：进度与正文分离；完成后一次性 Markdown+公式+引用。
+// assistant-ui reader Q&A: tách progress khỏi body; sau khi hoàn tất mới render Markdown + công thức + citation một lần.
 
 import {
   createContext,
@@ -57,30 +57,30 @@ import {
   MISSING_MODEL_API_KEY_MESSAGE,
 } from "../../../../../js/reader/ai/config.js";
 
-/** Notion 侧栏式建议：图标 + 短标题 */
+/** Gợi ý kiểu sidebar Notion: icon + tiêu đề ngắn. */
 const SUGGESTIONS: Array<{
   prompt: string;
   label: string;
   icon: typeof BookOpen;
 }> = [
   {
-    prompt: "用几句话总结这篇文献的核心内容。",
-    label: "总结本页文档",
+    prompt: "Summarize the core content of this paper in a few sentences.",
+    label: "Tóm tắt tài liệu",
     icon: BookOpen,
   },
   {
-    prompt: "这篇文献的主要结论是什么？",
-    label: "提炼主要结论",
+    prompt: "What are the main conclusions of this paper?",
+    label: "Rút ý kết luận chính",
     icon: ListTree,
   },
   {
-    prompt: "作者用了什么方法或模型？",
-    label: "梳理方法与模型",
+    prompt: "What methods or models did the authors use?",
+    label: "Tóm lược phương pháp",
     icon: FlaskConical,
   },
   {
-    prompt: "有哪些关键结果或数据？",
-    label: "标出关键结果",
+    prompt: "What key results or data are reported?",
+    label: "Nêu kết quả chính",
     icon: Sparkles,
   },
 ];
@@ -89,13 +89,13 @@ export type ReaderAssistantThreadProps = {
   jobId?: string;
   citationsByMessageId?: Record<string, AiCitationLike[]>;
   progressByMessageId?: Record<string, string>;
-  /** store 正文旁路，保证流式 token 能立刻渲染 */
+  /** Bypass body từ store để token streaming render ngay. */
   contentByMessageId?: Record<string, string>;
-  /** 当前正在生成的 assistant id（旁路 status，避免 aui 不刷 running） */
+  /** Id assistant đang generate hiện tại (status bypass, tránh aui không refresh running). */
   streamingAssistantId?: string;
   isRunning?: boolean;
   onJumpCitation?: (citation: AiCitationLike) => void;
-  /** 从助手答案开新会话窗口（复制到该点的历史） */
+  /** Mở cửa sổ hội thoại mới từ câu trả lời assistant (copy lịch sử tới điểm đó). */
   onBranchFromAnswer?: (assistantMessageId: string) => void | Promise<boolean | void>;
   branchBusy?: boolean;
 };
@@ -129,7 +129,7 @@ function messageIsStreaming(
   const status = (message as { status?: { type?: string } } | null)?.status;
   if (status?.type === "running") return true;
   if (status?.type === "complete" || status?.type === "incomplete") return false;
-  // aui 有时不把 ExternalStore 的 status 映到 useMessage；用旁路 id 兜底
+  // aui đôi khi không map status của ExternalStore vào useMessage; dùng id bypass làm fallback.
   if (!isRunning || !streamingAssistantId) return false;
   const id = `${(message as { id?: string } | null)?.id || ""}`;
   const storeId = `${(message as { metadata?: { custom?: { storeId?: string } } } | null)
@@ -154,7 +154,7 @@ function useViewportStickBottom(
       stick.current = distance < 120;
     };
     const scrollBottom = () => {
-      // 分支/切会话 remount 时禁止强行滚底，否则体感像「刷新并跳转」
+      // Khi branch/đổi session remount, cấm ép scroll xuống đáy; nếu không cảm giác như "refresh rồi nhảy".
       if (suppressRef.current) return;
       if (el.dataset.suppressAutoscroll === "1") return;
       if (!stick.current) return;
@@ -172,7 +172,7 @@ function useViewportStickBottom(
       if (structural) schedule();
     });
     mo.observe(el, { childList: true, subtree: true });
-    // 仅首挂且未 suppress 时贴底
+    // Chỉ bám đáy ở lần mount đầu và khi không suppress.
     if (!suppressAutoScroll) schedule();
     return () => {
       el.removeEventListener("scroll", onScroll);
@@ -186,7 +186,7 @@ function ThinkingRow({ label }: { label: string }) {
   return (
     <div className="aui-thinking" role="status" aria-live="polite">
       <Loader2 className="aui-spin" size={14} strokeWidth={2.4} aria-hidden />
-      <span>{label || "思考中…"}</span>
+      <span>{label || "Đang suy nghĩ..."}</span>
     </div>
   );
 }
@@ -225,21 +225,21 @@ function MarkdownText() {
   } = useContext(AskUiContext);
   const meta = readMessageCustom(message);
   const streaming = messageIsStreaming(message, streamingAssistantId, isRunning);
-  // 优先 metadata.custom（稳定）；回退 store map
+  // Ưu tiên metadata.custom (ổn định); fallback về store map.
   const citations = meta.citations.length
     ? meta.citations
     : (citationsByMessageId[meta.storeId] || citationsByMessageId[meta.messageId] || []);
   const rootRef = useRef<HTMLDivElement | null>(null);
-  // 流式：优先 contentByMessageId（store/旁路直通），避免 aui Parts 缓存导致「答完才渲染」
+  // Streaming: ưu tiên contentByMessageId (store/bypass trực tiếp), tránh cache aui Parts gây "xong mới render".
   const storeText =
     contentByMessageId[meta.storeId]
     || contentByMessageId[meta.messageId]
     || "";
-  // 流式过程不要 trim 尾部，避免半句被吃掉；完成后再 trim
+  // Khi streaming không trim phần đuôi để tránh nuốt nửa câu; hoàn tất rồi mới trim.
   const bodyText = streaming
     ? `${storeText || text || ""}`
     : `${storeText || text || ""}`.trim();
-  // 分支 remount 时 id 变了但正文相同：用缓存避免闪 pending
+  // Khi branch remount, id đổi nhưng body giống nhau: dùng cache để tránh nhấp nháy pending.
   const [finalHtml, setFinalHtml] = useState<string | null>(() =>
     (streaming || !bodyText ? null : peekFinalAnswerHtmlCache(bodyText)),
   );
@@ -260,7 +260,7 @@ function MarkdownText() {
     [citations],
   );
 
-  // 流式：同步轻量 HTML，绝不走 MathJax 异步（否则会「写完才显示」）
+  // Streaming: đồng bộ HTML nhẹ, tuyệt đối không đi qua MathJax async (nếu không sẽ "viết xong mới hiện").
   const streamingHtml = useMemo(
     () => (streaming && bodyText ? renderStreamingPreviewHtml(bodyText) : ""),
     [streaming, bodyText],
@@ -303,8 +303,8 @@ function MarkdownText() {
     const root = rootRef.current;
     if (!root || streaming || finalHtml == null || !finalHtml) return;
 
-    // 覆盖前回收上一轮 hydrate 的 blob URL（重渲染反复生成新 blob，
-    // 旧的会泄漏到页面关闭——审计 P1-5）
+    // Thu hồi blob URL hydrate vòng trước trước khi ghi đè (re-render tạo blob mới lặp lại,
+    // blob cũ sẽ rò tới khi đóng trang - audit P1-5).
     revokeHydratedImageUrls(root);
     root.innerHTML = finalHtml;
     neutralizeMarkdownAnchors(root, {
@@ -327,7 +327,7 @@ function MarkdownText() {
     }
   }, [streaming, finalHtml, citationByRef, citations, onJumpCitation, bodyText]);
 
-  // 卸载（切消息/关浮窗）回收本气泡的 blob
+  // Khi unmount (đổi message/đóng cửa sổ nổi), thu hồi blob của bubble này.
   useEffect(() => () => {
     revokeHydratedImageUrls(rootRef.current);
   }, []);
@@ -377,17 +377,17 @@ function messagePlainText(message: unknown): string {
 }
 
 /**
- * 兄弟节点切换器。
- * - path：同一答案下的多条续问路径
- * - answer：同一问题下的多版重试答案
+ * Bộ chuyển node sibling.
+ * - path: nhiều đường hỏi tiếp dưới cùng một câu trả lời
+ * - answer: nhiều bản retry câu trả lời cho cùng một câu hỏi
  */
 function MessageBranchPicker({ kind }: { kind: "path" | "answer" }) {
-  const label = kind === "path" ? "分支" : "答案";
+  const label = kind === "path" ? "Nhánh" : "Câu trả lời";
   return (
     <BranchPickerPrimitive.Root
       className={`aui-branch-picker aui-branch-picker-${kind}`}
       hideWhenSingleBranch
-      title={kind === "path" ? "切换从此答案分出的路径" : "切换不同答案版本"}
+      title={kind === "path" ? "Đổi đường hỏi tiếp tách ra từ câu trả lời này" : "Đổi phiên bản câu trả lời"}
     >
       <span className="aui-branch-kind" aria-hidden>
         {label}
@@ -396,7 +396,7 @@ function MessageBranchPicker({ kind }: { kind: "path" | "answer" }) {
         <button
           type="button"
           className="aui-branch-btn"
-          aria-label={kind === "path" ? "上一个分支" : "上一个答案"}
+          aria-label={kind === "path" ? "Nhánh trước" : "Câu trả lời trước"}
         >
           <ChevronLeft size={14} strokeWidth={2.4} aria-hidden />
         </button>
@@ -410,7 +410,7 @@ function MessageBranchPicker({ kind }: { kind: "path" | "answer" }) {
         <button
           type="button"
           className="aui-branch-btn"
-          aria-label={kind === "path" ? "下一个分支" : "下一个答案"}
+          aria-label={kind === "path" ? "Nhánh sau" : "Câu trả lời sau"}
         >
           <ChevronRight size={14} strokeWidth={2.4} aria-hidden />
         </button>
@@ -420,8 +420,9 @@ function MessageBranchPicker({ kind }: { kind: "path" | "answer" }) {
 }
 
 /**
- * 从助手答案开「新会话窗口」：
- * 复制 root→本答案 的历史到新 conversation，原会话不动（类似 ChatGPT Branch in new chat）。
+ * Mở "cửa sổ hội thoại mới" từ câu trả lời assistant:
+ * copy lịch sử root -> câu trả lời này sang conversation mới, không đụng conversation gốc
+ * (giống ChatGPT Branch in new chat).
  */
 function AssistantMessage() {
   const message = useMessage();
@@ -453,7 +454,7 @@ function AssistantMessage() {
     if (!onBranchFromAnswer || !assistantId || branchBusy || forking) return;
     setForking(true);
     try {
-      // 等 click 完全结束后再上全屏遮罩，绝不能在 pointerdown 就盖住按钮
+      // Chờ click kết thúc hoàn toàn rồi mới bật overlay toàn màn; tuyệt đối không che nút ngay từ pointerdown.
       await new Promise<void>((r) => {
         window.setTimeout(r, 0);
       });
@@ -461,7 +462,7 @@ function AssistantMessage() {
       lockReaderAiNavigation(1200);
       const ok = await onBranchFromAnswer(assistantId);
       if (!ok) {
-        // 失败时也给一点反馈时间（sessionError 在会话条）
+        // Khi thất bại cũng giữ một chút thời gian phản hồi (sessionError nằm ở thanh hội thoại).
         armReaderAiClickShield(200, { overlayDelayMs: 0 });
       }
     } finally {
@@ -476,7 +477,7 @@ function AssistantMessage() {
       </div>
       <div className="aui-msg-stack">
       {streaming && progress ? <ThinkingRow label={progress} /> : null}
-      {streaming && !progress && !hasBody ? <ThinkingRow label="思考中…" /> : null}
+      {streaming && !progress && !hasBody ? <ThinkingRow label="Đang suy nghĩ..." /> : null}
       {hasBody ? (
         <div className="aui-msg-bubble">
           <MessagePrimitive.Parts components={{ Text: StableMarkdownText }} />
@@ -489,41 +490,41 @@ function AssistantMessage() {
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* 同问题多版答案切换（仍在当前窗口；真正开新窗用下面「开新对话」） */}
+          {/* Đổi nhiều phiên bản trả lời cho cùng câu hỏi (vẫn trong cửa sổ hiện tại; mở cửa sổ thật dùng "Mở hội thoại mới" bên dưới). */}
           <MessageBranchPicker kind="answer" />
           <button
             type="button"
             className="aui-action-btn aui-action-btn-branch"
             onPointerDown={(e) => {
-              // 只 stopPropagation，不要 preventDefault，否则可能丢 click
+              // Chỉ stopPropagation, không preventDefault; nếu không có thể mất click.
               e.stopPropagation();
             }}
             onClick={(e) => {
               void handleBranch(e);
             }}
             disabled={Boolean(branchBusy || forking || !onBranchFromAnswer)}
-            aria-label="从此答案开新对话"
-            title="复制到此答案为止的上文，开一个新对话继续问（原对话不变，避免上下文污染）"
+            aria-label="Mở hội thoại mới từ câu trả lời này"
+            title="Copy ngữ cảnh tới câu trả lời này và mở một hội thoại mới để hỏi tiếp (hội thoại gốc không đổi, tránh nhiễu context)"
           >
             {forking ? (
               <Loader2 className="aui-spin" size={13} strokeWidth={2.4} aria-hidden />
             ) : (
               <GitBranch size={13} strokeWidth={2.4} aria-hidden />
             )}
-            {forking ? "分支中…" : "开新对话"}
+            {forking ? "Đang tách nhánh..." : "Mở hội thoại mới"}
           </button>
           <ActionBarPrimitive.Root className="aui-action-bar" hideWhenRunning>
             <ActionBarPrimitive.Reload asChild>
               <button
                 type="button"
                 className="aui-action-btn"
-                aria-label="重新生成答案"
-                title="同一问题再生成一版答案（仍在当前窗口）"
+                aria-label="Tạo lại câu trả lời"
+                title="Tạo thêm một phiên bản trả lời cho cùng câu hỏi (vẫn trong cửa sổ hiện tại)"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
               >
                 <RefreshCw size={13} strokeWidth={2.4} aria-hidden />
-                重试
+                Thử lại
               </button>
             </ActionBarPrimitive.Reload>
           </ActionBarPrimitive.Root>
@@ -560,9 +561,9 @@ function EmptyState() {
           <Sparkles size={22} strokeWidth={1.9} />
         </span>
       </div>
-      <h2 className="aui-empty-title">随时待命，有什么可以帮你？</h2>
-      <p className="aui-empty-sub">基于当前整份文档检索回答 · 点引用可跳页</p>
-      <div className="aui-suggestions" role="group" aria-label="推荐问题">
+      <h2 className="aui-empty-title">Luôn sẵn sàng. Tôi có thể giúp gì?</h2>
+      <p className="aui-empty-sub">Trả lời dựa trên toàn bộ tài liệu hiện tại · bấm citation để nhảy trang</p>
+      <div className="aui-suggestions" role="group" aria-label="Câu hỏi gợi ý">
         {SUGGESTIONS.map((item) => {
           const Icon = item.icon;
           return (
@@ -641,7 +642,7 @@ export function ReaderAssistantThread({
     [],
   );
 
-  // 无模型 Key 时禁止输入/发送（与主页一致：只认设置 → 凭据）
+  // Không có model key thì cấm nhập/gửi (khớp trang chủ: chỉ nhận Settings -> Credentials).
   const [credTick, setCredTick] = useState(0);
   useEffect(() => {
     const bump = () => setCredTick((n) => n + 1);
@@ -665,7 +666,7 @@ export function ReaderAssistantThread({
           className="aui-viewport"
           data-reader-ai-viewport="true"
           turnAnchor="top"
-          // 分支/切会话时关闭库内 autoScroll，避免整列跳到底像「刷新」
+          // Khi branch/đổi session, tắt autoScroll của thư viện để tránh cả cột nhảy xuống đáy như "refresh".
           autoScroll={!branchBusy}
           scrollToBottomOnRunStart={!branchBusy}
         >
@@ -676,7 +677,7 @@ export function ReaderAssistantThread({
           <ThreadPrimitive.Messages components={messageComponents} />
 
           <ThreadPrimitive.ScrollToBottom className="aui-scroll-bottom" asChild>
-            <button type="button" className="aui-scroll-bottom-btn" aria-label="滚到最新">
+            <button type="button" className="aui-scroll-bottom-btn" aria-label="Cuộn tới mới nhất">
               <ArrowDown size={16} strokeWidth={2.25} />
             </button>
           </ThreadPrimitive.ScrollToBottom>
@@ -685,35 +686,35 @@ export function ReaderAssistantThread({
         {missingLlmKey ? (
           <div className="aui-composer aui-composer-locked" role="alert">
             <p className="aui-llm-lock-msg">{MISSING_MODEL_API_KEY_MESSAGE}</p>
-            <p className="aui-hint">请到首页「设置 → API 设置」填写模型 Key 后即可提问</p>
+            <p className="aui-hint">Vào trang chủ "Cài đặt -&gt; Cài đặt API" để nhập model key rồi đặt câu hỏi.</p>
           </div>
         ) : (
           <ComposerPrimitive.Root className="aui-composer" compact>
-            {/* Notion 式一体圆角输入卡：正文 + 底栏工具 */}
+            {/* Thẻ input bo góc liền khối kiểu Notion: body + toolbar đáy. */}
             <div className="aui-composer-shell">
               <ComposerPrimitive.Input
                 className="aui-input"
                 rows={2}
-                placeholder="用 AI 做任何事…"
+                placeholder="Nhờ AI làm bất cứ việc gì..."
                 submitOnEnter
               />
               <div className="aui-composer-toolbar">
-                <span className="aui-composer-chip" title="检索范围">
+                <span className="aui-composer-chip" title="Phạm vi truy xuất">
                   <BookOpen size={12} strokeWidth={2.2} aria-hidden />
-                  当前文档
+                  Tài liệu hiện tại
                 </span>
-                {/* 停止/发送互斥占同一位：双钮常驻会让「停止」在 95% 时间是死按钮 */}
+                {/* Dừng/gửi loại trừ nhau và dùng cùng vị trí: nếu hai nút cùng tồn tại, "Dừng" sẽ là nút chết 95% thời gian. */}
                 <div className="aui-composer-actions">
                   <ThreadPrimitive.If running>
                     <ComposerPrimitive.Cancel asChild>
-                      <button type="button" className="aui-send aui-send-stop" aria-label="停止生成">
+                      <button type="button" className="aui-send aui-send-stop" aria-label="Dừng tạo">
                         <Square size={12} strokeWidth={2.6} aria-hidden />
                       </button>
                     </ComposerPrimitive.Cancel>
                   </ThreadPrimitive.If>
                   <ThreadPrimitive.If running={false}>
                     <ComposerPrimitive.Send asChild>
-                      <button type="button" className="aui-send" aria-label="发送">
+                      <button type="button" className="aui-send" aria-label="Gửi">
                         <ArrowUp size={16} strokeWidth={2.5} aria-hidden />
                       </button>
                     </ComposerPrimitive.Send>
@@ -721,7 +722,7 @@ export function ReaderAssistantThread({
                 </div>
               </div>
             </div>
-            <p className="aui-hint">Enter 发送 · Shift+Enter 换行 · 点答案 [n] 跳页</p>
+            <p className="aui-hint">Enter để gửi · Shift+Enter xuống dòng · bấm [n] trong câu trả lời để nhảy trang</p>
           </ComposerPrimitive.Root>
         )}
       </ThreadPrimitive.Root>

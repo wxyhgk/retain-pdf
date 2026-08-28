@@ -1,0 +1,7 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "instructions": [
+    "Follow the project rules in AGENTS.md before every task. Read docs/wiki/README.md and relevant Wiki pages before coding or implementation work; update docs/wiki after code, bug, API, contract, config, deployment, or behavior changes."
+  ],
+  "snapshot": false
+}

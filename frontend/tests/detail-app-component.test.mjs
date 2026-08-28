@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 
-// DetailApp(任务详情页 React 编排根)组件级测试:
-// 经 tests/helpers/jsx-loader.mjs 的 esbuild 钩子直接加载 .jsx。
-// 校验:加载编排(overview → markdown)、setText/setActionLink 适配、
-// 命令式孤岛(产物清单)落地、事件流按需加载与模态框开合。
+// DetailApp (Radix Dialog: trang chi tiết nhiệm vụ) kiểm thử cấp component:
+// Tải .jsx trực tiếp qua móc esbuild của tests/helpers/jsx-loader.mjs.
+// Xác nhận: tải bố cục (overview → markdown), kết nối setText/setActionLink,
+// thao tác mệnh lệnh (danh sách tạo phẩm), tải ngắt quãng danh sách sự kiện cùng mở/đóng dialog.
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/detail.html?job_id=job-react-detail" });
 for (const key of ["window", "document", "HTMLElement", "HTMLInputElement", "HTMLSelectElement", "CustomEvent", "Event", "KeyboardEvent", "MouseEvent", "Node", "MutationObserver", "NodeFilter"]) {
@@ -17,10 +17,10 @@ for (const key of ["window", "document", "HTMLElement", "HTMLInputElement", "HTM
 }
 globalThis.window = dom.window;
 globalThis.requestAnimationFrame = (callback) => setTimeout(() => callback(0), 0);
-// Radix Presence/Tabs(阶段 B 引入)在 jsdom 下需要 cancelAnimationFrame
-// (TabsContent 的 mount 动画计时器清理)和 getComputedStyle(Presence 读取
-// animation-name 判断退场动画是否结束)——jsdom 的 window 上有实现,只是没有
-// 像 requestAnimationFrame 一样被复制到裸 global 上,这里一并补上。
+// Radix Presence/Tabs (giai đoạn B) cần cancelAnimationFrame trong jsdom
+// (dọn dẹp bộ hẹn giờ mount animation của TabsContent) và getComputedStyle 
+// (Presence đọc animation-name xác định animation thoát kết thúc) — jsdom window 
+// có implement, chỉ là không được sao chép vào global như requestAnimationFrame.
 globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
 globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 globalThis.IS_REACT_ACT_ENVIRONMENT = false;
@@ -33,7 +33,7 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// 并行跑测时进程负载不定,固定等待会抖;轮询直到条件成立(上限 3s)
+// Chạy song song — thời gian tải biến động theo áp lực tiến trình; dùng polling thay vì chờ cố định (tối đa 3s).
 async function waitFor(predicate, description) {
   const deadline = Date.now() + 3000;
   while (Date.now() < deadline) {
@@ -42,7 +42,7 @@ async function waitFor(predicate, description) {
     }
     await wait(20);
   }
-  assert.fail(`等待超时:${description}`);
+  assert.fail(`Hết thời gian chờ: ${description}`);
 }
 
 function click(element) {
@@ -97,14 +97,14 @@ function makePorts() {
     ],
   };
   const eventItems = [
-    { seq: 1, event: "stage_transition", level: "info", message: "开始翻译", display_stage: "translation" },
-    { seq: 2, event: "stage_transition", level: "info", message: "渲染完成", display_stage: "render" },
+    { seq: 1, event: "stage_transition", level: "info", message: "Bắt đầu biên dịch", display_stage: "translation" },
+    { seq: 2, event: "stage_transition", level: "info", message: "Hoàn thành render", display_stage: "render" },
   ];
   const calls = { events: [] };
   return {
     calls,
     getJobId: () => "job-react-detail",
-    configPort: { detailShareNote: () => "分享提示文案(测试)" },
+    configPort: { detailShareNote: () => "Văn bản khuyến nghị chia sẻ (kiểm thử)" },
     resumePort: { submit: async () => ({ job_id: "job-next" }) },
     dataPort: {
       apiPrefix: "/api/v1",
@@ -115,7 +115,7 @@ function makePorts() {
         resumePlan: { can_resume: true, from_stage: "translation" },
       }),
       loadMarkdownPayload: async () => ({
-        content: "# 测试文档\n\n正文内容",
+        content: "# Tài liệu kiểm thử\n\nNội dung chính",
         file_name: "book.md",
         json_url: "/api/v1/jobs/job-react-detail/markdown",
         raw_url: "/api/v1/jobs/job-react-detail/markdown/raw",
@@ -126,7 +126,7 @@ function makePorts() {
         return { items: eventItems };
       },
       fetchProtected: async () => {
-        throw new Error("本测试不应发起受保护请求");
+        throw new Error("Bài kiểm thử này không nên thực hiện yêu cầu được bảo vệ");
       },
       rerunJob: async () => ({}),
       resumeJob: async () => ({}),

@@ -1,4 +1,4 @@
-// 清洗模型偶发输出的内部 block_id 引用，并尽量映射到 [n]。
+// Clean internal block_id references that models occasionally emit and map them to [n] where possible.
 
 import type { AiCitationLike } from "./answer-enhance.js";
 
@@ -9,13 +9,14 @@ function normBlockId(id: string): string {
   return `${id || ""}`.trim().toLowerCase().replace(/_/g, "-");
 }
 
-// 代码保护：围栏块（含流式末尾未闭合的）+ 行内 code 整段抽出，
-// 免遭空白压扁/block_id 清洗——Python 缩进、表格对齐曾被压成一行（审计 P1-6）
+// Code protection: extract fenced blocks, including unclosed streaming tails, and inline code
+// so whitespace collapsing/block_id cleanup cannot damage them. Python indentation
+// and table alignment were previously flattened into one line (audit P1-6).
 const CODE_SEGMENT_RE = /```[\s\S]*?(?:```|$)|`[^`\n]+`/g;
 const CODE_SLOT_PREFIX = "CODE_";
 const CODE_SLOT_SUFFIX = "";
 
-/** 将 [p002-b0004] / 裸 p002-b0004 换成 [n]；无法映射则删除。代码段原样保留。 */
+/** Replace [p002-b0004] or bare p002-b0004 with [n]; remove unmapped ids. Code segments stay unchanged. */
 export function sanitizeAssistantAnswer(
   text: string,
   citations: AiCitationLike[] = [],
@@ -47,7 +48,7 @@ export function sanitizeAssistantAnswer(
     return ref ? `[${ref}]` : "";
   });
 
-  // 去掉残留的内部字段口癖
+  // Remove leftover internal-field wording.
   out = out.replace(/\bblock_id\s*[=:：]\s*\S+/gi, "");
   out = out.replace(/\bpage_idx\s*[=:：]\s*\d+/gi, "");
   out = out.replace(/[ \t]{2,}/g, " ");

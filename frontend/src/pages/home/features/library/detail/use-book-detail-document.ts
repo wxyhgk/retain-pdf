@@ -1,4 +1,4 @@
-// 详情：拉 document 全文、标题/标签编辑、阅读状态、合集、删除。
+// Chi tiết: lấy toàn bộ document, chỉnh sửa tiêu đề/thẻ, trạng thái đọc, bộ sưu tập, xóa.
 
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -134,7 +134,7 @@ export function useBookDetailDocument({
     await withBusy(
       "reading",
       () => actions.updateDocument(documentId, { reading_status: value }),
-      "更新阅读状态失败",
+      "Cập nhật trạng thái đọc thất bại",
     ).catch(() => setReadingStatus(previous));
   }
 
@@ -161,7 +161,7 @@ export function useBookDetailDocument({
         setTags(nextTags);
         setEditing(false);
       },
-      "保存失败",
+      "Lưu thất bại",
     );
   }
 
@@ -176,7 +176,7 @@ export function useBookDetailDocument({
         await actions.deleteDocument(documentId);
         onClose?.();
       },
-      "删除失败",
+      "Xóa thất bại",
     );
   }
 
@@ -194,7 +194,7 @@ export function useBookDetailDocument({
       );
       collectionsReload?.actions.bump();
     } catch (err) {
-      setError(err?.message || "更新合集失败");
+      setError(err?.message || "Cập nhật bộ sưu tập thất bại");
     } finally {
       setCollectionsBusy("");
     }

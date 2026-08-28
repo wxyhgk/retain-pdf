@@ -14,7 +14,7 @@ import {
 import type { JobSubmissionView } from "../../pages/home/features/library/types.js";
 import { buildApiEndpoint } from "./http.js";
 
-/** Document record returned by documents API (media URLs included). */
+/** Bản ghi tài liệu trả về bởi API documents (bao gồm media URLs). */
 export type DocumentRecord = MockDocumentWithMedia;
 
 export async function fetchDocumentList(
@@ -52,13 +52,13 @@ export async function fetchDocumentList(
     headers: buildApiHeaders(),
   });
   if (!resp.ok) {
-    throw new Error(`读取文档库失败，请稍后重试。(${resp.status})`);
+    throw new Error(`Đọc thư viện tài liệu thất bại, vui lòng thử lại sau. (${resp.status})`);
   }
   return unwrapEnvelope<MockDocumentListResult>(await resp.json());
 }
 
-// 按任意 job_id(含历史 run)直查其所属文档,后端负责解析——前端不再扫列表反查。
-// 返回该文档记录或 null(job 不属于任何文档时)。
+// Tra cứu trực tiếp tài liệu thuộc về theo bất kỳ job_id (bao gồm lịch sử run), backend chịu trách nhiệm phân giải - frontend không quét danh sách ngược lại.
+// Trả về bản ghi tài liệu hoặc null (khi job không thuộc về tài liệu nào).
 export async function fetchDocumentByJobId(
   apiPrefix: string,
   jobId: string,
@@ -76,7 +76,7 @@ export async function fetchDocumentByJobId(
     headers: buildApiHeaders(),
   });
   if (!resp.ok) {
-    throw new Error(`按 job 查文档失败，请稍后重试。(${resp.status})`);
+    throw new Error(`Tìm tài liệu theo job thất bại, vui lòng thử lại sau. (${resp.status})`);
   }
   const payload = unwrapEnvelope<MockDocumentListResult>(await resp.json()) || {
     documents: [],
@@ -94,7 +94,7 @@ export async function fetchDocument(
 ): Promise<DocumentRecord> {
   const normalized = `${documentId || ""}`.trim();
   if (!normalized) {
-    throw new Error("缺少 document_id。");
+    throw new Error("Thiếu document_id.");
   }
   if (isMockMode()) {
     return getMockDocument(normalized);
@@ -103,12 +103,12 @@ export async function fetchDocument(
     headers: buildApiHeaders(),
   });
   if (!resp.ok) {
-    throw new Error(`读取文档详情失败，请稍后重试。(${resp.status})`);
+    throw new Error(`Đọc chi tiết tài liệu thất bại, vui lòng thử lại sau. (${resp.status})`);
   }
   return unwrapEnvelope<DocumentRecord>(await resp.json());
 }
 
-// body 支持 { title?, reading_status?, tags? };tags 是整体替换语义(传 [] 即清空)
+// body hỗ trợ { title?, reading_status?, tags? }; tags có ngữ nghĩa thay thế toàn bộ (truyền [] tức là xóa trắng)
 export async function patchDocument(
   apiPrefix: string,
   documentId: string,
@@ -116,7 +116,7 @@ export async function patchDocument(
 ): Promise<DocumentRecord> {
   const normalized = `${documentId || ""}`.trim();
   if (!normalized) {
-    throw new Error("缺少 document_id。");
+    throw new Error("Thiếu document_id.");
   }
   if (isMockMode()) {
     return patchMockDocument(normalized, payload);
@@ -131,17 +131,17 @@ export async function patchDocument(
   });
   if (!resp.ok) {
     const envelope = await resp.json().catch(() => null);
-    throw new Error(`${envelope?.message || "更新文档失败，请稍后重试。"}(${resp.status})`);
+    throw new Error(`${envelope?.message || "Cập nhật tài liệu thất bại, vui lòng thử lại sau."}(${resp.status})`);
   }
   return unwrapEnvelope<DocumentRecord>(await resp.json());
 }
 
-// 文档级删除:删掉 document + 名下所有 job/upload/文件(后端 DELETE /documents/:id)。
-// 被收藏引用时后端返回 409(force 可覆盖运行中的 job,不覆盖收藏保护)。
+// Xóa cấp tài liệu: xóa document + tất cả job/upload/tệp dưới tên (backend DELETE /documents/:id).
+// Khi được trích dẫn bởi yêu thích, backend trả về 409 (force có thể ghi đè job đang chạy, không ghi đè bảo vệ yêu thích).
 export async function deleteDocument(apiPrefix, documentId, { force = false } = {}) {
   const normalized = `${documentId || ""}`.trim();
   if (!normalized) {
-    throw new Error("缺少 document_id。");
+    throw new Error("Thiếu document_id.");
   }
   if (isMockMode()) {
     return deleteMockDocument(normalized);
@@ -153,16 +153,16 @@ export async function deleteDocument(apiPrefix, documentId, { force = false } = 
   );
   if (!resp.ok) {
     const envelope = await resp.json().catch(() => null);
-    const error = new Error(`${envelope?.message || "删除文档失败，请稍后重试。"}(${resp.status})`) as Error & { status?: number };
+    const error = new Error(`${envelope?.message || "Xóa tài liệu thất bại, vui lòng thử lại sau."}(${resp.status})`) as Error & { status?: number };
     error.status = resp.status;
     throw error;
   }
   return unwrapEnvelope(await resp.json());
 }
 
-// 对馆藏文档发起"以后再翻":复用文档已存的 upload 起 book 翻译 job。
-// 后端 translate_document 会注入该文档的 upload_id 并把 workflow 归一到 book/translate,
-// 前端只需带一个最小 CreateJobInput(workflow 缺省即 book)。返回 JobSubmissionView。
+// Khởi tạo "Dịch sau" cho tài liệu lưu trữ: tái sử dụng upload đã lưu của tài liệu để bắt đầu job dịch book.
+// Backend translate_document sẽ tiêm upload_id của tài liệu và chuẩn hóa workflow về book/translate,
+// Frontend chỉ cần mang theo CreateJobInput tối thiểu (workflow mặc định là book). Trả về JobSubmissionView.
 export async function translateDocument(
   apiPrefix: string,
   documentId: string,
@@ -170,7 +170,7 @@ export async function translateDocument(
 ): Promise<JobSubmissionView> {
   const normalized = `${documentId || ""}`.trim();
   if (!normalized) {
-    throw new Error("缺少 document_id。");
+    throw new Error("Thiếu document_id.");
   }
   if (isMockMode()) {
     return translateMockDocument(normalized);
@@ -188,7 +188,7 @@ export async function translateDocument(
   );
   if (!resp.ok) {
     const envelope = await resp.json().catch(() => null);
-    throw new Error(`${envelope?.message || "发起翻译失败，请稍后重试。"}(${resp.status})`);
+    throw new Error(`${envelope?.message || "Bắt đầu dịch thất bại, vui lòng thử lại sau."}(${resp.status})`);
   }
   return unwrapEnvelope<JobSubmissionView>(await resp.json());
 }

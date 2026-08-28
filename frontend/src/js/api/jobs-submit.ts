@@ -6,10 +6,10 @@ function isObject(value) {
 
 function assertGroupedJobPayload(payload) {
   if (!isObject(payload)) {
-    throw new Error("提交失败: /api/v1/jobs 需要 JSON object 请求体。");
+    throw new Error("Gửi thất bại: /api/v1/jobs yêu cầu JSON object request body.");
   }
   if (!payload.workflow || !isObject(payload.source)) {
-    throw new Error("提交失败: /api/v1/jobs 必须使用 grouped JSON，至少包含 workflow 和 source。");
+    throw new Error("Gửi thất bại: /api/v1/jobs phải sử dụng grouped JSON, ít nhất chứa workflow và source.");
   }
   const legacyTopLevelFields = [
     "upload_id",
@@ -35,7 +35,7 @@ function assertGroupedJobPayload(payload) {
   const leakedLegacyFields = legacyTopLevelFields.filter((field) => field in payload);
   if (leakedLegacyFields.length > 0) {
     throw new Error(
-      `提交失败: /api/v1/jobs 不再接受旧扁平字段，发现 ${leakedLegacyFields.join(", ")}。请改为 source/ocr/translation/render/runtime 分组结构。`,
+      `Gửi thất bại: /api/v1/jobs không còn chấp nhận các trường phẳng cũ, phát hiện ${leakedLegacyFields.join(", ")}. Vui lòng đổi sang cấu trúc nhóm source/ocr/translation/render/runtime.`,
     );
   }
 }

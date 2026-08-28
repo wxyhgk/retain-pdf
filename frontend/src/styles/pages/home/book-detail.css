@@ -1,11 +1,12 @@
-/* 书籍详情弹窗 + 内嵌进度卡（从 library-shell 拆出）
- * 前缀：.book-detail-* / .bd-job-status-* / #book-detail-job-status-card
- * 书架卡徽标 .book-card-*、mock banner 仍在 library-shell.css
+/* Popup chi tiết sách + thẻ tiến trình nhúng (tách từ library-shell)
+ * Tiền tố: .book-detail-* / .bd-job-status-* / #book-detail-job-status-card
+ * Huy hiệu thẻ giá sách .book-card-* và mock banner vẫn ở library-shell.css
  */
 
-/* ========== 书籍详情右栏 Tabs + 内嵌完整 StatusCard ========== */
+/* ========== Tabs cột phải chi tiết sách + StatusCard đầy đủ nhúng ========== */
 
-/* 裸 tab 组：去掉灰壳容器（原 border+bg 让头部像个输入框），激活态才有实底药丸 */
+/* Nhóm tab trần: bỏ vỏ xám (border+bg cũ khiến đầu giống ô nhập), chỉ trạng thái
+   đang chọn mới có pill nền đặc */
 .book-detail-right-tabs-list {
   display: inline-flex;
   max-width: calc(100% - 4px);
@@ -60,12 +61,13 @@
   background: var(--ink) !important;
 }
 
-/* 翻译 Tab 宿主 */
+/* Vùng chứa tab dịch */
 .book-detail-translate-workspace {
   min-width: 0;
 }
 
-/* 空态 StageFlow = 路线图预览：描边药丸代替禁用灰底（避免灰上灰的 disabled 感） */
+/* StageFlow trống = xem trước lộ trình: pill viền thay nền xám vô hiệu
+   (tránh cảm giác disabled xám trên xám) */
 .book-translate-progress[data-state="idle"] .status-stage-step {
   background: transparent;
   border: 1px dashed color-mix(in srgb, var(--muted) 45%, var(--line));
@@ -81,8 +83,9 @@
 }
 
 /*
- * #book-detail-job-status-card 内部布局（bd-job-status-*）
- * 与主流程 .status-card-shell / .status-progress-hero 完全隔离，高度固定不抖。
+ * Bố cục bên trong #book-detail-job-status-card (bd-job-status-*)
+ * hoàn toàn tách khỏi .status-card-shell / .status-progress-hero của quy trình
+ * chính, chiều cao cố định không rung.
  */
 #book-detail-job-status-card.bd-job-status-card,
 .bd-job-status-card {
@@ -104,7 +107,7 @@
   gap: 12px;
   padding: 14px;
   box-sizing: border-box;
-  /* head + flow + main(进度条+重试) + error */
+  /* head + flow + main (thanh tiến trình + thử lại) + error */
   min-height: 248px;
 }
 
@@ -166,7 +169,8 @@
   flex: 0 0 auto;
 }
 
-/* 主区：进度文案 + 进度条（重试改到 StageFlow 阶段左侧） */
+/* Vùng chính: chữ tiến trình + thanh tiến trình (thử lại chuyển sang bên trái
+   giai đoạn trong StageFlow) */
 .bd-job-status-main {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -191,7 +195,7 @@
   overflow: hidden;
 }
 
-/* 标题行：左文案 + 右「重新 xxx」 */
+/* Dòng tiêu đề: chữ bên trái + "Thực hiện lại xxx" bên phải */
 .bd-job-status-value-row {
   display: flex;
   align-items: center;
@@ -211,7 +215,7 @@
   white-space: nowrap;
 }
 
-/* 进度区动作：轮廓小按钮，不抢主进度 */
+/* Thao tác vùng tiến trình: nút viền nhỏ, không lấn tiến trình chính */
 .bd-job-status-retry-action {
   appearance: none;
   flex: 0 0 auto;
@@ -306,7 +310,7 @@
   display: none;
 }
 
-/* 详情内嵌 StageFlow：四枚 pill 一行，干净无重试 */
+/* StageFlow nhúng trong chi tiết: bốn pill trên một dòng, gọn và không có thử lại */
 #book-detail-job-status-card .status-stage-flow,
 .bd-job-status-card .status-stage-flow {
   width: 100%;

@@ -90,7 +90,7 @@ pub async fn store_pdf_upload(
         content_hash,
     };
     db.save_upload(&record)?;
-    // 内容哈希即文档身份:同一 PDF 重复上传归并到同一 document
+    // Hàm băm nội dung là nhận dạng tài liệu:Tương tự PDF Trùng lặp quá trình hợp nhất tải lên thànhTương tự document
     db.upsert_document_from_upload(&record)?;
     Ok(record)
 }

@@ -1,73 +1,73 @@
-# prunedResult 结构与 normalized_document_v1 值映射
+# Cấu trúc prunedResult và ánh xạ giá trị với normalized_document_v1
 
-该 README 针对 `rust_api/src/ocr_provider/paddle/json_full.json` 中 `layoutParsingResults[*].prunedResult` 的输出而写，供 adapter 实现者快速定位 key 字段、理解语义与归一化时的映射思路；同时指明哪些字段适合作为 trace/debug 保留。
+Tài liệu README này được viết cho đầu ra `layoutParsingResults[*].prunedResult` trong `rust_api/src/ocr_provider/paddle/json_full.json`, nhằm giúp người triển khai adapter nhanh chóng xác định các trường chính, hiểu ngữ nghĩa và tư duy ánh xạ khi chuẩn hóa; đồng thời chỉ rõ những trường nào phù hợp để giữ lại làm trace/debug.
 
-## JSON 层级
+## Cấp bậc JSON
 
-- `layoutParsingResults` 是 Paddle OCR 在同一份输入上可能产生的多套 layout 结果（通常会有若干 `split`/`merge` 版本）
-- 每个条目都含 `prunedResult`（我们关心的归一化起点）以及源码的 `markdown`/`outputImages`/`inputImage` 等调试片段
-- `prunedResult` 直接包含：
-  - `page_count`（总页数）
-  - `width`、`height`（当前 layout 解析对应的画布尺寸，单位 px）
-  - `model_settings`（此轮推理使用的各类开关，用于复现/排错）
-  - `parsing_res_list`（Paddle 原生的 block 结构列表）
-  - `layout_det_res`（底层 layout detector 的 box 输出，便于 trace 到具体检测结果）
+- `layoutParsingResults` là nhiều bộ kết quả layout mà Paddle OCR có thể tạo ra trên cùng một đầu vào (thường sẽ có một số phiên bản `split`/`merge`)
+- Mỗi mục đều chứa `prunedResult` (điểm khởi đầu chuẩn hóa mà chúng ta quan tâm) cùng các đoạn gỡ lỗi từ mã nguồn như `markdown`/`outputImages`/`inputImage`
+- `prunedResult` trực tiếp bao gồm:
+  - `page_count` (tổng số trang)
+  - `width`, `height` (kích thước canvas tương ứng với kết quả phân tích layout hiện tại, đơn vị px)
+  - `model_settings` (các thiết lập được sử dụng trong lượt suy luận này, dùng để tái hiện/gỡ lỗi)
+  - `parsing_res_list` (danh sách cấu trúc block gốc của Paddle)
+  - `layout_det_res` (đầu ra box của bộ phát hiện layout tầng dưới, thuận tiện cho việc trace đến kết quả phát hiện cụ thể)
 
-## 关键字段说明
+## Mô tả trường chính
 
 ### `page_count` / `width` / `height`
-- 直接提供 document 级的页数和画布尺寸，建议在 normalized document 中映射到 `document.page_count` 以及每页默认的 `page.width/page.height`，用于 overflow/缩放判断。
+- Cung cấp trực tiếp số trang và kích thước canvas ở cấp độ tài liệu, khuyến nghị ánh xạ đến `document.page_count` cũng như `page.width/page.height` mặc định của mỗi trang trong tài liệu đã chuẩn hóa, dùng để đánh giá tràn/co giãn.
 
 ### `model_settings`
-- 包含本次解析的开关字段，字段名与实际值如下：
-  - `use_doc_preprocessor`: 是否使用文档预处理
-  - `use_layout_detection`: 是否启用了 layout 检测器
-  - `use_chart_recognition`: 是否尝试识别图表
-  - `use_seal_recognition`: 是否开启印章识别
-  - `use_ocr_for_image_block`: 是否对 image block 再做 OCR
-  - `format_block_content`: 是否对文本内容执行格式化（如 trim）
-  - `merge_layout_blocks`: 是否合并 layout 中相邻的 block
-  - `markdown_ignore_labels`: 对应 markdown 生成时会忽略的 block label，例如 `number/footnote/header/...`
-  - `return_layout_polygon_points`: 是否在每个 block 中附带 polygon 信息
-- 建议将该结构作为 adapter 的 trace metadata（写入 normalized document 的 `meta.ocr_settings` 或类似字段），以便后续问题追踪或与 Rust layer 的 `normalization_report` 对齐。
+- Chứa các trường thiết lập cho lần phân tích này, tên trường và giá trị thực tế như sau:
+  - `use_doc_preprocessor`: Có sử dụng tiền xử lý tài liệu không
+  - `use_layout_detection`: Có bật bộ phát hiện layout không
+  - `use_chart_recognition`: Có thử nhận diện biểu đồ không
+  - `use_seal_recognition`: Có bật nhận diện dấu đóng không
+  - `use_ocr_for_image_block`: Có thực hiện OCR lại trên image block không
+  - `format_block_content`: Có thực hiện định dạng nội dung văn bản không (như trim)
+  - `merge_layout_blocks`: Có hợp nhất các block liền kề trong layout không
+  - `markdown_ignore_labels`: Nhãn block sẽ bị bỏ qua khi tạo markdown, ví dụ `number/footnote/header/...`
+  - `return_layout_polygon_points`: Có đính kèm thông tin polygon trong mỗi block không
+- Khuyến nghị coi cấu trúc này là metadata trace của adapter (ghi vào trường `meta.ocr_settings` của tài liệu đã chuẩn hóa hoặc trường tương tự), để thuận tiện cho việc theo dõi vấn đề sau này hoặc đồng bộ với `normalization_report` của lớp Rust.
 
 ### `parsing_res_list`
-- 核心的 block 列表，是 normalized_document 的第一手输入。每项字段：
-  - `block_label`: Paddle 预测的 label（如 `header/paragraph_title/text/table/figure_title/footer`），可以映射到 normalized block 的 `type`/`sub_type` 或 `tags`
-  - `block_content`: 文字内容，直接填入 normalized block 的 `text_content` 或 `lines` 之类字段
-  - `block_bbox`: `[x0,y0,x1,y1]`，对应 block 的 axis-aligned bounding box
-  - `block_polygon_points`: 同 `block_bbox`，但支持 polygon（每个 point 为 `[x,y]`），适合落在 normalized block 的 `polygon` 字段
-  - `block_id`、`group_id`：局部 block/组 ID，可用于生成 normalized block 的 `provider_id` 或 `group_id`
-  - `global_block_id`、`global_group_id`: 含全局偏移的 ID，在多个 layout 版本/页之间保持唯一，建议在 normalized document 中作为 `meta.global_id` 追踪
-  - `block_order`: Paddle 推断的阅读顺序（此示例中部分值为 `null`），可用来填充 `normalized_document.pages[].items[].order`
-- 建议 adapter 采用如下思路：
-  1. 将 `parsing_res_list` 按 `block_order` 或 `block_id` 分页划分（若存在 `group_id`，可作为 `Page.blocks` 的 `group` 维度）
-  2. 使用 `block_label` 区分类别（`header`/`paragraph_title`/`text` 等），确定 normalized block 的 `type/sub_type`（例如 `text` 核心内容，`paragraph_title` 可当作 `title` 类型）
-  3. `block_content` 直接赋值为 normalized block 的 `text`，并保留 `block_polygon_points` 作为 `geometry.polygon`
-  4. `block_bbox` 同步填充到 normalized block 的 `bounding_box`，以便前端/渲染复用
+- Danh sách block cốt lõi, là đầu vào trực tiếp của normalized_document. Mỗi mục có các trường:
+  - `block_label`: Nhãn do Paddle dự đoán (như `header/paragraph_title/text/table/figure_title/footer`), có thể ánh xạ đến `type`/`sub_type` hoặc `tags` của block đã chuẩn hóa
+  - `block_content`: Nội dung văn bản, điền trực tiếp vào trường `text_content` hoặc `lines` của block đã chuẩn hóa
+  - `block_bbox`: `[x0,y0,x1,y1]`, tương ứng với axis-aligned bounding box của block
+  - `block_polygon_points`: Tương tự `block_bbox`, nhưng hỗ trợ polygon (mỗi điểm là `[x,y]`), phù hợp để đưa vào trường `polygon` của block đã chuẩn hóa
+  - `block_id`, `group_id`: ID block/nhóm cục bộ, có thể dùng để tạo `provider_id` hoặc `group_id` cho block đã chuẩn hóa
+  - `global_block_id`, `global_group_id`: ID chứa offset toàn cục, duy trì tính duy nhất giữa các phiên bản layout/trang, khuyến nghị theo dõi như `meta.global_id` trong tài liệu đã chuẩn hóa
+  - `block_order`: Thứ tự đọc do Paddle suy luận (một số giá trị trong ví dụ này là `null`), có thể dùng để điền vào `normalized_document.pages[].items[].order`
+- Khuyến nghị adapter áp dụng tư duy sau:
+  1. Phân chia `parsing_res_list` theo trang dựa trên `block_order` hoặc `block_id` (nếu có `group_id`, có thể dùng làm chiều `group` của `Page.blocks`)
+  2. Sử dụng `block_label` để phân biệt loại (như `header`/`paragraph_title`/`text`), xác định `type/sub_type` của block đã chuẩn hóa (ví dụ `text` là nội dung chính, `paragraph_title` có thể coi là loại `title`)
+  3. Gán `block_content` trực tiếp cho trường `text` của block đã chuẩn hóa, và giữ lại `block_polygon_points` làm `geometry.polygon`
+  4. Đồng bộ `block_bbox` vào `bounding_box` của block đã chuẩn hóa, để frontend/render có thể tái sử dụng
 
 ### `layout_det_res`
-- 包含 layout detector 原始 box，当前结构是：
-  - `boxes`: list of objects
-  - 每个 box 拥有 `cls_id`（分类器 ID）、`label`（类别名称）、`score`（置信度）、`coordinate`（`[x0,y0,x1,y1]`）、`order`（预测阅读顺序，可为 `null`）、`polygon_points`
-- 建议 adapter 将 `layout_det_res` 作为原始检测 trace：
-  - 可在 normalized document 的 `meta.raw_traces.layout_det_res` 中保留 `boxes`，便于回溯 label 与 score
-  - `coordinate` / `polygon_points` 对应 `parsing_res_list` 的 geometry，可用于验证两者是否一致（如 `merge_layout_blocks` 开启时会产生差异）
-  - `score` 适合写入 trace 而非 normalized block 的核心字段，保持 `document.normalization_trace` 供排查漏检/误检
+- Chứa box gốc của bộ phát hiện layout, cấu trúc hiện tại là:
+  - `boxes`: danh sách các đối tượng
+  - Mỗi box có `cls_id` (ID phân loại), `label` (tên loại), `score` (độ tin cậy), `coordinate` (`[x0,y0,x1,y1]`), `order` (thứ tự đọc dự đoán, có thể là `null`), `polygon_points`
+- Khuyến nghị adapter coi `layout_det_res` là trace phát hiện gốc:
+  - Có thể giữ lại `boxes` trong `meta.raw_traces.layout_det_res` của tài liệu đã chuẩn hóa, thuận tiện cho việc truy vết label và score
+  - `coordinate` / `polygon_points` tương ứng với geometry của `parsing_res_list`, có thể dùng để kiểm tra tính nhất quán giữa hai bên (ví dụ khi bật `merge_layout_blocks` sẽ tạo ra sự khác biệt)
+  - `score` phù hợp để ghi vào trace thay vì trường cốt lõi của block đã chuẩn hóa, duy trì `document.normalization_trace` để phục vụ việc kiểm tra bỏ sót/nhận diện sai
 
-## 适配建议
+## Khuyến nghị triển khai
 
-1. Adapter 首先读 `page_count`/`width`/`height` 作为 normalized document 的基本页面信息；`layout_det_res.boxes` 可同步提供 `page_count` 的上下游一致性校验。
-2. `parsing_res_list` 每项生成一个 normalized block，`block_label` 决定 `type`（如 `table`、`image`、`text`），`block_content` 变成主要文本内容，`block_order`/`group_id` 用于构建 block 的阅读顺序/分群。
-3. 所有 polygon/bbox/cursor 相关字段（`block_bbox` + `block_polygon_points` + `layout_det_res.boxes coordinate/polygon_points`）都应该同步贴到 normalized block 的 geometry 和 trace，避免不同入口对坐标的理解แตก开。
-4. `model_settings` 和 `layout_det_res` 直接写 a debug trace（例如 `normalized_document.meta.provider_trace.paddle.pruned_result`），以便在 `normalization_report` 中复现该字段；只有 `parsing_res_list` 的 `block_content`/`label`/`geometry` 才需要真正映射到 normalized document 主链路。
-5. 如果后续走 `normalized_document_v1` 的 schema，建议在 `blocks[].meta` 里保存原始的 `block_id/global_block_id` 和 `group_id/global_group_id`，以便与不同 provider 的 ID 做对齐。
+1. Adapter trước tiên đọc `page_count`/`width`/`height` làm thông tin trang cơ bản của tài liệu đã chuẩn hóa; `layout_det_res.boxes` có thể đồng thời cung cấp kiểm tra tính nhất quán đầu cuối cho `page_count`.
+2. Mỗi mục trong `parsing_res_list` tạo ra một block đã chuẩn hóa, `block_label` quyết định `type` (như `table`, `image`, `text`), `block_content` trở thành nội dung văn bản chính, `block_order`/`group_id` dùng để xây dựng thứ tự đọc/phân nhóm cho block.
+3. Tất cả các trường liên quan đến polygon/bbox/cursor (`block_bbox` + `block_polygon_points` + `layout_det_res.boxes coordinate/polygon_points`) đều nên được đồng bộ vào geometry và trace của block đã chuẩn hóa, tránh việc hiểu sai tọa độ từ các đầu vào khác nhau.
+4. `model_settings` và `layout_det_res` ghi trực tiếp vào trace gỡ lỗi (ví dụ `normalized_document.meta.provider_trace.paddle.pruned_result`), để thuận tiện tái hiện trường này trong `normalization_report`; chỉ có `block_content`/`label`/`geometry` của `parsing_res_list` mới thực sự cần ánh xạ vào luồng chính của tài liệu đã chuẩn hóa.
+5. Nếu sau này sử dụng schema `normalized_document_v1`, khuyến nghị lưu các giá trị gốc `block_id/global_block_id` và `group_id/global_group_id` trong `blocks[].meta`, để thuận tiện đồng bộ ID với các provider khác.
 
-## Trace 保留的字段
+## Các trường cần giữ lại cho trace
 
-- `model_settings`：完整保存，便于对齐实验参数与 `normalization_summary`
-- `layout_det_res.boxes`：作为 `debug.traces.layout_detector`，保留 `label/score/coordinate/order`
-- `parsing_res_list` 中的 `block_polygon_points` 与 `block_id` 是往后排错时定位 block 的基础
-- 其余如 `global_block_id/global_group_id` 可直接写入 `blocks[].meta.source_ids`
+- `model_settings`: Lưu giữ đầy đủ, thuận tiện cho việc đồng bộ tham số thí nghiệm với `normalization_summary`
+- `layout_det_res.boxes`: Dùng làm `debug.traces.layout_detector`, giữ lại `label/score/coordinate/order`
+- `block_polygon_points` và `block_id` trong `parsing_res_list` là cơ sở để định vị block khi gỡ lỗi sau này
+- Các trường còn lại như `global_block_id/global_group_id` có thể ghi trực tiếp vào `blocks[].meta.source_ids`
 
-保持以上约定，能让 adapter 在生成 normalized document 时既不丢失 Paddle 提供的细粒度语义，也能在 trace 中完整还原 detection 过程，便于后续渲染、调试和 schema 回归。
+Tuân thủ các quy ước trên sẽ giúp adapter khi tạo tài liệu đã chuẩn hóa vừa không làm mất đi ngữ nghĩa chi tiết do Paddle cung cấp, vừa có thể tái hiện đầy đủ quá trình detection trong trace, thuận tiện cho việc render, gỡ lỗi và hồi quy schema sau này.

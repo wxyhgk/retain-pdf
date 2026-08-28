@@ -28,10 +28,10 @@ export interface LibrarySearchAppHandle {
   unmount: () => void;
 }
 
-// React 岛约定(试点):
-// - 宿主是普通 light-DOM 自定义元素,负责与既有页面的耦合(监听搜索框、派发契约事件);
-// - React 应用经动态 import 惰性加载:首个非空查询才拉起,node 测试环境不解析 JSX;
-// - 数据经 ports 注入,组件内不直接 import api 层。
+// Quy ước React island (thí điểm):
+// - Host là một custom element light-DOM thông thường, chịu trách nhiệm kết nối với trang hiện có (lắng nghe ô tìm kiếm, phát sự kiện contract);
+// - Ứng dụng React được tải lười qua dynamic import: chỉ tải khi có truy vấn không rỗng đầu tiên, môi trường test node không parse JSX;
+// - Dữ liệu được inject qua ports, không import trực tiếp lớp api trong component.
 class LibrarySearchIsland extends HTMLElement {
   querySubscribers: Set<LibrarySearchQuerySubscriber>;
   appPromise: Promise<LibrarySearchAppHandle | null> | null;
@@ -100,8 +100,8 @@ class LibrarySearchIsland extends HTMLElement {
         .then((module) => module.mountLibrarySearchApp(this, this.buildPorts()))
         .catch((error) => {
           this.appPromise = null;
-          // node 测试环境无法解析 JSX,这里静默降级;浏览器构建产物已内联该模块
-          console.error("library-search island 加载失败", error);
+          // Môi trường test node không thể parse JSX, ở đây hạ cấp im lặng; sản phẩm build trình duyệt đã inline module này
+          console.error("Tải library-search island thất bại", error);
           return null;
         });
     }
@@ -109,9 +109,9 @@ class LibrarySearchIsland extends HTMLElement {
   }
 }
 
-// node --test 环境下部分组件测试直接 import HomeApp.jsx 而不搭建完整 jsdom
-// window(customElements 未定义)。守卫不影响真实浏览器行为——customElements
-// 在浏览器/jsdom 里恒存在。
+// Trong môi trường node --test, một số test component import trực tiếp HomeApp.jsx mà không dựng toàn bộ jsdom
+// window(customElements chưa định nghĩa). Guard này không ảnh hưởng hành vi trình duyệt thực tế — customElements
+// luôn tồn tại trong trình duyệt/jsdom.
 if (typeof customElements !== "undefined" && !customElements.get("library-search-island")) {
   customElements.define("library-search-island", LibrarySearchIsland);
 }

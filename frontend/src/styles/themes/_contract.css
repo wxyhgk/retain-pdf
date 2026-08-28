@@ -1,28 +1,28 @@
 /*
- * 皮肤契约：每个 themes/<id>.css 必须为 [data-theme="<id>"] 定义下列变量。
- * classic 同时写在 :root，保证未设置 data-theme 时也有默认值。
+ * Hợp đồng skin: mỗi themes/<id>.css phải định nghĩa các biến sau cho [data-theme="<id>"].
+ * classic cũng được viết trong :root, đảm bảo có giá trị mặc định khi chưa set data-theme.
  *
- * 必选：
+ * Bắt buộc:
  *   --bg --paper --surface --ink --muted --line
  *   --accent --accent-weak --selection
  *   --danger --danger-weak --ok --ok-weak --warn --warn-weak
  *   --gold --gold-weak --chrome --reader-page
- *   --shadow-color（阴影基色：浅色皮肤用深 slate，深色皮肤用纯黑；
- *                   组件写阴影一律 color-mix(in srgb, var(--shadow-color) N%, transparent)，
- *                   禁止 rgba(15,23,42,…) 字面量——见 tests/css-color-literals.test.mjs）
+ *   --shadow-color（màu nền bóng: skin sáng dùng slate đậm, skin tối dùng đen thuần；
+ *                   component viết bóng luôn dùng color-mix(in srgb, var(--shadow-color) N%, transparent)，
+ *                   cấm literal rgba(15,23,42,…) — xem tests/css-color-literals.test.mjs）
  *
- * 可选（未写则回退到上表语义）：
- *   --shadow-soft / 由 tailwind-theme 用固定 rgba 亦可
+ * Tùy chọn（nếu không viết thì fallback về ngữ nghĩa bảng trên）：
+ *   --shadow-soft / có thể dùng rgba cố định trong tailwind-theme
  *
- * L3 组件形态 token（可选，全部有默认值，见 ./_component-defaults.css）：
+ * L3 component shape token（tùy chọn, tất cả có giá trị mặc định, xem ./_component-defaults.css）：
  *   --btn-radius --btn-primary-bg --btn-primary-fg
  *   --panel-radius --stage-veil --ornament-line
- *   布局密度：--shell-pad-inline(-narrow) --header-width --header-gap-bottom
+ *   Mật độ layout: --shell-pad-inline(-narrow) --header-width --header-gap-bottom
  *             --stage-width --stage-pad --stage-shadow
- *   氛围材质（ambient-surface 消费，默认在其 html 块）：
+ *   Chất liệu atmosphere（ambient-surface tiêu thụ, mặc định trong block html của nó）：
  *             --mat-fiber --mat-fiber-2 --mat-edge --mat-center
- *   皮肤只覆盖想改的；不覆盖 = 现状观感。core 文件禁止点名主题 id。
+ *   Skin chỉ override những gì muốn đổi；không override = giữ nguyên quan sát hiện tại。core file cấm chỉ định theme id。
  *
- * 新增皮肤：复制 classic.css → 改色 → 在 index.css @import → registry.ts 登记。
- * 见 docs/theme-system/ADDING_A_THEME.md
+ * Thêm skin mới：copy classic.css → đổi màu → @import trong index.css → đăng ký trong registry.ts。
+ * Xem docs/theme-system/ADDING_A_THEME.md
  */

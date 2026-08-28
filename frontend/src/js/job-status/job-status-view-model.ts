@@ -33,7 +33,7 @@ export function buildJobStatusViewModel({
     status: job?.status || "idle",
     stagePresentation: resolvedStagePresentation,
     label: resolvedStagePresentation.label,
-    value: resolvedStagePresentation.detail || "准备中",
+    value: resolvedStagePresentation.detail || "Đang chuẩn bị",
     detail: "",
     stageKey: resolvedStagePresentation.stageKey,
     visualStageKey: resolvedStagePresentation.visualStageKey,

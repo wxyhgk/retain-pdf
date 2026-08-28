@@ -9,7 +9,7 @@ function formatSelection(selection: ReaderAiSelectionContext | ReaderSelection =
   const rect = selection.rect || {};
   const width = Math.round(Number(rect.width || 0));
   const height = Math.round(Number(rect.height || 0));
-  return `第 ${selection.page || "-"} 页 · ${width} × ${height}`;
+  return `Trang ${selection.page || "-"} · ${width} × ${height}`;
 }
 
 export function createReaderAiContext({
@@ -33,14 +33,14 @@ export function createReaderAiContext({
       return;
     }
     if (scope === "selection" && selection) {
-      contextEl.textContent = `当前选区：${formatSelection(selection)}`;
+      contextEl.textContent = `Vùng chọn hiện tại: ${formatSelection(selection)}`;
       return;
     }
     if (scope === "page" && selection?.page) {
-      contextEl.textContent = `当前页：第 ${selection.page} 页`;
+      contextEl.textContent = `Trang hiện tại: Trang ${selection.page}`;
       return;
     }
-    contextEl.textContent = "当前范围：整份文档";
+    contextEl.textContent = "Phạm vi hiện tại: Toàn bộ tài liệu";
   }
 
   function setScope(nextScope: string) {

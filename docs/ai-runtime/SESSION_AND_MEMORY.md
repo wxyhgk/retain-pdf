@@ -1,104 +1,103 @@
-# Session 与上下文压缩（B 草案）
+# Phiên và nén ngữ cảnh (Bản thảo B)
 
-**状态：** API / 数据形状草案 v0.1 · **B1 + B2 已落地**  
-**日期：** 2026-07-21  
-**依赖：** [AI_RUNTIME.md](./AI_RUNTIME.md)  
-**目标：** 多轮真正可用；长聊不爆上下文；证据（引用/图）跨轮可复用  
+**Trạng thái:** API / Hình dạng dữ liệu bản thảo v0.1 · **B1 + B2 đã triển khai**  
+**Ngày:** 2026-07-21  
+**Phụ thuộc:** [AI_RUNTIME.md](./AI_RUNTIME.md)  
+**Mục tiêu:** Nhiều vòng thực sự có thể sử dụng; hội thoại dài không làm tràn ngữ cảnh; bằng chứng (trích dẫn/hình ảnh) có thể tái sử dụng qua các vòng
 
-### B1 落地摘要（实现）
+### Tóm tắt triển khai B1 (thực hiện)
 
-| 项 | 位置 |
+| Hạng mục | Vị trí |
 |----|------|
 | AI auto-create + `done.conversation_id` | `retainpdf_ai/app.py` |
-| Rust create 客户端 | `retainpdf_ai/rust_client.py` |
-| 前端粘性存储 | `frontend/src/js/reader/ai/conversation-store.ts` |
-| ask 传/收 conversationId | `api/ai.ts` + `ask-answerer.ts` |
+| Rust tạo client | `retainpdf_ai/rust_client.py` |
+| Lưu trữ sticky frontend | `frontend/src/js/reader/ai/conversation-store.ts` |
+| ask gửi/nhận conversationId | `api/ai.ts` + `ask-answerer.ts` |
 
-### B2 落地摘要（实现）
+### Tóm tắt triển khai B2 (thực hiện)
 
-| 项 | 位置 |
+| Hạng mục | Vị trí |
 |----|------|
-| 抽取式压缩 `extractive_v1` | `retainpdf_ai/memory/compress.py` |
-| 窗口组装 | `retainpdf_ai/memory/assemble.py` |
+| Trích xuất nén `extractive_v1` | `retainpdf_ai/memory/compress.py` |
+| Lắp ráp cửa sổ | `retainpdf_ai/memory/assemble.py` |
 | SSE `compress` + `done.memory` | `retainpdf_ai/app.py` |
-| 配置 | `RETAIN_AI_MEMORY_WINDOW_TURNS` 等（见 config.py） |
-| 摘要落库 | assistant 消息，正文以 `【对话摘要】` 开头 |
-
+| Cấu hình | `RETAIN_AI_MEMORY_WINDOW_TURNS` v.v. (xem config.py) |
+| Lưu tóm tắt | tin nhắn assistant, nội dung bắt đầu bằng `【Tóm tắt hội thoại】` |
 
 ---
 
-## 1. 现状与缺口
+## 1. Hiện trạng và khoảng trống
 
-### 1.1 已有
+### 1.1 Đã có
 
-| 能力 | 位置 |
+| Năng lực | Vị trí |
 |------|------|
-| Rust 会话 CRUD | `/api/v1/ai/conversations` |
-| 消息追加 | `.../messages`（user/assistant + citations_json + tool_trace_json） |
-| AI 读历史 | `load_history` → **最近 12 条** `role+content` |
-| AI 回写 | `persist_turn` 写 user + assistant |
+| Rust CRUD phiên | `/api/v1/ai/conversations` |
+| Thêm tin nhắn | `.../messages` (user/assistant + citations_json + tool_trace_json) |
+| AI đọc lịch sử | `load_history` → **12 tin nhắn gần nhất** `role+content` |
+| AI ghi lại | `persist_turn` ghi user + assistant |
 
-### 1.2 缺口
+### 1.2 Khoảng trống
 
-1. 前端阅读器 **常不传 / 不创建 `conversation_id`** → 实际多轮无状态。  
-2. 历史 **只塞原文**，无摘要、无 evidence 包 → 长了既贵又丢结构。  
-3. `tool_trace` 落库但 **不回灌模型**（正确，但需要别的形式保留证据）。  
-4. 无 **压缩事件**，用户不知道「早期轮次被摘要了」。  
-5. 无统一 **memory 视图**（给 runtime 的 `messages[]` 与给存储的 transcript 未分层）。
+1. Trình đọc frontend **thường không gửi / tạo `conversation_id`** → thực tế nhiều vòng không có trạng thái.  
+2. Lịch sử **chỉ nhét văn bản gốc**, không có tóm tắt, không có gói bằng chứng → dài vừa đắt vừa mất cấu trúc.  
+3. `tool_trace` được lưu nhưng **không được đưa lại vào mô hình** (đúng, nhưng cần hình thức khác để giữ bằng chứng).  
+4. Không có **sự kiện nén**, người dùng không biết "các vòng đầu đã được tóm tắt".  
+5. Không có **view memory** thống nhất ( `messages[]` cho runtime và transcript cho lưu trữ chưa được phân tầng).
 
 ---
 
-## 2. 概念分层
+## 2. Phân tầng khái niệm
 
 ```text
-Transcript（持久化，Rust）
-  = 用户可见的完整对话记录（可含 summary 消息）
+Transcript (lưu trữ, Rust)
+  = Bản ghi hội thoại đầy đủ người dùng thấy (có thể chứa tin nhắn tóm tắt)
 
-MemoryView（运行时，AI 内存中拼装）
-  = 本轮喂给 LLM 的 messages[]
+MemoryView (runtime, lắp ráp trong bộ nhớ AI)
+  = messages[] được đưa vào LLM
   = f(Transcript, EvidenceStore, CompressPolicy)
 
-EvidenceStore（运行时 + 可选快照落库）
-  = 本会话累积的 EvidenceItem（按 ref 或按 content hash）
+EvidenceStore (runtime + có thể snapshot lưu)
+  = EvidenceItem tích lũy của phiên (theo ref hoặc hash nội dung)
 ```
 
-原则：
+Nguyên tắc:
 
-- **Transcript 求真**（可回放 UI）  
-- **MemoryView 求省**（可截断、可替换为 summary）  
-- **Evidence 求稳**（[ n ] 与锚点跨轮尽量稳定）
+- **Transcript giữ nguyên** (có thể phát lại UI)  
+- **MemoryView tối giản** (có thể cắt, có thể thay thế bằng tóm tắt)  
+- **Evidence ổn định** ( [ n ] và anchor ổn định qua các vòng)
 
 ---
 
-## 3. 数据形状
+## 3. Hình dạng dữ liệu
 
-### 3.1 Conversation（Rust，已有可扩展）
+### 3.1 Conversation (Rust, đã có thể mở rộng)
 
 ```json
 {
   "conversation_id": "conv_...",
   "document_id": "doc_...",
   "job_id": "2026...",
-  "title": "可选自动标题",
+  "title": "Tự động hoặc do người dùng đặt",
   "skill_id": "literature-qa",
   "created_at": "...",
   "updated_at": "..."
 }
 ```
 
-扩展字段（建议）：
+Các trường mở rộng (đề xuất):
 
-| 字段 | 说明 |
+| Trường | Giải thích |
 |------|------|
-| `document_id` / `job_id` | 会话默认 scope（阅读器创建时写入） |
-| `skill_id` | 默认 skill |
-| `memory_json` | 可选：压缩状态 `{ "summary": "...", "through_message_id": "..." }` |
+| `document_id` / `job_id` | Phạm vi mặc định của phiên (ghi khi tạo bởi trình đọc) |
+| `skill_id` | Skill mặc định |
+| `memory_json` | Tùy chọn: trạng thái nén `{ "summary": "...", "through_message_id": "..." }` |
 
-### 3.2 Message（Rust）
+### 3.2 Message (Rust)
 
-现有大致：`role`, `content`, `citations_json`, `tool_trace_json`, `model`, timestamps。
+Hiện có: `role`, `content`, `citations_json`, `tool_trace_json`, `model`, thời gian.
 
-**建议扩展 `metadata_json`（对象序列化）**：
+**Đề xuất mở rộng `metadata_json` (đối tượng JSON)**:
 
 ```json
 {
@@ -114,15 +113,15 @@ EvidenceStore（运行时 + 可选快照落库）
 }
 ```
 
-| kind | role 建议 | 用途 |
+| kind | role gợi ý | Công dụng |
 |------|-----------|------|
-| `turn` | user / assistant | 正常问答（默认） |
-| `summary` | `assistant` 或专用 `system` | 压缩后的历史摘要（UI 可折叠显示「已压缩 N 轮」） |
-| `system_note` | system | 调试/策略说明，默认不对用户展示 |
+| `turn` | user / assistant | Hỏi đáp thông thường (mặc định) |
+| `summary` | `assistant` hoặc `system` chuyên biệt | Tóm tắt lịch sử đã nén (UI có thể thu gọn hiển thị "đã nén N vòng") |
+| `system_note` | system | Gỡ lỗi/thông tin chiến lược, mặc định không hiển thị cho người dùng |
 
-**兼容：** 无 `metadata_json` 的旧消息视为 `kind=turn`。
+**Tương thích:** Tin nhắn cũ không có `metadata_json` được coi là `kind=turn`.
 
-### 3.3 EvidenceSnapshot（可嵌在 assistant metadata 或独立表）
+### 3.3 EvidenceSnapshot (có thể nhúng trong metadata assistant hoặc bảng riêng)
 
 ```json
 {
@@ -142,14 +141,14 @@ EvidenceStore（运行时 + 可选快照落库）
 }
 ```
 
-同一会话内 **ref 单调递增不回收**（避免「[2] 上轮是 A 这轮是 B」）。  
-若必须回收，UI 只展示本轮 `citations`，历史气泡绑定当时 snapshot。
+Trong cùng phiên, **ref tăng đơn điệu không thu hồi** (tránh «[2] vòng trước là A, vòng này là B»).  
+Nếu bắt buộc phải thu hồi, UI chỉ hiển thị `citations` của vòng hiện tại, bong bóng lịch sử gắn với snapshot lúc đó.
 
 ---
 
-## 4. Memory 组装算法（B2 核心）
+## 4. Thuật toán lắp ráp Memory (cốt lõi B2)
 
-### 4.1 输入
+### 4.1 Đầu vào
 
 ```text
 assemble_memory(
@@ -160,83 +159,83 @@ assemble_memory(
 ) -> { messages: ChatMessage[], evidence: EvidenceItem[], debug }
 ```
 
-### 4.2 策略 `extractive_v1`（默认，不依赖 LLM 摘要）
+### 4.2 Chiến lược `extractive_v1` (mặc định, không dùng LLM tóm tắt)
 
 ```text
-1. 分离：
-   - summaries = kind==summary 的消息（按时间）
-   - turns = kind==turn 的 user/assistant 对
+1. Tách:
+   - summaries = tin nhắn kind==summary (theo thời gian)
+   - turns = cặp user/assistant kind==turn
 
-2. 取「最新 summary」S（若有），它覆盖 through 某 message_id 之前的内容。
+2. Lấy «tóm tắt mới nhất» S (nếu có), nó bao phủ nội dung trước message_id đó.
 
-3. 近期窗口 W：
-   - 取 S 之后的 turns，再截断为最近 K 轮（默认 K=6 轮 = 12 条消息）
-   - 单条 content 超长则 clip（user 2k / assistant 3k 字符硬顶）
+3. Cửa sổ gần đây W:
+   - Lấy các turn sau S, cắt xuống K vòng gần nhất (mặc định K=6 vòng = 12 tin nhắn)
+   - Nếu một tin nhắn quá dài thì cắt (user 2k / assistant 3k ký tự)
 
-4. Evidence 包 E：
-   - 合并 W 内 assistant 的 citations / evidence_snapshot
-   - 上限 max_evidence_items（默认 24）
-   - 优先保留：被最近一轮引用到的 ref > 较新 > 有 image_urls 的
+4. Gói Evidence E:
+   - Hợp nhất citations / evidence_snapshot từ assistant trong W
+   - Giới hạn max_evidence_items (mặc định 24)
+   - Ưu tiên: ref được tham chiếu bởi vòng gần nhất > mới hơn > có image_urls
 
-5. 拼 messages：
+5. Ghép messages:
    [ system = skill.system_prompt + scope_lock_text ]
    [ developer? = skill.developer ]
-   if S: [ {role:user, content: "以下是更早对话的摘要，请当作已知背景：\n"+S.content } ]
-          [ {role:assistant, content: "好的，我将基于摘要与新问题继续。" } ]  # 可选稳定前缀
-   for m in W: append role/content
-   if E:  append 一条隐藏/user 工具式上下文？ → 否；
-          改为在 system 尾部附 "已知证据表"：
+   if S: [ {role:user, content: "Dưới đây là tóm tắt các vòng trước, hãy coi là bối cảnh đã biết:\n"+S.content } ]
+          [ {role:assistant, content: "Được, tôi sẽ dựa trên tóm tắt và câu hỏi mới để tiếp tục." } ]  # Tiền tố ổn định
+   for m in W: thêm role/content
+   if E:  thêm một ngữ cảnh ẩn/user tool? → Không;
+          thay vào đó gắn vào cuối system "Bảng bằng chứng đã biết":
           "E1 [1] p.4 block … snippet"
-          （控制在 ~2k 字符）
+          (kiểm soát ~2k ký tự)
 
-6. 若估算 tokens > budget：
-   - 先减 K（窗口）
-   - 再缩短 snippet
-   - 再触发 compress_now() 生成新 summary（见 4.3）
+6. Nếu ước lượng tokens > budget:
+   - Giảm K (cửa sổ)
+   - Rút ngắn snippet
+   - Kích hoạt compress_now() để tạo tóm tắt mới (xem 4.3)
 ```
 
-### 4.3 何时压缩 `compress_now`
+### 4.3 Khi nào nén `compress_now`
 
-触发条件（任一）：
+Điều kiện kích hoạt (bất kỳ):
 
-- `len(turns) > 2K`（例如 12 轮）  
-- 估算 prompt tokens > `0.55 * context_window`  
-- 显式请求 `force_compress: true`
+- `len(turns) > 2K` (ví dụ 12 vòng)  
+- Ước lượng prompt tokens > `0.55 * context_window`  
+- Yêu cầu rõ ràng `force_compress: true`
 
-**extractive 摘要内容模板：**
+**Mẫu tóm tắt trích xuất:**
 
 ```text
-【对话摘要】
-- 用户关注：…
-- 已确认结论：…（附 [n] 若有）
-- 未解决问题：…
-- 重要证据：
-  [1] p.3 … 
-  [2] p.7 …
+【Tóm tắt hội thoại】
+- Người dùng quan tâm:…
+- Kết luận đã xác nhận:… (kèm [n] nếu có)
+- Vấn đề chưa giải quyết:…
+- Bằng chứng quan trọng:
+  [1] tr.3 … 
+  [2] tr.7 …
 ```
 
-生成方式 v1：
+Cách tạo v1:
 
-1. 从被折叠的 turns 抽取：所有 user 问题（截断）、所有带 [n] 的 assistant 句、全部 citations  
-2. 规则拼接，**不调用 LLM**（稳、便宜、可测）  
-3. v2 可选：LLM 摘要 skill，失败回退 v1  
+1. Trích xuất từ các turn bị gấp: tất cả câu hỏi user (cắt), tất cả câu assistant có [n], toàn bộ citations
+2. Ghép theo quy tắc, **không gọi LLM** (ổn định, rẻ, kiểm thử được)
+3. v2 tùy chọn: LLM tóm tắt skill, nếu thất bại quay về v1
 
-压缩后：
+Sau khi nén:
 
-1. 向 Rust append `kind=summary` 消息  
-2. 更新 `conversation.memory_json.through_message_id`  
-3. SSE 发 `compress` 事件  
+1. Gửi tin nhắn `kind=summary` đến Rust  
+2. Cập nhật `conversation.memory_json.through_message_id`  
+3. Gửi sự kiện SSE `compress`
 
-### 4.4 Token 估算
+### 4.4 Ước lượng Token
 
-v1 使用廉价估算：`tokens ≈ chars / 3`（中英混合偏保守可 `/2.5`）。  
-不强制 tiktoken，避免 AI 服务重依赖。
+v1 dùng ước lượng rẻ: `tokens ≈ chars / 3` (hỗn hợp Trung-Anh có thể dùng `/2.5`).  
+Không bắt buộc dùng tiktoken, tránh phụ thuộc nặng vào dịch vụ AI.
 
 ---
 
-## 5. API 形状
+## 5. Hình dạng API
 
-### 5.1 保持兼容：`POST /v1/ask`（retainpdf-ai）
+### 5.1 Giữ tương thích: `POST /v1/ask` (retainpdf-ai)
 
 ```json
 {
@@ -253,21 +252,21 @@ v1 使用廉价估算：`tokens ≈ chars / 3`（中英混合偏保守可 `/2.5`
 }
 ```
 
-| 字段 | 现状 | B 后 |
+| Trường | Hiện tại | Sau B |
 |------|------|------|
-| `conversation_id` | 可选 | **阅读器应总是带**（无则后端可 auto-create 并在 done 返回） |
-| `skill_id` | 无 | 可选，默认 `literature-qa` |
-| `force_compress` | 无 | 可选 |
-| `history` 客户端直传 | 无 | **不鼓励**；以服务端读 Rust 为准（防双源） |
+| `conversation_id` | Tùy chọn | **Trình đọc nên luôn gửi** (nếu không có, backend có thể tự tạo và trả về trong done) |
+| `skill_id` | Không có | Tùy chọn, mặc định `literature-qa` |
+| `force_compress` | Không có | Tùy chọn |
+| `history` truyền trực tiếp từ client | Không có | **Không khuyến khích**; dùng server đọc từ Rust (tránh hai nguồn) |
 
-### 5.2 `done` 扩展（可选字段）
+### 5.2 Mở rộng `done` (các trường tùy chọn)
 
 ```json
 {
   "type": "done",
   "answer": "……",
-  "citations": [ /* Evidence 子集 */ ],
-  "tool_trace": [ /* 本 run */ ],
+  "citations": [ /* Evidence con */ ],
+  "tool_trace": [ /* run này */ ],
   "rounds": 3,
   "conversation_id": "conv_…",
   "run_id": "run_…",
@@ -284,7 +283,7 @@ v1 使用廉价估算：`tokens ≈ chars / 3`（中英混合偏保守可 `/2.5`
 }
 ```
 
-### 5.3 新 SSE：`compress`
+### 5.3 SSE mới: `compress`
 
 ```json
 {
@@ -296,7 +295,7 @@ v1 使用廉价估算：`tokens ≈ chars / 3`（中英混合偏保守可 `/2.5`
 }
 ```
 
-### 5.4 Rust：创建会话（阅读器打开 AI 或首问时）
+### 5.4 Rust: Tạo phiên (khi trình đọc mở AI hoặc lần hỏi đầu)
 
 ```http
 POST /api/v1/ai/conversations
@@ -309,7 +308,7 @@ POST /api/v1/ai/conversations
 → { "conversation_id": "conv_…" }
 ```
 
-### 5.5 Rust：追加消息（扩展）
+### 5.5 Rust: Thêm tin nhắn (mở rộng)
 
 ```http
 POST /api/v1/ai/conversations/{id}/messages
@@ -323,33 +322,33 @@ POST /api/v1/ai/conversations/{id}/messages
 }
 ```
 
-Summary 消息：
+Tin nhắn tóm tắt:
 
 ```json
 {
   "role": "assistant",
-  "content": "【对话摘要】…",
+  "content": "【Tóm tắt hội thoại】…",
   "metadata_json": "{\"kind\":\"summary\",\"compress\":{\"policy\":\"extractive_v1\",\"covers_message_ids\":[…]}}"
 }
 ```
 
-### 5.6 前端阅读器流程（目标）
+### 5.6 Luồng trình đọc frontend (mục tiêu)
 
 ```text
-open AI panel
-  if !conversationId for (jobId|documentId):
-      create conversation → store in memory/localStorage key
-ask(question):
-  POST ask with conversation_id + job_id + document_id
-  on compress → 可选 toast「已压缩早期对话」
-  on done → 渲染 answer + citations；记住 conversation_id
+mở bảng AI
+  if !conversationId cho (jobId|documentId):
+       tạo conversation → lưu trong bộ nhớ/localStorage key
+ask(câu hỏi):
+  POST ask với conversation_id + job_id + document_id
+  on compress → có thể toast «Đã nén hội thoại đầu»
+  on done → hiển thị answer + citations; ghi nhớ conversation_id
 ```
 
-存储键建议：`retainpdf.reader.ai.conversation.v1:{jobId}`。
+Khóa lưu trữ gợi ý: `retainpdf.reader.ai.conversation.v1:{jobId}`.
 
 ---
 
-## 6. Runtime 伪代码
+## 6. Mã giả Runtime
 
 ```python
 def ask(question, *, conversation_id, scope, skill_id, budget, force_compress=False):
@@ -378,80 +377,80 @@ def ask(question, *, conversation_id, scope, skill_id, budget, force_compress=Fa
 
 ---
 
-## 7. 与引用编号的关系
+## 7. Quan hệ với số tham chiếu
 
-| 规则 | 说明 |
+| Quy tắc | Giải thích |
 |------|------|
-| 单 run 内 | 与现 ` _assign_refs` 相同，从 1 或从 `ref_counter+1` 起 |
-| 跨 run | **继续递增**（读上次 snapshot 的 `ref_counter`） |
-| 回答中的 [n] | 必须落在本 run 可见 evidence 或已知证据表 |
-| 压缩后 | 摘要里保留 [n] 与 snippet；旧气泡 UI 仍显示当时 citations |
+| Trong một run | Giống `_assign_refs` hiện tại, bắt đầu từ 1 hoặc `ref_counter+1` |
+| Qua các run | **Tiếp tục tăng** (đọc `ref_counter` từ snapshot lần trước) |
+| [n] trong câu trả lời | Phải nằm trong evidence hiện tại hoặc bảng bằng chứng đã biết |
+| Sau nén | Tóm tắt giữ [n] và snippet; UI bong bóng cũ vẫn hiển thị citations lúc đó |
 
 ---
 
-## 8. 测试计划（B）
+## 8. Kế hoạch kiểm thử (B)
 
-| 用例 | 期望 |
+| Tình huống | Kỳ vọng |
 |------|------|
-| 无 conversation_id | 行为与现网一致（单轮）；或 auto-create 并在 done 返回 |
-| 有 conversation_id 连问 2 轮 | 第二轮 memory 含第一轮 user/assistant |
-| 15 轮后触发压缩 | 出现 summary 消息；assemble 不再含全部早期原文 |
-| evidence 上限 | 超过 max 时丢最旧未引用项 |
-| scope 锁 | memory 的 system 含 document_id；工具参数被注入 |
-| 字符 clip | 超长 assistant 被截断且不炸 JSON |
+| Không có conversation_id | Hành vi như hiện tại (một vòng); hoặc auto-create và trả về trong done |
+| Có conversation_id hỏi liên tiếp 2 vòng | Vòng 2 memory chứa user/assistant vòng 1 |
+| Sau 15 vòng kích hoạt nén | Xuất hiện tin nhắn summary; assemble không còn chứa toàn bộ văn bản đầu |
+| Giới hạn evidence | Quá max thì bỏ mục cũ nhất không được tham chiếu |
+| Khóa scope | system của memory chứa document_id; tham số tool được tiêm |
+| Cắt ký tự | assistant quá dài bị cắt và không làm hỏng JSON |
 
 ---
 
-## 9. 分阶段实现清单
+## 9. Danh sách triển khai theo giai đoạn
 
-### B1 — Session 贯通（小、优先）
+### B1 — Kết nối phiên (nhỏ, ưu tiên)
 
-- [ ] 前端：创建/复用 `conversation_id` 并随 ask 上传  
-- [ ] 后端：done 回显 `conversation_id`  
-- [ ] Rust：conversation 支持 `document_id`/`job_id`/`skill_id`（若尚无）  
-- [ ] 文档 + 单测：history 注入条数  
+- [ ] Frontend: tạo/dùng lại `conversation_id` và gửi kèm ask
+- [ ] Backend: done trả về `conversation_id`
+- [ ] Rust: conversation hỗ trợ `document_id`/`job_id`/`skill_id` (nếu chưa có)
+- [ ] Tài liệu + unit test: số lượng history được tiêm
 
-### B2 — Memory 压缩
+### B2 — Nén Memory
 
-- [ ] `memory/assemble.py` + `memory/compress.py`  
-- [ ] `metadata_json` 读写  
-- [ ] SSE `compress`  
-- [ ] 估算 token 与 budget 配置项  
-- [ ] 单测：压缩前后 messages 长度  
+- [ ] `memory/assemble.py` + `memory/compress.py`
+- [ ] Đọc/ghi `metadata_json`
+- [ ] SSE `compress`
+- [ ] Ước lượng token và cấu hình budget
+- [ ] Unit test: độ dài messages trước/sau nén
 
-### B3 — Evidence 跨轮
+### B3 — Evidence qua các vòng
 
-- [ ] snapshot 落库 / 回灌「已知证据表」  
-- [ ] ref_counter 持久化  
+- [ ] Lưu snapshot / đưa lại «bảng bằng chứng đã biết»
+- [ ] Lưu ref_counter
 
 ---
 
-## 10. 配置项（建议 env）
+## 10. Cấu hình (gợi ý env)
 
-| 变量 | 默认 | 说明 |
+| Biến | Mặc định | Giải thích |
 |------|------|------|
-| `RETAIN_AI_MEMORY_WINDOW_TURNS` | `6` | 近期保留轮数 |
-| `RETAIN_AI_MEMORY_MAX_CHARS` | `24000` | MemoryView 粗上限 |
-| `RETAIN_AI_MEMORY_COMPRESS_AFTER_TURNS` | `12` | 超过则压缩 |
-| `RETAIN_AI_MEMORY_MAX_EVIDENCE` | `24` | 证据条数 |
-| `RETAIN_AI_MEMORY_POLICY` | `extractive_v1` | 压缩策略名 |
+| `RETAIN_AI_MEMORY_WINDOW_TURNS` | `6` | Số vòng gần đây giữ lại |
+| `RETAIN_AI_MEMORY_MAX_CHARS` | `24000` | Giới hạn thô MemoryView |
+| `RETAIN_AI_MEMORY_COMPRESS_AFTER_TURNS` | `12` | Quá số vòng này thì nén |
+| `RETAIN_AI_MEMORY_MAX_EVIDENCE` | `24` | Số lượng bằng chứng |
+| `RETAIN_AI_MEMORY_POLICY` | `extractive_v1` | Tên chiến lược nén |
 
 ---
 
-## 11. 开放决策
+## 11. Quyết định mở
 
-| ID | 问题 | 建议 |
+| ID | Vấn đề | Đề xuất |
 |----|------|------|
-| M1 | 无 conversation_id 时 auto-create？ | **是**（减少前端状态机），done 必须回传 |
-| M2 | summary 是否在 UI 展示？ | 默认折叠一行「已总结前 N 轮」 |
-| M3 | tool_trace 是否进 memory？ | **否**；只进 evidence 与本 run trace |
-| M4 | 是否允许客户端传 history？ | v1 **忽略**客户端 history，避免分叉 |
+| M1 | Tự động tạo khi không có conversation_id? | **Có** (giảm trạng thái frontend), done phải trả về |
+| M2 | Có hiển thị summary trong UI không? | Mặc định thu gọn một dòng «đã tóm tắt N vòng trước» |
+| M3 | tool_trace có vào memory không? | **Không**; chỉ vào evidence và trace run này |
+| M4 | Cho phép client gửi history không? | v1 **bỏ qua** history từ client, tránh phân nhánh |
 
 ---
 
-## 12. 验收标准（B 完成时）
+## 12. Tiêu chí nghiệm thu (khi B hoàn thành)
 
-1. 同一阅读任务连续追问 5 次，第 5 次回答能引用第 1 次结论或证据。  
-2. 人为加长历史至 20 轮后，请求仍成功；SSE 至少出现一次 `compress` 或存在 summary 消息。  
-3. 压缩后 citations 跳转仍正确（page_idx 0 基）。  
-4. 旧前端不传新字段时行为不回退到 5xx。  
+1. Cùng một tác vụ đọc, hỏi liên tiếp 5 lần, lần thứ 5 có thể tham chiếu kết luận hoặc bằng chứng của lần 1.  
+2. Kéo dài lịch sử lên 20 vòng, yêu cầu vẫn thành công; SSE xuất hiện ít nhất một lần `compress` hoặc có tin nhắn summary.  
+3. Sau nén, các liên kết citations vẫn đúng (page_idx 0-based).  
+4. Frontend cũ không gửi trường mới thì hành vi không bị lỗi 5xx.

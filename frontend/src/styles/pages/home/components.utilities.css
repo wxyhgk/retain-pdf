@@ -1,8 +1,8 @@
-/* 主页领域 UI 工具类（从 components.utilities 拆出）
+/* Utility UI miền trang chủ (tách từ components.utilities)
  *
- * 仅 entries/home.css import。含 status-card 配套、凭据/表单、inline-error、
- * app-button 等。部分 @utility 在源码中已无 class 引用（dead），暂保留以免
- * 遗漏运行时/旧模板生成类名；可后续再清。
+ * Chỉ entries/home.css import. Bao gồm status-card, thông tin xác thực/biểu mẫu, inline-error,
+ * app-button, v.v. Một số @utility không còn class tham chiếu trong mã nguồn (dead), tạm giữ để tránh
+ * bỏ sót tên class do runtime/template cũ sinh ra; có thể dọn sau.
  */
 
 
@@ -19,9 +19,9 @@
     display: none;
   }
 
-  /* 全局 .hidden{display:none!important} 已在 components.css 里以普通规则
-     恢复,这里不再重复裸声明(Tailwind 会丢弃 @utility 对内置工具类裸类名
-     层级的重新声明,详见 components.css 里的说明)。 */
+  /* .hidden{display:none!important} toàn cục đã được khôi phục trong components.css bằng quy tắc thường,
+     không khai báo trần trùng lặp ở đây (Tailwind sẽ bỏ qua việc @utility khai báo lại tên class utility
+     tích hợp ở tầng trần, xem giải thích trong components.css). */
 }
 
 
@@ -51,15 +51,16 @@
 
 
 /*
-  危险区修复(Tailwind v4 迁移):`.status-card` 在 components.utilities.css
-  (旧版固定 448px 高的 grid 布局)和 status-card.css(现役的
-  `block h-full w-full ...` 弹性布局,StatusCard.jsx 唯一实际渲染的版本)
-  里各定义一份、display/height/width/max-width/overflow/background/color/
-  box-shadow/padding 等大量属性同名冲突——v3 靠源码序 tie-break,
-  status-card.css 后写胜出(display:block,依赖 h-full 撑满父容器);
-  旧版 448px 定高 grid 版本一直是死代码。v4 顺序不保真源码序,实测迁移后
-  旧版反而胜出,`.status-card-shell` 塌陷。这里去掉冲突的布局/外观声明,
-  只保留不冲突的 `position: relative` 与 `@apply mx-auto`。
+  Sửa vùng nguy hiểm (di chuyển Tailwind v4): `.status-card` được định nghĩa cả trong
+  components.utilities.css (bản cũ grid cố định cao 448px) lẫn status-card.css (bản hiện tại
+  `block h-full w-full ...` flex, phiên bản duy nhất StatusCard.jsx thực tế render).
+  display/height/width/max-width/overflow/background/color/box-shadow/padding và nhiều
+  thuộc tính khác trùng tên — v3 dựa vào thứ tự mã nguồn để phân thắng bại, status-card.css
+  viết sau nên thắng (display:block, dựa h-full để căng đầy container cha); bản grid 448px
+  cũ luôn là dead code. v4 không đảm bảo giữ nguyên thứ tự mã nguồn, kiểm tra thực tế sau
+  di chuyển cho thấy bản cũ lại thắng, khiến `.status-card-shell` sụp. Ở đây loại bỏ các
+  khai báo bố cục/ngoại hình xung đột, chỉ giữ `position: relative` và `@apply mx-auto`
+  không xung đột.
 */
 @utility status-card {
   @apply mx-auto;
@@ -208,7 +209,7 @@
 }
 
 
-/* 自定义 grid/two：主页表单布局遗留；与 Tailwind 内置 grid 同名，仅 home entry 覆盖 */
+/* grid/two tùy chỉnh: di sản bố cục biểu mẫu trang chủ; trùng tên grid tích hợp Tailwind, chỉ home entry ghi đè */
 @utility grid {
   display: grid;
   gap: 1rem;
@@ -273,7 +274,7 @@
 
 @utility app-button {
   @apply inline-flex min-h-12 items-center justify-center px-5 text-[15px] font-semibold no-underline transition;
-  /* 形态/主色走 L3 token（themes/_component-defaults.css），皮肤可换按钮气质 */
+  /* Hình thái/màu chính đi qua token L3 (themes/_component-defaults.css), skin có thể đổi phong cách nút */
   border-radius: var(--btn-radius);
   border: 1px solid transparent;
   background: var(--btn-primary-bg);
@@ -302,7 +303,7 @@
     filter: none;
   }
 
-  /* 危险操作：删除合集等 */
+  /* Thao tác nguy hiểm: xóa bộ sưu tập, v.v. */
   &.danger {
     background: var(--danger);
     border-color: var(--danger);

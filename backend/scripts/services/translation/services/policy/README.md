@@ -1,19 +1,19 @@
-# Policy 说明
+# Mô tả Policy
 
-`scripts/services/translation/policy/` 是翻译策略层的正式实现目录。
+`scripts/services/translation/policy/` là thư mục cài đặt chính thức của tầng chiến lược dịch.
 
-主要包括：
+Bao gồm:
 
 - `config.py`
-  模式配置、跳过策略、领域推断入口。
+  Cấu hình chế độ, chiến lược bỏ qua, lối vào suy luận lĩnh vực.
 - `flow.py`
-  把策略真正应用到 payload 的流程入口。
+  Lối vào luồng áp dụng chiến lược thực sự vào payload.
 - `body_text_filter.py`
-  正文噪声和窄块过滤逻辑。
+  Logic lọc nhiễu văn bản và khối hẹp.
 - `metadata_filter.py`
-  作者行、版权行、编辑信息等元数据片段过滤逻辑。
+  Logic lọc đoạn metadata như dòng tác giả, dòng bản quyền, thông tin biên tập.
 
-## 设计原则
+## Nguyên tắc thiết kế
 
-- 新代码统一从 `services.translation.services.policy.*` 导入。
-- 策略层只处理 payload 级别判断，不直接碰 PDF 或渲染。
+- Mã mới thống nhất import từ `services.translation.services.policy.*`.
+- Tầng chiến lược chỉ xử lý phán đoán cấp payload, không trực tiếp chạm PDF hoặc render.

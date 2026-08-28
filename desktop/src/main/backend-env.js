@@ -35,7 +35,7 @@ function buildBackendEnv(options = {}) {
     RUST_API_NORMAL_MAX_PAGES: "300",
     RUST_API_PROJECT_ROOT: backendRoot,
     RUST_API_SCRIPTS_DIR: scriptsDir,
-    // 前端 /api/v1/ai/* 由 Rust 反代到 retainpdf-ai
+    // Frontend /api/v1/ai/* được Rust proxy ngược lại retainpdf-ai
     RUST_API_AI_SERVICE_BASE: `http://127.0.0.1:${aiServicePort}`,
     PYTHON_BIN: pythonRuntime.command,
     PYTHONPATH: [
@@ -53,7 +53,7 @@ function buildBackendEnv(options = {}) {
     RETAIN_PDF_TYPST_FONT_DIRS: bundledTypstFontDir,
     RETAIN_PDF_TYPST_FONT_FAMILY: "Source Han Serif SC",
     TYPST_PACKAGE_CACHE_PATH: typstPackageCachePath,
-    // retainpdf-ai（main 进程 spawn 时再叠一层也可）
+    // retainpdf-ai (có thể thêm một lớp nữa khi process main spawn)
     RETAIN_AI_HOST: "127.0.0.1",
     RETAIN_AI_PORT: String(aiServicePort),
     RETAIN_AI_API_KEYS: desktopApiKey,

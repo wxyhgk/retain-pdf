@@ -1,26 +1,26 @@
-// GlossariesDialog(React 版 <glossary-manager-dialog>,对照
-// components/dialogs/glossary-manager-dialog-template.js 逐 id 镜像 +
-// features/glossaries/controller.js(kept 控制器)的开合/读取/保存编排)。
+// GlossariesDialog(React bản <glossary-manager-dialog>,so sánh
+// components/dialogs/glossary-manager-dialog-template.js đuổi id ảnh phản chiếu +
+// features/glossaries/controller.js(kept Kiểm soát viên)Mở và đóng/chọn đọc/Lưu biên đạo múa)。
 //
-// Dialog 渲染层(阶段 C,shadcn 改造):从原生 <dialog>+showModal/close 换成
-// radix-ui 的 Dialog 原语(DialogPrimitive.Root/Portal/Overlay/Content),不经
-// src/components/ui/dialog.jsx 那层默认皮肤(className 继续用现有的
-// desktop-dialog/desktop-shell/glossary-manager-* 这套 bespoke CSS)。open 受控
-// 于 glossariesDialogStore(useGlossariesController 的 open),onOpenChange 在
-// next===false 时统一调用 dialogStore.close()——Escape、点击背板、点击关闭
-// 按钮三条路径都走这一个回调,不再需要手写 handleBackdropClick/keydown 监听。
+// Dialog Lớp kết xuất(Giai  C,shadcn sửa đổi):Từ người bản xứ <dialog>+showModal/close đổi thành
+// radix-ui của Dialog Nguyên thủy(DialogPrimitive.Root/Portal/Overlay/Content),Vô ý
+// src/components/ui/dialog.jsx Lớp da mặc định đó(className Tiếp tục với hiện có
+// desktop-dialog/desktop-shell/glossary-manager-* bộ này bespoke CSS)。open Được kiểm soát
+// vào glossariesDialogStore(useGlossariesController của open),onOpenChange Tại địa điểm:
+// next===false Gọi thống nhất khi dialogStore.close()——Escape、Chạm vào bảng nối đa năng、Nhấp để đóng
+// Nút ba đường dẫn tất cả đi một cuộc gọi lại này,Không còn chữ viết tay nữa handleBackdropClick/keydown nghe lén。
 //
-// 不 forceMount Content/Overlay(同 CredentialsDialog.jsx 头注释的结论):Radix
-// modal Content 内部 hideOthers(content) 的 effect 依赖真实 mount/unmount
-// 生命周期,forceMount 会让它在对话框从未打开时就永久生效,制造新的无障碍
-// 缺陷。词表列表/编辑器的字段都受控于 glossariesStore(非本组件本地状态),
-// 对话框关闭时 Content 卸载不会丢数据——controller.js 的 open() 在重新打开时
-// 会 reloadGlossaries() 回填,语义不变。
+// không forceMount Content/Overlay(cùng CredentialsDialog.jsx Kết luận bình luận tiêu đề):Radix
+// modal Content Hoạ tiết nội thất hideOthers(content) của effect Phụ thuộc vào sự thật mount/unmount
+// Vòng đời,forceMount sẽ làm cho nó vĩnh viễn khi hộp thoại không bao giờ được mở,Tạo tiện nghi phù hợp cho người khuyết tật mới
+// thiếu sót。Bảng chú giải thuật ngữ/Các trường trong trình biên tập được kiểm soát bởi glossariesStore(Trạng thái không cục bộ của thành phần này),
+// Khi hộp thoại đóng Content Gỡ cài đặt mà không làm mất dữ liệu——controller.js của open() Khi mở lại
+// sẽ reloadGlossaries() lấp lại,Ngữ nghĩa không thay đổi。
 //
-// 打开入口:SettingsHubDialog"词表"tab 的 #glossary-btn 调用
-// services.glossaries.dialogStore.open()(蓝图 §0.4);本组件内部的 open 状态
-// 迁移 effect(见 useGlossariesController.js)把这次打开接回 controller.js 的
-// open(),补上"打开即刷新列表"的旧语义。
+// Mở lối vào:SettingsHubDialog"Bảng chú giải thuật ngữ"tab của #glossary-btn điều dụng
+// services.glossaries.dialogStore.open()(kế hoạch xây dựng §0.4);Nội bộ của thành phần này open Trạng thái
+// dời effect(thấy useGlossariesController.js)Hãy vá lại lỗ hổng lần này controller.js của
+// open(),bù đắp"Mở để làm mới danh sách"Ngữ nghĩa cũ của。
 
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useDialogReturnFocus } from "../../../../shared/react/use-dialog-return-focus.js";
@@ -31,12 +31,12 @@ import { GlossaryEditor } from "./GlossaryEditor.jsx";
 import { GlossaryImportPanel } from "./GlossaryImportPanel.jsx";
 import { Button as ButtonBase } from "../../../../components/Button.jsx";
 
-// Button.size 在未注解源文件里被推断为必填;unstyled 路径运行时不用 size。
+// Button.size được suy ra là bắt buộc trong các tệp nguồn không được chú thích;unstyled Không được sử dụng khi đường dẫn được chạy size。
 const Button = ButtonBase as any;
 
 export function GlossariesDialog() {
   const { open, view, store: glossariesStore, dialogStore, handlers } = useGlossariesController();
-  // view.store 在 HomeServices 上仍是 AppStore 默认泛型；运行时 actions 齐全
+  // view.store Tại địa điểm: HomeServices Lên vẫn là AppStore Chung mặc định；Thời Gian Chạy actions đầy đủ hết
   const store = glossariesStore as unknown as {
     actions: {
       setName: (name: string) => unknown;
@@ -75,14 +75,14 @@ export function GlossariesDialog() {
             <div className="desktop-head">
               <div className="credential-dialog-head">
                 <DialogPrimitive.Title asChild>
-                  <h2>术语表</h2>
+                  <h2>Bảng thuật ngữ</h2>
                 </DialogPrimitive.Title>
               </div>
               <DialogPrimitive.Close asChild>
                 <Button
                   id={GLOSSARY_DOM_IDS.closeButton}
                   className="dialog-close-btn"
-                  aria-label="关闭"
+                  aria-label="Đóng"
                 >
                   ×
                 </Button>
@@ -98,21 +98,21 @@ export function GlossariesDialog() {
 
               <section className="glossary-editor-panel">
                 <label className="glossary-name-field">
-                  <span>名称</span>
+                  <span>Tên</span>
                   <input
                     id={GLOSSARY_DOM_IDS.nameInput}
                     type="text"
                     autoComplete="off"
-                    placeholder="例如 量子化学术语"
+                    placeholder="Ví dụ: thuật ngữ hóa học lượng tử"
                     value={view.draft.name}
                     onChange={(event) => store.actions.setName(event.target.value)}
                   />
                 </label>
                 <div className="glossary-toolbar">
-                  <Button id={GLOSSARY_DOM_IDS.addRowButton} className="app-button secondary" onClick={() => handlers?.addRow?.()}>添加</Button>
+                  <Button id={GLOSSARY_DOM_IDS.addRowButton} className="app-button secondary" onClick={() => handlers?.addRow?.()}>Thêm</Button>
                   <Button id={GLOSSARY_DOM_IDS.importButton} className="app-button secondary" onClick={() => handlers?.showImport?.()}>CSV</Button>
-                  <Button id={GLOSSARY_DOM_IDS.exportButton} className="app-button secondary" onClick={() => handlers?.exportCurrent?.()}>导出</Button>
-                  <Button id={GLOSSARY_DOM_IDS.deleteButton} className="app-button secondary danger" onClick={() => handlers?.deleteCurrent?.()}>删除</Button>
+                  <Button id={GLOSSARY_DOM_IDS.exportButton} className="app-button secondary" onClick={() => handlers?.exportCurrent?.()}>Xuất</Button>
+                  <Button id={GLOSSARY_DOM_IDS.deleteButton} className="app-button secondary danger" onClick={() => handlers?.deleteCurrent?.()}>Xóa</Button>
                 </div>
                 <div className="glossary-editor-scroll">
                   <GlossaryEditor
@@ -130,7 +130,7 @@ export function GlossariesDialog() {
                 </div>
                 <div className="glossary-footer">
                   <span id={GLOSSARY_DOM_IDS.status} className={statusClasses}>{statusContent}</span>
-                  <Button id={GLOSSARY_DOM_IDS.saveButton} className="app-button" onClick={() => handlers?.save?.()}>保存</Button>
+                  <Button id={GLOSSARY_DOM_IDS.saveButton} className="app-button" onClick={() => handlers?.save?.()}>Lưu</Button>
                 </div>
               </section>
             </div>

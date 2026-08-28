@@ -1,7 +1,7 @@
-# 接口说明
+# Hướng dẫn giao diện
 
-接口清单已合并到统一入口：
+Danh sách giao diện đã được hợp nhất vào một đầu vào thống nhất:
 
-- [RetainPDF 后端 API 总入口](./index.md)
+- [Tổng quan API backend RetainPDF](./index.md)
 
-保留这个文件是为了兼容旧链接。后续不要在这里维护第二份 endpoint 列表。
+Giữ tệp này để tương thích với các liên kết cũ. Sau này không duy trì danh sách endpoint thứ hai ở đây.

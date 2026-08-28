@@ -1,5 +1,5 @@
-// 详情「翻译」Tab：发起 / 重新翻译表单。
-// 从原 TranslateWorkspacePanel 抽出；书已在馆，无需 WorkflowPanel 上传瓦片。
+// Tab «Dịch» chi tiết: biểu mẫu khởi tạo / dịch lại.
+// Được tách từ TranslateWorkspacePanel gốc; sách đã có trong thư viện, không cần WorkflowPanel tải lên.
 
 import { btn, IconLanguages } from "./ui.jsx";
 
@@ -51,7 +51,7 @@ export function BookTranslateLaunchForm({
       {canTranslate ? (
         <div className="space-y-2.5 rounded-lg border border-border/60 bg-muted/15 px-3.5 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {statusTone === "failed" ? "重新翻译" : "发起翻译"}
+            {statusTone === "failed" ? "Dịch lại" : "Bắt đầu dịch"}
           </p>
           <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-muted-foreground">
             <input
@@ -60,7 +60,7 @@ export function BookTranslateLaunchForm({
               checked={rangeOn}
               onChange={(e) => onRangeOnChange(e.target.checked)}
             />
-            指定页码范围（不勾选 = 整本翻译）
+            Chỉ định phạm vi trang (không chọn = dịch toàn bộ)
           </label>
           {rangeOn ? (
             <div className="flex items-center gap-2">
@@ -68,7 +68,7 @@ export function BookTranslateLaunchForm({
                 type="number"
                 min="1"
                 value={startPage}
-                aria-label="起始页"
+                 aria-label="Trang bắt đầu"
                 onChange={(e) => onStartPageChange(e.target.value)}
                 className="h-8 w-20 rounded-md border border-input bg-background px-2 text-sm"
               />
@@ -77,12 +77,12 @@ export function BookTranslateLaunchForm({
                 type="number"
                 min="1"
                 value={endPage}
-                aria-label="结束页"
+                 aria-label="Trang kết thúc"
                 onChange={(e) => onEndPageChange(e.target.value)}
                 className="h-8 w-20 rounded-md border border-input bg-background px-2 text-sm"
               />
               <span className="text-[11px] text-muted-foreground/70">
-                共 {pageCount || "?"} 页
+                 Tổng {pageCount || "?"} trang
               </span>
             </div>
           ) : null}
@@ -95,21 +95,21 @@ export function BookTranslateLaunchForm({
           >
             <IconLanguages className="mr-1" />
             {busy === "translate"
-              ? "提交中…"
+              ? "Đang gửi…"
               : rangeOn
-                ? "翻译选定页码"
+                ? "Dịch trang đã chọn"
                 : statusTone === "failed"
-                  ? "重新翻译整本"
-                  : "翻译整本"}
+                  ? "Dịch lại toàn bộ"
+                  : "Dịch toàn bộ"}
           </button>
         </div>
       ) : readerAvailable ? (
         <p className="text-xs text-muted-foreground">
-          已翻译完成。上方为本书任务进度；左侧可「对照阅读」。
+          Đã dịch xong. Phía trên là tiến độ nhiệm vụ của sách này; bên trái có thể «Đọc đối chiếu».
         </p>
       ) : isActive ? (
         <p className="text-xs text-muted-foreground">
-          翻译进行中，进度在本 Tab 内自动刷新。完成后可在左侧对照阅读。
+          Đang dịch, tiến độ tự động làm mới trong Tab này. Sau khi hoàn thành có thể đọc đối chiếu bên trái.
         </p>
       ) : null}
     </div>

@@ -1,4 +1,4 @@
-"""Rust API 客户端:数据面只归 Rust 管,本服务经 HTTP 读。"""
+"""Client của Rust API: tầng dữ liệu chỉ do Rust quản lý, dịch vụ này đọc qua HTTP."""
 
 from __future__ import annotations
 
@@ -58,7 +58,7 @@ class RustApiClient:
         return self._get(f"/api/v1/documents/{document_id}")
 
     def get_document_by_job(self, job_id: str) -> dict[str, Any] | None:
-        """任意 job_id(含历史 run)→ 所属文档;查不到返回 None。"""
+        """Bất kỳ job_id nào (kể cả run cũ) → tài liệu tương ứng; không tìm thấy thì trả None."""
         data = self._get("/api/v1/documents", {"job_id": job_id})
         documents = list(data.get("documents") or [])
         return documents[0] if documents else None
@@ -98,7 +98,7 @@ class RustApiClient:
         title: str = "",
         document_id: str = "",
     ) -> dict[str, Any]:
-        """创建会话;document_id 可空(全库会话)。返回含 conversation_id 的记录。"""
+        """Tạo phiên hội thoại; document_id có thể rỗng (phiên trên toàn thư viện). Trả về bản ghi có conversation_id."""
         payload: dict[str, Any] = {"title": (title or "").strip()}
         doc = (document_id or "").strip()
         if doc:

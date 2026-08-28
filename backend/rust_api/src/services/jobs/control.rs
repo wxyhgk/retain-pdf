@@ -89,7 +89,7 @@ pub(crate) async fn cancel_job(
         if matches!(job.stage.as_deref(), Some("queued")) {
             job.status = JobStatusKind::Canceled;
             job.stage = Some("canceled".to_string());
-            job.stage_detail = Some("OCR 任务已取消".to_string());
+            job.stage_detail = Some("Tác vụ OCR đã hủy".to_string());
             job.updated_at = now_iso();
             job.finished_at = Some(now_iso());
             job.pid = None;
@@ -101,7 +101,7 @@ pub(crate) async fn cancel_job(
     }
     job.status = JobStatusKind::Canceled;
     job.stage = Some("canceled".to_string());
-    job.stage_detail = Some("任务已取消".to_string());
+    job.stage_detail = Some("Tác vụ đã hủy".to_string());
     job.updated_at = now_iso();
     job.finished_at = Some(now_iso());
     job.pid = None;

@@ -4,16 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: '镜像版本号，例如 v4.2.0'
+        description: 'Image version number, e.g. v4.2.0'
         required: true
         default: 'dev'
       push:
-        description: '是否推送到 Docker Hub？选 false 则只构建不推送'
+        description: 'Push to Docker Hub? Select false to only build without pushing'
         type: boolean
         required: false
         default: false
       platforms:
-        description: '目标平台（逗号分隔）'
+        description: 'Target platforms (comma-separated)'
         required: false
         default: 'linux/amd64,linux/arm64'
   push:

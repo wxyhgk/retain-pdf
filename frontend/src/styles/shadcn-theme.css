@@ -1,67 +1,62 @@
 /*
-  shadcn/ui 组件消费的一套标准 CSS 变量名(--background/--foreground/--primary/...)。
-  这些名字是 shadcn 组件源码(src/components/ui/*.jsx)里硬编码的 Tailwind 工具类
-  (bg-primary/text-muted-foreground 等)和少量直接 var() 引用(sonner.jsx 的
-  内联 style)所依赖的契约,不能改名——但实际颜色值不接受 shadcn CLI 生成的默认
-  皮肤,而是逐个映射到 src/styles/tokens.css 里项目已有的设计 token,达到
-  "工具链换了,视觉看不出来"的目标。
+  shadcn/ui tiêu thụ một bộ tên biến CSS tiêu chuẩn (--background/--foreground/--primary/...).
+  Những tên này được mã hóa cứng trong mã nguồn thành phần shadcn (src/components/ui/*.jsx) dưới dạng
+  các lớp tiện ích Tailwind (như bg-primary/text-muted-foreground, v.v.) và một số tham chiếu var() trực tiếp
+  (sonner.jsx với style nội tuyến) dựa vào hợp đồng này, không thể đổi tên — nhưng giá trị màu thực tế không chấp nhận
+  giao diện mặc định do shadcn CLI tạo ra, mà được ánh xạ từng cái một tới các token thiết kế đã có trong src/styles/tokens.css,
+  nhằm đạt được mục tiêu "thay đổi công cụ nhưng giao diện không thay đổi".
 
-  项目目前只有单一 :root(无暗色模式),故此文件也只有一份声明,不含 .dark 覆盖。
+  Hiện tại dự án chỉ có một :root duy nhất (không có chế độ tối), do đó tệp này cũng chỉ có một khai báo, không bao gồm ghi đè .dark.
 
-  **命名避坑**:shadcn 标准变量里 `--accent`/`--muted` 恰好和 tokens.css 已有的
-  项目 token 撞名,但语义不同(`--muted` 在项目里是文字灰,shadcn 语义里却是
-  "弱化背景色")。如果在这里重新声明同名的 `:root { --muted: ... }`,会整个
-  覆盖 tokens.css 里的原始定义,导致全项目几十处 `color: var(--muted)` 的文字
-  变成别的颜色——这是曾经在草稿里踩到的真实 bug,不是假设。
-  处理方式:
-  - `--accent` 语义相同(shadcn 消费它当强调色,项目 tokens.css 里 --accent
-    本来就是品牌蓝),不重复声明,直接复用 tokens.css 的定义 + tailwind.css
-    里已有的 `--color-accent: var(--accent)` 映射。
-  - `--muted` 语义不同,不能同名覆盖:新增一个不冲突的中间变量
-    `--muted-surface`(下方),真正的 `@theme inline` 里 `--color-muted` 映射到
-    `--muted-surface`,而 `--color-muted-foreground` 映射到原始的 `--muted`
-    (项目文字灰,不受影响)。
+  **Tránh lỗi đặt tên**: các biến tiêu chuẩn của shadcn như `--accent`/`--muted` trùng tên với các token dự án trong tokens.css,
+  nhưng ý nghĩa khác nhau (`--muted` trong dự án là màu chữ xám, trong khi ý nghĩa của shadcn là "màu nền yếu"). Nếu ở đây
+  khai báo lại cùng tên `:root { --muted: ... }`, sẽ ghi đè toàn bộ định nghĩa gốc trong tokens.css, khiến hàng chục chỗ trong dự án
+  sử dụng `color: var(--muted)` bị đổi thành màu khác — đây là lỗi thực tế từng gặp trong bản nháp, không phải giả định.
+  Cách xử lý:
+  - `--accent` có ý nghĩa giống nhau (shadcn sử dụng nó làm màu nhấn mạnh, trong tokens.css của dự án --accent
+    vốn đã là màu xanh thương hiệu), không khai báo lại, trực tiếp tái sử dụng định nghĩa trong tokens.css + ánh xạ
+    `--color-accent: var(--accent)` đã có trong tailwind.css.
+  - `--muted` có ý nghĩa khác nhau, không thể ghi đè cùng tên: thêm một biến trung gian không xung đột
+    `--muted-surface` (bên dưới), trong `@theme inline` thực sự `--color-muted` sẽ ánh xạ tới `--muted-surface`,
+    còn `--color-muted-foreground` ánh xạ tới `--muted` gốc (màu chữ xám của dự án, không bị ảnh hưởng).
 
-  逐项映射理由:
-  - --foreground          ← --ink          正文字色,项目原生主文字色 token。
-  - --background           ← --bg           页面底色。
-  - --muted-surface(新)   ← --line         shadcn "--muted" 背景色语义,项目
-                                            没有专门的浅灰底 token,借用现有
-                                            描边色 --line(var(--line))当浅灰底。
-  - --destructive          ← --danger       危险色。
-  - --border / --input     ← --line         项目唯一的描边/分隔线 token。
-  - --primary / --ring     ← --accent       项目没有独立的"品牌主色"token,
-                                            --accent(#0071e3)本身就是当前唯一
-                                            的强调色,主按钮/焦点环都从它派生
-                                            最合理。
-  - --radius               1rem(16px)     项目里 .app-button 是纯 pill 形
-                                            (rounded-full,不受 --radius 控制),
-                                            对话框壳 desktop-dialog 是 24px
-                                            圆角。这批拉下来的组件(button/tabs/
-                                            dialog/tooltip)实际都用字面 Tailwind 类
-                                            (rounded-md/rounded-lg)而非
-                                            --radius 本身——--radius 目前只被
-                                            sonner.jsx 的内联 style 用来设
-                                            toast 圆角,16px 介于"克制"的
-                                            rounded-md 和"松弛"的 24px 对话框
-                                            之间,和 toast 这种中等尺寸元素的
-                                            观感匹配。
+  Lý do ánh xạ từng mục:
+  - --foreground          ← --ink          Màu chữ chính, token màu chữ chính gốc của dự án.
+  - --background           ← --bg           Màu nền trang.
+  - --muted-surface(mới)   ← --line         Ý nghĩa màu nền "--muted" của shadcn, dự án
+                                            không có token nền xám nhạt chuyên dụng, mượn màu
+                                            viền hiện có --line(var(--line)) làm nền xám nhạt.
+  - --destructive          ← --danger       Màu nguy hiểm.
+  - --border / --input     ← --line         Token viền/phân cách duy nhất của dự án.
+  - --primary / --ring     ← --accent       Dự án không có token "màu chủ thương hiệu" riêng,
+                                            --accent(#0071e3) tự nó đã là màu nhấn mạnh duy nhất
+                                            hiện tại, nút chính/vòng focus đều được kế thừa từ nó
+                                            là hợp lý nhất.
+  - --radius               1rem(16px)     Trong dự án, .app-button có hình dạng pill thuần túy
+                                            (rounded-full, không bị kiểm soát bởi --radius),
+                                            vỏ hộp thoại desktop-dialog có góc bo tròn 24px.
+                                            Các thành phần được kéo xuống (button/tabs/
+                                            dialog/tooltip) thực tế đều sử dụng các lớp Tailwind theo nghĩa đen
+                                            (rounded-md/rounded-lg) thay vì --radius bản thân —
+                                            --radius hiện chỉ được sonner.jsx sử dụng trong style nội tuyến
+                                            để thiết lập góc bo tròn cho toast, 16px nằm giữa "tiết chế" của
+                                            rounded-md và "thoải mái" của hộp thoại 24px,
+                                            phù hợp với cảm giác của các phần tử có kích thước trung bình như toast.
 
-  以下几个变量任务简报未逐一点名,但拉下来的组件确实会用到,项目里没有直接
-  对应 token,按判断派生(阶段 B/C 走查具体页面时如观感不对可以再收紧):
-  - --primary-foreground  ← --paper(白)   叠在品牌蓝底上的文字,取高对比度白。
-  - --secondary            ← --paper(白)   对应现有 .app-button.secondary 的
-                                            实际背景(background:var(--paper))。
-  - --secondary-foreground ← --ink          对应 .app-button.secondary 的实际
-                                            文字色(color: var(--ink))。
-  - --accent-foreground    ← --paper(白)   --accent 现在是品牌蓝,叠字取白以
-                                            保证对比度(ghost 按钮/tabs/dialog
-                                            关闭按钮的 hover 态背景变蓝时的
-                                            文字色)。
+  Một số biến dưới đây không được đề cập chi tiết trong báo cáo nhiệm vụ, nhưng các thành phần được kéo xuống thực sự sẽ sử dụng, dự án không có
+  token tương ứng trực tiếp, được kế thừa theo phán đoán (trong quá trình rà soát trang cụ thể ở giai đoạn B/C nếu cảm nhận không đúng có thể điều chỉnh lại):
+  - --primary-foreground  ← --paper(trắng)   Văn bản chồng trên nền xanh thương hiệu, lấy màu trắng có độ tương phản cao.
+  - --secondary            ← --paper(trắng)   Tương ứng với nền thực tế của .app-button.secondary
+                                            (background:var(--paper)).
+  - --secondary-foreground ← --ink          Tương ứng với màu chữ thực tế của .app-button.secondary
+                                            (color: var(--ink)).
+  - --accent-foreground    ← --paper(trắng)   --accent hiện là màu xanh thương hiệu, chữ chồng lên lấy màu trắng để
+                                            đảm bảo độ tương phản (màu chữ khi hover của nút ghost/tabs/dialog
+                                            nút đóng khi nền chuyển sang xanh).
   - --popover / --popover-foreground ← --paper / --ink
-                                            Sonner toast 背景取项目"纸面"白,
-                                            文字用正文字色,和对话框壳
-                                            desktop-shell 卡片的白底黑字基调一致。
+                                            Nền toast Sonner lấy màu trắng "mặt giấy" của dự án,
+                                            chữ dùng màu chữ chính, cùng tông với thẻ vỏ hộp thoại
+                                            desktop-shell (nền trắng chữ đen).
 */
 :root {
   --background: var(--bg);
@@ -73,7 +68,7 @@
   --secondary: var(--paper);
   --secondary-foreground: var(--ink);
 
-  /* 不叫 --muted:避免覆盖 tokens.css 里语义不同的项目原生 --muted(文字灰) */
+  /* Không đặt tên --muted: tránh ghi đè --muted gốc của dự án trong tokens.css có ngữ nghĩa khác (chữ xám) */
   --muted-surface: var(--line);
 
   --accent-foreground: var(--paper);

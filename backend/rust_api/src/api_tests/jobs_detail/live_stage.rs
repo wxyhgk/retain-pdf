@@ -28,9 +28,9 @@ async fn job_detail_route_prefers_live_pipeline_stage_snapshot() {
     fs::write(
         job_root.join("logs").join("pipeline_events.jsonl"),
         concat!(
-            r#"{"job_id":"job-route-live-stage","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"translating","stage_detail":"已完成第 2/5 批翻译","provider":"","provider_stage":"","event_type":"stage_progress","message":"已完成第 2/5 批翻译","progress_current":2,"progress_total":5,"retry_count":0,"elapsed_ms":1000,"payload":{}}"#,
+            r#"{"job_id":"job-route-live-stage","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"translating","stage_detail":"Đã hoàn thành lô dịch thứ 2/5","provider":"","provider_stage":"","event_type":"stage_progress","message":"Đã hoàn thành lô dịch thứ 2/5","progress_current":2,"progress_total":5,"retry_count":0,"elapsed_ms":1000,"payload":{}}"#,
             "\n",
-            r#"{"job_id":"job-route-live-stage","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"saving","stage_detail":"最终 PDF 已发布","provider":"","provider_stage":"","event_type":"artifact_published","message":"最终 PDF 已发布","progress_current":null,"progress_total":null,"retry_count":0,"elapsed_ms":1100,"payload":{"artifact_key":"output_pdf"}}"#,
+            r#"{"job_id":"job-route-live-stage","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"saving","stage_detail":"PDF cuối cùng đã được xuất bản","provider":"","provider_stage":"","event_type":"artifact_published","message":"PDF cuối cùng đã được xuất bản","progress_current":null,"progress_total":null,"retry_count":0,"elapsed_ms":1100,"payload":{"artifact_key":"output_pdf"}}"#,
             "\n"
         ),
     )
@@ -57,7 +57,7 @@ async fn job_detail_route_prefers_live_pipeline_stage_snapshot() {
     );
     assert_eq!(
         detail_json["data"]["stage_snapshot"]["stage_detail"],
-        "已完成第 2/5 批翻译"
+        "Đã hoàn thành lô dịch thứ 2/5"
     );
     assert_eq!(
         detail_json["data"]["stage_snapshot"]["progress"]["current"],

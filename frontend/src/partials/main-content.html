@@ -1,38 +1,38 @@
 <main id="app-shell" class="page app-shell">
   <app-shell-header></app-shell-header>
 
-  <section id="library-view" class="library-view" aria-label="图书馆">
+  <section id="library-view" class="library-view" aria-label="Thư viện">
     <div id="recent-jobs-scroll-body" class="library-scroll-body">
       <div id="recent-jobs-summary" class="status-panel-note library-summary">Stage Spec 0 · Unknown 0</div>
-      <div id="recent-jobs-empty" class="events-empty hidden">暂无最近任务</div>
+      <div id="recent-jobs-empty" class="events-empty hidden">Chưa có tác vụ gần đây</div>
       <div id="library-grid" class="recent-jobs-list library-grid">
         <div id="recent-jobs-list" class="recent-jobs-list library-grid hidden"></div>
       </div>
       <div class="recent-jobs-more-row">
-        <button id="load-more-jobs-btn" class="secondary hidden" type="button">更多</button>
+        <button id="load-more-jobs-btn" class="secondary hidden" type="button">Xem thêm</button>
       </div>
     </div>
   </section>
 
-  <button id="open-query-btn" type="button" class="secondary hidden" aria-hidden="true">最近任务</button>
+  <button id="open-query-btn" type="button" class="secondary hidden" aria-hidden="true">Tác vụ gần đây</button>
   <library-search-island></library-search-island>
-  <div class="library-bottom-bar" aria-label="主页快捷操作">
+  <div class="library-bottom-bar" aria-label="Thao tác nhanh trên trang chính">
     <div class="library-search-bar" role="search">
-      <input id="library-search-input" type="search" autocomplete="off" placeholder="搜索书籍、任务或日期" aria-label="搜索书籍" />
+      <input id="library-search-input" type="search" autocomplete="off" placeholder="Tìm sách, tác vụ hoặc ngày" aria-label="Tìm sách" />
     </div>
-    <div class="library-bottom-actions" aria-label="快捷操作">
-      <button id="library-add-pdf-btn" type="button" class="library-bottom-action primary" aria-label="添加 PDF" title="添加 PDF" aria-controls="translation-workflow-dialog" aria-expanded="false" data-workflow-open="0" data-workflow-mode="upload">
+    <div class="library-bottom-actions" aria-label="Thao tác nhanh">
+      <button id="library-add-pdf-btn" type="button" class="library-bottom-action primary" aria-label="Thêm PDF" title="Thêm PDF" aria-controls="translation-workflow-dialog" aria-expanded="false" data-workflow-open="0" data-workflow-mode="upload">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
-        <span>添加</span>
+        <span>Thêm</span>
       </button>
-      <button id="app-settings-btn" type="button" class="library-bottom-action" aria-label="设置" title="设置" aria-controls="app-settings-dialog">
+      <button id="app-settings-btn" type="button" class="library-bottom-action" aria-label="Cài đặt" title="Cài đặt" aria-controls="app-settings-dialog">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M12 8.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z" stroke="currentColor" stroke-width="1.65"/>
           <path d="M19.1 13.2c.06-.39.09-.79.09-1.2s-.03-.81-.09-1.2l2.02-1.55-1.9-3.29-2.38.96a8.01 8.01 0 0 0-2.08-1.2L14.4 3.2h-3.8l-.36 2.52c-.75.28-1.45.69-2.08 1.2l-2.38-.96-1.9 3.29L5.9 10.8c-.06.39-.09.79-.09 1.2s.03.81.09 1.2l-2.02 1.55 1.9 3.29 2.38-.96c.63.51 1.33.92 2.08 1.2l.36 2.52h3.8l.36-2.52c.75-.28 1.45-.69 2.08-1.2l2.38.96 1.9-3.29-2.02-1.55Z" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/>
         </svg>
-        <span>设置</span>
+        <span>Cài đặt</span>
       </button>
     </div>
   </div>
@@ -42,11 +42,11 @@
   <div id="translation-workflow-dialog" class="translation-workflow-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="translation-workflow-title">
     <div class="desktop-shell translation-workflow-shell">
       <div class="translation-workflow-head">
-        <h2 id="translation-workflow-title">翻译 PDF</h2>
-        <button id="translation-workflow-close-btn" type="button" class="dialog-close-btn" aria-label="关闭">×</button>
+        <h2 id="translation-workflow-title">Dịch PDF</h2>
+        <button id="translation-workflow-close-btn" type="button" class="dialog-close-btn" aria-label="Đóng">×</button>
       </div>
       <section class="translation-workflow-card">
-        <div id="job-warning" class="job-warning hidden">检测到上一个任务仍在处理中。建议先等待当前任务结束，再提交新的 PDF。</div>
+        <div id="job-warning" class="job-warning hidden">Phát hiện tác vụ trước vẫn đang xử lý. Bạn nên đợi tác vụ hiện tại kết thúc rồi hãy gửi PDF mới.</div>
 
         <form id="job-form" class="form" novalidate>
           <input id="ocr_provider" name="ocr_provider" type="hidden" value="paddle" />
@@ -65,48 +65,48 @@
                     <circle cx="12" cy="16" r="1.2" fill="currentColor"/>
                   </svg>
                 </span>
-                <strong id="credential-gate-title">请先完成接口设置</strong>
-                <em id="credential-gate-help">填写 OCR Token 和 DeepSeek Key 后即可上传 PDF。</em>
-                <button id="credential-gate-action" type="button" class="credential-gate-action">去设置接口</button>
+                <strong id="credential-gate-title">Vui lòng hoàn tất cài đặt API trước</strong>
+                <em id="credential-gate-help">Điền OCR Token và DeepSeek Key để tải PDF lên.</em>
+                <button id="credential-gate-action" type="button" class="credential-gate-action">Mở cài đặt API</button>
               </div>
             </div>
             <span id="upload-glyph" class="upload-glyph" aria-hidden="true">
               <span class="upload-glyph-h"></span>
               <span class="upload-glyph-v"></span>
             </span>
-            <strong id="file-label">添加 PDF</strong>
-            <em id="upload-help">上传后会先完成文件校验，再进入任务处理。</em>
+            <strong id="file-label">Thêm PDF</strong>
+            <em id="upload-help">Sau khi tải lên, tệp sẽ được kiểm tra trước khi bắt đầu xử lý.</em>
             <div class="upload-meta upload-meta-inline">
-              <span>单个 PDF</span>
-              <span>最大 50MB</span>
-              <span>最多 999 页</span>
+              <span>Một PDF</span>
+              <span>Tối đa 50MB</span>
+              <span>Tối đa 999 trang</span>
             </div>
-            <div id="upload-status" class="upload-status hidden">尚未选择文件</div>
+            <div id="upload-status" class="upload-status hidden">Chưa chọn tệp</div>
             <div id="upload-progress-panel" class="upload-progress-panel hidden" aria-live="polite">
-              <span id="upload-progress-text">上传中</span>
+              <span id="upload-progress-text">Đang tải lên</span>
             </div>
-            <div id="inline-page-range" class="inline-page-range hidden" aria-label="翻译页码范围">
+            <div id="inline-page-range" class="inline-page-range hidden" aria-label="Phạm vi trang dịch">
               <label>
-                <span>起始页</span>
+                <span>Trang bắt đầu</span>
                 <input id="page-range-start" type="number" min="1" step="1" inputmode="numeric" autocomplete="off" placeholder="1" />
               </label>
               <label>
-                <span>结束页</span>
-                <input id="page-range-end" type="number" min="1" step="1" inputmode="numeric" autocomplete="off" placeholder="总页数" />
+                <span>Trang kết thúc</span>
+                <input id="page-range-end" type="number" min="1" step="1" inputmode="numeric" autocomplete="off" placeholder="Tổng số trang" />
               </label>
             </div>
             <div id="translation-budget-note" class="translation-budget-note hidden" aria-live="polite"></div>
           </div>
           <div id="upload-action-slot" class="upload-action-slot hidden">
             <div class="upload-action-group">
-              <button id="page-range-btn" type="button" class="page-range-mini secondary" aria-label="专业翻译" title="专业翻译">专业翻译</button>
-              <button id="submit-btn" type="submit" disabled>开始翻译</button>
+              <button id="page-range-btn" type="button" class="page-range-mini secondary" aria-label="Dịch chuyên nghiệp" title="Dịch chuyên nghiệp">Dịch chuyên nghiệp</button>
+              <button id="submit-btn" type="submit" disabled>Bắt đầu dịch</button>
             </div>
           </div>
           <inline-error-box id="error-box-inline" class="hidden">-</inline-error-box>
         </form>
       </section>
-      <section id="status-section" class="translation-status-panel hidden" aria-label="任务进度">
+      <section id="status-section" class="translation-status-panel hidden" aria-label="Tiến độ tác vụ">
         <job-status-card id="job-status-card"></job-status-card>
       </section>
     </div>

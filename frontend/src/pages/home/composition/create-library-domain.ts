@@ -57,9 +57,9 @@ export function createLibraryDomain({ features, documentRef, statusArea }: Creat
     apiPrefix: API_PREFIX,
   });
 
-  // 下层 port 工厂 `= {}` 默认参会丢掉无默认字段（openJob / closeDialog 等）。
+  // Cấp thấp hơn port Nhà máy `= {}` Người tham dự mặc định không bỏ trường mặc định（openJob / closeDialog chờ）。
   const recentJobsJobRuntimePort = createRecentJobsRuntimePort({
-    // 网格点任务：仅 silent 轮询（进度在详情 Tab）；不抬主工作流
+    // Nhiệm vụ điểm lưới：chỉ silent bỏ phiếu（Tiến độ chi tiết Tab）；Không nâng quy trình làm việc chính
     openJob: (jobId: string) => (
       features.jobRuntimeFeature.startPolling(jobId, {
         silent: true,
@@ -67,7 +67,7 @@ export function createLibraryDomain({ features, documentRef, statusArea }: Creat
         publishLibrary: false,
       })
     ),
-    // 冷启动恢复活跃任务：silent，不抬主状态区、不刷库 create 事件
+    // Bắt đầu lạnh tiếp tục các tác vụ đang hoạt động：silent，Không nâng khu vực trạng thái chính、Không đánh răng trong thư viện create biến cố
     recoverJob: (jobId: string) => (
       features.jobRuntimeFeature.startPolling(jobId, { silent: true })
     ),
@@ -78,7 +78,7 @@ export function createLibraryDomain({ features, documentRef, statusArea }: Creat
     openReader: (jobId: string, anchor: ReaderAnchor = null) => {
       const normalizedJobId = `${jobId || ""}`.trim();
       if (!normalizedJobId) return;
-      // 阅读器不需要抬主工作流区 / 刷库 create；silent 盯 job 即可
+      // Người đọc không cần phải nâng khu vực quy trình làm việc chính / Thư viện bàn chải create；silent nhìn chăm chú job Chỉ cần làm điều đó
       features.jobRuntimeFeature.startPolling(normalizedJobId, { silent: true });
       documentRef.dispatchEvent(new globalThis.CustomEvent(APP_EVENTS.openReaderRequested, {
         detail: {
@@ -98,7 +98,7 @@ export function createLibraryDomain({ features, documentRef, statusArea }: Creat
     doc: documentRef,
   });
 
-  // startPolling/openReader/closeRecentJobsDialog 可由 navigationPort 兜底；签名仍标必填。
+  // startPolling/openReader/closeRecentJobsDialog Có sẵn từ navigationPort Lưng túi；Chữ ký vẫn được đánh dấu là bắt buộc。
   const recentJobActions = createRecentJobActions({
     apiPrefix: API_PREFIX,
     deleteLibraryBook,

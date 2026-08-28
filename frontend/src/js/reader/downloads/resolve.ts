@@ -9,18 +9,18 @@ import { resolveReaderSourcePdf } from "../resource-resolver.js";
 export const READER_DOWNLOAD_ACTIONS = Object.freeze({
   source: {
     fallbackSuffix: "source",
-    label: "原始 PDF",
-    operation: "下载原始 PDF",
+    label: "PDF gốc",
+    operation: "Tải PDF gốc",
   },
   sideBySide: {
     fallbackSuffix: "side-by-side",
-    label: "对照 PDF",
-    operation: "下载对照 PDF",
+    label: "PDF đối chiếu",
+    operation: "Tải PDF đối chiếu",
   },
   translated: {
     fallbackSuffix: "translated",
-    label: "译文 PDF",
-    operation: "下载译文 PDF",
+    label: "PDF bản dịch",
+    operation: "Tải PDF bản dịch",
   },
 });
 
@@ -72,13 +72,13 @@ export function resolveReaderDownloadName(action, { jobId, jobPayload, manifestP
 
 export function disabledReason(action, urls) {
   if (action === "sideBySide" && (!urls.source || !urls.translated)) {
-    return "对照 PDF 需要原始 PDF 和译文 PDF 都可用";
+    return "PDF đối chiếu cần có cả PDF gốc và PDF bản dịch";
   }
   if (!urls.source && (action === "source" || action === "sideBySide")) {
-    return "原始 PDF 尚未生成或清单不可用";
+    return "PDF gốc chưa được tạo hoặc manifest chưa khả dụng";
   }
   if (!urls.translated && (action === "translated" || action === "sideBySide")) {
-    return "译文 PDF 尚未生成或清单不可用";
+    return "PDF bản dịch chưa được tạo hoặc manifest chưa khả dụng";
   }
-  return "下载地址暂不可用";
+  return "Địa chỉ tải xuống tạm không khả dụng";
 }

@@ -1,11 +1,11 @@
-# 工程规划与台账
+# Lập kế hoạch và sổ sách kỹ thuật
 
-这里存放工程判断、后续执行计划和历史任务台账。  
-如果你在找“当前功能怎么用”，不要从这里开始。
+Nơi đây lưu trữ phán đoán kỹ thuật, kế hoạch thực thi tiếp theo và sổ sách nhiệm vụ lịch sử.  
+Nếu bạn đang tìm "chức năng hiện tại dùng thế nào", đừng bắt đầu từ đây.
 
-- [工程评价与后续执行计划](./工程评价与后续执行计划.md)
-- [架构与 API 契约任务台账](./architecture_tasks.csv)
-- [2026-04-15 Rust API 去耦任务清单](./250415_task.csv)
-- [2026-04-16 Normalize/翻译持续试错台账](./260416.csv)
+- [Đánh giá kỹ thuật và kế hoạch thực thi tiếp theo](./danh-gia-ky-thuat-va-ke-hoach-thuc-thi-tiep-theo.md)
+- [Sổ sách nhiệm vụ kiến trúc và hợp đồng API](./architecture_tasks.csv)
+- [Danh sách nhiệm vụ tách rời Rust API 2026-04-15](./250415_task.csv)
+- [Sổ sách thử nghiệm liên tục Normalize/Dịch thuật 2026-04-16](./260416.csv)
 
-CSV 台账用于保留历史决策和试错记录，不建议随意覆盖旧行；新增结论应追加记录。
+Sổ sách CSV dùng để giữ quyết định lịch sử và ghi chép thử nghiệm, không khuyến nghị ghi đè lên hàng cũ một cách tùy tiện; kết luận mới nên được thêm vào cuối.

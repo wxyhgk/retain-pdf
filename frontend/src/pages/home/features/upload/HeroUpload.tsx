@@ -1,12 +1,12 @@
-// 上传瓦片家族(对照 partials/main-content.html 的 .upload-tile-hero 区块逐 id 镜像)。
+// Họ tile upload (ánh theo từng id khối .upload-tile-hero của partials/main-content.html).
 //
-// 视图状态全部来自 upload/workflow 两个视图 store(纯逻辑控制器写入);
-// 交互镜像旧 bindMainShellEvents + bindUploadTilePicker:
-// - 瓦片空白处点击 → 触发文件选择(按钮/链接/输入除外)
-// - #file click → prepareFilePicker(清空 value,保证重选同名文件也触发 change)
-// - #file change → uploadFeature.handleFileSelected()
-// - 页码区间 input → uploadFeature.constrainPageRanges({source})
-// - #credential-gate-action → openBrowserCredentials（非 setupMode → 设置 → API）
+// Trạng thái view toàn bộ đến từ view store upload/workflow (controller thuần logic ghi);
+// tương tác ánh theo bindMainShellEvents + bindUploadTilePicker cũ:
+// - Bấm chỗ trống của tile → kích chọn tệp (trừ nút/liên kết/input)
+// - Bấm #file → prepareFilePicker (xóa value, bảo đảm chọn lại cùng tên cũng kích change)
+// - Change #file → uploadFeature.handleFileSelected()
+// - Input khoảng trang → uploadFeature.constrainPageRanges({source})
+// - #credential-gate-action → openBrowserCredentials (không phải setupMode → cài đặt → API)
 
 import { useCallback } from "react";
 import { useStoreSnapshot } from "../../../../shared/react/use-store.js";
@@ -29,10 +29,10 @@ function CredentialGate({ visible }) {
             <circle cx="12" cy="16" r="1.2" fill="currentColor" />
           </svg>
         </span>
-        <strong id="credential-gate-title">请先完成 API 设置</strong>
-        <em id="credential-gate-help">在设置 → API 设置中填写 OCR Token 和 DeepSeek Key 后即可上传 PDF。</em>
+        <strong id="credential-gate-title">Vui lòng hoàn tất thiết lập API</strong>
+        <em id="credential-gate-help">Điền OCR Token và DeepSeek Key trong Cài đặt → Thiết lập API để tải lên PDF.</em>
         <button id="credential-gate-action" type="button" className="credential-gate-action" onClick={handleGateAction}>
-          打开设置
+          Mở cài đặt
         </button>
       </div>
     </div>
@@ -55,10 +55,10 @@ function InlinePageRange({ upload, onConstrain, onPatch }) {
     <div
       id="inline-page-range"
       className={`inline-page-range${upload.inlinePageRangeVisible ? "" : " hidden"}`}
-      aria-label="翻译页码范围"
-    >
-      <label>
-        <span>起始页</span>
+      aria-label="Phạm vi trang dịch"
+      >
+        <label>
+          <span>Trang bắt đầu</span>
         <input
           id="page-range-start"
           type="number"
@@ -72,16 +72,16 @@ function InlinePageRange({ upload, onConstrain, onPatch }) {
           onInput={handleInput("start")}
         />
       </label>
-      <label>
-        <span>结束页</span>
-        <input
-          id="page-range-end"
-          type="number"
-          min="1"
-          step="1"
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="总页数"
+        <label>
+          <span>Trang kết thúc</span>
+          <input
+            id="page-range-end"
+            type="number"
+            min="1"
+            step="1"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="Tổng số trang"
           {...maxAttr}
           value={upload.pageRangeEnd}
           onInput={handleInput("end")}
@@ -104,7 +104,7 @@ function TranslationBudgetNote({ budget }) {
       {budget.visible && budget.blocking ? (
         <>
           {" · "}
-          <a href={budget.topUpUrl} target="_blank" rel="noopener noreferrer">去充值</a>
+           <a href={budget.topUpUrl} target="_blank" rel="noopener noreferrer">Nạp tiền</a>
         </>
       ) : null}
     </div>
@@ -120,7 +120,7 @@ export function HeroUpload() {
     services.uploadDomRefs.fileInput = node;
   }, [services]);
 
-  // 镜像 bindUploadTilePicker:空白处点击代理到文件选择
+  // Ánh bindUploadTilePicker: bấm chỗ trống ủy quyền cho bộ chọn tệp
   function handleTileClick(event) {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
@@ -176,11 +176,11 @@ export function HeroUpload() {
           {upload.label}
         </strong>
         <em id="upload-help" className={upload.helpVisible ? "" : "hidden"}>{upload.help}</em>
-        <div className={`upload-meta upload-meta-inline${upload.tileEnabled ? "" : " hidden"}`}>
-          <span>单个 PDF</span>
-          <span>最大 50MB</span>
-          <span>最多 999 页</span>
-        </div>
+         <div className={`upload-meta upload-meta-inline${upload.tileEnabled ? "" : " hidden"}`}>
+           <span>Tệp PDF đơn</span>
+           <span>Tối đa 50MB</span>
+           <span>Tối đa 999 trang</span>
+         </div>
         <div id="upload-status" className={`upload-status${upload.statusVisible ? "" : " hidden"}`}>
           {upload.status}
         </div>
@@ -199,13 +199,13 @@ export function HeroUpload() {
         <TranslationBudgetNote budget={workflow.budget} />
       </div>
 
-      {/* 上传完成后给出明确二选一：直接翻译（提交 job）/ 仅收藏（关对话框入库） */}
-      <div
-        id="upload-ready-hint"
-        className={`upload-ready-hint${upload.ready ? "" : " hidden"}`}
-        aria-live="polite"
-      >
-        文件已就绪：可<strong>直接翻译</strong>，或<strong>仅收藏</strong>到书架稍后再翻。
+       {/* Sau khi tải lên xong: chọn dịch ngay (gửi tác vụ) hoặc chỉ lưu vào thư viện (đóng hộp thoại) */}
+       <div
+         id="upload-ready-hint"
+         className={`upload-ready-hint${upload.ready ? "" : " hidden"}`}
+         aria-live="polite"
+       >
+         Tệp đã sẵn sàng: có thể <strong>dịch ngay</strong>, hoặc <strong>chỉ lưu</strong> vào thư viện để dịch sau.
       </div>
 
       <div id="upload-action-slot" className={`upload-action-slot${upload.actionSlotVisible ? "" : " hidden"}`}>
@@ -214,30 +214,30 @@ export function HeroUpload() {
             id="page-range-btn"
             type="button"
             className={`page-range-mini secondary${workflow.pageRangeButtonVisible ? "" : " hidden"}`}
-            aria-label="专业翻译设置"
-            title="页码范围等专业选项"
+            aria-label="Thiết lập dịch chuyên nghiệp"
+            title="Tùy chọn chuyên nghiệp như phạm vi trang"
             onClick={() => services.features.uploadFeature?.openPageRangeDialog()}
           >
-            选项
+            Tùy chọn
           </button>
           <button
             id="store-only-btn"
             type="button"
             className={`secondary${upload.ready ? "" : " hidden"}`}
             disabled={!upload.ready || workflow.submitBusy}
-            title="只加入书架，不开始翻译"
+            title="Chỉ lưu vào thư viện, không bắt đầu dịch"
             onClick={() => services.library.actions.storeOnly?.()}
           >
-            仅收藏
+            Chỉ lưu
           </button>
           <button
             id="submit-btn"
             type="submit"
             disabled={workflow.submitDisabled || workflow.submitBusy}
             {...(workflow.submitBusy ? { "data-busy": "1" } : {})}
-            title="上传完成后立即发起翻译任务"
+            title="Bắt đầu dịch ngay sau khi tải lên"
           >
-            {workflow.submitBusy ? "提交中…" : (workflow.submitLabel || "直接翻译")}
+            {workflow.submitBusy ? "Đang gửi..." : (workflow.submitLabel || "Dịch ngay")}
           </button>
         </div>
       </div>

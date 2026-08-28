@@ -202,10 +202,10 @@ impl PaddleProviderError {
 
     pub fn stage_detail(&self) -> String {
         let prefix = match self.stage {
-            "submit" => "Paddle 提交失败",
-            "poll" => "Paddle 轮询失败",
-            "download" => "Paddle 结果下载失败",
-            _ => "Paddle provider 失败",
+            "submit" => "Lỗi gửi Paddle",
+            "poll" => "Lỗi kiểm tra trạng thái Paddle",
+            "download" => "Lỗi tải kết quả Paddle",
+            _ => "Lỗi nhà cung cấp Paddle",
         };
         let message = self
             .info
@@ -364,7 +364,7 @@ mod tests {
         assert_eq!(err.info().provider_code.as_deref(), Some("10010"));
         assert_eq!(
             err.info().provider_message.as_deref(),
-            Some("任务提交队列已满，请稍后重试")
+            Some("Hàng đợi gửi tác vụ đã đầy, vui lòng thử lại sau")
         );
         assert_eq!(err.info().trace_id.as_deref(), Some("trace-queue"));
         assert!(err.stage_detail().contains("任务提交队列已满"));

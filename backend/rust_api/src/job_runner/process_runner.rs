@@ -358,7 +358,7 @@ print(json.dumps({
         job.request_payload.translation.base_url = "https://api.deepseek.com/v1".to_string();
         job.status = JobStatusKind::Failed;
         job.stage = Some("failed".to_string());
-        job.stage_detail = Some("Python worker 执行失败".to_string());
+        job.stage_detail = Some("Python worker thực thi thất bại".to_string());
         job.error = Some("Traceback (most recent call last):\nRuntimeError: boom".to_string());
         job.failure = Some(JobFailureInfo {
             stage: "translation".to_string(),
@@ -369,7 +369,7 @@ print(json.dumps({
             failure_category: Some("internal".to_string()),
             provider_stage: None,
             provider_code: None,
-            summary: "任务失败，但暂未识别出明确根因".to_string(),
+            summary: "Nhiệm vụ thất bại, nhưng chưa xác định được nguyên nhân rõ ràng".to_string(),
             root_cause: Some("Traceback (most recent call last):".to_string()),
             retryable: true,
             upstream_host: None,

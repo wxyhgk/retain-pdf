@@ -1,194 +1,194 @@
-# RetainPDF 图标 / 动效需求说明
+# Hướng dẫn yêu cầu biểu tượng / hiệu ứng RetainPDF
 
-**用途：** 给你（或设计师）按清单出图；产品会逐步替换现有 Lucide 线框 SVG 与内联 path。  
-**日期：** 2026-07-21  
-**风格参考：** 轻量、阅读产品、偏 Apple / 学术工具——**细线、圆角、少装饰**；主色跟随 UI（`currentColor`），不要写死黑底大色块。
+**Mục đích:** Cung cấp cho bạn (hoặc nhà thiết kế) danh sách các hạng mục cần xuất; sản phẩm sẽ dần thay thế SVG khung dây Lucide hiện có và đường dẫn nội tuyến.  
+**Ngày:** 2026-07-21  
+**Phong cách tham khảo:** Nhẹ nhàng, sản phẩm đọc sách, thiên về Apple / công cụ học thuật — **đường nét mảnh, góc bo tròn, ít trang trí**; màu chính theo giao diện người dùng (`currentColor`), không cố định khối màu đen lớn.
 
 ---
 
-## 1. 交付约定（请按这个出）
+## 1. Quy ước bàn giao (vui lòng xuất theo)
 
-### 1.1 静态图标（UI 线标）
+### 1.1 Biểu tượng tĩnh (đường nét giao diện người dùng)
 
-| 项 | 要求 |
+| Hạng mục | Yêu cầu |
 |----|------|
-| 格式 | **SVG** 优先（矢量）；也可附带 24/48/96 PNG 预览 |
-| 画板 | **24×24** viewBox（统一）；重要入口可另出 **32×32 / 48×48** 变体 |
-| 描边 | 建议 **1.6–2.0** 视觉粗细，圆角线帽（round） |
-| 颜色 | **单色**，用 `currentColor` / `#000` 描边即可，我们会在 CSS 里换色 |
-| 边距 | 图形四周留约 **2px** 安全边，避免贴边裁切 |
-| 命名 | 小写 kebab-case，见下方文件名 |
-| 放置 | 做好后放进本目录的 `deliverables/`（你建也行），例如：`docs/icon-design/deliverables/nav-library.svg` |
+| Định dạng | Ưu tiên **SVG** (vector); có thể kèm bản xem trước PNG 24/48/96 |
+| Khung vẽ | **24×24** viewBox (thống nhất); mục nhập quan trọng có thể xuất thêm biến thể **32×32 / 48×48** |
+| Nét vẽ | Độ dày thị giác **1.6–2.0**, mũi tròn (round) |
+| Màu sắc | **Đơn sắc**, sử dụng `currentColor` / `#000` để vẽ nét, chúng tôi sẽ đổi màu trong CSS |
+| Lề | Để khoảng an toàn khoảng **2px** xung quanh hình, tránh cắt sát mép |
+| Đặt tên | Chữ thường, dạng kebab-case, xem tên tệp bên dưới |
+| Vị trí | Sau khi hoàn thành, đặt vào `deliverables/` của thư mục này (bạn có thể tự tạo), ví dụ: `docs/icon-design/deliverables/nav-library.svg` |
 
-### 1.2 动态图标（可选加分）
+### 1.2 Biểu tượng động (tùy chọn, điểm cộng)
 
-| 项 | 要求 |
+| Hạng mục | Yêu cầu |
 |----|------|
-| 格式 | **Lottie JSON**（优先，项目已有 lottie-web）或 **APNG / 短循环 WebM** |
-| 时长 | 循环 **1–2s**；处理中类可更长 |
-| 尺寸 | 导出逻辑 **64×64 或 128×128**，透明底 |
-| 命名 | `anim-<用途>.json`，如 `anim-processing.json` |
-| 注意 | 避免过重粒子；状态卡里会很小显示 |
+| Định dạng | Ưu tiên **Lottie JSON** (dự án đã có lottie-web) hoặc **APNG / WebM vòng lặp ngắn** |
+| Thời lượng | Vòng lặp **1–2s**; loại đang xử lý có thể dài hơn |
+| Kích thước | Logic xuất **64×64 hoặc 128×128**, nền trong suốt |
+| Đặt tên | `anim-<công dụng>.json`, ví dụ `anim-processing.json` |
+| Lưu ý | Tránh hạt quá nặng; sẽ hiển thị rất nhỏ trong thẻ trạng thái |
 
-### 1.3 已有动效（可换代，不必重做清单外的）
+### 1.3 Hiệu ứng hiện có (có thể thay thế, không cần làm lại ngoài danh sách)
 
-现有 Lottie 在 `frontend/src/assets/animations/`：
+Lottie hiện có trong `frontend/src/assets/animations/`:
 
-| 文件 | 用途（管线阶段） |
+| Tệp | Công dụng (giai đoạn đường ống) |
 |------|------------------|
-| `pdf_upload_Lottie.json` | 上传 |
+| `pdf_upload_Lottie.json` | Tải lên |
 | `ocr_Lottie.json` | OCR |
-| `deepseek_lottie.json` | 翻译（模型） |
-| `typst_rendering.json` | 排版 / 渲染 |
-| `pdf_download_Lottie.json` | 下载 / 产出 |
+| `deepseek_lottie.json` | Dịch (mô hình) |
+| `typst_rendering.json` | Sắp xếp / Kết xuất |
+| `pdf_download_Lottie.json` | Tải xuống / Đầu ra |
 
-若你要「更好看的动效」，优先换这 5 个 + 下文 **P0 动态** 即可。
+Nếu bạn muốn hiệu ứng "đẹp hơn", ưu tiên thay 5 cái này + **P0 động** bên dưới.
 
 ---
 
-## 2. 优先级总览
+## 2. Tổng quan ưu tiên
 
-| 优先级 | 说明 |
+| Ưu tiên | Giải thích |
 |--------|------|
-| **P0** | 每天看到：顶栏 Tab、底栏、阅读器模式/关闭/FAB、卡片状态徽标 |
-| **P1** | 书架操作、工具条、空状态、设置入口 |
-| **P2** | Toast / 通用对话框关闭、细节装饰 |
+| **P0** | Nhìn thấy hàng ngày: Tab trên cùng, thanh dưới cùng, chế độ đọc/đóng/FAB, huy hiệu trạng thái thẻ |
+| **P1** | Thao tác trên kệ sách, thanh công cụ, trạng thái trống, mục nhập cài đặt |
+| **P2** | Toast / đóng hộp thoại chung, trang trí chi tiết |
 
 ---
 
-## 3. P0 — 必须先做（导航 + 阅读器）
+## 3. P0 — Phải làm trước (điều hướng + trình đọc)
 
-### 3.1 主页顶栏 Tab（三枚一组，风格要统一）
+### 3.1 Tab trên cùng trang chủ (bộ ba, phong cách thống nhất)
 
-| 文件名建议 | 语义 | 界面文案 | 现用大致形态 | 尺寸场景 |
+| Tên tệp gợi ý | Ý nghĩa | Văn bản giao diện | Hình dạng hiện tại | Kích thước |
 |------------|------|----------|--------------|----------|
-| `nav-library.svg` | 图书馆 / 书架 | 图书馆 | 书脊并排 | 16–18px 内联 |
-| `nav-collections.svg` | 合集 / 文件夹书堆 | 合集 | 多层 stack | 同上 |
-| `nav-favorites.svg` | 收藏 / 书签摘录 | 收藏 | 书签 bookmark | 同上 |
+| `nav-library.svg` | Thư viện / Kệ sách | Thư viện | Các gáy sách xếp cạnh nhau | 16–18px nội tuyến |
+| `nav-collections.svg` | Bộ sưu tập / Đống sách trong thư mục | Bộ sưu tập | Xếp chồng nhiều lớp | Như trên |
+| `nav-favorites.svg` | Yêu thích / Trích đoạn đánh dấu | Yêu thích | Dấu trang | Như trên |
 
-**设计提示：** 三者并排在白色 pill 里；选中态会变白描边，**请保证在深底上仍清晰**。
+**Gợi ý thiết kế:** Ba mục xếp cạnh nhau trong viên thuốc màu trắng; trạng thái được chọn sẽ có nét trắng, **vui lòng đảm bảo rõ nét trên nền tối**.
 
-### 3.2 主页底栏
+### 3.2 Thanh dưới cùng trang chủ
 
-| 文件名 | 语义 | 文案 | 现用 |
+| Tên tệp | Ý nghĩa | Văn bản | Hình dạng hiện tại |
 |--------|------|------|------|
-| `action-add-pdf.svg` | 添加 / 上传 PDF | 添加 PDF | 粗 **+** |
-| `action-settings.svg` | 设置 | 设置 | 齿轮 |
+| `action-add-pdf.svg` | Thêm / Tải lên PDF | Thêm PDF | Dấu **+** đậm |
+| `action-settings.svg` | Cài đặt | Cài đặt | Bánh răng |
 
-可选：`action-search.svg`（搜索框左侧装饰，当前是纯 input）。
+Tùy chọn: `action-search.svg` (trang trí bên trái hộp tìm kiếm, hiện tại là input thuần).
 
-### 3.3 阅读器顶栏模式（三枚一组）
+### 3.3 Chế độ thanh trên cùng trình đọc (bộ ba)
 
-| 文件名 | 语义 | 文案 | 现用 Lucide |
+| Tên tệp | Ý nghĩa | Văn bản | Lucide hiện tại |
 |--------|------|------|-------------|
-| `reader-mode-source.svg` | 原文单栏 | 原文 | FileText |
-| `reader-mode-translated.svg` | 译文单栏 | 译文 | Languages |
-| `reader-mode-compare.svg` | 左右对照 | 对照阅读 | Columns2 |
+| `reader-mode-source.svg` | Một cột gốc | Bản gốc | FileText |
+| `reader-mode-translated.svg` | Một cột dịch | Bản dịch | Languages |
+| `reader-mode-compare.svg` | Đối chiếu trái phải | Đọc đối chiếu | Columns2 |
 
-### 3.4 阅读器操作
+### 3.4 Thao tác trình đọc
 
-| 文件名 | 语义 | 文案 / 场景 | 现用 |
+| Tên tệp | Ý nghĩa | Văn bản / Tình huống | Hình dạng hiện tại |
 |--------|------|-------------|------|
-| `reader-close.svg` | 关闭 / 回主页 | 关闭 | X |
-| `reader-fab.svg` | 悬浮工具钮主图标 | 工具菜单 | 菜单感 / 点阵亦可 |
-| `reader-notes.svg` | 批注列表 | 批注 | StickyNote |
-| `reader-download.svg` | 下载入口 | 下载 | Download |
-| `reader-download-source.svg` | 下原文 PDF | 原文 | FileText |
-| `reader-download-translated.svg` | 下译文 PDF | 译文 | Languages |
-| `reader-download-compare.svg` | 下对照 PDF | 对照 | Columns2 |
-| `reader-note-add.svg` | 选区加批注 | 加批注 | StickyNote |
-| `reader-shortcuts.svg` | 快捷键帮助 | 快捷键 | Keyboard |
+| `reader-close.svg` | Đóng / Về trang chủ | Đóng | X |
+| `reader-fab.svg` | Biểu tượng chính của nút công cụ nổi | Menu công cụ | Dạng menu / chấm |
+| `reader-notes.svg` | Danh sách ghi chú | Ghi chú | StickyNote |
+| `reader-download.svg` | Điểm vào tải xuống | Tải xuống | Download |
+| `reader-download-source.svg` | Tải PDF gốc | Bản gốc | FileText |
+| `reader-download-translated.svg` | Tải PDF dịch | Bản dịch | Languages |
+| `reader-download-compare.svg` | Tải PDF đối chiếu | Đối chiếu | Columns2 |
+| `reader-note-add.svg` | Thêm ghi chú cho vùng ch��n | Thêm ghi chú | StickyNote |
+| `reader-shortcuts.svg` | Trợ giúp phím tắt | Phím tắt | Keyboard |
 
-### 3.5 书架卡片状态徽标（小，11–14px）
+### 3.5 Huy hiệu trạng thái thẻ kệ sách (nhỏ, 11–14px)
 
-| 文件名 | 语义 | 状态文案方向 | 现用 key |
+| Tên tệp | Ý nghĩa | Hướng văn bản trạng thái | Key hiện tại |
 |--------|------|--------------|----------|
-| `badge-archive.svg` | 仅馆藏 / 未翻译 | 库存 | archive |
-| `badge-translated.svg` | 已翻译 | 已译 | languages |
-| `badge-processing.svg` | 处理中 | 进行中 | loader（可转） |
-| `badge-failed.svg` | 失败 | 失败 | alert |
-| `badge-queued.svg` | 排队 | 排队 | clock |
+| `badge-archive.svg` | Chỉ lưu trữ / Chưa dịch | Kho lưu trữ | archive |
+| `badge-translated.svg` | Đã dịch | Đã dịch | languages |
+| `badge-processing.svg` | Đang xử lý | Đang tiến hành | loader (có thể xoay) |
+| `badge-failed.svg` | Thất bại | Thất bại | alert |
+| `badge-queued.svg` | Đang xếp hàng | Đang xếp hàng | clock |
 
-**动态优先：** `anim-badge-processing.json`（替换 CSS spin 的 loader）。
+**Ưu tiên động:** `anim-badge-processing.json` (thay thế loader spin CSS).
 
 ---
 
-## 4. P1 — 书架与空状态
+## 4. P1 — Kệ sách và trạng thái trống
 
-| 文件名 | 语义 | 出现位置 |
+| Tên tệp | Ý nghĩa | Vị trí xuất hiện |
 |--------|------|----------|
-| `shelf-continue-book.svg` | 继续阅读封面占位 | 继续阅读条 |
-| `shelf-empty-favorites.svg` | 还没有收藏 | 收藏 Tab 空态 |
-| `shelf-empty-collection.svg` | 空合集 | 合集封面堆空 |
-| `shelf-view-grid.svg` | 网格视图 | 工具条 |
-| `shelf-view-list.svg` | 列表视图 | 工具条 |
-| `shelf-batch-select.svg` | 批量选择 | 工具条 |
-| `shelf-batch-delete.svg` | 批量删除 | 批量栏 |
-| `shelf-batch-collection.svg` | 加入合集 | 批量栏 |
-| `book-read.svg` | 读原文 / 眼睛 | 列表行、详情 |
-| `book-compare.svg` | 对照阅读 | 卡片操作 |
-| `book-translate.svg` | 发起翻译 | 详情 / 卡片 |
-| `book-cover-fallback.svg` | 无封面占位 | 卡片封面 |
-| `upload-lock.svg` | 未配凭据门禁 | 上传区 |
-| `collection-manage.svg` | 管理合集 | 合集卡片齿轮 |
+| `shelf-continue-book.svg` | Chiếm chỗ ảnh bìa tiếp tục đọc | Thanh tiếp tục đọc |
+| `shelf-empty-favorites.svg` | Chưa có yêu thích | Trạng thái trống tab Yêu thích |
+| `shelf-empty-collection.svg` | Bộ sưu tập trống | Chồng bìa bộ sưu tập trống |
+| `shelf-view-grid.svg` | Chế độ xem lưới | Thanh công cụ |
+| `shelf-view-list.svg` | Chế độ xem danh sách | Thanh công cụ |
+| `shelf-batch-select.svg` | Chọn hàng loạt | Thanh công cụ |
+| `shelf-batch-delete.svg` | Xóa hàng loạt | Thanh hàng loạt |
+| `shelf-batch-collection.svg` | Thêm vào bộ sưu tập | Thanh hàng loạt |
+| `book-read.svg` | Đọc gốc / Mắt | Dòng danh sách, chi tiết |
+| `book-compare.svg` | Đọc đối chiếu | Thao tác thẻ |
+| `book-translate.svg` | Bắt đầu dịch | Chi tiết / Thẻ |
+| `book-cover-fallback.svg` | Chiếm chỗ không có bìa | Bìa thẻ |
+| `upload-lock.svg` | Cổng chưa có thông tin xác thực | Khu vực tải lên |
+| `collection-manage.svg` | Quản lý bộ sưu tập | Bánh răng thẻ bộ sưu tập |
 
-### 设置中心（Settings Hub 三栏）
+### Trung tâm cài đặt (Settings Hub ba cột)
 
-| 文件名 | 语义 |
+| Tên tệp | Ý nghĩa |
 |--------|------|
-| `settings-api.svg` | 接口 / 凭据 |
-| `settings-glossary.svg` | 术语表 |
-| `settings-about.svg` | 关于 / 更新 |
+| `settings-api.svg` | Giao diện / Thông tin xác thực |
+| `settings-glossary.svg` | Bảng thuật ngữ |
+| `settings-about.svg` | Giới thiệu / Cập nhật |
 
 ---
 
-## 5. P2 — 系统与反馈
+## 5. P2 — Hệ thống và phản hồi
 
-| 文件名 | 语义 | 现用 |
+| Tên tệp | Ý nghĩa | Hình dạng hiện tại |
 |--------|------|------|
-| `toast-success.svg` | 成功 | CircleCheck |
-| `toast-info.svg` | 信息 | Info |
-| `toast-warning.svg` | 警告 | TriangleAlert |
-| `toast-error.svg` | 错误 | OctagonX |
-| `toast-loading.svg` | 加载中（可动态） | Loader2 spin |
-| `dialog-close.svg` | 对话框关闭 | X |
+| `toast-success.svg` | Thành công | CircleCheck |
+| `toast-info.svg` | Thông tin | Info |
+| `toast-warning.svg` | Cảnh báo | TriangleAlert |
+| `toast-error.svg` | Lỗi | OctagonX |
+| `toast-loading.svg` | Đang tải (có thể động) | Loader2 spin |
+| `dialog-close.svg` | Đóng hộp thoại | X |
 
 ---
 
-## 6. 建议优先做的「动态」清单
+## 6. Danh sách "động" ưu tiên
 
-若时间有限，动态只做这些：
+Nếu thời gian có hạn, chỉ làm động những cái này:
 
-| 文件名 | 场景 | 说明 |
+| Tên tệp | Tình huống | Giải thích |
 |--------|------|------|
-| `anim-processing.json` | 卡片处理中 / 状态卡 | 温和旋转或进度环，可循环 |
-| `anim-upload.json` | 上传中 | 可替换 `pdf_upload_Lottie.json` |
-| `anim-ocr.json` | OCR 阶段 | 可替换 `ocr_Lottie.json` |
-| `anim-translate.json` | 翻译阶段 | 可替换 `deepseek_lottie.json` |
-| `anim-render.json` | 排版阶段 | 可替换 `typst_rendering.json` |
-| `anim-download.json` | 下载完成/进行 | 可替换 `pdf_download_Lottie.json` |
-| `anim-empty-favorites.json`（可选） | 收藏空态 | 书签轻动，不要吵 |
+| `anim-processing.json` | Thẻ đang xử lý / Thẻ trạng thái | Xoay nhẹ hoặc vòng tiến trình, có thể lặp |
+| `anim-upload.json` | Đang tải lên | Có thể thay `pdf_upload_Lottie.json` |
+| `anim-ocr.json` | Giai đoạn OCR | Có thể thay `ocr_Lottie.json` |
+| `anim-translate.json` | Giai đoạn dịch | Có thể thay `deepseek_lottie.json` |
+| `anim-render.json` | Giai đoạn sắp xếp | Có thể thay `typst_rendering.json` |
+| `anim-download.json` | Đang/hay tải xuống hoàn tất | Có thể thay `pdf_download_Lottie.json` |
+| `anim-empty-favorites.json` (tùy chọn) | Trạng thái trống yêu thích | Dấu trang nhẹ nhàng, không ồn ào |
 
 ---
 
-## 7. 视觉统一建议
+## 7. Gợi ý thống nhất thị giác
 
-1. **同一套笔触**：全站 24 画板、相近 stroke。  
-2. **语义分组形状**：  
-   - 书 / 页 → 圆角矩形 + 折角  
-   - 翻译 → 文 / A 或双文气泡  
-   - 对照 → 双栏  
-   - 收藏 → 书签（不要用心形，和「喜欢」混淆）  
-3. **状态色由 UI 上色**：图标本身单色；失败/成功由外层 badge 背景表达。  
-4. **动效克制**：阅读场景避免闪烁；`prefers-reduced-motion` 时我们会停动画，请保证静态帧也看得懂。
+1. **Cùng một bộ nét**: Toàn bộ 24 khung vẽ, nét gần giống nhau.  
+2. **Hình dạng nhóm ngữ nghĩa**:  
+   - Sách / Trang → Hình chữ nhật bo tròn + góc gấp  
+   - Dịch → Văn bản / A hoặc bong bóng hai ngôn ngữ  
+   - Đối chiếu → Hai cột  
+   - Yêu thích → Dấu trang (không dùng hình trái tim, tránh nhầm với "thích")  
+3. **Màu trạng thái do giao diện người dùng tô màu**: Bản thân biểu tượng đơn sắc; thất bại/thành công do nền huy hiệu bên ngoài thể hiện.  
+4. **Hiệu ứng tiết chế**: Tránh nhấp nháy trong tình huống đọc; khi `prefers-reduced-motion`, chúng tôi sẽ dừng hiệu ứng, vui lòng đảm bảo khung hình tĩnh vẫn dễ hiểu.
 
 ---
 
-## 8. 交付目录结构（请按此丢文件）
+## 8. Cấu trúc thư mục bàn giao (vui lòng đặt tệp theo đây)
 
 ```
 docs/icon-design/
-  ICON_BRIEF.md          ← 本说明
+  ICON_BRIEF.md          ← Hướng dẫn này
   deliverables/
     svg/
       nav-library.svg
@@ -197,16 +197,16 @@ docs/icon-design/
     lottie/
       anim-processing.json
       ...
-    preview/             ← 可选：拼一张总览 PNG/PDF 方便评审
+    preview/             ← Tùy chọn: ghép một PNG/PDF tổng quan để tiện đánh giá
 ```
 
-做完后告诉我文件已就位，我可以按文件名接到 `frontend/src/assets/icons/` 并替换代码里的 Lucide / 内联 SVG。
+Sau khi hoàn thành, hãy thông báo cho tôi các tệp đã sẵn sàng, tôi có thể kết nối theo tên tệp vào `frontend/src/assets/icons/` và thay thế Lucide / SVG nội tuyến trong mã.
 
 ---
 
-## 9. 最小开工包（若只想先做 12 个）
+## 9. Gói khởi động tối thiểu (nếu chỉ muốn làm 12 cái trước)
 
-按产品曝光排序，**先做这 12 个**就够换一版气质：
+Theo thứ tự độ phơi sáng sản phẩm, **làm 12 cái này trước** là đủ để thay đổi diện mạo:
 
 1. `nav-library`  
 2. `nav-collections`  
@@ -218,18 +218,18 @@ docs/icon-design/
 8. `reader-mode-compare`  
 9. `reader-close`  
 10. `reader-notes`  
-11. `badge-processing`（+ 可选 `anim-processing`）  
+11. `badge-processing` (+ tùy chọn `anim-processing`)  
 12. `badge-translated`  
 
-其余可第二批发。
+Các mục còn lại có thể gửi đợt sau.
 
 ---
 
-## 10. 代码侧现状（给你对照，不必改）
+## 10. Hiện trạng phía mã (để bạn đối chiếu, không cần sửa)
 
-- 阅读器：大量 `lucide-react`（ModeTabs / Fab / Close / Selection）。  
-- 主页：大量内联 `<svg>`（TopTabs / BottomBar / Badge / Toolbar）。  
-- 品牌：`frontend/src/assets/RetainPDF-logo.svg`（Logo 另算，不在本清单强制范围）。  
-- 阶段动效：Lottie 见 §1.3。
+- Trình đọc: nhiều `lucide-react` (ModeTabs / Fab / Close / Selection).  
+- Trang chủ: nhiều `<svg>` nội tuyến (TopTabs / BottomBar / Badge / Toolbar).  
+- Thương hiệu: `frontend/src/assets/RetainPDF-logo.svg` (Logo tính riêng, không nằm trong phạm vi bắt buộc của danh sách này).  
+- Hiệu ứng giai đoạn: Lottie xem §1.3.
 
-有问题可以直接在 `deliverables/` 旁加 `notes.md` 写你的命名或变体说明。
+Nếu có vấn đề, bạn có thể thêm `notes.md` bên cạnh `deliverables/` ghi rõ tên hoặc biến thể của bạn.

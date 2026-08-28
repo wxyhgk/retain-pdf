@@ -1,99 +1,99 @@
-# Pipeline 目录说明
+# Hướng dẫn thư mục Pipeline
 
-`scripts/runtime/pipeline/` 负责把 OCR 标准化产物、翻译流程和渲染流程串成一条稳定的总线。
+`scripts/runtime/pipeline/` chịu trách nhiệm kết nối sản phẩm chuẩn hóa OCR, quy trình dịch và quy trình kết xuất thành một bus ổn định.
 
-这里不承载具体的 OCR provider 解析、翻译模型调用或 PDF 低层渲染细节，而是负责“怎么把这些能力按正确顺序组织起来”。
+Nơi đây không chứa phân tích OCR provider cụ thể, gọi mô hình dịch hay chi tiết kết xuất PDF cấp thấp, mà chịu trách nhiệm "làm thế nào để tổ chức các khả năng này theo đúng thứ tự".
 
-## 阶段契约
+## Hợp đồng giai đoạn
 
-### 1. OCR / Normalize 阶段
+### 1. Giai đoạn OCR / Chuẩn hóa
 
-责任边界：
+Ranh giới trách nhiệm:
 
-- 输入 provider 原始 OCR 结果、源 PDF 和 provider 元数据
-- 输出统一中间层 `document.v1.json` 与 `document.v1.report.json`
-- 到此为止，不继续承担翻译和最终 PDF 渲染
+- Đầu vào: kết quả OCR raw của provider, PDF nguồn và metadata provider
+- Đầu ra: tầng trung gian thống nhất `document.v1.json` và `document.v1.report.json`
+- Đến đây là dừng, không tiếp tục đảm nhận dịch và kết xuất PDF cuối cùng
 
-稳定交接点：
+Điểm giao tiếp ổn định:
 
-- translation / rendering 主线只应把 `document.v1.json` 当成 OCR 阶段完成后的正式输入
-- provider raw JSON、zip、unpacked 目录仅保留给 adapter、排错和回溯
+- Mainline dịch / kết xuất chỉ nên coi `document.v1.json` là đầu vào chính thức sau giai đoạn OCR
+- Thư mục JSON raw, zip, unpacked của provider chỉ giữ cho adapter, gỡ lỗi và truy xuất
 
-### 2. Translation 阶段
+### 2. Giai đoạn Dịch
 
-责任边界：
+Ranh giới trách nhiệm:
 
-- 输入 `document.v1.json`、翻译策略参数和翻译输出目录
-- 输出逐页 translation payload、`translation-manifest.json`、翻译摘要和诊断信息
-- 到此为止，不负责 provider raw 解析，不负责源 PDF 写回和最终 PDF 交付
+- Đầu vào: `document.v1.json`, tham số chiến lược dịch và thư mục đầu ra dịch
+- Đầu ra: payload dịch từng trang, `translation-manifest.json`, tóm tắt dịch và thông tin chẩn đoán
+- Đến đây là dừng, không chịu trách nhiệm phân tích raw provider, không ghi lại PDF nguồn và bàn giao PDF cuối cùng
 
-稳定交接点：
+Điểm giao tiếp ổn định:
 
-- rendering 阶段只应消费翻译产物协议，不应反向读取 provider raw OCR 结构
-- 当前默认翻译产物协议由逐页 translation payload 加 `translation-manifest.json` 组成
-- render-only 主线现在要求 manifest-only；不再回退扫描旧的逐页 JSON 文件
-- translation 阶段允许读取源 PDF 做领域推断或策略辅助，但不拥有源 PDF 的渲染控制权
-- 如果启用了术语表，translation 阶段还会把术语表摘要写入 `translation-manifest.json`、诊断文件和 pipeline summary；这些字段属于元数据，不改变渲染输入协议
-- pipeline summary 与 translation manifest 现在还会写入 `invocation` 字段，用来声明当前阶段 schema 版本
-- 各阶段 worker 现在还会在 `logs/pipeline_events.jsonl` 追加统一阶段事件；这份文件是后续 Rust API 收口事件协议的过渡落点
+- Giai đoạn kết xuất chỉ nên tiêu thụ giao thức sản phẩm dịch, không được đọc ngược cấu trúc OCR raw của provider
+- Giao thức sản phẩm dịch mặc định hiện tại bao gồm payload dịch từng trang và `translation-manifest.json`
+- Mainline render-only hiện yêu cầu manifest-only; không còn quay lại quét các tệp JSON từng trang cũ
+- Giai đoạn dịch được phép đọc PDF nguồn để suy luận lĩnh vực hoặc hỗ trợ chiến lược, nhưng không sở hữu quyền kiểm soát kết xuất PDF nguồn
+- Nếu bảng thuật ngữ được bật, giai đoạn dịch còn ghi tóm tắt bảng thuật ngữ vào `translation-manifest.json`, tệp chẩn đoán và pipeline summary; các trường này là metadata, không thay đổi giao thức đầu vào kết xuất
+- Pipeline summary và translation manifest hiện còn ghi trường `invocation` để khai báo phiên bản schema giai đoạn hiện tại
+- Worker các giai đoạn hiện còn ghi thêm sự kiện giai đoạn thống nhất vào `logs/pipeline_events.jsonl`; tệp này là điểm trung gian để Rust API thu gọn giao thức sự kiện sau này
 
-### 3. Rendering 阶段
+### 3. Giai đoạn Kết xuất
 
-责任边界：
+Ranh giới trách nhiệm:
 
-- 输入源 PDF、翻译产物和渲染参数
-- 输出最终 PDF，以及必要的中间 overlay / typst / 压缩产物
-- 到此为止，不负责 OCR provider 识别，不发起翻译模型请求
+- Đầu vào: PDF nguồn, sản phẩm dịch và tham số kết xuất
+- Đầu ra: PDF cuối cùng, cùng với các sản phẩm trung gian overlay / typst / nén cần thiết
+- Đến đây là dừng, không chịu trách nhiệm nhận diện OCR provider, không khởi tạo yêu cầu mô hình dịch
 
-稳定交接点：
+Điểm giao tiếp ổn định:
 
-- rendering 主线只接受“源 PDF + 翻译产物”这组输入
-- OCR 结构问题应回到 `document.v1.json` / `document.v1.report.json` 排查，而不是在渲染层补 provider 特判
+- Mainline kết xuất chỉ chấp nhận bộ đầu vào "PDF nguồn + sản phẩm dịch"
+- Vấn đề cấu trúc OCR nên quay lại kiểm tra `document.v1.json` / `document.v1.report.json`, thay vì bổ sung xử lý đặc biệt cho provider ở tầng kết xuất
 
-## 模块分工
+## Phân công module
 
 - `book_pipeline.py`
-  统一编排入口。对外保留最稳定的调用面，负责把翻译阶段和渲染阶段串起来，并返回整条流程的汇总结果。
+  Điểm vào điều phối thống nhất. Giữ bề mặt gọi ổn định nhất bên ngoài, chịu trách nhiệm kết nối giai đoạn dịch và kết xuất, trả về kết quả tổng hợp của toàn bộ quy trình.
 - `translation_stage.py`
-  只负责翻译阶段。输入 `document.v1.json` 和输出目录，完成页范围裁剪、学术模式策略装配和全书翻译，输出逐页 translation payload。
+  Chỉ chịu trách nhiệm giai đoạn dịch. Đầu vào `document.v1.json` và thư mục đầu ra, thực hiện cắt phạm vi trang, lắp ráp chiến lược chế độ học thuật và dịch toàn bộ sách, xuất payload dịch từng trang.
 - `render_stage.py`
-  只负责渲染阶段。输入源 PDF 和翻译产物，按 `overlay`、`typst`、`dual` 等模式生成最终 PDF。
+  Chỉ chịu trách nhiệm giai đoạn kết xuất. Đầu vào PDF nguồn và sản phẩm dịch, theo các chế độ `overlay`, `typst`, `dual`... tạo PDF cuối cùng.
 - `services/pipeline_shared/`
-  不属于 `runtime/pipeline/`，但它承载跨阶段共享的 stdout contract、summary、统一 `pipeline_events.jsonl` 事件流和 JSON IO；pipeline 应依赖这层，而不是回头依赖某个 provider 模块的共享 helper。
+  Không thuộc `runtime/pipeline/`, nhưng nó chứa hợp đồng stdout, summary, luồng sự kiện `pipeline_events.jsonl` dùng chung và JSON IO xuyên giai đoạn; pipeline nên phụ thuộc vào tầng này, thay vì quay lại phụ thuộc vào helper chia sẻ của một module provider nào đó.
 - `render_inputs.py`
-  只负责校验 Render-only 调用协议，把 `source_pdf_path + translations_dir/translation_manifest_path` 规范化成渲染阶段可消费的稳定输入。
+  Chỉ chịu trách nhiệm kiểm tra giao thức gọi Render-only, chuẩn hóa `source_pdf_path + translations_dir/translation_manifest_path` thành đầu vào ổn định mà giai đoạn kết xuất có thể tiêu thụ.
 - `render_mode.py`
-  只负责页范围和 `auto` 模式判定，包括是否更适合走可编辑 PDF 路径。
+  Chỉ chịu trách nhiệm xác định phạm vi trang và chế độ `auto`, bao gồm việc có nên đi đường dẫn PDF có thể chỉnh sửa hay không.
 - `translation_loader.py`
-  只负责读取和筛选翻译结果文件，把 per-page translation JSON 组织成渲染阶段可消费的数据结构。
+  Chỉ chịu trách nhiệm đọc và lọc các tệp kết quả dịch, tổ chức JSON dịch từng trang thành cấu trúc dữ liệu mà giai đoạn kết xuất có thể tiêu thụ.
 - `translation_stage.py`
-  负责全书翻译阶段的 pipeline facade，内部通过 `services.translation.workflow` 执行 continuation、策略应用、批量翻译、结果回填和落盘。
+  Chịu trách nhiệm facade pipeline giai đoạn dịch toàn bộ sách, bên trong thực thi continuation, áp dụng chiến lược, dịch batch, điền kết quả và ghi qua `services.translation.workflow`.
 
-## 协作方式
+## Cách hợp tác
 
-标准流程是：
+Quy trình chuẩn:
 
-`OCR JSON -> translation_stage -> translation JSON -> translation_loader/render_stage -> final PDF`
+`OCR JSON -> translation_stage -> translation JSON -> translation_loader/render_stage -> PDF cuối cùng`
 
-这里的 `OCR JSON` 默认指 `document.v1.json`。
+`OCR JSON` ở đây mặc định là `document.v1.json`.
 
-Rust API 的完整 provider-backed workflow 也按这个边界串联：
+Quy trình provider-backed đầy đủ của Rust API cũng được kết nối theo ranh giới này:
 
-- OCR 子任务先生成 `document.v1.json`
-- translate-only 入口只生成逐页 translation payload 与 `translation-manifest.json`
-- render-only 入口再消费源 PDF 与翻译产物生成最终 PDF
+- Tác vụ con OCR trước tiên tạo `document.v1.json`
+- Điểm vào translate-only chỉ tạo payload dịch từng trang và `translation-manifest.json`
+- Điểm vào render-only sau đó tiêu thụ PDF nguồn và sản phẩm dịch để tạo PDF cuối cùng
 
-补充约定：
+Quy ước bổ sung:
 
-- 如果入口拿到的是 raw provider JSON，应先在 pipeline 外或 translation 入口处显式规范化
-- pipeline 不负责理解 provider 私有 raw 结构
-- 如果只是看 provider 探测、defaults 默认补齐或 schema 校验摘要，优先读取 `document.v1.report.json`
-- 完整任务可以串联三阶段，但三阶段的输入/输出边界必须保持独立，不能靠私有内存对象隐式耦合
-- 如果只重跑渲染，应复用已有 job 的 `source_pdf` 与 `translations_dir`，不要重新进入 OCR 或翻译阶段
+- Nếu đầu vào là JSON raw provider, nên chuẩn hóa rõ ràng bên ngoài pipeline hoặc tại điểm vào dịch
+- Pipeline không chịu trách nhiệm hiểu cấu trúc raw riêng của provider
+- Nếu chỉ cần xem phát hiện provider, bổ sung mặc định hoặc tóm tắt kiểm tra schema, ưu tiên đọc `document.v1.report.json`
+- Tác vụ đầy đủ có thể kết nối ba giai đoạn, nhưng ranh giới đầu vào/đầu ra của ba giai đoạn phải độc lập, không thể phụ thuộc ngầm qua đối tượng bộ nhớ riêng
+- Nếu chỉ chạy lại kết xuất, nên tái sử dụng `source_pdf` và `translations_dir` của job hiện có, không vào lại giai đoạn OCR hoặc dịch
 
-## 对外稳定入口
+## Điểm vào ổn định bên ngoài
 
-当前建议优先使用下面这些入口：
+Hiện tại khuyến nghị sử dụng các điểm vào sau:
 
 - `run_book_pipeline(...)`
 - `translate_book_pipeline(...)`
@@ -103,51 +103,51 @@ Rust API 的完整 provider-backed workflow 也按这个边界串联：
 - `resolve_page_range(...)`
 - `is_editable_pdf(...)`
 
-补充约定：
+Quy ước bổ sung:
 
-- 阶段入口已经固定为 `--spec <stage-spec.json>` 协议
-- normalize 阶段对应 `normalize.stage.v1`
-- translate-only 阶段对应 `translate.stage.v1`
-- render-only 阶段对应 `render.stage.v1`
-- provider-backed 全流程当前对应 `provider.stage.v1`
-  这是当前实现细节，不是上层流程命名要求
-- 基于已规范化 OCR 的整链入口对应 `book.stage.v1`
-- Rust 主工作流调用的 worker 入口现在要求 `--spec`
-- 本地开发入口也已统一改为通过 stage spec 驱动
+- Điểm vào giai đoạn đã được cố định là giao thức `--spec <stage-spec.json>`
+- Giai đoạn normalize tương ứng `normalize.stage.v1`
+- Giai đoạn translate-only tương ứng `translate.stage.v1`
+- Giai đoạn render-only tương ứng `render.stage.v1`
+- Toàn bộ quy trình provider-backed hiện tại tương ứng `provider.stage.v1`
+  Đây là chi tiết triển khai hiện tại, không phải yêu cầu đặt tên quy trình cấp cao
+- Điểm vào toàn bộ quy trình dựa trên OCR đã chuẩn hóa tương ứng `book.stage.v1`
+- Điểm vào worker mà Rust workflow chính gọi hiện yêu cầu `--spec`
+- Các điểm vào phát triển local cũng đã thống nhất chuyển sang dùng stage spec
 
-## 调用建议
+## Gợi ý gọi
 
-- CLI、API、集成层优先只依赖 `book_pipeline.py`
-- OCR 阶段完成后再进入 `runtime/pipeline/`；不要把 provider raw 处理逻辑塞回这里
-- 只翻译时调用 `translate_book_pipeline(...)`
-- 只渲染时调用 `build_book_pipeline(...)` 或 `run_render_stage(...)`
-  调用时必须提供 `source_pdf_path`，以及下面两种翻译输入之一：
+- CLI, API, tầng tích hợp ưu tiên chỉ phụ thuộc vào `book_pipeline.py`
+- Chỉ vào `runtime/pipeline/` sau khi giai đoạn OCR hoàn tất; không đưa logic xử lý raw provider trở lại đây
+- Chỉ dịch thì gọi `translate_book_pipeline(...)`
+- Chỉ kết xuất thì gọi `build_book_pipeline(...)` hoặc `run_render_stage(...)`
+  Khi gọi phải cung cấp `source_pdf_path` và một trong hai đầu vào dịch sau:
   - `translations_dir`
   - `translation_manifest_path`
-- 如果两者都没给，或者目录里没有 `translation-manifest.json`，入口会直接抛出固定的 `Render-only input error`
-- 渲染阶段不会再自行“猜”旧任务目录或旧页文件命名
-- 不建议上层自己拼页范围、模式判定和翻译目录读取
+- Nếu cả hai đều không có, hoặc thư mục không chứa `translation-manifest.json`, điểm vào sẽ ném lỗi `Render-only input error` cố định
+- Giai đoạn kết xuất không còn tự "đoán" thư mục tác vụ cũ hoặc tên tệp trang cũ
+- Không khuyến nghị tầng trên tự ghép phạm vi trang, xác định chế độ và đọc thư mục dịch
 
-## 解耦回归
+## Hồi quy tách biệt
 
-当前专项回归覆盖：
+Phạm vi hồi quy chuyên biệt hiện tại:
 
-- Python：manifest-only 翻译产物加载、Render-only 输入协议
-- Rust：OCR-only job snapshot、Translate workflow、Render workflow、完整任务入口、artifact manifest 发现
+- Python: tải sản phẩm dịch chỉ manifest, giao thức đầu vào Render-only
+- Rust: snapshot job chỉ OCR, workflow Dịch, workflow Kết xuất, điểm vào tác vụ đầy đủ, phát hiện artifact manifest
 
-常用检查命令：
+Các lệnh kiểm tra thường dùng:
 
 ```bash
 PYTHONPATH=backend/scripts python -m pytest backend/scripts/devtools/tests -q
 cd backend/rust_api && cargo test -q
 ```
 
-## 协作规矩
+## Quy tắc hợp tác
 
-`runtime/pipeline/` 适合单独由“编排负责人”维护，但职责必须收紧在阶段组织本身。
+`runtime/pipeline/` phù hợp để "người phụ trách điều phối" duy trì riêng, nhưng trách nhiệm phải được thu gọn vào bản thân tổ chức giai đoạn.
 
-- 这里只负责阶段顺序、入口协议、任务目录和跨阶段结果汇总
-- 不要把 provider 私有适配逻辑塞进 pipeline
-- 不要把翻译策略细节或渲染实现细节回卷到 pipeline
-- 如果修改阶段输入输出契约，必须同步更新上游模块 README、下游模块 README、CLI/API 入口和回归测试
-- 如果只是某个模块内部 bug，优先在模块内修；pipeline 只保留必要的编排适配层
+- Nơi đây chỉ chịu trách nhiệm thứ tự giai đoạn, giao thức điểm vào, thư mục tác vụ và tổng hợp kết quả xuyên giai đoạn
+- Không đưa logic adapter riêng của provider vào pipeline
+- Không đưa chi tiết chiến lược dịch hoặc chi tiết triển khai kết xuất quay lại pipeline
+- Nếu sửa đổi hợp đồng đầu vào/đầu ra giai đoạn, phải đồng bộ cập nhật README module thượng nguồn, README module hạ nguồn, điểm vào CLI/API và kiểm thử hồi quy
+- Nếu chỉ là lỗi nội bộ của một module, ưu tiên sửa trong module đó; pipeline chỉ giữ lớp điều phối cần thiết

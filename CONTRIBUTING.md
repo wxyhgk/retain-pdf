@@ -1,37 +1,44 @@
-# 贡献指南
+# Contributing Guide
 
-感谢你愿意参与 RetainPDF。这个项目包含 Rust API、数据库、Python OCR/翻译/渲染流水线、静态前端、桌面端和 Docker 交付。贡献时最重要的是：边界清楚、改动可验证、问题可复现。
+Thank you for contributing to RetainPDF. This project includes a Rust API, database layer, Python OCR/translation/rendering pipeline, static frontend, desktop app, and Docker delivery. The most important contribution principles are clear boundaries, verifiable changes, and reproducible issues.
 
-## 贡献方向
+## Project Wiki Rule
 
-- 前端与桌面端：任务状态、对照阅读、术语表 UI、下载体验和 Electron bundle 同步。
-- Rust API：任务管理、图书馆接口、产物下载、事件流、reader、断点恢复和权限边界。
-- 数据库与持久化：job/artifact/event/glossary 记录、schema 兼容、旧数据恢复和存储路径。
-- Python 流水线：OCR 归一化、翻译一致性、公式保护、渲染、PDF 处理和失败诊断。
-- 专业测试：真实样本回归、边界用例、fixture、自动化脚本、性能基准和验收清单。
-- AI 辅助开发：推荐使用 Codex 或 Claude Code，按项目边界拆任务、生成测试、做代码审查和文档更新。
-- Docker、CI、文档和维护者发布流程。
+- Before writing code, fixing bugs, changing configuration, running implementation work, or making architecture decisions, read the relevant pages under [docs/wiki](docs/wiki/README.md). Start with [docs/wiki/README.md](docs/wiki/README.md), then follow the component and interface pages that match the task.
+- After adding code, changing behavior, fixing a bug, changing API/data/contracts/configuration/deployment, or discovering that the existing Wiki is stale, update the related Wiki page(s) in the same change.
+- If a code change does not require a Wiki update, mention why in the final note or PR description. Examples: formatting-only changes, comments-only changes, or test-only changes that do not alter documented behavior.
 
-## 子文档
+## Contribution Areas
 
-- [前端与桌面端贡献指南](doc/core/contributing/frontend.md)
-- [Rust API 贡献指南](doc/core/contributing/backend.md)
-- [数据库与持久化贡献指南](doc/core/contributing/database.md)
-- [Python 流水线贡献指南](doc/core/contributing/python-pipeline.md)
-- [测试贡献指南](doc/core/contributing/testing.md)
-- [AI 辅助开发指南](doc/core/contributing/ai-development.md)
-- [Issue、PR、代码风格与发布说明](doc/core/contributing/process-and-style.md)
+- Frontend and desktop: job status, side-by-side reader, glossary UI, download experience, and Electron bundle synchronization.
+- Rust API: job management, library APIs, artifact downloads, event streams, reader support, resume/retry flows, and authorization boundaries.
+- Database and persistence: job/artifact/event/glossary records, schema compatibility, legacy data recovery, and storage paths.
+- Python pipeline: OCR normalization, translation consistency, formula protection, rendering, PDF processing, and failure diagnosis.
+- Professional testing: real-sample regression, edge cases, fixtures, automation scripts, performance benchmarks, and acceptance checklists.
+- AI-assisted development: Codex or Claude Code are recommended for splitting tasks along project boundaries, generating tests, reviewing code, and updating documentation.
+- Docker, CI, documentation, and maintainer release workflows.
 
-建议同时阅读：
+## Subdocuments
+
+- [Frontend and desktop contribution guide](doc/core/contributing/frontend.md)
+- [Rust API contribution guide](doc/core/contributing/backend.md)
+- [Database and persistence contribution guide](doc/core/contributing/database.md)
+- [Python pipeline contribution guide](doc/core/contributing/python-pipeline.md)
+- [Testing contribution guide](doc/core/contributing/testing.md)
+- [AI-assisted development guide](doc/core/contributing/ai-development.md)
+- [Issues, PRs, code style, and release notes](doc/core/contributing/process-and-style.md)
+
+Recommended additional reading:
 
 - [README](README.md)
-- [本地启动与配置](doc/core/api/local-dev.md)
-- [运行时存储结构](doc/core/api/storage.md)
-- [主线文档](doc/core/README.md)
+- [Local startup and configuration](doc/core/api/local-dev.md)
+- [Runtime storage structure](doc/core/api/storage.md)
+- [Main documentation](doc/core/README.md)
+- [Technical Wiki](docs/wiki/README.md)
 
-## 本地最小启动
+## Minimal Local Startup
 
-后端：
+Backend:
 
 ```bash
 cd backend/rust_api
@@ -43,27 +50,27 @@ RUST_API_SCRIPTS_DIR="$(cd ../scripts && pwd)" \
 cargo run
 ```
 
-前端：
+Frontend:
 
 ```bash
 cd frontend
 python3 -m http.server 40001 --bind 0.0.0.0
 ```
 
-默认端口：
+Default ports:
 
-- Rust API：`41000`
-- multipart 异步提交 API：`42000`
-- Web 前端：`40001`
+- Rust API: `41000`
+- Multipart asynchronous submission API: `42000`
+- Web frontend: `40001`
 
-Docker 交付也默认使用同一组端口。如果本机已经启动 Docker Web，本地静态前端可以临时换成其他未占用端口；换端口只影响浏览器访问入口，不改变 Rust API 默认端口。
+Docker delivery uses the same default port set. If Docker Web is already running locally, the local static frontend can temporarily use another available port; changing that port only affects the browser entry point and does not change the Rust API default port.
 
-## 提交前最低要求
+## Minimum Requirements Before Submission
 
-- 说明改了什么、为什么改、影响哪些模块。
-- 根据改动范围跑对应测试或检查。
-- 如果有检查没跑，在 PR 描述里说明原因。
-- 不提交本地密钥、token、真实用户文件、`data/db/jobs.db`、`data/jobs/*`、`tmp/*` 或大体积实验输出。
-- 改动 API、事件、数据库 schema、产物结构、模块边界或部署方式时，同步更新文档。
+- Explain what changed, why it changed, and which modules are affected.
+- Run the relevant tests or checks for the scope of the change.
+- If any expected check was not run, explain why in the PR description.
+- Do not commit local secrets, tokens, real user files, `data/db/jobs.db`, `data/jobs/*`, `tmp/*`, or large experiment outputs.
+- When changing APIs, events, database schema, artifact structure, module boundaries, or deployment behavior, update the related documentation and Wiki pages.
 
-维护者发布、Docker 交付和线上运维流程不放在普通贡献者主线里，相关记录见 [运维与过程记录](doc/ops/README.md) 和 Docker 文档。
+Maintainer release, Docker delivery, and production operations workflows are not part of the ordinary contributor path. See [operations and process notes](doc/ops/README.md) and the Docker documentation for those records.

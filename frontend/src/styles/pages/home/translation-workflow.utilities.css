@@ -1,33 +1,28 @@
-/* 翻译工作流对话框 / 页码范围 / 术语表字段（从 components.utilities 拆出） */
+/* Hộp thoại quy trình dịch / phạm vi trang / trường bảng thuật ngữ (tách từ components.utilities) */
 
 @utility translation-workflow-dialog {
-  /* 阶段 C(shadcn 改造):这个类现在挂在 Radix DialogPrimitive.Content 上——
-     Content 和 Overlay 是两个独立的兄弟元素(不再是同一个 <div> 身兼背板+
-     内容两职),背板的半透明模糊背景移到下面新增的 translation-workflow-overlay
-     工具类(挂在 DialogPrimitive.Overlay 上)。z-index 从旧世界的 90 提到
-     101(对齐 desktop-dialog 的 Content 层级约定),必须高于
-     translation-workflow-overlay 的 100——否则 Overlay 会盖住 Content,阻断
-     所有点击(fresh Playwright 实测复现过:点击 status-detail-btn 被 Overlay
-     拦截)。
+/* Giai đoạn C (cải tiến shadcn): class này hiện được gắn trên Radix DialogPrimitive.Content —
+   Content và Overlay là hai phần tử anh em độc lập (không còn là cùng một <div> kiêm nhiệm cả nền và nội dung),
+   nền trong mờ mờ được chuyển sang công cụ translation-workflow-overlay mới bên dưới (gắn trên DialogPrimitive.Overlay).
+   z-index được nâng từ 90 của thế giới cũ lên 101 (theo quy ước lớp Content của desktop-dialog), phải cao hơn 100 của
+   translation-workflow-overlay — nếu không Overlay sẽ che phủ Content, chặn mọi thao tác nhấp chuột (đã tái hiện bằng Playwright mới:
+   nhấp vào status-detail-btn bị Overlay chặn lại).
 
-     真实踩坑记录(比上面的 z-index 更隐蔽、影响更大的一个结构性坑):旧世界
-     这个 div 身兼二职,靠 `display:grid;place-items:center;width:100vw;
-     height:100vh` 把自己撑满整个视口再把 .translation-workflow-shell 卡片
-     居中——迁移时如果照抄这套写法直接套到 Content 上,Content 自己的 DOM
-     包围盒就是整个视口,点击卡片外的"空白背板"区域,从 DOM 命中检测的角度看
-     其实点在了 Content 自己身上(不是 Overlay),Radix 的"点击 Content 之外
-     才关闭"判断永远不成立——fresh Playwright 实测 100% 复现:背板点击对
-     TranslationWorkflowDialog 完全失效,不是偶发时序问题,是必现的结构性
-     bug。修法是让 Content 自己收缩成"卡片"本身的定位容器(fixed+inset:0+
-     margin:auto 这套 desktop-dialog 同款的居中写法,尺寸收缩到实际卡片
-     大小),不再额外套一层撑满视口的 grid 容器;.translation-workflow-shell
-     退化成纯视觉壳(border/radius/shadow/background),尺寸跟随父级 Content
-     的 100%。*/
+   Ghi chép lỗi thực tế (một lỗi cấu trúc còn ẩn giấu hơn và ảnh hưởng lớn hơn cả z-index ở trên): trong thế giới cũ,
+   div này kiêm nhiệm hai vai trò, dựa vào `display:grid;place-items:center;width:100vw;
+   height:100vh` để tự căng đầy toàn bộ khung nhìn rồi căn giữa thẻ .translation-workflow-shell —
+   khi di chuyển, nếu sao chép nguyên mẫu này áp dụng trực tiếp lên Content, khung chứa DOM của Content sẽ là toàn bộ khung nhìn,
+   nhấp vào khu vực "nền trống" bên ngoài thẻ, từ góc độ kiểm tra trúng DOM thực chất là nhấp vào chính Content (không phải Overlay),
+   logic "chỉ đóng khi nhấp bên ngoài Content" của Radix sẽ không bao giờ thỏa mãn — đã tái hiện 100% bằng Playwright mới:
+   thao tác nhấp nền đối với TranslationWorkflowDialog hoàn toàn không hiệu quả, không phải vấn đề thời gian thỉnh thoảng,
+   mà là lỗi cấu trúc bắt buộc phải xảy ra. Cách sửa là để Content tự co lại thành vùng định vị của chính "thẻ" (fixed+inset:0+
+   margin:auto theo mẫu desktop-dialog, kích thước co lại bằng kích thước thực của thẻ), không còn bọc thêm một lớp grid căng đầy khung nhìn;
+   .translation-workflow-shell thoái hóa thành vỏ hình ảnh thuần túy (border/radius/shadow/background), kích thước theo 100% của Content cha. */
   position: fixed;
   inset: 0;
   margin: auto;
   z-index: 101;
-  /* 上传入口：更紧凑，避免半屏空白大弹窗 */
+  /* Điểm vào tải lên: gọn hơn để tránh hộp thoại lớn với nửa màn hình trống */
   width: min(420px, calc(100vw - 28px));
   max-height: min(480px, calc(100vh - 32px));
   overflow: hidden;
@@ -48,23 +43,22 @@
     display: none;
   }
 
-  /* &.hidden 规则(display:none)已随阶段 C 迁移作废:Content 不再 forceMount,
-     关闭态直接不挂载,不需要 CSS 兜底隐藏(下面 @utility hidden 块里
-     .translation-workflow-dialog 那条规则同理,留作历史死代码,不影响任何
-     现有行为)。 */
+  /* Quy tắc &.hidden (display:none) đã bị vô hiệu hóa sau khi di chuyển giai đoạn C: Content không còn forceMount nữa,
+     trạng thái đóng sẽ không gắn kết trực tiếp, không cần CSS dự phòng ẩn (quy tắc .translation-workflow-dialog trong khối @utility hidden bên dưới
+     cũng tương tự, được giữ lại như mã chết lịch sử, không ảnh hưởng đến bất kỳ hành vi hiện có nào). */
 }
 
 
 @utility translation-workflow-overlay {
-  /* 阶段 C(shadcn 改造)新增:承接原 .translation-workflow-dialog 的背板视觉
-     (半透明近白 + 模糊),挂在 DialogPrimitive.Overlay 上。z-index 必须低于
-     上面 translation-workflow-dialog(Content)的 101。不复用共享的
-     desktop-dialog-overlay 工具类——那套是深色纯色调(rgba(15,23,42,.3)),
-     这个对话框的原始视觉是浅色模糊,复用会造成背板变色的可见视觉回归。 */
+/* Mới bổ sung giai đoạn C (cải tiến shadcn): kế thừa hình ảnh nền của .translation-workflow-dialog gốc
+   (gần trắng trong mờ + làm mờ), gắn trên DialogPrimitive.Overlay. z-index phải thấp hơn
+   101 của translation-workflow-dialog (Content) ở trên. Không tái sử dụng công cụ desktop-dialog-overlay chung —
+   bộ đó là tông màu thuần tối (rgba(15,23,42,.3)), trong khi hình ảnh gốc của hộp thoại này là làm mờ màu sáng,
+   tái sử dụng sẽ gây ra hiện tượng đổi màu nền có thể nhìn thấy được. */
   position: fixed;
   inset: 0;
   z-index: 100;
-  /* 与全站统一背板同源（--dialog-scrim），不再各写各的 62% */
+  /* Nền đồng nhất toàn trang (--dialog-scrim), không còn mỗi nơi viết mỗi kiểu 62% */
   background: var(--dialog-scrim);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -72,10 +66,10 @@
 
 
 @utility translation-workflow-shell {
-  /* 阶段 C(shadcn 改造):尺寸(width/max-height/is-status-mode 覆盖)已经上移
-     到父级 .translation-workflow-dialog(挂在 Radix Content 上,见上面头
-     注释)——这个类退化成纯视觉壳,填满父级 100%,不再自己算尺寸(避免和父级
-     的尺寸计算出现两套来源、互相打架)。 */
+/* Giai đoạn C (cải tiến shadcn): kích thước (width/max-height/ghi đè is-status-mode) đã được chuyển lên
+   lớp cha .translation-workflow-dialog (gắn trên Radix Content, xem chú thích đầu ở trên) —
+   class này thoái hóa thành vỏ hình ảnh thuần túy, lấp đầy 100% lớp cha, không còn tự tính toán kích thước (tránh xung đột
+   giữa hai nguồn tính toán kích thước của cha và con). */
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   width: 100%;
@@ -89,11 +83,10 @@
 
 
 @utility is-status-mode {
-  /* 阶段 C(shadcn 改造):这里的 &.translation-workflow-dialog 尺寸覆盖已经
-     和上面 @utility translation-workflow-dialog 内部的 &.is-status-mode
-     规则重复(两处历史遗留的重复工具类声明,阶段 C 之前就存在),尺寸部分统一
-     只保留一份(上面那份),这里只留 .translation-workflow-card 的隐藏规则,
-     避免两份尺寸声明将来改一处忘改另一处。 */
+/* Giai đoạn C (cải tiến shadcn): ở đây &.translation-workflow-dialog ghi đè kích thước đã
+   trùng lặp với quy tắc &.is-status-mode bên trong @utility translation-workflow-dialog ở trên
+   (hai khai báo công cụ trùng lặp do di sản lịch sử, đã tồn tại từ trước giai đoạn C), phần kích thước thống nhất chỉ giữ lại một bản (bản ở trên),
+   ở đây chỉ giữ lại quy tắc ẩn .translation-workflow-card, tránh trường hợp sửa một chỗ mà quên sửa chỗ kia sau này. */
   &.translation-workflow-dialog .translation-workflow-card {
     display: none;
   }

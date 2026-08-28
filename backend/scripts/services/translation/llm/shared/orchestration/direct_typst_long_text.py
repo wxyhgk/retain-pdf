@@ -99,7 +99,7 @@ def translate_direct_typst_long_text_chunks(
         translated_parts.append(translated)
 
     if degraded_chunks >= len(chunks):
-        # 全部块失败才整体判失败;个别块失败走下方的部分接受。
+        # Tất cả các khối đều thất bại trước khi phán đoán tổng thể thất bại;Các khối riêng lẻ không thể xuống dưới mức được chấp nhận một phần。
         result = terminal_payloads.translation_failed_payload_for_validation(
             item,
             context=context,
@@ -117,8 +117,8 @@ def translate_direct_typst_long_text_chunks(
         return result
 
     if degraded_chunks:
-        # 部分接受:失败块降级为原文保留(与公式窗口路径一致),
-        # 不再因一个块的瞬时失败作废整条 4000+ 字符的大块。
+        # Được chấp nhận một phần:Khối lỗi giảm xuống mức ban đầu(Căn chỉnh với đường dẫn cửa sổ công thức),
+        # Không còn làm mất hiệu lực toàn bộ mảnh do lỗi tức thời của một khối 4000+ Số lượng ký tự lớn。
         translated_parts = [
             part if part else chunks[index]
             for index, part in enumerate(translated_parts)

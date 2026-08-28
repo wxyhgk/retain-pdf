@@ -142,7 +142,7 @@ async function renderPdfPage() {
   const src = `../fixtures/pdf-pages/${state.sample.job_id}/page-${String(state.pdfPageIndex + 1).padStart(3, "0")}.png`;
   await new Promise((resolve, reject) => {
     els.pdfImage.onload = () => resolve();
-    els.pdfImage.onerror = () => reject(new Error(`无法加载 PDF 页图片: ${src}`));
+    els.pdfImage.onerror = () => reject(new Error(`Không thể tải ảnh trang PDF: ${src}`));
     els.pdfImage.src = src;
   });
   const pageSample = state.payload.samples.find((sample) => sample.page_index === state.pdfPageIndex) || state.sample;
@@ -155,7 +155,7 @@ async function renderPdfPage() {
   els.pdfStack.style.height = `${viewportHeight}px`;
   els.pdfOverlay.style.width = `${viewportWidth}px`;
   els.pdfOverlay.style.height = `${viewportHeight}px`;
-  els.pdfPageLabel.textContent = `第 ${state.pdfPageIndex + 1} / ${pageCount} 页`;
+  els.pdfPageLabel.textContent = `Trang ${state.pdfPageIndex + 1} / ${pageCount}`;
   els.pdfPrev.disabled = state.pdfPageIndex <= 0;
   els.pdfNext.disabled = state.pdfPageIndex >= pageCount - 1;
   renderPdfOverlay(pageWidth, pageHeight, viewportWidth, viewportHeight);
@@ -166,7 +166,7 @@ async function renderPdfPage() {
 // Data loading and sample selection.
 function loadPayload(payload) {
   if (!payload || !Array.isArray(payload.samples) || payload.samples.length === 0) {
-    setStatus("样本 JSON 不合法。", true);
+    setStatus("JSON mẫu không hợp lệ.", true);
     return;
   }
   state.payload = payload;
@@ -178,7 +178,7 @@ function loadPayload(payload) {
     els.sampleSelect.append(option);
   }
   applySample(payload.samples[0].sample_id);
-  setStatus(`已载入 ${payload.samples.length} 个样本。`);
+  setStatus(`Đã tải ${payload.samples.length} mẫu.`);
 }
 
 function applySample(sampleId) {
@@ -210,11 +210,11 @@ function applySample(sampleId) {
   compareNow();
   if (typst?.fontSizePt && typst?.lineHeightRatio) {
     setStatus(
-      `已加载 ${sample.block_id}，默认采用 Typst 参数种子：字号 ${typst.fontSizePt}pt，行高倍率 ${typst.lineHeightRatio}；文本仍来自翻译 JSON。`
+      `Đã tải ${sample.block_id}, mặc định dùng tham số Typst: cỡ chữ ${typst.fontSizePt}pt, tỷ lệ độ cao dòng ${typst.lineHeightRatio}; văn bản vẫn từ JSON dịch.`
     );
   } else if (best) {
     setStatus(
-      `已加载 ${sample.block_id}，默认采用 Pretext 自动拟合：字号 ${best.fontSizePt}pt，行高倍率 ${best.lineHeightRatio}，Pretext 高度 ${best.height}pt。`
+      `Đã tải ${sample.block_id}, mặc định dùng khớp tự động Pretext: cỡ chữ ${best.fontSizePt}pt, tỷ lệ độ cao dòng ${best.lineHeightRatio}, chiều cao Pretext ${best.height}pt。`
     );
   }
 }
@@ -267,7 +267,7 @@ function fitCurrentSample() {
 
 function compareNow() {
   if (!state.sample) {
-    setStatus("先加载样本。", true);
+    setStatus("Trước hết hãy tải mẫu.", true);
     return;
   }
   try {

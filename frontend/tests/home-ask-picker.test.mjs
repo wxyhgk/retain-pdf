@@ -5,23 +5,23 @@ import {
   parseAtQuery,
 } from "../src/pages/home/features/home-ask/document-picker.js";
 
-test("parseAtQuery: 光标在 @query 后时解析", () => {
+test("parseAtQuery: phân tích khi con trỏ đứng sau @query", () => {
   const text = "帮我总结 @halogen";
   const caret = text.length;
   const parsed = parseAtQuery(text, caret);
   assert.deepEqual(parsed, { start: text.indexOf("@"), query: "halogen" });
 });
 
-test("parseAtQuery: 普通文本不触发", () => {
+test("parseAtQuery: không kích hoạt với văn bản thông thường", () => {
   assert.equal(parseAtQuery("hello world", 5), null);
   assert.equal(parseAtQuery("email@x.com", 11), null);
 });
 
-test("parseAtQuery: 行首 @ 可解析", () => {
+test("parseAtQuery: có thể phân tích @ ở đầu dòng", () => {
   assert.deepEqual(parseAtQuery("@doc", 4), { start: 0, query: "doc" });
 });
 
-test("filterDocumentOptions: 排除已选并按标题过滤", () => {
+test("filterDocumentOptions: loại mục đã chọn và lọc theo tiêu đề", () => {
   const options = [
     { kind: "document", id: "a", title: "Alpha paper" },
     { kind: "document", id: "b", title: "Beta notes" },
@@ -32,7 +32,7 @@ test("filterDocumentOptions: 排除已选并按标题过滤", () => {
   assert.equal(filtered[0].id, "b");
 });
 
-test("filterDocumentOptions: 可匹配合集", () => {
+test("filterDocumentOptions: có thể khớp bộ sưu tập", () => {
   const options = [
     { kind: "collection", id: "col-1", title: "量子化学", document_count: 4 },
     { kind: "document", id: "d1", title: "Other paper" },

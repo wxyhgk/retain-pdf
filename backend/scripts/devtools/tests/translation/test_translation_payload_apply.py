@@ -382,8 +382,8 @@ def test_load_translations_sanitizes_persisted_json_shell(tmp_path) -> None:
         [
           {
             "item_id": "p030-b010",
-            "translated_text": "{\\"translations\\":[{\\"item_id\\":\\"p030-b010\\",\\"translated_text\\":\\"(1) 计算效率、成本与精度。\\"}]}",
-            "protected_translated_text": "{\\"translated_text\\":\\"(1) 计算效率、成本与精度。\\"}"
+            "translated_text": "{\\"translations\\":[{\\"item_id\\":\\"p030-b010\\",\\"translated_text\\":\\"(1) Hiệu quả tính toán、Chi phí & Độ chính xác。\\"}]}",
+            "protected_translated_text": "{\\"translated_text\\":\\"(1) Hiệu quả tính toán、Chi phí & Độ chính xác。\\"}"
           }
         ]
         """,

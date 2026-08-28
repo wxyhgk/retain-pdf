@@ -1,45 +1,45 @@
 # RetainPDF API Wiki
 
-这套文档面向前端、桌面端和第三方集成方，描述 RetainPDF 后端对外 HTTP API 的稳定契约。
+Tài liệu này dành cho frontend, desktop và bên thứ ba tích hợp, mô tả các hợp đồng HTTP API ổn định của backend RetainPDF.
 
-`backend/rust_api/API_SPEC.md` 仍然保留为后端工程规格和实现备忘；本目录按使用场景拆分，作为联调和接入时优先阅读的 Wiki。
+`backend/rust_api/API_SPEC.md` được giữ lại như đặc tả kỹ thuật và ghi chú triển khai cho backend; thư mục này được chia theo các tình huống sử dụng và nên là Wiki chính được đọc trong quá trình gỡ lỗi và tích hợp chung.
 
-## 基础信息
+## Thông tin cơ bản
 
-- Base URL: `/api/v1`
-- 健康检查: `GET /health`
-- 除 `/health` 外，接口默认需要 `X-API-Key`
-- 除文件下载接口外，接口默认返回 JSON 包装对象
+- URL cơ sở: `/api/v1`
+- Kiểm tra sức khỏe: `GET /health`
+- Ngoại trừ `/health`, các giao diện mặc định yêu cầu `X-API-Key`
+- Ngoại trừ các giao diện tải xuống tệp, các giao diện mặc định trả về đối tượng JSON được bao bọc
 
-## 快速入口
+## Liên kết nhanh
 
-- [响应格式](00-约定/01-响应格式.md)
-- [认证与错误](00-约定/02-认证与错误.md)
-- [创建任务](01-任务/01-创建任务.md)
-- [查询任务详情](01-任务/02-查询任务详情.md)
-- [任务列表](01-任务/03-任务列表.md)
-- [事件总览](02-进度事件/01-事件总览.md)
-- [display_stage 与 lane](02-进度事件/02-display-stage与lane.md)
-- [OCR Provider 列表](03-OCR/01-provider列表.md)
-- [OCR-only 任务](03-OCR/02-OCR-only任务.md)
-- [local_command 插件](03-OCR/04-local-command插件.md)
-- [remote_command 插件](03-OCR/05-remote-command插件.md)
-- [翻译参数](04-翻译/01-翻译参数.md)
-- [翻译并发与批次](04-翻译/02-并发与批次.md)
-- [术语表](04-翻译/03-术语表.md)
-- [上下文术语记忆模式](04-翻译/04-上下文术语记忆模式.md)
-- [translate.stage.v1](04-翻译/05-translate-stage-spec.md)
-- [翻译工作流](04-翻译/06-翻译工作流.md)
-- [翻译事件](04-翻译/07-翻译事件.md)
-- [阶段操作总览](06-阶段操作/01-stage-actions.md)
-- [阶段重试](06-阶段操作/02-retry-stage.md)
-- [下载总览](07-产物下载/01-下载总览.md)
-- [失败结构](08-调试诊断/01-失败结构.md)
-- [Translation Debug API](08-调试诊断/02-translation-debug.md)
+- [Định dạng phản hồi](00-quy-uoc/01-dinh-dang-phan-hoi.md)
+- [Xác thực & Lỗi](00-quy-uoc/02-xac-thuc-va-loi.md)
+- [Tạo Job](01-tac-vu/01-tao-tac-vu.md)
+- [Truy vấn chi tiết Job](01-tac-vu/02-truy-van-chi-tiet-tac-vu.md)
+- [Danh sách Job](01-tac-vu/03-danh-sach-tac-vu.md)
+- [Tổng quan sự kiện](02-su-kien-tien-do/01-tong-quan-su-kien.md)
+- [display_stage và lane](02-su-kien-tien-do/02-display-stage-va-lane.md)
+- [Danh sách OCR Provider](03-OCR/01-danh-sach-provider.md)
+- [Job chỉ OCR](03-OCR/02-ocr-only-tac-vu.md)
+- [Plugin local_command](03-OCR/04-local-command-plugin.md)
+- [Plugin remote_command](03-OCR/05-remote-command-plugin.md)
+- [Tham số dịch thuật](04-dich/01-tham-so-dich.md)
+- [Đồng thời & Lô dịch](04-dich/02-dong-thoi-va-batch.md)
+- [Bảng thuật ngữ](04-dich/03-thuat-ngu.md)
+- [Chế độ ghi nhớ thuật ngữ theo ngữ cảnh](04-dich/04-ngu-canh-thuat-ngu-ghi-nho.md)
+- [translate.stage.v1](04-dich/05-translate-stage-spec.md)
+- [Quy trình dịch thuật](04-dich/06-luong-cong-viec-dich.md)
+- [Sự kiện dịch thuật](04-dich/07-su-kien-dich.md)
+- [Tổng quan hành động giai đoạn](06-thao-tac-giai-doan/01-stage-actions.md)
+- [Thử lại giai đoạn](06-thao-tac-giai-doan/02-retry-stage.md)
+- [Tổng quan tải xuống](07-tai-artifact/01-tong-quan-tai.md)
+- [Cấu trúc thất bại](08-chan-doan-go-loi/01-cau-truc-that-bai.md)
+- [API gỡ lỗi dịch thuật](08-chan-doan-go-loi/02-translation-debug.md)
 
-## 当前 API 分区
+## Phân vùng API hiện tại
 
-### 任务
+### Jobs
 
 - `POST /api/v1/jobs`
 - `GET /api/v1/jobs`
@@ -59,7 +59,7 @@
 - `POST /api/v1/ocr/jobs/{job_id}/cancel`
 - `GET /api/v1/providers/ocr`
 
-### 事件与诊断
+### Sự kiện & Chẩn đoán
 
 - `GET /api/v1/jobs/{job_id}/events`
 - `GET /api/v1/jobs/{job_id}/diagnostics`
@@ -68,14 +68,14 @@
 - `GET /api/v1/jobs/{job_id}/translation/items/{item_id}`
 - `POST /api/v1/jobs/{job_id}/translation/items/{item_id}/replay`
 
-### 阶段操作
+### Hành động giai đoạn
 
 - `GET /api/v1/jobs/{job_id}/resume-plan`
 - `POST /api/v1/jobs/{job_id}/resume`
 - `GET /api/v1/jobs/{job_id}/stage-actions`
 - `POST /api/v1/jobs/{job_id}/retry-stage`
 
-### 产物下载
+### Tải xuống sản phẩm
 
 - `GET /api/v1/jobs/{job_id}/artifacts`
 - `GET /api/v1/jobs/{job_id}/artifacts-manifest`
@@ -90,11 +90,11 @@
 - `GET /api/v1/jobs/{job_id}/markdown/images/{path}`
 - `GET /api/v1/jobs/{job_id}/download`
 
-## 前端读取原则
+## Nguyên tắc đọc Frontend
 
-- 主状态优先读 `display_stage`，不要从 `message` 或 `stage_detail` 正则猜阶段。
-- 子阶段优先读 `substage`。
-- 主线进度只读 `lane=main` 的事件或详情快照。
-- `lane=background` 只用于后台预处理、预热、缓存等辅助状态。
-- `message` 和 `stage_detail` 只作为人类文案，不参与业务判断。
-- 文件和图片展示优先使用 API 返回的 URL，不直接拼本地文件路径。
+- Ưu tiên đọc `display_stage` cho trạng thái chính; không đoán giai đoạn bằng regex trên `message` hoặc `stage_detail`.
+- Ưu tiên đọc `substage` cho các giai đoạn phụ.
+- Chỉ đọc các sự kiện hoặc ảnh chụp chi tiết với `lane=main` cho tiến trình chính.
+- `lane=background` chỉ được sử dụng cho các trạng thái phụ như tiền xử lý nền, làm nóng trước, bộ nhớ đệm, v.v.
+- `message` và `stage_detail` chỉ dành cho văn bản đọc được của con người và không nên được sử dụng cho logic nghiệp vụ.
+- Ưu tiên sử dụng URL do API trả về để hiển thị tệp và hình ảnh; không xây dựng đường dẫn tệp cục bộ trực tiếp.

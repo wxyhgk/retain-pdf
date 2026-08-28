@@ -1,29 +1,29 @@
-# Translation Promptfoo 调试
+# Translation Promptfoo Debugging
 
-这套脚手架的目标不是重跑整本书，而是把“某个翻译 item 为什么没翻 / 降级 / 输出脏了”收敛成可复现、可对比、可自动回归的最小闭环。
+The goal of this framework is not to replay entire books but to condense "why a translation item was not translated / degraded / produced dirty output" into the smallest reproducible, comparable, and automatically regression-testable loop.
 
-当前链路分成三层：
+The current process is divided into three layers:
 
-- Rust API 调试接口
+- Rust API Debug Interface
   - `GET /api/v1/jobs/{job_id}/translation/diagnostics`
   - `GET /api/v1/jobs/{job_id}/translation/items`
   - `GET /api/v1/jobs/{job_id}/translation/items/{item_id}`
   - `POST /api/v1/jobs/{job_id}/translation/items/{item_id}/replay`
-- Python 单 item replay
+- Single-Item Python Replay
   - `backend/scripts/devtools/replay_translation_item.py`
-- Promptfoo fixture/eval
-  - 当前目录下的 `scan_drift.py`、`capture_case.py`、`run_eval.py`、`promptfooconfig*.yaml`
+- Promptfoo Fixture/Eval
+  - Files `scan_drift.py`, `capture_case.py`, `run_eval.py`, `promptfooconfig*.yaml` in the current directory
 
-## 1. 先定位具体 item
+## 1. First Locate Specific Items
 
-本地 API 起着时，可以先看：
+When the local API is running, you can preview:
 
 ```bash
 curl -H 'X-API-Key: retain-pdf-desktop' \
   'http://127.0.0.1:41000/api/v1/jobs/<job_id>/translation/items?final_status=kept_origin&q=protocol'
 ```
 
-如果不想手写 curl，也可以直接用：
+Nếu không muốn viết curl thủ công, cũng có thể dùng trực tiếp:
 
 ```bash
 python backend/scripts/devtools/translation_debug_api.py \
@@ -33,7 +33,7 @@ python backend/scripts/devtools/translation_debug_api.py \
   --q protocol
 ```
 
-或者直接看单个 item：
+Hoặc xem trực tiếp từng item:
 
 ```bash
 curl -H 'X-API-Key: retain-pdf-desktop' \
@@ -47,7 +47,7 @@ python backend/scripts/devtools/translation_debug_api.py \
   --item-id <item_id>
 ```
 
-需要直接重放当前翻译链路时：
+Khi cần phát lại trực tiếp quy trình dịch hiện tại:
 
 ```bash
 python backend/scripts/devtools/translation_debug_api.py \
@@ -56,7 +56,7 @@ python backend/scripts/devtools/translation_debug_api.py \
   --item-id <item_id>
 ```
 
-## 2. 先扫一遍 saved vs replay 的策略漂移
+## 2. Pre-Scan Strategy Drift Between Saved and Replay
 
 ```bash
 python backend/scripts/devtools/promptfoo/scan_drift.py \
@@ -65,13 +65,13 @@ python backend/scripts/devtools/promptfoo/scan_drift.py \
   --limit 10
 ```
 
-默认会：
+By default, it will:
 
-- 先按 saved 侧 `final_status=kept_origin` 过滤
-- 对候选 item 逐个 replay
-- 输出发生策略漂移的项
+- Pre-filter by `final_status=kept_origin` on the saved side
+- Replay each candidate item
+- Output items that exhibit strategy drift
 
-如果想把 replay 过的候选全部打出来：
+Nếu muốn xuất ra tất cả các ứng viên đã replay:
 
 ```bash
 python backend/scripts/devtools/promptfoo/scan_drift.py \
@@ -80,7 +80,7 @@ python backend/scripts/devtools/promptfoo/scan_drift.py \
   --all
 ```
 
-## 3. 把坏例子记成 fixture
+## 3. Record Bad Examples as Fixtures
 
 ```bash
 python backend/scripts/devtools/promptfoo/capture_case.py \
@@ -92,19 +92,19 @@ python backend/scripts/devtools/promptfoo/capture_case.py \
   --required-term 551\ nm
 ```
 
-默认会写入：
+By default, it will write to:
 
 - `backend/scripts/devtools/promptfoo/fixtures/cases.csv`
 - `backend/scripts/devtools/promptfoo/fixtures/cases/<job>--<item>.json`
 
-这个 JSON case artifact 会把以下信息一起固化下来：
+This case JSON artifact will simultaneously freeze the following information:
 
-- saved item 快照
-- 当前 replay 结果
+- Saved item snapshot
+- Current replay result
 - policy_before / policy_after
-- drift 摘要
+- Drift summary
 
-如果这次只想记 saved 侧，不想触发 replay：
+Nếu lần này chỉ muốn ghi lại phía saved, không muốn kích hoạt replay:
 
 ```bash
 python backend/scripts/devtools/promptfoo/capture_case.py \
@@ -114,128 +114,126 @@ python backend/scripts/devtools/promptfoo/capture_case.py \
   --skip-replay
 ```
 
-CSV 里多值字段用 `||` 分隔，便于多人直接改表：
+Các trường đa giá trị trong CSV sử dụng `||` để phân tách, thuận tiện cho nhiều người chỉnh sửa trực tiếp:
 
 - `expected_contains`
 - `required_terms`
 - `forbidden_substrings`
 
-## 4. 跑 promptfoo
+## 4. Run promptfoo
 
-前置条件：
+Prerequisites:
 
-- Python 直接用当前仓库环境即可
-- `promptfoo` 需要 `Node 20.20+` 或 `22.22+`
+- Python directly uses the current repository environment
+- `promptfoo` requires `Node 20.20+` or `22.22+`
 
-`run_eval.py` 会优先使用当前 shell 的 `node`；如果当前版本不够，但 `~/.nvm/versions/node` 里已经装了兼容版本，它会自动切过去，不需要你手动 `nvm use`。
+`run_eval.py` will prioritize using the `node` from the current shell; if the current version is insufficient but a compatible version is installed in `~/.nvm/versions/node`, it will automatically switch without requiring you to manually `nvm use`.
 
-只评估当前 replay 输出：
+Chỉ đánh giá đầu ra replay hiện tại:
 
 ```bash
 python backend/scripts/devtools/promptfoo/run_eval.py
 ```
 
-同时看“当前 replay”对比“任务原始落盘输出”：
+Đồng thời xem so sánh giữa "replay hiện tại" và "đầu ra lưu trữ gốc của tác vụ":
 
 ```bash
 python backend/scripts/devtools/promptfoo/run_eval.py --compare
 ```
 
-如果只想先验证 fixture 和断言链路，不调用模型：
+Nếu chỉ muốn xác minh trước fixture và quy trình assertion mà không gọi mô hình:
 
 ```bash
 python backend/scripts/devtools/promptfoo/run_eval.py --saved-only
 ```
 
-底层实际执行的是：
+Thực tế bên dưới thực thi:
 
 ```bash
 npx promptfoo@latest eval -c backend/scripts/devtools/promptfoo/promptfooconfig.yaml
 ```
 
-`run_eval.py` 会自动：
+`run_eval.py` sẽ tự động:
 
-- 检查 fixture 是否为空
-- 把 `PROMPTFOO_PYTHON` 指到当前 Python
-- 把 fixture 路径注入 `PROMPTFOO_TRANSLATION_FIXTURES`
+- Check if the fixture is empty
+- Point `PROMPTFOO_PYTHON` to the current Python
+- Inject the fixture path into `PROMPTFOO_TRANSLATION_FIXTURES`
 
-## 断言规则
+## Assertion Rules
 
-当前 fixture 默认支持几类硬规则：
+The current fixture supports several hard rules by default:
 
-- 输出最小长度
-- 是否必须出现中文
-- 必须包含的翻译短语
-- 必须保留的术语
-- 禁止出现的脏输出片段
-- `$...$` / `$$...$$` 数量是否和源文本一致
+- Minimum output length
+- Whether Chinese must appear
+- Required translation phrases
+- Terms that must be preserved
+- Forbidden dirty output segments
+- Whether the count of `$...$` / `$$...$$` matches the source text
 
-这些规则都在：
+These rules are all located in:
 
 - `backend/scripts/devtools/promptfoo/assertions.py`
 
 ## GitHub CI
 
-仓库现在可以直接接 GitHub Actions 跑 `current-replay`。
+The current repository can directly connect with GitHub Actions to run `current-replay`.
 
-对应 workflow：
+Corresponding workflow:
 
 - `.github/workflows/translation-replay.yml`
 
-设计上分两层：
+Design is divided into two layers:
 
-- 先跑纯本地单元测试
+- First run pure local unit tests
   - `test_promptfoo_case_tools.py`
   - `test_promptfoo_harness_regressions.py`
   - `test_translation_debug_tools.py`
-- 再跑真正的 promptfoo current-replay
+- Then run the actual promptfoo current-replay
   - `python backend/scripts/devtools/promptfoo/run_eval.py`
 
-### 为什么 GitHub CI 不依赖 `data/jobs/`
+### Why GitHub CI Does Not Depend on `data/jobs/`
 
-GitHub runner checkout 后默认拿不到你本地的 `data/jobs/...` 工作目录，所以 case artifact 现在会额外冻结：
+After the GitHub runner checks out, it cannot access your local working directory `data/jobs/...` by default, so the current case artifact will additionally freeze:
 
-- translate spec 的关键参数
-- 对应页的完整 translated payload
+- Main parameters of the translate spec
+- The entire translated payload of the corresponding page
 
-这样 CI 在 runner 上即使没有 job 目录，也能直接从：
+Thus, even without the job directory on the runner, CI can still directly replay the current replay path from:
 
 - `backend/scripts/devtools/promptfoo/fixtures/cases/*.json`
 
-复跑当前 replay 路径。
+### Required GitHub Secrets
 
-### 需要的 GitHub Secret
-
-必须配置：
+Need to configure:
 
 - `RETAIN_TRANSLATION_API_KEY`
 
-用途：
+Purpose:
 
-- 给 current-replay provider 调模型
+- For the provider current-replay to call the model
 
-fork PR 默认拿不到 secret，所以 workflow 会：
+PRs from forks cannot access secrets by default, so the workflow will:
 
-- 仍然跑本地单元测试
-- 跳过需要 secret 的 current-replay eval
+- Still run local unit tests
+- Skip current-replay eval that requires secrets
 
-### Artifact
+### Artifacts
 
-workflow 会上传：
+The workflow will upload:
 
-- current replay 的 promptfoo JSON 结果
-- 当前 fixture CSV
-- case artifact JSON
+- Current replay promptfoo JSON results
+- Current fixture CSV
+- Case JSON artifacts
 - `~/.promptfoo/logs/*.log`
 
-## 适用边界
+## Application Boundaries
 
-这套工具优先解决“翻译策略 / fallback / keep-origin / prompt / provider 输出异常”的问题。
+This toolkit prioritizes solving issues related to "translation strategy / fallback / keep-origin / prompt / abnormal provider output".
 
-它不直接解决：
+It does not directly address:
 
-- OCR 抽块错误
-- continuation 拼接错误
-- Typst 排版错误
+- OCR block extraction errors
+- Continuation merging errors
+- Typst layout errors
 
-但你可以先用这套东西快速判断：问题发生在“翻译前”还是“翻译后”。
+However, you can use this toolkit to quickly determine: whether the issue occurs "before translation" or "after translation".

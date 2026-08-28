@@ -124,8 +124,8 @@ fn list_books_filtered(db: &Db, query: &ListJobsQuery) -> Result<Vec<JobSnapshot
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty());
-    // 分类文件夹展开时用 job_ids 精确点名一批 job(见 ListJobsQuery 字段注释)——
-    // 和 q 一样需要先在全量里过滤,不能先按 limit/offset 截断再匹配。
+    // Được sử dụng khi các thư mục danh mục được mở rộng job_ids Đặt tên chính xác cho một lô job(thấy ListJobsQuery Nhận xét trường)——
+    // Và q Điều tương tự cần được lọc ở mức âm lượng đầy đủ trước,Không thể nhấn trước limit/offset Cắt ngắn và Khớp lại。
     let job_ids: Option<std::collections::HashSet<String>> = query
         .job_ids
         .as_deref()
@@ -182,8 +182,8 @@ fn list_books_filtered(db: &Db, query: &ListJobsQuery) -> Result<Vec<JobSnapshot
         })
         .collect();
     if job_ids.is_some() {
-        // 精确集合查询:调用方要的是"这些 job 的完整数据",不是一页列表,
-        // 不做 limit/offset 截断。
+        // Truy vấn thu thập chính xác:Những gì người gọi muốn là"những thứ này job Dữ liệu đầy đủ cho",Không phải là danh sách một trang,
+        // Đừng limit/offset cắt đứt。
         return Ok(filtered);
     }
     Ok(filtered

@@ -1,10 +1,10 @@
 # Library Route
 
-`LibraryRoute` 是图书馆页面的组合容器。
+`LibraryRoute` là container tổ hợp trang thư viện.
 
-- 只负责把 `useLibraryController` 的状态和动作接到页面、详情、阅读器和设置弹窗。
-- 不写筛选、下载、删除、请求后端等业务逻辑。
-- 不放具体 UI 文案；文案仍然走 `library-config.ts`。
-- 阅读器静态接入，打开对照阅读时不再额外加载组件包。
+- Chỉ chịu trách nhiệm nối trạng thái và hành động của `useLibraryController` vào trang, chi tiết, trình đọc và hộp thoại cài đặt.
+- Không viết logic nghiệp vụ như lọc, tải xuống, xóa, yêu cầu backend.
+- Không đặt văn bản UI cụ thể; văn bản vẫn đi qua `library-config.ts`.
+- Trình đọc kết nối tĩnh, khi mở đọc đối chiếu không tải thêm gói component.
 
-这个边界让 `App.tsx` 保持入口职责，也让页面级状态不会进入纯展示组件。
+Ranh giới này giữ `App.tsx` ở vai trò lối vào, và ngăn trạng thái cấp trang xâm nhập vào component hiển thị thuần túy.

@@ -13,8 +13,8 @@
   justify-content: flex-start;
   max-width: none;
   gap: 0;
-  /* 廊道密度走 L3 token（themes/_component-defaults.css），皮肤可覆盖；
-   * 窄屏值默认跟随常规值，皮肤想收窄只覆盖 --shell-pad-inline-narrow */
+/* Mật độ hành lang sử dụng token L3 (themes/_component-defaults.css), có thể ghi đè bằng skin;
+ * Giá trị trên màn hẹp mặc định theo giá trị thông thường, skin muốn thu hẹp chỉ cần ghi đè --shell-pad-inline-narrow */
   padding: 0 var(--shell-pad-inline);
 
   @media (max-width: 900px) {
@@ -31,7 +31,7 @@
   }
 }
 
-/* 软打开阅读器：盖住主页，主页 DOM 保留（关 × 不刷新） */
+/* Mở đọc mềm: che phủ trang chủ, DOM trang chủ được giữ lại (đóng × không làm mới) */
 .soft-reader-host {
   position: fixed;
   inset: 0;
@@ -79,9 +79,7 @@ body.is-soft-reader-open {
   }
 }
 
-/* 顶部导航区——用户要求去掉白色卡片背景:logo 左、图书馆/分类分栏居中,直接
-   浮在灰底页面上,不再是一条独立的白色圆角栏。添加/搜索/设置 三样已下沉到
-   底部一条浮动栏(AppBottomBar.jsx / library-bottom-bar)。 */
+/* Khu vực điều hướng trên cùng - người dùng yêu cầu bỏ nền thẻ trắng: logo bên trái, thư viện/phân loại ở giữa, nổi trực tiếp trên nền xám của trang, không còn là một thanh tròn góc độc lập. Thêm/tìm kiếm/cài đặt ba mục đã được chuyển xuống thanh nổi dưới cùng (AppBottomBar.jsx / library-bottom-bar). */
 @utility app-shell-header {
   width: var(--header-width);
   flex: 0 0 auto;
@@ -98,7 +96,7 @@ body.is-soft-reader-open {
   overflow: hidden;
 }
 
-/* 去白卡:顶栏透明,只做 flex 布局(logo 左 + 两侧 spacer 把分栏挤到正中)。 */
+/* Bỏ thẻ trắng: thanh trên cùng trong suốt, chỉ thực hiện bố cục flex (logo bên trái + spacer hai bên đẩy phân loại vào giữa). */
 @utility library-topbar {
   justify-content: flex-start;
   gap: 18px;
@@ -117,14 +115,14 @@ body.is-soft-reader-open {
   flex: 0 0 auto;
 }
 
-/* 顶部"图书馆/分类"分栏——现在是整合导航栏(library-topbar)里的一个 flex
-   子项(和 logo、搜索框、按钮同一行),不再是独立占一整行的顶层元素。 */
+/* Phân cột "Thư viện/Phân loại" trên cùng — nay là một mục flex trong thanh
+   điều hướng hợp nhất (library-topbar), cùng hàng với logo, ô tìm kiếm và nút,
+   không còn là phần tử cấp cao chiếm cả một dòng. */
 @utility library-top-tabs-root {
   flex: 0 0 auto;
 }
 
-/* 顶栏去白卡后,分栏 pill 自己需要一个白底(不然灰 pill 贴在同色灰页面上
-   会隐形)——白底 + 细描边 + 轻阴影,成为顶栏中央唯一的浮起小控件。 */
+/* Sau khi bỏ thẻ trắng ở thanh trên cùng, pill phân loại cần một nền trắng (nếu không pill xám sẽ bị ẩn trên nền xám cùng màu) - nền trắng + viền mảnh + đổ bóng nhẹ, trở thành điều khiển nổi duy nhất ở trung tâm thanh trên cùng. */
 @utility library-top-tabs {
   display: inline-flex;
   gap: 3px;
@@ -135,8 +133,7 @@ body.is-soft-reader-open {
   box-shadow: 0 1px 3px color-mix(in srgb, var(--shadow-color) 6%, transparent);
 }
 
-/* 选中态用和"添加"按钮同一套实底深色(--ink)强对比。图标化:icon + 短文字
-   横排,图标比文字略淡,选中时一起转白。 */
+/* Trạng thái chọn sử dụng cùng bộ nền đặc đậm màu (--ink) với nút "Thêm" để tạo độ tương phản mạnh. Hình ảnh hóa: icon + văn bản ngắn xếp ngang, icon hơi nhạt hơn văn bản, khi chọn cả hai chuyển sang màu trắng. */
 @utility library-top-tab {
   display: inline-flex;
   align-items: center;
@@ -145,7 +142,8 @@ body.is-soft-reader-open {
   border: 0;
   background: transparent;
   border-radius: var(--btn-radius);
-  /* 四 tab（图书馆/合集/收藏/AI）略收紧水平 padding，窄屏不易挤换行 */
+  /* Bốn tab (Thư viện/Bộ sưu tập/Yêu thích/AI) giảm nhẹ đệm ngang để màn hình
+     hẹp ít bị ép xuống dòng */
   padding: 7px 10px;
   font-size: 13px;
 
@@ -180,9 +178,9 @@ body.is-soft-reader-open {
   }
 }
 
-/* library-view 已有 order:1(见文件靠前的 app-shell-header 附近定义)——
-   categories-view / favorites-view 用同样的 order,三者互斥渲染(tab 切换),
-   不会同时出现,不需要再手动错开。 */
+/* library-view đã có order:1 (xem định nghĩa gần app-shell-header ở đầu file) —
+   categories-view / favorites-view sử dụng cùng order, ba phần này hiển thị loại trừ lẫn nhau (chuyển tab),
+   không xuất hiện đồng thời, không cần điều chỉnh thủ công. */
 @utility categories-view {
   width: min(1120px, 100%);
   flex: 1 1 auto;
@@ -198,7 +196,7 @@ body.is-soft-reader-open {
   }
 }
 
-/* 收藏 tab：与合集同宽同滚动壳 */
+/* Tab Yêu thích: cùng chiều rộng và vỏ cuộn với Bộ sưu tập */
 @utility favorites-view {
   width: min(720px, 100%);
   flex: 1 1 auto;
@@ -305,7 +303,7 @@ body.is-soft-reader-open {
   color: var(--muted);
 }
 
-/* 统一空状态：科学仪器图标 + 标题 + 说明（EmptyState 组件） */
+/* Trạng thái trống thống nhất: biểu tượng thiết bị khoa học + tiêu đề + mô tả (thành phần EmptyState) */
 @utility empty-state {
   display: flex;
   flex-direction: column;
@@ -346,7 +344,7 @@ body.is-soft-reader-open {
   margin-top: 12px;
 }
 
-/* 兼容旧 class 名（FavoritesView 仍挂 favorites-empty） */
+/* Tương thích tên class cũ (FavoritesView vẫn sử dụng favorites-empty) */
 @utility favorites-empty {
   display: flex;
   flex-direction: column;
@@ -422,9 +420,10 @@ body.is-soft-reader-open {
   padding: 4px 0;
 }
 
-/* 文件夹卡片(阶段 D 追加:参考 PDF_MD_lib 的 FolderCard.tsx 改造成竖版
-   封面堆叠卡片,不再是纯文字的横向列表行——用户明确认可这个"多本书叠在
-   一起"的视觉,直接照这个结构复刻)。 */
+/* Thẻ thư mục (bổ sung giai đoạn D: dựa trên FolderCard.tsx của PDF_MD_lib,
+   chuyển thành thẻ dọc xếp chồng ảnh bìa, không còn là hàng danh sách ngang chỉ
+   có chữ — người dùng đã xác nhận hình ảnh "nhiều sách chồng lên nhau", nên
+   tái tạo trực tiếp cấu trúc này). */
 @utility categories-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
@@ -587,15 +586,15 @@ body.is-soft-reader-open {
 }
 
 /*
-  危险区修复(Tailwind v4 迁移):`.library-brand-link` 和 `.hero-repo-link`
-  同时出现在同一个 <a> 元素上(AppShellHeader.jsx),都定义了 font-size——
-  v3 里两者 specificity 相同,靠同文件源码序 tie-break,写在后面的
-  `.hero-repo-link`(2.2rem)胜出;library-brand-link 这份 1.3rem 一直是死
-  代码。v4 下 @utility 生成顺序不再保证跟随源码序(和上面 library-grid/
-  recent-jobs-list 的 gap 冲突同一模式),实测迁移后 1.3rem 反而胜出,导致
-  首页顶栏 "RetainPDF" 标题字号被砍掉近一半。这里去掉冲突的 font-size 声明,
-  字号完全交给 hero-repo-link 一处定义;logo 尺寸的嵌套覆盖两边取值一致
-  (28px),不冲突,保留。
+  Sửa lỗi vùng nguy hiểm (di chuyển Tailwind v4): `.library-brand-link` và `.hero-repo-link`
+  xuất hiện đồng thời trên cùng một phần tử <a> (AppShellHeader.jsx), cả hai đều định nghĩa font-size —
+  trong v3, cả hai có specificity giống nhau, dựa vào thứ tự mã nguồn trong cùng file để phá vỡ hòa, 
+  `.hero-repo-link` (2.2rem) được viết sau nên thắng; phần 1.3rem của library-brand-link luôn là mã chết.
+  Trong v4, thứ tự sinh ra của @utility không còn đảm bảo theo thứ tự mã nguồn (giống như xung đột gap
+  giữa library-grid/recent-jobs-list ở trên), thực tế sau khi di chuyển 1.3rem lại thắng, khiến kích thước
+  chữ tiêu đề "RetainPDF" ở thanh trên cùng trang chủ bị giảm gần một nửa. Ở đây loại bỏ khai báo font-size xung đột,
+  kích thước chữ hoàn toàn do hero-repo-link định nghĩa; kích thước logo được ghi đè lồng nhau ở cả hai bên đều nhất quán
+  (28px), không xung đột, được giữ lại.
 */
 @utility library-brand-link {
   & .hero-repo-logo {
@@ -653,18 +652,18 @@ body.is-soft-reader-open {
 }
 
 /*
-  危险区修复(Tailwind v4 迁移):`.library-grid` 和 `.recent-jobs-list` 这两个
-  类始终成对出现在同一批元素上(见 RecentJobsLibrary.jsx / partials/
-  main-content.html),`grid-template-columns`/`gap` 在两边各写了一份、值还
-  不一样(这里 46px 42px,recent-jobs-list 那份是 34px 32px)——v3 里两者
-  specificity 相同,靠 @import 顺序(library-shell.css 先于 job-dialogs.css)
-  的源码序 tie-break,job-dialogs.css 后写的 34px/32px 胜出,46px/42px 那份
-  其实一直是死代码。v4 把两者都转成同层 `@utility`,不再保证按文件 @import
-  顺序生成,这份"赢面"结果变得不可靠——实测迁移后 46px/42px 反而生效,导致
-  home 视觉基线里卡片网格间距变大、卡片整体变窄(封面图跟着变矮),968414/
-  892 一类差异越过阈值。这里去掉重复声明,只保留 library-grid 独有的
-  `#recent-jobs-list { display: contents }` 行为,网格尺寸/间距完全交给
-  recent-jobs-list 一处定义,消除歧义。
+   Sửa lỗi vùng nguy hiểm (di chuyển Tailwind v4): `.library-grid` và `.recent-jobs-list` hai class này
+   luôn xuất hiện theo cặp trên cùng một nhóm phần tử (xem RecentJobsLibrary.jsx / partials/
+   main-content.html), `grid-template-columns`/`gap` được viết ở cả hai bên với giá trị khác nhau
+   (ở đây là 46px 42px, còn ở recent-jobs-list là 34px 32px) — trong v3, cả hai có specificity giống nhau,
+   dựa vào thứ tự @import (library-shell.css trước job-dialogs.css) để phá vỡ hòa, 34px/32px ở job-dialogs.css
+   được viết sau nên thắng, phần 46px/42px thực chất luôn là mã chết. Trong v4, cả hai đều được chuyển thành
+   `@utility` cùng cấp, không còn đảm bảo sinh ra theo thứ tự @import của file, kết quả "chiến thắng" này trở nên không đáng tin cậy —
+   thực tế sau khi di chuyển, 46px/42px lại có hiệu lực, khiến khoảng cách lưới thẻ ở đường cơ sở hình ảnh trang chủ
+   trở nên lớn hơn, thẻ tổng thể hẹp hơn (ảnh bìa cũng trở nên thấp hơn), các khác biệt như 968414/
+   892 vượt quá ngưỡng. Ở đây loại bỏ khai báo trùng lặp, chỉ giữ lại hành vi duy nhất của library-grid là
+   `#recent-jobs-list { display: contents }`, kích thước/ khoảng cách lưới hoàn toàn do
+   recent-jobs-list định nghĩa ở một nơi, loại bỏ sự mơ hồ.
 */
 @utility library-grid {
   &#recent-jobs-list {
@@ -672,8 +671,8 @@ body.is-soft-reader-open {
   }
 }
 
-/* 底部悬浮搜索条(LibrarySearchDock.jsx)——挪回底部后是唯一内容,不用再
-   和添加/设置按钮共享一条 pill,宽度收窄一档(min(420px, 视口-56px))。 */
+/* Thanh tìm kiếm nổi dưới cùng (LibrarySearchDock.jsx) — sau khi chuyển xuống dưới cùng trở thành nội dung duy nhất, không cần
+   chia sẻ cùng một thanh pill với nút thêm/cài đặt nữa, chiều rộng thu hẹp một mức (min(420px, viewport-56px)). */
 @utility library-search-dock {
   position: fixed;
   left: 50%;
@@ -731,10 +730,10 @@ body.is-soft-reader-open {
   }
 }
 
-/* 底部三合一浮动栏(AppBottomBar.jsx)——添加(左)+ 搜索(中)+ 设置(右)收成
-   一条居中玻璃 pill,取代早期分离的"底部搜索条 + 右下角添加/设置胶囊"两个浮岛。
-   宽度交给中间的搜索槽(library-bottom-search)决定:有搜索时是一条宽 pill,
-   分类 tab 无搜索时自然收成"添加/设置"两颗按钮的小 pill(inline-flex 贴合内容)。 */
+/* Thanh nổi ba trong một dưới cùng (AppBottomBar.jsx) — thêm (trái) + tìm kiếm (giữa) + cài đặt (phải) gộp thành
+   một thanh pill kính mờ ở giữa, thay thế cho hai đảo nổi tách biệt trước đây là "thanh tìm kiếm dưới cùng + viên nang thêm/cài đặt góc dưới phải".
+   Chiều rộng do rãnh tìm kiếm ở giữa (library-bottom-search) quyết định: khi có tìm kiếm là một thanh pill rộng,
+   tab phân loại không có tìm kiếm sẽ tự động thu gọn thành pill nhỏ của hai nút "thêm/cài đặt" (inline-flex vừa với nội dung). */
 @utility library-bottom-bar {
   position: fixed;
   left: 50%;
@@ -754,8 +753,8 @@ body.is-soft-reader-open {
   -webkit-backdrop-filter: blur(18px);
   transition: opacity 0.18s var(--ease-out), transform 0.18s var(--ease-out);
 
-  /* 批量模式:隐藏但不卸载(visibility 保住 DOM 节点 + library-search-island
-     的 input 引用,退出批量后搜索照常工作),淡出下沉一点点。 */
+/* Chế độ hàng loạt: ẩn nhưng không gỡ bỏ (visibility bảo toàn nút DOM + tham chiếu input của library-search-island,
+      sau khi thoát hàng loạt tìm kiếm vẫn hoạt động bình thường), mờ dần và chìm xuống một chút. */
   &.is-hidden {
     opacity: 0;
     visibility: hidden;
@@ -807,8 +806,8 @@ body.is-soft-reader-open {
   }
 }
 
-/* 底部栏两侧的图标按钮(icon-only,"少文字多图标"):添加=accent 主按钮,
-   设置=纸面幽灵按钮。 */
+/* Nút biểu tượng hai bên thanh dưới cùng (icon-only, "ít chữ nhiều biểu tượng"): thêm = nút chính accent,
+   cài đặt = nút ma trên nền giấy. */
 @utility library-bottom-icon-btn {
   flex: 0 0 auto;
   display: inline-flex;
@@ -859,15 +858,16 @@ body.is-soft-reader-open {
   }
 }
 
-/* 导航栏里 logo/分栏 两侧的弹性占位,把分栏挤到正中。 */
+/* Chiếm chỗ linh hoạt hai bên logo/phân loại trong thanh điều hướng, đẩy phân loại vào giữa. */
 @utility library-topbar-spacer {
   flex: 1 1 auto;
   min-width: 0;
 }
 
 @utility library-bottom-actions {
-  /* 从顶栏挪到底部:固定在右下角悬浮(和底部居中的搜索条错开,搜索条在
-     left:50% 居中、这里贴右;两个 tab 下都常驻)。 */
+  /* Chuyển từ thanh trên xuống cuối: nổi cố định ở góc phải dưới (tránh thanh
+     tìm kiếm giữa cuối, thanh tìm kiếm căn giữa bằng left:50%, phần này bám
+     phải; luôn hiện ở cả hai tab). */
   position: fixed;
   right: 16px;
   bottom: 16px;
@@ -904,9 +904,9 @@ body.is-soft-reader-open {
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
-  /* 按下要有反馈(emil-design-eng skill):scale(0.97) 让"添加/设置"这两个
-     常驻悬浮按钮感觉真的在响应点击,而不是死板的纯色块切换。只做
-     transform/背景/边框,不用 transition: all。 */
+/* Phản hồi khi nhấn (emil-design-eng skill): scale(0.97) làm cho hai nút nổi thường trực "thêm/cài đặt"
+      có cảm giác thực sự phản hồi khi nhấn, thay vì chuyển đổi khối màu cứng nhắc. Chỉ thực hiện
+      transform/nền/viền, không dùng transition: all. */
   transition: transform 120ms var(--ease-out), background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 
   &:active {
@@ -1065,9 +1065,9 @@ body.is-soft-reader-open {
   @apply mx-auto max-w-[560px];
 }
 
-/* 只在整合导航栏(AppTopBar.jsx)这一处使用——早期是独立占一整行的大号
-   品牌标题(2.2rem),挤进现在这条和分栏/搜索框/按钮同高的紧凑导航栏后按
-   比例缩小,不然视觉分量会盖过其余元素。 */
+/* Chỉ dùng ở thanh điều hướng hợp nhất (AppTopBar.jsx) — tiêu đề thương hiệu
+   lớn từng chiếm cả dòng riêng (2.2rem), nay nằm trong thanh gọn cùng chiều
+   cao với phân cột/ô tìm kiếm/nút nên thu nhỏ theo tỷ lệ, tránh lấn át phần còn lại. */
 @utility hero-repo-link {
   @apply inline-flex items-center gap-2 text-[17px] font-semibold no-underline;
   color: var(--ink);
@@ -1098,7 +1098,8 @@ body.is-soft-reader-open {
   }
 }
 
-/* 书架卡右上角徽标：完整显示「已翻译/馆藏/失败」，禁止省略号 */
+/* Huy hiệu góc phải trên thẻ giá sách: hiển thị đầy đủ "Đã dịch/Trong thư viện/
+   Thất bại", không dùng dấu ba chấm */
 .book-card-status-badge {
   max-width: none !important;
   flex-shrink: 0;
@@ -1113,7 +1114,7 @@ body.is-soft-reader-open {
   flex-shrink: 0;
 }
 
-/* Mock 演示模式提示条 */
+/* Thanh thông báo chế độ trình diễn mock */
 .mock-mode-banner {
   display: flex;
   flex-wrap: wrap;

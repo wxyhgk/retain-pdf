@@ -1,4 +1,4 @@
-// 主页 AI 输入条：@ 选文档 / 合集 + chips + 发送
+// Thanh nhập AI trang chủ: @ chọn tài liệu / bộ sưu tập + chip + gửi.
 
 import {
   useCallback,
@@ -22,13 +22,13 @@ const MAX_SCOPES = 4;
 export type HomeAskComposerProps = {
   disabled?: boolean;
   isRunning?: boolean;
-  /** 未配置模型 Key 时禁用发送并提示 */
+  /** Tắt gửi và hiển thị nhắc nhở khi model chưa cấu hình Key. */
   missingLlmKey?: boolean;
   scopes: HomeAskScope[];
   onScopesChange: (next: HomeAskScope[]) => void;
   onSend: (question: string) => void;
   onStop?: () => void;
-  /** hero：空态居中大输入；dock：对话底栏 */
+  /** hero: vùng nhập lớn ở trạng thái trống; dock: thanh cuối hội thoại. */
   variant?: "hero" | "dock";
 };
 
@@ -171,37 +171,38 @@ export function HomeAskComposer({
   const canSend = Boolean(text.trim()) && !disabled && !isRunning && !missingLlmKey;
 
   const scopeHint = (() => {
-    if (missingLlmKey) return "请先在设置 → API 设置中填写模型 API Key";
-    if (!scopes.length) return "全库 · @ 文章或合集";
+    if (missingLlmKey) return "Hãy nhập API Key của model tại Cài đặt → API";
+    if (!scopes.length) return "Toàn thư viện · @ bài viết hoặc bộ sưu tập";
     const cols = scopes.filter((s) => s.kind === "collection").length;
     const docs = scopes.filter((s) => s.kind === "document").length;
     const parts: string[] = [];
-    if (cols) parts.push(`${cols} 合集`);
-    if (docs) parts.push(`${docs} 篇`);
-    return parts.join(" · ") || "已限定";
+    if (cols) parts.push(`${cols} bộ sưu tập`);
+    if (docs) parts.push(`${docs} bài`);
+    return parts.join(" · ") || "Đã giới hạn";
   })();
 
   return (
     <div className={`home-ask-composer home-ask-composer-${variant}${missingLlmKey ? " is-locked" : ""}`}>
       {missingLlmKey ? (
         <div className="home-ask-key-banner" role="alert">
-          <p>未配置模型 API Key，无法输入或提问。</p>
+          <p>Chưa cấu hình API Key của model, không thể nhập hoặc đặt câu hỏi.</p>
           <button
             type="button"
             className="home-ask-key-banner-btn"
             onClick={() => {
-              // 与上传门禁一致：打开「设置 → API 设置」（唯一常规入口）
+              // Tương tự kiểm soát truy cập tải lên: mở "Cài đặt → Cài đặt API"
+              // (lối vào thông thường duy nhất).
               document.dispatchEvent(
                 new CustomEvent("retainpdf:open-browser-credentials"),
               );
             }}
           >
-            打开设置
+            Mở cài đặt
           </button>
         </div>
       ) : null}
       {scopes.length > 0 ? (
-        <div className="home-ask-chips" aria-label="提问范围">
+        <div className="home-ask-chips" aria-label="Phạm vi hỏi">
           {scopes.map((s) => (
             <span
               key={scopeKey(s)}
@@ -213,12 +214,12 @@ export function HomeAskComposer({
                 <BookOpen size={12} strokeWidth={2.2} aria-hidden />
               )}
               <span className="home-ask-chip-label" title={s.title}>
-                {s.kind === "collection" ? `合集 · ${s.title}` : s.title}
+                {s.kind === "collection" ? `Bộ sưu tập · ${s.title}` : s.title}
               </span>
               <button
                 type="button"
                 className="home-ask-chip-remove"
-                aria-label={`移除 ${s.title}`}
+                aria-label={`Xóa ${s.title}`}
                 disabled={disabled || isRunning}
                 onClick={() => onScopesChange(scopes.filter((x) => scopeKey(x) !== scopeKey(s)))}
               >
@@ -230,7 +231,7 @@ export function HomeAskComposer({
       ) : null}
 
       <div className="home-ask-composer-shell" aria-disabled={missingLlmKey || undefined}>
-        {/* 锁定层：挡住一切输入（比仅 disabled 更稳） */}
+        {/* Lớp khóa chặn mọi thao tác nhập (ổn định hơn chỉ dùng disabled). */}
         {missingLlmKey ? (
           <div
             className="home-ask-composer-lock"
@@ -252,12 +253,12 @@ export function HomeAskComposer({
           aria-disabled={missingLlmKey}
           placeholder={
             missingLlmKey
-              ? "请先配置模型 API Key…"
+              ? "Vui lòng cấu hình API Key của model trước…"
               : scopes.length
-                ? "继续提问… @ 可再指定文章或合集"
+                ? "Tiếp tục đặt câu hỏi… @ có thể chỉ định bài viết hoặc bộ sưu tập"
                 : variant === "hero"
-                  ? "用 AI 做任何事… 输入 @ 指定文章或合集"
-                  : "继续提问… 输入 @ 指定文章或合集"
+                  ? "Dùng AI làm mọi việc… Nhập @ để chỉ định bài viết hoặc bộ sưu tập"
+                  : "Tiếp tục đặt câu hỏi… Nhập @ để chỉ định bài viết hoặc bộ sưu tập"
           }
           onChange={(e) => {
             if (missingLlmKey) return;
@@ -296,15 +297,15 @@ export function HomeAskComposer({
         />
 
         {pickerOpen ? (
-          <div className="home-ask-picker" role="listbox" id={listId} aria-label="选择文档或合集">
+          <div className="home-ask-picker" role="listbox" id={listId} aria-label="Chọn tài liệu hoặc bộ sưu tập">
             {loadingOpts && !optionsLoaded ? (
               <div className="home-ask-picker-empty">
                 <Loader2 className="home-ask-spin" size={14} aria-hidden />
-                加载中…
+                Đang tải…
               </div>
             ) : filtered.length === 0 ? (
               <div className="home-ask-picker-empty">
-                {optionsLoaded ? "没有匹配的文章或合集" : "暂无数据"}
+                {optionsLoaded ? "Không có bài viết hoặc bộ sưu tập phù hợp" : "Không có dữ liệu"}
               </div>
             ) : (
               filtered.map((item, index) => (
@@ -327,16 +328,16 @@ export function HomeAskComposer({
                   <span className="home-ask-picker-title">{item.title}</span>
                   <span className="home-ask-picker-kind">
                     {item.kind === "collection"
-                      ? `合集${item.document_count != null ? ` · ${item.document_count}` : ""}`
-                      : "文章"}
+                      ? `Bộ sưu tập${item.document_count != null ? ` · ${item.document_count}` : ""}`
+                      : "Bài viết"}
                   </span>
                 </button>
               ))
             )}
             {scopes.length >= MAX_SCOPES ? (
-              <div className="home-ask-picker-hint">最多指定 {MAX_SCOPES} 个范围</div>
+              <div className="home-ask-picker-hint">Tối đa chỉ định {MAX_SCOPES} phạm vi</div>
             ) : (
-              <div className="home-ask-picker-hint">合集会展开其中的文献再检索</div>
+              <div className="home-ask-picker-hint">Bộ sưu tập sẽ mở rộng các tài liệu trong đó để tìm kiếm</div>
             )}
           </div>
         ) : null}
@@ -347,8 +348,8 @@ export function HomeAskComposer({
             <button
               type="button"
               className="home-ask-send home-ask-send-stop"
-              aria-label="停止生成"
-              title="停止生成"
+              aria-label="Dừng tạo"
+              title="Dừng tạo"
               disabled={!onStop}
               onClick={() => onStop?.()}
             >
@@ -358,7 +359,7 @@ export function HomeAskComposer({
             <button
               type="button"
               className="home-ask-send"
-              aria-label="发送"
+              aria-label="Gửi"
               disabled={!canSend}
               onClick={handleSend}
             >

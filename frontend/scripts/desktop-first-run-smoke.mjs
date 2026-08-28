@@ -136,7 +136,7 @@ const [{ saveDesktopConfig }, { state }] = await Promise.all([
 
 let caughtMessage = "";
 try {
-  // 当前签名: saveDesktopConfig(browserConfig, afterSave)
+  // Chữ ký hiện tại: saveDesktopConfig(browserConfig, afterSave)
   await saveDesktopConfig(
     {
       ocrProvider: "paddle",

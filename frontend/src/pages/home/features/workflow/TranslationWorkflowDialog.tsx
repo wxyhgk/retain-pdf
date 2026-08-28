@@ -1,57 +1,54 @@
-// 翻译工作流对话框 —— 仅「添加 PDF」上传入口使用。
+// Hộp thoại quy trình dịch —— chỉ sử dụng cho mục tải lên "Thêm PDF".
 //
-// 书本任务进度 / 发起翻译已迁到书籍详情「翻译」Tab：
-//   BookTranslationWorkflowPanel（#book-detail-status-section）
-// 勿再把已有 document 的进度抬进本弹窗；selectJob 有 document_id 时会打开详情。
+// Tiến độ nhiệm vụ sách / khởi tạo dịch đã được chuyển đến tab "Dịch" trong chi tiết sách:
+//   BookTranslationWorkflowPanel (#book-detail-status-section)
+// Không đưa tiến độ của document đã có vào hộp thoại này nữa; selectJob khi có document_id sẽ mở chi tiết.
 //
-// Dialog 渲染层(阶段 C 第二批,shadcn 改造):从 bespoke <div role="dialog">
-// 换成 radix-ui 的 Dialog 原语(DialogPrimitive.Root/Portal/Overlay/Content)。
-// 相比阶段 C 第一批(CredentialsDialog 等 4 个,dialog-store.js 工厂 + 单态
-// 关闭语义)结构上有三处不同,逐一说明:
+// Lớp render Dialog (giai đoạn C đợt 2, cải tiến shadcn): chuyển từ bespoke <div role="dialog">
+// sang nguyên mẫu Dialog của radix-ui (DialogPrimitive.Root/Portal/Overlay/Content).
+// So với đợt 1 giai đoạn C (CredentialsDialog và 4 hộp thoại khác, sử dụng factory dialog-store.js + ngữ nghĩa đóng đơn trạng thái),
+// cấu trúc có ba điểm khác biệt, được giải thích lần lượt:
 //
-// 1. 开合状态源不是 dialog-store.js 工厂,是 bespoke createStore 包装的
-//    dialogStatePort({open,mode})——services.stores.dialog 快照。本文件不改
-//    这层(铁律),只换渲染。
+// 1. Nguồn trạng thái mở/đóng không phải là factory dialog-store.js, mà là dialogStatePort({open, mode})
+//    được bọc bởi createStore tùy chỉnh —— ảnh chụp nhanh từ services.stores.dialog. Tệp này không thay đổi
+//    lớp này (nguyên tắc bất di bất dịch), chỉ thay đổi lớp render.
 //
-// 2. 两态语义(dialog.mode: UPLOAD/STATUS)是对话框*内部*状态,不是 Radix 的
-//    open/close——mode 只影响标题文案和 statusMode/uploadMode 两个 class,
-//    与本次迁移正交,原样保留。
+// 2. Ngữ nghĩa hai trạng thái (dialog.mode: UPLOAD/STATUS) là trạng thái *bên trong* của hộp thoại,
+//    không phải open/close của Radix —— mode chỉ ảnh hưởng đến văn bản tiêu đề và hai class statusMode/uploadMode,
+//    không liên quan đến việc di chuyển lần này, giữ nguyên như cũ.
 //
-// 3. 关闭统一路由到 requestClose():Escape/背板/关闭按钮三条触发路径都必须走
-//    services.workflowDialog.requestClose()(见 translation-workflow-dialog-
-//    runtime.js),不能有任何一条绕过去直接调 dialogStatePort.close()——3b 库
-//    刷新挂起/恢复(bindings.js)依赖 closeTranslationWorkflow 事件在 document
-//    上可见,只有走 requestClose() 才会 dispatch 这个事件。
+// 3. Đóng thống nhất chuyển hướng đến requestClose(): ba đường kích hoạt (Escape/nền/ nút đóng) đều phải đi qua
+//    services.workflowDialog.requestClose() (xem translation-workflow-dialog-runtime.js),
+//    không được bỏ qua và gọi trực tiếp dialogStatePort.close() —— việc tạm dừng/khôi phục làm mới thư viện 3b (bindings.js)
+//    phụ thuộc vào sự kiện closeTranslationWorkflow hiển thị trên document, chỉ khi đi qua requestClose() mới dispatch sự kiện này.
 //
-//    requestClose() 现在是"一次点击直接关闭"(不再是早期的两段式:状态可见时
-//    先 returnHome、对话框不关)。两段式被用户判定为不符合预期(点任务进度的
-//    × 会弹回空上传表单、还顺带 stopPolling 把任务重置),已改成 × = 关闭;
-//    中止任务改由 StatusCard 的"取消任务"按钮负责。
+//    requestClose() hiện tại là "đóng trực tiếp bằng một cú nhấp" (không còn là hai giai đoạn trước đây: khi trạng thái hiển thị thì
+//    returnHome trước, hộp thoại không đóng). Hai giai đoạn bị người dùng đánh giá là không đáp ứng kỳ vọng (nhấp vào × của tiến độ nhiệm vụ
+//    sẽ quay lại biểu mẫu tải lên trống, đồng thời stopPolling làm nhiệm vụ bị reset), đã được đổi thành × = đóng;
+//    hủy nhiệm vụ do nút "Hủy nhiệm vụ" trên StatusCard đảm nhiệm.
 //
-//    Escape 键仍需额外处理:本对话框有一条独立的 document 级 keydown 监听
-//    (runtime 的 bindEvents,事件契约要它在 document 上可见,不能删),已经在
-//    调 requestClose()。若同时让 Radix Content 的 onEscapeKeyDown 走默认行为
-//    (触发 onOpenChange(false) → requestClose()),一次 Escape 会触发两次
-//    requestClose(),两次 closeTranslationWorkflow 事件会让 bindings.js 的
-//    挂起/恢复逻辑重复跑一遍。这里显式 onEscapeKeyDown={(e)=>e.preventDefault()}
-//    把 Escape 完全交给既有 document 监听器处理——DismissableLayer 的 keydown
-//    挂在 capture 阶段、bindEvents 挂在 bubble 阶段,前者先跑并被我们
-//    preventDefault(),Radix 自己的 onDismiss 被跳过,随后 bubble 阶段 bindEvents
-//    正常触发一次 requestClose(),三条路径最终都恰好调用一次,不重复。
+//    Phím Escape vẫn cần xử lý bổ sung: hộp thoại này có một trình lắng nghe keydown cấp document riêng biệt
+//    (bindEvents của runtime, hợp đồng sự kiện yêu cầu nó phải hiển thị trên document, không thể xóa), đã gọi requestClose().
+//    Nếu đồng thời để onEscapeKeyDown của Radix Content thực hiện hành vi mặc định
+//    (kích hoạt onOpenChange(false) → requestClose()), một lần nhấn Escape sẽ kích hoạt requestClose() hai lần,
+//    hai sự kiện closeTranslationWorkflow sẽ khiến logic tạm dừng/khôi phục của bindings.js chạy lặp lại.
+//    Ở đây, chúng ta rõ ràng đặt onEscapeKeyDown={(e)=>e.preventDefault()}
+//    để giao hoàn toàn việc xử lý Escape cho trình lắng nghe document hiện có —— DismissableLayer của keydown
+//    được gắn ở giai đoạn capture, bindEvents ở giai đoạn bubble, giai đoạn trước chạy và bị preventDefault(),
+//    onDismiss của Radix bị bỏ qua, sau đó ở giai đoạn bubble bindEvents kích hoạt requestClose() bình thường,
+//    cuối cùng cả ba đường dẫn đều gọi đúng một lần, không lặp lại.
 //
-// 4. 不 forceMount Content(同其余对话框的决策，见 use-dialog-return-focus.js
-//    头注释——forceMount 会让 Radix modal Content 内部的 hideOthers() 副作用
-//    在应用启动时就永久生效)。WorkflowPanel(上传表单)和 #status-section(3b
-//    StatusCard)因此随对话框关闭一起卸载。openUpload() 每次打开都无条件
-//    resetUploadSession(),不存在跨开合保留上传态的预期;job-runtime 轮询引擎
-//    是独立于 React 挂载生命周期的服务(store 驱动,不依赖 StatusCard 是否挂载),
-//    卸载 StatusCard 不影响后台轮询——任务到终态时引擎自己 stopPolling,关闭
-//    对话框不会漏掉常驻轮询。
+// 4. Không forceMount Content (quyết định giống các hộp thoại khác, xem chú thích đầu tệp use-dialog-return-focus.js
+//    —— forceMount sẽ khiến tác dụng phụ hideOthers() bên trong Content của Radix modal có hiệu lực vĩnh viễn khi ứng dụng khởi động).
+//    WorkflowPanel (biểu mẫu tải lên) và #status-section (StatusCard 3b) do đó sẽ bị gỡ bỏ khi hộp thoại đóng.
+//    openUpload() mỗi lần mở đều resetUploadSession() vô điều kiện, không có kỳ vọng giữ lại trạng thái tải lên khi mở/đóng;
+//    công cụ polling job-runtime độc lập với vòng đời gắn kết React (được điều khiển bởi store, không phụ thuộc vào việc StatusCard có được gắn kết hay không),
+//    việc gỡ bỏ StatusCard không ảnh hưởng đến việc polling ở chế độ nền —— khi nhiệm vụ đạt đến trạng thái cuối,
+//    công cụ sẽ tự động stopPolling, việc đóng hộp thoại sẽ không bỏ lỡ polling thường trú.
 //
-// <html> 级样式钩子(rootOpen class)在 React 根之外,用 effect 同步(卸载时
-// 清理),保持不动。触发按钮("添加",在 LibraryBottomBar 里)与本对话框跨
-// 子树，Radix 默认的 triggerRef 焦点归还机制失效，复用
-// use-dialog-return-focus.js(同 CredentialsDialog 等的先例)。
+// Hook kiểu CSS cấp <html> (rootOpen class) nằm ngoài gốc React, được đồng bộ bằng effect (dọn dẹp khi gỡ bỏ),
+// giữ nguyên không thay đổi. Nút kích hoạt ("Thêm", trong LibraryBottomBar) và hộp thoại này nằm trên các cây con khác nhau,
+// cơ chế trả lại tiêu điểm triggerRef mặc định của Radix không hoạt động, tái sử dụng use-dialog-return-focus.js (tương tự các ví dụ trước như CredentialsDialog).
 
 import { useEffect } from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
@@ -74,7 +71,7 @@ export function TranslationWorkflowDialog() {
   const statusMode = dialog.mode === TRANSLATION_WORKFLOW_MODES.STATUS;
   const { onCloseAutoFocus } = useDialogReturnFocus(open);
 
-  // <html> 级样式钩子在 React 根之外,用 effect 同步(卸载时清理)
+  // Móc kiểu CSS cấp <html> nằm ngoài gốc React, đồng bộ bằng effect (dọn dẹp khi unmount)
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle(TRANSLATION_WORKFLOW_DIALOG.classes.rootOpen, open);
@@ -88,11 +85,11 @@ export function TranslationWorkflowDialog() {
       : TRANSLATION_WORKFLOW_DIALOG.classes.uploadMode,
   ].join(" ");
 
-  // Escape(见头注释第 3 点，这里只 preventDefault，实际关闭由既有 document
-  // 监听器处理)/ 背板点击(DismissableLayer 的 outside-click 检测)/ 关闭按钮
-  // (DialogPrimitive.Close)最终都统一路由到 requestClose() 的两段式关闭判断
-  // (状态可见先 returnHome，否则才真正 close)，不直接调
-  // dialogStatePort/dialogStore 的 close()。
+  // Escape (xem mục 3 ở chú thích đầu, ở đây chỉ preventDefault, việc đóng thực tế do trình lắng nghe document hiện có xử lý) /
+  // nhấp vào nền (phát hiện outside-click của DismissableLayer) / nút đóng
+  // (DialogPrimitive.Close) cuối cùng đều chuyển hướng thống nhất đến requestClose() để đánh giá đóng hai giai đoạn
+  // (nếu trạng thái hiển thị thì returnHome trước, nếu không mới thực sự đóng), không gọi trực tiếp
+  // close() của dialogStatePort/dialogStore.
   function handleOpenChange(nextOpen) {
     if (!nextOpen) {
       services.workflowDialog.requestClose();
@@ -133,7 +130,7 @@ export function TranslationWorkflowDialog() {
                   id={TRANSLATION_WORKFLOW_DIALOG.ids.closeButton}
                   type="button"
                   className="dialog-close-btn"
-                  aria-label="关闭"
+                  aria-label="Đóng"
                 >
                   ×
                 </button>
@@ -143,9 +140,9 @@ export function TranslationWorkflowDialog() {
             <section
               id="status-section"
               className={`translation-status-panel${statusArea.visible ? "" : " hidden"}`}
-              aria-label="任务进度"
+              aria-label="Tiến độ nhiệm vụ"
             >
-              {/* status 侧 props 默认值在另一批收紧;此处补齐调用侧以满足当前签名 */}
+              {/* props phía status sẽ được siết chặt ở đợt khác; chỗ này bổ sung đủ phía gọi để khớp chữ ký hiện tại */}
               <StatusCard
                 visible={statusArea.visible}
                 showResultActions

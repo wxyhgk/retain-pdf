@@ -3,8 +3,8 @@ import { API_PREFIX } from "../config/api-constants.js";
 import { unwrapEnvelope } from "../job/core.js";
 import { buildApiEndpoint } from "./http.js";
 
-// 图书馆 AI 问答(POST /api/v1/ai/ask,SSE 流式)。
-// 用流式 fetch 而不是 EventSource:EventSource 无法携带 X-API-Key 请求头。
+// AI hỏi đáp thư viện (POST /api/v1/ai/ask, SSE streaming).
+// Sử dụng fetch streaming thay vì EventSource: EventSource không thể mang theo header X-API-Key.
 
 export class AiAskError extends Error {
   status: number;
@@ -22,8 +22,8 @@ function normalizeDonePayload(payload: any = {}) {
     toolTrace: Array.isArray(payload?.tool_trace) ? payload.tool_trace : [],
     rounds: Number(payload?.rounds) || 0,
     conversationId: `${payload?.conversation_id || payload?.conversationId || ""}`.trim(),
-    // 审计 C2:后端历史回写失败时 done.persisted=false,上层提示"未存入历史"。
-    // 旧后端无此字段 → 视为已持久化(不误报)。
+  // Kiểm toán C2: khi backend ghi lại lịch sử thất bại done.persisted=false, lớp trên hiển thị "Chưa lưu vào lịch sử".
+  // Backend cũ không có trường này → coi như đã lưu trữ (không báo sai).
     persisted: payload?.persisted !== false,
   };
 }
@@ -44,11 +44,11 @@ function parseSseEvent(line = "") {
   }
 }
 
-// 消费 /ai/ask 的 SSE body:按行切分 `data: {json}`,tool 事件回调,
-// done 事件返回最终结果,error 事件抛 AiAskError。
+// Tiêu thụ SSE body của /ai/ask: tách theo dòng `data: {json}`, callback sự kiện tool,
+// Sự kiện done trả về kết quả cuối cùng, sự kiện error ném ra AiAskError.
 export async function readAiAskStream(body, { onToolEvent = null, onAnswerDelta = null } = {}) {
   if (!body || typeof body.getReader !== "function") {
-    throw new AiAskError("AI 服务响应格式异常,请重试。");
+    throw new AiAskError("Định dạng phản hồi dịch vụ AI bất thường, vui lòng thử lại.");
   }
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -66,7 +66,7 @@ export async function readAiAskStream(body, { onToolEvent = null, onAnswerDelta 
       return;
     }
     if (event.type === "answer_delta") {
-      // 最终回答轮的逐 token 增量:累积并回调,前端据此增量渲染
+      // Tăng dần theo token của vòng trả lời cuối: tích lũy và callback, frontend render theo từng phần
       const chunk = `${event.text || ""}`;
       if (chunk) {
         streamedAnswer += chunk;
@@ -75,16 +75,16 @@ export async function readAiAskStream(body, { onToolEvent = null, onAnswerDelta 
       return;
     }
     if (event.type === "done") {
-      // done.answer 为权威全文;后端未回 answer 时用累积的流式文本兜底
+      // done.answer là văn bản đầy đủ chính thức; khi backend không trả về answer, dùng văn bản streaming tích lũy làm dự phòng
       result = normalizeDonePayload({
         ...event,
         answer: event.answer || streamedAnswer,
       });
       return;
     }
-    if (event.type === "error") {
-      throw new AiAskError(`${event.message || "AI 服务返回错误。"}`);
-    }
+      if (event.type === "error") {
+        throw new AiAskError(`${event.message || "Dịch vụ AI trả về lỗi."}`);
+      }
   }
 
   try {
@@ -112,7 +112,7 @@ export async function readAiAskStream(body, { onToolEvent = null, onAnswerDelta 
     reader.releaseLock?.();
   }
   if (!result) {
-    throw new AiAskError("AI 服务响应中断,请重试。");
+    throw new AiAskError("Phản hồi dịch vụ AI bị gián đoạn, vui lòng thử lại.");
   }
   return result;
 }
@@ -149,21 +149,21 @@ async function extractErrorMessage(resp) {
     }
     return "";
   } catch (_err) {
-    // 非 JSON 时截一段原文，避免整页 HTML 糊到聊天气泡
+    // Khi không phải JSON, cắt một đoạn văn bản gốc, tránh dán toàn bộ HTML vào bong bong chat
     return `${text || ""}`.replace(/\s+/g, " ").trim().slice(0, 240);
   }
 }
 
-// mock 模式的 SSE 流:忠实复刻真实后端事件序列(tool → answer_delta → done)。
-// 引用 block_id 对齐 mock 阅读区域(b-intro-3),使引用跳转可端到端验证。
+// SSE stream chế độ mock: sao chép trung thành trình tự sự kiện backend thực (tool → answer_delta → done).
+// Trích dẫn block_id căn chỉnh với khu vực đọc mock (b-intro-3), cho phép xác minh đầu cuối khi nhảy đến trích dẫn.
 function buildMockAskStream(question = "") {
   const encoder = new TextEncoder();
   const answer = [
-    `关于「${question}」,检索到以下要点:\n\n`,
-    "- **卤素-锂交换**在共轭体系中表现出显著选择性 [1]\n",
-    "- 该效应源于锂原子与芳环的有效共轭 [1]\n\n",
-    "### 结论\n\n",
-    "四重卤素交换未表现出配位倾向,量子化学计算支持这一解释。原始 HTML 如 <img src=x> 会以文本显示。\n",
+    `Về "${question}", tìm thấy các điểm chính sau:\n\n`,
+    "- **Trao đổi halogen-lithi** thể hiện tính chọn lọc đáng kể trong hệ thống liên hợp [1]\n",
+    "- Hiệu ứng này xuất phát từ sự liên hợp hiệu quả giữa nguyên tử lithi và vòng thơm [1]\n\n",
+    "### Kết luận\n\n",
+    "Trao đổi halogen bốn lần không thể hiện xu hướng phối trí, tính toán hóa học lượng tử hỗ trợ giải thích này. HTML gốc như <img src=x> sẽ hiển thị dưới dạng văn bản.\n",
   ];
   const events = [
     { type: "tool", round: 1, tool: "search_fulltext", arguments: { query: question } },
@@ -179,7 +179,7 @@ function buildMockAskStream(question = "") {
           job_id: "mock-job-20260415",
           page_idx: 0,
           block_id: "b-intro-3",
-          snippet: "现代有机合成已达到极高的精密水平",
+          snippet: "Tổng hợp hữu cơ hiện đại đã đạt đến mức độ chính xác cực kỳ cao",
         },
       ],
       tool_trace: [{ round: 1, tool: "search_fulltext" }],
@@ -197,18 +197,18 @@ function buildMockAskStream(question = "") {
   });
 }
 
-// 图书馆 agentic 问答。documentId 传入时限定单文档,不传全库检索。
-// jobId 一并上传:服务端可反查 document,历史 run 更稳。
-// conversationId 传入时走多轮;缺省服务端可 auto-create 并在 done.conversation_id 回传。
-// 返回 { answer, citations, toolTrace, rounds, conversationId };失败抛 AiAskError。
+// AI agentic hỏi đáp thư viện. Khi truyền documentId, giới hạn trong một tài liệu; không truyền thì tìm kiếm toàn bộ kho.
+// jobId cũng được gửi lên: server có thể truy ngược document, lịch sử run ổn định hơn.
+// Khi truyền conversationId, chạy đa vòng; nếu bỏ trống, server có thể auto-create và trả về done.conversation_id.
+// Trả về { answer, citations, toolTrace, rounds, conversationId }; nếu thất bại, ném ra AiAskError.
 export async function askLibraryAi({
   question = "",
   documentId = "",
   jobId = "",
   conversationId = "",
-  /** 新 user 的 parent / regenerate 时的 user 消息 id */
+  /** parent_id của tin nhắn user khi new user / regenerate */
   parentId = "",
-  /** 重新生成:只追加 assistant 兄弟分支 */
+  /** Regenerate: chỉ thêm nhánh anh em assistant */
   regenerate = false,
   userMessageId = "",
   assistantMessageId = "",
@@ -223,11 +223,11 @@ export async function askLibraryAi({
 } = {}) {
   const trimmed = `${question}`.trim();
   if (!trimmed) {
-    throw new AiAskError("请输入问题。", 400);
+    throw new AiAskError("Vui lòng nhập câu hỏi.", 400);
   }
   if (isMockMode()) {
-    // 忠实模拟真实 SSE 流:tool 事件 → answer_delta 逐块 → done 带引用,
-    // 让 markdown 渲染 / 流式 / 引用跳转三条链路都能在 mock 下端到端复现。
+    // Mô phỏng trung thành SSE stream thực: sự kiện tool → answer_delta từng khối → done có trích dẫn,
+    // Cho phép markdown render / streaming / nhảy trích dẫn ba đường link đều có thể tái hiện đầu cuối trong mock.
     return readAiAskStream(buildMockAskStream(trimmed), { onToolEvent, onAnswerDelta });
   }
   const payload: Record<string, any> = { question: trimmed, stream: true };
@@ -254,10 +254,10 @@ export async function askLibraryAi({
   const aid = `${assistantMessageId || ""}`.trim();
   if (uid) payload.user_message_id = uid;
   if (aid) payload.assistant_message_id = aid;
-  // 按请求携带 LLM 凭据:必须非空,禁止带出空 Authorization: Bearer
+  // Mang theo chứng chỉ LLM theo yêu cầu: phải không rỗng, cấm gửi Authorization: Bearer rỗng
   const key = `${llmApiKey || ""}`.trim();
   if (key) {
-    // 若用户误把 "Bearer xxx" 整段粘进设置,剥掉前缀
+    // Nếu người dùng nhầm dán cả "Bearer xxx" vào cài đặt, gỡ bỏ tiền tố
     payload.llm_api_key = key.replace(/^Bearer\s+/i, "").trim();
   }
   if (`${llmBaseUrl || ""}`.trim()) {
@@ -274,30 +274,30 @@ export async function askLibraryAi({
   });
   if (!resp.ok) {
     if (resp.status === 502) {
-      throw new AiAskError("AI 服务未运行(502),请先启动 retainpdf-ai 服务。", 502);
+      throw new AiAskError("Dịch vụ AI chưa chạy (502), vui lòng khởi động dịch vụ retainpdf-ai trước.", 502);
     }
     const message = await extractErrorMessage(resp);
-    // 401：多半是服务入口 X-API-Key（runtime xApiKey），不是模型 Key
+    // 401: phần lớn là X-API-Key của cổng dịch vụ (runtime xApiKey), không phải Key mô hình
     if (resp.status === 401) {
       const hint = /X-API-Key|api key|invalid api key|Unauthorized/i.test(message)
         ? message
-        : "服务鉴权失败：X-API-Key 无效或未配置（检查 runtime-config 的 xApiKey / 后端 auth 配置）。";
+        : "Xác thực dịch vụ thất bại: X-API-Key không hợp lệ hoặc chưa cấu hình (kiểm tra xApiKey trong runtime-config / cấu hình auth backend).";
       throw new AiAskError(`${hint}(${resp.status})`, 401);
     }
-    // 400 缺 LLM key：明确指向「设置 → 凭据」的模型 API Key
-    if (resp.status === 400 && /LLM|模型\s*API\s*Key|api key/i.test(message)) {
+    // 400 thiếu LLM key: chỉ rõ đến "Cài đặt → Thông tin xác thực" của Model API Key
+    if (resp.status === 400 && /LLM|Model\s*API\s*Key|api key/i.test(message)) {
       throw new AiAskError(
-        message.includes("凭据") || message.includes("设置")
+        message.includes("thông tin xác thực") || message.includes("cài đặt")
           ? `${message}(${resp.status})`
-          : `缺少模型 API Key：请到设置 → API 设置填写后再提问。(${resp.status})`,
+          : `Thiếu Model API Key: vui lòng đến Cài đặt → Cấu hình API điền thông tin trước khi hỏi. (${resp.status})`,
         400,
       );
     }
-    throw new AiAskError(`${message || "AI 问答请求失败,请稍后重试。"}(${resp.status})`, resp.status);
+    throw new AiAskError(`${message || "Yêu cầu hỏi đáp AI thất bại, vui lòng thử lại sau."}(${resp.status})`, resp.status);
   }
   const contentType = `${resp.headers?.get?.("content-type") || ""}`.toLowerCase();
   if (contentType.includes("application/json")) {
-    // 后端未按流式返回时,兼容一次性 JSON envelope
+    // Khi backend không trả về theo streaming, tương thích envelope JSON một lần
     return normalizeDonePayload(unwrapEnvelope(await resp.json()));
   }
   return readAiAskStream(resp.body, { onToolEvent, onAnswerDelta });

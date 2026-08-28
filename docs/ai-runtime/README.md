@@ -1,52 +1,52 @@
-# RetainPDF AI Runtime（设计文档索引）
+# RetainPDF AI Runtime (Chỉ mục tài liệu thiết kế)
 
-**状态：** 设计草案（C 架构 + B Session/压缩）  
-**日期：** 2026-07-21  
-**代码现状：** `backend/ai_service` 为无状态薄循环（`RetrievalAgent` + `ToolRegistry`）  
-**产品入口：** 阅读器整本问答 → Rust 代理 `POST /api/v1/ai/ask` → retainpdf-ai `:41100`
+**Trạng thái:** Bản thảo thiết kế (Kiến trúc C + Session/Nén B)  
+**Ngày:** 2026-07-21  
+**Hiện trạng mã:** `backend/ai_service` là vòng lặp mỏng không trạng thái (`RetrievalAgent` + `ToolRegistry`)  
+**Lối vào sản phẩm:** Hỏi đáp toàn sách trình đọc → Rust proxy `POST /api/v1/ai/ask` → retainpdf-ai `:41100`
 
 ---
 
-## 文档
+## Tài liệu
 
-| 文档 | 内容 |
+| Tài liệu | Nội dung |
 |------|------|
-| **[AI_RUNTIME.md](./AI_RUNTIME.md)** | 目标架构：Transport / Session / Orchestrator / Runtime / Skills / Evidence |
-| **[SESSION_AND_MEMORY.md](./SESSION_AND_MEMORY.md)** | 多轮会话协议、上下文压缩、API 与数据形状（B 的详细草案） |
-| **[SKILLS.md](./SKILLS.md)** | Skill 包格式、与 Tool 的边界、首个 `literature-qa` 示例 |
+| **[AI_RUNTIME.md](./AI_RUNTIME.md)** | Kiến trúc mục tiêu: Transport / Session / Orchestrator / Runtime / Skills / Evidence |
+| **[SESSION_AND_MEMORY.md](./SESSION_AND_MEMORY.md)** | Giao thức hội thoại đa luân, nén ngữ cảnh, API và hình dạng dữ liệu (bản thảo chi tiết B) |
+| **[SKILLS.md](./SKILLS.md)** | Định dạng gói Skill, ranh giới với Tool, ví dụ `literature-qa` đầu tiên |
 
 ---
 
-## 一句话目标
+## Mục tiêu một câu
 
-> **AI 服务只做编排；Rust 管数据与权限；工具形状与主流 SDK 同构；Skills / Memory / Multi-agent 可插拔挂上，不必推倒重写。**
+> **Dịch vụ AI chỉ làm điều phối; Rust quản dữ liệu và quyền; hình dạng tool đồng cấu với SDK chủ lưu; Skills / Memory / Multi-agent có thể cắm vào, không cần đập bỏ viết lại.**
 
 ---
 
-## 与现状的关系
+## Quan hệ với hiện trạng
 
 ```
-现状（MVP）
-  POST /v1/ask → RetrievalAgent 裸循环 → 4 个 tools → answer + citations
+Hiện trạng (MVP)
+  POST /v1/ask → RetrievalAgent vòng lặp trần → 4 tools → answer + citations
 
-目标（可扩展 runtime）
+Mục tiêu (runtime mở rộng được)
   POST /v1/runs  → Orchestrator
-                    ├─ Session/Memory（窗口 + 摘要 + evidence 包）
-                    ├─ Skill(s)（literature-qa / …）
-                    ├─ Agent loop(s)（检索 / 分析 / 可选 critic）
-                    └─ Evidence（锚点、图、可跳转引用）
+                    ├─ Session/Memory (cửa sổ + tóm tắt + gói evidence)
+                    ├─ Skill(s) (literature-qa / …)
+                    ├─ Agent loop(s) (truy vấn / phân tích / critic tùy chọn)
+                    └─ Evidence (điểm neo, hình, tham chiếu nhảy được)
 ```
 
-迁移策略：默认 skill 仍是今天的整本检索问答；新能力以 skill/tool 增加，**不先绑死** LangGraph/Crew 等重框架。
+Chiến lược di chuyển: Skill mặc định vẫn là hỏi đáp truy vấn toàn sách hôm nay; khả năng mới thêm dưới dạng skill/tool, **không khóa chặt** trước framework nặng như LangGraph/Crew.
 
 ---
 
-## 实施顺序（建议）
+## Thứ tự triển khai (khuyến nghị)
 
-1. **文档冻结接口** ✅（C + B 草案）  
-2. **Session 贯通（B1）** ✅ auto-create + 前端粘性 + done 回传  
-3. **Memory 压缩（B2）** ✅ 窗口 + extractive 摘要 + SSE `compress`  
-4. Skill 加载器 + 收口 `literature-qa`  
-5. Orchestrator + 第二 agent（可选）  
+1. **Tài liệu đóng băng giao diện** ✅ (Bản thảo C + B)  
+2. **Session xuyên suốt (B1)** ✅ auto-create + dính frontend + done hồi truyền  
+3. **Nén Memory (B2)** ✅ Cửa sổ + tóm tắt extractive + SSE `compress`  
+4. Bộ tải Skill + cổng thu `literature-qa`  
+5. Orchestrator + agent thứ hai (tùy chọn)  
 
-每步都应可单独合并、可回滚，不阻断现有 `/v1/ask`。
+Mỗi bước đều có thể hợp nhất riêng, có thể rollback, không chặn `/v1/ask` hiện có.

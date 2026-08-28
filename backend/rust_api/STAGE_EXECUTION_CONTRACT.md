@@ -1,193 +1,193 @@
-# Stage Execution Contract
+# Hợp đồng thực thi Stage
 
-这份文档只回答一个问题：
+Tài liệu này chỉ trả lời một câu hỏi:
 
-**`job_runner` 现在是怎么驱动各个 stage 的，哪些语义是稳定契约。**
+**`job_runner` hiện đang điều khiển các stage như thế nào, những ngữ nghĩa nào là hợp đồng ổn định.**
 
-相关文档：
+Tài liệu liên quan:
 
-- 总体架构边界：
+- Ranh giới kiến trúc tổng thể:
   [`RUST_API_ARCHITECTURE.md`](/home/wxyhgk/tmp/Code/backend/rust_api/RUST_API_ARCHITECTURE.md)
-- 当前运行主链：
+- Chuỗi chính đang chạy:
   [`CURRENT_API_MAP.md`](/home/wxyhgk/tmp/Code/backend/rust_api/CURRENT_API_MAP.md)
-- OCR provider 边界：
+- Ranh giới OCR provider:
   [`OCR_PROVIDER_CONTRACT.md`](/home/wxyhgk/tmp/Code/backend/rust_api/OCR_PROVIDER_CONTRACT.md)
 
-## 1. 目标
+## 1. Mục tiêu
 
-`job_runner` 负责把 Rust 侧 job 状态机和 Python worker 执行链连接起来。
+`job_runner` chịu trách nhiệm kết nối máy trạng thái job bên Rust và chuỗi thực thi worker Python.
 
-它不负责：
+Nó không chịu trách nhiệm:
 
-- HTTP 请求解析
-- job view 组装
-- OCR provider transport 细节定义
+- Phân tích yêu cầu HTTP
+- Lắp ráp view job
+- Định nghĩa chi tiết vận chuyển OCR provider
 
-它负责：
+Nó chịu trách nhiệm:
 
-- 选择执行链
-- 写 stage spec
-- 启动 Python worker
-- 消费 stdout/stderr
-- 更新 job runtime 状态
-- 处理 timeout / cancel / failure
+- Chọn chuỗi thực thi
+- Viết stage spec
+- Khởi động worker Python
+- Tiêu thụ stdout/stderr
+- Cập nhật trạng thái runtime job
+- Xử lý timeout / cancel / failure
 
-## 2. 当前 stage family
+## 2. Họ stage hiện tại
 
-当前运行链分成 4 类：
+Chuỗi chạy hiện tại được chia thành 4 loại:
 
-1. OCR provider transport
+1. Vận chuyển OCR provider
 2. `normalize`
 3. `translate`
 4. `render`
 
-对应正式 spec：
+Spec chính thức tương ứng:
 
 - `normalize.stage.v1`
 - `translate.stage.v1`
 - `render.stage.v1`
 
-`provider.stage.v1` 仍保留给 legacy/local `run_provider_case.py` wrapper；当前生产主链的 OCR provider
-transport 由 Rust `ocr_flow` 直接编排，然后只把 normalize 交给 Python worker。
+`provider.stage.v1` vẫn được giữ cho wrapper `run_provider_case.py` legacy/local; vận chuyển OCR provider
+trong chuỗi chính hiện tại được Rust `ocr_flow` điều phối trực tiếp, sau đó chỉ giao normalize cho worker Python.
 
-## 3. workflow 到 stage chain 的映射
+## 3. Ánh xạ workflow sang chuỗi stage
 
 ### 3.1 `workflow=book`
 
-链路：
+Luồng:
 
 ```text
-OCR child job
-  -> provider transport
+Job con OCR
+  -> vận chuyển provider
   -> normalize
-parent job
+Job cha
   -> translate
   -> render
 ```
 
-这里的 provider transport 是 Rust 运行时逻辑，不是 `run_provider_case.py`。
+Vận chuyển provider ở đây là logic runtime Rust, không phải `run_provider_case.py`.
 
-入口代码：
+Mã điểm vào:
 
 - [translation_flow.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/translation_flow.rs)
 
 ### 3.2 `workflow=translate`
 
-链路：
+Luồng:
 
 ```text
-OCR child job
-  -> provider transport
+Job con OCR
+  -> vận chuyển provider
   -> normalize
-parent job
+Job cha
   -> translate
 ```
 
-不进入 render。
+Không đi vào render.
 
 ### 3.3 `workflow=render`
 
-链路：
+Luồng:
 
 ```text
-reuse source.artifact_job_id
+Tái sử dụng source.artifact_job_id
   -> render
 ```
 
-入口代码：
+Mã điểm vào:
 
 - [render_flow.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/render_flow.rs)
 
 ### 3.4 `workflow=ocr`
 
-链路：
+Luồng:
 
 ```text
-provider transport
+vận chuyển provider
   -> normalize
 ```
 
-入口代码：
+Mã điểm vào:
 
 - [ocr_flow/mod.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/ocr_flow/mod.rs)
 
-当前额外约束：
+Ràng buộc bổ sung hiện tại:
 
 - `ocr_flow/mod.rs`
-  是 OCR 子流程唯一 orchestrator
-- 只有它可以：
-  - 选择 local upload / remote url transport 分支
-  - 组装 provider client 并分发到具体 transport helper
-  - 组装 normalize stage command
-  - 把 OCR 子流程交回通用 `process_runner`
-- `ocr_flow/*` 其他子模块只负责：
-  - provider transport
-  - workspace/path 准备
-  - provider result/raw artifact 处理
-  - source pdf 恢复
-  - 已准备上传文件或远程 source pdf 的叶子 helper
+  là bộ điều phối duy nhất của luồng con OCR
+- Chỉ nó có thể:
+  - Chọn nhánh vận chuyển local upload / remote url
+  - Lắp ráp client provider và phân phối đến helper vận chuyển cụ thể
+  - Lắp ráp lệnh stage normalize
+  - Giao luồng con OCR lại cho `process_runner` chung
+- Các mô-đun con khác trong `ocr_flow/*` chỉ chịu trách nhiệm:
+  - Vận chuyển provider
+  - Chuẩn bị workspace/path
+  - Xử lý kết quả/artifact thô provider
+  - Khôi phục pdf nguồn
+  - Các helper lá để xử lý tệp đã tải lên hoặc pdf nguồn từ xa
 
-## 4. 运行时主模块
+## 4. Mô-đun chính runtime
 
 ### 4.1 `lifecycle`
 
-文件：
+Tệp:
 
 - [lifecycle.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/lifecycle.rs)
 
-职责：
+Trách nhiệm:
 
-- 任务进入队列
-- 获取执行槽位
-- cancel 短路与 queued 持久化
-- 根据 workflow 分发到：
+- Nhiệm vụ vào hàng đợi
+- Lấy vị trí thực thi
+- Cancel ngắn mạch và lưu trữ queued
+- Phân phối theo workflow đến:
   - `ocr_flow`
   - `translation_flow`
   - `render_flow`
 
-当前约定：
+Quy ước hiện tại:
 
-- `lifecycle.rs` 只保留 runner 顶层编排
+- `lifecycle.rs` chỉ giữ điều phối tầng trên cùng của runner
 - `should_skip_job_execution(...)`
-  负责 cancel / canceled 短路
+  chịu trách nhiệm ngắn mạch cancel / canceled
 - `persist_queued_job(...)`
-  负责 queued 状态持久化
+  chịu trách nhiệm lưu trữ trạng thái queued
 - `dispatch_workflow(...)`
-  负责 workflow -> runner flow 分发
+  chịu trách nhiệm phân phối workflow -> runner flow
 - `persist_failed_job(...)`
-  负责失败收尾
+  chịu trách nhiệm kết thúc thất bại
 - `clear_job_cancel_request(...)`
-  负责统一清理 cancel registry
+  chịu trách nhiệm dọn dẹp thống nhất cancel registry
 
-### 4.2 stage command factory
+### 4.2 Stage command factory
 
-文件：
+Tệp:
 
 - [worker_command.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/worker_command.rs)
 - [worker_command/stage_specs.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/worker_command/stage_specs.rs)
 - [worker_command/entrypoints.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/worker_command/entrypoints.rs)
 
-职责：
+Trách nhiệm:
 
-- 写 stage spec
-- 选 Python 入口
-- 生成最终命令
+- Viết stage spec
+- Chọn điểm vào Python
+- Tạo lệnh cuối cùng
 
 ### 4.3 `worker_process`
 
-文件：
+Tệp:
 
 - [worker_process.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/worker_process.rs)
 
-职责：
+Trách nhiệm:
 
-- 启动 Python worker
-- 注入 env
-- 终止进程树
+- Khởi động worker Python
+- Tiêm env
+- Kết thúc cây tiến trình
 
 ### 4.4 `process_runner`
 
-文件：
+Tệp:
 
 - [process_runner.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_runner.rs)
 - [process_runner/startup.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_runner/startup.rs)
@@ -197,36 +197,36 @@ provider transport
 - [process_runner/failure_ai_diagnosis.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_runner/failure_ai_diagnosis.rs)
 - [process_runner/io_support.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_runner/io_support.rs)
 
-职责：
+Trách nhiệm:
 
 - `process_runner.rs`
-  只保留 orchestrator
+  chỉ giữ bộ điều phối
 - `startup.rs`
-  启动 worker、写入 running 初始状态
+  khởi động worker, ghi trạng thái running ban đầu
 - `execution.rs`
-  读取 stdout/stderr、等待进程结束、处理 timeout 分支
+  đọc stdout/stderr, chờ tiến trình kết thúc, xử lý nhánh timeout
 - `result_support.rs`
-  回填 `ProcessResult`
+  điền `ProcessResult`
 - `timeout_support.rs`
-  timeout 落态和持久化
+  trạng thái và lưu trữ timeout
 - `failure_ai_diagnosis.rs`
-  AI failure diagnosis
+  chẩn đoán AI failure
 - `io_support.rs`
-  stdout/stderr 消费策略；叶子 helper 只拿 `JobPersistDeps + canceled_jobs`
+  chiến lược tiêu thụ stdout/stderr; helper lá chỉ lấy `JobPersistDeps + canceled_jobs`
 
 ### 4.5 `runtime_state`
 
-文件：
+Tệp:
 
 - [runtime_state.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/runtime_state.rs)
 
-职责：
+Trách nhiệm:
 
-- 维护 artifacts/runtime/failure 的运行态变更
+- Duy trì các thay đổi runtime của artifacts/runtime/failure
 
-## 5. 运行态状态语义
+## 5. Ngữ nghĩa trạng thái runtime
 
-当前 job status：
+Trạng thái job hiện tại:
 
 - `queued`
 - `running`
@@ -234,7 +234,7 @@ provider transport
 - `failed`
 - `canceled`
 
-当前常见 stage：
+Stage phổ biến hiện tại:
 
 - `queued`
 - `ocr_submitting`
@@ -247,23 +247,23 @@ provider transport
 - `failed`
 - `canceled`
 
-规则：
+Quy tắc:
 
-- `status` 是最终态分类
-- `stage` 是当前执行阶段
-- `stage_detail` 是给人看的运行态说明
+- `status` là phân loại trạng thái cuối cùng
+- `stage` là giai đoạn thực thi hiện tại
+- `stage_detail` là mô tả runtime dành cho người đọc
 
-不要把业务判断塞进 `stage` 文本里。
+Không nhồi nhét logic nghiệp vụ vào văn bản `stage`.
 
-## 6. stdout contract
+## 6. Hợp đồng stdout
 
-Python worker 通过 stdout 回传运行线索。
+Worker Python gửi lại thông tin chạy qua stdout.
 
-当前重要标签在：
+Các nhãn quan trọng hiện tại trong:
 
 - [stdout_parser/mod.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/stdout_parser/mod.rs)
 
-例如：
+Ví dụ:
 
 - `job root`
 - `source pdf`
@@ -274,64 +274,64 @@ Python worker 通过 stdout 回传运行线索。
 - `output pdf`
 - `summary`
 
-规则：
+Quy tắc:
 
-- 新增 Rust 侧需要消费的 worker 产物时，优先走 stdout label contract
-- 不要让 route/service 层直接猜 Python 输出目录
+- Khi thêm sản phẩm worker mà Rust cần tiêu thụ, ưu tiên đi theo hợp đồng nhãn stdout
+- Đừng để lớp route/service đoán trực tiếp thư mục đầu ra của Python
 
-## 7. timeout / cancel contract
+## 7. Hợp đồng timeout / cancel
 
 ### 7.1 cancel
 
-当前 cancel 分两层：
+Cancel hiện tại có hai tầng:
 
 - cancel registry
-- process termination
+- kết thúc tiến trình
 
-模块：
+Mô-đun:
 
 - [cancel_registry.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/cancel_registry.rs)
 - [worker_process.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/worker_process.rs)
 
-语义：
+Ngữ nghĩa:
 
-- job 被标记 cancel 后，runner 会尽量终止进程树
-- `normalizing` 阶段允许有限继续，以便收尾
+- Sau khi job được đánh dấu cancel, runner sẽ cố gắng kết thúc cây tiến trình
+- Giai đoạn `normalizing` cho phép tiếp tục có giới hạn để kết thúc
 
 ### 7.2 timeout
 
-语义：
+Ngữ nghĩa:
 
-- timeout 秒数来自 `request_payload.runtime.timeout_seconds`
-- 超时后 runner 负责 kill worker
-- 然后把 job 标为 `failed`
+- Số giây timeout đến từ `request_payload.runtime.timeout_seconds`
+- Sau khi timeout, runner chịu trách nhiệm kill worker
+- Sau đó đánh dấu job là `failed`
 
-当前 detail：
+Chi tiết hiện tại:
 
 - `normalizing` -> `normalization timeout`
-- 其他 provider transport 阶段 -> `provider timeout`
+- Các giai đoạn vận chuyển provider khác -> `provider timeout`
 
-## 8. 成功与失败的判定
+## 8. Xác định thành công và thất bại
 
-`process_runner` 当前把进程结果归成 4 类：
+`process_runner` hiện phân loại kết quả tiến trình thành 4 loại:
 
 - `Canceled`
 - `Succeeded`
 - `SucceededWithShutdownNoise`
 - `Failed`
 
-也就是：
+Nghĩa là:
 
-- 进程退出码不是唯一标准
-- 如果 artifacts 已经完整写出，某些 Python shutdown noise 会被视为成功
+- Mã thoát tiến trình không phải tiêu chuẩn duy nhất
+- Nếu artifacts đã được ghi đầy đủ, một số nhiễu shutdown Python sẽ được coi là thành công
 
-这部分规则集中在：
+Các quy tắc này tập trung ở:
 
 - [process_runner.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_runner.rs)
 
-## 9. artifacts contract
+## 9. Hợp đồng artifacts
 
-`job_runner` 当前依赖的核心 artifacts 字段包括：
+Các trường artifacts cốt lõi mà `job_runner` hiện phụ thuộc bao gồm:
 
 - `job_root`
 - `source_pdf`
@@ -345,100 +345,98 @@ Python worker 通过 stdout 回传运行线索。
 - `provider_zip`
 - `provider_summary_json`
 
-规则：
+Quy tắc:
 
-- stage 切换时，尽量通过 artifacts 传递下游输入
-- 不要让下游重新猜路径
-- Rust 侧 readiness 判断集中在：
+- Khi chuyển stage, cố gắng truyền đầu vào hạ lưu qua artifacts
+- Đừng để hạ lưu đoán lại đường dẫn
+- Việc kiểm tra readiness bên Rust tập trung ở:
   - [stage_contract.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/stage_contract.rs)
   - [process_contract.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/job_runner/process_contract.rs)
-- `stage_contract.rs` 决定跨 stage 是否可以继续：
-  - OCR -> translate 需要 `source_pdf`、`normalized_document_json`
-  - translate -> render 需要 `source_pdf`、`translations_dir`、`translation-manifest.json`
-- `process_contract.rs` 决定 Python worker 成功退出后是否真的成功：
-  - normalize worker 需要 `normalized_document_json`、`normalization_report_json`
-  - translate worker 需要 `translations_dir`、`translation-manifest.json`、`summary`
-  - render worker 需要 `output_pdf`、`summary`
-- job detail API 会通过 `data.contracts` 暴露这些 readiness 检查，供前端展示和调试。
-- job events API 会在失败态 `failure_classified` / `job_terminal` 事件的 `payload.contracts`
-  中附带同一份 readiness 结构，避免前端在失败展示时额外请求 detail。
-- Python worker 发布 artifact 时应优先输出结构化 stdout JSON：
-  `{"event_type":"artifact_published","payload":{"artifact_key":"...","path":"..."}}`。
-  Rust `stdout_parser` 会消费该结构化事件并更新 `JobArtifacts`；旧的 `xxx: path`
-  标签仍保留为兼容路径。
+- `stage_contract.rs` quyết định có thể tiếp tục qua các stage không:
+  - OCR -> translate cần `source_pdf`、`normalized_document_json`
+  - translate -> render cần `source_pdf`、`translations_dir`、`translation-manifest.json`
+- `process_contract.rs` quyết định worker Python thoát thành công có thực sự thành công không:
+  - Worker normalize cần `normalized_document_json`、`normalization_report_json`
+  - Worker translate cần `translations_dir`、`translation-manifest.json`、`summary`
+  - Worker render cần `output_pdf`、`summary`
+- API chi tiết job sẽ hiển thị các kiểm tra readiness này qua `data.contracts` để frontend hiển thị và gỡ lỗi.
+- API sự kiện job sẽ đính kèm cấu trúc readiness tương tự trong `payload.contracts` của các sự kiện `failure_classified` / `job_terminal` ở trạng thái thất bại, tránh việc frontend phải yêu cầu thêm chi tiết khi hiển thị thất bại.
+- Khi worker Python phát hành artifact, nên ưu tiên xuất JSON stdout có cấu trúc:
+  `{"event_type":"artifact_published","payload":{"artifact_key":"...","path":"..."}}`.
+  Rust `stdout_parser` sẽ tiêu thụ sự kiện có cấu trúc này và cập nhật `JobArtifacts`; các nhãn `xxx: path` cũ vẫn được giữ làm đường dẫn tương thích.
 
-## 10. 团队协作红线
+## 10. Ranh giới đỏ cho cộng tác nhóm
 
-### 红线 1
+### Ranh giới đỏ 1
 
-新增 stage 字段时，先改：
+Khi thêm trường stage mới, trước tiên sửa:
 
 - `commands/stage_specs.rs`
 
-不要先改 route 参数。
+Đừng sửa tham số route trước.
 
-### 红线 2
+### Ranh giới đỏ 2
 
-新增 worker 入口时，先改：
+Khi thêm điểm vào worker mới, trước tiên sửa:
 
 - `commands/entrypoints.rs`
 
-不要在 `process_runner` 里拼临时命令。
+Đừng ghép lệnh tạm trong `process_runner`.
 
-### 红线 3
+### Ranh giới đỏ 3
 
-新增取消/超时语义时，优先改：
+Khi thêm ngữ nghĩa cancel/timeout mới, ưu tiên sửa:
 
 - `cancel_registry.rs`
 - `worker_process.rs`
 - `process_runner.rs`
 
-不要在 `translation_flow` / `render_flow` 里各自补一份。
+Đừng tự bổ sung trong `translation_flow` / `render_flow`.
 
-### 红线 4
+### Ranh giới đỏ 4
 
-新增 artifacts 路径语义时：
+Khi thêm ngữ nghĩa đường dẫn artifacts mới:
 
-- worker 产出 -> stdout label contract
-- Rust 消费 -> `stdout_parser` + `runtime_state`
+- Đầu ra worker -> hợp đồng nhãn stdout
+- Tiêu thụ Rust -> `stdout_parser` + `runtime_state`
 
-不要在 route/service 层直接解析 Python 目录结构。
+Đừng phân tích trực tiếp cấu trúc thư mục Python ở tầng route/service.
 
-## 11. 推荐改动路径
+## 11. Đường dẫn thay đổi được đề xuất
 
-### 场景 1：新增一个 Python stage
+### Tình huống 1: Thêm một stage Python mới
 
-顺序：
+Thứ tự:
 
 1. `commands/stage_specs.rs`
 2. `commands/entrypoints.rs`
-3. 对应 flow 模块
+3. Mô-đun flow tương ứng
 4. `stdout_parser`
 5. `runtime_state`
 
-### 场景 2：调整 OCR child -> parent 交接字段
+### Tình huống 2: Điều chỉnh trường bàn giao OCR child -> parent
 
-顺序：
+Thứ tự:
 
 1. `ocr_flow/mod.rs`
 2. `translation_flow.rs`
 3. `runtime_state.rs`
 
-### 场景 3：调整 render-only 输入来源
+### Tình huống 3: Điều chỉnh nguồn đầu vào của render-only
 
-顺序：
+Thứ tự:
 
 1. `render_flow.rs`
 2. `storage_paths`
-3. 必要时补 presentation summary
+3. Bổ sung presentation summary nếu cần
 
-## 12. 一句话约束
+## 12. Ràng buộc một câu
 
-`job_runner` 的稳定边界应该是：
+Ranh giới ổn định của `job_runner` nên là:
 
-- 上游给它 `JobRuntimeState`
-- 它通过 spec 驱动 Python worker
-- 它通过 stdout/artifacts 回收运行结果
-- 它把 job 状态更新回 Rust 持久层
+- Thượng nguồn cung cấp `JobRuntimeState`
+- Nó điều khiển worker Python qua spec
+- Nó thu hồi kết quả chạy qua stdout/artifacts
+- Nó cập nhật trạng thái job trở lại tầng lưu trữ Rust
 
-除此之外的职责，都不应该继续往这里堆。
+Ngoài những trách nhiệm này, không nên tiếp tục chất thêm vào đây.

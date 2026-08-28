@@ -1,14 +1,14 @@
-# 本地密钥
+# Khóa bí mật cục bộ
 
-这个目录只放本机开发时使用的密钥文件。
+Thư mục này chỉ chứa tệp khóa bí mật dùng khi phát triển trên máy nội bộ.
 
-当前约定：
+Quy ước hiện tại:
 
 - `mineru.env`
-  文件中写入 `MINERU_API_TOKEN=...`
+  Ghi `MINERU_API_TOKEN=...` vào tệp
 
-说明：
+Ghi chú:
 
-- 目录里的真实 `*.env` 文件已经被 Git 忽略
-- 这里只用于本地开发，不用于对外交付
-- 如果命令行传了 `--token`，仍然以命令行参数为准
+- Tệp `*.env` thực tế trong thư mục đã được Git bỏ qua
+- Chỉ dùng cho phát triển cục bộ, không dùng để phân phối ra ngoài
+- Nếu dòng lệnh truyền `--token`, vẫn ưu tiên tham số dòng lệnh

@@ -1,27 +1,25 @@
-# 前端对接说明:图书馆数据层 API
+# Hướng dẫn tích hợp frontend: API tầng dữ liệu thư viện
 
-> 后端提交:`9b22e26`(图书馆数据层:documents 一等公民 + 锚点收藏 + FTS5 全文检索)
+> Commit backend: `9b22e26` (Tầng dữ liệu thư viện: documents là công dân hạng nhất + lưu trữ neo + tìm kiếm toàn văn FTS5)
 >
-> 现有 `/api/v1/library/books` 接口**原样保留**,图书馆页面可以按节奏迁移,不迁移也不会坏。
-> 所有新接口和现有接口一样走 `X-API-Key` 认证,响应统一 `{code, message, data}` 包装。
+> Giao diện `/api/v1/library/books` hiện có được **giữ nguyên**, trang thư viện có thể di chuyển theo nhịp độ, không di chuyển cũng không hỏng.
+> Tất cả các giao diện mới và hiện có đều sử dụng xác thực `X-API-Key`, phản hồi thống nhất với gói `{code, message, data}`.
 
-## 核心概念(前端需要理解的唯一模型变化)
+## Khái niệm cốt lõi (thay đổi mô hình duy nhất frontend cần hiểu)
 
-- **document = 一篇 PDF 的稳定身份**(按文件内容 sha256 去重):同一篇 PDF 不管上传几次、
-  翻译几次,都是同一个 `document_id`。job 变成了文档名下的"处理记录"。
-- **锚点**:收藏和搜索命中都带 `(document_id, job_id, page_idx, block_id)` 四元组,
-  `job_id + page + block` 就是阅读器现有的定位坐标,可以直接跳转到原位。
+- **document = định danh ổn định của một PDF** (khử trùng theo sha256 nội dung): cùng một PDF dù tải lên bao nhiêu lần, dịch bao nhiêu lần, đều có cùng `document_id`. job trở thành "bản ghi xử lý" dưới tên tài liệu.
+- **Neo**: lưu trữ và kết quả tìm kiếm đều mang bộ bốn `(document_id, job_id, page_idx, block_id)`, `job_id + page + block` chính là tọa độ định vị hiện có của trình đọc, có thể nhảy trực tiếp đến vị trí gốc.
 
-## 接口清单
+## Danh sách giao diện
 
-### 1. 文档列表 / 详情 / 编辑
+### 1. Danh sách / Chi tiết / Sửa tài liệu
 
 ```
-GET  /api/v1/documents?limit=50&offset=0&reading_status=reading&tag=化学&collection_id=xxx
-GET  /api/v1/documents?job_id=xxx          ← 任意 job_id(含历史 run)直查所属文档,勿再扫列表反查 active_job_id
+GET  /api/v1/documents?limit=50&offset=0&reading_status=reading&tag=hóa học&collection_id=xxx
+GET  /api/v1/documents?job_id=xxx          ← Bất kỳ job_id nào (bao gồm lịch sử run) đều truy vấn trực tiếp tài liệu thuộc về, không cần quét danh sách để lấy active_job_id
      → data.documents[]: { document_id, title, source_filename, page_count, bytes,
-                           active_job_id, reading_status, tags[], added_at,
-                           last_opened_at, updated_at, authors_json, year, doi }
+                            active_job_id, reading_status, tags[], added_at,
+                            last_opened_at, updated_at, authors_json, year, doi }
 
 GET  /api/v1/documents/:document_id
 
@@ -29,71 +27,67 @@ PATCH /api/v1/documents/:document_id
      body: { title?, reading_status?, tags? }
 ```
 
-- `reading_status` 只接受 `unread | reading | done`,其他值返回 400;
-- `tags` 是**整体替换**语义(传 `[]` 即清空);
-- `active_job_id` 是该文档当前生效的处理 run——**打开阅读器就用它**;
-- 列表按 `added_at` 倒序,`limit` 上限 500。
+- `reading_status` chỉ nhận `unread | reading | done`, các giá trị khác trả về 400;
+- `tags` có ngữ nghĩa **thay thế toàn bộ** (truyền `[]` là xóa);
+- `active_job_id` là run xử lý hiện tại của tài liệu — **dùng nó để mở trình đọc**;
+- Danh sách sắp xếp theo `added_at` giảm dần, `limit` tối đa 500.
 
-### 2. 收藏
+### 2. Lưu trữ
 
 ```
 POST /api/v1/favorites
      body: {
-       page_idx, block_id, quote_text,                      ← 必填
-       document_id?, job_id?,                               ← 二选一至少给一个
+       page_idx, block_id, quote_text,                      ← Bắt buộc
+       document_id?, job_id?,                               ← Cần ít nhất một trong hai
        char_start?, char_end?, kind?,
        translated_quote_text?, note?
      }
-     → data: FavoriteRecord(含生成的 favorite_id、解析出的 document_id 和实际锚定的 job_id)
+     → data: FavoriteRecord (bao gồm favorite_id được tạo, document_id đã phân giải và job_id thực tế được neo)
 
 GET  /api/v1/favorites?document_id=xxx
-     → data.favorites[](按页码排序;不传参数 = 全部收藏,按时间倒序)
+     → data.favorites[] (sắp xếp theo số trang; không truyền tham số = tất cả lưu trữ, sắp xếp theo thời gian giảm dần)
 
 PATCH /api/v1/favorites/:favorite_id
-     body: { note }                          ← 原子更新笔记,favorite_id 不变
+     body: { note }                          ← Cập nhật nguyên tử ghi chú, favorite_id không đổi
 DELETE /api/v1/favorites/:favorite_id
 ```
 
-- **只给 `job_id`(含历史 run)时后端自动解析所属文档并锚定该 run 的块空间**——
-  阅读器里收藏直接传当前 job_id 即可,打开历史 job 也能正确入库;
-- 只给 `document_id` 时锚定其 `active_job_id`;
-- `quote_text` 是引文快照,必填(选中的原文文本);`translated_quote_text` 建议一起传——
-  锚点将来失效时快照保证内容不丢;
-- `kind`: `sentence | data | figure`,默认 `sentence`;
-- `char_start / char_end` 是块内选区(可选,不传表示整块)。
+- **Chỉ truyền `job_id` (bao gồm lịch sử run) thì backend tự động phân giải tài liệu thuộc về và neo vào không gian block của run đó** — khi lưu trữ trong trình đọc chỉ cần truyền job_id hiện tại, mở job lịch sử cũng lưu đúng;
+- Chỉ truyền `document_id` thì neo vào `active_job_id` của nó;
+- `quote_text` là ảnh chụp nhanh trích dẫn, bắt buộc (văn bản gốc được chọn); `translated_quote_text` khuyến nghị truyền cùng — khi neo bị mất, ảnh chụp đảm bảo nội dung không mất;
+- `kind`: `sentence | data | figure`, mặc định `sentence`;
+- `char_start / char_end` là vùng chọn trong block (tùy chọn, không truyền nghĩa là cả block).
 
-### 3. 全文检索(中英文都可)
+### 3. Tìm kiếm toàn văn (cả Trung và Anh)
 
 ```
-GET /api/v1/search?q=光学光谱&limit=20
+GET /api/v1/search?q=quang phổ&limit=20
     → data.hits[]: { document_id, job_id, page_idx, block_id,
                      source_snippet, translated_snippet }
 ```
 
-- snippet 里命中词用 `[` `]` 包裹,前端可替换成高亮标签;
-- 任意长度的 `q` 都能查(≥3 字符走 FTS5 全文索引,更短自动回退模糊匹配);
-- `limit` 上限 100。
+- Từ khóa trong snippet được bao bởi `[` `]`, frontend có thể thay thế bằng thẻ đánh dấu;
+- `q` có độ dài bất kỳ đều có thể tìm (≥3 ký tự dùng chỉ mục FTS5, ngắn hơn tự động chuyển về khớp mờ);
+- `limit` tối đa 100.
 
-### 4. AI 问答(agentic 检索,带可跳转引用)
+### 4. Hỏi đáp AI (truy xuất agentic, kèm trích dẫn có thể nhảy)
 
-> 前端只访问 Rust API 这一个入口:`/api/v1/ai/ask` 是到 retainpdf-ai 服务的
-> 反向代理,认证仍是同一个 X-API-Key,无需任何新配置。
+> Frontend chỉ truy cập một điểm vào Rust API: `/api/v1/ai/ask` là proxy ngược đến dịch vụ retainpdf-ai, xác thực vẫn là cùng X-API-Key, không cần cấu hình mới.
 
 ```
 POST /api/v1/ai/ask
      body: { question: string, document_id?: string, job_id?: string, stream?: boolean,
-             conversation_id?: string,             ← 多轮对话,见第 6 节
+             conversation_id?: string,             ← Hội thoại nhiều vòng, xem mục 6
              llm_api_key?: string, llm_base_url?: string, llm_model?: string }
 ```
 
-- `job_id`(含历史 run)可替代 `document_id`:服务端解析所属文档后限定检索范围;
-- `llm_*` 三个字段来自前端凭据设置,按请求覆盖服务端 env 配置;缺 key 返回
-  400「请在前端凭据设置中填写模型 API Key」。
+- `job_id` (bao gồm lịch sử run) có thể thay thế `document_id`: server phân giải tài liệu thuộc về và giới hạn phạm vi tìm kiếm;
+- Ba trường `llm_*` đến từ cài đặt thông tin xác thực frontend, ghi đè cấu hình env của server theo yêu cầu; thiếu key trả về 400 "Vui lòng điền API Key mô hình trong cài đặt thông tin xác thực frontend".
 
-**非流式**(`stream` 缺省 false):等待完整回答(agent 多轮检索,通常 10-30 秒)
+**Không phát trực tiếp** (`stream` mặc định false): chờ câu trả lời đầy đủ (agent truy xuất nhiều vòng, thường 10-30 giây)
 ```json
 { "code": 0, "data": {
-    "answer": "…回答文本,事实句带 [n] 引用标注…",
+    "answer": "…Văn bản trả lời, câu thực tế có chú thích [n]…",
     "citations": [ { "ref": 1, "document_id": "…", "job_id": "…",
                      "page_idx": 3, "block_id": "p004-b0002", "snippet": "…" } ],
     "tool_trace": [ { "round": 1, "tool": "search_fulltext", "arguments": {…} } ],
@@ -101,114 +95,94 @@ POST /api/v1/ai/ask
 } }
 ```
 
-**流式**(`stream: true`):SSE(`text/event-stream`),每行 `data: {json}`,事件类型:
+**Phát trực tiếp** (`stream: true`): SSE (`text/event-stream`), mỗi dòng `data: {json}`, các loại sự kiện:
 
-| type | 字段 | 说明 |
+| type | Các trường | Giải thích |
 |---|---|---|
-| `tool` | round, tool, arguments | agent 每次调用工具时实时推送——渲染成"正在检索:xxx"的过程提示 |
-| `answer_delta` | text | 最终回答的逐 token 增量,边到边渲染 |
-| `done` | answer, citations, tool_trace, rounds | 最终结果(结构同非流式 data) |
-| `error` | message | 失败 |
+| `tool` | round, tool, arguments | Đẩy theo thời gian thực mỗi khi agent gọi công cụ — hiển thị thành gợi ý quá trình "đang truy xuất: xxx" |
+| `answer_delta` | text | Tăng dần từng token của câu trả lời cuối, render từng phần |
+| `done` | answer, citations, tool_trace, rounds | Kết quả cuối cùng (cấu trúc giống data không phát) |
+| `error` | message | Thất bại |
 
-前端渲染要点:
-- 回答文本里的 `[n]` 对应 `citations[].ref`,渲染成可点击引用;点击用
-  `job_id + page_idx + block_id` 跳阅读器——**与收藏跳转是同一套锚点逻辑**;
-- `document_id` 传入时限定单文档问答(阅读器内的"问这篇文档"),不传则全库检索;
-- 过程事件建议展示 `tool` 的语义化文案:`search_fulltext`→"全文检索"、
-  `read_blocks`→"阅读原文上下文"、`list_documents`→"浏览图书馆"、
-  `search_favorites`→"查找收藏";
-- AI 服务未启动时反代返回 502,提示"AI 服务未运行"。
+Điểm cần lưu ý khi render frontend:
+- `[n]` trong văn bản trả lời tương ứng với `citations[].ref`, hiển thị thành trích dẫn có thể nhấp; khi nhấp dùng `job_id + page_idx + block_id` để nhảy đến trình đọc — **cùng logic neo với lưu trữ**;
+- Khi truyền `document_id` thì giới hạn hỏi đáp trong một tài liệu ("hỏi tài liệu này" trong trình đọc), không truyền thì tìm kiếm toàn bộ thư viện;
+- Sự kiện quá trình khuyến nghị hiển thị văn bản ngữ nghĩa của `tool`: `search_fulltext`→"Tìm kiếm toàn văn", `read_blocks`→"Đọc ngữ cảnh bản gốc", `list_documents`→"Duyệt thư viện", `search_favorites`→"Tìm lưu trữ";
+- Khi dịch vụ AI chưa khởi động, proxy trả về 502, thông báo "Dịch vụ AI chưa chạy".
 
-
-### 5. 资产(收藏截图等图片附件)
+### 5. Tài sản (ảnh đính kèm như ảnh chụp lưu trữ)
 
 ```
-POST /api/v1/assets                    ← multipart,字段名 file(png/jpeg/webp,≤20MB)
+POST /api/v1/assets                    ← multipart, tên trường file (png/jpeg/webp, ≤20MB)
      → data: { asset_id, mime, bytes, created_at }
-GET  /api/v1/assets/:asset_id          ← 文件本体;内容寻址,响应带 immutable 缓存头,可放心 <img src>
+GET  /api/v1/assets/:asset_id          ← Nội dung tệp; định địa chỉ nội dung, phản hồi kèm header cache immutable, có thể an tâm dùng <img src>
 ```
 
-- `asset_id` = 文件 sha256:同一张图重复上传自动归并,拿到相同 id;
-- **图片收藏流程**:canvas 导出 PNG → POST assets 拿 asset_id → POST favorites 时带
-  `asset_id`(建议 `kind: "figure"`)和 `rect_json`(剪裁矩形几何原样存,换设备可还原);
-- favorites 记录现在返回 `asset_id` / `rect_json` 字段,空串 = 纯文字收藏。
+- `asset_id` = sha256 của tệp: cùng một ảnh tải lên nhiều lần tự động hợp nhất, nhận cùng id;
+- **Luồng lưu trữ ảnh**: canvas xuất PNG → POST assets lấy asset_id → POST favorites kèm `asset_id` (khuyến nghị `kind: "figure"`) và `rect_json` (lưu nguyên hình học cắt, đổi thiết bị có thể khôi phục);
+- Bản ghi favorites hiện trả về các trường `asset_id` / `rect_json`, chuỗi rỗng = lưu trữ văn bản thuần.
 
-### 6. AI 问答会话(历史存储 + 多轮对话)
+### 6. Hội thoại hỏi đáp AI (lưu trữ lịch sử + hội thoại nhiều vòng)
 
 ```
 POST   /api/v1/ai/conversations                      body: { title?, document_id? }
-GET    /api/v1/ai/conversations?limit=50&offset=0    → data.conversations[](含 message_count,按更新倒序)
-GET    /api/v1/ai/conversations/:id                  → 会话字段 + messages[](seq 正序)
-DELETE /api/v1/ai/conversations/:id                  级联删消息
+GET    /api/v1/ai/conversations?limit=50&offset=0    → data.conversations[] (bao gồm message_count, sắp xếp theo cập nhật giảm dần)
+GET    /api/v1/ai/conversations/:id                  → Các trường hội thoại + messages[] (seq tăng dần)
+DELETE /api/v1/ai/conversations/:id                  Xóa tầng kèm tin nhắn
 POST   /api/v1/ai/conversations/:id/messages         body: { role, content, citations_json?, tool_trace_json?, model? }
 ```
 
-- **前端接多轮对话只需一步**:先建会话拿 `conversation_id`,之后每次 `/api/v1/ai/ask`
-  带上它——服务端自动注入既往轮次做上下文、回答完成后自动把 user/assistant 两条
-  写进历史(**前端不需要调 messages 接口**,那是 AI 服务回写用的);
-- 消息里的 `citations_json` 是锚点快照数组(结构同 ask 返回的 citations),渲染历史
-  时同样可点击跳转;
-- **软锚点语义**:问答引用不阻止 job 删除(与收藏的 409 保护不同),job 删除后跳转
-  失效但 snippet 文字仍在——渲染时跳转失败请优雅降级为仅展示文字;
-- 会话标题自动取首问前 40 字,可通过创建时的 `title` 覆盖。
+- **Frontend tích hợp hội thoại nhiều vòng chỉ cần một bước**: tạo hội thoại lấy `conversation_id`, sau đó mỗi lần `/api/v1/ai/ask` đều truyền nó — server tự động tiêm các vòng trước làm ngữ cảnh, sau khi trả lời xong tự động ghi user/assistant vào lịch sử (**frontend không cần gọi giao diện messages**, đó là để AI service ghi lại);
+- `citations_json` trong tin nhắn là mảng ảnh chụp neo (cấu trúc giống citations trả về từ ask), khi render lịch sử cũng có thể nhấp để nhảy;
+- **Ngữ nghĩa neo mềm**: trích dẫn hỏi đáp không ngăn xóa job (khác với bảo vệ 409 của lưu trữ), sau khi job bị xóa, nhảy không còn nhưng văn bản snippet vẫn còn — khi nhảy thất bại, hãy giảm cấp duyên dáng thành chỉ hiển thị văn bản;
+- Tiêu đề hội thoại tự động lấy 40 ký tự đầu của câu hỏi đầu tiên, có thể ghi đè bằng `title` khi tạo.
 
-### 7. 分类(合集):建文件夹给 PDF 分组
+### 7. Phân loại (bộ sưu tập): tạo thư mục để nhóm PDF
 
-> `collections`/`collection_documents` 表随图书馆数据层一起建好,一直没接
-> 路由;现在补上。v1 只做扁平文件夹(不支持嵌套,`parent_id` 传了也接受,
-> 但前端目前不需要用)。
+> Bảng `collections`/`collection_documents` đã được tạo cùng với tầng dữ liệu thư viện, nhưng chưa gắn route; nay bổ sung. v1 chỉ làm thư mục phẳng (không hỗ trợ lồng, `parent_id` truyền vào cũng chấp nhận, nhưng frontend hiện không cần dùng).
 
 ```
 POST   /api/v1/collections                body: { name, parent_id? }
-GET    /api/v1/collections                → data.collections[](按 sort_order 排序,含 document_count)
+GET    /api/v1/collections                → data.collections[] (sắp xếp theo sort_order, bao gồm document_count)
 PATCH  /api/v1/collections/:id             body: { name?, sort_order? }
-DELETE /api/v1/collections/:id             ← 只删文件夹本身,文档不受影响
+DELETE /api/v1/collections/:id             ← Chỉ xóa thư mục, tài liệu không bị ảnh hưởng
 
 POST   /api/v1/collections/:id/documents              body: { document_ids: [...] }
 DELETE /api/v1/collections/:id/documents/:document_id
 ```
 
-- 加入不存在的 `document_id` 返回 404;重复加入同一文档幂等(不报错、不重复计数);
-- 查看某个文件夹里有哪些文档:`GET /api/v1/documents?collection_id=xxx`(见第 1 节),
-  拿到的每条记录里的 `active_job_id` 就是该文档当前可打开的处理记录;
-- 如果前端仍在用旧世界的 `/api/v1/library/books` 渲染卡片(而不是 `/api/v1/documents`
-  投影),把上一步拿到的 `active_job_id` 集合拼进新加的 `job_ids` 参数
-  (逗号分隔,见下方对 `/api/v1/library/books` 的说明),就能拿到与首页图书馆
-  卡片同构的数据,不用另外做一套"文件夹详情卡片"渲染。
+- Truyền `document_id` không tồn tại trả về 404; thêm cùng tài liệu nhiều lần là idempotent (không báo lỗi, không đếm trùng);
+- Xem tài liệu trong một thư mục: `GET /api/v1/documents?collection_id=xxx` (xem mục 1), `active_job_id` trong mỗi bản ghi nhận được là run xử lý hiện tại có thể mở của tài liệu đó;
+- Nếu frontend vẫn đang dùng `/api/v1/library/books` cũ để render thẻ (thay vì chiếu `/api/v1/documents`), hãy ghép tập hợp `active_job_id` nhận được ở bước trên vào tham số `job_ids` mới (phân cách bằng dấu phẩy, xem giải thích bên dưới về `/api/v1/library/books`) để lấy dữ liệu cùng cấu trúc với thẻ thư viện trang chủ, không cần làm thêm một bộ render "chi tiết thẻ thư mục" khác.
 
-### `/api/v1/library/books` 新增可选参数:`job_ids`
+### `/api/v1/library/books` thêm tham số tùy chọn: `job_ids`
 
 ```
 GET /api/v1/library/books?job_ids=job-a,job-b,job-c
 ```
 
-- 逗号分隔的 job_id 白名单,只返回命中的记录,形状与不传该参数时完全一致;
-- 不传就是现状(分页 `limit`/`offset`),这是纯增量参数,不影响任何现有调用方;
-- 传了 `job_ids` 时不做分页截断——语义是"精确给我这几个 job",不是"翻到第几页"。
+- Danh sách trắng job_id phân cách bằng dấu phẩy, chỉ trả về các bản ghi khớp, hình dạng giống hệt khi không truyền tham số;
+- Không truyền là trạng thái hiện tại (phân trang `limit`/`offset`), đây là tham số tăng dần thuần túy, không ảnh hưởng đến bất kỳ caller hiện có nào;
+- Khi truyền `job_ids`, không cắt theo phân trang — ngữ nghĩa là "cho tôi chính xác các job này", không phải "lật đến trang thứ mấy".
 
-## 两个必须处理的边界
+## Hai ranh giới phải xử lý
 
-1. **删除保护**:删除书籍(`DELETE /api/v1/library/books/:job_id`)时,如果该 job 被收藏
-   引用,后端返回 **409**,message 里有引用数量——前端要把这个错误呈现为
-   "该文档有 N 条收藏,请先删除收藏",而不是通用报错。
-2. **重复上传**:同一 PDF 再次上传不会产生新文档(documents 列表数量不变),
-   前端不要假设"上传成功 = 列表多一条"。
+1. **Bảo vệ xóa**: khi xóa sách (`DELETE /api/v1/library/books/:job_id`), nếu job đó bị lưu trữ tham chiếu, backend trả về **409**, trong message có số lượng tham chiếu — frontend phải hiển thị lỗi này thành "Tài liệu có N lưu trữ, vui lòng xóa lưu trữ trước", thay vì lỗi chung.
+2. **Tải lên trùng lặp**: cùng một PDF tải lên lại không tạo tài liệu mới (số lượng danh sách documents không thay đổi), frontend không nên giả định "tải lên thành công = danh sách có thêm một mục".
 
-## 建议的迁移路径(不强制)
+## Đường dẫn di chuyển đề xuất (không bắt buộc)
 
-1. **第一步只做增量**:阅读器里加"选中 → 收藏"和收藏侧栏(纯新增,不动现有页面)。
-   收藏跳转:用锚点里的 `job_id + page_idx + block_id` 复用现有阅读器定位。
-2. **第二步**再把图书馆主页从 `/api/v1/library/books` 投影切到 `/api/v1/documents`,
-   拿到标签 / 阅读状态 / 合集能力。
+1. **Bước đầu chỉ làm tăng dần**: thêm "chọn → lưu trữ" và thanh bên lưu trữ trong trình đọc (chỉ thêm mới, không động đến trang hiện có). Nhảy lưu trữ: dùng `job_id + page_idx + block_id` trong neo để tái sử dụng định vị trình đọc hiện có.
+2. **Bước hai** chuyển trang chủ thư viện từ chiếu `/api/v1/library/books` sang `/api/v1/documents`, lấy được thẻ / trạng thái đọc / khả năng bộ sưu tập.
 
-## 附:字段速查
+## Phụ lục: Tra cứu nhanh các trường
 
-| 字段 | 说明 |
+| Trường | Giải thích |
 |---|---|
-| `document_id` | 文件内容 sha256(hex),稳定不变 |
-| `active_job_id` | 当前生效的处理 run,阅读器入口 |
-| `job_id`(收藏/命中里) | 锚点所在的块空间版本 |
-| `block_id` | `document.v1.json` 的块 ID,如 `p001-b0002` |
-| `page_idx` | 0 起始页码 |
+| `document_id` | sha256(hex) nội dung tệp, ổn định không đổi |
+| `active_job_id` | Run xử lý hiện tại, điểm vào trình đọc |
+| `job_id` (trong lưu trữ/kết qu��) | Phiên bản không gian block nơi neo |
+| `block_id` | ID block của `document.v1.json`, ví dụ `p001-b0002` |
+| `page_idx` | Số trang bắt đầu từ 0 |
 | `reading_status` | `unread` / `reading` / `done` |
-| `kind`(收藏) | `sentence` / `data` / `figure` |
+| `kind` (lưu trữ) | `sentence` / `data` / `figure` |

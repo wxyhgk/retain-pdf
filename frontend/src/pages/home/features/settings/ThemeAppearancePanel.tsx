@@ -1,5 +1,6 @@
-// 设置 · 外观：主题皮肤切换（注册表驱动，后期加皮肤无需改本文件）
-// 真值：html[data-theme] + localStorage（shared/theme）
+// Cài đặt · Ngoại quan: chuyển skin chủ đề (registry-driven, sau này thêm skin không cần sửa
+// file này)
+// Giá trị thật: html[data-theme] + localStorage (shared/theme)
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -12,8 +13,9 @@ import {
 
 export function ThemeAppearancePanel() {
   const [active, setActive] = useState<ThemeId>(() => getTheme());
-  // 按产品系列分区（基础/诸子百家/王朝/二次元…），系列注册表见
-  // shared/theme/registry.ts 的 THEME_SERIES——新系列加一行即出新分区
+  // Phân vùng theo dòng sản phẩm (cơ bản / các trường phái / triều đại / anime ...), bảng
+  // đăng ký dòng xem THEME_SERIES của shared/theme/registry.ts — thêm dòng mới là ra
+  // phân vùng mới
   const groups = listThemesBySeries();
 
   useEffect(() => {
@@ -27,21 +29,21 @@ export function ThemeAppearancePanel() {
 
   return (
     <div className="theme-appearance" id="theme-appearance-panel">
-      {/* 说明文案由设置面板的 pane-head 承担，此处不再重复 hint */}
+      {/* Pane-head của bảng cài đặt đã chứa mô tả, không lặp lại hint tại đây. */}
       {groups.map(({ series, label, themes }) => (
         <div key={series} className="theme-appearance-group" data-theme-series={series}>
           <h3 className="theme-appearance-group-title">{label}</h3>
           <div
             className="theme-appearance-grid"
             role="radiogroup"
-            aria-label={`${label}主题`}
+            aria-label={`Chủ đề ${label}`}
           >
             {themes.map((meta) => {
               const swatch = meta.preview;
               const selected = active === meta.id;
-              // className 用 cn + 纯字面量：v4 扫描器提不出 `x${y}` 模板里的
-              // 类名（tailwind-theme.css 头注释记录的坑，theme-option 曾因此
-              // 整条 @utility 静默丢失）
+              // className dùng cn + thuần literal: máy quét v4 không rút được tên class
+              // trong template `x${y}` (cái bẫy ghi ở đầu tailwind-theme.css, cả
+              // @utility theme-option từng bị thất lạc âm thầm vì vậy)
               return (
                 <button
                   key={meta.id}

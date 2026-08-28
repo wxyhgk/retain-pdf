@@ -1,13 +1,6 @@
-// AppUpdateBanner 的纯视图态 + 与 features/app-update/controller.js(kept
-// 控制器)对接的 store 驱动 viewPort(蓝图 §5,镜像
-// credentials-view-store.js/glossaries-store.js 的写法)。
+// Trạng thái thuần view của AppUpdateBanner + store kết nối với controller.js (giữ nguyên) của features/app-update để điều khiển viewPort (bản vẽ §5, phản chiếu cách viết của credentials-view-store.js/glossaries-store.js).
 //
-// 旧世界 update-view-port.js/view.js 全部是 DOM 直写(死,不 import);这里用
-// 同名方法签名(bindButton/setChecking/setReady/setAvailable/setLatest/
-// setError)重新实现,只是"写"的目的地从 DOM 换成 store。逐字段行为抄自
-// src/js/features/app-update/view.js:88-166(setUpdateChecking/setUpdateReady/
-// setUpdateAvailable/setUpdateLatest/setUpdateError),controller.js
-// (checkForUpdates 编排 + 24h 缓存)一行不改地复用。
+// Thế giới cũ update-view-port.js/view.js toàn bộ là DOM trực tiếp (cũ, không import); ở đây dùng chữ ký phương thức cùng tên (bindButton/setChecking/setReady/setAvailable/setLatest/setError) để triển khai lại, chỉ thay đổi mục đích "ghi" từ DOM sang store. Hành vi từng trường được sao chép từ src/js/features/app-update/view.js:88-166 (setUpdateChecking/setUpdateReady/setUpdateAvailable/setUpdateLatest/setUpdateError), controller.js (điều phối checkForUpdates + bộ nhớ đệm 24h) được sử dụng lại không thay đổi.
 
 import { APP_UPDATE_STATES } from "./app-update-contract.js";
 import type { HandlersBag } from "../../composition/types.js";
@@ -42,7 +35,7 @@ export type AppUpdateViewActions = {
 
 export type AppUpdateViewStore = Store<AppUpdateViewState, AppUpdateViewActions>;
 
-/** setAvailable / setLatest 的发布信息载荷 */
+/** Tải trọng thông tin phát hành cho setAvailable / setLatest */
 export type AppUpdateReleaseInfo = {
   latestVersion?: string;
   currentVersion?: string;
@@ -52,7 +45,7 @@ export type AppUpdateReleaseInfo = {
 };
 
 function panelOf({
-  title = "检查更新",
+  title = "Kiểm tra cập nhật",
   body = "",
   latestVersion = "",
   currentVersion = APP_VERSION,
@@ -67,11 +60,11 @@ export function createAppUpdateViewFeature() {
     initialState: {
       buttonState: APP_UPDATE_STATES.idle,
       hasUpdate: false,
-      buttonTitle: "检查更新",
+      buttonTitle: "Kiểm tra cập nhật",
       statusText: "",
       panel: panelOf({
-        title: "检查更新",
-        body: "点击“重新检查”从 GitHub Releases 获取最新版本。",
+        title: "Kiểm tra cập nhật",
+        body: "Nhấn 'Kiểm tra lại' để lấy phiên bản mới nhất từ GitHub Releases.",
       }),
     },
     actions: {
@@ -87,34 +80,34 @@ export function createAppUpdateViewFeature() {
     bindButton: (handlers: HandlersBag) => {
       handlersRef.current = handlers;
     },
-    // 抄自 view.js:88-100(setUpdateChecking)
+    // Sao chép từ view.js:88-100 (setUpdateChecking)
     setChecking: () => store.actions.apply({
       buttonState: APP_UPDATE_STATES.checking,
       hasUpdate: store.getSnapshot().hasUpdate,
-      buttonTitle: "正在检查更新",
-      statusText: "正在检查 GitHub Releases...",
+      buttonTitle: "Đang kiểm tra cập nhật",
+      statusText: "Đang kiểm tra GitHub Releases...",
       panel: panelOf({
-        title: "正在检查更新",
-        body: "正在连接 GitHub Releases...",
+        title: "Đang kiểm tra cập nhật",
+        body: "Đang kết nối GitHub Releases...",
       }),
     }),
-    // 抄自 view.js:102-115(setUpdateReady)
+    // Sao chép từ view.js:102-115 (setUpdateReady)
     setReady: () => store.actions.apply({
       buttonState: APP_UPDATE_STATES.idle,
       hasUpdate: false,
-      buttonTitle: "检查更新",
+      buttonTitle: "Kiểm tra cập nhật",
       statusText: "",
       panel: panelOf({
-        title: "检查更新",
-        body: "点击“重新检查”从 GitHub Releases 获取最新版本。",
+        title: "Kiểm tra cập nhật",
+        body: "Nhấn 'Kiểm tra lại' để lấy phiên bản mới nhất từ GitHub Releases.",
       }),
     }),
-    // 抄自 view.js:117-133(setUpdateAvailable)
+    // Sao chép từ view.js:117-133 (setUpdateAvailable)
     setAvailable: (info: AppUpdateReleaseInfo = {}) => store.actions.apply({
       buttonState: APP_UPDATE_STATES.available,
       hasUpdate: true,
-      buttonTitle: `发现新版本 ${info.latestVersion}`,
-      statusText: "发现新版本",
+      buttonTitle: `Phát hiện phiên bản mới ${info.latestVersion}`,
+      statusText: "Phát hiện phiên bản mới",
       panel: panelOf({
         title: info.title || `RetainPDF ${info.latestVersion}`,
         body: info.body,
@@ -123,29 +116,29 @@ export function createAppUpdateViewFeature() {
         htmlUrl: info.htmlUrl,
       }),
     }),
-    // 抄自 view.js:135-151(setUpdateLatest)
+    // Sao chép từ view.js:135-151 (setUpdateLatest)
     setLatest: (info?: AppUpdateReleaseInfo | null) => store.actions.apply({
       buttonState: APP_UPDATE_STATES.latest,
       hasUpdate: false,
-      buttonTitle: "已是最新版本",
-      statusText: "已是最新版本",
+      buttonTitle: "Đã là phiên bản mới nhất",
+      statusText: "Đã là phiên bản mới nhất",
       panel: panelOf({
-        title: "已是最新版本",
-        body: "当前版本已经是 GitHub Releases 上的最新版本。",
+        title: "Đã là phiên bản mới nhất",
+        body: "Phiên bản hiện tại đã là mới nhất trên GitHub Releases.",
         latestVersion: info?.latestVersion || APP_VERSION,
         currentVersion: info?.currentVersion || APP_VERSION,
         htmlUrl: info?.htmlUrl || "",
       }),
     }),
-    // 抄自 view.js:153-166(setUpdateError)
+    // Sao chép từ view.js:153-166 (setUpdateError)
     setError: (error?: { message?: string } | null) => store.actions.apply({
       buttonState: APP_UPDATE_STATES.error,
       hasUpdate: false,
-      buttonTitle: "检查更新失败",
-      statusText: "检查失败",
+      buttonTitle: "Kiểm tra cập nhật thất bại",
+      statusText: "Kiểm tra thất bại",
       panel: panelOf({
-        title: "检查更新失败",
-        body: error?.message || "暂时无法连接 GitHub Releases。",
+        title: "Kiểm tra cập nhật thất bại",
+        body: error?.message || "Không thể kết nối GitHub Releases.",
       }),
     }),
   };

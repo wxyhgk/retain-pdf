@@ -537,7 +537,7 @@ def test_long_text_split_partially_accepts_when_one_chunk_fails() -> None:
     assert result is not None
     payload = result["p001-b001"]
     diag = payload["translation_diagnostics"]
-    # 单块失败不再作废整条:失败块保留原文,其余块保留译文
+    # Lỗi của một khối duy nhất không còn làm mất hiệu lực toàn bộ bài viết:Khối lỗi bảo tồn văn bản gốc,Đặt trước bản dịch cho các khối còn lại
     assert diag["final_status"] == "partially_translated"
     assert diag["degradation_reason"] == "direct_typst_long_text_split_partial"
     assert diag["degraded_chunk_count"] == 1

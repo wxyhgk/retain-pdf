@@ -1,7 +1,7 @@
 // scene-render.jsx
 // 4 substeps: mask, typst overlay, merge, compress.
 
-// ── 3.1 背景 / 遮盖处理 ───────────────────────────────────────────────────
+// ── 3.1 Nền / Xử lý che ───────────────────────────────────────────────────
 function SceneMask({ progress }) {
   // PDF page on left: original English text being covered by white rectangles, line by line.
   // On the right: a "background" extracted (figure stays, text gone).
@@ -81,7 +81,7 @@ function SceneMask({ progress }) {
   );
 }
 
-// ── 3.2 Typst overlay 编译 ────────────────────────────────────────────────
+// ── 3.2 Biên dịch lớp phủ Typst ───────────────────────────────────────────
 function SceneTypst({ progress }) {
   // Left: code editor showing Typst overlay code being typed/processed line by line.
   // Right: PDF page with Chinese text appearing in the same layout positions.
@@ -93,9 +93,9 @@ function SceneTypst({ progress }) {
     { text: '#set page(width: 595pt, height: 842pt, margin: 0pt)', kind: 'directive' },
     { text: '#set text(font: "Source Han Serif SC", size: 9.5pt)', kind: 'directive' },
     { text: '', kind: 'blank' },
-    { text: '#place(dx: 62pt, dy: 88pt)[摘要]', kind: 'place', col: -1, idx: -1 },
-    { text: '#place(dx: 62pt, dy: 98pt)[我们提出一种端到端流水线…]', kind: 'place', col: -1, idx: -1 },
-    { text: '#place(dx: 62pt, dy: 122pt)[1 引言]', kind: 'place', col: 0, idx: 0 },
+    { text: '#place(dx: 62pt, dy: 88pt)[Tóm tắt]', kind: 'place', col: -1, idx: -1 },
+    { text: '#place(dx: 62pt, dy: 98pt)[Chúng tôi đề xuất một dây chuyền xử lý đầu cuối…]', kind: 'place', col: -1, idx: -1 },
+    { text: '#place(dx: 62pt, dy: 122pt)[1 Giới thiệu]', kind: 'place', col: 0, idx: 0 },
     { text: '#place(dx: 62pt, dy: 131pt)[文档翻译长期受困于排版崩塌…]', kind: 'place', col: 0, idx: 1 },
     { text: '#place(dx: 62pt, dy: 140pt)[结果 PDF 丢失图片位置与栏目…]', kind: 'place', col: 0, idx: 2 },
     { text: '#place(dx: 62pt, dy: 149pt)[本工作以 Typst overlay 解决…]', kind: 'place', col: 0, idx: 3 },

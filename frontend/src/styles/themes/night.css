@@ -1,4 +1,4 @@
-/* 皮肤 night：黛瓦夜色 — 深底阅读 */
+/* Skin night: màn đêm ngói đen — đọc trên nền tối */
 
 [data-theme="night"] {
   --bg: #141618;
@@ -25,7 +25,7 @@
   --reader-page: #1a1d21;
   --shadow-color: #000000;
 
-  /* L3（原 ambient-surface 特例块迁入）：深底纸台更透、影更沉 */
+  /* L3 (di dời từ block đặc biệt ambient-surface gốc): bụi giấy trên nền tối trong hơn, bóng đậm hơn */
   --stage-veil: 62%;
   --stage-width: min(1080px, 100%);
   --stage-pad: 14px 18px 0;
@@ -33,7 +33,7 @@
     inset 0 1px 0 color-mix(in srgb, var(--line) 45%, transparent),
     0 20px 44px color-mix(in srgb, var(--shadow-color) 28%, transparent);
 
-  /* 氛围垫层材质：夜色下纤维略强、廊道压暗走 chrome */
+  /* Chất liệu đệm atmosphere: sợi hơi mạnh hơn dưới ánh đêm, hành lang tối đi theo chrome */
   --mat-fiber: color-mix(in srgb, var(--ink) 4%, transparent);
   --mat-fiber-2: color-mix(in srgb, var(--ink) 2.5%, transparent);
   --mat-edge: color-mix(in srgb, var(--chrome) 25%, var(--bg));

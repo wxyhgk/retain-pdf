@@ -48,24 +48,24 @@ export function workflowUsesRenderStage(workflow, constants) {
 }
 
 export function workflowSubmitLabel(workflow, constants) {
-  // UI 文案：上传弹窗主按钮「直接翻译」；render 仍用「开始渲染」
+  // Text UI: Nút chính trong dialog upload là "Dịch trực tiếp"; render vẫn dùng "Bắt đầu render"
   switch (workflow) {
     case constants.WORKFLOW_RENDER:
-      return "开始渲染";
+      return "Bắt đầu render";
     case constants.WORKFLOW_TRANSLATE:
-      return "直接翻译";
+      return "Dịch trực tiếp";
     case constants.WORKFLOW_BOOK:
-      return "直接翻译";
+      return "Dịch trực tiếp";
     default:
-      return "直接翻译";
+      return "Dịch trực tiếp";
   }
 }
 
 export function workflowHeadline(workflow, constants) {
   switch (workflow) {
     case constants.WORKFLOW_RENDER:
-      return "当前工作流会复用已有任务产物重新生成 PDF。";
+      return "Luồng công việc hiện tại sẽ tái sử dụng kết quả tác vụ đã có để tạo lại PDF.";
     default:
-      return "选择 PDF 后，可直接翻译或仅收藏到书架。";
+      return "Sau khi chọn PDF, bạn có thể dịch trực tiếp hoặc chỉ lưu vào giá sách.";
   }
 }

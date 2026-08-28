@@ -213,7 +213,7 @@ test("markdown asset resolver keeps special URLs and resolves relative images", 
     artifacts.resolveMarkdownAssetUrl("http://retainpdf.local/images/", "/api/v1/jobs/1/markdown/images/p.png"),
     "http://retainpdf.local:41000/api/v1/jobs/1/markdown/images/p.png",
   );
-  // path 常带 images/ 前缀，base 已是 .../markdown/images/ —— 不得拼成双 images/
+  // path thường có tiền tố images/, base đã là .../markdown/images/ —— không được ghép thành images/ kép
   assert.equal(
     artifacts.resolveMarkdownAssetUrl(
       "http://127.0.0.1:41000/api/v1/jobs/j1/markdown/images/",

@@ -16,7 +16,7 @@ export function createStatusDetailTranslationTabCoordinator({
 
   function renderSelectionPlaceholder(selection) {
     renderItemDetail({
-      emptyText: selection?.selectedItemId ? "请选择左侧 item" : "没有可查看的 item",
+      emptyText: selection?.selectedItemId ? "Vui lòng chọn item bên trái" : "Không có item để xem",
     });
     renderReplay();
   }
@@ -55,7 +55,7 @@ export function createStatusDetailTranslationTabCoordinator({
     const jobId = dataPort.jobId();
     if (!jobId) {
       dataPort.reset("");
-      renderEmpty("请先选择任务");
+      renderEmpty("Vui lòng chọn tác vụ trước");
       return;
     }
     dataPort.syncJob();
@@ -63,7 +63,7 @@ export function createStatusDetailTranslationTabCoordinator({
       renderCurrent();
       return;
     }
-    renderEmpty("正在读取翻译调试数据...");
+    renderEmpty("Đang đọc dữ liệu debug bản dịch...");
     try {
       const selection = await dataPort.loadSummaryAndItems({ selectFirst: true });
       renderSummary();
@@ -115,7 +115,7 @@ export function createStatusDetailTranslationTabCoordinator({
     }
     setReplayLoading?.({
       hasResult: false,
-      status: "重放中...",
+      status: "Đang phát lại...",
     });
     await dataPort.replaySelectedItem();
     renderReplay();

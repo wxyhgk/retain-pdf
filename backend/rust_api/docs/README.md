@@ -1,22 +1,22 @@
-# Rust API Docs
+# Tài liệu Rust API
 
-这里保留 `backend/rust_api` 目录内的文档兼容入口。
+Đây là điểm vào tài liệu tương thích trong thư mục `backend/rust_api`.
 
-对外 HTTP API、图书馆接口、任务接口、产物下载、事件流和删除语义统一看：
+API HTTP bên ngoài, giao diện thư viện, giao diện tác vụ, tải sản phẩm, luồng sự kiện và ngữ nghĩa xóa xem thống nhất tại:
 
-- [RetainPDF 后端 API 总入口](../../../doc/core/api/index.md)
+- [Tổng lối vào API backend RetainPDF](../../../doc/core/api/index.md)
 
-后端实现和协作边界看：
+Triển khai backend và ranh giới cộng tác xem:
 
-- [Rust API 架构入口](../../../doc/core/rust_api/README.md)
-- [当前运行主链](../CURRENT_API_MAP.md)
-- [Stage 执行契约](../STAGE_EXECUTION_CONTRACT.md)
-- [OCR Provider 契约](../OCR_PROVIDER_CONTRACT.md)
-- [渲染参数契约](../RENDER_OPTIONS_CONTRACT.md)
-- [目录边界](../RUST_API_DIRECTORY_MAP.md)
+- [Lối vào kiến trúc Rust API](../../../doc/core/rust_api/README.md)
+- [Chuỗi chính vận hành hiện tại](../CURRENT_API_MAP.md)
+- [Hợp đồng thực thi Stage](../STAGE_EXECUTION_CONTRACT.md)
+- [Hợp đồng OCR Provider](../OCR_PROVIDER_CONTRACT.md)
+- [Hợp đồng tham số render](../RENDER_OPTIONS_CONTRACT.md)
+- [Ranh giới thư mục](../RUST_API_DIRECTORY_MAP.md)
 
-原则：
+Nguyên tắc:
 
-- `doc/core/api/index.md` 是对外 API 唯一真源。
-- `backend/rust_api/docs/*` 不再维护第二份接口详情。
-- `backend/rust_api/API_SPEC.md` 保留为历史/实现参考，不作为前端首读文档。
+- `doc/core/api/index.md` là nguồn duy nhất cho API bên ngoài.
+- `backend/rust_api/docs/*` không còn duy trì chi tiết giao diện thứ hai.
+- `backend/rust_api/API_SPEC.md` được giữ lại làm tham khảo lịch sử/triển khai, không phải tài liệu đọc đầu tiên cho frontend.

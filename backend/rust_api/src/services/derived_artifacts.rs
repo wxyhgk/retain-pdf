@@ -28,7 +28,7 @@ pub(crate) fn job_artifacts_dir(data_root: &Path, job: &JobSnapshot) -> Result<P
     Ok(output_dir)
 }
 
-/// 文档级缓存目录（无 job 时封面/缩略图仍可落盘）。
+/// Thư mục bộ nhớ cache cấp tài liệu（Không có job Bìa Thời gian/Hình thu nhỏ vẫn có sẵn）。
 pub(crate) fn document_artifacts_dir(
     data_root: &Path,
     document_id: &str,

@@ -1,7 +1,7 @@
-// 主页 → 阅读页导航（可注入，便于测试）
+// Trang chính → điều hướng trang đọc (có thể inject, thuận tiện cho kiểm thử)
 //
-// 默认「软打开」：history.pushState + SoftReaderHost 全屏层，主页不卸载。
-// replace / 非主页文档 / 跨域：仍 location.replace|assign。
+// Mặc định "mở mềm": history.pushState + lớp SoftReaderHost toàn màn hình, trang chính
+// không gỡ. replace / tài liệu không phải trang chính / khác nguồn: vẫn location.replace|assign.
 
 import { captureHomeReturnState } from "../../../../shared/navigation/home-return-state.js";
 import { trySoftOpenReader } from "../../../../shared/navigation/soft-reader.js";
@@ -15,27 +15,27 @@ export type ReaderNavigateFn = (url: string, options?: ReaderNavigateOptions) =>
 const defaultNavigate: ReaderNavigateFn = (url, { replace = false } = {}) => {
   const target = `${url || ""}`.trim();
   if (!target) return;
-  // 记下滚动；软打开时主页本就不卸，仍可作兜底
+  // Ghi lại vị trí cuộn; khi mở mềm trang chính vốn không gỡ, vẫn làm dự phòng
   captureHomeReturnState({ allowBack: !replace });
-  // 优先软打开（主页 SPA 仍在时，即使地址栏已是 reader.html 也能再开）
+  // Ưu tiên mở mềm (khi SPA trang chính còn, dù thanh địa chỉ đã là reader.html cũng mở lại được)
   if (!replace && trySoftOpenReader(target)) {
     return;
   }
   if (replace) {
-    // 深链启动：尽量软开；失败再硬进
+    // Khởi động sâu: cố mở mềm; thất bại mới cứng vào
     if (trySoftOpenReader(target)) {
       return;
     }
     window.location.replace(target);
     return;
   }
-  // 独立 reader 页 / 跨页：整页进入
+  // Trang reader độc lập / khác trang: vào nguyên trang
   window.location.assign(target);
 };
 
 let navigateImpl: ReaderNavigateFn = defaultNavigate;
 
-/** 仅测试使用：注入假导航，测完后传 null 复位 */
+/** Chỉ dùng cho kiểm thử: inject điều hướng giả, sau khi test truyền null để đặt lại */
 export function setReaderNavigateForTests(fn: ReaderNavigateFn | null) {
   navigateImpl = fn || defaultNavigate;
 }

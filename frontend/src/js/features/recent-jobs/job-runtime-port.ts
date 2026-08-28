@@ -1,6 +1,6 @@
 export function createRecentJobsRuntimePort({
   openJob,
-  /** 冷启动恢复活跃任务：默认 silent，不抬工作流区 */
+  /** Khôi phục tác vụ đang chạy khi cold start: mặc định silent, không bật khu workflow. */
   recoverJob,
   currentJobId = () => "",
 }: any = {}) {

@@ -1,4 +1,4 @@
-// React-pdf 阅读器视图：逻辑在 useReaderReactController；工具为悬浮窗（对齐 legacy 四件套）。
+// View trình đọc React-pdf: logic nằm trong useReaderReactController; công cụ là cửa sổ nổi (căn chỉnh theo bộ 4 legacy).
 
 import { useCallback } from "react";
 import { useReaderReactController } from "./hooks/use-reader-react-controller.js";
@@ -26,17 +26,17 @@ export function ReaderAppReactPdf() {
     tools.close();
   }, [tools]);
 
-  // citation.page_idx 0 基；兼容 page / block_id(p00N)；阅读器页码 1 基
+  // citation.page_idx tính từ 0; tương thích page / block_id(p00N); số trang trình đọc tính từ 1
   const jumpCitation = useCallback((citation: {
     page_idx?: number;
     page?: number;
     block_id?: string;
   } | number) => {
-    // 分支/切会话锁定期：绝不跳 PDF（体感像整页刷新+跳转）
+    // Trong thời gian khóa khi branch/đổi session: tuyệt đối không nhảy PDF (cảm giác như refresh + chuyển cả trang).
     if (isReaderAiNavigationLocked()) return;
     let page1: number | null = null;
     if (typeof citation === "number") {
-      // 约定：直接传数字时为 0 基 idx
+      // Quy ước: khi truyền số trực tiếp thì đó là index 0-based.
       if (Number.isFinite(citation) && citation >= 0) {
         page1 = Math.floor(citation) + 1;
       }
@@ -44,7 +44,7 @@ export function ReaderAppReactPdf() {
       const raw = citation.page_idx ?? citation.page;
       if (raw !== undefined && raw !== null && `${raw}`.trim() !== "" && Number.isFinite(Number(raw))) {
         const n = Number(raw);
-        // page_idx 常为 0 基；若像 1..N 且 block 也像 1 基则仍按 0 基 +1（与 FTS 一致）
+         // page_idx thường tính từ 0; nếu giống 1..N và block cũng tính từ 1 thì vẫn coi là 0-based +1 (nhất quán với FTS)
         page1 = Math.floor(n) + 1;
       } else {
         const m = `${citation.block_id || ""}`.match(/(?:^|[^0-9])p0*([1-9]\d*)(?:-|_|\b)/i);
@@ -64,7 +64,7 @@ export function ReaderAppReactPdf() {
         percent={boot.percent}
       />
 
-      {/* 整页阅读器：右上角关闭 → 回主页（替代旧 iframe 宿主关闭钮） */}
+      {/* Reader toàn trang: nút đóng góc phải trên -> về trang chủ (thay nút đóng host iframe cũ). */}
       <ReaderCloseHome />
 
       <ReaderModeTabs

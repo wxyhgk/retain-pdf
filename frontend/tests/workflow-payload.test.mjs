@@ -170,9 +170,9 @@ function mountWorkflowHarness({
     apiPrefix: "/api",
     setText: () => {},
   };
-  // controller.js 不再自带默认 viewPort(旧 DOM 直写实现已随 cutover 删除),
-  // 未显式传 viewPort 的用例用最小 no-op stub 桥接(只关心 collectRunPayload
-  // 等纯逻辑返回值,不断言这些 UI 副作用调用)。
+  // controller.js không còn viewPort mặc định (triển khai ghi DOM cũ đã bị xóa trong cutover),
+  // các trường hợp không truyền viewPort rõ ràng sẽ dùng stub no-op tối thiểu để kết nối (chỉ quan tâm
+  // giá trị trả về logic thuần như collectRunPayload, không xác nhận các tác dụng phụ UI này).
   options.viewPort = viewPort || {
     applyMockUpload: () => {},
     applyWorkflowUpload: () => {},

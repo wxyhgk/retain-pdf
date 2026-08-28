@@ -1,6 +1,6 @@
-// 主页 AI 问答 Tab 的轻量类型（不绑阅读器 job）
+// Kiểu nhẹ cho tab Hỏi đáp AI trang chủ (không yêu cầu reader job).
 
-/** @ 文档 */
+/** @ Tài liệu */
 export type HomeAskDocScope = {
   kind: "document";
   id: string;
@@ -9,7 +9,8 @@ export type HomeAskDocScope = {
   source_filename?: string;
 };
 
-/** @ 合集（发送时展开为合集内文档列表，软限定检索） */
+/** @ Bộ sưu tập (khi gửi sẽ mở rộng thành danh sách tài liệu trong bộ sưu tập,
+ * áp dụng điều kiện truy xuất mềm). */
 export type HomeAskCollectionScope = {
   kind: "collection";
   id: string;
@@ -19,7 +20,7 @@ export type HomeAskCollectionScope = {
 
 export type HomeAskScope = HomeAskDocScope | HomeAskCollectionScope;
 
-/** @deprecated 兼容旧命名 */
+/** @deprecated Tương thích với cách đặt tên cũ */
 export type HomeAskDocRef = HomeAskDocScope;
 
 export type HomeAskCitation = {

@@ -1,4 +1,4 @@
-// 主页 AI 消息列表：轻量 markdown 预览 + 引用跳阅读器
+// Trang chủ AI Danh sách tin nhắn：Trọng lượng nhẹ markdown xem trước + Trình đọc bỏ qua tham chiếu
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, FlaskConical, ListTree, Loader2, Sparkles } from "lucide-react";
@@ -23,23 +23,23 @@ export const HOME_ASK_SUGGESTIONS: Array<{
   icon: typeof BookOpen;
 }> = [
   {
-    prompt: "最近入库的文献里，有哪些值得优先阅读的主题？",
-    label: "浏览馆藏主题",
+    prompt: "Trong các tài liệu vừa nhập, chủ đề nào đáng đọc ưu tiên?",
+    label: "Duyệt chủ đề kho lưu trữ",
     icon: BookOpen,
   },
   {
-    prompt: "帮我对比不同文献对同一问题的主要结论。",
-    label: "跨文献对比结论",
+    prompt: "So sánh kết luận chính của các tài liệu khác nhau về cùng một vấn đề.",
+    label: "So sánh kết luận",
     icon: ListTree,
   },
   {
-    prompt: "有哪些常用的方法或实验设计？",
-    label: "梳理方法模型",
+    prompt: "Có các phương pháp hoặc thiết kế thí nghiệm nào thường dùng?",
+    label: "Phân loại mô hình phương pháp",
     icon: FlaskConical,
   },
   {
-    prompt: "用几句话总结图书馆里一篇核心论文。",
-    label: "快速总结一篇",
+    prompt: "Tóm tắt một bài báo cốt lõi trong thư viện bằng vài câu.",
+    label: "Tóm tắt nhanh một bài",
     icon: Sparkles,
   },
 ];
@@ -158,7 +158,7 @@ export function HomeAskThread({ messages, isRunning = false }: HomeAskThreadProp
     bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [messages, isRunning]);
 
-  // 空态由 HomeAskView 的 hero 区渲染（Notion：问候 + 居中输入 + 建议）
+  // Trạng thái trống bởi HomeAskView của hero Kết xuất khu vực（Notion：thăm hỏi sức khỏe + Đầu vào trung tâm + Khuyến nghị）
   if (empty) {
     return null;
   }
@@ -188,7 +188,7 @@ export function HomeAskThread({ messages, isRunning = false }: HomeAskThreadProp
             {streaming && !m.progress && !hasBody ? (
               <div className="home-ask-thinking" role="status">
                 <Loader2 className="home-ask-spin" size={13} strokeWidth={2.4} aria-hidden />
-                <span>思考中…</span>
+                <span>Đang suy nghĩ…</span>
               </div>
             ) : null}
             {hasBody || m.status === "error" ? (

@@ -126,8 +126,8 @@ def _shared_domain_context_path(preview_text: str, *, model: str) -> Path:
 
 
 def _load_shared_domain_context(preview_text: str, *, model: str) -> dict[str, str] | None:
-    # 按内容寻址的跨任务缓存:同一文档换个任务目录重跑,不必重付
-    # 4-5s 的领域识别调用(原有的 per-job 缓存只在同一任务目录内生效)。
+    # Bộ nhớ đệm tác vụ chéo được giải quyết theo nội dung:Chạy lại cùng một tài liệu với một thư mục nhiệm vụ khác,Không cần thanh toán lại
+    # 4-5s Cuộc gọi nhận dạng tên miền(Bản gốc per-job Bộ nhớ cache chỉ có hiệu lực trong cùng một thư mục tác vụ)。
     path = _shared_domain_context_path(preview_text, model=model)
     try:
         if not path.exists():

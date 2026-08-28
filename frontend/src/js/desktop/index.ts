@@ -98,7 +98,7 @@ export async function saveDesktopConfig(browserConfig: any = {}, afterSave) {
     } catch (error) {
       if (isDesktopConfigured(state)) {
         const message = error?.message || String(error);
-        throw new Error(`首次配置已保存，但当前无法连接本地后端。${message}`);
+        throw new Error(`Cấu hình lần đầu đã được lưu, nhưng hiện không thể kết nối với backend cục bộ. ${message}`);
       }
       throw error;
     }

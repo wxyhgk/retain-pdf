@@ -1,8 +1,8 @@
-# Python 后端架构边界
+# Ranh giới kiến trúc backend Python
 
-这份文档描述 `backend/scripts` 的长期维护边界。目标不是减少文件数量，而是保证代码增长后仍能定位、测试和修改。
+Tài liệu này mô tả ranh giới bảo trì lâu dài của `backend/scripts`. Mục tiêu không phải là giảm số lượng tệp, mà là đảm bảo sau khi mã phát triển vẫn có thể định vị, kiểm thử và sửa đổi.
 
-## 总体分层
+## Phân tầng tổng thể
 
 ```text
 entrypoints
@@ -11,18 +11,18 @@ entrypoints
       -> foundation
 ```
 
-职责：
+Trách nhiệm:
 
 - `entrypoints/`
-  命令行入口，只解析参数并调用稳定服务入口。
+  Đầu vào dòng lệnh, chỉ phân tích tham số và gọi đầu vào dịch vụ ổn định.
 - `runtime/pipeline/`
-  阶段编排层，负责 OCR、翻译、渲染的顺序、阶段 spec、事件和产物交接。
+  Tầng điều phối giai đoạn, chịu trách nhiệm thứ tự OCR, dịch thuật, kết xuất, stage spec, sự kiện và bàn giao sản phẩm.
 - `services/`
-  具体能力层，包含 OCR provider、document schema、translation、rendering 等业务能力。
+  Tầng năng lực cụ thể, bao gồm các năng lực nghiệp vụ như OCR provider, document schema, dịch thuật, kết xuất.
 - `foundation/`
-  配置、共享基础工具和跨服务底层能力。
+  Cấu hình, công cụ nền tảng dùng chung và năng lực cơ sở xuyên dịch vụ.
 
-## 稳定子系统
+## Hệ thống con ổn định
 
 ```text
 services/document_schema
@@ -34,14 +34,14 @@ services/pipeline_shared
 runtime/pipeline
 ```
 
-核心规则：
+Quy tắc cốt lõi:
 
-- OCR provider raw payload 必须先进入 `document_schema`，产出 `document.v1`。
-- 翻译主链只消费 `document.v1` 和 translation stage spec。
-- 渲染主链只消费源 PDF、translation manifest、逐页翻译 payload 和 render stage spec。
-- `runtime/pipeline` 只负责编排，不吸收 provider、LLM、Typst、redaction 的细节。
+- Raw payload của OCR provider trước tiên phải vào `document_schema`, tạo `document.v1`.
+- Luồng chính dịch thuật chỉ tiêu thụ `document.v1` và translation stage spec.
+- Luồng chính kết xuất chỉ tiêu thụ PDF nguồn, translation manifest, payload dịch từng trang và render stage spec.
+- `runtime/pipeline` chỉ chịu trách nhiệm điều phối, không hấp thụ chi tiết provider, LLM, Typst, redaction.
 
-## 渲染层边界
+## Ranh giới tầng kết xuất
 
 ```text
 services/rendering/workflow
@@ -51,35 +51,35 @@ services/rendering/workflow
   -> output
 ```
 
-职责：
+Trách nhiệm:
 
 - `workflow/`
-  串联渲染模式，选择 overlay、dual、background typst 等路径。
+  Kết nối các chế độ kết xuất, chọn đường dẫn overlay, dual, background typst, v.v.
 - `analysis/`
-  页面画像、页面分类和页面渲染路线决策。
+  Chân dung trang, phân loại trang và quyết định đường dẫn kết xuất trang.
 - `document/`
-  页码映射、目录/书签复制和文档级辅助。
+  Ánh xạ số trang, sao chép mục lục/dấu trang và hỗ trợ cấp tài liệu.
 - `source/background/`
-  生成 cleaned background PDF。
+  Tạo PDF nền đã làm sạch.
 - `source/cleanup/`
-  直接操作 PDF page，负责删除或覆盖原文区域。
+  Thao tác trực tiếp trên trang PDF, xóa hoặc ghi đè vùng văn bản gốc.
 - `layout/`
-  把 translated items 转成 `RenderBlock` / page specs。
+  Chuyển các mục đã dịch thành `RenderBlock` / page specs.
 - `output/typst/`
-  生成 Typst source，编译 overlay PDF，执行 overlay merge。
+  Tạo mã nguồn Typst, biên dịch overlay PDF, thực hiện hợp nhất overlay.
 - `source/compression/`
-  PDF 压缩。
+  Nén PDF.
 - `layout/model/`
-  渲染公共数据模型。
+  Mô hình dữ liệu chung cho kết xuất.
 
-禁止方向：
+Hướng cấm:
 
-- `output/typst` 不 import `source/cleanup`。
-- `layout` 不 import `output/typst`、`source/cleanup`、`source/prepare`。
-- `source/cleanup` 不 import `output/typst` 或高层 layout 逻辑。
-- `runtime/pipeline` 不直接 import `services.rendering.output.typst`、`services.rendering.source.cleanup`、`services.rendering.layout`。
+- `output/typst` không import `source/cleanup`.
+- `layout` không import `output/typst`, `source/cleanup`, `source/prepare`.
+- `source/cleanup` không import `output/typst` hoặc logic layout cấp cao.
+- `runtime/pipeline` không trực tiếp import `services.rendering.output.typst`, `services.rendering.source.cleanup`, `services.rendering.layout`.
 
-## 翻译层边界
+## Ranh giới tầng dịch thuật
 
 ```text
 services/translation/workflow
@@ -90,28 +90,28 @@ services/translation/workflow
   -> payload
 ```
 
-职责：
+Trách nhiệm:
 
 - `workflow/`
-  翻译请求入口和执行门面。
+  Đầu vào yêu cầu dịch và facade thực thi.
 - `context/`
-  domain guidance、memory guidance 组合。
+  Kết hợp domain guidance, memory guidance.
 - `policy/`
-  是否翻译、如何处理保留排版等策略。
+  Chiến lược như có dịch hay không, cách xử lý giữ nguyên bố cục.
 - `memory/`
-  job 级术语和保留排版记忆。
+  Ghi nhớ thuật ngữ cấp job và giữ nguyên bố cục.
 - `llm/`
-  provider 调用、重试、校验和 fallback。
+  Gọi provider, thử lại, xác thực và dự phòng.
 - `payload/`
-  翻译产物协议。
+  Giao thức sản phẩm dịch.
 
-禁止方向：
+Hướng cấm:
 
-- `runtime/pipeline/translation_stage.py` 不直接 import `policy`、`llm`、`diagnostics` 内部细节。
-- `translation` 不 import `services.rendering`。
-- `translation` 不消费 provider raw JSON。
+- `runtime/pipeline/translation_stage.py` không trực tiếp import chi tiết nội bộ `policy`, `llm`, `diagnostics`.
+- `translation` không import `services.rendering`.
+- `translation` không tiêu thụ raw JSON của provider.
 
-## OCR 边界
+## Ranh giới OCR
 
 ```text
 ocr_provider / mineru
@@ -119,15 +119,15 @@ ocr_provider / mineru
   -> document.v1
 ```
 
-禁止方向：
+Hướng cấm:
 
-- `ocr_provider` 不 import `services.translation`。
-- `ocr_provider` 不 import `services.rendering`。
-- `translation` 和 `rendering` 不 import `services.ocr_provider` 或 `services.mineru`。
+- `ocr_provider` không import `services.translation`.
+- `ocr_provider` không import `services.rendering`.
+- `translation` và `rendering` không import `services.ocr_provider` hoặc `services.mineru`.
 
-## 公共入口
+## Đầu vào công khai
 
-上层优先只调用这些入口：
+Tầng trên ưu tiên chỉ gọi các đầu vào sau:
 
 - `services.ocr_provider.provider_pipeline`
 - `services.document_schema.normalize_pipeline`
@@ -135,20 +135,20 @@ ocr_provider / mineru
 - `services.rendering.workflow.execute_render_plan`
 - `runtime.pipeline.book_pipeline`
 
-如果新增入口，必须同时更新：
+Nếu thêm đầu vào mới, phải đồng thời cập nhật:
 
-- 本文档。
-- 对应目录 README。
-- `backend/scripts/devtools/check_pipeline_architecture.py`。
+- Tài liệu này.
+- README thư mục tương ứng.
+- `backend/scripts/devtools/check_pipeline_architecture.py`.
 
-## 什么时候才继续拆文件
+## Khi nào mới tiếp tục tách tệp
 
-满足下面任一条件再拆：
+Tách khi đáp ứng bất kỳ điều kiện nào sau:
 
-- 一个文件超过 300 行且包含 3 种以上职责。
-- 改一个小功能需要跨 5 个以上目录。
-- 出现循环依赖。
-- 同一逻辑重复出现在多个模块。
-- 测试很难写，因为 IO、策略、数据结构混在一个函数里。
+- Một tệp vượt quá 300 dòng và chứa hơn 3 loại trách nhiệm.
+- Sửa một chức năng nhỏ cần qua hơn 5 thư mục.
+- Xuất hiện phụ thuộc vòng.
+- Cùng một logic lặp lại trong nhiều module.
+- Khó viết kiểm thử vì IO, chiến lược, cấu trúc dữ liệu trộn lẫn trong một hàm.
 
-不满足这些条件时，优先补测试、补文档、补架构检查，而不是继续拆文件。
+Không đáp ứng các điều kiện này, ưu tiên bổ sung kiểm thử, tài liệu, kiểm tra kiến trúc thay vì tiếp tục tách tệp.

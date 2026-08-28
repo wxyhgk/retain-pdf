@@ -6,29 +6,27 @@ import {
 } from "../../composition/external.js";
 import type { Store } from "../../composition/external.js";
 
-// 状态卡 store + presenter(蓝图 §2 features/status/,§4 生命周期)。
+// Store thẻ trạng thái + presenter (bản thiết kế §2 features/status/, §4 vòng đời).
 //
-// 唯一 VM 源:job-status/status-card-runtime-source.js 的
-// buildRuntimeStatusCardSnapshot——直接镜像 components/status/
-// connected-job-status-card.js 的 createRuntimeStatusCardSource 语义:无论
-// renderMain(主轮询命中)还是 renderPatch(events/manifest/stageActions 三路
-// 二级补丁中的任意一路),统一从 currentJobStore + secondaryResourceStore 两个
-// canonical store **重新整体计算**一份快照写回 statusCardStore(蓝图风险 10:
-// "renderPatch 收敛"——不按 source 分支做局部补丁,规避三份局部更新逻辑各自
-// 漂移的风险)。
+// Nguồn VM duy nhất: buildRuntimeStatusCardSnapshot từ job-status/status-card-runtime-source.js
+// —— sao chép trực tiếp ngữ nghĩa của createRuntimeStatusCardSource từ components/status/
+// connected-job-status-card.js: dù là renderMain (trúng polling chính) hay renderPatch (bất kỳ đường nào trong ba đường
+// bản vá cấp hai events/manifest/stageActions), đều thống nhất tính toán lại toàn bộ một bản snapshot từ hai
+// canonical store currentJobStore + secondaryResourceStore và ghi lại vào statusCardStore (rủi ro 10 trong bản thiết kế:
+// "renderPatch hội tụ" —— không thực hiện bản vá cục bộ theo nguồn, tránh rủi ro ba logic cập nhật cục bộ bị trôi dạt riêng lẻ).
 //
-// 风险 6(首帧 placeholder):jobRuntimeFeature.startPolling() 的同步链里
-// renderJob() 会在 await 网络请求之前先落一次 placeholder 快照
-// (render-context.js 的 applyJobRuntimeSnapshot 同步写 currentJobStore),
-// renderMain 在此刻被同步调用,本 store 因此在 React 首次渲染前就已有数据,
-// 不会闪空卡。
+// Rủi ro 6 (placeholder khung đầu tiên): trong chuỗi đồng bộ của jobRuntimeFeature.startPolling()
+// renderJob() sẽ ghi một bản snapshot placeholder trước khi await yêu cầu mạng
+// (applyJobRuntimeSnapshot trong render-context.js ghi đồng bộ vào currentJobStore),
+// renderMain được gọi đồng bộ tại thời điểm này, do đó store này đã có dữ liệu trước khi React render lần đầu,
+// không để thẻ trống.
 //
-// elapsed 故意不进本 store(蓝图 §3.5):resolveLiveDurations 每秒都变,若随
-// 主快照一起写 store,statusCardStore 的 useStoreSnapshot 会被拖着每秒重渲
-// 整卡;真正的秒表由 useElapsedTicker.js 独立驱动(读 snapshot.job 的
-// started_at/finished_at,不读本 store 的任何"已计算好的" elapsed 字段)。
+// elapsed cố tình không đưa vào store này (bản thiết kế §3.5): resolveLiveDurations thay đổi mỗi giây, nếu ghi cùng với
+// snapshot chính vào store, useStoreSnapshot của statusCardStore sẽ bị kéo theo render lại toàn bộ thẻ mỗi giây;
+// đồng hồ thực sự được điều khiển độc lập bởi useElapsedTicker.js (đọc started_at/finished_at từ snapshot.job,
+// không đọc bất kỳ trường "đã tính toán sẵn" elapsed nào từ store này).
 
-/** 阶段重试按钮（normalizeStageRetryActions 输出） */
+/** Nút thử lại giai đoạn (đầu ra của normalizeStageRetryActions) */
 export type StatusCardStageRetryAction = {
   stage: string;
   label: string;
@@ -37,7 +35,7 @@ export type StatusCardStageRetryAction = {
   danger: boolean;
 };
 
-/** 阶段进度分片（stageProgressByKey / selectedProgress） */
+/** Phân mảnh tiến độ giai đoạn (stageProgressByKey / selectedProgress) */
 export type StatusCardStageProgress = {
   current?: number;
   total?: number;
@@ -55,7 +53,7 @@ export type StatusCardStageProgress = {
   [key: string]: unknown;
 };
 
-/** job 原始载荷（API 形状宽，状态卡只读子集 + 透传） */
+/** Payload gốc của job (API có hình dạng rộng, thẻ trạng thái chỉ đọc một tập con + truyền thẳng) */
 export type StatusCardJobRecord = {
   job_id?: string;
   status?: string;
@@ -91,8 +89,8 @@ export type StatusCardSummary = {
 };
 
 /**
- * statusCardStore.snapshot 的完整形状。
- * 字段来自 EMPTY 默认值 + buildJobStatusViewModel + summary 合并。
+ * Hình dạng đầy đủ của statusCardStore.snapshot.
+ * Trường đến từ EMPTY mặc định + buildJobStatusViewModel + merge summary.
  */
 export type StatusCardSnapshot = {
   jobId: string;
@@ -123,12 +121,12 @@ export type StatusCardSnapshot = {
   sourcePdfReady: boolean;
   sourcePdfUrl: string;
   cancelEnabled: boolean;
-  /** EMPTY 默认携带；运行时以 StatusCardState.cancelDisabled 为准 */
+  /** Mặc định kèm theo từ EMPTY; runtime lấy StatusCardState.cancelDisabled làm chuẩn */
   cancelDisabled?: boolean;
   backgroundStages: unknown[];
   job: StatusCardJobRecord | null;
   summary: StatusCardSummary | null;
-  /** runtime VM 可能附带的阶段呈现（merge 时透传） */
+  /** Trình bày giai đoạn mà runtime VM có thể đính kèm (truyền thẳng khi merge) */
   stagePresentation?: Record<string, unknown> | null;
   elapsed?: string;
 };
@@ -169,14 +167,14 @@ export type StatusCardPresenterDeps = {
   statusCardStore: StatusCardStore;
 };
 
-// 拷贝自 components/status/job-status-card-snapshot.js 的零参默认值(该文件
-// 属"死,由 StatusCard.jsx 家族替代"清单,不可 import——js/components/ 是
-// 防回弹门禁的显式禁区)。只用于 currentJob 尚不存在时的占位快照。
+// Sao chép giá trị mặc định không tham số từ components/status/job-status-card-snapshot.js (tệp đó
+// thuộc danh sách "chết, đã thay bằng họ StatusCard.jsx", không được import —— js/components/ là
+// khu vực cấm rõ ràng bởi cổng chống hồi quy). Chỉ dùng làm snapshot placeholder khi currentJob chưa tồn tại.
 const EMPTY_STATUS_CARD_SNAPSHOT: StatusCardSnapshot = Object.freeze({
   jobId: "",
   status: "",
-  label: "等待中",
-  value: "准备中",
+  label: "Đang chờ",
+  value: "Đang chuẩn bị",
   detail: "",
   stageKey: "",
   progressCurrent: NaN,
@@ -234,7 +232,7 @@ export function createStatusCardPresenter({
   function recompute() {
     const currentJob = currentJobStore.getSnapshot();
     const secondaryResources = secondaryResourceStore.getSnapshot();
-    // runtime-source 接受 string | () => string；函数形式走 finishedAtFallbackForStatusCardRuntime
+    // runtime-source chấp nhận string | () => string; hình thức hàm đi qua finishedAtFallbackForStatusCardRuntime
     const rawSnapshot = buildRuntimeStatusCardSnapshot({
       currentJob,
       secondaryResources,
@@ -257,9 +255,9 @@ export function createStatusCardPresenter({
   }
 
   return {
-    // renderJob(renderContext) / renderJobSecondaryPatch({context,source}) 两个回调
-    // 签名不同,但都只需要"重算一次"——参数本身不使用,数据永远从两个 canonical
-    // store 读(controller.js 在调用这两个回调之前已经同步写完 store)。
+    // renderJob(renderContext) / renderJobSecondaryPatch({context,source}) hai callback
+    // chữ ký khác nhau, nhưng đều chỉ cần "tính lại một lần" —— tham số tự thân không dùng,
+    // dữ liệu luôn đọc từ hai canonical store (controller.js đã ghi xong store đồng bộ trước khi gọi hai callback này).
     renderMain: recompute,
     renderPatch: recompute,
     recompute,

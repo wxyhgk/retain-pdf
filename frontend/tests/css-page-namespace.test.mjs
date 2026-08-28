@@ -3,16 +3,16 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 
-// 源码级命名空间门禁：reader/detail 源文件选择器必须带页前缀。
-// 构建已按页拆包 dist/css/{home,detail,reader}.css，跨页污染风险已大幅下降；
-// 本测试继续锁住「别在 reader/detail 源码里写裸全局选择器」。
+// Cổng không gian tên cấp mã nguồn: bộ chọn tệp nguồn reader/detail phải có tiền tố trang.
+// Việc xây dựng đã tách dist/css/{home,detail,reader}.css theo trang, rủi ro ô nhiễm giữa các trang đã giảm đáng kể;
+// Kiểm thử này tiếp tục khóa "không viết bộ chọn toàn cục trần trong mã nguồn reader/detail".
 
 const PROJECT_ROOT = process.cwd();
 const STYLES_ROOT = join(PROJECT_ROOT, "src/styles");
 
 const GROUPS = [
   {
-    name: "reader 页/阅读器组件",
+    name: "Trang reader/thành phần trình đọc",
     files: [
       ...readdirSync(join(STYLES_ROOT, "reader"))
         .filter((f) => f.endsWith(".css"))
@@ -21,13 +21,13 @@ const GROUPS = [
     allowed: [
       /(\.|#)reader-/,
       /\[data-reader/,
-      /^reader-dialog\b/, // <reader-dialog> 自定义标签选择器
+      /^reader-dialog\b/, // bộ chọn thẻ tùy chỉnh <reader-dialog>
       /body\.reader/,
       /^:root$/,
     ],
   },
   {
-    name: "detail 页",
+    name: "Trang detail",
     files: [
       join(STYLES_ROOT, "pages.css"),
       ...readdirSync(join(STYLES_ROOT, "pages/detail"))
@@ -37,26 +37,26 @@ const GROUPS = [
     allowed: [
       /(\.|#)detail-/,
       /\[data-detail/,
-      /\.markdown-/, // detail 页 Markdown 预览区块
+      /\.markdown-/, // khối xem trước Markdown của trang detail
       /body\.detail/,
       /^:root$/,
     ],
   },
 ];
 
-// 解析出规则选择器,跳过 @keyframes 内部的步进选择器(0%/from/to)。
+// Phân tích bộ chọn quy tắc, bỏ qua bộ chọn bước bên trong @keyframes (0%/from/to).
 //
-// Tailwind v4 迁移后,部分样式文件改用了原生 CSS 嵌套(`&:hover`/`& p`/`&.foo`)
-// 和 `@utility <name> { ... }` 语法(v4 官方迁移工具的产物)。这两种写法编译后
-// 等价于旧版摊平的复合选择器,但字面文本不再自带页面前缀,所以这里需要把 `&`
-// 展开成最近一层的选择器上下文(`@utility <name>` 视为 `.<name>`),否则会把
-// 完全合规的嵌套选择器误判成"没有命名空间"。
+// Sau khi di chuyển sang Tailwind v4, một số tệp kiểu đã chuyển sang sử dụng CSS lồng gốc (`&:hover`/`& p`/`&.foo`)
+// và cú pháp `@utility <name> { ... }` (sản phẩm của công cụ di chuyển chính thức v4). Cả hai cách viết này sau khi biên dịch
+// tương đương với bộ chọn tổ hợp phẳng cũ, nhưng văn bản ký tự không còn tiền tố trang, vì vậy cần mở rộng `&`
+// thành ngữ cảnh bộ chọn của lớp gần nhất (`@utility <name>` được coi là `.<name>`), nếu không sẽ
+// coi nhầm bộ chọn lồng hoàn toàn hợp lệ thành "không có không gian tên".
 function ruleSelectors(css) {
   const noComments = css.replace(/\/\*[\s\S]*?\*\//g, "");
   const selectors = [];
-  // 每一层记录 { header, resolved }:resolved 为 null 表示这一层是透传的
-  // at-rule(@media/@keyframes 等),不建立新的选择器上下文,`&` 应穿透它去找
-  // 最近一层真正的选择器/`@utility` 上下文。
+  // Mỗi lớp ghi { header, resolved }: resolved là null nghĩa là lớp này là at-rule được truyền qua
+  // (@media/@keyframes, v.v.), không thiết lập ngữ cảnh bộ chọn mới, `&` nên xuyên qua nó để tìm
+  // ngữ cảnh bộ chọn thực/`@utility` của lớp gần nhất.
   const stack = [];
   let buffer = "";
 
@@ -127,7 +127,7 @@ for (const group of GROUPS) {
     assert.deepEqual(
       violations,
       [],
-      `以下选择器没有页面命名空间(应使用 reader-/detail- 前缀):\n  ${violations.join("\n  ")}`,
+       `Các bộ chọn sau không có không gian tên trang (nên sử dụng tiền tố reader-/detail-):\n  ${violations.join("\n  ")}`,
     );
   });
 }

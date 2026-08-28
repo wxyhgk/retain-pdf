@@ -1,16 +1,16 @@
 # Reader AI Chat API
 
-RetainPDF 后端提供一个最小但可扩展的阅读问答接口。前端不传模型密钥；后端只读取服务端环境变量。
+RetainPDF backend cung cấp một giao diện hỏi đáp đọc tối thiểu nhưng có thể mở rộng. Frontend không truyền khóa model; backend chỉ đọc biến môi trường phía máy chủ.
 
 ## Endpoint
 
 `POST /api/v1/jobs/{job_id}/reader/ai/chat`
 
-## Request
+## Yêu cầu
 
 ```json
 {
-  "message": "这篇文章的核心贡献是什么？",
+  "message": "Đóng góp cốt lõi của bài viết này là gì?",
   "scope": "document",
   "provider": "deepseek",
   "model": "deepseek-chat",
@@ -25,29 +25,29 @@ RetainPDF 后端提供一个最小但可扩展的阅读问答接口。前端不�
     "mode": "compare"
   },
   "history": [
-    { "role": "user", "content": "先总结一下" },
+    { "role": "user", "content": "Tóm tắt trước" },
     { "role": "assistant", "content": "..." }
   ]
 }
 ```
 
-当前第一版只支持 `scope=document`。`context` 和 `history` 可选；`context.page` / `selection.page` 会作为检索加权线索。
+Phiên bản đầu tiên chỉ hỗ trợ `scope=document`. `context` và `history` là tùy chọn; `context.page` / `selection.page` được dùng làm manh mối trọng số truy xuất.
 
-模型配置字段可选：
+Các trường cấu hình model tùy chọn:
 
-- `provider`: 可选，默认 `deepseek`，支持 `deepseek` / `openai`。
-- `model`: 可选，DeepSeek 默认 `deepseek-chat`。
-- `api_key`: 可选，前端直接传入时优先使用。后端不会写入 job snapshot、events 或返回体。
-- `base_url`: 可选，DeepSeek 默认 `https://api.deepseek.com/v1`。
+- `provider`: Tùy chọn, mặc định `deepseek`, hỗ trợ `deepseek` / `openai`.
+- `model`: Tùy chọn, DeepSeek mặc định `deepseek-chat`.
+- `api_key`: Tùy chọn, ưu tiên sử dụng khi frontend truyền trực tiếp. Backend không ghi vào job snapshot, events hay body phản hồi.
+- `base_url`: Tùy chọn, DeepSeek mặc định `https://api.deepseek.com/v1`.
 
-## Response
+## Phản hồi
 
 ```json
 {
   "code": 0,
   "message": "ok",
   "data": {
-    "answer": "这篇文章主要提出了...",
+    "answer": "Bài viết này chủ yếu đề xuất...",
     "citations": [
       {
         "title": "Introduction",
@@ -63,24 +63,24 @@ RetainPDF 后端提供一个最小但可扩展的阅读问答接口。前端不�
 }
 ```
 
-## Backend Behavior
+## Hành vi backend
 
-第一版流程：
+Luồng phiên bản đầu tiên:
 
-1. 根据 `job_id` 优先读取本地结构化翻译产物：`jobs/{job_id}/translated/translation-manifest.json` 以及它引用的逐页 payload。
-2. 从逐页 payload 提取 `page_idx/page_number`、标题角色和 `render_markdown/translated_text` 生成 page-aware chunks。
-3. 如果结构化翻译产物不存在或为空，再 fallback 到已发布 Markdown：`jobs/{job_id}/md/full.md`，按标题和段落切 chunk。
-4. 根据用户问题选择检索策略：
-   - 普通问题：轻量关键词检索，取 top 8 chunk。
-   - 泛总结问题：从 Abstract / Introduction / Methods / Results / Discussion / Conclusion 等章节优先取代表 chunk，并对全文做均匀采样，避免只命中第一页。
-5. 将 chunk、用户问题和有限历史发送给阅读问答模型。
-6. 返回模型答案和后端检索到的引用片段。
+1. Dựa vào `job_id`, ưu tiên đọc artifact dịch có cấu trúc cục bộ: `jobs/{job_id}/translated/translation-manifest.json` và payload từng trang mà nó tham chiếu.
+2. Trích xuất `page_idx/page_number`, vai trò tiêu đề và `render_markdown/translated_text` từ payload từng trang để tạo chunk nhận biết trang.
+3. Nếu artifact dịch có cấu trúc không tồn tại hoặc trống, dự phòng về Markdown đã xuất bản: `jobs/{job_id}/md/full.md`, cắt chunk theo tiêu đề và đoạn văn.
+4. Chọn chiến lược truy xuất theo câu hỏi của người dùng:
+   - Câu hỏi thông thường: Tìm kiếm từ khóa nhẹ, lấy top 8 chunk.
+   - Câu hỏi tổng hợp chung: Ưu tiên lấy chunk đại diện từ các chương như Abstract / Introduction / Methods / Results / Discussion / Conclusion và lấy mẫu đều toàn văn, tránh chỉ trúng trang đầu.
+5. Gửi chunk, câu hỏi người dùng và lịch sử giới hạn đến model hỏi đáp đọc.
+6. Trả về câu trả lời của model và các đoạn trích dẫn được backend truy xuất.
 
-注意：优先使用 `translation-manifest.json` 时，`citations[].page` 来自逐页 payload 的 `page_number` 或 `page_idx + 1`。只有 fallback 到 `full.md` 时，页码才需要从 Markdown 文本中尝试推导，无法推导则为 `null`。
+Lưu ý: Khi ưu tiên sử dụng `translation-manifest.json`, `citations[].page` lấy từ `page_number` hoặc `page_idx + 1` trong payload từng trang. Chỉ khi dự phòng về `full.md`, số trang mới cần suy luận từ văn bản Markdown, nếu không suy luận được thì là `null`.
 
-## Configuration
+## Cấu hình
 
-前端可以在请求体直接传 `api_key`。如果请求体没有传，后端再读取服务端环境变量：
+Frontend có thể truyền trực tiếp `api_key` trong body yêu cầu. Nếu body không truyền, backend mới đọc biến môi trường phía máy chủ:
 
 ```bash
 RETAINPDF_AI_PROVIDER=deepseek
@@ -88,25 +88,25 @@ RETAINPDF_AI_MODEL=deepseek-chat
 DEEPSEEK_API_KEY=...
 ```
 
-可选：
+Tùy chọn:
 
 ```bash
 RETAINPDF_AI_BASE_URL=https://api.deepseek.com/v1
 RETAINPDF_AI_API_KEY=...
 ```
 
-优先级：
+Ưu tiên:
 
-1. 请求体里的 `provider/model/api_key/base_url`
-2. 服务端环境变量 `RETAINPDF_AI_PROVIDER/RETAINPDF_AI_MODEL/RETAINPDF_AI_API_KEY/RETAINPDF_AI_BASE_URL`
-3. provider 默认值
+1. `provider/model/api_key/base_url` trong body yêu cầu
+2. Biến môi trường máy chủ `RETAINPDF_AI_PROVIDER/RETAINPDF_AI_MODEL/RETAINPDF_AI_API_KEY/RETAINPDF_AI_BASE_URL`
+3. Giá trị mặc định của provider
 
-默认 provider 是 `deepseek`，也支持 `openai`。`RETAINPDF_AI_API_KEY` 是通用环境变量覆盖项；不设置时，`deepseek` 读取 `DEEPSEEK_API_KEY`，`openai` 读取 `OPENAI_API_KEY`。
+Provider mặc định là `deepseek`, cũng hỗ trợ `openai`. `RETAINPDF_AI_API_KEY` là biến ghi đè chung; nếu không đặt, `deepseek` đọc `DEEPSEEK_API_KEY`, `openai` đọc `OPENAI_API_KEY`.
 
-## Error Codes
+## Mã lỗi
 
-- `404`: job 不存在，或 Markdown 不存在/不可读。
-- `409`: 任务还未完成，Markdown 未 ready。
-- `429`: 模型服务限流。
-- `502`: 模型服务失败或返回无效响应。
-- `500`: 后端内部错误，例如 AI provider 未配置。
+- `404`: job không tồn tại, hoặc Markdown không tồn tại/không đọc được.
+- `409`: Tác vụ chưa hoàn thành, Markdown chưa sẵn sàng.
+- `429`: Dịch vụ model bị giới hạn tốc độ.
+- `502`: Dịch vụ model thất bại hoặc trả về phản hồi không hợp lệ.
+- `500`: Lỗi nội bộ backend, ví dụ chưa cấu hình AI provider.

@@ -1,5 +1,5 @@
-/* Legacy 顶栏：动作组 / 下载菜单 / chrome-muted 淡出 / iframe 嵌入
- * 仅 entries/reader-legacy.css 引入。
+/* Thanh trên Legacy: nhóm thao tác / menu tải / chrome-muted mờ dần / nhúng iframe
+ * Chỉ entries/reader-legacy.css nhập vào.
  */
 
 .reader-body.reader-chrome-muted .reader-topbar:not(:focus-within) {
@@ -39,7 +39,7 @@
   box-shadow: 0 6px 18px color-mix(in srgb, var(--shadow-color) 6%, transparent);
 }
 
-/* iframe 嵌入(reader-dialog)时右上角是宿主的关闭按钮,动作组靠左 */
+/* Khi nhúng iframe (reader-dialog), góc phải trên là nút đóng của host, nhóm thao tác ở trái */
 .reader-body.reader-embedded .reader-topbar-actions {
   right: auto;
   left: clamp(12px, 2.2vw, 28px);
@@ -81,7 +81,7 @@
   -webkit-backdrop-filter: blur(14px);
 }
 
-/* 嵌入模式动作组在左侧,弹层随之左对齐 */
+/* Ở chế độ nhúng, nhóm thao tác ở trái và lớp nổi căn trái theo */
 .reader-body.reader-embedded .reader-download-popover {
   right: auto;
   left: 0;

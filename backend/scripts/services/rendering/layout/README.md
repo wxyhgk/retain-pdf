@@ -1,10 +1,10 @@
 # rendering/layout
 
-## 负责什么
+## Trách nhiệm
 
-排版层。这里把翻译后的 payload 转成可渲染块，计算字体、行距、bbox 适配和正文块布局。
+Tầng dàn trang. Chuyển payload đã dịch thành khối có thể render, tính toán font, khoảng cách dòng, thích ứng bbox và bố cục khối văn bản.
 
-## 对外入口
+## Lối vào công khai
 
 - `page_specs.py`
 - `font_fit.py`
@@ -14,27 +14,27 @@
 - `payload/`
 - `typography/`
 - `typography_memory/`
-  跨书字体/行距经验库。只缓存量化几何特征对应的 `font_size_pt`、`leading_em` 统计值，用作渲染 seed 的快速先验。
+  Thư viện kinh nghiệm font/khoảng cách dòng xuyên sách. Chỉ cache giá trị thống kê `font_size_pt`, `leading_em` tương ứng với đặc trưng hình học lượng tử hóa, dùng làm tiên nghiệm nhanh cho seed render.
 
-## 不该做什么
+## Không nên làm gì
 
-- 不操作 PDF 原始页面。
-- 不删除英文原文。
-- 不调用 OCR provider 或翻译模型。
-- 不决定整页 redaction/background 路线。
+- Không thao tác trang PDF gốc.
+- Không xóa văn bản tiếng Anh gốc.
+- Không gọi OCR provider hoặc mô hình dịch.
+- Không quyết định tuyến redaction/background toàn trang.
 
 ## typography memory
 
-`typography_memory/` 是全局、增量学习的排版标量库，默认存放在 `data/_render_typography_memory/typography_memory.sqlite3`。
+`typography_memory/` là thư viện scalar dàn trang toàn cục, học tăng dần, mặc định lưu tại `data/_render_typography_memory/typography_memory.sqlite3`.
 
-边界：
+Ranh giới:
 
-- 只允许记录字体大小、行间距这类标量决策。
-- key 只能由量化后的 bbox、页面尺寸、角色、行数、公式比例、译文密度等结构特征生成。
-- 不缓存原文、译文、公式内容、颜色、删除策略、page spec 或 PDF 对象。
-- 命中条件必须保守；样本数不足或方差过大时回退原算法。
+- Chỉ cho phép ghi nhận quyết định scalar như kích thước font, khoảng cách dòng.
+- Key chỉ được tạo từ đặc trưng cấu trúc đã lượng tử hóa như bbox, kích thước trang, vai trò, số dòng, tỷ lệ công thức, mật độ bản dịch.
+- Không cache nội dung gốc, bản dịch, công thức, màu sắc, chiến lược xóa, page spec hoặc đối tượng PDF.
+- Điều kiện khớp phải bảo thủ; khi số mẫu không đủ hoặc phương sai quá lớn thì lùi về thuật toán gốc.
 
-开关：
+Công tắc:
 
-- `RETAIN_RENDER_TYPOGRAPHY_MEMORY=0` 可关闭读写。
-- `RETAIN_RENDER_TYPOGRAPHY_MEMORY_MIN_OBS` 可调命中所需最小样本数。
+- `RETAIN_RENDER_TYPOGRAPHY_MEMORY=0` tắt đọc/ghi.
+- `RETAIN_RENDER_TYPOGRAPHY_MEMORY_MIN_OBS` điều chỉnh số mẫu tối thiểu cần thiết để khớp.

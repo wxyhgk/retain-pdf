@@ -1,5 +1,6 @@
-/* 阅读器顶栏 chrome（默认 react-pdf 共用）：tabs / boot / 关闭回主页
- * 顶栏动作组 / 下载菜单 / chrome-muted 淡出 → chrome-legacy.css
+/* Chrome thanh trên trình đọc (dùng chung với react-pdf mặc định): tabs / boot /
+ * đóng về trang chủ. Nhóm thao tác thanh trên / menu tải / chrome-muted mờ dần
+ * → chrome-legacy.css
  */
 
 .reader-topbar {
@@ -65,7 +66,8 @@
   color: var(--paper);
 }
 
-/* 整页阅读器「关闭 → 主页」（替代旧 iframe 宿主右上角关闭） */
+/* Trình đọc toàn trang "Đóng → trang chủ" (thay nút đóng góc phải trên của host
+   iframe cũ) */
 .reader-close-home-btn {
   position: fixed;
   top: 12px;

@@ -1,24 +1,24 @@
-# 0001 使用 document.v1 作为 OCR 到下游的中间表示
+# 0001 Sử dụng document.v1 làm biểu diễn trung gian từ OCR đến hạ lưu
 
-## 背景
+## Bối cảnh
 
-RetainPDF 支持 PaddleOCR、MinerU 和后续可能新增的 OCR provider。不同 provider 的原始 JSON 字段、文件结构、语义标签都不一样。如果翻译和渲染直接读取 provider raw payload，后续每接一个 provider 都会把私有字段扩散到全链路。
+RetainPDF hỗ trợ PaddleOCR, MinerU và các nhà cung cấp OCR mới có thể thêm sau. Các trường JSON thô, cấu trúc tệp, nhãn ngữ nghĩa của các nhà cung cấp khác nhau đều khác nhau. Nếu dịch và kết xuất đọc trực tiếp tải trọng thô của nhà cung cấp, thì mỗi khi thêm một nhà cung cấp mới, các trường riêng tư sẽ lan truyền ra toàn bộ chuỗi.
 
-## 决策
+## Quyết định
 
-OCR 阶段结束后，统一产出 `ocr/normalized/document.v1.json`。
+Sau khi giai đoạn OCR kết thúc, thống nhất tạo ra `ocr/normalized/document.v1.json`.
 
-翻译和渲染主链路只能消费 `document.v1` 的稳定字段，不直接消费 provider raw JSON。
+Chuỗi chính dịch và kết xuất chỉ tiêu thụ các trường ổn định của `document.v1`, không tiêu thụ trực tiếp JSON thô của nhà cung cấp.
 
-provider raw 文件只允许保留在 provider、adapter、调试和回溯层。
+Các tệp thô của nhà cung cấp chỉ được phép giữ lại ở lớp nhà cung cấp, bộ điều hợp, gỡ lỗi và truy vết.
 
-## 后果
+## Hậu quả
 
-- 新 OCR provider 必须先写 adapter，把 raw payload 转成 `document.v1`。
-- 翻译和渲染不能为了某个 provider 特判去读取 raw 字段。
-- 如果 `document.v1` 表达能力不够，应升级 schema，而不是让下游绕过 schema。
+- Nhà cung cấp OCR mới trước tiên phải viết bộ điều hợp, chuyển đổi tải trọng thô thành `document.v1`.
+- Dịch và kết xuất không thể đọc các trường thô vì một nhà cung cấp cụ thể.
+- Nếu khả năng biểu diễn của `document.v1` không đủ, cần nâng cấp schema, không để hạ lưu bỏ qua schema.
 
-## 替代方案
+## Phương án thay thế
 
-- 让翻译和渲染直接兼容每个 provider 的 raw JSON。这个方案短期快，但会让 provider 私有字段永久污染主链路。
-- 每个 provider 单独维护一条完整流水线。这个方案会导致重复实现翻译、渲染和诊断能力。
+- Cho phép dịch và kết xuất tương thích trực tiếp với JSON thô của từng nhà cung cấp. Phương án này nhanh trong ngắn hạn, nhưng sẽ làm ô nhiễm vĩnh viễn chuỗi chính với các trường riêng tư của nhà cung cấp.
+- Mỗi nhà cung cấp duy trì một đường ống hoàn chỉnh riêng. Phương án này dẫn đến việc triển khai trùng lặp các khả năng dịch, kết xuất và chẩn đoán.

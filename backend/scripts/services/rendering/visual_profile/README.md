@@ -1,19 +1,19 @@
-# 渲染视觉画像
+# Hồ sơ thị giác render
 
-`visual_profile` 是渲染前的通用视觉采样层，职责是从页面像素中得到每个 OCR item 的背景色和前景文字色。
+`visual_profile` là tầng lấy mẫu thị giác chung trước khi render, trách nhiệm lấy màu nền và màu chữ tiền cảnh của mỗi OCR item từ pixel trang.
 
-它不判断 PDF 是否可编辑，也不决定是否物理删除原文。后续渲染策略只消费它输出的稳定契约：
+Nó không phán đoán PDF có chỉnh sửa được hay không, cũng không quyết định xóa vật lý văn bản gốc. Chiến lược render sau đó chỉ tiêu thụ hợp đồng ổn định mà nó xuất ra:
 
-- `background_rgb`：覆盖原文时应该使用的局部背景色。
-- `text_rgb`：Typst 重新绘制译文时应该使用的文字颜色。
-- `confidence`：当前颜色判断可信度。
-- `method`：采样来源，例如 `background_pixels+span_color` 或 `background_pixels+foreground_pixels`。
-- `warnings`：无法识别前景等可诊断信息。
+- `background_rgb`: Màu nền cục bộ nên dùng khi che phủ văn bản gốc.
+- `text_rgb`: Màu chữ nên dùng khi Typst vẽ lại bản dịch.
+- `confidence`: Độ tin cậy của phán đoán màu hiện tại.
+- `method`: Nguồn lấy mẫu, ví dụ `background_pixels+span_color` hoặc `background_pixels+foreground_pixels`.
+- `warnings`: Thông tin chẩn đoán như không nhận diện được tiền cảnh.
 
-设计边界：
+Ranh giới thiết kế:
 
-- 视觉层始终可以运行，适用于可编辑 PDF、伪可编辑 PDF、图片型 PDF。
-- 删除层只是优化项，失败时也应该由视觉覆盖保证最终效果。
-- 该包只生成画像，不修改 PDF，不写渲染策略。
+- Tầng thị giác luôn chạy được, áp dụng cho PDF chỉnh sửa được, PDF giả chỉnh sửa, PDF dạng ảnh.
+- Tầng xóa chỉ là tối ưu hóa, khi thất bại thì lớp phủ thị giác vẫn đảm bảo hiệu quả cuối cùng.
+- Gói này chỉ sinh hồ sơ, không sửa PDF, không viết chiến lược render.
 
-预热阶段会把完整画像落到 `render_prewarm/visual_profile.v1.json`。主预热 manifest 只保存相对路径和轻量的 `colors_by_item_id`，这样取色、删除、Typst 渲染可以在不同时间读取同一份本地 JSON，而不是依赖内存里的临时对象。
+Giai đoạn prewarm sẽ lưu hồ sơ đầy đủ vào `render_prewarm/visual_profile.v1.json`. Manifest prewarm chính chỉ lưu đường dẫn tương đối và `colors_by_item_id` nhẹ, nhờ đó lấy màu, xóa, render Typst có thể đọc cùng một JSON cục bộ ở các thời điểm khác nhau thay vì phụ thuộc đối tượng tạm trong bộ nhớ.

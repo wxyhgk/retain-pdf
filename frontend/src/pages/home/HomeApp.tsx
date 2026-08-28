@@ -1,12 +1,12 @@
-// home 页 React 编排根。
+// home trang React Choreography Root。
 //
-// 结构对照 partials/main-content.html + dialogs.html 逐区块镜像;顶部只留
-// 品牌 + 图书馆/分类分栏(AppTopBar.jsx,去掉白卡背景);添加/搜索/设置 三样
-// 收进底部一条居中浮动栏(AppBottomBar.jsx,取代早期分离的 AppBottomActions +
-// LibrarySearchDock 两个浮岛)。
-// 其余区块(library-view 网格、status 卡、credentials/glossaries/status-detail 等)
-// 已陆续接上;ReaderDialog 仅导航到 reader.html(无 UI)。
-// 占位自定义元素标签(<recent-jobs-dialog> 等)在新世界不注册定义,惰性无副作用。
+// Kiểm soát kết cấu partials/main-content.html + dialogs.html Chặn theo phản chiếu khối;Chỉ để ở trên cùng
+// Thương hiệu  + Thư viện/Cột danh mục(AppTopBar.jsx,Xóa nền thẻ trắng);tăng thêm/Tìm kiếm/Thiết lập Ba
+// Chèn thanh nổi ở giữa đáy(AppBottomBar.jsx,Thay thế cách ly trước đó AppBottomActions +
+// LibrarySearchDock Hai hòn đảo nổi)。
+// Khối còn lại(library-view Lưới、status Cái、credentials/glossaries/status-detail chờ)
+// được kết nối lần lượt;ReaderDialog Chỉ chuyển đến reader.html(Không có UI)。
+// Nhãn thành phần tùy chỉnh của trình giữ chỗ(<recent-jobs-dialog> chờ)Không đăng ký định nghĩa trong Thế giới mới,Indolent Không có tác dụng phụ。
 
 import { useState } from "react";
 import { HomeServicesProvider } from "./home-services-context.js";
@@ -35,25 +35,27 @@ import {
   readInitialLibraryTabFromReturn,
   useHomeReturnRestore,
 } from "./features/library/page/useHomeReturnRestore.js";
-// library-search-island 自定义元素的唯一注册点。旧世界由 src/js/components/index.js
-// 兜底 side-effect import 注册;该文件随 cutover 删除后,注册链路断了会导致下方
-// JSX 里的 <library-search-island> 标签渲染成惰性空标签(数据契约上仍在,但搜索
-// 功能静默失效——只有真实浏览器渲染能看出来,jsdom 不会报错)。这里显式接管注册。
+// library-search-island: Điểm đăng ký duy nhất cho các custom elements.
+// Thế giới cũ dùng src/js/components/index.js để đăng ký side-effect import;
+// Sau khi xóa file này trong cutover, chuỗi đăng ký bị đứt sẽ khiến các thẻ
+// JSX bên trong <library-search-island> hiển thị thành thẻ trống (hợp đồng dữ liệu vẫn đúng,
+// nhưng chức năng tìm kiếm im lặng thất bại - chỉ có thể phát hiện khi render trên trình duyệt thực, jsdom không báo lỗi).
+// Tái đăng ký đầy đủ tại đây.
 import "../../js/islands/library-search/index.js";
 
 function HomeShell() {
-  // 从阅读器返回时尽量恢复离开前的 tab；否则默认图书馆。
+  // Khi trả về từ người đọc, hãy cố gắng khôi phục lại tab；Nếu không, thư viện mặc định。
   const [activeLibraryTab, setActiveLibraryTab] = useState(readInitialLibraryTabFromReturn);
   const isLibraryTab = activeLibraryTab === "library";
   const isCategoriesTab = activeLibraryTab === "categories";
   const isFavoritesTab = activeLibraryTab === "favorites";
   const isAskTab = activeLibraryTab === "ask";
-  // #31 批量选择工具栏和底部栏都固定在底部居中,批量模式期间底部栏用 CSS
-  // 隐藏(不卸载——搜索 input 卸载会让 library-search-island 的引用失效)让位
-  // 给批量工具栏,两者不同时可见。
+  // #31 Thanh công cụ lựa chọn hàng loạt và thanh dưới cùng được cố định ở giữa dưới cùng,Được sử dụng ở thanh dưới cùng trong chế độ hàng loạt CSS
+  // Ẩn(Không gỡ cài đặt——Tìm kiếm input Việc gỡ cài đặt sẽ gây ra library-search-island vô hiệu hóa tham chiếu cho)nhường ngôi
+  // Cung cấp thanh công cụ hàng loạt,Cả hai đều không thể nhìn thấy cùng một lúc。
   const [batchModeActive, setBatchModeActive] = useState(false);
 
-  // 合集/收藏/AI tab：视图挂载即可尝试恢复 panel 滚动（图书馆由 RecentJobsLibrary 在有列表后恢复）
+  // Bộ sưu tập/Yêu thích/AI tab：Cố gắng khôi phục bằng cách gắn chế độ xem panel lăn（Thư viện của RecentJobsLibrary Khôi phục sau danh sách）
   useHomeReturnRestore(isCategoriesTab || isFavoritesTab || isAskTab);
 
   return (
@@ -61,7 +63,7 @@ function HomeShell() {
       <main id="app-shell" className="page app-shell" data-home-spa="">
         <AppTopBar activeTab={activeLibraryTab} onTabChange={setActiveLibraryTab} />
         <MockModeBanner />
-        {/* 纸心舞台：材质/比例层级（非传统符号拼贴）；侧栏筛选暂不做 */}
+        {/* Sân khấu giấy: các lớp chất liệu/tỷ lệ (không phải ghép hình biểu tượng truyền thống); chưa làm bộ lọc thanh bên */}
         <div className="home-paper-stage">
           {isLibraryTab ? (
             <>
@@ -80,17 +82,17 @@ function HomeShell() {
               <AppBottomBar showSearch={false} />
             </>
           ) : isAskTab ? (
-            // AI 对话不挂底部「上传 / 设置」浮栏，避免压住输入区
+            // AI Cuộc trò chuyện không bị treo ở dưới cùng「Tải lên / Thiết lập」Thanh nổi，Tránh chèn ép khu vực đầu vào
             <HomeAskView />
           ) : null}
         </div>
-        <button id="open-query-btn" type="button" className="secondary hidden" aria-hidden="true">最近任务</button>
-        {/* 3b 占位:最近任务对话框 */}
+        <button id="open-query-btn" type="button" className="secondary hidden" aria-hidden="true">Nhiệm vụ gần đây</button>
+        {/* Giữ chỗ 3b: hộp thoại nhiệm vụ gần đây */}
         <recent-jobs-dialog></recent-jobs-dialog>
         <SettingsHubDialog />
         <TranslationWorkflowDialog />
       </main>
-      {/* dialogs.html 区块:upload 域的专业翻译对话框 + credentials 域已 React 化,其余占位(3b) */}
+      {/* Khối dialogs.html: hộp thoại dịch chuyên ngành của vùng upload + vùng credentials đã React hóa, các giữ chỗ còn lại (3b) */}
       <CredentialsDialog />
       <GlossariesDialog />
       <developer-auth-dialog></developer-auth-dialog>
@@ -98,7 +100,7 @@ function HomeShell() {
       <PageRangeDialog />
       <StatusDetailDialog />
       <ReaderDialog />
-      {/* 软打开阅读器：全屏层，主页不卸载（关 × 不刷新） */}
+      {/* Mở trình đọc mềm: lớp toàn màn hình, trang chủ không gỡ bỏ (đóng × không làm mới) */}
       <SoftReaderHost />
       <CollectionManageDialog />
       <BookDetailDialog />

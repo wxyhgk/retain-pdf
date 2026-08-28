@@ -37,23 +37,23 @@
     line-height: 1.6;
   }
 
-  /*
-    危险区修复(Tailwind v4 迁移):这条全局强制覆盖原本是普通 CSS 规则
-    `.hidden { display: none !important; }`,专门用来压过各组件自己的
-    `display` 声明(如 detail 页事件流模态内部 `.detail-list{display:grid}`
-    这类"空态/列表二选一"的容器——阶段 C 收官批把模态外层结构换成 Radix
-    Dialog 后,原来举例的 `.detail-modal{display:grid}` 本身已随之删除,但
-    `.detail-list`/`.detail-empty` 这类内层切换仍然依赖这条规则)。
-    迁移工具把它错误地拆并进了多个 `@utility hidden { &.xxx {...} }` 块
-    (src/styles/{components,upload-workflow,credential-settings,status-card}
-    .utilities.css/.css),而 "hidden" 是 Tailwind 内置保留的工具类名——
-    Tailwind 会丢弃自定义 @utility 里对内置工具类"裸类名"层级的重新声明,
-    只保留嵌套的复合选择器变体,导致裸 `.hidden` 的 `!important` 静默丢失,
-    所有仅靠 `.hidden` 隐藏、且和某个更高特异度/正常声明的容器样式冲突的元素
-    (如 detail 事件流/阶段时间线模态)在 v4 下会一直可见。
-    这里显式恢复为普通规则(不用 @utility),!important 对 normal 声明的
-    优先级判定与 CSS 层(layer)无关,能确保始终生效。
-  */
+/*
+  Sửa lỗi vùng nguy hiểm (di chuyển Tailwind v4): Quy tắc ghi đè cưỡng bức toàn cục này ban đầu là quy tắc CSS thông thường
+  `.hidden { display: none !important; }`, được dùng để áp đảo các khai báo `display` của các thành phần khác
+  (ví dụ như bên trong modal dòng sự kiện của trang chi tiết có `.detail-list{display:grid}`
+  thuộc loại "trạng thái trống/danh sách hai lựa chọn" — sau đợt hoàn thiện giai đoạn C, cấu trúc lớp ngoài của modal đã được chuyển sang Radix
+  Dialog, ví dụ ban đầu `.detail-modal{display:grid}` đã bị xóa theo, nhưng
+  việc chuyển đổi bên trong như `.detail-list`/`.detail-empty` vẫn phụ thuộc vào quy tắc này).
+  Công cụ di chuyển đã nhầm lẫn tách và gộp nó vào nhiều khối `@utility hidden { &.xxx {...} }`
+  (src/styles/{components,upload-workflow,credential-settings,status-card}
+  .utilities.css/.css), trong khi "hidden" là tên lớp tiện ích được Tailwind bảo lưu —
+  Tailwind sẽ loại bỏ việc khai báo lại cấp "tên lớp trần" của các lớp tiện ích tích hợp sẵn trong @utility tùy chỉnh,
+  chỉ giữ lại các biến thể bộ chọn phức hợp lồng nhau, khiến `!important` của `.hidden` trần bị mất một cách âm thầm,
+  tất cả các phần tử chỉ dựa vào `.hidden` để ẩn và xung đột với kiểu của một vùng chứa có độ đặc hiệu cao hơn/khai báo bình thường
+  (ví dụ như modal dòng sự kiện/đường thời gian giai đoạn của trang chi tiết) sẽ luôn hiển thị trong v4.
+  Ở đây khôi phục rõ ràng thành quy tắc thông thường (không dùng @utility), việc phán đoán ưu tiên của `!important` đối với khai báo normal
+  không liên quan đến lớp CSS (layer), đảm bảo luôn có hiệu lực.
+*/
   .hidden {
     display: none !important;
   }
@@ -82,18 +82,18 @@
   }
 }
 /*
-  危险区修复(Tailwind v4 迁移):这批自定义元素标签选择器(display:block 默认
-  兜底)在 v3 里和其余手写 CSS 一样是普通、未分层规则,和更具体的
-  class 选择器(如 `.app-shell-header{display:flex}`,来自 @utility)同台
-  按特异度比较——class(0,1,0)始终压过 tag(0,0,1),v3 下没有问题。
-  v4 给 @utility 生成的规则强制套上原生 CSS Cascade Layers(`@layer
-  utilities`),而这块标签选择器规则还留在任何 layer 之外——css 层叠规则里
-  "未分层" 在普通优先级声明下永远压过"已分层"，与特异度无关,导致这里的
-  `display:block` 反而压过更具体的 `.app-shell-header{display:flex}`,
-  首页顶栏从 flex 布局退化成 block,`.topbar` 不再被 `align-items:center`
-  垂直居中(顶栏在 home/library-search-island 视觉基线里整体上移约 5.6px,
-  文字/图标位置随之偏移)。这里把这批规则也放进 `@layer base`,让它和
-  @utility 生成的规则同层比较特异度,恢复 v3 的比较结果(class 压过 tag)。
+  Sửa lỗi vùng nguy hiểm (di chuyển Tailwind v4): Bộ chọn thẻ phần tử tùy chỉnh này (mặc định display:block
+  để dự phòng) trong v3 cùng với các CSS viết tay khác là quy tắc thông thường, không phân lớp,
+  so sánh độ đặc hiệu ngang hàng với các bộ chọn class cụ thể hơn (ví dụ `.app-shell-header{display:flex}`,
+  đến từ @utility) — class(0,1,0) luôn áp đảo tag(0,0,1), trong v3 không có vấn đề.
+  v4 buộc các quy tắc do @utility sinh ra phải nằm trong các Lớp Xếp chồng CSS gốc (`@layer
+  utilities`), trong khi quy tắc chọn thẻ này vẫn nằm ngoài bất kỳ lớp nào — trong quy tắc xếp chồng css,
+  "không phân lớp" trong trường hợp khai báo ưu tiên thông thường luôn áp đảo "đã phân lớp", không liên quan đến độ đặc hiệu,
+  khiến `display:block` ở đây lại áp đảo `.app-shell-header{display:flex}` cụ thể hơn,
+  thanh trên cùng trang chủ từ bố cục flex thoái hóa thành block, `.topbar` không còn được căn giữa dọc bởi `align-items:center`
+  (thanh trên cùng trong đường cơ sở hình ảnh home/library-search-island bị dịch lên khoảng 5.6px,
+  vị trí văn bản/biểu tượng cũng bị lệch theo). Ở đây đưa bộ quy tắc này vào `@layer base`,
+  để nó so sánh độ đặc hiệu cùng lớp với các quy tắc do @utility sinh ra, khôi phục kết quả so sánh của v3 (class áp đảo tag).
 */
 @layer base {
   app-shell-header,

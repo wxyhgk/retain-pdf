@@ -71,7 +71,7 @@ def seed_orchestration_metadata(item: dict) -> None:
     group_id = str(item.get("continuation_group", "") or "").strip()
     item_id = str(item.get("item_id", "") or "")
     unit_id = group_unit_id(group_id) if group_id else item_id
-    # skip_reason 归 policy 阶段所有;编排阶段只补缺，不覆盖已有的详细原因。
+    # skip_reason quy policy Giai đoạn Tất cả;Giai đoạn điều phối chỉ lấp đầy các khoảng trống，Không ghi đè lên các lý do chi tiết hiện có。
     if not should_translate:
         if not str(item.get("skip_reason", "") or "").strip():
             item["skip_reason"] = label

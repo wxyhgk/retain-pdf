@@ -144,7 +144,7 @@
   line-height: 1.55;
 }
 
-/* Markdown 渲染后的块级元素排版(回答气泡内) */
+/* Bố cục phần tử block sau khi render Markdown (trong bong bóng trả lời) */
 .reader-ai-message-body-el > *:first-child {
   margin-top: 0;
 }
@@ -214,13 +214,13 @@
   color: var(--accent);
 }
 
-/* agentic 问答:检索过程提示行 */
+/* Hỏi đáp agentic: dòng thông báo tiến trình truy xuất */
 .reader-ai-message-progress .reader-ai-message-body-el {
   color: var(--muted);
   font-style: italic;
 }
 
-/* 回答正文里的 [n] 引用标记(点击跳原文锚点) */
+/* Dấu trích dẫn [n] trong nội dung trả lời (bấm để tới neo bản gốc) */
 .reader-ai-citation-ref {
   display: inline;
   margin: 0 1px;
@@ -242,7 +242,7 @@
   color: var(--paper);
 }
 
-/* 回答底部引用脚注列表 */
+/* Danh sách chú thích trích dẫn cuối câu trả lời */
 .reader-ai-citations {
   display: grid;
   gap: 4px;
@@ -273,7 +273,8 @@
   color: var(--ink);
 }
 
-/* 引用行：页面缩略图 + 摘录文字（answer-enhance renderCitationFooter 动态创建） */
+/* Dòng trích dẫn: hình thu nhỏ trang + văn bản trích đoạn (được
+   answer-enhance renderCitationFooter tạo động) */
 .reader-ai-citation-thumb {
   width: 34px;
   height: 44px;

@@ -1,5 +1,5 @@
-// 可拖动悬浮工具钮（FAB）：点击展开菜单，拖动改位置。
-// 菜单：批注 + 下载（原始 / 译文 / 对照）。
+// Nút công cụ nổi kéo được (FAB): bấm để mở menu, kéo để đổi vị trí.
+// Menu: ghi chú + download (gốc / bản dịch / đối chiếu).
 
 import {
   useCallback,
@@ -56,15 +56,15 @@ const DOWNLOAD_ICONS: Record<DownloadAction, typeof FileText> = {
 };
 
 const DOWNLOAD_SHORT: Record<DownloadAction, string> = {
-  source: "原文",
-  sideBySide: "对照",
-  translated: "译文",
+  source: "Gốc",
+  sideBySide: "Đối chiếu",
+  translated: "Dịch",
 };
 
 type FabPos = { x: number; y: number };
 
 export type ReaderFabProps = {
-  /** 当前打开的工具 id；null 表示都关 */
+  /** Tool id đang mở; null nghĩa là tất cả đang đóng. */
   activeTool: ReaderToolId | null;
   notesCount: number;
   sourceOnly: boolean;
@@ -208,7 +208,7 @@ export function ReaderFab({
           (busy: boolean) => setBusyAction(busy ? action : ""),
         );
       } catch (err) {
-        const message = err instanceof Error ? err.message : "下载失败";
+        const message = err instanceof Error ? err.message : "Tải xuống thất bại";
         failDownloadToast(message);
         setBusyAction("");
       }
@@ -281,17 +281,17 @@ export function ReaderFab({
           id={menuId}
           className="reader-fab-menu"
           role="menu"
-          aria-label="阅读工具"
+          aria-label="Công cụ đọc"
         >
           <header className="reader-fab-menu-head">
             <div className="reader-fab-menu-head-text">
-              <strong>工具</strong>
-              <span>拖动圆钮可移动</span>
+              <strong>Công cụ</strong>
+              <span>Kéo nút tròn để di chuyển</span>
             </div>
             <button
               type="button"
               className="reader-fab-menu-close"
-              aria-label="关闭菜单"
+              aria-label="Đóng menu"
               onClick={() => setOpen(false)}
             >
               <X size={14} strokeWidth={2.5} aria-hidden />
@@ -304,10 +304,10 @@ export function ReaderFab({
             const disabled = tool.needsJob && sourceOnly;
             let sub = isActive ? tool.subOpen : tool.subIdle;
             if (tool.id === "notes" && !isActive && notesCount > 0) {
-              sub = `${notesCount} 条批注`;
+              sub = `${notesCount} ghi chú`;
             }
             if (disabled) {
-              sub = "需打开任务阅读";
+              sub = "Cần mở reader từ tác vụ";
             }
             return (
               <button
@@ -334,10 +334,10 @@ export function ReaderFab({
             );
           })}
 
-          <div className="reader-fab-section" role="group" aria-label="下载">
+          <div className="reader-fab-section" role="group" aria-label="Download">
             <div className="reader-fab-section-head">
               <Download size={12} strokeWidth={2.5} aria-hidden />
-              <span>下载 PDF</span>
+              <span>Tải PDF</span>
             </div>
             <div className="reader-fab-download-grid">
               {downloadItems.map((action, index) => {
@@ -355,7 +355,7 @@ export function ReaderFab({
                     id={`reader-fab-download-${action}`}
                     className={`reader-fab-chip${busy ? " is-busy" : ""}${enabled ? "" : " is-disabled"}`}
                     disabled={!enabled}
-                    title={enabled ? `下载${meta.label}` : reason}
+                    title={enabled ? `Tải ${DOWNLOAD_SHORT[action]}` : reason}
                     onClick={() => void handleDownload(action)}
                     style={{ ["--fab-i" as string]: index }}
                   >
@@ -371,7 +371,7 @@ export function ReaderFab({
               })}
             </div>
             {downloadItems.every((a) => !trimReaderDownloadString(urls[a])) ? (
-              <p className="reader-fab-empty">产物尚未就绪</p>
+              <p className="reader-fab-empty">Artifact chưa sẵn sàng</p>
             ) : null}
           </div>
         </div>
@@ -380,7 +380,7 @@ export function ReaderFab({
       <button
         type="button"
         className={`reader-fab-trigger${open ? " is-open" : ""}${activeTool ? " has-notes" : ""}`}
-        aria-label={open ? "收起工具菜单" : "打开工具菜单"}
+        aria-label={open ? "Thu gọn menu công cụ" : "Mở menu công cụ"}
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         aria-haspopup="menu"

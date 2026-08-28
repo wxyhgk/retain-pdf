@@ -4,8 +4,8 @@ import {
   cachedStageActionsFor,
 } from "./secondary-resource-cache.js";
 
-// 经全局 Symbol 读 current-job store(直接 import current-job-state.js 会循环依赖);
-// 无 store 的纯快照对象按字段名直读
+// qua Toàn cầu Symbol đọc current-job store(trực tiếp import current-job-state.js sẽ theo chu kỳ phụ thuộc vào);
+// Không có store của các đối tượng ảnh chụp nhanh thuần túy được đọc theo tên trường
 const CURRENT_JOB_STORE_KEY = Symbol.for("retainpdf.currentJobStore");
 
 function currentJobId(state) {

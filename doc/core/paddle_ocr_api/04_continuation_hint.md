@@ -1,16 +1,16 @@
-# 04 Continuation Hint
+# 04 Gợi ý tiếp tục
 
-## 目标
+## Mục tiêu
 
-如果 Paddle 本身已经知道哪些 block 属于同一段，adapter 应该把这类信息映射成统一契约：
+Nếu bản thân Paddle đã biết block nào thuộc cùng một đoạn, adapter nên ánh xạ thông tin này thành một hợp đồng thống nhất:
 
 - `continuation_hint`
 
-不要让 translation 层直接读取 Paddle 的 `group_id`、`global_group_id`、`block_order`。
+Đừng để tầng translation đọc trực tiếp `group_id`, `global_group_id`, `block_order` của Paddle.
 
-## 当前字段
+## Trường hiện tại
 
-`continuation_hint` 当前结构：
+Cấu trúc hiện tại của `continuation_hint`:
 
 ```json
 {
@@ -23,51 +23,51 @@
 }
 ```
 
-字段说明：
+Giải thích trường:
 
 - `source`
-  当前 provider 写入时固定为 `provider`
+  Khi provider ghi, cố định là `provider`
 - `group_id`
-  连续组稳定 id
+  ID ổn định của nhóm liên tục
 - `role`
   `single/head/middle/tail`
 - `scope`
-  `intra_page` 或 `cross_page`
+  `intra_page` hoặc `cross_page`
 - `reading_order`
-  组内顺序
+  Thứ tự trong nhóm
 - `confidence`
-  provider 对这个组的置信度
+  Mức độ tin cậy của provider đối với nhóm này
 
-## 当前 Paddle 映射规则
+## Quy tắc ánh xạ Paddle hiện tại
 
-当前代码在：
+Mã hiện tại trong:
 
 - `backend/scripts/services/document_schema/provider_adapters/paddle/continuation.py`
 
-当前规则：
+Quy tắc hiện tại:
 
-1. 优先用 `raw_global_group_id`
-2. 没有全局组时，退回 `page_index + raw_group_id`
-3. 多 block 组如果没有可靠 `raw_block_order`，则不生成 continuation hint
-4. 同页组标为 `intra_page`
-5. 跨页组标为 `cross_page`
+1. Ưu tiên dùng `raw_global_group_id`
+2. Không có nhóm toàn cục, dự phòng về `page_index + raw_group_id`
+3. Nếu nhóm nhiều block không có `raw_block_order` đáng tin cậy, thì không tạo continuation hint
+4. Nhóm cùng trang đánh dấu `intra_page`
+5. Nhóm xuyên trang đánh dấu `cross_page`
 
-## 下游消费约定
+## Quy ước tiêu thụ hạ nguồn
 
-translation 当前采用 provider-first：
+translation hiện sử dụng provider-first:
 
-1. 同页 `intra_page` hint 优先直接消费
-2. 跨页 `cross_page` hint 只在安全条件满足时受控消费
-3. 不满足安全条件时，hint 会被保留，但不会直接触发拼接
+1. Hint `intra_page` cùng trang ưu tiên tiêu thụ trực tiếp
+2. Hint `cross_page` xuyên trang chỉ tiêu thụ có kiểm soát khi đáp ứng điều kiện an toàn
+3. Khi không đáp ứng điều kiện an toàn, hint được giữ lại nhưng không kích hoạt nối ghép
 
-也就是说：
+Nghĩa là:
 
-- adapter 负责“准确表达 provider 知道的事”
-- translation 负责“决定什么时候安全地相信 provider”
+- adapter chịu trách nhiệm "thể hiện chính xác những gì provider biết"
+- translation chịu trách nhiệm "quyết định khi nào tin tưởng provider một cách an toàn"
 
-## 适配人需要注意
+## Người thích ứng cần lưu ý
 
-1. `group_id` 只要求组内稳定，不要求跨版本永远不变。
-2. `reading_order` 必须是组内唯一且单调的。
-3. 如果 Paddle 某个版本的组信息不稳定，宁可不写 `continuation_hint`，不要写错。
-4. 不要为了让某个样例过关，伪造跨页连续关系。
+1. `group_id` chỉ yêu cầu ổn định trong nhóm, không yêu cầu không đổi qua các phiên bản.
+2. `reading_order` phải là duy nhất và đơn điệu trong nhóm.
+3. Nếu thông tin nhóm của một phiên bản Paddle không ổn định, thà không viết `continuation_hint` còn hơn viết sai.
+4. Đừng giả tạo quan hệ liên tục xuyên trang chỉ để cho một mẫu vượt qua.

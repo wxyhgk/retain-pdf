@@ -1,12 +1,13 @@
-// 舞台计划器：manifest(未知 JSON) → 渲染计划(纯数据)。
+// Bộ lập kế hoạch sân khấu: manifest (JSON chưa biết) → kế hoạch render (dữ liệu thuần).
 //
-// DecorStage 组件只消费这里的输出，不自己解析 manifest——校验/降级/路径
-// 解析全部收在纯函数里，方便 node:test 直测（不用 jsdom 挂组件）。
+// Component DecorStage chỉ dùng output ở đây và không tự phân tích manifest —
+// validation/hạ cấp/phân tích đường dẫn đều nằm trong hàm thuần để node:test
+// kiểm tra trực tiếp (không cần mount component bằng jsdom).
 //
-// 降级链（契约 docs/theme-system/DECOR_PACKS.md）：
-// - model 层在图片版舞台/无 WebGL/reduced-motion 下 → 渲染 fallback 静态图
-// - reduced-motion → 所有 parallax 归零
-// 契约：./contract.ts · 锚点：./slots.ts
+// Chuỗi hạ cấp (hợp đồng docs/theme-system/DECOR_PACKS.md):
+// - lớp model trên sân khấu ảnh/không có WebGL/reduced-motion → render ảnh tĩnh fallback
+// - reduced-motion → đưa mọi parallax về 0
+// Hợp đồng: ./contract.ts · anchor: ./slots.ts
 
 import { validateDecorManifest } from "./contract.js";
 import { getDecorSlot, type DecorLayerBand, type DecorSlotId } from "./slots.js";
@@ -15,12 +16,12 @@ export type StageLayerPlan = {
   key: string;
   slot: DecorSlotId;
   band: DecorLayerBand;
-  /** 已拼上 assetBase 的图片地址（model 层在图片版舞台=其 fallback） */
+  /** Địa chỉ ảnh đã ghép assetBase (model trên sân khấu ảnh chính là fallback của nó) */
   src: string;
-  /** 0 = 不动（reduced-motion 下强制 0） */
+  /** 0 = không chuyển động (bắt buộc 0 khi reduced-motion) */
   parallax: number;
   opacity: number;
-  /** 点击图层展示的语录（image 层可选；多句 "\n\n" 分隔） */
+  /** Trích dẫn hiển thị khi click vào layer (tùy chọn cho layer image; phân cách nhiều câu bằng "\n\n") */
   clickQuote?: string;
 };
 
@@ -41,9 +42,9 @@ export type StagePlanResult =
   | { ok: false; plan: null; errors: string[] };
 
 export type StagePlanOptions = {
-  /** 装饰包根 URL（不带尾斜杠），如 "decor/jiangnan" */
+  /** URL gốc của gói trang trí (không có dấu gạch cuối), ví dụ "decor/jiangnan" */
   assetBase: string;
-  /** prefers-reduced-motion：parallax 归零（图片版舞台本就不渲染 3D） */
+  /** prefers-reduced-motion: parallax về 0 (sân khấu bản ảnh vốn không render 3D) */
   reducedMotion?: boolean;
 };
 
@@ -58,7 +59,7 @@ export function planStage(input: unknown, options: StagePlanOptions): StagePlanR
 
   const layers: StageLayerPlan[] = manifest.layers.map((layer, i) => {
     const band = getDecorSlot(layer.slot)?.band ?? "mid";
-    // 图片版舞台：model 层一律走静态降级图（three 引擎接入后再按能力分流）
+    // Sân khấu bản ảnh: layer model luôn dùng ảnh fallback tĩnh (sau khi tích hợp engine three sẽ phân luồng theo khả năng)
     const file = layer.type === "model" ? layer.fallback : layer.src;
     return {
       key: `${manifest.id}:${i}:${layer.slot}`,

@@ -5,14 +5,14 @@ import {
 import type { JobLike, JobPayload, ManifestPayload } from "../job/types.js";
 import type { EventsPayload, PublicStagePresentation } from "./types.js";
 
-/** secondaryResourceStore 单条缓存（events / manifest / stageActions） */
+/** Bộ nhớ đệm đơn của secondaryResourceStore (events / manifest / stageActions) */
 export interface SecondaryResourceRecordLike {
   jobId?: string;
   payload?: unknown;
   [key: string]: unknown;
 }
 
-/** secondaryResourceStore.getSnapshot() 形状；允许 host 以 Record 宽类型传入 */
+/** Hình dạng của secondaryResourceStore.getSnapshot(); cho phép host truyền vào kiểu Record rộng */
 export type SecondaryResourceSnapshot =
   | Record<string, SecondaryResourceRecordLike | null | undefined>
   | Record<string, unknown>

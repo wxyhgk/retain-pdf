@@ -1,287 +1,287 @@
-# 06 Paddle Markdown 到 Job Artifact 映射与边界
+# 06 Ánh xạ và ranh giới từ Paddle Markdown sang Job Artifact
 
-这份文档只回答一件事：
+Tài liệu này chỉ trả lời một câu hỏi:
 
-- Paddle provider 输出、`normalized_document`、job artifact 导出、下载接口，这四层各自是什么边界
+- Đầu ra của Paddle provider, `normalized_document`, xuất artifact job, và giao diện tải xuống — bốn tầng này có ranh giới gì.
 
-核心结论先写在前面：
+Kết luận cốt lõi được viết trước:
 
-1. `provider raw` 是 OCR provider 私有输出，只用于回溯、诊断、adapter 输入，不是下游主契约。
-2. `normalized_document` 是 OCR 阶段对翻译/渲染的正式交接物，主链路应该稳定依赖它。
-3. `job artifact` 是作业产物注册与导出层，负责把文件暴露成统一 artifact key，不重新定义 provider 语义。
-4. 下载接口是 HTTP 暴露层，只承诺“按 artifact 或按稳定资源下载”，不承诺下游理解 provider raw 结构。
+1. `provider raw` là đầu ra riêng của provider OCR, chỉ dùng để truy vết, chẩn đoán, đầu vào adapter, không phải hợp đồng chính cho hạ lưu.
+2. `normalized_document` là vật giao nhận chính thức của giai đoạn OCR cho bản dịch/kết xuất, luồng chính nên phụ thuộc ổn định vào nó.
+3. `job artifact` là tầng đăng ký và xuất sản phẩm công việc, chịu trách nhiệm phơi bày các tệp dưới dạng khóa artifact thống nhất, không định nghĩa lại ngữ nghĩa provider.
+4. Giao diện tải xuống là tầng phơi bày HTTP, chỉ cam kết “tải xuống theo artifact hoặc theo tài nguyên ổn định”, không cam kết hạ lưu hiểu cấu trúc provider raw.
 
-## 一张图看边界
+## Một sơ đồ xem ranh giới
 
 ```text
 Paddle API JSONL / result.json
-  -> provider raw boundary
-  -> document_schema adapter
+  -> ranh giới provider raw
+  -> bộ chuyển đổi document_schema
   -> ocr/normalized/document.v1.json
-  -> normalized_document boundary
-  -> translation / rendering
-  -> job artifacts registry / virtual bundle
-  -> artifact export boundary
-  -> /api/v1/jobs/* download routes
-  -> download API boundary
+  -> ranh giới normalized_document
+  -> bản dịch / kết xuất
+  -> kho đăng ký artifact job / gói ảo
+  -> ranh giới xuất artifact
+  -> /api/v1/jobs/* các tuyến tải xuống
+  -> ranh giới giao diện tải xuống
 ```
 
-## 1. Provider Raw Boundary
+## 1. Ranh giới Provider Raw
 
-Paddle provider 当前在 provider-backed 流程里的原始结果文件是：
+Tệp kết quả thô hiện tại của Paddle provider trong luồng hỗ trợ provider là:
 
 - `ocr/result.json`
 
-来源代码：
+Mã nguồn:
 
 - `backend/scripts/services/ocr_provider/provider_pipeline.py`
-  `run_paddle_to_job_dir()` 会把 `download_jsonl_result()` 的聚合结果保存到 `job_dirs.ocr_dir / "result.json"`
+  `run_paddle_to_job_dir()` sẽ lưu kết quả tổng hợp của `download_jsonl_result()` vào `job_dirs.ocr_dir / "result.json"`
 - `backend/scripts/services/ocr_provider/paddle_api.py`
-  `download_jsonl_result()` 把 JSONL 聚合为：
+  `download_jsonl_result()` tổng hợp JSONL thành:
   - `layoutParsingResults`
   - `dataInfo`
   - `_meta`
 
-这一层的职责只有：
+Trách nhiệm của tầng này chỉ có:
 
-- 保留 Paddle 原始结构
-- 给 `document_schema` adapter 提供输入
-- 给排错和 provider 对账提供依据
+- Giữ lại cấu trúc thô của Paddle
+- Cung cấp đầu vào cho bộ chuyển đổi `document_schema`
+- Cung cấp cơ sở cho việc gỡ lỗi và đối chiếu provider
 
-这一层不应该承担的职责：
+Trách nhiệm không nên có của tầng này:
 
-- 不应该直接作为翻译输入
-- 不应该直接作为渲染输入
-- 不应该要求 Rust API 或前端理解 `layoutParsingResults` 的字段细节
-- 不应该被下载接口包装成“统一文档语义”
+- Không nên trực tiếp làm đầu vào cho bản dịch
+- Không nên trực tiếp làm đầu vào cho kết xuất
+- Không nên yêu cầu Rust API hoặc frontend hiểu chi tiết trường của `layoutParsingResults`
+- Không nên được giao diện tải xuống bọc thành “ngữ nghĩa tài liệu thống nhất”
 
-也就是说：
+Nghĩa là:
 
-- `result.json` 是 provider raw snapshot
-- 它可以变
-- 只要 adapter 仍能把它稳定映射到 `document.v1`，下游就不应该被迫跟着改
+- `result.json` là ảnh chụp nhanh provider raw
+- Nó có thể thay đổi
+- Miễn là adapter vẫn có thể ánh xạ ổn định sang `document.v1`, hạ lưu không nên bị buộc thay đổi theo
 
-## 2. Normalized Document Boundary
+## 2. Ranh giới Normalized Document
 
-Paddle raw 进入统一契约后的正式输出是：
+Đầu ra chính thức sau khi Paddle raw đi vào hợp đồng thống nhất là:
 
 - `ocr/normalized/document.v1.json`
 - `ocr/normalized/document.v1.report.json`
 
-来源代码：
+Mã nguồn:
 
 - `backend/scripts/services/ocr_provider/provider_pipeline.py`
   `_save_normalized_document_for_paddle()`
 - `backend/scripts/services/document_schema/README.md`
 
-这一层是当前 OCR 到翻译/渲染主链路的稳定交接点。
+Tầng này là điểm giao nhận ổn định của luồng chính từ OCR đến bản dịch/kết xuất.
 
-职责：
+Trách nhiệm:
 
-- 把 Paddle 私有字段隔离在 adapter 内
-- 输出统一的 `normalized_document_v1`
-- 让 translation/rendering 只面向稳定结构工作
+- Cô lập các trường riêng của Paddle bên trong adapter
+- Xuất `normalized_document_v1` thống nhất
+- Để translation/rendering chỉ làm việc với cấu trúc ổn định
 
-主链路应该依赖：
+Luồng chính nên phụ thuộc:
 
 - `document.v1.json`
 
-主链路不应该依赖：
+Luồng chính không nên phụ thuộc:
 
 - `result.json`
 - `layoutParsingResults[*].prunedResult.*`
-- Paddle 的 `markdown.images`
-- Paddle 的 `group_id/global_group_id`
+- `markdown.images` của Paddle
+- `group_id/global_group_id` của Paddle
 
-`document.v1.report.json` 的定位也要明确：
+Vị trí của `document.v1.report.json` cũng cần được làm rõ:
 
-- 它是 normalize 报告和校验摘要
-- 用于排错、默认值分析、兼容性检查
-- 不是翻译或渲染主输入
+- Nó là báo cáo chuẩn hóa và tóm tắt kiểm tra
+- Dùng để gỡ lỗi, phân tích giá trị mặc định, kiểm tra tương thích
+- Không phải đầu vào chính cho bản dịch hay kết xuất
 
-## 3. Paddle Markdown 处在什么边界
+## 3. Paddle Markdown nằm ở ranh giới nào
 
-当前下载层里的 Markdown 不是 Paddle raw API 的正式契约字段，而是 job 目录里的一个可导出产物。
+Markdown trong tầng tải xuống hiện tại không phải là trường hợp đồng chính thức của API raw Paddle, mà là một sản phẩm có thể xuất trong thư mục job.
 
-Rust 侧解析 Markdown 的位置：
+Vị trí Rust phân tích Markdown:
 
 - `backend/rust_api/src/storage_paths.rs`
   - `resolve_markdown_path()`
   - `resolve_markdown_images_dir()`
 
-当前解析顺序：
+Thứ tự phân tích hiện tại:
 
-1. 优先读 `job_root/md/full.md`
-2. 优先读 `job_root/md/images/`
-3. 只有兼容旧布局时，才回退到 `provider_raw_dir/full.md` 和 `provider_raw_dir/images/`
+1. Ưu tiên đọc `job_root/md/full.md`
+2. Ưu tiên đọc `job_root/md/images/`
+3. Chỉ khi tương thích với bố cục cũ, mới fallback đến `provider_raw_dir/full.md` và `provider_raw_dir/images/`
 
-这意味着：
+Điều này có nghĩa:
 
-- `md/full.md` 和 `md/images/` 属于 job output 结构
-- 它们是“对外可下载的 Markdown 产物”
-- 它们不是 Paddle raw provider contract 本身
+- `md/full.md` và `md/images/` thuộc cấu trúc đầu ra của job
+- Chúng là “sản phẩm Markdown có thể tải xuống”
+- Chúng không phải là hợp đồng provider raw của Paddle
 
-因此不要混淆：
+Vì vậy đừng nhầm lẫn:
 
-- Paddle raw 里的 `markdown.text` / `markdown.images`
-- job 里的 `md/full.md` / `md/images/`
+- `markdown.text` / `markdown.images` trong Paddle raw
+- `md/full.md` / `md/images/` trong job
 
-前者属于 provider raw trace。
-后者属于 job artifact/export 口径。
+Cái trước thuộc dấu vết provider raw.
+Cái sau thuộc khẩu ngữ artifact/export của job.
 
-当前主链已经按这个边界收口：
+Luồng chính hiện đã đóng theo ranh giới này:
 
-- Paddle provider pipeline 会显式执行一次 markdown materialize
-- 把 `layoutParsingResults[*].markdown.text/images` 发布到 `job_root/md/full.md` 与 `job_root/md/images/`
-- Rust 下载层只读取这套 published artifact，不再从 `provider_raw_dir` 反推
+- Paddle provider pipeline sẽ thực hiện rõ ràng một lần materialize markdown
+- Phát hành `layoutParsingResults[*].markdown.text/images` vào `job_root/md/full.md` và `job_root/md/images/`
+- Tầng tải xuống Rust chỉ đọc bộ artifact đã phát hành này, không suy ngược từ `provider_raw_dir`
 
-这里有一个非常重要的实现约束：
+Có một ràng buộc triển khai rất quan trọng:
 
-- Markdown 里的图片相对路径，不能由我们自己拍脑袋生成固定模式
-- 必须以 Paddle `markdown.images` 的 key 为准
-- 我们当前只允许做一层稳定发布包装：把图片发布到 `md/images/` 下，并给每页加 `page-N/` 作用域前缀，避免多页 PDF 的同名图片互相覆盖
+- Đường dẫn tương đối của hình ảnh trong Markdown, không thể tự chúng ta ngồi nghĩ ra mẫu cố định
+- Phải dựa vào khóa `markdown.images` của Paddle
+- Chúng ta hiện chỉ cho phép một lớp bao bọc phát hành ổn định: phát hành hình ảnh vào `md/images/` và thêm tiền tố phạm vi `page-N/` cho mỗi trang, tránh các hình ảnh cùng tên trong PDF nhiều trang ghi đè lên nhau
 
-也就是说，如果 Paddle 原始 Markdown 里写的是：
+Nghĩa là, nếu Markdown thô của Paddle viết:
 
 ```html
 <img src="imgs/img_in_image_box_320_138_932_438.jpg" ... />
 ```
 
-那么发布后的 Markdown 应该变成：
+Thì Markdown đã phát hành nên trở thành:
 
 ```html
 <img src="images/page-6/imgs/img_in_image_box_320_138_932_438.jpg" ... />
 ```
 
-其中：
+Trong đó:
 
-- `imgs/img_in_image_box_320_138_932_438.jpg` 这段相对路径来自 provider 原始返回
-- `page-6/` 是我们为了多页发布增加的页面作用域
-- `images/` 对应 job artifact 目录 `md/images/`
+- `imgs/img_in_image_box_320_138_932_438.jpg` là đường dẫn tương đối từ provider trả về
+- `page-6/` là phạm vi trang chúng ta thêm để phát hành đa trang
+- `images/` tương ứng với thư mục artifact job `md/images/`
 
-不能把它错误简化成：
+Không thể đơn giản hóa sai thành:
 
-- 固定 `imgs/...`
-- 固定 `assets/...`
-- 固定某种图片命名模板
-- 固定某种 Markdown 图片语法
+- Cố định `imgs/...`
+- Cố định `assets/...`
+- Cố định một mẫu đặt tên hình ảnh nào đó
+- Cố định một cú pháp Markdown hình ảnh nào đó
 
-因为 Paddle 返回的正文里既可能是 Markdown `![](...)`，也可能是 HTML `<img src=\"...\">`，相对路径片段也必须完全跟随 provider 返回值。
+Vì văn bản Paddle trả về có thể là Markdown `![](...)` hoặc HTML `<img src=\"...\">`, và các đoạn đường dẫn tương đối cũng phải hoàn toàn theo giá trị trả về của provider.
 
-## 4. Job Artifact Export Boundary
+## 4. Ranh giới xuất Job Artifact
 
-job artifact 的职责是把作业目录里的文件和虚拟产物，统一映射成 artifact key。
+Trách nhiệm của artifact job là ánh xạ thống nhất các tệp và sản phẩm ảo trong thư mục job thành khóa artifact.
 
-关键代码：
+Mã chính:
 
 - `backend/rust_api/src/storage_paths.rs`
 - `backend/rust_api/src/services/artifacts.rs`
 
-这里最关键的不是“文件放哪”，而是“对外暴露成什么 artifact key”。
+Điểm quan trọng nhất ở đây không phải là “tệp đặt ở đâu”, mà là “phơi bày ra bên ngoài dưới dạng khóa artifact nào”.
 
-### 与 Paddle/Normalize/Markdown 直接相关的 artifact key
+### Các khóa artifact liên quan trực tiếp đến Paddle/Normalize/Markdown
 
-| artifact key | 含义 | 边界归属 |
+| artifact key | Ý nghĩa | Ranh giới thuộc về |
 | --- | --- | --- |
-| `provider_result_json` | provider 原始结果快照 | provider raw |
-| `provider_raw_dir` | provider 原始目录 | provider raw |
-| `layout_json` | 历史/兼容布局结果入口 | provider raw 或兼容层 |
-| `normalized_document_json` | 统一文档契约 | normalized_document |
-| `normalization_report_json` | normalize 报告 | normalized_document 辅助物 |
-| `markdown_raw` | job 导出的 Markdown 文件 | artifact export |
-| `markdown_images_dir` | job 导出的 Markdown 图片目录 | artifact export |
-| `markdown_bundle_zip` | 由 API 动态打包的 Markdown bundle | artifact export |
+| `provider_result_json` | Ảnh chụp nhanh kết quả thô provider | provider raw |
+| `provider_raw_dir` | Thư mục thô provider | provider raw |
+| `layout_json` | Điểm vào kết quả bố cục lịch sử/tương thích | provider raw hoặc tầng tương thích |
+| `normalized_document_json` | Hợp đồng tài liệu thống nhất | normalized_document |
+| `normalization_report_json` | Báo cáo chuẩn hóa | phụ trợ của normalized_document |
+| `markdown_raw` | Tệp Markdown xuất từ job | artifact export |
+| `markdown_images_dir` | Thư mục hình ảnh Markdown xuất từ job | artifact export |
+| `markdown_bundle_zip` | Gói Markdown được đóng gói động bởi API | artifact export |
 
-### 这里的边界规则
+### Quy tắc ranh giới ở đây
 
-`services/artifacts.rs` 只负责：
+`services/artifacts.rs` chỉ chịu trách nhiệm:
 
-- 从 registry 或 fallback 中找到 artifact
-- 为 artifact 生成稳定资源路径
-- 按需构建 zip bundle
+- Tìm artifact từ registry hoặc fallback
+- Tạo đường dẫn tài nguyên ổn định cho artifact
+- Xây dựng gói zip theo nhu cầu
 
-它不负责：
+Nó không chịu trách nhiệm:
 
-- 解释 Paddle raw JSON
-- 定义 `document.v1` 语义
-- 决定某个 block 是否正文
+- Giải thích JSON raw Paddle
+- Định nghĩa ngữ nghĩa `document.v1`
+- Quyết định một khối nào đó có phải là nội dung chính không
 
-也就是说，artifact 层处理的是：
+Nghĩa là, tầng artifact xử lý:
 
-- 文件是否存在
-- 文件属于哪个 group
-- 用哪个 artifact key 暴露
-- 是否允许直接下载
+- Tệp có tồn tại không
+- Tệp thuộc nhóm nào
+- Sử dụng khóa artifact nào để phơi bày
+- Có cho phép tải xuống trực tiếp không
 
-artifact 层不应该反向变成 provider 语义层。
+Tầng artifact không nên ngược lại trở thành tầng ngữ nghĩa provider.
 
-## 5. 下载接口 Boundary
+## 5. Ranh giới giao diện tải xuống
 
-下载接口是最外层 HTTP 暴露，不应把内部路径结构泄漏成新的业务契约。
+Giao diện tải xuống là tầng HTTP ngoài cùng, không nên rò rỉ cấu trúc đường dẫn nội bộ thành hợp đồng nghiệp vụ mới.
 
-关键代码：
+Mã chính:
 
 - `backend/rust_api/src/services/jobs/facade/query/downloads.rs`
 - `backend/rust_api/src/services/artifacts.rs`
 
-### 稳定资源接口
+### Giao diện tài nguyên ổn định
 
-这些接口暴露的是“稳定资源类型”，不是 provider 私有字段：
+Các giao diện này phơi bày “loại tài nguyên ổn định”, không phải trường riêng của provider:
 
-| 接口 | 对应资源 | 说明 |
+| Giao diện | Tài nguyên tương ứng | Mô tả |
 | --- | --- | --- |
-| `/api/v1/jobs/{job_id}/normalized-document` | `normalized_document_json` | OCR 到下游正式交接物 |
-| `/api/v1/jobs/{job_id}/normalization-report` | `normalization_report_json` | normalize 校验/摘要 |
-| `/api/v1/jobs/{job_id}/markdown` | `markdown_raw` 的读取视图 | 可返回 JSON 包装或 raw markdown |
-| `/api/v1/jobs/{job_id}/markdown/document` | `markdown_raw` + `markdown_images_dir` 的结构化读取视图 | 返回 Markdown 内容、绝对图片链接版 Markdown、图片直链清单 |
-| `/api/v1/jobs/{job_id}/markdown/images/{path}` | `markdown_images_dir` 下的文件 | 图片直链 |
-| `/api/v1/jobs/{job_id}/artifacts/{artifact_key}` | artifact registry 项 | 通用 artifact 下载 |
+| `/api/v1/jobs/{job_id}/normalized-document` | `normalized_document_json` | Vật giao nhận chính thức từ OCR đến hạ lưu |
+| `/api/v1/jobs/{job_id}/normalization-report` | `normalization_report_json` | Kiểm tra/tóm tắt chuẩn hóa |
+| `/api/v1/jobs/{job_id}/markdown` | Chế độ xem đọc của `markdown_raw` | Có thể trả về JSON bọc hoặc markdown thô |
+| `/api/v1/jobs/{job_id}/markdown/document` | Chế độ xem đọc có cấu trúc của `markdown_raw` + `markdown_images_dir` | Trả về nội dung Markdown, Markdown với liên kết hình ảnh tuyệt đối, danh sách liên kết hình ảnh trực tiếp |
+| `/api/v1/jobs/{job_id}/markdown/images/{path}` | Tệp trong `markdown_images_dir` | Liên kết hình ảnh trực tiếp |
+| `/api/v1/jobs/{job_id}/artifacts/{artifact_key}` | Mục trong artifact registry | Tải artifact chung |
 
-### Bundle 接口
+### Giao diện Bundle
 
-`bundle_response()` 会根据 job 当前产物动态打包 zip。
+`bundle_response()` sẽ đóng gói zip động dựa trên sản phẩm hiện tại của job.
 
-当前 bundle 内容来自：
+Nội dung bundle hiện tại đến từ:
 
 - `translated_pdf`
 - `markdown/full.md`
 - `markdown/images/*`
 
-这说明 bundle 是“导出层组合物”，不是新的 schema。
+Điều này cho thấy bundle là “tổ hợp tầng xuất”, không phải schema mới.
 
-## 6. 为什么这四层必须解耦
+## 6. Tại sao bốn tầng này phải tách rời
 
-如果四层不拆开，后面就会反复重构。
+Nếu bốn tầng không tách ra, sau này sẽ liên tục tái cấu trúc.
 
-典型错误耦合方式：
+Các cách ghép nối sai điển hình:
 
-1. 让翻译链直接读取 Paddle raw 的 `layoutParsingResults`
-2. 让 artifact 导出逻辑去理解 `block_label/group_id`
-3. 让下载接口直接承诺 provider 的原始字段结构
-4. 把 `markdown.text` 当作下游统一契约，而不是把 `document.v1` 当主输入
+1. Để chuỗi dịch đọc trực tiếp `layoutParsingResults` raw của Paddle
+2. Để logic xuất artifact hiểu `block_label/group_id`
+3. Để giao diện tải xuống trực tiếp cam kết cấu trúc trường thô của provider
+4. Coi `markdown.text` là hợp đồng thống nhất cho hạ lưu, thay vì coi `document.v1` là đầu vào chính
 
-正确做法是：
+Cách đúng là:
 
-1. provider raw 负责“保真”
-2. normalized document 负责“统一”
-3. artifact export 负责“注册和导出”
-4. download API 负责“按稳定资源暴露”
+1. provider raw chịu trách nhiệm “giữ đúng bản gốc”
+2. normalized document chịu trách nhiệm “thống nhất”
+3. artifact export chịu trách nhiệm “đăng ký và xuất”
+4. download API chịu trách nhiệm “phơi bày theo tài nguyên ổn định”
 
-这样每层变化只影响本层：
+Như vậy mỗi tầng thay đổi chỉ ảnh hưởng đến tầng đó:
 
-- Paddle API 变了：优先改 provider adapter
-- `document.v1` 增强了：改 normalize 与下游消费者
-- 下载方式变了：改 artifact/export 与 route/facade
+- Paddle API thay đổi: ưu tiên sửa provider adapter
+- `document.v1` được nâng cấp: sửa normalize và người tiêu dùng hạ lưu
+- Cách tải xuống thay đổi: sửa artifact/export và route/facade
 
-而不是整条链一起改。
+Thay vì cả chuỗi cùng thay đổi.
 
-## 7. 实际开发时的判定规则
+## 7. Quy tắc xác định trong quá trình phát triển thực tế
 
-遇到一个字段或文件，先问它属于哪层：
+Khi gặp một trường hoặc tệp, trước tiên hỏi nó thuộc tầng nào:
 
-### 属于 provider raw
+### Thuộc provider raw
 
-典型例子：
+Ví dụ điển hình:
 
 - `result.json`
 - `layoutParsingResults`
@@ -289,34 +289,34 @@ artifact 层不应该反向变成 provider 语义层。
 - `markdown.images`
 - `group_id`
 
-处理规则：
+Quy tắc xử lý:
 
-- 可以保留
-- 可以排错
-- 不能作为主链路正式契约
+- Có thể giữ lại
+- Có thể gỡ lỗi
+- Không thể làm hợp đồng chính thức cho luồng chính
 
-补一条针对 Markdown 图片路径的判断规则：
+Bổ sung quy tắc cho đường dẫn hình ảnh Markdown:
 
-- `markdown.images` 的 key 是 provider raw 语义的一部分
-- published artifact 层不能重命名它内部的相对路径结构
-- 允许做的是“job markdown 图片目录包装 + 页面作用域隔离”，例如 `images/page-6/` 前缀
-- 不允许把 provider 返回的 `imgs/...` 内部结构改写成仓库自定义命名
+- Khóa `markdown.images` là một phần ngữ nghĩa của provider raw
+- Tầng artifact đã phát hành không thể đổi tên cấu trúc đường dẫn tương đối bên trong nó
+- Được phép làm là “đóng gói thư mục hình ảnh markdown job + cô lập phạm vi trang”, ví dụ tiền tố `images/page-6/`
+- Không được phép đổi tên cấu trúc bên trong `imgs/...` do provider trả về thành tên tùy chỉnh của kho
 
-### 属于 normalized_document
+### Thuộc normalized_document
 
-典型例子：
+Ví dụ điển hình:
 
 - `document.v1.json`
 - `document.v1.report.json`
 
-处理规则：
+Quy tắc xử lý:
 
-- 这是 OCR 到 translation/rendering 的稳定交接层
-- 语义增强优先在 adapter/schema 侧完成
+- Đây là tầng giao nhận ổn định từ OCR đến translation/rendering
+- Nâng cấp ngữ nghĩa ưu tiên thực hiện ở phía adapter/schema
 
-### 属于 artifact export
+### Thuộc artifact export
 
-典型例子：
+Ví dụ điển hình:
 
 - `markdown_raw`
 - `markdown_images_dir`
@@ -324,39 +324,39 @@ artifact 层不应该反向变成 provider 语义层。
 - `provider_result_json`
 - `normalized_document_json`
 
-处理规则：
+Quy tắc xử lý:
 
-- 关注 artifact key、ready 状态、相对路径、group、content type
-- 不在这里发明新的 provider 语义
+- Quan tâm đến khóa artifact, trạng thái ready, đường dẫn tương đối, nhóm, loại nội dung
+- Không phát minh ngữ nghĩa provider mới ở đây
 
-### 属于 download API
+### Thuộc download API
 
-典型例子：
+Ví dụ điển hình:
 
 - `/normalized-document`
 - `/normalization-report`
 - `/markdown`
 - `/artifacts/{artifact_key}`
 
-处理规则：
+Quy tắc xử lý:
 
-- 关注资源暴露形式、鉴权、响应头、streaming
-- 不在这里解释 Paddle raw 的业务含义
+- Quan tâm đến hình thức phơi bày tài nguyên, xác thực, tiêu đề phản hồi, streaming
+- Không giải thích ý nghĩa nghiệp vụ của Paddle raw ở đây
 
-## 8. 文档主口径
+## 8. Khẩu ngữ chính của tài liệu
 
-以后讨论这块时，统一用下面这套说法：
+Khi thảo luận về phần này, hãy thống nhất sử dụng các thuật ngữ sau:
 
-- `provider raw`：Paddle 原始输出和原始目录
-- `normalized_document`：统一文档契约，翻译/渲染正式输入
-- `artifact export`：作业产物注册、打包和导出
-- `download API`：对外 HTTP 资源暴露
+- `provider raw`: Đầu ra và thư mục thô của Paddle
+- `normalized_document`: Hợp đồng tài liệu thống nhất, đầu vào chính thức cho dịch/kết xuất
+- `artifact export`: Đăng ký, đóng gói và xuất sản phẩm công việc
+- `download API`: Phơi bày tài nguyên HTTP ra bên ngoài
 
-不要再混用下面这些说法：
+Đừng tiếp tục sử dụng các cách nói lẫn lộn sau:
 
-- “Markdown 就是 Paddle 输出”
-- “artifact 就是 schema”
-- “下载接口等于 provider contract”
-- “只要能下载就能当主链路输入”
+- “Markdown chính là đầu ra của Paddle”
+- “artifact chính là schema”
+- “Giao diện tải xuống bằng với provider contract”
+- “Chỉ cần có thể tải xuống thì có thể làm đầu vào luồng chính”
 
-这些说法都会把层次重新耦合回去。
+Những cách nói này sẽ ghép nối lại các tầng.

@@ -18,7 +18,7 @@ export async function listCollections(apiPrefix) {
     headers: buildApiHeaders(),
   });
   if (!resp.ok) {
-    throw new Error(`读取分类失败，请稍后重试。(${resp.status})`);
+    throw new Error(`Không thể tải danh mục, vui lòng thử lại sau.(${resp.status})`);
   }
   return unwrapEnvelope(await resp.json());
 }
@@ -37,7 +37,7 @@ export async function createCollection(apiPrefix, { name, parentId = "" }: any =
   });
   if (!resp.ok) {
     const envelope = await resp.json().catch(() => null);
-    throw new Error(`${envelope?.message || "新建分类失败，请稍后重试。"}(${resp.status})`);
+    throw new Error(`${envelope?.message || "Không thể tạo danh mục, vui lòng thử lại sau."}(${resp.status})`);
   }
   return unwrapEnvelope(await resp.json()) as {
     collection_id?: string;
@@ -46,11 +46,11 @@ export async function createCollection(apiPrefix, { name, parentId = "" }: any =
   };
 }
 
-// body 支持 { name?, sort_order? }
+// body hỗ trợ { name?, sort_order? }
 export async function patchCollection(apiPrefix, collectionId, payload = {}) {
   const normalized = `${collectionId || ""}`.trim();
   if (!normalized) {
-    throw new Error("缺少 collection_id。");
+    throw new Error("Thiếu collection_id.");
   }
   if (isMockMode()) {
     return patchMockCollection(normalized, payload);
@@ -65,7 +65,7 @@ export async function patchCollection(apiPrefix, collectionId, payload = {}) {
   });
   if (!resp.ok) {
     const envelope = await resp.json().catch(() => null);
-    throw new Error(`${envelope?.message || "更新分类失败，请稍后重试。"}(${resp.status})`);
+    throw new Error(`${envelope?.message || "Không thể cập nhật danh mục, vui lòng thử lại sau."}(${resp.status})`);
   }
   return unwrapEnvelope(await resp.json());
 }
@@ -73,7 +73,7 @@ export async function patchCollection(apiPrefix, collectionId, payload = {}) {
 export async function deleteCollection(apiPrefix, collectionId) {
   const normalized = `${collectionId || ""}`.trim();
   if (!normalized) {
-    throw new Error("缺少 collection_id。");
+    throw new Error("Thiếu collection_id.");
   }
   if (isMockMode()) {
     return deleteMockCollection(normalized);
@@ -84,7 +84,7 @@ export async function deleteCollection(apiPrefix, collectionId) {
   });
   if (!resp.ok) {
     const envelope = await resp.json().catch(() => null);
-    throw new Error(`${envelope?.message || "删除分类失败，请稍后重试。"}(${resp.status})`);
+    throw new Error(`${envelope?.message || "Không thể xóa danh mục, vui lòng thử lại sau."}(${resp.status})`);
   }
   return unwrapEnvelope(await resp.json());
 }
@@ -92,7 +92,7 @@ export async function deleteCollection(apiPrefix, collectionId) {
 export async function addDocumentsToCollection(apiPrefix, collectionId, documentIds = []) {
   const normalized = `${collectionId || ""}`.trim();
   if (!normalized) {
-    throw new Error("缺少 collection_id。");
+    throw new Error("Thiếu collection_id.");
   }
   if (isMockMode()) {
     return addMockCollectionDocuments(normalized, documentIds);
@@ -107,7 +107,7 @@ export async function addDocumentsToCollection(apiPrefix, collectionId, document
   });
   if (!resp.ok) {
     const envelope = await resp.json().catch(() => null);
-    throw new Error(`${envelope?.message || "加入分类失败，请稍后重试。"}(${resp.status})`);
+    throw new Error(`${envelope?.message || "Không thể thêm vào danh mục, vui lòng thử lại sau."}(${resp.status})`);
   }
   return unwrapEnvelope(await resp.json());
 }
@@ -116,7 +116,7 @@ export async function removeDocumentFromCollection(apiPrefix, collectionId, docu
   const normalizedCollectionId = `${collectionId || ""}`.trim();
   const normalizedDocumentId = `${documentId || ""}`.trim();
   if (!normalizedCollectionId || !normalizedDocumentId) {
-    throw new Error("缺少 collection_id 或 document_id。");
+    throw new Error("Thiếu collection_id hoặc document_id.");
   }
   if (isMockMode()) {
     return removeMockCollectionDocument(normalizedCollectionId, normalizedDocumentId);
@@ -133,7 +133,7 @@ export async function removeDocumentFromCollection(apiPrefix, collectionId, docu
   );
   if (!resp.ok) {
     const envelope = await resp.json().catch(() => null);
-    throw new Error(`${envelope?.message || "移出分类失败，请稍后重试。"}(${resp.status})`);
+    throw new Error(`${envelope?.message || "Không thể xóa khỏi danh mục, vui lòng thử lại sau."}(${resp.status})`);
   }
   return unwrapEnvelope(await resp.json());
 }

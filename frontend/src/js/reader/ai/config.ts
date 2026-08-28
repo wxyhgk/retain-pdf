@@ -8,7 +8,7 @@ import {
 } from "../../config/persisted-config.js";
 import { defaultCredentialsStatePort } from "../../features/credentials/default-state-port.js";
 
-/** 取第一个 trim 后非空的字符串；空白 / 空串不算有效凭据。 */
+/** Return the first non-empty string after trim; blank strings are not valid credentials. */
 function firstNonEmpty(...candidates: unknown[]): string {
   for (const candidate of candidates) {
     const value = `${candidate ?? ""}`.trim();
@@ -20,9 +20,9 @@ function firstNonEmpty(...candidates: unknown[]): string {
 }
 
 /**
- * 读取「设置 → API 设置」里的模型 API Key。
- * 优先级：内存 credentials 状态 → 持久化配置（桌面 snapshot / localStorage）。
- * 不读 runtime-config 密钥。
+ * Read the model API Key from Settings -> API Settings.
+ * Priority: in-memory credentials state, then persisted config (desktop snapshot/localStorage).
+ * Never read runtime-config secrets.
  */
 export function readSettingsModelApiKey(
   browserConfig = loadBrowserStoredConfig(),
@@ -43,7 +43,7 @@ export function resolveReaderAiConfig({
   browserConfig = loadBrowserStoredConfig(),
   developerConfig = loadDeveloperStoredConfig(),
 } = {}) {
-  // 模型 Key：仅用户设置；baseUrl / model 可回退 runtime 默认（非密钥）
+  // Model Key: user settings only; baseUrl/model may fall back to runtime defaults, which are not secrets.
   return {
     apiKey: readSettingsModelApiKey(browserConfig),
     baseUrl: firstNonEmpty(developerConfig?.baseUrl, defaultModelBaseUrl()),
@@ -52,12 +52,12 @@ export function resolveReaderAiConfig({
   };
 }
 
-/** 是否已在设置中配置下游模型 API Key（对话前置门禁）。 */
+/** Whether the downstream model API Key is configured in settings, used as the chat preflight gate. */
 export function hasModelApiKey(): boolean {
   return Boolean(readSettingsModelApiKey());
 }
 
-/** 凭据保存后派发，供 AI 输入门禁立刻刷新。 */
+/** Dispatched after credentials are saved so the AI input gate refreshes immediately. */
 export const CREDENTIALS_CHANGED_EVENT = "retainpdf:credentials-changed";
 
 export function notifyCredentialsChanged(): void {
@@ -69,4 +69,4 @@ export function notifyCredentialsChanged(): void {
 }
 
 export const MISSING_MODEL_API_KEY_MESSAGE =
-  "缺少模型 API Key：请到设置 → API 设置填写 DeepSeek 等模型 Key（不是后端 X-API-Key）。";
+  "Thiếu model API Key: vào Cài đặt -> Cài đặt API để nhập key model như DeepSeek (không phải backend X-API-Key).";

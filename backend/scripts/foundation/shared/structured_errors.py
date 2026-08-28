@@ -148,37 +148,37 @@ def _failure_category_for(*, failure_code: str, failed_stage: str) -> str:
 
 
 def _suggestion_for(*, failure_code: str, failure_category: str, provider: str) -> str:
-    provider_label = provider.strip() or "上游服务"
+    provider_label = provider.strip() or "dịch vụ thượng nguồn"
     suggestions = {
-        "auth_failed": f"检查 {provider_label} 凭据、模型 API Key 或相关访问令牌是否有效。",
-        "dns_resolution_failed": "检查当前机器的 DNS / 网络连通性，确认目标域名可解析后再重试。",
-        "upstream_timeout": "检查网络质量、上游服务负载或适当增大超时后再重试。",
-        "upstream_rate_limited": f"{provider_label} 当前限流，请稍后重试或降低并发。",
-        "upstream_bad_request": "检查请求参数、输入文件和上游接口约束，修正后再重试。",
-        "placeholder_unstable": "检查公式占位符保护链和当前批次输入，必要时缩小批次或切换保守模式。",
-        "translation_protocol_shell": "检查翻译提示词与模型返回；该错误通常表示模型输出了 JSON/协议外壳而不是纯译文。",
-        "typst_dependency_download_failed": "检查 Typst 依赖源网络连通性，必要时预热依赖或重试。",
-        "render_failed": "检查渲染输入、字体和 Typst 编译日志，修正渲染问题后重试。",
-        "json_decode_failed": "检查 OCR 原始结果是否完整有效，必要时重新拉取或重新生成。",
-        "document_schema_validation_failed": "检查标准化输出是否满足 document.v1 契约，再重新执行后续阶段。",
-        "source_pdf_missing": "检查任务工作目录和源 PDF 路径，确认文件存在且可访问。",
-        "source_pdf_open_failed": "检查源 PDF 是否损坏或不可读，替换输入文件后重试。",
+        "auth_failed": f"Kiểm tra thông tin xác thực của {provider_label}, API Key của mô hình hoặc mã truy cập liên quan còn hợp lệ.",
+        "dns_resolution_failed": "Kiểm tra DNS / kết nối mạng của máy hiện tại, xác nhận tên miền đích phân giải được rồi thử lại.",
+        "upstream_timeout": "Kiểm tra chất lượng mạng, tải của dịch vụ thượng nguồn hoặc tăng thời gian chờ rồi thử lại.",
+        "upstream_rate_limited": f"{provider_label} đang bị giới hạn tần suất, hãy thử lại sau hoặc giảm độ đồng thời.",
+        "upstream_bad_request": "Kiểm tra tham số yêu cầu, tệp đầu vào và ràng buộc giao diện thượng nguồn, sửa lại rồi thử lại.",
+        "placeholder_unstable": "Kiểm tra chuỗi bảo vệ placeholder công thức và đầu vào lô hiện tại, nếu cần hãy thu nhỏ lô hoặc chuyển sang chế độ thận trọng.",
+        "translation_protocol_shell": "Kiểm tra prompt dịch và phản hồi của mô hình; lỗi này thường cho thấy mô hình xuất ra vỏ JSON/giao thức thay vì bản dịch thuần.",
+        "typst_dependency_download_failed": "Kiểm tra kết nối mạng của nguồn phụ thuộc Typst, nếu cần hãy làm nóng phụ thuộc hoặc thử lại.",
+        "render_failed": "Kiểm tra đầu vào render, phông chữ và nhật ký biên dịch Typst, sửa lỗi render rồi thử lại.",
+        "json_decode_failed": "Kiểm tra kết quả OCR gốc có đầy đủ và hợp lệ không, nếu cần hãy tải lại hoặc tạo lại.",
+        "document_schema_validation_failed": "Kiểm tra đầu ra chuẩn hóa có đáp ứng hợp đồng document.v1 không, rồi thực hiện lại các giai đoạn sau.",
+        "source_pdf_missing": "Kiểm tra thư mục làm việc của tác vụ và đường dẫn PDF nguồn, xác nhận tệp tồn tại và truy cập được.",
+        "source_pdf_open_failed": "Kiểm tra PDF nguồn có bị hỏng hoặc không đọc được không, thay tệp đầu vào rồi thử lại.",
     }
     if failure_code in suggestions:
         return suggestions[failure_code]
     category_suggestions = {
-        "auth": f"检查 {provider_label} 鉴权配置和权限范围。",
-        "network": "检查网络、代理和 DNS 配置后再重试。",
-        "timeout": "检查上游服务响应时间或增大超时后再试。",
-        "rate_limit": "降低并发、等待限流窗口恢复后再重试。",
-        "input": "检查输入内容、文件路径和请求参数。",
-        "normalization": "检查 OCR 输出和标准化输入契约。",
-        "translation": "检查翻译阶段输入、批次划分和模型返回。",
-        "render": "检查渲染输入、字体和编译环境。",
-        "provider": f"检查 {provider_label} 返回的错误码与原始响应。",
-        "internal": "查看 traceback 与任务日志，定位未分类的内部异常。",
+        "auth": f"Kiểm tra cấu hình xác thực và phạm vi quyền của {provider_label}.",
+        "network": "Kiểm tra mạng, proxy và cấu hình DNS rồi thử lại.",
+        "timeout": "Kiểm tra thời gian phản hồi của dịch vụ thượng nguồn hoặc tăng thời gian chờ rồi thử lại.",
+        "rate_limit": "Giảm độ đồng thời, chờ cửa sổ giới hạn tần suất phục hồi rồi thử lại.",
+        "input": "Kiểm tra nội dung đầu vào, đường dẫn tệp và tham số yêu cầu.",
+        "normalization": "Kiểm tra đầu ra OCR và hợp đồng đầu vào chuẩn hóa.",
+        "translation": "Kiểm tra đầu vào giai đoạn dịch, phân chia lô và phản hồi mô hình.",
+        "render": "Kiểm tra đầu vào render, phông chữ và môi trường biên dịch.",
+        "provider": f"Kiểm tra mã lỗi và phản hồi gốc mà {provider_label} trả về.",
+        "internal": "Xem traceback và nhật ký tác vụ để định vị ngoại lệ nội bộ chưa phân loại.",
     }
-    return category_suggestions.get(failure_category, "查看 traceback 与任务日志，定位失败根因。")
+    return category_suggestions.get(failure_category, "Xem traceback và nhật ký tác vụ để định vị nguyên nhân thất bại.")
 
 
 def _build_raw_excerpt(detail: str, raw_traceback: str) -> str:
@@ -205,22 +205,22 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
     provider_stage = _extract_provider_stage(f"{detail}\n{raw_traceback}")
 
     error_type = "python_unhandled_exception"
-    summary = "任务失败，但暂未识别出明确根因"
+    summary = "Tác vụ thất bại, nhưng chưa nhận diện được nguyên nhân rõ ràng"
     retryable = True
 
     if any(token in lowered for token in ("failed to resolve", "temporary failure in name resolution", "nameresolutionerror", "socket.gaierror")):
         error_type = "dns_resolution_failed"
-        summary = "外部服务域名解析失败"
+        summary = "Không phân giải được tên miền của dịch vụ bên ngoài"
     elif any(token in lowered for token in ("readtimeout", "connecttimeout", "timed out")):
         error_type = "upstream_timeout"
-        summary = "外部服务请求超时"
+        summary = "Yêu cầu dịch vụ bên ngoài hết thời gian chờ"
     elif stage == "render" and any(token in lowered for token in ("filenotfounderror", "no such file or directory")):
         error_type = "render_failed"
-        summary = "排版或编译阶段失败"
+        summary = "Thất bại ở giai đoạn sắp chữ hoặc biên dịch"
         retryable = True
     elif http_status_code == 429 or any(token in lowered for token in ("rate limited", "rate limit", "too many requests", "retry-after")):
         error_type = "upstream_rate_limited"
-        summary = "外部服务请求被限流"
+        summary = "Yêu cầu dịch vụ bên ngoài bị giới hạn tần suất"
     elif http_status_code in {401, 403} or any(
         token in lowered
         for token in (
@@ -233,11 +233,11 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         )
     ):
         error_type = "auth_failed"
-        summary = "鉴权失败"
+        summary = "Thất bại xác thực"
         retryable = False
     elif http_status_code == 400:
         error_type = "upstream_bad_request"
-        summary = "上游服务拒绝请求（400）"
+        summary = "Dịch vụ thượng nguồn từ chối yêu cầu (400)"
         retryable = False
     elif any(
         token in lowered
@@ -249,14 +249,14 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         )
     ):
         error_type = "placeholder_unstable"
-        summary = "公式占位符校验失败"
+        summary = "Kiểm tra placeholder công thức thất bại"
     elif any(token in lowered for token in ("translationprotocolerror", "protocol/json shell")):
         error_type = "translation_protocol_shell"
-        summary = "翻译模型返回了协议或 JSON 外壳"
+        summary = "Mô hình dịch trả về vỏ giao thức hoặc JSON"
         stage = "translation"
     elif any(token in lowered for token in ("failed to download package", "packages.typst.org", "downloading @preview/")):
         error_type = "typst_dependency_download_failed"
-        summary = "Typst 渲染依赖下载失败"
+        summary = "Tải phụ thuộc render Typst thất bại"
     elif any(
         token in lowered
         for token in (
@@ -266,32 +266,32 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         )
     ):
         error_type = "typst_runtime_failed"
-        summary = "Typst 运行时启动失败"
+        summary = "Khởi động runtime Typst thất bại"
         retryable = False
         stage = "render"
     elif any(token in lowered for token in ("typst compile", "typst error", "render failed", "failed to render", "font not found", "missing bundled font")):
         error_type = "render_failed"
-        summary = "排版或编译阶段失败"
+        summary = "Thất bại ở giai đoạn sắp chữ hoặc biên dịch"
         retryable = False
         stage = "render"
     elif any(token in lowered for token in ("jsondecodeerror", "expecting value", "extra data", "invalid control character")):
         error_type = "json_decode_failed"
-        summary = "OCR 结果 JSON 解析失败"
+        summary = "Phân tích JSON kết quả OCR thất bại"
         stage = "normalization"
         retryable = False
     elif any(token in lowered for token in ("validationerror", "normalized document schema validation failed")):
         error_type = "document_schema_validation_failed"
-        summary = "标准化文档校验失败"
+        summary = "Kiểm tra hợp lệ tài liệu chuẩn hóa thất bại"
         stage = "normalization"
         retryable = False
     elif "source pdf not found" in lowered:
         error_type = "source_pdf_missing"
-        summary = "源 PDF 缺失"
+        summary = "Thiếu PDF nguồn"
         stage = "normalization"
         retryable = False
     elif any(token in lowered for token in ("fitz.fitzerror", "pymupdf", "cannot open broken document", "file data error")):
         error_type = "source_pdf_open_failed"
-        summary = "源 PDF 打开失败"
+        summary = "Mở PDF nguồn thất bại"
         stage = "normalization"
         retryable = False
 

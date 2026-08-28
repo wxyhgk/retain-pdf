@@ -4,9 +4,9 @@ let lastPageIndicatorText = "";
 let lastPagePercent = -1;
 
 const READER_MODE_LABELS = {
-  source: "原文",
-  translated: "译文",
-  compare: "对照",
+  source: "Bản gốc",
+  translated: "Bản dịch",
+  compare: "Đối chiếu",
 };
 
 export function setReaderBootLoading(loading) {
@@ -77,7 +77,7 @@ export function setPageIndicator(currentPage, totalPages) {
   }
   const pageNumber = Math.max(1, Number(currentPage) || 1);
   const pageTotal = Math.max(1, Number(totalPages) || 1);
-  const pageText = `第 ${pageNumber} / ${pageTotal} 页`;
+  const pageText = `Trang ${pageNumber} / ${pageTotal}`;
   const percent = Math.max(0, Math.min(100, Math.round((pageNumber / pageTotal) * 100)));
   const text = `${pageText} · ${percent}%`;
   const pageEl = $("reader-bottom-hud-page");

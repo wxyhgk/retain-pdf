@@ -1,17 +1,17 @@
-// 图书馆网格滚动自动加载(蓝图 §2 features/library/)。
+// Tải tự động khi cuộn lưới thư viện (bản thiết kế §2 features/library/).
 //
-// 几何判定重写自 host-actions.js 的 shouldAutoLoadRecentJobs(260px / 0.35
-// 阈值,不 import——旧文件属"死(cutover 删)"清单,按蓝图口径原地重写这
-// ~10 行而不是复用)。触发口有两个,都汇到同一个 check():
-// 1. 滚动容器的 passive scroll 监听(用户手动划到底);
-// 2. refresh-scheduler.js 在每次分页提交后调用的 scheduleAutoLoadIfNeeded →
-//    viewPort.scheduleAutoLoadCheck({isSuspended})——通过
-//    react-view-port.js 的 registerAutoLoadChecker 接进来(内容变化后如果
-//    还没填满一屏,需要接着自动加载下一页)。
+// Phán đoán hình học viết lại từ shouldAutoLoadRecentJobs của host-actions.js (ngưỡng 260px / 0.35,
+// không import — file cũ thuộc danh sách "chết (cutover xóa)", viết lại tại chỗ ~10 dòng theo
+// mô tả bản thiết kế thay vì tái sử dụng). Có hai cổng kích hoạt, đều quy về cùng check():
+// 1. Lắng nghe passive scroll của vùng cuộn (người dùng cuộn tay đến đáy);
+// 2. refresh-scheduler.js gọi scheduleAutoLoadIfNeeded sau mỗi lần phân trang →
+//    viewPort.scheduleAutoLoadCheck({isSuspended}) — nối qua
+//    react-view-port.js's registerAutoLoadChecker (sau khi nội dung đổi mà chưa đầy
+//    một màn hình, cần tự động tải trang tiếp theo).
 //
-// loadMore 调用统一走 viewPort.handlersRef.current.onLoadMore(bindings.js
-// 绑定的是 () => runtime.loadRecentJobs({reset:false})),不直接调
-// runtime——保持与"更多"按钮同一条口径,避免出现两条平行的加载入口。
+// Lệnh loadMore thống nhất đi qua viewPort.handlersRef.current.onLoadMore (bindings.js
+// gắn là () => runtime.loadRecentJobs({reset:false})), không gọi thẳng runtime — giữ
+// chung đường với nút "Thêm", tránh hai đường tải song song.
 
 import { useCallback, useEffect } from "react";
 
@@ -37,10 +37,10 @@ export function useLibraryAutoLoad({ scrollBodyRef, hasMore, loadMoreLoading, vi
     }
   }, [hasMore, loadMoreLoading, scrollBodyRef, viewPort]);
 
-  // 接入 refresh-scheduler.js → viewPort.scheduleAutoLoadCheck 的调用链
+  // Nối chuỗi refresh-scheduler.js → viewPort.scheduleAutoLoadCheck
   useEffect(() => viewPort.registerAutoLoadChecker(check), [viewPort, check]);
 
-  // 滚动容器自身的被动监听
+  // Lắng nghe passive của chính vùng cuộn
   useEffect(() => {
     const scrollBody = scrollBodyRef.current;
     if (!scrollBody) {

@@ -1,7 +1,7 @@
-// React 阅读会话：
-// 1) 解析 job/document → URL
-// 2) 整文件下载完原文/译文 PDF（遮罩不关）
-// 3) 再展示阅读器；可见页渲染等优化在显示之后进行
+// Session đọc React:
+// 1) Resolve job/document -> URL
+// 2) Tải xong toàn bộ PDF gốc/bản dịch (overlay chưa tắt)
+// 3) Sau đó mới hiển thị reader; các tối ưu render page nhìn thấy chạy sau khi đã hiển thị.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -25,13 +25,13 @@ import {
 
 export type ReaderMode = "source" | "translated" | "compare";
 
-/** 与 legacy ReaderDownloadMenu 相同的下载上下文 */
+/** Download context giống legacy ReaderDownloadMenu. */
 export type ReaderDownloadContext = {
   fetchProtected: typeof defaultReaderDataPort.fetchProtected;
   jobId: string;
   jobPayload: Record<string, unknown> | null;
   manifestPayload: Record<string, unknown> | null;
-  /** 馆藏只读等无 job 时直接用已解析 URL */
+  /** Khi chỉ đọc thư viện và không có job, dùng trực tiếp URL đã resolve. */
   sourceUrl: string;
   translatedUrl: string;
   sourceOnly: boolean;
@@ -45,10 +45,10 @@ export type ReaderSessionState = {
   setMode: (mode: ReaderMode) => void;
   sourceUrl: string;
   translatedUrl: string;
-  /** 预下载完成的 PDF 字节；展示前已就绪 */
+  /** Bytes PDF đã predownload; sẵn sàng trước khi hiển thị. */
   sourceFile: ProtectedPdfFile | null;
   translatedFile: ProtectedPdfFile | null;
-  /** 下载完成、可以挂载 Document */
+  /** Tải xong, có thể mount Document. */
   assetsReady: boolean;
   boot: {
     loading: boolean;
@@ -220,17 +220,17 @@ export function useReaderSession(): ReaderSessionState {
           setTitle("");
           setJobPayload(null);
           setManifestPayload(null);
-          const file = await downloadOne(url, "正在下载原文 PDF…", 30, 85);
+          const file = await downloadOne(url, "Đang tải PDF gốc...", 30, 85);
           if (cancelled) return;
           if (!file) {
             setBoot({
               loading: false,
               percent: 100,
-              text: "源文件不可用：该文档没有可读取的源 PDF。",
+              text: "Tệp nguồn không khả dụng: tài liệu này không có PDF gốc có thể đọc.",
               stage: "failed",
               failed: true,
             });
-            postProgress({ percent: 100, text: "源文件下载失败", stage: "failed" });
+            postProgress({ percent: 100, text: "Tải tệp nguồn thất bại", stage: "failed" });
             return;
           }
           setSourceFile(file);
@@ -243,7 +243,7 @@ export function useReaderSession(): ReaderSessionState {
             failed: false,
           });
           postProgress({ percent: 100, text: READER_PROGRESS_COPY.ready, stage: "ready" });
-          // URL 锚点跳页见 useUrlAnchorJump（react-pdf 控制器）
+          // Nhảy trang theo URL anchor nằm ở useUrlAnchorJump (controller react-pdf).
           return;
         }
 
@@ -287,22 +287,22 @@ export function useReaderSession(): ReaderSessionState {
           return;
         }
 
-        // 先下完所有 PDF，再允许界面挂载 Document
-        setBootProgress(setBoot, 25, "正在下载 PDF…", "download");
+        // Tải xong tất cả PDF trước, rồi mới cho UI mount Document.
+        setBootProgress(setBoot, 25, "Đang tải PDF...", "download");
         const tasks: Promise<void>[] = [];
         let sourceBytes: ProtectedPdfFile | null = null;
         let translatedBytes: ProtectedPdfFile | null = null;
 
         if (sourceFinal) {
           tasks.push(
-            downloadOne(sourceFinal, "正在下载原文 PDF…", 30, 55).then((f) => {
+            downloadOne(sourceFinal, "Đang tải PDF gốc...", 30, 55).then((f) => {
               sourceBytes = f;
             }),
           );
         }
         if (translatedFinal) {
           tasks.push(
-            downloadOne(translatedFinal, "正在下载译文 PDF…", 55, 85).then((f) => {
+            downloadOne(translatedFinal, "Đang tải PDF bản dịch...", 55, 85).then((f) => {
               translatedBytes = f;
             }),
           );
@@ -316,11 +316,11 @@ export function useReaderSession(): ReaderSessionState {
           setBoot({
             loading: false,
             percent: 100,
-            text: "PDF 下载失败，请重试",
+            text: "Tải PDF thất bại, vui lòng thử lại",
             stage: "failed",
             failed: true,
           });
-          postProgress({ percent: 100, text: "PDF 下载失败", stage: "failed" });
+          postProgress({ percent: 100, text: "Tải PDF thất bại", stage: "failed" });
           return;
         }
 
@@ -335,7 +335,7 @@ export function useReaderSession(): ReaderSessionState {
           failed: false,
         });
         postProgress({ percent: 100, text: READER_PROGRESS_COPY.ready, stage: "ready" });
-        // URL 锚点跳页见 useUrlAnchorJump（react-pdf 控制器）
+        // Nhảy trang theo URL anchor nằm ở useUrlAnchorJump (controller react-pdf).
       } catch (err) {
         if (cancelled) return;
         const text = err instanceof Error ? err.message : READER_PROGRESS_COPY.failed;

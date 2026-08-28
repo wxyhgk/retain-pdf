@@ -19,7 +19,7 @@ export function showDeleteConfirmation(control, onConfirm, documentRef = control
   const popover = documentRef.createElement("span");
   popover.className = "reader-delete-popover";
   popover.setAttribute?.("role", "dialog");
-  popover.setAttribute?.("aria-label", "确认删除截图摘录");
+  popover.setAttribute?.("aria-label", "Xác nhận xóa trích đoạn ảnh chụp");
   popover.addEventListener?.("click", (event) => {
     event.preventDefault?.();
     event.stopPropagation?.();
@@ -27,12 +27,12 @@ export function showDeleteConfirmation(control, onConfirm, documentRef = control
 
   const message = documentRef.createElement("span");
   message.className = "reader-delete-popover-text";
-  message.textContent = "删除？";
+  message.textContent = "Xóa?";
 
   const cancel = documentRef.createElement("button");
   cancel.type = "button";
   cancel.className = "reader-delete-popover-cancel";
-  cancel.textContent = "取消";
+  cancel.textContent = "Hủy";
   cancel.addEventListener?.("click", (event) => {
     event.preventDefault?.();
     event.stopPropagation?.();
@@ -43,7 +43,7 @@ export function showDeleteConfirmation(control, onConfirm, documentRef = control
   const confirm = documentRef.createElement("button");
   confirm.type = "button";
   confirm.className = "reader-delete-popover-confirm";
-  confirm.textContent = "删除";
+  confirm.textContent = "Xóa";
   confirm.addEventListener?.("click", (event) => {
     event.preventDefault?.();
     event.stopPropagation?.();
@@ -99,7 +99,7 @@ export function attachSelectionClose(overlay, onClose, {
     const locate = documentRef.createElement("button");
     locate.type = "button";
     locate.className = "reader-selection-locate";
-    locate.setAttribute("aria-label", "定位截图位置");
+    locate.setAttribute("aria-label", "Định vị trích đoạn ảnh chụp");
     locate.textContent = "↗";
     let peekStartedAt = 0;
     let isPeeking = false;
@@ -137,7 +137,7 @@ export function attachSelectionClose(overlay, onClose, {
     const collect = documentRef.createElement("button");
     collect.type = "button";
     collect.className = "reader-selection-collect";
-    collect.setAttribute("aria-label", "收起截图摘录");
+    collect.setAttribute("aria-label", "Thu gọn trích đoạn ảnh chụp");
     collect.textContent = "−";
     collect.addEventListener("click", (event) => {
       event.preventDefault();
@@ -149,7 +149,7 @@ export function attachSelectionClose(overlay, onClose, {
   const close = documentRef.createElement("button");
   close.type = "button";
   close.className = "reader-selection-close";
-  close.setAttribute("aria-label", "删除截图摘录");
+  close.setAttribute("aria-label", "Xóa trích đoạn ảnh chụp");
   close.textContent = "×";
   close.addEventListener("click", (event) => {
     event.preventDefault();
@@ -177,7 +177,7 @@ export function setOverlayPreview(overlay, previewUrl = "") {
 }
 
 export function selectionSummary(selection: Partial<ReaderSelection> = {}) {
-  return `第 ${selection.page || "-"} 页，选区 ${formatRect(selection.rect || {})}`;
+  return `Trang ${selection.page || "-"}, vùng chọn ${formatRect(selection.rect || {})}`;
 }
 
 export function showSelectionToast(pageElement, rect: Partial<PixelRect>, message) {
@@ -200,7 +200,7 @@ export function showSelectionToast(pageElement, rect: Partial<PixelRect>, messag
   }, 1100);
 }
 
-export function showSourceLocator(pageElement, rect: Partial<PixelRect> | null | undefined, message = "收藏位置") {
+export function showSourceLocator(pageElement, rect: Partial<PixelRect> | null | undefined, message = "Vị trí đã lưu") {
   if (!pageElement || !rect) {
     return;
   }

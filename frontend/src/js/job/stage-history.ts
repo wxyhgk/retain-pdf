@@ -21,7 +21,7 @@ export function summarizeStageName(stage, detail) {
     || normalizedStage.includes("submit")
     || normalizedStage.includes("queued")
   ) {
-    return "上传 PDF";
+    return "Tải lên PDF";
   }
   if (
     normalizedStage.includes("ocr_processing")
@@ -32,7 +32,7 @@ export function summarizeStageName(stage, detail) {
     || normalizedStage.includes("normalization")
     || normalizedStage.includes("normaliz")
   ) {
-    return "云端 OCR / 标准化";
+    return "OCR đám mây / Chuẩn hóa";
   }
   if (
     normalizedStage.includes("translation_prepare")
@@ -41,7 +41,7 @@ export function summarizeStageName(stage, detail) {
     || normalizedStage.includes("garbled")
     || normalizedStage.includes("translat")
   ) {
-    return "翻译准备 / 跨栏跨页判断";
+    return "Chuẩn bị dịch / Phán đoán chéo cột chéo trang";
   }
   if (
     normalizedStage.includes("render")
@@ -49,26 +49,26 @@ export function summarizeStageName(stage, detail) {
     || normalizedStage.includes("compile")
     || normalizedStage.includes("overlay")
   ) {
-    return "渲染 PDF";
+    return "Render PDF";
   }
   switch (normalizedStage) {
     case "queued":
-      return "排队中";
+      return "Đang chờ";
     case "running":
-      return "处理中";
+      return "Đang xử lý";
     case "translating":
-      return "翻译";
+      return "Đang dịch";
     case "parsing":
     case "ocr":
-      return "解析 / OCR";
+      return "Phân tích / OCR";
     case "translation_prepare":
-      return "翻译准备";
+      return "Chuẩn bị dịch";
     case "rendering":
-      return "渲染";
+      return "Đang render";
     case "succeeded":
-      return "已完成";
+      return "Đã hoàn thành";
     case "failed":
-      return "失败";
+      return "Thất bại";
     default:
       return `${stage || "-"}`.trim() || "-";
   }

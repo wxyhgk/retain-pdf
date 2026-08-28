@@ -5,7 +5,7 @@ const PAGE_X = 540;     // center the PDF page in 1440-wide canvas (offset withi
 const PAGE_Y = 56;
 // MainCanvas is 1440 wide × ~580 tall (after chrome)
 
-// ── 1.1 上传 PDF ──────────────────────────────────────────────────────────
+// ── 1.1 Tải lên PDF ────────────────────────────────────────────────────────
 function SceneUpload({ progress, localTime }) {
   // 0.0–0.2: file appears bottom-left
   // 0.2–0.5: file flies up into a "drop zone"
@@ -40,7 +40,7 @@ function SceneUpload({ progress, localTime }) {
             stroke={FAINT} strokeWidth="1.5" strokeLinecap="round" />
         </svg>
         <div style={{ fontFamily: SANS, fontSize: 14, color: FAINT }}>
-          拖拽 PDF 到此处
+          Kéo thả PDF vào đây
         </div>
       </div>
 
@@ -126,7 +126,7 @@ function SceneUpload({ progress, localTime }) {
   );
 }
 
-// ── 1.2 云端 OCR ───────────────────────────────────────────────────────────
+// ── 1.2 OCR đám mây ───────────────────────────────────────────────────────
 function SceneCloud({ progress }) {
   // Page on left being scanned. As scan passes a row, glyphs appear in JSON tray on right.
   const scanY = animate({ from: 0, to: 1, start: 0.05, end: 0.95, ease: Easing.linear })(progress);
@@ -231,7 +231,7 @@ function OCRJsonRow({ idx, fresh }) {
   );
 }
 
-// ── 1.3 下载/整理 OCR 结果 ─────────────────────────────────────────────────
+// ── 1.3 Tải xuống/Sắp xếp kết quả OCR ───────────────────────────────────────
 function SceneFetch({ progress }) {
   // Lots of JSON snippets stream from a "cloud" icon, fall down, organize into rows.
   // 0–0.4: streaming particles fall down
@@ -329,7 +329,7 @@ function SceneFetch({ progress }) {
   );
 }
 
-// ── 1.4 标准化 ─────────────────────────────────────────────────────────────
+// 1.4 Chuẩn hóa
 function SceneStandardize({ progress }) {
   // Messy boxes → clean grid; coords cleaned up.
   // Show a "before" set of bboxes (rotated/jittered) → "after" (aligned)

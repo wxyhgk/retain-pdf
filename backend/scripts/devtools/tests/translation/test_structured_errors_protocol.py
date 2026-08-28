@@ -43,8 +43,8 @@ def test_classify_exception_extracts_provider_code_and_provider_category():
     assert payload["provider_stage"] == "mineru_processing"
     assert payload["provider_code"] == "A0211"
     assert payload["provider"] == "mineru"
-    assert payload["summary"] == "鉴权失败"
-    assert "凭据" in payload["suggestion"] or "token" in payload["suggestion"].lower()
+    assert payload["summary"] == "Thất bại xác thực"
+    assert "xác thực" in payload["suggestion"] or "token" in payload["suggestion"].lower()
 
 
 def test_direct_typst_protocol_shell_is_classified_as_translation_not_render():
@@ -83,4 +83,4 @@ def test_rate_limit_errors_are_classified_as_retryable_rate_limit():
     assert payload["failure_code"] == "upstream_rate_limited"
     assert payload["failure_category"] == "rate_limit"
     assert payload["retryable"] is True
-    assert "限流" in payload["summary"]
+    assert "giới hạn tần suất" in payload["summary"]

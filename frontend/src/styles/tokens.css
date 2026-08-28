@@ -1,21 +1,21 @@
-/* 颜色与字体的语义契约（真值在 themes/* 皮肤文件）。
+/* Hợp đồng ngữ nghĩa màu sắc và font chữ (giá trị thật trong themes/* skin files).
  *
- * 规则：
- * - 组件 / 工具类只用 var(--bg|--ink|--accent|…) 语义名
- * - 换肤 = 换 data-theme，不改组件
- * - 新增皮肤：themes/<id>.css + themes/index.css 一行 + shared/theme/registry.ts
- * - 见 docs/theme-system/ADDING_A_THEME.md
+ * Quy tắc:
+ * - Component / utility class chỉ dùng tên ngữ nghĩa var(--bg|--ink|--accent|…)
+ * - Đổi skin = đổi data-theme, không đổi component
+ * - Thêm skin mới: themes/<id>.css + themes/index.css một dòng + shared/theme/registry.ts
+ * - Xem docs/theme-system/ADDING_A_THEME.md
  */
 
 @import "./themes/index.css";
 
 :root {
-  /* 字体与动效与皮肤无关，固定在此 */
+  /* Font chữ và hiệu ứng động không liên quan đến skin, cố định tại đây */
   --font-sans: "SF Pro Display", "SF Pro SC", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif;
   --font-display: "SF Pro Display", "SF Pro SC", "PingFang SC", sans-serif;
   --font-mono: "Iosevka", "JetBrains Mono", monospace;
 
-  /* 动效基准曲线 */
+  /* Đường cong chuẩn hiệu ứng động */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);

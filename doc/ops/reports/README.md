@@ -1,13 +1,13 @@
-# 生成报告
+# Báo cáo sinh tự động
 
-这里放自动生成的检查结果、smoke 报告和临时导出的结果，不放手写说明文档。
+Nơi đây lưu trữ kết quả kiểm tra tự động sinh, báo cáo smoke và kết quả xuất tạm thời, không chứa tài liệu giải thích viết tay.
 
-## 当前内容
+## Nội dung hiện tại
 
-- [前端状态 Smoke 最新报告](./frontend-status-smoke-latest.json)
+- [Báo cáo Smoke trạng thái frontend mới nhất](./frontend-status-smoke-latest.json)
 
-## 使用约定
+## Quy ước sử dụng
 
-- 这些文件通常由脚本自动写出，默认不手工编辑。
-- 如果报告格式变了，优先改生成脚本，再重新生成报告。
-- 这类文件的作用是“留痕和排障”，不是长期协议源。
+- Các tệp này thường được script tự động ghi ra, mặc định không chỉnh sửa thủ công.
+- Nếu định dạng báo cáo thay đổi, ưu tiên sửa script sinh, sau đó tạo lại báo cáo.
+- Vai trò của các tệp này là "lưu dấu vết và khắc phục sự cố", không phải nguồn hợp đồng lâu dài.

@@ -1,8 +1,8 @@
 import { resolveMarkedVendorUrl } from "../runtime/vendor-url.js";
 
-// AI 回答专用的 Markdown 安全渲染:marked 惰性加载,且**转义原始 HTML**——
-// 模型输出的 `**加粗**`/`## 标题`/列表会渲染,但 `<img>`/`<script>` 一律显示为
-// 字面文本,绝不进入 DOM(防注入)。引用按钮注入与本模块解耦(见 chat.js)。
+// Render Markdown an toàn chuyên dụng cho câu trả lời AI: marked tải lười, và **thoát HTML gốc** —
+// Output của mô hình như `**in đậm**`/`## tiêu đề`/danh sách sẽ được render, nhưng `<img>`/`<script>` đều hiển thị dưới dạng
+// văn bản thô, tuyệt đối không vào DOM (chống injection). Injection nút trích dẫn được tách khỏi module này (xem chat.js).
 
 let markedPromise = null;
 
@@ -15,7 +15,7 @@ function escapeHtml(value = "") {
     .replaceAll("'", "&#39;");
 }
 
-// marked 各版本 renderer.html 的入参不一(字符串或 token),统一取原文再转义
+// Tham số đầu vào của renderer.html trong các phiên bản marked không giống nhau (chuỗi hoặc token), thống nhất lấy văn bản gốc rồi thoát
 function rawHtmlText(input) {
   if (typeof input === "string") {
     return input;
@@ -27,7 +27,7 @@ function loadMarked() {
   if (!markedPromise) {
     markedPromise = import(resolveMarkedVendorUrl())
       .then(({ marked, Marked }) => {
-        // 用独立实例,避免污染 markdown-preview 的全局 marked 配置
+        // Sử dụng instance độc lập, tránh làm ô nhiễm cấu hình global marked của markdown-preview
         const instance = typeof Marked === "function" ? new Marked() : marked;
         instance.use({
           renderer: {
@@ -44,13 +44,13 @@ function loadMarked() {
   return markedPromise;
 }
 
-// Markdown 文本 → 清洗后的 DocumentFragment。marked 不可用(如 node 测试)时抛错,
-// 调用方负责回退为纯文本节点。
+// Markdown văn bản → DocumentFragment đã làm sạch. Ném lỗi khi marked không khả dụng (như test node),
+// Phía gọi chịu trách nhiệm fallback về node văn bản thuần túy.
 export async function renderAiMarkdownFragment(text, { documentRef = globalThis.document } = {}) {
   const marked = await loadMarked();
   const template = documentRef.createElement("template");
   template.innerHTML = marked.parse(`${text || ""}`, { async: false });
-  // 双保险:即便 renderer.html 漏网,也移除脚本类节点与内联事件/危险链接
+  // Đảm bảo kép: ngay cả khi renderer.html có lỗ hổng, vẫn xóa các node kiểu script và sự kiện inline/liên kết nguy hiểm
   const content = template.content;
   content.querySelectorAll("script, iframe, object, embed, img, svg").forEach((node) => node.remove());
   content.querySelectorAll("*").forEach((node) => {

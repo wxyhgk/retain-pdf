@@ -1,24 +1,24 @@
 # rendering/analysis/profile
 
-## 负责什么
+## Trách nhiệm
 
-单页事实画像层。这里只采集事实，例如页面尺寸、文字层、背景图、矢量对象和 OCR bbox 摘要。
+Tầng hồ sơ sự thật đơn trang. Chỉ thu thập sự thật, ví dụ kích thước trang, tầng văn bản, ảnh nền, đối tượng vector và tóm tắt OCR bbox.
 
-伪可编辑 PDF、图片型 PDF、混合复杂页、矢量重页都必须先在这里归一成
-`RenderPageProfile.kind`。执行层不要重新组合“背景图 + 文字层 + 矢量对象”
-这类判断，否则后续 source cleanup、hidden text strip、overlay route 会再次分叉。
+PDF giả chỉnh sửa, PDF dạng ảnh, trang phức tạp hỗn hợp, trang nặng vector đều phải chuẩn hóa về
+`RenderPageProfile.kind` tại đây trước. Tầng thực thi không được tái tổ hợp phán đoán kiểu "ảnh nền + tầng chữ + đối tượng vector",
+nếu không source cleanup, hidden text strip, overlay route sau đó sẽ lại phân nhánh.
 
-## 对外入口
+## Lối vào công khai
 
 - `builder.py`
 - `models.py`
 - `registry.py`
 
-## 不该做什么
+## Không nên làm gì
 
-- 不决定 redaction 策略。
-- 不操作 PDF 页面内容。
-- 不生成 Typst 或布局块。
-- 不根据调用场景改变同一页的分类。
+- Không quyết định chiến lược redaction.
+- Không thao tác nội dung trang PDF.
+- Không sinh Typst hoặc khối bố cục.
+- Không thay đổi phân loại của cùng một trang tùy ngữ cảnh gọi.
 
-新增画像维度时，优先新增一个独立 `.py` 文件，再由 `builder.py` 汇总。
+Khi thêm chiều hồ sơ mới, ưu tiên thêm một tệp `.py` độc lập, rồi để `builder.py` tổng hợp.

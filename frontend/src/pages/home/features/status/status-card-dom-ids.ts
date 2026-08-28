@@ -1,11 +1,11 @@
 import { DOWNLOAD_ACTION_IDS } from "../../composition/external.js";
 
-// 状态卡 DOM 契约 id 拷贝(蓝图 §2 features/status/)。
+// Bản sao id hợp đồng DOM của thẻ trạng thái (bản thiết kế §2 features/status/).
 //
-// 拷贝自 components/status/job-status-card-dom-contract.js(该文件属"死,由
-// StatusCard.jsx 家族替代"清单,js/components/ 禁止 import;
-// DOWNLOAD_ACTION_IDS 来自 contracts/,不在禁区,原样 import)。id 字符串
-// 逐一保留——smoke DOM 契约(蓝图 §0)靠这些 id 断言。
+// Sao chép từ components/status/job-status-card-dom-contract.js (file đó thuộc danh sách
+// "chết, do họ StatusCard.jsx thay thế", js/components/ cấm import;
+// DOWNLOAD_ACTION_IDS đến từ contracts/, không nằm trong vùng cấm, import nguyên trạng).
+// Chuỗi id giữ từng cái — hợp đồng DOM smoke (bản thiết kế §0) assert theo các id này.
 
 export const STATUS_CARD_IDS = Object.freeze({
   cancelButton: "cancel-btn",

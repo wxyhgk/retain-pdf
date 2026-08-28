@@ -1,62 +1,62 @@
-# pretext 第一层评估
+# Đánh giá tầng đầu pretext
 
-评估对象：
+Đối tượng đánh giá:
 
 - <https://github.com/chenglou/pretext>
 - <https://github.com/chenglou/pretext/blob/main/STATUS.md>
 
-评估结论：
+Kết luận đánh giá:
 
-`pretext` 值得进入 `layout-fit` 的候选方案清单，但第一阶段不要直接把它定为唯一测量内核。更稳妥的定位是：和原生 HTML/DOM 测量器并行，作为更可控、可缓存、低 reflow 的块级文本布局测量方案做小样本对照。
+`pretext` xứng đáng vào danh sách ứng viên của `layout-fit`, nhưng giai đoạn đầu không nên đặt nó làm nhân đo lường duy nhất. Định vị an toàn hơn là: song song với bộ đo HTML/DOM gốc, làm phương án đo bố cục văn bản cấp khối可控 hơn, có thể cache, ít reflow để đối chiếu mẫu nhỏ.
 
-## 和 layout-fit 的匹配点
+## Điểm phù hợp với layout-fit
 
-`layout-fit` 当前最重要的问题是块级拟合：给定文本、字体、目标宽高和候选排版参数，稳定计算行数、高度、宽度溢出，再选择最接近目标框的一组参数。
+Vấn đề quan trọng nhất hiện tại của `layout-fit` là khớp cấp khối: cho trước văn bản, font, chiều rộng/cao đích và tham số dàn trang ứng viên, tính ổn định số dòng, chiều cao, tràn chiều rộng, rồi chọn bộ tham số gần khung đích nhất.
 
-`pretext` 的核心方向正好贴近这部分问题：
+Hướng cốt lõi của `pretext` vừa khớp phần vấn đề này:
 
-- 它把文本布局拆成可编程的准备和布局步骤，而不是完全依赖 DOM reflow。
-- 它暴露了 `prepare()` 和 `layout()` 这类基础入口，适合做“同一段文本，多组参数反复测量”的扫描。
-- 它支持 `layoutWithLines()`、`prepareWithSegments()`、`measureLineStats()` 等更细粒度接口，适合拿到逐行结果和行统计信息。
-- 它强调低分配、低延迟的文本布局路径，适合后续做批量样本扫描或实时调参。
+- Nó tách bố cục văn bản thành bước chuẩn bị và bố cục có thể lập trình, thay vì phụ thuộc hoàn toàn vào DOM reflow.
+- Nó phơi các lối vào cơ sở như `prepare()` và `layout()`, phù hợp làm quét "cùng một đoạn văn bản, nhiều bộ tham số đo lặp lại".
+- Nó hỗ trợ các giao diện hạt mịn hơn như `layoutWithLines()`, `prepareWithSegments()`, `measureLineStats()`, phù hợp lấy kết quả từng dòng và thống kê dòng.
+- Nó nhấn mạnh đường dẫn bố cục văn bản phân bổ thấp, độ trễ thấp, phù hợp sau này làm quét mẫu hàng loạt hoặc tinh chỉnh tham số thời gian thực.
 
-## 可以直接服务的能力
+## Khả năng có thể phục vụ trực tiếp
 
-第一层可复用能力主要是测量和布局，不是完整 PDF 恢复：
+Khả năng tái sử dụng tầng đầu chủ yếu là đo lường và bố cục, không phải khôi phục PDF hoàn chỉnh:
 
-- 给定宽度约束后，计算文本如何换行。
-- 拿到行数、行宽和整体高度一类布局指标。
-- 支持在不同参数下重复运行布局，用于字号、行高和段宽扫描。
-- 支持更细的文本片段输入，为后续处理中英文混排、强调样式或占位符保留提供空间。
+- Sau khi cho ràng buộc chiều rộng, tính văn bản ngắt dòng thế nào.
+- Lấy các chỉ số bố cục như số dòng, chiều rộng dòng và chiều cao tổng thể.
+- Hỗ trợ chạy lại bố cục dưới các tham số khác nhau, dùng cho quét kích thước chữ, chiều cao dòng và chiều rộng đoạn.
+- Hỗ trợ đầu vào đoạn văn bản mịn hơn, tạo không gian cho xử lý sau này như trộn Trung-Anh, kiểu nhấn mạnh hoặc giữ chỗ placeholder.
 
-## 不能直接解决的问题
+## Vấn đề không thể giải quyết trực tiếp
 
-这些能力仍然需要 `layout-fit` 自己做上层封装：
+Những khả năng này vẫn cần `layout-fit` tự đóng gói tầng trên:
 
-- 从 `document.v1.json`、`translated/page-XXX-deepseek.json` 抽取块级样本。
-- 定义 `fixtures` 的样本格式和实验输出格式。
-- 把测量结果映射到 Typst 的字号、行高、段落参数。
-- 做页面级多块回放、碰撞检测和图文混排恢复。
-- 验证 CJK、中英文混排、行内公式和 OCR 框坐标下的实际误差。
-- 对比 DOM、`pretext`、Typst 三者在同一批样本上的行数和高度差异。
+- Trích xuất mẫu cấp khối từ `document.v1.json`, `translated/page-XXX-deepseek.json`.
+- Định nghĩa định dạng mẫu `fixtures` và định dạng đầu ra thí nghiệm.
+- Ánh xạ kết quả đo sang tham số kích thước chữ, chiều cao dòng, đoạn văn của Typst.
+- Làm phát lại đa khối cấp trang, phát hiện va chạm và khôi phục trộn hình-văn bản.
+- Xác minh sai số thực tế dưới CJK, trộn Trung-Anh, công thức nội dòng và tọa độ khung OCR.
+- Đối chiếu số dòng và chiều cao của DOM, `pretext`, Typst trên cùng một lô mẫu.
 
-## 当前风险
+## Rủi ro hiện tại
 
-主要风险不在于 `pretext` 是否有价值，而在于它和我们的最终排版目标是否足够接近：
+Rủi ro chính không nằm ở việc `pretext` có giá trị hay không, mà ở việc nó có đủ gần với mục tiêu dàn trang cuối cùng của chúng ta hay không:
 
-- 它的排版模型不等同于 Typst，不能直接把输出当成 Typst 真值。
-- 字体测量一致性仍然可能受浏览器、Canvas 字体加载和平台字体差异影响。
-- 如果我们需要强控制 `letter-spacing`、段间距、中文标点压缩或公式占位符宽度，可能需要额外 adapter。
-- 如果样本主要来自 OCR 框，目标是贴合原 PDF 块尺寸，普通文本布局指标可能还不够，需要另加 OCR/Typst 对照评分。
+- Mô hình dàn trang của nó không tương đương Typst, không thể coi đầu ra là chân lý Typst.
+- Tính nhất quán đo font vẫn có thể bị ảnh hưởng bởi trình duyệt, tải font Canvas và khác biệt font nền tảng.
+- Nếu cần kiểm soát chặt `letter-spacing`, khoảng cách đoạn, nén dấu câu tiếng Trung hoặc chiều rộng placeholder công thức, có thể cần adapter bổ sung.
+- Nếu mẫu chủ yếu đến từ khung OCR, mục tiêu là khớp kích thước khối PDF gốc, chỉ số bố cục văn bản thông thường có thể chưa đủ, cần thêm chấm điểm đối chiếu OCR/Typst.
 
-## 建议定位
+## Định vị khuyến nghị
 
-下一步不要只做单轨 HTML/DOM 测量器，而是改成双轨：
+Bước tiếp theo không chỉ làm bộ đo HTML/DOM đơn tuyến, mà chuyển sang kép:
 
-- 轨道 A：HTML/DOM 基线测量器。
-- 轨道 B：`pretext` 候选测量器。
+- Tuyến A: Bộ đo cơ sở HTML/DOM.
+- Tuyến B: Bộ đo ứng viên `pretext`.
 
-两条轨道使用同一批 `fixtures`，输出同一组指标：
+Hai tuyến dùng cùng lô `fixtures`, xuất cùng bộ chỉ số:
 
 - `lineCount`
 - `height`
@@ -65,23 +65,23 @@
 - `overflowY`
 - `score`
 
-第一轮 PoC 只需要回答一个问题：在 5 到 10 个真实文本块样本上，`pretext` 的行数、高度和溢出判断是否比 DOM 基线更稳定、更容易做参数扫描。
+PoC vòng đầu chỉ cần trả lời một câu hỏi: Trên 5 đến 10 mẫu khối văn bản thực tế, phán đoán số dòng, chiều cao và tràn của `pretext` có ổn định hơn, dễ quét tham số hơn so với cơ sở DOM hay không.
 
-如果 PoC 结果稳定，再考虑把 `pretext` 包成 `scripts/` 或 `html/` 下的正式测量 adapter；如果结果和 DOM/Typst 差异过大，就只保留为参考方案。
+Nếu kết quả PoC ổn định, mới cân nhắc đóng gói `pretext` thành adapter đo chính thức dưới `scripts/` hoặc `html/`; nếu kết quả chênh lệch quá lớn so với DOM/Typst, thì chỉ giữ làm phương án tham khảo.
 
-## 当前实现状态
+## Trạng thái cài đặt hiện tại
 
-`layout-fit` 里已经补了浏览器侧 PoC 入口：
+`layout-fit` đã bổ sung lối vào PoC phía trình duyệt:
 
 - `html/pretext.html`
 - `package.json`
 
-依赖通过国内镜像可以正常安装：
+Phụ thuộc cài đặt bình thường qua mirror nội địa:
 
 - `npm install --registry=https://registry.npmmirror.com`
 
-另外已经确认一件重要事实：
+Ngoài ra đã xác nhận một sự thật quan trọng:
 
-- `@chenglou/pretext` 在当前 Node 环境里可以被导入。
-- 但真正执行 `prepare()` / `prepareWithSegments()` 时需要 `OffscreenCanvas` 或 DOM canvas context。
-- 因此当前最合理的 PoC 位置是浏览器侧，不是纯 Node CLI 脚本。
+- `@chenglou/pretext` có thể được import trong môi trường Node hiện tại.
+- Nhưng khi thực sự thực thi `prepare()` / `prepareWithSegments()` thì cần `OffscreenCanvas` hoặc DOM canvas context.
+- Do đó vị trí PoC hợp lý nhất hiện tại là phía trình duyệt, không phải script CLI Node thuần.

@@ -50,11 +50,11 @@ const MODEL_CONSTANTS_FROM_ROOT_PATTERN = /import\s*{[^}]*(?:DEFAULT_MODEL|DEFAU
 const STORAGE_KEYS_FROM_ROOT_PATTERN = /import\s*{[^}]*(?:BROWSER_CONFIG_STORAGE_KEY|DEVELOPER_CONFIG_STORAGE_KEY)[^}]*}\s*from\s+["'](?:\.\.\/)+constants\.js["']/s;
 const WORKFLOW_DEFAULTS_FROM_ROOT_PATTERN = /import\s*{[^}]*(?:DEFAULT_MODE|DEFAULT_LANGUAGE|DEFAULT_RULE_PROFILE|DEFAULT_RENDER_MODE|DEFAULT_TYPST_FONT_FAMILY|DEFAULT_PDF_COMPRESS_DPI|DEFAULT_TRANSLATED_PDF_NAME|DEFAULT_BODY_FONT_SIZE_FACTOR|DEFAULT_BODY_LEADING_FACTOR|DEFAULT_INNER_BBOX_SHRINK_X|DEFAULT_INNER_BBOX_SHRINK_Y|DEFAULT_INNER_BBOX_DENSE_SHRINK_X|DEFAULT_INNER_BBOX_DENSE_SHRINK_Y|DEFAULT_FONT_UNIFY_MODE|DEFAULT_WORKERS|DEFAULT_BATCH_SIZE|DEFAULT_CLASSIFY_BATCH_SIZE|DEFAULT_COMPILE_WORKERS|DEFAULT_TIMEOUT_SECONDS)[^}]*}\s*from\s+["'](?:\.\.\/)+constants\.js["']/s;
 const BOOTSTRAP_EXTERNAL_IMPORT_PATTERN = /from\s+["']\.\.\/(?:features|ui|api|state)\/|from\s+["']\.\.\/(?:config|constants)\.js["']/;
-// Phase 3 home cutover 删掉了绝大部分 src/js/bootstrap/(227 个手工 DI 端口文件里的
-// 226 个);现存唯一文件是 reader-dialog-runtime-port.js(reader iframe 契约仍需要,
-// 见 src/js/reader/downloads/resolve.js)。以下两份清单曾各有 30~130 个条目对应
-// 已删除文件——Phase 4 收紧为只保留仍然存在的条目,新文件若再落进 bootstrap/ 会被
-// 下面两条门禁测试正确拦下,强制显式决定是否加回允许清单。
+// Phase 3 home cutover đã xóa phần lớn src/js/bootstrap/ (226 trong số 227 tệp cổng DI thủ công);
+// tệp duy nhất còn lại là reader-dialog-runtime-port.js (hợp đồng iframe reader vẫn cần,
+// xem src/js/reader/downloads/resolve.js). Hai danh sách dưới đây từng có 30–130 mục tương ứng
+// với các tệp đã xóa — Phase 4 siết chặt chỉ giữ lại các mục vẫn tồn tại, nếu tệp mới rơi vào bootstrap/
+// sẽ bị hai kiểm thử cổng dưới đây chặn đúng, buộc phải quyết định rõ ràng có thêm vào danh sách cho phép hay không.
 const BOOTSTRAP_GROUPED_PORT_FILES = [];
 const BOOTSTRAP_GROUPED_PORT_DISCOVERY_ALLOWLIST = new Set([]);
 
@@ -70,7 +70,7 @@ function isSourceFile(filePath) {
     || filePath.endsWith(".jsx");
 }
 
-/** 源文件已迁 TS 后，测试里仍可写 foo.js，实际读 foo.ts */
+/** Sau khi tệp nguồn chuyển sang TS, trong kiểm thử vẫn có thể viết foo.js, thực tế đọc foo.ts */
 function resolveSourcePath(filePath) {
   if (existsSync(filePath)) {
     return filePath;
@@ -158,12 +158,12 @@ function filesUnder(...roots) {
   return roots.flatMap((root) => walkFiles(root));
 }
 
-/** 去掉 `import type` 再匹配——TS 类型导入不构成运行时对 view 层的依赖 */
+/** Loại bỏ `import type` rồi mới so khớp — import kiểu TS không tạo thành phụ thuộc runtime vào lớp view */
 function sourceWithoutTypeImports(source) {
   return source
     .replace(/import\s+type\s+[\s\S]*?from\s+["'][^"']+["']\s*;?/g, "")
     .replace(/import\s*\{[^}]*\}\s*from\s+["'][^"']+["']\s*;?/g, (block) => {
-      // 保留值导入；若整行只有 type 已在上一步处理
+      // Giữ import giá trị; nếu cả dòng chỉ có type đã được xử lý ở bước trước
       return block;
     });
 }
@@ -426,7 +426,7 @@ test("job runtime default adapter shims are not kept in feature layer", () => {
 
 test("recent jobs feature does not import home state directly", () => {
   for (const fileName of ["controller.js", "loader.js", "commit.js", "runtime-item.js"]) {
-    // 允许 `import type { HomeStatePort }`（编译期擦除，无运行时依赖）
+    // Cho phép `import type { HomeStatePort }` (xóa trong biên dịch, không có phụ thuộc runtime)
     const source = sourceWithoutTypeImports(readFeatureSource("recent-jobs", fileName));
 
     assert.equal(source.includes("../home/state.js"), false);
@@ -450,10 +450,10 @@ test("current job state is store-only with no legacy mirror", () => {
   const currentJobStateSource = readJobRuntimeSource("current-job-state.js");
   const secondarySelectorSource = readJobRuntimeSource("current-job-secondary-selectors.js");
 
-  // 迁移完成:镜像 port 文件不得存在,选择器读 store 快照
+  // Di chuyển hoàn tất: tệp cổng mirror không được tồn tại, selector đọc snapshot store
   assert.equal(existsSync(join(SOURCE_ROOTS.features, "job-runtime", "legacy-current-job-state-port.js")), false);
   assert.equal(/state\.currentJob[A-Za-z]*\s*=(?!=)/.test(currentJobStateSource), false);
-  // 允许 TS 收窄：currentJobStoreFor(state as object | null | undefined).getSnapshot()
+  // Cho phép thu hẹp TS: currentJobStoreFor(state as object | null | undefined).getSnapshot()
   assert.match(
     currentJobStateSource,
     /currentJobStoreFor\(\s*state(?:\s+as\s+[^)]+)?\s*\)\.getSnapshot\(\)/,
@@ -495,7 +495,7 @@ test("status detail layer does not keep legacy render compatibility facades", ()
 });
 
 test("credentials runtime state is store-only with no legacy mirror ports", () => {
-  // credential slice 已统一到 app-framework store,镜像 port 文件不应再出现
+  // credential slice đã được hợp nhất vào app-framework store, tệp cổng mirror không được xuất hiện
   for (const fileName of ["runtime-state-port.js", "balance-state-port.js", "legacy-runtime-port.js"]) {
     assert.equal(existsSync(join(SOURCE_ROOTS.features, "credentials", fileName)), false);
   }
@@ -518,30 +518,30 @@ test("upload controller reads upload state only through upload state port", () =
   assert.equal(stateSource.includes("../../state/upload-state.js"), false);
 });
 
-// ===== React 迁移防回弹门禁(Phase 0 起生效) =====
-// 新世界(src/pages/**、src/shared/**)只能消费旧世界的纯逻辑层
-// (api/contracts/state-port/actions/view-model 等),禁止 import 旧视图层——
-// 一旦引用,旧 DOM 视图就会"回弹"进 React 树,迁移永远收不了口。
+// ===== Cổng chống hồi quy khi di chuyển React (có hiệu lực từ Phase 0) =====
+// Thế giới mới (src/pages/**、src/shared/**) chỉ được tiêu thụ lớp logic thuần của thế giới cũ
+// (api/contracts/state-port/actions/view-model, v.v.), cấm import lớp view cũ —
+// một khi tham chiếu, view DOM cũ sẽ "nảy ngược" vào cây React, quá trình di chuyển sẽ không bao giờ kết thúc.
 //
-// 注:tests/esm-entry-resolution.test.mjs 已随 Phase 2b reader cutover 退役——
-// 三页(home/detail/reader)入口全部经 esbuild 打包,import 断链在 build:js
-// 构建期即失败,不再需要独立的原生 ESM 解析守卫。
+// Lưu ý: tests/esm-entry-resolution.test.mjs đã ngừng hoạt động theo Phase 2b reader cutover —
+// các điểm vào ba trang (home/detail/reader) đều được đóng gói qua esbuild, import đứt gãy trong build:js
+// thất bại ở giai đoạn xây dựng, không cần trình bảo vệ phân tích ESM nguyên bản riêng.
 
-test("React 新世界禁止 import 旧视图层(防回弹)", () => {
+test("Thế giới React mới cấm import lớp view cũ (chống hồi quy)", () => {
   const REACT_ROOTS = [join(PROJECT_ROOT, "src/pages"), join(PROJECT_ROOT, "src/shared")];
-  // 旧视图层路径特征:命中即违规
+  // Đặc điểm đường dẫn lớp view cũ: trúng là vi phạm
   const FORBIDDEN_IMPORT_PATTERNS = [
-    // 只拦旧世界的 src/js/components/;新世界页面自身的 components/ 子目录
-    // (src/pages/*/components/,目录约定)不在此列
-    [/from\s+["'][^"']*\/js\/components\//, "src/js/components/(自定义元素/对话框视图)"],
-    [/from\s+["'][^"']*\/generated\//, "src/js/generated/(预编译产物)"],
-    [/from\s+["'][^"']*\/bootstrap\//, "src/js/bootstrap/(旧 DI 装配层)"],
-    [/from\s+["'][^"']*\/features\/[^"']*\/view\.js["']/, "features/*/view.js(旧 DOM 视图)"],
-    [/from\s+["'][^"']*\/features\/[^"']*view-port\.js["']/, "features/*view-port.js(旧 DOM 端口)"],
-    [/from\s+["'][^"']*\/features\/[^"']*dom-contract\.js["']/, "features/*dom-contract.js(旧 DOM 契约)"],
-    [/from\s+["'][^"']*\/features\/[^"']*card-markup\.js["']/, "features/*card-markup.js(字符串模板)"],
-    [/from\s+["'][^"']*\/features\/[^"']*card-template\.js["']/, "features/*card-template.js(字符串模板)"],
-    [/from\s+["'][^"']*\/js\/dom\//, "src/js/dom/(旧 DOM 工具)"],
+    // Chỉ chặn src/js/components/ của thế giới cũ; thư mục con components/ của trang thế giới mới
+    // (src/pages/*/components/, quy ước thư mục) không thuộc danh sách này
+    [/from\s+["'][^"']*\/js\/components\//, "src/js/components/(phần tử tùy chỉnh/khung nhìn hộp thoại)"],
+    [/from\s+["'][^"']*\/generated\//, "src/js/generated/(sản phẩm tiền biên dịch)"],
+    [/from\s+["'][^"']*\/bootstrap\//, "src/js/bootstrap/(lớp lắp ráp DI cũ)"],
+    [/from\s+["'][^"']*\/features\/[^"']*\/view\.js["']/, "features/*/view.js (khung nhìn DOM cũ)"],
+    [/from\s+["'][^"']*\/features\/[^"']*view-port\.js["']/, "features/*view-port.js (cổng DOM cũ)"],
+    [/from\s+["'][^"']*\/features\/[^"']*dom-contract\.js["']/, "features/*dom-contract.js (hợp đồng DOM cũ)"],
+    [/from\s+["'][^"']*\/features\/[^"']*card-markup\.js["']/, "features/*card-markup.js (mẫu chuỗi)"],
+    [/from\s+["'][^"']*\/features\/[^"']*card-template\.js["']/, "features/*card-template.js (mẫu chuỗi)"],
+    [/from\s+["'][^"']*\/js\/dom\//, "src/js/dom/(công cụ DOM cũ)"],
   ];
 
   function walkReactFiles(root) {
@@ -580,13 +580,13 @@ test("React 新世界禁止 import 旧视图层(防回弹)", () => {
   assert.deepEqual(
     violations,
     [],
-    `React 新世界引用了旧视图层,请改为消费纯逻辑层或在 React 内重写:\n  ${violations.join("\n  ")}`,
+    `Thế giới React mới tham chiếu lớp view cũ, vui lòng chuyển sang tiêu thụ lớp logic thuần hoặc viết lại trong React:\n  ${violations.join("\n  ")}`,
   );
 });
 
 
 const HOME_FEATURES_ROOT = join(PROJECT_ROOT, "src/pages/home/features");
-/** Any import whose module path reaches src/js (…/js/…); composition/external is the only gate. */
+/** Bất kỳ import nào có đường dẫn mô-đun chạm tới src/js (…/js/…); composition/external là cổng duy nhất. */
 const HOME_FEATURES_DIRECT_JS_IMPORT =
   /from\s+["'][^"']*(?:^|\/)js\/[^"']+["']|from\s+["'][^"']*(?:\.\.\/)+js\/[^"']+["']/;
 
@@ -602,7 +602,7 @@ function pageHasDirectJsImport(source) {
   });
 }
 
-test("home features must not import src/js/* directly (use composition/external)", () => {
+test("Các tính năng home không được import src/js/* trực tiếp (dùng composition/external)", () => {
   const offenders = walkFiles(HOME_FEATURES_ROOT)
     .filter((file) => /\.(?:ts|tsx|js|jsx)$/.test(file))
     .filter((file) => pageHasDirectJsImport(readSource(file)))
@@ -611,13 +611,13 @@ test("home features must not import src/js/* directly (use composition/external)
   assert.deepEqual(
     offenders,
     [],
-    "import src/js/* only via pages/home/composition/external.ts",
+    "chỉ import src/js/* qua pages/home/composition/external.ts",
   );
 });
 
 const DETAIL_PAGE_ROOT = join(PROJECT_ROOT, "src/pages/detail");
 
-test("detail page must not import src/js/* directly (use pages/detail/external)", () => {
+test("Trang detail không được import src/js/* trực tiếp (dùng pages/detail/external)", () => {
   const offenders = walkFiles(DETAIL_PAGE_ROOT)
     .filter((file) => /\.(?:ts|tsx|js|jsx)$/.test(file))
     .filter((file) => {
@@ -630,19 +630,19 @@ test("detail page must not import src/js/* directly (use pages/detail/external)"
   assert.deepEqual(
     offenders,
     [],
-    "import src/js/* only via pages/detail/external.ts",
+    "chỉ import src/js/* qua pages/detail/external.ts",
   );
 });
 
 const READER_PAGE_ROOT = join(PROJECT_ROOT, "src/pages/reader");
 
-test("reader non-legacy must not import src/js/* directly (use pages/reader/external)", () => {
+test("Reader non-legacy không được import src/js/* trực tiếp (dùng pages/reader/external)", () => {
   const offenders = walkFiles(READER_PAGE_ROOT)
     .filter((file) => /\.(?:ts|tsx|js|jsx)$/.test(file))
     .filter((file) => {
       const base = relative(READER_PAGE_ROOT, file).replace(/\\/g, "/");
       if (base === "external.ts") return false;
-      if (base.startsWith("legacy/")) return false; // legacy 可直接依赖 js/reader
+      if (base.startsWith("legacy/")) return false; // legacy có thể phụ thuộc trực tiếp vào js/reader
       return pageHasDirectJsImport(readSource(file));
     })
     .map((file) => relative(READER_PAGE_ROOT, file).replace(/\\/g, "/"));
@@ -650,6 +650,6 @@ test("reader non-legacy must not import src/js/* directly (use pages/reader/exte
   assert.deepEqual(
     offenders,
     [],
-    "non-legacy reader code imports src/js/* only via pages/reader/external.ts",
+    "mã reader non-legacy chỉ import src/js/* qua pages/reader/external.ts",
   );
 });

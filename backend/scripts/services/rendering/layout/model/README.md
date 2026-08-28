@@ -1,16 +1,16 @@
 # rendering/layout/model
 
-## 负责什么
+## Trách nhiệm
 
-译文排版阶段使用的数据模型和文本保护 helper，例如 `RenderBlock`、`RenderLayoutBlock`、`RenderPageSpec`。
+Mô hình dữ liệu và helper bảo vệ văn bản dùng trong giai đoạn dàn trang bản dịch, ví dụ `RenderBlock`, `RenderLayoutBlock`, `RenderPageSpec`.
 
-## 对外入口
+## Lối vào công khai
 
 - `models.py`
 - `render_text.py`
 
-## 不该做什么
+## Không nên làm gì
 
-- 不操作 PDF。
-- 不生成 Typst。
-- 不做 redaction。
+- Không thao tác PDF.
+- Không sinh Typst.
+- Không thực hiện redaction.

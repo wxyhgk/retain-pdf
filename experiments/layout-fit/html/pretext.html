@@ -285,8 +285,8 @@
       <header class="hero">
         <h1>Pretext PoC</h1>
         <p>
-          使用同一批 `fixtures` 比较 DOM 测量与 `@chenglou/pretext`。这页只关注块级文本：同一段文本、同一宽度、
-          同一行高下，对比两条测量路径的 `height`、`lineCount`、`maxLineWidth` 和逐行文本。
+          So sánh đo đạc DOM với `@chenglou/pretext` dùng cùng `fixtures`. Trang này tập trung vào văn bản khối: cùng đoạn văn bản, cùng chiều rộng,
+          cùng độ cao dòng, so sánh hai đường đo `height`, `lineCount`, `maxLineWidth` và văn bản từng dòng.
         </p>
       </header>
 
@@ -295,79 +295,79 @@
           <div>
             <h2>数据</h2>
             <div class="actions">
-              <button id="load-default">加载默认样本</button>
+              <button id="load-default">Tải mẫu mặc định</button>
               <label>
-                <span>从本地 JSON 载入</span>
+                <span>Tải từ JSON cục bộ</span>
                 <input id="file-input" type="file" accept=".json,application/json" />
               </label>
             </div>
           </div>
 
           <div>
-            <label for="sample-select">样本</label>
+            <label for="sample-select">Mẫu</label>
             <select id="sample-select"></select>
           </div>
 
           <div>
-            <h2>参数</h2>
+            <h2>Tham số</h2>
             <label for="font-family">字体族</label>
             <input id="font-family" value="Source Han Serif SC, Noto Serif CJK SC, serif" />
             <div class="grid3">
-              <label><span>字号 (pt)</span><input id="font-size" type="number" min="4" max="48" step="0.01" value="11.16" /></label>
-              <label><span>行高倍率</span><input id="line-height" type="number" min="0.6" max="2.4" step="0.01" value="1" /></label>
-              <label><span>宽度 (pt)</span><input id="target-width" type="number" min="1" step="0.01" value="447.45" /></label>
+            <label><span>Cỡ chữ (pt)</span><input id="font-size" type="number" min="4" max="48" step="0.01" value="11.16" /></label>
+            <label><span>Tỷ lệ độ cao dòng</span><input id="line-height" type="number" min="0.6" max="2.4" step="0.01" value="1" /></label>
+            <label><span>Chiều rộng (pt)</span><input id="target-width" type="number" min="1" step="0.01" value="447.45" /></label>
             </div>
-            <label><span>目标高度 (pt)</span><input id="fit-height" type="number" min="1" step="0.01" value="98.7" /></label>
+            <label><span>Chiều cao mục tiêu (pt)</span><input id="fit-height" type="number" min="1" step="0.01" value="98.7" /></label>
           </div>
 
           <div class="actions">
-            <button id="apply-typst" class="secondary">应用 Typst 参考值</button>
-            <button id="measure-both">比较 DOM / Pretext</button>
-            <button id="auto-fit" class="secondary">自动拟合</button>
+            <button id="apply-typst" class="secondary">Áp dụng tham chiếu Typst</button>
+            <button id="measure-both">So sánh DOM / Pretext</button>
+            <button id="auto-fit" class="secondary">Tự động khớp</button>
           </div>
 
           <div>
-            <h2>文本</h2>
+            <h2>Văn bản</h2>
             <textarea id="fit-text"></textarea>
           </div>
 
           <div id="status" class="status">
-            这页依赖本地安装的 `@chenglou/pretext`。先在 `layout-fit/` 下执行 `npm install --registry=https://registry.npmmirror.com`，再用 `npm run serve` 打开。
+            Trang này yêu cầu `@chenglou/pretext` đã cài đặt cục bộ. Trước tiên chạy `npm install --registry=https://registry.npmmirror.com` trong `layout-fit/`, rồi mở bằng `npm run serve`.
           </div>
         </aside>
 
         <section class="workspace">
           <section class="card">
-            <h2>样本概览</h2>
-            <div id="sample-meta" class="status">尚未载入样本。</div>
+            <h2>Tổng quan mẫu</h2>
+            <div id="sample-meta" class="status">Chưa tải mẫu.</div>
           </section>
 
           <section class="card">
-            <h2>核心指标</h2>
+            <h2>Chỉ số cốt lõi</h2>
             <div class="metric-grid">
-              <div class="metric"><div class="name">DOM 高度</div><div class="value" id="dom-height">-</div></div>
-              <div class="metric"><div class="name">Pretext 高度</div><div class="value" id="pretext-height">-</div></div>
-              <div class="metric"><div class="name">高度差</div><div class="value" id="height-diff">-</div></div>
-              <div class="metric"><div class="name">目标高度</div><div class="value" id="target-height">-</div></div>
+              <div class="metric"><div class="name">Chiều cao DOM</div><div class="value" id="dom-height">-</div></div>
+              <div class="metric"><div class="name">Chiều cao Pretext</div><div class="value" id="pretext-height">-</div></div>
+              <div class="metric"><div class="name">Hiệu chiều cao</div><div class="value" id="height-diff">-</div></div>
+              <div class="metric"><div class="name">Chiều cao mục tiêu</div><div class="value" id="target-height">-</div></div>
             </div>
             <div class="metric-grid" style="margin-top: 10px;">
-              <div class="metric"><div class="name">DOM 行数</div><div class="value" id="dom-lines">-</div></div>
-              <div class="metric"><div class="name">Pretext 行数</div><div class="value" id="pretext-lines">-</div></div>
-              <div class="metric"><div class="name">DOM 最宽行</div><div class="value" id="dom-width">-</div></div>
-              <div class="metric"><div class="name">Pretext 最宽行</div><div class="value" id="pretext-width">-</div></div>
+              <div class="metric"><div class="name">Số dòng DOM</div><div class="value" id="dom-lines">-</div></div>
+              <div class="metric"><div class="name">Số dòng Pretext</div><div class="value" id="pretext-lines">-</div></div>
+              <div class="metric"><div class="name">Dòng rộng nhất DOM</div><div class="value" id="dom-width">-</div></div>
+              <div class="metric"><div class="name">Dòng rộng nhất Pretext</div><div class="value" id="pretext-width">-</div></div>
             </div>
           </section>
 
           <section class="card">
-            <h2>逐行对照</h2>
+            <h2>So sánh từng dòng</h2>
             <div class="compare">
               <div class="result-box">
-                <h3>DOM 预览</h3>
+                <h3>Xem trước DOM</h3>
                 <div class="preview"><div id="dom-preview" class="preview-block"></div></div>
                 <pre id="dom-lines-text"></pre>
               </div>
               <div class="result-box">
-                <h3>Pretext 行输出</h3>
+                <h3>Kết xuất Pretext</h3>
                 <div class="preview"><div id="pretext-preview" class="preview-block"></div></div>
                 <pre id="pretext-lines-text"></pre>
               </div>
@@ -375,13 +375,13 @@
           </section>
 
           <section class="card">
-            <h2>PDF 译文覆盖预览</h2>
+            <h2>Xem trước phủ PDF bằng bản dịch</h2>
             <div class="result-box">
-              <h3 id="pdf-title">源 PDF</h3>
+              <h3 id="pdf-title">PDF nguồn</h3>
               <div class="pdf-toolbar">
-                <button id="pdf-prev" class="secondary">上一页</button>
-                <div id="pdf-page-label" class="pdf-page-label">第 - / - 页</div>
-                <button id="pdf-next" class="secondary">下一页</button>
+                <button id="pdf-prev" class="secondary">Trang trước</button>
+                <div id="pdf-page-label" class="pdf-page-label">Trang - / -</div>
+                <button id="pdf-next" class="secondary">Trang sau</button>
               </div>
               <div id="pdf-stage" class="pdf-stage">
                 <div id="pdf-stack" class="pdf-stack">

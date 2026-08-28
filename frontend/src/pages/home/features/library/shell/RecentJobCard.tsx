@@ -1,5 +1,5 @@
-// 兼容导出：一等组件已迁至 BookCard.jsx。
-// 新代码请 import { BookCard } from "../shell/BookCard.jsx" 或 library/index.js。
+// Xuất tương thích: thành phần hạng nhất đã chuyển sang BookCard.jsx.
+// Mã mới hãy import { BookCard } from "../shell/BookCard.jsx" hoặc library/index.js.
 
 export {
   BookCard as RecentJobCard,

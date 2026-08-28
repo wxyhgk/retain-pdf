@@ -18,9 +18,9 @@ class FakeRust:
         self.documents = [
             {
                 "document_id": "doc-a",
-                "title": "光谱计算方法",
+                "title": "Phương pháp tính toán quang phổ",
                 "page_count": 12,
-                "tags": ["化学"],
+                "tags": ["Hóa học"],
                 "reading_status": "reading",
                 "active_job_id": "job-1",
             }
@@ -36,7 +36,7 @@ class FakeRust:
                 "page_idx": 2,
                 "block_id": "p003-b0001",
                 "source_snippet": "spectra",
-                "translated_snippet": f"关于{query}的片段",
+                "translated_snippet": f"Đoạn văn bản về {query}",
             },
             {
                 "document_id": "doc-other",
@@ -44,7 +44,7 @@ class FakeRust:
                 "page_idx": 0,
                 "block_id": "p001-b0001",
                 "source_snippet": "other",
-                "translated_snippet": "其它文档",
+                "translated_snippet": "Tài liệu khác",
             },
         ]
         if document_id:
@@ -73,8 +73,8 @@ class FakeRust:
                 "block_id": "p005-b0008",
                 "kind": "sentence",
                 "quote_text": "reaction rate",
-                "translated_quote_text": "反应速率相关引文",
-                "note": "重要",
+                "translated_quote_text": "Trích dẫn liên quan đến tốc độ phản ứng",
+                "note": "Quan trọng",
             }
         ]
 
@@ -164,7 +164,7 @@ def _write_job_dir(root: Path):
     (translated / "page-003-deepseek.json").write_text(
         json.dumps(
             [
-                {"page_idx": "2", "block_idx": "1", "translated_text": "第二个块的译文"},
+                {"page_idx": "2", "block_idx": "1", "translated_text": "Bản dịch của khối thứ hai"},
             ]
         ),
         encoding="utf-8",
@@ -176,7 +176,7 @@ def test_read_page_blocks_aligns_translation_by_numeric_index(tmp_path):
     job_root = _write_job_dir(tmp_path)
     blocks = read_page_blocks(job_root, 2)
     assert [block.block_id for block in blocks] == ["p003-b0000", "p003-b0001"]
-    assert blocks[1].translated_text == "第二个块的译文"
+    assert blocks[1].translated_text == "Bản dịch của khối thứ hai"
     windowed = read_page_blocks(job_root, 2, around_block_id="p003-b0001", max_blocks=1)
     assert [block.block_id for block in windowed] == ["p003-b0001"]
 
@@ -186,14 +186,14 @@ def test_default_registry_tools_return_anchored_results(tmp_path):
     settings = Settings(data_root=tmp_path)
     registry = build_default_registry(settings, FakeRust())
 
-    hits = registry.invoke("search_fulltext", {"query": "光谱"})["hits"]
+    hits = registry.invoke("search_fulltext", {"query": "quang phổ"})["hits"]
     assert len(hits) == 2
     assert hits[0]["block_id"] == "p003-b0001"
 
-    # 整本：document_id 过滤掉其它文档
+    # Toàn bộ tài liệu: document_id lọc bỏ các tài liệu khác
     scoped = registry.invoke(
         "search_fulltext",
-        {"query": "光谱", "document_id": "doc-a"},
+        {"query": "quang phổ", "document_id": "doc-a"},
     )
     assert len(scoped["hits"]) == 1
     assert scoped["hits"][0]["document_id"] == "doc-a"
@@ -201,24 +201,24 @@ def test_default_registry_tools_return_anchored_results(tmp_path):
 
     empty_scoped = registry.invoke(
         "search_fulltext",
-        {"query": "光谱", "document_id": "doc-missing"},
+        {"query": "quang phổ", "document_id": "doc-missing"},
     )
     assert empty_scoped["hits"] == []
-    assert "全文索引" in empty_scoped.get("hint", "")
+    assert "full-text index" in empty_scoped.get("hint", "")
 
     documents = registry.invoke("list_documents", {})["documents"]
     assert documents[0]["document_id"] == "doc-a"
-    # 注入 document_id 时 list_documents 只返回该文档
+    # Khi truyền document_id, list_documents chỉ trả về tài liệu đó
     only = registry.invoke("list_documents", {"document_id": "doc-a"})["documents"]
     assert len(only) == 1
 
     blocks = registry.invoke("read_blocks", {"document_id": "doc-a", "page_idx": 2})
     assert blocks["job_id"] == "job-1"
-    assert blocks["blocks"][1]["translated_text"] == "第二个块的译文"
+    assert blocks["blocks"][1]["translated_text"] == "Bản dịch của khối thứ hai"
 
-    favorites = registry.invoke("search_favorites", {"keyword": "速率"})["favorites"]
+    favorites = registry.invoke("search_favorites", {"keyword": "tốc độ"})["favorites"]
     assert favorites[0]["favorite_id"] == "fav-1"
-    assert registry.invoke("search_favorites", {"keyword": "不存在"})["favorites"] == []
+    assert registry.invoke("search_favorites", {"keyword": "không tồn tại"})["favorites"] == []
 
     assert "query must not be empty" in registry.invoke("search_fulltext", {})["error"]
 
@@ -233,7 +233,7 @@ class FakeAgent(RetrievalAgent):
             on_event({"type": "tool", "round": 1, "tool": "search_fulltext", "arguments": {"query": "q"}})
         history_note = f"(hist={len(self.last_history)})" if self.last_history else ""
         return AskResult(
-            answer=f"回答:{question}{history_note} [1]",
+            answer=f"Câu trả lời:{question}{history_note} [1]",
             citations=[
                 Citation(
                     ref=1,
@@ -241,7 +241,7 @@ class FakeAgent(RetrievalAgent):
                     job_id="job-1",
                     page_idx=2,
                     block_id="p003-b0001",
-                    snippet="片段",
+                    snippet="Đoạn văn bản",
                 )
             ],
             tool_trace=[{"round": 1, "tool": "search_fulltext", "arguments": {"query": "q"}}],
@@ -261,12 +261,12 @@ def test_ask_endpoint_requires_api_key_and_returns_citations():
 
     response = client.post(
         "/v1/ask",
-        json={"question": "库里讲什么?"},
+        json={"question": "Nội dung trong thư viện là gì?"},
         headers={"X-API-Key": "test-key"},
     )
     assert response.status_code == 200
     data = response.json()["data"]
-    assert data["answer"].startswith("回答:")
+    assert data["answer"].startswith("Câu trả lời:")
     assert data["citations"][0]["block_id"] == "p003-b0001"
     assert data["rounds"] == 2
 
@@ -279,7 +279,7 @@ def test_ask_endpoint_streams_sse_events():
     with client.stream(
         "POST",
         "/v1/ask",
-        json={"question": "流式?", "stream": True},
+        json={"question": "Dạng luồng?", "stream": True},
         headers={"X-API-Key": "test-key"},
     ) as response:
         assert response.status_code == 200
@@ -291,12 +291,12 @@ def test_ask_endpoint_streams_sse_events():
     assert events[0]["type"] == "tool"
     assert events[0]["tool"] == "search_fulltext"
     assert events[-1]["type"] == "done"
-    assert events[-1]["answer"].startswith("回答:")
+    assert events[-1]["answer"].startswith("Câu trả lời:")
     assert events[-1]["citations"][0]["block_id"] == "p003-b0001"
 
 
 def test_ask_endpoint_requires_llm_key_from_env_or_request():
-    # env 与请求都无 LLM key:提前 400,不打到上游
+    # Cả env và request đều không có LLM key: trả 400 sớm, không gọi upstream
     settings = Settings(api_keys=frozenset({"test-key"}))
     client = TestClient(build_app(settings, agent=FakeAgent()))
     missing = client.post(
@@ -307,18 +307,18 @@ def test_ask_endpoint_requires_llm_key_from_env_or_request():
     assert missing.status_code == 400
     assert "LLM API Key" in missing.json()["detail"]
 
-    # 请求携带 LLM key:即使 env 为空也放行(FakeAgent 忽略 chat_fn)
+    # Request mang theo LLM key: vẫn cho qua dù env rỗng (FakeAgent bỏ qua chat_fn)
     ok = client.post(
         "/v1/ask",
         json={"question": "q", "llm_api_key": "sk-from-frontend"},
         headers={"X-API-Key": "test-key"},
     )
     assert ok.status_code == 200
-    assert ok.json()["data"]["answer"].startswith("回答:")
+    assert ok.json()["data"]["answer"].startswith("Câu trả lời:")
 
 
 def test_ask_auto_creates_conversation_and_persists_history():
-    """B1: 无 conversation_id 时 auto-create;第二轮注入 history 并回传同一 id。"""
+    """B1: tự tạo khi không có conversation_id; lượt hai nạp history và trả lại cùng id."""
     settings = Settings(api_keys=frozenset({"test-key"}), llm_api_key="env-llm-key")
     rust = FakeRust()
     agent = FakeAgent()
@@ -326,7 +326,7 @@ def test_ask_auto_creates_conversation_and_persists_history():
 
     first = client.post(
         "/v1/ask",
-        json={"question": "第一问", "document_id": "doc-a"},
+        json={"question": "Câu hỏi đầu tiên", "document_id": "doc-a"},
         headers={"X-API-Key": "test-key"},
     )
     assert first.status_code == 200
@@ -334,14 +334,14 @@ def test_ask_auto_creates_conversation_and_persists_history():
     conversation_id = data1["conversation_id"]
     assert conversation_id.startswith("conv-")
     assert conversation_id in rust.conversations
-    # 已回写 user+assistant
+    # Đã ghi lại user + assistant
     assert len(rust.conversations[conversation_id]["messages"]) == 2
     assert agent.last_history == []
 
     second = client.post(
         "/v1/ask",
         json={
-            "question": "追问",
+            "question": "Câu hỏi tiếp theo",
             "document_id": "doc-a",
             "conversation_id": conversation_id,
         },
@@ -352,7 +352,7 @@ def test_ask_auto_creates_conversation_and_persists_history():
     assert data2["conversation_id"] == conversation_id
     assert len(agent.last_history) == 2
     assert agent.last_history[0]["role"] == "user"
-    assert "第一问" in agent.last_history[0]["content"]
+    assert "Câu hỏi đầu tiên" in agent.last_history[0]["content"]
     assert "(hist=2)" in data2["answer"]
     assert len(rust.conversations[conversation_id]["messages"]) == 4
 
@@ -365,7 +365,7 @@ def test_ask_stream_done_includes_conversation_id():
     with client.stream(
         "POST",
         "/v1/ask",
-        json={"question": "流式会话?", "stream": True, "document_id": "doc-a"},
+        json={"question": "Phiên luồng?", "stream": True, "document_id": "doc-a"},
         headers={"X-API-Key": "test-key"},
     ) as response:
         events = []
@@ -378,11 +378,13 @@ def test_ask_stream_done_includes_conversation_id():
 
 
 def test_summary_lands_on_head_path_and_feeds_next_turn():
-    """审计 A2 回归锁:摘要必须接进 head 路径——第二问的 history 要能读回
-    【对话摘要】,而不是每轮重压缩 + 累积孤儿摘要。
+    """Khóa hồi quy theo kiểm toán A2: summary phải nối vào đường dẫn head —
+    history của câu hỏi thứ hai phải đọc lại được 【Tóm tắt cuộc trò chuyện】, thay vì nén lại mỗi
+    lượt và tích lũy summary mồ côi.
 
-    关键:seed 与两次 ask 都显式传 parent 链(模拟真实前端),否则 FakeRust 的
-    空 parent 线性合成会掩盖死分支。"""
+    Điểm chính: seed và cả hai lần ask đều truyền rõ chuỗi parent (mô phỏng frontend
+    thực tế), nếu không phép tổng hợp tuyến tính với parent rỗng của FakeRust sẽ che
+    mất nhánh chết."""
     settings = Settings(
         api_keys=frozenset({"test-key"}),
         llm_api_key="env-llm-key",
@@ -396,7 +398,7 @@ def test_summary_lands_on_head_path_and_feeds_next_turn():
     for i in range(6):
         u = rust.append_conversation_message(cid, role="user", content=f"U{i}", parent_id=prev)
         a = rust.append_conversation_message(
-            cid, role="assistant", content=f"A{i} 结论 [1]", parent_id=u["message_id"],
+            cid, role="assistant", content=f"A{i} Kết luận [1]", parent_id=u["message_id"],
         )
         prev = a["message_id"]
 
@@ -405,13 +407,13 @@ def test_summary_lands_on_head_path_and_feeds_next_turn():
 
     first = client.post(
         "/v1/ask",
-        json={"question": "第一问", "document_id": "doc-a", "conversation_id": cid, "parent_id": prev},
+        json={"question": "Câu hỏi đầu tiên", "document_id": "doc-a", "conversation_id": cid, "parent_id": prev},
         headers={"X-API-Key": "test-key"},
     )
     assert first.status_code == 200
 
     conv = rust.conversations[cid]
-    # 摘要在 head 路径上:从 head 沿显式 parent 回溯必经过【对话摘要】节点
+    # Summary nằm trên đường dẫn head: lần theo parent từ head phải đi qua node 【Tóm tắt cuộc trò chuyện】
     by_id = {m["message_id"]: m for m in conv["messages"]}
     cur = by_id.get(conv["head_id"])
     on_path = []
@@ -419,24 +421,25 @@ def test_summary_lands_on_head_path_and_feeds_next_turn():
         on_path.append(cur)
         cur = by_id.get(cur.get("parent_id") or "")
     assert any(
-        str(m.get("content") or "").startswith("【对话摘要】") for m in on_path
-    ), "摘要不在 head 路径上(死分支回归)"
+        str(m.get("content") or "").startswith("【Tóm tắt cuộc trò chuyện】") for m in on_path
+    ), "Summary không nằm trên đường dẫn head (hồi quy nhánh chết)"
 
     second = client.post(
         "/v1/ask",
-        json={"question": "第二问", "document_id": "doc-a", "conversation_id": cid, "parent_id": conv["head_id"]},
+        json={"question": "Câu hỏi thứ hai", "document_id": "doc-a", "conversation_id": cid, "parent_id": conv["head_id"]},
         headers={"X-API-Key": "test-key"},
     )
     assert second.status_code == 200
-    assert agent.last_history, "第二问应携带 history"
-    # assemble_history 把摘要包装成"已知背景"伪轮(assemble.py),不保留原前缀
+    assert agent.last_history, "Câu hỏi thứ hai phải mang theo history"
+    # assemble_history bọc summary thành lượt giả "known background" (assemble.py), không giữ tiền tố gốc
     assert any(
-        "更早对话的摘要" in str(t.get("content") or "") for t in agent.last_history
-    ), "第二问的 history 读不回摘要(孤儿摘要回归)"
+        "summary of the earlier conversation" in str(t.get("content") or "")
+        for t in agent.last_history
+    ), "Lịch sử của câu hỏi thứ hai không đọc lại được summary (hồi quy summary mồ côi)"
 
 
 def test_persist_failure_surfaces_in_done_payload():
-    """审计 C2 回归锁:回写失败必须经 persisted=false 告知前端,不再静默丢轮。"""
+    """Khóa hồi quy theo kiểm toán C2: lỗi ghi lại phải báo persisted=false cho frontend, không âm thầm mất lượt."""
     settings = Settings(api_keys=frozenset({"test-key"}), llm_api_key="env-llm-key")
 
     class BrokenPersistRust(FakeRust):
@@ -452,25 +455,25 @@ def test_persist_failure_surfaces_in_done_payload():
     client = TestClient(build_app(settings, agent=FakeAgent(), rust=rust))
     response = client.post(
         "/v1/ask",
-        json={"question": "问", "document_id": "doc-a", "conversation_id": "conv-x"},
+        json={"question": "Câu hỏi", "document_id": "doc-a", "conversation_id": "conv-x"},
         headers={"X-API-Key": "test-key"},
     )
     assert response.status_code == 200
     assert response.json()["data"]["persisted"] is False
 
-    # 正常路径 persisted=True
+    # Luồng bình thường persisted=True
     ok_rust = FakeRust()
     ok_client = TestClient(build_app(settings, agent=FakeAgent(), rust=ok_rust))
     ok = ok_client.post(
         "/v1/ask",
-        json={"question": "问", "document_id": "doc-a"},
+        json={"question": "Câu hỏi", "document_id": "doc-a"},
         headers={"X-API-Key": "test-key"},
     )
     assert ok.json()["data"]["persisted"] is True
 
 
 def test_ask_force_compress_emits_compress_event_and_summary():
-    """B2: force_compress 时 SSE 先 compress，再 tool/done；摘要落库。"""
+    """B2: khi force_compress, SSE gửi compress trước rồi tool/done; summary được lưu."""
     settings = Settings(
         api_keys=frozenset({"test-key"}),
         llm_api_key="env-llm-key",
@@ -478,7 +481,7 @@ def test_ask_force_compress_emits_compress_event_and_summary():
         memory_compress_after_turns=100,
     )
     rust = FakeRust()
-    # 预置长对话
+    # Chuẩn bị sẵn hội thoại dài
     created = rust.create_conversation(title="t", document_id="doc-a")
     cid = created["conversation_id"]
     for i in range(6):
@@ -486,7 +489,7 @@ def test_ask_force_compress_emits_compress_event_and_summary():
         rust.append_conversation_message(
             cid,
             role="assistant",
-            content=f"A{i} 结论 [1]",
+            content=f"A{i} Kết luận [1]",
             citations_json='[{"ref":1,"page_idx":0,"snippet":"s"}]',
         )
 
@@ -496,7 +499,7 @@ def test_ask_force_compress_emits_compress_event_and_summary():
         "POST",
         "/v1/ask",
         json={
-            "question": "压缩后再问",
+            "question": "Hỏi sau khi nén",
             "stream": True,
             "document_id": "doc-a",
             "conversation_id": cid,
@@ -516,19 +519,19 @@ def test_ask_force_compress_emits_compress_event_and_summary():
     assert compress["dropped_turns"] >= 1
     assert events[-1]["type"] == "done"
     assert events[-1]["memory"]["had_summary"] is True
-    # 摘要已写入
+    # Summary đã được ghi
     assert any(
-        str(m.get("content") or "").startswith("【对话摘要】")
+        str(m.get("content") or "").startswith("【Tóm tắt cuộc trò chuyện】")
         for m in rust.conversations[cid]["messages"]
     )
-    # agent 收到带摘要的 history
+    # Agent nhận history có summary
     assert agent.last_history
-    assert any("摘要" in m["content"] for m in agent.last_history if m["role"] == "user")
+    assert any("Tóm tắt" in m["content"] for m in agent.last_history if m["role"] == "user")
 
 
 def test_ask_resolves_document_id_from_job_id():
-    # 历史 job 也能定位文档:job_id → 服务端解析 document_id,
-    # 不再依赖前端的 active_job_id 反查
+    # Job cũ cũng định vị được tài liệu: job_id → server phân tích document_id,
+    # không còn phụ thuộc frontend tra ngược active_job_id
     captured = {}
 
     class RecordingAgent(FakeAgent):
@@ -553,7 +556,7 @@ def test_ask_resolves_document_id_from_job_id():
     client = TestClient(app)
     response = client.post(
         "/v1/ask",
-        json={"question": "历史任务的问题", "job_id": "job-old", "llm_api_key": "sk-test"},
+        json={"question": "Câu hỏi về nhiệm vụ lịch sử", "job_id": "job-old", "llm_api_key": "sk-test"},
         headers={"X-API-Key": "test-key"},
     )
     assert response.status_code == 200
@@ -581,7 +584,7 @@ def test_ask_keeps_explicit_document_id_over_job_id():
     client = TestClient(app)
     client.post(
         "/v1/ask",
-        json={"question": "q", "document_id": "doc-explicit", "job_id": "job-x", "llm_api_key": "sk-test"},
+        json={"question": "Câu hỏi", "document_id": "doc-explicit", "job_id": "job-x", "llm_api_key": "sk-test"},
         headers={"X-API-Key": "test-key"},
     )
     assert captured["document_id"] == "doc-explicit"
@@ -608,8 +611,8 @@ def test_ask_injects_conversation_history_and_persists_turn():
             return {
                 "conversation_id": "conv-1",
                 "messages": [
-                    {"role": "user", "content": "之前的问题", "seq": 1},
-                    {"role": "assistant", "content": "之前的回答 [1]", "seq": 2},
+                    {"role": "user", "content": "Câu hỏi trước đó", "seq": 1},
+                    {"role": "assistant", "content": "Câu trả lời trước đó [1]", "seq": 2},
                 ],
             }
 
@@ -622,16 +625,16 @@ def test_ask_injects_conversation_history_and_persists_turn():
     client = TestClient(app)
     response = client.post(
         "/v1/ask",
-        json={"question": "接着上个问题继续", "conversation_id": "conv-1", "llm_api_key": "sk-test"},
+        json={"question": "Tiếp tục câu hỏi trước", "conversation_id": "conv-1", "llm_api_key": "sk-test"},
         headers={"X-API-Key": "test-key"},
     )
     assert response.status_code == 200
-    # 历史注入
+    # Nạp lịch sử
     assert calls["history"] == [
-        {"role": "user", "content": "之前的问题"},
-        {"role": "assistant", "content": "之前的回答 [1]"},
+        {"role": "user", "content": "Câu hỏi trước đó"},
+        {"role": "assistant", "content": "Câu trả lời trước đó [1]"},
     ]
-    # 回写 user + assistant 两条,assistant 带引用快照
+    # Ghi lại hai bản ghi user + assistant, assistant kèm snapshot trích dẫn
     assert [(c[1], c[0]) for c in calls["appended"]] == [("user", "conv-1"), ("assistant", "conv-1")]
     assert "block_id" in calls["appended"][1][3]
 
@@ -644,18 +647,18 @@ def test_agent_places_history_between_system_and_current_question():
 
     def chat(messages, tools):
         seen["messages"] = messages
-        return {"content": "好的。", "tool_calls": []}
+        return {"content": "Được rồi.", "tool_calls": []}
 
     agent = RetrievalAgent(ToolRegistry([]), chat, max_tool_rounds=2)
     agent.ask(
-        "当前问题",
+        "Câu hỏi hiện tại",
         history=[
-            {"role": "user", "content": "上一问"},
-            {"role": "assistant", "content": "上一答"},
+            {"role": "user", "content": "Câu hỏi trước"},
+            {"role": "assistant", "content": "Câu trả lời trước"},
             {"role": "tool", "content": "should be dropped"},
         ],
     )
     roles = [m["role"] for m in seen["messages"]]
     assert roles == ["system", "user", "assistant", "user"]
-    assert seen["messages"][1]["content"] == "上一问"
-    assert seen["messages"][-1]["content"] == "当前问题"
+    assert seen["messages"][1]["content"] == "Câu hỏi trước"
+    assert seen["messages"][-1]["content"] == "Câu hỏi hiện tại"

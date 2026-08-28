@@ -1,13 +1,13 @@
 use anyhow::Result;
 use rusqlite::Connection;
 
-/// 图书馆数据层的编号迁移阶梯(PRAGMA user_version)。
+/// Thang đi chuyển số cho các cấp dữ liệu thư viện (PRAGMA user_version).
 ///
-/// 现有 ensure_schema 的幂等 DDL 与 ensure_*_column 增量加列继续负责
-/// 任务系统的表;平台新表(documents/favorites/...)从这里走版本化
-/// 迁移,后续破坏性变更只能追加新版本,不允许改历史条目。
+/// hiện hữu ensure_schema Idempotent of DDL và ensure_*_column bổ sung gia tăng vẫn có trách nhiệm
+/// Bảng các hệ thống nhiệm vụ; Bảng mới cho nền tảng (documents/favorites/...) chuyển đến phiên bản được chỉnh sửa từ đây
+/// dời, Chỉ có thể thêm các phiên bản mới vào các thay đổi đột phá tiếp theo, Không cho phép thay đổi các mục nhập lịch sử.
 const VERSIONED_MIGRATIONS: &[&str] = &[
-    // v1: 图书馆地基 —— 文档一等公民 + 锚点收藏 + 合集/标签 + FTS5
+    // v1: Quỹ Thư viện —— Tài liệu Quyền công dân hạng nhất + Bộ sưu tập neo + Bộ sưu tập/Nhãn mác .... + FTS5
     r#"
     CREATE TABLE IF NOT EXISTS documents (
         document_id     TEXT PRIMARY KEY,
@@ -66,9 +66,9 @@ const VERSIONED_MIGRATIONS: &[&str] = &[
         tokenize='trigram'
     );
     "#,
-    // v2: 资产存储(内容寻址,收藏图片附件)+ AI 问答会话/消息。
-    // 设计原则:用户策展(收藏)是硬锚点,机器生成(问答引用)是软锚点
-    // ——引用只存 citations_json 快照,不做 job 删除保护。
+    // v2: Lưu trữ tài sản(Địa chỉ nội dung,Tệp đính kèm hình ảnh yêu thích)+ AI Phiên hỏi đáp/tin tức。
+    // Nguyên tắc thiết kế: Người dùng được tuyển chọn (Yêu thích) là neo cứng, Tạo máy (Báo giá hỏi đáp) là Neo Mềm
+    // —— Chỉ báo giá citations_json ảnh chụp nhanh, đừng job loại bỏ bảo vệ。
     r#"
     CREATE TABLE IF NOT EXISTS assets (
         asset_id    TEXT PRIMARY KEY,          -- sha256(文件字节)
@@ -101,9 +101,9 @@ const VERSIONED_MIGRATIONS: &[&str] = &[
     ALTER TABLE favorites ADD COLUMN asset_id  TEXT NOT NULL DEFAULT '';
     ALTER TABLE favorites ADD COLUMN rect_json TEXT NOT NULL DEFAULT '';
     "#,
-    // v3: AI 消息树分支 —— parent_id 形成兄弟分支; head_id 记录当前可见叶。
-    // 与 ChatGPT / assistant-ui 一致:同 parent 的多条 message 即 alternate。
-    // 兼容:旧行 parent_id 为空,按 seq 串成线性链;load 时无 head 或 max(seq)。
+    // v3: AI Nhánh cây tin nhắn —— parent_id Chi nhánh anh chị em; head_id Ghi lại lá có thể nhìn thấy hiện tại。
+    // VÀ ChatGPT / assistant-ui Khớp:cùng parent Nhiều dải message chính là alternate。
+    // Tương thích:Dòng cũ parent_id Trống,án seq Xâu thành chuỗi tuyến tính;load Không có thời gian head Hoặc max(seq)。
     r#"
     ALTER TABLE ai_conversations ADD COLUMN head_id TEXT NOT NULL DEFAULT '';
     ALTER TABLE ai_messages ADD COLUMN parent_id TEXT NOT NULL DEFAULT '';

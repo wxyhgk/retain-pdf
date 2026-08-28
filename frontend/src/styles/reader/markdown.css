@@ -1,5 +1,5 @@
-/* Markdown 正文排版（默认悬浮窗 + legacy 抽屉共用 .reader-markdown-content）
- * 抽屉壳（.reader-markdown-drawer 等）→ markdown-legacy.css
+/* Định dạng nội dung Markdown (cửa sổ nổi mặc định + drawer legacy dùng chung .reader-markdown-content)
+ * Vỏ drawer (.reader-markdown-drawer, v.v.) → markdown-legacy.css
  */
 
 .reader-markdown-content {
@@ -118,7 +118,7 @@
   font-size: 12px;
 }
 
-/* MathJax SVG：行内/块级公式 */
+/* SVG MathJax: công thức inline/block */
 .reader-markdown-content .reader-md-math-inline,
 .reader-float-markdown-content .reader-md-math-inline {
   display: inline-block;

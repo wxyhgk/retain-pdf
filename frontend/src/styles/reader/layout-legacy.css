@@ -1,30 +1,30 @@
-/* Legacy 阅读器布局：三栏骨架 / 滚动壳 / pdf.js 宿主 / 底栏 HUD
- * 仅 entries/reader-legacy.css 引入（?engine=legacy）。
+/* Bố cục trình đọc Legacy: khung ba cột / vỏ cuộn / host pdf.js / HUD thanh dưới
+ * Chỉ được import bởi entries/reader-legacy.css (?engine=legacy).
  */
 
 .reader-body {
-  /* 三栏骨架:左栏常驻(占位),右栏随工具面板开合(:has 驱动),中间自适应内缩。
-     --reader-left-col / --reader-right-col 是"展开宽度",拖拽控制器实时改写并持久化;
-     --reader-*-w 是"实际生效宽度",折叠时被 collapsed 类覆盖为 0(panel-collapse.js) */
+  /* Khung ba cột: cột trái thường trực (giữ chỗ), cột phải mở/đóng theo panel công cụ (:has điều khiển), giữa tự co giãn.
+     --reader-left-col / --reader-right-col là "chiều rộng mở", bộ điều khiển kéo ghi lại và lưu bền vững;
+     --reader-*-w là "chiều rộng thực tế áp dụng", khi thu gọn bị class collapsed ghi đè thành 0 (panel-collapse.js) */
   --reader-left-col: 248px;
   --reader-right-col: 384px;
   --reader-left-w: var(--reader-left-col);
   --reader-right-w: 0px;
 }
 
-/* 有工具面板且未折叠时右栏取展开宽度;:not(.reader-right-collapsed) 让折叠态回落到基础 0 宽
-   (:has 的参数带来更高特异性,单独写覆盖规则会被它压过,故用 :not 排除) */
+/* Khi có panel công cụ và chưa thu gọn, cột phải lấy chiều rộng mở; :not(.reader-right-collapsed) đưa trạng thái thu gọn về 0 cơ sở
+   (tham số :has mang độ đặc hiệu cao hơn, quy tắc ghi đè viết riêng sẽ bị nó đè, nên dùng :not để loại trừ) */
 .reader-body:has(.reader-side-drawer.is-open):not(.reader-right-collapsed) {
   --reader-right-w: var(--reader-right-col);
 }
 
-/* 抽屉打开时弱化底部页码条（避免与右栏抢视线） */
+/* Khi ngăn kéo mở, làm mờ thanh số trang dưới (tránh tranh tầm nhìn với cột phải) */
 .reader-body:has(.reader-side-drawer.is-open) .reader-page-indicator {
   opacity: 0.18;
   pointer-events: none;
 }
 
-/* 左栏折叠:实际宽度归零(特异性高于基础 var 规则) */
+/* Cột trái thu gọn: chiều rộng thực tế về 0 (độ đặc hiệu cao hơn quy tắc var cơ sở) */
 .reader-body.reader-left-collapsed {
   --reader-left-w: 0px;
 }
@@ -48,7 +48,7 @@
   transition: left 180ms ease, right 180ms ease;
 }
 
-/* 左栏:三栏骨架的导航位,当前为占位;摘录/批注后续迁入 */
+/* Cột trái: vị trí điều hướng trong khung ba cột, hiện giữ chỗ; trích dẫn/chú thích sẽ chuyển vào sau */
 .reader-col-left {
   position: fixed;
   top: 0;
@@ -93,7 +93,7 @@
   opacity: 0.72;
 }
 
-/* 栏间可拖拽分隔条:定位在栏边界上,拖动改 --reader-left-w / --reader-right-col */
+/* Thanh phân cách kéo được giữa các cột: định vị trên ranh giới cột, kéo để thay đổi --reader-left-w / --reader-right-col */
 .reader-col-resizer {
   position: fixed;
   top: 0;
@@ -130,23 +130,23 @@
   right: calc(var(--reader-right-w) - 5px);
 }
 
-/* 右栏收起(无工具面板)或被折叠时,右侧分隔条隐藏 */
+/* Cột phải thu gọn (không panel công cụ) hoặc bị gấp lại, thanh phân cách phải ẩn */
 .reader-body:not(:has(.reader-side-drawer.is-open)) .reader-col-resizer-right,
 .reader-body.reader-right-collapsed .reader-col-resizer-right {
   display: none;
 }
 
-/* 无工具面板时右栏本就没内容,右折叠把手一并隐藏 */
+/* Khi không có panel công cụ, cột phải vốn không có nội dung, tay nắm gấp phải cũng ẩn theo */
 .reader-body:not(:has(.reader-side-drawer.is-open)) .reader-col-collapse-right {
   display: none;
 }
 
-/* 左栏折叠时隐藏左分隔条(0 宽栏不可拖) */
+/* Cột trái thu gọn thì ẩn thanh phân cách trái (cột rộng 0 không thể kéo) */
 .reader-body.reader-left-collapsed .reader-col-resizer-left {
   display: none;
 }
 
-/* 折叠/展开把手:贴在栏边界的小圆片,折叠后停在屏幕边缘仍可点开 */
+/* Tay nắm gấp/mở: miếng tròn nhỏ dán trên ranh giới cột, sau khi gấp vẫn nằm ở mép màn hình để bấm mở */
 .reader-col-collapse {
   position: fixed;
   top: 50%;
@@ -172,7 +172,7 @@
   border-color: color-mix(in srgb, var(--ink) 24%, transparent);
 }
 
-/* 用 CSS 画的箭头,随折叠态翻转指向 */
+/* Mũi tên vẽ bằng CSS, lật hướng theo trạng thái gấp */
 .reader-col-collapse::before {
   content: "";
   width: 6px;
@@ -189,7 +189,7 @@
   right: calc(var(--reader-right-w) - 9px);
 }
 
-/* 左把手:展开时箭头指左(折叠方向),折叠时指右(展开) */
+/* Tay nắm trái: khi mở mũi tên chỉ trái (hướng gấp), khi gấp chỉ phải (mở) */
 .reader-col-collapse-left::before {
   transform: rotate(135deg);
   margin-left: 2px;
@@ -204,7 +204,7 @@
   margin-left: -2px;
 }
 
-/* 右把手:展开时箭头指右,折叠时指左 */
+/* Tay nắm phải: khi mở mũi tên chỉ phải, khi gấp chỉ trái */
 .reader-col-collapse-right::before {
   transform: rotate(-45deg);
   margin-right: 2px;
@@ -219,7 +219,7 @@
   margin-right: -2px;
 }
 
-/* 拖拽中禁用过渡,避免栏宽跟手时抖动 */
+/* Tắt transition khi kéo, tránh rung khi chiều rộng cột theo tay */
 .reader-body.reader-resizing .reader-scroll-shell,
 .reader-body.reader-resizing .reader-col-left {
   transition: none;
@@ -364,7 +364,7 @@
   inset: 0;
 }
 
-/* 窄屏：三栏退化为单栏；右抽屉改底部浮层（见 side-drawer.css） */
+/* Màn hình hẹp: ba cột suy biến thành một cột; ngăn kéo phải chuyển thành lớp nổi dưới (xem side-drawer.css) */
 @media (max-width: 720px) {
   .reader-body {
     --reader-left-w: 0px;

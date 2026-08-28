@@ -1,4 +1,4 @@
-// @ 选择器：文档 + 合集，本地过滤
+// @ Bộ chọn：Tài liệu + Bộ sưu tập，Lọc cục bộ
 
 import { API_PREFIX } from "../../../../js/config/api-constants.js";
 import { listCollections } from "../../../../js/api/collections.js";
@@ -8,7 +8,7 @@ import { scopeKey } from "./types.js";
 
 export function documentToScope(doc: DocumentRecord | Record<string, unknown>): HomeAskDocScope {
   const d = doc as DocumentRecord;
-  const title = `${d.title || d.source_filename || d.document_id || "未命名"}`.trim();
+  const title = `${d.title || d.source_filename || d.document_id || "Chưa đặt tên"}`.trim();
   const jobId = `${d.active_job_id || ""}`.trim();
   return {
     kind: "document",
@@ -19,7 +19,7 @@ export function documentToScope(doc: DocumentRecord | Record<string, unknown>): 
   };
 }
 
-/** 兼容旧测试/调用 */
+/** Tương thích với các bài kiểm tra cũ/điều dụng */
 export function documentToRef(doc: DocumentRecord | Record<string, unknown>): HomeAskDocScope {
   return documentToScope(doc);
 }
@@ -45,13 +45,13 @@ export async function loadCollectionPickerOptions(): Promise<HomeAskCollectionSc
     .map((c) => ({
       kind: "collection" as const,
       id: `${c.collection_id || ""}`.trim(),
-      title: `${c.name || c.collection_id || "未命名合集"}`.trim(),
+      title: `${c.name || c.collection_id || "Bộ sưu tập chưa đặt tên"}`.trim(),
       document_count: Number(c.document_count) || 0,
     }))
     .filter((c) => c.id);
 }
 
-/** 文档 + 合集一并加载，合集排在前面便于发现 */
+/** Tài liệu + Tải các bộ sưu tập cùng nhau，Các bộ sưu tập được sắp xếp ở phía trước để dễ dàng khám phá */
 export async function loadPickerOptions(docLimit = 100): Promise<HomeAskScope[]> {
   const [docs, cols] = await Promise.all([
     loadDocumentPickerOptions(docLimit).catch(() => [] as HomeAskDocScope[]),
@@ -72,7 +72,7 @@ export function filterDocumentOptions(
     .filter((opt) => {
       if (!q) return true;
       if (opt.kind === "collection") {
-        const hay = `合集 ${opt.title} ${opt.id}`.toLowerCase();
+        const hay = `Bộ sưu tập ${opt.title} ${opt.id}`.toLowerCase();
         return hay.includes(q);
       }
       const hay = `${opt.title} ${opt.source_filename || ""} ${opt.id}`.toLowerCase();
@@ -81,7 +81,7 @@ export function filterDocumentOptions(
     .slice(0, 16);
 }
 
-/** 展开合集为文档列表（用于提问范围） */
+/** Mở rộng việc thu thập vào danh sách tài liệu（Được sử dụng cho phạm vi câu hỏi） */
 export async function resolveCollectionDocuments(
   collectionId: string,
   limit = 80,
@@ -97,7 +97,7 @@ export async function resolveCollectionDocuments(
   return docs.map((d) => documentToScope(d)).filter((d) => d.id);
 }
 
-/** 从 textarea 文本里解析当前 @ 查询 */
+/** Từ textarea Phân tích cú pháp hiện tại trong văn bản @ tra hỏi */
 export function parseAtQuery(text: string, caret: number): { start: number; query: string } | null {
   const head = `${text || ""}`.slice(0, Math.max(0, caret));
   const match = head.match(/(^|[\s\u3000])@([^\s@]*)$/);

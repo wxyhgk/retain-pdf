@@ -26,8 +26,8 @@ pub(crate) fn default_end_page() -> i64 {
     -1
 }
 pub(crate) fn default_batch_size() -> i64 {
-    // 与 Python 引擎默认(TranslationExecutionRequest.batch_size=8)对齐;
-    // 1 会禁用批翻译队列,使每个文本块独立发起请求。
+    // VÀ Python Mặc định của động cơ(TranslationExecutionRequest.batch_size=8)xếp hợp lý;
+    // 1 Hàng đợi dịch hàng loạt sẽ bị vô hiệu hóa,Thực hiện từng khối yêu cầu khởi tạo văn bản một cách độc lập。
     8
 }
 pub(crate) fn default_model_version() -> String {

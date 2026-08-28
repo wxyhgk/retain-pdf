@@ -8,11 +8,11 @@ const __dirname = path.dirname(__filename);
 const frontendRoot = path.resolve(__dirname, "..");
 const outdir = path.join(frontendRoot, "dist");
 
-// --watch: esbuild context 增量重建(开发态:sourcemap 开、minify 关)
+// --watch: esbuild context Xây dựng lại gia tăng(Trạng thái phát triển:sourcemap mở、minify bên ngoài)
 const watchMode = process.argv.includes("--watch");
 
-// 导入路径仍写 .js/.jsx（兼容存量 import），解析时映射到 .ts/.tsx。
-// TypeScript bundler 约定：import "./foo.js" 可对应 foo.ts。
+// Đường dẫn nhập vẫn được ghi .js/.jsx（Cổ phiếu tương thích import），Ánh xạ tới khi phân tích cú pháp .ts/.tsx。
+// TypeScript bundler Quy ước：import "./foo.js" Tương ứng với foo.ts。
 function jsToTsResolvePlugin() {
   const map = new Map([
     [".js", [".ts", ".tsx", ".js"]],
@@ -48,7 +48,7 @@ function jsToTsResolvePlugin() {
   };
 }
 
-// 三页 MPA 各自打包的入口表——home/detail/reader 均已切换到 React 新世界
+// Ba Trang MPA Bảng mục nhập được đóng gói riêng——home/detail/reader được chuyển sang React Thế giới mới
 const PAGE_BUNDLES = [
   {
     name: "home",
@@ -67,8 +67,8 @@ const PAGE_BUNDLES = [
   },
 ];
 
-// mathjax-full/js/components/version.js 在未定义 PACKAGE_VERSION 时会
-// eval('require') 读 package.json —— 浏览器 ESM 里直接炸，导致全部公式回退。
+// mathjax-full/js/components/version.js không xác định PACKAGE_VERSION thì sẽ
+// eval('require') đọc package.json —— Trình duyệt ESM Chiên trực tiếp bên trong，Làm cho tất cả các công thức rơi trở lại。
 function resolveMathJaxPackageVersion() {
   try {
     const pkgPath = path.join(
@@ -110,7 +110,7 @@ function bundleOptions({ entry, outfile }) {
   };
 }
 
-// 只清 JS 产物，保留 dist/css/（build:css 独立写入；整目录 rm 会把主页样式弄没）
+// Chỉ có Qing JS Sản phẩm，Giữ dist/css/（build:css Viết độc lập；Toàn bộ Mục lục rm sẽ xử lý sai phong cách trang chủ）
 fs.mkdirSync(outdir, { recursive: true });
 for (const page of PAGE_BUNDLES) {
   try {

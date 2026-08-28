@@ -112,12 +112,12 @@ pub fn get_document(
     Ok(with_document_media_urls(document, base_url))
 }
 
-/// 彻底删除一篇文档:文档行 + 名下所有 job(含 -ocr 子 job)+ upload(s) +
-/// 磁盘文件。沿用馆藏删除的收藏保护——被收藏引用则 409(force 不绕过,
-/// 与 delete_library_book 一致;force 仅绕过"运行中 job 不可删")。
+/// Xóa hoàn toàn một tài liệu:Hàng tài liệu + Tất cả dưới tên job(hàm -ocr con cái job)+ upload(s) +
+/// Tập tin đĩa。Bảo vệ bộ sưu tập với việc loại bỏ bộ sưu tập——Trích dẫn yêu thích 409(force Không bỏ qua,
+/// VÀ delete_library_book Khớp;force Chỉ bỏ qua"Đang chạy job Không thể xóa")。
 ///
-/// "只入库不翻译"进来的文档没有 book job,也能经此彻底删除(是它唯一的
-/// 删除入口)。
+/// "Chỉ được nhập kho và không được dịch"Không có tài liệu đến book job,cũng có thể được xóa hoàn toàn thông qua(là duy nhất của nó
+/// Xóa lối vào)。
 pub fn delete_document(
     deps: &LibraryDeps<'_>,
     document_id: &str,
@@ -128,7 +128,7 @@ pub fn delete_document(
         .get_document(document_id)
         .map_err(|_| AppError::not_found(format!("document not found: {document_id}")))?;
 
-    // 收藏保护:文档一删,其锚点全断,拒绝无声销毁用户策展内容
+    // Bảo vệ thu gom:Xóa tài liệu 1,Tất cả các neo của nó bị hỏng,Từ chối âm thầm hủy nội dung do người dùng quản lý
     let favorites = deps.db.favorites_count_for_document(document_id)?;
     if favorites > 0 {
         return Err(AppError::conflict(format!(
@@ -136,7 +136,7 @@ pub fn delete_document(
         )));
     }
 
-    // 收集名下所有 job:jobs.document_id 关联的 + 每个的 -ocr 子 job
+    // Thu thập tất cả dưới tên job:jobs.document_id Liên kết + Mỗi -ocr con cái job
     let mut job_ids = deps.db.job_ids_for_document(document_id)?;
     for job_id in job_ids.clone() {
         let child = format!("{job_id}-ocr");
@@ -145,7 +145,7 @@ pub fn delete_document(
         }
     }
 
-    // 逐个校验可删(运行中的 job 需 force)
+    // Có thể xóa tổng kiểm tra riêng lẻ(Đang chạy job cần force)
     let mut jobs = Vec::new();
     for job_id in &job_ids {
         if let Ok(job) = deps.db.get_job(job_id) {
@@ -162,7 +162,7 @@ pub fn delete_document(
         removed_jobs.push(job.job_id.clone());
     }
 
-    // 删除 upload 记录与其磁盘目录(uploads/<upload_id>/...)
+    // Xoá upload Bản ghi và thư mục đĩa của chúng(uploads/<upload_id>/...)
     for upload in deps.db.uploads_for_document(document_id)? {
         let stored = PathBuf::from(&upload.stored_path);
         if let Some(parent) = stored.parent() {
@@ -173,7 +173,7 @@ pub fn delete_document(
         deps.db.delete_upload(&upload.upload_id)?;
     }
 
-    // 最后删文档行(FK 级联 tags/collection_documents;ai_conversations 置 NULL)+ FTS
+    // Đã xóa hàng tài liệu cuối cùng(FK Xếp tầng tags/collection_documents;ai_conversations đưa NULL)+ FTS
     let deleted = deps.db.delete_document(document_id)?;
 
     Ok(DocumentDeleteResultView {

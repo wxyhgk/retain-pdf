@@ -1,8 +1,8 @@
-//! 资产存储(收藏截图等二进制附件)与 AI 问答会话历史。
+//! Lưu trữ tài sản (ảnh chụp màn hình yêu thích, tệp đính kèm nhị phân) và lịch sử hội thoại AI.
 //!
-//! 资产是内容寻址的:asset_id = sha256(文件字节),文件落
-//! data_root/assets/<前2位>/<hash>,重复上传自动归并,URL 永久可缓存。
-//! 会话遵循"软锚点"原则:引用只存 JSON 快照,不做 job 删除保护。
+//! Tài sản được định địa chỉ theo nội dung: asset_id = sha256 (byte tệp), tệp được lưu trong
+//! data_root/assets/<2 ký tự đầu>/<hash>, tải lên trùng lặp tự động hợp nhất, URL có thể lưu cache vĩnh viễn.
+//! Cuộc trò chuyện tuân theo nguyên tắc "neo mềm": tham chiếu chỉ lưu ảnh chụp nhanh JSON, không bảo vệ xóa job.
 //!
 //! All handlers go through library_api (PR5).
 
@@ -65,7 +65,7 @@ pub async fn download_asset_route(
     Ok((
         [
             (header::CONTENT_TYPE, asset.mime),
-            // 内容寻址 → 永久缓存安全
+            // Địa chỉ nội dung → Bảo mật bộ nhớ cache vĩnh viễn
             (
                 header::CACHE_CONTROL,
                 "public, max-age=31536000, immutable".to_string(),

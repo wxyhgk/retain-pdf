@@ -34,7 +34,7 @@ export async function queryDeepSeekBalance(apiPrefix, payload) {
     return {
       ok: true,
       status: "available",
-      summary: "mock mode: DeepSeek 余额可用：CNY 100.00",
+      summary: "chế độ mock: DeepSeek số dư khả dụng: CNY 100.00",
       is_available: true,
       balance_infos: [
         {

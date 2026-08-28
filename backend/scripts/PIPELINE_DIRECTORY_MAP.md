@@ -1,32 +1,32 @@
-# Python Pipeline Directory Map
+# Bản đồ thư mục Python Pipeline
 
-这份文档只回答一个问题：
+Tài liệu này chỉ trả lời một câu hỏi:
 
-**现在要改 `backend/scripts`，应该先进哪个目录。**
+**Khi sửa `backend/scripts`, nên vào thư mục nào trước.**
 
-## 最常见入口
+## Điểm vào phổ biến nhất
 
-- 改人工执行入口：
+- Sửa điểm vào thực thi thủ công:
   [`entrypoints/`](/home/wxyhgk/tmp/Code/backend/scripts/entrypoints)
-- 改阶段编排总线：
+- Sửa bus điều phối giai đoạn:
   [`runtime/pipeline/`](/home/wxyhgk/tmp/Code/backend/scripts/runtime/pipeline)
-- 改 OCR provider 接入：
+- Sửa tích hợp OCR provider:
   [`services/ocr_provider/`](/home/wxyhgk/tmp/Code/backend/scripts/services/ocr_provider)
-- 改统一 OCR 契约：
+- Sửa hợp đồng OCR thống nhất:
   [`services/document_schema/`](/home/wxyhgk/tmp/Code/backend/scripts/services/document_schema)
-- 改翻译主链：
+- Sửa chuỗi chính dịch:
   [`services/translation/`](/home/wxyhgk/tmp/Code/backend/scripts/services/translation)
-- 改渲染主链：
+- Sửa chuỗi chính kết xuất:
   [`services/rendering/`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering)
 
-## 一眼看懂主链
+## Nhìn một cái hiểu ngay chuỗi chính
 
-### provider-backed 全流程
+### Toàn bộ quy trình provider-backed
 
 ```text
 entrypoints/run_provider_case.py
   -> services/ocr_provider/provider_pipeline.py
-     -> services/mineru/* 或 services/ocr_provider/paddle_api.py
+     -> services/mineru/*  hoặc services/ocr_provider/paddle_api.py
      -> services/document_schema/*
      -> runtime/pipeline/book_pipeline.py
         -> runtime/pipeline/translation_stage.py
@@ -35,7 +35,7 @@ entrypoints/run_provider_case.py
            -> services/rendering/*
 ```
 
-### normalized OCR -> translate -> render
+### OCR đã chuẩn hóa -> dịch -> kết xuất
 
 ```text
 entrypoints/run_book.py
@@ -45,7 +45,7 @@ entrypoints/run_book.py
         -> render_stage.py
 ```
 
-### translate-only
+### Chỉ dịch
 
 ```text
 entrypoints/run_translate_only.py
@@ -54,7 +54,7 @@ entrypoints/run_translate_only.py
         -> services/translation/*
 ```
 
-### render-only
+### Chỉ kết xuất
 
 ```text
 entrypoints/run_render_only.py
@@ -63,161 +63,161 @@ entrypoints/run_render_only.py
         -> services/rendering/*
 ```
 
-## 顶层目录地图
+## Bản đồ thư mục cấp cao
 
 ### `entrypoints/`
 
-- 作用：
-  最外层入口，只做参数接收、异常包装、把调用导向稳定入口。
-- 不该做的事：
-  不自己拼 provider 流程，不直接碰翻译/渲染深层实现。
-- 典型文件：
+- Vai trò:
+  Điểm vào ngoài cùng, chỉ nhận tham số, gói gọn ngoại lệ, hướng lệnh gọi vào điểm vào ổn định.
+- Không nên làm:
+  Không tự ghép quy trình provider, không trực tiếp chạm vào triển khai sâu của dịch/kết xuất.
+- Tệp điển hình:
   - [`run_provider_case.py`](/home/wxyhgk/tmp/Code/backend/scripts/entrypoints/run_provider_case.py)
-    provider-backed full flow 总入口。
+    Điểm vào tổng thể cho full flow provider-backed.
   - [`run_book.py`](/home/wxyhgk/tmp/Code/backend/scripts/entrypoints/run_book.py)
-    normalized OCR -> translate -> render 总入口。
+    Điểm vào tổng thể cho OCR đã chuẩn hóa -> dịch -> kết xuất.
   - [`run_translate_only.py`](/home/wxyhgk/tmp/Code/backend/scripts/entrypoints/run_translate_only.py)
-    纯翻译入口。
+    Điểm vào chỉ dịch.
   - [`run_render_only.py`](/home/wxyhgk/tmp/Code/backend/scripts/entrypoints/run_render_only.py)
-    纯渲染入口。
+    Điểm vào chỉ kết xuất.
 
 ### `runtime/pipeline/`
 
-- 作用：
-  阶段编排总线，只负责组织顺序、阶段输入输出和汇总结果。
-- 不该做的事：
-  不理解 provider raw JSON，不吸收翻译策略细节，不实现 PDF 底层渲染。
-- 关键文件：
+- Vai trò:
+  Bus điều phối giai đoạn, chỉ chịu trách nhiệm tổ chức thứ tự, đầu vào/đầu ra giai đoạn và tổng hợp kết quả.
+- Không nên làm:
+  Không hiểu JSON raw của provider, không hấp thụ chi tiết chiến lược dịch, không triển khai kết xuất PDF cấp thấp.
+- Tệp chính:
   - [`book_pipeline.py`](/home/wxyhgk/tmp/Code/backend/scripts/runtime/pipeline/book_pipeline.py)
-    顶层 `translate -> render` 编排。
+    Điều phối cấp cao `dịch -> kết xuất`.
   - [`translation_stage.py`](/home/wxyhgk/tmp/Code/backend/scripts/runtime/pipeline/translation_stage.py)
-    纯翻译阶段入口。
+    Điểm vào giai đoạn chỉ dịch.
   - [`render_stage.py`](/home/wxyhgk/tmp/Code/backend/scripts/runtime/pipeline/render_stage.py)
-    纯渲染阶段入口。
+    Điểm vào giai đoạn chỉ kết xuất.
   - [`translation_loader.py`](/home/wxyhgk/tmp/Code/backend/scripts/runtime/pipeline/translation_loader.py)
-    读取 `translation-manifest.json` 和逐页 payload。
+    Đọc `translation-manifest.json` và payload từng trang.
   - [`render_inputs.py`](/home/wxyhgk/tmp/Code/backend/scripts/runtime/pipeline/render_inputs.py)
-    render-only 输入协议收口。
+    Thu gọn giao thức đầu vào render-only.
 
 ### `services/document_schema/`
 
-- 作用：
-  OCR 统一中间契约层。
-- 进入条件：
-  改 raw OCR -> `document.v1.json` 的适配、字段默认值、schema 校验时进这里。
-- 关键文件：
+- Vai trò:
+  Tầng hợp đồng trung gian OCR thống nhất.
+- Điều kiện vào:
+  Sửa adapter raw OCR -> `document.v1.json`, giá trị mặc định trường, kiểm tra schema thì vào đây.
+- Tệp chính:
   - [`normalize_pipeline.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/document_schema/normalize_pipeline.py)
-    normalize worker 入口。
+    Điểm vào normalize worker.
   - [`adapters.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/document_schema/adapters.py)
-    raw provider -> normalized document 总适配口。
+    Cổng adapter tổng thể raw provider -> normalized document.
   - [`reporting.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/document_schema/reporting.py)
-    normalization summary/report 读取。
+    Đọc normalization summary/report.
 
 ### `services/ocr_provider/`
 
-- 作用：
-  provider-backed OCR 总入口与 provider 协议收口。
-- 进入条件：
-  改 provider 分发、Paddle API 调用、provider-backed worker 主线时进这里。
-- 关键文件：
+- Vai trò:
+  Điểm vào tổng thể OCR provider-backed và thu gọn giao thức provider.
+- Điều kiện vào:
+  Sửa phân phối provider, gọi Paddle API, mainline provider-backed worker thì vào đây.
+- Tệp chính:
   - [`provider_pipeline.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/ocr_provider/provider_pipeline.py)
-    当前 provider-backed full flow 稳定入口，也是脚本/测试依赖的兼容面。
+    Điểm vào ổn định cho full flow provider-backed hiện tại, cũng là bề mặt tương thích cho script/test phụ thuộc.
   - [`paddle_api.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/ocr_provider/paddle_api.py)
-    Paddle 异步 API 接入。
+    Tích hợp Paddle API không đồng bộ.
   - [`paddle_markdown.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/ocr_provider/paddle_markdown.py)
-    Paddle Markdown 与图片产物落盘。
+    Ghi Paddle Markdown và sản phẩm ảnh.
   - [`paddle_normalize.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/ocr_provider/paddle_normalize.py)
-    Paddle normalized document 几何修正等纯实现。
+    Triển khai thuần túy như hiệu chỉnh hình học của Paddle normalized document.
 
 ### `services/mineru/`
 
-- 作用：
-  MinerU provider 的具体实现。
-- 进入条件：
-  只在改 MinerU provider transport、下载、解包和产物整理时进这里。
-- 注意：
-  这里是 provider 实现，不是 OCR 总线，也不是翻译/渲染主链。
+- Vai trò:
+  Triển khai cụ thể của provider MinerU.
+- Điều kiện vào:
+  Chỉ vào đây khi sửa transport, tải xuống, giải nén và sắp xếp sản phẩm của MinerU provider.
+- Lưu ý:
+  Đây là triển khai provider, không phải bus OCR, cũng không phải mainline dịch/kết xuất.
 
 ### `services/translation/`
 
-- 作用：
-  把 `document.v1.json` 变成稳定翻译产物。
-- 进入条件：
-  改翻译策略、LLM 调度、continuation、payload 落盘、diagnostics 时进这里。
-- 关键文件：
+- Vai trò:
+  Biến `document.v1.json` thành sản phẩm dịch ổn định.
+- Điều kiện vào:
+  Sửa chiến lược dịch, điều phối LLM, continuation, ghi payload, diagnostics thì vào đây.
+- Tệp chính:
   - [`from_ocr_pipeline.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/translation/from_ocr_pipeline.py)
-    normalized OCR -> translate -> render 的 worker 包装入口。
+    Điểm vào wrapper worker cho normalized OCR -> translate -> render.
   - [`translate_only_pipeline.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/translation/translate_only_pipeline.py)
-    translate-only worker 包装入口。
+    Điểm vào wrapper worker translate-only.
   - [`workflow/translation_workflow.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/translation/workflow/translation_workflow.py)
-    单页翻译流程。
+    Quy trình dịch một trang.
   - [`llm/README.md`](/home/wxyhgk/tmp/Code/backend/scripts/services/translation/llm/README.md)
-    LLM 目录边界说明。
+    Giải thích ranh giới thư mục LLM.
 
 ### `services/rendering/`
 
-- 作用：
-  把翻译产物和源 PDF 变成最终 PDF。
-- 进入条件：
-  改 overlay、Typst、背景修复、压缩、render-only 协议时进这里。
-- 关键文件：
+- Vai trò:
+  Biến sản phẩm dịch và PDF nguồn thành PDF cuối cùng.
+- Điều kiện vào:
+  Sửa overlay, Typst, sửa nền, nén, giao thức render-only thì vào đây.
+- Tệp chính:
   - [`workflow/render_only.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/workflow/render_only.py)
-    render-only worker 包装入口。
+    Điểm vào wrapper worker render-only.
   - [`workflow/`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/workflow)
-    渲染流程编排入口。
+    Điểm vào điều phối quy trình kết xuất.
   - [`output/typst/`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/output/typst)
-    Typst 输出主链。
+    Chuỗi chính đầu ra Typst.
 
 ### `services/pipeline_shared/`
 
-- 作用：
-  provider / translate / render 共享的 stdout contract、summary、events、JSON IO。
-- 不该做的事：
-  不放 provider 私有逻辑，也不放翻译/渲染算法细节。
+- Vai trò:
+  Hợp đồng stdout, summary, events, JSON IO được chia sẻ giữa provider / translate / render.
+- Không nên làm:
+  Không đặt logic riêng của provider, cũng không đặt chi tiết thuật toán dịch/kết xuất.
 
 ### `foundation/`
 
-- 作用：
-  配置、路径、stage spec、共享工具、prompt loader。
-- 进入条件：
-  改跨模块共享配置或 stage spec 协议时进这里。
+- Vai trò:
+  Cấu hình, đường dẫn, stage spec, công cụ chia sẻ, prompt loader.
+- Điều kiện vào:
+  Sửa cấu hình chia sẻ xuyên module hoặc giao thức stage spec thì vào đây.
 
 ### `devtools/`
 
-- 作用：
-  调试、回归、探针、实验脚本。
-- 不该做的事：
-  不能反向成为主链路依赖。
+- Vai trò:
+  Gỡ lỗi, hồi quy, thăm dò, script thí nghiệm.
+- Không nên làm:
+  Không được trở thành phụ thuộc ngược của mainline.
 
-## 快速判断
+## Xác định nhanh
 
-- “这是入口参数或 worker 启动方式变化吗？”
-  先看 `entrypoints/`
-- “这是阶段顺序或输入输出协议变化吗？”
-  先看 `runtime/pipeline/`
-- “这是 raw OCR 适配或 schema 变化吗？”
-  先看 `services/document_schema/`
-- “这是 provider 接入问题吗？”
-  先看 `services/ocr_provider/` 或 `services/mineru/`
-- “这是翻译结果不对吗？”
-  先看 `services/translation/`
-- “这是 PDF 渲染不对吗？”
-  先看 `services/rendering/`
+- "Đây có phải là thay đổi tham số đầu vào hoặc cách khởi động worker không?"
+  Xem `entrypoints/` trước
+- "Đây có phải là thay đổi thứ tự giai đoạn hoặc giao thức đầu vào/đầu ra không?"
+  Xem `runtime/pipeline/` trước
+- "Đây có phải là thay đổi adapter raw OCR hoặc schema không?"
+  Xem `services/document_schema/` trước
+- "Đây có phải là vấn đề tích hợp provider không?"
+  Xem `services/ocr_provider/` hoặc `services/mineru/` trước
+- "Đây có phải là kết quả dịch không đúng không?"
+  Xem `services/translation/` trước
+- "Đây có phải là PDF kết xuất không đúng không?"
+  Xem `services/rendering/` trước
 
-## 三条边界红线
+## Ba ranh giới đỏ
 
-- `runtime/pipeline/` 不理解 provider raw JSON，也不直接 import provider 私有实现。
-- `services/translation/` 和 `services/rendering/` 不消费 provider raw 结构，只消费稳定交接物。
-- `entrypoints/` 只连稳定入口，不绕过 `*_pipeline.py` 或 `runtime/pipeline/*` 直连深层实现。
+- `runtime/pipeline/` không hiểu JSON raw của provider, cũng không import trực tiếp triển khai riêng của provider.
+- `services/translation/` và `services/rendering/` không tiêu thụ cấu trúc raw của provider, chỉ tiêu thụ vật giao tiếp ổn định.
+- `entrypoints/` chỉ kết nối điểm vào ổn định, không bypass `*_pipeline.py` hoặc `runtime/pipeline/*` để kết nối trực tiếp triển khai sâu.
 
-## 新人阅读顺序
+## Thứ tự đọc cho người mới
 
 1. [`README.md`](/home/wxyhgk/tmp/Code/backend/scripts/README.md)
-   先知道整体目录和正式入口。
+   Biết tổng thể thư mục và điểm vào chính thức trước.
 2. [`PIPELINE_DIRECTORY_MAP.md`](/home/wxyhgk/tmp/Code/backend/scripts/PIPELINE_DIRECTORY_MAP.md)
-   再知道改哪里。
+   Sau đó biết sửa ở đâu.
 3. [`runtime/pipeline/README.md`](/home/wxyhgk/tmp/Code/backend/scripts/runtime/pipeline/README.md)
-   看阶段边界。
+   Xem ranh giới giai đoạn.
 4. [`services/README.md`](/home/wxyhgk/tmp/Code/backend/scripts/services/README.md)
-   看 services 总分工。
-5. 再按模块进入 `translation/`、`rendering/`、`ocr_provider/` 的 README。
+   Xem phân công tổng thể của services.
+5. Sau đó theo module vào README của `translation/`, `rendering/`, `ocr_provider/`.

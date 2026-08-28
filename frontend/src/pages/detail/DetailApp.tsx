@@ -1,15 +1,15 @@
-// 任务详情页 React 编排根(旧 src/js/job-detail/index.js + view.js +
-// modal-bindings.js + downloads.js + events.js 启动器的重写)。
+// Root điều phối React cho trang chi tiết tác vụ (bản viết lại của launcher cũ
+// src/js/job-detail/index.js + view.js + modal-bindings.js + downloads.js + events.js).
 //
-// 状态策略(按现状语义,不引入 store):
-// - 旧世界纯逻辑(overview-renderer / markdown-flow / summary / action-links /
-//   resume 等)通过 setText/setActionLink/setEventsStatus 回调写文案——这里把
-//   回调实现为 React state(texts/links 两张映射表),JSX 按 id 取值渲染;
-// - 产物清单、失败调试上下文、Markdown 图片网格仍由保留的旧模块
-//   (artifacts.js / failure.js,经 overview-renderer / markdown-flow)在挂载后
-//   命令式 innerHTML 写入 React 渲染出的叶子容器(见各组件注释);
-// - 模态框开合、事件流加载、受保护下载改为 React 管理(原 view.js /
-//   modal-bindings.js / events.js 启动器 / downloads.js 的职责)。
+// Chiến lược state (giữ đúng ngữ nghĩa hiện tại, không thêm store):
+// - Logic thuần của thế giới cũ (overview-renderer / markdown-flow / summary / action-links /
+//   resume, v.v.) ghi text qua callback setText/setActionLink/setEventsStatus. Ở đây các callback
+//   được hiện thực bằng React state (hai map texts/links), JSX render theo id.
+// - Danh sách artifact, context debug lỗi, lưới ảnh Markdown vẫn do module cũ giữ lại
+//   (artifacts.js / failure.js, qua overview-renderer / markdown-flow) ghi innerHTML vào leaf
+//   container do React render sau khi mount (xem comment ở từng component).
+// - Mở/đóng modal, tải event stream và download được bảo vệ chuyển sang React quản lý
+//   (trách nhiệm cũ của view.js / modal-bindings.js / launcher events.js / downloads.js).
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DetailHeader } from "./components/DetailHeader.jsx";
@@ -47,7 +47,7 @@ const JOB_EVENTS_PAGE_SIZE = 200;
 
 function eventsStatusText(payload) {
   const count = Array.isArray(payload?.items) ? payload.items.length : 0;
-  return count > 0 ? `全部事件 · ${count} 条` : "全部事件";
+  return count > 0 ? `Tất cả sự kiện · ${count} mục` : "Tất cả sự kiện";
 }
 
 export function DetailApp({
@@ -66,15 +66,15 @@ export function DetailApp({
   const [stageHistoryOpen, setStageHistoryOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
   const [eventsPayload, setEventsPayload] = useState(null);
-  const [eventsStatus, setEventsStatus] = useState("尚未加载");
-  const [openEventsText, setOpenEventsText] = useState("按需加载");
+  const [eventsStatus, setEventsStatus] = useState("Chưa tải");
+  const [openEventsText, setOpenEventsText] = useState("Tải khi cần");
 
-  // 旧 view.js setDetailText 语义:value ?? "-"
+  // Ngữ nghĩa setDetailText của view.js cũ: value ?? "-".
   const setText = useCallback((id, value) => {
     setTexts((prev) => ({ ...prev, [id]: value ?? "-" }));
   }, []);
 
-  // 旧 view.js setDetailActionLink 语义:href/disabled/aria-disabled 三件套
+  // Ngữ nghĩa setDetailActionLink của view.js cũ: bộ ba href/disabled/aria-disabled.
   const setActionLink = useCallback((id, url, enabled) => {
     setLinks((prev) => ({ ...prev, [id]: { url, enabled: Boolean(enabled) } }));
   }, []);
@@ -84,7 +84,7 @@ export function DetailApp({
     [texts],
   );
 
-  // 页面加载编排:旧 index.js initializePage 的 hooks 重建
+  // Điều phối tải trang: dựng lại hook từ initializePage của index.js cũ.
   const startedRef = useRef(false);
   useEffect(() => {
     if (startedRef.current) {
@@ -104,7 +104,7 @@ export function DetailApp({
     (async () => {
       const jobId = getJobId();
       if (!jobId) {
-        setText("detail-head-note", "缺少 job_id，请通过 detail.html?job_id=... 打开。");
+        setText("detail-head-note", "Thiếu job_id, vui lòng mở bằng detail.html?job_id=...");
         return;
       }
       setText("detail-job-id", jobId);
@@ -140,32 +140,29 @@ export function DetailApp({
         state,
       });
     })().catch((error) => {
-      // 旧 createPageRuntime onError 语义:初始化异常写入头部提示
+      // Ngữ nghĩa onError của createPageRuntime cũ: ghi lỗi khởi tạo vào ghi chú header.
       setText("detail-head-note", error.message || String(error));
     });
-    // 只在挂载时执行一次;端口在页面生命周期内不变
+    // Chỉ chạy một lần khi mount; các port không đổi trong vòng đời trang.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 旧 modal-bindings.js:Escape 关闭全部模态框。
+  // modal-bindings.js cũ: Escape đóng tất cả modal.
   //
-  // 阶段 C 收官批(shadcn 改造)决策:两个模态换成 Radix Dialog 后保留这条
-  // "无条件关两个"的手写监听,不改成"只关当前打开的那个"。理由:两个模态各自
-  // 是 fixed inset-0 的独立 Radix Root/Content,打开时会用 DismissableLayer
-  // 抢占式接管焦点(focus trap)——StageHistoryModal 打开时其触发卡片
-  // (EventsTriggerCard)完全被遮罩盖住且不可聚焦/不可点击,反之亦然,所以两个
-  // 模态在本页面结构下永远互斥(同一时刻至多一个 open=true)。这意味着
-  // "关两个"和"只关当前这个"在所有可达状态下结果恒等——setStageHistoryOpen/
-  // setEventsOpen 对已经是 false 的一侧调用是幂等 no-op,不会有 double-fire
-  // 语义坍缩的风险(不同于 TranslationWorkflowDialog 的两段式关闭那种真正会
-  // 被"多调一次"破坏语义的场景)。保留原样是这批改造里风险最低的选择,不
-  // 引入新分支去做一个在当前 UI 下不可观测的行为收紧。
+  // Quyết định ở batch kết thúc phase C (shadcn migration): sau khi đổi hai modal sang Radix Dialog,
+  // vẫn giữ listener thủ công "đóng vô điều kiện cả hai", không đổi thành "chỉ đóng modal đang mở".
+  // Lý do: mỗi modal là Radix Root/Content độc lập fixed inset-0; khi mở, DismissableLayer chiếm focus
+  // theo kiểu focus trap. Khi StageHistoryModal mở, thẻ trigger của nó (EventsTriggerCard) bị overlay che
+  // hoàn toàn, không focus/click được, và ngược lại. Vì vậy trong cấu trúc trang này hai modal luôn loại trừ nhau
+  // (cùng lúc tối đa một open=true). "Đóng cả hai" và "chỉ đóng cái đang mở" cho kết quả giống nhau ở mọi trạng thái
+  // có thể đạt tới: gọi setStageHistoryOpen/setEventsOpen lên phía đã false là no-op idempotent, không có nguy cơ
+  // double-fire làm sụp ngữ nghĩa (khác TranslationWorkflowDialog, nơi đóng hai bước có thể thật sự hỏng nếu gọi dư).
+  // Giữ nguyên là lựa chọn ít rủi ro nhất trong batch này, không thêm nhánh mới cho behavior hiện không quan sát được.
   //
-  // 这条监听和 Radix 自己的 Escape 处理(DismissableLayer,capture 阶段)会
-  // 在同一次按键里都跑一遍:Radix 先对"当前打开的那个"调用 onOpenChange(false)
-  // (对应的 setXxxOpen(false) 生效),随后这里的 bubble 阶段监听器对两个都调
-  // 一次 setXxxOpen(false)——已经是 false 的一侧是 no-op,不产生额外渲染或
-  // 副作用,两套机制不冲突。
+  // Listener này và xử lý Escape riêng của Radix (DismissableLayer, capture phase) đều chạy trong cùng một phím:
+  // Radix gọi onOpenChange(false) trước cho "modal đang mở" (setXxxOpen(false) tương ứng có hiệu lực), sau đó
+  // listener bubble ở đây gọi setXxxOpen(false) cho cả hai. Phía đã false là no-op, không render thêm hay side effect;
+  // hai cơ chế không xung đột.
   useEffect(() => {
     const onKeyDown = (event) => {
       if (event.key !== "Escape") {
@@ -178,29 +175,26 @@ export function DetailApp({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // 旧 view.js setDetailModalOpen 的 body 滚动锁定手写实现已删除:Radix Dialog
-  // modal 模式(默认)自带等价的 body 滚动锁定(react-remove-scroll,挂在
-  // DialogPrimitive.Content 上,随 Content 真实 mount/unmount 生命周期自动
-  // 加锁/解锁,见 EventsTimeline.jsx 的 DetailModal)。留着这条手写
-  // document.body.style.overflow 赋值会和 Radix 自己的锁定机制形成两个独立
-  // writer 同时争抢同一个 CSS 属性——react-remove-scroll 内部会记住"加锁前
-  // 的原始 overflow 值"并在解锁时精确恢复,若这里再直接赋值/清空,可能会在
-  // 解锁时机不一致的边界情况下把这个属性重置成与 Radix 记忆不一致的值(表现
-  // 为关掉一个模态后 body 仍然滚动不了,或反过来)。两个模态互斥（同上），
-  // Radix 的锁定粒度按需（对应 Content 是否挂载）已经完全覆盖旧实现想要的
-  // 语义,不需要再手写。
+  // Đã xóa body scroll lock thủ công của setDetailModalOpen trong view.js cũ: Radix Dialog ở modal mode
+  // (mặc định) tự có scroll lock tương đương cho body (react-remove-scroll, gắn trên DialogPrimitive.Content,
+  // tự lock/unlock theo vòng đời mount/unmount thật của Content; xem DetailModal trong EventsTimeline.jsx).
+  // Giữ lệnh gán document.body.style.overflow thủ công sẽ tạo hai writer độc lập tranh cùng một CSS property:
+  // react-remove-scroll ghi nhớ "overflow gốc trước khi lock" và khôi phục chính xác khi unlock; nếu ở đây lại
+  // gán/xóa trực tiếp, edge case lệch thời điểm unlock có thể reset thuộc tính thành giá trị khác với Radix đã nhớ
+  // (biểu hiện: đóng một modal xong body vẫn không cuộn được, hoặc ngược lại). Hai modal loại trừ nhau (như trên),
+  // độ chi tiết lock theo nhu cầu của Radix (Content có mount hay không) đã bao phủ hoàn toàn ngữ nghĩa cũ, không cần tự viết nữa.
 
-  // 旧 events.js fetchAllJobEvents + ensureEventsLoaded(分页拉全量 + 页内缓存)
+  // events.js cũ: fetchAllJobEvents + ensureEventsLoaded (kéo toàn bộ theo phân trang + cache trong trang).
   const ensureEventsLoaded = useCallback(async () => {
     const state = pageStateRef.current;
     if (state.eventsPayload) {
       return state.eventsPayload;
     }
     if (!state.job?.job_id) {
-      throw new Error("缺少 job_id，无法加载事件流。");
+      throw new Error("Thiếu job_id, không thể tải event stream.");
     }
     if (!state.eventsLoadingPromise) {
-      setEventsStatus("正在加载全部事件...");
+      setEventsStatus("Đang tải tất cả sự kiện...");
       state.eventsLoadingPromise = (async () => {
         const items = [];
         let offset = 0;
@@ -230,7 +224,7 @@ export function DetailApp({
           return payload;
         })
         .catch((error) => {
-          setEventsStatus(error.message || "读取事件流失败。");
+          setEventsStatus(error.message || "Không đọc được event stream.");
           throw error;
         })
         .finally(() => {
@@ -246,13 +240,13 @@ export function DetailApp({
       const payload = await ensureEventsLoaded();
       setEventsPayload(payload);
       setEventsStatus(eventsStatusText(payload));
-      setOpenEventsText("查看");
+      setOpenEventsText("Xem");
     } catch (_error) {
-      // 失败文案已在 ensureEventsLoaded 中写入
+      // Text lỗi đã được ghi trong ensureEventsLoaded.
     }
   }, [ensureEventsLoaded]);
 
-  // 旧 downloads.js bindProtectedDownloadLink 的 React 事件重写
+  // Bản viết lại bằng React event cho bindProtectedDownloadLink của downloads.js cũ.
   const handleProtectedDownload = useCallback((fallbackNameFactory) => async (event) => {
     const link = event.currentTarget;
     const enabled = link?.getAttribute("aria-disabled") !== "true";
@@ -273,7 +267,7 @@ export function DetailApp({
       const resp = await dataPort.fetchProtected(url);
       if (!resp.ok) {
         const text = await resp.text();
-        throw new Error(`下载失败: ${resp.status} ${text || "unknown error"}`);
+        throw new Error(`Tải xuống thất bại: ${resp.status} ${text || "unknown error"}`);
       }
       const disposition = resp.headers.get("content-disposition") || "";
       const filename = fileNameFromDisposition(disposition, fallbackName);
@@ -282,7 +276,7 @@ export function DetailApp({
         filename,
         onProgress: ({ receivedBytes, totalBytes, percent, done }) => {
           if (done) {
-            setText("detail-head-note", `已开始保存 ${filename}`);
+            setText("detail-head-note", `Đã bắt đầu lưu ${filename}`);
             completeDownloadToast(filename);
             return;
           }
@@ -290,8 +284,8 @@ export function DetailApp({
         },
       });
     } catch (error) {
-      setText("detail-head-note", error.message || "下载失败");
-      failDownloadToast(error.message || "下载失败");
+      setText("detail-head-note", error.message || "Tải xuống thất bại");
+      failDownloadToast(error.message || "Tải xuống thất bại");
     }
   }, [dataPort, setText]);
 
@@ -300,25 +294,25 @@ export function DetailApp({
       <main className="detail-page">
         <DetailHeader t={t} links={links} onProtectedDownload={handleProtectedDownload} />
         <section className="detail-grid">
-          <JobSummaryCard title="运行信息">
-            <MetaRow label="当前阶段" id="detail-runtime-current-stage" value={t("detail-runtime-current-stage")} />
-            <MetaRow label="当前阶段耗时" id="detail-runtime-stage-elapsed" value={t("detail-runtime-stage-elapsed")} />
-            <MetaRow label="累计耗时" id="detail-runtime-total-elapsed" value={t("detail-runtime-total-elapsed")} />
-            <MetaRow label="重试次数" id="detail-runtime-retry-count" value={t("detail-runtime-retry-count")} />
-            <MetaRow label="最近切换" id="detail-runtime-last-transition" value={t("detail-runtime-last-transition")} />
-            <MetaRow label="终态原因" id="detail-runtime-terminal-reason" value={t("detail-runtime-terminal-reason")} />
-            <MetaRow label="输入协议" id="detail-runtime-input-protocol" value={t("detail-runtime-input-protocol")} />
+          <JobSummaryCard title="Thông tin chạy">
+            <MetaRow label="Giai đoạn hiện tại" id="detail-runtime-current-stage" value={t("detail-runtime-current-stage")} />
+            <MetaRow label="Thời gian giai đoạn hiện tại" id="detail-runtime-stage-elapsed" value={t("detail-runtime-stage-elapsed")} />
+            <MetaRow label="Tổng thời gian" id="detail-runtime-total-elapsed" value={t("detail-runtime-total-elapsed")} />
+            <MetaRow label="Số lần retry" id="detail-runtime-retry-count" value={t("detail-runtime-retry-count")} />
+            <MetaRow label="Lần chuyển gần nhất" id="detail-runtime-last-transition" value={t("detail-runtime-last-transition")} />
+            <MetaRow label="Lý do terminal" id="detail-runtime-terminal-reason" value={t("detail-runtime-terminal-reason")} />
+            <MetaRow label="Giao thức đầu vào" id="detail-runtime-input-protocol" value={t("detail-runtime-input-protocol")} />
             <MetaRow label="Stage Schema" id="detail-runtime-stage-spec-version" value={t("detail-runtime-stage-spec-version")} />
-            <MetaRow label="公式模式" id="detail-runtime-math-mode" value={t("detail-runtime-math-mode")} />
+            <MetaRow label="Chế độ công thức" id="detail-runtime-math-mode" value={t("detail-runtime-math-mode")} />
           </JobSummaryCard>
-          <JobSummaryCard title="失败诊断">
-            <MetaRow label="摘要" id="detail-failure-summary" value={t("detail-failure-summary")} />
-            <MetaRow label="分类" id="detail-failure-category" value={t("detail-failure-category")} />
-            <MetaRow label="阶段" id="detail-failure-stage" value={t("detail-failure-stage")} />
-            <MetaRow label="根因" id="detail-failure-root-cause" value={t("detail-failure-root-cause")} />
-            <MetaRow label="建议" id="detail-failure-suggestion" value={t("detail-failure-suggestion")} />
-            <MetaRow label="最近日志" id="detail-failure-last-log-line" value={t("detail-failure-last-log-line")} />
-            <MetaRow label="可重试" id="detail-failure-retryable" value={t("detail-failure-retryable")} />
+          <JobSummaryCard title="Chẩn đoán lỗi">
+            <MetaRow label="Tóm tắt" id="detail-failure-summary" value={t("detail-failure-summary")} />
+            <MetaRow label="Phân loại" id="detail-failure-category" value={t("detail-failure-category")} />
+            <MetaRow label="Giai đoạn" id="detail-failure-stage" value={t("detail-failure-stage")} />
+            <MetaRow label="Nguyên nhân gốc" id="detail-failure-root-cause" value={t("detail-failure-root-cause")} />
+            <MetaRow label="Đề xuất" id="detail-failure-suggestion" value={t("detail-failure-suggestion")} />
+            <MetaRow label="Log gần nhất" id="detail-failure-last-log-line" value={t("detail-failure-last-log-line")} />
+            <MetaRow label="Có thể retry" id="detail-failure-retryable" value={t("detail-failure-retryable")} />
           </JobSummaryCard>
           <ErrorNoticeCard t={t} />
           <ErrorDiagnostics />

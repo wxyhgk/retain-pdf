@@ -1,15 +1,15 @@
-/* 阅读器 Legacy 附加包 → dist/css/reader-legacy.css
+/* Reader Legacy gói bổ sung → dist/css/reader-legacy.css
  *
- * 仅在 ?engine=legacy|classic 时由 src/pages/reader/entry.tsx 注入。
- * 默认 react-pdf 路径不加载本文件。
+ * Chỉ được src/pages/reader/entry.tsx inject khi ?engine=legacy|classic.
+ * Đường dẫn react-pdf mặc định không load file này.
  *
- * 假定 dist/css/reader.css 已加载（tokens / base / layout / chrome / content）。
- * 本包只追加：三栏布局、legacy 顶栏动作、抽屉 / 选区 / 旧 AI / 旧批注。
+ * Giả định dist/css/reader.css đã được load (tokens / base / layout / chrome / content).
+ * Gói này chỉ nối thêm: bố cục ba cột, động tác thanh trên legacy, drawer / chọn vùng / AI cũ / chú thích cũ.
  */
 @import "tailwindcss";
 @import "../core/tailwind-theme.css";
 
-/* 内容扫描：legacy 壳 + 命令式 reader 岛 + 旧批注 island */
+/* Quét content: legacy shell + island reader imperative + island chú thích cũ */
 @source "../../pages/reader/legacy/**/*.{js,jsx,ts,tsx}";
 @source "../../js/reader/**/*.{js,ts,tsx}";
 @source "../../js/islands/reader-annotations/**/*.{js,jsx,ts,tsx}";
@@ -17,17 +17,17 @@
 
 @layer pages;
 
-/* 三栏 / pdf.js 宿主 / 底栏 HUD / 窄屏三栏退化 */
+/* Ba cột / pdf.js host / HUD thanh dưới / ba cột thu gọn màn hẹp */
 @import "../reader/layout-legacy.css" layer(pages);
-/* 顶栏动作组 / 下载菜单 / chrome-muted */
+/* Nhóm động tác thanh trên / menu tải xuống / chrome-muted */
 @import "../reader/chrome-legacy.css" layer(pages);
 
-/* 旧批注抽屉（@utility → 需 tailwind 扫描 island class） */
+/* Drawer chú thích cũ (@utility → cần tailwind quét island class) */
 @import "../reader/annotations.css";
 
-/* 右侧工具抽屉 chrome */
+/* chrome drawer công cụ bên phải */
 @import "../reader/side-drawer.css" layer(pages);
-/* 摘录 / 框选 / 抽屉 AI / Markdown 抽屉 / 区域 popover */
+/* Trích dẫn / chọn khung / drawer AI / drawer Markdown / popover vùng */
 @import "../reader/favorites.css" layer(pages);
 @import "../reader/selection.css" layer(pages);
 @import "../reader/ai.css" layer(pages);

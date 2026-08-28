@@ -31,9 +31,9 @@ export function mountArtifactDownloadsFeature({
     if (Number.isFinite(totalBytes) && totalBytes > 0) {
       const totalText = formatTransferSize(totalBytes);
       const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
-      return `正在下载 ${receivedText} / ${totalText} (${safePercent.toFixed(0)}%)`;
+      return `Đang tải xuống ${receivedText} / ${totalText} (${safePercent.toFixed(0)}%)`;
     }
-    return receivedText ? `正在下载 ${receivedText}` : "正在下载...";
+    return receivedText ? `Đang tải xuống ${receivedText}` : "Đang tải xuống...";
   }
 
   async function handleProtectedArtifactClick(event, matchedLink = null) {
@@ -68,12 +68,12 @@ export function mountArtifactDownloadsFeature({
     }
 
     try {
-      viewPort.setLinkBusy(link, true, "下载中...");
+      viewPort.setLinkBusy(link, true, "Đang tải xuống...");
       showDownloadPreparing(preferredName);
       const resp = await fetchProtected(url);
       if (!resp.ok) {
         const text = await resp.text();
-        const error: any = new Error(`下载失败: ${resp.status} ${text || "unknown error"}`);
+        const error: any = new Error(`Tải xuống thất bại: ${resp.status} ${text || "unknown error"}`);
         error.status = resp.status;
         error.url = url;
         throw error;
@@ -88,8 +88,8 @@ export function mountArtifactDownloadsFeature({
         filename,
         onProgress: ({ receivedBytes, totalBytes, percent, done }) => {
           if (done) {
-            setText("error-box", `已开始保存 ${filename}`);
-            viewPort.setLinkBusy(link, true, "已完成");
+            setText("error-box", `Đã bắt đầu lưu ${filename}`);
+            viewPort.setLinkBusy(link, true, "Đã hoàn tất");
             completeDownloadToast(filename);
             return;
           }
@@ -97,7 +97,7 @@ export function mountArtifactDownloadsFeature({
           viewPort.setLinkBusy(
             link,
             true,
-            Number.isFinite(percent) ? `${Math.max(0, Math.min(100, Number(percent) || 0)).toFixed(0)}%` : "下载中...",
+            Number.isFinite(percent) ? `${Math.max(0, Math.min(100, Number(percent) || 0)).toFixed(0)}%` : "Đang tải xuống...",
           );
           updateDownloadProgress({
             filename,
@@ -109,7 +109,7 @@ export function mountArtifactDownloadsFeature({
       });
     } catch (err) {
       setText("error-box", buildErrorDiagnostic(err, {
-        operation: "下载任务产物",
+        operation: "Tải xuống artifact của tác vụ",
         url,
         jobId,
         details: {
@@ -117,7 +117,7 @@ export function mountArtifactDownloadsFeature({
           filename: preferredName,
         },
       }));
-      failDownloadToast(err.message || "下载失败");
+      failDownloadToast(err.message || "Tải xuống thất bại");
     } finally {
       viewPort.setLinkBusy(link, false);
     }

@@ -1,6 +1,6 @@
-/* 状态详情 · 翻译调试 tab（列表/筛选/详情/重放） */
+/* Chi tiết trạng thái · tab gỡ lỗi bản dịch (danh sách/lọc/chi tiết/phát lại) */
 
-/* 状态详情 / 翻译调试 / 事件时间线工具类（从 components.utilities 拆出） */
+/* Utility cho chi tiết trạng thái / gỡ lỗi bản dịch / dòng thời gian sự kiện (tách từ components.utilities) */
 
 
 @utility translation-debug-content {
@@ -11,7 +11,7 @@
 
 
 @utility translation-debug-column {
-  /* 统计条与筛选行不做卡片,只有列表/详情两栏保留一层浅容器 */
+  /* Thanh thống kê và hàng lọc không tạo thành thẻ; chỉ hai cột danh sách/chi tiết giữ một lớp container nhẹ */
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--paper);
@@ -49,7 +49,7 @@
     overflow-wrap: anywhere;
   }
 
-  /* Provider 是文本型指标(如 deepseek_official),比数字长,降一级字号 */
+  /* Provider là chỉ số dạng văn bản (như deepseek_official), dài hơn số nên giảm một cấp cỡ chữ */
   & #translation-provider-family {
     font-size: 14px;
     line-height: 1.6;
@@ -458,7 +458,7 @@
 
 
 @utility detail-info-list {
-  /* 提高特异性:后文的 .detail-info-list 定义了两列,这里要单列扁平键值行 */
+  /* Tăng specificity: .detail-info-list ở dưới định nghĩa hai cột, còn ở đây cần hàng key-value phẳng một cột */
   &.translation-detail-grid {
     margin: 0;
     display: grid;
@@ -476,7 +476,7 @@
 
 
 @utility translation-detail-grid {
-  /* 提高特异性:后文的 .detail-info-list 定义了两列,这里要单列扁平键值行 */
+  /* Tăng specificity: .detail-info-list ở dưới định nghĩa hai cột, còn ở đây cần hàng key-value phẳng một cột */
   &.detail-info-list {
     margin: 0;
     display: grid;
@@ -496,7 +496,7 @@
 
 
 @utility info-row {
-  /* 详情字段用扁平键值行,盖掉 .info-row 的卡片样式 */
+  /* Trường chi tiết dùng hàng key-value phẳng, ghi đè kiểu thẻ của .info-row */
   &.translation-detail-row {
     grid-template-columns: minmax(120px, auto) 1fr;
     align-items: baseline;
@@ -538,7 +538,7 @@
 
 
 @utility translation-detail-row {
-  /* 详情字段用扁平键值行,盖掉 .info-row 的卡片样式 */
+  /* Trường chi tiết dùng hàng key-value phẳng, ghi đè kiểu thẻ của .info-row */
   &.info-row {
     grid-template-columns: minmax(120px, auto) 1fr;
     align-items: baseline;

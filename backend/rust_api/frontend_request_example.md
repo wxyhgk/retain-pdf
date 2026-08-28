@@ -1,23 +1,23 @@
-# 前端请求示例
+# Ví dụ yêu cầu từ frontend
 
-这份文档面向前端接入，给出最常用的调用顺序、请求头、请求体和示例代码。
+Tài liệu này dành cho frontend, đưa ra thứ tự gọi phổ biến nhất, header, body và mã mẫu.
 
-配合主文档使用：
+Kết hợp với tài liệu chính:
 
-- [RetainPDF 后端 API 总入口](/home/wxyhgk/tmp/Code/doc/core/api/index.md)
+- [RetainPDF Backend API Entry](/home/wxyhgk/tmp/Code/doc/core/api/index.md)
 - [Rust API README](/home/wxyhgk/tmp/Code/backend/rust_api/README.md)
 - [CURRENT_API_MAP](/home/wxyhgk/tmp/Code/backend/rust_api/CURRENT_API_MAP.md)
 
-文档约定：
+Quy ước tài liệu:
 
-- 这份文档是前端接入示例，不是协议规范源头；正式口径以 `doc/core/api/index.md` 为准
-- 前端请求示例统一以分组后的正式请求结构为准
-- 旧版扁平字段已经移除，不再接受
-- 前端只需要关心接口契约，不需要依赖 Rust 内部模块名
+- Đây là ví dụ cho frontend, không phải nguồn đặc tả giao thức chính thức; các quy tắc chính thức lấy theo `doc/core/api/index.md`
+- Các ví dụ yêu cầu frontend đều dựa trên cấu trúc yêu cầu chính thức đã được nhóm lại
+- Các trường phẳng cũ đã bị loại bỏ, không còn được chấp nhận
+- Frontend chỉ cần quan tâm đến hợp đồng giao diện, không cần phụ thuộc vào tên module nội bộ Rust
 
-## 1. 你必须准备的 5 个值
+## 1. Năm giá trị bạn phải chuẩn bị
 
-调用 Rust API 时，前端至少要准备下面这些值：
+Khi gọi Rust API, frontend ít nhất phải chuẩn bị các giá trị sau:
 
 1. `X-API-Key`
 2. `mineru_token`
@@ -25,32 +25,32 @@
 4. `api_key`
 5. `model`
 
-含义：
+Ý nghĩa:
 
-- `X-API-Key`：你自己的 Rust 后端访问 key
-- `mineru_token`：MinerU 的 API Key
-- `base_url`：模型服务的 OpenAI 兼容 URL
-- `api_key`：模型服务的 API Key
-- `model`：模型名字
+- `X-API-Key`: Khóa truy cập backend Rust của bạn
+- `mineru_token`: API Key của MinerU
+- `base_url`: URL tương thích OpenAI của dịch vụ mô hình
+- `api_key`: API Key của dịch vụ mô hình
+- `model`: Tên mô hình
 
-可选但建议前端同步支持的字段：
+Các trường tùy chọn nhưng nên hỗ trợ:
 
-- `translation.math_mode`：公式翻译模式
-  - `direct_typst`：默认模式，直接让模型输出正文 + `$...$` 数学
-  - `placeholder`：兼容旧公式保护链的保守模式
+- `translation.math_mode`: Chế độ dịch công thức
+  - `direct_typst`: Mặc định, cho mô hình xuất trực tiếp văn bản + `$...$`
+  - `placeholder`: Chế độ bảo toàn cũ (cho chuỗi bảo vệ công thức cũ)
 
-## 2. 调用顺序
+## 2. Thứ tự gọi
 
-前端推荐顺序：
+Thứ tự khuyến nghị cho frontend:
 
-1. 上传 PDF
-2. 用上传返回的 `upload_id` 创建任务
-3. 轮询任务状态
-4. 成功后下载 PDF / Markdown / Bundle
+1. Tải lên PDF
+2. Dùng `upload_id` trả về để tạo tác vụ
+3. Polling trạng thái tác vụ
+4. Sau khi thành công, tải PDF / Markdown / Bundle
 
-## 3. 上传 PDF
+## 3. Tải lên PDF
 
-请求：
+Yêu cầu:
 
 ```http
 POST /api/v1/uploads
@@ -58,7 +58,7 @@ X-API-Key: your-rust-api-key
 Content-Type: multipart/form-data
 ```
 
-前端示例：
+Ví dụ frontend:
 
 ```ts
 async function uploadPdf(file: File, backendKey: string, developerMode = false) {
@@ -82,7 +82,7 @@ async function uploadPdf(file: File, backendKey: string, developerMode = false) 
 }
 ```
 
-成功后会得到：
+Thành công sẽ nhận được:
 
 ```json
 {
@@ -94,14 +94,14 @@ async function uploadPdf(file: File, backendKey: string, developerMode = false) 
 }
 ```
 
-上传限制说明：
+Giới hạn tải lên:
 
-- 当前后端默认不额外限制 PDF 大小和页数
-- 如果部署方配置了 `RUST_API_UPLOAD_MAX_BYTES` / `RUST_API_UPLOAD_MAX_PAGES`，以前端实际收到的服务端报错为准
+- Mặc định backend không giới hạn kích thước và số trang PDF
+- Nếu triển khai có cấu hình `RUST_API_UPLOAD_MAX_BYTES` / `RUST_API_UPLOAD_MAX_PAGES`, lấy theo lỗi thực tế trả về
 
-## 4. 创建任务
+## 4. Tạo tác vụ
 
-请求：
+Yêu cầu:
 
 ```http
 POST /api/v1/jobs
@@ -109,18 +109,18 @@ X-API-Key: your-rust-api-key
 Content-Type: application/json
 ```
 
-说明：
+Lưu ý:
 
-- 这里的 `workflow: "book"` 才是当前完整主链路的正式协议值
-- OCR provider 选择看 `ocr.provider`，而不是看 `workflow`
-- 如果你只想跑 OCR-only，请走 `POST /api/v1/ocr/jobs`，不要向 `/api/v1/jobs` 传 `workflow="ocr"`
-- 本地人工一次性调试时可以使用 legacy wrapper `run_provider_case.py`；生产 API 主链由 Rust job_runner 编排
-- 如果输入已经是 OCR JSON + PDF，优先使用 `run_document_flow.py`
-- 如果只想跑 OCR-only，优先使用 `run_provider_ocr.py`
+- `workflow: "book"` mới là giá trị chính thức cho luồng đầy đủ
+- Chọn OCR provider qua `ocr.provider`, không qua `workflow`
+- Nếu chỉ chạy OCR-only, hãy dùng `POST /api/v1/ocr/jobs`, không dùng `workflow="ocr"` với `/api/v1/jobs`
+- Khi gỡ lỗi thủ công local, có thể dùng legacy wrapper `run_provider_case.py`; luồng sản xuất chính do Rust job_runner điều phối
+- Nếu đầu vào đã có OCR JSON + PDF, ưu tiên dùng `run_document_flow.py`
+- Nếu chỉ chạy OCR-only, ưu tiên dùng `run_provider_ocr.py`
 
-### 4.1 DeepSeek 示例
+### 4.1 Ví dụ DeepSeek
 
-推荐请求体：
+Body khuyến nghị:
 
 ```json
 {
@@ -142,7 +142,7 @@ Content-Type: application/json
     "batch_size": 1,
     "glossary_id": "glossary-20260411-abc123",
     "glossary_entries": [
-      {"source": "band gap", "target": "带隙", "note": "materials"}
+      {"source": "band gap", "target": "khe năng lượng", "note": "materials"}
     ]
   },
   "render": {
@@ -151,7 +151,7 @@ Content-Type: application/json
 }
 ```
 
-### 4.2 OpenAI 兼容接口示例
+### 4.2 Ví dụ giao diện tương thích OpenAI
 
 ```json
 {
@@ -180,7 +180,7 @@ Content-Type: application/json
 }
 ```
 
-前端示例：
+Ví dụ frontend:
 
 ```ts
 type CreateJobPayload = {
@@ -234,9 +234,9 @@ async function createJob(payload: CreateJobPayload, backendKey: string) {
 }
 ```
 
-### 4.3 当前强制校验
+### 4.3 Kiểm tra bắt buộc hiện tại
 
-`POST /api/v1/jobs` 目前会强制校验：
+`POST /api/v1/jobs` hiện đang kiểm tra bắt buộc:
 
 - `source.upload_id`
 - `ocr.mineru_token`
@@ -244,46 +244,46 @@ async function createJob(payload: CreateJobPayload, backendKey: string) {
 - `translation.api_key`
 - `translation.model`
 
-另外：
+Thêm vào đó:
 
-- `base_url` 必须以 `http://` 或 `https://` 开头
+- `base_url` phải bắt đầu bằng `http://` hoặc `https://`
 
-`translation.math_mode` 当前约定：
+`translation.math_mode` quy ước hiện tại:
 
-- 不传时默认 `direct_typst`
-- 前端若要开放实验开关，建议文案直接写成“公式直出实验模式”
-- `direct_typst` 只影响翻译阶段的公式处理链路，不改变渲染接口调用方式
+- Mặc định là `direct_typst` nếu không truyền
+- Nếu frontend muốn cung cấp công tắc thử nghiệm, khuyến nghị đặt tên là "Chế độ thử nghiệm công thức trực tiếp"
+- `direct_typst` chỉ ảnh hưởng đến cách xử lý công thức trong giai đoạn dịch, không thay đổi cách gọi giao diện kết xuất
 
-### 4.4 术语表怎么传
+### 4.4 Cách truyền bảng thuật ngữ
 
-推荐做法：
+Cách làm được khuyến nghị:
 
-- 前端维护“命名术语表”列表时，先调用 `POST /api/v1/glossaries` 保存，任务里只传 `translation.glossary_id`
-- 如果只是单次任务临时术语，直接传 `translation.glossary_entries`
-- 如果用户上传的是 Excel，前端先解析成 JSON；后端不直接解析 Excel
-- 如果前端手里只有 CSV 文本，可以先调用 `POST /api/v1/glossaries/parse-csv` 转成标准条目
+- Khi frontend quản lý danh sách thuật ngữ, gọi `POST /api/v1/glossaries` để lưu trước, sau đó trong tác vụ chỉ truyền `translation.glossary_id`
+- Nếu chỉ là thuật ngữ tạm cho một tác vụ, truyền trực tiếp `translation.glossary_entries`
+- Nếu người dùng tải lên Excel, frontend tự phân tích thành JSON; backend không phân tích Excel trực tiếp
+- Nếu frontend chỉ có CSV, có thể gọi `POST /api/v1/glossaries/parse-csv` để chuyển thành danh sách chuẩn
 
-合并规则：
+Quy tắc hợp nhất:
 
-- 命名术语表是基础层
-- 任务内 `glossary_entries` 是覆盖层
-- 相同 `source` 以任务内条目为准
+- Bảng thuật ngữ có tên là lớp cơ sở
+- `glossary_entries` trong tác vụ là lớp ghi đè
+- Cùng `source` thì lấy entry trong tác vụ
 
-当前行为边界：
+Ranh giới hành vi hiện tại:
 
-- 术语表 v1 只参与提示词注入和结果统计
-- 不做翻译完成后的强制文本替换
+- Bảng thuật ngữ v1 chỉ tham gia vào gợi ý prompt và thống kê kết quả
+- Không thực hiện thay thế văn bản bắt buộc sau dịch
 
-## 5. 轮询任务状态
+## 5. Polling trạng thái tác vụ
 
-请求：
+Yêu cầu:
 
 ```http
 GET /api/v1/jobs/{job_id}
 X-API-Key: your-rust-api-key
 ```
 
-前端示例：
+Ví dụ frontend:
 
 ```ts
 async function getJob(jobId: string, backendKey: string) {
@@ -314,38 +314,38 @@ async function pollJobUntilDone(jobId: string, backendKey: string) {
 }
 ```
 
-最近任务列表接口同样会返回协议聚合：
+Danh sách tác vụ gần đây cũng trả về tổng hợp giao thức:
 
 - `items[].invocation`
 - `invocation_summary.stage_spec_count`
 - `invocation_summary.unknown_count`
 
-注意：
+Lưu ý:
 
-- 不要用 `progress.percent >= 90` 判断完成
-- 必须用 `status` 判断是否结束
-- `queued` 表示任务已创建，但可能还在等待执行槽位
-- 任务详情里的 `invocation` 可直接用于展示当前任务使用的 stage spec 协议
+- Không dùng `progress.percent >= 90` để xác định hoàn thành
+- Phải dùng `status` để xác định kết thúc
+- `queued` nghĩa là tác vụ đã tạo, nhưng có thể đang chờ vị trí thực thi
+- `invocation` trong chi tiết tác vụ có thể dùng để hiển thị giao thức stage spec đang dùng
   - `invocation.input_protocol`
   - `invocation.stage_spec_schema_version`
 
-## 6. 下载结果
+## 6. Tải xuống kết quả
 
-常用接口：
+Các giao diện thường dùng:
 
-- PDF：`GET /api/v1/jobs/{job_id}/pdf`
-- Markdown(JSON)：`GET /api/v1/jobs/{job_id}/markdown`
-- Markdown(raw)：`GET /api/v1/jobs/{job_id}/markdown?raw=true`
-- Bundle(zip)：`GET /api/v1/jobs/{job_id}/download`
+- PDF: `GET /api/v1/jobs/{job_id}/pdf`
+- Markdown(JSON): `GET /api/v1/jobs/{job_id}/markdown`
+- Markdown(raw): `GET /api/v1/jobs/{job_id}/markdown?raw=true`
+- Bundle(zip): `GET /api/v1/jobs/{job_id}/download`
 
-更推荐前端先取任务详情或产物详情，再使用服务端返回的 `actions`：
+Khuyến nghị frontend lấy chi tiết tác vụ hoặc chi tiết sản phẩm trước, sau đó dùng `actions` do server trả về:
 
 - `actions.download_pdf.url`
 - `actions.open_markdown.url`
 - `actions.open_markdown_raw.url`
 - `actions.download_bundle.url`
 
-## 7. 完整前端示例
+## 7. Ví dụ frontend đầy đủ
 
 ```ts
 async function runPdfTranslateFlow(file: File, config: {
@@ -397,23 +397,23 @@ async function runPdfTranslateFlow(file: File, config: {
 }
 ```
 
-## 8. 前端变量命名建议
+## 8. Gợi ý đặt tên biến frontend
 
-建议前端内部把变量分清楚，不要混：
+Nên phân biệt rõ các biến, không trộn lẫn:
 
-- `backendKey`：Rust API 的 `X-API-Key`
-- `mineruToken`：MinerU 的 key
-- `modelBaseUrl`：模型服务 URL
-- `modelApiKey`：模型服务 key
-- `model`：模型名
-- `mathMode`：公式翻译模式，默认 `direct_typst`
+- `backendKey`: `X-API-Key` của Rust API
+- `mineruToken`: key của MinerU
+- `modelBaseUrl`: URL dịch vụ mô hình
+- `modelApiKey`: key của dịch vụ mô hình
+- `model`: tên mô hình
+- `mathMode`: chế độ dịch công thức, mặc định `direct_typst`
 
-## 9. `math_mode` 什么时候该开
+## 9. Khi nào nên bật `math_mode`
 
-当前默认推荐就是 `direct_typst`。前端如果要暴露开关，可以把它放进高级选项，但不要再把 `placeholder` 当默认值。
+Hiện tại mặc định khuyến nghị là `direct_typst`. Nếu frontend muốn hiển thị công tắc, có thể đặt trong tùy chọn nâng cao, nhưng đừng đặt `placeholder` làm mặc định.
 
-- 普通任务：不传，或显式传 `direct_typst`
-- 只有在你要回退旧公式保护链时，才传 `placeholder`
-- 如果后续前端要做开关，推荐直接传字符串，不要自己在前端推断文档是否“公式很多”
+- Tác vụ thông thường: không truyền, hoặc truyền rõ `direct_typst`
+- Chỉ khi muốn quay lại chuỗi bảo vệ công thức cũ thì mới truyền `placeholder`
+- Nếu sau này có công tắc, khuyến nghị truyền thẳng chuỗi, không tự suy đoán xem tài liệu có nhiều công thức hay không
 
-这样后面接多服务商时不会乱。
+Như vậy khi kết nối với nhiều nhà cung cấp sẽ không bị lộn xộn.

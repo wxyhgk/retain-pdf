@@ -1,4 +1,4 @@
-"""抽取式上下文压缩 extractive_v1：不调用 LLM，规则折叠早期轮次。"""
+"""Nén ngữ cảnh kiểu trích xuất extractive_v1: không gọi LLM, dùng quy tắc để gộp các lượt cũ."""
 
 from __future__ import annotations
 
@@ -6,13 +6,15 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-SUMMARY_PREFIX = "【对话摘要】"
+# Dấu hiệu nhận biết tin nhắn tóm tắt đã lưu trong lịch sử: giữ nguyên chuỗi cũ để vẫn
+# nhận ra được các bản tóm tắt đã ghi trước đây.
+SUMMARY_PREFIX = "【Tóm tắt cuộc trò chuyện】"
 CITATION_RE = re.compile(r"\[(\d+)\]")
 
 
 @dataclass
 class CompressResult:
-    """压缩结果；summary_message 非空时调用方应持久化并通知前端。"""
+    """Kết quả nén; khi summary_message khác None thì bên gọi nên lưu lại và báo cho frontend."""
 
     messages: list[dict[str, Any]]
     compressed: bool = False
@@ -28,7 +30,7 @@ def is_summary_message(message: dict[str, Any]) -> bool:
 def split_transcript(
     messages: list[dict[str, Any]],
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
-    """返回 (最新 summary 消息或 None, 该 summary 之后的 turn 消息)。"""
+    """Trả về (tin nhắn summary mới nhất hoặc None, các tin nhắn lượt nằm sau summary đó)."""
     last_summary: dict[str, Any] | None = None
     last_summary_idx = -1
     for index, message in enumerate(messages):
@@ -46,7 +48,7 @@ def split_transcript(
 
 
 def count_turns(messages: list[dict[str, Any]]) -> int:
-    """粗算「轮」：user 条数。"""
+    """Đếm thô số "lượt": số tin nhắn của user."""
     return sum(1 for m in messages if str(m.get("role") or "") == "user")
 
 
@@ -58,7 +60,7 @@ def _clip(text: str, max_chars: int) -> str:
 
 
 def build_extractive_summary(turns: list[dict[str, Any]], *, max_chars: int = 1800) -> str:
-    """从被折叠的 turns 抽出问题 / 带引用结论 / 证据片段。"""
+    """Trích từ các lượt bị gộp ra câu hỏi / kết luận có trích dẫn / mảnh bằng chứng."""
     user_questions: list[str] = []
     cited_lines: list[str] = []
     evidence_lines: list[str] = []
@@ -102,23 +104,23 @@ def build_extractive_summary(turns: list[dict[str, Any]], *, max_chars: int = 18
                 parts = [f"[{ref}]", page_label, block, snippet]
                 evidence_lines.append(" ".join(p for p in parts if p))
 
-    lines = [SUMMARY_PREFIX, "- 用户关注："]
+    lines = [SUMMARY_PREFIX, "- User is interested in:"]
     if user_questions:
         for q in user_questions[-8:]:
             lines.append(f"  · {q}")
     else:
-        lines.append("  · （无）")
+        lines.append("  · (none)")
 
-    lines.append("- 已确认结论（含引用）：")
+    lines.append("- Confirmed conclusions (with citations):")
     if cited_lines:
         for line in cited_lines[-10:]:
             lines.append(f"  · {line}")
     else:
-        lines.append("  · （早期回答未标注 [n]，仅保留主题）")
+        lines.append("  · (earlier answers had no [n] markers, only the topics are kept)")
 
-    lines.append("- 重要证据：")
+    lines.append("- Key evidence:")
     if evidence_lines:
-        # 去重保序
+        # Lọc trùng nhưng giữ thứ tự
         seen: set[str] = set()
         for line in evidence_lines:
             if line in seen:
@@ -128,7 +130,7 @@ def build_extractive_summary(turns: list[dict[str, Any]], *, max_chars: int = 18
             if len(seen) >= 12:
                 break
     else:
-        lines.append("  · （无结构化 citations）")
+        lines.append("  · (no structured citations)")
 
     text = "\n".join(lines)
     if len(text) > max_chars:
@@ -145,12 +147,12 @@ def maybe_compress_transcript(
     summary_max_chars: int = 1800,
 ) -> CompressResult:
     """
-    若 turn 数超过阈值或 force，则把「最新 summary 之后、窗口之外」的早期轮次
-    折叠为一条 assistant 摘要消息。
+    Nếu số lượt vượt ngưỡng hoặc force, gộp các lượt cũ "nằm sau summary mới nhất và ngoài
+    cửa sổ" thành một tin nhắn tóm tắt của assistant.
 
-    返回的 messages 是**逻辑 transcript**（内存视图）：
-    [可选旧 summary] + [新 summary] + [近期窗口 turns]
-    调用方负责把新 summary 写入 Rust。
+    messages trả về là **transcript logic** (view trong bộ nhớ):
+    [summary cũ nếu có] + [summary mới] + [các lượt trong cửa sổ gần đây]
+    Bên gọi chịu trách nhiệm ghi summary mới vào Rust.
     """
     normalized = [
         {
@@ -170,13 +172,13 @@ def maybe_compress_transcript(
     if not force and turn_count <= compress_after_turns:
         return CompressResult(messages=normalized, compressed=False)
 
-    # 保留最近 window_turns 个 user 开启的轮次 → 约 2*window 条消息
+    # Giữ lại window_turns lượt gần nhất do user mở đầu → khoảng 2*window tin nhắn
     keep_n = window_turns * 2
     if len(turns) <= keep_n:
-        # 强制压缩但窗口已覆盖全部 → 仍可整段摘要后只留窗口（空折叠）
+        # Ép nén nhưng cửa sổ đã bao trọn tất cả → vẫn có thể tóm tắt cả đoạn rồi chỉ giữ cửa sổ (gộp rỗng)
         if not force:
             return CompressResult(messages=normalized, compressed=False)
-        # force: 生成覆盖全部 turns 的摘要，窗口仍保留最近 keep_n
+        # force: sinh tóm tắt bao trùm mọi lượt, cửa sổ vẫn giữ keep_n gần nhất
         to_fold = turns[:-keep_n] if len(turns) > keep_n else turns[:]
         kept = turns[-keep_n:] if len(turns) > keep_n else turns[:]
     else:
@@ -188,9 +190,9 @@ def maybe_compress_transcript(
 
     summary_text = build_extractive_summary(to_fold, max_chars=summary_max_chars)
     summary_message = {"role": "assistant", "content": summary_text}
-    # 新 transcript：丢弃旧 summary 与被折叠 turns，保留新 summary + 窗口
-    # （旧 summary 信息已可能融入 to_fold 的早期内容；若 to_fold 不含旧 summary 文本，
-    #  把旧 summary 拼进摘要头部以免丢）
+    # Transcript mới: bỏ summary cũ và các lượt bị gộp, giữ summary mới + cửa sổ
+    # (thông tin của summary cũ có thể đã nằm trong phần đầu của to_fold; nếu to_fold không
+    #  chứa nội dung summary cũ thì ghép summary cũ lên đầu bản tóm tắt để khỏi mất)
     if last_summary and str(last_summary.get("content") or "").strip():
         prior = str(last_summary.get("content") or "").strip()
         if prior not in summary_text:

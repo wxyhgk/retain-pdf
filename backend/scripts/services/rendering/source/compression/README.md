@@ -1,17 +1,17 @@
 # rendering/source/compression
 
-## 负责什么
+## Trách nhiệm
 
-PDF 压缩层。这里负责图片压缩、Ghostscript 压缩和压缩前分析。
+Tầng nén PDF. Chịu trách nhiệm nén ảnh, nén Ghostscript và phân tích trước khi nén.
 
-## 对外入口
+## Lối vào công khai
 
 - `image_pipeline.py`
 - `ghostscript.py`
 - `analysis.py`
 
-## 不该做什么
+## Không nên làm gì
 
-- 不改变页面内容。
-- 不做 redaction。
-- 不参与 OCR/翻译/排版决策。
+- Không thay đổi nội dung trang.
+- Không thực hiện redaction.
+- Không tham gia quyết định OCR/dịch/dàn trang.

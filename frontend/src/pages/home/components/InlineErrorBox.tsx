@@ -1,8 +1,11 @@
-// 行内错误盒(React 版 <inline-error-box>,对照 components/feedback/inline-error-box.js)。
+// Hộp lỗi nội tuyến (bản React của <inline-error-box>, đối chiếu
+// components/feedback/inline-error-box.js).
 //
-// 数据源:text store 的 "error-box" 槽位(镜像 ui/text.js 的 setText("error-box") 特例)。
-// value 为 error-diagnostic 对象时展开「查看诊断 + 复制诊断」;字符串时纯文本。
-// 保留 <inline-error-box> 标签与 log/error-box/inline-error-box 类(CSS 平权)。
+// Nguồn dữ liệu là khe text store "error-box" (đối chiếu ui/text.js của
+// setText("error-box")). Khi value là error-diagnostic, hiển thị bản mở rộng
+// "Xem chẩn đoán" và bản chẩn đoán; với chuỗi thì hiển thị văn bản thuần.
+// Giữ thẻ <inline-error-box> cùng các class log/error-box/inline-error-box
+// để CSS dùng chung.
 
 import { useState } from "react";
 import { messageForErrorBox } from "../../../js/utils/error-diagnostics.js";
@@ -15,7 +18,7 @@ const selectErrorBoxValue = (snapshot) => snapshot?.texts?.["error-box"];
 export function InlineErrorBox() {
   const services = useHomeServices();
   const value = useStoreSnapshot(services.stores.text, selectErrorBoxValue);
-  const [copyLabel, setCopyLabel] = useState("复制诊断");
+  const [copyLabel, setCopyLabel] = useState("Sao chép chẩn đoán");
 
   const summary = messageForErrorBox(value);
   const text = `${summary ?? ""}`.trim();
@@ -27,10 +30,10 @@ export function InlineErrorBox() {
   async function handleCopy() {
     try {
       await copyText(diagnostic);
-      setCopyLabel("已复制");
-      globalThis.window?.setTimeout(() => setCopyLabel("复制诊断"), 1600);
+      setCopyLabel("Đã sao chép");
+      globalThis.window?.setTimeout(() => setCopyLabel("Sao chép chẩn đoán"), 1600);
     } catch {
-      setCopyLabel("复制失败");
+      setCopyLabel("Sao chép thất bại");
     }
   }
 
@@ -45,7 +48,7 @@ export function InlineErrorBox() {
           <div className="inline-error-summary">{summary}</div>
           <div className="inline-error-actions">
             <details className="inline-error-details">
-              <summary>查看诊断</summary>
+              <summary>Xem chẩn đoán</summary>
               <pre>{diagnostic}</pre>
             </details>
             <button type="button" className="inline-error-copy-btn" onClick={handleCopy}>

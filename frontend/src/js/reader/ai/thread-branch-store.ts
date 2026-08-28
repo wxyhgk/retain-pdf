@@ -1,11 +1,11 @@
-// assistant-ui 分支树本地快照：按 job 存全量 parentId 树 + headId。
-// 与 conversation-store（Rust conversation_id 粘性）互补；不进服务端。
+// Local assistant-ui branch tree snapshot: store the full parentId tree plus headId by job.
+// Complements conversation-store's Rust conversation_id stickiness and is not sent to the server.
 
 import { loadStoredConversationId } from "./conversation-store.js";
 
 const STORAGE_PREFIX = "retainpdf.reader.ai.thread-branch.v1:";
 
-/** 与 answer-enhance / runtime 中的引用形状兼容；此处用宽松结构避免循环依赖。 */
+/** Compatible with citation shapes in answer-enhance/runtime; kept loose here to avoid circular dependencies. */
 export type ThreadBranchCitation = {
   ref?: number | string;
   block_id?: string;
@@ -38,7 +38,7 @@ export type ThreadBranchSnapshot = {
   version: 1;
   headId: string | null;
   items: ThreadBranchItem[];
-  /** 快照归属的会话 id（防串会话印章，审计 P2-10）；旧快照无此字段 */
+  /** Chat id owned by this snapshot, used as an anti-cross-chat stamp (audit P2-10); legacy snapshots lack this field. */
   conversationId?: string;
 };
 
@@ -84,7 +84,7 @@ function normalizeMessage(raw: unknown): ThreadBranchMessage | null {
     ? (raw.citations as ThreadBranchCitation[])
     : undefined;
   const progress = typeof raw.progress === "string" ? raw.progress : undefined;
-  // 不恢复 running：刷新后不应卡在「生成中」
+  // Do not restore running; after refresh it should not stay stuck in "generating".
   let status = normalizeStatus(raw.status);
   if (status?.type === "running") {
     status = { type: "incomplete", reason: "cancelled" };
@@ -133,10 +133,10 @@ export function loadThreadBranchSnapshot(
   try {
     const raw = store.getItem(threadBranchStorageKey(jobId, conversationId));
     if (!raw && conversationId) {
-      // 兼容旧 key（仅 job）——但要防串会话（审计 P2-10）：
-      // 1. 带 conversationId 印章的快照，归属不符直接拒绝；
-      // 2. 无印章的真旧快照，只在"请求的正是本 job 的粘性会话"时才接受
-      //    （旧快照写入时代唯一可能代表的就是它）。
+      // Support the legacy key (job only) while preventing cross-chat leakage (audit P2-10):
+      // 1. Reject snapshots with a conversationId stamp that does not match.
+      // 2. Accept truly old unstamped snapshots only when the requested chat is
+      //    this job's sticky chat, which is the only chat the legacy snapshot could represent.
       const legacy = store.getItem(threadBranchStorageKey(jobId));
       if (!legacy) return null;
       const snapshot = normalizeSnapshot(JSON.parse(legacy));
@@ -193,7 +193,7 @@ export function clearThreadBranchSnapshot(
   try {
     store.removeItem(threadBranchStorageKey(jobId, conversationId));
     if (!conversationId) {
-      // 清 job 级旧 key
+      // Clear the old job-level key.
       store.removeItem(threadBranchStorageKey(jobId));
     }
   } catch {
@@ -201,7 +201,7 @@ export function clearThreadBranchSnapshot(
   }
 }
 
-/** 可见路径：从 head 沿 parent 链回溯（parent 须先于 child 出现在 items 中）。 */
+/** Visible path: walk back from head along the parent chain; parents must appear before children in items. */
 export function visiblePathFromSnapshot(
   snapshot: ThreadBranchSnapshot,
 ): ThreadBranchMessage[] {

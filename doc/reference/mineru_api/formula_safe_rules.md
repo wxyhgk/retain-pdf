@@ -1,51 +1,51 @@
-# MinerU 公式安全修正规则
+# Quy tắc sửa lỗi công thức an toàn cho MinerU
 
-这份规则只针对 MinerU / UniMERNet 一类公式 OCR 输出的 `raw latex-ish` 文本。
+Quy tắc này chỉ áp dụng cho văn bản `raw latex-ish` đầu ra từ OCR công thức như MinerU / UniMERNet.
 
-目标不是“把所有公式修到最漂亮”，而是：
+Mục tiêu không phải là "sửa tất cả công thức đẹp nhất", mà là:
 
-- 只做低风险、结构化、可解释的修正
-- 避免全局字符串替换破坏复杂公式
-- 让 Typst / mitex 渲染更稳定
+- Chỉ thực hiện sửa lỗi rủi ro thấp, có cấu trúc, có thể giải thích
+- Tránh thay thế chuỗi toàn cục phá hỏng công thức phức tạp
+- Làm cho Typst / mitex kết xuất ổn định hơn
 
-## 背景
+## Bối cảnh
 
-MinerU 的公式输出本质上是公式识别模型生成的 LaTeX 序列，不是 PDF 原生的规范 LaTeX。
+Đầu ra công thức của MinerU về bản chất là chuỗi LaTeX do mô hình nhận dạng công thức tạo ra, không phải LaTeX chuẩn gốc của PDF.
 
-常见特征：
+Các đặc điểm thường gặp:
 
-- 控制词与花括号之间有空格：`\mathrm { C H }`
-- 下标上标被空格打散：`x _ { i , j }`
-- 数字中间被打散：`1 . 2 7`
-- 局部样式命令混入：`\bf { g }`
+- Khoảng trắng giữa từ điều khiển và dấu ngoặc nhọn: `\mathrm { C H }`
+- Chỉ số dưới / trên bị tách bởi khoảng trắng: `x _ { i , j }`
+- Chữ số bị tách rời: `1 . 2 7`
+- Lẫn lệnh kiểu cục bộ: `\bf { g }`
 
-## 允许修正
+## Cho phép sửa
 
-这些规则可以保留，因为风险低、语义明确：
+Các quy tắc này có thể giữ lại vì rủi ro thấp, ngữ nghĩa rõ ràng:
 
 - `\mathrm { C H } -> \mathrm{CH}`
 - `a _ { b } -> a_{b}`
 - `a ^ { b } -> a^{b}`
 - `a _ 2 -> a_2`
 - `a ^ 2 -> a^2`
-- 数字内部空格收紧：`1 . 2 7 -> 1.27`
+- Siết khoảng trắng bên trong số: `1 . 2 7 -> 1.27`
 - `\textsuperscript{...} -> ^{...}`
-- 少量明确的 OCR 噪声修复，例如 `\mathrm { e V } -> \mathrm{eV}`
+- Sửa một số ít nhiễu OCR rõ ràng, ví dụ `\mathrm { e V } -> \mathrm{eV}`
 
-## 禁止修正
+## Cấm sửa
 
-这些规则禁止使用全局字符串替换：
+Các quy tắc này cấm sử dụng thay thế chuỗi toàn cục:
 
-- 全局 `"{ -> ("`、`"} -> )"`
-- 全局 `" _ {" -> "_("`
-- 全局 `" ^ {" -> "^("`
-- 基于正则大面积删除花括号
-- 未确认语法边界时直接改写 `\frac`、`\sqrt`、`\left...\right`
-- 根据长度或字符集“猜测”复杂公式结构
+- Toàn cục `"{ -> ("`, `"} -> )"`
+- Toàn cục `" _ {" -> "_("`
+- Toàn cục `" ^ {" -> "^("`
+- Xóa dấu ngoặc nhọn diện rộng dựa trên regex
+- Trực tiếp sửa `\frac`, `\sqrt`, `\left...\right` khi chưa xác nhận ranh giới cú pháp
+- "Đoán" cấu trúc công thức phức tạp dựa trên độ dài hoặc bộ ký tự
 
-## 复杂结构处理原则
+## Nguyên tắc xử lý cấu trúc phức tạp
 
-对于以下结构，只能做结构化、平衡括号级别的处理：
+Đối với các cấu trúc sau, chỉ có thể xử lý ở mức cân bằng ngoặc, có cấu trúc:
 
 - `\frac{...}{...}`
 - `\sqrt{...}`
@@ -55,26 +55,26 @@ MinerU 的公式输出本质上是公式识别模型生成的 LaTeX 序列，不
 - `\Delta G_{H^*}`
 - `\mathbf{v}_{t+1}`
 
-原则：
+Nguyên tắc:
 
-- 先收紧 `_` / `^` 的原子绑定
-- 再递归处理组内内容
-- 不对未知分组做激进重写
+- Trước tiên siết chặt liên kết nguyên tử của `_` / `^`
+- Sau đó xử lý đệ quy nội dung trong nhóm
+- Không viết lại mạnh mẽ các nhóm chưa biết
 
-## 工程边界
+## Ranh giới kỹ thuật
 
-我们接受以下事实：
+Chúng tôi chấp nhận thực tế:
 
-- MinerU 输出不是最终 LaTeX
-- 复杂公式宁可少修，也不要过修
-- 如果复杂结构已经可渲染，优先保持原样
-- 渲染失败时优先做 selective sanitize，不要在主路径上激进改写
+- Đầu ra MinerU không phải là LaTeX cuối cùng
+- Công thức phức tạp thà sửa ít còn hơn sửa quá
+- Nếu cấu trúc phức tạp đã có thể kết xuất, ưu tiên giữ nguyên
+- Khi kết xuất thất bại, ưu tiên làm selective sanitize, không sửa mạnh trên đường dẫn chính
 
-## 当前策略
+## Chiến lược hiện tại
 
-当前代码应遵循：
+Mã hiện tại nên tuân theo:
 
-- `normalizer.py` 只做白名单化低风险收紧
-- `typst_formula_renderer.py` 不做全局花括号替换
-- 复杂脚本结构通过平衡括号递归处理
-- 所有新规则必须先补回归测试再上线
+- `normalizer.py` chỉ làm siết chặt rủi ro thấp theo danh sách trắng
+- `typst_formula_renderer.py` không thay thế dấu ngoặc nhọn toàn cục
+- Cấu trúc kịch bản phức tạp xử lý qua đệ quy cân bằng ngoặc
+- Tất cả quy tắc mới phải bổ sung kiểm thử hồi quy trước khi đưa lên

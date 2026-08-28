@@ -59,7 +59,7 @@ function isCompletedJobStatus(status: unknown): boolean {
   return `${status || ""}`.trim().toLowerCase() === "succeeded";
 }
 
-// Guard against the UI jumping straight to "完成" while the job is still
+// Guard against the UI jumping straight to "Hoàn thành" while the job is still
 // running. Backends sometimes flip `display_stage` / `stage_snapshot.publicStage`
 // to `done` (or fire a final-artifact signal) before the run actually reaches a
 // terminal status — the stage flow card would then mark every prior step done
@@ -279,7 +279,7 @@ function doneProgressRecord(): ProgressRecord {
     progressPercent: 100,
     displayPercent: 100,
     progressUnit: "percent",
-    progressText: "渲染完成",
+    progressText: "Kết xuất hoàn tất",
     substageKey: "render_compile",
     visualStageKey: "render_compile",
     indeterminate: false,
@@ -306,13 +306,13 @@ function labelForStage(
   progress: ProgressRecord | Record<string, unknown> = {},
 ): string {
   if (stageKey === "done") {
-    return "完成";
+    return "Hoàn tất";
   }
   if (stageKey === "failed") {
-    return "失败";
+    return "Thất bại";
   }
   if (stageKey === "canceled") {
-    return "已取消";
+    return "Đã hủy";
   }
   return summarizeStageLabel(stagePayloadForPresentation(job, stageKey, substageKey, progress));
 }
@@ -324,13 +324,13 @@ function detailForStage(
   progress: ProgressRecord | Record<string, unknown> = {},
 ): string {
   if (stageKey === "done") {
-    return "翻译 PDF 已生成";
+    return "PDF đã dịch đã được tạo";
   }
   if (stageKey === "failed") {
-    return "任务失败，请查看详情";
+    return "Tác vụ thất bại, vui lòng xem chi tiết";
   }
   if (stageKey === "canceled") {
-    return "任务已取消";
+    return "Tác vụ đã hủy";
   }
   return substageDetail(substageKey)
     || summarizeStageDetail(stagePayloadForPresentation(job, stageKey, substageKey, progress));

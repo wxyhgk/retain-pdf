@@ -1,32 +1,32 @@
-// 快捷键说明：底栏键盘图标 + 浮层列表；h / ? 也可打开。
+// Hướng dẫn phím tắt: icon bàn phím ở thanh đáy + danh sách nổi; h / ? cũng mở được.
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Keyboard } from "lucide-react";
 
 const SHORTCUT_GROUPS: { title: string; items: { keys: string; desc: string }[] }[] = [
   {
-    title: "翻页",
+    title: "Chuyển trang",
     items: [
-      { keys: "J · ↓ · PgDn", desc: "下一页" },
-      { keys: "K · ↑ · PgUp", desc: "上一页" },
-      { keys: "Home / End", desc: "首页 / 末页" },
-      { keys: "点底栏页码", desc: "输入页码跳转" },
+      { keys: "J · ↓ · PgDn", desc: "Trang sau" },
+      { keys: "K · ↑ · PgUp", desc: "Trang trước" },
+      { keys: "Home / End", desc: "Trang đầu / cuối" },
+      { keys: "Bấm số trang đáy", desc: "Nhập số trang để nhảy" },
     ],
   },
   {
-    title: "缩放",
+    title: "Zoom",
     items: [
-      { keys: "+ / −", desc: "放大 / 缩小" },
-      { keys: "0", desc: "重置为模式默认" },
-      { keys: "点百分比", desc: "重置为模式默认" },
+      { keys: "+ / −", desc: "Phóng to / thu nhỏ" },
+      { keys: "0", desc: "Reset về mặc định của mode" },
+      { keys: "Bấm phần trăm", desc: "Reset về mặc định của mode" },
     ],
   },
   {
-    title: "模式",
+    title: "Mode",
     items: [
-      { keys: "1", desc: "原文" },
-      { keys: "2", desc: "译文" },
-      { keys: "3", desc: "对照阅读" },
+      { keys: "1", desc: "Bản gốc" },
+      { keys: "2", desc: "Bản dịch" },
+      { keys: "3", desc: "Đọc đối chiếu" },
     ],
   },
 ];
@@ -73,9 +73,9 @@ export function ReaderShortcutsHelp() {
       if (isEditableTarget(event.target)) return;
       const key = event.key;
       if (key === "?" || key === "h" || key === "H" || key === "/") {
-        // / 在部分键盘上是 ? 未 shift；也接受 h
+        // Trên một số bàn phím, / là ? khi chưa shift; cũng chấp nhận h.
         if (key === "/" && !event.shiftKey) {
-          // 单独 / 不当帮助，避免误触
+          // / đơn lẻ không mở trợ giúp để tránh chạm nhầm.
           return;
         }
         event.preventDefault();
@@ -91,10 +91,10 @@ export function ReaderShortcutsHelp() {
       <button
         type="button"
         className={`reader-react-hud-btn reader-react-shortcuts-btn${open ? " is-active" : ""}`}
-        aria-label="快捷键说明"
+        aria-label="Hướng dẫn phím tắt"
         aria-expanded={open}
         aria-controls={panelId}
-        title="快捷键（H 或 ?）"
+        title="Phím tắt (H hoặc ?)"
         onClick={() => setOpen((v) => !v)}
       >
         <Keyboard className="reader-react-shortcuts-icon" size={16} strokeWidth={2.25} aria-hidden />
@@ -104,14 +104,14 @@ export function ReaderShortcutsHelp() {
           id={panelId}
           className="reader-react-shortcuts-panel"
           role="dialog"
-          aria-label="阅读器快捷键"
+          aria-label="Phím tắt reader"
         >
           <div className="reader-react-shortcuts-head">
-            <strong>快捷键</strong>
+            <strong>Phím tắt</strong>
             <button
               type="button"
               className="reader-react-shortcuts-close"
-              aria-label="关闭"
+              aria-label="Đóng"
               onClick={() => setOpen(false)}
             >
               ×
@@ -132,7 +132,7 @@ export function ReaderShortcutsHelp() {
               </section>
             ))}
           </div>
-          <p className="reader-react-shortcuts-foot">在输入框内不会触发快捷键</p>
+          <p className="reader-react-shortcuts-foot">Phím tắt không kích hoạt khi đang ở trong ô nhập</p>
         </div>
       ) : null}
     </div>

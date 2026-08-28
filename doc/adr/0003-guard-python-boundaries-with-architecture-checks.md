@@ -1,30 +1,30 @@
-# 0003 用架构检查守住 Python 模块边界
+# 0003 Sử dụng kiểm tra kiến trúc để bảo vệ ranh giới mô-đun Python
 
-## 背景
+## Bối cảnh
 
-随着 OCR、翻译、渲染、桌面端和 Rust API 持续增长，单纯靠人工记忆无法长期维护模块边界。文件数量本身不是问题，真正的问题是跨层 import、循环依赖和 provider 私有字段泄漏。
+Với sự tăng trưởng liên tục của OCR, dịch thuật, kết xuất, máy tính để bàn và Rust API, việc chỉ dựa vào trí nhớ con người không thể duy trì ranh giới mô-đun lâu dài. Số lượng tệp không phải là vấn đề, vấn đề thực sự là import xuyên lớp, phụ thuộc vòng và rò rỉ trường riêng của nhà cung cấp.
 
-## 决策
+## Quyết định
 
-短期先使用仓库已有的 `backend/scripts/devtools/check_pipeline_architecture.py` 固化 Python 后端核心边界，并接入 CI。
+Trong ngắn hạn, sử dụng `backend/scripts/devtools/check_pipeline_architecture.py` đã có trong kho lưu trữ để củng cố ranh giới cốt lõi của backend Python và tích hợp vào CI.
 
-长期可以评估引入 `tach`、`import-linter` 或 `grimp`，但不会在没有收益验证前增加新依赖。
+Về lâu dài, có thể đánh giá việc đưa vào `tach`, `import-linter` hoặc `grimp`, nhưng sẽ không thêm phụ thuộc mới trước khi xác minh lợi ích.
 
-当前必须守住的方向：
+Các hướng phải bảo vệ hiện tại:
 
-- `runtime/pipeline` 只编排，不直接依赖 provider raw、translation internals、rendering internals。
-- `translation` 和 `rendering` 不消费 provider raw JSON。
-- `typst` 不反向 import `redaction`。
-- `layout` 不 import `source_pdf`、`typst`、`redaction`。
-- `ocr_provider` 不依赖 translation/rendering。
+- `runtime/pipeline` chỉ điều phối, không phụ thuộc trực tiếp vào raw provider, translation internals, rendering internals.
+- `translation` và `rendering` không tiêu thụ JSON thô của provider.
+- `typst` không import ngược `redaction`.
+- `layout` không import `source_pdf`, `typst`, `redaction`.
+- `ocr_provider` không phụ thuộc vào translation/rendering.
 
-## 后果
+## Hậu quả
 
-- 结构性违规会在架构检查中失败。
-- 新模块要么放进现有边界，要么先更新架构文档和检查规则。
-- 不是所有边界都一次性卡死，先卡最容易腐化的关键方向。
+- Các vi phạm cấu trúc sẽ thất bại trong kiểm tra kiến trúc.
+- Các mô-đun mới phải nằm trong ranh giới hiện có hoặc cập nhật tài liệu kiến trúc và quy tắc kiểm tra.
+- Không phải tất cả ranh giới đều bị chặn cùng lúc, trước tiên chặn các hướng dễ bị ăn mòn nhất.
 
-## 替代方案
+## Phương án thay thế
 
-- 只写 README 靠约定。这个方案执行成本低，但长期会失效。
-- 立刻引入完整第三方依赖治理工具。这个方案更系统，但需要先评估配置成本和 CI 稳定性。
+- Chỉ viết README và dựa vào quy ước. Phương án này chi phí thấp, nhưng sẽ mất hiệu lực lâu dài.
+- Ngay lập tức đưa vào công cụ quản lý phụ thuộc của bên thứ ba đầy đủ. Phương án này có hệ thống hơn, nhưng cần đánh giá chi phí cấu hình và độ ổn định CI.

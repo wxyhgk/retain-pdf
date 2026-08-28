@@ -1,4 +1,4 @@
-// Markdown 悬浮预览：任务识别/译文 Markdown 产物
+// Xem trước Markdown dạng cửa sổ nổi: artifact Markdown OCR/bản dịch của tác vụ.
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { FileCode2 } from "lucide-react";
@@ -56,7 +56,7 @@ export function ReaderMarkdownPanel({
   onClose,
 }: ReaderMarkdownPanelProps) {
   const contentRef = useRef<HTMLElement | null>(null);
-  const [status, setStatus] = useState("尚未加载");
+  const [status, setStatus] = useState("Chưa tải");
   const objectUrlsRef = useRef<string[]>([]);
 
   useEffect(() => {
@@ -72,21 +72,21 @@ export function ReaderMarkdownPanel({
 
     async function load() {
       if (sourceOnly || !jobId) {
-        setStatus("源文档阅读不提供 Markdown 产物");
+        setStatus("Chế độ đọc tài liệu gốc không có artifact Markdown");
         if (contentRef.current) {
           contentRef.current.replaceChildren();
           contentRef.current.classList.add("hidden");
         }
         return;
       }
-      setStatus("正在加载 Markdown…");
+      setStatus("Đang tải Markdown...");
       try {
         const payload = await defaultReaderDataPort.loadMarkdownPayload(jobId);
         if (cancelled) return;
         const content = `${payload?.content_with_absolute_image_urls || payload?.content || ""}`;
         const imagesBaseUrl = `${payload?.images_base_url || payload?.images_base_path || ""}`.trim();
         if (!content.trim()) {
-          setStatus("该任务暂无 Markdown 产物");
+          setStatus("Tác vụ này chưa có artifact Markdown");
           contentRef.current?.replaceChildren();
           contentRef.current?.classList.add("hidden");
           return;
@@ -101,7 +101,7 @@ export function ReaderMarkdownPanel({
         template.innerHTML = html;
         sanitizeRenderedMarkdown(template.content);
         template.content.querySelectorAll("img[src]").forEach((img) => {
-          // 相对 images/... 用 base 解析成 API 绝对地址，避免挂到 reader.html 同源下 404
+          // Resolve images/... tương đối thành URL tuyệt đối API bằng base, tránh treo vào same-origin reader.html và 404.
           const raw = img.getAttribute("src") || "";
           const resolved = resolveMarkdownAssetUrl(imagesBaseUrl, raw) || raw;
           img.setAttribute("data-reader-md-src", resolved);
@@ -111,7 +111,7 @@ export function ReaderMarkdownPanel({
         contentRef.current.classList.remove("hidden");
         setStatus("");
 
-        // 受保护图片 → 带 X-API-Key 拉 blob（<img> 无法带鉴权头）
+        // Ảnh được bảo vệ -> fetch blob kèm X-API-Key (<img> không gắn auth header được).
         const images = [...contentRef.current.querySelectorAll("img[data-reader-md-src]")];
         let failed = 0;
         await Promise.allSettled(images.map(async (img) => {
@@ -126,17 +126,17 @@ export function ReaderMarkdownPanel({
             failed += 1;
             const fallback = img.ownerDocument.createElement("span");
             fallback.className = "reader-markdown-image-missing";
-            fallback.textContent = `[图片暂不可用]`;
+            fallback.textContent = `[Ảnh tạm không khả dụng]`;
             fallback.title = src;
             img.replaceWith(fallback);
           }
         }));
         if (!cancelled && failed > 0 && failed === images.length && images.length > 0) {
-          setStatus(`图片加载失败（${failed} 张）。请确认 API 可达且已配置 X-API-Key。`);
+          setStatus(`Tải ảnh thất bại (${failed} ảnh). Vui lòng xác nhận API truy cập được và đã cấu hình X-API-Key.`);
         }
       } catch (err) {
         if (cancelled) return;
-        setStatus(err instanceof Error ? err.message : "Markdown 加载失败");
+        setStatus(err instanceof Error ? err.message : "Tải Markdown thất bại");
       }
     }
 
@@ -151,14 +151,14 @@ export function ReaderMarkdownPanel({
       id="reader-markdown-panel"
       open={open}
       title="Markdown"
-      subtitle="识别与翻译产出 · 拖动可移动"
+      subtitle="Kết quả OCR và dịch · kéo để di chuyển"
       titleIcon={<FileCode2 size={14} strokeWidth={2.25} aria-hidden />}
       storageKey="retainpdf.reader.markdown-float.pos.v1"
-      ariaLabel="Markdown 预览"
+      ariaLabel="Xem trước Markdown"
       width={420}
       onClose={onClose}
       toolbar={(
-        <span className="reader-notes-count">{status || "已加载"}</span>
+        <span className="reader-notes-count">{status || "Đã tải"}</span>
       )}
     >
       {status && !contentRef.current?.childNodes?.length ? (

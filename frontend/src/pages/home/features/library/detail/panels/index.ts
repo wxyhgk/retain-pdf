@@ -1,4 +1,4 @@
-// 细粒度区块（被 tabs/* 组装，一般不直接给 Dialog 用）
+// Khối hạt mịn（bị tabs/* lắp ráp，Nói chung không tặng trực tiếp cho Dialog dùng）
 export { CoverActionsPanel } from "./CoverActionsPanel.jsx";
 export { TitleMetaPanel } from "./TitleMetaPanel.jsx";
 export { TranslateWorkspacePanel } from "./TranslateWorkspacePanel.jsx";

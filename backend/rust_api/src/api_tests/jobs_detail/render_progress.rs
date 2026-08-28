@@ -27,9 +27,9 @@ async fn job_detail_route_ignores_background_render_prewarm_for_main_stage() {
     fs::write(
         job_root.join("logs").join("pipeline_events.jsonl"),
         concat!(
-            r#"{"job_id":"job-route-background-prewarm","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"translating","stage_detail":"已完成第 2/5 批翻译","event_type":"stage_progress","message":"已完成第 2/5 批翻译","progress_current":2,"progress_total":5,"payload":{}}"#,
+            r#"{"job_id":"job-route-background-prewarm","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"translating","stage_detail":"Đã hoàn thành lô dịch thứ 2/5","event_type":"stage_progress","message":"Đã hoàn thành lô dịch thứ 2/5","progress_current":2,"progress_total":5,"payload":{}}"#,
             "\n",
-            r#"{"job_id":"job-route-background-prewarm","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"rendering","substage":"render_prewarm","stage_detail":"渲染预热完成","event_type":"stage_progress","message":"render payload prewarm: ready","progress_current":3,"progress_total":3,"progress_unit":"step","payload":{"render_stage":"payload_prewarm"}}"#,
+            r#"{"job_id":"job-route-background-prewarm","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"rendering","substage":"render_prewarm","stage_detail":"Hoàn thành prewarm render","event_type":"stage_progress","message":"render payload prewarm: ready","progress_current":3,"progress_total":3,"progress_unit":"step","payload":{"render_stage":"payload_prewarm"}}"#,
             "\n"
         ),
     )
@@ -56,7 +56,7 @@ async fn job_detail_route_ignores_background_render_prewarm_for_main_stage() {
     );
     assert_eq!(
         detail_json["data"]["stage_snapshot"]["stage_detail"],
-        "已完成第 2/5 批翻译"
+        "Đã hoàn thành lô dịch thứ 2/5"
     );
     assert_eq!(
         detail_json["data"]["stage_snapshot"]["progress"]["current"],
@@ -90,9 +90,9 @@ async fn job_detail_route_keeps_render_page_progress_over_compile_steps() {
     fs::write(
         job_root.join("logs").join("pipeline_events.jsonl"),
         concat!(
-            r#"{"job_id":"job-route-render-page-over-compile","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","user_stage":"render","stage":"rendering","substage":"render_pages","stage_detail":"正在生成 Typst 页面，第 548/548 页","event_type":"stage_progress","message":"正在生成 Typst 页面，第 548/548 页","progress_current":548,"progress_total":548,"progress_unit":"page","payload":{"render_stage":"typst_source_build"}}"#,
+            r#"{"job_id":"job-route-render-page-over-compile","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","user_stage":"render","stage":"rendering","substage":"render_pages","stage_detail":"Đang tạo trang Typst, trang 548/548","event_type":"stage_progress","message":"Đang tạo trang Typst, trang 548/548","progress_current":548,"progress_total":548,"progress_unit":"page","payload":{"render_stage":"typst_source_build"}}"#,
             "\n",
-            r#"{"job_id":"job-route-render-page-over-compile","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","user_stage":"render","stage":"rendering","substage":"render_compile","stage_detail":"整本 Typst 渲染编译完成，共 548 页","event_type":"stage_progress","message":"整本 Typst 渲染编译完成，共 548 页","progress_current":4,"progress_total":4,"progress_unit":"step","payload":{"render_stage":"background_typst_compile_done"}}"#,
+            r#"{"job_id":"job-route-render-page-over-compile","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","user_stage":"render","stage":"rendering","substage":"render_compile","stage_detail":"Hoàn thành biên dịch render Typst toàn bộ, tổng 548 trang","event_type":"stage_progress","message":"Hoàn thành biên dịch render Typst toàn bộ, tổng 548 trang","progress_current":4,"progress_total":4,"progress_unit":"step","payload":{"render_stage":"background_typst_compile_done"}}"#,
             "\n"
         ),
     )
@@ -114,7 +114,7 @@ async fn job_detail_route_keeps_render_page_progress_over_compile_steps() {
     assert_eq!(detail_json["data"]["stage_snapshot"]["stage"], "rendering");
     assert_eq!(
         detail_json["data"]["stage_snapshot"]["stage_detail"],
-        "整本 Typst 渲染编译完成，共 548 页"
+        "Hoàn thành biên dịch render Typst toàn bộ, tổng 548 trang"
     );
     assert_eq!(
         detail_json["data"]["stage_snapshot"]["progress"]["current"],

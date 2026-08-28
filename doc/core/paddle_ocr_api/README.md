@@ -1,46 +1,46 @@
-# Paddle OCR 对接文档
+# Tài liệu kết nối Paddle OCR
 
-这里是 RetainPDF 自己的 OCR adapter 说明，不是 Paddle 官方文档本体。
-如果你要改“Paddle 原始 JSON 怎么进 `document.v1`”，先看这里。
+Đây là giải thích adapter OCR của RetainPDF, không phải tài liệu chính thức của Paddle.
+Nếu bạn muốn sửa "JSON thô Paddle đi vào `document.v1` như thế nào", hãy xem ở đây trước.
 
-这套文档只服务一件事：
+Bộ tài liệu này chỉ phục vụ một việc:
 
-- 把 Paddle OCR 原始返回结果稳定收敛成 `normalized_document_v1`
+- Ổn định và hội tụ kết quả trả về gốc của Paddle OCR thành `normalized_document_v1`
 
-不要把这里写成翻译规则文档，也不要把渲染策略塞进来。
+Đừng viết tài liệu quy tắc dịch ở đây, cũng đừng nhét chiến lược kết xuất vào.
 
-## 对接边界
+## Ranh giới kết nối
 
-适配 Paddle OCR 的同学只负责：
+Người thích ứng Paddle OCR chỉ phụ trách:
 
-1. 理解 Paddle 原始 API 和 JSON 结构
-2. 实现 provider 探测与 adapter
-3. 把 Paddle 私有字段映射到 `document.v1`
-4. 补 fixture、回归测试和文档
+1. Hiểu cấu trúc API và JSON gốc của Paddle
+2. Triển khai phát hiện provider và adapter
+3. Ánh xạ trường riêng của Paddle vào `document.v1`
+4. Bổ sung fixture, kiểm thử hồi quy và tài liệu
 
-明确不负责：
+Không phụ trách rõ ràng:
 
-1. 不改翻译层 `services/translation/*`
-2. 不改渲染层 `services/rendering/*`
-3. 不在 `runtime/pipeline/*` 里写 Paddle 私有特判
-4. 不让下游直接读取 Paddle raw JSON
+1. Không sửa tầng dịch `services/translation/*`
+2. Không sửa tầng kết xuất `services/rendering/*`
+3. Không viết đặc trưng riêng Paddle trong `runtime/pipeline/*`
+4. Không để hạ nguồn đọc trực tiếp raw JSON của Paddle
 
-## 当前代码入口
+## Đầu vào mã hiện tại
 
-- provider 注册入口：
+- Đầu vào đăng ký provider:
   `backend/scripts/services/document_schema/adapters.py`
-- provider 常量：
+- Hằng provider:
   `backend/scripts/services/document_schema/providers.py`
-- Paddle adapter 入口：
+- Đầu vào adapter Paddle:
   `backend/scripts/services/document_schema/provider_adapters/paddle/adapter.py`
-- Paddle page reader：
+- Page reader Paddle:
   `backend/scripts/services/document_schema/provider_adapters/paddle/page_reader.py`
-- Paddle block reader：
+- Block reader Paddle:
   `backend/scripts/services/document_schema/provider_adapters/paddle/block_reader.py`
-- 通用契约说明：
+- Giải thích hợp đồng chung:
   `backend/scripts/services/document_schema/README.md`
 
-## 阅读顺序
+## Thứ tự đọc
 
 1. [00_overview.md](./00_overview.md)
 2. [01_response_shape.md](./01_response_shape.md)
@@ -51,10 +51,10 @@
 7. [06_job_artifact_boundary.md](./06_job_artifact_boundary.md)
 8. [official/README.md](./official/README.md)
 
-## 对接原则
+## Nguyên tắc kết nối
 
-1. Paddle 私有字段只允许留在 adapter 层和 trace 层。
-2. 下游主链路只消费 `document.v1.json`。
-3. 如果 Paddle 已经识别出连续段落组，写入 `continuation_hint`，不要把 `group_id` 之类的私有字段直接泄漏给 translation。
-4. 先保证 schema 正确，再做语义增强；不要一上来就堆规则。
-5. `provider raw -> normalized_document -> artifact export -> download API` 是四层边界，不要混用。
+1. Trường riêng của Paddle chỉ được phép ở tầng adapter và tầng trace.
+2. Luồng chính hạ nguồn chỉ tiêu thụ `document.v1.json`.
+3. Nếu Paddle đã nhận dạng nhóm đoạn liên tục, ghi vào `continuation_hint`, đừng để lộ trường riêng như `group_id` trực tiếp cho translation.
+4. Đảm bảo schema đúng trước, sau đó mới tăng cường ngữ nghĩa; đừng chất đống quy tắc ngay từ đầu.
+5. `provider raw -> normalized_document -> artifact export -> download API` là bốn tầng ranh giới, đừng trộn lẫn.

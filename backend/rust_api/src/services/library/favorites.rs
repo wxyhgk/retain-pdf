@@ -26,7 +26,7 @@ pub fn create_favorite(
                 AppError::not_found(format!("document not found: {}", payload.document_id))
             })?
     } else if let Some(job_id) = requested_job_id.as_deref() {
-        // 只给 job_id 也能收藏:历史 run 同样解析到所属文档
+        // Chỉ dành cho job_id Bạn cũng có thể thu thập:Sử học run Cũng được phân tích cú pháp đến tài liệu mà nó thuộc về
         deps.db.get_document_by_job_id(job_id)?.ok_or_else(|| {
             AppError::not_found(format!("no document owns job: {job_id}"))
         })?

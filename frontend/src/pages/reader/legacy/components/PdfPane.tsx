@@ -1,11 +1,13 @@
-// 单个 PDF 面板:React 只渲染容器骨架(空态/包裹层/viewer host)。
-// .pdfViewer 的内容 DOM 完全由 pdfjs 命令式管理(pdf-controller/pdf-renderer 按 id 查找挂载),
-// hidden 开合由 view.js 的 showReaderPaneReady/Empty 切换——绝不虚拟 DOM 化 PDF 页。
-// 本组件无 props 变化、无 state,首次 commit 后 React 不会再触碰这些节点。
+// Panel PDF đơn lẻ: React chỉ render khung (trạng thái rỗng/lớp bọc/viewer host).
+// Nội dung DOM của .pdfViewer hoàn toàn do pdfjs mệnh lệnh quản (pdf-controller/pdf-renderer
+// tìm id để mount), đóng/mở hidden do showReaderPaneReady/Empty của view.js chuyển —
+// tuyệt đối không ảo hóa DOM các trang PDF. Component này không đổi props, không có
+// state, sau lần commit đầu React sẽ không đụng vào các nút này nữa.
 //
-// 容器 id 全部写成字面量(不做 `${viewerKey}-wrap` 拼接):
-// tests/page-dom-references.test.mjs 以 id="..." 字面量做归属校验,
-// 拼接会让 src/js/reader 侧的引用(view.js/viewer-mount-flow.js)变孤儿误报。
+// id vùng chứa viết thẳng literal (không nối `${viewerKey}-wrap`):
+// tests/page-dom-references.test.mjs kiểm tra thuộc tính theo id="..." dạng literal,
+// nối chuỗi sẽ khiến tham chiếu phía src/js/reader (view.js/viewer-mount-flow.js) thành
+// mồ côi, báo động sai.
 
 import type { CSSProperties } from "react";
 import { Panel } from "react-resizable-panels";
@@ -17,7 +19,8 @@ function paneStyle(pane: ReaderPdfPane): CSSProperties {
     maxHeight: "none",
     overflowY: "visible",
     overflowX: "clip",
-    // 旧布局里译文面板的分栏细线(.reader-panel + .reader-panel 规则的等价复刻)
+    // Tái tạo tương đương đường kẻ phân cột của panel bản dịch trong bố cục cũ
+    // (quy tắc .reader-panel + .reader-panel)
     ...(pane === "translated"
       ? { borderLeft: "1px solid color-mix(in srgb, var(--shadow-color) 4%, transparent)" }
       : null),

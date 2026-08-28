@@ -1,16 +1,17 @@
-// 文档中心网格的分页数据源(计划 F2)。返回形状与
-// recent-jobs/pagination.js#collectRecentJobsPage 对齐
-// ({ collected, hasMore, latestInvocationSummary, nextOffset }),这样
-// recent-jobs 的 loader.js/commit.js/store 引擎可以一行不改地消费它。
+// Nguồn dữ liệu phân trang cho lưới document-centric (kế hoạch F2). Shape trả về khớp với
+// recent-jobs/pagination.js#collectRecentJobsPage
+// ({ collected, hasMore, latestInvocationSummary, nextOffset }) để engine
+// loader.js/commit.js/store của recent-jobs dùng được mà không cần sửa.
 //
-// 每篇文档产出一张卡:先拉一页 /documents,收集该页 active_job_id,批量向
-// library/books?job_ids= 取这些 job 的实时活态,再按 job_id 合并
-// (shapeDocumentCardItem)。馆藏文档(无 active_job_id)拿合成 job_id 穿过引擎。
+// Mỗi document tạo một thẻ: lấy một trang /documents, gom active_job_id của trang đó,
+// gọi hàng loạt library/books?job_ids= để lấy trạng thái sống của các job, rồi merge theo job_id
+// (shapeDocumentCardItem). Document chỉ có trong thư viện (không có active_job_id) dùng job_id
+// tổng hợp để đi qua engine.
 //
-// 搜索:/documents 目前没有服务端文本搜索(仅 reading_status/tag/collection 过滤),
-// 这里 query 走**客户端标题/文件名过滤**;有 query 时一次多拉一批再过滤、并关掉
-// 继续分页。文档级服务端全文/标题搜索是后端待补项(见 memory
-// f2-document-centric-grid-design)。
+// Tìm kiếm: /documents hiện chưa có tìm kiếm văn bản phía server (chỉ filter reading_status/tag/collection),
+// nên query ở đây dùng **lọc tiêu đề/tên file phía client**; khi có query, kéo một batch lớn hơn rồi lọc,
+// và tắt phân trang tiếp. Tìm kiếm full-text/tiêu đề ở cấp document là phần backend còn cần bổ sung
+// (xem memory f2-document-centric-grid-design).
 
 import { shapeDocumentsWithBooks } from "./shape-documents-with-books.js";
 
@@ -42,8 +43,8 @@ export async function collectDocumentLibraryPage({
   const documents = Array.isArray(payload?.documents) ? payload.documents : [];
   const total = Number.isFinite(Number(payload?.total)) ? Number(payload.total) : documents.length;
 
-  // 文档 → 卡片的映射走统一编排(shapeDocumentsWithBooks);去重/搜索过滤这些
-  // 分页数据源自己的关切留在下面。
+  // Mapping document -> thẻ đi qua điều phối chung (shapeDocumentsWithBooks); dedupe/lọc tìm kiếm
+  // là trách nhiệm riêng của nguồn dữ liệu phân trang và ở lại bên dưới.
   const shaped = await shapeDocumentsWithBooks(documents, { fetchLibraryBookList, apiPrefix });
 
   const collected = [];

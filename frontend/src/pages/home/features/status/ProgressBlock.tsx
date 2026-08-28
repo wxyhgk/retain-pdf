@@ -1,9 +1,9 @@
-// 进度区块(蓝图 §2 features/status/;镜像
-// job-status-card-progress-renderer.js 的 renderProgressComponents/
-// renderProgressModel——DOM 契约逐 id/class/CSS 变量保留(蓝图风险 §8.7:
-// --status-ring-percent、--status-progress-percent、data-value、
-// aria-valuenow)。renderOptions 来自 useStagedProgressAnimation 的输出,
-// 本组件只管声明式渲染,不持有动画状态。
+// Khối tiến trình (bản thiết kế §2 features/status/, phản chiếu
+// renderProgressComponents/renderProgressModel của job-status-card-progress-renderer.js
+// — giữ nguyên hợp đồng DOM theo id/class/biến CSS (rủi ro bản thiết kế §8.7:
+// --status-ring-percent, --status-progress-percent, data-value, aria-valuenow).
+// renderOptions lấy từ useStagedProgressAnimation; component này chỉ render
+// khai báo và không giữ trạng thái hoạt ảnh.
 
 import type { CSSProperties } from "react";
 import { buildProgressRenderModel, type ProgressRenderModelInput } from "./progress-model.js";
@@ -31,8 +31,8 @@ export function ProgressBlock({ renderOptions }: ProgressBlockProps) {
   } = model || {};
   const rounded = roundPercent(percent);
   const ringText = indeterminate ? "..." : `${rounded}%`;
-  const ringMetaText = componentText || (indeterminate ? "处理中" : `${rounded}%`);
-  const footPercentText = indeterminate ? "处理中" : `${rounded}%`;
+  const ringMetaText = componentText || (indeterminate ? "Đang xử lý" : `${rounded}%`);
+  const footPercentText = indeterminate ? "Đang xử lý" : `${rounded}%`;
 
   return (
     <>
@@ -41,7 +41,7 @@ export function ProgressBlock({ renderOptions }: ProgressBlockProps) {
           id={ids.progressBar}
           className={`status-progress-bar${indeterminate ? " is-indeterminate" : ""}`}
           role="progressbar"
-          aria-label="任务进度"
+          aria-label="Tiến trình tác vụ"
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={visible ? percent : 0}
@@ -62,12 +62,12 @@ export function ProgressBlock({ renderOptions }: ProgressBlockProps) {
           <span id={ids.progressPercent} className="status-progress-percent">{footPercentText}</span>
         </div>
       </div>
-      <div className="status-progress-ring-wrap" aria-label="任务进度百分比">
+       <div className="status-progress-ring-wrap" aria-label="Tiến độ tác vụ (phần trăm)">
         <div
           id={ids.progressRing}
           className={`status-progress-ring${indeterminate ? " is-indeterminate" : ""}`}
           role="progressbar"
-          aria-label="任务进度"
+          aria-label="Tiến độ tác vụ"
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={percent}

@@ -27,12 +27,12 @@ async fn diagnostics_route_exposes_stable_failure_summary() {
         failure_category: Some("timeout".to_string()),
         provider_stage: Some("continuation_review".to_string()),
         provider_code: None,
-        summary: "翻译阶段超时".to_string(),
+        summary: "Giai đoạn dịch quá thời gian chờ".to_string(),
         root_cause: Some("provider timed out".to_string()),
         retryable: true,
         upstream_host: None,
         provider: Some("translation".to_string()),
-        suggestion: Some("从断点恢复任务".to_string()),
+        suggestion: Some("Khôi phục tác vụ từ điểm dừng".to_string()),
         last_log_line: None,
         raw_excerpt: None,
         raw_error_excerpt: None,
@@ -57,7 +57,7 @@ async fn diagnostics_route_exposes_stable_failure_summary() {
     let payload = read_json(response).await;
     assert_eq!(payload["data"]["failed_stage"], "translation");
     assert_eq!(payload["data"]["failed_substage"], "continuation_review");
-    assert_eq!(payload["data"]["summary"], "翻译阶段超时");
+    assert_eq!(payload["data"]["summary"], "Giai đoạn dịch quá thời gian chờ");
     assert_eq!(payload["data"]["detail"], "provider timed out");
     assert_eq!(payload["data"]["retryable"], true);
     assert_eq!(payload["data"]["resume_available"], false);

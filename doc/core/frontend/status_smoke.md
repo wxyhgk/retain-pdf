@@ -1,61 +1,61 @@
-# 前端状态 Smoke 检查
+# Kiểm tra Smoke trạng thái frontend
 
-这套检查的目标不是“把前端页面截图出来”，而是自动验证：
+Mục tiêu của bộ kiểm tra này không phải là "chụp ảnh màn hình trang frontend", mà là tự động xác minh:
 
-- 上传是否成功
-- `/api/v1/jobs` 是否成功提交
-- 任务详情轮询里，前端会显示的状态标签是否按预期推进
+- Tải lên có thành công không
+- `/api/v1/jobs` có được gửi thành công không
+- Trong quá trình polling chi tiết tác vụ, các nhãn trạng thái frontend hiển thị có tiến triển theo dự kiến không
 
-当前脚本位置：
+Vị trí script hiện tại:
 
 - `frontend/scripts/frontend-status-smoke.mjs`
 
-当前 npm 入口：
+Đầu vào npm hiện tại:
 
 ```bash
 cd frontend
 npm run smoke:status -- --file ../data/temPDF/test1.pdf
 ```
 
-仓库级固定入口：
+Đầu vào cố định cấp kho lưu trữ:
 
 ```bash
 ./.github/scripts/smoke_frontend_status.sh
 ```
 
-默认会把最新结果写到：
+Mặc định sẽ ghi kết quả mới nhất vào:
 
 ```text
 doc/ops/reports/frontend-status-smoke-latest.json
 ```
 
-## 默认行为
+## Hành vi mặc định
 
-脚本会按下面的顺序自动取配置：
+Script sẽ tự động lấy cấu hình theo thứ tự sau:
 
-1. 命令行参数
-2. 环境变量
+1. Tham số dòng lệnh
+2. Biến môi trường
 3. `frontend/runtime-config.local.js`
 4. `backend/scripts/.env/*.env`
 
-默认读取：
+Mặc định đọc:
 
 - API Base: `frontend/runtime-config.local.js` / `frontend/runtime-config.js`
 - `X-API-Key`: `frontend/runtime-config.local.js`
-- Paddle token: `backend/scripts/.env/paddle.env`
-- MinerU token: `backend/scripts/.env/mineru.env`
-- 翻译 API key: `backend/scripts/.env/deepseek.env`
+- Token Paddle: `backend/scripts/.env/paddle.env`
+- Token MinerU: `backend/scripts/.env/mineru.env`
+- API key dịch: `backend/scripts/.env/deepseek.env`
 
-## 常用示例
+## Ví dụ thường dùng
 
-跑完整 `book` 流程：
+Chạy toàn bộ quy trình `book`:
 
 ```bash
 cd frontend
 npm run smoke:status -- --file ../data/temPDF/test1.pdf
 ```
 
-指定 Paddle：
+Chỉ định Paddle:
 
 ```bash
 cd frontend
@@ -64,23 +64,23 @@ npm run smoke:status -- \
   --ocr-provider paddle
 ```
 
-仓库根目录直接跑：
+Chạy trực tiếp từ thư mục gốc kho lưu trữ:
 
 ```bash
 ./.github/scripts/smoke_frontend_status.sh data/temPDF/test1.pdf --ocr-provider paddle
 ```
 
-只跑翻译不渲染：
+Chỉ chạy dịch không kết xuất:
 
 ```bash
 cd frontend
 npm run smoke:status -- \
   --file ../data/temPDF/test1.pdf \
   --workflow translate \
-  --expect-labels "OCR 中,翻译中,处理完成"
+  --expect-labels "Đang OCR,Đang dịch,Hoàn tất"
 ```
 
-指定接口地址与超时时间：
+Chỉ định địa chỉ API và thời gian chờ:
 
 ```bash
 cd frontend
@@ -90,7 +90,7 @@ npm run smoke:status -- \
   --max-wait-ms 3600000
 ```
 
-输出 JSON：
+Xuất JSON:
 
 ```bash
 cd frontend
@@ -99,18 +99,18 @@ npm run smoke:status -- \
   --json
 ```
 
-## 输出重点
+## Trọng tâm đầu ra
 
-脚本会打印每次状态变化，例如：
+Script sẽ in mỗi lần thay đổi trạng thái, ví dụ:
 
 ```text
-2026-04-25T14:00:00.000Z | running | OCR 中 | 已完成第 3/12 页 OCR
-2026-04-25T14:00:20.000Z | running | 翻译中 | 已完成第 5/18 批翻译
-2026-04-25T14:01:10.000Z | running | 渲染中 | 已完成第 9/12 页渲染
-2026-04-25T14:01:30.000Z | succeeded | 处理完成 | 处理完成
+2026-04-25T14:00:00.000Z | running | Đang OCR | Đã hoàn thành OCR trang 3/12
+2026-04-25T14:00:20.000Z | running | Đang dịch | Đã hoàn thành lô dịch 5/18
+2026-04-25T14:01:10.000Z | running | Đang kết xuất | Đã hoàn thành kết xuất trang 9/12
+2026-04-25T14:01:30.000Z | succeeded | Hoàn tất | Hoàn tất xử lý
 ```
 
-结尾会汇总：
+Cuối cùng sẽ tổng hợp:
 
 - `job_id`
 - `final_status`
@@ -118,15 +118,15 @@ npm run smoke:status -- \
 - `missing_labels`
 - `event_count`
 
-如果缺少预期标签，或任务最终不是 `succeeded`，脚本会返回非 0 退出码。
+Nếu thiếu nhãn dự kiến, hoặc tác vụ cuối cùng không phải `succeeded`, script sẽ trả về mã thoát khác 0.
 
-## 固定报告
+## Báo cáo cố định
 
-仓库级脚本会固定写出：
+Script cấp kho lưu trữ sẽ ghi cố định:
 
 - `doc/ops/reports/frontend-status-smoke-latest.json`
 
-报告里包含：
+Báo cáo bao gồm:
 
 - `jobId`
 - `finalStatus`
@@ -135,12 +135,12 @@ npm run smoke:status -- \
 - `observations`
 - `eventSamples`
 
-## 适用边界
+## Phạm vi áp dụng
 
-这套 smoke 主要验证“前端状态映射链路”：
+Bộ smoke này chủ yếu xác minh "chuỗi ánh xạ trạng thái frontend":
 
-- 后端是否产出 job detail
-- 前端状态归一化逻辑会得到什么标签
-- 实际流程里这些标签是否真的出现
+- Backend có tạo ra chi tiết job không
+- Logic chuẩn hóa trạng thái frontend sẽ thu được nhãn gì
+- Trong quy trình thực tế, các nhãn này có thực sự xuất hiện không
 
-它不验证浏览器布局、组件动画、按钮显隐这类纯 UI 细节。那部分如果后面要补，再单独上 Playwright。
+Nó không xác minh các chi tiết UI thuần túy như bố cục trình duyệt, hoạt ảnh thành phần, hiển thị/ẩn nút. Phần đó nếu sau này cần bổ sung, sẽ dùng Playwright riêng.

@@ -1,9 +1,9 @@
-// 书籍详情弹窗的开合状态(参考 PDF_MD_lib 的 BookDetailModal)。
-// payload = 被点开的那张网格卡片 item(含 document_id / job_id / status /
-// library_only / reading_status / tags 等即时字段),弹窗再按 document_id 拉一次
-// 完整文档补齐作者/年份/DOI/字节/日期这些卡片上没有的元数据。
+// Trạng thái mở và đóng của cửa sổ bật lên thông tin đặt phòng(Tham khảo PDF_MD_lib của BookDetailModal)。
+// payload = Tấm lưới đã được nhấp vào item(hàm document_id / job_id / status /
+// library_only / reading_status / tags Chờ trường tức thì),Nhấn một lần nữa trong cửa sổ bật lên document_id Kéo một lần
+// Tác giả hoàn thành tài liệu đầy đủ/niên đại/DOI/bai/Ngày Siêu dữ liệu không khả dụng trên các thẻ này。
 //
-// 复用通用 createDialogStore({ open, payload })——同 CollectionManageDialog。
+// Multiplex Chung createDialogStore({ open, payload })——cùng CollectionManageDialog。
 
 import { createDialogStore } from "../../../state/dialog-store.js";
 import type { LibraryCardItem } from "../types.js";

@@ -117,19 +117,19 @@ export interface MockSearchHit {
 
 type HttpStatusError = Error & { status?: number };
 
-// 与后端 documents 数据层形状一致(见后端对接说明):
-// document = 按内容哈希去重的稳定身份,job 是文档名下的处理记录
+// Đồng bộ với lớp dữ liệu documents backend (xem tài liệu tích hợp backend):
+// document = định danh ổn định sau khi loại bỏ trùng lặp theo hash nội dung, job là bản ghi xử lý dưới tên tài liệu
 function buildMockDocuments(): MockDocument[] {
   return [
     {
       document_id: MOCK_DOCUMENT_ID,
-      title: "共轭在卤素-锂交换选择性中的作用",
+      title: "Vai trò của liên hợp trong tính chọn lọc trao đổi halogen-lithi",
       source_filename: "halogen-lithium-exchange.pdf",
       page_count: 10,
       bytes: 2_621_440,
       active_job_id: MOCK_JOB_ID,
       reading_status: "reading",
-      tags: ["化学", "有机合成"],
+      tags: ["Hóa học", "Tổng hợp hữu cơ"],
       added_at: "2026-06-01T10:00:00Z",
       updated_at: "2026-06-01T12:00:00Z",
     },
@@ -141,7 +141,7 @@ function buildMockDocuments(): MockDocument[] {
       bytes: 1_843_200,
       active_job_id: "20260520-att-001",
       reading_status: "done",
-      tags: ["机器学习"],
+      tags: ["Học máy"],
       added_at: "2026-05-20T08:00:00Z",
       updated_at: "2026-05-21T09:30:00Z",
     },
@@ -157,23 +157,23 @@ function buildMockDocuments(): MockDocument[] {
       added_at: "2026-06-08T14:00:00Z",
       updated_at: "2026-06-08T14:00:00Z",
     },
-    // 馆藏态(只入库、未翻译):active_job_id 为空。文档中心网格要能显示它们,
-    // 阅读器要能只读原文,卡片要能"以后再翻"。
+    // Trạng thái lưu trữ (chỉ nhập kho, chưa dịch): active_job_id để trống. Lưới trung tâm tài liệu phải hiển thị chúng,
+    // Trình đọc phải có thể đọc nguyên văn, thẻ phải có thể "Dịch sau".
     {
       document_id: "doc-ref-6a1f2c",
-      title: "Reaxys Retrosynthesis 手册(仅馆藏)",
+      title: "Cẩm nang Retrosynthesis Reaxys (chỉ lưu trữ)",
       source_filename: "reaxys-handbook.pdf",
       page_count: 42,
       bytes: 3_200_000,
       active_job_id: null,
       reading_status: "unread",
-      tags: ["工具书"],
+      tags: ["Sách công cụ"],
       added_at: "2026-06-10T09:00:00Z",
       updated_at: "2026-06-10T09:00:00Z",
     },
     {
       document_id: "doc-ref-9b7e04",
-      title: "Group Theory Lecture Notes(仅馆藏)",
+      title: "Bài giảng Lý thuyết Nhóm (chỉ lưu trữ)",
       source_filename: "group-theory-notes.pdf",
       page_count: 88,
       bytes: 5_600_000,
@@ -186,8 +186,8 @@ function buildMockDocuments(): MockDocument[] {
   ];
 }
 
-// 镜像后端 with_document_media_urls。封面/缩略图走 mock://，
-// 避免 /api/v1/documents/.../cover 在纯前端 mock 下 404 导致空封面。
+// Sao chép backend with_document_media_urls. Bìa/ảnh thu nhỏ sử dụng mock://,
+// Tránh trường hợp /api/v1/documents/.../cover trả về 404 trong chế độ mock frontend dẫn đến bìa trống.
 export const MOCK_DOCUMENT_SOURCE_PDF_URL = "mock://document-source.pdf";
 export const MOCK_DOCUMENT_COVER_URL = "mock://document-cover.png";
 export const MOCK_DOCUMENT_THUMB_URL = "mock://document-thumb.png";
@@ -239,13 +239,13 @@ export function getMockDocumentList({
 export function getMockDocument(documentId: string): MockDocumentWithMedia {
   const found = documents().find((item) => item.document_id === documentId);
   if (!found) {
-    throw new Error("未找到该文档。(404)");
+    throw new Error("Không tìm thấy tài liệu. (404)");
   }
   return withMockDocumentMediaUrls(found);
 }
 
-// 后端按 job_id 直查所属文档:active_job_id 命中当然算,
-// 历史 run(同一文档的旧翻译记录)也应解析到同一文档——用一张历史映射证明这条路可用。
+// Backend tra cứu trực tiếp tài liệu theo job_id: active_job_id trúng khớp đương nhiên được tính,
+// Lịch sử run (bản ghi dịch cũ của cùng một tài liệu) cũng nên được phân giải về cùng một tài liệu - sử dụng bản đồ lịch sử để chứng minh đường dẫn này khả dụng.
 const MOCK_HISTORICAL_JOB_TO_DOCUMENT: Record<string, string> = {
   "mock-job-20260101-old": MOCK_DOCUMENT_ID,
 };
@@ -268,8 +268,8 @@ export function getMockDocumentByJobId(jobId: string): MockDocumentWithMedia | n
 }
 
 /**
- * 重试/新 job 绑定到文档：更新 active_job_id，并登记历史映射，
- * 使 getMockDocumentByJobId(新 id) 仍能取到书名/封面。
+ * Thử lại/mới job gắn vào tài liệu: cập nhật active_job_id, và đăng ký ánh xạ lịch sử,
+ * Để getMockDocumentByJobId(id mới) vẫn có thể lấy được tiêu đề/bìa.
  */
 export function bindMockDocumentActiveJob(
   documentId?: string | null,
@@ -295,8 +295,8 @@ export function bindMockDocumentActiveJob(
   return withMockDocumentMediaUrls(found);
 }
 
-// mock 版 DELETE /documents/:id:从 mock 文档表移除该文档(连同其合集成员关系)。
-// 被收藏引用时抛 409(镜像后端收藏保护)。
+// Phiên bản mock DELETE /documents/:id: xóa tài liệu khỏi bảng mock (cùng với quan hệ thành viên bộ sưu tập).
+// Khi được trích dẫn bởi yêu thích, ném ra 409 (sao chép bảo vệ yêu thích backend).
 export function deleteMockDocument(documentId: string): {
   deleted: boolean;
   document_id: string;
@@ -305,12 +305,12 @@ export function deleteMockDocument(documentId: string): {
   const list = documents();
   const index = list.findIndex((item) => item.document_id === documentId);
   if (index < 0) {
-    throw new Error("未找到该文档。(404)");
+    throw new Error("Không tìm thấy tài liệu. (404)");
   }
   const favoriteCount = favorites().filter((item) => item.document_id === documentId).length;
   if (favoriteCount > 0) {
     const error: HttpStatusError = new Error(
-      `该文档有 ${favoriteCount} 条收藏，请先删除收藏后再删除文档。(409)`,
+      `Tài liệu có ${favoriteCount} mục yêu thích, vui lòng xóa yêu thích trước khi xóa tài liệu. (409)`,
     );
     error.status = 409;
     throw error;
@@ -332,10 +332,10 @@ export function patchMockDocument(
 ): MockDocumentWithMedia {
   const found = documents().find((item) => item.document_id === documentId);
   if (!found) {
-    throw new Error("未找到该文档。(404)");
+    throw new Error("Không tìm thấy tài liệu. (404)");
   }
   if (readingStatus !== undefined && !READING_STATUSES.includes(readingStatus as MockReadingStatus)) {
-    throw new Error("reading_status 仅支持 unread | reading | done。(400)");
+    throw new Error("reading_status chỉ hỗ trợ unread | reading | done. (400)");
   }
   if (title !== undefined) {
     found.title = `${title}`;
@@ -344,24 +344,24 @@ export function patchMockDocument(
     found.reading_status = readingStatus;
   }
   if (tags !== undefined) {
-    // 整体替换语义
+    // Ngữ nghĩa thay thế toàn bộ
     found.tags = Array.isArray(tags) ? tags.map((item) => `${item}`) : [];
   }
   found.updated_at = new Date().toISOString();
   return withMockDocumentMediaUrls(found);
 }
 
-// mock 版 POST /documents/:id/translate：登记 live 可推进任务，
-// 轮询 getMockJobPayload 会随时间走 OCR→翻译→渲染→完成（见 mock/live-jobs）。
-// 运行中再次提交 → 409；已终态可重新提交（方便反复演示）。
+// Phiên bản mock POST /documents/:id/translate: đăng ký nhiệm vụ có thể tiến triển,
+// Thăm dò getMockJobPayload sẽ đi theo thời gian OCR→Dịch→Render→Hoàn thành (xem mock/live-jobs).
+// Gửi lại khi đang chạy → 409; Trạng thái cuối có thể gửi lại (tiện cho demo lặp đi lặp lại).
 export function translateMockDocument(documentId: string): JobSubmissionView {
   const found = documents().find((item) => item.document_id === documentId);
   if (!found) {
-    throw new Error("未找到该文档。(404)");
+    throw new Error("Không tìm thấy tài liệu. (404)");
   }
   const existingId = `${found.active_job_id || ""}`.trim();
   if (existingId && isLiveMockJobActive(existingId)) {
-    throw new Error("该文档已在翻译流程中。(409)");
+    throw new Error("Tài liệu đang trong quá trình dịch. (409)");
   }
   const live = registerLiveMockJob({
     documentId: found.document_id,
@@ -377,14 +377,14 @@ export function translateMockDocument(documentId: string): JobSubmissionView {
     status: `${snapshot.status || "queued"}`,
     stage: `${snapshot.stage || "queued"}`,
     display_stage: `${snapshot.display_stage || "ocr"}`,
-    stage_detail: `${snapshot.stage_detail || "正在读取任务状态..."}`,
+    stage_detail: `${snapshot.stage_detail || "Đang đọc trạng thái nhiệm vụ..."}`,
   };
 }
 
-// ===== 分类(合集):建文件夹给 PDF 分组 =====
-// 与 js/api/collections.js 同构(collection_id/name/parent_id/sort_order/
-// created_at/document_count);membership 单独存一张 collection_id → Set<document_id>
-// 表,和真实后端 collection_documents 表同样的建模方式。
+// ===== Phân loại (Bộ sưu tập): Tạo thư mục để nhóm PDF =====
+// Đồng cấu trúc với js/api/collections.js (collection_id/name/parent_id/sort_order/
+// created_at/document_count); membership lưu riêng một bảng collection_id → Set<document_id>
+// Giống với cách mô hình hóa bảng collection_documents của backend thực.
 
 let mockCollections: MockCollection[] | null = null;
 let mockCollectionMembership: Map<string, Set<string>> | null = null;
@@ -393,12 +393,12 @@ let collectionSeq = 0;
 function seedMockCollections(): void {
   collectionSeq = 2;
   mockCollections = [
-    { collection_id: "col-001", name: "化学", parent_id: null, sort_order: 0, created_at: "2026-06-01T10:30:00Z" },
-    { collection_id: "col-002", name: "机器学习", parent_id: null, sort_order: 1, created_at: "2026-06-08T15:00:00Z" },
+    { collection_id: "col-001", name: "Hóa học", parent_id: null, sort_order: 0, created_at: "2026-06-01T10:30:00Z" },
+    { collection_id: "col-002", name: "Học máy", parent_id: null, sort_order: 1, created_at: "2026-06-08T15:00:00Z" },
   ];
-  // mock 的"最近任务"列表(js/mock/index.js#getMockJobList)目前只有 MOCK_JOB_ID
-  // 这一条真实数据,doc-1b8c52d9a304/doc-77e0fa3c1d55 的 active_job_id 在
-  // job 列表里查不到——"机器学习"文件夹留空,顺便覆盖"空文件夹"这个真实 UI 态。
+  // Danh sách "Nhiệm vụ gần đây" mock (js/mock/index.js#getMockJobList) hiện chỉ có MOCK_JOB_ID
+  // Dữ liệu thực này, active_job_id của doc-1b8c52d9a304/doc-77e0fa3c1d55
+  // Không tìm thấy trong danh sách job - thư mục "Học máy" để trống, tiện thể phủ trạng thái UI "Thư mục trống".
   mockCollectionMembership = new Map([
     ["col-001", new Set([MOCK_DOCUMENT_ID])],
     ["col-002", new Set()],
@@ -439,7 +439,7 @@ export function createMockCollection({
   if (!trimmed) {
     throw new Error("name must not be empty. (400)");
   }
-  collectionsList(); // 确保种子数据与 collectionSeq 初始化
+  collectionsList(); // Đảm bảo dữ liệu seed và collectionSeq được khởi tạo
   collectionSeq += 1;
   const record: MockCollection = {
     collection_id: `col-${String(collectionSeq).padStart(3, "0")}`,
@@ -458,7 +458,7 @@ export function patchMockCollection(
 ): MockCollectionWithCount {
   const found = collectionsList().find((item) => item.collection_id === collectionId);
   if (!found) {
-    throw new Error("未找到该分类。(404)");
+    throw new Error("Không tìm thấy phân loại. (404)");
   }
   if (name !== undefined) {
     const trimmed = `${name}`.trim();
@@ -477,7 +477,7 @@ export function deleteMockCollection(collectionId: string): { deleted: boolean }
   const list = collectionsList();
   const index = list.findIndex((item) => item.collection_id === collectionId);
   if (index < 0) {
-    throw new Error("未找到该分类。(404)");
+    throw new Error("Không tìm thấy phân loại. (404)");
   }
   list.splice(index, 1);
   if (mockCollectionMembership) {
@@ -492,7 +492,7 @@ export function addMockCollectionDocuments(
 ): MockCollectionWithCount {
   const found = collectionsList().find((item) => item.collection_id === collectionId);
   if (!found) {
-    throw new Error("未找到该分类。(404)");
+    throw new Error("Không tìm thấy phân loại. (404)");
   }
   const members = collectionMembership(collectionId);
   for (const documentId of documentIds) {
@@ -501,7 +501,7 @@ export function addMockCollectionDocuments(
       continue;
     }
     if (!documents().some((item) => item.document_id === normalized)) {
-      throw new Error(`未找到该文档: ${normalized}(404)`);
+      throw new Error(`Không tìm thấy tài liệu: ${normalized}(404)`);
     }
     members.add(normalized);
   }
@@ -515,13 +515,13 @@ export function removeMockCollectionDocument(
   const members = collectionMembership(collectionId);
   const normalized = `${documentId || ""}`.trim();
   if (!members.has(normalized)) {
-    throw new Error("该文档不在此分类中。(404)");
+    throw new Error("Tài liệu không có trong phân loại này. (404)");
   }
   members.delete(normalized);
   return { removed: true };
 }
 
-// ===== 收藏 =====
+// ===== Yêu thích =====
 
 let mockFavorites: MockFavorite[] | null = null;
 let favoriteSeq = 0;
@@ -537,7 +537,7 @@ function favorites(): MockFavorite[] {
         page_idx: 0,
         block_id: "b-intro-3",
         kind: "sentence",
-        quote_text: "现代有机合成已达到极高的精密水平。",
+        quote_text: "Tổng hợp hữu cơ hiện đại đã đạt đến mức độ chính xác cực kỳ cao.",
         translated_quote_text: "",
         note: "",
         created_at: "2026-06-01T11:00:00Z",
@@ -551,7 +551,7 @@ function favorites(): MockFavorite[] {
         kind: "figure",
         quote_text: "Scheme 1b",
         translated_quote_text: "",
-        note: "萘系刚性对位阻的影响",
+        note: "Ảnh hưởng của hiệu ứng không gian cứng của hệ naphthalene",
         created_at: "2026-06-01T11:20:00Z",
       },
     ];
@@ -562,19 +562,19 @@ function favorites(): MockFavorite[] {
 export function createMockFavorite(payload: MockFavoriteCreatePayload = {}): MockFavorite {
   const quoteText = `${payload.quote_text || ""}`.trim();
   const jobId = `${payload.job_id || ""}`.trim();
-  // document_id 可缺省:给了 job_id 时后端解析所属文档(含历史 run)。二者至少有一。
+  // document_id có thể bỏ trống: khi cung cấp job_id, backend sẽ phân giải tài liệu thuộc về (bao gồm lịch sử run). Ít nhất một trong hai phải có.
   const doc = `${payload.document_id || ""}`.trim()
     ? documents().find((item) => item.document_id === `${payload.document_id}`.trim())
     : (jobId ? getMockDocumentByJobId(jobId) : null);
   if (!doc || payload.page_idx === undefined || !payload.block_id || !quoteText) {
-    throw new Error("document_id 或 job_id、page_idx、block_id、quote_text 为必填。(400)");
+    throw new Error("document_id hoặc job_id, page_idx, block_id, quote_text là bắt buộc. (400)");
   }
-  favorites(); // 先确保种子数据与 favoriteSeq 初始化,再分配新 id
+  favorites(); // Đảm bảo dữ liệu seed và favoriteSeq được khởi tạo trước, sau đó mới cấp id mới
   favoriteSeq += 1;
   const favorite: MockFavorite = {
     favorite_id: `fav-${String(favoriteSeq).padStart(3, "0")}`,
     document_id: doc.document_id,
-    // job_id 不传时锚定文档的 active_job_id
+    // Khi không truyền job_id, neo vào active_job_id của tài liệu
     job_id: jobId || doc.active_job_id || "",
     page_idx: Number(payload.page_idx) || 0,
     block_id: `${payload.block_id}`,
@@ -605,7 +605,7 @@ export function deleteMockFavorite(favoriteId: string): { favorite_id: string } 
   const list = favorites();
   const index = list.findIndex((item) => item.favorite_id === favoriteId);
   if (index < 0) {
-    throw new Error("未找到该收藏。(404)");
+    throw new Error("Không tìm thấy mục yêu thích. (404)");
   }
   list.splice(index, 1);
   return { favorite_id: favoriteId };
@@ -615,7 +615,7 @@ export function countMockFavoritesByJob(jobId: string): number {
   return favorites().filter((item) => item.job_id === `${jobId || ""}`.trim()).length;
 }
 
-// ===== 全文检索 =====
+// ===== Tìm kiếm toàn văn =====
 
 export function getMockSearchHits(
   q = "",
@@ -626,27 +626,27 @@ export function getMockSearchHits(
     return { hits: [] };
   }
   const hits: MockSearchHit[] = [
-    {
-      document_id: MOCK_DOCUMENT_ID,
-      job_id: MOCK_JOB_ID,
-      page_idx: 0,
-      block_id: "b-intro-3",
-      source_snippet: `…the halogen–lithium exchange in [${query}] series was investigated…`,
-      translated_snippet: `…考察了[${query}]系列中的卤素-锂交换…`,
-    },
-    {
-      document_id: "doc-1b8c52d9a304",
-      job_id: "20260520-att-001",
-      page_idx: 3,
-      block_id: "b-sec3-2",
-      source_snippet: `…scaled dot-product attention relates to [${query}] in the encoder…`,
-      translated_snippet: `…缩放点积注意力与编码器中的[${query}]相关…`,
-    },
+     {
+       document_id: MOCK_DOCUMENT_ID,
+       job_id: MOCK_JOB_ID,
+       page_idx: 0,
+       block_id: "b-intro-3",
+       source_snippet: `…the halogen–lithium exchange in [${query}] series was investigated…`,
+       translated_snippet: `…khảo sát sự trao đổi halogen-lithi trong loạt [${query}]…`,
+     },
+     {
+       document_id: "doc-1b8c52d9a304",
+       job_id: "20260520-att-001",
+       page_idx: 3,
+       block_id: "b-sec3-2",
+       source_snippet: `…scaled dot-product attention relates to [${query}] in the encoder…`,
+       translated_snippet: `…chú ý tích điểm có thang đo liên quan đến [${query}] trong bộ mã hóa…`,
+     },
   ];
   return { hits: hits.slice(0, limit) };
 }
 
-// ===== 阅读区域(锚点/选区取文 e2e 用) =====
+// ===== Khu vực đọc (neo/chọn vùng lấy văn bản cho e2e) =====
 
 export function getMockReaderRegions() {
   return {
@@ -660,11 +660,11 @@ export function getMockReaderRegions() {
           bbox: [57, 52, 540, 96],
           text: "Source PDF",
         },
-        translated: {
-          page: 1,
-          bbox: [57, 52, 540, 96],
-          text: "原始 PDF",
-        },
+         translated: {
+           page: 1,
+           bbox: [57, 52, 540, 96],
+           text: "PDF gốc",
+         },
       },
       {
         item_id: "b-body-1",
@@ -675,11 +675,11 @@ export function getMockReaderRegions() {
           bbox: [57, 100, 540, 150],
           text: "RetainPDF Mock Preview",
         },
-        translated: {
-          page: 1,
-          bbox: [57, 100, 540, 150],
-          text: "RetainPDF 联调预览",
-        },
+         translated: {
+           page: 1,
+           bbox: [57, 100, 540, 150],
+           text: "RetainPDF xem trước tích hợp",
+         },
       },
     ],
   };

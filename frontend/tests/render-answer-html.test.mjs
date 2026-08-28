@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 
-// AI 回答渲染的 XSS 向量锁（审计 P0-1 回归锁）。
-// renderFinalAnswerHtml 的输出经 root.innerHTML 注入,本文件锁死:
-// 模型输出的任何原始 HTML 只能以"转义文本"形态出现,不得成为活的元素/属性。
-// 改消毒策略必须让这些向量全部继续通过。
+// Khóa XSS vector cho render câu trả lời AI (audit P0-1 regression lock).
+// Đầu ra của renderFinalAnswerHtml được inject qua root.innerHTML — test file này khóa chặt:
+// bất kỳ HTML thô nào từ mô hình chỉ xuất hiện ở dạng "escaped text", không phải phần tử/attribute sống.
+// Chiến lược khử độc thay đổi vẫn phải khiến các vector trên tiếp tục vượt kiểm tra.
 
 const dom = new JSDOM("<!doctype html><body></body>");
 globalThis.document = dom.window.document;
@@ -14,7 +14,7 @@ const { renderFinalAnswerHtml, renderStreamingPreviewHtml } = await import(
   "../src/js/reader/ai/render-answer-html.ts"
 );
 
-/** 把输出重新解析,断言不存在任何危险活元素/属性 */
+/** Tái phân tích đầu ra, khẳng định không có phần tử/attribute nguy hiểm nào */
 function assertInert(html, label) {
   const template = dom.window.document.createElement("template");
   template.innerHTML = html;

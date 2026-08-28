@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { messagesToBranchItems } from "../src/js/api/conversations.ts";
 
-test("messagesToBranchItems builds parent tree for siblings", () => {
+test("messagesToBranchItems xây dựng cây cha cho các nhánh anh em", () => {
   const items = messagesToBranchItems([
     {
       message_id: "u1",

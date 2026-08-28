@@ -146,7 +146,7 @@ def test_unit_cache_prunes_expired_entries_once(tmp_path, monkeypatch) -> None:
 
     assert not stale.exists()
     assert fresh.exists()
-    # 每进程只清扫一次
+    # Chỉ làm sạch một lần cho mỗi quy trình
     stale.write_text("{}", encoding="utf-8")
     os.utime(stale, (old, old))
     cache_module._prune_expired_cache_entries_once()

@@ -1,36 +1,36 @@
-/* 氛围与纸心：材质 + 进深 + 比例，不是传统符号。
+/* Không gian và lõi giấy: chất liệu + chiều sâu + tỷ lệ, không phải biểu tượng truyền thống.
  *
- * 可见：
- *  - 院落地面 vs 堂心纸面的明度差（纸心抬起）
- *  - 极淡「纤维」材质（纸/地面），不是密点阵也不是插画
- *  - 宽屏两侧廊道压暗（空间，不是翅膀贴图）
- * 不可见目标：梅枝、亭、印、水墨剪贴
+ * Hiển thị:
+ *  - Chênh lệch độ sáng giữa nền sân và mặt giấy trung tâm (lõi giấy nổi lên)
+ *  - Chất liệu "sợi" rất nhạt (giấy/nền), không phải lưới chấm dày hay hình minh họa
+ *  - Hành lang hai bên màn hình rộng tối hơn (không gian, không phải ảnh cánh)
+ * Mục tiêu không hiển thị: cành mai, đình, con dấu, mảng cắt thủy mặc
  */
 
 html {
   min-height: 100%;
   background-color: var(--bg);
 
-  /* 材质强度：宁可几乎看不见，也不要脏纹 */
+  /* Cường độ chất liệu: gần như không nhìn thấy còn hơn tạo vân bẩn */
   --mat-fiber: color-mix(in srgb, var(--ink) 3.2%, transparent);
   --mat-fiber-2: color-mix(in srgb, var(--ink) 2%, transparent);
   --mat-edge: color-mix(in srgb, var(--ink) 2.8%, var(--bg));
   --mat-center: color-mix(in srgb, var(--paper) 18%, var(--bg));
 
   background-image:
-    /* 1. 极淡斜向纤维（纸/灰泥感，间距大） */
+    /* 1. Sợi chéo rất nhạt (cảm giác giấy/vữa, khoảng cách rộng) */
     repeating-linear-gradient(
       -12deg,
       transparent 0 13px,
       var(--mat-fiber) 13px 13.6px
     ),
-    /* 2. 正交弱纤维，打破「一条条」 */
+    /* 2. Sợi vuông góc nhẹ, phá cảm giác "từng dải" */
     repeating-linear-gradient(
       78deg,
       transparent 0 21px,
       var(--mat-fiber-2) 21px 21.5px
     ),
-    /* 3. 中心略亮（堂）、外缘略暗（廊） */
+    /* 3. Trung tâm sáng hơn một chút (sảnh), mép ngoài tối hơn (hành lang) */
     radial-gradient(
       ellipse 78% 68% at 50% 40%,
       var(--mat-center) 0%,
@@ -60,7 +60,7 @@ main.app-shell {
   background: transparent;
 }
 
-/* —— 纸心舞台（所有主题都有轻微台基，jiangnan 更明显）—— */
+/* —— Sân khấu lõi giấy (mọi chủ đề đều có bệ nhẹ, jiangnan rõ hơn) —— */
 .home-paper-stage {
   position: relative;
   z-index: 1;
@@ -72,14 +72,15 @@ main.app-shell {
   flex-direction: column;
   border-radius: 6px 6px 0 0;
   padding: var(--stage-pad);
-  /* 台基干净：接近实纸，阴影极轻。宽度/内边距/纱厚/阴影全走 L3 token
-   * （themes/_component-defaults.css 默认值，皮肤按需覆盖）——本文件
-   * 不再点名任何主题，加新皮肤零改动。 */
+  /* Bệ sạch, gần như giấy thật, bóng rất nhẹ. Chiều rộng/đệm trong/độ phủ/lớp bóng
+   * đều dùng token L3 (giá trị mặc định trong themes/_component-defaults.css,
+   * giao diện có thể ghi đè) — tệp này không nêu tên chủ đề để thêm giao diện mới
+   * không cần sửa. */
   background: color-mix(in srgb, var(--paper) var(--stage-veil), transparent);
   box-shadow: var(--stage-shadow);
 }
 
-/* 窄屏：弱化廊道，纸心仍保留 */
+/* Màn hình hẹp: giảm hành lang, vẫn giữ lõi giấy */
 @media (max-width: 900px) {
   html {
     background-image:

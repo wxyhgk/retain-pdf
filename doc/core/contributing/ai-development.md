@@ -1,44 +1,44 @@
-# AI 辅助开发指南
+# Hướng dẫn phát triển với AI
 
-RetainPDF 鼓励使用 AI 辅助开发。推荐优先使用 Codex 或 Claude Code 这类能读写本地仓库、运行命令、执行测试的 coding agent，而不是只在聊天窗口里让模型凭空给方案。
+RetainPDF khuyến khích sử dụng AI hỗ trợ phát triển. Khuyến nghị ưu tiên sử dụng coding agent như Codex hoặc Claude Code có thể đọc/ghi kho lưu trữ cục bộ, chạy lệnh và thực thi kiểm thử, thay vì chỉ để model đưa ra giải pháp trong cửa sổ chat.
 
-AI 可以提高效率，但不能替代边界判断、测试验证和最终责任。提交 PR 的人需要确认改动符合项目架构、通过必要检查，并能解释风险。
+AI có thể nâng cao hiệu quả, nhưng không thể thay thế đánh giá ranh giới, xác minh kiểm thử và trách nhiệm cuối cùng. Người gửi PR cần xác nhận thay đổi phù hợp với kiến trúc dự án, vượt qua các kiểm tra cần thiết và có thể giải thích rủi ro.
 
-## 推荐工具
+## Công cụ được khuyến nghị
 
-- Codex：适合在本地仓库中做代码修改、重构、测试、文档整理和发布前检查。
-- Claude Code：适合长上下文代码阅读、跨文件重构、生成测试和总结复杂改动。
+- Codex: Phù hợp để sửa đổi mã, tái cấu trúc, kiểm thử, sắp xếp tài liệu và kiểm tra trước khi phát hành trong kho lưu trữ cục bộ.
+- Claude Code: Phù hợp để đọc mã ngữ cảnh dài, tái cấu trúc đa tệp, tạo kiểm thử và tóm tắt thay đổi phức tạp.
 
-不要求贡献者必须使用某一个工具，但如果使用 AI 参与开发，建议在 PR 描述中简单说明 AI 参与了哪些环节，例如“辅助生成测试”“辅助整理文档”“辅助重构 import 边界”。
+Không bắt buộc người đóng góp phải sử dụng một công cụ cụ thể, nhưng nếu sử dụng AI tham gia phát triển, nên mô tả ngắn gọn trong mô tả PR những phần AI đã tham gia, ví dụ "hỗ trợ tạo kiểm thử", "hỗ trợ sắp xếp tài liệu", "hỗ trợ tái cấu trúc ranh giới import".
 
-## 建议的 AI Skills
+## Skills AI được đề xuất
 
-可以把下面这些能力写成 Codex skill、Claude Code command，或项目内的 agent checklist。
+Có thể viết các khả năng dưới đây thành Codex skill, Claude Code command hoặc agent checklist trong dự án.
 
-### RetainPDF 项目上下文
+### Ngữ cảnh dự án RetainPDF
 
-用途：让 AI 先理解仓库边界再动手。
+Mục đích: Giúp AI hiểu ranh giới kho lưu trữ trước khi bắt tay vào làm.
 
-应包含：
+Nên bao gồm:
 
-- 项目根目录：`/home/wxyhgk/tmp/Code`
-- 主要模块：`backend/rust_api/`、`backend/scripts/`、`frontend/`、`frontend-react/`、`desktop/`、`docker/`、`doc/`
-- 核心规则：不要回滚无关脏改；手动编辑用 patch；改前先读相邻代码；按模块跑测试。
-- 文档入口：根目录 `CONTRIBUTING.md` 和 `doc/core/contributing/README.md`
+- Thư mục gốc dự án: `/home/wxyhgk/tmp/Code`
+- Các module chính: `backend/rust_api/`, `backend/scripts/`, `frontend/`, `frontend-react/`, `desktop/`, `docker/`, `doc/`
+- Quy tắc cốt lõi: Không hoàn tác các thay đổi không liên quan; chỉnh sửa thủ công bằng patch; đọc mã lân cận trước khi sửa; chạy kiểm thử theo module.
+- Đầu vào tài liệu: `CONTRIBUTING.md` ở thư mục gốc và `doc/core/contributing/README.md`
 
-### Rust API 边界检查
+### Kiểm tra ranh giới Rust API
 
-用途：防止 AI 把 route、service、runner、db 混在一起。
+Mục đích: Ngăn AI trộn lẫn route, service, runner, db.
 
-应提醒 AI：
+Nên nhắc AI:
 
-- `routes/*` 只做 HTTP adapter。
-- service 层做业务聚合和 view/projection。
-- `job_runner/*` 做运行态执行。
-- 数据库访问通过 `Db` facade，不在 route 里直接写 SQL。
-- 新 API 字段要同步文档和测试。
+- `routes/*` chỉ làm HTTP adapter.
+- Tầng service thực hiện tổng hợp nghiệp vụ và view/projection.
+- `job_runner/*` thực thi trạng thái chạy.
+- Truy cập cơ sở dữ liệu thông qua facade `Db`, không viết SQL trực tiếp trong route.
+- Trường API mới cần đồng bộ tài liệu và kiểm thử.
 
-常用检查：
+Kiểm tra thường dùng:
 
 ```bash
 cargo fmt --manifest-path backend/rust_api/Cargo.toml --check
@@ -46,18 +46,18 @@ cargo test --manifest-path backend/rust_api/Cargo.toml
 cd backend/rust_api && python3 scripts/check_architecture.py
 ```
 
-### Python 流水线边界检查
+### Kiểm tra ranh giới pipeline Python
 
-用途：防止 AI 引入跨层 import 或绕过稳定 manifest。
+Mục đích: Ngăn AI đưa import xuyên tầng hoặc bỏ qua manifest ổn định.
 
-应提醒 AI：
+Nên nhắc AI:
 
-- OCR raw payload 先进入 `document_schema`，产出 `document.v1`。
-- translation 不 import rendering。
-- rendering 只消费源 PDF、translation manifest、逐页 payload 和 render spec。
-- 新增公式、术语、bbox、渲染策略时补最小回归测试。
+- Raw payload OCR trước tiên vào `document_schema`, tạo `document.v1`.
+- translation không import rendering.
+- rendering chỉ tiêu thụ PDF nguồn, translation manifest, payload từng trang và render spec.
+- Bổ sung kiểm thử hồi quy tối thiểu khi thêm công thức, thuật ngữ, bbox, chiến lược kết xuất.
 
-常用检查：
+Kiểm tra thường dùng:
 
 ```bash
 python3 backend/scripts/devtools/check_pipeline_architecture.py
@@ -65,94 +65,94 @@ PYTHONPATH=backend/scripts python3 -m pytest backend/scripts/devtools/tests/tran
 PYTHONPATH=backend/scripts python3 -m pytest backend/scripts/devtools/tests/rendering -q
 ```
 
-### 前端与桌面端同步
+### Đồng bộ frontend và desktop
 
-用途：防止 AI 只改网页源码，忘记桌面端 bundle。
+Mục đích: Ngăn AI chỉ sửa mã nguồn web mà quên bundle desktop.
 
-应提醒 AI：
+Nên nhắc AI:
 
-- 改 `frontend/**` 后需要跑 `npm --prefix desktop run verify-frontend-sync`。
-- 不要只改 `desktop/app/frontend/**`。
-- `frontend-react/` 是迁移区，不默认替代 `frontend/`。
-- 本地静态前端默认端口是 `40001`。
+- Sau khi sửa `frontend/**`, cần chạy `npm --prefix desktop run verify-frontend-sync`.
+- Không chỉ sửa `desktop/app/frontend/**`.
+- `frontend-react/` là khu vực di chuyển, không mặc định thay thế `frontend/`.
+- Cổng mặc định cho frontend tĩnh cục bộ là `40001`.
 
-常用检查：
+Kiểm tra thường dùng:
 
 ```bash
 npm --prefix frontend run build
 npm --prefix desktop run verify-frontend-sync
 ```
 
-### 测试与回归生成
+### Tạo kiểm thử và hồi quy
 
-用途：让 AI 帮专业测试人员把问题转成可复现用例。
+Mục đích: Giúp AI chuyển vấn đề của chuyên gia kiểm thử thành trường hợp tái hiện được.
 
-应提醒 AI 输出：
+Nên nhắc AI xuất:
 
-- 环境、版本、provider、workflow。
-- 样本是否可公开。
-- 页码、bbox、截图、job_id。
-- 复现步骤、期望结果、实际结果。
-- 最小 fixture 或自动化测试建议。
+- Môi trường, phiên bản, provider, workflow.
+- Mẫu có thể công khai hay không.
+- Số trang, bbox, ảnh chụp màn hình, job_id.
+- Các bước tái hiện, kết quả mong đợi, kết quả thực tế.
+- Fixture tối thiểu hoặc đề xuất kiểm thử tự động.
 
-### 文档一致性检查
+### Kiểm tra tính nhất quán của tài liệu
 
-用途：避免改代码后文档落后。
+Mục đích: Tránh tài liệu lạc hậu sau khi sửa mã.
 
-应提醒 AI 检查：
+Nên nhắc AI kiểm tra:
 
-- API 字段是否同步 `doc/core/api/`。
-- Rust 边界是否同步 `doc/core/rust_api/`。
-- Python 边界是否同步 `doc/core/python/`。
-- 前端、Docker、桌面端端口和命令是否一致。
-- 根目录 `CONTRIBUTING.md` 是否仍然只是短入口。
+- Trường API có đồng bộ `doc/core/api/` không.
+- Ranh giới Rust có đồng bộ `doc/core/rust_api/` không.
+- Ranh giới Python có đồng bộ `doc/core/python/` không.
+- Cổng và lệnh frontend, Docker, desktop có nhất quán không.
+- `CONTRIBUTING.md` ở thư mục gốc vẫn chỉ là đầu vào ngắn.
 
-## 推荐工作流
+## Quy trình làm việc được khuyến nghị
 
-1. 让 AI 先读相关子文档，不要直接改代码。
-2. 要求 AI 给出影响范围和验证计划。
-3. 让 AI 小步提交 patch，不做无关格式化。
-4. 跑对应测试或检查。
-5. 让 AI 做一次 review：重点查跨层依赖、旧兼容、测试缺口、文档缺口。
-6. 人工确认输出、风险和 PR 描述。
+1. Cho AI đọc tài liệu con liên quan trước, không trực tiếp sửa mã.
+2. Yêu cầu AI đưa ra phạm vi ảnh hưởng và kế hoạch xác minh.
+3. Cho AI gửi patch từng bước nhỏ, không định dạng không liên quan.
+4. Chạy kiểm thử hoặc kiểm tra tương ứng.
+5. Cho AI xem xét một lần: tập trung vào phụ thuộc xuyên tầng, tương thích cũ, lỗ hổng kiểm thử, lỗ hổng tài liệu.
+6. Xác nhận đầu ra, rủi ro và mô tả PR bằng tay.
 
-## 提示词建议
+## Gợi ý prompt
 
-可以直接对 Codex 或 Claude Code 这样说：
-
-```text
-你在 RetainPDF 仓库中工作。先阅读 CONTRIBUTING.md 和相关 doc/core/contributing 子文档。
-只修改本任务相关文件，不要回滚无关脏改。
-改动前说明影响范围，改动后运行对应测试。
-如果不能运行测试，说明原因和剩余风险。
-```
-
-针对后端：
+Có thể nói trực tiếp với Codex hoặc Claude Code:
 
 ```text
-检查这次 Rust API 改动是否违反 routes -> services -> job_runner/db 的边界。
-重点看 route 是否拼业务 JSON、service 是否直接依赖 HTTP Response、job_runner 是否反向依赖 service。
-给出文件和行号，必要时直接修复。
+Bạn đang làm việc trong kho lưu trữ RetainPDF. Trước tiên hãy đọc CONTRIBUTING.md và các tài liệu con liên quan trong doc/core/contributing.
+Chỉ sửa các tệp liên quan đến nhiệm vụ này, không hoàn tác các thay đổi không liên quan.
+Trước khi sửa, hãy nêu phạm vi ảnh hưởng; sau khi sửa, chạy kiểm thử tương ứng.
+Nếu không chạy được kiểm thử, hãy giải thích lý do và rủi ro còn lại.
 ```
 
-针对 Python：
+Với backend:
 
 ```text
-检查 translation、rendering、ocr_provider 是否存在跨层 import。
-不要让 translation import services.rendering。
-如果需要共享数据，通过 manifest/spec/document.v1 传递。
+Kiểm tra xem thay đổi Rust API lần này có vi phạm ranh giới routes -> services -> job_runner/db không.
+Tập trung vào việc route có ghép JSON nghiệp vụ không, service có phụ thuộc trực tiếp HTTP Response không, job_runner có phụ thuộc ngược vào service không.
+Đưa ra tệp và số dòng, nếu cần thì sửa trực tiếp.
 ```
 
-针对测试：
+Với Python:
 
 ```text
-把这个 bug 报告整理成可复现测试用例。
-需要包含环境、样本、页码、bbox、复现步骤、期望结果、实际结果，以及建议自动化测试落点。
+Kiểm tra xem translation, rendering, ocr_provider có tồn tại import xuyên tầng không.
+Đừng để translation import services.rendering.
+Nếu cần chia sẻ dữ liệu, hãy truyền qua manifest/spec/document.v1.
 ```
 
-## 注意事项
+Với kiểm thử:
 
-- AI 生成的代码必须经过人工 review。
-- AI 不应提交真实用户文件、私有 token、本地数据库或大体积运行产物。
-- AI 做重构时必须说明替代了哪些重复或耦合，不能为了“看起来更通用”新增抽象。
-- AI 修改发布、Docker、桌面端打包流程时，要额外说明回滚方式和验证方式。
+```text
+Sắp xếp báo cáo lỗi này thành trường hợp kiểm thử tái hiện được.
+Cần bao gồm môi trường, mẫu, số trang, bbox, các bước tái hiện, kết quả mong đợi, kết quả thực tế và đề xuất vị trí kiểm thử tự động.
+```
+
+## Lưu ý
+
+- Mã do AI tạo ra phải được xem xét thủ công.
+- AI không nên gửi tệp người dùng thực, token riêng tư, cơ sở dữ liệu cục bộ hoặc sản phẩm chạy có dung lượng lớn.
+- Khi AI tái cấu trúc, phải giải thích nó thay thế những sự trùng lặp hoặc phụ thuộc nào, không thêm trừu tượng chỉ để "trông tổng quát hơn".
+- Khi AI sửa quy trình phát hành, Docker, đóng gói desktop, cần giải thích thêm cách hoàn tác và cách xác minh.

@@ -1,13 +1,13 @@
-// AppUpdateBanner 的 id/状态契约(蓝图 §5 + §0.1)。
+// ID và hợp đồng trạng thái của AppUpdateBanner (kế hoạch xây dựng §5 + §0.1).
 //
-// 拷贝自 src/js/components/layout/app-update-dom-contract.js(旧自定义元素
-// 视图层,architecture-boundaries 门禁禁止 src/pages/** 直接 import
-// js/components/**)——同一手法 3a 阶段已在
-// src/pages/home/features/app-shell/app-update-contract.js 用过一次(当时只
-// 需要 IDS,详情 dialog 骨架临时挂在 AppShellHeader.jsx)。本文件补齐
-// STATES/CLASSES,是 3b app-update 域(按钮 + 详情 dialog 合并进
-// AppUpdateBanner.jsx)唯一出处;3a 那份局部拷贝随 AppShellHeader 清理旧
-// 模板一并移除,不留两份重复契约。
+// Sao chép từ src/js/components/layout/app-update-dom-contract.js (lớp custom elements cũ,
+// architecture-boundaries cấm src/pages/** import trực tiếp từ js/components/)
+// - cùng cách tiếp cận đã dùng trong Giai đoạn 3a tại
+// src/pages/home/features/app-shell/app-update-contract.js (khi đó chỉ cần IDS,
+// dialog thông báo tạm treo bộ khung trong AppShellHeader.jsx). Tài liệu này hoàn thiện
+// STATES/CLASSES, là nguồn duy nhất cho vùng app-update 3b (nút + dialog thông báo hợp nhất vào
+// AppUpdateBanner.jsx); bản sao một phần 3a được dọn dẹp cùng với việc xóa template trong AppShellHeader,
+// không để lại hai hợp đồng trùng lặp.
 
 export const APP_UPDATE_IDS = Object.freeze({
   button: "app-update-btn",

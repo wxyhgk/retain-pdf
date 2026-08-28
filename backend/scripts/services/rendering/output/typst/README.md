@@ -1,10 +1,10 @@
 # rendering/output/typst
 
-## 负责什么
+## Trách nhiệm
 
-Typst 输出实现层。这里负责生成 Typst 源码、调用 Typst 编译、处理 overlay 合成所需的 Typst/PDF 辅助逻辑。
+Tầng cài đặt đầu ra Typst. Chịu trách nhiệm sinh mã nguồn Typst, gọi biên dịch Typst, xử lý logic hỗ trợ Typst/PDF cần thiết cho tổng hợp overlay.
 
-## 对外入口
+## Lối vào công khai
 
 - `book_renderer.py`
 - `book_support.py`
@@ -13,8 +13,8 @@ Typst 输出实现层。这里负责生成 Typst 源码、调用 Typst 编译、
 - `overlay_ops.py`
 - `source_page_overlay.py`
 
-## 不该做什么
+## Không nên làm gì
 
-- 不执行 OCR 或翻译。
-- 不做原 PDF 清理策略。
-- 不计算译文 bbox 字体适配。
+- Không thực hiện OCR hoặc dịch.
+- Không làm chiến lược dọn PDF gốc.
+- Không tính toán thích ứng font bbox bản dịch.

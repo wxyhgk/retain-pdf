@@ -1,10 +1,10 @@
-/* 悬浮工具钮 FAB 触发器（可拖动）
- * 菜单见 fab-menu.css；下载 chip 见 fab-downloads.css
+/* Nút công cụ nổi FAB (có thể kéo)
+ * Xem menu trong fab-menu.css; chip tải xuống trong fab-downloads.css
  */
 .reader-fab {
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   position: fixed;
-  /* 始终在批注悬浮窗(48) / 选区浮条(55) 之上，避免被挡住 */
+  /* Luôn nằm trên cửa sổ nổi chú thích (48) / thanh vùng chọn (55), tránh bị che */
   z-index: 70;
   width: 52px;
   height: 52px;
@@ -84,4 +84,3 @@
   box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent);
   pointer-events: none;
 }
-

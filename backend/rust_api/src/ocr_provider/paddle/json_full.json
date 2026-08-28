@@ -126,7 +126,7 @@
           },
           {
             "block_label": "text",
-            "block_content": "PaddleOCR 的 JSON 拆分调研文件，目标是让 layout、segments、metadata、table、formula、image 等层级在后续适配时更容易拆开。This document deliberately mixes English and 中文 to cover bilingual metadata, while the inline formula  $ \\lambda = 1.5 $ simulates the confidence bias used in split heuristics.",
+            "block_content": "Tài liệu nghiên cứu phân tách JSON của PaddleOCR, mục tiêu là giúp layout, segments, metadata, table, formula, image dễ dàng tách rời hơn trong quá trình thích ứng sau này. This document deliberately mixes English and Vietnamese to cover bilingual metadata, while the inline formula  $ \\lambda = 1.5 $ simulates the confidence bias used in split heuristics.",
             "block_bbox": [
               96,
               134,
@@ -159,7 +159,7 @@
           },
           {
             "block_label": "paragraph_title",
-            "block_content": "### 1.1. 结构概览",
+            "block_content": "### 1.1. Tổng quan cấu trúc",
             "block_bbox": [
               97,
               265,
@@ -192,7 +192,7 @@
           },
           {
             "block_label": "text",
-            "block_content": "This paragraph mixes short English phrases and 中文短句 to imitate how OCR records title, body text, and side metadata in one page. 下面这一段包含行内公式  $ E = mc^{2} $，也包含简短提示文字，适合观察 PaddleOCR 对 text span 和 inline math 的切分行为。",
+            "block_content": "This paragraph mixes short English phrases and câu ngắn tiếng Việt to imitate how OCR records title, body text, and side metadata in one page. Đoạn dưới đây chứa công thức nội tuyến $ E = mc^{2} $, cũng bao gồm các ghi chú ngắn, phù hợp để quan sát cách PaddleOCR phân tách text span và inline math.",
             "block_bbox": [
               95,
               300,

@@ -1,7 +1,7 @@
 // scene-complete.jsx
-// 3 substeps: publish, summary, download.
+// 3 bước con: xuất bản, tóm tắt, tải xuống.
 
-// ── 4.1 产物发布 ──────────────────────────────────────────────────────────
+// ── 4.1 Xuất bản sản phẩm ──────────────────────────────────────────────────────────
 function ScenePublish({ progress }) {
   // PDF artifact card flies in and gets a "Published" stamp.
   const cardP = animate({ from: 0, to: 1, start: 0.05, end: 0.4, ease: Easing.easeOutCubic })(progress);
@@ -31,7 +31,7 @@ function ScenePublish({ progress }) {
             <div style={{
               fontFamily: SANS, fontSize: 18, fontWeight: 600, color: INK,
               letterSpacing: '-0.01em', marginBottom: 4,
-            }}>保留排版的文档翻译方法综述</div>
+            }}>Tổng quan về phương pháp dịch tài liệu giữ nguyên bố cục</div>
             <div style={{
               fontFamily: MONO, fontSize: 11, color: FAINT,
             }}>output_zh.pdf · 12 pages · 3.1 MB</div>
@@ -101,7 +101,7 @@ function RegistryRow({ icon, name, meta, check }) {
   );
 }
 
-// ── 4.2 写 summary ────────────────────────────────────────────────────────
+// ── 4.2 Viết tóm tắt ────────────────────────────────────────────────────────
 function SceneSummary({ progress }) {
   // A summary card with stats appearing line by line.
   const stats = [
@@ -127,7 +127,7 @@ function SceneSummary({ progress }) {
           fontFamily: SANS, fontSize: 38, fontWeight: 700,
           color: INK, letterSpacing: '-0.025em', lineHeight: 1.1,
           marginBottom: 18,
-        }}>翻译完成</div>
+        }}>Dịch hoàn tất</div>
         <div style={{
           fontFamily: SANS, fontSize: 14, color: FAINT, lineHeight: 1.6,
         }}>
@@ -185,7 +185,7 @@ function SceneSummary({ progress }) {
   );
 }
 
-// ── 4.3 可下载 ────────────────────────────────────────────────────────────
+// ── 4.3 Có thể tải xuống ────────────────────────────────────────────────────────────
 function SceneDownload({ progress }) {
   // Big download button activates and pulses; PDF preview behind.
   const buttonReveal = animate({ from: 0, to: 1, start: 0.0, end: 0.3, ease: Easing.easeOutBack })(progress);

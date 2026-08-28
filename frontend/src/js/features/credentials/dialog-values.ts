@@ -56,7 +56,7 @@ export function readCredentialDialogValues({
 export function buildBrowserCredentialConfig({
   values,
   currentOcrProvider,
-  // defaultModelApiKey 保留参数兼容调用方，但不再静默写入设置（密钥只认对话框/用户输入）
+  // defaultModelApiKey Bảo Tồn Thông Số Người Gọi Tương Thích，nhưng không còn âm thầm viết cài đặt（Hộp thoại chỉ nhận dạng khóa/Đầu vào của người dùng）
   defaultModelApiKey: _defaultModelApiKey,
 }: BuildBrowserCredentialConfigOptions) {
   return {

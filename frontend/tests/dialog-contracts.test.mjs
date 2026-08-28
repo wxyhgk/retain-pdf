@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// cutover 说明:旧世界的对话框 HTML 模板文件(reader/ai-assistant/app-settings/
-// status-detail/glossary-manager 的 *-dialog-template.js)、features/developer/*、
-// features/reader-dialog/{view.js,legacy-dom-adapter.js} 已随 home 页 cutover 删除
-// (React 组件树取代)。本文件原有的"模板 markup 含契约 id"类用例随之删除;
-// 保留的 3 个用例测的是纯逻辑(reader-dialog-contract.js 的 readerDialogLinkOpenState、
-// reader-dialog/config-port.js 的 URL/消息可信度解析),与 DOM 模板无关,继续保活。
+// Ghi chú cutover: các file HTML template dialog cũ (reader/ai-assistant/app-settings/
+// status-detail/glossary-manager *-dialog-template.js), features/developer/*,
+// features/reader-dialog/{view.js,legacy-dom-adapter.js} đã bị xóa cùng với cutover trang home
+// (cây component React thay thế). Các test case dạng "template markup chứa contract id" cũng bị xóa;
+// 3 test case còn lại đo logic thuần (readerDialogLinkOpenState của reader-dialog-contract.js,
+// phân tích độ tin cậy URL/thông điệp của reader-dialog/config-port.js), không liên quan DOM template, tiếp tục giữ.
 
 import {
   READER_DIALOG_CLASSES,

@@ -1,11 +1,11 @@
-// 书籍详情「翻译」Tab 的工作流主面板。
+// Bảng điều khiển chính của Tab «Dịch» trong chi tiết sách.
 //
-// 从 TranslationWorkflowDialog 的内容区迁移而来：
-//   - 弹窗里：#status-section + StatusCardMain（#job-status-card）
-//   - 本 Tab：#book-detail-status-section + StatusCardEmbedded（#book-detail-job-status-card）
+// Được di chuyển từ vùng nội dung của TranslationWorkflowDialog:
+//   - Trong hộp thoại: #status-section + StatusCardMain (#job-status-card)
+//   - Tab này: #book-detail-status-section + StatusCardEmbedded (#book-detail-job-status-card)
 //
-// 书已在馆：不需要 WorkflowPanel 上传表单；发起翻译用 BookTranslateLaunchForm。
-// 进度主场永远在本面板，绝不打开 #translation-workflow-dialog。
+// Sách đã có trong thư viện: không cần WorkflowPanel biểu mẫu tải lên; khởi tạo dịch dùng BookTranslateLaunchForm.
+// Tiến độ luôn ở bảng này, không bao giờ mở #translation-workflow-dialog.
 
 import { cn } from "@/lib/utils";
 import { BookTranslateProgressPanel } from "./BookTranslateProgressPanel.jsx";
@@ -33,8 +33,8 @@ export type BookTranslationWorkflowPanelProps = {
 };
 
 /**
- * 对应旧弹窗 translation-workflow-shell 中的 status + 动作区，
- * 布局适配详情右栏 Tab。
+ * Tương ứng với vùng status + hành động trong hộp thoại cũ translation-workflow-shell,
+ * bố cục thích ứng với Tab cột phải chi tiết.
  */
 export function BookTranslationWorkflowPanel({
   item = {},
@@ -75,11 +75,11 @@ export function BookTranslationWorkflowPanel({
         </span>
       </div>
 
-      {/* 迁移自 #status-section / .translation-status-panel */}
+      {/* Di chuyển từ #status-section / .translation-status-panel */}
       <section
         id="book-detail-status-section"
         className="book-translation-status-panel"
-        aria-label="任务进度"
+        aria-label="Tiến độ nhiệm vụ"
       >
         <BookTranslateProgressPanel
           item={item}

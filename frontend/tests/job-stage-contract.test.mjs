@@ -1344,7 +1344,7 @@ test("normalized stage event record does not use substage copy without public st
   });
 
   assert.equal(record.canonicalDisplayStage, "");
-  assert.equal(record.progressText, "进度 1/3");
+  assert.equal(record.progressText, "Tiến độ 1/3");
 });
 
 test("structured public stage ignores internal stage values", () => {

@@ -377,9 +377,9 @@ def _fast_agent_repair_limit(
 ) -> int:
     del payload_size
     blocking_untranslated_count = max(0, int(blocking_untranslated_count or 0))
-    # fast 档只在存在阻塞级未译条目时才动用 agent 修复:原先的
-    # broad_budget 会在任务完全干净时也按篇幅跑警告级候选,而这类候选
-    # (英文残留为主)修复成功率极低、重验必拒,纯烧钱。quality 档不变。
+    # fast Các tệp chỉ được sử dụng khi có các mục nhập chưa được dịch ở cấp độ chặn agent Sửa chữa:Bản gốc
+    # broad_budget Cũng sẽ chạy các ứng viên cấp độ cảnh báo theo độ dài khi nhiệm vụ hoàn toàn sạch sẽ,và loại ứng cử viên này
+    # (Chủ yếu là dư lượng tiếng Anh)Tỷ lệ sửa chữa thành công rất thấp、Trải nghiệm lại phải bị từ chối,Tiền bị đốt sạch。quality Tệp không thay đổi。
     if blocking_untranslated_count <= 0:
         return 0
     return min(FAST_AGENT_REPAIR_DEFAULT_LIMIT, blocking_untranslated_count)

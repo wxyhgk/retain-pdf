@@ -1,14 +1,14 @@
-// 文档中心网格的卡片 item 形状(计划 wondrous-baking-donut.md 的 F2)。
+// Shape item thẻ của lưới document-centric (F2 trong kế hoạch wondrous-baking-donut.md).
 //
-// 设计要点(见 memory f2-document-centric-grid-design):图书馆网格改成"每篇文档
-// 一张卡",但底层复用 features/recent-jobs 那套按 job_id 键控的 store/去重/轮询
-// 引擎(一行不改)。于是:
-// - 已翻译文档(active_job_id 非空):卡片带真实 job_id,并把 library/books 的实时
-//   status/stage/progress/cover 合并进来 → 现有轮询/进度/封面机制原样接管。
-// - 馆藏文档(active_job_id 为 null/空):给一个**合成命名空间 job_id**
-//   `doc:<document_id>`,让它能原样穿过按 job_id 去重的 dedupeRecentJobs / store,
-//   不被"空 job_id 直接丢弃"的逻辑滤掉;卡片靠 library_only 布尔分支馆藏态
-//   (禁用对照阅读、显示"未翻译"、走翻译/读原文),不去解析这个合成 id。
+// Điểm thiết kế (xem memory f2-document-centric-grid-design): lưới thư viện chuyển sang
+// "mỗi document một thẻ", nhưng bên dưới vẫn tái sử dụng nguyên engine store/dedupe/polling
+// theo job_id của features/recent-jobs. Vì vậy:
+// - Document đã dịch (active_job_id khác rỗng): thẻ mang job_id thật và merge trạng thái sống
+//   status/stage/progress/cover từ library/books -> cơ chế polling/progress/cover hiện có tiếp quản nguyên vẹn.
+// - Document chỉ có trong thư viện (active_job_id null/rỗng): cấp một **job_id namespace tổng hợp**
+//   `doc:<document_id>` để đi qua nguyên dedupeRecentJobs / store theo job_id, không bị logic
+//   "job_id rỗng thì bỏ luôn" lọc mất; thẻ dựa vào boolean library_only để phân nhánh trạng thái thư viện
+//   (tắt đọc đối chiếu, hiển thị "chưa dịch", đi qua dịch/đọc bản gốc), không parse id tổng hợp này.
 
 import { flattenStageSnapshot } from "../../job/stage-snapshot-flatten.js";
 
@@ -33,14 +33,14 @@ function firstUrl(...candidates) {
   return "";
 }
 
-/** book 标题若是 job_id / job_id.pdf / Mock…，改用文档真名 */
+/** Nếu tiêu đề book là job_id / job_id.pdf / Mock..., dùng tên thật của document. */
 function pickCardTitle(bookTitle, document, jobId) {
   const book = `${bookTitle || ""}`.trim();
   const docTitle = `${document?.title || document?.source_filename || ""}`.trim();
   const id = `${jobId || ""}`.trim();
   const bookIsPlaceholder = !book
     || (id && (book === id || book === `${id}.pdf`))
-    || /^Mock(\s|重试|-|_)/i.test(book)
+    || /^Mock(\s|retry|-|_)/i.test(book)
     || /^mock-/i.test(book);
   if (bookIsPlaceholder && docTitle) {
     return docTitle;
@@ -48,9 +48,9 @@ function pickCardTitle(bookTitle, document, jobId) {
   return book || docTitle || id || "";
 }
 
-// document + 可选的 library/books 投影 → 一张网格卡片 item。
-// book 命中(已翻译)时以 book 的活态字段为主,叠加文档身份(document_id、
-// reading_status、tags、source_pdf_url);book 缺失时按文档字段构造馆藏卡。
+// document + projection library/books tùy chọn -> một item thẻ lưới.
+// Khi book hit (đã dịch), ưu tiên các field trạng thái sống của book và chồng thêm danh tính document
+// (document_id, reading_status, tags, source_pdf_url); khi thiếu book, dựng thẻ thư viện từ field document.
 export function shapeDocumentCardItem(document: any = {}, book = null) {
   const documentId = `${document.document_id || ""}`.trim();
   const activeJobId = `${document.active_job_id || ""}`.trim();
@@ -65,8 +65,8 @@ export function shapeDocumentCardItem(document: any = {}, book = null) {
   };
 
   if (activeJobId && book && typeof book === "object") {
-    // 已翻译:以 library/books 活态为主(与现网格视觉一致),补齐文档身份与
-    // 封面兜底(合成 book 可能不带 cover_url,回退到文档级 cover)。
+    // Đã dịch: ưu tiên trạng thái sống từ library/books (khớp giao diện lưới hiện tại), bổ sung danh tính document
+    // và fallback cover (book tổng hợp có thể không có cover_url, fallback về cover cấp document).
     const flattened = flattenStageSnapshot(book);
     const jobId = `${flattened.job_id || book.job_id || activeJobId}`.trim();
     return {
@@ -75,8 +75,8 @@ export function shapeDocumentCardItem(document: any = {}, book = null) {
       job_id: jobId,
       active_job_id: activeJobId,
       library_only: false,
-      // 封面/页数：book 活态优先、文档级兜底（与现网格视觉一致）；
-      // 标题：禁止 book 用 job_id.pdf 盖掉真书名
+      // Cover/số trang: ưu tiên trạng thái sống của book, fallback cấp document (khớp giao diện lưới hiện tại).
+      // Tiêu đề: không cho book dùng job_id.pdf ghi đè tên sách thật.
       cover_url: firstUrl(flattened.cover_url, book.cover_url, document.cover_url),
       thumbnail_url: firstUrl(flattened.thumbnail_url, book.thumbnail_url, document.thumbnail_url),
       page_count: document.page_count || flattened.page_count || 0,
@@ -91,8 +91,8 @@ export function shapeDocumentCardItem(document: any = {}, book = null) {
   }
 
   if (activeJobId) {
-    // 有 active_job_id 但 library/books 没投影(少见边角:job 刚建/被清)。保留真实
-    // job_id 让轮询/对照阅读仍可用,但没有成品活态,按未完成处理(reader 禁用)。
+    // Có active_job_id nhưng library/books chưa có projection (edge case hiếm: job vừa tạo/bị dọn).
+    // Giữ job_id thật để polling/đọc đối chiếu vẫn dùng được, nhưng chưa có trạng thái thành phẩm nên xử lý như chưa hoàn tất (reader bị tắt).
     return {
       ...sharedDocFields,
       job_id: activeJobId,
@@ -109,7 +109,7 @@ export function shapeDocumentCardItem(document: any = {}, book = null) {
     };
   }
 
-  // 馆藏态(未翻译):合成 job_id 让它穿过按 job_id 键控的引擎;library_only 打标。
+  // Trạng thái thư viện (chưa dịch): job_id tổng hợp giúp đi qua engine key theo job_id; library_only đánh dấu nhánh.
   return {
     ...sharedDocFields,
     job_id: syntheticLibraryJobId(documentId),

@@ -9,9 +9,9 @@ import type {
   ServerFavoriteRaw,
 } from "./types.js";
 
-// 服务端收藏 → 阅读器视图记录:snake_case 转 camelCase,
-// page_idx 与 jumpToReaderAnchor 的 pageIdx 同为 0 基。
-// 缺 favorite_id 或 quote_text 的脏数据直接丢弃(返回 null)。
+// Yêu thích server → ghi lại view trình đọc: chuyển snake_case sang camelCase,
+// page_idx và pageIdx của jumpToReaderAnchor đều là 0-based.
+// Dữ liệu bẩn thiếu favorite_id hoặc quote_text sẽ bị loại bỏ trực tiếp (trả về null).
 export function normalizeServerFavorite(raw: ServerFavoriteRaw = {}): ServerFavorite | null {
   const favoriteId = `${raw?.favorite_id || ""}`.trim();
   const quoteText = `${raw?.quote_text || ""}`.trim();
@@ -33,7 +33,7 @@ export function normalizeServerFavorite(raw: ServerFavoriteRaw = {}): ServerFavo
   };
 }
 
-// 本地记录同步成功后带 serverFavoriteId;云端区不重复展示这些收藏。
+// Sau khi đồng bộ ghi chép cục bộ thành công sẽ mang serverFavoriteId; khu vực Yêu thích đám mây không hiển thị trùng lặp các Yêu thích này.
 export function dedupeServerFavorites(
   serverFavorites: ServerFavorite[] = [],
   localItems: FavoriteItem[] = [],
@@ -47,9 +47,9 @@ export function dedupeServerFavorites(
     .filter((favorite) => favorite?.favoriteId && !syncedIds.has(favorite.favoriteId));
 }
 
-// 把阅读器收藏同步到后端 favorites。
-// document_id 经后端 GET /documents?job_id= 直查(含历史 run),前端不再扫列表反查。
-// 所有服务端调用尽力而为:失败仅记录日志,阅读器本地功能不受影响。
+// Đồng bộ Yêu thích trình đọc lên backend favorites.
+// document_id được backend tra cứu trực tiếp qua GET /documents?job_id= (bao gồm lịch sử run), frontend không quét danh sách ngược lại.
+// Tất cả cuộc gọi server sẽ cố gắng hết sức: thất bại chỉ ghi log, chức năng cục bộ của trình đọc không bị ảnh hưởng.
 export function createReaderServerFavoritesPort({
   jobId = "",
   apiPrefix = API_PREFIX,
@@ -81,7 +81,7 @@ export function createReaderServerFavoritesPort({
       return null;
     }
     try {
-      // 写路径只给 job_id,后端解析所属文档(历史 run 也能收藏)
+      // Đường dẫn ghi chỉ cung cấp job_id, backend phân giải tài liệu thuộc về (lịch sử run cũng có thể yêu thích)
       const favorite = await submitFavorite(apiPrefix, {
         job_id: jobId,
         page_idx: Number(quote.pageIdx) || 0,
@@ -90,16 +90,16 @@ export function createReaderServerFavoritesPort({
         translated_quote_text: `${quote.translatedQuoteText || ""}`,
         kind: "sentence",
       });
-      console.info("收藏已同步到服务端", favorite?.favorite_id || "");
+      console.info("Yêu thích đã đồng bộ lên server", favorite?.favorite_id || "");
       return favorite;
     } catch (error) {
-      console.error("同步收藏到服务端失败", error);
+      console.error("Đồng bộ Yêu thích lên server thất bại", error);
       return null;
     }
   }
 
-  // 拉取当前文档的服务端收藏并归一化;离线/解析不到文档时静默返回空。
-  // mock 模式不短路:api 层自带 mock 分支,基线与 e2e 依赖 mock 全流程可用。
+// Lấy yêu thích server của tài liệu hiện tại và chuẩn hóa; khi offline/không phân giải được tài liệu, im lặng trả về rỗng.
+// Chế độ mock không ngắn mạch: lớp api tự mang nhánh mock, baseline và e2e phụ thuộc mock toàn bộ quy trình có thể sử dụng.
   async function loadServerFavorites(): Promise<ServerFavorite[]> {
     const documentId = await resolveDocumentId();
     if (!documentId) {
@@ -111,12 +111,12 @@ export function createReaderServerFavoritesPort({
         .map(normalizeServerFavorite)
         .filter(Boolean);
     } catch (error) {
-      console.warn("读取服务端收藏失败", error);
+      console.warn("Đọc Yêu thích server thất bại", error);
       return [];
     }
   }
 
-  // 删除服务端收藏,成功返回 true;失败仅记录日志返回 false(不阻塞本地流程)。
+  // Xóa Yêu thích server, thành công trả về true; thất bại chỉ ghi log và trả về false (không chặn quy trình cục bộ).
   async function removeServerFavorite(favoriteId: string) {
     const normalized = `${favoriteId || ""}`.trim();
     if (!normalized) {
@@ -126,13 +126,13 @@ export function createReaderServerFavoritesPort({
       await removeFavorite(apiPrefix, normalized);
       return true;
     } catch (error) {
-      console.error("删除服务端收藏失败", error);
+      console.error("Xóa Yêu thích server thất bại", error);
       return false;
     }
   }
 
-  // 规范没有收藏 PATCH:改笔记 = 同锚点重建 + 删旧。先建后删,失败不丢数据。
-  // 写路径只给 job_id,后端解析所属文档。
+// Quy chuẩn không có PATCH Yêu thích: sửa ghi chú = tái tạo cùng neo + xóa cũ. Tạo trước xóa sau, thất bại không mất dữ liệu.
+// Đường dẫn ghi chỉ cung cấp job_id, backend phân giải tài liệu thuộc về.
   async function recreateFavoriteNote(annotation: Partial<ServerFavorite> = {}, note = "") {
     if (!annotation?.favoriteId) {
       return null;
@@ -150,7 +150,7 @@ export function createReaderServerFavoritesPort({
       await removeServerFavorite(annotation.favoriteId);
       return normalizeServerFavorite(created);
     } catch (error) {
-      console.error("更新批注笔记失败", error);
+      console.error("Cập nhật ghi chú chú thích thất bại", error);
       return null;
     }
   }

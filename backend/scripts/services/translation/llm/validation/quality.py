@@ -204,10 +204,10 @@ def _review_translated_text(
         issues.append(truncation)
     context_bleed = _context_bleed_leaked_math(item, source_text, translated_text)
     if context_bleed:
-        # 连续段片段按设计就是"无终止标点的不完整句",此检查对它们必然
-        # 高频触发;而 apply 层的 _sanitize_neighbor_continuation_leak 已经
-        # 能确定性修剪泄漏的后文公式。对连续段降级为警告,避免为机械层
-        # 可修复的问题反复重试;独立条目仍保持硬错误。
+        # Các phân đoạn tuần tự được thiết kế để"Câu không đầy đủ mà không có dấu chấm câu chấm dứt",Việc kiểm tra này là không thể tránh khỏi đối với họ
+        # Kích hoạt tần số cao;mà apply Lớp _sanitize_neighbor_continuation_leak đã
+        # Công thức sau để cắt tỉa xác định rò rỉ。Hạ cấp các phân đoạn liên tiếp thành cảnh báo,Tránh các lớp cơ học
+        # Các vấn đề có thể sửa chữa được thử lại nhiều lần;Các mục nhập riêng biệt vẫn giữ lại các lỗi khó。
         issues.append(
             TranslationQualityIssue(
                 item_id=item_id,

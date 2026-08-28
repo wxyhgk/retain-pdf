@@ -6,7 +6,7 @@ export function currentMockScenario() {
     succeeded: "done",
     complete: "done",
     completed: "done",
-    // demo：本地演示推荐入口；静态列表用 parallel，提交翻译走 live 推进
+    // demo: Điểm nhập đề xuất cho bản demo cục bộ; danh sách tĩnh dùng parallel, gửi bản dịch dùng live để tiến hành
     demo: "parallel",
     live: "parallel",
   };

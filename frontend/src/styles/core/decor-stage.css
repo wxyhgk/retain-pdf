@@ -1,19 +1,20 @@
-/* 装饰舞台：slot 定位真值。
+/* Sân khấu trang trí: nguồn chuẩn cho vị trí slot.
  *
- * 锚点契约（id/层级带/语义）在 src/shared/decor/slots.ts，此处只负责
- * "每个 slot 在哪、多大、什么 z 层"。新增锚点 = slots.ts 登记 + 这里补一条。
+ * Hợp đồng neo (id/dải lớp/ngữ nghĩa) nằm ở src/shared/decor/slots.ts; tệp này chỉ
+ * quy định "mỗi slot ở đâu, kích thước nào và lớp z nào". Neo mới = đăng ký trong
+ * slots.ts và thêm một quy tắc tại đây.
  *
- * z 层约定：
- * - bg / mid 带 z-index:-1 —— 压在所有静态内容之下（html 的氛围垫层
- *   之上），DOM 顺序保证 mid 盖 bg
- * - fg 带 z-index:60 —— 压边装饰浮在 UI 边缘上，pointer-events:none 不挡交互
- * - .home-paper-stage(z:1) 与功能 UI 始终盖住 bg/mid
+ * Quy ước lớp z:
+ * - dải bg / mid có z-index:-1 — nằm dưới nội dung tĩnh (trên lớp nền không gian
+ *   của html); thứ tự DOM bảo đảm mid phủ bg
+ * - dải fg có z-index:60 — trang trí nổi ở mép UI, pointer-events:none không cản tương tác
+ * - .home-paper-stage(z:1) và UI chức năng luôn phủ bg/mid
  *
- * 颜色一律语义变量（tests/css-color-literals.test.mjs 棘轮门禁）。
+ * Màu luôn dùng biến ngữ nghĩa (cổng kiểm tra tests/css-color-literals.test.mjs).
  */
 
 .decor-stage {
-  display: contents; /* 只当 CSS 变量载体（--decor-px/py），不产生盒 */
+  display: contents; /* Chỉ làm vật chứa biến CSS (--decor-px/py), không tạo hộp */
 }
 
 .decor-layer {
@@ -36,7 +37,7 @@
   z-index: 60;
 }
 
-/* —— 各锚点定位（区域语义见 slots.ts 的 area 注释）—— */
+/* —— Vị trí các neo (xem ngữ nghĩa vùng trong chú thích area của slots.ts) —— */
 
 .decor-slot-backdrop {
   inset: 0;
@@ -74,7 +75,7 @@
   height: min(40vh, 420px);
 }
 
-/* right-bottom 的 fg 版：几何相同，z 层压面板（band 见 slots.ts） */
+/* Bản fg của right-bottom: cùng hình học, lớp z phủ lên panel (xem band trong slots.ts) */
 .decor-slot-right-bottom-fg {
   right: 0.5vw;
   bottom: 1.5vh;
@@ -87,7 +88,7 @@
   top: 0;
   width: min(38vw, 520px);
   height: min(11vh, 110px);
-  margin-left: calc(min(38vw, 520px) / -2); /* 不用 transform 居中，留给视差 */
+  margin-left: calc(min(38vw, 520px) / -2); /* Không dùng transform để căn giữa, dành cho thị sai */
 }
 
 .decor-slot-hero {
@@ -111,7 +112,7 @@
   width: min(10vw, 140px);
 }
 
-/* right-bottom 的 fg 版：人物/道具压在面板之上（band=fg → z:60，pointer-events:none） */
+/* Bản fg của right-bottom: người/đạo cụ nằm trên panel (band=fg → z:60, pointer-events:none) */
 .decor-slot-right-bottom-fg {
   right: 0.5vw;
   bottom: 1.5vh;
@@ -119,7 +120,7 @@
   height: min(40vh, 420px);
 }
 
-/* 题字横幅：textCapable 锚点，文字排版由舞台统一处理 */
+/* Biểu ngữ chữ: neo textCapable, bố cục chữ do sân khấu xử lý thống nhất */
 .decor-slot-quote {
   right: 2.5vw;
   top: 6vh;
@@ -127,8 +128,8 @@
   height: auto;
 }
 
-/* clickQuote 热点：只盖人物实体部（图层盒左侧留白带不挡面板点击），
-   父层 pointer-events:none，热点自己恢复可点 */
+/* Vùng clickQuote: chỉ phủ phần thân người (dải trống bên trái hộp lớp không chặn
+   thao tác panel); lớp cha pointer-events:none, vùng nóng tự khôi phục khả năng bấm */
 .decor-hotspot {
   position: absolute;
   top: 0;
@@ -142,7 +143,7 @@
   pointer-events: auto;
 }
 
-/* 语录气泡：浮在人物头顶上方，纸面小卡片 */
+/* Bong bóng câu trích: nổi trên đầu nhân vật, thẻ nhỏ nền giấy */
 .decor-verse {
   position: absolute;
   right: 0;
@@ -180,7 +181,7 @@
   writing-mode: vertical-rl;
 }
 
-/* 窄屏安全区：只留全幅背景，道具/题字全部让位给功能 UI */
+/* Vùng an toàn màn hình hẹp: chỉ giữ nền toàn chiều rộng, đạo cụ/chữ nhường chỗ cho UI */
 @media (max-width: 1100px) {
   .decor-layer:not(.decor-slot-backdrop) {
     display: none;

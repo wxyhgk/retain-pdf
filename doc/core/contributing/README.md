@@ -1,17 +1,17 @@
-# 贡献文档
+# Tài liệu đóng góp
 
-这里放 RetainPDF 贡献者需要的分角色指南。根目录 [CONTRIBUTING.md](../../../CONTRIBUTING.md) 是短入口，这里放细则。
+Nơi đây chứa các hướng dẫn theo vai trò cho người đóng góp RetainPDF. [CONTRIBUTING.md](../../../CONTRIBUTING.md) ở thư mục gốc là đầu vào ngắn, nơi đây chứa chi tiết.
 
-## 入口
+## Đầu vào
 
-- [前端与桌面端](./frontend.md)
+- [Frontend và desktop](./frontend.md)
 - [Rust API](./backend.md)
-- [数据库与持久化](./database.md)
-- [Python 流水线](./python-pipeline.md)
-- [测试贡献](./testing.md)
-- [AI 辅助开发](./ai-development.md)
-- [Issue、PR、代码风格与发布说明](./process-and-style.md)
+- [Cơ sở dữ liệu và lưu trữ](./database.md)
+- [Pipeline Python](./python-pipeline.md)
+- [Đóng góp kiểm thử](./testing.md)
+- [Phát triển với AI](./ai-development.md)
+- [Issue, PR, phong cách mã và hướng dẫn phát hành](./process-and-style.md)
 
-## 读法
+## Cách đọc
 
-先读根目录贡献指南，再按自己要改的模块进入对应子文档。跨模块改动需要同时阅读相关模块文档。
+Trước tiên đọc hướng dẫn đóng góp ở thư mục gốc, sau đó vào tài liệu con tương ứng theo module bạn muốn sửa. Thay đổi xuyên module cần đọc đồng thời tài liệu các module liên quan.

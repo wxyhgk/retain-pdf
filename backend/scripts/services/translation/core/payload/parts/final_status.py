@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 
-# payload item 上 final_status 的唯一赋值漏斗。
+# payload item Trước final_status Phễu được chỉ định duy nhất。
 #
-# 状态语义:
-# - ""                    尚未收口(pending)
-# - "translated"          已产出译文
-# - "partially_translated" 译文经降级清洗(reasoning 泄漏 salvage、邻段泄漏裁剪等)
-# - "failed"              翻译失败,等待修复链兜底
-# - "kept_origin"         按策略保留原文
+# Ngữ nghĩa học tiểu bang:
+# - ""                    Chưa đóng(pending)
+# - "translated"          Đã tạo bản dịch
+# - "partially_translated" Đã hạ cấp bản dịch quy trình vệ sinh(reasoning tiết lộ salvage、Khu vực lân cậntiết lộCắt, v.v.)
+# - "failed"              Dịch không thành công,Đang chờ sửa túi dây chuyền
+# - "kept_origin"         Giữ bản gốc theo chính sách
 #
-# 唯一被声明禁止的转移:成功译文不得被降级为 failed。
-# 修复链(乱码重建/agent repair/最终收口)只允许把 failed 拉回成功,反向为违规。
+# Chỉ chuyển tiền được tuyên bố là bị cấm:Không được hạ cấp bản dịch thành công xuống failed。
+# Chuỗi sửa chữa(Tái thiết bị bị xáo trộn/agent repair/Đóng cửa cuối cùng)Chỉ được phép failed Pullback thành công,Đảo ngược là vi phạm。
 #
-# v1 只观测不拦截:违规照常写入,但在 translation_diagnostics.final_status_violations
-# 留下面包屑。等真实任务证明违规不再出现(或确认属 bug 修掉)后,再升级为硬拦截。
+# v1 Chỉ Quan Sát Không Có Đường Dây Nghe Xen:Vi phạm được ghi như bình thường,nhưng trong translation_diagnostics.final_status_violations
+# Để lại Breadcrumbs。Chờ cho nhiệm vụ thực sự chứng minh rằng vi phạm không xảy ra lần nữa(hoặc chi xác nhận bug Sửa lỗi)xong,Tăng cấp thành Hard Block một lần nữa。
 
 PENDING_STATUS = ""
 TRANSLATED_STATUS = "translated"

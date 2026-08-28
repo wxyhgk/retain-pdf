@@ -1,27 +1,27 @@
-# PaddleOCR-VL 官方服务化说明摘录
+# Trích đoạn hướng dẫn dịch vụ chính thức PaddleOCR-VL
 
-来源：
+Nguồn:
 
-- GitHub 官方文档：
+- Tài liệu chính thức GitHub:
   <https://github.com/PaddlePaddle/PaddleOCR/blob/main/docs/version3.x/pipeline_usage/PaddleOCR-VL.md>
-- 当前仓库早期摘录：
+- Trích đoạn sớm trong kho lưu trữ hiện tại:
   `backend/rust_api/src/ocr_provider/paddle/AsyncParse.md`
 
-这份摘录只保留和本仓库 provider 对接直接相关的内容，不复制整份官方教程。
+Trích đoạn này chỉ giữ lại những nội dung liên quan trực tiếp đến việc kết nối provider trong kho lưu trữ này, không sao chép toàn bộ hướng dẫn chính thức.
 
-## 1. 官方返回里存在 Markdown
+## 1. Markdown tồn tại trong phản hồi chính thức
 
-官方服务化示例明确展示了如下用法：
+Ví dụ dịch vụ hóa chính thức thể hiện rõ cách sử dụng sau:
 
-- 遍历 `result["layoutParsingResults"]`
-- 读取 `res["markdown"]["text"]`
-- 读取 `res["markdown"]["images"]`
+- Duyệt qua `result["layoutParsingResults"]`
+- Đọc `res["markdown"]["text"]`
+- Đọc `res["markdown"]["images"]`
 
-也就是说，Paddle 官方返回不仅有结构化 `prunedResult`，还可以直接得到 Markdown 文本和 Markdown 图片映射。
+Nghĩa là, phản hồi chính thức của Paddle không chỉ có `prunedResult` có cấu trúc, mà còn có thể nhận trực tiếp văn bản Markdown và ánh xạ hình ảnh Markdown.
 
-## 2. 关键响应结构
+## 2. Cấu trúc phản hồi quan trọng
 
-和本仓库对接最直接相关的结构是：
+Cấu trúc liên quan trực tiếp nhất đến việc kết nối trong kho lưu trữ này là:
 
 ```json
 {
@@ -41,53 +41,53 @@
 }
 ```
 
-字段含义：
+Ý nghĩa các trường:
 
-- `prunedResult`: 结构化页面解析结果
-- `markdown.text`: 页面级 Markdown 文本
-- `markdown.images`: Markdown 图片相对路径到图片内容/地址的映射
-- `outputImages`: 可视化或中间图像结果
-- `inputImage`: 输入页图像
+- `prunedResult`: Kết quả phân tích trang có cấu trúc
+- `markdown.text`: Văn bản Markdown cấp trang
+- `markdown.images`: Ánh xạ từ đường dẫn tương đối hình ảnh Markdown đến nội dung/địa chỉ hình ảnh
+- `outputImages`: Kết quả hình ảnh trực quan hoặc trung gian
+- `inputImage`: Hình ảnh trang đầu vào
 
-这里要特别注意：
+Cần đặc biệt lưu ý:
 
-- `markdown.images` 的键不是“建议值”，而是 Markdown/HTML 正文里实际引用的相对路径
-- 如果正文里是 `<img src="imgs/xxx.jpg">`，那 `images` 里的 key 就应该是 `imgs/xxx.jpg`
-- 集成方不能擅自把这段 provider 返回的相对路径固定改写成另一套目录规范，只能在发布阶段做最小的、可逆的包装
+- Khóa của `markdown.images` không phải là "giá trị đề xuất", mà là đường dẫn tương đối thực tế được tham chiếu trong văn bản Markdown/HTML
+- Nếu văn bản là `<img src="imgs/xxx.jpg">`, thì key trong `images` phải là `imgs/xxx.jpg`
+- Bên tích hợp không được tự ý sửa đổi đường dẫn tương đối do provider trả về thành một bộ quy tắc thư mục khác, chỉ có thể thực hiện đóng gói tối thiểu, có thể đảo ngược ở giai đoạn phát hành
 
-## 3. 与本仓库当前主链直接相关的请求参数
+## 3. Các tham số yêu cầu liên quan trực tiếp đến luồng chính hiện tại của kho lưu trữ
 
 - `restructurePages`
-  用于多页 PDF 的重构，影响跨页表格和段落标题级别识别。
+  Dùng để tái cấu trúc PDF nhiều trang, ảnh hưởng đến nhận dạng bảng xuyên trang và mức tiêu đề đoạn.
 - `mergeTables`
-  跨页表格合并。
+  Hợp nhất bảng xuyên trang.
 - `relevelTitles`
-  段落标题级别识别。
+  Nhận dạng mức tiêu đề đoạn.
 - `showFormulaNumber`
-  控制 Markdown 中是否包含公式编号。
+  Kiểm soát việc bao gồm số công thức trong Markdown.
 - `prettifyMarkdown`
-  控制是否输出美化后的 Markdown。
+  Kiểm soát việc xuất Markdown đã làm đẹp.
 - `visualize`
-  控制是否返回图像结果。
+  Kiểm soát việc trả về kết quả hình ảnh.
 
-## 4. 对我们系统的落地结论
+## 4. Kết luận áp dụng cho hệ thống của chúng tôi
 
-结论很直接：
+Kết luận rất trực tiếp:
 
-1. `markdown_ready = false` 不能再归因于 Paddle 官方不支持 Markdown。
-2. 如果任务 raw 已经拿到了 `markdown.text` / `markdown.images`，就应该在我们产物层导出成 job markdown artifact。
-3. provider adapter / pipeline 需要明确区分：
-   - 结构化文档标准化
-   - Markdown 产物落盘
-   - Markdown 图片落盘
-4. Markdown 图片路径应当遵循 provider 返回值；如果为了多页任务防冲突而增加页面前缀，也只能做这类外层作用域包装，不能把内部相对路径模式写死。
+1. `markdown_ready = false` không thể quy cho việc Paddle chính thức không hỗ trợ Markdown.
+2. Nếu raw của tác vụ đã có `markdown.text` / `markdown.images`, thì nên xuất thành artifact Markdown của job ở tầng sản phẩm.
+3. Provider adapter / pipeline cần phân biệt rõ:
+   - Chuẩn hóa tài liệu có cấu trúc
+   - Ghi sản phẩm Markdown
+   - Ghi hình ảnh Markdown
+4. Đường dẫn hình ảnh Markdown nên tuân theo giá trị trả về của provider; nếu cần thêm tiền tố trang để tránh xung đột cho tác vụ nhiều trang, chỉ được thực hiện đóng gói phạm vi bên ngoài như vậy, không được mã hóa cứng mẫu đường dẫn tương đối bên trong.
 
-## 5. 更新原则
+## 5. Nguyên tắc cập nhật
 
-以后如果继续补 Paddle 文档，优先补这里：
+Sau này nếu tiếp tục bổ sung tài liệu Paddle, ưu tiên bổ sung ở đây:
 
-- 官方入口
-- 与当前仓库强相关的字段和参数
-- 对应到本仓库 artifact / normalized document / provider adapter 的映射
+- Đầu vào chính thức
+- Các trường và tham số liên quan mạnh đến kho lưu trữ hiện tại
+- Ánh xạ tương ứng với artifact / normalized document / provider adapter của kho lưu trữ
 
-不要把整份官方部署教程原样搬进来。
+Không sao chép toàn bộ hướng dẫn triển khai chính thức vào đây.

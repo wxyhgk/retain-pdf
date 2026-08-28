@@ -1,4 +1,4 @@
-/* 全部皮肤入口：tokens.css 只 import 本文件，后期加皮肤在此加一行 @import。 */
+/* Cửa vào tất cả skin: tokens.css chỉ import file này, sau này thêm skin chỉ cần thêm một dòng @import ở đây. */
 @import "./_contract.css";
 @import "./_component-defaults.css";
 @import "./classic.css";

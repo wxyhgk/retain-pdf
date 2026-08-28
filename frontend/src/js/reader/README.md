@@ -1,34 +1,34 @@
-# `src/js/reader` — 旧阅读引擎 + 少量共享 ports
+# `src/js/reader` — Legacy Reader Engine + Shared Ports
 
-命令式 pdf.js 管线（`pdf-controller` / `pdf-renderer` / mode / favorites / regions…）。
+Imperative pdf.js pipeline (`pdf-controller` / `pdf-renderer` / mode / favorites / regions…).
 
-默认产品路径已是 **react-pdf**（`pages/reader/ReaderAppReactPdf`）。本目录主力服务 **`?engine=legacy`**。
+The default product path is now **react-pdf** (`pages/reader/ReaderAppReactPdf`). This directory primarily serves **`?engine=legacy`**.
 
-## 分层（与 `pages/reader/README` 对齐）
+## Layering (Aligned with `pages/reader/README`)
 
-| 用途 | 模块 | 谁 import |
+| Purpose | Module | Who Imports |
 |------|------|-----------|
-| **共享 ports** | `data-port`、`config-port`、`resource-resolver`、`pdf-document`（URL）、`page-state`（进度文案） | 新引擎经 `pages/reader/external.ts`；legacy 也可直接用 |
-| **legacy 引擎** | `pdf-controller`、`pdf-renderer`、`viewer-mount-flow`、`selection-favorites`、`favorites/**`、`region-*`、chrome/mode… | 仅 `pages/reader/legacy/**` |
-| **legacy AI** | `ai/ask-answerer`、`ai/chat-history-store`、`markdown-render`… | `legacy/ai`、`use-reader-boot` |
+| **Shared ports** | `data-port`, `config-port`, `resource-resolver`, `pdf-document` (URL), `page-state` (progress text) | New engine via `pages/reader/external.ts`; legacy may also use directly |
+| **Legacy engine** | `pdf-controller`, `pdf-renderer`, `viewer-mount-flow`, `selection-favorites`, `favorites/**`, `region-*`, chrome/mode… | Only `pages/reader/legacy/**` |
+| **Legacy AI** | `ai/ask-answerer`, `ai/chat-history-store`, `markdown-render`… | `legacy/ai`, `use-reader-boot` |
 
 ## 已删除
 
-| 文件 | 说明 |
+| File | Description |
 |------|------|
-| `ai/remote-answerer.ts` | 旧 `/reader/ai/chat` payload 应答器；现网 `ask-answerer` |
+| `ai/remote-answerer.ts` | Old `/reader/ai/chat` payload responder; current network uses `ask-answerer` |
 
-## 不要
+## Do Not
 
-- 不要在这里加新 UI（批注 / 缩放 / 对照 → `pages/reader` 非 legacy）  
-- 不要批量删除 favorites / pdf-*（legacy 仍依赖内部图）  
-- 不要假设 `pages/reader/components/*` 扁平存在（已迁 `legacy/components/`）
+- Do not add new UI here (annotations / zoom / comparison → `pages/reader` non-legacy)
+- Do not mass-delete favorites / pdf-* (legacy still depends on internal diagrams)
+- Do not assume `pages/reader/components/*` still exists flat (moved to `legacy/components/`)
 
-## 主路径
+## Main Paths
 
 ```text
-默认: pages/reader/ReaderAppReactPdf + hooks/ + pdf/ + annotations/ + components/react-pdf/
-      js 依赖 → pages/reader/external.ts → 本目录共享 ports
-回退: pages/reader/legacy/*  +  本目录命令式引擎
-地图: src/FEATURES.md
+Default: pages/reader/ReaderAppReactPdf + hooks/ + pdf/ + annotations/ + components/react-pdf/
+      js dependencies → pages/reader/external.ts → shared ports in this directory
+Fallback: pages/reader/legacy/*  +  imperative engine in this directory
+Map: src/FEATURES.md
 ```

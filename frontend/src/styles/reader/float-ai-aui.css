@@ -1,5 +1,6 @@
-/* AI 悬浮窗 · assistant-ui 消息骨架（Notion 侧栏气质）
- * 正文见 float-ai-md.css；引用见 float-ai-citations.css；输入条见 float-ai-composer.css
+/* Cửa sổ nổi AI · khung tin nhắn assistant-ui (phong cách thanh bên Notion)
+ * Nội dung xem float-ai-md.css; trích dẫn xem float-ai-citations.css; thanh
+ * nhập xem float-ai-composer.css
  */
 
 .reader-float-ai .aui-thread {
@@ -19,7 +20,7 @@
   background: var(--paper);
 }
 
-/* —— 空状态：居中问候 + 列表建议 —— */
+/* —— Trạng thái trống: lời chào giữa + danh sách gợi ý —— */
 .reader-float-ai .aui-empty {
   display: grid;
   justify-items: center;
@@ -65,7 +66,7 @@
   max-width: 26em;
 }
 
-/* 建议：Notion 侧栏式图标行，非重卡片 */
+/* Gợi ý: hàng biểu tượng kiểu thanh bên Notion, không phải thẻ nặng */
 .reader-float-ai .aui-suggestions {
   display: grid;
   gap: 2px;
@@ -110,7 +111,7 @@
   background: color-mix(in srgb, var(--ink) 6%, var(--paper));
 }
 
-/* —— 消息 —— */
+/* —— Tin nhắn —— */
 .reader-float-ai .aui-msg {
   display: grid;
   gap: 4px;
@@ -138,7 +139,7 @@
   }
 }
 
-/* 助手：左头像 + 无重气泡的文档流正文 */
+/* Trợ lý: ảnh đại diện trái + nội dung dạng tài liệu không có bong bóng nặng */
 .reader-float-ai .aui-msg-assistant {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr);
@@ -163,7 +164,7 @@
   min-width: 0;
 }
 
-/* 用户：右对齐浅灰气泡 */
+/* Người dùng: bong bóng xám nhạt căn phải */
 .reader-float-ai .aui-msg-user {
   display: flex;
   flex-direction: column;
@@ -182,7 +183,7 @@
   line-height: 1.55;
 }
 
-/* 助手气泡：去边框，像页面正文 */
+/* Bong bóng trợ lý: bỏ viền, giống nội dung trang */
 .reader-float-ai .aui-msg-assistant .aui-msg-bubble {
   padding: 0;
   border: 0;
@@ -196,7 +197,7 @@
   overflow-wrap: anywhere;
 }
 
-/* 检索进度 pill */
+/* Pill tiến trình truy xuất */
 .reader-float-ai .aui-thinking {
   display: inline-flex;
   align-items: center;
@@ -216,7 +217,7 @@
   color: color-mix(in srgb, var(--ink) 50%, var(--muted));
 }
 
-/* 操作条：更轻的幽灵按钮 */
+/* Thanh thao tác: nút ghost nhẹ hơn */
 .reader-float-ai .aui-msg-actions {
   position: relative;
   z-index: 3;

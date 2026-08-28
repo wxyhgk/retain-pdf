@@ -40,7 +40,7 @@ async function preparePythonRuntime(pythonRuntime, options = {}) {
     console.warn(
       `[desktop] bundled ${platformLabel} python startup probe failed, fallback to system python: ${startupProbe.reason}\n${startupProbe.stderr || ""}`.trim(),
     );
-    updateSplashProgress(options, 26, "正在检查 Python 运行时", "内置 Python 不可用，正在回退系统 Python");
+    updateSplashProgress(options, 26, "Đang kiểm tra môi trường Python", "Không dùng được Python tích hợp, đang chuyển sang Python hệ thống");
     const fallbackRuntime = systemPythonRuntime();
     const fallbackProbe = await probePythonRuntime(fallbackRuntime, {
       timeoutMs: 10000,
@@ -69,12 +69,12 @@ async function preparePythonRuntime(pythonRuntime, options = {}) {
           dependencyProbe.stderr || dependencyProbe.stdout || "",
         ].filter(Boolean).join("\n"),
       );
-      updateSplashProgress(options, 26, "正在检查 Python 运行时", "内置 Python 启动较慢，继续启动本地服务");
+      updateSplashProgress(options, 26, "Đang kiểm tra môi trường Python", "Python tích hợp khởi động chậm, tiếp tục khởi động dịch vụ cục bộ");
     } else if (selectedRuntime.bundledHome && !options.isPackaged) {
       console.warn(
         `[desktop] bundled ${platformLabel} python dependency probe failed, fallback to system python: ${dependencyProbe.reason}\n${dependencyProbe.stderr || ""}`.trim(),
       );
-      updateSplashProgress(options, 26, "正在检查 Python 运行时", "内置 Python 不可用，正在回退系统 Python");
+      updateSplashProgress(options, 26, "Đang kiểm tra môi trường Python", "Không dùng được Python tích hợp, đang chuyển sang Python hệ thống");
       const fallbackRuntime = systemPythonRuntime();
       const fallbackProbe = await probePythonRuntime(fallbackRuntime, {
         timeoutMs: 10000,

@@ -1,16 +1,16 @@
-# Library Home Page 组件族
+# Nhóm component Library Home Page
 
-## 边界
+## Ranh giới
 
-`library-home-page` 负责图书馆主页的页面级布局。它组合顶部栏、筛选工具条和图书网格，但不拥有数据请求、弹窗状态或后端 API。
+`library-home-page` phụ trách bố cục cấp trang của trang chủ thư viện. Nó tổ hợp thanh trên, thanh công cụ lọc và lưới sách, nhưng không sở hữu yêu cầu dữ liệu, trạng thái hộp thoại hay API backend.
 
-## 文件
+## Tệp
 
-- `library-home-page.tsx`：主页组合层。
-- `index.ts`：组件族公共出口。
+- `library-home-page.tsx`: Tầng tổ hợp trang chủ.
+- `index.ts`: Xuất khẩu công khai nhóm component.
 
-## 规则
+## Quy tắc
 
-- 页面状态由上层容器传入。
-- 产品文案和排序项来自 `library-config.ts`。
-- 后续搜索、筛选、上传入口可以在这个组件族内继续拆成独立区域。
+- Trạng thái trang do container tầng trên truyền vào.
+- Văn bản sản phẩm và mục sắp xếp đến từ `library-config.ts`.
+- Lối vào tìm kiếm, lọc, tải lên sau này có thể tiếp tục tách thành vùng độc lập trong nhóm component này.

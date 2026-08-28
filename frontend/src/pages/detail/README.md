@@ -1,29 +1,29 @@
-# 任务详情页（`pages/detail`）
+# Trang Chi Tiết Tác Vụ (`pages/detail`)
 
-独立 SPA：`detail.html` → `entry.tsx` → `DetailApp`。
+SPA độc lập: `detail.html` -> `entry.tsx` -> `DetailApp`.
 
-## 布局
+## Bố cục
 
 ```text
 pages/detail/
   entry.tsx / DetailApp.tsx
-  external.ts              # 对 src/js/* 的唯一出口
-  components/              # UI（Header / Artifacts / Events…）
+  external.ts              # điểm xuất duy nhất sang src/js/*
+  components/              # UI (Header / Artifacts / Events...)
 ```
 
-## 规则
+## Quy tắc
 
-| 层 | 规则 |
+| Tầng | Quy tắc |
 |----|------|
-| `DetailApp` / `components/**` | **禁止**直接 `import … from "../../js/…"` |
-| `external.ts` | 唯一允许 import `src/js/*` 的文件；缺符号只改这里 |
-| `js/job-detail/*` | 命令式 overview / markdown / resume 逻辑（经 external 接入） |
+| `DetailApp` / `components/**` | **Cấm** import trực tiếp `... from "../../js/..."` |
+| `external.ts` | File duy nhất được import `src/js/*`; thiếu symbol thì chỉ sửa ở đây |
+| `js/job-detail/*` | Logic imperative cho overview / markdown / resume (được nối qua external) |
 
-门禁：`tests/architecture-boundaries.test.mjs`  
-（`detail page must not import src/js/* directly`）
+Gate: `tests/architecture-boundaries.test.mjs`
+(`detail page must not import src/js/* directly`)
 
-## 状态策略（摘要）
+## Chiến lược state (tóm tắt)
 
-- 文案 / 链接：React state（`texts` / `links`），由 job-detail 回调写入  
-- 产物清单、失败调试、Markdown 图片网格：命令式 innerHTML 孤岛（见各组件注释）  
-- 模态 / 下载 toast：React（Radix Dialog + DownloadToastHost）
+- Text / link: React state (`texts` / `links`), được callback job-detail ghi vào.
+- Danh sách artifact, debug lỗi, lưới ảnh Markdown: đảo imperative `innerHTML` (xem comment trong component).
+- Modal / download toast: React (Radix Dialog + DownloadToastHost).

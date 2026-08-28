@@ -1,18 +1,18 @@
-// GlossariesDialog 家族(GlossariesDialog/GlossaryList/GlossaryEditor/
-// GlossaryImportPanel)的唯一装配面(镜像 useCredentialsController.js)——把
-// composition.js 的 glossaries 域(services.glossaries:{feature, view,
-// dialogStore})折成一个 hook。
+// Họ GlossariesDialog (GlossariesDialog/GlossaryList/GlossaryEditor/
+// GlossaryImportPanel) là bề mặt lắp ráp riêng (đối chiếu
+// useCredentialsController.js), gom vùng glossaries của composition.js
+// (services.glossaries:{feature, view, dialogStore}) thành một hook.
 //
-// 打开触发:SettingsHubDialog"词表"tab 的 #glossary-btn 直接调
-// services.glossaries.dialogStore.open()(蓝图 §0.4 占位调用点,composition
-// 就位后即生效),不经 APP_EVENTS——本 hook 用一个 open 状态迁移 effect 把
-// "对话框被打开"这件事接回 controller.js 的 open()(内部会 openDialog() +
-// reloadGlossaries()),语义等价旧世界"点击词表按钮 → open()"的单一入口,
-// 不需要改 SettingsHubDialog.jsx 的既有占位调用。
+// Bộ kích hoạt mở: tab "Bảng thuật ngữ" của SettingsHubDialog và #glossary-btn
+// gọi trực tiếp services.glossaries.dialogStore.open() (kế hoạch §0.4, điểm gọi
+// giữ chỗ của composition có hiệu lực tại chỗ). Không dùng APP_EVENTS cho việc
+// này — effect theo dõi trạng thái mở sẽ gọi lại controller.js open() (gồm
+// openDialog() + reloadGlossaries()), tương đương ngữ nghĩa cũ "bấm nút Bảng
+// thuật ngữ → open()" và không cần đổi điểm gọi giữ chỗ trong SettingsHubDialog.jsx.
 //
-// APP_EVENTS.refreshGlossaries(蓝图 §0.6)用 useAppEvent 消费,调用
-// handlers.reload(controller.js bindEvents 捕获的 reload 处理函数,内部已带
-// try/catch → setStatus 错误提示)。
+// APP_EVENTS.refreshGlossaries (kế hoạch §0.6) dùng useAppEvent; gọi
+// handlers.reload (hàm xử lý reload đã được bindEvents của controller.js thu
+// lại, bên trong có try/catch → setStatus thông báo lỗi).
 
 import { useEffect, useRef } from "react";
 import { useStoreSnapshot } from "../../../../shared/react/use-store.js";
@@ -36,9 +36,10 @@ export function useGlossariesController() {
   const wasOpenRef = useRef(false);
   useEffect(() => {
     if (open && !wasOpenRef.current) {
-      // controller.js 的 open() = openDialog()(dialogStore.open() 幂等) +
-      // "正在读取术语表..." 状态 + reloadGlossaries() + 清空/错误状态,一次性
-      // 复用,不在这里重新拼一遍等价逻辑。
+      // open() của controller.js = openDialog() (dialogStore.open() idempotent) +
+      // trạng thái "Đọc bảng thuật ngữ..." + reloadGlossaries() + xóa trạng thái
+      // lỗi, tất cả thực hiện một lần trong composition; không lặp lại logic tương
+      // đương ở đây.
       void feature?.open?.();
     }
     wasOpenRef.current = open;

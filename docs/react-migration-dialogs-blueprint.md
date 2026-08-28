@@ -1,92 +1,92 @@
-# Phase 3 对话框群施工蓝图(StatusDetail / Credentials / Glossaries / ReaderDialog / AppUpdate / developer / artifact-downloads)
+# Phase 3: Bản thi công nhóm hộp thoại (StatusDetail / Credentials / Glossaries / ReaderDialog / AppUpdate / developer / artifact-downloads)
 
-> 配合总计划 ~/.claude/plans/wondrous-baking-donut.md、docs/react-migration-recent-jobs-blueprint.md、
-> docs/react-migration-legacy-audit.md 使用。不重复 recent-jobs 蓝图范围。
+> Kết hợp với kế hoạch tổng thể ~/.claude/plans/wondrous-baking-donut.md, docs/react-migration-recent-jobs-blueprint.md,
+> docs/react-migration-legacy-audit.md. Không lặp lại phạm vi blueprint của recent-jobs.
 
-## 0. 全局发现(七域共享,施工前必读)
+## 0. Phát hiện toàn cục (bảy miền chia sẻ, bắt buộc đọc trước khi thi công)
 
-1. dom-contract 常量(STATUS_DETAIL_DIALOG/CREDENTIAL_DOM_IDS/GLOSSARY_DOM_IDS/READER_DIALOG_IDS/APP_UPDATE_IDS)原样保留,直接用作 JSX id——视觉基线按 id 精确点击,门禁按常量断言,**不得改名/不得改 CSS Modules**。
-2. **原生 `<dialog>` 语义必须保留**(showModal()/close())。`app-shell/view.js:bindDialogBackdropClose` 对固定 id 做一次性 getElementById——若对话框"打开时才挂载"会永久失效。**对策:5 个对话框常驻挂载(entry 起就存在),useEffect 依 open 驱动 showModal/close,自带 backdrop-close onClick,不依赖旧 bindDialogBackdropClose。**
-3. 开合状态跨子树:新增 `src/pages/home/state/dialog-store.js` 通用工厂 `createDialogStore()`(open(payload)/close()/subscribe/getState),每个对话框一个实例,参照 reader 的 drawer-store.js 模式。
-4. **`AppSettingsDialog` 是三个 tab 的壳**(API 设置/词表/更新),内部按钮开启 Credentials/Glossaries/AppUpdate。归属建议:并入 CredentialsDialog 承建方,命名 `SettingsHubDialog.jsx`。
-5. **artifact-downloads 风险**:document 级委托点击 + `setLinkBusy` 直改 DOM,按钮宿主分布在 recent-jobs 的 ResultActions.jsx 与本蓝图 StatusDetailDialog。若父组件因 store 变化重渲染会覆盖"下载中..."文案。**建议方案二**:新增 `artifact-download-busy-store.js`,按钮各自订阅自己 actionId 分片(见 §7.5)。
-6. APP_EVENTS:openBrowserCredentials(Credentials)、refreshGlossaries(Glossaries)、openReaderRequested(ReaderDialog,由已有 library-search React 岛 dispatch)。全部经 useAppEvent(name, handler) 消费,事件名不改。
+1. Hằng số dom-contract (STATUS_DETAIL_DIALOG/CREDENTIAL_DOM_IDS/GLOSSARY_DOM_IDS/READER_DIALOG_IDS/APP_UPDATE_IDS) giữ nguyên, dùng trực tiếp làm JSX id — đường cơ sở thị giác nhấp chính xác theo id, cổng kiểm tra khẳng định theo hằng số, **không được đổi tên/không đổi CSS Modules**.
+2. **Ngữ nghĩa `<dialog>` gốc phải được giữ** (showModal()/close()). `app-shell/view.js:bindDialogBackdropClose` gọi getElementById một lần cho id cố định — nếu hộp thoại "chỉ gắn khi mở" sẽ vĩnh viễn hỏng. **Đối sách: 5 hộp thoại được gắn thường trực (tồn tại từ entry), useEffect điều khiển showModal/close dựa trên open, có backdrop-close onClick riêng, không phụ thuộc vào bindDialogBackdropClose cũ.**
+3. Trạng thái mở/đóng xuyên cây con: thêm `src/pages/home/state/dialog-store.js` factory chung `createDialogStore()` (open(payload)/close()/subscribe/getState), mỗi hộp thoại một instance, tham khảo mô hình drawer-store.js của reader.
+4. **`AppSettingsDialog` là vỏ của ba tab** (cài đặt API / từ vựng / cập nhật), các nút bên trong mở Credentials/Glossaries/AppUpdate. Đề xuất phân loại: hợp nhất vào bên nhận thầu CredentialsDialog, đặt tên `SettingsHubDialog.jsx`.
+5. **Rủi ro artifact-downloads**: ủy nhiệm nhấp cấp document + `setLinkBusy` thay đổi DOM trực tiếp, máy chủ nút nằm trong ResultActions.jsx của recent-jobs và StatusDetailDialog của blueprint này. Nếu thành phần cha render lại do thay đổi store sẽ ghi đè văn bản "đang tải...". **Đề xuất phương án hai**: thêm `artifact-download-busy-store.js`, các nút tự đăng ký theo actionId của mình (xem §7.5).
+6. APP_EVENTS: openBrowserCredentials (Credentials), refreshGlossaries (Glossaries), openReaderRequested (ReaderDialog, được dispatch bởi React island library-search hiện có). Tất cả được tiêu thụ qua useAppEvent(name, handler), tên sự kiện không đổi.
 
-## 1. StatusDetailDialog(1,511 行/18 文件)
+## 1. StatusDetailDialog (1.511 dòng / 18 tệp)
 
-- **数据源独立**:与 recent-jobs 蓝图的 statusCardStore 并行、不合并——status-detail 自己 fetch(events/diagnostics/resumePlan),StatusCard 不需要这些字段。两者共享同一个 renderJob 回调注入点。
-- 打开触发:ResultActions.jsx 的 `#status-detail-btn` onClick 直调 `openStatusDetailDialog("overview")`(非事件,直接函数调用)。
-- **判决要点**:controller.js/overview-coordinator/translation-tab-coordinator/translation-data-port/resume-actions/formatters(纯格式化部分)/status-detail/{snapshot,utils,history,events}(纯函数部分)全部**保留**;translation-renderer.js/navigation-view-port.js/dialog-view-port.js/translation-view-port.js/resume-view-port.js/view.js **死**;components/dialogs/status-detail-dialog*.js 6 文件死(仅 STATUS_DETAIL_DIALOG 常量保留)。
-- **markup→JSX 是本域最大改写量**(history.js/events.js/translation-renderer.js 三处 HTML 字符串拼接 → 结构化 JSX),逐段跑视觉基线,不能一把梭。
-- 新 store:`status-detail-store.js`(overview 段 + translation 段)+ `status-detail-dialog-store.js`(open/activeTab)。
-- 组件:StatusDetailDialog.jsx(4 tab 常驻渲染用 hidden 属性,不卸载)、StageHistoryList/EventsList(新写结构化 JSX)、TranslationDebugTab 家族、useRerunAction。
-- 验收:status-dialog-failed / status-dialog-translation 两条视觉基线(cutover 门槛)。
+- **Nguồn dữ liệu độc lập**: chạy song song với statusCardStore của blueprint recent-jobs, không hợp nhất — status-detail tự fetch (events/diagnostics/resumePlan), StatusCard không cần các trường này. Cả hai chia sẻ cùng một điểm chèn callback renderJob.
+- Kích hoạt mở: `#status-detail-btn` trong ResultActions.jsx onClick gọi trực tiếp `openStatusDetailDialog("overview")` (không phải sự kiện, gọi hàm trực tiếp).
+- **Điểm quyết định**: controller.js / overview-coordinator / translation-tab-coordinator / translation-data-port / resume-actions / formatters (phần thuần định dạng) / status-detail/{snapshot,utils,history,events} (phần thuần hàm) tất cả **giữ nguyên**; translation-renderer.js / navigation-view-port.js / dialog-view-port.js / translation-view-port.js / resume-view-port.js / view.js **chết**; components/dialogs/status-detail-dialog*.js 6 tệp chết (chỉ giữ hằng STATUS_DETAIL_DIALOG).
+- **markup→JSX là khối lượng viết lại lớn nhất trong miền này** (ba chỗ history.js/events.js/translation-renderer.js ghép chuỗi HTML → JSX có cấu trúc), chạy từng đoạn theo đường cơ sở thị giác, không thể làm một lần.
+- Store mới: `status-detail-store.js` (phần overview + translation) + `status-detail-dialog-store.js` (open/activeTab).
+- Thành phần: StatusDetailDialog.jsx (4 tab render thường trực dùng thuộc tính hidden, không gỡ bỏ), StageHistoryList/EventsList (viết JSX có cấu trúc mới), họ TranslationDebugTab, useRerunAction.
+- Nghiệm thu: hai đường cơ sở thị giác status-dialog-failed / status-dialog-translation (ngưỡng cutover).
 
-## 2. CredentialsDialog(1,673 行/22 文件,全项目最大单特性)
+## 2. CredentialsDialog (1.673 dòng / 22 tệp, tính năng đơn lớn nhất toàn dự án)
 
-- **`default-state-port.js` 的单例必须原样复用**(不重建)——它的 mirrorToDom 副作用同步 4 个隐藏 input(ocr_provider/mineru_token/paddle_token/api_key),这些 input 被 3a 的上传表单读取。**风险最高点:composition 若各域各建一份隐藏 input 会导致"设置里填了 token,上传时读不到"的静默失败。**
-- 判决:state.js/default-state-port.js/hidden-input-dom-port.js/selectors-port.js/validation.js/deepseek-flow.js/ocr-readiness-flow.js/persistence.js/dialog-values.js **保留**;browser-view-port.js/deepseek-view-port.js/view.js/dialog-sync.js/dialog-elements-port.js/setup-mode-port.js **死**。
-- `updateCredentialGate`(上传按钮锁定态)建议**整体移交 3a**,本域只 expose 只读订阅。
-- `developer-auth-dialog.js` **判定为死代码(孤儿组件)**:除自身注册与 APP_DIALOG_BACKDROP_IDS 列表引用外,全码库无任何打开/校验逻辑接线。**建议 Phase 4 删除前找用户/产品确认一次**,不要悄悄丢弃(可能是预留需求)。
-- 建议顺带实现 §0.4 的 SettingsHubDialog.jsx 与 §0.3 的 dialog-store 工厂(其他域复用)。
+- **Singleton của `default-state-port.js` phải được tái sử dụng nguyên bản** (không xây dựng lại) — tác dụng phụ mirrorToDom của nó đồng bộ 4 input ẩn (ocr_provider/mineru_token/paddle_token/api_key), các input này được biểu mẫu tải lên của 3a đọc. **Điểm rủi ro cao nhất: composition nếu mỗi miền xây dựng một input ẩn riêng sẽ dẫn đến lỗi im lặng "điền token trong cài đặt, tải lên không đọc được".**
+- Quyết định: state.js / default-state-port.js / hidden-input-dom-port.js / selectors-port.js / validation.js / deepseek-flow.js / ocr-readiness-flow.js / persistence.js / dialog-values.js **giữ nguyên**; browser-view-port.js / deepseek-view-port.js / view.js / dialog-sync.js / dialog-elements-port.js / setup-mode-port.js **chết**.
+- `updateCredentialGate` (trạng thái khóa nút tải lên) đề xuất **chuyển toàn bộ cho 3a**, miền này chỉ expose đăng ký chỉ đọc.
+- `developer-auth-dialog.js` **được xác định là mã chết (thành phần mồ côi)**: ngoài đăng ký của chính nó và tham chiếu danh sách APP_DIALOG_BACKDROP_IDS, toàn bộ kho mã không có bất kỳ kết nối logic mở/kiểm tra nào. **Đề xuất xác nhận với người dùng/sản phẩm trước khi xóa trong Phase 4**, không lặng lẽ vứt bỏ (có thể là yêu cầu dự trữ).
+- Đề xuất thực hiện kèm theo SettingsHubDialog.jsx §0.4 và factory dialog-store §0.3 (tái sử dụng cho các miền khác).
 
-## 3. GlossariesDialog(533 行)
+## 3. GlossariesDialog (533 dòng)
 
-- controller.js 业务函数(reload/select/save/delete/export/applyImport)保留,state 从可变对象改走 glossaries-store.js。
-- entries 表格从命令式 DOM 行操作改结构化数组 + map——**level==="preserve" 时 target 留空回填 source 的旧语义必须原样保留**。
-- `refreshWorkflowGlossaries({force, selectedId})` 是对 3a workflow 域的回调依赖(反向调用),composition 组装需等 workflow 域就绪;默认参数保持可选调用(no-op 兜底)。
+- Các hàm nghiệp vụ controller.js (reload/select/save/delete/export/applyImport) giữ nguyên, chuyển state từ đối tượng biến đổi sang glossaries-store.js.
+- Bảng entries từ thao tác DOM mệnh lệnh chuyển sang mảng có cấu trúc + map — **khi level==="preserve" ngữ nghĩa cũ để target trống và điền lại source phải được giữ nguyên**.
+- `refreshWorkflowGlossaries({force, selectedId})` là phụ thuộc callback vào miền workflow của 3a (gọi ngược), composition cần đợi miền workflow sẵn sàng; tham số mặc định giữ lệnh gọi tùy chọn (no-op dự phòng).
 
-## 4. ReaderDialog iframe 宿主(919 行,风险等级高)
+## 4. ReaderDialog iframe host (919 dòng, mức độ rủi ro cao)
 
-- **postMessage 契约必须逐字节核对**:type `"retainpdf-reader-progress"`,字段 `{type,percent,text,stage}`,`stage==="ready" && percent>=100` → 180ms 后隐藏;来源校验 `isTrustedWindowMessage(event, frameWindow)` 不改。已与 Phase2b 的 src/pages/reader/entry.jsx 发送端核对一致。
-- `reader-embedded` body class 已由 Phase2b reader 侧自行处理,宿主侧无需动作,只需继续用真实 `<iframe>`。
-- **下载按钮死代码判定需运行时复核**:READER_DIALOG_BUTTON_IDS 对应的宿主侧下载按钮在当前模板里不存在(已被 Phase2b 的 ReaderDownloadMenu.jsx 完全取代),controller.js 的 handleSourceDownload 等四函数疑似死代码——**建议实现 agent 先跑一次 mock 场景真实打开 reader-dialog 确认,再决定是否裁剪**。
-- **iframe src 切换必须用 ref 命令式处理**(setAttribute/removeAttribute),不要走 JSX 声明式 src 属性(React diff 边界情况风险)。
-- 建议单独一个 agent,紧跟 Credentials/StatusDetail 之后,不与其他域并行(联调窗口易冲突)。
+- **Hợp đồng postMessage phải được kiểm tra từng byte**: type `"retainpdf-reader-progress"`, các trường `{type,percent,text,stage}`, `stage==="ready" && percent>=100` → 180ms sau ẩn; kiểm tra nguồn `isTrustedWindowMessage(event, frameWindow)` không đổi. Đã đối chiếu với đầu gửi src/pages/reader/entry.jsx của Phase2b.
+- `reader-embedded` body class đã được xử lý bởi phía reader Phase2b, phía host không cần hành động, chỉ cần tiếp tục dùng `<iframe>` thực.
+- **Xác định mã chết của nút tải xuống cần kiểm tra khi chạy**: READER_DIALOG_BUTTON_IDS tương ứng với nút tải xuống phía host không tồn tại trong mẫu hiện tại (đã được ReaderDownloadMenu.jsx của Phase2b thay thế hoàn toàn), bốn hàm handleSourceDownload... trong controller.js nghi là mã chết — **đề xuất agent chạy thử một lần mở reader-dialog trong mock để xác nhận trước khi quyết định cắt bỏ**.
+- **Chuyển đổi iframe src phải xử lý bằng ref mệnh lệnh** (setAttribute/removeAttribute), không dùng thuộc tính src khai báo JSX (rủi ro trường hợp biên React diff).
+- Đề xuất một agent riêng, theo sau Credentials/StatusDetail, không chạy song song với các miền khác (dễ xung đột cửa sổ liên kết).
 
-## 5. AppUpdateBanner(491 行)
+## 5. AppUpdateBanner (491 dòng)
 
-- 完全自包含,localStorage 24h TTL 缓存 + 后台自动检查。
-- **两处 DOM 分属两个宿主**(按钮在 SettingsHubDialog"更新"tab,详情 dialog 现在 app-shell-header.js 里)——React 化建议合并到同一 AppUpdateBanner.jsx,放进 SettingsHubDialog"更新"tab 下,需与 3a 确认 AppShellHeader 不再残留 update-dialog 模板(否则重复 id 违反门禁)。
+- Hoàn toàn khép kín, bộ nhớ cache localStorage TTL 24h + kiểm tra tự động nền.
+- **Hai DOM thuộc hai host khác nhau** (nút trong tab "Cập nhật" của SettingsHubDialog, hộp thoại chi tiết hiện nằm trong app-shell-header.js) — Đề xuất React hóa: hợp nhất vào cùng AppUpdateBanner.jsx, đặt trong tab "Cập nhật" của SettingsHubDialog, cần xác nhận với 3a rằng AppShellHeader không còn mẫu update-dialog (nếu không sẽ vi phạm cổng kiểm tra do trùng id).
 
-## 6. developer 面板(133 行,几乎不能独立施工)
+## 6. Bảng developer (133 dòng, hầu như không thể thi công độc lập)
 
-- **强依赖 3a workflow 域**:表单字段(模型/工作流/并发参数)读写全部来自 workflowPorts,developer 域自身只有彩蛋触发(键盘序列"bbpp")+ tab 切换 + 打开对话框。
-- 彩蛋逻辑(排除表单元素目标 + 4 字符滑动窗口匹配)需原样迁移为 useDeveloperEasterEgg() hook,注意 StrictMode 下 effect 幂等/cleanup(唯一全局 document keydown 监听)。
-- **建议不单独立项,并入 workflow 承建方或作为 workflow 完成后的收尾小任务**。
+- **Phụ thuộc mạnh vào miền workflow của 3a**: các trường biểu mẫu (mô hình / luồng công việc / tham số đồng thời) đọc/ghi hoàn toàn từ workflowPorts, bản thân miền developer chỉ có kích hoạt easter egg (chuỗi phím "bbpp") + chuyển tab + mở hộp thoại.
+- Logic easter egg (loại trừ mục tiêu phần tử biểu mẫu + khớp cửa sổ trượt 4 ký tự) cần được di chuyển nguyên bản thành hook useDeveloperEasterEgg(), lưu ý StrictMode effect idempotent/cleanup (lắng nghe document keydown toàn cục duy nhất).
+- **Đề xuất không thành lập dự án riêng, nhập vào bên nhận thầu workflow hoặc làm nhiệm vụ nhỏ cuối cùng sau khi workflow hoàn thành**.
 
-## 7. artifact-downloads(264 行)
+## 7. artifact-downloads (264 dòng)
 
-- 无独立可视组件,是挂载在 composition 根部的行为 hook:useArtifactDownloadsBinding()。
-- 7 个固定 id(#download-btn/#markdown-bundle-btn/#status-markdown-bundle-btn/#source-pdf-btn/#pdf-btn/#markdown-btn/#markdown-raw-btn)分布在 recent-jobs 的 ResultActions.jsx 与 StatusDetailDialog。
-- **方案二(推荐)**:setLinkBusy 改写 artifact-download-busy-store.js,按钮各自订阅自己 actionId 分片。需与 recent-jobs 蓝图承建方协商接口——若对方不愿改,退回方案一(ResultActions 按钮包 React.memo,props 只含 enabled/url,不含高频字段)。
+- Không có thành phần hiển thị độc lập, là hook hành vi gắn ở gốc composition: useArtifactDownloadsBinding().
+- 7 id cố định (#download-btn/#markdown-bundle-btn/#status-markdown-bundle-btn/#source-pdf-btn/#pdf-btn/#markdown-btn/#markdown-raw-btn) phân bố trong ResultActions.jsx của recent-jobs và StatusDetailDialog.
+- **Phương án hai (khuyến nghị)**: sửa setLinkBusy thành artifact-download-busy-store.js, các nút tự đăng ký theo actionId của mình. Cần thương lượng giao diện với bên nhận thầu blueprint recent-jobs — nếu họ không muốn sửa, quay lại phương án một (ResultActions bọc React.memo, props chỉ chứa enabled/url, không chứa trường tần suất cao).
 
-## 8. 依赖矩阵与 agent 拆分建议
+## 8. Ma trận phụ thuộc và đề xuất phân tách agent
 
-| 域 | 依赖(读) | 被依赖(写/耦合) |
+| Miền | Phụ thuộc (đọc) | Bị phụ thuộc (ghi/khớp nối) |
 |---|---|---|
-| StatusDetailDialog | job-runtime 保留引擎 state(非 statusCardStore) | ResultActions 需调其 openStatusDetailDialog |
-| CredentialsDialog | 无 | 3a HeroUpload 读隐藏 input + 去设置按钮需其 open() |
-| GlossariesDialog | 无 | 3a workflow 的 refreshWorkflowGlossaries 回调(反向);developer 术语表下拉 |
-| ReaderDialog | Phase2b postMessage 发送端(只读契约) | recent-jobs 卡片"对照阅读"按钮;library-search 岛事件 |
-| AppUpdateBanner | 无 | 3a AppShellHeader 需移除旧模板片段 |
-| developer | 强依赖 3a workflow | 无 |
-| artifact-downloads | 无 | recent-jobs 与本蓝图下载按钮需挂正确 id(+方案二订阅) |
+| StatusDetailDialog | job-runtime giữ state engine (không phải statusCardStore) | ResultActions cần gọi openStatusDetailDialog |
+| CredentialsDialog | Không | 3a HeroUpload đọc input ẩn + nút đến cài đặt cần open() |
+| GlossariesDialog | Không | callback refreshWorkflowGlossaries của workflow 3a (gọi ngược); dropdown bảng thuật ngữ của developer |
+| ReaderDialog | Đầu gửi postMessage Phase2b (hợp đồng chỉ đọc) | nút "Đọc đối chiếu" trên card recent-jobs; sự kiện library-search island |
+| AppUpdateBanner | Không | 3a AppShellHeader cần loại bỏ mẫu cũ |
+| developer | Phụ thuộc mạnh vào workflow 3a | Không |
+| artifact-downloads | Không | recent-jobs và các nút tải của blueprint này cần gắn đúng id (+đăng ký phương án hai) |
 
-**建议 4 个实施 agent**:
-1. CredentialsDialog(+SettingsHubDialog 壳 +dialog-store 基座)—— 最大最自洽,优先。
-2. GlossariesDialog + AppUpdateBanner 合并(体量小,共享 SettingsHubDialog 宿主)。
-3. StatusDetailDialog(+artifact-downloads 方案一兜底,视 recent-jobs 承建方是否接受方案二而定)。
-4. ReaderDialog 单独(体量小但风险高,紧跟 1/3 之后,不与其他域并行)。
-developer 面板归 workflow 收尾,不单独立项。
+**Đề xuất 4 agent thực hiện**:
+1. CredentialsDialog (+ vỏ SettingsHubDialog + đế dialog-store) — lớn nhất, tự nhất quán, ưu tiên.
+2. GlossariesDialog + AppUpdateBanner hợp nhất (khối lượng nhỏ, chia sẻ host SettingsHubDialog).
+3. StatusDetailDialog (+ phương án một artifact-downloads dự phòng, tùy thuộc vào việc bên nhận thầu recent-jobs có chấp nhận phương án hai hay không).
+4. ReaderDialog riêng (khối lượng nhỏ nhưng rủi ro cao, theo sát sau 1/3, không song song với các miền khác).
+Bảng developer thuộc về giai đoạn kết thúc workflow, không thành lập dự án riêng.
 
-**关键前置条件:本蓝图 4 个域与 3a(app-shell/upload/workflow)强耦合**(隐藏 input 共享、去设置按钮触发点、AppShellHeader 模板位置、refreshWorkflowGlossaries 回调)——**必须等 3a 落地后再派工**,否则接口对不齐要返工。
+**Điều kiện tiên quyết quan trọng: 4 miền của blueprint này khớp nối mạnh với 3a (app-shell/upload/workflow)** (chia sẻ input ẩn, điểm kích hoạt nút đến cài đặt, vị trí mẫu AppShellHeader, callback refreshWorkflowGlossaries) — **phải đợi 3a hoàn thành mới giao việc**, nếu không giao diện không khớp sẽ phải làm lại.
 
-## 关键文件
+## Tệp chính
 - src/js/components/dialogs/status-detail-dialog-dom-contract.js
 - src/js/features/status-detail/controller.js
 - src/js/features/credentials/default-state-port.js
 - src/js/features/reader-dialog/controller.js
-- src/pages/reader/entry.jsx(postMessage 发送端核对基准)
-- src/pages/reader/state/drawer-store.js(dialog-store 模式参照)
+- src/pages/reader/entry.jsx (đầu gửi postMessage để đối chiếu)
+- src/pages/reader/state/drawer-store.js (tham khảo mô hình dialog-store)
 - src/shared/react/use-store.js

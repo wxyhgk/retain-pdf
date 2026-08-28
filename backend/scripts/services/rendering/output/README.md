@@ -1,16 +1,16 @@
 # rendering/output
 
-## 负责什么
+## Trách nhiệm
 
-最终输出生成层。这里放 Typst 之外的输出写入、overlay 合成和 PDF 写出辅助能力。
+Tầng sinh đầu ra cuối cùng. Chứa ghi đầu ra ngoài Typst, tổng hợp overlay và khả năng hỗ trợ ghi PDF.
 
-## 对外入口
+## Lối vào công khai
 
 - `pdf_writer.py`
-- 后续 `typst/` 会逐步迁入这里。
+- `typst/` sẽ dần chuyển vào đây.
 
-## 不该做什么
+## Không nên làm gì
 
-- 不做 OCR/翻译判断。
-- 不做页面 redaction 策略。
-- 不做 bbox 字体适配。
+- Không phán đoán OCR/dịch.
+- Không làm chiến lược redaction trang.
+- Không thích ứng font bbox.

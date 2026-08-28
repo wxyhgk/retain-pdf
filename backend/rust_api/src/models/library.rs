@@ -4,7 +4,7 @@ fn default_documents_limit() -> u32 {
     50
 }
 
-/// 文档:图书馆一等公民,document_id = sha256(文件字节)。
+/// Tài liệu:Thư viện Công dân hạng nhất,document_id = sha256(Byte Tệp)。
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DocumentRecord {
     pub document_id: String,
@@ -21,19 +21,19 @@ pub struct DocumentRecord {
     pub last_opened_at: Option<String>,
     pub updated_at: String,
     pub tags: Vec<String>,
-    /// 源 PDF 下载 URL（列表/详情由 API 层填充，不入库）
+    /// nguồn PDF TẢI VỀ URL（Danh sách/Chi tiết từ API Lớp đệm，Không lưu kho）
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub source_pdf_url: String,
-    /// 封面图 URL（列表/详情由 API 层填充，不入库）
+    /// Ảnh bìa URL（Danh sách/Chi tiết từ API Lớp đệm，Không lưu kho）
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub cover_url: String,
-    /// 缩略图 URL（列表/详情由 API 层填充，不入库）
+    /// Hiện các ảnh mẫu URL（Danh sách/Chi tiết từ API Lớp đệm，Không lưu kho）
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub thumbnail_url: String,
 }
 
-/// 收藏:锚点 = (document_id, job_id, page_idx, block_id[, 选区]) + 引文快照。
-/// job_id 标记锚点所在的块空间版本;被引用的 job 不允许单独删除。
+/// Yêu thích:Neo = (document_id, job_id, page_idx, block_id[, khu vực tuyển cử]) + Ảnh chụp nhanh trích dẫn。
+/// job_id Đánh dấu phiên bản của không gian khối nơi neo được đặt;Tham chiếu job Không cho phép xóa riêng lẻ。
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FavoriteRecord {
     pub favorite_id: String,
@@ -47,17 +47,17 @@ pub struct FavoriteRecord {
     pub quote_text: String,
     pub translated_quote_text: String,
     pub note: String,
-    /// 图片附件(assets.asset_id,内容寻址);空串 = 纯文字收藏
+    /// Tệp đính kèm hình ảnh(assets.asset_id,Địa chỉ nội dung);Chuỗi trống = Thu thập văn bản thuần túy
     #[serde(default)]
     pub asset_id: String,
-    /// 截图剪裁矩形几何(前端坐标系,整存整取)
+    /// Ảnh chụp màn hình cắt hình chữ nhật(Hệ tọa độ front-end,Thu thập dữ liệu toàn bộ quyền truy cập)
     #[serde(default)]
     pub rect_json: String,
     pub created_at: String,
     pub updated_at: String,
 }
 
-/// 内容寻址的二进制资产(收藏截图等);文件本体在 data/assets/<2>/<hash>。
+/// Tài sản nhị phân địa chỉ nội dung(Ảnh chụp màn hình yêu thích, v.v.);Bản thể học tài liệu trong data/assets/<2>/<hash>。
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AssetRecord {
     pub asset_id: String,
@@ -68,8 +68,8 @@ pub struct AssetRecord {
     pub created_at: String,
 }
 
-/// AI 问答会话。document_id 为空 = 全库问答。
-/// head_id: 当前可见分支的叶消息 id(空 = 用 max(seq) 推断)。
+/// AI Phiên hỏi đáp。document_id Trống = Hỏi & Đáp Toàn Bộ Thư Viện。
+/// head_id: Thông báo Lá cho Nhánh Hiển thị Hiện tại id(Trống = dùng max(seq) suy đoán)。
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConversationRecord {
     pub conversation_id: String,
@@ -79,13 +79,13 @@ pub struct ConversationRecord {
     pub updated_at: String,
     #[serde(default)]
     pub message_count: i64,
-    /// 当前可见叶;空字符串表示未显式设置。
+    /// Hoa lá nhìn thấy được hiện tại;Chuỗi trống có nghĩa là không được đặt rõ ràng。
     #[serde(default)]
     pub head_id: String,
 }
 
-/// 会话消息。citations_json 是软锚点快照:job 删除后跳转失效但内容不丢。
-/// parent_id: 树边;空 = 根。同 parent 的多条为分支兄弟(重试/编辑)。
+/// Tin nhắn hội thoại。citations_json Là ảnh chụp nhanh neo mềm:job Sau khi xóa, bước nhảy không hợp lệ nhưng nội dung không bị mất。
+/// parent_id: bên cây;Trống = Cột。cùng parent Nhiều người là anh em chi nhánh(thử lại/HIệu chỉnh)。
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MessageRecord {
     pub message_id: String,
@@ -97,13 +97,13 @@ pub struct MessageRecord {
     pub tool_trace_json: String,
     pub model: String,
     pub created_at: String,
-    /// 父消息 id;空字符串 = 根节点。
+    /// Tin nhắn của phụ huynh id;Chuỗi trống = Nút Gốc。
     #[serde(default)]
     pub parent_id: String,
 }
 
-/// 分类文件夹(合集)。v1 只用扁平结构展示,parent_id 为未来嵌套子分类预留
-/// (建表时就规划好,当前恒为 None,不是本次要拆的技术债)。
+/// Thư mục danh mục(Bộ sưu tập)。v1 Chỉ hiển thị với cấu trúc phẳng,parent_id Dành riêng cho các danh mục con lồng nhau trong tương lai
+/// (Lên kế hoạch khi bạn xây dựng bảng,Hiện tại liên tục None,Đây không phải là khoản nợ kỹ thuật sẽ bị phá hủy lần này)。
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CollectionRecord {
     pub collection_id: String,
@@ -111,12 +111,12 @@ pub struct CollectionRecord {
     pub parent_id: Option<String>,
     pub sort_order: i64,
     pub created_at: String,
-    /// 该文件夹当前文档数;只有列表接口才会填,单条查询恒为 0。
+    /// Số lượng tài liệu hiện tại trong thư mục này;Chỉ có giao diện danh sách sẽ được điền vào,Một truy vấn duy nhất luôn luôn là 0。
     #[serde(default)]
     pub document_count: i64,
 }
 
-/// blocks_fts 的一行(派生索引,可随时由任务产物重建)。
+/// blocks_fts Một hàng(Chỉ số dẫn xuất,Sẵn sàng để được xây dựng lại từ sản phẩm nhiệm vụ)。
 #[derive(Debug, Clone)]
 pub struct FtsBlockRow {
     pub page_idx: i64,
@@ -125,7 +125,7 @@ pub struct FtsBlockRow {
     pub translated_text: String,
 }
 
-/// 全文检索命中:带完整锚点,前端可跳转阅读器原位。
+/// Số lần truy xuất toàn văn bản:Với neo đầy đủ,Trình đọc bỏ qua giao diện người dùng tại chỗ。
 #[derive(Debug, Serialize, Clone)]
 pub struct BlockSearchHit {
     pub document_id: String,
@@ -136,7 +136,7 @@ pub struct BlockSearchHit {
     pub translated_snippet: String,
 }
 
-/// GET /api/v1/documents 查询参数。
+/// GET /api/v1/documents Thông số truy vấn。
 #[derive(Debug, Deserialize)]
 pub struct ListDocumentsQuery {
     #[serde(default = "default_documents_limit")]
@@ -146,7 +146,7 @@ pub struct ListDocumentsQuery {
     pub reading_status: Option<String>,
     pub tag: Option<String>,
     pub collection_id: Option<String>,
-    /// 按任意 job_id(含历史 run)直查其所属文档,前端无需再扫列表反查
+    /// Bởi Bất kỳ job_id(Có lịch sử run)Đi thẳng đến giấy tờ thuộc về,Không cần quét danh sách để kiểm tra lại ở mặt trước
     pub job_id: Option<String>,
 }
 
@@ -166,10 +166,10 @@ pub struct PatchDocumentInput {
 /// POST /api/v1/favorites
 #[derive(Debug, Deserialize)]
 pub struct CreateFavoriteInput {
-    /// 可缺省:给了 job_id 时后端自动解析所属文档(历史 run 也能收藏)
+    /// Có thể mặc định:cho job_id Khi phụ trợ tự động phân tích tài liệu thuộc về(Sử học run Bạn cũng có thể thu thập)
     #[serde(default)]
     pub document_id: String,
-    /// 锚点所在块空间;缺省用文档当前 active_job_id
+    /// Chặn không gian nơi neo được đặt;Tài liệu mặc định hiện tại active_job_id
     pub job_id: Option<String>,
     pub page_idx: i64,
     pub block_id: String,
@@ -182,10 +182,10 @@ pub struct CreateFavoriteInput {
     pub translated_quote_text: Option<String>,
     #[serde(default)]
     pub note: Option<String>,
-    /// 图片附件:先 POST /api/v1/assets 拿 asset_id 再挂上(kind 建议 figure)
+    /// Tệp đính kèm hình ảnh:trước POST /api/v1/assets cầm asset_id Cúp máy lần nữa(kind Khuyến nghị figure)
     #[serde(default)]
     pub asset_id: Option<String>,
-    /// 截图剪裁矩形几何(前端坐标系原样存)
+    /// Ảnh chụp màn hình cắt hình chữ nhật(Hệ tọa độ front-end nguyên trạng)
     #[serde(default)]
     pub rect_json: Option<String>,
 }
@@ -223,7 +223,7 @@ pub struct SearchQuery {
     pub q: String,
     #[serde(default = "default_search_limit")]
     pub limit: u32,
-    /// 限定单文档（阅读器 / AI 整本问答）；空 = 全库
+    /// Tài liệu đặt hàng đủ điều kiện（Đầu đọc / AI Toàn bộ phần hỏi đáp）；Trống = Toàn bộ thư viện
     #[serde(default)]
     pub document_id: String,
 }
@@ -254,7 +254,7 @@ pub struct ListConversationsQuery {
     pub limit: u32,
     #[serde(default)]
     pub offset: u32,
-    /// 按文档过滤;空 = 全部。
+    /// Lọc theo tài liệu;Trống = Tất cả。
     #[serde(default)]
     pub document_id: String,
 }
@@ -281,13 +281,13 @@ pub struct AppendMessageInput {
     pub tool_trace_json: String,
     #[serde(default)]
     pub model: String,
-    /// 父消息 id;省略/空 = 挂到当前 head(线性续写)。
+    /// Tin nhắn của phụ huynh id;tỉnh lược/Trống = Giữ nguyên trạng thái hiện tại head(Tiếp tục tuyến tính)。
     #[serde(default)]
     pub parent_id: String,
-    /// 客户端稳定 id(与 assistant-ui store id 对齐);空则服务端生成。
+    /// Tính ổn định của khách hàng id(VÀ assistant-ui store id xếp hợp lý);Null sau đó tạo phía máy chủ。
     #[serde(default)]
     pub message_id: String,
-    /// 追加后是否把 head 指到本条;默认 true。
+    /// Bạn có muốn thêm head Chỉ vào bài viết này;ngầm thừa nhận true。
     #[serde(default = "default_true")]
     pub set_head: bool,
 }
@@ -298,7 +298,7 @@ fn default_true() -> bool {
 
 #[derive(Debug, Deserialize)]
 pub struct PatchConversationInput {
-    /// 切换可见分支叶节点。
+    /// Bật/Tắt Nút Lá Nhánh Có Thể Nhìn Thấy。
     #[serde(default)]
     pub head_id: String,
     #[serde(default)]

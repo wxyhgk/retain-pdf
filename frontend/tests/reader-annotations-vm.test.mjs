@@ -8,7 +8,7 @@ import {
   sortAnnotations,
 } from "../src/js/reader/annotations/view-model.js";
 
-// 造一条最小批注:测试里只覆写关心的字段
+// Tạo một chú thích tối thiểu: trong kiểm thử chỉ ghi đè các trường quan tâm
 function makeAnnotation(overrides = {}) {
   return {
     favoriteId: "fav-1",
@@ -25,24 +25,24 @@ function makeAnnotation(overrides = {}) {
   };
 }
 
-test("sortAnnotations 先按页码升序,同页按创建时间升序", () => {
+test("sortAnnotations sắp xếp theo số trang tăng dần, cùng trang theo thời gian tạo tăng dần", () => {
   const annotations = [
     makeAnnotation({ favoriteId: "c", pageIdx: 2, createdAt: "2026-07-01T00:00:00Z" }),
     makeAnnotation({ favoriteId: "b", pageIdx: 0, createdAt: "2026-07-02T00:00:00Z" }),
     makeAnnotation({ favoriteId: "a", pageIdx: 0, createdAt: "2026-07-01T00:00:00Z" }),
   ];
   assert.deepEqual(sortAnnotations(annotations).map((item) => item.favoriteId), ["a", "b", "c"]);
-  // 不改动入参数组本身
+  // không sửa đổi mảng đầu vào
   assert.deepEqual(annotations.map((item) => item.favoriteId), ["c", "b", "a"]);
 });
 
-test("sortAnnotations 非数组入参返回空数组", () => {
+test("sortAnnotations với đầu vào không phải mảng trả về mảng rỗng", () => {
   assert.deepEqual(sortAnnotations(null), []);
   assert.deepEqual(sortAnnotations(undefined), []);
   assert.deepEqual(sortAnnotations("oops"), []);
 });
 
-test("groupAnnotationsByPage 按页分组且组内保持时间序", () => {
+test("groupAnnotationsByPage nhóm theo trang và giữ thứ tự thời gian trong nhóm", () => {
   const groups = groupAnnotationsByPage([
     makeAnnotation({ favoriteId: "p3", pageIdx: 3 }),
     makeAnnotation({ favoriteId: "p0-late", pageIdx: 0, createdAt: "2026-07-02T00:00:00Z" }),
@@ -58,11 +58,11 @@ test("groupAnnotationsByPage 按页分组且组内保持时间序", () => {
   assert.deepEqual(groupAnnotationsByPage([]), []);
 });
 
-test("buildAnnotationsMarkdown 输出标题/页小节/引用块/译文/笔记", () => {
+test("buildAnnotationsMarkdown xuất tiêu đề/mục trang/khối trích dẫn/bản dịch/ghi chú", () => {
   const markdown = buildAnnotationsMarkdown({
     title: "Attention",
     annotations: [
-      // 故意乱序传入,导出应先排序再分组
+      // cố ý truyền vào không theo thứ tự, xuất ra nên sắp xếp trước rồi mới nhóm
       makeAnnotation({ favoriteId: "f2", pageIdx: 1, quoteText: "第二页数据", kind: "data" }),
       makeAnnotation({
         favoriteId: "f1",
@@ -77,9 +77,9 @@ test("buildAnnotationsMarkdown 输出标题/页小节/引用块/译文/笔记", 
   });
   assert.equal(
     markdown,
-    "# Attention 批注\n" +
+    "# Chú thích Attention\n" +
       "\n" +
-      "## 第 1 页\n" +
+      "## Trang 1\n" +
       "\n" +
       "> 图注\n" +
       "\n" +
@@ -88,23 +88,23 @@ test("buildAnnotationsMarkdown 输出标题/页小节/引用块/译文/笔记", 
       "> —— trans1\n" +
       "> trans2\n" +
       "\n" +
-      "笔记:重要\n" +
+      "Ghi chú: quan trọng\n" +
       "\n" +
-      "## 第 2 页\n" +
+      "## Trang 2\n" +
       "\n" +
       "> 第二页数据\n",
   );
 });
 
-test("buildAnnotationsMarkdown 空列表输出占位文案", () => {
-  assert.equal(buildAnnotationsMarkdown({ title: "Attention", annotations: [] }), "# Attention 批注\n\n(暂无批注)\n");
-  assert.equal(buildAnnotationsMarkdown({}), "# 批注\n\n(暂无批注)\n");
+test("buildAnnotationsMarkdown danh sách rỗng xuất văn bản giữ chỗ", () => {
+  assert.equal(buildAnnotationsMarkdown({ title: "Attention", annotations: [] }), "# Chú thích Attention\n\n(Không có chú thích)\n");
+  assert.equal(buildAnnotationsMarkdown({}), "# Chú thích\n\n(Không có chú thích)\n");
 });
 
-test("annotationAnchor 只暴露跳转所需的页码与块 id", () => {
+test("annotationAnchor chỉ hiển thị số trang và block id cần cho chuyển hướng", () => {
   assert.deepEqual(annotationAnchor(makeAnnotation({ pageIdx: 4, blockId: "blk-9" })), { pageIdx: 4, blockId: "blk-9" });
 });
 
-test("ANNOTATION_KIND_META 覆盖三种批注类型", () => {
+test("ANNOTATION_KIND_META bao phủ ba loại chú thích", () => {
   assert.deepEqual(Object.keys(ANNOTATION_KIND_META), ["sentence", "data", "figure"]);
 });

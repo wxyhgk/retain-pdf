@@ -1,8 +1,8 @@
-//! retainpdf-ai 服务的反向代理。
+//! retainpdf-ai Proxy ngược cho các dịch vụ。
 //!
-//! 前端保持单一入口(Rust API)与单一 X-API-Key:本路由把请求转发到
-//! 常驻 AI 服务并透传客户端的 X-API-Key(两个服务共享同一 key 集合即可,
-//! 零新增前端配置)。SSE 流式响应按字节流透传。
+//! Giao diện người dùng duy trì một mục nhập duy nhất(Rust API)Với người độc thân X-API-Key:Lộ trình này chuyển tiếp yêu cầu đến
+//! thường trú AI phục vụ và giao tiếp minh bạch với khách hàng X-API-Key(Hai dịch vụ chia sẻ cùng một key Chỉ cần thu thập chúng.,
+//! Không có cấu hình giao diện người dùng mới)。SSE Phản hồi phát trực tuyến được truyền theo byte。
 
 use axum::body::Body;
 use axum::extract::Json;
@@ -14,8 +14,8 @@ use crate::error::AppError;
 
 static PROXY_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
     reqwest::Client::builder()
-        // 上游 agent 循环最长可跑数分钟;连接超时短、整体不设上限,
-        // 由上游自身的轮数/超时护栏兜底。
+        // Thượng lưu agent Vòng lặp có thể chạy trong tối đa vài phút;Hết thời gian kết nối ngắn、Không có giới hạn trên tổng thể,
+        // Số vòng từ chính thượng nguồn/Túi sau lan can bảo vệ ngoài giờ。
         .connect_timeout(std::time::Duration::from_secs(3))
         .build()
         .expect("build ai proxy client")

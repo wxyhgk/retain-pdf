@@ -234,7 +234,7 @@ export function createCurrentJobStatePort(
   };
 }
 
-// 选择器读子 store 快照(store 是唯一真值,旧 state 对象只充当身份键)
+// Trình đọc bộ chọn store Ảnh chụp nhanh(store là giá trị thực duy nhất,trước đây state Đối tượng chỉ hoạt động như một khóa nhận dạng)
 export function currentJobId(state?: unknown) {
   return `${currentJobStoreFor(state as object | null | undefined).getSnapshot().jobId || ""}`.trim();
 }

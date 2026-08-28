@@ -1,30 +1,30 @@
-# 皮肤：素纸（id 仍为 `jiangnan`）
+# Skin: Giấy Mộc (id vẫn là `jiangnan`)
 
-## 为什么旧版显「土」
+## Tại sao bản cũ trông "thô"
 
-| 问题 | 旧值倾向 | 观感 |
+| Vấn đề | Xu hướng giá trị cũ | Cảm nhận |
 |------|----------|------|
-| 底色过暖 | `#ede8e1` 米黄 | 夯土、陈旧 |
-| 纸色发黄 | `#f7f3eb` | 廉价宣纸黄 |
-| 强调偏铜绿 | `#2f6f5e` | 锈绿、俗气 |
-| 点缀砖朱/亮金 | 砖红 + 鎏金 | 装修样板间 |
+| Nền quá ấm | `#ede8e1` vàng be | Đất nện, cũ kỹ |
+| Màu giấy ngả vàng | `#f7f3eb` | Vàng giấy tuyên rẻ tiền |
+| Nhấn thiên lục đồng | `#2f6f5e` | Xanh gỉ, sến |
+| Điểm xuyết gạch son/vàng sáng | Đỏ gạch + vàng mạ | Phòng mẫu trang trí |
 
-## 修正方向
+## Hướng sửa đổi
 
-**素雅 = 冷灰中性大面 + 一点冷青绿 + 干净红只做状态。**
+**Thanh nhã = Mặt lớn xám lạnh trung tính + chút xanh lục lạnh + đỏ sạch chỉ làm trạng thái.**
 
-| Token | 新值 | 说明 |
+| Token | Giá trị mới | Ghi chú |
 |-------|------|------|
-| `--bg` | `#f1f0ed` | 冷石灰，几乎不黄 |
-| `--paper` | `#fbfaf8` | 近白纸 |
-| `--ink` / `--muted` / `--line` | 中性冷灰 | 不跟暖黄 |
-| `--accent` | `#2a5f57` | 冷青绿，非橄榄绿 |
-| `--selection` | `#e8efed` | 极浅冷罩 |
-| `--danger` | `#c23b32` | 干净红 |
-| `--gold` | `#8a7a5c` | 哑青铜，仅小标签 |
+| `--bg` | `#f1f0ed` | Xám đá lạnh, gần như không vàng |
+| `--paper` | `#fbfaf8` | Gần trắng |
+| `--ink` / `--muted` / `--line` | Xám lạnh trung tính | Không theo vàng ấm |
+| `--accent` | `#2a5f57` | Xanh lục lạnh, không phải xanh olive |
+| `--selection` | `#e8efed` | Lớp phủ lạnh cực nhạt |
+| `--danger` | `#c23b32` | Đỏ sạch |
+| `--gold` | `#8a7a5c` | Đồng xanh mờ, chỉ nhãn nhỏ |
 
-## 纪律（不变）
+## Kỷ luật (không đổi)
 
-1. 大面积只用灰与纸，不用大块绿/金/朱。  
-2. 不贴梅枝亭台印章。  
-3. 层次靠明度与间距，不靠脏纹理。  
+1. Diện tích lớn chỉ dùng xám và giấy, không dùng mảng lớn xanh/vàng/son.  
+2. Không dán cành mai đình đài ấn chương.  
+3. Tầng lớp dựa vào độ sáng và khoảng cách, không dựa vào vân bẩn.  

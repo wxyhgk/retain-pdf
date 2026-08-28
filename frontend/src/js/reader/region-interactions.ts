@@ -199,34 +199,34 @@ async function handleTranslatedRegionDoubleClick(event) {
   }
   event.preventDefault();
   showReaderRegionPair(region);
-  try {
-    const payload = await fetchReaderRegionPayload(region);
-    const formatted = formatReaderRegionMarkdownPayload(payload);
-    await copyTextToClipboard(formatted.translated || formatted.primaryText);
-    showReaderRegionToast(readerRegionBinding?.translatedController, region.translated, "已复制");
-  } catch {
-    showReaderRegionToast(readerRegionBinding?.translatedController, region.translated, "复制失败");
-    // Keep text selection behavior unaffected if copy is unavailable.
-  }
+    try {
+      const payload = await fetchReaderRegionPayload(region);
+      const formatted = formatReaderRegionMarkdownPayload(payload);
+      await copyTextToClipboard(formatted.translated || formatted.primaryText);
+      showReaderRegionToast(readerRegionBinding?.translatedController, region.translated, "Đã sao chép");
+    } catch {
+      showReaderRegionToast(readerRegionBinding?.translatedController, region.translated, "Sao chép thất bại");
+      // Keep text selection behavior unaffected if copy is unavailable.
+    }
 }
 
-async function showReaderRegionMarkdown(event, region) {
-  event.preventDefault();
-  event.stopPropagation();
-  showReaderRegionPair(region);
-  const binding = readerRegionBinding;
-  if (!binding?.jobId || !binding?.fetchTranslationItem || !region?.itemId) {
-    renderReaderMarkdownPopover(event, region, { message: "缺少 item_id，无法读取文本" });
-    return;
+  async function showReaderRegionMarkdown(event, region) {
+    event.preventDefault();
+    event.stopPropagation();
+    showReaderRegionPair(region);
+    const binding = readerRegionBinding;
+    if (!binding?.jobId || !binding?.fetchTranslationItem || !region?.itemId) {
+      renderReaderMarkdownPopover(event, region, { message: "Thiếu item_id, không thể đọc văn bản" });
+      return;
+    }
+    const popover = renderReaderMarkdownPopover(event, region, { message: "Đang đọc..." });
+    try {
+      const payload = await fetchReaderRegionPayload(region);
+      renderReaderMarkdownPayload(popover, payload);
+    } catch (error) {
+      popover.querySelector(".reader-region-markdown-body").textContent = error?.message || "Không thể đọc";
+    }
   }
-  const popover = renderReaderMarkdownPopover(event, region, { message: "正在读取..." });
-  try {
-    const payload = await fetchReaderRegionPayload(region);
-    renderReaderMarkdownPayload(popover, payload);
-  } catch (error) {
-    popover.querySelector(".reader-region-markdown-body").textContent = error?.message || "读取失败";
-  }
-}
 
 export function scheduleRegionOverlayRender() {
   if (!readerRegionBinding || regionOverlayTicking) {
@@ -294,11 +294,11 @@ export function bindReaderRegionHover({
   scheduleRegionOverlayRender();
 }
 
-// ===== 锚点定位与选区取文(收藏/搜索命中/批注共用的前置能力) =====
+// ===== Định vị neo và trích xuất vùng chọn (khả năng tiền đề dùng chung cho thu thập/tìm kiếm/trúng mục chú thích) =====
 
-// 块 ID 在两套产物里补零位数不同:regions 的 itemId 是 3 位(p001-b002),
-// 服务端 FTS/收藏/引用的 block_id 是 4 位(p001-b0002)。统一归一成
-// "p<页>-b<块>" 的纯数字键再比较,否则跨系统锚点永远匹配不上。
+// ID khối có số chữ số 0 khác nhau trong 2 bộ sản phẩm: itemId trong regions là 3 chữ số (p001-b002),
+// block_id trong FTS/Thu thập/Trích dẫn của máy chủ là 4 chữ số (p001-b0002). Thống nhất về
+// khóa số thuần túy "p<trang>-b<khối>" để so sánh, nếu không neo chéo hệ thống sẽ không bao giờ khớp.
 const BLOCK_KEY_RE = /^p0*(\d+)-b0*(\d+)$/i;
 
 export function normalizeBlockKey(blockId) {
@@ -306,8 +306,8 @@ export function normalizeBlockKey(blockId) {
   return match ? `p${Number(match[1])}-b${Number(match[2])}` : `${blockId || ""}`.trim();
 }
 
-// 按 (pageIdx, blockId) 锚点滚动到原位并短暂高亮命中区域。
-// blockId ↔ region.itemId(补零位数不敏感);找不到区域时回退为整页定位。
+// Cuộn theo neo (pageIdx, blockId) về vị trí gốc và tô sáng tạm thời vùng trúng.
+// blockId ↔ region.itemId (không nhạy cảm với số chữ số 0); nếu không tìm thấy vùng, quay lại định vị toàn trang.
 export function jumpToReaderAnchor(anchor: PageAnchor = {}) {
   const binding = readerRegionBinding;
   const blockKey = normalizeBlockKey(anchor?.blockId);
@@ -337,8 +337,8 @@ export function jumpToReaderAnchor(anchor: PageAnchor = {}) {
   return true;
 }
 
-// 从原文页选区矩形提取引文:命中与选区相交的 region,拼出 quote 文本与主 block。
-// 选区 rect 为相对页面元素的像素坐标(selection-favorites 的坐标系)。
+// Trích xuất trích dẫn từ vùng chọn trang gốc: trúng với region giao với vùng chọn, ghép văn bản trích dẫn và khối chính.
+// rect của vùng chọn là tọa độ pixel tương đối với phần tử trang (hệ tọa độ của selection-favorites).
 export function resolveSelectionQuote({ page = 0, rect = null }: {
   page?: number;
   rect?: PixelRect | null;

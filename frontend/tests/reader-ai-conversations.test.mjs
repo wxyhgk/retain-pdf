@@ -95,7 +95,7 @@ const selectOptions = () =>
   [...documentRef.getElementById("reader-ai-session-select").options].map((o) => o.textContent);
 const statusText = () => documentRef.getElementById("reader-ai-status")?.textContent || "";
 
-test("DOM 布线:表单提交产出问答气泡,新建按钮清空线程", async () => {
+test("Kết nối DOM: gửi biểu mẫu tạo bong bóng hỏi đáp, nút hội thoại mới xóa luồng", async () => {
   const { historyStore } = await makeChat();
   // 首个挂载:React 根事件委托可用,走真实 DOM 事件验布线
   const input = documentRef.getElementById("reader-ai-input");
@@ -106,34 +106,34 @@ test("DOM 布线:表单提交产出问答气泡,新建按钮清空线程", async
     .dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
   await waitFor(
     () => bubbleTexts().some((t) => t.includes("回答:会话A问题")),
-    "DOM 提交产出回答气泡",
+    "Gửi DOM tạo bong bóng trả lời",
   );
   assert.ok(bubbleTexts().some((t) => t.includes("会话A问题")));
 
   documentRef.getElementById("reader-ai-new-btn")
     .dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
-  await waitFor(() => bubbleTexts().length === 0, "新对话线程为空");
+  await waitFor(() => bubbleTexts().length === 0, "Luồng hội thoại mới trống");
   assert.equal(historyStore.listSessions().length, 2);
 });
 
-test("切换会话:载回目标会话的气泡", async () => {
+test("Chuyển hội thoại: tải lại bong bóng của hội thoại đích", async () => {
   const { controller, historyStore } = await makeChat();
   await controller().submit("第一段问题");
   const idA = historyStore.activeSessionId();
-  assert.ok(idA, "首次提交后应有 active 会话");
+  assert.ok(idA, "Sau lần gửi đầu tiên phải có hội thoại active");
 
   await controller().newConversation();
-  assert.equal(bubbleTexts().length, 0, "新对话线程为空");
+  assert.equal(bubbleTexts().length, 0, "Luồng hội thoại mới trống");
   await controller().submit("第二段问题");
   assert.ok(bubbleTexts().some((t) => t.includes("第二段问题")));
   assert.ok(!bubbleTexts().some((t) => t.includes("第一段问题")));
 
   await controller().switchConversation(idA);
-  assert.ok(bubbleTexts().some((t) => t.includes("第一段问题")), "切回后 A 的气泡恢复");
+  assert.ok(bubbleTexts().some((t) => t.includes("第一段问题")), "Bong bóng của A được khôi phục sau khi quay lại");
   assert.ok(!bubbleTexts().some((t) => t.includes("第二段问题")));
 });
 
-test("删除当前对话:移除并切到剩余会话", async () => {
+test("Xóa hội thoại hiện tại: loại bỏ và chuyển sang hội thoại còn lại", async () => {
   const { controller, historyStore } = await makeChat();
   await controller().submit("留存问题");
   await controller().newConversation();
@@ -142,15 +142,15 @@ test("删除当前对话:移除并切到剩余会话", async () => {
 
   await controller().deleteConversation();
   assert.equal(historyStore.listSessions().length, 1);
-  assert.ok(bubbleTexts().some((t) => t.includes("留存问题")), "删除后落到留存会话");
+  assert.ok(bubbleTexts().some((t) => t.includes("留存问题")), "Sau khi xóa sẽ chuyển sang hội thoại được giữ lại");
 });
 
-test("会话切换栏:提交后下拉出现带标题的选项", async () => {
+test("Thanh chuyển hội thoại: sau khi gửi, danh sách xuất hiện tùy chọn có tiêu đề", async () => {
   const { controller } = await makeChat();
   await controller().submit("给会话取名的问题");
   await waitFor(
     () => selectOptions().some((t) => t.includes("给会话取名的问题")),
-    "下拉出现会话标题",
+    "Danh sách xuất hiện tiêu đề hội thoại",
   );
 });
 

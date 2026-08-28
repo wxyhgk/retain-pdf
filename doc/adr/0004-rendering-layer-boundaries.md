@@ -1,50 +1,50 @@
-# 0004 渲染层按 workflow/analysis/source/layout/output 分层
+# 0004 Phân tầng lớp kết xuất theo workflow/analysis/source/layout/output
 
-## 背景
+## Bối cảnh
 
-渲染层同时处理页面画像、原 PDF 清理、背景重建、译文排版、Typst 生成和 PDF 写出。旧结构按技术文件自然增长，导致 `source`、`layout`、`output` 之间出现桥接逻辑堆叠，后续修字体、删除策略或 overlay 时容易互相影响。
+Lớp kết xuất đồng thời xử lý chân dung trang, làm sạch PDF gốc, tái tạo nền, sắp chữ bản dịch, tạo Typst và ghi PDF. Cấu trúc cũ phát triển tự nhiên theo các tệp kỹ thuật, dẫn đến việc chồng chất logic cầu nối giữa `source`, `layout`, `output`, khi sửa font, chiến lược xóa hoặc overlay về sau dễ ảnh hưởng lẫn nhau.
 
-典型问题是：
+Các vấn đề điển hình:
 
-- `source/background` 既构建 layout block，又做 redaction，又合并 overlay。
-- 通用 PDF 保存能力放在 `output/pdf_writer.py`，导致 source 层反向依赖 output。
-- `layout/typography/measurement.py` 同时包含 bbox 测量、行数预测、紧凑度、正文候选和页基准字号。
-- `RenderLayoutBlock` 和 `RenderBlock` 双轨存在，字段计算重复。
+- `source/background` vừa xây dựng layout block, vừa redaction, vừa hợp nhất overlay.
+- Khả năng lưu PDF chung đặt trong `output/pdf_writer.py`, khiến lớp source phụ thuộc ngược vào output.
+- `layout/typography/measurement.py` đồng thời chứa đo lường bbox, dự đoán số dòng, độ gọn, ứng cử viên văn bản và cỡ chữ cơ sở trang.
+- `RenderLayoutBlock` và `RenderBlock` tồn tại song song, tính toán trường lặp lại.
 
-## 决策
+## Quyết định
 
-渲染层一级目录按稳定职责分层：
+Thư mục cấp một của lớp kết xuất được phân tầng theo trách nhiệm ổn định:
 
-- `workflow`：流程编排。
-- `analysis`：页面/文档事实和路线判断。
-- `document`：文档级通用能力，比如 metadata、page map、PDF 保存辅助。
-- `source`：原 PDF 准备、清理、背景重建和压缩。
-- `layout`：译文排版、字体、行距、bbox fit、渲染块模型。
-- `output`：Typst/PDF overlay 输出。
-- `legacy`：旧入口兼容，不放新业务逻辑。
+- `workflow`: Điều phối quy trình.
+- `analysis`: Thông tin trang/tài liệu và đánh giá lộ trình.
+- `document`: Khả năng chung cấp tài liệu, ví dụ metadata, page map, hỗ trợ lưu PDF.
+- `source`: Chuẩn bị, làm sạch, tái tạo nền và nén PDF gốc.
+- `layout`: Sắp chữ bản dịch, font, giãn dòng, fit bbox, mô hình khối kết xuất.
+- `output`: Xuất Typst/PDF overlay.
+- `legacy`: Tương thích với lối vào cũ, không chứa logic mới.
 
-这次重构落实了几个边界：
+Lần tái cấu trúc này đã thực hiện một số ranh giới:
 
-- `source/background/redaction_plan.py` 只消费 `RenderBlock`，不再调用 `layout.payload.blocks`。
-- `build_render_blocks` 上移到 `output/typst/source_page_overlay.py` 这一桥接层。
-- `save_optimized_pdf` 和 `strip_page_links` 下沉到 `document/pdf_ops.py`。
-- `layout/model/block_view.py` 作为 `RenderLayoutBlock -> RenderBlock` 的统一视图。
-- `output/typst/block_fields.py` 统一 Typst emitter 的 bbox/font/color 字段计算。
-- Typst overlay 路径使用“文本容器自带背景”，不再为普通译文块输出独立 `rect(...)` 白块。
-- `layout/typography/measurement.py` 保留兼容导出，真实逻辑拆到单职责模块。
+- `source/background/redaction_plan.py` chỉ tiêu thụ `RenderBlock`, không còn gọi `layout.payload.blocks`.
+- `build_render_blocks` được chuyển lên lớp cầu nối `output/typst/source_page_overlay.py`.
+- `save_optimized_pdf` và `strip_page_links` được đưa xuống `document/pdf_ops.py`.
+- `layout/model/block_view.py` làm khung nhìn thống nhất `RenderLayoutBlock -> RenderBlock`.
+- `output/typst/block_fields.py` thống nhất tính toán trường bbox/font/màu của Typst emitter.
+- Đường dẫn overlay Typst sử dụng "vùng chứa văn bản có nền riêng", không còn xuất các khối `rect(...)` trắng độc lập cho các khối dịch thông thường.
+- `layout/typography/measurement.py` giữ xuất khẩu tương thích, logic thực tế được tách sang các mô-đun đơn trách nhiệm.
 
-## 后果
+## Hậu quả
 
-- 新代码不能随意跨层 import，必须通过 `backend/scripts/devtools/check_pipeline_architecture.py`。
-- `legacy/` 只能 re-export 或兼容旧调用方，不应承载新逻辑。
-- `source` 可以操作 PDF 页面对象，但不应知道 Typst 输出细节，也不应自己构建 layout payload。
-- `layout` 只产出排版模型，不直接清理 PDF 或生成 Typst。
-- output 层可以做桥接，但需要避免把 OCR/翻译判断带进来。
-- 视觉遮盖和文本层清理分开处理。Typst/Word 的文本容器背景只负责视觉层，PDF 原文本层仍由 `source/cleanup` / redaction 策略负责。
+- Mã mới không thể import xuyên lớp tùy tiện, phải thông qua `backend/scripts/devtools/check_pipeline_architecture.py`.
+- `legacy/` chỉ có thể re-export hoặc tương thích với các caller cũ, không được chứa logic mới.
+- `source` có thể thao tác đối tượng trang PDF, nhưng không được biết chi tiết xuất Typst, cũng không tự xây dựng layout payload.
+- `layout` chỉ tạo ra mô hình sắp chữ, không trực tiếp làm sạch PDF hoặc tạo Typst.
+- Lớp output có thể làm cầu nối, nhưng cần tránh đưa các phán đoán OCR/dịch vào.
+- Che phủ trực quan và làm sạch lớp văn bản được xử lý riêng. Nền vùng chứa văn bản Typst/Word chỉ phụ trách lớp trực quan, lớp văn bản PDF gốc vẫn do chiến lược `source/cleanup` / redaction đảm nhiệm.
 
-## 验证
+## Xác minh
 
-当前基础验证：
+Xác minh cơ bản hiện tại:
 
 ```bash
 python3 -m pytest backend/scripts/devtools/tests/rendering -q
@@ -53,7 +53,7 @@ python3 -m compileall -q backend/scripts
 python3 backend/scripts/devtools/check_pipeline_architecture.py
 ```
 
-真实 PDF render-only 回归：
+Hồi quy render-only PDF thực tế:
 
 ```bash
 python3 backend/scripts/devtools/run_golden_flow.py \
@@ -67,10 +67,10 @@ python3 backend/scripts/devtools/run_golden_flow.py \
   --bbox-item p001-b013
 ```
 
-这两个样本分别覆盖可编辑论文 PDF 和伪可编辑 PDF。
+Hai mẫu này lần lượt bao phủ PDF bài báo có thể chỉnh sửa và PDF giả có thể chỉnh sửa.
 
-## 替代方案
+## Phương án thay thế
 
-- 继续按文件自然拆分，不加边界检查。短期快，但会继续积累跨层补丁。
-- 直接引入 `tach` 或 `import-linter`。更系统，但当前已有 `check_pipeline_architecture.py` 足够先守住关键边界。
-- 一次性合并 `RenderLayoutBlock` 和 `RenderBlock`。理论更干净，但会同时影响 Typst 输出、redaction 和 page spec，风险过高；先用 `block_view` 渐进统一。
+- Tiếp tục phân chia theo tệp tự nhiên, không thêm kiểm tra ranh giới. Nhanh trong ngắn hạn, nhưng sẽ tiếp tục tích lũy các bản vá xuyên lớp.
+- Trực tiếp đưa vào `tach` hoặc `import-linter`. Có hệ thống hơn, nhưng hiện tại `check_pipeline_architecture.py` đã đủ để giữ các ranh giới quan trọng trước.
+- Hợp nhất một lần `RenderLayoutBlock` và `RenderBlock`. Lý thuyết sạch hơn, nhưng sẽ ảnh hưởng đồng thời đến xuất Typst, redaction và page spec, rủi ro cao; trước tiên sử dụng `block_view` để thống nhất dần dần.

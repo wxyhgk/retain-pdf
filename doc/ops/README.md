@@ -1,13 +1,13 @@
-# 运维与过程记录
+# Vận hành và ghi chép quy trình
 
-这里放工程判断、执行计划、历史台账和自动生成报告。
+Nơi đây lưu trữ các phán đoán kỹ thuật, kế hoạch thực thi, sổ sách lịch sử và báo cáo tự động sinh.
 
-## 入口
+## Đầu vào
 
-- [工程规划与台账](./planning/README.md)
-- [生成报告](./reports/README.md)
+- [Lập kế hoạch và sổ sách kỹ thuật](./planning/README.md)
+- [Báo cáo sinh tự động](./reports/README.md)
 
-## 读法
+## Cách đọc
 
-这层适合看历史决策、排障留痕和自动导出结果。
-如果你在找“当前功能怎么用”，不要从这里开始。
+Tầng này phù hợp để xem quyết định lịch sử, dấu vết khắc phục sự cố và kết quả xuất tự động.
+Nếu bạn đang tìm "chức năng hiện tại dùng thế nào", đừng bắt đầu từ đây.

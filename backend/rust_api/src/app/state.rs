@@ -153,7 +153,7 @@ mod tests {
         job.updated_at = "2026-04-02T00:10:00Z".to_string();
         job.pid = pid;
         job.stage = Some("translation_prepare".to_string());
-        job.stage_detail = Some("正在运行".to_string());
+        job.stage_detail = Some("Đang chạy".to_string());
         job.sync_runtime_state();
         job
     }
@@ -181,7 +181,7 @@ mod tests {
         assert!(job
             .error
             .as_deref()
-            .is_some_and(|detail| detail.contains("未记录 worker pid")));
+            .is_some_and(|detail| detail.contains("worker pid không được ghi lại")));
         assert_eq!(
             state
                 .db
@@ -307,7 +307,7 @@ mod tests {
                 "{\"invalid\":true}",
                 Option::<String>::None,
                 "mineru_upload",
-                "正在运行",
+                "Đang chạy",
                 Option::<i64>::None,
                 Option::<i64>::None,
                 "[]",
@@ -387,7 +387,7 @@ mod tests {
                 "{\"workflow\":\"mineru\",\"ocr_provider\":\"mineru\"}",
                 Option::<String>::None,
                 "finished",
-                "历史任务",
+                "Tác vụ lịch sử",
                 Option::<i64>::None,
                 Option::<i64>::None,
                 "[]",

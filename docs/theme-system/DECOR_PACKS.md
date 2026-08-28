@@ -1,40 +1,39 @@
-# 装饰包（Decor Packs）契约
+# Hợp đồng gói trang trí (Decor Packs)
 
-> 状态：契约 + 图片版舞台已落地（three 引擎未实现，model 层暂走 fallback 图）。
-> 代码真值：`frontend/src/shared/decor/{slots,contract,stage-plan}.ts` · `DecorStage.tsx`
-> slot 定位：`frontend/src/styles/core/decor-stage.css` · 示范包：`frontend/decor/jiangnan/`
-> 测试：`frontend/tests/decor-contract.test.mjs` · `tests/decor-stage.test.mjs`
+> Trạng thái: Hợp đồng + sân khấu phiên bản hình ảnh đã triển khai (engine three chưa thực hiện, tầng model tạm dùng hình fallback).
+> Chân lý mã: `frontend/src/shared/decor/{slots,contract,stage-plan}.ts` · `DecorStage.tsx`
+> Định vị slot: `frontend/src/styles/core/decor-stage.css` · Gói mẫu: `frontend/decor/jiangnan/`
+> Kiểm thử: `frontend/tests/decor-contract.test.mjs` · `tests/decor-stage.test.mjs`
 
-## 是什么
+## Là gì
 
-现有主题体系（`data-theme` + 语义 CSS 变量）只管**配色**。装饰包在其上叠加一层
-**可选的视觉世界**：全幅背景插画、分层道具、可点击播动画的 3D 模型、题字横幅——
-即概念稿里的"国风/园林/草原"主题。
-
-```
-装饰主题 = 配色皮肤 (themes/<id>.css)  ← 既有体系，不动
-         + 装饰包   (decor/<pack>/manifest.json + 资产)
-```
-
-`registry.ts` 的 `ThemeDefinition.decorPack` 指向包名。**没有 decorPack 的皮肤
-（classic / night）零装饰、零额外下载**——three.js chunk 只在装饰包含 model 层时
-动态 import。
-
-## 第一原则：功能 UI 永远是 DOM
-
-书库网格、顶栏、搜索、按钮全部保持 React/DOM。装饰层只能挂在**具名锚点（slot）**
-上，分三个层级带：
+Hệ thống chủ đề hiện có (`data-theme` + biến CSS ngữ nghĩa) chỉ quản **bảng màu**. Gói trang trí phủ lên trên một tầng
+**thế giới thị giác tùy chọn**: minh họa nền toàn màn hình, đạo cụ phân tầng, mô hình 3D nhấp phát hoạt hình, biểu ngữ đề tự —
+tức chủ đề "quốc phong/vườn thảo/nguyên" trong bản phác thảo khái niệm.
 
 ```
-z-index 低 → 高
-  bg   全幅背景插画          （永远被 UI 面板盖住）
-  ---- 功能 UI 背板（半透明 --surface）----
-  mid  中景道具：人物/铜鼎/马 （可被 UI 面板局部遮挡）
-  ---- 功能 UI 内容 ----
-  fg   前景压边：花枝/流苏    （压在 UI 边缘上，pointer-events: none）
+Chủ đề trang trí = Skin bảng màu (themes/<id>.css)  ← Hệ thống sẵn có, không động
+               + Gói trang trí   (decor/<pack>/manifest.json + tài sản)
 ```
 
-## 锚点地图（slots.ts 真值）
+`ThemeDefinition.decorPack` trong `registry.ts` trỏ đến tên gói. **Skin không có decorPack
+(classic / night) bằng không trang trí, bằng không tải thêm** — chunk three.js chỉ dynamic import khi gói trang trí chứa tầng model.
+
+## Nguyên tắc đầu tiên: UI chức năng luôn là DOM
+
+Lưới thư viện, thanh trên, tìm kiếm, nút toàn bộ giữ React/DOM. Tầng trang trí chỉ treo trên **điểm neo đặt tên (slot)**,
+chia ba dải tầng:
+
+```
+z-index thấp → cao
+  bg   Minh họa nền toàn màn hình          (luôn bị panel UI che)
+  ---- Bảng lưng UI chức năng (--surface bán trong suốt) ----
+  mid  Đạo cụ trung cảnh: nhân vật/đỉnh đồng/ngựa (có thể bị panel UI che một phần)
+  ---- Nội dung UI chức năng ----
+  fg   Viền trước ép cạnh: cành hoa/lưu tô    (đè lên mép UI, pointer-events: none)
+```
+
+## Bản đồ điểm neo (chân lý slots.ts)
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -42,22 +41,22 @@ z-index 低 → 高
 │                  hero              quote    │
 │ e┌─────────────────────────────────────┐e   │
 │ d│                                     │d   │
-│ g│         功能 UI（书库面板）          │g   │
+│ g│         UI chức năng (panel thư viện)│g   │
 │ e│                                     │e   │
 │ -│                                     │-   │
 │ l└─────────────────────────────────────┘r   │
 │ left-bottom                   right-bottom  │
-│              （right-bottom-fg：右下前景位）  │
-│              backdrop（全幅）                │
+│              (right-bottom-fg: vị trí tiền cảnh phải dưới) │
+│              backdrop (toàn màn hình)                       │
 └─────────────────────────────────────────────┘
 ```
 
-- slot 在哪、多大、什么 z-index：**舞台 CSS 统一实现**（待建 DecorStage），
-  manifest 只声明"资产挂哪个 slot"。资产侧与布局侧解耦。
-- 一个 slot 只挂一层。要堆叠 → slots.ts 开新锚点，不在 manifest 里叠罗汉。
-- 新增锚点 = slots.ts 登记一条 + 舞台 CSS 补一条定位，校验自动放行。
+- Slot ở đâu, lớn bao nhiêu, z-index gì: **CSS sân khấu thống nhất thực hiện** (DecorStage chờ xây),
+  manifest chỉ khai báo "tài sản treo slot nào". Phía tài sản và phía bố cục tách rời.
+- Một slot chỉ treo một tầng. Muốn chồng → slots.ts mở điểm neo mới, không chồng trong manifest.
+- Thêm điểm neo = slots.ts đăng ký một dòng + CSS sân khấu bổ sung một dòng định vị, kiểm nghiệm tự động thông qua.
 
-## manifest 示例
+## Ví dụ manifest
 
 ```jsonc
 // decor/guofeng/manifest.json
@@ -70,58 +69,58 @@ z-index 低 → 高
     { "type": "model", "slot": "left-top",    "src": "girl.glb",
       "fallback": "girl.webp", "idleClip": "Breathe", "clickClip": "TurnPage" }
   ],
-  "quote": { "slot": "quote", "text": "知其所来\n明其所往" }
+  "quote": { "slot": "quote", "text": "Tri kỳ sở lai\nMinh kỳ sở vãng" }
 }
 ```
 
-## 硬规则（validateDecorManifest 强制）
+## Quy tắc cứng (validateDecorManifest bắt buộc)
 
-| 规则 | 理由 |
+| Quy tắc | Lý do |
 |---|---|
-| model 层 `fallback` 必填 | 降级链是契约：reduced-motion / 无 WebGL / 低端机 → 静态图 |
-| backdrop 禁挂 3D | 性能红线；背景用 image + parallax 以假乱真 |
-| 3D 图层 ≤ 3 | 单画布单 renderer，多了必卡 |
-| 图层总数 ≤ 12 | 防"贴满屏"失控 |
-| src 仅包内相对路径 | 禁止 `..` / 绝对路径 / http: / data: |
-| parallax ∈ [0, 0.2] | 视差是点缀不是特技 |
-| quote 只能挂 textCapable 锚点 | 文字排版由舞台统一处理 |
+| Tầng model `fallback` bắt buộc điền | Chuỗi giảm cấp là hợp đồng: reduced-motion / không WebGL / máy cấu hình thấp → hình tĩnh |
+| Backdrop cấm treo 3D | Ngưỡng đỏ hiệu năng; nền dùng image + parallax giả thật |
+| Tầng 3D ≤ 3 | Canvas đơn renderer đơn, nhiều chắc chắn giật |
+| Tổng số tầng ≤ 12 | Chống "dán đầy màn hình" mất kiểm soát |
+| src chỉ đường dẫn tương đối trong gói | Cấm `..` / đường dẫn tuyệt đối / http: / data: |
+| parallax ∈ [0, 0.2] | Thị sai là chấm phá không phải kỹ xảo |
+| quote chỉ treo điểm neo textCapable | Sắp chữ do sân khấu thống nhất xử lý |
 
-## 资产预算（contract.ts 常量，管线门禁用）
+## Ngân sách tài sản (hằng số contract.ts, cổng pipeline cấm)
 
-| 项 | 上限 |
+| Hạng mục | Giới hạn trên |
 |---|---|
-| 单个 glb（Draco+KTX2 压缩后） | 2048 KB |
-| 单模型三角面 | 50,000 |
-| 单张装饰图（webp） | 512 KB |
+| glb đơn (sau nén Draco+KTX2) | 2048 KB |
+| Mặt tam giác mô hình đơn | 50.000 |
+| Hình trang trí đơn (webp) | 512 KB |
 
-AI 产模型管线：AI 生成 → `gltf-transform optimize`（Draco 几何 + KTX2 纹理）→
-预算门禁（npm script，超限拒绝入库）→ 动画 clip 命名（`idleClip`/`clickClip`
-引用的名字必须存在于 glb）→ 入库。
+Pipeline mô hình AI sản xuất: AI tạo → `gltf-transform optimize` (hình học Draco + vân KTX2) →
+Cổng ngân sách (npm script, vượt giới hạn từ chối nhập kho) → Đặt tên clip hoạt hình (tên tham chiếu trong `idleClip`/`clickClip`
+phải tồn tại trong glb) → Nhập kho.
 
-## 交互模型（舞台引擎实现时遵守）
+## Mô hình tương tác (tuân thủ khi engine sân khấu thực hiện)
 
-- 单个全屏透明 WebGL canvas 承载所有 model 层，`pointer-events: none`。
-- window 级监听 click，raycast 命中注册了 `clickClip` 的对象才播动画——
-  UI 事件与装饰互不干扰。
-- `idleClip` 循环播放；`prefers-reduced-motion` 时不加载 three，直接用 fallback 图。
-- image 层可声明 `clickQuote`：舞台在该图层上叠一个透明热点按钮
-  （只盖人物实体部、恢复 `pointer-events`），点击轮播语录气泡、5s 自动收起；
-  装饰 `<img>` 本体依旧 `pointer-events: none` + `alt=""`，交互走真按钮。
+- Canvas WebGL trong suốt toàn màn hình đơn chở tất cả tầng model, `pointer-events: none`.
+- Window lắng nghe click, raycast trúng đối tượng đã đăng ký `clickClip` mới phát hoạt hình —
+  Sự kiện UI và trang trí không can nhiễu lẫn nhau.
+- `idleClip` phát vòng lặp; khi `prefers-reduced-motion` không tải three, trực tiếp dùng hình fallback.
+- Tầng image có thể khai báo `clickQuote`: Sân khấu phủ một nút hotspot trong suốt lên tầng hình đó
+  (chỉ che phần thực thể nhân vật, khôi phục `pointer-events`), nhấp luân phiên bong bóng ngữ lục, 5s tự đóng;
+  bản thân `<img>` trang trí vẫn `pointer-events: none` + `alt=""`, tương tác đi qua nút thật.
 
-## 新增一个装饰包
+## Thêm một gói trang trí mới
 
-1. `decor/<pack>/` 放 manifest.json + 资产（过预算门禁）
-2. **同目录写 `ASSETS.md` 资产规格书**（给 AI 生成工具的逐资产提示词 +
-   尺寸/构图/配色硬约束，模板见 `decor/jiangnan/ASSETS.md`）
-3. `registry.ts` 对应主题加 `decorPack: "<pack>"`
-4. 跑 `tests/decor-contract.test.mjs`（schema 变更时）+ 舞台引擎的 manifest 校验会在加载时兜底
+1. `decor/<pack>/` đặt manifest.json + tài sản (qua cổng ngân sách)
+2. **Cùng thư mục viết `ASSETS.md` đặc tả tài sản** (prompt từng tài sản cho công cụ AI tạo +
+   ràng buộc cứng kích thước/bố cục/bảng màu, mẫu xem `decor/jiangnan/ASSETS.md`)
+3. `registry.ts` chủ đề tương ứng thêm `decorPack: "<pack>"`
+4. Chạy `tests/decor-contract.test.mjs` (khi schema thay đổi) + kiểm nghiệm manifest của engine sân khấu sẽ đỡ đáy khi tải
 
-## 路线图位置
+## Vị trí lộ trình
 
-1. ✅ manifest 契约 + slot 注册表（本文档）
-2. ✅ CSS 硬编码收敛（461→0，棘轮基线 `{}`）
-3. ✅ 门禁（tests/css-color-literals.test.mjs，测试即门禁）
-4. ⬜ L3 组件 token（按钮/卡片形态可换肤）——由舞台实践反哺 token 清单
-5. ✅ DecorStage 图片版（jiangnan 示范包：雾山/竹枝/朱砂印/竖排题字；
-   视差 rAF 节流；<1100px 安全区只留背景；classic 等无包主题零开销）
-6. ⬜ three 引擎 + 第一个 3D 道具 + 资产管线门禁脚本
+1. ✅ Hợp đồng manifest + bảng đăng ký slot (tài liệu này)
+2. ✅ Hội tụ hardcode CSS (461→0, baseline ratchet `{}`)
+3. ✅ Cổng (tests/css-color-literals.test.mjs, kiểm thử tức cổng)
+4. ⬜ Token component L3 (hình thái nút/thẻ có thể đổi skin) — thực tiễn sân khấu phản hồi danh sách token
+5. ✅ DecorStage phiên bản hình ảnh (gói mẫu jiangnan: núi sương/cành trúc/chu sa ấn/đề tự dọc;
+   thị sai rAF tiết lưu; vùng an toàn <1100px chỉ giữ nền; chủ đề không gói như classic bằng không chi phí)
+6. ⬜ Engine three + đạo cụ 3D đầu tiên + script cổng pipeline tài sản

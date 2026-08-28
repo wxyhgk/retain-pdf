@@ -1,47 +1,47 @@
-/* 皮肤 jiangnan：素雅纸本
- * 避免黄褐「土气」——底色偏冷石灰，强调色偏冷青绿，点缀克制。
- * 见 docs/theme-system/skins/jiangnan.md
+/* Skin jiangnan: giấy sờn thanh nhã
+ * Tránh màu vàng nâu "thô kệch" — nền thiên về đá vôi lạnh, màu nhấn thiên về xanh lá lạnh, điểm xuyết kiềm chế.
+ * Xem docs/theme-system/skins/jiangnan.md
  */
 
 [data-theme="jiangnan"] {
-  /* 院落：冷石灰（非米黄夯土） */
+  /* Sân: đá vôi lạnh (không phải đất vàng be) */
   --bg: #f1f0ed;
-  /* 纸面：近白，仅极弱暖 */
+  /* Mặt giấy: gần trắng, chỉ hơi ấm rất nhẹ */
   --paper: #fbfaf8;
   --surface: rgba(251, 250, 248, 0.88);
-  /* 墨：中性偏冷 */
+  /* Mực: trung tính hơi lạnh */
   --ink: #1b1b1d;
   --muted: #6e6e72;
-  /* 缝：冷灰，不发黄 */
+  /* Kẽ hở: xám lạnh, không vàng */
   --line: #e5e4e1;
 
-  /* 冷青绿（非铜锈橄榄绿）— 主按钮 / 选中 */
+  /* Xanh lá lạnh (không phải xanh ô liu rỉ đồng) — nút chính / chọn */
   --accent: #2a5f57;
   --accent-weak: rgba(42, 95, 87, 0.11);
   --selection: #e8efed;
 
-  /* 朱砂改为干净正红，避免砖红发脏 */
+  /* Chu sa đổi thành đỏ sạch, tránh đỏ gạch bẩn */
   --danger: #c23b32;
   --danger-weak: rgba(194, 59, 50, 0.11);
   --ok: #2d7a4f;
   --ok-weak: rgba(45, 122, 79, 0.11);
-  /* 警告：哑光琥珀，不做亮金黄 */
+  /* Cảnh báo: hổ phách mờ, không làm vàng rực */
   --warn: #a67c2d;
   --warn-weak: rgba(166, 124, 45, 0.12);
 
-  /* 「金」改为哑青铜灰，大面积不用 */
+  /* "Vàng" đổi thành xám đồng mờ, không dùng diện tích lớn */
   --gold: #8a7a5c;
   --gold-weak: rgba(138, 122, 92, 0.12);
   --chrome: #1a1b1c;
   --reader-page: #fbfaf8;
   --shadow-color: #26251f;
 
-  /* L3 形态（可选 token，默认见 themes/_component-defaults.css）：
-   * 文人气质——主按钮微方角，纸台更实一档 */
+  /* L3 hình thái (token tùy chọn, mặc định xem themes/_component-defaults.css):
+   * Khí chất văn nhân — nút chính góc hơi vuông, bụi giấy thực hơn một bậc */
   --btn-radius: 12px;
   --stage-veil: 92%;
 
-  /* 布局密度（原 ambient-surface 特例块迁入）：廊道更宽、纸台更窄 */
+  /* Mật độ layout (di dời từ block đặc biệt ambient-surface gốc): hành lang rộng hơn, bụi giấy hẹp hơn */
   --shell-pad-inline: clamp(28px, 6vw, 72px);
   --shell-pad-inline-narrow: clamp(12px, 3vw, 20px);
   --header-width: min(1080px, 100%);
@@ -52,7 +52,7 @@
     inset 0 1px 0 color-mix(in srgb, var(--paper) 92%, var(--line)),
     0 14px 36px color-mix(in srgb, var(--ink) 3%, transparent);
 
-  /* 氛围垫层材质（ambient-surface 消费）：纤维更弱，避免「脏灰」 */
+  /* Chất liệu đệm atmosphere (ambient-surface tiêu thụ): sợi yếu hơn, tránh "xám bẩn" */
   --mat-fiber: color-mix(in srgb, var(--ink) 2.8%, transparent);
   --mat-fiber-2: color-mix(in srgb, var(--ink) 1.8%, transparent);
   --mat-edge: color-mix(in srgb, var(--ink) 2.5%, var(--bg));

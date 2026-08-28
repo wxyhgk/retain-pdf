@@ -33,7 +33,7 @@ def test_normal_transitions_leave_no_breadcrumb() -> None:
 
 
 def test_demoting_translated_to_failed_records_breadcrumb_but_still_writes() -> None:
-    # v1 契约:只观测不拦截。违规照常写入,但必须留下可观测的面包屑。
+    # Hợp đồng v1: chỉ quan sát không chặn. Vi phạm vẫn ghi bình thường, nhưng phải để lại breadcrumb có thể quan sát.
     item = {"final_status": TRANSLATED_STATUS}
 
     set_final_status(item, FAILED_STATUS)
@@ -80,8 +80,8 @@ def test_final_status_violation_is_pure_check() -> None:
 
 
 def test_policy_helpers_route_through_funnel() -> None:
-    # mark_translation_failed_policy_state 打在已译 item 上 = 真实的降级场景,
-    # 走漏斗后必须留面包屑;mark_policy_skip 的正常收口不留。
+    # mark_translation_failed_policy_state áp dụng trên item đã dịch = tình huống hạ cấp thực tế,
+    # sau khi qua funnel phải để lại breadcrumb; mark_policy_skip thu gọn bình thường không để lại.
     translated_item = {
         "final_status": TRANSLATED_STATUS,
         "translated_text": "已有译文",

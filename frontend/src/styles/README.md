@@ -1,78 +1,78 @@
-# 前端 CSS 架构（按页拆分）
+# Kiến trúc CSS frontend (chia theo trang)
 
-三页**不再共用一份**全站 `styles.css`。构建产出三份独立包：
+Ba trang **không còn dùng chung** một tệp `styles.css` toàn trạm. Build xuất ra ba gói độc lập:
 
-| HTML | 入口源码 | 产物 |
+| HTML | Mã nguồn lối vào | Sản phẩm |
 |------|----------|------|
 | `index.html` | `entries/home.css` | `dist/css/home.css` |
 | `detail.html` | `entries/detail.css` | `dist/css/detail.css` |
 | `reader.html` | `entries/reader.css` | `dist/css/reader.css` |
-| `?engine=legacy` | `entries/reader-legacy.css` | `dist/css/reader-legacy.css`（动态注入） |
+| `?engine=legacy` | `entries/reader-legacy.css` | `dist/css/reader-legacy.css` (inject động) |
 
-兼容：`styles.css` = `home.css` 副本（旧文档/脚本）；**HTML 已改指向 `dist/css/*`**。
+Tương thích: `styles.css` = bản sao `home.css` (tài liệu/script cũ); **HTML đã đổi trỏ sang `dist/css/*`**.
 
-## 目录
+## Thư mục
 
 ```text
 src/styles/
-  entries/           # 页面入口（谁 import 什么 = 耦合边界）
+  entries/           # Lối vào trang (ai import gì = ranh giới ghép nối)
     home.css
     detail.css
-    reader.css          # 默认 react-pdf
-    reader-legacy.css   # ?engine=legacy 附加包
-  core/              # 跨页最小共享
+    reader.css          # Mặc định react-pdf
+    reader-legacy.css   # Gói bổ sung ?engine=legacy
+  core/              # Chia sẻ tối thiểu xuyên trang
     tailwind-theme.css
     download-toast.css
   tokens.css / base.css / shadcn-theme.css / dialog-shell.css
-  components*.css    # 共享 UI（button-link/label/mono…；阅读器尽量不引整包）
-  pages/home/*       # 主页领域（components.utilities 拆出 + library/status/upload…）
+  components*.css    # UI dùng chung (button-link/label/mono…; trình đọc cố gắng không import cả gói)
+  pages/home/*       # Miền trang chủ (components.utilities tách ra + library/status/upload…)
   pages.css + pages/detail/*
   reader/ + reader.utilities.css
 ```
 
-## 耦合规则
+## Quy tắc ghép nối
 
-1. **页面专属样式只进对应 entry**  
-   - 主页：书架、上传工作流、状态卡、凭据、合集…  
-   - 详情：`pages.css` + `pages/detail/*`  
-   - 阅读默认：`reader/layout|chrome|content|react-pdf|fab*|float-ai*|hud…`  
-   - 阅读 legacy：`layout-legacy|chrome-legacy|side-drawer|favorites|selection|ai|annotations…`  
-2. **跨页只放 `core/` + tokens/base/dialog-shell**（以及确有必要时的 components）  
-3. **禁止**再把全站 import 塞回 `src/input.css`  
-4. 新增样式：先判断属于哪一页 → 写进该域文件 → 确认已由对应 `entries/*.css` import  
-5. 门禁：`tests/css-page-namespace.test.mjs`（reader/detail 选择器前缀）
+1. **Kiểu riêng trang chỉ vào entry tương ứng**  
+   - Trang chủ: Kệ sách, workflow tải lên, thẻ trạng thái, thông tin xác thực, bộ sưu tập…  
+   - Chi tiết: `pages.css` + `pages/detail/*`  
+   - Đọc mặc định: `reader/layout|chrome|content|react-pdf|fab*|float-ai*|hud…`  
+   - Đọc legacy: `layout-legacy|chrome-legacy|side-drawer|favorites|selection|ai|annotations…`  
+2. **Xuyên trang chỉ đặt `core/` + tokens/base/dialog-shell** (và components khi thực sự cần)  
+3. **Cấm** nhét lại import toàn trạm vào `src/input.css`  
+4. Thêm kiểu mới: Trước tiên xác định thuộc trang nào → Viết vào tệp miền đó → Xác nhận đã được `entries/*.css` tương ứng import  
+5. Cổng: `tests/css-page-namespace.test.mjs` (tiền tố selector reader/detail)
 
-## 构建
+## Build
 
 ```bash
 npm run build:css          # → dist/css/{home,detail,reader,reader-legacy}.css
-npm run watch:css          # 各入口并行 --watch
+npm run watch:css          # Các lối vào song song --watch
 ```
 
-`scripts/stamp-cache-version.mjs` 按页给 HTML 引用的 `dist/css/*.css` 打 `?v=hash`  
-（`reader-legacy.css` 由 JS 动态注入，一般无 HTML 引用、不参与 stamp）。
+`scripts/stamp-cache-version.mjs` đánh `?v=hash` cho `dist/css/*.css` mà HTML tham chiếu theo trang  
+(`reader-legacy.css` do JS inject động, thường không có tham chiếu HTML, không tham gia stamp).
 
-## 体量（minify 后约）
+## Dung lượng (sau minify xấp xỉ)
 
-| 包 | 量级 | 说明 |
+| Gói | Cỡ | Ghi chú |
 |----|------|------|
-| home | ~175KB | 主页域最多 |
-| reader | 默认 react-pdf 精简包 | 无书架/工作流、无 legacy 抽屉 |
-| reader-legacy | 附加包 | 仅 `?engine=legacy` |
-| detail | ~86KB | 最轻 |
+| home | ~175KB | Miền trang chủ nhiều nhất |
+| reader | Gói gọn react-pdf mặc định | Không kệ sách/workflow, không ngăn kéo legacy |
+| reader-legacy | Gói bổ sung | Chỉ `?engine=legacy` |
+| detail | ~86KB | Nhẹ nhất |
 
-阅读页不再加载 `library-view` / `translation-workflow-*` 等主页规则。
+Trang đọc không còn tải `library-view` / `translation-workflow-*` và các quy tắc trang chủ khác.
 
 ## desktop / button-link
 
-| 符号 | 基准位置 |
+| Ký hiệu | Vị trí chuẩn |
 |------|----------|
-| `desktop-shell/head/body/dialog` | `dialog-shell.css`（唯一 `@utility`） |
-| `button-link` / `label` / `mono` | `components.utilities.css`（home+detail 共享） |
-| status-card / app-button / inline-error… | `pages/home/components.utilities.css`（仅 home） |
-| 下载 toast | `core/download-toast.css` |
+| `desktop-shell/head/body/dialog` | `dialog-shell.css` (`@utility` duy nhất) |
+| `button-link` / `label` / `mono` | `components.utilities.css` (home+detail dùng chung) |
+| status-card / app-button / inline-error… | `pages/home/components.utilities.css` (chỉ home) |
+| Toast tải xuống | `core/download-toast.css` |
 
-## 相关
+## Liên quan
 
 - `scripts/build-css.mjs` · `scripts/stamp-cache-version.mjs`  
 - `src/FEATURES.md` · `frontend/README.md`

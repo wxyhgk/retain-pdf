@@ -48,7 +48,7 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
-          # @tailwindcss/oxide 需本机原生绑定；npm optionalDeps 偶发漏装时补齐
+          # @tailwindcss/oxide Bắt buộc liên kết gốc；npm optionalDeps Bù đắp cho những rò rỉ không thường xuyên
           node -e "require('@tailwindcss/oxide')" \
             || npm install --no-save --no-package-lock "@tailwindcss/oxide@$(node -p "require('./node_modules/@tailwindcss/oxide/package.json').version")"
 

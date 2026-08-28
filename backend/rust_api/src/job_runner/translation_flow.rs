@@ -74,7 +74,7 @@ async fn run_translate_only_job_from_artifacts(
         &deps,
         job,
         &source_job_id,
-        "继续翻译",
+        "Tiếp tục dịch",
     )
     .await?;
     let job_paths = build_job_paths(&deps.persist.output_root, &job.job_id)?;

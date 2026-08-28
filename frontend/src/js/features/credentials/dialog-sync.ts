@@ -20,7 +20,7 @@ export function syncCredentialDialogFields({
     paddleInput.value = credentials.paddleToken || "";
   }
   if (apiKeyInput) {
-    // 只展示设置里已存的 Key，不从 runtime 回填（避免「设置空白却仍能问答」）
+    // Chỉ hiển thị những mục đã lưu trong cài đặt Key，Không phải từ runtime lấp lại（tránh cho「Để trống phần Hỏi & Đáp」）
     void defaultModelApiKey;
     apiKeyInput.value = `${credentials.modelApiKey || ""}`.trim();
   }

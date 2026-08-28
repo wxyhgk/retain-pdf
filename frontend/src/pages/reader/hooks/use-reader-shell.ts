@@ -1,5 +1,5 @@
-// 阅读器外壳尺寸：合并 shellRef + shellEl state + ResizeObserver。
-// bindShell 同时写 ref（同步读）与 state（驱动重渲 / 挂观察器）。
+// Kích thước shell reader: gộp shellRef + state shellEl + ResizeObserver.
+// bindShell ghi đồng thời ref (đọc đồng bộ) và state (kích hoạt re-render / gắn observer).
 
 import {
   useCallback,
@@ -72,7 +72,7 @@ export function useReaderShell(options?: {
     onWidthChangeRef.current?.(shellWidth);
   }, [shellWidth]);
 
-  // 对照半栏宽：按 shell 均分（扣中线），供 100% 适应左右栏
+  // Chiều rộng nửa cột đối chiếu: chia đều shell (trừ đường giữa), để 100% fit cột trái/phải.
   const compareColWidth = comparePaneWidth(shellWidth);
 
   return {

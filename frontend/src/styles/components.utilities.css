@@ -1,8 +1,8 @@
-/* 跨页共享 UI 工具类（home + detail 均 import；reader 不引）
+/* Utility UI dùng chung giữa các trang (home + detail đều import; reader không dùng)
  *
- * 仅保留两侧实际用到的通用控件：button-link / secondary / disabled / mono / label。
- * 主页领域（status-card、凭据、inline-error、app-button 等）见
- * pages/home/components.utilities.css。
+ * Chỉ giữ các control chung thực sự được hai phía sử dụng: button-link / secondary / disabled / mono / label.
+ * Các thành phần riêng của trang chủ (status-card, thông tin xác thực, inline-error, app-button, v.v.) xem
+ * pages/home/components.utilities.css.
  */
 
 
@@ -93,19 +93,21 @@
 
 
 /*
-  危险区修复(Tailwind v4 迁移):v3 的 `text-sm` 编译成绝对值
-  `font-size:.875rem;line-height:1.25rem`,下面三处 `.xxx & { font-size:12px;
-  ... }` 覆盖只重写了 font-size,v3 下 line-height 仍是基类那个固定 20px,
-  不受 font-size 变小影响。v4 把 `text-sm` 的行高改成了无单位比例
-  `calc(1.25/.875)`(约 1.4286,随元素自身 font-size 动态计算),同样的源码
-  结构下,font-size 被子规则压到 12px 后,行高跟着按比例缩到约 17.14px——
-  类名和覆盖结构完全没变,数值却因为 Tailwind 自身 line-height 语义改变而
-  静默变了(detail-item/failure-hero-card/info-row 三处 label 行高变矮,
-  status-dialog-failed/status-dialog-translation 视觉基线的行间距累积偏移
-  即源于此)。这里显式把三处覆盖的 line-height 钉死成 v3 的固定值 1.25rem,
-  不再随 font-size 缩放。
-  detail 页 MetaRow 也用 .label；嵌套覆盖（detail-item / failure-hero 等）
-  主要服务主页 status-detail，留在 shared 以免 detail 丢基类样式。
+ Sửa vùng nguy hiểm (di chuyển Tailwind v4): `text-sm` của v3 được biên dịch thành
+ giá trị tuyệt đối `font-size:.875rem;line-height:1.25rem`, trong khi ba phần ghi đè
+ `.xxx & { font-size:12px; ... }` bên dưới chỉ viết lại font-size; trong v3,
+ line-height vẫn là 20px cố định của lớp cơ sở và không bị ảnh hưởng khi font-size giảm.
+ v4 đổi line-height của `text-sm` thành tỷ lệ không đơn vị `calc(1.25/.875)`
+ (khoảng 1.4286, tính động theo font-size của phần tử). Với cùng cấu trúc nguồn,
+ khi quy tắc con giảm font-size xuống 12px, line-height cũng giảm theo tỷ lệ còn
+ khoảng 17.14px — tên lớp và cấu trúc ghi đè hoàn toàn không đổi, nhưng giá trị
+ âm thầm thay đổi do ngữ nghĩa line-height của Tailwind (line-height label ở
+ detail-item/failure-hero-card/info-row thấp đi, gây lệch cộng dồn khoảng cách
+ đường cơ sở thị giác của status-dialog-failed/status-dialog-translation).
+ Vì vậy đặt tường minh line-height của cả ba phần ghi đè về giá trị cố định 1.25rem
+ của v3 để không còn co theo font-size.
+ MetaRow ở trang detail cũng dùng .label; các ghi đè lồng nhau (detail-item / failure-hero, v.v.)
+ chủ yếu phục vụ status-detail của trang chủ, giữ tại shared để detail không mất kiểu cơ sở.
 */
 @utility label {
   .status-card & {

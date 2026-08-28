@@ -3,17 +3,17 @@ import assert from "node:assert/strict";
 import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
-// CSS 字面色值棘轮门禁。
+// Cổng bánh cóc giá trị màu chữ CSS.
 //
-// 目标状态:src/styles 里除 themes/(皮肤真值)外,不出现任何字面色值
-// (hex / rgb / rgba / hsl),全部走语义变量 var(--ink|--paper|--surface|
-// --shadow-color|…) 或 color-mix 派生——否则装饰主题/深色皮肤下这些
-// 颜色不跟随换肤(night 主题曾因此半坏)。
+// Trạng thái mục tiêu: trong src/styles, ngoại trừ themes/(giá trị thực của giao diện), không xuất hiện bất kỳ giá trị màu chữ nào
+// (hex / rgb / rgba / hsl), tất cả đều dùng biến ngữ nghĩa var(--ink|--paper|--surface|
+// --shadow-color|…) hoặc color-mix dẫn xuất — nếu không, các màu này sẽ không theo đổi giao diện
+// (chủ đề night từng bị hỏng một nửa vì điều này).
 //
-// 现状离目标还有几百处,一次清完不现实。本测试做"棘轮":
-// - 每个文件的字面色值数只许 ≤ baseline,新增即失败;
-// - 收敛后运行 UPDATE_CSS_COLOR_BASELINE=1 npm test 拧紧棘轮
-//   (baseline 只减不增,减少的部分会被固化)。
+// Hiện tại còn hàng trăm chỗ, không thể dọn sạch một lần. Kiểm thử này đóng vai trò "bánh cóc":
+// - Số lượng giá trị màu chữ trong mỗi tệp chỉ được ≤ baseline, thêm mới là thất bại;
+// - Sau khi thu gọn, chạy UPDATE_CSS_COLOR_BASELINE=1 npm test để siết bánh cóc
+//   (baseline chỉ giảm không tăng, phần giảm sẽ được cố định).
 // baseline: tests/helpers/css-color-literals-baseline.json
 
 const PROJECT_ROOT = process.cwd();
@@ -21,14 +21,14 @@ const STYLES_ROOT = join(PROJECT_ROOT, "src/styles");
 const THEMES_ROOT = join(PROJECT_ROOT, "src/styles/themes");
 const BASELINE_PATH = join(PROJECT_ROOT, "tests/helpers/css-color-literals-baseline.json");
 
-// hex 色 / rgb(a) / hsl(a) 函数。CSS 变量名里的数字不含 #,不会误命中。
+// Hàm hex / rgb(a) / hsl(a). Các số trong tên biến CSS không chứa #, sẽ không bị trúng nhầm.
 const COLOR_LITERAL_RE = /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?)\(/g;
 
 function walkCss(dir, out = []) {
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
     if (statSync(full).isDirectory()) {
-      if (full === THEMES_ROOT) continue; // 皮肤真值,唯一允许字面色的地方
+      if (full === THEMES_ROOT) continue; // giá trị thực của giao diện, nơi duy nhất cho phép màu chữ
       walkCss(full, out);
     } else if (name.endsWith(".css")) {
       out.push(full);
@@ -55,18 +55,18 @@ function currentCounts() {
   return counts;
 }
 
-test("CSS 字面色值只减不增(棘轮,皮肤文件除外)", () => {
+test("Giá trị màu chữ CSS chỉ giảm không tăng (bánh cóc, ngo��i trừ tệp giao diện)", () => {
   const counts = currentCounts();
 
   if (process.env.UPDATE_CSS_COLOR_BASELINE === "1") {
     writeFileSync(BASELINE_PATH, `${JSON.stringify(counts, null, 2)}\n`);
-    return; // 拧紧棘轮后本轮直接通过
+    return; // sau khi siết bánh cóc, vòng này qua trực tiếp
   }
 
   const baseline = JSON.parse(readFileSync(BASELINE_PATH, "utf8"));
   const regressions = [];
   for (const [file, n] of Object.entries(counts)) {
-    const allowed = baseline[file] ?? 0; // 新文件必须零字面色
+    const allowed = baseline[file] ?? 0; // tệp mới phải không có màu chữ
     if (n > allowed) {
       regressions.push(`${file}: ${n} 处(棘轮上限 ${allowed})`);
     }
@@ -75,11 +75,11 @@ test("CSS 字面色值只减不增(棘轮,皮肤文件除外)", () => {
   assert.deepEqual(
     regressions,
     [],
-    `以下文件新增了字面色值,请改用语义变量(var(--ink|--paper|--surface|--shadow-color|…) 或 color-mix):\n  ${regressions.join("\n  ")}\n收敛后用 UPDATE_CSS_COLOR_BASELINE=1 npm test 拧紧棘轮。`,
+     `Các tệp sau đây đã thêm giá trị màu chữ, vui lòng chuyển sang biến ngữ nghĩa (var(--ink|--paper|--surface|--shadow-color|…) hoặc color-mix):\n  ${regressions.join("\n  ")}\nSau khi thu gọn, chạy UPDATE_CSS_COLOR_BASELINE=1 npm test để siết bánh cóc.`,
   );
 });
 
-test("棘轮 baseline 没有虚高(已收敛的文件应拧紧)", () => {
+test("Baseline bánh cóc không bị thổi phồng (các tệp đã thu gọn phải được siết chặt)", () => {
   if (process.env.UPDATE_CSS_COLOR_BASELINE === "1") return;
   const counts = currentCounts();
   const baseline = JSON.parse(readFileSync(BASELINE_PATH, "utf8"));
@@ -91,6 +91,6 @@ test("棘轮 baseline 没有虚高(已收敛的文件应拧紧)", () => {
   assert.deepEqual(
     stale,
     [],
-    `收敛成果未固化,运行 UPDATE_CSS_COLOR_BASELINE=1 npm test 拧紧棘轮:\n  ${stale.join("\n  ")}`,
+     `Thành quả thu gọn chưa được cố định, chạy UPDATE_CSS_COLOR_BASELINE=1 npm test để siết bánh cóc:\n  ${stale.join("\n  ")}`,
   );
 });

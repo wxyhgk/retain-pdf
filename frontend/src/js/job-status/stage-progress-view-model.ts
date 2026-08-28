@@ -99,7 +99,7 @@ export function currentStageProgressViewModel(
       current: 100,
       total: 100,
       displayPercent: 100,
-      progressText: "渲染完成",
+      progressText: "Kết xuất hoàn tất",
       progressUnit: "percent",
       visualStageKey: renderVisualStageKey,
       substageKey: renderProgress.substageKey || currentProgress.substageKey || "render_compile",
@@ -112,7 +112,7 @@ export function currentStageProgressViewModel(
       current: 100,
       total: 100,
       displayPercent: 100,
-      progressText: currentProgress.progressText || "渲染完成",
+      progressText: currentProgress.progressText || "Kết xuất hoàn tất",
       progressUnit: currentProgress.progressUnit || "percent",
       visualStageKey: renderVisualStageKey,
       substageKey: currentProgress.substageKey || "render_compile",
@@ -121,7 +121,7 @@ export function currentStageProgressViewModel(
 
   return {
     ...renderProgress,
-    progressText: renderProgress.progressText || "渲染完成",
+    progressText: renderProgress.progressText || "Kết xuất hoàn tất",
     visualStageKey: renderVisualStageKey,
   };
 }

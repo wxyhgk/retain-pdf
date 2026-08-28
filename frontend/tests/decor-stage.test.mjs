@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-// 舞台计划器测试:manifest → 渲染计划的纯函数层(不挂 jsdom 组件)。
-// 关键约束:随包发布的 decor/*/manifest.json 必须永远通过契约校验——
-// 资产改坏 manifest 会在这里先红,而不是运行时静默不渲染。
+// Test stage planner: manifest → render plan thuần hàm (không gắn component jsdom).
+// Ràng buộc then chốt: manifest.json đi kèm package phải luôn vượt kiểm định hợp đồng —
+// sửa manifest hư sẽ báo đỏ ở đây trước, thay vì không render âm thầm khi chạy.
 
 import { planStage } from "../src/shared/decor/stage-plan.js";
 
@@ -21,12 +21,12 @@ test("随包发布的 jiangnan manifest 通过契约校验并产出计划", () =
   assert.ok(result.ok);
   const { plan } = result;
   assert.equal(plan.layers.length, 3);
-  // 路径已拼上 assetBase
+  // Đường dẫn đã ghép thêm assetBase
   assert.ok(plan.layers.every((l) => l.src.startsWith("decor/jiangnan/")));
-  // band 来自 slots 注册表:backdrop=bg,道具=mid
+  // band đến từ slots registry: backdrop=bg, props=mid
   assert.equal(plan.layers.find((l) => l.slot === "backdrop")?.band, "bg");
   assert.equal(plan.layers.find((l) => l.slot === "left-bottom")?.band, "mid");
-  // 题字
+  // Câu đề
   assert.equal(plan.quote?.text.includes("书藏万卷"), true);
   assert.equal(plan.quote?.writingMode, "vertical");
 });

@@ -1,75 +1,75 @@
-# 00 Overview
+# 00 Tổng quan
 
-## 目标
+## Mục tiêu
 
-Paddle OCR 对接层的目标是：
+Mục tiêu của tầng kết nối Paddle OCR là:
 
-- 输入：Paddle OCR 原始 JSON
-- 输出：符合当前主契约的 `normalized_document_v1`
+- Đầu vào: JSON thô Paddle OCR
+- Đầu ra: `normalized_document_v1` phù hợp với hợp đồng chính hiện tại
 
-也就是：
+Cụ thể:
 
-`Paddle raw payload -> provider adapter -> document.v1 -> translation/rendering`
+`Raw payload Paddle -> provider adapter -> document.v1 -> translation/rendering`
 
-## 当前识别口径
+## Tiêu chí nhận dạng hiện tại
 
-当前代码把下面这种 payload 识别为 Paddle：
+Mã hiện tại nhận dạng payload sau là Paddle:
 
-- 顶层是 `dict`
-- 存在 `layoutParsingResults`
-- 存在 `dataInfo`
+- Tầng trên cùng là `dict`
+- Tồn tại `layoutParsingResults`
+- Tồn tại `dataInfo`
 
-代码位置：
+Vị trí mã:
 
 - `backend/scripts/services/document_schema/provider_adapters/paddle/adapter.py`
 - `backend/scripts/services/document_schema/adapters.py`
 
-## 当前目录职责
+## Trách nhiệm thư mục hiện tại
 
-`provider_adapters/paddle/` 当前按职责拆成这些部分：
+`provider_adapters/paddle/` hiện được chia theo trách nhiệm thành các phần sau:
 
 - `adapter.py`
-  Paddle provider 总入口
+  Đầu vào tổng của Paddle provider
 - `payload_reader.py`
-  读取顶层 payload，并按页构造 page spec
+  Đọc payload tầng trên cùng và xây dựng page spec theo trang
 - `page_reader.py`
-  构造 page context/page spec
+  Xây dựng page context/page spec
 - `block_reader.py`
-  构造 block context/block spec
+  Xây dựng block context/block spec
 - `block_labels.py`
-  `block_label -> type/sub_type/tags` 映射
+  Ánh xạ `block_label -> type/sub_type/tags`
 - `trace.py`
-  构造 `metadata/source/derived`
+  Xây dựng `metadata/source/derived`
 - `continuation.py`
-  把 Paddle 的组信息映射成 `continuation_hint`
+  Ánh xạ thông tin nhóm của Paddle thành `continuation_hint`
 - `page_trace.py`
-  页级 trace 和 layout_det 匹配
-- `rich_content.py` 及相关文件
-  富内容 trace 聚合
+  Trace cấp trang và khớp layout_det
+- `rich_content.py` và các tệp liên quan
+  Tổng hợp trace nội dung phong phú
 
-## 适配人的任务边界
+## Ranh giới nhiệm vụ của người thích ứng
 
-适配 Paddle 的人只需要负责这几层：
+Người thích ứng Paddle chỉ cần phụ trách các tầng sau:
 
-1. Paddle 原始字段解释
-2. 字段落位规则
-3. `block_label` 语义映射
-4. `continuation_hint` 映射
-5. fixture 和回归
+1. Giải thích trường thô Paddle
+2. Quy tắc định vị trường
+3. Ánh xạ ngữ nghĩa `block_label`
+4. Ánh xạ `continuation_hint`
+5. Fixture và hồi quy
 
-不要把这些事情混进任务里：
+Đừng trộn những việc này vào nhiệm vụ:
 
-1. 翻译提示词
-2. 排版覆盖
-3. PDF 写回
-4. 前端展示逻辑
+1. Prompt dịch
+2. Ghi đè bố cục
+3. Ghi lại PDF
+4. Logic hiển thị frontend
 
-## 交付标准
+## Tiêu chuẩn bàn giao
 
-至少满足：
+Ít nhất đáp ứng:
 
-1. `adapt_path_to_document_v1()` 可以把 Paddle raw JSON 转成 `document.v1`
-2. `validate_document_payload()` 通过
-3. `extract_text_items()` smoke 通过
-4. fixture 已登记进回归
-5. 文档已经更新
+1. `adapt_path_to_document_v1()` có thể chuyển JSON thô Paddle thành `document.v1`
+2. Vượt qua `validate_document_payload()`
+3. Vượt qua smoke `extract_text_items()`
+4. Fixture đã được đăng ký vào hồi quy
+5. Tài liệu đã được cập nhật

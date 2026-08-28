@@ -1,23 +1,23 @@
-# 01 Response Shape
+# 01 Hình dạng phản hồi
 
-## 顶层结构
+## Cấu trúc tầng trên cùng
 
-当前 Paddle adapter 依赖的顶层字段主要有：
+Các trường tầng trên cùng mà Paddle adapter hiện tại phụ thuộc bao gồm:
 
 - `layoutParsingResults`
-  按页的解析结果列表
+  Danh sách kết quả phân tích theo trang
 - `dataInfo`
-  页尺寸等元信息
+  Siêu dữ liệu như kích thước trang
 - `preprocessedImages`
-  预处理图像列表，可选
+  Danh sách hình ảnh tiền xử lý, tùy chọn
 
-当前最小识别条件见：
+Điều kiện nhận dạng tối thiểu hiện tại xem:
 
 - `backend/scripts/services/document_schema/provider_adapters/paddle/adapter.py`
 
-## 页级结构
+## Cấu trúc cấp trang
 
-对每一页，当前 adapter 主要读取：
+Đối với mỗi trang, adapter hiện tại đọc chủ yếu:
 
 - `prunedResult`
 - `prunedResult.parsing_res_list`
@@ -25,15 +25,15 @@
 - `markdown.text`
 - `markdown.images`
 
-页面尺寸优先顺序：
+Thứ tự ưu tiên kích thước trang:
 
 1. `dataInfo.pages[i].width / height`
 2. `prunedResult.width / height`
-3. 缺省为 `0`
+3. Mặc định là `0`
 
-## block 级结构
+## Cấu trúc cấp block
 
-当前 block reader 主要读取这些字段：
+Block reader hiện tại đọc chủ yếu các trường sau:
 
 - `block_label`
 - `block_bbox`
@@ -45,32 +45,32 @@
 - `global_group_id`
 - `block_order`
 
-说明：
+Giải thích:
 
-- `block_label` 决定主结构映射
-- `block_content` 是文本主来源
-- `group_id / global_group_id / block_order` 当前主要服务于 `continuation_hint`
+- `block_label` quyết định ánh xạ cấu trúc chính
+- `block_content` là nguồn văn bản chính
+- `group_id / global_group_id / block_order` hiện chủ yếu phục vụ `continuation_hint`
 
-## 当前页构造流程
+## Quy trình xây dựng trang hiện tại
 
-当前 page adapter 流程是：
+Quy trình page adapter hiện tại:
 
-1. 从 `layoutParsingResults[page_index]` 读一页 payload
-2. 构造 `PaddlePageContext`
-3. 从 `prunedResult.parsing_res_list` 逐块构造 block spec
-4. 补页级 `metadata`
-5. 交给 common builder 生成 `document.v1`
+1. Đọc payload một trang từ `layoutParsingResults[page_index]`
+2. Xây dựng `PaddlePageContext`
+3. Xây dựng block spec từ `prunedResult.parsing_res_list` theo từng block
+4. Bổ sung `metadata` cấp trang
+5. Giao cho common builder để tạo `document.v1`
 
-代码入口：
+Đầu vào mã:
 
 - `backend/scripts/services/document_schema/provider_adapters/paddle/payload_reader.py`
 - `backend/scripts/services/document_schema/provider_adapters/paddle/page_reader.py`
 
-## 文档维护建议
+## Đề xuất bảo trì tài liệu
 
-如果后续 Paddle API 结构变了，这个文件要优先更新：
+Nếu cấu trúc API Paddle sau này thay đổi, tệp này cần được cập nhật ưu tiên:
 
-1. 顶层字段是否变了
-2. 页级字段路径是否变了
-3. block 级字段路径是否变了
-4. 哪些字段已经不再可靠
+1. Trường tầng trên cùng có thay đổi không
+2. Đường dẫn trường cấp trang có thay đổi không
+3. Đường dẫn trường cấp block có thay đổi không
+4. Trường nào đã không còn đáng tin cậy

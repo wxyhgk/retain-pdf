@@ -1,5 +1,5 @@
-# 实验性符号素材（默认不用）
+# Tài sản ký hiệu thử nghiệm (mặc định không dùng)
 
-这些 SVG 是早期「贴传统元素」方向的草稿。
-产品默认路径**不加载**它们。
-正确方向见 skins/jiangnan.md：比例 / 留白 / 材质 / 层级 / 用色秩序。
+Các SVG này là bản nháp hướng "dán yếu tố truyền thống" giai đoạn đầu.
+Đường dẫn mặc định của sản phẩm **không tải** chúng.
+Hướng đúng xem skins/jiangnan.md: tỷ lệ / khoảng trống / chất liệu / tầng lớp / trật tự dùng màu.

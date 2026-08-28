@@ -1,12 +1,12 @@
-# 提示词文件
+# Tệp prompt
 
-这个目录存放主链路使用的可编辑提示词文本。
+Thư mục này lưu trữ văn bản prompt có thể chỉnh sửa mà luồng chính sử dụng.
 
 - `translation_system.txt`
-  翻译请求使用的 system prompt。
+  System prompt dùng cho yêu cầu dịch.
 - `translation_task.txt`
-  拼接进翻译 user payload 的任务说明。
+  Mô tả nhiệm vụ ghép vào user payload dịch.
 - `classification_system.txt`
-  `precise` 模式下整页分类使用的 system prompt。
+  System prompt dùng cho phân loại toàn trang ở chế độ `precise`.
 
-如果要调模型行为，优先改这里，不要直接把提示词硬编码进 Python。
+Nếu muốn điều chỉnh hành vi mô hình, ưu tiên sửa ở đây, không hardcode prompt trực tiếp vào Python.

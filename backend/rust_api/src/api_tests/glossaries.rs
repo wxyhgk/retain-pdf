@@ -22,7 +22,7 @@ async fn export_glossary_csv_route_returns_csv() {
             enabled: true,
             entries: vec![crate::models::GlossaryEntryInput {
                 source: "band gap".to_string(),
-                target: "带隙".to_string(),
+                target: "khoảng cách dải".to_string(),
                 note: String::new(),
                 level: String::new(),
                 match_mode: String::new(),
@@ -74,7 +74,7 @@ async fn import_glossary_route_creates_glossary() {
                 "target_lang": "zh-CN",
                 "enabled": true,
                 "entries": [
-                    {"source": "SCF", "target": "自洽场", "level": "preferred"}
+                    {"source": "SCF", "target": "trường tự hợp", "level": "preferred"}
                 ]
             }"#,
         ))

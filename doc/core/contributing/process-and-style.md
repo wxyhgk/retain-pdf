@@ -1,115 +1,115 @@
-# Issue、PR、代码风格与发布说明
+# Issue, PR, phong cách mã và hướng dẫn phát hành
 
-## Issue 流程
+## Quy trình Issue
 
-提交 Bug Issue 时尽量包含：
+Khi gửi Bug Issue, cố gắng bao gồm:
 
-- RetainPDF 版本、运行方式：桌面端 / Docker / 本地开发。
-- 操作系统和浏览器。
-- OCR provider、模型 provider、任务 workflow。
-- job_id、失败阶段、错误摘要或截图。
-- 可复现步骤。
-- 期望结果和实际结果。
-- 如涉及 PDF 样本，说明是否可以公开；不能公开时提供最小化截图、页面编号、bbox 或脱敏样本。
+- Phiên bản RetainPDF, cách chạy: desktop / Docker / phát triển cục bộ.
+- Hệ điều hành và trình duyệt.
+- OCR provider, model provider, workflow tác vụ.
+- job_id, giai đoạn thất bại, tóm tắt lỗi hoặc ảnh chụp màn hình.
+- Các bước tái hiện.
+- Kết quả mong đợi và kết quả thực tế.
+- Nếu liên quan đến mẫu PDF, nêu rõ có thể công khai không; nếu không, cung cấp ảnh chụp màn hình tối thiểu, số trang, bbox hoặc mẫu đã làm ẩn.
 
-提交 Feature Issue 时尽量包含：
+Khi gửi Feature Issue, cố gắng bao gồm:
 
-- 使用场景。
-- 你希望前端/API/命令行如何暴露。
-- 是否需要兼容现有 job、artifact、reader、library 或 Docker 交付。
-- 可能影响的模块。
+- Kịch bản sử dụng.
+- Bạn muốn frontend/API/dòng lệnh hiển thị như thế nào.
+- Có cần tương thích với job, artifact, reader, library hoặc phân phối Docker hiện có không.
+- Các module có thể bị ảnh hưởng.
 
-安全问题、密钥泄露、隐私数据问题不要直接贴公开 Issue。请先通过 README 里的交流群或 GitHub 私下渠道联系维护者；如果只能公开提交，请只描述影响范围，不要附带密钥、真实文件或可识别用户数据。
+Vấn đề bảo mật, lộ khóa, dữ liệu riêng tư không đăng trực tiếp lên Issue công khai. Vui lòng liên hệ với người bảo trì qua nhóm trong README hoặc kênh riêng trên GitHub trước; nếu chỉ có thể đăng công khai, chỉ mô tả phạm vi ảnh hưởng, không kèm khóa, tệp thực hoặc dữ liệu nhận dạng người dùng.
 
-## PR 流程
+## Quy trình PR
 
-建议流程：
+Quy trình đề xuất:
 
-1. 先开 Issue 或在已有 Issue 下说明方案，尤其是跨 Rust/Python/frontend/Docker 的改动。
-2. 从最新 `main` 开分支。
-3. 保持 PR 聚焦，一次只解决一个主题。
-4. 代码改动同时补测试或说明为什么暂时无法补。
-5. 更新相关文档。
-6. PR 描述写清楚改了什么、为什么改、怎么验证。
+1. Trước tiên tạo Issue hoặc mô tả giải pháp trong Issue hiện có, đặc biệt là thay đổi xuyên Rust/Python/frontend/Docker.
+2. Tạo nhánh từ `main` mới nhất.
+3. Giữ PR tập trung, mỗi lần chỉ giải quyết một chủ đề.
+4. Bổ sung kiểm thử khi sửa mã hoặc giải thích lý do tạm thời chưa bổ sung được.
+5. Cập nhật tài liệu liên quan.
+6. Mô tả PR rõ ràng đã sửa gì, tại sao sửa, xác minh thế nào.
 
-PR 描述建议包含：
+Mô tả PR nên bao gồm:
 
 ```md
-## 变更
+## Thay đổi
 
 - ...
 
-## 验证
+## Xác minh
 
 - [ ] cargo test --manifest-path backend/rust_api/Cargo.toml
 - [ ] python3 backend/scripts/devtools/check_pipeline_architecture.py
 - [ ] npm --prefix desktop run verify-frontend-sync
 
-## 风险
+## Rủi ro
 
 - ...
 ```
 
-如果 PR 修改了用户可见行为，请附截图、接口示例、样本 job_id 或前后对比。
+Nếu PR sửa đổi hành vi người dùng có thể thấy, vui lòng đính kèm ảnh chụp màn hình, ví dụ giao diện, job_id mẫu hoặc so sánh trước sau.
 
-## 沿用现有风格
+## Áp dụng phong cách hiện có
 
-“沿用现有模块风格和命名”的意思是：
+"Áp dụng phong cách và đặt tên module hiện có" nghĩa là:
 
-- 先在同目录找 2 到 3 个相近实现，按它们的命名、错误处理、返回类型、测试写法和文件组织继续写。
-- 已有模块叫 `*_view`、`*_payload`、`*_manifest`、`*_contract` 时，新字段或 helper 也尽量沿用同一套词，不要另起一套 `dto/result/response/entity` 混用。
-- 已有代码使用窄依赖参数时，不要退回传整个 `AppState`、全局 config 或大 dict。
-- 已有 API 返回走 view/projection 层时，不要在 route 里临时拼 JSON。
-- 已有 Python pipeline 使用 stage spec、manifest、document.v1 时，不要直接绕过去读 provider raw JSON。
+- Trước tiên tìm 2-3 triển khai tương tự trong cùng thư mục, tiếp tục viết theo cách đặt tên, xử lý lỗi, kiểu trả về, cách viết kiểm thử và tổ chức tệp của chúng.
+- Khi module hiện có đặt tên `*_view`, `*_payload`, `*_manifest`, `*_contract`, trường mới hoặc helper mới cũng cố gắng sử dụng cùng bộ từ, không tạo ra một bộ `dto/result/response/entity` lẫn lộn.
+- Khi mã hiện có sử dụng tham số phụ thuộc hẹp, đừng quay lại truyền toàn bộ `AppState`, config toàn cục hoặc dict lớn.
+- Khi API hiện có trả về qua tầng view/projection, đừng ghép JSON tạm thời trong route.
+- Khi Python pipeline hiện có sử dụng stage spec, manifest, document.v1, đừng vòng qua để đọc raw JSON của provider.
 
-## 什么时候可以加抽象
+## Khi nào có thể thêm trừu tượng
 
-不要为单个小需求引入新的抽象体系。下面这些情况通常不应该新增框架式抽象：
+Đừng đưa hệ thống trừu tượng mới cho các nhu cầu nhỏ lẻ. Các trường hợp sau thường không nên thêm trừu tượng dạng framework:
 
-- 只是新增一个字段、一个按钮、一个下载入口或一个校验分支。
-- 只是两个调用点有少量重复。
-- 只是为了把名字变得“更通用”，但没有减少真实复杂度。
-- 只是把原本清楚的顺序逻辑包进多层 class/factory/manager。
+- Chỉ thêm một trường, một nút, một đầu vào tải xuống hoặc một nhánh xác thực.
+- Chỉ hai điểm gọi có một chút trùng lặp.
+- Chỉ để làm tên "tổng quát hơn" nhưng không giảm độ phức tạp thực tế.
+- Chỉ bọc logic tuần tự rõ ràng vào nhiều tầng class/factory/manager.
 
-可以新增抽象的情况：
+Có thể thêm trừu tượng khi:
 
-- 同一逻辑已经在 3 个以上地方重复，而且修改时容易漏。
-- 现有函数已经混合 IO、策略、数据转换、错误处理，导致测试困难。
-- 新抽象能把跨层依赖变窄，例如把 route 中的业务判断移到 service。
-- 新抽象能形成稳定契约，例如 artifact manifest、reader region、translation diagnostics。
+- Cùng một logic đã lặp lại ở hơn 3 nơi và khi sửa dễ bỏ sót.
+- Hàm hiện tại đã trộn lẫn IO, chiến lược, chuyển đổi dữ liệu, xử lý lỗi, gây khó kiểm thử.
+- Trừu tượng mới có thể thu hẹp phụ thuộc xuyên tầng, ví dụ chuyển phán đoán nghiệp vụ trong route sang service.
+- Trừu tượng mới có thể tạo hợp đồng ổn định, ví dụ artifact manifest, reader region, translation diagnostics.
 
-新增抽象时，PR 描述里说明：
+Khi thêm trừu tượng, mô tả PR nêu:
 
-- 它替代了哪些重复或耦合。
-- 它属于哪一层。
-- 哪些模块允许依赖它，哪些模块不应该依赖它。
+- Nó thay thế những sự trùng lặp hoặc phụ thuộc nào.
+- Nó thuộc tầng nào.
+- Module nào được phép phụ thuộc vào nó, module nào không nên phụ thuộc.
 
-## 改动范围
+## Phạm vi thay đổi
 
-- 不要把不相关重构混进功能 PR。功能修复、重命名、目录迁移、格式化最好分开。
-- 不要顺手改大量无关文件、排序 import、重排 CSS 或重写历史逻辑，除非这是本 PR 的目标。
-- 不要提交本地密钥、token、真实用户文件、`data/db/jobs.db`、`data/jobs/*` 大量运行产物、`tmp/*` 或大体积实验输出。
+- Đừng trộn tái cấu trúc không liên quan vào PR chức năng. Sửa lỗi, đổi tên, di chuyển thư mục, định dạng nên tách riêng.
+- Đừng tiện tay sửa nhiều tệp không liên quan, sắp xếp import, sắp xếp lại CSS hoặc viết lại logic lịch sử, trừ khi đó là mục tiêu của PR.
+- Không commit khóa cục bộ, token, tệp người dùng thực, `data/db/jobs.db`, nhiều sản phẩm chạy trong `data/jobs/*`, `tmp/*` hoặc đầu ra thí nghiệm có dung lượng lớn.
 
-## 性能与大样本改动
+## Thay đổi hiệu suất và mẫu lớn
 
-渲染、PDF 处理、翻译批处理、OCR adapter 这类改动可能对 500 页以上 PDF 有明显影响。涉及性能时建议提供：
+Các thay đổi như kết xuất, xử lý PDF, xử lý batch dịch, OCR adapter có thể ảnh hưởng rõ rệt đến PDF trên 500 trang. Khi liên quan đến hiệu suất, nên cung cấp:
 
-- 样本页数和文件类型。
-- 旧耗时、新耗时。
-- 使用的命令或 job_id。
-- 是否改变输出 PDF 内容、体积或首屏预览体验。
+- Số trang mẫu và loại tệp.
+- Thời gian cũ, thời gian mới.
+- Lệnh đã sử dụng hoặc job_id.
+- Có thay đổi nội dung PDF đầu ra, kích thước hoặc trải nghiệm xem trước trang đầu không.
 
-大样本、临时 CSV、benchmark 输出应放在 `experiments/` 或 `tmp/`，默认不要提交到仓库。
+Mẫu lớn, CSV tạm thời, đầu ra benchmark nên đặt trong `experiments/` hoặc `tmp/`, mặc định không commit vào kho lưu trữ.
 
-## 发布与运维
+## Phát hành và vận hành
 
-普通贡献者通常不需要打 tag 或发布包。维护者发布时会单独执行版本提交、tag、GitHub push、桌面端同步和 Docker/Release 流程。
+Người đóng góp thông thường thường không cần tạo tag hoặc gói phát hành. Người bảo trì khi phát hành sẽ thực hiện riêng quy trình commit phiên bản, tag, push GitHub, đồng bộ desktop và Docker/Release.
 
-如果你的 PR 会影响发布包，请在 PR 描述中说明：
+Nếu PR của bạn ảnh hưởng đến gói phát hành, vui lòng nêu trong mô tả PR:
 
-- 是否影响桌面端 bundle。
-- 是否影响 Docker runtime config。
-- 是否需要迁移数据库或兼容旧 job。
-- 是否需要更新 README、API 文档或用户安装说明。
+- Có ảnh hưởng đến bundle desktop không.
+- Có ảnh hưởng đến cấu hình runtime Docker không.
+- Có cần di chuyển cơ sở dữ liệu hoặc tương thích với job cũ không.
+- Có cần cập nhật README, tài liệu API hoặc hướng dẫn cài đặt người dùng không.
 
-维护者发布、Docker 交付和线上运维记录见 [运维与过程记录](../../ops/README.md) 和 Docker 文档。
+Ghi chép phát hành, phân phối Docker và vận hành trực tuyến của người bảo trì xem [Vận hành và ghi chép quy trình](../../ops/README.md) và tài liệu Docker.

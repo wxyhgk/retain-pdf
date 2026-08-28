@@ -74,7 +74,7 @@ test("上传弹窗：标题提示 + 就绪后出现直接翻译/仅收藏", asyn
 
   click(dom, byId("library-add-pdf-btn"));
   await waitFor(() => byId("translation-workflow-dialog") !== null, "添加对话框打开");
-  assert.equal(byId("translation-workflow-title").textContent, "添加 PDF");
+  assert.equal(byId("translation-workflow-title").textContent, "Thêm PDF");
   assert.match(byId("translation-workflow-desc").textContent, /直接翻译|收藏/);
 
   // 模拟上传完成

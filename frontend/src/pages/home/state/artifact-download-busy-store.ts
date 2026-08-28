@@ -1,26 +1,25 @@
-// artifact-downloads busy 态 store(dialogs 蓝图 §7.5 方案二)。
+// Store trạng thái busy của artifact-downloads (bản thiết kế dialogs §7.5 phương án hai).
 //
-// 背景(蓝图 §0.5):artifact-downloads 是 document 级委托点击 + 命令式
-// setLinkBusy(旧世界直改 DOM 文本/class)。按钮宿主分布在 recent-jobs 的
-// ResultActions.jsx 与本域 StatusDetailDialog.jsx——两者的祖先(StatusCard/
-// StatusDetailDialog 本身)都挂在高频轮询/store 更新链路上,若下载中途父组件
-// 因无关字段变化重渲染,虚拟 DOM diff 会把命令式写入的"下载中.../37%"文案
-// 吃掉、打回按钮原始 label。方案二:setLinkBusy 不再直改 DOM,只写这个 store;
-// 按钮组件各自订阅自己的 actionId 分片(use-artifact-download-busy.js),
-// label 完全来自 React state,重渲染不会覆盖(因为 state 本身就是最新值)。
+// Bối cảnh (bản thiết kế §0.5): artifact-downloads là ủy quyền nhấp ở cấp document + hàm mệnh lệnh
+// setLinkBusy (thế giới cũ sửa trực tiếp văn bản/class của DOM). Nơi chứa nút nằm rải rác ở
+// ResultActions.jsx của recent-jobs và StatusDetailDialog.jsx của miền này — tổ tiên của cả hai (StatusCard/
+// bản thân StatusDetailDialog) đều gắn trên luồng polling/store update tần suất cao, nếu giữa chừng component cha
+// re-render do thay đổi trường không liên quan, virtual DOM diff sẽ ghi đè và làm mất đoạn văn bản "Đang tải.../37%"
+// ghi theo kiểu mệnh lệnh, đưa nút về label gốc. Phương án hai: setLinkBusy không sửa trực tiếp DOM nữa mà chỉ ghi vào store này;
+// các component nút tự subscribe vào slice actionId của riêng mình (use-artifact-download-busy.js),
+// label hoàn toàn đến từ React state, re-render không bị ghi đè (vì bản thân state đã là giá trị mới nhất).
 //
-// 与旧世界 src/js/features/artifact-downloads/download-view-port.js 的关系:
-// 旧文件保持不动(仍供尚未 cutover 的 dist/app.bundle.js 使用,默认 DOM 版
-// setLinkBusy 直改真实 <a> 文本)——composition.js 给 React 世界另挂一份
-// viewPort 实例,字面量直接实现 3 个方法(不 import 旧 view-port.js/view.js:
-// 两者文件名分别匹配 architecture-boundaries.test.mjs 的防回弹正则,
-// src/pages/** 禁止导入),setLinkBusy 落这个 store。
+// Mối quan hệ với src/js/features/artifact-downloads/download-view-port.js của thế giới cũ:
+// Tệp cũ giữ nguyên (vẫn phục vụ cho dist/app.bundle.js chưa cutover, bản DOM mặc định
+// setLinkBusy sửa trực tiếp text của thẻ <a> thật) — composition.js gắn thêm một instance
+// viewPort riêng cho thế giới React, triển khai trực tiếp 3 phương thức bằng literal (không import view-port.js/view.js cũ:
+// tên của hai tệp này khớp regex chống hồi quy của architecture-boundaries.test.mjs,
+// cấm import vào src/pages/**), setLinkBusy ghi vào store này.
 //
-// state 形状:{ [actionId]: { busy: true, label } };不含某 actionId 表示当前
-// 非 busy。getState() 只在真正发生变化时才换新的顶层引用(与
-// src/pages/home/state/dialog-store.js 同款极简 pub-sub),可直接喂
-// useSyncExternalStore 而不会触发无限重渲染(不存在 app-framework/store.js
-// 的 getSnapshot 每次克隆雷点)。
+// Hình dạng state: { [actionId]: { busy: true, label } }; không chứa actionId nào nghĩa là hiện tại
+// không busy. getState() chỉ thay đổi tham chiếu cấp cao nhất khi thực sự có biến đổi (cùng loại
+// pub-sub tối giản như src/pages/home/state/dialog-store.js), có thể truyền trực tiếp vào
+// useSyncExternalStore mà không kích hoạt re-render vô tận (không dính bẫy clone mỗi lần của getSnapshot trong app-framework/store.js).
 
 export type ArtifactBusySlice = {
   busy: boolean;
@@ -48,7 +47,7 @@ export function createArtifactDownloadBusyStore(): ArtifactDownloadBusyStore {
   }
 
   return {
-    // useSyncExternalStore 兼容:subscribe 返回退订函数
+    // Tương thích useSyncExternalStore: subscribe trả về hàm unsubscribe
     subscribe(listener) {
       listeners.add(listener);
       return () => {
@@ -56,9 +55,9 @@ export function createArtifactDownloadBusyStore(): ArtifactDownloadBusyStore {
       };
     },
     getState: () => state,
-    // 按 actionId 取一个分片;命中同一 actionId 且未变化时返回同一个对象
-    // 引用(setBusy 对不相关的 actionId 是纯粹的浅 spread,不触碰其他键的
-    // 值引用)——配合 use-artifact-download-busy.js 做到按钮级精确重渲染。
+    // Lấy một slice theo actionId; khi khớp cùng một actionId và chưa thay đổi thì trả về cùng một tham chiếu
+    // đối tượng (setBusy với các actionId không liên quan là phép spread nông thuần túy, không chạm vào
+    // tham chiếu giá trị của các key khác) — kết hợp với use-artifact-download-busy.js để re-render chính xác cấp nút.
     getActionState(actionId) {
       return state[`${actionId || ""}`.trim()] || IDLE;
     },

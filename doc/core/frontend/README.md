@@ -1,18 +1,18 @@
-# 前端文档
+# Tài liệu frontend
 
-这里存放前端联调、状态检查和优化记录，不是业务产品文档。
+Nơi đây lưu trữ các ghi chép về tích hợp frontend, kiểm tra trạng thái và tối ưu hóa, không phải tài liệu sản phẩm nghiệp vụ.
 
-- [前端状态 Smoke](./status_smoke.md)
-- [前端优化记录](./optimization_notes.md)
-- [前端状态 Smoke 最新报告](../../ops/reports/frontend-status-smoke-latest.json)
+- [Smoke trạng thái frontend](./status_smoke.md)
+- [Ghi chép tối ưu hóa frontend](./optimization_notes.md)
+- [Báo cáo Smoke trạng thái frontend mới nhất](../../ops/reports/frontend-status-smoke-latest.json)
 
-主要代码入口：
+Đầu vào mã chính:
 
 - `frontend/src/js/`
 - `frontend/src/styles/`
 - `frontend/package.json`
 
-桌面端同步：
+Đồng bộ desktop:
 
-- 修改 `frontend/src/**` 后，运行 `npm --prefix desktop run sync-frontend`，它会重新构建网页前端并同步到 `desktop/app/frontend`。
-- 提交前运行 `npm --prefix desktop run verify-frontend-sync`，它会先同步桌面前端，再跑桌面前端 smoke，避免 Electron 打包继续使用旧页面。
+- Sau khi sửa `frontend/src/**`, chạy `npm --prefix desktop run sync-frontend`, nó sẽ xây dựng lại frontend web và đồng bộ vào `desktop/app/frontend`.
+- Trước khi commit, chạy `npm --prefix desktop run verify-frontend-sync`, nó sẽ đồng bộ frontend desktop trước, sau đó chạy smoke frontend desktop, tránh việc đóng gói Electron tiếp tục sử dụng trang cũ.

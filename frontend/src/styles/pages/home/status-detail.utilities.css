@@ -1,4 +1,5 @@
-/* 状态详情 · 壳/阶段历史/事件/失败/结果动作（翻译调试见 status-detail-translation.utilities） */
+/* Chi tiết trạng thái · vỏ/lịch sử giai đoạn/sự kiện/thất bại/hành động kết quả
+   (xem gỡ lỗi bản dịch trong status-detail-translation.utilities) */
 
 
 
@@ -41,13 +42,14 @@
 
 
 /*
-  危险区修复(Tailwind v4 迁移):`.log` 全项目只和 `.inline-error-box` 成对
-  出现(InlineErrorBox.jsx 的 `log error-box inline-error-box`),background/
-  border-color 两边都定义——v3 靠源码序 tie-break,inline-error-box 写在
-  后面胜出(红色错误底色),这里的白底/中性边框一直是死代码。v4 顺序不保真
-  源码序(同一模式,另见本文件其余几处修复说明),实测迁移后白底反而胜出,
-  错误提示框失去红色底色视觉提示。去掉冲突的 background/border-color,
-  交给 inline-error-box 一处定义。
+ Sửa vùng nguy hiểm (di chuyển Tailwind v4): trong toàn dự án, `.log` chỉ xuất hiện
+ cùng `.inline-error-box` (InlineErrorBox.jsx có `log error-box inline-error-box`),
+ cả hai bên đều định nghĩa background/border-color — v3 dùng thứ tự nguồn để tie-break,
+ inline-error-box ở sau nên thắng (nền lỗi màu đỏ), còn nền trắng/viền trung tính ở đây
+ vốn luôn là code chết. v4 không bảo toàn thứ tự nguồn (cùng kiểu với các phần sửa khác
+ trong tệp này), thực tế sau khi di chuyển nền trắng lại thắng, khiến hộp lỗi mất
+ dấu hiệu nền đỏ. Loại bỏ background/border-color xung đột và giao cho inline-error-box
+ định nghĩa tại một nơi.
 */
 @utility log {
   @apply rounded-[20px];

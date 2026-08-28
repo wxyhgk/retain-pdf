@@ -1,9 +1,9 @@
-"""任务产物的块级读取。
+"""Đọc dữ liệu ở mức block từ sản phẩm của tác vụ.
 
-真相在任务目录:ocr/normalized/document.v1.json(原文块)与
-translated/page-*.json(译文,按 (page_idx, block_idx) 数字索引对齐——
-译文 item_id 与规范 block_id 的零填充位数不同,不能按字符串对齐)。
-只读,不写任何任务目录内容。
+Nguồn sự thật nằm trong thư mục tác vụ: ocr/normalized/document.v1.json (block văn bản gốc) và
+translated/page-*.json (bản dịch, khớp theo chỉ số số học (page_idx, block_idx) — item_id của
+bản dịch và block_id chuẩn có số chữ số 0 đệm khác nhau nên không khớp được theo chuỗi).
+Chỉ đọc, không ghi bất cứ thứ gì vào thư mục tác vụ.
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ def read_page_blocks(
     around_block_id: str = "",
     max_blocks: int = 12,
 ) -> list[Block]:
-    """取某页的块;给定 around_block_id 时以它为中心取窗口。"""
+    """Lấy các block của một trang; nếu có around_block_id thì lấy cửa sổ quanh block đó."""
     page_blocks = [block for block in load_job_blocks(job_root) if block.page_idx == page_idx]
     if not around_block_id:
         return page_blocks[: max(1, max_blocks)]

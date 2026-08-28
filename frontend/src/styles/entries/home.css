@@ -1,21 +1,21 @@
-/* 主页 CSS 入口 → dist/css/home.css
- * 仅 index.html 加载。
+/* Trang chính CSS entry → dist/css/home.css
+ * Chỉ được load bởi index.html.
  *
- * 边界：
- * - 禁止 import reader/*、pages/detail/*（阅读器/详情页各自 entry）
- * - 共享仅限 tokens / base / components* / dialog-shell / download-toast
- * - 主页领域文件在 pages/home/
+ * Ranh giới:
+ * - cấm import reader/*, pages/detail/* (reader / trang chi tiết có entry riêng)
+ * - chia sẻ chỉ giới hạn tokens / base / components* / dialog-shell / download-toast
+ * - file phạm vi trang chính nằm ở pages/home/
  */
 @import "tailwindcss";
 @import "../core/tailwind-theme.css";
 
-/* content 扫描：收窄到主页会渲染的路径，避免把 reader 域 class 扫进 home 包 */
+/* Quét content: thu hẹp về các đường dẫn trang chính sẽ render, tránh quét class của phạm vi reader vào gói home */
 @source "../../../index.html";
 @source "../../pages/home/**/*.{js,jsx,ts,tsx}";
 @source "../../shared/**/*.{js,jsx,ts,tsx}";
 @source "../../components/**/*.{js,jsx,ts,tsx}";
 @source "../../lib/**/*.{js,jsx,ts,tsx}";
-/* 主页仍经 composition 消费的 js 域（勿用 ../../js/** 全量扫） */
+/* Js domain mà trang chính vẫn tiêu thụ qua composition (đừng dùng ../../js/** quét toàn bộ) */
 @source "../../js/features/**/*.{js,jsx,ts,tsx}";
 @source "../../js/islands/**/*.{js,jsx,ts,tsx}";
 @source "../../js/job/**/*.{js,ts}";
@@ -33,17 +33,17 @@
 @import "../tokens.css" layer(tokens);
 @import "../shadcn-theme.css" layer(tokens);
 @import "../base.css" layer(base);
-/* 主页氛围：浅纹理 + 宽屏侧翼（装饰） */
+/* Bối cảnh trang chính: họa tiết nông + cánh bên màn rộng (decor) */
 @import "../core/ambient-surface.css";
 @import "../core/decor-stage.css";
 
-/* —— shared（三页可共用）—— */
+/* —— shared (ba trang có thể dùng chung) —— */
 @import "../components.css";
 @import "../components.utilities.css";
 @import "../dialog-shell.css";
 @import "../core/download-toast.css";
 
-/* —— home-only（主页领域；勿再塞 reader/detail）—— */
+/* —— home-only (phạm vi trang chính; đừng nhồi thêm reader/detail) —— */
 @import "../pages/home/components.utilities.css";
 @import "../pages/home/translation-workflow.utilities.css";
 @import "../pages/home/collections.utilities.css";

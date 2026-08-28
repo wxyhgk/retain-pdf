@@ -6,9 +6,9 @@ const MODES: {
   label: string;
   Icon: typeof FileText;
 }[] = [
-  { id: "source", label: "原文", Icon: FileText },
-  { id: "translated", label: "译文", Icon: Languages },
-  { id: "compare", label: "对照阅读", Icon: Columns2 },
+  { id: "source", label: "Bản gốc", Icon: FileText },
+  { id: "translated", label: "Bản dịch", Icon: Languages },
+  { id: "compare", label: "Đọc đối chiếu", Icon: Columns2 },
 ];
 
 export type ReaderModeTabsProps = {
@@ -24,7 +24,7 @@ export function ReaderModeTabs({
 }: ReaderModeTabsProps): JSX.Element {
   return (
     <header className="reader-topbar reader-react-topbar">
-      <div className="reader-tabs" role="tablist" aria-label="阅读模式">
+      <div className="reader-tabs" role="tablist" aria-label="Chế độ đọc">
         {MODES.map((item) => {
           if (sourceOnly && item.id !== "source") {
             return null;

@@ -1,45 +1,45 @@
-/* 皮肤 mojia：墨家 · 素绢青铜
- * 暖绢底衬玄墨，青铜绿作主强调，青铜金只给小面积点缀——
- * 与 decor/mojia 装饰包（机关素材）同源气质。
- * 见 docs/theme-system/skins/mojia.md
+/* Giao diện mojia: Mặc gia · lụa trắng đồng xanh
+ * Nền lụa ấm điểm mực đen huyền, đồng xanh làm màu nhấn mạnh chính, đồng vàng chỉ dùng để điểm xuyết nhỏ —
+ * cùng phong cách với gói trang trí decor/mojia (tư liệu cơ khí).
+ * Xem docs/theme-system/skins/mojia.md
  */
 
 [data-theme="mojia"] {
-  /* 院落：暖素绢（区别于 jiangnan 的冷石灰） */
+  /* Sân vườn: lụa trắng ấm (khác với vôi lạnh của jiangnan) */
   --bg: #f2efe8;
-  /* 纸面：近白微暖 */
+  /* Mặt giấy: gần trắng hơi ấm */
   --paper: #faf8f1;
   --surface: rgba(250, 248, 241, 0.88);
-  /* 玄墨：黑中带褐 */
+  /* Mực huyền: đen pha nâu */
   --ink: #26221b;
   --muted: #6f6a5e;
-  /* 缝：暖灰 */
+  /* Đường nối: xám ấm */
   --line: #e4ded2;
 
-  /* 青铜绿 — 主按钮 / 选中 */
+  /* Đồng xanh — nút chính / được chọn */
   --accent: #4c6658;
   --accent-weak: rgba(76, 102, 88, 0.11);
   --selection: #ece8da;
 
-  /* 朱砂：比正红沉一档，压得住木色 */
+  /* Chu sa: đậm hơn đỏ chính một bậc, đủ sức át màu gỗ */
   --danger: #b23b32;
   --danger-weak: rgba(178, 59, 50, 0.11);
   --ok: #3d7a52;
   --ok-weak: rgba(61, 122, 82, 0.11);
-  /* 哑光琥珀 */
+  /* Hổ phách mờ */
   --warn: #a67c2d;
   --warn-weak: rgba(166, 124, 45, 0.12);
 
-  /* 青铜金：比 jiangnan 的哑青铜更暖一档，仍不大面积用 */
+  /* Đồng vàng: ấm hơn đồng xỉn của jiangnan một bậc, vẫn không dùng diện rộng */
   --gold: #8f7442;
   --gold-weak: rgba(143, 116, 66, 0.12);
   --chrome: #211e19;
   --reader-page: #faf8f1;
   --shadow-color: #2b2519;
 
-  /* L3 形态（可选 token，默认见 themes/_component-defaults.css）：
-   * 规矩绳墨——主按钮/选中态用青铜绿（与素材青绿流苏、徽章同族），
-   * 面板收方一档，题字描边露出青铜 */
+  /* Hình thái L3 (token tùy chọn, mặc định xem themes/_component-defaults.css):
+   * Quy tắc mực thước — nút chính/trạng thái chọn sử dụng đồng xanh (cùng họ với tua rua xanh, huy hiệu của tư liệu),
+   * bảng điều khiển bo góc vuông hơn một bậc, chữ tiêu đề viền để lộ đồng */
   --btn-radius: 8px;
   --btn-primary-bg: var(--accent);
   --btn-primary-fg: var(--paper);
@@ -47,7 +47,7 @@
   --stage-veil: 92%;
   --ornament-line: color-mix(in srgb, var(--gold) 55%, var(--line));
 
-  /* 布局密度（同 jiangnan）：廊道更宽、纸台更窄，给道具让出边翼 */
+  /* Mật độ bố cục (giống jiangnan): hành lang rộng hơn, bệ giấy hẹp hơn, nhường không gian cho đạo cụ ở hai bên */
   --shell-pad-inline: clamp(28px, 6vw, 72px);
   --shell-pad-inline-narrow: clamp(12px, 3vw, 20px);
   --header-width: min(1080px, 100%);
@@ -58,18 +58,18 @@
     inset 0 1px 0 color-mix(in srgb, var(--paper) 92%, var(--line)),
     0 14px 36px color-mix(in srgb, var(--ink) 3%, transparent);
 
-  /* 氛围垫层材质（ambient-surface 消费）：暖绢底上走青铜丝 */
+  /* Chất liệu lớp đệm khí quyển (được sử dụng bởi ambient-surface): trên nền lụa ấm có sợi đồng */
   --mat-fiber: color-mix(in srgb, var(--ink) 2.6%, transparent);
   --mat-fiber-2: color-mix(in srgb, var(--gold) 2%, transparent);
   --mat-edge: color-mix(in srgb, var(--ink) 2.5%, var(--bg));
   --mat-center: color-mix(in srgb, var(--paper) 20%, var(--bg));
 }
 
-/* 「+」主按钮换装为齿轮机关钮：去掉方底，真齿轮图满嵌在玻璃栏上
- *（组件 AppBottomBar 预留 .library-bottom-icon-btn-ornament 钩子——改了组件
- * 必须 npm run build:js 重出 app.bundle.js，否则皮肤藏起 + 号后钮面空白；
- * 其他主题钩子无样式零渲染）；悬停时齿轮转动 45°。齿轮图以 data: URI 内联
- *（源文件 decor/mojia/gear-btn.webp，112px q80），不依赖额外取件。 */
+/* Nút chính "+" thay đổi thành nút cơ cấu bánh răng: bỏ nền vuông, hình bánh răng thật được nhúng đầy đủ trên thanh kính
+ * (thành phần AppBottomBar đã chuẩn bị sẵn móc .library-bottom-icon-btn-ornament — nếu sửa thành phần
+ * phải chạy npm run build:js để tạo lại app.bundle.js, nếu không giao diện sẽ ẩn nút "+" khiến bề mặt nút trống rỗng;
+ * các giao diện khác không có kiểu cho móc này nên không hiển thị gì). Khi di chuột, bánh răng quay 45°.
+ * Hình bánh răng được nhúng nội tuyến bằng data: URI (tệp nguồn decor/mojia/gear-btn.webp, 112px q80), không phụ thuộc vào việc tải thêm tài nguyên. */
 [data-theme="mojia"] .library-bottom-icon-btn.primary {
   position: relative;
   border-color: transparent;
@@ -89,12 +89,12 @@
   transition: transform 0.35s var(--ease-out);
 }
 
-/* 齿轮贴面只给添加钮（.primary） */
+/* Miếng dán bánh răng chỉ dành cho nút thêm (.primary) */
 [data-theme="mojia"] .library-bottom-icon-btn.primary .library-bottom-icon-btn-ornament {
 background: url("data:image/webp;base64,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") center / contain no-repeat;
 }
 
-/* 设置钮同样换装：贴 06 规矩量具（"设置=规矩工具"），悬停轻抬 2px */
+/* Nút cài đặt cũng thay đổi: dán công cụ đo lường 06 ("cài đặt = công cụ đo lường"), khi di chuột nhấc nhẹ lên 2px */
 [data-theme="mojia"] #app-settings-btn {
   position: relative;
   border-color: transparent;
@@ -118,14 +118,14 @@ background: url("data:image/webp;base64,UklGRkgXAABXRUJQVlA4WAoAAAAQAAAAbwAAbAAA
   transform: rotate(45deg);
 }
 
-/* 幽灵钮（设置/右下动作）描边带一点青铜，与齿轮钮同族 */
+/* Nút ma (cài đặt/hành động góc dưới phải) có viền pha chút đồng xanh, cùng họ với nút bánh răng */
 [data-theme="mojia"] .library-bottom-icon-btn:not(.primary),
 [data-theme="mojia"] .library-bottom-action {
   border-color: color-mix(in srgb, var(--gold) 38%, var(--line));
 }
 
-/* 合集 tab：图标位贴 08 竹简卷轴（竹简=卷帙合集），组件预留
- * .library-top-tab-ornament 钩子；图比 glyph 略大、上下微出血更耐看 */
+/* Tab Bộ sưu tập: vị trí biểu tượng dán cuộn trúc 08 (trúc = bộ sưu tập cuộn sách), thành phần đã chuẩn bị sẵn
+ * móc .library-top-tab-ornament; hình ảnh lớn hơn glyph một chút, chảy máu nhẹ trên dưới để nhìn đẹp hơn */
 [data-theme="mojia"] #library-top-tab-categories {
   position: relative;
 }
@@ -146,7 +146,7 @@ background: url("data:image/webp;base64,UklGRkgXAABXRUJQVlA4WAoAAAAQAAAAbwAAbAAA
   pointer-events: none;
 }
 
-/* 图书馆 tab：图标位贴 11_图书馆（机关书架上的摊开竹简） */
+/* Tab Thư viện: vị trí biểu tượng dán 11_Thư viện (cuộn trúc mở trên giá sách cơ khí) */
 [data-theme="mojia"] #library-top-tab-library {
   position: relative;
 }
@@ -167,7 +167,7 @@ background: url("data:image/webp;base64,UklGRkgXAABXRUJQVlA4WAoAAAAQAAAAbwAAbAAA
   pointer-events: none;
 }
 
-/* 收藏 tab：图标位贴 12_收藏（入函典藏） */
+/* Tab Yêu thích: vị trí biểu tượng dán 12_Yêu thích (cất vào hộp để lưu trữ) */
 [data-theme="mojia"] #library-top-tab-favorites {
   position: relative;
 }

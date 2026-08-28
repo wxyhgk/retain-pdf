@@ -1,9 +1,10 @@
-// 批量选择工具栏(照搬 PDF_MD_lib 的 LibraryBatchToolbar,按我们后端能力收窄:
-// 没有批量删除端点,逐个复用 deleteDocument;加入合集本身就是批量端点,直接
-// 传数组)。视觉上不搬参考项目的"贴底通栏",改成和本项目已有的
-// library-search-dock/library-bottom-actions 同一套"悬浮圆角胶囊"语言——
-// 批量模式下占用搜索框原来的底部居中位置(RecentJobsLibrary 切换时隐藏
-// LibrarySearchDock,两者不会同时出现)。
+// Thanh công cụ chọn hàng loạt (chép từ LibraryBatchToolbar của PDF_MD_lib, thu hẹp
+// theo khả năng backend của dự án: không có endpoint xóa hàng loạt, tái sử dụng
+// deleteDocument cho từng cái; thêm vào bộ sưu tập vốn đã là endpoint hàng loạt, truyền
+// thẳng mảng). Về thị giác không chuyển "thanh dính đáy" của dự án tham chiếu, đổi sang
+// cùng ngôn ngữ "viên nang bo góc lơ lửng" với library-search-dock/library-bottom-actions
+// đã có trong dự án — chế độ hàng loạt chiếm vị trí giữa đáy vốn là ô tìm kiếm
+// (RecentJobsLibrary ẩn LibrarySearchDock khi chuyển, hai cái không đồng thời xuất hiện).
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -52,16 +53,16 @@ export function LibraryBatchToolbar({
   const hasSelection = count > 0;
 
   return (
-    <div className="library-search-dock" aria-label="批量操作工具栏">
+    <div className="library-search-dock" aria-label="Thanh công cụ thao tác hàng loạt">
       <div className="flex min-h-[52px] flex-wrap items-center gap-2 rounded-full border border-[color-mix(in_srgb,color-mix(in_srgb,var(--line)_85%,var(--muted))_82%,transparent)] bg-paper/82 p-2 pl-4 shadow-[0_18px_46px_color-mix(in_srgb,var(--shadow-color)_12%,transparent)] backdrop-blur-[18px]">
         <button
           type="button"
           className="shrink-0 rounded-[var(--btn-radius)] px-2 py-1 text-xs font-medium text-muted-foreground transition active:scale-95 hover:bg-muted/40 hover:text-foreground"
           onClick={onCancel}
-        >取消</button>
+        >Hủy</button>
 
         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-          已选 {count}{Number.isFinite(totalSelectable) ? ` / ${totalSelectable}` : ""}
+          Đã chọn {count}{Number.isFinite(totalSelectable) ? ` / ${totalSelectable}` : ""}
         </span>
 
         <button
@@ -69,7 +70,7 @@ export function LibraryBatchToolbar({
           className="shrink-0 rounded-[var(--btn-radius)] border border-border px-3 py-1.5 text-xs transition active:scale-95 hover:bg-muted/30 disabled:pointer-events-none disabled:opacity-50"
           disabled={busy || !totalSelectable}
           onClick={onSelectAll}
-        >{allSelected ? "取消全选" : `全选已加载${Number.isFinite(totalSelectable) ? `(${totalSelectable})` : ""}`}</button>
+        >{allSelected ? "Bỏ chọn tất cả" : `Chọn tất cả đã tải${Number.isFinite(totalSelectable) ? `(${totalSelectable})` : ""}`}</button>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <div className="relative" ref={ref}>
@@ -80,7 +81,7 @@ export function LibraryBatchToolbar({
               onClick={() => setCollectionsOpen((v) => !v)}
             >
               <IconFolderPlus className="opacity-70" />
-              加入合集
+Thêm vào bộ sưu tập
             </button>
             {collectionsOpen ? (
               <div className="absolute bottom-full right-0 z-30 mb-2 max-h-64 w-48 origin-bottom-right overflow-y-auto rounded-2xl border border-border bg-paper p-1.5 shadow-[0_16px_40px_color-mix(in_srgb,var(--shadow-color)_16%,transparent)] transition-[opacity,transform] duration-150 ease-[var(--ease-out)] starting:scale-95 starting:opacity-0">
@@ -103,7 +104,7 @@ export function LibraryBatchToolbar({
             onClick={onDelete}
           >
             <IconTrash />
-            删除
+Xóa
           </button>
         </div>
       </div>

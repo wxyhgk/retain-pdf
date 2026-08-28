@@ -1,5 +1,5 @@
-// AI 会话切换 / 分支时的短时隔离：防列表收起后点击穿透到 PDF/链接。
-// 只在 lock 窗口内生效，绝不永久拦截阅读入口或正常导航。
+// Short isolation while switching/branching AI chats to prevent clicks passing through the collapsed list into PDFs/links.
+// Active only during the lock window; never permanently blocks reader entry or normal navigation.
 
 let lockUntil = 0;
 let shieldCleanup: (() => void) | null = null;
@@ -15,7 +15,7 @@ export function lockReaderAiNavigation(durationMs = 700): void {
   if (until > lockUntil) lockUntil = until;
 }
 
-/** 强制解除隔离（进页/异常时兜底，避免遮罩残留导致点不了） */
+/** Force-clear isolation as an entry/error fallback so a leftover overlay cannot block clicks. */
 export function clearReaderAiNavigationLock(): void {
   lockUntil = 0;
   shieldCleanup?.();
@@ -73,8 +73,8 @@ function removeOverlay(): void {
 }
 
 /**
- * 短时全屏吞指针 + 禁止跳页/开链。
- * 仅用于 AI 会话条切换 / 分支，时长应尽量短。
+ * Brief full-screen pointer swallow plus page-jump/link suppression.
+ * Only used for AI session-row switching/branching and should stay short.
  */
 export function armReaderAiClickShield(
   durationMs = 700,
@@ -105,7 +105,7 @@ export function armReaderAiClickShield(
       return;
     }
     const target = event.target;
-    // 会话条 / 答案操作条（开新对话按钮）放行，避免 pointerdown 上锁后点不中
+    // Allow the session row and answer action bar, including the new-chat button, so pointerdown locking does not block the intended click.
     if (
       target instanceof Element
       && target.closest(
@@ -144,9 +144,9 @@ export function armReaderAiClickShield(
 export function shouldIgnoreReaderAiNavEvent(event: Event | null | undefined): boolean {
   if (isReaderAiNavigationLocked()) return true;
   if (!event) return false;
-  // typeof 守卫：node/jsdom 没有全局 MouseEvent，裸 instanceof 会抛
-  // ReferenceError 且在事件 listener 里被静默吞掉（answer-enhance 测试
-  // 曾因此假失败——按钮注入成功但 onJump 永不触发）。
+  // typeof guard: node/jsdom has no global MouseEvent, and a bare instanceof
+  // throws ReferenceError that event listeners swallow silently. answer-enhance
+  // tests once failed this way: button injection succeeded but onJump never ran.
   if (typeof MouseEvent !== "undefined" && event instanceof MouseEvent && event.isTrusted === false) {
     return true;
   }
@@ -154,8 +154,8 @@ export function shouldIgnoreReaderAiNavEvent(event: Event | null | undefined): b
 }
 
 /**
- * 仅在 AI 导航锁定期拦截 window.open / 链接默认行为。
- * 不永久 ban 同源导航，避免破坏正常打开阅读。
+ * Intercept window.open/link defaults only during AI navigation lock.
+ * Do not permanently ban same-origin navigation, preserving normal reader opening.
  */
 export function installReaderWindowOpenGuard(): () => void {
   if (typeof window === "undefined" || typeof window.open !== "function") {
@@ -164,12 +164,12 @@ export function installReaderWindowOpenGuard(): () => void {
   if (openGuardInstalled) return () => {};
   openGuardInstalled = true;
 
-  // 进页先清残留遮罩
+  // Clear any leftover overlay on entry.
   clearReaderAiNavigationLock();
 
   const original = window.open.bind(window);
   window.open = ((url?: string | URL, target?: string, features?: string) => {
-    // 只在锁定期拒绝（会话切换误触）；平时不拦
+    // Reject only during the lock window for accidental session-switch clicks; otherwise allow.
     if (isReaderAiNavigationLocked()) {
       return null;
     }
@@ -180,7 +180,7 @@ export function installReaderWindowOpenGuard(): () => void {
     if (!isReaderAiNavigationLocked()) return;
     const t = event.target;
     if (!(t instanceof Element)) return;
-    // 会话条自身放行
+    // Allow the session row itself.
     if (t.closest("[data-reader-ai-sessions]")) return;
     const a = t.closest("a[href]");
     if (a) {

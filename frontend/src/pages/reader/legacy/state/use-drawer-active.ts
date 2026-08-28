@@ -1,5 +1,5 @@
-// drawer store → React 订阅 hook。store 的 active 是原始字符串(引用稳定),
-// 直接喂 useSyncExternalStore 即可(不存在 app-framework/store 的快照克隆雷点)。
+// Hook đăng ký React cho drawer store. active của store là chuỗi gốc (tham chiếu ổn định),
+// nạp thẳng vào useSyncExternalStore (không có bãi cạn clone snapshot của app-framework/store).
 
 import { useSyncExternalStore } from "react";
 

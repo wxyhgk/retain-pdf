@@ -29,8 +29,8 @@ export function renderFavorites(listEl, items = [], {
       "-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;",
       "-webkit-mask-position:center;mask-position:center;",
       'display:block"></span></div>',
-      '<p class="empty-state-title">暂无截图摘录</p>',
-      '<p class="empty-state-hint">选中段落或图表后点「收藏」，摘录会出现在这里。</p>',
+      '<p class="empty-state-title">Chưa có trích đoạn ảnh chụp</p>',
+      '<p class="empty-state-hint">Chọn đoạn văn hoặc biểu đồ rồi bấm "Lưu", trích đoạn sẽ xuất hiện ở đây.</p>',
     ].join("");
     listEl.appendChild(empty);
     return;
@@ -50,7 +50,7 @@ export function renderFavorites(listEl, items = [], {
     locateButton.className = "reader-favorite-locate";
     locateButton.role = "button";
     locateButton.tabIndex = 0;
-    locateButton.setAttribute("aria-label", "定位截图位置");
+    locateButton.setAttribute("aria-label", "Định vị trích đoạn ảnh chụp");
     locateButton.textContent = "↗";
     let peekStartedAt = 0;
     let isPeeking = false;
@@ -98,7 +98,7 @@ export function renderFavorites(listEl, items = [], {
     removeButton.className = "reader-favorite-remove";
     removeButton.role = "button";
     removeButton.tabIndex = 0;
-    removeButton.setAttribute("aria-label", "删除截图摘录");
+    removeButton.setAttribute("aria-label", "Xóa trích đoạn ảnh chụp");
     removeButton.textContent = "×";
     const removeFavorite = (event) => {
       event.preventDefault?.();
@@ -126,7 +126,7 @@ export function renderFavorites(listEl, items = [], {
     }
     const meta = documentRef.createElement("span");
     meta.className = "reader-favorite-card-meta";
-    meta.textContent = `第 ${item.page || "-"} 页`;
+    meta.textContent = `Trang ${item.page || "-"}`;
     const editor = documentRef.createElement("span");
     editor.className = "reader-favorite-editor";
     const tagRow = documentRef.createElement("span");

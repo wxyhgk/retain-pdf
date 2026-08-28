@@ -1,23 +1,22 @@
-# RetainPDF 533 页渲染基准
+# Điểm chuẩn kết xuất 533 trang RetainPDF
 
-这个目录把真实 job `20260514183142-dec42e` 抽象成一个可复现的大文档渲染 benchmark。
+Thư mục này trừu tượng hóa job thực `20260514183142-dec42e` thành một benchmark kết xuất tài liệu lớn có thể tái tạo.
 
-它不是玩具题。样本来自真实 533 页科学书籍 PDF，包含正文、标题、脚注、图注、行内公式、
-行间公式、复杂 PDF 背景、Typst overlay 和 PDF 合并。这个 benchmark 用来衡量真实文档翻译
-渲染算法，而不是孤立函数性能。
+Đây không phải bài toán đồ chơi. Mẫu đến từ sách khoa học PDF 533 trang thực, bao gồm văn bản, tiêu đề, chú thích cuối trang, chú thích hình ảnh, công thức nội tuyến,
+công thức hiển thị, nền PDF phức tạp, overlay Typst và hợp nhất PDF. Benchmark này dùng để đo lường thuật toán kết xuất dịch tài liệu thực, chứ không phải hiệu suất hàm riêng lẻ.
 
-## 适合优化什么
+## Phù hợp để tối ưu hóa gì
 
-- 排版策略：字体、行距、bbox、视觉密度、正文/标题/脚注/图注策略
-- Typst source builder：从翻译 JSON 生成 `.typ` 的速度和结构
-- Typst compile：固定 `.typ` 输入下的编译耗时
-- source prepare：bbox text strip、预热、背景 PDF 准备
-- PDF overlay：overlay merge 和保存
-- 端到端 render-only 性能
+- Chiến lược bố cục: phông chữ, dòng, bbox, mật độ thị giác, chiến lược văn bản/tiêu đề/chú thích cuối/chú thích hình
+- Trình xây dựng nguồn Typst: tốc độ và cấu trúc tạo `.typ` từ JSON dịch
+- Biên dịch Typst: thời gian biên dịch với đầu vào `.typ` cố định
+- Chuẩn bị nguồn: xóa bbox text strip, làm nóng, chuẩn bị PDF nền
+- Overlay PDF: hợp nhất overlay và lưu
+- Hiệu suất end-to-end render-only
 
-## 当前基线
+## Đường cơ sở hiện tại
 
-在当前开发机上，warm benchmark 已验证：
+Trên máy phát triển hiện tại, benchmark warm đã được xác minh:
 
 ```text
 case: quantum_chem_533
@@ -31,17 +30,17 @@ PDF merge: 2.13s
 source cleanup: 0.00s
 ```
 
-单独编译导出的 Typst case：
+Biên dịch riêng Typst case đã xuất:
 
 ```text
 Typst compile only: 6.28s
 ```
 
-这些数字不是最终目标，只是当前代码和当前机器上的参考基线。
+Những con số này không phải mục tiêu cuối cùng, chỉ là đường cơ sở tham khảo trên mã hiện tại và máy hiện tại.
 
-## 一分钟流程
+## Quy trình một phút
 
-如果本机已有源 job：
+Nếu máy cục bộ đã có job nguồn:
 
 ```bash
 python3 experiments/render-benchmark-533/scripts/materialize.py --overwrite
@@ -49,41 +48,40 @@ python3 experiments/render-benchmark-533/scripts/check_env.py
 python3 experiments/render-benchmark-533/scripts/run_render_benchmark.py --run-id my-run --overwrite
 ```
 
-查看结果：
+Xem kết quả:
 
 ```bash
 cat experiments/render-benchmark-533/runs/my-run/report.json
 ```
 
-导出并单独测试 Typst：
+Xuất và kiểm thử Typst riêng:
 
 ```bash
 python3 experiments/render-benchmark-533/scripts/export_typst_case.py --run-id my-run --overwrite
 python3 experiments/render-benchmark-533/scripts/compile_typst_case.py --typst-case my-run --run-id compile-1 --overwrite
 ```
 
-## 数据要求
+## Yêu cầu dữ liệu
 
-只 clone 代码不能直接跑这个 533 页 benchmark。
+Chỉ clone mã không thể chạy trực tiếp benchmark 533 trang này.
 
-原因是 benchmark 依赖真实 PDF、OCR JSON、翻译 JSON 和预热产物。这些数据体积较大，且原始
-PDF 可能涉及分发授权，所以默认不直接放进代码仓库。
+Lý do là benchmark phụ thuộc vào PDF thực, JSON OCR, JSON dịch và sản phẩm làm nóng. Dữ liệu này có dung lượng lớn và PDF gốc có thể liên quan đến quyền phân phối, vì vậy mặc định không đưa trực tiếp vào kho mã.
 
-能跑的人需要满足以下条件之一：
+Người có thể chạy cần đáp ứng một trong các điều kiện sau:
 
-1. 本机已有源 job：
+1. Máy cục bộ đã có job nguồn:
 
    ```text
    data/jobs/20260514183142-dec42e/
    ```
 
-2. 或者拿到 benchmark 数据包，并解压成：
+2. Hoặc nhận được gói dữ liệu benchmark và giải nén thành:
 
    ```text
    experiments/render-benchmark-533/case-data/quantum_chem_533/job/
    ```
 
-源 job 中主要使用这些目录：
+Các thư mục chính được sử dụng trong job nguồn:
 
 ```text
 source/
@@ -93,28 +91,28 @@ specs/
 artifacts/render_prewarm/
 ```
 
-其中 `translated/` 约 54MB，`ocr/normalized/` 约 87MB，`source/` 约 10MB，
-`artifacts/render_prewarm/` 约 11MB。完整源 job 会更大。
+Trong đó `translated/` khoảng 54MB, `ocr/normalized/` khoảng 87MB, `source/` khoảng 10MB,
+`artifacts/render_prewarm/` khoảng 11MB. Job nguồn đầy đủ sẽ lớn hơn.
 
-## 环境依赖
+## Phụ thuộc môi trường
 
-建议环境：
+Môi trường khuyến nghị:
 
 - Linux x86_64
 - Python 3.10+
-- RetainPDF 仓库源码
-- 后端 Python 依赖已安装
-- Typst CLI 可执行
-- PyMuPDF / `fitz` 可 import
-- 可用中文字体，当前默认 `Source Han Serif SC`
+- Mã nguồn kho RetainPDF
+- Các phụ thuộc Python backend đã cài
+- Typst CLI có thể thực thi
+- PyMuPDF / `fitz` có thể import
+- Phông chữ Trung Quốc khả dụng, mặc định hiện tại `Source Han Serif SC`
 
-快速检查：
+Kiểm tra nhanh:
 
 ```bash
 python3 experiments/render-benchmark-533/scripts/check_env.py
 ```
 
-当前开发机示例：
+Ví dụ máy phát triển hiện tại:
 
 ```text
 Python 3.10.12
@@ -122,82 +120,81 @@ Typst 0.14.2
 PyMuPDF OK
 ```
 
-说明：
+Giải thích:
 
-- render-only 正常路径不需要 OCR API 或翻译 API。
-- 如果 Typst 编译失败并触发 LLM repair fallback，可能读取 `RETAIN_TRANSLATION_API_KEY`。
-- 做公开比赛时，建议关闭网络 fallback，或规定 fallback 触发即判失败，避免结果不可比。
-- 给外部参与者时，最好提供 Docker 镜像或安装脚本，否则字体和 Typst 版本会影响结果。
+- Đường dẫn render-only thông thường không cần OCR API hoặc dịch API.
+- Nếu biên dịch Typst thất bại và kích hoạt fallback sửa LLM, có thể đọc `RETAIN_TRANSLATION_API_KEY`.
+- Khi tổ chức cuộc thi công khai, khuyến nghị tắt fallback mạng, hoặc quy định fallback kích hoạt là thất bại, tránh kết quả không so sánh được.
+- Khi cung cấp cho người tham gia bên ngoài, nên cung cấp Docker image hoặc script cài đặt, nếu không phông chữ và phiên bản Typst sẽ ảnh hưởng đến kết quả.
 
-## 目录结构
+## Cấu trúc thư mục
 
 ```text
 experiments/render-benchmark-533/
-  case.json                  # case 元信息、hash、参考基线
+  case.json                  # Thông tin case, hash, đường cơ sở tham khảo
   README.md
   scripts/
-    materialize.py           # 从源 job 生成本地 case-data
-    check_env.py             # 检查依赖和 case 数据
-    run_render_benchmark.py  # 跑完整 render-only benchmark
-    export_typst_case.py     # 从某次 run 导出 Typst 物料
-    compile_typst_case.py    # 只编译导出的 Typst source
-  case-data/                 # 本地物料，默认 git ignore
-  runs/                      # 每次完整 benchmark 的输出，默认 git ignore
-  typst-cases/               # 导出的 Typst 子 benchmark，默认 git ignore
+    materialize.py           # Tạo case-data cục bộ từ job nguồn
+    check_env.py             # Kiểm tra phụ thuộc và dữ liệu case
+    run_render_benchmark.py  # Chạy benchmark render-only đầy đủ
+    export_typst_case.py     # Xuất vật liệu Typst từ một run
+    compile_typst_case.py    # Chỉ biên dịch nguồn Typst đã xuất
+  case-data/                 # Vật liệu cục bộ, mặc định git ignore
+  runs/                      # Đầu ra của mỗi lần benchmark đầy đủ, mặc định git ignore
+  typst-cases/               # Benchmark con Typst đã xuất, mặc định git ignore
 ```
 
-## 准备数据
+## Chuẩn bị dữ liệu
 
-从源 job materialize：
+Từ job nguồn materialize:
 
 ```bash
 python3 experiments/render-benchmark-533/scripts/materialize.py
 ```
 
-覆盖已有 case：
+Ghi đè case hiện có:
 
 ```bash
 python3 experiments/render-benchmark-533/scripts/materialize.py --overwrite
 ```
 
-输出：
+Đầu ra:
 
 ```text
 experiments/render-benchmark-533/case-data/quantum_chem_533/job/
 ```
 
-脚本默认尽量使用硬链接，避免重复占用磁盘；如果文件系统不支持硬链接，则退化为复制。
+Script mặc định cố gắng sử dụng hard link, tránh chiếm dụng đĩa lặp lại; nếu hệ thống tệp không hỗ trợ hard link, sẽ chuyển sang sao chép.
 
-脚本还会重写 `artifacts/render_prewarm/render_source_prewarm_manifest.json` 里的 source PDF
-路径和 mtime 指纹。否则隔离 run 中预热会 miss，warm benchmark 会退化成 cold benchmark。
+Script cũng ghi lại đường dẫn source PDF và dấu vân tay mtime trong `artifacts/render_prewarm/render_source_prewarm_manifest.json`. Nếu không, làm nóng trong run cách ly sẽ bị miss, benchmark warm sẽ suy biến thành cold benchmark.
 
-## 运行完整 Benchmark
+## Chạy Benchmark đầy đủ
 
-默认运行：
+Chạy mặc định:
 
 ```bash
 python3 experiments/render-benchmark-533/scripts/run_render_benchmark.py
 ```
 
-指定 run id：
+Chỉ định run id:
 
 ```bash
 python3 experiments/render-benchmark-533/scripts/run_render_benchmark.py --run-id my-test --overwrite
 ```
 
-带 cProfile：
+Với cProfile:
 
 ```bash
 python3 experiments/render-benchmark-533/scripts/run_render_benchmark.py --run-id prof-1 --profile
 ```
 
-每次 run 都会创建隔离目录：
+Mỗi run sẽ tạo thư mục cách ly:
 
 ```text
 experiments/render-benchmark-533/runs/<run_id>/
 ```
 
-核心输出：
+Đầu ra cốt lõi:
 
 ```text
 runs/<run_id>/report.json
@@ -206,7 +203,7 @@ runs/<run_id>/render.stderr.log
 runs/<run_id>/job/rendered/*.pdf
 ```
 
-`report.json` 记录：
+`report.json` ghi lại:
 
 - `success`
 - `wall_seconds`
@@ -214,14 +211,14 @@ runs/<run_id>/job/rendered/*.pdf
 - `effective_render_mode`
 - `pages_processed`
 - `render_diagnostics`
-- 输出 PDF 路径
-- stdout/stderr 路径
-- 输入 hash
-- 实际执行命令
+- Đường dẫn PDF đầu ra
+- Đường dẫn stdout/stderr
+- Hash đầu vào
+- Lệnh thực tế
 
-## 查看关键耗时
+## Xem thời gian chính
 
-可以直接用：
+Có thể dùng trực tiếp:
 
 ```bash
 python3 - <<'PY'
@@ -241,24 +238,24 @@ print("source cleanup:", diag.get("source_overlay_elapsed_seconds"))
 PY
 ```
 
-## 单独测试 Typst
+## Kiểm thử Typst riêng
 
-完整 render benchmark 包含 source prepare、layout、Typst source 生成、Typst compile、
-PDF overlay merge 和保存。如果只想研究 Typst 编译，可以导出 Typst case。
+Benchmark render đầy đủ bao gồm source prepare, layout, tạo nguồn Typst, biên dịch Typst,
+hợp nhất overlay PDF và lưu. Nếu chỉ muốn nghiên cứu biên dịch Typst, có thể xuất Typst case.
 
-从某次完整 run 导出：
+Xuất từ một run đầy đủ:
 
 ```bash
 python3 experiments/render-benchmark-533/scripts/export_typst_case.py --run-id my-test --overwrite
 ```
 
-导出目录：
+Thư mục xuất:
 
 ```text
 experiments/render-benchmark-533/typst-cases/my-test/
 ```
 
-包含：
+Bao gồm:
 
 ```text
 book-overlay.typ
@@ -268,7 +265,7 @@ typst-case.json
 source-run-report.json
 ```
 
-只编译 Typst：
+Chỉ biên dịch Typst:
 
 ```bash
 python3 experiments/render-benchmark-533/scripts/compile_typst_case.py \
@@ -277,7 +274,7 @@ python3 experiments/render-benchmark-533/scripts/compile_typst_case.py \
   --overwrite
 ```
 
-输出：
+Đầu ra:
 
 ```text
 typst-cases/my-test/compile-runs/compile-1/compile-report.json
@@ -285,70 +282,69 @@ typst-cases/my-test/compile-runs/compile-1/book-overlay.pdf
 typst-cases/my-test/compile-runs/compile-1/typst.stderr.log
 ```
 
-这个流程不会重新跑 OCR、翻译、source prepare、layout 或 PDF merge，只测固定 `.typ` 输入下
-的 Typst CLI 编译。
+Quy trình này không chạy lại OCR, dịch, source prepare, layout hoặc PDF merge, chỉ đo biên dịch Typst CLI với đầu vào `.typ` cố định.
 
-## warm 与 cold
+## warm và cold
 
-当前完整 benchmark 默认是 warm-ish 模式：
+Benchmark đầy đủ hiện tại mặc định ở chế độ warm-ish:
 
-- 会复制 `artifacts/render_prewarm/`
-- 会自动修正 prewarm manifest 的 source PDF 指纹
-- source bbox-text stripped PDF 和 payload prewarm 可以命中
+- Sao chép `artifacts/render_prewarm/`
+- Tự động sửa dấu vân tay source PDF trong prewarm manifest
+- PDF đã xóa bbox text và payload prewarm có thể được sử dụng
 
-如果要测试 cold 模式，可以删除 run job 里的：
+Nếu muốn kiểm tra chế độ cold, có thể xóa trong run job:
 
 ```text
 artifacts/render_prewarm/
 ```
 
-后续建议把 cold/warm 做成显式参数，例如：
+Đề xuất sau: biến cold/warm thành tham số rõ ràng, ví dụ:
 
 ```bash
 --mode warm
 --mode cold
 ```
 
-## 评分建议
+## Đề xuất chấm điểm
 
-不要只按速度排名。只比速度会鼓励少处理、牺牲质量、跳过复杂页面。
+Đừng chỉ xếp hạng theo tốc độ. Chỉ so tốc độ sẽ khuyến khích xử lý ít, hy sinh chất lượng, bỏ qua trang phức tạp.
 
-建议规则：
+Đề xuất quy tắc:
 
-1. 必须成功生成 PDF。
-2. 必须通过质量门槛。
-3. 质量通过后，再按耗时排名。
+1. Phải tạo thành công PDF.
+2. Phải vượt qua ngưỡng chất lượng.
+3. Sau khi chất lượng đạt, mới xếp hạng theo thời gian.
 
-质量门槛建议逐步加入：
+Ngưỡng chất lượng đề xuất từng bước:
 
-- 文字溢出
-- 文字重叠
-- 行间公式保护
-- 字体大小跳跃
-- 页面视觉密度
-- PDF 文件大小
-- 抽样页截图 diff
-- 固定页人工审阅
+- Tràn chữ
+- Chồng chéo chữ
+- Bảo vệ công thức hiển thị
+- Nhảy cỡ chữ
+- Mật độ thị giác trang
+- Kích thước file PDF
+- So sánh ảnh chụp trang mẫu
+- Đánh giá thủ công trang cố định
 
-第一版可以先做硬门槛：
+Phiên bản đầu có thể làm ngưỡng cứng:
 
 ```text
 success == true
 pages_processed == 533
 output_pdf exists
-Typst compile 没有 fatal error
+Typst compile không có lỗi fatal
 ```
 
-然后再扩展视觉质量评分。
+Sau đó mở rộng thêm điểm chất lượng thị giác.
 
-## 发布数据包建议
+## Đề xuất phát hành gói dữ liệu
 
-如果要给外部算法开发者，建议发布两个包：
+Nếu muốn cung cấp cho nhà phát triển thuật toán bên ngoài, đề xuất phát hành hai gói:
 
-1. 轻量包：只含 `typst-cases/<case>/`，用于 Typst source/compile 优化。
-2. 完整包：含 `case-data/quantum_chem_533/job/`，用于完整 render-only 优化。
+1. Gói nhẹ: chỉ chứa `typst-cases/<case>/`, dùng để tối ưu nguồn/biên dịch Typst.
+2. Gói đầy đủ: chứa `case-data/quantum_chem_533/job/`, dùng để tối ưu render-only đầy đủ.
 
-完整包应包含：
+Gói đầy đủ nên bao gồm:
 
 ```text
 source/
@@ -361,13 +357,12 @@ README.md
 scripts/
 ```
 
-不建议发布完整 `data/jobs/<job_id>/`，因为其中包含大量日志、历史产物和调试文件，会让基准
-输入不够干净。
+Không khuyến nghị phát hành toàn bộ `data/jobs/<job_id>/` vì nó chứa nhiều nhật ký, sản phẩm lịch sử và tệp gỡ lỗi, làm đầu vào benchmark không đủ sạch.
 
-## 当前限制
+## Giới hạn hiện tại
 
-- 目前还没有自动视觉质量评分。
-- 目前 cold/warm 不是显式参数。
-- 当前 benchmark 依赖本仓库后端代码，不是独立 Python package。
-- 当前字体、Typst 版本、系统环境会影响绝对耗时。
-- 真实 PDF 是否能公开分发需要单独确认授权。
+- Chưa có điểm chất lượng thị giác tự động.
+- Hiện tại cold/warm chưa phải tham số rõ ràng.
+- Benchmark hiện tại phụ thuộc mã backend của kho này, không phải gói Python độc lập.
+- Phông chữ, phiên bản Typst, môi trường hệ thống hiện tại ảnh hưởng đến thời gian tuyệt đối.
+- Cần xác nhận riêng quyền phân phối cho PDF thực.

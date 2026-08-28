@@ -3,20 +3,20 @@ import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
-// 事件名/命令名是字符串契约,typo 只能运行时静默失效。
-// 现状:retainpdf:* 事件已全部收敛在 contracts/app-contract.js 的 APP_EVENTS,
-// 命令总线两端都走 RECENT_JOBS_COMMANDS 常量。本测试锁住这个状态,
-// 禁止未来出现绕过契约的裸字面量。
-// 扫描覆盖 .js 与 .jsx(React 迁移的新世界 src/pages、src/shared 一并纳入)。
+// Tên sự kiện / tên lệnh là hợp đồng chuỗi — lỗi chính tả chỉ âm thầm mất hiệu lực khi chạy.
+// Hiện trạng: các sự kiện retainpdf:* đã được gom hết vào APP_EVENTS trong contracts/app-contract.js,
+// hai đầu bus lệnh đều dùng hằng số RECENT_JOBS_COMMANDS. Bộ test này khóa trạng thái đó,
+// cấm xuất hiện bare literal vượt qua hợp đồng trong tương lai.
+// Quét bao phủ .js và .jsx (cả src/pages, src/shared mới từ quá trình React migration).
 
 const PROJECT_ROOT = process.cwd();
 const JS_ROOT = join(PROJECT_ROOT, "src/js");
 const SCAN_ROOTS = [JS_ROOT, join(PROJECT_ROOT, "src/pages"), join(PROJECT_ROOT, "src/shared")];
 const EVENT_CONTRACT_FILE = join(JS_ROOT, "contracts/app-contract.js");
-// generated/ 为构建产物(打包内联的事件名字面量来自源码,由源码扫描守卫)
+// generated/ là sản phẩm build (literal tên sự kiện inline đến từ mã nguồn, được guard bằng quét mã nguồn)
 const GENERATED_ROOT = join(JS_ROOT, "generated");
 
-// 非事件用途的 retainpdf: 前缀字符串(如 localStorage key),逐条登记
+// Chuỗi tiền tố retainpdf: không dùng cho sự kiện (ví dụ localStorage key), đăng ký từng mục
 const ALLOWED_LITERALS = [
   { file: join(JS_ROOT, "features/app-update/state.js"), literal: "retainpdf:update-check:v1" },
 ];

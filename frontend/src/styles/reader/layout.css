@@ -1,10 +1,10 @@
-/* 阅读器布局共享（默认 react-pdf + legacy 共用）：
- * 页面变量 / body / panel / empty / viewer-wrap。
- * 三栏骨架、legacy pdf.js、底栏 HUD → layout-legacy.css（仅 legacy 包）。
+/* Layout reader dùng chung (react-pdf mặc định + legacy cùng dùng):
+ * biến trang / body / panel / empty / viewer-wrap.
+ * Khung ba cột, pdf.js legacy, HUD thanh dưới → layout-legacy.css (chỉ gói legacy).
  */
 
 :root {
-  /* 皮肤可覆盖 --reader-page（宣纸米白）；回退 bg */
+  /* Theme có thể ghi đè --reader-page (trắng ngà như giấy); fallback về bg */
   --reader-page-bg: var(--reader-page, var(--bg));
   --reader-toolbar-bg: var(--paper);
   --reader-panel-border: var(--line);

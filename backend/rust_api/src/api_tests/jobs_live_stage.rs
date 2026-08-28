@@ -46,9 +46,9 @@ async fn job_detail_list_and_events_share_pipeline_event_priority() {
     fs::write(
         job_root.join("logs").join("pipeline_events.jsonl"),
         concat!(
-            r#"{"job_id":"job-route-shared-live-stage","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"translating","stage_detail":"已完成第 4/9 批翻译","provider":"","provider_stage":"","event":"stage_progress","message":"已完成第 4/9 批翻译","progress_current":4,"progress_total":9,"retry_count":0,"elapsed_ms":900,"payload":{"origin":"python"}}"#,
+            r#"{"job_id":"job-route-shared-live-stage","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"translating","stage_detail":"Đã hoàn thành lô dịch thứ 4/9","provider":"","provider_stage":"","event":"stage_progress","message":"Đã hoàn thành lô dịch thứ 4/9","progress_current":4,"progress_total":9,"retry_count":0,"elapsed_ms":900,"payload":{"origin":"python"}}"#,
             "\n",
-            r#"{"job_id":"job-route-shared-live-stage","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"saving","stage_detail":"最终 PDF 已发布","provider":"","provider_stage":"","event":"artifact_published","message":"最终 PDF 已发布","progress_current":null,"progress_total":null,"retry_count":0,"elapsed_ms":1000,"payload":{"artifact_key":"output_pdf"}}"#,
+            r#"{"job_id":"job-route-shared-live-stage","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"saving","stage_detail":"PDF cuối cùng đã được xuất bản","provider":"","provider_stage":"","event":"artifact_published","message":"PDF cuối cùng đã được xuất bản","progress_current":null,"progress_total":null,"retry_count":0,"elapsed_ms":1000,"payload":{"artifact_key":"output_pdf"}}"#,
             "\n"
         ),
     )
@@ -75,7 +75,7 @@ async fn job_detail_list_and_events_share_pipeline_event_priority() {
     assert_eq!(detail_stage["stage"], "translating");
     assert_eq!(detail_stage["substage"], "translation_batches");
     assert_eq!(detail_stage["lane"], "main");
-    assert_eq!(detail_stage["stage_detail"], "已完成第 4/9 批翻译");
+    assert_eq!(detail_stage["stage_detail"], "Đã hoàn thành lô dịch thứ 4/9");
     assert_eq!(detail_stage["progress"]["unit"], "batch");
     assert_eq!(detail_stage["progress"]["current"], 4);
     assert_eq!(detail_stage["progress"]["total"], 9);
@@ -165,9 +165,9 @@ async fn job_detail_keeps_render_prewarm_as_background_stage() {
     fs::write(
         job_root.join("logs").join("pipeline_events.jsonl"),
         concat!(
-            r#"{"job_id":"job-route-render-prewarm-background","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"translating","stage_detail":"正在翻译第 8/42 批","event":"stage_progress","message":"正在翻译第 8/42 批","progress_current":8,"progress_total":42,"progress_unit":"batch","payload":{"origin":"python"}}"#,
+            r#"{"job_id":"job-route-render-prewarm-background","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"translating","stage_detail":"Đang dịch lô thứ 8/42","event":"stage_progress","message":"Đang dịch lô thứ 8/42","progress_current":8,"progress_total":42,"progress_unit":"batch","payload":{"origin":"python"}}"#,
             "\n",
-            r#"{"job_id":"job-route-render-prewarm-background","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"rendering","substage":"render_prewarm","stage_detail":"渲染预热完成","event":"stage_progress","message":"render payload prewarm: ready indents=333 geometry=836 elapsed=1.58s","progress_current":2,"progress_total":3,"progress_unit":"step","payload":{"origin":"python"}}"#,
+            r#"{"job_id":"job-route-render-prewarm-background","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"rendering","substage":"render_prewarm","stage_detail":"Hoàn thành prewarm render","event":"stage_progress","message":"render payload prewarm: ready indents=333 geometry=836 elapsed=1.58s","progress_current":2,"progress_total":3,"progress_unit":"step","payload":{"origin":"python"}}"#,
             "\n"
         ),
     )
@@ -238,11 +238,11 @@ async fn running_job_detail_does_not_select_premature_done_event_over_active_sta
     fs::write(
         job_root.join("logs").join("pipeline_events.jsonl"),
         concat!(
-            r#"{"job_id":"job-route-running-ignore-premature-done","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"ocr_processing","stage_detail":"OCR 第 10/10 页","event":"stage_progress","message":"OCR 第 10/10 页","progress_current":10,"progress_total":10,"progress_unit":"page","payload":{}}"#,
+            r#"{"job_id":"job-route-running-ignore-premature-done","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"ocr_processing","stage_detail":"OCR trang 10/10","event":"stage_progress","message":"OCR trang 10/10","progress_current":10,"progress_total":10,"progress_unit":"page","payload":{}}"#,
             "\n",
-            r#"{"job_id":"job-route-running-ignore-premature-done","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"finished","stage_detail":"任务完成","event":"job_terminal","event_type":"job_terminal","message":"任务进入终态 succeeded","payload":{"status":"succeeded"}}"#,
+            r#"{"job_id":"job-route-running-ignore-premature-done","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"finished","stage_detail":"Nhiệm vụ hoàn thành","event":"job_terminal","event_type":"job_terminal","message":"Nhiệm vụ vào trạng thái cuối succeeded","payload":{"status":"succeeded"}}"#,
             "\n",
-            r#"{"job_id":"job-route-running-ignore-premature-done","seq":3,"ts":"2026-04-24T01:00:02Z","level":"info","stage":"translating","stage_detail":"正在翻译第 2/8 批","event":"stage_progress","message":"正在翻译第 2/8 批","progress_current":2,"progress_total":8,"progress_unit":"batch","payload":{}}"#,
+            r#"{"job_id":"job-route-running-ignore-premature-done","seq":3,"ts":"2026-04-24T01:00:02Z","level":"info","stage":"translating","stage_detail":"Đang dịch lô thứ 2/8","event":"stage_progress","message":"Đang dịch lô thứ 2/8","progress_current":2,"progress_total":8,"progress_unit":"batch","payload":{}}"#,
             "\n"
         ),
     )
@@ -303,9 +303,9 @@ async fn running_job_detail_prefers_latest_retry_stage_over_old_higher_rank_stag
     fs::write(
         job_root.join("logs").join("pipeline_events.jsonl"),
         concat!(
-            r#"{"job_id":"job-route-running-retry-latest-stage","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"rendering","stage_detail":"旧运行正在渲染第 8/10 页","event":"stage_progress","message":"旧运行正在渲染第 8/10 页","progress_current":8,"progress_total":10,"progress_unit":"page","payload":{"attempt":1}}"#,
+            r#"{"job_id":"job-route-running-retry-latest-stage","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"rendering","stage_detail":"Chạy cũ đang render trang 8/10","event":"stage_progress","message":"Chạy cũ đang render trang 8/10","progress_current":8,"progress_total":10,"progress_unit":"page","payload":{"attempt":1}}"#,
             "\n",
-            r#"{"job_id":"job-route-running-retry-latest-stage","seq":2,"ts":"2026-04-24T01:01:00Z","level":"info","stage":"translating","stage_detail":"重试正在翻译第 1/5 批","event":"stage_progress","message":"重试正在翻译第 1/5 批","progress_current":1,"progress_total":5,"progress_unit":"batch","payload":{"attempt":2}}"#,
+            r#"{"job_id":"job-route-running-retry-latest-stage","seq":2,"ts":"2026-04-24T01:01:00Z","level":"info","stage":"translating","stage_detail":"Thử lại đang dịch lô thứ 1/5","event":"stage_progress","message":"Thử lại đang dịch lô thứ 1/5","progress_current":1,"progress_total":5,"progress_unit":"batch","payload":{"attempt":2}}"#,
             "\n"
         ),
     )
@@ -335,7 +335,7 @@ async fn running_job_detail_prefers_latest_retry_stage_over_old_higher_rank_stag
     );
     assert_eq!(
         detail_json["data"]["stage_snapshot"]["stage_detail"],
-        "重试正在翻译第 1/5 批"
+        "Thử lại đang dịch lô thứ 1/5"
     );
     assert_eq!(
         detail_json["data"]["stage_snapshot"]["progress"]["unit"],
@@ -365,7 +365,7 @@ async fn terminal_job_detail_uses_status_not_done_display_stage() {
     state.db.save_job(&job).expect("save job");
     fs::write(
         job_root.join("logs").join("pipeline_events.jsonl"),
-        r#"{"job_id":"job-route-terminal-null-stage-snapshot","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"finished","stage_detail":"任务完成","event":"job_terminal","event_type":"job_terminal","message":"任务进入终态 succeeded","payload":{"status":"succeeded"}}"#,
+        r#"{"job_id":"job-route-terminal-null-stage-snapshot","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"finished","stage_detail":"Nhiệm vụ hoàn thành","event":"job_terminal","event_type":"job_terminal","message":"Nhiệm vụ vào trạng thái cuối succeeded","payload":{"status":"succeeded"}}"#,
     )
     .expect("write pipeline events");
 

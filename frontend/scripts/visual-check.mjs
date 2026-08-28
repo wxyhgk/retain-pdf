@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// 视觉回归基线:对三个页面的关键状态截图,与 tests/visual/baseline 对比。
-//   node scripts/visual-check.mjs           # 对比,差异超阈值则退出码 1,diff 图写入 tests/visual/output
-//   node scripts/visual-check.mjs --update  # 重建基线(确认视觉改动符合预期后运行)
-// 全程 mock 模式、冻结时钟,不依赖后端。基线在本机生成,仅用于本机对比。
+// Đường cơ sở hồi quy trực quan:Ảnh chụp màn hình các trạng thái chính của ba trang,VÀ tests/visual/baseline so sánh。
+//   node scripts/visual-check.mjs           # so sánh,Mã thoát nếu chênh lệch vượt quá ngưỡng 1,diff Ghi sơ đồ tests/visual/output
+//   node scripts/visual-check.mjs --update  # Xây dựng lại đường cơ sở(Chạy sau khi xác nhận rằng các thay đổi trực quan đáp ứng mong đợi)
+// Toàn bộ chuyến đi mock Kiểu mẫu、Đóng băng đồng hồ,Không có phụ thuộc back-end。Đường cơ sở được tạo cục bộ,Chỉ để so sánh bản địa。
 
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -18,7 +18,7 @@ const OUTPUT_DIR = join(FRONTEND_ROOT, "tests/visual/output");
 const PORT = 40151;
 const FIXED_TIME = new Date("2026-06-01T10:00:00+08:00");
 const MOCK_JOB_ID = "mock-job-20260415";
-// 允许的差异像素占比(抗锯齿等噪音)
+// Tỷ lệ điểm ảnh vi sai cho phép(Chống răng cưa và tiếng ồn khác)
 const DIFF_RATIO_THRESHOLD = 0.001;
 
 const STATES = [
@@ -42,7 +42,7 @@ const STATES = [
     url: `/reader.html?mock=succeeded`,
     prepare: async (page) => {
       await page.waitForSelector("#reader-boot-loading.hidden", { state: "attached", timeout: 20000 });
-      // 右栏默认展开会触发 PDF 重排缩放,留足时间让缩放落定再截图(否则 PDF 文本亚像素抖动)
+      // Các phần mở rộng cột bên phải sẽ kích hoạt theo mặc định PDF Sắp xếp lại Zoom,Cho phép đủ thời gian để thu phóng và sau đó chụp ảnh màn hình(nếu không thì.  PDF Text Subpixel Jitter)
       await page.waitForTimeout(1800);
     },
   },
@@ -52,9 +52,9 @@ const STATES = [
     url: `/reader.html?mock=succeeded`,
     prepare: async (page) => {
       await page.waitForSelector("#reader-boot-loading.hidden", { state: "attached", timeout: 20000 });
-      // 三栏骨架:右栏(AI 问答)默认展开,无需再点开
+      // Bộ xương ba cột:Cột bên phải(AI vấn đáp)Mở rộng mặc định,Không cần nhấp chuột nữa
       await page.waitForSelector("#reader-ai-drawer.is-open", { timeout: 10000 });
-      // 等待右栏展开引发的 PDF 重排缩放落定,避免亚像素抖动
+      // Đang chờ kích hoạt mở rộng cột bên phải PDF Đã thiết lập lại thu phóng,Tránh hiện tượng rung điểm ảnh phụ
       await page.waitForTimeout(1800);
     },
   },
@@ -108,7 +108,7 @@ const STATES = [
     url: `/reader.html?mock=succeeded`,
     prepare: async (page) => {
       await page.waitForSelector("#reader-boot-loading.hidden", { state: "attached", timeout: 20000 });
-      // 右栏默认展开,直接提问(不再点击开合按钮)
+      // Mở rộng mặc định cột bên phải,Đặt câu hỏi trực tiếp(Không nhấp vào nút bật/tắt một lần nữa)
       await page.waitForSelector("#reader-ai-drawer.is-open", { timeout: 10000 });
       await page.fill("#reader-ai-input", "共轭如何影响选择性?");
       await page.click("#reader-ai-submit-btn");
@@ -203,8 +203,8 @@ try {
       threshold: 0.15,
     });
     const ratio = diffPixels / (baseline.width * baseline.height);
-    // 少数以 PDF 画布为主体的状态,pdf.js 文本渲染有 run-to-run 亚像素抗锯齿抖动
-    // (布局本身像素一致,见 diff),放宽阈值以吸收该噪声;其余状态维持严格 0.1%。
+    // Một số lượng nhỏ PDF Canvas làm trạng thái cơ thể,pdf.js Kết xuất văn bản có run-to-run Chống răng cưa subpixel
+    // (Bản thân bố cục là điểm ảnh nhất quán,thấy diff),Nới lỏng ngưỡng để hấp thụ tiếng ồn;Trạng thái còn lại vẫn nghiêm ngặt 0.1%。
     const stateThreshold = state.diffThreshold ?? DIFF_RATIO_THRESHOLD;
     if (ratio > stateThreshold) {
       writeFileSync(join(OUTPUT_DIR, `${state.name}.current.png`), shot);

@@ -50,7 +50,7 @@ export function compositeRenderCompileProgress(record: ProgressRecord | null | u
   const compileRatio = hasProgress ? clampRatio(Number(record.current), Number(record.total)) : 0;
   const percent = 80 + Math.round(compileRatio * 20);
   const compileDone = hasProgress && Number(record.current) >= Number(record.total);
-  const compileText = compileDone ? "渲染完成" : "正在编译 PDF";
+  const compileText = compileDone ? "Kết xuất hoàn tất" : "Đang biên dịch PDF";
   const payload = (record.payload && typeof record.payload === "object")
     ? record.payload as Record<string, unknown>
     : {};
@@ -100,7 +100,7 @@ export function compositeRenderPrewarmProgress(record: ProgressRecord | null | u
   }
   const prewarmRatio = clampRatio(Number(record.current), Number(record.total));
   const percent = Math.round(prewarmRatio * 10);
-  const prewarmText = `预热 ${record.current}/${record.total}`;
+  const prewarmText = `Đang khởi động ${record.current}/${record.total}`;
   const payload = (record.payload && typeof record.payload === "object")
     ? record.payload as Record<string, unknown>
     : {};
@@ -135,7 +135,7 @@ export function compositeRenderPrepareProgress(record: ProgressRecord | null | u
     total: 100,
     progressUnit: "percent",
     displayPercent: percent,
-    progressText: `准备 ${record.current}/${record.total}`,
+    progressText: `Đang chuẩn bị ${record.current}/${record.total}`,
     payload: {
       ...payload,
       progress_unit: "percent",

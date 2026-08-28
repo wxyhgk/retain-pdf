@@ -45,19 +45,19 @@ const MOCK_TRANSLATION_ITEMS = [
     index: 1, page: 1, blockType: "paragraph", label: "body",
     finalStatus: "translated",
     source: "Transformer architectures rely entirely on attention mechanisms to draw global dependencies between input and output.",
-    translated: "Transformer 架构完全依赖注意力机制来建立输入与输出之间的全局依赖关系。",
+    translated: "Kiến trúc Transformer hoàn toàn phụ thuộc vào cơ chế chú ý để thiết lập các phụ thuộc toàn cục giữa đầu vào và đầu ra.",
   }),
   buildItem({
     index: 2, page: 1, blockType: "heading", label: "title",
     finalStatus: "translated",
     source: "2. Background and Related Work",
-    translated: "2. 背景与相关工作",
+    translated: "2. Bối cảnh và Công trình liên quan",
   }),
   buildItem({
     index: 3, page: 2, blockType: "paragraph", label: "body",
     finalStatus: "translated",
     source: "We evaluate our method on three benchmark datasets and observe consistent improvements over strong baselines.",
-    translated: "我们在三个基准数据集上评估了该方法，并观察到相对强基线的一致提升。",
+    translated: "Chúng tôi đánh giá phương pháp của mình trên ba bộ dữ liệu chuẩn và quan sát thấy những cải thiện nhất quán so với các baseline mạnh.",
   }),
   buildItem({
     index: 4, page: 2, blockType: "formula", label: "display_math",
@@ -70,7 +70,7 @@ const MOCK_TRANSLATION_ITEMS = [
     index: 5, page: 3, blockType: "paragraph", label: "body",
     finalStatus: "translated",
     source: "Ablation studies show that positional encodings contribute significantly to final accuracy.",
-    translated: "消融实验表明位置编码对最终精度有显著贡献。",
+    translated: "Nghiên cứu loại bỏ cho thấy mã hóa vị trí đóng góp đáng kể vào độ chính xác cuối cùng.",
     fallbackTo: "placeholder",
     errorTypes: ["schema_mismatch"],
     degradationReason: "retry_with_placeholder",
@@ -85,7 +85,7 @@ const MOCK_TRANSLATION_ITEMS = [
     index: 9, page: 4, blockType: "paragraph", label: "body",
     finalStatus: "partially_translated",
     source: "The proposed method achieves state-of-the-art results while remaining computationally efficient (see Appendix C for proofs).",
-    translated: "所提方法在保持计算高效的同时达到了 state-of-the-art 结果(证明见 Appendix C)。",
+    translated: "Phương pháp đề xuất đạt được kết quả state-of-the-art trong khi vẫn giữ hiệu quả tính toán (xem Phụ lục C cho bằng chứng).",
     degradationReason: "terminology_partially_preserved",
   }),
   buildItem({
@@ -105,13 +105,13 @@ const MOCK_TRANSLATION_ITEMS = [
     index: 8, page: 4, blockType: "paragraph", label: "body",
     finalStatus: "translated",
     source: "Finally, we discuss limitations and outline directions for future research.",
-    translated: "最后，我们讨论了局限性并展望了后续研究方向。",
+    translated: "Cuối cùng, chúng tôi thảo luận về những hạn chế và phác thảo hướng đi cho nghiên cứu trong tương lai.",
   }),
 ];
 
 export function getMockTranslationSummary(jobId = "") {
-  // 与真实管线落盘形状一致(backend scripts/services/translation/artifacts/io.py):
-  // 统计键是 status_summary,状态枚举为 translated/partially_translated/kept_origin/failed
+  // Cùng hình dạng với pipeline thật (backend scripts/services/translation/artifacts/io.py):
+  // Khóa thống kê là status_summary, trạng thái bao gồm translated/partially_translated/kept_origin/failed
   const statusSummary = {
     translated: 0,
     partially_translated: 0,
@@ -166,7 +166,7 @@ export function getMockTranslationItems(jobId, {
 export function getMockTranslationItem(jobId, itemId) {
   const item = MOCK_TRANSLATION_ITEMS.find((entry) => entry.item_id === itemId);
   if (!item) {
-    throw new Error("未找到该翻译 item，请确认 item_id 是否正确。");
+    throw new Error("Không tìm thấy mục dịch thuật, vui lòng xác nhận item_id có đúng không.");
   }
   return {
     job_id: jobId,

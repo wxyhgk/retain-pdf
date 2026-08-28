@@ -19,10 +19,10 @@ function memoryStorage(seed) {
 
 const KEY = "retainpdf-ai-chat-v1:job-1";
 
-// ===== view-model 纯逻辑 =====
+// ===== view-model logic thuần =====
 
 test("会话标题:取首条用户消息并裁剪,空则占位", () => {
-  assert.equal(deriveSessionTitle({ messages: [] }), "新对话");
+  assert.equal(deriveSessionTitle({ messages: [] }), "Hội thoại mới");
   assert.equal(
     deriveSessionTitle({ messages: [{ role: "assistant", text: "先回答" }, { role: "user", text: "  卤素锂交换是什么  " }] }),
     "卤素锂交换是什么",
@@ -52,7 +52,7 @@ test("会话上限截断:超过上限保留最近更新的,且保留 active", ()
   assert.ok(kept.some((s) => s.id === "s-0"), "最旧但 active 的会话被保留");
 });
 
-// ===== store:向后兼容单会话层 =====
+// ===== store: tương thích ngược session đơn =====
 
 test("单会话层:save/load/clear 作用于当前会话", () => {
   const storage = memoryStorage();
@@ -69,7 +69,7 @@ test("单会话层:save/load/clear 作用于当前会话", () => {
   assert.deepEqual(store.load(), { messages: [], history: [] });
 });
 
-// ===== store:多会话层 =====
+// ===== store: nhiều session =====
 
 test("多会话:新建/切换/删除与 active 迁移", () => {
   const storage = memoryStorage();
@@ -85,12 +85,12 @@ test("多会话:新建/切换/删除与 active 迁移", () => {
 
   assert.equal(store.listSessions().length, 2);
 
-  // 切回 A
+  // Quay lại A
   const backToA = store.switchSession(idA);
   assert.equal(backToA.messages[0].text, "会话A");
   assert.equal(store.activeSessionId(), idA);
 
-  // 删除 A → active 落到 B
+  // Xóa A → active chuyển sang B
   const afterDelete = store.deleteSession(idA);
   assert.equal(store.listSessions().length, 1);
   assert.equal(afterDelete.messages[0].text, "会话B");

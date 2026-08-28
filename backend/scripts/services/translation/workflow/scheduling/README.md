@@ -1,18 +1,18 @@
-# 翻译调度
+# Điều độ dịch
 
-这个目录负责 translation units 选定之后的执行机制：
+Thư mục này chịu trách nhiệm cơ chế thực thi sau khi translation units đã được chọn:
 
-- 队列分配
-- worker pool 生命周期
-- 结果队列 drain
-- tail retry pass
-- flush 节奏
-- 调度指标
+- Phân phối hàng đợi
+- Vòng đời worker pool
+- Drain hàng đợi kết quả
+- Lượt tail retry
+- Nhịp flush
+- Chỉ số điều độ
 
-它不应该决定某个 block 是否翻译，不应该构造 prompt，也不应该实现 provider HTTP 调用。
+Nó không nên quyết định một block nào đó có dịch hay không, không nên xây dựng prompt, cũng không nên cài đặt lời gọi HTTP provider.
 
-后续需要迁移的当前源文件：
+Các tệp nguồn hiện tại cần di chuyển sau này:
 
 - `workflow/batch_runner.py`
 - `workflow/workers.py`
-- `workflow/batching/pending_units.py` 里和调度相关的部分
+- Phần liên quan đến điều độ trong `workflow/batching/pending_units.py`

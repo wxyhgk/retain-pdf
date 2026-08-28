@@ -10,7 +10,7 @@ use crate::storage_paths::resolve_data_path;
 use super::Db;
 
 impl Db {
-    /// 上传即建档:同一内容哈希只有一个 document,重复上传仅刷新时间与文件名。
+    /// Tải lên trong hồ sơ:Chỉ có một hàm băm có cùng nội dung document,Chỉ tải lên trùng lặp thời gian làm mới và tên tệp。
     pub fn upsert_document_from_upload(&self, upload: &UploadRecord) -> Result<()> {
         if upload.content_hash.is_empty() {
             return Ok(());
@@ -47,9 +47,9 @@ impl Db {
         Ok(record)
     }
 
-    /// 任意 job_id(含历史 run 与 -ocr 子任务)→ 所属 document。
-    /// 前端打开历史 job 时不能再靠 active_job_id 反查——那只匹配当前
-    /// 生效 run,历史 run 会静默失配(收藏不入库、问答退化全库)。
+    /// Bất kỳ job_id(Có lịch sử run VÀ -ocr Nhiệm vụ phụ)→ thuộc quyền document。
+    /// Lịch sử mở Frontend job Khi không còn có thể dựa vào active_job_id Kiểm tra lại——Cái đó khớp với cái hiện tại
+    /// có hiệu lực run,Sử học run sẽ âm thầm không khớp(Mục yêu thích không được lưu kho、Q&A Degradation Full Library)。
     pub fn get_document_by_job_id(&self, job_id: &str) -> Result<Option<DocumentRecord>> {
         let conn = self.connect()?;
         let document_id: Option<String> = conn
@@ -90,8 +90,8 @@ impl Db {
         collection_id: Option<&str>,
     ) -> Result<Vec<DocumentRecord>> {
         let conn = self.connect()?;
-        // 防御性:图书馆列表永不返回无 upload 支撑的孤儿文档(源文件已丢的
-        // 僵尸卡)。"只入库"文档有 upload 只是没 job,不受影响。
+        // Phòng thủ:Danh sách thư viện không bao giờ trả về 0 upload Tài liệu mồ côi được hỗ trợ(Tệp nguồn bị mất
+        // Lá bài Zombie)。"Chỉ chiều về"Tài liệu có upload Chỉ là không job,Không bị ảnh hưởng。
         let mut clauses: Vec<String> = vec![
             "EXISTS (SELECT 1 FROM uploads u WHERE u.content_hash = d.document_id AND u.content_hash <> '')"
                 .to_string(),
@@ -184,7 +184,7 @@ impl Db {
         Ok(record)
     }
 
-    /// 把 job 归属到 document(经 upload.content_hash),返回 document_id。
+    /// cầm job Được quy cho document(Sau khi được chấp thuận của. upload.content_hash),trở lại document_id。
     pub fn link_job_to_document(&self, job_id: &str, upload_id: &str) -> Result<Option<String>> {
         let conn = self.connect()?;
         let document_id: Option<String> = conn
@@ -204,7 +204,7 @@ impl Db {
         Ok(Some(document_id))
     }
 
-    /// 按 document_id(= content_hash) 找到最近一次上传记录，用于源 PDF / 封面 / 重译。
+    /// án document_id(= content_hash) Đã tìm thấy nội dung tải lên gần，Đối với nguồn PDF / Trang bìa / dịch nhiều lần。
     pub fn find_upload_for_document(&self, document_id: &str) -> Result<Option<UploadRecord>> {
         let conn = self.connect()?;
         let upload = conn
@@ -243,7 +243,7 @@ impl Db {
         }))
     }
 
-    /// 该文档名下的所有 job_id(经 jobs.document_id 关联)。
+    /// Tất cả dưới tên của tài liệu này job_id(Sau khi được chấp thuận của. jobs.document_id Liên quan)。
     pub fn job_ids_for_document(&self, document_id: &str) -> Result<Vec<String>> {
         let conn = self.connect()?;
         let mut stmt =
@@ -256,8 +256,8 @@ impl Db {
         Ok(ids)
     }
 
-    /// 该文档对应的所有 upload 记录(可能同一文件多次上传成多个 upload_id),
-    /// stored_path 解析为绝对路径供删除磁盘文件。
+    /// Tất cả các câu trả lời tương ứng upload Lịch sử(Cùng một tệp có thể được tải lên nhiều lần upload_id),
+    /// stored_path Giải quyết thành đường dẫn tuyệt đối để xóa tệp đĩa。
     pub fn uploads_for_document(&self, document_id: &str) -> Result<Vec<UploadRecord>> {
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
@@ -310,8 +310,8 @@ impl Db {
         Ok(count as u64)
     }
 
-    /// 删除文档行(FK 级联清 favorites/document_tags/collection_documents,
-    /// ai_conversations.document_id 置 NULL)+ 派生的 blocks_fts 行。
+    /// Xóa mục hàng tài liệu(FK Cascade Qing favorites/document_tags/collection_documents,
+    /// ai_conversations.document_id đưa NULL)+ Có nguồn gốc blocks_fts đi。
     pub fn delete_document(&self, document_id: &str) -> Result<bool> {
         let conn = self.connect()?;
         conn.execute(
@@ -325,8 +325,8 @@ impl Db {
         Ok(changed > 0)
     }
 
-    /// 修复悬空的 active_job_id:若它指向的 job 已不存在,重指该文档下最新的
-    /// 成功 book job;没有则置 NULL(降级为干净馆藏)。删 job 后必调,防僵尸卡。
+    /// Sửa lỗi treo cổ active_job_id:Nếu nó chỉ đến job Không còn tồn tại,Tập trung vào tài liệu gần đây nhất theo tài liệu này
+    /// thành công book job;Nếu không, hãy đặt NULL(Hạ cấp xuống bộ sưu tập sạch)。xóa job Bài đăng phải điều chỉnh,Thẻ chống zombie。
     pub fn reconcile_document_active_job(&self, document_id: &str) -> Result<()> {
         let conn = self.connect()?;
         conn.execute(
@@ -368,7 +368,7 @@ impl Db {
         Ok(())
     }
 
-    /// 整体重建某文档的 FTS 行(派生索引,幂等)。
+    /// Xây dựng lại toàn bộ tài liệu FTS đi(Chỉ số dẫn xuất,Idempotent)。
     pub fn replace_document_fts(
         &self,
         document_id: &str,
@@ -404,8 +404,8 @@ impl Db {
         Ok(())
     }
 
-    /// 全文检索。trigram 分词要求查询 ≥3 字符,更短的查询回退 LIKE 扫描。
-    /// `document_id` 非空时只搜该文档（阅读器 / AI 整本问答）。
+    /// Truy xuất Toàn văn。trigram Truy vấn yêu cầu phân đoạn từ ≥3 ký tự,Dự phòng truy vấn ngắn hơn LIKE quét xem。
+    /// `document_id` Chỉ tìm kiếm tài liệu này khi nó không trống（Đầu đọc / AI Toàn bộ phần hỏi đáp）。
     pub fn search_blocks(
         &self,
         query: &str,
@@ -564,7 +564,7 @@ impl Db {
         Ok(changed > 0)
     }
 
-    /// 被收藏锚点引用的 job 不允许单独删除(锚点块空间保护)。
+    /// Tham chiếu bởi Anchor yêu thích job Không cho phép xóa riêng lẻ(Bảo vệ không gian khối neo)。
     pub fn favorites_referencing_job(&self, job_id: &str) -> Result<u64> {
         let conn = self.connect()?;
         let count: i64 = conn.query_row(
@@ -575,8 +575,8 @@ impl Db {
         Ok(count as u64)
     }
 
-    /// 存量回填:老库升级为图书馆模型。幂等且只在有缺口时做事,
-    /// 稳态启动只付几条 COUNT 的代价。
+    /// Đắp đất dự trữ:Thư viện cựu chiến binh được nâng cấp lên mô hình thư viện。Nhàn rỗi và chỉ hoạt động khi có khoảng trống,
+    /// Khởi nghiệp ở trạng thái ổn định chỉ trả một vài COUNT Chi phí。
     pub(super) fn backfill_library_records(&self) -> Result<()> {
         self.backfill_upload_hashes()?;
         self.backfill_job_document_links()?;
@@ -586,11 +586,11 @@ impl Db {
         Ok(())
     }
 
-    /// 一次性清理孤儿文档:没有任何 upload 支撑(源文件早被 retention GC 掉)
-    /// 的文档行,是永远打不开的僵尸卡。只清没有收藏引用的——有收藏的降级
-    /// 数据保留给用户经 DELETE /documents/:id 显式处理,不无声销毁策展内容。
-    /// root-cause(retention 不再删 document-backed upload)已堵住新孤儿产生,
-    /// 此清理只处理历史遗留。
+    /// Dọn dẹp các tài liệu mồ côi trong một lần:Không upload chống đỡ(Tệp nguồn đã tồn tại từ lâu retention GC rơi)
+    /// Hàng tài liệu,là một lá bài zombie không bao giờ mở ra.。Chỉ trích dẫn rõ ràng không có bộ sưu tập——Có hạ cấp yêu thích
+    /// Dữ liệu được người dùng lưu giữ qua DELETE /documents/:id Xử lý rõ ràng,Không phá hủy im lặng nội dung được tuyển chọn。
+    /// root-cause(retention Không xóa lại document-backed upload)Trại trẻ mồ côi mới bị chặn,
+    /// Việc dọn dẹp này chỉ liên quan đến các di sản lịch sử。
     fn cleanup_orphan_documents(&self) -> Result<()> {
         let conn = self.connect()?;
         let orphan_ids: Vec<String> = {
@@ -735,7 +735,7 @@ impl Db {
     }
 }
 
-/// sha2 0.11 的输出类型不再实现 LowerHex,统一走手动十六进制编码。
+/// sha2 0.11 Loại đầu ra của không còn được triển khai LowerHex,Mã hóa hex thủ công hợp nhất。
 pub fn sha256_hex(bytes: &[u8]) -> String {
     use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
@@ -837,12 +837,12 @@ fn row_to_favorite(row: &rusqlite::Row<'_>) -> rusqlite::Result<FavoriteRecord> 
     })
 }
 
-/// 从任务产物目录构建某文档的 FTS 行:
-/// - `ocr/normalized/document.v1.json` 提供 source_text 与规范 block_id;
-/// - `translated/page-*.json` 提供 translated_text,按 (page_idx, block_idx)
-///   数字索引对齐(译文 item_id 与规范 block_id 的零填充位数不同,不能按
-///   字符串对齐)。
-/// 译文缺失时只索引原文。
+/// xây dựng tài liệu từ danh mục sản phẩm nhiệm vụ FTS đi:
+/// - `ocr/normalized/document.v1.json` cung cấp source_text và thông số kỹ thuật block_id;
+/// - `translated/page-*.json` cung cấp translated_text,án (page_idx, block_idx)
+///   Căn chỉnh chỉ mục kỹ thuật số (item_id của bản dịch và thông số kỹ thuật block_id có số lượng bit đệm 0 khác nhau giữa các bên, không thể so khớp trực tiếp).
+///   Căn chỉnh chuỗi)。
+/// Chỉ có văn bản gốc được lập chỉ mục khi bản dịch bị thiếu。
 pub fn build_fts_rows_from_job_dir(job_root: &Path) -> Result<Vec<FtsBlockRow>> {
     let normalized_path = job_root.join("ocr").join("normalized").join("document.v1.json");
     let raw = std::fs::read_to_string(&normalized_path)
@@ -998,7 +998,7 @@ mod tests {
             char_end: None,
             kind: "sentence".to_string(),
             quote_text: "quoted source".to_string(),
-            translated_quote_text: "引文快照".to_string(),
+            translated_quote_text: "Bản chụp trích dẫn".to_string(),
             note: String::new(),
             asset_id: String::new(),
             rect_json: String::new(),
@@ -1017,7 +1017,7 @@ mod tests {
         let version: i64 = conn
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .expect("user_version");
-        // 与迁移数组长度同步:v1 图书馆地基 + v2 资产/会话
+        // Đồng bộ hóa với chiều dài mảng di chuyển:v1 Quỹ Thư viện + v2 tài sản/Phiên chạy
         assert_eq!(version, 2);
     }
 
@@ -1027,7 +1027,7 @@ mod tests {
         let db = fs.db();
         db.init().expect("init");
         let hash = sha256_hex(b"same pdf bytes");
-        // 生产路径:save_upload 先于 upsert_document(列表过滤依赖 upload 存在)
+        // Đường dẫn sản xuất:save_upload trước upsert_document(Liệt kê các phụ thuộc của bộ lọc upload tồn tại)
         let up1 = upload_with_hash("up-1", &hash);
         db.save_upload(&up1).expect("save up-1");
         db.upsert_document_from_upload(&up1).expect("first upsert");
@@ -1083,10 +1083,10 @@ mod tests {
         assert_eq!(hits[0].document_id, hash);
         assert_eq!(hits[0].page_idx, 2);
         assert_eq!(hits[0].block_id, "p003-b0001");
-        // 2 字符查询走 LIKE 回退
+        // 2 ký tự truy vấn vẫn khớp nhờ FTS5 tokenize='trigram'
         let short_hits = db.search_blocks("光谱", 10, None).expect("search short");
         assert_eq!(short_hits.len(), 1);
-        // 单文档过滤：不存在的 document_id 应无命中
+        // Lọc theo document: document_id không tồn tại sẽ không có kết quả
         let scoped_miss = db
             .search_blocks("光学光谱", 10, Some("no-such-doc"))
             .expect("search scoped miss");
@@ -1095,7 +1095,7 @@ mod tests {
             .search_blocks("光学光谱", 10, Some(&hash))
             .expect("search scoped hit");
         assert_eq!(scoped_hit.len(), 1);
-        // 重建幂等:再次替换后仍只有一行
+        // Xây dựng lại Idempotency:Chỉ còn lại một hàng sau khi thay thế nó một lần nữa
         db.replace_document_fts(
             &hash,
             "job-2",

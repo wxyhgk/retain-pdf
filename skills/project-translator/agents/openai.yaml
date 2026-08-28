@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Translator"
+  short_description: "Translate repositories by context and target language"
+  default_prompt: "Use $project-translator to scan this repository and translate its UI to English while preserving prompts and code contracts."

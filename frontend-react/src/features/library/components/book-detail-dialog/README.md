@@ -1,41 +1,41 @@
-# Book Detail Dialog 组件族
+# Nhóm component Book Detail Dialog
 
-## 边界
+## Ranh giới
 
-`book-detail-dialog` 负责单本书的详情弹窗。它展示书籍摘要、操作按钮和当前任务状态，不负责加载书籍数据或调用下载/阅读 API。
+`book-detail-dialog` phụ trách hộp thoại chi tiết một cuốn sách. Nó hiển thị tóm tắt sách, nút thao tác và trạng thái nhiệm vụ hiện tại, không phụ trách tải dữ liệu sách hay gọi API tải xuống/đọc.
 
-## 文件
+## Tệp
 
-- `book-detail-dialog.tsx`：弹窗组合层。
-- `book-detail-config.ts`：tab 定义和本组件族布局尺寸。
-- `book-detail-selectors.ts`：把 `LibraryBook` 转成详情弹窗内部 view model。
-- `book-detail-cover-panel.tsx`：左侧封面区域。
-- `book-detail-heading.tsx`：标题和作者。
-- `book-detail-tabs.tsx`：详情、翻译、文件、进度四个 tab 的组合层。
-- `book-detail-overview-panel.tsx`：详情 tab 的组合层。
-- `book-detail-fields.tsx`：页数、状态、更新时间。
-- `book-detail-translation-panel.tsx`：翻译 tab 的组合层。
-- `book-detail-field-list.tsx`：详情字段的通用 label-value 列表。
-- `book-detail-translation.tsx`：翻译任务配置摘要。
-- `book-detail-artifacts.tsx`：原始 PDF、译文 PDF、对照 PDF 等文件产物。
-- `book-detail-artifacts-panel.tsx`：文件 tab 的组合层。
-- `book-detail-artifact-row.tsx`：单个文件产物行。
-- `book-detail-progress-summary.tsx`：详情弹窗专用的简洁任务进度摘要。
-- `book-detail-section.tsx`：详情弹窗内部通用区块。
-- `book-detail-actions.tsx`：对照阅读和下载入口。
-- `book-detail-status-panel.tsx`：右侧任务进度区域。
-- `book-detail-types.ts`：本组件族内部共享的 props 类型。
-- `index.ts`：组件族的公共出口。
+- `book-detail-dialog.tsx`: Tầng tổ hợp hộp thoại.
+- `book-detail-config.ts`: Định nghĩa tab và kích thước bố cục nhóm component này.
+- `book-detail-selectors.ts`: Chuyển `LibraryBook` thành view model nội bộ hộp thoại chi tiết.
+- `book-detail-cover-panel.tsx`: Vùng bìa trái.
+- `book-detail-heading.tsx`: Tiêu đề và tác giả.
+- `book-detail-tabs.tsx`: Tầng tổ hợp bốn tab chi tiết, dịch, tệp, tiến độ.
+- `book-detail-overview-panel.tsx`: Tầng tổ hợp tab chi tiết.
+- `book-detail-fields.tsx`: Số trang, trạng thái, thời gian cập nhật.
+- `book-detail-translation-panel.tsx`: Tầng tổ hợp tab dịch.
+- `book-detail-field-list.tsx`: Danh sách label-value chung cho trường chi tiết.
+- `book-detail-translation.tsx`: Tóm tắt cấu hình nhiệm vụ dịch.
+- `book-detail-artifacts.tsx`: Sản phẩm tệp như PDF gốc, PDF dịch, PDF đối chiếu.
+- `book-detail-artifacts-panel.tsx`: Tầng tổ hợp tab tệp.
+- `book-detail-artifact-row.tsx`: Hàng sản phẩm tệp đơn.
+- `book-detail-progress-summary.tsx`: Tóm tắt tiến độ nhiệm vụ giản lược dành riêng cho hộp thoại chi tiết.
+- `book-detail-section.tsx`: Khối chung nội bộ hộp thoại chi tiết.
+- `book-detail-actions.tsx`: Lối vào đọc đối chiếu và tải xuống.
+- `book-detail-status-panel.tsx`: Vùng tiến độ nhiệm vụ bên phải.
+- `book-detail-types.ts`: Kiểu props chia sẻ nội bộ nhóm component này.
+- `index.ts`: Xuất khẩu công khai của nhóm component.
 
-## 规则
+## Quy tắc
 
-- 外部只导入 `BookDetailDialog`。
-- 产品文案来自 `library-config.ts`。
-- 固定布局尺寸来自 `book-detail-config.ts`，不要散落在多个 `.tsx` 里。
-- 复杂数据派生放在 `book-detail-selectors.ts`，展示组件只接收简单 props。
-- `BookDetailDialog` 是唯一允许接收 `LibraryBook` 的组件入口。
-- `BookDetailTabs` 和 tab 内组件接收 `BookDetailViewModel` 或更小的 props，不直接依赖 `LibraryBook`。
-- 详情弹窗内使用轻量的 `BookDetailProgressSummary`，不要直接嵌完整任务页卡片。
-- 真实动作回调从 `BookDetailDialog` props 传入，再下发给内部动作组件。
-- 书籍详情、任务进度、下载/阅读动作分别在独立文件里维护，避免组合层变厚。
-- 弹窗内容通过 tabs 分区，新增功能时优先新增 tab 内组件，不要把内容直接堆到 `book-detail-dialog.tsx`。
+- Bên ngoài chỉ import `BookDetailDialog`.
+- Văn bản sản phẩm đến từ `library-config.ts`.
+- Kích thước bố cục cố định đến từ `book-detail-config.ts`, không rải rác trong nhiều `.tsx`.
+- Phái sinh dữ liệu phức tạp đặt trong `book-detail-selectors.ts`, component hiển thị chỉ nhận props đơn giản.
+- `BookDetailDialog` là lối vào component duy nhất được phép nhận `LibraryBook`.
+- `BookDetailTabs` và component trong tab nhận `BookDetailViewModel` hoặc props nhỏ hơn, không phụ thuộc trực tiếp `LibraryBook`.
+- Hộp thoại chi tiết dùng `BookDetailProgressSummary` nhẹ, không nhúng trực tiếp thẻ trang nhiệm vụ đầy đủ.
+- Callback hành động thật truyền từ props `BookDetailDialog`, rồi phân phát xuống component hành động nội bộ.
+- Chi tiết sách, tiến độ nhiệm vụ, hành động tải xuống/đọc duy trì trong tệp độc lập, tránh tầng tổ hợp phình to.
+- Nội dung hộp thoại phân vùng qua tabs, khi thêm tính năng ưu tiên thêm component trong tab, không chất nội dung trực tiếp vào `book-detail-dialog.tsx`.

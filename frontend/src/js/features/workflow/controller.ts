@@ -150,7 +150,7 @@ export function mountWorkflowFeature({
   defaultPaddleToken,
   defaultOcrProvider,
   defaultModelApiKey,
-  defaultFileLabel = "选择 PDF",
+  defaultFileLabel = "Chọn PDF",
   normalizeWorkflow,
   normalizeMathMode,
   constants,
@@ -394,11 +394,11 @@ export function mountWorkflowFeature({
     });
   }
 
-  // 馆藏文档"翻译整本/选定页码"(F5)复用主流程的凭据组装:从当前已配置的
-  // 凭据(credentialsStatePort,与对话框是否打开无关——readSubmitValues 读的是
-  // 凭据 state 而非弹窗 DOM)拼出 ocr(PaddleOCR)+ translation(DeepSeek)。
-  // 不含 source——后端会从文档已存的 upload 注入 upload_id。pageRanges 缺省
-  // 空串=整本。
+  // Tài liệu trong kho "Dịch toàn bộ/Trang đã chọn" (F5) tái sử dụng việc lắp ráp thông tin xác thực của luồng chính: từ các
+  // thông tin xác thực đã cấu hình (credentialsStatePort, không liên quan đến việc dialog có mở hay không — readSubmitValues đọc
+  // credentials state chứ không đọc DOM popup) lắp ra ocr(PaddleOCR) + translation(DeepSeek).
+  // Không bao gồm source — backend sẽ inject upload_id từ upload đã lưu của tài liệu. pageRanges mặc định
+  // chuỗi rỗng = toàn bộ.
   function buildTranslateJobConfig(pageRanges = "") {
     const developerConfig = developerConfigWithDefaults();
     const submitValues = currentWorkflowSubmitValues();

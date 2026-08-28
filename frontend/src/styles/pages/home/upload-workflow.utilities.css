@@ -27,8 +27,8 @@
     min-height: 168px;
     aspect-ratio: auto;
     padding: 16px 14px;
-    /* 拖放区：白底大圆角（原灰底大块在白弹窗里像未加载的占位），
-       虚线安静，hover 才用 accent 撑起"可交互"感 */
+    /* Vùng kéo thả: nền trắng, bo góc lớn (mảng xám cũ trong hộp thoại trắng trông như placeholder chưa tải),
+       đường gạch yên nhẹ, chỉ hover mới dùng accent để gợi cảm giác “có thể tương tác” */
     border: 1.5px dashed color-mix(in srgb, var(--muted) 40%, var(--line));
     border-radius: 18px;
     background: var(--paper);
@@ -54,7 +54,7 @@
 
   & #file-label {
     font-size: 0.92rem;
-    /* 长文件名单行省略，避免撑高卡片出现纵向滚动条 */
+    /* Tên tệp dài bị ellipsis trên một dòng để thẻ không phình cao và xuất hiện thanh cuộn dọc */
     display: block;
     width: 100%;
     max-width: 100%;
@@ -110,8 +110,8 @@
     min-height: 168px;
     aspect-ratio: auto;
     padding: 16px 14px;
-    /* 拖放区：白底大圆角（原灰底大块在白弹窗里像未加载的占位），
-       虚线安静，hover 才用 accent 撑起"可交互"感 */
+    /* Vùng kéo thả: nền trắng, bo góc lớn (mảng xám cũ trong hộp thoại trắng trông như placeholder chưa tải),
+       đường gạch yên nhẹ, chỉ hover mới dùng accent để gợi cảm giác “có thể tương tác” */
     border: 1.5px dashed color-mix(in srgb, var(--muted) 40%, var(--line));
     border-radius: 18px;
     background: var(--paper);
@@ -220,7 +220,7 @@
     font-size: 1.18rem;
     font-weight: 600;
     letter-spacing: -0.03em;
-    /* grid 子项默认 min-content，不截断会把卡片撑高 */
+    /* Phần tử con của grid mặc định là min-content; không cắt sẽ làm thẻ phình cao */
     justify-self: stretch;
     text-align: center;
   }

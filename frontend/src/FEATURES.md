@@ -1,135 +1,135 @@
-# 前端功能树地图（`frontend/src`）
+# Bản đồ cây tính năng frontend (`frontend/src`)
 
-日常开发以 **`frontend/`** 为准（不是 `frontend-react/`）。  
-本文说明**两套「features」**、阅读器双引擎、以及共享 `js/*` 该往哪放。
+Phát triển hàng ngày lấy **`frontend/`** làm chuẩn (không phải `frontend-react/`).  
+Bài này giải thích **hai bộ "features"**, hai engine đọc sách, và nơi đặt `js/*` dùng chung.
 
-## 总览
+## Tổng quan
 
 ```text
 frontend/src/
 ├── pages/
-│   ├── home/          # 主页 SPA（React 壳 + 装配）
-│   │   ├── composition/   # 只接线：external → js/features + home features
-│   │   └── features/      # React UI / store / 主页专属编排
-│   ├── reader/        # 阅读器 SPA（默认 react-pdf；legacy 回退）
-│   └── detail/        # 任务详情 SPA
+│   ├── home/          # SPA trang chủ (React shell + lắp ráp)
+│   │   ├── composition/   # Chỉ đấu nối: external → js/features + home features
+│   │   └── features/      # React UI / store / điều phối riêng trang chủ
+│   ├── reader/        # SPA trình đọc (mặc định react-pdf; legacy dự phòng)
+│   └── detail/        # SPA chi tiết nhiệm vụ
 ├── js/
-│   ├── api/           # HTTP / 后端契约
-│   ├── features/      # 命令式领域逻辑（mount*、ports、state）
-│   ├── reader/        # 旧 pdf.js 引擎 + 少量被新引擎复用的 ports
-│   ├── job-status/ job/ job-detail/ status-detail/  # 任务展示纯逻辑
+│   ├── api/           # HTTP / hợp đồng backend
+│   ├── features/      # Logic miền mệnh lệnh (mount*, ports, state)
+│   ├── reader/        # Engine pdf.js cũ + một số ports được engine mới tái sử dụng
+│   ├── job-status/ job/ job-detail/ status-detail/  # Logic thuần hiển thị nhiệm vụ
 │   ├── state/ config/ mock/ islands/ …
 └── styles/ components/ shared/ partials/
 ```
 
-| 层 | 路径 | 职责 | 新代码放哪 |
+| Tầng | Đường dẫn | Trách nhiệm | Mã mới đặt ở đâu |
 |----|------|------|------------|
-| **页面 React** | `pages/*/features` 或 `pages/reader/*` | UI、hooks、page store | 新 UI / 新交互 |
-| **命令式领域** | `js/features/*` | 挂载、轮询、表单、ports | 跨页可复用的非 UI 逻辑 |
-| **共享 API** | `js/api/*` | fetch 封装 | 新后端端点客户端 |
-| **装配** | `pages/home/composition/*` | 接线，不写业务 | 只改 wiring |
+| **Trang React** | `pages/*/features` hoặc `pages/reader/*` | UI, hooks, page store | UI mới / tương tác mới |
+| **Miền mệnh lệnh** | `js/features/*` | Gắn kết, polling, biểu mẫu, ports | Logic phi UI tái sử dụng xuyên trang |
+| **API dùng chung** | `js/api/*` | Đóng gói fetch | Client endpoint backend mới |
+| **Lắp ráp** | `pages/home/composition/*` | Đấu nối, không viết nghiệp vụ | Chỉ thay đổi wiring |
 
 ---
 
-## 主页：双 features 树
+## Trang chủ: Hai cây features
 
-主页同时存在：
+Trang chủ tồn tại song song:
 
-1. **`src/js/features/*`** — 旧主路径抽出来的**命令式领域**（`mountXxxFeature`、ports、DOM contract、state）
-2. **`src/pages/home/features/*`** — **React 侧**视图、store、对话框、书架 UI
+1. **`src/js/features/*`** — **Miền mệnh lệnh** tách ra từ đường dẫn chính cũ (`mountXxxFeature`, ports, DOM contract, state)
+2. **`src/pages/home/features/*`** — View phía **React**, store, hộp thoại, UI kệ sách
 
-它们**不是重复目录**，而是 **UI 层 vs 领域层**。接线规则见 `pages/home/composition/README.md`：
+Chúng **không phải thư mục trùng lặp**, mà là **tầng UI vs tầng miền**. Quy tắc đấu nối xem tại `pages/home/composition/README.md`:
 
-- 领域工厂应经 **`composition/external.ts`** 引用 `js/*`（避免在 features 里满天飞 `../../../js`）
-- 例外：少量类型 / 纯函数已直接从 `pages/home/features` import `js/features`（历史债务，新增优先走 external）
+- Factory miền nên tham chiếu `js/*` qua **`composition/external.ts`** (tránh import `../../../js` tràn lan trong features)
+- Ngoại lệ: Một ít kiểu / hàm thuần đã import trực tiếp `js/features` từ `pages/home/features` (nợ lịch sử, mã mới ưu tiên đi qua external)
 
-### 对照表（名字相近 ≠ 同一模块）
+### Bảng đối chiếu (tên gần giống ≠ cùng module)
 
-| `js/features/` | `pages/home/features/` | 关系 |
+| `js/features/` | `pages/home/features/` | Quan hệ |
 |----------------|------------------------|------|
-| `upload/` | `upload/` | 领域 mount + form ↔ React upload view store |
-| `workflow/` + `translation-workflow-dialog/` | `workflow/` | 命令式 workflow + 对话框契约 ↔ React 工作流对话框 |
-| `credentials/` | `credentials/` | 凭据 mount/DOM ↔ React 设置 UI |
-| `glossaries/` | `glossaries/` | 术语表 controller ↔ React 术语表 |
-| `app-update/` | `app-update/` | GitHub release / cache ↔ React 更新条 |
-| `app-shell/` | `app-shell/` | idle reset / config ↔ 底栏等壳 UI |
-| `app-actions/` | （无同名） | 提交任务；由 composition 挂到 status/upload |
-| `job-runtime/` | （无同名） | 当前任务轮询；status / library 消费 |
-| `recent-jobs/` + `documents-library/` | `library/` + `collections/` | 最近任务 + 文档资源 ↔ 书架卡片 / 合集 |
-| `status-detail/` | `status/` + `status-detail/` | 详情逻辑 ↔ 状态卡 / 详情弹窗 React |
-| `reader-dialog/` | `reader/` | 阅读入口路由/契约 ↔ 主页「打开阅读」对话框 store |
-| `home/` | （散落） | home state port |
-| `artifact-downloads/` | （经 library/status） | 产物下载 |
-| （无） | `settings/` | 主页设置入口（多靠 credentials/update） |
+| `upload/` | `upload/` | mount miền + form ↔ React upload view store |
+| `workflow/` + `translation-workflow-dialog/` | `workflow/` | workflow mệnh lệnh + hợp đồng hộp thoại ↔ React workflow dialog |
+| `credentials/` | `credentials/` | mount/DOM thông tin xác thực ↔ React settings UI |
+| `glossaries/` | `glossaries/` | controller bảng thuật ngữ ↔ React glossary |
+| `app-update/` | `app-update/` | GitHub release / cache ↔ React update bar |
+| `app-shell/` | `app-shell/` | idle reset / config ↔ shell UI thanh dưới |
+| `app-actions/` | (không cùng tên) | Gửi nhiệm vụ; composition gắn vào status/upload |
+| `job-runtime/` | (không cùng tên) | Polling nhiệm vụ hiện tại; status / library tiêu thụ |
+| `recent-jobs/` + `documents-library/` | `library/` + `collections/` | Nhiệm vụ gần đây + tài liệu ↔ Thẻ kệ sách / bộ sưu tập |
+| `status-detail/` | `status/` + `status-detail/` | Logic chi tiết ↔ Thẻ trạng thái / React detail dialog |
+| `reader-dialog/` | `reader/` | Định tuyến/hợp đồng lối vào đọc ↔ Store hộp thoại "mở đọc" trang chủ |
+| `home/` | (rải rác) | home state port |
+| `artifact-downloads/` | (qua library/status) | Tải xuống sản phẩm |
+| (không) | `settings/` | Lối vào cài đặt trang chủ (chủ yếu dựa credentials/update) |
 
-### 主页改代码口诀
+### Công thức sửa mã trang chủ
 
-| 你要改… | 优先路径 |
+| Bạn muốn sửa… | Đường dẫn ưu tiên |
 |---------|----------|
-| 书架卡片 / 详情弹窗 UI | `pages/home/features/library/**` |
-| 上传表单 UI | `pages/home/features/upload/**` |
-| 任务轮询、active job | `js/features/job-runtime/**` |
-| 提交翻译任务 | `js/features/app-actions/**` + composition |
-| 把新 `js` 依赖接进主页 | **只改** `composition/external.ts` + 对应 `create-*.ts` |
+| Thẻ kệ sách / UI hộp thoại chi tiết | `pages/home/features/library/**` |
+| UI biểu mẫu tải lên | `pages/home/features/upload/**` |
+| Polling nhiệm vụ, active job | `js/features/job-runtime/**` |
+| Gửi nhiệm vụ dịch | `js/features/app-actions/**` + composition |
+| Đưa dependency `js` mới vào trang chủ | **Chỉ sửa** `composition/external.ts` + `create-*.ts` tương ứng |
 
-`library` 子目录约定见 `pages/home/features/library/README.md`。
+Quy ước thư mục con `library` xem tại `pages/home/features/library/README.md`.
 
 ---
 
-## 阅读器：三层边界（与主页 features 无关）
+## Trình đọc: Ba ranh giới tầng (không liên quan features trang chủ)
 
-| 层 | 入口 / 路径 | js 依赖方式 |
+| Tầng | Lối vào / Đường dẫn | Cách phụ thuộc js |
 |----|-------------|-------------|
-| **A 新引擎（默认）** | `ReaderAppReactPdf` + `hooks/` `pdf/` `annotations/` `components/react-pdf/` | 只经 **`pages/reader/external.ts`** |
-| **B 共享 ports** | `js/reader` 子集：data/config/resource/pdf-document/page-state… | 经 external 出口；勿塞进 pdf-controller |
-| **C legacy** | `?engine=legacy` → `legacy/**` + **`js/reader` 命令式主力** | 允许直接 import `js/reader/**` |
+| **A Engine mới (mặc định)** | `ReaderAppReactPdf` + `hooks/` `pdf/` `annotations/` `components/react-pdf/` | Chỉ qua **`pages/reader/external.ts`** |
+| **B Ports dùng chung** | Tập con `js/reader`: data/config/resource/pdf-document/page-state… | Qua export external; không nhét vào pdf-controller |
+| **C Legacy** | `?engine=legacy` → `legacy/**` + **`js/reader` lực lượng chính mệnh lệnh** | Cho phép import trực tiếp `js/reader/**` |
 
-详情：`pages/reader/README.md`、`js/reader/README.md`。
+Chi tiết: `pages/reader/README.md`, `js/reader/README.md`.
 
-**新功能不要写进 `legacy/` 或 `js/reader/favorites*`。**
+**Tính năng mới không viết vào `legacy/` hoặc `js/reader/favorites*`.**
 
-## 详情页
+## Trang chi tiết
 
-| 路径 | 规则 |
+| Đường dẫn | Quy tắc |
 |------|------|
-| `pages/detail/**` | js 只经 **`pages/detail/external.ts`** |
-| `js/job-detail/*` | overview / markdown / resume 命令式逻辑 |
+| `pages/detail/**` | js chỉ qua **`pages/detail/external.ts`** |
+| `js/job-detail/*` | Logic mệnh lệnh overview / markdown / resume |
 
 ---
 
-## `js/` 其它目录（速查）
+## Các thư mục khác của `js/` (tra nhanh)
 
-| 目录 | 用途 |
+| Thư mục | Mục đích |
 |------|------|
-| `api/` | 后端 API 客户端 |
-| `job-status/`、`job/`、`job-detail/` | 任务阶段 / 产物 / 详情页逻辑（detail + home status 共用） |
-| `status-detail/` | 状态详情 presenter（偏旧路径；与 `js/features/status-detail` 并存时以实际 import 为准） |
-| `state/`、`config/` | 全局 store 切片、runtime 配置 |
-| `islands/` | 可挂到旧 HTML 的小岛（如 library-search、reader-annotations） |
-| `mock/` | 测试与本地 mock |
-| `app-framework/` | 轻量 connector/store 原语 |
-| `styles/` | **按页拆包** `dist/css/{home,detail,reader}.css`；见 **`styles/README.md`** |
+| `api/` | Client API backend |
+| `job-status/`, `job/`, `job-detail/` | Giai đoạn nhiệm vụ / sản phẩm / logic trang chi tiết (detail + home status dùng chung) |
+| `status-detail/` | Presenter chi tiết trạng thái (thiên về đường dẫn cũ; khi tồn tại song song với `js/features/status-detail` thì lấy import thực tế làm chuẩn) |
+| `state/`, `config/` | Slice store toàn cục, cấu hình runtime |
+| `islands/` | Đảo nhỏ gắn được vào HTML cũ (ví dụ library-search, reader-annotations) |
+| `mock/` | Kiểm thử và mock cục bộ |
+| `app-framework/` | Nguyên ngữ connector/store nhẹ |
+| `styles/` | **Đóng gói theo trang** `dist/css/{home,detail,reader}.css`; xem **`styles/README.md`** |
 
 ---
 
-## 死代码策略
+## Chiến lược mã chết
 
-- **先文档、再删**：`rg` 无 importer 仍可能是动态路径或测试专用。
-- `js/reader` 几乎全部被 legacy 链路引用（含内部引用）。已删除无生产引用的 `ai/remote-answerer.ts`。
-- **`pages/home/features` → `src/js/*`**：经 `pages/home/composition/external.ts`。
-- **`pages/detail` → `src/js/*`**：经 `pages/detail/external.ts`。
-- **`pages/reader` 非 legacy → `src/js/*`**：经 `pages/reader/external.ts`；`legacy/**` 除外。
-- **不要**批量删除 `js/reader/favorites/*` 或 `pdf-renderer` 等——它们经 `selection-favorites` / `pdf-controller` 服务 `?engine=legacy`。
+- **Ghi nhận trước, xóa sau**: `rg` không thấy importer vẫn có thể là đường dẫn động hoặc dành riêng cho kiểm thử.
+- `js/reader` gần như toàn bộ được liên kết chuỗi legacy tham chiếu (bao gồm tham chiếu nội bộ). Đã xóa `ai/remote-answerer.ts` không còn tham chiếu sản xuất.
+- **`pages/home/features` → `src/js/*`**: Qua `pages/home/composition/external.ts`.
+- **`pages/detail` → `src/js/*`**: Qua `pages/detail/external.ts`.
+- **`pages/reader` phi legacy → `src/js/*`**: Qua `pages/reader/external.ts`; ngoại trừ `legacy/**`.
+- **Không** xóa hàng loạt `js/reader/favorites/*` hoặc `pdf-renderer` — chúng phục vụ `?engine=legacy` qua `selection-favorites` / `pdf-controller`.
 
 ---
 
-## 相关 README
+## README liên quan
 
-| 文件 | 内容 |
+| Tệp | Nội dung |
 |------|------|
-| `frontend/README.md` | 入口、命令、与 frontend-react 关系 |
-| `pages/home/composition/README.md` | 主页装配规则 |
-| `pages/home/features/README.md` | home React features 索引 |
-| `pages/home/features/library/README.md` | 书架子目录 |
-| `pages/reader/README.md` | 阅读器新/旧布局 |
-| `js/reader/README.md` | 旧引擎边界与共享 ports |
+| `frontend/README.md` | Lối vào, lệnh, quan hệ với frontend-react |
+| `pages/home/composition/README.md` | Quy tắc lắp ráp trang chủ |
+| `pages/home/features/README.md` | Chỉ mục home React features |
+| `pages/home/features/library/README.md` | Thư mục con kệ sách |
+| `pages/reader/README.md` | Bố cục trình đọc mới/cũ |
+| `js/reader/README.md` | Ranh giới engine cũ và ports dùng chung |

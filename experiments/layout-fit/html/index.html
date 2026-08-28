@@ -276,135 +276,135 @@
       <header class="hero">
         <h1>Layout Fit Lab</h1>
         <p>
-          面向块级拟合的最小 HTML/DOM 测量器。它读取 `fixtures` 样本，允许你切换文本块、调整字体参数、
-          观察目标框与实际测量结果，并扫描一组更贴近目标高度的参数。
+          Trình đo HTML/DOM tối giản cho khối văn bản. Nó đọc mẫu `fixtures`, cho phép bạn chuyển đổi khối văn bản, điều chỉnh tham số phông chữ,
+          quan sát khung mục tiêu và kết quả đo thực tế, và quét một tập hợp tham số gần hơn với chiều cao mục tiêu.
         </p>
       </header>
 
       <main class="layout">
         <aside class="panel controls">
           <section class="section">
-            <h2>数据</h2>
+            <h2>Dữ liệu</h2>
             <div class="grid2">
-              <button id="load-default">加载默认样本</button>
+              <button id="load-default">Tải mẫu mặc định</button>
               <label>
-                <span>从本地 JSON 载入</span>
+                <span>Tải từ JSON cục bộ</span>
                 <input id="file-input" type="file" accept=".json,application/json" />
               </label>
             </div>
-            <label for="sample-select">样本</label>
+            <label for="sample-select">Mẫu</label>
             <select id="sample-select"></select>
           </section>
 
           <section class="section">
-            <h2>排版参数</h2>
+            <h2>Tham số dàn trang</h2>
             <label for="font-family">字体</label>
             <input id="font-family" value="Source Han Serif SC, Noto Serif CJK SC, serif" />
             <div class="grid3">
               <label>
-                <span>字号 (pt)</span>
+                <span>Cỡ chữ (pt)</span>
                 <input id="font-size" type="number" min="4" max="48" step="0.01" value="11.16" />
               </label>
               <label>
-                <span>行高 (em)</span>
+                <span>Độ cao dòng (em)</span>
                 <input id="line-height" type="number" min="0.4" max="2" step="0.01" value="0.6" />
               </label>
               <label>
-                <span>字距 (pt)</span>
+                <span>Khoảng cách chữ (pt)</span>
                 <input id="letter-spacing" type="number" min="-1" max="2" step="0.01" value="0" />
               </label>
             </div>
             <div class="grid2">
               <label>
-                <span>目标宽度 (pt)</span>
+                <span>Chiều rộng mục tiêu (pt)</span>
                 <input id="target-width" type="number" min="1" step="0.01" value="447.45" />
               </label>
               <label>
-                <span>目标高度 (pt)</span>
+                <span>Chiều cao mục tiêu (pt)</span>
                 <input id="target-height" type="number" min="1" step="0.01" value="98.7" />
               </label>
             </div>
             <div class="actions">
-              <button id="apply-typst" class="secondary">应用 Typst 参数</button>
-              <button id="measure-now">立即测量</button>
+              <button id="apply-typst" class="secondary">Áp dụng tham số Typst</button>
+              <button id="measure-now">Đo ngay</button>
             </div>
           </section>
 
           <section class="section">
-            <h2>扫描</h2>
+            <h2>Quét</h2>
             <div class="grid3">
               <label>
-                <span>最小字号</span>
+                <span>Cỡ chữ tối thiểu</span>
                 <input id="scan-font-min" type="number" min="4" max="48" step="0.01" value="9.5" />
               </label>
               <label>
-                <span>最大字号</span>
+                <span>Cỡ chữ tối đa</span>
                 <input id="scan-font-max" type="number" min="4" max="48" step="0.01" value="12" />
               </label>
               <label>
-                <span>字号步长</span>
+                <span>Bước nhảy cỡ chữ</span>
                 <input id="scan-font-step" type="number" min="0.01" max="4" step="0.01" value="0.05" />
               </label>
             </div>
             <div class="grid3">
               <label>
-                <span>最小行高</span>
+                <span>Độ cao dòng tối thiểu</span>
                 <input id="scan-leading-min" type="number" min="0.4" max="2" step="0.01" value="0.55" />
               </label>
               <label>
-                <span>最大行高</span>
+                <span>Độ cao dòng tối đa</span>
                 <input id="scan-leading-max" type="number" min="0.4" max="2" step="0.01" value="0.72" />
               </label>
               <label>
-                <span>行高步长</span>
+                <span>Bước nhảy độ cao dòng</span>
                 <input id="scan-leading-step" type="number" min="0.01" max="0.5" step="0.01" value="0.01" />
               </label>
             </div>
-            <button id="scan-now">扫描最优参数</button>
+            <button id="scan-now">Quét tham số tối ưu</button>
           </section>
 
           <section class="section">
-            <h2>文本</h2>
-            <label for="fit-text">拟合文本</label>
+            <h2>Văn bản</h2>
+            <label for="fit-text">Văn bản cần khớp</label>
             <textarea id="fit-text"></textarea>
           </section>
         </aside>
 
         <section class="panel workspace">
           <section class="card">
-            <h2>目标框预览</h2>
+            <h2>Xem trước khung mục tiêu</h2>
             <div class="preview-wrap">
               <div id="target-box" class="target-box">
                 <div id="preview-text" class="preview-text"></div>
-                <div id="preview-badge" class="preview-badge">未测量</div>
+                <div id="preview-badge" class="preview-badge">Chưa đo</div>
               </div>
             </div>
           </section>
 
           <section class="card">
-            <h2>测量结果</h2>
+            <h2>Kết quả đo</h2>
             <div class="metric-grid">
-              <dl class="metric"><dt>估算行数</dt><dd id="metric-lines">0</dd></dl>
-              <dl class="metric"><dt>测量高度</dt><dd id="metric-height">0pt</dd></dl>
-              <dl class="metric"><dt>最大行宽</dt><dd id="metric-width">0pt</dd></dl>
-              <dl class="metric"><dt>评分</dt><dd id="metric-score">0</dd></dl>
+              <dl class="metric"><dt>Số dòng ước tính</dt><dd id="metric-lines">0</dd></dl>
+              <dl class="metric"><dt>Chiều cao đo</dt><dd id="metric-height">0pt</dd></dl>
+              <dl class="metric"><dt>Chiều rộng dòng lớn nhất</dt><dd id="metric-width">0pt</dd></dl>
+              <dl class="metric"><dt>Đánh giá</dt><dd id="metric-score">0</dd></dl>
             </div>
             <div class="metric-grid" style="margin-top: 10px;">
-              <dl class="metric"><dt>高度误差</dt><dd id="metric-height-error">0pt</dd></dl>
-              <dl class="metric"><dt>宽度溢出</dt><dd id="metric-overflow-x">否</dd></dl>
-              <dl class="metric"><dt>高度溢出</dt><dd id="metric-overflow-y">否</dd></dl>
-              <dl class="metric"><dt>当前样本</dt><dd id="metric-sample">无</dd></dl>
+              <dl class="metric"><dt>Sai số chiều cao</dt><dd id="metric-height-error">0pt</dd></dl>
+              <dl class="metric"><dt>Xuất hiện chiều rộng</dt><dd id="metric-overflow-x">không</dd></dl>
+              <dl class="metric"><dt>Xuất hiện chiều cao</dt><dd id="metric-overflow-y">không</dd></dl>
+              <dl class="metric"><dt>Mẫu hiện tại</dt><dd id="metric-sample">không có</dd></dl>
             </div>
           </section>
 
           <section class="card">
-            <h2>样本信息</h2>
-            <div id="sample-meta" class="status">还没有载入样本。</div>
+            <h2>Thông tin mẫu</h2>
+            <div id="sample-meta" class="status">Chưa tải mẫu nào.</div>
           </section>
 
           <section class="card">
-            <h2>运行状态</h2>
-            <div id="status" class="status">点击“加载默认样本”或选择本地 JSON 开始。</div>
+            <h2>Trạng thái chạy</h2>
+            <div id="status" class="status">Nhấn "Tải mẫu mặc định" hoặc chọn JSON cục bộ để bắt đầu.</div>
           </section>
         </section>
       </main>
@@ -476,7 +476,7 @@
 
       function loadPayload(payload) {
         if (!payload || !Array.isArray(payload.samples) || payload.samples.length === 0) {
-          setStatus("样本 JSON 为空，或不符合 block samples 结构。", true);
+          setStatus("JSON mẫu rỗng hoặc không đúng cấu trúc block samples.", true);
           return;
         }
         state.payload = payload;
@@ -486,7 +486,7 @@
         });
         els.sampleSelect.value = payload.samples[0].sample_id;
         applySampleById(payload.samples[0].sample_id);
-        setStatus(`已载入 ${payload.samples.length} 个样本。`);
+        setStatus(`Đã tải ${payload.samples.length} mẫu.`);
       }
 
       function applySampleById(sampleId) {
@@ -607,30 +607,30 @@
         els.targetBox.style.width = `${metrics.widthPt}pt`;
         els.targetBox.style.minHeight = `${metrics.targetHeightPt}pt`;
         els.targetBox.style.height = `${metrics.targetHeightPt}pt`;
-        els.previewBadge.textContent = metrics.overflowY || metrics.overflowX ? "超出目标框" : "在目标框内";
+        els.previewBadge.textContent = metrics.overflowY || metrics.overflowX ? "Ngoài khung mục tiêu" : "Trong khung mục tiêu";
 
         els.metricLines.textContent = String(metrics.lineCount);
         els.metricHeight.textContent = `${metrics.height}pt`;
         els.metricWidth.textContent = `${metrics.maxLineWidth}pt`;
         els.metricScore.textContent = String(metrics.score);
         els.metricHeightError.textContent = `${round(Math.abs(metrics.height - metrics.targetHeightPt))}pt`;
-        els.metricOverflowX.textContent = metrics.overflowX ? "是" : "否";
-        els.metricOverflowY.textContent = metrics.overflowY ? "是" : "否";
+        els.metricOverflowX.textContent = metrics.overflowX ? "có" : "không";
+        els.metricOverflowY.textContent = metrics.overflowY ? "có" : "không";
       }
 
       function measureAndRender() {
         if (!state.sample) {
-          setStatus("先加载样本。", true);
+          setStatus("Trước hết hãy tải mẫu.", true);
           return;
         }
         const metrics = measureCurrentParams();
         renderMetrics(metrics);
-        setStatus(`已测量 ${state.sample.block_id}。评分越低越接近目标高度，overflow 会被重罚。`);
+        setStatus(`Đã đo ${state.sample.block_id}. Điểm càng thấp càng gần chiều cao mục tiêu, overflow bị phạt nặng.`);
       }
 
       function scanBest() {
         if (!state.sample) {
-          setStatus("先加载样本。", true);
+          setStatus("Trước hết hãy tải mẫu.", true);
           return;
         }
 
@@ -654,7 +654,7 @@
         }
 
         if (!best) {
-          setStatus("扫描失败。请检查扫描范围。", true);
+          setStatus("Quét thất bại. Vui lòng kiểm tra phạm vi quét.", true);
           return;
         }
 
@@ -662,7 +662,7 @@
         els.lineHeight.value = best.lineHeightEm;
         renderMetrics(best);
         setStatus(
-          `扫描完成：字号 ${best.fontSizePt}pt，行高 ${best.lineHeightEm}em，测量高度 ${best.height}pt，评分 ${best.score}。`
+          `Quét hoàn tất: cỡ chữ ${best.fontSizePt}pt, độ cao dòng ${best.lineHeightEm}em, chiều cao đo ${best.height}pt, điểm ${best.score}。`
         );
       }
 
@@ -676,7 +676,7 @@
           loadPayload(payload);
         } catch (error) {
           setStatus(
-            "默认样本加载失败。直接打开 HTML 时浏览器可能会拦截本地 fetch，这时请用右上文件选择器手动载入 fixtures/sample-blocks.v1.json。",
+            "Tải mẫu mặc định thất bại. Khi mở trực tiếp HTML, trình duyệt có thể chặn fetch cục bộ, hãy dùng bộ chọn file ở góc trên bên phải để tải tay fixtures/sample-blocks.v1.json.",
             true
           );
         }
@@ -705,7 +705,7 @@
       els.scanNow.addEventListener("click", scanBest);
       els.applyTypst.addEventListener("click", () => {
         if (!state.sample?.typst) {
-          setStatus("当前样本没有 Typst 参数。", true);
+          setStatus("Mẫu hiện tại không có tham số Typst.", true);
           return;
         }
         const typst = state.sample.typst;
@@ -737,7 +737,7 @@
           const payload = JSON.parse(await file.text());
           loadPayload(payload);
         } catch (error) {
-          setStatus("读取本地 JSON 失败。请确认文件是有效的 block samples JSON。", true);
+          setStatus("Đọc JSON cục bộ thất bại. Vui lòng xác nhận file là JSON block samples hợp lệ.", true);
         }
       });
 

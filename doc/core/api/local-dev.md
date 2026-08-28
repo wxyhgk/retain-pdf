@@ -1,8 +1,8 @@
-# 本地启动与配置
+# Khởi động và cấu hình cục bộ
 
-## 后端
+## Backend
 
-从仓库根目录启动：
+Khởi động từ thư mục gốc của kho lưu trữ:
 
 ```bash
 cd /path/to/retain-pdf/backend/rust_api
@@ -12,62 +12,62 @@ RUST_API_SCRIPTS_DIR=../scripts \
 cargo run
 ```
 
-默认监听：
+Lắng nghe mặc định:
 
-- 完整 API：`http://127.0.0.1:41000`
-- multipart 异步提交 API：`http://127.0.0.1:42000`
+- API đầy đủ: `http://127.0.0.1:41000`
+- API gửi multipart không đồng bộ: `http://127.0.0.1:42000`
 
-## 前端
+## Frontend
 
 ```bash
 cd /path/to/retain-pdf/frontend
 python3 -m http.server 40001 --bind 0.0.0.0
 ```
 
-前端 API base 规则：
+Quy tắc cơ sở API frontend:
 
-- 优先读取 `window.__FRONT_RUNTIME_CONFIG__.apiBase`。
-- 如果没有配置，回落到当前 host 的 `41000`。
-- Docker 交付默认 `FRONT_API_BASE=` 为空，由 Nginx 同源 `/api/` 代理到后端。
+- Ưu tiên đọc `window.__FRONT_RUNTIME_CONFIG__.apiBase`.
+- Nếu không có cấu hình, dự phòng về `41000` của host hiện tại.
+- Docker mặc định `FRONT_API_BASE=` để trống, Nginx proxy `/api/` cùng nguồn gốc đến backend.
 
-## 鉴权
+## Xác thực
 
-除 `GET /health` 外，其余 API 默认需要：
+Ngoại trừ `GET /health`, các API còn lại mặc định yêu cầu:
 
 ```http
 X-API-Key: your-rust-api-key
 ```
 
-`X-API-Key` 是访问 Rust API 的后端白名单 key，不是 DeepSeek / MinerU / Paddle 的模型或 OCR key。
+`X-API-Key` là khóa danh sách trắng backend để truy cập Rust API, không phải khóa model hay OCR của DeepSeek / MinerU / Paddle.
 
-本地 key 来源：
+Nguồn khóa cục bộ:
 
 - `backend/rust_api/auth.local.json`
-- 环境变量 `RUST_API_KEYS`
+- Biến môi trường `RUST_API_KEYS`
 
-Docker 中 `docker/delivery/docker/auth.local.json` 的 `api_keys` 必须和 `docker/delivery/docker/web.env` 里的 `FRONT_X_API_KEY` 对上。
+Trong Docker, `api_keys` của `docker/delivery/docker/auth.local.json` phải khớp với `FRONT_X_API_KEY` trong `docker/delivery/docker/web.env`.
 
-## 常用环境变量
+## Biến môi trường thường dùng
 
-- `RUST_API_ROOT`：Rust API 根目录。
-- `RUST_API_PROJECT_ROOT`：项目根目录。
-- `RUST_API_BIND_HOST`：监听地址，默认 `0.0.0.0`。
-- `RUST_API_PORT`：完整 API 端口，默认 `41000`。
-- `RUST_API_SIMPLE_PORT`：multipart 异步提交端口，默认 `42000`。
-- `RUST_API_DATA_ROOT`：运行时数据根目录。
-- `RUST_API_DATA_DIR`：旧别名，仅在 `RUST_API_DATA_ROOT` 未设置时使用。
-- `RUST_API_SCRIPTS_DIR`：Python 脚本目录。
-- `PYTHON_BIN`：Python 可执行文件。
-- `RUST_API_UPLOAD_MAX_BYTES`：普通上传大小限制，`0` 表示不限制。
-- `RUST_API_UPLOAD_MAX_PAGES`：普通上传页数限制，`0` 表示不限制。
-- `RUST_API_MAX_RUNNING_JOBS`：最大并发任务数。
+- `RUST_API_ROOT`: Thư mục gốc Rust API.
+- `RUST_API_PROJECT_ROOT`: Thư mục gốc dự án.
+- `RUST_API_BIND_HOST`: Địa chỉ lắng nghe, mặc định `0.0.0.0`.
+- `RUST_API_PORT`: Cổng API đầy đủ, mặc định `41000`.
+- `RUST_API_SIMPLE_PORT`: Cổng gửi multipart không đồng bộ, mặc định `42000`.
+- `RUST_API_DATA_ROOT`: Thư mục gốc dữ liệu khi chạy.
+- `RUST_API_DATA_DIR`: Bí danh cũ, chỉ sử dụng khi `RUST_API_DATA_ROOT` không được thiết lập.
+- `RUST_API_SCRIPTS_DIR`: Thư mục script Python.
+- `PYTHON_BIN`: Tệp thực thi Python.
+- `RUST_API_UPLOAD_MAX_BYTES`: Giới hạn kích thước tải lên thông thường, `0` có nghĩa không giới hạn.
+- `RUST_API_UPLOAD_MAX_PAGES`: Giới hạn số trang tải lên thông thường, `0` có nghĩa không giới hạn.
+- `RUST_API_MAX_RUNNING_JOBS`: Số lượng tác vụ đồng thời tối đa.
 
-## Docker 配置位置
+## Vị trí cấu hình Docker
 
-Compose 实际读取的是：
+Compose thực sự đọc:
 
 - `docker/delivery/docker/app.env`
 - `docker/delivery/docker/web.env`
 - `docker/delivery/docker/auth.local.json`
 
-不是仓库根目录下的 `docker/*.env`。
+Không phải `docker/*.env` ở thư mục gốc kho lưu trữ.

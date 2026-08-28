@@ -1,165 +1,165 @@
-# Translation LLM Orchestration
+# Điều phối LLM Dịch
 
-这一层只负责一件事：
-把“单个 block / 单批 items 的翻译请求”编排成稳定、可回退、可诊断的 provider 调用流程。
+Lớp này chỉ chịu trách nhiệm một việc:
+Điều phối "yêu cầu dịch cho từng block / từng batch items" thành quy trình gọi provider ổn định, có thể quay lui và có thể chẩn đoán.
 
-它不负责：
+Lớp này không chịu trách nhiệm:
 
-- provider 专属 HTTP 细节
-- OCR payload 抽取
-- page payload 回填落盘
-- PDF 渲染
+- Chi tiết HTTP dành riêng cho provider
+- Trích xuất payload OCR
+- Ghi đè và lưu payload trang
+- Render PDF
 
-## 新人先读
+## Đọc trước đối với người mới
 
-- 想看总入口：
+- Muốn xem điểm vào tổng:
   `retrying_translator.py`
-- 想看 plain-text 单条降级主链：
+- Muốn xem luồng chính hạ cấp plain-text đơn:
   `single_item_flow.py`
-- 想看单条编排的路由包装：
+- Muốn xem wrapper định tuyến cho điều phối đơn:
   `single_item_routes.py`
-- 想看 fallback facade：
+- Muốn xem facade fallback:
   `fallbacks.py`
-- 想看公式 segment 路由：
+- Muốn xem định tuyến segment công thức:
   `segment_routing.py`
-- 想看公式 segment 请求/切窗执行：
+- Muốn xem yêu cầu/chia cửa sổ/thực thi segment công thức:
   `segment_request.py` / `segment_windows.py` / `segment_executor.py`
-- 想看 direct-typst 特殊路径：
+- Muốn xem đường dẫn đặc biệt direct-typst:
   `direct_typst.py`
-- 想看 batch/cache/tail retry：
+- Muốn xem batch/cache/tail retry:
   `batched_plain.py`
 
-## 当前边界
+## Ranh giới hiện tại
 
 - `retrying_translator.py`
-  shared orchestration 稳定入口。
-  只负责 `translate_batch` / `translate_items_to_text_map`，不承载真实编排逻辑，也不再暴露历史 `_xxx` 私有 API。
+  Điểm vào ổn định cho shared orchestration.
+  Chỉ chịu trách nhiệm cho `translate_batch` / `translate_items_to_text_map`, không chứa logic điều phối thực tế, cũng không còn để lộ các API riêng tư lịch sử `_xxx`.
 
 - `fallbacks.py`
-  plain-text 单条编排 facade。
-  负责：
-  - 保留顶层测试/调用入口
-  - 通过显式依赖注入把 facade 上的测试替身传给 `single_item_flow.py`
-  - 转发到 `single_item_flow.py`
-  不再保留 tagged-placeholder 等旧私有路径包装。
+  Facade điều phối plain-text đơn.
+  Chịu trách nhiệm:
+  - Giữ lại điểm vào gọi/kiểm thử tầng trên
+  - Truyền các đối tượng thay thế kiểm thử trên facade vào `single_item_flow.py` thông qua dependency injection tường minh
+  - Chuyển tiếp đến `single_item_flow.py`
+  Không còn giữ lại các wrapper đường dẫn riêng tư cũ như tagged-placeholder.
 
 - `single_item_flow.py`
-  plain-text 单条编排主链。
-  负责：
-  - 选择 direct-typst / segmented / plain-text 主路径
-  - tagged placeholder first 决策
-  - 单条 plain-text attempt loop
-  - sentence-level fallback 接入
+  Luồng chính điều phối plain-text đơn.
+  Chịu trách nhiệm:
+  - Lựa chọn đường dẫn chính direct-typst / segmented / plain-text
+  - Quyết định tagged placeholder first
+  - Vòng lặp thử plain-text đơn
+  - Tích hợp fallback cấp câu
 
 - `single_item_deps.py`
-  单条编排的显式依赖注入对象。
-  只负责把 provider 调用、segment 调用、sentence fallback、validation 等可替换函数集中传入 `single_item_flow.py`。
+  Đối tượng dependency injection tường minh cho điều phối đơn.
+  Chỉ chịu trách nhiệm truyền tập trung các hàm có thể thay thế như gọi provider, gọi segment, fallback cấp câu, validation vào `single_item_flow.py`.
 
 - `single_item_routes.py`
-  单条编排的路由包装。
-  只负责 direct-typst、heavy-formula、tagged-placeholder 这些可替换 route 的调用形状，避免 `single_item_flow.py` 继续承载测试替身和历史包装入口。
+  Wrapper định tuyến cho điều phối đơn.
+  Chỉ chịu trách nhiệm về hình dạng gọi của các route có thể thay thế như direct-typst, heavy-formula, tagged-placeholder, tránh để `single_item_flow.py` tiếp tục chứa các điểm vào wrapper lịch sử và đối tượng thay thế kiểm thử.
 
 - `batched_plain.py`
-  batched plain-text 编排。
-  负责：
+  Điều phối plain-text theo batch.
+  Chịu trách nhiệm:
   - cache hit / cache drop
-  - low-risk batch 决策
-  - batch partial accept + retry split
-  - transport tail retry pass
+  - Quyết định low-risk batch
+  - Chấp nhận một phần batch + chia retry
+  - Truyền lại tail retry cho transport
 
 - `direct_typst.py`
-  direct-typst 主 retry loop。
-  负责：
-  - direct-typst plain/raw 两条路径的 attempt loop
-  - validation failure 后的最终收口
-  - sentence fallback / transport degrade 接入
+  Vòng lặp retry chính cho direct-typst.
+  Chịu trách nhiệm:
+  - Vòng lặp thử cho hai đường dẫn direct-typst plain/raw
+  - Thu gọn cuối cùng sau khi validation failure
+  - Tích hợp sentence fallback / degrade transport
 
 - `direct_typst_long_text.py`
-  direct-typst 长文本预切分。
-  只负责拆块和 chunk 级拼回，不处理 provider transport。
+  Tiền chia nhỏ văn bản dài cho direct-typst.
+  Chỉ chịu trách nhiệm chia khối và ghép lại cấp chunk, không xử lý transport provider.
 
 - `direct_typst_salvage.py`
-  direct-typst protocol/json shell salvage。
-  只负责从异常文本中提取可接受译文并做 partial accept。
+  Salvage giao thức/json shell cho direct-typst.
+  Chỉ chịu trách nhiệm trích xuất bản dịch có thể chấp nhận từ văn bản bất thường và thực hiện partial accept.
 
 - `heavy_formula.py`
-  heavy formula block 预拆分。
-  只负责：
-  - 是否需要 heavy split
-  - 如何按 placeholder 密度拆块
-  - chunk 级重试后再拼回
+  Tiền chia nhỏ block công thức nặng.
+  Chỉ chịu trách nhiệm:
+  - Có cần heavy split không
+  - Cách chia khối theo mật độ placeholder
+  - Ghép lại sau khi retry cấp chunk
 
 - `plain_text_validation.py`
-  plain-text validation 失败后的收口逻辑。
-  只负责：
-  - protocol shell salvage
-  - English residue partial salvage
-  - repeated validation failure 最终 degrade 决策
+  Logic thu gọn sau khi plain-text validation thất bại.
+  Chỉ chịu trách nhiệm:
+  - Salvage giao thức shell
+  - Salvage một phần residue tiếng Anh
+  - Quyết định degrade cuối cùng sau khi validation thất bại nhiều lần
 
 - `sentence_level.py`
-  sentence-level fallback。
-  只负责句级拆分、逐句请求、部分成功拼回。
+  Fallback cấp câu.
+  Chỉ chịu trách nhiệm chia nhỏ cấp câu, yêu cầu từng câu, ghép lại khi thành công một phần.
 
 - `segment_routing.py`
-  公式 segment 对外路由 facade。
-  只负责暴露 routing / risk / plan 入口，并把执行转发给 executor。
+  Facade định tuyến segment công thức đối ngoại.
+  Chỉ chịu trách nhiệm để lộ các điểm vào routing / risk / plan, và chuyển tiếp thực thi cho executor.
 
 - `segment_request.py`
-  公式 segment provider 请求。
-  只负责 tagged/json 双格式请求、响应解析和格式错误收口。
+  Yêu cầu provider cho segment công thức.
+  Chỉ chịu trách nhiệm yêu cầu định dạng kép tagged/json, phân tích phản hồi và thu gọn lỗi định dạng.
 
 - `segment_windows.py`
-  公式 segment 单窗口重试。
-  只负责窗口上下文合并、窗口级 attempt loop 和 provider 请求调用。
+  Retry cửa sổ đơn cho segment công thức.
+  Chỉ chịu trách nhiệm hợp nhất ngữ cảnh cửa sổ, vòng lặp thử cấp cửa sổ và gọi yêu cầu provider.
 
 - `segment_executor.py`
-  公式 segment 执行编排。
-  只负责单窗口/多窗口整体流程、结果拼回、validation 和窗口失败收口。
+  Điều phối thực thi segment công thức.
+  Chỉ chịu trách nhiệm quy trình tổng thể cửa sổ đơn/đa cửa sổ, ghép lại kết quả, validation và thu gọn thất bại cửa sổ.
 
 - `segment_failures.py`
-  公式 segment 失败 payload 构造。
-  只负责把窗口失败诊断写成统一 `failed` payload。
+  Xây dựng payload thất bại cho segment công thức.
+  Chỉ chịu trách nhiệm ghi chẩn đoán thất bại cửa sổ thành payload `failed` thống nhất.
 
 - `transport.py`
-  transport tail retry / DLQ 公共逻辑。
+  Logic chung cho transport tail retry / DLQ.
 
 - `terminal_payloads.py`
-  翻译终态 payload 构造器。
-  约定：
-  - 明确不可译/可跳过内容才使用 `kept_origin`
-  - provider、transport、validation、chunk/window 失败统一使用 `failed`
-  - `failed` 默认带 `fallback_to=retry_required`，让导出门禁拦住半成品
+  Bộ xây dựng payload trạng thái cuối cho dịch.
+  Quy ước:
+  - Chỉ sử dụng `kept_origin` cho nội dung rõ ràng không thể dịch/cho phép bỏ qua
+  - Thất bại provider, transport, validation, chunk/window đều sử dụng thống nhất `failed`
+  - `failed` mặc định mang `fallback_to=retry_required`, để gate xuất khẩu chặn sản phẩm chưa hoàn thiện
 
 - `keep_origin.py`
-  keep-origin 兼容入口。
-  新增失败终态时优先使用 `terminal_payloads.py`，不要再把失败写成 keep-origin。
+  Điểm vào tương thích keep-origin.
+  Khi thêm trạng thái thất bại mới, ưu tiên sử dụng `terminal_payloads.py`, không ghi thất bại thành keep-origin nữa.
 
 - `metadata.py`
-  translation_diagnostics / formula diagnostics / runtime term restore。
+  translation_diagnostics / formula diagnostics / khôi phục term runtime.
 
 - `common.py`
-  文本长度、continuation、CJK、placeholder 数量等纯判定工具。
+  Các công cụ phán đoán thuần túy như độ dài văn bản, continuation, CJK, số lượng placeholder.
 
-## 调用链
+## Chuỗi gọi
 
-最常见的调用链是：
+Chuỗi gọi phổ biến nhất là:
 
 `retrying_translator.py`
 -> `fallbacks.py` / `single_item_flow.py`
--> `direct_typst.py` / `segment_routing.py` / plain-text provider runtime
+-> `direct_typst.py` / `segment_routing.py` / runtime provider plain-text
 -> `terminal_payloads.py` / `plain_text_validation.py` / `sentence_level.py`
 
-batch 路径是：
+Đường dẫn batch là:
 
 `retrying_translator.py`
 -> `batched_plain.py`
 -> `fallbacks.py`
 
-## 后续约定
+## Quy ước sau này
 
-- 新的降级策略，优先放进对应的责任模块，不要再回堆到 `fallbacks.py` 或 `retrying_translator.py`
-- 失败不是 keep-origin。除 fast-path metadata、短非正文标签、明确中文原文等有意保留场景外，所有异常终态都应写成 `failed`。
-- `fallbacks.py` 保持薄 facade 定位，不再塞真实流程或旧私有别名
-- `retrying_translator.py` 保持稳定入口定位，不再塞 `_xxx_impl` 历史别名和真实流程
-- provider 专属逻辑不要进入这里，统一留在 `shared/provider_runtime.py` 之后的 provider 实现里
-- 如果某个模块再次超过 400-500 行，优先按责任切，不按代码块机械切
+- Chiến lược degrade mới ưu tiên đặt vào module chịu trách nhiệm tương ứng, không nhồi lại vào `fallbacks.py` hoặc `retrying_translator.py`
+- Thất bại không phải là keep-origin. Ngoại trừ các trường hợp cố tình giữ lại như metadata đường dẫn nhanh, nhãn không phải nội dung chính ngắn, văn bản tiếng Trung rõ ràng, tất cả các trạng thái cuối bất thường đều phải ghi thành `failed`.
+- `fallbacks.py` giữ nguyên định vị là facade mỏng, không nhét thêm quy trình thực tế hoặc bí danh riêng tư cũ
+- `retrying_translator.py` giữ nguyên định vị là điểm vào ổn định, không nhét thêm bí danh lịch sử `_xxx_impl` và quy trình thực tế
+- Logic dành riêng cho provider không được vào đây, thống nhất để lại trong các triển khai provider sau `shared/provider_runtime.py`
+- Nếu module nào lại vượt quá 400-500 dòng, ưu tiên cắt theo trách nhiệm, không cắt máy móc theo khối code

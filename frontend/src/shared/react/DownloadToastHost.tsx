@@ -1,26 +1,26 @@
-// 下载进度 toast 宿主(阶段 B:shadcn 改造,消灭 3 份逐字节相同的
-// DownloadToastHost.jsx 复制粘贴——home/reader/detail 三份旧文件已删除,
-// 全部改用这一份共享实现)。
+// Host cho toast tiến độ tải xuống (Giai đoạn B: cải tạo shadcn, loại bỏ 3 bản
+// DownloadToastHost.jsx copy-paste giống hệt nhau — 3 file cũ ở home/reader/detail đã bị xóa,
+// tất cả chuyển sang dùng bản triển khai chia sẻ này).
 //
-// 接口契约不变:src/js/utils/download-feedback.js 的私有实现细节是
-// `document.querySelector("download-toast").setState(state)/.hide()`——
-// 该文件本身不在本次改造范围内,也没有任何其他调用方直接依赖 DOM 结构,只经由
+// Contract giao diện không đổi: chi tiết triển khai private của src/js/utils/download-feedback.js là
+// `document.querySelector("download-toast").setState(state)/.hide()` —
+// bản thân file đó không nằm trong phạm vi cải tạo lần này, và cũng không có bên gọi nào khác phụ thuộc trực tiếp vào cấu trúc DOM, chỉ thông qua
 // showDownloadToast/showDownloadPreparing/updateDownloadProgress/
-// completeDownloadToast/failDownloadToast 这几个导出函数间接消费,因此这里
-// 继续渲染一个 `<download-toast>` 占位元素并挂 setState/hide 方法(与旧 3
-// 份文件同样的 ref 手法),消费方零改动。
+// completeDownloadToast/failDownloadToast các hàm export này tiêu thụ gián tiếp, nên ở đây
+// tiếp tục render một element placeholder `<download-toast>` và gán phương thức setState/hide (dùng ref tương tự 3
+// file cũ), bên tiêu thụ không cần thay đổi.
 //
-// 内部渲染改用 Sonner(src/components/ui/sonner.jsx 的 <Toaster/>):
-// setState/hide 不再手动 querySelector 改 DOM 文本,而是调用
+// Render nội bộ chuyển sang dùng Sonner (Toaster trong src/components/ui/sonner.jsx):
+// setState/hide không còn manually querySelector để sửa text DOM, mà gọi
 // toast.custom(..., { id: TOAST_ID, duration: Infinity }) / toast.dismiss(...)。
-// 卡片内部结构/id(#download-toast-title 等)/class(download-toast-card 等)
-// 原样保留(tests/artifact-downloads-react.test.mjs 按 id 断言 toast 标题文本,
-// 视觉上也复用原有 CSS,不接受 Sonner 默认皮肤)——只是外层的固定定位/层级/
-// 入场动画交给 Sonner 的 <Toaster/> 负责(src/styles/components.utilities.css
-// 里 download-toast 外壳的 fixed 定位规则已随之退役,理由见该文件注释)。
-// Sonner 对 toast.custom() 渲染的内容默认不套用它自己的卡片皮肤
-// (data-styled 由 toast.jsx 存在与否决定,见 node_modules/sonner 源码),
-// 所以两套视觉不会打架。
+// Cấu trúc nội bộ card/id(#download-toast-title v.v.)/class(download-toast-card v.v.)
+// được giữ nguyên (tests/artifact-downloads-react.test.mjs assert text tiêu đề toast theo id,
+// về mặt thị giác cũng tái sử dụng CSS cũ, không chấp nhận skin mặc định của Sonner) — chỉ có định vị fixed/layer/
+// animation vào trường giao cho <Toaster/> của Sonner quản lý (quy tắc định vị fixed của vỏ download-toast trong src/styles/components.utilities.css
+// đã bị loại bỏ, lý do xem chú thích trong file đó).
+// Sonner mặc định không áp dụng skin card của chính nó cho nội dung render bởi toast.custom()
+// (data-styled được quyết định bởi sự tồn tại của toast.jsx, xem source node_modules/sonner),
+// nên hai hệ thống thị giác sẽ không xung đột.
 
 import { useCallback } from "react";
 import { toast } from "sonner";
@@ -37,9 +37,9 @@ declare module "react" {
 const TOAST_ID = "download-toast";
 
 function DownloadToastCard({
-  title = "下载中",
-  status = "正在准备...",
-  meta = "等待响应...",
+  title = "Đang tải xuống",
+  status = "Đang chuẩn bị...",
+  meta = "Đang đợi phản hồi...",
   percent = NaN,
   tone = "progress",
 }) {
@@ -61,14 +61,14 @@ function DownloadToastCard({
 }
 
 function applyToastState(state: any = {}) {
-  const {
-    visible = false,
-    title = "下载中",
-    status = "正在准备...",
-    meta = "等待响应...",
-    percent = NaN,
-    tone = "progress",
-  } = state;
+    const {
+      visible = false,
+      title = "Đang tải xuống",
+      status = "Đang chuẩn bị...",
+      meta = "Đang đợi phản hồi...",
+      percent = NaN,
+      tone = "progress",
+    } = state;
   if (!visible) {
     toast.dismiss(TOAST_ID);
     return;
@@ -91,7 +91,8 @@ export function DownloadToastHost() {
   return (
     <>
       <Toaster position="bottom-right" />
-      {/* download-feedback.js 的查询占位,不参与渲染(Sonner 负责实际可见 UI)。 */}
+      {/* Placeholder truy vấn của download-feedback.js, không tham gia render
+          (Sonner phụ trách UI thực tế). */}
       <download-toast style={{ display: "none" }} aria-hidden="true" ref={attach} />
     </>
   );

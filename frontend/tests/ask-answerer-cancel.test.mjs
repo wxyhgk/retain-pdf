@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 
-// 取消语义锁（审计 P0-2/P0-4 回归锁,ask-answerer 侧）：
-// 1. answer() 把 AbortSignal 透传给 ask（askLibraryAi → fetch）——断流是真的
-// 2. aborted 的旧流即便带回 conversation_id,也禁止回写会话粘性
-//    （否则"生成中切会话"会被旧 done 拽回旧会话,下一问落错线程）
+// Khóa ngữ nghĩa hủy (khóa hồi quy audit P0-2/P0-4, phía ask-answerer):
+// 1. answer() chuyển tiếp AbortSignal cho ask (askLibraryAi → fetch) — ngắt stream là thật
+// 2. Stream đã hủy dù mang conversation_id về cũng cấm ghi lại session keo dính
+//    (nếu không "đổi session khi đang sinh" sẽ bị done cũ kéo về session cũ, câu hỏi sau lọt nhầm thread)
 
 const dom = new JSDOM("<!doctype html><body></body>", { url: "http://localhost/" });
 globalThis.document = dom.window.document;
@@ -44,7 +44,7 @@ test("signal 透传到 ask,正常完成时回写会话粘性", async () => {
 
 test("aborted 的旧流禁止回写会话粘性(P0-4)", async () => {
   const answerer = makeAnswerer(async () => {
-    // 模拟：abort 发生在流进行中,但 done 仍带回旧会话 id
+    // Giả lập: abort xảy ra khi stream đang chạy, nhưng done vẫn mang session ID cũ
     return { answer: "迟到的旧答案", citations: [], conversationId: "conv-stale" };
   }, "job-cancel-b");
 

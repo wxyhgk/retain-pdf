@@ -1,4 +1,4 @@
-"""FastAPI 应用:认证 + /v1/ask + 健康检查。"""
+"""Ứng dụng FastAPI: xác thực + /v1/ask + health check."""
 
 from __future__ import annotations
 
@@ -23,24 +23,24 @@ from .tools import build_default_registry
 class AskInput(BaseModel):
     question: str = Field(min_length=1, max_length=4000)
     document_id: str = ""
-    # 可只传 job_id(含历史 run):由服务端解析所属文档,避免前端靠
-    # active_job_id 反查在历史 job 上静默失配、问答退化为全库检索
+    # Có thể chỉ truyền job_id (kể cả run cũ): server tự xác định tài liệu tương ứng, tránh việc
+    # frontend tra ngược qua active_job_id rồi lệch âm thầm ở job cũ, khiến hỏi đáp thoái hóa thành tìm kiếm toàn thư viện
     job_id: str = ""
-    # 多轮对话:传会话 ID 则注入既往轮次为上下文,并在完成后把
-    # user/assistant 两条经 Rust API 回写(单写入者不破)。
-    # 缺省时若能连上 Rust 会 auto-create,并在 done 回传 conversation_id。
+    # Hội thoại nhiều lượt: nếu truyền ID phiên thì các lượt trước được chèn làm ngữ cảnh,
+    # và khi xong sẽ ghi hai bản ghi user/assistant qua Rust API (không phá nguyên tắc một người ghi).
+    # Nếu bỏ trống mà kết nối được Rust thì sẽ auto-create và trả conversation_id trong sự kiện done.
     conversation_id: str = ""
-    # 消息树:新 user 的 parent(当前 head);重试时 = 被重试的 user 消息 id。
+    # Cây tin nhắn: parent của user mới (head hiện tại); khi thử lại = id tin nhắn user được thử lại.
     parent_id: str = ""
-    # 重新生成:只挂新 assistant 到 parent_id(user),不再写 user。
+    # Tạo lại câu trả lời: chỉ gắn assistant mới vào parent_id (user), không ghi thêm user.
     regenerate: bool = False
-    # 客户端稳定消息 id,与前端 store / assistant-ui 对齐。
+    # Id tin nhắn ổn định do client sinh, khớp với store của frontend / assistant-ui.
     user_message_id: str = ""
     assistant_message_id: str = ""
     stream: bool = False
-    # B2: 强制触发抽取式压缩（测试/调试）
+    # B2: buộc kích hoạt nén kiểu trích xuất (dùng để kiểm thử/gỡ lỗi)
     force_compress: bool = False
-    # 前端按请求传入的 LLM 凭据:留空则回退启动期 env 配置
+    # Thông tin đăng nhập LLM do frontend gửi theo từng request: bỏ trống thì quay về cấu hình env lúc khởi động
     llm_api_key: str = ""
     llm_base_url: str = ""
     llm_model: str = ""
@@ -53,7 +53,7 @@ def build_app(
 ) -> FastAPI:
     settings = settings or load_settings()
     if agent is None:
-        # LLM key 不再强制:允许留空 env,由前端按请求传入(见 AskInput.llm_api_key)
+        # LLM key không còn bắt buộc: cho phép để trống trong env, frontend gửi theo từng request (xem AskInput.llm_api_key)
         if not settings.rust_api_key:
             raise RuntimeError("RETAIN_AI_RUST_API_KEY is required")
         rust = rust or RustApiClient(settings)
@@ -76,7 +76,7 @@ def build_app(
         return str((document or {}).get("document_id") or "")
 
     def ensure_conversation_id(payload: AskInput, document_id: str) -> str:
-        """B1: 有 conversation_id 则用;否则经 Rust auto-create 并返回新 id。"""
+        """B1: có conversation_id thì dùng; không thì auto-create qua Rust và trả về id mới."""
         existing = payload.conversation_id.strip()
         if existing:
             return existing
@@ -86,7 +86,7 @@ def build_app(
         if len(title) > 48:
             title = f"{title[:48].rstrip()}…"
         if not title:
-            title = "阅读问答"
+            title = "Hỏi đáp khi đọc"
         try:
             created = rust.create_conversation(title=title, document_id=document_id or "")
             return str((created or {}).get("conversation_id") or "").strip()
@@ -100,9 +100,9 @@ def build_app(
         *,
         stop_at: str = "",
     ) -> list[dict[str, Any]]:
-        """从 head(或 stop_at)沿 parent_id 回溯,返回根→叶路径。
+        """Lần ngược theo parent_id từ head (hoặc stop_at), trả về đường đi gốc → lá.
 
-        无 parent / message_id 的旧数据按 seq 串成线性链。
+        Dữ liệu cũ không có parent / message_id thì được nối thành chuỗi tuyến tính theo seq.
         """
         if not messages:
             return []
@@ -110,7 +110,7 @@ def build_app(
             messages,
             key=lambda m: int(m.get("seq") or 0) if str(m.get("seq") or "").strip() else 0,
         )
-        # 合成稳定 id + 线性 parent,保证无树字段时退化为整条 transcript
+        # Tạo id ổn định + parent tuyến tính, để khi thiếu trường cây thì suy biến thành nguyên bản transcript
         by_id: dict[str, dict[str, Any]] = {}
         prev_id = ""
         for index, raw in enumerate(ordered):
@@ -175,13 +175,13 @@ def build_app(
         force_compress: bool = False,
         stop_at: str = "",
     ) -> tuple[list[dict[str, str]], dict[str, Any] | None, dict[str, Any], str]:
-        """压缩(可选) + 组装 history；返回 (history, compress_event|None, memory_debug, summary_id)。
+        """Nén (tùy chọn) + dựng history; trả về (history, compress_event|None, memory_debug, summary_id).
 
-        summary_id 非空时,调用方必须把本轮 user(或 regenerate 的 assistant)挂在
-        它下面——摘要只有落在 head 路径上,下一轮 load_transcript 才读得回来。
-        旧实现摘要以 set_head=False 挂在 head 下、user 又同样挂在 head 下,
-        摘要成了 user 的兄弟节点(死分支):永远读不回 → 每轮重新压缩 + 再写一条
-        孤儿摘要(审计 A2)。
+        Khi summary_id khác rỗng, bên gọi bắt buộc phải gắn user của lượt này (hoặc assistant khi
+        regenerate) bên dưới nó — bản tóm tắt chỉ đọc lại được ở lượt sau (load_transcript) nếu
+        nằm trên đường đi head. Bản cũ gắn tóm tắt với set_head=False dưới head, còn user cũng
+        gắn dưới head, nên tóm tắt thành nút anh em của user (nhánh chết): không bao giờ đọc lại
+        được → mỗi lượt lại nén lại + ghi thêm một bản tóm tắt mồ côi (kiểm toán A2).
         """
         transcript = load_transcript(conversation_id, stop_at=stop_at)
         compress = maybe_compress_transcript(
@@ -207,7 +207,7 @@ def build_app(
                 compress_event = compress.event
             except Exception as exc:
                 print(f"[retainpdf-ai] persist summary failed: {exc}", flush=True)
-                # 持久化失败仍用内存 working 视图完成本轮
+                # Lưu thất bại thì vẫn dùng view working trong bộ nhớ để hoàn tất lượt này
         assembled = assemble_history(
             working,
             window_turns=settings.memory_window_turns,
@@ -227,15 +227,17 @@ def build_app(
         *,
         chain_parent_id: str = "",
     ) -> None:
-        """尽力而为的历史回写:失败只记日志,不影响返回。
+        """Ghi lịch sử theo kiểu nỗ lực tối đa: thất bại chỉ ghi log, không ảnh hưởng kết quả trả về.
 
-        正常轮: user(parent=chain_parent_id|payload.parent_id|head) + assistant(parent=user)。
-        regenerate: 仅 assistant(parent=chain_parent_id|payload.parent_id 的 user 节点)。
-        chain_parent_id = prepare_memory 刚落库的摘要节点 id:传入时本轮消息以
-        摘要为 parent,把摘要接进 head 路径(否则摘要成死分支,见 prepare_memory 注释)。
+        Lượt bình thường: user(parent=chain_parent_id|payload.parent_id|head) + assistant(parent=user).
+        regenerate: chỉ assistant(parent = nút user chain_parent_id|payload.parent_id).
+        chain_parent_id = id nút tóm tắt vừa được prepare_memory ghi xuống: khi có giá trị thì tin
+        nhắn lượt này lấy tóm tắt làm parent, để nối tóm tắt vào đường đi head (nếu không tóm tắt
+        thành nhánh chết, xem ghi chú ở prepare_memory).
 
-        返回是否成功持久化(无会话可写=True,不算失败);False 会经 done.persisted
-        透传给前端提示"本轮未存入历史"(审计 C2:此前失败只 print,用户无感知)。
+        Trả về việc có lưu thành công hay không (không có phiên để ghi = True, không tính là lỗi);
+        False sẽ được chuyển qua done.persisted để frontend báo "lượt này chưa lưu vào lịch sử"
+        (kiểm toán C2: trước đây thất bại chỉ print, người dùng không hề biết).
         """
         if not conversation_id or rust is None:
             return True
@@ -247,7 +249,7 @@ def build_app(
             tool_trace_json = json.dumps(result.tool_trace, ensure_ascii=False)
             model = payload.llm_model or settings.llm_model
             if payload.regenerate:
-                # 重试: parent_id 必须是 user 消息
+                # Thử lại: parent_id bắt buộc phải là tin nhắn user
                 user_parent = parent_hint
                 rust.append_conversation_message(
                     conversation_id,
@@ -318,11 +320,11 @@ def build_app(
         return payload
 
     def _resolve_llm_settings(payload: AskInput) -> Settings:
-        # 前端按请求携带 LLM key/base/model 时覆盖启动期配置;三者留空则回退 env。
-        # 缺 key 直接报错,避免打到上游才 401。
+        # Khi frontend gửi kèm LLM key/base/model theo request thì ghi đè cấu hình lúc khởi động;
+        # cả ba để trống thì quay về env. Thiếu key thì báo lỗi ngay, tránh để đến khi gọi thượng nguồn mới nhận 401.
         api_key = (payload.llm_api_key or settings.llm_api_key).strip()
         if not api_key:
-            raise HTTPException(status_code=400, detail="缺少 LLM API Key:请在前端凭据设置中填写模型 API Key。")
+            raise HTTPException(status_code=400, detail="Thiếu LLM API Key: hãy nhập API Key của model trong phần cài đặt thông tin đăng nhập ở giao diện.")
         return replace(
             settings,
             llm_api_key=api_key,
@@ -331,20 +333,20 @@ def build_app(
         )
 
     def _request_chat_fn(payload: AskInput):
-        # 非流式路径:请求未覆盖任何 LLM 参数时回退启动期 chat_fn(返回 None)。
-        resolved = _resolve_llm_settings(payload)  # 顺带做缺 key 守卫
+        # Luồng không streaming: nếu request không ghi đè tham số LLM nào thì dùng lại chat_fn lúc khởi động (trả None).
+        resolved = _resolve_llm_settings(payload)  # tiện thể kiểm tra thiếu key
         if not payload.llm_api_key and not payload.llm_base_url and not payload.llm_model:
             return None
         return build_deepseek_chat_fn(resolved)
 
     def _sse_events(payload: AskInput, resolved: Settings) -> Iterator[str]:
-        # agent 循环是同步阻塞的,放到工作线程,经队列推事件——
-        # 前端在首个工具调用(~2s)就能看到"正在检索…"的过程感;
-        # 最终回答轮经 on_delta 逐 token 推 answer_delta。
+        # Vòng lặp agent là đồng bộ và chặn luồng, nên đặt vào thread riêng và đẩy sự kiện qua queue —
+        # frontend thấy được cảm giác tiến trình "đang tìm kiếm…" ngay từ lần gọi tool đầu tiên (~2s);
+        # vòng trả lời cuối đẩy answer_delta từng token qua on_delta.
         events: queue.Queue[dict[str, Any] | None] = queue.Queue()
         document_id = resolve_document_id(payload)
         conversation_id = ensure_conversation_id(payload, document_id)
-        # regenerate: 上下文停在 user 节点;正常续写:走当前 head 路径
+        # regenerate: ngữ cảnh dừng ở nút user; viết tiếp bình thường: đi theo đường head hiện tại
         memory_stop = (
             payload.parent_id.strip()
             if payload.regenerate and payload.parent_id.strip()
@@ -355,7 +357,7 @@ def build_app(
             force_compress=bool(payload.force_compress),
             stop_at=memory_stop,
         )
-        # SSE 路径总是用带 on_delta 的流式 chat_fn:增量文本进事件队列。
+        # Luồng SSE luôn dùng chat_fn streaming có on_delta: phần văn bản tăng thêm đi vào hàng đợi sự kiện.
         chat_fn = build_deepseek_chat_fn(
             resolved,
             on_delta=lambda text: events.put({"type": "answer_delta", "text": text}),
@@ -386,8 +388,8 @@ def build_app(
                     }
                 )
             except Exception as exc:
-                # RuntimeError 是我们自己产的用户可读文案（如 _friendly_llm_error），
-                # 直出不带异常类名；其余异常保留类名便于定位
+                # RuntimeError là thông báo do chính ta tạo cho người dùng đọc (ví dụ _friendly_llm_error),
+                # nên trả thẳng không kèm tên lớp ngoại lệ; các ngoại lệ khác giữ tên lớp để dễ truy vết
                 message = str(exc) if isinstance(exc, RuntimeError) else f"{type(exc).__name__}: {exc}"
                 events.put({"type": "error", "message": message})
             finally:
@@ -403,7 +405,7 @@ def build_app(
     @app.post("/v1/ask", dependencies=[Depends(require_api_key)])
     def ask(payload: AskInput) -> Any:
         if payload.stream:
-            # 生成器内抛 HTTPException 无法转成 400,故先在此校验并解析出 settings
+            # Ném HTTPException bên trong generator không chuyển thành 400 được, nên kiểm tra và dựng settings ngay tại đây
             resolved = _resolve_llm_settings(payload)
             return StreamingResponse(
                 _sse_events(payload, resolved),

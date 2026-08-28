@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="vi">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>RetainPDF · Theme Studio</title>
-<!-- 主题工作台（仅开发环境使用，不进生产分发）：
-     M1 点选检查/调 token/导出皮肤 · M2 LLM 配色提案 · M3 gpt-image-2 生图入 slot
-     文档：docs/theme-system/DECOR_PACKS.md · 资产规格：decor/<pack>/ASSETS.md -->
+<!-- Bảng làm việc giao diện (chỉ dùng trong môi trường phát triển, không đưa vào phân phối sản xuất):
+     M1 Nhấp chọn kiểm tra/điều chỉnh token/xuất skin · M2 LLM đề xuất phối màu · M3 gpt-image-2 sinh ảnh vào slot
+     Tài liệu: docs/theme-system/DECOR_PACKS.md · Quy cách tài nguyên: decor/<pack>/ASSETS.md -->
 <style>
   :root { --st-bg:#17181b; --st-panel:#1f2126; --st-ink:#e8e6e3; --st-mut:#9a9590; --st-line:#2c3238; --st-acc:#e0447a; }
   * { box-sizing:border-box; margin:0; }
@@ -48,24 +48,24 @@
 <body>
 <header>
   <h1>🎨 Theme Studio</h1>
-  <label>基准皮肤
+  <label>Skin cơ sở
     <select id="base-theme">
-      <option value="classic">classic 经典</option>
-      <option value="jiangnan">jiangnan 素纸</option>
-      <option value="seacliff">seacliff 雾青</option>
-      <option value="night">night 黛瓦夜色</option>
+      <option value="classic">classic Cổ điển</option>
+      <option value="jiangnan">jiangnan Giấy trơn</option>
+      <option value="seacliff">seacliff Vụ Thanh</option>
+      <option value="night">night Đại Ngói Đêm</option>
     </select>
   </label>
-  <label>草稿 id <input type="text" id="draft-name" value="draft" size="10" /></label>
-  <button id="pick-btn">🎯 点选元素</button>
-  <button id="reset-btn">还原</button>
+  <label>Bản nháp id <input type="text" id="draft-name" value="draft" size="10" /></label>
+  <button id="pick-btn">🎯 Nhấp chọn phần tử</button>
+  <button id="reset-btn">Khôi phục</button>
   <span class="spacer"></span>
-  <span id="dirty-count" style="color:var(--st-mut)">0 项改动</span>
-  <button id="export-btn">导出皮肤</button>
+  <span id="dirty-count" style="color:var(--st-mut)">0 thay đổi</span>
+  <button id="export-btn">Xuất skin</button>
 </header>
 
 <div id="stage-wrap">
-  <iframe id="stage-frame" src="./index.html?mock=1" title="主页预览"></iframe>
+  <iframe id="stage-frame" src="./index.html?mock=1" title="Xem trước trang chủ"></iframe>
 </div>
 
 <aside>
@@ -74,12 +74,12 @@
 </aside>
 
 <dialog id="export-dialog">
-  <h3 style="margin-bottom:8px">导出：themes/&lt;id&gt;.css + registry 片段</h3>
+  <h3 style="margin-bottom:8px">Xuất: themes/&lt;id&gt;.css + đoạn registry</h3>
   <textarea id="export-out" readonly></textarea>
   <div class="dlg-foot">
-    <button id="copy-btn">复制全部</button>
-    <button id="download-btn">下载 .css</button>
-    <button onclick="this.closest('dialog').close()">关闭</button>
+    <button id="copy-btn">Sao chép toàn bộ</button>
+    <button id="download-btn">Tải .css</button>
+    <button onclick="this.closest('dialog').close()">Đóng</button>
   </div>
 </dialog>
 

@@ -226,8 +226,8 @@ test("app update controller routes cached and manual states through view port", 
       hasUpdate: false,
       latestVersion: release.tag_name,
     }),
-    // 旧 DOM 直写 viewPort(update-view-port.js/view.js)已随 cutover 删除;
-    // 两处调用原本就 100% 覆盖了每个方法,直接用字面量等价替代。
+    // DOM cũ ghi trực tiếp viewPort(update-view-port.js/view.js) đã bị xóa trong cutover;
+    // Hai lệnh gọi ban đầu đã cover 100% từng phương thức, dùng literal tương đương trực tiếp.
     viewPort: {
       bindButton: (payload) => {
         calls.push(["bind"]);

@@ -44,7 +44,7 @@ async fn main_job_events_include_ocr_child_page_progress() {
     state.db.save_job(&child).expect("save child job");
     fs::write(
         child_root.join("logs").join("pipeline_events.jsonl"),
-        r#"{"job_id":"job-route-parent-progress-ocr","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","user_stage":"ocr","stage":"ocr_processing","substage":"provider_processing","stage_detail":"Paddle 正在解析文件，第 12/34 页","provider":"paddle","provider_stage":"provider_processing","event_type":"stage_progress","message":"Paddle 正在解析文件，第 12/34 页","progress_current":12,"progress_total":34,"progress_unit":"page","payload":{"provider_task_id":"task-1"}}"#,
+        r#"{"job_id":"job-route-parent-progress-ocr","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","user_stage":"ocr","stage":"ocr_processing","substage":"provider_processing","stage_detail":"Paddle đang phân tích tệp, trang 12/34","provider":"paddle","provider_stage":"provider_processing","event_type":"stage_progress","message":"Paddle đang phân tích tệp, trang 12/34","progress_current":12,"progress_total":34,"progress_unit":"page","payload":{"provider_task_id":"task-1"}}"#,
     )
     .expect("write child pipeline events");
 

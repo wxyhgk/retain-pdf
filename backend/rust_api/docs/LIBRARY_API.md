@@ -1,10 +1,10 @@
-# 图书馆 API 契约
+# Hợp đồng API Thư viện
 
-图书馆 **对外 HTTP** 已合并到统一 API 入口：
+**HTTP bên ngoài** của Thư viện đã được hợp nhất vào điểm vào API thống nhất:
 
-- [RetainPDF 后端 API 总入口](../../../doc/core/api/index.md)
+- [Điểm vào API tổng của backend RetainPDF](../../../doc/core/api/index.md)
 
-**实现分层**（模块化单体，非微服务）：
+**Phân lớp triển khai** (đơn thể mô-đun hóa, không phải vi dịch vụ):
 
 ```text
 routes/library*.rs, collections.rs
@@ -12,10 +12,10 @@ routes/library*.rs, collections.rs
       → services/library/*
 ```
 
-协作说明见：
+Xem hướng dẫn cộng tác:
 
 - [RUST_API_ARCHITECTURE.md](../RUST_API_ARCHITECTURE.md) §2.2–2.3
 - [RUST_API_DIRECTORY_MAP.md](../RUST_API_DIRECTORY_MAP.md)
 - [BOUNDARIES.md](../BOUNDARIES.md)（Library Facade）
 
-保留这个文件是为了兼容旧链接。不要在这里维护第二份接口字段说明。
+Giữ lại tệp này để tương thích với các liên kết cũ. Không duy trì mô tả trường giao diện thứ hai ở đây.

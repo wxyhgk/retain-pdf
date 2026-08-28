@@ -1,33 +1,33 @@
-# Rust API 贡献指南
+# Hướng dẫn đóng góp Rust API
 
-## 分层方向
+## Hướng phân tầng
 
-默认依赖方向：
+Hướng phụ thuộc mặc định:
 
 ```text
 routes -> services -> job_snapshot_factory / job_launcher / runtime_gateway / db
 job_runner -> db / config / runtime state
-models 不反向依赖 routes 或 services
+models không phụ thuộc ngược vào routes hoặc services
 ```
 
-基本规则：
+Quy tắc cơ bản:
 
-- `routes/*` 只做 HTTP adapter，请求解析、鉴权后入口和响应包装。
-- `services/jobs/*` 放任务域业务逻辑，包括 query、presentation、creation、control。
-- `job_runner/*` 放运行态执行、进程拉起、取消、OCR 子任务衔接和阶段推进。
-- `models/*` 只放 DTO、输入输出模型、持久化模型，不放业务编排或文件系统读取。
-- 不要为了省事把 `AppState` 传进只需要 `Db`、`AppConfig`、`Path` 或 semaphore 的 helper。
+- `routes/*` chỉ làm HTTP adapter, phân tích yêu cầu, đầu vào sau xác thực và bao bọc phản hồi.
+- `services/jobs/*` chứa logic nghiệp vụ miền tác vụ, bao gồm truy vấn, trình bày, tạo, điều khiển.
+- `job_runner/*` chứa thực thi trạng thái chạy, khởi động tiến trình, hủy, kết nối tác vụ con OCR và đẩy giai đoạn.
+- `models/*` chỉ chứa DTO, mô hình đầu vào/đầu ra, mô hình lưu trữ, không chứa điều phối nghiệp vụ hoặc đọc hệ thống tệp.
+- Đừng vì tiện mà truyền `AppState` vào helper chỉ cần `Db`, `AppConfig`, `Path` hoặc semaphore.
 
-更细规则见 [Rust API 协同开发约定](../rust_api/09-协同开发约定.md)。
+Quy tắc chi tiết hơn xem [Quy ước hợp tác phát triển Rust API](../rust_api/09-quy-uoc-hop-tac-phat-trien.md).
 
-## API 改动
+## Thay đổi API
 
-- 新增公开 API 字段时，使用稳定 view/model，不要把内部 `JobSnapshot` 字段直接暴露出去。
-- 新增或改变接口、事件、产物 manifest、reader metadata、diagnostics、resume 行为时，更新 [API 文档](../api/index.md) 或对应 rust_api 文档。
-- API 返回字段优先从 view/projection 层输出，不要在 route 里临时拼 JSON。
-- 下载、预览、Range、ETag、reader regions 这类前端强依赖接口，应保持字段稳定和向后兼容。
+- Khi thêm trường API công khai, sử dụng view/model ổn định, không để lộ trường nội bộ `JobSnapshot` trực tiếp.
+- Khi thêm hoặc thay đổi giao diện, sự kiện, artifact manifest, reader metadata, diagnostics, hành vi resume, cập nhật [Tài liệu API](../api/index.md) hoặc tài liệu rust_api tương ứng.
+- Trường trả về API ưu tiên xuất từ tầng view/projection, không ghép JSON tạm thời trong route.
+- Các giao diện frontend phụ thuộc mạnh như tải xuống, xem trước, Range, ETag, reader regions cần giữ trường ổn định và tương thích ngược.
 
-## 常用检查
+## Kiểm tra thường dùng
 
 ```bash
 cargo fmt --manifest-path backend/rust_api/Cargo.toml --check
@@ -35,11 +35,11 @@ cargo test --manifest-path backend/rust_api/Cargo.toml
 cd backend/rust_api && python3 scripts/check_architecture.py
 ```
 
-## PR 说明
+## Mô tả PR
 
-涉及 Rust API 的 PR 至少说明：
+PR liên quan đến Rust API ít nhất nêu:
 
-- 影响哪些 endpoint 或内部 service。
-- 是否改变 job、artifact、reader、library、resume、diagnostics 等契约。
-- 是否需要更新前端、桌面端或 API 文档。
-- 已跑哪些 Rust 检查；没跑的说明原因。
+- Ảnh hưởng đến endpoint hoặc service nội bộ nào.
+- Có thay đổi hợp đồng job, artifact, reader, library, resume, diagnostics không.
+- Có cần cập nhật frontend, desktop hoặc tài liệu API không.
+- Đã chạy những kiểm tra Rust nào; nếu chưa chạy, nêu lý do.

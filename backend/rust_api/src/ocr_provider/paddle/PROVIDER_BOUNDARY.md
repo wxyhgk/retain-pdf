@@ -1,114 +1,114 @@
-# Paddle Provider Boundary
+# Ranh giới Provider Paddle
 
-这份文档只说明一件事：
+Tài liệu này chỉ nói về một điều:
 
-Paddle OCR 的 provider API 边界，和 `document.v1` 的统一文档边界，必须分开。
+Ranh giới API của provider Paddle OCR và ranh giới tài liệu thống nhất `document.v1` phải được tách biệt.
 
-相关文档：
+Tài liệu liên quan:
 
-- API 摘要：
+- Tóm tắt API:
   [`API_SUMMARY.md`](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/API_SUMMARY.md)
-- 官方异步接口示例：
+- Ví dụ giao diện bất đồng bộ chính thức:
   [`AsyncParse.md`](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/AsyncParse.md)
 
-## 1. Paddle Provider API 的三段式边界
+## 1. Ranh giới API Provider Paddle theo ba giai đoạn
 
-根据 [AsyncParse.md](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/AsyncParse.md)，Paddle 的异步接口天然分成三段：
+Theo [AsyncParse.md](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/AsyncParse.md), giao diện bất đồng bộ của Paddle tự nhiên được chia thành ba giai đoạn:
 
 ### `submit`
 
 - `POST /api/v2/ocr/jobs`
-- 输入：
-  - `fileUrl` 或 multipart `file`
+- Đầu vào:
+  - `fileUrl` hoặc multipart `file`
   - `model`
   - `optionalPayload`
-- 输出：
+- Đầu ra:
   - `jobId`
 
 ### `poll`
 
 - `GET /api/v2/ocr/jobs/{jobId}`
-- 状态：
+- Trạng thái:
   - `pending`
   - `running`
   - `done`
   - `failed`
-- 运行中可拿到：
+- Trong quá trình chạy có thể lấy được:
   - `extractProgress.totalPages`
   - `extractProgress.extractedPages`
-- 完成后可拿到：
+- Sau khi hoàn thành có thể lấy được:
   - `resultUrl.jsonUrl`
 
 ### `download_result`
 
-- 下载 `jsonUrl`
-- 返回的是 `jsonl`
-- 逐行解包后，才拿到真正的：
+- Tải xuống `jsonUrl`
+- Trả về `jsonl`
+- Sau khi giải nén từng dòng, mới nhận được:
   - `result.layoutParsingResults`
   - `result.dataInfo`
 
-## 2. 哪些属于 Provider API 层
+## 2. Những gì thuộc về lớp Provider API
 
-以下内容属于 Paddle provider client / OCR service 层：
+Các nội dung sau đây thuộc về lớp Paddle provider client / OCR service:
 
 - `jobId`
 - `state`
 - `extractProgress`
 - `resultUrl.jsonUrl`
-- 提交参数：
+- Tham số gửi:
   - `model`
   - `optionalPayload`
   - `fileUrl`
   - multipart `file`
 
-这些信息用于：
+Các thông tin này được sử dụng để:
 
-- 提交任务
-- 轮询任务
-- 下载结果
-- 失败排错
+- Gửi tác vụ
+- Thăm dò tác vụ
+- Tải kết quả
+- Gỡ lỗi khi thất bại
 
-它们不属于 `document.v1`。
+Chúng không thuộc về `document.v1`.
 
-## 3. 哪些才进入 `document.v1`
+## 3. Những gì mới được đưa vào `document.v1`
 
-只有在 `download_result` 之后，从 `jsonl` 里解出的实际 OCR 页面内容，才进入统一文档层：
+Chỉ sau khi `download_result`, nội dung trang OCR thực tế được giải nén từ `jsonl` mới được đưa vào lớp tài liệu thống nhất:
 
 - `layoutParsingResults`
 - `dataInfo`
 
-后续才由 adapter 做：
+Sau đó adapter mới thực hiện:
 
 1. provider raw JSON
-2. adapter 归一化
-3. 生成 `document.v1.json`
+2. Chuẩn hóa adapter
+3. Tạo `document.v1.json`
 
-也就是说：
+Nói cách khác:
 
-- Paddle provider API 层解决“任务怎么跑”
-- `document.v1` 层解决“文档最终长什么样”
+- Lớp API provider Paddle giải quyết "tác vụ chạy như thế nào"
+- Lớp `document.v1` giải quyết "tài liệu cuối cùng trông ra sao"
 
-这两层不要混。
+Hai lớp này không được trộn lẫn.
 
-## 4. 当前实现建议
+## 4. Khuyến nghị triển khai hiện tại
 
-如果后续在 Rust 或 Python 里继续接 Paddle：
+Nếu sau này tiếp tục kết nối Paddle trong Rust hoặc Python:
 
-- provider client 只负责：
+- provider client chỉ chịu trách nhiệm:
   - submit
   - poll
   - download
-  - 解包 jsonl
-- adapter 只负责：
+  - giải nén jsonl
+- adapter chỉ chịu trách nhiệm:
   - `layoutParsingResults/dataInfo -> document.v1`
-- 翻译/渲染主链路只接受：
+- Luồng chính dịch/render chỉ chấp nhận:
   - `document.v1.json`
 
-不要把：
+Không đưa:
 
 - `jobId`
 - `state`
 - `resultUrl`
 - `extractProgress`
 
-这类 provider API 运行态字段塞进 `document.v1`。
+Các trường trạng thái chạy của API provider vào `document.v1`.

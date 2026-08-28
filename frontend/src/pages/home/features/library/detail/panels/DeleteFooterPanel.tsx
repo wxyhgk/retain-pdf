@@ -1,4 +1,4 @@
-// 右栏：错误提示 + 删除确认。
+// Cột phải: thông báo lỗi + xác nhận xóa.
 
 import { cn } from "@/lib/utils";
 
@@ -24,7 +24,7 @@ export function DeleteFooterPanel({ error, confirmingDelete, busy, onDelete }) {
             confirmingDelete && "font-semibold",
           )}
         >
-          {confirmingDelete ? "确认删除这本书？" : "删除"}
+          {confirmingDelete ? "Xác nhận xóa cuốn sách này?" : "Xóa"}
         </button>
       </div>
     </>

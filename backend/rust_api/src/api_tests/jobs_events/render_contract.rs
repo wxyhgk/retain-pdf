@@ -27,9 +27,9 @@ async fn job_events_route_keeps_rendering_page_progress_events() {
     fs::write(
         job_root.join("logs").join("pipeline_events.jsonl"),
         concat!(
-            r#"{"job_id":"job-route-render-progress","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"rendering","stage_detail":"正在渲染第 1/3 页","provider":"","provider_stage":"","event_type":"stage_progress","message":"正在渲染第 1/3 页","progress_current":1,"progress_total":3,"retry_count":0,"elapsed_ms":1000,"payload":{"page_index":0,"render_stage":"book_overlay"}}"#,
+            r#"{"job_id":"job-route-render-progress","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"rendering","stage_detail":"Đang render trang 1/3","provider":"","provider_stage":"","event_type":"stage_progress","message":"Đang render trang 1/3","progress_current":1,"progress_total":3,"retry_count":0,"elapsed_ms":1000,"payload":{"page_index":0,"render_stage":"book_overlay"}}"#,
             "\n",
-            r#"{"job_id":"job-route-render-progress","seq":2,"ts":"2026-04-24T01:00:01Z","level":"error","stage":"failed","stage_detail":"渲染失败","provider":"","provider_stage":"","event_type":"job_terminal","message":"任务进入终态 failed","progress_current":null,"progress_total":null,"retry_count":0,"elapsed_ms":1100,"payload":{}}"#,
+            r#"{"job_id":"job-route-render-progress","seq":2,"ts":"2026-04-24T01:00:01Z","level":"error","stage":"failed","stage_detail":"Render thất bại","provider":"","provider_stage":"","event_type":"job_terminal","message":"Nhiệm vụ vào trạng thái cuối failed","progress_current":null,"progress_total":null,"retry_count":0,"elapsed_ms":1100,"payload":{}}"#,
             "\n"
         ),
     )
@@ -53,7 +53,7 @@ async fn job_events_route_keeps_rendering_page_progress_events() {
     assert_eq!(detail_json["data"]["stage_snapshot"]["stage"], "rendering");
     assert_eq!(
         detail_json["data"]["stage_snapshot"]["stage_detail"],
-        "正在渲染第 1/3 页"
+        "Đang render trang thứ 1/3"
     );
     assert_eq!(
         detail_json["data"]["stage_snapshot"]["progress"]["current"],
@@ -112,7 +112,7 @@ async fn job_events_route_canonicalizes_render_prewarm_even_when_user_stage_is_s
     state.db.save_job(&job).expect("save job");
     fs::write(
         job_root.join("logs").join("pipeline_events.jsonl"),
-        r#"{"job_id":"job-route-render-prewarm-canonical","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","user_stage":"translation","stage":"rendering","substage":"render_prewarm","stage_detail":"渲染预热完成","event_type":"stage_progress","message":"render payload prewarm: ready indents=333 geometry=836 elapsed=1.58s","progress_current":2,"progress_total":3,"progress_unit":"step","payload":{"render_stage":"payload_prewarm"}}"#,
+        r#"{"job_id":"job-route-render-prewarm-canonical","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","user_stage":"translation","stage":"rendering","substage":"render_prewarm","stage_detail":"Hoàn thành prewarm render","event_type":"stage_progress","message":"render payload prewarm: ready indents=333 geometry=836 elapsed=1.58s","progress_current":2,"progress_total":3,"progress_unit":"step","payload":{"render_stage":"payload_prewarm"}}"#,
     )
     .expect("write pipeline events");
 

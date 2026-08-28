@@ -1,13 +1,13 @@
-# 字体与排版密度文档
+# Tài liệu về phông chữ và mật độ bố cục
 
-这组文档记录 RetainPDF 在翻译回填时的字体缩放、文本密度和版面容量估算逻辑。
+Nhóm tài liệu này ghi lại logic co giãn phông chữ, mật độ văn bản và ước tính dung lượng trang khi điền dịch trong RetainPDF.
 
-建议阅读顺序：
+Thứ tự đọc đề xuất:
 
-1. [字体随页面变化的算法](./字体随页面变化的算法.md)
-2. [密度算法说明](./密度.md)
+1. [Thuật toán cỡ chữ theo trang](./thuat-toan-co-chu-theo-trang.md)
+2. [Giải thích thuật toán mật độ](./mat-do.md)
 
-相关代码主要在：
+Mã liên quan chủ yếu ở:
 
 - `backend/scripts/services/rendering/layout/payload/`
 - `backend/scripts/services/rendering/layout/typography/`

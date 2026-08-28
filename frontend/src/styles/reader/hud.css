@@ -1,4 +1,4 @@
-/* 底栏 HUD：页码 / 缩放 / 快捷键帮助 / 模式图标 tab */
+/* HUD thanh cuối: số trang / thu phóng / trợ giúp phím tắt / tab biểu tượng chế độ */
 
 /* —— R2 HUD / zoom —— */
 .reader-react-hud {
@@ -120,7 +120,7 @@
   color: var(--muted, var(--muted));
 }
 
-/* 快捷键帮助 */
+/* Trợ giúp phím tắt */
 .reader-react-hud-help {
   margin-left: 2px;
   padding-left: 6px;
@@ -224,7 +224,7 @@
 }
 
 
-/* 模式 tab：纯图标 */
+/* Tab chế độ: chỉ biểu tượng */
 .reader-tab.reader-tab-icon {
   flex: 1 1 0;
   min-width: 40px;
@@ -248,4 +248,3 @@
 .reader-body .reader-react-topbar {
   width: min(200px, calc(100vw - 48px));
 }
-

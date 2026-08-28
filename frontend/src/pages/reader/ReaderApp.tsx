@@ -1,4 +1,4 @@
-// 阅读器编排根：默认 react-pdf 引擎；?engine=legacy 回退命令式 boot。
+// Root điều phối trình đọc: mặc định dùng engine react-pdf; ?engine=legacy để quay về boot kiểu mệnh lệnh.
 
 import { useMemo, useState } from "react";
 import { ReaderBootLoading } from "./legacy/components/ReaderBootLoading.jsx";
@@ -24,7 +24,7 @@ function resolveReaderEngine(search = globalThis.location?.search || "") {
   if (engine === "legacy" || engine === "classic") {
     return "legacy";
   }
-  // 默认全 React + react-pdf
+  // Mặc định dùng toàn bộ React + react-pdf
   return "react-pdf";
 }
 

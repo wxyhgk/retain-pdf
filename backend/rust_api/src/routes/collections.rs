@@ -1,5 +1,5 @@
-//! 分类文件夹(合集)CRUD——collections/collection_documents 表早已随图书馆
-//! 数据层建好(见 db/schema.rs),这里只是补上一直缺失的路由层。
+//! Thư mục danh mục(Bộ sưu tập)CRUD——collections/collection_documents Bàn đã có thư viện đi kèm
+//! Lớp dữ liệu được xây dựng(thấy db/schema.rs),Điều này chỉ để bù đắp cho lớp định tuyến bị thiếu。
 //!
 //! All handlers go through library_api (PR5).
 

@@ -1,11 +1,11 @@
-// 主题注册表：后期加皮肤 = 追加一项 + 对应 CSS 文件。
-// 组件只读 listThemes() / setTheme()，不要 hardcode 皮肤 id 列表。
-// 设计：docs/theme-system/THEME_SYSTEM.md · ADDING_A_THEME.md
+// Registry chủ đề: Thêm giao diện mới = Thêm một mục vào đây + file CSS tương ứng.
+// Component chỉ đọc listThemes() / setTheme(), không hardcode danh sách ID giao diện.
+// Thiết kế: docs/theme-system/THEME_SYSTEM.md · ADDING_A_THEME.md
 
 export const THEME_STORAGE_KEY = "retainpdf.theme";
 export const DEFAULT_THEME_ID = "classic";
 
-/** 设置页色块预览（与 CSS 皮肤主色一致，仅用于 UI 缩略） */
+/** Bản xem trước ô màu ở trang cài đặt (khớp màu chính của skin CSS, chỉ dùng cho thumbnail UI) */
 export type ThemePreview = {
   bg: string;
   paper: string;
@@ -17,53 +17,53 @@ export type ThemePreview = {
 export type ThemeGroup = "light" | "dark" | "accent";
 
 /**
- * 主题系列（产品线维度，与明暗 group 正交）：
- * 诸子百家 / 王朝 / 二次元……皮肤挂 series 字段归队，
- * 新系列 = 此表加一行，外观面板自动出现新分区。
- */
+  * Series chủ đề (chiều hướng dòng sản phẩm, độc lập với group sáng/tối):
+  * Các skin như Chư Tử Bách Gia / Vương Triều / Niji... được gom nhóm qua trường series,
+  * Series mới = Thêm một dòng vào bảng này, bảng giao diện sẽ tự động xuất hiện phân vùng mới.
+  */
 export type ThemeSeries = {
   id: string;
   label: string;
-  /** 分区排序，越小越靠前 */
+  /** Thứ tự phân vùng, số càng nhỏ càng đứng trước */
   order: number;
 };
 
 export const THEME_SERIES: readonly ThemeSeries[] = [
-  { id: "base", label: "基础", order: 10 },
-  { id: "baijia", label: "诸子百家", order: 20 },
-  // 规划中：{ id: "wangchao", label: "王朝", order: 30 },
-  //         { id: "niji", label: "二次元", order: 40 },
+  { id: "base", label: "Cơ bản", order: 10 },
+  { id: "baijia", label: "Chư Tử Bách Gia", order: 20 },
+  // Đang lập kế hoạch: { id: "wangchao", label: "Wangchao", order: 30 },
+  //         { id: "niji", label: "Niji", order: 40 },
 ] as const;
 
 export type ThemeDefinition = {
-  /** 与 html[data-theme] / 文件名 themes/<id>.css 一致 */
+  /** Nhất quán với html[data-theme] / tên file themes/<id>.css */
   id: string;
   label: string;
   description: string;
-  /** 设置页分组 */
+  /** Nhóm trên trang cài đặt */
   group: ThemeGroup;
-  /** 列表排序，越小越靠前 */
+  /** Sắp xếp danh sách, số càng nhỏ càng lên trước */
   order: number;
   preview: ThemePreview;
   /**
-   * 装饰包名（public 静态目录 decor/<包名>/manifest.json）。
-   * 缺省 = 纯配色皮肤，零装饰零额外下载。
-   * 契约：src/shared/decor/contract.ts · docs/theme-system/DECOR_PACKS.md
+    * Tên gói trang trí (trong thư mục tĩnh public decor/<tên_gói>/manifest.json).
+    * Mặc định = skin chỉ phối màu, không có trang trí, không tải thêm.
+    * Contract: src/shared/decor/contract.ts · docs/theme-system/DECOR_PACKS.md
    */
   decorPack?: string;
-  /** 所属系列 id（THEME_SERIES），缺省归入 "base" 基础系列 */
+  /** id series (THEME_SERIES), mặc định thuộc series cơ bản "base" */
   series?: string;
 };
 
 /**
- * 注册表真值。
- * 新增皮肤步骤见 docs/theme-system/ADDING_A_THEME.md
+ * Nguồn sự thật của registry.
+ * Xem docs/theme-system/ADDING_A_THEME.md để thêm skin.
  */
 export const THEME_REGISTRY: readonly ThemeDefinition[] = [
   {
     id: "classic",
-    label: "经典",
-    description: "黑白灰克制，默认观感",
+    label: "Cổ điển",
+    description: "Đen trắng xám tiết chế, cảm giác mặc định",
     group: "light",
     order: 10,
     preview: {
@@ -76,8 +76,8 @@ export const THEME_REGISTRY: readonly ThemeDefinition[] = [
   },
   {
     id: "jiangnan",
-    label: "素纸",
-    description: "冷石灰底 · 冷青绿强调（去土黄）",
+    label: "Giấy trơn",
+    description: "Nền xám lạnh · Nhấn xanh lục lạnh (loại bỏ vàng đất)",
     group: "accent",
     order: 20,
     decorPack: "jiangnan",
@@ -91,8 +91,8 @@ export const THEME_REGISTRY: readonly ThemeDefinition[] = [
   },
   {
     id: "mojia",
-    label: "墨家",
-    description: "素绢暖底 · 青铜机关",
+    label: "Mặc Gia",
+    description: "Nền lụa ấm · Cơ quan đồng xanh",
     group: "accent",
     order: 25,
     decorPack: "mojia",
@@ -107,8 +107,8 @@ export const THEME_REGISTRY: readonly ThemeDefinition[] = [
   },
   {
     id: "seacliff",
-    label: "雾青",
-    description: "冷灰蓝底 · 青灰强调",
+    label: "Vụ Thanh",
+    description: "Nền xanh xám lạnh · Nhấn xanh xám",
     group: "accent",
     order: 30,
     preview: {
@@ -121,8 +121,8 @@ export const THEME_REGISTRY: readonly ThemeDefinition[] = [
   },
   {
     id: "night",
-    label: "黛瓦夜色",
-    description: "深底阅读 · 黛瓦墨黑",
+    label: "Đại Ngói Đêm",
+    description: "Đọc nền tối · Đen mờ như ngói",
     group: "dark",
     order: 40,
     preview: {
@@ -138,9 +138,9 @@ export const THEME_REGISTRY: readonly ThemeDefinition[] = [
 export type ThemeId = (typeof THEME_REGISTRY)[number]["id"] | string;
 
 const GROUP_LABEL: Record<ThemeGroup, string> = {
-  light: "浅色",
-  dark: "深色",
-  accent: "意境",
+  light: "Sáng",
+  dark: "Tối",
+  accent: "Ý cảnh",
 };
 
 export function themeGroupLabel(group: ThemeGroup): string {
@@ -169,8 +169,8 @@ export function listThemesByGroup(): { group: ThemeGroup; label: string; themes:
 }
 
 /**
- * 按系列分组（外观面板消费）：系列按 THEME_SERIES.order 排，
- * 未登记 series 的皮肤归入 "base"；空系列不出现。
+ * Nhóm theo series (bảng giao diện dùng): series được sắp theo THEME_SERIES.order,
+ * skin chưa đăng ký series thuộc "base"; series rỗng không xuất hiện.
  */
 export function listThemesBySeries(): { series: string; label: string; themes: ThemeDefinition[] }[] {
   const map = new Map<string, ThemeDefinition[]>();

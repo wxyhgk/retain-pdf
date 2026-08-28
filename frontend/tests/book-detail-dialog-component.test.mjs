@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 
-// 书籍详情弹窗(参考 PDF_MD_lib 的 BookDetailModal)组件级测试:点卡片打开、
-// 元数据渲染、阅读状态切换走 patchDocument、馆藏/已翻译的动作集不同。
+// Kiểm thử cấp component cho hộp thoại chi tiết sách (tham chiếu BookDetailModal của PDF_MD_lib): nhấp thẻ để mở,
+// hiển thị metadata, chuyển trạng thái đọc qua patchDocument, tập hành động khác nhau giữa lưu trữ/đã dịch.
 //
-// 每个 test 一份全新 JSDOM(同一个 jsdom 第二次 createRoot 会停摆)。
+// Mỗi test một JSDOM mới hoàn toàn (cùng một jsdom, createRoot lần hai sẽ bị treo).
 
 function makeDom(search = "") {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
@@ -43,7 +43,7 @@ async function waitFor(predicate, description) {
 }
 
 function click(dom, element) {
-  // Radix Tabs Trigger 挂在 mousedown 上，只 dispatch click 不会切 tab
+  // Radix Tabs Trigger gắn trên mousedown, chỉ dispatch click thì không chuyển tab
   element.dispatchEvent(new dom.window.MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
   element.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true, cancelable: true }));
 }
@@ -67,98 +67,98 @@ async function bootHomeApp(dom) {
 
   const root = createRoot(host);
   root.render(React.createElement(HomeApp, { services }));
-  await waitFor(() => dom.window.document.getElementById("app-shell"), "HomeApp 首帧渲染");
+  await waitFor(() => dom.window.document.getElementById("app-shell"), "HomeApp head soạn");
   await wait(0);
   return { services, root, host };
 }
 
-test("馆藏卡打开书籍详情:元数据 + 阅读状态切换 + 翻译/读原文动作,无对照阅读", async () => {
+test("Thẻ lưu trữ mở chi tiết sách: metadata + chuyển trạng thái đọc + hành động dịch/đọc bản gốc, không có đọc đối chiếu", async () => {
   const dom = makeDom("?mock=parallel");
   const byId = (id) => dom.window.document.getElementById(id);
   const { services, root, host } = await bootHomeApp(dom);
 
   const card = await waitFor(
     () => dom.window.document.querySelector('#recent-jobs-list .recent-job-item[data-library-only="true"]'),
-    "馆藏卡就位",
+    "Thẻ lưu trữ đã sẵn sàng",
   );
   const documentId = card.getAttribute("data-document-id");
   click(dom, card);
 
-  const dlg = await waitFor(() => byId("book-detail-dialog"), "书籍详情弹窗打开");
-  // 标题默认是只读大标题(不是常驻输入框),编辑才出现输入框
+  const dlg = await waitFor(() => byId("book-detail-dialog"), "Mở hộp thoại chi tiết sách");
+  // Tiêu đề mặc định là tiêu đề lớn chỉ đọc (không phải ô nhập thường trực), chỉnh sửa mới hiện ô nhập
   await waitFor(() => dlg.querySelector(".book-detail-title")?.textContent?.trim(), "标题就位");
-  assert.equal(byId("book-detail-title-input"), null, "默认只读,无标题输入框");
-  assert.ok(dlg.querySelector(".book-detail-status")?.textContent.includes("未翻译"), "馆藏显示未翻译");
-  // 未翻译：轻量空态 + StageFlow 预览（尚无真实 job，不嵌完整 StatusCard）
-  assert.ok(byId("book-detail-translate-progress"), "馆藏有翻译进度面板");
-  assert.ok(byId("book-detail-stage-flow"), "未翻译进度区有 StageFlow 预览");
-  assert.equal(byId("book-detail-job-status-card"), null, "未翻译不嵌 StatusCard");
-  // 馆藏:有翻译 + 读原文,无对照阅读
-  assert.ok(byId("book-detail-translate-btn"), "馆藏有翻译按钮");
-  assert.ok(byId("book-detail-read-source-btn"), "有读原文");
-  assert.equal(byId("book-detail-compare-btn"), null, "馆藏没有对照阅读");
-  // 点"编辑"进入标题/标签编辑
+  assert.equal(byId("book-detail-title-input"), null, "Mặc định chỉ đọc, không có ô nhập tiêu đề");
+  assert.ok(dlg.querySelector(".book-detail-status")?.textContent.includes("Chưa dịch"), "Mục lưu trữ hiển thị Chưa dịch");
+  // Chưa dịch: trạng thái trống nhẹ + xem trước StageFlow (chưa có job thật, không nhúng StatusCard đầy đủ)
+  assert.ok(byId("book-detail-translate-progress"), "Mục lưu trữ có bảng tiến độ dịch");
+  assert.ok(byId("book-detail-stage-flow"), "Khu vực tiến độ Chưa dịch có bản xem trước StageFlow");
+  assert.equal(byId("book-detail-job-status-card"), null, "Chưa dịch không nhúng StatusCard");
+  // Lưu trữ: có dịch + đọc bản gốc, không có đọc đối chiếu
+  assert.ok(byId("book-detail-translate-btn"), "Mục lưu trữ có nút dịch");
+  assert.ok(byId("book-detail-read-source-btn"), "Có nút đọc bản gốc");
+  assert.equal(byId("book-detail-compare-btn"), null, "Mục lưu trữ không có đọc đối chiếu");
+  // Nhấp "Sửa" để vào chỉnh sửa tiêu đề/thẻ
   click(dom, byId("book-detail-edit-btn"));
-  await waitFor(() => byId("book-detail-title-input"), "点编辑出现标题输入框");
+  await waitFor(() => byId("book-detail-title-input"), "Sửa xuất hiện ô nhập tiêu đề");
 
-  // 阅读状态切换 → patchDocument(mock),按钮变激活
+  // Chuyển trạng thái đọc → patchDocument(mock), nút chuyển sang kích hoạt
   const { getMockDocument } = await import("../src/js/mock/documents.js");
   const readBtns = dlg.querySelectorAll(".book-detail-reading-btn");
-  const doneBtn = Array.from(readBtns).find((b) => b.textContent === "读完");
+  const doneBtn = Array.from(readBtns).find((b) => b.textContent === "Đã đọc");
   click(dom, doneBtn);
-  await waitFor(() => doneBtn.classList.contains("is-active"), "读完变激活");
-  await waitFor(() => getMockDocument(documentId).reading_status === "done", "patchDocument 落库 reading_status=done");
+  await waitFor(() => doneBtn.classList.contains("is-active"), "Đã đọc chuyển sang trạng thái active");
+  await waitFor(() => getMockDocument(documentId).reading_status === "done", "patchDocument cập nhật reading_status=done vào cơ sở dữ liệu");
 
   root.unmount();
   services.dispose();
   host.remove();
 });
 
-test("已翻译卡打开书籍详情:有对照阅读,无翻译按钮", async () => {
+test("Thẻ đã dịch mở chi tiết sách: có đọc đối chiếu, không có nút dịch", async () => {
   const dom = makeDom("?mock=parallel");
   const byId = (id) => dom.window.document.getElementById(id);
   const { services, root, host } = await bootHomeApp(dom);
 
-  // mock 里 att-001/scl-002 等合成 book 是 succeeded 的已翻译文档
+  // Trong mock, các book tổng hợp như att-001/scl-002 là tài liệu đã dịch với trạng thái succeeded
   const card = await waitFor(
     () => dom.window.document.querySelector('#recent-jobs-list .recent-job-item[data-library-only="false"][data-status="succeeded"]'),
-    "已翻译卡就位",
+    "Thẻ đã dịch đã sẵn sàng",
   );
   click(dom, card);
 
-  const dlg = await waitFor(() => byId("book-detail-dialog"), "书籍详情弹窗打开");
-  // 默认在「简介」：不应弹出工作流对话框
+  const dlg = await waitFor(() => byId("book-detail-dialog"), "Mở hộp thoại chi tiết sách");
+  // Mặc định ở 'Giới thiệu': không được bật hộp thoại workflow
   assert.equal(
     services.stores.dialog.getSnapshot().open,
     false,
-    "打开书籍详情不得自动打开工作流弹窗",
+    "Mở chi tiết sách không được tự động mở hộp thoại workflow",
   );
-  // 已翻译书默认落在「翻译」Tab；进度卡应立刻在 DOM
+  // Sách đã dịch mặc định nằm ở tab 'Dịch'; thẻ tiến độ nên hiển thị ngay trên DOM
   await waitFor(
     () => dlg.querySelector(".book-detail-status")?.textContent?.includes("已完成"),
-    "显示已完成",
+    "Hiển thị trạng thái hoàn thành",
   );
-  const statusCard = await waitFor(() => byId("book-detail-job-status-card"), "翻译 Tab 内嵌 StatusCard");
-  assert.ok(statusCard.classList.contains("bd-job-status-card"), "详情专用进度卡");
-  assert.equal(statusCard.getAttribute("data-embedded"), "true", "embedded 模式");
+  const statusCard = await waitFor(() => byId("book-detail-job-status-card"), "StatusCard được nhúng trong tab dịch");
+  assert.ok(statusCard.classList.contains("bd-job-status-card"), "Thẻ tiến độ dành riêng cho chi tiết");
+  assert.equal(statusCard.getAttribute("data-embedded"), "true", "Chế độ embedded");
   assert.ok(
     statusCard.closest("#book-detail-panel-translate"),
-    "StatusCard 在翻译 Tab 面板内",
+    "StatusCard nằm trong bảng tab dịch",
   );
-  // 书籍详情专用内部结构（bd-job-status-*），固定高度
-  assert.ok(statusCard.classList.contains("bd-job-status-card"), "bd-job-status-card 根类");
-  assert.ok(statusCard.querySelector(".bd-job-status-inner"), "独立 inner，非 status-card-shell");
-  assert.ok(statusCard.querySelector(".bd-job-status-main"), "固定高度主区");
+  // Cấu trúc nội bộ dành riêng cho chi tiết sách (bd-job-status-*), chiều cao cố định
+  assert.ok(statusCard.classList.contains("bd-job-status-card"), "Lớp gốc bd-job-status-card");
+  assert.ok(statusCard.querySelector(".bd-job-status-inner"), "inner độc lập, không phải status-card-shell");
+  assert.ok(statusCard.querySelector(".bd-job-status-main"), "Khu vực chính có chiều cao cố định");
   assert.ok(
     statusCard.querySelector(".status-stage-flow .status-stage-step"),
-    "含阶段流",
+    "Có luồng giai đoạn",
   );
-  assert.equal(statusCard.querySelector(".status-card-shell"), null, "不使用主流程 shell");
-  assert.equal(statusCard.querySelector(".status-progress-hero"), null, "不使用主流程 hero");
+  assert.equal(statusCard.querySelector(".status-card-shell"), null, "Không dùng shell của luồng chính");
+  assert.equal(statusCard.querySelector(".status-progress-hero"), null, "Không dùng hero của luồng chính");
   await waitFor(
     () => `${statusCard.getAttribute("data-status") || ""}` === "succeeded"
       || statusCard.querySelector(".status-stage-step.is-active, .status-stage-step.is-done"),
-    "StatusCard 进入完成/有阶段高亮",
+    "StatusCard hoàn thành/có giai đoạn được tô sáng",
   );
   const doneStep = statusCard.querySelector(
     '.status-stage-flow .status-stage-step[data-stage-key="done"]',
@@ -167,26 +167,26 @@ test("已翻译卡打开书籍详情:有对照阅读,无翻译按钮", async () 
     doneStep?.classList.contains("is-active")
       || doneStep?.classList.contains("is-selected")
       || doneStep?.classList.contains("is-done"),
-    "完成阶段高亮",
+    "Giai đoạn hoàn thành được tô sáng",
   );
   const valueText = statusCard.querySelector(".bd-job-status-value")?.textContent?.trim();
-  assert.ok(valueText && valueText !== "准备中", `完成态应有进度文案，实际: ${valueText}`);
-  // 详情进度卡已从 ring 改为 bar 布局（StatusCardEmbedded：.bd-job-status-percent）
+  assert.ok(valueText && valueText !== "Đang chuẩn bị", `Trạng thái hoàn thành phải có văn bản tiến độ, thực tế: ${valueText}`);
+  // Thẻ tiến độ chi tiết đã chuyển từ bố cục ring sang bar (StatusCardEmbedded: .bd-job-status-percent)
   const pct = statusCard.querySelector(".bd-job-status-percent")?.textContent?.trim();
-  assert.equal(pct, "100%", "完成态进度条 100%");
+  assert.equal(pct, "100%", "Thanh tiến độ trạng thái hoàn thành 100%");
   assert.ok(
     statusCard.querySelector(".bd-job-status-bar.is-done"),
-    "完成态进度条 is-done",
+    "Thanh tiến độ trạng thái hoàn thành có is-done",
   );
-  // 仍然不得弹工作流
+  // Vẫn không được bật hộp thoại workflow
   assert.equal(
     services.stores.dialog.getSnapshot().open,
     false,
-    "切换翻译 Tab / 加载进度后仍不打开工作流弹窗",
+    "Sau khi chuyển tab dịch / tải tiến độ vẫn không mở hộp thoại workflow",
   );
-  assert.ok(byId("book-detail-compare-btn"), "已翻译有对照阅读");
-  assert.equal(byId("book-detail-translate-btn"), null, "已翻译没有翻译按钮");
-  assert.ok(byId("book-detail-read-source-btn"), "仍可读原文");
+  assert.ok(byId("book-detail-compare-btn"), "Thẻ đã dịch có đọc đối chiếu");
+  assert.equal(byId("book-detail-translate-btn"), null, "Thẻ đã dịch không có nút dịch");
+  assert.ok(byId("book-detail-read-source-btn"), "Vẫn có thể đọc bản gốc");
 
   root.unmount();
   services.dispose();

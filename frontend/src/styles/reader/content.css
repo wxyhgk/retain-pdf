@@ -1,5 +1,6 @@
-/* 阅读器正文区：markdown 表面 token / 源文档只读态。
- * 功能模块见 entries/reader.css；三栏窄屏见 layout-legacy.css。
+/* Vùng nội dung trình đọc: token bề mặt markdown / trạng thái chỉ đọc tài liệu
+ * gốc. Mô-đun chức năng xem entries/reader.css; bố cục ba cột màn hình hẹp xem
+ * layout-legacy.css.
  */
 
 .reader-markdown {
@@ -28,9 +29,11 @@
   color: var(--ink);
 }
 
-/* 馆藏文档"读原文"只读态(F4):没有 job,所有吃 jobId 的入口都不该出现——
-   译文/对照两个模式 tab、Markdown/摘录/批注/AI 问答/下载工具组全部隐藏,
-   只留原文单栏。根节点的 .reader-source-only 由 use-reader-boot.js 打上。 */
+/* Trạng thái chỉ đọc "Đọc bản gốc" của tài liệu trong thư viện (F4): không có
+   job, mọi lối vào nhận jobId đều không được xuất hiện — ẩn toàn bộ tab bản dịch/
+   đối chiếu, nhóm công cụ Markdown/trích đoạn/chú thích/AI Hỏi đáp/tải xuống,
+   chỉ giữ một cột bản gốc. Nút gốc .reader-source-only do use-reader-boot.js
+   thêm vào. */
 .reader-source-only .reader-topbar-actions,
 .reader-source-only .reader-tab[data-reader-mode="translated"],
 .reader-source-only .reader-tab[data-reader-mode="compare"] {

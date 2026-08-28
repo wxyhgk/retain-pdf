@@ -1,21 +1,21 @@
-# OCR-only API 说明
+# Hướng dẫn API OCR-only
 
-这份文档只说明 OCR-only 微服务接口。
+Tài liệu này chỉ giải thích về giao diện microservice OCR-only.
 
-说明：
+Lưu ý:
 
-- 这是一份 OCR-only 专项说明，正式 API 总入口先看 [RetainPDF 后端 API 总入口](/home/wxyhgk/tmp/Code/doc/core/api/index.md)，运行主链看 [CURRENT_API_MAP](/home/wxyhgk/tmp/Code/backend/rust_api/CURRENT_API_MAP.md)
-- 当前 provider 选择看请求里的 `provider` / `ocr.provider`，实际支持集以健康检查和 `OCR_PROVIDER_CONTRACT.md` 为准
+- Đây là hướng dẫn chuyên biệt cho OCR-only, điểm vào API chính thức tổng thể xem [RetainPDF Backend API Entry](/home/wxyhgk/tmp/Code/doc/core/api/index.md), chuỗi chạy chính xem [CURRENT_API_MAP](/home/wxyhgk/tmp/Code/backend/rust_api/CURRENT_API_MAP.md)
+- Cách chọn provider hiện tại xem `provider` / `ocr.provider` trong yêu cầu, tập provider thực tế được hỗ trợ dựa trên kiểm tra sức khỏe và `OCR_PROVIDER_CONTRACT.md`
 
-它的目标很明确：
+Mục tiêu rất rõ ràng:
 
-- 只做 OCR 解析
-- 只做 raw OCR -> `document.v1.json` / `document.v1.report.json` 标准化
-- 不做翻译
-- 不做 Typst
-- 不做 PDF 渲染
+- Chỉ thực hiện phân tích OCR
+- Chỉ chuẩn hóa raw OCR -> `document.v1.json` / `document.v1.report.json`
+- Không dịch
+- Không Typst
+- Không kết xuất PDF
 
-当前这套接口已经挂在现有 `rust_api` 服务里，但逻辑上是独立的 OCR 微服务接口族：
+Hiện tại, các giao diện này đã được gắn vào dịch vụ `rust_api` hiện có, nhưng về mặt logic chúng là một nhóm giao diện microservice OCR độc lập:
 
 - `/api/v1/ocr/jobs`
 - `/api/v1/ocr/jobs/{job_id}`
@@ -24,15 +24,15 @@
 - `/api/v1/ocr/jobs/{job_id}/normalization-report`
 - `/api/v1/ocr/jobs/{job_id}/cancel`
 
-当前示例仍以 `mineru` 为主，但这只是 provider 示例，不代表 OCR-only 协议默认绑定 MinerU。
+Ví dụ hiện tại vẫn dùng `mineru` làm chính, nhưng đó chỉ là ví dụ provider, không có nghĩa giao thức OCR-only mặc định bị ràng buộc với MinerU.
 
-这条 OCR-only 流程在整套系统中的位置是：
+Vị trí của luồng OCR-only này trong toàn bộ hệ thống:
 
-1. OCR API 负责把 provider 原始结果收口成 `document.v1`
-2. 完整翻译链再由上层 `normalize -> translate -> render` 主流程继续消费
-3. OCR API 不是测试脚本，也不是翻译/渲染入口；它是正式生产链路里的 normalize 前半段
+1. OCR API chịu trách nhiệm thu gọn kết quả raw của provider thành `document.v1`
+2. Luồng dịch đầy đủ sẽ tiếp tục được tiêu thụ bởi luồng chính `normalize -> translate -> render` ở tầng trên
+3. OCR API không phải là script kiểm thử, cũng không phải điểm vào dịch/kết xuất; nó là nửa đầu của normalize trong luồng sản xuất chính thức
 
-当前 `document.v1` 交给下游时的正式消费口径是：
+Quy tắc tiêu thụ chính thức của `document.v1` khi chuyển xuống hạ lưu hiện tại:
 
 - `geometry`
 - `content`
@@ -42,38 +42,38 @@
 - `policy`
 - `provenance`
 
-兼容字段 `type/sub_type/bbox/text/lines/segments` 可以保留，但不应再被下游当成主要语义入口。
+Các trường tương thích `type/sub_type/bbox/text/lines/segments` có thể giữ lại, nhưng không nên được coi là điểm vào ngữ nghĩa chính cho hạ lưu.
 
-内部实现说明：
+Giải thích về triển khai nội bộ:
 
-- `app/router.rs` 负责挂载 `/api/v1/ocr/jobs*` 路由
-- `routes/jobs/create.rs` 负责 OCR `multipart/form-data` 入口
-- `routes/jobs/query.rs` / `routes/jobs/control.rs` / `routes/jobs/download.rs` 负责查询、取消和产物下载
-- `routes/job_requests.rs` 负责 OCR 表单解析
-- `routes/common.rs` / `routes/download_response/**` / `routes/job_helpers.rs` 负责 OCR / 通用 job 的公共 response 与下载辅助逻辑
-- `services/jobs/facade.rs` 负责稳定服务入口
-- `services/jobs/creation.rs` 与 `services/jobs/creation/bundle.rs` 负责 OCR job 构建
-- `services/job_validation.rs` 负责 provider 参数校验
-- `services/job_snapshot_factory.rs` 负责 snapshot / command 组装
-- `services/job_launcher.rs` 负责执行启动
+- `app/router.rs` chịu trách nhiệm gắn các route `/api/v1/ocr/jobs*`
+- `routes/jobs/create.rs` chịu trách nhiệm điểm vào `multipart/form-data` của OCR
+- `routes/jobs/query.rs` / `routes/jobs/control.rs` / `routes/jobs/download.rs` chịu trách nhiệm truy vấn, hủy và tải xuống sản phẩm
+- `routes/job_requests.rs` chịu trách nhiệm phân tích biểu mẫu OCR
+- `routes/common.rs` / `routes/download_response/**` / `routes/job_helpers.rs` chịu trách nhiệm phản hồi công khai và logic hỗ trợ tải xuống cho OCR / job chung
+- `services/jobs/facade.rs` chịu trách nhiệm điểm vào dịch vụ ổn định
+- `services/jobs/creation.rs` và `services/jobs/creation/bundle.rs` chịu trách nhiệm xây dựng job OCR
+- `services/job_validation.rs` chịu trách nhiệm kiểm tra tham số provider
+- `services/job_snapshot_factory.rs` chịu trách nhiệm lắp ráp snapshot / command
+- `services/job_launcher.rs` chịu trách nhiệm khởi chạy thực thi
 
-如果你在排查接口行为，请以这些拆分后的模块职责为准，而不是旧版集中式文件结构。
+Nếu bạn đang kiểm tra hành vi giao diện, hãy dựa trên trách nhiệm của các mô-đun đã được tách này, không phải cấu trúc tệp tập trung cũ.
 
-## 1. 基础信息
+## 1. Thông tin cơ bản
 
-- 服务端口：`41000`
-- 基础前缀：`/api/v1`
-- 健康检查：`GET /health`
-- 鉴权方式：请求头 `X-API-Key`
-- 响应格式：除下载接口外，默认返回 JSON
+- Cổng dịch vụ: `41000`
+- Tiền tố cơ sở: `/api/v1`
+- Kiểm tra sức khỏe: `GET /health`
+- Phương thức xác thực: Header `X-API-Key`
+- Định dạng phản hồi: Ngoại trừ các giao diện tải xuống, mặc định trả về JSON
 
-请求头示例：
+Ví dụ header yêu cầu:
 
 ```http
 X-API-Key: your-rust-api-key
 ```
 
-统一返回包：
+Gói phản hồi thống nhất:
 
 ```json
 {
@@ -83,15 +83,15 @@ X-API-Key: your-rust-api-key
 }
 ```
 
-说明：
+Giải thích:
 
-- `code=0` 表示成功
-- 非 `0` 表示失败
-- `message` 可以直接给前端展示
+- `code=0` nghĩa là thành công
+- Khác `0` nghĩa là thất bại
+- `message` có thể hiển thị trực tiếp cho frontend
 
-## 2. OCR 任务状态
+## 2. Trạng thái tác vụ OCR
 
-任务总状态：
+Trạng thái tổng thể:
 
 - `queued`
 - `running`
@@ -99,7 +99,7 @@ X-API-Key: your-rust-api-key
 - `failed`
 - `canceled`
 
-常见阶段：
+Các giai đoạn phổ biến:
 
 - `queued`
 - `mineru_upload`
@@ -109,19 +109,19 @@ X-API-Key: your-rust-api-key
 - `failed`
 - `canceled`
 
-补充说明：
+Giải thích bổ sung:
 
-- `queued`：已入队，等待执行槽位
-- `mineru_upload`：文件已上传给 MinerU，等待处理
-- `mineru_processing`：MinerU 正在解析
-- `normalizing`：正在生成 `document.v1`
-- `finished`：OCR + 标准化完成
+- `queued`: Đã xếp hàng, chờ vị trí thực thi
+- `mineru_upload`: Tệp đã được tải lên MinerU, đang chờ xử lý
+- `mineru_processing`: MinerU đang phân tích
+- `normalizing`: Đang tạo `document.v1`
+- `finished`: OCR + chuẩn hóa hoàn tất
 
-## 3. 健康检查
+## 3. Kiểm tra sức khỏe
 
 `GET /health`
 
-返回示例：
+Ví dụ phản hồi:
 
 ```json
 {
@@ -138,43 +138,43 @@ X-API-Key: your-rust-api-key
 }
 ```
 
-字段说明：
+Mô tả các trường:
 
-- `status`：`up` 或 `degraded`
-- `db`：SQLite 是否可用
-- `queue_depth`：当前排队任务数
-- `running_jobs`：当前运行中任务数
-- `provider_backends`：当前已接入的 OCR provider
+- `status`: `up` hoặc `degraded`
+- `db`: SQLite có khả dụng không
+- `queue_depth`: Số lượng tác vụ đang xếp hàng
+- `running_jobs`: Số lượng tác vụ đang chạy
+- `provider_backends`: Các OCR provider hiện đã được tích hợp
 
-## 4. 创建 OCR 任务
+## 4. Tạo tác vụ OCR
 
 `POST /api/v1/ocr/jobs`
 
-这是一个 `multipart/form-data` 接口。
+Đây là giao diện `multipart/form-data`.
 
-实现补充：
+Bổ sung triển khai:
 
-- 表单字段解析在 `routes/job_requests.rs`
-- 创建入口在 `routes/jobs/create.rs`
-- facade 收口在 `services/jobs/facade.rs`
-- 创建前的 provider / token / URL / timeout 校验在 `services/job_validation.rs`
-- OCR job 的 snapshot 构建与启动由 `services/jobs/creation.rs`、`services/job_snapshot_factory.rs` 和 `services/job_launcher.rs` 协作完成
+- Phân tích trường biểu mẫu trong `routes/job_requests.rs`
+- Điểm vào tạo trong `routes/jobs/create.rs`
+- Thu gọn facade trong `services/jobs/facade.rs`
+- Kiểm tra provider / token / URL / timeout trước khi tạo trong `services/job_validation.rs`
+- Xây dựng snapshot và khởi động job OCR do `services/jobs/creation.rs`, `services/job_snapshot_factory.rs` và `services/job_launcher.rs` phối hợp thực hiện
 
-支持两种提交方式，二选一：
+Hỗ trợ hai cách gửi, chọn một trong hai:
 
-- 上传本地 PDF：`file`
-- 提交远程 PDF：`source_url`
+- Tải lên PDF cục bộ: `file`
+- Gửi PDF từ xa: `source_url`
 
-### 必填字段
+### Trường bắt buộc
 
 - `provider`
-  当前常用值：`mineru`；其他 provider 以当前部署启用项为准
+  Giá trị thường dùng hiện tại: `mineru`; các provider khác tùy thuộc vào triển khai hiện tại
 - `mineru_token`
-  当 `provider=mineru` 时必填
+  Bắt buộc khi `provider=mineru`
 - `timeout_seconds`
-  OCR 任务总超时秒数
+  Tổng thời gian chờ tối đa của tác vụ OCR
 
-### 常用可选字段
+### Các trường tùy chọn thường dùng
 
 - `file`
 - `source_url`
@@ -192,7 +192,7 @@ X-API-Key: your-rust-api-key
 - `poll_timeout`
 - `job_id`
 
-### 本地文件示例
+### Ví dụ với tệp cục bộ
 
 ```bash
 curl -X POST "http://127.0.0.1:41000/api/v1/ocr/jobs" \
@@ -204,7 +204,7 @@ curl -X POST "http://127.0.0.1:41000/api/v1/ocr/jobs" \
   -F "file=@/path/to/paper.pdf"
 ```
 
-### 远程 URL 示例
+### Ví dụ với URL từ xa
 
 ```bash
 curl -X POST "http://127.0.0.1:41000/api/v1/ocr/jobs" \
@@ -215,7 +215,7 @@ curl -X POST "http://127.0.0.1:41000/api/v1/ocr/jobs" \
   -F "source_url=https://example.com/paper.pdf"
 ```
 
-### 返回示例
+### Ví dụ phản hồi
 
 ```json
 {
@@ -237,33 +237,33 @@ curl -X POST "http://127.0.0.1:41000/api/v1/ocr/jobs" \
 }
 ```
 
-### 校验规则
+### Quy tắc kiểm tra
 
-- `provider` 必须是当前服务支持的 OCR provider
-- 当 `provider=mineru` 时，`mineru_token` 不能为空
-- 当传入 `mineru_token` 时，它不能是 URL
-- `source_url` 如果提供，必须以 `http://` 或 `https://` 开头
-- `timeout_seconds` 必须大于 `0`
+- `provider` phải là OCR provider được hỗ trợ bởi dịch vụ hiện tại
+- Khi `provider=mineru`, `mineru_token` không được để trống
+- Khi truyền `mineru_token`, nó không được là URL
+- `source_url` nếu có phải bắt đầu bằng `http://` hoặc `https://`
+- `timeout_seconds` phải lớn hơn `0`
 
-## 5. OCR 任务列表
+## 5. Danh sách tác vụ OCR
 
 `GET /api/v1/ocr/jobs`
 
-支持参数：
+Hỗ trợ tham số:
 
 - `limit`
 - `offset`
 - `status`
 - `provider`
 
-示例：
+Ví dụ:
 
 ```bash
 curl -H "X-API-Key: your-rust-api-key" \
   "http://127.0.0.1:41000/api/v1/ocr/jobs?limit=20&offset=0&status=failed&provider=mineru"
 ```
 
-返回示例：
+Ví dụ phản hồi:
 
 ```json
 {
@@ -287,18 +287,18 @@ curl -H "X-API-Key: your-rust-api-key" \
 }
 ```
 
-## 6. OCR 任务详情
+## 6. Chi tiết tác vụ OCR
 
 `GET /api/v1/ocr/jobs/{job_id}`
 
-示例：
+Ví dụ:
 
 ```bash
 curl -H "X-API-Key: your-rust-api-key" \
   "http://127.0.0.1:41000/api/v1/ocr/jobs/20260331033736-c2bcda"
 ```
 
-详情里重点看这些字段：
+Trong chi tiết, chú ý các trường sau:
 
 - `status`
 - `stage`
@@ -308,28 +308,28 @@ curl -H "X-API-Key: your-rust-api-key" \
 - `ocr_provider_diagnostics`
 - `artifacts`
 
-说明：
+Giải thích:
 
-- `trace_id` 是 OCR 微服务内部链路 ID
-- `provider_trace_id` 是 provider 返回的链路 ID
-- `ocr_provider_diagnostics` 用于排错
-- `ocr_provider_diagnostics.artifacts` 只放 provider transport/raw 产物和 normalize 产物路径摘要，不直接展开 `document.v1` 内部字段
+- `trace_id` là ID liên kết nội bộ của microservice OCR
+- `provider_trace_id` là ID liên kết do provider trả về
+- `ocr_provider_diagnostics` dùng để gỡ lỗi
+- `ocr_provider_diagnostics.artifacts` chỉ chứa tóm tắt đường dẫn sản phẩm transport/raw provider và normalize, không mở rộng các trường nội bộ của `document.v1`
 
-边界约定：
+Quy ước ranh giới:
 
-- provider 原始状态、错误、raw bundle 信息保留在 `ocr_provider_diagnostics`
-- `document.v1.json` / `document.v1.report.json` 仍然是下游主契约
-- 不把 provider 私有字段直接塞进 `document.v1`
+- Trạng thái raw của provider, lỗi, thông tin raw bundle được giữ trong `ocr_provider_diagnostics`
+- `document.v1.json` / `document.v1.report.json` vẫn là hợp đồng chính cho hạ lưu
+- Không đưa các trường private của provider trực tiếp vào `document.v1`
 
-## 7. 获取产物索引
+## 7. Lấy chỉ mục sản phẩm
 
 `GET /api/v1/ocr/jobs/{job_id}/artifacts`
 
-这个接口是 OCR 微服务最重要的接口之一。
+Đây là một trong những giao diện quan trọng nhất của microservice OCR.
 
-它会返回下游真正关心的产物索引。
+Nó trả về chỉ mục sản phẩm mà hạ lưu thực sự quan tâm.
 
-返回重点：
+Các điểm chính trong phản hồi:
 
 - `schema_version`
 - `provider_raw_dir`
@@ -338,7 +338,7 @@ curl -H "X-API-Key: your-rust-api-key" \
 - `normalized_document`
 - `normalization_report`
 
-真实示例字段形态：
+Ví dụ thực tế về hình dạng trường:
 
 ```json
 {
@@ -357,45 +357,45 @@ curl -H "X-API-Key: your-rust-api-key" \
 }
 ```
 
-字段语义：
+Ngữ nghĩa các trường:
 
 - `provider_raw_dir`
-  provider 解包后的原始目录
+  Thư mục raw đã giải nén của provider
 - `provider_zip`
-  provider 原始 zip
+  Zip raw của provider
 - `provider_summary_json`
-  provider 原始返回结果
+  Kết quả trả về raw của provider
 - `normalized_document`
-  标准化后的 `document.v1.json`
+  `document.v1.json` đã chuẩn hóa
 - `normalization_report`
-  标准化报告 `document.v1.report.json`
+  Báo cáo chuẩn hóa `document.v1.report.json`
 
-补充说明：
+Giải thích bổ sung:
 
-- `provider_summary_json` / `provider_zip` / `provider_raw_dir` 属于 provider raw artifacts
-- `normalized_document` / `normalization_report` 属于 normalized artifacts
-- 这两层需要同时保留，前者用于排 OCR provider 问题，后者用于排 `document_schema` 适配问题
+- `provider_summary_json` / `provider_zip` / `provider_raw_dir` thuộc về artifacts raw provider
+- `normalized_document` / `normalization_report` thuộc về artifacts đã chuẩn hóa
+- Cần giữ cả hai lớp này, lớp trước dùng để gỡ lỗi provider OCR, lớp sau dùng để gỡ lỗi `document_schema`
 
-## 8. 下载标准化 OCR 结果
+## 8. Tải xuống kết quả OCR đã chuẩn hóa
 
-### 下载 `document.v1.json`
+### Tải xuống `document.v1.json`
 
 `GET /api/v1/ocr/jobs/{job_id}/normalized-document`
 
-### 下载 `document.v1.report.json`
+### Tải xuống `document.v1.report.json`
 
 `GET /api/v1/ocr/jobs/{job_id}/normalization-report`
 
-用途：
+Mục đích:
 
-- `document.v1.json` 给翻译主线直接消费
-- `document.v1.report.json` 给排错、前端诊断、schema 检查使用
+- `document.v1.json` cung cấp cho luồng dịch chính để tiêu thụ trực tiếp
+- `document.v1.report.json` dùng để gỡ lỗi, chẩn đoán frontend, kiểm tra schema
 
-## 9. 取消 OCR 任务
+## 9. Hủy tác vụ OCR
 
 `POST /api/v1/ocr/jobs/{job_id}/cancel`
 
-示例：
+Ví dụ:
 
 ```bash
 curl -X POST \
@@ -403,15 +403,15 @@ curl -X POST \
   "http://127.0.0.1:41000/api/v1/ocr/jobs/20260331033736-c2bcda/cancel"
 ```
 
-当前取消规则：
+Quy tắc hủy hiện tại:
 
-- 如果任务还在排队，直接取消
-- 如果任务还在 provider 阶段，停止后续轮询/执行
-- 如果任务已经进入 `normalizing`，会先完成当前 normalize，再丢弃标准化产物，然后标记 `canceled`
+- Nếu tác vụ vẫn đang xếp hàng, hủy ngay
+- Nếu tác vụ đang ở giai đoạn provider, dừng polling/thực thi tiếp theo
+- Nếu tác vụ đã vào `normalizing`, sẽ hoàn thành normalize hiện tại, sau đó loại bỏ sản phẩm chuẩn hóa và đánh dấu `canceled`
 
-## 10. 当前目录落盘约定
+## 10. Quy ước lưu trữ thư mục hiện tại
 
-以任务 `20260331033736-c2bcda` 为例：
+Với tác vụ `20260331033736-c2bcda` làm ví dụ:
 
 ```text
 output/20260331033736-c2bcda/
@@ -426,43 +426,43 @@ output/20260331033736-c2bcda/
         └── document.v1.report.json
 ```
 
-说明：
+Giải thích:
 
-- `source/`：原始 PDF
-- `ocr/unpacked/`：provider 解包原始内容
-- `ocr/normalized/`：给主链路消费的标准化结果
+- `source/`: PDF gốc
+- `ocr/unpacked/`: Nội dung raw đã giải nén của provider
+- `ocr/normalized/`: Kết quả chuẩn hóa cho luồng chính tiêu thụ
 
-## 11. 当前限制和边界
+## 11. Giới hạn và ranh giới hiện tại
 
-当前这套 OCR 微服务接口已经能跑通 `provider raw -> document.v1`。
+Hiện tại, các giao diện microservice OCR này đã có thể chạy từ `provider raw -> document.v1`.
 
-但要注意：
+Tuy nhiên, cần lưu ý:
 
-- 当前 provider 已不止 `mineru`，但不同部署启用的 provider 集合可能不同
-- Rust 侧已经负责 MinerU / Paddle provider transport 的提交、轮询、结果下载或 raw 产物落盘
-- Python 侧仍负责 raw OCR -> `document.v1.json` 的 normalize，以及后续 translate / render worker
-- Rust 侧还负责：
+- Hiện tại provider không chỉ có `mineru`, nhưng tập provider được kích hoạt ở các triển khai khác nhau có thể khác nhau
+- Phía Rust đã chịu trách nhiệm về việc gửi transport, polling, tải xuống kết quả hoặc lưu raw artifacts cho MinerU / Paddle provider
+- Phía Python vẫn chịu trách nhiệm chuẩn hóa raw OCR -> `document.v1.json`, và các worker translate / render sau đó
+- Phía Rust còn chịu trách nhiệm:
   - HTTP API
-  - 任务状态
-  - 分页列表
+  - Trạng thái tác vụ
+  - Danh sách phân trang
   - trace_id
-  - 取消/超时
-  - artifacts 索引
+  - Hủy/Timeout
+  - Chỉ mục artifacts
 
-## 12. 推荐对接方式
+## 12. Cách tích hợp được khuyến nghị
 
-如果你后续要让主系统接这套 OCR 微服务，建议固定按这个顺序：
+Nếu sau này bạn muốn hệ thống chính kết nối với bộ giao diện OCR này, nên cố định theo thứ tự sau:
 
 1. `POST /api/v1/ocr/jobs`
 2. `GET /api/v1/ocr/jobs/{job_id}`
 3. `GET /api/v1/ocr/jobs/{job_id}/artifacts`
-4. 下载：
+4. Tải xuống:
    - `/normalized-document`
    - `/normalization-report`
 
-主系统不要直接读 provider raw JSON。
+Hệ thống chính không nên đọc trực tiếp JSON raw của provider.
 
-主系统应该优先消费：
+Hệ thống chính nên ưu tiên tiêu thụ:
 
 - `document.v1.json`
 - `document.v1.report.json`
@@ -470,4 +470,4 @@ output/20260331033736-c2bcda/
 - `trace_id`
 - `provider_trace_id`
 
-这样后续替换 OCR provider 时，翻译和渲染主线不需要一起改。
+Như vậy, sau này khi thay đổi OCR provider, luồng dịch và kết xuất không cần sửa cùng lúc.

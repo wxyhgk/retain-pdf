@@ -12,7 +12,7 @@ from services.translation.core.payload.parts.diagnostics import record_translati
 
 
 def test_top_level_merge_semantics_unchanged() -> None:
-    # 契约:顶层仍是 dict、覆盖式 merge——现有读方(前端/Rust/debug index)零感知。
+    # Hợp đồng:Tầng trên cùng vẫn còn dict、Lớp phủ merge——Trình đọc hiện có(Frontend/Rust/debug index)Không có nhận thức。
     item = {
         "translation_diagnostics": {
             "route_path": ["batch"],
@@ -30,8 +30,8 @@ def test_top_level_merge_semantics_unchanged() -> None:
 
 
 def test_history_preserves_per_stage_updates() -> None:
-    # 此前 degradation_reason/fallback_to 被后写阶段覆盖即丢历史;
-    # 现在每个阶段的 updates 都留在 history 里。
+    # trước đây degradation_reason/fallback_to Loại bỏ lịch sử bị ghi đè bởi giai đoạn ghi sau;
+    # Bây giờ ở mỗi giai đoạn của updates đang ở tại history Bên trong。
     item: dict = {}
 
     record_translation_diagnostics(
@@ -50,8 +50,8 @@ def test_history_preserves_per_stage_updates() -> None:
 
 
 def test_rereads_item_state_instead_of_stale_snapshot() -> None:
-    # 覆盖旧模式的病灶:"先构造快照、中间别人写入、再整段回写"。
-    # helper 写入前必须重读 item 当前诊断。
+    # Ghi đè lên các tổn thương ở chế độ cũ:"Tạo ảnh chụp nhanh trước、Được viết bởi một người khác ở giữa、Viết lại toàn bộ đoạn văn"。
+    # helper Phải đọc lại trước khi viết item Chẩn đoán hiện tại。
     item = {"translation_diagnostics": {"a": 1}}
     item["translation_diagnostics"] = {**item["translation_diagnostics"], "written_in_between": True}
 

@@ -1,5 +1,5 @@
-// 三栏骨架的左右栏拖拽调宽:分隔条 pointer 拖动实时改 CSS 变量,松手持久化。
-// 纯宽度计算(clampColumnWidth)与持久化(load/save)抽出便于单测;DOM 拖拽为薄封装。
+// Kéo thay đổi chiều rộng cột trái/phải của khung ba cột: di chuyển con trỏ phân cách để cập nhật biến CSS theo thời gian thực, thả tay để lưu trạng thái.
+// Tính toán chiều rộng (clampColumnWidth) và lưu trạng thái (load/save) được tách riêng để thuận tiện cho kiểm thử đơn vị; DOM kéo thả được đóng gói mỏng.
 
 export const READER_COLUMN_LIMITS = {
   left: { min: 180, max: 460, default: 248 },
@@ -8,7 +8,7 @@ export const READER_COLUMN_LIMITS = {
 
 const STORAGE_KEY = "retainpdf-reader-cols-v1";
 
-// 夹取到 [min, max] 的整数像素;非法输入回退到 default。
+// Kẹp giá trị vào pixel nguyên trong [min, max]; đầu vào không hợp lệ quay về default.
 export function clampColumnWidth(px, { min, max, default: fallback }) {
   const value = Number(px);
   if (!Number.isFinite(value)) {
@@ -46,7 +46,7 @@ export function saveColumnWidths(widths, storage = globalThis.localStorage || nu
   try {
     storage.setItem(STORAGE_KEY, JSON.stringify({ left: widths.left, right: widths.right }));
   } catch (_err) {
-    // 配额满/隐私模式:静默失败
+    // Hết hạn mức/chế độ riêng tư: thất bại im lặng
   }
 }
 
@@ -64,14 +64,14 @@ export function createReaderColumnResizer({
     body?.style?.setProperty?.(name, `${value}px`);
   }
 
-  // 左栏"展开宽度":applied 宽 --reader-left-w 由 CSS 从它派生,折叠时被类覆盖为 0
+  // "Chiều rộng mở" cột trái: applied width --reader-left-w được CSS kế thừa từ nó, khi thu gọn bị lớp ghi đè thành 0
   function applyLeft(px) {
     widths.left = clampColumnWidth(px, READER_COLUMN_LIMITS.left);
     setVar("--reader-left-col", widths.left);
     return widths.left;
   }
 
-  // 右栏"展开宽度"::has(.is-open) 时右栏取用它,收起时右栏为 0(见 CSS)
+  // "Chiều rộng mở" cột phải: khi ::has(.is-open) cột phải dùng nó, khi thu gọn cột phải = 0 (xem CSS)
   function applyRight(px) {
     widths.right = clampColumnWidth(px, READER_COLUMN_LIMITS.right);
     setVar("--reader-right-col", widths.right);
@@ -125,7 +125,7 @@ export function createReaderColumnResizer({
       event.preventDefault?.();
     });
 
-    // 双击分隔条:恢复该栏默认宽度
+    // Nhấp đúp vào thanh phân cách: khôi phục chiều rộng mặc định của cột
     handle.addEventListener("dblclick", () => {
       if (side === "left") {
         applyLeft(READER_COLUMN_LIMITS.left.default);

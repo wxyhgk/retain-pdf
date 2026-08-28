@@ -557,7 +557,7 @@ mod tests {
         request.translation.memory_mode = "broad".to_string();
         request.translation.glossary_entries = vec![GlossaryEntryInput {
             source: "bond".to_string(),
-            target: "键".to_string(),
+            target: "liên kết".to_string(),
             note: String::new(),
             level: String::new(),
             match_mode: String::new(),

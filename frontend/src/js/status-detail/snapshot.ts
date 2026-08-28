@@ -45,13 +45,13 @@ function stageIconMarkup(job: StatusDetailJob, stageText: string | undefined): s
   if (status === "failed") {
     return '<svg viewBox="0 0 24 24" fill="none"><path d="M15 9l-6 6M9 9l6 6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   }
-  if (text.includes("排队")) {
+  if (text.includes("chờ") || text.includes("queue")) {
     return '<svg viewBox="0 0 24 24" fill="none"><path d="M8 7h8M8 12h8M8 17h5M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
   }
-  if (text.includes("翻译")) {
+  if (text.includes("dịch") || text.includes("translate")) {
     return '<svg viewBox="0 0 24 24" fill="none"><path d="M4 6h8M8 6c0 6-2 10-5 12M8 6c1 3 3.5 6.5 7 9M14 6h6M17 6v12M14 18h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   }
-  if (text.includes("解析") || text.includes("ocr")) {
+  if (text.includes("phân tích") || text.includes("ocr") || text.includes("parse")) {
     return '<svg viewBox="0 0 24 24" fill="none"><path d="M7 4h7l5 5v11a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 4v5h5" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>';
   }
   return '<svg viewBox="0 0 24 24" fill="none"><path d="M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -59,10 +59,10 @@ function stageIconMarkup(job: StatusDetailJob, stageText: string | undefined): s
 
 function statusDetailNote(job: StatusDetailJob = {}): string {
   return job.status === "failed"
-    ? "查看失败原因、建议与事件流"
+    ? "Xem nguyên nhân thất bại, đề xuất và luồng sự kiện"
     : job.status === "succeeded" && isJobTerminal(job)
-      ? "任务已完成，可查看概览与事件流"
-      : "查看任务概览、失败原因与事件流";
+      ? "Nhiệm vụ đã hoàn thành, có thể xem tổng quan và luồng sự kiện"
+      : "Xem tổng quan nhiệm vụ, nguyên nhân thất bại và luồng sự kiện";
 }
 
 function buildHeadline(job: StatusDetailJob, stageText: string | undefined) {
@@ -76,10 +76,10 @@ function buildHeadline(job: StatusDetailJob, stageText: string | undefined) {
 function summarizeMathMode(job: StatusDetailJob): string {
   const mathMode = `${(job as JobPayload)?.request_payload_math_mode || ""}`.trim();
   if (mathMode === "placeholder") {
-    return "placeholder - 公式占位保护";
+    return "placeholder - Giữ chỗ cho công thức";
   }
   if (mathMode === "direct_typst") {
-    return "direct_typst - 模型直出公式";
+    return "direct_typst - Công thức xuất trực tiếp từ mô hình";
   }
   return mathMode || "-";
 }
@@ -142,7 +142,7 @@ function buildFailureDetails(job: StatusDetailJob) {
     lastLogLine: summarizeRuntimeField(
       diagnostics.raw_excerpt || diagnostics.detail || failureLastLogLine,
     ),
-    retryable: typeof (diagnostics.retryable ?? retryable) === "boolean" ? ((diagnostics.retryable ?? retryable) ? "是" : "否") : "-",
+    retryable: typeof (diagnostics.retryable ?? retryable) === "boolean" ? ((diagnostics.retryable ?? retryable) ? "Có" : "Không") : "-",
   };
 }
 
@@ -166,8 +166,8 @@ export function buildStatusDetailSnapshot(
     rerun: {
       enabled: rerunEnabled,
       status: rerunEnabled
-        ? "后端支持从当前任务产物创建恢复任务。"
-        : "当前任务暂不可从断点恢复。",
+        ? "Backend hỗ trợ tạo nhiệm vụ phục hồi từ sản phẩm nhiệm vụ hiện tại."
+        : "Nhiệm vụ hiện tại tạm thời không thể phục hồi từ điểm dừng.",
     },
   };
 }

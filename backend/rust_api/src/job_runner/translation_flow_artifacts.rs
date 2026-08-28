@@ -38,7 +38,7 @@ pub(super) async fn prepare_job_from_ocr_artifacts(
             .map(|path| path.to_string_lossy().to_string());
     }
     job.stage_detail = Some(format!(
-        "正在基于任务 {source_job_id} 的 OCR 产物{action_label}"
+        "Đang dựa trên sản phẩm OCR của nhiệm vụ {source_job_id}{action_label}"
     ));
     persist_runtime_job_with_resources(
         deps.db.as_ref(),

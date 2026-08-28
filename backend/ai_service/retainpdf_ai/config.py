@@ -1,4 +1,4 @@
-"""环境变量配置。所有凭证只走环境变量,代码与仓库不落任何密钥。"""
+"""Cấu hình qua biến môi trường. Mọi thông tin bí mật chỉ đi qua biến môi trường, không có khóa nào nằm trong mã nguồn hay repo."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 def _repo_root() -> Path:
-    # backend/ai_service/retainpdf_ai/config.py -> 仓库根
+    # backend/ai_service/retainpdf_ai/config.py -> gốc repo
     return Path(__file__).resolve().parents[3]
 
 
@@ -16,23 +16,23 @@ def _repo_root() -> Path:
 class Settings:
     host: str = "127.0.0.1"
     port: int = 41100
-    # 本服务自身的认证 key 集合(与 Rust API 同风格的 X-API-Key)
+    # Tập key xác thực của chính dịch vụ này (X-API-Key cùng phong cách với Rust API)
     api_keys: frozenset[str] = field(default_factory=frozenset)
-    # 调用 Rust API 用
+    # Dùng để gọi Rust API
     rust_api_base: str = "http://127.0.0.1:41000"
     rust_api_key: str = ""
-    # LLM(DeepSeek 或兼容端点)
+    # LLM (DeepSeek hoặc endpoint tương thích)
     llm_base_url: str = "https://api.deepseek.com/v1"
     llm_model: str = "deepseek-v4-flash"
     llm_api_key: str = ""
     llm_timeout_s: float = 60.0
-    # agent 循环护栏
+    # Lan can an toàn cho vòng lặp agent
     max_tool_rounds: int = 6
-    # B2 memory：近期窗口 / 超过则压缩 / MemoryView 字符上限
+    # B2 memory: cửa sổ gần đây / vượt ngưỡng thì nén / giới hạn ký tự của MemoryView
     memory_window_turns: int = 6
     memory_compress_after_turns: int = 12
     memory_max_chars: int = 24000
-    # 任务产物根目录(data/jobs/<job_id>/...)
+    # Thư mục gốc chứa sản phẩm của tác vụ (data/jobs/<job_id>/...)
     data_root: Path = field(default_factory=lambda: _repo_root() / "data")
 
 

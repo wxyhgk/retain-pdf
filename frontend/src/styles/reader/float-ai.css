@@ -1,6 +1,7 @@
-/* AI 悬浮问答外壳 — Notion 侧栏气质：大留白 / 轻边框 / 软阴影
- * 细节：float-ai-aui|md|citations|composer.css
- * 旧抽屉 AI 皮肤仅在 reader-legacy（ai.css），不在此包。
+/* Vỏ hỏi đáp AI nổi — phong cách thanh bên Notion: nhiều khoảng trắng / viền nhẹ /
+ * bóng mềm
+ * Chi tiết: float-ai-aui|md|citations|composer.css
+ * Giao diện AI ngăn kéo cũ chỉ ở reader-legacy (ai.css), không thuộc gói này.
  */
 .reader-float-ai {
   max-height: min(92vh, 860px);
@@ -57,7 +58,7 @@
   display: flex;
   flex-direction: column;
 }
-/* 透明吞事件层：不要半透明压暗 */
+/* Lớp trong suốt nuốt sự kiện: không làm tối bằng bán trong suốt */
 .reader-float-ai .aui-branch-pointer-shield {
   position: absolute;
   inset: 0;
@@ -67,7 +68,7 @@
   pointer-events: auto;
 }
 
-/* —— 会话条：安静、像 Notion 顶栏下拉 —— */
+/* —— Thanh phiên: yên tĩnh, giống menu thả xuống thanh trên Notion —— */
 .reader-float-ai .aui-session-bar {
   display: flex;
   flex-direction: column;
@@ -292,7 +293,7 @@
   line-height: 1.45;
 }
 
-/* 空态 / 源文档禁用 */
+/* Trạng thái trống / tài liệu gốc vô hiệu */
 .reader-float-ai-empty {
   display: grid;
   justify-items: center;

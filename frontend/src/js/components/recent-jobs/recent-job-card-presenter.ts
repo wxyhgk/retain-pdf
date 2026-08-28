@@ -9,16 +9,16 @@ import { escapeAttribute, truncateDisplayName } from "../../utils/html-formattin
 export function recentJobStatusLabel(status) {
   switch (`${status || ""}`.trim()) {
     case "queued":
-      return "排队中";
+      return "Đang chờ";
     case "running":
-      return "进行中";
+      return "Đang chạy";
     case "succeeded":
-      return "已完成";
+      return "Đã hoàn thành";
     case "failed":
-      return "失败";
+      return "Thất bại";
     case "canceled":
     case "cancelled":
-      return "已取消";
+      return "Đã hủy";
     default:
       return status || "-";
   }
@@ -69,21 +69,21 @@ export function stageKeyForRecentJobLabel(item: any = {}) {
 export function recentJobStageLabel(item) {
   switch (stageKeyForRecentJobLabel(item)) {
     case "ocr":
-      return "OCR 中";
+      return "Đang OCR";
     case "translate":
-      return "翻译中";
+      return "Đang dịch";
     case "render":
-      return "渲染中";
+      return "Đang render";
     case "done":
-      return "已完成";
+      return "Đã hoàn thành";
     case "queued":
-      return "排队中";
+      return "Đang chờ";
     case "failed":
-      return "失败";
+      return "Thất bại";
     case "canceled":
-      return "已取消";
+      return "Đã hủy";
     default:
-      return `${item?.status || ""}`.trim() === "queued" ? "排队中" : "处理中";
+      return `${item?.status || ""}`.trim() === "queued" ? "Đang chờ" : "Đang xử lý";
   }
 }
 

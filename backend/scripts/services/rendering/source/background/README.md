@@ -1,10 +1,10 @@
 # rendering/source/background
 
-## 负责什么
+## Trách nhiệm
 
-背景处理层。这里负责大背景图检测、图像提取、局部背景重建和背景页面叠加。
+Tầng xử lý nền. Chịu trách nhiệm phát hiện ảnh nền lớn, trích xuất ảnh, tái tạo nền cục bộ và chồng trang nền.
 
-## 对外入口
+## Lối vào công khai
 
 - `detect.py`
 - `extract.py`
@@ -15,11 +15,11 @@
 - `stage.py`
 - `redaction_items.py`
 
-## 不该做什么
+## Không nên làm gì
 
-- 不决定翻译文字怎么排版。
-- 不执行文本层删除策略。
-- 不调用 Typst 编译。
-- 不替代 `page_profile/` 做全局页面分类。
-- 不从 `source.cleanup` 借背景重建参数或采样 helper；背景图路径的参数放在
-  本目录内。
+- Không quyết định cách dàn trang văn bản dịch.
+- Không thực hiện chiến lược xóa tầng văn bản.
+- Không gọi biên dịch Typst.
+- Không thay thế `page_profile/` làm phân loại trang toàn cục.
+- Không mượn tham số tái tạo nền hoặc helper lấy mẫu từ `source.cleanup`; tham số đường dẫn ảnh nền đặt trong
+  thư mục này.

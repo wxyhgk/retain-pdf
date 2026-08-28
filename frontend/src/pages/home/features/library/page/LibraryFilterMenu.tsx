@@ -1,15 +1,16 @@
-// 书架筛选(照搬 PDF_MD_lib 的 LibraryFilterModal,做成轻量 popover 而非 Radix
-// 弹窗——满载测试下少一个重型 modal 更稳):按状态 + 标签筛选,客户端过滤已加载项。
+// Bộ lọc thư viện (dựa trên LibraryFilterModal của PDF_MD_lib, dùng popover nhẹ
+// thay vì popup Radix — ổn định hơn khi kiểm thử tải đầy): lọc theo trạng thái +
+// thẻ, chỉ lọc phía máy khách trên các mục đã tải.
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const STATUS_FILTERS = [
-  { value: "all", label: "全部" },
-  { value: "done", label: "已翻译" },
-  { value: "untranslated", label: "未翻译" },
-  { value: "active", label: "翻译中" },
-  { value: "failed", label: "失败" },
+  { value: "all", label: "Tất cả" },
+  { value: "done", label: "Đã dịch" },
+  { value: "untranslated", label: "Chưa dịch" },
+  { value: "active", label: "Đang dịch" },
+  { value: "failed", label: "Thất bại" },
 ];
 
 export function LibraryFilterMenu({
@@ -56,16 +57,17 @@ export function LibraryFilterMenu({
           activeCount > 0 ? "bg-secondary text-secondary-foreground" : "border border-border text-foreground hover:bg-muted/30",
         )}
       >
-        筛选
+Lọc
         {activeCount > 0 ? <span className="tabular-nums text-[11px] text-muted-foreground/70">{activeCount}</span> : null}
       </button>
 
       {open ? (
-        // 非 Radix 的轻量 popover(满载测试下比重型 modal 稳),没有 Presence 卸载延迟,
-        // 关闭只能瞬间收起——但至少进场要有生命感:从触发按钮所在的右上角
-        // 展开(origin-top-right),不从 scale(0) 凭空出现(emil-design-eng skill)。
+        // Popover nhẹ không dùng Radix (ổn định hơn modal nặng khi tải đầy), không
+        // có độ trễ tháo gắn Presence; đóng là thu lại ngay — nhưng lúc vào vẫn
+        // có chuyển động: mở từ góc phải trên của nút kích hoạt (origin-top-right),
+        // không xuất hiện đột ngột từ scale(0) (emil-design-eng skill).
         <div className="absolute right-0 z-30 mt-2 w-64 origin-top-right rounded-2xl border border-border bg-paper p-4 shadow-[0_16px_40px_color-mix(in_srgb,var(--shadow-color)_16%,transparent)] transition-[opacity,transform] duration-150 ease-[var(--ease-out)] starting:scale-95 starting:opacity-0">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">翻译状态</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Trạng thái dịch</p>
           <div className="flex flex-wrap gap-2">
             {STATUS_FILTERS.map((s) => (
               <Pill key={s.value} active={statusFilter === s.value} onClick={() => setStatusFilter(s.value)}>
@@ -76,9 +78,9 @@ export function LibraryFilterMenu({
 
           {tags.length ? (
             <>
-              <p className="mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">标签</p>
+              <p className="mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Thẻ</p>
               <div className="flex flex-wrap gap-2">
-                <Pill active={!tagFilter} onClick={() => setTagFilter("")}>全部</Pill>
+                <Pill active={!tagFilter} onClick={() => setTagFilter("")}>Tất cả</Pill>
                 {tags.map((t) => (
                   <Pill key={t} active={tagFilter === t} onClick={() => setTagFilter(tagFilter === t ? "" : t)}>{t}</Pill>
                 ))}
@@ -91,7 +93,7 @@ export function LibraryFilterMenu({
               type="button"
               onClick={() => { setStatusFilter("all"); setTagFilter(""); }}
               className="mt-4 text-xs text-muted-foreground hover:text-foreground hover:underline"
-            >清空筛选</button>
+            >Xóa bộ lọc</button>
           ) : null}
         </div>
       ) : null}
@@ -99,7 +101,7 @@ export function LibraryFilterMenu({
   );
 }
 
-// 客户端筛选谓词(和 sort 一样只作用已加载项)。
+// Vị từ lọc phía máy khách (giống sort, chỉ áp dụng cho mục đã tải).
 export function matchesLibraryFilter(item, statusFilter, tagFilter, { isLibraryOnly, isActive }) {
   if (tagFilter && !(Array.isArray(item.tags) ? item.tags : []).includes(tagFilter)) {
     return false;

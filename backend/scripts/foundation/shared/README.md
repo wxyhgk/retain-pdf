@@ -1,58 +1,58 @@
-# Shared 说明
+# Shared Guide
 
-`scripts/foundation/shared` 放的是整套脚本都会依赖的基础能力。
+`scripts/foundation/shared` contains basic capabilities that the entire script suite depends on.
 
-这一层不做 OCR、翻译或渲染业务逻辑，主要负责把“共用的东西”集中起来，避免路径、环境变量和默认参数在多个脚本里重复定义。
+This layer does not implement OCR, translation, or rendering business logic, primarily responsible for centralizing "shared things" to avoid redefining paths, environment variables, and default parameters across multiple scripts.
 
-## 主要文件
+## Main Files
 
 - `config.py`
-  过渡入口。内部实现已经拆到 `scripts/foundation/config/`，新代码应直接依赖拆分后的模块。
+  Forwarding entry point. Internal implementations have been split into `scripts/foundation/config/`; new code should depend directly on the split modules.
 - `input_resolver.py`
-  负责把输入目录解析成明确的 `source_json/source_pdf`。
+  Responsible for resolving input directories into clear `source_json/source_pdf`.
 - `job_dirs.py`
-  负责解析和校验标准 job 目录契约：`source/ocr/translated/rendered/artifacts/logs`。
+  Responsible for resolving and validating the standard job directory contract: `source/ocr/translated/rendered/artifacts/logs`.
 - `local_env.py`
-  负责从显式参数、环境变量或 `scripts/.env/` 中读取密钥。
+  Responsible for reading keys from explicit parameters, environment variables, or `scripts/.env/`.
 - `prompt_loader.py`
-  负责从 `scripts/foundation/prompts/` 加载可编辑提示词模板。
+  Responsible for loading editable prompt templates from `scripts/foundation/prompts/`.
 - `job_cleanup.py`
-  负责输出目录清理相关逻辑。
+  Responsible for output directory cleanup logic.
 - `stage_specs.py`
-  负责阶段 spec schema 常量、JSON loader 和 `credential_ref` 解析。
+  Responsible for stage spec schema constants, JSON loading, and `credential_ref` resolution.
 
-## 在总流程中的位置
+## Position in the Overall Process
 
-`foundation/shared` 是所有层的支撑层：
+`foundation/shared` is the support layer for all layers:
 
-- Stage worker / 编排层用它解析 spec、凭证引用和标准任务目录
-- OCR provider 实现层用它读取 token、环境配置和输出路径
-- 翻译层用它加载提示词和默认配置
-- 渲染层用它读取字体、压缩和版式参数
-- Rust/Python 编排层用它解析 `job_root/specs/*.spec.json`
+- Stage workers / orchestration layers use it to resolve specs, credential references, and standard job directories
+- OCR provider implementation layers use it to read tokens, environment configurations, and output paths
+- Translation layers use it to load prompts and default configurations
+- Rendering layers use it to read fonts, compression, and layout parameters
+- Rust/Python orchestration layers use it to resolve `job_root/specs/*.spec.json`
 
-## 一个重要约定
+## An Important Convention
 
-当前 `config.py` 里有一部分是“进程级可变调参”，例如：
+Currently, `config.py` contains a section for "process-level adjustable tuning parameters", such as:
 
 - `BODY_FONT_SIZE_FACTOR`
 - `BODY_LEADING_FACTOR`
 - `INNER_BBOX_SHRINK_X/Y`
 
-这些参数可以通过 `apply_layout_tuning(...)` 在运行时改写。
+These parameters can be overridden at runtime via `apply_layout_tuning(...)`.
 
-这对 CLI 很方便，但也意味着：
+This is very convenient for CLI, but it also means:
 
-- 同一个进程里连续跑多个任务时，要注意参数是否互相影响
-- 如果后续继续去耦合，这一层是值得继续下刀的重点
+- When running multiple tasks consecutively in the same process, pay attention to whether parameters affect each other
+- If further splitting and consolidation are needed later, this layer is a worthwhile point to focus on
 
-## Stage Spec 与凭证约定
+## Stage Spec and Credential Conventions
 
-当前阶段 worker 已统一收敛到：
+Current stage workers have been unified into:
 
 `python -u <entrypoint> --spec <job_root>/specs/<stage>.spec.json`
 
-`stage_specs.py` 当前维护的 schema 版本包括：
+Schema versions currently maintained in `stage_specs.py` include:
 
 - `normalize.stage.v1`
 - `translate.stage.v1`
@@ -60,22 +60,22 @@
 - `provider.stage.v1`
 - `book.stage.v1`
 
-附加约定：
+Additional conventions:
 
-- spec 是 Rust 到 Python 的稳定数据契约，不再依赖长 CLI flags 拼接
-- 密钥不直接写进 spec JSON
-- spec 里只保留 `credential_ref`
+- Spec is a stable data contract from Rust to Python, no longer dependent on concatenating long CLI flags
+- Do not write keys directly into JSON specs
+- Only retain `credential_ref` in specs
   - `env:RETAIN_TRANSLATION_API_KEY`
   - `env:RETAIN_MINERU_API_TOKEN`
-- Python worker 统一通过 `resolve_credential_ref(...)` 在运行时取真实值
-- Rust 主工作流调用的 worker 现在要求 `--spec`
-- 本地开发入口也统一通过 stage spec 驱动
+- Python workers uniformly obtain actual values at runtime via `resolve_credential_ref(...)`
+- Workers called by the main Rust process now require `--spec`
+- Local development entry points are also uniformly controlled via stage specs
 
-## 使用建议
+## Usage Recommendations
 
-- 新代码优先直接看 `scripts/foundation/config/` 下按职责拆分后的配置。
-- 上层脚本不要自己拼 `output/<job-id>/...` 路径，优先走 `job_dirs.py`
-- Python worker 只消费 stage spec，不再暴露业务长参数入口
-- 如果是阶段 worker，优先新增/消费 `stage_specs.py` 里的 schema，而不是继续扩 CLI 参数
-- 密钥读取不要散落在业务代码里，优先走 `local_env.py`
-- 提示词不要硬编码在业务模块里，优先走 `prompt_loader.py`
+- New code should prioritize viewing configurations split by responsibility in `scripts/foundation/config/`.
+- Upper-layer scripts should not manually concatenate paths like `output/<job-id>/...`; prioritize going through `job_dirs.py`
+- Python workers should only consume stage specs, no longer exposing long business parameter entry points
+- If it's a stage worker, prioritize adding/consuming schemas in `stage_specs.py` rather than continuing to expand CLI parameters
+- Key reading should not be scattered in business code; prioritize going through `local_env.py`
+- Prompts should not be hardcoded in business modules; prioritize going through `prompt_loader.py`

@@ -1,7 +1,7 @@
-// pages/detail 对 src/js/* 的唯一出口。
-// DetailApp / components 禁止直接 import ../../js/**；缺符号只改本文件。
+// Điểm xuất duy nhất từ pages/detail sang src/js/*.
+// DetailApp / components bị cấm import trực tiếp ../../js/**; thiếu symbol thì chỉ sửa file này.
 
-// —— job ——
+// -- job --
 export { normalizeJobPayload } from "../../js/job/normalize.js";
 export { isJobTerminal } from "../../js/job/core.js";
 export {
@@ -10,7 +10,7 @@ export {
 } from "../../js/job/formatters.js";
 export { stageHistoryDisplay } from "../../js/job/stage-history.js";
 
-// —— job-detail ——
+// -- job-detail --
 export { getJobIdFromQuery } from "../../js/job-detail/routing.js";
 export { defaultJobDetailConfigPort } from "../../js/job-detail/config-port.js";
 export { defaultJobDetailDataPort } from "../../js/job-detail/data-port.js";
@@ -24,7 +24,7 @@ export {
 } from "../../js/job-detail/page-state.js";
 export { buildJobDetailEventViewModel } from "../../js/job-detail/status-view-model.js";
 
-// —— downloads ——
+// -- downloads --
 export {
   fileNameFromDisposition,
   prepareDownloadTarget,

@@ -1,41 +1,41 @@
-# library 域目录
+# Thư mục miền library
 
-按**组件角色**分文件夹，避免所有 JSX 平铺在一层。
+Chia thư mục theo **vai trò component**, tránh tất cả JSX trải phẳng một tầng.
 
-| 目录 | 放什么 | 不放什么 |
+| Thư mục | Chứa gì | Không chứa gì |
 |------|--------|----------|
-| **shell/** | 通用壳：`BookCard`、`BookListRow` | 业务 onClick、列表数据 |
-| **actions/** | 卡片按钮工厂：`read` / `translate` | UI 布局 |
-| **display/** | 封面 hook、徽标 | 页面编排 |
-| **page/** | 书架页：网格、工具条、filter、viewPort | 详情/合集弹窗 |
-| **categories/** | 合集 tab | 书架网格 |
-| **detail/** | 详情容器 + store + hooks | 卡片壳 |
-| **detail/shell/** | `BookDetailShell`（Dialog 开合 / 双栏槽） | 业务逻辑 |
-| **detail/panels/** | 细粒度区块（封面、标题表单、翻译工作台…） | Tab 组装 |
-| **detail/tabs/** | 三个 Tab 组件 + Tab 导航壳 | 领域 API |
-| **detail/use-book-detail-*.js** | live item / document / translate hooks | UI 组件 |
-| **domain/** | `controller`（翻译/删除/入库/静默接进度…） | 纯 UI |
+| **shell/** | Vỏ chung: `BookCard`, `BookListRow` | onClick nghiệp vụ, dữ liệu danh sách |
+| **actions/** | Nhà máy nút thẻ: `read` / `translate` | Bố cục UI |
+| **display/** | Hook bìa, huy hiệu | Sắp xếp trang |
+| **page/** | Trang kệ sách: lưới, thanh công cụ, filter, viewPort | Hộp thoại chi tiết/bộ sưu tập |
+| **categories/** | Tab bộ sưu tập | Lưới kệ sách |
+| **detail/** | Container chi tiết + store + hooks | Vỏ thẻ |
+| **detail/shell/** | `BookDetailShell` (mở/đóng Dialog / khe hai cột) | Logic nghiệp vụ |
+| **detail/panels/** | Khu vực hạt mịn (bìa, biểu mẫu tiêu đề, bàn dịch…) | Lắp ghép Tab |
+| **detail/tabs/** | Ba component Tab + vỏ điều hướng Tab | API miền |
+| **detail/use-book-detail-*.js** | Hooks live item / document / translate | Component UI |
+| **domain/** | `controller` (dịch/xóa/nhập kho/tiếp tiến trình im lặng…) | UI thuần túy |
 
-### 进度入口契约（易混）
+### Hợp đồng lối vào tiến độ (dễ nhầm)
 
-| 方法 | 谁提供 | 做什么 |
+| Phương thức | Ai cung cấp | Làm gì |
 |------|--------|--------|
-| `selectJob(jobId)` | recent-jobs actions | **打开工作流弹窗** + 开始轮询 |
-| `attachJobProgress(jobId)` | **library domain/controller** | **只**开始轮询，接进 statusCardStore；不弹窗、关掉主状态区 |
+| `selectJob(jobId)` | recent-jobs actions | **Mở hộp thoại workflow** + bắt đầu thăm dò |
+| `attachJobProgress(jobId)` | **library domain/controller** | **Chỉ** bắt đầu thăm dò, nối vào statusCardStore; không bật hộp thoại, đóng vùng trạng thái chính |
 
-书籍详情「翻译」Tab 只用 `attachJobProgress`。
+Tab "Dịch" chi tiết sách chỉ dùng `attachJobProgress`.
 
-对外请用 `import { … } from "./features/library/index.js"`。
+Đối ngoại vui lòng dùng `import { … } from "./features/library/index.js"`.
 
 ```text
 App
  └─ page/RecentJobsLibrary
        └─ shell/BookCard  +  actions/*
-             └─ 点开 → detail/BookDetailDialog（容器）
+             └─ Nhấn mở → detail/BookDetailDialog (container)
                       └─ shell/BookDetailShell
                            ├─ left:  CoverActionsPanel
                            └─ right: BookDetailRightTabs
-                                ├─ BookDetailOverviewTab   书籍简介
-                                ├─ BookDetailTranslateTab  翻译
-                                └─ BookDetailMoreTab       其他操作（含占位）
+                                ├─ BookDetailOverviewTab   Giới thiệu sách
+                                ├─ BookDetailTranslateTab  Dịch
+                                └─ BookDetailMoreTab       Thao tác khác (gồm placeholder)
 ```

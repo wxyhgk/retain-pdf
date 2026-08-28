@@ -1,80 +1,78 @@
-# Translation 说明
+# Đặc tả Dịch
 
-这一层只做一件事：把 OCR payload 变成可落盘、可回填、可渲染的翻译结果。
+Lớp này chỉ thực hiện một việc duy nhất: chuyển đổi payload OCR thành kết quả dịch có thể lưu trữ, điền lại và kết xuất.
 
-这里不负责 PDF 读取和写回，也不负责 MinerU 解包。
+Module này không xử lý đọc/ghi PDF hoặc giải nén MinerU.
 
-## 阶段边界
+## Ranh giới giai đoạn
 
-Translation 阶段的正式输入和输出固定为：
+Đầu vào và đầu ra chính thức của giai đoạn dịch được cố định như sau:
 
-- 输入：
-  `document.v1.json`、翻译策略参数、翻译输出目录
-- 输出：
-  逐页 translation payload、翻译摘要、翻译诊断
+- Đầu vào:
+  `document.v1.json`, tham số chiến lược dịch, thư mục đầu ra dịch
+- Đầu ra:
+  Payload dịch theo trang, tóm tắt dịch, chẩn đoán dịch
 
-明确不负责的事情：
+Không chịu trách nhiệm rõ ràng về:
 
-- 不直接消费 provider raw JSON、zip 或 unpacked 目录
-- 不负责源 PDF 的页面写回、排版覆盖和最终 PDF 交付
-- 不负责 OCR provider 上传、轮询、下载和 normalize 产物生成
+- Tiêu thụ trực tiếp JSON thô của provider, zip hoặc thư mục đã giải nén
+- Ghi đè trang PDF nguồn, ghi đè bố cục, giao hàng PDF cuối cùng
+- Tải lên, thăm dò, tải xuống, tạo artifact chuẩn hóa của OCR provider
 
-## 默认翻译策略
+## Chiến lược dịch mặc định
 
-默认策略按人工翻译流程设计，而不是把整页信息全部塞给模型：
+Chiến lược mặc định được thiết kế xoay quanh quy trình dịch của con người thay vì nhồi nhét toàn bộ thông tin trang vào mô hình:
 
-1. 当前块优先
-   每次翻译以当前 item 的原文为唯一输出对象。上下文、术语和文档记忆只能辅助理解，不能被翻译进当前块。
-2. 术语按命中注入
-   用户词汇表和自动文档记忆不会全量进入 prompt。主翻译链会先用当前 item 或当前 batch 的 source text 匹配术语，只把命中的 `preferred` 术语作为翻译偏好注入；`preserve/canonical` 这类硬约束优先通过占位保护处理。
-3. 上下文按需注入
-   完整普通正文段默认不带前后文，减少 prompt 体积并避免邻近段落被误翻进当前块。只有跨栏/跨页续接、候选续接、图注、连接词开头片段、短的不完整片段等场景才会带 reading-order 前后文。需要调试旧行为时可用 `mode="all"` 保留全量邻居上下文。
-4. 质量兜底不可关闭
-   `should_translate=true` 的 item 不能以空译文结束。普通翻译、短文本 retry、乱码修复和 agent repair 都应把空译视为可修复问题；高级选项可以控制上下文/术语/质量预算，但不应关闭最终空译修复保证。
+1. Ưu tiên block hiện tại
+   Mỗi bản dịch nhắm đến văn bản nguồn của mục hiện tại như đối tượng đầu ra duy nhất. Ngữ cảnh, thuật ngữ và bộ nhớ tài liệu hỗ trợ hiểu biết; không dịch vào block hiện tại.
+2. Thuật ngữ được tiêm theo khớp
+   Bảng thuật ngữ của người dùng và bộ nhớ tài liệu tự động không được đưa vào prompt đầy đủ. Chuỗi dịch chính khớp thuật ngữ với văn bản nguồn của mục hoặc batch hiện tại trước; chỉ tiêm các thuật ngữ `preferred` đã khớp như gợi ý dịch. Các ràng buộc cứng `preserve/canonical` được xử lý ưu tiên thông qua bảo vệ placeholder.
+3. Ngữ cảnh được tiêm theo yêu cầu
+   Các đoạn văn bản nội dung thông thường hoàn chỉnh mặc định không có ngữ cảnh xung quanh để giảm kích thước prompt và tránh các đoạn văn liền kề bị dịch sai vào block hiện tại. Ngữ cảnh theo thứ tự đọc chỉ được cung cấp cho tiếp nối cột/trang, ứng viên tiếp nối, chú thích, các đoạn bắt đầu bằng liên từ và các đoạn ngắn chưa hoàn chỉnh. Sử dụng `mode="all"` để giữ lại ngữ cảnh lân cận đầy đủ khi gỡ lỗi hành vi kế thừa.
+4. Fallback chất lượng không thể tắt
+   Các mục có `should_translate=true` không được kết thúc với bản dịch trống. Bản dịch thông thường, thử lại văn bản ngắn, sửa chữa văn bản bị lỗi và sửa chữa agent đều phải coi bản dịch trống là vấn đề có thể khắc phục. Các tùy chọn nâng cao có thể kiểm soát ngân sách ngữ cảnh/thuật ngữ/chất lượng nhưng không nên vô hiệu hóa đảm bảo sửa chữa bản dịch trống cuối cùng.
 
-### 高级选项
+### Tùy chọn nâng cao
 
-后端翻译请求支持三个高级选项，Rust API 会写入 stage spec 并传给 Python 翻译执行层：
+Yêu cầu dịch backend hỗ trợ ba tùy chọn nâng cao; Rust API ghi chúng vào đặc tả giai đoạn và chuyển đến lớp thực thi dịch Python:
 
-| 字段 | 默认值 | 可选值 | 含义 |
+| Trường | Mặc định | Tùy chọn | Ý nghĩa |
 | --- | --- | --- | --- |
-| `context_mode` | `needed` | `needed` / `all` / `off` | 控制 reading-order 前后文。`needed` 只给不完整片段、续接段和图注等需要上下文的块；`all` 退回旧的邻居上下文行为；`off` 完全关闭前后文。 |
-| `glossary_mode` | `matched` | `matched` / `all` / `off` | 控制用户词汇表注入。`matched` 只注入当前 item/batch 命中的术语；`all` 把整张表交给 prompt；`off` 不注入词汇表。 |
-| `memory_mode` | `matched` | `matched` / `broad` / `off` | 控制自动文档记忆。`matched` 只注入当前 item/batch 命中的历史术语；`broad` 注入文档级摘要；`off` 关闭记忆注入。 |
+| `context_mode` | `needed` | `needed` / `all` / `off` | Kiểm soát ngữ cảnh theo thứ tự đọc. `needed` chỉ cung cấp ngữ cảnh cho các đoạn chưa hoàn chỉnh, đoạn tiếp nối, chú thích, v.v.; `all` quay lại hành vi ngữ cảnh lân cận cũ; `off` vô hiệu hóa ngữ cảnh hoàn toàn. |
+| `glossary_mode` | `matched` | `matched` / `all` / `off` | Kiểm soát việc tiêm bảng thuật ngữ người dùng. `matched` chỉ tiêm các thuật ngữ khớp với mục/batch hiện tại; `all` chuyển toàn bộ bảng vào prompt; `off` không tiêm bảng thuật ngữ. |
+| `memory_mode` | `matched` | `matched` / `broad` / `off` | Kiểm soát bộ nhớ tài liệu tự động. `matched` chỉ tiêm các thuật ngữ lịch sử khớp với mục/batch hiện tại; `broad` tiêm tóm tắt cấp tài liệu; `off` vô hiệu hóa việc tiêm bộ nhớ. |
 
-这些选项只影响 prompt 上下文预算和术语/记忆注入范围，不影响最终质量兜底。空译、严重英文残留和占位符错误仍然必须进入后续修复链路。
+Các tùy chọn này chỉ ảnh hưởng đến ngân sách ngữ cảnh prompt và phạm vi tiêm thuật ngữ/bộ nhớ; không ảnh hưởng đến fallback chất lượng cuối cùng. Bản dịch trống, residue tiếng Anh nghiêm trọng và lỗi placeholder vẫn phải đi vào quy trình sửa chữa tiếp theo.
 
-默认执行时，自动文档记忆只在任务开始时读取一次 `JobMemorySnapshot`，worker 并发翻译期间不会实时写回
-`job-memory.json`。这样可以避免大 PDF 高并发时反复锁文件、刷新 prompt 记忆和拖慢尾批次。需要调试旧行为时，
-可以设置 `RETAIN_TRANSLATION_LIVE_MEMORY_UPDATES=1`，让结果回填阶段继续实时更新 job memory。
+Trong quá trình thực thi mặc định, bộ nhớ tài liệu tự động chỉ đọc `JobMemorySnapshot` một lần khi bắt đầu tác vụ; các worker không ghi lại vào `job-memory.json` trong thời gian thực trong quá trình dịch đồng thời. Điều này tránh khóa tệp lặp lại, làm mới bộ nhớ prompt và làm chậm batch đuôi dưới tải đồng thời cao cho các PDF lớn. Đặt `RETAIN_TRANSLATION_LIVE_MEMORY_UPDATES=1` để cho phép giai đoạn điền lại kết quả tiếp tục cập nhật bộ nhớ tác vụ trong thời gian thực khi gỡ lỗi hành vi kế thừa.
 
-当前稳定交接点：
+Các điểm chuyển giao ổn định hiện tại:
 
-- 上游 OCR 阶段应先把 provider 结果收敛成 `document.v1.json`
-- 下游渲染阶段应只消费这里落盘的翻译产物，不应再回头理解 OCR provider 私有字段
+- Giai đoạn OCR upstream nên hội tụ kết quả provider vào `document.v1.json` trước
+- Giai đoạn kết xuất downstream chỉ nên tiêu thụ các artifact dịch được lưu trữ tại đây; không nên xem lại các trường riêng của OCR provider
 
-当前默认翻译产物协议：
+Giao thức artifact dịch mặc định hiện tại:
 
 - `translation-manifest.json`
-记录页索引到翻译 payload 文件的稳定映射，供渲染阶段优先读取
-  还会附带轻量元数据，例如 glossary 摘要、诊断摘要，以及 `invocation` 字段
-  当前正式路径统一标记为 `stage_spec`
-- 逐页 translation payload
-  当前仍按每页一个 JSON 落盘，manifest 负责声明这些文件该如何被渲染阶段发现
-- 阶段 spec
-  `translate-only` 入口已支持 `job_root/specs/translate.spec.json`（`translate.stage.v1`）
-- 调试产物
+  Ghi lại ánh xạ ổn định từ chỉ mục trang đến các tệp payload dịch để giai đoạn kết xuất đọc ưu tiên.
+  Cũng mang siêu dữ liệu nhẹ như tóm tắt bảng thuật ngữ, tóm tắt chẩn đoán và trường `invocation`.
+  Hiện được đánh dấu chính thức là `stage_spec`.
+- Payload dịch theo trang
+  Hiện được lưu trữ dưới dạng một JSON cho mỗi trang; manifest khai báo cách giai đoạn kết xuất phát hiện các tệp này.
+- Đặc tả giai đoạn
+  Điểm vào `translate-only` hiện hỗ trợ `job_root/specs/translate.spec.json` (`translate.stage.v1`)
+- Artifact gỡ lỗi
   - `artifacts/translation_diagnostics.json`
   - `artifacts/translation_debug_index.json`
 
-## Translation Payload 口径
+## Đặc tả Payload Dịch
 
-逐页 translation payload 现在分成两层：
+Payload dịch theo trang hiện được chia thành hai lớp:
 
-1. 顶层 contract 字段
-2. `metadata` 调试/桥接字段
+1. Các trường hợp đồng cấp cao
+2. Các trường `metadata` gỡ lỗi/cầu nối
 
-顶层 contract 字段包括：
+Các trường hợp đồng cấp cao bao gồm:
 
 - `block_kind`
 - `layout_role`
@@ -86,69 +84,68 @@ Translation 阶段的正式输入和输出固定为：
 - `raw_block_type`
 - `normalized_sub_type`
 
-当前约定：
+Quy ước hiện tại:
 
-- translation 的分类、style hint、policy、payload 回填和 diagnostics 主链优先只读这些顶层 contract 字段
-- `metadata` 可以继续保留，但职责只限于 debug、provider trace 和桥接 `continuation_hint/provider warning`
-- 新逻辑不要再把 `metadata.layout_role`、`metadata.semantic_role`、`metadata.structure_role` 当正式语义入口
-- 如果后续 block 语义变更，优先只改 `document.v1 -> TextItem -> payload` 这条 contract 投影，不要让下游模块各自再翻 `metadata`
+- Phân loại dịch, gợi ý kiểu, chính sách, điền lại payload và chuỗi chẩn đoán chính nên đọc chỉ các trường hợp đồng cấp cao này ưu tiên
+- `metadata` có thể tiếp tục tồn tại nhưng trách nhiệm giới hạn ở gỡ lỗi, theo dõi provider và cầu nối `continuation_hint/provider warning`
+- Logic mới không nên coi `metadata.layout_role`, `metadata.semantic_role`, `metadata.structure_role` là điểm vào ngữ nghĩa chính thức
+- Nếu ngữ nghĩa block thay đổi sau này, chỉ sửa đổi phép chiếu hợp đồng `document.v1 -> TextItem -> payload`; không để các module downstream tự ý lật qua `metadata`
 
-兼容约定：
+Quy ước tương thích:
 
-- 新任务目录应生成 `translation-manifest.json`
-- 翻译产物协议固定为 `translation-manifest.json` + 每页 payload，渲染阶段不再兼容旧的逐页 JSON 直扫模式
-- 默认加载口径已经是 strict contract；缺少上述顶层字段的 payload 会直接报错
-- Rust 主工作流调用的 `translate-only` worker 现在要求 `--spec`
-- `scripts/entrypoints/translate_book.py` 现在也是 spec-only 包装入口
-- API 凭证不再要求写入 stage spec；spec 中使用 `credential_ref`，由运行时环境注入真实 key
+- Các thư mục tác vụ mới nên tạo `translation-manifest.json`
+- Giao thức artifact dịch được cố định là `translation-manifest.json` + payload theo trang; giai đoạn kết xuất không còn tương thích với chế độ quét trực tiếp JSON theo trang cũ
+- Đặc tả tải mặc định là hợp đồng nghiêm ngặt; các payload thiếu các trường hợp đồng cấp cao trên sẽ báo lỗi trực tiếp
+- Worker `translate-only` của quy trình chính Rust hiện yêu cầu `--spec`
+- `scripts/entrypoints/translate_book.py` hiện là điểm vào wrapper chỉ dành cho spec
+- Thông tin xác thực API không còn được yêu cầu trong đặc tả giai đoạn; spec sử dụng `credential_ref`; môi trường runtime sẽ tiêm khóa thực tế
 
-## 调试闭环
+## Vòng lặp gỡ lỗi khép kín
 
-现在有一套最小可复现链路，专门用来定位“某个 item 为什么没翻 / 降级 / 保留原文”：
+Chuỗi tái tạo tối thiểu để xác định "tại sao một mục không được dịch / bị suy giảm / giữ nguyên bản gốc":
 
-1. 先看调试产物
-   - `translation_diagnostics.json` 看全局统计
-   - `translation_debug_index.json` 看 item 级索引
-2. 再看单 item
+1. Kiểm tra các artifact gỡ lỗi trước
+   - `translation_diagnostics.json` để xem thống kê toàn cục
+   - `translation_debug_index.json` để xem chỉ mục cấp mục
+2. Sau đó kiểm tra mục đơn
    - `backend/scripts/devtools/replay_translation_item.py`
-3. 需要批量回归时再接 promptfoo
+3. Kết nối promptfoo cho hồi quy batch khi cần
    - `backend/scripts/devtools/promptfoo/`
-   - 先用 `scan_drift.py` 找 saved vs replay 漂移项，再用 `capture_case.py` 固化成 case artifact
+   - Sử dụng `scan_drift.py` để tìm các mục drift giữa lưu và phát lại trước, sau đó dùng `capture_case.py` để đóng gói thành artifact trường hợp
 
-Rust API 对应暴露了：
+Rust API cung cấp tương ứng:
 
 - `GET /api/v1/jobs/{job_id}/translation/diagnostics`
 - `GET /api/v1/jobs/{job_id}/translation/items`
 - `GET /api/v1/jobs/{job_id}/translation/items/{item_id}`
 - `POST /api/v1/jobs/{job_id}/translation/items/{item_id}/replay`
 
-## 子目录与边界
+## Thư mục con và ranh giới
 
-一级目录按稳定职责划分。新代码优先放入这些目录，不要在根目录继续增加大文件。
+Các thư mục cấp một được phân chia theo trách nhiệm ổn định. Mã mới nên được đặt vào các thư mục này ưu tiên; không thêm các tệp lớn vào thư mục gốc.
 
-根目录只保留 `README.md` 和包初始化。新代码不要再新增 `translation/*.py`
-大文件；外部模块需要 translation 能力时，优先走 `public/`。
+Thư mục gốc chỉ giữ lại `README.md` và khởi tạo package. Không thêm các tệp `translation/*.py` lớn mới; các module bên ngoài cần khả năng dịch nên đi qua `public/` ưu tiên.
 
-| 目录 | 职责 | 不该做的事 |
+| Thư mục | Trách nhiệm | Không nên làm |
 | --- | --- | --- |
-| `entrypoints/` | Python worker 入口脚本实现，例如 translate-only、book translation pipeline。根目录同名文件只是兼容 shim。 | 不放业务规则；不被 workflow 反向依赖。 |
-| `workflow/` | 翻译流程编排、阶段调度、batch/worker 分配和主流程落盘。 | 不直接拼 provider HTTP payload；不写具体 policy 规则。 |
-| `core/` | 稳定领域模型和数据协议：item contract、`document.v1` 读取、translation payload、manifest、orchestration。 | 不调用 LLM；不管理 job 生命周期。 |
-| `services/` | 翻译业务能力：policy、continuation、classification、context、terms、memory、quality、agents、postprocess、results。 | 不做外部入口解析；不直接依赖 runtime pipeline。 |
-| `llm/` | LLM provider、prompt 协议、缓存、响应解析、重试和校验入口。 | 不读取 OCR 文件；不决定页面级 workflow。 |
-| `artifacts/` | 结构化诊断、debug index、review artifact、运行统计输出。 | 不承担业务决策；不调用 provider。 |
-| `public/` | 给 runtime、rendering、ocr_provider 等 translation 外部生产代码使用的稳定门面。 | 不写业务逻辑；不把内部临时 helper 随手暴露出去。 |
+| `entrypoints/` | Triển khai script worker Python, ví dụ: translate-only, quy trình dịch sách. Các tệp cùng tên ở gốc chỉ là shim tương thích. | Không chứa quy tắc nghiệp vụ; không bị workflow phụ thuộc ngược. |
+| `workflow/` | Điều phối luồng dịch, lập lịch giai đoạn, phân bổ batch/worker, duy trì luồng chính. | Không lắp ráp trực tiếp payload HTTP provider; không viết các quy tắc chính sách cụ thể. |
+| `core/` | Mô hình miền ổn định và giao thức dữ liệu: hợp đồng mục, đọc `document.v1`, payload dịch, manifest, điều phối. | Không gọi LLM; không quản lý vòng đời tác vụ. |
+| `services/` | Khả năng nghiệp vụ dịch: chính sách, tiếp nối, phân loại, ngữ cảnh, thuật ngữ, bộ nhớ, chất lượng, tác nhân, hậu xử lý, kết quả. | Không phân tích cú pháp các mục nhập bên ngoài; không phụ thuộc trực tiếp vào quy trình runtime. |
+| `llm/` | Nhà cung cấp LLM, giao thức prompt, bộ nhớ đệm, phân tích cú pháp phản hồi, thử lại, mục nhập xác thực. | Không đọc tệp OCR; không quyết định quy trình cấp trang. |
+| `artifacts/` | Chẩn đoán có cấu trúc, chỉ mục gỡ lỗi, artifact đánh giá, đầu ra thống kê runtime. | Không đưa ra quyết định nghiệp vụ; không gọi provider. |
+| `public/` | Facade ổn định cho mã sản xuất bên ngoài dịch (runtime, kết xuất, ocr_provider). | Không viết logic nghiệp vụ; không tùy tiện tiết lộ các helper tạm thời nội bộ. |
 
-### 外部公开入口
+### Điểm vào công khai bên ngoài
 
-production 代码在 translation 外部引用本模块时，默认只允许：
+Mã sản xuất tham chiếu đến module này từ bên ngoài dịch chỉ được sử dụng mặc định:
 
 - `services.translation.public`
-  runtime、rendering、ocr_provider 共享的稳定 contract，例如 glossary entry、provider runtime 默认值、translation manifest 读取、item role helper、公式保护 helper、diagnostics writer。
+  Các hợp đồng ổn định được chia sẻ bởi runtime, kết xuất, ocr_provider, ví dụ: mục nhập bảng thuật ngữ, mặc định runtime provider, đọc manifest dịch, helper vai trò mục, helper bảo vệ công thức, trình ghi chẩn đoán.
 - `services.translation.entrypoints.*`
-  CLI/worker 入口脚本使用。
+  Được sử dụng bởi các script điểm vào CLI/worker.
 
-以下 production 目录不应直接 import translation 内部实现：
+Các thư mục sản xuất sau không nên import trực tiếp triển khai nội bộ của dịch:
 
 - `runtime/pipeline/**`
 - `services/rendering/**`
@@ -156,7 +153,7 @@ production 代码在 translation 外部引用本模块时，默认只允许：
 - `services/mineru/**`
 - `services/document_schema/**`
 
-这些目录禁止直接引用：
+Các thư mục này cấm tham chiếu trực tiếp đến:
 
 - `services.translation.core`
 - `services.translation.services`
@@ -164,27 +161,23 @@ production 代码在 translation 外部引用本模块时，默认只允许：
 - `services.translation.workflow`
 - `services.translation.artifacts`
 
-如果这些外部模块确实需要新的 translation 能力，先把它设计成稳定 contract 后加到 `public/`，再由外部调用。
+Nếu các module bên ngoài thực sự cần khả năng dịch mới, hãy thiết kế dưới dạng hợp đồng ổn định và thêm vào `public/` trước, sau đó gọi từ bên ngoài.
 
-`public/` 必须保持 lazy facade：不要在 `services/translation/public/__init__.py` 顶层写
-`from services.translation... import ...` 或 `from services.rendering... import ...`。新增导出时只登记到
-`_EXPORTS`，由 `__getattr__` 按需加载，避免 translation 和 rendering 之间重新形成 import cycle。
+`public/` phải duy trì facade lười: không viết `from services.translation... import ...` hoặc `from services.rendering... import ...` ở cấp cao nhất của `services/translation/public/__init__.py`. Chỉ đăng ký các export mới vào `_EXPORTS`; tải theo yêu cầu thông qua `__getattr__` để ngăn chặn việc tái tạo vòng lặp import giữa dịch và kết xuất.
 
-### Devtools 与测试例外
+### Ngoại lệ Devtools và Kiểm thử
 
-`backend/scripts/devtools/**` 和 `backend/scripts/devtools/tests/**` 可以直接 import translation 内部模块，用来做：
+`backend/scripts/devtools/**` và `backend/scripts/devtools/tests/**` có thể import trực tiếp các module nội bộ của dịch cho:
 
-- 单元测试内部规则、payload helper、LLM 协议和 policy 分支
-- replay / promptfoo / repair runner 这类调试工具
-- golden flow 或 schema 回归检查
+- Kiểm thử đơn vị các quy tắc nội bộ, helper payload, giao thức LLM, nhánh chính sách
+- Công cụ gỡ lỗi chạy replay / promptfoo / sửa chữa
+- Kiểm tra hồi quy golden flow hoặc schema
 
-这些是 debug/test-only 例外，不代表 production 代码可以照抄。新增普通运行链路、worker、OCR/normalize、rendering 或 runtime 代码时，
-默认仍必须走 `services.translation.public`。如果某个 devtools 脚本将来会被 production 调用，应先把它需要的 translation 能力收口到
-`public/`，再接入主链。
+Đây là các ngoại lệ chỉ dành cho gỡ lỗi/kiểm thử; mã sản xuất không được sao chép. Khi thêm các chuỗi runtime thông thường, worker, OCR/normalize, kết xuất hoặc mã runtime, vẫn phải đi qua `services.translation.public` theo mặc định. Nếu một script devtools sẽ được gọi bởi sản xuất sau này, hãy hợp nhất khả năng dịch cần thiết vào `public/` trước khi kết nối với chuỗi chính.
 
-### 依赖方向
+### Hướng phụ thuộc
 
-目标依赖方向：
+Hướng phụ thuộc mục tiêu:
 
 ```text
 entrypoints
@@ -203,18 +196,18 @@ public
   -> core / workflow / llm provider runtime / artifacts
 ```
 
-当前仍有少量过渡例外：
+Các ngoại lệ chuyển tiếp còn lại:
 
-- `workflow/execution_runner.py` 会启动 render source prewarm，这是为了和翻译并行预热渲染输入，例外必须保持窄范围。
+- `workflow/execution_runner.py` khởi động render source prewarm để làm nóng song song đầu vào kết xuất với dịch; ngoại lệ phải được giữ hẹp.
 
-已经收口的边界：
+Ranh giới hợp nhất:
 
-- `core` 只放纯 contract、数据读取、payload 数据操作和文本规则，不 import `services`、`workflow` 或 `llm`
-- `llm` 不再读取 `services/context`、`services/memory`、`services/quality`、`services/terms`
-- `artifacts` 不再读取 `services/agents` 或 LLM control context；review 摘要构造在 `services/agents/review_artifact.py`
-- `services` 可以组合 `core`、`llm` 和 `artifacts`，但不反向依赖 `workflow`
+- `core` chỉ chứa các hợp đồng thuần túy, đọc dữ liệu, thao tác dữ liệu payload, quy tắc văn bản; không import `services`, `workflow` hoặc `llm`
+- `llm` không còn đọc `services/context`, `services/memory`, `services/quality`, `services/terms`
+- `artifacts` không còn đọc `services/agents` hoặc ngữ cảnh điều khiển LLM; xây dựng tóm tắt đánh giá trong `services/agents/review_artifact.py`
+- `services` có thể kết hợp `core`, `llm`, `artifacts` nhưng không phụ thuộc ngược vào `workflow`
 
-已删除的兼容 shim：
+Các shim tương thích đã bị xóa:
 
 - `translation/from_ocr_pipeline.py` -> `translation/entrypoints/from_ocr_pipeline.py`
 - `translation/translate_only_pipeline.py` -> `translation/entrypoints/translate_only_pipeline.py`
@@ -227,187 +220,184 @@ public
 - `translation/services/terms/injection.py` -> `translation/core/terms/injection.py`
 - `translation/services/quality/checks.py` -> `translation/llm/validation/quality.py`
 
-这些 shim 已经退出主线。架构门禁会拒绝继续引用这些旧路径；新代码应直接引用真实路径。
+Các shim này đã thoát khỏi mainline. Các cổng kiến trúc từ chối các tham chiếu tiếp tục đến các đường dẫn cũ này; mã mới nên tham chiếu trực tiếp đến các đường dẫn thực.
 
-### payload/parts 边界
+### Ranh giới Payload/Parts
 
-`core/payload/` 只保留 payload contract 和数据操作：
+`core/payload/` chỉ giữ lại các hợp đồng payload và thao tác dữ liệu:
 
-- `manifest.py` 负责 translation manifest 读写协议。
-- `ops.py` 负责通用 payload 字段读写。
-- `translations.py` 负责翻译结果回填和状态字段。
-- `formula_protection.py` 负责 payload 内公式保护标记。
-- `template_contract.py`、`template_records.py`、`template_sync.py` 负责模板 contract、记录和同步。
-- `parts/` 负责 payload 内部拆分后的纯数据处理，例如 apply、result entry、group split、result status、summary、translation units。
+- `manifest.py` xử lý giao thức đọc/ghi manifest dịch.
+- `ops.py` xử lý đọc/ghi trường payload chung.
+- `translations.py` xử lý điền lại kết quả dịch và các trường trạng thái.
+- `formula_protection.py` xử lý các marker bảo vệ công thức trong payload.
+- `template_contract.py`, `template_records.py`, `template_sync.py` xử lý hợp đồng mẫu, bản ghi và đồng bộ hóa.
+- `parts/` xử lý xử lý dữ liệu thuần túy sau khi phân rã payload nội bộ, ví dụ: áp dụng, mục kết quả, tách nhóm, trạng thái kết quả, tóm tắt, đơn vị dịch.
 
-policy 相关 mutation/check/default 已迁到 `services/policy/payload_rules/`，统一策略状态写入在
-`core/payload/parts/policy_state.py`，运行时策略判定在 `services/policy/verdict.py`：
+Các đột biến/kiểm tra/mặc định liên quan đến chính sách được chuyển đến `services/policy/payload_rules/`; việc ghi trạng thái chính sách thống nhất trong `core/payload/parts/policy_state.py`; phán quyết chính sách runtime trong `services/policy/verdict.py`:
 
-- `policy_mutations.py`、`legacy_policy_mutations.py` 负责 policy 阶段写字段。
-- `policy_defaults.py` 负责 reset 阶段的 foundational/default translatable 判定。
-- `legacy_policy_checks.py` 负责 legacy policy 中 CJK、引用条目、mixed literal 的纯判定。
-- `core/payload/parts/policy_state.py` 负责统一写入 `classification_label`、`should_translate`、
-  `skip_reason`、`final_status`。
-- `services/policy/verdict.py` 负责统一回答是否调用模型、是否允许保留原文、是否阻塞导出。
+- `policy_mutations.py`, `legacy_policy_mutations.py` xử lý việc ghi trường giai đoạn chính sách.
+- `policy_defaults.py` xử lý xác định khả năng dịch mặc định/nền tảng trong giai đoạn đặt lại.
+- `legacy_policy_checks.py` xử lý các kiểm tra chính sách cũ như CJK, mục trích dẫn, đánh giá thuần văn bản hỗn hợp.
+- `core/payload/parts/policy_state.py` xử lý việc ghi thống nhất `classification_label`, `should_translate`, `skip_reason`, `final_status`.
+- `services/policy/verdict.py` xử lý câu trả lời thống nhất về việc có gọi mô hình hay không, có cho phép giữ nguyên bản gốc hay không, có chặn xuất hay không.
 
-禁止方向：
+Hướng bị cấm:
 
-- `llm/providers/**` 不应 import `workflow`、`runtime.pipeline`、`rendering`。
-- `policy/**` 不应 import `llm/providers` 或 `runtime.pipeline`。
-- `payload/**` 不应 import `llm/providers`、`workflow`、`rendering`。
-- `memory/**` 不应 import `llm/providers`、`workflow`、`rendering`。
-- `translation/**` 整体不应 import `services.rendering`。
+- `llm/providers/**` không được import `workflow`, `runtime.pipeline`, `rendering`.
+- `policy/**` không được import `llm/providers` hoặc `runtime.pipeline`.
+- `payload/**` không được import `llm/providers`, `workflow`, `rendering`.
+- `memory/**` không được import `llm/providers`, `workflow`, `rendering`.
+- Tổng thể `translation/**` không được import `services.rendering`.
 
-这些规则由 `backend/scripts/devtools/check_pipeline_architecture.py` 逐步收紧。当前先卡住新增越界依赖，历史兼容入口会分批迁移。
+Các quy tắc này được thực thi dần dần bởi `backend/scripts/devtools/check_pipeline_architecture.py`. Hiện tại chặn các phụ thuộc ngoài ranh giới mới; các mục tương thích lịch sử được di chuyển theo lô.
 
-当前架构门禁已经覆盖：
+Current architecture gates cover:
 
-- translation 根目录只允许包初始化和 README，不允许新增根部大文件
-- production 外部目录只能通过 `services.translation.public` 使用 translation contract
-- `public/` 必须保持 lazy export，避免 eager import 拉起 workflow/rendering
-- 已删除 shim 路径不可再引用
-- translation 内部不得直接 import `runtime.pipeline`
-- translation 整体不得直接 import `services.rendering`，唯一窄例外是 `workflow/execution_runner.py` 的 render source prewarm
+- Translation root allows only package initialization and README; no new root large files
+- Production external directories may use translation contracts only through `services.translation.public`
+- `public/` must maintain lazy export to avoid eager import pulling workflow/rendering
+- Deleted shim paths may not be referenced
+- Translation internals may not import `runtime.pipeline` directly
+- Translation overall may not import `services.rendering` directly; only narrow exception is `workflow/execution_runner.py` render source prewarm
 
-## 主要流程
+## Luồng chính
 
-1. `core/ocr/` 读取统一中间层 `document.v1.json` 并抽取页面块
-2. 如果入口给的是 provider 原始 JSON，则先由 `document_schema/adapters.py` 转成 `document.v1`
-3. `workflow/translation_workflow.py` 生成每页翻译模板并加载 payload
-4. `core/orchestration` 补齐布局区和编排元数据
-5. `services/continuation` 先消费上游 `continuation_hint`，再用规则兜底，把连续段落合并成统一 translation unit
-6. `services/policy` 根据模式决定跳过哪些块
-7. `llm` 按 batch 调模型翻译、缓存和重试，并统一处理 placeholder/segment/fallback 控制
-8. `core/payload` 把翻译结果回填到 page payload，并保存最终 JSON
+1. `core/ocr/` đọc `document.v1.json` trung gian thống nhất và trích xuất các block trang
+2. Nếu điểm vào cung cấp JSON thô của provider, `document_schema/adapters.py` chuyển đổi sang `document.v1` trước
+3. `workflow/translation_workflow.py` tạo mẫu dịch theo trang và tải payload
+4. `core/orchestration` hoàn thiện các vùng bố cục và metadata điều phối
+5. `services/continuation` tiêu thụ `continuation_hint` từ upstream trước, sau đó fallback theo quy tắc, hợp nhất các đoạn liên tục thành đơn vị dịch thống nhất
+6. `services/policy` quyết định các block nào sẽ bỏ qua dựa trên chế độ
+7. `llm` gọi mô hình theo batch để dịch, caching, thử lại; xử lý đồng nhất kiểm soát placeholder/segment/fallback
+8. `core/payload` điền lại kết quả dịch vào payload trang và lưu JSON cuối cùng
 
-补充约定：
+Các quy ước bổ sung:
 
-- translation 主线不应该直接理解某个 OCR provider 的 raw JSON 结构
-- translation 主线当前的默认落盘结果是“逐页 translation payload + translation-manifest.json”；这层负责产物内容和映射协议，不负责最终 PDF 文件名和渲染模式
-- `document.v1` 里凡是已经带 `skip_translation` tag 的块，必须在 `core/ocr/json_extractor.py` 抽取阶段就被挡掉，不能再漏进翻译候选
-- `abstract` 这类正文扩展语义可以继续进入翻译；`reference_entry`、`formula_number` 这类 provider 已明确标记跳过的块不应进入 payload
-- 抽取阶段优先读取显式 `content.kind / layout_role / semantic_role / structure_role / policy.translate`；默认主链不再从 `derived.role / sub_type / raw_type / tags` 反推正文
-- 抽取阶段会把 block 上的 `continuation_hint` 展开成 payload 里的 `ocr_continuation_*` 字段
-- continuation 当前采用 provider-first 策略：优先消费同页 `intra_page` provider hint；跨页 `cross_page` hint 只在“相邻页 + 顺序明确 + layout_zone 命中页尾/页首阅读边界 + 文本长度足够”时受控消费，其余情况继续保留但不直接驱动拼接
-- 如果只想排查 OCR 规范化是否有问题，优先看 `document.v1.report.json`
-- Python 侧读取 report 摘要时，优先走 `document_schema/reporting.py`
+- Luồng chính dịch không nên hiểu trực tiếp cấu trúc JSON thô của bất kỳ OCR provider nào
+- Kết quả lưu trữ mặc định hiện tại của luồng chính dịch là "per-page translation payload + translation-manifest.json"; tầng này xử lý nội dung artifact và giao thức ánh xạ, không phải tên tệp PDF cuối cùng hoặc chế độ kết xuất
+- Các block đã được gắn thẻ `skip_translation` trong `document.v1` phải bị chặn tại giai đoạn trích xuất `core/ocr/json_extractor.py`; không được rò rỉ vào các ứng viên dịch
+- Ngữ nghĩa mở rộng body như `abstract` có thể tiếp tục vào dịch; các block được provider đánh dấu skip rõ ràng như `reference_entry`, `formula_number` không nên vào payload
+- Giai đoạn trích xuất đọc ưu tiên các trường rõ ràng `content.kind / layout_role / semantic_role / structure_role / policy.translate`; luồng chính mặc định không còn suy luận văn bản body từ `derived.role / sub_type / raw_type / tags`
+- Giai đoạn trích xuất mở rộng `continuation_hint` trên các block thành các trường `ocr_continuation_*` trong payload
+- Tiếp nối hiện sử dụng chiến lược provider-first: ưu tiên tiêu thụ các gợi ý `intra_page` cùng trang của provider; các gợi ý `cross_page` giữa các trang chỉ được tiêu thụ có kiểm soát khi "các trang liền kề + thứ tự rõ ràng + vùng bố cục chạm ranh giới đọc trang-cuối/trang-đầu + đủ độ dài văn bản"; các trường hợp khác được giữ lại nhưng không trực tiếp thúc đẩy ghép nối
+- Để khắc phục sự cố chuẩn hóa OCR, chỉ cần kiểm tra `document.v1.report.json` trước
+- Khi phía Python đọc tóm tắt báo cáo, nên đi qua `document_schema/reporting.py` ưu tiên
 
-默认正文白名单现在固定为：
+Danh sách trắng body mặc định hiện được cố định như sau:
 
 - `content.kind == "text"`
-- 且 `policy.translate == true`
+- Và `policy.translate == true`
 
-这意味着：
+Ý nghĩa:
 
-- 正文是否进入翻译链，应该在 normalize / adapter 阶段决定
-- translation 默认主链不再重新猜 `footer/header/page_number/table/image/code/reference_content`
-- `ref_text`、`mixed_literal`、`metadata_fragment` 这类旧本地 skip / rewrite 规则已经退出默认主链
+- Việc body có vào chuỗi dịch hay không nên được quyết định tại giai đoạn normalize / adapter
+- Luồng chính dịch mặc định không còn đoán lại `footer/header/page_number/table/image/code/reference_content`
+- Các quy tắc skip / viết lại cục bộ cũ như `ref_text`, `mixed_literal`, `metadata_fragment` đã thoát khỏi luồng chính mặc định
 
-## 术语表 v1
+## Bảng thuật ngữ v1
 
-当前术语表链路分成两层输入：
+Chuỗi bảng thuật ngữ hiện tại có hai lớp đầu vào:
 
-- 命名术语表资源：由 Rust API 先落库，再通过 `glossary_id` 引用
-- 任务内 inline 术语：直接随任务一起传入 `glossary_entries`
+- Tài nguyên bảng thuật ngữ được đặt tên: được Rust API lưu trữ trước, tham chiếu thông qua `glossary_id`
+- Các thuật ngữ inline trong tác vụ: được truyền trực tiếp cùng tác vụ dưới dạng `glossary_entries`
 
-进入 Python 之前，Rust 侧会先完成：
+Trước khi vào Python, phía Rust hoàn thành:
 
-- 术语条目归一化
-- 去重
-- 命名术语表与 inline 术语的合并
-- 相同 `source` 的覆盖统计
+- Chuẩn hóa mục thuật ngữ
+- Loại bỏ trùng lặp
+- Hợp nhất bảng thuật ngữ được đặt tên và các thuật ngữ inline
+- Thống kê ghi đè cho cùng `source`
 
-Translation 阶段当前只做两件事：
+Giai đoạn dịch hiện chỉ thực hiện hai việc:
 
-- 把合并后的术语表注入到 LLM 控制上下文，作为翻译偏好提示
-- 在翻译结束后统计术语命中情况，并写入 `translation-manifest.json`、诊断文件和 pipeline summary
+- Tiêm bảng thuật ngữ đã hợp nhất vào ngữ cảnh điều khiển LLM như gợi ý ưu tiên dịch
+- Đếm số lần trúng thuật ngữ sau khi dịch và ghi vào `translation-manifest.json`, các tệp chẩn đoán và tóm tắt quy trình
 
-运行时注入规则：
+Quy tắc tiêm runtime:
 
-- LLM 调用前会按当前 item 或 batch 的源文命中术语，只把命中的 glossary 条目写入提示词
-- 缩写表也按源文命中后再注入，避免无关缩写污染当前段落
-- `preserve` / `canonical` 这类硬术语仍只对命中的源文片段生效，不做全书无条件替换
-- 如果源文没有命中某个术语或缩写，该条目不会进入当前 prompt，也不会影响当前缓存 key
+- Trước khi gọi LLM, khớp các thuật ngữ với văn bản nguồn của mục hoặc batch hiện tại; chỉ ghi các mục thuật ngữ đã khớp vào prompt
+- Bảng viết tắt cũng được tiêm sau khi khớp văn bản nguồn để tránh các viết tắt không liên quan làm ô nhiễm đoạn hiện tại
+- Các thuật ngữ cứng như `preserve` / `canonical` chỉ áp dụng cho các đoạn văn bản nguồn đã khớp; không có thay thế vô điều kiện trên toàn bộ sách
+- Nếu văn bản nguồn không khớp với thuật ngữ hoặc viết tắt nào, mục đó sẽ không vào prompt hiện tại và không ảnh hưởng đến khóa bộ nhớ đệm hiện tại
 
-明确不做的事情：
+Các việc không được thực hiện:
 
-- 不做翻译后强制替换
-- 不保证每个术语一定命中
-- 不直接解析 Excel 文件
+- Không ép buộc thay thế sau dịch
+- Không đảm bảo mọi thuật ngữ đều được áp dụng
+- Không phân tích cú pháp trực tiếp tệp Excel
 
-## Agent v1
+## Tác nhân v1
 
-当前 agent 不是独立进程，也不是新的 provider gateway，而是 translation 服务层里的角色化能力封装。它们复用现有
-`llm/shared/provider_runtime.py`，不绕过既有模型、base_url、api_key 和结构化输出协议。
+Tác nhân hiện tại không phải là quy trình độc lập cũng không phải là cổng provider mới; nó là sự đóng gói khả năng dựa trên vai trò trong tầng dịch vụ dịch. Tái sử dụng `llm/shared/provider_runtime.py` hiện có; không bỏ qua mô hình đã thiết lập, base_url, api_key, giao thức đầu ra có cấu trúc.
 
-已落地的角色：
+Các vai trò đã triển khai:
 
 - `TerminologyAgent`
-  按当前源文命中术语和缩写，避免把整张术语表塞进每次 prompt。
+  Khớp các thuật ngữ và viết tắt với văn bản nguồn hiện tại để tránh nhồi nhét toàn bộ bảng thuật ngữ vào mọi prompt.
 - `ConsistencyReviewerAgent`
-  对翻译结果做规则型质量检查，例如英文残留、placeholder 不一致、术语缺失。
+  Thực hiện kiểm tra chất lượng dựa trên quy tắc đối với kết quả dịch, ví dụ: residue tiếng Anh, không nhất quán placeholder, bỏ sót thuật ngữ.
 - `RepairAgent`
-  对可修复问题构造 LLM repair task，只修当前 item，不扩写上下文。
+  Xây dựng tác vụ sửa chữa LLM cho các vấn đề có thể khắc phục; chỉ sửa mục hiện tại mà không mở rộng ngữ cảnh.
 - `TranslationAgentRuntime`
-  统一执行 LLM agent task，默认走 active provider 的 `request_chat_content`。
+  Thực thi tác vụ tác nhân LLM thống nhất; mặc định sử dụng `request_chat_content` của provider đang hoạt động.
 - `TranslationAgentCoordinator`
-  作为服务层编排入口，把 terminology/review/repair 串成稳定接口。
+  Điểm vào điều phối tầng dịch vụ; liên kết thuật ngữ/đánh giá/sửa chữa thành giao diện ổn định.
 
-第一版边界：
+Ranh giới phiên bản đầu tiên:
 
-- agent 可以构造 task、执行 task、解析结果、写入诊断或 review artifact
-- agent 不直接读取 OCR 文件、不决定页面级 workflow、不写最终 PDF
-- agent 不引入新的 SDK；新增 provider 时仍先接 `llm/shared/provider_registry.py`
-- 多 agent 编排先保持在 translation 内部，外部 API 只暴露稳定产物和诊断
+- Tác nhân có thể xây dựng tác vụ, thực thi tác vụ, phân tích kết quả, ghi chẩn đoán hoặc artifact đánh giá
+- Tác nhân không đọc trực tiếp tệp OCR, quyết định quy trình cấp trang hoặc ghi PDF cuối cùng
+- Tác nhân không giới thiệu SDK mới; các provider mới vẫn kết nối thông qua `llm/shared/provider_registry.py` trước
+- Điều phối đa tác nhân ban đầu vẫn nằm trong dịch; API bên ngoài chỉ tiết lộ các artifact và chẩn đoán ổn định
 
-当前主链接入：
+Tích hợp mainline hiện tại:
 
-- 翻译批次和乱码修复结束后，会进入 `agent_repair` 后处理阶段
-- 默认 `RETAIN_TRANSLATION_REPAIR_PROFILE=fast`，agent repair 只拿小预算做兜底修复，避免少量异常段落拖慢整本书
-- `fast` 默认最多修复 8 个候选项；候选很少时会按阻塞未译项数量收缩
-- `quality` 会放大 agent repair 预算，适合重质量的离线任务
-- 可通过 `RETAIN_TRANSLATION_AGENT_REPAIR_LIMIT=0` 彻底关闭
-- 可通过 `RETAIN_TRANSLATION_AGENT_REPAIR=0` 跳过 agent repair 阶段
-- 只修复英文残留、术语缺失、协议壳等可修复问题
-- placeholder 数量/顺序错误、数学分隔符不平衡、上下文串入等硬错误只写 skip 诊断，不让 repair agent 猜
+- Sau các batch dịch và sửa chữa văn bản bị lỗi,进入 giai đoạn hậu xử lý `agent_repair`
+- Mặc định `RETAIN_TRANSLATION_REPAIR_PROFILE=fast`; tác nhân sửa chữa sử dụng ngân sách nhỏ cho sửa chữa dự phòng để tránh một vài đoạn bất thường kéo toàn bộ sách
+- `fast` mặc định tối đa 8 ứng viên sửa chữa; giảm bằng cách chặn số lượng mục chưa dịch khi ứng viên ít
+- `quality` mở rộng ngân sách sửa chữa tác nhân; phù hợp với các tác vụ ngoại tuyến ưu tiên chất lượng
+- Có thể vô hiệu hóa hoàn toàn thông qua `RETAIN_TRANSLATION_AGENT_REPAIR_LIMIT=0`
+- Có thể bỏ qua giai đoạn sửa chữa tác nhân thông qua `RETAIN_TRANSLATION_AGENT_REPAIR=0`
+- Chỉ sửa chữa các vấn đề có thể khắc phục như residue tiếng Anh, bỏ sót thuật ngữ, lỗi giao thức shell, v.v.
+- Các lỗi cứng như đếm/lệnh placeholder, mất cân bằng dấu phân cách toán học, tràn ngữ cảnh, v.v. chỉ ghi chẩn đoán skip; tác nhân sửa chữa không đoán
 
-repair profile：
+Repair profile:
 
 - `RETAIN_TRANSLATION_REPAIR_PROFILE=fast`
-  默认模式。跳过重型乱码重构，保留小预算 agent repair 和最终空译收口。
+  Default mode. Skips heavy garbled reconstruction; retains small-budget agent repair and final empty translation consolidation.
 - `RETAIN_TRANSLATION_REPAIR_PROFILE=quality`
-  质量优先。启用更大的 agent repair 和最终恢复预算，适合对速度不敏感的任务。
-- 单项覆盖：
+  Quality priority. Enables larger agent repair and final recovery budget; suits speed-insensitive tasks.
+- Individual overrides:
   `RETAIN_TRANSLATION_GARBLED_RECONSTRUCTION=1`
   `RETAIN_TRANSLATION_AGENT_REPAIR=0|1`
   `RETAIN_TRANSLATION_AGENT_REPAIR_LIMIT=N`
   `RETAIN_TRANSLATION_FINAL_RECOVERY_MAX_ITEMS=N`
 
-后续推进顺序：
+Future progression order:
 
-1. 先把更多现有“翻译后检查 / 修复 / 术语注入”收口到 coordinator。
-2. 再把失败重试、英文残留修复、术语一致性修复接成可配置 pipeline。
-3. 最后再考虑跨段落一致性 agent 或文档级术语记忆 agent，避免一开始就改主流程太大。
+1. Consolidate more existing "post-translation check / repair / term injection" into coordinator first.
+2. Then connect failure retry, English residue repair, term consistency repair into configurable pipeline.
+3. Finally consider cross-paragraph consistency agent or document-level term memory agent; avoid changing main flow too much initially.
 
-## 并发与失败调度
+## Đồng thời và lập lịch thất bại
 
-- DeepSeek 官方 API 的默认翻译 workers 由 Rust API 解析为 `1000`。请求体里的 `translation.workers` 仍然可以覆盖。
-- Python HTTP 连接池会按 `configured_workers` 放大，默认上限 `1000`；可用 `RETAIN_TRANSLATION_HTTP_POOL_MAX` 临时压低。
-- 主翻译通道默认只做 1 次 HTTP attempt。timeout、429、5xx、连接错误会尽快让出 worker，进入尾部 transport retry 队列，避免一个失败项卡住后续段落。
-- 尾部 transport retry 会在主队列之后执行，默认允许 2 次 HTTP attempt，并使用更长 timeout。
+- Số lượng worker dịch mặc định của API chính thức DeepSeek được Rust API phân tích cú pháp là `1000`. Thân yêu cầu `translation.workers` vẫn có thể ghi đè.
+- Nhóm kết nối HTTP Python mở rộng theo `configured_workers`; giới hạn mặc định là `1000`; có thể tạm thời ngăn chặn thông qua `RETAIN_TRANSLATION_HTTP_POOL_MAX`.
+- Kênh dịch chính mặc định thực hiện 1 lần thử HTTP. Lỗi timeout, 429, 5xx, kết nối sẽ nhanh chóng giải phóng worker và đưa vào hàng đợi thử lại vận chuyển đuôi để tránh một mục thất bại chặn các đoạn tiếp theo.
+- Thử lại vận chuyển đuôi thực thi sau hàng đợi chính; mặc định thực hiện 2 lần thử HTTP với thời gian chờ dài hơn.
 
-## 模式说明
+## Mô tả chế độ
 
 - `fast`
-  不启用分类器。
+  Không bật bộ phân loại.
 - `sci`
-  面向论文和技术文档，还会做领域推断。
+  Dành cho bài báo và tài liệu kỹ thuật; cũng thực hiện suy luận miền.
 - `precise`
-  启用 LLM 分类器，只对可疑 OCR 块做额外判断。
+  Bật bộ phân loại LLM; chỉ phán đoán bổ sung cho các block OCR đáng ngờ.
 
-## Policy Config 兼容说明
+## Lưu ý tương thích cấu hình chính sách
 
-`services/policy/config.py` 里的 `build_translation_policy_config()` 目前还保留了几个旧字段，但它们已经不属于默认主链语义：
+`build_translation_policy_config()` trong `services/policy/config.py` hiện vẫn giữ lại một số trường kế thừa không còn là một phần của ngữ nghĩa mainline mặc định:
 
 - `enable_narrow_body_noise_skip`
 - `enable_metadata_fragment_skip`
@@ -415,23 +405,25 @@ repair profile：
 - `enable_reference_zone_skip`
 - `enable_reference_tail_skip`
 
-当前约定是：
+Quy ước hiện tại:
 
-- 默认主链不会消费这些字段去重建旧 skip 逻辑
-- 它们当前只作为 deprecated compatibility surface 保留，主要避免老测试/老调用方立刻报错
-- 新代码不要再基于这些字段设计行为
+- Mainline mặc định không sử dụng các trường này để tái tạo logic skip cũ
+- Hiện chỉ được giữ lại như bề mặt tương thích đã lỗi thời để ngăn các bài kiểm tra/caller cũ báo lỗi ngay lập tức
+- Mã mới không nên thiết kế hành vi dựa trên các trường này
 
-注意：
+Lưu ý:
 
-- 这属于内部 Python translation policy contract，不是外部 HTTP API 契约
-- 真实的“是否翻译”主决策仍应来自 `document.v1` 的显式 block policy
+- Đây là hợp đồng chính sách dịch nội bộ Python, không phải hợp đồng API HTTP bên ngoài
+- Quyết định chính "có dịch hay không" vẫn nên đến từ chính sách block rõ ràng trong `document.v1`
 
-## 协作规矩
+## Quy tắc hợp tác
 
-如果翻译模块单独分人维护，这里只负责“把 `document.v1.json` 变成稳定翻译产物”。
+Nếu module dịch được duy trì riêng biệt, tầng này chỉ chịu trách nhiệm "chuyển đổi `document.v1.json` thành các artifact dịch ổn định".
 
-- 允许在这里改策略、并发、术语表、LLM 调度、payload 落盘和翻译诊断
-- 不要在这里直接处理 provider raw OCR 结构，也不要把源 PDF 渲染逻辑塞回来
-- 当前正式输出协议是“逐页 translation payload + `translation-manifest.json`”；渲染层应只消费这套协议
-- 如果修改 payload 结构、manifest 字段语义或默认文件发现方式，必须同步更新 `runtime/pipeline`、`rendering`、README 和测试
-- 术语表当前是翻译提示约束，不是渲染层规则，也不是 OCR 层规则；不要把术语逻辑扩散到其他模块
+- Được phép sửa đổi chiến lược, đồng thời, bảng thuật ngữ, lập lịch LLM, lưu trữ payload, chẩn đoán dịch tại đây
+- Không xử lý trực tiếp cấu trúc OCR thô của provider tại đây; không nhồi nhét logic kết xuất PDF nguồn trở lại
+- Giao thức đầu ra chính thức hiện tại là "per-page translation payload + `translation-manifest.json`"; tầng kết xuất chỉ nên tiêu thụ giao thức này
+- Nếu sửa đổi cấu trúc payload, ngữ nghĩa trường manifest hoặc phương thức phát hiện tệp mặc định, phải cập nhật đồng bộ `runtime/pipeline`, `rendering`, README và kiểm thử
+- Bảng thuật ngữ hiện là ràng buộc gợi ý dịch, không phải quy tắc của tầng kết xuất hay tầng OCR; không lan truyền logic bảng thuật ngữ sang các module khác
+
+</content>

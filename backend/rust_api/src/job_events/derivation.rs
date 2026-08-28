@@ -66,7 +66,7 @@ pub(super) fn derive_events(
             substage: event_provider_stage(current),
             progress_unit: progress_unit_for_event(current.stage.as_deref(), "job_created"),
             event: "job_created".to_string(),
-            message: "任务已创建".to_string(),
+            message: "Tác vụ đã được tạo".to_string(),
             progress_current: current.progress_current,
             progress_total: current.progress_total,
             retry_count: event_retry_count(current),
@@ -97,7 +97,7 @@ pub(super) fn derive_events(
             substage: event_provider_stage(current),
             progress_unit: progress_unit_for_event(current.stage.as_deref(), "status_changed"),
             event: "status_changed".to_string(),
-            message: format!("任务状态变更为 {}", status_name(&current.status)),
+            message: format!("Trạng thái tác vụ thay đổi thành {}", status_name(&current.status)),
             progress_current: current.progress_current,
             progress_total: current.progress_total,
             retry_count: event_retry_count(current),
@@ -121,7 +121,7 @@ pub(super) fn derive_events(
                 substage: event_provider_stage(current),
                 progress_unit: progress_unit_for_event(current.stage.as_deref(), "job_terminal"),
                 event: "job_terminal".to_string(),
-                message: format!("任务进入终态 {}", status_name(&current.status)),
+                message: format!("Tác vụ vào trạng thái cuối {}", status_name(&current.status)),
                 progress_current: current.progress_current,
                 progress_total: current.progress_total,
                 retry_count: event_retry_count(current),
@@ -159,7 +159,7 @@ pub(super) fn derive_events(
                 .stage_detail
                 .clone()
                 .or_else(|| current.stage.clone())
-                .unwrap_or_else(|| "任务进度更新".to_string()),
+                .unwrap_or_else(|| "Cập nhật tiến độ tác vụ".to_string()),
             progress_current: current.progress_current,
             progress_total: current.progress_total,
             retry_count: event_retry_count(current),
@@ -192,7 +192,7 @@ pub(super) fn derive_events(
                 .stage_detail
                 .clone()
                 .or_else(|| current.stage.clone())
-                .unwrap_or_else(|| "任务进度更新".to_string()),
+                .unwrap_or_else(|| "Cập nhật tiến độ tác vụ".to_string()),
             progress_current: current.progress_current,
             progress_total: current.progress_total,
             retry_count: event_retry_count(current),
@@ -383,7 +383,7 @@ mod tests {
         let mut current = previous.clone();
         current.status = JobStatusKind::Running;
         current.stage = Some(job_stage_str(JobStage::Translating).to_string());
-        current.stage_detail = Some("正在翻译".to_string());
+        current.stage_detail = Some("Đang dịch".to_string());
         current.request_payload.ocr.provider = "paddle".to_string();
         current.started_at = Some("2026-04-11T00:00:00Z".to_string());
         current.updated_at = "2026-04-11T00:00:05Z".to_string();
@@ -411,7 +411,7 @@ mod tests {
         );
         assert!(payload.get("runtime").is_some());
         assert!(payload.get("stage_history").is_some());
-        assert_eq!(transition.stage_detail.as_deref(), Some("正在翻译"));
+        assert_eq!(transition.stage_detail.as_deref(), Some("Đang dịch"));
         assert_eq!(transition.provider.as_deref(), Some("paddle"));
         assert_eq!(transition.event, "stage_transition");
         assert_eq!(transition.user_stage.as_deref(), Some("translation"));
@@ -435,12 +435,12 @@ mod tests {
             failure_category: Some("timeout".to_string()),
             provider_stage: None,
             provider_code: None,
-            summary: "外部服务请求超时".to_string(),
-            root_cause: Some("测试".to_string()),
+            summary: "Yêu cầu dịch vụ bên ngoài quá thời gian chờ".to_string(),
+            root_cause: Some("Kiểm tra".to_string()),
             retryable: true,
             upstream_host: Some("api.deepseek.com".to_string()),
             provider: Some("deepseek".to_string()),
-            suggestion: Some("重试".to_string()),
+            suggestion: Some("Thử lại".to_string()),
             last_log_line: Some("ReadTimeout".to_string()),
             raw_excerpt: Some("ReadTimeout".to_string()),
             raw_error_excerpt: Some("ReadTimeout".to_string()),
@@ -468,7 +468,7 @@ mod tests {
         );
         assert_eq!(
             payload.get("failure_summary").and_then(Value::as_str),
-            Some("外部服务请求超时")
+            Some("Yêu cầu dịch vụ bên ngoài quá thời gian chờ")
         );
         let failure = events
             .iter()

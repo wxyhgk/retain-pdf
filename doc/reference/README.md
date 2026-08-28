@@ -1,14 +1,14 @@
-# 参考资料
+# Tài liệu tham khảo
 
-这里放外部服务资料和专题性参考，不是 RetainPDF 主流程协议源。
+Nơi đây chứa tài liệu về dịch vụ bên ngoài và các tham khảo chuyên đề, không phải nguồn giao thức luồng chính của RetainPDF.
 
-## 入口
+## Đầu vào
 
-- [MinerU API 资料](./mineru_api/README.md)
+- [Tài liệu MinerU API](./mineru_api/README.md)
 - [LLM Provider](./LLM_api/README.md)
-- [字体与排版密度](./font-scaling/README.md)
+- [Phông chữ và mật độ bố cục](./font-scaling/README.md)
 
-## 读法
+## Cách đọc
 
-这层适合“查资料、看约束、做专题试验”。
-如果你要改主链路，先去 `doc/core/`。
+Tầng này phù hợp để "tra cứu, xem ràng buộc, làm thí nghiệm chuyên đề".
+Nếu bạn sửa luồng chính, hãy đến `doc/core/`.

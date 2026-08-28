@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// 让 config/runtime.js 的 isMockMode()/apiBase() 在 node 下可用(无 jsdom 需求)
+// Cho phép isMockMode()/apiBase() của config/runtime.js hoạt động trong node (không cần jsdom)
 globalThis.window = globalThis.window || { location: { search: "", protocol: "http:", hostname: "127.0.0.1" } };
 
 const { AiAskError, askLibraryAi, readAiAskStream } = await import("../src/js/api/ai.js");
@@ -20,11 +20,11 @@ function sseStream(chunks = []) {
   });
 }
 
-// ===== SSE 行解析(/api/v1/ai/ask 流式契约) =====
+// ===== Phân tích dòng SSE (hợp đồng luồng /api/v1/ai/ask) =====
 
-test("readAiAskStream:tool 事件按序回调,done 事件返回归一化结果", async () => {
+test("readAiAskStream:sự kiện tool gọi lại theo thứ tự, sự kiện done trả về kết quả chuẩn hóa", async () => {
   const toolEvents = [];
-  // 事件跨 chunk 截断 + CRLF + 非 data 行,验证缓冲逻辑
+  // Sự kiện cắt ngang chunk + CRLF + dòng không phải data, xác minh logic đệm
   const result = await readAiAskStream(sseStream([
     ': keep-alive\n',
     'data: {"type": "tool", "round": 1, "tool": "list_documents", "arguments": {"limit": 200}}\r\n\r\n',
@@ -53,7 +53,7 @@ test("readAiAskStream:tool 事件按序回调,done 事件返回归一化结果",
   assert.equal(result.toolTrace.length, 1);
 });
 
-test("readAiAskStream:error 事件抛出 AiAskError", async () => {
+test("readAiAskStream:sự kiện error ném AiAskError", async () => {
   await assert.rejects(
     readAiAskStream(sseStream([
       'data: {"type": "tool", "round": 1, "tool": "search_fulltext", "arguments": {}}\n\n',
@@ -63,7 +63,7 @@ test("readAiAskStream:error 事件抛出 AiAskError", async () => {
   );
 });
 
-test("readAiAskStream:流中断(无 done)抛出可重试错误", async () => {
+test("readAiAskStream:luồng bị gián đoạn (không có done) ném lỗi có thể thử lại", async () => {
   await assert.rejects(
     readAiAskStream(sseStream([
       'data: {"type": "tool", "round": 1, "tool": "read_blocks", "arguments": {}}\n\n',
@@ -72,16 +72,16 @@ test("readAiAskStream:流中断(无 done)抛出可重试错误", async () => {
   );
 });
 
-test("readAiAskStream:末尾无换行的 done 行也能解析", async () => {
+test("readAiAskStream:dòng done không có xuống dòng ở cuối cũng phân tích được", async () => {
   const result = await readAiAskStream(sseStream([
     'data: {"type": "done", "answer": "ok", "citations": [], "tool_trace": [], "rounds": 1}',
   ]));
   assert.equal(result.answer, "ok");
 });
 
-// ===== askLibraryAi:请求构造与错误分级 =====
+// ===== askLibraryAi:xây dựng yêu cầu và phân cấp lỗi =====
 
-test("askLibraryAi:携带 X-API-Key,body 含 question/document_id/job_id/stream", async () => {
+test("askLibraryAi:mang theo X-API-Key, body chứa question/document_id/job_id/stream", async () => {
   setRuntimeConfig({ xApiKey: "test-key" });
   const calls = [];
   const result = await askLibraryAi({
@@ -114,17 +114,17 @@ test("askLibraryAi:携带 X-API-Key,body 含 question/document_id/job_id/stream"
   });
 });
 
-test("askLibraryAi:502 抛出带 status 的 AI 服务未运行错误", async () => {
+test("askLibraryAi:502 ném lỗi dịch vụ AI chưa chạy kèm status", async () => {
   await assert.rejects(
     askLibraryAi({
       question: "hi",
       fetchImpl: async () => ({ ok: false, status: 502, text: async () => "" }),
     }),
-    (error) => error instanceof AiAskError && error.status === 502 && /AI 服务未运行/.test(error.message),
+    (error) => error instanceof AiAskError && error.status === 502 && /Dịch vụ AI chưa chạy/.test(error.message),
   );
 });
 
-test("askLibraryAi:401 解析 FastAPI detail 并提示 X-API-Key", async () => {
+test("askLibraryAi:401 phân tích chi tiết FastAPI và đề xuất X-API-Key", async () => {
   await assert.rejects(
     askLibraryAi({
       question: "hi",
@@ -140,7 +140,7 @@ test("askLibraryAi:401 解析 FastAPI detail 并提示 X-API-Key", async () => {
   );
 });
 
-test("askLibraryAi:400 缺 LLM key 时透传/归并可读文案", async () => {
+test("askLibraryAi:400 thiếu LLM key thì truyền qua/đưa về văn bản có thể đọc", async () => {
   await assert.rejects(
     askLibraryAi({
       question: "hi",
@@ -158,7 +158,7 @@ test("askLibraryAi:400 缺 LLM key 时透传/归并可读文案", async () => {
   );
 });
 
-test("askLibraryAi:非流式 JSON envelope 兜底解包", async () => {
+test("askLibraryAi:bao bì JSON envelope phi luồng dự phòng giải nén", async () => {
   const result = await askLibraryAi({
     question: "hi",
     fetchImpl: async () => ({
@@ -171,13 +171,13 @@ test("askLibraryAi:非流式 JSON envelope 兜底解包", async () => {
   assert.equal(result.rounds, 2);
 });
 
-// ===== ask-answerer:document_id 反查缓存与 scope 前缀 =====
+// ===== ask-answerer:document_id tra ngược bộ nhớ cache và tiền tố scope =====
 
-test("buildScopedQuestion:页/选区范围以前缀写进 question 文本", () => {
+test("buildScopedQuestion:phạm vi trang/vùng chọn ghi vào văn bản question bằng tiền tố", () => {
   assert.equal(buildScopedQuestion({ question: "总结一下", scope: "document" }), "总结一下");
   assert.equal(
     buildScopedQuestion({ question: "总结一下", scope: "page", context: { page: 4 } }),
-    "（当前第 4 页）总结一下",
+    "(Trang hiện tại 4) Tóm tắt",
   );
   assert.equal(
     buildScopedQuestion({
@@ -186,19 +186,19 @@ test("buildScopedQuestion:页/选区范围以前缀写进 question 文本", () =
       context: { page: 2, rect: {} },
       resolveQuote: () => ({ quoteText: "选中的  原文\n片段" }),
     }),
-    "（针对选中的原文片段：「选中的 原文 片段」）解释这段",
+    "(Dành cho đoạn văn bản gốc đã chọn: «đoạn văn bản gốc đã chọn») Giải thích đoạn này",
   );
   assert.equal(
     buildScopedQuestion({ question: "解释这段", scope: "selection", context: { page: 2 }, resolveQuote: () => null }),
-    "（针对第 2 页的选区内容）解释这段",
+    "(Dành cho nội dung vùng chọn ở trang 2) Giải thích đoạn này",
   );
 });
 
-// ===== chat 渲染:引用可点击、模型文本不注入 HTML =====
+// ===== chat render:trích dẫn có thể nhấp, văn bản mô hình không tiêm HTML =====
 
-test("chat:agentic 回答渲染 [n] 可点击引用与脚注,模型文本 XSS 安全", async () => {
-  // Phase 2b:AI 问答 UI 迁入 React(ReaderAiChat),本测试改为渲染组件、
-  // 经 DOM 提交驱动;渲染语义断言(过程提示/XSS/引用按钮/脚注)保持不变。
+test("chat:render trả lời agentic [n] trích dẫn có thể nhấp và chú thích, văn bản mô hình an toàn XSS", async () => {
+  // Giai đoạn 2b:UI hỏi đáp AI chuyển vào React (ReaderAiChat), bài test này đổi sang render component,
+  // điều khiển bằng DOM submit; ngữ nghĩa render assertion (tiến trình/XSS/nút trích dẫn/chú thích) giữ nguyên.
   const { JSDOM } = await import("jsdom");
   const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/" });
   for (const k of ["window", "document", "HTMLElement", "CustomEvent", "Event", "Node", "MutationObserver"]) {
@@ -206,10 +206,10 @@ test("chat:agentic 回答渲染 [n] 可点击引用与脚注,模型文本 XSS �
   }
   globalThis.window = dom.window;
   globalThis.requestAnimationFrame = (cb) => setTimeout(() => cb(0), 0);
-  // Radix Presence/Tabs(阶段 B 引入)在 jsdom 下需要 cancelAnimationFrame
-  // (TabsContent 的 mount 动画计时器清理)和 getComputedStyle(Presence 读取
-  // animation-name 判断退场动画是否结束)——jsdom 的 window 上有实现,只是没有
-  // 像 requestAnimationFrame 一样被复制到裸 global 上,这里一并补上。
+  // Radix Presence/Tabs (giới thiệu giai đoạn B) cần cancelAnimationFrame trong jsdom
+  // (dọn dẹp bộ hẹn giờ mount animation của TabsContent) và getComputedStyle (Presence đọc
+  // animation-name xác định animation thoát kết thúc) — jsdom window có implement, chỉ là không
+  // được sao chép vào global như requestAnimationFrame, bù đắp ở đây.
   globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
   globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
   globalThis.IS_REACT_ACT_ENVIRONMENT = false;
@@ -257,24 +257,24 @@ test("chat:agentic 回答渲染 [n] 可点击引用与脚注,模型文本 XSS �
       }
       await new Promise((resolve) => setTimeout(resolve, 15));
     }
-    assert.fail(`等待超时:${description}`);
+    assert.fail(`Hết thời gian chờ:${description}`);
   };
-  await waitFor(() => documentRef.getElementById("reader-ai-input"), "composer 挂载");
+  await waitFor(() => documentRef.getElementById("reader-ai-input"), "mount composer");
   const input = documentRef.getElementById("reader-ai-input");
   const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, "value").set;
-  setter.call(input, "Molassembler 是什么?");
+  setter.call(input, "Molassembler là gì?");
   input.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
   documentRef.querySelector("[data-reader-ai-composer]")
     .dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
   await waitFor(
     () => documentRef.querySelector(".reader-ai-citations .reader-ai-citation-item"),
-    "回答 finalize(脚注出现)",
+    "trả lời finalize (chú thích xuất hiện)",
   );
 
   const assistant = documentRef.querySelector(".reader-ai-message-assistant");
-  assert.deepEqual(progressTexts, ["正在检索文档内容…"], "tool 事件应渲染为过程提示行");
-  assert.ok(!assistant.className.includes("reader-ai-message-progress"), "完成后应移除过程态样式");
-  assert.ok(!assistant.innerHTML.includes("<img"), "模型文本必须按纯文本插入");
+  assert.deepEqual(progressTexts, ["Đang tìm kiếm nội dung tài liệu…"], "sự kiện tool nên render thành dòng tiến trình");
+  assert.ok(!assistant.className.includes("reader-ai-message-progress"), "hoàn thành nên xóa trạng thái tiến trình");
+  assert.ok(!assistant.innerHTML.includes("<img"), "văn bản mô hình phải chèn dạng plain text");
   assert.match(assistant.textContent, /<img src=x/);
 
   const refButton = assistant.querySelector("button.reader-ai-citation-ref");
@@ -284,10 +284,10 @@ test("chat:agentic 回答渲染 [n] 可点击引用与脚注,模型文本 XSS �
   assert.equal(footerButtons.length, 1);
   assert.match(footerButtons[0].textContent, /^\[1\] 命中片段文本 · 第 4 页$/);
   footerButtons[0].click();
-  assert.deepEqual(jumps, [citation, citation], "正文标记与脚注点击都跳同一引用");
+  assert.deepEqual(jumps, [citation, citation], "đánh dấu văn bản và nhấp chú thích đều nhảy cùng trích dẫn");
 });
 
-test("ask answerer:按 job_id 直查 document_id 且只查一次", async () => {
+test("ask answerer:tra job_id trực tiếp document_id và chỉ tra một lần", async () => {
   const listCalls = [];
   const askCalls = [];
   const answerer = createReaderAskAnswerer({
@@ -295,7 +295,7 @@ test("ask answerer:按 job_id 直查 document_id 且只查一次", async () => {
     llmConfig: () => ({ apiKey: "sk-test", baseUrl: "", model: "" }),
     documentByJobId: async (apiPrefix, jobId) => {
       listCalls.push([apiPrefix, jobId]);
-      // 后端直查:历史 run 也能解析到所属文档
+      // Tra ngược trực tiếp backend:lịch sử run cũng phân tích được tài liệu thuộc về
       return { document_id: "doc-b", active_job_id: "job-a" };
     },
     ask: async (payload) => {
@@ -307,7 +307,7 @@ test("ask answerer:按 job_id 直查 document_id 且只查一次", async () => {
 
   const toolEvents = [];
   const first = await answerer.answer({
-    question: "问题一",
+    question: "Câu hỏi một",
     scope: "document",
     onToolEvent: (event) => toolEvents.push(event),
   });
@@ -315,15 +315,15 @@ test("ask answerer:按 job_id 直查 document_id 且只查一次", async () => {
 
   assert.equal(first.answer, "回答");
   assert.equal(first.scope, "document");
-  assert.equal(listCalls.length, 1, "document_id 直查结果应被缓存");
-  assert.deepEqual(listCalls[0][1], "job-b", "按 job_id 直查");
+  assert.equal(listCalls.length, 1, "kết quả tra document_id nên được cache");
+  assert.deepEqual(listCalls[0][1], "job-b", "tra theo job_id");
   assert.equal(askCalls[0].documentId, "doc-b");
   assert.equal(askCalls[0].jobId, "job-b");
-  assert.equal(askCalls[1].question, "（当前第 3 页）问题二");
+  assert.equal(askCalls[1].question, "(Trang hiện tại 3) Câu hỏi hai");
   assert.equal(toolEvents.length, 1);
 });
 
-test("ask answerer:反查不到 document 时 fail closed，不静默全库", async () => {
+test("ask answerer:tra ngược không thấy document thì fail closed, không im lặng toàn thư viện", async () => {
   const askCalls = [];
   const answerer = createReaderAskAnswerer({
     jobId: "job-orphan",
@@ -336,12 +336,12 @@ test("ask answerer:反查不到 document 时 fail closed，不静默全库", asy
   });
   await assert.rejects(
     answerer.answer({ question: "这篇讲什么?", scope: "document" }),
-    /无法关联当前文档/,
+    /Không thể liên kết với tài liệu hiện tại/,
   );
   assert.equal(askCalls.length, 0);
 });
 
-test("ask answerer:无模型 Key 时不查文档、不发 ask", async () => {
+test("ask answerer:không có model Key thì không tra tài liệu, không gửi ask", async () => {
   const listCalls = [];
   const askCalls = [];
   const answerer = createReaderAskAnswerer({
@@ -358,13 +358,13 @@ test("ask answerer:无模型 Key 时不查文档、不发 ask", async () => {
   });
   await assert.rejects(
     answerer.answer({ question: "hi", scope: "document" }),
-    /缺少模型 API Key/,
+    /Thiếu API Key của model/,
   );
-  assert.equal(listCalls.length, 0, "缺 Key 不得先查文档");
-  assert.equal(askCalls.length, 0, "缺 Key 不得发 ask");
+  assert.equal(listCalls.length, 0, "thiếu Key không được tra tài liệu trước");
+  assert.equal(askCalls.length, 0, "thiếu Key không được gửi ask");
 });
 
-test("askLibraryAi 携带 llm_api_key/base/model,仅非空字段进 payload", async () => {
+test("askLibraryAi mang theo llm_api_key/base/model, chỉ trường không null vào payload", async () => {
   globalThis.window = { location: { search: "", protocol: "http:", hostname: "127.0.0.1" } };
   let sentBody = null;
   const fakeFetch = async (_url, options) => {
@@ -389,7 +389,7 @@ test("askLibraryAi 携带 llm_api_key/base/model,仅非空字段进 payload", as
   assert.equal(sentBody.document_id, "doc-1");
 });
 
-test("askLibraryAi 无 llm key 时 payload 不含 llm_* 字段(后端回退 env)", async () => {
+test("askLibraryAi không có llm key thì payload không chứa trường llm_* (backend fallback env)", async () => {
   globalThis.window = { location: { search: "", protocol: "http:", hostname: "127.0.0.1" } };
   let sentBody = null;
   const fakeFetch = async (_url, options) => {

@@ -1,69 +1,69 @@
-# 测试贡献指南
+# Hướng dẫn đóng góp kiểm thử
 
-测试贡献和代码贡献同等重要。专业测试人员不需要先理解全部内部实现，也可以直接贡献高价值工作。
+Đóng góp kiểm thử quan trọng ngang với đóng góp mã. Chuyên gia kiểm thử không cần hiểu toàn bộ triển khai nội bộ trước, cũng có thể trực tiếp đóng góp công việc giá trị cao.
 
-## 可以贡献什么
+## Có thể đóng góp gì
 
-- 可公开或已脱敏的 PDF 样本，以及对应的期望现象、页码、bbox、截图和 job_id。
-- OCR 归一化、翻译、公式保护、渲染、下载、reader、library、resume 的回归用例。
-- 大样本性能基准，例如 100 页、500 页、1000 页 PDF 的阶段耗时、内存占用和输出体积。
-- 端到端验收清单，例如桌面端首次启动、Docker 升级、断网重试、token 错误、任务取消、重新渲染、批量删除。
-- 手工测试报告，包含环境、版本、复现步骤、期望结果、实际结果和附件。
-- 自动化测试脚本或 fixture，但必须保证不包含私有 token、真实用户文件或不可公开内容。
+- Mẫu PDF có thể công khai hoặc đã làm ẩn, cùng với hiện tượng mong đợi, số trang, bbox, ảnh chụp màn hình và job_id tương ứng.
+- Các trường hợp hồi quy cho chuẩn hóa OCR, dịch thuật, bảo vệ công thức, kết xuất, tải xuống, reader, library, resume.
+- Điểm chuẩn hiệu suất mẫu lớn, ví dụ thời gian giai đoạn, mức sử dụng bộ nhớ và kích thước đầu ra cho PDF 100 trang, 500 trang, 1000 trang.
+- Danh sách kiểm thử end-to-end, ví dụ khởi động desktop lần đầu, nâng cấp Docker, thử lại khi mất mạng, lỗi token, hủy tác vụ, kết xuất lại, xóa hàng loạt.
+- Báo cáo kiểm thử thủ công, bao gồm môi trường, phiên bản, các bước tái hiện, kết quả mong đợi, kết quả thực tế và tệp đính kèm.
+- Script kiểm thử tự động hoặc fixture, nhưng phải đảm bảo không chứa token riêng tư, tệp người dùng thực hoặc nội dung không công khai.
 
-## 测试 Issue 建议格式
+## Định dạng đề xuất cho Issue kiểm thử
 
 ```md
-## 环境
+## Môi trường
 
-- RetainPDF 版本：
-- 运行方式：桌面端 / Docker / 本地开发
-- 系统和浏览器：
-- OCR provider：
-- 模型 provider：
+- Phiên bản RetainPDF:
+- Cách chạy: desktop / Docker / phát triển cục bộ
+- Hệ điều hành và trình duyệt:
+- OCR provider:
+- Model provider:
 
-## 样本
+## Mẫu
 
-- 是否可公开：
-- 页数：
-- 相关页码 / bbox：
-- job_id：
+- Có thể công khai không:
+- Số trang:
+- Số trang / bbox liên quan:
+- job_id:
 
-## 步骤
+## Các bước
 
 1. ...
 2. ...
 
-## 期望结果
+## Kết quả mong đợi
 
 ...
 
-## 实际结果
+## Kết quả thực tế
 
 ...
 
-## 附件
+## Tệp đính kèm
 
-- 截图 / 脱敏 PDF / 日志 / 事件流片段
+- Ảnh chụp màn hình / PDF đã làm ẩn / nhật ký / đoạn luồng sự kiện
 ```
 
-## 测试 PR 建议
+## Đề xuất PR kiểm thử
 
-- fixture 尽量小，能用 1 到 3 页复现就不要提交整本书。
-- 大文件、批量 PDF、benchmark 输出默认放 `experiments/` 或外部链接；只有明确需要进入自动化测试的小样本才提交仓库。
-- 新增测试时说明它保护的 bug、模块或用户流程。
-- 对性能测试，写清楚机器环境、样本页数、命令、旧耗时、新耗时和允许波动范围。
-- 对视觉/渲染问题，尽量附页码、bbox、截图和期望行为；只说“看起来不对”很难形成回归测试。
+- Fixture càng nhỏ càng tốt, nếu có thể tái hiện bằng 1-3 trang thì không gửi cả cuốn sách.
+- Tệp lớn, PDF hàng loạt, đầu ra benchmark mặc định đặt trong `experiments/` hoặc liên kết ngoài; chỉ những mẫu nhỏ rõ ràng cần vào kiểm thử tự động mới commit vào kho lưu trữ.
+- Khi thêm kiểm thử mới, nêu rõ nó bảo vệ lỗi, module hoặc luồng người dùng nào.
+- Đối với kiểm thử hiệu suất, viết rõ môi trường máy, số trang mẫu, lệnh, thời gian cũ, thời gian mới và phạm vi dao động cho phép.
+- Đối với vấn đề hình ảnh/kết xuất, cố gắng đính kèm số trang, bbox, ảnh chụp màn hình và hành vi mong đợi; chỉ nói "trông không đúng" rất khó tạo kiểm thử hồi quy.
 
-## 常用测试入口
+## Đầu vào kiểm thử thường dùng
 
-Rust API：
+Rust API:
 
 ```bash
 cargo test --manifest-path backend/rust_api/Cargo.toml
 ```
 
-Python：
+Python:
 
 ```bash
 PYTHONPATH=backend/scripts python3 -m pytest backend/scripts/devtools/tests/translation -q
@@ -72,7 +72,7 @@ PYTHONPATH=backend/scripts python3 -m pytest backend/scripts/devtools/tests/rend
 python3 backend/scripts/devtools/check_pipeline_architecture.py
 ```
 
-前端与桌面端：
+Frontend và desktop:
 
 ```bash
 npm --prefix frontend test
@@ -80,9 +80,9 @@ npm --prefix frontend run build
 npm --prefix desktop run verify-frontend-sync
 ```
 
-`npm --prefix frontend test` 使用 Node 原生 test runner，优先覆盖任务进度、状态整形等不依赖浏览器和后端服务的纯函数回归。
+`npm --prefix frontend test` sử dụng Node test runner gốc, ưu tiên bao phủ kiểm thử hồi quy thuần túy như tiến độ tác vụ, định dạng trạng thái, không phụ thuộc vào trình duyệt hoặc dịch vụ backend.
 
-前端端到端状态 smoke 会真实提交任务，通常需要本地 Rust API、OCR token、模型 key 和样本 PDF；具备这些条件时再跑：
+Smoke trạng thái end-to-end frontend sẽ thực sự gửi tác vụ, thường cần Rust API cục bộ, token OCR, key model và PDF mẫu; chạy khi có đủ điều kiện:
 
 ```bash
 cd frontend

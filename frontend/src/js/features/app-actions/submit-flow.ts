@@ -8,7 +8,7 @@ import { APP_EVENTS } from "../../contracts/app-contract.js";
 
 export const DEEPSEEK_BALANCE_CHECK_TIMEOUT_MS = 12000;
 
-/** DeepSeek 余额/预算快照（workflow budget 侧）。 */
+/** DeepSeek balance/budget snapshot from the workflow budget side. */
 export interface BudgetStateSnapshot {
   visible?: boolean;
   blocking?: boolean;
@@ -55,7 +55,7 @@ export interface WindowRefLike {
   setTimeout?: (handler: TimerHandler, timeout?: number, ...args: unknown[]) => number;
 }
 
-/** setText 接收 string 或 diagnostic 对象（error-box 侧再格式化）。 */
+/** setText accepts a string or diagnostic object; error-box formatting happens later. */
 export type SetTextFn = (id: string, text?: unknown) => void;
 
 export interface NeedsDeepSeekBudgetCheckOptions {
@@ -195,32 +195,32 @@ export async function ensureDeepSeekBudgetReady({
   if (!needsDeepSeekBudgetCheck({ workflow, workflowNeedsUpload, currentBudgetState })) {
     return true;
   }
-  setText("error-box", "正在检测 DeepSeek 余额…");
+  setText("error-box", "Đang kiểm tra số dư DeepSeek...");
   try {
     const result = asBalanceResult(await withTimeout(
       refreshDeepSeekBalance?.({ silent: true }) || Promise.resolve(null),
       timeoutMs,
-      "DeepSeek 余额检测超时，请稍后重试或在接口设置中检测。",
+      "Kiểm tra số dư DeepSeek đã hết thời gian chờ. Hãy thử lại sau hoặc kiểm tra trong cài đặt API.",
     ));
     if (result?.status === "missing_key") {
-      setText("error-box", "请先填写 DeepSeek API Key。");
+      setText("error-box", "Hãy nhập DeepSeek API Key trước.");
       return false;
     }
     if (result?.status === "network_error") {
-      setText("error-box", "DeepSeek 余额检测失败，请稍后重试或在接口设置中检测。");
+      setText("error-box", "Không kiểm tra được số dư DeepSeek. Hãy thử lại sau hoặc kiểm tra trong cài đặt API.");
       return false;
     }
   } catch (error) {
-    setText("error-box", (error as { message?: string })?.message || "DeepSeek 余额检测失败，请稍后重试。");
+    setText("error-box", (error as { message?: string })?.message || "Không kiểm tra được số dư DeepSeek. Hãy thử lại sau.");
     return false;
   }
   const budget = asBudgetState(currentBudgetState?.());
   if (budget?.blocking) {
-    setText("error-box", `余额不足：${budget.message}。请充值后再提交。`);
+    setText("error-box", `Số dư không đủ: ${budget.message}. Hãy nạp thêm rồi gửi lại.`);
     return false;
   }
   if (budget?.visible && !budget.balanceChecked) {
-    setText("error-box", "无法确认 DeepSeek 余额，请先在接口设置中完成检测。");
+    setText("error-box", "Chưa xác nhận được số dư DeepSeek. Hãy kiểm tra trong cài đặt API trước.");
     return false;
   }
   return true;
@@ -262,21 +262,21 @@ export function handleSubmitReadinessBlock({
   switch (readiness?.reason) {
     case SUBMIT_BLOCK_REASONS.DESKTOP_NOT_CONFIGURED:
       openSetupDialog?.();
-      setText("error-box", "请先完成首次配置。");
+      setText("error-box", "Hãy hoàn tất cấu hình ban đầu trước.");
       return true;
     case SUBMIT_BLOCK_REASONS.MISSING_CREDENTIALS:
-      setText("error-box", "请先填写当前 OCR Provider 凭证。");
+      setText("error-box", "Hãy nhập thông tin xác thực OCR Provider hiện tại trước.");
       openBrowserCredentialsDialog?.();
       return true;
     case SUBMIT_BLOCK_REASONS.MISSING_UPLOAD:
-      setText("error-box", "请先选择并上传 PDF 文件");
+      setText("error-box", "Hãy chọn và tải tệp PDF lên trước.");
       return true;
     case SUBMIT_BLOCK_REASONS.MISSING_RENDER_SOURCE:
-      setText("error-box", "请先在开发者设置里填写 Render 源任务 ID。");
+      setText("error-box", "Hãy nhập Render source job ID trong cài đặt nhà phát triển trước.");
       return true;
     case SUBMIT_BLOCK_REASONS.BUDGET_BLOCKING: {
       const budget = asBudgetState(currentBudgetState?.());
-      setText("error-box", `余额不足：${budget?.message || "请充值后再提交"}。请充值后再提交。`);
+      setText("error-box", `Số dư không đủ: ${budget?.message || "hãy nạp thêm rồi gửi lại"}. Hãy nạp thêm rồi gửi lại.`);
       return true;
     }
     default:
@@ -297,13 +297,13 @@ export async function ensureOcrCredentialsForSubmit({
   }
   return Boolean(await ensureOcrCredentialsReady?.({
     onMissingToken: () => {
-      setText("error-box", "请先填写当前 OCR Provider 凭证。");
+      setText("error-box", "Hãy nhập thông tin xác thực OCR Provider hiện tại trước.");
       if (!desktopMode) {
         openBrowserCredentialsDialog?.();
       }
     },
     onInvalidToken: (result) => {
-      setText("error-box", result.summary || "OCR Provider 凭证校验未通过。");
+      setText("error-box", result.summary || "Xác thực OCR Provider không đạt.");
       if (!desktopMode) {
         openBrowserCredentialsDialog?.();
       }
@@ -322,9 +322,9 @@ export function publishSubmitSuccess({
   windowRef = globalThis.window,
   now = () => new Date().toISOString(),
 }: PublishSubmitSuccessOptions = {}) {
-  // 创建事件已 insert+hydrate；不再 200/1500/4000 三次 force 整页刷（叠乘闪烁）
+  // The create event is already inserted and hydrated; avoid three forced full-page refreshes at 200/1500/4000ms that compound flicker.
   libraryEventPort?.publishJobCreated?.(payload);
-  // 单次延迟 soft 对齐文档投影（soft reset 保留旧 items；不 force 绕过 workflow suspend）
+  // One delayed soft sync aligns the document projection; soft reset keeps old items and does not force through workflow suspend.
   windowRef?.setTimeout?.(() => {
     libraryEventPort?.requestRefresh?.({ delay: 0, force: false });
   }, 800);
@@ -457,7 +457,7 @@ export async function runSubmitFlow({
       return { status: "missing_upload", error: err };
     }
     setText("error-box", buildErrorDiagnostic(err, {
-      operation: "提交 PDF 任务",
+      operation: "Gửi tác vụ PDF",
       url: `${apiPrefix || ""}/jobs`,
       details: {
         workflow,

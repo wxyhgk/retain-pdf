@@ -1,22 +1,21 @@
-# 皮肤：墨家（id `mojia`）
+# Skin: Mặc Gia (id `mojia`)
 
-配套装饰包 `decor/mojia`（机关素材 10 元素合成）。与 jiangnan「素纸」
-冷灰留白路线拉开差异：暖一档、端方一档，但仍守住不大面积用色的纪律。
+Gói trang trí đi kèm `decor/mojia` (10 yếu tố cơ quan tổng hợp). Khác biệt với tuyến xám lạnh khoảng trống của jiangnan "Giấy Mộc": ấm hơn một bậc, đoan trang hơn một bậc, nhưng vẫn giữ kỷ luật không dùng màu diện tích lớn.
 
-## 取色逻辑
+## Logic lấy màu
 
-| Token | 值 | 说明 |
+| Token | Giá trị | Ghi chú |
 |-------|-----|------|
-| `--bg` | `#f2efe8` | 暖素绢，区别于 jiangnan 冷石灰 |
-| `--paper` | `#faf8f1` | 近白微暖绢面 |
-| `--ink` | `#26221b` | 玄墨带褐，配木色不发蓝 |
-| `--accent` | `#4c6658` | 青铜绿，选中态/强调 |
-| `--btn-primary-bg` | `var(--accent)` | 主按钮/选中态青铜绿，方角 8px（早期试过玄墨底，太生硬弃用） |
-| `--gold` | `#8f7442` | 青铜金，仅小标签点缀 |
-| `--danger` | `#b23b32` | 朱砂沉一档，压得住木色 |
+| `--bg` | `#f2efe8` | Lụa mộc ấm, khác với xám đá lạnh của jiangnan |
+| `--paper` | `#faf8f1` | Mặt lụa gần trắng hơi ấm |
+| `--ink` | `#26221b` | Huyền mặc pha nâu, phối màu gỗ không ngả xanh |
+| `--accent` | `#4c6658` | Xanh đồng, trạng thái chọn/nhấn mạnh |
+| `--btn-primary-bg` | `var(--accent)` | Nút chính/trạng thái chọn xanh đồng, góc vuông 8px (bản đầu thử nền huyền mặc, quá cứng nên bỏ) |
+| `--gold` | `#8f7442` | Vàng đồng, chỉ điểm xuyết nhãn nhỏ |
+| `--danger` | `#b23b32` | Chu sa trầm một bậc, đè được màu gỗ |
 
-## 纪律
+## Kỷ luật
 
-1. 大面积只用绢与墨，青铜/金/朱只做小面积功能色。
-2. 机关元素交给装饰包，皮肤本身不堆纹理。
-3. 背景剪影不透明度 ≤ 10%，面板下不许显脏（红线同 jiangnan）。
+1. Diện tích lớn chỉ dùng lụa và mặc, đồng/xanh/son chỉ làm màu chức năng diện tích nhỏ.
+2. Yếu tố cơ quan giao cho gói trang trí, bản thân skin không chất vân.
+3. Độ mờ bóng nền cắt ≤ 10%, dưới panel không được trông bẩn (giới hạn đỏ giống jiangnan).

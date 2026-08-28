@@ -53,7 +53,7 @@ pub fn get_conversation(
         .db
         .get_conversation(conversation_id)?
         .ok_or_else(|| AppError::not_found(format!("conversation not found: {conversation_id}")))?;
-    // 全量消息建树;上限 2000 防异常膨胀
+    // Xây dựng tin nhắn đầy đủ;Giới hạn trên 2000 Chống giãn nở bất thường
     let messages = deps.db.list_messages(conversation_id, 2000)?;
     Ok(ConversationDetailView {
         conversation,
@@ -85,7 +85,7 @@ pub fn patch_conversation(
     }
     let head_id = payload.head_id.trim();
     if !head_id.is_empty() {
-        // head 必须属于本会话
+        // head Phải thuộc về buổi học này
         if deps.db.get_message(conversation_id, head_id)?.is_none() {
             return Err(AppError::bad_request(format!(
                 "head_id not in conversation: {head_id}"
@@ -128,7 +128,7 @@ pub fn append_message(
 
     let mut parent_id = payload.parent_id.trim().to_string();
     if parent_id.is_empty() {
-        // 未指定 parent: 挂到当前 head(线性续写);无 head 则为根
+        // Chưa ghi rõ parent: Giữ nguyên trạng thái hiện tại head(Tiếp tục tuyến tính);Không có head sau đó root
         parent_id = resolve_head_id(deps, conversation_id, &conversation)?;
     } else if deps.db.get_message(conversation_id, &parent_id)?.is_none() {
         return Err(AppError::bad_request(format!(
@@ -179,7 +179,7 @@ fn resolve_head_id(
     if !head.is_empty() {
         return Ok(head.to_string());
     }
-    // 旧数据无 head_id:取 seq 最大的一条作为当前叶
+    // Dữ liệu cũ không có sẵn head_id:lấy seq Cái lớn nhất như lá hiện tại
     let all = deps.db.list_messages(conversation_id, 2000)?;
     Ok(all
         .last()
@@ -187,7 +187,7 @@ fn resolve_head_id(
         .unwrap_or_default())
 }
 
-/// 从 head 沿 parent 链回溯得到可见线性路径(根→叶),供 LLM 上下文。
+/// Từ head dọc theo parent Chuỗi backtracking dẫn đến các đường tuyến tính có thể nhìn thấy(Cột→lá),cung cấp LLM Bối cảnh。
 pub fn visible_path_messages(
     messages: &[MessageRecord],
     head_id: &str,

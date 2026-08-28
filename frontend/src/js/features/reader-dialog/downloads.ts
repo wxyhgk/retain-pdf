@@ -15,9 +15,9 @@ export function summarizeDownloadProgress(receivedBytes, totalBytes, percent) {
   if (Number.isFinite(totalBytes) && totalBytes > 0) {
     const totalText = formatTransferSize(totalBytes);
     const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
-    return `正在下载 ${receivedText} / ${totalText} (${safePercent.toFixed(0)}%)`;
+    return `Đang tải xuống ${receivedText} / ${totalText} (${safePercent.toFixed(0)}%)`;
   }
-  return receivedText ? `正在下载 ${receivedText}` : "正在下载...";
+  return receivedText ? `Đang tải xuống ${receivedText}` : "Đang tải xuống...";
 }
 
 export async function downloadProtectedResource(
@@ -34,14 +34,14 @@ export async function downloadProtectedResource(
     return;
   }
   if (typeof onBusy === "function") {
-    onBusy(true, "下载中...");
+    onBusy(true, "Đang tải xuống...");
   }
   try {
     showDownloadPreparing(suggestedName);
     const resp = await fetchProtected(url);
     if (!resp.ok) {
       const text = await resp.text();
-      const error: any = new Error(`下载失败: ${resp.status} ${text || "unknown error"}`);
+      const error: any = new Error(`Tải xuống thất bại: ${resp.status} ${text || "unknown error"}`);
       error.status = resp.status;
       error.url = url;
       throw error;
@@ -59,10 +59,10 @@ export async function downloadProtectedResource(
           onBusy(
             true,
             done
-              ? "已完成"
+              ? "Đã hoàn tất"
               : Number.isFinite(percent)
                 ? `${Math.max(0, Math.min(100, Number(percent) || 0)).toFixed(0)}%`
-                : "下载中...",
+                : "Đang tải xuống...",
           );
         }
         if (done) {

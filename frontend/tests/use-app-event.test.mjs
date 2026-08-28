@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 
-// useAppEvent(APP_EVENTS → React 适配 hook)单测:
-// 订阅生命周期、handler ref 更新不重订阅、卸载解绑、自定义 target。
+// Unit test cho useAppEvent(APP_EVENTS → React adapter hook):
+// vòng đời đăng ký, cập nhật handler ref không đăng ký lại, gỡ khi unmount, target tùy chỉnh.
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/" });
 for (const key of ["window", "document", "HTMLElement", "CustomEvent", "Event", "Node"]) {
@@ -15,10 +15,10 @@ for (const key of ["window", "document", "HTMLElement", "CustomEvent", "Event", 
 }
 globalThis.window = dom.window;
 globalThis.requestAnimationFrame = (callback) => setTimeout(() => callback(0), 0);
-// Radix Presence/Tabs(阶段 B 引入)在 jsdom 下需要 cancelAnimationFrame
-// (TabsContent 的 mount 动画计时器清理)和 getComputedStyle(Presence 读取
-// animation-name 判断退场动画是否结束)——jsdom 的 window 上有实现,只是没有
-// 像 requestAnimationFrame 一样被复制到裸 global 上,这里一并补上。
+// Radix Presence/Tabs (giai đoạn B) dưới jsdom cần cancelAnimationFrame
+// (dọn timer mount animation của TabsContent) và getComputedStyle (Presence đọc
+// animation-name để xác định animation thoát có kết thúc chưa) — window của jsdom có cài đặt,
+// chỉ là không được copy lên bare global như requestAnimationFrame, ở đây bổ sung thêm.
 globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
 globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 globalThis.IS_REACT_ACT_ENVIRONMENT = false;
@@ -97,7 +97,7 @@ test("useAppEvent：handler 引用漂移不重订阅,始终调用最新 handler"
   }, "初始 handler 生效");
   assert.equal(calls[calls.length - 1], "first");
 
-  // 换新 handler(新引用)重渲染:不应重复 addEventListener
+  // Thay handler mới (reference mới) rồi re-render: không được gọi addEventListener lần nữa
   root.render(React.createElement(Probe, {
     eventName: "retainpdf-test:swap",
     handler: () => calls.push("second"),

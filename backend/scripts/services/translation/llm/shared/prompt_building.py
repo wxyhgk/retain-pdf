@@ -30,7 +30,7 @@ def build_messages(
     domain_guidance: str = "",
     mode: str = "fast",
     response_style: str = "tagged",
-    target_language_name: str = "简体中文",
+    target_language_name: str = "Simplified Chinese",
 ) -> list[dict[str, str]]:
     item_contexts = [_item_context(item) for item in batch]
     direct_typst_mode = any(item.math_mode == "direct_typst" for item in item_contexts)
@@ -69,7 +69,7 @@ def build_single_item_fallback_messages(
     mode: str = "fast",
     structured_decision: bool = False,
     response_style: str = "plain_text",
-    target_language_name: str = "简体中文",
+    target_language_name: str = "Simplified Chinese",
 ) -> list[dict[str, str]]:
     item_context = _item_context(item)
     direct_typst_mode = item_context.math_mode == "direct_typst"
@@ -84,8 +84,8 @@ def build_single_item_fallback_messages(
         if response_style == "json":
             system_prompt = (
                 f"{system_prompt}\n\n"
-                '只返回符合 {"decision":"translate","translated_text":"translated text"} 的 JSON。'
-                "不要包含 Markdown、代码块或解释说明。"
+                'Return only JSON matching {"decision":"translate","translated_text":"translated text"}.'
+                "Do not include Markdown, code fences, or explanations."
             )
         user_prompt = (
             _direct_typst_single_user_prompt(item_context, mode=mode, target_language_name=target_language_name)
@@ -159,7 +159,7 @@ def build_group_member_messages(
     item: dict,
     domain_guidance: str = "",
     mode: str = "fast",
-    target_language_name: str = "简体中文",
+    target_language_name: str = "Simplified Chinese",
 ) -> list[dict[str, str]]:
     item_context = _item_context(item)
     system_prompt = _build_translation_system_prompt(

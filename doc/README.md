@@ -1,15 +1,15 @@
-# RetainPDF 文档目录
+# Thư mục tài liệu RetainPDF
 
-用户安装、下载和 Docker 部署入口见仓库根目录 [README](../README.md)。  
-这里只保留 3 个入口。
+Đầu vào cài đặt, tải xuống và triển khai Docker cho người dùng xem [README](../README.md) ở thư mục gốc kho lưu trữ.  
+Nơi đây chỉ giữ 3 đầu vào.
 
-## 入口
+## Đầu vào
 
 - [API Wiki](./api/README.md)
-- [主线文档](./core/README.md)
-- [参考资料](./reference/README.md)
-- [运维与过程记录](./ops/README.md)
+- [Tài liệu chính](./core/README.md)
+- [Tài liệu tham khảo](./reference/README.md)
+- [Vận hành và ghi chép quy trình](./ops/README.md)
 
-## 读法
+## Cách đọc
 
-先按目录找大类，再进具体文档。不要再从顶层直接暴露一长串平铺入口。
+Tìm danh mục lớn theo thư mục, sau đó vào tài liệu cụ thể. Đừng để lộ một danh sách dài các đầu vào trải phẳng từ tầng trên cùng.

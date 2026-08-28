@@ -684,7 +684,7 @@ if (!frontendOnly) {
     recursive: true,
     force: true,
   });
-  // retainpdf-ai：桌面端由 main 进程拉起，Rust 反代 41100
+  // retainpdf-ai：Máy tính để bàn của main Quy trình kéo lên，Rust kháng sinh 41100
   const aiServiceSrc = path.join(backendRoot, "ai_service");
   const aiServiceDst = path.join(outputBackendRoot, "ai_service");
   if (!fs.existsSync(aiServiceSrc)) {

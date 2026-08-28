@@ -1,17 +1,17 @@
-// 阅读器启动编排(Phase 2b 全量):旧 src/js/reader/index.js 的完整移植。
-// React 首次 commit 后运行(命令式模块按 id 查找容器,DOM 必须先就位)。
+// Điều phối khởi động trình đọc (Phase 2b toàn bộ): chuyển toàn bộ từ src/js/reader/index.js cũ.
+// Chạy sau lần commit đầu tiên của React (các mô-đun mệnh lệnh tìm container theo id, DOM phải sẵn sàng trước).
 //
-// 命令式复用(不 React 化):pdf 全家、interaction-flow、region-*、
-// selection-favorites、favorites/*、markdown-preview、progress-presenter、
-// chrome/mode 控制器、column-resizer/panel-collapse(三栏外层维持 CSS 变量方案,
-// rrp 只统内层双 PDF Group——旧三栏不是同级 flex,抽屉是 fixed 覆盖层 +
-// body :has() 级联,改 rrp 外层要重写整片 reader-page.css,像素风险远大于收益)。
+// Tái sử dụng mệnh lệnh (không React hóa): toàn bộ họ pdf, interaction-flow, region-*,
+// selection-favorites, favorites/*, markdown-preview, progress-presenter,
+// bộ điều khiển chrome/mode, column-resizer/panel-collapse (giữ nguyên giải pháp biến CSS cho lớp ngoài ba cột,
+// rrp chỉ quản lý nhóm PDF đôi bên trong —— ba cột cũ không phải flex đồng cấp, ngăn kéo là lớp phủ fixed +
+// cascade cấp body :has(), thay đổi lớp ngoài rrp đòi hỏi viết lại toàn bộ reader-page.css, rủi ro pixel lớn hơn nhiều so với lợi ích).
 //
-// React 侧(经 runtime state 注入):下载菜单 context、批注面板端口、AI chat 端口。
+// Phía React (tiêm qua runtime state): context menu tải xuống, cổng panel chú thích, cổng AI chat.
 //
-// 时序契约(像素级):chrome.bindEvents() 必须先于 drawerStore.open("ai")——
-// 淡出定时器在"尚无抽屉打开"时排上,1.6s 后 body 进入 reader-chrome-muted,
-// 与旧页在基线截图时刻的形态一致。
+// Hợp đồng thời gian (cấp pixel): chrome.bindEvents() phải chạy trước drawerStore.open("ai") ——
+// bộ đếm thời gian mờ dần được xếp khi "chưa có ngăn kéo nào mở", sau 1.6s body chuyển sang reader-chrome-muted,
+// khớp với hình dạng của trang cũ tại thời điểm chụp ảnh baseline.
 
 import { useEffect, useState } from "react";
 import {
@@ -65,8 +65,8 @@ import type { ReaderMetadata, RegionsPayload } from "../../../../js/reader/types
 
 let bootStarted = false;
 
-// 引用点击跳原文锚点(与收藏跳转同一套定位),抽屉保持打开;
-// 引用属于其他文档时,导航到那篇文档的阅读器并带上锚点参数
+  // Nhấp vào trích dẫn sẽ nhảy đến anchor văn bản gốc (sử dụng chung cơ chế định vị với chuyển hướng từ mục yêu thích), ngăn kéo vẫn mở;
+  // Khi trích dẫn thuộc về tài liệu khác, điều hướng đến trình đọc của tài liệu đó và mang theo tham số anchor.
 function jumpToCitationFactory(jobId) {
   return (citation) => {
     const citationJobId = `${citation?.job_id || ""}`.trim();
@@ -88,9 +88,9 @@ function jumpToCitationFactory(jobId) {
   };
 }
 
-// URL 带锚点(?page_idx=&block_id=)时跳过去。页面/regions 异步挂载,且启动布局
-// 流程会在挂载后把滚动位置重置回顶部——jump 一次成功不算数,必须按"目标页是否
-// 真在视口内"判定,未就位则退避重试(布局稳定后即收敛)。
+// Khi URL có anchor (?page_idx=&block_id=) thì nhảy đến đó. Trang/regions được mount bất đồng bộ, và luồng khởi động
+// sẽ reset vị trí cuộn về đầu sau khi mount — nhảy thành công một lần chưa đủ, phải xác định theo "trang đích có thực sự
+// nằm trong viewport hay không", nếu chưa vào vị trí thì retry với backoff (hội tụ khi layout ổn định).
 function scheduleAnchorJump(anchor) {
   const anchorPageNumber = Number.isFinite(Number(anchor.pageIdx))
     ? Number(anchor.pageIdx) + 1
@@ -108,8 +108,8 @@ function scheduleAnchorJump(anchor) {
     const rect = pageElement.getBoundingClientRect();
     return rect.top < globalThis.innerHeight && rect.bottom > 0;
   };
-  // PDF 渲染与布局可能持续二十秒以上,期间 scrollIntoView 会被
-  // 布局重置吞掉;持续重试到就位,用户一旦手动滚动立即让位。
+  // Quá trình render và layout PDF có thể kéo dài hơn 20 giây, trong thời gian đó scrollIntoView sẽ bị
+  // layout reset nuốt mất; tiếp tục retry cho đến khi vào vị trí, người dùng vừa cuộn thủ công thì nhường ngay.
   let anchorCanceled = false;
   const cancelAnchor = () => {
     anchorCanceled = true;
@@ -131,24 +131,24 @@ function scheduleAnchorJump(anchor) {
       }
     }, 600);
   };
-  // 不用 requestAnimationFrame:后台标签页里 rAF 被挂起,回调
-  // 永远不触发,锚点定位会静默失效(实测踩中)。
+  // Không dùng requestAnimationFrame: ở tab nền rAF bị treo, callback
+  // không bao giờ được gọi, định vị anchor sẽ thất bại im lặng (đã gặp thực tế).
   globalThis.setTimeout(tryJump, 0);
 }
 
-// 源文件不可用时给源栏填一条明确文案(孤儿文档:有 document 行但没入库源 PDF)。
-// #reader-pdf-empty 默认是无文字的虚线占位块,直接写 textContent 让它有话可说。
+  // Khi tệp nguồn không khả dụng, điền một thông báo rõ ràng vào cột nguồn (tài liệu mồ côi: có hàng document nhưng không có PDF nguồn trong kho).
+  // #reader-pdf-empty mặc định là khối placeholder nét đứt không có văn bản, ghi trực tiếp textContent để nó có nội dung hiển thị.
 function showReaderSourceUnavailable() {
   showReaderPaneEmpty("reader-pdf", "reader-pdf-empty");
   const empty = document.getElementById("reader-pdf-empty");
   if (empty) {
-    empty.textContent = "源文件不可用：该文档没有可读取的源 PDF（可能只有记录、未入库文件）。";
+    empty.textContent = "Tệp nguồn không khả dụng: tài liệu này không có PDF nguồn đọc được (có thể chỉ có bản ghi, chưa nhập tệp).";
   }
 }
 
-// 馆藏文档"读原文"(F4):无 job,只挂源文档一栏,切 source 单栏模式,跳过所有
-// 吃 jobId 的副功能(收藏/AI/批注/markdown/interaction)。源文档 URL 走
-// /documents/:id/source.pdf(mock 模式走 mock:// 通道)。
+  // "Đọc văn bản gốc" tài liệu thư viện (F4): không có job, chỉ gắn cột nguồn, chuyển sang chế độ một cột source,
+  // bỏ qua tất cả các chức năng phụ phụ thuộc jobId (yêu thích/AI/chú thích/markdown/interaction). URL tài liệu nguồn đi qua
+  // /documents/:id/source.pdf (chế độ mock đi qua kênh mock://).
 async function mountSourceOnlyReader({
   documentId,
   pageState,
@@ -156,8 +156,8 @@ async function mountSourceOnlyReader({
   applyBootProgress,
   syncBootProgress,
 }) {
-  // 只读源文档全程都是单栏——**先**收进 source 单栏,无论源加载成功失败都不该
-  // 退回默认的两栏对照空态(否则源文件缺失时会是两个空白栏 = 一片空白)。
+  // Tài liệu chỉ đọc nguồn luôn là một cột —— **trước tiên** đưa vào cột source một cột, bất kể nguồn tải thành công hay thất bại
+  // đều không nên quay lại trạng thái trống hai cột mặc định (nếu không sẽ có hai cột trống khi thiếu tệp nguồn = một khoảng trắng hoàn toàn).
   modeController.setMode("source");
   try {
     applyBootProgress(14, READER_PROGRESS_COPY.metadata, "metadata");
@@ -183,8 +183,8 @@ async function mountSourceOnlyReader({
     });
 
     if (!sourceReady) {
-      // 源文件取不到(如孤儿文档行:有 document 记录但没入库源 PDF,
-      // /documents/:id/source.pdf 404)——单栏里给一条明确文案,不留空白。
+      // Không lấy được tệp nguồn (ví dụ dòng tài liệu mồ côi: có bản ghi document nhưng chưa nhập PDF nguồn,
+      // /documents/:id/source.pdf trả về 404) — hiển thị thông báo rõ ràng trong khung đơn, không để trống.
       showReaderSourceUnavailable();
       applyBootProgress(100, READER_PROGRESS_COPY.failed, "failed");
       setReaderBootLoading(false);
@@ -206,13 +206,13 @@ async function mountSourceOnlyReader({
 }
 
 async function initializeReader({ drawerStore, publish }) {
-  // 先定路线(纯 URL 解析,无副作用):有 job 走完整对照阅读;只有 document_id
-  // 是馆藏文档"读原文"(F4),要跳过所有吃 jobId 的副功能与工具栏。
+  // Xác định luồng trước (chỉ parse URL, không side-effect): có job thì đi đọc đối chiếu đầy đủ; chỉ có document_id
+  // là tài liệu thư viện "đọc bản gốc" (F4), cần bỏ qua mọi tính năng phụ và thanh công cụ phụ thuộc jobId.
   const jobId = resolveReaderJobId(defaultReaderPageConfigPort);
   const sourceOnlyDocumentId = jobId ? "" : resolveReaderDocumentId();
   const sourceOnly = Boolean(sourceOnlyDocumentId);
   if (sourceOnly) {
-    // CSS 据此隐藏译文/对照 tab 与 Markdown/摘录/批注/AI/下载工具组(全部吃 jobId)。
+    // CSS dựa vào điều này để ẩn tab dịch/đối chiếu và nhóm công cụ Markdown/trích xuất/chú thích/AI/tải xuống (tất cả đều phụ thuộc jobId).
     document.documentElement.classList.add("reader-source-only");
   }
 
@@ -241,11 +241,11 @@ async function initializeReader({ drawerStore, publish }) {
     },
     onModeHudChanged: setReaderModeHud,
   });
-  // 折叠控制器:管理左右栏折叠;顶栏点开工具时自动展开右栏亮出内容
+  // Bộ điều khiển thu gọn: quản lý thu gọn cột trái/phải; khi mở công cụ từ thanh trên cùng tự động mở rộng cột phải để hiện nội dung
   const panelCollapse = createReaderPanelCollapse({
     onChange: () => scheduleScaleRefresh(),
   });
-  // 启动时的程序化 open("ai") 不应清掉用户持久化的右栏折叠;仅用户点顶栏工具才自动展开
+  // Lệnh open("ai") lập trình lúc khởi động không được xóa trạng thái thu gọn cột phải do người dùng lưu; chỉ khi người dùng nhấn công cụ trên thanh trên cùng mới tự động mở rộng
   let allowAutoExpandRight = false;
   drawerStore.subscribe((active) => {
     scheduleScaleRefresh();
@@ -260,18 +260,18 @@ async function initializeReader({ drawerStore, publish }) {
   bindResizeRefresh();
   chromeController.bindEvents();
   modeController.bindEvents();
-  // 三栏骨架:左右栏可拖拽调宽(持久化),拖动时刷新 PDF 缩放
+  // Khung ba cột: cột trái/phải có thể kéo để điều chỉnh độ rộng (lưu bền vững), khi kéo làm mới tỷ lệ phóng PDF
   createReaderColumnResizer({ onResize: () => scheduleScaleRefresh() }).bindEvents();
-  // 左右栏折叠把手(先应用持久折叠态)
+  // Tay nắm thu gọn cột trái/phải (áp dụng trạng thái thu gọn bền vững trước)
   panelCollapse.bindEvents();
-  // 默认展开右栏(AI 问答)。必须晚于 chromeController.bindEvents(),见文件头时序契约;
-  // 若用户上次折叠了右栏则由 CSS 保持折叠。
-  // 源文档只读态没有 job → AI/批注/Markdown 都不可用,不展开右栏(否则会挂着一个
-  // 永远"正在准备…"的空面板)。
+  // Mặc định mở rộng cột phải (AI hỏi đáp). Phải chạy sau chromeController.bindEvents(), xem hợp đồng thời gian ở đầu tệp;
+  // nếu người dùng đã thu gọn cột phải lần trước thì CSS sẽ giữ nguyên trạng thái thu gọn.
+  // Chế độ chỉ đọc tài liệu nguồn không có job → AI/chú thích/Markdown đều không khả dụng, không mở rộng cột phải
+  // (nếu không sẽ treo một panel trống mãi "đang chuẩn bị…").
   if (!sourceOnly) {
     drawerStore.open("ai");
   }
-  // 启动 open 完成后,后续用户点顶栏工具才允许自动展开右栏
+  // Sau khi hoàn tất open lúc khởi động, chỉ cho phép tự động mở rộng cột phải khi người dùng nhấn công cụ trên thanh trên cùng
   allowAutoExpandRight = true;
 
   setReaderBootLoading(true);
@@ -346,7 +346,7 @@ async function initializeReader({ drawerStore, publish }) {
       translatedReady,
     });
 
-    // 双击框选截图摘录(命令式孤岛,含 favorites 抽屉列表渲染)
+    // Nhấp đúp chọn vùng để trích xuất ảnh chụp màn hình (đảo mệnh lệnh, bao gồm render danh sách favorites trong ngăn kéo)
     const serverFavoritesPort = createReaderServerFavoritesPort({ jobId });
     createReaderSelectionFavorites({
       drawerController: drawerStore,
@@ -356,7 +356,7 @@ async function initializeReader({ drawerStore, publish }) {
       serverFavoritesPort,
     }).bindEvents();
 
-    // 批注面板端口(开合订阅由抽屉组件桥接 drawer store)
+    // Cổng bảng chú thích (subscription đóng/mở được cầu nối bởi component ngăn kéo tới drawer store)
     const jobFields = (jobPayload || {}) as { source_filename?: string; title?: string };
     const documentTitle = `${jobFields.source_filename || jobFields.title || jobId}`;
     const clipboard = globalThis.navigator?.clipboard || null;
@@ -370,7 +370,7 @@ async function initializeReader({ drawerStore, publish }) {
           await clipboard?.writeText?.(text);
           return true;
         } catch (error) {
-          console.error("导出批注到剪贴板失败", error);
+          console.error("Xuất chú thích sang clipboard thất bại", error);
           return false;
         }
       },
@@ -388,7 +388,7 @@ async function initializeReader({ drawerStore, publish }) {
     });
     readerAiContext.bindEvents();
 
-    // React 侧一次性注入:下载菜单 context、批注端口、AI chat 端口
+    // Phía React inject một lần: context menu tải xuống, cổng chú thích, cổng AI chat
     publish({
       annotations: annotationPorts,
       chat: {

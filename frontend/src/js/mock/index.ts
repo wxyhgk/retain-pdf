@@ -52,17 +52,17 @@ function enrichJobWithDocument(job: JobLike | LibraryCardItem, jobId: string) {
 
 export function getMockJobPayload(jobId = ""): JobLike {
   const id = `${jobId || ""}`.trim();
-  // 提交翻译产生的 live job：按墙钟推进（详情 Tab 进度动画）
+  // Live job được tạo từ việc gửi dịch: tiến triển theo đồng hồ (hiển thị hoạt ảnh tiến độ trong Tab chi tiết)
   const live = buildLiveMockJobPayload(id);
   if (live) {
     return enrichJobWithDocument(live, id) as JobLike;
   }
-  // 主 mock job：跟 URL ?mock= 场景
+  // Job mock chính: theo kịch bản URL ?mock=
   if (!id || id === MOCK_JOB_ID) {
     return enrichJobWithDocument(buildMockJobPayload(), id || MOCK_JOB_ID) as JobLike;
   }
-  // 文档中心合成的 active_job_id（如 20260520-att-001）：返回终态完整 payload，
-  // 让书籍详情嵌入的 StatusCard 能拉到与真实成功 job 同形的数据（阶段流/产物就绪）。
+  // active_job_id được tổng hợp từ trung tâm tài liệu (ví dụ 20260520-att-001): trả về payload trạng thái cuối,
+  // cho phép StatusCard nhúng trong chi tiết sách có thể lấy dữ liệu cùng hình dạng với job thành công thật (luồng giai đoạn/sản phẩm sẵn sàng).
   const book = synthesizeMockBook(id);
   return {
     ...buildMockJobPayload("done"),
@@ -70,7 +70,7 @@ export function getMockJobPayload(jobId = ""): JobLike {
     job_id: id,
     status: "succeeded",
     stage: "finished",
-    stage_detail: book.stage_detail || "任务完成",
+    stage_detail: book.stage_detail || "Nhiệm vụ đã hoàn thành",
   } as JobLike;
 }
 
@@ -86,11 +86,11 @@ export function getMockJobArtifactsManifest() {
   return buildMockManifest();
 }
 
-// 文档中心网格(F2)会用 library/books?job_ids= 批量取"已翻译 mock 文档"的活态。
-// 优先从 mock 文档表取真书名/封面，禁止再用 job_id.pdf 当标题（空封面根因之一）。
+// Lưới trung tâm tài liệu (F2) sẽ dùng library/books?job_ids= để lấy trạng thái động của "tài liệu mock đã dịch".
+// Ưu tiên lấy tên sách/bìa từ bảng tài liệu mock, không dùng job_id.pdf làm tiêu đề (một trong những nguyên nhân bìa trống).
 function synthesizeMockBook(jobId: string): LibraryCardItem {
   const doc = getMockDocumentByJobId(jobId);
-  const title = doc?.title || doc?.source_filename || "已翻译文档";
+  const title = doc?.title || doc?.source_filename || "Tài liệu đã dịch";
   return {
     id: jobId,
     job_id: jobId,
@@ -103,7 +103,7 @@ function synthesizeMockBook(jobId: string): LibraryCardItem {
     thumbnail_url: doc?.thumbnail_url,
     status: "succeeded",
     stage: "finished",
-    stage_detail: "任务完成",
+    stage_detail: "Nhiệm vụ đã hoàn thành",
     progress: { current: 12, total: 12, percent: 100, unit: "none" },
     output_pdf_ready: true,
     markdown_ready: true,
@@ -148,9 +148,9 @@ export function getMockJobList({ jobIds = [] }: MockJobListQuery = {}): MockJobL
 }
 
 export function submitMockJob(): JobLike {
-  // 上传流「开始翻译」也走 live 任务，才能在状态区看到推进动画
+  // Luồng tải lên "Bắt đầu dịch" cũng chạy live job, mới có thể thấy hoạt ảnh tiến độ trong khu vực trạng thái
   const live = registerLiveMockJob({
-    title: "Mock 上传翻译",
+    title: "Mock Tải lên dịch",
     pageCount: 12,
   });
   return buildLiveMockJobPayload(live.jobId) || buildMockJobPayload();

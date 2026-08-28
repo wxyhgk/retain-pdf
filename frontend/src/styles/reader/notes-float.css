@@ -1,7 +1,7 @@
-/* 批注悬浮卡片（列表 / 编辑 / 导出）
- * 悬浮窗 Markdown 内容见 float-markdown.css
+/* Thẻ chú thích nổi (danh sách / chỉnh sửa / xuất)
+ * Xem nội dung Markdown của cửa sổ nổi trong float-markdown.css
  */
-/* 批注：悬浮卡片（不贴边占栏、不挤 PDF） */
+/* Chú thích: thẻ nổi (không dính mép pane, không chèn ép PDF) */
 .reader-notes-panel {
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   position: fixed;
@@ -21,7 +21,7 @@
   overflow: hidden;
   animation: reader-notes-float-in 200ms var(--ease-out) both;
 }
-/* left/top 由 inline style 控制（--float 标记类） */
+/* left/top do inline style điều khiển (lớp đánh dấu --float) */
 .reader-notes-panel--float {
   touch-action: none;
 }
@@ -260,4 +260,3 @@
   display: flex;
   gap: 8px;
 }
-

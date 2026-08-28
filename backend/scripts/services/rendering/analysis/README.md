@@ -1,18 +1,18 @@
 # rendering/analysis
 
-## 负责什么
+## Trách nhiệm
 
-页面和文档分析层。这里负责回答“这一页是什么情况”和“这一页建议走什么渲染路线”。
+Tầng phân tích trang và tài liệu. Trả lời "trang này có tình trạng gì" và "trang này nên đi tuyến render nào".
 
-## 对外入口
+## Lối vào công khai
 
 - `classifier.py`
 - `profile/`
 - `route/`
 
-## 不该做什么
+## Không nên làm gì
 
-- 不操作 PDF 内容。
-- 不生成 Typst。
-- 不执行 redaction。
-- 不做译文 bbox 排版。
+- Không thao tác nội dung PDF.
+- Không sinh Typst.
+- Không thực hiện redaction.
+- Không dàn trang bbox bản dịch.

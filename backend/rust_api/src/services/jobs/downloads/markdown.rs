@@ -7,11 +7,11 @@ use super::super::query::load_supported_job;
 use super::paths::safe_markdown_image_path;
 use super::{FileDownload, MarkdownDownload, QueryJobsDeps};
 
-// 匹配 ![alt](images/...)，路径内可含空格；可选 "title"/'title'、尖括号、./ 前缀
-// path 用贪婪 [^)>\n]+；title 必须带引号，避免把 `chart a.png` 的空格误当 title 分隔
+// Khớp ![alt](images/...)，Đường dẫn có thể chứa khoảng trắng；TÃ¹y chá»n "title"/'title'、Giá đỡ góc、./ Tiền tố
+// path Với lòng tham [^)>\n]+；title Phải được trích dẫn，Tránh đặt `chart a.png` Khi không gian sai title Riêng biệt
 const MARKDOWN_IMAGE_LINK_RE: &str =
     r#"!\[([^\]]*)\]\(\s*<?((?:\./)?images/[^)>\n]+)>?(?:[ \t]+(?:"[^"]*"|'[^']*'))?\s*\)"#;
-// HTML: 分单/双引号（regex crate 不支持 backref）
+// HTML: Tách đơn hàng/Dấu ngoặc kép（regex crate Không hỗ trợ backref）
 const HTML_IMAGE_SRC_DQ_RE: &str =
     r#"(?i)(<img\b[^>]*?\bsrc\s*=\s*")((?:\./)?images/[^"]+)(")"#;
 const HTML_IMAGE_SRC_SQ_RE: &str =
@@ -105,8 +105,8 @@ fn markdown_images_view(
             url_path_escape(&relative_path)
         );
         let metadata = path.metadata().ok();
-        // path 与 markdown 原文引用一致：images/<rel>
-        // 注意：拼 images_base_url 时前端必须去掉 images/ 前缀，见 normalize_markdown_image_rel
+        // path VÀ markdown Báo giá ban đầu là nhất quán：images/<rel>
+        // Ghi chú：liều images_base_url khi mặt trước phải được gỡ bỏ images/ Tiền tố，thấy normalize_markdown_image_rel
         images.push(MarkdownImageView {
             path: format!("images/{relative_path}"),
             url: to_absolute_url(base_url, &resource_path),
@@ -120,9 +120,9 @@ fn markdown_images_view(
     Ok(images)
 }
 
-/// 把 markdown/html 里的相对图片引用改成可直连的 API 绝对 URL。
-/// 同时修掉「images_base + images/...」双重 images 的前端拼法隐患：
-/// 绝对 URL 直接指向 /markdown/images/<rel>，不再依赖 base 拼接。
+/// cầm markdown/html Thay đổi tham chiếu hình ảnh tương đối thành có thể kết nối trực tiếp API tuyệt đối URL。
+/// Sửa chữa đồng thời「images_base + images/...」Kép images Cạm bẫy chính tả ở giao diện người dùng：
+/// tuyệt đối URL Trực tiếp đến /markdown/images/<rel>，Không còn phụ thuộc base hợp lại。
 pub(crate) fn rewrite_markdown_image_links_to_absolute_urls(
     content: &str,
     job_id: &str,
@@ -170,11 +170,11 @@ fn absolute_markdown_image_url(raw_path: &str, job_id: &str, base_url: &str) -> 
     to_absolute_url(base_url, &resource_path)
 }
 
-/// 归一化 markdown 图片相对路径 → 相对 images 目录的路径（不含 images/ 前缀）
+/// Chuẩn hoá markdown Hình ảnh đường dẫn tương đối → tương đối images Đường dẫn đến thư mục（Không bao gồm images/ Tiền tố）
 fn normalize_markdown_image_rel(raw: &str) -> String {
     let mut path = raw.trim().trim_matches(|c| c == '<' || c == '>').to_string();
-    // 去掉可选 title：仅当 `path "title"` / `path 'title'` 时截断
-    // 文件名本身可含空格（chart a.png），不能见空白就截
+    // Xóa tùy chọn title：Chỉ khi `path "title"` / `path 'title'` Cắt ngắn vào
+    // Bản thân tên tệp có thể chứa khoảng trắng（chart a.png），Không thể nhìn thấy khoảng trống, chỉ cần cắt chúng ra
     if let Some(idx) = path.find(" \"") {
         path = path[..idx].to_string();
     } else if let Some(idx) = path.find(" '") {
@@ -184,7 +184,7 @@ fn normalize_markdown_image_rel(raw: &str) -> String {
     while path.starts_with("./") {
         path = path[2..].to_string();
     }
-    // 剥掉一层或多层 images/ 前缀，避免 images/images/...
+    // Bóc một hoặc nhiều lớp images/ Tiền tố，tránh cho images/images/...
     while path.starts_with("images/") {
         path = path["images/".len()..].to_string();
     }

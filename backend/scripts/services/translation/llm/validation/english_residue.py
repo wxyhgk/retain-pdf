@@ -69,9 +69,9 @@ def _zh_char_count(text: str) -> int:
 
 
 def _looks_like_data_dense_segment(segment: str) -> bool:
-    # NMR 谱线、数值列表、化学计量串:数字密度高,是合法保留的数据而
-    # 不是待译散文。此前这类片段会命中长残留跨度硬错误,触发注定失败
-    # 的重试(译文本来就该保留它们)。
+    # NMR Các vạch quang phổ、Danh sách số、Chuỗi cân bằng hóa học:Mật độ kỹ thuật số cao,là dữ liệu được lưu giữ hợp pháp và
+    # Không phải là một văn xuôi để dịch。Trước đây, những mảnh vỡ như vậy sẽ gặp lỗi cứng dài,Lỗi kích hoạt cam chịu
+    # Thử lại(Dịch văn bản để giữ chúng)。
     alpha = sum(1 for char in segment if char.isalpha())
     digits = sum(1 for char in segment if char.isdigit())
     if alpha <= 0:
@@ -191,7 +191,7 @@ def _looks_like_term_preserving_mixed_output(item: dict, translated_text: str) -
     chunk_lengths = english_chunk_word_lengths(strip_placeholders(translated))
     if not chunk_lengths:
         return False
-    # 7-8 词的合法英文技术短语(方法名、仪器型号)不应让术语保留豁免失效
+    # 7-8 Cụm từ kỹ thuật tiếng Anh pháp lý cho các từ(Tên phương thức、Model thiết bị:)Không được hủy bỏ việc miễn giữ kỳ hạn
     if max(chunk_lengths) > 8:
         return False
     english_words = _english_word_count(translated)

@@ -1,16 +1,16 @@
-# 翻译层说明
+# Giải thích tầng dịch thuật
 
-本文记录当前 Python 翻译层的稳定边界、目录职责和排查入口。这里描述的是主线契约，不记录临时迁移过程。
+Tài liệu này ghi lại ranh giới ổn định, trách nhiệm thư mục và đầu vào gỡ lỗi của tầng dịch thuật Python hiện tại. Đây mô tả hợp đồng chính, không ghi lại quá trình di chuyển tạm thời.
 
-## 位置与职责
+## Vị trí và trách nhiệm
 
-翻译层位于：
+Tầng dịch thuật nằm tại:
 
 ```text
 backend/scripts/services/translation/
 ```
 
-它只负责把标准化 OCR 文档变成可渲染的翻译产物：
+Nó chỉ chịu trách nhiệm biến tài liệu OCR đã chuẩn hóa thành sản phẩm dịch có thể kết xuất:
 
 ```text
 document.v1.json
@@ -19,57 +19,57 @@ document.v1.json
 -> translation diagnostics/debug index
 ```
 
-翻译层不负责：
+Tầng dịch thuật không chịu trách nhiệm:
 
-- 调用 OCR provider、下载 provider zip 或解析 provider raw JSON。
-- 修改源 PDF、擦除英文、生成 Typst overlay 或写最终 PDF。
-- 直接处理 Rust API 的 HTTP 请求和 job 状态机。
+- Gọi OCR provider, tải zip provider hoặc phân tích raw JSON provider.
+- Sửa đổi PDF nguồn, xóa văn bản tiếng Anh, tạo Typst overlay hoặc viết PDF cuối cùng.
+- Xử lý trực tiếp yêu cầu HTTP Rust API và máy trạng thái job.
 
-稳定上游输入是 `ocr/normalized/document.v1.json`。稳定下游输出是 `translated/translation-manifest.json` 加逐页 payload JSON。
+Đầu vào thượng nguồn ổn định là `ocr/normalized/document.v1.json`. Đầu ra hạ nguồn ổn định là `translated/translation-manifest.json` cộng với payload JSON từng trang.
 
-## 主入口
+## Đầu vào chính
 
-外部和 stage worker 不应直接拼翻译内部模块，优先走这些入口：
+Bên ngoài và stage worker không nên ghép trực tiếp các module nội bộ dịch, ưu tiên các đầu vào này:
 
 - `backend/scripts/services/translation/translate_only_pipeline.py`
-  `translate.stage.v1` worker，要求 `--spec <job_root>/specs/translate.spec.json`。
+  Worker `translate.stage.v1`, yêu cầu `--spec <job_root>/specs/translate.spec.json`.
 - `backend/scripts/services/translation/from_ocr_pipeline.py`
-  provider/normalize 后继续翻译和渲染的入口之一。
+  Một trong các đầu vào để tiếp tục dịch và kết xuất sau provider/normalize.
 - `backend/scripts/services/translation/workflow`
-  翻译层内部 facade，`runtime/pipeline/translation_stage.py` 通过这里进入翻译执行。
+  Facade nội bộ tầng dịch, `runtime/pipeline/translation_stage.py` đi qua đây để vào thực thi dịch.
 
-当前 stage spec 里的 `start_page` / `end_page` 是 0 基页码，`end_page=0` 表示只处理第一页，不能被当成未设置值。
+`start_page` / `end_page` trong stage spec hiện tại là số trang 0 gốc, `end_page=0` có nghĩa chỉ xử lý trang đầu tiên, không được coi là giá trị chưa đặt.
 
-## 目录分层
+## Phân tầng thư mục
 
-当前一级目录按职责拆分：
+Cấp thư mục hiện tại được chia theo trách nhiệm:
 
-| 目录 | 职责 |
+| Thư mục | Trách nhiệm |
 | --- | --- |
-| `workflow/` | 翻译流程编排：加载输入、生成执行计划、跑 continuation/policy/batch、写 manifest 和 summary。 |
-| `ocr/` | 只读取 `document.v1.json`，抽取可翻译 block，投影成 translation payload item。 |
-| `payload/` | payload 协议、模板、公式保护、结果回填、manifest 写出。 |
-| `policy/` | 是否翻译、技术块 hint、正文过滤、模式配置。 |
-| `context/` | 翻译上下文、邻近窗口、执行上下文模型。 |
-| `continuation/` | 同页/跨页连续段候选、规则和审阅。 |
-| `orchestration/` | translation unit、layout zone、文档级编排元数据。 |
-| `batching/` | pending item 收集、去重、快路径、批次划分、并发队列入口。 |
-| `results/` | 翻译结果应用、重复 item 展开、job memory 更新、周期性刷盘。 |
-| `llm/` | provider runtime、prompt 协议、缓存、响应解析、重试和校验。 |
-| `memory/` | job 级术语/缩写/稳定翻译记忆的候选、过滤、摘要和持久化。 |
-| `terms/` | 术语表归一化、提示词注入和术语命中统计。 |
-| `diagnostics/` | 翻译诊断、debug index、item 级定位信息。 |
-| `classification/` | `precise` 模式下的可疑块分类。 |
-| `fast_path/` | 明确无需模型翻译的 keep-origin 快路径。 |
-| `postprocess/` | 翻译后轻量修复，例如乱码候选恢复。 |
+| `workflow/` | Điều phối quy trình dịch: tải đầu vào, tạo kế hoạch thực thi, chạy continuation/policy/batch, ghi manifest và summary. |
+| `ocr/` | Chỉ đọc `document.v1.json`, trích xuất block có thể dịch, chiếu thành translation payload item. |
+| `payload/` | Giao thức payload, mẫu, bảo vệ công thức, điền kết quả, ghi manifest. |
+| `policy/` | Có dịch hay không, hint cho khối kỹ thuật, lọc văn bản, cấu hình chế độ. |
+| `context/` | Ngữ cảnh dịch, cửa sổ lân cận, mô hình ngữ cảnh thực thi. |
+| `continuation/` | Ứng viên đoạn liên tục cùng trang/xuyên trang, quy tắc và xem xét. |
+| `orchestration/` | Translation unit, layout zone, siêu dữ liệu điều phối cấp tài liệu. |
+| `batching/` | Thu thập pending item, khử trùng, đường dẫn nhanh, phân chia batch, đầu vào hàng đợi đồng thời. |
+| `results/` | Áp dụng kết quả dịch, mở rộng item trùng, cập nhật job memory, ghi định kỳ. |
+| `llm/` | Runtime provider, giao thức prompt, bộ nhớ cache, phân tích phản hồi, thử lại và xác thực. |
+| `memory/` | Ứng viên, lọc, tóm tắt và lưu trữ bộ nhớ dịch ổn định, thuật ngữ và từ viết tắt cấp job. |
+| `terms/` | Chuẩn hóa bảng thuật ngữ, tiêm prompt và thống kê trúng thuật ngữ. |
+| `diagnostics/` | Chẩn đoán dịch, debug index, thông tin định vị cấp item. |
+| `classification/` | Phân loại khối đáng ngờ trong chế độ `precise`. |
+| `fast_path/` | Đường dẫn nhanh keep-origin không cần model dịch. |
+| `postprocess/` | Sửa chữa nhẹ sau dịch, ví dụ phục hồi ứng viên bị lỗi. |
 
-`backend/scripts/runtime/pipeline/book_translation_*.py` 兼容 shim 已删除。新代码不要再依赖 `runtime.pipeline.book_translation_*`。
+Shim tương thích `backend/scripts/runtime/pipeline/book_translation_*.py` đã bị xóa. Mã mới không phụ thuộc `runtime.pipeline.book_translation_*`.
 
-## 数据契约
+## Hợp đồng dữ liệu
 
-### 输入
+### Đầu vào
 
-翻译层默认只消费 `document.v1` 的正式字段：
+Tầng dịch mặc định chỉ tiêu thụ các trường chính thức của `document.v1`:
 
 - `geometry`
 - `content`
@@ -79,18 +79,18 @@ document.v1.json
 - `policy`
 - `provenance`
 
-正文白名单是：
+Danh sách trắng văn bản:
 
 ```text
 content.kind == "text"
 policy.translate == true
 ```
 
-是否进入翻译应由 normalize/adapter 阶段显式决定。翻译层不再从 provider raw 字段、旧 `sub_type` 或 `metadata` 里重新猜正文。
+Việc có dịch hay không nên được quyết định rõ ràng ở giai đoạn normalize/adapter. Tầng dịch không đoán lại văn bản từ trường raw provider, `sub_type` cũ hoặc `metadata`.
 
-### 输出
+### Đầu ra
 
-翻译输出固定为：
+Đầu ra dịch cố định:
 
 ```text
 translated/
@@ -103,7 +103,7 @@ artifacts/
   translation_debug_index.json
 ```
 
-逐页 payload 的正式字段优先放在顶层，例如：
+Các trường chính thức của payload từng trang ưu tiên đặt ở tầng trên cùng, ví dụ:
 
 - `block_kind`
 - `layout_role`
@@ -115,11 +115,11 @@ artifacts/
 - `raw_block_type`
 - `normalized_sub_type`
 
-`metadata` 只用于调试、provider trace 和少量桥接信息，不作为新逻辑的正式语义入口。
+`metadata` chỉ dùng để gỡ lỗi, trace provider và thông tin cầu nối nhỏ, không dùng làm đầu vào ngữ nghĩa chính thức cho logic mới.
 
-## 执行流程
+## Quy trình thực thi
 
-主流程可以简化为：
+Quy trình chính có thể đơn giản hóa:
 
 ```text
 load document.v1
@@ -138,32 +138,32 @@ load document.v1
 -> write manifest, diagnostics, debug index
 ```
 
-这里的 batch 执行已经从旧 runtime pipeline 拆出：
+Batch thực thi đã được tách khỏi pipeline runtime cũ:
 
-- `batching/` 决定哪些 item 进入哪些队列。
-- `workflow/batch_runner.py` 执行串行或并行 batch。
-- `results/` 负责回填和刷盘。
+- `batching/` quyết định item nào vào hàng đợi nào.
+- `workflow/batch_runner.py` thực thi batch nối tiếp hoặc song song.
+- `results/` chịu trách nhiệm điền và ghi.
 
-## 凭证与页范围
+## Thông tin xác thực và phạm vi trang
 
-API key 不写入 stage spec。spec 只保存：
+API key không ghi vào stage spec. Spec chỉ lưu:
 
 ```json
 "credential_ref": "env:RETAIN_TRANSLATION_API_KEY"
 ```
 
-运行时由环境变量注入真实 key。
+Key thực được tiêm bởi biến môi trường khi chạy.
 
-页范围字段是 0 基闭区间：
+Trường phạm vi trang là khoảng đóng 0 gốc:
 
-- `start_page=0, end_page=0`：只处理第一页。
-- `start_page=0, end_page=-1`：从第一页处理到末页。
+- `start_page=0, end_page=0`: Chỉ xử lý trang đầu tiên.
+- `start_page=0, end_page=-1`: Xử lý từ trang đầu đến trang cuối.
 
-stage spec loader 必须保留合法的 `0`，不能用 `value or default` 解析页码。
+Stage spec loader phải giữ nguyên `0` hợp lệ, không dùng `value or default` để phân tích số trang.
 
-## 调试入口
+## Đầu vào gỡ lỗi
 
-排查某个 job 的翻译问题时，优先看：
+Khi gỡ lỗi vấn đề dịch của một job, ưu tiên xem:
 
 ```text
 data/jobs/<job_id>/translated/translation-manifest.json
@@ -172,15 +172,15 @@ data/jobs/<job_id>/artifacts/translation_debug_index.json
 data/jobs/<job_id>/logs/pipeline_events.jsonl
 ```
 
-判断一个 item 为什么未翻译、降级或保留原文：
+Để xác định tại sao một item không dịch, bị giảm cấp hoặc giữ nguyên:
 
-1. 在 `translation_debug_index.json` 里找 item。
-2. 看 `translation_diagnostics` 的 `route_path`、`output_mode_path`、`error_trace`、`fallback_to`。
-3. 如需复现，使用已有 replay/debug 工具，不要手改 payload。
+1. Tìm item trong `translation_debug_index.json`.
+2. Xem `route_path`, `output_mode_path`, `error_trace`, `fallback_to` trong `translation_diagnostics`.
+3. Nếu cần tái hiện, sử dụng công cụ replay/debug hiện có, không sửa payload thủ công.
 
-## 验证命令
+## Lệnh xác minh
 
-翻译层改动后至少跑：
+Sau khi thay đổi tầng dịch, ít nhất chạy:
 
 ```bash
 python3 -m compileall -q backend/scripts/services/translation
@@ -188,25 +188,23 @@ PYTHONPATH=backend/scripts python3 -m pytest backend/scripts/devtools/tests/tran
 python3 backend/scripts/devtools/check_pipeline_architecture.py
 ```
 
-如果改了 stage spec、页范围或 provider-backed workflow，还要跑：
+Nếu thay đổi stage spec, phạm vi trang hoặc workflow dựa trên provider, còn chạy:
 
 ```bash
 PYTHONPATH=backend/scripts python3 -m pytest backend/scripts/devtools/tests/document_schema/test_normalize_stage_spec.py -q
 python3 backend/scripts/devtools/check_stage_specs_contract.py data/jobs
 ```
 
-## 边界规则
+## Quy tắc ranh giới
 
-翻译层禁止反向依赖：
+Tầng dịch cấm phụ thuộc ngược:
 
 - `services.rendering`
-- provider 私有 raw 结构
+- Cấu trúc raw riêng của provider
 - `runtime.pipeline.book_translation_*`
 
-新增代码应优先放进已有分层目录。架构边界以：
+Mã mới nên đặt trong thư mục phân tầng hiện có. Ranh giới kiến trúc tuân theo:
 
 ```text
 backend/scripts/devtools/check_pipeline_architecture.py
 ```
-
-为准。

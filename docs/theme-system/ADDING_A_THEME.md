@@ -1,24 +1,24 @@
-# 如何新增一套主题皮肤
+# Cách thêm một bộ skin chủ đề
 
-目标：后期加大量主题时，**只动 3 处**，不动业务组件。
+Mục tiêu: Sau này thêm nhiều chủ đề, **chỉ sửa 3 chỗ**, không động component nghiệp vụ.
 
 ---
 
-## 步骤（约 10 分钟）
+## Bước (khoảng 10 phút)
 
-### 1. 写 CSS 皮肤文件
+### 1. Viết tệp CSS skin
 
-复制模板：
+Sao chép mẫu:
 
 ```bash
 cp frontend/src/styles/themes/classic.css \
    frontend/src/styles/themes/<id>.css
 ```
 
-编辑为：
+Sửa thành:
 
 ```css
-/* 皮肤 <id>：一句话说明 */
+/* Skin <id>: Mô tả ngắn */
 [data-theme="<id>"] {
   --bg: …;
   --paper: …;
@@ -45,32 +45,32 @@ cp frontend/src/styles/themes/classic.css \
 }
 ```
 
-**必选变量**见 `frontend/src/styles/themes/_contract.css`。
+**Biến bắt buộc** xem tại `frontend/src/styles/themes/_contract.css`.
 
-注意：
+Lưu ý:
 
-- 主按钮文字用 `var(--paper)` 叠在 `var(--accent)` 上，请保证对比度。
-- 深色皮肤：`group: "dark"`，`--ink` 应是浅色字，`--bg` 深底。
+- Chữ nút chính dùng `var(--paper)` chồng lên `var(--accent)`, hãy đảm bảo độ tương phản.
+- Skin tối: `group: "dark"`, `--ink` nên là chữ sáng, `--bg` nền tối.
 
-### 2. 挂进构建
+### 2. Gắn vào build
 
-`frontend/src/styles/themes/index.css` 增加一行：
+`frontend/src/styles/themes/index.css` thêm một dòng:
 
 ```css
 @import "./<id>.css";
 ```
 
-### 3. 登记注册表
+### 3. Đăng ký bảng đăng ký
 
-`frontend/src/shared/theme/registry.ts` 的 `THEME_REGISTRY` 数组追加：
+Mảng `THEME_REGISTRY` trong `frontend/src/shared/theme/registry.ts` nối thêm:
 
 ```ts
 {
   id: "<id>",
-  label: "显示名",
-  description: "一句话",
+  label: "Tên hiển thị",
+  description: "Một câu",
   group: "light" | "dark" | "accent",
-  order: 50, // 排序
+  order: 50, // Sắp xếp
   preview: {
     bg: "#……",
     paper: "#……",
@@ -81,47 +81,47 @@ cp frontend/src/styles/themes/classic.css \
 },
 ```
 
-`preview` 只用于设置页色块，**请与 CSS 主色一致**。
+`preview` chỉ dùng cho ô màu trang cài đặt, **hãy giữ nhất quán với màu chính CSS**.
 
-### 4. 构建
+### 4. Build
 
 ```bash
 cd frontend && npm run build:css && npm run build:js
 ```
 
-### 5. 验证
+### 5. Kiểm chứng
 
 ```js
 localStorage.setItem("retainpdf.theme", "<id>");
 location.reload();
-// 或 设置 → 外观 点选
+// Hoặc Cài đặt → Giao diện chọn
 ```
 
 ---
 
-## 禁止事项
+## Điều cấm
 
-| 不要 | 原因 |
+| Không làm | Lý do |
 |------|------|
-| 在组件里写 `if (theme === 'xxx')` 换色 | 应走 CSS 变量 |
-| 在业务 CSS 写死 `#1d1d1f` | 用 `var(--ink)` |
-| 改 shadcn 变量名 | 只改底层 `--accent` 等 |
-| 忘记 index.css import | 皮肤不会进 dist |
+| Viết `if (theme === 'xxx')` trong component để đổi màu | Nên đi qua biến CSS |
+| Viết cứng `#1d1d1f` trong CSS nghiệp vụ | Dùng `var(--ink)` |
+| Đổi tên biến shadcn | Chỉ đổi `--accent` v.v. ở tầng dưới |
+| Quên import index.css | Skin sẽ không vào dist |
 
 ---
 
-## 可选增强
+## Tăng cường tùy chọn
 
-- 设计说明：`docs/theme-system/skins/<id>.md`
-- 监听换肤：`window.addEventListener('retainpdf:theme-change', …)`
-- 深色特例：`html.theme-dark` 或 `[data-theme-group="dark"]`
+- Mô tả thiết kế: `docs/theme-system/skins/<id>.md`
+- Lắng nghe đổi skin: `window.addEventListener('retainpdf:theme-change', …)`
+- Biệt lệ tối: `html.theme-dark` hoặc `[data-theme-group="dark"]`
 
 ---
 
-## 检查清单
+## Danh sách kiểm tra
 
-- [ ] `themes/<id>.css` 含全部必选 token  
-- [ ] `themes/index.css` 已 import  
-- [ ] `registry.ts` 已登记且 preview 对齐  
-- [ ] 主按钮 / 选中 tab 在该皮肤下可读  
-- [ ] `npm run build:css` 通过  
+- [ ] `themes/<id>.css` chứa toàn bộ token bắt buộc  
+- [ ] `themes/index.css` đã import  
+- [ ] `registry.ts` đã đăng ký và preview khớp  
+- [ ] Nút chính / tab đang chọn đọc được dưới skin này  
+- [ ] `npm run build:css` thông qua  

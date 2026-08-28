@@ -1,9 +1,9 @@
-// 详情页 hero 区:标题/分享提示、四个动作链接、断点恢复按钮、任务元信息。
-// DOM 结构与类名照搬旧 detail.html,保证像素平权。
+// Khu hero của trang detail: tiêu đề/ghi chú chia sẻ, bốn link hành động, nút khôi phục checkpoint, metadata tác vụ.
+// Cấu trúc DOM và class name bê nguyên từ detail.html cũ để giữ parity pixel.
 //
-// 注意:#detail-rerun-btn 的 disabled 由旧世界逻辑(overview-renderer.js /
-// resume.js bindRerunButton)在挂载后命令式管理;JSX 里恒定渲染 disabled,
-// React 后续重渲染不会碰它(虚拟 DOM 无 diff),命令式写入得以保留。
+// Lưu ý: disabled của #detail-rerun-btn được logic thế giới cũ (overview-renderer.js /
+// resume.js bindRerunButton) quản lý imperative sau khi mount; JSX luôn render disabled,
+// các lần re-render sau của React không chạm vào nó (virtual DOM không diff), nên ghi imperative được giữ lại.
 
 import { MetaRow } from "./JobSummaryCard.jsx";
 
@@ -30,17 +30,17 @@ export function DetailHeader({ t, links, onProtectedDownload }) {
     <section className="detail-hero">
       <div className="detail-hero-top">
         <div>
-          <h1>任务详情</h1>
-          <p id="detail-head-note">{t("detail-head-note", "通过 `detail.html?job_id=...` 可直接分享当前任务详情。")}</p>
+          <h1>Chi tiết tác vụ</h1>
+          <p id="detail-head-note">{t("detail-head-note", "Dùng `detail.html?job_id=...` để chia sẻ trực tiếp chi tiết tác vụ hiện tại.")}</p>
         </div>
         <div className="detail-actions">
-          <ActionLink id="detail-reader-btn" link={links["detail-reader-btn"]}>对照阅读</ActionLink>
+          <ActionLink id="detail-reader-btn" link={links["detail-reader-btn"]}>Đọc đối chiếu</ActionLink>
           <ActionLink
             id="detail-pdf-btn"
             link={links["detail-pdf-btn"]}
             onClick={onProtectedDownload((jobId) => `${jobId}.pdf`)}
           >
-            下载 PDF
+            Tải PDF
           </ActionLink>
           <ActionLink
             id="detail-markdown-raw-btn"
@@ -58,15 +58,15 @@ export function DetailHeader({ t, links, onProtectedDownload }) {
           </ActionLink>
         </div>
       </div>
-      <div className="detail-task-actions" aria-label="任务操作">
-        <button id="detail-rerun-btn" type="button" className="detail-trigger-btn" disabled>断点恢复/重新运行</button>
-        <span id="detail-rerun-status" className="detail-inline-note">{t("detail-rerun-status", "当前任务暂不可恢复。")}</span>
+      <div className="detail-task-actions" aria-label="Thao tác tác vụ">
+        <button id="detail-rerun-btn" type="button" className="detail-trigger-btn" disabled>Khôi phục checkpoint / chạy lại</button>
+        <span id="detail-rerun-status" className="detail-inline-note">{t("detail-rerun-status", "Tác vụ hiện chưa thể khôi phục.")}</span>
       </div>
       <div className="detail-meta-list">
         <MetaRow label="Job ID" id="detail-job-id" mono value={t("detail-job-id")} />
-        <MetaRow label="状态摘要" id="detail-status-summary" value={t("detail-status-summary")} />
-        <MetaRow label="当前阶段" id="detail-stage-detail" value={t("detail-stage-detail")} />
-        <MetaRow label="完成时间" id="detail-finished-at" value={t("detail-finished-at")} />
+        <MetaRow label="Tóm tắt trạng thái" id="detail-status-summary" value={t("detail-status-summary")} />
+        <MetaRow label="Giai đoạn hiện tại" id="detail-stage-detail" value={t("detail-stage-detail")} />
+        <MetaRow label="Thời gian hoàn tất" id="detail-finished-at" value={t("detail-finished-at")} />
       </div>
     </section>
   );

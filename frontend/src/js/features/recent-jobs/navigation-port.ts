@@ -8,7 +8,7 @@ export function createRecentJobsNavigationPort({
   doc = document,
   jobRuntimePort = createRecentJobsRuntimePort({ currentJobId }),
   readerPort = createRecentJobsReaderPort(),
-  /** 图书馆网格默认 false：进度在书籍详情 Tab，不弹旧工作流窗 */
+  /** Lưới thư viện mặc định false: tiến độ nằm trong tab chi tiết sách, không bật workflow dialog cũ. */
   openWorkflowOnSelect = false,
 }: any = {}) {
   function openWorkflow() {
@@ -46,7 +46,7 @@ export function createRecentJobsNavigationPort({
       if (!normalizedJobId) {
         return false;
       }
-      // 优先 recoverJob（silent poll）；兼容旧 port 仅有 openJob
+      // Ưu tiên recoverJob (silent poll); tương thích port cũ chỉ có openJob.
       if (typeof jobRuntimePort.recoverJob === "function") {
         return jobRuntimePort.recoverJob(normalizedJobId) !== false;
       }

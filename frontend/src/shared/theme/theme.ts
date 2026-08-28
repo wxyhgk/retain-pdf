@@ -1,5 +1,5 @@
-// 主题皮肤运行时 API
-// 注册表：./registry.ts · 文档：docs/theme-system/
+// Runtime API cho giao diện chủ đề
+// Registry: ./registry.ts · Tài liệu: docs/theme-system/
 
 import {
   DEFAULT_THEME_ID,
@@ -29,7 +29,7 @@ export {
   type ThemeSeries,
 } from "./registry.js";
 
-/** 兼容旧 import 名 */
+/** Tương thích với tên import cũ */
 export const THEME_IDS = listThemes().map((t) => t.id);
 export const THEME_META = Object.fromEntries(
   listThemes().map((t) => [t.id, { id: t.id, label: t.label, description: t.description }]),
@@ -56,7 +56,7 @@ export function getTheme(): ThemeId {
   return getStoredTheme();
 }
 
-/** 写入 storage + <html data-theme>，并广播事件 */
+/** Ghi vào storage + <html data-theme> và phát sự kiện */
 export function setTheme(theme: ThemeId) {
   const next = isThemeId(theme) ? theme : DEFAULT_THEME_ID;
   try {
@@ -66,7 +66,7 @@ export function setTheme(theme: ThemeId) {
   }
   if (typeof document !== "undefined") {
     document.documentElement.dataset.theme = next;
-    // 深色皮肤可给 body 一个 class，方便个别组件写 .theme-dark 特例
+    // Giao diện tối có thể gán class cho body để các component đặc thù dễ dàng viết style .theme-dark
     const def = getThemeDefinition(next);
     document.documentElement.dataset.themeGroup = def?.group || "light";
     document.documentElement.classList.toggle("theme-dark", def?.group === "dark");
@@ -83,7 +83,7 @@ export function setTheme(theme: ThemeId) {
   return next;
 }
 
-/** 入口最顶部调用，减少换肤 FOUC */
+/** Gọi ở đầu entry để giảm FOUC khi đổi skin */
 export function bootTheme() {
   return setTheme(getStoredTheme());
 }

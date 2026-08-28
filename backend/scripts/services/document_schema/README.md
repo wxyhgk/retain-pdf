@@ -1,54 +1,54 @@
-# Document Schema 说明
+# Đặc tả Schema Tài liệu
 
-`scripts/services/document_schema/` 定义统一中间文档结构。
+`scripts/services/document_schema/` định nghĩa cấu trúc tài liệu trung gian thống nhất.
 
-当前正式使用的是：
+Hiện đang được sử dụng chính thức:
 
-- schema 名称：`normalized_document_v1`
-- schema 版本：`1.1`
-- 默认文件名：`document.v1.json`
-- 默认报告文件名：`document.v1.report.json`
-- 机器可读 schema：`document.v1.schema.json`
-- Python 校验器：`validator.py`
+- Tên schema: `normalized_document_v1`
+- Phiên bản schema: `1.1`
+- Tên tệp mặc định: `document.v1.json`
+- Tên tệp báo cáo mặc định: `document.v1.report.json`
+- Schema đọc được bằng máy: `document.v1.schema.json`
+- Trình xác thực Python: `validator.py`
 
-这份 JSON 现在已经是翻译/渲染主链路的标准 OCR 输入。
+JSON này hiện là đầu vào OCR tiêu chuẩn cho quy trình dịch/render chính.
 
-## 阶段边界
+## Ranh giới giai đoạn
 
-`document_schema` 这一层只负责 OCR / Normalize 阶段的交接，不向下游承担翻译或渲染职责。
+Lớp `document_schema` chỉ chịu trách nhiệm cho việc bàn giao giai đoạn OCR / Chuẩn hóa; nó không đảm nhận trách nhiệm dịch hoặc render ở các giai đoạn hạ lưu.
 
-正式输入和输出固定为：
+Đầu vào và đầu ra chính thức được cố định như sau:
 
-- 输入：
-  provider 原始 OCR payload、provider raw 文件目录、源 PDF 的必要上下文
-- 输出：
-  `document.v1.json` 和 `document.v1.report.json`
+- Đầu vào:
+  Payload OCR thô của provider, thư mục tệp thô của provider, ngữ cảnh PDF nguồn cần thiết
+- Đầu ra:
+  `document.v1.json` và `document.v1.report.json`
 
-明确不负责的事情：
+Không chịu trách nhiệm rõ ràng về:
 
-- 不负责翻译策略、术语控制和翻译产物落盘
-- 不负责排版覆盖、Typst 编译和最终 PDF 输出
-- 不负责在下游阶段继续暴露 provider 私有字段作为主契约
+- Chiến lược dịch, kiểm soát thuật ngữ hoặc lưu trữ artifact dịch
+- Ghi đè bố cục, biên dịch Typst hoặc đầu ra PDF cuối cùng
+- Để lộ các trường riêng tư của provider như hợp đồng chính trong các giai đoạn hạ lưu
 
-稳定交接点：
+Các điểm bàn giao ổn định:
 
-- OCR 阶段到此结束时，下游应只依赖 `document.v1.json`
-- `document.v1.report.json` 只服务于校验、排错和兼容性摘要，不是翻译/渲染主输入
-- provider raw trace 保留用于回溯，但禁止变成 translation / rendering 主逻辑依赖
+- Khi giai đoạn OCR kết thúc tại đây, hạ lưu chỉ nên phụ thuộc vào `document.v1.json`
+- `document.v1.report.json` chỉ phục vụ xác thực, khắc phục sự cố và tóm tắt tương thích; nó không phải là đầu vào chính cho dịch/render
+- Dấu vết thô của provider được giữ lại để phân tích hồi cứu nhưng không được trở thành phụ thuộc của logic chính dịch / render
 
-## 字段分层规范
+## Đặc tả phân tầng trường
 
-`document.v1` 里的字段，不应再被当成“一锅粥”。当前约定分成三层：
+Các trường trong `document.v1` không còn nên được coi là không phân biệt. Quy ước hiện tại chia chúng thành ba lớp:
 
-1. 核心结构层
-2. 通用 trace 层
-3. provider raw trace 层
+1. Lớp cấu trúc cốt lõi
+2. Lớp dấu vết chung
+3. Lớp dấu vết thô của provider
 
-### 1. 核心结构层
+### 1. Lớp cấu trúc cốt lõi
 
-这层是翻译、渲染、策略代码可以直接依赖的稳定字段。
+Lớp này chứa các trường ổn định mà mã dịch, render và chính sách có thể phụ thuộc trực tiếp.
 
-顶层：
+Cấp cao nhất:
 
 - `schema`
 - `schema_version`
@@ -61,7 +61,7 @@
 - `derived`
 - `markers`
 
-页面级：
+Cấp trang:
 
 - `page`
 - `page_index`
@@ -70,7 +70,7 @@
 - `unit`
 - `blocks`
 
-块级：
+Cấp block:
 
 - `block_id`
 - `page_index`
@@ -93,33 +93,33 @@
 - `derived`
 - `continuation_hint`
 
-原则：
+Nguyên tắc:
 
-- 下游主逻辑优先只读这层
-- 新 provider 接入时，第一目标是把原始 JSON 先稳定映射到这层
-- 新主链路优先消费 `geometry/content/layout_role/semantic_role/structure_role/policy/provenance`
-- 旧 `type/sub_type/bbox/text/lines/segments` 当前仍保留作兼容层，不再继续扩语义
-- 默认翻译链不应再从 `type/sub_type/tags/derived/source.raw_*` 反推正文
-- `policy.translate` 是正文是否进入翻译链的正式入口
+- Logic chính hạ lưu nên ưu tiên chỉ đọc lớp này
+- Khi tích hợp các provider mới, mục tiêu đầu tiên là ánh xạ ổn định JSON thô sang lớp này
+- Các quy trình chính mới nên ưu tiên tiêu thụ `geometry/content/layout_role/semantic_role/structure_role/policy/provenance`
+- Các trường kế thừa `type/sub_type/bbox/text/lines/segments` được giữ lại như lớp tương thích; không mở rộng ngữ nghĩa thêm nữa
+- Chuỗi dịch mặc định không nên suy luận văn bản nội dung từ `type/sub_type/tags/derived/source.raw_*`
+- `policy.translate` là điểm vào chính thức để xác định liệu văn bản nội dung có đi vào chuỗi dịch hay không
 
-`content` 内部的排版流字段：
+Các trường luồng bố cục trong `content`:
 
-- `content.text`：块级文本，保留 provider 给出的必要换行
-- `content.line_texts`：块内行文本列表，来自 provider 显式换行或 adapter 构造的稳定行记录
-- `content.text_flow`：下游排版契约，目前取值为 `flow` 或 `preserve_lines`
+- `content.text`: văn bản cấp block, giữ lại các ngắt dòng cần thiết từ provider
+- `content.line_texts`: danh sách các văn bản dòng trong block, từ ngắt dòng rõ ràng của provider hoặc các bản ghi dòng ổn định do adapter xây dựng
+- `content.text_flow`: hợp đồng bố cục hạ lưu; hiện có giá trị `flow` hoặc `preserve_lines`
 
-`text_flow` 的职责边界：
+Ranh giới trách nhiệm của `text_flow`:
 
-- `flow` 表示普通正文，翻译和渲染可以按自然段流式处理，不应强制保留 OCR 视觉换行
-- `preserve_lines` 表示块内行结构有语义价值，例如目录、编号列表、项目列表、结构化短行块
-- `preserve_lines` 的判定必须在 normalize / adapter 层完成，渲染层只消费该契约，不应再用正则重新猜列表结构
-- Paddle 等 provider 如果只给出 `block_label=text`，但 `block_content` 已经有稳定显式换行，adapter 应把这些换行升级为 `line_texts + text_flow`，而不是把 provider 私有字段暴露给下游
+- `flow` chỉ định văn bản nội dung thông thường; dịch và render có thể xử lý như các đoạn văn tự nhiên mà không buộc phải giữ các ngắt dòng trực quan của OCR
+- `preserve_lines` chỉ định cấu trúc dòng trong block có giá trị ngữ nghĩa, ví dụ: mục lục, danh sách đánh số, danh sách mục, các block dòng ngắn có cấu trúc
+- Việc xác định `preserve_lines` phải được hoàn thành tại lớp chuẩn hóa / adapter; lớp render chỉ tiêu thụ hợp đồng này và không nên đoán lại cấu trúc danh sách bằng regex
+- Nếu các provider như Paddle chỉ cung cấp `block_label=text` nhưng `block_content` đã có các ngắt dòng rõ ràng ổn định, adapter nên nâng cấp các ngắt dòng này thành `line_texts + text_flow` thay vì để lộ các trường riêng tư của provider ở hạ lưu
 
-### 2. 通用 trace 层
+### 2. Lớp dấu vết chung
 
-这层不是主链路硬依赖，但多个 provider 都建议尽量往这套字段靠。
+Lớp này không phải là phụ thuộc cứng của quy trình chính, nhưng nhiều provider được khuyến khích căn chỉnh với các trường này khi có thể.
 
-当前已经出现并可继续沿用的字段包括：
+Các trường hiện có và sẵn sàng để tiếp tục sử dụng bao gồm:
 
 - `content_is_rich`
 - `content_format`
@@ -132,85 +132,85 @@
 - `markdown_match_found`
 - `markdown_match_count`
 
-原则：
+Nguyên tắc:
 
-- 这层主要服务于排错、调优、后续增强功能
-- 可以被策略代码谨慎读取
-- 不应替代 `type/sub_type/tags/derived`
+- Lớp này chủ yếu phục vụ khắc phục sự cố, điều chỉnh và các tính năng cải tiến trong tương lai
+- Có thể được đọc một cách thận trọng bởi mã chính sách
+- Không nên thay thế `type/sub_type/tags/derived`
 
-### 3. Provider Raw Trace 层
+### 3. Lớp dấu vết thô của Provider
 
-这层只用于回溯和排错，禁止下游业务逻辑直接依赖。
+Lớp này chỉ dành cho phân tích hồi cứu và khắc phục sự cố; logic nghiệp vụ hạ lưu không được phụ thuộc trực tiếp vào nó.
 
-包括但不限于：
+Bao gồm nhưng không giới hạn ở:
 
 - `source.raw_*`
 - `metadata.raw_*`
 - `layout_det_*`
-- provider 原始 id/path/score/label
-- Paddle 的 `model_settings`
-- Paddle 的 `layout_det_res`
-- Paddle 的原始 `markdown.images`
-- 其他 provider 的原始检测字段
+- Id/đường dẫn/điểm/số/nhãn thô của provider
+- Paddle `model_settings`
+- Paddle `layout_det_res`
+- Paddle `markdown.images` thô
+- Các trường phát hiện thô của provider khác
 
-原则：
+Nguyên tắc:
 
-- 这层可以保留得很全
-- 但不应被当成统一语义入口
-- 如果某个字段未来被多个 provider 稳定提供，再考虑提升到“通用 trace 层”
+- Lớp này có thể được giữ lại một cách toàn diện
+- Nhưng không nên được coi là điểm vào ngữ nghĩa thống nhất
+- Nếu một trường được cung cấp ổn định bởi nhiều provider trong tương lai, hãy xem xét nâng cấp lên "lớp dấu vết chung"
 
-### 下游读取原则
+### Nguyên tắc đọc hạ lưu
 
-推荐顺序：
+Thứ tự được khuyến nghị:
 
-1. 先读核心结构层
-2. 必要时再读通用 trace 层
-3. 只有排错或 provider 研究脚本才读 raw trace 层
+1. Đọc lớp cấu trúc cốt lõi trước
+2. Đọc lớp dấu vết chung khi cần thiết
+3. Chỉ các script khắc phục sự cố hoặc nghiên cứu provider mới nên đọc lớp dấu vết thô
 
-也就是说：
+Nói cách khác:
 
-- 翻译/渲染主链路优先使用 `geometry/content/layout_role/semantic_role/structure_role/policy/provenance`
-- 如果需要增强判断，可谨慎读取 `content_format` 这类通用 trace
-- 不要直接基于 `layout_det_score`、`source.raw_type`、`metadata.raw_*` 写主逻辑
+- Quy trình chính dịch/render nên ưu tiên `geometry/content/layout_role/semantic_role/structure_role/policy/provenance`
+- Để đưa ra phán đoán nâng cao, các trường dấu vết chung như `content_format` có thể được đọc một cách thận trọng
+- Không viết logic chính dựa trực tiếp vào `layout_det_score`, `source.raw_type`, `metadata.raw_*`
 
-## 设计目标
+## Mục tiêu thiết kế
 
-- 把上游 OCR provider 的原始结构隔离在 adapter 层
-- 给翻译、渲染、策略、API 一个稳定的中间层契约
-- 不过度设计，不把 OCR 很难稳定判断的语义强行塞进主类型系统
+- Cô lập các cấu trúc thô của OCR provider thượng nguồn tại lớp adapter
+- Cung cấp một hợp đồng trung gian ổn định cho dịch, render, chính sách và API
+- Tránh thiết kế quá mức; không ép các phán đoán ngữ nghĩa OCR không ổn định vào hệ thống kiểu chính
 
-## 当前链路
+## Quy trình hiện tại
 
-主链路约定：
+Quy ước quy trình chính:
 
-1. 上游 provider 先输出自己的原始结果
-2. adapter 把原始结果转成 `normalized_document_v1`
-3. `services/translation` 和 `services/rendering` 只围绕这份统一结构工作
+1. Provider thượng nguồn xuất kết quả thô của chính nó trước
+2. Adapter chuyển đổi kết quả thô thành `normalized_document_v1`
+3. `services/translation` và `services/rendering` hoạt động độc quyền xung quanh cấu trúc thống nhất này
 
-以当前 provider 实现为例：
+Lấy triển khai provider hiện tại làm ví dụ:
 
-- 原始 OCR：`ocr/unpacked/layout.json`
-- 统一中间层：`ocr/normalized/document.v1.json`
-- 归一化报告：`ocr/normalized/document.v1.report.json`
-- 阶段 spec：`specs/normalize.spec.json`（`normalize.stage.v1`）
+- OCR thô: `ocr/unpacked/layout.json`
+- Trung gian thống nhất: `ocr/normalized/document.v1.json`
+- Báo cáo chuẩn hóa: `ocr/normalized/document.v1.report.json`
+- Đặc tả giai đoạn: `specs/normalize.spec.json` (`normalize.stage.v1`)
 
-注意：
+Ghi chú:
 
-- raw `layout.json` 保留给 adapter、调试和回溯
-- 翻译/渲染主链路优先消费 `document.v1.json`
-- `document.v1.report.json` 用于查 adapter 探测、默认值补齐和 schema 校验摘要
-- Rust 主工作流调用的 normalize worker 现在要求 `--spec <job_root/specs/normalize.spec.json>`
-- 如果只是本地手动验证 schema / adapter，应该走 `scripts/entrypoints/validate_document_schema.py`
+- `layout.json` thô được giữ lại cho adapter, gỡ lỗi và phân tích hồi cứu
+- Quy trình chính dịch/render ưu tiên tiêu thụ `document.v1.json`
+- `document.v1.report.json` được sử dụng để thăm dò adapter, hoàn thiện giá trị mặc định và tóm tắt xác thực schema
+- Worker chuẩn hóa được gọi bởi quy trình chính Rust hiện yêu cầu `--spec <job_root/specs/normalize.spec.json>`
+- Chỉ sử dụng `scripts/entrypoints/validate_document_schema.py` để xác thực schema / adapter thủ công cục bộ
 
-## Adapter 约定
+## Quy ước Adapter
 
-provider 原始 OCR 不应直接进入翻译/渲染主线。
+OCR thô của provider không nên đi trực tiếp vào luồng chính dịch/render.
 
-统一入口在：
+Điểm vào thống nhất tại:
 
 - `services/document_schema/adapters.py`
 
-当前 adapter 接口：
+Giao diện adapter hiện tại:
 
 - `detect_ocr_provider(payload)`
 - `adapt_payload_to_document_v1(...)`
@@ -219,215 +219,215 @@ provider 原始 OCR 不应直接进入翻译/渲染主线。
 - `adapt_path_to_document_v1_with_report(...)`
 - `register_ocr_adapter(...)`
 
-共享约定入口：
+Điểm vào quy ước chung:
 
 - `services/document_schema/providers.py`
-  稳定 OCR provider 标识常量，adapter、fixture registry、回归脚本优先共用这一层
+  Hằng số định danh provider OCR ổn định; adapter, registry fixture và script hồi quy nên chia sẻ lớp này ưu tiên
 - `services/pipeline_shared/`
-  主线共享的 `pipeline_summary.json`、stdout 标签、JSON IO 和 source-json 选择规则
+  `pipeline_summary.json`, nhãn stdout, JSON IO và quy tắc chọn source-json dùng chung cho luồng chính
 - `services/mineru/contracts.py`
-  仅保留 MinerU provider 私有原始文件名、目录名约定
+  Chỉ giữ lại tên tệp thô và quy ước đặt tên thư mục riêng của provider MinerU
 
-当前正式 provider adapter 有：
+Các adapter provider chính thức hiện tại bao gồm:
 
 - `mineru -> document.v1`
 - `mineru_content_list_v2 -> document.v1`
 - `generic_flat_ocr -> document.v1`
 - `paddle -> document.v1`
 
-## Provider Adapter 分层
+## Phân tầng Adapter Provider
 
-现在的 adapter 分成两层：
+Các adapter hiện tại được chia thành hai lớp:
 
-1. 通用骨架
-2. provider 装配层
+1. Khung chung
+2. Lớp lắp ráp provider
 
-通用骨架位于：
+Khung chung nằm tại:
 
 - `services/document_schema/provider_adapters/common/`
 
-当前包含：
+Hiện bao gồm:
 
 - `document_builder.py`
-  负责统一拼装顶层 `document.v1`
+  Chịu trách nhiệm lắp ráp `document.v1` cấp cao nhất thống nhất
 - `page_builder.py`
-  负责统一拼装 page record
+  Chịu trách nhiệm lắp ráp bản ghi trang thống nhất
 - `block_builder.py`
-  负责统一拼装 block record
+  Chịu trách nhiệm lắp ráp bản ghi block thống nhất
 - `normalize.py`
-  负责 `bbox/polygon/segments/lines` 等通用归一化 helper
+  Chịu trách nhiệm về các helper chuẩn hóa chung cho `bbox/polygon/segments/lines`, v.v.
 - `relations.py`
-  提供“按前一个锚点推断当前块语义”的页内关系骨架
+  Cung cấp khung quan hệ trong trang để "suy luận ngữ nghĩa block hiện tại từ anchor trước đó"
 - `specs.py`
-  定义 provider 内部先落到的中间 block/page spec
+  Định nghĩa các đặc tả block/trang trung gian mà provider ban đầu ánh xạ nội bộ
 
-原则：
+Nguyên tắc:
 
-- `common/` 不直接读取某个 OCR provider 的原始字段名
-- `common/` 只接收已经被 provider 解析好的中间 spec
-- 这样未来接新的 OCR，只需要自己把原始 JSON 先转成 spec，再交给通用 builder
+- `common/` không đọc trực tiếp bất kỳ tên trường thô nào của OCR provider cụ thể
+- `common/` chỉ nhận các đặc tả trung gian đã được phân tích bởi lớp provider
+- Bằng cách này, việc tích hợp các provider OCR mới chỉ yêu cầu chuyển đổi JSON thô thành đặc tả trước, sau đó chuyển giao cho các trình xây dựng chung
 
-provider 装配层位于：
+Lớp lắp ráp provider nằm tại:
 
 - `services/document_schema/provider_adapters/`
 
-其中：
+Trong đó:
 
 - `paddle/`
-  采用目录化拆分，负责把 Paddle 原始 `layoutParsingResults` 解析成通用 spec
-  当前又细分为 reader、relations、page trace、rich-content trace。
-  现在 reader 层内部再通过 page/block context 收敛接口，不再散传 markdown/layout trace 参数。
+  Sử dụng phân rã dựa trên thư mục; chịu trách nhiệm phân tích `layoutParsingResults` thô của Paddle thành đặc tả chung.
+  Hiện được chia nhỏ hơn nữa thành reader, relations, page trace, rich-content trace.
+  Lớp reader hiện hội tụ giao diện thông qua ngữ cảnh trang/block nội bộ, không còn phân tán các tham số dấu vết markdown/bố cục.
 - `mineru_content_list_v2_adapter.py`
-  已经接入通用 builder，但还没有像 Paddle 一样完全目录化
+  Đã tích hợp với các trình xây dựng chung nhưng chưa được phân rã thư mục hoàn toàn như Paddle
 - `generic_flat_ocr_adapter.py`
-  目前仍是最薄的一层 passthrough adapter
+  Hiện vẫn là adapter chuyển tiếp mỏng nhất
 - `mineru`
-  主线仍在 `services/mineru/document_v1.py`，当前不在这轮通用化范围内
+  Luồng chính vẫn nằm trong `services/mineru/document_v1.py`; hiện không nằm trong phạm vi tổng quát này
 
-也就是说，后续扩展 OCR provider 时，优先目标不是继续堆“大 adapter 文件”，而是：
+Nói cách khác, khi mở rộng các provider OCR sau này, ưu tiên không phải là tiếp tục xếp chồng "các tệp adapter lớn", mà là:
 
-1. provider 原始 JSON -> provider 内部 spec
-2. spec -> `common` builder
-3. adapter 注册到 `adapters.py`
-4. fixture 接入回归
+1. JSON thô của provider -> đặc tả nội bộ của provider
+2. Đặc tả -> trình xây dựng `common`
+3. Adapter được đăng ký trong `adapters.py`
+4. Fixture được tích hợp vào kiểm tra hồi quy
 
-Paddle 当前 rich-content trace 也已经继续拆分成三层：
+Dấu vết nội dung phong phú của Paddle cũng đã được chia nhỏ hơn nữa thành ba lớp:
 
-- 内容画像：`content_profile.py`
-- 资源引用：`asset_links.py`
-- markdown 轻匹配：`markdown_match.py`
+- Hồ sơ nội dung: `content_profile.py`
+- Tham chiếu tài sản: `asset_links.py`
+- Khớp nhẹ Markdown: `markdown_match.py`
 
-`rich_content.py` 只保留聚合入口，不再承载具体解析细节。
+`rich_content.py` chỉ giữ lại điểm vào tổng hợp; không còn mang các chi tiết phân tích cụ thể.
 
-注意：
+Ghi chú:
 
-- Paddle 的 `content_format / asset_* / markdown_match_*` 当前归入“通用 trace 层”
-- Paddle 的 `layout_det_* / model_settings / markdown.images` 当前归入“provider raw trace 层”
+- Paddle `content_format / asset_* / markdown_match_*` hiện được phân loại dưới "lớp dấu vết chung"
+- Paddle `layout_det_* / model_settings / markdown.images` hiện được phân loại dưới "lớp dấu vết thô của provider"
 
-新 provider 可以参考：
+Các provider mới có thể tham khảo:
 
 - `services/document_schema/provider_adapters/provider_adapter_template.py`
 - `services/document_schema/provider_adapters/paddle/`
 
-后续新增 OCR provider 时，正确做法是：
+Khi thêm provider OCR mới, cách tiếp cận đúng đắn là:
 
-1. 新增一个 provider adapter
-2. 把原始 JSON 转成 `normalized_document_v1`
-3. 在 adapter 输出后立刻做 schema 校验
-4. 下游继续只消费 `document.v1.json`
+1. Thêm adapter provider mới
+2. Chuyển đổi JSON thô thành `normalized_document_v1`
+3. Chạy xác thực schema ngay sau đầu ra của adapter
+4. Hạ lưu tiếp tục chỉ tiêu thụ `document.v1.json`
 
-推荐接入顺序：
+Thứ tự tích hợp được khuyến nghị:
 
-1. 先明确字段落位规则
-   也就是先决定哪些进入 `content/layout_role/semantic_role/structure_role/policy`，哪些只留在 `tags/derived`，哪些只留在 `metadata/source`。
-2. 准备最小 raw fixture
-   放到 `scripts/devtools/tests/document_schema/fixtures/`。
-3. 写并注册 adapter
-   优先复用 `providers.py` 里的共享 provider 常量，不要在 adapter、fixture、回归入口里各写一份裸字符串。
-   如果原始结构比较复杂，优先按 `payload_reader / block_labels / relations / content_extract / trace` 这种职责拆分，而不是继续堆单文件。
-4. 把 fixture 登记到 `fixtures/registry.py`
-5. 跑 `regression_check.py`
-   让 detector、adapt、validation、extractor smoke 一次过。
+1. Định nghĩa quy tắc đặt trường trước
+   Quyết định trường nào đi vào `content/layout_role/semantic_role/structure_role/policy`, trường nào chỉ ở lại `tags/derived`, trường nào chỉ ở lại `metadata/source`.
+2. Chuẩn bị fixture thô tối thiểu
+   Đặt trong `scripts/devtools/tests/document_schema/fixtures/`.
+3. Viết và đăng ký adapter
+   Ưu tiên sử dụng lại các hằng số provider chung từ `providers.py`; không viết các chuỗi trần riêng biệt trong adapter, fixture và mục hồi quy.
+   Nếu cấu trúc thô phức tạp, ưu tiên phân chia theo trách nhiệm `payload_reader / block_labels / relations / content_extract / trace` thay vì tiếp tục xếp chồng các tệp đơn.
+4. Đăng ký fixture trong `fixtures/registry.py`
+5. Chạy `regression_check.py`
+   Để detector, adapt, validation, extractor vượt qua kiểm tra khói trong một lần chạy.
 
-## 检查入口
+## Điểm vào xác thực
 
-长期检查入口：
+Điểm vào xác thực dài hạn:
 
 - `scripts/entrypoints/validate_document_schema.py`
 - `scripts/devtools/tests/document_schema/regression_check.py`
 
-现在支持两种用法：
+Hiện hỗ trợ hai chế độ sử dụng:
 
-1. 直接校验已经生成好的 `document.v1.json`
-2. 对 raw OCR JSON 执行 `adapter -> defaults -> validation`，并输出 report
+1. Xác thực trực tiếp `document.v1.json` đã tạo trước
+2. Thực thi `adapter -> defaults -> validation` trên JSON OCR thô và xuất báo cáo
 
-示例：
+Ví dụ:
 
 ```bash
 python scripts/entrypoints/validate_document_schema.py output/.../ocr/normalized/document.v1.json
 python scripts/entrypoints/validate_document_schema.py output/.../ocr/unpacked/layout.json --adapt --document-id demo --write-report /tmp/document-schema-report.json
 ```
 
-report 里当前会包含：
+Báo cáo hiện bao gồm:
 
-- 输入路径
-- adapter/provider 探测结果
-- 默认值补齐统计
-- schema 校验摘要
+- Đường dẫn đầu vào
+- Kết quả phát hiện adapter/provider
+- Thống kê hoàn thiện giá trị mặc định
+- Tóm tắt xác thực schema
 
-`validate_document_schema.py --write-report` 当前约定：
+Quy ước hiện tại của `validate_document_schema.py --write-report`:
 
-- `mode = "adapt"` 时：
+- Khi `mode = "adapt"`:
   - `input_path`
   - `normalization`
   - `normalization_summary`
   - `validation`
-- `mode = "validate"` 时：
+- Khi `mode = "validate"`:
   - `input_path`
   - `validation`
 
-也就是说：
+Nói cách khác:
 
-- 完整 adapter / defaults / detection 细节看 `normalization`
-- 稳定轻量摘要优先看 `normalization_summary`
-- 顶层校验结果看 `validation`
+- Để xem chi tiết adapter / defaults / phát hiện đầy đủ, xem `normalization`
+- Để xem tóm tắt nhẹ ổn định, ưu tiên `normalization_summary`
+- Để xem kết quả xác thực cấp cao nhất, xem `validation`
 
-统一消费入口：
+Điểm vào tiêu thụ thống nhất:
 
 - `services/document_schema/reporting.py`
 - `load_normalization_report(path)`
 - `build_normalization_summary(report)`
 
-约定：
+Quy ước:
 
-- Python 侧如果只是想展示 provider / detected provider / pages observed / blocks observed / defaulted field counts / validation 摘要，优先走这两个 helper
-- 不要在 `mineru/summary.py`、排错脚本或后续 API 层里各自重新手写 `report['defaults']['pages_seen']` 这类读取
-- 需要完整原始 report 时，再直接使用 report dict，本身不阻止保留原始字段
+- Khi phía Python chỉ cần hiển thị provider / provider đã phát hiện / số trang quan sát / số block quan sát / số trường mặc định / tóm tắt xác thực, ưu tiên sử dụng hai helper này
+- Không viết lại kiểu đọc `report['defaults']['pages_seen']` riêng biệt trong `mineru/summary.py`, script khắc phục sự cố hoặc các lớp API tương lai
+- Chỉ sử dụng trực tiếp dict báo cáo khi cần báo cáo gốc đầy đủ; việc giữ lại các trường gốc không bị ngăn cản
 
-回归 smoke 检查：
+Kiểm tra khói hồi quy:
 
 ```bash
 python scripts/devtools/tests/document_schema/regression_check.py
 python scripts/devtools/tests/document_schema/regression_check.py --write-report /tmp/document-schema-regression.json
 ```
 
-这个回归脚本现在不是简单打印日志，而是会硬校验：
+Script hồi quy này hiện thực hiện các xác thực nghiêm ngặt thay vì chỉ in log đơn giản:
 
-- adapter 注册表里必须包含当前正式 provider
-- 当前 `document.v1.json` 必须能通过 schema 校验
-- raw layout / `content_list_v2.json` / generic fixture / paddle fixture 都必须能被自动探测、适配并再次通过 schema 校验
-- 显式指定 provider 的路径也必须可用，防止“自动探测能过，显式调用反而退化”
-- Paddle 这类 provider 还要额外做语义断言，至少锁死：
+- Registry adapter phải bao gồm các provider chính thức hiện tại
+- `document.v1.json` hiện tại phải vượt qua xác thực schema
+- layout thô / `content_list_v2.json` / fixture chung / fixture paddle phải đều được tự động phát hiện, chuyển đổi và vượt qua xác thực schema lại
+- Các đường dẫn provider được chỉ định rõ ràng cũng phải hoạt động, ngăn chặn "tự động phát hiện vượt qua nhưng gọi rõ ràng bị hồi quy"
+- Các provider như Paddle yêu cầu các khẳng định ngữ nghĩa bổ sung, khóa tối thiểu:
   - `header/footer`
   - `image_caption/table_caption`
   - `table_footnote`
   - `display_formula -> formula segment`
 
-建议：
+Khuyến nghị:
 
-- 新 provider 至少补一条“provider 语义断言”
-- 不要只看 `pages / blocks`，否则分类回归很容易漏掉
+- Các provider mới nên thêm ít nhất một "khẳng định ngữ nghĩa provider"
+- Không chỉ nhìn vào `pages / blocks`; nếu không dễ bỏ sót các hồi quy phân loại
 
-## 默认值补齐规则
+## Quy tắc hoàn thiện giá trị mặc định
 
-adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补齐稳定默认值。
+Tệp `document.v1.json` phiên bản hiện tại do adapter tạo ra trải qua quá trình hoàn thiện giá trị mặc định ổn định thống nhất trước khi đi vào luồng chính.
 
-### 硬字段
+### Các trường cứng
 
-这些字段不能自动猜，缺失时应该视为结构错误：
+Các trường này không thể được đoán tự động; việc thiếu sẽ được coi là lỗi cấu trúc:
 
-- 文档级：
+- Cấp tài liệu:
   - `schema`
   - `schema_version`
   - `document_id`
   - `source`
   - `pages`
-- 页面级：
+- Cấp trang:
   - `width`
   - `height`
   - `unit`
   - `blocks`
-- block 级：
+- Cấp block:
   - `block_id`
   - `geometry`
   - `content`
@@ -437,62 +437,62 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
   - `policy`
   - `provenance`
 
-### 软字段
+### Các trường mềm
 
-这些字段允许默认值收口层补默认值：
+Các trường này cho phép lớp hoàn thiện giá trị mặc định cung cấp giá trị mặc định:
 
-- 文档级：
+- Cấp tài liệu:
   - `derived -> {}`
   - `markers -> {}`
   - `page_count -> len(pages)`
-- 页面级：
-  - `page_index -> 当前页序号`
-- block 级：
-  - `page_index -> 当前页序号`
-  - `order -> 当前块顺序`
+- Cấp trang:
+  - `page_index -> chỉ số trang hiện tại`
+- Cấp block:
+  - `page_index -> chỉ số trang hiện tại`
+  - `order -> thứ tự block hiện tại`
   - `reading_order -> order`
   - `geometry -> {bbox:[0,0,0,0]}`
-  - `content -> {kind:\"unknown\", text:\"\"}`
-  - `layout_role -> \"unknown\"`
-  - `semantic_role -> \"unknown\"`
-  - `structure_role -> \"\"`
-  - `policy -> {translate:false, translate_reason:\"missing_contract_fields\"}`
-  - `provenance -> {provider:\"\", raw_label:\"\", raw_sub_type:\"\", raw_bbox:[0,0,0,0], raw_path:\"\"}`
+  - `content -> {kind:"unknown", text:""}`
+  - `layout_role -> "unknown"`
+  - `semantic_role -> "unknown"`
+  - `structure_role -> ""`
+  - `policy -> {translate:false, translate_reason:"missing_contract_fields"}`
+  - `provenance -> {provider:"", raw_label:"", raw_sub_type:"", raw_bbox:[0,0,0,0], raw_path:""}`
   - `tags -> []`
-  - `derived -> {role:\"\", by:\"\", confidence:0.0}`
-  - `continuation_hint -> {source:\"\", group_id:\"\", role:\"\", scope:\"\", reading_order:-1, confidence:0.0}`
+  - `derived -> {role:"", by:"", confidence:0.0}`
+  - `continuation_hint -> {source:"", group_id:"", role:"", scope:"", reading_order:-1, confidence:0.0}`
   - `metadata -> {}`
   - `source -> {}`
 
-原则：
+Nguyên tắc:
 
-- 默认值收口层只补“稳定默认值明确”的字段
-- 默认值收口层只补空缺槽位；正式语义口径仍由 `contract_v1.py` 收口
-- 真正的结构错误仍然交给 validator 拦截
+- Lớp hoàn thiện giá trị mặc định chỉ điền các trường có giá trị mặc định ổn định được định nghĩa rõ ràng
+- Lớp hoàn thiện giá trị mặc định chỉ điền vào các ô trống; các đặc tả ngữ nghĩa chính thức vẫn được hợp nhất trong `contract_v1.py`
+- Các lỗi cấu trúc thực sự vẫn được trình xác thực chặn lại
 
-## 顶层结构
+## Cấu trúc cấp cao nhất
 
-顶层字段：
+Các trường cấp cao nhất:
 
 - `schema: str`
-  固定为 `normalized_document_v1`
+  Cố định là `normalized_document_v1`
 - `schema_version: str`
-  当前最新版本为 `1.1`
-  validator 只接受当前版本 `1.1`
+  Phiên bản mới nhất hiện tại là `1.1`
+  Trình xác thực chỉ chấp nhận phiên bản hiện tại `1.1`
 - `document_id: str`
-  文档标识，通常对应 job 或输入文档
+  Định danh tài liệu, thường tương ứng với job hoặc tài liệu đầu vào
 - `source: dict`
-  顶层来源信息，记录 provider 和原始文件
+  Thông tin nguồn cấp cao nhất, ghi lại provider và các tệp thô
 - `page_count: int`
-  页数
+  Số lượng trang
 - `pages: list[dict]`
-  页面列表
+  Danh sách các trang
 - `derived: dict`
-  文档级派生说明或后处理备注
+  Ghi chú phái sinh cấp tài liệu hoặc nhận xét hậu xử lý
 - `markers: dict`
-  文档级稳定标记，例如参考文献起点
+  Các điểm đánh dấu ổn định cấp tài liệu, ví dụ: điểm bắt đầu tham chiếu
 
-示例：
+Ví dụ:
 
 ```json
 {
@@ -507,106 +507,106 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
 }
 ```
 
-## 页面结构
+## Cấu trúc trang
 
-每个页面对象当前包含：
+Mỗi đối tượng trang hiện chứa:
 
 - `page_index: int`
-  从 `0` 开始
+  Bắt đầu từ `0`
 - `width: number`
-  页面宽度
+  Chiều rộng trang
 - `height: number`
-  页面高度
+  Chiều cao trang
 - `unit: str`
-  当前使用 `pt`
+  Hiện sử dụng `pt`
 - `blocks: list[dict]`
-  页面块列表
+  Danh sách các block trang
 
-约束：
+Ràng buộc:
 
-- `pages[i].page_index` 应与数组顺序一致
-- `blocks` 内的块顺序由 `order` 明确指定
+- `pages[i].page_index` phải khớp với thứ tự mảng
+- Thứ tự block trong `blocks` được chỉ định rõ ràng bởi `order`
 
-## Block 结构
+## Cấu trúc block
 
-每个 block 当前包含：
+Mỗi block hiện chứa:
 
 - `block_id: str`
-  稳定块 id，例如 `p001-b0000`
+  Id block ổn định, ví dụ: `p001-b0000`
 - `page_index: int`
-  所在页
+  Trang chứa block
 - `order: int`
-  页内顺序
+  Thứ tự trong trang
 - `reading_order: int`
-  规范化后的阅读顺序
+  Thứ tự đọc đã chuẩn hóa
 - `geometry: dict`
-  稳定几何字段，当前至少包含 `bbox`
+  Các trường hình học ổn định, hiện bao gồm ít nhất `bbox`
 - `content: dict`
-  稳定内容字段，当前至少包含 `kind` 和 `text`
+  Các trường nội dung ổn định, hiện bao gồm ít nhất `kind` và `text`
 - `layout_role: str`
-  显式版面角色
+  Vai trò bố cục rõ ràng
 - `semantic_role: str`
-  显式语义角色
+  Vai trò ngữ nghĩa rõ ràng
 - `structure_role: str`
-  显式正文结构角色
+  Vai trò cấu trúc nội dung rõ ràng
 - `policy: dict`
-  显式执行策略，当前至少包含 `translate`
+  Chính sách thực thi rõ ràng, hiện bao gồm ít nhất `translate`
 - `provenance: dict`
-  provider 原始标签和回溯信息
+  Nhãn thô của provider và thông tin truy xuất nguồn gốc
 - `type: str`
-  兼容主类型
+  Loại chính tương thích
 - `sub_type: str`
-  兼容子类型
+  Loại phụ tương thích
 - `bbox: [x0, y0, x1, y1]`
-  兼容块级边界框
+  Hộp bao quanh cấp block tương thích
 - `text: str`
-  块的归一化纯文本
+  Văn bản thuần đã chuẩn hóa của block
 - `lines: list[dict]`
-  行级结构
+  Cấu trúc cấp dòng
 - `segments: list[dict]`
-  span/segment 扁平结构
+  Cấu trúc phẳng span/segment
 - `tags: list[str]`
-  轻量派生标记
+  Các thẻ phái sinh nhẹ
 - `derived: dict`
-  更强的派生语义结论
+  Các kết luận ngữ nghĩa phái sinh mạnh hơn
 - `continuation_hint: dict`
-  provider 或上游结构层给出的段落连续性提示
+  Gợi ý liên tục đoạn văn từ provider hoặc lớp cấu trúc thượng nguồn
 - `metadata: dict`
-  调试/映射元数据
+  Metadata gỡ lỗi/ánh xạ
 - `source: dict`
-  provider 原始来源信息
+  Thông tin nguồn thô của provider
 
-## `continuation_hint` 约定
+## Quy ước `continuation_hint`
 
-`continuation_hint` 是 block 级稳定字段，用来承接 OCR provider 或后续结构层给出的“这些块本来属于同一段”的提示。
+`continuation_hint` là một trường ổn định cấp block được sử dụng để mang gợi ý từ provider OCR hoặc lớp cấu trúc tiếp theo cho biết "các block này ban đầu thuộc cùng một đoạn văn".
 
-当前字段：
+Các trường hiện tại:
 
 - `source`
-  目前保留 `"" | "provider"`
+  Hiện giữ lại `"" | "provider"`
 - `group_id`
-  同一连续组的稳定 id
+  Id ổn định cho cùng một nhóm liên tục
 - `role`
   `"" | "single" | "head" | "middle" | "tail"`
 - `scope`
   `"" | "intra_page" | "cross_page"`
 - `reading_order`
-  provider 给出的组内阅读顺序；未知时为 `-1`
+  Thứ tự đọc trong nhóm từ provider; `-1` khi không xác định
 - `confidence`
   `0.0 ~ 1.0`
 
-当前行为约束：
+Các ràng buộc hành vi hiện tại:
 
-- `document.v1` 只负责把提示稳定落盘，不在 schema 层硬编码某个 provider 的私有字段
-- translation 主线当前优先消费 `source="provider"` 且 `scope="intra_page"` 的提示
-- `cross_page` 提示只在 translation 层满足相邻页、顺序明确、layout zone 边界安全、文本长度足够等受控条件时消费；schema 层只负责定义和保存契约
-- 新 OCR provider 如果也能稳定产出连续组信息，应优先写入这个字段，而不是把私有 raw 字段直接暴露给下游
+- `document.v1` chỉ chịu trách nhiệm lưu trữ ổn định các gợi ý; không hardcode bất kỳ trường riêng tư nào của provider ở lớp schema
+- Luồng chính dịch hiện ưu tiên tiêu thụ các gợi ý với `source="provider"` và `scope="intra_page"`
+- Các gợi ý `cross_page` chỉ được tiêu thụ ở lớp dịch trong các điều kiện được kiểm soát (các trang liền kề, thứ tự rõ ràng, ranh giới vùng bố cục an toàn, độ dài văn bản đủ); lớp schema chỉ định nghĩa và duy trì hợp đồng
+- Các provider OCR mới có thể tạo ra thông tin nhóm liên tục ổn định nên ưu tiên ghi vào trường này thay vì để lộ các trường thô riêng tư ở hạ lưu
 
-## `type / sub_type` 约定
+## Quy ước `type / sub_type`
 
-`type / sub_type` 只承载稳定结构，不强行塞入 OCR 很难稳定判断的高层语义。
+`type / sub_type` chỉ mang cấu trúc ổn định; không ép buộc ngữ nghĩa cấp cao mà OCR không thể xác định ổn định.
 
-当前主类型：
+Các loại chính hiện tại:
 
 - `text`
 - `formula`
@@ -615,7 +615,7 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
 - `code`
 - `unknown`
 
-当前已使用的 `sub_type` 示例：
+Ví dụ về `sub_type` hiện đang sử dụng:
 
 - `title`
 - `body`
@@ -629,54 +629,54 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
 - `table_body`
 - `code_block`
 
-规则：
+Quy tắc:
 
-- 能稳定映射的结构，优先进入 `type / sub_type`
-- 不稳定的高层语义，不要直接扩主类型系统
-- 先问“这是结构，还是语义判断”
-- 先问“跨 provider 是否大概率都能稳定落下来”
+- Các cấu trúc có thể ánh xạ ổn định nên đi vào `type / sub_type` ưu tiên
+- Ngữ nghĩa cấp cao không ổn định không nên mở rộng trực tiếp hệ thống loại chính
+- Hỏi trước: "Đây là cấu trúc hay phán đoán ngữ nghĩa?"
+- Hỏi trước: "Điều này có thể được tạo ra ổn định trên các provider với xác suất cao không?"
 
-示例：
+Ví dụ:
 
-- 正文段落：
+- Đoạn văn nội dung:
   - `type = "text"`
   - `sub_type = "body"`
-- 页眉：
+- Tiêu đề:
   - `type = "text"`
   - `sub_type = "header"`
-- 行间公式：
+- Công thức hiển thị:
   - `type = "formula"`
   - `sub_type = "display_formula"`
-- 代码块：
+- Khối mã:
   - `type = "code"`
   - `sub_type = "code_block"`
-- OCR 无法稳定细分，但能确认是文字：
+- OCR không thể phân chia nhỏ ổn định nhưng xác nhận văn bản:
   - `type = "text"`
-  - `sub_type = "metadata"` 或 `body`
+  - `sub_type = "metadata"` hoặc `body`
 
-反例：
+Phản ví dụ:
 
-- 不要把 `caption` 直接塞进 `type`
-- 不要把 `reference_entry` 直接塞进 `sub_type`
-- 不要因为单个 provider 有特殊字段，就扩一套新的主类型
+- Không đặt `caption` trực tiếp vào `type`
+- Không đặt `reference_entry` trực tiếp vào `sub_type`
+- Không mở rộng một loại chính mới chỉ vì một provider có trường đặc biệt
 
-接 provider 时可以按下面这个判断：
+Khi tích hợp các provider, sử dụng khung quyết định này:
 
-- `text/header/footer/page_number/footnote` 这类版面结构稳定，进 `type / sub_type`
-- `formula/display_formula`、`image/figure`、`table/table_body`、`code/code_block` 这类块级结构稳定，进 `type / sub_type`
-- `image_caption/table_caption/table_footnote/reference_entry/reference_heading` 这类更像“语义标签”，优先进 `tags`
-- 如果本地规则或后续 LLM 已经对某块做出更强结论，再写进 `derived.role`
-- `author/date/affiliation/doi` 这类 OCR 经常分不稳、provider 差异又大的内容，默认不要扩成新的稳定 `sub_type`
+- `text/header/footer/page_number/footnote` là các cấu trúc bố cục ổn định → đi vào `type / sub_type`
+- `formula/display_formula`, `image/figure`, `table/table_body`, `code/code_block` là các cấu trúc block ổn định → đi vào `type / sub_type`
+- `image_caption/table_caption/table_footnote/reference_entry/reference_heading` giống như "nhãn ngữ nghĩa" → đi vào `tags` ưu tiên
+- Nếu các quy tắc cục bộ hoặc LLM tiếp theo đã đưa ra kết luận mạnh hơn về một block, ghi vào `derived.role`
+- `author/date/affiliation/doi` thường không ổn định trong OCR và thay đổi nhiều giữa các provider; không mở rộng thành `sub_type` ổn định mới theo mặc định
 
-## `tags / markers / derived` 分层
+## Phân tầng `tags / markers / derived`
 
-这是当前 schema 最重要的设计约定。
+Đây là quy ước thiết kế quan trọng nhất của schema hiện tại.
 
 ### `tags`
 
-`tags` 是块级轻量标记。
+`tags` là các điểm đánh dấu nhẹ cấp block.
 
-适合放：
+Phù hợp cho:
 
 - `caption`
 - `image_caption`
@@ -687,31 +687,31 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
 - `reference_entry`
 - `reference_zone`
 
-特点：
+Đặc điểm:
 
-- 轻量
-- 可并列
-- 适合规则快速消费
+- Nhẹ
+- Có thể cùng tồn tại
+- Phù hợp cho tiêu thụ quy tắc nhanh
 
-适合放进 `tags` 的例子：
+Ví dụ phù hợp cho `tags`:
 
-- 一个块同时是 `caption`，并且还能细分成 `image_caption`
-- 一个块已经进入参考文献区，可额外打 `reference_zone`
+- Một block vừa là `caption` và có thể được phân loại thêm là `image_caption`
+- Một block đã ở trong vùng tham chiếu có thể mang thêm `reference_zone`
 
-不适合放进 `tags` 的例子：
+Ví dụ không phù hợp cho `tags`:
 
-- 正文 / 页眉 / 页脚这类稳定结构
-- provider 的临时调试字段
+- Các cấu trúc ổn định như body / header / footer
+- Các trường gỡ lỗi tạm thời của provider
 
 ### `markers`
 
-`markers` 是文档级稳定标记。
+`markers` là các điểm đánh dấu ổn định cấp tài liệu.
 
-当前已经使用：
+Hiện đang sử dụng:
 
 - `reference_start`
 
-示例：
+Ví dụ:
 
 ```json
 {
@@ -723,82 +723,82 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
 }
 ```
 
-适合放进 `markers` 的例子：
+Ví dụ phù hợp cho `markers`:
 
-- 文档级的 `reference_start`
+- `reference_start` cấp tài liệu
 
-不适合放进 `markers` 的例子：
+Ví dụ không phù hợp cho `markers`:
 
-- 单个 block 的语义
-- 只对某一页临时有意义的调试信息
+- Ngữ nghĩa block đơn
+- Thông tin gỡ lỗi chỉ có ý nghĩa tạm thời cho một trang
 
 ### `derived`
 
-`derived` 是更强的派生语义结论。
+`derived` chứa các kết luận ngữ nghĩa phái sinh mạnh hơn.
 
-块级 `derived` 当前结构：
+Cấu trúc `derived` cấp block hiện tại:
 
 - `role: str`
 - `by: str`
 - `confidence: float`
 
-例如：
+Ví dụ:
 
 - `role = "caption"`
 - `role = "reference_heading"`
 - `role = "reference_entry"`
 
-`derived` 的意义：
+Ý nghĩa của `derived`:
 
-- 允许 provider 规则写入
-- 允许本地规则写入
-- 后续也允许 LLM 写入
+- Cho phép các quy tắc của provider ghi
+- Cho phép các quy tắc cục bộ ghi
+- Sẽ cho phép LLM ghi trong tương lai
 
-也就是说，`derived` 是后续继续进化语义层的主要入口。
+Nói cách khác, `derived` là điểm vào chính cho sự phát triển tiếp tục của lớp ngữ nghĩa.
 
-适合放进 `derived` 的例子：
+Ví dụ phù hợp cho `derived`:
 
 - `role = "caption"`
 - `role = "reference_heading"`
 - `role = "reference_entry"`
-- `role = "algorithm"`，但前提是这个结论来自本地规则或更高层判定，而不是硬把 provider 原字段抄进主契约
+- `role = "algorithm"`, miễn là kết luận đến từ các quy tắc cục bộ hoặc phán đoán cấp cao hơn, không sao chép các trường thô của provider vào hợp đồng chính
 
-不适合放进 `derived` 的例子：
+Ví dụ không phù hợp cho `derived`:
 
-- 原始 provider 的 `raw_type`
-- 可以直接稳定落进 `type / sub_type` 的结构
-- 只对某个本地脚本有意义的临时标记
+- `raw_type` thô của provider
+- Các cấu trúc có thể được đặt ổn định trực tiếp trong `type / sub_type`
+- Các điểm đánh dấu tạm thời chỉ có ý nghĩa đối với một script cục bộ cụ thể
 
-一个实用判断：
+Hướng dẫn quyết định thực tế:
 
-- 如果下游逻辑希望“快速筛一批块”，优先考虑 `tags`
-- 如果下游逻辑希望“把这块当成某种明确语义对象处理”，优先考虑 `derived.role`
-- 如果这是布局基础事实，不要放 `tags/derived`，直接落到 `type / sub_type`
+- Nếu logic hạ lưu muốn "lọc nhanh một loạt các block", ưu tiên `tags`
+- Nếu logic hạ lưu muốn "xem block này như một đối tượng ngữ nghĩa cụ thể", ưu tiên `derived.role`
+- Nếu đây là sự thật bố cục nền tảng, không đặt trong `tags/derived`; đặt trực tiếp trong `type / sub_type`
 
-## `metadata` 与 `source` 的边界
+## Ranh giới `metadata` và `source`
 
 ### `metadata`
 
-`metadata` 放本地映射、调试和结构追踪信息。
+`metadata` chứa thông tin ánh xạ cục bộ, gỡ lỗi và theo dõi cấu trúc.
 
-当前已使用示例：
+Ví dụ hiện đang sử dụng:
 
 - `raw_index`
 - `raw_angle`
 - `raw_sub_type`
 - `parent_block_id`
 
-特点：
+Đặc điểm:
 
-- 偏本地实现
-- 偏调试/追踪
-- 不建议上层强绑定太多业务逻辑
+- Nghiêng về triển khai cục bộ
+- Nghiêng về gỡ lỗi/theo dõi
+- Các lớp trên nên tránh ràng buộc quá nhiều logic nghiệp vụ
 
 ### `source`
 
-`source` 放 provider 来源信息。
+`source` chứa thông tin nguồn gốc của provider.
 
-当前已使用示例：
+Ví dụ hiện đang sử dụng:
 
 - `provider`
 - `raw_page_index`
@@ -808,20 +808,20 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
 - `raw_bbox`
 - `raw_text_excerpt`
 
-特点：
+Đặc điểm:
 
-- 保留原始映射
-- 便于回溯 provider 输出
-- 不应成为翻译/渲染主逻辑的长期依赖
+- Bảo tồn ánh xạ gốc
+- Tạo điều kiện truy xuất nguồn gốc đầu ra của provider
+- Không nên trở thành phụ thuộc dài hạn của logic chính dịch/render
 
-## 行和段结构
+## Cấu trúc dòng và segment
 
-`lines[*]` 当前字段：
+`lines[*]` các trường hiện tại:
 
 - `bbox`
 - `spans`
 
-`lines[*].spans[*]` 当前字段：
+`lines[*].spans[*]` các trường hiện tại:
 
 - `type`
 - `raw_type`
@@ -829,7 +829,7 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
 - `bbox`
 - `score`
 
-`segments[*]` 当前字段：
+`segments[*]` các trường hiện tại:
 
 - `type`
 - `raw_type`
@@ -837,96 +837,98 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
 - `bbox`
 - `score`
 
-约定：
+Quy ước:
 
-- `segments` 是块内扁平序列，便于翻译和公式保护
-- `lines` 保留行级结构，便于排版与局部分析
-- 行内公式不作为 block 主类型，保留在 `segments/spans` 中
+- `segments` là chuỗi phẳng trong block, thuận tiện cho dịch và bảo vệ công thức
+- `lines` bảo tồn cấu trúc cấp dòng, thuận tiện cho bố cục và phân tích cục bộ
+- Công thức nội tuyến không phải là loại chính của block; được giữ lại trong `segments/spans`
 
-## 稳定契约与非稳定字段
+## Hợp đồng ổn định và các trường không ổn định
 
-当前建议视为稳定契约的字段：
+Các trường hiện được khuyến nghị là hợp đồng ổn định:
 
-- 顶层：`schema`, `schema_version`, `document_id`, `page_count`, `pages`, `markers`
-- 页面：`page_index`, `width`, `height`, `unit`, `blocks`
-- block：`block_id`, `page_index`, `order`, `type`, `sub_type`, `bbox`, `text`, `lines`, `segments`, `tags`, `derived`, `continuation_hint`, `metadata`, `source`
+- Cấp cao nhất: `schema`, `schema_version`, `document_id`, `page_count`, `pages`, `markers`
+- Trang: `page_index`, `width`, `height`, `unit`, `blocks`
+- Block: `block_id`, `page_index`, `order`, `type`, `sub_type`, `bbox`, `text`, `lines`, `segments`, `tags`, `derived`, `continuation_hint`, `metadata`, `source`
 - `derived.role/by/confidence`
 
-当前不建议外部强绑定的部分：
+Các phần hiện không được khuyến nghị để ràng buộc mạnh bên ngoài:
 
-- `metadata` 内部细节
-- `source.raw_*` 的具体字段集合
-- 某些 provider 专属 `tags`
+- Chi tiết nội bộ của `metadata`
+- Tập hợp trường cụ thể của `source.raw_*`
+- Một số `tags` đặc thù của provider
 
-换句话说：
+Nói cách khác:
 
-- 上层业务应优先依赖 `type / sub_type / tags / derived / markers`
-- 不要把 provider 原始字段重新当成主契约
+- Nghiệp vụ lớp trên nên ưu tiên phụ thuộc vào `type / sub_type / tags / derived / markers`
+- Không coi các trường thô của provider là hợp đồng chính nữa
 
-## 版本演进原则
+## Nguyên tắc tiến hóa phiên bản
 
-`v1` 当前已经可用，但还不是“一次定终身”的终极版本。
+`v1` hiện có thể sử dụng nhưng không phải là phiên bản "cuối cùng vĩnh viễn".
 
-后续演进原则：
+Nguyên tắc tiến hóa trong tương lai:
 
-- 小改动尽量追加字段，不轻易改语义
-- 如果要破坏现有稳定契约，升级到 `v2`
-- provider 适配器负责把上游变化吸收掉，不把变化直接泄漏到主链路
+- Các thay đổi nhỏ nên bổ sung trường; không thay đổi ngữ nghĩa một cách nhẹ nhàng
+- Nếu cần phá vỡ các hợp đồng ổn định hiện có, nâng cấp lên `v2`
+- Adapter provider hấp thụ các thay đổi thượng nguồn; không để rò rỉ các thay đổi trực tiếp vào luồng chính
 
-### 当前结论
+### Kết luận hiện tại
 
-现阶段不建议启动 `document.v2`。
+Không khuyến nghị khởi tạo `document.v2` ở giai đoạn này.
 
-原因：
+Lý do:
 
-- 当前主线刚完成 `raw -> adapter -> defaults -> validator -> document.v1` 的收口，首要目标是把 `v1` 打磨稳定
-- 现有新增需求大多还属于 adapter 扩展、`tags/derived/markers` 语义沉淀和回归覆盖增强，还没有到必须破坏契约的程度
-- 如果过早开 `v2`，会把 provider 接入、翻译主线、渲染主线和历史任务兼容同时拉进来，收益不如先把 `v1` 做稳
+- Luồng chính vừa hoàn thành hợp nhất `raw -> adapter -> defaults -> validator -> document.v1`; mục tiêu chính là ổn định `v1`
+- Hầu hết các yêu cầu mới vẫn thuộc về mở rộng adapter, lắng đọng ngữ nghĩa `tags/derived/markers` và tăng cường phạm vi hồi quy; chưa đến mức cần phá vỡ hợp đồng
+- Mở `v2` sớm sẽ kéo theo tích hợp provider, luồng chính dịch, luồng chính render và tương thích tác vụ lịch sử đồng thời; lợi ích ít hơn so với việc ổn định `v1` trước
 
-### 只有满足这些条件，才考虑开 `v2`
+### Điều kiện cần trước khi xem xét `v2`
 
-至少满足其中一类：
+Phải đáp ứng ít nhất một trong các điều kiện:
 
-1. `v1` 的稳定字段定义必须被整体替换。
-   例如：
-   - `type / sub_type` 体系需要大改
-   - `lines / segments` 的基本组织方式需要改变
-   - `tags / derived / markers` 的职责边界需要整体重划
+1. Các định nghĩa trường ổn định của `v1` phải được thay thế hoàn toàn.
+   Ví dụ:
+   - Hệ thống `type / sub_type` cần đại tu lớn
+   - Tổ chức cơ bản của `lines / segments` cần thay đổi
+   - Ranh giới trách nhiệm của `tags / derived / markers` cần được vẽ lại hoàn toàn
 
-2. 出现跨 provider 的长期共性需求，但无法用“加字段”兼容表达。
-   例如：
-   - 多个 OCR provider 都稳定产出某类结构，而 `v1` 无法无损承载
-   - 现有字段语义已经逼得下游持续写兼容分支
+2. Nhu cầu chung dài hạn giữa các provider xuất hiện mà không thể diễn đạt tương thích bằng cách "thêm trường".
+   Ví dụ:
+   - Nhiều provider OCR tạo ra ổn định một loại cấu trúc mà `v1` không thể mang theo không mất mát
+   - Ngữ nghĩa trường hiện có buộc hạ lưu phải liên tục viết các nhánh tương thích
 
-3. 历史兼容成本开始明显高于升级成本。
-   例如：
-   - 默认值收口层越来越像“半重写”
-   - validator 和主链路需要长期维护两套相互冲突的假设
+3. Chi phí tương thích lịch sử bắt đầu vượt quá đáng kể chi phí nâng cấp.
+   Ví dụ:
+   - Lớp hoàn thiện giá trị mặc định ngày càng giống "viết lại bán phần"
+   - Trình xác thực và luồng chính cần duy trì hai bộ giả định mâu thuẫn dài hạn
 
-### 在此之前的默认策略
+### Chiến lược mặc định cho đến lúc đó
 
-- 优先扩 adapter，不扩主链路契约
-- 优先补 `tags / derived / markers` 语义，不轻易改 `type / sub_type`
-- 优先追加 machine-readable schema 和回归样本，不先升级版本号
+- Mở rộng adapter ưu tiên; không mở rộng hợp đồng luồng chính
+- Bổ sung ngữ nghĩa `tags / derived / markers` ưu tiên; không thay đổi `type / sub_type` một cách nhẹ nhàng
+- Bổ sung schema đọc được bằng máy và mẫu hồi quy ưu tiên; không nâng cấp số phiên bản trước
 
-## 当前最重要的实现原则
+## Nguyên tắc triển khai quan trọng nhất hiện tại
 
-- 主链路优先围绕 `document.v1.json`
-- adapter 层负责 `raw -> normalized`
-- 业务层优先消费：
+- Luồng chính tập trung vào `document.v1.json`
+- Lớp adapter xử lý `raw -> normalized`
+- Lớp nghiệp vụ ưu tiên tiêu thụ:
   - `type / sub_type`
   - `tags`
   - `derived`
   - `markers`
 
-不要再把 MinerU 的原始 JSON 结构当成翻译/渲染主契约。
+Không coi cấu trúc JSON thô của MinerU là hợp đồng chính cho dịch/render nữa.
 
-## 协作规矩
+## Quy tắc phối hợp
 
-这一层是 OCR 和下游模块之间最重要的协议边界。
+Lớp này là ranh giới giao thức quan trọng nhất giữa OCR và các module hạ lưu.
 
-- `document.v1.json` 是 translation / rendering 可以直接依赖的正式契约
-- `document.v1.report.json` 用于校验、排错和兼容摘要，不是下游主输入
-- 新增字段时，优先补到核心结构层或通用 trace 层，不要让下游长期依赖 raw trace
-- 如果修改 `document.v1` 结构、字段语义或默认文件名，必须同时更新 adapter、README、fixture、schema 校验和下游兼容测试
-- translation / rendering 负责人如果需要更多语义，应先在这里定义清楚，再进入各自模块实现，不能直接绕开这一层读取 provider 私有字段
+- `document.v1.json` là hợp đồng chính thức mà dịch / render có thể phụ thuộc trực tiếp
+- `document.v1.report.json` dùng cho xác thực, khắc phục sự cố và tóm tắt tương thích; không phải là đầu vào chính của hạ lưu
+- Khi thêm trường, ưu tiên bổ sung vào lớp cấu trúc cốt lõi hoặc lớp dấu vết chung; không để hạ lưu phụ thuộc vào dấu vết thô dài hạn
+- Nếu sửa đổi cấu trúc `document.v1`, ngữ nghĩa trường hoặc tên tệp mặc định, phải đồng thời cập nhật adapter, README, fixture, xác thực schema và kiểm thử tương thích hạ lưu
+- Chủ sở hữu dịch / render cần thêm ngữ nghĩa nên định nghĩa rõ ràng tại đây trước khi triển khai trong các module tương ứng; không được bỏ qua lớp này để đọc các trường riêng tư của provider
+
+</content>

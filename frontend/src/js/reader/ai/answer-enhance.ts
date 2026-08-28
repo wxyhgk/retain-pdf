@@ -1,4 +1,4 @@
-// AI 回答 DOM 增强：注入 [n] 可点引用、精简脚注、鉴权图片 blob 化。
+// AI answer DOM enhancement: inject clickable [n] citations, compact footnotes, and hydrate protected images as blobs.
 
 import { fetchProtected } from "../../api/http.js";
 import { resolveResourceUrl } from "../../job/artifacts.js";
@@ -24,17 +24,17 @@ export function isAgenticCitation(citation: unknown): citation is AiCitationLike
     && `${(citation as AiCitationLike).block_id || ""}`.trim() !== "";
 }
 
-/** 从 citation 解析 0 基 page_idx；缺省时尝试 block_id 里的 p00N。 */
+/** Resolve a 0-based page_idx from a citation; when absent, try p00N inside block_id. */
 export function resolveCitationPageIdx(citation: AiCitationLike | null | undefined): number | null {
   if (!citation || typeof citation !== "object") return null;
-  // page_idx 全链 0 基（Python Citation/新 ask 链路）
+  // page_idx is 0-based across the chain (Python Citation/new ask flow).
   const rawIdx = citation.page_idx;
   if (rawIdx !== undefined && rawIdx !== null && `${rawIdx}`.trim() !== "") {
     const n = Number(rawIdx);
     if (Number.isFinite(n) && n >= 0) return Math.floor(n);
   }
-  // page 字段系统内全部 1 基（旧 /reader/ai/chat 链路、Python _public_anchor）
-  // ——此前被当 0 基直用，只带 page 的数据会差一页（审计 B4 latent off-by-one）
+  // page fields are 1-based across the system (legacy /reader/ai/chat flow, Python _public_anchor).
+  // They were previously used as 0-based, causing page-only data to be off by one (audit B4 latent off-by-one).
   const rawPage = citation.page;
   if (rawPage !== undefined && rawPage !== null && `${rawPage}`.trim() !== "") {
     const n = Number(rawPage);
@@ -49,7 +49,7 @@ export function resolveCitationPageIdx(citation: AiCitationLike | null | undefin
   return null;
 }
 
-/** 阅读器 1 基页码 */
+/** Reader-facing 1-based page number. */
 export function resolveCitationPageNumber(citation: AiCitationLike | null | undefined): number | null {
   const idx = resolveCitationPageIdx(citation);
   if (idx === null) return null;
@@ -62,7 +62,7 @@ export function clipSnippet(text = "", maxLength = 72): string {
   return `${normalized.slice(0, maxLength).trim()}…`;
 }
 
-/** 只保留回答正文出现的 [n]，避免「甩 10 条长列表」。 */
+/** Keep only [n] references that appear in the answer body, avoiding a long list of citations. */
 export function pickCitationsForAnswer(
   answerText: string,
   citations: AiCitationLike[],
@@ -93,7 +93,7 @@ export function pickCitationsForAnswer(
     return orderedRefs.slice(0, max).map((ref) => byRef.get(ref)!);
   }
 
-  // 正文未标 [n] 时只留少量高质量锚点（按页去重）
+  // If the body has no [n], keep a few high-quality anchors, deduplicated by page.
   const fallback: AiCitationLike[] = [];
   const pages = new Set<number>();
   for (const c of agentic) {
@@ -128,10 +128,10 @@ export function buildMarkdownImageApiUrl(jobId: string, relativePath: string): s
 }
 
 /**
- * 把 markdown 生成的 <a href> 改成无导航 span。
- * 桌面端 Electron setWindowOpenHandler → shell.openExternal：
- * 任何 target=_blank / window.open / 真实 <a> 点击都会弹出系统浏览器。
- * 分支 remount 时幽灵点击因此被体感成「重新打开新标签」。
+ * Convert markdown-generated <a href> elements into non-navigating spans.
+ * In desktop Electron, setWindowOpenHandler leads to shell.openExternal, so
+ * target=_blank, window.open, or a real <a> click can open the system browser.
+ * During branch remounts, stale clicks felt like "opening a new tab again".
  */
 export function neutralizeMarkdownAnchors(
   container: ParentNode,
@@ -139,7 +139,7 @@ export function neutralizeMarkdownAnchors(
     onOpen,
     documentRef = globalThis.document,
   }: {
-    /** 用户主动点链接时回调；返回 true 表示已处理 */
+    /** Callback for explicit user link clicks; return true when handled. */
     onOpen?: ((href: string, event: MouseEvent) => boolean | void) | null;
     documentRef?: Document;
   } = {},
@@ -151,7 +151,7 @@ export function neutralizeMarkdownAnchors(
     const href = `${a.getAttribute("href") || ""}`.trim();
     const span = documentRef.createElement("span");
     span.className = `aui-md-extlink${a.className ? ` ${a.className}` : ""}`.trim();
-    // 保留子节点（链接里可能有 strong/code）
+    // Preserve child nodes; links may contain strong/code.
     while (a.firstChild) {
       span.appendChild(a.firstChild);
     }
@@ -167,20 +167,20 @@ export function neutralizeMarkdownAnchors(
       span.dataset.href = href;
       span.setAttribute("role", "link");
       span.tabIndex = 0;
-      span.title = `打开链接：${href}`;
+      span.title = `Mở liên kết: ${href}`;
       const tryOpen = (event: Event) => {
         event.preventDefault();
         event.stopPropagation();
         if (shouldIgnoreReaderAiNavEvent(event)) return;
         if (isReaderAiNavigationLocked()) return;
         if (event instanceof MouseEvent) {
-          // 仅主按钮、有实际点击次数的可信点击
+          // Only trusted primary-button clicks with an actual click count.
           if (event.button !== 0) return;
           if (event.detail === 0) return;
         }
         if (onOpen?.(href, event as MouseEvent) === true) return;
-        // 默认：不自动 openExternal。需要用户明确手势时由 onOpen 处理。
-        // 这里只做 no-op，避免任何「点分支却弹出浏览器」。
+        // Default: do not openExternal automatically. onOpen handles explicit user gestures.
+        // This no-op avoids any "clicked a branch but opened a browser" behavior.
       };
       span.addEventListener("click", tryOpen);
       span.addEventListener("auxclick", (event) => {
@@ -193,13 +193,13 @@ export function neutralizeMarkdownAnchors(
         tryOpen(event);
       });
     } else {
-      // 锚点/空链：纯文本
+      // Anchor/empty links: plain text.
       span.removeAttribute("role");
     }
     a.replaceWith(span);
   }
 
-  // 双保险：若仍有残留 a[href]（动态插入），捕获阶段一律拦截导航
+  // Extra guard: if any a[href] remains from dynamic insertion, intercept navigation in the capture phase.
   const host = container as Element;
   if (host instanceof Element && !host.dataset.auiLinkGuard) {
     host.dataset.auiLinkGuard = "1";
@@ -218,7 +218,7 @@ export function neutralizeMarkdownAnchors(
   }
 }
 
-/** 把正文里的 [n] 换成可点击按钮（跳过 code/pre）。 */
+/** Replace [n] in the body with clickable buttons, skipping code/pre. */
 export function injectCitationMarkers(
   container: ParentNode,
   citationByRef: Map<string, AiCitationLike>,
@@ -226,14 +226,14 @@ export function injectCitationMarkers(
   documentRef: Document = globalThis.document,
 ): void {
   if (!citationByRef.size || !container) return;
-  // 先清旧标记，避免重复 inject 叠多层监听
+  // Clear old markers first to avoid repeated injection and stacked listeners.
   (container as Element).querySelectorAll?.("button.reader-ai-citation-ref").forEach((btn) => {
     const parent = btn.parentNode;
     if (!parent) return;
     parent.replaceChild(documentRef.createTextNode(btn.textContent || ""), btn);
     parent.normalize?.();
   });
-  // 0x4 = SHOW_TEXT；避免依赖 NodeFilter 全局（jsdom/部分环境未挂）
+  // 0x4 = SHOW_TEXT; avoid relying on global NodeFilter, which is absent in jsdom/some environments.
   const walker = documentRef.createTreeWalker?.(container as Node, 0x4) || null;
   const textNodes: Text[] = [];
   if (walker) {
@@ -260,13 +260,13 @@ export function injectCitationMarkers(
         button.textContent = part;
         const pageNo = resolveCitationPageNumber(citation);
         button.title = pageNo
-          ? `跳到第 ${pageNo} 页 · ${clipSnippet(citation.snippet || "", 60)}`
-          : clipSnippet(citation.snippet || "相关片段", 60);
+          ? `Đi tới trang ${pageNo} - ${clipSnippet(citation.snippet || "", 60)}`
+          : clipSnippet(citation.snippet || "Đoạn liên quan", 60);
         if (pageNo != null) button.dataset.page = `${pageNo}`;
         button.addEventListener("click", (event) => {
           event.preventDefault();
           event.stopPropagation();
-          // 分支/切会话 remount 期间的幽灵点击不跳页
+          // Ignore stale clicks during branch/session remounts.
           if (shouldIgnoreReaderAiNavEvent(event)) return;
           onJump?.(citation);
         });
@@ -279,7 +279,7 @@ export function injectCitationMarkers(
   }
 }
 
-/** 回收容器内已 hydrate 的 blob URL（重渲染/卸载前调用，防泄漏——审计 P1-5）。 */
+/** Revoke hydrated blob URLs in the container before rerender/unmount to prevent leaks (audit P1-5). */
 export function revokeHydratedImageUrls(container: ParentNode | null | undefined): void {
   if (!container) return;
   const images = [...((container as Element).querySelectorAll?.("img.is-hydrated") || [])];
@@ -295,7 +295,7 @@ export function revokeHydratedImageUrls(container: ParentNode | null | undefined
   }
 }
 
-/** 受保护 API 图片 → blob（回答正文里的 md 图）。 */
+/** Protected API images to blobs for markdown images inside answer bodies. */
 export async function hydrateProtectedImages(
   container: ParentNode,
   { fetchImpl = fetchProtected }: { fetchImpl?: typeof fetchProtected } = {},
@@ -315,7 +315,7 @@ export async function hydrateProtectedImages(
       const response = await fetchImpl(url);
       if (!response?.ok) throw new Error(`HTTP ${response?.status || 0}`);
       const objectUrl = URL.createObjectURL(await response.blob());
-      // 同一 img 重复 hydrate（引用/内容变化触发重渲染）时回收旧 blob
+      // Revoke the old blob when the same image is hydrated repeatedly after citation/content rerenders.
       const previous = el.src || "";
       if (previous.startsWith("blob:")) {
         try {
@@ -328,14 +328,14 @@ export async function hydrateProtectedImages(
       el.classList.add("is-hydrated");
     } catch {
       el.classList.add("is-missing");
-      el.alt = el.alt || "图片暂不可用";
+      el.alt = el.alt || "Hình ảnh tạm không khả dụng";
     }
   }));
 }
 
 /**
- * 精简引用脚注：紧凑 chip，不默认铺大图缩略图。
- * 仅展示 pick 后的条目（通常是正文 [n]）。
+ * Compact citation footnotes as chips, without large thumbnails by default.
+ * Only show picked entries, usually the [n] references in the body.
  */
 export function renderCitationFooter(
   host: HTMLElement,
@@ -358,11 +358,11 @@ export function renderCitationFooter(
 
   const footer = documentRef.createElement("div");
   footer.className = "reader-ai-citations";
-  footer.setAttribute("aria-label", "引用来源");
+  footer.setAttribute("aria-label", "Nguồn trích dẫn");
 
   const head = documentRef.createElement("div");
   head.className = "reader-ai-citations-head";
-  head.textContent = "来源";
+  head.textContent = "Nguồn";
   footer.appendChild(head);
 
   const list = documentRef.createElement("div");
@@ -375,7 +375,7 @@ export function renderCitationFooter(
     row.type = "button";
     row.className = "reader-ai-citation-item";
     if (pageNo != null) row.dataset.page = `${pageNo}`;
-    row.title = pageNo != null ? `跳到第 ${pageNo} 页` : "定位来源";
+    row.title = pageNo != null ? `Đi tới trang ${pageNo}` : "Định vị nguồn";
     row.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -393,7 +393,7 @@ export function renderCitationFooter(
 
     const copy = documentRef.createElement("span");
     copy.className = "reader-ai-citation-copy";
-    copy.textContent = clipSnippet(citation.snippet || "相关片段", 64);
+    copy.textContent = clipSnippet(citation.snippet || "Đoạn liên quan", 64);
 
     row.append(refEl, meta, copy);
     list.appendChild(row);

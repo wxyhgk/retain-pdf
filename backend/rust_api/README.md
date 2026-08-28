@@ -1,90 +1,90 @@
 # Rust API Docs
 
-这份索引只回答一个问题：
+This index answers one question:
 
-**现在看 `rust_api` 文档，先看哪篇。**
+**When looking at `rust_api` docs, which one should I read first.**
 
-## 建议阅读顺序
+## Recommended Reading Order
 
-1. 对外 HTTP API、图书馆接口和前端接入：
+1. External HTTP API, Library interfaces and Frontend integration:
    [`../doc/core/api/index.md`](../../doc/core/api/index.md)
-2. 当前系统到底怎么跑：
+2. How the current system actually runs:
    [`CURRENT_API_MAP.md`](CURRENT_API_MAP.md)
-3. 先看目录，知道改哪里：
+3. First look at the directory to know where to make changes:
    [`RUST_API_DIRECTORY_MAP.md`](RUST_API_DIRECTORY_MAP.md)
-4. 团队协作边界和分层规则：
+4. Team collaboration boundaries and layering rules:
    [`RUST_API_ARCHITECTURE.md`](RUST_API_ARCHITECTURE.md)
-5. Rust 侧 artifact 四层边界：
-   [`10-Rust 侧 Artifact Boundary.md`](../../doc/core/rust_api/10-Rust%20%E4%BE%A7%20Artifact%20Boundary.md)
-6. Rust 和 Python stage spec 契约：
+5. Rust side artifact four-layer boundary:
+    [`10-ranh-gioi-artifact-rust.md`](../../doc/core/rust_api/10-ranh-gioi-artifact-rust.md)
+6. Rust and Python stage spec contract:
    [`STAGE_EXECUTION_CONTRACT.md`](STAGE_EXECUTION_CONTRACT.md)
-7. 阶段事件与失败协议：
-   [`../doc/core/rust_api/11-阶段事件与失败协议.md`](../../doc/core/rust_api/11-%E9%98%B6%E6%AE%B5%E4%BA%8B%E4%BB%B6%E4%B8%8E%E5%A4%B1%E8%B4%A5%E5%8D%8F%E8%AE%AE.md)
-8. job_runner 运行态边界：
-   [`../doc/core/rust_api/12-job_runner 边界.md`](../../doc/core/rust_api/12-job_runner%20%E8%BE%B9%E7%95%8C.md)
-9. OCR provider 边界：
+7. Stage events and failure protocol:
+    [`../doc/core/rust_api/11-su-kien-giai-doan-va-giao-thuc-that-bai.md`](../../doc/core/rust_api/11-su-kien-giai-doan-va-giao-thuc-that-bai.md)
+8. job_runner runtime boundary:
+    [`../doc/core/rust_api/12-ranh-gioi-job-runner.md`](../../doc/core/rust_api/12-ranh-gioi-job-runner.md)
+9. OCR provider boundary:
    [`OCR_PROVIDER_CONTRACT.md`](OCR_PROVIDER_CONTRACT.md)
-10. Paddle OCR 异步 API 摘要：
-   [`src/ocr_provider/paddle/API_SUMMARY.md`](src/ocr_provider/paddle/API_SUMMARY.md)
-11. Paddle Markdown / artifact 边界：
-   [`../doc/core/paddle_ocr_api/06_job_artifact_boundary.md`](../../doc/core/paddle_ocr_api/06_job_artifact_boundary.md)
+10. Paddle OCR Async API Summary:
+    [`src/ocr_provider/paddle/API_SUMMARY.md`](src/ocr_provider/paddle/API_SUMMARY.md)
+11. Paddle Markdown / artifact boundary:
+    [`../doc/core/paddle_ocr_api/06_job_artifact_boundary.md`](../../doc/core/paddle_ocr_api/06_job_artifact_boundary.md)
 
-## 每篇文档解决什么问题
+## What Problem Each Document Solves
 
 - [`CURRENT_API_MAP.md`](CURRENT_API_MAP.md)
-  只看当前正式运行主链，重点回答“请求进来后，Rust 和 Python 到底怎么串起来”。
+  Focuses on the current official running main chain, answering "after a request comes in, how are Rust and Python actually chained together".
 - [`RUST_API_DIRECTORY_MAP.md`](RUST_API_DIRECTORY_MAP.md)
-  只看当前目录职责，重点回答“应该先进哪个目录改代码”。
+  Focuses on current directory responsibilities, answering "which directory should I enter first to change code".
 - [`RUST_API_ARCHITECTURE.md`](RUST_API_ARCHITECTURE.md)
-  只看当前团队协作边界，重点回答“改哪里才对，哪些层不能乱穿透”。
-- [`10-Rust 侧 Artifact Boundary.md`](../../doc/core/rust_api/10-Rust%20%E4%BE%A7%20Artifact%20Boundary.md)
-  只看 Rust 侧 artifact boundary，重点回答“provider raw / normalized / published artifact / download API 四层各负责什么”。
+  Focuses on current team collaboration boundaries, answering "where is the right place to change, and which layers must not be penetrated".
+-    [`10-ranh-gioi-artifact-rust.md`](../../doc/core/rust_api/10-ranh-gioi-artifact-rust.md)
+  Focuses on the Rust side artifact boundary, answering "what are the responsibilities of the four layers: provider raw / normalized / published artifact / download API".
 - [`../doc/core/api/index.md`](../../doc/core/api/index.md)
-  只看外部 HTTP 行为，重点回答“接口怎么调、返回什么、哪些字段是正式契约”。
+  Focuses on external HTTP behavior, answering "how to call the interface, what it returns, and which fields are official contracts".
 - [`API_SPEC.md`](API_SPEC.md)
-  保留为历史和实现参考，不再作为前端首读文档。
+  Retained for historical and implementation reference, no longer the primary document for the frontend.
 - [`STAGE_EXECUTION_CONTRACT.md`](STAGE_EXECUTION_CONTRACT.md)
-  只看 stage worker 的 spec 协议，重点回答“Rust 如何给 Python 传执行输入”。
-- [`../doc/core/rust_api/11-阶段事件与失败协议.md`](../../doc/core/rust_api/11-%E9%98%B6%E6%AE%B5%E4%BA%8B%E4%BB%B6%E4%B8%8E%E5%A4%B1%E8%B4%A5%E5%8D%8F%E8%AE%AE.md)
-  只看状态/事件/失败正式协议，重点回答“Python 怎么发事件、Rust 怎么 canonicalize、前端该消费哪些字段”。
-- [`../doc/core/rust_api/12-job_runner 边界.md`](../../doc/core/rust_api/12-job_runner%20%E8%BE%B9%E7%95%8C.md)
-  只看运行态执行层边界，重点回答“改 job_runner 时逻辑应该放在哪个模块”。
+  Focuses on the stage worker spec protocol, answering "how Rust passes execution input to Python".
+-    [`../doc/core/rust_api/11-su-kien-giai-doan-va-giao-thuc-that-bai.md`](../../doc/core/rust_api/11-su-kien-giai-doan-va-giao-thuc-that-bai.md)
+  Focuses on official status/event/failure protocols, answering "how Python sends events, how Rust canonicalizes them, and which fields the frontend should consume".
+-    [`../doc/core/rust_api/12-ranh-gioi-job-runner.md`](../../doc/core/rust_api/12-ranh-gioi-job-runner.md)
+  Focuses on the runtime execution layer boundary, answering "when changing job_runner, which module the logic should be placed in".
 - [`OCR_PROVIDER_CONTRACT.md`](OCR_PROVIDER_CONTRACT.md)
-  只看 provider adapter 边界，重点回答“MinerU / Paddle 在哪一层分发和收口”。
+  Focuses on the provider adapter boundary, answering "where MinerU / Paddle are dispatched and aggregated".
 - [`src/ocr_provider/paddle/API_SUMMARY.md`](src/ocr_provider/paddle/API_SUMMARY.md)
-  只看 Paddle OCR 异步接口协议，重点回答“submit / poll / result download 到底怎么走”。
+  Focuses on the Paddle OCR async interface protocol, answering "how submit / poll / result download actually works".
 - [`../doc/core/paddle_ocr_api/06_job_artifact_boundary.md`](../../doc/core/paddle_ocr_api/06_job_artifact_boundary.md)
-  只看 Markdown 发布边界，重点回答“provider raw 为什么不能直接当 job markdown artifact”。
+  Focuses on the Markdown publishing boundary, answering "why provider raw cannot be used directly as a job markdown artifact".
 
-## 当前推荐认知路径
+## Current Recommended Cognitive Path
 
-- 想快速理解系统：
+- To quickly understand the system:
   `README -> RUST_API_DIRECTORY_MAP -> CURRENT_API_MAP -> RUST_API_ARCHITECTURE`
-- 想改后端代码：
-  `RUST_API_DIRECTORY_MAP -> RUST_API_ARCHITECTURE -> 10-Rust 侧 Artifact Boundary -> CURRENT_API_MAP -> 对应源码`
-- 想接前端或第三方：
+- To change backend code:
+  `RUST_API_DIRECTORY_MAP -> RUST_API_ARCHITECTURE -> 10-ranh-gioi-artifact-phia-rust -> CURRENT_API_MAP -> corresponding source code`
+- To integrate frontend or third-party:
   `doc/core/api/index.md -> CURRENT_API_MAP`
 
-## 架构门禁
+## Architecture Gatekeeping
 
-后端改动默认至少跑这几项：
+Backend changes must run at least these items by default:
 
 - `python3 backend/rust_api/scripts/check_architecture.py`
 - `cargo build --manifest-path backend/rust_api/Cargo.toml`
 - `cargo test --manifest-path backend/rust_api/Cargo.toml --lib job_runner::process_runner::tests::execute_process_job_injects_provider_and_translation_envs`
 - `cargo test --manifest-path backend/rust_api/Cargo.toml --lib routes::jobs::query::tests::job_detail_and_events_routes_redact_secrets`
 
-第一条负责卡住最容易回退的架构问题：
+The first item is responsible for blocking the most common architecture regressions:
 
-- `AppState` 回流到 `services/job_runner/ocr_provider`
-- `routes` 直接依赖 `job_runner`
-- `routes/jobs/*` 重新手写局部 `route_deps(...)`
-- `routes` 直接 `state.db` / `state.config`，或绕过 facade import 内部 service
-- library / glossary / upload route 不经 `*_api` 入口
-- `ProcessRuntimeDeps::new(...)` 在 `app` 边界层之外被随手组装
-- `JobPersistDeps` 从 leaf helper 边界重新外溢
-- `runtime_deps` 结构体被重新散落回多个 runner 文件
-- `state.rs` 重新把 stale running job recovery 混回 bootstrap
-- `lifecycle.rs` 重新退化回一个大函数，丢掉已收口的 helper 边界
-- artifact/download 边界层重新开始理解 provider raw 内部字段
-- published markdown artifact 重新从 `provider_raw_dir/full.md|images` 反推
+- `AppState` flowing back to `services/job_runner/ocr_provider`
+- `routes` directly depending on `job_runner`
+- `routes/jobs/*` hand-writing local `route_deps(...)`
+- `routes` directly accessing `state.db` / `state.config`, or bypassing facade to import internal services
+- library / glossary / upload routes not passing through `*_api` entry points
+- `ProcessRuntimeDeps::new(...)` being assembled haphazardly outside the `app` boundary layer
+- `JobPersistDeps` leaking back from leaf helper boundaries
+- `runtime_deps` struct being scattered back across multiple runner files
+- `state.rs` mixing stale running job recovery back into bootstrap
+- `lifecycle.rs` degenerating back into one large function, losing aggregated helper boundaries
+- artifact/download boundary layer starting to understand provider raw internal fields
+- published markdown artifact being reverse-engineered from `provider_raw_dir/full.md|images`

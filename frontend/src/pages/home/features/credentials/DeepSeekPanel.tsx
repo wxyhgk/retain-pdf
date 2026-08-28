@@ -1,5 +1,5 @@
-// DeepSeek(翻译模型)卡片(对照旧 components/dialogs/browser-credentials-dialog.js
-// 的 DeepSeek 区块 + validation-view.js 的校验徽标/充值链接语义)。
+// Thẻ DeepSeek (mô hình dịch) — đối chiếu với components/dialogs/browser-credentials-dialog.js cũ:
+// khối DeepSeek + validation-view.js cho huy hiệu xác thực / ngữ nghĩa liên kết nạp tiền.
 
 import { CREDENTIAL_DOM_IDS } from "./credentials-dom-ids.js";
 import { useCredentialsController } from "./useCredentialsController.js";
@@ -74,7 +74,7 @@ export function DeepSeekPanel() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          充值
+          Nạp tiền
         </a>
       </div>
     </section>

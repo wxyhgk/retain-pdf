@@ -1,6 +1,6 @@
-/* 选文批注浮层：选区卡片 / 主次按钮 / 三角 */
+/* Popover chú thích lựa chọn: thẻ vùng chọn / nút chính và phụ / caret */
 
-/* —— 选文批注浮层 —— */
+/* —— Popover chú thích lựa chọn —— */
 .reader-sel-pop {
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   position: fixed;
@@ -157,7 +157,7 @@
   background: color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
-/* 指向选区的小三角 */
+/* Caret nhỏ trỏ vào vùng chọn */
 .reader-sel-pop-caret {
   position: absolute;
   left: 50%;
@@ -189,4 +189,3 @@
     transition: none;
   }
 }
-

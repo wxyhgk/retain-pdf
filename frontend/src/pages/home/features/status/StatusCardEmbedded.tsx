@@ -1,7 +1,7 @@
-// 书籍详情「翻译」Tab 进度：
-// - StageFlow：纯阶段导航
-// - 进度文案行右侧：仅当前选中阶段的「重新 OCR / 翻译 / 渲染」
-//   （动作与导航分离，不挤 pill、不顶乱布局）
+// Tab "Dịch" chi tiết sách — tiến trình:
+// - StageFlow: điều hướng giai đoạn thuần
+// - Bên phải dòng văn bản tiến trình: chỉ "thực hiện lại OCR / dịch / render" cho
+//   giai đoạn đang chọn (tách thao tác khỏi điều hướng, không chen pill, không xáo bố cục)
 
 import { StageFlow } from "./StageFlow.jsx";
 import { buildProgressRenderModel, type ProgressRenderModelInput } from "./progress-model.js";
@@ -54,17 +54,17 @@ function dispatchRetryStage(stage: string, jobId = "") {
 
 const STAGE_RETRY_META = {
   ocr: {
-    label: "重新 OCR",
+    label: "Thực hiện lại OCR",
     dispatchStage: "ocr",
     actionKeys: ["ocr"] as const,
   },
   translate: {
-    label: "重新翻译",
+    label: "Thực hiện lại bản dịch",
     dispatchStage: "translation",
     actionKeys: ["translate", "translation"] as const,
   },
   render: {
-    label: "重新渲染",
+    label: "Thực hiện lại render",
     dispatchStage: "render",
     actionKeys: ["render"] as const,
   },
@@ -99,28 +99,28 @@ function isRedundantDoneDetail(detail: string, value: string, title: string) {
   const d = `${detail || ""}`.trim();
   if (!d) return true;
   const compact = d.replace(/\s+/g, "");
-  const redundant = new Set([
-    "渲染完成",
-    "任务完成",
-    "处理完成",
-    "已完成",
-    "完成",
-    "翻译PDF已生成",
-    "可以对照阅读",
-    "处理完成，可以对照阅读",
-  ]);
+    const redundant = new Set([
+      "Đã hoàn tất render",
+      "Tác vụ hoàn thành",
+      "Đã xử lý xong",
+      "Hoàn thành",
+      "Xong",
+      "Đã tạo xong PDF dịch",
+      "Có thể đọc đối chiếu",
+      "Đã xử lý xong, có thể đọc đối chiếu",
+    ]);
   if (redundant.has(compact)) return true;
   if (compact === `${value || ""}`.trim().replace(/\s+/g, "")) return true;
   if (compact === `${title || ""}`.trim().replace(/\s+/g, "")) return true;
-  if (/^(渲染|任务|处理)?完成/.test(compact) && compact.length <= 12) return true;
+  if (/^(hoàn thành|tác vụ|xử lý)?xong/i.test(compact) && compact.length <= 12) return true;
   return false;
 }
 
 /**
- * 仅针对「当前选中阶段」返回一颗重试按钮配置。
- * - OCR：有 job 即可（不看失败）
- * - 翻译/渲染：can_retry 或 失败/成功
- * - 完成：不显示
+ * Chỉ trả về cấu hình nút thử lại cho giai đoạn đang chọn.
+ * - OCR: chỉ cần có job (không xét thất bại)
+ * - Dịch/render: can_retry hoặc thất bại/thành công
+ * - Hoàn thành: không hiển thị
  */
 function resolveSelectedRetry(options: {
   hasJob: boolean;
@@ -142,7 +142,7 @@ function resolveSelectedRetry(options: {
     return {
       label: action?.label || meta.label,
       dispatchStage: meta.dispatchStage,
-      title: "从 OCR 重新执行",
+      title: "Thực hiện lại từ OCR",
     };
   }
   const enabled = Boolean(action?.canRetry) || failed || succeeded;
@@ -195,7 +195,7 @@ export function StatusCardEmbedded({
   const status = `${snapshot?.status || ""}`.trim().toLowerCase();
   const percent = resolvePercent(renderOptions, snapshot);
   const valueText = `${snapshot?.value || ""}`.trim()
-    || (status === "succeeded" ? "翻译 PDF 已生成" : "准备中");
+    || (status === "succeeded" ? "Đã tạo xong PDF dịch" : "Đang chuẩn bị");
   const rawDetail = `${display?.detailText || snapshot?.detail || ""}`.trim();
   const failed = status === "failed";
   const succeeded = status === "succeeded";
@@ -251,11 +251,11 @@ export function StatusCardEmbedded({
               id={ids.cancelButton}
               type="button"
               className="bd-job-status-btn"
-              aria-label="取消任务"
+              aria-label="Hủy tác vụ"
               disabled={!cancelEnabled || cancelDisabled}
               onClick={() => cancelCurrentJob?.()}
             >
-              取消
+              Hủy
             </button>
             <div className="bd-job-status-head-center">
               <div id={ids.ringLabel} className="bd-job-status-title">{ringLabel}</div>
@@ -267,10 +267,10 @@ export function StatusCardEmbedded({
               id={ids.detailButton}
               type="button"
               className="bd-job-status-btn bd-job-status-btn-primary"
-              aria-label="任务详情"
+              aria-label="Chi tiết tác vụ"
               onClick={openDetail}
             >
-              详情
+              Chi tiết
             </button>
           </div>
 
@@ -284,7 +284,8 @@ export function StatusCardEmbedded({
 
           <div className="bd-job-status-main">
             <div className="bd-job-status-copy">
-              {/* 标题行：左侧状态文案，右侧「重新 xxx」（仅当前阶段） */}
+              {/* Dòng tiêu đề: văn bản trạng thái bên trái, "thực hiện lại xxx" bên
+                  phải (chỉ giai đoạn hiện tại). */}
               <div className="bd-job-status-value-row">
                 <div id={ids.ringValue} className="bd-job-status-value">
                   {valueText}
@@ -316,7 +317,7 @@ export function StatusCardEmbedded({
                   id={ids.progressBar}
                   className={`bd-job-status-bar${succeeded ? " is-done" : ""}${failed ? " is-failed" : ""}`}
                   role="progressbar"
-                  aria-label="翻译进度"
+                  aria-label="Tiến độ dịch"
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={rounded}

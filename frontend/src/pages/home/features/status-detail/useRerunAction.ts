@@ -1,6 +1,7 @@
-// 失败 tab 的"从断点恢复/重新运行"按钮绑定(蓝图 §1.2)。resume-actions.js
-// (kept)已经把 enabled/status 算好写进 overview.rerun,这里只做
-// disabled = !enabled || rerunPending 的组合与点击派发,不重复计算。
+// Ràng buộc nút "khôi phục từ điểm dừng / chạy lại" của tab thất bại (bản thiết kế
+// §1.2). resume-actions.js (giữ lại) đã tính enabled/status rồi ghi vào
+// overview.rerun, ở đây chỉ tổ hợp disabled = !enabled || rerunPending và phát
+// sự kiện bấm, không tính lại.
 
 export function useRerunAction({ overview, rerunPending, controller }) {
   const rerun = overview.rerun || { enabled: false, status: "" };

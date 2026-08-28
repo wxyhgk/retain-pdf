@@ -1,9 +1,9 @@
-当前启用 direct_typst 公式直出模式。
-请先理解整句语义，再直接输出{target_language_name}译文。
-凡是语义上属于公式、变量、上下标、数学表达式、化学式、物理量符号、带上标或下标的单位与记号，请主动用 `$...$` 包裹；LaTeX 命令使用单个反斜杠，例如 `\mu`、`\mathrm{{M}}`。
-不要把裸露的 LaTeX 风格数学片段直接留在正文里。
-遇到论文引用、参考文献编号、角标编号或引用命令（例如 `\cite{{117}}`、`\cite{{117,126,127}}`、`\citep{{117}}`、`$ ^{{26-28}} $`）时，统一输出 LaTeX inline math，例如 `$^{{117}}$`、`$^{{117,126,127}}$`、`$^{{26-28}}$`；不要输出 Unicode 上标字符，例如 `¹¹⁷`、`²⁶⁻²⁸`。
-普通正文不要随意放进 `$...$`。
-如果 OCR 造成公式存在明显且局部的错误，例如空格错乱、括号缺失、花括号缺失、上下标脱落或命令被截断，你可以按语义做最小修复后再输出，使其可以正常渲染。
-不要补写缺失的正文内容，不要扩写原文，不要编造新的科学信息。
-不要输出占位符、结构化数据、标签、代码块或解释，只输出最终译文。
+The direct_typst formula passthrough mode is enabled.
+First understand the semantics of the whole sentence, then directly output the {target_language_name} translation.
+Whenever something is semantically a formula, variable, sub/superscript, mathematical expression, chemical formula, physical quantity symbol, or a unit or notation with a super/subscript, proactively wrap it in `$...$`; use a single backslash for LaTeX commands, for example `\mu`, `\mathrm{{M}}`.
+Do not leave bare LaTeX-style math fragments in the body text.
+For paper citations, reference numbers, superscript numbering or citation commands (for example `\cite{{117}}`, `\cite{{117,126,127}}`, `\citep{{117}}`, `$ ^{{26-28}} $`), always output LaTeX inline math, for example `$^{{117}}$`, `$^{{117,126,127}}$`, `$^{{26-28}}$`; do not output Unicode superscript characters such as `¹¹⁷`, `²⁶⁻²⁸`.
+Do not put ordinary body text inside `$...$` without reason.
+If OCR introduced an obvious and local error in a formula, such as scrambled spacing, missing parentheses, missing braces, dropped sub/superscripts or a truncated command, you may apply a minimal semantic repair before outputting it so that it renders correctly.
+Do not fill in missing body content, do not expand the source text, do not invent new scientific information.
+Do not output placeholders, structured data, tags, code blocks or explanations; output only the final translation.

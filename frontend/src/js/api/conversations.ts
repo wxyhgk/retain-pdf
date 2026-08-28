@@ -1,4 +1,4 @@
-// AI 会话 CRUD：对接 Rust /api/v1/ai/conversations（含 parent_id / head_id 分支树）。
+// CRUD phiên hội thoại AI: kết nối với Rust /api/v1/ai/conversations (bao gồm parent_id / head_id cây nhánh).
 
 import { API_PREFIX } from "../config/api-constants.js";
 import { buildApiHeaders, isMockMode } from "../config/runtime.js";
@@ -48,7 +48,7 @@ async function apiJson<T>(
   const body = await resp.json().catch(() => ({}));
   if (!resp.ok) {
     const err = new Error(
-      `${(body as { message?: string })?.message || resp.statusText || "request failed"}`,
+      `${(body as { message?: string })?.message || resp.statusText || "yêu cầu thất bại"}`,
     ) as Error & { status?: number };
     err.status = resp.status;
     throw err;
@@ -131,7 +131,7 @@ export async function deleteConversation(
 ): Promise<{ deleted: boolean }> {
   const id = `${conversationId || ""}`.trim();
   if (!id) {
-    throw new Error("conversation_id required");
+    throw new Error("yêu cầu conversation_id");
   }
   if (isMockMode()) {
     return { deleted: true };
@@ -150,7 +150,7 @@ export async function patchConversation(
 ): Promise<ConversationRecord> {
   const id = `${conversationId || ""}`.trim();
   if (!id) {
-    throw new Error("conversation_id required");
+    throw new Error("yêu cầu conversation_id");
   }
   if (isMockMode()) {
     return {
@@ -161,7 +161,7 @@ export async function patchConversation(
       head_id: payload.head_id || "",
     };
   }
-  // 只发有值的字段：空 head_id 不必带（旧服务/校验更稳）
+  // Chỉ gửi các trường có giá trị: head_id rỗng không cần đưa (dịch vụ cũ/kiểm tra ổn định hơn)
   const body: Record<string, string> = {};
   const head = `${payload.head_id || ""}`.trim();
   const title = `${payload.title || ""}`.trim();
@@ -196,7 +196,7 @@ export async function appendConversationMessage(
 ): Promise<MessageRecord> {
   const id = `${conversationId || ""}`.trim();
   if (!id) {
-    throw new Error("conversation_id required");
+    throw new Error("yêu cầu conversation_id");
   }
   if (isMockMode()) {
     return {
@@ -228,19 +228,19 @@ export async function appendConversationMessage(
   );
 }
 
-/** 去掉 fork-n- / 分支 · 前缀，得到原始对话名。 */
+/** Loại bỏ tiền tố fork-n- / nhánh · , lấy tên hội thoại gốc. */
 export function baseConversationTitle(title: string): string {
   let t = `${title || ""}`.replace(/\s+/g, " ").trim();
-  if (!t) return "未命名对话";
+  if (!t) return "Hội thoại chưa đặt tên";
   const fork = t.match(/^fork-\d+-(.+)$/i);
   if (fork?.[1]) t = fork[1].trim();
-  t = t.replace(/^分支\s*[·•\-—]\s*/, "").trim();
-  return t || "未命名对话";
+  t = t.replace(/^nhánh\s*[·•\-—]\s*/i, "").trim();
+  return t || "Hội thoại chưa đặt tên";
 }
 
 /**
- * 生成 fork 标题：fork-n-xxx
- * n 为相对同一原始名已有 fork 的递增序号；xxx 为原对话名。
+ * Tạo tiêu đề fork: fork-n-xxx
+ * n là số thứ tự tăng dần của fork đã có với cùng tên gốc; xxx là tên hội thoại gốc.
  */
 export function nextForkConversationTitle(
   sourceTitle: string,
@@ -257,13 +257,13 @@ export function nextForkConversationTitle(
     if (Number.isFinite(n) && n > maxN) maxN = n;
   }
   const title = `fork-${maxN + 1}-${base}`;
-  // DB/UI 标题不宜过长
+  // Tiêu đề DB/UI không nên quá dài
   return title.length > 80 ? `${title.slice(0, 79).trim()}…` : title;
 }
 
 /**
- * 从答案处分叉成「新会话窗口」：
- * 把 root→fork 路径复制到新 conversation（新 message_id），原会话不动。
+ * Fork từ câu trả lời thành "Cửa sổ phiên mới":
+ * Sao chép đường dẫn root→fork sang conversation mới (message_id mới), phiên gốc không đổi.
  */
 export async function forkConversationFromPath(
   options: {
@@ -281,22 +281,22 @@ export async function forkConversationFromPath(
 ): Promise<{ conversation: ConversationRecord; items: ReturnType<typeof messagesToBranchItems> }> {
   const path = options.path || [];
   if (!path.length) {
-    throw new Error("fork path empty");
+    throw new Error("đường dẫn fork trống");
   }
   const firstUser = path.find((m) => m.role === "user");
-  const rawTitle = `${options.title || firstUser?.content || "未命名对话"}`.replace(/\s+/g, " ").trim();
+  const rawTitle = `${options.title || firstUser?.content || "Hội thoại chưa đặt tên"}`.replace(/\s+/g, " ").trim();
   const title = rawTitle.length > 80 ? `${rawTitle.slice(0, 79).trim()}…` : rawTitle;
 
   const conversation = await createConversation(
     {
-      title: title || "未命名对话",
+      title: title || "Hội thoại chưa đặt tên",
       document_id: options.documentId || "",
     },
     apiPrefix,
   );
   const convId = conversation.conversation_id;
 
-  // message_id 全局唯一，必须重映射
+  // message_id toàn cục duy nhất, phải ánh xạ lại
   const idMap = new Map<string, string>();
   const makeId = (role: string, i: number) =>
     `fork-${role[0] || "m"}-${Date.now().toString(36)}-${i}-${Math.random().toString(36).slice(2, 7)}`;
@@ -310,7 +310,7 @@ export async function forkConversationFromPath(
     const m = path[i];
     const newId = idMap.get(m.id)!;
     const parentRaw = m.parentId ? idMap.get(m.parentId) || "" : "";
-    // 路径上若 parent 未映射（不应发生），按线性挂上一条
+    // Nếu parent trên đường dẫn chưa được ánh xạ (không nên xảy ra), treo theo tuyến tính lên một mức
     const parentId =
       parentRaw
       || (i > 0 ? idMap.get(path[i - 1].id) || "" : "");
@@ -361,7 +361,7 @@ export async function forkConversationFromPath(
   };
 }
 
-/** 服务端消息 → 前端分支树 items。 */
+/** Tin nhắn server → mục cây nhánh frontend. */
 export function messagesToBranchItems(messages: MessageRecord[]): Array<{
   parentId: string | null;
   message: {
@@ -400,7 +400,7 @@ export function messagesToBranchItems(messages: MessageRecord[]): Array<{
         role,
         content: m.content || "",
         ...(citations ? { citations } : {}),
-        // assistant-ui: status 仅允许 assistant；user 带 status 会直接 throw
+        // assistant-ui: status chỉ cho phép assistant; user mang status sẽ ném ra trực tiếp
         ...(role === "assistant"
           ? { status: { type: "complete", reason: "stop" } }
           : {}),

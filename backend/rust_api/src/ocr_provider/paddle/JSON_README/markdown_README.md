@@ -1,30 +1,30 @@
-# Markdown 层说明
+# Mô tả tầng Markdown
 
-## 1. 层定义
+## 1. Định nghĩa tầng
 
-`layoutParsingResults[*].markdown` 是在 `prunedResult` 的基础上，再生成的可读 Markdown/HTML 字符串，用来给人快速预览 OCR 的文本、段落结构和内嵌资源。每个 `layoutParsingResults` 项都可以附带自己的 `markdown.text`（整个页面的 Markdown 内容）和 `markdown.images`（被 `<img>` 标签引用的图像资产），所以它不是一个新的 OCR schema，而是对 `prunedResult` 中信息的“扁平化、可阅读化”展示。
+`layoutParsingResults[*].markdown` là chuỗi Markdown/HTML dễ đọc được sinh thêm trên cơ sở `prunedResult`, dùng để con người nhanh chóng xem trước văn bản OCR, cấu trúc đoạn và tài nguyên nhúng. Mỗi mục `layoutParsingResults` đều có thể kèm theo `markdown.text` (nội dung Markdown toàn trang) và `markdown.images` (tài sản ảnh được thẻ `<img>` tham chiếu), nên nó không phải schema OCR mới mà là biểu diễn "làm phẳng, dễ đọc" của thông tin trong `prunedResult`.
 
-## 2. 字段结构
+## 2. Cấu trúc trường
 
-- `text`：一个完整的 Markdown/HTML 脚本。实际内容自带标题（如 `## 1. JSON Split Profile`）、段落、英文/中文混排、行内公式（`$ \lambda = 1.5 $`、`$ E = mc^{2} $`）以及 `<div>`/`<img>` 标签，几乎就是把页面的文本片段拼起来的连贯叙述。这个字符串里没有任何坐标或类型标记，所有布局/类别信息都被扔掉了，只有顺序与格式。
-- `images`：字典，键是 Markdown 里用到的相对路径（例如 `imgs/img_in_image_box_256_840_937_1091.jpg`），值是可以直接访问的 HTTP URL（往往带有授权签名）。你可以把它当作 `text` 中 `<img>` 标签的引用表：每当 Markdown 里出现 `src="imgs/...jpg"`，`images[key]` 就能拿到实际图片文件的位置，便于在渲染层嵌入预览图。
+- `text`: Một script Markdown/HTML hoàn chỉnh. Nội dung thực tế tự mang tiêu đề (như `## 1. JSON Split Profile`), đoạn văn, trộn Anh/Trung, công thức nội dòng (`$ \lambda = 1.5 $`, `$ E = mc^{2} $`) cùng thẻ `<div>`/`<img>`, gần như là văn bản liền mạch ghép từ các đoạn văn bản trang. Chuỗi này không chứa bất kỳ tọa độ hay đánh dấu loại nào, tất cả thông tin bố cục/phân loại đều bị bỏ, chỉ còn thứ tự và định dạng.
+- `images`: Từ điển, khóa là đường dẫn tương đối dùng trong Markdown (ví dụ `imgs/img_in_image_box_256_840_937_1091.jpg`), giá trị là URL HTTP truy cập trực tiếp (thường kèm chữ ký ủy quyền). Có thể coi nó là bảng tham chiếu cho thẻ `<img>` trong `text`: mỗi khi Markdown xuất hiện `src="imgs/...jpg"`, `images[key]` sẽ lấy được vị trí tệp ảnh thực tế, thuận tiện nhúng ảnh xem trước ở tầng render.
 
-## 3. 与 `prunedResult` 的关系
+## 3. Quan hệ với `prunedResult`
 
-`markdown` 并不是原始 OCR 的结构化输出，它是从 `prunedResult` 派生出来的“软格式”视图。`prunedResult` 仍然是上下游接口应该信任的 canonical 结构体，保存了 page size、`parsing_res_list`（带 `block_bbox`、`block_label`、`block_order`）、布局/段落的抽象和其他 metadata，而 `markdown` 只是把其中文本内容和图片引用串成可读文档。二者的差异意味着：如果你需要定位到某个 block、恢复 X/Y、判断是标题还是表格，就必须去看 `prunedResult`，不能靠 `markdown`。
+`markdown` không phải đầu ra cấu trúc của OCR gốc, nó là khung nhìn "định dạng mềm" phái sinh từ `prunedResult`. `prunedResult` vẫn là cấu trúc canonical mà giao diện thượng/hạ nguồn nên tin tưởng, giữ lại page size, `parsing_res_list` (kèm `block_bbox`, `block_label`, `block_order`), trừu tượng bố cục/đoạn và metadata khác, còn `markdown` chỉ nối nội dung văn bản và tham chiếu ảnh thành tài liệu dễ đọc. Sự khác biệt giữa hai bên có nghĩa: nếu cần định vị block, khôi phục X/Y, phán đoán tiêu đề hay bảng, bắt buộc phải xem `prunedResult`, không thể dựa vào `markdown`.
 
-## 4. 适用与禁忌
+## 4. Phù hợp và cấm kỵ
 
-- **适合**：调试/排错时快速人眼确认 OCR 输出；给前端或文档工具展示页面概览；用 `text` 里的 Markdown/HTML 层级（标题、`<img>`、公式）简易替代截图；验证 `images` 引用的 asset 是否能访问。
-- **不适合**：当作 adapter 的主输入；当作 downstream schema（如 `document.v1`、normalized document）；用来判断结构 tag/type、段落边界或表格/配图关系——这些信息在 `markdown` 中都只剩顺序，不再包含原始类别和坐标。
-- **谨慎**：`markdown.images` 只是 URL 映射，不包含 `block_bbox` 等定位信息。如果要在某处重建图片所处的区域，依然要组合 `prunedResult` + `outputImages` 的元数据。
+- **Phù hợp**: Nhanh chóng xác nhận bằng mắt đầu ra OCR khi gỡ lỗi; hiển thị tổng quan trang cho frontend hoặc công cụ tài liệu; dùng tầng Markdown/HTML trong `text` (tiêu đề, `<img>`, công thức) thay thế đơn giản ảnh chụp màn hình; xác minh asset tham chiếu trong `images` có truy cập được.
+- **Không phù hợp**: Làm đầu vào chính cho adapter; làm schema hạ nguồn (như `document.v1`, normalized document); dùng để phán đoán tag/type cấu trúc, ranh giới đoạn hay quan hệ bảng/ảnh minh họa — những thông tin này trong `markdown` chỉ còn thứ tự, không còn loại gốc và tọa độ.
+- **Thận trọng**: `markdown.images` chỉ là ánh xạ URL, không chứa thông tin định vị như `block_bbox`. Nếu muốn tái tạo vùng ảnh ở đâu đó, vẫn phải kết hợp metadata của `prunedResult` + `outputImages`.
 
-## 5. 后续 adapter 的接入建议
+## 5. Khuyến nghị kết nối adapter sau này
 
-新接入的 adapter 或 provider 实现应当把 `prunedResult`（或 `normalized_document`）当作主链路输入，`markdown.text`/`markdown.images` 只作为辅助的调试视图。常见流程是：
+Adapter hoặc cài đặt provider mới nên coi `prunedResult` (hoặc `normalized_document`) làm đầu vào chuỗi chính, `markdown.text`/`markdown.images` chỉ làm khung nhìn gỡ lỗi phụ trợ. Luồng phổ biến là:
 
-1. 利用 `prunedResult` 里的 `parsing_res_list`、`block_label`、`block_bbox` 等字段完成结构化编排。
-2. 如果需要人工确认提取结果，在调试脚本里再读取 `markdown.text`，快速看标题、正文、公式是否连贯。
-3. `markdown.images` 可用于渲染 preview 或把图片作为 markdown 里的 `![alt](URL)` 输出，但不要用它决定图像归属或坐标。
+1. Dùng các trường `parsing_res_list`, `block_label`, `block_bbox` trong `prunedResult` để hoàn thiện sắp xếp cấu trúc.
+2. Nếu cần xác nhận thủ công kết quả trích xuất, đọc thêm `markdown.text` trong script gỡ lỗi để nhanh chóng xem tiêu đề, thân văn bản, công thức có liền mạch.
+3. `markdown.images` có thể dùng để render preview hoặc xuất ảnh dưới dạng `![alt](URL)` trong markdown, nhưng đừng dùng nó để quyết định quy thuộc hay tọa độ ảnh.
 
-保持这一条线索有助于控制 schema 主链路不会因为某个 “看起来像文档” 的 Markdown 而偏离规范。
+Giữ tuyến này giúp kiểm soát chuỗi chính schema không lệch chuẩn vì một Markdown "trông giống tài liệu".

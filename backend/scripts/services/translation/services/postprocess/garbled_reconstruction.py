@@ -207,8 +207,8 @@ def _repair_item_translation(item: dict, *, runtime: GarbledReconstructionRuntim
 
 
 def _clean_reconstructed_text(text: str, item: dict) -> tuple[str, bool]:
-    # 复用主翻译回填的清洗:剥离模型 reasoning 泄漏,再还原占位符。
-    # 其它翻译/修复路径都经 apply.py 做这两步,唯独乱码重建曾直接落盘模型原始输出。
+    # Multiplex Master Translation Backfilled Wash:Loại bỏ mô hình reasoning tiết lộ,Khôi phục chỗ dành sẵn。
+    # Các bản dịch khác/Sửa chữa tất cả các đường dẫn đi qua apply.py Thực hiện hai bước này,Chỉ có việc xây dựng lại mã bị cắt xén đã trực tiếp làm giảm đầu ra ban đầu của mô hình。
     salvaged, salvage_changed = salvage_reasoning_leak(text)
     protected_map = item.get("protected_map") or item.get("formula_map", [])
     return restore_protected_tokens(salvaged, protected_map), salvage_changed
@@ -218,7 +218,7 @@ def _apply_reconstruction(items: list[dict], translated_text: str) -> None:
     if not translated_text or not items:
         return
     cleaned_text, salvaged = _clean_reconstructed_text(translated_text, items[0])
-    # 用清洗后的文本做质量校验:落盘什么就校验什么。
+    # Kiểm tra chất lượng với văn bản đã được làm sạch:Xác minh bất cứ thứ gì rơi trên khay。
     validation_issues = _validate_reconstruction(items[0], cleaned_text)
     if validation_issues:
         for item in items:
@@ -226,8 +226,8 @@ def _apply_reconstruction(items: list[dict], translated_text: str) -> None:
         return
     apply_reconstructed_unit_text(items, cleaned_text)
     for item in items:
-        # 候选资格已保证 should_translate=True(verdict 会把显式 False 挡在
-        # should_skip_model_by_policy 之外),此处写 True 为恒等操作。
+        # Ứng viên được đảm bảo should_translate=True(verdict sẽ đưa ra False ngăn ở
+        # should_skip_model_by_policy Beyond),Viết ở đây True Là hoạt động giống hệt nhau。
         mark_translation_required(item, label="llm_reconstructed_garbled")
         set_final_status(item, TRANSLATED_STATUS)
         prior = dict(item.get("translation_diagnostics") or {})

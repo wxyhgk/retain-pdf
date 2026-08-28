@@ -102,7 +102,7 @@ test("collectStageProgressByKey keeps translation substage progress", () => {
   assert.equal(progressByKey.translate.current, 4);
   assert.equal(progressByKey.translate.total, 8);
   assert.equal(progressByKey.translate.progressUnit, "batch");
-  assert.equal(progressByKey.translate.progressText, "第 4/8 批");
+  assert.equal(progressByKey.translate.progressText, "Lô 4/8");
   assert.equal(progressByKey.translate.bySubstage.continuation_review.current, 2);
   assert.equal(progressByKey.translate.bySubstage.continuation_review.total, 10);
   assert.equal(progressByKey.translate.bySubstage.continuation_review.progressUnit, "page");
@@ -156,10 +156,10 @@ test("translation main progress follows the latest main substage", () => {
   assert.equal(progressByKey.translate.current, 5);
   assert.equal(progressByKey.translate.total, 10);
   assert.equal(progressByKey.translate.progressUnit, "page");
-  assert.equal(progressByKey.translate.progressText, "第 5/10 页");
+  assert.equal(progressByKey.translate.progressText, "Trang 5/10");
   assert.equal(progressByKey.translate.substageKey, "garbled_repair");
-  assert.equal(progressByKey.translate.bySubstage.translation_batches.progressText, "第 120/900 批");
-  assert.equal(progressByKey.translate.bySubstage.garbled_repair.progressText, "第 5/10 页");
+  assert.equal(progressByKey.translate.bySubstage.translation_batches.progressText, "Lô 120/900");
+  assert.equal(progressByKey.translate.bySubstage.garbled_repair.progressText, "Trang 5/10");
 });
 
 test("job snapshot progress does not replace translation event with different substage", () => {
@@ -203,7 +203,7 @@ test("job snapshot progress does not replace translation event with different su
   assert.equal(presentation.progressCurrent, 4);
   assert.equal(presentation.progressTotal, 10);
   assert.equal(presentation.progressUnit, "page");
-  assert.equal(presentation.progressText, "第 4/10 页");
+  assert.equal(presentation.progressText, "Trang 4/10");
 });
 
 test("translation detail snapshot composes progress without events", () => {
@@ -227,7 +227,7 @@ test("translation detail snapshot composes progress without events", () => {
 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.substageKey, "translation_batches");
-  assert.equal(presentation.progressText, "翻译批次完成");
+  assert.equal(presentation.progressText, "Đã hoàn tất các lượt dịch");
   assert.equal(presentation.progressCurrent, 8);
   assert.equal(presentation.progressTotal, 8);
   assert.equal(presentation.progressUnit, "batch");
@@ -253,7 +253,7 @@ test("translation batch progress composes even when substage is missing", () => 
 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.substageKey, "translation_batches");
-  assert.equal(presentation.progressText, "翻译批次完成");
+  assert.equal(presentation.progressText, "Đã hoàn tất các lượt dịch");
   assert.equal(presentation.progressCurrent, 8);
   assert.equal(presentation.progressTotal, 8);
   assert.equal(presentation.progressUnit, "batch");
@@ -309,7 +309,7 @@ test("current translation helper substage uses its own progress", () => {
 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.substageKey, "page_policies");
-  assert.equal(presentation.progressText, "第 3/10 页");
+  assert.equal(presentation.progressText, "Trang 3/10");
   assert.equal(presentation.progressCurrent, 3);
   assert.equal(presentation.progressTotal, 10);
   assert.equal(presentation.progressUnit, "page");
@@ -367,7 +367,7 @@ test("translation event stream can advance beyond stale job snapshot substage", 
 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.substageKey, "garbled_repair");
-  assert.equal(presentation.progressText, "第 2/10 页");
+  assert.equal(presentation.progressText, "Trang 2/10");
   assert.equal(presentation.progressUnit, "page");
   assert.equal(presentation.progressCurrent, 2);
   assert.equal(presentation.progressTotal, 10);
@@ -425,7 +425,7 @@ test("translation presentation advances from batches to later repair substage", 
 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.substageKey, "garbled_repair");
-  assert.equal(presentation.progressText, "第 5/10 页");
+  assert.equal(presentation.progressText, "Trang 5/10");
   assert.equal(presentation.progressCurrent, 5);
   assert.equal(presentation.progressTotal, 10);
 });
@@ -517,15 +517,15 @@ test("translation zero-total repair events remain visible instead of falling bac
 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.substageKey, "agent_repair");
-  assert.equal(presentation.progressText, "正在修复翻译结果");
+  assert.equal(presentation.progressText, "Đang sửa kết quả dịch");
   assert.equal(presentation.progressCurrent, 100);
   assert.equal(presentation.progressTotal, 100);
   assert.equal(presentation.progressUnit, "percent");
   assert.equal(progressByKey.translate.substageKey, "agent_repair");
-  assert.equal(progressByKey.translate.progressText, "正在修复翻译结果");
+  assert.equal(progressByKey.translate.progressText, "Đang sửa kết quả dịch");
   assert.equal(progressByKey.translate.current, 100);
-  assert.equal(progressByKey.translate.bySubstage.garbled_repair.progressText, "正在修复乱码候选段");
-  assert.equal(progressByKey.translate.bySubstage.agent_repair.progressText, "正在修复翻译结果");
+  assert.equal(progressByKey.translate.bySubstage.garbled_repair.progressText, "Đang sửa các đoạn văn bản bị lỗi mã hóa");
+  assert.equal(progressByKey.translate.bySubstage.agent_repair.progressText, "Đang sửa kết quả dịch");
 });
 
 test("translation batch completion keeps batch progress for the ring", () => {
@@ -549,7 +549,7 @@ test("translation batch completion keeps batch progress for the ring", () => {
 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.substageKey, "translation_batches");
-  assert.equal(presentation.progressText, "翻译批次完成");
+  assert.equal(presentation.progressText, "Đã hoàn tất các lượt dịch");
   assert.equal(presentation.progressCurrent, 56);
   assert.equal(presentation.progressTotal, 56);
   assert.equal(presentation.progressUnit, "batch");
@@ -609,9 +609,9 @@ test("translation body copy keeps batch progress instead of stale job percent", 
   );
 
   assert.equal(presentation.stageKey, "translate");
-  assert.equal(presentation.detail, "正在翻译正文内容");
+  assert.equal(presentation.detail, "Đang dịch nội dung chính");
   assert.equal(presentation.substageKey, "translation_batches");
-  assert.equal(presentation.progressText, "第 28/5216 批");
+  assert.equal(presentation.progressText, "Lô 28/5216");
   assert.equal(presentation.progressCurrent, 28);
   assert.equal(presentation.progressTotal, 5216);
   assert.equal(presentation.progressUnit, "batch");
@@ -664,7 +664,7 @@ test("translation substage progress keeps the latest event by seq", () => {
 
   assert.equal(progressByKey.translate.bySubstage.translation_batches.current, 45);
   assert.equal(progressByKey.translate.bySubstage.translation_batches.total, 100);
-  assert.equal(progressByKey.translate.bySubstage.translation_batches.progressText, "第 45/100 批");
+  assert.equal(progressByKey.translate.bySubstage.translation_batches.progressText, "Lô 45/100");
   assert.equal(progressByKey.translate.bySubstage.translation_batches.displayPercent, 45);
 });
 
@@ -710,7 +710,7 @@ test("translation helper start event with unit none does not render as batch cou
 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.substageKey, "agent_repair");
-  assert.equal(presentation.progressText, "正在修复翻译结果");
+  assert.equal(presentation.progressText, "Đang sửa kết quả dịch");
   assert.equal(presentation.progressCurrent, 0);
   assert.equal(presentation.progressTotal, 1);
   assert.equal(presentation.progressUnit, "none");
@@ -753,7 +753,7 @@ test("canonical translation event without counts does not borrow stale job batch
 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.substageKey, "translation_batches");
-  assert.equal(presentation.progressText, "正在翻译正文内容");
+  assert.equal(presentation.progressText, "Đang dịch nội dung chính");
   assert.equal(presentation.progressCurrent, 0);
   assert.equal(presentation.progressTotal, 100);
   assert.equal(presentation.progressUnit, "percent");
@@ -842,7 +842,7 @@ test("public display_stage field drives translation stage", () => {
 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.substageKey, "translation_tail_retry");
-  assert.equal(presentation.progressText, "第 2/7 批");
+  assert.equal(presentation.progressText, "Lô 2/7");
 });
 
 test("translation percent substage event updates current substage instead of stale batch progress", () => {
@@ -897,7 +897,7 @@ test("translation percent substage event updates current substage instead of sta
 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.substageKey, "agent_repair");
-  assert.equal(presentation.progressText, "进度 65%");
+  assert.equal(presentation.progressText, "Tiến độ 65%");
   assert.equal(presentation.progressCurrent, 65);
   assert.equal(presentation.progressTotal, 100);
   assert.equal(presentation.progressUnit, "percent");
@@ -971,7 +971,7 @@ test("background render prewarm does not replace the translation main lane", () 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.visualStageKey, "translate");
   assert.equal(presentation.substageKey, "translation_batches");
-  assert.equal(presentation.progressText, "第 121/900 批");
+  assert.equal(presentation.progressText, "Lô 121/900");
   assert.equal(presentation.progressCurrent, 121);
   assert.equal(presentation.progressTotal, 900);
   assert.equal(presentation.progressUnit, "batch");

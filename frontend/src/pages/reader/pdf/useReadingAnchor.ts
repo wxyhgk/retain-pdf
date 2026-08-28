@@ -1,5 +1,5 @@
-// 模式切换 / 跳页时的阅读锚点锁定与恢复。
-// 关键规则：切换前锁定 progress，恢复期间禁止 scroll 写回锚点，且绝不 re-measure。
+// Khóa và khôi phục anchor đọc khi đổi mode / nhảy trang.
+// Quy tắc then chốt: khóa progress trước khi chuyển đổi, cấm ghi ngược anchor vào scroll trong khi khôi phục, và tuyệt đối không re-measure.
 
 import { useCallback, useEffect, useRef } from "react";
 import type { RefObject } from "react";
@@ -45,11 +45,11 @@ export function useReadingAnchor(
 } {
   const { primaryPane, mode, enabled = true } = options;
 
-  /** 用户真实阅读锚点（仅用户滚动 / 跳转 / 恢复完成后更新） */
+  /** Anchor đọc thật của người dùng (chỉ cập nhật sau user scroll / jump / restore hoàn tất). */
   const anchorRef = useRef<PageScrollProgress>({ page: 1, fraction: 0 });
-  /** 本次恢复锁定的锚点（不被中间 scroll 事件污染） */
+  /** Anchor bị khóa cho lần restore này (không bị scroll event giữa chừng làm bẩn). */
   const pendingRestoreRef = useRef<PageScrollProgress | null>(null);
-  /** 恢复中：禁止 scroll 写回 anchor */
+  /** Đang restore: cấm scroll ghi ngược vào anchor. */
   const restoringRef = useRef(false);
   const prevModeRef = useRef(mode);
   const cancelRestoreRef = useRef<(() => void) | null>(null);
@@ -69,20 +69,20 @@ export function useReadingAnchor(
   }, []);
 
   const finishRestore = useCallback((locked: PageScrollProgress) => {
-    // 恢复完成：锚点钉回锁定值，再允许滚动更新
+    // Restore hoàn tất: ghim anchor về giá trị đã khóa, rồi mới cho scroll cập nhật.
     anchorRef.current = cloneProgress(locked);
     pendingRestoreRef.current = null;
     if (unfreezeTimerRef.current != null) {
       clearTimeout(unfreezeTimerRef.current);
     }
-    // 稍后再解冻，避免最后一次程序化 scroll 事件写脏锚点
+    // Giải băng sau, tránh sự kiện scroll lập trình lần cuối ghi bẩn anchor
     unfreezeTimerRef.current = setTimeout(() => {
       unfreezeTimerRef.current = null;
       restoringRef.current = false;
     }, UNFREEZE_DELAY_MS);
   }, []);
 
-  // 仅用户滚动时更新锚点；恢复期间一律忽略
+  // Chỉ cập nhật anchor khi user scroll; trong lúc restore thì bỏ qua tất cả.
   useEffect(() => {
     if (!enabled) {
       return;
@@ -128,7 +128,7 @@ export function useReadingAnchor(
     };
   }, [enabled, mode, primaryPane, shellRef]);
 
-  // 模式切换后：只用 pending 锁定锚点恢复，绝不重新 measure
+  // Sau khi chuyển chế độ: chỉ dùng pending để khóa khôi phục anchor, tuyệt đối không measure lại
   useEffect(() => {
     if (prevModeRef.current === mode) {
       return;
@@ -146,7 +146,7 @@ export function useReadingAnchor(
       ? cloneProgress(pendingRestoreRef.current)
       : cloneProgress(anchorRef.current);
 
-    // 再次确保冻结（应对严格模式下 effect 重跑）
+    // Đảm bảo đóng băng một lần nữa (để đối phó với việc effect chạy lại trong Strict Mode)
     restoringRef.current = true;
     pendingRestoreRef.current = locked;
     anchorRef.current = locked;
@@ -158,13 +158,13 @@ export function useReadingAnchor(
       {
         behavior: "auto",
         pane: primaryPane,
-        // 等页宽/行高同步后再钉；同一 locked 幂等，不会越滚越远
+         // Ghim sau khi đồng bộ chiều rộng trang/chiều cao dòng; cùng một locked là idempotent, không bị cuộn càng lúc càng xa
         delaysMs: MODE_RESTORE_DELAYS_MS,
         onDone: () => finishRestore(locked),
       },
     );
 
-    // 兜底解冻
+    // Fallback giải băng.
     safetyTimerRef.current = setTimeout(() => {
       safetyTimerRef.current = null;
       finishRestore(locked);
@@ -197,9 +197,9 @@ export function useReadingAnchor(
   }, [shellRef]);
 
   const beginModeSwitch = useCallback((): PageScrollProgress => {
-    // 1) 先冻结，防止 setMode 后布局钳位 scrollTop 触发的 scroll 写脏锚点
+    // 1) Đóng băng trước, ngăn chặn việc setMode khiến layout kẹp scrollTop kích hoạt scroll ghi bẩn anchor
     restoringRef.current = true;
-    // 2) 在布局变化前锁定当前位置
+    // 2) Khóa vị trí hiện tại trước khi layout thay đổi.
     const measured = measurePageScrollProgress(
       shellRef.current,
       primaryPaneRef.current,

@@ -108,7 +108,7 @@ def _build_translation_batches(
         if should_skip:
             immediate_results.append(fast_path_keep_origin_result_fn(item, reason))
             continue
-        # 批大小 1(批处理退役)时所有条目都走单条路径,不再标记批候选
+        # Kích thước lô 1(Ngừng hoạt động hàng loạt)khi tất cả các mục nhập có một đường dẫn duy nhất,Không đánh dấu ứng viên hàng loạt nữa
         if effective_batch_size > 1 and _is_low_risk_batchable_item(
             item,
             translation_context=translation_context,

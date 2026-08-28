@@ -1,4 +1,4 @@
-/* AI 悬浮窗 · Notion 式一体圆角输入卡 */
+/* Cửa sổ nổi AI · thẻ nhập bo góc liền mạch kiểu Notion */
 
 .reader-float-ai .aui-scroll-bottom-btn {
   position: sticky;
@@ -35,7 +35,7 @@
   background: var(--paper);
 }
 
-/* 无模型 Key：不渲染可编辑输入 */
+/* Không có Key model: không render ô nhập có thể sửa */
 .reader-float-ai .aui-composer-locked {
   gap: 6px;
 }
@@ -52,7 +52,7 @@
   line-height: 1.45;
 }
 
-/* 一体输入壳：软阴影 + 大圆角 */
+/* Vỏ nhập liền mạch: bóng mềm + góc lớn */
 .reader-float-ai .aui-composer-shell {
   display: grid;
   gap: 0;
@@ -136,7 +136,7 @@
   margin-left: auto;
 }
 
-/* 圆形发送 / 停止 — 对齐 Notion ↑ */
+/* Gửi / dừng hình tròn — căn theo ↑ của Notion */
 .reader-float-ai .aui-send {
   display: grid;
   place-items: center;
@@ -184,7 +184,7 @@
   letter-spacing: 0.01em;
 }
 
-/* 兼容旧类名（若别处仍引用） */
+/* Tương thích tên class cũ (nếu nơi khác vẫn tham chiếu) */
 .reader-float-ai .aui-composer-foot {
   display: flex;
   align-items: center;

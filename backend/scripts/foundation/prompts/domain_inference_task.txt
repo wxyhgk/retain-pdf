@@ -1,11 +1,11 @@
-请阅读这个 PDF 的前两页，判断其所属的学术或技术领域。
+Read the first two pages of this PDF and determine the academic or technical domain it belongs to.
 
-然后为后续整本书翻译写一段简洁的中文指导。
+Then write concise guidance in Chinese for translating the rest of the book.
 
-这段指导至少应帮助翻译模型做到：
-- 保持领域术语稳定一致
-- 在需要时保留英文缩写、模型名、符号、命令、文件名和代码
-- 使用自然、准确、符合学术语体的中文
-- 避免过度意译或无依据扩写
-- 优先采用该领域常见的中文术语
-- 当内容里出现数学表达式、变量、化学式、上下标、单位幂次时，先理解语义，再主动用 `$...$` 包裹应作为公式显示的部分
+At a minimum, this guidance should help the translation model to:
+- Keep domain terminology stable and consistent
+- Keep English abbreviations, model names, symbols, commands, file names and code where needed
+- Use natural, accurate Chinese wording that matches academic writing conventions
+- Avoid over-paraphrasing or unsupported expansion
+- Prefer the Chinese terminology commonly used in that domain
+- When mathematical expressions, variables, chemical formulas, sub/superscripts or unit powers appear, first understand the semantics and then proactively wrap the parts that should render as formulas in `$...$`

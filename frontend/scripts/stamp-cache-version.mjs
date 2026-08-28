@@ -1,13 +1,13 @@
-// 给三页 HTML 里引用的 CSS / *.bundle.js 打上内容哈希的 ?v= 缓存串。
+// Đưa ra ba trang HTML được tham chiếu trong CSS / *.bundle.js đạt được hàm băm nội dung ?v= Chuỗi bộ nhớ cache。
 //
-// CSS 已按页拆分：
+// CSS Tách theo trang：
 //   index  → dist/css/home.css
 //   detail → dist/css/detail.css
 //   reader → dist/css/reader.css
-// （styles.css 仅为 home 兼容副本，一般不再被 HTML 引用。）
+// （styles.css Chỉ dành cho home Bản sao tương thích，Nói chung không còn tồn tại HTML trích dẫn。）
 //
-// 正解:构建产物后,按每个资源的内容哈希写 ?v=<hash>——内容不变 → URL 不变
-// (正常命中缓存),内容一变 → URL 变(强制回源)。
+// chính giải:Sau khi xây dựng sản phẩm,Viết theo hàm băm nội dung của từng tài nguyên ?v=<hash>——Nội dung không thay đổi → URL Không thay đổi
+// (Bộ nhớ cache Lượt truy cập Bình thường),Nội dung đã thay đổi → URL biến(Buộc phải quay lại nguồn)。
 
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -16,8 +16,8 @@ import { fileURLToPath } from "node:url";
 
 const FRONTEND_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
-// 每页 HTML 引用的资源(相对 frontend 根),stamp 会把这些 href/src 上的 ?v=
-// 改写成对应文件的内容哈希。
+// Mỗi trang HTML Tài liệu tham khảo(tương đối frontend Cột),stamp sẽ lấy những thứ này href/src vào ?v=
+// Viết lại hàm băm nội dung của tệp tương ứng。
 const PAGES = [
   { html: "index.html", assets: ["dist/css/home.css", "dist/app.bundle.js"] },
   { html: "detail.html", assets: ["dist/css/detail.css", "dist/detail.bundle.js"] },
@@ -29,8 +29,8 @@ function contentHash(absPath) {
   return createHash("sha256").update(buf).digest("hex").slice(0, 10);
 }
 
-// 把 html 里对某个 asset 的引用(href/src="./asset" 或 "./asset?v=旧值")统一
-// 改写成 "./asset?v=<hash>"。asset 里的 . 和 / 需要转义进正则。
+// cầm html Li so với ai đó asset tài liệu tham khảo(href/src="./asset" Hoặc "./asset?v=Giá trị cũ")thống nhất
+// Viết lại cho "./asset?v=<hash>"。asset trong . Và / Cần phải thoát ra một cách đều đặn。
 function stampAssetRef(htmlText, asset, hash) {
   const escaped = asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(`(["']\\.\\/${escaped})(\\?v=[^"']*)?(["'])`, "g");

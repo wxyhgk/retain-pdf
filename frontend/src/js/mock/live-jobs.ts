@@ -1,5 +1,5 @@
-// 可推进的 mock 翻译任务：提交后随墙钟时间走完阶段。
-// 支持 fromStage：点「重新 OCR/翻译/渲染」时从该阶段起跑，前面阶段视为已完成。
+// Nhiệm vụ dịch mock có thể tiến triển: sau khi gửi, các giai đoạn sẽ hoàn thành theo thời gian.
+// Hỗ trợ fromStage: khi nhấn "OCR lại/Dịch lại/Render lại", bắt đầu từ giai đoạn đó, các giai đoạn trước được coi là đã hoàn thành.
 
 import type { JobLike } from "../job/types.js";
 
@@ -11,14 +11,14 @@ export type LiveMockJobMeta = {
   title?: string;
   pageCount?: number;
   startedAtMs: number;
-  /** 总时长缩放（1 = 默认约 16s 跑完整条；fromStage 时只跑剩余段） */
+  /** Tỷ lệ thời lượng tổng (1 = mặc định khoảng 16s chạy toàn bộ; khi fromStage chỉ chạy đoạn còn lại) */
   speed?: number;
   /**
-   * 从哪一阶段开始推进。
-   * - 省略 / upload：整条流水线
-   * - ocr：跳过排队，从 OCR 起
-   * - translate：跳过排队+OCR，从翻译起
-   * - render：只跑渲染
+   * Bắt đầu tiến triển từ giai đoạn nào.
+   * - Bỏ trống / upload: toàn bộ dây chuyền
+   * - ocr: bỏ qua hàng đợi, bắt đầu từ OCR
+   * - translate: bỏ qua hàng đợi+OCR, bắt đầu từ dịch
+   * - render: chỉ chạy render
    */
   fromStage?: LiveMockFromStage;
 };
@@ -47,7 +47,7 @@ const PHASES: PhaseDef[] = [
     durationMs: 1_500,
     unit: "none",
     total: 1,
-    detail: () => "正在读取文档并排队…",
+    detail: () => "Đang đọc tài liệu và xếp hàng…",
   },
   {
     key: "ocr",
@@ -58,7 +58,7 @@ const PHASES: PhaseDef[] = [
     durationMs: 4_000,
     unit: "page",
     total: 12,
-    detail: ({ current, total }) => `正在执行 OCR，第 ${current}/${total} 页`,
+    detail: ({ current, total }) => `Đang thực hiện OCR, trang ${current}/${total}`,
   },
   {
     key: "translate",
@@ -69,7 +69,7 @@ const PHASES: PhaseDef[] = [
     durationMs: 7_000,
     unit: "batch",
     total: 40,
-    detail: ({ current, total }) => `正在翻译正文，第 ${current}/${total} 批`,
+    detail: ({ current, total }) => `Đang dịch nội dung chính, lô ${current}/${total}`,
   },
   {
     key: "render",
@@ -80,7 +80,7 @@ const PHASES: PhaseDef[] = [
     durationMs: 3_000,
     unit: "page",
     total: 12,
-    detail: ({ current, total }) => `正在渲染第 ${current}/${total} 页`,
+    detail: ({ current, total }) => `Đang render trang ${current}/${total}`,
   },
   {
     key: "done",
@@ -91,7 +91,7 @@ const PHASES: PhaseDef[] = [
     durationMs: 0,
     unit: "none",
     total: 1,
-    detail: () => "处理完成，可以对照阅读",
+    detail: () => "Xử lý hoàn thành, có thể đọc đối chiếu",
   },
 ];
 
@@ -102,7 +102,7 @@ function clamp01(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
-/** API stage 名 → 流水线 from 相位（done 不作为起点） */
+/** Tên API stage → phase của dây chuyền (done không phải điểm bắt đầu) */
 export function normalizeLiveMockFromStage(stage?: string | null): PhaseKey {
   const value = `${stage || ""}`.trim().toLowerCase();
   if (!value || value === "upload" || value === "queued") return "upload";
@@ -125,15 +125,15 @@ function phaseStartIndex(fromStage?: LiveMockFromStage | PhaseKey | string): num
 }
 
 /**
- * 生成时间线：fromStage 之前的相位 duration=0（瞬间完成），
- * 从 fromStage 起按正常时长推进。
+ * Tạo timeline: các phase trước fromStage có duration=0 (hoàn thành tức thời),
+ * Bắt đầu tiến triển từ fromStage theo thời lượng bình thường.
  */
 function phaseTimeline(speed = 1, fromStage?: LiveMockFromStage | PhaseKey | string) {
   const scale = Number.isFinite(speed) && speed > 0 ? speed : 1;
   const startIdx = phaseStartIndex(fromStage);
   let cursor = 0;
   return PHASES.map((phase, index) => {
-    // done 始终接在末尾；from 之前的非 done 相位跳过时长
+    // done luôn ở cuối; các phase không phải done trước from sẽ bỏ qua thời lượng
     const skip = index < startIdx && phase.key !== "done";
     const durationMs = skip ? 0 : Math.round(phase.durationMs / scale);
     const startMs = cursor;
@@ -166,9 +166,9 @@ export function isLiveMockJobActive(jobId?: string | null, nowMs = Date.now()): 
   return status !== "succeeded" && status !== "failed" && status !== "canceled" && status !== "cancelled";
 }
 
-/**
- * 登记一条可推进任务。返回 job_id。
- * fromStage：重试入口，从 ocr / translate / render 起跑。
+/* *
+ * Đăng ký một nhiệm vụ có thể tiến triển. Trả về job_id.
+ * fromStage: điểm vào lại, bắt đầu từ ocr / translate / render.
  */
 export function registerLiveMockJob(meta: {
   jobId?: string;
@@ -242,9 +242,9 @@ export function buildLiveMockJobPayload(
 
   const detail = phase.detail({ current, total, percent });
   const pageCount = Number(meta.pageCount) || 12;
-  const title = `${meta.title || "Mock 翻译任务"}`.trim() || "Mock 翻译任务";
+  const title = `${meta.title || "Nhiệm vụ dịch mock"}`.trim() || "Nhiệm vụ dịch mock";
 
-  // 历史：fromStage 之前的相位标为已完成；当前及之后按时间
+  // Lịch sử: các phase trước fromStage được đánh dấu là đã hoàn thành; hiện tại và sau đó theo thời gian
   const history = timeline
     .filter((slot) => slot.skipped || slot.startMs <= elapsed || slot.phase.key === phase.key)
     .map((slot) => {
@@ -288,7 +288,7 @@ export function buildLiveMockJobPayload(
     display_stage: isDone ? "done" : phase.displayStage,
     substage: !isDone && phase.key === "translate" ? "translation_batches" : undefined,
     lane: "main",
-    stage_detail: isDone ? "处理完成，可以对照阅读" : detail,
+    stage_detail: isDone ? "Xử lý hoàn thành, có thể đọc đối chiếu" : detail,
     progress: {
       unit: isDone || phase.unit === "none" ? undefined : phase.unit,
       current: isDone ? pageCount : current,

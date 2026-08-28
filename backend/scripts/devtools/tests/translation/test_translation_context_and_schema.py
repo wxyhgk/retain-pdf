@@ -495,7 +495,7 @@ def test_build_translation_context_from_policy_uses_policy_guidance() -> None:
     assert "extra-guidance" in context.merged_guidance
     assert "snippet" in context.merged_guidance
     assert context.engine_profile_name == "balanced"
-    # 多条目批处理已退役,默认单条请求
+    # Nhiều lô đầu vào đã ngừng hoạt động,Yêu cầu đơn lẻ mặc định
     assert context.batch_policy.plain_batch_size == 1
 
 

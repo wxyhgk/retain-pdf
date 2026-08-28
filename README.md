@@ -1,98 +1,98 @@
-# RetainPDF：PDF 保留排版翻译工具
+# RetainPDF: Công cụ Dịch PDF Giữ Nguyên Bố cục
 
 <p align="center">
   <img src="resources/brand/RetainPDF-github.svg" alt="RetainPDF" width="320" />
 </p>
 
 
-开源社区做保留排版的项目不少，但是都围绕可复制，可编辑的 PDF，以及行内公式不复杂的场景.
+Các dự án mã nguồn mở về giữ nguyên bố cục khi dịch PDF không ít, nhưng hầu hết đều tập trung vào các tệp PDF có thể sao chép, chỉnh sửa được và các tình huống công thức nội tuyến không quá phức tạp.
 
-RetainPDF 从一开始就是要解决各类 PDF 的保留排版翻译问题，尤其是图片型/扫描版 PDF，以及行内公式的渲染问题.
+RetainPDF ngay từ đầu đã được thiết kế để giải quyết vấn đề dịch PDF giữ nguyên bố cục cho mọi loại PDF, đặc biệt là PDF dạng hình ảnh/quét và vấn đề hiển thị công thức nội tuyến.
 
-在保留排版翻译这个领域，正面硬刚闭源模型,并且在一些场景下做得更好，比如翻译后的 PDF 体积、整体速度和字体大小控制。
+Trong lĩnh vực dịch PDF giữ nguyên bố cục, RetainPDF cạnh tranh trực tiếp với các mô hình nguồn đóng và thậm chí còn làm tốt hơn ở một số tình huống, chẳng hạn như kích thước PDF sau dịch, tốc độ tổng thể và kiểm soát kích thước font chữ.
 
-此外本项目是前后端分离、OCR、翻译、排版与交付打通的全栈项目，整体结构尽量解耦，既能直接使用，也方便后续开发者继续扩展、替换模块和二次开发。
+Ngoài ra, dự án này là một dự án full-stack với frontend và backend tách biệt, tích hợp OCR, dịch, dàn trang và giao hàng liền mạch. Cấu trúc tổng thể được thiết kế để tách rời, giúp dễ dàng sử dụng trực tiếp cũng như mở rộng, thay thế module và phát triển thứ cấp sau này.
 
 
-简单对比：
+So sánh đơn giản:
 
-| 项目 | 扫描型 PDF | 复杂行内公式 | 代码不误翻 | 表格控制 | 自定义翻译策略 | 排版保留 | PDF 压缩优化 | API 自动化 |
+| Dự án | PDF quét | Công thức nội tuyến phức tạp | Mã code không dịch sai | Kiểm soát bảng | Chiến lược dịch tùy chỉnh | Giữ bố cục | Tối ưu nén PDF | Tự động hóa API |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| PDFMathTranslate | ❌ | ❌ | ❌ | 弱 | 弱 | 一般 | 一般 | ✅ |
-| PolyglotPDF | ❌ | ❌ | ❌ | 弱 | 弱 | 一般 | 一般 | ✅ |
-| Doc2X | ✅ | ✅ | ❌ | 中 | 弱 | 强 | 弱 | ❌ 不开放 |
-| RetainPDF | ✅ | ✅ | ✅ | ✅ 可开关 | ✅ 可按规则配置 | 强 | ✅ 持续优化 | ✅ |
+| PDFMathTranslate | ❌ | ❌ | ❌ | Yếu | Yếu | Trung bình | Trung bình | ✅ |
+| PolyglotPDF | ❌ | ❌ | ❌ | Yếu | Yếu | Trung bình | Trung bình | ✅ |
+| Doc2X | ✅ | ✅ | ❌ | Trung bình | Yếu | Mạnh | Yếu | ❌ Không mở |
+| RetainPDF | ✅ | ✅ | ✅ | ✅ Có thể bật/tắt | ✅ Có thể cấu hình theo quy tắc | Mạnh | ✅ Tối ưu liên tục | ✅ |
 
-## 效果图
+## Hình ảnh Minh họa
 
-### SCI 论文
+### Bài báo Khoa học (SCI)
 
 <p align="center">
-  <img src="resources/brand/readme-gallery/image%201.png" alt="SCI 示例 1" width="860" />
+  <img src="resources/brand/readme-gallery/image%201.png" alt="Ví dụ SCI 1" width="860" />
 </p>
 
 <p align="center">
-  <img src="resources/brand/readme-gallery/image%202.png" alt="SCI 示例 2" width="860" />
+  <img src="resources/brand/readme-gallery/image%202.png" alt="Ví dụ SCI 2" width="860" />
 </p>
 
-### 图片型 / 扫描版 PDF
+### PDF dạng Hình ảnh / Quét
 
 <p align="center">
-  <img src="resources/brand/readme-gallery/image%203.png" alt="扫描版示例 1" width="860" />
-</p>
-
-<p align="center">
-  <img src="resources/brand/readme-gallery/image%207.png" alt="扫描版示例 2" width="860" />
-</p>
-
-### 图书类
-
-<p align="center">
-  <img src="resources/brand/readme-gallery/image%204.png" alt="图书示例 1" width="860" />
+  <img src="resources/brand/readme-gallery/image%203.png" alt="Ví dụ PDF quét 1" width="860" />
 </p>
 
 <p align="center">
-  <img src="resources/brand/readme-gallery/image%205.png" alt="图书示例 2" width="860" />
+  <img src="resources/brand/readme-gallery/image%207.png" alt="Ví dụ PDF quét 2" width="860" />
+</p>
+
+### Sách
+
+<p align="center">
+  <img src="resources/brand/readme-gallery/image%204.png" alt="Ví dụ sách 1" width="860" />
 </p>
 
 <p align="center">
-  <img src="resources/brand/readme-gallery/image%206.png" alt="图书示例 3" width="860" />
+  <img src="resources/brand/readme-gallery/image%205.png" alt="Ví dụ sách 2" width="860" />
 </p>
-
-## 快速开始
-
-如果你只是想直接使用，先去 [GitHub Releases](https://github.com/wxyhgk/retain-pdf/releases) 下载对应平台的发布包：
-
-- Windows：优先下载 `Setup.exe`
-- macOS：下载 `.dmg`
-- Linux：下载 `.deb`
-
-如果你想给局域网、团队或多台设备一起用，优先选 Docker 部署。
-
-### Windows 桌面端
 
 <p align="center">
-  <img src="resources/brand/RetainPDF-desktop.png" alt="RetainPDF Windows 桌面端" width="860" />
+  <img src="resources/brand/readme-gallery/image%206.png" alt="Ví dụ sách 3" width="860" />
 </p>
 
-### macOS 提示
+## Bắt đầu Nhanh
 
-由于当前没有 Apple 开发者账号，macOS 版本第一次打开时可能会提示应用“已损坏”。这不是文件真的损坏，而是系统的签名校验导致的。把应用拖到 `/Applications` 后，执行：
+Nếu bạn chỉ muốn sử dụng trực tiếp, hãy tải xuống gói phát hành cho nền tảng tương ứng từ [GitHub Releases](https://github.com/wxyhgk/retain-pdf/releases):
+
+- Windows: Tải `Setup.exe`
+- macOS: Tải `.dmg`
+- Linux: Tải `.deb`
+
+Nếu bạn muốn sử dụng cho mạng nội bộ, nhóm hoặc nhiều thiết bị cùng lúc, hãy ưu tiên triển khai Docker.
+
+### Windows Desktop
+
+<p align="center">
+  <img src="resources/brand/RetainPDF-desktop.png" alt="RetainPDF Windows phiên bản desktop" width="860" />
+</p>
+
+### Lưu ý cho macOS
+
+Do hiện tại không có tài khoản nhà phát triển Apple, phiên bản macOS có thể hiển thị thông báo ứng dụng "đã hỏng" khi mở lần đầu. Đây không phải là tệp thực sự bị hỏng, mà là do hệ thống kiểm tra chữ ký. Sau khi kéo ứng dụng vào `/Applications`, hãy thực thi:
 
 ```bash
 sudo xattr -r -d com.apple.quarantine /Applications/RetainPDF.app
 ```
 
-然后再重新打开应用即可。
+Sau đó mở lại ứng dụng.
 
-### Docker 部署
+### Triển khai Docker
 
-当前仓库提供了 Docker 交付目录：
+Hiện tại kho lưu trữ cung cấp thư mục giao hàng Docker:
 
 - [docker/delivery/README.md](docker/delivery/README.md)
 - [docker/delivery/docker-compose.yml](docker/delivery/docker-compose.yml)
 
-基本步骤：
+Các bước cơ bản:
 
 ```bash
 git clone https://github.com/wxyhgk/retain-pdf.git
@@ -100,21 +100,21 @@ cd retain-pdf/docker/delivery
 docker compose up -d
 ```
 
-启动后默认访问：
+Sau khi khởi động, truy cập mặc định tại:
 
 ```text
 http://127.0.0.1:40001
 ```
 
-默认端口：
+Cổng mặc định:
 
-- `40001`：前端页面
-- `41000`：Rust API
-- `42000`：multipart 异步提交接口
+- `40001`: Trang frontend
+- `41000`: Rust API
+- `42000`: Giao diện submit bất đồng bộ multipart
 
-### Docker 更新
+### Cập nhật Docker
 
-如果只是更新到最新镜像版本：
+Nếu chỉ cập nhật lên phiên bản image mới nhất:
 
 ```bash
 cd retain-pdf/docker/delivery
@@ -122,7 +122,7 @@ docker compose pull
 docker compose up -d
 ```
 
-如果你要切换到指定镜像版本，也可以这样：
+Nếu bạn muốn chuyển sang một phiên bản image cụ thể, cũng có thể thực hiện như sau:
 
 ```bash
 cd retain-pdf/docker/delivery
@@ -131,95 +131,95 @@ WEB_IMAGE=wxyhgk/retainpdf-web:<version> \
 docker compose up -d
 ```
 
-更新后建议执行一次状态检查：
+Sau khi cập nhật, nên thực hiện kiểm tra trạng thái một lần:
 
 ```bash
 docker compose ps
 ```
 
-当前镜像地址：
+Địa chỉ image hiện tại:
 
 - [wxyhgk/retainpdf-app](https://hub.docker.com/r/wxyhgk/retainpdf-app)
 - [wxyhgk/retainpdf-web](https://hub.docker.com/r/wxyhgk/retainpdf-web)
 
-## 交流群
+## Nhóm Trao đổi
 
-如果你在使用、部署或二次开发 RetainPDF 时遇到问题，欢迎加入 QQ 交流群一起讨论。
+Nếu bạn gặp vấn đề khi sử dụng, triển khai hoặc phát triển thứ cấp RetainPDF, hãy tham gia nhóm trao đổi QQ để thảo luận cùng nhau.
 
-- QQ 群号：`1101779791`
+- Số nhóm QQ: `1101779791`
 
 <p align="center">
-  <img src="resources/brand/QQ_Group.JPG" alt="RetainPDF QQ 交流群二维码" width="280" />
+  <img src="resources/brand/QQ_Group.JPG" alt="Mã QR nhóm trao đổi QQ RetainPDF" width="280" />
 </p>
 
-## 开发者
+## Nhà phát triển
 
 
-### 文档入口
+### Cổng thông tin Tài liệu
 
-建议按下面顺序阅读。
+Đề xuất đọc theo thứ tự sau.
 
-- [贡献指南](CONTRIBUTING.md)
-- [文档目录](doc/README.md)
-- [主线文档](doc/core/README.md)
-- [参考资料](doc/reference/README.md)
-- [运维与过程记录](doc/ops/README.md)
-- [Pipeline 阶段契约](backend/scripts/runtime/pipeline/README.md)
+- [Hướng dẫn Đóng góp](CONTRIBUTING.md)
+- [Mục lục Tài liệu](doc/README.md)
+- [Tài liệu Chính](doc/core/README.md)
+- [Tài liệu Tham khảo](doc/reference/README.md)
+- [Vận hành và Ghi chép Quá trình](doc/ops/README.md)
+- [Hợp đồng Giai đoạn Pipeline](backend/scripts/runtime/pipeline/README.md)
 
-### 代码与子模块说明
+### Mô tả Mã nguồn và Mô-đun Con
 
-- [后端脚本说明](backend/scripts/README.md)
-- `frontend/`：当前生产使用的前端，也是桌面端 bundle 的输入目录；index/reader/detail 三页均已迁移为 React SPA（`src/pages/` 是新世界入口，esbuild 打包，`src/js/` 保留纯逻辑核心）。
-- `frontend-react/`：另一条 React 前端迁移区（独立技术栈：Vite + TypeScript），当前不直接替代 `frontend/`。
-- `desktop/`：Electron 桌面端打包与运行壳。
+- [Giải thích script backend](backend/scripts/README.md)
+- `frontend/`: Frontend hiện đang sử dụng trong sản xuất, cũng là thư mục đầu vào cho bundle desktop; ba trang index/reader/detail đều đã được chuyển sang React SPA (`src/pages/` là cổng vào thế giới mới, esbuild đóng gói, `src/js/` giữ lại lõi logic thuần).
+- `frontend-react/`: Khu vực chuyển đổi frontend React khác (công nghệ độc lập: Vite + TypeScript), hiện không thay thế trực tiếp `frontend/`.
+- `desktop/`: Vỏ đóng gói và chạy Electron cho desktop.
 
-### 当前目录结构
+### Cấu trúc Thư mục Hiện tại
 
 - `frontend/`
-  当前生产使用的前端，三页 React SPA（esbuild 打包），源码见 `frontend/src/pages/`。
+  Frontend hiện đang sử dụng trong sản xuất, ba trang React SPA (esbuild đóng gói), mã nguồn nằm trong `frontend/src/pages/`.
 - `frontend-react/`
-  另一条 React 前端迁移区（独立技术栈）。
+  Khu vực chuyển đổi frontend React khác (công nghệ độc lập).
 - `desktop/`
-  Electron 桌面端打包、运行壳和桌面端前端 bundle。
+  Đóng gói Electron desktop, vỏ chạy và bundle frontend cho desktop.
 - `backend/`
-  Rust API、Python 脚本、嵌入式 Python、历史工作区。
+  Rust API, script Python, Python nhúng, khu vực làm việc lịch sử.
 - `docker/`
-  Dockerfile、发布脚本、交付用 compose 配置。
+  Dockerfile, script phát hành, cấu hình compose cho giao hàng.
 - `experiments/`
-  独立实验、验证记录和临时 POC。
+  Thí nghiệm độc lập, ghi chép xác minh và POC tạm thời.
 - `data/`
-  本地运行输出、任务目录、历史样本数据。
+  Đầu ra chạy cục bộ, thư mục tác vụ, dữ liệu mẫu lịch sử.
 - `resources/`
-  仓库级品牌图、README 展示图、动画、示例文件和后续本地 runtime 归档入口。
+  Hình ảnh thương hiệu cấp kho, hình ảnh hiển thị README, hoạt ảnh, tệp mẫu và cổng lưu trữ runtime cục bộ sau này.
 
-### 当前开发状态
+### Trạng thái Phát triển Hiện tại
 
-RetainPDF 目前已经形成完整产品链路：
+RetainPDF hiện đã hình thành một quy trình sản phẩm hoàn chỉnh:
 
-- Rust API 负责上传、任务、图书馆、事件、产物、断点恢复和 Provider 调度。
-- Python pipeline 负责 OCR 归一化、翻译、诊断、渲染和 PDF 处理。
-- `frontend/` 是当前生产入口，已是三页 React SPA；`frontend-react/` 是另一条独立技术栈的迁移区。
-- Docker 和桌面端是当前主要交付形态。
-- API、数据库、artifact、reader、glossary 和 stage spec 已有主线文档维护。
+- Rust API chịu trách nhiệm upload, tác vụ, thư viện, sự kiện, artifact, khôi phục điểm dừng và điều phối Provider.
+- Python pipeline chịu trách nhiệm chuẩn hóa OCR, dịch, chẩn đoán, render và xử lý PDF.
+- `frontend/` là cổng vào sản xuất hiện tại, đã là ba trang React SPA; `frontend-react/` là khu vực chuyển đổi với công nghệ độc lập.
+- Docker và desktop là các hình thức giao hàng chính hiện nay.
+- API, cơ sở dữ liệu, artifact, reader, glossary và stage spec đã có tài liệu chính duy trì.
 
-当前开发优先级以主线契约为准，主要集中在：
+Ưu tiên phát triển hiện tại dựa trên hợp đồng chính, chủ yếu tập trung vào:
 
-- 前端图书馆、reader、任务进度和术语表体验。
-- Rust API 的边界收口、数据库持久化和 artifact 管理。
-- Python 翻译一致性、公式保护、渲染稳定性和诊断能力。
-- Docker、桌面端、CI 和测试样本的可复现交付。
-- 文档与真实 API / 配置 / 目录结构保持同步。
+- Trải nghiệm thư viện frontend, reader, tiến độ tác vụ và bảng thuật ngữ.
+- Thu hẹp ranh giới Rust API, duy trì cơ sở dữ liệu và quản lý artifact.
+- Tính nhất quán dịch Python, bảo vệ công thức, ổn định render và khả năng chẩn đoán.
+- Giao hàng có thể tái hiện cho Docker, desktop, CI và mẫu thử nghiệm.
+- Đồng bộ tài liệu với API / cấu hình / cấu trúc thư mục thực tế.
 
-### 欢迎一起参与
+### Mời Tham gia Cùng Phát triển
 
-如果你也对下面这些方向感兴趣，欢迎一起把这个项目继续往前做：
+Nếu bạn cũng quan tâm đến những hướng sau, mời cùng nhau tiếp tục phát triển dự án này:
 
-- 高精度 OCR / 疑难版面解析
-- 长文块与公式场景下的翻译稳定性
-- 排版回填、字体自适应与 PDF 渲染
-- 桌面端、Docker 交付与工程化完善
+- OCR độ chính xác cao / phân tích bố cục khó
+- Tính ổn định dịch trong các tình huống văn bản dài và công thức
+- Điền lại bố cục, tự động điều chỉnh font chữ và render PDF
+- Hoàn thiện giao hàng desktop, Docker và kỹ nghệ
 
-不管你更擅长算法、前端、后端还是部署，只要你也想把“真正能用的 PDF 保留排版翻译”这件事做深，欢迎进来一起搞。
+Dù bạn giỏi hơn về thuật toán, frontend, backend hay triển khai, chỉ cần bạn cũng muốn đào sâu vào việc "dịch PDF giữ nguyên bố cục thực sự hữu dụng", mời tham gia cùng phát triển.
 
 ## License
 

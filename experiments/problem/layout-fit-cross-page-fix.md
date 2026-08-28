@@ -1,67 +1,67 @@
-# Layout-Fit 跨页/跨栏问题说明
+# Mô tả vấn đề Layout-Fit xuyên trang/xuyên cột
 
-## 问题现象
+## Hiện tượng vấn đề
 
-在 `layout-fit/html/pretext.html` 的 PDF 覆盖预览里，部分区域虽然单框拟合看起来接近，但遇到跨页、跨栏段落时会出现明显错误：
+Trong phần xem trước phủ PDF của `layout-fit/html/pretext.html`, một số vùng tuy khung đơn khớp gần đúng, nhưng khi gặp đoạn văn xuyên trang, xuyên cột thì xuất hiện lỗi rõ rệt:
 
-- 第三页底部和第四页开头本来是同一段文字，却被当成两个独立块重新排版。
-- 某些块显示英文原文，而不是中文译文。
-- 自动拟合的高度、行数、断行结果看起来“差一点”，但实际上是系统性偏差。
+- Đáy trang 3 và đầu trang 4 vốn là cùng một đoạn văn bản, lại bị coi là hai khối độc lập để dàn trang lại.
+- Một số khối hiển thị văn bản tiếng Anh gốc thay vì bản dịch tiếng Trung.
+- Kết quả tự động khớp chiều cao, số dòng, ngắt dòng trông "gần đúng", nhưng thực chất là sai lệch hệ thống.
 
-## 根因
+## Nguyên nhân gốc rễ
 
-这次问题不是单一原因，而是几层错误叠加：
+Vấn đề này không do nguyên nhân đơn lẻ mà là nhiều lớp lỗi chồng chéo:
 
-### 1. 错把跨页续接段落当成独立 block
+### 1. Nhầm lẫn đoạn nối xuyên trang thành block độc lập
 
-上游翻译和 Typst 为了方便处理，把一个跨页段落拆成了两个 item。
+Để thuận tiện xử lý, tầng dịch và Typst phía trên đã tách một đoạn xuyên trang thành hai item.
 
-例如：
+Ví dụ:
 
 - `p003-b0005 -> p004-b0000`
 - `p005-b0005 -> p006-b0000`
 - `p007-b0004 -> p008-b0000`
 - `p009-b0006 -> p010-b0000`
 
-在 Typst overlay 里，这些也是两个独立的 `pX_item_*`，不是一个天然连续流动的对象。
+Trong Typst overlay, đây cũng là hai `pX_item_*` độc lập, không phải đối tượng liên tục tự nhiên.
 
-但旧版 preview 仍按“一个 sample = 一个独立文本框”处理，所以：
+Nhưng bản xem trước cũ vẫn xử lý theo "một sample = một khung văn bản độc lập", nên:
 
-- 前一页尾部只排前半段
-- 后一页开头又从自己的文本重新开始排
+- Cuối trang trước chỉ dàn nửa đoạn đầu
+- Đầu trang sau lại bắt đầu dàn từ văn bản riêng của mình
 
-这会导致跨页段落无法正确续接。
+Điều này khiến đoạn xuyên trang không thể nối tiếp đúng.
 
-### 2. 翻译 JSON 里部分续接块本身没有译文
+### 2. Một số khối nối trong JSON dịch thiếu bản dịch
 
-例如：
+Ví dụ:
 
 - `p003-b0005`
 - `p004-b0000`
 
-在 `translated/page-003-deepseek.json` 和 `translated/page-004-deepseek.json` 里，这两个块的 `translated_text` 是空字符串。
+Trong `translated/page-003-deepseek.json` và `translated/page-004-deepseek.json`, `translated_text` của hai khối này là chuỗi rỗng.
 
-因此旧逻辑会退回 `source_text`，页面上就显示成英文原文。
+Do đó logic cũ sẽ lùi về `source_text`, và trang hiển thị thành văn bản tiếng Anh gốc.
 
-### 3. `pretext` 测量单位和 PDF 坐标单位混用
+### 3. Đơn vị đo `pretext` và đơn vị tọa độ PDF bị trộn lẫn
 
-`pretext` 的测量基于浏览器像素，而 PDF 的目标框是 `pt`。旧实现直接把 PDF `pt` 宽高喂给 `pretext`，又把结果当 `pt` 用回覆盖层和评分，导致：
+Phép đo của `pretext` dựa trên pixel trình duyệt, trong khi khung đích PDF tính bằng `pt`. Cài đặt cũ đưa trực tiếp chiều rộng/cao `pt` của PDF vào `pretext`, rồi dùng kết quả như `pt` trở lại cho lớp phủ và chấm điểm, dẫn đến:
 
-- 断行不稳定
-- 行高和高度评分偏差
-- 看起来像“拟合不太对”
+- Ngắt dòng không ổn định
+- Sai lệch chiều cao dòng và chấm điểm
+- Trông giống "khớp chưa chuẩn"
 
-## 解决方案
+## Giải pháp
 
-### 1. 把跨页 block 恢复成 flow group
+### 1. Khôi phục block xuyên trang thành flow group
 
-在 [extract_block_samples.py](/home/wxyhgk/tmp/Code/experiments/layout-fit/scripts/extract_block_samples.py) 中增加了跨页续接检测：
+Trong [extract_block_samples.py](/home/wxyhgk/tmp/Code/experiments/layout-fit/scripts/extract_block_samples.py) đã bổ sung phát hiện nối xuyên trang:
 
-- 顺序扫描 OCR text block
-- 如果上一块以英文词中间结尾、下一块以小写或续接样式开头，并且跨页相邻
-- 就把它们标记为同一个 `flow`
+- Quét tuần tự OCR text block
+- Nếu khối trước kết thúc giữa từ tiếng Anh, khối sau bắt đầu bằng chữ thường hoặc kiểu nối, và kề nhau xuyên trang
+- Đánh dấu chúng thuộc cùng một `flow`
 
-然后将 `flow` 信息写入 fixture：
+Sau đó ghi thông tin `flow` vào fixture:
 
 - `group_id`
 - `index`
@@ -70,58 +70,58 @@
 - `next_block_id`
 - `block_ids`
 
-这样前端不再把这些块当彼此独立。
+Nhờ vậy frontend không còn coi các khối này là độc lập.
 
-### 2. 前端改成多框串流，而不是单框独立拟合
+### 2. Frontend chuyển sang luồng đa khung thay vì khớp đơn khung độc lập
 
-在 [pretext.html](/home/wxyhgk/tmp/Code/experiments/layout-fit/html/pretext.html) 中：
+Trong [pretext.html](/home/wxyhgk/tmp/Code/experiments/layout-fit/html/pretext.html):
 
-- 对属于同一 `flow` 的多个 box，先把文本拼成一个连续段落
-- 用 `pretext.layoutNextLine()` 按 box 顺序逐框消费行
-- 前一个框放不下的剩余内容，继续流到下一个框
+- Với nhiều box thuộc cùng `flow`, ghép văn bản thành một đoạn liên tục trước
+- Dùng `pretext.layoutNextLine()` tiêu thụ dòng theo thứ tự box
+- Nội dung dư không vừa khung trước sẽ chảy tiếp sang khung sau
 
-这一步修复了跨页、跨栏本质问题。
+Bước này sửa vấn đề cốt lõi xuyên trang, xuyên cột.
 
-### 3. 翻译缺失时回退到 Typst markdown 文本
+### 3. Khi thiếu bản dịch, lùi về văn bản markdown Typst
 
-在同一个抽取脚本里，增加了对 Typst overlay 中 `*_md` 的解析。
+Trong cùng script trích xuất, bổ sung phân tích `*_md` trong Typst overlay.
 
-如果某个 block：
+Nếu một block:
 
-- `translated_text` 为空
-- 但 Typst 里对应 `markdown_text` 存在
+- `translated_text` rỗng
+- Nhưng `markdown_text` tương ứng trong Typst tồn tại
 
-就把 Typst 的中文 markdown 作为 `translated_text / fit_text` 的回退来源。
+Thì lấy markdown tiếng Trung của Typst làm nguồn lùi cho `translated_text / fit_text`.
 
-这一步修复了第三页底部、第四页开头显示英文的问题。
+Bước này sửa vấn đề đáy trang 3, đầu trang 4 hiển thị tiếng Anh.
 
-### 4. 统一 `pretext` 与 PDF 的单位系
+### 4. Thống nhất hệ đơn vị giữa `pretext` và PDF
 
-前端拟合时改成：
+Khi khớp ở frontend, đổi thành:
 
-- 先按 PDF 页图的像素密度把字号、宽度、行高换成像素
-- 用 `pretext` 在该像素坐标系里排版
-- 再把结果换回 PDF `pt` 用于评分和覆盖层绘制
+- Trước tiên đổi kích thước chữ, chiều rộng, chiều cao dòng sang pixel theo mật độ pixel ảnh trang PDF
+- Dùng `pretext` dàn trang trong hệ tọa độ pixel đó
+- Sau đó đổi kết quả về `pt` PDF để chấm điểm và vẽ lớp phủ
 
-这样断行和 PDF 覆盖终于在同一个坐标系里。
+Nhờ vậy ngắt dòng và lớp phủ PDF cuối cùng nằm trong cùng hệ tọa độ.
 
-## 当前效果
+## Hiệu quả hiện tại
 
-修复后：
+Sau khi sửa:
 
-- 第三页底部和第四页开头会显示中文
-- 两者不再各自从头排，而是同一个段落连续串流
-- 预览层已经能够识别并处理多组跨页续接
+- Đáy trang 3 và đầu trang 4 hiển thị tiếng Trung
+- Hai phần không còn dàn lại từ đầu riêng biệt mà là cùng một đoạn chảy liên tục
+- Lớp xem trước đã nhận diện và xử lý được nhiều nhóm nối xuyên trang
 
-已识别的跨页 flow 包括：
+Các flow xuyên trang đã nhận diện bao gồm:
 
 - `p003-b0005 -> p004-b0000`
 - `p005-b0005 -> p006-b0000`
 - `p007-b0004 -> p008-b0000`
 - `p009-b0006 -> p010-b0000`
 
-## 经验总结
+## Bài học kinh nghiệm
 
-这类问题不能只从“字号、行高、两端对齐”去调。
+Loại vấn đề này không thể chỉ điều chỉnh từ "kích thước chữ, chiều cao dòng, căn đều hai bên".
 
-如果上游翻译/排版为了工程方便把段落拆碎，preview 层必须恢复“段落流”的语义；否则无论 `pretext` 怎么调，都会在跨页和跨栏场景里出现结构性错误。
+Nếu tầng dịch/dàn trang phía trên vì thuận tiện kỹ thuật mà xé nhỏ đoạn văn, lớp xem trước phải khôi phục ngữ nghĩa "luồng đoạn văn"; nếu không, dù `pretext` tinh chỉnh thế nào cũng sẽ xuất hiện lỗi cấu trúc trong tình huống xuyên trang và xuyên cột.

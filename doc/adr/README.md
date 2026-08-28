@@ -1,15 +1,15 @@
-# ADR 说明
+# Giới thiệu ADR
 
-ADR 是 Architecture Decision Record，用来记录重要架构决策。
+ADR là Bản ghi quyết định kiến trúc (Architecture Decision Record), dùng để ghi lại các quyết định kiến trúc quan trọng.
 
-每篇 ADR 只回答四件事：
+Mỗi ADR chỉ trả lời bốn điều:
 
-- 背景：当时遇到什么问题。
-- 决策：最终选择什么方案。
-- 后果：这个选择带来什么约束和代价。
-- 替代方案：考虑过但没有采用什么。
+- Bối cảnh: Vấn đề gặp phải vào thời điểm đó.
+- Quyết định: Cuối cùng đã chọn giải pháp nào.
+- Hậu quả: Lựa chọn này mang lại những ràng buộc và chi phí gì.
+- Phương án thay thế: Những gì đã xem xét nhưng không chọn.
 
-命名规则：
+Quy tắc đặt tên:
 
 ```text
 0001-use-document-v1-as-ir.md
@@ -17,4 +17,4 @@ ADR 是 Architecture Decision Record，用来记录重要架构决策。
 0003-guard-python-boundaries-with-architecture-checks.md
 ```
 
-ADR 不是流水账。只有会影响多人协作、模块边界、长期维护成本的决定才需要写。
+ADR không phải là nhật ký. Chỉ những quyết định ảnh hưởng đến cộng tác nhiều người, ranh giới mô-đun và chi phí bảo trì lâu dài mới cần viết.

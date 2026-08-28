@@ -1,13 +1,14 @@
-// 书架工具栏(照搬 PDF_MD_lib 的 LibraryCollectionContextBar):左侧上下文标签 +
-// 数量;右侧排序下拉 + 网格/列表切换(筛选按钮在后续阶段接)。
+// Thanh công cụ giá sách (dựa trên LibraryCollectionContextBar của PDF_MD_lib):
+// nhãn ngữ cảnh + số lượng bên trái; menu sắp xếp + chuyển lưới/danh sách bên
+// phải (nút lọc được nối ở giai đoạn sau).
 
 import { cn } from "@/lib/utils";
 
 const SORT_OPTIONS = [
-  { value: "updated", label: "最近更新" },
-  { value: "created", label: "最近上传" },
-  { value: "opened", label: "最近阅读" },
-  { value: "title", label: "标题" },
+  { value: "updated", label: "Cập nhật gần đây" },
+  { value: "created", label: "Tải lên gần đây" },
+  { value: "opened", label: "Đọc gần đây" },
+  { value: "title", label: "Tiêu đề" },
 ];
 
 function IconGrid() {
@@ -42,7 +43,7 @@ export function LibraryToolbar({
     <div className="mb-4 border-b border-border/10 pb-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-baseline gap-2">
-          <span className="truncate text-[15px] font-semibold tracking-tight text-foreground/90 sm:text-[16px]">全部书库</span>
+          <span className="truncate text-[15px] font-semibold tracking-tight text-foreground/90 sm:text-[16px]">Tất cả thư viện</span>
           {Number.isFinite(count) ? (
             <span className="inline-flex h-5 shrink-0 items-center rounded-full bg-muted/45 px-2 text-[11px] tabular-nums text-muted-foreground/70">{count}</span>
           ) : null}
@@ -52,23 +53,23 @@ export function LibraryToolbar({
           {onToggleBatchMode ? (
             <button
               type="button"
-              title="批量操作" aria-label="批量操作" aria-pressed={batchMode}
+              title="Thao tác hàng loạt" aria-label="Thao tác hàng loạt" aria-pressed={batchMode}
               onClick={() => onToggleBatchMode(!batchMode)}
               className={cn(
                 "inline-flex h-8 items-center gap-1.5 rounded-[var(--btn-radius)] px-3 text-xs transition active:scale-95",
                 batchMode ? "bg-secondary text-secondary-foreground" : "border border-border text-foreground hover:bg-muted/30",
               )}
-            ><IconCheckSquare className="opacity-70" />批量</button>
+            ><IconCheckSquare className="opacity-70" />Hàng loạt</button>
           ) : null}
 
           {filterSlot}
 
           <label className="inline-flex h-8 shrink-0 items-center rounded-[var(--btn-radius)] px-2.5 text-xs transition-colors hover:bg-muted/30">
-            <span className="sr-only">排序</span>
+            <span className="sr-only">Sắp xếp</span>
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value)}
-              aria-label="排序方式"
+              aria-label="Cách sắp xếp"
               className="h-full max-w-[7.5rem] cursor-pointer rounded-none border-0 bg-transparent py-0 pl-0 pr-5 text-xs text-foreground/90 outline-none"
             >
               {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -77,15 +78,15 @@ export function LibraryToolbar({
 
           <div className="hidden h-5 w-px bg-border/15 sm:block" aria-hidden />
 
-          <div className="inline-flex h-8 shrink-0 items-center rounded-[var(--btn-radius)] bg-muted/20 p-0.5" role="group" aria-label="视图">
+          <div className="inline-flex h-8 shrink-0 items-center rounded-[var(--btn-radius)] bg-muted/20 p-0.5" role="group" aria-label="Chế độ xem">
             <button
-              type="button" title="网格" aria-label="网格视图" aria-pressed={viewMode === "grid"}
+              type="button" title="Lưới" aria-label="Chế độ xem lưới" aria-pressed={viewMode === "grid"}
               onClick={() => setViewMode("grid")}
               className={cn("inline-flex h-7 w-7 items-center justify-center rounded-[var(--btn-radius)] transition active:scale-90",
                 viewMode === "grid" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground/45 hover:bg-background/60 hover:text-foreground")}
             ><IconGrid /></button>
             <button
-              type="button" title="列表" aria-label="列表视图" aria-pressed={viewMode === "list"}
+              type="button" title="Danh sách" aria-label="Chế độ xem danh sách" aria-pressed={viewMode === "list"}
               onClick={() => setViewMode("list")}
               className={cn("inline-flex h-7 w-7 items-center justify-center rounded-[var(--btn-radius)] transition active:scale-90",
                 viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground/45 hover:bg-background/60 hover:text-foreground")}

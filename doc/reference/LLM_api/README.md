@@ -1,33 +1,33 @@
-# LLM Provider 资料
+# Tài liệu LLM Provider
 
-这里归档翻译 Provider 和 LLM 接入相关资料。  
-它不是 RetainPDF 主流程协议文档，而是“如果要接模型服务，先看什么”的参考目录。
+Nơi đây lưu trữ tài liệu liên quan đến tích hợp Provider dịch và LLM.  
+Nó không phải là tài liệu giao thức luồng chính của RetainPDF, mà là thư mục tham khảo "nếu cần tích hợp dịch vụ model, nên xem gì trước".
 
-## 适用范围
+## Phạm vi áp dụng
 
-- 想看模型服务接入参考时看这里
-- 想看 RetainPDF 自己的翻译链路，请优先看 [Python 文档](../../core/python/README.md) 和 [Rust API 文档](../../core/rust_api/README.md)
+- Xem ở đây khi muốn tham khảo tích hợp dịch vụ model
+- Để xem luồng dịch thuật của RetainPDF, vui lòng xem [Tài liệu Python](../../core/python/README.md) và [Tài liệu Rust API](../../core/rust_api/README.md)
 
 ## DeepSeek
 
-建议优先阅读：
+Đề xuất đọc theo thứ tự:
 
-1. [RetainPDF 接入建议](./DeepSeek/Retain_接入建议.md)
-2. [首次调用 API](./DeepSeek/首次调用%20API.md)
-3. [模型与价格](./DeepSeek/模型%20&%20价格.md)
-4. [Token 用量计算](./DeepSeek/Token%20用量计算.md)
-5. [JSON 输出](./DeepSeek/JSON_output.md)
-6. [错误码](./DeepSeek/错误码.md)
+1. [Đề xuất tích hợp RetainPDF](./DeepSeek/Retain_de-xuat-tich-hop.md)
+2. [Gọi API lần đầu](./DeepSeek/goi-api-lan-dau.md)
+3. [Mô hình và giá](./DeepSeek/mo-hinh-va-gia.md)
+4. [Tính lượng token sử dụng](./DeepSeek/tinh-luong-token-su-dung.md)
+5. [JSON output](./DeepSeek/JSON_output.md)
+6. [Mã lỗi](./DeepSeek/ma-loi.md)
 
-补充资料：
+Tài liệu bổ sung:
 
-- [多轮对话](./DeepSeek/多轮对话.md)
-- [思考模式](./DeepSeek/思考模式.md)
+- [Hội thoại nhiều lượt](./DeepSeek/hoi-thoai-nhieu-luot.md)
+- [Chế độ suy luận](./DeepSeek/che-do-suy-luan.md)
 - [Tool Calls](./DeepSeek/Tool%20Calls.md)
-- [接入 Coding Agents](./DeepSeek/接入%20Coding%20Agents.md)
-- [查询余额](./DeepSeek/查询余额.md)
+- [Tích hợp Coding Agents](./DeepSeek/tich-hop-coding-agents.md)
+- [Tra cứu số dư](./DeepSeek/tra-cuu-so-du.md)
 
-## 项目内实现入口
+## Đầu vào triển khai trong dự án
 
-- [Translation 模块说明](../../backend/scripts/services/translation/README.md)
-- [Python 依赖单一事实来源](../python/dependency_source_of_truth.md)
+- [Giải thích module Translation](../../backend/scripts/services/translation/README.md)
+- [Nguồn duy nhất phụ thuộc Python](../python/dependency_source_of_truth.md)

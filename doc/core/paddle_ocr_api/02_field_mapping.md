@@ -1,63 +1,63 @@
-# 02 Field Mapping
+# 02 Ánh xạ trường
 
-## 核心原则
+## Nguyên tắc cốt lõi
 
-映射时只问一件事：
+Khi ánh xạ, chỉ cần hỏi một điều:
 
-- 这个 Paddle 字段应该落到 `document.v1` 的哪一层
+- Trường Paddle này nên rơi vào tầng nào của `document.v1`
 
-当前允许的落位层：
+Các tầng định vị hiện cho phép:
 
-1. 核心结构层：`type/sub_type/bbox/text/lines/segments/tags/derived`
-2. 通用 trace 层：多个 provider 可能共用的 `metadata`
-3. provider raw trace 层：Paddle 私有字段，保留在 `metadata/source`
+1. Tầng cấu trúc lõi: `type/sub_type/bbox/text/lines/segments/tags/derived`
+2. Tầng trace chung: `metadata` có thể được nhiều provider dùng chung
+3. Tầng trace thô provider: trường riêng của Paddle, giữ trong `metadata/source`
 
-## 顶层映射
+## Ánh xạ tầng trên cùng
 
-| Paddle 字段 | `document.v1` 字段 | 说明 |
+| Trường Paddle | Trường `document.v1` | Giải thích |
 | --- | --- | --- |
-| provider 固定值 | `source.provider` | 当前固定为 `paddle` |
-| 输入文件路径 | `source.raw_files.source_json` | 由 adapter 外层注入 |
-| 页数 | `page_count` | 由 pages 数量确定 |
+| Giá trị cố định provider | `source.provider` | Hiện cố định là `paddle` |
+| Đường dẫn tệp đầu vào | `source.raw_files.source_json` | Do adapter bên ngoài tiêm vào |
+| Số trang | `page_count` | Xác định bởi số lượng pages |
 
-## 页面映射
+## Ánh xạ trang
 
-| Paddle 字段 | `document.v1` 字段 | 说明 |
+| Trường Paddle | Trường `document.v1` | Giải thích |
 | --- | --- | --- |
-| `dataInfo.pages[i].width` | `pages[i].width` | 首选 |
-| `dataInfo.pages[i].height` | `pages[i].height` | 首选 |
-| `prunedResult.width` | `pages[i].width` | 兜底 |
-| `prunedResult.height` | `pages[i].height` | 兜底 |
-| 页序号 | `pages[i].page_index` | 从 0 开始 |
-| 固定值 | `pages[i].unit` | 当前固定 `pt` |
+| `dataInfo.pages[i].width` | `pages[i].width` | Ưu tiên |
+| `dataInfo.pages[i].height` | `pages[i].height` | Ưu tiên |
+| `prunedResult.width` | `pages[i].width` | Dự phòng |
+| `prunedResult.height` | `pages[i].height` | Dự phòng |
+| Số thứ tự trang | `pages[i].page_index` | Bắt đầu từ 0 |
+| Giá trị cố định | `pages[i].unit` | Hiện cố định `pt` |
 
-## block 映射
+## Ánh xạ block
 
-| Paddle 字段 | `document.v1` 字段 | 说明 |
+| Trường Paddle | Trường `document.v1` | Giải thích |
 | --- | --- | --- |
-| `block_bbox` | `bbox` | 归一化 bbox |
-| `block_content` | `text` | 归一化文本 |
-| `block_label` | `type/sub_type/tags` | 走 `block_labels.py` |
-| 行/段拆分结果 | `lines/segments` | 走 `content_extract.py` |
-| `block_id` | `source.raw_block_id` | 保留原始来源 |
-| `block_label` | `source.raw_type` | 保留原始类型 |
-| `block_bbox` | `source.raw_bbox` | 保留原始 bbox |
-| `block_content[:200]` | `source.raw_text_excerpt` | 排错用 |
-| 原始路径 | `source.raw_path` | 指向原始 JSON 路径 |
+| `block_bbox` | `bbox` | bbox đã chuẩn hóa |
+| `block_content` | `text` | Văn bản đã chuẩn hóa |
+| `block_label` | `type/sub_type/tags` | Đi qua `block_labels.py` |
+| Kết quả tách dòng/đoạn | `lines/segments` | Đi qua `content_extract.py` |
+| `block_id` | `source.raw_block_id` | Giữ nguồn gốc |
+| `block_label` | `source.raw_type` | Giữ kiểu gốc |
+| `block_bbox` | `source.raw_bbox` | Giữ bbox gốc |
+| `block_content[:200]` | `source.raw_text_excerpt` | Dùng để gỡ lỗi |
+| Đường dẫn gốc | `source.raw_path` | Trỏ đến đường dẫn JSON gốc |
 
-## 当前 label 映射
+## Ánh xạ label hiện tại
 
-当前主要规则见：
+Quy tắc chính hiện tại xem:
 
 - `backend/scripts/services/document_schema/provider_adapters/paddle/block_labels.py`
 
-已实现映射示例：
+Ví dụ ánh xạ đã triển khai:
 
 | `block_label` | `type` | `sub_type` | `tags` |
 | --- | --- | --- | --- |
 | `doc_title` | `text` | `title` | `title` |
 | `abstract` | `text` | `abstract` | `abstract` |
-| `text` | `text` | `body` | 空 |
+| `text` | `text` | `body` | Trống |
 | `paragraph_title` | `text` | `heading` | `heading` |
 | `reference_content` | `text` | `reference_entry` | `reference_entry, reference_zone, skip_translation` |
 | `formula_number` | `text` | `formula_number` | `formula_number, skip_translation` |
@@ -66,13 +66,13 @@
 | `algorithm` | `code` | `code_block` | `code` |
 | `display_formula` | `formula` | `display_formula` | `formula` |
 
-## `derived` 映射
+## Ánh xạ `derived`
 
-当前 `derived` 主要由 provider 规则生成，见：
+`derived` hiện được tạo chủ yếu bởi quy tắc provider, xem:
 
 - `backend/scripts/services/document_schema/provider_adapters/paddle/trace.py`
 
-典型规则：
+Quy tắc điển hình:
 
 - `doc_title -> derived.role = title`
 - `abstract -> derived.role = abstract`
@@ -80,8 +80,8 @@
 - `formula_number -> derived.role = formula_number`
 - `header/footer -> derived.role = header/footer`
 
-## 不要这么做
+## Đừng làm điều này
 
-1. 不要把 Paddle 私有字段直接塞成新的主契约字段。
-2. 不要在 translation 层再重新解释 `block_label`。
-3. 不要为了单个 fixture 临时改 `type/sub_type` 语义。
+1. Đừng nhét trường riêng của Paddle trực tiếp thành trường hợp đồng chính mới.
+2. Đừng giải thích lại `block_label` ở tầng translation.
+3. Đừng tạm thời thay đổi ngữ nghĩa `type/sub_type` chỉ cho một fixture duy nhất.

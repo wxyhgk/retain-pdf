@@ -1,71 +1,72 @@
-# 阅读器目录（`pages/reader`）
+# Reader Directory (`pages/reader`)
 
-默认引擎：**react-pdf**（`ReaderAppReactPdf`）。  
-回退：`?engine=legacy`（`ReaderApp` 内分支 + `legacy/**` + `src/js/reader` 命令式引擎）。
+Default engine: **react-pdf** (`ReaderAppReactPdf`).
+Fallback: `?engine=legacy` (`ReaderApp` branch + `legacy/**` + `src/js/reader` imperative engine).
 
-## 三层边界
+## Three-Layer Boundaries
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│  A. 新引擎 UI/逻辑（默认）                                    │
-│     hooks/  pdf/  annotations/  components/react-pdf/         │
-│     ReaderAppReactPdf.tsx                                     │
-│     js 依赖 → 只经 ./external.ts                              │
+│  A. New Engine UI/Logic (Default)                            │
+│     hooks/  pdf/  annotations/  components/react-pdf/       │
+│     ReaderAppReactPdf.tsx                                   │
+│     js dependencies → only via ./external.ts                │
 └──────────────────────────┬──────────────────────────────────┘
-                           │ 仅共享 ports
+                           │ Shared ports only
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  B. 共享 ports（js/reader 子集 + 少量 config/api）            │
-│     data-port / config-port / resource-resolver /             │
-│     pdf-document(resolve URL) / page-state(文案常量)          │
-│     经 pages/reader/external.ts 出口                          │
+│  B. Shared Ports (js/reader subset + some config/api)        │
+│     data-port / config-port / resource-resolver /           │
+│     pdf-document(resolve URL) / page-state(text constants)   │
+│     Exported via pages/reader/external.ts                    │
 └──────────────────────────┬──────────────────────────────────┘
-                           │ legacy 可多用
+                           │ Legacy may use more
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  C. 旧命令式引擎（?engine=legacy）                            │
-│     pages/reader/legacy/**  +  js/reader 全部                   │
-│     pdf-controller / pdf-renderer / favorites / regions…      │
-│     允许直接 import js/reader（不要塞进 external 冒充共享）    │
+│  C. Legacy Imperative Engine (?engine=legacy)                │
+│     pages/reader/legacy/**  +  js/reader/**                  │
+│     pdf-controller / pdf-renderer / favorites / regions…    │
+│     Direct import of js/reader allowed (do not stuff into   │
+│     external pretending to be shared)                       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-| 层 | 路径 | 新功能放哪 |
+| Layer | Path | Where to Add New Features |
 |----|------|------------|
-| **A 新引擎** | `hooks/`、`pdf/`、`annotations/`、`components/react-pdf/` | 批注、缩放、对照、滚动锚点 |
-| **B 共享** | `external.ts` → `js/reader/{data,config,resource,…}` | 仅会话/资源/URL，不写 UI |
-| **C legacy** | `legacy/**` + `js/reader/**` 主力 | **不要**加新功能 |
+| **A New Engine** | `hooks/`, `pdf/`, `annotations/`, `components/react-pdf/` | Annotations, zoom, comparison, scroll anchors |
+| **B Shared** | `external.ts` → `js/reader/{data,config,resource,…}` | Session/resource/URL only, no UI |
+| **C Legacy** | `legacy/**` + `js/reader/**` main | **Do not** add new features |
 
-## 布局
+## Layout
 
 ```text
 pages/reader/
   entry.tsx / ReaderApp.tsx / ReaderAppReactPdf.tsx
-  external.ts                # 新引擎对 js/* 唯一出口
-  hooks/                     # 会话、缩放、锚点、批注、控制器
-  pdf/                       # Document/Page、滚动、行高
-  annotations/               # 新批注 + localStorage
-  components/react-pdf/      # 新引擎 UI
-  legacy/                    # 旧壳 UI + boot + 抽屉 AI
+  external.ts                # New engine's only export to js/*
+  hooks/                     # Session, zoom, anchors, annotations, controller
+  pdf/                       # Document/Page, scroll, line height
+  annotations/               # New annotations + localStorage
+  components/react-pdf/      # New engine UI
+  legacy/                    # Legacy shell UI + boot + AI drawer
     components/
     hooks/use-reader-boot.ts
     state/
     ai/
 ```
 
-## 入口
+## Lối vào
 
-| 文件 | 作用 |
+| File | Purpose |
 |------|------|
-| `entry.tsx` | 挂载 `ReaderApp` |
-| `ReaderApp.tsx` | `engine=legacy` → 旧壳，否则 `ReaderAppReactPdf` |
-| `hooks/use-reader-react-controller.ts` | 新引擎逻辑总装 |
-| `external.ts` | 新引擎共享 js 依赖 |
+| `entry.tsx` | Mounts `ReaderApp` |
+| `ReaderApp.tsx` | `engine=legacy` → legacy shell, otherwise `ReaderAppReactPdf` |
+| `hooks/use-reader-react-controller.ts` | New engine logic assembly |
+| `external.ts` | New engine's shared js dependencies |
 
-## 不要
+## Do Not
 
-- 新功能接到 `js/reader/selection-favorites` / `favorites/*`  
-- 把 `pdf-controller` 引进 `external.ts` 给新引擎用  
-- 假设组件仍在扁平 `components/*`（旧 UI 已在 `legacy/components/`）
+- Add new features to `js/reader/selection-favorites` / `favorites/*`
+- Import `pdf-controller` into `external.ts` for new engine use
+- Assume components are still in flat `components/*` (legacy UI is in `legacy/components/`)
 
-全站地图：`src/FEATURES.md` · 旧引擎细节：`src/js/reader/README.md`
+Site map: `src/FEATURES.md` · Legacy engine details: `src/js/reader/README.md`

@@ -53,7 +53,7 @@ export function renderJobDetailOverview({
   }
   setText("detail-rerun-status", summarizeResumePlan(resumePlan));
   renderJobDetailPublicError({ job, setText });
-  setEventsStatus("尚未加载");
+  setEventsStatus("Chưa tải");
   renderJobDetailActionLinks({ actions, job, manifestPayload, setActionLink });
 
   return { actions, durations, statusViewModel };

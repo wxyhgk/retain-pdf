@@ -1,18 +1,18 @@
-// BookCard「快速阅读」动作 —— 独立模块，改阅读逻辑只动本文件。
+// BookCard「Đọc nhanh」Hành động —— Mô-đun độc lập，Thay đổi logic đọc để chỉ di chuyển tài liệu này。
 //
-// 行为:
-// - 已完成 job → 对照阅读 (onReader(jobId))
-// - 否则有 document → 读原文 (onReadSource(documentId))
-// - 失败且无 document → 仍返回按钮，点击 no-op（兼容旧 UI/测试）
+// hành vi:
+// - Đã hoàn thành job → Đọc độ tương phản (onReader(jobId))
+// - Nếu không, có document → Đọc bản gốc (onReadSource(documentId))
+// - Không thành công và không có document → Vẫn quay lại nút，điểm kích no-op（Tương thích với di sản UI/khảo sát）
 
 import type { BookCardAction, BookCardActionHandlers, LibraryCardItem } from "../types.js";
 
 export const BOOK_CARD_ACTION_READ = "read";
 
 /**
- * @param item 书架 item
+ * @param item Tủ sách item
  * @param handlers onReader / onReadSource
- * @returns 0 或 1 个 action（当前始终 1 个）
+ * @returns 0 Hoặc 1 chiếc action（Luôn luôn hiện tại 1 chiếc）
  */
 export function buildReadBookCardAction(
   item: LibraryCardItem = {},
@@ -22,16 +22,16 @@ export function buildReadBookCardAction(
   const jobId = `${item.job_id || ""}`.trim();
   const readerAvailable = `${item.status || ""}`.trim() === "succeeded";
 
-  let label = "读原文";
+  let label = "Đọc bản gốc";
   let onClick: BookCardAction["onClick"] = () => {};
 
   if (readerAvailable && jobId) {
-    label = "对照阅读";
+    label = "Đọc đối chiếu";
     onClick = () => {
       onReader?.(jobId);
     };
   } else if (documentId) {
-    label = "读原文";
+    label = "Đọc bản gốc";
     onClick = () => {
       onReadSource?.(documentId);
     };
@@ -41,7 +41,7 @@ export function buildReadBookCardAction(
     id: BOOK_CARD_ACTION_READ,
     label,
     icon: "eye",
-    // 历史测试锚点 .recent-job-reader
+    // Neo kiểm tra lịch sử .recent-job-reader
     className: "book-card-action book-card-action-read recent-job-reader",
     onClick,
   }];

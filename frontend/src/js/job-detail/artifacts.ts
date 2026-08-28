@@ -42,43 +42,43 @@ function truncatePreview(value, maxChars = 4000) {
   if (text.length <= maxChars) {
     return text;
   }
-  return `${text.slice(0, maxChars)}\n\n...（预览已截断）`;
+  return `${text.slice(0, maxChars)}\n\n...(Xem trước đã cắt bớt)`;
 }
 
 function summarizeArtifactLabel(key) {
   switch (`${key || ""}`.trim()) {
     case "source_pdf":
-      return "源 PDF";
+      return "PDF gốc";
     case "translated_pdf":
-      return "译后 PDF";
+      return "PDF đã dịch";
     case "typst_render_pdf":
-      return "Typst 渲染 PDF";
+      return "PDF render Typst";
     case "markdown_raw":
-      return "Markdown Raw";
+      return "Markdown thô";
     case "markdown_images_dir":
-      return "Markdown 图片目录";
+      return "Thư mục hình ảnh Markdown";
     case "markdown_bundle_zip":
-      return "Markdown Bundle";
+      return "Gói Markdown";
     case "normalized_document_json":
-      return "Normalized Document";
+      return "Tài liệu chuẩn hóa";
     case "normalization_report_json":
-      return "Normalization Report";
+      return "Báo cáo chuẩn hóa";
     case "translation_manifest_json":
-      return "Translation Manifest";
+      return "Bản kê khai dịch thuật";
     case "translation_diagnostics_json":
-      return "Translation Diagnostics";
+      return "Chẩn đoán dịch thuật";
     case "translation_debug_index_json":
-      return "Translation Debug Index";
+      return "Chỉ mục gỡ lỗi dịch thuật";
     case "provider_result_json":
-      return "Provider Result";
+      return "Kết quả nhà cung cấp";
     case "provider_bundle_zip":
-      return "Provider Bundle";
+      return "Gói nhà cung cấp";
     case "provider_raw_dir":
-      return "Provider Raw Dir";
+      return "Thư mục thô nhà cung cấp";
     case "pipeline_summary":
-      return "Pipeline Summary";
+      return "Tóm tắt quy trình";
     case "events_jsonl":
-      return "Events JSONL";
+      return "Sự kiện JSONL";
     default:
       return `${key || "-"}`.trim() || "-";
   }
@@ -102,9 +102,9 @@ export function renderArtifactsManifest(manifestPayload) {
     return;
   }
   const items = Array.isArray(manifestPayload?.items) ? [...manifestPayload.items] : [];
-  summary.textContent = items.length > 0 ? `共 ${items.length} 项` : "暂无已登记产物";
+  summary.textContent = items.length > 0 ? `Tổng ${items.length} mục` : "Chưa có sản phẩm nào";
   if (items.length === 0) {
-    container.innerHTML = '<div class="detail-empty">暂无产物清单</div>';
+    container.innerHTML = '<div class="detail-empty">Chưa có danh sách sản phẩm</div>';
     return;
   }
   const preferredOrder = [
@@ -137,18 +137,18 @@ export function renderArtifactsManifest(manifestPayload) {
   });
   container.innerHTML = items.map((item) => {
     const resource = firstNonEmptyText(item?.resource_url, item?.resource_path, item?.relative_path) || "-";
-    const readyLabel = item?.ready ? "ready" : "pending";
-    const readyClass = item?.ready ? "is-ready" : "is-pending";
-    const topLabel = summarizeArtifactLabel(item?.artifact_key);
-    const metaBits = [
-      firstNonEmptyText(item?.artifact_group) || "-",
-      firstNonEmptyText(item?.artifact_kind) || "-",
-      formatSizeBytes(item?.size_bytes),
-    ];
-    const extraBits = [
-      firstNonEmptyText(item?.source_stage),
-      firstNonEmptyText(item?.content_type),
-    ].filter(Boolean);
+  const readyLabel = item?.ready ? "sẵn sàng" : "đang chờ";
+  const readyClass = item?.ready ? "is-ready" : "is-pending";
+  const topLabel = summarizeArtifactLabel(item?.artifact_key);
+  const metaBits = [
+    firstNonEmptyText(item?.artifact_group) || "-",
+    firstNonEmptyText(item?.artifact_kind) || "-",
+    formatSizeBytes(item?.size_bytes),
+  ];
+  const extraBits = [
+    firstNonEmptyText(item?.source_stage),
+    firstNonEmptyText(item?.content_type),
+  ].filter(Boolean);
     return `
       <article class="detail-artifact-row">
         <div class="detail-artifact-top">
@@ -210,7 +210,7 @@ export function renderMarkdownContract({
   setActionLink("detail-markdown-raw-btn", rawUrl, contract.ready && !!rawUrl);
   if (!contract.ready) {
     revokeMarkdownImageUrls(markdownImageUrls);
-    setText("detail-markdown-status", "当前任务没有已发布 Markdown");
+    setText("detail-markdown-status", "Nhiệm vụ hiện tại chưa có Markdown nào được xuất bản");
     setText("detail-markdown-image-count", "0");
     setText("detail-markdown-preview", "-");
     const grid = $("detail-markdown-image-grid");
@@ -222,7 +222,7 @@ export function renderMarkdownContract({
     return;
   }
   if (!markdownPayload) {
-    setText("detail-markdown-status", "已发布，正在读取内容…");
+    setText("detail-markdown-status", "Đã xuất bản, đang đọc nội dung...");
     return;
   }
   const refs = Array.isArray(markdownPayload?.images) && markdownPayload.images.length > 0
@@ -230,7 +230,7 @@ export function renderMarkdownContract({
     : collectMarkdownImageRefs(previewContent);
   const fileName = firstNonEmptyText(markdownPayload?.file_name, markdownArtifact.file_name);
   const sizeText = formatSizeBytes(markdownPayload?.size_bytes ?? markdownArtifact.size_bytes);
-  const statusBits = [markdownPayload?.content_with_absolute_image_urls ? "已加载 /markdown/document" : "已加载 /markdown JSON"];
+  const statusBits = [markdownPayload?.content_with_absolute_image_urls ? "Đã tải /markdown/document" : "Đã tải /markdown JSON"];
   if (fileName) {
     statusBits.push(fileName);
   }
@@ -267,7 +267,7 @@ export async function renderMarkdownImagePreview({
   const previews = await Promise.all(previewRefs.map(async (ref) => {
     const absoluteUrl = resolveMarkdownAssetUrl(imagesBaseUrl, ref);
     if (!absoluteUrl) {
-      return { ref, absoluteUrl: "", objectUrl: "", error: "无法解析图片地址" };
+       return { ref, absoluteUrl: "", objectUrl: "", error: "Không thể phân giải địa chỉ hình ảnh" };
     }
     try {
       const resp = await fetchProtected(absoluteUrl);
@@ -279,7 +279,7 @@ export async function renderMarkdownImagePreview({
       markdownImageUrls.push(objectUrl);
       return { ref, absoluteUrl, objectUrl, error: "" };
     } catch (error) {
-      return { ref, absoluteUrl, objectUrl: "", error: error.message || "图片读取失败" };
+      return { ref, absoluteUrl, objectUrl: "", error: error.message || "Không thể tải hình ảnh" };
     }
   }));
   grid.innerHTML = previews.map((item) => `
@@ -287,7 +287,7 @@ export async function renderMarkdownImagePreview({
       <div class="detail-artifact-meta mono">${escapeHtml(item.ref)}</div>
       ${item.objectUrl
         ? `<img class="detail-markdown-image" src="${escapeHtml(item.objectUrl)}" alt="${escapeHtml(item.ref)}" />`
-        : `<div class="detail-empty">${escapeHtml(item.error || "图片不可用")}</div>`}
+        : `<div class="detail-empty">${escapeHtml(item.error || "Hình ảnh không khả dụng")}</div>`}
       <div class="detail-artifact-meta mono">${escapeHtml(item.absoluteUrl || "-")}</div>
     </article>
   `).join("");

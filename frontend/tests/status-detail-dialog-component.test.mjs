@@ -2,14 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 
-// StatusDetailDialog(Phase 3 dialogs 群,蓝图 §1)组件级测试。覆盖蓝图 §1.4
-// 新增测试清单:4 tab 切换 + hidden 属性契约、overview 首屏占位→刷新两段渲染、
-// StageHistoryList/EventsList 逐条断言(对象数组断言取代 markup 断言)、
-// TranslationDebugTab 过滤/翻页/选中/重放闭环、rerun 成功路径 + startPolling
-// 联调。走真实 mountJobRuntimeFeature 轮询链路(?mock=failed / ?mock=done),
-// 不 mock fetch——所有 status-detail 专属 fetch(diagnostics/resume-plan/
-// translation/*)均走各自模块内建的 isMockMode() 分支(镜像
-// status-card-component.test.mjs 的 makeDom 先例)。
+// Kiểm thử thành phần StatusDetailDialog (nhóm hộp thoại Phase 3, Blueprint §1). Bao phủ danh sách kiểm thử mới §1.4
+// trong blueprint: chuyển đổi 4 tab + hợp đồng thuộc tính hidden, chiếm chỗ màn hình đầu overview → làm mới hai giai đoạn render,
+// xác nhận từng mục StageHistoryList/EventsList (xác nhận mảng đối tượng thay thế xác nhận markup),
+// vòng lặp đóng lọc/phân trang/chọn/phát lại của TranslationDebugTab, đường dẫn thành công rerun + tích hợp startPolling.
+// Đi qua đường dẫn轮询 mountJobRuntimeFeature thực tế (?mock=failed / ?mock=done),
+// không mock fetch — tất cả fetch dành riêng cho status-detail (diagnostics/resume-plan/translation/*) đều đi qua
+// nhánh isMockMode() tích hợp trong từng mô-đun (sao chép tiền lệ makeDom của status-card-component.test.mjs).
 
 function makeDom(search) {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
@@ -24,8 +23,8 @@ function makeDom(search) {
   }
   globalThis.window = dom.window;
   globalThis.requestAnimationFrame = (callback) => setTimeout(() => callback(0), 0);
-  // Radix Presence/Tabs(阶段 B 引入)在 jsdom 下需要 cancelAnimationFrame
-  // (TabsContent 的 mount 动画计时器清理)和 getComputedStyle(Presence 读取
+  // Radix Presence/Tabs (giới thiệu giai đoạn B) cần cancelAnimationFrame trong jsdom
+  // (dọn dẹp bộ đếm thời gian hoạt ảnh mount của TabsContent) và getComputedStyle (đọc Presence
   // animation-name 判断退场动画是否结束)——jsdom 的 window 上有实现,只是没有
   // 像 requestAnimationFrame 一样被复制到裸 global 上,这里一并补上。NodeFilter
   // 是阶段 C(StatusDetailDialog 换 Radix Dialog)新增的需要——Dialog.Content 的
@@ -49,7 +48,7 @@ async function waitFor(predicate, description) {
     }
     await wait(15);
   }
-  assert.fail(`等待超时：${description}`);
+  assert.fail(`Chờ quá thời gian: ${description}`);
 }
 
 function click(dom, element) {
@@ -121,7 +120,7 @@ async function openStatusDetailDialog(dom, services) {
   return getMockJobId();
 }
 
-test("StatusDetailDialog：4 tab 切换 + hidden 属性契约（常驻挂载不卸载）", async () => {
+test("StatusDetailDialog: chuyển đổi 4 tab + hợp đồng thuộc tính hidden (gắn thường trực không gỡ bỏ)", async () => {
   const dom = makeDom("?mock=failed");
   const { services, root, host } = await bootHomeApp(dom);
   await openStatusDetailDialog(dom, services);
@@ -164,7 +163,7 @@ test("StatusDetailDialog：4 tab 切换 + hidden 属性契约（常驻挂载不�
   host.remove();
 });
 
-test("StatusDetailDialog：overview 首屏占位（同步）→ 刷新两段渲染（异步补齐诊断字段）", async () => {
+test("StatusDetailDialog: chiếm chỗ màn hình đầu overview (đồng bộ) → làm mới hai giai đoạn render (bất đồng bộ bổ sung trường chẩn đoán)", async () => {
   const dom = makeDom("?mock=failed");
   const { services, root, host } = await bootHomeApp(dom);
   await openStatusDetailDialog(dom, services);
@@ -192,7 +191,7 @@ test("StatusDetailDialog：overview 首屏占位（同步）→ 刷新两段渲�
   host.remove();
 });
 
-test("StatusDetailDialog：StageHistoryList/EventsList 结构化 JSX 逐条渲染", async () => {
+test("StatusDetailDialog: StageHistoryList/EventsList có cấu trúc JSX render từng mục", async () => {
   const dom = makeDom("?mock=failed");
   const { services, root, host } = await bootHomeApp(dom);
   await openStatusDetailDialog(dom, services);
@@ -226,7 +225,7 @@ test("StatusDetailDialog：StageHistoryList/EventsList 结构化 JSX 逐条渲�
   host.remove();
 });
 
-test("StatusDetailDialog：失败 tab 重放（rerun）成功 → 关闭对话框 + startPolling 联调", async () => {
+test("StatusDetailDialog: phát lại tab thất bại (rerun) thành công → đóng hộp thoại + tích hợp startPolling", async () => {
   const dom = makeDom("?mock=failed");
   const { services, root, host } = await bootHomeApp(dom);
   const originalJobId = await openStatusDetailDialog(dom, services);
@@ -248,7 +247,7 @@ test("StatusDetailDialog：失败 tab 重放（rerun）成功 → 关闭对话�
   host.remove();
 });
 
-test("StatusDetailDialog：翻译调试 tab —— 摘要/筛选/选中/翻页/重放闭环", async () => {
+test("StatusDetailDialog: tab gỡ lỗi dịch —— tóm tắt/lọc/chọn/chuyển trang/phát lại vòng kín", async () => {
   const dom = makeDom("?mock=done");
   const { services, root, host } = await bootHomeApp(dom);
   const { getMockTranslationItems, getMockTranslationSummary } = await import("../src/js/mock/translation.js");
@@ -301,7 +300,7 @@ test("StatusDetailDialog：翻译调试 tab —— 摘要/筛选/选中/翻页/�
   host.remove();
 });
 
-test("StatusDetailDialog：数据源独立——status-detail 的 overview 不读 statusCardStore", async () => {
+test("StatusDetailDialog: nguồn dữ liệu độc lập — overview của status-detail không đọc statusCardStore", async () => {
   const dom = makeDom("?mock=failed");
   const { services, root, host } = await bootHomeApp(dom);
   await openStatusDetailDialog(dom, services);

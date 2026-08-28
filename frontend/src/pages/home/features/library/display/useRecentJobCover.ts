@@ -1,14 +1,14 @@
-// 卡片封面图加载 hook(蓝图 §2 features/library/,风险缓解 §8.3)。
+// Hook tải ảnh bìa thẻ (bản thiết kế §2 features/library/, giảm thiểu rủi ro §8.3).
 //
-// 复用:image-loader.js facade 的 loadFirstRecentJobImage(模块级 objectURL
-// 缓存,从不 revoke——React 卸载**不得** revoke,失效只走
-// invalidateRecentJobImages,这里完全不触碰缓存生命周期);card-presenter.js
-// facade 的 recentJobRawImageUrls 取候选 URL 列表。
+// Tái sử dụng: loadFirstRecentJobImage của facade image-loader.js (cache objectURL cấp module,
+// không bao giờ revoke —— React unmount **không được** revoke, mất hiệu lực chỉ qua
+// invalidateRecentJobImages, ở đây hoàn toàn không đụng vào vòng đời cache);
+// recentJobRawImageUrls của facade card-presenter.js lấy danh sách URL ứng viên.
 //
-// imageCacheVersionOf 从 recent-job-card.js:12-29 拷贝(facade 未导出这个纯
-// 函数,按蓝图口径直接拷贝而非新增导出面)。token 防竞态:job 切换或候选 URL
-// 变化时递增 token,异步 resolve 回来时核对 token 仍是最新才写 state,防止
-// 卡片快速复用时旧请求的图片覆盖新请求。
+// imageCacheVersionOf sao chép từ recent-job-card.js:12-29 (facade không export hàm thuần
+// này, sao chép trực tiếp theo khẩu độ bản thiết kế thay vì thêm bề mặt export mới). Token chống race condition: tăng token khi chuyển job hoặc URL ứng viên
+// thay đổi, khi async resolve xong kiểm tra token vẫn là mới nhất mới ghi state, tránh việc
+// thẻ tái sử dụng nhanh thì ảnh của request cũ ghi đè request mới.
 
 import { useEffect, useRef, useState } from "react";
 import type { LibraryCardItem } from "../types.js";
@@ -17,17 +17,17 @@ import {
   recentJobRawImageUrls,
 } from "../../../composition/external.js";
 
-// 缓存版本只在"封面可能真的变了"时才变。封面由后端 /jobs/{id}/cover 渲染
-// (运行中 = 原始 PDF 首页,任务完成后才可能换成成品封面),运行过程中封面
-// 内容并不变。原实现把 updated_at + progress.current/percent 等"每一拍轮询都在
-// 变"的字段计入缓存版本 → 每秒都命中一次缓存 miss → 重新 fetch 封面 blob、
-// 生成新的 objectURL、<img> src 一换就闪一下(还每拍泄漏一个 objectURL)。这
-// 正是用户看到的"图书馆卡片运行中闪烁"。
+// Phiên bản cache chỉ đổi khi "ảnh bìa thực sự có thể đã đổi". Ảnh bìa do backend /jobs/{id}/cover render
+// (đang chạy = trang đầu PDF gốc, sau khi hoàn thành mới có thể đổi thành ảnh bìa thành phẩm), trong quá trình chạy nội dung
+// ảnh bìa không đổi. Bản triển khai cũ đưa updated_at + progress.current/percent là các trường "mỗi nhịp polling đều
+// đổi" vào phiên bản cache → mỗi giây đều dính cache miss → fetch lại blob ảnh bìa,
+// tạo objectURL mới, <img> src vừa đổi là chớp một cái (còn rò rỉ một objectURL mỗi nhịp). Đây
+// chính là hiện tượng "thẻ thư viện chớp nháy khi đang chạy" mà người dùng nhìn thấy.
 //
-// 修:非终态只按 status 计版本(queued/running 期间恒定,封面拉一次就够,不再
-// 每拍重拉);到终态(succeeded/failed/canceled)才把 updated_at 计入——这时
-// 封面可能刚产出/更新,需要 bust 一次;updated_at 也能区分不同 run(重跑会有
-// 新的完成时间戳,封面随之刷新),不丢原来"重跑后换新封面"的能力。
+// Sửa: Trạng thái chưa kết thúc chỉ tính phiên bản theo status (cố định trong thời gian queued/running, kéo ảnh bìa một lần là đủ, không
+// kéo lại mỗi nhịp nữa); đến trạng thái kết thúc (succeeded/failed/canceled) mới đưa updated_at vào —— lúc này
+// ảnh bìa có thể vừa tạo ra/cập nhật, cần bust một lần; updated_at cũng phân biệt được các run khác nhau (chạy lại sẽ có
+// timestamp hoàn thành mới, ảnh bìa tự làm mới theo), không mất khả năng "đổi ảnh bìa mới sau khi chạy lại" vốn có.
 const TERMINAL_COVER_STATUSES = new Set(["succeeded", "failed", "canceled", "cancelled"]);
 
 function imageCacheVersionOf(item: LibraryCardItem = {}) {
@@ -70,8 +70,8 @@ export function useRecentJobCover(item?: LibraryCardItem | null) {
     return () => {
       cancelled = true;
     };
-    // rawUrlsKey/cacheVersion 是 rawUrls/cacheVersion 的 primitive 化,用作
-    // effect 依赖(数组/对象每次渲染新引用,不能直接进依赖表)。
+    // rawUrlsKey/cacheVersion là dạng primitive của rawUrls/cacheVersion, dùng làm
+    // dependency của effect (mỗi lần render mảng/đối tượng tạo tham chiếu mới, không thể vào trực tiếp danh sách phụ thuộc).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawUrlsKey, cacheVersion]);
 

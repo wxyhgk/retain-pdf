@@ -1,16 +1,16 @@
-# 03 Semantics Rules
+# 03 Quy tắc ngữ nghĩa
 
-## 总原则
+## Tổng nguyên tắc
 
-适配 Paddle 时，先判断字段属于哪一类：
+Khi thích ứng Paddle, trước tiên xác định trường thuộc loại nào:
 
-1. 稳定结构
-2. 稳定语义
-3. 仅供排错的原始 trace
+1. Cấu trúc ổn định
+2. Ngữ nghĩa ổn định
+3. Trace thô chỉ dùng để gỡ lỗi
 
-## 哪些进核心结构层
+## Những gì vào tầng cấu trúc lõi
 
-只有跨 provider 也大概率稳定的内容，才允许进入核心结构层：
+Chỉ những nội dung có khả năng ổn định trên nhiều provider mới được phép vào tầng cấu trúc lõi:
 
 - `type`
 - `sub_type`
@@ -22,11 +22,11 @@
 - `derived`
 - `continuation_hint`
 
-## 哪些进 `tags`
+## Những gì vào `tags`
 
-`tags` 适合放轻量、可组合、下游可能会用到的结构提示。
+`tags` phù hợp để chứa các gợi ý cấu trúc nhẹ, có thể kết hợp và có thể được hạ nguồn sử dụng.
 
-当前 Paddle 已在用的示例：
+Ví dụ hiện tại Paddle đang sử dụng:
 
 - `title`
 - `abstract`
@@ -40,11 +40,11 @@
 - `table`
 - `formula`
 
-## 哪些进 `derived`
+## Những gì vào `derived`
 
-`derived` 适合放更强的语义结论，并注明是谁给的结论。
+`derived` phù hợp để chứa các kết luận ngữ nghĩa mạnh hơn và nêu rõ ai đưa ra kết luận.
 
-当前格式：
+Định dạng hiện tại:
 
 ```json
 {
@@ -54,18 +54,18 @@
 }
 ```
 
-适合进 `derived` 的例子：
+Ví dụ phù hợp cho `derived`:
 
 - title
 - abstract
 - reference_entry
 - formula_number
 - header/footer
-- caption/footnote 这类 provider 已明确识别的角色
+- caption/footnote – các vai trò provider đã xác định rõ
 
-## 哪些只留在 `metadata/source`
+## Những gì chỉ giữ lại ở `metadata/source`
 
-Paddle 私有字段默认都应该先留在 trace 层：
+Các trường riêng của Paddle mặc định nên giữ ở tầng trace:
 
 - `raw_group_id`
 - `raw_global_group_id`
@@ -76,26 +76,26 @@ Paddle 私有字段默认都应该先留在 trace 层：
 - `model_settings`
 - `markdown.images`
 
-只有在多个 provider 都稳定产出、并且下游确实需要时，才考虑上提。
+Chỉ khi nhiều provider đều tạo ra ổn định và hạ nguồn thực sự cần, mới xem xét nâng lên.
 
-## 当前 trace 分层
+## Phân tầng trace hiện tại
 
-当前 Paddle trace 分层建议：
+Phân tầng trace Paddle hiện tại:
 
-1. 核心结构层
-2. 通用 trace 层
-3. provider raw trace 层
+1. Tầng cấu trúc lõi
+2. Tầng trace chung
+3. Tầng trace thô provider
 
-其中：
+Trong đó:
 
-- `content_format / asset_* / markdown_match_*` 更偏“通用 trace 层”
-- `layout_det_* / model_settings / 原始 group id` 更偏“provider raw trace 层”
+- `content_format / asset_* / markdown_match_*` nghiêng về "tầng trace chung"
+- `layout_det_* / model_settings / group id gốc` nghiêng về "tầng trace thô provider"
 
-## 规则变更要求
+## Yêu cầu thay đổi quy tắc
 
-如果对 `block_label -> type/sub_type/tags/derived` 做变更，必须同时更新：
+Nếu thay đổi `block_label -> type/sub_type/tags/derived`, phải đồng thời cập nhật:
 
-1. 本目录文档
-2. 相关 fixture
-3. regression check
-4. 如有必要，translation extractor smoke
+1. Tài liệu trong thư mục này
+2. Fixture liên quan
+3. Regression check
+4. Nếu cần, translation extractor smoke

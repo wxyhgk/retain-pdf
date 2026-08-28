@@ -1,45 +1,45 @@
-# Pretext PoC Results
+# Kết quả PoC Pretext
 
-日期：
+Ngày:
 
 - 2026-04-07
 
-环境：
+Môi trường:
 
-- 本地静态服务：`python3 -m http.server 4173`
-- 浏览器：`chromium --headless --disable-gpu --no-sandbox`
-- 依赖安装：`npm install --registry=https://registry.npmmirror.com`
+- Dịch vụ tĩnh cục bộ: `python3 -m http.server 4173`
+- Trình duyệt: `chromium --headless --disable-gpu --no-sandbox`
+- Cài đặt phụ thuộc: `npm install --registry=https://registry.npmmirror.com`
 
-## 已验证页面
+## Trang đã xác minh
 
 - `html/index.html`
 - `html/pretext.html`
 
-两页都支持 URL 参数自动运行：
+Hai trang đều hỗ trợ tự động chạy qua tham số URL:
 
 - `?autoload=1`
 - `&sample=<sample_id>`
 - `&autorun=1`
 
-例如：
+Ví dụ:
 
 - `http://127.0.0.1:4173/html/index.html?autoload=1&sample=20260407033349-ffe2e4:p002-b0002&autorun=1`
 - `http://127.0.0.1:4173/html/pretext.html?autoload=1&sample=20260407033349-ffe2e4:p002-b0002&autorun=1`
 
-## 首个浏览器侧对照结果
+## Kết quả đối chiếu phía trình duyệt đầu tiên
 
-样本：
+Mẫu:
 
 - `20260407033349-ffe2e4:p002-b0002`
 
-输入参数：
+Tham số đầu vào:
 
-- 宽度：`447.45pt`
-- 字号：`11.06pt`
-- 行高：约 `6.64pt`
-  这里沿用了当前页面里“用字号乘 Typst 的 `max_leading_em`”的近似方式，仅作为第一轮 PoC 对照输入。
+- Chiều rộng: `447.45pt`
+- Kích thước chữ: `11.06pt`
+- Chiều cao dòng: khoảng `6.64pt`
+  Ở đây沿用 cách近似 hiện tại trong trang "nhân kích thước chữ với `max_leading_em` của Typst", chỉ làm đầu vào đối chiếu PoC vòng đầu.
 
-结果：
+Kết quả:
 
 - DOM height: `53.16pt`
 - Pretext height: `53.12pt`
@@ -49,23 +49,23 @@
 - DOM maxLineWidth: `597pt`
 - Pretext maxLineWidth: `442.03pt`
 
-## 当前结论
+## Kết luận hiện tại
 
-可以先确认三件事：
+Có thể xác nhận ba điều trước:
 
-1. `@chenglou/pretext` 已经可以在本实验目录本地安装并被浏览器页面导入。
-2. 在同一批 `fixtures` 上，DOM 和 `pretext` 的块级高度与行数已经可以直接做自动对照。
-3. 至少在样本 `p002-b0002` 上，`pretext` 与 DOM 的高度和行数非常接近。
+1. `@chenglou/pretext` đã có thể cài đặt cục bộ trong thư mục thí nghiệm này và được trang trình duyệt import.
+2. Trên cùng lô `fixtures`, chiều cao và số dòng cấp khối của DOM và `pretext` đã có thể tự động đối chiếu trực tiếp.
+3. Ít nhất trên mẫu `p002-b0002`, chiều cao và số dòng của `pretext` và DOM rất gần nhau.
 
-同时也暴露出一个重要问题：
+Đồng thời cũng lộ ra một vấn đề quan trọng:
 
-- 当前 DOM 页面对 `maxLineWidth` 的读取是 `scrollWidth`，它反映的是整个块盒子的滚动宽度，不一定是“最宽一行文字”的真实宽度。
-- `pretext` 的 `maxLineWidth` 是逐行计算出来的文本宽度，因此两者目前还不是严格同口径。
+- Việc đọc `maxLineWidth` của trang DOM hiện tại là `scrollWidth`, nó phản ánh chiều rộng cuộn của toàn bộ hộp khối, không nhất thiết là chiều rộng thực của "dòng văn bản rộng nhất".
+- `maxLineWidth` của `pretext` là chiều rộng văn bản tính từng dòng, do đó hai bên hiện chưa cùng khẩu độ nghiêm ngặt.
 
-这意味着下一步应优先统一“最宽行”指标口径，再继续扩展更多样本。
+Điều này có nghĩa bước tiếp theo nên ưu tiên thống nhất khẩu độ chỉ số "dòng rộng nhất", rồi mới tiếp tục mở rộng thêm mẫu.
 
-## 下一步建议
+## Khuyến nghị bước tiếp theo
 
-- 把 DOM 基线页的宽度指标从 `scrollWidth` 改成逐行口径，和 `pretext` 对齐。
-- 用当前 5 个样本全量跑一遍 DOM / `pretext` 对照，记录高度差、行数差和最宽行差。
-- 再引入 Typst 对照，判断是 DOM 还是 `pretext` 更接近 Typst 结果。
+- Đổi chỉ số chiều rộng của trang cơ sở DOM từ `scrollWidth` sang khẩu độ từng dòng, căn chỉnh với `pretext`.
+- Dùng toàn bộ 5 mẫu hiện tại chạy một lượt đối chiếu DOM / `pretext`, ghi lại chênh lệch chiều cao, chênh lệch số dòng và chênh lệch dòng rộng nhất.
+- Sau đó đưa vào đối chiếu Typst, phán đoán DOM hay `pretext` gần kết quả Typst hơn.

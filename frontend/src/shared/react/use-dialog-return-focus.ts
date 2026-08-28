@@ -1,27 +1,25 @@
-// Radix Dialog 关闭后的焦点归还补偿(阶段 C:shadcn 改造,dialog 渲染层换血)。
+// Bù đắp hoàn trả tiêu điểm (focus) sau khi đóng Radix Dialog (Giai đoạn C: cải tạo shadcn, thay đổi lớp render dialog).
 //
-// Radix 默认的"关闭后焦点归还触发元素"依赖 DialogPrimitive.Trigger 记录
-// context.triggerRef——但本项目 9 个对话框全部不是"Trigger 和 Content 同一
-// 子树"的经典用法:没有一处渲染 DialogPrimitive.Trigger(触发按钮都是普通
-// <button onClick={...}>,分散在 HeroUpload/SettingsHubDialog 面板/
-// AppShellHeader/EventsTimeline 触发卡片等完全不同的组件里,状态经
-// dialogStore.open()/APP_EVENTS/本地 useState 驱动),Radix 无法知道"是谁
-// 打开了我",于是默认的 onCloseAutoFocus(尝试 focus triggerRef.current)
-// 永远是 no-op——实测验证:关闭后焦点会落到 <body>,不会回到用户刚才点击
-// 的按钮。这个根因和"触发按钮是否与 Content 同一 React 子树"无关(即使同树,
-// 只要没用 DialogPrimitive.Trigger,同样是 no-op),所以本项目 9 个对话框
-// 统一都需要这个 hook,不按"是否跨子树"挑着用。
+// Việc "hoàn trả tiêu điểm về phần tử kích hoạt" mặc định của Radix phụ thuộc vào việc DialogPrimitive.Trigger ghi lại
+// context.triggerRef — nhưng 9 dialog trong dự án này đều không dùng cách điển hình "Trigger và Content cùng một
+// subtree": không có nơi nào render DialogPrimitive.Trigger (các nút kích hoạt đều là <button onClick={...}> thông thường,
+// nằm rải rác ở HeroUpload/SettingsHubDialog panel/AppShellHeader/EventsTimeline trigger card và các component khác nhau,
+// trạng thái được điều khiển bởi dialogStore.open()/APP_EVENTS/useState cục bộ), Radix không biết "ai đã
+// mở tôi", nên mặc định onCloseAutoFocus (thử focus triggerRef.current) luôn là no-op — thực tế kiểm chứng: sau khi đóng,
+// tiêu điểm rơi vào <body>, không quay lại nút người dùng vừa click. Nguyên nhân gốc rễ không liên quan đến việc
+// "nút kích hoạt có cùng React subtree với Content hay không" (ngay cả khi cùng cây, nếu không dùng DialogPrimitive.Trigger
+// thì vẫn là no-op), nên cả 9 dialog trong dự án này đều cần hook này, không phân biệt có cross-subtree hay không.
 //
-// 这里手动补上等价语义:open 从 false→true 的那一刻,记下当时的
-// document.activeElement(几乎总是用户刚点击的触发按钮),对话框关闭时
-// (DialogPrimitive.Content 的 onCloseAutoFocus)把焦点还给它,并
-// preventDefault 掉 Radix 自己的默认行为。
+// Tại đây, ta bổ sung ngữ nghĩa tương đương thủ công: tại thời điểm open chuyển từ false → true, ghi lại
+// document.activeElement (thường là nút kích hoạt người dùng vừa click), khi dialog đóng
+// (onCloseAutoFocus của DialogPrimitive.Content) trả tiêu điểm về phần tử đó và
+// preventDefault hành vi mặc định của Radix.
 //
-// 本文件原先在 src/pages/home/state/ 下(阶段 C 前 4 批对话框都在 home 页);
-// 阶段 C 收官批把 detail 页的 EventsTimeline 两个模态也接入 Radix Dialog 后,
-// 这个 hook 变成跨页共享(home.bundle.js + detail.bundle.js 都要打包它),
-// 挪到 src/shared/react/ 与 use-app-event.js/use-store.js/DownloadToastHost.jsx
-// 同级(后者也是同样"多页面各自 esbuild 打包但共享同一份源码"的先例)。
+// File này trước đây nằm ở src/pages/home/state/ (trước Giai đoạn C, 4 đợt dialog đầu đều ở trang home);
+// sau khi đợt cuối Giai đoạn C đưa hai modal của EventsTimeline ở trang detail vào Radix Dialog,
+// hook này trở thành chia sẻ xuyên trang (home.bundle.js + detail.bundle.js đều cần đóng gói nó),
+// nên được chuyển sang src/shared/react/ cùng cấp với use-app-event.js/use-store.js/DownloadToastHost.jsx
+// (những file sau cũng là tiền lệ cho việc "mỗi trang tự esbuild đóng gói nhưng chia sẻ cùng một mã nguồn").
 
 import { useEffect, useRef } from "react";
 

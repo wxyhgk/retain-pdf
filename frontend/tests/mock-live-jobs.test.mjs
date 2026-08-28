@@ -64,7 +64,7 @@ test("live mock fromStage=translate starts at translation, not upload/ocr", () =
   assert.equal(at0.display_stage, "translation");
   assert.match(`${at0.stage_detail}`, /翻译/);
 
-  // 跳过 ocr 后时长更短：约 7s 翻译 + 3s 渲染
+  // Bỏ ocr nên thời gian ngắn hơn: khoảng 7s dịch + 3s render
   const mid = buildLiveMockJobPayload(jobId, startedAtMs + 8_000);
   assert.equal(mid.stage, "rendering");
   const done = buildLiveMockJobPayload(jobId, startedAtMs + 12_000);
@@ -98,7 +98,7 @@ test("live mock fromStage=ocr starts at ocr_processing (skips queue)", () => {
 test("translateMockDocument wires live payload via getMockJobPayload", () => {
   resetLiveMockJobs();
   const targetId = "doc-ref-6a1f2c";
-  // 其它测试可能写过 active_job_id，先清掉
+  // Các test khác có thể đã đặt active_job_id, xóa trước
   const doc = getMockDocument(targetId);
   doc.active_job_id = null;
 
@@ -120,13 +120,13 @@ test("translateMockDocument wires live payload via getMockJobPayload", () => {
     /409|翻译流程中/,
   );
 
-  // 终态后允许再提交
+  // Sau trạng thái cuối cùng, cho phép submit lại
   const metaStarted = Date.now() - 60_000;
   resetLiveMockJobs();
   doc.active_job_id = null;
   const again = translateMockDocument(targetId);
-  // 把 startedAt 拨到过去：通过重新 register 同 id 不太方便，用 isLiveMockJobActive 假时间
-  // 这里只断言第二次在 cleared state 成功
+  // Đẩy startedAt về quá khứ: không tiện register lại cùng id, dùng thời gian giả cho isLiveMockJobActive
+  // Ở đây chỉ khẳng định lần thứ hai thành công ở trạng thái đã xóa
   assert.ok(again.job_id);
   assert.ok(getMockDocumentList().documents.some((d) => d.document_id === targetId));
 });

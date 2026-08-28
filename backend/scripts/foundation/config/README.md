@@ -1,32 +1,32 @@
-# Config 分层说明
+# Mô tả phân tầng Config
 
-`scripts/foundation/config` 用来集中管理配置，避免共享层继续承载所有职责。
+`scripts/foundation/config` dùng để quản lý tập trung cấu hình, tránh tầng chia sẻ tiếp tục gánh tất cả trách nhiệm.
 
-## 拆分结果
+## Kết quả tách
 
 - `paths.py`
-  只放路径相关配置，例如 `ROOT_DIR`、`DATA_DIR`、`OUTPUT_DIR`、`SOURCE_PDF`。
+  Chỉ chứa cấu hình liên quan đường dẫn, ví dụ `ROOT_DIR`, `DATA_DIR`, `OUTPUT_DIR`, `SOURCE_PDF`.
 - `fonts.py`
-  只放字体与字号相关配置，例如默认字体路径、默认字号、Typst 默认字体族。
+  Chỉ chứa cấu hình liên quan font và kích thước chữ, ví dụ đường dẫn font mặc định, kích thước chữ mặc định, họ font Typst mặc định.
 - `runtime.py`
-  只放运行时默认项，例如默认页码、默认输出名、PDF 压缩 DPI。
+  Chỉ chứa mục mặc định runtime, ví dụ số trang mặc định, tên đầu ra mặc định, DPI nén PDF.
 - `layout.py`
-  只放版式调参相关配置，以及 `apply_layout_tuning(...)`。
+  Chỉ chứa cấu hình tinh chỉnh bố cục, cùng `apply_layout_tuning(...)`.
 
-## 兼容策略
+## Chiến lược tương thích
 
-当前仍保留 `scripts/foundation/shared/config.py` 作为兼容 facade。
+Hiện vẫn giữ `scripts/foundation/shared/config.py` làm facade tương thích.
 
-历史代码里常见的旧写法是：
+Cách viết cũ thường gặp trong mã lịch sử là:
 
 ```python
 from foundation.config.paths import OUTPUT_DIR
 from foundation.config.layout import apply_layout_tuning
 ```
 
-后续如果要逐步去耦合，可以再把各模块的 import 迁移到更明确的来源：
+Sau này nếu muốn dần giải ghép, có thể chuyển import các module sang nguồn rõ ràng hơn:
 
-- 路径相关优先用 `foundation.config.paths`
-- 字体相关优先用 `foundation.config.fonts`
-- 版式调参优先用 `foundation.config.layout`
-- 运行默认值优先用 `foundation.config.runtime`
+- Liên quan đường dẫn ưu tiên dùng `foundation.config.paths`
+- Liên quan font ưu tiên dùng `foundation.config.fonts`
+- Tinh chỉnh bố cục ưu tiên dùng `foundation.config.layout`
+- Giá trị mặc định runtime ưu tiên dùng `foundation.config.runtime`

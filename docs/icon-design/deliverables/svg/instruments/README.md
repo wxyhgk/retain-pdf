@@ -1,27 +1,27 @@
-# 科学仪器线标（RetainPDF）
+# Biểu tượng nét khoa học (RetainPDF)
 
-学术/实验气质 UI 图标，**不是**中国风山水符号。
+Biểu tượng UI phong cách học thuật/thí nghiệm, **không phải** biểu tượng sơn thủy phong cách Trung Quốc.
 
-| 文件 | 语义 | 可用场景（建议） |
+| Tệp | Ngữ nghĩa | Tình huống sử dụng (gợi ý) |
 |------|------|------------------|
-| `instrument-microscope.svg` | 显微镜 | 空状态、OCR/阅读相关 |
-| `instrument-flask.svg` | 锥形瓶 | 化学/实验类标签 |
-| `instrument-atom.svg` | 原子轨道 | 科学主题、AI 分析 |
-| `instrument-spectrum.svg` | 光谱/信号 | 数据、图表、分析 |
-| `instrument-telescope.svg` | 望远镜 | 探索、发现 |
-| `instrument-balance.svg` | 天平 | 对照阅读、对比 |
+| `instrument-microscope.svg` | Kính hiển vi | Trạng thái trống, liên quan OCR/đọc |
+| `instrument-flask.svg` | Bình nón | Nhãn hóa học/thí nghiệm |
+| `instrument-atom.svg` | Quỹ đạo nguyên tử | Chủ đề khoa học, phân tích AI |
+| `instrument-spectrum.svg` | Quang phổ/tín hiệu | Dữ liệu, biểu đồ, phân tích |
+| `instrument-telescope.svg` | Kính thiên văn | Khám phá, phát hiện |
+| `instrument-balance.svg` | Cân | Đọc đối chiếu, so sánh |
 
-## 规范
+## Quy chuẩn
 
 - `viewBox="0 0 24 24"`
-- `stroke="currentColor"` `fill="none"`（atom 中心点除外）
+- `stroke="currentColor"` `fill="none"` (trừ điểm tâm atom)
 - `stroke-width="1.6"` round
 
-接入时用 CSS `color: var(--ink)` 或 `var(--accent)`，不要写死色。
+Khi tích hợp dùng CSS `color: var(--ink)` hoặc `var(--accent)`, không viết cứng màu.
 
-## 来源
+## Nguồn
 
-- **Kimi CLI** 生成线标（2026-07-21），已写入本目录  
-- 规范：`currentColor` / 24×24 / stroke 1.6  
+- **Kimi CLI** sinh biểu tượng nét (2026-07-21), đã ghi vào thư mục này  
+- Quy chuẩn: `currentColor` / 24×24 / stroke 1.6  
 
-预览：用浏览器打开任意 `.svg`，或 `color: #1d1d1f` 套在 UI 里看。
+Xem trước: Mở bất kỳ `.svg` nào bằng trình duyệt, hoặc áp `color: #1d1d1f` trong UI để xem.

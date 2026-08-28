@@ -1,20 +1,21 @@
-// 结果操作行(蓝图 §2 features/status/;镜像 job-status-card-rendering.js 的
-// syncPrimaryActions/setActionLinkState——DOM 契约逐 id/class 保留)。
+// Hàng thao tác kết quả (bản thiết kế §2 features/status/, phản chiếu
+// syncPrimaryActions/setActionLinkState của job-status-card-rendering.js — giữ
+// nguyên hợp đồng DOM theo từng id/class).
 //
-// 「对照阅读」链接(dialogs 蓝图 §4 施工范围第 6 条 ①):运行时复核确认
-// 3b 只渲染了裸 <a href="reader.html?...">,没有拦截点击——整页跳转会
-// 打断 SPA 的对话框体验,补上 onClick(preventDefault + onReaderClick)
-// 走 ReaderDialog 统一的 openReaderRequested 入口,href 保留作为
-// JS 失效时的可用兜底。
+// Liên kết "Đọc đối chiếu" (bản thiết kế dialogs §4, phạm vi mục 6 ①): kiểm
+// tra runtime xác nhận 3b chỉ render <a href="reader.html?..."> trần, không
+// chặn click — chuyển cả trang làm gián đoạn trải nghiệm dialog SPA. Thêm
+// onClick (preventDefault + onReaderClick) qua lối vào openReaderRequested
+// thống nhất của ReaderDialog; giữ href làm dự phòng khi JS lỗi.
 //
-// markdownBundle/sourcePdf/pdf 三个下载链接(dialogs 蓝图 §7):这几个 id
-// 命中 artifact-downloads 域的 document 级委托点击(controller.js 的
-// handleProtectedArtifactClick,composition.js 已挂载 bindEvents()),点击
-// 时该处理器会先于原生 <a> 默认跳转执行 event.preventDefault()——按钮本身不
-// 需要额外接 onClick(委托点击与谁渲染了按钮无关)。这里只订阅
-// artifact-download-busy-store.js 的对应 actionId 分片,驱动"下载中...".
-// 文案与禁用态(方案二:避免父组件因轮询重渲染把命令式写入的下载进度文案
-// 覆盖回原始 label)。
+// Ba liên kết tải markdownBundle/sourcePdf/pdf (bản thiết kế dialogs §7): các
+// id này được ủy quyền click ở cấp document của miền artifact-downloads (hàm
+// handleProtectedArtifactClick trong controller.js, bindEvents() đã gắn ở
+// composition.js). Handler chạy trước điều hướng mặc định của <a> và gọi
+// event.preventDefault() — nút không cần onClick thêm. Chỉ subscribe lát cắt
+// actionId tương ứng của artifact-download-busy-store.js để điều khiển nhãn
+// "Đang tải..." và trạng thái vô hiệu (phương án hai, tránh component cha
+// render lại do polling ghi đè nhãn tiến trình bằng label gốc).
 
 import { useHomeServices } from "../../home-services-context.js";
 import { useArtifactDownloadBusy } from "../../state/use-artifact-download-busy.js";
@@ -33,7 +34,7 @@ function ActionLink({ id, label, ready, url, onClick }: ActionLinkProps) {
   const busyState = useArtifactDownloadBusy(services.artifactDownloads.busyStore, id);
   const enabled = Boolean(ready && url) && !busyState.busy;
   const isReaderLink = id === STATUS_CARD_ACTION_IDS.reader;
-  const displayLabel = busyState.busy ? (busyState.label || "下载中...") : label;
+  const displayLabel = busyState.busy ? (busyState.label || "Đang tải...") : label;
   return (
     <a
       id={id}
@@ -87,10 +88,10 @@ export function ResultActions({
 
   return (
     <div className={`status-result-actions${hasActions ? "" : " hidden"}`}>
-      <ActionLink id={STATUS_CARD_ACTION_IDS.markdownBundle} label="下载 Markdown" ready={markdownBundleReady} url={markdownBundleUrl} />
-      <ActionLink id={STATUS_CARD_ACTION_IDS.sourcePdf} label="下载原始 PDF" ready={sourcePdfReady} url={sourcePdfUrl} />
-      <ActionLink id={STATUS_CARD_ACTION_IDS.reader} label="对照阅读" ready={readerReady} url={readerUrl} onClick={onReaderClick} />
-      <ActionLink id={STATUS_CARD_ACTION_IDS.pdf} label="下载 PDF" ready={pdfReady} url={pdfUrl} />
+       <ActionLink id={STATUS_CARD_ACTION_IDS.markdownBundle} label="Tải Markdown" ready={markdownBundleReady} url={markdownBundleUrl} />
+       <ActionLink id={STATUS_CARD_ACTION_IDS.sourcePdf} label="Tải PDF gốc" ready={sourcePdfReady} url={sourcePdfUrl} />
+       <ActionLink id={STATUS_CARD_ACTION_IDS.reader} label="Đọc đối chiếu" ready={readerReady} url={readerUrl} onClick={onReaderClick} />
+       <ActionLink id={STATUS_CARD_ACTION_IDS.pdf} label="Tải PDF" ready={pdfReady} url={pdfUrl} />
     </div>
   );
 }

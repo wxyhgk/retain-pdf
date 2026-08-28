@@ -1,24 +1,24 @@
 # rendering/analysis/route
 
-## 负责什么
+## Trách nhiệm
 
-单页路线决策层。这里消费 `RenderPageProfile`，输出 `RenderPageRoute`。
+Tầng quyết định tuyến đơn trang. Tiêu thụ `RenderPageProfile`, xuất ra `RenderPageRoute`.
 
-上层执行代码只能消费这里的路线或 profile 中的事实字段。比如伪 PDF
-是否走 `typst_visual`、hidden text 是否剥离、source cleanup 是否物理删字，
-都应该由同一份 page profile 派生，不能在 overlay/source cleanup 中各自再扫
-`page_has_large_background_image()` 后做局部判断。
+Mã thực thi tầng trên chỉ được tiêu thụ tuyến từ đây hoặc trường sự thật trong profile. Ví dụ pseudo PDF
+có đi `typst_visual` hay không, hidden text có bóc hay không, source cleanup có xóa vật lý hay không,
+đều phải phái sinh từ cùng một page profile, không được quét riêng
+`page_has_large_background_image()` trong overlay/source cleanup rồi phán đoán cục bộ.
 
-## 对外入口
+## Lối vào công khai
 
 - `builder.py`
 - `models.py`
 
-## 不该做什么
+## Không nên làm gì
 
-- 不重新扫描 PDF。
-- 不执行 redaction。
-- 不生成 Typst。
-- 不改变实际渲染行为，除非上层显式接入 route。
+- Không quét lại PDF.
+- Không thực hiện redaction.
+- Không sinh Typst.
+- Không thay đổi hành vi render thực tế, trừ khi tầng trên kết nối rõ ràng vào route.
 
-新增路线判断时，保持一个判断一个文件，例如 `redaction_route.py`、`background_route.py`。
+Khi thêm phán đoán tuyến mới, giữ một phán đoán một tệp, ví dụ `redaction_route.py`, `background_route.py`.

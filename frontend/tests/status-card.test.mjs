@@ -21,7 +21,7 @@ import {
   buildStatusCardProgressPresentation,
   capRunningStagePercent,
 } from "../src/js/job-status/status-card-progress-view-model.js";
-// buildProgressRenderModel 随 cutover 从 components/status/job-status-card-rendering.js
+// buildProgressRenderModel moved from components/status/job-status-card-rendering.js during cutover
 // (死,已删除)迁移指向 src/pages/home/features/status/progress-model.js(蓝图判决:
 // 45-164 行纯函数拷贝,归属改在新世界,断言口径不变)。
 import {
@@ -74,9 +74,9 @@ test("status substage badges do not infer translation substages from display tex
   assert.equal(
     translationSubstageKeyForSnapshot({
       stageKey: "translate",
-      label: "第 2/4 步 · 跨栏/跨页判断",
-      value: "正在判断跨栏/跨页连续段",
-      progressText: "第 9/34 页",
+      label: "Bước 2/4 · Xác định vượt cột/trang",
+      value: "đang xác định đoạn tiếp nối vượt cột/trang",
+      progressText: "trang 9/34",
     }),
     "translation_batches",
   );
@@ -84,7 +84,7 @@ test("status substage badges do not infer translation substages from display tex
     translationSubstageKeyForSnapshot({
       stageKey: "translate",
       substageKey: "continuation_review",
-      label: "第 2/4 步 · 跨栏/跨页判断",
+      label: "Bước 2/4 · Xác định vượt cột/trang",
     }),
     "continuation_review",
   );
@@ -197,7 +197,7 @@ test("render stage presentation follows the current public stage through ui boun
   assert.equal(renderPresentation.stageKey, "render");
   assert.equal(regressedPresentation.stageKey, "translate");
   assert.equal(regressedPresentation.visualStageKey, "translate");
-  assert.equal(regressedPresentation.detail, "正在翻译正文内容");
+  assert.equal(regressedPresentation.detail, "đang dịch nội dung chính");
 });
 
 test("runtime status card snapshot source belongs to job-status boundary", () => {
@@ -341,7 +341,7 @@ test("status card patch payload resolves public error and exposes selected stage
     job_id: "job-status-patch",
     status: "failed",
     failure: {
-      summary: "模型返回为空",
+      summary: "mô hình trả về rỗng",
     },
   };
   const payload = buildStatusCardPatchPayload({
@@ -362,14 +362,14 @@ test("status card patch payload resolves public error and exposes selected stage
 test("status card selector memoizes stable status card inputs", () => {
   const state = createInitialState();
   const stagePresentation = {
-    label: "第 2/4 步 · 翻译",
-    detail: "正在翻译正文内容",
+    label: "Bước 2/4 · Dịch",
+    detail: "đang dịch nội dung chính",
     stageKey: "translate",
     visualStageKey: "translate",
     progressCurrent: 1,
     progressTotal: 10,
     progressPercent: 10,
-    progressText: "第 1/10 批",
+    progressText: "lô 1/10",
     progressUnit: "batch",
     progressIndeterminate: false,
     substageKey: "translation_batches",
@@ -402,19 +402,19 @@ test("status card selector memoizes stable status card inputs", () => {
     ...context,
     stagePresentation: {
       ...stagePresentation,
-      progressText: "完成",
+      progressText: "hoàn tất",
     },
   });
 
   assert.equal(first, second);
   assert.notEqual(second, third);
-  assert.equal(third.progressText, "完成");
+  assert.equal(third.progressText, "hoàn tất");
 });
 
 test("status card stage presentation resolver rejects stale explicit stage", () => {
   const explicit = {
-    label: "外部阶段",
-    detail: "外部详情",
+    label: "giai đoạn bên ngoài",
+    detail: "chi tiết bên ngoài",
     stageKey: "render",
   };
 
@@ -429,7 +429,7 @@ test("status card stage presentation resolver rejects stale explicit stage", () 
   });
 
   assert.equal(presentation.stageKey, "translate");
-  assert.equal(presentation.detail, "正在翻译正文内容");
+  assert.equal(presentation.detail, "đang dịch nội dung chính");
 });
 
 test("status substage view model owns visible active and done states", () => {
@@ -456,11 +456,11 @@ test("status substage view model owns visible active and done states", () => {
   assert.deepEqual(
     viewModel.items.map((item) => [item.key, item.label, item.active, item.done]),
     [
-      ["continuation_review", "跨栏/跨页", false, true],
-      ["page_policies", "页面策略", false, true],
-      ["translation_batches", "翻译批次", false, true],
-      ["translation_tail_retry", "尾部重试", false, true],
-      ["garbled_repair", "乱码修复", true, false],
+      ["continuation_review", "vượt cột/trang", false, true],
+      ["page_policies", "chính sách trang", false, true],
+      ["translation_batches", "lô dịch", false, true],
+      ["translation_tail_retry", "thử lại cuối", false, true],
+      ["garbled_repair", "sửa lỗi mã hóa", true, false],
     ],
   );
 });
@@ -476,8 +476,8 @@ test("status substage view model shows render substages from progress records", 
     selectedProgress: {
       substageKey: "render_compile",
       bySubstage: {
-        render_pages: { current: 45, total: 100, progressText: "第 50/100 页" },
-        render_compile: { current: 90, total: 100, progressText: "正在编译 PDF" },
+        render_pages: { current: 45, total: 100, progressText: "trang 50/100" },
+        render_compile: { current: 90, total: 100, progressText: "đang biên dịch PDF" },
       },
     },
   });
@@ -487,8 +487,8 @@ test("status substage view model shows render substages from progress records", 
   assert.deepEqual(
     viewModel.items.map((item) => [item.key, item.label, item.active, item.done]),
     [
-      ["render_pages", "页面", false, true],
-      ["render_compile", "编译", true, false],
+      ["render_pages", "trang", false, true],
+      ["render_compile", "biên dịch", true, false],
     ],
   );
 });
@@ -504,7 +504,7 @@ test("status substage view model fills reached substages before the active one",
     selectedProgress: {
       substageKey: "render_compile",
       bySubstage: {
-        render_compile: { current: 4, total: 4, progressText: "渲染完成" },
+        render_compile: { current: 4, total: 4, progressText: "kết xuất hoàn tất" },
       },
     },
   });
@@ -559,9 +559,9 @@ test("terminal stage flow fallback does not infer done without explicit stage", 
 test("status substage contract centralizes aliases labels and details", () => {
   assert.equal(normalizeSubstageKey("provider_processing"), "ocr_processing");
   assert.equal(normalizeSubstageKey("render_preprocess"), "render_prepare");
-  assert.equal(substageLabel("continuation_review"), "跨栏/跨页判断");
-  assert.equal(substageCardLabel("continuation_review"), "跨栏/跨页");
-  assert.equal(substageDetail("continuation_review"), "正在判断跨栏/跨页连续段");
+  assert.equal(substageLabel("continuation_review"), "xác định vượt cột/trang");
+  assert.equal(substageCardLabel("continuation_review"), "vượt cột/trang");
+  assert.equal(substageDetail("continuation_review"), "đang xác định đoạn tiếp nối vượt cột/trang");
   assert.equal(substageDefaultProgressUnit("continuation_review"), "page");
   assert.equal(substageDefaultProgressUnit("translation_batches"), "batch");
   assert.equal(substageDefaultProgressUnit("agent_repair"), "step");
@@ -628,7 +628,7 @@ test("structured substage labels and details are stable", () => {
         total: 4,
       },
     }),
-    "正在编译 PDF",
+    "đang biên dịch PDF",
   );
   const ocrNormalizing = resolveDisplayedStagePresentation({
     job_id: "job-ocr-normalizing",
@@ -642,8 +642,8 @@ test("structured substage labels and details are stable", () => {
       total: 2,
     },
   }, null);
-  assert.equal(ocrNormalizing.label, "第 1/4 步 · 标准化");
-  assert.equal(ocrNormalizing.detail, "正在整理 OCR 结果");
+  assert.equal(ocrNormalizing.label, "Bước 1/4 · Chuẩn hóa");
+  assert.equal(ocrNormalizing.detail, "đang tổng hợp kết quả OCR");
 
   const translationPrepare = resolveDisplayedStagePresentation({
     job_id: "job-translation-prepare",
@@ -657,8 +657,8 @@ test("structured substage labels and details are stable", () => {
       total: 3,
     },
   }, null);
-  assert.equal(translationPrepare.label, "第 2/4 步 · 翻译准备");
-  assert.equal(translationPrepare.detail, "正在准备翻译任务");
+  assert.equal(translationPrepare.label, "Bước 2/4 · Chuẩn bị dịch");
+  assert.equal(translationPrepare.detail, "đang chuẩn bị tác vụ dịch");
 
   const renderCompile = resolveDisplayedStagePresentation({
     job_id: "job-render-compile",
@@ -672,30 +672,30 @@ test("structured substage labels and details are stable", () => {
       total: 4,
     },
   }, null);
-  assert.equal(renderCompile.label, "第 3/4 步 · 编译");
-  assert.equal(renderCompile.detail, "正在编译 PDF");
+  assert.equal(renderCompile.label, "Bước 3/4 · Biên dịch");
+  assert.equal(renderCompile.detail, "đang biên dịch PDF");
 });
 
 test("structured substage matrix uses stable display copy", () => {
   const cases = [
-    ["ocr", "ocr_submitting", "第 1/4 步 · 启动", "正在启动 OCR 子任务", "进度 1/3"],
-    ["ocr", "ocr_upload", "第 1/4 步 · 上传", "正在上传 PDF", "第 2/34 页"],
-    ["ocr", "provider_processing", "第 1/4 步 · OCR 解析", "正在执行云端 OCR", "第 12/34 页"],
-    ["ocr", "ocr_result_ready", "第 1/4 步 · 结果整理", "OCR 结果已就绪", "进度 1/1"],
-    ["ocr", "normalizing", "第 1/4 步 · 标准化", "正在整理 OCR 结果", "进度 1/2"],
-    ["translation", "translation_prepare", "第 2/4 步 · 翻译准备", "正在准备翻译任务", "进度 1/3"],
-    ["translation", "domain_inference", "第 2/4 步 · 领域判断", "正在识别文档领域和术语", "进度 1/2"],
-    ["translation", "page_policies", "第 2/4 步 · 页面策略", "正在判断正文与保留排版内容", "第 8/34 页"],
-    ["translation", "continuation_review", "第 2/4 步 · 跨栏/跨页判断", "正在判断跨栏/跨页连续段", "第 9/34 页"],
-    ["translation", "translation_batches", "第 2/4 步 · 翻译", "正在翻译正文内容", "第 789/5216 批"],
-    ["translation", "translation_tail_retry", "第 2/4 步 · 尾部重试", "正在重试剩余翻译批次", "第 3/7 批"],
-    ["translation", "garbled_repair", "第 2/4 步 · 乱码修复", "正在修复乱码候选段", "第 4/10 批"],
-    ["translation", "agent_repair", "第 2/4 步 · 结果修复", "正在修复翻译结果", "第 5/11 批"],
-    ["translation", "final_untranslated_recovery", "第 2/4 步 · 最终收口", "正在处理未翻译内容", "第 6/12 批"],
-    ["render", "render_prepare", "第 3/4 步 · 准备", "正在准备渲染资源", "准备 1/3"],
-    ["render", "render_prewarm", "第 3/4 步 · 预热", "正在预热渲染资源", "预热 2/3"],
-    ["render", "render_pages", "第 3/4 步 · 页面", "正在生成页面内容", "第 18/34 页"],
-    ["render", "render_compile", "第 3/4 步 · 编译", "正在编译 PDF", "正在编译 PDF"],
+    ["ocr", "ocr_submitting", "Bước 1/4 · Khởi động", "đang khởi động tác vụ con OCR", "tiến độ 1/3"],
+    ["ocr", "ocr_upload", "Bước 1/4 · Tải lên", "đang tải lên PDF", "trang 2/34"],
+    ["ocr", "provider_processing", "Bước 1/4 · Phân tích OCR", "đang thực hiện OCR đám mây", "trang 12/34"],
+    ["ocr", "ocr_result_ready", "Bước 1/4 · Tổng hợp kết quả", "kết quả OCR đã sẵn sàng", "tiến độ 1/1"],
+    ["ocr", "normalizing", "Bước 1/4 · Chuẩn hóa", "đang tổng hợp kết quả OCR", "tiến độ 1/2"],
+    ["translation", "translation_prepare", "Bước 2/4 · Chuẩn bị dịch", "đang chuẩn bị tác vụ dịch", "tiến độ 1/3"],
+    ["translation", "domain_inference", "Bước 2/4 · Xác định lĩnh vực", "đang xác định lĩnh vực và thuật ngữ", "tiến độ 1/2"],
+    ["translation", "page_policies", "Bước 2/4 · Chính sách trang", "đang xác định nội dung chính và giữ bố cục", "trang 8/34"],
+    ["translation", "continuation_review", "Bước 2/4 · Xác định vượt cột/trang", "đang xác định đoạn tiếp nối vượt cột/trang", "trang 9/34"],
+    ["translation", "translation_batches", "Bước 2/4 · Dịch", "đang dịch nội dung chính", "lô 789/5216"],
+    ["translation", "translation_tail_retry", "Bước 2/4 · Thử lại cuối", "đang thử lại các lô dịch còn lại", "lô 3/7"],
+    ["translation", "garbled_repair", "Bước 2/4 · Sửa lỗi mã hóa", "đang sửa các đoạn mã hóa lỗi", "lô 4/10"],
+    ["translation", "agent_repair", "Bước 2/4 · Sửa kết quả", "đang sửa kết quả dịch", "lô 5/11"],
+    ["translation", "final_untranslated_recovery", "Bước 2/4 · Thu gọn cuối", "đang xử lý nội dung chưa dịch", "lô 6/12"],
+    ["render", "render_prepare", "Bước 3/4 · Chuẩn bị", "đang chuẩn bị tài nguyên kết xuất", "chuẩn bị 1/3"],
+    ["render", "render_prewarm", "Bước 3/4 · Làm nóng", "đang làm nóng tài nguyên kết xuất", "làm nóng 2/3"],
+    ["render", "render_pages", "Bước 3/4 · Trang", "đang tạo nội dung trang", "trang 18/34"],
+    ["render", "render_compile", "Bước 3/4 · Biên dịch", "đang biên dịch PDF", "đang biên dịch PDF"],
   ];
   const progressBySubstage = {
     ocr_submitting: { unit: "step", current: 1, total: 3 },
@@ -748,7 +748,7 @@ test("structured percent progress is displayed as percent before render substage
         total: 100,
       },
     }),
-    "进度 85%",
+    "tiến độ 85%",
   );
 });
 
@@ -765,7 +765,7 @@ test("completed render compile step hides internal step count", () => {
         total: 4,
       },
     }),
-    "渲染完成",
+    "kết xuất hoàn tất",
   );
 });
 
@@ -776,13 +776,13 @@ test("done stage inherits the last render progress for the status card", () => {
       status: "succeeded",
       progressCurrent: 100,
       progressTotal: 100,
-      progressText: "翻译 PDF 已生成",
+      progressText: "PDF dịch đã tạo",
       progressUnit: "percent",
       stageProgressByKey: {
         render: {
           current: 100,
           total: 100,
-          progressText: "渲染完成",
+          progressText: "kết xuất hoàn tất",
           progressUnit: "percent",
           visualStageKey: "render_compile",
           substageKey: "render_compile",
@@ -793,7 +793,7 @@ test("done stage inherits the last render progress for the status card", () => {
   });
 
   assert.equal(context.selected, "done");
-  assert.equal(context.selectedProgress.progressText, "渲染完成");
+  assert.equal(context.selectedProgress.progressText, "kết xuất hoàn tất");
   assert.equal(context.selectedProgress.visualStageKey, "render_compile");
   assert.equal(context.selectedProgress.current, 100);
   assert.equal(context.selectedProgress.total, 100);
@@ -807,13 +807,13 @@ test("succeeded done stage keeps render visual state but forces 100 percent", ()
       status: "succeeded",
       progressCurrent: 100,
       progressTotal: 100,
-      progressText: "翻译 PDF 已生成",
+      progressText: "PDF dịch đã tạo",
       progressUnit: "percent",
       stageProgressByKey: {
         render: {
           current: 90,
           total: 100,
-          progressText: "正在编译 PDF",
+          progressText: "đang biên dịch PDF",
           progressUnit: "percent",
           visualStageKey: "render_compile",
           substageKey: "render_compile",
@@ -826,7 +826,7 @@ test("succeeded done stage keeps render visual state but forces 100 percent", ()
   assert.equal(context.selectedProgress.current, 100);
   assert.equal(context.selectedProgress.total, 100);
   assert.equal(context.selectedProgress.displayPercent, 100);
-  assert.equal(context.selectedProgress.progressText, "渲染完成");
+  assert.equal(context.selectedProgress.progressText, "kết xuất hoàn tất");
   assert.equal(context.selectedProgress.visualStageKey, "render_compile");
 });
 
@@ -837,13 +837,13 @@ test("completed done stage keeps render visual state but forces 100 percent", ()
       status: "completed",
       progressCurrent: 4,
       progressTotal: 100,
-      progressText: "编译 4/4",
+      progressText: "biên dịch 4/4",
       progressUnit: "step",
       stageProgressByKey: {
         render: {
           current: 4,
           total: 100,
-          progressText: "编译 4/4",
+          progressText: "biên dịch 4/4",
           progressUnit: "step",
           visualStageKey: "render_compile",
           substageKey: "render_compile",
@@ -856,7 +856,7 @@ test("completed done stage keeps render visual state but forces 100 percent", ()
   assert.equal(context.selectedProgress.current, 100);
   assert.equal(context.selectedProgress.total, 100);
   assert.equal(context.selectedProgress.displayPercent, 100);
-  assert.equal(context.selectedProgress.progressText, "渲染完成");
+  assert.equal(context.selectedProgress.progressText, "kết xuất hoàn tất");
   assert.equal(context.selectedProgress.progressUnit, "percent");
   assert.equal(context.selectedProgress.visualStageKey, "render_compile");
 });
@@ -867,13 +867,13 @@ test("done stage progress policy is owned by the status progress view model", ()
     status: "succeeded",
     progressCurrent: 100,
     progressTotal: 100,
-    progressText: "翻译 PDF 已生成",
+    progressText: "PDF dịch đã tạo",
     progressUnit: "percent",
     stageProgressByKey: {
       render: {
         current: 88,
         total: 100,
-        progressText: "正在编译 PDF",
+        progressText: "đang biên dịch PDF",
         progressUnit: "percent",
         visualStageKey: "render_compile",
         substageKey: "render_compile",
@@ -886,7 +886,7 @@ test("done stage progress policy is owned by the status progress view model", ()
   assert.equal(progress.current, 100);
   assert.equal(progress.total, 100);
   assert.equal(progress.displayPercent, 100);
-  assert.equal(progress.progressText, "渲染完成");
+  assert.equal(progress.progressText, "kết xuất hoàn tất");
   assert.equal(progress.progressUnit, "percent");
   assert.equal(progress.visualStageKey, "render_compile");
   assert.equal(progress.substageKey, "render_compile");
@@ -1038,23 +1038,23 @@ test("status card retry actions view model owns stage action normalization", () 
     stages: [
       {
         stage: "translation",
-        label: "重新翻译",
+        label: "dịch l���i",
         can_retry: true,
       },
       {
         stage: "render",
         can_retry: false,
-        disabled_reason: "等待翻译完成",
+        disabled_reason: "đợi dịch hoàn tất",
       },
     ],
   });
 
   assert.equal(actions.translate.stage, "translation");
-  assert.equal(actions.translate.label, "重新翻译");
+  assert.equal(actions.translate.label, "dịch l���i");
   assert.equal(actions.translate.canRetry, true);
   assert.equal(actions.render.stage, "render");
   assert.equal(actions.render.canRetry, false);
-  assert.equal(actions.render.disabledReason, "等待翻译完成");
+  assert.equal(actions.render.disabledReason, "đợi dịch hoàn tất");
 });
 
 test("ui layer no longer keeps legacy stage action helper", () => {
@@ -1069,10 +1069,10 @@ test("status card error state is owned by the status error view model", () => {
   assert.deepEqual(
     buildStatusCardErrorState({
       stageKey: "failed",
-      errorText: "翻译失败",
+      errorText: "dịch thất bại",
     }),
     {
-      errorText: "翻译失败",
+      errorText: "dịch thất bại",
       isErrorStage: true,
       showError: true,
       bodyHasError: true,
@@ -1081,10 +1081,10 @@ test("status card error state is owned by the status error view model", () => {
   assert.deepEqual(
     buildStatusCardErrorState({
       stageKey: "canceled",
-      errorText: "用户取消",
+      errorText: "người dùng hủy",
     }),
     {
-      errorText: "用户取消",
+      errorText: "người dùng hủy",
       isErrorStage: true,
       showError: true,
       bodyHasError: true,
@@ -1093,10 +1093,10 @@ test("status card error state is owned by the status error view model", () => {
   assert.deepEqual(
     buildStatusCardErrorState({
       stageKey: "translate",
-      errorText: "后台诊断文本",
+      errorText: "văn bản chẩn đoán nền",
     }),
     {
-      errorText: "后台诊断文本",
+      errorText: "văn bản chẩn đoán nền",
       isErrorStage: false,
       showError: false,
       bodyHasError: false,
@@ -1122,7 +1122,7 @@ test("selected stage display view model groups display state for the status card
     snapshot: {
       stageKey: "done",
       status: "succeeded",
-      detail: "翻译 PDF 已生成",
+      detail: "PDF dịch đã tạo",
       pdfReady: true,
       pdfUrl: "/api/v1/jobs/job-1/pdf",
       markdownBundleReady: true,
@@ -1138,7 +1138,7 @@ test("selected stage display view model groups display state for the status card
         render: {
           current: 90,
           total: 100,
-          progressText: "正在编译 PDF",
+          progressText: "đang biên dịch PDF",
           progressUnit: "percent",
           visualStageKey: "render_compile",
           substageKey: "render_compile",
@@ -1150,7 +1150,7 @@ test("selected stage display view model groups display state for the status card
   assert.equal(display.selected, "done");
   assert.equal(display.selectedIsCurrent, true);
   assert.equal(display.visualStageKey, "render_compile");
-  assert.equal(display.detailText, "翻译 PDF 已生成");
+  assert.equal(display.detailText, "PDF dịch đã tạo");
   assert.equal(display.showDetail, true);
   assert.equal(display.errorState.showError, false);
   assert.equal(display.primaryActions.pdfReady, true);
@@ -1162,7 +1162,7 @@ test("selected stage display view model groups display state for the status card
     snapshot: {
       stageKey: "done",
       status: "succeeded",
-      detail: "翻译 PDF 已生成",
+      detail: "PDF dịch đã tạo",
       pdfReady: true,
       pdfUrl: "/api/v1/jobs/job-1/pdf",
       readerReady: true,
@@ -1174,7 +1174,7 @@ test("selected stage display view model groups display state for the status card
         render: {
           current: 90,
           total: 100,
-          progressText: "正在编译 PDF",
+          progressText: "đang biên dịch PDF",
           progressUnit: "percent",
           visualStageKey: "render_compile",
           substageKey: "render_compile",
@@ -1195,7 +1195,7 @@ test("done stage progress options keep the ring visible at 100 percent", () => {
   const selectedProgress = {
     current: 100,
     total: 100,
-    progressText: "渲染完成",
+    progressText: "kết xuất hoàn tất",
     progressUnit: "percent",
   };
   const options = buildProgressOptions({
@@ -1213,7 +1213,7 @@ test("done stage progress options keep the ring visible at 100 percent", () => {
   assert.equal(options.current, 100);
   assert.equal(options.total, 100);
   assert.equal(options.displayPercent, 100);
-  assert.equal(options.progressText, "渲染完成");
+  assert.equal(options.progressText, "kết xuất hoàn tất");
   assert.equal(options.progressUnit, "percent");
   assert.equal(options.forceVisible, true);
 });
@@ -1232,7 +1232,7 @@ test("running stage progress options cap terminal-looking percent before renderi
       current: 100,
       total: 100,
       displayPercent: 100,
-      progressText: "正在翻译正文内容",
+      progressText: "đang dịch nội dung chính",
       progressUnit: "percent",
     },
   });
@@ -1256,7 +1256,7 @@ test("status card progress keeps measured batch text and explicit display percen
       current: 28,
       total: 5216,
       displayPercent: 75,
-      progressText: "第 28/5216 批",
+      progressText: "lô 28/5216",
       progressUnit: "batch",
     },
   });
@@ -1266,9 +1266,9 @@ test("status card progress keeps measured batch text and explicit display percen
   assert.equal(options.total, 5216);
   assert.equal(options.displayPercent, 75);
   assert.equal(Number.isNaN(options.percent), true);
-  assert.equal(options.progressText, "第 28/5216 批");
+  assert.equal(options.progressText, "lô 28/5216");
   assert.equal(options.progressUnit, "batch");
-  assert.equal(renderModel.text, "第 28/5216 批");
+  assert.equal(renderModel.text, "lô 28/5216");
   assert.equal(Math.round(renderModel.percent * 100) / 100, 75);
 });
 
@@ -1279,7 +1279,7 @@ test("snapshot-only translation progress derives local substage percent for ring
       status: "running",
       progressCurrent: 28,
       progressTotal: 5216,
-      progressText: "第 28/5216 批",
+      progressText: "lô 28/5216",
       progressUnit: "batch",
       substageKey: "translation_batches",
       progressFallbackText: "-",
@@ -1357,7 +1357,7 @@ test("snapshot-only translation progress recognizes substage from visual and pay
       status: "running",
       progressCurrent: 1,
       progressTotal: 2,
-      progressText: "乱码修复 1/2",
+      progressText: "sửa lỗi mã hóa 1/2",
       progressUnit: "step",
       substageKey: "",
       visualStageKey: "garbled_repair",
@@ -1378,7 +1378,7 @@ test("snapshot-only render progress derives composite percent for ring", () => {
       status: "running",
       progressCurrent: 7,
       progressTotal: 14,
-      progressText: "第 7/14 页",
+      progressText: "trang 7/14",
       progressUnit: "page",
       substageKey: "render_pages",
       progressFallbackText: "-",
@@ -1407,7 +1407,7 @@ test("snapshot-only render progress derives composite percent for ring", () => {
       status: "running",
       progressCurrent: 1,
       progressTotal: 4,
-      progressText: "编译 1/4",
+      progressText: "biên dịch 1/4",
       progressUnit: "step",
       substageKey: "render_compile",
       progressFallbackText: "-",
@@ -1444,7 +1444,7 @@ test("status card progress options cap running stages but not done or succeeded 
       current: 100,
       total: 100,
       displayPercent: 100,
-      progressText: "翻译完成",
+      progressText: "dịch hoàn tất",
       progressUnit: "percent",
     },
   }).displayPercent, 99);
@@ -1462,7 +1462,7 @@ test("status card progress options cap running stages but not done or succeeded 
       current: 100,
       total: 100,
       displayPercent: 100,
-      progressText: "翻译完成",
+      progressText: "dịch hoàn tất",
       progressUnit: "percent",
     },
   }).displayPercent, 100);
@@ -1480,7 +1480,7 @@ test("status card progress options cap running stages but not done or succeeded 
       current: 100,
       total: 100,
       displayPercent: 100,
-      progressText: "渲染完成",
+      progressText: "kết xuất hoàn tất",
       progressUnit: "percent",
     },
   }).displayPercent, 100);
@@ -1493,7 +1493,7 @@ test("status card render model caps running terminal-looking fallback percent", 
     current: 100,
     total: 100,
     progressUnit: "percent",
-    progressText: "正在编译 PDF",
+    progressText: "đang biên dịch PDF",
   }).percent, 99);
 
   assert.equal(buildProgressRenderModel({
@@ -1502,7 +1502,7 @@ test("status card render model caps running terminal-looking fallback percent", 
     current: 100,
     total: 100,
     progressUnit: "percent",
-    progressText: "渲染完成",
+    progressText: "kết xuất hoàn tất",
     forceVisible: true,
   }).percent, 100);
 });
@@ -1521,7 +1521,7 @@ test("status card progress presentation owns visibility cap and animation text",
       current: 100,
       total: 100,
       displayPercent: 100,
-      progressText: "渲染完成",
+      progressText: "kết xuất hoàn tất",
       progressUnit: "percent",
     },
   });
@@ -1542,7 +1542,7 @@ test("status card progress presentation owns visibility cap and animation text",
       current: 10,
       total: 10,
       displayPercent: 100,
-      progressText: "正在生成页面内容",
+      progressText: "đang tạo nội dung trang",
       progressUnit: "percent",
       indeterminate: true,
     },
@@ -1563,7 +1563,7 @@ test("status card progress presentation owns visibility cap and animation text",
     selectedProgress: {
       current: 10,
       total: 20,
-      progressText: "第 10/20 页",
+      progressText: "trang 10/20",
       progressUnit: "page",
       indeterminate: true,
     },
@@ -1593,12 +1593,12 @@ test("status card progress render model owns progress DOM values", () => {
     stageKey: "render",
     forceVisible: true,
     displayPercent: 90,
-    progressText: "正在编译 PDF",
+    progressText: "đang biên dịch PDF",
   }), {
     visible: true,
     percent: 90,
-    text: "正在编译 PDF",
-    componentText: "正在编译 PDF",
+    text: "đang biên dịch PDF",
+    componentText: "đang biên dịch PDF",
     indeterminate: false,
     legacyIndeterminate: false,
   });
@@ -1606,12 +1606,12 @@ test("status card progress render model owns progress DOM values", () => {
   assert.deepEqual(buildProgressRenderModel({
     stageKey: "ocr",
     indeterminate: true,
-    progressText: "OCR 准备中",
+    progressText: "OCR đang chuẩn bị",
   }), {
     visible: true,
     percent: 42,
-    text: "OCR 准备中",
-    componentText: "OCR 准备中",
+    text: "OCR đang chuẩn bị",
+    componentText: "OCR đang chuẩn bị",
     indeterminate: true,
     legacyIndeterminate: true,
   });
@@ -1620,13 +1620,13 @@ test("status card progress render model owns progress DOM values", () => {
     stageKey: "translate",
     current: 28,
     total: 5216,
-    progressText: "第 28/5216 批",
+    progressText: "lô 28/5216",
     progressUnit: "batch",
   }), {
     visible: true,
     percent: 28 / 5216 * 100,
-    text: "第 28/5216 批",
-    componentText: "第 28/5216 批",
+    text: "lô 28/5216",
+    componentText: "lô 28/5216",
     indeterminate: false,
     legacyIndeterminate: false,
   });
@@ -1677,7 +1677,7 @@ test("status card ignores legacy render prewarm without lane while translation i
 
   assert.equal(presentation.stageKey, "translate");
   assert.equal(presentation.substageKey, "translation_batches");
-  assert.equal(presentation.progressText, "第 120/900 批");
+  assert.equal(presentation.progressText, "lô 120/900");
   assert.equal(presentation.progressCurrent, 120);
   assert.equal(presentation.progressTotal, 900);
   assert.equal(presentation.progressUnit, "batch");
@@ -1722,21 +1722,21 @@ test("status card selected translation body progress prefers substage batch data
       status: "running",
       progressCurrent: 75,
       progressTotal: 100,
-      progressText: "进度 75%",
+      progressText: "tiến độ 75%",
       progressUnit: "percent",
       substageKey: "translation_batches",
       stageProgressByKey: {
         translate: {
           current: 75,
           total: 100,
-          progressText: "进度 75%",
+          progressText: "tiến độ 75%",
           progressUnit: "percent",
           substageKey: "translation_batches",
           bySubstage: {
             translation_batches: {
               current: 28,
               total: 5216,
-              progressText: "第 28/5216 批",
+              progressText: "lô 28/5216",
               progressUnit: "batch",
               substageKey: "translation_batches",
             },
@@ -1751,7 +1751,7 @@ test("status card selected translation body progress prefers substage batch data
   assert.equal(context.selectedProgress.substageKey, "translation_batches");
   assert.equal(context.selectedProgress.current, 28);
   assert.equal(context.selectedProgress.total, 5216);
-  assert.equal(context.selectedProgress.progressText, "第 28/5216 批");
+  assert.equal(context.selectedProgress.progressText, "lô 28/5216");
   assert.equal(context.selectedProgress.progressUnit, "batch");
 });
 
@@ -1762,28 +1762,28 @@ test("status card selected translation helper progress does not fall back to bat
       status: "running",
       progressCurrent: 2,
       progressTotal: 10,
-      progressText: "第 2/10 页",
+      progressText: "trang 2/10",
       progressUnit: "page",
       substageKey: "garbled_repair",
       stageProgressByKey: {
         translate: {
           current: 2,
           total: 10,
-          progressText: "第 2/10 页",
+          progressText: "trang 2/10",
           progressUnit: "page",
           substageKey: "garbled_repair",
           bySubstage: {
             translation_batches: {
               current: 900,
               total: 900,
-              progressText: "翻译批次完成",
+              progressText: "hoàn thành lô dịch",
               progressUnit: "batch",
               substageKey: "translation_batches",
             },
             garbled_repair: {
               current: 2,
               total: 10,
-              progressText: "第 2/10 页",
+              progressText: "trang 2/10",
               progressUnit: "page",
               substageKey: "garbled_repair",
             },
@@ -1810,9 +1810,9 @@ test("status card selected translation helper progress does not fall back to bat
   assert.equal(context.selectedProgress.substageKey, "garbled_repair");
   assert.equal(context.selectedProgress.current, 2);
   assert.equal(context.selectedProgress.total, 10);
-  assert.equal(context.selectedProgress.progressText, "第 2/10 页");
+  assert.equal(context.selectedProgress.progressText, "trang 2/10");
   assert.equal(context.selectedProgress.progressUnit, "page");
-  assert.equal(options.progressText, "第 2/10 页");
+  assert.equal(options.progressText, "trang 2/10");
 });
 
 test("status card translation ring uses local substage percent", () => {
@@ -1822,7 +1822,7 @@ test("status card translation ring uses local substage percent", () => {
       status: "running",
       progressCurrent: 28,
       progressTotal: 5216,
-      progressText: "第 28/5216 批",
+      progressText: "lô 28/5216",
       progressUnit: "batch",
       displayPercent: 0.5368098159509203,
       substageKey: "translation_batches",
@@ -1830,7 +1830,7 @@ test("status card translation ring uses local substage percent", () => {
         translate: {
           current: 28,
           total: 5216,
-          progressText: "第 28/5216 批",
+          progressText: "lô 28/5216",
           progressUnit: "batch",
           displayPercent: 0.5368098159509203,
           substageKey: "translation_batches",
@@ -1838,7 +1838,7 @@ test("status card translation ring uses local substage percent", () => {
             translation_batches: {
               current: 28,
               total: 5216,
-              progressText: "第 28/5216 批",
+              progressText: "lô 28/5216",
               progressUnit: "batch",
               displayPercent: 0.5368098159509203,
               substageKey: "translation_batches",
@@ -1861,7 +1861,7 @@ test("status card translation ring uses local substage percent", () => {
     selectedProgress: context.selectedProgress,
   });
 
-  assert.equal(context.selectedProgress.progressText, "第 28/5216 批");
+  assert.equal(context.selectedProgress.progressText, "lô 28/5216");
   assert.equal(context.selectedProgress.progressUnit, "batch");
   assert.equal(Math.round(context.selectedProgress.displayPercent * 100) / 100, 0.54);
   assert.equal(Math.round(options.displayPercent * 100) / 100, 0.54);
@@ -1900,7 +1900,7 @@ test("ocr processing display stage does not regress to upload wording", () => {
       display_stage: "ocr",
       stage: "ocr_upload",
       substage: "provider_processing",
-      stage_detail: "上传完成，等待 OCR 解析",
+      stage_detail: "tải lên hoàn tất, đợi phân tích OCR",
       progress: {
         unit: "page",
         current: 12,
@@ -1927,7 +1927,7 @@ test("ocr processing display stage does not regress to upload wording", () => {
   );
 
   assert.equal(presentation.stageKey, "ocr");
-  assert.equal(presentation.detail, "正在执行云端 OCR");
+  assert.equal(presentation.detail, "đang thực hiện OCR đám mây");
   assert.equal(presentation.substageKey, "ocr_processing");
   assert.equal(presentation.progressText, "第 12/34 页");
   assert.equal(presentation.progressCurrent, 12);
@@ -1985,9 +1985,9 @@ test("ocr normalizing event advances beyond provider page progress", () => {
   );
 
   assert.equal(presentation.stageKey, "ocr");
-  assert.equal(presentation.detail, "正在整理 OCR 结果");
+  assert.equal(presentation.detail, "đang tổng hợp kết quả OCR");
   assert.equal(presentation.substageKey, "normalizing");
-  assert.equal(presentation.progressText, "进度 1/2");
+  assert.equal(presentation.progressText, "tiến độ 1/2");
   assert.equal(presentation.progressCurrent, 1);
   assert.equal(presentation.progressTotal, 2);
   assert.equal(presentation.progressUnit, "step");

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Project Wiki Writer"
+  short_description: "Create and maintain evidence-based project Wikis"
+  default_prompt: "Use $project-wiki-writer to inspect this repository and create or update its technical Wiki from source evidence."
+

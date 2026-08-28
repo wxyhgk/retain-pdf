@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// 一次性机械迁移：src 下 .js → .ts、.jsx → .tsx（跳过已有 .ts/.tsx）
-// import 路径仍写 .js/.jsx，由 esbuild/test loader 映射到 .ts/.tsx。
+// Di chuyển cơ học dùng một lần：src Tiếp theo .js → .ts、.jsx → .tsx（Bỏ qua Hiện có .ts/.tsx）
+// import Đường dẫn vẫn được viết .js/.jsx，GIỮA esbuild/test loader Bản đồ đến .ts/.tsx。
 
 import fs from "node:fs";
 import path from "node:path";

@@ -1,38 +1,38 @@
-# Continuation 子包说明
+# Mô tả gói con Continuation
 
-这个子包专门放段落连续性相关逻辑，也就是判断哪些 OCR 块应该连成同一个翻译单元。
+Gói con này chuyên chứa logic liên quan đến tính liên tục đoạn văn, tức là phán đoán những khối OCR nào nên nối thành cùng một đơn vị dịch.
 
-## 分工
+## Phân công
 
 - `rules.py`
-  文本起止特征、bbox 几何关系、join/break 评分。
+  Đặc điểm đầu cuối văn bản, quan hệ hình học bbox, chấm điểm join/break.
 - `state.py`
-  先消费 provider hint，再把规则结果写回 payload，维护 continuation group 和 candidate 标记。
+  Tiêu thụ provider hint trước, sau đó ghi kết quả quy tắc trở lại payload, duy trì nhóm continuation và đánh dấu candidate.
 - `pairs.py`
-  导出候选 pair，以及审批通过后的 join 回写。
+  Xuất cặp candidate, và ghi lại join sau khi phê duyệt.
 - `review.py`
-  把候选 pair 送给模型审阅。
+  Gửi cặp candidate cho mô hình xem xét.
 
-## 当前策略
+## Chiến lược hiện tại
 
-当前 continuation 采用 provider-first，但不是 provider-only：
+Continuation hiện tại dùng provider-first, nhưng không phải provider-only:
 
-- 如果 payload 已带 `ocr_continuation_*` 字段，且属于同页 `intra_page` provider hint，`state.py` 会优先直接建组
-- 如果属于跨页 `cross_page` provider hint，当前只在“相邻两页 + reading_order 唯一 + layout_zone 命中页尾/页首阅读边界 + 文本长度足够”时受控消费
-- 这些 item 标记为 `provider_joined`，后续规则不再重复消费
-- 没有可用 provider hint 的部分，仍继续走本地规则拼接
-- 不满足受控条件的 `cross_page` provider hint 会继续保留在 payload 里，但不会直接驱动拼接
-- 规则扫描不得因中间缺页（payload 里 page_idx 不连续）整段中止；`pair_join_score` 仍只允许相邻 `page_idx` 直接 join
-- 双栏 L→R 优先信 `layout_zone`，窄栏缝（&lt;8pt）也允许 bbox 判定
-- 后一段若像章节号标题（如 `2.2.1 Title`），硬 break，避免把残句拼进新小节
+- Nếu payload đã có trường `ocr_continuation_*`, và thuộc provider hint `intra_page` cùng trang, `state.py` sẽ ưu tiên xây dựng nhóm trực tiếp
+- Nếu thuộc provider hint `cross_page` khác trang, hiện chỉ tiêu thụ có kiểm soát khi "hai trang kề nhau + reading_order duy nhất + layout_zone chạm ranh giới đọc cuối/trang đầu + độ dài văn bản đủ"
+- Những item này được đánh dấu `provider_joined`, quy tắc sau không tiêu thụ lặp lại
+- Phần không có provider hint khả dụng vẫn tiếp tục đi qua quy tắc ghép nối cục bộ
+- Provider hint `cross_page` không thỏa điều kiện kiểm soát vẫn giữ trong payload, nhưng không trực tiếp điều khiển ghép nối
+- Quét quy tắc không được dừng toàn bộ vì thiếu trang giữa chừng (page_idx không liên tục trong payload); `pair_join_score` vẫn chỉ cho phép join trực tiếp giữa `page_idx` liền kề
+- Hai cột L→R ưu tiên tin `layout_zone`, khe cột hẹp (<8pt) cũng cho phép bbox phán định
+- Đoạn sau nếu giống tiêu đề số chương (như `2.2.1 Title`), hard break, tránh ghép câu dở vào tiểu tiết mới
 
-这样做的目的很明确：
+Mục đích rõ ràng:
 
-- 已经会同页拼接的新 OCR 模型，不需要再被本地规则二次猜测
-- 还不会拼接的模型，继续复用现有规则
-- 后续如果出现能稳定提供跨页连续组的新模型，也只需要扩展 hint 消费策略，不需要把 provider 私有结构灌进翻译主线
+- Mô hình OCR mới đã biết ghép cùng trang thì không cần quy tắc cục bộ đoán lại
+- Mô hình chưa biết ghép thì tiếp tục tái sử dụng quy tắc hiện có
+- Sau này nếu xuất hiện mô hình mới cung cấp ổn định nhóm liên tục xuyên trang, chỉ cần mở rộng chiến lược tiêu thụ hint, không cần đưa cấu trúc riêng của provider vào luồng chính dịch
 
-## 对外接口
+## Giao diện công khai
 
 ```python
 from services.translation.services.continuation import annotate_continuation_context

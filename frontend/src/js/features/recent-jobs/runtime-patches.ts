@@ -109,11 +109,12 @@ function shouldKeepPreviousRuntimePatch(
   if (isJobTerminal(next) || (isTerminalStatus(next.status) && next.status !== "succeeded")) {
     return false;
   }
-  // 重试 / 再翻译会换 job_id：这是新一轮，绝不能继承旧终态（否则主页卡卡在「已翻译」不转圈）
+  // Retry / dịch lại sẽ đổi job_id: đây là vòng mới, tuyệt đối không kế thừa terminal state cũ
+  // (nếu không thẻ trang chủ sẽ kẹt ở "Đã dịch" và không quay lại trạng thái đang chạy).
   if (!sameRuntimeJobId(previous, next)) {
     return false;
   }
-  // 同 job 终态后偶发非终态脏轮询：保留终态，避免卡片回退
+  // Cùng job nhưng sau terminal thỉnh thoảng poll trả trạng thái chưa terminal bị bẩn: giữ terminal để tránh thẻ lùi trạng thái.
   if (isJobTerminal(previous) && !isJobTerminal(next)) {
     return true;
   }
@@ -146,7 +147,7 @@ function identityFieldsFromPrevious(
   previous: RuntimeJobPatch = {},
   next: RuntimeJobPatch = {},
 ): Partial<RuntimeJobPatch> {
-  // 换 job_id 时仍保留书目身份，避免轮询包缺字段时补丁丢 document_id/封面
+  // Khi đổi job_id vẫn giữ danh tính sách, tránh patch làm mất document_id/cover nếu payload polling thiếu field.
   return {
     document_id: firstNonEmpty(next.document_id, previous.document_id) || undefined,
     title: firstNonEmpty(next.title, previous.title) || undefined,
@@ -165,7 +166,7 @@ function mergeRuntimePatch(
   if (!previous) {
     return next;
   }
-  // 新 job（重试）: 全量采用 next 的运行态，只继承书目身份字段
+  // Job mới (retry): lấy toàn bộ trạng thái runtime của next, chỉ kế thừa field danh tính sách.
   if (!sameRuntimeJobId(previous, next)) {
     return {
       ...next,
@@ -179,7 +180,7 @@ function mergeRuntimePatch(
     };
   }
   const previousProgress = progressOfPatch(previous);
-  // 仅同 job_id 才可能保留旧 status（终态防回退 / active 盖过 queued）
+  // Chỉ cùng job_id mới được giữ status cũ (chống lùi khỏi terminal / active đè queued).
   const previousTerminal = isJobTerminal(previous) && !isJobTerminal(next);
   const previousActiveOverQueued = `${next.status || ""}`.trim() === "queued" && isRecentJobActive(previous);
   const keepPreviousRuntimeState = previousTerminal || previousActiveOverQueued;
@@ -230,7 +231,7 @@ export function createRecentJobsRuntimePatches({
   const runtimeCreatedJobIds = new Set<string>();
 
   function apply(items: LibraryJobItem[] | null | undefined) {
-    // 先把 patches 按 document_id 并进列表项（重试换 job_id 时不丢原卡）
+    // Merge patches vào list item theo document_id trước (retry đổi job_id vẫn không mất thẻ gốc).
     const mergedItems = mergeRuntimePatches(items, runtimeJobPatches, { stageAdapterPort });
     const presentJobIds = new Set(
       mergedItems
@@ -242,8 +243,9 @@ export function createRecentJobsRuntimePatches({
         .map((item) => `${item?.document_id || ""}`.trim())
         .filter(Boolean),
     );
-    // 仅「全新文档」才 prepend；同一 document 已在列表里绝不再插第二张。
-    // 带 source_job_id 的是阶段重试血缘，绝不能当新书插（否则主页多一张 job_id 空壳）。
+    // Chỉ prepend "document hoàn toàn mới"; cùng một document đã có trong list thì tuyệt đối không chèn thẻ thứ hai.
+    // Patch có source_job_id là lineage retry theo stage, không được xem là sách mới
+    // (nếu không trang chủ sẽ thêm một thẻ rỗng chỉ có job_id).
     const missingCreatedItems = Array.from(runtimeCreatedJobIds)
       .filter((createdJobId: string) => {
         if (presentJobIds.has(createdJobId)) return false;
@@ -270,7 +272,7 @@ export function createRecentJobsRuntimePatches({
   ) {
     const byJob = items.findIndex((item) => `${item?.job_id || ""}`.trim() === jobId);
     if (byJob >= 0) return byJob;
-    // 阶段重试会换新 job_id：用 source_job_id / document_id / active_job_id 找回原书卡片
+    // Retry theo stage sẽ đổi job_id mới: dùng source_job_id / document_id / active_job_id để tìm lại thẻ sách gốc.
     const sourceJobId = `${(job as RuntimeJobPatch)?.source_job_id || ""}`.trim();
     if (sourceJobId) {
       const bySource = items.findIndex((item) => {
@@ -288,7 +290,7 @@ export function createRecentJobsRuntimePatches({
     return -1;
   }
 
-  /** 补丁必须带上原卡书目身份，否则终态 refresh 会把「换 id 的重试」当成新建空壳卡 prepend */
+  /** Patch phải mang danh tính sách của thẻ gốc, nếu không terminal refresh sẽ xem "retry đổi id" là thẻ rỗng mới để prepend. */
   function stampBookIdentity(
     patch: RuntimeJobPatch,
     previousItem: LibraryJobItem | null | undefined,
@@ -296,11 +298,11 @@ export function createRecentJobsRuntimePatches({
   ): RuntimeJobPatch {
     const prev = previousItem || {};
     const currentJobId = firstNonEmpty(patch.job_id, job.job_id);
-    // source_job_id 仅表示「重试前的旧 job」；不可写成当前 id 自己
+    // source_job_id chỉ biểu thị "job cũ trước retry"; không được ghi thành chính id hiện tại.
     const rawSource = firstNonEmpty(
       (patch as RuntimeJobPatch).source_job_id,
       (job as RuntimeJobPatch).source_job_id,
-      // 仅当就地换 id 时才把旧 job_id 记作 source
+      // Chỉ khi đổi id tại chỗ mới ghi job_id cũ làm source.
       (prev.job_id && currentJobId && prev.job_id !== currentJobId ? prev.job_id : ""),
     );
     const sourceJobId = rawSource && rawSource !== currentJobId ? rawSource : undefined;
@@ -327,7 +329,7 @@ export function createRecentJobsRuntimePatches({
       ? `${state.items[index]?.job_id || ""}`.trim()
       : "";
     const previousItem = index >= 0 ? state.items[index] : null;
-    // 补丁 map：重试换 id 时把旧 patch 并过来；再盖上原卡书目身份
+    // Map patch: khi retry đổi id, merge patch cũ vào; sau đó chồng danh tính sách từ thẻ gốc.
     const previousPatch = previousJobId && previousJobId !== jobId
       ? runtimeJobPatches.get(previousJobId)
       : runtimeJobPatches.get(jobId);
@@ -337,11 +339,11 @@ export function createRecentJobsRuntimePatches({
     if (previousJobId && previousJobId !== jobId) {
       runtimeJobPatches.delete(previousJobId);
       runtimeCreatedJobIds.delete(previousJobId);
-      // 就地改原卡：绝不能标成 created，否则 soft refresh 会 prepend 一张 job_id 空壳
+      // Sửa thẻ gốc tại chỗ: tuyệt đối không đánh dấu created, nếu không soft refresh sẽ prepend một thẻ rỗng chỉ có job_id.
     }
     if (index < 0) {
-      // 仍找不到原卡时：若带 document_id 但补丁缺书名，不要 insert 空壳
-      // （否则主页会出现「转圈 + job_id」占位卡，原书还在）
+      // Nếu vẫn không tìm được thẻ gốc: khi có document_id nhưng patch thiếu tên sách, không insert thẻ rỗng
+      // (nếu không trang chủ sẽ hiện placeholder "đang quay + job_id" trong khi sách gốc vẫn còn).
       const title = `${patch.title || patch.display_name || ""}`.trim();
       const hasBookIdentity = Boolean(
         `${patch.document_id || ""}`.trim()
@@ -363,10 +365,10 @@ export function createRecentJobsRuntimePatches({
       active_job_id: jobId,
       document_id: firstNonEmpty(patch.document_id, previousItem?.document_id),
     }, { stageAdapterPort });
-    // 再写回补丁，保证 refresh 合并时有 document_id/真书名
+    // Ghi patch lại để đảm bảo lúc refresh merge vẫn có document_id/tên sách thật.
     runtimeJobPatches.set(jobId, stampBookIdentity(patch, nextItem, job));
     invalidateRecentJobImages(previousItem || {}, nextItem);
-    // job_id 变更时 replaceItem 按新 id 匹配会失败，必须整表替换该行
+    // Khi job_id đổi, replaceItem match theo id mới sẽ thất bại nên phải thay dòng bằng toàn bộ bảng.
     if (previousJobId && previousJobId !== jobId && typeof statePort.setItems === "function") {
       const nextItems = state.items.map((item, i) => (i === index ? nextItem : item));
       statePort.setItems(nextItems);
@@ -387,7 +389,7 @@ export function createRecentJobsRuntimePatches({
     if (!jobId) {
       return;
     }
-    // 核心：有 document_id / source_job_id 且书架已有该书 → 就地 update，绝不 prepend 新卡
+    // Cốt lõi: có document_id / source_job_id và thư viện đã có sách này -> update tại chỗ, tuyệt đối không prepend thẻ mới.
     const state = statePort.getSnapshot();
     const existingIndex = findItemIndex(state.items, job, jobId);
     if (existingIndex >= 0) {
@@ -399,7 +401,7 @@ export function createRecentJobsRuntimePatches({
       });
       return;
     }
-    // 馆藏合成 id `doc:<documentId>`：按 document 再找一次
+    // Id tổng hợp của thư viện `doc:<documentId>`: tìm thêm một lần theo document.
     const documentId = `${job?.document_id || ""}`.trim();
     if (documentId) {
       const syntheticId = `doc:${documentId}`;

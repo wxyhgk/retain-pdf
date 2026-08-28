@@ -1,17 +1,17 @@
-# 存储结构
+# Cấu trúc lưu trữ
 
-运行时根目录由 `RUST_API_DATA_ROOT` 决定；下文用 `DATA_ROOT` 代指这个解析后的目录。
+Thư mục gốc khi chạy được xác định bởi `RUST_API_DATA_ROOT`; dưới đây dùng `DATA_ROOT` để chỉ thư mục đã được phân giải này.
 
-## 主要路径
+## Các đường dẫn chính
 
-- `DATA_ROOT/uploads/`：上传文件。
-- `DATA_ROOT/jobs/{job_id}/`：任务工作目录。
-- `DATA_ROOT/downloads/`：下载缓存。
-- `DATA_ROOT/db/jobs.db`：SQLite 数据库。
+- `DATA_ROOT/uploads/`: Tệp tải lên.
+- `DATA_ROOT/jobs/{job_id}/`: Thư mục làm việc của tác vụ.
+- `DATA_ROOT/downloads/`: Bộ nhớ cache tải xuống.
+- `DATA_ROOT/db/jobs.db`: Cơ sở dữ liệu SQLite.
 
-## 任务目录
+## Thư mục tác vụ
 
-标准任务目录：
+Thư mục tác vụ chuẩn:
 
 ```text
 jobs/{job_id}/
@@ -23,35 +23,35 @@ jobs/{job_id}/
 └── logs/
 ```
 
-常见产物：
+Sản phẩm thường gặp:
 
-- `ocr/`：Provider 原始结果、解包结果、标准化输入。
-- `translated/`：翻译中间产物和 `translation-manifest.json`。
-- `rendered/`：渲染输出。
-- `artifacts/`：对外发布的稳定产物、诊断文件和索引。
-- `logs/pipeline_events.jsonl`：当前事件落盘主文件。
+- `ocr/`: Kết quả thô của Provider, kết quả giải nén, đầu vào chuẩn hóa.
+- `translated/`: Sản phẩm trung gian dịch và `translation-manifest.json`.
+- `rendered/`: Đầu ra kết xuất.
+- `artifacts/`: Sản phẩm ổn định phát hành ra ngoài, tệp chẩn đoán và chỉ mục.
+- `logs/pipeline_events.jsonl`: Tệp chính ghi sự kiện hiện tại.
 
-历史兼容：
+Tương thích lịch sử:
 
-- 老任务可能只有 `logs/events.jsonl`。
-- 当前读取逻辑会优先读取 `pipeline_events.jsonl`，再回退到旧文件名。
+- Tác vụ cũ có thể chỉ có `logs/events.jsonl`.
+- Logic đọc hiện tại ưu tiên đọc `pipeline_events.jsonl`, sau đó dự phòng về tên tệp cũ.
 
 ## SQLite
 
-SQLite 主要承担：
+SQLite đảm nhiệm chính:
 
-- `uploads`：源文件名、存储路径、PDF 大小、页数和上传时间。
-- `jobs`：任务状态、阶段、进度、请求/runtime 状态、失败信息和日志尾部。
-- `artifacts`：每个任务的 artifact index JSON。
-- `job_artifact_entries`：规范化 artifact manifest，用于下载和列表展示。
-- `events`：结构化事件流。
-- `glossaries`：命名术语表资源。
+- `uploads`: Tên tệp nguồn, đường dẫn lưu trữ, kích thước PDF, số trang và thời gian tải lên.
+- `jobs`: Trạng thái tác vụ, giai đoạn, tiến độ, trạng thái yêu cầu/runtime, thông tin thất bại và cuối nhật ký.
+- `artifacts`: Chỉ mục artifact JSON cho mỗi tác vụ.
+- `job_artifact_entries`: Danh sách artifact đã chuẩn hóa, dùng cho tải xuống và hiển thị danh sách.
+- `events`: Luồng sự kiện có cấu trúc.
+- `glossaries`: Tài nguyên bảng thuật ngữ được đặt tên.
 
-接口返回和数据库记录尽量使用相对路径，运行时再解析到真实文件，避免把机器路径暴露给前端。
+Phản hồi API và bản ghi cơ sở dữ liệu cố gắng sử dụng đường dẫn tương đối, khi chạy mới phân giải thành tệp thực, tránh lộ đường dẫn máy cho frontend.
 
-## 边界约定
+## Quy ước ranh giới
 
-- Rust 负责分配任务目录和登记 artifacts。
-- Python worker 只消费 Rust 传入的路径。
-- 前端和外部调用方不应该依赖任务目录内部布局。
-- 正式产物发现入口是 `GET /api/v1/jobs/{job_id}/artifacts-manifest`。
+- Rust chịu trách nhiệm phân bổ thư mục tác vụ và đăng ký artifacts.
+- Python worker chỉ tiêu thụ đường dẫn do Rust truyền vào.
+- Frontend và bên gọi ngoài không nên phụ thuộc vào bố cục nội bộ thư mục tác vụ.
+- Đầu vào phát hiện sản phẩm chính thức là `GET /api/v1/jobs/{job_id}/artifacts-manifest`.

@@ -1,10 +1,10 @@
-Tool Calls 让模型能够调用外部工具，来增强自身能力。
+Tool Calls cho phép mô hình gọi các công cụ bên ngoài để tăng cường khả năng của mình.
 
-非思考模式
-样例代码
-这里以获取用户当前位置的天气信息为例，展示了使用 Tool Calls 的完整 Python 代码。
+Chế độ không suy nghĩ
+Mã mẫu
+Dưới đây là mã Python hoàn chỉnh sử dụng Tool Calls, lấy ví dụ lấy thông tin thời tiết tại vị trí hiện tại của người dùng.
 
-Tool Calls 的具体 API 格式请参考对话补全文档。
+Định dạng API cụ thể của Tool Calls vui lòng tham khảo tài liệu Chat Completion.
 
 from openai import OpenAI
 
@@ -52,26 +52,26 @@ messages.append({"role": "tool", "tool_call_id": tool.id, "content": "24℃"})
 message = send_messages(messages)
 print(f"Model>\t {message.content}")
 
-这个例子的执行流程如下：
+Quy trình thực thi của ví dụ này như sau:
 
-用户：询问现在的天气
-模型：返回 function get_weather({location: 'Hangzhou'})
-用户：调用 function get_weather({location: 'Hangzhou'})，并传给模型。
-模型：返回自然语言，"The current temperature in Hangzhou is 24°C."
-注：上述代码中 get_weather 函数功能需由用户提供，模型本身不执行具体函数。
+Người dùng: Hỏi thời tiết hiện tại
+Mô hình: Trả về function get_weather({location: 'Hangzhou'})
+Người dùng: Gọi function get_weather({location: 'Hangzhou'}) và truyền cho mô hình.
+Mô hình: Trả về ngôn ngữ tự nhiên, "The current temperature in Hangzhou is 24°C."
+Lưu ý: Chức năng của hàm get_weather trong mã trên cần do người dùng cung cấp, mô hình không tự thực thi hàm cụ thể.
 
-思考模式
-从 DeepSeek-V3.2 开始，API 支持了思考模式下的工具调用能力，详见思考模式。
+Chế độ suy nghĩ
+Từ DeepSeek-V3.2, API hỗ trợ khả năng gọi công cụ trong chế độ suy nghĩ, xem chi tiết tại chế độ suy nghĩ.
 
-strict 模式（Beta）
-在 strict 模式下，模型在输出 Function 调用时会严格遵循 Function 的 JSON Schema 的格式要求，以确保模型输出的 Function 符合用户的定义。在思考与非思考模式下的工具调用，均可使用 strict 模式。
+Chế độ strict (Beta)
+Trong chế độ strict, mô hình sẽ tuân thủ nghiêm ngặt định dạng JSON Schema của Function khi xuất ra lời gọi Function, để đảm bảo Function mà mô hình xuất ra phù hợp với định nghĩa của người dùng. Có thể sử dụng chế độ strict cho cả chế độ suy nghĩ và không suy nghĩ.
 
-要使用 strict 模式，需要：
+Để sử dụng chế độ strict, cần:
 
-用户需要设置 base_url="https://api.deepseek.com/beta" 来开启 Beta 功能
-在传入的 tools 列表中，所有 function 均需设置 strict 属性为 true
-服务端会对用户传入的 Function 的 JSON Schema 进行校验，如不符合规范，或遇到服务端不支持的 JSON Schema 类型，将返回错误信息
-以下是 strict 模式下 tool 的定义样例：
+Người dùng đặt base_url="https://api.deepseek.com/beta" để bật tính năng Beta
+Trong danh sách tools truyền vào, tất cả function đều phải đặt thuộc tính strict là true
+Phía server sẽ kiểm tra JSON Schema của Function mà người dùng truyền vào, nếu không đúng quy định hoặc gặp loại JSON Schema không được hỗ trợ, sẽ trả về lỗi
+Dưới đây là ví dụ định nghĩa tool trong chế độ strict:
 
 {
     "type": "function",
@@ -93,7 +93,7 @@ strict 模式（Beta）
     }
 }
 
-strict 模式支持的 JSON Schema 类型
+Các loại JSON Schema được hỗ trợ trong chế độ strict
 object
 string
 number
@@ -102,10 +102,10 @@ boolean
 array
 enum
 anyOf
-object 类型
-object 定义一个包含键值对的深层结构，其中 properties 定义了对象中每个键（属性）的 schema。每个 object 的所有属性均需设置为 required，且 object 中 additionalProperties 属性必须为 false。
+Loại object
+object định nghĩa một cấu trúc lồng chứa các cặp key-value, trong đó properties định nghĩa schema cho từng key (thuộc tính) trong object. Tất cả thuộc tính của mỗi object đều phải được đặt là required và thuộc tính additionalProperties trong object phải là false.
 
-示例：
+Ví dụ:
 
 {
     "type": "object",
@@ -117,19 +117,19 @@ object 定义一个包含键值对的深层结构，其中 properties 定义了�
     "additionalProperties": false
 }
 
-string 类型
-支持的参数：
-pattern：使用正则表达式来约束字符串的格式
-format：使用预定义的常见格式进行校验，目前支持：
-email：电子邮件地址
-hostname：主机名
-ipv4：IPv4 地址
-ipv6：IPv6 地址
-uuid：uuid
-不支持的参数
+Loại string
+Các tham số được hỗ trợ:
+pattern: sử dụng biểu thức chính quy để ràng buộc định dạng chuỗi
+format: sử dụng các định dạng phổ biến được xác định trước để kiểm tra, hiện hỗ trợ:
+email: địa chỉ email
+hostname: tên máy chủ
+ipv4: địa chỉ IPv4
+ipv6: địa chỉ IPv6
+uuid: uuid
+Các tham số không được hỗ trợ
 minLength
 maxLength
-示例：
+Ví dụ:
 
 {
     "type": "object",
@@ -147,16 +147,16 @@ maxLength
     }
 }
 
-number/integer 类型
-支持的参数
-const：固定数字为常数
-default：数字的默认值
-minimum：最小值
-maximum：最大值
-exclusiveMinimum：不小于
-exclusiveMaximum：不大于
-multipleOf：数字输出为这个值的倍数
-示例：
+Loại number/integer
+Các tham số được hỗ trợ
+const: cố định số là hằng số
+default: giá trị mặc định của số
+minimum: giá trị nhỏ nhất
+maximum: giá trị lớn nhất
+exclusiveMinimum: không nhỏ hơn
+exclusiveMaximum: không lớn hơn
+multipleOf: số xuất ra là bội số của giá trị này
+Ví dụ:
 
 {
     "type": "object",
@@ -172,11 +172,11 @@ multipleOf：数字输出为这个值的倍数
     "additionalProperties": false
 }
 
-array 类型
-不支持的参数
+Loại array
+Các tham số không được hỗ trợ
 minItems
 maxItems
-示例：
+Ví dụ:
 
 {
     "type": "object",
@@ -195,9 +195,9 @@ maxItems
 }
 
 enum
-enum 可以确保输出是预期的几个选项之一，例如在订单状态的场景下，只能是有限几个状态之一。
+enum đảm bảo đầu ra là một trong số các lựa chọn dự kiến, ví dụ trong tình huống trạng thái đơn hàng, chỉ có thể là một trong số các trạng thái giới hạn.
 
-样例：
+Ví dụ:
 
 {
     "type": "object",
@@ -211,22 +211,22 @@ enum 可以确保输出是预期的几个选项之一，例如在订单状态的
 }
 
 anyOf
-匹配所提供的多个 schema 中的任意一个，可以处理可能具有多种有效格式的字段，例如用户的账户可能是邮箱或者手机号中的一个：
+Khớp với bất kỳ schema nào trong số các schema được cung cấp, có thể xử lý các trường có thể có nhiều định dạng hợp lệ, ví dụ tài khoản người dùng có thể là email hoặc số điện thoại:
 
 {
     "type": "object",
     "properties": {
     "account": {
         "anyOf": [
-            { "type": "string", "format": "email", "description": "可以是电子邮件地址" },
-            { "type": "string", "pattern": "^\\d{11}$", "description": "或11位手机号码" }
+            { "type": "string", "format": "email", "description": "có thể là địa chỉ email" },
+            { "type": "string", "pattern": "^\\d{11}$", "description": "hoặc số điện thoại 11 chữ số" }
         ]
     }
   }
 }
 
-$ref 和 $def
-可以使用 $def 定义模块，再用 $ref 引用以减少模式的重复和模块化，此外还可以单独使用 $ref 定义递归结构。
+$ref và $def
+Có thể sử dụng $def để định nghĩa các module, sau đó dùng $ref để tham chiếu nhằm giảm sự lặp lại và phân mô-đun hóa schema, ngoài ra còn có thể sử dụng $ref một mình để định nghĩa cấu trúc đệ quy.
 
 {
     "type": "object",
@@ -269,4 +269,4 @@ $ref 和 $def
     }
 }
 
-上一页
+Trang trước

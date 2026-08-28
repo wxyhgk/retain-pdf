@@ -1,5 +1,5 @@
-// composition 层公共类型。HomeServices / HomeFeatures 表面 API 不用 any；
-// 深层 payload 用 unknown；store/port 复用已有模块类型。
+// Các loại chung của composition layer. API bên ngoài HomeServices/HomeFeatures không cần "any";
+// Payload sâu dùng unknown; store/port tái sử dụng các kiểu từ module có sẵn.
 
 import type {
   Store,
@@ -22,8 +22,8 @@ import type {
 } from "../features/library/types.js";
 
 /**
- * 通用 app-framework store。
- * 用 Store 默认参（未建模 snapshot/actions），避免把消费方推成 never/unknown。
+ * thông dụng app-framework store。
+ * dùng Store Thông số mặc định（Không được mô hình hóa snapshot/actions），Tránh đẩy người tiêu dùng never/unknown。
  */
 export type AppStore = Store;
 
@@ -85,7 +85,7 @@ export type AppUpdateFeature = {
 export type AppActionsFeature = {
   checkApiConnectivity: () => Promise<unknown> | unknown;
   handleOpenOutputDir: () => unknown;
-  /** React SubmitEvent 与 DOM Event 均允许 */
+  /** React SubmitEvent VÀ DOM Event Tất cả được phép */
   submitForm: (event?: { preventDefault?: () => void } | null) => unknown;
 };
 
@@ -121,7 +121,7 @@ export type AppShellFeature = {
   initializeIdleView: () => void;
 };
 
-/** 装配期逐步填满的 features 注册表 */
+/** Thời gian lắp ráp đang dần được lấp đầy. features Đăng ký */
 export type HomeFeatures = {
   workflowFeature?: WorkflowFeature;
   uploadFeature?: UploadFeature;
@@ -159,7 +159,7 @@ export type HomeStores = {
 
 // ── Domain bags ───────────────────────────────────────────────────────
 
-/** 事件处理函数表（viewPort.bindEvents 写入 handlersRef） */
+/** Bảng xử lý sự kiện（viewPort.bindEvents Ghi handlersRef） */
 export type HandlersBag = {
   [key: string]: ((...args: unknown[]) => unknown) | undefined | null;
 };
@@ -226,7 +226,7 @@ export type LibraryActions = RecentJobActions & {
   openSourceReader: LibraryController["openSourceReader"];
   translateDocument: LibraryController["translateDocument"];
   deleteDocument: LibraryController["deleteDocument"];
-  /** 选择集可能是 unknown[]（view state），参数放宽 */
+  /** Bộ lựa chọn có thể là unknown[]（view state），Độ giãn thông số */
   deleteDocuments: (
     documentIds?: Array<string | null | undefined | unknown>,
   ) => Promise<DeleteDocumentsResult>;
@@ -247,7 +247,7 @@ export type HomeBookDetail = {
   dialogStore: DialogStore<LibraryCardItem | null>;
 };
 
-/** 分类/合集控制器（createCollectionsController 返回面） */
+/** Loại/Bộ điều khiển bộ sưu tập（createCollectionsController Trở lại khuôn mặt） */
 export type CollectionRecord = {
   collection_id?: string;
   name?: string;
@@ -284,7 +284,7 @@ export type CollectionsController = {
   fetchFolderBooks: (collectionId: string) => Promise<LibraryCardItem[]>;
 };
 
-/** createStore 返回的 actions 经 BoundStoreActions 后难精确建模；消费面只认 bump */
+/** createStore Đã trả lại actions Sau khi được chấp thuận của. BoundStoreActions Mô hình hóa sau chính xác rất khó；Chỉ nhận dạng phía tiêu thụ bump */
 export type CollectionsReloadSignal = {
   getSnapshot: () => { version: number };
   subscribe: (listener: (snapshot: { version: number }, meta?: unknown) => void) => () => void;
@@ -342,7 +342,7 @@ export type HomeStatusDetail = {
   controller: StatusDetailController;
 };
 
-/** 主页阅读入口：跳转独立 reader.html（不再维护 dialogStore / iframe）。 */
+/** Cổng đọc sách tại nhà：JUMP độc lập reader.html（Không còn được duy trì dialogStore / iframe）。 */
 export type HomeReader = {
   openReader: (jobId: string, anchor?: unknown) => unknown;
 };
@@ -421,7 +421,7 @@ export type HomeServices = {
   statusCard: HomeStatusCard;
   statusDetail: HomeStatusDetail;
   reader: HomeReader;
-  /** text-store 的 selector 帮助函数（配合 useStoreSnapshot） */
+  /** text-store của selector Chức năng trợ giúp（phối hợp useStoreSnapshot） */
   textOf: (snapshot: unknown, id: string, fallback?: unknown) => unknown;
   uploadDomRefs: UploadDomRefs;
   uploadViewActions: UploadViewActions;
@@ -429,7 +429,7 @@ export type HomeServices = {
   workflowDialog: WorkflowDialogRuntime;
 };
 
-/** buildHomeServices 的 views 入参 */
+/** buildHomeServices của views Thông số đầu vào */
 export type HomeServicesViews = {
   textStore: {
     store: AppStore;
@@ -449,7 +449,7 @@ export type HomeServicesViews = {
   workflowDialog: WorkflowDialogRuntime;
 };
 
-/** buildHomeServices 的 domains 入参 */
+/** buildHomeServices của domains Thông số đầu vào */
 export type HomeServicesDomains = {
   credentials: {
     browserCredentialsFeature: BrowserCredentialsFeature;

@@ -1,8 +1,9 @@
-// StatusCard 入口：主流程 / 书籍详情两套展示拆成独立文件。
+// Lối vào StatusCard: hai chế độ hiển thị quy trình chính / chi tiết sách được
+// tách thành các tệp riêng.
 //
-// - StatusCardMain：工作流弹窗 #job-status-card（DOM 契约 / smoke）
-// - StatusCardEmbedded：详情 #book-detail-job-status-card（bd-job-status-* 固定高度）
-// - useStatusCardModel：共享 store → display / lottie / progress
+// - StatusCardMain: popup quy trình #job-status-card (hợp đồng DOM / smoke)
+// - StatusCardEmbedded: chi tiết #book-detail-job-status-card (chiều cao cố định bd-job-status-*)
+// - useStatusCardModel: store dùng chung → display / lottie / progress
 
 import { StatusCardMain } from "./StatusCardMain.jsx";
 import { StatusCardEmbedded } from "./StatusCardEmbedded.jsx";

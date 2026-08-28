@@ -1088,8 +1088,8 @@ test("reader translated region right click keeps selection drag from stealing th
 });
 
 test("reader page exposes ai/favorites/download entries, keeps paused tools hidden", () => {
-  // Phase 2b cutover 后 reader.html 只剩 #reader-root 挂载点,页面骨架改由
-  // src/pages/reader 的 JSX 渲染:入口断言改扫新世界组件源码。
+// Sau chuyển đổi Phase 2b, reader.html chỉ còn điểm mounting #reader-root, khung trang được render bởi
+// src/pages/reader JSX: assertion đầu vào quét thành phần mới.
   const jsxSources = [
     "../src/pages/reader/legacy/components/ReaderSideDrawers.tsx",
     "../src/pages/reader/legacy/components/ReaderTopbarActions.tsx",
@@ -1139,7 +1139,7 @@ test("reader download actions resolve artifact urls and disabled reasons", () =>
   assert.equal(urls.translated, "http://retainpdf.local:41000/api/v1/jobs/job-reader/artifacts/pdf");
   assert.equal(urls.sideBySide, "http://retainpdf.local:41000/api/v1/jobs/job-reader/pdf/side-by-side");
 
-  // 产物缺失时的禁用原因(React 下载菜单以此作为按钮 title)
+  // Lý do vô hiệu khi artifact bị thiếu (menu tải về React dùng làm tiêu đề nút)
   const emptyUrls = readerDownloadResolve.resolveReaderDownloadUrls({
     jobId: "job-reader",
     jobPayload: { job_id: "job-reader", workflow: "ocr", status: "succeeded" },
@@ -1153,8 +1153,8 @@ test("reader download actions resolve artifact urls and disabled reasons", () =>
   assert.match(readerDownloadResolve.disabledReason("sideBySide", emptyUrls), /PDF/);
 });
 
-// 抽屉互斥开合的状态语义已移入 React 世界的 drawer store,
-// DOM 写入(is-open/inert/aria-expanded)由组件渲染;见 tests/reader-drawers.test.mjs。
+// Ngữ nghĩa trạng thái bật/tắt ngăn kéo độc quyền đã chuyển vào drawer store của thế giới React,
+// ghi DOM (is-open/inert/aria-expanded) do component render; xem tests/reader-drawers.test.mjs.
 
 test("reader ai context can switch to selection scope", () => {
   const calls = [];
@@ -1191,7 +1191,7 @@ test("reader ai context can switch to selection scope", () => {
   });
 
   assert.equal(context.scope(), "selection");
-  assert.equal(contextEl.textContent, "当前选区：第 4 页 · 120 × 64");
+  assert.equal(contextEl.textContent, "Vùng chọn hiện tại: Trang 4 · 120 × 64");
   assert.equal(buttons[1].classList.values.has("is-active"), true);
   assert.deepEqual(opened, ["ai"]);
 });
@@ -1220,9 +1220,9 @@ test("reader markdown answerer answers from markdown sections", async () => {
   assert.deepEqual(result.citations.includes("Formula"), true);
 });
 
-// chat 提交/状态流转已随 AI 问答 UI 迁入 React(use-reader-ai-chat),
-// 等价断言见 tests/reader-ai-conversations.test.mjs(React 组件版)。
-// 旧 remote-answerer（/reader/ai/chat payload）已删除；现网走 ask-answerer。
+// Việc submit/chuyển trạng thái trò chuyện cùng AI đã chuyển sang React (use-reader-ai-chat),
+// assertion tương đương xem tests/reader-ai-conversations.test.mjs (phiên bản React component).
+// remote-answerer cũ (/reader/ai/chat payload) đã xóa; hệ thống thực tế chạy ask-answerer.
 
 test("reader ai config prefers persisted browser credentials", () => {
   const config = readerAiConfig.resolveReaderAiConfig({
@@ -1248,7 +1248,7 @@ test("reader ai model key comes only from settings (no runtime secret fallback)"
     baseUrl: "https://api.deepseek.com/v1",
     model: "deepseek-v4-flash",
   });
-  // 模型 Key 只认设置；runtime 里的 modelApiKey 不得解锁
+  // Khóa model chỉ nhận từ cài đặt; modelApiKey trong runtime không được unlock
   const config = readerAiConfig.resolveReaderAiConfig({
     browserConfig: { modelApiKey: "   " },
     developerConfig: { baseUrl: "", model: "" },
@@ -1257,15 +1257,15 @@ test("reader ai model key comes only from settings (no runtime secret fallback)"
   assert.equal(config.baseUrl, "https://api.deepseek.com/v1");
   assert.equal(config.model, "deepseek-v4-flash");
   assert.equal(config.provider, "deepseek");
-  // hasModelApiKey / readSettingsModelApiKey 只认设置里的 modelApiKey
+  // hasModelApiKey / readSettingsModelApiKey chỉ nhận modelApiKey trong cài đặt
   assert.equal(readerAiConfig.readSettingsModelApiKey({ modelApiKey: "" }), "");
   assert.equal(readerAiConfig.readSettingsModelApiKey({ modelApiKey: "   " }), "");
   assert.equal(readerAiConfig.readSettingsModelApiKey({ modelApiKey: " sk-user " }), "sk-user");
   setRuntimeConfig({ modelApiKey: "", baseUrl: "", model: "" });
 });
 
-// 502 回退本地 Markdown 检索的语义迁移至 React 组件测试:
-// 见 tests/reader-ai-conversations.test.mjs「后端 502 时回退本地检索」。
+// Ngữ nghĩa chuyển dịch 502 sang tra cứu Markdown cục bộ thành phần React:
+// xem tests/reader-ai-conversations.test.mjs「quay về tra cứu cục bộ khi backend 502」。
 
 test("reader data port owns page API orchestration and fallbacks", async () => {
   const calls = [];
@@ -1332,36 +1332,36 @@ test("reader data port owns page API orchestration and fallbacks", async () => {
   ]);
 });
 
-// startup.js(page-runtime 包装)随旧入口 index.js 一并退役:React 入口
-// (src/pages/reader/entry.jsx)由打包构建守卫,boot 编排在 use-reader-boot。
+// startup.js (trang trí page-runtime) cùng lối vào cũ index.js một lượt nghỉ hưu: React entry
+// (src/pages/reader/entry.jsx) được bảo vệ bởi build hệ thống, boot xếp trong use-reader-boot.
 
 test("reader page state owns boot progress snapshots", () => {
   const state = readerPageState.createReaderPageState();
 
   assert.deepEqual(readerPageState.computeReaderProgressSnapshot(state.progress), {
     percent: 8,
-    text: "正在准备对照阅读…",
+    text: "Đang chuẩn bị đọc đối chiếu…",
     stage: "boot",
   });
 
   state.progress.metadataReady = true;
   assert.deepEqual(readerPageState.computeReaderProgressSnapshot(state.progress), {
     percent: 24,
-    text: "正在加载原始 PDF 和译文 PDF…",
+    text: "Đang tải PDF gốc và PDF dịch…",
     stage: "pdfs",
   });
 
   state.progress.sourceDone = true;
   assert.deepEqual(readerPageState.computeReaderProgressSnapshot(state.progress), {
     percent: 54,
-    text: "原始 PDF 已加载，正在加载译文 PDF…",
+    text: "PDF gốc đã tải xong, đang tải PDF dịch…",
     stage: "pdfs",
   });
 
   state.progress.translatedDone = true;
   assert.deepEqual(readerPageState.computeReaderProgressSnapshot(state.progress), {
     percent: 92,
-    text: "对照阅读已就绪",
+    text: "Đọc đối chiếu đã sẵn sàng",
     stage: "readying",
   });
 

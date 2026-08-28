@@ -16,9 +16,9 @@ export async function fetchJobPayload(jobId, apiPrefix) {
   });
   if (!resp.ok) {
     if (resp.status === 404) {
-      throw new Error("未找到该任务，请检查 job_id 是否正确。");
+      throw new Error("Không tìm thấy tác vụ, vui lòng kiểm tra job_id có đúng không.");
     }
-    throw new Error(`读取任务失败，请稍后重试。(${resp.status})`);
+    throw new Error(`Đọc tác vụ thất bại, vui lòng thử lại sau. (${resp.status})`);
   }
   return unwrapEnvelope(await resp.json());
 }
@@ -58,7 +58,7 @@ export async function fetchJobList(
     headers: buildApiHeaders(),
   });
   if (!resp.ok) {
-    throw new Error(`读取最近任务失败，请稍后重试。(${resp.status})`);
+    throw new Error(`Đọc tác vụ gần đây thất bại, vui lòng thử lại sau. (${resp.status})`);
   }
   return unwrapEnvelope(await resp.json());
 }

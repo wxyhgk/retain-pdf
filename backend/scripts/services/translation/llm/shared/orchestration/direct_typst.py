@@ -77,9 +77,9 @@ def translate_direct_typst_plain_text_with_retries(
         context=context,
         transport_tail_retry=not allow_transport_tail_defer,
     )
-    # 定界符修复要求模型重写整段文本,20s 档超时对长块是极限值(实测
-    # NMR 长块修复需要 ~19s,连续 4 次踩超时白烧 80s)。修复调用统一
-    # 用 transport tail 档超时。
+    # Sửa chữa dấu phân cách yêu cầu mô hình viết lại toàn bộ đoạn văn bản,20s Thời gian chờ bánh răng là giới hạn cho các khối dài(Đo thực tế
+    # NMR Nhu cầu phục hồi khối dài ~19s,liên tục 4 Hết thời gian sốt trắng 80s)。Sửa chữa đồng phục cuộc gọi
+    # dùng transport tail Hết thời gian chờ bánh răng。
     repair_timeout_s = max(
         plain_timeout_s,
         int(getattr(context.timeout_policy, "transport_tail_retry_seconds", plain_timeout_s)),

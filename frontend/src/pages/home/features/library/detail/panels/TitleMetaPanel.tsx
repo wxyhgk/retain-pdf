@@ -1,4 +1,4 @@
-// 右栏：标题 / 作者 / 标签 + 编辑表单。
+// Cột phải: tiêu đề / tác giả / thẻ + biểu mẫu chỉnh sửa.
 
 import { btn } from "./ui.jsx";
 
@@ -10,7 +10,7 @@ import { btn } from "./ui.jsx";
  * @param {string[]} props.tags
  * @param {string[]} props.authors
  * @param {string|number|null|undefined} props.year
- * @param {string} props.displayTitle 展示用标题
+ * @param {string} props.displayTitle Tiêu đề để hiển thị
  * @param {string} props.busy
  * @param {() => void} props.onStartEdit
  * @param {() => void} props.onCancelEdit
@@ -47,19 +47,19 @@ export function TitleMetaPanel({
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
             />
             <div>
-              <p className="mb-1 text-xs text-muted-foreground">标签（逗号或顿号分隔）</p>
+              <p className="mb-1 text-xs text-muted-foreground">Thẻ (phân cách bằng dấu phẩy hoặc dấu gạch chéo)</p>
               <input
                 id="book-detail-tags-input"
                 type="text"
                 value={tagsText}
-                placeholder="例如：化学、综述"
+                placeholder="Ví dụ: Hóa học, Tổng quan"
                 onChange={(e) => onTagsTextChange(e.target.value)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
               />
             </div>
             <div className="flex justify-end gap-2">
               <button className={btn("outline")} disabled={busy === "meta"} onClick={onCancelEdit}>
-                取消
+                Hủy
               </button>
               <button
                 id="book-detail-save-btn"
@@ -67,7 +67,7 @@ export function TitleMetaPanel({
                 disabled={busy === "meta"}
                 onClick={onSave}
               >
-                {busy === "meta" ? "保存中…" : "保存"}
+                {busy === "meta" ? "Đang lưu…" : "Lưu"}
               </button>
             </div>
           </div>
@@ -80,7 +80,7 @@ export function TitleMetaPanel({
               {displayTitle || "-"}
             </h1>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              {authors.length ? authors.join("、") : "未知作者"}
+              {authors.length ? authors.join("、") : "Không rõ tác giả"}
               {year ? ` · ${year}` : ""}
             </p>
             {tags.length ? (
@@ -102,7 +102,7 @@ export function TitleMetaPanel({
           onClick={onStartEdit}
           className="shrink-0 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         >
-          编辑
+          Sửa
         </button>
       ) : null}
     </div>

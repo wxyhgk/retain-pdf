@@ -1,17 +1,17 @@
-# Book Grid 组件族
+# Nhóm component Book Grid
 
-## 边界
+## Ranh giới
 
-`book-grid` 负责图书集合的网格布局。它只接收已经准备好的 `books`，不负责搜索、排序、筛选或请求数据。
+`book-grid` phụ trách bố cục lưới bộ sưu tập sách. Nó chỉ nhận `books` đã chuẩn bị sẵn, không phụ trách tìm kiếm, sắp xếp, lọc hay yêu cầu dữ liệu.
 
-## 文件
+## Tệp
 
-- `book-grid.tsx`：渲染滚动容器和书卡片网格。
-- `index.ts`：组件族的公共出口。
+- `book-grid.tsx`: Render container cuộn và lưới thẻ sách.
+- `index.ts`: Xuất khẩu công khai của nhóm component.
 
-## 规则
+## Quy tắc
 
-- 外部只导入 `BookGrid`。
-- 选择态通过 `selectedBookId` 传入。
-- 点击行为通过 `onSelectBook` 交给页面或容器处理。
-- 后续空状态、加载态、批量选择工具条可以放在这个目录里。
+- Bên ngoài chỉ import `BookGrid`.
+- Trạng thái chọn truyền qua `selectedBookId`.
+- Hành vi nhấp giao cho trang hoặc container xử lý qua `onSelectBook`.
+- Trạng thái trống, trạng thái tải, thanh công cụ chọn hàng loạt sau này có thể đặt trong thư mục này.

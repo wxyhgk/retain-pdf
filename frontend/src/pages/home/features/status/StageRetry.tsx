@@ -1,6 +1,7 @@
-// 阶段重试按钮(蓝图 §2 features/status/;镜像 job-status-card-retry.js 的
-// renderStageRetryAction/bindStageRetryEvents——点击 dispatch
-// APP_EVENTS.retryStage,job-runtime 引擎消费,事件契约原样保留,蓝图 §5)。
+// Nút thử lại giai đoạn (bản thiết kế §2 features/status/, phản chiếu
+// renderStageRetryAction/bindStageRetryEvents của job-status-card-retry.js —
+// click dispatch APP_EVENTS.retryStage, engine job-runtime nhận; giữ nguyên
+// hợp đồng sự kiện theo bản thiết kế §5).
 
 import { useStatusCardIds } from "./status-card-ids-context.js";
 import { APP_EVENTS } from "../../composition/external.js";
@@ -36,7 +37,7 @@ export function StageRetry({ selectedStageKey = "", action = null }) {
           }
         }}
       >
-        {action.label || "重新执行"}
+        {action.label || "Thực hiện lại"}
       </button>
     </div>
   );

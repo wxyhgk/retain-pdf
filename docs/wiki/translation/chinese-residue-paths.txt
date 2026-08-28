@@ -1,0 +1,57 @@
+﻿resources\ocr_api\PaddleOCR\错误码.md
+resources\ocr_api\PaddleOCR\异步 api使用.md
+doc\reference\LLM_api\DeepSeek\首次调用 API.md
+doc\reference\LLM_api\DeepSeek\错误码.md
+doc\reference\LLM_api\DeepSeek\模型 & 价格.md
+doc\reference\LLM_api\DeepSeek\查询余额.md
+doc\reference\LLM_api\DeepSeek\接入 Coding Agents.md
+doc\reference\LLM_api\DeepSeek\思考模式.md
+doc\reference\LLM_api\DeepSeek\多轮对话.md
+doc\reference\LLM_api\DeepSeek\Token 用量计算.md
+doc\reference\LLM_api\DeepSeek\Retain_接入建议.md
+doc\reference\font-scaling\密度.md
+doc\reference\font-scaling\字体随页面变化的算法.md
+doc\core\rust_api\12-job_runner 边界.md
+doc\core\rust_api\11-阶段事件与失败协议.md
+doc\core\rust_api\10-Rust 侧 Artifact Boundary.md
+doc\core\rust_api\09-协同开发约定.md
+doc\core\rust_api\08-Provider 校验接口.md
+doc\core\rust_api\07-任务列表接口.md
+doc\core\rust_api\06-产物清单与下载.md
+doc\core\rust_api\05-联调与排错.md
+doc\core\rust_api\04-协作与边界.md
+doc\core\rust_api\04-任务生命周期.md
+doc\core\rust_api\03-产物与下载.md
+doc\core\rust_api\03-事件流接口.md
+doc\core\rust_api\02-任务详情与时间线.md
+doc\core\rust_api\02-任务详情与事件.md
+doc\core\rust_api\01-基础契约.md
+doc\core\rust_api\01-响应包装.md
+doc\problem\20260615_rust_api_边界调研.md
+doc\problem\20260606_渲染提速.md
+doc\ops\planning\工程评价与后续执行计划.md
+doc\api\08-调试诊断\02-translation-debug.md
+doc\api\08-调试诊断\01-失败结构.md
+doc\api\07-产物下载\01-下载总览.md
+doc\api\06-阶段操作\02-retry-stage.md
+doc\api\06-阶段操作\01-stage-actions.md
+doc\api\05-渲染\02-source-cleanup策略.md
+doc\api\05-渲染\01-渲染参数.md
+doc\api\04-翻译\07-翻译事件.md
+doc\api\04-翻译\06-翻译工作流.md
+doc\api\04-翻译\05-translate-stage-spec.md
+doc\api\04-翻译\04-上下文术语记忆模式.md
+doc\api\04-翻译\03-术语表.md
+doc\api\04-翻译\02-并发与批次.md
+doc\api\04-翻译\01-翻译参数.md
+doc\api\03-OCR\05-remote-command插件.md
+doc\api\03-OCR\04-local-command插件.md
+doc\api\03-OCR\02-OCR-only任务.md
+doc\api\03-OCR\01-provider列表.md
+doc\api\02-进度事件\02-display-stage与lane.md
+doc\api\02-进度事件\01-事件总览.md
+doc\api\01-任务\03-任务列表.md
+doc\api\01-任务\02-查询任务详情.md
+doc\api\01-任务\01-创建任务.md
+doc\api\00-约定\02-认证与错误.md
+doc\api\00-约定\01-响应格式.md

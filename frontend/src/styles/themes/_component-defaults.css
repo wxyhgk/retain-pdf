@@ -1,17 +1,17 @@
-/* L3 组件形态 token：可选，皮肤只覆盖想改的。
+/* L3 component shape token：tùy chọn, skin chỉ override những gì muốn đổi。
  *
- * 与颜色契约（_contract.css 必选 20 项）不同，这里全部有默认值——
- * 不覆盖 = 现状观感。皮肤在自己的 [data-theme] 块里覆盖（本文件在
- * index.css 里先于各皮肤 import，同特异性下皮肤后来居上）。
+ * Khác với hợp đồng màu（_contract.css 20 mục bắt buộc），ở đây tất cả có giá trị mặc định——
+ * không override = giữ nguyên quan sát hiện tại。Skin override trong block [data-theme] của nó（file này
+ * được import trước các skin trong index.css, cùng specificity thì skin sau ghi đè lên）。
  *
- * v1 清单只收"已有真实消费者"的 token（由 DecorStage 实践反哺）：
- * - --btn-radius        主按钮圆角（app-button；classic 是纯 pill）
- * - --btn-primary-bg/fg 主按钮底/字（默认走 accent/paper）
- * - --panel-radius      对话框壳圆角（dialog-shell）
- * - --stage-veil        主页纸台不透明度（ambient-surface 的 color-mix 百分比）
- * - --ornament-line     装饰件描边（DecorStage 题字横幅金边）
+ * Danh sách v1 chỉ thu token "đã có consumer thực sự"（được nuôi dưỡng từ thực tiễn DecorStage）：
+ * - --btn-radius        bo góc nút chính（app-button；classic là pill thuần）
+ * - --btn-primary-bg/fg nền/chữ nút chính（mặc định đi accent/paper）
+ * - --panel-radius      bo góc vỏ dialog（dialog-shell）
+ * - --stage-veil        độ mờ bụi giấy trang chủ（tỷ lệ phần trăm color-mix của ambient-surface）
+ * - --ornament-line     viền đồ trang trí（viền vàng banner chữ của DecorStage）
  *
- * 新增 token 前先找到消费者，别囤"以后可能用"的。
+ * Thêm token mới trước tiên phải tìm consumer, đừng tích trữ "có thể dùng sau này"。
  */
 
 :root {
@@ -19,15 +19,15 @@
   --btn-primary-bg: var(--accent);
   --btn-primary-fg: var(--paper);
   --panel-radius: 24px;
-  /* 弹窗背板：浅色纸感（night 下随 --bg 自动变深色毛玻璃），全站唯一真值 */
+  /* Nền dialog: cảm giác giấy sáng (dưới night tự động biến thành kính mờ tối theo --bg), giá trị thật duy nhất toàn cục */
   --dialog-scrim: color-mix(in srgb, var(--bg) 62%, transparent);
   --stage-veil: 88%;
   --ornament-line: color-mix(in srgb, var(--gold) 45%, var(--line));
 
-  /* —— 布局密度（原 ambient-surface 的 html[data-theme=…] 特例块收编于此，
-   *    皮肤想要"素纸式"更宽廊道/更窄纸台，只在自己文件里覆盖，不碰 core）—— */
+  /* —— Mật độ layout (các block đặc biệt html[data-theme=…] của ambient-surface gốc được thu nhận vào đây,
+   *    skin muốn hành lang rộng hơn kiểu "giấy thô"/bụi giấy hẹp hơn, chỉ override trong file của mình, không đụng core)—— */
   --shell-pad-inline: clamp(18px, 4vw, 56px);
-  /* ≤900px 窄屏值；默认跟随常规值（= 无窄屏特例） */
+  /* Giá trị màn hình hẹp ≤900px; mặc định theo giá trị thường (= không có ngoại lệ màn hình hẹp) */
   --shell-pad-inline-narrow: var(--shell-pad-inline);
   --header-width: min(1120px, 100%);
   --header-gap-bottom: 16px;

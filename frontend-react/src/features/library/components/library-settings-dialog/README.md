@@ -1,21 +1,21 @@
-# Library Settings Dialog 组件族
+# Nhóm component Library Settings Dialog
 
-## 边界
+## Ranh giới
 
-`library-settings-dialog` 负责图书馆主页的设置弹窗。当前只提供设置分区占位，不直接读写 API、localStorage 或全局状态。
+`library-settings-dialog` phụ trách hộp thoại cài đặt trang chủ thư viện. Hiện chỉ cung cấp placeholder phân vùng cài đặt, không trực tiếp đọc/ghi API, localStorage hoặc trạng thái toàn cục.
 
-## 文件
+## Tệp
 
-- `library-settings-dialog.tsx`：弹窗组合层。
-- `library-settings-config.ts`：布局 class 和组件族本地配置。
-- `library-settings-selectors.ts`：把配置转换为设置视图数据。
-- `library-settings-tabs.tsx`：设置分区 tab 切换。
-- `library-settings-panel.tsx`：单个设置分区面板。
-- `library-settings-types.ts`：设置组件族类型。
-- `index.ts`：组件族公共出口。
+- `library-settings-dialog.tsx`: Tầng tổ hợp hộp thoại.
+- `library-settings-config.ts`: Class bố cục và cấu hình cục bộ nhóm component.
+- `library-settings-selectors.ts`: Chuyển cấu hình thành dữ liệu view cài đặt.
+- `library-settings-tabs.tsx`: Chuyển đổi tab phân vùng cài đặt.
+- `library-settings-panel.tsx`: Panel phân vùng cài đặt đơn.
+- `library-settings-types.ts`: Kiểu nhóm component cài đặt.
+- `index.ts`: Xuất khẩu công khai nhóm component.
 
-## 规则
+## Quy tắc
 
-- 产品文案来自 `library-config.ts`。
-- 后续真实设置项应先补类型和 view model，再交给展示组件渲染。
-- 不要把后端 API 字段直接写进展示组件。
+- Văn bản sản phẩm đến từ `library-config.ts`.
+- Mục cài đặt thực tế sau này nên bổ sung kiểu và view model trước, rồi mới giao cho component hiển thị render.
+- Không đưa trường API backend trực tiếp vào component hiển thị.

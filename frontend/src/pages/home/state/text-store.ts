@@ -1,16 +1,18 @@
-// home 页文本注册表(id → 文案)store。
+// Store đăng ký văn bản (id → văn bản) của trang home.
 //
-// 旧世界 ui/text.js 的 setText(id, value) 是全局 DOM 写入口;React 世界改为
-// 写入本 store,由订阅了对应 id 的组件自行渲染。3a 阶段只有 error-box
-// (inline-error-box)消费;status-detail/job-runtime 等 3b 域的 id 先落在
-// store 里等占位组件接管——setText 回调接口因此对 3b 保持稳定。
+// setText(id, value) của ui/text.js thế giới cũ là đầu vào ghi DOM toàn cục; thế giới
+// React đổi thành ghi vào store này, do component đăng ký id tương ứng tự render.
+// Giai đoạn 3a chỉ có error-box (inline-error-box) tiêu thụ; id của các miền
+// status-detail/job-runtime v.v. ở 3b rơi vào store trước chờ component giữ chỗ
+// tiếp quản — vì vậy giao diện callback setText giữ ổn định với 3b.
 //
-// 特例口径(镜像 ui/text.js):"error-box" 的 value 允许是 error-diagnostic
-// 对象,展示层用 messageForErrorBox 提取摘要;这里原样存储,由组件解读。
+// Quy ước đặc biệt (ánh theo ui/text.js): value của "error-box" cho phép là đối tượng
+// error-diagnostic, tầng trình bày dùng messageForErrorBox trích tóm tắt; ở đây lưu
+// nguyên bản, do component diễn giải.
 
 import { createStore, type Store } from "../../../js/app-framework/store.js";
 
-/** error-diagnostics.buildErrorDiagnostic 的返回形状 */
+/** Hình dạng trả về của error-diagnostics.buildErrorDiagnostic */
 export type ErrorDiagnosticText = {
   kind: "error-diagnostic";
   summary?: string;
@@ -19,8 +21,9 @@ export type ErrorDiagnosticText = {
 };
 
 /**
- * 文本槽位值：普通字符串、error-box 诊断对象，或其它展示载荷。
- * 用 unknown 收口，避免 any；ErrorDiagnosticText 供展示层窄化。
+ * Giá trị vị trí văn bản: chuỗi thường, đối tượng chẩn đoán error-box, hoặc tải trọng
+ * trình bày khác. Dùng unknown để thu hẹp, tránh any; ErrorDiagnosticText để tầng trình
+ * bày thu hẹp.
  */
 export type HomeTextValue = unknown;
 
@@ -64,7 +67,7 @@ export function createHomeTextStore() {
     store.actions.set({ id, value });
   }
 
-  // selector 帮助函数:配合 useStoreSnapshot(store, selector) 使用
+  // Hàm trợ giúp selector: dùng với useStoreSnapshot(store, selector)
   function textOf(
     snapshot: HomeTextState | null | undefined,
     id: string,

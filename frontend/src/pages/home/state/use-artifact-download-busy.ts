@@ -1,9 +1,10 @@
-// artifact-download-busy-store.js → React 订阅 hook,按 actionId 取切片
-// (蓝图 §7.5 方案二核心机制)。getSnapshot 用 useCallback 缓存,只在
-// store/actionId 变化时换函数身份;store.getActionState(actionId) 在该
-// actionId 未变化时返回同一个对象引用(IDLE 常量或未改动的 busy 分片),
-// 配合 useSyncExternalStore 做到"只有自己的 actionId 变化才重渲染"，
-// 不随祖先(StatusCard/StatusDetailDialog)高频轮询重渲染而被覆盖或抖动。
+// artifact-download-busy-store.js → hook đăng ký React, lấy lát cắt theo actionId
+// (cơ chế cốt lõi phương án hai trong bản thiết kế §7.5). getSnapshot được cache
+// bằng useCallback và chỉ đổi identity khi store/actionId thay đổi;
+// store.getActionState(actionId) trả cùng tham chiếu object (hằng IDLE hoặc lát
+// busy chưa đổi) khi actionId không đổi. Kết hợp useSyncExternalStore để chỉ
+// re-render khi actionId của chính nó đổi, không bị polling tần suất cao của
+// ancestor (StatusCard/StatusDetailDialog) ghi đè hoặc rung.
 
 import { useCallback, useSyncExternalStore } from "react";
 import type { ArtifactBusySlice, ArtifactDownloadBusyStore } from "./artifact-download-busy-store.js";

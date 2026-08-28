@@ -1,5 +1,5 @@
-# 把做好的图标放这里
+# Đặt các biểu tượng đã hoàn thành ở đây
 
-- svg/  → 静态 SVG
-- lottie/ → 动态 Lottie JSON
-- preview/ → 可选总览图
+- svg/ → SVG tĩnh
+- lottie/ → Lottie JSON động
+- preview/ → Ảnh tổng quan tùy chọn

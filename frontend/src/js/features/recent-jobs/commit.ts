@@ -202,7 +202,7 @@ export function commitRecentJobsEmpty({
   recentJobsStatePort.setItems([]);
   recentJobsStatePort.setHasMore(false);
   homeStatePort.setRecentJobsLoadingState(RECENT_JOBS_LOADING_STATES.READY);
-  const message = `${query || ""}`.trim() ? "没有匹配的书籍" : "暂无最近任务";
+  const message = `${query || ""}`.trim() ? "Không có sách phù hợp" : "Chưa có tác vụ gần đây";
   if (!storeDrivenRendering) {
     viewPort.renderEmpty(message, invocationSummary);
   }
@@ -232,7 +232,7 @@ export function commitRecentJobsError({
   renderError: _renderError,
   viewPort,
 }: CommitRecentJobsErrorOptions = {}): { message: string } {
-  const message = error?.message || "读取最近任务失败";
+  const message = error?.message || "Không đọc được tác vụ gần đây";
   if (!reset) {
     recentJobsStatePort.setHasMore(false);
   }

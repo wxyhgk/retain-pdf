@@ -32,55 +32,55 @@ export function progressTextForStageProgress({
   const stageInfo = stage || { key: stageKey };
   const progressUnit = progress.unit || "";
   if (progressUnit === "percent") {
-    return current > 0 ? `进度 ${current}%` : "处理中";
+    return current > 0 ? `Tiến độ ${current}%` : "Đang xử lý";
   }
   if (stageInfo.key === "render" && subtype === "render_compile") {
-    return current >= total ? "渲染完成" : "正在编译 PDF";
+    return current >= total ? "Render hoàn thành" : "Đang biên dịch PDF";
   }
   if (stageInfo.key === "render" && subtype === "render_prewarm") {
-    return `预热 ${current}/${total}`;
+    return `Làm nóng ${current}/${total}`;
   }
   if (stageInfo.key === "render" && subtype === "render_prepare") {
-    return `准备 ${current}/${total}`;
+    return `Chuẩn bị ${current}/${total}`;
   }
   if (progressUnit === "page") {
     if (stageInfo.key === "ocr" && current <= 0) {
-      return `OCR 处理中，共 ${total} 页`;
+      return `Đang xử lý OCR, tổng ${total} trang`;
     }
     if (stageInfo.key === "render" && current <= 0) {
-      return `正在渲染，共 ${total} 页`;
+      return `Đang render, tổng ${total} trang`;
     }
     if (stageInfo.key === "render" && current >= total) {
-      return `渲染完成，共 ${total} 页`;
+      return `Render hoàn thành, tổng ${total} trang`;
     }
-    return `第 ${current}/${total} 页`;
+    return `Trang ${current}/${total}`;
   }
   if (progressUnit === "batch") {
-    return `第 ${current}/${total} 批`;
+    return `Lô ${current}/${total}`;
   }
   if (progressUnit === "step") {
     if (stageInfo.key === "render") {
-      return `准备 ${current}/${total}`;
+      return `Chuẩn bị ${current}/${total}`;
     }
-    return `进度 ${current}/${total}`;
+    return `Tiến độ ${current}/${total}`;
   }
   if (subtype === "continuation_review" || subtype === "page_policies") {
-    return `第 ${current}/${total} 页`;
+    return `Trang ${current}/${total}`;
   }
   if (subtype === "domain_inference" || subtype === "translation_prepare") {
-    return `进度 ${current}/${total}`;
+    return `Tiến độ ${current}/${total}`;
   }
   if (stageInfo.key === "translate") {
-    return `第 ${current}/${total} 批`;
+    return `Lô ${current}/${total}`;
   }
   if (stageInfo.key === "ocr") {
     if (looksLikeProviderPercentProgress(current, total)) {
-      return current > 0 ? `OCR ${current}%` : "OCR 处理中";
+      return current > 0 ? `OCR ${current}%` : "Đang xử lý OCR";
     }
-    return `第 ${current}/${total} 页`;
+    return `Trang ${current}/${total}`;
   }
   if (stageInfo.key === "render") {
-    return `第 ${current}/${total} 页`;
+    return `Trang ${current}/${total}`;
   }
-  return `进度 ${current}/${total}`;
+  return `Tiến độ ${current}/${total}`;
 }

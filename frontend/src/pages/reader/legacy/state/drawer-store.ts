@@ -1,12 +1,14 @@
-// 四抽屉(favorites/annotations/markdown/ai)的开合状态源:单一 active、互斥切换。
-// 替代旧 src/js/reader/side-drawers.js 的状态语义;DOM 写入(is-open/inert/aria-expanded)
-// 改由 React 组件订阅渲染,命令式消费方(ai-context、selection-favorites、boot 编排)
-// 仍拿同一个 store 当 drawerController 用(open/toggle/close 接口签名不变)。
+// Nguồn trạng thái đóng/mở bốn drawer (favorites/annotations/markdown/ai): active đơn nhất,
+// chuyển qua lại loại trừ. Thay thế ngữ nghĩa trạng thái của src/js/reader/side-drawers.js
+// cũ; thao tác ghi DOM (is-open/inert/aria-expanded) đổi sang component React đăng ký
+// render, phía tiêu thụ mệnh lệnh (ai-context, selection-favorites, điều phối boot) vẫn
+// lấy cùng store đó làm drawerController (chữ ký open/toggle/close không đổi).
 //
-// 语义保全(与旧 side-drawers 一致):
-// - open/toggle/close 每次调用都通知订阅者(即使 active 未变)——旧 sync() 无条件跑,
-//   onActiveChanged 消费方(scheduleScaleRefresh 等)依赖这个"每次都来"的节拍。
-// - close(name):不传 name 或 name 恰为当前 active 时才清空。
+// Bảo toàn ngữ nghĩa (khớp với side-drawers cũ):
+// - open/toggle/close mỗi lần gọi đều thông báo cho người đăng ký (dù active không đổi)
+//   — sync() cũ chạy vô điều kiện, phía tiêu thụ onActiveChanged (scheduleScaleRefresh
+//   v.v.) phụ thuộc nhịp "mỗi lần đều tới" này.
+// - close(name): không truyền name hoặc name đúng là active hiện tại mới xóa.
 
 export type DrawerActiveListener = (active: string) => void;
 
@@ -19,7 +21,8 @@ export function createReaderDrawerStore() {
   }
 
   return {
-    // useSyncExternalStore 兼容:subscribe 返回退订函数;监听器随参携带 active
+    // Tương thích useSyncExternalStore: subscribe trả về hàm hủy đăng ký; listener mang
+    // theo active làm tham số
     subscribe(listener: DrawerActiveListener) {
       listeners.add(listener);
       return () => listeners.delete(listener);

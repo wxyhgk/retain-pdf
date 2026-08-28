@@ -1,7 +1,7 @@
-# 后端 API 主文档
+# Tài liệu chính API backend
 
-本文档已收敛到统一入口：
+Tài liệu này đã được hội tụ vào một đầu vào thống nhất:
 
-- [RetainPDF 后端 API 总入口](./index.md)
+- [Tổng quan API backend RetainPDF](./index.md)
 
-保留这个文件是为了兼容旧链接。后续不要在这里新增接口细节，统一改 `index.md`。
+Giữ tệp này để tương thích với các liên kết cũ. Sau này không thêm chi tiết giao diện ở đây, thống nhất sửa `index.md`.

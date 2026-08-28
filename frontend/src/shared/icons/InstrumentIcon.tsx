@@ -1,5 +1,5 @@
-// 科学仪器线标（Kimi 生成，currentColor 描边）
-// 资源：src/assets/icons/instruments/
+// Biểu tượng đường nét dụng cụ khoa học (Kimi tạo, stroke dùng currentColor)
+// Tài nguyên: src/assets/icons/instruments/
 
 export type InstrumentName =
   | "microscope"
@@ -20,15 +20,15 @@ const SRC: Record<InstrumentName, string> = {
 
 export type InstrumentIconProps = {
   name: InstrumentName;
-  /** 显示尺寸，默认 40 */
+  /** Kích thước hiển thị, mặc định 40 */
   size?: number;
   className?: string;
   title?: string;
 };
 
 /**
- * 用 mask 吃 currentColor，这样主题换肤时图标跟 ink/muted 走。
- * （纯 <img> 无法继承 stroke currentColor）
+ * Dùng mask để nhận currentColor, nhờ đó icon đi theo ink/muted khi đổi skin.
+ * (Thẻ <img> thuần không thể kế thừa stroke currentColor.)
  */
 export function InstrumentIcon({
   name,

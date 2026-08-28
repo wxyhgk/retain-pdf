@@ -165,7 +165,7 @@ def assert_mock_submit(report, events):
     submitted_text = f"{submitted.get('firstText', '')} {settled.get('firstText', '')}"
     if "mock-job-20260415" not in f"{submitted.get('firstJobId', '')} {settled.get('firstJobId', '')}":
         errors.append("mock job card was not present after submit")
-    if "翻译中" not in submitted_text and "处理中" not in submitted_text:
+    if "Đang dịch" not in submitted_text and "Đang xử lý" not in submitted_text:
         errors.append("mock job card did not show an active translation/processing state")
     if int(settled.get("cardCount") or 0) < 1:
         errors.append("recent job cards disappeared after mock submit")

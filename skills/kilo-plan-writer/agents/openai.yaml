@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kilo Plan Writer"
+  short_description: "Write implementation-ready plans for Kilo Code"
+  default_prompt: "Use $kilo-plan-writer to inspect this repository and write an implementation-ready plan under .kilo/plans/."

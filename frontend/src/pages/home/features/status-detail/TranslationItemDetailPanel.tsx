@@ -1,9 +1,9 @@
-// 翻译调试:Item 详情 + 重放——JSX 重写
+// Gỡ lỗi dịch: chi tiết Item + phát lại — viết lại JSX cho
 // features/status-detail/translation-renderer.js#renderTranslationItemDetail/
-// #renderTranslationReplay(markup 拼接)的结构化版本。纯格式化函数
+// #renderTranslationReplay (nối markup) thành dạng cấu trúc. Hàm định dạng thuần
 // (boolLabel/diagnosticsOf/normalizeRoutePath/routePathOf/pageNumberOf/
-// finalStatusOf/fallbackToOf/degradationReasonOf)保留直接 import;
-// renderField/renderTextBlock 换成 InfoRow/TextBlock 两个 JSX 组件。
+// finalStatusOf/fallbackToOf/degradationReasonOf) giữ import trực tiếp;
+// renderField/renderTextBlock đổi thành hai component JSX InfoRow/TextBlock.
 
 import { InfoRow, TextBlock } from "./TranslationInfoBlocks.jsx";
 import { STATUS_DETAIL_DIALOG_IDS } from "./status-detail-dom-ids.js";
@@ -39,9 +39,9 @@ function ItemDetailBody({ payload }) {
         <InfoRow label="fallback_to" value={fallbackToOf(item) || "-"} />
         <InfoRow label="degradation_reason" value={degradationReasonOf(item) || "-"} />
       </div>
-      <TextBlock label="原文" value={item.source_text || ""} />
-      <TextBlock label="落盘翻译" value={item.translated_text || item.translation_unit_translated_text || item.group_translated_text || ""} />
-      <TextBlock label="保护后译文" value={item.protected_translated_text || item.translation_unit_protected_translated_text || item.group_protected_translated_text || ""} />
+      <TextBlock label="Bản gốc" value={item.source_text || ""} />
+      <TextBlock label="Bản dịch đã lưu" value={item.translated_text || item.translation_unit_translated_text || item.group_translated_text || ""} />
+      <TextBlock label="Bản dịch sau bảo vệ" value={item.protected_translated_text || item.translation_unit_protected_translated_text || item.group_protected_translated_text || ""} />
       <TextBlock label="translation_diagnostics" value={diagnostics || {}} />
     </>
   );
@@ -64,34 +64,34 @@ export function TranslationItemDetailPanel({ translation, onReplay }) {
   const loading = translation.itemDetailLoading;
   const hasItem = Boolean(payload?.item);
   const emptyText = translation.itemErrorText
-    || (translation.selectedItemId ? "请选择左侧 item" : "没有可查看的 item");
+    || (translation.selectedItemId ? "Vui lòng chọn item bên trái" : "Không có item để xem");
   const meta = loading
-    ? "读取中..."
+    ? "Đang đọc..."
     : hasItem
-      ? `${payload.item_id || payload.item?.item_id || "-"} · 第 ${pageNumberOf(payload, pageNumberOf(payload.item))} 页`
+      ? `${payload.item_id || payload.item?.item_id || "-"} · Trang ${pageNumberOf(payload, pageNumberOf(payload.item))}`
       : "-";
   const ids = STATUS_DETAIL_DIALOG_IDS.translation;
 
   const replay = translation.replay;
   const hasReplayResult = Boolean(replay?.payload);
   const replayStatus = translation.replayLoading
-    ? "重放中..."
+    ? "Đang phát lại..."
     : hasReplayResult
-      ? (replay.payload.replay_error ? "重放返回错误" : "重放完成")
+      ? (replay.payload.replay_error ? "Phát lại trả về lỗi" : "Phát lại hoàn tất")
       : (translation.replayErrorText || "-");
 
   return (
     <section className="translation-debug-column translation-debug-column-detail">
-      <div className="translation-debug-subhead"><h4>Item 详情</h4><span id={ids.itemMeta} className="status-panel-note">{meta}</span></div>
+      <div className="translation-debug-subhead"><h4>Chi tiết item</h4><span id={ids.itemMeta} className="status-panel-note">{meta}</span></div>
       <div className="translation-panel-body translation-panel-body-detail">
-        <div id={ids.itemLoading} className={loading ? "events-empty" : "events-empty hidden"}>正在读取 item 详情...</div>
+        <div id={ids.itemLoading} className={loading ? "events-empty" : "events-empty hidden"}>Đang đọc chi tiết item...</div>
         <div id={ids.itemEmpty} className={!loading && !hasItem ? "events-empty" : "events-empty hidden"}>{emptyText}</div>
         <div id={ids.itemDetail} className={!loading && hasItem ? "translation-item-detail" : "translation-item-detail hidden"}>
           {!loading && hasItem ? <ItemDetailBody payload={payload} /> : null}
         </div>
       </div>
       <div className="translation-replay-actions">
-        <button id={ids.itemReplay} type="button" className="button-link secondary" disabled={!hasItem} onClick={onReplay}>重放当前 item</button>
+        <button id={ids.itemReplay} type="button" className="button-link secondary" disabled={!hasItem} onClick={onReplay}>Phát lại item hiện tại</button>
         <span id={ids.replayStatus} className="status-panel-note">{replayStatus}</span>
       </div>
       <div id={ids.replayResult} className={hasReplayResult ? "translation-replay-result" : "translation-replay-result hidden"}>

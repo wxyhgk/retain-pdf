@@ -27,9 +27,9 @@ async fn job_events_route_classifies_new_pipeline_substages() {
     fs::write(
         job_root.join("logs").join("pipeline_events.jsonl"),
         concat!(
-            r#"{"job_id":"job-route-new-pipeline-substages","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"agent_repair","substage":"agent_repair","stage_detail":"翻译结果修复完成","event_type":"stage_progress","semantic_event_type":"progress","message":"翻译结果修复完成","progress_current":1,"progress_total":2,"payload":{}}"#,
+            r#"{"job_id":"job-route-new-pipeline-substages","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"agent_repair","substage":"agent_repair","stage_detail":"Hoàn thành sửa kết quả dịch","event_type":"stage_progress","semantic_event_type":"progress","message":"Hoàn thành sửa kết quả dịch","progress_current":1,"progress_total":2,"payload":{}}"#,
             "\n",
-            r#"{"job_id":"job-route-new-pipeline-substages","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"render_preprocess","substage":"render_prewarm","stage_detail":"渲染 payload 预热完成","event_type":"stage_progress","semantic_event_type":"progress","message":"render payload prewarm: ready","progress_current":2,"progress_total":3,"progress_unit":"step","payload":{}}"#,
+            r#"{"job_id":"job-route-new-pipeline-substages","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"render_preprocess","substage":"render_prewarm","stage_detail":"Hoàn thành prewarm render payload","event_type":"stage_progress","semantic_event_type":"progress","message":"render payload prewarm: ready","progress_current":2,"progress_total":3,"progress_unit":"step","payload":{}}"#,
             "\n"
         ),
     )

@@ -1,14 +1,15 @@
-// "一批文档 → 一批网格卡片 item"的唯一编排(重构②)。
+// Điều phối duy nhất cho "một lô documents -> một lô item thẻ lưới" (refactor 2).
 //
-// 之前这套"收集有 active_job_id 的文档 → 批量取 library/books 活态 → 建
-// bookMap → 逐篇 shapeDocumentCardItem"的编排被抄了两份:图书馆主网格
-// (document-library-source.js)和合集展开(collections/controller.js)。两份
-// 发散是"空合集" bug 的根源——合集那份是 F2 文档中心化之前的旧拷贝,自己
-// filter 掉了馆藏文档。收成这一个函数后,任何"列一批文档成卡片"的界面
-// (图书馆/合集/搜索/未来的新入口)都穿过它,不会再各自发散。
+// Trước đây luồng "thu thập document có active_job_id -> lấy hàng loạt trạng thái sống
+// từ library/books -> tạo bookMap -> shapeDocumentCardItem từng document" bị copy ở hai nơi:
+// lưới thư viện chính (document-library-source.js) và phần mở rộng collection (collections/controller.js).
+// Hai bản copy lệch nhau là gốc của bug "collection rỗng": bản collection là bản cũ trước F2
+// document-centric, tự filter mất document chỉ có trong thư viện. Gom về hàm này để mọi UI
+// "liệt kê một lô document thành thẻ" (thư viện/collection/tìm kiếm/entry tương lai) đều đi qua
+// cùng một đường và không lệch nhau nữa.
 //
-// 只负责 documents → cards 的映射(保序,不去重/不分页/不搜索过滤——那些是
-// 各消费方自己的关切,留在调用方)。
+// Chỉ chịu trách nhiệm map documents -> cards (giữ thứ tự, không dedupe/không phân trang/
+// không lọc tìm kiếm; các phần đó thuộc về từng consumer và ở lại call-site).
 
 import { shapeDocumentCardItem } from "./document-card-item.js";
 
@@ -16,10 +17,10 @@ function normalizedJobId(value) {
   return `${value || ""}`.trim();
 }
 
-// documents: /documents 返回的文档数组
-// fetchLibraryBookList: (apiPrefix, { jobIds, limit }: any) => { items } 端口(可缺省)
-// 返回:与 documents 等长、同序的卡片 item 数组(已翻译叠加 book 活态,馆藏走
-// 合成 job_id)。
+// documents: mảng document trả về từ /documents.
+// fetchLibraryBookList: port (apiPrefix, { jobIds, limit }: any) => { items } (có thể bỏ qua).
+// Trả về: mảng item thẻ cùng độ dài và cùng thứ tự với documents (document đã dịch được chồng trạng thái sống từ book,
+// document chỉ có trong thư viện dùng job_id tổng hợp).
 export async function shapeDocumentsWithBooks(documents, { fetchLibraryBookList, apiPrefix }: any = {}) {
   const docs = Array.isArray(documents) ? documents : [];
   const jobIds = docs.map((doc) => normalizedJobId(doc?.active_job_id)).filter(Boolean);

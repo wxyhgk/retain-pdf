@@ -1,5 +1,5 @@
-// composition 层对 src/js/* 的统一出口。
-// pages/home/features 与 create-*.ts 禁止再直接 import ../../../js/**；缺符号只改本文件。
+// composition Cặp lớp src/js/* Xuất khẩu hài hòa。
+// pages/home/features VÀ create-*.ts Cấm một lần nữa trực tiếp import ../../../js/**；Thiếu biểu tượng chỉ viết lại tài liệu。
 
 // —— config / constants ——
 export { API_PREFIX } from "../../../js/config/api-constants.js";
@@ -197,7 +197,7 @@ export {
 } from "../../../js/api/translation-debug.js";
 
 // —— feature controllers / ports ——
-// pages/home/features 不得直接 import ../../../js/features/*；统一从本文件拿。
+// pages/home/features Không được trực tiếp import ../../../js/features/*；Lấy thống nhất từ tài liệu này。
 
 // home / upload / workflow
 export { createHomeStatePort, HOME_LOADING_STATES } from "../../../js/features/home/state.js";

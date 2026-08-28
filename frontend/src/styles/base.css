@@ -3,9 +3,9 @@
     box-sizing: border-box;
   }
 
-  /* apple-design skill:减弱动效不等于零动效——用户开了"减弱动态效果"时,
-     整站过渡/动画统一收到几乎瞬时,不做逐组件适配(此前项目里完全没有这条,
-     是真实缺口)。 */
+  /* apple-design skill: giảm hiệu ứng động không có nghĩa là bằng không động — khi người dùng bật "giảm hiệu ứng động",
+     toàn bộ chuyển tiếp/animation trên trang được thu gọn về gần như tức thời, không làm thích ứng từng thành phần (trước đây dự án hoàn toàn không có quy tắc này,
+     là một lỗ hổng thực sự). */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -20,7 +20,7 @@
     overflow-x: hidden;
   }
 
-  /* 深色皮肤：系统控件（滚动条、表单）跟深色方案 */
+  /* Skin tối: hệ thống điều khiển (thanh cuộn, form) theo phương án tối */
   html.theme-dark,
   html[data-theme-group="dark"] {
     color-scheme: dark;
@@ -32,7 +32,7 @@
     overflow-x: hidden;
     font-family: var(--font-sans);
     color: var(--ink);
-    /* 实底交给 html + ambient-surface；body 透明以免盖住纹理 */
+    /* Nền đặc giao cho html + ambient-surface; body trong suốt để không che texture */
     background: transparent;
   }
 
@@ -57,7 +57,7 @@
 }
 
 
-/* 跨页无障碍：屏幕阅读器专用（home/reader/dialog 共用 className="sr-only"） */
+/* Khả năng tiếp cận xuyên trang: chỉ dành cho trình đọc màn hình (home/reader/dialog dùng chung className="sr-only") */
 .sr-only {
   position: absolute;
   width: 1px;

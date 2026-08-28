@@ -1,4 +1,4 @@
-# 同步解析代码
+# Mã phân tích đồng bộ
 # Please make sure the requests library is installed
 # pip install requests
 import base64
@@ -64,7 +64,7 @@ for i, res in enumerate(result["layoutParsingResults"]):
             print(f"Failed to download image, status code: {img_response.status_code}")
 
 
-# 异步解析代码
+# Mã phân tích không đồng bộ
 # Please make sure the requests library is installed
 # pip install requests
 import json

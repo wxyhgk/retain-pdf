@@ -1,5 +1,5 @@
-//! 图书馆数据层的最小 API:documents / favorites / 全文检索。
-//! 前端图书馆改版前,现有 /api/v1/library/books 投影接口保持不动。
+//! Lớp dữ liệu thư viện API tối thiểu: documents / favorites / tìm kiếm toàn văn.
+//! Trước khi cải tiến thư viện frontend, các giao diện projection hiện có /api/v1/library/books giữ nguyên.
 //!
 //! All handlers go through library_api (PR2–PR4).
 
@@ -57,7 +57,7 @@ pub async fn get_document_route(
     )?))
 }
 
-/// GET /api/v1/documents/:id/source.pdf — 无翻译 job 也能读源文件。
+/// GET /api/v1/documents/:id/source.pdf — có thể đọc tệp nguồn ngay cả khi không có job dịch.
 pub async fn download_document_source_pdf_route(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -124,8 +124,8 @@ pub async fn patch_document_route(
     )?))
 }
 
-/// DELETE /api/v1/documents/:id —— 彻底删除文档(行 + jobs + uploads + 文件)。
-/// 被收藏引用 → 409;运行中 job 需 ?force=true。
+/// DELETE /api/v1/documents/:id —— xóa hoàn toàn tài liệu (hàng + job + uploads + tệp).
+/// Được tham chiếu trong yêu thích → 409; job đang chạy cần ?force=true.
 pub async fn delete_document_route(
     State(state): State<AppState>,
     AxumPath(document_id): AxumPath<String>,
@@ -142,7 +142,7 @@ pub async fn delete_document_route(
 // --- translate ---
 
 /// POST /api/v1/documents/:id/translate
-/// 复用馆藏文档已存的源 PDF 发起 book 翻译流水线，完成后 lifecycle 会回填 active_job_id。
+/// Tái sử dụng PDF nguồn đã có trong tài liệu lưu trữ để khởi chạy pipeline dịch book, sau khi hoàn thành lifecycle sẽ điền active_job_id.
 pub async fn translate_document_route(
     State(state): State<AppState>,
     headers: HeaderMap,

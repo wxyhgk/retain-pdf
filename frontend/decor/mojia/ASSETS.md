@@ -1,128 +1,127 @@
-# 「墨家」装饰包 —— 美术资产说明
+# Gói trang trí "Mặc Gia" — Mô tả tài sản mỹ thuật
 
-> 本文件格式沿用 `decor/jiangnan/ASSETS.md` 模板（契约真值见
-> `docs/theme-system/DECOR_PACKS.md`）。当前包内资产为**正式稿**：
-> 背景为用户提供的绢本框景图；道具由 10 张墨家机关题材透明 PNG 素材
-> （1254×1254 RGBA）经 ImageMagick 裁边 / 缩放 / 合成 / 压缩而来。
-> 替换资产时同名覆盖即可生效。
+> Định dạng tệp này tuân theo mẫu `decor/jiangnan/ASSETS.md` (chân lý hợp đồng xem tại
+> `docs/theme-system/DECOR_PACKS.md`). Tài sản trong gói hiện tại là **bản chính thức**:
+> nền là tranh khung lụa do người dùng cung cấp; đạo cụ gồm 10 tấm PNG trong suốt chủ đề
+> cơ quan Mặc Gia (1254×1254 RGBA) được ImageMagick cắt viền / thu phóng / ghép / nén.
+> Thay thế tài sản chỉ cần ghi đè cùng tên.
 
 ---
 
-## 1. 主题气质（所有资产共同遵守）
+## 1. Khí chất chủ đề (tất cả tài sản cùng tuân thủ)
 
-**意象**：墨家工坊 · 竹简卷帙 · 青铜机关 · 规矩绳墨。端方、克制、暖素。
-**禁止**：高饱和色、赛博/现代元素、拥挤构图、兵器特写压屏。
+**Hình tượng**: Xưởng Mặc Gia · Trúc giản quyển trục · Cơ quan đồng xanh · Quy củ thằng mặc. Đoan trang, kiềm chế, ấm mộc.
+**Cấm**: Màu bão hòa cao, yếu tố cyber/hiện đại, bố cục chen chúc, cận cảnh binh khí đè màn hình.
 
-配色从皮肤 token 取（`src/styles/themes/mojia.css`）：
+Bảng màu lấy từ token skin (`src/styles/themes/mojia.css`):
 
-| token | 值 | 用途 |
+| token | Giá trị | Mục đích |
 |---|---|---|
-| 素绢 `--paper` | `#faf8f1` | 亮部 / 留白 |
-| 暖绢底 `--bg` | `#f2efe8` | 背景基调 / 道具底雾 |
-| 青铜 `--accent` | `#4c6658` | 主强调 |
-| 玄墨 `--ink` | `#26221b` | 主按钮底 / 点睛 |
-| 青铜金 `--gold` | `#8f7442` | 小面积点缀 |
+| Lụa mộc `--paper` | `#faf8f1` | Phần sáng / khoảng trống |
+| Nền lụa ấm `--bg` | `#f2efe8` | Tông nền / sương đáy đạo cụ |
+| Đồng xanh `--accent` | `#4c6658` | Nhấn chính |
+| Mực huyền `--ink` | `#26221b` | Đáy nút chính / điểm nhấn |
+| Vàng đồng `--gold` | `#8f7442` | Chấm phá diện tích nhỏ |
 
-**对比度红线**：背景垫在 ~92% 不透明纸面板之下，整体明度必须 ≥ `#dde2dd`。
+**Ngưỡng tương phản**: Nền đặt dưới tấm giấy ~92% không mờ, độ sáng tổng thể phải ≥ `#dde2dd`.
 
-**摆放纪律**（真机目检换来的）：
+**Kỷ luật sắp xếp** (rút ra từ kiểm tra thiết bị thật):
 
-- 站立/坐卧的物件只能放 **bottom 锚点**（脚踩屏幕底缘接地）；
-  top 锚点只放会飞的（木鸢）——立件放 top = 悬空贴纸
-- `hero` 落在书库面板横幅区、`top-center` 与悬浮导航相撞，**两锚点禁用**
-- 同侧物件按"组图"合成一张（一 slot 一层），不要散摆成四角贴纸
+- Vật đứng/nằm chỉ đặt **điểm neo bottom** (chân chạm mép dưới màn hình);
+  điểm neo top chỉ đặt vật biết bay (diều gỗ) — vật đứng đặt top = nhãn dán lơ lửng
+- `hero` rơi vào vùng banner panel thư viện, `top-center` va chạm điều hướng nổi, **hai điểm neo bị cấm**
+- Vật cùng phía ghép thành "nhóm hình" một tấm (một slot một tầng), không rải rác thành nhãn dán bốn góc
 
-## 2. 通用技术规格（契约强制）
+## 2. Thông số kỹ thuật chung (hợp đồng bắt buộc)
 
-- 格式：`webp`（首选）/ `png` / `svg` / `avif`；**道具类必须透明背景**
-- 单文件 ≤ **512 KB**（`IMAGE_BUDGET_KB`，contract.ts 真值）
-- 色彩空间 sRGB；命名与 manifest.json 的 `src` 一致；替换 = 同名覆盖
+- Định dạng: `webp` (ưu tiên) / `png` / `svg` / `avif`; **đạo cụ bắt buộc nền trong suốt**
+- Tệp đơn ≤ **512 KB** (`IMAGE_BUDGET_KB`, chân lý contract.ts)
+- Không gian màu sRGB; tên khớp với `src` trong manifest.json; thay thế = ghi đè cùng tên
 
-## 3. 逐资产规格（现状 + 复现管线）
+## 3. Thông số từng tài sản (hiện trạng + pipeline tái tạo)
 
-素材源：`墨家透明素材包_10个元素/*.png`。通用预处理：`magick <素材> -trim +repage`。
-道具统一融合工序：`-modulate 100,90,100` 降饱和 + 底部叠 `--bg` 色雾带渐隐
-（贴底件 220px 浓到 55%），与 bg 底部雾感同一语言；**不加硬接地阴影**
-（浮空锚点上阴影比道具更显假）。压缩：`-define webp:alpha-quality=95 -quality 85`。
+Nguồn nguyên liệu: `mojia-transparent-assets-10-elements/*.png`. Tiền xử lý chung: `magick <nguyen_lieu> -trim +repage`.
+Quy trình hòa trộn đạo cụ thống nhất: `-modulate 100,90,100` giảm bão hòa + chồng dải sương màu `--bg` ở đáy
+(vật chạm đáy 220px đậm đến 55%), cùng ngôn ngữ cảm giác sương với đáy bg; **không thêm bóng cứng chạm đất**
+(bóng trên điểm neo lơ lửng trông giả hơn cả đạo cụ). Nén: `-define webp:alpha-quality=95 -quality 85`.
 
-### 3.1 `bg.webp`（backdrop 全幅背景，31 KB）
+### 3.1 `bg.webp` (backdrop toàn màn hình, 31 KB)
 
-- 来源：**用户提供稿**（绢本暖底 + 四角回纹框 + 两下角淡墨远山/齿轮），
-  原尺寸 1672×941 直接转 webp，不做二次加工
-- 构图天然满足契约：上部 60% 留白、下部淡景、明度远高于红线
+- Nguồn: **Bản do người dùng cung cấp** (nền lụa ấm + khung hồi văn bốn góc + núi xa/miệng bánh răng mực nhạt hai góc dưới),
+  kích thước gốc 1672×941 chuyển thẳng sang webp, không gia công lần hai
+- Bố cục tự nhiên đáp ứng hợp đồng: 60% phía trên để trống, phía dưới cảnh nhạt, độ sáng cao hơn ngưỡng đỏ nhiều
 
-### 3.2 `kite.webp`（left-top 双木鸢 ← 素材 07）
+### 3.2 `kite.webp` (left-top đôi diều gỗ ← nguyên liệu 07)
 
-- 出图：**560×720** 透明；主鸢 300 宽（+170,+60，仰 6°）、副鸢 165 宽
-  （+40,+150，俯 4°），朝右上飞进画面，只占画布上部——
-  left-top 是唯一"会飞的东西"该待的锚点（top-center 撞悬浮导航，禁用）
+- Xuất hình: **560×720** trong suốt; diều chính rộng 300 (+170,+60, ngửa 6°), diều phụ rộng 165
+  (+40,+150, cúi 4°), bay vào khung hình từ phải trên, chỉ chiếm phần trên canvas —
+  left-top là điểm neo duy nhất "vật biết bay" nên ở (top-center va chạm điều hướng nổi, cấm)
 
-### 3.3 `master.webp`（right-bottom-fg 机关大师单人 ← 素材 02）
+### 3.3 `master.webp` (right-bottom-fg đại sư cơ quan đơn nhân ← nguyên liệu 02)
 
-- 出图：**600×840** 透明，人物高 800（画布 95%）贴右贴底，底部 220px 雾带接地
-- 曾是 scholar 组图一员，现按目检要求单人放大；挂 **right-bottom-fg**（fg 带，
-  压在面板之上，避免袍角没入面板边缘），并带 `clickQuote` 两句《墨子》语录
-  （点击人物轮播：志不强者智不达，言不信者行不果 / 兴天下之利，除天下之害）
+- Xuất hình: **600×840** trong suốt, nhân vật cao 800 (95% canvas) sát phải sát đáy, dải sương 220px chạm đất
+- Từng là thành viên nhóm scholar, nay theo yêu cầu kiểm tra thực tế phóng to đơn nhân; treo **right-bottom-fg** (dải fg,
+  đè lên trên panel, tránh tà áo chìm vào mép panel), kèm `clickQuote` hai câu ngữ lục "Mặc Tử"
+  (nhấp nhân vật luân phiên: Chí bất cường giả trí bất đạt, ngôn bất tín giả hành bất quả / Hưng thiên hạ chi lợi, trừ thiên hạ chi hại)
 
-### 3.4 `scholar.webp` / `lantern-lock.webp`（备用，未挂层）
+### 3.4 `scholar.webp` / `lantern-lock.webp` (dự phòng, chưa treo tầng)
 
-- 两组图（大师书案 / 灯下机巧，规格见 git 历史），真机目检后撤下；文件留库可复挂
+- Hai nhóm hình (thư án đại sư / xảo cơ dưới đèn, thông số xem lịch sử git), sau kiểm tra thiết bị thật đã gỡ; tệp giữ trong kho có thể treo lại
 
-### 3.5 `boy.webp`（备用，未挂层 ← 素材 01）
+### 3.5 `boy.webp` (dự phòng, chưa treo tầng ← nguyên liệu 01)
 
-- 出图：440×520 透明。英雄位（hero）落在书库面板横幅区，
-  人物会被纸面压成"水印残影"——布局演变前不入库挂层
+- Xuất hình: 440×520 trong suốt. Vị trí anh hùng (hero) rơi vào vùng banner panel thư viện,
+  nhân vật sẽ bị mặt giấy ép thành "tàn ảnh watermark" — trước khi bố cục tiến hóa không đưa vào kho treo tầng
 
-### 3.6 `gear-btn.webp`（"添加"按钮贴面 ← 素材 03，不经 manifest）
+### 3.6 `gear-btn.webp` (mặt nút "thêm" ← nguyên liệu 03, không qua manifest)
 
-- 出图：**128×125** 透明（40px 钮面的 3x 余量），齿轮紧凑裁边、不雾化
-- 消费方是 `themes/mojia.css` 的 `.library-bottom-icon-btn-ornament` 规则
- *（组件 AppBottomBar 预留的换装钩子），把底栏"+"钮面换成真齿轮、
-  悬停转 45°；不经 manifest、不进舞台图层
-- **注意**：主题 CSS 里以 data: URI 内联此图（112px q80 派生版，约 8KB），
-  图变了要同步重生成内联版。另一个坑：钩子是组件改动，**必须
-  `npm run build:js` 重出 bundle**——只跑 build:css 会出现"皮肤藏起 + 号、
-  钩子元素不存在"的空白钮
+- Xuất hình: **128×125** trong suốt (dư lượng 3x cho mặt nút 40px), bánh răng cắt viền gọn, không làm mờ
+- Bên tiêu thụ là quy tắc `.library-bottom-icon-btn-ornament` trong `themes/mojia.css`
+ *(móc thay trang phục dự phòng của component AppBottomBar), đổi mặt nút "+" thanh dưới thành bánh răng thật,
+  hover xoay 45°; không qua manifest, không vào tầng sân khấu
+- **Lưu ý**: Trong CSS chủ đề, hình này được nhúng inline dạng data: URI (phiên bản phái sinh 112px q80, ~8KB),
+  hình thay đổi phải đồng bộ tạo lại bản inline. Một bẫy khác: móc là thay đổi component, **bắt buộc
+  `npm run build:js` xuất lại bundle** — chỉ chạy build:css sẽ xuất hiện "skin giấu dấu +,
+  phần tử móc không tồn tại" nút trống
 
-### 3.7 `tools-btn.webp`（"设置"按钮贴面 ← 素材 06，不经 manifest）
+### 3.7 `tools-btn.webp` (mặt nút "cài đặt" ← nguyên liệu 06, không qua manifest)
 
-- 出图：**128×128** 透明；主题 CSS 内联 112px q80 派生版（约 6KB）
-- 消费方同齿轮钮：`#app-settings-btn` 的 ornament 钩子；"设置=规矩工具"，悬停轻抬
+- Xuất hình: **128×128** trong suốt; CSS chủ đề nhúng inline phiên bản phái sinh 112px q80 (~6KB)
+- Bên tiêu thụ giống nút bánh răng: móc ornament của `#app-settings-btn`; "cài đặt = công cụ quy củ", hover nâng nhẹ
 
-### 3.8 `scroll-btn.webp` / `library-btn.webp` / `fav-btn.webp`（顶栏 tab 图标贴面 ← 素材 08 / 11 / 12，不经 manifest）
+### 3.8 `scroll-btn.webp` / `library-btn.webp` / `fav-btn.webp` (mặt biểu tượng tab thanh trên ← nguyên liệu 08 / 11 / 12, không qua manifest)
 
-- 出图：均 **128px** 透明；主题 CSS 内联 96px q80 派生版（各约 3KB）
-- 消费方：`#library-top-tab-{categories,library,favorites}` 的
-  `.library-top-tab-ornament` 钩子（LibraryTopTabs 组件预留），24px 图标位微出血；
-  语义：图书馆=机关书架竹简、合集=竹简卷轴、收藏=入函典藏
-- **注意**：素材 11 / 12 是 RGB 白底图（非 RGBA），入库前必须抠图：
-  `-alpha set -fuzz 9% -fill none -floodfill +2+2 white`（四角各一次）；
-  08 等前 10 张素材本身透明，直接 `-trim` 即可
+- Xuất hình: đều **128px** trong suốt; CSS chủ đề nhúng inline phiên bản phái sinh 96px q80 (mỗi tấm ~3KB)
+- Bên tiêu thụ: móc `.library-top-tab-ornament` của `#library-top-tab-{categories,library,favorites}`
+  (component LibraryTopTabs dự phòng), vị trí biểu tượng 24px tràn nhẹ;
+  ngữ nghĩa: thư viện = kệ sách trúc giản cơ quan, bộ sưu tập = cuộn trúc giản, yêu thích = nhập hòm điển tạng
+- **Lưu ý**: Nguyên liệu 11 / 12 là hình nền trắng RGB (không phải RGBA), trước khi nhập kho phải tách nền:
+  `-alpha set -fuzz 9% -fill none -floodfill +2+2 white` (bốn góc mỗi lần);
+  08 và 10 tấm nguyên liệu trước đó vốn trong suốt, trực tiếp `-trim` là được
 
-### 3.9 题字（quote）—— 不是图片资产
+### 3.9 Đề tự (quote) — không phải tài sản hình ảnh
 
-竖排文字由舞台直接渲染。当前文案：「兼相爱 / 交相利」（《墨子·兼爱》）。
+Văn tự dọc do sân khấu render trực tiếp. Văn án hiện tại: 「Kiêm tương ái / Giao tương lợi」("Mặc Tử · Kiêm Ái").
 
-## 4. 空置锚点
+## 4. Điểm neo bỏ trống
 
-| slot | 状态 | 原因 |
+| slot | Trạng thái | Lý do |
 |---|---|---|
-| `hero` / `top-center` | **禁用** | 落在功能面板/悬浮导航区，见 §1 摆放纪律 |
-| 底部中央（底栏两侧） | **禁用** | 书库面板全高占满底部：mid 带被面板压住成残影、fg 带压在书卡上像贴纸。曾为此登记过 `bottom-center` 锚点（齿轮核心），真机目检否决后回退 |
-| `right-top` | 空 | 题字条幅独占右上，再放道具会互相压盖 |
-| `edge-left` / `edge-right` | 空 | fg 压边带；如加（璎珞/绳墨线）必须极稀疏，中部 80% 留空 |
+| `hero` / `top-center` | **Cấm** | Rơi vào vùng panel chức năng/điều hướng nổi, xem §1 kỷ luật sắp xếp |
+| Giữa dưới (hai bên thanh dưới) | **Cấm** | Panel thư viện chiếm đầy chiều cao đáy: dải mid bị panel đè thành tàn ảnh, dải fg đè lên thẻ sách như nhãn dán. Từng đăng ký điểm neo `bottom-center` (lõi bánh răng), sau kiểm tra thiết bị thật phủ quyết đã lùi |
+| `right-top` | Trống | Dải đề tự độc chiếm phải trên, thêm đạo cụ sẽ đè lấn nhau |
+| `edge-left` / `edge-right` | Trống | Dải fg ép biên; nếu thêm (anh lạc/dây mực) phải cực thưa, 80% giữa để trống |
 
-素材 05 连弩 / 09 城楼：用户框景图已含远景，剪影方案废弃，原图留作日后
-3D 化或其他主题的原料；素材 03 齿轮改作"添加"按钮贴面（见 §3.6）。
+Nguyên liệu 05 liên nỏ / 09 thành lâu: Tranh khung cảnh người dùng đã chứa viễn cảnh, phương án cắt bóng bỏ, hình gốc giữ làm nguyên liệu cho 3D hóa hoặc chủ đề khác sau này; nguyên liệu 03 bánh răng chuyển làm mặt nút "thêm" (xem §3.6).
 
-## 5. 验收（替换/新增资产后必跑）
+## 5. Nghiệm thu (bắt buộc chạy sau khi thay/thêm tài sản)
 
 ```bash
 cd frontend
 node --import ./tests/helpers/register-jsx.mjs --test tests/decor-stage.test.mjs
 find decor/mojia -type f \( -name '*.webp' -o -name '*.png' -o -name '*.svg' -o -name '*.avif' \) -size +512k
-# ↑ 有输出 = 超预算，压缩后再入库
+# ↑ Có output = vượt ngân sách, nén xong mới nhập kho
 ```
 
-浏览器目检：切主题到「墨家」，确认 <1100px 窄屏只留背景、
-功能面板文字可读性不受背景干扰。
+Kiểm tra bằng mắt trên trình duyệt: Chuyển chủ đề sang "Mặc Gia", xác nhận màn hình hẹp <1100px chỉ giữ nền,
+khả năng đọc văn bản panel chức năng không bị nền can nhiễu.

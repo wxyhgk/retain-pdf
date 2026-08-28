@@ -1,45 +1,45 @@
-// 阅读器工具定义（对齐 legacy 顶栏四件套 + 下载在 FAB 另区）
+// Định nghĩa công cụ đọc (căn chỉnh theo bộ 4 công cụ topbar legacy + tải xuống ở khu vực FAB riêng)
 
 export type ReaderToolId = "notes" | "favorites" | "markdown" | "ai";
 
 export type ReaderToolDef = {
   id: ReaderToolId;
   label: string;
-  /** 副文案（关 / 开） */
+  /** Copy phụ (đóng / mở). */
   subIdle: string;
   subOpen: string;
-  /** 源文档只读时是否禁用 */
+  /** Có bị tắt khi chỉ đọc tài liệu gốc không. */
   needsJob: boolean;
 };
 
-/** 与 legacy ReaderTopbarActions.TOOL_BUTTONS 同一套能力 */
+/** Cùng bộ capability với legacy ReaderTopbarActions.TOOL_BUTTONS. */
 export const READER_TOOLS: readonly ReaderToolDef[] = Object.freeze([
   {
     id: "notes",
-    label: "批注",
-    subIdle: "选中文字后添加",
-    subOpen: "关闭悬浮窗",
+    label: "Ghi chú",
+    subIdle: "Chọn văn bản để thêm",
+    subOpen: "Đóng cửa sổ nổi",
     needsJob: false,
   },
   {
     id: "favorites",
-    label: "摘录",
-    subIdle: "本书云端收藏",
-    subOpen: "关闭悬浮窗",
+    label: "Trích đoạn",
+    subIdle: "Mục yêu thích trên mây của sách này",
+    subOpen: "Đóng cửa sổ nổi",
     needsJob: false,
   },
   {
     id: "markdown",
     label: "Markdown",
-    subIdle: "识别 / 译文文本",
-    subOpen: "关闭悬浮窗",
+    subIdle: "Văn bản OCR / bản dịch",
+    subOpen: "Đóng cửa sổ nổi",
     needsJob: true,
   },
   {
     id: "ai",
-    label: "AI 问答",
-    subIdle: "基于文档提问",
-    subOpen: "关闭悬浮窗",
+    label: "Hỏi đáp AI",
+    subIdle: "Đặt câu hỏi theo tài liệu",
+    subOpen: "Đóng cửa sổ nổi",
     needsJob: true,
   },
 ]);

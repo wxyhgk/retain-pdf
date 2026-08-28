@@ -376,7 +376,7 @@ OCR progress example:
   "display_stage": "ocr",
   "stage": "ocr_processing",
   "substage": "provider_processing",
-  "stage_detail": "Paddle 正在解析文件，第 12/34 页",
+  "stage_detail": "Paddle đang phân tích file, trang 12/34",
   "event_type": "progress",
   "progress": {
     "unit": "page",
@@ -399,7 +399,7 @@ Translation batch progress example:
   "job_id": "20260514-xxxx",
   "display_stage": "translation",
   "stage": "translating",
-  "stage_detail": "正在翻译第 8/42 批",
+  "stage_detail": "Đang dịch lô 8/42",
   "event_type": "progress",
   "progress": {
     "unit": "batch",
@@ -416,7 +416,7 @@ Render progress example:
   "job_id": "20260514-xxxx",
   "display_stage": "render",
   "stage": "rendering",
-  "stage_detail": "正在渲染第 18/34 页",
+  "stage_detail": "Đang render trang 18/34",
   "event_type": "progress",
   "progress": {
     "unit": "page",
@@ -759,7 +759,7 @@ Example item:
     "stage": "translating",
     "substage": "translation_batches",
     "lane": "main",
-    "stage_detail": "正在翻译，第 3/12 批",
+    "stage_detail": "Đang dịch, batch 3/12",
     "progress": {"unit": "batch", "current": 3, "total": 12, "percent": 25.0}
   },
   "background_snapshots": [],
@@ -800,7 +800,7 @@ Response:
     "stages": [
       {
         "stage": "ocr",
-        "label": "重试 OCR",
+        "label": "Thử lại OCR",
         "can_retry": true,
         "reason": "",
         "disabled_reason": "",
@@ -815,7 +815,7 @@ Response:
       },
       {
         "stage": "translation",
-        "label": "重试翻译",
+        "label": "Thử lại dịch",
         "can_retry": true,
         "reason": "",
         "disabled_reason": "",
@@ -830,7 +830,7 @@ Response:
       },
       {
         "stage": "render",
-        "label": "重新渲染",
+        "label": "Render lại",
         "can_retry": true,
         "reason": "",
         "disabled_reason": "",
@@ -992,8 +992,8 @@ Create / update request body:
 {
   "name": "semiconductor",
   "entries": [
-    {"source": "band gap", "target": "带隙", "note": "materials"},
-    {"source": "density of states", "target": "态密度", "note": ""}
+    {"source": "band gap", "target": "khe năng lượng", "note": "materials"},
+    {"source": "density of states", "target": "mật độ trạng thái", "note": ""}
   ]
 }
 ```
@@ -1015,7 +1015,7 @@ CSV parse helper request:
 
 ```json
 {
-  "csv_text": "source,target,note\nband gap,带隙,materials\n"
+  "csv_text": "source,target,note\nband gap,khe năng lượng,materials\n"
 }
 ```
 
@@ -1060,7 +1060,7 @@ Response:
       "stage": "translating",
       "substage": "translation_batches",
       "lane": "main",
-      "stage_detail": "正在翻译，第 3/12 批",
+    "stage_detail": "Đang dịch, lô thứ 3/12",
       "progress": {
         "unit": "batch",
         "current": 3,
@@ -1074,7 +1074,7 @@ Response:
         "stage": "rendering",
         "substage": "render_prewarm",
         "lane": "background",
-        "stage_detail": "渲染预热完成",
+        "stage_detail": "Làm nóng render hoàn tất",
         "progress": {
           "unit": "step",
           "current": 2,
@@ -1192,7 +1192,7 @@ Response:
     "artifacts_display": [
       {
         "key": "output_pdf",
-        "label": "译文 PDF",
+        "label": "PDF bản dịch",
         "ready": false,
         "kind": "pdf",
         "file_name": "paper-translated.pdf",
@@ -1360,7 +1360,7 @@ Response:
           "stage": "translating",
           "substage": "translation_batches",
           "lane": "main",
-          "stage_detail": "正在翻译，第 3/12 批",
+"stage_detail": "Đang dịch, lô 3/12",
           "progress": {
             "unit": "batch",
             "current": 3,
@@ -1678,7 +1678,7 @@ Response:
         "final_status": "translated"
       },
       "replay_result": {
-        "translated_text": "杂环 9 的形成增强了超共轭作用……"
+        "translated_text": "Sự hình thành vòng dị vòng 9 tăng cường hiệu ứng siêu liên hợp…"
       },
       "replay_error": null
     }

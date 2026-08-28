@@ -209,7 +209,7 @@ def test_domain_context_parser_salvages_fields_from_malformed_json() -> None:
     result = structured_parsers.parse_domain_context_response(content, preview_text="preview")
     assert result["domain"] == "computational chemistry"
     assert result["summary"] == "A materials-modeling paper with equation-heavy prose."
-    assert result["translation_guidance"] == "保留术语、缩写和公式记号，不要意译。"
+    assert result["translation_guidance"] == "Giữ lại thuật ngữ、Từ viết tắt và điểm đánh dấu công thức，Không dịch。"
 
 
 def test_placeholder_guard_canonicalizes_nested_json_shell() -> None:
@@ -223,7 +223,7 @@ def test_placeholder_guard_canonicalizes_nested_json_shell() -> None:
                         "translations": [
                             {
                                 "item_id": "p030-b010",
-                                "translated_text": "计算效率、成本与精度。",
+                                "translated_text": "Hiệu quả tính toán、Chi phí & Độ chính xác。",
                             }
                         ]
                     },
@@ -232,7 +232,7 @@ def test_placeholder_guard_canonicalizes_nested_json_shell() -> None:
             }
         },
     )
-    assert result["p030-b010"]["translated_text"] == "计算效率、成本与精度。"
+    assert result["p030-b010"]["translated_text"] == "Hiệu quả tính toán、Chi phí & Độ chính xác。"
 
 
 def test_placeholder_guard_rejects_protocol_shell_output() -> None:
@@ -242,7 +242,7 @@ def test_placeholder_guard_rejects_protocol_shell_output() -> None:
             {
                 "p030-b010": {
                     "decision": "translate",
-                    "translated_text": '{ "translations": [{"item_id":"p030-b010","translated_text":"计算效率"}] }',
+                    "translated_text": '{ "translations": [{"item_id":"p030-b010","translated_text":"Hiệu quả tính toán"}] }',
                 }
             },
         )
@@ -261,7 +261,7 @@ def test_placeholder_guard_rejects_unbalanced_direct_typst_math_delimiters() -> 
             {
                 "p021-b005": {
                     "decision": "translate",
-                    "translated_text": "含有被破坏的 $ m' 数学片段。",
+                    "translated_text": "Chứa nội dung bị phá hoại $ m' Đoạn mã toán học。",
                 }
             },
         )
@@ -284,7 +284,7 @@ def test_placeholder_guard_rejects_direct_typst_following_context_math_bleed() -
             {
                 "p125-b018": {
                     "decision": "translate",
-                    "translated_text": r"为简化起见，考虑一个同核中性双原子分子AB。我们欲证明结合能在$ \lambda = 1 $时为正。",
+                    "translated_text": r"Để đơn giản，Xem xét một phân tử diatomic trung tính đồng nhânAB。Chúng tôi muốn chứng minh rằng việc kết hợp$ \lambda = 1 $Giờ là số dương。",
                 }
             },
         )
@@ -303,7 +303,7 @@ def test_placeholder_guard_rejects_model_request_prompt_output() -> None:
             {
                 "p014-b014": {
                     "decision": "translate",
-                    "translated_text": "请提供待翻译的原文。",
+                    "translated_text": "Vui lòng cung cấp văn bản gốc cần dịch。",
                 }
             },
         )
@@ -321,7 +321,7 @@ def test_placeholder_guard_allows_legitimate_source_text_request_sentence() -> N
         {
             "p014-b015": {
                 "decision": "translate",
-                "translated_text": "该表单要求用户在提交前提供原文。",
+                "translated_text": "Biểu mẫu yêu cầu người dùng cung cấp văn bản gốc trước khi gửi。",
             }
         },
     )
@@ -340,10 +340,10 @@ def test_translation_and_formula_outputs_use_strict_json_schema_format() -> None
 
 def test_formula_segment_parser_accepts_schema_json_payload() -> None:
     result = segment_routing.parse_segment_translation_payload(
-        '{"segments":[{"segment_id":"1","translated_text":"第一段"},{"segment_id":"2","translated_text":"第二段"}]}',
+        '{"segments":[{"segment_id":"1","translated_text":"Đoạn đầu tiên"},{"segment_id":"2","translated_text":"Giai đoạn thứ hai"}]}',
         expected_segments=[
             {"segment_id": "1", "source_text": "first"},
             {"segment_id": "2", "source_text": "second"},
         ],
     )
-    assert result == {"1": "第一段", "2": "第二段"}
+    assert result == {"1": "Đoạn đầu tiên", "2": "Giai đoạn thứ hai"}

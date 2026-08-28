@@ -1,4 +1,4 @@
-// 主流程 StatusCard 展示：status-card-shell + hero（DOM 契约 id 保留）。
+// Hiển thị StatusCard quy trình chính: status-card-shell + hero (giữ id hợp đồng DOM).
 
 import { StageFlow } from "./StageFlow.jsx";
 import { SubstageFlow } from "./SubstageFlow.jsx";
@@ -74,12 +74,12 @@ export function StatusCardMain({
                 id={ids.cancelButton}
                 type="button"
                 className="status-action-btn status-head-btn status-head-cancel"
-                aria-label="取消任务"
-                title="取消任务"
+                aria-label="Hủy tác vụ"
+                title="Hủy tác vụ"
                 disabled={!snapshot.cancelEnabled || cancelDisabled}
                 onClick={() => cancelCurrentJob?.()}
               >
-                <span>取消</span>
+                <span>Hủy</span>
               </button>
               <div className="status-head-center">
                 <div id={ids.ringLabel} className="status-ring-label">{ringLabel}</div>
@@ -91,11 +91,11 @@ export function StatusCardMain({
                 id={ids.detailButton}
                 type="button"
                 className="status-action-btn status-head-btn status-head-detail"
-                aria-label="任务详情"
-                title="任务详情"
+                aria-label="Chi tiết tác vụ"
+                title="Chi tiết tác vụ"
                 onClick={openDetail}
               >
-                <span>详情</span>
+                <span>Chi tiết</span>
               </button>
             </div>
 
@@ -117,7 +117,7 @@ export function StatusCardMain({
                 <div
                   id="status-stage-animation"
                   className={`status-stage-animation${lottie.hasStageAnimation ? "" : " hidden"}`}
-                  aria-label="任务阶段动画"
+                  aria-label="Hoạt ảnh giai đoạn tác vụ"
                 >
                   <div
                     id="status-stage-lottie"

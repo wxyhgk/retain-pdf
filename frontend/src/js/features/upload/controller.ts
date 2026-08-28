@@ -134,7 +134,7 @@ export function mountUploadFeature({
 
   function formatByteLimit(bytes) {
     const mb = Number(bytes) / (1024 * 1024);
-    return Number.isFinite(mb) && mb > 0 ? `${Math.round(mb)}MB` : "当前";
+    return Number.isFinite(mb) && mb > 0 ? `${Math.round(mb)}MB` : "hiện tại";
   }
 
   function normalizePageRangeValue(startValue = "", endValue = "") {
@@ -210,19 +210,19 @@ export function mountUploadFeature({
     const end = rawEnd.trim();
     const maxPage = pageRangeLimit();
     if ((start && Number(start) < 1) || (end && Number(end) < 1)) {
-      setText("error-box", "页码必须从 1 开始");
+      setText("error-box", "Số trang phải bắt đầu từ 1");
       return false;
     }
     if ((start && maxPage && Number(start) > maxPage) || (end && maxPage && Number(end) > maxPage)) {
-      setText("error-box", `页码不能超过 ${maxPage}`);
+      setText("error-box", `Số trang không được vượt quá ${maxPage}`);
       return false;
     }
     if (start && end && Number(start) > Number(end)) {
-      setText("error-box", "起始页不能大于结束页");
+      setText("error-box", "Trang bắt đầu không được lớn hơn trang kết thúc");
       return false;
     }
     if (maxPage && start && end && Number(end) - Number(start) + 1 > maxPage) {
-      setText("error-box", `页码区间不能超过 ${maxPage} 页`);
+      setText("error-box", `Khoảng trang không được vượt quá ${maxPage} trang`);
       return false;
     }
     updateAppliedPageRange(normalizePageRangeValue(start, end));
@@ -267,42 +267,42 @@ export function mountUploadFeature({
       return;
     }
     if (file.size > frontMaxBytes) {
-      setText("error-box", `当前前端限制为 ${formatByteLimit(frontMaxBytes)} 以内 PDF`);
-      viewPort.showUploadStatus("文件超出大小限制");
+      setText("error-box", `Frontend hiện chỉ cho phép PDF tối đa ${formatByteLimit(frontMaxBytes)}`);
+      viewPort.showUploadStatus("Tệp vượt quá giới hạn dung lượng");
       return;
     }
     if (frontMaxPageCount && countPdfPages) {
-      viewPort.showUploadStatus("正在校验页数…");
+      viewPort.showUploadStatus("Đang kiểm tra số trang...");
       try {
         const localPageCount = await countPdfPages(file);
         if (!Number.isFinite(localPageCount) || localPageCount <= 0) {
-          setText("error-box", "PDF 解析失败，请检查文件是否损坏或可访问性异常。");
-          viewPort.showUploadStatus("文件校验失败");
+          setText("error-box", "Không phân tích được PDF. Hãy kiểm tra tệp có bị hỏng hoặc có vấn đề truy cập không.");
+          viewPort.showUploadStatus("Kiểm tra tệp thất bại");
           clearFileInputValue();
           return;
         }
         if (localPageCount > frontMaxPageCount) {
-          setText("error-box", `PDF 页数超过限制：最多 ${frontMaxPageCount} 页`);
-          viewPort.showUploadStatus("文件超出页数限制");
+          setText("error-box", `PDF vượt quá giới hạn số trang: tối đa ${frontMaxPageCount} trang`);
+          viewPort.showUploadStatus("Tệp vượt quá giới hạn số trang");
           clearFileInputValue();
           return;
         }
       } catch (err) {
         setText("error-box", buildErrorDiagnostic(err, {
-          operation: "校验 PDF 文件",
+          operation: "Kiểm tra tệp PDF",
           details: {
             file_name: file.name,
             file_size: file.size,
             max_pages: frontMaxPageCount,
           },
         }));
-        viewPort.showUploadStatus("文件校验失败");
+        viewPort.showUploadStatus("Kiểm tra tệp thất bại");
         clearFileInputValue();
         return;
       }
     }
     setText("error-box", "-");
-    viewPort.showUploadStatus("正在上传…");
+    viewPort.showUploadStatus("Đang tải lên...");
 
     const uploadUrl = configPort.buildUploadUrl(apiPrefix);
     try {
@@ -313,8 +313,8 @@ export function mountUploadFeature({
       );
       const uploadedPageCount = Number(payload.page_count || 0);
       if (frontMaxPageCount > 0 && uploadedPageCount > frontMaxPageCount) {
-        setText("error-box", `PDF 页数超过限制：最多 ${frontMaxPageCount} 页`);
-        viewPort.showUploadStatus("文件超出页数限制");
+        setText("error-box", `PDF vượt quá giới hạn số trang: tối đa ${frontMaxPageCount} trang`);
+        viewPort.showUploadStatus("Tệp vượt quá giới hạn số trang");
         clearFileInputValue();
         resetUploadedFile();
         return;
@@ -331,27 +331,27 @@ export function mountUploadFeature({
       });
       updateAppliedPageRange(currentPageRanges());
       viewPort.markUploadReady(!!snapshot.uploadId);
-      viewPort.showUploadStatus("上传完成：可直接翻译，或仅收藏。");
+      viewPort.showUploadStatus("Tải lên hoàn tất: có thể dịch ngay hoặc chỉ lưu vào thư viện.");
       clearFileInputValue();
       renderPageRangeSummary();
       refreshSubmitControls();
       if (refreshDeepSeekBalance) {
-        viewPort.showUploadStatus("上传完成，正在检测余额…");
+        viewPort.showUploadStatus("Tải lên hoàn tất, đang kiểm tra số dư...");
         void withTimeout(
           refreshDeepSeekBalance({ silent: true }),
           BALANCE_CHECK_TIMEOUT_MS,
-          "DeepSeek 余额检测超时",
+          "Kiểm tra số dư DeepSeek đã hết thời gian chờ",
         )
           .then((result) => {
             const status = `${(result as { status?: string } | null | undefined)?.status || ""}`;
             if (status === "network_error" || status === "missing_key") {
-              viewPort.showUploadStatus("上传完成，余额未确认，提交前会再次检测。");
+              viewPort.showUploadStatus("Tải lên hoàn tất, chưa xác nhận số dư; hệ thống sẽ kiểm tra lại trước khi gửi.");
               return;
             }
-            viewPort.showUploadStatus("上传完成，可以开始任务。");
+            viewPort.showUploadStatus("Tải lên hoàn tất, có thể bắt đầu tác vụ.");
           })
           .catch(() => {
-            viewPort.showUploadStatus("上传完成，余额未确认，提交前会再次检测。");
+            viewPort.showUploadStatus("Tải lên hoàn tất, chưa xác nhận số dư; hệ thống sẽ kiểm tra lại trước khi gửi.");
           })
           .finally(() => {
             refreshSubmitControls();
@@ -361,7 +361,7 @@ export function mountUploadFeature({
       resetUploadedFile();
       clearFileInputValue();
       setText("error-box", buildErrorDiagnostic(err, {
-        operation: "上传 PDF 文件",
+        operation: "Tải tệp PDF lên",
         url: uploadUrl,
         details: {
           file_name: file.name,
@@ -369,7 +369,7 @@ export function mountUploadFeature({
           max_pages: frontMaxPageCount,
         },
       }));
-      viewPort.showUploadStatus("上传失败");
+      viewPort.showUploadStatus("Tải lên thất bại");
       applyWorkflowMode();
     }
   }

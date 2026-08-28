@@ -1,30 +1,30 @@
-# Inline Content Rendering 说明
+# Hướng dẫn Inline Content Rendering
 
-`services/rendering/layout/inline_content/` 负责一件事：
+`services/rendering/layout/inline_content/` chịu trách nhiệm một việc:
 
-把“带公式、Markdown、Typst inline 内容的翻译文本”整理成排版阶段可用的文本形态。
+Chuyển đổi "văn bản dịch có chứa công thức, Markdown, nội dung inline Typst" thành dạng văn bản sẵn sàng cho giai đoạn bố cục.
 
-这里不负责：
+Nơi đây không chịu trách nhiệm:
 
-- OCR 公式检测
-- 翻译模型调用
-- PDF 页面排版
-- Typst 整页编译
+- Phát hiện công thức OCR
+- Gọi mô hình dịch
+- Bố cục trang PDF
+- Biên dịch toàn bộ trang Typst
 
-它只是渲染链里的一个小模块，负责“公式文本怎么进入渲染主链”。
+Nó chỉ là một module nhỏ trong chuỗi kết xuất, chịu trách nhiệm "cách văn bản công thức đi vào chuỗi chính kết xuất".
 
-## 当前设计原则
+## Nguyên tắc thiết kế hiện tại
 
-当前这块已经按两条线拆开：
+Phần này hiện đã được tách thành hai luồng:
 
 - `core/`
-  主链。放现在正常渲染一定会经过的逻辑。
+  Chuỗi chính. Chứa logic mà kết xuất bình thường sẽ luôn đi qua.
 - `fallback/`
-  兜底链。放历史兼容、placeholder 路径、LaTeX-ish 修补、公式 PNG 渲染。
+  Chuỗi dự phòng. Chứa tương thích lịch sử, đường dẫn placeholder, sửa chữa LaTeX-ish, kết xuất công thức PNG.
 
-不要再使用 `shared/`、`modes/` 这种语义模糊的目录名。
+Không sử dụng lại các tên thư mục mơ hồ như `shared/`, `modes/`.
 
-## 当前目录
+## Thư mục hiện tại
 
 ```text
 layout/inline_content/
@@ -42,128 +42,128 @@ layout/inline_content/
     png_renderer.py
 ```
 
-## 主链怎么走
+## Chuỗi chính đi như thế nào
 
-当前默认思路是：
+Luồng mặc định hiện tại:
 
-1. 上游给出 `protected_text`、`formula_map`、`math_mode`
-2. `mode_router.py` 决定走哪条路径
-3. 如果是 `direct_typst`
-   直接走 `core/inline_math.py` + `core/markdown.py`
-4. 如果是 `placeholder`
-   走 `fallback/placeholder_markdown.py`
-5. 最终输出 markdown/plain-text，交给 layout / typst / redaction
+1. Thượng nguồn cung cấp `protected_text`, `formula_map`, `math_mode`
+2. `mode_router.py` quyết định đi đường nào
+3. Nếu là `direct_typst`
+   Đi trực tiếp qua `core/inline_math.py` + `core/markdown.py`
+4. Nếu là `placeholder`
+   Đi qua `fallback/placeholder_markdown.py`
+5. Đầu ra cuối cùng là markdown/văn bản thuần, giao cho layout / typst / redaction
 
-也就是说：
+Nghĩa là:
 
-- `mode_router.py` 只负责分发
-- `core/` 负责主链文本整理
-- `fallback/` 负责旧路径和兜底能力
+- `mode_router.py` chỉ chịu trách nhiệm phân phối
+- `core/` chịu trách nhiệm xử lý văn bản chuỗi chính
+- `fallback/` chịu trách nhiệm đường dẫn cũ và khả năng dự phòng
 
-## 文件职责
+## Trách nhiệm các tệp
 
 ### `mode_router.py`
 
-唯一职责：根据 `math_mode` 选择路径。
+Trách nhiệm duy nhất: chọn đường dẫn theo `math_mode`.
 
-现在只应该做：
+Hiện chỉ nên làm:
 
 - `item_render_math_mode`
 - `is_direct_typst_math_mode`
 - `build_render_markdown`
 - `build_item_render_markdown`
 
-不应该在这里堆公式清洗细节。
+Không nên chất chi tiết làm sạch công thức ở đây.
 
 ### `core/inline_math.py`
 
-负责 inline math 级别的轻量处理。
+Chịu trách nhiệm xử lý nhẹ cấp inline math.
 
-主要是：
+Chủ yếu:
 
-- 识别已有的 `$...$`
-- 只对非数学片段做文本替换
-- `direct_typst` 模式下做最小兼容清洗
-- 给行内公式补必要空格
+- Nhận diện `$...$` hiện có
+- Chỉ thay thế văn bản trên các đoạn không phải toán học
+- Làm sạch tương thích tối thiểu ở chế độ `direct_typst`
+- Bổ sung khoảng trắng cần thiết cho công thức nội tuyến
 
-这里应该保持轻量，不要塞 placeholder 逻辑。
+Nên giữ nhẹ, không nhét logic placeholder vào đây.
 
 ### `core/markdown.py`
 
-负责主链 markdown 文本构建。
+Chịu trách nhiệm xây dựng văn bản markdown chuỗi chính.
 
-主要是：
+Chủ yếu:
 
-- 从普通文本构建可渲染 markdown
-- 做 inline math 提升
-- 处理 citation-like 文本
-- 提供 plain-text 构建辅助
+- Xây dựng markdown có thể kết xuất từ văn bản thông thường
+- Nâng cấp inline math
+- Xử lý văn bản dạng trích dẫn
+- Cung cấp hỗ trợ xây dựng văn bản thuần
 
-这里代表“当前主路径真正想保留的公式文本规则”。
+Đây đại diện cho "quy tắc văn bản công thức mà đường dẫn chính thực sự muốn giữ".
 
 ### `fallback/placeholder_markdown.py`
 
-负责 placeholder 公式路径。
+Chịu trách nhiệm đường dẫn công thức placeholder.
 
-输入通常是：
+Đầu vào thường là:
 
 - `protected_text`
 - `formula_map`
 
-职责是：
+Trách nhiệm:
 
-- 按 token 切分文本
-- 用 `formula_map` 回填公式
-- 必要时把 citation 还原成普通文本
-- 最后再调用主链的 markdown 文本整理
+- Cắt văn bản theo token
+- Điền công thức bằng `formula_map`
+- Khôi phục trích dẫn thành văn bản thông thường khi cần
+- Cuối cùng gọi xử lý văn bản markdown của chuỗi chính
 
-如果未来彻底去掉 placeholder，这个文件会继续缩小。
+Nếu sau này loại bỏ hoàn toàn placeholder, tệp này sẽ tiếp tục thu nhỏ.
 
 ### `fallback/latex_normalizer.py`
 
-负责旧 LaTeX-ish 公式修补。
+Chịu trách nhiệm sửa chữa công thức LaTeX-ish cũ.
 
-它不是主链核心能力，而是兼容层：
+Đây không phải khả năng cốt lõi của chuỗi chính, mà là lớp tương thích:
 
-- 修正常见 OCR 噪声
-- 处理历史遗留格式
-- 给 placeholder / PNG fallback 提供更稳定的输入
+- Sửa lỗi OCR phổ biến
+- Xử lý định dạng lịch sử
+- Cung cấp đầu vào ổn định hơn cho placeholder / PNG fallback
 
-如果某条规则只服务老数据，不要放进 `core/`，放这里。
+Nếu một quy tắc chỉ phục vụ dữ liệu cũ, đừng đưa vào `core/`, đặt ở đây.
 
 ### `fallback/png_renderer.py`
 
-负责把单条公式转成 PNG。
+Chịu trách nhiệm chuyển đổi một công thức đơn lẻ thành PNG.
 
-这个能力主要给：
+Khả năng này chủ yếu dùng cho:
 
-- redaction 路径
-- 某些公式无法直接按文本渲染时的兜底路径
+- Đường dẫn redaction
+- Đường dẫn dự phòng khi một số công thức không thể kết xuất dạng văn bản
 
-它不代表主链。
+Nó không đại diện cho chuỗi chính.
 
-当前主链还是优先走文本 / direct typst，而不是把公式都转成图片。
+Chuỗi chính hiện tại vẫn ưu tiên văn bản / direct typst, thay vì chuyển tất cả công thức thành hình ảnh.
 
-## 依赖方向
+## Hướng phụ thuộc
 
-这一层必须遵守下面的依赖方向：
+Tầng này phải tuân thủ hướng phụ thuộc sau:
 
 - `mode_router -> core`
 - `mode_router -> fallback`
 - `fallback -> core`
-- `core` 不反向依赖 `fallback`
+- `core` không phụ thuộc ngược vào `fallback`
 
-也就是说：
+Nghĩa là:
 
-- `core` 只能放真正底层、稳定、主链的东西
-- `fallback` 可以调用 `core`
-- 不能让 `core` 再 import 回 `fallback`
+- `core` chỉ chứa những thứ thực sự cấp thấp, ổn định, thuộc chuỗi chính
+- `fallback` có thể gọi `core`
+- Không để `core` import ngược vào `fallback`
 
-否则目录虽然拆了，实际还是耦合的。
+Nếu không, dù đã tách thư mục nhưng thực tế vẫn bị ràng buộc.
 
-## 对外暴露什么
+## Xuất những gì ra bên ngoài
 
-外部模块通常只应该依赖这些稳定口：
+Module bên ngoài thường chỉ nên phụ thuộc vào các giao diện ổn định này:
 
 - `services.rendering.layout.inline_content.mode_router`
 - `services.rendering.layout.inline_content.core.markdown`
@@ -172,32 +172,32 @@ layout/inline_content/
 - `services.rendering.layout.inline_content.fallback.latex_normalizer`
 - `services.rendering.layout.inline_content.fallback.png_renderer`
 
-不要再引用已经删除的历史路径，比如：
+Không tham chiếu các đường dẫn lịch sử đã xóa, ví dụ:
 
-- `services.rendering.formula.*` 旧路径已删除，不要再使用。
+- `services.rendering.formula.*` đã xóa, không sử dụng lại.
 - `services.rendering.layout.inline_content.math_utils`
 - `services.rendering.layout.inline_content.normalizer`
 - `services.rendering.layout.inline_content.typst_formula_renderer`
 - `services.rendering.layout.inline_content.shared.*`
 - `services.rendering.layout.inline_content.modes.*`
 
-## 修改建议
+## Gợi ý sửa đổi
 
-如果以后再改这块，按这个顺序判断：
+Nếu sau này sửa phần này, đánh giá theo thứ tự:
 
-1. 这是主链必经逻辑吗？
-   如果是，优先放 `core/`
-2. 这是 placeholder / 旧 LaTeX / PNG fallback / 历史兼容吗？
-   如果是，放 `fallback/`
-3. 这是路径选择吗？
-   放 `mode_router.py`
-4. 这是测试坏例吗？
-   放到
+1. Đây có phải logic bắt buộc trong chuỗi chính không?
+   Nếu có, ưu tiên đặt trong `core/`
+2. Đây có phải placeholder / LaTeX cũ / PNG fallback / tương thích lịch sử không?
+   Nếu có, đặt trong `fallback/`
+3. Đây có phải chọn đường dẫn không?
+   Đặt trong `mode_router.py`
+4. Đây có phải lỗi kiểm thử không?
+   Đặt vào
    [`devtools/tests/translation/test_formula_math_markers.py`](/home/wxyhgk/tmp/Code/backend/scripts/devtools/tests/translation/test_formula_math_markers.py)
 
-## 当前你最该看的文件
+## Các tệp bạn nên xem nhất
 
-如果你想快速理解这里，阅读顺序建议是：
+Để nhanh chóng hiểu phần này, thứ tự đọc khuyến nghị:
 
 1. [`mode_router.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/layout/inline_content/mode_router.py)
 2. [`core/markdown.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/layout/inline_content/core/markdown.py)
@@ -206,17 +206,17 @@ layout/inline_content/
 5. [`fallback/latex_normalizer.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/layout/inline_content/fallback/latex_normalizer.py)
 6. [`fallback/png_renderer.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/rendering/layout/inline_content/fallback/png_renderer.py)
 
-## 当前状态
+## Trạng thái hiện tại
 
-当前这块已经完成的整理是：
+Công việc đã hoàn thành ở phần này:
 
-- `direct_typst` 主链和 placeholder 兜底链分开
-- `shared/`、`modes/` 这种假边界已经移除
-- `core` 与 `fallback` 的循环导入已经拆掉
+- Tách chuỗi chính `direct_typst` và chuỗi dự phòng placeholder
+- Đã loại bỏ các ranh giới giả như `shared/`, `modes/`
+- Đã phá bỏ import vòng lặp giữa `core` và `fallback`
 
-还剩下的非逻辑问题是：
+Các vấn đề phi logic còn lại:
 
-- 目录里还有 `.ipynb_checkpoints`
-- 目录里还有 `__pycache__`
+- Thư mục có `.ipynb_checkpoints`
+- Thư mục có `__pycache__`
 
-这些不影响运行，但会影响阅读体验，后续可以直接清掉。
+Những thứ này không ảnh hưởng đến hoạt động, nhưng ảnh hưởng đến trải nghiệm đọc, có thể xóa sau.

@@ -17,9 +17,9 @@ export async function fetchTranslationDiagnostics(jobId, apiPrefix) {
   });
   if (!resp.ok) {
     if (resp.status === 404) {
-      throw new Error("未找到翻译调试信息，请确认该任务已完成翻译。");
+      throw new Error("Không tìm thấy thông tin gỡ lỗi dịch thuật, vui lòng xác nhận tác vụ đã hoàn thành dịch.");
     }
-    throw new Error(`读取翻译调试摘要失败，请稍后重试。(${resp.status})`);
+    throw new Error(`Đọc tóm tắt gỡ lỗi dịch thất bại, vui lòng thử lại sau. (${resp.status})`);
   }
   return unwrapEnvelope(await resp.json());
 }
@@ -68,7 +68,7 @@ export async function fetchTranslationItems(
     if (resp.status === 404) {
       return { items: [], total: 0, limit, offset };
     }
-    throw new Error(`读取翻译调试列表失败，请稍后重试。(${resp.status})`);
+    throw new Error(`Đọc danh sách gỡ lỗi dịch thất bại, vui lòng thử lại sau. (${resp.status})`);
   }
   return unwrapEnvelope(await resp.json());
 }
@@ -82,9 +82,9 @@ export async function fetchTranslationItem(jobId, itemId, apiPrefix) {
   });
   if (!resp.ok) {
     if (resp.status === 404) {
-      throw new Error("未找到该翻译 item，请确认 item_id 是否正确。");
+      throw new Error("Không tìm thấy mục dịch này, vui lòng xác nhận item_id có đúng không.");
     }
-    throw new Error(`读取翻译 item 详情失败，请稍后重试。(${resp.status})`);
+    throw new Error(`Đọc chi tiết mục dịch thất bại, vui lòng thử lại sau. (${resp.status})`);
   }
   return unwrapEnvelope(await resp.json());
 }
@@ -103,14 +103,14 @@ export async function replayTranslationItem(jobId, itemId, apiPrefix) {
   if (!resp.ok) {
     const contentType = resp.headers.get("content-type") || "";
     if (resp.status === 404) {
-      throw new Error("未找到该翻译 item，无法重放。");
+      throw new Error("Không tìm thấy mục dịch này, không thể phát lại.");
     }
     if (contentType.includes("application/json")) {
       const errorPayload = await resp.json();
-      throw new Error(`重放翻译 item 失败: ${errorPayload.message || JSON.stringify(errorPayload)}`);
+      throw new Error(`Phát lại mục dịch thất bại: ${errorPayload.message || JSON.stringify(errorPayload)}`);
     }
     const text = await resp.text();
-    throw new Error(`重放翻译 item 失败: ${resp.status} ${text}`);
+    throw new Error(`Phát lại mục dịch thất bại: ${resp.status} ${text}`);
   }
   return unwrapEnvelope(await resp.json());
 }

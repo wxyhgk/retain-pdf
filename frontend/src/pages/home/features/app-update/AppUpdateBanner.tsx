@@ -1,24 +1,24 @@
-// AppUpdateBanner(React 版 app-update 按钮 + 详情 dialog,蓝图 §5)。
+// AppUpdateBanner (React port của nút cập nhật ứng dụng + dialog thông báo tình trạng, kế hoạch xây dựng §5).
 //
-// 旧世界"两处 DOM 分属两个宿主"的问题(按钮在 app-settings-dialog 模板,
-// 详情 dialog 在 app-shell-header.js)在这里合并成同一个组件:本组件整体挂载
-// 在 SettingsHubDialog.jsx"更新"tab 面板下(该面板用 hidden 属性切换,不卸载
-// ——见 SettingsHubDialog.jsx 头注释同款处理),按钮与 dialog 都是这里的常驻
-// 子节点。dialog 只会在用户点击本组件自己的按钮时才打开(此时"更新"
-// tab 必然是激活态、祖先没有 hidden),不存在"父级隐藏时误开 dialog"的场景。
+// Vấn đề thế giới cũ "hai vị trí DOM thuộc hai chủ khác nhau" (nút trong khuôn app-settings-dialog,
+// dialog thông báo tại app-shell-header.js) được hợp nhất tại đây: toàn bộ module này được mount
+// tại tab "Cập nhật" bên dưới panel trong SettingsHubDialog.jsx (panel này dùng thuộc tính hidden để toggle,
+// không unmount - xem cùng đoạn xử lý trong tiêu đề SettingsHubDialog.jsx), nút và dialog đều là con của component này.
+// Dialog chỉ mở khi người dùng click vào nút riêng của component (lúc này tab "Cập nhật"
+// phải được active, tổ tiên không hidden), tránh tình huống "mở dialog khi parent bị ẩn".
 //
-// Dialog 渲染层(阶段 C,shadcn 改造):详情 dialog 从原生 <dialog>+
-// showModal/close 换成 radix-ui 的 Dialog 原语,不经 src/components/ui/dialog.jsx
-// 默认皮肤(className 继续用 desktop-dialog/desktop-shell/app-update-* 这套
-// bespoke CSS)。open 受控于本地 useAppUpdateDialogOpen(纯 UI 瞬态,不进
-// store——这条既有决策不变),onOpenChange 在 next===false 时统一调用
-// setDialogOpen(false),Escape/背板点击/关闭按钮三条路径都走这一个回调。
-// 不 forceMount(同 CredentialsDialog.jsx 头注释的结论,避免 hideOthers 永久
-// 生效的无障碍缺陷)——本详情 dialog 内容全部是只读展示(状态文案/说明/
-// 链接),没有表单输入,关闭时卸载不会丢任何数据。
+// Dialog Lớp kết xuất(Giai  C,shadcn sửa đổi):tình hình rõ ràng dialog Từ người bản xứ <dialog>+
+// showModal/close đổi thành radix-ui của Dialog Nguyên thủy,Vô ý src/components/ui/dialog.jsx
+// Ngoại Trang Mặc Định(className Tiếp tục với desktop-dialog/desktop-shell/app-update-* bộ này
+// bespoke CSS)。open Được kiểm soát tại địa phương useAppUpdateDialogOpen(thuần UI Tạm thời,Không có mục nhập
+// store——Quyết định hiện tại này vẫn không thay đổi),onOpenChange Tại địa điểm: next===false Gọi thống nhất khi
+// setDialogOpen(false),Escape/Nhấp vào bảng điều khiển/Nút đóng Tất cả ba đường dẫn thực hiện một cuộc gọi lại này。
+// không forceMount(cùng CredentialsDialog.jsx Kết luận bình luận tiêu đề,tránh cho hideOthers vĩnh cửu
+// Thiếu khả năng tiếp cận chủ động)——Chi tiết này dialog Tất cả nội dung ở chế độ chỉ đọc(Bản sao trạng thái/nói rõ/
+// liên tiếp),Không có đầu vào biểu mẫu,Gỡ cài đặt khi đóng mà không mất bất kỳ dữ liệu nào。
 //
-// AppShellHeader.jsx 不再残留 app-update-dialog 模板骨架(3a 遗留,已清理,
-// 避免 id 重复违反视觉基线/门禁)。
+// AppShellHeader.jsx Không còn nữa app-update-dialog Bộ xương mẫu(3a di truyền,Đã xóa,
+// tránh cho id Vi phạm đường cơ sở trực quan nhiều lần/gác cổng)。
 
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useStoreSnapshot } from "../../../../shared/react/use-store.js";
@@ -28,11 +28,11 @@ import { APP_UPDATE_IDS } from "./app-update-contract.js";
 import { useAppUpdateDialogOpen } from "./useAppUpdateDialogOpen.js";
 import { Button as ButtonBase } from "../../../../components/Button.jsx";
 
-// Button.size 在未注解源文件里被推断为必填;unstyled 路径运行时不用 size。
+// Button.size được suy ra là bắt buộc trong các tệp nguồn không được chú thích;unstyled Không được sử dụng khi đường dẫn được chạy size。
 const Button = ButtonBase as any;
 
-// 抄自 src/js/features/app-update/view.js:47-60(formatReleaseNotes)——纯函数,
-// 逐字符保留,拷贝进本组件(蓝图 §5:AppUpdateBanner agent 范围)。
+// Đã sao chép từ src/js/features/app-update/view.js:47-60(formatReleaseNotes)——Chức năng thuần túy,
+// Bảo quản từng ký tự,Sao chép vào thành phần này(kế hoạch xây dựng §5:AppUpdateBanner agent Scope)。
 function formatReleaseNotes(markdown = "") {
   return `${markdown || ""}`
     .replace(/\r\n/g, "\n")
@@ -63,10 +63,10 @@ export function AppUpdateBanner() {
 
   const hasUpdate = Boolean(state.hasUpdate);
   const panel = state.panel;
-  const notesText = formatReleaseNotes(panel.body) || "暂无更新说明。";
+  const notesText = formatReleaseNotes(panel.body) || "Chưa có ghi chú phát hành.";
   const versionText = panel.latestVersion
-    ? `当前 ${panel.currentVersion} · 最新 ${panel.latestVersion}`
-    : `当前 ${panel.currentVersion}`;
+    ? `Hiện tại ${panel.currentVersion} · Mới nhất ${panel.latestVersion}`
+    : `Hiện tại ${panel.currentVersion}`;
   const statusText = `${state.statusText || ""}`;
 
   return (
@@ -74,12 +74,12 @@ export function AppUpdateBanner() {
       <Button
         id={APP_UPDATE_IDS.button}
         className={`app-settings-action app-update-btn${hasUpdate ? " has-update" : ""}`}
-        aria-label="检查更新"
+        aria-label="Kiểm tra cập nhật"
         title={state.buttonTitle}
         data-update-state={state.buttonState}
         onClick={() => setDialogOpen(true)}
       >
-        检查更新
+         Kiểm tra cập nhật
         <span className="app-update-dot" aria-hidden="true"></span>
       </Button>
       <DialogPrimitive.Root open={dialogOpen} onOpenChange={handleOpenChange}>
@@ -99,7 +99,7 @@ export function AppUpdateBanner() {
                   <p>{versionText}</p>
                 </div>
                 <DialogPrimitive.Close asChild>
-                  <Button className="desktop-close app-update-close" aria-label="关闭">×</Button>
+                  <Button className="desktop-close app-update-close" aria-label="Đóng">×</Button>
                 </DialogPrimitive.Close>
               </div>
               <div className="app-update-body">
@@ -112,7 +112,7 @@ export function AppUpdateBanner() {
                   className="home-action-btn secondary"
                   onClick={() => handlersRef.current?.onCheck?.()}
                 >
-                  重新检查
+                   Kiểm tra lại
                 </Button>
                 <a
                   className={`app-update-link${panel.htmlUrl ? "" : " hidden"}`}
@@ -120,7 +120,7 @@ export function AppUpdateBanner() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  打开 Release
+                   Mở Release
                 </a>
               </div>
             </div>

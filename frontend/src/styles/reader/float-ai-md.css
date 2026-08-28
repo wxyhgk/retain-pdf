@@ -1,6 +1,6 @@
-/* AI 悬浮窗 · 答案 Markdown 排版 / 公式 / 图片 */
+/* Cửa sổ nổi AI · bố cục Markdown / công thức / ảnh của câu trả lời */
 
-/* AI 正文：Notion 文档流气质（流式 / 最终共用） */
+/* Nội dung AI: phong cách luồng tài liệu Notion (dùng chung khi streaming / cuối) */
 .reader-float-ai .aui-md {
   font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif);
   font-size: 14px;
@@ -12,7 +12,8 @@
   overflow-wrap: anywhere;
   -webkit-font-smoothing: antialiased;
 }
-/* 外链已降级为 span（无 href），避免桌面端 openExternal；仅保留视觉 */
+/* Liên kết ngoài đã hạ xuống span (không có href) để tránh openExternal trên desktop;
+   chỉ giữ phần hình ảnh */
 .reader-float-ai .aui-md .aui-md-extlink {
   color: color-mix(in srgb, var(--accent) 85%, var(--ink));
   text-decoration: underline;
@@ -22,7 +23,7 @@
   word-break: break-all;
 }
 .reader-float-ai .aui-md a[href] {
-  /* 残留真实锚点也禁止点穿（JS 会再拆掉） */
+  /* Neo thật còn sót cũng không cho click xuyên (JS sẽ tháo tiếp) */
   pointer-events: none;
   color: inherit;
   text-decoration: underline;
@@ -107,7 +108,7 @@
   border: 0;
   border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 }
-/* 公式（MathJax SVG） */
+/* Công thức (MathJax SVG) */
 .reader-float-ai .aui-md .reader-md-math-inline {
   display: inline-block;
   max-width: 100%;

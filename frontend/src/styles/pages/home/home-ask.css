@@ -1,7 +1,8 @@
-/* 主页 AI 问答 — Notion 式：左历史 + 中空态居中 / 对话流 */
+/* Hỏi đáp AI trang chủ — kiểu Notion: lịch sử trái + trạng thái trống giữa /
+   luồng hội thoại */
 
 .home-ask-view {
-  /* 消息与输入同一列宽，略宽更易读 */
+  /* Tin nhắn và ô nhập cùng một độ rộng cột, rộng hơn một chút để dễ đọc */
   --home-ask-col: min(720px, 100%);
   width: min(1120px, 100%);
   max-width: 100%;
@@ -22,7 +23,7 @@
   grid-template-columns: 48px minmax(0, 1fr);
 }
 
-/* —— 左侧历史：与主区同底，仅细线分隔 —— */
+/* —— Lịch sử bên trái: cùng nền vùng chính, chỉ ngăn bằng đường mảnh —— */
 .home-ask-sidebar {
   display: flex;
   flex-direction: column;
@@ -126,7 +127,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 2px;
-  /* 侧栏滚动条：极轻 / 几乎不可见 */
+  /* Thanh cuộn thanh bên: rất nhẹ / gần như không nhìn thấy */
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--ink) 12%, transparent) transparent;
 }
@@ -294,7 +295,7 @@
   cursor: default;
 }
 
-/* —— 主区 —— */
+/* —— Vùng chính —— */
 .home-ask-main {
   display: flex;
   flex-direction: column;
@@ -305,7 +306,7 @@
   background: var(--paper);
 }
 
-/* 空态：垂直居中（Notion） */
+/* Trạng thái trống: căn giữa theo chiều dọc (Notion) */
 .home-ask-view.is-empty .home-ask-main {
   align-items: center;
   justify-content: center;
@@ -380,7 +381,7 @@
   }
 }
 
-/* 有对话：消息区 + 底栏输入 */
+/* Có hội thoại: vùng tin nhắn + ô nhập cuối */
 .home-ask-view.is-chat .home-ask-main {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
@@ -390,12 +391,12 @@
   min-width: 0;
   min-height: 0;
   max-width: 100%;
-  /* 只纵向滚，禁止整列出现横向条 */
+  /* Chỉ cuộn dọc, không cho cả cột xuất hiện thanh ngang */
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 24px 32px 12px;
-  /* 右侧滚动条：细、淡、无轨道感 */
+  /* Thanh cuộn bên phải: mảnh, nhạt, không tạo cảm giác có rãnh */
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--ink) 14%, transparent) transparent;
 }
@@ -437,7 +438,7 @@
   min-width: 0;
 }
 
-/* 用户：右对齐浅灰气泡 */
+/* Người dùng: bong bóng xám nhạt căn phải */
 .home-ask-msg-user {
   display: flex;
   justify-content: flex-end;
@@ -455,7 +456,7 @@
   word-break: break-word;
 }
 
-/* 助手：纯正文，不套气泡、不带头像 */
+/* Trợ lý: chỉ nội dung, không bọc bong bóng và không có ảnh đại diện */
 .home-ask-msg-assistant {
   display: block;
   width: 100%;
@@ -508,7 +509,7 @@
   word-break: break-word;
 }
 
-/* 助手正文：干净阅读排版；长串/公式不撑破列宽 */
+/* Nội dung trợ lý: bố cục đọc gọn; chuỗi dài/công thức không làm vỡ độ rộng cột */
 .home-ask-md {
   max-width: 100%;
   min-width: 0;
@@ -623,7 +624,7 @@
   height: auto;
 }
 
-/* 公式：宽公式只在自身区域内横滚，不撑开整页 */
+/* Công thức: công thức rộng chỉ cuộn ngang trong vùng riêng, không mở rộng cả trang */
 .home-ask-md .reader-md-math-display,
 .home-ask-md mjx-container[display="true"] {
   display: block !important;
@@ -646,7 +647,7 @@
   max-width: 100%;
 }
 
-/* 文内引用 [n]：小标签，不抢戏 */
+/* Trích dẫn nội dòng [n]: nhãn nhỏ, không lấn át */
 .home-ask-msg-bubble .reader-ai-citation-ref {
   display: inline;
   margin: 0 1px;
@@ -667,7 +668,7 @@
   color: var(--ink);
 }
 
-/* 底部来源 */
+/* Nguồn ở cuối */
 .home-ask-msg-bubble .reader-ai-citations {
   display: grid;
   gap: 6px;
@@ -725,7 +726,7 @@
   white-space: nowrap;
 }
 
-/* —— 输入条 —— */
+/* —— Thanh nhập —— */
 .home-ask-composer {
   display: grid;
   gap: 8px;
@@ -812,7 +813,8 @@
   padding: 8px 32px 22px;
 }
 
-/* 主区横向绝不出现滚动条；宽内容在 pre/公式内局部横滚 */
+/* Vùng chính không bao giờ có thanh cuộn ngang; nội dung rộng cuộn cục bộ trong
+   pre/công thức */
 .home-ask-view.is-chat .home-ask-main,
 .home-ask-view.is-chat .home-ask-scroll,
 .home-ask-view.is-chat .home-ask-thread {
@@ -1054,7 +1056,7 @@
 .app-shell:has(#home-ask-view) .home-paper-stage {
   flex: 1 1 auto;
   min-height: 0;
-  /* 无底部浮栏，只留一点内边距 */
+  /* Không có thanh nổi cuối, chỉ giữ một ít đệm */
   padding-bottom: 12px;
 }
 

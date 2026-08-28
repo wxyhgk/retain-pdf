@@ -1,19 +1,19 @@
-# Python 依赖单一事实来源
+# Nguồn duy nhất phụ thuộc Python
 
-当前仓库的 Python 依赖真相源已经收敛到根目录的 [`pyproject.toml`](../../pyproject.toml)。
+Nguồn tin cậy phụ thuộc Python của kho lưu trữ hiện tại đã được hội tụ vào [`pyproject.toml`](../../pyproject.toml) ở thư mục gốc.
 
-## 现在怎么维护
+## Cách bảo trì hiện tại
 
-- 运行时依赖：
+- Phụ thuộc runtime:
   `project.dependencies`
-- 测试依赖：
+- Phụ thuộc kiểm thử:
   `project.optional-dependencies.test`
-- Python 版本：
+- Phiên bản Python:
   `project.requires-python`
-- 非 Python 二进制依赖：
+- Phụ thuộc nhị phân không phải Python:
   `tool.retain_pdf.external-binaries`
 
-不要再直接手改这些生成产物：
+Không trực tiếp sửa các tệp sinh này nữa:
 
 - [`docker/requirements-app.txt`](../../docker/requirements-app.txt)
 - [`docker/requirements-test.txt`](../../docker/requirements-test.txt)
@@ -21,23 +21,23 @@
 - [`desktop/requirements-desktop-windows.txt`](../../desktop/requirements-desktop-windows.txt)
 - [`desktop/requirements-desktop-macos.txt`](../../desktop/requirements-desktop-macos.txt)
 
-## 更新方式
+## Cách cập nhật
 
-修改完 [`pyproject.toml`](../../pyproject.toml) 后，执行：
+Sau khi sửa [`pyproject.toml`](../../pyproject.toml), thực thi:
 
 ```bash
 python backend/scripts/devtools/sync_python_requirements.py --repo-root .
 ```
 
-如果只想检查是否漂移：
+Nếu chỉ muốn kiểm tra xem có sai lệch không:
 
 ```bash
 python backend/scripts/devtools/sync_python_requirements.py --repo-root . --check
 ```
 
-## 当前口径
+## Cấu hình hiện tại
 
-运行时 Python 包：
+Gói Python runtime:
 
 - `Pillow`
 - `PyMuPDF`
@@ -45,25 +45,25 @@ python backend/scripts/devtools/sync_python_requirements.py --repo-root . --chec
 - `requests`
 - `urllib3`
 
-测试额外包：
+Gói bổ sung kiểm thử:
 
 - `pytest`
 
-非 Python 二进制依赖：
+Phụ thuộc nhị phân không phải Python:
 
-- `typst`：必需
-- `gs`：可选压缩路径依赖
+- `typst`: Bắt buộc
+- `gs`: Tùy chọn, phụ thuộc đường dẫn nén
 
-## 为什么这样做
+## Tại sao làm vậy
 
-之前 Docker、desktop、CI 各自维护 requirements，容易出现：
+Trước đây Docker, desktop, CI tự duy trì requirements, dễ xảy ra:
 
-- 某个平台漏装包
-- 运行时和桌面打包版本漂移
-- CI 通过，但本地或发布构建失败
+- Một nền tảng thiếu gói
+- Phiên bản runtime và đóng gói desktop sai lệch
+- CI thông qua nhưng bản dựng cục bộ hoặc phát hành thất bại
 
-现在的目标是：
+Mục tiêu hiện tại:
 
-- 只改一处
-- 多处生成
-- CI 用 `--check` 阻止漂移进入主线
+- Chỉ sửa một chỗ
+- Sinh nhiều nơi
+- CI dùng `--check` để ngăn sai lệch vào nhánh chính

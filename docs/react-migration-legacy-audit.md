@@ -1,36 +1,36 @@
-# React 迁移:遗留树可达性审计(Phase 0 产出)
+# Di chuyển React: Kiểm tra khả năng truy cập cây kế thừa (Đầu ra Phase 0)
 
-审计对象:`src/js/job/`(14 文件)、`src/js/job-status/`(54)、`src/js/status-detail/`(5)。
-方法:esbuild metafile 从三个真实入口(app-bundle-entry.js / reader/index.js / job-detail/index.js)求可达集 + 反向 import 图 + DOM API 扫描。
+Đối tượng kiểm tra: `src/js/job/` (14 tệp), `src/js/job-status/` (54), `src/js/status-detail/` (5).
+Phương pháp: siêu dữ liệu esbuild từ ba điểm vào thực tế (app-bundle-entry.js / reader/index.js / job-detail/index.js) tính tập đạt tới + đồ thị import ngược + quét DOM API.
 
-## 结论
+## Kết luận
 
-| 树 | 活VM | 活视图 | 仅测试引用 | 死代码 | 合计 |
-|---|---|---|---|---|---|
+| Cây | VM sống | Khung nhìn sống | Chỉ tham chiếu thử nghiệm | Mã chết | Tổng |
+|---|---|---|---|---|---|---|
 | job/ | 14 | 0 | 0 | 0 | 14 |
 | job-status/ | 45 | 0 | 3 | 6 | 54 |
 | status-detail/ | 5 | 0 | 0 | 0 | 5 |
-| **合计** | **64** | **0** | **3** | **6** | **73** |
+| **Tổng** | **64** | **0** | **3** | **6** | **73** |
 
-**三棵树是迁移要原样继承的纯逻辑核心,不是死代码。** 可达文件全部为纯 view-model/adapter,零 DOM 渲染(DOM 视图在 components/、ui/、job-detail/view.js 等处)。
+**Ba cây là lõi logic thuần túy cần được kế thừa nguyên vẹn trong quá trình di chuyển, không phải mã chết.** Tất cả các tệp đạt tới đều là view-model/adapter thuần, không có kết xuất DOM (các khung nhìn DOM nằm trong components/, ui/, job-detail/view.js, v.v.).
 
-## Phase 4 可删清单(9 文件,自成孤立子图,一起删干净)
+## Danh sách có thể xóa trong Phase 4 (9 tệp, tạo thành đồ thị con cô lập, xóa sạch cùng nhau)
 
-**无条件可删(6,零引用或仅被死文件引用):**
-- src/js/job-status/stage-presentation-event.js(集群根)
-- src/js/job-status/stage-presentation-fallback.js(完全孤立)
+**Có thể xóa vô điều kiện (6, không tham chiếu hoặc chỉ được tham chiếu bởi các tệp chết):**
+- src/js/job-status/stage-presentation-event.js (gốc cụm)
+- src/js/job-status/stage-presentation-fallback.js (hoàn toàn cô lập)
 - src/js/job-status/stage-presentation-event-context.js
 - src/js/job-status/job-stage-progress-strategy.js
 - src/js/job-status/stage-progress-selection.js
 - src/js/job-status/stage-progress-view-data.js
 
-**仅被 tests/job-stage-contract.test.mjs(第 10-12 行 import)引用(3):**
+**Chỉ được tham chiếu bởi tests/job-stage-contract.test.mjs (dòng 10-12 import) (3):**
 - src/js/job-status/canonical-stage-snapshot.js
 - src/js/job-status/job-stage-event-selection.js
 - src/js/job-status/main-lane-stage-selection.js
 
-删这 3 个需同步处理该测试;若保留测试则保留这 3 个文件。
+Việc xóa 3 tệp này cần xử lý đồng bộ với thử nghiệm đó; nếu giữ lại thử nghiệm thì giữ lại 3 tệp này.
 
-## 备注
-- `job/action-model.js`、`job/artifacts.js` 有受守卫的 `window.location.href` 读取(URL 构建,非 DOM 渲染),判活 VM;重度被活代码引用,不在删除范围。
-- 外部无任何动态 import() 指向上述 9 文件(已验证)。
+## Ghi chú
+- `job/action-model.js`, `job/artifacts.js` có đọc `window.location.href` được bảo vệ (xây dựng URL, không phải kết xuất DOM), được coi là VM sống; được mã sống tham chiếu nhiều, không nằm trong phạm vi xóa.
+- Không có import() động nào từ bên ngoài trỏ tới 9 tệp trên (đã xác minh).

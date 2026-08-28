@@ -1,16 +1,16 @@
-# RetainPDF 后端 API 总入口
+# RetainPDF Backend API Entry Point
 
-这份文档是前端接入、第三方调用和后端联调用的唯一入口。其它 API 文档只作为专题页或历史兼容入口。
+This document is the sole entry point for frontend integration, third-party invocation, and backend joint debugging. Other API documents serve only as topic pages or historical compatibility entries.
 
-## 1. 基础约定
+## 1. Basic Conventions
 
-- 完整 API 默认端口：`41000`
-- multipart 异步提交 API 默认端口：`42000`
-- 健康检查：`GET /health`
-- 业务前缀：`/api/v1`
-- 除 `GET /health` 外，业务 API 默认需要 `X-API-Key`
+- Full API default port: `41000`
+- Multipart async submission API default port: `42000`
+- Health check: `GET /health`
+- Business prefix: `/api/v1`
+- Except `GET /health`, business APIs require `X-API-Key` by default
 
-成功响应：
+Success response:
 
 ```json
 {
@@ -20,7 +20,7 @@
 }
 ```
 
-错误响应：
+Error response:
 
 ```json
 {
@@ -29,21 +29,21 @@
 }
 ```
 
-常见错误码：
+Common error codes:
 
-- `40000`：请求错误
-- `40100`：鉴权失败
-- `40400`：资源不存在
-- `40900`：状态冲突
-- `42900`：模型或外部服务限流
-- `50200`：模型或外部服务失败
-- `50000`：内部错误
+- `40000`: Request error
+- `40100`: Authentication failed
+- `40400`: Resource not found
+- `40900`: Status conflict
+- `42900`: Model or external service rate limited
+- `50200`: Model or external service failed
+- `50000`: Internal error
 
-`X-API-Key` 是访问 Rust API 的后端白名单 key，不是 OCR Provider token，也不是模型 API key。
+`X-API-Key` is backend whitelist key for accessing Rust API; not OCR Provider token nor model API key.
 
-## 2. 推荐前端接入路径
+## 2. Recommended Frontend Integration Path
 
-图书馆页面优先使用“书籍语义”接口：
+Library pages prefer "book semantics" endpoints:
 
 - `GET /api/v1/library/books`
 - `GET /api/v1/library/books/{job_id}`
@@ -52,27 +52,27 @@
 - `GET /api/v1/library/books/{job_id}/cover`
 - `GET /api/v1/library/books/{job_id}/thumbnail`
 
-任务创建和执行仍走 job API：
+Task creation and execution still use job API:
 
 1. `POST /api/v1/uploads`
 2. `POST /api/v1/jobs`
 3. `GET /api/v1/jobs/{job_id}`
 4. `GET /api/v1/jobs/{job_id}/events`
-5. 根据 `actions` / `artifacts` / `artifacts_display` 下载产物
-6. 已完成任务的阅读问答使用 `POST /api/v1/jobs/{job_id}/reader/ai/chat`
+5. Download artifacts per `actions` / `artifacts` / `artifacts_display`
+6. Completed task reading Q&A uses `POST /api/v1/jobs/{job_id}/reader/ai/chat`
 
-## 3. 图书馆接口
+## 3. Library Endpoints
 
-列表：
+List:
 
 `GET /api/v1/library/books?limit=20&offset=0&q=physics`
 
-查询参数：
+Query parameters:
 
-- `limit` / `offset`：分页。
-- `q`：可选，全库搜索书名、源文件名、job_id、源 URL 和状态文本。
+- `limit` / `offset`: Pagination.
+- `q`: Optional; full-library search across book title, source filename, job_id, source URL, status text.
 
-返回 `data.items[]`：
+Returns `data.items[]`:
 
 ```json
 {
@@ -101,11 +101,11 @@
 }
 ```
 
-详情：
+Detail:
 
 `GET /api/v1/library/books/{job_id}`
 
-返回重点字段：
+Key return fields:
 
 - `id`
 - `job_id`
@@ -123,32 +123,32 @@
 - `thumbnail_url`
 - `artifacts`
 
-删除：
+Delete:
 
 - `DELETE /api/v1/library/books/{job_id}`
 - `DELETE /api/v1/library/books/{job_id}?force=true`
 - `POST /api/v1/library/books/delete`
 
-删除行为：
+Delete behavior:
 
-- 删除主 job 记录
-- 删除关联 `artifacts` / `job_artifact_entries` / `events`
-- 删除 `DATA_ROOT/jobs/{job_id}`
-- 删除 `DATA_ROOT/downloads/{job_id}.zip`
-- 如果存在 `{job_id}-ocr` 子任务，一并删除
-- 默认不删除 `uploads` 源文件
-- `queued` / `running` 默认拒绝删除，除非传 `force=true`
+- Deletes main job record
+- Deletes associated `artifacts` / `job_artifact_entries` / `events`
+- Deletes `DATA_ROOT/jobs/{job_id}`
+- Deletes `DATA_ROOT/downloads/{job_id}.zip`
+- If `{job_id}-ocr` child task exists, deletes together
+- Does not delete `uploads` source file by default
+- `queued` / `running` rejected by default unless `force=true`
 
-## 4. 上传接口
+## 4. Upload Endpoint
 
 `POST /api/v1/uploads`
 
-`multipart/form-data`：
+`multipart/form-data`:
 
-- `file`：必填，PDF
-- `developer_mode`：可选，`true/false`
+- `file`: Required, PDF
+- `developer_mode`: Optional, `true/false`
 
-返回重点字段：
+Key return fields:
 
 - `upload_id`
 - `filename`
@@ -156,13 +156,13 @@
 - `page_count`
 - `uploaded_at`
 
-## 5. 创建任务
+## 5. Create Task
 
 `POST /api/v1/jobs`
 
-只接受 grouped JSON，不接受旧扁平 JSON。
+Accepts grouped JSON only; does not accept legacy flat JSON.
 
-顶层结构：
+Top-level structure:
 
 ```json
 {
@@ -195,32 +195,32 @@
 }
 ```
 
-`workflow`：
+`workflow`:
 
-- `book`：OCR -> Normalize -> Translate -> Render
-- `translate`：OCR -> Normalize -> Translate
-- `render`：基于已有任务 artifact 重跑渲染
+- `book`: OCR -> Normalize -> Translate -> Render
+- `translate`: OCR -> Normalize -> Translate
+- `render`: Rerun rendering based on existing task artifact
 
-阶段恢复：
+Stage recovery:
 
 - `POST /api/v1/jobs/{job_id}/rerun`
 - `GET /api/v1/jobs/{job_id}/stage-actions`
 - `POST /api/v1/jobs/{job_id}/retry-stage`
 - `GET /api/v1/jobs/{job_id}/resume-plan`
 - `POST /api/v1/jobs/{job_id}/resume`
-- 有 `translations_dir + source_pdf` 时，复用原 `job_id` 原地重渲染并替换渲染产物
-- 只有 `normalized_document_json + source_pdf` 时，创建新的 `book` 恢复任务
-- `workflow=translate` + `source.artifact_job_id`：复用 OCR checkpoint
-- `workflow=book` + `source.artifact_job_id`：复用 OCR checkpoint 后继续翻译并渲染
-- `workflow=render` + `source.artifact_job_id`：复用翻译产物后只重跑渲染
+- When `translations_dir + source_pdf` exist, reuses original `job_id` for in-place rerender replacing render artifacts
+- When only `normalized_document_json + source_pdf` exist, creates new `book` recovery task
+- `workflow=translate` + `source.artifact_job_id`: Reuses OCR checkpoint
+- `workflow=book` + `source.artifact_job_id`: Reuses OCR checkpoint then continues translate and render
+- `workflow=render` + `source.artifact_job_id`: Reuses translation artifacts then reruns render only
 
-`/resume` 当前复用 `/rerun` 的恢复执行契约；`/resume-plan` 用于前端先展示“会从哪里恢复、会复用哪些产物、会重跑哪些阶段”。
+`/resume` currently reuses `/rerun` recovery execution contract; `/resume-plan` allows frontend to preview "where recovery starts, which artifacts reused, which stages rerun".
 
-主动阶段重试：
+Active stage retry:
 
 `GET /api/v1/jobs/{job_id}/stage-actions`
 
-返回每个阶段当前是否能主动重跑。前端按钮优先读这个接口，不要自己猜可重试阶段。
+Returns whether each stage can be actively retried currently. Frontend buttons read this endpoint first; do not guess retryable stages.
 
 ```json
 {
@@ -228,7 +228,7 @@
   "stages": [
     {
       "stage": "translation",
-      "label": "重试翻译",
+      "label": "Retry Translation",
       "can_retry": true,
       "disabled_reason": "",
       "will_reuse": ["source_pdf", "ocr_result"],
@@ -263,17 +263,16 @@
 }
 ```
 
-返回新任务或原地任务的 `job_id`。前端拿到响应后直接按返回的 `job_id`
-进入 `GET /jobs/{job_id}` 和 `GET /jobs/{job_id}/events` 轮询。
+Returns new task or in-place task `job_id`. Frontend enters `GET /jobs/{job_id}` and `GET /jobs/{job_id}/events` polling directly per returned `job_id`.
 
-## 6. 任务查询与事件
+## 6. Task Query and Events
 
-任务查询：
+Task query:
 
 - `GET /api/v1/jobs?limit=20&offset=0&status=&workflow=&provider=`
 - `GET /api/v1/jobs/{job_id}`
 
-详情重点字段：
+Detail key fields:
 
 - `job_id`
 - `workflow`
@@ -297,11 +296,11 @@
 - `invocation`
 - `log_tail`
 
-事件：
+Events:
 
 `GET /api/v1/jobs/{job_id}/events?limit=200&offset=0`
 
-前端应消费的稳定字段：
+Stable fields frontend should consume:
 
 - `stage`
 - `substage`
@@ -313,22 +312,22 @@
 - `message`
 - `payload`
 
-其中：
+Where:
 
-- `stage`：公共展示阶段，当前只按 `ocr` / `translation` / `render` / `done` 理解。
-- `substage`：机器可读子阶段。
-- `lane`：事件所属通道，主状态卡只消费 `main`。
-- `progress`：唯一推荐进度对象。
-- `message`：只给人看，前端不要靠它判断阶段。
+- `stage`: Public display stage; currently understood as `ocr` / `translation` / `render` / `done` only.
+- `substage`: Machine-readable sub-stage.
+- `lane`: Event channel; main status card consumes `main` only.
+- `progress`: Only recommended progress object.
+- `message`: Human-readable only; frontend should not judge stage by it.
 
-`stage` 枚举：
+`stage` enum:
 
 - `ocr`
 - `translation`
 - `render`
 - `done`
 
-`substage` 是机器可读子阶段，例如：
+`substage` is machine-readable sub-stage, e.g.:
 
 - `ocr_processing`
 - `translation_batches`
@@ -344,14 +343,14 @@
 - `render_pages`
 - `render_compile`
 
-`lane` 可为：
+`lane` can be:
 
-- `main`：主状态卡可展示。
-- `background`：后台预热或缓存构建，不应覆盖主状态。
-- `artifact`：产物发布。
-- `diagnostic`：诊断信息。
+- `main`: Main status card displayable.
+- `background`: Background prewarm or cache build; should not override main status.
+- `artifact`: Artifact publishing.
+- `diagnostic`: Diagnostic information.
 
-`event_type` 可为：
+`event_type` can be:
 
 - `progress`
 - `artifact`
@@ -359,7 +358,7 @@
 - `error`
 - `diagnostic`
 
-`progress` 对象：
+`progress` object:
 
 ```json
 {
@@ -370,7 +369,7 @@
 }
 ```
 
-`progress_unit` 可为：
+`progress_unit` can be:
 
 - `page`
 - `batch`
@@ -378,35 +377,35 @@
 - `percent`
 - `none`
 
-兼容说明：
+Compatibility notes:
 
-- API 输出中的 `progress_current` / `progress_total` / `progress_unit` 是内部兼容字段，默认不序列化；前端优先读 `progress`。
-- `message` 只给人看，前端不要靠它判断阶段。
-- Python 原始事件里的 `user_stage` 不作为公共 API 字段暴露；排障时看 `payload.raw_user_stage`。
+- `progress_current` / `progress_total` / `progress_unit` in API output are internal compatibility fields; not serialized by default; frontend reads `progress` first.
+- `message` human-readable only; frontend should not judge stage by it.
+- `user_stage` in Python raw events not exposed as public API field; check `payload.raw_user_stage` for troubleshooting.
 
-主任务事件流会合并 OCR 子任务页进度。任务完成后仍保留历史事件。
+Main task event stream merges OCR child task page progress. Historical events retained after task completion.
 
-前端接入最小规则：
+Frontend integration minimum rules:
 
-1. 状态卡阶段只认 `stage`。
-2. 子阶段卡片只认 `substage`。
-3. 进度条只认 `progress.unit/current/total/percent`。
-4. 后台预热、缓存、并行渲染准备类事件如果 `lane != "main"`，不能覆盖主状态卡。
-5. 事件排序优先读 `seq`，没有 `seq` 时再用 `created_at`。
+1. Status card stage recognizes only `stage`.
+2. Sub-stage card recognizes only `substage`.
+3. Progress bar recognizes only `progress.unit/current/total/percent`.
+4. Background prewarm, cache, parallel render prep events with `lane != "main"` cannot override main status card.
+5. Event ordering reads `seq` first; falls back to `created_at` when no `seq`.
 
-失败诊断：
+Failure diagnostics:
 
 `GET /api/v1/jobs/{job_id}/diagnostics`
 
-返回稳定字段：
+Returns stable fields:
 
 ```json
 {
   "failed_stage": "translation",
   "failed_substage": "continuation_review",
-  "summary": "翻译阶段超时",
+  "summary": "Translation stage timeout",
   "detail": "provider timed out",
-  "suggestion": "从断点恢复任务",
+  "suggestion": "Resume task from breakpoint",
   "retryable": true,
   "resume_available": true,
   "render_diagnostics": {
@@ -424,11 +423,9 @@
 }
 ```
 
-`render_diagnostics` 是可选字段，只在 `artifacts/pipeline_summary.json`
-包含渲染诊断时返回。它用于排查物理删除失败后哪些页或 block
-走了 Typst 白底兜底，不表示任务失败。
+`render_diagnostics` optional field; returned only when `artifacts/pipeline_summary.json` contains render diagnostics. Used for troubleshooting which pages or blocks took Typst white-background fallback after physical deletion failure; does not indicate task failure.
 
-断点恢复计划：
+Breakpoint recovery plan:
 
 `GET /api/v1/jobs/{job_id}/resume-plan`
 
@@ -444,15 +441,15 @@
 }
 ```
 
-执行恢复：
+Execute recovery:
 
 `POST /api/v1/jobs/{job_id}/resume`
 
-响应同 `POST /api/v1/jobs/{job_id}/rerun`，返回 `JobSubmissionView`。
+Response same as `POST /api/v1/jobs/{job_id}/rerun`; returns `JobSubmissionView`.
 
-## 7. 产物与下载
+## 7. Artifacts and Downloads
 
-产物接口：
+Artifact endpoints:
 
 - `GET /api/v1/jobs/{job_id}/artifacts`
 - `GET /api/v1/jobs/{job_id}/artifacts-manifest`
@@ -466,34 +463,34 @@
 - `GET /api/v1/jobs/{job_id}/normalized-document`
 - `GET /api/v1/jobs/{job_id}/normalization-report`
 
-前端按钮状态优先读：
+Frontend button state reads preferentially:
 
 - `actions.*.enabled`
 - `artifacts.*.ready`
 - `artifacts_display[].ready`
 - `artifacts-manifest.items[].ready`
 
-Markdown 注意：
+Markdown notes:
 
-- `/markdown` 默认返回 JSON 包装
-- `/markdown/document` 返回结构化文档视图，包含 `content`、`content_with_absolute_image_urls`、`images[]` 图片直链清单，适合前端预览和 AI 问答
-- `/markdown?raw=true` 返回原始 Markdown
-- 图片通过 `/markdown/images/*path` 读取
+- `/markdown` returns JSON wrapper by default
+- `/markdown/document` returns structured document view including `content`, `content_with_absolute_image_urls`, `images[]` image direct link list; suitable for frontend preview and AI Q&A
+- `/markdown?raw=true` returns raw Markdown
+- Images read via `/markdown/images/*path`
 
-PDF 按需加载：
+PDF on-demand loading:
 
 - `GET /api/v1/jobs/{job_id}/pdf`
 - `GET /api/v1/jobs/{job_id}/artifacts/source_pdf`
 
-这两个接口支持 HTTP Range Requests。前端 PDF.js 应优先使用 URL 模式，而不是先 fetch 整个 PDF 到 `ArrayBuffer`。
+Both endpoints support HTTP Range Requests. Frontend PDF.js should prefer URL mode over fetching entire PDF into `ArrayBuffer` first.
 
-后端会优先返回线性化 PDF 缓存：
+Backend returns linearized PDF cache preferentially:
 
-- 如果运行环境存在 `qpdf`，首次下载时会懒生成 `*.linearized.pdf`
-- 后续下载复用缓存
-- 如果没有 `qpdf`，自动回退到原 PDF，不影响接口可用性
+- If `qpdf` exists in runtime environment, lazily generates `*.linearized.pdf` on first download
+- Subsequent downloads reuse cache
+- Without `qpdf`, automatically falls back to original PDF; interface availability unaffected
 
-请求示例：
+Request example:
 
 ```http
 GET /api/v1/jobs/{job_id}/pdf
@@ -501,7 +498,7 @@ X-API-Key: your-rust-api-key
 Range: bytes=0-65535
 ```
 
-成功响应：
+Success response:
 
 ```http
 206 Partial Content
@@ -511,25 +508,25 @@ Content-Length: 65536
 Content-Type: application/pdf
 ```
 
-跨域读取时，后端会暴露：
+Cross-origin reads expose:
 
 - `Accept-Ranges`
 - `Content-Range`
 - `Content-Length`
 - `X-Job-Id`
 
-页级预览：
+Page-level preview:
 
 `GET /api/v1/jobs/{job_id}/preview/pages/{page}?kind=translated`
 
-参数：
+Parameters:
 
-- `page`：1-based 页码
-- `kind`：`source | translated`，默认 `translated`
-- `width`：可选，默认 `1200`，范围 `240..2400`
-- `dpi`：可选，优先级高于 `width`，最大 `300`
+- `page`: 1-based page number
+- `kind`: `source | translated`; default `translated`
+- `width`: Optional; default `1200`; range `240..2400`
+- `dpi`: Optional; priority over `width`; max `300`
 
-响应：
+Response:
 
 ```http
 200 OK
@@ -538,15 +535,15 @@ Cache-Control: public, max-age=31536000, immutable
 ETag: "..."
 ```
 
-预览图按 job 缓存在 `DATA_ROOT/jobs/{job_id}/artifacts/` 下。前端可先请求第一页预览图实现秒开，再后台加载 PDF.js。
+Preview images cached per job at `DATA_ROOT/jobs/{job_id}/artifacts/`. Frontend can request first page preview for instant open, then load PDF.js in background.
 
-## 8. 对照阅读辅助接口
+## 8. Side-by-Side Reading Assistance Endpoints
 
-阅读区域映射：
+Reading region mapping:
 
 `GET /api/v1/jobs/{job_id}/reader/regions`
 
-每项包含：
+Each item contains:
 
 - `item_id`
 - `source.page/bbox/unit/origin/text`
@@ -555,13 +552,13 @@ ETag: "..."
 - `region_type`
 - `status`
 
-坐标单位固定为 PDF point，原点为左上角。前端可用 `item_id` 做译文 hover 到原文 bbox 的映射，也可以直接使用 `text` / `markdown` 做复制菜单。
+Coordinate unit fixed as PDF point; origin top-left. Frontend can use `item_id` for translated hover to source bbox mapping; can also use `text` / `markdown` directly for copy menu.
 
-PDF 元数据：
+PDF metadata:
 
 `GET /api/v1/jobs/{job_id}/reader/metadata`
 
-返回 source / translated 两侧的页数和每页尺寸：
+Returns source / translated side page counts and per-page dimensions:
 
 ```json
 {
@@ -576,9 +573,9 @@ PDF 元数据：
 }
 ```
 
-某一侧 PDF 尚未就绪时，该侧返回 `null`。
+When one side PDF not ready, that side returns `null`.
 
-## 9. OCR-only 接口
+## 9. OCR-Only Endpoints
 
 - `POST /api/v1/ocr/jobs`
 - `GET /api/v1/ocr/jobs?limit=20&offset=0&status=&provider=`
@@ -591,7 +588,7 @@ PDF 元数据：
 - `GET /api/v1/ocr/jobs/{job_id}/normalization-report`
 - `POST /api/v1/ocr/jobs/{job_id}/cancel`
 
-## 10. 术语表接口
+## 10. Glossary Endpoints
 
 - `POST /api/v1/glossaries/parse-csv`
 - `POST /api/v1/glossaries`
@@ -600,13 +597,13 @@ PDF 元数据：
 - `PUT /api/v1/glossaries/{glossary_id}`
 - `DELETE /api/v1/glossaries/{glossary_id}`
 
-术语表用于前端做“自定义词汇表”：
+Glossary used by frontend for "custom vocabulary":
 
-- 不翻译，保留原文：`level=preserve`
-- 专业词汇固定译法：`level=canonical`
-- 软性偏好译法：`level=preferred`
+- Do not translate; keep original: `level=preserve`
+- Fixed translation for technical term: `level=canonical`
+- Soft preference translation: `level=preferred`
 
-表格行字段：
+Table row fields:
 
 ```json
 {
@@ -615,26 +612,26 @@ PDF 元数据：
   "level": "preserve",
   "match_mode": "case_insensitive",
   "context": "",
-  "note": "方法名，保留英文"
+  "note": "Method name; keep English"
 }
 ```
 
-字段说明：
+Field descriptions:
 
-- `source`：原文词条，必填。
-- `target`：目标译文。`level=preserve` 时可为空，后端会自动设为 `source`。
-- `level`：
-  - `preserve`：强制保留，不翻译。
-  - `canonical`：强制使用固定译法。
-  - `preferred`：提示模型优先这样翻译，不保证强制命中。
-- `match_mode`：
-  - `exact`：默认精确匹配。
-  - `case_insensitive`：忽略大小写。
-  - `regex`：正则匹配。
-- `context`：可选，只在附近上下文包含该词时生效。
-- `note`：备注，只给前端和 prompt 说明用。
+- `source`: Source term; required.
+- `target`: Target translation. Can be empty when `level=preserve`; backend auto-sets to `source`.
+- `level`:
+  - `preserve`: Force keep; do not translate.
+  - `canonical`: Force fixed translation.
+  - `preferred`: Hint model to prefer this translation; no guaranteed hit.
+- `match_mode`:
+  - `exact`: Default exact match.
+  - `case_insensitive`: Ignore case.
+  - `regex`: Regex match.
+- `context`: Optional; takes effect only when nearby context contains term.
+- `note`: Remark; for frontend and prompt explanation only.
 
-创建术语表：
+Create glossary:
 
 ```http
 POST /api/v1/glossaries
@@ -642,35 +639,35 @@ POST /api/v1/glossaries
 
 ```json
 {
-  "name": "量子化学术语",
+  "name": "Quantum Chemistry Terms",
   "entries": [
     {
       "source": "Hartree-Fock",
       "target": "",
       "level": "preserve",
       "match_mode": "case_insensitive",
-      "note": "保留英文"
+      "note": "Keep English"
     },
     {
       "source": "density functional theory",
-      "target": "密度泛函理论",
+      "target": "lý thuyết phiếm hàm mật độ",
       "level": "canonical",
       "match_mode": "case_insensitive",
-      "note": "固定专业译法"
+      "note": "Fixed technical translation"
     }
   ]
 }
 ```
 
-更新术语表：
+Update glossary:
 
 ```http
 PUT /api/v1/glossaries/{glossary_id}
 ```
 
-请求体同创建接口。后端按整个 `entries` 数组替换。
+Request body same as create endpoint. Backend replaces by entire `entries` array.
 
-CSV 解析：
+CSV parsing:
 
 ```http
 POST /api/v1/glossaries/parse-csv
@@ -678,29 +675,29 @@ POST /api/v1/glossaries/parse-csv
 
 ```json
 {
-  "csv_text": "原词,译文,类型,匹配模式,备注\nHartree-Fock,,保留,忽略大小写,保留英文\nDFT,密度泛函理论,专业译法,忽略大小写,固定译法\n"
+  "csv_text": "Source,Translation,Type,Match Mode,Note\nHartree-Fock,,Preserve,Case Insensitive,Keep English\nDFT,lý thuyết phiếm hàm mật độ,Canonical,Case Insensitive,Fixed Translation\n"
 }
 ```
 
-CSV 表头支持英文和中文别名：
+CSV headers support English and Chinese aliases:
 
-- 原词：`source/src/term/original/原词/原文/术语`
-- 译文：`target/translation/translated/译文/翻译/目标译文`
-- 类型：`level/mode/action/类型/模式/动作`
-- 匹配模式：`match/match_mode/匹配/匹配模式`
-- 备注：`note/comment/备注/说明`
-- 上下文：`context/上下文/语境`
+- Source: `source/src/term/original/từ gốc/văn bản gốc/thuật ngữ`
+- Translation: `target/translation/translated/bản dịch/dịch/bản dịch mục tiêu`
+- Type: `level/mode/action/loại/chế độ/hành động`
+- Match mode: `match/match_mode/khớp/chế độ khớp`
+- Note: `note/comment/ghi chú/giải thích`
+- Context: `context/ngữ cảnh/bối cảnh`
 
-任务提交时可通过 `translation.glossary_id` 引用命名术语表，也可通过 `translation.glossary_entries` 传 inline 条目。
+Task submission can reference named glossary via `translation.glossary_id` or pass inline entries via `translation.glossary_entries`.
 
-## 11. Provider 校验
+## 11. Provider Validation
 
 - `POST /api/v1/providers/mineru/validate-token`
 - `POST /api/v1/providers/paddle/validate-token`
 - `POST /api/v1/providers/deepseek/validate-token`
 - `POST /api/v1/providers/deepseek/balance`
 
-推荐返回状态：
+Recommended return statuses:
 
 - `valid`
 - `unauthorized`
@@ -708,40 +705,42 @@ CSV 表头支持英文和中文别名：
 - `network_error`
 - `provider_error`
 
-## 12. Simple App 入口
+## 12. Simple App Entry
 
 `POST /api/v1/translate/bundle`
 
-该接口属于 simple app，通常监听 `42000`。它接受 multipart 扁平字段，适合脚本直接上传 PDF 并创建后台翻译任务。
+This endpoint belongs to simple app; typically listens on `42000`. Accepts multipart flat fields; suitable for scripts uploading PDF directly and creating background translation task.
 
-该接口返回 `ApiResponse<JobSubmissionView>`，不会等待 Python OCR / 翻译 / 渲染完成，也不会同步返回 ZIP。
+Returns `ApiResponse<JobSubmissionView>`; does not wait for Python OCR / translation / rendering completion; does not return ZIP synchronously.
 
-## 13. 存储与所有权
+## 13. Storage and Ownership
 
-后端是书籍、PDF、产物和封面的唯一真源。前端不持久化真实文件。
+Backend is single source of truth for books, PDFs, artifacts, covers. Frontend does not persist real files.
 
-主要存储：
+Main storage:
 
-- `DATA_ROOT/uploads/`：上传文件
-- `DATA_ROOT/jobs/{job_id}/`：任务工作目录
-- `DATA_ROOT/downloads/`：下载缓存
-- `DATA_ROOT/db/jobs.db`：SQLite 数据库
+- `DATA_ROOT/uploads/`: Uploaded files
+- `DATA_ROOT/jobs/{job_id}/`: Task working directory
+- `DATA_ROOT/downloads/`: Download cache
+- `DATA_ROOT/db/jobs.db`: SQLite database
 
-SQLite 主要表：
+SQLite main tables:
 
-- `uploads`：源文件名、源 PDF 大小、页数
-- `jobs`：任务状态、阶段、进度、时间戳、请求/runtime 状态
-- `artifacts`：任务产物路径和缓存的书籍展示元数据
-- `job_artifact_entries`：规范化产物 manifest
-- `events`：完整历史进度流
+- `uploads`: Source filename, source PDF size, page count
+- `jobs`: Task status, stage, progress, timestamps, request/runtime state
+- `artifacts`: Task artifact paths and cached book display metadata
+- `job_artifact_entries`: Normalized artifact manifest
+- `events`: Complete historical progress stream
 
-## 14. 专题文档
+## 14. Topic Documents
 
-- [本地启动与配置](./local-dev.md)
-- [存储结构](./storage.md)
-- [错误排查](./troubleshooting.md)
-- [Rust API 架构边界](../rust_api/README.md)
-- [当前运行主链](../../../backend/rust_api/CURRENT_API_MAP.md)
-- [Stage 执行契约](../../../backend/rust_api/STAGE_EXECUTION_CONTRACT.md)
-- [OCR Provider 契约](../../../backend/rust_api/OCR_PROVIDER_CONTRACT.md)
-- [渲染参数契约](../../../backend/rust_api/RENDER_OPTIONS_CONTRACT.md)
+- [Local Startup and Configuration](./local-dev.md)
+- [Storage Structure](./storage.md)
+- [Troubleshooting](./troubleshooting.md)
+- [Rust API Architecture Boundaries](../rust_api/README.md)
+- [Current Runtime Main Chain](../../../backend/rust_api/CURRENT_API_MAP.md)
+- [Stage Execution Contract](../../../backend/rust_api/STAGE_EXECUTION_CONTRACT.md)
+- [OCR Provider Contract](../../../backend/rust_api/OCR_PROVIDER_CONTRACT.md)
+- [Render Options Contract](../../../backend/rust_api/RENDER_OPTIONS_CONTRACT.md)
+
+</content>

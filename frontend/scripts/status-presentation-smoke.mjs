@@ -27,7 +27,7 @@ function checkOcrPresentationUsesPageProgress() {
       {
         stage: "queued",
         event_type: "stage_progress",
-        stage_detail: "PDF 上传完成",
+        stage_detail: "Tải PDF lên hoàn tất",
         progress_current: 2,
         progress_total: 12,
       },
@@ -108,7 +108,7 @@ function checkTranslatePresentationUsesBatchProgressWhenDetailMentionsOcr() {
     status: "running",
     stage: "translating",
     current_stage: "translating",
-    stage_detail: "OCR 完成，开始翻译正文",
+    stage_detail: "OCR hoàn tất, bắt đầu dịch nội dung chính",
     progress_current: 18,
     progress_total: 55,
   };
@@ -124,7 +124,7 @@ function checkTranslatePresentationUsesBatchProgressWhenDetailMentionsOcr() {
       {
         stage: "translating",
         event_type: "stage_progress",
-        stage_detail: "OCR 完成，正在翻译正文，第 18/55 批",
+        stage_detail: "OCR hoàn tất, đang dịch nội dung chính, lô 18/55",
         progress_current: 18,
         progress_total: 55,
       },
@@ -240,7 +240,7 @@ function checkTranslateUsesLatestProgressfulEvent() {
       {
         stage: "continuation_review",
         event_type: "stage_progress",
-        stage_detail: "跨栏/跨页连续段复核完成",
+        stage_detail: "Xác định đoạn liên tục qua cột/trang hoàn tất",
         progress_current: 1,
         progress_total: 1,
       },
@@ -254,7 +254,7 @@ function checkTranslateUsesLatestProgressfulEvent() {
       {
         stage: "translating",
         event_type: "stage_transition",
-        stage_detail: "开始批量翻译",
+        stage_detail: "Bắt đầu dịch hàng loạt",
       },
     ],
   };
@@ -268,7 +268,7 @@ function checkOcrPercentProgressDoesNotLookLikePages() {
     status: "running",
     stage: "ocr_processing",
     current_stage: "ocr_processing",
-    stage_detail: "OCR provider 正在处理",
+    stage_detail: "Nhà cung cấp OCR đang xử lý",
     progress_current: 0,
     progress_total: 100,
   };
@@ -282,7 +282,7 @@ function checkOcrFallbackProgressUsesStageSteps() {
     status: "running",
     stage: "ocr_upload",
     current_stage: "ocr_upload",
-    stage_detail: "OCR provider transport 启动中",
+    stage_detail: "Vận chuyển nhà cung cấp OCR đang khởi động",
   };
   const presentation = resolveDisplayedStagePresentation(job, { items: [] });
   assertEqual(presentation.stageKey, "ocr", "OCR fallback stage");
@@ -344,7 +344,7 @@ function checkOcrUploadWaitingDoesNotLookQueued() {
     status: "running",
     stage: "ocr_upload",
     current_stage: "ocr_upload",
-    stage_detail: "OCR 子任务：Paddle 已接收任务，等待排队",
+    stage_detail: "Nhiệm vụ con OCR: Paddle đã nhận nhiệm vụ, đang chờ xếp hàng",
   };
   const presentation = resolveDisplayedStagePresentation(job, { items: [] });
   assertEqual(presentation.stageKey, "ocr", "OCR upload waiting stage");
@@ -358,7 +358,7 @@ function checkTranslationSubstageOrderDoesNotPreferBatchWhenReviewing() {
     status: "running",
     stage: "continuation_review",
     current_stage: "continuation_review",
-    stage_detail: "正在判断跨栏/跨页连续段，第 3/9 页",
+    stage_detail: "Đang xác định đoạn liên tục qua cột/trang, trang 3/9",
     progress_current: 3,
     progress_total: 9,
   };
@@ -373,7 +373,7 @@ function checkCompletedStageHasDoneKeyAndNoProgressTextRequirement() {
     status: "succeeded",
     stage: "finished",
     current_stage: "finished",
-    stage_detail: "处理完成，可以下载结果",
+    stage_detail: "Xử lý hoàn tất, có thể tải xuống kết quả",
     progress_current: 12,
     progress_total: 12,
   };
@@ -387,7 +387,7 @@ function checkFailedStageUsesFailureSummary() {
     status: "failed",
     stage: "rendering",
     current_stage: "rendering",
-    stage_detail: "渲染阶段失败",
+    stage_detail: "Giai đoạn render thất bại",
     failure: {
       summary: "Typst 渲染失败：页面 9 文本溢出",
     },
@@ -440,7 +440,7 @@ function checkRenderPrepareDoesNotLookLikeOcr() {
       workflow: "render",
       stage: "render_prepare",
       current_stage: "render_prepare",
-      stage_detail: "开始准备纯渲染阶段",
+      stage_detail: "Bắt đầu chuẩn bị giai đoạn render thuần",
     },
     { items: [] },
   );
@@ -577,7 +577,7 @@ function checkPageProgressBeatsLaterStepProgress() {
         {
           user_stage: "ocr",
           stage: "ocr_processing",
-          stage_detail: "Paddle 正在解析文件，第 4/9 页",
+          stage_detail: "Paddle đang phân tích tệp, trang 4/9",
           progress_unit: "page",
           progress_current: 4,
           progress_total: 9,
@@ -585,7 +585,7 @@ function checkPageProgressBeatsLaterStepProgress() {
         {
           user_stage: "ocr",
           stage: "normalizing",
-          stage_detail: "OCR 完成，开始标准化",
+          stage_detail: "OCR hoàn tất, bắt đầu chuẩn hóa",
           progress_unit: "step",
           progress_current: 9,
           progress_total: 9,
@@ -609,7 +609,7 @@ function checkCompletedOcrPageProgressBeatsPartialPageProgress() {
         {
           user_stage: "ocr",
           stage: "ocr_processing",
-          stage_detail: "Paddle 正在解析文件，第 28/33 页",
+          stage_detail: "Paddle đang phân tích tệp, trang 28/33",
           progress_unit: "page",
           progress_current: 28,
           progress_total: 33,
@@ -617,7 +617,7 @@ function checkCompletedOcrPageProgressBeatsPartialPageProgress() {
         {
           user_stage: "ocr",
           stage: "ocr_result_ready",
-          stage_detail: "Paddle 正在解析文件，第 33/33 页",
+          stage_detail: "Paddle đang phân tích tệp, trang 33/33",
           progress_unit: "none",
           progress_current: 33,
           progress_total: 33,
@@ -660,7 +660,7 @@ function checkTranslateProgressTextFallbackParsesStageDetail() {
     {
       status: "running",
       stage: "translating",
-      stage_detail: "已完成第 1292/5216 批翻译（最近页: 132）",
+      stage_detail: "Đã hoàn thành lô dịch 1292/5216 (trang gần nhất: 132)",
     },
     { items: [] },
   );

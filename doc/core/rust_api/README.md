@@ -1,31 +1,31 @@
-# Rust API 说明
+# Giới thiệu Rust API
 
-这组文档是 RetainPDF 后端实现和协作边界入口。
+Bộ tài liệu này là cổng vào cho triển khai backend và ranh giới hợp tác của RetainPDF.
 
-如果要接入 HTTP API，先看：
+Nếu cần tích hợp HTTP API, xem trước:
 
-- [RetainPDF 后端 API 总入口](../api/index.md)
+- [Cổng vào tổng hợp API backend RetainPDF](../api/index.md)
 
-如果你只想快速找答案，先按这个顺序看：
+Nếu bạn chỉ muốn nhanh chóng tìm câu trả lời, hãy xem theo thứ tự sau:
 
-1. [01-基础契约.md](./01-基础契约.md)
-2. [02-任务详情与事件.md](./02-任务详情与事件.md)
-3. [03-产物与下载.md](./03-产物与下载.md)
-4. [04-协作与边界.md](./04-协作与边界.md)
+1. [01-hop-dong-co-ban.md](./01-hop-dong-co-ban.md)
+2. [02-chi-tiet-tac-vu-va-su-kien.md](./02-chi-tiet-tac-vu-va-su-kien.md)
+3. [03-san-pham-va-tai-xuong.md](./03-san-pham-va-tai-xuong.md)
+4. [04-hop-tac-va-ranh-gioi.md](./04-hop-tac-va-ranh-gioi.md)
 
-## 4 个主文档
+## 4 tài liệu chính
 
-- [01-基础契约.md](./01-基础契约.md)
-  - 响应包装、列表、Provider 校验、基础读法
-- [02-任务详情与事件.md](./02-任务详情与事件.md)
-  - 任务详情、时间线、事件流、生命周期、失败协议
-- [03-产物与下载.md](./03-产物与下载.md)
-  - 产物清单、下载入口、artifact 边界、排错
-- [04-协作与边界.md](./04-协作与边界.md)
-  - 协同开发约定、分层边界、落点规则、大模型权限边界
-- [12-job_runner 边界.md](./12-job_runner%20%E8%BE%B9%E7%95%8C.md)
-  - 后端运行态执行层的模块职责、落点规则、拆分边界
+- [01-hop-dong-co-ban.md](./01-hop-dong-co-ban.md)
+  - Đóng gói phản hồi, danh sách, kiểm tra Provider, cách đọc cơ bản
+- [02-chi-tiet-tac-vu-va-su-kien.md](./02-chi-tiet-tac-vu-va-su-kien.md)
+  - Chi tiết nhiệm vụ, dòng thời gian, luồng sự kiện, vòng đời, giao thức thất bại
+- [03-san-pham-va-tai-xuong.md](./03-san-pham-va-tai-xuong.md)
+  - Danh sách sản phẩm, cổng tải xuống, ranh giới artifact, gỡ lỗi
+- [04-hop-tac-va-ranh-gioi.md](./04-hop-tac-va-ranh-gioi.md)
+  - Quy ước hợp tác phát triển, ranh giới phân tầng, quy tắc vị trí, ranh giới quyền mô hình lớn
+- [12-ranh-gioi-job_runner.md](./12-ranh-gioi-job_runner.md)
+  - Trách nhiệm module lớp thực thi thời gian chạy backend, quy tắc vị trí, ranh giới tách
 
-## 旧文档
+## Tài liệu cũ
 
-`01-11` 这些旧单篇文档先保留兼容入口，但不再作为主入口。以后优先读上面 4 篇。
+Các tài liệu đơn lẻ cũ `01-11` tạm thời giữ cổng vào tương thích, nhưng không còn là cổng vào chính. Sau này ưu tiên đọc 4 bài trên.

@@ -19,12 +19,12 @@ def finalize_payload_orchestration_metadata(payload: list[dict]) -> None:
 
 
 def finalize_orchestration_metadata_by_page(page_payloads: dict[int, list[dict]]) -> None:
-    # 必须以全书扁平口径执行一次,与 save_pages 的 refresh 口径一致。
-    # 逐页执行时跨页 continuation 组在每页都只有 1 个成员:
-    # - review 拼接的组(candidate ids 已清空、无 provider id)会被
-    #   clear_singleton_continuation_group 当孤儿直接抹掉;
-    # - provider 跨页组虽保住 group id,unit 字段也会被降级成 single,
-    #   与随后 save_pages 的扁平分组结论互相矛盾。
+    # phải thực hiện một lần với phạm vi toàn sách phẳng, nhất quán với phạm vi refresh của save_pages.
+    # khi thực hiện theo từng trang, các nhóm continuation xuyên trang trên mỗi trang chỉ có 1 thành viên:
+    # - nhóm được ghép bởi review (candidate ids đã bị xóa, không có provider id) sẽ bị
+    #   clear_singleton_continuation_group coi là nhóm mồ côi và xóa trực tiếp;
+    # - nhóm xuyên trang của provider tuy giữ được group id, nhưng trường unit cũng bị hạ cấp thành single,
+    #   mâu thuẫn với kết luận phân nhóm phẳng của save_pages sau đó.
     flat_payload = [item for page_idx in sorted(page_payloads) for item in page_payloads[page_idx]]
     finalize_payload_orchestration_metadata(flat_payload)
 

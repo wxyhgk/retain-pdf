@@ -34,22 +34,22 @@ export function createRecentJobActions({
   function selectJob(jobId) {
     const normalizedJobId = `${jobId || ""}`.trim();
     if (!normalizedJobId) {
-      renderRecentJobsError("该任务缺少 job_id，无法打开。", { reset: false });
+      renderRecentJobsError("Tác vụ này thiếu job_id nên không thể mở.", { reset: false });
       return;
     }
     navigationPort.openJob(normalizedJobId);
   }
 
-  // 409 = 删除保护:该 job 被收藏引用,不能自动 force,必须让用户先处理收藏
+  // 409 = bảo vệ xóa: job đang được mục yêu thích tham chiếu, không tự force; người dùng phải xử lý mục yêu thích trước.
   function friendlyDeleteError(error) {
     const message = `${error?.message || error || ""}`;
     if (error?.status === 409 || message.includes("(409)")) {
       const count = message.match(/\d+/)?.[0];
       return count
-        ? `该文档有 ${count} 条收藏，请先删除收藏后再删除文档。`
-        : "该文档存在收藏引用，请先删除相关收藏后再删除文档。";
+        ? `Tài liệu này có ${count} mục yêu thích. Vui lòng xóa mục yêu thích trước khi xóa tài liệu.`
+        : "Tài liệu này đang được mục yêu thích tham chiếu. Vui lòng xóa các mục yêu thích liên quan trước khi xóa tài liệu.";
     }
-    return message || "删除失败";
+    return message || "Xóa thất bại";
   }
 
   async function deleteJob(jobId) {
@@ -66,7 +66,7 @@ export function createRecentJobActions({
     statePort.removeJobFamily(normalizedJobId);
     const nextItems = statePort.getSnapshot().items;
     if (nextItems.length === 0) {
-      renderRecentJobsEmpty("暂无最近任务");
+      renderRecentJobsEmpty("Chưa có tác vụ gần đây");
       return;
     }
     renderCurrentRecentJobs({ reset: true });
@@ -75,7 +75,7 @@ export function createRecentJobActions({
   function openJobReader(jobId) {
     const normalizedJobId = `${jobId || ""}`.trim();
     if (!normalizedJobId) {
-      renderRecentJobsError("该任务缺少 job_id，无法打开对照阅读。", { reset: false });
+      renderRecentJobsError("Tác vụ này thiếu job_id nên không thể mở chế độ đọc đối chiếu.", { reset: false });
       return;
     }
     navigationPort.openReader(normalizedJobId);

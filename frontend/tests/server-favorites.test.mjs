@@ -20,9 +20,9 @@ const API_FAVORITE = {
   created_at: "2026-07-01T08:00:00Z",
 };
 
-// ===== 归一化:API snake_case → 阅读器视图记录 =====
+// ===== Chuẩn hóa: API snake_case → bản ghi视图 trình đọc =====
 
-test("normalizeServerFavorite:API 收藏转视图记录,page_idx 保持 0 基", () => {
+test("normalizeServerFavorite: API yêu thích chuyển sang bản ghi view, page_idx giữ nguyên cơ số 0", () => {
   const record = normalizeServerFavorite(API_FAVORITE);
   assert.deepEqual(record, {
     favoriteId: "fav-1",
@@ -38,7 +38,7 @@ test("normalizeServerFavorite:API 收藏转视图记录,page_idx 保持 0 基", 
   });
 });
 
-test("normalizeServerFavorite:缺 favorite_id/quote_text 丢弃,非法 page_idx 归 0,kind 默认 sentence", () => {
+test("normalizeServerFavorite: thiếu favorite_id/quote_text sẽ bị loại, page_idx bất hợp lệ đưa về 0, kind mặc định sentence", () => {
   assert.equal(normalizeServerFavorite({ ...API_FAVORITE, favorite_id: "" }), null);
   assert.equal(normalizeServerFavorite({ ...API_FAVORITE, quote_text: "  " }), null);
   assert.equal(normalizeServerFavorite(null), null);
@@ -47,7 +47,7 @@ test("normalizeServerFavorite:缺 favorite_id/quote_text 丢弃,非法 page_idx 
   assert.equal(fallback.kind, "sentence");
 });
 
-test("loadServerFavorites:按 job_id 直查 document_id 并归一化,脏数据被过滤", async () => {
+test("loadServerFavorites: tra trực tiếp document_id theo job_id và chuẩn hóa, dữ liệu bẩn bị lọc", async () => {
   const loadCalls = [];
   const port = createReaderServerFavoritesPort({
     jobId: "job-1",
@@ -72,8 +72,8 @@ test("loadServerFavorites:按 job_id 直查 document_id 并归一化,脏数据�
   assert.equal(await port.resolveDocumentId(), "doc-1");
 });
 
-test("loadServerFavorites:查不到文档/请求失败一律静默返回空数组", async () => {
-  // mock 模式不再短路:api 层自带 mock 分支,基线与 e2e 依赖 mock 全流程可用
+test("loadServerFavorites: không tìm thấy tài liệu hoặc yêu cầu thất bại đều trả về mảng rỗng", async () => {
+  // Chế độ mock không còn ngắt mạch: tầng api có nhánh mock riêng, baseline và e2e dựa vào luồng mock đầy đủ để dùng
   const missingPort = createReaderServerFavoritesPort({
     jobId: "job-x",
     documentByJobId: async () => null,
@@ -93,12 +93,12 @@ test("loadServerFavorites:查不到文档/请求失败一律静默返回空数�
   assert.deepEqual(await failingPort.loadServerFavorites(), []);
 });
 
-// ===== 去重:本地已同步(serverFavoriteId)的记录不在云端区重复展示 =====
+// ===== Khử trùng: bản ghi đã đồng bộ cục bộ (serverFavoriteId) không hiển thị trùng trong khu vực đám mây =====
 
 test("dedupeServerFavorites:favorite_id 命中本地 serverFavoriteId 时剔除", () => {
   const serverRecords = [
     normalizeServerFavorite(API_FAVORITE),
-    normalizeServerFavorite({ ...API_FAVORITE, favorite_id: "fav-2", quote_text: "另一条" }),
+    normalizeServerFavorite({ ...API_FAVORITE, favorite_id: "fav-2", quote_text: "Một dòng khác" }),
   ];
   const localItems = [
     { id: "local-1", serverFavoriteId: "fav-1" },
@@ -115,7 +115,7 @@ test("dedupeServerFavorites:favorite_id 命中本地 serverFavoriteId 时剔除"
 
 // ===== 删除流程:端口尽力而为 + API 层真正发 DELETE =====
 
-test("removeServerFavorite:成功返回 true,失败/空 id 返回 false", async () => {
+test("removeServerFavorite: thành công trả về true, thất bại/id rỗng trả về false", async () => {
   const deleteCalls = [];
   const port = createReaderServerFavoritesPort({
     jobId: "job-1",
@@ -135,10 +135,10 @@ test("removeServerFavorite:成功返回 true,失败/空 id 返回 false", async 
       throw new Error("500");
     },
   });
-  assert.equal(await failingPort.removeServerFavorite("fav-1"), false, "删除失败不抛错,返回 false");
+  assert.equal(await failingPort.removeServerFavorite("fav-1"), false, "Xóa thất bại không ném lỗi, trả về false");
 });
 
-test("deleteFavorite API:对 /favorites/:favorite_id 发 DELETE(mock fetch)", async () => {
+test("API deleteFavorite: gửi DELETE tới /favorites/:favorite_id (fetch giả lập)", async () => {
   const originalWindow = globalThis.window;
   const originalFetch = globalThis.fetch;
   const calls = [];

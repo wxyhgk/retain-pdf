@@ -1,4 +1,4 @@
-// workflow + upload 特性。
+// workflow + upload Tính năng。
 
 import {
   API_PREFIX,
@@ -89,7 +89,7 @@ export function createWorkflowAndUpload({
   } = {}) {
     const credentials = credentialsStatePort.getCredentials();
     const ocrProvider = credentials?.ocrProvider || ocrProviderFallback;
-    // providerId 仅作历史调用透传；getOcrToken 实现只读 defaultPaddleToken。
+    // providerId Thẻ trong suốt chỉ dành cho các cuộc gọi lịch sử；getOcrToken Nhận biết chế độ chỉ đọc defaultPaddleToken。
     const ocrToken = credentialsStatePort.getOcrToken({
       defaultPaddleToken: () => paddleTokenFallback || "",
     }) || "";
@@ -131,7 +131,7 @@ export function createWorkflowAndUpload({
     setText,
   }) as WorkflowFeature;
 
-  // mountUploadFeature 签名要求 state，但 uploadStatePort 在运行时已足够；下层 nocheck 签名未放宽。
+  // mountUploadFeature Yêu cầu chữ ký state，nhưng uploadStatePort Đủ trong thời gian chạy；Cấp thấp hơn nocheck Chữ ký không được nới lỏng。
   const uploadFeature = mountUploadFeature({
     uploadStatePort,
     viewPort: uploadView.viewPort as import("../../../js/features/upload/controller.js").UploadViewPort,

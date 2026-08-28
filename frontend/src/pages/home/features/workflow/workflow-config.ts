@@ -20,12 +20,13 @@ import {
   DEFAULT_MODEL_VERSION,
 } from "../../composition/external.js";
 
-// 工作流常量与归一化。
+// Hằng số và chuẩn hóa quy trình.
 //
-// 拷贝自 bootstrap/workflow-constants.js 与 bootstrap/workflow-normalizers.js:
-// bootstrap/ 属旧 DI 装配层,architecture-boundaries 门禁禁止 pages import;
-// 常量本体仍从 src/js/config/(纯逻辑)取,拷贝的只是组装样板。
-// home cutover 删除旧世界时,bootstrap 版随之退役,此处成为唯一出处。
+// Sao chép từ bootstrap/workflow-constants.js và bootstrap/workflow-normalizers.js:
+// bootstrap/ thuộc tầng lắp ráp DI cũ, cổng kiểm soát architecture-boundaries cấm pages
+// import; bản thân hằng số vẫn lấy từ src/js/config/ (logic thuần), phần sao chép chỉ là
+// khuôn lắp ráp. Khi home cutover xóa thế giới cũ, bản bootstrap theo đó cũng về hưu,
+// nơi này trở thành xuất xứ duy nhất.
 
 export const WORKFLOW_BOOK = "book";
 export const WORKFLOW_TRANSLATE = "translate";

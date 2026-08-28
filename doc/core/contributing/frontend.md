@@ -1,62 +1,62 @@
-# 前端与桌面端贡献指南
+# Hướng dẫn đóng góp frontend và desktop
 
-## 目录边界
+## Ranh giới thư mục
 
-- `frontend/`：当前生产使用的静态前端源码，也是桌面端 bundle 的输入。
-- `frontend-react/`：新 React 前端迁移区，当前不直接替代 `frontend/`。
-- `desktop/`：Electron 桌面端打包。
-- `desktop/app/frontend/**`：桌面端实际读取的前端 bundle，不应该作为主要编辑入口。
+- `frontend/`: Mã nguồn frontend tĩnh đang được sử dụng trong sản xuất, cũng là đầu vào cho bundle desktop.
+- `frontend-react/`: Khu vực di chuyển sang React mới, hiện không trực tiếp thay thế `frontend/`.
+- `desktop/`: Đóng gói Electron desktop.
+- `desktop/app/frontend/**`: Bundle frontend thực tế desktop đọc, không nên là đầu vào chỉnh sửa chính.
 
-## 本地启动
+## Khởi động cục bộ
 
 ```bash
 cd frontend
 python3 -m http.server 40001 --bind 0.0.0.0
 ```
 
-React 迁移区如需单独启动：
+Nếu cần khởi động riêng khu vực di chuyển React:
 
 ```bash
 cd frontend-react
 npm run dev
 ```
 
-默认端口：`40002`。该入口仍是迁移区，不直接替代生产 `frontend/`。
+Cổng mặc định: `40002`. Đầu vào này vẫn là khu vực di chuyển, không trực tiếp thay thế `frontend/` sản xuất.
 
-默认端口：
+Các cổng mặc định:
 
-- Web 前端：`40001`
-- Rust API：`41000`
-- multipart 异步提交 API：`42000`
+- Web frontend: `40001`
+- Rust API: `41000`
+- API gửi multipart không đồng bộ: `42000`
 
-前端 API base 规则见 [本地启动与配置](../api/local-dev.md)。
+Quy tắc cơ sở API frontend xem [Khởi động và cấu hình cục bộ](../api/local-dev.md).
 
-## 桌面端同步
+## Đồng bộ desktop
 
-修改 `frontend/src/**`、`frontend/*.html`、`frontend/src/styles/**` 或其他会进入桌面端 bundle 的前端资源后，必须同步桌面端：
+Sau khi sửa `frontend/src/**`, `frontend/*.html`, `frontend/src/styles/**` hoặc các tài nguyên frontend khác sẽ vào bundle desktop, phải đồng bộ desktop:
 
 ```bash
 npm --prefix desktop run verify-frontend-sync
 ```
 
-这个命令会重新构建静态前端、同步到桌面端 bundle，并跑桌面端前端 smoke。
+Lệnh này sẽ xây dựng lại frontend tĩnh, đồng bộ vào bundle desktop và chạy smoke frontend desktop.
 
-## 改动规则
+## Quy tắc sửa đổi
 
-- 不要只改 `desktop/app/frontend/**`，应改 `frontend/**` 源文件后同步。
-- UI 逻辑优先放到现有 feature/controller/view 模块，不要把新流程塞回一个大入口文件。
-- 新增下载、reader、状态卡、术语表能力时，确认桌面端 bundle 也能通过 `npm --prefix desktop run verify-frontend-sync`。
-- 前端需要新增 API 字段时，先确认后端是否有稳定 view/projection，不要让前端从内部 payload、raw artifact 或数据库字段里猜。
-- `frontend-react/` 的改动应明确是迁移区能力，除非 PR 目标就是切换生产入口。
+- Đừng chỉ sửa `desktop/app/frontend/**`, hãy sửa tệp nguồn `frontend/**` rồi đồng bộ.
+- Logic UI ưu tiên đặt vào các module feature/controller/view hiện có, không nhét luồng mới vào một tệp đầu vào lớn.
+- Khi thêm khả năng tải xuống, reader, thẻ trạng thái, bảng thuật ngữ, xác nhận bundle desktop cũng có thể vượt qua `npm --prefix desktop run verify-frontend-sync`.
+- Khi frontend cần thêm trường API mới, trước tiên xác nhận backend có view/projection ổn định không, đừng để frontend đoán từ payload nội bộ, raw artifact hoặc trường cơ sở dữ liệu.
+- Sửa đổi `frontend-react/` nên rõ ràng là khả năng khu vực di chuyển, trừ khi mục tiêu PR là chuyển đổi đầu vào sản xuất.
 
-## 常用检查
+## Kiểm tra thường dùng
 
 ```bash
 npm --prefix frontend run build
 npm --prefix desktop run verify-frontend-sync
 ```
 
-前端端到端状态 smoke 会真实提交任务，通常需要本地 Rust API、OCR token、模型 key 和样本 PDF；具备这些条件时再跑：
+Smoke trạng thái end-to-end frontend sẽ thực sự gửi tác vụ, thường cần Rust API cục bộ, token OCR, key model và PDF mẫu; chạy khi có đủ điều kiện:
 
 ```bash
 cd frontend

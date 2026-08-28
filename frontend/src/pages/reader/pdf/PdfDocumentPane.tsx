@@ -1,5 +1,5 @@
-// 单栏 PDF：栏不滚动；纵向由共享 scroll shell 负责（对齐旧 reader-scroll-shell）。
-// 对照等高由父级 usePageRowSync 完成，不做 display:contents。
+// PDF một cột: cột không tự cuộn; trục dọc do shared scroll shell phụ trách (khớp reader-scroll-shell cũ).
+// Đồng bộ chiều cao hàng đối chiếu do usePageRowSync ở parent xử lý, không dùng display:contents.
 
 import {
   forwardRef,
@@ -23,8 +23,8 @@ import type { PageRowHeights } from "./usePageRowSync.js";
 import type { ReaderPaneId } from "./reader-dom-contract.js";
 
 /**
- * 页宽按「shell 全宽 × zoom%」计算，与当前栏宽无关。
- * pageWidthOverride 在此语义下应传 shell 全宽（不是半宽）。
+ * Page width tính theo "toàn bộ chiều rộng shell x zoom%", không phụ thuộc chiều rộng cột hiện tại.
+ * Với ngữ nghĩa này, pageWidthOverride nên truyền toàn bộ chiều rộng shell (không phải nửa chiều rộng).
  */
 
 setupReactPdf();
@@ -43,11 +43,11 @@ export type PdfDocumentPaneProps = {
   emptyLabel?: string;
   scrollRoot?: HTMLElement | null;
   /**
-   * 阅读区全宽（shell clientWidth）。
-   * 页绘制宽 = pageWidthFromShell(此值, userZoom)，不随单栏/半栏变化。
+   * Toàn bộ chiều rộng vùng đọc (shell clientWidth).
+   * Chiều rộng render page = pageWidthFromShell(giá trị này, userZoom), không đổi theo một cột/nửa cột.
    */
   pageWidthOverride?: number | null;
-  /** 对照行高同步 */
+  /** Đồng bộ chiều cao hàng đối chiếu. */
   rowHeights?: PageRowHeights;
   onMetrics?: () => void;
   onLoadSuccess?: (info: { numPages: number; pane: ReaderPaneId }) => void;
@@ -63,7 +63,7 @@ const PdfDocumentPaneInner = forwardRef<HTMLElement, PdfDocumentPaneProps>(
       preloadedFile = null,
       userZoom = 1,
       visible = true,
-      emptyLabel = "暂无 PDF",
+      emptyLabel = "Chưa có PDF",
       scrollRoot = null,
       pageWidthOverride = null,
       rowHeights,
@@ -85,7 +85,7 @@ const PdfDocumentPaneInner = forwardRef<HTMLElement, PdfDocumentPaneProps>(
 
     useImperativeHandle(ref, () => paneEl as HTMLElement, [paneEl]);
 
-    // 页宽只跟 shell 全宽 + zoom 走，禁止用本栏 clientWidth（对照会变成 25%）
+    // Page width chỉ theo toàn bộ chiều rộng shell + zoom, cấm dùng clientWidth của cột này (đối chiếu sẽ thành 25%).
     useEffect(() => {
       const w = pageWidthOverride && pageWidthOverride >= 80
         ? pageWidthOverride
@@ -96,7 +96,7 @@ const PdfDocumentPaneInner = forwardRef<HTMLElement, PdfDocumentPaneProps>(
       setPaneWidth(w);
     }, [pageWidthOverride, scrollRoot, visible]);
 
-    // shell 尺寸变化时同步
+    // Đồng bộ khi kích thước shell thay đổi.
     useEffect(() => {
       if (!scrollRoot || typeof ResizeObserver === "undefined") return;
       if (pageWidthOverride && pageWidthOverride >= 80) return;
@@ -134,7 +134,7 @@ const PdfDocumentPaneInner = forwardRef<HTMLElement, PdfDocumentPaneProps>(
 
     const handleLoadError = useCallback(
       (err: Error) => {
-        const message = err?.message || "PDF 解析失败";
+        const message = err?.message || "Không phân tích được PDF";
         setDocError(message);
         setNumPages(0);
         onNumPagesChange?.(0, pane);
@@ -161,7 +161,7 @@ const PdfDocumentPaneInner = forwardRef<HTMLElement, PdfDocumentPaneProps>(
         data-reader-engine="react-pdf"
         data-reader-visible={visible ? "true" : "false"}
         aria-hidden={visible ? undefined : true}
-        aria-label={pane === "source" ? "原文 PDF" : "译文 PDF"}
+        aria-label={pane === "source" ? "PDF gốc" : "PDF bản dịch"}
       >
         {showEmpty && !loading ? (
           <div className="reader-empty reader-react-pdf-empty" data-reader-pdf-empty={pane}>
@@ -170,7 +170,7 @@ const PdfDocumentPaneInner = forwardRef<HTMLElement, PdfDocumentPaneProps>(
         ) : null}
         {loading ? (
           <div className="reader-empty reader-react-pdf-loading" data-reader-pdf-loading={pane}>
-            正在加载 PDF…
+            Đang tải PDF...
           </div>
         ) : null}
         {file && !fetchError ? (

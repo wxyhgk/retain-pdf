@@ -1,6 +1,6 @@
-/* 悬浮窗内 Markdown 正文（批注 / Markdown 预览共用） */
+/* Nội dung Markdown trong cửa sổ nổi (dùng chung cho chú thích / xem trước Markdown) */
 
-/* 悬浮窗内 Markdown / AI 内容 */
+/* Nội dung Markdown / AI trong cửa sổ nổi */
 .reader-float-markdown-content {
   font-size: 13px;
   line-height: 1.55;
@@ -9,7 +9,8 @@
 .reader-float-markdown-content.hidden {
   display: none;
 }
-/* 逗号列表逐段带命名空间前缀（css-page-namespace 测试逐段校验），:where 保持特异性不变 */
+/* Danh sách dấu phẩy mang tiền tố namespace ở từng phần (test css-page-namespace
+   kiểm tra từng phần), :where giữ nguyên độ đặc hiệu */
 .reader-float-markdown-content :where(h1),
 .reader-float-markdown-content :where(h2),
 .reader-float-markdown-content :where(h3) {

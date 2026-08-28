@@ -1,11 +1,11 @@
-// CredentialsDialog 家族(CredentialsDialog/OcrProviderPanels/DeepSeekPanel/
-// TaskOptionsPanel)的唯一装配面——把 composition.js 的 credentials 域
-// (services.credentials:{feature, view, dialogStore})折成一个 hook,组件
-// 只订阅需要的切片,不各自重复 useStoreSnapshot/useDialogState 样板。
+// CredentialsDialog Gia đình(CredentialsDialog/OcrProviderPanels/DeepSeekPanel/
+// TaskOptionsPanel)Bề mặt lắp ráp độc đáo——cầm composition.js của credentials vực
+// (services.credentials:{feature, view, dialogStore})Gấp thành một hook,Mô đun
+// Chỉ đăng ký những lát cắt bạn cần,Không lặp lại riêng lẻ useStoreSnapshot/useDialogState dạng bản。
 //
-// handlers 来自 browser.js(kept 控制器)在 mount 时同步调用一次
-// viewPort.bindEvents(...)捕获的处理函数(save/validateOcr/validateDeepSeek/
-// changeProvider/resetXxxValidation 等)——见 credentials-view-store.js 头注释。
+// handlers đến từ browser.js(kept Kiểm soát viên)Tại địa điểm: mount Cuộc gọi đồng bộ một lần cùng một lúc
+// viewPort.bindEvents(...)Trình xử lý bị bắt(save/validateOcr/validateDeepSeek/
+// changeProvider/resetXxxValidation chờ)——thấy credentials-view-store.js Tiêu đề bình luận。
 
 import { useStoreSnapshot } from "../../../../shared/react/use-store.js";
 import { useHomeServices } from "../../home-services-context.js";

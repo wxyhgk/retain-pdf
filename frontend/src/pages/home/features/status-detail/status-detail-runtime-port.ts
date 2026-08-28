@@ -9,18 +9,18 @@ import type {
   EventsPayload,
 } from "../../composition/external.js";
 
-// StatusDetailDialog 的 runtimePort(蓝图 §1 数据源铁律:读 job-runtime 保留
-// 引擎的 state,不是 statusCardStore)。
+// runtimePort của StatusDetailDialog (bản thiết kế §1 nguyên tắc nguồn dữ liệu: đọc state
+// giữ từ job-runtime, không phải statusCardStore).
 //
-// 逻辑拷贝自 src/js/bootstrap/status-detail-runtime-port.js——该文件路径命中
-// architecture-boundaries.test.mjs 的 `/bootstrap/` 防回弹正则,pages/** 禁止
-// import;但它本身只是 job-runtime 三个 kept 端口
-// (current-job-state.js/secondary-resource-cache.js/render-context.js)的字面量
-// 组合,零 DOM 逻辑,直接照抄零风险。composition.js 用同一个 jobRuntimeState
-// 对象构造,拿到与 job-runtime 引擎完全同一份 currentJobStore/
-// secondaryResourceStore 引用,不新建平行状态。
+// Logic sao chép từ src/js/bootstrap/status-detail-runtime-port.js — đường dẫn file đó
+// trúng regex chống hồi quy `/bootstrap/` của architecture-boundaries.test.mjs, pages/**
+// cấm import; nhưng bản thân nó chỉ là tổ hợp literal của ba cổng kept của job-runtime
+// (current-job-state.js/secondary-resource-cache.js/render-context.js), không có logic
+// DOM, chép nguyên trạng không rủi ro. composition.js dùng cùng đối tượng jobRuntimeState
+// để cấu tạo, lấy cùng tham chiếu currentJobStore/secondaryResourceStore với engine
+// job-runtime, không tạo trạng thái song song.
 
-/** applyOverviewPayload 入参：概览刷新后写回 runtime 的一批载荷 */
+/** Tham số applyOverviewPayload: lô tải trọng ghi ngược vào runtime sau khi làm mới tổng quan */
 export interface StatusDetailOverviewPayloadOptions {
   payload?: JobLike | JobPayload | Record<string, unknown> | null;
   eventsPayload?: EventsPayload | null;

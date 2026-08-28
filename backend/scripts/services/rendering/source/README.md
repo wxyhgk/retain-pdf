@@ -1,10 +1,10 @@
 # rendering/source
 
-## 负责什么
+## Trách nhiệm
 
-原 PDF 改造层。这里负责把源 PDF 变成可承载译文的底板。
+Tầng chuyển đổi PDF nguồn. Module này chịu trách nhiệm chuyển đổi PDF nguồn thành nền tảng có thể mang nội dung đã dịch.
 
-## 对外入口
+## Điểm vào công khai
 
 - `render_source.py`
 - `rects.py`
@@ -20,26 +20,21 @@
 - `compression/`
 - `dev_overlay/`
 
-## 不该做什么
+## Ngoài phạm vi
 
-- 不生成 Typst。
-- 不计算译文排版。
-- 不调用翻译模型。
-- 不承担 workflow 编排职责。
+- Không tạo Typst.
+- Không tính toán bố cục nội dung đã dịch.
+- Không gọi mô hình dịch.
+- Không xử lý điều phối quy trình.
 
-## 边界约定
+## Quy ước ranh giới
 
-- `rects.py` 放 source 层共享的矩形基础工具，`background/`、
-  `cleanup/`、`preparation/` 可以依赖它。
-- `items.py` 放 source 层共享的 translated item 读取、token 拆分和文本归一化 helper。
-- `document_ops.py` 放 source 层共享的 PDF 文档操作 primitive。
-- `redaction.py` 是 source 层对 cleanup redaction 策略的门面；外部子包不要直接
-  import `cleanup.redaction`。
-- `text_redaction.py` 放 source 层共享的文本层删除 primitive。
-- `vector_profile.py` 放 source 层共享的页面 vector drawing 统计 primitive。
-- `vector_text.py` 放 source 层共享的 vector text 检测 primitive；具体删除和
-  背景修补由 cleanup/background 执行层决定。
-- `dev_overlay/` 是旧 PyMuPDF 直绘译文路径，仅用于 direct overlay 和单页调试；
-  主渲染路径不要在这里扩展正文排版规则。
-- 子包之间不要为了共享基础 geometry 互相 import；需要共享时先上移到
-  `rects.py`。
+- `rects.py` chứa các tiện ích hình chữ nhật chung cho tầng nguồn; `background/`, `cleanup/`, và `preparation/` có thể phụ thuộc vào nó.
+- `items.py` chứa các helper đọc mục đã dịch, tách token và chuẩn hóa văn bản.
+- `document_ops.py` chứa các nguyên thủy thao tác tài liệu PDF chung.
+- `redaction.py` là facade cho các chiến lược redaction dọn dẹp trong tầng nguồn; các subpackage bên ngoài không nên import trực tiếp `cleanup.redaction`.
+- `text_redaction.py` chứa các nguyên thủy xóa tầng văn bản chung.
+- `vector_profile.py` chứa các nguyên thủy thống kê vẽ vector trang chung.
+- `vector_text.py` chứa các nguyên thủy phát hiện văn bản vector chung; việc xóa thực tế và sửa nền được quyết định bởi tầng thực thi cleanup/background.
+- `dev_overlay/` là đường dẫn dịch vẽ trực tiếp PyMuPDF cũ, chỉ sử dụng cho overlay trực tiếp và gỡ lỗi trang đơn; không mở rộng các quy tắc bố cục đường dẫn kết xuất chính tại đây.
+- Các subpackage không nên import lẫn nhau cho các hình học cơ bản chung; di chuyển các tiện ích chung vào `rects.py` trước.

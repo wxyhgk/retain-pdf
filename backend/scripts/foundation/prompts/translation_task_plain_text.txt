@@ -1,12 +1,12 @@
-请将下面的原文翻译成适合科研论文排版的{target_language_name}，同时保持原意、术语精度和版面友好性。
-优先使用自然的{target_language_name}学术表达，不要机械照搬原文语序。
-在不损失信息和技术精度的前提下，优先采用更凝练、更自然的{target_language_name}措辞。
-译文长度在可能时尽量接近原文，不要添加冗余解释。
-不要翻译占位符，不要改写代码、命令、配置、文件路径、API 字段、变量名、版本号和字面量示例。
-如果当前文本混合了说明文字和字面量，只翻译说明文字，字面量部分逐字保留。
-如果原文只是明显损坏的极短 OCR 片段，且少于 4 个拉丁字母，则保持原样，不要借上下文扩写。
-但这个规则不适用于正常英文虚词，例如 “and”“or”“the”。
-如果提供了风格提示，请把它视为块级风格约束，但仍然只能翻译当前原文本身。
-如果原文本身不完整、被截断或突然结束，译文也应保持同等程度的不完整，不要自行补全。
-不要添加原文中不存在的内容。
-如果提供了前后文上下文，只能用于术语消歧和句法顺滑，最终返回内容仍然只能覆盖当前原文。
+Translate the source text below into {target_language_name} suitable for academic paper typesetting, while preserving the original meaning, terminology precision and layout friendliness.
+Prefer natural {target_language_name} academic expression; do not mechanically copy the word order of the source.
+Without losing information or technical precision, prefer more condensed and more natural {target_language_name} wording.
+Keep the length of the translation as close to the source as possible and do not add redundant explanations.
+Do not translate placeholders, and do not rewrite code, commands, configuration, file paths, API fields, variable names, version numbers or literal examples.
+If the current text mixes explanatory text with literals, translate only the explanatory text and keep the literal parts verbatim.
+If the source text is only an obviously damaged, extremely short OCR fragment with fewer than 4 Latin letters, keep it as-is and do not expand it using the context.
+However, this rule does not apply to normal English function words such as "and", "or", "the".
+If a style hint is provided, treat it as a block-level style constraint, but still translate only the current source text itself.
+If the source text is itself incomplete, truncated or ends abruptly, the translation must stay equally incomplete and must not be completed on your own.
+Do not add content that does not exist in the source text.
+If preceding/following context is provided, it may only be used for terminology disambiguation and syntactic smoothing; the returned content must still cover only the current source text.

@@ -1,11 +1,11 @@
-/* 阅读器 CSS 入口 → dist/css/reader.css
- * 仅 reader.html 加载；默认引擎 react-pdf（ReaderAppReactPdf）。
+/* Reader CSS entry → dist/css/reader.css
+ * Chỉ được load bởi reader.html; engine mặc định react-pdf (ReaderAppReactPdf).
  *
- * 边界：禁止 import library-* / status-* / book-detail / credential-* 等主页域。
- * 共享仅限 tokens / base / dialog-shell / download-toast。
+ * Ranh giới: cấm import library-* / status-* / book-detail / credential-* thuộc phạm vi trang chính.
+ * Chia sẻ chỉ giới hạn tokens / base / dialog-shell / download-toast.
  *
- * Legacy-only（三栏 / 抽屉 / 旧 AI / 框选）见 entries/reader-legacy.css
- * （?engine=legacy 时由 entry.tsx 动态注入）。
+ * Legacy-only (ba cột / drawer / AI cũ / chọn khung) xem entries/reader-legacy.css
+ * (?engine=legacy được entry.tsx inject động).
  */
 @import "tailwindcss";
 @import "../core/tailwind-theme.css";
@@ -26,14 +26,14 @@
 @import "../tokens.css" layer(tokens);
 @import "../shadcn-theme.css" layer(tokens);
 @import "../base.css" layer(base);
-/* 阅读器也吃氛围底（PDF 区仍是自己的 --reader-page） */
+/* Reader cũng ăn nền bối cảnh (vùng PDF vẫn dùng --reader-page riêng) */
 @import "../core/ambient-surface.css";
 
-/* 阅读器只需最小共享：下载 toast；不用整包主页 components.utilities */
+/* Reader chỉ cần chia sẻ tối thiểu: tải xuống toast; không dùng toàn gói trang chính components.utilities */
 @import "../core/download-toast.css";
 @import "../dialog-shell.css";
 
-/* —— 默认 react-pdf 路径（无 legacy 残留） —— */
+/* —— Đường dẫn react-pdf mặc định (không tồn dư legacy) —— */
 @import "../reader.utilities.css";
 @import "../reader/layout.css" layer(pages);
 @import "../reader/chrome.css" layer(pages);
@@ -51,5 +51,5 @@
 @import "../reader/float-ai-citations.css" layer(pages);
 @import "../reader/float-ai-composer.css" layer(pages);
 @import "../reader/hud.css" layer(pages);
-/* Markdown 悬浮预览（含 MathJax）；默认引擎与 legacy 共用类名 */
+/* Xem trước Markdown dạng nổi (kèm MathJax); engine mặc định và legacy dùng chung class */
 @import "../reader/markdown.css" layer(pages);

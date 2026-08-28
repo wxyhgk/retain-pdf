@@ -1,20 +1,20 @@
-# Python 后端文档
+# Tài liệu backend Python
 
-这里记录 Python 后端架构、运行时、测试依赖和 Pipeline 依赖生成规则。
+Nơi đây ghi lại kiến trúc backend Python, runtime, phụ thuộc kiểm thử và quy tắc sinh phụ thuộc Pipeline.
 
-建议阅读顺序：
+Thứ tự đọc đề xuất:
 
-1. [Python 后端架构边界](./architecture.md)
-2. [翻译层说明](./translation.md)
-3. [Python 依赖单一事实来源](./dependency_source_of_truth.md)
-4. [Pipeline 依赖说明](./pipeline_dependencies.md)
-5. [Pipeline 依赖清单 JSON](./pipeline_dependencies.json)
-6. [运行时 requirements 输入](./pipeline_runtime_requirements.in)
-7. [测试 requirements 输入](./pipeline_test_requirements.in)
+1. [Ranh giới kiến trúc backend Python](./architecture.md)
+2. [Giải thích tầng dịch thuật](./translation.md)
+3. [Nguồn duy nhất phụ thuộc Python](./dependency_source_of_truth.md)
+4. [Giải thích phụ thuộc Pipeline](./pipeline_dependencies.md)
+5. [Danh sách phụ thuộc Pipeline JSON](./pipeline_dependencies.json)
+6. [Đầu vào requirements runtime](./pipeline_runtime_requirements.in)
+7. [Đầu vào requirements kiểm thử](./pipeline_test_requirements.in)
 
-维护原则：
+Nguyên tắc bảo trì:
 
-- 依赖真相源是根目录 [`pyproject.toml`](../../pyproject.toml)。
-- requirements 文件应由脚本生成，不直接手改。
-- Docker、桌面端和 CI 应共享同一套依赖口径。
-- 模块边界以 [architecture.md](./architecture.md) 和 `backend/scripts/devtools/check_pipeline_architecture.py` 为准。
+- Nguồn tin cậy phụ thuộc là [`pyproject.toml`](../../pyproject.toml) ở thư mục gốc.
+- Các tệp requirements nên được sinh bởi script, không trực tiếp sửa tay.
+- Docker, desktop và CI nên chia sẻ cùng một bộ tiêu chuẩn phụ thuộc.
+- Ranh giới module tuân theo [architecture.md](./architecture.md) và `backend/scripts/devtools/check_pipeline_architecture.py`.

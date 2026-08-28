@@ -1,10 +1,9 @@
-/* 弹窗进出场关键帧(此前整站零动效——Radix Content 挂载即瞬间可见,关闭即瞬间
-   消失,是真实体验缺口)。踩坑记录:一开始用 `transition` + `data-state` +
-   `@starting-style` 实现,进场确实有效,但 Radix 的 Presence 组件只通过监听
-   `animationend` 事件来判断"退场动画播完了没",对纯 `transition` 完全不感知
-   ——于是关闭时 data-state 一变 closed,Presence 立刻卸载 DOM,退场过渡根本
-   没机会播放(浏览器里挂 JS 实测:close() 后 50ms 节点已经不在了)。必须用
-   真正的 `@keyframes` + `animation` 才能让 Presence 等它播完。 */
+/* Khung hình chính cho hiệu ứng vào/ra của hộp thoại (trước đây toàn trang không có hiệu ứng — Radix Content gắn xong là hiện ngay lập tức, đóng là biến mất ngay lập tức,
+   là một thiếu sót trải nghiệm thực tế). Ghi chép lỗi: ban đầu dùng `transition` + `data-state` +
+   `@starting-style` để thực hiện, hiệu ứng vào thực sự có hiệu quả, nhưng thành phần Presence của Radix chỉ theo dõi sự kiện
+   `animationend` để phán đoán "hiệu ứng ra đã phát xong chưa", hoàn toàn không nhận biết được `transition` thuần —
+   do đó khi đóng, data-state vừa chuyển sang closed, Presence lập tức gỡ bỏ DOM, hiệu ứng chuyển tiếp ra hoàn toàn không có cơ hội phát (đã thử bằng JS trong trình duyệt:
+   50ms sau khi close() nút đã biến mất). Phải sử dụng `@keyframes` + `animation` thực sự mới có thể khiến Presence đợi nó phát xong. */
 @keyframes dialog-content-in {
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
@@ -28,28 +27,25 @@
   max-height: calc(100vh - 24px);
   border-radius: var(--panel-radius);
 
-  /* 模态居中显示,transform-origin 用默认 center(不像 popover 要跟随触发点)。
-     scale 起点/终点 0.96 而非 0——emil-design-eng skill:现实世界没有东西从
-     "不存在"直接变出来。 */
+/* Hiển thị modal căn giữa, transform-origin sử dụng mặc định là center (không giống như popover cần theo điểm kích hoạt).
+   Điểm bắt đầu/kết thúc của scale là 0.96 chứ không phải 0 — emil-design-eng skill: trong thế giới thực không có thứ gì xuất hiện trực tiếp từ "không tồn tại". */
   &[data-state='open'] { animation: dialog-content-in 200ms var(--ease-out); }
-  /* forwards:退场动画播完后停在终帧(opacity:0/scale(0.96)),不因
-     animation-fill-mode 默认值 none 而在 Presence 卸载前那一帧弹回可见态。 */
+  /* forwards: sau khi animation thoát chạy xong, dừng ở khung cuối (opacity:0/scale(0.96)), không vì
+     giá trị mặc định animation-fill-mode none mà bị bật lại trạng thái hiển thị ở khung trước khi Presence unmount. */
   &[data-state='closed'] { animation: dialog-content-out 200ms var(--ease-out) forwards; }
 
-  /* ::backdrop 只对原生 <dialog>(showModal 后的浏览器 top-layer)生效——阶段 C
-     收官批(ReaderDialog/PageRangeDialog)完成后,9 个对话框已全部换成 Radix
-     Dialog,不再有任何组件渲染 <dialog> 元素,这条规则整体变成死代码(风险
-     为零,保留不删,同 app-update.css 头注释里记录的先例)。真正生效的背板
-     样式统一由下面的 desktop-dialog-overlay 工具类(挂在 DialogPrimitive.Overlay
-     上)负责。 */
+  /* ::backdrop chỉ có hiệu lực với <dialog> gốc (sau khi showModal được gọi, nằm trong top-layer của trình duyệt) — sau đợt hoàn thiện giai đoạn C
+     (ReaderDialog/PageRangeDialog), 9 hộp thoại đã được chuyển toàn bộ sang Radix Dialog, không còn thành phần nào render phần tử <dialog>,
+     quy tắc này trở thành mã chết hoàn toàn (rủi ro bằng không, giữ lại không xóa, tương tự tiền lệ đã ghi trong chú thích đầu của app-update.css).
+     Kiểu nền thực sự có hiệu lực được thống nhất bởi công cụ desktop-dialog-overlay bên dưới (gắn trên DialogPrimitive.Overlay). */
   &::backdrop {
     background: color-mix(in srgb, var(--chrome, var(--ink)) 36%, transparent);
   }
 }
 
 @utility desktop-dialog-overlay {
-  /* 全站统一背板：浅色纸感模糊（--dialog-scrim 真值在 themes/_component-defaults.css）。
-     此前三种背板并存（深色 36% / 浅色模糊 / 深色 z110）是弹窗观感割裂的最大来源。 */
+/* Nền thống nhất toàn trang: làm mờ giống giấy màu sáng (giá trị thực của --dialog-scrim nằm trong themes/_component-defaults.css).
+   Trước đây có ba loại nền cùng tồn tại (tối 36% / sáng mờ / tối z110) là nguyên nhân chính gây ra sự phân mảnh về giao diện của các hộp thoại. */
   @apply fixed inset-0 z-[100];
   background: var(--dialog-scrim);
   backdrop-filter: blur(10px);
@@ -60,9 +56,9 @@
 }
 
 @utility status-detail-dialog-overlay {
-  /* StatusDetailDialog 专属背板(阶段 C)——z-index 垫高到 110(高于
-     desktop-dialog-overlay 的 100),确保嵌套在已打开的 TranslationWorkflowDialog
-     之上时能正确盖住它,视觉与 desktop-dialog-overlay 同源(--dialog-scrim)。 */
+/* Nền chuyên dụng cho StatusDetailDialog (giai đoạn C) — z-index được nâng lên 110 (cao hơn
+   desktop-dialog-overlay là 100), đảm bảo khi được nhúng trong TranslationWorkflowDialog đã mở
+   sẽ che phủ chính xác, giao diện đồng nhất với desktop-dialog-overlay (--dialog-scrim). */
   @apply fixed inset-0 z-[110];
   background: var(--dialog-scrim);
   backdrop-filter: blur(10px);
@@ -86,7 +82,7 @@
 }
 
 @utility dialog-close-btn {
-  /* 幽灵钮：静默不抢注意力，hover 才浮出底色（原描边圆圈在每个弹窗角落都过重） */
+  /* Nút ma: im lặng không giành chú ý, hover mới hiện nền (vòng tròn viền gốc quá nặng ở mỗi góc dialog) */
   @apply inline-flex h-[34px] min-h-[34px] w-[34px] min-w-[34px] items-center justify-center rounded-full border-0 p-0 text-[22px] leading-none shadow-none;
   background: transparent;
   color: var(--muted);
@@ -112,8 +108,8 @@
 
 @utility desktop-body {
   @apply grid gap-4 p-6;
-  /* 内容比壳晚 40ms 微升进场：分层节奏，避免所有元素一次性砸出。
-     both = 延迟期间停在首帧(透明)，不闪现。 */
+/* Nội dung xuất hiện muộn hơn vỏ 40ms với hiệu ứng nâng nhẹ: tạo nhịp điệu phân lớp, tránh tất cả các phần tử xuất hiện cùng lúc.
+   both = trong thời gian trễ dừng ở khung hình đầu tiên (trong suốt), không bị nhấp nháy. */
   animation: dialog-body-in 220ms var(--ease-out) 40ms both;
 }
 
@@ -121,11 +117,11 @@
   .desktop-body { animation-duration: 1ms; animation-delay: 0ms; }
 }
 
-/* BookDetailDialog 用的是自己那套原始 Tailwind 类(照搬 PDF_MD_lib 视觉),
-   没有走 desktop-dialog 工具类,单独补同一套进出场关键帧。 */
+/* BookDetailDialog sử dụng bộ lớp Tailwind gốc của riêng mình (sao chép trực tiếp giao diện từ PDF_MD_lib),
+   không sử dụng công cụ desktop-dialog, bổ sung riêng bộ khung hình chính cho hiệu ứng vào/ra tương tự. */
 @utility book-detail-dialog-content {
   &[data-state='open'] { animation: dialog-content-in 200ms var(--ease-out); }
-  /* forwards:退场动画播完后停在终帧(opacity:0/scale(0.96)),不因
-     animation-fill-mode 默认值 none 而在 Presence 卸载前那一帧弹回可见态。 */
+  /* forwards: sau khi animation thoát chạy xong, dừng ở khung cuối (opacity:0/scale(0.96)), không vì
+     giá trị mặc định animation-fill-mode none mà bị bật lại trạng thái hiển thị ở khung trước khi Presence unmount. */
   &[data-state='closed'] { animation: dialog-content-out 200ms var(--ease-out) forwards; }
 }

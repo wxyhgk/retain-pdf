@@ -1,103 +1,103 @@
-# RetainPDF AI Runtime 设计
+# Thiết kế AI Runtime RetainPDF
 
-**状态：** 设计草案 v0.1  
-**日期：** 2026-07-21  
-**范围：** `backend/ai_service`（retainpdf-ai）及与 Rust / 前端的契约  
-**非范围：** OCR/翻译流水线；具体 LLM 供应商锁定
+**Trạng thái:** Bản thảo thiết kế v0.1  
+**Ngày:** 2026-07-21  
+**Phạm vi:** `backend/ai_service` (retainpdf-ai) và hợp đồng với Rust / frontend  
+**Không thuộc phạm vi:** Đường ống OCR/dịch; khóa nhà cung cấp LLM cụ thể
 
-配套：
+Tài liệu kèm theo:
 
-- [SESSION_AND_MEMORY.md](./SESSION_AND_MEMORY.md) — 多轮与压缩  
-- [SKILLS.md](./SKILLS.md) — Skill 包  
+- [SESSION_AND_MEMORY.md](./SESSION_AND_MEMORY.md) — Nhiều vòng và nén  
+- [SKILLS.md](./SKILLS.md) — Gói Skill  
 
 ---
 
-## 1. 动机
+## 1. Động lực
 
-当前 `RetrievalAgent` 足够支撑「整本检索 + 引用跳转」，但产品路线还需要：
+Hiện tại `RetrievalAgent` đủ để hỗ trợ "truy xuất toàn bộ tài liệu + chuyển hướng trích dẫn", nhưng lộ trình sản phẩm còn cần:
 
-| 能力 | 为什么现在就设计 |
+| Năng lực | Tại sao phải thiết kế ngay |
 |------|------------------|
-| **Skills** | 文献问答 / 批注助手 / 多文对比… 不能全塞进一个 system prompt |
-| **工具调用** | 已有 function calling；要版本化、权限域、预算、可观测 |
-| **上下文压缩** | 多轮后 `history[-12:]` 会爆 token 且丢证据结构 |
-| **多 Agent** | 检索与写作拆分、可选 critic；避免单循环无限膨胀 |
+| **Skills** | Hỏi đáp tài liệu / trợ lý chú thích / so sánh nhiều tài liệu… không thể nhét hết vào một system prompt |
+| **Gọi công cụ** | Đã có function calling; cần phiên bản hóa, phạm vi quyền, ngân sách, khả năng quan sát |
+| **Nén ngữ cảnh** | Sau nhiều vòng, `history[-12:]` sẽ làm tràn token và mất cấu trúc bằng chứng |
+| **Đa Agent** | Tách biệt truy xuất và viết, có thể có critic; tránh vòng lặp đơn vô hạn |
 
-约束（不可破）：
+Ràng buộc (không thể phá vỡ):
 
-1. **Rust 是数据面单写入者**（documents / FTS / conversations / favorites）。  
-2. **AI 服务无状态优先**：可重启；会话持久化落 Rust。  
-3. **本地单用户**优先：延迟与可控性 > 云端 agent 平台完整度。  
-4. **工具 schema 与 OpenAI-compatible tools 同构**，便于换循环外壳。
+1. **Rust là bên ghi duy nhất vào mặt dữ liệu** (documents / FTS / conversations / favorites).  
+2. **AI service ưu tiên không trạng thái**: có thể khởi động lại; phiên được lưu vào Rust.  
+3. **Ưu tiên người dùng đơn cục bộ**: độ trễ và khả năng kiểm soát > mức độ hoàn chỉnh của nền tảng agent đám mây.  
+4. **Schema công cụ đồng cấu với OpenAI-compatible tools**, dễ thay đổi vòng ngoài.
 
 ---
 
-## 2. 分层架构
+## 2. Kiến trúc phân tầng
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Frontend (reader AI panel)                                 │
+│  Frontend (bảng AI reader)                                 │
 │  SSE: tool / answer_delta / compress / handoff / done       │
 └───────────────────────────┬─────────────────────────────────┘
-                            │ POST /api/v1/ai/ask  (Rust 代理)
+                            │ POST /api/v1/ai/ask  (proxy Rust)
 ┌───────────────────────────▼─────────────────────────────────┐
 │  Transport  app.py                                          │
-│  鉴权 · SSE · 请求校验 · conversation_id 透传               │
+│  Xác thực · SSE · Kiểm tra yêu cầu · Truyền conversation_id │
 └───────────────────────────┬─────────────────────────────────┘
                             │
 ┌───────────────────────────▼─────────────────────────────────┐
-│  Orchestrator  (后期；v0 可退化为「直接跑默认 skill」)        │
-│  选 skill / 是否多 agent / 何时收尾                         │
+│  Orchestrator  (về sau; v0 có thể downgrade thành "chạy skill mặc định")│
+│  Chọn skill / có đa agent hay không / khi nào kết thúc      │
 └───────┬─────────────────────┬───────────────────────────────┘
         │                     │
 ┌───────▼───────┐   ┌─────────▼─────────┐
 │ Session/Memory│   │ RunBudget         │
-│ 窗口·摘要·证据 │   │ 轮数·token·墙钟   │
+│ Cửa sổ·Tóm tắt·Bằng chứng │ Số vòng·Token·Thời gian tường  │
 └───────┬───────┘   └─────────┬─────────┘
         │                     │
 ┌───────▼─────────────────────▼─────────┐
 │  Agent Runtime(s)                     │
-│  通用 tool loop · 事件发射 · 中止条件  │
+│  Vòng lặp công cụ chung · Phát sự kiện · Điều kiện dừng  │
 └───────┬───────────────────────────────┘
         │
 ┌───────▼───────────────────────────────┐
 │  Skills  →  Tools                     │
-│  声明式能力包    原子动作               │
+│  Gói khai báo năng lực    Hành động nguyên tử │
 └───────┬───────────────────────────────┘
         │
 ┌───────▼───────────────────────────────┐
-│  Data plane (只读自 AI 视角)            │
-│  Rust HTTP · job 目录 md/ocr/translated│
+│  Data plane (chỉ đọc từ góc nhìn AI)   │
+│  Rust HTTP · thư mục job md/ocr/translated│
 └───────────────────────────────────────┘
 ```
 
-| 层 | 职责 | 现状 | 目标 |
+| Tầng | Trách nhiệm | Hiện trạng | Mục tiêu |
 |----|------|------|------|
-| Transport | HTTP/SSE、Key | `app.py` | 保持薄；事件类型可扩展 |
-| Session/Memory | 多轮、压缩 | `history[-12:]` 原文 | 窗口 + 摘要 + evidence 包 |
-| Orchestrator | 路由/协作 | 无（单 agent） | skill 选择 → 可选 multi-agent |
-| Runtime | 工具循环 | `agent.py` | 抽成可复用 loop |
-| Skills | 策略+提示+工具子集 | 硬编码 SYSTEM_PROMPT | 目录化 skill 包 |
-| Tools | 原子 I/O | `tools.py` | 加 scope/timeout/版本 |
-| Evidence | 引用/图 | Citation dataclass | 统一协议，前端可跳可渲 |
+| Transport | HTTP/SSE, Key | `app.py` | Giữ mỏng; loại sự kiện có thể mở rộng |
+| Session/Memory | Nhiều vòng, nén | `history[-12:]` văn bản gốc | Cửa sổ + tóm tắt + gói bằng chứng |
+| Orchestrator | Định tuyến/hợp tác | Không có (single agent) | Chọn skill → có thể multi-agent |
+| Runtime | Vòng lặp công cụ | `agent.py` | Tách thành loop tái sử dụng |
+| Skills | Chiến lược+gợi ý+tập con công cụ | SYSTEM_PROMPT hardcode | Gói skill dạng thư mục |
+| Tools | I/O nguyên tử | `tools.py` | Thêm scope/timeout/phiên bản |
+| Evidence | Trích dẫn/hình ảnh | Citation dataclass | Giao thức thống nhất, frontend có thể chuyển hướng và render |
 
 ---
 
-## 3. 核心对象（逻辑模型）
+## 3. Đối tượng cốt lõi (mô hình logic)
 
 ### 3.1 Run
 
-一次用户提问触发的执行单元（可多轮工具、可跨 agent）。
+Một đơn vị thực thi do câu hỏi của người dùng kích hoạt (có thể nhiều vòng công cụ, có thể qua nhiều agent).
 
 ```text
 Run
-  run_id            运行时生成（日志/SSE 关联）
-  conversation_id   可选，持久会话
-  skill_id          默认 literature-qa
+  run_id            Tạo runtime (liên kết log/SSE)
+  conversation_id   Tùy chọn, phiên bền vững
+  skill_id          Mặc định literature-qa
   scope             { document_id?, job_id? }
   budget            RunBudget
   status            running | done | error | cancelled
-  events[]          可观测轨迹
+  events[]          Vết quan sát được
   result            answer + evidence + usage
 ```
 
@@ -105,113 +105,117 @@ Run
 
 ```text
 RunBudget
-  max_tool_rounds      默认 6（现有 RETAIN_AI_MAX_TOOL_ROUNDS）
-  max_wall_time_s      建议 120
-  max_input_tokens     建议按模型窗口 60%
-  max_tool_calls       建议 24
-  max_evidence_items   建议 32（压缩时保留上限）
+  max_tool_rounds      Mặc định 6 (RETAIN_AI_MAX_TOOL_ROUNDS hiện tại)
+  max_wall_time_s      Đề xuất 120
+  max_input_tokens     Đề xuất 60% cửa sổ model
+  max_tool_calls       Đề xuất 24
+  max_evidence_items   Đề xuất 32 (giới hạn trên khi nén)
 ```
 
-耗尽时：强制收尾轮（现有「请基于已有证据回答」行为保留）。
+Khi cạn: vòng thu dọn bắt buộc (giữ hành vi "Hãy trả lời dựa trên bằng chứng hiện có").
 
-### 3.3 EvidenceItem（统一证据）
+### 3.3 EvidenceItem (Bằng chứng thống nhất)
 
-前端跳转、插图、引用脚注都吃这一种形状：
+Frontend chuyển hướng, hình minh họa, chú thích đều dùng hình dạng này:
 
 ```text
 EvidenceItem
-  ref               int          # 对用户可见的 [n]
+  ref               int          # [n] hiển thị cho người dùng
   kind              text | image | page_preview | favorite
   document_id
   job_id
   page_idx          0-based
   block_id? 
-  snippet?          短摘录
+  snippet?          Trích đoạn ngắn
   image_url?        /api/v1/jobs/.../markdown/images/...
   preview_url?      /api/v1/jobs/.../preview/pages/{1-based}
   source_tool       search_fulltext | read_blocks | ...
   created_round     int
 ```
 
-`citations[]` 是 `EvidenceItem` 中 `kind=text`（及被回答引用到的）子集的视图。
+`citations[]` là view của tập con `kind=text` (và được trích dẫn trong câu trả lời) trong `EvidenceItem`.
 
-### 3.4 Transcript 消息（会话存储）
+### 3.4 Tin nhắn Transcript (lưu trữ phiên)
 
-见 [SESSION_AND_MEMORY.md](./SESSION_AND_MEMORY.md)。关键点：除 `user`/`assistant` 外，允许 **`system_summary`** 与 **`evidence_snapshot`** 元数据字段（可落在 assistant 消息的 JSON 扩展里，或独立 message kind）。
+Xem [SESSION_AND_MEMORY.md](./SESSION_AND_MEMORY.md). Điểm chính: ngoài `user`/`assistant`, cho phép **`system_summary`** và trường metadata **`evidence_snapshot`** (có thể nằm trong phần mở rộng JSON của tin nhắn assistant, hoặc loại tin nhắn độc lập).
 
 ---
 
-## 4. 事件流（SSE 契约）
+## 4. Luồng sự kiện (Hợp đồng SSE)
 
-向后兼容现有类型；新增可选类型前端可忽略。
+Tương thích ngược với các loại hiện có; các loại mới tùy chọn, frontend có thể bỏ qua.
 
-| type | 何时 | payload 要点 |
+| type | Khi nào | payload要点 |
 |------|------|----------------|
-| `tool` | 工具调用前后 | `tool`, `round`, `arguments?`, `status?` |
-| `answer_delta` | 最终回答流式 | `text` 增量或累积（**实现须固定一种**；现状为累积全文） |
-| `compress` | 压缩发生 | `dropped_turns`, `summary_chars`, `kept_evidence` |
-| `skill` | skill 切换/加载 | `skill_id`, `phase: start\|end` |
-| `handoff` | agent 交接 | `from`, `to`, `reason` |
-| `done` | 成功结束 | `answer`, `citations`, `tool_trace`, `rounds`, `usage?`, `memory?` |
-| `error` | 失败 | `message`, `code?` |
+| `tool` | Trước/sau gọi công cụ | `tool`, `round`, `arguments?`, `status?` |
+| `answer_delta` | Luồng câu trả lời cuối | `text` gia tăng hoặc tích lũy (**triển khai phải cố định một cách**; hiện tại là tích lũy toàn văn) |
+| `compress` | Nén xảy ra | `dropped_turns`, `summary_chars`, `kept_evidence` |
+| `skill` | Chuyển/tải skill | `skill_id`, `phase: start\|end` |
+| `handoff` | Bàn giao agent | `from`, `to`, `reason` |
+| `done` | Kết thúc thành công | `answer`, `citations`, `tool_trace`, `rounds`, `usage?`, `memory?` |
+| `error` | Thất bại | `message`, `code?` |
 
-**兼容规则：** 旧前端只认 `tool` / `answer_delta` / `done` / `error` 即可。
+**Quy tắc tương thích:** Frontend cũ chỉ cần nhận `tool` / `answer_delta` / `done` / `error` là đủ.
 
 ---
 
-## 5. Skills 与 Tools（边界）
+## 5. Skills và Tools (Ranh giới)
 
 ```text
-Tool  = 原子动作（有 schema、可单测、可审计）
-Skill = 工具子集 + system/developer 提示 + 策略（scope 锁、输出格式、是否允许 list_documents）
+Tool  = Hành động nguyên tử (có schema, có thể unit test, có thể kiểm tra)
+Skill = Tập con công cụ + gợi ý system/developer + chiến lược (khóa scope, định dạng đầu ra, có cho phép list_documents không)
 ```
 
-详见 [SKILLS.md](./SKILLS.md)。
+Xem chi tiết tại [SKILLS.md](./SKILLS.md).
 
-首发 skill：
+Skill đầu tiên:
 
-| skill_id | 用途 | 工具 |
+| skill_id | Mục đích | Công cụ |
 |----------|------|------|
-| `literature-qa` | 阅读器整本问答（当前行为） | search_fulltext, read_blocks, search_favorites（scoped） |
+| `literature-qa` | Hỏi đáp toàn bộ tài liệu trong reader (hành vi hiện tại) | search_fulltext, read_blocks, search_favorites (có scope) |
 
-后续候选：`annotation-assist`、`paper-compare`、`glossary-extract`。
+Các ứng viên tiếp theo: `annotation-assist`, `paper-compare`, `glossary-extract`.
 
 ---
 
-## 6. 多 Agent（Phase D，接口先占位）
+## 6. Đa Agent (Phase D, giao diện chiếm chỗ trước)
 
-**v0 / v1 不强制 multi-agent。** 接口预留：
+**v0 / v1 không bắt buộc multi-agent.** Giao diện dự phòng:
 
 ```text
 AgentRole
   id: retriever | analyst | critic
-  skill_id or tool_allowlist
+  skill_id hoặc tool_allowlist
   model_override?
+```
 
+Bàn giao:
+
+```text
 Handoff
   from_role → to_role
   payload: { evidence_refs[], question, notes }
 ```
 
-推荐演进：
+Lộ trình phát triển khuyến ngh���:
 
-1. **单 Runtime + literature-qa**（现在）  
-2. **流水线** Retriever → Analyst（同 evidence，不同 prompt）  
-3. **可选 Critic** 检查「无 [n] 的断言」  
-4. 再考虑并行 fan-out（多文档）
+1. **Single Runtime + literature-qa** (hiện tại)  
+2. **Pipeline** Retriever → Analyst (cùng evidence, khác prompt)  
+3. **Critic tùy chọn** kiểm tra "khẳng định không có [n]"  
+4. Sau đó mới xét fan-out song song (nhiều tài liệu)
 
-编排器用简单状态机即可，不必先上图执行引擎。
+Orchestrator dùng máy trạng thái đơn giản, không cần đồ thị thực thi trước.
 
 ---
 
-## 7. 包结构目标
+## 7. Cấu trúc gói mục tiêu
 
 ```text
 backend/ai_service/retainpdf_ai/
   app.py                 # Transport
   config.py
   rust_client.py
-  tools/                 # 或保留 tools.py 再拆
+  tools/                 # Hoặc giữ tools.py rồi tách
     registry.py
     literature.py        # search/read/favorites
   skills/
@@ -220,113 +224,113 @@ backend/ai_service/retainpdf_ai/
       skill.yaml
       prompt.md
   runtime/
-    loop.py              # 自 agent.py 抽出
+    loop.py              # Tách từ agent.py
     budget.py
     events.py
   memory/
-    assemble.py          # 拼 messages
-    compress.py          # 摘要 + 裁剪
+    assemble.py          # Ghép messages
+    compress.py          # Tóm tắt + cắt
   orchestrator/
-    default.py           # v0: 直接 run skill
+    default.py           # v0: chạy skill trực tiếp
   evidence/
     model.py
     assign_refs.py
-  agent.py               # 过渡期 facade → 调 runtime
+  agent.py               # Facade quá độ → gọi runtime
 ```
 
-迁移时 **`POST /v1/ask` 路径与字段保持兼容**；内部改调用链。
+Khi di chuyển, **đường dẫn `POST /v1/ask` và trường giữ tương thích**; thay đổi chuỗi gọi nội bộ.
 
 ---
 
-## 8. 与 Rust / 前端边界
+## 8. Ranh giới với Rust / Frontend
 
 ### Rust
 
-- 继续：`/api/v1/ai/ask` 代理、conversations CRUD、messages 追加  
-- 扩展（B 需要）：消息可带 `metadata_json`（summary / evidence_snapshot / skill_id）  
-- AI **不**直接写 SQLite  
+- Tiếp tục: proxy `/api/v1/ai/ask`, CRUD conversations, thêm messages  
+- Mở rộng (B cần): tin nhắn có thể mang `metadata_json` (summary / evidence_snapshot / skill_id)  
+- AI **không** trực tiếp ghi SQLite  
 
-### 前端
+### Frontend
 
-- 传：`question`, `document_id`/`job_id`, `conversation_id`, `stream`, LLM 凭据  
-- 消费：SSE + `citations` + 图片 hydrate（已做）  
-- 后期：展示 compress 提示、skill 名、多会话列表（可复用 Rust conversations）
+- Gửi: `question`, `document_id`/`job_id`, `conversation_id`, `stream`, thông tin LLM  
+- Tiêu thụ: SSE + `citations` + hydrate hình ảnh (đã có)  
+- Về sau: hiển thị gợi ý nén, tên skill, danh sách nhiều phiên (có thể tái sử dụng Rust conversations)
 
-### AI 服务
+### AI service
 
-- 读：Rust search/documents/favorites + job 目录  
-- 写：仅经 Rust append conversation messages  
+- Đọc: Rust search/documents/favorites + thư mục job  
+- Ghi: chỉ qua Rust append conversation messages  
 
 ---
 
-## 9. 安全与策略
+## 9. Bảo mật và chính sách
 
-| 策略 | 说明 |
+| Chính sách | Giải thích |
 |------|------|
-| Document scope | 阅读器会话强制 `document_id`；工具层注入（现有 `_scope_tool_arguments`） |
-| 禁止隐式全库 | 有 job 无 document 时 fail closed（现有） |
-| Tool 副作用 | v1 tools 全部只读；写操作（改收藏等）需显式 skill + 确认 |
-| 密钥 | LLM key 可请求级下发；不写 job snapshot / 不回显 |
-| 引用诚实 | 系统提示要求事实带 [n]；可选 critic 后置检查 |
+| Phạm vi Document | Phiên reader ép `document_id`; tiêm ở tầng công cụ (hiện có `_scope_tool_arguments`) |
+| Cấm ngầm truy xuất toàn bộ | Có job không có document thì fail closed (hiện có) |
+| Tác dụng phụ của Tool | v1 tools đều chỉ đọc; thao tác ghi (sửa yêu thích, v.v.) cần skill rõ ràng + xác nh��n |
+| Khóa | LLM key có thể truyền ở cấp request; không ghi vào job snapshot / không trả về |
+| Trung thực trích dẫn | System prompt yêu cầu dẫn [n] cho sự thật; có thể có critic kiểm tra sau |
 
 ---
 
-## 10. 测试策略
+## 10. Chiến lược kiểm thử
 
-| 层 | 测什么 |
+| Tầng | Kiểm thử gì |
 |----|--------|
-| tools | schema、handler 纯函数、image_urls 路径 |
-| runtime loop | mock chat_fn：工具轮 → 收尾轮 → budget 耗尽 |
-| memory | 窗口裁剪、摘要替换后 token 下降、evidence 保留 |
-| app SSE | 事件顺序、done 含 citations |
-| 契约 | OpenAPI/示例与前端 mock 一致 |
+| tools | schema, handler pure functions, đường dẫn image_urls |
+| runtime loop | mock chat_fn: vòng công cụ → vòng kết thúc → budget cạn |
+| memory | cắt cửa sổ, thay thế tóm tắt giảm token, giữ evidence |
+| app SSE | thứ tự sự kiện, done chứa citations |
+| Hợp đồng | OpenAPI/ví dụ khớp với mock frontend |
 
-不强制 e2e 真打 DeepSeek；mock chat 即可。
+Không bắt buộc e2e gọi DeepSeek thật; mock chat là đủ.
 
 ---
 
-## 11. 分阶段落地（PR 粒度）
+## 11. Các giai đoạn triển khai (mức PR)
 
-| Phase | 交付 | 用户可见 |
+| Phase | Bàn giao | Người dùng thấy |
 |-------|------|----------|
-| **C** | 本文档集 | 无 |
-| **B1** | Session 协议 + 前端 `conversation_id` 贯通 | 多轮有记忆 |
-| **B2** | Memory 压缩管道 + `compress` 事件 | 长聊不爆、可提示「已压缩」 |
-| **S1** | Skill 加载 + literature-qa 外置 | 行为近似，可热加 skill |
-| **D0** | Orchestrator 占位 + 可选 analyst 拆分 | 回答质量/结构提升 |
+| **C** | Bộ tài liệu này | Không |
+| **B1** | Giao thức Session + frontend `conversation_id` thông suốt | Nhiều vòng có bộ nhớ |
+| **B2** | Đường ống nén Memory + sự kiện `compress` | Hội thoại dài không tràn, có thể hiển thị "đã nén" |
+| **S1** | Tải Skill + literature-qa ngoài | Hành vi tương tự, có thể thêm skill nóng |
+| **D0** | Orchestrator chiếm chỗ + tùy chọn tách analyst | Cải thiện chất lượng/cấu trúc câu trả lời |
 
-每阶段保持 `/v1/ask` 兼容；废弃路径给一个小版本窗口。
-
----
-
-## 12. 刻意不做（本阶段）
-
-- 绑定某一 agent 框架为唯一实现  
-- AI 服务本地写业务库  
-- 无限多 agent 无 budget 对话  
-- 前端再实现一套 tool 协议  
-- 云端多租户路由（非当前产品形态）
+Mỗi phase giữ `/v1/ask` tương thích; đường dẫn bỏ sẽ có cửa sổ một phiên bản nhỏ.
 
 ---
 
-## 13. 决策记录（开放问题）
+## 12. Cố ý không làm (giai đoạn này)
 
-| ID | 问题 | 倾向 | 状态 |
+- Gắn một framework agent cụ thể là duy nhất  
+- AI service ghi trực tiếp vào thư viện nghiệp vụ  
+- Hội thoại đa agent không giới hạn budget  
+- Frontend triển khai thêm một giao thức tool  
+- Định tuyến đa thuê bao đám mây (không phải hình thức sản phẩm hiện tại)
+
+---
+
+## 13. Quyết định (vấn đề mở)
+
+| ID | Vấn đề | Xu hướng | Trạng thái |
 |----|------|------|------|
-| D1 | `answer_delta` 传增量还是累积？ | **固定累积全文**（与现实现一致），文档写死 | 建议批准 |
-| D2 | summary 存在哪？ | assistant 旁路 `metadata_json` 或 kind=`summary` 消息 | 见 Session 文档 |
-| D3 | 压缩用 LLM 还是抽取式？ | v1 **抽取式**（引用+问题关键词）；v2 可选 LLM 摘要 | 建议批准 |
-| D4 | multi-agent 默认开吗？ | 默认关；feature flag / skill 配置 | 建议批准 |
+| D1 | `answer_delta` gửi gia tăng hay tích lũy? | **Cố định tích lũy toàn văn** (khớp hiện thực), ghi rõ trong tài liệu | Đề xuất phê duyệt |
+| D2 | Tóm tắt lưu ở đâu? | `metadata_json` hoặc tin nhắn `kind=summary` bên cạnh assistant | Xem tài liệu Session |
+| D3 | Nén dùng LLM hay trích xuất? | v1 **trích xuất** (trích dẫn + từ khóa câu hỏi); v2 có thể LLM tóm tắt | Đề xuất phê duyệt |
+| D4 | Multi-agent có mặc định bật không? | Mặc định tắt; feature flag / cấu hình skill | Đề xuất phê duyệt |
 
 ---
 
-## 14. 参考代码锚点
+## 14. Điểm neo code tham khảo
 
-| 路径 | 角色 |
+| Đường dẫn | Vai trò |
 |------|------|
-| `backend/ai_service/retainpdf_ai/agent.py` | 现循环 / 引用编号 |
-| `backend/ai_service/retainpdf_ai/tools.py` | 原子工具 |
+| `backend/ai_service/retainpdf_ai/agent.py` | Vòng lặp hiện tại / đánh số tham chiếu |
+| `backend/ai_service/retainpdf_ai/tools.py` | Công cụ nguyên tử |
 | `backend/ai_service/retainpdf_ai/app.py` | SSE / history / persist |
-| `backend/ai_service/retainpdf_ai/rust_client.py` | 会话与检索客户端 |
-| `frontend/.../use-reader-ask-runtime.ts` | 前端消费 ask |
-| `frontend/.../answer-enhance.ts` | 引用跳转与图 |
+| `backend/ai_service/retainpdf_ai/rust_client.py` | Client phiên và truy xuất |
+| `frontend/.../use-reader-ask-runtime.ts` | Frontend tiêu thụ ask |
+| `frontend/.../answer-enhance.ts` | Chuyển hướng trích dẫn và hình ảnh |

@@ -1,99 +1,99 @@
-# Paddle OCR API Summary
+# Tổng quan API Paddle OCR
 
-这份文档只回答一个问题：
+Tài liệu này chỉ trả lời một câu hỏi:
 
-**我们当前接入的 Paddle OCR 异步 API，实际协议是什么。**
+**Giao thức thực tế của API Paddle OCR bất đồng bộ mà chúng ta hiện đang tích hợp là gì.**
 
-不是讲 `document.v1`，也不是讲渲染/翻译，只讲 provider transport 层。
+Không đề cập đến `document.v1`, cũng không đề cập đến render/dịch, chỉ nói về lớp provider transport.
 
-相关资料：
+Tài liệu liên quan:
 
-- Paddle 官方异步接口示例：
+- Ví dụ giao diện bất đồng bộ chính thức Paddle:
   [`AsyncParse.md`](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/AsyncParse.md)
-- Rust client：
+- Rust client:
   [`client.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/client.rs)
-- Python client：
+- Python client:
   [`backend/scripts/services/ocr_provider/paddle_api.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/ocr_provider/paddle_api.py)
-- provider 边界：
+- Ranh giới provider:
   [`PROVIDER_BOUNDARY.md`](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/PROVIDER_BOUNDARY.md)
 
-## 1. 我们当前用的是哪套接口
+## 1. Bộ giao diện chúng ta hiện đang sử dụng
 
-当前主链接的是 Paddle OCR 的异步任务接口：
+Hiện tại chúng ta đang kết nối chính đến giao diện tác vụ bất đồng bộ của Paddle OCR:
 
 - `POST /api/v2/ocr/jobs`
 - `GET /api/v2/ocr/jobs/{jobId}`
-- 下载 `resultUrl.jsonUrl`
+- Tải xuống `resultUrl.jsonUrl`
 
-默认基地址：
+Địa chỉ cơ sở mặc định:
 
 - `https://paddleocr.aistudio-app.com`
 
-当前代码入口：
+Điểm vào mã hiện tại:
 
-- Rust：
+- Rust:
   [`client.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/client.rs)
-- Python：
+- Python:
   [`paddle_api.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/ocr_provider/paddle_api.py)
 
-## 2. 鉴权方式
+## 2. Phương thức xác thực
 
-请求头：
+Header yêu cầu:
 
 ```http
 Authorization: bearer <token>
 Accept: application/json
 ```
 
-当前代码口径：
+Phạm vi mã hiện tại:
 
-- 环境变量：`RETAIN_PADDLE_API_TOKEN`
-- 本地 env 文件：`backend/scripts/.env/paddle.env`
+- Biến môi trường: `RETAIN_PADDLE_API_TOKEN`
+- Tệp env cục bộ: `backend/scripts/.env/paddle.env`
 
-Python 读取口：
+Lối đọc Python:
 
 - [`get_paddle_token(...)`](/home/wxyhgk/tmp/Code/backend/scripts/services/ocr_provider/paddle_api.py)
 
-## 3. 三段式协议
+## 3. Giao thức ba giai đoạn
 
-### 3.1 submit
+### 3.1 Gửi tác vụ
 
-接口：
+Giao diện:
 
 - `POST /api/v2/ocr/jobs`
 
-两种提交方式：
+Hai phương thức gửi:
 
-1. 本地文件上传
-2. 远程 URL 提交
+1. Tải lên tệp cục bộ
+2. Gửi URL từ xa
 
-我们当前实际支持的两种调用：
+Hai phương thức gọi mà chúng ta hiện đang hỗ trợ thực tế:
 
-- Python：
+- Python:
   - `submit_local_file(...)`
   - `submit_remote_url(...)`
-- Rust：
+- Rust:
   - `submit_local_file(...)`
   - `submit_remote_url(...)`
 
-关键入参：
+Tham số đầu vào chính:
 
 - `model`
 - `optionalPayload`
-- 本地文件时用 multipart `file`
-- 远程文件时用 JSON `fileUrl`
+- Khi dùng tệp cục bộ thì multipart `file`
+- Khi dùng tệp từ xa thì JSON `fileUrl`
 
-成功后最关键的返回字段：
+Trường trả về quan trọng nhất sau khi thành công:
 
 - `data.jobId`
 
-## 3.2 poll
+### 3.2 Thăm dò trạng thái
 
-接口：
+Giao diện:
 
 - `GET /api/v2/ocr/jobs/{jobId}`
 
-我们当前关心的返回字段：
+Các trường trả về mà chúng ta hiện đang quan tâm:
 
 - `data.state`
 - `data.extractProgress.totalPages`
@@ -101,52 +101,52 @@ Python 读取口：
 - `data.resultUrl.jsonUrl`
 - `data.errorMsg`
 
-当前系统中的统一状态映射：
+Ánh xạ trạng thái thống nhất trong hệ thống hiện tại:
 
 - `pending` -> queued
 - `running` -> processing
 - `done` -> succeeded
 - `failed` -> failed
 
-对应实现：
+Triển khai tương ứng:
 
 - [`status.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/status.rs)
 
-## 3.3 download result
+### 3.3 Tải kết quả
 
-完成后不是直接拿结构化 JSON，而是去下载：
+Sau khi hoàn thành không trực tiếp lấy JSON cấu trúc, mà đi tải xuống:
 
 - `resultUrl.jsonUrl`
 
-这个 URL 返回的是 `jsonl`，不是单个 JSON。
+URL này trả về `jsonl`, không phải một JSON đơn lẻ.
 
-当前解包逻辑会把每一行里的：
+Logic giải nén hiện tại sẽ lấy từ mỗi dòng:
 
 - `result.layoutParsingResults`
 - `result.dataInfo`
 
-聚合成后续 adapter 能消费的 provider raw payload。
+Tổng hợp thành provider raw payload mà adapter sau này có thể tiêu thụ.
 
-对应实现：
+Triển khai tương ứng:
 
-- Rust：
+- Rust:
   [`client.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/client.rs)
-- Python：
+- Python:
   [`paddle_api.py`](/home/wxyhgk/tmp/Code/backend/scripts/services/ocr_provider/paddle_api.py)
 
-## 4. 当前我们实际传的关键参数
+## 4. Các tham số chính chúng ta hiện đang truyền
 
 ### `model`
 
-当前默认模型名：
+Tên mô hình mặc định hiện tại:
 
 - `PaddleOCR-VL-1.6`
 
-默认值来自共享配置：
+Giá trị mặc định đến từ cấu hình chung:
 
 - [`backend/config/ocr_providers.json`](/home/wxyhgk/tmp/Code/backend/config/ocr_providers.json)
 
-兼容归一化：
+Chuẩn hóa tương thích:
 
 - `paddleocr-vl`
 - `paddle-ocr-vl`
@@ -157,34 +157,34 @@ Python 读取口：
 
 ### `optionalPayload`
 
-当前代码会按模型名构造不同 payload：
+Mã hiện tại sẽ xây dựng payload khác nhau dựa trên tên mô hình:
 
-- `PaddleOCR-VL(-1.6/-1.5)` 走一套默认 rich-content 参数
-- `PP-StructureV3` 走另一套结构化参数
+- `PaddleOCR-VL(-1.6/-1.5)` đi một bộ tham số rich-content mặc định
+- `PP-StructureV3` đi một bộ tham số cấu trúc khác
 
-对应实现：
+Triển khai tương ứng:
 
 - [`build_optional_payload(...)`](/home/wxyhgk/tmp/Code/backend/scripts/services/ocr_provider/paddle_api.py)
 
-## 5. 错误口径
+## 5. Xử lý lỗi
 
-当前 transport 层主要处理这几类错误：
+Lớp transport hiện tại chủ yếu xử lý các loại lỗi sau:
 
-- HTTP 状态错误
-- provider 返回 `errorCode != 0`
-- 返回结构不完整
-- `jobId` 缺失
-- `resultUrl.jsonUrl` 缺失
-- 轮询超时
-- JSONL 解包失败
+- Lỗi trạng thái HTTP
+- Provider trả về `errorCode != 0`
+- Cấu trúc trả về không đầy đủ
+- Thiếu `jobId`
+- Thiếu `resultUrl.jsonUrl`
+- Thăm dò quá thời gian
+- Giải nén JSONL thất bại
 
-Rust 统一错误映射：
+Ánh xạ lỗi thống nhất trong Rust:
 
 - [`errors.rs`](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/errors.rs)
 
-## 6. 与 `document.v1` 的边界
+## 6. Ranh giới với `document.v1`
 
-下面这些字段仍然只属于 provider transport 层：
+Các trường sau đây vẫn chỉ thuộc về lớp provider transport:
 
 - `jobId`
 - `state`
@@ -193,29 +193,29 @@ Rust 统一错误映射：
 - `errorCode`
 - `errorMsg`
 
-只有下载并解包完 `jsonl` 后得到的：
+Chỉ sau khi tải xuống và giải nén xong `jsonl`, chúng ta mới nhận được:
 
 - `layoutParsingResults`
 - `dataInfo`
 
-才会继续进入 adapter，最终变成：
+Mới tiếp tục vào adapter, cuối cùng thành:
 
 - `document.v1.json`
 
-不要把 provider 任务态字段直接混进统一文档层。
+Không đưa trực tiếp các trường trạng thái tác vụ của provider vào lớp tài liệu thống nhất.
 
-## 7. 我们当前真实跑通的口径
+## 7. Phạm vi đã chạy thành công thực tế hiện tại
 
-当前本机真实链路已经验证：
+Hiện tại, đường dẫn thực tế trên máy cục bộ đã được xác minh:
 
 - `workflow = book`
 - `ocr.provider = paddle`
 - `translation.base_url = https://api.deepseek.com/v1`
 - `translation.model = deepseek-v4-flash`
 
-能跑通：
+Có thể chạy thành công:
 
-- 上传
+- Tải lên
 - Paddle OCR submit
 - poll
 - result download
@@ -223,4 +223,4 @@ Rust 统一错误映射：
 - translate
 - render
 
-这说明当前仓库里的 Paddle API 接入不是纸面协议，而是和主链联通的。
+Điều này cho thấy việc tích hợp API Paddle trong kho hiện tại không phải là giao thức trên giấy, mà đã được kết nối với luồng chính.

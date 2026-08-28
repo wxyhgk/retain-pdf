@@ -69,7 +69,7 @@ function detailFromPayload(
     return canonicalDetailFromPayload(payload, stageKey);
   }
   const summarized = summarizeStageDetail(payload);
-  if (summarized && summarized !== "等待任务开始") {
+  if (summarized && summarized !== "Đang chờ tác vụ bắt đầu") {
     return summarized;
   }
   return firstNonEmpty(payload.stage_detail, payload.payload?.stage_detail, stageKey);

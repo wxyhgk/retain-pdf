@@ -8,18 +8,17 @@
 }
 
 /*
-  阶段 C 收官批(shadcn 改造):StageHistoryModal/EventsModal 的外层结构从
-  <section className="detail-modal"><div className="detail-modal-panel"
-  role="dialog"> 换成 Radix Dialog + 现有 desktop-dialog/desktop-shell/
-  desktop-head/desktop-body 视觉骨架(见 EventsTimeline.jsx 头注释),原来的
-  .detail-modal/.detail-modal-panel/.detail-modal-head 三条结构性规则不再有
-  任何消费者,已删除。detail-timeline-overlay/detail-timeline-dialog 这两个
-  新增覆盖类复刻它们的像素级视觉(920px 宽上限/82vh 高上限/28px 圆角/
-  var(--line) 描边/0 24px 64px 阴影),挂在 DialogPrimitive.Overlay/Content 上。
-  下面的 detail-modal-title/-subtitle/-close/-status 这几个纯排版类名原样
-  保留,只是父级结构换了;detail-modal-body 的职责(内层滚动容器的
-  padding/background/overflow)并入上面 detail-timeline-dialog 对
-  desktop-body 的覆盖,原规则已删除。
+  Đợt kết thúc giai đoạn C (cải tạo shadcn): cấu trúc ngoài của
+  StageHistoryModal/EventsModal chuyển từ <section className="detail-modal">
+  <div className="detail-modal-panel" role="dialog"> sang Radix Dialog cùng
+  khung hình ảnh desktop-dialog/desktop-shell/desktop-head/desktop-body hiện có
+  (xem chú thích đầu EventsTimeline.jsx). Ba quy tắc cấu trúc cũ không còn
+  consumer và đã bị xóa. Hai lớp phủ detail-timeline-overlay/detail-timeline-dialog
+  tái tạo hình ảnh theo pixel (rộng tối đa 920px/cao tối đa 82vh/góc 28px/viền
+  var(--line)/bóng 0 24px 64px), gắn trên DialogPrimitive.Overlay/Content.
+  Các lớp bố cục detail-modal-title/-subtitle/-close/-status vẫn giữ nguyên, chỉ
+  đổi cấu trúc cha; trách nhiệm của detail-modal-body (đệm/nền/overflow vùng cuộn)
+  được gộp vào phần ghi đè desktop-body và quy tắc cũ đã xóa.
 */
 @utility detail-timeline-overlay {
   @apply fixed inset-0 z-[100];

@@ -1,14 +1,15 @@
-// library 域对外入口 —— 页面/composition 只从这里 import，勿深挖子路径（测试除外）。
+// Cửa vào ra ngoài của miền library — trang/composition chỉ import từ đây, đừng đào sâu
+// đường dẫn con (trừ kiểm thử).
 //
-// 目录:
-//   shell/      通用壳（BookCard、BookListRow）
-//   actions/    卡片操作工厂（read / translate）
-//   display/    展示辅助（封面、徽标）
-//   page/       书架页编排（网格、工具条、viewPort）
-//   categories/ 合集 tab
-//   favorites/  收藏 tab（摘录/笔记）
-//   detail/     书籍详情（shell 壳 + Dialog 容器）
-//   domain/     领域 controller
+// Cấu trúc thư mục:
+//   shell/      vỏ chung (BookCard, BookListRow)
+//   actions/    nhà máy thao tác thẻ (read / translate)
+//   display/    trợ giúp trình bày (bìa, huy hiệu)
+//   page/       dàn trang thư viện (lưới, thanh công cụ, viewPort)
+//   categories/ tab bộ sưu tập
+//   favorites/  tab yêu thích (trích dẫn/ghi chú)
+//   detail/     chi tiết sách (vỏ shell + vùng chứa Dialog)
+//   domain/     controller miền
 
 export { BookCard, BookCardActionButton, cardSignatureOf } from "./shell/BookCard.jsx";
 export { BookListRow } from "./shell/BookListRow.jsx";

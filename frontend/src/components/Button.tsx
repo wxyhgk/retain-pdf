@@ -1,25 +1,25 @@
-// 共享 Button 组件(阶段 B:shadcn 改造)。
+// Component Button dùng chung (Giai đoạn B: cải tạo shadcn).
 //
-// 现状(探索 3/3):项目里 74 处裸 <button>、5+ 个独立 class 家族(app-button/
-// dialog-close-btn/app-settings-action/button-link/developer-tab...),没有任何
-// 统一入口。这次不强求一次性把全部 74 处收拢(改动面太大,阶段 C 逐个对话框
-// 换皮时顺带迁移),只提供一个共享落点:
+// Hiện trạng (Khám phá 3/3): Có 74 chỗ dùng <button> trần, 5+ nhóm class độc lập (app-button/
+// dialog-close-btn/app-settings-action/button-link/developer-tab...), không có
+// điểm nhập thống nhất. Lần này không ép buộc gom tất cả 74 chỗ cùng lúc (phạm vi thay đổi quá lớn, Giai đoạn C 
+// sẽ di chuyển dần khi thay giao diện từng dialog), chỉ cung cấp một điểm tập trung chia sẻ:
 //
-// - variant="unstyled"(默认):项目既有视觉系统各自的 bespoke CSS class 直接
-//   通过 className 传入,本组件只负责 <button> 元素本身的通用行为(默认
-//   type="button",避免裸 <button> 缺省 type="submit" 时误触发所在 <form> 提交
-//   ——CredentialsDialog/StatusDetailDialog 的 <form method="dialog"> 就是这个
-//   坑的现成案例,本组件把"忘记写 type"这类问题在共享入口收掉)。不叠加
-//   shadcn 默认视觉,因为 buttonVariants 的 Tailwind 工具类(bg-primary/
-//   rounded-md 等)会和这些已经成熟的 bespoke class 系统正面冲突,现在硬套会
-//   制造视觉回归(baseline 抓不到但真实存在)。
-// - variant 为 shadcn 6 个标准值之一(default/destructive/outline/secondary/
-//   ghost/link)时:直接走 src/components/ui/button.jsx 的 buttonVariants,
-//   用于阶段 C 真正换皮的新对话框/新功能,不需要再包一层。
+// - variant="unstyled" (mặc định): Các bespoke CSS class của hệ thống thị giác hiện có được
+//   truyền trực tiếp qua className, component này chỉ chịu trách nhiệm về hành vi chung của phần tử <button> (mặc định
+//   type="button", tránh việc <button> thiếu type="submit" vô tình kích hoạt submit <form> chứa nó
+//   — ví dụ điển hình là <form method="dialog"> trong CredentialsDialog/StatusDetailDialog, 
+//   component này sẽ xử lý triệt để các vấn đề như "quên viết type" tại điểm nhập chung). Không áp dụng
+//   thị giác mặc định của shadcn, vì các Tailwind utility classes của buttonVariants (bg-primary/
+//   rounded-md v.v.) sẽ xung đột trực tiếp với hệ thống bespoke class đã ổn định, nếu ép dùng lúc này
+//   sẽ gây ra lỗi thị giác (không bắt được bằng baseline nhưng thực tế có xảy ra).
+// - khi variant là một trong 6 giá trị tiêu chuẩn của shadcn (default/destructive/outline/secondary/
+//   ghost/link): chạy trực tiếp buttonVariants của src/components/ui/button.jsx,
+//   dùng cho các dialog/tính năng mới thực sự thay giao diện trong Giai đoạn C, không cần bọc thêm lớp.
 //
-// 用法:
-//   <Button className="app-button" onClick={...}>保存</Button>            // 沿用现状视觉
-//   <Button variant="ghost" size="icon" aria-label="关闭">×</Button>       // 走 shadcn 皮肤
+// Cách dùng:
+//   <Button className="app-button" onClick={...}>Lưu</Button>            // Giữ nguyên thị giác hiện tại
+//   <Button variant="ghost" size="icon" aria-label="Đóng">×</Button>       // Dùng skin shadcn
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button.jsx";

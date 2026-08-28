@@ -1,30 +1,30 @@
-# PaddleOCR-VL-1.5 服务化部署调用示例及 API 介绍：
+# Ví dụ Gọi API và Triển khai Dịch vụ PaddleOCR-VL-1.5:
 
 > 
 > 
 > 
-> [PaddleOCR 开源项目 GitHub 地址](https://github.com/PaddlePaddle/PaddleOCR/tree/release/3.3)，本服务**基于该开源项目的 PaddleOCR-VL 模型构建**。
+> [Địa chỉ GitHub dự án mã nguồn mở PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR/tree/release/3.3), dịch vụ này **được xây dựng dựa trên mô hình PaddleOCR-VL của dự án mã nguồn mở đó**.
 > 
-> **版本说明**：PaddleOCR 官网当前对应的 **PaddleX 版本为 3.4.0**，**PaddlePaddle 版本为 3.2.1**。
+> **Ghi chú phiên bản**: Trang chủ PaddleOCR hiện tại tương ứng với **phiên bản PaddleX 3.4.0**, **phiên bản PaddlePaddle 3.2.1**.
 > 
 
-## 1. PaddleOCR-VL-1.5 介绍
+## 1. Giới thiệu PaddleOCR-VL-1.5
 
-2026年1月29日，我们在PaddleOCR-VL的基础上发布了**PaddleOCR-VL-1.5**。PaddleOCR-VL-1.5不仅以94.5%精度大幅刷新了评测集OmniDocBench v1.5，更创新性地支持了异形框定位，使得PaddleOCR-VL-1.5 在扫描、倾斜、弯折、屏幕拍摄及复杂光照等真实场景中均表现优异。此外，模型还新增了印章识别与文本检测识别能力，关键指标持续领跑。
+Vào ngày 29 tháng 1 năm 2026, chúng tôi đã phát hành **PaddleOCR-VL-1.5** dựa trên PaddleOCR-VL. PaddleOCR-VL-1.5 không chỉ đạt độ chính xác 94.5% trên bộ đánh giá OmniDocBench v1.5, mà còn hỗ trợ định vị khung bất thường một cách sáng tạo, giúp PaddleOCR-VL-1.5 thể hiện xuất sắc trong các tình huống thực tế như quét, nghiêng, gập, chụp màn hình và điều kiện ánh sáng phức tạp. Ngoài ra, mô hình còn bổ sung khả năng nhận diện dấu đóng và phát hiện nhận diện văn bản, các chỉ số chính tiếp tục dẫn đầu.
 
-### **关键指标:**
+### **Các chỉ số chính:**
 
 ![](https://paddle-model-ecology.bj.bcebos.com/paddlex/demo_image/paddleocr-vl-1.5_metrics.png)
 
-下图展示了 PaddleOCR-VL-1.5 的整体流程及新增能力：
+Hình dưới đây thể hiện quy trình tổng thể và khả năng mới được bổ sung của PaddleOCR-VL-1.5:
 
 ![](https://paddle-model-ecology.bj.bcebos.com/paddlex/demo_image/PaddleOCR-VL-1.5.png)
 
-## 2. 接口说明
+## 2. Mô tả Giao diện
 
-请查看[文档](https://ai.baidu.com/ai-doc/AISTUDIO/Xmjclapam)
+Vui lòng xem [tài liệu](https://ai.baidu.com/ai-doc/AISTUDIO/Xmjclapam)
 
-## 3. 服务调用示例（python）
+## 3. Ví dụ gọi dịch vụ (Python)
 
 ```
 # Please make sure the requests library is installed
@@ -33,7 +33,7 @@ import base64
 import os
 import requests
 
-# API_URL 及 TOKEN 请访问 [PaddleOCR 官网](https://aistudio.baidu.com/paddleocr/task) 在 API 调用示例中获取。
+# Vui lòng truy cập [trang chủ PaddleOCR](https://aistudio.baidu.com/paddleocr/task) để lấy API_URL và TOKEN trong ví dụ gọi API.
 API_URL = "<your url>"
 TOKEN = "<access token>"
 
@@ -50,7 +50,7 @@ headers = {
 
 required_payload = {
     "file": file_data,
-    "fileType": <file type>,  # For PDF documents, set `fileType` to 0; for images, set `fileType` to 1
+    "fileType": <file type>,  # Đối với tài liệu PDF, đặt `fileType` là 0; đối với hình ảnh, đặt `fileType` là 1
 }
 
 optional_payload = {
@@ -93,131 +93,132 @@ for i, res in enumerate(result["layoutParsingResults"]):
             print(f"Failed to download image, status code: {img_response.status_code}")
 ```
 
-对于服务提供的主要操作：
+Đối với các thao tác chính do dịch vụ cung cấp:
 
-- HTTP请求方法为POST。
-- 请求体和响应体均为JSON数据（JSON对象）。
-- 当请求处理成功时，响应状态码为`200`，响应体的属性如下：
+- Phương thức yêu cầu HTTP là POST.
+- Thân yêu cầu và thân phản hồi đều là dữ liệu JSON (đối tượng JSON).
+- Khi yêu cầu được xử lý thành công, mã trạng thái phản hồi là `200`, các thuộc tính của thân phản hồi như sau:
 
-| 名称 | 类型 | 含义 |
+| Tên | Kiểu | Ý nghĩa |
 | --- | --- | --- |
-| `logId` | `string` | 请求的UUID。 |
-| `errorCode` | `integer` | 错误码。固定为`0`。 |
-| `errorMsg` | `string` | 错误说明。固定为`"Success"`。 |
-| `result` | `object` | 操作结果。 |
-- 当请求处理未成功时，响应体的属性如下：
+| `logId` | `string` | UUID của yêu cầu. |
+| `errorCode` | `integer` | Mã lỗi. Cố định là `0`. |
+| `errorMsg` | `string` | Mô tả lỗi. Cố định là `"Success"`. |
+| `result` | `object` | Kết quả thao tác. |
+- Khi yêu cầu xử lý không thành công, các thuộc tính của thân phản hồi như sau:
 
-| 名称 | 类型 | 含义 |
+| Tên | Kiểu | Ý nghĩa |
 | --- | --- | --- |
-| `logId` | `string` | 请求的UUID。 |
-| `errorCode` | `integer` | 错误码。与响应状态码相同。 |
-| `errorMsg` | `string` | 错误说明。 |
+| `logId` | `string` | UUID của yêu cầu. |
+| `errorCode` | `integer` | Mã lỗi. Giống với mã trạng thái phản hồi. |
+| `errorMsg` | `string` | Mô tả lỗi. |
 
-服务提供的主要操作如下：
+Các thao tác chính do dịch vụ cung cấp như sau:
 
 - **`infer`**
 
-进行版面解析。
+Thực hiện phân tích bố cục.
 
 `POST /layout-parsing`
 
-## 4. 请求参数说明
+## 4. Mô tả Tham số Yêu cầu
 
-| 名称 | 参数 | 类型 | 含义 | 是否必填 |
+| Tên | Tham số | Kiểu | Ý nghĩa | Bắt buộc |
 | --- | --- | --- | --- | --- |
-| `输入文件` | `file` | `string` | 服务器可访问的图像文件或PDF文件的URL，或上述类型文件内容的Base64编码结果。默认对于超过100页的PDF文件，只有前100页的内容会被处理。 要解除页数限制，请在产线配置文件中添加以下配置： 
+| `Tệp đầu vào` | `file` | `string` | URL của tệp hình ảnh hoặc PDF có thể truy cập được từ máy chủ, hoặc kết quả mã hóa Base64 của nội dung tệp loại này. Mặc định đối với tệp PDF vượt quá 100 trang, chỉ có nội dung của 100 trang đầu tiên sẽ được xử lý. Để bỏ giới hạn số trang, vui lòng thêm cấu hình sau vào tệp cấu hình dây chuyền sản xuất:
 
 `Serving:
   extra:
     max_num_input_imgs: null`
- | 是 |
-| `文件类型` | `fileType` | `integer`｜`null` | 文件类型。`0`表示PDF文件，`1`表示图像文件。若请求体无此属性，则将根据URL推断文件类型。 | 否 |
-| `图片方向矫正` | `useDocOrientationClassify` | `boolean` | `null` | 是否在推理时使用文本图像方向矫正模块，开启后，可以自动识别并矫正 0°、90°、180°、270°的图片。 | 否 |
-| `图片扭曲矫正` | `useDocUnwarping` | `boolean` | `null` | 是否在推理时使用文本图像矫正模块，开启后，可以自动矫正扭曲图片，例如褶皱、倾斜等情况。 | 否 |
-| `版面分析` | `useLayoutDetection` | `boolean` | `null` | 是否在推理时使用版面区域检测排序模块，开启后，可以自动检测文档中不同区域并排序。 | 否 |
-| `图表识别` | `useChartRecognition` | `boolean` | `null` | 是否在推理时使用图表解析模块，开启后，可以自动解析文档中的图表（如柱状图、饼图等）并转换为表格形式，方便查看和编辑数据。 | 否 |
-| `版面区域过滤强度` | `layoutThreshold` | `number` | `object` | `null` | 版面模型得分阈值。`0-1` 之间的任意浮点数。如果不设置，将使用产线初始化的该参数值，默认初始化为 `0.5`。 | 否 |
-| `NMS后处理` | `layoutNms` | `boolean` | `null` | 版面检测是否使用后处理NMS，开启后，会自动移除重复或高度重叠的区域框。 | 否 |
-| `扩张系数` | `layoutUnclipRatio` | `number` | `array` | `object` | `null` | 版面区域检测模型检测框的扩张系数。 任意大于 `0` 浮点数。如果不设置，将使用产线初始化的该参数值，默认初始化为 `1.0`。 | 否 |
-| `版面区域检测的重叠框过滤方式` | `layoutMergeBboxesMode` | `string` | `object` | `null` |  
-• **large**，设置为large时，表示在模型输出的检测框中，对于互相重叠包含的检测框，只保留外部最大的框，删除重叠的内部框； 
-• **small**，设置为small，表示在模型输出的检测框中，对于互相重叠包含的检测框，只保留内部被包含的小框，删除重叠的外部框； 
-• **union**，不进行框的过滤处理，内外框都保留；  如果不设置，将使用产线初始化的该参数值，默认初始化为`large`。 | 否 |
-| `版面检测结果的几何形状` | `layoutShapeMode` | `string` | `null` | 用于指定版面检测结果的几何形状表示模式，该参数决定了检测区域（如文本块、图片、表格等）边界的计算方式及展示形态。可填写参数为 `rect` (矩形)、`quad` (四边形)、`poly` (多边形) 和 `auto` (自动)，默认初始化为`auto`。 | 否 |
-| `prompt类型设置` | `promptLabel` | `string` | `null` | VL模型的 prompt 类型设置，当且仅当 `useLayoutDetection=False` 时生效。可填写参数为 `ocr`、`formula`、`table` 和 `chart`，默认初始化为`ocr`。 | 否 |
-| `重复抑制强度` | `repetitionPenalty` | `number` | `null` | 结果中出现重复文字、重复表格内容时，可适当调高。 | 否 |
-| `识别稳定性` | `temperature` | `number` | `null` | 结果不稳定或出现明显幻觉时调低，漏识别或者重复较多时可略微调高。 | 否 |
-| `结果可信范围` | `topP` | `number` | `null` | 结果发散、不够可信时可适当调低，让模型更保守。 | 否 |
-| `最小图像尺寸` | `minPixels` | `number` | `null` | 输入图片太小、文字看不清时可适当调高，一般无需调整。 | 否 |
-| `最大图像尺寸` | `maxPixels` | `number` | `null` | 输入图片特别大、处理变慢或显存压力较大时可适当调低。 | 否 |
-| `公式编号展示` | `showFormulaNumber` | `boolean` | 输出的 Markdown 文本中是否包含公式编号。 | 否 |
-| `重构多页结果` | `restructurePages` | `boolean` | 对多页 pdf 解析结果进行重构，用于适配跨页表格合并和段落标题级别识别，默认初始化为`False`。 | 否 |
-| `跨页表格合并` | `mergeTables` | `boolean` | 开启后，会识别跨页表格，将其合并为一个，当且仅当 `useLayoutDetection=False` 时生效，默认初始化为`True`。 | 否 |
-| `段落标题级别识别` | `relevelTitles` | `boolean` | 开启后，会识别段落标题级别，当且仅当 `useLayoutDetection=False` 时生效，默认初始化为`True`。 | 否 |
-| `Markdown 美化` | `prettifyMarkdown` | `boolean` | 是否输出美化后的 Markdown 文本。 | 否 |
-| `可视化` | `visualize` | `boolean` | `null` | 支持返回可视化结果图及处理过程中的中间图像。开启此功能后，将增加结果返回时间。  
-• 传入 `true`：返回图像。 
-• 传入 `false`：不返回图像。 
-• 若请求体中未提供该参数或传入 `null`：遵循产线配置文件`Serving.visualize` 的设置。  例如，在产线配置文件中添加如下字段： 
+ | Có |
+| `Loại tệp` | `fileType` | `integer`｜`null` | Loại tệp. `0` đại diện cho tệp PDF, `1` đại diện cho tệp hình ảnh. Nếu thân yêu cầu không có thuộc tính này, loại tệp sẽ được suy ra từ URL. | Không |
+| `Điều chỉnh hướng hình ảnh` | `useDocOrientationClassify` | `boolean` | `null` | Có sử dụng mô-đun điều chỉnh hướng hình ảnh văn bản khi suy luận hay không. Khi bật, có thể tự động nhận diện và điều chỉnh hình ảnh ở các góc 0°, 90°, 180°, 270°. | Không |
+| `Điều chỉnh méo mó hình ảnh` | `useDocUnwarping` | `boolean` | `null` | Có sử dụng mô-đun điều chỉnh hình ảnh văn bản khi suy luận hay không. Khi bật, có thể tự động điều chỉnh hình ảnh bị méo mó, ví dụ như nhăn, nghiêng, v.v. | Không |
+| `Phân tích bố cục` | `useLayoutDetection` | `boolean` | `null` | Có sử dụng mô-đun phát hiện và sắp xếp vùng bố cục khi suy luận hay không. Khi bật, có thể tự động phát hiện và sắp xếp các vùng khác nhau trong tài liệu. | Không |
+| `Nhận diện biểu đồ` | `useChartRecognition` | `boolean` | `null` | Có sử dụng mô-đun phân tích biểu đồ khi suy luận hay không. Khi bật, có thể tự động phân tích biểu đồ trong tài liệu (như biểu đồ cột, biểu đồ tròn, v.v.) và chuyển đổi thành dạng bảng để thuận tiện cho việc xem và chỉnh sửa dữ liệu. | Không |
+| `Ngưỡng lọc vùng bố cục` | `layoutThreshold` | `number` | `object` | `null` | Ngưỡng điểm của mô hình bố cục. Số thực bất kỳ trong khoảng `0-1`. Nếu không thiết lập, sẽ sử dụng giá trị tham số được khởi tạo trong dây chuyền sản xuất, mặc định khởi tạo là `0.5`. | Không |
+| `Xử lý hậu kỳ NMS` | `layoutNms` | `boolean` | `null` | Phát hiện bố cục có sử dụng xử lý hậu kỳ NMS hay không. Khi bật, sẽ tự động loại bỏ các khung vùng trùng lặp hoặc chồng lấn cao. | Không |
+| `Hệ số giãn` | `layoutUnclipRatio` | `number` | `array` | `object` | `null` | Hệ số giãn của khung phát hiện mô hình phát hiện vùng bố cục. Số thực bất kỳ lớn hơn `0`. Nếu không thiết lập, sẽ sử dụng giá trị tham số được khởi tạo trong dây chuyền sản xuất, mặc định khởi tạo là `1.0`. | Không |
+| `Phương pháp lọc khung chồng lấn trong phát hiện vùng bố cục` | `layoutMergeBboxesMode` | `string` | `object` | `null` | 
+• **large**: Khi đặt là large, trong các khung phát hiện do mô hình xuất ra, đối với các khung chồng lấn và bao nhau, chỉ giữ lại khung lớn nhất bên ngoài và xóa các khung bên trong bị chồng lấn;
+• **small**: Khi đặt là small, trong các khung phát hiện do mô hình xuất ra, đối với các khung chồng lấn và bao nhau, chỉ giữ lại khung nhỏ bên trong bị bao và xóa khung bên ngoài;
+• **union**: Không thực hiện lọc khung, giữ lại tất cả các khung bên trong và bên ngoài;
+Nếu không thiết lập, sẽ sử dụng giá trị tham số được khởi tạo trong dây chuyền sản xuất, mặc định khởi tạo là `large`. | Không |
+| `Hình dạng hình học của kết quả phát hiện bố cục` | `layoutShapeMode` | `string` | `null` | Dùng để chỉ định chế độ biểu diễn hình dạng hình học của kết quả phát hiện bố cục. Tham số này quyết định cách tính toán và hiển thị ranh giới của các vùng phát hiện (như khối văn bản, hình ảnh, bảng, v.v.). Các tham số có thể điền là `rect` (hình chữ nhật), `quad` (tứ giác), `poly` (đa giác) và `auto` (tự động), mặc định khởi tạo là `auto`. | Không |
+| `Thiết lập loại prompt` | `promptLabel` | `string` | `null` | Thiết lập loại prompt của mô hình VL, chỉ có hiệu lực khi `useLayoutDetection=False`. Các tham số có thể điền là `ocr`, `formula`, `table` và `chart`, mặc định khởi tạo là `ocr`. | Không |
+| `Cường độ ức chế lặp lại` | `repetitionPenalty` | `number` | `null` | Khi xuất hiện văn bản lặp lại hoặc nội dung bảng lặp lại trong kết quả, có thể tăng thích hợp. | Không |
+| `Độ ổn định nhận diện` | `temperature` | `number` | `null` | Khi kết quả không ổn định hoặc xuất hiện ảo giác rõ ràng, hãy giảm xuống; khi nhận diện thiếu hoặc lặp lại nhiều, có thể tăng nhẹ. | Không |
+| `Phạm vi tin cậy của kết quả` | `topP` | `number` | `null` | Khi kết quả phân tán và không đủ tin cậy, có thể giảm thích hợp để mô hình thận trọng hơn. | Không |
+| `Kích thước hình ảnh tối thiểu` | `minPixels` | `number` | `null` | Khi hình ảnh đầu vào quá nhỏ và không nhìn rõ chữ, có thể tăng thích hợp, thường không cần điều chỉnh. | Không |
+| `Kích thước hình ảnh tối đa` | `maxPixels` | `number` | `null` | Khi hình ảnh đầu vào đặc biệt lớn, xử lý chậm hoặc áp lực bộ nhớ hiển thị lớn, có thể giảm thích hợp. | Không |
+| `Hiển thị số công thức` | `showFormulaNumber` | `boolean` | Có bao gồm số công thức trong văn bản Markdown đầu ra hay không. | Không |
+| `Tái cấu trúc kết quả nhiều trang` | `restructurePages` | `boolean` | Tái cấu trúc kết quả phân tích tài liệu PDF nhiều trang để phù hợp với việc hợp nhất bảng biểu trải nhiều trang và nhận diện cấp độ tiêu đề đoạn văn, mặc định khởi tạo là `False`. | Không |
+| `Hợp nhất bảng xuyên trang` | `mergeTables` | `boolean` | Khi bật, sẽ nhận diện bảng xuyên trang và hợp nhất thành một, chỉ có hiệu lực khi `useLayoutDetection=False`, mặc định khởi tạo là `True`. | Không |
+| `Nhận diện cấp tiêu đề đoạn văn` | `relevelTitles` | `boolean` | Khi bật, sẽ nhận diện cấp tiêu đề đoạn văn, chỉ có hiệu lực khi `useLayoutDetection=False`, mặc định khởi tạo là `True`. | Không |
+| `Làm đẹp Markdown` | `prettifyMarkdown` | `boolean` | Có xuất ra văn bản Markdown đã làm đẹp hay không. | Không |
+| `Trực quan hóa` | `visualize` | `boolean` | `null` | Hỗ trợ trả về hình ảnh kết quả trực quan và hình ảnh trung gian trong quá trình xử lý. Bật chức năng này sẽ tăng thời gian trả kết quả.  
+• Truyền `true`: Trả về hình ảnh. 
+• Truyền `false`: Không trả về hình ảnh. 
+• Nếu thân yêu cầu không cung cấp tham số này hoặc truyền `null`: Tuân theo cài đặt `Serving.visualize` trong tệp cấu hình dây chuyền. Ví dụ, thêm trường sau vào tệp cấu hình dây chuyền: 
 
 `Serving:
   visualize: False`
- 将默认不返回图像，通过请求体中的`visualize`参数可以覆盖默认行为。如果请求体和配置文件中均未设置（或请求体传入`null`、配置文件中未设置），则默认返回图像。 | 否 |
-- 请求处理成功时，响应体的`result`具有如下属性：
+ Sẽ mặc định không trả về hình ảnh, tham số `visualize` trong thân yêu cầu có thể ghi đè hành vi mặc định. Nếu cả thân yêu cầu và tệp cấu hình đều không đặt (hoặc thân yêu cầu truyền `null`, tệp cấu hình không đặt), thì mặc định trả về hình ảnh. | Không |
+- Khi yêu cầu được xử lý thành công, thuộc tính `result` của thân phản hồi có các thuộc tính sau:
 
-| 名称 | 类型 | 含义 |
+| Tên | Kiểu | Ý nghĩa |
 | --- | --- | --- |
-| `layoutParsingResults` | `array` | 版面解析结果。数组长度为1（对于图像输入）或实际处理的文档页数（对于PDF输入）。对于PDF输入，数组中的每个元素依次表示PDF文件中实际处理的每一页的结果。 |
-| `dataInfo` | `object` | 输入数据信息。 |
+| `layoutParsingResults` | `array` | Kết quả phân tích bố cục. Độ dài mảng là 1 (đối với đầu vào hình ảnh) hoặc số trang tài liệu thực tế được xử lý (đối với đầu vào PDF). Đối với đầu vào PDF, mỗi phần tử trong mảng lần lượt đại diện cho kết quả của mỗi trang trong tệp PDF được xử lý thực tế. |
+| `dataInfo` | `object` | Thông tin dữ liệu đầu vào. |
 
-`layoutParsingResults`中的每个元素为一个`object`，具有如下属性：
+Mỗi phần tử trong `layoutParsingResults` là một đối tượng `object`, có các thuộc tính sau:
 
-| 名称 | 类型 | 含义 |
+| Tên | Kiểu | Ý nghĩa |
 | --- | --- | --- |
-| `prunedResult` | `object` | 对象的 `predict` 方法生成结果的 JSON 表示中 `res` 字段的简化版本，其中去除了 `input_path` 和 `page_index` 字段。 |
-| `markdown` | `object` | Markdown结果。 |
-| `outputImages` | `object` | `null` | 参见预测结果的 `img` 属性说明。图像为JPEG格式，使用Base64编码。 |
-| `inputImage` | `string` | `null` | 输入图像。图像为JPEG格式，使用Base64编码。 |
+| `prunedResult` | `object` | Phiên bản đơn giản hóa của trường `res` trong biểu diễn JSON của kết quả được tạo bởi phương thức `predict` của đối tượng, trong đó đã loại bỏ các trường `input_path` và `page_index`. |
+| `markdown` | `object` | Kết quả Markdown. |
+| `outputImages` | `object` | `null` | Xem mô tả thuộc tính `img` của kết quả dự đoán. Hình ảnh ở định dạng JPEG, được mã hóa bằng Base64. |
+| `inputImage` | `string` | `null` | Hình ảnh đầu vào. Hình ảnh ở định dạng JPEG, được mã hóa bằng Base64. |
 
-`markdown`为一个`object`，具有如下属性：
+`markdown` là một đối tượng `object`, có các thuộc tính sau:
 
-| 名称 | 类型 | 含义 |
+| Tên | Kiểu | Ý nghĩa |
 | --- | --- | --- |
-| `text` | `string` | Markdown文本。 |
-| `images` | `object` | Markdown图片相对路径和Base64编码图像的键值对。 |
+| `text` | `string` | Văn bản Markdown. |
+| `images` | `object` | Cặp khóa-giá trị của đường dẫn tương đối hình ảnh Markdown và hình ảnh được mã hóa bằng Base64.
 - **`restructurePages`**
 
-重构多页结果 (可选)。
+Tái cấu trúc kết quả nhiều trang (tùy chọn).
 
 `POST /restructure-pages`
 
-- 请求体的属性如下：
+- Các thuộc tính của thân yêu cầu như sau:
 
-| 名称 | 参数 | 类型 | 含义 | 是否必填 |
+| Tên | Tham số | Kiểu | Ý nghĩa | Bắt buộc |
 | --- | --- | --- | --- | --- |
-| `跨页表格合并` | `mergeTables` | `boolean` | 开启后，会识别跨页表格，将其合并为一个，当且仅当 `useLayoutDetection=False` 时生效，默认初始化为`True`。 | 否 |
-| `段落标题级别识别` | `relevelTitles` | `boolean` | 开启后，会识别段落标题级别，当且仅当 `useLayoutDetection=False` 时生效，默认初始化为`True`。 | 否 |
-| `重构多页结果` | `concatenatePages` | `boolean` | 对多页 pdf 解析结果进行重构，用于适配跨页表格合并和段落标题级别识别，默认初始化为`False`。 | 否 |
-| `Markdown 美化` | `prettifyMarkdown` | `boolean` | 是否输出美化后的 Markdown 文本。 | 否 |
-| `公式编号展示` | `showFormulaNumber` | `boolean` | 输出的 Markdown 文本中是否包含公式编号。 | 否 |
+| `Hợp nhất bảng biểu trải nhiều trang` | `mergeTables` | `boolean` | Khi bật, sẽ nhận diện các bảng biểu trải nhiều trang và hợp nhất chúng thành một bảng, chỉ có hiệu lực khi `useLayoutDetection=False`, mặc định khởi tạo là `True`. | Không |
+| `Nhận diện cấp độ tiêu đề đoạn văn` | `relevelTitles` | `boolean` | Khi bật, sẽ nhận diện cấp độ tiêu đề đoạn văn, chỉ có hiệu lực khi `useLayoutDetection=False`, mặc định khởi tạo là `True`. | Không |
+| `Tái cấu trúc kết quả nhiều trang` | `concatenatePages` | `boolean` | Tái cấu trúc kết quả phân tích tài liệu PDF nhiều trang để phù hợp với việc hợp nhất bảng biểu trải nhiều trang và nhận diện cấp độ tiêu đề đoạn văn, mặc định khởi tạo là `False`. | Không |
+| `Làm đẹp Markdown` | `prettifyMarkdown` | `boolean` | Có xuất ra văn bản Markdown đã được làm đẹp hay không. | Không |
+| `Hiển thị số công thức` | `showFormulaNumber` | `boolean` | Có bao gồm số công thức trong văn bản Markdown đầu ra hay không. | Không |
 
-`pages`中的每个元素为一个`object`，具有如下属性：
+Mỗi phần tử trong `pages` là một đối tượng `object`, có các thuộc tính sau:
 
-| 名称 | 类型 | 含义 |
+| Tên | Kiểu | Ý nghĩa |
 | --- | --- | --- |
-| `prunedResult` | `object` | 对应`infer`操作返回的`prunedResult`对象。 |
-| `markdownImages` | `object`|`null` | 对应`infer`操作返回的`markdown`对象的`images`属性。 |
-- 请求处理成功时，响应体的`result`具有如下属性：
+| `prunedResult` | `object` | Đối tượng `prunedResult` tương ứng được trả về từ thao tác `infer`. |
+| `markdownImages` | `object`|`null` | Thuộc tính `images` của đối tượng `markdown` được trả về từ thao tác `infer`.
+- Khi yêu cầu được xử lý thành công, thuộc tính `result` của thân phản hồi có các thuộc tính sau:
 
-| 名称 | 类型 | 含义 |
+| Tên | Kiểu | Ý nghĩa |
 | --- | --- | --- |
-| `layoutParsingResults` | `array` | 重构后的版面解析结果。其中每个元素包含的字段请参见对`infer`操作返回结果的说明（不含可视化结果图和中间图像）。 |
+| `layoutParsingResults` | `array` | Kết quả phân tích bố cục sau khi tái cấu trúc. Các trường chứa trong mỗi phần tử xem mô tả kết quả trả về của thao tác `infer` (không bao gồm hình ảnh kết quả trực quan và hình ảnh trung gian). |
 
-对于返回的数据结构及字段说明，请查阅[文档](https://www.paddleocr.ai/latest/version3.x/pipeline_usage/PaddleOCR-VL.html)。
+Đối với mô tả cấu trúc dữ liệu và trường trả về, vui lòng tham khảo [tài liệu](https://www.paddleocr.ai/latest/version3.x/pipeline_usage/PaddleOCR-VL.html).
 
-**注**：如果在使用过程中遇到问题，欢迎随时在 [issue](https://github.com/PaddlePaddle/PaddleOCR/issues) 区提交反馈。
+**Lưu ý**: Nếu gặp vấn đề trong quá trình sử dụng, vui lòng gửi phản hồi bất cứ lúc nào tại mục [issue](https://github.com/PaddlePaddle/PaddleOCR/issues).
 
-# 异步调用代码
+# Mã gọi bất đồng bộ
 
 # Please make sure the requests library is installed
 # pip install requests

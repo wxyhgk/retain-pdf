@@ -378,7 +378,8 @@
   white-space: nowrap;
 }
 
-/* ===== 云端收藏区(服务端 favorites,独立于本地截图摘录) ===== */
+/* ===== Vùng yêu thích đám mây (favorites phía máy chủ, độc lập với trích đoạn
+   ảnh chụp cục bộ) ===== */
 
 .reader-favorite-server-section {
   display: none;
@@ -597,7 +598,8 @@
     display: none;
   }
 
-  /* 移动端无 hover:云端区只要非空就展示,卡片宽度自适应 */
+  /* Thiết bị di động không có hover: vùng đám mây hiện khi không trống, độ rộng
+     thẻ tự thích ứng */
   .reader-favorite-server-section:not(.is-empty) {
     display: grid;
     max-width: calc(100vw - 32px);

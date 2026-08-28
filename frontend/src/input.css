@@ -1,7 +1,7 @@
-/* 已拆为按页入口（见 src/styles/entries/）。
+/* Đã xóa dưới dạng mục nhập từng trang（thấy src/styles/entries/）。
  *
  *   npm run build:css  → dist/css/{home,detail,reader}.css
  *
- * 本文件保留为「主页」别名，仅供遗留文档 / 单入口实验；请勿再往这里堆全站 import。
+ * Tài liệu này được giữ lại dưới dạng「Trang chủ」Bí danh:，Chỉ dành cho tài liệu kế thừa / Thí nghiệm một lần；Vui lòng không chất đống toàn bộ nhà ga ở đây một lần nữa import。
  */
 @import "./styles/entries/home.css";

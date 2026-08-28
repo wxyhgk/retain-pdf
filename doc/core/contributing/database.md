@@ -1,58 +1,58 @@
-# 数据库与持久化贡献指南
+# Hướng dẫn đóng góp cơ sở dữ liệu và lưu trữ
 
-## 运行时位置
+## Vị trí khi chạy
 
-当前 Rust API 使用 SQLite，默认位置是 `DATA_ROOT/db/jobs.db`。本地开发常见路径是：
+Rust API hiện tại sử dụng SQLite, vị trí mặc định là `DATA_ROOT/db/jobs.db`. Các đường dẫn thường gặp trong phát triển cục bộ:
 
-- `data/db/jobs.db`：SQLite 数据库，默认不提交。
-- `data/jobs/**`：任务运行目录和中间产物，默认不提交。
-- `data/uploads/**`：上传文件，默认不提交。
-- `data/downloads/**`：下载产物，默认不提交。
+- `data/db/jobs.db`: Cơ sở dữ liệu SQLite, mặc định không commit.
+- `data/jobs/**`: Thư mục chạy tác vụ và sản phẩm trung gian, mặc định không commit.
+- `data/uploads/**`: Tệp tải lên, mặc định không commit.
+- `data/downloads/**`: Sản phẩm tải xuống, mặc định không commit.
 
-存储结构见 [运行时存储结构](../api/storage.md)。
+Cấu trúc lưu trữ xem [Cấu trúc lưu trữ khi chạy](../api/storage.md).
 
-## 代码边界
+## Ranh giới mã
 
-数据库访问统一收敛在 `backend/rust_api/src/db.rs` 及其子模块：
+Truy cập cơ sở dữ liệu được tập trung trong `backend/rust_api/src/db.rs` và các module con:
 
-- `src/db.rs`：`Db` facade，对外提供 job、artifact、event、glossary 等持久化能力。
-- `src/db/schema.rs`：建表、schema 检查和兼容初始化。
-- `src/db/rows.rs`：数据库行到内部模型的 decode。
+- `src/db.rs`: Facade `Db`, cung cấp khả năng lưu trữ job, artifact, event, glossary ra ngoài.
+- `src/db/schema.rs`: Tạo bảng, kiểm tra schema và khởi tạo tương thích.
+- `src/db/rows.rs`: Giải mã dòng cơ sở dữ liệu thành mô hình nội bộ.
 
-基本规则：
+Quy tắc cơ bản:
 
-- 涉及数据库时，优先通过 `Db` facade 和已有 row/schema 模块扩展，不要在 route 或 presentation 层直接写 SQL。
-- 新增持久化字段时，先判断它属于数据库记录、文件 manifest，还是运行时临时状态；不要把临时状态随手塞进数据库。
-- 数据库里尽量保存相对路径、artifact key、job_id 和稳定元数据；真实文件路径运行时再通过 storage path resolver 解析。
-- API 返回字段优先从 view/projection 层输出，不要让前端直接依赖数据库列名或 `JobSnapshot` 内部字段。
-- 术语表、图书馆、artifact manifest、reader metadata 这类可被前端长期消费的数据，应优先设计成稳定表/稳定 view。
+- Khi liên quan đến cơ sở dữ liệu, ưu tiên mở rộng qua facade `Db` và các module row/schema hiện có, không viết SQL trực tiếp trong tầng route hoặc presentation.
+- Khi thêm trường lưu trữ mới, xác định nó thuộc bản ghi cơ sở dữ liệu, file manifest hay trạng thái tạm thời khi chạy; đừng nhét trạng thái tạm thời vào cơ sở dữ liệu một cách tùy tiện.
+- Cố gắng lưu đường dẫn tương đối, artifact key, job_id và siêu dữ liệu ổn định trong cơ sở dữ liệu; đường dẫn tệp thực khi chạy được phân giải qua storage path resolver.
+- Trường trả về API ưu tiên xuất từ tầng view/projection, không để frontend phụ thuộc trực tiếp vào tên cột cơ sở dữ liệu hoặc trường nội bộ `JobSnapshot`.
+- Dữ liệu có thể được frontend tiêu thụ lâu dài như bảng thuật ngữ, thư viện, artifact manifest, reader metadata nên được thiết kế thành bảng/view ổn định.
 
-## 兼容要求
+## Yêu cầu tương thích
 
-改 schema 时必须考虑：
+Khi sửa schema, cần xem xét:
 
-- 旧 `jobs.db` 能否启动。
-- 旧 job 能否列出、查看详情、删除。
-- 旧 artifact 能否下载。
-- 旧 glossary 是否还能被读取或迁移。
-- 是否影响重新渲染、断点恢复或失败诊断。
+- `jobs.db` cũ có khởi động được không.
+- Job cũ có thể liệt kê, xem chi tiết, xóa không.
+- Artifact cũ có thể tải xuống không.
+- Glossary cũ có còn đọc hoặc di chuyển được không.
+- Có ảnh hưởng đến kết xuất lại, khôi phục điểm dừng hoặc chẩn đoán thất bại không.
 
-不要提交本地 `data/db/jobs.db`。需要复现数据库问题时，优先提供最小 SQL、脱敏 fixture、job_id、schema 版本和复现步骤。
+Không commit `data/db/jobs.db` cục bộ. Khi cần tái hiện vấn đề cơ sở dữ liệu, ưu tiên cung cấp SQL tối thiểu, fixture đã làm ẩn, job_id, phiên bản schema và các bước tái hiện.
 
-## 常用检查
+## Kiểm tra thường dùng
 
 ```bash
 cargo test --manifest-path backend/rust_api/Cargo.toml
 cd backend/rust_api && python3 scripts/check_architecture.py
 ```
 
-新增数据库行为时，优先补 `backend/rust_api/src/db.rs` 或相关 service 的最小单元测试。
+Khi thêm hành vi cơ sở dữ liệu mới, ưu tiên bổ sung kiểm thử đơn vị tối thiểu trong `backend/rust_api/src/db.rs` hoặc service liên quan.
 
-## PR 说明
+## Mô tả PR
 
-涉及数据库的 PR 至少说明：
+PR liên quan đến cơ sở dữ liệu ít nhất nêu:
 
-- 新增或修改了哪些表、列、索引或 JSON 字段。
-- 对旧 job、旧 artifact、旧 glossary 是否兼容。
-- 是否需要迁移、回填、清理或一次性修复脚本。
-- 已覆盖哪些数据库测试，是否用旧数据样本验证过。
+- Đã thêm hoặc sửa đổi bảng, cột, chỉ mục hay trường JSON nào.
+- Có tương thích với job cũ, artifact cũ, glossary cũ không.
+- Có cần di chuyển, điền lại, dọn dẹp hoặc script sửa một lần không.
+- Đã bao phủ những kiểm thử cơ sở dữ liệu nào, đã xác minh bằng mẫu dữ liệu cũ chưa.

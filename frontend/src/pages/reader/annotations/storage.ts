@@ -1,4 +1,4 @@
-// 本地持久化批注（localStorage）。不接旧 favorites API。
+// Lưu ghi chú cục bộ (localStorage). Không nối với favorites API cũ.
 
 import {
   notesStorageKey,

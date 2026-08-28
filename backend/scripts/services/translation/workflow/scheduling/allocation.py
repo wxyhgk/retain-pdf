@@ -8,8 +8,8 @@ PREFIX_CACHE_WARMUP_ENV = "RETAIN_TRANSLATION_PREFIX_CACHE_WARMUP"
 
 
 def prefix_cache_warmup_enabled(provider_family: str) -> bool:
-    # 首条请求单独放行,写入 provider 的前缀缓存后再放开全并发。
-    # 仅对支持前缀缓存计价的 deepseek 官方 API 默认开启。
+    # Yêu cầu giải phóng CÁ nhân đầu tiên,Ghi provider Bộ nhớ đệm tiền tố trước khi phát hành đồng thời đầy đủ。
+    # Chỉ định giá bộ đệm tiền tố deepseek Chính thức API Bật theo mặc định。
     if provider_family != "deepseek_official":
         return False
     value = str(os.environ.get(PREFIX_CACHE_WARMUP_ENV, "") or "").strip().lower()

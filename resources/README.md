@@ -1,28 +1,28 @@
 # resources
 
-这个目录用于放仓库级资源，避免把 logo、动画、示例文件和本地运行时继续散落到 `backend/`、`frontend/`、`desktop/` 等源码目录里。
+Thư mục này dùng để chứa tài nguyên cấp kho, tránh việc logo, hoạt hình, file mẫu và runtime cục bộ tiếp tục bị rải rác vào các thư mục mã nguồn như `backend/`, `frontend/`, `desktop/`.
 
-## 分类
+## Phân loại
 
-- `brand/`：logo、二维码、品牌图、发布展示图。
-- `animations/`：动效素材、演示动画、加载动画源文件。
-- `samples/`：示例 PDF、测试输入文件、可公开的小样本。
-- `runtime/`：本地运行时或平台二进制的归档入口。正式迁移前不要直接移动 `backend/python`、`backend/typst-win32` 这类路径，必须同步更新打包脚本。
-- `misc/`：暂时无法归类的资源。定期清理，避免长期堆积。
+- `brand/`: logo, mã QR, hình ảnh thương hiệu, ảnh giới thiệu phát hành.
+- `animations/`: tài nguyên hiệu ứng động, hoạt hình trình diễn, file nguồn hoạt hình tải.
+- `samples/`: PDF mẫu, file đầu vào kiểm thử, mẫu nhỏ có thể công khai.
+- `runtime/`: cổng lưu trữ runtime cục bộ hoặc nhị phân nền tảng. Trước khi di chuyển chính thức, không di chuyển trực tiếp các đường dẫn như `backend/python`, `backend/typst-win32`; phải đồng bộ cập nhật script đóng gói.
+- `misc/`: tài nguyên tạm thời chưa phân loại. Dọn dẹp định kỳ, tránh tích tụ lâu dài.
 
-## 不建议放这里
+## Không khuyến nghị đặt ở đây
 
-- 源码：继续放在 `backend/`、`frontend/`、`desktop/`。
-- 任务数据：继续放在 `data/jobs`、`data/uploads`、`data/downloads`。
-- 密钥文件：不要放入仓库。
-- 大体积构建产物：优先忽略或放到发布制品，不要提交。
+- Mã nguồn: tiếp tục để ở `backend/`, `frontend/`, `desktop/`.
+- Dữ liệu nhiệm vụ: tiếp tục để ở `data/jobs`, `data/uploads`, `data/downloads`.
+- File khóa: không đưa vào kho.
+- Sản phẩm xây dựng dung lượng lớn: ưu tiên bỏ qua hoặc đưa vào artifact phát hành, không commit.
 
-## backend 整理建议
+## Gợi ý sắp xếp backend
 
-`backend/` 里真正可疑的不是源码，而是本地运行时和构建产物：
+Trong `backend/`, thứ thực sự đáng ngờ không phải mã nguồn, mà là runtime cục bộ và sản phẩm xây dựng:
 
-- `backend/rust_api/target/` 是 Rust 构建产物，可以删除后重新编译。
-- `backend/python/` 是 Windows 桌面端 Python runtime，当前被打包脚本引用，迁移前要改 `desktop/scripts/prepare-app.mjs`。
-- `backend/typst-win32/` 是 Windows Typst runtime，迁移前也要同步桌面端打包逻辑。
+- `backend/rust_api/target/` là sản phẩm xây dựng Rust, có thể xóa và biên dịch lại.
+- `backend/python/` là runtime Python cho Windows desktop, hiện đang được script đóng gói tham chiếu; trước khi di chuyển cần sửa `desktop/scripts/prepare-app.mjs`.
+- `backend/typst-win32/` là runtime Typst cho Windows, trước khi di chuyển cũng cần đồng bộ logic đóng gói desktop.
 
-因此短期只新增 `resources/` 入口，不直接搬 `backend/scripts` 或 `backend/rust_api`。
+Vì vậy trong ngắn hạn chỉ thêm cổng vào `resources/`, không di chuyển trực tiếp `backend/scripts` hoặc `backend/rust_api`.

@@ -1,5 +1,5 @@
-// BookCard 操作按钮工厂聚合。
-// 每种功能一个文件；本文件只组合，不写 onClick 业务细节。
+// BookCard Tổng hợp Nhà máy Nút Hành động。
+// Một tệp cho mỗi chức năng；Tài liệu này chỉ kết hợp，Không viết onClick Chi tiết doanh nghiệp。
 
 import { buildReadBookCardAction } from "./read.js";
 import { buildTranslateBookCardAction } from "./translate.js";
@@ -11,7 +11,7 @@ export {
   buildTranslateBookCardAction,
 } from "./translate.js";
 
-/** 默认：只有快速阅读。 */
+/** ngầm thừa nhận：Chỉ đọc nhanh。 */
 export function buildDefaultBookCardActions(
   item: LibraryCardItem = {},
   handlers: BookCardActionHandlers = {},
@@ -19,7 +19,7 @@ export function buildDefaultBookCardActions(
   return buildReadBookCardAction(item, handlers);
 }
 
-/** 阅读 +（有条件时）翻译。 */
+/** đọc +（Khi có điều kiện）phiên dịch。 */
 export function buildShelfBookCardActions(
   item: LibraryCardItem = {},
   handlers: BookCardActionHandlers = {},

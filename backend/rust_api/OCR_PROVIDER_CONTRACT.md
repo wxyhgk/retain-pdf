@@ -1,38 +1,38 @@
 # OCR Provider Contract
 
-这份文档只回答一个问题：
+This document answers one question:
 
-**在 `rust_api` 里，OCR provider 这一层到底负责什么，不负责什么。**
+**In `rust_api`, what exactly is the OCR provider layer responsible for, and what is it NOT responsible for.**
 
-相关文档：
+Related documents:
 
-- 总体架构边界：
+- Overall architecture boundaries:
   [`RUST_API_ARCHITECTURE.md`](/home/wxyhgk/tmp/Code/backend/rust_api/RUST_API_ARCHITECTURE.md)
-- 当前运行主链：
+- Current execution main chain:
   [`CURRENT_API_MAP.md`](/home/wxyhgk/tmp/Code/backend/rust_api/CURRENT_API_MAP.md)
-- stage 运行时契约：
+- Stage runtime contract:
   [`STAGE_EXECUTION_CONTRACT.md`](/home/wxyhgk/tmp/Code/backend/rust_api/STAGE_EXECUTION_CONTRACT.md)
-- Paddle OCR API 摘要：
+- Paddle OCR API Summary:
   [`src/ocr_provider/paddle/API_SUMMARY.md`](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle/API_SUMMARY.md)
 
-## 1. 目标
+## 1. Goal
 
-`ocr_provider` 这一层的目标不是跑完整 OCR 流程，而是提供：
+The goal of the `ocr_provider` layer is not to run the complete OCR process, but to provide:
 
-- provider 身份识别
-- provider 能力声明
-- provider transport client
-- provider 状态映射
-- provider 错误分类
+- Provider identity recognition
+- Provider capability declaration
+- Provider transport client
+- Provider status mapping
+- Provider error classification
 
-也就是：
+In other words:
 
-- “这个 provider 是谁”
-- “它支持什么”
-- “它返回的状态是什么意思”
-- “它失败时怎么归类”
+- "Who is this provider?"
+- "What does it support?"
+- "What does the status it returns mean?"
+- "How to classify it when it fails?"
 
-## 2. 当前目录
+## 2. Current Directory
 
 - [src/ocr_provider/mod.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/mod.rs)
 - [src/ocr_provider/types.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/types.rs)
@@ -40,11 +40,11 @@
 - [src/ocr_provider/mineru](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/mineru)
 - [src/ocr_provider/paddle](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/paddle)
 
-## 3. 分工
+## 3. Division of Labor
 
 ### 3.1 `types.rs`
 
-负责 provider 共享数据结构：
+Responsible for provider shared data structures:
 
 - `OcrProviderKind`
 - `OcrProviderCapabilities`
@@ -52,63 +52,63 @@
 - `OcrTaskStatus`
 - `OcrProviderErrorInfo`
 
-规则：
+Rules:
 
-- 这里放共享 contract
-- 不放 provider 专属 transport 逻辑
+- Place shared contracts here.
+- Do not place provider-specific transport logic here.
 
 ### 3.2 `catalog.rs`
 
-负责 provider 元信息注册：
+Responsible for provider metadata registration:
 
 - `provider_definition`
 - `provider_capabilities`
 - `is_supported_provider`
 - `ensure_provider_diagnostics`
 
-规则：
+Rules:
 
-- 新增 provider 时，先在这里注册
-- `capabilities` 的唯一汇总口必须在这里
-- `diagnostics` 初始化逻辑不要散落到 runner 各处
+- When adding a new provider, register it here first.
+- The unique aggregation point for `capabilities` must be here.
+- Do not scatter `diagnostics` initialization logic across the runner.
 
 ### 3.3 `<provider>/client.rs`
 
-负责 provider 通信：
+Responsible for provider communication:
 
-- 构造请求
-- 调外部 API
-- 解析响应
+- Construct requests.
+- Call external APIs.
+- Parse responses.
 
-不负责：
+Not responsible for:
 
-- job 生命周期
-- 路由返回
-- translation/render 决策
+- Job lifecycle.
+- Route returns.
+- Translation/render decisions.
 
 ### 3.4 `<provider>/status.rs`
 
-负责 provider 原始状态到统一状态的映射。
+Responsible for mapping provider raw status to unified status.
 
-例如：
+Example:
 
 - provider raw state -> `OcrTaskState`
 - provider raw message -> stage/detail
 
 ### 3.5 `<provider>/errors.rs`
 
-负责 provider 错误到统一错误分类的映射。
+Responsible for mapping provider errors to unified error categories.
 
-例如：
+Example:
 
 - invalid token
 - expired token
 - upload failed
 - poll timeout
 
-## 4. 依赖方向
+## 4. Dependency Direction
 
-允许：
+Allowed:
 
 ```text
 job_runner -> ocr_provider
@@ -116,7 +116,7 @@ ocr_provider/catalog -> ocr_provider/<provider>
 ocr_provider/<provider> -> ocr_provider/types
 ```
 
-禁止：
+Forbidden:
 
 ```text
 ocr_provider -> routes
@@ -124,9 +124,9 @@ ocr_provider -> services/jobs/presentation
 ocr_provider -> translation/render logic
 ```
 
-## 5. 当前运行时约定
+## 5. Current Runtime Conventions
 
-`job_runner` 侧现在只应该通过这些统一入口消费 provider 元信息：
+The `job_runner` side should now only consume provider metadata through these unified entry points:
 
 - `parse_provider_kind`
 - `require_supported_provider`
@@ -134,70 +134,70 @@ ocr_provider -> translation/render logic
 - `provider_capabilities`
 - `ensure_provider_diagnostics`
 
-特别是：
+Specifically:
 
-- `OcrProviderDiagnostics` 初始化不要在多个模块手写
-- 当前已经统一收口到 `ensure_provider_diagnostics`
+- Do not hand-write `OcrProviderDiagnostics` initialization in multiple modules.
+- It has been unified into `ensure_provider_diagnostics`.
 
-## 6. 新增 provider 的最小步骤
+## 6. Minimum Steps for Adding a Provider
 
-如果以后接第三个 provider，最小步骤应该是：
+If a third provider is added in the future, the minimum steps should be:
 
-1. 新建 `src/ocr_provider/<provider>/`
-2. 实现：
+1. Create `src/ocr_provider/<provider>/`
+2. Implement:
    - `client.rs`
    - `status.rs`
    - `errors.rs`
-3. 在 `catalog.rs` 注册：
+3. Register in `catalog.rs`:
    - `kind`
    - `key`
    - `capabilities`
-4. 在 `mod.rs` 暴露 provider 模块
-5. 在 `job_runner/ocr_flow` 接入 transport 分发
+4. Expose the provider module in `mod.rs`
+5. Integrate transport dispatch in `job_runner/ocr_flow`
 
-不应该做的事：
+Things that should NOT be done:
 
-- 不在 `routes` 里加 provider 特判
-- 不在 `services/jobs/facade` 里加 provider 特判
-- 不在 `process_runner` 里加 provider 初始化逻辑
+- Do not add provider-specific special handling in `routes`.
+- Do not add provider-specific special handling in `services/jobs/facade`.
+- Do not add provider initialization logic in `process_runner`.
 
-## 6.1 和 `job_runner/ocr_flow` 的边界
+### 6.1 Boundary with `job_runner/ocr_flow`
 
-`ocr_provider` 和 `job_runner/ocr_flow` 现在按下面分工：
+`ocr_provider` and `job_runner/ocr_flow` are now divided as follows:
 
 - `ocr_provider`
-  负责 provider client、状态映射、错误分类、能力声明
+  Responsible for provider client, status mapping, error classification, and capability declaration.
 - `job_runner/ocr_flow`
-  负责 OCR 子任务运行态编排、workspace、provider raw/result 落盘、normalize 衔接
+  Responsible for OCR sub-task runtime orchestration, workspace, provider raw/result persistence, and normalization kết nối.
 
-进一步说：
+Further:
 
 - `ocr_flow/mod.rs`
-  是 OCR 子流程唯一 orchestrator
-- provider client 的构造、本地/远程 transport 分支选择
-  也必须收口在 `ocr_flow/mod.rs`
-- `ocr_flow/*` 其他子模块不能重新长成第二个 orchestrator
-- provider raw token 的理解应尽量收敛在专门 helper
-  例如 Paddle Markdown artifact helper
+  Is the sole orchestrator of the OCR sub-process.
+- Construction of provider client and selection of local/remote transport branches
+  Must also be centralized in `ocr_flow/mod.rs`.
+- Other sub-modules of `ocr_flow/*` must not grow into a second orchestrator.
+- Understanding of provider raw tokens should converge in specialized helpers.
+  Example: Paddle Markdown artifact helper.
 
-## 7. 边界红线
+## 7. Boundary Red-lines
 
-### 红线 1
+### Red-line 1
 
-provider 层不做完整 job orchestration。
+The provider layer does not perform complete job orchestration.
 
-### 红线 2
+### Red-line 2
 
-provider 层不决定翻译策略。
+The provider layer does not determine translation strategy.
 
-### 红线 3
+### Red-line 3
 
-provider 层不返回 HTTP view model。
+The provider layer does not return HTTP view models.
 
-### 红线 4
+### Red-line 4
 
-provider 能力声明只能有一个注册口，不能到处 `match kind`.
+Provider capability declarations can only have one registration point; do not `match kind` everywhere.
 
-当前这个注册口就是：
+The current registration point is:
 
 - [catalog.rs](/home/wxyhgk/tmp/Code/backend/rust_api/src/ocr_provider/catalog.rs)

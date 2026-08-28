@@ -2,15 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 
-// RecentJobsLibrary / RecentJobCard(Phase 3b recent-jobs 域)组件级测试。
-// 覆盖蓝图 §6 新增测试①②③:
-// ① 库网格渲染 + smoke DOM 契约(mock=parallel,走真实 mountRecentJobsFeature
-//    初次加载链路,不 mock fetch——直接验证 isMockMode() 短路路径下的端到端
-//    装配是否work);
-// ② 卡片交互(delete 确认/取消/确认删除、select、reader);
-// ③ 卡片渲染隔离(replaceItem 单卡,断言其余卡片渲染计数不变——memo 回归锚,
-//    黑盒 DOM 比对无法区分"跳过 render"与"render 了但输出相同"，必须用
-//    RecentJobCard.jsx 导出的渲染计数器)。
+// Kiểm thử thành phần RecentJobsLibrary / RecentJobCard (miền Phase 3b recent-jobs).
+// Bao phủ các kiểm thử mới §6 trong blueprint ①②③:
+// ① Hiển thị lưới thư viện + hợp đồng DOM smoke (mock=parallel, đi qua đường dẫn tải lần đầu mountRecentJobsFeature thực tế,
+//    không mock fetch — xác minh trực tiếp đường dẫn ngắn isMockMode() có hoạt động end-to-end không);
+// ② Tương tác thẻ (xác nhận xóa/hủy/xác nhận xóa, chọn, reader);
+// ③ Cách ly render thẻ (replaceItem một thẻ, xác nhận số lần render của các thẻ còn lại không đổi — neo hồi quy memo,
+//    so sánh DOM hộp đen không thể phân biệt "bỏ qua render" với "render nhưng đầu ra giống nhau", phải dùng
+//    bộ đếm render xuất từ RecentJobCard.jsx).
 
 function makeDom(search = "") {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
@@ -25,12 +24,12 @@ function makeDom(search = "") {
   }
   globalThis.window = dom.window;
   globalThis.requestAnimationFrame = (callback) => setTimeout(() => callback(0), 0);
-  // Radix Presence/Tabs(阶段 B 引入)在 jsdom 下需要 cancelAnimationFrame
-  // (TabsContent 的 mount 动画计时器清理)和 getComputedStyle(Presence 读取
-  // animation-name 判断退场动画是否结束)——jsdom 的 window 上有实现,只是没有
-  // 像 requestAnimationFrame 一样被复制到裸 global 上,这里一并补上。NodeFilter
-  // 是阶段 C(TranslationWorkflowDialog 换 Radix Dialog)新增的需要——
-  // Dialog.Content 的 FocusScope 用它做可聚焦元素树遍历。
+  // Radix Presence/Tabs (giới thiệu giai đoạn B) cần cancelAnimationFrame trong jsdom
+  // (dọn dẹp bộ đếm thời gian hoạt ảnh mount của TabsContent) và getComputedStyle (đọc Presence
+  // animation-name xác định hoạt ảnh thoát đã kết thúc) — window của jsdom có triển khai, chỉ là không
+  // được sao chép vào global trần như requestAnimationFrame, bổ sung ở đây. NodeFilter
+  // là giai đoạn C cần thêm (TranslationWorkflowDialog thay Radix Dialog) —
+  // FocusScope của Dialog.Content dùng nó để duyệt cây phần tử có thể focus.
   globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
   globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
   globalThis.IS_REACT_ACT_ENVIRONMENT = false;
@@ -49,7 +48,7 @@ async function waitFor(predicate, description) {
     }
     await wait(15);
   }
-  assert.fail(`等待超时：${description}`);
+  assert.fail(`Chờ quá thời gian: ${description}`);
 }
 
 function click(dom, element) {
@@ -89,7 +88,7 @@ async function bootHomeApp(dom) {
 
   const root = createRoot(host);
   root.render(React.createElement(HomeApp, { services }));
-  await waitFor(() => dom.window.document.getElementById("library-view"), "HomeApp 首帧渲染");
+  await waitFor(() => dom.window.document.getElementById("library-view"), "HomeApp render khung đầu tiên");
   await wait(0);
 
   return { services, root, host };
@@ -99,16 +98,16 @@ function byId(dom, id) {
   return dom.window.document.getElementById(id);
 }
 
-test("RecentJobsLibrary：初始加载(mock=parallel)渲染网格 + DOM 契约", async () => {
+test("RecentJobsLibrary: tải lần đầu (mock=parallel) render lưới + hợp đồng DOM", async () => {
   const dom = makeDom("?mock=parallel");
   const { services, root, host } = await bootHomeApp(dom);
 
-  // mock=parallel 走 isMockMode() 短路(fetchLibraryBookList/fetchJobList 不
-  // 打真实网络),验证 mountRecentJobsFeature 装配在 initialize() 同步链内
-  // 已生效——这正是"5 处默认参数断链"风险(蓝图风险 9)的端到端反证:如果
-  // composition.js 传入的 React viewPort 被默认 createRecentJobsViewPort()
-  // 悄悄短路,下面的 DOM 契约断言会全部失败(旧世界会去操作真实 DOM,新世界
-  // 的 store 永远拿不到数据)。
+  // mock=parallel đi qua isMockMode() ngắn mạch (fetchLibraryBookList/fetchJobList không
+  // gọi mạng thật), xác minh mountRecentJobsFeature được lắp ráp trong cùng đồng bộ initialize()
+  // đã có hiệu lực — đây chính là bằng chứng end-to-end chống lại rủi ro "5 điểm tham số mặc định bị đứt mạch" (rủi ro blueprint 9): nếu
+  // React viewPort từ composition.js bị createRecentJobsViewPort() mặc định
+  // ngầm ngắn mạch, các khẳng định hợp đồng DOM phía dưới sẽ toàn bộ thất bại (lộ cũ thao tác DOM thật, store của lộ mới
+  // vĩnh viễn không nhận được dữ liệu).
   const contractIds = [
     "library-view", "recent-jobs-scroll-body", "recent-jobs-summary",
     "recent-jobs-empty", "library-grid", "recent-jobs-list", "load-more-jobs-btn",
@@ -117,10 +116,10 @@ test("RecentJobsLibrary：初始加载(mock=parallel)渲染网格 + DOM 契约",
     assert.ok(byId(dom, id), `契约 id 缺失：#${id}`);
   }
 
-  await waitFor(() => byId(dom, "recent-jobs-list").querySelector(".recent-job-item[data-job-id]"), "网格出现至少一张卡片");
+  await waitFor(() => byId(dom, "recent-jobs-list").querySelector(".recent-job-item[data-job-id]"), "Lưới xuất hiện ít nhất một thẻ");
   assert.equal(byId(dom, "recent-jobs-list").classList.contains("hidden"), false);
   const card = byId(dom, "recent-jobs-list").querySelector(".recent-job-item[data-job-id]");
-  assert.ok(card.dataset.jobId, "卡片必须带 data-job-id");
+  assert.ok(card.dataset.jobId, "Thẻ phải có data-job-id");
   assert.match(byId(dom, "recent-jobs-summary").textContent, /Stage Spec|Unknown/);
 
   root.unmount();
@@ -128,28 +127,28 @@ test("RecentJobsLibrary：初始加载(mock=parallel)渲染网格 + DOM 契约",
   host.remove();
 });
 
-test("RecentJobsLibrary：卡片交互(select / reader / delete 确认与取消 / 确认删除)", async () => {
+test("RecentJobsLibrary: tương tác thẻ (select / reader / xác nhận và hủy xóa / xác nhận xóa)", async () => {
   const dom = makeDom("?mock=parallel");
   const { services, root, host } = await bootHomeApp(dom);
 
   const items = [makeItem(1), makeItem(2), makeItem(3)];
   services.library.recentJobsStore.actions.setItems(items);
-  await waitFor(() => byId(dom, "recent-jobs-list").querySelectorAll(".recent-job-item").length === 3, "三张卡片就位");
+  await waitFor(() => byId(dom, "recent-jobs-list").querySelectorAll(".recent-job-item").length === 3, "Ba thẻ sẵn sàng");
 
   const cardOf = (jobId) => byId(dom, "recent-jobs-list").querySelector(`.recent-job-item[data-job-id="${jobId}"]`);
 
-  // ---- select 无 document_id：仍开书籍详情（不弹旧工作流窗）+ silent 轮询 ----
+  // ---- select không có document_id: vẫn mở sách chi tiết (không弹 cũ workflow window) + silent polling ----
   let openCount = 0;
   dom.window.document.addEventListener(
     (await import("../src/js/contracts/app-contract.js")).APP_EVENTS.openTranslationWorkflow,
     () => { openCount += 1; },
   );
   click(dom, cardOf("job-1"));
-  await waitFor(() => byId(dom, "book-detail-dialog"), "点卡打开书籍详情");
-  assert.equal(openCount, 0, "点卡不打开 #translation-workflow-dialog");
+  await waitFor(() => byId(dom, "book-detail-dialog"), "Nhấn thẻ mở chi tiết sách");
+  assert.equal(openCount, 0, "Nhấn thẻ không mở #translation-workflow-dialog");
   await waitFor(
     () => services.features.jobRuntimeFeature.currentJobId() === "job-1",
-    "select/详情路径 silent 轮询",
+    "Polling silent đường dẫn select/chi tiết",
   );
 
   // ---- reader:点击悬浮"对照阅读"按钮 → openReaderRequested ----
@@ -160,17 +159,17 @@ test("RecentJobsLibrary：卡片交互(select / reader / delete 确认与取消 
   });
   const readerButton = cardOf("job-2").querySelector(".recent-job-reader");
   click(dom, readerButton);
-  await waitFor(() => readerDetail?.jobId === "job-2", "reader 按钮触发 openReaderRequested");
+  await waitFor(() => readerDetail?.jobId === "job-2", "Nút reader kích hoạt openReaderRequested");
 
   root.unmount();
   services.dispose();
   host.remove();
 });
 
-test("RecentJobsLibrary：卡片眼睛=快速阅读(已完成→对照阅读;失败无源→不误触发)", async () => {
-  // 卡片改成照搬 PDF_MD_lib 的 BookCard 后,删除/翻译都挪进书籍详情弹窗,卡片
-  // 只留一个眼睛=快速阅读:已完成派发对照阅读;没有可读目标(失败且无 document_id)
-  // 点了不派发任何东西(不再一路捅进阅读器深处报错)。
+test("RecentJobsLibrary: mắt thẻ = đọc nhanh (đã hoàn thành → đọc đối chiếu; thất bại không nguồn → không kích hoạt nhầm)", async () => {
+  // 卡片改为沿用 PDF_MD_lib 的 BookCard 后，导入/导出功能转入书籍详情弹窗中，卡片
+  // 只保留一个眼睛图标用于快速阅读：已完成的任务派发对照阅读，没有可读目标（失败且无 document_id）
+  // 点击时不派发任何内容（不再一路深入阅读器底部出错）。
   const dom = makeDom("?mock=parallel");
   const { services, root, host } = await bootHomeApp(dom);
 
@@ -179,72 +178,72 @@ test("RecentJobsLibrary：卡片眼睛=快速阅读(已完成→对照阅读;失
     makeItem(2, { status: "succeeded" }),
   ];
   services.library.recentJobsStore.actions.setItems(items);
-  await waitFor(() => byId(dom, "recent-jobs-list").querySelectorAll(".recent-job-item").length === 2, "两张卡片就位");
+  await waitFor(() => byId(dom, "recent-jobs-list").querySelectorAll(".recent-job-item").length === 2, "Hai thẻ sẵn sàng");
 
   const cardOf = (jobId) => byId(dom, "recent-jobs-list").querySelector(`.recent-job-item[data-job-id="${jobId}"]`);
-  // 卡片不再有删除/翻译按钮(都进详情弹窗了)
-  assert.equal(cardOf("job-2").querySelector(".recent-job-delete"), null, "卡片不再有删除按钮");
-  assert.equal(cardOf("job-2").querySelector(".recent-job-translate"), null, "卡片不再有翻译按钮");
+  // Thẻ không còn nút xóa (chức năng đã chuyển trong popup chi tiết)
+  assert.equal(cardOf("job-2").querySelector(".recent-job-delete"), null, "Thẻ không còn nút xóa");
+  assert.equal(cardOf("job-2").querySelector(".recent-job-translate"), null, "Thẻ không còn nút dịch");
 
   const { APP_EVENTS } = await import("../src/js/contracts/app-contract.js");
   let readerDetail = null;
   dom.window.document.addEventListener(APP_EVENTS.openReaderRequested, (event) => { readerDetail = event.detail; });
 
-  // 失败任务(makeItem 无 document_id、非 succeeded)→ 眼睛点了没有可读目标,不派发
+  // ----失败任务(makeItem无document_id、非succeeded)→ 点击眼睛没有可读目标，不派发----
   click(dom, cardOf("job-1").querySelector(".recent-job-reader"));
   await wait(30);
-  assert.equal(readerDetail, null, "失败且无源:点眼睛不触发 openReaderRequested");
+  assert.equal(readerDetail, null, "Thất bại và không có nguồn: nhấn mắt không kích hoạt openReaderRequested");
 
   // 已完成 → 对照阅读
   click(dom, cardOf("job-2").querySelector(".recent-job-reader"));
-  await waitFor(() => readerDetail?.jobId === "job-2", "已完成点眼睛派发对照阅读");
+  await waitFor(() => readerDetail?.jobId === "job-2", "Đã hoàn thành nhấn mắt gửi đọc đối chiếu");
 
   root.unmount();
   services.dispose();
   host.remove();
 });
 
-test("RecentJobsLibrary：馆藏文档卡(未翻译)——徽标/点卡片开详情/眼睛读原文", async () => {
-  // 馆藏文档(合成 job_id `doc:<id>`)进网格:徽标"馆藏"、点卡片开书籍详情弹窗、
-  // 眼睛=读原文(派发带 documentId、不带 jobId 的 openReaderRequested)。
+test("RecentJobsLibrary: thẻ tài liệu lưu trữ (chưa dịch) — huy hiệu/nhấn thẻ mở chi tiết/mắt đọc bản gốc", async () => {
+  // ----馆藏文档（合成 job_id `doc:<id>`）进网格：显示徽标"Lưu trữ"、点击卡片打开书籍详情弹窗、
+  // 眼睛图标用于读取原文（派发带 documentId、不带 jobId 的 openReaderRequested）。----
   const dom = makeDom("?mock=parallel");
   const { services, root, host } = await bootHomeApp(dom);
 
   const libraryOnlyItem = {
     job_id: "doc:doc-ref-6a1f2c", document_id: "doc-ref-6a1f2c", library_only: true,
-    title: "只入库的参考书", display_name: "只入库的参考书", status: "", page_count: 42,
+    title: "Sách tham khảo chỉ lưu trữ", display_name: "Sách tham khảo chỉ lưu trữ", status: "", page_count: 42,
     updated_at: "2026-07-01T00:00:00Z",
   };
   services.library.recentJobsStore.actions.setItems([libraryOnlyItem, makeItem(2, { status: "succeeded" })]);
   await waitFor(() => byId(dom, "recent-jobs-list").querySelectorAll(".recent-job-item").length === 2, "两张卡片就位");
 
   const card = byId(dom, "recent-jobs-list").querySelector('.recent-job-item[data-library-only="true"]');
-  assert.ok(card, "馆藏卡片渲染出来了");
+  assert.ok(card, "Thẻ lưu trữ đã được render");
   assert.equal(card.getAttribute("data-document-id"), "doc-ref-6a1f2c");
-  assert.match(card.textContent, /馆藏/, "显示馆藏徽标");
-  assert.equal(card.querySelector(".recent-job-delete"), null, "卡片无删除(在详情弹窗里)");
+  assert.match(card.textContent, /馆藏/, "Hiển thị huy hiệu lưu trữ");
+  assert.equal(card.querySelector(".recent-job-delete"), null, "Thẻ không có xóa (trong popup chi tiết)");
 
   const { APP_EVENTS } = await import("../src/js/contracts/app-contract.js");
   let readerDetail = null;
   dom.window.document.addEventListener(APP_EVENTS.openReaderRequested, (event) => { readerDetail = event.detail; });
 
-  // 点卡片本体 → 开书籍详情弹窗(不派发 openReaderRequested)
+  // ---- Nhấn thân thẻ → mở popup chi tiết sách (không phát dispatch openReaderRequested) ----
   click(dom, card);
-  await waitFor(() => byId(dom, "book-detail-dialog"), "点馆藏卡打开书籍详情弹窗");
-  assert.equal(readerDetail, null, "点卡片本体不触发 openReaderRequested");
+  await waitFor(() => byId(dom, "book-detail-dialog"), "Nhấn thẻ lưu trữ mở popup chi tiết sách");
+  assert.equal(readerDetail, null, "Nhấn thân thẻ không kích hoạt openReaderRequested");
   services.bookDetail.dialogStore.close();
 
-  // 眼睛 = 读原文(带 documentId,不带 jobId)
+  // ---- Mắt = đọc nguyên bản (kèm documentId, không có jobId) ----
   click(dom, card.querySelector(".recent-job-reader"));
-  await waitFor(() => readerDetail?.documentId === "doc-ref-6a1f2c", "眼睛派发带 documentId 的 openReaderRequested");
-  assert.ok(!readerDetail.jobId, "馆藏文档不带 jobId");
+  await waitFor(() => readerDetail?.documentId === "doc-ref-6a1f2c", "Mắt gửi openReaderRequested kèm documentId");
+  assert.ok(!readerDetail.jobId, "Tài liệu lưu trữ không có jobId");
 
   root.unmount();
   services.dispose();
   host.remove();
 });
 
-test("书籍详情弹窗:馆藏点翻译 → 立刻接进度 + 网格静默更新(不闪 loading)", async () => {
+test("Popup chi tiết sách: dịch từ lưu trữ → nhận tiến độ ngay + cập nhật lưới im lặng (không flash loading)", async () => {
   // 点馆藏卡开详情 → 翻译整本 → mock 挂 active_job_id →
   // 详情 payload/进度卡立刻有 job_id，网格有真实 job 行，不靠整页 loading 重载。
   const dom = makeDom("?mock=parallel");
@@ -253,24 +252,24 @@ test("书籍详情弹窗:馆藏点翻译 → 立刻接进度 + 网格静默更�
 
   const { getMockDocumentList } = await import("../src/js/mock/documents.js");
   const untranslated = getMockDocumentList().documents.find((doc) => !`${doc.active_job_id || ""}`.trim());
-  assert.ok(untranslated, "mock 里有馆藏文档");
+  assert.ok(untranslated, "Trong mock có tài liệu lưu trữ");
 
   services.library.recentJobsStore.actions.setItems([{
     job_id: `doc:${untranslated.document_id}`, document_id: untranslated.document_id,
     library_only: true, title: untranslated.title, status: "", page_count: untranslated.page_count,
   }]);
-  await waitFor(() => byId(dom, "recent-jobs-list").querySelector('.recent-job-item[data-library-only="true"]'), "馆藏卡就位");
+  await waitFor(() => byId(dom, "recent-jobs-list").querySelector('.recent-job-item[data-library-only="true"]'), "Thẻ lưu trữ sẵn sàng");
 
   click(dom, byId(dom, "recent-jobs-list").querySelector('.recent-job-item[data-library-only="true"]'));
-  await waitFor(() => byId(dom, "book-detail-dialog"), "详情弹窗打开");
+  await waitFor(() => byId(dom, "book-detail-dialog"), "Mở popup chi tiết");
   click(dom, byId(dom, "book-detail-tab-translate"));
-  await waitFor(() => byId(dom, "book-detail-translate-btn"), "详情弹窗翻译按钮就位");
+  await waitFor(() => byId(dom, "book-detail-translate-btn"), "Nút dịch trong popup chi tiết sẵn sàng");
   click(dom, byId(dom, "book-detail-translate-btn"));
 
   await waitFor(
     () => getMockDocumentList().documents
       .find((doc) => doc.document_id === untranslated.document_id)?.active_job_id,
-    "translateDocument 给文档挂上 active_job_id",
+    "translateDocument gán active_job_id cho tài liệu",
   );
 
   // 详情 payload 立刻挂真实 job（翻译 Tab 可嵌 StatusCard）
@@ -278,47 +277,47 @@ test("书籍详情弹窗:馆藏点翻译 → 立刻接进度 + 网格静默更�
     const payload = services.bookDetail.dialogStore.getState().payload;
     const jobId = `${payload?.job_id || ""}`.trim();
     return jobId && !jobId.startsWith("doc:") && payload?.library_only === false;
-  }, "详情 payload 立刻有真实 job_id");
+  }, "Payload chi tiết có job_id thực ngay lập tức");
 
   // 进度卡应出现在详情内 bd-job-status-inner（不需等整页重载）
-  await waitFor(() => byId(dom, "book-detail-job-status-card"), "翻译 Tab 立刻出现 StatusCard");
+  await waitFor(() => byId(dom, "book-detail-job-status-card"), "Tab Dịch xuất hiện StatusCard ngay lập tức");
   const statusCard = byId(dom, "book-detail-job-status-card");
   assert.ok(
     statusCard.querySelector(".bd-job-status-inner"),
-    "进度落在 bd-job-status-inner（详情内嵌，非工作流弹窗）",
+    "Tiến độ nằm trong bd-job-status-inner (nhúng trong chi tiết, không phải popup workflow)",
   );
   assert.ok(
     statusCard.querySelector(".bd-job-status-bar"),
-    "内嵌区用进度条（无圆环）",
+    "Vùng nhúng dùng thanh tiến độ (không có vòng)",
   );
   assert.ok(
     statusCard.querySelector(".status-stage-flow"),
-    "阶段流在详情内嵌卡内",
+    "Luồng giai đoạn nằm trong thẻ nhúng chi tiết",
   );
 
   // 绝不能打开工作流弹窗当进度 UI
   assert.equal(
     byId(dom, "translation-workflow-dialog"),
     null,
-    "详情点翻译不打开工作流弹窗",
+    "Nhấn dịch trong chi tiết không mở popup workflow",
   );
   assert.equal(
     services.stores.statusArea.getSnapshot().visible,
     false,
-    "主状态区保持隐藏（进度不在弹窗 StatusCard）",
+    "Vùng trạng thái chính giữ ẩn (tiến độ không trong StatusCard popup)",
   );
 
   // 网格有真实 job 行
   await waitFor(
     () => services.library.recentJobsStore.getSnapshot().items
       .some((item) => item.document_id === untranslated.document_id && !item.library_only),
-    "网格出现真实 job 行",
+    "Lưới xuất hiện dòng job thực",
   );
 
   assert.notEqual(
     services.stores.homeState.getSnapshot().recentJobsLoadingState,
     HOME_LOADING_STATES.LOADING,
-    "翻译后静默更新，不把 recentJobs 打成 loading",
+    "Sau dịch cập nhật im lặng, không đặt recentJobs thành loading",
   );
 
   root.unmount();
@@ -326,7 +325,7 @@ test("书籍详情弹窗:馆藏点翻译 → 立刻接进度 + 网格静默更�
   host.remove();
 });
 
-test("RecentJobsLibrary：卡片渲染隔离(replaceItem 单卡,其余 23 张卡片渲染计数不变)", async () => {
+test("RecentJobsLibrary: cách ly render thẻ (replaceItem một thẻ, 23 thẻ còn lại số lần render không đổi)", async () => {
   const dom = makeDom("?mock=parallel");
   const { services, root, host } = await bootHomeApp(dom);
   const {
@@ -336,7 +335,7 @@ test("RecentJobsLibrary：卡片渲染隔离(replaceItem 单卡,其余 23 张卡
 
   const items = Array.from({ length: 24 }, (_, index) => makeItem(index));
   services.library.recentJobsStore.actions.setItems(items);
-  await waitFor(() => byId(dom, "recent-jobs-list").querySelectorAll(".recent-job-item").length === 24, "24 张卡片就位");
+  await waitFor(() => byId(dom, "recent-jobs-list").querySelectorAll(".recent-job-item").length === 24, "24 thẻ sẵn sàng");
   await wait(30); // 让首轮渲染的 effect/commit 完全落定
 
   resetCardRenderCountsForTests();
@@ -345,15 +344,15 @@ test("RecentJobsLibrary：卡片渲染隔离(replaceItem 单卡,其余 23 张卡
   const previous = items.find((item) => item.job_id === patchedJobId);
   services.library.recentJobsStore.actions.replaceItem({
     ...previous,
-    title: "Book 5 · 已更新标题",
+    title: "Book 5 · Tiêu đề đã cập nhật",
     status: "running",
     display_stage: "translate",
   });
 
   await waitFor(() => {
     const card = byId(dom, "recent-jobs-list").querySelector(`.recent-job-item[data-job-id="${patchedJobId}"]`);
-    return card?.querySelector(".recent-job-id")?.title === "Book 5 · 已更新标题";
-  }, "被补丁的卡片内容已更新");
+    return card?.querySelector(".recent-job-id")?.title === "Book 5 · Tiêu đề đã cập nhật";
+  }, "Nội dung thẻ được patch đã cập nhật");
   await wait(30);
 
   // 断言"至少重渲一次"而非"恰好一次":react-dom 的 useSyncExternalStore 在
@@ -364,7 +363,7 @@ test("RecentJobsLibrary：卡片渲染隔离(replaceItem 单卡,其余 23 张卡
   // (可用 stack trace 验证两次调用都源自 beginWork/updateFunctionComponent),
   // 不是这里的 memo 逻辑缺陷,断言死板的"===1"会对 React 版本升级过度敏感。
   // 核心不变量始终是下面的"未涉及卡片 0 次"。
-  assert.ok(getCardRenderCountForTests(patchedJobId) >= 1, "被补丁的卡片应至少重渲一次");
+  assert.ok(getCardRenderCountForTests(patchedJobId) >= 1, "Thẻ được patch nên render lại ít nhất một lần");
   for (const item of items) {
     if (item.job_id === patchedJobId) {
       continue;
@@ -381,7 +380,7 @@ test("RecentJobsLibrary：卡片渲染隔离(replaceItem 单卡,其余 23 张卡
   host.remove();
 });
 
-test("RecentJobsLibrary：workflow 挂起不死锁(开→job-updated 仍打补丁,不发起整页刷新→关→300ms 后刷新恢复)", async () => {
+test("RecentJobsLibrary: workflow treo không deadlock (mở → job-updated vẫn áp patch, không kích hoạt refresh toàn trang → đóng → 300ms sau refresh phục hồi)", async () => {
   // 蓝图风险 5:workflow 打开期间 refresh-scheduler.setSuspended(true),
   // command-handlers.js 的 onJobUpdated 仍无条件调 runtimePatches.update(单卡
   // 补丁不受影响),但被 scheduleRefresh(整页刷新)会被挂起吞掉;关闭后
@@ -395,7 +394,7 @@ test("RecentJobsLibrary：workflow 挂起不死锁(开→job-updated 仍打补�
   // 有真实 job 的已翻译卡当补丁靶子(runtimePatches.update 按真实 job_id 找卡)。
   await waitFor(
     () => services.library.recentJobsStore.getSnapshot().items.some((item) => item.job_id && !item.library_only),
-    "初次加载的已翻译 mock 文档就位",
+    "Mock tài liệu đã dịch lần đầu sẵn sàng",
   );
   const originalItem = services.library.recentJobsStore
     .getSnapshot().items.find((item) => item.job_id && !item.library_only);
@@ -404,7 +403,7 @@ test("RecentJobsLibrary：workflow 挂起不死锁(开→job-updated 仍打补�
   // 阶段 C(shadcn 改造):TranslationWorkflowDialog 换成 Radix Dialog 后不
   // forceMount Content——关闭时不挂载,断言从"hidden 类"改为"是否挂载"
   // (同 CredentialsDialog 等阶段 C 第一批对话框的先例)。
-  await waitFor(() => byId(dom, "translation-workflow-dialog") !== null, "工作流对话框打开(挂起刷新)");
+  await waitFor(() => byId(dom, "translation-workflow-dialog") !== null, "Mở hộp thoại workflow (treo refresh)");
 
   let sawLoadingWhileSuspended = false;
   const unsubscribe = services.stores.homeState.subscribe((snapshot) => {
@@ -420,10 +419,10 @@ test("RecentJobsLibrary：workflow 挂起不死锁(开→job-updated 仍打补�
   await waitFor(() => {
     const card = byId(dom, "recent-jobs-list").querySelector(`.recent-job-item[data-job-id="${originalItem.job_id}"]`);
     return card?.querySelector(".recent-job-id")?.title === "Patched While Suspended";
-  }, "挂起期间单卡补丁(runtimePatches.update)仍无条件生效");
+  }, "Trong thời gian treo, patch một thẻ (runtimePatches.update) vẫn có hiệu lực vô điều kiện");
 
   await wait(150);
-  assert.equal(sawLoadingWhileSuspended, false, "挂起期间不应发起整页刷新(scheduleRefresh 应被 isSuspended 吞掉)");
+  assert.equal(sawLoadingWhileSuspended, false, "Trong thời gian treo không nên kích hoạt refresh toàn trang (scheduleRefresh nên bị isSuspended nuốt)");
   unsubscribe();
 
   // 关闭后的恢复刷新是 scheduleRefresh({delay:300}) → loadRecentJobs({reset:true,
@@ -435,8 +434,8 @@ test("RecentJobsLibrary：workflow 挂起不死锁(开→job-updated 仍打补�
     notifyCountAfterClose += 1;
   });
   services.workflowDialog.requestClose();
-  await waitFor(() => byId(dom, "translation-workflow-dialog") === null, "工作流对话框关闭");
-  await waitFor(() => notifyCountAfterClose > 0, "关闭后 300ms 静默刷新应恢复(不死锁)");
+  await waitFor(() => byId(dom, "translation-workflow-dialog") === null, "Đóng hộp thoại workflow");
+  await waitFor(() => notifyCountAfterClose > 0, "Sau khi đóng, 300ms sau refresh im lặng nên phục hồi (không deadlock)");
   unsubscribe2();
 
   root.unmount();

@@ -38,20 +38,20 @@ impl JobStage {
 
     pub fn as_stage_detail(self) -> &'static str {
         match self {
-            JobStage::Queued => "任务已创建，等待可用执行槽位",
-            JobStage::Running => "正在启动 Python worker",
-            JobStage::OcrSubmitting => "正在提交 OCR 任务",
-            JobStage::OcrUpload => "OCR 任务上传中",
-            JobStage::MineruUpload => "MinerU 任务上传中",
-            JobStage::OcrProcessing => "OCR 任务处理中",
-            JobStage::MineruProcessing => "MinerU 任务处理中",
-            JobStage::OcrResultReady => "OCR 结果已就绪",
-            JobStage::Normalizing => "OCR 完成，开始标准化",
-            JobStage::Translating => "OCR 完成，开始翻译",
-            JobStage::Rendering => "翻译完成，开始渲染",
-            JobStage::Finished => "任务完成",
-            JobStage::Canceled => "任务已取消",
-            JobStage::Failed => "任务失败",
+            JobStage::Queued => "Nhiệm vụ đã tạo, chờ vị trí thực thi khả dụng",
+            JobStage::Running => "Đang khởi động Python worker",
+            JobStage::OcrSubmitting => "Đang gửi tác vụ OCR",
+            JobStage::OcrUpload => "Đang tải lên tác vụ OCR",
+            JobStage::MineruUpload => "Đang tải lên tác vụ MinerU",
+            JobStage::OcrProcessing => "Đang xử lý tác vụ OCR",
+            JobStage::MineruProcessing => "Đang xử lý tác vụ MinerU",
+            JobStage::OcrResultReady => "Kết quả OCR đã sẵn sàng",
+            JobStage::Normalizing => "OCR hoàn tất, bắt đầu chuẩn hóa",
+            JobStage::Translating => "OCR hoàn tất, bắt đầu dịch",
+            JobStage::Rendering => "Dịch hoàn tất, bắt đầu kết xuất",
+            JobStage::Finished => "Nhiệm vụ hoàn tất",
+            JobStage::Canceled => "Nhiệm vụ đã hủy",
+            JobStage::Failed => "Nhiệm vụ thất bại",
         }
     }
 

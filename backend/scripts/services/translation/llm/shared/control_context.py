@@ -61,10 +61,10 @@ class TimeoutPolicy:
 
 @dataclass(frozen=True)
 class BatchPolicy:
-    # 多条目 tagged 批处理已退役:批越大,模型损坏输出协议(如把末尾
-    # <<<END>>> 打成 <<<END>>,实测 1/6 复现)导致整批作废重译的概率越高。
-    # 稳定性优先,生产路径一律单条 plain-text 请求;机制代码保留,
-    # 需要 A/B 时改这里即可。
+    # Nhiều mục tagged Lô đã nghỉ hưu:Lô càng lớn,,Mô hình giao thức đầu ra tham nhũng(chẳng hạn như đặt dấu chấm hết
+    # <<<END>>> đánh thành <<<END>>,Đo thực tế 1/6 tái hiện)Xác suất làm cho một lô dịch lại được dịch lại càng cao。
+    # Ổn định là trên hết,Đường dẫn sản xuất luôn đơn lẻ plain-text thỉnh cầu;Lưu giữ mã cơ chế,
+    # Cần A/B Bạn có thể thay đổi nó ở đây theo thời gian。
     plain_batch_size: int = 1
     batch_low_risk_min_chars: int = 16
     batch_low_risk_max_chars: int = 1200
@@ -165,11 +165,11 @@ class TranslationControlContext:
 
     @property
     def prompt_system_guidance(self) -> str:
-        # 进 system 消息的运行期常量部分:不含 terms_guidance。词表经
-        # scoped_to_item 按条目匹配后是逐条变化的,放进 system 会让每条
-        # 请求的前缀都不同,直接打掉 provider 前缀缓存(预热白做)。
-        # 匹配到的术语改经 item 注入 user 消息;cache_guidance 仍含术语,
-        # 缓存正确性不受影响。
+        # vào system Phần không đổi thời gian chạy của tin nhắn:Không bao gồm terms_guidance。Từ điển đồng nghĩa
+        # scoped_to_item Thay đổi theo từng mục sau khi đối sánh theo từng mục,bỏ vào system sẽ gây ra mỗi
+        # Tất cả các tiền tố được yêu cầu đều khác nhau,Chỉ cần gõ nó ra. provider Bộ nhớ đệm tiền tố(Làm nóng trước màu trắng)。
+        # Sửa đổi thời hạn phù hợp item rót vào user tin tức;cache_guidance Thuật ngữ vẫn được bao gồm,
+        # Độ chính xác của bộ nhớ cache không bị ảnh hưởng。
         parts = []
         for value in (
             self.domain_guidance,

@@ -39,7 +39,7 @@ pub(crate) fn ensure_book_image(
     ensure_book_image_at_path(deps, source_pdf, &output_path, kind)
 }
 
-/// 文档级封面/缩略图：从源 PDF 首页渲染，缓存到 documents/<id>/。
+/// Bìa cấp tài liệu/Hiện các ảnh mẫu：Từ nguồn PDF Kết xuất trang chủ，Cache Đến documents/<id>/。
 pub(crate) fn ensure_document_book_image(
     deps: DerivedArtifactDeps<'_>,
     data_root: &Path,

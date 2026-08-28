@@ -1,30 +1,30 @@
-# doc2x-gs PDF 内容流删正文实验
+# Thí nghiệm xóa văn bản正文 trong luồng nội dung PDF doc2x-gs
 
-这个目录用于复现“删除原文正文，但保留行间公式”的 PDF content stream 实验。
+Thư mục này dùng để tái tạo thí nghiệm luồng nội dung PDF "xóa văn bản正文 gốc nhưng giữ công thức giữa dòng".
 
-## 目标
+## Mục tiêu
 
-验证一种比 bbox 覆盖更精细的方案：
+Xác minh một phương án tinh tế hơn phủ bbox:
 
-- 不整页栅格化；
-- 不按大 bbox 一刀切删除；
-- 直接改写 PDF content stream；
-- 删除普通正文的 `TJ/Tj` text-show 操作；
-- 保留行间公式里的细碎 `Tj/Tm` 操作和矢量元素；
-- 后续再叠加我们的 Typst 中文译文。
+- Không rasterize toàn trang;
+- Không xóa一刀切 theo bbox lớn;
+- Trực tiếp viết lại luồng nội dung PDF;
+- Xóa thao tác hiển thị văn bản `TJ/Tj` của正文 thông thường;
+- Giữ các thao tác `Tj/Tm` vụn vặt và yếu tố vector trong công thức giữa dòng;
+- Sau đó phủ bản dịch tiếng Trung Typst của chúng ta.
 
-闭源参考文件 `电子结构方法-第四章-高斯基组-onlyTrans.pdf` 基本就是类似路线：原始英文正文不可抽取，但行间公式仍保留为 PDF 原始文本/矢量。
+Tệp tham chiếu đóng nguồn `电子结构方法-第四章-高斯基组-onlyTrans.pdf` cơ bản đi theo hướng tương tự: văn bản tiếng Anh gốc không trích xuất được, nhưng công thức giữa dòng vẫn giữ dưới dạng văn bản/vector PDF gốc.
 
-## 文件
+## Tệp
 
-- `电子结构方法-第四章-高斯基组.pdf`：原始样本 PDF。
-- `电子结构方法-第四章-高斯基组-onlyTrans.pdf`：闭源项目输出，用于对比。
-- `content_stream_text_strip.py`：当前 POC 脚本。
-- `work/`：实验输出目录。
+- `电子结构方法-第四章-高斯基组.pdf`: PDF mẫu gốc.
+- `电子结构方法-第四章-高斯基组-onlyTrans.pdf`: Đầu ra dự án đóng nguồn, dùng để so sánh.
+- `content_stream_text_strip.py`: Script POC hiện tại.
+- `work/`: Thư mục đầu ra thí nghiệm.
 
-## 运行
+## Chạy
 
-在本目录运行：
+Chạy trong thư mục này:
 
 ```bash
 python3 content_stream_text_strip.py \
@@ -35,7 +35,7 @@ python3 content_stream_text_strip.py \
   --pages 1
 ```
 
-也可以运行专家建议的“先 redact 再贴回公式区域”方案：
+Cũng có thể chạy phương án chuyên gia đề xuất "redact trước rồi dán lại vùng công thức":
 
 ```bash
 python3 redact_restore_formula.py \
@@ -46,46 +46,46 @@ python3 redact_restore_formula.py \
   --pages 1
 ```
 
-输出：
+Đầu ra:
 
 - `work/content-op-strip.pdf`
 - `work/content-op-strip-diagnostics.json`
 - `work/content-op-strip-page1.png`
 
-## 当前效果
+## Hiệu quả hiện tại
 
-对第 1 页：
+Với trang 1:
 
-- 英文正文、英文标题、页脚被删除；
-- 三个行间公式被保留；
-- PDF 没有图片化，公式仍是原始 PDF 对象；
-- 抽取文本基本只剩公式块。
+- Văn bản正文 tiếng Anh, tiêu đề tiếng Anh, chân trang bị xóa;
+- Ba công thức giữa dòng được giữ lại;
+- PDF không bị chuyển thành ảnh, công thức vẫn là đối tượng PDF gốc;
+- Văn bản trích xuất cơ bản chỉ còn khối công thức.
 
-## 当前限制
+## Hạn chế hiện tại
 
-这还是样本 POC，不是后端通用实现。
+Đây vẫn là POC mẫu, chưa phải cài đặt chung backend.
 
-当前规则利用了这个 PDF 的结构特征：
+Quy tắc hiện tại tận dụng đặc trưng cấu trúc của PDF này:
 
-- 正文主要编码为长 `TJ` 数组；
-- 行间公式主要编码为大量细碎 `Tj/Tm`；
-- 正文中的孤立变量需要额外规则清掉。
+- Văn bản正文 chủ yếu mã hóa bằng mảng `TJ` dài;
+- Công thức giữa dòng chủ yếu mã hóa bằng nhiều `Tj/Tm` vụn vặt;
+- Biến đơn lẻ trong正文 cần quy tắc bổ sung để xóa sạch.
 
-后端通用版本还需要补：
+Phiên bản chung backend còn cần bổ sung:
 
-- 稳定的 `Tj/TJ -> bbox` 映射；
-- 接入 PaddleOCR `display_formula` bbox 作为保护区；
-- 保护区内保留原文操作，保护区外删除正文操作；
-- 与现有 Typst overlay / source cleanup 策略做成可选渲染模式。
+- Ánh xạ ổn định `Tj/TJ -> bbox`;
+- Kết nối bbox `display_formula` của PaddleOCR làm vùng保护区;
+- Trong vùng保护区 giữ thao tác văn bản gốc, ngoài vùng保护区 xóa thao tác正文;
+- Kết hợp với chiến lược Typst overlay / source cleanup hiện có thành chế độ render tùy chọn.
 
-## 推荐集成方向
+## Hướng tích hợp khuyến nghị
 
-专家建议优先集成 `apply_redactions + show_pdf_page`，原因是工程复杂度远低于完整 text-op interpreter。
+Chuyên gia khuyến nghị ưu tiên tích hợp `apply_redactions + show_pdf_page`, vì độ phức tạp kỹ thuật thấp hơn nhiều so với text-op interpreter đầy đủ.
 
-后端流程可以是：
+Luồng backend có thể là:
 
-1. OCR 阶段保留 `display_formula` bbox。
-2. cleanup 阶段对正文翻译 bbox 做 redaction。
-3. redaction 后从原 PDF 按 `display_formula` bbox clip 回贴公式区域。
-4. 再叠加 Typst 中文译文。
-5. 如果回贴失败，降级到现有 bbox cover/strip。
+1. Giai đoạn OCR giữ bbox `display_formula`.
+2. Giai đoạn cleanup thực hiện redaction cho bbox dịch正文.
+3. Sau redaction, từ PDF gốc clip lại vùng công thức theo bbox `display_formula`.
+4. Phủ bản dịch tiếng Trung Typst.
+5. Nếu dán lại thất bại, hạ cấp sang cover/strip bbox hiện có.

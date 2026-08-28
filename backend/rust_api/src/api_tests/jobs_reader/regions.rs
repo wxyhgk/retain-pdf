@@ -40,8 +40,8 @@ async fn reader_regions_route_maps_translated_items_to_source_blocks() {
                 "item_id": "p008-b009",
                 "page_idx": 7,
                 "bbox": [74.0, 130.0, 330.0, 190.0],
-                "translated_text": "译文",
-                "render_markdown": "译文 markdown"
+                "translated_text": "Bản dịch",
+                "render_markdown": "Bản dịch markdown"
             }
         ]))
         .expect("page json"),
@@ -105,8 +105,8 @@ async fn reader_regions_route_maps_translated_items_to_source_blocks() {
         payload["data"]["items"][0]["source"]["text"],
         "The source text"
     );
-    assert_eq!(payload["data"]["items"][0]["translated"]["text"], "译文");
-    assert_eq!(payload["data"]["items"][0]["markdown"], "译文 markdown");
+    assert_eq!(payload["data"]["items"][0]["translated"]["text"], "Bản dịch");
+    assert_eq!(payload["data"]["items"][0]["markdown"], "Bản dịch markdown");
     assert_eq!(payload["data"]["items"][0]["region_type"], "text");
     assert_eq!(payload["data"]["items"][0]["status"], "translated");
 }

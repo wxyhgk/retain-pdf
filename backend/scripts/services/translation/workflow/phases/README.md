@@ -1,18 +1,18 @@
-# 翻译阶段
+# Giai đoạn dịch
 
-这个目录用于承接全书级翻译阶段实现。
+Thư mục này dùng để chứa cài đặt giai đoạn dịch cấp độ toàn sách.
 
-计划拆分：
+Kế hoạch tách:
 
 - `continuation.py`
-  初始连续段整理，以及 provider 辅助的跨栏/跨页连续段复核。
+  Sắp xếp đoạn liên tục ban đầu, và rà soát đoạn liên tục xuyên cột/xuyên trang có provider hỗ trợ.
 - `policy.py`
-  页面策略和块分类阶段。
+  Giai đoạn chiến lược trang và phân loại khối.
 - `batch_translation.py`
-  批量翻译阶段适配层。它应该调用 scheduling 代码，而不是自己管理队列细节。
+  Tầng thích ứng giai đoạn dịch hàng loạt. Nó nên gọi mã scheduling, không tự quản lý chi tiết hàng đợi.
 - `repair.py`
-  乱码重建、agent 修复和最终未翻译收口。
+  Tái tạo văn bản lỗi, sửa chữa agent và thu gom phần chưa dịch cuối cùng.
 - `events.py`
-  如果事件格式继续增长，稳定的阶段事件 helper 放这里。
+  Nếu định dạng sự kiện tiếp tục tăng, helper sự kiện giai đoạn ổn định đặt tại đây.
 
-不要把 provider HTTP client、render prewarm 或页面文件发现逻辑放到这里。
+Không đưa provider HTTP client, render prewarm hoặc logic khám phá tệp trang vào đây.

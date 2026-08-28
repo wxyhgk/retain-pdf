@@ -27,20 +27,20 @@ function AnnotationItem({ annotation, onJump, onDelete, onSaveNote }) {
       <div className="reader-annotations-item-top">
         <span className={`reader-annotations-kind is-${annotation.kind}`}>{meta.label}</span>
         <div className="reader-annotations-actions">
-          <button
-            type="button"
-            className="reader-annotations-locate"
-            onClick={() => onJump(annotationAnchor(annotation))}
-          >
-            定位
-          </button>
-          <button
-            type="button"
-            className="reader-annotations-remove"
-            onClick={() => onDelete(annotation)}
-          >
-            删除
-          </button>
+            <button
+              type="button"
+              className="reader-annotations-locate"
+              onClick={() => onJump(annotationAnchor(annotation))}
+            >
+              Định vị
+            </button>
+            <button
+              type="button"
+              className="reader-annotations-remove"
+              onClick={() => onDelete(annotation)}
+            >
+              Xóa
+            </button>
         </div>
       </div>
       <p className="reader-annotations-quote">{annotation.quoteText}</p>
@@ -50,35 +50,35 @@ function AnnotationItem({ annotation, onJump, onDelete, onSaveNote }) {
       {editing
         ? (
           <div className="reader-annotations-note-editor">
-            <textarea
-              className="reader-annotations-note-input"
-              value={draft}
-              placeholder="写点想法…"
-              onChange={(event) => setDraft(event.target.value)}
-            />
-            <div className="reader-annotations-note-editor-actions">
-              <button type="button" className="reader-annotations-note-save" onClick={commit}>保存</button>
-              <button type="button" className="reader-annotations-note-cancel" onClick={() => setEditing(false)}>取消</button>
+               <textarea
+                 className="reader-annotations-note-input"
+                 value={draft}
+                 placeholder="Viết vài suy nghĩ..."
+                 onChange={(event) => setDraft(event.target.value)}
+               />
+               <div className="reader-annotations-note-editor-actions">
+                 <button type="button" className="reader-annotations-note-save" onClick={commit}>Lưu</button>
+                 <button type="button" className="reader-annotations-note-cancel" onClick={() => setEditing(false)}>Hủy</button>
             </div>
           </div>
         )
         : annotation.note
           ? (
-            <p className="reader-annotations-note" title="点击编辑笔记" onClick={startEdit}>
+            <p className="reader-annotations-note" title="Click để sửa ghi chú" onClick={startEdit}>
               {annotation.note}
             </p>
           )
           : (
             <button type="button" className="reader-annotations-note-add" onClick={startEdit}>
-              添加笔记
+              Thêm ghi chú
             </button>
           )}
     </div>
   );
 }
 
-// 具名导出:reader 页(src/pages/reader)已打包,直接复用组件源码渲染进
-// 批注抽屉(Phase 2b);mountReaderAnnotationsApp 保留给组件级测试当挂载入口。
+// Export định danh: Trang reader (src/pages/reader) đã được đóng gói, tái sử dụng mã nguồn component để render vào
+// ngăn kéo ghi chú (Phase 2b); mountReaderAnnotationsApp được giữ lại làm điểm mount cho test cấp component.
 export function ReaderAnnotationsPanel({ ports }) {
   const [open, setOpen] = useState(false);
   const [annotations, setAnnotations] = useState([]);
@@ -101,7 +101,7 @@ export function ReaderAnnotationsPanel({ ports }) {
       setAnnotations(Array.isArray(list) ? list : []);
     } catch (loadError) {
       if (loadSeqRef.current === seq) {
-        setError(loadError?.message || "加载批注失败");
+        setError(loadError?.message || "Tải ghi chú thất bại");
       }
     } finally {
       if (loadSeqRef.current === seq) {
@@ -112,7 +112,7 @@ export function ReaderAnnotationsPanel({ ports }) {
 
   useEffect(() => ports.subscribeOpen((visible) => setOpen(Boolean(visible))), [ports]);
 
-  // 首次可见时加载,之后每次重新变为可见时刷新
+  // Tải khi lần đầu hiển thị, sau đó làm mới mỗi khi trở lại trạng thái hiển thị
   useEffect(() => {
     if (open) {
       load();
@@ -135,7 +135,7 @@ export function ReaderAnnotationsPanel({ ports }) {
   }, [ports, annotations]);
 
   const handleDelete = useCallback(async (annotation) => {
-    // 乐观移除,失败恢复
+    // Optimistically remove, then restore on failure.
     setAnnotations((current) => current.filter((item) => item.favoriteId !== annotation.favoriteId));
     let ok = false;
     try {
@@ -154,7 +154,7 @@ export function ReaderAnnotationsPanel({ ports }) {
 
   const handleSaveNote = useCallback(async (annotation, note) => {
     const previousNote = annotation.note;
-    // 乐观更新,失败回滚
+    // Optimistically update, then roll back on failure.
     setAnnotations((current) => current.map((item) => (
       item.favoriteId === annotation.favoriteId ? { ...item, note } : item
     )));
@@ -178,32 +178,32 @@ export function ReaderAnnotationsPanel({ ports }) {
   const groups = groupAnnotationsByPage(annotations);
 
   return (
-    <div className="reader-annotations-panel" role="region" aria-label="批注列表">
+    <div className="reader-annotations-panel" role="region" aria-label="Danh sách ghi chú">
       <div className="reader-annotations-head">
-        <span className="reader-annotations-count">{annotations.length} 条批注</span>
+        <span className="reader-annotations-count">{annotations.length} ghi chú</span>
         <button
           type="button"
           className="reader-annotations-export"
           onClick={handleExport}
           disabled={copied}
         >
-          {copied ? "已复制" : "导出 Markdown"}
+            {copied ? "Đã sao chép" : "Xuất Markdown"}
         </button>
       </div>
       {loading
-        ? <p className="reader-annotations-loading">加载批注中…</p>
+        ? <p className="reader-annotations-loading">Đang tải ghi chú…</p>
         : error
           ? (
             <div className="reader-annotations-error">
               <p>{error}</p>
-              <button type="button" className="reader-annotations-retry" onClick={load}>重试</button>
+              <button type="button" className="reader-annotations-retry" onClick={load}>Thử lại</button>
             </div>
           )
           : groups.length === 0
-            ? <p className="reader-annotations-empty">暂无批注,框选原文即可创建</p>
+            ? <p className="reader-annotations-empty">Chưa có ghi chú, hãy chọn văn bản gốc để tạo</p>
             : groups.map((group) => (
               <section key={group.pageIdx} className="reader-annotations-group">
-                <h4 className="reader-annotations-group-title">第 {group.pageIdx + 1} 页</h4>
+                <h4 className="reader-annotations-group-title">Trang {group.pageIdx + 1}</h4>
                 <div className="reader-annotations-group-items">
                   {group.items.map((annotation) => (
                     <AnnotationItem

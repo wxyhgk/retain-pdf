@@ -1,4 +1,4 @@
-// 阅读器工具开合：单一 active、互斥（对齐 legacy drawer-store）
+// Reader tool open/close state: single active tool, mutually exclusive, aligned with the legacy drawer store.
 
 import { useCallback, useState } from "react";
 import type { ReaderToolId } from "../tools/registry.js";

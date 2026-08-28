@@ -190,15 +190,16 @@
 }
 
 /*
-  危险区修复(Tailwind v4 迁移):`.status-head-btn` 在整个代码库里只和
-  `.status-action-btn` 成对出现(StatusCard.jsx 的取消/详情按钮),
-  min-height/font-size 两边都定义、值不一样——v3 里靠同文件源码序(
-  status-action-btn 写在后面)tie-break,status-action-btn 的 32px/12px 胜出,
-  status-head-btn 这份 28px/11px 一直是死代码。v4 下顺序不再保证跟随源码序
-  (与前面几处 library-grid/library-brand-link 同一模式),实测迁移后
-  status-head-btn 反而胜出,按钮变矮变小。这里去掉冲突的 min-height/
-  font-size,尺寸完全交给 status-action-btn 一处定义;padding-inline 没有
-  与 status-action-btn 的 padding 冲突过(未观测到差异),保留。
+ Sửa vùng nguy hiểm (di chuyển Tailwind v4): trong toàn bộ codebase, `.status-head-btn`
+ chỉ xuất hiện theo cặp với `.status-action-btn` (các nút hủy/chi tiết của StatusCard.jsx),
+ cả hai bên đều định nghĩa min-height/font-size nhưng giá trị khác nhau — trong v3,
+ thứ tự nguồn cùng tệp dùng để tie-break (status-action-btn viết sau), nên 32px/12px
+ của status-action-btn thắng; bản 28px/11px của status-head-btn luôn là code chết.
+ Trong v4, thứ tự không còn đảm bảo theo thứ tự nguồn (cùng kiểu với library-grid/
+ library-brand-link ở các phần trước), thực tế sau khi di chuyển status-head-btn lại thắng,
+ khiến nút thấp và nhỏ hơn. Loại bỏ min-height/font-size xung đột ở đây và giao toàn bộ
+ kích thước cho status-action-btn; padding-inline chưa từng xung đột với padding của
+ status-action-btn (chưa quan sát thấy khác biệt), nên giữ lại.
 */
 @utility status-head-btn {
   padding-inline: var(--status-head-btn-padding, 10px);
@@ -294,7 +295,7 @@
   }
 
   &.is-active {
-    /* text-white 会在 night（ink 为浅色）下糊掉，语义应为 paper */
+    /* text-white bị chìm trong night (ink là màu sáng), về ngữ nghĩa nên dùng paper */
     @apply bg-[var(--ink)] text-[var(--paper)];
     box-shadow: 0 10px 24px color-mix(in srgb, var(--ink) 14%, transparent);
   }
@@ -314,9 +315,10 @@
   }
 }
 
-/* 阶段态 class（is-done / is-active / is-selected / is-disabled）
- * 只挂在父 @utility 的 &.is-* 嵌套上，禁止再注册短名全局 @utility is-*，
- * 避免与其它模块抢 .is-active 等全局类。substage 见下方 status-substage-step。 */
+/* Trạng thái giai đoạn (is-done / is-active / is-selected / is-disabled)
+ * chỉ gắn trên phần lồng &.is-* của @utility cha; không đăng ký lại @utility is-* toàn cục
+ * dạng tên ngắn để tránh tranh chấp các lớp toàn cục như .is-active với module khác.
+ * Xem substage trong status-substage-step bên dưới. */
 
 @utility status-stage-error-summary {
   grid-area: error;

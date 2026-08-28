@@ -1,21 +1,23 @@
-// 图书馆网格的"瞬态视图信号" store(蓝图 §2 features/library/)。
+// Store "tín hiệu giao diện tạm thời" của lưới thư viện (bản thiết kế §2 features/library/).
 //
-// 背景(实测核实,非直觉设计):recentJobsStatePort 的 batch() 提交(初次分页/
-// load-more 分页)与 storeDrivenRendering:true 的组合,导致旧 viewPort 契约的
-// renderList/renderEmpty(大多数路径)从不会被引擎实际调用——引擎把渲染权已经
-// 交给 store 本身。本 store 因此只承担两类事情:
-// 1. 引擎仍然"无条件"调用的信号:renderLoading()/setLoadMoreLoading()(loader.js
-//    reset/load-more 两分支开头都会调,不受 storeDrivenRendering 影响);
-// 2. actions.js 里"直接"调用、不经 storeDrivenRendering 闸门的边缘路径:
-//    - deleteJob 成功且清空 → renderEmpty("暂无最近任务")
-//    - deleteJob 失败 / selectJob·openJobReader 缺 job_id → renderError(msg,{reset:false})
-//      (镜像旧 applyRecentJobsErrorState:reset:false 时只隐藏 load-more 按钮,
-//      不展示错误文案——错误提示走别处的 error-box,这里不越权渲染)
+// Bối cảnh (đã kiểm chứng thực tế, không phải thiết kế theo trực giác):
+// việc gửi batch() của recentJobsStatePort (phân trang đầu/load-more) kết hợp
+// storeDrivenRendering:true khiến renderList/renderEmpty của hợp đồng viewPort cũ
+// (hầu hết đường đi) không bao giờ được engine gọi thực tế — engine giao quyền
+// render cho store. Vì vậy store này chỉ đảm nhiệm hai nhóm:
+// 1. tín hiệu engine vẫn gọi "vô điều kiện": renderLoading()/setLoadMoreLoading()
+//    (loader.js gọi ở đầu cả hai nhánh reset/load-more, không phụ thuộc
+//    storeDrivenRendering);
+// 2. đường biên actions.js gọi "trực tiếp", không qua cổng storeDrivenRendering:
+//    - deleteJob thành công và danh sách rỗng → renderEmpty("Chưa có tác vụ gần đây")
+//    - deleteJob thất bại / selectJob·openJobReader thiếu job_id → renderError(msg,{reset:false})
+//      (mô phỏng applyRecentJobsErrorState cũ: reset:false chỉ ẩn nút load-more,
+//      không hiển thị thông báo lỗi — lỗi đi qua error-box, không render vượt quyền tại đây)
 //
-// RecentJobsLibrary.jsx 的最终展示模式**不是**直接读 store.mode,而是
-// "items.length > 0 优先"的派生逻辑(见组件),因为 store.mode 在批量提交路径下
-// 会停留在陈旧值(例如首次成功加载后 mode 仍是 "loading")。本 store 只在
-// items 为空时才被信任为准确来源。
+// Chế độ hiển thị cuối của RecentJobsLibrary.jsx **không** đọc trực tiếp store.mode
+// mà dùng logic suy ra "ưu tiên items.length > 0" (xem component), vì store.mode
+// có thể giữ giá trị cũ trên đường gửi batch (ví dụ sau lần tải thành công đầu tiên
+// mode vẫn là "loading"). Store này chỉ được tin là nguồn chính xác khi items rỗng.
 
 import type {
   LibraryViewActions,

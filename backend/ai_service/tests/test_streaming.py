@@ -19,19 +19,20 @@ def _sse(obj) -> str:
 
 def test_assemble_streaming_pure_content_emits_each_delta():
     lines = [
-        _sse({"choices": [{"delta": {"content": "选择"}}]}),
-        _sse({"choices": [{"delta": {"content": "性来自"}}]}),
-        _sse({"choices": [{"delta": {"content": "共轭 [1]"}}]}),
+        _sse({"choices": [{"delta": {"content": "Tính"}}]}),
+        _sse({"choices": [{"delta": {"content": "chọn lọc đến từ"}}]}),
+        _sse({"choices": [{"delta": {"content": "hiệu ứng liên hợp [1]"}}]}),
         "data: [DONE]",
-        _sse({"choices": [{"delta": {"content": "被忽略"}}]}),  # [DONE] 之后不再处理
+        _sse({"choices": [{"delta": {"content": "bị bỏ qua"}}]}),  # Sau [DONE] thì không xử lý nữa
     ]
     deltas: list[str] = []
     message = assemble_streaming_message(iter(lines), deltas.append)
 
-    # 审计 A3 后的新契约:前 64 字符先缓冲定性(防工具轮前言泄漏),
-    # 短纯回答在流结束时合并补发——总文本不变,分片方式不再逐 piece 锁死
-    assert "".join(deltas) == "选择性来自共轭 [1]"
-    assert message["content"] == "选择性来自共轭 [1]"
+    # Hợp đồng mới sau kiểm toán A3: 64 ký tự đầu được đệm lại để xác định tính chất (chống rò rỉ
+    # phần mở đầu của vòng gọi tool), câu trả lời ngắn được gộp gửi bù khi luồng kết thúc — tổng văn
+    # bản không đổi, cách chia mảnh không còn bị chốt cứng theo từng piece
+    assert "".join(deltas) == "Tính chọn lọc đến từ hiệu ứng liên hợp [1]"
+    assert message["content"] == "Tính chọn lọc đến từ hiệu ứng liên hợp [1]"
     assert "tool_calls" not in message
 
 
@@ -73,7 +74,7 @@ def test_assemble_streaming_tool_calls_do_not_emit_deltas():
     deltas: list[str] = []
     message = assemble_streaming_message(iter(lines), deltas.append)
 
-    assert deltas == []  # 工具调用轮绝不 emit answer_delta
+    assert deltas == []  # Vòng gọi tool tuyệt đối không emit answer_delta
     assert message["content"] == ""
     call = message["tool_calls"][0]
     assert call["id"] == "call-1"
@@ -82,11 +83,11 @@ def test_assemble_streaming_tool_calls_do_not_emit_deltas():
 
 
 def test_ask_endpoint_streams_answer_deltas(monkeypatch):
-    pieces = ["选择", "性来自", "共轭 [1]"]
+    pieces = ["Tính", "chọn lọc đến từ", "hiệu ứng liên hợp [1]"]
     full = "".join(pieces)
 
     def fake_build(settings, client=None, *, on_delta=None):
-        def chat(messages, tools):  # 2 参契约:与非流式一致
+        def chat(messages, tools):  # Hợp đồng 2 tham số: giống bản không streaming
             for piece in pieces:
                 if on_delta is not None:
                     on_delta(piece)
@@ -103,7 +104,7 @@ def test_ask_endpoint_streams_answer_deltas(monkeypatch):
     with client.stream(
         "POST",
         "/v1/ask",
-        json={"question": "为什么有选择性?", "stream": True},
+        json={"question": "Tại sao có tính chọn lọc?", "stream": True},
         headers={"X-API-Key": "test-key"},
     ) as response:
         assert response.status_code == 200

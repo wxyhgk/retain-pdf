@@ -1,59 +1,59 @@
-// 装饰锚点（slot）注册表：装饰主题的"布局契约"。
+// Registry anchor trang trí (slot): "Contract bố cục" của chủ đề trang trí.
 //
-// 设计原则（docs/theme-system/DECOR_PACKS.md）：
-// - 功能 UI 永远是 DOM；装饰层只能挂在下列具名锚点上，不得自造坐标。
-// - manifest 声明"资产挂在哪个 slot"，slot 在哪、多大、什么层级由
-//   舞台 CSS（后续 DecorStage）统一实现——资产侧与布局侧解耦。
-// - 新增锚点 = 此处登记 + 舞台 CSS 补一条定位；manifest 校验自动放行。
+// Nguyên tắc thiết kế (docs/theme-system/DECOR_PACKS.md):
+// - UI chức năng luôn là DOM; lớp trang trí chỉ được treo trên các anchor định danh sau, không được tự tạo tọa độ.
+// - manifest khai báo "tài sản treo ở slot nào", slot ở đâu, lớn bao nhiêu, cấp độ nào do
+//   CSS sân khấu (DecorStage sau đó) triển khai thống nhất — tách biệt giữa tài sản và bố cục.
+// - Thêm anchor mới = đăng ký tại đây + bổ sung định vị trong CSS sân khấu; manifest sẽ tự động cho phép.
 //
-// 层级带（z-index band，具体数值由舞台 CSS 统一分配）：
-//   bg  < 功能 UI 背板 < mid < 功能 UI 内容 …之外的边缘 < fg
-//   bg  全幅背景（山水/园林/草原），永远被 UI 面板盖住
-//   mid 中景道具（人物/铜鼎/马），可被 UI 面板局部遮挡
-//   fg  前景压边（花枝/龙雕探进 UI 边缘），pointer-events: none
+// Dải phân cấp (z-index band, giá trị cụ thể do CSS sân khấu phân phối thống nhất):
+//   bg  < Tấm nền UI chức năng < mid < Nội dung UI chức năng … ngoài rìa < fg
+//   bg  Nền toàn cảnh (sơn thủy/vườn tược/thảo nguyên), luôn bị panel UI che khuất
+//   mid Đạo cụ trung cảnh (nhân vật/đỉnh đồng/ngựa), có thể bị panel UI che khuất cục bộ
+//   fg  Rìa tiền cảnh (cành hoa/điêu khắc rồng lấn vào rìa UI), pointer-events: none
 
 export type DecorLayerBand = "bg" | "mid" | "fg";
 
 export type DecorSlotDefinition = {
-  /** manifest.layers[].slot 引用的 id */
+  /** id mà manifest.layers[].slot tham chiếu */
   id: string;
   band: DecorLayerBand;
-  /** 大致区域（百分比语义仅作文档提示，真值在舞台 CSS） */
+  /** Khu vực đại khái (ngữ nghĩa phần trăm chỉ dùng để gợi ý tài liệu, giá trị thực nằm trong CSS sân khấu) */
   area: string;
-  /** true = 允许压到功能 UI 边缘之上（仅 fg 带可为 true） */
+  /** true = cho phép đè lên rìa UI chức năng (chỉ dải fg mới được true) */
   overUi: boolean;
-  /** true = 该 slot 支持竖排/横排文字（题字横幅） */
+  /** true = slot này hỗ trợ văn bản dọc/ngang (biển chữ) */
   textCapable?: boolean;
 };
 
 /**
- * 锚点真值表。围绕中央书库面板一圈 + 全幅背景 + 题字位。
- * 三张概念稿（国风/园林/草原）的装饰元素都能映射进这套锚点。
- */
+  * Bảng giá trị anchor. Bao quanh panel thư viện trung tâm + nền toàn cảnh + vị trí đề chữ.
+  * Các phần tử trang trí của 3 bản phác thảo concept (Phong cách Quốc gia/Vườn tược/Thảo nguyên) đều có thể ánh xạ vào bộ anchor này.
+  */
 export const DECOR_SLOTS: readonly DecorSlotDefinition[] = [
-  { id: "backdrop", band: "bg", area: "全屏 100%×100%", overUi: false },
+  { id: "backdrop", band: "bg", area: "Toàn màn hình 100%×100%", overUi: false },
 
-  // 左右两翼：概念稿里的人物、龙雕、瓷瓶、马匹、鹰架
-  { id: "left-top", band: "mid", area: "左上 0~25% × 0~40%", overUi: false },
-  { id: "left-bottom", band: "mid", area: "左下 0~25% × 55~100%", overUi: false },
-  { id: "right-top", band: "mid", area: "右上 75~100% × 0~40%", overUi: false },
-  { id: "right-bottom", band: "mid", area: "右下 75~100% × 55~100%", overUi: false },
+  // Hai cánh trái phải: nhân vật, điêu khắc rồng, bình sứ, ngựa, giàn giáo trong bản concept
+  { id: "left-top", band: "mid", area: "Trên trái 0~25% × 0~40%", overUi: false },
+  { id: "left-bottom", band: "mid", area: "Dưới trái 0~25% × 55~100%", overUi: false },
+  { id: "right-top", band: "mid", area: "Trên phải 75~100% × 0~40%", overUi: false },
+  { id: "right-bottom", band: "mid", area: "Dưới phải 75~100% × 55~100%", overUi: false },
 
-  // 顶部中央：导航上方的拱形饰件/蝴蝶/飞鸟
-  { id: "top-center", band: "mid", area: "顶部 30~70% × 0~12%", overUi: false },
+  // Trung tâm phía trên: vật trang trí hình vòm/bướm/chim phía trên điều hướng
+  { id: "top-center", band: "mid", area: "Đỉnh 30~70% × 0~12%", overUi: false },
 
-  // 主角位：顶部横幅区的人物（三张概念稿的看书少女/少年）
-  { id: "hero", band: "mid", area: "顶部横幅区 40~70% × 10~30%", overUi: false },
+  // Vị trí nhân vật chính: nhân vật trong vùng banner phía trên (thiếu nữ/thiếu niên đọc sách trong 3 bản concept)
+  { id: "hero", band: "mid", area: "Vùng banner đỉnh 40~70% × 10~30%", overUi: false },
 
-  // 前景压边：探进面板边缘的花枝、璎珞、流苏
-  { id: "edge-left", band: "fg", area: "左缘 0~12% × 全高", overUi: true },
-  { id: "edge-right", band: "fg", area: "右缘 88~100% × 全高", overUi: true },
+  // Rìa tiền cảnh: cành hoa, chuỗi ngọc, tua rua lấn vào rìa panel
+  { id: "edge-left", band: "fg", area: "Rìa trái 0~12% × toàn cao", overUi: true },
+  { id: "edge-right", band: "fg", area: "Rìa phải 88~100% × toàn cao", overUi: true },
 
-  // 右下前景位：right-bottom 的 fg 版——需要人物/道具压在面板之上的场合
-  { id: "right-bottom-fg", band: "fg", area: "右下 75~100% × 55~100%", overUi: true },
+  // Vị trí tiền cảnh dưới phải: bản fg của right-bottom — dùng cho trường hợp cần nhân vật/đạo cụ đè lên panel
+  { id: "right-bottom-fg", band: "fg", area: "Dưới phải 75~100% × 55~100%", overUi: true },
 
-  // 题字横幅（"知其所来 明其所往"）：竖排文字位
-  { id: "quote", band: "mid", area: "右上 82~98% × 5~35%", overUi: false, textCapable: true },
+  // Banner đề chữ ("Tri kỳ sở lai Minh kỳ sở vãng"): vị trí văn bản dọc
+  { id: "quote", band: "mid", area: "Trên phải 82~98% × 5~35%", overUi: false, textCapable: true },
 ] as const;
 
 export type DecorSlotId = (typeof DECOR_SLOTS)[number]["id"];

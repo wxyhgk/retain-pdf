@@ -1,12 +1,13 @@
-// statusCard 快照 + 书架 live item 合并。
+// Hợp nhất snapshot statusCard + live item thư viện.
 //
-// 问题：attachJobProgress → startPolling 首帧会推 placeholder
-// （status=queued, stage_detail=正在读取…），已完成书会被盖成排队。
-// 本函数把书架 item 的终态/进度补回 snapshot，详情与主流程共用一处。
+// Vấn đề: attachJobProgress → startPolling khung đầu đẩy placeholder
+// (status=queued, stage_detail=đang đọc...), sách đã hoàn thành bị đè thành đang xếp hàng.
+// Hàm này bù trạng thái cuối/tiến trình từ item thư viện về snapshot, chi tiết và luồng
+// chính dùng chung một chỗ.
 
 import type { StatusCardJobRecord, StatusCardSnapshot } from "./status-card-store.js";
 
-/** 书架 live 行（library item）上与进度合并相关的字段 */
+/** Trường liên quan tiến trình trên dòng live thư viện (library item) */
 export type StatusCardFallbackItem = {
   job_id?: string;
   status?: string;
@@ -26,7 +27,7 @@ export type StatusCardFallbackItem = {
 
 /**
  * @param snapshot statusCardStore.snapshot
- * @param fallbackItem 书架 item
+ * @param fallbackItem item thư viện
  */
 export function mergeSnapshotWithFallback(
   snapshot: StatusCardSnapshot | null | undefined,
@@ -53,8 +54,8 @@ export function mergeSnapshotWithFallback(
     !snapStatus
     || snapStatus === "queued"
     || !snapJob
-    || `${snapshot?.detail || ""}`.includes("正在读取")
-    || `${snapshot?.value || ""}`.includes("准备");
+    || `${snapshot?.detail || ""}`.includes("đang đọc")
+    || `${snapshot?.value || ""}`.includes("chuẩn bị");
 
   const progress = fallbackItem.progress && typeof fallbackItem.progress === "object"
     ? fallbackItem.progress
@@ -73,7 +74,7 @@ export function mergeSnapshotWithFallback(
           job_id: itemJob,
           status: "succeeded",
           stage: "finished",
-          stage_detail: (fallbackItem.stage_detail as string) || "任务完成",
+          stage_detail: (fallbackItem.stage_detail as string) || "Tác vụ hoàn thành",
           progress: {
             percent: 100,
             current: itemCurrent || 100,
@@ -90,15 +91,15 @@ export function mergeSnapshotWithFallback(
       jobId: itemJob,
       status: "succeeded",
       stageKey: "done",
-      label: "完成",
-      value: "翻译 PDF 已生成",
-      detail: `${fallbackItem.stage_detail || "任务完成"}`.trim(),
+      label: "Hoàn thành",
+      value: "Đã tạo xong PDF dịch",
+      detail: `${fallbackItem.stage_detail || "Tác vụ hoàn thành"}`.trim(),
       displayPercent: 100,
       progressPercent: 100,
       progressCurrent: Number.isFinite(itemCurrent) ? itemCurrent : 100,
       progressTotal: Number.isFinite(itemTotal) && itemTotal > 0 ? itemTotal : 100,
-      progressFallbackText: "完成",
-      progressText: "渲染完成",
+      progressFallbackText: "Hoàn thành",
+      progressText: "Đã hoàn tất render",
       progressUnit: "percent",
       progressIndeterminate: false,
       visualStageKey: "done",
@@ -114,8 +115,8 @@ export function mergeSnapshotWithFallback(
       ...snapshot!,
       jobId: itemJob,
       status: "failed",
-      label: "失败",
-      value: "任务失败",
+      label: "Thất bại",
+      value: "Tác vụ thất bại",
       detail: `${fallbackItem.stage_detail || ""}`.trim(),
       cancelEnabled: false,
     };
@@ -127,7 +128,7 @@ export function mergeSnapshotWithFallback(
       jobId: itemJob,
       status: itemStatus,
       stageKey: snapshot?.stageKey || "ocr",
-      label: snapshot?.label || (itemStatus === "queued" ? "排队中" : "处理中"),
+      label: snapshot?.label || (itemStatus === "queued" ? "Đang xếp hàng" : "Đang xử lý"),
       detail: `${fallbackItem.stage_detail || snapshot?.detail || ""}`.trim(),
       displayPercent: Number.isFinite(itemPercent) ? itemPercent : snapshot?.displayPercent ?? null,
       progressPercent: Number.isFinite(itemPercent) ? itemPercent : (snapshot?.progressPercent ?? NaN),
@@ -139,9 +140,10 @@ export function mergeSnapshotWithFallback(
   return snapshot;
 }
 
-/** 书架 live 行是否为 startPolling 首帧占位（Dialog 层与 snapshot 层共用） */
+/** Dòng live thư viện có phải placeholder khung đầu của startPolling không (Dialog và
+ *  tầng snapshot dùng chung) */
 export function isPollingBootstrapPlaceholder(item: StatusCardFallbackItem = {}): boolean {
   const status = `${item.status || ""}`.trim();
   const detail = `${item.stage_detail || item.detail || ""}`;
-  return status === "queued" && detail.includes("正在读取任务状态");
+  return status === "queued" && detail.includes("đang đọc trạng thái tác vụ");
 }

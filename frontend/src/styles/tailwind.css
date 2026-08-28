@@ -1,23 +1,26 @@
 @import 'tailwindcss';
 
 /*
-  shadcn 组件源码里大量类名带 `dark:` 前缀(如 button.jsx 的
-  `dark:bg-destructive/60`)。Tailwind v4 的 `dark:` 变体默认按
-  `prefers-color-scheme: dark` 媒体查询生效,而不是"某个元素带 .dark
-  类"——项目 tokens.css 只有单一 :root,压根没有暗色模式设计,一旦某个
-  访客系统开着深色模式,这些 dark: 类会在半成品状态下被激活(没有配套的暗色
-  token,画面会不上不下地变淡/变暗),这是实测确认过的真实问题(验证 Button
-  时 destructive 变体在此环境下渲染成了 60% 透明度而非实心红,根源就是
-  headless 浏览器 prefers-color-scheme 探测为 dark 命中了 dark:bg-destructive/60)。
-  把 dark 变体的判定改绑到 `.dark` 类选择器——项目里永远不会有元素带这个类,
-  于是 dark: 前缀的类名永久不生效,行为等价于"固定浅色主题",不随访客系统
-  设置漂移。
+  Mã nguồn component shadcn chứa rất nhiều tên class có tiền tố `dark:` (như
+  `dark:bg-destructive/60` trong button.jsx). Biến thể `dark:` của Tailwind v4
+  mặc định hoạt động theo media query `prefers-color-scheme: dark`, chứ không
+  phải "một phần tử mang class .dark" — tokens.css của dự án chỉ có một :root
+  duy nhất, hoàn toàn không có thiết kế chế độ tối. Khi hệ thống của khách truy cập
+  bật chế độ tối, các class dark: này sẽ được kích hoạt ở trạng thái nửa vời
+  (không có token tối đi kèm, giao diện sẽ nhạt/tối một cách lửng lơ). Đây là vấn
+  đề thực tế đã được xác nhận qua kiểm thử (khi xác minh Button, biến thể destructive
+  render thành 60% độ trong suốt thay vì đỏ đặc, nguyên nhân là headless browser
+  phát hiện prefers-color-scheme: dark và khớp dark:bg-destructive/60).
+  Chuyển phán đoán biến thể dark sang bộ chọn class `.dark` — dự án sẽ không bao giờ
+  có phần tử nào mang class này, do đó các class có tiền tố dark: vĩnh viễn không
+  có hiệu lực, hành vi tương đương "chủ đề sáng cố định", không trôi theo cài đặt
+  hệ thống của khách truy cập.
 */
 @custom-variant dark (&:is(.dark *));
 
 /*
-  显式声明 content 来源(对应原 tailwind.config.js 的 content 数组),
-  不依赖 v4 的自动探测——路径相对本文件(src/styles/)解析。
+  Khai báo rõ ràng nguồn content (tương ứng mảng content trong tailwind.config.js cũ),
+  không phụ thuộc vào tự động phát hiện của v4 — đường dẫn được phân giải tương đối so với tệp này (src/styles/).
 */
 @source '../../index.html';
 @source '../../detail.html';
@@ -32,16 +35,20 @@
 @source '../lib/**/*.js';
 
 /*
-  危险区修复(Tailwind v4 迁移):v4 的内容扫描是纯文本 token 提取,不理解 JS
-  语法。项目里大量 JSX 用 `` `class-name${cond ? " x" : ""}` `` 这种模板字符
-  串拼类名,类名和 `${` 之间没有分隔符时,扫描器会把 "class-name${cond" 当成
-  一个整体 token,提取不出 "class-name" 本身。这些类名对应的自定义类被迁移
-  工具转成了 `@utility <name> {}`(v4 里 @utility 和内置工具类一样按需生成,
-  不再像 v3 的手写 CSS 那样无条件编译进产物),于是它们的样式在 v4 下静默
-  丢失(class 还在 DOM 上,但对应 CSS 规则整条消失,不报错)。
-  下面显式 safelist 这些类名(经比对 v3 编译产物逐个确认:v3 下确有内容,
-  v4 编译产物里裸选择器规则消失)——不改 JSX 源码,把修复收在 CSS 侧,和本
-  阶段"只做 Tailwind 升级"的范围保持一致。
+  Sửa vùng nguy hiểm (di chuyển Tailwind v4): Quét nội dung của v4 là trích xuất
+  token văn bản thuần túy, không hiểu cú pháp JS. Dự án có rất nhiều JSX dùng
+  template string kiểu `` `class-name${cond ? " x" : ""}` `` để ghép tên class;
+  khi giữa tên class và `${` không có ký tự phân cách, scanner sẽ coi
+  "class-name${cond" là một token nguyên khối, không trích xuất được "class-name".
+  Các custom class tương ứng đã được công cụ di chuyển chuyển thành
+  `@utility <name> {}` (trong v4, @utility sinh theo nhu cầu giống utility tích hợp,
+  không còn biên dịch vô điều kiện vào sản phẩm như CSS viết tay v3), do đó style
+  của chúng bị mất âm thầm dưới v4 (class vẫn còn trên DOM nhưng toàn bộ quy tắc CSS
+  tương ứng biến mất, không báo lỗi).
+  Dưới đây safelist rõ ràng các tên class này (đã so sánh từng cái với sản phẩm biên
+  dịch v3 để xác nhận: v3 có nội dung, v4 mất quy tắc selector trần) — không sửa mã
+  nguồn JSX, gói gọn sửa chữa ở phía CSS, phù hợp với phạm vi giai đoạn này "chỉ
+  nâng cấp Tailwind".
 */
 @source inline("app-settings-panel credential-provider-panel credential-tabs credential-top-up-link detail-item detail-tab detail-tab-panel glossary-list-item progress-bar recent-job-cover status-result-actions status-substage-flow status-substage-step");
 
@@ -67,9 +74,10 @@
   --shadow-panel: 0 18px 48px color-mix(in srgb, var(--shadow-color) 22%, transparent);
 
   /*
-    shadcn/ui 组件消费的标准变量名(阶段 A,shadcn 工具链落地)。实际值的
-    映射理由和"命名避坑"说明见 src/styles/shadcn-theme.css 顶部注释——这里
-    只做 Tailwind v4 要求的"@theme 名字 → 运行时变量"登记,不重复写理由。
+    Tên biến chuẩn mà component shadcn/ui tiêu thụ (giai đoạn A, triển khai
+    toolchain shadcn). Lý do ánh xạ giá trị thực tế và ghi chú "tránh đặt tên"
+    xem phần chú thích đầu tệp src/styles/shadcn-theme.css — ở đây chỉ thực hiện
+    đăng ký "@theme name → biến runtime" theo yêu cầu của Tailwind v4, không lặp lại lý do.
   */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -94,12 +102,12 @@
 }
 
 /*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
+  Màu viền mặc định đã đổi thành `currentcolor` trong Tailwind CSS v4,
+  nên chúng tôi thêm các style tương thích này để đảm bảo mọi thứ vẫn
+  trông giống như khi dùng Tailwind CSS v3.
 
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
+  Nếu sau này muốn xóa các style này, cần thêm utility màu viền rõ ràng
+  cho bất kỳ phần tử nào phụ thuộc vào các giá trị mặc định này.
 */
 @layer base {
   *,

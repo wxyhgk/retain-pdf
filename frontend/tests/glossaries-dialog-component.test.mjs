@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 
-// GlossariesDialog(Phase 3 dialogs 群,蓝图 §3)组件级测试。
-// 校验:契约 id、列表加载/选中/新建草稿、保存的名称回退与
-// "固定/偏好译法缺译文"校验、CSV 导入解析、CSV 导出、refreshWorkflowGlossaries
-// 反向回调断言(mock workflow 域)、APP_EVENTS.refreshGlossaries 触发刷新。
+// Kiểm thử thành phần GlossariesDialog (nhóm hộp thoại Phase 3, Blueprint §3).
+// Kiểm tra: id hợp đồng, tải danh sách/chọn/tạo bản nháp mới, dự phòng tên khi lưu và
+// xác thực "dịch cố định/ưu tiên thiếu bản dịch", phân tích nhập CSV, xuất CSV, xác nhận
+// gọi lại refreshWorkflowGlossaries (miền workflow mock), sự kiện APP_EVENTS.refreshGlossaries kích hoạt làm mới.
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/index.html" });
 for (const key of ["window", "document", "HTMLElement", "HTMLInputElement", "HTMLTextAreaElement", "HTMLSelectElement", "CustomEvent", "Event", "KeyboardEvent", "MouseEvent", "Node", "MutationObserver", "NodeFilter"]) {
@@ -18,21 +18,21 @@ for (const key of ["window", "document", "HTMLElement", "HTMLInputElement", "HTM
 globalThis.window = dom.window;
 globalThis.localStorage = dom.window.localStorage;
 globalThis.requestAnimationFrame = (callback) => setTimeout(() => callback(0), 0);
-// Radix Presence/Tabs(阶段 B 引入)在 jsdom 下需要 cancelAnimationFrame
-// (TabsContent 的 mount 动画计时器清理)和 getComputedStyle(Presence 读取
-// animation-name 判断退场动画是否结束)——jsdom 的 window 上有实现,只是没有
-// 像 requestAnimationFrame 一样被复制到裸 global 上,这里一并补上。
+// Radix Presence/Tabs (Giai đoạn B giới thiệu) trong jsdom cần cancelAnimationFrame
+// (TabsContent dọn dẹp bộ đếm thời gian hoạt ảnh khi mount) và getComputedStyle (Presence đọc
+// animation-name để xác định hoạt ảnh thoát đã kết thúc chưa) — có trên window của jsdom, chỉ là chưa
+// được sao chép lên global trần giống requestAnimationFrame, ở đây bổ sung luôn.
 globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
 globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 globalThis.IS_REACT_ACT_ENVIRONMENT = false;
 
-// HomeApp.jsx 渲染 <download-toast></download-toast> 占位(蓝图 §7
-// artifact-downloads 域,不在本 agent 范围),真正的自定义元素类
-// (src/js/components/feedback/download-toast.js)属旧世界 js/components/**,
-// architecture-boundaries 门禁禁止 src/pages/** import——组件本身尚未在
-// React 世界注册。这里注册一个最小 stub(仅 setState/hide 两个公开方法,
-// 与真实实现的公开契约一致),隔离本域(CSV 导出)的测试,不代表已解决
-// artifact-downloads 域的接线缺口(见测试文件末尾的发现说明)。
+// HomeApp.jsx render <download-toast></download-toast> làm placeholder (Blueprint §7
+// miền artifact-downloads, không trong phạm vi agent này), lớp phần tử tùy chỉnh thực tế
+// (src/js/components/feedback/download-toast.js) thuộc thế giới cũ js/components/**,
+// architecture-boundaries cấm src/pages/** import — thành phần chưa được
+// đăng ký trong thế giới React. Ở đây đăng ký một stub tối thiểu (chỉ 2 phương thức công khai setState/hide,
+// khớp với hợp đồng công khai của thực tế), cô lập kiểm thử miền này (CSV xuất), không có nghĩa là đã giải quyết
+// khoảng trống kết nối miền artifact-downloads (xem phần phát hiện ở cuối tệp kiểm thử).
 if (!dom.window.customElements.get("download-toast")) {
   dom.window.customElements.define("download-toast", class extends dom.window.HTMLElement {
     setState() {}
@@ -58,7 +58,7 @@ async function waitFor(predicate, description) {
     }
     await wait(15);
   }
-  assert.fail(`等待超时：${description}`);
+  assert.fail(`Chờ quá thời gian: ${description}`);
 }
 
 function byId(id) {
@@ -94,13 +94,13 @@ function mockGlossaryApi(overrides = {}) {
     refreshWorkflowGlossaries: [],
   };
   const state = {
-    items: [{ glossary_id: "g-1", name: "量子化学术语", entry_count: 2 }],
+    items: [{ glossary_id: "g-1", name: "Thuật ngữ hóa học lượng tử", entry_count: 2 }],
     detail: {
       glossary_id: "g-1",
-      name: "量子化学术语",
+      name: "Thuật ngữ hóa học lượng tử",
       entries: [
-        { source: "Hartree-Fock", target: "", level: "preserve", match_mode: "case_insensitive", context: "", note: "保留英文" },
-        { source: "density functional theory", target: "密度泛函理论", level: "canonical", match_mode: "case_insensitive", context: "", note: "" },
+        { source: "Hartree-Fock", target: "", level: "preserve", match_mode: "case_insensitive", context: "", note: "Giữ tiếng Anh" },
+        { source: "density functional theory", target: "Lý thuyết phiếm hàm mật độ", level: "canonical", match_mode: "case_insensitive", context: "", note: "" },
       ],
     },
   };
@@ -164,9 +164,9 @@ function createServices({ glossaryOverrides = {} } = {}) {
     loadPersistedDeveloperConfig: () => ({}),
     loadPersistedBrowserConfig: () => ({}),
   });
-  // refreshWorkflowGlossaries 是 workflow 域的反向回调,composition.js 内部接的是
-  // features.workflowFeature.loadGlossaryOptions——这里直接替换该函数,断言
-  // GlossariesDialog 保存/删除后确实调用了它(蓝图 §3/§8 依赖矩阵的耦合点)。
+  // refreshWorkflowGlossaries là callback ngược của miền workflow, bên trong composition.js kết nối đến
+  // features.workflowFeature.loadGlossaryOptions — ở đây thay thế trực tiếp hàm này, kiểm tra
+  // GlossariesDialog sau khi lưu/xóa có thực sự gọi nó (điểm phụ thuộc của ma trận phụ thuộc Blueprint §3/§8).
   services.features.workflowFeature.loadGlossaryOptions = api.refreshWorkflowGlossaries;
   return { services, calls, state };
 }
@@ -178,35 +178,35 @@ async function mountHome(services) {
   services.initialize();
   const root = createRoot(host);
   root.render(React.createElement(HomeApp, { services }));
-  await waitFor(() => byId("app-shell"), "HomeApp 首帧渲染");
+  await waitFor(() => byId("app-shell"), "Khung chuyển đầu tiên của HomeApp");
   await wait(0);
   return { host, root };
 }
 
-// 3a workflow 域启动时也会调 fetchGlossaries(填充术语表下拉,composition.js
-// 共用同一个注入口)——本域"打开对话框触发一次列表加载"类断言不能用绝对值
-// 1,要先等 workflow 那次初始加载稳定,记一个基线,后续断言用基线 +1 的相对值,
-// 避免两处调用时序竞态导致断言假失败/假通过。
+// 3a workflow miền khởi động cũng gọi fetchGlossaries (điền danh sách thả thuật ngữ, composition.js
+// dùng chung điểm tiêm) — kiểm tra loại "mở hộp thoại kích hoạt tải danh sách một lần" miền này không thể dùng giá trị tuyệt đối
+// 1, phải đợi lần tải ban đầu của workflow ổn định, ghi lại baseline, sau đó kiểm tra dùng giá trị tương đối baseline +1,
+// tránh tình trạng đua thời gian giữa hai cuộc gọi dẫn đến kết quả kiểm tra sai fail/pass.
 async function settle(services, calls) {
   const { host, root } = await mountHome(services);
-  await waitFor(() => calls.fetchGlossaries.length >= 1, "workflow 域启动时的初始术语表加载稳定");
+  await waitFor(() => calls.fetchGlossaries.length >= 1, "Tải thuật ngữ ban đầu ổn định khi khởi động miền workflow");
   await wait(30);
   return { host, root, glossariesBaseline: calls.fetchGlossaries.length };
 }
 
 async function openGlossariesDialog() {
-  // 阶段 C(shadcn 改造):SettingsHubDialog/GlossariesDialog 换成 Radix Dialog
-  // 后不 forceMount Content,关闭态下整个内容都不挂载(不再是原生
-  // <dialog>.open 布尔属性),这里改用"是否挂载"判断打开态。
+  // Giai đoạn C (cải tạo shadcn): SettingsHubDialog/GlossariesDialog đổi sang Radix Dialog
+  // sau đó không forceMount Content, ở trạng thái đóng toàn bộ nội dung không được mount (không còn
+  // thuộc tính boolean .open của <dialog> gốc), ở đây đổi sang "có mount hay không" để xác định trạng thái mở.
   click(byId("app-settings-btn"));
-  await waitFor(() => byId("app-settings-dialog") !== null, "设置对话框打开");
+  await waitFor(() => byId("app-settings-dialog") !== null, "Hộp thoại cài đặt mở");
   click(dom.window.document.querySelector('[data-settings-tab="glossary"]'));
   await wait(0);
   click(byId("glossary-btn"));
-  await waitFor(() => byId("glossary-manager-dialog") !== null, "术语表对话框打开");
+  await waitFor(() => byId("glossary-manager-dialog") !== null, "Hộp thoại thuật ngữ mở");
 }
 
-test("GlossariesDialog：契约 id、打开即刷新列表、选中态、编辑器回填(preserve 词条译文留空)", async () => {
+test("GlossariesDialog: Hợp đồng id, mở ra làm mới danh sách ngay, trạng thái chọn, điền lại trình soạn thảo (mục preserve bản dịch để trống)", async () => {
   const { services, calls } = createServices();
   const { host, root, glossariesBaseline } = await settle(services, calls);
 
@@ -219,48 +219,48 @@ test("GlossariesDialog：契约 id、打开即刷新列表、选中态、编辑�
     "glossary-csv-text", "glossary-import-apply-btn", "glossary-import-cancel-btn",
     "glossary-status", "glossary-save-btn",
   ]) {
-    assert.ok(byId(id), `契约 id 缺失：#${id}`);
+    assert.ok(byId(id), `Thiếu id hợp đồng: #${id}`);
   }
 
-  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "打开对话框触发一次列表加载");
-  await waitFor(() => byId("glossary-name").value === "量子化学术语", "自动选中首条并回填编辑器");
-  assert.equal(calls.fetchGlossary.length, 1, "自动选中触发一次详情加载");
+  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "Mở hộp thoại kích hoạt tải danh sách một lần");
+  await waitFor(() => byId("glossary-name").value === "Thuật ngữ hóa học lượng tử", "Tự động chọn mục đầu và điền lại trình soạn thảo");
+  assert.equal(calls.fetchGlossary.length, 1, "Tự động chọn kích hoạt tải chi tiết một lần");
 
   const listButtons = byId("glossary-list").querySelectorAll("button");
   assert.equal(listButtons.length, 1);
-  assert.equal(listButtons[0].classList.contains("is-active"), true, "首条自动选中态");
+  assert.equal(listButtons[0].classList.contains("is-active"), true, "Trạng thái tự động chọn mục đầu");
 
-  // preserve 词条(Hartree-Fock)的译文输入框应保持"留空"展示(不是自动回填
-  // source),回填语义只发生在保存时的读取阶段——见 glossaries-store.js 头注释
-  // readEditorPayloadFromDraft,抄自 src/js/features/glossaries/view.js:165。
+  // ô nhập bản dịch của mục preserve (Hartree-Fock) phải giữ trạng thái "để trống" hiển thị (không phải tự động điền lại
+  // source), ngữ nghĩa điền lại chỉ xảy ra ở giai đoạn đọc khi lưu — xem chú thích đầu glossaries-store.js
+  // readEditorPayloadFromDraft, sao chép từ src/js/features/glossaries/view.js:165.
   const sourceInputs = byId("glossary-entries").querySelectorAll(".glossary-entry-source");
   const targetInputs = byId("glossary-entries").querySelectorAll(".glossary-entry-target");
   assert.equal(sourceInputs[0].value, "Hartree-Fock");
-  assert.equal(targetInputs[0].value, "", "preserve 词条译文展示态留空,不提前回填 source");
-  assert.equal(targetInputs[1].value, "密度泛函理论");
+  assert.equal(targetInputs[0].value, "", "mục preserve bản dịch hiển thị để trống, không điền lại source trước");
+  assert.equal(targetInputs[1].value, "Lý thuyết phiếm hàm mật độ");
 
   root.unmount();
   services.dispose();
   host.remove();
 });
 
-test("GlossariesDialog：新建草稿 + preserve 保存时用 source 回填空译文(风险 1 语义)", async () => {
+test("GlossariesDialog: Tạo bản nháp mới + preserve lưu lúc dùng source điền lại bản dịch trống (ngữ nghĩa rủi ro 1)", async () => {
   const { services, calls } = createServices();
   const { host, root, glossariesBaseline } = await settle(services, calls);
 
   await openGlossariesDialog();
-  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "打开对话框触发一次列表加载");
+  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "Mở hộp thoại kích hoạt tải danh sách một lần");
 
   click(byId("glossary-new-btn"));
-  await waitFor(() => byId("glossary-name").value === "未命名术语表", "新建草稿回填默认名称");
+  await waitFor(() => byId("glossary-name").value === "Bảng thuật ngữ chưa đặt tên", "Tạo bản nháp mới điền lại tên mặc định");
 
   const sourceInput = byId("glossary-entries").querySelector(".glossary-entry-source");
-  assert.ok(sourceInput, "新建草稿自动带一行空白词条");
+  assert.ok(sourceInput, "Tạo bản nháp mới tự động thêm một dòng mục trống");
   typeInput(sourceInput, "Hartree-Fock");
-  // level 默认已是 preserve,不需要切换 select。
+  // level mặc định đã là preserve, không cần chuyển select。
 
   click(byId("glossary-save-btn"));
-  await waitFor(() => calls.createGlossary.length === 1, "保存触发 createGlossary");
+  await waitFor(() => calls.createGlossary.length === 1, "Lưu kích hoạt createGlossary");
   assert.deepEqual(calls.createGlossary[0].entries, [{
     source: "Hartree-Fock",
     target: "Hartree-Fock",
@@ -268,9 +268,9 @@ test("GlossariesDialog：新建草稿 + preserve 保存时用 source 回填空�
     match_mode: "case_insensitive",
     context: "",
     note: "",
-  }], "preserve 词条译文留空时,保存时用 source 回填(抄自 view.js:165)");
+  }], "khi mục preserve bản dịch để trống, lưu lúc dùng source điền lại (sao chép từ view.js:165)");
 
-  await waitFor(() => calls.refreshWorkflowGlossaries.length === 1, "保存后回调 workflow 域刷新");
+  await waitFor(() => calls.refreshWorkflowGlossaries.length === 1, "Sau khi lưu callback làm mới miền workflow");
   assert.equal(calls.refreshWorkflowGlossaries[0].force, true);
 
   root.unmount();
@@ -278,65 +278,65 @@ test("GlossariesDialog：新建草稿 + preserve 保存时用 source 回填空�
   host.remove();
 });
 
-test("GlossariesDialog：非 preserve 词条缺译文时保存被拦截(校验)", async () => {
+test("GlossariesDialog: Mục không phải preserve thiếu bản dịch lúc lưu bị chặn (kiểm tra)", async () => {
   const { services, calls } = createServices();
   const { host, root, glossariesBaseline } = await settle(services, calls);
 
   await openGlossariesDialog();
-  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "打开对话框触发一次列表加载");
+  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "Mở hộp thoại kích hoạt tải danh sách một lần");
 
   click(byId("glossary-new-btn"));
-  await waitFor(() => byId("glossary-name").value === "未命名术语表", "新建草稿");
+  await waitFor(() => byId("glossary-name").value === "Bảng thuật ngữ chưa đặt tên", "Tạo bản nháp mới");
 
   const sourceInput = byId("glossary-entries").querySelector(".glossary-entry-source");
   const levelSelect = byId("glossary-entries").querySelector(".glossary-entry-level");
   typeInput(sourceInput, "density functional theory");
   selectOption(levelSelect, "canonical");
-  // 译文(target)保持留空。
+  // Bản dịch (target) giữ để trống。
 
   click(byId("glossary-save-btn"));
-  await waitFor(() => byId("glossary-status").textContent === "固定译法/偏好译法需要填写译文。", "校验拦截提示");
+  await waitFor(() => byId("glossary-status").textContent === "Dịch cố định/ưu tiên cần điền bản dịch.", "Hiển thị kiểm tra chặn");
   assert.equal(byId("glossary-status").classList.contains("is-error"), true);
-  assert.equal(calls.createGlossary.length, 0, "校验未通过不应调用保存接口");
+  assert.equal(calls.createGlossary.length, 0, "Kiểm tra không qua không nên gọi giao diện lưu");
 
   const targetInput = byId("glossary-entries").querySelector(".glossary-entry-target");
-  typeInput(targetInput, "密度泛函理论");
+  typeInput(targetInput, "Lý thuyết phiếm hàm mật độ");
   click(byId("glossary-save-btn"));
-  await waitFor(() => calls.createGlossary.length === 1, "补齐译文后保存成功");
-  assert.equal(calls.createGlossary[0].entries[0].target, "密度泛函理论");
+  await waitFor(() => calls.createGlossary.length === 1, "Bổ sung bản dịch sau khi lưu thành công");
+  assert.equal(calls.createGlossary[0].entries[0].target, "Lý thuyết phiếm hàm mật độ");
 
   root.unmount();
   services.dispose();
   host.remove();
 });
 
-test("GlossariesDialog：CSV 导入解析替换草稿词条", async () => {
+test("GlossariesDialog: Phân tích CSV nhập để thay thế mục bản nháp", async () => {
   const { services, calls } = createServices();
   const { host, root, glossariesBaseline } = await settle(services, calls);
 
   await openGlossariesDialog();
-  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "打开对话框触发一次列表加载");
-  await waitFor(() => byId("glossary-name").value === "量子化学术语", "自动选中首条");
+  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "Mở hộp thoại kích hoạt tải danh sách một lần");
+  await waitFor(() => byId("glossary-name").value === "Thuật ngữ hóa học lượng tử", "Tự động chọn mục đầu");
 
   click(byId("glossary-import-btn"));
-  await waitFor(() => byId("glossary-import-panel").classList.contains("hidden") === false, "导入面板打开");
+  await waitFor(() => byId("glossary-import-panel").classList.contains("hidden") === false, "Bảng nhập mở");
 
   typeInput(byId("glossary-csv-text"), "parsed-term,解析术语,canonical,case_insensitive,");
   click(byId("glossary-import-apply-btn"));
 
-  await waitFor(() => calls.parseGlossaryCsv.length === 1, "触发 CSV 解析");
-  await waitFor(() => byId("glossary-import-panel").classList.contains("hidden") === true, "解析成功后导入面板收起");
-  await waitFor(() => byId("glossary-entries").querySelectorAll(".glossary-entry-row").length === 1, "词条替换为解析结果");
+  await waitFor(() => calls.parseGlossaryCsv.length === 1, "Kích hoạt phân tích CSV");
+  await waitFor(() => byId("glossary-import-panel").classList.contains("hidden") === true, "Bảng nhập thu gọn sau khi phân tích thành công");
+  await waitFor(() => byId("glossary-entries").querySelectorAll(".glossary-entry-row").length === 1, "Mục được thay thế bằng kết quả phân tích");
   assert.equal(byId("glossary-entries").querySelector(".glossary-entry-source").value, "parsed-term");
-  assert.equal(byId("glossary-csv-text").value, "", "解析成功后清空 CSV 文本框");
-  assert.match(byId("glossary-status").textContent, /已解析 1 条/);
+  assert.equal(byId("glossary-csv-text").value, "", "Xóa trống hộp văn bản CSV sau khi phân tích thành công");
+  assert.match(byId("glossary-status").textContent, /Đã phân tích 1 mục/);
 
   root.unmount();
   services.dispose();
   host.remove();
 });
 
-test("GlossariesDialog：CSV 导出调用 exportGlossaryCsv 并提示成功", async () => {
+test("GlossariesDialog: Gọi exportGlossaryCsv khi CSV xuất và hiển thị thành công", async () => {
   const previousURL = globalThis.URL;
   globalThis.URL = class extends previousURL {
     static createObjectURL() { return "blob:mock-glossary-export"; }
@@ -347,13 +347,13 @@ test("GlossariesDialog：CSV 导出调用 exportGlossaryCsv 并提示成功", as
   const { host, root, glossariesBaseline } = await settle(services, calls);
 
   await openGlossariesDialog();
-  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "打开对话框触发一次列表加载");
-  await waitFor(() => byId("glossary-name").value === "量子化学术语", "自动选中首条");
+  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "Mở hộp thoại kích hoạt tải danh sách một lần");
+  await waitFor(() => byId("glossary-name").value === "Thuật ngữ hóa học lượng tử", "Tự động chọn mục đầu");
 
   click(byId("glossary-export-btn"));
-  await waitFor(() => calls.exportGlossaryCsv.length === 1, "触发导出请求");
+  await waitFor(() => calls.exportGlossaryCsv.length === 1, "Kích hoạt yêu cầu xuất");
   assert.equal(calls.exportGlossaryCsv[0], "g-1");
-  await waitFor(() => /^已导出 g-1\.csv。$/.test(byId("glossary-status").textContent), "导出成功提示");
+  await waitFor(() => /^已导出 g-1\.csv。$/.test(byId("glossary-status").textContent), "Hiển thị xuất thành công");
   assert.equal(byId("glossary-status").classList.contains("is-valid"), true);
 
   root.unmount();
@@ -362,33 +362,33 @@ test("GlossariesDialog：CSV 导出调用 exportGlossaryCsv 并提示成功", as
   globalThis.URL = previousURL;
 });
 
-test("GlossariesDialog：APP_EVENTS.refreshGlossaries 触发列表重新加载", async () => {
+test("GlossariesDialog: APP_EVENTS.refreshGlossaries kích hoạt tải lại danh sách", async () => {
   const { services, calls } = createServices();
   const { host, root, glossariesBaseline } = await settle(services, calls);
 
   await openGlossariesDialog();
-  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "打开对话框触发一次列表加载");
+  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "Mở hộp thoại kích hoạt tải danh sách một lần");
 
   dom.window.document.dispatchEvent(new dom.window.CustomEvent(APP_EVENTS.refreshGlossaries));
-  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 2, "refreshGlossaries 事件触发重新加载");
+  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 2, "refreshGlossaries sự kiện kích hoạt tải lại");
 
   root.unmount();
   services.dispose();
   host.remove();
 });
 
-test("GlossariesDialog：删除当前术语表回调 workflow 域刷新", async () => {
+test("GlossariesDialog: Xóa thuật ngữ hiện tại gọi callback làm mới miền workflow", async () => {
   const { services, calls } = createServices();
   const { host, root, glossariesBaseline } = await settle(services, calls);
 
   await openGlossariesDialog();
-  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "打开对话框触发一次列表加载");
-  await waitFor(() => byId("glossary-name").value === "量子化学术语", "自动选中首条");
+  await waitFor(() => calls.fetchGlossaries.length === glossariesBaseline + 1, "Mở hộp thoại kích hoạt tải danh sách một lần");
+  await waitFor(() => byId("glossary-name").value === "Thuật ngữ hóa học lượng tử", "Tự động chọn mục đầu");
 
   click(byId("glossary-delete-btn"));
-  await waitFor(() => calls.deleteGlossary.length === 1, "触发删除请求");
+  await waitFor(() => calls.deleteGlossary.length === 1, "Kích hoạt yêu cầu xóa");
   assert.equal(calls.deleteGlossary[0], "g-1");
-  await waitFor(() => calls.refreshWorkflowGlossaries.some((options) => options.selectedId === ""), "删除后回调 workflow 域刷新(selectedId 清空)");
+  await waitFor(() => calls.refreshWorkflowGlossaries.some((options) => options.selectedId === ""), "Xóa sau callback làm mới miền workflow (selectedId xóa trống)");
 
   root.unmount();
   services.dispose();

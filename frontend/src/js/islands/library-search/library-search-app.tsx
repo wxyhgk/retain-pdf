@@ -25,11 +25,11 @@ function SearchHit({ hit, onOpenReader }) {
       type="button"
       className="lib-search-hit"
       onClick={() => onOpenReader(hit)}
-      title={`第 ${Number(hit.page_idx) + 1} 页 · ${hit.block_id}`}
+       title={`Trang ${Number(hit.page_idx) + 1} · ${hit.block_id}`}
     >
       <Snippet text={hit.source_snippet} />
       {hit.translated_snippet ? <Snippet text={hit.translated_snippet} /> : null}
-      <span className="lib-search-hit-meta">第 {Number(hit.page_idx) + 1} 页</span>
+       <span className="lib-search-hit-meta">Trang {Number(hit.page_idx) + 1}</span>
     </button>
   );
 }
@@ -44,16 +44,16 @@ function DocumentRow({ doc, onOpenReader, onCycleStatus }) {
         onClick={() => onOpenReader({ document_id: doc.document_id, job_id: doc.active_job_id })}
       >
         <span className="lib-search-doc-title">{doc.title || doc.source_filename}</span>
-        <span className="lib-search-doc-meta">
-          {doc.page_count} 页{doc.tags.length ? ` · ${doc.tags.join(" / ")}` : ""}
-        </span>
+         <span className="lib-search-doc-meta">
+           {doc.page_count} trang{doc.tags.length ? ` · ${doc.tags.join(" / ")}` : ""}
+         </span>
       </button>
-      <button
-        type="button"
-        className={`lib-search-doc-status is-${doc.reading_status}`}
-        onClick={() => onCycleStatus(doc)}
-        title="点击切换阅读状态"
-      >
+       <button
+         type="button"
+         className={`lib-search-doc-status is-${doc.reading_status}`}
+         onClick={() => onCycleStatus(doc)}
+         title="Click để chuyển trạng thái đọc"
+       >
         {meta.label}
       </button>
     </div>
@@ -97,7 +97,7 @@ function LibrarySearchPanel({ ports }) {
         setError("");
       } catch (searchError) {
         if (requestSeqRef.current === seq) {
-          setError(searchError?.message || "检索失败");
+          setError(searchError?.message || "Tìm kiếm thất bại");
         }
       } finally {
         if (requestSeqRef.current === seq) {
@@ -116,7 +116,7 @@ function LibrarySearchPanel({ ports }) {
     try {
       await ports.patchDocument(doc.document_id, { reading_status: next });
     } catch (_err) {
-      // 回滚乐观更新
+      // Cập nhật lạc quan khôi phục
       setDocuments((current) => current.map((item) => (
         item.document_id === doc.document_id ? { ...item, reading_status: doc.reading_status } : item
       )));
@@ -130,12 +130,12 @@ function LibrarySearchPanel({ ports }) {
   const matchedDocuments = filterDocuments(documents, { query: trimmed, readingStatus: statusFilter });
 
   return (
-    <div className="lib-search-panel" role="region" aria-label="库检索结果">
+    <div className="lib-search-panel" role="region" aria-label="Kết quả tìm kiếm thư viện">
       <div className="lib-search-head">
-        <strong>库检索</strong>
-        <span className="lib-search-status">{busy ? "检索中…" : error || `${hits.length} 条全文命中 · ${matchedDocuments.length} 篇文档`}</span>
-        <div className="lib-search-filters" role="group" aria-label="按阅读状态过滤">
-          <button type="button" className={statusFilter === "" ? "is-active" : ""} onClick={() => setStatusFilter("")}>全部</button>
+        <strong>Tìm kiếm thư viện</strong>
+        <span className="lib-search-status">{busy ? "Đang tìm..." : error || `${hits.length} kết quả khớp toàn văn · ${matchedDocuments.length} tài liệu`}</span>
+        <div className="lib-search-filters" role="group" aria-label="Lọc theo trạng thái đọc">
+          <button type="button" className={statusFilter === "" ? "is-active" : ""} onClick={() => setStatusFilter("")}>Tất cả</button>
           {Object.entries(READING_STATUS_META).map(([value, meta]) => (
             <button
               key={value}
@@ -150,7 +150,7 @@ function LibrarySearchPanel({ ports }) {
       </div>
       {hits.length > 0 && (
         <section className="lib-search-section">
-          <h4>全文命中</h4>
+          <h4>Kết quả khớp toàn văn</h4>
           <div className="lib-search-hits">
             {hits.map((hit) => (
               <SearchHit key={`${hit.job_id}-${hit.page_idx}-${hit.block_id}`} hit={hit} onOpenReader={ports.openReader} />
@@ -159,9 +159,9 @@ function LibrarySearchPanel({ ports }) {
         </section>
       )}
       <section className="lib-search-section">
-        <h4>文档</h4>
+        <h4>Tài liệu</h4>
         {matchedDocuments.length === 0
-          ? <p className="lib-search-empty">没有匹配的文档</p>
+          ? <p className="lib-search-empty">Không tìm thấy tài liệu phù hợp</p>
           : (
             <div className="lib-search-docs">
               {matchedDocuments.map((doc) => (

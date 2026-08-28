@@ -63,8 +63,8 @@ function userStageFor(payload) {
   if (payload.status === "succeeded" && isJobTerminal(payload)) {
     return {
       key: "done",
-      label: "完成",
-      detail: "翻译 PDF 已生成",
+      label: "Hoàn thành",
+      detail: "PDF dịch đã tạo",
       step: USER_STAGE_TOTAL,
       total: USER_STAGE_TOTAL,
     };
@@ -72,8 +72,8 @@ function userStageFor(payload) {
   if (payload.status === "failed") {
     return {
       key: "failed",
-      label: "失败",
-      detail: "任务失败，请查看详情",
+      label: "Thất bại",
+      detail: "Nhiệm vụ thất bại, vui lòng xem chi tiết",
       step: null,
       total: USER_STAGE_TOTAL,
     };
@@ -81,8 +81,8 @@ function userStageFor(payload) {
   if (payload.status === "canceled") {
     return {
       key: "canceled",
-      label: "已取消",
-      detail: "任务已取消",
+      label: "Đã hủy",
+      detail: "Nhiệm vụ đã hủy",
       step: null,
       total: USER_STAGE_TOTAL,
     };
@@ -94,8 +94,8 @@ function userStageFor(payload) {
   ) {
     return {
       key: "queued",
-      label: "排队中",
-      detail: detailForPayload(payload, "等待可用执行槽位"),
+      label: "Đang chờ",
+      detail: detailForPayload(payload, "Đang chờ slot thực thi"),
       step: null,
       total: USER_STAGE_TOTAL,
     };
@@ -113,16 +113,16 @@ function userStageFor(payload) {
   if (payload.status === "running") {
     return {
       key: "running",
-      label: "处理中",
-      detail: detailForPayload(payload, "正在处理任务"),
+      label: "Đang xử lý",
+      detail: detailForPayload(payload, "Đang xử lý nhiệm vụ"),
       step: null,
       total: USER_STAGE_TOTAL,
     };
   }
   return {
     key: "idle",
-    label: "等待中",
-    detail: "等待任务开始",
+    label: "Đang chờ",
+    detail: "Đang chờ nhiệm vụ bắt đầu",
     step: null,
     total: USER_STAGE_TOTAL,
   };
@@ -133,7 +133,7 @@ function userStageLabel(payload) {
   if (stage.step && stage.total && !isJobTerminal(payload)) {
     const subtype = stageSubtypeOf(payload);
     const subtypeLabel = substageLabel(subtype) || stage.label;
-    return `第 ${stage.step}/${stage.total} 步 · ${subtypeLabel}`;
+    return `Bước ${stage.step}/${stage.total} · ${subtypeLabel}`;
   }
   return stage.label;
 }
