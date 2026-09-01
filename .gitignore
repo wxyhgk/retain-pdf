@@ -49,3 +49,6 @@ backend/typst-win32/bin/
 VERSION
 .codex
 .codex/
+
+# 本地源码部署（含密钥，勿提交）
+run.env
