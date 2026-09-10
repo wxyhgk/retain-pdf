@@ -1,0 +1,39 @@
+/* L3 组件形态 token：可选，皮肤只覆盖想改的。
+ *
+ * 与颜色契约（_contract.css 必选 20 项）不同，这里全部有默认值——
+ * 不覆盖 = 现状观感。皮肤在自己的 [data-theme] 块里覆盖（本文件在
+ * index.css 里先于各皮肤 import，同特异性下皮肤后来居上）。
+ *
+ * v1 清单只收"已有真实消费者"的 token（由 DecorStage 实践反哺）：
+ * - --btn-radius        主按钮圆角（app-button；classic 是纯 pill）
+ * - --btn-primary-bg/fg 主按钮底/字（默认走 accent/paper）
+ * - --panel-radius      对话框壳圆角（dialog-shell）
+ * - --stage-veil        主页纸台不透明度（ambient-surface 的 color-mix 百分比）
+ * - --ornament-line     装饰件描边（DecorStage 题字横幅金边）
+ *
+ * 新增 token 前先找到消费者，别囤"以后可能用"的。
+ */
+
+:root {
+  --btn-radius: 9999px;
+  --btn-primary-bg: var(--accent);
+  --btn-primary-fg: var(--paper);
+  --panel-radius: 24px;
+  /* 弹窗背板：浅色纸感（night 下随 --bg 自动变深色毛玻璃），全站唯一真值 */
+  --dialog-scrim: color-mix(in srgb, var(--bg) 62%, transparent);
+  --stage-veil: 88%;
+  --ornament-line: color-mix(in srgb, var(--gold) 45%, var(--line));
+
+  /* —— 布局密度（原 ambient-surface 的 html[data-theme=…] 特例块收编于此，
+   *    皮肤想要"素纸式"更宽廊道/更窄纸台，只在自己文件里覆盖，不碰 core）—— */
+  --shell-pad-inline: clamp(18px, 4vw, 56px);
+  /* ≤900px 窄屏值；默认跟随常规值（= 无窄屏特例） */
+  --shell-pad-inline-narrow: var(--shell-pad-inline);
+  --header-width: min(1120px, 100%);
+  --header-gap-bottom: 16px;
+  --stage-width: min(1120px, 100%);
+  --stage-pad: 10px 14px 0;
+  --stage-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--paper) 90%, var(--line)),
+    0 12px 32px color-mix(in srgb, var(--ink) 2.5%, transparent);
+}

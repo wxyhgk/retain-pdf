@@ -1,0 +1,309 @@
+/* 批注悬浮卡片（列表 / 编辑 / 导出）
+ * 悬浮窗 Markdown 内容见 float-markdown.css
+ */
+/* 批注：悬浮卡片（不贴边占栏、不挤 PDF） */
+.reader-notes-panel {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  position: fixed;
+  z-index: 48;
+  z-index: var(--z-notes-float, 48);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  width: min(360px, calc(100vw - 24px));
+  width: min(360px, calc(100dvw - 24px));
+  max-height: min(72vh, 560px);
+  max-height: min(72dvh, 560px);
+  overflow: hidden;
+  animation: reader-notes-float-in 200ms var(--ease-out) both;
+}
+/* left/top 由 inline style 控制（--float 标记类）。拖拽仅绑定标题栏；
+ * 不在整个面板禁用 touch action，保证 textarea 和可编辑控件正常取焦。 */
+.reader-notes-panel--docked {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: 50vw;
+  width: 50dvw;
+  max-height: none;
+  border-width: 0 0 0 1px;
+  border-radius: 0;
+  background: var(--paper);
+  box-shadow: -12px 0 32px color-mix(in srgb, var(--ink) 9%, transparent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.reader-notes-panel--docked .reader-notes-panel-head {
+  cursor: default;
+  touch-action: auto;
+}
+
+/* Markdown / AI 作为 Reader 中间工作区，不再伪装成悬浮对话框。 */
+.reader-notes-panel--workspace {
+  position: fixed;
+  inset: 60px 0 0 auto;
+  z-index: 24;
+  width: 50vw;
+  width: 50dvw;
+  height: auto;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  background: var(--paper);
+  box-shadow: none;
+  animation: reader-workspace-in 170ms var(--ease-out) both;
+}
+
+.reader-notes-panel--workspace.is-pane-left {
+  inset-inline: 0 auto;
+}
+
+.reader-notes-panel--workspace.is-pane-right {
+  inset-inline: auto 0;
+}
+
+.reader-notes-panel--workspace.is-headerless:not(.has-panel-toolbar) {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.reader-notes-panel--workspace.is-headerless.has-panel-toolbar {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+@keyframes reader-workspace-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 520px) {
+  .reader-notes-panel--workspace {
+    inset: 58px 0 0;
+    width: 100vw;
+    width: 100dvw;
+  }
+}
+
+@media (max-width: 899px) {
+  .reader-notes-panel--docked {
+    width: 100vw;
+    width: 100dvw;
+    border-left: 0;
+  }
+}
+.reader-notes-panel.is-dragging {
+  animation: none;
+  cursor: grabbing;
+  user-select: none;
+  box-shadow:
+    0 22px 56px color-mix(in srgb, var(--shadow-color) 18%, transparent),
+    0 4px 12px color-mix(in srgb, var(--shadow-color) 8%, transparent);
+}
+@keyframes reader-notes-float-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reader-notes-panel {
+    animation: none;
+  }
+}
+.reader-notes-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px 8px 10px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.reader-notes-panel.is-dragging .reader-notes-panel-head {
+  cursor: grabbing;
+}
+.reader-notes-panel-drag {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 28px;
+  margin-top: 2px;
+  color: color-mix(in srgb, var(--ink) 28%, transparent);
+  flex-shrink: 0;
+}
+.reader-notes-panel-head-text {
+  flex: 1;
+  min-width: 0;
+}
+.reader-notes-panel-head strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+.reader-notes-panel-head span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted, var(--muted));
+  font-size: 11px;
+  font-weight: 600;
+}
+.reader-notes-close {
+  flex-shrink: 0;
+}
+.reader-notes-panel-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 14px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.reader-notes-count {
+  color: var(--muted, var(--muted));
+  font-size: 12px;
+  font-weight: 650;
+}
+.reader-notes-export {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.reader-notes-export:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.reader-notes-panel-body {
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 12px 14px 16px;
+  min-height: 0;
+}
+.reader-notes-empty {
+  margin: 18px 4px;
+  color: var(--muted, var(--muted));
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
+.reader-notes-group {
+  margin-bottom: 16px;
+}
+.reader-notes-group-title {
+  margin: 0 0 8px;
+  color: var(--muted, var(--muted));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+.reader-notes-item {
+  margin-bottom: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 5%, transparent);
+}
+.reader-notes-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.reader-notes-kind {
+  display: inline-flex;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+.reader-notes-item-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+.reader-notes-link,
+.reader-notes-danger,
+.reader-notes-primary,
+.reader-notes-add-note {
+  min-height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.reader-notes-link {
+  color: var(--accent);
+}
+.reader-notes-danger {
+  color: var(--danger);
+}
+.reader-notes-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.reader-notes-quote {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--warn) 16%, transparent) 0%, color-mix(in srgb, var(--warn) 7%, transparent) 100%);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--gold) 45%, transparent);
+  color: var(--ink, var(--ink));
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.reader-notes-note,
+.reader-notes-add-note {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--paper) 80%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--ink) 12%, transparent);
+  color: var(--muted, var(--muted));
+  font-size: 12px;
+  line-height: 1.4;
+}
+.reader-notes-note {
+  border-style: solid;
+  color: var(--ink, var(--ink));
+  white-space: pre-wrap;
+}
+.reader-notes-editor {
+  display: grid;
+  gap: 8px;
+}
+.reader-notes-textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: 8px;
+  resize: vertical;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.reader-notes-editor-actions {
+  display: flex;
+  gap: 8px;
+}

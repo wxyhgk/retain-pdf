@@ -1,0 +1,295 @@
+/* Markdown 正文排版（默认悬浮窗 + legacy 抽屉共用 .reader-markdown-content）
+ * 抽屉壳（.reader-markdown-drawer 等）→ markdown-legacy.css
+ */
+
+.reader-markdown-content {
+  color: var(--ink);
+  font-size: 13.5px;
+  line-height: 1.75;
+  word-break: break-word;
+}
+
+.reader-markdown-content.hidden {
+  display: none;
+}
+
+.reader-markdown-nav {
+  position: sticky;
+  z-index: 3;
+  top: -1px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: -2px -2px 10px;
+  padding: 4px 2px 7px;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.reader-markdown-search {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--paper) 90%, transparent);
+  color: var(--muted);
+}
+
+.reader-markdown-search input {
+  min-width: 48px;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.reader-markdown-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.reader-markdown-search button,
+.reader-markdown-outline-toggle,
+.reader-markdown-outline button {
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.reader-markdown-search button {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  place-items: center;
+  border-radius: 5px;
+  background: transparent;
+}
+
+.reader-markdown-search button:hover:not(:disabled),
+.reader-markdown-outline-toggle:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink);
+}
+
+.reader-markdown-search button:disabled,
+.reader-markdown-outline-toggle:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.reader-markdown-search-count {
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.reader-markdown-outline-toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.reader-markdown-outline {
+  display: grid;
+  gap: 2px;
+  max-height: 190px;
+  margin: -4px 0 10px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow-y: auto;
+  background: color-mix(in srgb, var(--paper) 96%, transparent);
+}
+
+.reader-markdown-outline button {
+  overflow: hidden;
+  padding: 5px 7px 5px calc(7px + var(--reader-md-outline-level, 0) * 10px);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader-markdown-outline button:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+.reader-markdown-search-hit {
+  border-radius: 3px;
+  background: color-mix(in srgb, #f6c453 22%, transparent);
+  outline: 2px solid color-mix(in srgb, #f6c453 22%, transparent);
+}
+
+.reader-markdown-search-hit-active {
+  background: color-mix(in srgb, #f6c453 42%, transparent);
+  outline-color: color-mix(in srgb, #d99b12 55%, transparent);
+}
+
+.reader-markdown-content h1,
+.reader-markdown-content h2,
+.reader-markdown-content h3,
+.reader-markdown-content h4 {
+  margin: 1.2em 0 0.5em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+
+.reader-markdown-content h1 {
+  margin-top: 0.2em;
+  font-size: 20px;
+}
+
+.reader-markdown-content h2 {
+  font-size: 17px;
+}
+
+.reader-markdown-content h3,
+.reader-markdown-content h4 {
+  font-size: 14.5px;
+}
+
+.reader-markdown-content p {
+  margin: 0 0 0.85em;
+}
+
+.reader-markdown-content ul,
+.reader-markdown-content ol {
+  margin: 0 0 0.85em;
+  padding-left: 1.4em;
+}
+
+.reader-markdown-content li {
+  margin-bottom: 0.3em;
+}
+
+.reader-markdown-content blockquote {
+  margin: 0 0 0.85em;
+  padding: 2px 12px;
+  border-left: 3px solid var(--line);
+  color: var(--muted);
+}
+
+.reader-markdown-content code {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.reader-markdown-content pre {
+  margin: 0 0 0.85em;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  overflow-x: auto;
+}
+
+.reader-markdown-content pre code {
+  padding: 0;
+  background: none;
+}
+
+.reader-markdown-content img {
+  display: block;
+  max-width: 100%;
+  margin: 0.5em auto 0.85em;
+  border-radius: 10px;
+}
+
+.reader-markdown-content table {
+  margin: 0 0 0.85em;
+  border-collapse: collapse;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  font-size: 12.5px;
+}
+
+.reader-markdown-content th,
+.reader-markdown-content td {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.reader-markdown-content hr {
+  margin: 1.2em 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.reader-markdown-image-missing {
+  display: block;
+  margin: 0.5em 0 0.85em;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* MathJax SVG：行内/块级公式 */
+.reader-markdown-content .reader-md-math-inline,
+.reader-float-markdown-content .reader-md-math-inline {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  overflow-x: auto;
+  color: inherit;
+}
+
+.reader-markdown-content .reader-md-math-display,
+.reader-float-markdown-content .reader-md-math-display {
+  display: block;
+  margin: 0.75em 0;
+  max-width: 100%;
+  overflow-x: auto;
+  text-align: center;
+  color: inherit;
+}
+
+.reader-markdown-content .reader-md-math mjx-container,
+.reader-float-markdown-content .reader-md-math mjx-container {
+  margin: 0 !important;
+  max-width: 100%;
+}
+
+.reader-markdown-content .reader-md-math svg,
+.reader-float-markdown-content .reader-md-math svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.reader-markdown-content .reader-md-math-error,
+.reader-float-markdown-content .reader-md-math-error {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

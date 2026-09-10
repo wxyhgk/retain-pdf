@@ -1,0 +1,88 @@
+/* 氛围与纸心：材质 + 进深 — 阅读器 variant（无主页纸台）
+ *
+ * 从 core/ambient-surface.css 拆分：阅读器包仅需此文件。
+ * 已移除 #home-root / #detail-root / .home-paper-stage（主页专用，见 ambient-surface-home.css）。
+ * html 材质与窄屏弱化保留；body 高度已改为 dvh 回退。
+ */
+
+html {
+  min-height: 100%;
+  background-color: var(--bg);
+
+  /* 材质强度：宁可几乎看不见，也不要脏纹 */
+  --mat-fiber: color-mix(in srgb, var(--ink) 3.2%, transparent);
+  --mat-fiber-2: color-mix(in srgb, var(--ink) 2%, transparent);
+  --mat-edge: color-mix(in srgb, var(--ink) 2.8%, var(--bg));
+  --mat-center: color-mix(in srgb, var(--paper) 18%, var(--bg));
+
+  background-image:
+    /* 1. 极淡斜向纤维（纸/灰泥感，间距大） */
+    repeating-linear-gradient(
+      -12deg,
+      transparent 0 13px,
+      var(--mat-fiber) 13px 13.6px
+    ),
+    /* 2. 正交弱纤维，打破「一条条」 */
+    repeating-linear-gradient(
+      78deg,
+      transparent 0 21px,
+      var(--mat-fiber-2) 21px 21.5px
+    ),
+    /* 3. 中心略亮（堂）、外缘略暗（廊） */
+    radial-gradient(
+      ellipse 78% 68% at 50% 40%,
+      var(--mat-center) 0%,
+      transparent 55%
+    ),
+    linear-gradient(
+      90deg,
+      var(--mat-edge) 0%,
+      transparent min(16vw, 200px),
+      transparent calc(100% - min(16vw, 200px)),
+      var(--mat-edge) 100%
+    );
+  background-size: auto, auto, 100% 100%, 100% 100%;
+  background-repeat: repeat, repeat, no-repeat, no-repeat;
+  background-attachment: fixed, fixed, fixed, fixed;
+}
+
+body {
+  background: transparent !important;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+#reader-root,
+main.app-shell {
+  background: transparent;
+}
+
+/* 窄屏：弱化廊道 */
+@media (max-width: 900px) {
+  html {
+    background-image:
+      repeating-linear-gradient(
+        -12deg,
+        transparent 0 16px,
+        var(--mat-fiber) 16px 16.5px
+      ),
+      radial-gradient(
+        ellipse 95% 80% at 50% 35%,
+        var(--mat-center) 0%,
+        transparent 60%
+      );
+    background-size: auto, 100% 100%;
+    background-repeat: repeat, no-repeat;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  html {
+    background-image: none !important;
+    background-color: var(--bg) !important;
+  }
+
+  body {
+    background: var(--bg) !important;
+  }
+}

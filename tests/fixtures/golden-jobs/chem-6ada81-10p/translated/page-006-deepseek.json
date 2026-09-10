@@ -1,0 +1,2123 @@
+[
+  {
+    "item_id": "p006-b004",
+    "page_idx": 5,
+    "block_idx": 4,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 4,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      43.983,
+      227.47,
+      290.391,
+      256.466
+    ],
+    "source_text": "Figure 7. Dependence of relative electronic energy on the dihedral angle of the CCNC for the complex for 2-lithio- $ N,N $-dimethylaniline with toluene, scan along CCNC using the modredundant scheme.",
+    "source_line_texts": [
+      "Figure 7. Dependence of relative electronic energy on the dihedral angle of the CCNC for the complex for 2-lithio- $ N,N $-dimethylaniline with toluene, scan along CCNC using the modredundant scheme."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          227.47,
+          290.391,
+          256.466
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 7. Dependence of relative electronic energy on the dihedral angle of the CCNC for the complex for 2-lithio- $ N,N $-dimethylaniline with toluene, scan along CCNC using the modredundant scheme.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-84",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-84",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 295.51,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 7. Dependence of relative electronic energy on the dihedral angle of the CCNC for the complex for 2-lithio- $ N,N $-dimethylaniline with toluene, scan along CCNC using the modredundant scheme.",
+    "mixed_original_protected_source_text": "Figure 7. Dependence of relative electronic energy on the dihedral angle of the CCNC for the complex for 2-lithio- $ N,N $-dimethylaniline with toluene, scan along CCNC using the modredundant scheme.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p006-b004",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p006-b004"
+    ],
+    "translation_unit_protected_source_text": "Figure 7. Dependence of relative electronic energy on the dihedral angle of the CCNC for the complex for 2-lithio- $ N,N $-dimethylaniline with toluene, scan along CCNC using the modredundant scheme.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图7. 相对电子能量对2-锂代-$N,N$-二甲苯胺与甲苯配合物中CCNC二面角的依赖性，使用modredundant方案沿CCNC扫描。",
+    "translation_unit_translated_text": "图7. 相对电子能量对2-锂代-$N,N$-二甲苯胺与甲苯配合物中CCNC二面角的依赖性，使用modredundant方案沿CCNC扫描。",
+    "protected_translated_text": "图7. 相对电子能量对2-锂代-$N,N$-二甲苯胺与甲苯配合物中CCNC二面角的依赖性，使用modredundant方案沿CCNC扫描。",
+    "translated_text": "图7. 相对电子能量对2-锂代-$N,N$-二甲苯胺与甲苯配合物中CCNC二面角的依赖性，使用modredundant方案沿CCNC扫描。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p006-b004",
+      "page_idx": 5,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "directing group to the lithium atom. Thus, according to our quantum chemical calculations, the rotation of the NMe₂ group in 2-lithio-N,N-dimethylaniline complex with toluene first leads to a slight increase of the electronic energy with a maximum of +0.6 kcal/mol at approximately 30° (Figure 7). Further rotation leads to the stabilization via coordination...",
+    "translation_context_after": "Figure 8. Dependence of the relative electronic energy on the dihedral angle of the CCNC for 12b·Tol, scan along CCNC using the modredundant scheme. / Scheme 4. Bromine–lithium exchange selectivity in 13."
+  },
+  {
+    "item_id": "p006-b006",
+    "page_idx": 5,
+    "block_idx": 6,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 6,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      43.983,
+      437.943,
+      291.39,
+      466.439
+    ],
+    "source_text": "Figure 8. Dependence of the relative electronic energy on the dihedral angle of the CCNC for 12b·Tol, scan along CCNC using the modredundant scheme.",
+    "source_line_texts": [
+      "Figure 8. Dependence of the relative electronic energy on the dihedral angle of the CCNC for 12b·Tol, scan along CCNC using the modredundant scheme."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          437.943,
+          291.39,
+          466.439
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 8. Dependence of the relative electronic energy on the dihedral angle of the CCNC for 12b·Tol, scan along CCNC using the modredundant scheme.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-86",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-86",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 295.51,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 8. Dependence of the relative electronic energy on the dihedral angle of the CCNC for 12b·Tol, scan along CCNC using the modredundant scheme.",
+    "mixed_original_protected_source_text": "Figure 8. Dependence of the relative electronic energy on the dihedral angle of the CCNC for 12b·Tol, scan along CCNC using the modredundant scheme.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p006-b006",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p006-b006"
+    ],
+    "translation_unit_protected_source_text": "Figure 8. Dependence of the relative electronic energy on the dihedral angle of the CCNC for 12b·Tol, scan along CCNC using the modredundant scheme.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图8. 对于12b·Tol，相对电子能量随CCNC二面角的变化关系，使用modredundant方法沿CCNC扫描。",
+    "translation_unit_translated_text": "图8. 对于12b·Tol，相对电子能量随CCNC二面角的变化关系，使用modredundant方法沿CCNC扫描。",
+    "protected_translated_text": "图8. 对于12b·Tol，相对电子能量随CCNC二面角的变化关系，使用modredundant方法沿CCNC扫描。",
+    "translated_text": "图8. 对于12b·Tol，相对电子能量随CCNC二面角的变化关系，使用modredundant方法沿CCNC扫描。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p006-b006",
+      "page_idx": 5,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "The removal of the repulsion of peri-bromine atoms upon transition to tribromoderivative 13 elevates the impact of / Figure 7. Dependence of relative electronic energy on the dihedral angle of the CCNC for the complex for 2-lithio- $ N,N $-dimethylaniline with toluene, scan along CCNC using the modredundant scheme.",
+    "translation_context_after": "Scheme 4. Bromine–lithium exchange selectivity in 13. / conjugation on the regioselectivity of the bromine-lithium exchange. Thus, treatment of 13 with 0.9 equiv. of n-BuLi leads only to the formation of ortho-lithioderivatives 14 and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4)."
+  },
+  {
+    "item_id": "p006-b008",
+    "page_idx": 5,
+    "block_idx": 8,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 8,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      44.483,
+      653.915,
+      221.417,
+      664.413
+    ],
+    "source_text": "Scheme 4. Bromine–lithium exchange selectivity in 13.",
+    "source_line_texts": [
+      "Scheme 4. Bromine–lithium exchange selectivity in 13."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          44.483,
+          653.915,
+          221.417,
+          664.413
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Scheme 4. Bromine–lithium exchange selectivity in 13.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-88",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-88",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 295.51,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Scheme 4. Bromine–lithium exchange selectivity in 13.",
+    "mixed_original_protected_source_text": "Scheme 4. Bromine–lithium exchange selectivity in 13.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p006-b008",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p006-b008"
+    ],
+    "translation_unit_protected_source_text": "Scheme 4. Bromine–lithium exchange selectivity in 13.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图式4. 化合物13中的溴–锂交换选择性。",
+    "translation_unit_translated_text": "图式4. 化合物13中的溴–锂交换选择性。",
+    "protected_translated_text": "图式4. 化合物13中的溴–锂交换选择性。",
+    "translated_text": "图式4. 化合物13中的溴–锂交换选择性。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p006-b008",
+      "page_idx": 5,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Figure 7. Dependence of relative electronic energy on the dihedral angle of the CCNC for the complex for 2-lithio- $ N,N $-dimethylaniline with toluene, scan along CCNC using the modredundant scheme. / Figure 8. Dependence of the relative electronic energy on the dihedral angle of the CCNC for 12b·Tol, scan along CCNC using the modredundant scheme.",
+    "translation_context_after": "conjugation on the regioselectivity of the bromine-lithium exchange. Thus, treatment of 13 with 0.9 equiv. of n-BuLi leads only to the formation of ortho-lithioderivatives 14 and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4). / While the N2 atom in compounds 14 and 15 participates in the coordination of lithium, the unshared electro..."
+  },
+  {
+    "item_id": "p006-b009",
+    "page_idx": 5,
+    "block_idx": 9,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 9,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      699.909,
+      292.39,
+      747.902
+    ],
+    "source_text": "conjugation on the regioselectivity of the bromine-lithium exchange. Thus, treatment of 13 with 0.9 equiv. of n-BuLi leads only to the formation of ortho-lithioderivatives 14 and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4).",
+    "source_line_texts": [
+      "conjugation on the regioselectivity of the bromine-lithium",
+      "exchange. Thus, treatment of 13 with 0.9 equiv. of n-BuLi",
+      "leads only to the formation of ortho-lithioderivatives 14",
+      "and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4)."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          699.909,
+          292.39,
+          711.907
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "conjugation on the regioselectivity of the bromine-lithium",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          711.907,
+          292.39,
+          723.906
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "exchange. Thus, treatment of 13 with 0.9 equiv.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          723.906,
+          292.39,
+          735.904
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of n-BuLi leads only to the formation of ortho-lithioderivatives",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          735.904,
+          292.39,
+          747.902
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "14 and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-89",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 1,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-89",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 295.51,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "conjugation on the regioselectivity of the bromine-lithium exchange. Thus, treatment of 13 with 0.9 equiv. of n-BuLi leads only to the formation of ortho-lithioderivatives 14 and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4).",
+    "mixed_original_protected_source_text": "conjugation on the regioselectivity of the bromine-lithium exchange. Thus, treatment of 13 with 0.9 equiv. of n-BuLi leads only to the formation of ortho-lithioderivatives 14 and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4).",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-005-006",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p005-b010",
+      "p006-b009"
+    ],
+    "translation_unit_protected_source_text": "The removal of the repulsion of peri-bromine atoms upon transition to tribromoderivative 13 elevates the impact of conjugation on the regioselectivity of the bromine-lithium exchange. Thus, treatment of 13 with 0.9 equiv. of n-BuLi leads only to the formation of ortho-lithioderivatives 14 and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "在转化为三溴衍生物 13 时，周位溴原子之间的排斥作用被消除，从而增强了共轭效应对溴-锂交换区域选择性的影响。因此，用 0.9 当量的 $n$-BuLi 处理 13 仅生成邻位锂化衍生物 14 和 15，比例为 1:4，而未观察到 16 的生成（Scheme 4）。",
+    "translation_unit_translated_text": "在转化为三溴衍生物 13 时，周位溴原子之间的排斥作用被消除，从而增强了共轭效应对溴-锂交换区域选择性的影响。因此，用 0.9 当量的 $n$-BuLi 处理 13 仅生成邻位锂化衍生物 14 和 15，比例为 1:4，而未观察到 16 的生成（Scheme 4）。",
+    "protected_translated_text": "共轭效应对溴-锂交换区域选择性的影响。因此，用 0.9 当量的 $n$-BuLi 处理 13 仅生成邻位锂化衍生物 14 和 15，比例为 1:4，而未观察到 16 的生成（Scheme 4）。",
+    "translated_text": "共轭效应对溴-锂交换区域选择性的影响。因此，用 0.9 当量的 $n$-BuLi 处理 13 仅生成邻位锂化衍生物 14 和 15，比例为 1:4，而未观察到 16 的生成（Scheme 4）。",
+    "continuation_group": "cg-005-006",
+    "continuation_prev_text": "The removal of the repulsion of peri-bromine atoms upon transition to tribromoderivative 13 elevates the impact of",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "The removal of the repulsion of peri-bromine atoms upon transition to tribromoderivative 13 elevates the impact of conjugation on the regioselectivity of the bromine-lithium exchange. Thus, treatment of 13 with 0.9 equiv. of n-BuLi leads only to the formation of ortho-lithioderivatives 14 and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4).",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "在转化为三溴衍生物 13 时，周位溴原子之间的排斥作用被消除，从而增强了共轭效应对溴-锂交换区域选择性的影响。因此，用 0.9 当量的 $n$-BuLi 处理 13 仅生成邻位锂化衍生物 14 和 15，比例为 1:4，而未观察到 16 的生成（Scheme 4）。",
+    "group_translated_text": "在转化为三溴衍生物 13 时，周位溴原子之间的排斥作用被消除，从而增强了共轭效应对溴-锂交换区域选择性的影响。因此，用 0.9 当量的 $n$-BuLi 处理 13 仅生成邻位锂化衍生物 14 和 15，比例为 1:4，而未观察到 16 的生成（Scheme 4）。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p006-b009",
+      "page_idx": 5,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Figure 8. Dependence of the relative electronic energy on the dihedral angle of the CCNC for 12b·Tol, scan along CCNC using the modredundant scheme. / Scheme 4. Bromine–lithium exchange selectivity in 13.",
+    "translation_context_after": "While the N2 atom in compounds 14 and 15 participates in the coordination of lithium, the unshared electron pair of N1 effectively conjugates with the aromatic system (E=38.6 and 37.7 kcal/mol in 14 and 15 respectively, Figure 9). Despite the highest distortion of the molecule of 15 caused by the repulsion of the bromine atom and methyl group ( $ \\theta=3.7..."
+  },
+  {
+    "item_id": "p006-b010",
+    "page_idx": 5,
+    "block_idx": 10,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 10,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      64.492,
+      550.793,
+      170.478
+    ],
+    "source_text": "While the N2 atom in compounds 14 and 15 participates in the coordination of lithium, the unshared electron pair of N1 effectively conjugates with the aromatic system (E=38.6 and 37.7 kcal/mol in 14 and 15 respectively, Figure 9). Despite the highest distortion of the molecule of 15 caused by the repulsion of the bromine atom and methyl group ( $ \\theta=3.7^\\circ $), the conjugation leads to the highest thermodynamic stability of 15 among isomers: $ \\Delta G(15\\rightarrow14)=+0.9 $ kcal/mol, $ \\Delta G(15\\rightarrow16)=+4.3 $ kcal/mol.",
+    "source_line_texts": [
+      "While the N2 atom in compounds 14 and 15 participates in",
+      "the coordination of lithium, the unshared electron pair",
+      "of N1 effectively conjugates with the aromatic system (E=38.6",
+      "and 37.7 kcal/mol in 14 and 15 respectively, Figure 9).",
+      "Despite the highest distortion of the molecule of 15 caused",
+      "by the repulsion of the bromine atom and methyl group (",
+      "$ \\theta=3.7 ^\\circ $), the conjugation leads to the highest",
+      "thermodynamic stability of 15 among isomers: $ \\Delta G(15\\rightarrow14)=+0.9 $ kcal/mol, $ \\Delta G(15\\rightarrow16)=+4.3 $ kcal/mol."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          64.492,
+          550.793,
+          76.268
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "While the N2 atom in compounds 14 and 15 participates",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          76.268,
+          550.793,
+          88.044
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "in the coordination of lithium, the unshared electron",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          88.044,
+          550.793,
+          99.821
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "pair of N1 effectively conjugates with the aromatic",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          99.821,
+          550.793,
+          111.597
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "system (E=38.6 and 37.7 kcal/mol in 14 and 15 respectively,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          111.597,
+          550.793,
+          123.373
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 9). Despite the highest distortion of the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          123.373,
+          550.793,
+          135.149
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "molecule of 15 caused by the repulsion of the bromine",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          135.149,
+          550.793,
+          146.926
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "atom and methyl group ( $ \\theta=3.7^\\circ $), the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          146.926,
+          550.793,
+          158.702
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "conjugation leads to the highest thermodynamic stability",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          158.702,
+          550.793,
+          170.478
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of 15 among isomers: $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\Delta G(15\\rightarrow14)=+0.9",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ kcal/mol, $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\Delta G(15\\rightarrow16)=+4.3",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ kcal/mol.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-90",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 2,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-90",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 2,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 295.51,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "While the N2 atom in compounds 14 and 15 participates in the coordination of lithium, the unshared electron pair of N1 effectively conjugates with the aromatic system (E=38.6 and 37.7 kcal/mol in 14 and 15 respectively, Figure 9). Despite the highest distortion of the molecule of 15 caused by the repulsion of the bromine atom and methyl group ( $ \\theta=3.7^\\circ $), the conjugation leads to the highest thermodynamic stability of 15 among isomers: $ \\Delta G(15\\rightarrow14)=+0.9 $ kcal/mol, $ \\Delta G(15\\rightarrow16)=+4.3 $ kcal/mol.",
+    "mixed_original_protected_source_text": "While the N2 atom in compounds 14 and 15 participates in the coordination of lithium, the unshared electron pair of N1 effectively conjugates with the aromatic system (E=38.6 and 37.7 kcal/mol in 14 and 15 respectively, Figure 9). Despite the highest distortion of the molecule of 15 caused by the repulsion of the bromine atom and methyl group ( $ \\theta=3.7^\\circ $), the conjugation leads to the highest thermodynamic stability of 15 among isomers: $ \\Delta G(15\\rightarrow14)=+0.9 $ kcal/mol, $ \\Delta G(15\\rightarrow16)=+4.3 $ kcal/mol.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p006-b010",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p006-b010"
+    ],
+    "translation_unit_protected_source_text": "While the N2 atom in compounds 14 and 15 participates in the coordination of lithium, the unshared electron pair of N1 effectively conjugates with the aromatic system (E=38.6 and 37.7 kcal/mol in 14 and 15 respectively, Figure 9). Despite the highest distortion of the molecule of 15 caused by the repulsion of the bromine atom and methyl group ( $ \\theta=3.7^\\circ $), the conjugation leads to the highest thermodynamic stability of 15 among isomers: $ \\Delta G(15\\rightarrow14)=+0.9 $ kcal/mol, $ \\Delta G(15\\rightarrow16)=+4.3 $ kcal/mol.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "在化合物 **14** 和 **15** 中，N2 原子参与锂的配位，而 N1 的孤对电子则与芳香体系形成有效共轭（在 **14** 和 **15** 中，相应的共轭能 $E$ 分别为 38.6 和 37.7 kcal/mol，图 9）。尽管溴原子与甲基之间的排斥导致分子 **15** 发生最大程度的畸变（$ \\theta=3.7^\\circ $），但共轭效应仍使 **15** 在同分异构体中具有最高的热力学稳定性：$ \\Delta G(15\\rightarrow14)=+0.9 $ kcal/mol，$ \\Delta G(15\\rightarrow16)=+4.3 $ kcal/mol。",
+    "translation_unit_translated_text": "在化合物 **14** 和 **15** 中，N2 原子参与锂的配位，而 N1 的孤对电子则与芳香体系形成有效共轭（在 **14** 和 **15** 中，相应的共轭能 $E$ 分别为 38.6 和 37.7 kcal/mol，图 9）。尽管溴原子与甲基之间的排斥导致分子 **15** 发生最大程度的畸变（$ \\theta=3.7^\\circ $），但共轭效应仍使 **15** 在同分异构体中具有最高的热力学稳定性：$ \\Delta G(15\\rightarrow14)=+0.9 $ kcal/mol，$ \\Delta G(15\\rightarrow16)=+4.3 $ kcal/mol。",
+    "protected_translated_text": "在化合物 **14** 和 **15** 中，N2 原子参与锂的配位，而 N1 的孤对电子则与芳香体系形成有效共轭（在 **14** 和 **15** 中，相应的共轭能 $E$ 分别为 38.6 和 37.7 kcal/mol，图 9）。尽管溴原子与甲基之间的排斥导致分子 **15** 发生最大程度的畸变（$ \\theta=3.7^\\circ $），但共轭效应仍使 **15** 在同分异构体中具有最高的热力学稳定性：$ \\Delta G(15\\rightarrow14)=+0.9 $ kcal/mol，$ \\Delta G(15\\rightarrow16)=+4.3 $ kcal/mol。",
+    "translated_text": "在化合物 **14** 和 **15** 中，N2 原子参与锂的配位，而 N1 的孤对电子则与芳香体系形成有效共轭（在 **14** 和 **15** 中，相应的共轭能 $E$ 分别为 38.6 和 37.7 kcal/mol，图 9）。尽管溴原子与甲基之间的排斥导致分子 **15** 发生最大程度的畸变（$ \\theta=3.7^\\circ $），但共轭效应仍使 **15** 在同分异构体中具有最高的热力学稳定性：$ \\Delta G(15\\rightarrow14)=+0.9 $ kcal/mol，$ \\Delta G(15\\rightarrow16)=+4.3 $ kcal/mol。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p006-b010",
+      "page_idx": 5,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Scheme 4. Bromine–lithium exchange selectivity in 13. / conjugation on the regioselectivity of the bromine-lithium exchange. Thus, treatment of 13 with 0.9 equiv. of n-BuLi leads only to the formation of ortho-lithioderivatives 14 and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4).",
+    "translation_context_after": "Treatment of 2 with 1.5 equiv. of n-BuLi at −24°C and further quenching with MeOH leads to the formation of 6a and 10a together with 4a and 12a after quenching the reaction mixture with MeOH, no formation of 5a and 11a was observed (Table 1, entry 4). Elevating the temperature to 25°C gives poorly reproducible but overall similar results (entry 5). Analysis..."
+  },
+  {
+    "item_id": "p006-b011",
+    "page_idx": 5,
+    "block_idx": 11,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 11,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      171.978,
+      550.793,
+      387.449
+    ],
+    "source_text": "Treatment of 2 with 1.5 equiv. of n-BuLi at −24°C and further quenching with MeOH leads to the formation of 6a and 10a together with 4a and 12a after quenching the reaction mixture with MeOH, no formation of 5a and 11a was observed (Table 1, entry 4). Elevating the temperature to 25°C gives poorly reproducible but overall similar results (entry 5). Analysis of orbitals interactions of corresponding lithiated species clearly demonstrates that the most effective conjugation for both nitrogen atoms occurs in 11b (Figure 10). Nevertheless, corresponding bromide 11a is not observed in the reaction mixture, since this interaction is outweighed by the better saturation of the coordination sphere of lithium in 5b, 6b and 10b. Meanwhile, the charge overload in one ring of 5b makes it significantly less stable: $ \\Delta G(10\\text{b} \\rightarrow 5\\text{b}) = +6.3 $ kcal/mol (Figure 11). The combination of the abovementioned factors makes 6b and 10b the most thermodynamically stable isomers ( $ \\Delta G(10\\text{b} \\rightarrow 6\\text{b}) = +1.9 $ kcal/mol), which are observed in the reaction mixture in comparable amounts.",
+    "source_line_texts": [
+      "Treatment of 2 with 1.5 equiv. of n-BuLi at −24°C and further",
+      "quenching with MeOH leads to the formation of 6a and 10a",
+      "together with 4a and 12a after quenching the reaction mixture",
+      "with MeOH, no formation of 5a and 11a was observed (Table",
+      "1, entry 4). Elevating the temperature to 25°C gives poorly",
+      "reproducible but overall similar results (entry 5). Analysis",
+      "of orbitals interactions of corresponding lithiated species",
+      "clearly demonstrates that the most effective conjugation",
+      "for both nitrogen atoms occurs in 11b (Figure 10). Nevertheless,",
+      "corresponding bromide 11a is not observed in the reaction",
+      "mixture, since this interaction is outweighed by the better",
+      "saturation of the coordination sphere of lithium in 5b,",
+      "6b and 10b. Meanwhile, the charge overload in one ring of",
+      "5b makes it significantly less stable: $ \\Delta G (10 \\text{b}",
+      "\\rightarrow 5\\text{b} ) = +6.3 $ kcal/mol (Figure 11). The",
+      "combination of the abovementioned factors makes 6b and 10b",
+      "the most thermodynamically stable isomers ( $ \\Delta G(10\\text{b} \\rightarrow 6\\text{b}) = +1.9 $ kcal/mol), which are observed in the reaction mixture in comparable amounts."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          171.978,
+          550.793,
+          183.319
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Treatment of 2 with 1.5 equiv. of n-BuLi at −24°C",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          183.319,
+          550.793,
+          194.659
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and further quenching with MeOH leads to the formation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          194.659,
+          550.793,
+          206.0
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of 6a and 10a together with 4a and 12a after quenching",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          206.0,
+          550.793,
+          217.34
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the reaction mixture with MeOH, no formation of",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          217.34,
+          550.793,
+          228.681
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "5a and 11a was observed (Table 1, entry 4). Elevating",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          228.681,
+          550.793,
+          240.021
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the temperature to 25°C gives poorly reproducible",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          240.021,
+          550.793,
+          251.362
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "but overall similar results (entry 5). Analysis",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          251.362,
+          550.793,
+          262.703
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of orbitals interactions of corresponding lithiated",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          262.703,
+          550.793,
+          274.043
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "species clearly demonstrates that the most effective",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          274.043,
+          550.793,
+          285.384
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "conjugation for both nitrogen atoms occurs in 11b",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          285.384,
+          550.793,
+          296.724
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(Figure 10). Nevertheless, corresponding bromide",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          296.724,
+          550.793,
+          308.065
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "11a is not observed in the reaction mixture, since",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          308.065,
+          550.793,
+          319.406
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "this interaction is outweighed by the better saturation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          319.406,
+          550.793,
+          330.746
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of the coordination sphere of lithium in 5b, 6b",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          330.746,
+          550.793,
+          342.087
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and 10b. Meanwhile, the charge overload in one ring",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          342.087,
+          550.793,
+          353.427
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of 5b makes it significantly less stable: $ \\Delta",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          353.427,
+          550.793,
+          364.768
+        ],
+        "spans": [
+          {
+            "type": "inline_equation",
+            "content": "G(10\\text{b} \\rightarrow 5\\text{b}) = +6.3",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ kcal/mol",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          364.768,
+          550.793,
+          376.108
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(Figure 11). The combination of the abovementioned",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          376.108,
+          550.793,
+          387.449
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "factors makes 6b and 10b the most thermodynamically stable isomers ( $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\Delta G(10\\text{b} \\rightarrow 6\\text{b}) = +1.9",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ kcal/mol), which are observed in the reaction mixture in comparable amounts.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-91",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 3,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-91",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 3,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 295.51,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Treatment of 2 with 1.5 equiv. of n-BuLi at −24°C and further quenching with MeOH leads to the formation of 6a and 10a together with 4a and 12a after quenching the reaction mixture with MeOH, no formation of 5a and 11a was observed (Table 1, entry 4). Elevating the temperature to 25°C gives poorly reproducible but overall similar results (entry 5). Analysis of orbitals interactions of corresponding lithiated species clearly demonstrates that the most effective conjugation for both nitrogen atoms occurs in 11b (Figure 10). Nevertheless, corresponding bromide 11a is not observed in the reaction mixture, since this interaction is outweighed by the better saturation of the coordination sphere of lithium in 5b, 6b and 10b. Meanwhile, the charge overload in one ring of 5b makes it significantly less stable: $ \\Delta G(10\\text{b} \\rightarrow 5\\text{b}) = +6.3 $ kcal/mol (Figure 11). The combination of the abovementioned factors makes 6b and 10b the most thermodynamically stable isomers ( $ \\Delta G(10\\text{b} \\rightarrow 6\\text{b}) = +1.9 $ kcal/mol), which are observed in the reaction mixture in comparable amounts.",
+    "mixed_original_protected_source_text": "Treatment of 2 with 1.5 equiv. of n-BuLi at −24°C and further quenching with MeOH leads to the formation of 6a and 10a together with 4a and 12a after quenching the reaction mixture with MeOH, no formation of 5a and 11a was observed (Table 1, entry 4). Elevating the temperature to 25°C gives poorly reproducible but overall similar results (entry 5). Analysis of orbitals interactions of corresponding lithiated species clearly demonstrates that the most effective conjugation for both nitrogen atoms occurs in 11b (Figure 10). Nevertheless, corresponding bromide 11a is not observed in the reaction mixture, since this interaction is outweighed by the better saturation of the coordination sphere of lithium in 5b, 6b and 10b. Meanwhile, the charge overload in one ring of 5b makes it significantly less stable: $ \\Delta G(10\\text{b} \\rightarrow 5\\text{b}) = +6.3 $ kcal/mol (Figure 11). The combination of the abovementioned factors makes 6b and 10b the most thermodynamically stable isomers ( $ \\Delta G(10\\text{b} \\rightarrow 6\\text{b}) = +1.9 $ kcal/mol), which are observed in the reaction mixture in comparable amounts.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p006-b011",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p006-b011"
+    ],
+    "translation_unit_protected_source_text": "Treatment of 2 with 1.5 equiv. of n-BuLi at −24°C and further quenching with MeOH leads to the formation of 6a and 10a together with 4a and 12a after quenching the reaction mixture with MeOH, no formation of 5a and 11a was observed (Table 1, entry 4). Elevating the temperature to 25°C gives poorly reproducible but overall similar results (entry 5). Analysis of orbitals interactions of corresponding lithiated species clearly demonstrates that the most effective conjugation for both nitrogen atoms occurs in 11b (Figure 10). Nevertheless, corresponding bromide 11a is not observed in the reaction mixture, since this interaction is outweighed by the better saturation of the coordination sphere of lithium in 5b, 6b and 10b. Meanwhile, the charge overload in one ring of 5b makes it significantly less stable: $ \\Delta G(10\\text{b} \\rightarrow 5\\text{b}) = +6.3 $ kcal/mol (Figure 11). The combination of the abovementioned factors makes 6b and 10b the most thermodynamically stable isomers ( $ \\Delta G(10\\text{b} \\rightarrow 6\\text{b}) = +1.9 $ kcal/mol), which are observed in the reaction mixture in comparable amounts.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "用 1.5 当量的 $n$-BuLi 在 −24°C 下处理 2，随后用 MeOH 淬灭，得到 6a 和 10a 以及 4a 和 12a，未观察到 5a 和 11a 的生成（表 1，条目 4）。将温度升至 25°C 可获得可重复性较差但总体相似的结果（条目 5）。相应锂化物种的轨道相互作用分析清楚表明，两个氮原子在 11b 中达到最有效的共轭（图 10）。然而，由于 5b、6b 和 10b 中锂配位球的饱和程度更高，这种相互作用被削弱，因此在反应混合物中未观察到相应的溴化物 11a。同时，5b 一个环上的电荷过载使其稳定性显著降低：$ \\Delta G(10\\text{b} \\rightarrow 5\\text{b}) = +6.3 $ kcal/mol（图 11）。上述因素的共同作用使 6b 和 10b 成为热力学上最稳定的异构体（$ \\Delta G(10\\text{b} \\rightarrow 6\\text{b}) = +1.9 $ kcal/mol），它们在反应混合物中以相近的量被观测到。",
+    "translation_unit_translated_text": "用 1.5 当量的 $n$-BuLi 在 −24°C 下处理 2，随后用 MeOH 淬灭，得到 6a 和 10a 以及 4a 和 12a，未观察到 5a 和 11a 的生成（表 1，条目 4）。将温度升至 25°C 可获得可重复性较差但总体相似的结果（条目 5）。相应锂化物种的轨道相互作用分析清楚表明，两个氮原子在 11b 中达到最有效的共轭（图 10）。然而，由于 5b、6b 和 10b 中锂配位球的饱和程度更高，这种相互作用被削弱，因此在反应混合物中未观察到相应的溴化物 11a。同时，5b 一个环上的电荷过载使其稳定性显著降低：$ \\Delta G(10\\text{b} \\rightarrow 5\\text{b}) = +6.3 $ kcal/mol（图 11）。上述因素的共同作用使 6b 和 10b 成为热力学上最稳定的异构体（$ \\Delta G(10\\text{b} \\rightarrow 6\\text{b}) = +1.9 $ kcal/mol），它们在反应混合物中以相近的量被观测到。",
+    "protected_translated_text": "用 1.5 当量的 $n$-BuLi 在 −24°C 下处理 2，随后用 MeOH 淬灭，得到 6a 和 10a 以及 4a 和 12a，未观察到 5a 和 11a 的生成（表 1，条目 4）。将温度升至 25°C 可获得可重复性较差但总体相似的结果（条目 5）。相应锂化物种的轨道相互作用分析清楚表明，两个氮原子在 11b 中达到最有效的共轭（图 10）。然而，由于 5b、6b 和 10b 中锂配位球的饱和程度更高，这种相互作用被削弱，因此在反应混合物中未观察到相应的溴化物 11a。同时，5b 一个环上的电荷过载使其稳定性显著降低：$ \\Delta G(10\\text{b} \\rightarrow 5\\text{b}) = +6.3 $ kcal/mol（图 11）。上述因素的共同作用使 6b 和 10b 成为热力学上最稳定的异构体（$ \\Delta G(10\\text{b} \\rightarrow 6\\text{b}) = +1.9 $ kcal/mol），它们在反应混合物中以相近的量被观测到。",
+    "translated_text": "用 1.5 当量的 $n$-BuLi 在 −24°C 下处理 2，随后用 MeOH 淬灭，得到 6a 和 10a 以及 4a 和 12a，未观察到 5a 和 11a 的生成（表 1，条目 4）。将温度升至 25°C 可获得可重复性较差但总体相似的结果（条目 5）。相应锂化物种的轨道相互作用分析清楚表明，两个氮原子在 11b 中达到最有效的共轭（图 10）。然而，由于 5b、6b 和 10b 中锂配位球的饱和程度更高，这种相互作用被削弱，因此在反应混合物中未观察到相应的溴化物 11a。同时，5b 一个环上的电荷过载使其稳定性显著降低：$ \\Delta G(10\\text{b} \\rightarrow 5\\text{b}) = +6.3 $ kcal/mol（图 11）。上述因素的共同作用使 6b 和 10b 成为热力学上最稳定的异构体（$ \\Delta G(10\\text{b} \\rightarrow 6\\text{b}) = +1.9 $ kcal/mol），它们在反应混合物中以相近的量被观测到。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p006-b011",
+      "page_idx": 5,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p006-b012",
+    "page_idx": 5,
+    "block_idx": 12,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 12,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.886,
+      388.449,
+      550.793,
+      484.437
+    ],
+    "source_text": "The triple and quadruple halogen exchange in 2 reveals the strongest manifestation of discussed effect. Thus, treatment of 2 with 2.8 equivalents of n-BuLi (entries 8 and 9) leads to the formation of 9b as the only product of the triple halogen exchange. While 9b, unlike isomeric 8b, has no coordination of the amino group to the neighboring lithium atom, the gain of conjugation energy facilitates its formation. From the NBO analysis, one can clearly see that in the case of 9b, both",
+    "source_line_texts": [
+      "The triple and quadruple halogen exchange in 2 reveals the",
+      "strongest manifestation of discussed effect. Thus, treatment",
+      "of 2 with 2.8 equivalents of n-BuLi (entries 8 and 9) leads",
+      "to the formation of 9b as the only product of the triple",
+      "halogen exchange. While 9b, unlike isomeric 8b, has no coordination",
+      "of the amino group to the neighboring lithium atom, the",
+      "gain of conjugation energy facilitates its formation. From",
+      "the NBO analysis, one can clearly see that in the case of 9b, both"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.886,
+          388.449,
+          550.793,
+          400.447
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The triple and quadruple halogen exchange in 2 reveals",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          400.447,
+          550.793,
+          412.446
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the strongest manifestation of discussed effect.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          412.446,
+          550.793,
+          424.445
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Thus, treatment of 2 with 2.8 equivalents of n-BuLi",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          424.445,
+          550.793,
+          436.443
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(entries 8 and 9) leads to the formation of 9b as",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          436.443,
+          550.793,
+          448.442
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the only product of the triple halogen exchange.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          448.442,
+          550.793,
+          460.44
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "While 9b, unlike isomeric 8b, has no coordination",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          460.44,
+          550.793,
+          472.438
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of the amino group to the neighboring lithium atom,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          472.438,
+          550.793,
+          484.437
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the gain of conjugation energy facilitates its formation. From the NBO analysis, one can clearly see that in the case of 9b, both",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-92",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 4,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-92",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 4,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 295.51,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "The triple and quadruple halogen exchange in 2 reveals the strongest manifestation of discussed effect. Thus, treatment of 2 with 2.8 equivalents of n-BuLi (entries 8 and 9) leads to the formation of 9b as the only product of the triple halogen exchange. While 9b, unlike isomeric 8b, has no coordination of the amino group to the neighboring lithium atom, the gain of conjugation energy facilitates its formation. From the NBO analysis, one can clearly see that in the case of 9b, both",
+    "mixed_original_protected_source_text": "The triple and quadruple halogen exchange in 2 reveals the strongest manifestation of discussed effect. Thus, treatment of 2 with 2.8 equivalents of n-BuLi (entries 8 and 9) leads to the formation of 9b as the only product of the triple halogen exchange. While 9b, unlike isomeric 8b, has no coordination of the amino group to the neighboring lithium atom, the gain of conjugation energy facilitates its formation. From the NBO analysis, one can clearly see that in the case of 9b, both",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-006-007",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p006-b012",
+      "p007-b009"
+    ],
+    "translation_unit_protected_source_text": "The triple and quadruple halogen exchange in 2 reveals the strongest manifestation of discussed effect. Thus, treatment of 2 with 2.8 equivalents of n-BuLi (entries 8 and 9) leads to the formation of 9b as the only product of the triple halogen exchange. While 9b, unlike isomeric 8b, has no coordination of the amino group to the neighboring lithium atom, the gain of conjugation energy facilitates its formation. From the NBO analysis, one can clearly see that in the case of 9b, both nitrogen atoms are effectively conjugated with an aromatic core (Figure 12). In contrast, the triple exchange in 1 is not selective and leads to the formation of both possible isomers due to the much stronger impact of the N→Li coordination on the thermodynamic stabilization.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "2中的三重和四重卤素交换展现了所讨论效应的最强体现。因此，用2.8当量的n-BuLi处理2（条目8和9）导致形成单一的三重卤素交换产物9b。尽管9b与异构体8b不同，其氨基不与相邻锂原子配位，但共轭能的增加促进了它的形成。从NBO分析可以清楚地看到，在9b的情况下，两个氮原子与芳香核心有效共轭（图12）。相比之下，1中的三重交换不具有选择性，由于N→Li配位对热力学稳定性的影响更强，导致生成两种可能的异构体。",
+    "translation_unit_translated_text": "2中的三重和四重卤素交换展现了所讨论效应的最强体现。因此，用2.8当量的n-BuLi处理2（条目8和9）导致形成单一的三重卤素交换产物9b。尽管9b与异构体8b不同，其氨基不与相邻锂原子配位，但共轭能的增加促进了它的形成。从NBO分析可以清楚地看到，在9b的情况下，两个氮原子与芳香核心有效共轭（图12）。相比之下，1中的三重交换不具有选择性，由于N→Li配位对热力学稳定性的影响更强，导致生成两种可能的异构体。",
+    "protected_translated_text": "2中的三重和四重卤素交换展现了所讨论效应的最强体现。因此，用2.8当量的n-BuLi处理2（条目8和9）导致形成单一的三重卤素交换产物9b。尽管9b与异构体8b不同，其氨基不与相邻锂原子配位，但共轭能的增加促进了它的形成。从NBO分析可以清楚地看到，在9b的情况下，",
+    "translated_text": "2中的三重和四重卤素交换展现了所讨论效应的最强体现。因此，用2.8当量的n-BuLi处理2（条目8和9）导致形成单一的三重卤素交换产物9b。尽管9b与异构体8b不同，其氨基不与相邻锂原子配位，但共轭能的增加促进了它的形成。从NBO分析可以清楚地看到，在9b的情况下，",
+    "continuation_group": "cg-006-007",
+    "continuation_prev_text": "",
+    "continuation_next_text": "nitrogen atoms are effectively conjugated with an aromatic core (Figure 12). In contrast, the triple exchange in 1 is not selective and leads to the formation of both possible isomers due to the much stronger impact of the N→Li coordination on the thermodynamic stabilization.",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "The triple and quadruple halogen exchange in 2 reveals the strongest manifestation of discussed effect. Thus, treatment of 2 with 2.8 equivalents of n-BuLi (entries 8 and 9) leads to the formation of 9b as the only product of the triple halogen exchange. While 9b, unlike isomeric 8b, has no coordination of the amino group to the neighboring lithium atom, the gain of conjugation energy facilitates its formation. From the NBO analysis, one can clearly see that in the case of 9b, both nitrogen atoms are effectively conjugated with an aromatic core (Figure 12). In contrast, the triple exchange in 1 is not selective and leads to the formation of both possible isomers due to the much stronger impact of the N→Li coordination on the thermodynamic stabilization.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "2中的三重和四重卤素交换展现了所讨论效应的最强体现。因此，用2.8当量的n-BuLi处理2（条目8和9）导致形成单一的三重卤素交换产物9b。尽管9b与异构体8b不同，其氨基不与相邻锂原子配位，但共轭能的增加促进了它的形成。从NBO分析可以清楚地看到，在9b的情况下，两个氮原子与芳香核心有效共轭（图12）。相比之下，1中的三重交换不具有选择性，由于N→Li配位对热力学稳定性的影响更强，导致生成两种可能的异构体。",
+    "group_translated_text": "2中的三重和四重卤素交换展现了所讨论效应的最强体现。因此，用2.8当量的n-BuLi处理2（条目8和9）导致形成单一的三重卤素交换产物9b。尽管9b与异构体8b不同，其氨基不与相邻锂原子配位，但共轭能的增加促进了它的形成。从NBO分析可以清楚地看到，在9b的情况下，两个氮原子与芳香核心有效共轭（图12）。相比之下，1中的三重交换不具有选择性，由于N→Li配位对热力学稳定性的影响更强，导致生成两种可能的异构体。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p006-b012",
+      "page_idx": 5,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "While the N2 atom in compounds 14 and 15 participates in the coordination of lithium, the unshared electron pair of N1 effectively conjugates with the aromatic system (E=38.6 and 37.7 kcal/mol in 14 and 15 respectively, Figure 9). Despite the highest distortion of the molecule of 15 caused by the repulsion of the bromine atom and methyl group ( $ \\theta=3.7...",
+    "translation_context_after": "Figure 9. Natural bond orbitals (NBO) for 14b-Tol, 15b-Tol, 16b-Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity. / Figure 10. Natural bond orbitals..."
+  },
+  {
+    "item_id": "p006-b014",
+    "page_idx": 5,
+    "block_idx": 14,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 14,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      301.387,
+      698.409,
+      544.795,
+      744.403
+    ],
+    "source_text": "Figure 9. Natural bond orbitals (NBO) for 14b-Tol, 15b-Tol, 16b-Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "source_line_texts": [
+      "Figure 9. Natural bond orbitals (NBO) for 14b-Tol, 15b-Tol, 16b-Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          698.409,
+          544.795,
+          744.403
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 9. Natural bond orbitals (NBO) for 14b-Tol, 15b-Tol, 16b-Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-94",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-94",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 295.51,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 9. Natural bond orbitals (NBO) for 14b-Tol, 15b-Tol, 16b-Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "mixed_original_protected_source_text": "Figure 9. Natural bond orbitals (NBO) for 14b-Tol, 15b-Tol, 16b-Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p006-b014",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p006-b014"
+    ],
+    "translation_unit_protected_source_text": "Figure 9. Natural bond orbitals (NBO) for 14b-Tol, 15b-Tol, 16b-Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图9. 14b-Tol、15b-Tol和16b-Tol的自然键轨道(NBO)。N1氮原子的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠(上方)，N2氮原子的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠(下方)。轨道可视化的等值面值为0.02。为清晰起见，甲苯分子已省略。",
+    "translation_unit_translated_text": "图9. 14b-Tol、15b-Tol和16b-Tol的自然键轨道(NBO)。N1氮原子的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠(上方)，N2氮原子的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠(下方)。轨道可视化的等值面值为0.02。为清晰起见，甲苯分子已省略。",
+    "protected_translated_text": "图9. 14b-Tol、15b-Tol和16b-Tol的自然键轨道(NBO)。N1氮原子的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠(上方)，N2氮原子的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠(下方)。轨道可视化的等值面值为0.02。为清晰起见，甲苯分子已省略。",
+    "translated_text": "图9. 14b-Tol、15b-Tol和16b-Tol的自然键轨道(NBO)。N1氮原子的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠(上方)，N2氮原子的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠(下方)。轨道可视化的等值面值为0.02。为清晰起见，甲苯分子已省略。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p006-b014",
+      "page_idx": 5,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Treatment of 2 with 1.5 equiv. of n-BuLi at −24°C and further quenching with MeOH leads to the formation of 6a and 10a together with 4a and 12a after quenching the reaction mixture with MeOH, no formation of 5a and 11a was observed (Table 1, entry 4). Elevating the temperature to 25°C gives poorly reproducible but overall similar results (entry 5). Analysis...",
+    "translation_context_after": "Figure 10. Natural bond orbitals (NBO) for 5b-2Tol, 6b-2Tol, 10b-2Tol, 11b-2Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity. / Figure 11. Isosurfac..."
+  }
+]

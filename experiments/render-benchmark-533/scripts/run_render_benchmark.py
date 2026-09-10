@@ -146,15 +146,17 @@ def run_benchmark(args: argparse.Namespace) -> Path:
         command.extend(["-m", "cProfile", "-o", str(profile_path)])
     command.extend(
         [
-            str(REPO_ROOT / "backend/scripts/entrypoints/run_render_only.py"),
+            "-m",
+            "retainpdf_pipeline.render",
             "--spec",
             str(spec_path),
         ]
     )
 
     started = time.perf_counter()
+    pipeline_root = REPO_ROOT / "services" / "pipeline"
     with stdout_path.open("w", encoding="utf-8") as stdout, stderr_path.open("w", encoding="utf-8") as stderr:
-        completed = subprocess.run(command, cwd=REPO_ROOT, stdout=stdout, stderr=stderr, check=False)
+        completed = subprocess.run(command, cwd=pipeline_root, stdout=stdout, stderr=stderr, check=False)
     wall_seconds = time.perf_counter() - started
 
     summary = _load_summary(job_root)

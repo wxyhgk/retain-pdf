@@ -1,0 +1,107 @@
+map $http_x_forwarded_proto $retainpdf_forwarded_proto {
+  default $http_x_forwarded_proto;
+  "" $scheme;
+}
+
+map $http_x_forwarded_host $retainpdf_forwarded_host {
+  default $http_x_forwarded_host;
+  "" $http_host;
+}
+
+map $http_x_forwarded_port $retainpdf_forwarded_port {
+  default $http_x_forwarded_port;
+  "" "";
+}
+
+# Keep the backend API key on the server side for browser deployments. API
+# clients may still provide their own X-API-Key; the configured proxy key is
+# used only when the incoming request has no key.
+map $http_x_api_key $retainpdf_backend_api_key {
+  default $http_x_api_key;
+  "" "${RETAINPDF_PROXY_API_KEY}";
+}
+
+server {
+  listen 80;
+  server_name _;
+
+  include /etc/nginx/mime.types;
+  include /etc/nginx/conf.d/mjs.types.conf;
+
+  root /usr/share/nginx/html;
+  index index.html;
+
+  location = /health {
+    proxy_pass http://app:41000/health;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Proto $retainpdf_forwarded_proto;
+    proxy_set_header X-Forwarded-Host $retainpdf_forwarded_host;
+    proxy_set_header X-Forwarded-Port $retainpdf_forwarded_port;
+  }
+
+  # AI answers are proxied through Rust as an SSE byte stream.  Disable every
+  # response buffering layer so tool events and answer deltas reach the client
+  # as soon as they are committed by the upstream runtime.
+  location = /api/v1/ai/ask {
+    proxy_pass http://app:41000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Proto $retainpdf_forwarded_proto;
+    proxy_set_header X-Forwarded-Host $retainpdf_forwarded_host;
+    proxy_set_header X-Forwarded-Port $retainpdf_forwarded_port;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-API-Key $retainpdf_backend_api_key;
+    proxy_set_header Connection "";
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 1h;
+    proxy_send_timeout 1h;
+    add_header X-Accel-Buffering no always;
+    client_max_body_size 256m;
+  }
+
+  # Live translation is a durable SSE hint stream.  Its 15-second keepalive
+  # must cross nginx immediately so disconnected readers can reconnect using
+  # Last-Event-ID without appearing stalled.
+  location ~ ^/api/v1/jobs/[^/]+/live-events$ {
+    proxy_pass http://app:41000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Proto $retainpdf_forwarded_proto;
+    proxy_set_header X-Forwarded-Host $retainpdf_forwarded_host;
+    proxy_set_header X-Forwarded-Port $retainpdf_forwarded_port;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-API-Key $retainpdf_backend_api_key;
+    proxy_set_header Connection "";
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 1h;
+    proxy_send_timeout 1h;
+    add_header X-Accel-Buffering no always;
+  }
+
+  location /api/ {
+    proxy_pass http://app:41000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Proto $retainpdf_forwarded_proto;
+    proxy_set_header X-Forwarded-Host $retainpdf_forwarded_host;
+    proxy_set_header X-Forwarded-Port $retainpdf_forwarded_port;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-API-Key $retainpdf_backend_api_key;
+    proxy_set_header Connection "";
+    proxy_request_buffering off;
+    proxy_read_timeout 1h;
+    proxy_send_timeout 1h;
+    client_body_timeout 1h;
+    send_timeout 1h;
+    client_max_body_size 256m;
+  }
+
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+}

@@ -1,0 +1,74 @@
+.detail-body .detail-empty {
+  padding: 20px;
+  border: 1px dashed var(--line);
+  border-radius: 18px;
+  color: var(--muted);
+  text-align: center;
+  background: var(--bg);
+}
+
+/*
+  阶段 C 收官批(shadcn 改造):StageHistoryModal/EventsModal 的外层结构从
+  <section className="detail-modal"><div className="detail-modal-panel"
+  role="dialog"> 换成 Radix Dialog + 现有 desktop-dialog/desktop-shell/
+  desktop-head/desktop-body 视觉骨架(见 EventsTimeline.jsx 头注释),原来的
+  .detail-modal/.detail-modal-panel/.detail-modal-head 三条结构性规则不再有
+  任何消费者,已删除。外层视觉由共享 AppDialog 提供，
+  detail-timeline-dialog 只保留高度与内容滚动覆盖。
+  下面的 detail-modal-title/-subtitle/-close/-status 这几个纯排版类名原样
+  保留,只是父级结构换了;detail-modal-body 的职责(内层滚动容器的
+  padding/background/overflow)并入上面 detail-timeline-dialog 对
+  desktop-body 的覆盖,原规则已删除。
+*/
+@utility detail-timeline-dialog {
+  max-height: min(82vh, 920px);
+
+  & .desktop-shell {
+    max-height: inherit;
+  }
+
+  & .desktop-head {
+    padding: 18px 20px;
+    border-color: var(--line);
+  }
+
+  & .desktop-body {
+    display: block;
+    padding: 18px 20px 20px;
+    background: var(--bg);
+    overflow: auto;
+  }
+}
+
+.detail-body .detail-modal-title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.detail-body .detail-modal-subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.detail-body .detail-modal-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.detail-body .detail-modal-status {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.detail-inline-note {
+  color: color-mix(in srgb, var(--ink) 35%, var(--muted));
+  font-size: 0.9rem;
+}

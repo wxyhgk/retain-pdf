@@ -1,0 +1,38 @@
+/* 阅读器正文区：markdown 表面 token / 源文档只读态。
+ * 功能模块见 entries/reader.css；三栏窄屏见 layout-legacy.css。
+ */
+
+.reader-markdown {
+  background: var(--reader-markdown-bg);
+  color: var(--ink);
+}
+
+.reader-markdown blockquote {
+  border-left-color: var(--reader-markdown-border);
+  color: var(--muted);
+  background: var(--bg);
+}
+
+.reader-markdown pre,
+.reader-markdown-raw {
+  background: var(--reader-markdown-raw-bg);
+  color: var(--paper);
+}
+
+.reader-pdf-frame {
+  background: var(--paper);
+}
+
+.reader-markdown,
+.reader-markdown-raw {
+  color: var(--ink);
+}
+
+/* 馆藏文档"读原文"只读态(F4):没有 job,所有吃 jobId 的入口都不该出现——
+   译文/对照两个模式 tab、Markdown/摘录/批注/AI 问答/下载工具组全部隐藏,
+   只留原文单栏。根节点的 .reader-source-only 由 use-reader-boot.js 打上。 */
+.reader-source-only .reader-topbar-actions,
+.reader-source-only .reader-tab[data-reader-mode="translated"],
+.reader-source-only .reader-tab[data-reader-mode="compare"] {
+  display: none;
+}

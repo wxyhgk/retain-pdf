@@ -1,0 +1,91 @@
+{
+  "name": "@retainpdf/reader",
+  "version": "0.1.0",
+  "private": false,
+  "description": "RetainPDF reader — standalone react-pdf engine (extracted from frontend/web)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters.d.ts",
+      "import": "./dist/adapters.js"
+    },
+    "./boot": {
+      "types": "./dist/boot.d.ts",
+      "import": "./dist/boot.js"
+    },
+    "./ai": {
+      "types": "./dist/ai.d.ts",
+      "import": "./dist/ai.js"
+    },
+    "./runtime/ai": {
+      "types": "./dist/runtime/ai.d.ts",
+      "import": "./dist/runtime/ai.js"
+    },
+    "./runtime/config": {
+      "types": "./dist/runtime/config.d.ts",
+      "import": "./dist/runtime/config.js"
+    },
+    "./runtime/content": {
+      "types": "./dist/runtime/content.d.ts",
+      "import": "./dist/runtime/content.js"
+    },
+    "./runtime/data": {
+      "types": "./dist/runtime/data.d.ts",
+      "import": "./dist/runtime/data.js"
+    },
+    "./runtime/state": {
+      "types": "./dist/runtime/state.d.ts",
+      "import": "./dist/runtime/state.js"
+    },
+    "./ai.css": "./dist/ai.css",
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "./dist/styles.css",
+    "./dist/ai.css"
+  ],
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json && npm run build:styles",
+    "build:styles": "tailwindcss -i ./scripts/styles.css -o ./dist/styles.css --minify && tailwindcss -i ./scripts/ai.css -o ./dist/ai.css --minify && node ./scripts/flatten-css-layers.mjs ./dist/styles.css ./dist/ai.css",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "vite --port 40003"
+  },
+  "peerDependencies": {
+    "lucide-react": "^0.400.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sonner": "^2.0.0"
+  },
+  "dependencies": {
+    "@ai-sdk/react": "^3.0.267",
+    "@assistant-ui/react": "^0.15.16",
+    "@retainpdf/api": "0.1.0",
+    "ai": "^6.0.264",
+    "katex": "^0.16.47",
+    "marked": "^18.0.6",
+    "markstream-react": "^2.0.3",
+    "mathjax-full": "^3.2.1",
+    "pdfjs-dist": "^4.8.69",
+    "react-pdf": "^9.2.1",
+    "react-resizable-panels": "4.12.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.3.2",
+    "typescript": "^7.0.2",
+    "vite": "^6.3.0"
+  }
+}

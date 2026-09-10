@@ -3,43 +3,64 @@ name: Rust API Architecture
 "on":
   pull_request:
     paths:
-      - "backend/rust_api/**"
-      - "backend/scripts/**"
-      - "doc/adr/**"
-      - "doc/core/python/**"
+      - "backend/api/**"
+      - "backend/packages/**"
+      - "backend/jobs/**"
+      - "database/**"
+      - "contracts/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "backend/pipeline/**"
+      - "backend-package.json"
+      - ".github/actions/prepare-backend-source/**"
+      - ".github/scripts/resolve_backend_source.py"
+      - "docs/adr/**"
+      - "docs/core/python/**"
       - ".github/workflows/rust-api-architecture.yml"
   push:
     branches:
       - main
       - master
     paths:
-      - "backend/rust_api/**"
-      - "backend/scripts/**"
-      - "doc/adr/**"
-      - "doc/core/python/**"
+      - "backend/api/**"
+      - "backend/packages/**"
+      - "backend/jobs/**"
+      - "database/**"
+      - "contracts/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "backend/pipeline/**"
+      - "backend-package.json"
+      - ".github/actions/prepare-backend-source/**"
+      - ".github/scripts/resolve_backend_source.py"
+      - "docs/adr/**"
+      - "docs/core/python/**"
       - ".github/workflows/rust-api-architecture.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-api-architecture-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   rust-api-architecture:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Prepare embedded backend package
+        id: backend
+        uses: ./.github/actions/prepare-backend-source
 
+      # 纯静态架构检查（秒级）。全量测试在 tests.yml——此前这里挂着
+      # 两个定点冒烟测试，但 cargo 名字筛选匹配 0 个时照样绿，先后因
+      # 重构改名/crate 拆分变成"静默跑 0"。定点筛选是反模式，勿再用。
       - name: Architecture Check
-        run: python3 backend/rust_api/scripts/check_architecture.py
+        run: python3 "$RETAIN_PDF_SERVICES_ROOT/api/scripts/check_architecture.py"
 
       - name: Python Pipeline Architecture Check
-        run: python3 backend/scripts/devtools/check_pipeline_architecture.py
-
-      - name: Cargo Build
-        run: cargo build --manifest-path backend/rust_api/Cargo.toml
-
-      - name: Runner Smoke Test
-        run: cargo test --manifest-path backend/rust_api/Cargo.toml --lib job_runner::process_runner::tests::execute_process_job_injects_provider_and_translation_envs
-
-      - name: Route Redaction Smoke Test
-        run: cargo test --manifest-path backend/rust_api/Cargo.toml --lib routes::jobs::query::tests::job_detail_and_events_routes_redact_secrets
+        run: python3 "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/check_pipeline_architecture.py"

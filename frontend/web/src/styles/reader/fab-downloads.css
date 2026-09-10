@@ -1,0 +1,116 @@
+/* FAB 下载区：三列 chip / empty */
+
+/* 下载区：三列 chip */
+.reader-fab-section {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ink) 3.5%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.reader-fab-section-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--muted, var(--muted));
+}
+.reader-fab-download-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.reader-fab-chip {
+  --fab-i: 1;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-height: 68px;
+  padding: 10px 6px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink, var(--ink));
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease,
+    transform 100ms var(--ease-out);
+  animation: reader-fab-item-in 220ms var(--ease-out) both;
+  animation-delay: calc(var(--fab-i) * 35ms);
+}
+.reader-fab-chip:hover:not(:disabled) {
+  background: var(--paper);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent),
+    0 6px 14px color-mix(in srgb, var(--shadow-color) 7%, transparent);
+}
+.reader-fab-chip:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.reader-fab-chip.is-busy {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.reader-fab-chip.is-disabled,
+.reader-fab-chip:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+.reader-fab-chip-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink, var(--ink));
+}
+.reader-fab-chip-label {
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+.reader-fab-chip-state {
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--muted, var(--muted));
+  line-height: 1;
+}
+.reader-fab-empty {
+  margin: 0;
+  padding: 2px 4px 0;
+  font-size: 11px;
+  color: var(--muted, var(--muted));
+  text-align: center;
+}
+
+@keyframes reader-fab-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-fab-menu,
+  .reader-fab-row,
+  .reader-fab-chip {
+    animation: none;
+  }
+  .reader-fab-trigger,
+  .reader-fab-row,
+  .reader-fab-chip,
+  .reader-fab-menu-close {
+    transition: none;
+  }
+}
+

@@ -1,0 +1,138 @@
+/* AI 悬浮窗 · 正文 [n] 角标与精简来源条 */
+
+/* 正文内 [n] 角标：像论文脚注，不做成灰色输入框。 */
+.reader-float-ai .reader-ai-citation-ref {
+  display: inline-block;
+  margin: 0 0.08em;
+  padding: 0 0.12em;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: color-mix(in srgb, var(--accent) 82%, var(--ink));
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  vertical-align: super;
+  transition: background 120ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)), color 120ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+}
+.reader-float-ai .reader-ai-citation-ref:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--ink);
+}
+/* 精简来源条 */
+.reader-float-ai .reader-ai-citations {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.reader-float-ai .reader-ai-citations-head {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 550;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+.reader-float-ai .reader-ai-citations-list {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  max-width: 100%;
+  padding-bottom: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.reader-float-ai .reader-ai-citations-list::-webkit-scrollbar {
+  display: none;
+}
+.reader-float-ai .reader-ai-citation-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: min(22em, 82%);
+  flex: 0 0 auto;
+  min-height: 0;
+  padding: 4px 10px 4px 6px;
+  border: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+  font-size: 11.5px;
+  font-weight: 450;
+  line-height: 1.35;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 120ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+  animation: reader-ai-chip-in 200ms var(--ease-out) both;
+  transition:
+    border-color 150ms var(--ease-out),
+    background-color 150ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+/* 微错峰进场（装饰性，30ms 步进，不阻塞交互） */
+.reader-float-ai .reader-ai-citation-item:nth-child(2) { animation-delay: 30ms; }
+.reader-float-ai .reader-ai-citation-item:nth-child(3) { animation-delay: 60ms; }
+.reader-float-ai .reader-ai-citation-item:nth-child(4) { animation-delay: 90ms; }
+.reader-float-ai .reader-ai-citation-item:nth-child(n + 5) { animation-delay: 120ms; }
+.reader-float-ai .reader-ai-citation-item:hover {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  background: var(--paper);
+  color: var(--ink);
+}
+.reader-float-ai .reader-ai-citation-item:active {
+  transform: scale(0.97);
+}
+@keyframes reader-ai-chip-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* [n] 徽章化：chip 内唯一的强标识，编号+页码一眼可扫 */
+.reader-float-ai .reader-ai-citation-refno {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: color-mix(in srgb, var(--accent) 80%, var(--ink));
+  font-size: 10px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.reader-float-ai .reader-ai-citation-meta {
+  color: var(--accent);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.reader-float-ai .reader-ai-citation-copy {
+  min-width: 0;
+  max-width: 22em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reader-float-ai .aui-md :where(p:first-child),
+.reader-float-ai .aui-md :where(ul:first-child),
+.reader-float-ai .aui-md :where(ol:first-child) { margin-top: 0; }
+.reader-float-ai .aui-md :where(p:last-child),
+.reader-float-ai .aui-md :where(ul:last-child),
+.reader-float-ai .aui-md :where(ol:last-child) { margin-bottom: 0; }
+.reader-float-ai .aui-md :where(ul),
+.reader-float-ai .aui-md :where(ol) { padding-left: 1.2em; }
+.reader-float-ai .aui-md code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  font-size: 11.5px;
+}
+.reader-float-ai .aui-md pre {
+  margin: 0.5em 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg) 60%, var(--paper));
+  overflow-x: auto;
+}

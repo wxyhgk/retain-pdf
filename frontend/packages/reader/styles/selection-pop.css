@@ -1,0 +1,160 @@
+/* PDF 选择浮层：正文选区与 OCR 结构区块共用。 */
+
+/* —— 选择浮层 —— */
+.reader-sel-pop {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  position: fixed;
+  z-index: 55;
+  z-index: var(--z-selection-pop, 55);
+  width: max-content;
+  max-width: calc(100dvw - 24px);
+  transform: translateX(-50%);
+  pointer-events: auto;
+  filter: drop-shadow(0 14px 32px color-mix(in srgb, var(--shadow-color) 16%, transparent));
+  animation: reader-sel-pop-in 180ms var(--ease-out) both;
+}
+.reader-sel-pop--above {
+  transform: translateX(-50%) translateY(-100%);
+}
+.reader-sel-pop--below {
+  transform: translateX(-50%);
+  animation-name: reader-sel-pop-in-below;
+}
+@keyframes reader-sel-pop-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(calc(-100% + 6px)) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-100%) scale(1);
+  }
+}
+@keyframes reader-sel-pop-in-below {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+.reader-sel-pop-card {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px;
+}
+
+.reader-sel-pop-context {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.reader-sel-pop-context svg {
+  color: var(--ink);
+}
+.reader-sel-pop-context-divider {
+  color: color-mix(in srgb, var(--muted) 54%, transparent);
+}
+
+.reader-sel-pop-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.reader-sel-pop-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  cursor: pointer;
+  transition:
+    transform 100ms var(--ease-out),
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+.reader-sel-pop-btn:active {
+  transform: scale(0.97);
+}
+.reader-sel-pop-btn--primary {
+  flex: 0 0 auto;
+  background: linear-gradient(160deg, var(--ink) 0%, var(--ink) 100%);
+  color: var(--paper);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--shadow-color) 16%, transparent);
+}
+.reader-sel-pop-btn--primary:hover {
+  filter: brightness(1.06);
+}
+.reader-sel-pop-btn--secondary {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  background: var(--paper);
+  color: var(--ink);
+}
+.reader-sel-pop-btn--secondary:hover {
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper));
+}
+.reader-sel-pop-selection-hint {
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 650;
+}
+.reader-sel-pop-btn--ghost {
+  flex: 0 0 auto;
+  width: 32px;
+  padding: 0;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink, var(--ink));
+}
+.reader-sel-pop-btn--ghost:hover {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+/* 指向选区的小三角 */
+.reader-sel-pop-caret {
+  position: absolute;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--paper) 96%, transparent) 0%, color-mix(in srgb, color-mix(in srgb, var(--bg) 50%, var(--paper)) 94%, transparent) 100%);
+  border-right: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.reader-sel-pop--above .reader-sel-pop-caret {
+  bottom: -5px;
+}
+.reader-sel-pop--below .reader-sel-pop-caret {
+  top: -5px;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-sel-pop {
+    animation: none;
+  }
+  .reader-sel-pop-btn {
+    transition: none;
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "name": "@retainpdf/ui",
+  "version": "0.1.0",
+  "private": false,
+  "description": "RetainPDF shared UI primitives — cn, button, dialog, etc. (extracted from frontend/web)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./lib/utils": {
+      "types": "./dist/lib/utils.d.ts",
+      "import": "./dist/lib/utils.js"
+    },
+    "./components/ui/button": {
+      "types": "./dist/components/ui/button.d.ts",
+      "import": "./dist/components/ui/button.js"
+    },
+    "./components/ui/dialog": {
+      "types": "./dist/components/ui/dialog.d.ts",
+      "import": "./dist/components/ui/dialog.js"
+    },
+    "./components/ui/sonner": {
+      "types": "./dist/components/ui/sonner.d.ts",
+      "import": "./dist/components/ui/sonner.js"
+    },
+    "./components/ui/tabs": {
+      "types": "./dist/components/ui/tabs.d.ts",
+      "import": "./dist/components/ui/tabs.js"
+    },
+    "./components/ui/tooltip": {
+      "types": "./dist/components/ui/tooltip.d.ts",
+      "import": "./dist/components/ui/tooltip.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "./dist/styles.css"
+  ],
+  "scripts": {
+    "clean": "node ./scripts/clean-dist.mjs",
+    "build": "npm run clean && tsc -p tsconfig.json && npm run build:css",
+    "build:css": "tailwindcss -i ./scripts/styles.css -o ./dist/styles.css --minify",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsc --watch -p tsconfig.json",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.24.0",
+    "radix-ui": "^1.6.2",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.6.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.3.2",
+    "typescript": "^7.0.2"
+  }
+}

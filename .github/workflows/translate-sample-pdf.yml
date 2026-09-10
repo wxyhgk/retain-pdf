@@ -103,13 +103,11 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PYTHONPATH: backend/scripts
   RETAIN_TRANSLATION_API_KEY: ${{ secrets.RETAIN_TRANSLATION_API_KEY }}
   MINERU_API_TOKEN: ${{ secrets.MINERU_API_TOKEN }}
   TYPST_VERSION: "0.14.2"
   CMARKER_VERSION: "0.1.8"
   MITEX_VERSION: "0.2.6"
-  RETAIN_PDF_TYPST_FONT_DIRS: ${{ github.workspace }}/backend/fonts
   RETAIN_PDF_TYPST_FONT_FAMILY: "Source Han Serif SC"
 
 jobs:
@@ -119,7 +117,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Prepare embedded backend package
+        id: backend
+        uses: ./.github/actions/prepare-backend-source
+
+      - name: Configure backend runtime paths
+        shell: bash
+        run: |
+          echo "PYTHONPATH=$RETAIN_PDF_SERVICES_ROOT/pipeline" >> "$GITHUB_ENV"
+          echo "RETAIN_PDF_TYPST_FONT_DIRS=$RETAIN_PDF_SERVICES_ROOT/fonts" >> "$GITHUB_ENV"
 
       - name: Validate required secrets
         shell: bash
@@ -134,7 +142,7 @@ jobs:
           fi
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -142,8 +150,9 @@ jobs:
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          python backend/scripts/devtools/sync_python_requirements.py --repo-root . --check
-          python -m pip install -r docker/requirements-app.txt
+          python .github/scripts/sync_backend_python_requirements.py --repo-root . --services-root "$RETAIN_PDF_SERVICES_ROOT" --check
+          python -m pip install -r ops/deployment/docker/requirements-app.txt
+          python -m pip install --no-deps "$RETAIN_PDF_SERVICES_ROOT/pipeline"
 
       - name: Setup Typst runtime
         shell: bash
@@ -259,9 +268,9 @@ jobs:
         shell: bash
         run: |
           if [ "${{ steps.prepare.outputs.mode }}" = "book" ]; then
-            python backend/scripts/services/translation/from_ocr_pipeline.py --spec "${{ steps.prepare.outputs.spec_path }}"
+            retainpdf-pipeline book --spec "${{ steps.prepare.outputs.spec_path }}"
           else
-            python backend/scripts/services/mineru/mineru_pipeline.py --spec "${{ steps.prepare.outputs.spec_path }}"
+            retainpdf-pipeline provider-case --spec "${{ steps.prepare.outputs.spec_path }}"
           fi
 
       - name: Publish run summary
@@ -290,7 +299,7 @@ jobs:
 
       - name: Upload translated PDF and job artifacts
         if: always() && steps.prepare.outputs.job_id != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: translated-sample-${{ steps.prepare.outputs.job_id }}
           if-no-files-found: warn

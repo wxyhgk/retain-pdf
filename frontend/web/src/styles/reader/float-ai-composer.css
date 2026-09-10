@@ -1,0 +1,241 @@
+/* AI 悬浮窗 · Notion 式一体圆角输入卡 */
+
+.reader-float-ai .aui-scroll-bottom-btn {
+  position: sticky;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin: 0 auto;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 96%, transparent);
+  color: var(--ink);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--ink) 8%, transparent);
+  cursor: pointer;
+  transition:
+    transform 140ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)),
+    background 140ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+}
+.reader-float-ai .aui-scroll-bottom-btn:hover {
+  background: var(--paper);
+}
+.reader-float-ai .aui-scroll-bottom-btn:active {
+  transform: translateX(-50%) scale(0.96);
+}
+
+.reader-float-ai .aui-composer {
+  display: grid;
+  gap: 8px;
+  padding: 10px 14px 14px;
+  border-top: 0;
+  background: var(--paper);
+}
+
+/* 无模型 Key：不渲染可编辑输入 */
+.reader-float-ai .aui-composer-locked {
+  gap: 6px;
+}
+
+.reader-float-ai .aui-llm-lock-msg {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 22%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--danger) 6%, var(--paper));
+  color: color-mix(in srgb, var(--danger) 80%, var(--ink));
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+/* 一体输入壳：软阴影 + 大圆角 */
+.reader-float-ai .aui-composer-shell {
+  display: grid;
+  gap: 0;
+  padding: 10px 12px 8px;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--ink) 3%, transparent),
+    0 6px 20px color-mix(in srgb, var(--ink) 5%, transparent);
+  transition:
+    border-color 160ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)),
+    box-shadow 160ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+}
+.reader-float-ai .aui-composer-shell:focus-within {
+  border-color: color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 8px 24px color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.reader-float-ai .aui-input {
+  width: 100%;
+  min-height: 44px;
+  max-height: 140px;
+  resize: none;
+  padding: 2px 2px 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 450;
+  outline: none;
+  box-shadow: none;
+}
+.reader-float-ai .aui-input::placeholder {
+  color: color-mix(in srgb, var(--muted) 85%, transparent);
+  font-weight: 400;
+}
+.reader-float-ai .aui-input:focus {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.reader-float-ai .aui-composer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 32px;
+  padding-top: 2px;
+}
+
+.reader-float-ai .aui-composer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 70%;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
+  background: color-mix(in srgb, var(--ink) 2.5%, var(--paper));
+  color: color-mix(in srgb, var(--ink) 60%, var(--muted));
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader-float-ai .aui-composer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* 圆形发送 / 停止 — 对齐 Notion ↑ */
+.reader-float-ai .aui-send {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+  transition:
+    transform 140ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)),
+    background 140ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)),
+    opacity 140ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+}
+.reader-float-ai .aui-send:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 88%, black);
+}
+.reader-float-ai .aui-send:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.reader-float-ai .aui-send:disabled {
+  background: color-mix(in srgb, var(--ink) 12%, var(--bg, var(--paper)));
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.7;
+}
+.reader-float-ai .aui-send-stop {
+  background: color-mix(in srgb, var(--danger) 12%, var(--paper));
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+}
+.reader-float-ai .aui-send-stop:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 18%, var(--paper));
+}
+
+.reader-float-ai .aui-hint {
+  margin: 0;
+  padding: 0 2px;
+  font-size: 11px;
+  font-weight: 450;
+  color: color-mix(in srgb, var(--muted) 90%, transparent);
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+/* 兼容旧类名（若别处仍引用） */
+.reader-float-ai .aui-composer-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.reader-float-ai .aui-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 11px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.reader-float-ai .aui-btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.reader-float-ai .aui-btn-primary:disabled {
+  background: color-mix(in srgb, var(--ink) 12%, var(--bg, var(--paper)));
+  color: var(--muted);
+  cursor: default;
+}
+.reader-float-ai .aui-btn-ghost {
+  background: color-mix(in srgb, var(--bg, var(--paper)) 50%, var(--paper));
+  color: var(--muted);
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.reader-float-ai .aui-btn-stop {
+  background: color-mix(in srgb, var(--danger) 8%, var(--paper));
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+}
+.reader-float-ai .aui-running {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--ink) 70%, var(--muted));
+}
+.reader-float-ai .aui-spin {
+  animation: reader-ai-spin 0.85s linear infinite;
+}
+@keyframes reader-ai-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reader-float-ai .aui-spin { animation: none; }
+}

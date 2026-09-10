@@ -1,0 +1,68 @@
+/* 主页 CSS 入口 → dist/css/home.css
+ * 仅 index.html 加载。
+ *
+ * 边界：
+ * - 禁止 import reader/*、pages/detail/*（阅读器/详情页各自 entry）
+ * - 共享仅限 tokens / base / components* / dialog-shell / download-toast
+ * - 主页领域文件在 pages/home/
+ */
+@import "tailwindcss";
+@import "../core/tailwind-theme.css";
+
+/* content 扫描。
+ *
+ * 注意：`@import "tailwindcss"` 没有 source(none)，v4 的自动来源探测一直在跑，
+ * 所以下面这些 @source 是**叠加**而非收窄——此前注释写「收窄到主页会渲染的
+ * 路径，避免把 reader 域 class 扫进 home 包」，与实际行为不符。
+ *
+ * 批次 5 之前这里有 8 条指向已删除目录（shared/ components/ lib/ js/islands/
+ * partials/），全靠自动探测兜住才没出事。现改为按新的四层结构列出。
+ * 真要收窄需要加 source(none)，那会改变 CSS 产物，另行处理。 */
+@source "../../../index.html";
+@source "../../app/home/**/*.{ts,tsx}";
+@source "../../features/**/*.{ts,tsx}";
+@source "../../ui/**/*.{ts,tsx}";
+@source "../../platform/**/*.{ts,tsx}";
+@source inline("app-settings-panel credential-provider-panel credential-tabs credential-top-up-link glossary-list-item progress-bar recent-job-cover status-result-actions status-substage-flow status-substage-step");
+
+@layer tokens, base, pages;
+
+@import "@retainpdf/reader/ai.css" layer(pages);
+
+@import "../tokens.css" layer(tokens);
+@import "../shadcn-theme.css" layer(tokens);
+@import "../base.css" layer(base);
+/* 主页氛围：浅纹理 + 宽屏侧翼（装饰） */
+@import "../core/ambient-surface.css";
+@import "../core/decor-stage.css";
+
+/* —— shared（三页可共用）—— */
+@import "../components.css";
+@import "../components.utilities.css";
+@import "../dialog-shell.css";
+@import "../core/download-toast.css";
+
+/* —— home-only（主页领域；勿再塞 reader/detail）—— */
+@import "../pages/home/components.utilities.css";
+@import "../pages/home/translation-workflow.utilities.css";
+@import "../pages/home/collections.utilities.css";
+@import "../pages/home/status-detail-translation.utilities.css";
+@import "../pages/home/status-detail.utilities.css";
+@import "../pages/home/app-update.css";
+@import "../pages/home/ai-assistant.css";
+@import "../pages/home/home-ask.css";
+@import "../pages/home/app-settings.css";
+@import "../pages/home/library-shell.css";
+@import "../pages/home/library-search-island.css";
+@import "../pages/home/upload-workflow.css";
+@import "../pages/home/upload-workflow.utilities.css";
+@import "../pages/home/job-dialogs.css";
+@import "../pages/home/job-dialogs.utilities.css";
+@import "../pages/home/credential-settings.css";
+@import "../pages/home/status-card.css";
+/* 书籍详情按职责拆分：壳层 → 概览 → 处理 → 文件产物。 */
+@import "../pages/home/book-detail-shell.css" layer(pages);
+@import "../pages/home/book-detail-overview.css" layer(pages);
+@import "../pages/home/book-detail-processing.css" layer(pages);
+@import "../pages/home/book-detail-artifacts.css" layer(pages);
+@import "../pages/home/mojia-ornaments.css" layer(pages);

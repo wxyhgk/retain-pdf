@@ -1,0 +1,87 @@
+/* 悬浮工具钮 FAB 触发器（可拖动）
+ * 菜单见 fab-menu.css；下载 chip 见 fab-downloads.css
+ */
+.reader-fab {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  position: fixed;
+  /* 始终在批注悬浮窗(48) / 选区浮条(55) 之上，避免被挡住 */
+  z-index: 70;
+  z-index: var(--z-fab, 70);
+  width: 52px;
+  height: 52px;
+  touch-action: none;
+  user-select: none;
+}
+
+.reader-fab-trigger {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--paper) 28%, transparent);
+  border-radius: 999px;
+  background: linear-gradient(160deg, var(--ink) 0%, var(--ink) 100%);
+  color: var(--paper);
+  box-shadow:
+    0 14px 32px color-mix(in srgb, var(--shadow-color) 24%, transparent),
+    0 1px 0 color-mix(in srgb, var(--paper) 14%, transparent) inset;
+  cursor: grab;
+  transition:
+    transform 160ms var(--ease-out),
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+.reader-fab-trigger:active {
+  cursor: grabbing;
+  transform: scale(0.96);
+}
+.reader-fab-trigger.is-open {
+  background: linear-gradient(160deg, var(--ink) 0%, color-mix(in srgb, var(--ink) 90%, var(--chrome)) 100%);
+  box-shadow:
+    0 10px 24px color-mix(in srgb, var(--shadow-color) 20%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.reader-fab-trigger.has-active-tool:not(.is-open) {
+  box-shadow:
+    0 14px 32px color-mix(in srgb, var(--shadow-color) 24%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.reader-fab-icon {
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  pointer-events: none;
+}
+.reader-fab-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.reader-fab-dots i {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--paper);
+  opacity: 0.95;
+}
+.reader-fab-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--paper);
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent);
+  pointer-events: none;
+}

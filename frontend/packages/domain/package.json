@@ -1,0 +1,46 @@
+{
+  "name": "@retainpdf/domain",
+  "version": "0.1.0",
+  "private": false,
+  "description": "RetainPDF pure domain — framework-agnostic job / job-status view-models (extracted from frontend/web/src/js/job*).",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./job": {
+      "types": "./dist/job/index.d.ts",
+      "import": "./dist/job/index.js"
+    },
+    "./job-status": {
+      "types": "./dist/job-status/index.d.ts",
+      "import": "./dist/job-status/index.js"
+    },
+    "./library": {
+      "types": "./dist/library/index.d.ts",
+      "import": "./dist/library/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "node ./scripts/clean-dist.mjs",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsc --watch -p tsconfig.json",
+    "test:types": "tsc -p tsconfig.package-tests.json",
+    "test:imports": "node --test ./tests/package-imports.test.mjs",
+    "test:pack": "node ./scripts/verify-pack.mjs",
+    "test": "npm run typecheck && npm run build && npm run test:types && npm run test:imports && npm run test:pack",
+    "prepack": "npm run build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

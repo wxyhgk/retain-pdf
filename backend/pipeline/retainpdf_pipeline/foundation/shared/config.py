@@ -1,0 +1,67 @@
+from __future__ import annotations
+from retainpdf_pipeline.foundation.config.fonts import DEFAULT_FONT_PATH
+from retainpdf_pipeline.foundation.config.fonts import DEFAULT_FONT_SIZE
+from retainpdf_pipeline.foundation.config.fonts import MIN_FONT_SIZE
+from retainpdf_pipeline.foundation.config.fonts import TYPST_DEFAULT_FONT_FAMILY
+from retainpdf_pipeline.foundation.config.layout import BODY_FONT_SIZE_FACTOR
+from retainpdf_pipeline.foundation.config.layout import BODY_LEADING_FACTOR
+from retainpdf_pipeline.foundation.config.layout import INNER_BBOX_DENSE_SHRINK_X
+from retainpdf_pipeline.foundation.config.layout import INNER_BBOX_DENSE_SHRINK_Y
+from retainpdf_pipeline.foundation.config.layout import INNER_BBOX_SHRINK_X
+from retainpdf_pipeline.foundation.config.layout import INNER_BBOX_SHRINK_Y
+from retainpdf_pipeline.foundation.config.layout import FONT_UNIFY_MODE
+from retainpdf_pipeline.foundation.config.layout import SOURCE_CLEANUP_STRATEGY
+from retainpdf_pipeline.foundation.config.layout import apply_layout_tuning as _apply_layout_tuning
+from retainpdf_pipeline.foundation.config.paths import DATA_DIR
+from retainpdf_pipeline.foundation.config.paths import OUTPUT_DIR
+from retainpdf_pipeline.foundation.config.paths import ROOT_DIR
+from retainpdf_pipeline.foundation.config.paths import SOURCE_JSON
+from retainpdf_pipeline.foundation.config.paths import SOURCE_PDF
+from retainpdf_pipeline.foundation.config.paths import TRANSLATION_UNIT_CACHE_DIR
+from retainpdf_pipeline.foundation.config.paths import TRANSLATIONS_DIR
+from retainpdf_pipeline.foundation.config.runtime import DEFAULT_OUTPUT_NAME
+from retainpdf_pipeline.foundation.config.runtime import DEFAULT_PAGE_INDEX
+from retainpdf_pipeline.foundation.config.runtime import DEFAULT_PDF_COMPRESS_DPI
+
+
+def apply_layout_tuning(
+    *,
+    body_font_size_factor: float | None = None,
+    body_leading_factor: float | None = None,
+    inner_bbox_shrink_x: float | None = None,
+    inner_bbox_shrink_y: float | None = None,
+    inner_bbox_dense_shrink_x: float | None = None,
+    inner_bbox_dense_shrink_y: float | None = None,
+    font_unify_mode: str | None = None,
+    source_cleanup_strategy: str | None = None,
+) -> None:
+    global BODY_FONT_SIZE_FACTOR
+    global BODY_LEADING_FACTOR
+    global INNER_BBOX_SHRINK_X
+    global INNER_BBOX_SHRINK_Y
+    global INNER_BBOX_DENSE_SHRINK_X
+    global INNER_BBOX_DENSE_SHRINK_Y
+    global FONT_UNIFY_MODE
+    global SOURCE_CLEANUP_STRATEGY
+
+    _apply_layout_tuning(
+        body_font_size_factor=body_font_size_factor,
+        body_leading_factor=body_leading_factor,
+        inner_bbox_shrink_x=inner_bbox_shrink_x,
+        inner_bbox_shrink_y=inner_bbox_shrink_y,
+        inner_bbox_dense_shrink_x=inner_bbox_dense_shrink_x,
+        inner_bbox_dense_shrink_y=inner_bbox_dense_shrink_y,
+        font_unify_mode=font_unify_mode,
+        source_cleanup_strategy=source_cleanup_strategy,
+    )
+
+    from retainpdf_pipeline.foundation.config import layout as _layout
+
+    BODY_FONT_SIZE_FACTOR = _layout.BODY_FONT_SIZE_FACTOR
+    BODY_LEADING_FACTOR = _layout.BODY_LEADING_FACTOR
+    INNER_BBOX_SHRINK_X = _layout.INNER_BBOX_SHRINK_X
+    INNER_BBOX_SHRINK_Y = _layout.INNER_BBOX_SHRINK_Y
+    INNER_BBOX_DENSE_SHRINK_X = _layout.INNER_BBOX_DENSE_SHRINK_X
+    INNER_BBOX_DENSE_SHRINK_Y = _layout.INNER_BBOX_DENSE_SHRINK_Y
+    FONT_UNIFY_MODE = _layout.FONT_UNIFY_MODE
+    SOURCE_CLEANUP_STRATEGY = _layout.SOURCE_CLEANUP_STRATEGY

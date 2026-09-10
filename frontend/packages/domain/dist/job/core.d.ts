@@ -1,0 +1,10 @@
+import type { JobLike, JobPayload, JobStatus } from "./types.js";
+export type { JobLike, JobPayload, JobStatus } from "./types.js";
+export declare function numberOrNull(value: unknown): number | null;
+export declare function arrayOrEmpty<T = unknown>(value: unknown): T[];
+export declare function objectOrNull<T extends object = Record<string, unknown>>(value: unknown): T | null;
+export declare function unwrapEnvelope<T = unknown>(payload: unknown): T;
+export declare function firstNonEmpty(...values: unknown[]): string;
+export declare function firstDefined<T>(...values: T[]): T | undefined;
+export declare function isTerminalStatus(status: JobStatus | string | null | undefined): boolean;
+export declare function isJobTerminal(payload?: JobLike | JobPayload | JobStatus | string | null | undefined): boolean;

@@ -1,0 +1,1 @@
+{"version":3,"file":"tool-labels.d.ts","sourceRoot":"","sources":["../../../src/shared/ai/tool-labels.ts"],"names":[],"mappings":"AACA,eAAO,MAAM,iBAAiB,EAAE,MAAM,CAAC,MAAM,EAAE,MAAM,CAOpD,CAAC;AACF,wBAAgB,iBAAiB,CAAC,KAAK,EAAE;IAAE,IAAI,CAAC,EAAE,MAAM,CAAC;IAAC,KAAK,CAAC,EAAE,MAAM,CAAC;IAAC,IAAI,CAAC,EAAE,MAAM,CAAA;CAAE,GAAG,MAAM,GAAG,MAAM,CAG1G"}

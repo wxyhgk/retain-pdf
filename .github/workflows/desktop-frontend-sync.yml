@@ -5,11 +5,17 @@ name: Desktop Frontend Sync
     paths:
       - ".github/workflows/desktop-frontend-sync.yml"
       - ".githooks/pre-commit"
-      - "desktop/package.json"
-      - "desktop/package-lock.json"
-      - "desktop/scripts/prepare-app.mjs"
-      - "desktop/scripts/check-frontend-bundle.mjs"
-      - "frontend/**"
+      - "package.json"
+      - "package-lock.json"
+      - "frontend/desktop/package.json"
+      - "frontend/desktop/scripts/prepare-app.mjs"
+      - "frontend/desktop/scripts/check-frontend-bundle.mjs"
+      - "frontend/web/**"
+      - "frontend/packages/api/**"
+      - "frontend/packages/domain/**"
+      - "frontend/packages/reader/**"
+      - "contracts/**"
+      - "frontend/packages/ui/**"
   push:
     branches:
       - main
@@ -17,50 +23,60 @@ name: Desktop Frontend Sync
     paths:
       - ".github/workflows/desktop-frontend-sync.yml"
       - ".githooks/pre-commit"
-      - "desktop/package.json"
-      - "desktop/package-lock.json"
-      - "desktop/scripts/prepare-app.mjs"
-      - "desktop/scripts/check-frontend-bundle.mjs"
-      - "frontend/**"
+      - "package.json"
+      - "package-lock.json"
+      - "frontend/desktop/package.json"
+      - "frontend/desktop/scripts/prepare-app.mjs"
+      - "frontend/desktop/scripts/check-frontend-bundle.mjs"
+      - "frontend/web/**"
+      - "frontend/packages/api/**"
+      - "frontend/packages/domain/**"
+      - "frontend/packages/reader/**"
+      - "contracts/**"
+      - "frontend/packages/ui/**"
   workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-frontend-sync-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   desktop-frontend-sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22.22.0"
           cache: "npm"
-          cache-dependency-path: |
-            desktop/package-lock.json
-            frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
-      - name: Install desktop dependencies
-        working-directory: desktop
+      - name: Install JavaScript workspace dependencies
         run: npm ci
 
-      - name: Install frontend dependencies
-        working-directory: frontend
+      - name: Verify native frontend dependency
+        working-directory: frontend/web
         run: |
-          npm ci
           # @tailwindcss/oxide 需本机原生绑定；npm optionalDeps 偶发漏装时补齐
           node -e "require('@tailwindcss/oxide')" \
-            || npm install --no-save --no-package-lock "@tailwindcss/oxide@$(node -p "require('./node_modules/@tailwindcss/oxide/package.json').version")"
+            || npm install --no-save --no-package-lock "@tailwindcss/oxide@$(node -p "require('@tailwindcss/oxide/package.json').version")"
 
       - name: Verify desktop frontend generation
         env:
           RETAIN_PDF_DESKTOP_PLATFORM: linux
           RETAIN_PDF_SKIP_BUNDLED_RUNTIME_VERIFICATION: "1"
-        run: npm --prefix desktop run verify-frontend-sync
+        run: npm run verify:desktop
 
       - name: Check tracked generated files are up to date
         run: |
           git diff --exit-code -- \
-            frontend/styles.css \
-            desktop/build/icons \
-            desktop/package.json
+            frontend/web/styles.css \
+            frontend/desktop/build/icons \
+            frontend/desktop/package.json

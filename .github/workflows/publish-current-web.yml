@@ -13,27 +13,45 @@ name: Publish Current Web Image
       - master
     paths:
       - ".github/workflows/publish-current-web.yml"
-      - "docker/Dockerfile.web"
-      - "docker/entrypoint-web.sh"
-      - "docker/nginx-mjs.types.conf"
-      - "docker/nginx.conf.template"
-      - "frontend/**"
+      - ".dockerignore"
+      - "package.json"
+      - "package-lock.json"
+      - "frontend/web/scripts/build-workspace-packages.mjs"
+      - "ops/deployment/docker/Dockerfile.web"
+      - "ops/deployment/docker/entrypoint-web.sh"
+      - "ops/deployment/docker/nginx-mjs.types.conf"
+      - "ops/deployment/docker/nginx.conf.template"
+      - "frontend/desktop/package.json"
+      - "frontend/web/**"
+      - "frontend/packages/api/**"
+      - "frontend/packages/domain/**"
+      - "frontend/packages/reader/**"
+      - "contracts/**"
+      - "frontend/packages/ui/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-current-web-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   publish-web:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Resolve Docker Hub namespace
         id: hub
@@ -46,18 +64,18 @@ jobs:
           echo "user=${user}" >> "$GITHUB_OUTPUT"
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ steps.hub.outputs.user }}/retainpdf-web
           tags: |
-            type=raw,value=latest
+            type=raw,value=edge
             type=sha,prefix=current-
 
       - name: Resolve frontend version
@@ -76,15 +94,15 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push current frontend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
-          file: docker/Dockerfile.web
+          file: ops/deployment/docker/Dockerfile.web
           platforms: ${{ inputs.platforms || 'linux/amd64,linux/arm64' }}
           push: true
           build-args: |
             RETAIN_PDF_VERSION=${{ steps.frontend-version.outputs.version }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=current-web
+          cache-to: type=gha,mode=max,scope=current-web

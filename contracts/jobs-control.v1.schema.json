@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/jobs-control/v1",
+  "title": "retain-shell ↔ retain-jobsd 内部控制契约（ADR-002）",
+  "description": "壳把任务运行时操作交给 jobsd 进程执行。四个操作与拆分前 services/runtime_gateway.rs 的公开面一一对应，语义逐条保持不变——本契约是那 58 行接缝的进程间投影。仅监听 127.0.0.1，鉴权复用 RETAIN_API_KEYS。生产者 = jobsd（crates/retain-jobsd），消费者 = 壳（services/runtime_gateway.rs 的 Remote 实现），双端各配锁测试。",
+  "base_path": "/internal/v1",
+  "bind_host": "127.0.0.1",
+  "auth": {
+    "header": "X-API-Key",
+    "source": "RETAIN_API_KEYS（与壳同源，钥匙单源）"
+  },
+  "endpoints": [
+    {
+      "op": "launch",
+      "method": "POST",
+      "path": "/internal/v1/jobs/{job_id}/launch",
+      "seam_origin": "JobRuntimeLauncher::launch",
+      "semantics": "发射后不管（fire-and-forget）：受理即返回，任务在 jobsd 内异步跑；与拆分前闭包同语义，不等待任务完成",
+      "response": "AckResult"
+    },
+    {
+      "op": "cancel",
+      "method": "POST",
+      "path": "/internal/v1/jobs/{job_id}/cancel",
+      "seam_origin": "RuntimeControl::request_cancel",
+      "semantics": "把 job_id 写入 jobsd 的取消注册表；runner 在下一个 stdout 行边界消费",
+      "response": "AckResult"
+    },
+    {
+      "op": "clear_cancel",
+      "method": "DELETE",
+      "path": "/internal/v1/jobs/{job_id}/cancel",
+      "seam_origin": "RuntimeControl::clear_cancel",
+      "semantics": "移除未被消费的取消请求（取消与终态竞态时防止注册表堆积孤儿项）",
+      "response": "AckResult"
+    },
+    {
+      "op": "terminate",
+      "method": "POST",
+      "path": "/internal/v1/processes/{pid}/terminate",
+      "seam_origin": "terminate_runtime_process",
+      "semantics": "组杀该 pid 的进程树（kill(-pid)），宽限期与轮询间隔取 jobsd 侧 JobRunnerConfig",
+      "response": "AckResult"
+    }
+  ],
+  "definitions": {
+    "AckResult": {
+      "type": "object",
+      "description": "统一受理应答。失败经 HTTP 状态码 + 壳侧既有 AppError 信封表达，不在 body 里另造错误结构。",
+      "required": ["accepted"],
+      "properties": {
+        "accepted": { "type": "boolean" }
+      }
+    }
+  },
+  "health": {
+    "path": "/healthz",
+    "semantics": "监督探活；与 retainpdf-ai sidecar 同形，便于复用 supervisor 模式"
+  }
+}

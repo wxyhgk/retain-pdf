@@ -1,0 +1,2241 @@
+[
+  {
+    "item_id": "p003-b003",
+    "page_idx": 2,
+    "block_idx": 3,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 3,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      63.992,
+      292.89,
+      184.476
+    ],
+    "source_text": "leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied",
+    "source_line_texts": [
+      "leaves only traces of 3 and makes 2 the main product with",
+      "42% isolated yield. Surprisingly, the debrominated products",
+      "4a–6a are also formed under these conditions (Figure 1).",
+      "Unfortunately, it is possible to obtain 5a and 6a only as",
+      "an inseparable mixture with 19% total yield and a 5a:6a",
+      "ratio of 6.7:1. Refluxing 1 with two equivalents of NBS",
+      "in THF facilitates debromination and leads to the formation",
+      "of 4a with 29% yield. Despite the complicity of this reaction,",
+      "the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          63.992,
+          292.89,
+          76.04
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "leaves only traces of 3 and makes 2 the main product",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          76.04,
+          292.89,
+          88.089
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "with 42% isolated yield. Surprisingly, the debrominated",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          88.089,
+          292.89,
+          100.137
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "products 4a–6a are also formed under these conditions",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          100.137,
+          292.89,
+          112.186
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(Figure 1). Unfortunately, it is possible to obtain",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          112.186,
+          292.89,
+          124.234
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "5a and 6a only as an inseparable mixture with 19%",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          124.234,
+          292.89,
+          136.282
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "total yield and a 5a:6a ratio of 6.7:1. Refluxing",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          136.282,
+          292.89,
+          148.331
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "1 with two equivalents of NBS in THF facilitates",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          148.331,
+          292.89,
+          160.379
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "debromination and leads to the formation of 4a with",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          160.379,
+          292.89,
+          172.428
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "29% yield. Despite the complicity of this reaction,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          172.428,
+          292.89,
+          184.476
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-38",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 1,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-38",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 293.39,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied",
+    "mixed_original_protected_source_text": "leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-002-002",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p003-b003",
+      "p003-b011"
+    ],
+    "translation_unit_protected_source_text": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$ leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 with n-BuLi under different conditions. The step-by-step lithiation of 2 can give two monolithioderivatives 4b and 12b, four dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives 8b and 9b and finally tetralithioderivative 7b (Scheme 3). Formed lithiated species were trapped by quenching with MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "translation_unit_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "protected_translated_text": "成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相",
+    "translated_text": "成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相",
+    "continuation_group": "cg-002-002",
+    "continuation_prev_text": "the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$",
+    "continuation_next_text": "diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 with n-BuLi under different conditions. The step-by-step lithiation of 2 can give two monolithioderivatives 4b and 12b, four dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives 8b and 9b and finally tetralithioderivative 7b (Scheme 3). Formed lithiated species were trapped by quenching with MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$ leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 with n-BuLi under different conditions. The step-by-step lithiation of 2 can give two monolithioderivatives 4b and 12b, four dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives 8b and 9b and finally tetralithioderivative 7b (Scheme 3). Formed lithiated species were trapped by quenching with MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "group_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p003-b003",
+      "page_idx": 2,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, t...",
+    "translation_context_after": "Figure 1. X-ray structures of 3 (left) and 4a (right). / Figure 2. Experimental X-ray (left) and calculated in a vacuum (right) structures of 2 (top) and 1 (bottom). Selected geometric parameters are given."
+  },
+  {
+    "item_id": "p003-b005",
+    "page_idx": 2,
+    "block_idx": 5,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 5,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      44.483,
+      329.957,
+      206.922,
+      340.955
+    ],
+    "source_text": "Figure 1. X-ray structures of 3 (left) and 4a (right).",
+    "source_line_texts": [
+      "Figure 1. X-ray structures of 3 (left) and 4a (right)."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          44.483,
+          329.957,
+          206.922,
+          340.955
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 1. X-ray structures of 3 (left) and 4a (right).",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-40",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-40",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 293.39,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 1. X-ray structures of 3 (left) and 4a (right).",
+    "mixed_original_protected_source_text": "Figure 1. X-ray structures of 3 (left) and 4a (right).",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b005",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b005"
+    ],
+    "translation_unit_protected_source_text": "Figure 1. X-ray structures of 3 (left) and 4a (right).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图1. 化合物3（左）和4a（右）的X射线结构。",
+    "translation_unit_translated_text": "图1. 化合物3（左）和4a（右）的X射线结构。",
+    "protected_translated_text": "图1. 化合物3（左）和4a（右）的X射线结构。",
+    "translated_text": "图1. 化合物3（左）和4a（右）的X射线结构。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p003-b005",
+      "page_idx": 2,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Scheme 2. Oxidation of 1 with NBS. / leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with...",
+    "translation_context_after": "Figure 2. Experimental X-ray (left) and calculated in a vacuum (right) structures of 2 (top) and 1 (bottom). Selected geometric parameters are given. / Figure 3. Electron localization function (ELF) isosurfaces (isovalue 0.85) for 1, 2 and 12b in the region of lone pairs of nitrogen atoms, other ELF regions are omitted for clarity."
+  },
+  {
+    "item_id": "p003-b007",
+    "page_idx": 2,
+    "block_idx": 7,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 7,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      44.483,
+      570.925,
+      275.396,
+      599.922
+    ],
+    "source_text": "Figure 2. Experimental X-ray (left) and calculated in a vacuum (right) structures of 2 (top) and 1 (bottom). Selected geometric parameters are given.",
+    "source_line_texts": [
+      "Figure 2. Experimental X-ray (left) and calculated in a vacuum (right) structures of 2 (top) and 1 (bottom). Selected geometric parameters are given."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          44.483,
+          570.925,
+          275.396,
+          599.922
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 2. Experimental X-ray (left) and calculated in a vacuum (right) structures of 2 (top) and 1 (bottom). Selected geometric parameters are given.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-42",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-42",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 293.39,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 2. Experimental X-ray (left) and calculated in a vacuum (right) structures of 2 (top) and 1 (bottom). Selected geometric parameters are given.",
+    "mixed_original_protected_source_text": "Figure 2. Experimental X-ray (left) and calculated in a vacuum (right) structures of 2 (top) and 1 (bottom). Selected geometric parameters are given.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b007",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b007"
+    ],
+    "translation_unit_protected_source_text": "Figure 2. Experimental X-ray (left) and calculated in a vacuum (right) structures of 2 (top) and 1 (bottom). Selected geometric parameters are given.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图2. 化合物2（上）和1（下）的实验X射线（左）与真空计算（右）结构。给出了选定的几何参数。",
+    "translation_unit_translated_text": "图2. 化合物2（上）和1（下）的实验X射线（左）与真空计算（右）结构。给出了选定的几何参数。",
+    "protected_translated_text": "图2. 化合物2（上）和1（下）的实验X射线（左）与真空计算（右）结构。给出了选定的几何参数。",
+    "translated_text": "图2. 化合物2（上）和1（下）的实验X射线（左）与真空计算（右）结构。给出了选定的几何参数。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p003-b007",
+      "page_idx": 2,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilit...",
+    "translation_context_after": "Figure 3. Electron localization function (ELF) isosurfaces (isovalue 0.85) for 1, 2 and 12b in the region of lone pairs of nitrogen atoms, other ELF regions are omitted for clarity. / diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramati..."
+  },
+  {
+    "item_id": "p003-b009",
+    "page_idx": 2,
+    "block_idx": 9,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 9,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      43.983,
+      716.406,
+      289.891,
+      744.903
+    ],
+    "source_text": "Figure 3. Electron localization function (ELF) isosurfaces (isovalue 0.85) for 1, 2 and 12b in the region of lone pairs of nitrogen atoms, other ELF regions are omitted for clarity.",
+    "source_line_texts": [
+      "Figure 3. Electron localization function (ELF) isosurfaces (isovalue 0.85) for 1, 2 and 12b in the region of lone pairs of nitrogen atoms, other ELF regions are omitted for clarity."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          716.406,
+          289.891,
+          744.903
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 3. Electron localization function (ELF) isosurfaces (isovalue 0.85) for 1, 2 and 12b in the region of lone pairs of nitrogen atoms, other ELF regions are omitted for clarity.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-44",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-44",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 293.39,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 4,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 3. Electron localization function (ELF) isosurfaces (isovalue 0.85) for 1, 2 and 12b in the region of lone pairs of nitrogen atoms, other ELF regions are omitted for clarity.",
+    "mixed_original_protected_source_text": "Figure 3. Electron localization function (ELF) isosurfaces (isovalue 0.85) for 1, 2 and 12b in the region of lone pairs of nitrogen atoms, other ELF regions are omitted for clarity.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b009",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b009"
+    ],
+    "translation_unit_protected_source_text": "Figure 3. Electron localization function (ELF) isosurfaces (isovalue 0.85) for 1, 2 and 12b in the region of lone pairs of nitrogen atoms, other ELF regions are omitted for clarity.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图3. 化合物1、2和12b在氮原子孤对电子区域的电子局域化函数（ELF）等值面（等值0.85），为清晰起见，其他ELF区域已省略。",
+    "translation_unit_translated_text": "图3. 化合物1、2和12b在氮原子孤对电子区域的电子局域化函数（ELF）等值面（等值0.85），为清晰起见，其他ELF区域已省略。",
+    "protected_translated_text": "图3. 化合物1、2和12b在氮原子孤对电子区域的电子局域化函数（ELF）等值面（等值0.85），为清晰起见，其他ELF区域已省略。",
+    "translated_text": "图3. 化合物1、2和12b在氮原子孤对电子区域的电子局域化函数（ELF）等值面（等值0.85），为清晰起见，其他ELF区域已省略。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p003-b009",
+      "page_idx": 2,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Figure 1. X-ray structures of 3 (left) and 4a (right). / Figure 2. Experimental X-ray (left) and calculated in a vacuum (right) structures of 2 (top) and 1 (bottom). Selected geometric parameters are given.",
+    "translation_context_after": "diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 wit..."
+  },
+  {
+    "item_id": "p003-b011",
+    "page_idx": 2,
+    "block_idx": 11,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 11,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      63.992,
+      550.793,
+      219.471
+    ],
+    "source_text": "diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 with n-BuLi under different conditions. The step-by-step lithiation of 2 can give two monolithioderivatives 4b and 12b, four dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives 8b and 9b and finally tetralithioderivative 7b (Scheme 3). Formed lithiated species were trapped by quenching with MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+    "source_line_texts": [
+      "diamine 1, dihydroperimidine 2 has less conformational mobility",
+      "of amino groups, opposite orientation of lone pairs of nitrogen",
+      "atoms (in,out in 1 vs out,out in 2) and dramatically smaller",
+      "torsion distortion (Figures 2 and 3). The influence of this",
+      "combination of structural parameters on the bromine—lithium",
+      "permutation was investigated by treatment of 2 with n-BuLi",
+      "under different conditions. The step-by-step lithiation",
+      "of 2 can give two monolithioderivatives 4b and 12b, four",
+      "dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives",
+      "8b and 9b and finally tetralithioderivative 7b (Scheme 3).",
+      "Formed lithiated species were trapped by quenching with",
+      "MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1)."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          63.992,
+          550.793,
+          75.098
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "diamine 1, dihydroperimidine 2 has less conformational",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          75.098,
+          550.793,
+          86.203
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "mobility of amino groups, opposite orientation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          86.203,
+          550.793,
+          97.309
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of lone pairs of nitrogen atoms (in,out in 1 vs",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          97.309,
+          550.793,
+          108.415
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "out,out in 2) and dramatically smaller torsion",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          108.415,
+          550.793,
+          119.52
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "distortion (Figures 2 and 3). The influence of",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          119.52,
+          550.793,
+          130.626
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "this combination of structural parameters on the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          130.626,
+          550.793,
+          141.732
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "bromine—lithium permutation was investigated by",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          141.732,
+          550.793,
+          152.837
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "treatment of 2 with n-BuLi under different conditions.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          152.837,
+          550.793,
+          163.943
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The step-by-step lithiation of 2 can give two monolithioderivatives",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          163.943,
+          550.793,
+          175.048
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "4b and 12b, four dilithiospecies 5b, 6b, 10b and",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          175.048,
+          550.793,
+          186.154
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "11b, two trilithioderivatives 8b and 9b and finally",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          186.154,
+          550.793,
+          197.26
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "tetralithioderivative 7b (Scheme 3). Formed lithiated",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          197.26,
+          550.793,
+          208.365
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "species were trapped by quenching with MeOH and",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          208.365,
+          550.793,
+          219.471
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-46",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 2,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-46",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 2,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 293.39,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 with n-BuLi under different conditions. The step-by-step lithiation of 2 can give two monolithioderivatives 4b and 12b, four dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives 8b and 9b and finally tetralithioderivative 7b (Scheme 3). Formed lithiated species were trapped by quenching with MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+    "mixed_original_protected_source_text": "diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 with n-BuLi under different conditions. The step-by-step lithiation of 2 can give two monolithioderivatives 4b and 12b, four dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives 8b and 9b and finally tetralithioderivative 7b (Scheme 3). Formed lithiated species were trapped by quenching with MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-002-002",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p003-b003",
+      "p003-b011"
+    ],
+    "translation_unit_protected_source_text": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$ leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 with n-BuLi under different conditions. The step-by-step lithiation of 2 can give two monolithioderivatives 4b and 12b, four dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives 8b and 9b and finally tetralithioderivative 7b (Scheme 3). Formed lithiated species were trapped by quenching with MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "translation_unit_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "protected_translated_text": "比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "translated_text": "比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "continuation_group": "cg-002-002",
+    "continuation_prev_text": "leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$ leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 with n-BuLi under different conditions. The step-by-step lithiation of 2 can give two monolithioderivatives 4b and 12b, four dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives 8b and 9b and finally tetralithioderivative 7b (Scheme 3). Formed lithiated species were trapped by quenching with MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "group_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p003-b011",
+      "page_idx": 2,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Figure 2. Experimental X-ray (left) and calculated in a vacuum (right) structures of 2 (top) and 1 (bottom). Selected geometric parameters are given. / Figure 3. Electron localization function (ELF) isosurfaces (isovalue 0.85) for 1, 2 and 12b in the region of lone pairs of nitrogen atoms, other ELF regions are omitted for clarity.",
+    "translation_context_after": "All experiments were performed in toluene, since it provides fine solubility of lithiated species, stays liquid in a wide range of temperatures and has a low CH-acidity. In some cases, benzene was used as a less CH-acidic solvent. When it was possible, products were separated to confirm their structure. Further analysis of reaction mixtures was performed by..."
+  },
+  {
+    "item_id": "p003-b012",
+    "page_idx": 2,
+    "block_idx": 12,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 12,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      219.971,
+      550.793,
+      351.454
+    ],
+    "source_text": "All experiments were performed in toluene, since it provides fine solubility of lithiated species, stays liquid in a wide range of temperatures and has a low CH-acidity. In some cases, benzene was used as a less CH-acidic solvent. When it was possible, products were separated to confirm their structure. Further analysis of reaction mixtures was performed by comparing the chemical shifts of the NMe and NCH₂N groups’ protons with our and literature data (Figure 4).[15] The geometries and energies of studied lithiated species were calculated for their sandwich-like complexes with toluene, in which each lithium atom is coordinated to one toluene molecule (Figure 5).",
+    "source_line_texts": [
+      "All experiments were performed in toluene, since it provides",
+      "fine solubility of lithiated species, stays liquid in a",
+      "wide range of temperatures and has a low CH-acidity. In",
+      "some cases, benzene was used as a less CH-acidic solvent.",
+      "When it was possible, products were separated to confirm",
+      "their structure. Further analysis of reaction mixtures was",
+      "performed by comparing the chemical shifts of the NMe and",
+      "NCH₂N groups’ protons with our and literature data (Figure",
+      "4).[15] The geometries and energies of studied lithiated",
+      "species were calculated for their sandwich-like complexes",
+      "with toluene, in which each lithium atom is coordinated to one toluene molecule (Figure 5)."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          219.971,
+          550.793,
+          231.924
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "All experiments were performed in toluene, since",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          231.924,
+          550.793,
+          243.877
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "it provides fine solubility of lithiated species,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          243.877,
+          550.793,
+          255.83
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "stays liquid in a wide range of temperatures and",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          255.83,
+          550.793,
+          267.783
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "has a low CH-acidity. In some cases, benzene was",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          267.783,
+          550.793,
+          279.736
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "used as a less CH-acidic solvent. When it was possible,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          279.736,
+          550.793,
+          291.689
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "products were separated to confirm their structure.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          291.689,
+          550.793,
+          303.642
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Further analysis of reaction mixtures was performed",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          303.642,
+          550.793,
+          315.595
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "by comparing the chemical shifts of the NMe and",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          315.595,
+          550.793,
+          327.548
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "NCH₂N groups’ protons with our and literature data",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          327.548,
+          550.793,
+          339.501
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(Figure 4).[15] The geometries and energies of studied",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          339.501,
+          550.793,
+          351.454
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "lithiated species were calculated for their sandwich-like complexes with toluene, in which each lithium atom is coordinated to one toluene molecule (Figure 5).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-47",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 3,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-47",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 3,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 293.39,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "All experiments were performed in toluene, since it provides fine solubility of lithiated species, stays liquid in a wide range of temperatures and has a low CH-acidity. In some cases, benzene was used as a less CH-acidic solvent. When it was possible, products were separated to confirm their structure. Further analysis of reaction mixtures was performed by comparing the chemical shifts of the NMe and NCH₂N groups’ protons with our and literature data (Figure 4).[15] The geometries and energies of studied lithiated species were calculated for their sandwich-like complexes with toluene, in which each lithium atom is coordinated to one toluene molecule (Figure 5).",
+    "mixed_original_protected_source_text": "All experiments were performed in toluene, since it provides fine solubility of lithiated species, stays liquid in a wide range of temperatures and has a low CH-acidity. In some cases, benzene was used as a less CH-acidic solvent. When it was possible, products were separated to confirm their structure. Further analysis of reaction mixtures was performed by comparing the chemical shifts of the NMe and NCH₂N groups’ protons with our and literature data (Figure 4).[15] The geometries and energies of studied lithiated species were calculated for their sandwich-like complexes with toluene, in which each lithium atom is coordinated to one toluene molecule (Figure 5).",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b012",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b012"
+    ],
+    "translation_unit_protected_source_text": "All experiments were performed in toluene, since it provides fine solubility of lithiated species, stays liquid in a wide range of temperatures and has a low CH-acidity. In some cases, benzene was used as a less CH-acidic solvent. When it was possible, products were separated to confirm their structure. Further analysis of reaction mixtures was performed by comparing the chemical shifts of the NMe and NCH₂N groups’ protons with our and literature data (Figure 4).[15] The geometries and energies of studied lithiated species were calculated for their sandwich-like complexes with toluene, in which each lithium atom is coordinated to one toluene molecule (Figure 5).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "所有实验均在甲苯中进行，因为甲苯对锂化物种具有良好的溶解性，在宽温度范围内保持液态，且CH酸性较低。在某些情况下，使用CH酸性更弱的苯作为溶剂。在可能时，对产物进行分离以确认其结构。进一步的反应混合物分析通过比较NMe和NCH₂N基团质子的化学位移与我们的文献数据（图4）进行[15]。研究的锂化物种的几何结构和能量在其与甲苯形成的夹心型络合物中计算，其中每个锂原子与一个甲苯分子配位（图5）。",
+    "translation_unit_translated_text": "所有实验均在甲苯中进行，因为甲苯对锂化物种具有良好的溶解性，在宽温度范围内保持液态，且CH酸性较低。在某些情况下，使用CH酸性更弱的苯作为溶剂。在可能时，对产物进行分离以确认其结构。进一步的反应混合物分析通过比较NMe和NCH₂N基团质子的化学位移与我们的文献数据（图4）进行[15]。研究的锂化物种的几何结构和能量在其与甲苯形成的夹心型络合物中计算，其中每个锂原子与一个甲苯分子配位（图5）。",
+    "protected_translated_text": "所有实验均在甲苯中进行，因为甲苯对锂化物种具有良好的溶解性，在宽温度范围内保持液态，且CH酸性较低。在某些情况下，使用CH酸性更弱的苯作为溶剂。在可能时，对产物进行分离以确认其结构。进一步的反应混合物分析通过比较NMe和NCH₂N基团质子的化学位移与我们的文献数据（图4）进行[15]。研究的锂化物种的几何结构和能量在其与甲苯形成的夹心型络合物中计算，其中每个锂原子与一个甲苯分子配位（图5）。",
+    "translated_text": "所有实验均在甲苯中进行，因为甲苯对锂化物种具有良好的溶解性，在宽温度范围内保持液态，且CH酸性较低。在某些情况下，使用CH酸性更弱的苯作为溶剂。在可能时，对产物进行分离以确认其结构。进一步的反应混合物分析通过比较NMe和NCH₂N基团质子的化学位移与我们的文献数据（图4）进行[15]。研究的锂化物种的几何结构和能量在其与甲苯形成的夹心型络合物中计算，其中每个锂原子与一个甲苯分子配位（图5）。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p003-b012",
+      "page_idx": 2,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p003-b013",
+    "page_idx": 2,
+    "block_idx": 13,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 13,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      352.454,
+      550.293,
+      424.445
+    ],
+    "source_text": "We have found that the treatment of 2 with 0.9 equiv. of n-BuLi at $ -20^{\\circ} $C for 1 h and further quenching with MeOH leads to the formation of both 12a and 4a with a ratio of 1:2.5 together with some traces of 6a (Table 1, entry 1). Increasing the temperature to $ 25^{\\circ} $C or the reaction time to 24 h does not noticeably affect the result (entries 2 and 3). Altogether, the first",
+    "source_line_texts": [
+      "We have found that the treatment of 2 with 0.9 equiv. of",
+      "n-BuLi at $ -20^{\\circ} $C for 1 h and further quenching",
+      "with MeOH leads to the formation of both 12a and 4a with",
+      "a ratio of 1:2.5 together with some traces of 6a (Table",
+      "1, entry 1). Increasing the temperature to $ 25^{\\circ}",
+      "$C or the reaction time to 24 h does not noticeably affect",
+      "the result (entries 2 and 3). Altogether, the first"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          352.454,
+          550.293,
+          364.452
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "We have found that the treatment of 2 with 0.9 equiv.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          364.452,
+          550.293,
+          376.451
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of n-BuLi at $ -20^{\\circ} $C for 1 h and further",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          376.451,
+          550.293,
+          388.45
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "quenching with MeOH leads to the formation of both",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          388.45,
+          550.293,
+          400.448
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "12a and 4a with a ratio of 1:2.5 together with some",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          400.448,
+          550.293,
+          412.447
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "traces of 6a (Table 1, entry 1). Increasing the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          412.447,
+          550.293,
+          424.445
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "temperature to $ 25^{\\circ} $C or the reaction time to 24 h does not noticeably affect the result (entries 2 and 3). Altogether, the first",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-48",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 4,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-48",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 4,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 293.39,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "We have found that the treatment of 2 with 0.9 equiv. of n-BuLi at $ -20^{\\circ} $C for 1 h and further quenching with MeOH leads to the formation of both 12a and 4a with a ratio of 1:2.5 together with some traces of 6a (Table 1, entry 1). Increasing the temperature to $ 25^{\\circ} $C or the reaction time to 24 h does not noticeably affect the result (entries 2 and 3). Altogether, the first",
+    "mixed_original_protected_source_text": "We have found that the treatment of 2 with 0.9 equiv. of n-BuLi at $ -20^{\\circ} $C for 1 h and further quenching with MeOH leads to the formation of both 12a and 4a with a ratio of 1:2.5 together with some traces of 6a (Table 1, entry 1). Increasing the temperature to $ 25^{\\circ} $C or the reaction time to 24 h does not noticeably affect the result (entries 2 and 3). Altogether, the first",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b013",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b013"
+    ],
+    "translation_unit_protected_source_text": "We have found that the treatment of 2 with 0.9 equiv. of n-BuLi at $ -20^{\\circ} $C for 1 h and further quenching with MeOH leads to the formation of both 12a and 4a with a ratio of 1:2.5 together with some traces of 6a (Table 1, entry 1). Increasing the temperature to $ 25^{\\circ} $C or the reaction time to 24 h does not noticeably affect the result (entries 2 and 3). Altogether, the first",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "我们发现，在 $ -20^{\\circ} $C 下用 $0.9$ equiv. 的 $n$-BuLi 处理化合物 $2$ 1小时，然后以 MeOH 淬灭，得到 $12a$ 和 $4a$，比例为 $1:2.5$，同时伴有少量 $6a$ (表 1，条目 1)。将温度升至 $25^{\\circ} $C 或将反应时间延长至 24 小时，结果没有明显变化 (条目 2 和 3)。总之，第一个",
+    "translation_unit_translated_text": "我们发现，在 $ -20^{\\circ} $C 下用 $0.9$ equiv. 的 $n$-BuLi 处理化合物 $2$ 1小时，然后以 MeOH 淬灭，得到 $12a$ 和 $4a$，比例为 $1:2.5$，同时伴有少量 $6a$ (表 1，条目 1)。将温度升至 $25^{\\circ} $C 或将反应时间延长至 24 小时，结果没有明显变化 (条目 2 和 3)。总之，第一个",
+    "protected_translated_text": "我们发现，在 $ -20^{\\circ} $C 下用 $0.9$ equiv. 的 $n$-BuLi 处理化合物 $2$ 1小时，然后以 MeOH 淬灭，得到 $12a$ 和 $4a$，比例为 $1:2.5$，同时伴有少量 $6a$ (表 1，条目 1)。将温度升至 $25^{\\circ} $C 或将反应时间延长至 24 小时，结果没有明显变化 (条目 2 和 3)。总之，第一个",
+    "translated_text": "我们发现，在 $ -20^{\\circ} $C 下用 $0.9$ equiv. 的 $n$-BuLi 处理化合物 $2$ 1小时，然后以 MeOH 淬灭，得到 $12a$ 和 $4a$，比例为 $1:2.5$，同时伴有少量 $6a$ (表 1，条目 1)。将温度升至 $25^{\\circ} $C 或将反应时间延长至 24 小时，结果没有明显变化 (条目 2 和 3)。总之，第一个",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p003-b013",
+      "page_idx": 2,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p003-b015",
+    "page_idx": 2,
+    "block_idx": 15,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 15,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      301.387,
+      716.406,
+      535.798,
+      744.403
+    ],
+    "source_text": "Figure 4. Chemical shifts (ppm) of the alkylamino groups' protons of 1,3-dimethyl-2,3-dihydro-1H-perimidine and its known bromoderivatives in CDCl_{3}.",
+    "source_line_texts": [
+      "Figure 4. Chemical shifts (ppm) of the alkylamino groups' protons of 1,3-dimethyl-2,3-dihydro-1H-perimidine and its known bromoderivatives in CDCl_{3}."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          716.406,
+          535.798,
+          744.403
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 4. Chemical shifts (ppm) of the alkylamino groups' protons of 1,3-dimethyl-2,3-dihydro-1H-perimidine and its known bromoderivatives in CDCl_{3}.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-50",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-50",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 293.39,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 4. Chemical shifts (ppm) of the alkylamino groups' protons of 1,3-dimethyl-2,3-dihydro-1H-perimidine and its known bromoderivatives in CDCl_{3}.",
+    "mixed_original_protected_source_text": "Figure 4. Chemical shifts (ppm) of the alkylamino groups' protons of 1,3-dimethyl-2,3-dihydro-1H-perimidine and its known bromoderivatives in CDCl_{3}.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p003-b015",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p003-b015"
+    ],
+    "translation_unit_protected_source_text": "Figure 4. Chemical shifts (ppm) of the alkylamino groups' protons of 1,3-dimethyl-2,3-dihydro-1H-perimidine and its known bromoderivatives in CDCl_{3}.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图4. 1,3-二甲基-2,3-二氢-1H-嘧啶及其已知溴代衍生物在$CDCl_{3}$中烷氨基质子的化学位移（ppm）。",
+    "translation_unit_translated_text": "图4. 1,3-二甲基-2,3-二氢-1H-嘧啶及其已知溴代衍生物在$CDCl_{3}$中烷氨基质子的化学位移（ppm）。",
+    "protected_translated_text": "图4. 1,3-二甲基-2,3-二氢-1H-嘧啶及其已知溴代衍生物在$CDCl_{3}$中烷氨基质子的化学位移（ppm）。",
+    "translated_text": "图4. 1,3-二甲基-2,3-二氢-1H-嘧啶及其已知溴代衍生物在$CDCl_{3}$中烷氨基质子的化学位移（ppm）。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p003-b015",
+      "page_idx": 2,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "All experiments were performed in toluene, since it provides fine solubility of lithiated species, stays liquid in a wide range of temperatures and has a low CH-acidity. In some cases, benzene was used as a less CH-acidic solvent. When it was possible, products were separated to confirm their structure. Further analysis of reaction mixtures was performed by...",
+    "translation_context_after": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH / Scheme 3. Possible pathways of the step-by-step bromine—lithium exchange in 2. Experimentally observed species are marked with blue."
+  },
+  {
+    "item_id": "p003-b016",
+    "page_idx": 2,
+    "block_idx": 16,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 16,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      299.887,
+      759.401,
+      549.793,
+      769.899
+    ],
+    "source_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH",
+    "source_line_texts": [
+      "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          299.887,
+          759.401,
+          549.793,
+          769.899
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-51",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 5,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-51",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 5,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 293.39,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH",
+    "mixed_original_protected_source_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-003-003",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p003-b016",
+      "p004-b006"
+    ],
+    "translation_unit_protected_source_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH 化合物 2 中的溴-锂交换没有选择性，导致生成两种可能的产物 12b 和 4b。",
+    "translation_unit_translated_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH 化合物 2 中的溴-锂交换没有选择性，导致生成两种可能的产物 12b 和 4b。",
+    "protected_translated_text": "© 2023 The Authors. Chemistry - A European Journal published",
+    "translated_text": "© 2023 The Authors. Chemistry - A European Journal published",
+    "continuation_group": "cg-003-003",
+    "continuation_prev_text": "",
+    "continuation_next_text": "bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b.",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH 化合物 2 中的溴-锂交换没有选择性，导致生成两种可能的产物 12b 和 4b。",
+    "group_translated_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH 化合物 2 中的溴-锂交换没有选择性，导致生成两种可能的产物 12b 和 4b。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p003-b016",
+      "page_idx": 2,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "We have found that the treatment of 2 with 0.9 equiv. of n-BuLi at $ -20^{\\circ} $C for 1 h and further quenching with MeOH leads to the formation of both 12a and 4a with a ratio of 1:2.5 together with some traces of 6a (Table 1, entry 1). Increasing the temperature to $ 25^{\\circ} $C or the reaction time to 24 h does not noticeably affect the result (entri...",
+    "translation_context_after": "Scheme 3. Possible pathways of the step-by-step bromine—lithium exchange in 2. Experimentally observed species are marked with blue. / bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b."
+  }
+]

@@ -1,0 +1,69 @@
+{
+  "_backend": "vlm-auto-engine",
+  "_version_name": "3.3.0",
+  "pdf_info": [
+    {
+      "page_idx": 0,
+      "page_size": [595.0, 842.0],
+      "para_blocks": [
+        {
+          "type": "doc_title",
+          "bbox": [60, 45, 535, 78],
+          "index": 0,
+          "lines": [{"bbox": [60, 45, 535, 78], "spans": [{"type": "text", "content": "A MinerU Contract Fixture", "bbox": [60, 45, 535, 78], "score": 0.99}]}]
+        },
+        {
+          "type": "abstract",
+          "bbox": [60, 95, 535, 145],
+          "index": 1,
+          "lines": [{"bbox": [60, 95, 535, 120], "spans": [{"type": "text", "content": "Abstract text is body content, not a heading.", "bbox": [60, 95, 535, 120], "score": 0.98}]}]
+        },
+        {
+          "type": "image",
+          "bbox": [70, 165, 300, 390],
+          "index": 2,
+          "blocks": [
+            {"type": "image_body", "bbox": [70, 165, 300, 340], "index": 2, "lines": [{"bbox": [70, 165, 300, 340], "spans": [{"type": "image", "image_path": "images/figures/figure 1.png", "bbox": [70, 165, 300, 340], "score": 0.97}]}]},
+            {"type": "image_caption", "bbox": [70, 345, 300, 368], "index": 3, "lines": [{"bbox": [70, 345, 300, 368], "spans": [{"type": "text", "content": "Figure 1. Provider-owned group relation.", "bbox": [70, 345, 300, 368], "score": 0.99}]}]},
+            {"type": "image_footnote", "bbox": [70, 370, 300, 390], "index": 4, "lines": [{"bbox": [70, 370, 300, 390], "spans": [{"type": "text", "content": "Image source note.", "bbox": [70, 370, 300, 390], "score": 0.96}]}]}
+          ]
+        },
+        {
+          "type": "table",
+          "bbox": [320, 165, 535, 390],
+          "index": 5,
+          "blocks": [
+            {"type": "table_body", "bbox": [320, 165, 535, 340], "index": 5, "lines": [{"bbox": [320, 165, 535, 340], "spans": [{"type": "table", "image_path": "images/tables/table-1.png", "html": "<table><tr><td>A</td></tr></table>", "bbox": [320, 165, 535, 340], "score": 0.97}]}]},
+            {"type": "table_caption", "bbox": [320, 345, 535, 368], "index": 6, "lines": [{"bbox": [320, 345, 535, 368], "spans": [{"type": "text", "content": "Table 1. Canonical asset preview.", "bbox": [320, 345, 535, 368], "score": 0.99}]}]}
+          ]
+        },
+        {
+          "type": "text",
+          "bbox": [60, 420, 535, 462],
+          "index": 7,
+          "lines": [{"bbox": [60, 420, 535, 440], "spans": [{"type": "text", "content": "Body with inline math ", "bbox": [60, 420, 235, 440], "score": 0.99}, {"type": "inline_equation", "content": "E=mc^2", "bbox": [236, 420, 292, 440], "score": 0.99}, {"type": "text", "content": ".", "bbox": [293, 420, 300, 440], "score": 0.99}]}]
+        },
+        {
+          "type": "interline_equation",
+          "bbox": [180, 480, 415, 515],
+          "index": 8,
+          "lines": [{"bbox": [180, 480, 415, 515], "spans": [{"type": "interline_equation", "content": "a^2+b^2=c^2", "bbox": [180, 480, 415, 515], "score": 0.99}]}]
+        },
+        {
+          "type": "list",
+          "sub_type": "text",
+          "bbox": [60, 540, 535, 600],
+          "index": 9,
+          "blocks": [
+            {"type": "text", "bbox": [70, 540, 535, 565], "index": 9, "lines": [{"bbox": [70, 540, 535, 565], "spans": [{"type": "text", "content": "First list item", "bbox": [70, 540, 535, 565], "score": 0.98}]}]},
+            {"type": "text", "bbox": [70, 570, 535, 595], "index": 10, "lines": [{"bbox": [70, 570, 535, 595], "spans": [{"type": "text", "content": "Second list item", "bbox": [70, 570, 535, 595], "score": 0.98}]}]}
+          ]
+        }
+      ],
+      "discarded_blocks": [
+        {"type": "header", "bbox": [60, 15, 535, 32], "index": -1, "lines": [{"bbox": [60, 15, 535, 32], "spans": [{"type": "text", "content": "Running header", "bbox": [60, 15, 535, 32], "score": 0.95}]}]},
+        {"type": "page_number", "bbox": [285, 815, 310, 830], "index": 99, "lines": [{"bbox": [285, 815, 310, 830], "spans": [{"type": "text", "content": "1", "bbox": [285, 815, 310, 830], "score": 0.99}]}]}
+      ]
+    }
+  ]
+}

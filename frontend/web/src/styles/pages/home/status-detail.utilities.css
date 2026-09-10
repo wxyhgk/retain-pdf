@@ -1,0 +1,833 @@
+/* 状态详情 · 壳/阶段历史/事件/失败/结果动作（翻译调试见 status-detail-translation.utilities） */
+
+
+
+@utility job-warning {
+  @apply rounded-[20px];
+  @apply border px-4 py-2.5 text-sm leading-6;
+  border-color: var(--line);
+  background: var(--paper);
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 8%, transparent);
+  border-color: color-mix(in srgb, var(--warn) 18%, transparent);
+}
+
+
+
+@utility stage-pill {
+  @apply rounded-[20px];
+
+  .status-card & {
+    color: var(--ink);
+  }
+  @apply inline-flex items-center rounded-full px-3 py-1.5 text-sm;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  width: fit-content;
+}
+
+
+
+@utility info-list {
+  @apply rounded-[20px];
+
+  .status-panel & {
+    @apply grid gap-2;
+    background: transparent;
+  }
+}
+
+
+
+/*
+  危险区修复(Tailwind v4 迁移):`.log` 全项目只和 `.inline-error-box` 成对
+  出现(InlineErrorBox.jsx 的 `log error-box inline-error-box`),background/
+  border-color 两边都定义——v3 靠源码序 tie-break,inline-error-box 写在
+  后面胜出(红色错误底色),这里的白底/中性边框一直是死代码。v4 顺序不保真
+  源码序(同一模式,另见本文件其余几处修复说明),实测迁移后白底反而胜出,
+  错误提示框失去红色底色视觉提示。去掉冲突的 background/border-color,
+  交给 inline-error-box 一处定义。
+*/
+@utility log {
+  @apply rounded-[20px];
+  @apply border px-4 py-4 text-sm leading-6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+
+
+@utility token-validation {
+  margin-top: -4px;
+  border-radius: 16px;
+  background: var(--bg);
+  border-color: var(--line);
+  color: var(--ink);
+
+  &.is-valid {
+    background: color-mix(in srgb, var(--ok) 8%, transparent);
+    border-color: color-mix(in srgb, var(--ok) 18%, transparent);
+    color: var(--ok);
+  }
+
+  &.is-error {
+    background: color-mix(in srgb, var(--danger) 8%, transparent);
+    border-color: color-mix(in srgb, var(--danger) 18%, transparent);
+    color: var(--danger);
+  }
+}
+
+
+
+@utility is-valid {
+  &.token-validation {
+    background: color-mix(in srgb, var(--ok) 8%, transparent);
+    border-color: color-mix(in srgb, var(--ok) 18%, transparent);
+    color: var(--ok);
+  }
+}
+
+
+
+@utility is-error {
+  &.token-validation {
+    background: color-mix(in srgb, var(--danger) 8%, transparent);
+    border-color: color-mix(in srgb, var(--danger) 18%, transparent);
+    color: var(--danger);
+  }
+}
+
+
+
+@utility progress-meta {
+  @apply flex items-center justify-between gap-3 text-sm;
+  color: var(--muted);
+}
+
+
+
+@utility task-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+
+
+@utility task-toolbar-btn {
+  gap: 7px;
+
+  & svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+  }
+}
+
+
+
+@utility task-toolbar-btn-compact {
+  padding-inline: 12px;
+}
+
+
+
+@utility task-toolbar-btn-primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 14%, transparent);
+
+  &:hover:not(.disabled) {
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+}
+
+
+
+@utility detail-grid {
+  @apply grid gap-3;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  .detail-tab-panel & {
+    padding-right: 2px;
+  }
+
+  @media (max-width: 767px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+
+.detail-item {
+  @apply flex items-center gap-2 rounded-[9px] px-2.5 py-2;
+  background: color-mix(in srgb, var(--ink) 2%, transparent);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  align-content: start;
+  min-height: 40px;
+}
+
+.detail-item .detail-item-icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
+.detail-item .detail-item-copy {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.detail-item .label {
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.detail-item .info-value {
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.detail-item.is-compact {
+  min-height: 38px;
+  padding: 7px 9px;
+}
+
+
+
+@utility detail-stage-panel {
+  margin-top: 7px;
+}
+
+@utility status-detail-section {
+  @apply rounded-[14px] border;
+  padding: 10px;
+  border-color: var(--line);
+  background: var(--paper);
+}
+
+@utility status-detail-section-head {
+  @apply flex items-center justify-between gap-3;
+  margin-bottom: 7px;
+
+  & .status-detail-section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  & .status-detail-section-title > svg {
+    width: 15px;
+    height: 15px;
+    color: var(--muted);
+  }
+
+  & h3 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  & p {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  & .button-link {
+    min-height: 30px;
+    padding: 5px 10px;
+    font-size: 12px;
+    gap: 5px;
+  }
+}
+
+@utility status-detail-current-stage {
+  @apply flex min-w-0 items-center gap-2 rounded-[9px] border px-2.5 py-2;
+  border-color: var(--line);
+  background: color-mix(in srgb, var(--ink) 2%, transparent);
+
+  & > svg {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 auto;
+    color: var(--muted);
+  }
+
+  & .label {
+    flex: 0 0 auto;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+
+  & .info-value {
+    min-width: 0;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 550;
+    line-height: 1.4;
+  }
+}
+
+@utility status-detail-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 5px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@utility status-detail-secondary-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 5px;
+}
+
+@utility status-detail-runtime-details {
+  margin-top: 5px;
+}
+
+@utility status-detail-runtime-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 8px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+
+@utility stage-history-list {
+  @apply grid gap-1;
+}
+
+
+
+@utility stage-history-item {
+  @apply flex items-center justify-between gap-3 rounded-[9px] border px-2.5 py-1.5;
+  border-color: var(--line);
+  background: var(--paper);
+
+  @media (max-width: 767px) {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+
+
+@utility stage-history-main {
+  @apply flex min-w-0 items-center gap-2.5;
+}
+
+
+
+@utility stage-history-index {
+  @apply inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold;
+  background: var(--bg);
+  color: var(--ink);
+  flex: 0 0 auto;
+}
+
+
+
+@utility stage-history-copy {
+  @apply grid min-w-0;
+  gap: 2px;
+}
+
+@utility stage-history-heading {
+  @apply flex min-w-0 items-baseline gap-2;
+}
+
+
+
+@utility stage-history-title {
+  @apply text-[13px] font-medium leading-5;
+  color: var(--ink);
+}
+
+
+
+@utility stage-history-stage {
+  @apply text-[11.5px] leading-5;
+  color: var(--muted);
+}
+
+
+
+@utility stage-history-meta {
+  @apply text-[11.5px] leading-4;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+
+
+@utility stage-history-duration {
+  @apply text-[12px] font-semibold;
+  color: var(--ink);
+  flex: 0 0 auto;
+  white-space: nowrap;
+
+  @media (max-width: 767px) {
+    padding-left: 40px;
+  }
+}
+
+
+
+@utility events-empty {
+  @apply rounded-[18px] px-4 py-4 text-sm;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--muted);
+  text-align: center;
+}
+
+
+
+@utility events-lead {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+
+
+@utility events-list {
+  @apply grid gap-3;
+}
+
+
+
+@utility event-item {
+  @apply rounded-[20px] border px-4 py-4;
+  border-color: var(--line);
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper) 100%);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--shadow-color) 4%, transparent);
+}
+
+
+
+@utility event-meta {
+  @apply flex flex-wrap items-center gap-2 text-[12px];
+  color: var(--muted);
+}
+
+
+
+@utility event-badge {
+  @apply inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold;
+  background: var(--bg);
+  color: var(--ink);
+
+  &.warn {
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
+    color: var(--warn);
+  }
+
+  &.error {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    color: var(--danger);
+  }
+}
+
+
+
+@utility warn {
+  &.event-badge {
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
+    color: var(--warn);
+  }
+}
+
+
+
+@utility error {
+  &.event-badge {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    color: var(--danger);
+  }
+}
+
+
+
+@utility event-title {
+  @apply mt-3 text-[14px] font-medium leading-6;
+  color: var(--ink);
+}
+
+
+
+@utility event-payload-wrap {
+  margin-top: 10px;
+
+  &[open] .event-payload-toggle {
+    background: var(--line);
+    color: var(--ink);
+  }
+}
+
+
+
+@utility event-payload-toggle {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-[12px] font-medium;
+  cursor: pointer;
+  list-style: none;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  .event-payload-wrap[open] & {
+    background: var(--line);
+    color: var(--ink);
+  }
+}
+
+
+
+@utility event-payload {
+  @apply mt-3 rounded-[16px] px-3 py-3 text-[12px] leading-5;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+
+
+@utility badge {
+  @apply inline-flex min-w-24 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold;
+
+  &.idle {
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
+    color: var(--warn);
+  }
+
+  &.queued {
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
+    color: var(--warn);
+  }
+
+  &.running {
+    background: color-mix(in srgb, var(--ink) 10%, transparent);
+    color: var(--accent);
+  }
+
+  &.succeeded {
+    background: color-mix(in srgb, var(--ok) 12%, transparent);
+    color: var(--ok);
+  }
+
+  &.failed {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    color: var(--danger);
+  }
+}
+
+
+
+@utility idle {
+  &.badge {
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
+    color: var(--warn);
+  }
+}
+
+
+
+@utility queued {
+  & .badge {
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
+    color: var(--warn);
+  }
+}
+
+
+
+@utility running {
+  &.badge {
+    background: color-mix(in srgb, var(--ink) 10%, transparent);
+    color: var(--accent);
+  }
+}
+
+
+
+@utility succeeded {
+  &.badge {
+    background: color-mix(in srgb, var(--ok) 12%, transparent);
+    color: var(--ok);
+  }
+}
+
+
+
+@utility failed {
+  &.badge {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    color: var(--danger);
+  }
+}
+
+
+
+@utility failure-hero-card {
+  @apply grid gap-1.5 rounded-[14px] px-4 py-3.5;
+  margin-bottom: 0;
+  background: color-mix(in srgb, var(--danger) 5%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--danger) 12%, transparent);
+
+  & .label {
+    font-size: 12px;
+    letter-spacing: 0.01em;
+    color: var(--danger);
+    text-transform: uppercase;
+  }
+
+  & .info-value {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink);
+    word-break: break-word;
+  }
+}
+
+@utility status-detail-failure-root-cause {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+@utility status-detail-failure-recovery {
+  margin-top: 12px;
+}
+
+@utility status-detail-failure-queue {
+  @apply mb-3 grid gap-2 rounded-[14px] border px-4 py-3;
+  border-color: color-mix(in srgb, var(--warn) 20%, transparent);
+  background: color-mix(in srgb, var(--warn) 6%, transparent);
+
+  & strong {
+    color: var(--ink);
+    font-size: 13px;
+  }
+
+  & p {
+    margin: 3px 0 0;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+}
+
+@utility status-detail-technical-details {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+
+  &.status-detail-runtime-details {
+    margin-top: 7px;
+    border-top: 0;
+  }
+
+  & summary {
+    padding: 12px 2px 2px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 500;
+    list-style-position: inside;
+  }
+
+  &.status-detail-runtime-details summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 2px 0;
+  }
+
+  &.status-detail-runtime-details summary > svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  & .detail-info-list {
+    margin-top: 10px;
+  }
+}
+
+@utility status-detail-failure-detail-wide {
+  grid-column: 1 / -1;
+}
+
+@utility status-detail-log-entry-row {
+  @apply mt-3 flex flex-wrap items-center gap-2;
+
+  & .button-link {
+    min-height: 36px;
+    padding: 7px 12px;
+    font-size: 12.5px;
+  }
+}
+
+@utility status-detail-log-dialog {
+  --app-dialog-radius: 22px;
+}
+
+@utility status-detail-log-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  max-height: min(76dvh, 680px);
+}
+
+@utility status-detail-log-heading {
+  @apply flex min-w-0 items-center gap-3;
+}
+
+@utility status-detail-log-icon {
+  @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+
+  & svg {
+    width: 17px;
+    height: 17px;
+  }
+}
+
+@utility status-detail-log-body {
+  min-height: 0;
+  overflow: hidden;
+  padding: 18px;
+}
+
+@utility status-detail-log-content {
+  max-height: min(48dvh, 430px);
+  margin: 0;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+  color: var(--ink);
+  padding: 14px 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+@utility status-detail-log-footer {
+  justify-content: space-between;
+
+  & .status-panel-note {
+    min-width: 0;
+  }
+}
+
+
+
+@utility failure-action-row {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+@utility status-detail-recovery-actions {
+  & .button-link {
+    min-height: 36px;
+    padding: 7px 12px;
+    font-size: 12.5px;
+  }
+
+  & > .status-panel-note {
+    flex: 1 1 240px;
+  }
+}
+
+
+
+.detail-tab-panel .status-panel {
+  min-height: 100%;
+}
+
+.detail-tab-panel .detail-grid {
+  padding-right: 2px;
+}
+
+
+
+@utility progress-track {
+  .status-card & {
+    height: 12px;
+    background: var(--line);
+  }
+}
+
+
+
+@utility progress-bar {
+  .status-card & {
+    background: linear-gradient(90deg, var(--ink) 0%, color-mix(in srgb, var(--ink) 72%, var(--muted)) 100%);
+    box-shadow: none;
+  }
+}
+
+
+
+@utility result-actions {
+  @apply grid gap-3;
+}
+
+
+
+@utility result-primary {
+  min-height: 56px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+
+
+@utility result-secondary {
+  @apply grid gap-3;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  @media (max-width: 767px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

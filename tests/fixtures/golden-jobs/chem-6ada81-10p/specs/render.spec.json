@@ -1,0 +1,34 @@
+{
+  "inputs": {
+    "source_pdf": "{JOB_ROOT}/source/Chemistry A European J - 2023 - Yakubenko - The Role of Conjugation in the Halogen Lithium Exchange Selectivity  Lithiation.pdf",
+    "translation_manifest": "{JOB_ROOT}/translated/translation-manifest.json",
+    "translations_dir": "{JOB_ROOT}/translated"
+  },
+  "job": {
+    "job_id": "20260709124749-6ada81",
+    "job_root": "{JOB_ROOT}",
+    "workflow": "book"
+  },
+  "params": {
+    "base_url": "https://api.deepseek.com/v1",
+    "body_font_size_factor": 0.95,
+    "body_leading_factor": 1.08,
+    "compile_workers": 8,
+    "credential_ref": "env:RETAIN_TRANSLATION_API_KEY",
+    "end_page": -1,
+    "font_unify_mode": "role_min",
+    "inner_bbox_dense_shrink_x": 0.0,
+    "inner_bbox_dense_shrink_y": 0.0,
+    "inner_bbox_shrink_x": 0.0,
+    "inner_bbox_shrink_y": 0.0,
+    "model": "deepseek-v4-flash",
+    "pdf_compress_dpi": 0,
+    "render_mode": "auto",
+    "source_cleanup_strategy": "pikepdf_text_strip",
+    "start_page": 0,
+    "translated_pdf_name": "",
+    "typst_font_family": "Source Han Serif SC"
+  },
+  "schema_version": "render.stage.v1",
+  "stage": "render"
+}

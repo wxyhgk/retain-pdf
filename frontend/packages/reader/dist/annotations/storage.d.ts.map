@@ -1,0 +1,1 @@
+{"version":3,"file":"storage.d.ts","sourceRoot":"","sources":["../../src/annotations/storage.ts"],"names":[],"mappings":"AAEA,OAAO,EAEL,KAAK,UAAU,EACf,KAAK,iBAAiB,EACvB,MAAM,YAAY,CAAC;AA0BpB,wBAAgB,SAAS,CAAC,GAAG,EAAE,iBAAiB,GAAG,UAAU,EAAE,CAS9D;AAED,wBAAgB,SAAS,CAAC,GAAG,EAAE,iBAAiB,EAAE,IAAI,EAAE,UAAU,EAAE,GAAG,IAAI,CAS1E"}

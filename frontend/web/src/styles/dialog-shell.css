@@ -1,0 +1,197 @@
+/* 弹窗进出场关键帧(此前整站零动效——Radix Content 挂载即瞬间可见,关闭即瞬间
+   消失,是真实体验缺口)。踩坑记录:一开始用 `transition` + `data-state` +
+   `@starting-style` 实现,进场确实有效,但 Radix 的 Presence 组件只通过监听
+   `animationend` 事件来判断"退场动画播完了没",对纯 `transition` 完全不感知
+   ——于是关闭时 data-state 一变 closed,Presence 立刻卸载 DOM,退场过渡根本
+   没机会播放(浏览器里挂 JS 实测:close() 后 50ms 节点已经不在了)。必须用
+   真正的 `@keyframes` + `animation` 才能让 Presence 等它播完。 */
+@keyframes dialog-content-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes dialog-content-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.96); }
+}
+@keyframes dialog-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes dialog-overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes dialog-body-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floating-surface-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* AppDialog 是应用弹窗唯一的外层视觉契约。业务弹窗只选择尺寸与层级，
+   不再各自实现遮罩、定位、圆角、标题栏、关闭按钮和进出场动画。 */
+@utility app-dialog-overlay {
+  @apply fixed inset-0;
+  z-index: 100;
+  background: var(--dialog-scrim);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  &[data-state='open'] { animation: dialog-overlay-in 200ms var(--ease-out); }
+  &[data-state='closed'] { animation: dialog-overlay-out 200ms var(--ease-out) forwards; }
+
+  &.app-dialog-level-nested { z-index: 110; }
+}
+
+@utility app-dialog-content {
+  @apply fixed inset-0 m-auto overflow-visible border-0 bg-transparent p-0 outline-none;
+  z-index: 101;
+  width: calc(100dvw - 24px);
+  height: fit-content;
+  max-height: calc(100dvh - 24px);
+  border-radius: var(--app-dialog-radius, 28px) !important;
+
+  &[data-state='open'] { animation: dialog-content-in 200ms var(--ease-out); }
+  &[data-state='closed'] { animation: dialog-content-out 200ms var(--ease-out) forwards; }
+
+  &.app-dialog-level-nested { z-index: 111; }
+}
+
+@utility app-dialog-size-compact {
+  width: min(420px, calc(100dvw - 24px));
+}
+
+@utility app-dialog-size-standard {
+  width: min(720px, calc(100dvw - 24px));
+}
+
+@utility app-dialog-size-wide {
+  width: min(960px, calc(100dvw - 24px));
+}
+
+@utility app-dialog-size-workspace {
+  width: min(1040px, calc(100dvw - 24px));
+}
+
+@utility app-dialog-shell {
+  @apply w-full overflow-hidden border p-0 shadow-panel;
+  max-height: inherit;
+  border-radius: var(--app-dialog-radius, 28px) !important;
+  border-color: var(--line);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+@utility app-dialog-header {
+  @apply flex items-center justify-between gap-3 border-b px-6 py-5;
+  min-height: 64px;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+@utility app-dialog-title {
+  @apply m-0 text-lg font-semibold leading-tight;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+@utility app-dialog-description {
+  @apply m-0 text-sm;
+  color: var(--muted);
+}
+
+@utility app-dialog-body {
+  @apply grid gap-4 p-6;
+  animation: dialog-body-in 220ms var(--ease-out) 40ms both;
+}
+
+@utility app-dialog-footer {
+  @apply flex items-center justify-end gap-3 border-t px-6 py-4;
+  border-color: var(--line);
+}
+
+@utility app-dialog-close {
+  @apply inline-flex h-[34px] min-h-[34px] w-[34px] min-w-[34px] items-center justify-center rounded-full border-0 p-0 shadow-none outline-none;
+  background: transparent;
+  color: var(--muted);
+  transition:
+    background-color 150ms var(--ease-out),
+    color 150ms var(--ease-out),
+    transform 160ms var(--ease-out);
+
+  &:hover {
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
+    color: var(--ink);
+  }
+
+  &:active { transform: scale(0.94); }
+  &:focus-visible { box-shadow: 0 0 0 2px var(--ring); }
+}
+
+@utility app-confirm-heading {
+  @apply flex min-w-0 items-center gap-3;
+}
+
+@utility app-confirm-icon {
+  @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+
+  &.app-confirm-icon-danger {
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+    color: var(--danger);
+  }
+}
+
+@utility app-confirm-body {
+  padding-block: 22px;
+}
+
+@utility app-confirm-description {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* 非模态浮层（Popover / 菜单 / combobox 列表）与 Dialog 共享纸面、描边、
+   阴影和动效语言，但不增加遮罩，也不抢占模态焦点。 */
+@utility app-floating-surface {
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--paper) 96%, transparent);
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--shadow-color) 16%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  color: var(--ink);
+  animation: floating-surface-in 180ms var(--ease-out) both;
+}
+
+@utility app-floating-close {
+  @apply inline-flex h-[34px] min-h-[34px] w-[34px] min-w-[34px] items-center justify-center rounded-full border-0 p-0 shadow-none outline-none;
+  background: transparent;
+  color: var(--muted);
+  transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out), transform 160ms var(--ease-out);
+
+  &:hover {
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
+    color: var(--ink);
+  }
+
+  &:active { transform: scale(0.94); }
+  &:focus-visible { box-shadow: 0 0 0 2px var(--ring); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-dialog-content,
+  .app-dialog-overlay,
+  .app-dialog-body {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+
+  .app-floating-surface { animation-duration: 1ms; }
+}

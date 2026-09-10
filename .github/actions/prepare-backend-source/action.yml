@@ -1,0 +1,46 @@
+name: Prepare embedded backend package
+description: Resolve and verify the self-contained backend package in this repository.
+
+outputs:
+  source_root:
+    description: Absolute path to the aggregate backend source workspace.
+    value: ${{ steps.resolve.outputs.source_root }}
+  path:
+    description: Absolute path to the verified backend package.
+    value: ${{ steps.resolve.outputs.path }}
+  tree:
+    description: Verified backend package Git tree.
+    value: ${{ steps.resolve.outputs.tree }}
+
+runs:
+  using: composite
+  steps:
+    - name: Verify embedded backend package
+      id: resolve
+      shell: bash
+      run: |
+        resolved_json="$(python3 "$GITHUB_WORKSPACE/.github/scripts/resolve_backend_source.py" \
+          --repo-root "$GITHUB_WORKSPACE" --json)"
+        python3 - "$resolved_json" "$GITHUB_ENV" "$GITHUB_OUTPUT" <<'PY'
+        import json
+        from pathlib import Path
+        import sys
+
+        resolved = json.loads(sys.argv[1])
+        env_path = Path(sys.argv[2])
+        output_path = Path(sys.argv[3])
+        values = {
+            "source_root": resolved["source_root"],
+            "path": resolved["path"],
+            "tree": resolved["tree"],
+        }
+        for key, value in values.items():
+            if "\n" in value or "\r" in value:
+                raise SystemExit(f"backend package output {key} contains a newline")
+        with env_path.open("a", encoding="utf-8") as env_file:
+            env_file.write(f"RETAIN_PDF_SERVICES_ROOT={values['path']}\n")
+            env_file.write(f"RETAIN_PDF_SOURCE_ROOT={values['source_root']}\n")
+        with output_path.open("a", encoding="utf-8") as output_file:
+            for key, value in values.items():
+                output_file.write(f"{key}={value}\n")
+        PY

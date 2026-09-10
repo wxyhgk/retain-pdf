@@ -21,11 +21,11 @@ def _check(name: str, ok: bool, detail: str = "") -> bool:
 
 def main() -> None:
     ok = True
-    ok &= _check("repo root", (REPO_ROOT / "backend/scripts/entrypoints/run_render_only.py").exists(), str(REPO_ROOT))
+    ok &= _check("repo root", (REPO_ROOT / "services/pipeline/retainpdf_pipeline/render/__main__.py").exists(), str(REPO_ROOT))
     ok &= _check("python >= 3.10", sys.version_info >= (3, 10), sys.version.split()[0])
     ok &= _check("typst executable", shutil.which("typst") is not None, shutil.which("typst") or "not found")
     ok &= _check("PyMuPDF import", importlib.util.find_spec("fitz") is not None)
-    ok &= _check("backend scripts import path", (REPO_ROOT / "backend/scripts").exists())
+    ok &= _check("backend scripts import path", (REPO_ROOT / "services/pipeline").exists())
     case_root = EXPERIMENT_ROOT / "case-data/quantum_chem_533/job"
     ok &= _check("materialized case", case_root.exists(), str(case_root))
     ok &= _check("case source pdf", (case_root / "source/Quantum-Chemistry-&-Spectroscopy-by-Thomas-Engel.pdf").exists())

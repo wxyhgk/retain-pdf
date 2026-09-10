@@ -1,0 +1,38 @@
+name: Translation Offline Order Check
+
+"on":
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: translation-offline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reverse-order:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Prepare embedded backend package
+        uses: ./.github/actions/prepare-backend-source
+
+      - name: Setup uv
+        # astral-sh/setup-uv v9.0.0, same pin as the main test workflow.
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          version: "0.11.19"
+          python-version: "3.11"
+
+      - name: Install locked test dependencies
+        run: uv sync --project "$RETAIN_PDF_SERVICES_ROOT" --locked --all-extras
+
+      - name: Setup Typst for offline formula tests
+        uses: ./.github/actions/setup-test-typst
+
+      - name: Offline translation regression in reverse file order
+        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/run_translation_tests.py" --reverse

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "retainpdf-pipeline"
+version = "4.2.2"
+description = "RetainPDF OCR, translation, and rendering pipeline"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "Pillow==10.4.0",
+  "PyMuPDF==1.26.5",
+  "pikepdf==7.2.0",
+  "requests==2.32.5",
+  "urllib3==2.5.0",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest==9.0.3",
+  "python-docx>=1.1,<2",
+]
+
+[project.scripts]
+retainpdf-pipeline = "retainpdf_pipeline.entrypoints.console:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+  "retainpdf_pipeline*",
+]
+namespaces = true
+
+[tool.setuptools.package-data]
+"retainpdf_pipeline.translate.prompts" = ["*.txt", "*.md"]
+"retainpdf_pipeline.ocr.document_schema" = ["*.json"]

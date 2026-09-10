@@ -1,0 +1,202 @@
+/* Book detail artifact center.
+ * Keep file/asset presentation isolated from the shared detail shell and
+ * processing status styles.
+ */
+
+.book-detail-artifact-center {
+  display: grid;
+  gap: 12px;
+}
+
+.book-detail-artifact-group {
+  padding: 14px;
+  border: 0;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--bg) 58%, var(--paper));
+}
+
+.book-detail-artifact-group-header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.book-detail-artifact-group-icon {
+  display: inline-flex;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 17px;
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.book-detail-artifact-group-icon svg {
+  width: 27px;
+  height: 27px;
+  stroke-width: 1.5;
+}
+
+.book-detail-artifact-group-copy {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 1px;
+}
+
+.book-detail-artifact-group-copy h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.book-detail-artifact-group-copy p,
+.book-detail-artifact-group-copy small {
+  overflow: hidden;
+  margin: 0;
+  color: var(--muted);
+  font-size: 9.5px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-detail-artifact-group-open,
+.book-detail-artifact-action {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 38px;
+  height: 42px;
+  min-height: 42px;
+  padding: 3px 6px;
+  border-radius: 13px;
+}
+
+.book-detail-artifact-group-open svg,
+.book-detail-artifact-action svg {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+}
+
+.book-detail-artifact-group-open small,
+.book-detail-artifact-action small {
+  font-size: 8.5px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.book-detail-artifact-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.book-detail-artifact-group[data-artifact-group="source"] .book-detail-artifact-items {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.book-detail-artifact-item {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 64px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  border: 0;
+  border-radius: 17px;
+  background: var(--paper);
+}
+
+.book-detail-artifact-item-icon {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--bg) 82%, var(--paper));
+}
+
+.book-detail-artifact-item-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.55;
+}
+
+.book-detail-artifact-item-copy {
+  min-width: 0;
+}
+
+.book-detail-artifact-item-copy > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+}
+
+.book-detail-artifact-item-copy strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 10.5px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-detail-artifact-item-copy > div > span {
+  flex: 0 0 auto;
+  padding: 1px 4px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--bg) 85%, var(--paper));
+  font-size: 7.5px;
+  font-weight: 650;
+}
+
+.book-detail-artifact-item-copy p {
+  overflow: hidden;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 8.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-detail-artifact-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+}
+
+.book-detail-artifact-empty {
+  margin: 12px 0 0;
+  padding: 9px 11px;
+  border: 1px dashed color-mix(in srgb, var(--line) 65%, transparent);
+  border-radius: 14px;
+  color: var(--muted);
+  background: var(--paper);
+  font-size: 9.5px;
+}
+
+@media (max-width: 899px) {
+  .book-detail-artifact-items {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

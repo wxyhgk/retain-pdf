@@ -1,0 +1,15 @@
+import type { EventIdentity, StageEvent } from "../types.js";
+export type { EventIdentity, StageEvent } from "../types.js";
+export declare function eventPayloadOf(event?: StageEvent): Record<string, unknown>;
+export declare function normalizeEventStage(value?: unknown): string;
+export declare function normalizeUserStage(value?: unknown): string;
+export declare function normalizeDisplayStage(value?: unknown): string;
+export declare function isPublicStageKey(value?: unknown): boolean;
+export declare function hasStructuredProgress(event?: StageEvent): boolean;
+export declare function eventIdentity(event?: StageEvent): EventIdentity;
+export declare function eventLaneOf(event?: StageEvent): string;
+export declare function isMainLaneEvent(event?: StageEvent): boolean;
+export declare function structuredPublicStageOf(event?: StageEvent): string;
+export declare function hasStructuredPublicStage(event?: StageEvent): boolean;
+export declare function hasCanonicalEventContract(event?: StageEvent | Record<string, unknown>): boolean;
+export declare function progressUnitOf(event?: StageEvent): string;

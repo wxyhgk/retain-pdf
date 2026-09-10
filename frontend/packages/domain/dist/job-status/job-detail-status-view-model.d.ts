@@ -1,0 +1,31 @@
+import type { EventsPayload, StageEvent } from "./types.js";
+import type { JobLike } from "../job/types.js";
+export declare function buildJobDetailStatusViewModel(job?: JobLike, eventsPayload?: EventsPayload | null): {
+    stageDetail: string;
+    runtimeCurrentStage: string;
+    progressText: string;
+    stageKey: string;
+    visualStageKey: string;
+};
+export declare function buildJobDetailEventViewModel(item?: StageEvent): {
+    event: string;
+    level: string;
+    timestamp: string | number;
+    stageText: string;
+    displayStage: string;
+    substage: string;
+    lane: string;
+    eventType: string;
+    rawEventType: string;
+    provider: string;
+    providerStage: string;
+    message: string;
+    payload: unknown;
+    progressCurrent: number;
+    progressTotal: number;
+    progressUnit: string;
+    progressText: string;
+    retryCount: number;
+    elapsedMs: number;
+    seq: unknown;
+};

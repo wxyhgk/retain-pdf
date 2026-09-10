@@ -1,0 +1,1049 @@
+[
+  {
+    "item_id": "p002-b004",
+    "page_idx": 1,
+    "block_idx": 4,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 4,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      44.483,
+      494.435,
+      273.897,
+      505.434
+    ],
+    "source_text": "Scheme 1. Factors contributing to the Br $ \\rightarrow $Li exchange regioselectivity.",
+    "source_line_texts": [
+      "Scheme 1. Factors contributing to the Br $ \\rightarrow $Li exchange regioselectivity."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          44.483,
+          494.435,
+          273.897,
+          505.434
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Scheme 1. Factors contributing to the Br $ \\rightarrow $Li exchange regioselectivity.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-26",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-26",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Scheme 1. Factors contributing to the Br $ \\rightarrow $Li exchange regioselectivity.",
+    "mixed_original_protected_source_text": "Scheme 1. Factors contributing to the Br $ \\rightarrow $Li exchange regioselectivity.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p002-b004",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p002-b004"
+    ],
+    "translation_unit_protected_source_text": "Scheme 1. Factors contributing to the Br $ \\rightarrow $Li exchange regioselectivity.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "方案1. 影响 Br $ \\rightarrow $Li 交换区域选择性的因素。",
+    "translation_unit_translated_text": "方案1. 影响 Br $ \\rightarrow $Li 交换区域选择性的因素。",
+    "protected_translated_text": "方案1. 影响 Br $ \\rightarrow $Li 交换区域选择性的因素。",
+    "translated_text": "方案1. 影响 Br $ \\rightarrow $Li 交换区域选择性的因素。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p002-b004",
+      "page_idx": 1,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "It was also found that charge overload also significantly controls the regioselectivity of multiple halogen exchanges. For example, upon treatment of 1 with 2 equivalents of n-BuLi, no signs of simultaneous exchange of two halogen atoms in one ring were observed due to the disadvantageous charge overload (Scheme 1c). $ ^{[11]} $ This effect also prevents mu...",
+    "translation_context_after": "Results and Discussion / Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed..."
+  },
+  {
+    "item_id": "p002-b005",
+    "page_idx": 1,
+    "block_idx": 5,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "heading",
+    "semantic_role": "unknown",
+    "structure_role": "heading",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 5,
+    "raw_block_type": "paragraph_title",
+    "normalized_sub_type": "heading",
+    "bbox": [
+      44.483,
+      530.431,
+      163.938,
+      543.429
+    ],
+    "source_text": "Results and Discussion",
+    "source_line_texts": [
+      "Results and Discussion"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          44.483,
+          530.431,
+          163.938,
+          543.429
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Results and Discussion",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-27",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 1,
+        "confidence": 0.98
+      },
+      "structure_role": "heading",
+      "structure_group": "",
+      "pair_with": "",
+      "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose."
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-27",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Results and Discussion",
+    "mixed_original_protected_source_text": "Results and Discussion",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p002-b005",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p002-b005"
+    ],
+    "translation_unit_protected_source_text": "Results and Discussion",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "结果与讨论",
+    "translation_unit_translated_text": "结果与讨论",
+    "protected_translated_text": "结果与讨论",
+    "translated_text": "结果与讨论",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p002-b005",
+      "page_idx": 1,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose.",
+    "translation_context_mode": "needed",
+    "translation_context_before": "To date, three main effects are known to control the regioselectivity of the halogen–lithium exchange: the presence of the directing group, steric strain and the effectiveness of an “electron sink” (the possibility to utilize excess electrons). Here we present a “new player” in this competition for regioselectivity – the conjugation of an electron-donating...",
+    "translation_context_after": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in / the reaction mixtur..."
+  },
+  {
+    "item_id": "p002-b006",
+    "page_idx": 1,
+    "block_idx": 6,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 6,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      555.927,
+      292.89,
+      616.419
+    ],
+    "source_text": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in",
+    "source_line_texts": [
+      "Previously, we reported the formation of 2 as admixture",
+      "during the synthesis of 1. $ ^{[11]} $ In order to obtain",
+      "2 with reasonable yield, we investigated the oxidation of",
+      "1 with NBS in THF (Scheme 2). It was found that the reaction",
+      "outcome significantly depends on the temperature. Thus,",
+      "at $ 25^{\\circ} $C, only 2 and 3 are observed in"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          555.927,
+          292.89,
+          568.025
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Previously, we reported the formation of 2 as admixture",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          568.025,
+          292.89,
+          580.124
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "during the synthesis of 1. $ ^{[11]} $ In order",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          580.124,
+          292.89,
+          592.222
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "to obtain 2 with reasonable yield, we investigated",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          592.222,
+          292.89,
+          604.321
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the oxidation of 1 with NBS in THF (Scheme 2). It",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          604.321,
+          292.89,
+          616.419
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-28",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 2,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-28",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 2,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in",
+    "mixed_original_protected_source_text": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-002-002",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p002-b006",
+      "p002-b007"
+    ],
+    "translation_unit_protected_source_text": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$ leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 with n-BuLi under different conditions. The step-by-step lithiation of 2 can give two monolithioderivatives 4b and 12b, four dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives 8b and 9b and finally tetralithioderivative 7b (Scheme 3). Formed lithiated species were trapped by quenching with MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "translation_unit_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "protected_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到",
+    "translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到",
+    "continuation_group": "cg-002-002",
+    "continuation_prev_text": "",
+    "continuation_next_text": "the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$ leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 with n-BuLi under different conditions. The step-by-step lithiation of 2 can give two monolithioderivatives 4b and 12b, four dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives 8b and 9b and finally tetralithioderivative 7b (Scheme 3). Formed lithiated species were trapped by quenching with MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "group_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p002-b006",
+      "page_idx": 1,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Scheme 1. Factors contributing to the Br $ \\rightarrow $Li exchange regioselectivity. / Results and Discussion",
+    "translation_context_after": "the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, t..."
+  },
+  {
+    "item_id": "p002-b007",
+    "page_idx": 1,
+    "block_idx": 7,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 7,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      531.931,
+      550.793,
+      616.419
+    ],
+    "source_text": "the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$",
+    "source_line_texts": [
+      "the reaction mixture with 31% and 44% isolated yields, respectively.",
+      "Demethylation of 1,8-bis(dimethylamino)naphthalene is known",
+      "to occur in the presence of nucleophiles,$^{[14]}$ however,",
+      "in our case, this transformation is rather radical in nature.",
+      "Since NBS is a well-known oxidant, we believe that 2 is",
+      "formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ} \\mathrm{C} $"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          531.931,
+          550.793,
+          544.001
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the reaction mixture with 31% and 44% isolated yields,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          544.001,
+          550.793,
+          556.07
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          556.07,
+          550.793,
+          568.14
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "is known to occur in the presence of nucleophiles,$^{[14]}$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          568.14,
+          550.793,
+          580.21
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "however, in our case, this transformation is rather",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          580.21,
+          550.793,
+          592.28
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "radical in nature. Since NBS is a well-known oxidant,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          592.28,
+          550.793,
+          604.349
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "we believe that 2 is formed during the oxidation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          604.349,
+          550.793,
+          616.419
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\mathrm{C}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-29",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 3,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-29",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 3,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$",
+    "mixed_original_protected_source_text": "the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-002-002",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p002-b006",
+      "p002-b007"
+    ],
+    "translation_unit_protected_source_text": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$ leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 with n-BuLi under different conditions. The step-by-step lithiation of 2 can give two monolithioderivatives 4b and 12b, four dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives 8b and 9b and finally tetralithioderivative 7b (Scheme 3). Formed lithiated species were trapped by quenching with MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "translation_unit_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "protected_translated_text": "2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2",
+    "translated_text": "2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2",
+    "continuation_group": "cg-002-002",
+    "continuation_prev_text": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in",
+    "continuation_next_text": "leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in the reaction mixture with 31% and 44% isolated yields, respectively. Demethylation of 1,8-bis(dimethylamino)naphthalene is known to occur in the presence of nucleophiles,$^{[14]}$ however, in our case, this transformation is rather radical in nature. Since NBS is a well-known oxidant, we believe that 2 is formed during the oxidation of 3 with NBS. Indeed, the elevation of the reaction temperature to $40^{\\circ}\\mathrm{C}$ leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilitates debromination and leads to the formation of 4a with 29% yield. Despite the complicity of this reaction, the formation of 4a–6a was extremely useful for the further investigation of the bromine–lithium exchange. In contrast to previously studied diamine 1, dihydroperimidine 2 has less conformational mobility of amino groups, opposite orientation of lone pairs of nitrogen atoms (in,out in 1 vs out,out in 2) and dramatically smaller torsion distortion (Figures 2 and 3). The influence of this combination of structural parameters on the bromine—lithium permutation was investigated by treatment of 2 with n-BuLi under different conditions. The step-by-step lithiation of 2 can give two monolithioderivatives 4b and 12b, four dilithiospecies 5b, 6b, 10b and 11b, two trilithioderivatives 8b and 9b and finally tetralithioderivative 7b (Scheme 3). Formed lithiated species were trapped by quenching with MeOH and the resulting mixture of products was studied by $ ^{1} $H NMR spectroscopy (Table 1).",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "group_translated_text": "此前，我们报道了在合成 1 的过程中形成了混合物 2。$^{[11]}$ 为了以获得合理产率得到 2，我们研究了 1 与 NBS 在 THF 中的氧化反应（Scheme 2）。研究发现，反应结果显著依赖于温度。在 $25^{\\circ}$C 时，反应混合物中仅观察到 2 和 3，分离产率分别为 31% 和 44%。已知 1,8-双(二甲氨基)萘在亲核试剂存在下会发生去甲基化，$^{[14]}$ 但在本研究中，此转化本质上是自由基反应。由于 NBS 是众所周知的氧化剂，我们认为 2 是由 3 被 NBS 氧化形成的。实际上，将反应温度升高至 $40^{\\circ}\\mathrm{C}$ 后，仅剩下痕量的 3，而 2 成为主要产物，分离产率为 42%。令人惊讶的是，在此条件下还形成了脱溴产物 4a–6a（Figure 1）。遗憾的是，5a 和 6a 只能以不可分离的混合物形式获得，总产率为 19%，且 5a:6a 比例为 6.7:1。将 1 与两当量的 NBS 在 THF 中回流可促进脱溴反应，并以 29% 的产率形成 4a。尽管该反应较为复杂，但 4a–6a 的形成对后续溴-锂交换的研究极为有用。与先前研究的二胺 1 相比，二氢苝啶 2 的氨基具有较低构象灵活性，氮原子孤对电子取向相反（1 中为 in,out，2 中为 out,out），且扭转形变显著减小（Figures 2 和 3）。通过在不同条件下用 $n$-BuLi 处理 2，研究了这一结构参数组合对溴-锂交换的影响。2 的逐步锂化可得到两种单锂衍生物 4b 和 12b、四种二锂物种 5b、6b、10b 和 11b、两种三锂衍生物 8b 和 9b，以及最终的四锂衍生物 7b（Scheme 3）。形成的锂化物种通过 MeOH 淬灭捕集，所得产物混合物通过 $^{1}$H NMR 光谱研究（Table 1）。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p002-b007",
+      "page_idx": 1,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Results and Discussion / Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed...",
+    "translation_context_after": "Scheme 2. Oxidation of 1 with NBS. / leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with..."
+  },
+  {
+    "item_id": "p002-b009",
+    "page_idx": 1,
+    "block_idx": 9,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 9,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      44.483,
+      733.904,
+      160.939,
+      744.903
+    ],
+    "source_text": "Scheme 2. Oxidation of 1 with NBS.",
+    "source_line_texts": [
+      "Scheme 2. Oxidation of 1 with NBS."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          44.483,
+          733.904,
+          160.939,
+          744.903
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Scheme 2. Oxidation of 1 with NBS.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-31",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-31",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "single",
+    "layout_split_x": 0.0,
+    "layout_zone": "single_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Scheme 2. Oxidation of 1 with NBS.",
+    "mixed_original_protected_source_text": "Scheme 2. Oxidation of 1 with NBS.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p002-b009",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p002-b009"
+    ],
+    "translation_unit_protected_source_text": "Scheme 2. Oxidation of 1 with NBS.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "方案2. 用NBS氧化1.",
+    "translation_unit_translated_text": "方案2. 用NBS氧化1.",
+    "protected_translated_text": "方案2. 用NBS氧化1.",
+    "translated_text": "方案2. 用NBS氧化1.",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p002-b009",
+      "page_idx": 1,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Previously, we reported the formation of 2 as admixture during the synthesis of 1. $ ^{[11]} $ In order to obtain 2 with reasonable yield, we investigated the oxidation of 1 with NBS in THF (Scheme 2). It was found that the reaction outcome significantly depends on the temperature. Thus, at $ 25^{\\circ} $C, only 2 and 3 are observed in / the reaction mixtur...",
+    "translation_context_after": "leaves only traces of 3 and makes 2 the main product with 42% isolated yield. Surprisingly, the debrominated products 4a–6a are also formed under these conditions (Figure 1). Unfortunately, it is possible to obtain 5a and 6a only as an inseparable mixture with 19% total yield and a 5a:6a ratio of 6.7:1. Refluxing 1 with two equivalents of NBS in THF facilit..."
+  }
+]

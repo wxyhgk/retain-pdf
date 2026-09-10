@@ -1,0 +1,232 @@
+name: Tests
+
+# 全量测试门禁：rust workspace + 前端（含棘轮/边界门禁）+ Python 服务。
+# 此前这三套只在本地跑，CI 无人站岗——门禁存在但拦不住绕过（先例：v4.1.9
+# home-ask 带着 4 类门禁违规发布）。pipeline 当前覆盖命令契约、包边界，
+# 以及最容易影响断点续跑的 translation/document_operations 单元测试。
+
+"on":
+  workflow_call: {}
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  # Tag releases may call this workflow from both desktop and Docker release
+  # workflows at the same time. Never cancel a release gate midway.
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+jobs:
+  rust-workspace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Prepare embedded backend package
+        id: backend
+        uses: ./.github/actions/prepare-backend-source
+
+      - name: Setup uv
+        # astral-sh/setup-uv v9.0.0
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          version: "0.11.19"
+          python-version: "3.11"
+
+      - name: Install locked Python workspace for executor tests
+        run: uv sync --project "$RETAIN_PDF_SERVICES_ROOT" --locked --all-extras
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ steps.backend.outputs.path }}/api
+
+      # 必须 --workspace：裸 cargo test 只跑主 crate，会漏掉
+      # retain-core/retain-data/retain-jobs 三个子 crate 的测试
+      # 通过 uv 启动 cargo，确保 Rust 集成测试派生的 python3 继承已安装
+      # PyMuPDF 等依赖的 Python 虚拟环境，而不是误用 runner 的系统 Python。
+      - name: Cargo Workspace Tests
+        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" cargo test --locked --workspace --manifest-path "$RETAIN_PDF_SOURCE_ROOT/Cargo.toml"
+
+  packages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22.22.0"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install (root workspaces)
+        run: npm ci
+
+      - name: Desktop main-process checks
+        run: |
+          npm run test:desktop
+          npm --prefix frontend/desktop run verify:packaging-deps
+
+      - name: Test and build @retainpdf/contracts
+        run: |
+          npm --prefix contracts test
+          npm --prefix contracts run typecheck
+          npm --prefix contracts run build
+
+      - name: Typecheck and build @retainpdf/domain
+        run: |
+          npm --prefix frontend/packages/domain run typecheck
+          npm --prefix frontend/packages/domain run build
+
+      - name: Build @retainpdf/ui
+        run: npm --prefix frontend/packages/ui run build
+
+      - name: Build @retainpdf/api
+        run: npm --prefix frontend/packages/api run build
+
+      - name: Typecheck @retainpdf/reader
+        run: npm --prefix frontend/packages/reader run typecheck
+
+      - name: Build @retainpdf/reader
+        run: npm --prefix frontend/packages/reader run build
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: packages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22.22.0"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install (root workspaces)
+        run: npm ci
+
+      - name: Build frontend package dependencies
+        run: |
+          npm --prefix contracts run build
+          npm --prefix frontend/packages/domain run build
+          npm --prefix frontend/packages/ui run build
+          npm --prefix frontend/packages/api run build
+          npm --prefix frontend/packages/reader run build
+
+      - name: Frontend Tests
+        working-directory: frontend/web
+        run: npm test
+
+  python-services:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Prepare embedded backend package
+        id: backend
+        uses: ./.github/actions/prepare-backend-source
+
+      - name: Setup uv
+        # astral-sh/setup-uv v9.0.0
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          version: "0.11.19"
+          python-version: "3.11"
+
+      - name: Install
+        run: uv sync --project "$RETAIN_PDF_SERVICES_ROOT" --locked --all-extras
+
+      - name: Check generated dependency manifests
+        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python .github/scripts/sync_backend_python_requirements.py --repo-root . --services-root "$RETAIN_PDF_SERVICES_ROOT" --check
+
+      - name: Check installed command contracts
+        run: |
+          uv run --project "$RETAIN_PDF_SERVICES_ROOT" retainpdf-pipeline --help
+          uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -c "import retainpdf_ai, retainpdf_pipeline"
+
+      - name: AI Service Tests
+        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/ai/tests" -q
+
+      - name: Pipeline package entrypoint tests
+        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/tests/entrypoints/test_console.py" -q
+
+      - name: Setup Typst for offline formula tests
+        uses: ./.github/actions/setup-test-typst
+
+      - name: Offline translation regression
+        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/run_translation_tests.py"
+
+      - name: Pipeline durable stage tests
+        run: |
+          uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest -q \
+            "$RETAIN_PDF_SERVICES_ROOT/ai/tests/test_page_program.py" \
+            "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/tests/pipeline"
+
+  backend-standalone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Prepare embedded backend package
+        id: backend
+        uses: ./.github/actions/prepare-backend-source
+
+      - name: Setup uv
+        # astral-sh/setup-uv v9.0.0
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          version: "0.11.19"
+          python-version: "3.11"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install locked backend test environment
+        run: uv sync --project "$RETAIN_PDF_SERVICES_ROOT" --locked --all-extras
+
+      - name: Test backend source resolver
+        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest .github/scripts/tests -q
+
+      - name: Check backend contract mirror parity
+        run: |
+          python3 "$RETAIN_PDF_SERVICES_ROOT/contracts/check_parity.py"
+          for backend_schema in "$RETAIN_PDF_SERVICES_ROOT"/contracts/*.schema.json; do
+            product_schema="$GITHUB_WORKSPACE/contracts/$(basename "$backend_schema")"
+            diff -- "$backend_schema" "$product_schema"
+          done
+
+      - name: Verify isolated backend workspace
+        run: python3 "$RETAIN_PDF_SOURCE_ROOT/ops/release/check_standalone.py" --compile-rust
+
+      - name: Build backend source archive
+        run: python3 "$RETAIN_PDF_SOURCE_ROOT/ops/release/build_source_archive.py"
+
+      - name: Upload backend source archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: retainpdf-backend-source-${{ steps.backend.outputs.tree }}
+          path: |
+            ${{ steps.backend.outputs.path }}/dist/*.tar.gz
+            ${{ steps.backend.outputs.path }}/dist/*.sha256
+          if-no-files-found: error

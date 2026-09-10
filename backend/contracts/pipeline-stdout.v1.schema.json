@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/pipeline-stdout/v1",
+  "title": "services/api ↔ services/pipeline workers stdout 行协议",
+  "description": "services/api 的 retain-jobs 逐行解析 pipeline 子进程 stdout 来驱动任务状态机。本文件是该行协议的单一真值：生产者（services/pipeline workers）与消费者（services/api/crates/retain-jobs 的 job_runner/stdout_parser）各配一侧契约测试；改协议必须同步上游 schema、后端镜像和两端实现。行分七类：带标签工件行、结构化 artifact_published JSONL 事件、durable stage 观察、durable checkpoint 观察、指标行、provider 状态行、阶段前缀行。",
+  "labeled_line_format": "<label>: <value>",
+  "artifact_labels": {
+    "job root": { "artifact_field": "job_root" },
+    "source pdf": { "artifact_field": "source_pdf" },
+    "layout json": { "artifact_field": "layout_json" },
+    "normalized document json": { "artifact_field": "normalized_document_json" },
+    "normalization report json": {
+      "artifact_field": "normalization_report_json",
+      "note": "OCR 阶段收到此行会把 stage 推进为 normalizing"
+    },
+    "provider raw dir": { "artifact_field": "provider_raw_dir" },
+    "provider zip": { "artifact_field": "provider_zip" },
+    "provider summary json": { "artifact_field": "provider_summary_json" },
+    "schema version": {
+      "artifact_field": "schema_version",
+      "expected_value": "document.v1"
+    },
+    "translations dir": { "artifact_field": "translations_dir" },
+    "output pdf": { "artifact_field": "output_pdf" },
+    "summary": { "artifact_field": "summary" },
+    "events jsonl": { "artifact_field": "events_jsonl" },
+    "batch_id": { "artifact_field": "provider_batch_id" },
+    "task_id": { "artifact_field": "provider_task_id" },
+    "full_zip_url": { "artifact_field": "provider_full_zip_url" }
+  },
+  "emit_only_labels": {
+    "source json used": "python 侧作为日志行发射；rust 不解析该标签行，仅在 artifact_published 事件里认 source_json_used 这个 key（映射到 normalized_document_json）"
+  },
+  "artifact_event": {
+    "event_type": "artifact_published",
+    "required_payload_fields": ["artifact_key", "path"],
+    "artifact_keys": {
+      "job_root": [],
+      "source_pdf": [],
+      "layout_json": [],
+      "normalized_document_json": ["source_json_used"],
+      "normalization_report_json": [],
+      "provider_raw_dir": [],
+      "provider_zip": ["provider_bundle_zip"],
+      "provider_summary_json": ["provider_result_json"],
+      "translations_dir": [],
+      "output_pdf": ["translated_pdf"],
+      "summary": ["pipeline_summary", "pipeline_summary_json"],
+      "events_jsonl": ["pipeline_events_jsonl"]
+    },
+    "example": "{\"event_type\": \"artifact_published\", \"payload\": {\"artifact_key\": \"output_pdf\", \"path\": \"/data/jobs/j1/out.pdf\"}}",
+  "emit_only_keys": {
+    "markdown_raw": "rust 经 storage_paths::ARTIFACT_KEY_MARKDOWN_RAW 与约定 md/full.md 解析，不写入 JobArtifacts 字段",
+    "translation_diagnostics_json": "rust 经 storage_paths::resolve_translation_diagnostics 按约定解析路径，不消费此事件",
+      "translation_debug_index_json": "rust 经 storage_paths::resolve_translation_debug_index 按约定解析路径，不消费此事件",
+      "translation_review_json": "翻译审阅工件，rust 不消费；仅记录于 pipeline_events.jsonl 供检视"
+    }
+  },
+  "checkpoint_event": {
+    "event_type": "pipeline_checkpoint",
+    "description": "worker 原子保存兼容 checkpoint 后发射。Rust 将该观察提交到权威 Attempt/Stage/Unit 状态机，再由已提交状态派生 events；原始 stdout 本身不是事件真值。",
+    "required_payload_fields": [
+      "schema",
+      "schema_version",
+      "stage",
+      "phase",
+      "status",
+      "producer_generation"
+    ],
+    "committed_unit_fields": [
+      "unit_key",
+      "unit_order",
+      "page_index",
+      "page_hash"
+    ],
+    "committed_pages_field": {
+      "name": "committed_pages",
+      "description": "可选的多页原子提交数组；翻译页使用稳定身份 unit_key=page:<page_index>、unit_order=page_index，每项还包含 page_hash 和精确的 changed_item_ids。不得与顶层 committed_unit_fields 同时出现。Rust 以一个权威 generation 原子提交整批页面。",
+      "item_fields": [
+        "unit_key",
+        "unit_order",
+        "page_index",
+        "page_hash",
+        "changed_item_ids"
+      ]
+    },
+    "page_hash": "lowercase sha256 of the atomically saved page JSON",
+    "example": "{\"event_type\":\"pipeline_checkpoint\",\"payload\":{\"schema\":\"pipeline_checkpoint_v1\",\"schema_version\":1,\"stage\":\"translate\",\"phase\":\"translating\",\"status\":\"in_progress\",\"producer_generation\":4,\"committed_pages\":[{\"unit_key\":\"page:0\",\"unit_order\":0,\"page_index\":0,\"page_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"changed_item_ids\":[\"p001-b0006\",\"p001-b0007\"]}],\"progress\":{\"completed_item_count\":8,\"item_count\":20}}}"
+  },
+  "stage_observation_event": {
+    "schema": "pipeline_stage_observation_v1",
+    "schema_version": 1,
+    "event_types": ["stage_transition", "stage_progress"],
+    "description": "worker 把阶段观察同时写入诊断 JSONL 与 stdout。Rust 在 generation fencing 下先更新 pipeline_stages，再在同一事务派生公开 event；已有 durable attempt 的 JSONL 阶段行不再是公开状态真值。",
+    "required_fields": [
+      "schema",
+      "schema_version",
+      "job_id",
+      "seq",
+      "ts",
+      "user_stage",
+      "stage",
+      "event_type",
+      "message",
+      "payload"
+    ],
+    "example": "{\"schema\":\"pipeline_stage_observation_v1\",\"schema_version\":1,\"job_id\":\"job-1\",\"seq\":7,\"ts\":\"2026-08-26T00:00:00Z\",\"level\":\"info\",\"user_stage\":\"translation\",\"stage\":\"translating\",\"substage\":\"translation_batches\",\"stage_detail\":\"completed batch 3/5\",\"provider\":\"\",\"provider_stage\":\"\",\"event_type\":\"stage_progress\",\"semantic_event_type\":\"progress\",\"message\":\"completed batch 3/5\",\"progress_current\":3,\"progress_total\":5,\"progress_unit\":\"batch\",\"payload\":{}}"
+  },
+  "metric_lines": [
+    {
+      "metric": "pages_processed",
+      "pattern": "^pages processed:\\s*(\\d+)$",
+      "example": "pages processed: 12"
+    },
+    {
+      "metric": "translated_items",
+      "pattern": "^translated items:\\s*(\\d+)$",
+      "example": "translated items: 240"
+    },
+    {
+      "metric": "translate_render_time_seconds",
+      "pattern": "^translation time:\\s*([0-9.]+)s$",
+      "example": "translation time: 8.52s"
+    },
+    {
+      "metric": "save_time_seconds",
+      "pattern": "^(?:render\\+save time|save time):\\s*([0-9.]+)s$",
+      "example": "save time: 1.20s"
+    },
+    {
+      "metric": "total_time_seconds",
+      "pattern": "^total time:\\s*([0-9.]+)s$",
+      "example": "total time: 9.72s"
+    }
+  ],
+  "provider_state_lines": {
+    "prefixes": ["batch ", "task "],
+    "separator": ": state=",
+    "examples": ["batch b-42: state=running", "task t-7: state=done"]
+  },
+  "stage_prefix_rules": [
+    {
+      "prefix": "upload done: ",
+      "effect": "provider 阶段推进为上传完成",
+      "example": "upload done: /tmp/in.pdf"
+    }
+  ]
+}

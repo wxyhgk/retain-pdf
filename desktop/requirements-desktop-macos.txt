@@ -1,9 +1,0 @@
-# Generated from pyproject.toml by backend/scripts/devtools/sync_python_requirements.py.
-# Do not edit manually.
-# Legacy compatibility copy. CI should stay aligned with requirements-desktop-posix.txt.
-
-Pillow==10.4.0
-PyMuPDF==1.26.5
-pikepdf==7.2.0
-requests==2.32.5
-urllib3==2.5.0

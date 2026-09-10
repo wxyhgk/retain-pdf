@@ -1,0 +1,107 @@
+{
+  "layoutParsingResults": [
+    {
+      "prunedResult": {
+        "width": 1200,
+        "height": 1600,
+        "parsing_res_list": [
+          {
+            "block_label": "doc_title",
+            "block_content": "Offline Golden Document",
+            "block_bbox": [80, 40, 1120, 120]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "Introduction",
+            "block_bbox": [80, 140, 1120, 200]
+          },
+          {
+            "block_label": "text",
+            "block_content": "The left column opens with inline $a^2+b^2=c^2$ and a stable long paragraph used to verify document normalization, formula geometry, citation anchors, and reading order across multiple wrapped lines.",
+            "block_bbox": [80, 220, 550, 390]
+          },
+          {
+            "block_label": "text",
+            "block_content": "The left column continues before the reader moves to the top of the right column, preserving a distinct block and exact page location.",
+            "block_bbox": [80, 410, 550, 560]
+          },
+          {
+            "block_label": "text",
+            "block_content": "The right column starts here and remains a separate long body block with its own geometry, searchable text, and stable citation target.",
+            "block_bbox": [650, 220, 1120, 390]
+          },
+          {
+            "block_label": "text",
+            "block_content": "The right column closes the multi-column section without merging into the left column or losing its provider reading order.",
+            "block_bbox": [650, 410, 1120, 560]
+          },
+          {
+            "block_label": "display_formula",
+            "block_content": "E = mc^2",
+            "block_bbox": [250, 600, 950, 680]
+          },
+          {
+            "block_label": "figure_title",
+            "block_content": "Table 1. Offline quality metrics.",
+            "block_bbox": [100, 700, 1100, 750]
+          },
+          {
+            "block_label": "table",
+            "block_content": "<table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody><tr><td>Recall</td><td>0.98</td></tr></tbody></table>",
+            "block_bbox": [100, 770, 1100, 940]
+          },
+          {
+            "block_label": "image",
+            "block_content": "<img src=\"imgs/img_in_image_box_80_980_550_1250.png\" />",
+            "block_bbox": [80, 980, 550, 1250]
+          },
+          {
+            "block_label": "figure_title",
+            "block_content": "Figure 1. Offline pipeline overview.",
+            "block_bbox": [80, 1260, 550, 1310]
+          },
+          {
+            "block_label": "paragraph_title",
+            "block_content": "Additional result",
+            "block_bbox": [80, 1330, 1120, 1380]
+          },
+          {
+            "block_label": "image",
+            "block_content": "<img src=\"imgs/img_in_image_box_650_980_1120_1250.png\" />",
+            "block_bbox": [650, 980, 1120, 1250]
+          },
+          {
+            "block_label": "figure_title",
+            "block_content": "Figure 2. Citation region map.",
+            "block_bbox": [650, 1260, 1120, 1310]
+          }
+        ],
+        "layout_det_res": {
+          "boxes": [
+            {
+              "label": "inline_formula",
+              "coordinate": [250, 250, 410, 290],
+              "score": 0.99
+            }
+          ]
+        }
+      },
+      "markdown": {
+        "text": "# Offline Golden Document\n\n## Introduction\n\nThe left column opens with inline $a^2+b^2=c^2$ and a stable long paragraph used to verify document normalization, formula geometry, citation anchors, and reading order across multiple wrapped lines.\n\nThe left column continues before the reader moves to the top of the right column, preserving a distinct block and exact page location.\n\nThe right column starts here and remains a separate long body block with its own geometry, searchable text, and stable citation target.\n\nThe right column closes the multi-column section without merging into the left column or losing its provider reading order.\n\n$$E = mc^2$$\n\nTable 1. Offline quality metrics.\n\n| Metric | Value |\n| --- | ---: |\n| Recall | 0.98 |\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_80_980_550_1250.png\" alt=\"Pipeline figure\" width=\"45%\" /></div>\n\nFigure 1. Offline pipeline overview.\n\n## Additional result\n\n![Citation map](imgs/img_in_image_box_650_980_1120_1250.png)\n\nFigure 2. Citation region map.",
+        "images": {
+          "imgs/img_in_image_box_80_980_550_1250.png": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD3sAAAAASUVORK5CYII=",
+          "imgs/img_in_image_box_650_980_1120_1250.png": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD3sAAAAASUVORK5CYII="
+        }
+      },
+      "outputImages": {},
+      "inputImage": ""
+    }
+  ],
+  "dataInfo": {
+    "type": "paddle",
+    "numPages": 1,
+    "pages": [{"width": 1200, "height": 1600}]
+  },
+  "preprocessedImages": [""],
+  "_meta": {"source": "committed_offline_golden_fixture"}
+}

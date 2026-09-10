@@ -1,0 +1,48 @@
+{
+  "name": "@retainpdf/contracts",
+  "version": "0.1.0",
+  "private": false,
+  "description": "RetainPDF versioned JSON Schemas and generated wire DTO types.",
+  "type": "module",
+  "exports": {
+    "./job-status": {
+      "types": "./dist/job-status.d.ts",
+      "import": "./dist/job-status.js"
+    },
+    "./library-books": {
+      "types": "./dist/library-books.d.ts",
+      "import": "./dist/library-books.js"
+    },
+    "./ai-ask.v1.schema.json": "./ai-ask.v1.schema.json",
+    "./agent-calculation.v1.schema.json": "./agent-calculation.v1.schema.json",
+    "./ai-conversations.v1.schema.json": "./ai-conversations.v1.schema.json",
+    "./job-status.v1.schema.json": "./job-status.v1.schema.json",
+    "./jobs-control.v1.schema.json": "./jobs-control.v1.schema.json",
+    "./library-books.v1.schema.json": "./library-books.v1.schema.json",
+    "./pipeline-stdout.v1.schema.json": "./pipeline-stdout.v1.schema.json",
+    "./public-document-operation.v1.schema.json": "./public-document-operation.v1.schema.json",
+    "./runtime-config.v1.schema.json": "./runtime-config.v1.schema.json"
+  },
+  "files": [
+    "dist",
+    "*.schema.json",
+    "README.md"
+  ],
+  "scripts": {
+    "generate": "node ./scripts/generate-types.mjs",
+    "generate:check": "node ./scripts/generate-types.mjs --check",
+    "lint:schemas": "node ./scripts/lint-schemas.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "npm run generate:check && tsc -p tsconfig.json",
+    "test": "npm run lint:schemas && npm run generate:check && node --test ./tests/*.test.mjs",
+    "prepack": "npm test && npm run build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "json-schema-to-typescript": "15.0.4",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -61,9 +61,9 @@
 - 主 OCR 统一结构：
   `/home/wxyhgk/tmp/Code/data/jobs/{job_id}/ocr/normalized/document.v1.json`
 - OCR 统一结构说明文档：
-  `/home/wxyhgk/tmp/Code/backend/scripts/services/document_schema/README.md`
+  `/home/wxyhgk/tmp/Code/backend/scripts/ocr/document_schema/README.md`
 - OCR 统一结构机器 schema：
-  `/home/wxyhgk/tmp/Code/backend/scripts/services/document_schema/document.v1.schema.json`
+  `/home/wxyhgk/tmp/Code/backend/scripts/ocr/document_schema/document.v1.schema.json`
 - OCR 原始 provider 结果摘要：
   `/home/wxyhgk/tmp/Code/data/jobs/{job_id}/ocr/mineru_result.json`
 - OCR 原始 unpacked 内容：
@@ -108,7 +108,7 @@
 1. 本文件：
    `/home/wxyhgk/tmp/Code/experiments/layout-fit/README.md`
 2. OCR 统一结构说明：
-   `/home/wxyhgk/tmp/Code/backend/scripts/services/document_schema/README.md`
+   `/home/wxyhgk/tmp/Code/backend/scripts/ocr/document_schema/README.md`
 3. 选一个真实任务目录：
    `/home/wxyhgk/tmp/Code/data/jobs/{job_id}`
 4. 先打开：

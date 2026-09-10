@@ -1,0 +1,117 @@
+{
+  "name": "retain-pdf-desktop",
+  "version": "4.1.10",
+  "private": true,
+  "description": "RetainPDF desktop wrapper",
+  "homepage": "https://github.com/wxyhgk/retain-pdf",
+  "author": {
+    "name": "wxyhgk",
+    "email": "wxyhgk@qq.com"
+  },
+  "main": "main.js",
+  "scripts": {
+    "dev": "node scripts/run-local.mjs",
+    "lint": "eslint --max-warnings=0 main.js preload.js src/main scripts/pack-current-asar.mjs scripts/remote-windows.mjs scripts/run-local.mjs",
+    "test": "npm run lint && node --test scripts/runtime-prune.test.mjs src/main/*.test.mjs",
+    "sync:win-frontend": "node scripts/sync-win-frontend.mjs",
+    "install-git-hooks": "sh scripts/install-git-hooks.sh",
+    "smoke:frontend-bundle": "node scripts/check-frontend-bundle.mjs",
+    "smoke:frontend-desktop": "npm --prefix ../web run smoke:desktop-first-run && npm run smoke:frontend-bundle",
+    "report:size": "node scripts/report-package-size.mjs",
+    "verify:packaging-deps": "node scripts/check-packaging-dependencies.mjs",
+    "sync-frontend": "npm --prefix ../web run build && node scripts/prepare-app.mjs --frontend-only",
+    "verify-frontend-sync": "npm run sync-frontend && npm run smoke:frontend-desktop",
+    "prepare-app": "npm --prefix ../web run build && node scripts/prepare-app.mjs",
+    "dist:win32": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --win portable --x64 --config.directories.output=win",
+    "dist:win32-installer": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --win nsis --x64 --config.directories.output=win",
+    "dist:mac": "RETAIN_PDF_BUNDLE_MAC_PYTHON=1 npm run prepare-app && npm run verify:packaging-deps && RETAIN_PDF_BUNDLE_MAC_PYTHON=1 electron-builder --mac dmg --publish never --config.directories.output=mac",
+    "dist:linux": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --linux deb --publish never --config.directories.output=linux"
+  },
+  "devDependencies": {
+    "@electron/asar": "3.4.1",
+    "electron": "33.4.11",
+    "electron-builder": "25.1.8",
+    "eslint": "10.8.1"
+  },
+  "build": {
+    "appId": "com.wxyhgk.retainpdf",
+    "productName": "RetainPDF",
+    "electronVersion": "33.4.11",
+    "npmRebuild": false,
+    "directories": {
+      "buildResources": "build"
+    },
+    "files": [
+      "app/frontend/**/*",
+      "assets/**/*",
+      "!assets/fonts/**/*",
+      "main.js",
+      "preload.js",
+      "src/main/**/*",
+      "splash.html",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "app/backend",
+        "to": "backend"
+      }
+    ],
+    "asar": true,
+    "win": {
+      "icon": "build/icon.ico",
+      "electronLanguages": [
+        "en-US",
+        "zh-CN",
+        "zh-TW"
+      ],
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "RetainPDF-Windows-${version}.${ext}"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
+      "electronLanguages": [
+        "en",
+        "zh_CN",
+        "zh_TW"
+      ],
+      "artifactName": "RetainPDF-Mac-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "deb"
+      ],
+      "category": "Utility",
+      "icon": "build/icons",
+      "electronLanguages": [
+        "en-US",
+        "zh-CN",
+        "zh-TW"
+      ],
+      "maintainer": "wxyhgk <wxyhgk@qq.com>",
+      "desktop": {
+        "Name": "RetainPDF",
+        "Comment": "PDF retain-layout translation desktop application",
+        "Categories": "Office;Utility;",
+        "StartupWMClass": "RetainPDF"
+      },
+      "artifactName": "RetainPDF-Linux-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "RetainPDF-Windows-${version}-Setup.${ext}",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{"version":3,"file":"ReaderCloseHome.d.ts","sourceRoot":"","sources":["../../../src/components/react-pdf/ReaderCloseHome.tsx"],"names":[],"mappings":"AA2BA,wBAAgB,yBAAyB,CACvC,QAAQ,EAAE,MAAM,EAChB,WAAW,EAAE,MAAM,EACnB,aAAa,EAAE,MAAM,GACpB,OAAO,CAWT;AAED,cAAc;AACd,wBAAgB,oBAAoB,SAsBnC;AAED,wBAAgB,eAAe,CAAC,EAAE,aAAa,EAAE,GAAE;IAAE,aAAa,CAAC,EAAE,MAAM,IAAI,CAAA;CAAO,+BAmBrF"}

@@ -10,10 +10,10 @@ if [ -z "$STAGED_FILES" ]; then
   exit 0
 fi
 
-if ! printf '%s\n' "$STAGED_FILES" | grep -Eq '^(frontend/|desktop/scripts/prepare-app\.mjs|desktop/scripts/check-frontend-bundle\.mjs|desktop/package\.json)'; then
+if ! printf '%s\n' "$STAGED_FILES" | grep -Eq '^(frontend/web/|frontend/desktop/scripts/prepare-app\.mjs|frontend/desktop/scripts/check-frontend-bundle\.mjs|frontend/desktop/package\.json)'; then
   exit 0
 fi
 
-printf '%s\n' "[pre-commit] frontend/desktop sync-sensitive files changed."
-printf '%s\n' "[pre-commit] Run before pushing: npm --prefix desktop run verify-frontend-sync"
+printf '%s\n' "[pre-commit] frontend/web/desktop sync-sensitive files changed."
+printf '%s\n' "[pre-commit] Run before pushing: npm --prefix frontend/desktop run verify-frontend-sync"
 printf '%s\n' "[pre-commit] This hook no longer rewrites generated desktop frontend files."

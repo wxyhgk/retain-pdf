@@ -1,0 +1,91 @@
+/*
+  shadcn/ui 组件消费的一套标准 CSS 变量名(--background/--foreground/--primary/...)。
+  这些名字是 shadcn 组件源码(src/components/ui/*.jsx)里硬编码的 Tailwind 工具类
+  (bg-primary/text-muted-foreground 等)和少量直接 var() 引用(sonner.jsx 的
+  内联 style)所依赖的契约,不能改名——但实际颜色值不接受 shadcn CLI 生成的默认
+  皮肤,而是逐个映射到 src/styles/tokens.css 里项目已有的设计 token,达到
+  "工具链换了,视觉看不出来"的目标。
+
+  项目目前只有单一 :root(无暗色模式),故此文件也只有一份声明,不含 .dark 覆盖。
+
+  **命名避坑**:shadcn 标准变量里 `--accent`/`--muted` 恰好和 tokens.css 已有的
+  项目 token 撞名,但语义不同(`--muted` 在项目里是文字灰,shadcn 语义里却是
+  "弱化背景色")。如果在这里重新声明同名的 `:root { --muted: ... }`,会整个
+  覆盖 tokens.css 里的原始定义,导致全项目几十处 `color: var(--muted)` 的文字
+  变成别的颜色——这是曾经在草稿里踩到的真实 bug,不是假设。
+  处理方式:
+  - `--accent` 语义相同(shadcn 消费它当强调色,项目 tokens.css 里 --accent
+    本来就是品牌蓝),不重复声明,直接复用 tokens.css 的定义 + tailwind.css
+    里已有的 `--color-accent: var(--accent)` 映射。
+  - `--muted` 语义不同,不能同名覆盖:新增一个不冲突的中间变量
+    `--muted-surface`(下方),真正的 `@theme inline` 里 `--color-muted` 映射到
+    `--muted-surface`,而 `--color-muted-foreground` 映射到原始的 `--muted`
+    (项目文字灰,不受影响)。
+
+  逐项映射理由:
+  - --foreground          ← --ink          正文字色,项目原生主文字色 token。
+  - --background           ← --bg           页面底色。
+  - --muted-surface(新)   ← --line         shadcn "--muted" 背景色语义,项目
+                                            没有专门的浅灰底 token,借用现有
+                                            描边色 --line(var(--line))当浅灰底。
+  - --destructive          ← --danger       危险色。
+  - --border / --input     ← --line         项目唯一的描边/分隔线 token。
+  - --primary / --ring     ← --accent       项目没有独立的"品牌主色"token,
+                                            --accent(#0071e3)本身就是当前唯一
+                                            的强调色,主按钮/焦点环都从它派生
+                                            最合理。
+  - --radius               1rem(16px)     项目里 .app-button 是纯 pill 形
+                                            (rounded-full,不受 --radius 控制),
+                                            对话框壳 desktop-dialog 是 24px
+                                            圆角。这批拉下来的组件(button/tabs/
+                                            dialog/tooltip)实际都用字面 Tailwind 类
+                                            (rounded-md/rounded-lg)而非
+                                            --radius 本身——--radius 目前只被
+                                            sonner.jsx 的内联 style 用来设
+                                            toast 圆角,16px 介于"克制"的
+                                            rounded-md 和"松弛"的 24px 对话框
+                                            之间,和 toast 这种中等尺寸元素的
+                                            观感匹配。
+
+  以下几个变量任务简报未逐一点名,但拉下来的组件确实会用到,项目里没有直接
+  对应 token,按判断派生(阶段 B/C 走查具体页面时如观感不对可以再收紧):
+  - --primary-foreground  ← --paper(白)   叠在品牌蓝底上的文字,取高对比度白。
+  - --secondary            ← --paper(白)   对应现有 .app-button.secondary 的
+                                            实际背景(background:var(--paper))。
+  - --secondary-foreground ← --ink          对应 .app-button.secondary 的实际
+                                            文字色(color: var(--ink))。
+  - --accent-foreground    ← --paper(白)   --accent 现在是品牌蓝,叠字取白以
+                                            保证对比度(ghost 按钮/tabs/dialog
+                                            关闭按钮的 hover 态背景变蓝时的
+                                            文字色)。
+  - --popover / --popover-foreground ← --paper / --ink
+                                            Sonner toast 背景取项目"纸面"白,
+                                            文字用正文字色,和对话框壳
+                                            desktop-shell 卡片的白底黑字基调一致。
+*/
+:root {
+  --background: var(--bg);
+  --foreground: var(--ink);
+
+  --primary: var(--accent);
+  --primary-foreground: var(--paper);
+
+  --secondary: var(--paper);
+  --secondary-foreground: var(--ink);
+
+  /* 不叫 --muted:避免覆盖 tokens.css 里语义不同的项目原生 --muted(文字灰) */
+  --muted-surface: var(--line);
+
+  --accent-foreground: var(--paper);
+
+  --destructive: var(--danger);
+
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent);
+
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+
+  --radius: 1rem;
+}

@@ -1,0 +1,1 @@
+{"version":3,"file":"route-identity.d.ts","sourceRoot":"","sources":["../../../src/hooks/reader-session/route-identity.ts"],"names":[],"mappings":"AAUA,wBAAgB,cAAc,IAAI,MAAM,CAiDvC;AAED,MAAM,MAAM,aAAa,GAAG;IAC1B,WAAW,EAAE,MAAM,CAAC;IACpB,KAAK,EAAE,MAAM,CAAC;IACd,eAAe,EAAE,MAAM,CAAC;IACxB,eAAe,EAAE,MAAM,CAAC;CACzB,CAAC;AAEF;;;GAGG;AACH,wBAAgB,gBAAgB,IAAI,aAAa,CAQhD"}

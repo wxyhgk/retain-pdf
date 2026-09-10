@@ -1,0 +1,8 @@
+/* 阅读器 CSS 入口（代理） → dist/css/reader.css
+ * 真值已迁至 @retainpdf/reader：frontend/packages/reader/styles/entry.css
+ * 本文件仅作薄包装/代理，保留 @import 重定向；请编辑 frontend/packages/reader/styles/*。
+ * 构建仍经 frontend/web/scripts/build-css.mjs：src/styles/entries/reader.css → dist/css/reader.css
+ * （如需双写/回退，见 frontend/packages/reader/styles/README.md）
+ */
+@import "tailwindcss";
+@import "../../../../../frontend/packages/reader/styles/entry.css";

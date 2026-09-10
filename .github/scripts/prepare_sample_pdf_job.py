@@ -6,21 +6,16 @@ import json
 import os
 from pathlib import Path
 import shutil
-import sys
 from urllib.parse import urlparse
 from urllib.request import Request
 from urllib.request import urlopen
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-BACKEND_SCRIPTS_ROOT = REPO_ROOT / "backend" / "scripts"
-if str(BACKEND_SCRIPTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(BACKEND_SCRIPTS_ROOT))
-
-from foundation.config import fonts
-from foundation.config import layout
-from foundation.config import runtime
-from foundation.shared.job_dirs import create_job_dirs
+from retainpdf_pipeline.foundation.config import fonts
+from retainpdf_pipeline.foundation.config import layout
+from retainpdf_pipeline.foundation.config import runtime
+from retainpdf_pipeline.foundation.shared.job_dirs import create_job_dirs
 
 
 DEFAULT_BASE_URL = "https://api.deepseek.com/v1"

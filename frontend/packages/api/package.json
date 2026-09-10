@@ -1,0 +1,146 @@
+{
+  "name": "@retainpdf/api",
+  "version": "0.1.0",
+  "private": false,
+  "description": "RetainPDF typed API clients backed by @retainpdf/contracts wire DTOs.",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./library-books": {
+      "types": "./dist/library-books.d.ts",
+      "import": "./dist/library-books.js"
+    },
+    "./jobs": {
+      "types": "./dist/jobs.d.ts",
+      "import": "./dist/jobs.js"
+    },
+    "./http": {
+      "types": "./dist/http.d.ts",
+      "import": "./dist/http.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js"
+    },
+    "./jobs-query": {
+      "types": "./dist/jobs-query.d.ts",
+      "import": "./dist/jobs-query.js"
+    },
+    "./jobs-artifacts": {
+      "types": "./dist/jobs-artifacts.d.ts",
+      "import": "./dist/jobs-artifacts.js"
+    },
+    "./jobs-events": {
+      "types": "./dist/jobs-events.d.ts",
+      "import": "./dist/jobs-events.js"
+    },
+    "./jobs-actions": {
+      "types": "./dist/jobs-actions.d.ts",
+      "import": "./dist/jobs-actions.js"
+    },
+    "./jobs-submit": {
+      "types": "./dist/jobs-submit.d.ts",
+      "import": "./dist/jobs-submit.js"
+    },
+    "./translation-debug": {
+      "types": "./dist/translation-debug.d.ts",
+      "import": "./dist/translation-debug.js"
+    },
+    "./live-translation": {
+      "types": "./dist/live-translation.d.ts",
+      "import": "./dist/live-translation.js"
+    },
+    "./ai": {
+      "types": "./dist/ai.d.ts",
+      "import": "./dist/ai.js"
+    },
+    "./document-operations": {
+      "types": "./dist/document-operations.d.ts",
+      "import": "./dist/document-operations.js"
+    },
+    "./agent-runtime-settings": {
+      "types": "./dist/agent-runtime-settings.d.ts",
+      "import": "./dist/agent-runtime-settings.js"
+    },
+    "./documents": {
+      "types": "./dist/documents.d.ts",
+      "import": "./dist/documents.js"
+    },
+    "./collections": {
+      "types": "./dist/collections.d.ts",
+      "import": "./dist/collections.js"
+    },
+    "./favorites": {
+      "types": "./dist/favorites.d.ts",
+      "import": "./dist/favorites.js"
+    },
+    "./glossaries": {
+      "types": "./dist/glossaries.d.ts",
+      "import": "./dist/glossaries.js"
+    },
+    "./conversations": {
+      "types": "./dist/conversations.d.ts",
+      "import": "./dist/conversations.js"
+    },
+    "./providers": {
+      "types": "./dist/providers.d.ts",
+      "import": "./dist/providers.js"
+    },
+    "./reader": {
+      "types": "./dist/reader.d.ts",
+      "import": "./dist/reader.js"
+    },
+    "./search": {
+      "types": "./dist/search.d.ts",
+      "import": "./dist/search.js"
+    },
+    "./job-images": {
+      "types": "./dist/job-images.d.ts",
+      "import": "./dist/job-images.js"
+    },
+    "./fonts": {
+      "types": "./dist/fonts.d.ts",
+      "import": "./dist/fonts.js"
+    },
+    "./credentials": {
+      "types": "./dist/credentials.d.ts",
+      "import": "./dist/credentials.js"
+    },
+    "./utils/strip-ocr": {
+      "types": "./dist/utils/strip-ocr.d.ts",
+      "import": "./dist/utils/strip-ocr.js"
+    },
+    "./internal/runtime": {
+      "types": "./dist/internal/runtime.d.ts",
+      "import": "./dist/internal/runtime.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsc --watch -p tsconfig.json",
+    "verify:package": "node ./scripts/verify-package.mjs",
+    "test": "npm run build && npm run verify:package",
+    "prepack": "npm run build && npm run verify:package"
+  },
+  "dependencies": {
+    "@retainpdf/contracts": "0.1.0"
+  },
+  "peerDependencies": {
+    "zod": "^3.22.0"
+  },
+  "peerDependenciesMeta": {
+    "zod": { "optional": true }
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

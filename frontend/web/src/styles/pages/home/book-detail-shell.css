@@ -1,0 +1,399 @@
+/* Book detail dialog shell, left rail, navigation, and scroll ownership.
+ * Source selectors were split from book-detail.css; this file intentionally
+ * excludes overview, processing, and artifact-center presentation styles.
+ */
+
+#book-detail-dialog.book-detail-dialog {
+  width: min(1040px, calc(100dvw - 32px));
+  height: min(720px, calc(100dvh - 32px));
+  max-width: none;
+  max-height: none;
+}
+
+.book-detail-dialog-shell {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  min-height: 0;
+}
+
+.book-detail-shell-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.book-detail-shell-left {
+  min-width: 0;
+  min-height: 0;
+  padding: 22px 18px 22px 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-right: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  background: color-mix(in srgb, var(--bg) 45%, var(--paper));
+}
+
+.book-detail-cover-identity {
+  display: grid;
+  gap: 5px;
+}
+
+.book-detail-cover-identity h3 {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.book-detail-cover-identity p,
+.book-detail-left-reading-card p {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.book-detail-cover-identity p span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-detail-cover-identity svg,
+.book-detail-left-reading-card svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+}
+
+.book-detail-left-reading-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--paper) 76%, transparent);
+}
+
+.book-detail-quick-downloads {
+  display: grid;
+  gap: 7px;
+  padding: 9px 10px 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--paper) 76%, transparent);
+}
+
+.book-detail-quick-downloads > header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.book-detail-quick-downloads > header > svg {
+  width: 13px;
+  height: 13px;
+}
+
+.book-detail-quick-downloads-loader {
+  margin-left: auto;
+  animation: spin 900ms linear infinite;
+}
+
+.book-detail-quick-download-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.book-detail-quick-download-trigger {
+  display: block;
+  min-width: 0;
+}
+
+.book-detail-quick-download-btn {
+  display: flex;
+  width: 100%;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  border-radius: 9px;
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--shadow-color) 7%, transparent);
+  transition:
+    border-color 150ms var(--ease-out),
+    background-color 150ms var(--ease-out),
+    transform 150ms var(--ease-out);
+}
+
+.book-detail-quick-download-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ink) 34%, var(--line));
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  transform: translateY(-1px);
+}
+
+.book-detail-quick-download-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.book-detail-quick-download-btn:disabled {
+  cursor: not-allowed;
+  color: color-mix(in srgb, var(--muted) 38%, transparent);
+  background: color-mix(in srgb, var(--bg) 64%, var(--paper));
+  box-shadow: none;
+}
+
+.book-detail-quick-download-btn > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.book-detail-quick-download-btn > svg.is-spinning {
+  animation: spin 850ms linear infinite;
+}
+
+.book-detail-left-reading-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.book-detail-left-reading-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.book-detail-left-reading-head strong {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.book-detail-left-reading-track {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.book-detail-left-reading-track span {
+  height: 3px;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.book-detail-left-reading-track span.is-filled {
+  background: var(--ink);
+}
+
+.book-detail-shell-right {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 16px 20px 20px;
+  overflow: hidden;
+}
+
+.book-detail-right-tabs {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+/* 裸 tab 组：去掉灰壳容器（原 border+bg 让头部像个输入框），激活态才有实底药丸 */
+.book-detail-right-tabs-list {
+  display: inline-flex;
+  width: fit-content;
+  max-width: calc(100% - 48px);
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.book-detail-right-tab {
+  display: inline-flex;
+  flex: 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 30px;
+  padding: 4px 13px;
+  border: 0;
+  border-radius: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--muted) !important;
+  background: transparent !important;
+  transition:
+    background-color 150ms var(--ease-out),
+    color 150ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+
+.book-detail-right-tab:active {
+  transform: scale(0.96);
+}
+
+.book-detail-right-tab-icon {
+  flex-shrink: 0;
+  display: block;
+}
+
+.book-detail-right-tab-label {
+  min-width: 0;
+}
+
+.book-detail-right-tab:hover {
+  color: var(--ink) !important;
+  background: color-mix(in srgb, var(--ink) 6%, transparent) !important;
+}
+
+.book-detail-right-tab[data-state="active"],
+.book-detail-right-tab.is-active {
+  color: var(--paper) !important;
+  background: var(--ink) !important;
+}
+
+.book-detail-right-panel {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding-right: 5px;
+  padding-bottom: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ink) 20%, transparent) transparent;
+}
+
+.book-detail-right-panel[data-state="inactive"] {
+  display: none;
+}
+
+.book-detail-right-panel::-webkit-scrollbar,
+.book-detail-shell-left::-webkit-scrollbar {
+  width: 8px;
+}
+
+.book-detail-right-panel::-webkit-scrollbar-thumb,
+.book-detail-shell-left::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 18%, transparent);
+  background-clip: padding-box;
+}
+
+@media (max-width: 899px) and (min-width: 720px) {
+  .book-detail-shell-grid {
+    grid-template-columns: 230px minmax(0, 1fr);
+  }
+
+  .book-detail-shell-left {
+    padding: 18px 15px 18px 18px;
+  }
+
+  .book-detail-shell-right {
+    padding: 14px 16px 18px;
+  }
+}
+@media (max-width: 719px) {
+  #book-detail-dialog.book-detail-dialog {
+    width: calc(100dvw - 20px);
+    height: calc(100dvh - 20px);
+  }
+
+  .book-detail-shell-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 112px minmax(0, 1fr);
+  }
+
+  .book-detail-shell-left {
+    padding: 12px 50px 12px 12px;
+    overflow: hidden;
+    border-right: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  }
+
+  .book-detail-cover-actions {
+    position: static;
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+  }
+
+  .book-detail-cover-preview {
+    width: 64px;
+    height: 86px;
+    aspect-ratio: auto;
+    border-radius: 10px;
+  }
+
+  .book-detail-cover-buttons {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 0;
+  }
+
+  .book-detail-cover-buttons > button {
+    width: auto;
+    min-height: 38px;
+    flex: 1 1 130px;
+  }
+
+  .book-detail-quick-downloads,
+  .book-detail-left-reading-card {
+    display: none;
+  }
+
+  .book-detail-shell-right {
+    padding: 10px 12px 12px;
+  }
+
+  .book-detail-right-tabs {
+    gap: 8px;
+  }
+
+  .book-detail-right-tabs-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    max-width: none;
+  }
+
+  .book-detail-right-tab {
+    min-height: 40px;
+    padding-inline: 8px;
+  }
+}

@@ -1,0 +1,1204 @@
+[
+  {
+    "item_id": "p004-b004",
+    "page_idx": 3,
+    "block_idx": 4,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 4,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      44.483,
+      343.455,
+      482.818,
+      353.454
+    ],
+    "source_text": "Scheme 3. Possible pathways of the step-by-step bromine—lithium exchange in 2. Experimentally observed species are marked with blue.",
+    "source_line_texts": [
+      "Scheme 3. Possible pathways of the step-by-step bromine—lithium exchange in 2. Experimentally observed species are marked with blue."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          44.483,
+          343.455,
+          482.818,
+          353.454
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Scheme 3. Possible pathways of the step-by-step bromine—lithium exchange in 2. Experimentally observed species are marked with blue.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "full",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "full",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-57",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-57",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "full",
+    "layout_mode": "double",
+    "layout_split_x": 297.01,
+    "layout_zone": "full_width",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 1,
+    "layout_boundary_role": "single",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Scheme 3. Possible pathways of the step-by-step bromine—lithium exchange in 2. Experimentally observed species are marked with blue.",
+    "mixed_original_protected_source_text": "Scheme 3. Possible pathways of the step-by-step bromine—lithium exchange in 2. Experimentally observed species are marked with blue.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p004-b004",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p004-b004"
+    ],
+    "translation_unit_protected_source_text": "Scheme 3. Possible pathways of the step-by-step bromine—lithium exchange in 2. Experimentally observed species are marked with blue.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图解3. 2中逐步溴‑锂交换的可能路径。实验观测到的物种用蓝色标记。",
+    "translation_unit_translated_text": "图解3. 2中逐步溴‑锂交换的可能路径。实验观测到的物种用蓝色标记。",
+    "protected_translated_text": "图解3. 2中逐步溴‑锂交换的可能路径。实验观测到的物种用蓝色标记。",
+    "translated_text": "图解3. 2中逐步溴‑锂交换的可能路径。实验观测到的物种用蓝色标记。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p004-b004",
+      "page_idx": 3,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Figure 4. Chemical shifts (ppm) of the alkylamino groups' protons of 1,3-dimethyl-2,3-dihydro-1H-perimidine and its known bromoderivatives in CDCl_{3}. / © 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH",
+    "translation_context_after": "bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b. / It should be noted here that the first bromine–lithium exchange in 1 occurs selectively in para-position due to the coordination of the lithium atom to the peri-bromine atom, resulting in a significant decrease of naphthalene ring twisting ( $ \\..."
+  },
+  {
+    "item_id": "p004-b006",
+    "page_idx": 3,
+    "block_idx": 6,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 6,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      616.419,
+      291.89,
+      639.416
+    ],
+    "source_text": "bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b.",
+    "source_line_texts": [
+      "bromine—lithium exchange in 2 is not selective and leads",
+      "to the formation of both possible products 12b and 4b."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          616.419,
+          291.89,
+          639.416
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-59",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 1,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-59",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.01,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 2,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b.",
+    "mixed_original_protected_source_text": "bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-003-003",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p003-b016",
+      "p004-b006"
+    ],
+    "translation_unit_protected_source_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH 化合物 2 中的溴-锂交换没有选择性，导致生成两种可能的产物 12b 和 4b。",
+    "translation_unit_translated_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH 化合物 2 中的溴-锂交换没有选择性，导致生成两种可能的产物 12b 和 4b。",
+    "protected_translated_text": "by Wiley-VCH GmbH 化合物 2 中的溴-锂交换没有选择性，导致生成两种可能的产物 12b 和 4b。",
+    "translated_text": "by Wiley-VCH GmbH 化合物 2 中的溴-锂交换没有选择性，导致生成两种可能的产物 12b 和 4b。",
+    "continuation_group": "cg-003-003",
+    "continuation_prev_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH 化合物 2 中的溴-锂交换没有选择性，导致生成两种可能的产物 12b 和 4b。",
+    "group_translated_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH 化合物 2 中的溴-锂交换没有选择性，导致生成两种可能的产物 12b 和 4b。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p004-b006",
+      "page_idx": 3,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH / Scheme 3. Possible pathways of the step-by-step bromine—lithium exchange in 2. Experimentally observed species are marked with blue.",
+    "translation_context_after": "It should be noted here that the first bromine–lithium exchange in 1 occurs selectively in para-position due to the coordination of the lithium atom to the peri-bromine atom, resulting in a significant decrease of naphthalene ring twisting ( $ \\Delta\\theta\\approx8^{\\circ} $). $ ^{[11]} $ Despite the similar $ \\Delta\\theta\\approx6^{\\circ} $ value, the first..."
+  },
+  {
+    "item_id": "p004-b007",
+    "page_idx": 3,
+    "block_idx": 7,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 7,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      42.984,
+      640.416,
+      292.89,
+      747.902
+    ],
+    "source_text": "It should be noted here that the first bromine–lithium exchange in 1 occurs selectively in para-position due to the coordination of the lithium atom to the peri-bromine atom, resulting in a significant decrease of naphthalene ring twisting ( $ \\Delta\\theta\\approx8^{\\circ} $). $ ^{[11]} $ Despite the similar $ \\Delta\\theta\\approx6^{\\circ} $ value, the first exchange in 2 is not selective. It is very tempting to assume that out,out-conformation of amino groups facilitates the coordination of the lithium atom in ortho-position, thus bringing thermodynamic stabilization. However, the optimized geometry of 12b",
+    "source_line_texts": [
+      "It should be noted here that the first bromine–lithium exchange",
+      "in 1 occurs selectively in para-position due to the coordination",
+      "of the lithium atom to the peri-bromine atom, resulting",
+      "in a significant decrease of naphthalene ring twisting (",
+      "$ \\Delta\\theta\\approx8^{\\circ} $). $ ^{[11]} $ Despite the",
+      "similar $ \\Delta\\theta\\approx6^{\\circ} $ value, the first",
+      "exchange in 2 is not selective. It is very tempting to assume",
+      "that out,out-conformation of amino groups facilitates the",
+      "coordination of the lithium atom in ortho-position, thus bringing thermodynamic stabilization. However, the optimized geometry of 12b"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          42.984,
+          640.416,
+          292.89,
+          652.359
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "It should be noted here that the first bromine–lithium",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          652.359,
+          292.89,
+          664.302
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "exchange in 1 occurs selectively in para-position",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          664.302,
+          292.89,
+          676.245
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "due to the coordination of the lithium atom to the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          676.245,
+          292.89,
+          688.188
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "peri-bromine atom, resulting in a significant decrease",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          688.188,
+          292.89,
+          700.13
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of naphthalene ring twisting ( $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\Delta\\theta\\approx8^{\\circ}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          700.13,
+          292.89,
+          712.073
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$). $ ^{[11]} $ Despite the similar $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\Delta\\theta\\approx6^{\\circ}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          712.073,
+          292.89,
+          724.016
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$ value, the first exchange in 2 is not selective.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          724.016,
+          292.89,
+          735.959
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "It is very tempting to assume that out,out-conformation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          735.959,
+          292.89,
+          747.902
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of amino groups facilitates the coordination of the lithium atom in ortho-position, thus bringing thermodynamic stabilization. However, the optimized geometry of 12b",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-60",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 2,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-60",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 2,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.01,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 2,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "It should be noted here that the first bromine–lithium exchange in 1 occurs selectively in para-position due to the coordination of the lithium atom to the peri-bromine atom, resulting in a significant decrease of naphthalene ring twisting ( $ \\Delta\\theta\\approx8^{\\circ} $). $ ^{[11]} $ Despite the similar $ \\Delta\\theta\\approx6^{\\circ} $ value, the first exchange in 2 is not selective. It is very tempting to assume that out,out-conformation of amino groups facilitates the coordination of the lithium atom in ortho-position, thus bringing thermodynamic stabilization. However, the optimized geometry of 12b",
+    "mixed_original_protected_source_text": "It should be noted here that the first bromine–lithium exchange in 1 occurs selectively in para-position due to the coordination of the lithium atom to the peri-bromine atom, resulting in a significant decrease of naphthalene ring twisting ( $ \\Delta\\theta\\approx8^{\\circ} $). $ ^{[11]} $ Despite the similar $ \\Delta\\theta\\approx6^{\\circ} $ value, the first exchange in 2 is not selective. It is very tempting to assume that out,out-conformation of amino groups facilitates the coordination of the lithium atom in ortho-position, thus bringing thermodynamic stabilization. However, the optimized geometry of 12b",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-review-1001",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p004-b007",
+      "p004-b008"
+    ],
+    "translation_unit_protected_source_text": "It should be noted here that the first bromine–lithium exchange in 1 occurs selectively in para-position due to the coordination of the lithium atom to the peri-bromine atom, resulting in a significant decrease of naphthalene ring twisting ( $ \\Delta\\theta\\approx8^{\\circ} $). $ ^{[11]} $ Despite the similar $ \\Delta\\theta\\approx6^{\\circ} $ value, the first exchange in 2 is not selective. It is very tempting to assume that out,out-conformation of amino groups facilitates the coordination of the lithium atom in ortho-position, thus bringing thermodynamic stabilization. However, the optimized geometry of 12b (Figure 5) demonstrates no such coordination – neither in the presence nor the absence of the toluene saturating coordination demands of lithium. Moreover, the visualization of electron localization function (ELF) and NBO-analysis clearly demonstrate that a lone pair of N2 atom is involved in the conjugation with the aromatic system and effectively interacts with C–C anti-bonding $ \\sigma^{*} $ orbitals: the energy of this interaction for the N2 orbital is 27.8 kcal/mol and for N1 orbital is 11.2 kcal/mol (Figures 3 and 6).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "这里需要注意的是，由于锂原子与周位溴原子配位，导致萘环扭曲显著减小（$\\Delta\\theta\\approx8^{\\circ}$），因此化合物1中首次溴-锂交换选择性地在邻位发生$^{[11]}$。尽管$\\Delta\\theta\\approx6^{\\circ}$值类似，但化合物2中的首次交换并不具有选择性。人们很容易假设氨基的外-外构象有利于锂原子在邻位的配位，从而带来热力学稳定化。然而，12b的优化几何结构（图5）显示不存在这种配位——无论是否存在满足锂配位需求的甲苯。此外，电子局域化函数（ELF）和NBO分析的可视化清晰地表明，N2原子的孤对电子参与芳香体系的共轭，并与C–C反键$\\sigma^{*}$轨道有效相互作用:N2轨道的相互作用能为27.8 kcal/mol，N1轨道为11.2 kcal/mol（图3和图6）。",
+    "translation_unit_translated_text": "这里需要注意的是，由于锂原子与周位溴原子配位，导致萘环扭曲显著减小（$\\Delta\\theta\\approx8^{\\circ}$），因此化合物1中首次溴-锂交换选择性地在邻位发生$^{[11]}$。尽管$\\Delta\\theta\\approx6^{\\circ}$值类似，但化合物2中的首次交换并不具有选择性。人们很容易假设氨基的外-外构象有利于锂原子在邻位的配位，从而带来热力学稳定化。然而，12b的优化几何结构（图5）显示不存在这种配位——无论是否存在满足锂配位需求的甲苯。此外，电子局域化函数（ELF）和NBO分析的可视化清晰地表明，N2原子的孤对电子参与芳香体系的共轭，并与C–C反键$\\sigma^{*}$轨道有效相互作用:N2轨道的相互作用能为27.8 kcal/mol，N1轨道为11.2 kcal/mol（图3和图6）。",
+    "protected_translated_text": "这里需要注意的是，由于锂原子与周位溴原子配位，导致萘环扭曲显著减小（$\\Delta\\theta\\approx8^{\\circ}$），因此化合物1中首次溴-锂交换选择性地在邻位发生$^{[11]}$。尽管$\\Delta\\theta\\approx6^{\\circ}$值类似，但化合物2中的首次交换并不具有选择性。人们很容易假设氨基的外-外构象有利于锂原子在邻位的配位，从而带来热力学稳定化。然而，12b的优化几何结构（图5）显示不存",
+    "translated_text": "这里需要注意的是，由于锂原子与周位溴原子配位，导致萘环扭曲显著减小（$\\Delta\\theta\\approx8^{\\circ}$），因此化合物1中首次溴-锂交换选择性地在邻位发生$^{[11]}$。尽管$\\Delta\\theta\\approx6^{\\circ}$值类似，但化合物2中的首次交换并不具有选择性。人们很容易假设氨基的外-外构象有利于锂原子在邻位的配位，从而带来热力学稳定化。然而，12b的优化几何结构（图5）显示不存",
+    "continuation_group": "cg-review-1001",
+    "continuation_prev_text": "",
+    "continuation_next_text": "(Figure 5) demonstrates no such coordination – neither in the presence nor the absence of the toluene saturating coordination demands of lithium. Moreover, the visualization of electron localization function (ELF) and NBO-analysis clearly demonstrate that a lone pair of N2 atom is involved in the conjugation with the aromatic system and effectively interacts with C–C anti-bonding $ \\sigma^{*} $ orbitals: the energy of this interaction for the N2 orbital is 27.8 kcal/mol and for N1 orbital is 11.2 kcal/mol (Figures 3 and 6).",
+    "continuation_decision": "review_joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "It should be noted here that the first bromine–lithium exchange in 1 occurs selectively in para-position due to the coordination of the lithium atom to the peri-bromine atom, resulting in a significant decrease of naphthalene ring twisting ( $ \\Delta\\theta\\approx8^{\\circ} $). $ ^{[11]} $ Despite the similar $ \\Delta\\theta\\approx6^{\\circ} $ value, the first exchange in 2 is not selective. It is very tempting to assume that out,out-conformation of amino groups facilitates the coordination of the lithium atom in ortho-position, thus bringing thermodynamic stabilization. However, the optimized geometry of 12b (Figure 5) demonstrates no such coordination – neither in the presence nor the absence of the toluene saturating coordination demands of lithium. Moreover, the visualization of electron localization function (ELF) and NBO-analysis clearly demonstrate that a lone pair of N2 atom is involved in the conjugation with the aromatic system and effectively interacts with C–C anti-bonding $ \\sigma^{*} $ orbitals: the energy of this interaction for the N2 orbital is 27.8 kcal/mol and for N1 orbital is 11.2 kcal/mol (Figures 3 and 6).",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "这里需要注意的是，由于锂原子与周位溴原子配位，导致萘环扭曲显著减小（$\\Delta\\theta\\approx8^{\\circ}$），因此化合物1中首次溴-锂交换选择性地在邻位发生$^{[11]}$。尽管$\\Delta\\theta\\approx6^{\\circ}$值类似，但化合物2中的首次交换并不具有选择性。人们很容易假设氨基的外-外构象有利于锂原子在邻位的配位，从而带来热力学稳定化。然而，12b的优化几何结构（图5）显示不存在这种配位——无论是否存在满足锂配位需求的甲苯。此外，电子局域化函数（ELF）和NBO分析的可视化清晰地表明，N2原子的孤对电子参与芳香体系的共轭，并与C–C反键$\\sigma^{*}$轨道有效相互作用:N2轨道的相互作用能为27.8 kcal/mol，N1轨道为11.2 kcal/mol（图3和图6）。",
+    "group_translated_text": "这里需要注意的是，由于锂原子与周位溴原子配位，导致萘环扭曲显著减小（$\\Delta\\theta\\approx8^{\\circ}$），因此化合物1中首次溴-锂交换选择性地在邻位发生$^{[11]}$。尽管$\\Delta\\theta\\approx6^{\\circ}$值类似，但化合物2中的首次交换并不具有选择性。人们很容易假设氨基的外-外构象有利于锂原子在邻位的配位，从而带来热力学稳定化。然而，12b的优化几何结构（图5）显示不存在这种配位——无论是否存在满足锂配位需求的甲苯。此外，电子局域化函数（ELF）和NBO分析的可视化清晰地表明，N2原子的孤对电子参与芳香体系的共轭，并与C–C反键$\\sigma^{*}$轨道有效相互作用:N2轨道的相互作用能为27.8 kcal/mol，N1轨道为11.2 kcal/mol（图3和图6）。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p004-b007",
+      "page_idx": 3,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Scheme 3. Possible pathways of the step-by-step bromine—lithium exchange in 2. Experimentally observed species are marked with blue. / bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b.",
+    "translation_context_after": "(Figure 5) demonstrates no such coordination – neither in the presence nor the absence of the toluene saturating coordination demands of lithium. Moreover, the visualization of electron localization function (ELF) and NBO-analysis clearly demonstrate that a lone pair of N2 atom is involved in the conjugation with the aromatic system and effectively interact..."
+  },
+  {
+    "item_id": "p004-b008",
+    "page_idx": 3,
+    "block_idx": 8,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 8,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      616.419,
+      550.793,
+      723.405
+    ],
+    "source_text": "(Figure 5) demonstrates no such coordination – neither in the presence nor the absence of the toluene saturating coordination demands of lithium. Moreover, the visualization of electron localization function (ELF) and NBO-analysis clearly demonstrate that a lone pair of N2 atom is involved in the conjugation with the aromatic system and effectively interacts with C–C anti-bonding $ \\sigma^{*} $ orbitals: the energy of this interaction for the N2 orbital is 27.8 kcal/mol and for N1 orbital is 11.2 kcal/mol (Figures 3 and 6).",
+    "source_line_texts": [
+      "(Figure 5) demonstrates no such coordination – neither in",
+      "the presence nor the absence of the toluene saturating coordination",
+      "demands of lithium. Moreover, the visualization of electron",
+      "localization function (ELF) and NBO-analysis clearly demonstrate",
+      "that a lone pair of N2 atom is involved in the conjugation",
+      "with the aromatic system and effectively interacts with",
+      "C–C anti-bonding $ \\sigma^{*} $ orbitals: the energy of",
+      "this interaction for the N2 orbital is 27.8 kcal/mol and for N1 orbital is 11.2 kcal/mol (Figures 3 and 6)."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          616.419,
+          550.793,
+          628.306
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(Figure 5) demonstrates no such coordination – neither",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          628.306,
+          550.793,
+          640.194
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "in the presence nor the absence of the toluene saturating",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          640.194,
+          550.793,
+          652.081
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "coordination demands of lithium. Moreover, the visualization",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          652.081,
+          550.793,
+          663.968
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of electron localization function (ELF) and NBO-analysis",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          663.968,
+          550.793,
+          675.856
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "clearly demonstrate that a lone pair of N2 atom",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          675.856,
+          550.793,
+          687.743
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "is involved in the conjugation with the aromatic",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          687.743,
+          550.793,
+          699.63
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "system and effectively interacts with C–C anti-bonding",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          699.63,
+          550.793,
+          711.518
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\sigma^{*}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ orbitals: the energy of this interaction",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          711.518,
+          550.793,
+          723.405
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "for the N2 orbital is 27.8 kcal/mol and for N1 orbital is 11.2 kcal/mol (Figures 3 and 6).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-61",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 3,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-61",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 3,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.01,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 2,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "(Figure 5) demonstrates no such coordination – neither in the presence nor the absence of the toluene saturating coordination demands of lithium. Moreover, the visualization of electron localization function (ELF) and NBO-analysis clearly demonstrate that a lone pair of N2 atom is involved in the conjugation with the aromatic system and effectively interacts with C–C anti-bonding $ \\sigma^{*} $ orbitals: the energy of this interaction for the N2 orbital is 27.8 kcal/mol and for N1 orbital is 11.2 kcal/mol (Figures 3 and 6).",
+    "mixed_original_protected_source_text": "(Figure 5) demonstrates no such coordination – neither in the presence nor the absence of the toluene saturating coordination demands of lithium. Moreover, the visualization of electron localization function (ELF) and NBO-analysis clearly demonstrate that a lone pair of N2 atom is involved in the conjugation with the aromatic system and effectively interacts with C–C anti-bonding $ \\sigma^{*} $ orbitals: the energy of this interaction for the N2 orbital is 27.8 kcal/mol and for N1 orbital is 11.2 kcal/mol (Figures 3 and 6).",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-review-1001",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p004-b007",
+      "p004-b008"
+    ],
+    "translation_unit_protected_source_text": "It should be noted here that the first bromine–lithium exchange in 1 occurs selectively in para-position due to the coordination of the lithium atom to the peri-bromine atom, resulting in a significant decrease of naphthalene ring twisting ( $ \\Delta\\theta\\approx8^{\\circ} $). $ ^{[11]} $ Despite the similar $ \\Delta\\theta\\approx6^{\\circ} $ value, the first exchange in 2 is not selective. It is very tempting to assume that out,out-conformation of amino groups facilitates the coordination of the lithium atom in ortho-position, thus bringing thermodynamic stabilization. However, the optimized geometry of 12b (Figure 5) demonstrates no such coordination – neither in the presence nor the absence of the toluene saturating coordination demands of lithium. Moreover, the visualization of electron localization function (ELF) and NBO-analysis clearly demonstrate that a lone pair of N2 atom is involved in the conjugation with the aromatic system and effectively interacts with C–C anti-bonding $ \\sigma^{*} $ orbitals: the energy of this interaction for the N2 orbital is 27.8 kcal/mol and for N1 orbital is 11.2 kcal/mol (Figures 3 and 6).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "这里需要注意的是，由于锂原子与周位溴原子配位，导致萘环扭曲显著减小（$\\Delta\\theta\\approx8^{\\circ}$），因此化合物1中首次溴-锂交换选择性地在邻位发生$^{[11]}$。尽管$\\Delta\\theta\\approx6^{\\circ}$值类似，但化合物2中的首次交换并不具有选择性。人们很容易假设氨基的外-外构象有利于锂原子在邻位的配位，从而带来热力学稳定化。然而，12b的优化几何结构（图5）显示不存在这种配位——无论是否存在满足锂配位需求的甲苯。此外，电子局域化函数（ELF）和NBO分析的可视化清晰地表明，N2原子的孤对电子参与芳香体系的共轭，并与C–C反键$\\sigma^{*}$轨道有效相互作用:N2轨道的相互作用能为27.8 kcal/mol，N1轨道为11.2 kcal/mol（图3和图6）。",
+    "translation_unit_translated_text": "这里需要注意的是，由于锂原子与周位溴原子配位，导致萘环扭曲显著减小（$\\Delta\\theta\\approx8^{\\circ}$），因此化合物1中首次溴-锂交换选择性地在邻位发生$^{[11]}$。尽管$\\Delta\\theta\\approx6^{\\circ}$值类似，但化合物2中的首次交换并不具有选择性。人们很容易假设氨基的外-外构象有利于锂原子在邻位的配位，从而带来热力学稳定化。然而，12b的优化几何结构（图5）显示不存在这种配位——无论是否存在满足锂配位需求的甲苯。此外，电子局域化函数（ELF）和NBO分析的可视化清晰地表明，N2原子的孤对电子参与芳香体系的共轭，并与C–C反键$\\sigma^{*}$轨道有效相互作用:N2轨道的相互作用能为27.8 kcal/mol，N1轨道为11.2 kcal/mol（图3和图6）。",
+    "protected_translated_text": "在这种配位——无论是否存在满足锂配位需求的甲苯。此外，电子局域化函数（ELF）和NBO分析的可视化清晰地表明，N2原子的孤对电子参与芳香体系的共轭，并与C–C反键$\\sigma^{*}$轨道有效相互作用:N2轨道的相互作用能为27.8 kcal/mol，N1轨道为11.2 kcal/mol（图3和图6）。",
+    "translated_text": "在这种配位——无论是否存在满足锂配位需求的甲苯。此外，电子局域化函数（ELF）和NBO分析的可视化清晰地表明，N2原子的孤对电子参与芳香体系的共轭，并与C–C反键$\\sigma^{*}$轨道有效相互作用:N2轨道的相互作用能为27.8 kcal/mol，N1轨道为11.2 kcal/mol（图3和图6）。",
+    "continuation_group": "cg-review-1001",
+    "continuation_prev_text": "It should be noted here that the first bromine–lithium exchange in 1 occurs selectively in para-position due to the coordination of the lithium atom to the peri-bromine atom, resulting in a significant decrease of naphthalene ring twisting ( $ \\Delta\\theta\\approx8^{\\circ} $). $ ^{[11]} $ Despite the similar $ \\Delta\\theta\\approx6^{\\circ} $ value, the first exchange in 2 is not selective. It is very tempting to assume that out,out-conformation of amino groups facilitates the coordination of the lithium atom in ortho-position, thus bringing thermodynamic stabilization. However, the optimized geometry of 12b",
+    "continuation_next_text": "",
+    "continuation_decision": "review_joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "It should be noted here that the first bromine–lithium exchange in 1 occurs selectively in para-position due to the coordination of the lithium atom to the peri-bromine atom, resulting in a significant decrease of naphthalene ring twisting ( $ \\Delta\\theta\\approx8^{\\circ} $). $ ^{[11]} $ Despite the similar $ \\Delta\\theta\\approx6^{\\circ} $ value, the first exchange in 2 is not selective. It is very tempting to assume that out,out-conformation of amino groups facilitates the coordination of the lithium atom in ortho-position, thus bringing thermodynamic stabilization. However, the optimized geometry of 12b (Figure 5) demonstrates no such coordination – neither in the presence nor the absence of the toluene saturating coordination demands of lithium. Moreover, the visualization of electron localization function (ELF) and NBO-analysis clearly demonstrate that a lone pair of N2 atom is involved in the conjugation with the aromatic system and effectively interacts with C–C anti-bonding $ \\sigma^{*} $ orbitals: the energy of this interaction for the N2 orbital is 27.8 kcal/mol and for N1 orbital is 11.2 kcal/mol (Figures 3 and 6).",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "这里需要注意的是，由于锂原子与周位溴原子配位，导致萘环扭曲显著减小（$\\Delta\\theta\\approx8^{\\circ}$），因此化合物1中首次溴-锂交换选择性地在邻位发生$^{[11]}$。尽管$\\Delta\\theta\\approx6^{\\circ}$值类似，但化合物2中的首次交换并不具有选择性。人们很容易假设氨基的外-外构象有利于锂原子在邻位的配位，从而带来热力学稳定化。然而，12b的优化几何结构（图5）显示不存在这种配位——无论是否存在满足锂配位需求的甲苯。此外，电子局域化函数（ELF）和NBO分析的可视化清晰地表明，N2原子的孤对电子参与芳香体系的共轭，并与C–C反键$\\sigma^{*}$轨道有效相互作用:N2轨道的相互作用能为27.8 kcal/mol，N1轨道为11.2 kcal/mol（图3和图6）。",
+    "group_translated_text": "这里需要注意的是，由于锂原子与周位溴原子配位，导致萘环扭曲显著减小（$\\Delta\\theta\\approx8^{\\circ}$），因此化合物1中首次溴-锂交换选择性地在邻位发生$^{[11]}$。尽管$\\Delta\\theta\\approx6^{\\circ}$值类似，但化合物2中的首次交换并不具有选择性。人们很容易假设氨基的外-外构象有利于锂原子在邻位的配位，从而带来热力学稳定化。然而，12b的优化几何结构（图5）显示不存在这种配位——无论是否存在满足锂配位需求的甲苯。此外，电子局域化函数（ELF）和NBO分析的可视化清晰地表明，N2原子的孤对电子参与芳香体系的共轭，并与C–C反键$\\sigma^{*}$轨道有效相互作用:N2轨道的相互作用能为27.8 kcal/mol，N1轨道为11.2 kcal/mol（图3和图6）。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p004-b008",
+      "page_idx": 3,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "bromine—lithium exchange in 2 is not selective and leads to the formation of both possible products 12b and 4b. / It should be noted here that the first bromine–lithium exchange in 1 occurs selectively in para-position due to the coordination of the lithium atom to the peri-bromine atom, resulting in a significant decrease of naphthalene ring twisting ( $ \\...",
+    "translation_context_after": "Altogether, the exchange of bromine in ortho-position leads to the formation of 12b and removes steric pressure on the / Figure 5. Optimized geometries of studied lithiated species – B3LYP–D3/6-311 + + G(d,p). $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ values are given. Hydrogen atoms are omitted for clarity."
+  },
+  {
+    "item_id": "p004-b009",
+    "page_idx": 3,
+    "block_idx": 9,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 9,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      724.405,
+      550.793,
+      747.902
+    ],
+    "source_text": "Altogether, the exchange of bromine in ortho-position leads to the formation of 12b and removes steric pressure on the",
+    "source_line_texts": [
+      "Altogether, the exchange of bromine in ortho-position leads",
+      "to the formation of 12b and removes steric pressure on the"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          724.405,
+          550.793,
+          747.902
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Altogether, the exchange of bromine in ortho-position leads to the formation of 12b and removes steric pressure on the",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-62",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 4,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-62",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 4,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.01,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 2,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Altogether, the exchange of bromine in ortho-position leads to the formation of 12b and removes steric pressure on the",
+    "mixed_original_protected_source_text": "Altogether, the exchange of bromine in ortho-position leads to the formation of 12b and removes steric pressure on the",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-004-004",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p004-b009",
+      "p005-b007"
+    ],
+    "translation_unit_protected_source_text": "Altogether, the exchange of bromine in ortho-position leads to the formation of 12b and removes steric pressure on the neighboring amino group. This allows its effective conjugation, which successfully competes with the planarization of the naphthalene ring and the coordination of bromine to lithium in the case of 4b formation.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "总之，邻位溴的交换导致12b的形成，并消除了相邻氨基上的空间位阻。这使得其有效共轭成为可能，从而成功与萘环的平面化以及在4b形成情况下溴与锂的配位相竞争。",
+    "translation_unit_translated_text": "总之，邻位溴的交换导致12b的形成，并消除了相邻氨基上的空间位阻。这使得其有效共轭成为可能，从而成功与萘环的平面化以及在4b形成情况下溴与锂的配位相竞争。",
+    "protected_translated_text": "总之，邻位溴的交换导致12b的形成，并消除了相邻氨基上的",
+    "translated_text": "总之，邻位溴的交换导致12b的形成，并消除了相邻氨基上的",
+    "continuation_group": "cg-004-004",
+    "continuation_prev_text": "",
+    "continuation_next_text": "neighboring amino group. This allows its effective conjugation, which successfully competes with the planarization of the naphthalene ring and the coordination of bromine to lithium in the case of 4b formation.",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Altogether, the exchange of bromine in ortho-position leads to the formation of 12b and removes steric pressure on the neighboring amino group. This allows its effective conjugation, which successfully competes with the planarization of the naphthalene ring and the coordination of bromine to lithium in the case of 4b formation.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "总之，邻位溴的交换导致12b的形成，并消除了相邻氨基上的空间位阻。这使得其有效共轭成为可能，从而成功与萘环的平面化以及在4b形成情况下溴与锂的配位相竞争。",
+    "group_translated_text": "总之，邻位溴的交换导致12b的形成，并消除了相邻氨基上的空间位阻。这使得其有效共轭成为可能，从而成功与萘环的平面化以及在4b形成情况下溴与锂的配位相竞争。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p004-b009",
+      "page_idx": 3,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "It should be noted here that the first bromine–lithium exchange in 1 occurs selectively in para-position due to the coordination of the lithium atom to the peri-bromine atom, resulting in a significant decrease of naphthalene ring twisting ( $ \\Delta\\theta\\approx8^{\\circ} $). $ ^{[11]} $ Despite the similar $ \\Delta\\theta\\approx6^{\\circ} $ value, the first...",
+    "translation_context_after": "Figure 5. Optimized geometries of studied lithiated species – B3LYP–D3/6-311 + + G(d,p). $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ values are given. Hydrogen atoms are omitted for clarity. / Figure 6. Natural bond orbitals (NBO) for 12b·Tol. Overlapping of lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (left), lone pair of N1 nitrogen and C–C an..."
+  }
+]

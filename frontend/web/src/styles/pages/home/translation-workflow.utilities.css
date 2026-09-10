@@ -1,0 +1,332 @@
+/* 翻译工作流对话框 / 页码范围 / 术语表字段（从 components.utilities 拆出） */
+
+@utility translation-workflow-dialog {
+  /* 定位、尺寸、层级、遮罩与圆角由共享 AppDialog 负责；此处只保留
+     两种业务模式需要的高度和显隐规则。 */
+  max-height: min(720px, calc(100vh - 24px));
+  max-height: min(720px, calc(100dvh - 24px));
+  overflow: hidden;
+
+  &.is-status-mode {
+    --status-card-scale: 1;
+    height: min(560px, calc(100vh - 24px));
+    height: min(560px, calc(100dvh - 24px));
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+
+  &.is-status-mode .translation-workflow-card {
+    display: none;
+  }
+
+  &.is-upload-mode .translation-status-panel {
+    display: none;
+  }
+
+}
+
+@utility translation-workflow-shell {
+  /* 只负责上传卡/状态卡的两行网格，视觉壳由 AppDialog 提供。 */
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+}
+
+
+@utility is-status-mode {
+  /* 阶段 C(shadcn 改造):这里的 &.translation-workflow-dialog 尺寸覆盖已经
+     和上面 @utility translation-workflow-dialog 内部的 &.is-status-mode
+     规则重复(两处历史遗留的重复工具类声明,阶段 C 之前就存在),尺寸部分统一
+     只保留一份(上面那份),这里只留 .translation-workflow-card 的隐藏规则,
+     避免两份尺寸声明将来改一处忘改另一处。 */
+  &.translation-workflow-dialog .translation-workflow-card {
+    display: none;
+  }
+}
+
+
+@utility translation-status-panel {
+  display: grid;
+  align-self: stretch;
+  justify-self: stretch;
+  place-items: stretch;
+  --status-card-width: 100%;
+  --status-body-gap: 11px;
+  --status-body-padding: 14px;
+  --status-head-height: 30px;
+  --status-button-height: 32px;
+  --status-button-padding: 13px;
+  --status-button-font-size: 12px;
+  --status-head-btn-height: var(--status-button-height);
+  --status-head-btn-padding: var(--status-button-padding);
+  --status-head-btn-font-size: var(--status-button-font-size);
+  --status-label-font-size: 12px;
+  --status-elapsed-font-size: 10px;
+  --status-stage-flow-gap: 7px;
+  --status-stage-step-height: 26px;
+  --status-stage-step-font-size: 11px;
+  --status-animation-column-width: 128px;
+  --status-animation-column-height: 108px;
+  --status-progress-hero-height: 210px;
+  --status-progress-hero-min-height: 210px;
+  --status-progress-hero-gap: 24px;
+  --status-progress-hero-row-gap: 14px;
+  --status-progress-hero-padding: 24px;
+  --status-progress-hero-inline-padding: 34px;
+  --status-ring-column-width: 128px;
+  --status-progress-ring-size: 104px;
+  --status-progress-ring-track-width: 9px;
+  --status-progress-ring-indicator-width: 9px;
+  --status-progress-ring-font-size: 20px;
+  --status-animation-size: 104px;
+  --status-lottie-size: 104px;
+  --status-spinner-size: 72px;
+  --status-progress-meta-font-size: 13px;
+  --status-value-max-width: 340px;
+  --status-value-font-size: 20px;
+  --status-detail-max-width: 360px;
+  --status-detail-font-size: 14px;
+  --status-substage-font-size: 10px;
+  --status-progress-min-height: 24px;
+  --status-progress-gap: 5px;
+  --status-progress-track-height: 5px;
+  --status-progress-text-font-size: 13px;
+  --status-retry-min-height: 24px;
+  --status-retry-slot-height: var(--status-button-height);
+  --status-retry-btn-min-height: var(--status-button-height);
+  --status-retry-btn-padding: var(--status-button-padding);
+  --status-retry-btn-font-size: var(--status-button-font-size);
+  --status-actions-gap: 7px;
+  --status-actions-min-height: 38px;
+  --status-action-btn-min-height: var(--status-button-height);
+  --status-action-btn-padding: var(--status-button-padding);
+  --status-action-btn-font-size: var(--status-button-font-size);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--paper);
+
+  & > job-status-card {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--paper);
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  &.hidden {
+    display: none;
+  }
+
+  .translation-workflow-dialog.is-upload-mode & {
+    display: none;
+  }
+}
+
+
+@utility translation-workflow-card {
+  .translation-workflow-dialog.is-status-mode & {
+    display: none;
+  }
+}
+
+
+@utility is-upload-mode {
+  &.translation-workflow-dialog .translation-status-panel {
+    display: none;
+  }
+}
+
+
+@utility translation-workflow-open {
+  &html {
+    overflow: hidden;
+  }
+
+  & html body {
+    overflow: hidden;
+  }
+}
+
+
+@utility translation-workflow-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 18px;
+  border-bottom: 1px solid var(--line);
+
+  & h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  &.is-upload-head {
+    min-height: 50px;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 8px 12px;
+    border-bottom: 0;
+  }
+}
+
+@utility translation-workflow-head-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+@utility translation-options-panel {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg) 58%, var(--paper));
+}
+
+@utility translation-options-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  & h3 {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  & p {
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+}
+
+@utility translation-options-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+@utility translation-options-range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+
+  & legend {
+    grid-column: 1 / -1;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 8px;
+    padding: 0;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  & div {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  & label {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  & input {
+    width: 100%;
+    height: 42px;
+    min-height: 42px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 13px;
+    text-align: center;
+    box-shadow: none;
+  }
+}
+
+@utility translation-options-range-separator {
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  color: var(--muted);
+}
+
+@utility translation-options-glossary {
+  display: grid;
+  align-content: end;
+  gap: 8px;
+  min-width: 0;
+
+  & span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  & select {
+    width: 100%;
+    height: 42px;
+    min-height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 0 12px;
+    box-shadow: none;
+    font-size: 14px;
+  }
+}
+
+@utility translation-options-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 620px) {
+  .translation-workflow-head {
+    padding: 18px 18px 16px;
+  }
+
+  .translation-options-grid {
+    grid-template-columns: 1fr;
+  }
+}

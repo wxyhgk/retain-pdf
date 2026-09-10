@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/public-document-operation/v1",
+  "title": "公开 PDF 文档操作契约",
+  "description": "services/api 面向浏览器的安全文档操作投影与 CAS action 契约。本契约描述成功响应的 data 载荷；内部 manifest、workspace、回执、原始错误和凭据不属于公开面。",
+  "base_path": "/api/v1/ai",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/conversations/:conversation_id/operations",
+      "query": "PublicDocumentOperationListQuery",
+      "output": "PublicDocumentOperationListView"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/operations/:operation_id",
+      "output": "PublicDocumentOperationView"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/operations/:operation_id/run",
+      "input": "PublicDocumentOperationActionInput",
+      "output": "PublicDocumentOperationView"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/operations/:operation_id/retry",
+      "input": "PublicDocumentOperationActionInput",
+      "output": "PublicDocumentOperationView"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/operations/:operation_id/cancel",
+      "input": "PublicDocumentOperationActionInput",
+      "output": "PublicDocumentOperationView"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/operations/:operation_id/commit",
+      "input": "PublicDocumentOperationActionInput",
+      "output": "PublicDocumentOperationView"
+    }
+  ],
+  "definitions": {
+    "DocumentOperationStatus": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "awaiting_confirmation",
+        "queued",
+        "running",
+        "validating",
+        "result_ready",
+        "committed",
+        "failed",
+        "cancelled",
+        "ambiguous"
+      ]
+    },
+    "PublicDocumentOperationAction": {
+      "type": "string",
+      "enum": ["run", "cancel", "commit", "retry"]
+    },
+    "PublicDocumentOperationListQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "serde query DTO；limit 进入服务后钳制到 1..100，offset 缺省为 0。",
+      "properties": {
+        "limit": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "default": 0
+        }
+      }
+    },
+    "PublicDocumentOperationActionInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "idempotency_key",
+        "expected_status",
+        "expected_attempt",
+        "expected_program_sha256"
+      ],
+      "properties": {
+        "schema": { "const": "document_operation_action_v1" },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^\\S+$"
+        },
+        "expected_status": { "$ref": "#/definitions/DocumentOperationStatus" },
+        "expected_attempt": { "type": "integer", "minimum": 1 },
+        "expected_program_sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "reason": { "type": "string", "default": "" },
+        "accept_duplicate_risk": { "type": "boolean", "default": false }
+      }
+    },
+    "SelectPagesStepView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "pages"],
+      "properties": {
+        "op": { "const": "select_pages" },
+        "pages": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "RotatePagesStepView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "pages", "degrees"],
+      "properties": {
+        "op": { "const": "rotate_pages" },
+        "pages": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "degrees": { "type": "integer", "enum": [90, 180, 270] }
+      }
+    },
+    "PublicDocumentOperationPlanStepView": {
+      "oneOf": [
+        { "$ref": "#/definitions/SelectPagesStepView" },
+        { "$ref": "#/definitions/RotatePagesStepView" }
+      ]
+    },
+    "PublicDocumentOperationEventView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seq", "attempt", "ts", "event", "status"],
+      "properties": {
+        "seq": { "type": "integer", "minimum": 0 },
+        "attempt": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string" },
+        "event": { "type": "string" },
+        "status": { "$ref": "#/definitions/DocumentOperationStatus" }
+      }
+    },
+    "PublicDocumentOperationCandidateView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version_id", "status", "content_sha256", "url"],
+      "properties": {
+        "version_id": { "type": "string" },
+        "status": { "type": "string" },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "url": { "type": "string" }
+      }
+    },
+    "PublicDocumentOperationFailureCode": {
+      "type": "string",
+      "enum": [
+        "page_program_failed",
+        "candidate_validation_failed",
+        "executor_program_identity_mismatch",
+        "executor_visual_validation_missing",
+        "executor_wall_timeout",
+        "executor_process_missing",
+        "executor_receipt_missing",
+        "dispatch_outcome_unknown",
+        "document_operation_failed"
+      ]
+    },
+    "PublicDocumentOperationFailureView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": { "$ref": "#/definitions/PublicDocumentOperationFailureCode" },
+        "message": { "type": "string" },
+        "retryable": { "const": true }
+      }
+    },
+    "PublicDocumentOperationView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "operation_id",
+        "conversation_id",
+        "request_message_id",
+        "document_id",
+        "intent_summary",
+        "plan_steps",
+        "affected_pages",
+        "status",
+        "current_attempt",
+        "program_sha256",
+        "candidate_available",
+        "candidate",
+        "failure",
+        "latest_event_seq",
+        "allowed_actions",
+        "events",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "schema": { "const": "public_document_operation_v1" },
+        "operation_id": { "type": "string" },
+        "conversation_id": { "type": ["string", "null"] },
+        "request_message_id": { "type": "string" },
+        "document_id": { "type": "string" },
+        "intent_summary": { "type": "string" },
+        "plan_steps": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PublicDocumentOperationPlanStepView" }
+        },
+        "affected_pages": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "uniqueItems": true
+        },
+        "status": { "$ref": "#/definitions/DocumentOperationStatus" },
+        "current_attempt": { "type": "integer", "minimum": 1 },
+        "program_sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "candidate_available": { "type": "boolean" },
+        "candidate": {
+          "oneOf": [
+            { "$ref": "#/definitions/PublicDocumentOperationCandidateView" },
+            { "type": "null" }
+          ]
+        },
+        "failure": {
+          "oneOf": [
+            { "$ref": "#/definitions/PublicDocumentOperationFailureView" },
+            { "type": "null" }
+          ]
+        },
+        "latest_event_seq": { "type": "integer", "minimum": 0 },
+        "allowed_actions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PublicDocumentOperationAction" },
+          "uniqueItems": true
+        },
+        "events": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PublicDocumentOperationEventView" }
+        },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" }
+      }
+    },
+    "PublicDocumentOperationListView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operations", "total", "limit", "offset", "has_more"],
+      "properties": {
+        "operations": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PublicDocumentOperationView" }
+        },
+        "total": { "type": "integer", "minimum": 0 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "offset": { "type": "integer", "minimum": 0 },
+        "has_more": { "type": "boolean" }
+      }
+    }
+  }
+}

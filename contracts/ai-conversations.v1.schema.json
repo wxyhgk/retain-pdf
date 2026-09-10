@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/ai-conversations/v1",
+  "title": "AI 会话 CRUD 契约",
+  "description": "会话与消息树（parent_id 分支 / head_id 可见叶）的单一真值。生产者：services/api（SQLite 唯一写者，library conversation service）。消费者：services/ai/retainpdf_ai/rust_client.py 与 apps/web/packages API。改契约必须同步上游 schema、后端镜像、生产者和消费者测试。所有响应采用 {code, message, data} 信封，code=0 成功；本契约描述 data 部分。",
+  "base_path": "/api/v1/ai/conversations",
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/conversations",
+      "input": "CreateConversationInput",
+      "output": "ConversationRecord"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/conversations",
+      "query": "ListConversationsQuery",
+      "output": "ConversationListView"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/conversations/:conversation_id",
+      "output": "ConversationDetailView"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/ai/conversations/:conversation_id",
+      "input": "PatchConversationInput",
+      "output": "ConversationRecord"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/ai/conversations/:conversation_id",
+      "output": "ConversationMutationResult"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/conversations/:conversation_id/messages",
+      "input": "AppendMessageInput",
+      "output": "MessageRecord"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/conversations/fork",
+      "input": "ForkConversationInput",
+      "output": "ConversationDetailView"
+    }
+  ],
+  "definitions": {
+    "ConversationRecord": {
+      "type": "object",
+      "required": [
+        "conversation_id",
+        "title",
+        "document_id",
+        "created_at",
+        "updated_at",
+        "message_count",
+        "head_id"
+      ],
+      "properties": {
+        "conversation_id": { "type": "string" },
+        "title": { "type": "string" },
+        "document_id": {
+          "type": ["string", "null"],
+          "description": "null = 全库会话（不绑定单文档）"
+        },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" },
+        "message_count": { "type": "integer" },
+        "head_id": {
+          "type": "string",
+          "description": "当前可见分支的叶消息 id；空字符串 = 未显式设置（用 max(seq) 推断）"
+        }
+      }
+    },
+    "MessageRecord": {
+      "type": "object",
+      "required": [
+        "message_id",
+        "conversation_id",
+        "seq",
+        "role",
+        "content",
+        "citations_json",
+        "tool_trace_json",
+        "model",
+        "created_at",
+        "parent_id"
+      ],
+      "properties": {
+        "message_id": { "type": "string" },
+        "conversation_id": { "type": "string" },
+        "seq": { "type": "integer" },
+        "role": { "type": "string", "enum": ["user", "assistant"] },
+        "content": { "type": "string" },
+        "citations_json": {
+          "type": "string",
+          "description": "软锚点快照（ai-ask.v1 Citation 数组的 JSON 字符串）；job 删除后跳转失效但内容不丢"
+        },
+        "tool_trace_json": { "type": "string" },
+        "model": { "type": "string" },
+        "created_at": { "type": "string" },
+        "parent_id": {
+          "type": "string",
+          "description": "树边；空字符串 = 根。同 parent 多条 = 分支兄弟（重试/编辑）"
+        }
+      }
+    },
+    "ConversationListView": {
+      "type": "object",
+      "required": ["conversations", "total", "limit", "offset", "has_more"],
+      "properties": {
+        "conversations": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ConversationRecord" }
+        },
+        "total": { "type": "integer", "minimum": 0 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 200 },
+        "offset": { "type": "integer", "minimum": 0 },
+        "has_more": { "type": "boolean" }
+      }
+    },
+    "ConversationDetailView": {
+      "type": "object",
+      "description": "ConversationRecord 字段平铺（serde flatten）+ messages 全量（上限 2000）",
+      "flatten_of": "ConversationRecord",
+      "required": ["messages"],
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/MessageRecord" }
+        }
+      }
+    },
+    "ConversationMutationResult": {
+      "type": "object",
+      "required": ["deleted"],
+      "properties": { "deleted": { "type": "boolean" } }
+    },
+    "CreateConversationInput": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "title": { "type": "string", "default": "" },
+        "document_id": {
+          "type": "string",
+          "default": "",
+          "description": "空 = 全库会话；非空必须是已入库文档 id，否则 404"
+        }
+      }
+    },
+    "ListConversationsQuery": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "limit": { "type": "integer", "default": 50, "minimum": 1, "maximum": 200 },
+        "offset": { "type": "integer", "default": 0 },
+        "document_id": { "type": "string", "default": "", "description": "按文档过滤；空 = 全部" }
+      }
+    },
+    "PatchConversationInput": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "head_id": {
+          "type": "string",
+          "default": "",
+          "description": "切换可见分支叶节点；必须属于本会话，否则 400"
+        },
+        "title": { "type": "string", "default": "" }
+      }
+    },
+    "AppendMessageInput": {
+      "type": "object",
+      "required": ["role", "content"],
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "assistant"] },
+        "content": { "type": "string" },
+        "citations_json": { "type": "string", "default": "" },
+        "tool_trace_json": { "type": "string", "default": "" },
+        "model": { "type": "string", "default": "" },
+        "parent_id": {
+          "type": "string",
+          "default": "",
+          "description": "省略/空 = 挂到当前 head（线性续写）"
+        },
+        "message_id": {
+          "type": "string",
+          "default": "",
+          "description": "客户端稳定 id（与 assistant-ui store id 对齐）；空则服务端生成"
+        },
+        "set_head": {
+          "type": "boolean",
+          "default": true,
+          "description": "追加后是否把 head 指到本条"
+        }
+      }
+    },
+    "ForkMessageInput": {
+      "type": "object",
+      "required": ["role", "content"],
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "assistant"] },
+        "content": { "type": "string" },
+        "parent_id": { "type": "string", "default": "" },
+        "message_id": { "type": "string", "default": "" },
+        "citations_json": { "type": "string", "default": "" },
+        "tool_trace_json": { "type": "string", "default": "" },
+        "model": { "type": "string", "default": "" }
+      }
+    },
+    "ForkConversationInput": {
+      "type": "object",
+      "required": ["messages"],
+      "properties": {
+        "title": { "type": "string", "default": "" },
+        "document_id": { "type": "string", "default": "" },
+        "messages": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ForkMessageInput" },
+          "minItems": 1,
+          "description": "待复制的分支路径（根→叶，parent_id 已按新 id 重映射）"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1242 @@
+[
+  {
+    "item_id": "p010-b003",
+    "page_idx": 9,
+    "block_idx": 3,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "heading",
+    "semantic_role": "unknown",
+    "structure_role": "heading",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 3,
+    "raw_block_type": "paragraph_title",
+    "normalized_sub_type": "heading",
+    "bbox": [
+      43.983,
+      62.492,
+      169.436,
+      75.99
+    ],
+    "source_text": "Supporting Information",
+    "source_line_texts": [
+      "Supporting Information"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          62.492,
+          169.436,
+          75.99
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Supporting Information",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-162",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 1,
+        "confidence": 0.98
+      },
+      "structure_role": "heading",
+      "structure_group": "",
+      "pair_with": "",
+      "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose."
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-162",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 142.2,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Supporting Information",
+    "mixed_original_protected_source_text": "Supporting Information",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p010-b003",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p010-b003"
+    ],
+    "translation_unit_protected_source_text": "Supporting Information",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "支持信息",
+    "translation_unit_translated_text": "支持信息",
+    "protected_translated_text": "支持信息",
+    "translated_text": "支持信息",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p010-b003",
+      "page_idx": 9,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose.",
+    "translation_context_mode": "needed",
+    "translation_context_before": "¹H NMR (CDCl₃, 400 MHz): δ = 7.69–7.54 (m, 2H), 7.46 (dd, J=8.5, 7.6 Hz, 1H), 6.63 (d, J=7.6 Hz, 1H), 6.40 (d, J=8.2 Hz, 1H), 4.18 (s, 2H), 3.03 (s, 3H), 3.00 (s, 3H). ¹³C NMR (CDCl₃, 100 MHz): δ = 144.58, 144.29, 132.75, 130.54, 128.16, 116.74, 115.73, 110.42, 104.34, 103.80, 70.23, 37.04, 36.89. HRMS (ESI): m/z [M–H]⁺ calcd for C₁₃H₁₂BrN₂⁺: 275.0178, 277....",
+    "translation_context_after": "NMR spectra and X-ray data for obtained compounds can be found in the Supporting Information. / Deposition Numbers 2227277 (for 3), 2227276 (for 4a), 2252223 (for 17) contain the supplementary crystallographic data for this paper. These data are provided free of charge by the joint Cambridge Crystallographic Data Centre and Fachinformationszentrum Karlsruhe..."
+  },
+  {
+    "item_id": "p010-b004",
+    "page_idx": 9,
+    "block_idx": 4,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 4,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.983,
+      88.488,
+      291.89,
+      110.986
+    ],
+    "source_text": "NMR spectra and X-ray data for obtained compounds can be found in the Supporting Information.",
+    "source_line_texts": [
+      "NMR spectra and X-ray data for obtained compounds can be",
+      "found in the Supporting Information."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          88.488,
+          291.89,
+          110.986
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "NMR spectra and X-ray data for obtained compounds can be found in the Supporting Information.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-163",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 2,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-163",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 2,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 142.2,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "NMR spectra and X-ray data for obtained compounds can be found in the Supporting Information.",
+    "mixed_original_protected_source_text": "NMR spectra and X-ray data for obtained compounds can be found in the Supporting Information.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p010-b004",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p010-b004"
+    ],
+    "translation_unit_protected_source_text": "NMR spectra and X-ray data for obtained compounds can be found in the Supporting Information.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "所获化合物的 NMR 谱图和 X 射线数据见支持信息。",
+    "translation_unit_translated_text": "所获化合物的 NMR 谱图和 X 射线数据见支持信息。",
+    "protected_translated_text": "所获化合物的 NMR 谱图和 X 射线数据见支持信息。",
+    "translated_text": "所获化合物的 NMR 谱图和 X 射线数据见支持信息。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p010-b004",
+      "page_idx": 9,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p010-b005",
+    "page_idx": 9,
+    "block_idx": 5,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 5,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.983,
+      112.485,
+      291.89,
+      171.478
+    ],
+    "source_text": "Deposition Numbers 2227277 (for 3), 2227276 (for 4a), 2252223 (for 17) contain the supplementary crystallographic data for this paper. These data are provided free of charge by the joint Cambridge Crystallographic Data Centre and Fachinformationszentrum Karlsruhe Access Structures service.",
+    "source_line_texts": [
+      "Deposition Numbers 2227277 (for 3), 2227276 (for 4a), 2252223",
+      "(for 17) contain the supplementary crystallographic data",
+      "for this paper. These data are provided free of charge by",
+      "the joint Cambridge Crystallographic Data Centre and Fachinformationszentrum Karlsruhe Access Structures service."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          112.485,
+          291.89,
+          124.284
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Deposition Numbers 2227277 (for 3), 2227276 (for",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.983,
+          124.284,
+          291.89,
+          136.082
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "4a), 2252223 (for 17) contain the supplementary",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.983,
+          136.082,
+          291.89,
+          147.881
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "crystallographic data for this paper. These data",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.983,
+          147.881,
+          291.89,
+          159.679
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "are provided free of charge by the joint Cambridge",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.983,
+          159.679,
+          291.89,
+          171.478
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Crystallographic Data Centre and Fachinformationszentrum Karlsruhe Access Structures service.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-164",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 3,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-164",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 3,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 142.2,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Deposition Numbers 2227277 (for 3), 2227276 (for 4a), 2252223 (for 17) contain the supplementary crystallographic data for this paper. These data are provided free of charge by the joint Cambridge Crystallographic Data Centre and Fachinformationszentrum Karlsruhe Access Structures service.",
+    "mixed_original_protected_source_text": "Deposition Numbers 2227277 (for 3), 2227276 (for 4a), 2252223 (for 17) contain the supplementary crystallographic data for this paper. These data are provided free of charge by the joint Cambridge Crystallographic Data Centre and Fachinformationszentrum Karlsruhe Access Structures service.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p010-b005",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p010-b005"
+    ],
+    "translation_unit_protected_source_text": "Deposition Numbers 2227277 (for 3), 2227276 (for 4a), 2252223 (for 17) contain the supplementary crystallographic data for this paper. These data are provided free of charge by the joint Cambridge Crystallographic Data Centre and Fachinformationszentrum Karlsruhe Access Structures service.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "沉积编号 2227277（化合物 3）、2227276（化合物 4a）、2252223（化合物 17）包含了本文的补充晶体学数据。这些数据由剑桥晶体学数据中心与卡尔斯鲁厄专业信息中心联合提供的 Access Structures 服务免费获取。",
+    "translation_unit_translated_text": "沉积编号 2227277（化合物 3）、2227276（化合物 4a）、2252223（化合物 17）包含了本文的补充晶体学数据。这些数据由剑桥晶体学数据中心与卡尔斯鲁厄专业信息中心联合提供的 Access Structures 服务免费获取。",
+    "protected_translated_text": "沉积编号 2227277（化合物 3）、2227276（化合物 4a）、2252223（化合物 17）包含了本文的补充晶体学数据。这些数据由剑桥晶体学数据中心与卡尔斯鲁厄专业信息中心联合提供的 Access Structures 服务免费获取。",
+    "translated_text": "沉积编号 2227277（化合物 3）、2227276（化合物 4a）、2252223（化合物 17）包含了本文的补充晶体学数据。这些数据由剑桥晶体学数据中心与卡尔斯鲁厄专业信息中心联合提供的 Access Structures 服务免费获取。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p010-b005",
+      "page_idx": 9,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p010-b006",
+    "page_idx": 9,
+    "block_idx": 6,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "heading",
+    "semantic_role": "unknown",
+    "structure_role": "heading",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 6,
+    "raw_block_type": "paragraph_title",
+    "normalized_sub_type": "heading",
+    "bbox": [
+      44.483,
+      194.975,
+      144.446,
+      207.473
+    ],
+    "source_text": "Acknowledgements",
+    "source_line_texts": [
+      "Acknowledgements"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          44.483,
+          194.975,
+          144.446,
+          207.473
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Acknowledgements",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-165",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 4,
+        "confidence": 0.98
+      },
+      "structure_role": "heading",
+      "structure_group": "",
+      "pair_with": "",
+      "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose."
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-165",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 4,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 142.2,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Acknowledgements",
+    "mixed_original_protected_source_text": "Acknowledgements",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p010-b006",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p010-b006"
+    ],
+    "translation_unit_protected_source_text": "Acknowledgements",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "致谢",
+    "translation_unit_translated_text": "致谢",
+    "protected_translated_text": "致谢",
+    "translated_text": "致谢",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p010-b006",
+      "page_idx": 9,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose.",
+    "translation_context_mode": "needed",
+    "translation_context_before": "NMR spectra and X-ray data for obtained compounds can be found in the Supporting Information. / Deposition Numbers 2227277 (for 3), 2227276 (for 4a), 2252223 (for 17) contain the supplementary crystallographic data for this paper. These data are provided free of charge by the joint Cambridge Crystallographic Data Centre and Fachinformationszentrum Karlsruhe...",
+    "translation_context_after": "Conflict of Interests / Data Availability Statement"
+  },
+  {
+    "item_id": "p010-b008",
+    "page_idx": 9,
+    "block_idx": 8,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "heading",
+    "semantic_role": "unknown",
+    "structure_role": "heading",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 8,
+    "raw_block_type": "paragraph_title",
+    "normalized_sub_type": "heading",
+    "bbox": [
+      44.483,
+      290.462,
+      148.444,
+      303.46
+    ],
+    "source_text": "Conflict of Interests",
+    "source_line_texts": [
+      "Conflict of Interests"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          44.483,
+          290.462,
+          148.444,
+          303.46
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Conflict of Interests",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-167",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 6,
+        "confidence": 0.98
+      },
+      "structure_role": "heading",
+      "structure_group": "",
+      "pair_with": "",
+      "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose."
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-167",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 6,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 142.2,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Conflict of Interests",
+    "mixed_original_protected_source_text": "Conflict of Interests",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p010-b008",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p010-b008"
+    ],
+    "translation_unit_protected_source_text": "Conflict of Interests",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "利益冲突",
+    "translation_unit_translated_text": "利益冲突",
+    "protected_translated_text": "利益冲突",
+    "translated_text": "利益冲突",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p010-b008",
+      "page_idx": 9,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose.",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Deposition Numbers 2227277 (for 3), 2227276 (for 4a), 2252223 (for 17) contain the supplementary crystallographic data for this paper. These data are provided free of charge by the joint Cambridge Crystallographic Data Centre and Fachinformationszentrum Karlsruhe Access Structures service. / Acknowledgements",
+    "translation_context_after": "Data Availability Statement / The data that support the findings of this study are available in the supplementary material of this article."
+  },
+  {
+    "item_id": "p010-b010",
+    "page_idx": 9,
+    "block_idx": 10,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "heading",
+    "semantic_role": "unknown",
+    "structure_role": "heading",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 10,
+    "raw_block_type": "paragraph_title",
+    "normalized_sub_type": "heading",
+    "bbox": [
+      44.483,
+      350.954,
+      188.429,
+      363.453
+    ],
+    "source_text": "Data Availability Statement",
+    "source_line_texts": [
+      "Data Availability Statement"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          44.483,
+          350.954,
+          188.429,
+          363.453
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Data Availability Statement",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-169",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 8,
+        "confidence": 0.98
+      },
+      "structure_role": "heading",
+      "structure_group": "",
+      "pair_with": "",
+      "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose."
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-169",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 8,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 142.2,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 5,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Data Availability Statement",
+    "mixed_original_protected_source_text": "Data Availability Statement",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p010-b010",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p010-b010"
+    ],
+    "translation_unit_protected_source_text": "Data Availability Statement",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "数据可用性声明",
+    "translation_unit_translated_text": "数据可用性声明",
+    "protected_translated_text": "数据可用性声明",
+    "translated_text": "数据可用性声明",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p010-b010",
+      "page_idx": 9,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose.",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Acknowledgements / Conflict of Interests",
+    "translation_context_after": "The data that support the findings of this study are available in the supplementary material of this article."
+  },
+  {
+    "item_id": "p010-b011",
+    "page_idx": 9,
+    "block_idx": 11,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 11,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.983,
+      375.951,
+      292.39,
+      400.448
+    ],
+    "source_text": "The data that support the findings of this study are available in the supplementary material of this article.",
+    "source_line_texts": [
+      "The data that support the findings of this study are available",
+      "in the supplementary material of this article."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          375.951,
+          292.39,
+          388.2
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The data that support the findings of this study",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.983,
+          388.2,
+          292.39,
+          400.448
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "are available in the supplementary material of this article.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-170",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 9,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-170",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 9,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 142.2,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 6,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "The data that support the findings of this study are available in the supplementary material of this article.",
+    "mixed_original_protected_source_text": "The data that support the findings of this study are available in the supplementary material of this article.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p010-b011",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p010-b011"
+    ],
+    "translation_unit_protected_source_text": "The data that support the findings of this study are available in the supplementary material of this article.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "支持本研究结果的数据可在本文的补充材料中获取。",
+    "translation_unit_translated_text": "支持本研究结果的数据可在本文的补充材料中获取。",
+    "protected_translated_text": "支持本研究结果的数据可在本文的补充材料中获取。",
+    "translated_text": "支持本研究结果的数据可在本文的补充材料中获取。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p010-b011",
+      "page_idx": 9,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  }
+]

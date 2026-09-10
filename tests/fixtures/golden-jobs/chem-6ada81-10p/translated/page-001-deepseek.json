@@ -1,0 +1,2695 @@
+[
+  {
+    "item_id": "p001-b005",
+    "page_idx": 0,
+    "block_idx": 5,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "title",
+    "semantic_role": "unknown",
+    "structure_role": "title",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 5,
+    "raw_block_type": "doc_title",
+    "normalized_sub_type": "title",
+    "bbox": [
+      43.484,
+      83.489,
+      541.796,
+      142.981
+    ],
+    "source_text": "The Role of Conjugation in the Halogen-Lithium Exchange Selectivity: Lithiation of 4,6,7,9-Tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine",
+    "source_line_texts": [
+      "The Role of Conjugation in the Halogen-Lithium Exchange Selectivity: Lithiation of 4,6,7,9-Tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          83.489,
+          541.796,
+          142.981
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The Role of Conjugation in the Halogen-Lithium Exchange Selectivity: Lithiation of 4,6,7,9-Tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "full",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "full",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-5",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 2,
+        "confidence": 0.98
+      },
+      "structure_role": "title",
+      "structure_group": "",
+      "pair_with": "",
+      "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose."
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-5",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 2,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "full",
+    "layout_mode": "double",
+    "layout_split_x": 297.26,
+    "layout_zone": "full_width",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 1,
+    "layout_boundary_role": "single",
+    "math_mode": "direct_typst",
+    "protected_source_text": "The Role of Conjugation in the Halogen-Lithium Exchange Selectivity: Lithiation of 4,6,7,9-Tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine",
+    "mixed_original_protected_source_text": "The Role of Conjugation in the Halogen-Lithium Exchange Selectivity: Lithiation of 4,6,7,9-Tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b005",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b005"
+    ],
+    "translation_unit_protected_source_text": "The Role of Conjugation in the Halogen-Lithium Exchange Selectivity: Lithiation of 4,6,7,9-Tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "共轭在卤素-锂交换区域选择性中的作用：4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶的锂化",
+    "translation_unit_translated_text": "共轭在卤素-锂交换区域选择性中的作用：4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶的锂化",
+    "protected_translated_text": "共轭在卤素-锂交换区域选择性中的作用：4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶的锂化",
+    "translated_text": "共轭在卤素-锂交换区域选择性中的作用：4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶的锂化",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p001-b005",
+      "page_idx": 0,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose.",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p001-b008",
+    "page_idx": 0,
+    "block_idx": 8,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "abstract",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 8,
+    "raw_block_type": "abstract",
+    "normalized_sub_type": "body",
+    "bbox": [
+      51.481,
+      223.471,
+      292.89,
+      308.46
+    ],
+    "source_text": "Abstract: The first case of successful suppression of the coordination of a lithium atom with a dialkylamino group by the effective conjugation of the latter with the aromatic core has been discovered. This effect controls regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine, which leads to products with the most effective conjugation. As a result, the product",
+    "source_line_texts": [
+      "Abstract: The first case of successful suppression of",
+      "the coordination of a lithium atom with a dialkylamino",
+      "group by the effective conjugation of the latter with",
+      "the aromatic core has been discovered. This effect controls",
+      "regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine,",
+      "which leads to products with the most effective conjugation. As a result, the product"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          51.481,
+          223.471,
+          292.89,
+          235.612
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Abstract: The first case of successful suppression",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          51.481,
+          235.612,
+          292.89,
+          247.754
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of the coordination of a lithium atom with a dialkylamino",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          51.481,
+          247.754,
+          292.89,
+          259.895
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "group by the effective conjugation of the latter",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          51.481,
+          259.895,
+          292.89,
+          272.036
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "with the aromatic core has been discovered. This",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          51.481,
+          272.036,
+          292.89,
+          284.177
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "effect controls regioselectivity of the bromine–lithium",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          51.481,
+          284.177,
+          292.89,
+          296.319
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          51.481,
+          296.319,
+          292.89,
+          308.46
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "which leads to products with the most effective conjugation. As a result, the product",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-8",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 5,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-8",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 5,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.26,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 3,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Abstract: The first case of successful suppression of the coordination of a lithium atom with a dialkylamino group by the effective conjugation of the latter with the aromatic core has been discovered. This effect controls regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine, which leads to products with the most effective conjugation. As a result, the product",
+    "mixed_original_protected_source_text": "Abstract: The first case of successful suppression of the coordination of a lithium atom with a dialkylamino group by the effective conjugation of the latter with the aromatic core has been discovered. This effect controls regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine, which leads to products with the most effective conjugation. As a result, the product",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-001-001",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p001-b008",
+      "p001-b009"
+    ],
+    "translation_unit_protected_source_text": "Abstract: The first case of successful suppression of the coordination of a lithium atom with a dialkylamino group by the effective conjugation of the latter with the aromatic core has been discovered. This effect controls regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine, which leads to products with the most effective conjugation. As a result, the product of this quadruple exchange demonstrates no tendency of the coordination of the NMe groups to neighboring lithium atoms despite the absence of steric restrictions. Experimental results are explained by means of quantum chemical calculations: geometry optimization, natural bond analysis and scans using the modredundant scheme.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "摘要:本文发现了二甲氨基与芳香核的有效共轭成功抑制了锂原子与二甲氨基配位的首个案例。该效应控制了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性，从而生成具有最有效共轭的产物。结果表明，尽管无空间位阻，该四重交换产物未表现出NMe基团与相邻锂原子配位的倾向。通过量子化学计算（几何优化、自然键分析及基于modredundant方案的扫描）解释了实验结果。",
+    "translation_unit_translated_text": "摘要:本文发现了二甲氨基与芳香核的有效共轭成功抑制了锂原子与二甲氨基配位的首个案例。该效应控制了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性，从而生成具有最有效共轭的产物。结果表明，尽管无空间位阻，该四重交换产物未表现出NMe基团与相邻锂原子配位的倾向。通过量子化学计算（几何优化、自然键分析及基于modredundant方案的扫描）解释了实验结果。",
+    "protected_translated_text": "摘要:本文发现了二甲氨基与芳香核的有效共轭成功抑制了锂原子与二甲氨基配位的首个案例。该效应控制了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性，从而生成具有最有效共轭的产物。结果表",
+    "translated_text": "摘要:本文发现了二甲氨基与芳香核的有效共轭成功抑制了锂原子与二甲氨基配位的首个案例。该效应控制了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性，从而生成具有最有效共轭的产物。结果表",
+    "continuation_group": "cg-001-001",
+    "continuation_prev_text": "",
+    "continuation_next_text": "of this quadruple exchange demonstrates no tendency of the coordination of the NMe groups to neighboring lithium atoms despite the absence of steric restrictions. Experimental results are explained by means of quantum chemical calculations: geometry optimization, natural bond analysis and scans using the modredundant scheme.",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Abstract: The first case of successful suppression of the coordination of a lithium atom with a dialkylamino group by the effective conjugation of the latter with the aromatic core has been discovered. This effect controls regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine, which leads to products with the most effective conjugation. As a result, the product of this quadruple exchange demonstrates no tendency of the coordination of the NMe groups to neighboring lithium atoms despite the absence of steric restrictions. Experimental results are explained by means of quantum chemical calculations: geometry optimization, natural bond analysis and scans using the modredundant scheme.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "摘要:本文发现了二甲氨基与芳香核的有效共轭成功抑制了锂原子与二甲氨基配位的首个案例。该效应控制了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性，从而生成具有最有效共轭的产物。结果表明，尽管无空间位阻，该四重交换产物未表现出NMe基团与相邻锂原子配位的倾向。通过量子化学计算（几何优化、自然键分析及基于modredundant方案的扫描）解释了实验结果。",
+    "group_translated_text": "摘要:本文发现了二甲氨基与芳香核的有效共轭成功抑制了锂原子与二甲氨基配位的首个案例。该效应控制了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性，从而生成具有最有效共轭的产物。结果表明，尽管无空间位阻，该四重交换产物未表现出NMe基团与相邻锂原子配位的倾向。通过量子化学计算（几何优化、自然键分析及基于modredundant方案的扫描）解释了实验结果。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p001-b008",
+      "page_idx": 0,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "The Role of Conjugation in the Halogen-Lithium Exchange Selectivity: Lithiation of 4,6,7,9-Tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine",
+    "translation_context_after": "of this quadruple exchange demonstrates no tendency of the coordination of the NMe groups to neighboring lithium atoms despite the absence of steric restrictions. Experimental results are explained by means of quantum chemical calculations: geometry optimization, natural bond analysis and scans using the modredundant scheme. / Introduction"
+  },
+  {
+    "item_id": "p001-b009",
+    "page_idx": 0,
+    "block_idx": 9,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "abstract",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 9,
+    "raw_block_type": "abstract",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      223.971,
+      543.296,
+      295.961
+    ],
+    "source_text": "of this quadruple exchange demonstrates no tendency of the coordination of the NMe groups to neighboring lithium atoms despite the absence of steric restrictions. Experimental results are explained by means of quantum chemical calculations: geometry optimization, natural bond analysis and scans using the modredundant scheme.",
+    "source_line_texts": [
+      "of this quadruple exchange demonstrates no tendency of",
+      "the coordination of the NMe groups to neighboring lithium",
+      "atoms despite the absence of steric restrictions. Experimental",
+      "results are explained by means of quantum chemical calculations:",
+      "geometry optimization, natural bond analysis and scans using the modredundant scheme."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          223.971,
+          543.296,
+          235.969
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of this quadruple exchange demonstrates no tendency",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          235.969,
+          543.296,
+          247.968
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of the coordination of the NMe groups to neighboring",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          247.968,
+          543.296,
+          259.966
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "lithium atoms despite the absence of steric restrictions.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          259.966,
+          543.296,
+          271.964
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Experimental results are explained by means of",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          271.964,
+          543.296,
+          283.963
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "quantum chemical calculations: geometry optimization,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          283.963,
+          543.296,
+          295.961
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "natural bond analysis and scans using the modredundant scheme.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-9",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 6,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-9",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 6,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.26,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "of this quadruple exchange demonstrates no tendency of the coordination of the NMe groups to neighboring lithium atoms despite the absence of steric restrictions. Experimental results are explained by means of quantum chemical calculations: geometry optimization, natural bond analysis and scans using the modredundant scheme.",
+    "mixed_original_protected_source_text": "of this quadruple exchange demonstrates no tendency of the coordination of the NMe groups to neighboring lithium atoms despite the absence of steric restrictions. Experimental results are explained by means of quantum chemical calculations: geometry optimization, natural bond analysis and scans using the modredundant scheme.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-001-001",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p001-b008",
+      "p001-b009"
+    ],
+    "translation_unit_protected_source_text": "Abstract: The first case of successful suppression of the coordination of a lithium atom with a dialkylamino group by the effective conjugation of the latter with the aromatic core has been discovered. This effect controls regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine, which leads to products with the most effective conjugation. As a result, the product of this quadruple exchange demonstrates no tendency of the coordination of the NMe groups to neighboring lithium atoms despite the absence of steric restrictions. Experimental results are explained by means of quantum chemical calculations: geometry optimization, natural bond analysis and scans using the modredundant scheme.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "摘要:本文发现了二甲氨基与芳香核的有效共轭成功抑制了锂原子与二甲氨基配位的首个案例。该效应控制了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性，从而生成具有最有效共轭的产物。结果表明，尽管无空间位阻，该四重交换产物未表现出NMe基团与相邻锂原子配位的倾向。通过量子化学计算（几何优化、自然键分析及基于modredundant方案的扫描）解释了实验结果。",
+    "translation_unit_translated_text": "摘要:本文发现了二甲氨基与芳香核的有效共轭成功抑制了锂原子与二甲氨基配位的首个案例。该效应控制了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性，从而生成具有最有效共轭的产物。结果表明，尽管无空间位阻，该四重交换产物未表现出NMe基团与相邻锂原子配位的倾向。通过量子化学计算（几何优化、自然键分析及基于modredundant方案的扫描）解释了实验结果。",
+    "protected_translated_text": "明，尽管无空间位阻，该四重交换产物未表现出NMe基团与相邻锂原子配位的倾向。通过量子化学计算（几何优化、自然键分析及基于modredundant方案的扫描）解释了实验结果。",
+    "translated_text": "明，尽管无空间位阻，该四重交换产物未表现出NMe基团与相邻锂原子配位的倾向。通过量子化学计算（几何优化、自然键分析及基于modredundant方案的扫描）解释了实验结果。",
+    "continuation_group": "cg-001-001",
+    "continuation_prev_text": "Abstract: The first case of successful suppression of the coordination of a lithium atom with a dialkylamino group by the effective conjugation of the latter with the aromatic core has been discovered. This effect controls regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine, which leads to products with the most effective conjugation. As a result, the product",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Abstract: The first case of successful suppression of the coordination of a lithium atom with a dialkylamino group by the effective conjugation of the latter with the aromatic core has been discovered. This effect controls regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine, which leads to products with the most effective conjugation. As a result, the product of this quadruple exchange demonstrates no tendency of the coordination of the NMe groups to neighboring lithium atoms despite the absence of steric restrictions. Experimental results are explained by means of quantum chemical calculations: geometry optimization, natural bond analysis and scans using the modredundant scheme.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "摘要:本文发现了二甲氨基与芳香核的有效共轭成功抑制了锂原子与二甲氨基配位的首个案例。该效应控制了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性，从而生成具有最有效共轭的产物。结果表明，尽管无空间位阻，该四重交换产物未表现出NMe基团与相邻锂原子配位的倾向。通过量子化学计算（几何优化、自然键分析及基于modredundant方案的扫描）解释了实验结果。",
+    "group_translated_text": "摘要:本文发现了二甲氨基与芳香核的有效共轭成功抑制了锂原子与二甲氨基配位的首个案例。该效应控制了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性，从而生成具有最有效共轭的产物。结果表明，尽管无空间位阻，该四重交换产物未表现出NMe基团与相邻锂原子配位的倾向。通过量子化学计算（几何优化、自然键分析及基于modredundant方案的扫描）解释了实验结果。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p001-b009",
+      "page_idx": 0,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "The Role of Conjugation in the Halogen-Lithium Exchange Selectivity: Lithiation of 4,6,7,9-Tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine / Abstract: The first case of successful suppression of the coordination of a lithium atom with a dialkylamino group by the effective conjugation of the latter with the aromatic core has been discovered. This effect co...",
+    "translation_context_after": "Introduction / Modern organic synthesis has reached an extraordinary level of sophistication, largely due to the advances of organometallic chemistry. Thus, the discovery of effective catalytic processes involving transition metals has given chemists powerful synthetic tools, such as cross-couplings, click reactions, stereoselective transformations and many..."
+  },
+  {
+    "item_id": "p001-b010",
+    "page_idx": 0,
+    "block_idx": 10,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "heading",
+    "semantic_role": "unknown",
+    "structure_role": "heading",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 10,
+    "raw_block_type": "paragraph_title",
+    "normalized_sub_type": "heading",
+    "bbox": [
+      44.483,
+      326.457,
+      111.958,
+      339.456
+    ],
+    "source_text": "Introduction",
+    "source_line_texts": [
+      "Introduction"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          44.483,
+          326.457,
+          111.958,
+          339.456
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Introduction",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-10",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 7,
+        "confidence": 0.98
+      },
+      "structure_role": "heading",
+      "structure_group": "",
+      "pair_with": "",
+      "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose."
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-10",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 7,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.26,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 3,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Introduction",
+    "mixed_original_protected_source_text": "Introduction",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b010",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b010"
+    ],
+    "translation_unit_protected_source_text": "Introduction",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "引言",
+    "translation_unit_translated_text": "引言",
+    "protected_translated_text": "引言",
+    "translated_text": "引言",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p001-b010",
+      "page_idx": 0,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose.",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Abstract: The first case of successful suppression of the coordination of a lithium atom with a dialkylamino group by the effective conjugation of the latter with the aromatic core has been discovered. This effect controls regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine, which leads to products w...",
+    "translation_context_after": "Modern organic synthesis has reached an extraordinary level of sophistication, largely due to the advances of organometallic chemistry. Thus, the discovery of effective catalytic processes involving transition metals has given chemists powerful synthetic tools, such as cross-couplings, click reactions, stereoselective transformations and many others. $ ^{[1..."
+  },
+  {
+    "item_id": "p001-b011",
+    "page_idx": 0,
+    "block_idx": 11,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 11,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      42.984,
+      350.454,
+      292.89,
+      568.926
+    ],
+    "source_text": "Modern organic synthesis has reached an extraordinary level of sophistication, largely due to the advances of organometallic chemistry. Thus, the discovery of effective catalytic processes involving transition metals has given chemists powerful synthetic tools, such as cross-couplings, click reactions, stereoselective transformations and many others. $ ^{[1-3]} $ Despite the grand success of homogeneous catalysis, the high cost of palladium, platinum, gold, iridium etc., the necessity to use complicated (and expensive) ligands, and the difficulties with the purification of the final products from toxic transition metals still limit its application. The main group organometallics, such as organoaluminum, organoborons, Grignard reagents and organolithiums generally lack these disadvantages. That is why they not only keep their solid positions as indispensable tools for modern organic synthesis but also improve it with more and more novel applications discovered in recent years. $ ^{[4,5]} $ This stimulates the search for new regioselective methods of the synthesis of organometallic reagents. In",
+    "source_line_texts": [
+      "Modern organic synthesis has reached an extraordinary level",
+      "of sophistication, largely due to the advances of organometallic",
+      "chemistry. Thus, the discovery of effective catalytic processes",
+      "involving transition metals has given chemists powerful",
+      "synthetic tools, such as cross-couplings, click reactions,",
+      "stereoselective transformations and many others. $ ^{[1-3]}",
+      "$ Despite the grand success of homogeneous catalysis, the",
+      "high cost of palladium, platinum, gold, iridium etc., the",
+      "necessity to use complicated (and expensive) ligands, and",
+      "the difficulties with the purification of the final products",
+      "from toxic transition metals still limit its application.",
+      "The main group organometallics, such as organoaluminum,",
+      "organoborons, Grignard reagents and organolithiums generally",
+      "lack these disadvantages. That is why they not only keep",
+      "their solid positions as indispensable tools for modern",
+      "organic synthesis but also improve it with more and more",
+      "novel applications discovered in recent years. $ ^{[4,5]} $ This stimulates the search for new regioselective methods of the synthesis of organometallic reagents. In"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          42.984,
+          350.454,
+          292.89,
+          361.953
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Modern organic synthesis has reached an extraordinary",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          361.953,
+          292.89,
+          373.451
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "level of sophistication, largely due to the advances",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          373.451,
+          292.89,
+          384.95
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of organometallic chemistry. Thus, the discovery",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          384.95,
+          292.89,
+          396.448
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of effective catalytic processes involving transition",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          396.448,
+          292.89,
+          407.947
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "metals has given chemists powerful synthetic tools,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          407.947,
+          292.89,
+          419.445
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "such as cross-couplings, click reactions, stereoselective",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          419.445,
+          292.89,
+          430.944
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "transformations and many others. $ ^{[1-3]} $ Despite",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          430.944,
+          292.89,
+          442.442
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the grand success of homogeneous catalysis, the high",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          442.442,
+          292.89,
+          453.941
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "cost of palladium, platinum, gold, iridium etc.,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          453.941,
+          292.89,
+          465.439
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the necessity to use complicated (and expensive)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          465.439,
+          292.89,
+          476.938
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "ligands, and the difficulties with the purification",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          476.938,
+          292.89,
+          488.436
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of the final products from toxic transition metals",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          488.436,
+          292.89,
+          499.935
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "still limit its application. The main group organometallics,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          499.935,
+          292.89,
+          511.433
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "such as organoaluminum, organoborons, Grignard reagents",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          511.433,
+          292.89,
+          522.932
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and organolithiums generally lack these disadvantages.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          522.932,
+          292.89,
+          534.43
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "That is why they not only keep their solid positions",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          534.43,
+          292.89,
+          545.929
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "as indispensable tools for modern organic synthesis",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          545.929,
+          292.89,
+          557.427
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "but also improve it with more and more novel applications",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          557.427,
+          292.89,
+          568.926
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "discovered in recent years. $ ^{[4,5]} $ This stimulates the search for new regioselective methods of the synthesis of organometallic reagents. In",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-11",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 8,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-11",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 8,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.26,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 3,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Modern organic synthesis has reached an extraordinary level of sophistication, largely due to the advances of organometallic chemistry. Thus, the discovery of effective catalytic processes involving transition metals has given chemists powerful synthetic tools, such as cross-couplings, click reactions, stereoselective transformations and many others. $ ^{[1-3]} $ Despite the grand success of homogeneous catalysis, the high cost of palladium, platinum, gold, iridium etc., the necessity to use complicated (and expensive) ligands, and the difficulties with the purification of the final products from toxic transition metals still limit its application. The main group organometallics, such as organoaluminum, organoborons, Grignard reagents and organolithiums generally lack these disadvantages. That is why they not only keep their solid positions as indispensable tools for modern organic synthesis but also improve it with more and more novel applications discovered in recent years. $ ^{[4,5]} $ This stimulates the search for new regioselective methods of the synthesis of organometallic reagents. In",
+    "mixed_original_protected_source_text": "Modern organic synthesis has reached an extraordinary level of sophistication, largely due to the advances of organometallic chemistry. Thus, the discovery of effective catalytic processes involving transition metals has given chemists powerful synthetic tools, such as cross-couplings, click reactions, stereoselective transformations and many others. $ ^{[1-3]} $ Despite the grand success of homogeneous catalysis, the high cost of palladium, platinum, gold, iridium etc., the necessity to use complicated (and expensive) ligands, and the difficulties with the purification of the final products from toxic transition metals still limit its application. The main group organometallics, such as organoaluminum, organoborons, Grignard reagents and organolithiums generally lack these disadvantages. That is why they not only keep their solid positions as indispensable tools for modern organic synthesis but also improve it with more and more novel applications discovered in recent years. $ ^{[4,5]} $ This stimulates the search for new regioselective methods of the synthesis of organometallic reagents. In",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b011",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b011"
+    ],
+    "translation_unit_protected_source_text": "Modern organic synthesis has reached an extraordinary level of sophistication, largely due to the advances of organometallic chemistry. Thus, the discovery of effective catalytic processes involving transition metals has given chemists powerful synthetic tools, such as cross-couplings, click reactions, stereoselective transformations and many others. $ ^{[1-3]} $ Despite the grand success of homogeneous catalysis, the high cost of palladium, platinum, gold, iridium etc., the necessity to use complicated (and expensive) ligands, and the difficulties with the purification of the final products from toxic transition metals still limit its application. The main group organometallics, such as organoaluminum, organoborons, Grignard reagents and organolithiums generally lack these disadvantages. That is why they not only keep their solid positions as indispensable tools for modern organic synthesis but also improve it with more and more novel applications discovered in recent years. $ ^{[4,5]} $ This stimulates the search for new regioselective methods of the synthesis of organometallic reagents. In",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "现代有机合成已达到非凡的精密度，这在很大程度上归功于金属有机化学的进步。因此，涉及过渡金属的有效催化过程的发现为化学家提供了强大的合成工具，例如交叉偶联、点击反应、立体选择性转化等。$^{[1-3]}$ 尽管均相催化取得了巨大成功，但钯、铂、金、铱等金属的高昂成本、使用复杂（且昂贵）配体的必要性，以及从有毒过渡金属中纯化最终产物的困难，仍然限制了其应用。主族金属有机化合物，如有机铝、有机硼、格氏试剂和有机锂，通常没有这些缺点。正因如此，它们不仅作为现代有机合成不可或缺的工具保持着稳固地位，而且近年来随着更多新颖应用的发现而不断改进。$^{[4,5]}$ 这推动了对合成有机金属试剂的新区域选择性方法的探索。在",
+    "translation_unit_translated_text": "现代有机合成已达到非凡的精密度，这在很大程度上归功于金属有机化学的进步。因此，涉及过渡金属的有效催化过程的发现为化学家提供了强大的合成工具，例如交叉偶联、点击反应、立体选择性转化等。$^{[1-3]}$ 尽管均相催化取得了巨大成功，但钯、铂、金、铱等金属的高昂成本、使用复杂（且昂贵）配体的必要性，以及从有毒过渡金属中纯化最终产物的困难，仍然限制了其应用。主族金属有机化合物，如有机铝、有机硼、格氏试剂和有机锂，通常没有这些缺点。正因如此，它们不仅作为现代有机合成不可或缺的工具保持着稳固地位，而且近年来随着更多新颖应用的发现而不断改进。$^{[4,5]}$ 这推动了对合成有机金属试剂的新区域选择性方法的探索。在",
+    "protected_translated_text": "现代有机合成已达到非凡的精密度，这在很大程度上归功于金属有机化学的进步。因此，涉及过渡金属的有效催化过程的发现为化学家提供了强大的合成工具，例如交叉偶联、点击反应、立体选择性转化等。$^{[1-3]}$ 尽管均相催化取得了巨大成功，但钯、铂、金、铱等金属的高昂成本、使用复杂（且昂贵）配体的必要性，以及从有毒过渡金属中纯化最终产物的困难，仍然限制了其应用。主族金属有机化合物，如有机铝、有机硼、格氏试剂和有机锂，通常没有这些缺点。正因如此，它们不仅作为现代有机合成不可或缺的工具保持着稳固地位，而且近年来随着更多新颖应用的发现而不断改进。$^{[4,5]}$ 这推动了对合成有机金属试剂的新区域选择性方法的探索。在",
+    "translated_text": "现代有机合成已达到非凡的精密度，这在很大程度上归功于金属有机化学的进步。因此，涉及过渡金属的有效催化过程的发现为化学家提供了强大的合成工具，例如交叉偶联、点击反应、立体选择性转化等。$^{[1-3]}$ 尽管均相催化取得了巨大成功，但钯、铂、金、铱等金属的高昂成本、使用复杂（且昂贵）配体的必要性，以及从有毒过渡金属中纯化最终产物的困难，仍然限制了其应用。主族金属有机化合物，如有机铝、有机硼、格氏试剂和有机锂，通常没有这些缺点。正因如此，它们不仅作为现代有机合成不可或缺的工具保持着稳固地位，而且近年来随着更多新颖应用的发现而不断改进。$^{[4,5]}$ 这推动了对合成有机金属试剂的新区域选择性方法的探索。在",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p001-b011",
+      "page_idx": 0,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p001-b012",
+    "page_idx": 0,
+    "block_idx": 12,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 12,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      300.887,
+      327.457,
+      550.793,
+      447.442
+    ],
+    "source_text": "the field of organolithiums, the halogen–lithium exchange nowadays regains its status as one of the most important and versatile methods for synthesis. $ ^{[6]} $ There is no surprise that to date, different features of this process, such as the influence of directing groups and the possibility of multiple halogen exchanges, were thoroughly investigated in a benzene series. Thus, it has been demonstrated that the presence of heteroatomic groups able to coordinate metal (so-called directing groups) facilitate the halogen exchange in the ortho-position, thus allowing regioselective functionalization (Scheme 1a). $ ^{[7-10]} $",
+    "source_line_texts": [
+      "the field of organolithiums, the halogen–lithium exchange",
+      "nowadays regains its status as one of the most important",
+      "and versatile methods for synthesis. $ ^{[6]} $ There is",
+      "no surprise that to date, different features of this process,",
+      "such as the influence of directing groups and the possibility",
+      "of multiple halogen exchanges, were thoroughly investigated",
+      "in a benzene series. Thus, it has been demonstrated that",
+      "the presence of heteroatomic groups able to coordinate metal",
+      "(so-called directing groups) facilitate the halogen exchange",
+      "in the ortho-position, thus allowing regioselective functionalization (Scheme 1a). $ ^{[7-10]} $"
+    ],
+    "text_flow": "preserve_lines",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          300.887,
+          327.457,
+          550.793,
+          339.455
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the field of organolithiums, the halogen–lithium",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          339.455,
+          550.793,
+          351.454
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "exchange nowadays regains its status as one of the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          351.454,
+          550.793,
+          363.452
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "most important and versatile methods for synthesis.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          363.452,
+          550.793,
+          375.451
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$ ^{[6]} $ There is no surprise that to date, different",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          375.451,
+          550.793,
+          387.45
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "features of this process, such as the influence of",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          387.45,
+          550.793,
+          399.448
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "directing groups and the possibility of multiple",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          399.448,
+          550.793,
+          411.447
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "halogen exchanges, were thoroughly investigated in",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          411.447,
+          550.793,
+          423.445
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "a benzene series. Thus, it has been demonstrated",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          423.445,
+          550.793,
+          435.444
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "that the presence of heteroatomic groups able to",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          435.444,
+          550.793,
+          447.442
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "coordinate metal (so-called directing groups) facilitate the halogen exchange in the ortho-position, thus allowing regioselective functionalization (Scheme 1a). $ ^{[7-10]} $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-12",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 9,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-12",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 9,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.26,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "the field of organolithiums, the halogen–lithium exchange nowadays regains its status as one of the most important and versatile methods for synthesis. $ ^{[6]} $ There is no surprise that to date, different features of this process, such as the influence of directing groups and the possibility of multiple halogen exchanges, were thoroughly investigated in a benzene series. Thus, it has been demonstrated that the presence of heteroatomic groups able to coordinate metal (so-called directing groups) facilitate the halogen exchange in the ortho-position, thus allowing regioselective functionalization (Scheme 1a). $ ^{[7-10]} $",
+    "mixed_original_protected_source_text": "the field of organolithiums, the halogen–lithium exchange nowadays regains its status as one of the most important and versatile methods for synthesis. $ ^{[6]} $ There is no surprise that to date, different features of this process, such as the influence of directing groups and the possibility of multiple halogen exchanges, were thoroughly investigated in a benzene series. Thus, it has been demonstrated that the presence of heteroatomic groups able to coordinate metal (so-called directing groups) facilitate the halogen exchange in the ortho-position, thus allowing regioselective functionalization (Scheme 1a). $ ^{[7-10]} $",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b012",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b012"
+    ],
+    "translation_unit_protected_source_text": "the field of organolithiums, the halogen–lithium exchange nowadays regains its status as one of the most important and versatile methods for synthesis. $ ^{[6]} $ There is no surprise that to date, different features of this process, such as the influence of directing groups and the possibility of multiple halogen exchanges, were thoroughly investigated in a benzene series. Thus, it has been demonstrated that the presence of heteroatomic groups able to coordinate metal (so-called directing groups) facilitate the halogen exchange in the ortho-position, thus allowing regioselective functionalization (Scheme 1a). $ ^{[7-10]} $",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "在有机锂领域中，卤素–锂交换如今重新成为最重要、最通用的合成方法之一。$^{[6]}$ 毫不意外的是，迄今为止，该过程的不同特征——如导向基团的影响以及多重卤素交换的可能性——已在苯系中得到了深入的研究。因此，已有研究表明，能够配位金属的杂原子基团（即所谓的导向基团）的存在促进了邻位卤素交换，从而实现了区域选择性官能化（Scheme 1a）。$^{[7-10]}$",
+    "translation_unit_translated_text": "在有机锂领域中，卤素–锂交换如今重新成为最重要、最通用的合成方法之一。$^{[6]}$ 毫不意外的是，迄今为止，该过程的不同特征——如导向基团的影响以及多重卤素交换的可能性——已在苯系中得到了深入的研究。因此，已有研究表明，能够配位金属的杂原子基团（即所谓的导向基团）的存在促进了邻位卤素交换，从而实现了区域选择性官能化（Scheme 1a）。$^{[7-10]}$",
+    "protected_translated_text": "在有机锂领域中，卤素–锂交换如今重新成为最重要、最通用的合成方法之一。$^{[6]}$ 毫不意外的是，迄今为止，该过程的不同特征——如导向基团的影响以及多重卤素交换的可能性——已在苯系中得到了深入的研究。因此，已有研究表明，能够配位金属的杂原子基团（即所谓的导向基团）的存在促进了邻位卤素交换，从而实现了区域选择性官能化（Scheme 1a）。$^{[7-10]}$",
+    "translated_text": "在有机锂领域中，卤素–锂交换如今重新成为最重要、最通用的合成方法之一。$^{[6]}$ 毫不意外的是，迄今为止，该过程的不同特征——如导向基团的影响以及多重卤素交换的可能性——已在苯系中得到了深入的研究。因此，已有研究表明，能够配位金属的杂原子基团（即所谓的导向基团）的存在促进了邻位卤素交换，从而实现了区域选择性官能化（Scheme 1a）。$^{[7-10]}$",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p001-b012",
+      "page_idx": 0,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p001-b013",
+    "page_idx": 0,
+    "block_idx": 13,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 13,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      447.941,
+      550.793,
+      519.432
+    ],
+    "source_text": "In the naphthalene series, these features are much less investigated, while the rigidity of a naphthalene ring significantly elevates the impact of the steric strain. In our recent paper, we have shown that the directing effect of dimethylamino groups in 1 can be completely suppressed by the steric strain of the molecule (Scheme 1b).$^{[11]}$",
+    "source_line_texts": [
+      "In the naphthalene series, these features are much less",
+      "investigated, while the rigidity of a naphthalene ring significantly",
+      "elevates the impact of the steric strain. In our recent",
+      "paper, we have shown that the directing effect of dimethylamino",
+      "groups in 1 can be completely suppressed by the steric strain of the molecule (Scheme 1b).$^{[11]}$"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          447.941,
+          550.793,
+          459.856
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "In the naphthalene series, these features are much",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          459.856,
+          550.793,
+          471.771
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "less investigated, while the rigidity of a naphthalene",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          471.771,
+          550.793,
+          483.687
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "ring significantly elevates the impact of the steric",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          483.687,
+          550.793,
+          495.602
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "strain. In our recent paper, we have shown that",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          495.602,
+          550.793,
+          507.517
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the directing effect of dimethylamino groups in",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          507.517,
+          550.793,
+          519.432
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "1 can be completely suppressed by the steric strain of the molecule (Scheme 1b).$^{[11]}$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-13",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 10,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-13",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 10,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.26,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "In the naphthalene series, these features are much less investigated, while the rigidity of a naphthalene ring significantly elevates the impact of the steric strain. In our recent paper, we have shown that the directing effect of dimethylamino groups in 1 can be completely suppressed by the steric strain of the molecule (Scheme 1b).$^{[11]}$",
+    "mixed_original_protected_source_text": "In the naphthalene series, these features are much less investigated, while the rigidity of a naphthalene ring significantly elevates the impact of the steric strain. In our recent paper, we have shown that the directing effect of dimethylamino groups in 1 can be completely suppressed by the steric strain of the molecule (Scheme 1b).$^{[11]}$",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b013",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b013"
+    ],
+    "translation_unit_protected_source_text": "In the naphthalene series, these features are much less investigated, while the rigidity of a naphthalene ring significantly elevates the impact of the steric strain. In our recent paper, we have shown that the directing effect of dimethylamino groups in 1 can be completely suppressed by the steric strain of the molecule (Scheme 1b).$^{[11]}$",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "在萘系列中，这些特征的研究要少得多，而萘环的刚性显著提升了空间张力的影响。在我们最近的论文中，我们已证明 **1** 中二甲氨基的导向效应可被分子的空间张力完全抑制（Scheme 1b）。$^{[11]}$",
+    "translation_unit_translated_text": "在萘系列中，这些特征的研究要少得多，而萘环的刚性显著提升了空间张力的影响。在我们最近的论文中，我们已证明 **1** 中二甲氨基的导向效应可被分子的空间张力完全抑制（Scheme 1b）。$^{[11]}$",
+    "protected_translated_text": "在萘系列中，这些特征的研究要少得多，而萘环的刚性显著提升了空间张力的影响。在我们最近的论文中，我们已证明 **1** 中二甲氨基的导向效应可被分子的空间张力完全抑制（Scheme 1b）。$^{[11]}$",
+    "translated_text": "在萘系列中，这些特征的研究要少得多，而萘环的刚性显著提升了空间张力的影响。在我们最近的论文中，我们已证明 **1** 中二甲氨基的导向效应可被分子的空间张力完全抑制（Scheme 1b）。$^{[11]}$",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p001-b013",
+      "page_idx": 0,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Modern organic synthesis has reached an extraordinary level of sophistication, largely due to the advances of organometallic chemistry. Thus, the discovery of effective catalytic processes involving transition metals has given chemists powerful synthetic tools, such as cross-couplings, click reactions, stereoselective transformations and many others. $ ^{[1...",
+    "translation_context_after": "It was also found that charge overload also significantly controls the regioselectivity of multiple halogen exchanges. For example, upon treatment of 1 with 2 equivalents of n-BuLi, no signs of simultaneous exchange of two halogen atoms in one ring were observed due to the disadvantageous charge overload (Scheme 1c). $ ^{[11]} $ This effect also prevents mu..."
+  },
+  {
+    "item_id": "p001-b014",
+    "page_idx": 0,
+    "block_idx": 14,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 14,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      300.887,
+      520.432,
+      550.793,
+      627.418
+    ],
+    "source_text": "It was also found that charge overload also significantly controls the regioselectivity of multiple halogen exchanges. For example, upon treatment of 1 with 2 equivalents of n-BuLi, no signs of simultaneous exchange of two halogen atoms in one ring were observed due to the disadvantageous charge overload (Scheme 1c). $ ^{[11]} $ This effect also prevents multiple halogen substitutions in the benzene series. Even though the formation of hexalithiobenzene is possible, it requires 24 equiv. of tert-BuLi, for instance. $ ^{[12,13]} $",
+    "source_line_texts": [
+      "It was also found that charge overload also significantly",
+      "controls the regioselectivity of multiple halogen exchanges.",
+      "For example, upon treatment of 1 with 2 equivalents of n-BuLi,",
+      "no signs of simultaneous exchange of two halogen atoms in",
+      "one ring were observed due to the disadvantageous charge",
+      "overload (Scheme 1c). $ ^{[11]} $ This effect also prevents",
+      "multiple halogen substitutions in the benzene series. Even",
+      "though the formation of hexalithiobenzene is possible, it requires 24 equiv. of tert-BuLi, for instance. $ ^{[12,13]} $"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          300.887,
+          520.432,
+          550.793,
+          532.319
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "It was also found that charge overload also significantly",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          532.319,
+          550.793,
+          544.207
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "controls the regioselectivity of multiple halogen",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          544.207,
+          550.793,
+          556.094
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "exchanges. For example, upon treatment of 1 with",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          556.094,
+          550.793,
+          567.981
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "2 equivalents of n-BuLi, no signs of simultaneous",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          567.981,
+          550.793,
+          579.869
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "exchange of two halogen atoms in one ring were observed",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          579.869,
+          550.793,
+          591.756
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "due to the disadvantageous charge overload (Scheme",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          591.756,
+          550.793,
+          603.643
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "1c). $ ^{[11]} $ This effect also prevents multiple",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          603.643,
+          550.793,
+          615.531
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "halogen substitutions in the benzene series. Even",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          615.531,
+          550.793,
+          627.418
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "though the formation of hexalithiobenzene is possible, it requires 24 equiv. of tert-BuLi, for instance. $ ^{[12,13]} $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-14",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 11,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-14",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 11,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.26,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "It was also found that charge overload also significantly controls the regioselectivity of multiple halogen exchanges. For example, upon treatment of 1 with 2 equivalents of n-BuLi, no signs of simultaneous exchange of two halogen atoms in one ring were observed due to the disadvantageous charge overload (Scheme 1c). $ ^{[11]} $ This effect also prevents multiple halogen substitutions in the benzene series. Even though the formation of hexalithiobenzene is possible, it requires 24 equiv. of tert-BuLi, for instance. $ ^{[12,13]} $",
+    "mixed_original_protected_source_text": "It was also found that charge overload also significantly controls the regioselectivity of multiple halogen exchanges. For example, upon treatment of 1 with 2 equivalents of n-BuLi, no signs of simultaneous exchange of two halogen atoms in one ring were observed due to the disadvantageous charge overload (Scheme 1c). $ ^{[11]} $ This effect also prevents multiple halogen substitutions in the benzene series. Even though the formation of hexalithiobenzene is possible, it requires 24 equiv. of tert-BuLi, for instance. $ ^{[12,13]} $",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b014",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b014"
+    ],
+    "translation_unit_protected_source_text": "It was also found that charge overload also significantly controls the regioselectivity of multiple halogen exchanges. For example, upon treatment of 1 with 2 equivalents of n-BuLi, no signs of simultaneous exchange of two halogen atoms in one ring were observed due to the disadvantageous charge overload (Scheme 1c). $ ^{[11]} $ This effect also prevents multiple halogen substitutions in the benzene series. Even though the formation of hexalithiobenzene is possible, it requires 24 equiv. of tert-BuLi, for instance. $ ^{[12,13]} $",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "还发现电荷过载也显著控制着多重卤素交换的区域选择性。例如，当用 2 当量 $n$-BuLi 处理化合物 1 时，由于不利的电荷过载，未观察到同一环中两个卤素原子同时交换的迹象（Scheme 1c）$^{[11]}$。该效应也阻止了苯系列中的多重卤素取代。尽管六锂代苯的形成是可能的，但例如它需要 24 当量的 $tert$-BuLi $^{[12,13]}$。",
+    "translation_unit_translated_text": "还发现电荷过载也显著控制着多重卤素交换的区域选择性。例如，当用 2 当量 $n$-BuLi 处理化合物 1 时，由于不利的电荷过载，未观察到同一环中两个卤素原子同时交换的迹象（Scheme 1c）$^{[11]}$。该效应也阻止了苯系列中的多重卤素取代。尽管六锂代苯的形成是可能的，但例如它需要 24 当量的 $tert$-BuLi $^{[12,13]}$。",
+    "protected_translated_text": "还发现电荷过载也显著控制着多重卤素交换的区域选择性。例如，当用 2 当量 $n$-BuLi 处理化合物 1 时，由于不利的电荷过载，未观察到同一环中两个卤素原子同时交换的迹象（Scheme 1c）$^{[11]}$。该效应也阻止了苯系列中的多重卤素取代。尽管六锂代苯的形成是可能的，但例如它需要 24 当量的 $tert$-BuLi $^{[12,13]}$。",
+    "translated_text": "还发现电荷过载也显著控制着多重卤素交换的区域选择性。例如，当用 2 当量 $n$-BuLi 处理化合物 1 时，由于不利的电荷过载，未观察到同一环中两个卤素原子同时交换的迹象（Scheme 1c）$^{[11]}$。该效应也阻止了苯系列中的多重卤素取代。尽管六锂代苯的形成是可能的，但例如它需要 24 当量的 $tert$-BuLi $^{[12,13]}$。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p001-b014",
+      "page_idx": 0,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p001-b016",
+    "page_idx": 0,
+    "block_idx": 16,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 16,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      627.918,
+      550.793,
+      735.904
+    ],
+    "source_text": "To date, three main effects are known to control the regioselectivity of the halogen–lithium exchange: the presence of the directing group, steric strain and the effectiveness of an “electron sink” (the possibility to utilize excess electrons). Here we present a “new player” in this competition for regioselectivity – the conjugation of an electron-donating group with an aromatic system – and its manifestation in bromine–lithium exchanges in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine 2.",
+    "source_line_texts": [
+      "To date, three main effects are known to control the regioselectivity",
+      "of the halogen–lithium exchange: the presence of the directing",
+      "group, steric strain and the effectiveness of an “electron",
+      "sink” (the possibility to utilize excess electrons). Here",
+      "we present a “new player” in this competition for regioselectivity",
+      "– the conjugation of an electron-donating group with an aromatic system – and its manifestation in bromine–lithium exchanges in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine 2."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          627.918,
+          550.793,
+          639.916
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To date, three main effects are known to control",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          639.916,
+          550.793,
+          651.915
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the regioselectivity of the halogen–lithium exchange:",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          651.915,
+          550.793,
+          663.913
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the presence of the directing group, steric strain",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          663.913,
+          550.793,
+          675.912
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and the effectiveness of an “electron sink” (the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          675.912,
+          550.793,
+          687.91
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "possibility to utilize excess electrons). Here we",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          687.91,
+          550.793,
+          699.909
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "present a “new player” in this competition for regioselectivity",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          699.909,
+          550.793,
+          711.907
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "– the conjugation of an electron-donating group",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          711.907,
+          550.793,
+          723.906
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "with an aromatic system – and its manifestation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          723.906,
+          550.793,
+          735.904
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "in bromine–lithium exchanges in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine 2.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-16",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 12,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-16",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 12,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.26,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "To date, three main effects are known to control the regioselectivity of the halogen–lithium exchange: the presence of the directing group, steric strain and the effectiveness of an “electron sink” (the possibility to utilize excess electrons). Here we present a “new player” in this competition for regioselectivity – the conjugation of an electron-donating group with an aromatic system – and its manifestation in bromine–lithium exchanges in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine 2.",
+    "mixed_original_protected_source_text": "To date, three main effects are known to control the regioselectivity of the halogen–lithium exchange: the presence of the directing group, steric strain and the effectiveness of an “electron sink” (the possibility to utilize excess electrons). Here we present a “new player” in this competition for regioselectivity – the conjugation of an electron-donating group with an aromatic system – and its manifestation in bromine–lithium exchanges in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine 2.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p001-b016",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p001-b016"
+    ],
+    "translation_unit_protected_source_text": "To date, three main effects are known to control the regioselectivity of the halogen–lithium exchange: the presence of the directing group, steric strain and the effectiveness of an “electron sink” (the possibility to utilize excess electrons). Here we present a “new player” in this competition for regioselectivity – the conjugation of an electron-donating group with an aromatic system – and its manifestation in bromine–lithium exchanges in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine 2.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "迄今为止，已知控制卤素–锂交换区域选择性的主要效应有三种：导向基团的存在、空间张力和“电子阱”的有效性（即利用过剩电子的能力）。本文在此区域选择性竞争机制中提出一个“新因素”——给电子基团与芳环体系的共轭作用——以及其在化合物 2（4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶）的溴–锂交换反应中的体现。",
+    "translation_unit_translated_text": "迄今为止，已知控制卤素–锂交换区域选择性的主要效应有三种：导向基团的存在、空间张力和“电子阱”的有效性（即利用过剩电子的能力）。本文在此区域选择性竞争机制中提出一个“新因素”——给电子基团与芳环体系的共轭作用——以及其在化合物 2（4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶）的溴–锂交换反应中的体现。",
+    "protected_translated_text": "迄今为止，已知控制卤素–锂交换区域选择性的主要效应有三种：导向基团的存在、空间张力和“电子阱”的有效性（即利用过剩电子的能力）。本文在此区域选择性竞争机制中提出一个“新因素”——给电子基团与芳环体系的共轭作用——以及其在化合物 2（4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶）的溴–锂交换反应中的体现。",
+    "translated_text": "迄今为止，已知控制卤素–锂交换区域选择性的主要效应有三种：导向基团的存在、空间张力和“电子阱”的有效性（即利用过剩电子的能力）。本文在此区域选择性竞争机制中提出一个“新因素”——给电子基团与芳环体系的共轭作用——以及其在化合物 2（4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶）的溴–锂交换反应中的体现。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p001-b016",
+      "page_idx": 0,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "In the naphthalene series, these features are much less investigated, while the rigidity of a naphthalene ring significantly elevates the impact of the steric strain. In our recent paper, we have shown that the directing effect of dimethylamino groups in 1 can be completely suppressed by the steric strain of the molecule (Scheme 1b).$^{[11]}$ / It was also...",
+    "translation_context_after": "Scheme 1. Factors contributing to the Br $ \\rightarrow $Li exchange regioselectivity. / Results and Discussion"
+  }
+]

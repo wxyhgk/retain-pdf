@@ -1,60 +1,65 @@
 name: Release Desktop
+run-name: Release Desktop · ${{ github.ref_name }}
 
 "on":
   push:
     tags:
-      - "v*"
+      - "v[0-9]*.[0-9]*.[0-9]*"
+      - "[0-9]*.[0-9]*.[0-9]*"
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-desktop-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
+  DESKTOP_ROOT: frontend/desktop
   TYPST_VERSION: "0.14.2"
   CMARKER_VERSION: "0.1.8"
   MITEX_VERSION: "0.2.6"
 
 jobs:
+  quality-gate:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/tests.yml
+
   build-windows-release:
+    needs: quality-gate
     runs-on: windows-latest
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Prepare embedded backend package
+        id: backend
+        uses: ./.github/actions/prepare-backend-source
 
       - name: Derive version
         id: version
         shell: pwsh
-        run: |
-          $refName = "${{ github.ref_name }}"
-          if ([string]::IsNullOrWhiteSpace($refName) -or -not $refName.StartsWith("v")) {
-            throw "release workflow must be triggered by a version tag"
-          }
-          $version = $refName.TrimStart("v")
-          if ([string]::IsNullOrWhiteSpace($version)) {
-            throw "release version is empty"
-          }
-          $tag = "v$version"
-          "tag=$tag" >> $env:GITHUB_OUTPUT
-          "version=$version" >> $env:GITHUB_OUTPUT
+        run: python .github/scripts/resolve_release_version.py --tag "${{ github.ref_name }}" --github-output "$env:GITHUB_OUTPUT"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22.22.0"
           cache: "npm"
-          cache-dependency-path: |
-            desktop/package-lock.json
-            frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Setup Python runtime for desktop bundle
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           architecture: "x64"
 
       - name: Verify generated Python requirement snapshots
         shell: pwsh
-        run: python backend/scripts/devtools/sync_python_requirements.py --repo-root . --check
+        run: python .github/scripts/sync_backend_python_requirements.py --repo-root . --check
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -63,7 +68,7 @@ jobs:
 
       - name: Build Rust API for Windows
         shell: pwsh
-        run: cargo build --release --target x86_64-pc-windows-msvc --manifest-path backend/rust_api/Cargo.toml
+        run: cargo build --release --locked --workspace --bins --target x86_64-pc-windows-msvc --manifest-path "$env:RETAIN_PDF_SOURCE_ROOT/Cargo.toml"
 
       - name: Assemble bundled Typst runtime
         shell: pwsh
@@ -72,7 +77,7 @@ jobs:
           $typstUrl = "https://github.com/typst/typst/releases/download/v$typstVersion/typst-x86_64-pc-windows-msvc.zip"
           $downloadZip = Join-Path $env:RUNNER_TEMP "typst-windows.zip"
           $extractRoot = Join-Path $env:RUNNER_TEMP "typst-windows"
-          $bundleRoot = Join-Path $PWD "desktop/src/runtime/windows/typst"
+          $bundleRoot = Join-Path $PWD "$env:DESKTOP_ROOT/src/runtime/windows/typst"
           Write-Host "Downloading Typst $typstVersion from $typstUrl"
           Invoke-WebRequest -Uri $typstUrl -OutFile $downloadZip
           if (Test-Path $extractRoot) {
@@ -93,13 +98,13 @@ jobs:
       - name: Assemble bundled Typst packages
         shell: pwsh
         run: |
-          $bundleRoot = Join-Path $PWD "desktop/src/runtime/shared/typst-packages/preview"
+          $bundleRoot = Join-Path $PWD "$env:DESKTOP_ROOT/src/runtime/shared/typst-packages/preview"
           $packages = @(
             @{ Name = "cmarker"; Version = "${{ env.CMARKER_VERSION }}" },
             @{ Name = "mitex"; Version = "${{ env.MITEX_VERSION }}" }
           )
-          if (Test-Path (Join-Path $PWD "desktop/src/runtime/shared/typst-packages")) {
-            Remove-Item (Join-Path $PWD "desktop/src/runtime/shared/typst-packages") -Recurse -Force
+          if (Test-Path (Join-Path $PWD "$env:DESKTOP_ROOT/src/runtime/shared/typst-packages")) {
+            Remove-Item (Join-Path $PWD "$env:DESKTOP_ROOT/src/runtime/shared/typst-packages") -Recurse -Force
           }
           foreach ($pkg in $packages) {
             $url = "https://packages.typst.org/preview/$($pkg.Name)-$($pkg.Version).tar.gz"
@@ -115,14 +120,14 @@ jobs:
             New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
             Copy-Item (Join-Path $extractRoot "*") $targetDir -Recurse -Force
           }
-          Get-ChildItem (Join-Path $PWD "desktop/src/runtime/shared/typst-packages") -Recurse | Select-Object FullName, Length
+          Get-ChildItem (Join-Path $PWD "$env:DESKTOP_ROOT/src/runtime/shared/typst-packages") -Recurse | Select-Object FullName, Length
 
       - name: Assemble bundled Python runtime
         shell: pwsh
         run: |
           $pythonExe = (Get-Command python).Source
           $pythonRoot = Split-Path -Parent $pythonExe
-          $bundleRoot = Join-Path $PWD "desktop/src/runtime/windows/python"
+          $bundleRoot = Join-Path $PWD "$env:DESKTOP_ROOT/src/runtime/windows/python"
           Write-Host "Using Python executable: $pythonExe"
           Write-Host "Python runtime root: $pythonRoot"
           if (Test-Path $bundleRoot) {
@@ -139,115 +144,132 @@ jobs:
           }
           New-Item -ItemType Directory -Path $sitePackages -Force | Out-Null
           python -m pip install --upgrade pip
-          python -m pip install --target $sitePackages -r desktop/requirements-desktop-windows.txt
-          python -m pip install --target $sitePackages -r desktop/requirements-ai-service.txt
+          python -m pip install --target $sitePackages -r frontend/desktop/requirements-desktop-windows.txt
+          python -m pip install --target $sitePackages -r frontend/desktop/requirements-ai-service.txt
           $pythonBundleExe = Join-Path $bundleRoot "python.exe"
+          # 打包 retainpdf-pipeline console 入口：--no-deps 避免重复拉原生轮子；
+          # 用捆绑 python.exe 直接安装（产出 Lib/site-packages + Scripts/retainpdf-pipeline.exe），
+          # 但 Scripts exe 首行 shebang 硬编码构建机路径不可搬运，运行时走 backend/bin/*.cmd wrapper（-m）。
+          $pipelineSrc = Join-Path $env:RETAIN_PDF_SERVICES_ROOT "pipeline"
+          # 注意：捆绑 python.exe 自身没有 pip（No module named pip），必须用
+          # 系统 python 的 pip --target 装进 bundle，不能调 bundle python -m pip。
+          python -m pip install --target $sitePackages --no-deps --no-build-isolation $pipelineSrc
           $env:PYTHONPATH = $sitePackages
           & $pythonBundleExe -c "import requests, fitz, pikepdf, PIL, urllib3; print('python_bundle_import_check=ok')"
+          # console 入口探针（过渡期 warn-only，不阻断打包）
+          try {
+            & $pythonBundleExe -m retainpdf_pipeline.entrypoints.console --help
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "warning: bundled pipeline console -m --help probe failed (exit=$LASTEXITCODE, script fallback)"
+            } else {
+              Write-Host "bundled pipeline console -m probe OK"
+            }
+          } catch {
+            Write-Host "warning: bundled pipeline console --help probe failed: $_ (script fallback)"
+          }
+          # 探针是 warn-only：显式清掉残留 $LASTEXITCODE，否则 pwsh 会在步骤
+          # 末尾带着旧失败码退出（原生命令失败不阻断，但失败码会粘住）。
+          $global:LASTEXITCODE = 0
+          Get-ChildItem (Join-Path $bundleRoot "Scripts") -Filter "retainpdf-pipeline*" -ErrorAction SilentlyContinue | Select-Object Name, Length
           Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
           Get-ChildItem $bundleRoot | Select-Object Name, Length, LastWriteTime
           $bundleSize = [Math]::Round(((Get-ChildItem $bundleRoot -Recurse -File | Measure-Object -Property Length -Sum).Sum / 1MB), 2)
           Write-Host "Bundled Python size: ${bundleSize} MB"
 
-      - name: Install desktop dependencies
-        working-directory: desktop
+      - name: Install JavaScript workspace dependencies
         shell: pwsh
         run: npm ci
 
-      - name: Install frontend dependencies
-        working-directory: frontend
+      - name: Verify native frontend dependency
+        working-directory: frontend/web
         shell: pwsh
         run: |
-          npm ci
           # @tailwindcss/oxide needs native binding; npm optionalDeps can drop it (npm/cli#4828)
           node -e "require('@tailwindcss/oxide')"
           if ($LASTEXITCODE -ne 0) {
-            $ver = node -p "require('./node_modules/@tailwindcss/oxide/package.json').version"
+            $ver = node -p "require('@tailwindcss/oxide/package.json').version"
             npm install --no-save --no-package-lock "@tailwindcss/oxide@$ver"
             node -e "require('@tailwindcss/oxide')"
             if ($LASTEXITCODE -ne 0) { throw "tailwindcss oxide native binding missing after reinstall" }
           }
 
       - name: Build Windows installer package
-        working-directory: desktop
+        working-directory: frontend/desktop
         shell: pwsh
         env:
           RETAIN_PDF_VERSION: ${{ steps.version.outputs.version }}
         run: npm run dist:win32-installer
 
+      - name: Report Windows package sizes
+        working-directory: frontend/desktop
+        run: npm run report:size
+
       - name: Show desktop bundle manifest
         shell: pwsh
         run: |
-          Get-Content desktop/app/backend/bundle-manifest.json
+          Get-Content "$env:DESKTOP_ROOT/app/backend/bundle-manifest.json"
 
       - name: Smoke frontend bundle before manifest validation
         shell: pwsh
-        run: npm --prefix desktop run smoke:frontend-bundle
+        run: npm --prefix frontend/desktop run smoke:frontend-bundle
 
       - name: Validate desktop bundle manifest
         shell: pwsh
-        run: python .github/scripts/validate_desktop_bundle.py --manifest desktop/app/backend/bundle-manifest.json
+        run: python .github/scripts/validate_desktop_bundle.py --manifest "$env:DESKTOP_ROOT/app/backend/bundle-manifest.json"
 
       - name: Smoke frontend bundle after manifest validation
         shell: pwsh
-        run: npm --prefix desktop run smoke:frontend-bundle
+        run: npm --prefix frontend/desktop run smoke:frontend-bundle
 
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v2
+      - name: Upload Windows package artifact
+        uses: actions/upload-artifact@v7
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          files: |
-            desktop/win/RetainPDF-Windows-${{ steps.version.outputs.version }}-Setup.exe
+          name: desktop-windows-${{ github.sha }}
+          path: ${{ env.DESKTOP_ROOT }}/win/RetainPDF-Windows-${{ steps.version.outputs.version }}-Setup.exe
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
 
   build-linux-release:
+    needs: quality-gate
     runs-on: ubuntu-latest
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Prepare embedded backend package
+        id: backend
+        uses: ./.github/actions/prepare-backend-source
 
       - name: Derive version
         id: version
         shell: bash
-        run: |
-          ref_name="${{ github.ref_name }}"
-          if [ -z "$ref_name" ] || [[ "$ref_name" != v* ]]; then
-            echo "release workflow must be triggered by a version tag" >&2
-            exit 1
-          fi
-          version="${ref_name#v}"
-          if [ -z "$version" ]; then
-            echo "release version is empty" >&2
-            exit 1
-          fi
-          tag="v$version"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+        run: python3 .github/scripts/resolve_release_version.py --tag "${{ github.ref_name }}" --github-output "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22.22.0"
           cache: "npm"
-          cache-dependency-path: |
-            desktop/package-lock.json
-            frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Setup Python runtime for desktop bundle
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
       - name: Verify generated Python requirement snapshots
         shell: bash
-        run: python backend/scripts/devtools/sync_python_requirements.py --repo-root . --check
+        run: python .github/scripts/sync_backend_python_requirements.py --repo-root . --check
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Build Rust API for Linux
         shell: bash
-        run: cargo build --release --manifest-path backend/rust_api/Cargo.toml
+        run: cargo build --release --locked --workspace --bins --manifest-path "$RETAIN_PDF_SOURCE_ROOT/Cargo.toml"
 
       - name: Install Linux packaging dependencies
         shell: bash
@@ -262,7 +284,7 @@ jobs:
           typst_url="https://github.com/typst/typst/releases/download/v${typst_version}/typst-x86_64-unknown-linux-musl.tar.xz"
           download_tar="$RUNNER_TEMP/typst-linux.tar.xz"
           extract_root="$RUNNER_TEMP/typst-linux"
-          bundle_root="$PWD/desktop/src/runtime/linux/typst"
+          bundle_root="$PWD/$DESKTOP_ROOT/src/runtime/linux/typst"
           echo "Downloading Typst $typst_version from $typst_url"
           curl -L "$typst_url" -o "$download_tar"
           rm -rf "$extract_root" "$bundle_root"
@@ -279,8 +301,8 @@ jobs:
       - name: Assemble bundled Typst packages
         shell: bash
         run: |
-          bundle_root="$PWD/desktop/src/runtime/shared/typst-packages/preview"
-          rm -rf "$PWD/desktop/src/runtime/shared/typst-packages"
+          bundle_root="$PWD/$DESKTOP_ROOT/src/runtime/shared/typst-packages/preview"
+          rm -rf "$PWD/$DESKTOP_ROOT/src/runtime/shared/typst-packages"
           mkdir -p "$bundle_root"
           for spec in "cmarker:${{ env.CMARKER_VERSION }}" "mitex:${{ env.MITEX_VERSION }}"; do
             name="${spec%%:*}"
@@ -295,7 +317,7 @@ jobs:
             tar -xzf "$download" -C "$extract_root"
             cp -R "$extract_root"/. "$target_dir"/
           done
-          find "$PWD/desktop/src/runtime/shared/typst-packages" -maxdepth 4 -type f | sort
+          find "$PWD/$DESKTOP_ROOT/src/runtime/shared/typst-packages" -maxdepth 4 -type f | sort
 
       - name: Assemble bundled Python runtime
         shell: bash
@@ -309,7 +331,7 @@ jobs:
           print(python_bin.parent.parent)
           PY
           )"
-          bundle_root="$PWD/desktop/src/runtime/linux/python"
+          bundle_root="$PWD/$DESKTOP_ROOT/src/runtime/linux/python"
           echo "Using Python executable: $python_bin"
           echo "Python runtime root: $python_root"
           rm -rf "$bundle_root"
@@ -325,18 +347,42 @@ jobs:
           )"
           site_packages="$bundle_root/lib/python${py_minor}/site-packages"
           mkdir -p "$site_packages"
-          "$bundle_root/bin/python3" -m pip install --target "$site_packages" -r desktop/requirements-desktop-posix.txt
-          "$bundle_root/bin/python3" -m pip install --target "$site_packages" -r desktop/requirements-ai-service.txt
+          "$bundle_root/bin/python3" -m pip install --target "$site_packages" -r frontend/desktop/requirements-desktop-posix.txt
+          "$bundle_root/bin/python3" -m pip install --target "$site_packages" -r frontend/desktop/requirements-ai-service.txt
           "$bundle_root/bin/python3" - <<'PY'
           import requests, fitz, pikepdf, PIL, urllib3
           print("python_bundle_import_check=ok")
           PY
+          # 打包 retainpdf-pipeline console 入口：--no-deps 避免重复拉原生轮子触发 ldd 门禁
+          "$bundle_root/bin/python3" -m pip install --target "$site_packages" --no-deps --no-build-isolation "$RETAIN_PDF_SERVICES_ROOT/pipeline"
+          # 兜底：pip 生成脚本首行多为 runner 绝对路径，重写为可搬运 shebang
+          pipeline_entry="$(find "$bundle_root" -maxdepth 4 -name 'retainpdf-pipeline' -type f | head -n 1 || true)"
+          if [ -n "${pipeline_entry:-}" ]; then
+            sed -i '1s|^.*$|#!/usr/bin/env python3|' "$pipeline_entry"
+            chmod +x "$pipeline_entry"
+          fi
+          # 主路径：bundled python 同包 wrapper（兼容 backend/python/bin 与 backend/bin 两种落点）
+          cat > "$bundle_root/bin/retainpdf-pipeline" <<'WRAPPER'
+          #!/bin/sh
+          set -eu
+          SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+          if [ -x "$SCRIPT_DIR/python3" ]; then
+            PYTHON_BIN="$SCRIPT_DIR/python3"
+          elif [ -x "$SCRIPT_DIR/../python/bin/python3" ]; then
+            PYTHON_BIN="$SCRIPT_DIR/../python/bin/python3"
+          else
+            PYTHON_BIN="python3"
+          fi
+          exec "$PYTHON_BIN" -m retainpdf_pipeline.entrypoints.console "$@"
+          WRAPPER
+          chmod +x "$bundle_root/bin/retainpdf-pipeline"
+          "$bundle_root/bin/retainpdf-pipeline" --help
           ldd "$bundle_root/bin/python3"
           bad_refs="$( \
             { ldd "$bundle_root/bin/python3" 2>/dev/null; \
               find "$bundle_root" \( -name '*.so' -o -name '*.dylib' \) -type f -print0 | \
               xargs -0 -I{} sh -c 'ldd "{}" 2>/dev/null || true'; } | \
-            rg '/Library/Frameworks/Python\\.framework|/opt/homebrew/Cellar|/usr/local/Cellar|/usr/local/opt/' || true \
+            grep -E '/Library/Frameworks/Python\\.framework|/opt/homebrew/Cellar|/usr/local/Cellar|/usr/local/opt/' || true \
           )"
           if [ -n "$bad_refs" ]; then
             echo "Bundled Linux Python runtime still contains host-specific library references:" >&2
@@ -345,49 +391,51 @@ jobs:
           fi
           du -sh "$bundle_root"
 
-      - name: Install desktop dependencies
-        working-directory: desktop
+      - name: Install JavaScript workspace dependencies
         shell: bash
         run: npm ci
 
-      - name: Install frontend dependencies
-        working-directory: frontend
+      - name: Verify native frontend dependency
+        working-directory: frontend/web
         shell: bash
         run: |
-          npm ci
           # @tailwindcss/oxide 需本机原生绑定；npm optionalDeps 偶发漏装时补齐
           node -e "require('@tailwindcss/oxide')" \
-            || npm install --no-save --no-package-lock "@tailwindcss/oxide@$(node -p "require('./node_modules/@tailwindcss/oxide/package.json').version")"
+            || npm install --no-save --no-package-lock "@tailwindcss/oxide@$(node -p "require('@tailwindcss/oxide/package.json').version")"
           node -e "require('@tailwindcss/oxide')"
 
       - name: Build Linux package
-        working-directory: desktop
+        working-directory: frontend/desktop
         shell: bash
         env:
           RETAIN_PDF_VERSION: ${{ steps.version.outputs.version }}
           RETAIN_PDF_DESKTOP_PLATFORM: linux
         run: npm run dist:linux
 
+      - name: Report Linux package sizes
+        working-directory: frontend/desktop
+        run: npm run report:size
+
       - name: Show desktop bundle manifest
         shell: bash
-        run: cat desktop/app/backend/bundle-manifest.json
+        run: cat "$DESKTOP_ROOT/app/backend/bundle-manifest.json"
 
       - name: Smoke frontend bundle before manifest validation
         shell: bash
-        run: npm --prefix desktop run smoke:frontend-bundle
+        run: npm --prefix frontend/desktop run smoke:frontend-bundle
 
       - name: Validate desktop bundle manifest
         shell: bash
-        run: python3 .github/scripts/validate_desktop_bundle.py --manifest desktop/app/backend/bundle-manifest.json
+        run: python3 .github/scripts/validate_desktop_bundle.py --manifest "$DESKTOP_ROOT/app/backend/bundle-manifest.json"
 
       - name: Smoke frontend bundle after manifest validation
         shell: bash
-        run: npm --prefix desktop run smoke:frontend-bundle
+        run: npm --prefix frontend/desktop run smoke:frontend-bundle
 
       - name: Check Linux bundled native dependencies
         shell: bash
         run: |
-          backend_root="$PWD/desktop/app/backend"
+          backend_root="$PWD/$DESKTOP_ROOT/app/backend"
           ldd_log="$RUNNER_TEMP/retainpdf-linux-ldd.log"
           : > "$ldd_log"
 
@@ -425,62 +473,55 @@ jobs:
             exit 1
           fi
 
-      - name: Upload Linux release assets
-        uses: softprops/action-gh-release@v2
+      - name: Upload Linux package artifact
+        uses: actions/upload-artifact@v7
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          files: |
-            desktop/linux/RetainPDF-Linux-${{ steps.version.outputs.version }}.deb
+          name: desktop-linux-${{ github.sha }}
+          path: ${{ env.DESKTOP_ROOT }}/linux/RetainPDF-Linux-${{ steps.version.outputs.version }}.deb
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
 
   build-macos-release:
+    needs: quality-gate
     runs-on: macos-latest
+    timeout-minutes: 120
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Prepare embedded backend package
+        id: backend
+        uses: ./.github/actions/prepare-backend-source
 
       - name: Derive version
         id: version
         shell: bash
-        run: |
-          ref_name="${{ github.ref_name }}"
-          if [ -z "$ref_name" ] || [[ "$ref_name" != v* ]]; then
-            echo "release workflow must be triggered by a version tag" >&2
-            exit 1
-          fi
-          version="${ref_name#v}"
-          if [ -z "$version" ]; then
-            echo "release version is empty" >&2
-            exit 1
-          fi
-          tag="v$version"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+        run: python3 .github/scripts/resolve_release_version.py --tag "${{ github.ref_name }}" --github-output "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22.22.0"
           cache: "npm"
-          cache-dependency-path: |
-            desktop/package-lock.json
-            frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Setup Python runtime for desktop bundle
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
       - name: Verify generated Python requirement snapshots
         shell: bash
-        run: python backend/scripts/devtools/sync_python_requirements.py --repo-root . --check
+        run: python .github/scripts/sync_backend_python_requirements.py --repo-root . --check
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Build Rust API for macOS
         shell: bash
-        run: cargo build --release --manifest-path backend/rust_api/Cargo.toml
+        run: cargo build --release --locked --workspace --bins --manifest-path "$RETAIN_PDF_SOURCE_ROOT/Cargo.toml"
 
       - name: Assemble bundled Typst runtime
         shell: bash
@@ -489,7 +530,7 @@ jobs:
           typst_url="https://github.com/typst/typst/releases/download/v${typst_version}/typst-aarch64-apple-darwin.tar.xz"
           download_tar="$RUNNER_TEMP/typst-macos.tar.xz"
           extract_root="$RUNNER_TEMP/typst-macos"
-          bundle_root="$PWD/desktop/src/runtime/mac/typst"
+          bundle_root="$PWD/$DESKTOP_ROOT/src/runtime/mac/typst"
           echo "Downloading Typst $typst_version from $typst_url"
           curl -L "$typst_url" -o "$download_tar"
           rm -rf "$extract_root" "$bundle_root"
@@ -506,8 +547,8 @@ jobs:
       - name: Assemble bundled Typst packages
         shell: bash
         run: |
-          bundle_root="$PWD/desktop/src/runtime/shared/typst-packages/preview"
-          rm -rf "$PWD/desktop/src/runtime/shared/typst-packages"
+          bundle_root="$PWD/$DESKTOP_ROOT/src/runtime/shared/typst-packages/preview"
+          rm -rf "$PWD/$DESKTOP_ROOT/src/runtime/shared/typst-packages"
           mkdir -p "$bundle_root"
           for spec in "cmarker:${{ env.CMARKER_VERSION }}" "mitex:${{ env.MITEX_VERSION }}"; do
             name="${spec%%:*}"
@@ -522,7 +563,7 @@ jobs:
             tar -xzf "$download" -C "$extract_root"
             cp -R "$extract_root"/. "$target_dir"/
           done
-          find "$PWD/desktop/src/runtime/shared/typst-packages" -maxdepth 4 -type f | sort
+          find "$PWD/$DESKTOP_ROOT/src/runtime/shared/typst-packages" -maxdepth 4 -type f | sort
 
       - name: Install qpdf build dependency
         shell: bash
@@ -535,7 +576,7 @@ jobs:
         shell: bash
         run: |
           qpdf_prefix="$(brew --prefix qpdf)"
-          bundle_root="$PWD/desktop/src/runtime/mac/python"
+          bundle_root="$PWD/$DESKTOP_ROOT/src/runtime/mac/python"
           python_executable="$(python3 -c 'import sys; print(sys.executable)')"
           framework_python="$(python3 -c 'import sysconfig; print(sysconfig.get_config_var("PYTHONFRAMEWORK"))')"
           framework_prefix="$(python3 -c 'import sysconfig; print(sysconfig.get_config_var("PYTHONFRAMEWORKPREFIX"))')"
@@ -758,8 +799,18 @@ jobs:
           export LDFLAGS="-L$qpdf_prefix/lib ${LDFLAGS:-}"
           export PKG_CONFIG_PATH="$qpdf_prefix/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
           "$bundle_python3" -m pip install --upgrade pip
-          "$bundle_python3" -m pip install -r desktop/requirements-desktop-posix.txt
-          "$bundle_python3" -m pip install -r desktop/requirements-ai-service.txt
+          "$bundle_python3" -m pip install -r frontend/desktop/requirements-desktop-posix.txt
+          "$bundle_python3" -m pip install -r frontend/desktop/requirements-ai-service.txt
+          # 打包 retainpdf-pipeline console 入口：--no-deps 避免重复拉原生轮子触发门禁
+          # 先装 wheel：venv 精简后缺 bdist_wheel，否则 metadata 生成失败
+          "$bundle_python3" -m pip install wheel
+          "$bundle_python3" -m pip install --no-deps --no-build-isolation "$RETAIN_PDF_SERVICES_ROOT/pipeline"
+          # 兜底：pip 生成脚本首行多为 runner 绝对路径，重写为可搬运 shebang（纯文本替换，不跑 install_name_tool）
+          pipeline_entry="$bundle_root/bin/retainpdf-pipeline"
+          if [ -f "$pipeline_entry" ]; then
+            sed -i '' '1s|^.*$|#!/usr/bin/env python3|' "$pipeline_entry"
+            chmod +x "$pipeline_entry"
+          fi
           site_packages_root="$bundle_root/lib/python$framework_version/site-packages"
           python_lib_dynload="$framework_bundle_root/lib/python$framework_version/lib-dynload"
           while IFS= read -r site_mach_o; do
@@ -845,30 +896,39 @@ jobs:
           if [ -e "$bundle_python_app" ]; then
             otool -L "$bundle_python_app"
           fi
+          # console 入口探针（过渡期 warn-only；PYTHONHOME 保持 Versions/Current，不阻断打包）
+          export PYTHONHOME="$framework_bundle_framework_root/Versions/Current"
+          export PYTHONPATH="$site_packages_root:$python_lib_dynload"
+          if [ -x "$bundle_root/bin/retainpdf-pipeline" ]; then
+            "$bundle_root/bin/retainpdf-pipeline" --help || echo "warning: bundled pipeline console --help probe failed (script fallback)"
+          else
+            echo "warning: bundled pipeline console script missing: $bundle_root/bin/retainpdf-pipeline (script fallback)"
+          fi
+          "$bundle_python3" -m retainpdf_pipeline.entrypoints.console --help || echo "warning: bundled pipeline console -m probe failed (script fallback)"
+          unset PYTHONHOME
+          unset PYTHONPATH
           du -sh "$bundle_root"
 
-      - name: Install desktop dependencies
-        working-directory: desktop
+      - name: Install JavaScript workspace dependencies
         shell: bash
         run: npm ci
 
-      - name: Install frontend dependencies
-        working-directory: frontend
+      - name: Verify native frontend dependency
+        working-directory: frontend/web
         shell: bash
         run: |
-          npm ci
           # @tailwindcss/oxide 需本机原生绑定；npm optionalDeps 偶发漏装时补齐
           node -e "require('@tailwindcss/oxide')" \
-            || npm install --no-save --no-package-lock "@tailwindcss/oxide@$(node -p "require('./node_modules/@tailwindcss/oxide/package.json').version")"
+            || npm install --no-save --no-package-lock "@tailwindcss/oxide@$(node -p "require('@tailwindcss/oxide/package.json').version")"
           node -e "require('@tailwindcss/oxide')"
 
       - name: Generate macOS icon
         shell: bash
         run: |
-          iconset_dir="$PWD/desktop/build/icon.iconset"
-          source_svg="$PWD/desktop/svg/mac_RetainPDF.svg"
-          source_png="$PWD/desktop/build/icon-mac.png"
-          rm -rf "$iconset_dir" "$PWD/desktop/build/icon.icns"
+          iconset_dir="$PWD/$DESKTOP_ROOT/build/icon.iconset"
+          source_svg="$PWD/$DESKTOP_ROOT/svg/mac_RetainPDF.svg"
+          source_png="$PWD/$DESKTOP_ROOT/build/icon-mac.png"
+          rm -rf "$iconset_dir" "$PWD/$DESKTOP_ROOT/build/icon.icns"
           sips -s format png "$source_svg" --out "$source_png" >/dev/null
           mkdir -p "$iconset_dir"
           for size in 16 32 64 128 256 512; do
@@ -879,11 +939,11 @@ jobs:
           cp "$iconset_dir/icon_256x256.png" "$iconset_dir/icon_128x128@2x.png"
           cp "$iconset_dir/icon_512x512.png" "$iconset_dir/icon_256x256@2x.png"
           cp "$source_png" "$iconset_dir/icon_512x512@2x.png"
-          iconutil -c icns "$iconset_dir" -o "$PWD/desktop/build/icon.icns"
-          ls -lah "$PWD/desktop/build/icon.icns"
+          iconutil -c icns "$iconset_dir" -o "$PWD/$DESKTOP_ROOT/build/icon.icns"
+          ls -lah "$PWD/$DESKTOP_ROOT/build/icon.icns"
 
       - name: Build macOS package
-        working-directory: desktop
+        working-directory: frontend/desktop
         shell: bash
         env:
           RETAIN_PDF_VERSION: ${{ steps.version.outputs.version }}
@@ -892,13 +952,19 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npm run dist:mac
 
+      - name: Report macOS package sizes
+        working-directory: frontend/desktop
+        run: npm run report:size
+
       - name: Check macOS bundled binary architectures
         shell: bash
         run: |
-          backend_root="$PWD/desktop/app/backend"
+          backend_root="$PWD/$DESKTOP_ROOT/app/backend"
           expected_arch="$(uname -m)"
           required_bins=(
             "$backend_root/bin/rust_api"
+            "$backend_root/bin/retain-jobsd"
+            "$backend_root/bin/retainpdf-agent"
             "$backend_root/typst/bin/typst"
             "$backend_root/python/bin/python3"
           )
@@ -920,10 +986,10 @@ jobs:
       - name: Probe packaged macOS bundled Python
         shell: bash
         run: |
-          app_root="$(find "$PWD/desktop" -maxdepth 3 -type d -name 'RetainPDF.app' | head -n 1)"
+          app_root="$(find "$PWD/$DESKTOP_ROOT" -maxdepth 3 -type d -name 'RetainPDF.app' | head -n 1)"
           if [ -z "$app_root" ]; then
-            echo "Packaged RetainPDF.app not found under $PWD/desktop" >&2
-            find "$PWD/desktop" -maxdepth 3 -type d | sort
+            echo "Packaged RetainPDF.app not found under $PWD/$DESKTOP_ROOT" >&2
+            find "$PWD/$DESKTOP_ROOT" -maxdepth 3 -type d | sort
             exit 1
           fi
           python_bin="$app_root/Contents/Resources/backend/python/bin/python3"
@@ -990,23 +1056,114 @@ jobs:
 
       - name: Show desktop bundle manifest
         shell: bash
-        run: cat desktop/app/backend/bundle-manifest.json
+        run: cat "$DESKTOP_ROOT/app/backend/bundle-manifest.json"
 
       - name: Smoke frontend bundle before manifest validation
         shell: bash
-        run: npm --prefix desktop run smoke:frontend-bundle
+        run: npm --prefix frontend/desktop run smoke:frontend-bundle
 
       - name: Validate desktop bundle manifest
         shell: bash
-        run: python3 .github/scripts/validate_desktop_bundle.py --manifest desktop/app/backend/bundle-manifest.json
+        run: python3 .github/scripts/validate_desktop_bundle.py --manifest "$DESKTOP_ROOT/app/backend/bundle-manifest.json"
 
       - name: Smoke frontend bundle after manifest validation
         shell: bash
-        run: npm --prefix desktop run smoke:frontend-bundle
+        run: npm --prefix frontend/desktop run smoke:frontend-bundle
 
-      - name: Upload macOS release assets
-        uses: softprops/action-gh-release@v2
+      - name: Upload macOS package artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: desktop-macos-${{ github.sha }}
+          path: ${{ env.DESKTOP_ROOT }}/mac/RetainPDF-Mac-${{ steps.version.outputs.version }}.dmg
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
+  publish-desktop-release:
+    needs:
+      - build-windows-release
+      - build-linux-release
+      - build-macos-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout release revision
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Derive version
+        id: version
+        shell: bash
+        run: python3 .github/scripts/resolve_release_version.py --tag "${{ github.ref_name }}" --github-output "$GITHUB_OUTPUT"
+
+      - name: Download Windows package artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: desktop-windows-${{ github.sha }}
+          path: release-assets
+
+      - name: Download Linux package artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: desktop-linux-${{ github.sha }}
+          path: release-assets
+
+      - name: Download macOS package artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: desktop-macos-${{ github.sha }}
+          path: release-assets
+
+      - name: Verify complete desktop release set
+        shell: bash
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          expected=(
+            "release-assets/RetainPDF-Windows-${version}-Setup.exe"
+            "release-assets/RetainPDF-Linux-${version}.deb"
+            "release-assets/RetainPDF-Mac-${version}.dmg"
+          )
+          for asset in "${expected[@]}"; do
+            if [ ! -s "$asset" ]; then
+              echo "Missing or empty desktop release asset: $asset" >&2
+              exit 1
+            fi
+          done
+          find release-assets -maxdepth 1 -type f -print | sort
+          (
+            cd release-assets
+            sha256sum \
+              "RetainPDF-Windows-${version}-Setup.exe" \
+              "RetainPDF-Linux-${version}.deb" \
+              "RetainPDF-Mac-${version}.dmg" \
+              > SHA256SUMS.txt
+          )
+          cat release-assets/SHA256SUMS.txt
+
+      - name: Verify release tag still targets this revision
+        shell: bash
+        run: |
+          head_sha="$(git rev-parse HEAD)"
+          remote_sha="$(git ls-remote origin "refs/tags/${GITHUB_REF_NAME}^{}" | awk 'NR == 1 { print $1 }')"
+          if [ -z "$remote_sha" ]; then
+            remote_sha="$(git ls-remote origin "refs/tags/${GITHUB_REF_NAME}" | awk 'NR == 1 { print $1 }')"
+          fi
+          if [ "$head_sha" != "$GITHUB_SHA" ] || [ "$remote_sha" != "$GITHUB_SHA" ]; then
+            echo "Release tag moved while this run was building: head=$head_sha remote=$remote_sha expected=$GITHUB_SHA" >&2
+            exit 1
+          fi
+
+      - name: Publish complete desktop release
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
           files: |
-            desktop/mac/RetainPDF-Mac-${{ steps.version.outputs.version }}.dmg
+            release-assets/RetainPDF-Windows-${{ steps.version.outputs.version }}-Setup.exe
+            release-assets/RetainPDF-Linux-${{ steps.version.outputs.version }}.deb
+            release-assets/RetainPDF-Mac-${{ steps.version.outputs.version }}.dmg
+            release-assets/SHA256SUMS.txt

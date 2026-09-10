@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/library-books/v1",
+  "title": "图书馆书架契约（Library Books）",
+  "description": "Rust ↔ TS 重复的图书馆视图单一真值。生产者：services/api crates/retain-core models/view/job_types.rs（LibraryBookListView / LibraryBookListItemView / LibraryBookDetailView / JobListView / JobListItemView）；消费者：@retainpdf/contracts/library-books 生成 DTO、packages/domain 的 job 归一化模型、apps/web 的 library API 与 apps/web-react 的 library 类型层。所有响应为 {code, message, data} 信封，本契约描述 data 部分。改契约先改本文件，再重新生成 DTO 并让 Rust 与 TS 契约测试变绿。",
+  "base_path": "/api/v1/library",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/library/books",
+      "query": "ListLibraryBooksQuery",
+      "output": "LibraryBookListView",
+      "rust_view": "LibraryBookListView",
+      "ts_consumer": "@retainpdf/contracts/library-books :: LibraryBookListView"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/library/books/:job_id",
+      "output": "LibraryBookDetailView",
+      "rust_view": "LibraryBookDetailView",
+      "ts_consumer": "@retainpdf/contracts/library-books :: LibraryBookDetailView"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs",
+      "query": "ListJobsQuery",
+      "output": "JobListView",
+      "rust_view": "JobListView",
+      "ts_consumer": "@retainpdf/contracts/library-books :: JobListView"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/library/books/:job_id",
+      "query": "LibraryDeleteQuery",
+      "output": "LibraryDeleteResultView"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/library/books/batch-delete",
+      "input": "LibraryBatchDeleteInput",
+      "output": "LibraryBatchDeleteResultView"
+    }
+  ],
+  "definitions": {
+    "JobStatusKind": {
+      "type": "string",
+      "enum": ["queued", "running", "succeeded", "failed", "canceled"],
+      "description": "crate::models::common::JobStatusKind (serde rename_all snake_case)"
+    },
+    "WorkflowKind": {
+      "type": "string",
+      "enum": ["book", "ocr", "translate", "render"],
+      "description": "crate::models::common::WorkflowKind"
+    },
+    "JobProgressView": {
+      "type": "object",
+      "description": "services/api/crates/retain-core/src/models/view/common.rs :: JobProgressView。current/total 为页/批计数（i64），percent 0-100，unit 标识页/批/步/percent。",
+      "required": [],
+      "properties": {
+        "current": { "type": ["integer", "null"], "description": "已完成计数，null=未知" },
+        "total": { "type": ["integer", "null"], "description": "总数，null=未定/不定长" },
+        "percent": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "unit": { "type": ["string", "null"], "description": "page|batch|step|percent|null，skip_serializing_if None" }
+      }
+    },
+    "ArtifactDisplayItemView": {
+      "type": "object",
+      "required": ["key", "label", "ready", "kind"],
+      "properties": {
+        "key": { "type": "string" },
+        "label": { "type": "string" },
+        "ready": { "type": "boolean" },
+        "kind": { "type": "string" },
+        "file_name": { "type": ["string", "null"] },
+        "size_bytes": { "type": ["integer", "null"] },
+        "download_url": { "type": ["string", "null"] }
+      }
+    },
+    "LibraryBookListItemView": {
+      "type": "object",
+      "description": "job_types.rs :: LibraryBookListItemView — 书架卡片。job_id 是主键（كر очередь: id 冗余为 job_id 别名），display_name 回退为 title/source_file_name。",
+      "required": ["id", "job_id", "title", "display_name", "status", "progress", "output_pdf_ready", "markdown_ready", "bundle_ready", "created_at", "updated_at"],
+      "properties": {
+        "id": { "type": "string", "description": "book id (= job_id 去 ocr 后缀的归一化)" },
+        "job_id": { "type": "string" },
+        "title": { "type": "string" },
+        "display_name": { "type": "string" },
+        "source_file_name": { "type": ["string", "null"] },
+        "authors": { "type": ["string", "null"] },
+        "page_count": { "type": ["integer", "null"] },
+        "status": { "$ref": "#/definitions/JobStatusKind" },
+        "stage": { "type": ["string", "null"], "description": "当前阶段 raw stage，null=未开始" },
+        "stage_detail": { "type": ["string", "null"] },
+        "progress": { "$ref": "#/definitions/JobProgressView" },
+        "cover_url": { "type": ["string", "null"] },
+        "thumbnail_url": { "type": ["string", "null"] },
+        "output_pdf_ready": { "type": "boolean" },
+        "markdown_ready": { "type": "boolean" },
+        "bundle_ready": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "LibraryBookListView": {
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/definitions/LibraryBookListItemView" } }
+      }
+    },
+    "LibraryBookDetailView": {
+      "type": "object",
+      "required": ["id", "job_id", "title", "status", "progress", "cover_url", "thumbnail_url", "artifacts"],
+      "properties": {
+        "id": { "type": "string" },
+        "job_id": { "type": "string" },
+        "title": { "type": "string" },
+        "authors": { "type": ["string", "null"] },
+        "source_file_name": { "type": ["string", "null"] },
+        "page_count": { "type": ["integer", "null"] },
+        "source_language": { "type": ["string", "null"] },
+        "target_language": { "type": ["string", "null"] },
+        "file_size_bytes": { "type": ["integer", "null"] },
+        "status": { "$ref": "#/definitions/JobStatusKind" },
+        "stage": { "type": ["string", "null"] },
+        "progress": { "$ref": "#/definitions/JobProgressView" },
+        "cover_url": { "type": ["string", "null"] },
+        "thumbnail_url": { "type": ["string", "null"] },
+        "artifacts": { "type": "array", "items": { "$ref": "#/definitions/ArtifactDisplayItemView" } }
+      }
+    },
+    "JobListItemView": {
+      "type": "object",
+      "description": "job_types.rs :: JobListItemView — /api/v1/jobs 列表项，含 stage_snapshot 与 cover/thumbnail 双图。",
+      "required": ["job_id", "display_name", "workflow", "status", "attempt", "retry_count", "last_retry_at", "stage_snapshot", "background_snapshots", "stages", "output_pdf_ready", "markdown_ready", "bundle_ready", "created_at", "updated_at", "detail_path", "detail_url"],
+      "properties": {
+        "job_id": { "type": "string" },
+        "display_name": { "type": "string" },
+        "workflow": { "$ref": "#/definitions/WorkflowKind" },
+        "status": { "$ref": "#/definitions/JobStatusKind" },
+        "attempt": { "type": "integer", "minimum": 1 },
+        "retry_count": { "type": "integer", "minimum": 0 },
+        "last_retry_at": { "type": ["string", "null"], "format": "date-time" },
+        "trace_id": { "type": ["string", "null"] },
+        "stage_snapshot": { "anyOf": [{ "$ref": "#/definitions/JobStageSnapshotView" }, { "type": "null" }] },
+        "background_snapshots": { "type": "array", "items": { "$ref": "#/definitions/JobStageSnapshotView" } },
+        "stages": { "$ref": "#/definitions/JobStagesView" },
+        "page_count": { "type": ["integer", "null"] },
+        "source_file_name": { "type": ["string", "null"] },
+        "cover_url": { "type": ["string", "null"] },
+        "thumbnail_url": { "type": ["string", "null"] },
+        "output_pdf_ready": { "type": "boolean" },
+        "markdown_ready": { "type": "boolean" },
+        "bundle_ready": { "type": "boolean" },
+        "invocation": { "anyOf": [{ "$ref": "#/definitions/InvocationSummaryView" }, { "type": "null" }] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "detail_path": { "type": "string" },
+        "detail_url": { "type": "string" }
+      }
+    },
+    "JobListView": {
+      "type": "object",
+      "required": ["items", "invocation_summary"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/definitions/JobListItemView" } },
+        "invocation_summary": { "$ref": "#/definitions/JobListInvocationSummaryView" }
+      }
+    },
+    "JobStageSnapshotView": {
+      "type": "object",
+      "description": "job_types.rs :: JobStageSnapshotView — 阶段快照（含 display_stage / stage / substage / lane / stage_detail / progress）。前端 normalize 与阶段进度均以此驱动。",
+      "required": ["progress"],
+      "properties": {
+        "display_stage": { "type": ["string", "null"] },
+        "stage": { "type": ["string", "null"] },
+        "substage": { "type": ["string", "null"] },
+        "lane": { "type": ["string", "null"], "description": "main|background" },
+        "stage_detail": { "type": ["string", "null"] },
+        "progress": { "$ref": "#/definitions/JobProgressView" }
+      }
+    },
+    "JobStageStateView": {
+      "type": "string",
+      "enum": ["reused", "queued", "pending", "in_progress", "completed", "failed", "skipped"]
+    },
+    "JobStageRuntimeView": {
+      "type": "object",
+      "required": ["state", "progress"],
+      "properties": {
+        "state": { "$ref": "#/definitions/JobStageStateView" },
+        "progress": { "$ref": "#/definitions/JobProgressView" }
+      }
+    },
+    "JobStagesView": {
+      "type": "object",
+      "required": ["ocr", "translation", "render"],
+      "properties": {
+        "ocr": { "$ref": "#/definitions/JobStageRuntimeView" },
+        "translation": { "$ref": "#/definitions/JobStageRuntimeView" },
+        "render": { "$ref": "#/definitions/JobStageRuntimeView" }
+      }
+    },
+    "JobTimestampsView": {
+      "type": "object",
+      "required": ["created_at", "updated_at"],
+      "properties": {
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "started_at": { "type": ["string", "null"] },
+        "finished_at": { "type": ["string", "null"] },
+        "duration_seconds": { "type": ["number", "null"] }
+      }
+    },
+    "InvocationSummaryView": {
+      "type": "object",
+      "required": ["stage", "input_protocol", "stage_spec_schema_version"],
+      "properties": {
+        "stage": { "type": "string" },
+        "input_protocol": { "type": "string" },
+        "stage_spec_schema_version": { "type": "string" }
+      }
+    },
+    "JobListInvocationSummaryView": {
+      "type": "object",
+      "required": ["stage_spec_count", "unknown_count"],
+      "properties": {
+        "stage_spec_count": { "type": "integer" },
+        "unknown_count": { "type": "integer" }
+      }
+    },
+    "LibraryDeleteResultView": {
+      "type": "object",
+      "required": ["deleted", "job_id", "removed_paths", "removed_child_jobs"],
+      "properties": {
+        "deleted": { "type": "boolean" },
+        "job_id": { "type": "string" },
+        "removed_paths": { "type": "array", "items": { "type": "string" } },
+        "removed_child_jobs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "LibraryBatchDeleteResultView": {
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/definitions/LibraryDeleteResultView" } }
+      }
+    },
+    "LibraryDeleteQuery": {
+      "type": "object",
+      "properties": {
+        "force": { "type": "boolean", "default": false }
+      }
+    },
+    "LibraryBatchDeleteInput": {
+      "type": "object",
+      "required": ["ids"],
+      "properties": {
+        "ids": { "type": "array", "items": { "type": "string" } },
+        "force": { "type": "boolean", "default": false }
+      }
+    },
+    "ListLibraryBooksQuery": {
+      "type": "object",
+      "properties": {
+        "limit": { "type": "integer", "default": 40 },
+        "offset": { "type": "integer", "default": 0 },
+        "q": { "type": "string" },
+        "job_ids": { "type": "string", "description": "逗号分隔 job_id 白名单，对应 ListJobsQuery.job_ids" }
+      }
+    },
+    "ListJobsQuery": {
+      "type": "object",
+      "properties": {
+        "limit": { "type": "integer" },
+        "offset": { "type": "integer" },
+        "status": { "$ref": "#/definitions/JobStatusKind" },
+        "workflow": { "$ref": "#/definitions/WorkflowKind" },
+        "provider": { "type": "string" },
+        "q": { "type": "string" },
+        "job_ids": { "type": "string" }
+      }
+    }
+  }
+}

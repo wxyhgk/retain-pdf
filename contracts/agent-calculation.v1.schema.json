@@ -1,0 +1,356 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/agent-calculation/v1",
+  "title": "AI Agent durable calculation contract",
+  "description": "Safe, durable calculation lifecycle owned by services/api. Internal endpoints accept only fixed calculation tool identities, input provenance and hashes, bounded results, and controlled SVG chart bytes. Public endpoints expose recoverable calculation state and verified artifact URLs. All JSON endpoints use the {code, message, data} envelope; this contract describes data payloads.",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "audience": "internal_ai_service",
+      "method": "POST",
+      "path": "/api/v1/internal/agent/calculations",
+      "input": "CreateAgentCalculationInput",
+      "output": "AgentCalculationView"
+    },
+    {
+      "audience": "internal_ai_service",
+      "method": "POST",
+      "path": "/api/v1/internal/agent/calculations/:calculation_id/complete",
+      "input": "CompleteAgentCalculationInput",
+      "output": "AgentCalculationView"
+    },
+    {
+      "audience": "internal_ai_service",
+      "method": "POST",
+      "path": "/api/v1/internal/agent/calculations/:calculation_id/fail",
+      "input": "FailAgentCalculationInput",
+      "output": "AgentCalculationView"
+    },
+    {
+      "audience": "public_client",
+      "method": "GET",
+      "path": "/api/v1/ai/conversations/:conversation_id/calculations",
+      "query": "AgentCalculationListQuery",
+      "output": "AgentCalculationListView"
+    },
+    {
+      "audience": "public_client",
+      "method": "GET",
+      "path": "/api/v1/ai/calculations/:calculation_id",
+      "output": "AgentCalculationView"
+    },
+    {
+      "audience": "public_client",
+      "method": "GET",
+      "path": "/api/v1/ai/calculations/:calculation_id/artifacts/:artifact_id",
+      "output": "AgentCalculationArtifactBody",
+      "response_body": "binary"
+    }
+  ],
+  "security_boundary": {
+    "internal_authentication": "Internal mutation endpoints require the ordinary Rust API key and are never called by an FX child process.",
+    "never_persisted_or_returned": [
+      "raw expression text",
+      "raw model-authored values",
+      "raw table cells",
+      "credentials and environment variables",
+      "artifact content_base64",
+      "server absolute paths"
+    ],
+    "durable_input": "Only scope-checked input_refs and input_sha256 are persisted; input_sha256 is not returned by AgentCalculationView.",
+    "result_limit_bytes": 65536,
+    "artifact_limit_count": 10,
+    "artifact_limit_bytes_each": 524288,
+    "artifact_policy": "Only UTF-8 image/svg+xml svg_chart artifacts are accepted. The server rejects scripts, foreignObject, links, data URLs, JavaScript URLs, CSS url(), hash mismatches and unsafe paths, then verifies size and SHA-256 again on download."
+  },
+  "definitions": {
+    "Identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
+    "Sha256": {
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    },
+    "AgentCalculationToolName": {
+      "type": "string",
+      "enum": [
+        "calculate_expression",
+        "calculate_statistics",
+        "analyze_table",
+        "generate_chart"
+      ]
+    },
+    "AgentCalculationStatus": {
+      "type": "string",
+      "enum": ["running", "completed", "failed"]
+    },
+    "AgentCalculationInputRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "May be empty for an unscoped calculation; a non-empty value must match the validated top-level scope."
+        },
+        "job_id": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "May be empty when no job is in scope; a non-empty value must match the validated top-level scope."
+        },
+        "page_idx": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "block_ids": {
+          "type": "array",
+          "maxItems": 128,
+          "items": { "$ref": "#/definitions/Identifier" }
+        },
+        "source_calculation_ids": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "$ref": "#/definitions/Identifier" }
+        }
+      }
+    },
+    "CreateAgentCalculationInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "conversation_id",
+        "request_message_id",
+        "tool_name",
+        "tool_call_id",
+        "input_sha256"
+      ],
+      "properties": {
+        "schema": { "const": "agent_calculation_create_v1" },
+        "calculation_id": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Optional idempotency identity. Empty or absent lets the server create an id."
+        },
+        "conversation_id": { "$ref": "#/definitions/Identifier" },
+        "request_message_id": { "$ref": "#/definitions/Identifier" },
+        "document_id": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Empty or absent means unscoped. A non-empty value must equal the conversation document."
+        },
+        "job_id": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Empty or absent means no job scope. A job scope requires and must belong to document_id."
+        },
+        "tool_name": { "$ref": "#/definitions/AgentCalculationToolName" },
+        "tool_call_id": { "$ref": "#/definitions/Identifier" },
+        "input_refs": { "$ref": "#/definitions/AgentCalculationInputRefs" },
+        "input_sha256": { "$ref": "#/definitions/Sha256" }
+      }
+    },
+    "CalculationResult": {
+      "type": "object",
+      "description": "Bounded JSON result. The server accepts only these result schema identities, rejects embedded artifact content fields, and enforces a 64 KiB encoded limit.",
+      "required": ["schema"],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "enum": [
+            "retainpdf.calculation-result.v1",
+            "retainpdf.table-analysis.v1",
+            "retainpdf.calculation-artifact.v1"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "CompleteAgentCalculationArtifactInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "kind", "mime_type", "sha256", "content_base64"],
+      "properties": {
+        "artifact_id": { "$ref": "#/definitions/Identifier" },
+        "kind": { "const": "svg_chart" },
+        "mime_type": { "const": "image/svg+xml" },
+        "sha256": { "$ref": "#/definitions/Sha256" },
+        "content_base64": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "Internal transport only. Decoded bytes must be non-empty and at most 524288 bytes."
+        }
+      }
+    },
+    "CompleteAgentCalculationInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "result"],
+      "properties": {
+        "schema": { "const": "agent_calculation_complete_v1" },
+        "result": { "$ref": "#/definitions/CalculationResult" },
+        "artifacts": {
+          "type": "array",
+          "maxItems": 10,
+          "items": { "$ref": "#/definitions/CompleteAgentCalculationArtifactInput" }
+        }
+      }
+    },
+    "FailAgentCalculationInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "code", "message"],
+      "properties": {
+        "schema": { "const": "agent_calculation_fail_v1" },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^(?=.*\\S)[^\\r\\n\\u0000]+$"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^(?=.*\\S)[^\\r\\n\\u0000]+$"
+        }
+      }
+    },
+    "AgentCalculationListQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "limit is clamped by the service to 1..100; absent means 50. offset defaults to 0.",
+      "properties": {
+        "limit": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "default": 0
+        }
+      }
+    },
+    "AgentCalculationFailureView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    },
+    "AgentCalculationArtifactView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "kind", "mime_type", "size_bytes", "sha256", "url"],
+      "properties": {
+        "artifact_id": { "$ref": "#/definitions/Identifier" },
+        "kind": { "const": "svg_chart" },
+        "mime_type": { "const": "image/svg+xml" },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 524288
+        },
+        "sha256": { "$ref": "#/definitions/Sha256" },
+        "url": {
+          "type": "string",
+          "pattern": "^/api/v1/ai/calculations/[A-Za-z0-9_.-]+/artifacts/[A-Za-z0-9_.-]+$"
+        }
+      }
+    },
+    "AgentCalculationView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "calculation_id",
+        "conversation_id",
+        "request_message_id",
+        "document_id",
+        "job_id",
+        "tool_name",
+        "tool_call_id",
+        "input_refs",
+        "status",
+        "result",
+        "failure",
+        "artifacts",
+        "created_at",
+        "updated_at",
+        "finished_at"
+      ],
+      "properties": {
+        "schema": { "const": "agent_calculation_v1" },
+        "calculation_id": { "$ref": "#/definitions/Identifier" },
+        "conversation_id": { "$ref": "#/definitions/Identifier" },
+        "request_message_id": { "$ref": "#/definitions/Identifier" },
+        "document_id": {
+          "oneOf": [
+            { "$ref": "#/definitions/Identifier" },
+            { "type": "null" }
+          ]
+        },
+        "job_id": {
+          "oneOf": [
+            { "$ref": "#/definitions/Identifier" },
+            { "type": "null" }
+          ]
+        },
+        "tool_name": { "$ref": "#/definitions/AgentCalculationToolName" },
+        "tool_call_id": { "$ref": "#/definitions/Identifier" },
+        "input_refs": { "$ref": "#/definitions/AgentCalculationInputRefs" },
+        "status": { "$ref": "#/definitions/AgentCalculationStatus" },
+        "result": {
+          "oneOf": [
+            { "$ref": "#/definitions/CalculationResult" },
+            { "type": "null" }
+          ]
+        },
+        "failure": {
+          "oneOf": [
+            { "$ref": "#/definitions/AgentCalculationFailureView" },
+            { "type": "null" }
+          ]
+        },
+        "artifacts": {
+          "type": "array",
+          "maxItems": 10,
+          "items": { "$ref": "#/definitions/AgentCalculationArtifactView" }
+        },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" },
+        "finished_at": { "type": ["string", "null"] }
+      }
+    },
+    "AgentCalculationListView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["calculations", "total", "limit", "offset", "has_more"],
+      "properties": {
+        "calculations": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/AgentCalculationView" }
+        },
+        "total": { "type": "integer", "minimum": 0 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "offset": { "type": "integer", "minimum": 0 },
+        "has_more": { "type": "boolean" }
+      }
+    },
+    "AgentCalculationArtifactBody": {
+      "description": "Raw, integrity-verified SVG response body. This endpoint does not use the JSON envelope.",
+      "contentMediaType": "image/svg+xml",
+      "type": "string",
+      "contentEncoding": "binary"
+    }
+  }
+}

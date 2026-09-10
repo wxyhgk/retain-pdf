@@ -2,6 +2,15 @@ name: Translation Replay
 
 "on":
   workflow_dispatch: {}
+  pull_request:
+    paths:
+      - "backend/pipeline/devtools/promptfoo/**"
+      - "backend/pipeline/devtools/tests/translation/test_promptfoo_*.py"
+      - "backend/pipeline/devtools/tests/translation/test_translation_debug_tools.py"
+      - ".github/workflows/translation-replay.yml"
+
+permissions:
+  contents: read
 
 concurrency:
   group: translation-replay-${{ github.workflow }}-${{ github.ref }}
@@ -12,19 +21,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      PYTHONPATH: backend/scripts
       RETAIN_TRANSLATION_API_KEY: ${{ secrets.RETAIN_TRANSLATION_API_KEY }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Prepare embedded backend package
+        id: backend
+        uses: ./.github/actions/prepare-backend-source
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22.22.0"
 
@@ -32,16 +44,17 @@ jobs:
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          python backend/scripts/devtools/sync_python_requirements.py --repo-root . --check
-          python -m pip install -r docker/requirements-test.txt
+          python .github/scripts/sync_backend_python_requirements.py --repo-root . --services-root "$RETAIN_PDF_SERVICES_ROOT" --check
+          python -m pip install -r ops/deployment/docker/requirements-test.txt
+          python -m pip install --no-deps "$RETAIN_PDF_SERVICES_ROOT/pipeline"
 
       - name: Run promptfoo toolchain unit tests
         shell: bash
         run: |
           python -m pytest -q \
-            backend/scripts/devtools/tests/translation/test_promptfoo_case_tools.py \
-            backend/scripts/devtools/tests/translation/test_promptfoo_harness_regressions.py \
-            backend/scripts/devtools/tests/translation/test_translation_debug_tools.py
+            "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/tests/translation/test_promptfoo_case_tools.py" \
+            "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/tests/translation/test_promptfoo_harness_regressions.py" \
+            "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/tests/translation/test_translation_debug_tools.py"
 
       - name: Note missing replay secret on fork PRs
         if: env.RETAIN_TRANSLATION_API_KEY == '' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
@@ -60,17 +73,18 @@ jobs:
         if: env.RETAIN_TRANSLATION_API_KEY != ''
         shell: bash
         run: |
-          mkdir -p backend/scripts/devtools/promptfoo/.ci
-          python backend/scripts/devtools/promptfoo/run_eval.py -- --output "$GITHUB_WORKSPACE/backend/scripts/devtools/promptfoo/.ci/current-replay.json" --no-table
+          replay_root="$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/promptfoo"
+          mkdir -p "$replay_root/.ci"
+          python "$replay_root/run_eval.py" -- --output "$replay_root/.ci/current-replay.json" --no-table
 
       - name: Upload promptfoo artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: translation-replay-${{ github.run_id }}
           if-no-files-found: ignore
           path: |
-            backend/scripts/devtools/promptfoo/.ci/*.json
-            backend/scripts/devtools/promptfoo/fixtures/cases.csv
-            backend/scripts/devtools/promptfoo/fixtures/cases/*.json
+            ${{ steps.backend.outputs.path }}/pipeline/devtools/promptfoo/.ci/*.json
+            ${{ steps.backend.outputs.path }}/pipeline/devtools/promptfoo/fixtures/cases.csv
+            ${{ steps.backend.outputs.path }}/pipeline/devtools/promptfoo/fixtures/cases/*.json
             ${{ env.HOME }}/.promptfoo/logs/*.log

@@ -1,0 +1,82 @@
+{
+  "job_root": "{JOB_ROOT}",
+  "source_pdf": "{JOB_ROOT}/source/Chemistry A European J - 2023 - Yakubenko - The Role of Conjugation in the Halogen Lithium Exchange Selectivity  Lithiation.pdf",
+  "translations_dir": "{JOB_ROOT}/translated",
+  "translation_manifest": "{JOB_ROOT}/translated/translation-manifest.json",
+  "output_pdf": "{JOB_ROOT}/rendered/Chemistry A European J - 2023 - Yakubenko - The Role of Conjugation in the Halogen Lithium Exchange Selectivity  Lithiation-translated.pdf",
+  "pages_processed": 10,
+  "render_elapsed": 5.427929125027731,
+  "total_elapsed": 5.427929125027731,
+  "render_mode": "auto",
+  "effective_render_mode": "overlay",
+  "pdf_compress_dpi": 0,
+  "render_diagnostics": {
+    "pages": [],
+    "source_overlay_elapsed_seconds": 0.0,
+    "overlay_merge_elapsed_seconds": 0.09554408304393291,
+    "raw_removable_rects": 0,
+    "merged_removable_rects": 0,
+    "cover_rects": 0,
+    "item_fast_cover_count": 0,
+    "fast_page_cover_pages": 0,
+    "legacy_pymupdf_redaction_pages": 0,
+    "legacy_pymupdf_overlay_pages": 0,
+    "legacy_pdf_write_reasons": {},
+    "page_compile_diagnostics": [],
+    "compile_elapsed_seconds": 0.9303767499513924,
+    "sanitize_elapsed_seconds": 0.0,
+    "page_count": 10,
+    "mode": "book_overlay_pikepdf",
+    "typst_cover_blocks": false,
+    "source_overlay_skipped_reason": "prepared_source_pdf",
+    "payload_prepare_elapsed_seconds": 2.4124979972839355e-05,
+    "color_adapt_elapsed_seconds": 0.0,
+    "page_specs_elapsed_seconds": 0.0007290421053767204,
+    "typst_cover_fallback_pages": {
+      "count": 0,
+      "head": [],
+      "tail": []
+    },
+    "typst_source_prepare_elapsed_seconds": 0.23311304207891226,
+    "typst_prebuilt_source_path": "{JOB_ROOT}/rendered/typst/book-overlay-sources/book-overlay.typ.prebuilt",
+    "pikepdf_overlay_output_pdf_path": "{JOB_ROOT}/rendered/Chemistry A European J - 2023 - Yakubenko - The Role of Conjugation in the Halogen Lithium Exchange Selectivity  Lithiation-translated.pdf",
+    "pikepdf_overlay_pages": 10,
+    "pikepdf_overlay_elapsed_seconds": 0.09413575008511543,
+    "compile_errors": [],
+    "sanitize_page_diagnostics": [],
+    "visual_profile": {
+      "loaded": true,
+      "path": "{JOB_ROOT}/artifacts/render_prewarm/visual_profile.v1.json",
+      "page_count": 10,
+      "item_count": 89,
+      "algorithm": "visual_profile_v6_document_title_pixels_only"
+    },
+    "final_image_compressed": false,
+    "render_source_prewarm_hit": true,
+    "render_payload_prewarm_hit": true,
+    "render_document_analysis_hit": true,
+    "render_source_prewarm_manifest": "{JOB_ROOT}/artifacts/render_prewarm/render_source_prewarm_manifest.json",
+    "render_source_sync_cache_written": false,
+    "render_no_cache": false,
+    "source_cleanup_strategy": "pikepdf_text_strip",
+    "source_text_precleaned_pages": 10,
+    "bbox_text_stripped_pages": 10,
+    "bbox_text_strip_skipped_pages": 0,
+    "bbox_text_strip_candidate_source": "manifest",
+    "bbox_text_strip_candidate_pages": 10,
+    "typst_cover_fallback_items": {
+      "count": 0,
+      "head": [],
+      "tail": []
+    },
+    "render_page_route_counts": {
+      "editable_text": 10
+    }
+  },
+  "events_jsonl": "{JOB_ROOT}/logs/pipeline_events.jsonl",
+  "invocation": {
+    "stage": "render",
+    "input_protocol": "stage_spec",
+    "stage_spec_schema_version": "render.stage.v1"
+  }
+}

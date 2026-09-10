@@ -1,0 +1,9 @@
+[package]
+name = "retain-proc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+libc = "0.2"
+tokio = { version = "1", features = ["process", "time"] }

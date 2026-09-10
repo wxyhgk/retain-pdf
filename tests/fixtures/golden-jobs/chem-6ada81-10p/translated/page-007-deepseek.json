@@ -1,0 +1,1926 @@
+[
+  {
+    "item_id": "p007-b004",
+    "page_idx": 6,
+    "block_idx": 4,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 4,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      43.983,
+      239.969,
+      541.296,
+      259.966
+    ],
+    "source_text": "Figure 10. Natural bond orbitals (NBO) for 5b-2Tol, 6b-2Tol, 10b-2Tol, 11b-2Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "source_line_texts": [
+      "Figure 10. Natural bond orbitals (NBO) for 5b-2Tol, 6b-2Tol, 10b-2Tol, 11b-2Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          239.969,
+          541.296,
+          259.966
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 10. Natural bond orbitals (NBO) for 5b-2Tol, 6b-2Tol, 10b-2Tol, 11b-2Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "full",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "full",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-102",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-102",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "full",
+    "layout_mode": "double",
+    "layout_split_x": 251.66,
+    "layout_zone": "full_width",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 1,
+    "layout_boundary_role": "single",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 10. Natural bond orbitals (NBO) for 5b-2Tol, 6b-2Tol, 10b-2Tol, 11b-2Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "mixed_original_protected_source_text": "Figure 10. Natural bond orbitals (NBO) for 5b-2Tol, 6b-2Tol, 10b-2Tol, 11b-2Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p007-b004",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p007-b004"
+    ],
+    "translation_unit_protected_source_text": "Figure 10. Natural bond orbitals (NBO) for 5b-2Tol, 6b-2Tol, 10b-2Tol, 11b-2Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图 10. 化合物 5b-2Tol、6b-2Tol、10b-2Tol、11b-2Tol 的自然键轨道 (NBO)。N1 氮原子孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道的重叠（上），N2 氮原子孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道的重叠（下）。轨道可视化的等值面为 0.02。为清晰起见，省略了甲苯分子。",
+    "translation_unit_translated_text": "图 10. 化合物 5b-2Tol、6b-2Tol、10b-2Tol、11b-2Tol 的自然键轨道 (NBO)。N1 氮原子孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道的重叠（上），N2 氮原子孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道的重叠（下）。轨道可视化的等值面为 0.02。为清晰起见，省略了甲苯分子。",
+    "protected_translated_text": "图 10. 化合物 5b-2Tol、6b-2Tol、10b-2Tol、11b-2Tol 的自然键轨道 (NBO)。N1 氮原子孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道的重叠（上），N2 氮原子孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道的重叠（下）。轨道可视化的等值面为 0.02。为清晰起见，省略了甲苯分子。",
+    "translated_text": "图 10. 化合物 5b-2Tol、6b-2Tol、10b-2Tol、11b-2Tol 的自然键轨道 (NBO)。N1 氮原子孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道的重叠（上），N2 氮原子孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道的重叠（下）。轨道可视化的等值面为 0.02。为清晰起见，省略了甲苯分子。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p007-b004",
+      "page_idx": 6,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "The triple and quadruple halogen exchange in 2 reveals the strongest manifestation of discussed effect. Thus, treatment of 2 with 2.8 equivalents of n-BuLi (entries 8 and 9) leads to the formation of 9b as the only product of the triple halogen exchange. While 9b, unlike isomeric 8b, has no coordination of the amino group to the neighboring lithium atom, th...",
+    "translation_context_after": "Figure 11. Isosurfaces of electron density (isovalue 0.001 a.u.) mapped by electrostatic potential for 5b·2Tol, 6b·2Tol, 10b·2Tol and 11b·2Tol. Toluene molecules are omitted for clarity. / Figure 12. Natural bond orbitals (NBO) for 7b·4Tol, 8b·3Tol, 9b·3Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair..."
+  },
+  {
+    "item_id": "p007-b006",
+    "page_idx": 6,
+    "block_idx": 6,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 6,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      43.983,
+      376.951,
+      280.394,
+      405.447
+    ],
+    "source_text": "Figure 11. Isosurfaces of electron density (isovalue 0.001 a.u.) mapped by electrostatic potential for 5b·2Tol, 6b·2Tol, 10b·2Tol and 11b·2Tol. Toluene molecules are omitted for clarity.",
+    "source_line_texts": [
+      "Figure 11. Isosurfaces of electron density (isovalue 0.001 a.u.) mapped by electrostatic potential for 5b·2Tol, 6b·2Tol, 10b·2Tol and 11b·2Tol. Toluene molecules are omitted for clarity."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          376.951,
+          280.394,
+          405.447
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 11. Isosurfaces of electron density (isovalue 0.001 a.u.) mapped by electrostatic potential for 5b·2Tol, 6b·2Tol, 10b·2Tol and 11b·2Tol. Toluene molecules are omitted for clarity.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-104",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-104",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 251.66,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 3,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 11. Isosurfaces of electron density (isovalue 0.001 a.u.) mapped by electrostatic potential for 5b·2Tol, 6b·2Tol, 10b·2Tol and 11b·2Tol. Toluene molecules are omitted for clarity.",
+    "mixed_original_protected_source_text": "Figure 11. Isosurfaces of electron density (isovalue 0.001 a.u.) mapped by electrostatic potential for 5b·2Tol, 6b·2Tol, 10b·2Tol and 11b·2Tol. Toluene molecules are omitted for clarity.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p007-b006",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p007-b006"
+    ],
+    "translation_unit_protected_source_text": "Figure 11. Isosurfaces of electron density (isovalue 0.001 a.u.) mapped by electrostatic potential for 5b·2Tol, 6b·2Tol, 10b·2Tol and 11b·2Tol. Toluene molecules are omitted for clarity.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图11. 化合物5b·2Tol、6b·2Tol、10b·2Tol和11b·2Tol的电子密度等值面（等值值0.001 a.u.）的静电势映射图。为清晰起见，省略甲苯分子。",
+    "translation_unit_translated_text": "图11. 化合物5b·2Tol、6b·2Tol、10b·2Tol和11b·2Tol的电子密度等值面（等值值0.001 a.u.）的静电势映射图。为清晰起见，省略甲苯分子。",
+    "protected_translated_text": "图11. 化合物5b·2Tol、6b·2Tol、10b·2Tol和11b·2Tol的电子密度等值面（等值值0.001 a.u.）的静电势映射图。为清晰起见，省略甲苯分子。",
+    "translated_text": "图11. 化合物5b·2Tol、6b·2Tol、10b·2Tol和11b·2Tol的电子密度等值面（等值值0.001 a.u.）的静电势映射图。为清晰起见，省略甲苯分子。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p007-b006",
+      "page_idx": 6,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Figure 9. Natural bond orbitals (NBO) for 14b-Tol, 15b-Tol, 16b-Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity. / Figure 10. Natural bond orbitals...",
+    "translation_context_after": "Figure 12. Natural bond orbitals (NBO) for 7b·4Tol, 8b·3Tol, 9b·3Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity. / nitrogen atoms are effectiv..."
+  },
+  {
+    "item_id": "p007-b008",
+    "page_idx": 6,
+    "block_idx": 8,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 8,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      43.983,
+      597.422,
+      289.891,
+      644.416
+    ],
+    "source_text": "Figure 12. Natural bond orbitals (NBO) for 7b·4Tol, 8b·3Tol, 9b·3Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "source_line_texts": [
+      "Figure 12. Natural bond orbitals (NBO) for 7b·4Tol, 8b·3Tol, 9b·3Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          597.422,
+          289.891,
+          644.416
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 12. Natural bond orbitals (NBO) for 7b·4Tol, 8b·3Tol, 9b·3Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-106",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-106",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 251.66,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 3,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 12. Natural bond orbitals (NBO) for 7b·4Tol, 8b·3Tol, 9b·3Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "mixed_original_protected_source_text": "Figure 12. Natural bond orbitals (NBO) for 7b·4Tol, 8b·3Tol, 9b·3Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p007-b008",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p007-b008"
+    ],
+    "translation_unit_protected_source_text": "Figure 12. Natural bond orbitals (NBO) for 7b·4Tol, 8b·3Tol, 9b·3Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "Figure 12. 化合物7b·4Tol、8b·3Tol、9b·3Tol的自然键轨道(NBO)。N1氮的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠（上），N2氮的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠（下）。轨道可视化的等值面值为0.02。为清晰起见，甲苯分子已省略。",
+    "translation_unit_translated_text": "Figure 12. 化合物7b·4Tol、8b·3Tol、9b·3Tol的自然键轨道(NBO)。N1氮的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠（上），N2氮的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠（下）。轨道可视化的等值面值为0.02。为清晰起见，甲苯分子已省略。",
+    "protected_translated_text": "Figure 12. 化合物7b·4Tol、8b·3Tol、9b·3Tol的自然键轨道(NBO)。N1氮的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠（上），N2氮的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠（下）。轨道可视化的等值面值为0.02。为清晰起见，甲苯分子已省略。",
+    "translated_text": "Figure 12. 化合物7b·4Tol、8b·3Tol、9b·3Tol的自然键轨道(NBO)。N1氮的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠（上），N2氮的孤对电子与C–C反键$ \\sigma^{*} $轨道的重叠（下）。轨道可视化的等值面值为0.02。为清晰起见，甲苯分子已省略。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p007-b008",
+      "page_idx": 6,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Figure 10. Natural bond orbitals (NBO) for 5b-2Tol, 6b-2Tol, 10b-2Tol, 11b-2Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (bottom). Isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity. / Figure 11. Isosurfac...",
+    "translation_context_after": "nitrogen atoms are effectively conjugated with an aromatic core (Figure 12). In contrast, the triple exchange in 1 is not selective and leads to the formation of both possible isomers due to the much stronger impact of the N→Li coordination on the thermodynamic stabilization. / Finally, treatment of 2 with 4 and more equiv. of n-BuLi leads to the formation..."
+  },
+  {
+    "item_id": "p007-b009",
+    "page_idx": 6,
+    "block_idx": 9,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 9,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      675.912,
+      292.89,
+      735.904
+    ],
+    "source_text": "nitrogen atoms are effectively conjugated with an aromatic core (Figure 12). In contrast, the triple exchange in 1 is not selective and leads to the formation of both possible isomers due to the much stronger impact of the N→Li coordination on the thermodynamic stabilization.",
+    "source_line_texts": [
+      "nitrogen atoms are effectively conjugated with an aromatic",
+      "core (Figure 12). In contrast, the triple exchange in 1",
+      "is not selective and leads to the formation of both possible",
+      "isomers due to the much stronger impact of the N→Li coordination on the thermodynamic stabilization."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          675.912,
+          292.89,
+          687.91
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "nitrogen atoms are effectively conjugated with an",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          687.91,
+          292.89,
+          699.909
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "aromatic core (Figure 12). In contrast, the triple",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          699.909,
+          292.89,
+          711.907
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "exchange in 1 is not selective and leads to the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          711.907,
+          292.89,
+          723.906
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "formation of both possible isomers due to the much",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          723.906,
+          292.89,
+          735.904
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "stronger impact of the N→Li coordination on the thermodynamic stabilization.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-107",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 1,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-107",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 251.66,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 3,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "nitrogen atoms are effectively conjugated with an aromatic core (Figure 12). In contrast, the triple exchange in 1 is not selective and leads to the formation of both possible isomers due to the much stronger impact of the N→Li coordination on the thermodynamic stabilization.",
+    "mixed_original_protected_source_text": "nitrogen atoms are effectively conjugated with an aromatic core (Figure 12). In contrast, the triple exchange in 1 is not selective and leads to the formation of both possible isomers due to the much stronger impact of the N→Li coordination on the thermodynamic stabilization.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-006-007",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p006-b012",
+      "p007-b009"
+    ],
+    "translation_unit_protected_source_text": "The triple and quadruple halogen exchange in 2 reveals the strongest manifestation of discussed effect. Thus, treatment of 2 with 2.8 equivalents of n-BuLi (entries 8 and 9) leads to the formation of 9b as the only product of the triple halogen exchange. While 9b, unlike isomeric 8b, has no coordination of the amino group to the neighboring lithium atom, the gain of conjugation energy facilitates its formation. From the NBO analysis, one can clearly see that in the case of 9b, both nitrogen atoms are effectively conjugated with an aromatic core (Figure 12). In contrast, the triple exchange in 1 is not selective and leads to the formation of both possible isomers due to the much stronger impact of the N→Li coordination on the thermodynamic stabilization.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "2中的三重和四重卤素交换展现了所讨论效应的最强体现。因此，用2.8当量的n-BuLi处理2（条目8和9）导致形成单一的三重卤素交换产物9b。尽管9b与异构体8b不同，其氨基不与相邻锂原子配位，但共轭能的增加促进了它的形成。从NBO分析可以清楚地看到，在9b的情况下，两个氮原子与芳香核心有效共轭（图12）。相比之下，1中的三重交换不具有选择性，由于N→Li配位对热力学稳定性的影响更强，导致生成两种可能的异构体。",
+    "translation_unit_translated_text": "2中的三重和四重卤素交换展现了所讨论效应的最强体现。因此，用2.8当量的n-BuLi处理2（条目8和9）导致形成单一的三重卤素交换产物9b。尽管9b与异构体8b不同，其氨基不与相邻锂原子配位，但共轭能的增加促进了它的形成。从NBO分析可以清楚地看到，在9b的情况下，两个氮原子与芳香核心有效共轭（图12）。相比之下，1中的三重交换不具有选择性，由于N→Li配位对热力学稳定性的影响更强，导致生成两种可能的异构体。",
+    "protected_translated_text": "两个氮原子与芳香核心有效共轭（图12）。相比之下，1中的三重交换不具有选择性，由于N→Li配位对热力学稳定性的影响更强，导致生成两种可能的异构体。",
+    "translated_text": "两个氮原子与芳香核心有效共轭（图12）。相比之下，1中的三重交换不具有选择性，由于N→Li配位对热力学稳定性的影响更强，导致生成两种可能的异构体。",
+    "continuation_group": "cg-006-007",
+    "continuation_prev_text": "The triple and quadruple halogen exchange in 2 reveals the strongest manifestation of discussed effect. Thus, treatment of 2 with 2.8 equivalents of n-BuLi (entries 8 and 9) leads to the formation of 9b as the only product of the triple halogen exchange. While 9b, unlike isomeric 8b, has no coordination of the amino group to the neighboring lithium atom, the gain of conjugation energy facilitates its formation. From the NBO analysis, one can clearly see that in the case of 9b, both",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "The triple and quadruple halogen exchange in 2 reveals the strongest manifestation of discussed effect. Thus, treatment of 2 with 2.8 equivalents of n-BuLi (entries 8 and 9) leads to the formation of 9b as the only product of the triple halogen exchange. While 9b, unlike isomeric 8b, has no coordination of the amino group to the neighboring lithium atom, the gain of conjugation energy facilitates its formation. From the NBO analysis, one can clearly see that in the case of 9b, both nitrogen atoms are effectively conjugated with an aromatic core (Figure 12). In contrast, the triple exchange in 1 is not selective and leads to the formation of both possible isomers due to the much stronger impact of the N→Li coordination on the thermodynamic stabilization.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "2中的三重和四重卤素交换展现了所讨论效应的最强体现。因此，用2.8当量的n-BuLi处理2（条目8和9）导致形成单一的三重卤素交换产物9b。尽管9b与异构体8b不同，其氨基不与相邻锂原子配位，但共轭能的增加促进了它的形成。从NBO分析可以清楚地看到，在9b的情况下，两个氮原子与芳香核心有效共轭（图12）。相比之下，1中的三重交换不具有选择性，由于N→Li配位对热力学稳定性的影响更强，导致生成两种可能的异构体。",
+    "group_translated_text": "2中的三重和四重卤素交换展现了所讨论效应的最强体现。因此，用2.8当量的n-BuLi处理2（条目8和9）导致形成单一的三重卤素交换产物9b。尽管9b与异构体8b不同，其氨基不与相邻锂原子配位，但共轭能的增加促进了它的形成。从NBO分析可以清楚地看到，在9b的情况下，两个氮原子与芳香核心有效共轭（图12）。相比之下，1中的三重交换不具有选择性，由于N→Li配位对热力学稳定性的影响更强，导致生成两种可能的异构体。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p007-b009",
+      "page_idx": 6,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Figure 11. Isosurfaces of electron density (isovalue 0.001 a.u.) mapped by electrostatic potential for 5b·2Tol, 6b·2Tol, 10b·2Tol and 11b·2Tol. Toluene molecules are omitted for clarity. / Figure 12. Natural bond orbitals (NBO) for 7b·4Tol, 8b·3Tol, 9b·3Tol. Overlapping of lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (top), lone pair...",
+    "translation_context_after": "Finally, treatment of 2 with 4 and more equiv. of n-BuLi leads to the formation of 7b (entries 8–16). The structure of the latter avoids the N→Li coordination in favor of the most effective conjugation of the lone pairs of both nitrogen atoms with the aromatic system (Figure 12). / Polylichionapthalenes are rather attractive substrates for the preparation o..."
+  },
+  {
+    "item_id": "p007-b010",
+    "page_idx": 6,
+    "block_idx": 10,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 10,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      291.962,
+      550.793,
+      351.454
+    ],
+    "source_text": "Finally, treatment of 2 with 4 and more equiv. of n-BuLi leads to the formation of 7b (entries 8–16). The structure of the latter avoids the N→Li coordination in favor of the most effective conjugation of the lone pairs of both nitrogen atoms with the aromatic system (Figure 12).",
+    "source_line_texts": [
+      "Finally, treatment of 2 with 4 and more equiv. of n-BuLi",
+      "leads to the formation of 7b (entries 8–16). The structure",
+      "of the latter avoids the N→Li coordination in favor of the",
+      "most effective conjugation of the lone pairs of both nitrogen",
+      "atoms with the aromatic system (Figure 12)."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          291.962,
+          550.793,
+          303.86
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Finally, treatment of 2 with 4 and more equiv. of",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          303.86,
+          550.793,
+          315.759
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "n-BuLi leads to the formation of 7b (entries 8–16).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          315.759,
+          550.793,
+          327.657
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The structure of the latter avoids the N→Li coordination",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          327.657,
+          550.793,
+          339.556
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "in favor of the most effective conjugation of the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          339.556,
+          550.793,
+          351.454
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "lone pairs of both nitrogen atoms with the aromatic system (Figure 12).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-108",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 2,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-108",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 2,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 251.66,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 6,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Finally, treatment of 2 with 4 and more equiv. of n-BuLi leads to the formation of 7b (entries 8–16). The structure of the latter avoids the N→Li coordination in favor of the most effective conjugation of the lone pairs of both nitrogen atoms with the aromatic system (Figure 12).",
+    "mixed_original_protected_source_text": "Finally, treatment of 2 with 4 and more equiv. of n-BuLi leads to the formation of 7b (entries 8–16). The structure of the latter avoids the N→Li coordination in favor of the most effective conjugation of the lone pairs of both nitrogen atoms with the aromatic system (Figure 12).",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p007-b010",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p007-b010"
+    ],
+    "translation_unit_protected_source_text": "Finally, treatment of 2 with 4 and more equiv. of n-BuLi leads to the formation of 7b (entries 8–16). The structure of the latter avoids the N→Li coordination in favor of the most effective conjugation of the lone pairs of both nitrogen atoms with the aromatic system (Figure 12).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "最后，用4个及更多当量的$n$-BuLi处理2，导致生成7b（条目8–16）。后者的结构避免了N→Li配位，转而有利于两个氮原子的孤对电子与芳香体系实现最有效的共轭（图12）。",
+    "translation_unit_translated_text": "最后，用4个及更多当量的$n$-BuLi处理2，导致生成7b（条目8–16）。后者的结构避免了N→Li配位，转而有利于两个氮原子的孤对电子与芳香体系实现最有效的共轭（图12）。",
+    "protected_translated_text": "最后，用4个及更多当量的$n$-BuLi处理2，导致生成7b（条目8–16）。后者的结构避免了N→Li配位，转而有利于两个氮原子的孤对电子与芳香体系实现最有效的共轭（图12）。",
+    "translated_text": "最后，用4个及更多当量的$n$-BuLi处理2，导致生成7b（条目8–16）。后者的结构避免了N→Li配位，转而有利于两个氮原子的孤对电子与芳香体系实现最有效的共轭（图12）。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p007-b010",
+      "page_idx": 6,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p007-b011",
+    "page_idx": 6,
+    "block_idx": 11,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 11,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      352.454,
+      550.293,
+      423.945
+    ],
+    "source_text": "Polylichionapthalenes are rather attractive substrates for the preparation of polyfunctionalized rigid organic compounds. In order to demonstrate the reactivity of 7b towards nucleophiles we treated it with $ Me_{2}S_{2} $. As a result, tetrakismethylthio derivative 17 was obtained with good yield (Scheme 5, Figure 13).",
+    "source_line_texts": [
+      "Polylichionapthalenes are rather attractive substrates for",
+      "the preparation of polyfunctionalized rigid organic compounds.",
+      "In order to demonstrate the reactivity of 7b towards nucleophiles",
+      "we treated it with $ Me_{2}S_{2} $. As a result, tetrakismethylthio",
+      "derivative 17 was obtained with good yield (Scheme 5, Figure 13)."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          352.454,
+          550.293,
+          364.369
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Polylichionapthalenes are rather attractive substrates",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          364.369,
+          550.293,
+          376.284
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "for the preparation of polyfunctionalized rigid",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          376.284,
+          550.293,
+          388.2
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "organic compounds. In order to demonstrate the reactivity",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          388.2,
+          550.293,
+          400.115
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of 7b towards nucleophiles we treated it with $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          400.115,
+          550.293,
+          412.03
+        ],
+        "spans": [
+          {
+            "type": "inline_equation",
+            "content": "Me_{2}S_{2}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$. As a result, tetrakismethylthio derivative",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          412.03,
+          550.293,
+          423.945
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "17 was obtained with good yield (Scheme 5, Figure 13).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-109",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 3,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-109",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 3,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 251.66,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 6,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Polylichionapthalenes are rather attractive substrates for the preparation of polyfunctionalized rigid organic compounds. In order to demonstrate the reactivity of 7b towards nucleophiles we treated it with $ Me_{2}S_{2} $. As a result, tetrakismethylthio derivative 17 was obtained with good yield (Scheme 5, Figure 13).",
+    "mixed_original_protected_source_text": "Polylichionapthalenes are rather attractive substrates for the preparation of polyfunctionalized rigid organic compounds. In order to demonstrate the reactivity of 7b towards nucleophiles we treated it with $ Me_{2}S_{2} $. As a result, tetrakismethylthio derivative 17 was obtained with good yield (Scheme 5, Figure 13).",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p007-b011",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p007-b011"
+    ],
+    "translation_unit_protected_source_text": "Polylichionapthalenes are rather attractive substrates for the preparation of polyfunctionalized rigid organic compounds. In order to demonstrate the reactivity of 7b towards nucleophiles we treated it with $ Me_{2}S_{2} $. As a result, tetrakismethylthio derivative 17 was obtained with good yield (Scheme 5, Figure 13).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "多氯萘是制备多官能化刚性有机化合物相当有吸引力的底物。为了证明7b对亲核试剂的反应活性，我们将其与$ Me_{2}S_{2} $反应。结果，以良好的产率得到了四(甲硫基)衍生物17（方案5，图13）。",
+    "translation_unit_translated_text": "多氯萘是制备多官能化刚性有机化合物相当有吸引力的底物。为了证明7b对亲核试剂的反应活性，我们将其与$ Me_{2}S_{2} $反应。结果，以良好的产率得到了四(甲硫基)衍生物17（方案5，图13）。",
+    "protected_translated_text": "多氯萘是制备多官能化刚性有机化合物相当有吸引力的底物。为了证明7b对亲核试剂的反应活性，我们将其与$ Me_{2}S_{2} $反应。结果，以良好的产率得到了四(甲硫基)衍生物17（方案5，图13）。",
+    "translated_text": "多氯萘是制备多官能化刚性有机化合物相当有吸引力的底物。为了证明7b对亲核试剂的反应活性，我们将其与$ Me_{2}S_{2} $反应。结果，以良好的产率得到了四(甲硫基)衍生物17（方案5，图13）。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p007-b011",
+      "page_idx": 6,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p007-b013",
+    "page_idx": 6,
+    "block_idx": 13,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "heading",
+    "semantic_role": "unknown",
+    "structure_role": "heading",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 13,
+    "raw_block_type": "paragraph_title",
+    "normalized_sub_type": "heading",
+    "bbox": [
+      302.386,
+      445.942,
+      367.862,
+      459.44
+    ],
+    "source_text": "Conclusions",
+    "source_line_texts": [
+      "Conclusions"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          302.386,
+          445.942,
+          367.862,
+          459.44
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Conclusions",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-111",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 4,
+        "confidence": 0.98
+      },
+      "structure_role": "heading",
+      "structure_group": "",
+      "pair_with": "",
+      "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose."
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-111",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 4,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 251.66,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 6,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Conclusions",
+    "mixed_original_protected_source_text": "Conclusions",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p007-b013",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p007-b013"
+    ],
+    "translation_unit_protected_source_text": "Conclusions",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "结论",
+    "translation_unit_translated_text": "结论",
+    "protected_translated_text": "结论",
+    "translated_text": "结论",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p007-b013",
+      "page_idx": 6,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose.",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Finally, treatment of 2 with 4 and more equiv. of n-BuLi leads to the formation of 7b (entries 8–16). The structure of the latter avoids the N→Li coordination in favor of the most effective conjugation of the lone pairs of both nitrogen atoms with the aromatic system (Figure 12). / Polylichionapthalenes are rather attractive substrates for the preparation o...",
+    "translation_context_after": "In summary, the first case of effective competition of the conjugation of an alkylamino group with an aromatic system / Figure 13. X-ray structure of 17."
+  },
+  {
+    "item_id": "p007-b014",
+    "page_idx": 6,
+    "block_idx": 14,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 14,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      471.938,
+      550.793,
+      496.435
+    ],
+    "source_text": "In summary, the first case of effective competition of the conjugation of an alkylamino group with an aromatic system",
+    "source_line_texts": [
+      "In summary, the first case of effective competition of the",
+      "conjugation of an alkylamino group with an aromatic system"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          471.938,
+          550.793,
+          484.187
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "In summary, the first case of effective competition",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          484.187,
+          550.793,
+          496.435
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of the conjugation of an alkylamino group with an aromatic system",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-112",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 5,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-112",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 5,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 251.66,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 6,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "In summary, the first case of effective competition of the conjugation of an alkylamino group with an aromatic system",
+    "mixed_original_protected_source_text": "In summary, the first case of effective competition of the conjugation of an alkylamino group with an aromatic system",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-007-008",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p007-b014",
+      "p008-b003"
+    ],
+    "translation_unit_protected_source_text": "In summary, the first case of effective competition of the conjugation of an alkylamino group with an aromatic system against the saturation of the coordination sphere of a lithium atom has been discovered. The manifestation of this effect significantly affects the regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine as well as the structure of lithiated products. The first exchange is not selective and leads to the formation of both possible products. While the 6-lithioderivative is stabilized by the reduction of steric strain and the coordination of the lithium atom by bromine, the formation of 4-lithioderivative is facilitated by the dramatic improvement of the effectiveness of the conjugation of the amino nitrogen with the naphthalene core. The selectivity of the second exchanges is controlled by the combination of the abovementioned conjugation effect, coordination of the NMe group to the lithium atom, steric strain and effective charge distribution. The third exchange is mainly influenced by the effective conjugation of both nitrogen atoms with the aromatic core, making the 4-bromo-6,7,9-trilithioderivative the only product. In most cases, effective conjugation outweighs the tendency of the amino group to coordinate with the neighboring lithium atom. As a result, the product of a quadruple exchange – 4,6,7,9-tetralithio-1,3-dimethyl-2,3-dihydro-1H-perimidine – demonstrated no tendency in the participation of NMe groups in the saturation of the coordination sphere of neighboring lithium atoms.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "总之，首次发现了烷基氨基与芳香体系的共轭效应与锂原子配位球饱和之间的有效竞争。该效应的表现显著影响了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性以及锂化产物的结构。第一次交换无选择性，导致两种可能产物的生成。6-锂衍生物通过减少空间张力和锂原子与溴的配位而稳定，而4-锂衍生物的形成则因氨基氮与萘核心共轭效能的显著提升而得以促进。第二次交换的选择性受上述共轭效应、NMe基团与锂原子的配位、空间张力以及有效电荷分布的共同控制。第三次交换主要受两个氮原子与芳香核心的有效共轭影响，使得4-溴-6,7,9-三锂衍生物成为唯一产物。在大多数情况下，有效共轭超过了氨基与邻近锂原子配位的倾向。结果，四次交换产物——4,6,7,9-四锂-1,3-二甲基-2,3-二氢-1H-苝啶——表现出NMe基团不参与邻近锂原子配位球饱和的倾向。",
+    "translation_unit_translated_text": "总之，首次发现了烷基氨基与芳香体系的共轭效应与锂原子配位球饱和之间的有效竞争。该效应的表现显著影响了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性以及锂化产物的结构。第一次交换无选择性，导致两种可能产物的生成。6-锂衍生物通过减少空间张力和锂原子与溴的配位而稳定，而4-锂衍生物的形成则因氨基氮与萘核心共轭效能的显著提升而得以促进。第二次交换的选择性受上述共轭效应、NMe基团与锂原子的配位、空间张力以及有效电荷分布的共同控制。第三次交换主要受两个氮原子与芳香核心的有效共轭影响，使得4-溴-6,7,9-三锂衍生物成为唯一产物。在大多数情况下，有效共轭超过了氨基与邻近锂原子配位的倾向。结果，四次交换产物——4,6,7,9-四锂-1,3-二甲基-2,3-二氢-1H-苝啶——表现出NMe基团不参与邻近锂原子配位球饱和的倾向。",
+    "protected_translated_text": "总之，首次发现了烷基氨基与芳香体系的共轭效应与锂原子",
+    "translated_text": "总之，首次发现了烷基氨基与芳香体系的共轭效应与锂原子",
+    "continuation_group": "cg-007-008",
+    "continuation_prev_text": "",
+    "continuation_next_text": "against the saturation of the coordination sphere of a lithium atom has been discovered. The manifestation of this effect significantly affects the regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine as well as the structure of lithiated products. The first exchange is not selective and leads to the formation of both possible products. While the 6-lithioderivative is stabilized by the reduction of steric strain and the coordination of the lithium atom by bromine, the formation of 4-lithioderivative is facilitated by the dramatic improvement of the effectiveness of the conjugation of the amino nitrogen with the naphthalene core. The selectivity of the second exchanges is controlled by the combination of the abovementioned conjugation effect, coordination of the NMe group to the lithium atom, steric strain and effective charge distribution. The third exchange is mainly influenced by the effective conjugation of both nitrogen atoms with the aromatic core, making the 4-bromo-6,7,9-trilithioderivative the only product. In most cases, effective conjugation outweighs the tendency of the amino group to coordinate with the neighboring lithium atom. As a result, the product of a quadruple exchange – 4,6,7,9-tetralithio-1,3-dimethyl-2,3-dihydro-1H-perimidine – demonstrated no tendency in the participation of NMe groups in the saturation of the coordination sphere of neighboring lithium atoms.",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "In summary, the first case of effective competition of the conjugation of an alkylamino group with an aromatic system against the saturation of the coordination sphere of a lithium atom has been discovered. The manifestation of this effect significantly affects the regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine as well as the structure of lithiated products. The first exchange is not selective and leads to the formation of both possible products. While the 6-lithioderivative is stabilized by the reduction of steric strain and the coordination of the lithium atom by bromine, the formation of 4-lithioderivative is facilitated by the dramatic improvement of the effectiveness of the conjugation of the amino nitrogen with the naphthalene core. The selectivity of the second exchanges is controlled by the combination of the abovementioned conjugation effect, coordination of the NMe group to the lithium atom, steric strain and effective charge distribution. The third exchange is mainly influenced by the effective conjugation of both nitrogen atoms with the aromatic core, making the 4-bromo-6,7,9-trilithioderivative the only product. In most cases, effective conjugation outweighs the tendency of the amino group to coordinate with the neighboring lithium atom. As a result, the product of a quadruple exchange – 4,6,7,9-tetralithio-1,3-dimethyl-2,3-dihydro-1H-perimidine – demonstrated no tendency in the participation of NMe groups in the saturation of the coordination sphere of neighboring lithium atoms.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "总之，首次发现了烷基氨基与芳香体系的共轭效应与锂原子配位球饱和之间的有效竞争。该效应的表现显著影响了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性以及锂化产物的结构。第一次交换无选择性，导致两种可能产物的生成。6-锂衍生物通过减少空间张力和锂原子与溴的配位而稳定，而4-锂衍生物的形成则因氨基氮与萘核心共轭效能的显著提升而得以促进。第二次交换的选择性受上述共轭效应、NMe基团与锂原子的配位、空间张力以及有效电荷分布的共同控制。第三次交换主要受两个氮原子与芳香核心的有效共轭影响，使得4-溴-6,7,9-三锂衍生物成为唯一产物。在大多数情况下，有效共轭超过了氨基与邻近锂原子配位的倾向。结果，四次交换产物——4,6,7,9-四锂-1,3-二甲基-2,3-二氢-1H-苝啶——表现出NMe基团不参与邻近锂原子配位球饱和的倾向。",
+    "group_translated_text": "总之，首次发现了烷基氨基与芳香体系的共轭效应与锂原子配位球饱和之间的有效竞争。该效应的表现显著影响了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性以及锂化产物的结构。第一次交换无选择性，导致两种可能产物的生成。6-锂衍生物通过减少空间张力和锂原子与溴的配位而稳定，而4-锂衍生物的形成则因氨基氮与萘核心共轭效能的显著提升而得以促进。第二次交换的选择性受上述共轭效应、NMe基团与锂原子的配位、空间张力以及有效电荷分布的共同控制。第三次交换主要受两个氮原子与芳香核心的有效共轭影响，使得4-溴-6,7,9-三锂衍生物成为唯一产物。在大多数情况下，有效共轭超过了氨基与邻近锂原子配位的倾向。结果，四次交换产物——4,6,7,9-四锂-1,3-二甲基-2,3-二氢-1H-苝啶——表现出NMe基团不参与邻近锂原子配位球饱和的倾向。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p007-b014",
+      "page_idx": 6,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Polylichionapthalenes are rather attractive substrates for the preparation of polyfunctionalized rigid organic compounds. In order to demonstrate the reactivity of 7b towards nucleophiles we treated it with $ Me_{2}S_{2} $. As a result, tetrakismethylthio derivative 17 was obtained with good yield (Scheme 5, Figure 13). / Conclusions",
+    "translation_context_after": "Figure 13. X-ray structure of 17. / © 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH"
+  },
+  {
+    "item_id": "p007-b016",
+    "page_idx": 6,
+    "block_idx": 16,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 16,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      302.386,
+      734.404,
+      407.347,
+      744.903
+    ],
+    "source_text": "Figure 13. X-ray structure of 17.",
+    "source_line_texts": [
+      "Figure 13. X-ray structure of 17."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          302.386,
+          734.404,
+          407.347,
+          744.903
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 13. X-ray structure of 17.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-114",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-114",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 251.66,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 6,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 13. X-ray structure of 17.",
+    "mixed_original_protected_source_text": "Figure 13. X-ray structure of 17.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p007-b016",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p007-b016"
+    ],
+    "translation_unit_protected_source_text": "Figure 13. X-ray structure of 17.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图 13. 化合物 17 的 X 射线结构。",
+    "translation_unit_translated_text": "图 13. 化合物 17 的 X 射线结构。",
+    "protected_translated_text": "图 13. 化合物 17 的 X 射线结构。",
+    "translated_text": "图 13. 化合物 17 的 X 射线结构。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p007-b016",
+      "page_idx": 6,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Conclusions / In summary, the first case of effective competition of the conjugation of an alkylamino group with an aromatic system",
+    "translation_context_after": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH / against the saturation of the coordination sphere of a lithium atom has been discovered. The manifestation of this effect significantly affects the regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine as well as the struc..."
+  },
+  {
+    "item_id": "p007-b017",
+    "page_idx": 6,
+    "block_idx": 17,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "footnote",
+    "semantic_role": "metadata",
+    "structure_role": "footnote",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 17,
+    "raw_block_type": "vision_footnote",
+    "normalized_sub_type": "image_footnote",
+    "bbox": [
+      299.887,
+      759.401,
+      550.293,
+      770.399
+    ],
+    "source_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH",
+    "source_line_texts": [
+      "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          299.887,
+          759.401,
+          550.293,
+          770.399
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-115",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "footnote",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-115",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 251.66,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 5,
+    "layout_zone_size": 6,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH",
+    "mixed_original_protected_source_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p007-b017",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p007-b017"
+    ],
+    "translation_unit_protected_source_text": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "© 2023 作者。Chemistry - A European Journal 由 Wiley-VCH GmbH 出版。",
+    "translation_unit_translated_text": "© 2023 作者。Chemistry - A European Journal 由 Wiley-VCH GmbH 出版。",
+    "protected_translated_text": "© 2023 作者。Chemistry - A European Journal 由 Wiley-VCH GmbH 出版。",
+    "translated_text": "© 2023 作者。Chemistry - A European Journal 由 Wiley-VCH GmbH 出版。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p007-b017",
+      "page_idx": 6,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  }
+]

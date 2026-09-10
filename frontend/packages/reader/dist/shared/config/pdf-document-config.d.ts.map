@@ -1,0 +1,1 @@
+{"version":3,"file":"pdf-document-config.d.ts","sourceRoot":"","sources":["../../../src/shared/config/pdf-document-config.ts"],"names":[],"mappings":"AACA,wBAAgB,iCAAiC,CAAC,EAChD,YAAmD,GACpD,GAAE;IACD,YAAY,CAAC,EAAE,MAAM,MAAM,CAAC,MAAM,EAAE,MAAM,CAAC,CAAC;CACxC;sBACmB,MAAM,CAAC,MAAM,EAAE,MAAM,CAAC;GAI9C;AACD,eAAO,MAAM,kCAAkC;sBALtB,MAAM,CAAC,MAAM,EAAE,MAAM,CAAC;EAKsC,CAAC"}

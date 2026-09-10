@@ -1,0 +1,4661 @@
+[
+  {
+    "item_id": "p008-b003",
+    "page_idx": 7,
+    "block_idx": 3,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 3,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      63.992,
+      292.89,
+      352.454
+    ],
+    "source_text": "against the saturation of the coordination sphere of a lithium atom has been discovered. The manifestation of this effect significantly affects the regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine as well as the structure of lithiated products. The first exchange is not selective and leads to the formation of both possible products. While the 6-lithioderivative is stabilized by the reduction of steric strain and the coordination of the lithium atom by bromine, the formation of 4-lithioderivative is facilitated by the dramatic improvement of the effectiveness of the conjugation of the amino nitrogen with the naphthalene core. The selectivity of the second exchanges is controlled by the combination of the abovementioned conjugation effect, coordination of the NMe group to the lithium atom, steric strain and effective charge distribution. The third exchange is mainly influenced by the effective conjugation of both nitrogen atoms with the aromatic core, making the 4-bromo-6,7,9-trilithioderivative the only product. In most cases, effective conjugation outweighs the tendency of the amino group to coordinate with the neighboring lithium atom. As a result, the product of a quadruple exchange – 4,6,7,9-tetralithio-1,3-dimethyl-2,3-dihydro-1H-perimidine – demonstrated no tendency in the participation of NMe groups in the saturation of the coordination sphere of neighboring lithium atoms.",
+    "source_line_texts": [
+      "against the saturation of the coordination sphere of a lithium",
+      "atom has been discovered. The manifestation of this effect",
+      "significantly affects the regioselectivity of the bromine–lithium",
+      "exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine",
+      "as well as the structure of lithiated products. The first",
+      "exchange is not selective and leads to the formation of",
+      "both possible products. While the 6-lithioderivative is",
+      "stabilized by the reduction of steric strain and the coordination",
+      "of the lithium atom by bromine, the formation of 4-lithioderivative",
+      "is facilitated by the dramatic improvement of the effectiveness",
+      "of the conjugation of the amino nitrogen with the naphthalene",
+      "core. The selectivity of the second exchanges is controlled",
+      "by the combination of the abovementioned conjugation effect,",
+      "coordination of the NMe group to the lithium atom, steric",
+      "strain and effective charge distribution. The third exchange",
+      "is mainly influenced by the effective conjugation of both",
+      "nitrogen atoms with the aromatic core, making the 4-bromo-6,7,9-trilithioderivative",
+      "the only product. In most cases, effective conjugation outweighs",
+      "the tendency of the amino group to coordinate with the neighboring",
+      "lithium atom. As a result, the product of a quadruple exchange – 4,6,7,9-tetralithio-1,3-dimethyl-2,3-dihydro-1H-perimidine – demonstrated no tendency in the participation of NMe groups in the saturation of the coordination sphere of neighboring lithium atoms."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          63.992,
+          292.89,
+          75.087
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "against the saturation of the coordination sphere",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          75.087,
+          292.89,
+          86.181
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of a lithium atom has been discovered. The manifestation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          86.181,
+          292.89,
+          97.276
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of this effect significantly affects the regioselectivity",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          97.276,
+          292.89,
+          108.371
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          108.371,
+          292.89,
+          119.465
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "as well as the structure of lithiated products.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          119.465,
+          292.89,
+          130.56
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The first exchange is not selective and leads to",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          130.56,
+          292.89,
+          141.655
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the formation of both possible products. While the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          141.655,
+          292.89,
+          152.75
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "6-lithioderivative is stabilized by the reduction",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          152.75,
+          292.89,
+          163.844
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of steric strain and the coordination of the lithium",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          163.844,
+          292.89,
+          174.939
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "atom by bromine, the formation of 4-lithioderivative",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          174.939,
+          292.89,
+          186.034
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "is facilitated by the dramatic improvement of the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          186.034,
+          292.89,
+          197.128
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "effectiveness of the conjugation of the amino nitrogen",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          197.128,
+          292.89,
+          208.223
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "with the naphthalene core. The selectivity of the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          208.223,
+          292.89,
+          219.318
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "second exchanges is controlled by the combination",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          219.318,
+          292.89,
+          230.412
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of the abovementioned conjugation effect, coordination",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          230.412,
+          292.89,
+          241.507
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of the NMe group to the lithium atom, steric strain",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          241.507,
+          292.89,
+          252.602
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and effective charge distribution. The third exchange",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          252.602,
+          292.89,
+          263.696
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "is mainly influenced by the effective conjugation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          263.696,
+          292.89,
+          274.791
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of both nitrogen atoms with the aromatic core, making",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          274.791,
+          292.89,
+          285.886
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the 4-bromo-6,7,9-trilithioderivative the only product.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          285.886,
+          292.89,
+          296.981
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "In most cases, effective conjugation outweighs the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          296.981,
+          292.89,
+          308.075
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "tendency of the amino group to coordinate with the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          308.075,
+          292.89,
+          319.17
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "neighboring lithium atom. As a result, the product",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          319.17,
+          292.89,
+          330.265
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of a quadruple exchange – 4,6,7,9-tetralithio-1,3-dimethyl-2,3-dihydro-1H-perimidine",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          330.265,
+          292.89,
+          341.359
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "– demonstrated no tendency in the participation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          341.359,
+          292.89,
+          352.454
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of NMe groups in the saturation of the coordination sphere of neighboring lithium atoms.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-120",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 1,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-120",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "against the saturation of the coordination sphere of a lithium atom has been discovered. The manifestation of this effect significantly affects the regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine as well as the structure of lithiated products. The first exchange is not selective and leads to the formation of both possible products. While the 6-lithioderivative is stabilized by the reduction of steric strain and the coordination of the lithium atom by bromine, the formation of 4-lithioderivative is facilitated by the dramatic improvement of the effectiveness of the conjugation of the amino nitrogen with the naphthalene core. The selectivity of the second exchanges is controlled by the combination of the abovementioned conjugation effect, coordination of the NMe group to the lithium atom, steric strain and effective charge distribution. The third exchange is mainly influenced by the effective conjugation of both nitrogen atoms with the aromatic core, making the 4-bromo-6,7,9-trilithioderivative the only product. In most cases, effective conjugation outweighs the tendency of the amino group to coordinate with the neighboring lithium atom. As a result, the product of a quadruple exchange – 4,6,7,9-tetralithio-1,3-dimethyl-2,3-dihydro-1H-perimidine – demonstrated no tendency in the participation of NMe groups in the saturation of the coordination sphere of neighboring lithium atoms.",
+    "mixed_original_protected_source_text": "against the saturation of the coordination sphere of a lithium atom has been discovered. The manifestation of this effect significantly affects the regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine as well as the structure of lithiated products. The first exchange is not selective and leads to the formation of both possible products. While the 6-lithioderivative is stabilized by the reduction of steric strain and the coordination of the lithium atom by bromine, the formation of 4-lithioderivative is facilitated by the dramatic improvement of the effectiveness of the conjugation of the amino nitrogen with the naphthalene core. The selectivity of the second exchanges is controlled by the combination of the abovementioned conjugation effect, coordination of the NMe group to the lithium atom, steric strain and effective charge distribution. The third exchange is mainly influenced by the effective conjugation of both nitrogen atoms with the aromatic core, making the 4-bromo-6,7,9-trilithioderivative the only product. In most cases, effective conjugation outweighs the tendency of the amino group to coordinate with the neighboring lithium atom. As a result, the product of a quadruple exchange – 4,6,7,9-tetralithio-1,3-dimethyl-2,3-dihydro-1H-perimidine – demonstrated no tendency in the participation of NMe groups in the saturation of the coordination sphere of neighboring lithium atoms.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-007-008",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p007-b014",
+      "p008-b003"
+    ],
+    "translation_unit_protected_source_text": "In summary, the first case of effective competition of the conjugation of an alkylamino group with an aromatic system against the saturation of the coordination sphere of a lithium atom has been discovered. The manifestation of this effect significantly affects the regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine as well as the structure of lithiated products. The first exchange is not selective and leads to the formation of both possible products. While the 6-lithioderivative is stabilized by the reduction of steric strain and the coordination of the lithium atom by bromine, the formation of 4-lithioderivative is facilitated by the dramatic improvement of the effectiveness of the conjugation of the amino nitrogen with the naphthalene core. The selectivity of the second exchanges is controlled by the combination of the abovementioned conjugation effect, coordination of the NMe group to the lithium atom, steric strain and effective charge distribution. The third exchange is mainly influenced by the effective conjugation of both nitrogen atoms with the aromatic core, making the 4-bromo-6,7,9-trilithioderivative the only product. In most cases, effective conjugation outweighs the tendency of the amino group to coordinate with the neighboring lithium atom. As a result, the product of a quadruple exchange – 4,6,7,9-tetralithio-1,3-dimethyl-2,3-dihydro-1H-perimidine – demonstrated no tendency in the participation of NMe groups in the saturation of the coordination sphere of neighboring lithium atoms.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "总之，首次发现了烷基氨基与芳香体系的共轭效应与锂原子配位球饱和之间的有效竞争。该效应的表现显著影响了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性以及锂化产物的结构。第一次交换无选择性，导致两种可能产物的生成。6-锂衍生物通过减少空间张力和锂原子与溴的配位而稳定，而4-锂衍生物的形成则因氨基氮与萘核心共轭效能的显著提升而得以促进。第二次交换的选择性受上述共轭效应、NMe基团与锂原子的配位、空间张力以及有效电荷分布的共同控制。第三次交换主要受两个氮原子与芳香核心的有效共轭影响，使得4-溴-6,7,9-三锂衍生物成为唯一产物。在大多数情况下，有效共轭超过了氨基与邻近锂原子配位的倾向。结果，四次交换产物——4,6,7,9-四锂-1,3-二甲基-2,3-二氢-1H-苝啶——表现出NMe基团不参与邻近锂原子配位球饱和的倾向。",
+    "translation_unit_translated_text": "总之，首次发现了烷基氨基与芳香体系的共轭效应与锂原子配位球饱和之间的有效竞争。该效应的表现显著影响了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性以及锂化产物的结构。第一次交换无选择性，导致两种可能产物的生成。6-锂衍生物通过减少空间张力和锂原子与溴的配位而稳定，而4-锂衍生物的形成则因氨基氮与萘核心共轭效能的显著提升而得以促进。第二次交换的选择性受上述共轭效应、NMe基团与锂原子的配位、空间张力以及有效电荷分布的共同控制。第三次交换主要受两个氮原子与芳香核心的有效共轭影响，使得4-溴-6,7,9-三锂衍生物成为唯一产物。在大多数情况下，有效共轭超过了氨基与邻近锂原子配位的倾向。结果，四次交换产物——4,6,7,9-四锂-1,3-二甲基-2,3-二氢-1H-苝啶——表现出NMe基团不参与邻近锂原子配位球饱和的倾向。",
+    "protected_translated_text": "配位球饱和之间的有效竞争。该效应的表现显著影响了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性以及锂化产物的结构。第一次交换无选择性，导致两种可能产物的生成。6-锂衍生物通过减少空间张力和锂原子与溴的配位而稳定，而4-锂衍生物的形成则因氨基氮与萘核心共轭效能的显著提升而得以促进。第二次交换的选择性受上述共轭效应、NMe基团与锂原子的配位、空间张力以及有效电荷分布的共同控制。第三次交换主要受两个氮原子与芳香核心的有效共轭影响，使得4-溴-6,7,9-三锂衍生物成为唯一产物。在大多数情况下，有效共轭超过了氨基与邻近锂原子配位的倾向。结果，四次交换产物——4,6,7,9-四锂-1,3-二甲基-2,3-二氢-1H-苝啶——表现出NMe基团不参与邻近锂原子配位球饱和的倾向。",
+    "translated_text": "配位球饱和之间的有效竞争。该效应的表现显著影响了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性以及锂化产物的结构。第一次交换无选择性，导致两种可能产物的生成。6-锂衍生物通过减少空间张力和锂原子与溴的配位而稳定，而4-锂衍生物的形成则因氨基氮与萘核心共轭效能的显著提升而得以促进。第二次交换的选择性受上述共轭效应、NMe基团与锂原子的配位、空间张力以及有效电荷分布的共同控制。第三次交换主要受两个氮原子与芳香核心的有效共轭影响，使得4-溴-6,7,9-三锂衍生物成为唯一产物。在大多数情况下，有效共轭超过了氨基与邻近锂原子配位的倾向。结果，四次交换产物——4,6,7,9-四锂-1,3-二甲基-2,3-二氢-1H-苝啶——表现出NMe基团不参与邻近锂原子配位球饱和的倾向。",
+    "continuation_group": "cg-007-008",
+    "continuation_prev_text": "In summary, the first case of effective competition of the conjugation of an alkylamino group with an aromatic system",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "In summary, the first case of effective competition of the conjugation of an alkylamino group with an aromatic system against the saturation of the coordination sphere of a lithium atom has been discovered. The manifestation of this effect significantly affects the regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine as well as the structure of lithiated products. The first exchange is not selective and leads to the formation of both possible products. While the 6-lithioderivative is stabilized by the reduction of steric strain and the coordination of the lithium atom by bromine, the formation of 4-lithioderivative is facilitated by the dramatic improvement of the effectiveness of the conjugation of the amino nitrogen with the naphthalene core. The selectivity of the second exchanges is controlled by the combination of the abovementioned conjugation effect, coordination of the NMe group to the lithium atom, steric strain and effective charge distribution. The third exchange is mainly influenced by the effective conjugation of both nitrogen atoms with the aromatic core, making the 4-bromo-6,7,9-trilithioderivative the only product. In most cases, effective conjugation outweighs the tendency of the amino group to coordinate with the neighboring lithium atom. As a result, the product of a quadruple exchange – 4,6,7,9-tetralithio-1,3-dimethyl-2,3-dihydro-1H-perimidine – demonstrated no tendency in the participation of NMe groups in the saturation of the coordination sphere of neighboring lithium atoms.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "总之，首次发现了烷基氨基与芳香体系的共轭效应与锂原子配位球饱和之间的有效竞争。该效应的表现显著影响了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性以及锂化产物的结构。第一次交换无选择性，导致两种可能产物的生成。6-锂衍生物通过减少空间张力和锂原子与溴的配位而稳定，而4-锂衍生物的形成则因氨基氮与萘核心共轭效能的显著提升而得以促进。第二次交换的选择性受上述共轭效应、NMe基团与锂原子的配位、空间张力以及有效电荷分布的共同控制。第三次交换主要受两个氮原子与芳香核心的有效共轭影响，使得4-溴-6,7,9-三锂衍生物成为唯一产物。在大多数情况下，有效共轭超过了氨基与邻近锂原子配位的倾向。结果，四次交换产物——4,6,7,9-四锂-1,3-二甲基-2,3-二氢-1H-苝啶——表现出NMe基团不参与邻近锂原子配位球饱和的倾向。",
+    "group_translated_text": "总之，首次发现了烷基氨基与芳香体系的共轭效应与锂原子配位球饱和之间的有效竞争。该效应的表现显著影响了4,6,7,9-四溴-1,3-二甲基-2,3-二氢-1H-苝啶中溴-锂交换的区域选择性以及锂化产物的结构。第一次交换无选择性，导致两种可能产物的生成。6-锂衍生物通过减少空间张力和锂原子与溴的配位而稳定，而4-锂衍生物的形成则因氨基氮与萘核心共轭效能的显著提升而得以促进。第二次交换的选择性受上述共轭效应、NMe基团与锂原子的配位、空间张力以及有效电荷分布的共同控制。第三次交换主要受两个氮原子与芳香核心的有效共轭影响，使得4-溴-6,7,9-三锂衍生物成为唯一产物。在大多数情况下，有效共轭超过了氨基与邻近锂原子配位的倾向。结果，四次交换产物——4,6,7,9-四锂-1,3-二甲基-2,3-二氢-1H-苝啶——表现出NMe基团不参与邻近锂原子配位球饱和的倾向。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b003",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Figure 13. X-ray structure of 17. / © 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH",
+    "translation_context_after": "Experimental Procedures / General"
+  },
+  {
+    "item_id": "p008-b004",
+    "page_idx": 7,
+    "block_idx": 4,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "heading",
+    "semantic_role": "unknown",
+    "structure_role": "heading",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 4,
+    "raw_block_type": "paragraph_title",
+    "normalized_sub_type": "heading",
+    "bbox": [
+      44.483,
+      374.451,
+      176.434,
+      387.949
+    ],
+    "source_text": "Experimental Procedures",
+    "source_line_texts": [
+      "Experimental Procedures"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          44.483,
+          374.451,
+          176.434,
+          387.949
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Experimental Procedures",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-121",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 2,
+        "confidence": 0.98
+      },
+      "structure_role": "heading",
+      "structure_group": "",
+      "pair_with": "",
+      "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose."
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-121",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 2,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Experimental Procedures",
+    "mixed_original_protected_source_text": "Experimental Procedures",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b004",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b004"
+    ],
+    "translation_unit_protected_source_text": "Experimental Procedures",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "实验步骤",
+    "translation_unit_translated_text": "实验步骤",
+    "protected_translated_text": "实验步骤",
+    "translated_text": "实验步骤",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b004",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose.",
+    "translation_context_mode": "needed",
+    "translation_context_before": "© 2023 The Authors. Chemistry - A European Journal published by Wiley-VCH GmbH / against the saturation of the coordination sphere of a lithium atom has been discovered. The manifestation of this effect significantly affects the regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine as well as the struc...",
+    "translation_context_after": "General / Toluene and benzene were dried over sodium/benzophenone."
+  },
+  {
+    "item_id": "p008-b005",
+    "page_idx": 7,
+    "block_idx": 5,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "heading",
+    "semantic_role": "unknown",
+    "structure_role": "heading",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 5,
+    "raw_block_type": "paragraph_title",
+    "normalized_sub_type": "heading",
+    "bbox": [
+      43.983,
+      399.948,
+      79.97,
+      410.946
+    ],
+    "source_text": "General",
+    "source_line_texts": [
+      "General"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          399.948,
+          79.97,
+          410.946
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "General",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-122",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 3,
+        "confidence": 0.98
+      },
+      "structure_role": "heading",
+      "structure_group": "",
+      "pair_with": "",
+      "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose."
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-122",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 3,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "General",
+    "mixed_original_protected_source_text": "General",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b005",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b005"
+    ],
+    "translation_unit_protected_source_text": "General",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "一般",
+    "translation_unit_translated_text": "一般",
+    "protected_translated_text": "一般",
+    "translated_text": "一般",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b005",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose.",
+    "translation_context_mode": "needed",
+    "translation_context_before": "against the saturation of the coordination sphere of a lithium atom has been discovered. The manifestation of this effect significantly affects the regioselectivity of the bromine–lithium exchange in 4,6,7,9-tetrabromo-1,3-dimethyl-2,3-dihydro-1H-perimidine as well as the structure of lithiated products. The first exchange is not selective and leads to the...",
+    "translation_context_after": "Toluene and benzene were dried over sodium/benzophenone. / Liquid-state NMR experiments were performed using a Bruker Avance iii NMR spectrometer (400 MHz for $ ^1 $H and 100 MHz for $ ^{13} $C) at the Center for Magnetic Resonance, St. Petersburg State University Research Park. Chemical shifts are referenced to TMS for $ ^1 $H and $ ^{13} $C."
+  },
+  {
+    "item_id": "p008-b006",
+    "page_idx": 7,
+    "block_idx": 6,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 6,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.983,
+      416.946,
+      272.897,
+      428.444
+    ],
+    "source_text": "Toluene and benzene were dried over sodium/benzophenone.",
+    "source_line_texts": [
+      "Toluene and benzene were dried over sodium/benzophenone."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          416.946,
+          272.897,
+          428.444
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Toluene and benzene were dried over sodium/benzophenone.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-123",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 4,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-123",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 4,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Toluene and benzene were dried over sodium/benzophenone.",
+    "mixed_original_protected_source_text": "Toluene and benzene were dried over sodium/benzophenone.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b006",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b006"
+    ],
+    "translation_unit_protected_source_text": "Toluene and benzene were dried over sodium/benzophenone.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "甲苯和苯用钠/二苯甲酮干燥。",
+    "translation_unit_translated_text": "甲苯和苯用钠/二苯甲酮干燥。",
+    "protected_translated_text": "甲苯和苯用钠/二苯甲酮干燥。",
+    "translated_text": "甲苯和苯用钠/二苯甲酮干燥。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b006",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p008-b007",
+    "page_idx": 7,
+    "block_idx": 7,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 7,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      433.943,
+      291.89,
+      485.437
+    ],
+    "source_text": "Liquid-state NMR experiments were performed using a Bruker Avance iii NMR spectrometer (400 MHz for $ ^1 $H and 100 MHz for $ ^{13} $C) at the Center for Magnetic Resonance, St. Petersburg State University Research Park. Chemical shifts are referenced to TMS for $ ^1 $H and $ ^{13} $C.",
+    "source_line_texts": [
+      "Liquid-state NMR experiments were performed using a Bruker",
+      "Avance iii NMR spectrometer (400 MHz for $ ^1 $H and 100",
+      "MHz for $ ^{13} $C) at the Center for Magnetic Resonance,",
+      "St. Petersburg State University Research Park. Chemical",
+      "shifts are referenced to TMS for $ ^1 $H and $ ^{13} $C."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          433.943,
+          291.89,
+          446.817
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Liquid-state NMR experiments were performed using",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          446.817,
+          291.89,
+          459.69
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "a Bruker Avance iii NMR spectrometer (400 MHz for",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          459.69,
+          291.89,
+          472.563
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$ ^1 $H and 100 MHz for $ ^{13} $C) at the Center",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          472.563,
+          291.89,
+          485.437
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "for Magnetic Resonance, St. Petersburg State University Research Park. Chemical shifts are referenced to TMS for $ ^1 $H and $ ^{13} $C.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-124",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 5,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-124",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 5,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Liquid-state NMR experiments were performed using a Bruker Avance iii NMR spectrometer (400 MHz for $ ^1 $H and 100 MHz for $ ^{13} $C) at the Center for Magnetic Resonance, St. Petersburg State University Research Park. Chemical shifts are referenced to TMS for $ ^1 $H and $ ^{13} $C.",
+    "mixed_original_protected_source_text": "Liquid-state NMR experiments were performed using a Bruker Avance iii NMR spectrometer (400 MHz for $ ^1 $H and 100 MHz for $ ^{13} $C) at the Center for Magnetic Resonance, St. Petersburg State University Research Park. Chemical shifts are referenced to TMS for $ ^1 $H and $ ^{13} $C.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b007",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b007"
+    ],
+    "translation_unit_protected_source_text": "Liquid-state NMR experiments were performed using a Bruker Avance iii NMR spectrometer (400 MHz for $ ^1 $H and 100 MHz for $ ^{13} $C) at the Center for Magnetic Resonance, St. Petersburg State University Research Park. Chemical shifts are referenced to TMS for $ ^1 $H and $ ^{13} $C.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "液态NMR实验在圣彼得堡国立大学研究园磁共振中心使用Bruker Avance III NMR谱仪（$^1$H为400 MHz，$^{13}$C为100 MHz）进行。$^1$H和$^{13}$C的化学位移以TMS为基准标定。",
+    "translation_unit_translated_text": "液态NMR实验在圣彼得堡国立大学研究园磁共振中心使用Bruker Avance III NMR谱仪（$^1$H为400 MHz，$^{13}$C为100 MHz）进行。$^1$H和$^{13}$C的化学位移以TMS为基准标定。",
+    "protected_translated_text": "液态NMR实验在圣彼得堡国立大学研究园磁共振中心使用Bruker Avance III NMR谱仪（$^1$H为400 MHz，$^{13}$C为100 MHz）进行。$^1$H和$^{13}$C的化学位移以TMS为基准标定。",
+    "translated_text": "液态NMR实验在圣彼得堡国立大学研究园磁共振中心使用Bruker Avance III NMR谱仪（$^1$H为400 MHz，$^{13}$C为100 MHz）进行。$^1$H和$^{13}$C的化学位移以TMS为基准标定。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b007",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p008-b008",
+    "page_idx": 7,
+    "block_idx": 8,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 8,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      490.436,
+      292.39,
+      573.425
+    ],
+    "source_text": "HR-ESI mass-spectra were obtained on a BRUKER maXis spectrometer equipped with an electrospray ionization (ESI) source; methanol was used as the solvent at the Chemical Analysis and Materials Research Centre, St. Petersburg State University Research Park. The instrument was operated in positive mode using an m/z range of 50–1200. The capillary voltage of the ion source was set at 4000 V. The nebulizer gas pressure was 1.0 bar, and the drying gas flow was set to 4.0 L/min.",
+    "source_line_texts": [
+      "HR-ESI mass-spectra were obtained on a BRUKER maXis spectrometer",
+      "equipped with an electrospray ionization (ESI) source; methanol",
+      "was used as the solvent at the Chemical Analysis and Materials",
+      "Research Centre, St. Petersburg State University Research",
+      "Park. The instrument was operated in positive mode using",
+      "an m/z range of 50–1200. The capillary voltage of the ion",
+      "source was set at 4000 V. The nebulizer gas pressure was",
+      "1.0 bar, and the drying gas flow was set to 4.0 L/min."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          490.436,
+          292.39,
+          502.292
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "HR-ESI mass-spectra were obtained on a BRUKER maXis",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          502.292,
+          292.39,
+          514.147
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "spectrometer equipped with an electrospray ionization",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          514.147,
+          292.39,
+          526.003
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(ESI) source; methanol was used as the solvent at",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          526.003,
+          292.39,
+          537.858
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the Chemical Analysis and Materials Research Centre,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          537.858,
+          292.39,
+          549.714
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "St. Petersburg State University Research Park. The",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          549.714,
+          292.39,
+          561.569
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "instrument was operated in positive mode using an",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          561.569,
+          292.39,
+          573.425
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "m/z range of 50–1200. The capillary voltage of the ion source was set at 4000 V. The nebulizer gas pressure was 1.0 bar, and the drying gas flow was set to 4.0 L/min.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-125",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 6,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-125",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 6,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 5,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "HR-ESI mass-spectra were obtained on a BRUKER maXis spectrometer equipped with an electrospray ionization (ESI) source; methanol was used as the solvent at the Chemical Analysis and Materials Research Centre, St. Petersburg State University Research Park. The instrument was operated in positive mode using an m/z range of 50–1200. The capillary voltage of the ion source was set at 4000 V. The nebulizer gas pressure was 1.0 bar, and the drying gas flow was set to 4.0 L/min.",
+    "mixed_original_protected_source_text": "HR-ESI mass-spectra were obtained on a BRUKER maXis spectrometer equipped with an electrospray ionization (ESI) source; methanol was used as the solvent at the Chemical Analysis and Materials Research Centre, St. Petersburg State University Research Park. The instrument was operated in positive mode using an m/z range of 50–1200. The capillary voltage of the ion source was set at 4000 V. The nebulizer gas pressure was 1.0 bar, and the drying gas flow was set to 4.0 L/min.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b008",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b008"
+    ],
+    "translation_unit_protected_source_text": "HR-ESI mass-spectra were obtained on a BRUKER maXis spectrometer equipped with an electrospray ionization (ESI) source; methanol was used as the solvent at the Chemical Analysis and Materials Research Centre, St. Petersburg State University Research Park. The instrument was operated in positive mode using an m/z range of 50–1200. The capillary voltage of the ion source was set at 4000 V. The nebulizer gas pressure was 1.0 bar, and the drying gas flow was set to 4.0 L/min.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "HR-ESI 质谱由配备电喷雾电离（ESI）源的 BRUKER maXis 质谱仪测定；以甲醇为溶剂，在圣彼得堡国立大学研究园区化学分析与材料研究中心进行操作。仪器采用正离子模式，$m/z$ 范围为 50–1200。离子源毛细管电压设为 4000 V，雾化气压力为 1.0 bar，干燥气流量设为 4.0 L/min。",
+    "translation_unit_translated_text": "HR-ESI 质谱由配备电喷雾电离（ESI）源的 BRUKER maXis 质谱仪测定；以甲醇为溶剂，在圣彼得堡国立大学研究园区化学分析与材料研究中心进行操作。仪器采用正离子模式，$m/z$ 范围为 50–1200。离子源毛细管电压设为 4000 V，雾化气压力为 1.0 bar，干燥气流量设为 4.0 L/min。",
+    "protected_translated_text": "HR-ESI 质谱由配备电喷雾电离（ESI）源的 BRUKER maXis 质谱仪测定；以甲醇为溶剂，在圣彼得堡国立大学研究园区化学分析与材料研究中心进行操作。仪器采用正离子模式，$m/z$ 范围为 50–1200。离子源毛细管电压设为 4000 V，雾化气压力为 1.0 bar，干燥气流量设为 4.0 L/min。",
+    "translated_text": "HR-ESI 质谱由配备电喷雾电离（ESI）源的 BRUKER maXis 质谱仪测定；以甲醇为溶剂，在圣彼得堡国立大学研究园区化学分析与材料研究中心进行操作。仪器采用正离子模式，$m/z$ 范围为 50–1200。离子源毛细管电压设为 4000 V，雾化气压力为 1.0 bar，干燥气流量设为 4.0 L/min。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b008",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p008-b009",
+    "page_idx": 7,
+    "block_idx": 9,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 9,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      42.984,
+      578.424,
+      292.89,
+      732.904
+    ],
+    "source_text": "Single crystals of 3 were grown by slow evaporation of pentane solution at −20°C, while crystals of 4a were grown by slow evaporation of an ethyl acetate solution and crystals of 17 were grown from the mixture of diethyl ether and hexane at RT in the dark. The single crystal X-ray diffraction data were collected using the SuperNova diffractometer equipped with a HyPix-3000 detector and a micro-focus Cu Kα radiation source (λ = 1.54184 Å) at temperature T = 100 (2) K at the Centre for X-ray Diffraction Studies, St. Petersburg State University Research Park. Using Olex2, $ ^{[16]} $ the structure was solved with the $ SHELXT^{[17]} $ structure solution program using Intrinsic Phasing and refined with the $ SHELXL^{[18]} $ refinement package using Least Squares minimization. Empirical absorption correction was applied in CrysAlisPro $ ^{[19]} $ program complex using spherical harmonics, implemented in SCALE3 ABSPACK scaling algorithm.",
+    "source_line_texts": [
+      "Single crystals of 3 were grown by slow evaporation of pentane",
+      "solution at −20°C, while crystals of 4a were grown by slow",
+      "evaporation of an ethyl acetate solution and crystals of",
+      "17 were grown from the mixture of diethyl ether and hexane",
+      "at RT in the dark. The single crystal X-ray diffraction",
+      "data were collected using the SuperNova diffractometer equipped",
+      "with a HyPix-3000 detector and a micro-focus Cu K α radiation",
+      "source (λ = 1.54184 Å) at temperature T = 100 (2) K at the",
+      "Centre for X-ray Diffraction Studies, St. Petersburg State",
+      "University Research Park. Using Olex2, $ ^{[16]} $ the structure",
+      "was solved with the $ SHELXT^{[17]} $ structure solution",
+      "program using Intrinsic Phasing and refined with the $ SHELXL^{[18]}",
+      "$ refinement package using Least Squares minimization. Empirical",
+      "absorption correction was applied in CrysAlisPro $ ^{[19]} $ program complex using spherical harmonics, implemented in SCALE3 ABSPACK scaling algorithm."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          42.984,
+          578.424,
+          292.89,
+          589.458
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Single crystals of 3 were grown by slow evaporation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          589.458,
+          292.89,
+          600.493
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of pentane solution at −20°C, while crystals of 4a",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          600.493,
+          292.89,
+          611.527
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "were grown by slow evaporation of an ethyl acetate",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          611.527,
+          292.89,
+          622.561
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "solution and crystals of 17 were grown from the mixture",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          622.561,
+          292.89,
+          633.595
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of diethyl ether and hexane at RT in the dark. The",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          633.595,
+          292.89,
+          644.63
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "single crystal X-ray diffraction data were collected",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          644.63,
+          292.89,
+          655.664
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "using the SuperNova diffractometer equipped with",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          655.664,
+          292.89,
+          666.698
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "a HyPix-3000 detector and a micro-focus Cu K",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "α radiation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          666.698,
+          292.89,
+          677.733
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "source (λ = 1.54184 Å) at temperature T = 100 (2)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          677.733,
+          292.89,
+          688.767
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "K at the Centre for X-ray Diffraction Studies, St.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          688.767,
+          292.89,
+          699.801
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Petersburg State University Research Park. Using",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          699.801,
+          292.89,
+          710.835
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Olex2, $ ^{[16]} $ the structure was solved with",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          710.835,
+          292.89,
+          721.87
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "SHELXT^{[17]}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ structure solution program",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          42.984,
+          721.87,
+          292.89,
+          732.904
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "using Intrinsic Phasing and refined with the $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "SHELXL^{[18]}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ refinement package using Least Squares minimization. Empirical absorption correction was applied in CrysAlisPro $ ^{[19]} $ program complex using spherical harmonics, implemented in SCALE3 ABSPACK scaling algorithm.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-126",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 7,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-126",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 7,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 6,
+    "layout_zone_size": 7,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Single crystals of 3 were grown by slow evaporation of pentane solution at −20°C, while crystals of 4a were grown by slow evaporation of an ethyl acetate solution and crystals of 17 were grown from the mixture of diethyl ether and hexane at RT in the dark. The single crystal X-ray diffraction data were collected using the SuperNova diffractometer equipped with a HyPix-3000 detector and a micro-focus Cu Kα radiation source (λ = 1.54184 Å) at temperature T = 100 (2) K at the Centre for X-ray Diffraction Studies, St. Petersburg State University Research Park. Using Olex2, $ ^{[16]} $ the structure was solved with the $ SHELXT^{[17]} $ structure solution program using Intrinsic Phasing and refined with the $ SHELXL^{[18]} $ refinement package using Least Squares minimization. Empirical absorption correction was applied in CrysAlisPro $ ^{[19]} $ program complex using spherical harmonics, implemented in SCALE3 ABSPACK scaling algorithm.",
+    "mixed_original_protected_source_text": "Single crystals of 3 were grown by slow evaporation of pentane solution at −20°C, while crystals of 4a were grown by slow evaporation of an ethyl acetate solution and crystals of 17 were grown from the mixture of diethyl ether and hexane at RT in the dark. The single crystal X-ray diffraction data were collected using the SuperNova diffractometer equipped with a HyPix-3000 detector and a micro-focus Cu Kα radiation source (λ = 1.54184 Å) at temperature T = 100 (2) K at the Centre for X-ray Diffraction Studies, St. Petersburg State University Research Park. Using Olex2, $ ^{[16]} $ the structure was solved with the $ SHELXT^{[17]} $ structure solution program using Intrinsic Phasing and refined with the $ SHELXL^{[18]} $ refinement package using Least Squares minimization. Empirical absorption correction was applied in CrysAlisPro $ ^{[19]} $ program complex using spherical harmonics, implemented in SCALE3 ABSPACK scaling algorithm.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b009",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b009"
+    ],
+    "translation_unit_protected_source_text": "Single crystals of 3 were grown by slow evaporation of pentane solution at −20°C, while crystals of 4a were grown by slow evaporation of an ethyl acetate solution and crystals of 17 were grown from the mixture of diethyl ether and hexane at RT in the dark. The single crystal X-ray diffraction data were collected using the SuperNova diffractometer equipped with a HyPix-3000 detector and a micro-focus Cu Kα radiation source (λ = 1.54184 Å) at temperature T = 100 (2) K at the Centre for X-ray Diffraction Studies, St. Petersburg State University Research Park. Using Olex2, $ ^{[16]} $ the structure was solved with the $ SHELXT^{[17]} $ structure solution program using Intrinsic Phasing and refined with the $ SHELXL^{[18]} $ refinement package using Least Squares minimization. Empirical absorption correction was applied in CrysAlisPro $ ^{[19]} $ program complex using spherical harmonics, implemented in SCALE3 ABSPACK scaling algorithm.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "化合物 3 的单晶通过在 −20°C 下缓慢蒸发戊烷溶液获得，4a 的单晶通过缓慢蒸发乙酸乙酯溶液获得，而 17 的单晶则是在室温避光条件下从乙醚和正己烷的混合溶液中生长得到。单晶 X 射线衍射数据是在圣彼得堡国立大学研究园区 X 射线衍射研究中心，使用配备 HyPix-3000 探测器和微聚焦 Cu Kα 辐射源（λ = 1.54184 Å）的 SuperNova 衍射仪，在温度 T = 100 (2) K 下收集。利用 Olex2$^{[16]}$，通过 $SHELXT^{[17]}$ 结构求解程序采用本征定相法（Intrinsic Phasing）解析结构，并使用 $SHELXL^{[18]}$ 精修程序包基于最小二乘法进行精修。在 CrysAlisPro$^{[19]}$ 程序套件中，采用 SCALE3 ABSPACK 缩放算法中实现的球谐函数进行了经验吸收校正。",
+    "translation_unit_translated_text": "化合物 3 的单晶通过在 −20°C 下缓慢蒸发戊烷溶液获得，4a 的单晶通过缓慢蒸发乙酸乙酯溶液获得，而 17 的单晶则是在室温避光条件下从乙醚和正己烷的混合溶液中生长得到。单晶 X 射线衍射数据是在圣彼得堡国立大学研究园区 X 射线衍射研究中心，使用配备 HyPix-3000 探测器和微聚焦 Cu Kα 辐射源（λ = 1.54184 Å）的 SuperNova 衍射仪，在温度 T = 100 (2) K 下收集。利用 Olex2$^{[16]}$，通过 $SHELXT^{[17]}$ 结构求解程序采用本征定相法（Intrinsic Phasing）解析结构，并使用 $SHELXL^{[18]}$ 精修程序包基于最小二乘法进行精修。在 CrysAlisPro$^{[19]}$ 程序套件中，采用 SCALE3 ABSPACK 缩放算法中实现的球谐函数进行了经验吸收校正。",
+    "protected_translated_text": "化合物 3 的单晶通过在 −20°C 下缓慢蒸发戊烷溶液获得，4a 的单晶通过缓慢蒸发乙酸乙酯溶液获得，而 17 的单晶则是在室温避光条件下从乙醚和正己烷的混合溶液中生长得到。单晶 X 射线衍射数据是在圣彼得堡国立大学研究园区 X 射线衍射研究中心，使用配备 HyPix-3000 探测器和微聚焦 Cu Kα 辐射源（λ = 1.54184 Å）的 SuperNova 衍射仪，在温度 T = 100 (2) K 下收集。利用 Olex2$^{[16]}$，通过 $SHELXT^{[17]}$ 结构求解程序采用本征定相法（Intrinsic Phasing）解析结构，并使用 $SHELXL^{[18]}$ 精修程序包基于最小二乘法进行精修。在 CrysAlisPro$^{[19]}$ 程序套件中，采用 SCALE3 ABSPACK 缩放算法中实现的球谐函数进行了经验吸收校正。",
+    "translated_text": "化合物 3 的单晶通过在 −20°C 下缓慢蒸发戊烷溶液获得，4a 的单晶通过缓慢蒸发乙酸乙酯溶液获得，而 17 的单晶则是在室温避光条件下从乙醚和正己烷的混合溶液中生长得到。单晶 X 射线衍射数据是在圣彼得堡国立大学研究园区 X 射线衍射研究中心，使用配备 HyPix-3000 探测器和微聚焦 Cu Kα 辐射源（λ = 1.54184 Å）的 SuperNova 衍射仪，在温度 T = 100 (2) K 下收集。利用 Olex2$^{[16]}$，通过 $SHELXT^{[17]}$ 结构求解程序采用本征定相法（Intrinsic Phasing）解析结构，并使用 $SHELXL^{[18]}$ 精修程序包基于最小二乘法进行精修。在 CrysAlisPro$^{[19]}$ 程序套件中，采用 SCALE3 ABSPACK 缩放算法中实现的球谐函数进行了经验吸收校正。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b009",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p008-b010",
+    "page_idx": 7,
+    "block_idx": 10,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "heading",
+    "semantic_role": "unknown",
+    "structure_role": "heading",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 10,
+    "raw_block_type": "paragraph_title",
+    "normalized_sub_type": "heading",
+    "bbox": [
+      302.886,
+      64.492,
+      361.864,
+      75.49
+    ],
+    "source_text": "Computations",
+    "source_line_texts": [
+      "Computations"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          302.886,
+          64.492,
+          361.864,
+          75.49
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Computations",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-127",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 8,
+        "confidence": 0.98
+      },
+      "structure_role": "heading",
+      "structure_group": "",
+      "pair_with": "",
+      "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose."
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-127",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 8,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Computations",
+    "mixed_original_protected_source_text": "Computations",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b010",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b010"
+    ],
+    "translation_unit_protected_source_text": "Computations",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "计算",
+    "translation_unit_translated_text": "计算",
+    "protected_translated_text": "计算",
+    "translated_text": "计算",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b010",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose.",
+    "translation_context_mode": "needed",
+    "translation_context_before": "HR-ESI mass-spectra were obtained on a BRUKER maXis spectrometer equipped with an electrospray ionization (ESI) source; methanol was used as the solvent at the Chemical Analysis and Materials Research Centre, St. Petersburg State University Research Park. The instrument was operated in positive mode using an m/z range of 50–1200. The capillary voltage of th...",
+    "translation_context_after": "Computational resources were provided by the Computer Center of Saint-Petersburg University Research Park (http://www.cc.spbu.ru/). The calculations were carried out using the Gaussian16 software package. $ ^{[20]} $ Geometry optimizations (with standard convergence criteria for forces and displacements) and vibrational harmonic frequencies calculation were..."
+  },
+  {
+    "item_id": "p008-b011",
+    "page_idx": 7,
+    "block_idx": 11,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 11,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      81.489,
+      550.293,
+      204.973
+    ],
+    "source_text": "Computational resources were provided by the Computer Center of Saint-Petersburg University Research Park (http://www.cc.spbu.ru/). The calculations were carried out using the Gaussian16 software package. $ ^{[20]} $ Geometry optimizations (with standard convergence criteria for forces and displacements) and vibrational harmonic frequencies calculation were performed at the B3LYP/6-311++G(d,p) level of theory. The Grimme dispersion correction D3 with zero damping was included. $ ^{[21]} $ All structures were checked on the absence of imaginary vibrational frequencies. Solvent effects were accounted implicitly using the conductor-like polarizable continuum model (CPCM) and explicitly by adding toluene molecules in the first coordination sphere of lithium atom.",
+    "source_line_texts": [
+      "Computational resources were provided by the Computer Center",
+      "of Saint-Petersburg University Research Park (http://www.cc.spbu.ru/).",
+      "The calculations were carried out using the Gaussian16 software",
+      "package. $ ^{[20]} $ Geometry optimizations (with standard",
+      "convergence criteria for forces and displacements) and vibrational",
+      "harmonic frequencies calculation were performed at the B3LYP/6-311++G(d,p)",
+      "level of theory. The Grimme dispersion correction D3 with",
+      "zero damping was included. $ ^{[21]} $ All structures were",
+      "checked on the absence of imaginary vibrational frequencies.",
+      "Solvent effects were accounted implicitly using the conductor-like",
+      "polarizable continuum model (CPCM) and explicitly by adding toluene molecules in the first coordination sphere of lithium atom."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          81.489,
+          550.293,
+          92.715
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Computational resources were provided by the Computer",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          92.715,
+          550.293,
+          103.941
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Center of Saint-Petersburg University Research Park",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          103.941,
+          550.293,
+          115.166
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(http://www.cc.spbu.ru/). The calculations were",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          115.166,
+          550.293,
+          126.392
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "carried out using the Gaussian16 software package.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          126.392,
+          550.293,
+          137.618
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$ ^{[20]} $ Geometry optimizations (with standard",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          137.618,
+          550.293,
+          148.844
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "convergence criteria for forces and displacements)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          148.844,
+          550.293,
+          160.07
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and vibrational harmonic frequencies calculation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          160.07,
+          550.293,
+          171.296
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "were performed at the B3LYP/6-311++G(d,p) level",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          171.296,
+          550.293,
+          182.521
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of theory. The Grimme dispersion correction D3 with",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          182.521,
+          550.293,
+          193.747
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "zero damping was included. $ ^{[21]} $ All structures",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          193.747,
+          550.293,
+          204.973
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "were checked on the absence of imaginary vibrational frequencies. Solvent effects were accounted implicitly using the conductor-like polarizable continuum model (CPCM) and explicitly by adding toluene molecules in the first coordination sphere of lithium atom.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-128",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 9,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-128",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 9,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Computational resources were provided by the Computer Center of Saint-Petersburg University Research Park (http://www.cc.spbu.ru/). The calculations were carried out using the Gaussian16 software package. $ ^{[20]} $ Geometry optimizations (with standard convergence criteria for forces and displacements) and vibrational harmonic frequencies calculation were performed at the B3LYP/6-311++G(d,p) level of theory. The Grimme dispersion correction D3 with zero damping was included. $ ^{[21]} $ All structures were checked on the absence of imaginary vibrational frequencies. Solvent effects were accounted implicitly using the conductor-like polarizable continuum model (CPCM) and explicitly by adding toluene molecules in the first coordination sphere of lithium atom.",
+    "mixed_original_protected_source_text": "Computational resources were provided by the Computer Center of Saint-Petersburg University Research Park (http://www.cc.spbu.ru/). The calculations were carried out using the Gaussian16 software package. $ ^{[20]} $ Geometry optimizations (with standard convergence criteria for forces and displacements) and vibrational harmonic frequencies calculation were performed at the B3LYP/6-311++G(d,p) level of theory. The Grimme dispersion correction D3 with zero damping was included. $ ^{[21]} $ All structures were checked on the absence of imaginary vibrational frequencies. Solvent effects were accounted implicitly using the conductor-like polarizable continuum model (CPCM) and explicitly by adding toluene molecules in the first coordination sphere of lithium atom.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b011",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b011"
+    ],
+    "translation_unit_protected_source_text": "Computational resources were provided by the Computer Center of Saint-Petersburg University Research Park (http://www.cc.spbu.ru/). The calculations were carried out using the Gaussian16 software package. $ ^{[20]} $ Geometry optimizations (with standard convergence criteria for forces and displacements) and vibrational harmonic frequencies calculation were performed at the B3LYP/6-311++G(d,p) level of theory. The Grimme dispersion correction D3 with zero damping was included. $ ^{[21]} $ All structures were checked on the absence of imaginary vibrational frequencies. Solvent effects were accounted implicitly using the conductor-like polarizable continuum model (CPCM) and explicitly by adding toluene molecules in the first coordination sphere of lithium atom.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "计算资源由圣彼得堡大学研究园计算中心提供（http://www.cc.spbu.ru/）。计算使用Gaussian16软件包完成 $^{[20]}$ 。几何优化（采用力和位移的标准收敛判据）及振动谐波频率计算均在B3LYP/6-311++G(d,p)理论水平下进行，并加入了带零阻尼的Grimme色散校正D3 $^{[21]}$ 。所有结构均经检查无虚频。溶剂效应通过类导体极化连续模型（CPCM）隐式考虑，并通过在锂原子第一配位层中添加甲苯分子进行显式处理。",
+    "translation_unit_translated_text": "计算资源由圣彼得堡大学研究园计算中心提供（http://www.cc.spbu.ru/）。计算使用Gaussian16软件包完成 $^{[20]}$ 。几何优化（采用力和位移的标准收敛判据）及振动谐波频率计算均在B3LYP/6-311++G(d,p)理论水平下进行，并加入了带零阻尼的Grimme色散校正D3 $^{[21]}$ 。所有结构均经检查无虚频。溶剂效应通过类导体极化连续模型（CPCM）隐式考虑，并通过在锂原子第一配位层中添加甲苯分子进行显式处理。",
+    "protected_translated_text": "计算资源由圣彼得堡大学研究园计算中心提供（http://www.cc.spbu.ru/）。计算使用Gaussian16软件包完成 $^{[20]}$ 。几何优化（采用力和位移的标准收敛判据）及振动谐波频率计算均在B3LYP/6-311++G(d,p)理论水平下进行，并加入了带零阻尼的Grimme色散校正D3 $^{[21]}$ 。所有结构均经检查无虚频。溶剂效应通过类导体极化连续模型（CPCM）隐式考虑，并通过在锂原子第一配位层中添加甲苯分子进行显式处理。",
+    "translated_text": "计算资源由圣彼得堡大学研究园计算中心提供（http://www.cc.spbu.ru/）。计算使用Gaussian16软件包完成 $^{[20]}$ 。几何优化（采用力和位移的标准收敛判据）及振动谐波频率计算均在B3LYP/6-311++G(d,p)理论水平下进行，并加入了带零阻尼的Grimme色散校正D3 $^{[21]}$ 。所有结构均经检查无虚频。溶剂效应通过类导体极化连续模型（CPCM）隐式考虑，并通过在锂原子第一配位层中添加甲苯分子进行显式处理。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b011",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p008-b012",
+    "page_idx": 7,
+    "block_idx": 12,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 12,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      208.973,
+      550.793,
+      260.813
+    ],
+    "source_text": "The MultiWFN $ ^{[22]} $ program was used for calculating the surfaces of electron density, electron localization function $ ^{[23]} $ and molecular electrostatic potential. $ ^{[24]} $ NBO analysis performed using NBO 7.0 program. The visualization was performed using GaussView and Matlab R2021b.",
+    "source_line_texts": [
+      "The MultiWFN $ ^{[22]} $ program was used for calculating",
+      "the surfaces of electron density, electron localization",
+      "function $ ^{[23]} $ and molecular electrostatic potential.",
+      "$ ^{[24]} $ NBO analysis performed using NBO 7.0 program.",
+      "The visualization was performed using GaussView and Matlab R2021b."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          208.973,
+          550.793,
+          221.933
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The MultiWFN $ ^{[22]} $ program was used for calculating",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          221.933,
+          550.793,
+          234.893
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the surfaces of electron density, electron localization",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          234.893,
+          550.793,
+          247.853
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "function $ ^{[23]} $ and molecular electrostatic",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          247.853,
+          550.793,
+          260.813
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "potential. $ ^{[24]} $ NBO analysis performed using NBO 7.0 program. The visualization was performed using GaussView and Matlab R2021b.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-129",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 10,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-129",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 10,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "The MultiWFN $ ^{[22]} $ program was used for calculating the surfaces of electron density, electron localization function $ ^{[23]} $ and molecular electrostatic potential. $ ^{[24]} $ NBO analysis performed using NBO 7.0 program. The visualization was performed using GaussView and Matlab R2021b.",
+    "mixed_original_protected_source_text": "The MultiWFN $ ^{[22]} $ program was used for calculating the surfaces of electron density, electron localization function $ ^{[23]} $ and molecular electrostatic potential. $ ^{[24]} $ NBO analysis performed using NBO 7.0 program. The visualization was performed using GaussView and Matlab R2021b.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b012",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b012"
+    ],
+    "translation_unit_protected_source_text": "The MultiWFN $ ^{[22]} $ program was used for calculating the surfaces of electron density, electron localization function $ ^{[23]} $ and molecular electrostatic potential. $ ^{[24]} $ NBO analysis performed using NBO 7.0 program. The visualization was performed using GaussView and Matlab R2021b.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "使用 MultiWFN $^{[22]}$ 程序计算了电子密度、电子定域化函数 $^{[23]}$ 和分子静电势的表面。$^{[24]}$ 使用 NBO 7.0 程序进行了 NBO 分析。可视化采用 GaussView 和 Matlab R2021b 完成。",
+    "translation_unit_translated_text": "使用 MultiWFN $^{[22]}$ 程序计算了电子密度、电子定域化函数 $^{[23]}$ 和分子静电势的表面。$^{[24]}$ 使用 NBO 7.0 程序进行了 NBO 分析。可视化采用 GaussView 和 Matlab R2021b 完成。",
+    "protected_translated_text": "使用 MultiWFN $^{[22]}$ 程序计算了电子密度、电子定域化函数 $^{[23]}$ 和分子静电势的表面。$^{[24]}$ 使用 NBO 7.0 程序进行了 NBO 分析。可视化采用 GaussView 和 Matlab R2021b 完成。",
+    "translated_text": "使用 MultiWFN $^{[22]}$ 程序计算了电子密度、电子定域化函数 $^{[23]}$ 和分子静电势的表面。$^{[24]}$ 使用 NBO 7.0 程序进行了 NBO 分析。可视化采用 GaussView 和 Matlab R2021b 完成。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b012",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p008-b013",
+    "page_idx": 7,
+    "block_idx": 13,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "heading",
+    "semantic_role": "unknown",
+    "structure_role": "heading",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 13,
+    "raw_block_type": "paragraph_title",
+    "normalized_sub_type": "heading",
+    "bbox": [
+      302.386,
+      278.964,
+      344.37,
+      290.962
+    ],
+    "source_text": "Synthesis",
+    "source_line_texts": [
+      "Synthesis"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          302.386,
+          278.964,
+          344.37,
+          290.962
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Synthesis",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-130",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 11,
+        "confidence": 0.98
+      },
+      "structure_role": "heading",
+      "structure_group": "",
+      "pair_with": "",
+      "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose."
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-130",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 11,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Synthesis",
+    "mixed_original_protected_source_text": "Synthesis",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b013",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b013"
+    ],
+    "translation_unit_protected_source_text": "Synthesis",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "合成",
+    "translation_unit_translated_text": "合成",
+    "protected_translated_text": "合成",
+    "translated_text": "合成",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b013",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_style_hint": "Title rule: translate titles as concise formal headings. Preserve numbering, formula placeholders, symbols, and proper nouns; apply the document domain guidance and matched terminology when choosing technical wording; do not expand into body prose.",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Computational resources were provided by the Computer Center of Saint-Petersburg University Research Park (http://www.cc.spbu.ru/). The calculations were carried out using the Gaussian16 software package. $ ^{[20]} $ Geometry optimizations (with standard convergence criteria for forces and displacements) and vibrational harmonic frequencies calculation were...",
+    "translation_context_after": "2,4,5,7-Tetrabromo-1,8-bis(dimethylamino)naphthalene (1). 4,5-dibromo-1,8-bis(dimethylamino)naphthalene. $ ^{[11]} $ / (470 mg, 1.26 mmol), NBS (472 mg, 2.65 mmol) and cooled to $ -20^{\\circ} $C THF (20 mL) were placed in a flask. The reaction mixture was stirred overnight at $ -20^{\\circ} $C. The solvent was removed in vacuo to form dark-orange waxy residu..."
+  },
+  {
+    "item_id": "p008-b014",
+    "page_idx": 7,
+    "block_idx": 14,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 14,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.886,
+      295.961,
+      549.293,
+      317.958
+    ],
+    "source_text": "2,4,5,7-Tetrabromo-1,8-bis(dimethylamino)naphthalene (1). 4,5-dibromo-1,8-bis(dimethylamino)naphthalene. $ ^{[11]} $",
+    "source_line_texts": [
+      "2,4,5,7-Tetrabromo-1,8-bis(dimethylamino)naphthalene (1).",
+      "4,5-dibromo-1,8-bis(dimethylamino)naphthalene. $ ^{[11]} $"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.886,
+          295.961,
+          549.293,
+          317.958
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "2,4,5,7-Tetrabromo-1,8-bis(dimethylamino)naphthalene (1). 4,5-dibromo-1,8-bis(dimethylamino)naphthalene. $ ^{[11]} $",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-131",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 12,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-131",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 12,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "2,4,5,7-Tetrabromo-1,8-bis(dimethylamino)naphthalene (1). 4,5-dibromo-1,8-bis(dimethylamino)naphthalene. $ ^{[11]} $",
+    "mixed_original_protected_source_text": "2,4,5,7-Tetrabromo-1,8-bis(dimethylamino)naphthalene (1). 4,5-dibromo-1,8-bis(dimethylamino)naphthalene. $ ^{[11]} $",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b014",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b014"
+    ],
+    "translation_unit_protected_source_text": "2,4,5,7-Tetrabromo-1,8-bis(dimethylamino)naphthalene (1). 4,5-dibromo-1,8-bis(dimethylamino)naphthalene. $ ^{[11]} $",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "2,4,5,7-四溴-1,8-双(二甲氨基)萘 (1). 4,5-二溴-1,8-双(二甲氨基)萘. $^{[11]}$",
+    "translation_unit_translated_text": "2,4,5,7-四溴-1,8-双(二甲氨基)萘 (1). 4,5-二溴-1,8-双(二甲氨基)萘. $^{[11]}$",
+    "protected_translated_text": "2,4,5,7-四溴-1,8-双(二甲氨基)萘 (1). 4,5-二溴-1,8-双(二甲氨基)萘. $^{[11]}$",
+    "translated_text": "2,4,5,7-四溴-1,8-双(二甲氨基)萘 (1). 4,5-二溴-1,8-双(二甲氨基)萘. $^{[11]}$",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b014",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "The MultiWFN $ ^{[22]} $ program was used for calculating the surfaces of electron density, electron localization function $ ^{[23]} $ and molecular electrostatic potential. $ ^{[24]} $ NBO analysis performed using NBO 7.0 program. The visualization was performed using GaussView and Matlab R2021b. / Synthesis",
+    "translation_context_after": "(470 mg, 1.26 mmol), NBS (472 mg, 2.65 mmol) and cooled to $ -20^{\\circ} $C THF (20 mL) were placed in a flask. The reaction mixture was stirred overnight at $ -20^{\\circ} $C. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (25 mL) was added to the residue. The product was extracted with dichloromethane (3×15..."
+  },
+  {
+    "item_id": "p008-b015",
+    "page_idx": 7,
+    "block_idx": 15,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 15,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.886,
+      322.958,
+      549.793,
+      415.946
+    ],
+    "source_text": "(470 mg, 1.26 mmol), NBS (472 mg, 2.65 mmol) and cooled to $ -20^{\\circ} $C THF (20 mL) were placed in a flask. The reaction mixture was stirred overnight at $ -20^{\\circ} $C. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (25 mL) was added to the residue. The product was extracted with dichloromethane (3×15 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was recrystallized from petroleum ether to yield 1 as orange crystals (583 mg, 87%) with mp 151–152°C.",
+    "source_line_texts": [
+      "(470 mg, 1.26 mmol), NBS (472 mg, 2.65 mmol) and cooled",
+      "to $ -20^{\\circ} $C THF (20 mL) were placed in a flask.",
+      "The reaction mixture was stirred overnight at $ -20^{\\circ}",
+      "$C. The solvent was removed in vacuo to form dark-orange",
+      "waxy residue. 10% aqueous ammonia solution (25 mL) was added",
+      "to the residue. The product was extracted with dichloromethane",
+      "(3×15 mL). Organic layers were combined and dried over anhydrous",
+      "sodium sulfate. The solvent was removed in vacuo. The residue",
+      "was recrystallized from petroleum ether to yield 1 as orange crystals (583 mg, 87%) with mp 151–152°C."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.886,
+          322.958,
+          549.793,
+          334.582
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(470 mg, 1.26 mmol), NBS (472 mg, 2.65 mmol) and",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          334.582,
+          549.793,
+          346.205
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "cooled to $ -20^{\\circ} $C THF (20 mL) were placed",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          346.205,
+          549.793,
+          357.829
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "in a flask. The reaction mixture was stirred overnight",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          357.829,
+          549.793,
+          369.452
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "at $ -20^{\\circ} $C. The solvent was removed in",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          369.452,
+          549.793,
+          381.076
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "vacuo to form dark-orange waxy residue. 10% aqueous",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          381.076,
+          549.793,
+          392.699
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "ammonia solution (25 mL) was added to the residue.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          392.699,
+          549.793,
+          404.322
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The product was extracted with dichloromethane (3×15",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          404.322,
+          549.793,
+          415.946
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was recrystallized from petroleum ether to yield 1 as orange crystals (583 mg, 87%) with mp 151–152°C.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-132",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 13,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-132",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 13,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 5,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "(470 mg, 1.26 mmol), NBS (472 mg, 2.65 mmol) and cooled to $ -20^{\\circ} $C THF (20 mL) were placed in a flask. The reaction mixture was stirred overnight at $ -20^{\\circ} $C. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (25 mL) was added to the residue. The product was extracted with dichloromethane (3×15 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was recrystallized from petroleum ether to yield 1 as orange crystals (583 mg, 87%) with mp 151–152°C.",
+    "mixed_original_protected_source_text": "(470 mg, 1.26 mmol), NBS (472 mg, 2.65 mmol) and cooled to $ -20^{\\circ} $C THF (20 mL) were placed in a flask. The reaction mixture was stirred overnight at $ -20^{\\circ} $C. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (25 mL) was added to the residue. The product was extracted with dichloromethane (3×15 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was recrystallized from petroleum ether to yield 1 as orange crystals (583 mg, 87%) with mp 151–152°C.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b015",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b015"
+    ],
+    "translation_unit_protected_source_text": "(470 mg, 1.26 mmol), NBS (472 mg, 2.65 mmol) and cooled to $ -20^{\\circ} $C THF (20 mL) were placed in a flask. The reaction mixture was stirred overnight at $ -20^{\\circ} $C. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (25 mL) was added to the residue. The product was extracted with dichloromethane (3×15 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was recrystallized from petroleum ether to yield 1 as orange crystals (583 mg, 87%) with mp 151–152°C.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "(470 mg, 1.26 mmol)、NBS (472 mg, 2.65 mmol) 以及冷却至 $ -20^{\\circ} $C 的 THF (20 mL) 置于烧瓶中。反应混合物在 $ -20^{\\circ} $C 下搅拌过夜。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (25 mL)。用二氯甲烷 (3×15 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物用石油醚重结晶，得到橙色晶体 1 (583 mg, 87%)，熔点 151–152°C。",
+    "translation_unit_translated_text": "(470 mg, 1.26 mmol)、NBS (472 mg, 2.65 mmol) 以及冷却至 $ -20^{\\circ} $C 的 THF (20 mL) 置于烧瓶中。反应混合物在 $ -20^{\\circ} $C 下搅拌过夜。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (25 mL)。用二氯甲烷 (3×15 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物用石油醚重结晶，得到橙色晶体 1 (583 mg, 87%)，熔点 151–152°C。",
+    "protected_translated_text": "(470 mg, 1.26 mmol)、NBS (472 mg, 2.65 mmol) 以及冷却至 $ -20^{\\circ} $C 的 THF (20 mL) 置于烧瓶中。反应混合物在 $ -20^{\\circ} $C 下搅拌过夜。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (25 mL)。用二氯甲烷 (3×15 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物用石油醚重结晶，得到橙色晶体 1 (583 mg, 87%)，熔点 151–152°C。",
+    "translated_text": "(470 mg, 1.26 mmol)、NBS (472 mg, 2.65 mmol) 以及冷却至 $ -20^{\\circ} $C 的 THF (20 mL) 置于烧瓶中。反应混合物在 $ -20^{\\circ} $C 下搅拌过夜。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (25 mL)。用二氯甲烷 (3×15 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物用石油醚重结晶，得到橙色晶体 1 (583 mg, 87%)，熔点 151–152°C。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b015",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p008-b016",
+    "page_idx": 7,
+    "block_idx": 16,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 16,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      302.386,
+      420.445,
+      550.293,
+      446.365
+    ],
+    "source_text": "$ ^{1} $H NMR (CDCl $ _3 $, 400 MHz): $ \\delta=7.89 $ (s, 2H), 2.96 (s, 12H). $ ^{13} $C NMR (CDCl $ _3 $, 100 MHz): $ \\delta=147.08 $, 138.01, 134.84, 131.74, 119.89, 114.51, 44.34.",
+    "source_line_texts": [
+      "$ ^{1} $ H NMR (CDCl $ _3 $, 400 MHz) : $ \\delta=7.89 $ (s,",
+      "2H), 2.96 (s, 12H). $ ^{13} $ C NMR (CDCl $ _3 $, 100 MHz) :",
+      "$ \\delta=147.08 $, 138.01, 134.84, 131.74, 119.89, 114.51, 44.34."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          302.386,
+          420.445,
+          550.293,
+          433.405
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$ ^{1} $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "H NMR (CDCl $ _3 $, 400 MHz)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": ": $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\delta=7.89",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          302.386,
+          433.405,
+          550.293,
+          446.365
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$ (s, 2H), 2.96 (s, 12H). $ ^{13} $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "C NMR (CDCl $ _3 $, 100 MHz)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": ": $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\delta=147.08",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$, 138.01, 134.84, 131.74, 119.89, 114.51, 44.34.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-133",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 14,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-133",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 14,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 6,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "$ ^{1} $H NMR (CDCl $ _3 $, 400 MHz): $ \\delta=7.89 $ (s, 2H), 2.96 (s, 12H). $ ^{13} $C NMR (CDCl $ _3 $, 100 MHz): $ \\delta=147.08 $, 138.01, 134.84, 131.74, 119.89, 114.51, 44.34.",
+    "mixed_original_protected_source_text": "$ ^{1} $H NMR (CDCl $ _3 $, 400 MHz): $ \\delta=7.89 $ (s, 2H), 2.96 (s, 12H). $ ^{13} $C NMR (CDCl $ _3 $, 100 MHz): $ \\delta=147.08 $, 138.01, 134.84, 131.74, 119.89, 114.51, 44.34.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "skip_model_keep_origin",
+    "should_translate": false,
+    "skip_reason": "skip_model_keep_origin",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b016",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b016"
+    ],
+    "translation_unit_protected_source_text": "$ ^{1} $H NMR (CDCl $ _3 $, 400 MHz): $ \\delta=7.89 $ (s, 2H), 2.96 (s, 12H). $ ^{13} $C NMR (CDCl $ _3 $, 100 MHz): $ \\delta=147.08 $, 138.01, 134.84, 131.74, 119.89, 114.51, 44.34.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "kept_origin",
+    "translation_diagnostics": {
+      "item_id": "p008-b016",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "policy_keep_origin_item",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p008-b017",
+    "page_idx": 7,
+    "block_idx": 17,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 17,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      300.887,
+      457.44,
+      550.793,
+      631.418
+    ],
+    "source_text": "2,4,5,7-Tetrabromo-N',N',N°-trimethylnaphthalene-1,8-diamine (3). The mixture of 1 (100 mg, 0.19 mmol), NBS (71 mg, 0.40 mmol) and THF (15 mL) was stirred overnight at room temperature. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added. The product was extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; greenish-yellow fraction with $ R_f = 0.35 $ was collected. The solvent was removed in vacuo to give 3 as greenish-yellow crystals (28 mg, 29%) with mp 72–74°C.¹H NMR (CDCl₃, 400 MHz): $ \\delta = 8.84 $ (s, 1H), 8.02 (s, 1H), 8.01 (s, 1H), 3.04 (s, 3H), 3.01 (s, 6H). $ ^{13} $C NMR (CDCl₃, 100 MHz): $ \\delta = 148.78, 145.49, 140.00, 139.30, 130.58, 130.39, 121.00, 118.43, 111.21, 109.68, 42.28, 37.00 $. HRMS (ESI): m/z [M+H]⁺ calcd for C₁₃H₃Br₄N₂⁺: 516.7766, 514.7786, 518.7745, 512.7807, 520.7725; found: 516.7768, 514.7795, 518.7748, 512.7850, 520.7723.",
+    "source_line_texts": [
+      "2,4,5,7-Tetrabromo-N',N',N°-trimethylnaphthalene-1,8-diamine",
+      "(3). The mixture of 1 (100 mg, 0.19 mmol), NBS (71 mg, 0.40",
+      "mmol) and THF (15 mL) was stirred overnight at room temperature.",
+      "The solvent was removed in vacuo to form dark-orange waxy",
+      "residue. 10% aqueous ammonia solution (20 mL) was added.",
+      "The product was extracted with dichloromethane (3×10 mL).",
+      "Organic layers were combined and dried over anhydrous sodium",
+      "sulfate. The solvent was removed in vacuo. The residue was",
+      "chromatographed on silica using benzene as eluent; greenish-yellow",
+      "fraction with $ R_f = 0.35 $ was collected. The solvent",
+      "was removed in vacuo to give 3 as greenish-yellow crystals",
+      "(28 mg, 29%) with mp 72–74°C.¹H NMR (CDCl₃, 400 MHz): $",
+      "\\delta = 8.84 $ (s, 1H), 8.02 (s, 1H), 8.01 (s, 1H), 3.04",
+      "(s, 3H), 3.01 (s, 6H). $ ^{13} $C NMR (CDCl₃, 100 MHz):",
+      "$ \\delta = 148.78, 145.49, 140.00, 139.30, 130.58, 130.39,",
+      "121.00, 118.43, 111.21, 109.68, 42.28, 37.00 $. HRMS (ESI):",
+      "m/z [M+H]⁺ calcd for C₁₃H₃Br₄N₂⁺: 516.7766, 514.7786, 518.7745, 512.7807, 520.7725; found: 516.7768, 514.7795, 518.7748, 512.7850, 520.7723."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          300.887,
+          457.44,
+          550.793,
+          469.039
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "2,4,5,7-Tetrabromo-N',N',N°-trimethylnaphthalene-1,8-diamine",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          469.039,
+          550.793,
+          480.637
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(3). The mixture of 1 (100 mg, 0.19 mmol), NBS (71",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          480.637,
+          550.793,
+          492.236
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "mg, 0.40 mmol) and THF (15 mL) was stirred overnight",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          492.236,
+          550.793,
+          503.834
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "at room temperature. The solvent was removed in vacuo",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          503.834,
+          550.793,
+          515.433
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "to form dark-orange waxy residue. 10% aqueous ammonia",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          515.433,
+          550.793,
+          527.031
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "solution (20 mL) was added. The product was extracted",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          527.031,
+          550.793,
+          538.63
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "with dichloromethane (3×10 mL). Organic layers were",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          538.63,
+          550.793,
+          550.228
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "combined and dried over anhydrous sodium sulfate.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          550.228,
+          550.793,
+          561.827
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The solvent was removed in vacuo. The residue was",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          561.827,
+          550.793,
+          573.425
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "chromatographed on silica using benzene as eluent;",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          573.425,
+          550.793,
+          585.024
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "greenish-yellow fraction with $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "R_f = 0.35",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ was",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          585.024,
+          550.793,
+          596.622
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "collected. The solvent was removed in vacuo to give",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          596.622,
+          550.793,
+          608.221
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "3 as greenish-yellow crystals (28 mg, 29%) with mp",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          608.221,
+          550.793,
+          619.819
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "72–74°C.¹H NMR (CDCl₃, 400 MHz): $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\delta = 8.84",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          300.887,
+          619.819,
+          550.793,
+          631.418
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$ (s, 1H), 8.02 (s, 1H), 8.01 (s, 1H), 3.04 (s, 3H), 3.01 (s, 6H). $ ^{13} $C NMR (CDCl₃, 100 MHz): $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\delta = 148.78, 145.49, 140.00, 139.30, 130.58, 130.39, 121.00, 118.43, 111.21, 109.68, 42.28, 37.00",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$. HRMS (ESI): m/z [M+H]⁺ calcd for C₁₃H₃Br₄N₂⁺: 516.7766, 514.7786, 518.7745, 512.7807, 520.7725; found: 516.7768, 514.7795, 518.7748, 512.7850, 520.7723.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-134",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 15,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-134",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 15,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 7,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "2,4,5,7-Tetrabromo-N',N',N°-trimethylnaphthalene-1,8-diamine (3). The mixture of 1 (100 mg, 0.19 mmol), NBS (71 mg, 0.40 mmol) and THF (15 mL) was stirred overnight at room temperature. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added. The product was extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; greenish-yellow fraction with $ R_f = 0.35 $ was collected. The solvent was removed in vacuo to give 3 as greenish-yellow crystals (28 mg, 29%) with mp 72–74°C.¹H NMR (CDCl₃, 400 MHz): $ \\delta = 8.84 $ (s, 1H), 8.02 (s, 1H), 8.01 (s, 1H), 3.04 (s, 3H), 3.01 (s, 6H). $ ^{13} $C NMR (CDCl₃, 100 MHz): $ \\delta = 148.78, 145.49, 140.00, 139.30, 130.58, 130.39, 121.00, 118.43, 111.21, 109.68, 42.28, 37.00 $. HRMS (ESI): m/z [M+H]⁺ calcd for C₁₃H₃Br₄N₂⁺: 516.7766, 514.7786, 518.7745, 512.7807, 520.7725; found: 516.7768, 514.7795, 518.7748, 512.7850, 520.7723.",
+    "mixed_original_protected_source_text": "2,4,5,7-Tetrabromo-N',N',N°-trimethylnaphthalene-1,8-diamine (3). The mixture of 1 (100 mg, 0.19 mmol), NBS (71 mg, 0.40 mmol) and THF (15 mL) was stirred overnight at room temperature. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added. The product was extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; greenish-yellow fraction with $ R_f = 0.35 $ was collected. The solvent was removed in vacuo to give 3 as greenish-yellow crystals (28 mg, 29%) with mp 72–74°C.¹H NMR (CDCl₃, 400 MHz): $ \\delta = 8.84 $ (s, 1H), 8.02 (s, 1H), 8.01 (s, 1H), 3.04 (s, 3H), 3.01 (s, 6H). $ ^{13} $C NMR (CDCl₃, 100 MHz): $ \\delta = 148.78, 145.49, 140.00, 139.30, 130.58, 130.39, 121.00, 118.43, 111.21, 109.68, 42.28, 37.00 $. HRMS (ESI): m/z [M+H]⁺ calcd for C₁₃H₃Br₄N₂⁺: 516.7766, 514.7786, 518.7745, 512.7807, 520.7725; found: 516.7768, 514.7795, 518.7748, 512.7850, 520.7723.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p008-b017",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p008-b017"
+    ],
+    "translation_unit_protected_source_text": "2,4,5,7-Tetrabromo-N',N',N°-trimethylnaphthalene-1,8-diamine (3). The mixture of 1 (100 mg, 0.19 mmol), NBS (71 mg, 0.40 mmol) and THF (15 mL) was stirred overnight at room temperature. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added. The product was extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; greenish-yellow fraction with $ R_f = 0.35 $ was collected. The solvent was removed in vacuo to give 3 as greenish-yellow crystals (28 mg, 29%) with mp 72–74°C.¹H NMR (CDCl₃, 400 MHz): $ \\delta = 8.84 $ (s, 1H), 8.02 (s, 1H), 8.01 (s, 1H), 3.04 (s, 3H), 3.01 (s, 6H). $ ^{13} $C NMR (CDCl₃, 100 MHz): $ \\delta = 148.78, 145.49, 140.00, 139.30, 130.58, 130.39, 121.00, 118.43, 111.21, 109.68, 42.28, 37.00 $. HRMS (ESI): m/z [M+H]⁺ calcd for C₁₃H₃Br₄N₂⁺: 516.7766, 514.7786, 518.7745, 512.7807, 520.7725; found: 516.7768, 514.7795, 518.7748, 512.7850, 520.7723.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "2,4,5,7-四溴-N',N',N⁶-三甲基萘-1,8-二胺(3)。将1 (100 mg, 0.19 mmol)、NBS (71 mg, 0.40 mmol)和THF (15 mL)的混合物于室温搅拌过夜。减压除去溶剂，得到深橙色蜡状残渣。加入10%氨水溶液 (20 mL)，用二氯甲烷 (3×10 mL)萃取产物。合并有机层，用无水硫酸钠干燥，减压除去溶剂。残渣以硅胶柱色谱分离，苯为洗脱剂，收集 $R_f = 0.35$ 的黄绿色馏分。减压除去溶剂，得到黄绿色晶体3 (28 mg, 29%)，熔点72–74°C。¹H NMR (CDCl₃, 400 MHz): $\\delta = 8.84$ (s, 1H), 8.02 (s, 1H), 8.01 (s, 1H), 3.04 (s, 3H), 3.01 (s, 6H)。$^{13}$C NMR (CDCl₃, 100 MHz): $\\delta = 148.78, 145.49, 140.00, 139.30, 130.58, 130.39, 121.00, 118.43, 111.21, 109.68, 42.28, 37.00$。HRMS (ESI): m/z [M+H]⁺ 计算值 C₁₃H₃Br₄N₂⁺: 516.7766, 514.7786, 518.7745, 512.7807, 520.7725; 实测值: 516.7768, 514.7795, 518.7748, 512.7850, 520.7723。",
+    "translation_unit_translated_text": "2,4,5,7-四溴-N',N',N⁶-三甲基萘-1,8-二胺(3)。将1 (100 mg, 0.19 mmol)、NBS (71 mg, 0.40 mmol)和THF (15 mL)的混合物于室温搅拌过夜。减压除去溶剂，得到深橙色蜡状残渣。加入10%氨水溶液 (20 mL)，用二氯甲烷 (3×10 mL)萃取产物。合并有机层，用无水硫酸钠干燥，减压除去溶剂。残渣以硅胶柱色谱分离，苯为洗脱剂，收集 $R_f = 0.35$ 的黄绿色馏分。减压除去溶剂，得到黄绿色晶体3 (28 mg, 29%)，熔点72–74°C。¹H NMR (CDCl₃, 400 MHz): $\\delta = 8.84$ (s, 1H), 8.02 (s, 1H), 8.01 (s, 1H), 3.04 (s, 3H), 3.01 (s, 6H)。$^{13}$C NMR (CDCl₃, 100 MHz): $\\delta = 148.78, 145.49, 140.00, 139.30, 130.58, 130.39, 121.00, 118.43, 111.21, 109.68, 42.28, 37.00$。HRMS (ESI): m/z [M+H]⁺ 计算值 C₁₃H₃Br₄N₂⁺: 516.7766, 514.7786, 518.7745, 512.7807, 520.7725; 实测值: 516.7768, 514.7795, 518.7748, 512.7850, 520.7723。",
+    "protected_translated_text": "2,4,5,7-四溴-N',N',N⁶-三甲基萘-1,8-二胺(3)。将1 (100 mg, 0.19 mmol)、NBS (71 mg, 0.40 mmol)和THF (15 mL)的混合物于室温搅拌过夜。减压除去溶剂，得到深橙色蜡状残渣。加入10%氨水溶液 (20 mL)，用二氯甲烷 (3×10 mL)萃取产物。合并有机层，用无水硫酸钠干燥，减压除去溶剂。残渣以硅胶柱色谱分离，苯为洗脱剂，收集 $R_f = 0.35$ 的黄绿色馏分。减压除去溶剂，得到黄绿色晶体3 (28 mg, 29%)，熔点72–74°C。¹H NMR (CDCl₃, 400 MHz): $\\delta = 8.84$ (s, 1H), 8.02 (s, 1H), 8.01 (s, 1H), 3.04 (s, 3H), 3.01 (s, 6H)。$^{13}$C NMR (CDCl₃, 100 MHz): $\\delta = 148.78, 145.49, 140.00, 139.30, 130.58, 130.39, 121.00, 118.43, 111.21, 109.68, 42.28, 37.00$。HRMS (ESI): m/z [M+H]⁺ 计算值 C₁₃H₃Br₄N₂⁺: 516.7766, 514.7786, 518.7745, 512.7807, 520.7725; 实测值: 516.7768, 514.7795, 518.7748, 512.7850, 520.7723。",
+    "translated_text": "2,4,5,7-四溴-N',N',N⁶-三甲基萘-1,8-二胺(3)。将1 (100 mg, 0.19 mmol)、NBS (71 mg, 0.40 mmol)和THF (15 mL)的混合物于室温搅拌过夜。减压除去溶剂，得到深橙色蜡状残渣。加入10%氨水溶液 (20 mL)，用二氯甲烷 (3×10 mL)萃取产物。合并有机层，用无水硫酸钠干燥，减压除去溶剂。残渣以硅胶柱色谱分离，苯为洗脱剂，收集 $R_f = 0.35$ 的黄绿色馏分。减压除去溶剂，得到黄绿色晶体3 (28 mg, 29%)，熔点72–74°C。¹H NMR (CDCl₃, 400 MHz): $\\delta = 8.84$ (s, 1H), 8.02 (s, 1H), 8.01 (s, 1H), 3.04 (s, 3H), 3.01 (s, 6H)。$^{13}$C NMR (CDCl₃, 100 MHz): $\\delta = 148.78, 145.49, 140.00, 139.30, 130.58, 130.39, 121.00, 118.43, 111.21, 109.68, 42.28, 37.00$。HRMS (ESI): m/z [M+H]⁺ 计算值 C₁₃H₃Br₄N₂⁺: 516.7766, 514.7786, 518.7745, 512.7807, 520.7725; 实测值: 516.7768, 514.7795, 518.7748, 512.7850, 520.7723。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b017",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p008-b018",
+    "page_idx": 7,
+    "block_idx": 18,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 18,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      636.917,
+      550.293,
+      729.905
+    ],
+    "source_text": "4,6,9-tribromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (4a). The mixture of 1 (150 mg, 0.28 mmol), NBS (106 mg, 0.59 mmol) and THF (15 mL) was refluxed for 12 h. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added to the residue. The product was extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $",
+    "source_line_texts": [
+      "4,6,9-tribromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (4a).",
+      "The mixture of 1 (150 mg, 0.28 mmol), NBS (106 mg, 0.59",
+      "mmol) and THF (15 mL) was refluxed for 12 h. The solvent",
+      "was removed in vacuo to form dark-orange waxy residue. 10%",
+      "aqueous ammonia solution (20 mL) was added to the residue.",
+      "The product was extracted with dichloromethane (3×10 mL).",
+      "Organic layers were combined and dried over anhydrous sodium",
+      "sulfate. The solvent was removed in vacuo. The residue was",
+      "chromatographed on silica using a mixture of benzene/hexane",
+      "10:1 as eluent; colorless fraction with $ R_f=0.5 $"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          636.917,
+          550.293,
+          648.541
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "4,6,9-tribromo-1,3-dimethyl-2,3-dihydro-1H-perimidine",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          648.541,
+          550.293,
+          660.164
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(4a). The mixture of 1 (150 mg, 0.28 mmol), NBS",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          660.164,
+          550.293,
+          671.788
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(106 mg, 0.59 mmol) and THF (15 mL) was refluxed",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          671.788,
+          550.293,
+          683.411
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "for 12 h. The solvent was removed in vacuo to form",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          683.411,
+          550.293,
+          695.034
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "dark-orange waxy residue. 10% aqueous ammonia solution",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          695.034,
+          550.293,
+          706.658
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(20 mL) was added to the residue. The product was",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          706.658,
+          550.293,
+          718.281
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "extracted with dichloromethane (3×10 mL). Organic",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          718.281,
+          550.293,
+          729.905
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "R_f=0.5",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-135",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 16,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-135",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 16,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 245.78,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 8,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "4,6,9-tribromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (4a). The mixture of 1 (150 mg, 0.28 mmol), NBS (106 mg, 0.59 mmol) and THF (15 mL) was refluxed for 12 h. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added to the residue. The product was extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $",
+    "mixed_original_protected_source_text": "4,6,9-tribromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (4a). The mixture of 1 (150 mg, 0.28 mmol), NBS (106 mg, 0.59 mmol) and THF (15 mL) was refluxed for 12 h. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added to the residue. The product was extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-008-009",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p008-b018",
+      "p009-b003"
+    ],
+    "translation_unit_protected_source_text": "4,6,9-tribromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (4a). The mixture of 1 (150 mg, 0.28 mmol), NBS (106 mg, 0.59 mmol) and THF (15 mL) was refluxed for 12 h. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added to the residue. The product was extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give 4a as grayish crystals (35 mg, 29%) with mp 87–88°C.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "4,6,9-三溴-1,3-二甲基-2,3-二氢-1H-苝啶 (4a)。将1 (150 mg, 0.28 mmol)、NBS (106 mg, 0.59 mmol) 与 THF (15 mL) 的混合物回流 12 h。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (20 mL)。用二氯甲烷 (3×10 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物以苯/己烷 10:1 为洗脱剂进行硅胶柱色谱分离，收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 为浅灰色晶体 (35 mg, 29%)，熔点 87–88°C。",
+    "translation_unit_translated_text": "4,6,9-三溴-1,3-二甲基-2,3-二氢-1H-苝啶 (4a)。将1 (150 mg, 0.28 mmol)、NBS (106 mg, 0.59 mmol) 与 THF (15 mL) 的混合物回流 12 h。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (20 mL)。用二氯甲烷 (3×10 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物以苯/己烷 10:1 为洗脱剂进行硅胶柱色谱分离，收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 为浅灰色晶体 (35 mg, 29%)，熔点 87–88°C。",
+    "protected_translated_text": "4,6,9-三溴-1,3-二甲基-2,3-二氢-1H-苝啶 (4a)。将1 (150 mg, 0.28 mmol)、NBS (106 mg, 0.59 mmol) 与 THF (15 mL) 的混合物回流 12 h。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (20 mL)。用二氯甲烷 (3×10 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物以苯/己烷 10:1 为洗脱剂进行硅胶柱色谱分离，收集 $ R_f=0.5 $ 的无色馏分。",
+    "translated_text": "4,6,9-三溴-1,3-二甲基-2,3-二氢-1H-苝啶 (4a)。将1 (150 mg, 0.28 mmol)、NBS (106 mg, 0.59 mmol) 与 THF (15 mL) 的混合物回流 12 h。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (20 mL)。用二氯甲烷 (3×10 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物以苯/己烷 10:1 为洗脱剂进行硅胶柱色谱分离，收集 $ R_f=0.5 $ 的无色馏分。",
+    "continuation_group": "cg-008-009",
+    "continuation_prev_text": "",
+    "continuation_next_text": "was collected. The solvent was removed in vacuo to give 4a as grayish crystals (35 mg, 29%) with mp 87–88°C.",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "4,6,9-tribromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (4a). The mixture of 1 (150 mg, 0.28 mmol), NBS (106 mg, 0.59 mmol) and THF (15 mL) was refluxed for 12 h. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added to the residue. The product was extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give 4a as grayish crystals (35 mg, 29%) with mp 87–88°C.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "4,6,9-三溴-1,3-二甲基-2,3-二氢-1H-苝啶 (4a)。将1 (150 mg, 0.28 mmol)、NBS (106 mg, 0.59 mmol) 与 THF (15 mL) 的混合物回流 12 h。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (20 mL)。用二氯甲烷 (3×10 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物以苯/己烷 10:1 为洗脱剂进行硅胶柱色谱分离，收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 为浅灰色晶体 (35 mg, 29%)，熔点 87–88°C。",
+    "group_translated_text": "4,6,9-三溴-1,3-二甲基-2,3-二氢-1H-苝啶 (4a)。将1 (150 mg, 0.28 mmol)、NBS (106 mg, 0.59 mmol) 与 THF (15 mL) 的混合物回流 12 h。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (20 mL)。用二氯甲烷 (3×10 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物以苯/己烷 10:1 为洗脱剂进行硅胶柱色谱分离，收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 为浅灰色晶体 (35 mg, 29%)，熔点 87–88°C。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p008-b018",
+      "page_idx": 7,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "$ ^{1} $H NMR (CDCl $ _3 $, 400 MHz): $ \\delta=7.89 $ (s, 2H), 2.96 (s, 12H). $ ^{13} $C NMR (CDCl $ _3 $, 100 MHz): $ \\delta=147.08 $, 138.01, 134.84, 131.74, 119.89, 114.51, 44.34. / 2,4,5,7-Tetrabromo-N',N',N°-trimethylnaphthalene-1,8-diamine (3). The mixture of 1 (100 mg, 0.19 mmol), NBS (71 mg, 0.40 mmol) and THF (15 mL) was stirred overnight at room t...",
+    "translation_context_after": "was collected. The solvent was removed in vacuo to give 4a as grayish crystals (35 mg, 29%) with mp 87–88°C. / $^{1}$H NMR (CDCl$_{3}$, 400 MHz): $\\delta = 7.90$ (s, 1H), 7.68 (s, 2H), 4.36 (s, 2H), 3.31 (s, 3H), 3.30 (s, 3H). $^{13}$C NMR (CDCl$_{3}$, 100 MHz): $\\delta = 142.71$, 142.44, 134.66, 132.85, 131.28, 124.71, 122.65, 115.25, 112.41, 110.05, 71.82..."
+  }
+]

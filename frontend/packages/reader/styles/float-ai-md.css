@@ -1,0 +1,278 @@
+/* AI 悬浮窗 · 答案 Markdown 排版 / 公式 / 图片 */
+
+/* AI 正文：为 440px 左右的窄栏单独排版。Markstream 负责语法树与流式
+ * 增量渲染，这里只覆盖视觉主题，不再让它继承桌面文章的宽栏节奏。 */
+.reader-float-ai .aui-md {
+  font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif);
+  font-size: 13.75px;
+  font-weight: 400;
+  line-height: 1.66;
+  letter-spacing: 0;
+  color: color-mix(in srgb, var(--ink) 88%, transparent);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  -webkit-font-smoothing: antialiased;
+}
+.reader-float-ai .aui-md .retain-markstream-shell,
+.reader-float-ai .aui-md .markstream-react {
+  width: 100%;
+  min-width: 0;
+}
+.reader-float-ai .aui-md :where(strong) {
+  color: var(--ink);
+  font-weight: 650;
+}
+/* 外链已降级为 span（无 href），避免桌面端 openExternal；仅保留视觉 */
+.reader-float-ai .aui-md .aui-md-extlink {
+  color: color-mix(in srgb, var(--accent) 85%, var(--ink));
+  text-decoration: underline;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 2px;
+  cursor: default;
+  word-break: break-all;
+}
+.reader-float-ai .aui-md a[href] {
+  /* 残留真实锚点也禁止点穿（JS 会再拆掉） */
+  pointer-events: none;
+  color: inherit;
+  text-decoration: underline;
+}
+.reader-float-ai .aui-md-streaming,
+.reader-float-ai .aui-md-pending {
+  white-space: normal;
+}
+.reader-float-ai .aui-md-plain {
+  font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", sans-serif);
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 450;
+  white-space: pre-wrap;
+}
+.reader-float-ai .aui-md :where(p),
+.reader-float-ai .aui-md :where(ul),
+.reader-float-ai .aui-md :where(ol) { margin: 0.52em 0; }
+.reader-float-ai .aui-md :where(p:first-child),
+.reader-float-ai .aui-md :where(ul:first-child),
+.reader-float-ai .aui-md :where(ol:first-child) { margin-top: 0; }
+.reader-float-ai .aui-md :where(p:last-child),
+.reader-float-ai .aui-md :where(ul:last-child),
+.reader-float-ai .aui-md :where(ol:last-child) { margin-bottom: 0; }
+.reader-float-ai .aui-md :where(h1),
+.reader-float-ai .aui-md :where(h2),
+.reader-float-ai .aui-md :where(h3),
+.reader-float-ai .aui-md :where(h4) {
+  margin: 0.95em 0 0.38em;
+  color: var(--ink);
+  font-weight: 680;
+  letter-spacing: -0.015em;
+  line-height: 1.38;
+}
+.reader-float-ai .aui-md :where(h1) { font-size: 16px; }
+.reader-float-ai .aui-md :where(h2) { font-size: 15px; }
+.reader-float-ai .aui-md :where(h3) { font-size: 14px; }
+.reader-float-ai .aui-md :where(h4) { font-size: 13.5px; }
+.reader-float-ai .aui-md :where(ul),
+.reader-float-ai .aui-md :where(ol) { padding-left: 1.15em; }
+.reader-float-ai .aui-md :where(li) { margin: 0.28em 0; padding-left: 0.12em; }
+.reader-float-ai .aui-md :where(li)::marker {
+  color: color-mix(in srgb, var(--ink) 48%, var(--muted));
+  font-size: 0.88em;
+  font-weight: 600;
+}
+.reader-float-ai .aui-md :where(li > ul),
+.reader-float-ai .aui-md :where(li > ol) {
+  margin: 0.22em 0 0.12em;
+}
+.reader-float-ai .aui-md :where(blockquote) {
+  margin: 0.5em 0;
+  padding: 0.15em 0 0.15em 0.75em;
+  border-left: 3px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  color: var(--muted);
+}
+.reader-float-ai .aui-md :where(code) {
+  padding: 0.1em 0.35em;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+  font-size: 0.9em;
+}
+.reader-float-ai .aui-md :where(pre) {
+  margin: 0.55em 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.reader-float-ai .aui-md :where(pre code) {
+  padding: 0;
+  background: none;
+}
+.reader-float-ai .aui-md :where(table) {
+  width: 100%;
+  max-width: 100%;
+  margin: 0.7em 0;
+  overflow-x: auto;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 10px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: color-mix(in srgb, var(--ink) 1.5%, var(--paper));
+  font-size: 12.5px;
+}
+.reader-float-ai .aui-md :where(th),
+.reader-float-ai .aui-md :where(td) {
+  padding: 7px 9px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
+  text-align: left;
+  vertical-align: top;
+}
+.reader-float-ai .aui-md :where(th) {
+  background: color-mix(in srgb, var(--ink) 3.5%, var(--paper));
+  color: var(--ink);
+  font-weight: 650;
+}
+.reader-float-ai .aui-md :where(tr:last-child td) {
+  border-bottom: 0;
+}
+.reader-float-ai .aui-md :where(hr) {
+  margin: 0.9em 0;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+/* 旧 Markdown renderer 的 MathJax SVG 兼容层。 */
+.reader-float-ai .aui-md .reader-md-math-inline {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  overflow-x: auto;
+}
+.reader-float-ai .aui-md .reader-md-math-display {
+  display: block;
+  margin: 0.65em 0;
+  overflow-x: auto;
+  text-align: center;
+}
+.reader-float-ai .aui-md .reader-md-math mjx-container {
+  margin: 0 !important;
+}
+.reader-float-ai .aui-md .reader-md-math svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Markstream / KaTeX。默认的 1.21em + middle 对齐会让行内分式显得
+ * 又大又低；Reader 将行内公式恢复到正文尺度与数学基线。 */
+.reader-float-ai .aui-md .math-inline-wrapper {
+  position: static;
+  display: inline;
+  white-space: nowrap;
+}
+.reader-float-ai .aui-md .math-inline {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0 0.04em;
+  vertical-align: -0.08em;
+  line-height: 1;
+}
+.reader-float-ai .aui-md .math-inline .katex {
+  font-size: 1.02em;
+  line-height: 1;
+  text-rendering: optimizeLegibility;
+}
+.reader-float-ai .aui-md .math-block-node {
+  margin: 0.7em 0;
+}
+.reader-float-ai .aui-md .math-block {
+  min-height: 0;
+  padding: 0.55em 0.7em;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 2.5%, transparent);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.reader-float-ai .aui-md .math-block .katex-display {
+  margin: 0;
+}
+.reader-float-ai .aui-md .math-block .katex {
+  font-size: 1.06em;
+  line-height: 1.15;
+  text-rendering: optimizeLegibility;
+}
+.reader-float-ai .aui-md img {
+  display: block;
+  width: 70%;
+  max-width: 70%;
+  height: auto;
+  margin: 0.75em auto;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.reader-float-ai .aui-md img.is-low-resolution {
+  width: min(70%, var(--reader-ai-image-width, 70%));
+}
+.reader-float-ai .reader-ai-image-jump {
+  position: relative;
+  display: block;
+  width: 70%;
+  max-width: 70%;
+  margin: 0.75em auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.reader-float-ai .reader-ai-image-jump.is-low-resolution {
+  width: min(70%, var(--reader-ai-image-width, 70%));
+}
+.reader-float-ai .reader-ai-image-jump img {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  transition: filter 160ms ease, transform 160ms ease;
+}
+.reader-float-ai .reader-ai-image-jump img.is-low-resolution {
+  width: 100%;
+}
+.reader-float-ai .reader-ai-image-jump-label {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, white 28%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, black 68%, transparent);
+  color: white;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.2;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 160ms ease, transform 160ms ease;
+  pointer-events: none;
+}
+.reader-float-ai .reader-ai-image-jump:hover img {
+  filter: brightness(0.94);
+  transform: scale(1.002);
+}
+.reader-float-ai .reader-ai-image-jump:hover .reader-ai-image-jump-label,
+.reader-float-ai .reader-ai-image-jump:focus-visible .reader-ai-image-jump-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reader-float-ai .reader-ai-image-jump:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ink) 58%, transparent);
+  outline-offset: 3px;
+}
+.reader-float-ai .aui-md img.is-missing {
+  min-height: 48px;
+  opacity: 0.55;
+}
+.reader-float-ai .aui-msg {
+  position: relative;
+}

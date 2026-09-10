@@ -1,0 +1,95 @@
+/* 悬浮窗内 Markdown 正文（批注 / Markdown 预览共用） */
+
+/* 悬浮窗内 Markdown / AI 内容 */
+.reader-float-markdown-content {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.reader-float-markdown-content.hidden {
+  display: none;
+}
+.reader-notes-panel--workspace .reader-notes-panel-toolbar {
+  display: none;
+}
+.reader-notes-panel--workspace .reader-notes-panel-body {
+  width: min(900px, 100%);
+  margin-inline: auto;
+  padding: 8px 18px 76px;
+}
+.reader-notes-panel--workspace .reader-markdown-content {
+  font-size: 14px;
+  line-height: 1.68;
+}
+.reader-notes-panel--workspace .reader-markdown-nav {
+  position: fixed;
+  top: auto;
+  right: max(18px, calc(25vw - 230px));
+  bottom: 13px;
+  z-index: 36;
+  width: min(460px, calc(50vw - 36px));
+  margin: 0;
+  padding: 5px;
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 90%, transparent);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color) 10%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.reader-notes-panel--workspace .reader-markdown-search {
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+}
+.reader-notes-panel--workspace .reader-markdown-outline-toggle {
+  border-radius: 999px;
+}
+.reader-notes-panel--workspace .reader-markdown-outline {
+  position: fixed;
+  right: max(18px, calc(25vw - 230px));
+  bottom: 58px;
+  z-index: 37;
+  width: min(460px, calc(50vw - 36px));
+  margin: 0;
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--shadow-color) 12%, transparent);
+}
+.reader-notes-panel--workspace.is-pane-left .reader-markdown-nav,
+.reader-notes-panel--workspace.is-pane-left .reader-markdown-outline {
+  left: max(18px, calc(25vw - 230px));
+  right: auto;
+}
+@media (max-width: 899px) {
+  .reader-notes-panel--workspace .reader-markdown-nav,
+  .reader-notes-panel--workspace .reader-markdown-outline {
+    right: 16px;
+    width: calc(100vw - 32px);
+    width: calc(100dvw - 32px);
+  }
+}
+/* 逗号列表逐段带命名空间前缀（css-page-namespace 测试逐段校验），:where 保持特异性不变 */
+.reader-float-markdown-content :where(h1),
+.reader-float-markdown-content :where(h2),
+.reader-float-markdown-content :where(h3) {
+  margin: 0.8em 0 0.4em;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+.reader-float-markdown-content :where(p),
+.reader-float-markdown-content :where(ul),
+.reader-float-markdown-content :where(ol) {
+  margin: 0.45em 0;
+}
+.reader-float-markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.reader-float-markdown-content .reader-md-math-display {
+  margin: 0.65em 0;
+  overflow-x: auto;
+  text-align: center;
+}
+.reader-float-markdown-content .reader-md-math-inline {
+  vertical-align: middle;
+}

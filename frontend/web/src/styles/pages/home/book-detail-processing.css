@@ -1,0 +1,497 @@
+/* Book detail: processing tab, translation workflow and embedded job status.
+ *
+ * This file intentionally owns only the processing surface. The dialog shell,
+ * right-side tabs, overview and artifact-center styles stay in their own
+ * modules so task-state UI can evolve without widening the shell stylesheet.
+ */
+
+.book-detail-tab-processing {
+  display: grid;
+  gap: 12px;
+}
+
+.book-detail-processing-card {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 0;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--bg) 58%, var(--paper));
+}
+
+.book-detail-processing-header {
+  min-height: 56px;
+}
+
+.book-detail-processing-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.book-detail-processing-icon svg {
+  width: 28px;
+  height: 28px;
+  stroke-width: 1.55;
+}
+
+.book-detail-processing-copy h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.book-detail-processing-copy p {
+  max-width: 42ch;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+
+.book-detail-processing-status {
+  padding: 3px 8px;
+}
+
+.book-detail-processing-summary {
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--paper);
+}
+
+.book-detail-processing-actions {
+  min-height: 50px;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--paper);
+}
+
+.book-detail-processing-actions button {
+  min-height: 34px;
+  font-size: 11px;
+}
+
+.book-detail-processing-hint {
+  margin: 0;
+  padding: 9px 11px;
+  border-radius: 14px;
+  color: var(--muted);
+  background: var(--paper);
+  font-size: 10.5px;
+}
+
+.book-detail-translation-process {
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--paper);
+}
+
+.book-detail-stage-actions {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.book-detail-translate-workspace {
+  min-width: 0;
+}
+
+.book-detail-status-card-host {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.home-book-live-translation-entry {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  margin-bottom: 10px;
+  padding: 7px 12px 7px 8px;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  border-radius: 16px;
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 5px 18px color-mix(in srgb, var(--shadow-color) 5%, transparent);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.home-book-live-translation-entry:hover {
+  border-color: color-mix(in srgb, var(--ink) 20%, transparent);
+  background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+}
+
+.home-book-live-translation-entry:active {
+  transform: scale(0.99);
+}
+
+.home-book-live-translation-entry-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  color: var(--paper);
+  background: var(--ink);
+}
+
+.home-book-live-translation-entry-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.home-book-live-translation-entry > span:nth-child(2) {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.home-book-live-translation-entry strong {
+  font-size: 12px;
+  font-weight: 680;
+}
+
+.home-book-live-translation-entry small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.home-book-live-translation-entry > svg {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
+
+/* Embedded StatusCard. These selectors are deliberately scoped away from the
+ * full-size workflow/status dialog. */
+#book-detail-job-status-card.bd-job-status-card,
+.bd-job-status-card {
+  display: block;
+  width: 100%;
+  height: auto;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--shadow-color) 6%, transparent);
+}
+
+.bd-job-status-inner {
+  display: flex;
+  min-height: 248px;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 14px;
+}
+
+.bd-job-status-head {
+  display: grid;
+  min-height: 32px;
+  flex: 0 0 auto;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.bd-job-status-head-center {
+  min-width: 0;
+  text-align: center;
+}
+
+.bd-job-status-title {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bd-job-status-elapsed {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bd-job-status-btn {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--bg);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bd-job-status-btn > svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+}
+
+.bd-job-status-btn-cancel:not(:disabled) {
+  border-color: var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--shadow-color) 9%, transparent);
+}
+
+.bd-job-status-btn-cancel:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.bd-job-status-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bd-job-status-btn-primary {
+  border-color: var(--ink);
+  color: var(--paper);
+  background: var(--ink);
+}
+
+.bd-job-status-flow,
+.bd-job-status-retry {
+  flex: 0 0 auto;
+}
+
+.bd-job-status-main {
+  display: grid;
+  min-height: 112px;
+  flex: 0 0 auto;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 14px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--paper) 0%, var(--bg) 100%);
+}
+
+.bd-job-status-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.bd-job-status-value-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bd-job-status-value {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bd-job-status-retry-action {
+  height: 28px;
+  min-height: 28px;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--shadow-color) 5%, transparent);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 26px;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.bd-job-status-retry-action:hover,
+.bd-job-status-retry-action:active {
+  border-color: var(--line);
+  background: var(--bg);
+}
+
+.bd-job-status-detail {
+  display: -webkit-box;
+  min-height: 32px;
+  max-height: 32px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.bd-job-status-bar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.bd-job-status-bar {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+}
+
+.bd-job-status-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ink);
+  transition: width 0.35s ease;
+}
+
+.bd-job-status-bar.is-done .bd-job-status-bar-fill {
+  background: var(--ok);
+}
+
+.bd-job-status-bar.is-failed .bd-job-status-bar-fill {
+  background: var(--danger);
+}
+
+.bd-job-status-percent {
+  min-width: 2.75rem;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.bd-job-status-bar-meta {
+  min-height: 14px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bd-job-status-detail.is-empty,
+.bd-job-status-bar-meta.is-empty {
+  display: none;
+}
+
+#book-detail-job-status-card .status-stage-flow,
+.bd-job-status-card .status-stage-flow {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 6px;
+}
+
+.bd-job-status-error {
+  min-height: 18px;
+  max-height: 18px;
+  flex: 0 0 18px;
+  overflow: hidden;
+  color: var(--danger);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.bd-job-status-error.is-empty {
+  visibility: hidden;
+}
+
+@media (max-width: 719px) {
+  .book-detail-tab-processing {
+    gap: 9px;
+  }
+
+  .book-detail-processing-card {
+    gap: 10px;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .book-detail-processing-header {
+    min-height: 48px;
+  }
+
+  .book-detail-processing-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .book-detail-processing-icon svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .book-detail-processing-actions {
+    min-height: 44px;
+  }
+
+  .bd-job-status-inner {
+    min-height: 224px;
+    gap: 10px;
+    padding: 11px;
+  }
+
+  .bd-job-status-main {
+    min-height: 100px;
+    padding: 10px 11px;
+  }
+}
+
+@media (max-width: 479px) {
+  #book-detail-job-status-card .status-stage-flow,
+  .bd-job-status-card .status-stage-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bd-job-status-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .bd-job-status-head > :first-child {
+    display: none;
+  }
+
+  .bd-job-status-head-center {
+    text-align: left;
+  }
+}

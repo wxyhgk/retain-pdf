@@ -1,0 +1,139 @@
+/* Immutable page snapshots projected over the source PDF while translation runs. */
+.reader-live-translation-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.reader-live-translation-waiting {
+  position: sticky;
+  top: 18px;
+  z-index: 6;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 32px);
+  min-height: 34px;
+  margin: 18px 16px -52px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--ink, #171719) 9%, transparent);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--ink, #171719) 66%, var(--muted, #6f7178));
+  background: color-mix(in srgb, var(--paper, #fff) 92%, transparent);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color, #111) 9%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  font-size: 12px;
+  font-weight: 620;
+  pointer-events: none;
+}
+
+.reader-live-translation-waiting-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: currentColor;
+  animation: reader-live-translation-pulse 1.2s ease-in-out infinite;
+}
+
+[data-live-translation-status="failed"] .reader-live-translation-waiting-dot,
+[data-live-translation-status="cancelled"] .reader-live-translation-waiting-dot,
+[data-live-translation-status="canceled"] .reader-live-translation-waiting-dot {
+  animation: none;
+  opacity: 0.48;
+}
+
+.reader-live-translation-item {
+  position: absolute;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: var(--ink, #171719);
+  background: color-mix(in srgb, var(--paper, #fff) 96%, transparent);
+  filter: blur(0);
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reader-live-translation-content {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+}
+
+.reader-live-translation-content .reader-md-math-inline,
+.reader-live-translation-content .reader-md-math-inline mjx-container {
+  display: inline-block;
+  margin: 0 0.05em;
+  vertical-align: -0.14em;
+}
+
+.reader-live-translation-content .reader-md-math-display,
+.reader-live-translation-content .reader-md-math-display mjx-container {
+  display: block;
+  max-width: 100%;
+  margin: 0.16em auto;
+  text-align: center;
+}
+
+.reader-live-translation-content .reader-md-math svg {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+  color: currentColor;
+  fill: currentColor;
+}
+
+.reader-live-translation-content .reader-md-math-error {
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}
+
+.reader-live-translation-item.is-changed {
+  animation: reader-live-translation-arrive 420ms cubic-bezier(.2, .75, .25, 1) both;
+}
+
+.reader-live-translation-item.is-changed::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--ink, #171719) 7%, transparent);
+  animation: reader-live-translation-highlight 900ms ease-out both;
+}
+
+@keyframes reader-live-translation-arrive {
+  0% {
+    opacity: 0.25;
+    filter: blur(4px);
+    transform: translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes reader-live-translation-highlight {
+  0%, 35% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-live-translation-item,
+  .reader-live-translation-item::after,
+  .reader-live-translation-waiting-dot {
+    animation: none;
+  }
+}

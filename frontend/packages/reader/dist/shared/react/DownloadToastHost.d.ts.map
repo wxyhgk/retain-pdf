@@ -1,0 +1,1 @@
+{"version":3,"file":"DownloadToastHost.d.ts","sourceRoot":"","sources":["../../../src/shared/react/DownloadToastHost.tsx"],"names":[],"mappings":"AAOA,OAAO,QAAQ,OAAO,CAAC;IACrB,UAAU,GAAG,CAAC;QACZ,UAAU,iBAAiB;YACzB,gBAAgB,EAAE,GAAG,CAAC;SACvB;KACF;CACF;AA+CD,wBAAgB,iBAAiB,gCAehC"}

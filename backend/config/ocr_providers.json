@@ -36,6 +36,11 @@
         "required_for": ["remote_url", "local_upload"]
       },
       "options": {
+        "transport": {
+          "type": "string",
+          "default": "official_http",
+          "choices": ["official_http", "official_cli"]
+        },
         "paddle_api_url": {
           "type": "string",
           "default": ""

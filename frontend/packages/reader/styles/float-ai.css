@@ -1,0 +1,418 @@
+/* AI 悬浮问答外壳 — Notion 侧栏气质：大留白 / 轻边框 / 软阴影
+ * 细节：float-ai-aui|md|citations|composer.css
+ * 旧抽屉 AI 皮肤仅在 reader-legacy（ai.css），不在此包。
+ */
+.reader-float-ai {
+  max-height: min(92vh, 860px);
+  max-height: min(92dvh, 860px);
+  height: min(88vh, 820px);
+  height: min(88dvh, 820px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  background: color-mix(in srgb, var(--paper) 98%, var(--ink));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ink) 2%, transparent),
+    0 24px 64px color-mix(in srgb, var(--ink) 14%, transparent),
+    0 4px 14px color-mix(in srgb, var(--ink) 6%, transparent);
+  overflow: hidden;
+}
+.reader-float-ai.is-floating {
+  height: min(76vh, 700px);
+  height: min(76dvh, 700px);
+  max-height: min(82vh, 740px);
+  max-height: min(82dvh, 740px);
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ink) 2%, transparent),
+    0 18px 54px color-mix(in srgb, var(--ink) 13%, transparent),
+    0 3px 10px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+.reader-float-ai.reader-notes-panel--docked {
+  inset: 0 0 0 auto;
+  width: var(--reader-ai-split-width, 50vw);
+  height: 100vh;
+  height: 100dvh;
+  max-height: none;
+  border: 0;
+  border-left: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: 0;
+  background: var(--paper);
+  box-shadow: -1px 0 0 color-mix(in srgb, var(--ink) 3%, transparent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  animation: reader-ai-split-in 180ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+.reader-float-ai.reader-notes-panel--workspace {
+  inset: 60px 0 0 auto;
+  width: 50vw;
+  width: 50dvw;
+  height: calc(100vh - 60px);
+  height: calc(100dvh - 60px);
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  background: var(--paper);
+  box-shadow: none;
+  animation: reader-workspace-in 170ms var(--ease-out) both;
+}
+.reader-float-ai.reader-notes-panel--workspace.is-pane-left {
+  inset-inline: 0 auto;
+}
+.reader-float-ai.reader-notes-panel--workspace.is-pane-right {
+  inset-inline: auto 0;
+}
+.reader-float-ai.reader-notes-panel--workspace .aui-session-row,
+.reader-float-ai.reader-notes-panel--workspace .aui-thread-inner {
+  width: min(760px, calc(100% - 32px));
+  max-width: 760px;
+  margin-inline: auto;
+}
+.reader-float-ai.reader-notes-panel--workspace .aui-session-list,
+.reader-float-ai.reader-notes-panel--workspace .aui-session-error {
+  width: min(760px, calc(100% - 32px));
+  margin-inline: auto;
+}
+.reader-float-ai.reader-notes-panel--workspace .aui-thread-viewport-footer {
+  padding-bottom: 14px;
+}
+.reader-float-ai.reader-notes-panel--workspace .aui-composer {
+  width: min(760px, 100%);
+  margin-inline: auto;
+}
+@media (max-width: 899px) {
+  .reader-float-ai.reader-notes-panel--workspace {
+    inset: 58px 0 0;
+    width: 100vw;
+    width: 100dvw;
+    height: calc(100vh - 58px);
+    height: calc(100dvh - 58px);
+  }
+}
+@keyframes reader-ai-split-in {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.reader-float-ai .reader-notes-panel-head {
+  min-height: 46px;
+  padding: 8px 10px 7px 16px;
+  border-bottom: 0;
+  background: var(--paper);
+}
+.reader-float-ai.reader-notes-panel--docked .reader-notes-panel-head {
+  align-items: center;
+  cursor: default;
+  touch-action: auto;
+}
+.reader-float-ai.reader-notes-panel--docked .reader-notes-panel-head-text {
+  display: grid;
+  gap: 1px;
+}
+.reader-float-ai .reader-notes-panel-head strong {
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  gap: 6px;
+}
+.reader-float-ai .reader-notes-panel-head strong svg {
+  color: color-mix(in srgb, var(--ink) 55%, var(--muted));
+}
+.reader-float-ai .reader-notes-panel-head .reader-notes-panel-sub {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+@media (max-width: 899px) {
+  .reader-float-ai.is-floating {
+    inset: 0 !important;
+    width: 100vw !important;
+    width: 100dvw !important;
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+  }
+  .reader-float-ai.reader-notes-panel--docked {
+    width: 100vw;
+    width: 100dvw;
+    border-left: 0;
+  }
+}
+.reader-float-ai .reader-notes-panel-body {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--paper);
+}
+.reader-float-ai-body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.reader-float-ai-thread-wrap {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* —— 会话条：安静、像 Notion 顶栏下拉 —— */
+.reader-float-ai .aui-session-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 0 0 auto;
+  padding: 5px 12px 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+  background: var(--paper);
+  position: relative;
+  z-index: 5;
+  z-index: var(--z-float-ai-bar, 5);
+}
+.reader-float-ai .aui-session-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.reader-float-ai .aui-session-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 3.5%, var(--paper));
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 550;
+  outline: none;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 140ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)),
+    border-color 140ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+}
+.reader-float-ai .aui-session-trigger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 5.5%, var(--paper));
+}
+.reader-float-ai .aui-session-trigger:focus-visible,
+.reader-float-ai .aui-session-trigger.is-open {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.reader-float-ai .aui-session-trigger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.reader-float-ai .aui-session-trigger-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reader-float-ai .aui-session-list {
+  position: relative;
+  z-index: 6;
+  z-index: var(--z-float-ai-dropdown, 6);
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: min(36vh, 240px);
+  max-height: min(36dvh, 240px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.reader-float-ai .aui-session-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+}
+.reader-float-ai .aui-session-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+}
+.reader-float-ai .aui-session-item.is-active {
+  background: color-mix(in srgb, var(--ink) 5.5%, var(--paper));
+  font-weight: 600;
+}
+.reader-float-ai .aui-session-item-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reader-float-ai .aui-session-item-badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.reader-float-ai .aui-session-row-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.reader-float-ai .aui-session-row-item .aui-session-item {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.reader-float-ai .aui-session-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex: 0 0 auto;
+  width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 3.5%, var(--paper));
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+  transition:
+    background 140ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)),
+    border-color 140ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+}
+.reader-float-ai .aui-session-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 5.5%, var(--paper));
+}
+.reader-float-ai .aui-session-btn > span {
+  display: none;
+}
+.reader-float-ai .aui-session-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.reader-float-ai .aui-session-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.reader-float-ai .aui-session-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background 120ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)),
+    color 120ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+}
+.reader-float-ai .aui-session-icon-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 5%, var(--paper));
+  color: var(--ink);
+}
+.reader-float-ai .aui-session-icon-btn.is-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 10%, var(--paper));
+  color: var(--danger);
+}
+.reader-float-ai .aui-session-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.reader-float-ai .aui-session-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 0;
+}
+.reader-float-ai .aui-session-edit-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+.reader-float-ai .aui-session-edit-input:focus {
+  border-color: color-mix(in srgb, var(--ink) 22%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.reader-float-ai .aui-session-error {
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--danger) 8%, var(--paper));
+  color: color-mix(in srgb, var(--danger) 85%, var(--ink));
+  font-size: 11.5px;
+  font-weight: 550;
+  line-height: 1.4;
+}
+.reader-float-ai .aui-session-banner {
+  margin: 0 12px 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+  background: color-mix(in srgb, var(--ink) 2.5%, var(--paper));
+  color: color-mix(in srgb, var(--ink) 72%, var(--muted));
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+/* 空态 / 源文档禁用 */
+.reader-float-ai-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin: auto;
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+.reader-float-ai-empty p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+.reader-float-ai-empty span {
+  font-size: 12.5px;
+  line-height: 1.45;
+}

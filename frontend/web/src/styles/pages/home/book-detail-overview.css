@@ -1,0 +1,490 @@
+/* Book detail overview and embedded management presentation.
+ * Source selectors were split from book-detail.css; this file intentionally
+ * excludes dialog shell, tabs, processing, and artifact-center styles.
+ */
+
+.book-detail-tab-overview {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 4px;
+}
+
+.book-detail-overview-hero {
+  display: flex;
+  min-height: 126px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  overflow: hidden;
+  border-radius: 24px;
+  color: var(--paper);
+  background:
+    radial-gradient(circle at 77% 12%, color-mix(in srgb, var(--paper) 17%, transparent), transparent 36%),
+    linear-gradient(145deg, var(--ink), color-mix(in srgb, var(--ink) 86%, var(--muted)));
+}
+
+.book-detail-overview-hero-copy {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 16px;
+}
+
+.book-detail-overview-hero-icon {
+  display: inline-flex;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--paper) 15%, transparent);
+  border-radius: 19px;
+  color: color-mix(in srgb, var(--paper) 88%, transparent);
+  background: color-mix(in srgb, var(--paper) 9%, transparent);
+}
+
+.book-detail-overview-hero-icon svg {
+  width: 31px;
+  height: 31px;
+  stroke-width: 1.55;
+}
+
+.book-detail-overview-page-count {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.book-detail-overview-page-count strong {
+  font-size: clamp(43px, 5vw, 54px);
+  font-weight: 650;
+  line-height: 0.88;
+  letter-spacing: -0.065em;
+}
+
+.book-detail-overview-page-count span {
+  font-size: 14px;
+  font-weight: 550;
+  color: color-mix(in srgb, var(--paper) 82%, transparent);
+}
+
+.book-detail-overview-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 9px;
+}
+
+.book-detail-overview-action {
+  position: relative;
+  display: grid;
+  width: 68px;
+  min-height: 68px;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 9px 8px 8px;
+  border: 1px solid color-mix(in srgb, var(--paper) 24%, transparent);
+  border-radius: 20px;
+  color: var(--paper);
+  background: color-mix(in srgb, var(--paper) 8%, transparent);
+}
+
+.book-detail-overview-action.is-primary {
+  color: var(--ink);
+  background: var(--paper);
+  border-color: var(--paper);
+}
+
+.book-detail-overview-action > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-detail-overview-action > span svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.65;
+}
+
+.book-detail-overview-action small {
+  font-size: 10.5px;
+  font-weight: 620;
+}
+
+.book-detail-overview-action .book-detail-overview-action-arrow {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  opacity: 0.58;
+}
+
+.book-detail-overview-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.book-detail-overview-stat {
+  display: flex;
+  min-width: 0;
+  min-height: 76px;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  border: 0;
+  border-radius: 19px;
+  background: color-mix(in srgb, var(--bg) 72%, var(--paper));
+}
+
+.book-detail-overview-stat-icon {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.book-detail-overview-stat-icon svg {
+  width: 23px;
+  height: 23px;
+  stroke-width: 1.55;
+}
+
+.book-detail-overview-stat > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.book-detail-overview-stat > div > span {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.book-detail-overview-stat > div > strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 620;
+  letter-spacing: -0.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-detail-overview-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.book-detail-overview-feature-card,
+.book-detail-overview-activity {
+  display: grid;
+  gap: 11px;
+  padding: 13px;
+  border: 0;
+  border-radius: 21px;
+  background: color-mix(in srgb, var(--bg) 55%, var(--paper));
+}
+
+.book-detail-overview-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.book-detail-overview-card-heading h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 620;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+
+.book-detail-overview-heading-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.book-detail-overview-heading-title > span {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.book-detail-overview-heading-title > span svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.6;
+}
+
+.book-detail-overview-icon-link {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.book-detail-overview-icon-link svg {
+  width: 15px;
+  height: 15px;
+}
+
+.book-detail-overview-capabilities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.book-detail-overview-capability {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 8px;
+  border-radius: 15px;
+  background: var(--paper);
+}
+
+.book-detail-overview-capability-icon {
+  display: inline-flex;
+  width: 37px;
+  height: 37px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--bg) 80%, var(--paper));
+}
+
+.book-detail-overview-capability-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.6;
+}
+
+.book-detail-overview-capability > div {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.book-detail-overview-capability > div > span {
+  font-size: 11px;
+  font-weight: 620;
+  color: var(--ink);
+}
+
+.book-detail-overview-capability > div > strong {
+  overflow: hidden;
+  font-size: 10.5px;
+  font-weight: 620;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-detail-overview-capability > div > strong.is-done {
+  color: var(--ink);
+}
+
+.book-detail-overview-capability > div > strong.is-failed {
+  color: var(--ink);
+}
+
+.book-detail-overview-capability > div > strong.is-active {
+  color: var(--ink);
+}
+
+.book-detail-overview-management {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 0;
+  border-radius: 21px;
+  background: color-mix(in srgb, var(--bg) 55%, var(--paper));
+}
+
+.book-detail-overview-section-heading h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.book-detail-overview-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.book-detail-overview-section-heading > span {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.book-detail-overview-section-heading > span svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.6;
+}
+
+.book-detail-management-section {
+  display: grid;
+  gap: 8px;
+}
+
+.book-detail-reading-status-panel {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.book-detail-reading-status-label {
+  display: none;
+}
+
+.book-detail-overview-management .book-detail-reading-btn {
+  min-width: 52px;
+  padding: 6px 11px;
+  font-size: 10.5px;
+}
+
+.book-detail-overview-management .book-detail-collections-panel,
+.book-detail-overview-management .book-detail-delete-panel {
+  padding-top: 8px;
+}
+
+.book-detail-overview-activity ol {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.book-detail-overview-activity li {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+}
+
+.book-detail-overview-activity li + li {
+  margin-top: 5px;
+}
+
+.book-detail-overview-activity-icon {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  color: var(--muted);
+  background: var(--paper);
+}
+
+.book-detail-overview-activity-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.6;
+}
+
+.book-detail-overview-activity-icon.is-done,
+.book-detail-overview-activity-icon.is-failed,
+.book-detail-overview-activity-icon.is-active {
+  color: var(--ink);
+}
+
+.book-detail-overview-activity li > div {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.book-detail-overview-activity li strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.book-detail-overview-activity li span,
+.book-detail-overview-activity time,
+.book-detail-overview-empty-activity {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.book-detail-overview-activity time {
+  white-space: nowrap;
+}
+
+.book-detail-overview-empty-activity {
+  margin: 0;
+}
+
+@media (max-width: 899px) and (min-width: 720px) {
+  .book-detail-overview-main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 719px) {
+  .book-detail-overview-hero {
+    min-height: 210px;
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  .book-detail-overview-actions {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .book-detail-overview-action {
+    flex: 1 1 0;
+  }
+
+  .book-detail-overview-stats,
+  .book-detail-overview-main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .book-detail-overview-stat {
+    min-height: 88px;
+  }
+}

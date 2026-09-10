@@ -23,7 +23,7 @@ def parse_args() -> argparse.Namespace:
         "--manifest",
         type=Path,
         required=True,
-        help="Path to desktop/app/backend/bundle-manifest.json",
+        help="Path to frontend/desktop/app/backend/bundle-manifest.json",
     )
     parser.add_argument(
         "--min-fonts",
@@ -89,11 +89,77 @@ def typst_executable(backend_root: Path, payload: dict[str, object]) -> Path:
     return candidate
 
 
+def validate_backend_binary(
+    backend_root: Path,
+    payload: dict[str, object],
+    *,
+    bundled_field: str,
+    name_field: str,
+    label: str,
+) -> None:
+    require(payload.get(bundled_field) is True, f"bundle manifest missing {label}")
+    name = str(payload.get(name_field) or "").strip()
+    require(bool(name) and Path(name).name == name, f"bundle manifest has invalid {label} name")
+    binary = backend_root / "bin" / name
+    require(binary.is_file(), f"bundled {label} missing: {binary}")
+    if not is_windows_bundle(payload):
+        require(os.access(binary, os.X_OK), f"bundled {label} is not executable: {binary}")
+
+
+def validate_pipeline_command(backend_root: Path, payload: dict[str, object]) -> None:
+    # Transitional check: a missing wrapper only warns so legacy bundles
+    # (script entrypoint fallback) still validate during migration.
+    command_rel = str(payload.get("pipelineCommand") or "").strip()
+    if not command_rel:
+        print("warning: bundle manifest missing pipelineCommand; console mode unavailable (script fallback)")
+        return
+    command_bin = backend_root / command_rel
+    if not command_bin.is_file():
+        print(f"warning: bundled pipeline command missing: {command_bin} (script fallback)")
+        return
+    if not is_windows_bundle(payload) and not os.access(command_bin, os.X_OK):
+        print(f"warning: bundled pipeline command is not executable: {command_bin}")
+        return
+    try:
+        if is_windows_bundle(payload) and command_bin.suffix.lower() in {".cmd", ".bat"}:
+            probe_cmd = ["cmd", "/c", str(command_bin), "--help"]
+        else:
+            probe_cmd = [str(command_bin), "--help"]
+        result = subprocess.run(
+            probe_cmd,
+            cwd=backend_root,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=60,
+            check=False,
+        )
+    except Exception as exc:  # noqa: BLE001 - warn-only transitional probe
+        print(f"warning: bundled pipeline command --help probe failed: {exc} (script fallback)")
+        return
+    if result.returncode != 0:
+        print(
+            "warning: bundled pipeline command --help probe failed\n"
+            f"exit code: {result.returncode}\n"
+            f"stdout: {output_summary(result.stdout)}\n"
+            f"stderr: {output_summary(result.stderr)}\n"
+            "(script fallback)"
+        )
+        return
+    print(f"pipeline command probe OK: {command_bin}")
+
+
 def validate_typst_bundle(backend_root: Path, payload: dict[str, object]) -> None:
     typst_bin = typst_executable(backend_root, payload)
     fonts_root = backend_root / "fonts"
     packages_root = backend_root / "typst-packages"
     require(fonts_root.is_dir(), f"bundled fonts directory missing: {fonts_root}")
+    require(
+        (fonts_root / "LICENSE-OFL-1.1.txt").is_file(),
+        "bundled Source Han Serif license missing",
+    )
     require(packages_root.is_dir(), f"bundled Typst packages directory missing: {packages_root}")
 
     env = os.environ.copy()
@@ -137,7 +203,36 @@ def main() -> None:
     backend_root = manifest_path.parent
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
 
-    require(payload.get("rustApiBinaryBundled") is True, "bundle manifest missing Rust API binary")
+    validate_backend_binary(
+        backend_root,
+        payload,
+        bundled_field="rustApiBinaryBundled",
+        name_field="rustApiBinaryName",
+        label="Rust API binary",
+    )
+    validate_backend_binary(
+        backend_root,
+        payload,
+        bundled_field="jobsdBinaryBundled",
+        name_field="jobsdBinaryName",
+        label="jobsd binary",
+    )
+    validate_backend_binary(
+        backend_root,
+        payload,
+        bundled_field="agentBinaryBundled",
+        name_field="agentBinaryName",
+        label="agent binary",
+    )
+    require(payload.get("providerConfigBundled") is True, "bundle manifest missing provider config")
+    require(
+        bool(str(payload.get("servicesSourceRevision") or "").strip()),
+        "bundle manifest missing backend source revision",
+    )
+    require(
+        (backend_root / "config" / "ocr_providers.json").is_file(),
+        "bundled provider config missing",
+    )
     require(payload.get("pythonBundled") is True, "bundle manifest missing bundled Python runtime")
     require(payload.get("typstBundled") is True, "bundle manifest missing Typst runtime")
     require(payload.get("typstPackagesBundled") is True, "bundle manifest missing Typst packages")
@@ -151,6 +246,7 @@ def main() -> None:
         "bundle manifest missing bundled fonts",
     )
 
+    validate_pipeline_command(backend_root, payload)
     validate_typst_bundle(backend_root, payload)
 
     print(f"desktop bundle manifest OK: {manifest_path}")

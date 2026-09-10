@@ -1,0 +1,7 @@
+# Generated from backend/ai/pyproject.toml by .github/scripts/sync_backend_python_requirements.py.
+# Do not edit manually.
+
+fastapi>=0.115.0,<1
+httpx>=0.27.0,<1
+pydantic>=2.0,<3
+uvicorn>=0.30.0,<1

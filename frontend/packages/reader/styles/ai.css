@@ -1,0 +1,4 @@
+/* Shared AI-answer renderer skin. Keep this entry independent from Reader page
+ * layout so Home consumers do not need to import the complete Reader theme. */
+@import "markstream-react/index.css";
+@import "katex/dist/katex.min.css";

@@ -1,0 +1,24 @@
+[
+  [
+    {
+      "type": "title",
+      "content": {"title_content": [{"type": "text", "content": "Section title"}], "level": 1},
+      "bbox": [100, 80, 900, 130]
+    },
+    {
+      "type": "paragraph",
+      "content": {"paragraph_content": [{"type": "text", "content": "Experimental V2 body with "}, {"type": "equation_inline", "content": "x^2"}, {"type": "text", "content": "."}]},
+      "bbox": [100, 150, 900, 240]
+    },
+    {
+      "type": "equation_interline",
+      "content": {"math_content": "x^2+y^2=z^2", "math_type": "latex"},
+      "bbox": [250, 280, 750, 340]
+    },
+    {
+      "type": "page_footnote",
+      "content": {"page_footnote_content": [{"type": "text", "content": "Corresponding author"}]},
+      "bbox": [100, 900, 900, 960]
+    }
+  ]
+]

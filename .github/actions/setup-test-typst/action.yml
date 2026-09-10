@@ -1,0 +1,20 @@
+name: Setup test Typst
+description: Install the repository-pinned Linux Typst runtime for offline formula tests.
+runs:
+  using: composite
+  steps:
+    - name: Install Typst 0.14.2
+      shell: bash
+      run: |
+        set -euo pipefail
+        test "$RUNNER_OS" = Linux
+        test "$RUNNER_ARCH" = X64
+        typst_test_root="$(mktemp -d "$RUNNER_TEMP/typst-tests.XXXXXX")"
+        curl --fail --location --retry 3 --connect-timeout 15 --max-time 180 \
+          https://github.com/typst/typst/releases/download/v0.14.2/typst-x86_64-unknown-linux-musl.tar.xz \
+          --output "$typst_test_root/typst.tar.xz"
+        tar -xJf "$typst_test_root/typst.tar.xz" -C "$typst_test_root"
+        typst_test_bin="$typst_test_root/typst-x86_64-unknown-linux-musl/typst"
+        test -x "$typst_test_bin"
+        "$typst_test_bin" --version
+        echo "TYPST_BIN=$typst_test_bin" >> "$GITHUB_ENV"

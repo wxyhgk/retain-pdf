@@ -1,0 +1,74 @@
+{
+  "job": {
+    "job_id": "20260709124749-6ada81-ocr",
+    "job_root": "{JOB_ROOT}",
+    "workflow": "ocr"
+  },
+  "ocr": {
+    "cache_tolerance": 900,
+    "credential_ref": "env:RETAIN_PADDLE_API_TOKEN",
+    "data_id": "",
+    "disable_formula": false,
+    "disable_table": false,
+    "extra_formats": "",
+    "is_ocr": false,
+    "language": "ch",
+    "model_version": "vlm",
+    "no_cache": false,
+    "options": {
+      "paddle_api_url": "",
+      "paddle_model": "PaddleOCR-VL-1.6"
+    },
+    "paddle_api_url": "https://paddleocr.aistudio-app.com",
+    "paddle_model": "PaddleOCR-VL-1.6",
+    "page_ranges": "1-10",
+    "poll_interval": 5,
+    "poll_timeout": 1800,
+    "provider": "paddle"
+  },
+  "render": {
+    "body_font_size_factor": 0.95,
+    "body_leading_factor": 1.08,
+    "compile_workers": 8,
+    "font_unify_mode": "role_min",
+    "inner_bbox_dense_shrink_x": 0.0,
+    "inner_bbox_dense_shrink_y": 0.0,
+    "inner_bbox_shrink_x": 0.0,
+    "inner_bbox_shrink_y": 0.0,
+    "pdf_compress_dpi": 0,
+    "render_mode": "auto",
+    "source_cleanup_strategy": "pikepdf_text_strip",
+    "translated_pdf_name": "",
+    "typst_font_family": "Source Han Serif SC"
+  },
+  "schema_version": "provider.stage.v1",
+  "source": {
+    "file_path": "{UPLOADS_ROOT}/20260709124740-c6d229/Chemistry A European J - 2023 - Yakubenko - The Role of Conjugation in the Halogen Lithium Exchange Selectivity  Lithiation.pdf",
+    "file_url": ""
+  },
+  "stage": "provider",
+  "translation": {
+    "base_url": "https://api.deepseek.com/v1",
+    "batch_size": 1,
+    "classify_batch_size": 12,
+    "context_mode": "needed",
+    "credential_ref": "env:RETAIN_TRANSLATION_API_KEY",
+    "custom_rules_text": "",
+    "end_page": -1,
+    "glossary_entries": [],
+    "glossary_id": "",
+    "glossary_inline_entry_count": 0,
+    "glossary_mode": "matched",
+    "glossary_name": "",
+    "glossary_overridden_entry_count": 0,
+    "glossary_resource_entry_count": 0,
+    "math_mode": "direct_typst",
+    "memory_mode": "matched",
+    "mode": "sci",
+    "model": "deepseek-v4-flash",
+    "rule_profile_name": "general_sci",
+    "skip_title_translation": false,
+    "start_page": 0,
+    "workers": 100
+  }
+}

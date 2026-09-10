@@ -1,6 +1,35 @@
 name: Release Docker Images
+run-name: Release Docker Images · ${{ github.ref_name }}
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/release-docker.yml'
+      - '.github/actions/prepare-backend-source/**'
+      - '.github/scripts/resolve_backend_source.py'
+      - '.github/scripts/resolve_release_version.py'
+      - '.dockerignore'
+      - 'backend-package.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'frontend/web/scripts/build-workspace-packages.mjs'
+      - 'frontend/desktop/package.json'
+      - 'frontend/web/**'
+      - 'frontend/packages/api/**'
+      - 'frontend/packages/domain/**'
+      - 'frontend/packages/reader/**'
+      - 'contracts/**'
+      - 'frontend/packages/ui/**'
+      - 'ops/deployment/docker/Dockerfile.web'
+      - 'ops/deployment/docker/entrypoint-web.sh'
+      - 'ops/deployment/docker/nginx-mjs.types.conf'
+      - 'ops/deployment/docker/nginx.conf.template'
+      - 'backend/**'
+      - 'database/**'
+      - 'resources/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'ops/deployment/docker/backend/**'
   workflow_dispatch:
     inputs:
       version:
@@ -18,34 +47,115 @@ on:
         default: 'linux/amd64,linux/arm64'
   push:
     tags:
-      - 'v*'
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+      - '[0-9]*.[0-9]*.[0-9]*'
+      # Desktop hotfix/prerelease tags are intentionally excluded. They used to
+      # start a second copy of the full quality gate plus two Docker builds.
+      - '!v*-*'
+      - '!*-*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-docker-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
+  quality-gate:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/tests.yml
+
   build:
+    needs: quality-gate
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         target:
           - name: app
-            file: docker/Dockerfile.app
             repo: retainpdf-app
           - name: web
-            file: docker/Dockerfile.web
             repo: retainpdf-web
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Resolve release version
+        id: release
+        shell: bash
+        env:
+          MANUAL_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python3 .github/scripts/resolve_release_version.py \
+              --tag "$MANUAL_VERSION" \
+              --allow-label \
+              --github-output "$GITHUB_OUTPUT"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            python3 .github/scripts/resolve_release_version.py \
+              --tag "$GITHUB_REF_NAME" \
+              --github-output "$GITHUB_OUTPUT"
+          else
+            python3 .github/scripts/resolve_release_version.py \
+              --tag "ci-${GITHUB_SHA:0:12}" \
+              --allow-label \
+              --github-output "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve build policy
+        id: policy
+        shell: bash
+        env:
+          MANUAL_PLATFORMS: ${{ inputs.platforms }}
+          MANUAL_PUSH: ${{ inputs.push }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            case "$MANUAL_PLATFORMS" in
+              linux/amd64|linux/arm64|linux/amd64,linux/arm64|linux/arm64,linux/amd64) ;;
+              *)
+                echo "Unsupported Docker platforms: $MANUAL_PLATFORMS" >&2
+                exit 1
+                ;;
+            esac
+            echo "platforms=$MANUAL_PLATFORMS" >> "$GITHUB_OUTPUT"
+            echo "push=$MANUAL_PUSH" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "platforms=linux/amd64,linux/arm64" >> "$GITHUB_OUTPUT"
+            echo "push=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "platforms=linux/amd64" >> "$GITHUB_OUTPUT"
+            echo "push=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prepare embedded backend package
+        if: matrix.target.name == 'app'
+        id: backend
+        uses: ./.github/actions/prepare-backend-source
+
+      - name: Resolve image build source
+        id: build-source
+        shell: bash
+        run: |
+          if [ "${{ matrix.target.name }}" = "app" ]; then
+            echo "context=${{ steps.backend.outputs.source_root }}" >> "$GITHUB_OUTPUT"
+            echo "file=${{ steps.backend.outputs.source_root }}/ops/deployment/docker/backend/Dockerfile.app" >> "$GITHUB_OUTPUT"
+          else
+            echo "context=$GITHUB_WORKSPACE" >> "$GITHUB_OUTPUT"
+            echo "file=$GITHUB_WORKSPACE/ops/deployment/docker/Dockerfile.web" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Resolve Docker Hub namespace
         id: hub
@@ -58,29 +168,18 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ steps.hub.outputs.user }}/${{ matrix.target.repo }}
           tags: |
-            type=ref,event=tag
-            type=raw,value=${{ inputs.version }},enable=${{ github.event_name == 'workflow_dispatch' }}
-            type=raw,value=latest,enable=${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
-
-      - name: Resolve frontend version
-        id: frontend-version
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            version="${{ inputs.version }}"
-          else
-            version="${GITHUB_REF_NAME}"
-          fi
-          version="${version#v}"
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
+            type=raw,value=candidate-${{ github.sha }}-${{ github.run_id }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.release.outputs.version }}
 
       - name: Login to Docker Hub
-        if: inputs.push || github.event_name == 'push'
-        uses: docker/login-action@v3
+        if: steps.policy.outputs.push == 'true'
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -95,7 +194,7 @@ jobs:
                 echo "${var}=${val}"
               fi
             done
-            echo "RETAIN_PDF_VERSION=${{ steps.frontend-version.outputs.version }}"
+            echo "RETAIN_PDF_VERSION=${{ steps.release.outputs.version }}"
           } > /tmp/build-args.txt
           {
             echo 'args<<EOF'
@@ -104,14 +203,275 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        id: build-image
+        uses: docker/build-push-action@v7
         with:
-          context: .
-          file: ${{ matrix.target.file }}
-          platforms: ${{ inputs.platforms || 'linux/amd64,linux/arm64' }}
-          push: ${{ inputs.push || github.event_name == 'push' }}
+          context: ${{ steps.build-source.outputs.context }}
+          file: ${{ steps.build-source.outputs.file }}
+          platforms: ${{ steps.policy.outputs.platforms }}
+          push: ${{ steps.policy.outputs.push }}
+          # PR builds are native single-platform builds, so loading into the
+          # local daemon is safe. Release builds remain multi-platform pushes.
+          load: ${{ github.event_name == 'pull_request' }}
           build-args: ${{ steps.build-args.outputs.args }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=release-docker-${{ matrix.target.name }}
+          cache-to: type=gha,mode=max,scope=release-docker-${{ matrix.target.name }}
+
+      - name: Record candidate image identity
+        if: steps.policy.outputs.push == 'true'
+        shell: bash
+        env:
+          TARGET_NAME: ${{ matrix.target.name }}
+          TARGET_REPO: ${{ matrix.target.repo }}
+          IMAGE_DIGEST: ${{ steps.build-image.outputs.digest }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          TARGET_PLATFORMS: ${{ steps.policy.outputs.platforms }}
+        run: |
+          if ! printf '%s' "$IMAGE_DIGEST" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+            echo "Build did not return a valid image digest: $IMAGE_DIGEST" >&2
+            exit 1
+          fi
+          mkdir -p docker-candidate
+          jq -n \
+            --arg target "$TARGET_NAME" \
+            --arg repo "$TARGET_REPO" \
+            --arg digest "$IMAGE_DIGEST" \
+            --arg revision "$GITHUB_SHA" \
+            --arg version "$RELEASE_VERSION" \
+            --arg platforms "$TARGET_PLATFORMS" \
+            '{target: $target, repo: $repo, digest: $digest, revision: $revision, version: $version, platforms: $platforms}' \
+            > "docker-candidate/${TARGET_NAME}.json"
+          cat "docker-candidate/${TARGET_NAME}.json"
+
+      - name: Upload candidate image identity
+        if: steps.policy.outputs.push == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: docker-candidate-${{ matrix.target.name }}-${{ github.run_id }}
+          path: docker-candidate/${{ matrix.target.name }}.json
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
+      - name: Smoke loaded PR image
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          IMAGE_REF: ${{ steps.hub.outputs.user }}/${{ matrix.target.repo }}:candidate-${{ github.sha }}-${{ github.run_id }}
+          TARGET_NAME: ${{ matrix.target.name }}
+        run: |
+          container="retainpdf-${TARGET_NAME}-pr-smoke"
+          cleanup() {
+            rc=$?
+            trap - EXIT
+            if [ "$rc" -ne 0 ]; then
+              docker logs "$container" 2>&1 || true
+            fi
+            docker rm -f "$container" >/dev/null 2>&1 || true
+            exit "$rc"
+          }
+          trap cleanup EXIT
+
+          docker image inspect "$IMAGE_REF" >/dev/null
+          if [ "$TARGET_NAME" = "web" ]; then
+            docker run -d \
+              --name "$container" \
+              --add-host app:127.0.0.1 \
+              -p 18080:80 \
+              "$IMAGE_REF"
+            probe_url="http://127.0.0.1:18080/"
+          else
+            docker run -d \
+              --name "$container" \
+              -e RUST_API_AI_SUPERVISE=0 \
+              -e RUST_API_KEYS=retainpdf-ci-smoke-key \
+              -p 14100:41000 \
+              "$IMAGE_REF"
+            probe_url="http://127.0.0.1:14100/health"
+          fi
+
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error "$probe_url" >/dev/null; then
+              echo "${TARGET_NAME} image smoke passed on attempt ${attempt}"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "${TARGET_NAME} image did not become ready at ${probe_url}" >&2
+          exit 1
+
+  publish:
+    needs: build
+    if: github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && inputs.push == true)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout release revision
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Resolve release version
+        id: release
+        shell: bash
+        env:
+          MANUAL_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python3 .github/scripts/resolve_release_version.py \
+              --tag "$MANUAL_VERSION" \
+              --allow-label \
+              --github-output "$GITHUB_OUTPUT"
+          else
+            python3 .github/scripts/resolve_release_version.py \
+              --tag "$GITHUB_REF_NAME" \
+              --github-output "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Download app candidate identity
+        uses: actions/download-artifact@v7
+        with:
+          name: docker-candidate-app-${{ github.run_id }}
+          path: docker-candidates
+
+      - name: Download web candidate identity
+        uses: actions/download-artifact@v7
+        with:
+          name: docker-candidate-web-${{ github.run_id }}
+          path: docker-candidates
+
+      - name: Resolve Docker Hub namespace
+        id: hub
+        shell: bash
+        run: |
+          user="${{ secrets.DOCKERHUB_USERNAME }}"
+          if [ -z "$user" ]; then
+            user="${GITHUB_REPOSITORY_OWNER}"
+          fi
+          echo "user=${user}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Verify both candidate images
+        shell: bash
+        env:
+          EXPECTED_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          for target in app web; do
+            manifest="docker-candidates/${target}.json"
+            if [ ! -s "$manifest" ]; then
+              echo "Missing candidate identity manifest: $manifest" >&2
+              exit 1
+            fi
+            revision="$(jq -r '.revision' "$manifest")"
+            version="$(jq -r '.version' "$manifest")"
+            manifest_target="$(jq -r '.target' "$manifest")"
+            repo="$(jq -r '.repo' "$manifest")"
+            digest="$(jq -r '.digest' "$manifest")"
+            platforms="$(jq -r '.platforms' "$manifest")"
+            if [ "$manifest_target" != "$target" ] || [ "$revision" != "$GITHUB_SHA" ] || [ "$version" != "$EXPECTED_VERSION" ]; then
+              echo "Candidate identity mismatch for $target: revision=$revision version=$version" >&2
+              exit 1
+            fi
+            if ! printf '%s' "$digest" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+              echo "Invalid candidate digest for $target: $digest" >&2
+              exit 1
+            fi
+            case "$target:$repo" in
+              app:retainpdf-app|web:retainpdf-web) ;;
+              *)
+                echo "Unexpected candidate repository for $target: $repo" >&2
+                exit 1
+                ;;
+            esac
+            image="${{ steps.hub.outputs.user }}/${repo}@${digest}"
+            echo "Verifying ${image} for ${platforms}"
+            docker buildx imagetools inspect "$image" --format '{{json .Image}}' > "docker-candidates/${target}-images.json"
+            expected_platforms="$(printf '%s' "$platforms" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sort)"
+            actual_platforms="$(jq -r 'keys[]' "docker-candidates/${target}-images.json" | sort)"
+            if [ "$actual_platforms" != "$expected_platforms" ]; then
+              echo "Candidate platform mismatch for $target" >&2
+              echo "expected: $expected_platforms" >&2
+              echo "actual: $actual_platforms" >&2
+              exit 1
+            fi
+            label_mismatches="$(
+              jq \
+                --arg revision "$GITHUB_SHA" \
+                --arg version "$EXPECTED_VERSION" \
+                '[to_entries[] | select(
+                  .value.config.Labels["org.opencontainers.image.revision"] != $revision or
+                  .value.config.Labels["org.opencontainers.image.version"] != $version
+                )] | length' \
+                "docker-candidates/${target}-images.json"
+            )"
+            if [ "$label_mismatches" != "0" ]; then
+              echo "Candidate OCI identity labels do not match this release for $target" >&2
+              exit 1
+            fi
+          done
+
+      - name: Verify release identity before promotion
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          head_sha="$(git rev-parse HEAD)"
+          if [ "$head_sha" != "$GITHUB_SHA" ]; then
+            echo "Checked out revision does not match this run: head=$head_sha expected=$GITHUB_SHA" >&2
+            exit 1
+          fi
+
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            remote_sha="$(git ls-remote origin "refs/tags/${GITHUB_REF_NAME}^{}" | awk 'NR == 1 { print $1 }')"
+            if [ -z "$remote_sha" ]; then
+              remote_sha="$(git ls-remote origin "refs/tags/${GITHUB_REF_NAME}" | awk 'NR == 1 { print $1 }')"
+            fi
+            if [ "$remote_sha" != "$GITHUB_SHA" ]; then
+              echo "Release tag moved while Docker images were building: remote=$remote_sha expected=$GITHUB_SHA" >&2
+              exit 1
+            fi
+          else
+            case "$RELEASE_TAG" in
+              dev|dev-*|manual-*) ;;
+              *)
+                echo "Manual Docker publishing only accepts dev, dev-*, or manual-* labels" >&2
+                exit 1
+                ;;
+            esac
+          fi
+
+      - name: Promote complete Docker release
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          STABLE_RELEASE: ${{ steps.release.outputs.stable }}
+        run: |
+          for target in app web; do
+            repo="$(jq -r '.repo' "docker-candidates/${target}.json")"
+            digest="$(jq -r '.digest' "docker-candidates/${target}.json")"
+            image="${{ steps.hub.outputs.user }}/${repo}"
+            docker buildx imagetools create --tag "${image}:${RELEASE_TAG}" "${image}@${digest}"
+            docker buildx imagetools inspect "${image}:${RELEASE_TAG}"
+          done
+
+          if [ "$STABLE_RELEASE" = "true" ]; then
+            for target in app web; do
+              repo="$(jq -r '.repo' "docker-candidates/${target}.json")"
+              digest="$(jq -r '.digest' "docker-candidates/${target}.json")"
+              image="${{ steps.hub.outputs.user }}/${repo}"
+              docker buildx imagetools create --tag "${image}:latest" "${image}@${digest}"
+              docker buildx imagetools inspect "${image}:latest"
+            done
+          fi

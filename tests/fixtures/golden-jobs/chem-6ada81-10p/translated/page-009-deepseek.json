@@ -1,0 +1,4912 @@
+[
+  {
+    "item_id": "p009-b003",
+    "page_idx": 8,
+    "block_idx": 3,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 3,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.983,
+      64.492,
+      291.89,
+      83.929
+    ],
+    "source_text": "was collected. The solvent was removed in vacuo to give 4a as grayish crystals (35 mg, 29%) with mp 87–88°C.",
+    "source_line_texts": [
+      "was collected. The solvent was removed in vacuo to give",
+      "4a as grayish crystals (35 mg, 29%) with mp 87–88°C."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          64.492,
+          291.89,
+          83.929
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "was collected. The solvent was removed in vacuo to give 4a as grayish crystals (35 mg, 29%) with mp 87–88°C.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-142",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 1,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-142",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "was collected. The solvent was removed in vacuo to give 4a as grayish crystals (35 mg, 29%) with mp 87–88°C.",
+    "mixed_original_protected_source_text": "was collected. The solvent was removed in vacuo to give 4a as grayish crystals (35 mg, 29%) with mp 87–88°C.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-008-009",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p008-b018",
+      "p009-b003"
+    ],
+    "translation_unit_protected_source_text": "4,6,9-tribromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (4a). The mixture of 1 (150 mg, 0.28 mmol), NBS (106 mg, 0.59 mmol) and THF (15 mL) was refluxed for 12 h. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added to the residue. The product was extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give 4a as grayish crystals (35 mg, 29%) with mp 87–88°C.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "4,6,9-三溴-1,3-二甲基-2,3-二氢-1H-苝啶 (4a)。将1 (150 mg, 0.28 mmol)、NBS (106 mg, 0.59 mmol) 与 THF (15 mL) 的混合物回流 12 h。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (20 mL)。用二氯甲烷 (3×10 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物以苯/己烷 10:1 为洗脱剂进行硅胶柱色谱分离，收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 为浅灰色晶体 (35 mg, 29%)，熔点 87–88°C。",
+    "translation_unit_translated_text": "4,6,9-三溴-1,3-二甲基-2,3-二氢-1H-苝啶 (4a)。将1 (150 mg, 0.28 mmol)、NBS (106 mg, 0.59 mmol) 与 THF (15 mL) 的混合物回流 12 h。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (20 mL)。用二氯甲烷 (3×10 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物以苯/己烷 10:1 为洗脱剂进行硅胶柱色谱分离，收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 为浅灰色晶体 (35 mg, 29%)，熔点 87–88°C。",
+    "protected_translated_text": "真空除去溶剂，得到 4a 为浅灰色晶体 (35 mg, 29%)，熔点 87–88°C。",
+    "translated_text": "真空除去溶剂，得到 4a 为浅灰色晶体 (35 mg, 29%)，熔点 87–88°C。",
+    "continuation_group": "cg-008-009",
+    "continuation_prev_text": "4,6,9-tribromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (4a). The mixture of 1 (150 mg, 0.28 mmol), NBS (106 mg, 0.59 mmol) and THF (15 mL) was refluxed for 12 h. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added to the residue. The product was extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "4,6,9-tribromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (4a). The mixture of 1 (150 mg, 0.28 mmol), NBS (106 mg, 0.59 mmol) and THF (15 mL) was refluxed for 12 h. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added to the residue. The product was extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give 4a as grayish crystals (35 mg, 29%) with mp 87–88°C.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "4,6,9-三溴-1,3-二甲基-2,3-二氢-1H-苝啶 (4a)。将1 (150 mg, 0.28 mmol)、NBS (106 mg, 0.59 mmol) 与 THF (15 mL) 的混合物回流 12 h。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (20 mL)。用二氯甲烷 (3×10 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物以苯/己烷 10:1 为洗脱剂进行硅胶柱色谱分离，收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 为浅灰色晶体 (35 mg, 29%)，熔点 87–88°C。",
+    "group_translated_text": "4,6,9-三溴-1,3-二甲基-2,3-二氢-1H-苝啶 (4a)。将1 (150 mg, 0.28 mmol)、NBS (106 mg, 0.59 mmol) 与 THF (15 mL) 的混合物回流 12 h。真空除去溶剂，得到深橙色蜡状残余物。向残余物中加入 10% 氨水溶液 (20 mL)。用二氯甲烷 (3×10 mL) 萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残余物以苯/己烷 10:1 为洗脱剂进行硅胶柱色谱分离，收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 为浅灰色晶体 (35 mg, 29%)，熔点 87–88°C。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p009-b003",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "2,4,5,7-Tetrabromo-N',N',N°-trimethylnaphthalene-1,8-diamine (3). The mixture of 1 (100 mg, 0.19 mmol), NBS (71 mg, 0.40 mmol) and THF (15 mL) was stirred overnight at room temperature. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (20 mL) was added. The product was extracted with dichloromethane (3×10 mL)....",
+    "translation_context_after": "$^{1}$H NMR (CDCl$_{3}$, 400 MHz): $\\delta = 7.90$ (s, 1H), 7.68 (s, 2H), 4.36 (s, 2H), 3.31 (s, 3H), 3.30 (s, 3H). $^{13}$C NMR (CDCl$_{3}$, 100 MHz): $\\delta = 142.71$, 142.44, 134.66, 132.85, 131.28, 124.71, 122.65, 115.25, 112.41, 110.05, 71.82, 43.52, 43.48. HRMS (ESI): m/z [M+H]^{+} calcd for C$_{13}$H$_{12}$Br$_3$N$_2$$^{+}$: 434.8525, 436.8504, 432...."
+  },
+  {
+    "item_id": "p009-b004",
+    "page_idx": 8,
+    "block_idx": 4,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 4,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      89.988,
+      291.89,
+      151.48
+    ],
+    "source_text": "$^{1}$H NMR (CDCl$_{3}$, 400 MHz): $\\delta = 7.90$ (s, 1H), 7.68 (s, 2H), 4.36 (s, 2H), 3.31 (s, 3H), 3.30 (s, 3H). $^{13}$C NMR (CDCl$_{3}$, 100 MHz): $\\delta = 142.71$, 142.44, 134.66, 132.85, 131.28, 124.71, 122.65, 115.25, 112.41, 110.05, 71.82, 43.52, 43.48. HRMS (ESI): m/z [M+H]^{+} calcd for C$_{13}$H$_{12}$Br$_3$N$_2$$^{+}$: 434.8525, 436.8504, 432.8545, 438.8484; found: 434.8532, 436.8513, 432.8553, 438.8493.",
+    "source_line_texts": [
+      "$^{1}$ H NMR (CDCl$_{3}$, 400 MHz) : $ \\delta = 7.90 $ (s, 1H),",
+      "7.68 (s, 2H), 4.36 (s, 2H), 3.31 (s, 3H), 3.30 (s, 3H).",
+      "$^{13}$ C NMR (CDCl$_{3}$, 100 MHz) : $ \\delta = 142.71 $, 142.44,",
+      "134.66, 132.85, 131.28, 124.71, 122.65, 115.25, 112.41,",
+      "110.05, 71.82, 43.52, 43.48. HRMS (ESI): m/z [M+H]^{+} calcd",
+      "for C$_{13}$H$_{12}$Br$_3$N$_2$$^{+}$: 434.8525, 436.8504,",
+      "432.8545, 438.8484; found: 434.8532, 436.8513, 432.8553, 438.8493."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          89.988,
+          291.89,
+          102.286
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$^{1}$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "H NMR (CDCl$_{3}$, 400 MHz)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": ": $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\delta = 7.90",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          102.286,
+          291.89,
+          114.585
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(s, 1H), 7.68 (s, 2H), 4.36 (s, 2H), 3.31 (s, 3H),",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          114.585,
+          291.89,
+          126.883
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "3.30 (s, 3H). $^{13}$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "C NMR (CDCl$_{3}$, 100 MHz)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": ":",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          126.883,
+          291.89,
+          139.182
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\delta = 142.71",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$, 142.44, 134.66, 132.85, 131.28,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          139.182,
+          291.89,
+          151.48
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "124.71, 122.65, 115.25, 112.41, 110.05, 71.82, 43.52, 43.48. HRMS (ESI):",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "m/z [M+H]^{+} calcd for C",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$_{13}$H$_{12}$Br$_3$N$_2$$^{+}$: 434.8525, 436.8504, 432.8545, 438.8484; found: 434.8532, 436.8513, 432.8553, 438.8493.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-143",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 2,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-143",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 2,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "$^{1}$H NMR (CDCl$_{3}$, 400 MHz): $\\delta = 7.90$ (s, 1H), 7.68 (s, 2H), 4.36 (s, 2H), 3.31 (s, 3H), 3.30 (s, 3H). $^{13}$C NMR (CDCl$_{3}$, 100 MHz): $\\delta = 142.71$, 142.44, 134.66, 132.85, 131.28, 124.71, 122.65, 115.25, 112.41, 110.05, 71.82, 43.52, 43.48. HRMS (ESI): m/z [M+H]^{+} calcd for C$_{13}$H$_{12}$Br$_3$N$_2$$^{+}$: 434.8525, 436.8504, 432.8545, 438.8484; found: 434.8532, 436.8513, 432.8553, 438.8493.",
+    "mixed_original_protected_source_text": "$^{1}$H NMR (CDCl$_{3}$, 400 MHz): $\\delta = 7.90$ (s, 1H), 7.68 (s, 2H), 4.36 (s, 2H), 3.31 (s, 3H), 3.30 (s, 3H). $^{13}$C NMR (CDCl$_{3}$, 100 MHz): $\\delta = 142.71$, 142.44, 134.66, 132.85, 131.28, 124.71, 122.65, 115.25, 112.41, 110.05, 71.82, 43.52, 43.48. HRMS (ESI): m/z [M+H]^{+} calcd for C$_{13}$H$_{12}$Br$_3$N$_2$$^{+}$: 434.8525, 436.8504, 432.8545, 438.8484; found: 434.8532, 436.8513, 432.8553, 438.8493.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "skip_model_keep_origin",
+    "should_translate": false,
+    "skip_reason": "skip_model_keep_origin",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p009-b004",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p009-b004"
+    ],
+    "translation_unit_protected_source_text": "$^{1}$H NMR (CDCl$_{3}$, 400 MHz): $\\delta = 7.90$ (s, 1H), 7.68 (s, 2H), 4.36 (s, 2H), 3.31 (s, 3H), 3.30 (s, 3H). $^{13}$C NMR (CDCl$_{3}$, 100 MHz): $\\delta = 142.71$, 142.44, 134.66, 132.85, 131.28, 124.71, 122.65, 115.25, 112.41, 110.05, 71.82, 43.52, 43.48. HRMS (ESI): m/z [M+H]^{+} calcd for C$_{13}$H$_{12}$Br$_3$N$_2$$^{+}$: 434.8525, 436.8504, 432.8545, 438.8484; found: 434.8532, 436.8513, 432.8553, 438.8493.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "kept_origin",
+    "translation_diagnostics": {
+      "item_id": "p009-b004",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "policy_keep_origin_item",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p009-b005",
+    "page_idx": 8,
+    "block_idx": 5,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 5,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      157.979,
+      292.89,
+      301.461
+    ],
+    "source_text": "4,6,7,9-tetrabromo-(2), 4,6-dibromo-(5a) and 4,7-dibromo-(6a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. The mixture of 1 (750 mg, 1.42 mmol), NBS (529 mg, 2.97 mmol) and THF (150 mL) was stirred overnight at 40°C. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (25 mL) was added to the residue. The products were extracted with dichloromethane (3×15 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $ R_f=0.55 $ (5a and 6a) and light-yellow fraction with $ R_f=0.6 $ (2) were collected. The solvent was removed in vacuo to give 2 as light-yellow crystals (305 mg, 42%) with mp 108–109°C and inseparable 6.7:1 mixture of 5a and 6a as colorless oil (96 mg, 19%).",
+    "source_line_texts": [
+      "4,6,7,9-tetrabromo-(2), 4,6-dibromo-(5a) and 4,7-dibromo-(6a)",
+      "1,3-dimethyl-2,3-dihydro-1H-perimidines. The mixture of",
+      "1 (750 mg, 1.42 mmol), NBS (529 mg, 2.97 mmol) and THF (150",
+      "mL) was stirred overnight at 40°C. The solvent was removed",
+      "in vacuo to form dark-orange waxy residue. 10% aqueous ammonia",
+      "solution (25 mL) was added to the residue. The products",
+      "were extracted with dichloromethane (3×15 mL). Organic layers",
+      "were combined and dried over anhydrous sodium sulfate. The",
+      "solvent was removed in vacuo. The residue was chromatographed",
+      "on silica using benzene as eluent; colorless fraction with",
+      "$ R_f=0.55 $ (5a and 6a) and light-yellow fraction with",
+      "$ R_f=0.6 $ (2) were collected. The solvent was removed",
+      "in vacuo to give 2 as light-yellow crystals (305 mg, 42%)",
+      "with mp 108–109°C and inseparable 6.7:1 mixture of 5a and 6a as colorless oil (96 mg, 19%)."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          157.979,
+          292.89,
+          169.016
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "4,6,7,9-tetrabromo-(2), 4,6-dibromo-(5a) and 4,7-dibromo-(6a)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          169.016,
+          292.89,
+          180.053
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "1,3-dimethyl-2,3-dihydro-1H-perimidines. The mixture",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          180.053,
+          292.89,
+          191.09
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of 1 (750 mg, 1.42 mmol), NBS (529 mg, 2.97 mmol)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          191.09,
+          292.89,
+          202.127
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and THF (150 mL) was stirred overnight at 40°C.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          202.127,
+          292.89,
+          213.164
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The solvent was removed in vacuo to form dark-orange",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          213.164,
+          292.89,
+          224.201
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "waxy residue. 10% aqueous ammonia solution (25 mL)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          224.201,
+          292.89,
+          235.239
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "was added to the residue. The products were extracted",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          235.239,
+          292.89,
+          246.276
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "with dichloromethane (3×15 mL). Organic layers were",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          246.276,
+          292.89,
+          257.313
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "combined and dried over anhydrous sodium sulfate.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          257.313,
+          292.89,
+          268.35
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The solvent was removed in vacuo. The residue was",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          268.35,
+          292.89,
+          279.387
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "chromatographed on silica using benzene as eluent;",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          279.387,
+          292.89,
+          290.424
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "colorless fraction with $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "R_f=0.55",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ (5a and 6a)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          290.424,
+          292.89,
+          301.461
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and light-yellow fraction with $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "R_f=0.6",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ (2) were collected. The solvent was removed in vacuo to give 2 as light-yellow crystals (305 mg, 42%) with mp 108–109°C and inseparable 6.7:1 mixture of 5a and 6a as colorless oil (96 mg, 19%).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-144",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 3,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-144",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 3,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "4,6,7,9-tetrabromo-(2), 4,6-dibromo-(5a) and 4,7-dibromo-(6a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. The mixture of 1 (750 mg, 1.42 mmol), NBS (529 mg, 2.97 mmol) and THF (150 mL) was stirred overnight at 40°C. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (25 mL) was added to the residue. The products were extracted with dichloromethane (3×15 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $ R_f=0.55 $ (5a and 6a) and light-yellow fraction with $ R_f=0.6 $ (2) were collected. The solvent was removed in vacuo to give 2 as light-yellow crystals (305 mg, 42%) with mp 108–109°C and inseparable 6.7:1 mixture of 5a and 6a as colorless oil (96 mg, 19%).",
+    "mixed_original_protected_source_text": "4,6,7,9-tetrabromo-(2), 4,6-dibromo-(5a) and 4,7-dibromo-(6a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. The mixture of 1 (750 mg, 1.42 mmol), NBS (529 mg, 2.97 mmol) and THF (150 mL) was stirred overnight at 40°C. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (25 mL) was added to the residue. The products were extracted with dichloromethane (3×15 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $ R_f=0.55 $ (5a and 6a) and light-yellow fraction with $ R_f=0.6 $ (2) were collected. The solvent was removed in vacuo to give 2 as light-yellow crystals (305 mg, 42%) with mp 108–109°C and inseparable 6.7:1 mixture of 5a and 6a as colorless oil (96 mg, 19%).",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p009-b005",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p009-b005"
+    ],
+    "translation_unit_protected_source_text": "4,6,7,9-tetrabromo-(2), 4,6-dibromo-(5a) and 4,7-dibromo-(6a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. The mixture of 1 (750 mg, 1.42 mmol), NBS (529 mg, 2.97 mmol) and THF (150 mL) was stirred overnight at 40°C. The solvent was removed in vacuo to form dark-orange waxy residue. 10% aqueous ammonia solution (25 mL) was added to the residue. The products were extracted with dichloromethane (3×15 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $ R_f=0.55 $ (5a and 6a) and light-yellow fraction with $ R_f=0.6 $ (2) were collected. The solvent was removed in vacuo to give 2 as light-yellow crystals (305 mg, 42%) with mp 108–109°C and inseparable 6.7:1 mixture of 5a and 6a as colorless oil (96 mg, 19%).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "4,6,7,9-四溴-(2)、4,6-二溴-(5a)和4,7-二溴-(6a)-1,3-二甲基-2,3-二氢-1H-萘嵌间二氮杂苯。将1（750 mg，1.42 mmol）、NBS（529 mg，2.97 mmol）和THF（150 mL）的混合物在40°C下搅拌过夜。减压除去溶剂，得到深橙色蜡状残留物。向残留物中加入10%氨水溶液（25 mL）。用二氯甲烷（3×15 mL）萃取产物，合并有机层，用无水硫酸钠干燥。减压除去溶剂。残留物以苯为洗脱剂经硅胶色谱分离；收集 $R_f=0.55$ 的无色馏分（5a和6a）和 $R_f=0.6$ 的浅黄色馏分（2）。减压除去溶剂，得到浅黄色晶体2（305 mg，42%），熔点108–109°C，以及不可分离的5a和6a混合物（6.7:1，无色油，96 mg，19%）。",
+    "translation_unit_translated_text": "4,6,7,9-四溴-(2)、4,6-二溴-(5a)和4,7-二溴-(6a)-1,3-二甲基-2,3-二氢-1H-萘嵌间二氮杂苯。将1（750 mg，1.42 mmol）、NBS（529 mg，2.97 mmol）和THF（150 mL）的混合物在40°C下搅拌过夜。减压除去溶剂，得到深橙色蜡状残留物。向残留物中加入10%氨水溶液（25 mL）。用二氯甲烷（3×15 mL）萃取产物，合并有机层，用无水硫酸钠干燥。减压除去溶剂。残留物以苯为洗脱剂经硅胶色谱分离；收集 $R_f=0.55$ 的无色馏分（5a和6a）和 $R_f=0.6$ 的浅黄色馏分（2）。减压除去溶剂，得到浅黄色晶体2（305 mg，42%），熔点108–109°C，以及不可分离的5a和6a混合物（6.7:1，无色油，96 mg，19%）。",
+    "protected_translated_text": "4,6,7,9-四溴-(2)、4,6-二溴-(5a)和4,7-二溴-(6a)-1,3-二甲基-2,3-二氢-1H-萘嵌间二氮杂苯。将1（750 mg，1.42 mmol）、NBS（529 mg，2.97 mmol）和THF（150 mL）的混合物在40°C下搅拌过夜。减压除去溶剂，得到深橙色蜡状残留物。向残留物中加入10%氨水溶液（25 mL）。用二氯甲烷（3×15 mL）萃取产物，合并有机层，用无水硫酸钠干燥。减压除去溶剂。残留物以苯为洗脱剂经硅胶色谱分离；收集 $R_f=0.55$ 的无色馏分（5a和6a）和 $R_f=0.6$ 的浅黄色馏分（2）。减压除去溶剂，得到浅黄色晶体2（305 mg，42%），熔点108–109°C，以及不可分离的5a和6a混合物（6.7:1，无色油，96 mg，19%）。",
+    "translated_text": "4,6,7,9-四溴-(2)、4,6-二溴-(5a)和4,7-二溴-(6a)-1,3-二甲基-2,3-二氢-1H-萘嵌间二氮杂苯。将1（750 mg，1.42 mmol）、NBS（529 mg，2.97 mmol）和THF（150 mL）的混合物在40°C下搅拌过夜。减压除去溶剂，得到深橙色蜡状残留物。向残留物中加入10%氨水溶液（25 mL）。用二氯甲烷（3×15 mL）萃取产物，合并有机层，用无水硫酸钠干燥。减压除去溶剂。残留物以苯为洗脱剂经硅胶色谱分离；收集 $R_f=0.55$ 的无色馏分（5a和6a）和 $R_f=0.6$ 的浅黄色馏分（2）。减压除去溶剂，得到浅黄色晶体2（305 mg，42%），熔点108–109°C，以及不可分离的5a和6a混合物（6.7:1，无色油，96 mg，19%）。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p009-b005",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p009-b006",
+    "page_idx": 8,
+    "block_idx": 6,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 6,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      306.46,
+      292.89,
+      470.439
+    ],
+    "source_text": "Alternative approach for the synthesis of 4,6-dibromo-(5a) and 4,7-dibromo-(6a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 4a (150 mg, 0.34 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (15 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at -20°C for 10 min, and a 1.6 M solution of n-BuLi in hexanes (0.23 mL, 0.37 mmol) was added via syringe. The yellow mixture was kept at -20°C for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $ R_f=0.6 $ was collected. The solvent was removed in vacuo to give inseparable 1:7.7 mixture of 5a and 6a as grayish oil (50 mg, 41%).",
+    "source_line_texts": [
+      "Alternative approach for the synthesis of 4,6-dibromo-(5a)",
+      "and 4,7-dibromo-(6a) 1,3-dimethyl-2,3-dihydro-1H-perimidines.",
+      "Crystals of 4a (150 mg, 0.34 mmol) were placed in a flame-dried",
+      "round-bottomed flask. Freshly distilled over sodium/benzophenone",
+      "toluene was added (15 mL). The flask was filled with argon",
+      "and closed with a septa cap. The mixture was kept at -20°C",
+      "for 10 min, and a 1.6 M solution of n-BuLi in hexanes (0.23",
+      "mL, 0.37 mmol) was added via syringe. The yellow mixture",
+      "was kept at -20°C for 1 h. Methanol (0.2 mL) was added to",
+      "the reaction mixture. The solvent was removed in vacuo.",
+      "The products were extracted with dichloromethane (3×10 mL).",
+      "Organic layers were combined and dried over anhydrous sodium",
+      "sulfate. The solvent was removed in vacuo. The residue was",
+      "chromatographed on silica using benzene as eluent; colorless",
+      "fraction with $ R_f=0.6 $ was collected. The solvent was",
+      "removed in vacuo to give inseparable 1:7.7 mixture of 5a and 6a as grayish oil (50 mg, 41%)."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          306.46,
+          292.89,
+          318.173
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Alternative approach for the synthesis of 4,6-dibromo-(5a)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          318.173,
+          292.89,
+          329.886
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and 4,7-dibromo-(6a) 1,3-dimethyl-2,3-dihydro-1H-perimidines.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          329.886,
+          292.89,
+          341.598
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Crystals of 4a (150 mg, 0.34 mmol) were placed in",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          341.598,
+          292.89,
+          353.311
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "a flame-dried round-bottomed flask. Freshly distilled",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          353.311,
+          292.89,
+          365.024
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "over sodium/benzophenone toluene was added (15 mL).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          365.024,
+          292.89,
+          376.737
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The flask was filled with argon and closed with",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          376.737,
+          292.89,
+          388.45
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "a septa cap. The mixture was kept at -20°C for 10",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          388.45,
+          292.89,
+          400.162
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "min, and a 1.6 M solution of n-BuLi in hexanes (0.23",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          400.162,
+          292.89,
+          411.875
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "mL, 0.37 mmol) was added via syringe. The yellow",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          411.875,
+          292.89,
+          423.588
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "mixture was kept at -20°C for 1 h. Methanol (0.2",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          423.588,
+          292.89,
+          435.301
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "mL) was added to the reaction mixture. The solvent",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          435.301,
+          292.89,
+          447.013
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "was removed in vacuo. The products were extracted",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          447.013,
+          292.89,
+          458.726
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "with dichloromethane (3×10 mL). Organic layers were",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          458.726,
+          292.89,
+          470.439
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "R_f=0.6",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ was collected. The solvent was removed in vacuo to give inseparable 1:7.7 mixture of 5a and 6a as grayish oil (50 mg, 41%).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-145",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 4,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-145",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 4,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Alternative approach for the synthesis of 4,6-dibromo-(5a) and 4,7-dibromo-(6a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 4a (150 mg, 0.34 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (15 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at -20°C for 10 min, and a 1.6 M solution of n-BuLi in hexanes (0.23 mL, 0.37 mmol) was added via syringe. The yellow mixture was kept at -20°C for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $ R_f=0.6 $ was collected. The solvent was removed in vacuo to give inseparable 1:7.7 mixture of 5a and 6a as grayish oil (50 mg, 41%).",
+    "mixed_original_protected_source_text": "Alternative approach for the synthesis of 4,6-dibromo-(5a) and 4,7-dibromo-(6a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 4a (150 mg, 0.34 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (15 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at -20°C for 10 min, and a 1.6 M solution of n-BuLi in hexanes (0.23 mL, 0.37 mmol) was added via syringe. The yellow mixture was kept at -20°C for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $ R_f=0.6 $ was collected. The solvent was removed in vacuo to give inseparable 1:7.7 mixture of 5a and 6a as grayish oil (50 mg, 41%).",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p009-b006",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p009-b006"
+    ],
+    "translation_unit_protected_source_text": "Alternative approach for the synthesis of 4,6-dibromo-(5a) and 4,7-dibromo-(6a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 4a (150 mg, 0.34 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (15 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at -20°C for 10 min, and a 1.6 M solution of n-BuLi in hexanes (0.23 mL, 0.37 mmol) was added via syringe. The yellow mixture was kept at -20°C for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $ R_f=0.6 $ was collected. The solvent was removed in vacuo to give inseparable 1:7.7 mixture of 5a and 6a as grayish oil (50 mg, 41%).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "4,6-二溴-(5a)和4,7-二溴-(6a) 1,3-二甲基-2,3-二氢-1H-萘啶并[1,2,3-cd]吲哚的合成替代方法。将4a晶体（150 mg, 0.34 mmol）置于火焰干燥的圆底烧瓶中，加入经钠/二苯甲酮新鲜蒸馏的甲苯（15 mL）。烧瓶内充入氩气并用隔膜盖密封。混合物在-20°C下保持10 min，通过注射器加入1.6 M的n-BuLi己烷溶液（0.23 mL, 0.37 mmol）。黄色混合物在-20°C下保持1 h。向反应混合物中加入甲醇（0.2 mL）。减压除去溶剂。用二氯甲烷（3×10 mL）萃取产物，合并有机层并用无水硫酸钠干燥。减压除去溶剂。残留物以苯为洗脱剂进行硅胶柱色谱分离，收集$R_f=0.6$的无色馏分。减压除去溶剂，得到不可分离的5a与6a混合物（灰色油状物，50 mg, 41%），比例为1:7.7。",
+    "translation_unit_translated_text": "4,6-二溴-(5a)和4,7-二溴-(6a) 1,3-二甲基-2,3-二氢-1H-萘啶并[1,2,3-cd]吲哚的合成替代方法。将4a晶体（150 mg, 0.34 mmol）置于火焰干燥的圆底烧瓶中，加入经钠/二苯甲酮新鲜蒸馏的甲苯（15 mL）。烧瓶内充入氩气并用隔膜盖密封。混合物在-20°C下保持10 min，通过注射器加入1.6 M的n-BuLi己烷溶液（0.23 mL, 0.37 mmol）。黄色混合物在-20°C下保持1 h。向反应混合物中加入甲醇（0.2 mL）。减压除去溶剂。用二氯甲烷（3×10 mL）萃取产物，合并有机层并用无水硫酸钠干燥。减压除去溶剂。残留物以苯为洗脱剂进行硅胶柱色谱分离，收集$R_f=0.6$的无色馏分。减压除去溶剂，得到不可分离的5a与6a混合物（灰色油状物，50 mg, 41%），比例为1:7.7。",
+    "protected_translated_text": "4,6-二溴-(5a)和4,7-二溴-(6a) 1,3-二甲基-2,3-二氢-1H-萘啶并[1,2,3-cd]吲哚的合成替代方法。将4a晶体（150 mg, 0.34 mmol）置于火焰干燥的圆底烧瓶中，加入经钠/二苯甲酮新鲜蒸馏的甲苯（15 mL）。烧瓶内充入氩气并用隔膜盖密封。混合物在-20°C下保持10 min，通过注射器加入1.6 M的n-BuLi己烷溶液（0.23 mL, 0.37 mmol）。黄色混合物在-20°C下保持1 h。向反应混合物中加入甲醇（0.2 mL）。减压除去溶剂。用二氯甲烷（3×10 mL）萃取产物，合并有机层并用无水硫酸钠干燥。减压除去溶剂。残留物以苯为洗脱剂进行硅胶柱色谱分离，收集$R_f=0.6$的无色馏分。减压除去溶剂，得到不可分离的5a与6a混合物（灰色油状物，50 mg, 41%），比例为1:7.7。",
+    "translated_text": "4,6-二溴-(5a)和4,7-二溴-(6a) 1,3-二甲基-2,3-二氢-1H-萘啶并[1,2,3-cd]吲哚的合成替代方法。将4a晶体（150 mg, 0.34 mmol）置于火焰干燥的圆底烧瓶中，加入经钠/二苯甲酮新鲜蒸馏的甲苯（15 mL）。烧瓶内充入氩气并用隔膜盖密封。混合物在-20°C下保持10 min，通过注射器加入1.6 M的n-BuLi己烷溶液（0.23 mL, 0.37 mmol）。黄色混合物在-20°C下保持1 h。向反应混合物中加入甲醇（0.2 mL）。减压除去溶剂。用二氯甲烷（3×10 mL）萃取产物，合并有机层并用无水硫酸钠干燥。减压除去溶剂。残留物以苯为洗脱剂进行硅胶柱色谱分离，收集$R_f=0.6$的无色馏分。减压除去溶剂，得到不可分离的5a与6a混合物（灰色油状物，50 mg, 41%），比例为1:7.7。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p009-b006",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p009-b007",
+    "page_idx": 8,
+    "block_idx": 7,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 7,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.983,
+      475.938,
+      291.89,
+      527.431
+    ],
+    "source_text": "2. $ ^{1}\\text{H NMR (CDCl}_3\\text{, 400 MHz): } \\delta = 8.08\\ \\text{s, 2H} $, 4.30 $ \\text{s, 2H} $, 3.28 $ \\text{s, 6H} $. $ ^{13}\\text{C NMR (CDCl}_3\\text{, 100 MHz): } \\delta = 142.90 $, 139.59, 128.44, 126.63, 112.60, 111.54, 70.82, 43.64. HRMS (ESI): m/z $ [M+H]^+ $ calcd for $ C_{13}H_{11}Br_4N_2^+ $: 514.7610, 512.7630, 516.7590, 510.7650, 518.7572; found: 514.7622, 512.7639, 516.7608, 510.7658, 518.7613.",
+    "source_line_texts": [
+      "2. $ ^{1} \\text{H NMR (CDCl}_3\\text{, 400 MHz): } \\delta",
+      "= 8.08\\ \\text{s, 2H} $, 4.30 $ \\text{s, 2H} $, 3.28 $ \\text{s,",
+      "6H} $. $ ^{13} \\text{C NMR (CDCl}_3\\text{, 100 MHz): } \\delta",
+      "= 142.90 $, 139.59, 128.44, 126.63, 112.60, 111.54, 70.82,",
+      "43.64. HRMS (ESI): m/z $ [M+H]^+ $ calcd for $ C_{13}H_{11}Br_4N_2 ^+",
+      "$: 514.7610, 512.7630, 516.7590, 510.7650, 518.7572; found:",
+      "514.7622, 512.7639, 516.7608, 510.7658, 518.7613."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          475.938,
+          291.89,
+          488.811
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "2. $ ^{1}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\text{H NMR (CDCl}_3\\text{, 400 MHz): }",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.983,
+          488.811,
+          291.89,
+          501.685
+        ],
+        "spans": [
+          {
+            "type": "inline_equation",
+            "content": "\\delta = 8.08",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "\\",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\text{s, 2H}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$, 4.30 $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\text{s, 2H}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.983,
+          501.685,
+          291.89,
+          514.558
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$, 3.28 $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\text{s, 6H}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$. $ ^{13}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\text{C NMR (CDCl}_3\\text",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "{,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.983,
+          514.558,
+          291.89,
+          527.431
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "100 MHz): }",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\delta = 142.90",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$, 139.59, 128.44, 126.63, 112.60, 111.54, 70.82, 43.64. HRMS (ESI): m/z $ [M+H]^+ $ calcd for $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "C_{13}H_{11}Br_4N_2",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "^+ $: 514.7610, 512.7630, 516.7590, 510.7650, 518.7572; found: 514.7622, 512.7639, 516.7608, 510.7658, 518.7613.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-146",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 5,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-146",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 5,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "2. $ ^{1}\\text{H NMR (CDCl}_3\\text{, 400 MHz): } \\delta = 8.08\\ \\text{s, 2H} $, 4.30 $ \\text{s, 2H} $, 3.28 $ \\text{s, 6H} $. $ ^{13}\\text{C NMR (CDCl}_3\\text{, 100 MHz): } \\delta = 142.90 $, 139.59, 128.44, 126.63, 112.60, 111.54, 70.82, 43.64. HRMS (ESI): m/z $ [M+H]^+ $ calcd for $ C_{13}H_{11}Br_4N_2^+ $: 514.7610, 512.7630, 516.7590, 510.7650, 518.7572; found: 514.7622, 512.7639, 516.7608, 510.7658, 518.7613.",
+    "mixed_original_protected_source_text": "2. $ ^{1}\\text{H NMR (CDCl}_3\\text{, 400 MHz): } \\delta = 8.08\\ \\text{s, 2H} $, 4.30 $ \\text{s, 2H} $, 3.28 $ \\text{s, 6H} $. $ ^{13}\\text{C NMR (CDCl}_3\\text{, 100 MHz): } \\delta = 142.90 $, 139.59, 128.44, 126.63, 112.60, 111.54, 70.82, 43.64. HRMS (ESI): m/z $ [M+H]^+ $ calcd for $ C_{13}H_{11}Br_4N_2^+ $: 514.7610, 512.7630, 516.7590, 510.7650, 518.7572; found: 514.7622, 512.7639, 516.7608, 510.7658, 518.7613.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p009-b007",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p009-b007"
+    ],
+    "translation_unit_protected_source_text": "2. $ ^{1}\\text{H NMR (CDCl}_3\\text{, 400 MHz): } \\delta = 8.08\\ \\text{s, 2H} $, 4.30 $ \\text{s, 2H} $, 3.28 $ \\text{s, 6H} $. $ ^{13}\\text{C NMR (CDCl}_3\\text{, 100 MHz): } \\delta = 142.90 $, 139.59, 128.44, 126.63, 112.60, 111.54, 70.82, 43.64. HRMS (ESI): m/z $ [M+H]^+ $ calcd for $ C_{13}H_{11}Br_4N_2^+ $: 514.7610, 512.7630, 516.7590, 510.7650, 518.7572; found: 514.7622, 512.7639, 516.7608, 510.7658, 518.7613.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "2. $^{1}\\text{H NMR (CDCl}_3\\text{, 400 MHz): } \\delta = 8.08\\ \\text{s, 2H}$, 4.30 $\\text{s, 2H}$, 3.28 $\\text{s, 6H}$. $^{13}\\text{C NMR (CDCl}_3\\text{, 100 MHz): } \\delta = 142.90$, 139.59, 128.44, 126.63, 112.60, 111.54, 70.82, 43.64. HRMS (ESI): m/z $[M+H]^+$ calcd for $C_{13}H_{11}Br_4N_2^+$: 514.7610, 512.7630, 516.7590, 510.7650, 518.7572; found: 514.7622, 512.7639, 516.7608, 510.7658, 518.7613.",
+    "translation_unit_translated_text": "2. $^{1}\\text{H NMR (CDCl}_3\\text{, 400 MHz): } \\delta = 8.08\\ \\text{s, 2H}$, 4.30 $\\text{s, 2H}$, 3.28 $\\text{s, 6H}$. $^{13}\\text{C NMR (CDCl}_3\\text{, 100 MHz): } \\delta = 142.90$, 139.59, 128.44, 126.63, 112.60, 111.54, 70.82, 43.64. HRMS (ESI): m/z $[M+H]^+$ calcd for $C_{13}H_{11}Br_4N_2^+$: 514.7610, 512.7630, 516.7590, 510.7650, 518.7572; found: 514.7622, 512.7639, 516.7608, 510.7658, 518.7613.",
+    "protected_translated_text": "2. $^{1}\\text{H NMR (CDCl}_3\\text{, 400 MHz): } \\delta = 8.08\\ \\text{s, 2H}$, 4.30 $\\text{s, 2H}$, 3.28 $\\text{s, 6H}$. $^{13}\\text{C NMR (CDCl}_3\\text{, 100 MHz): } \\delta = 142.90$, 139.59, 128.44, 126.63, 112.60, 111.54, 70.82, 43.64. HRMS (ESI): m/z $[M+H]^+$ calcd for $C_{13}H_{11}Br_4N_2^+$: 514.7610, 512.7630, 516.7590, 510.7650, 518.7572; found: 514.7622, 512.7639, 516.7608, 510.7658, 518.7613.",
+    "translated_text": "2. $^{1}\\text{H NMR (CDCl}_3\\text{, 400 MHz): } \\delta = 8.08\\ \\text{s, 2H}$, 4.30 $\\text{s, 2H}$, 3.28 $\\text{s, 6H}$. $^{13}\\text{C NMR (CDCl}_3\\text{, 100 MHz): } \\delta = 142.90$, 139.59, 128.44, 126.63, 112.60, 111.54, 70.82, 43.64. HRMS (ESI): m/z $[M+H]^+$ calcd for $C_{13}H_{11}Br_4N_2^+$: 514.7610, 512.7630, 516.7590, 510.7650, 518.7572; found: 514.7622, 512.7639, 516.7608, 510.7658, 518.7613.",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p009-b007",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p009-b008",
+    "page_idx": 8,
+    "block_idx": 8,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 8,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      532.93,
+      291.89,
+      584.424
+    ],
+    "source_text": "5a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta = 7.90 $ (s, 1H), 7.55 (d, J=8.5 Hz, 1H), 7.49 (t, J=8.0 Hz, 1H), 6.64 (d, J=7.5 Hz, 1H), 4.20 (s, 2H), 3.03 (s, 3H), 2.96 (s, 3H). $ ^{13}\\text{C} $ NMR (CDCl $ _3 $, 100 MHz): $ \\delta = 144.35, 143.01, 133.72, 132.35, 128.45, 120.25, 117.18, 116.37, 110.64, 105.10, 71.32, 40.86, 36.86.",
+    "source_line_texts": [
+      "5a. $ ^{1} \\text{H} $ NMR (CDCl $ _3 $, 400 MHz) : $ \\delta",
+      "= 7.90 $ (s, 1H), 7.55 (d, J=8.5 Hz, 1H), 7.49 (t, J=8.0",
+      "Hz, 1H), 6.64 (d, J=7.5 Hz, 1H), 4.20 (s, 2H), 3.03 (s,",
+      "3H), 2.96 (s, 3H). $ ^{13} \\text{C} $ NMR (CDCl $ _3 $, 100",
+      "MHz): $ \\delta = 144.35, 143.01, 133.72, 132.35, 128.45,",
+      "120.25, 117.18, 116.37, 110.64, 105.10, 71.32, 40.86, 36.86."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          532.93,
+          291.89,
+          545.803
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "5a. $ ^{1}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\text{H}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "NMR (CDCl $ _3 $, 400 MHz)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": ":",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          545.803,
+          291.89,
+          558.677
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\delta = 7.90",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ (s, 1H), 7.55 (d, J=8.5 Hz, 1H),",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          558.677,
+          291.89,
+          571.55
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "7.49 (t, J=8.0 Hz, 1H), 6.64 (d, J=7.5 Hz, 1H),",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          571.55,
+          291.89,
+          584.424
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "4.20 (s, 2H), 3.03 (s, 3H), 2.96 (s, 3H). $ ^{13}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\text{C}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "NMR (CDCl $ _3 $, 100 MHz)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": ": $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\delta = 144.35, 143.01, 133.72, 132.35, 128.45, 120.25, 117.18, 116.37, 110.64, 105.10, 71.32, 40.86, 36.86.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-147",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 6,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-147",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 6,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 5,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "5a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta = 7.90 $ (s, 1H), 7.55 (d, J=8.5 Hz, 1H), 7.49 (t, J=8.0 Hz, 1H), 6.64 (d, J=7.5 Hz, 1H), 4.20 (s, 2H), 3.03 (s, 3H), 2.96 (s, 3H). $ ^{13}\\text{C} $ NMR (CDCl $ _3 $, 100 MHz): $ \\delta = 144.35, 143.01, 133.72, 132.35, 128.45, 120.25, 117.18, 116.37, 110.64, 105.10, 71.32, 40.86, 36.86.",
+    "mixed_original_protected_source_text": "5a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta = 7.90 $ (s, 1H), 7.55 (d, J=8.5 Hz, 1H), 7.49 (t, J=8.0 Hz, 1H), 6.64 (d, J=7.5 Hz, 1H), 4.20 (s, 2H), 3.03 (s, 3H), 2.96 (s, 3H). $ ^{13}\\text{C} $ NMR (CDCl $ _3 $, 100 MHz): $ \\delta = 144.35, 143.01, 133.72, 132.35, 128.45, 120.25, 117.18, 116.37, 110.64, 105.10, 71.32, 40.86, 36.86.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "skip_model_keep_origin",
+    "should_translate": false,
+    "skip_reason": "skip_model_keep_origin",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p009-b008",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p009-b008"
+    ],
+    "translation_unit_protected_source_text": "5a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta = 7.90 $ (s, 1H), 7.55 (d, J=8.5 Hz, 1H), 7.49 (t, J=8.0 Hz, 1H), 6.64 (d, J=7.5 Hz, 1H), 4.20 (s, 2H), 3.03 (s, 3H), 2.96 (s, 3H). $ ^{13}\\text{C} $ NMR (CDCl $ _3 $, 100 MHz): $ \\delta = 144.35, 143.01, 133.72, 132.35, 128.45, 120.25, 117.18, 116.37, 110.64, 105.10, 71.32, 40.86, 36.86.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "",
+    "translation_unit_translated_text": "",
+    "protected_translated_text": "",
+    "translated_text": "",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "kept_origin",
+    "translation_diagnostics": {
+      "item_id": "p009-b008",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "final_untranslated_recovery",
+        "dead_letter"
+      ],
+      "error_trace": [
+        {
+          "type": "validation",
+          "code": "MATH_DELIMITER_UNBALANCED"
+        }
+      ],
+      "fallback_to": "dead_letter_queue",
+      "degradation_reason": "final_untranslated_recovery_failed",
+      "final_status": "kept_origin",
+      "agent_repair_failed": true,
+      "agent_repair_error_type": "ValueError",
+      "agent_repair_error": "Repair response is missing repaired_text.",
+      "dead_letter": true,
+      "final_recovery_error_type": "ValueError",
+      "final_recovery_error": "final recovery output failed validation: math_delimiter_unbalanced"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p009-b009",
+    "page_idx": 8,
+    "block_idx": 9,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 9,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      589.423,
+      292.89,
+      641.263
+    ],
+    "source_text": "6a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta = 7.77 $ (d, J=9.1 Hz, 1H), 7.67 (d, J=9.1 Hz, 1H), 7.64 (d, J=8.2 Hz, 1H), 6.45 (d, J=8.2 Hz, 1H), 4.21 (s, 3H), 3.01 (s, 4H), 2.96 (s, 4H). $ ^{13}\\text{C} $ NMR (CDCl $ _3 $, 100 MHz): $ \\delta = 143.98 $, 143.15, 131.98, 131.94, 130.80, 123.87, 120.77, 112.73, 109.55, 104.79, 71.32, 40.94, 36.67.",
+    "source_line_texts": [
+      "6a. $ ^{1} \\text{H} $ NMR (CDCl $ _3 $, 400 MHz) : $ \\delta",
+      "= 7.77 $ (d, J=9.1 Hz, 1H), 7.67 (d, J=9.1 Hz, 1H), 7.64",
+      "(d, J=8.2 Hz, 1H), 6.45 (d, J=8.2 Hz, 1H), 4.21 (s, 3H),",
+      "3.01 (s, 4H), 2.96 (s, 4H). $ ^{13} \\text{C} $ NMR (CDCl",
+      "$ _3 $, 100 MHz): $ \\delta = 143.98 $, 143.15, 131.98, 131.94,",
+      "130.80, 123.87, 120.77, 112.73, 109.55, 104.79, 71.32, 40.94, 36.67."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          589.423,
+          292.89,
+          602.383
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "6a. $ ^{1}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\text{H}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "NMR (CDCl $ _3 $, 400 MHz)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": ":",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          602.383,
+          292.89,
+          615.343
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\delta = 7.77",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ (d, J=9.1 Hz, 1H), 7.67 (d, J=9.1",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          615.343,
+          292.89,
+          628.303
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Hz, 1H), 7.64 (d, J=8.2 Hz, 1H), 6.45 (d, J=8.2",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          628.303,
+          292.89,
+          641.263
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Hz, 1H), 4.21 (s, 3H), 3.01 (s, 4H), 2.96 (s, 4H). $ ^{13}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\text{C}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "NMR (CDCl $ _3 $, 100 MHz)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": ": $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\delta = 143.98",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$, 143.15, 131.98, 131.94, 130.80, 123.87, 120.77, 112.73, 109.55, 104.79, 71.32, 40.94, 36.67.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-148",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 7,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-148",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 7,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 6,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "6a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta = 7.77 $ (d, J=9.1 Hz, 1H), 7.67 (d, J=9.1 Hz, 1H), 7.64 (d, J=8.2 Hz, 1H), 6.45 (d, J=8.2 Hz, 1H), 4.21 (s, 3H), 3.01 (s, 4H), 2.96 (s, 4H). $ ^{13}\\text{C} $ NMR (CDCl $ _3 $, 100 MHz): $ \\delta = 143.98 $, 143.15, 131.98, 131.94, 130.80, 123.87, 120.77, 112.73, 109.55, 104.79, 71.32, 40.94, 36.67.",
+    "mixed_original_protected_source_text": "6a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta = 7.77 $ (d, J=9.1 Hz, 1H), 7.67 (d, J=9.1 Hz, 1H), 7.64 (d, J=8.2 Hz, 1H), 6.45 (d, J=8.2 Hz, 1H), 4.21 (s, 3H), 3.01 (s, 4H), 2.96 (s, 4H). $ ^{13}\\text{C} $ NMR (CDCl $ _3 $, 100 MHz): $ \\delta = 143.98 $, 143.15, 131.98, 131.94, 130.80, 123.87, 120.77, 112.73, 109.55, 104.79, 71.32, 40.94, 36.67.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p009-b009",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p009-b009"
+    ],
+    "translation_unit_protected_source_text": "6a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta = 7.77 $ (d, J=9.1 Hz, 1H), 7.67 (d, J=9.1 Hz, 1H), 7.64 (d, J=8.2 Hz, 1H), 6.45 (d, J=8.2 Hz, 1H), 4.21 (s, 3H), 3.01 (s, 4H), 2.96 (s, 4H). $ ^{13}\\text{C} $ NMR (CDCl $ _3 $, 100 MHz): $ \\delta = 143.98 $, 143.15, 131.98, 131.94, 130.80, 123.87, 120.77, 112.73, 109.55, 104.79, 71.32, 40.94, 36.67.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "6a. $ ^{1}\\text{H} $ 核磁共振 (CDCl $ _3 $, 400 MHz): $ \\delta = 7.77 $ (d, J=9.1 Hz, 1H), 7.67 (d, J=9.1 Hz, 1H), 7.64 (d, J=8.2 Hz, 1H), 6.45 (d, J=8.2 Hz, 1H), 4.21 (s, 3H), 3.01 (s, 4H), 2.96 (s, 4H). $ ^{13}\\text{C} $ 核磁共振 (CDCl $ _3 $, 100 MHz): $ \\delta = 143.98 $, 143.15, 131.98, 131.94, 130.80, 123.87, 120.77, 112.73, 109.55, 104.79, 71.32, 40.94, 36.67.",
+    "translation_unit_translated_text": "6a. $ ^{1}\\text{H} $ 核磁共振 (CDCl $ _3 $, 400 MHz): $ \\delta = 7.77 $ (d, J=9.1 Hz, 1H), 7.67 (d, J=9.1 Hz, 1H), 7.64 (d, J=8.2 Hz, 1H), 6.45 (d, J=8.2 Hz, 1H), 4.21 (s, 3H), 3.01 (s, 4H), 2.96 (s, 4H). $ ^{13}\\text{C} $ 核磁共振 (CDCl $ _3 $, 100 MHz): $ \\delta = 143.98 $, 143.15, 131.98, 131.94, 130.80, 123.87, 120.77, 112.73, 109.55, 104.79, 71.32, 40.94, 36.67.",
+    "protected_translated_text": "6a. $ ^{1}\\text{H} $ 核磁共振 (CDCl $ _3 $, 400 MHz): $ \\delta = 7.77 $ (d, J=9.1 Hz, 1H), 7.67 (d, J=9.1 Hz, 1H), 7.64 (d, J=8.2 Hz, 1H), 6.45 (d, J=8.2 Hz, 1H), 4.21 (s, 3H), 3.01 (s, 4H), 2.96 (s, 4H). $ ^{13}\\text{C} $ 核磁共振 (CDCl $ _3 $, 100 MHz): $ \\delta = 143.98 $, 143.15, 131.98, 131.94, 130.80, 123.87, 120.77, 112.73, 109.55, 104.79, 71.32, 40.94, 36.67.",
+    "translated_text": "6a. $ ^{1}\\text{H} $ 核磁共振 (CDCl $ _3 $, 400 MHz): $ \\delta = 7.77 $ (d, J=9.1 Hz, 1H), 7.67 (d, J=9.1 Hz, 1H), 7.64 (d, J=8.2 Hz, 1H), 6.45 (d, J=8.2 Hz, 1H), 4.21 (s, 3H), 3.01 (s, 4H), 2.96 (s, 4H). $ ^{13}\\text{C} $ 核磁共振 (CDCl $ _3 $, 100 MHz): $ \\delta = 143.98 $, 143.15, 131.98, 131.94, 130.80, 123.87, 120.77, 112.73, 109.55, 104.79, 71.32, 40.94, 36.67.",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p009-b009",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "final_untranslated_recovery"
+      ],
+      "fallback_to": "final_untranslated_recovery",
+      "degradation_reason": "blocking_untranslated_recovered",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p009-b010",
+    "page_idx": 8,
+    "block_idx": 10,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 10,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.983,
+      646.915,
+      291.89,
+      672.835
+    ],
+    "source_text": "HRMS (ESI) (for both 5a and 6a): m/z [M+H] $ ^+ $ calcd for $ C_{13}H_{13}Br_2N_2^+ $: 356.9420, 354.9440, 358.9399; found: 356.9427, 354.9444, 358.9417.",
+    "source_line_texts": [
+      "HRMS (ESI) (for both 5a and 6a): m/z [M+H] $ ^+ $ calcd",
+      "for $ C_{13}H_{13}Br_2N_2 ^+ $: 356.9420, 354.9440, 358.9399;",
+      "found: 356.9427, 354.9444, 358.9417."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.983,
+          646.915,
+          291.89,
+          659.875
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "HRMS (ESI) (for both 5a and 6a): m/z [M+H] $ ^+",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.983,
+          659.875,
+          291.89,
+          672.835
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$ calcd for $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "C_{13}H_{13}Br_2N_2",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "^+ $: 356.9420, 354.9440, 358.9399; found: 356.9427, 354.9444, 358.9417.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-149",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 8,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-149",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 8,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 7,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "HRMS (ESI) (for both 5a and 6a): m/z [M+H] $ ^+ $ calcd for $ C_{13}H_{13}Br_2N_2^+ $: 356.9420, 354.9440, 358.9399; found: 356.9427, 354.9444, 358.9417.",
+    "mixed_original_protected_source_text": "HRMS (ESI) (for both 5a and 6a): m/z [M+H] $ ^+ $ calcd for $ C_{13}H_{13}Br_2N_2^+ $: 356.9420, 354.9440, 358.9399; found: 356.9427, 354.9444, 358.9417.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p009-b010",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p009-b010"
+    ],
+    "translation_unit_protected_source_text": "HRMS (ESI) (for both 5a and 6a): m/z [M+H] $ ^+ $ calcd for $ C_{13}H_{13}Br_2N_2^+ $: 356.9420, 354.9440, 358.9399; found: 356.9427, 354.9444, 358.9417.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "HRMS (ESI) (对 5a 和 6a 两者): m/z [M+H] $^+$ 计算值 $C_{13}H_{13}Br_2N_2^+$: 356.9420, 354.9440, 358.9399; 实测值: 356.9427, 354.9444, 358.9417.",
+    "translation_unit_translated_text": "HRMS (ESI) (对 5a 和 6a 两者): m/z [M+H] $^+$ 计算值 $C_{13}H_{13}Br_2N_2^+$: 356.9420, 354.9440, 358.9399; 实测值: 356.9427, 354.9444, 358.9417.",
+    "protected_translated_text": "HRMS (ESI) (对 5a 和 6a 两者): m/z [M+H] $^+$ 计算值 $C_{13}H_{13}Br_2N_2^+$: 356.9420, 354.9440, 358.9399; 实测值: 356.9427, 354.9444, 358.9417.",
+    "translated_text": "HRMS (ESI) (对 5a 和 6a 两者): m/z [M+H] $^+$ 计算值 $C_{13}H_{13}Br_2N_2^+$: 356.9420, 354.9440, 358.9399; 实测值: 356.9427, 354.9444, 358.9417.",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p009-b010",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p009-b011",
+    "page_idx": 8,
+    "block_idx": 11,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 11,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      682.911,
+      292.39,
+      745.903
+    ],
+    "source_text": "4,6,9-tribromo-(4a) and 4,6,7-tribromo-(12a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (10 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at $ -20^{\\circ} $C for 10 min, and a 1.6 M solution of n-BuLi in hexanes",
+    "source_line_texts": [
+      "4,6,9-tribromo-(4a) and 4,6,7-tribromo-(12a) 1,3-dimethyl-2,3-dihydro-1H-perimidines.",
+      "Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried",
+      "round-bottomed flask. Freshly distilled over sodium/benzophenone",
+      "toluene was added (10 mL). The flask was filled with argon",
+      "and closed with a septa cap. The mixture was kept at $ -20^{\\circ}",
+      "$C for 10 min, and a 1.6 M solution of n-BuLi in hexanes"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          682.911,
+          292.39,
+          695.509
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "4,6,9-tribromo-(4a) and 4,6,7-tribromo-(12a) 1,3-dimethyl-2,3-dihydro-1H-perimidines.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          695.509,
+          292.39,
+          708.108
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Crystals of 2 (100 mg, 0.19 mmol) were placed in",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          708.108,
+          292.39,
+          720.706
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "a flame-dried round-bottomed flask. Freshly distilled",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          720.706,
+          292.39,
+          733.305
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "over sodium/benzophenone toluene was added (10 mL).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          733.305,
+          292.39,
+          745.903
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The flask was filled with argon and closed with a septa cap. The mixture was kept at $ -20^{\\circ} $C for 10 min, and a 1.6 M solution of n-BuLi in hexanes",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-150",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 9,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-150",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 9,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 8,
+    "layout_zone_size": 9,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "4,6,9-tribromo-(4a) and 4,6,7-tribromo-(12a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (10 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at $ -20^{\\circ} $C for 10 min, and a 1.6 M solution of n-BuLi in hexanes",
+    "mixed_original_protected_source_text": "4,6,9-tribromo-(4a) and 4,6,7-tribromo-(12a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (10 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at $ -20^{\\circ} $C for 10 min, and a 1.6 M solution of n-BuLi in hexanes",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-review-1002",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p009-b011",
+      "p009-b012"
+    ],
+    "translation_unit_protected_source_text": "4,6,9-tribromo-(4a) and 4,6,7-tribromo-(12a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (10 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at $ -20^{\\circ} $C for 10 min, and a 1.6 M solution of n-BuLi in hexanes (0.13 mL, 0.21 mmol) was added via syringe. The yellow mixture was kept at $ -20^\\circ\\mathrm{C} $ for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give inseparable 9.4:1 mixture of 4a and 12a as grayish oil (37 mg, 45%).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "4,6,9-三溴-(4a) 和 4,6,7-三溴-(12a) 1,3-二甲基-2,3-二氢-1H-萘啶。将 2 (100 mg, 0.19 mmol) 的晶体置于火焰干燥的圆底烧瓶中。加入新蒸馏的经钠/二苯甲酮干燥的甲苯 (10 mL)。烧瓶充满氩气，用隔垫盖密封。将混合物在 $ -20^{\\circ} $C 下保持 10 min，通过注射器加入 1.6 M 的正丁基锂己烷溶液 (0.13 mL, 0.21 mmol)。黄色混合物在 $ -20^\\circ\\mathrm{C} $ 下保持 1 h。向反应混合物中加入甲醇 (0.2 mL)。真空除去溶剂。用二氯甲烷萃取产物 (3×10 mL)。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物经硅胶色谱分离，以苯/己烷 10:1 混合液为洗脱剂；收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 和 12a 的 9.4:1 不可分离混合物，为灰白色油状物 (37 mg, 45%)。",
+    "translation_unit_translated_text": "4,6,9-三溴-(4a) 和 4,6,7-三溴-(12a) 1,3-二甲基-2,3-二氢-1H-萘啶。将 2 (100 mg, 0.19 mmol) 的晶体置于火焰干燥的圆底烧瓶中。加入新蒸馏的经钠/二苯甲酮干燥的甲苯 (10 mL)。烧瓶充满氩气，用隔垫盖密封。将混合物在 $ -20^{\\circ} $C 下保持 10 min，通过注射器加入 1.6 M 的正丁基锂己烷溶液 (0.13 mL, 0.21 mmol)。黄色混合物在 $ -20^\\circ\\mathrm{C} $ 下保持 1 h。向反应混合物中加入甲醇 (0.2 mL)。真空除去溶剂。用二氯甲烷萃取产物 (3×10 mL)。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物经硅胶色谱分离，以苯/己烷 10:1 混合液为洗脱剂；收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 和 12a 的 9.4:1 不可分离混合物，为灰白色油状物 (37 mg, 45%)。",
+    "protected_translated_text": "4,6,9-三溴-(4a) 和 4,6,7-三溴-(12a) 1,3-二甲基-2,3-二氢-1H-萘啶。将 2 (100 mg, 0.19 mmol) 的晶体置于火焰干燥的圆底烧瓶中。加入新蒸馏的经钠/二苯甲酮干燥的甲苯 (10 mL)。烧瓶充满氩气，用隔垫盖密封。将混合物在 $ -20^{\\circ} $C 下保持 10 min，通过",
+    "translated_text": "4,6,9-三溴-(4a) 和 4,6,7-三溴-(12a) 1,3-二甲基-2,3-二氢-1H-萘啶。将 2 (100 mg, 0.19 mmol) 的晶体置于火焰干燥的圆底烧瓶中。加入新蒸馏的经钠/二苯甲酮干燥的甲苯 (10 mL)。烧瓶充满氩气，用隔垫盖密封。将混合物在 $ -20^{\\circ} $C 下保持 10 min，通过",
+    "continuation_group": "cg-review-1002",
+    "continuation_prev_text": "",
+    "continuation_next_text": "(0.13 mL, 0.21 mmol) was added via syringe. The yellow mixture was kept at $ -20^\\circ\\mathrm{C} $ for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give inseparable 9.4:1 mixture of 4a and 12a as grayish oil (37 mg, 45%).",
+    "continuation_decision": "review_joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "4,6,9-tribromo-(4a) and 4,6,7-tribromo-(12a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (10 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at $ -20^{\\circ} $C for 10 min, and a 1.6 M solution of n-BuLi in hexanes (0.13 mL, 0.21 mmol) was added via syringe. The yellow mixture was kept at $ -20^\\circ\\mathrm{C} $ for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give inseparable 9.4:1 mixture of 4a and 12a as grayish oil (37 mg, 45%).",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "4,6,9-三溴-(4a) 和 4,6,7-三溴-(12a) 1,3-二甲基-2,3-二氢-1H-萘啶。将 2 (100 mg, 0.19 mmol) 的晶体置于火焰干燥的圆底烧瓶中。加入新蒸馏的经钠/二苯甲酮干燥的甲苯 (10 mL)。烧瓶充满氩气，用隔垫盖密封。将混合物在 $ -20^{\\circ} $C 下保持 10 min，通过注射器加入 1.6 M 的正丁基锂己烷溶液 (0.13 mL, 0.21 mmol)。黄色混合物在 $ -20^\\circ\\mathrm{C} $ 下保持 1 h。向反应混合物中加入甲醇 (0.2 mL)。真空除去溶剂。用二氯甲烷萃取产物 (3×10 mL)。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物经硅胶色谱分离，以苯/己烷 10:1 混合液为洗脱剂；收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 和 12a 的 9.4:1 不可分离混合物，为灰白色油状物 (37 mg, 45%)。",
+    "group_translated_text": "4,6,9-三溴-(4a) 和 4,6,7-三溴-(12a) 1,3-二甲基-2,3-二氢-1H-萘啶。将 2 (100 mg, 0.19 mmol) 的晶体置于火焰干燥的圆底烧瓶中。加入新蒸馏的经钠/二苯甲酮干燥的甲苯 (10 mL)。烧瓶充满氩气，用隔垫盖密封。将混合物在 $ -20^{\\circ} $C 下保持 10 min，通过注射器加入 1.6 M 的正丁基锂己烷溶液 (0.13 mL, 0.21 mmol)。黄色混合物在 $ -20^\\circ\\mathrm{C} $ 下保持 1 h。向反应混合物中加入甲醇 (0.2 mL)。真空除去溶剂。用二氯甲烷萃取产物 (3×10 mL)。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物经硅胶色谱分离，以苯/己烷 10:1 混合液为洗脱剂；收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 和 12a 的 9.4:1 不可分离混合物，为灰白色油状物 (37 mg, 45%)。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p009-b011",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "6a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta = 7.77 $ (d, J=9.1 Hz, 1H), 7.67 (d, J=9.1 Hz, 1H), 7.64 (d, J=8.2 Hz, 1H), 6.45 (d, J=8.2 Hz, 1H), 4.21 (s, 3H), 3.01 (s, 4H), 2.96 (s, 4H). $ ^{13}\\text{C} $ NMR (CDCl $ _3 $, 100 MHz): $ \\delta = 143.98 $, 143.15, 131.98, 131.94, 130.80, 123.87, 120.77, 112.73, 109.55, 104.79, 71.32, 40.94, 36.67....",
+    "translation_context_after": "(0.13 mL, 0.21 mmol) was added via syringe. The yellow mixture was kept at $ -20^\\circ\\mathrm{C} $ for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo...."
+  },
+  {
+    "item_id": "p009-b012",
+    "page_idx": 8,
+    "block_idx": 12,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 12,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.886,
+      63.992,
+      550.293,
+      166.978
+    ],
+    "source_text": "(0.13 mL, 0.21 mmol) was added via syringe. The yellow mixture was kept at $ -20^\\circ\\mathrm{C} $ for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give inseparable 9.4:1 mixture of 4a and 12a as grayish oil (37 mg, 45%).",
+    "source_line_texts": [
+      "(0.13 mL, 0.21 mmol) was added via syringe. The yellow mixture",
+      "was kept at $ -20^ \\circ\\mathrm {C} $ for 1 h. Methanol (0.2",
+      "mL) was added to the reaction mixture. The solvent was removed",
+      "in vacuo. The products were extracted with dichloromethane",
+      "(3×10 mL). Organic layers were combined and dried over anhydrous",
+      "sodium sulfate. The solvent was removed in vacuo. The residue",
+      "was chromatographed on silica using a mixture of benzene/hexane",
+      "10:1 as eluent; colorless fraction with $ R_f=0.5 $ was",
+      "collected. The solvent was removed in vacuo to give inseparable",
+      "9.4:1 mixture of 4a and 12a as grayish oil (37 mg, 45%)."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.886,
+          63.992,
+          550.293,
+          75.435
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(0.13 mL, 0.21 mmol) was added via syringe. The",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          75.435,
+          550.293,
+          86.878
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "yellow mixture was kept at $ -20^",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\circ\\mathrm",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "{C}",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          86.878,
+          550.293,
+          98.321
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "$ for 1 h. Methanol (0.2 mL) was added to the reaction",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          98.321,
+          550.293,
+          109.764
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "mixture. The solvent was removed in vacuo. The products",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          109.764,
+          550.293,
+          121.206
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "were extracted with dichloromethane (3×10 mL). Organic",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          121.206,
+          550.293,
+          132.649
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "layers were combined and dried over anhydrous sodium",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          132.649,
+          550.293,
+          144.092
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "sulfate. The solvent was removed in vacuo. The residue",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          144.092,
+          550.293,
+          155.535
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "was chromatographed on silica using a mixture of",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          155.535,
+          550.293,
+          166.978
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "benzene/hexane 10:1 as eluent; colorless fraction with $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "R_f=0.5",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ was collected. The solvent was removed in vacuo to give inseparable 9.4:1 mixture of 4a and 12a as grayish oil (37 mg, 45%).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-151",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 10,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-151",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 10,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "(0.13 mL, 0.21 mmol) was added via syringe. The yellow mixture was kept at $ -20^\\circ\\mathrm{C} $ for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give inseparable 9.4:1 mixture of 4a and 12a as grayish oil (37 mg, 45%).",
+    "mixed_original_protected_source_text": "(0.13 mL, 0.21 mmol) was added via syringe. The yellow mixture was kept at $ -20^\\circ\\mathrm{C} $ for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give inseparable 9.4:1 mixture of 4a and 12a as grayish oil (37 mg, 45%).",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-review-1002",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p009-b011",
+      "p009-b012"
+    ],
+    "translation_unit_protected_source_text": "4,6,9-tribromo-(4a) and 4,6,7-tribromo-(12a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (10 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at $ -20^{\\circ} $C for 10 min, and a 1.6 M solution of n-BuLi in hexanes (0.13 mL, 0.21 mmol) was added via syringe. The yellow mixture was kept at $ -20^\\circ\\mathrm{C} $ for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give inseparable 9.4:1 mixture of 4a and 12a as grayish oil (37 mg, 45%).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "4,6,9-三溴-(4a) 和 4,6,7-三溴-(12a) 1,3-二甲基-2,3-二氢-1H-萘啶。将 2 (100 mg, 0.19 mmol) 的晶体置于火焰干燥的圆底烧瓶中。加入新蒸馏的经钠/二苯甲酮干燥的甲苯 (10 mL)。烧瓶充满氩气，用隔垫盖密封。将混合物在 $ -20^{\\circ} $C 下保持 10 min，通过注射器加入 1.6 M 的正丁基锂己烷溶液 (0.13 mL, 0.21 mmol)。黄色混合物在 $ -20^\\circ\\mathrm{C} $ 下保持 1 h。向反应混合物中加入甲醇 (0.2 mL)。真空除去溶剂。用二氯甲烷萃取产物 (3×10 mL)。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物经硅胶色谱分离，以苯/己烷 10:1 混合液为洗脱剂；收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 和 12a 的 9.4:1 不可分离混合物，为灰白色油状物 (37 mg, 45%)。",
+    "translation_unit_translated_text": "4,6,9-三溴-(4a) 和 4,6,7-三溴-(12a) 1,3-二甲基-2,3-二氢-1H-萘啶。将 2 (100 mg, 0.19 mmol) 的晶体置于火焰干燥的圆底烧瓶中。加入新蒸馏的经钠/二苯甲酮干燥的甲苯 (10 mL)。烧瓶充满氩气，用隔垫盖密封。将混合物在 $ -20^{\\circ} $C 下保持 10 min，通过注射器加入 1.6 M 的正丁基锂己烷溶液 (0.13 mL, 0.21 mmol)。黄色混合物在 $ -20^\\circ\\mathrm{C} $ 下保持 1 h。向反应混合物中加入甲醇 (0.2 mL)。真空除去溶剂。用二氯甲烷萃取产物 (3×10 mL)。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物经硅胶色谱分离，以苯/己烷 10:1 混合液为洗脱剂；收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 和 12a 的 9.4:1 不可分离混合物，为灰白色油状物 (37 mg, 45%)。",
+    "protected_translated_text": "注射器加入 1.6 M 的正丁基锂己烷溶液 (0.13 mL, 0.21 mmol)。黄色混合物在 $ -20^\\circ\\mathrm{C} $ 下保持 1 h。向反应混合物中加入甲醇 (0.2 mL)。真空除去溶剂。用二氯甲烷萃取产物 (3×10 mL)。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物经硅胶色谱分离，以苯/己烷 10:1 混合液为洗脱剂；收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 和 12a 的 9.4:1 不可分离混合物，为灰白色油状物 (37 mg, 45%)。",
+    "translated_text": "注射器加入 1.6 M 的正丁基锂己烷溶液 (0.13 mL, 0.21 mmol)。黄色混合物在 $ -20^\\circ\\mathrm{C} $ 下保持 1 h。向反应混合物中加入甲醇 (0.2 mL)。真空除去溶剂。用二氯甲烷萃取产物 (3×10 mL)。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物经硅胶色谱分离，以苯/己烷 10:1 混合液为洗脱剂；收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 和 12a 的 9.4:1 不可分离混合物，为灰白色油状物 (37 mg, 45%)。",
+    "continuation_group": "cg-review-1002",
+    "continuation_prev_text": "4,6,9-tribromo-(4a) and 4,6,7-tribromo-(12a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (10 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at $ -20^{\\circ} $C for 10 min, and a 1.6 M solution of n-BuLi in hexanes",
+    "continuation_next_text": "",
+    "continuation_decision": "review_joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "4,6,9-tribromo-(4a) and 4,6,7-tribromo-(12a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (10 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at $ -20^{\\circ} $C for 10 min, and a 1.6 M solution of n-BuLi in hexanes (0.13 mL, 0.21 mmol) was added via syringe. The yellow mixture was kept at $ -20^\\circ\\mathrm{C} $ for 1 h. Methanol (0.2 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using a mixture of benzene/hexane 10:1 as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give inseparable 9.4:1 mixture of 4a and 12a as grayish oil (37 mg, 45%).",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "4,6,9-三溴-(4a) 和 4,6,7-三溴-(12a) 1,3-二甲基-2,3-二氢-1H-萘啶。将 2 (100 mg, 0.19 mmol) 的晶体置于火焰干燥的圆底烧瓶中。加入新蒸馏的经钠/二苯甲酮干燥的甲苯 (10 mL)。烧瓶充满氩气，用隔垫盖密封。将混合物在 $ -20^{\\circ} $C 下保持 10 min，通过注射器加入 1.6 M 的正丁基锂己烷溶液 (0.13 mL, 0.21 mmol)。黄色混合物在 $ -20^\\circ\\mathrm{C} $ 下保持 1 h。向反应混合物中加入甲醇 (0.2 mL)。真空除去溶剂。用二氯甲烷萃取产物 (3×10 mL)。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物经硅胶色谱分离，以苯/己烷 10:1 混合液为洗脱剂；收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 和 12a 的 9.4:1 不可分离混合物，为灰白色油状物 (37 mg, 45%)。",
+    "group_translated_text": "4,6,9-三溴-(4a) 和 4,6,7-三溴-(12a) 1,3-二甲基-2,3-二氢-1H-萘啶。将 2 (100 mg, 0.19 mmol) 的晶体置于火焰干燥的圆底烧瓶中。加入新蒸馏的经钠/二苯甲酮干燥的甲苯 (10 mL)。烧瓶充满氩气，用隔垫盖密封。将混合物在 $ -20^{\\circ} $C 下保持 10 min，通过注射器加入 1.6 M 的正丁基锂己烷溶液 (0.13 mL, 0.21 mmol)。黄色混合物在 $ -20^\\circ\\mathrm{C} $ 下保持 1 h。向反应混合物中加入甲醇 (0.2 mL)。真空除去溶剂。用二氯甲烷萃取产物 (3×10 mL)。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物经硅胶色谱分离，以苯/己烷 10:1 混合液为洗脱剂；收集 $ R_f=0.5 $ 的无色馏分。真空除去溶剂，得到 4a 和 12a 的 9.4:1 不可分离混合物，为灰白色油状物 (37 mg, 45%)。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p009-b012",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "HRMS (ESI) (for both 5a and 6a): m/z [M+H] $ ^+ $ calcd for $ C_{13}H_{13}Br_2N_2^+ $: 356.9420, 354.9440, 358.9399; found: 356.9427, 354.9444, 358.9417. / 4,6,9-tribromo-(4a) and 4,6,7-tribromo-(12a) 1,3-dimethyl-2,3-dihydro-1H-perimidines. Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/be...",
+    "translation_context_after": "12a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta=8.07 $ (s, 1H), 7.79 (d, J=8.4 Hz, 1H), 6.45 (d, J=8.5 Hz, 1H), 4.16 (s, 2H), 3.02 (s, 3H), 2.91 (s, 4H). / 4-bromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (9a). Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was..."
+  },
+  {
+    "item_id": "p009-b013",
+    "page_idx": 8,
+    "block_idx": 13,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 13,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      302.886,
+      171.978,
+      549.793,
+      193.975
+    ],
+    "source_text": "12a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta=8.07 $ (s, 1H), 7.79 (d, J=8.4 Hz, 1H), 6.45 (d, J=8.5 Hz, 1H), 4.16 (s, 2H), 3.02 (s, 3H), 2.91 (s, 4H).",
+    "source_line_texts": [
+      "12a. $ ^{1} \\text{H} $ NMR (CDCl $ _3 $, 400 MHz) : $ \\delta=8.07",
+      "$ (s, 1H), 7.79 (d, J=8.4 Hz, 1H), 6.45 (d, J=8.5 Hz, 1H),",
+      "4.16 (s, 2H), 3.02 (s, 3H), 2.91 (s, 4H)."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          302.886,
+          171.978,
+          549.793,
+          193.975
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "12a. $ ^{1}",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\text{H}",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "NMR (CDCl $ _3 $, 400 MHz)",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "type": "text",
+            "content": ": $",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "\\delta=8.07",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ (s, 1H), 7.79 (d, J=8.4 Hz, 1H), 6.45 (d, J=8.5 Hz, 1H), 4.16 (s, 2H), 3.02 (s, 3H), 2.91 (s, 4H).",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-152",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 11,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-152",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 11,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "12a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta=8.07 $ (s, 1H), 7.79 (d, J=8.4 Hz, 1H), 6.45 (d, J=8.5 Hz, 1H), 4.16 (s, 2H), 3.02 (s, 3H), 2.91 (s, 4H).",
+    "mixed_original_protected_source_text": "12a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta=8.07 $ (s, 1H), 7.79 (d, J=8.4 Hz, 1H), 6.45 (d, J=8.5 Hz, 1H), 4.16 (s, 2H), 3.02 (s, 3H), 2.91 (s, 4H).",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p009-b013",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p009-b013"
+    ],
+    "translation_unit_protected_source_text": "12a. $ ^{1}\\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \\delta=8.07 $ (s, 1H), 7.79 (d, J=8.4 Hz, 1H), 6.45 (d, J=8.5 Hz, 1H), 4.16 (s, 2H), 3.02 (s, 3H), 2.91 (s, 4H).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "12a. $^{1}\\text{H}$ NMR (CDCl$_3$, 400 MHz): $\\delta=8.07$ (s, 1H), 7.79 (d, J=8.4 Hz, 1H), 6.45 (d, J=8.5 Hz, 1H), 4.16 (s, 2H), 3.02 (s, 3H), 2.91 (s, 4H).",
+    "translation_unit_translated_text": "12a. $^{1}\\text{H}$ NMR (CDCl$_3$, 400 MHz): $\\delta=8.07$ (s, 1H), 7.79 (d, J=8.4 Hz, 1H), 6.45 (d, J=8.5 Hz, 1H), 4.16 (s, 2H), 3.02 (s, 3H), 2.91 (s, 4H).",
+    "protected_translated_text": "12a. $^{1}\\text{H}$ NMR (CDCl$_3$, 400 MHz): $\\delta=8.07$ (s, 1H), 7.79 (d, J=8.4 Hz, 1H), 6.45 (d, J=8.5 Hz, 1H), 4.16 (s, 2H), 3.02 (s, 3H), 2.91 (s, 4H).",
+    "translated_text": "12a. $^{1}\\text{H}$ NMR (CDCl$_3$, 400 MHz): $\\delta=8.07$ (s, 1H), 7.79 (d, J=8.4 Hz, 1H), 6.45 (d, J=8.5 Hz, 1H), 4.16 (s, 2H), 3.02 (s, 3H), 2.91 (s, 4H).",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p009-b013",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p009-b014",
+    "page_idx": 8,
+    "block_idx": 14,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 14,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      199.474,
+      550.793,
+      352.954
+    ],
+    "source_text": "4-bromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (9a). Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (10 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at -20°C for 10 min, and a 1.6 M solution of n-BuLi in hexanes (1 mL, 1.6 mmol) was added via syringe. The bright-yellow mixture was kept at 25°C for 1 h. Methanol (0.5 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give 9a as colorless crystals (24 mg, 46%) with mp 103–104°C.",
+    "source_line_texts": [
+      "4-bromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (9a). Crystals",
+      "of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed",
+      "flask. Freshly distilled over sodium/benzophenone toluene",
+      "was added (10 mL). The flask was filled with argon and closed",
+      "with a septa cap. The mixture was kept at -20°C for 10 min,",
+      "and a 1.6 M solution of n-BuLi in hexanes (1 mL, 1.6 mmol)",
+      "was added via syringe. The bright-yellow mixture was kept",
+      "at 25°C for 1 h. Methanol (0.5 mL) was added to the reaction",
+      "mixture. The solvent was removed in vacuo. The products",
+      "were extracted with dichloromethane (3×10 mL). Organic layers",
+      "were combined and dried over anhydrous sodium sulfate. The",
+      "solvent was removed in vacuo. The residue was chromatographed",
+      "on silica using benzene as eluent; colorless fraction with",
+      "$ R_f=0.5 $ was collected. The solvent was removed in vacuo to give 9a as colorless crystals (24 mg, 46%) with mp 103–104°C."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          199.474,
+          550.793,
+          211.28
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "4-bromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (9a).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          211.28,
+          550.793,
+          223.086
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Crystals of 2 (100 mg, 0.19 mmol) were placed in",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          223.086,
+          550.793,
+          234.892
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "a flame-dried round-bottomed flask. Freshly distilled",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          234.892,
+          550.793,
+          246.699
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "over sodium/benzophenone toluene was added (10 mL).",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          246.699,
+          550.793,
+          258.505
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The flask was filled with argon and closed with",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          258.505,
+          550.793,
+          270.311
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "a septa cap. The mixture was kept at -20°C for 10",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          270.311,
+          550.793,
+          282.117
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "min, and a 1.6 M solution of n-BuLi in hexanes (1",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          282.117,
+          550.793,
+          293.923
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "mL, 1.6 mmol) was added via syringe. The bright-yellow",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          293.923,
+          550.793,
+          305.729
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "mixture was kept at 25°C for 1 h. Methanol (0.5",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          305.729,
+          550.793,
+          317.536
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "mL) was added to the reaction mixture. The solvent",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          317.536,
+          550.793,
+          329.342
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "was removed in vacuo. The products were extracted",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          329.342,
+          550.793,
+          341.148
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "with dichloromethane (3×10 mL). Organic layers were",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          341.148,
+          550.793,
+          352.954
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "R_f=0.5",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": "$ was collected. The solvent was removed in vacuo to give 9a as colorless crystals (24 mg, 46%) with mp 103–104°C.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-153",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 12,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-153",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 12,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "4-bromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (9a). Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (10 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at -20°C for 10 min, and a 1.6 M solution of n-BuLi in hexanes (1 mL, 1.6 mmol) was added via syringe. The bright-yellow mixture was kept at 25°C for 1 h. Methanol (0.5 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give 9a as colorless crystals (24 mg, 46%) with mp 103–104°C.",
+    "mixed_original_protected_source_text": "4-bromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (9a). Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (10 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at -20°C for 10 min, and a 1.6 M solution of n-BuLi in hexanes (1 mL, 1.6 mmol) was added via syringe. The bright-yellow mixture was kept at 25°C for 1 h. Methanol (0.5 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give 9a as colorless crystals (24 mg, 46%) with mp 103–104°C.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p009-b014",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p009-b014"
+    ],
+    "translation_unit_protected_source_text": "4-bromo-1,3-dimethyl-2,3-dihydro-1H-perimidine (9a). Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried round-bottomed flask. Freshly distilled over sodium/benzophenone toluene was added (10 mL). The flask was filled with argon and closed with a septa cap. The mixture was kept at -20°C for 10 min, and a 1.6 M solution of n-BuLi in hexanes (1 mL, 1.6 mmol) was added via syringe. The bright-yellow mixture was kept at 25°C for 1 h. Methanol (0.5 mL) was added to the reaction mixture. The solvent was removed in vacuo. The products were extracted with dichloromethane (3×10 mL). Organic layers were combined and dried over anhydrous sodium sulfate. The solvent was removed in vacuo. The residue was chromatographed on silica using benzene as eluent; colorless fraction with $ R_f=0.5 $ was collected. The solvent was removed in vacuo to give 9a as colorless crystals (24 mg, 46%) with mp 103–104°C.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "4-溴-1,3-二甲基-2,3-二氢-1H-芘啶 (9a)。将化合物 2 的晶体（100 mg，0.19 mmol）置于经火焰干燥的圆底烧瓶中。加入经钠/二苯甲酮新鲜蒸馏的甲苯（10 mL）。烧瓶充入氩气，并用隔膜盖密封。混合物于-20°C 保持 10 min，然后用注射器加入溶解于己烷中的 1.6 M $n$-BuLi 溶液（1 mL，1.6 mmol）。亮黄色混合物于 25°C 保持 1 h。向反应混合物中加入甲醇（0.5 mL）。真空除去溶剂。用二氯甲烷（3×10 mL）萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。粗产物在硅胶柱上进行色谱分离，以苯为洗脱剂；收集 $R_f=0.5$ 的无色组分。真空除去溶剂，得到无色晶体状 9a（24 mg，46%），熔点为 103–104°C。",
+    "translation_unit_translated_text": "4-溴-1,3-二甲基-2,3-二氢-1H-芘啶 (9a)。将化合物 2 的晶体（100 mg，0.19 mmol）置于经火焰干燥的圆底烧瓶中。加入经钠/二苯甲酮新鲜蒸馏的甲苯（10 mL）。烧瓶充入氩气，并用隔膜盖密封。混合物于-20°C 保持 10 min，然后用注射器加入溶解于己烷中的 1.6 M $n$-BuLi 溶液（1 mL，1.6 mmol）。亮黄色混合物于 25°C 保持 1 h。向反应混合物中加入甲醇（0.5 mL）。真空除去溶剂。用二氯甲烷（3×10 mL）萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。粗产物在硅胶柱上进行色谱分离，以苯为洗脱剂；收集 $R_f=0.5$ 的无色组分。真空除去溶剂，得到无色晶体状 9a（24 mg，46%），熔点为 103–104°C。",
+    "protected_translated_text": "4-溴-1,3-二甲基-2,3-二氢-1H-芘啶 (9a)。将化合物 2 的晶体（100 mg，0.19 mmol）置于经火焰干燥的圆底烧瓶中。加入经钠/二苯甲酮新鲜蒸馏的甲苯（10 mL）。烧瓶充入氩气，并用隔膜盖密封。混合物于-20°C 保持 10 min，然后用注射器加入溶解于己烷中的 1.6 M $n$-BuLi 溶液（1 mL，1.6 mmol）。亮黄色混合物于 25°C 保持 1 h。向反应混合物中加入甲醇（0.5 mL）。真空除去溶剂。用二氯甲烷（3×10 mL）萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。粗产物在硅胶柱上进行色谱分离，以苯为洗脱剂；收集 $R_f=0.5$ 的无色组分。真空除去溶剂，得到无色晶体状 9a（24 mg，46%），熔点为 103–104°C。",
+    "translated_text": "4-溴-1,3-二甲基-2,3-二氢-1H-芘啶 (9a)。将化合物 2 的晶体（100 mg，0.19 mmol）置于经火焰干燥的圆底烧瓶中。加入经钠/二苯甲酮新鲜蒸馏的甲苯（10 mL）。烧瓶充入氩气，并用隔膜盖密封。混合物于-20°C 保持 10 min，然后用注射器加入溶解于己烷中的 1.6 M $n$-BuLi 溶液（1 mL，1.6 mmol）。亮黄色混合物于 25°C 保持 1 h。向反应混合物中加入甲醇（0.5 mL）。真空除去溶剂。用二氯甲烷（3×10 mL）萃取产物。合并有机层，用无水硫酸钠干燥。真空除去溶剂。粗产物在硅胶柱上进行色谱分离，以苯为洗脱剂；收集 $R_f=0.5$ 的无色组分。真空除去溶剂，得到无色晶体状 9a（24 mg，46%），熔点为 103–104°C。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p009-b014",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p009-b015",
+    "page_idx": 8,
+    "block_idx": 15,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 15,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      302.386,
+      357.453,
+      550.293,
+      420.445
+    ],
+    "source_text": "¹H NMR (CDCl₃, 400 MHz): δ = 7.69–7.54 (m, 2H), 7.46 (dd, J=8.5, 7.6 Hz, 1H), 6.63 (d, J=7.6 Hz, 1H), 6.40 (d, J=8.2 Hz, 1H), 4.18 (s, 2H), 3.03 (s, 3H), 3.00 (s, 3H). ¹³C NMR (CDCl₃, 100 MHz): δ = 144.58, 144.29, 132.75, 130.54, 128.16, 116.74, 115.73, 110.42, 104.34, 103.80, 70.23, 37.04, 36.89. HRMS (ESI): m/z [M–H]⁺ calcd for C₁₃H₁₂BrN₂⁺: 275.0178, 277.0158; found: 275.0183, 277.0164.",
+    "source_line_texts": [
+      "¹H NMR (CDCl₃, 400 MHz): δ = 7.69–7.54 (m, 2H), 7.46 (dd,",
+      "J=8.5, 7.6 Hz, 1H), 6.63 (d, J=7.6 Hz, 1H), 6.40 (d, J=8.2",
+      "Hz, 1H), 4.18 (s, 2H), 3.03 (s, 3H), 3.00 (s, 3H). ¹³C NMR",
+      "(CDCl₃, 100 MHz): δ = 144.58, 144.29, 132.75, 130.54, 128.16,",
+      "116.74, 115.73, 110.42, 104.34, 103.80, 70.23, 37.04, 36.89.",
+      "HRMS (ESI): m/z [M–H]⁺ calcd for C₁₃H₁₂BrN₂⁺: 275.0178, 277.0158; found: 275.0183, 277.0164."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          302.386,
+          357.453,
+          550.293,
+          370.051
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "¹H NMR (CDCl₃, 400 MHz): δ = 7.69–7.54 (m, 2H),",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          302.386,
+          370.051,
+          550.293,
+          382.65
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "7.46 (dd, J=8.5, 7.6 Hz, 1H), 6.63 (d, J=7.6 Hz,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          302.386,
+          382.65,
+          550.293,
+          395.248
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "1H), 6.40 (d, J=8.2 Hz, 1H), 4.18 (s, 2H), 3.03",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          302.386,
+          395.248,
+          550.293,
+          407.847
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(s, 3H), 3.00 (s, 3H). ¹³C NMR (CDCl₃, 100 MHz):",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          302.386,
+          407.847,
+          550.293,
+          420.445
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "δ = 144.58, 144.29, 132.75, 130.54, 128.16, 116.74, 115.73, 110.42, 104.34, 103.80, 70.23, 37.04, 36.89. HRMS (ESI): m/z [M–H]⁺ calcd for C₁₃H₁₂BrN₂⁺: 275.0178, 277.0158; found: 275.0183, 277.0164.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-154",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 13,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-154",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 13,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 3,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "¹H NMR (CDCl₃, 400 MHz): δ = 7.69–7.54 (m, 2H), 7.46 (dd, J=8.5, 7.6 Hz, 1H), 6.63 (d, J=7.6 Hz, 1H), 6.40 (d, J=8.2 Hz, 1H), 4.18 (s, 2H), 3.03 (s, 3H), 3.00 (s, 3H). ¹³C NMR (CDCl₃, 100 MHz): δ = 144.58, 144.29, 132.75, 130.54, 128.16, 116.74, 115.73, 110.42, 104.34, 103.80, 70.23, 37.04, 36.89. HRMS (ESI): m/z [M–H]⁺ calcd for C₁₃H₁₂BrN₂⁺: 275.0178, 277.0158; found: 275.0183, 277.0164.",
+    "mixed_original_protected_source_text": "¹H NMR (CDCl₃, 400 MHz): δ = 7.69–7.54 (m, 2H), 7.46 (dd, J=8.5, 7.6 Hz, 1H), 6.63 (d, J=7.6 Hz, 1H), 6.40 (d, J=8.2 Hz, 1H), 4.18 (s, 2H), 3.03 (s, 3H), 3.00 (s, 3H). ¹³C NMR (CDCl₃, 100 MHz): δ = 144.58, 144.29, 132.75, 130.54, 128.16, 116.74, 115.73, 110.42, 104.34, 103.80, 70.23, 37.04, 36.89. HRMS (ESI): m/z [M–H]⁺ calcd for C₁₃H₁₂BrN₂⁺: 275.0178, 277.0158; found: 275.0183, 277.0164.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p009-b015",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p009-b015"
+    ],
+    "translation_unit_protected_source_text": "¹H NMR (CDCl₃, 400 MHz): δ = 7.69–7.54 (m, 2H), 7.46 (dd, J=8.5, 7.6 Hz, 1H), 6.63 (d, J=7.6 Hz, 1H), 6.40 (d, J=8.2 Hz, 1H), 4.18 (s, 2H), 3.03 (s, 3H), 3.00 (s, 3H). ¹³C NMR (CDCl₃, 100 MHz): δ = 144.58, 144.29, 132.75, 130.54, 128.16, 116.74, 115.73, 110.42, 104.34, 103.80, 70.23, 37.04, 36.89. HRMS (ESI): m/z [M–H]⁺ calcd for C₁₃H₁₂BrN₂⁺: 275.0178, 277.0158; found: 275.0183, 277.0164.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "¹H NMR (CDCl₃, 400 MHz): δ = 7.69–7.54 (m, 2H), 7.46 (dd, J=8.5, 7.6 Hz, 1H), 6.63 (d, J=7.6 Hz, 1H), 6.40 (d, J=8.2 Hz, 1H), 4.18 (s, 2H), 3.03 (s, 3H), 3.00 (s, 3H). ¹³C NMR (CDCl₃, 100 MHz): δ = 144.58, 144.29, 132.75, 130.54, 128.16, 116.74, 115.73, 110.42, 104.34, 103.80, 70.23, 37.04, 36.89. HRMS (ESI): m/z [M–H]⁺ 计算值 C₁₃H₁₂BrN₂⁺: 275.0178, 277.0158; 实测值: 275.0183, 277.0164.",
+    "translation_unit_translated_text": "¹H NMR (CDCl₃, 400 MHz): δ = 7.69–7.54 (m, 2H), 7.46 (dd, J=8.5, 7.6 Hz, 1H), 6.63 (d, J=7.6 Hz, 1H), 6.40 (d, J=8.2 Hz, 1H), 4.18 (s, 2H), 3.03 (s, 3H), 3.00 (s, 3H). ¹³C NMR (CDCl₃, 100 MHz): δ = 144.58, 144.29, 132.75, 130.54, 128.16, 116.74, 115.73, 110.42, 104.34, 103.80, 70.23, 37.04, 36.89. HRMS (ESI): m/z [M–H]⁺ 计算值 C₁₃H₁₂BrN₂⁺: 275.0178, 277.0158; 实测值: 275.0183, 277.0164.",
+    "protected_translated_text": "¹H NMR (CDCl₃, 400 MHz): δ = 7.69–7.54 (m, 2H), 7.46 (dd, J=8.5, 7.6 Hz, 1H), 6.63 (d, J=7.6 Hz, 1H), 6.40 (d, J=8.2 Hz, 1H), 4.18 (s, 2H), 3.03 (s, 3H), 3.00 (s, 3H). ¹³C NMR (CDCl₃, 100 MHz): δ = 144.58, 144.29, 132.75, 130.54, 128.16, 116.74, 115.73, 110.42, 104.34, 103.80, 70.23, 37.04, 36.89. HRMS (ESI): m/z [M–H]⁺ 计算值 C₁₃H₁₂BrN₂⁺: 275.0178, 277.0158; 实测值: 275.0183, 277.0164.",
+    "translated_text": "¹H NMR (CDCl₃, 400 MHz): δ = 7.69–7.54 (m, 2H), 7.46 (dd, J=8.5, 7.6 Hz, 1H), 6.63 (d, J=7.6 Hz, 1H), 6.40 (d, J=8.2 Hz, 1H), 4.18 (s, 2H), 3.03 (s, 3H), 3.00 (s, 3H). ¹³C NMR (CDCl₃, 100 MHz): δ = 144.58, 144.29, 132.75, 130.54, 128.16, 116.74, 115.73, 110.42, 104.34, 103.80, 70.23, 37.04, 36.89. HRMS (ESI): m/z [M–H]⁺ 计算值 C₁₃H₁₂BrN₂⁺: 275.0178, 277.0158; 实测值: 275.0183, 277.0164.",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p009-b015",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  },
+  {
+    "item_id": "p009-b016",
+    "page_idx": 8,
+    "block_idx": 16,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 16,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.886,
+      426.444,
+      550.293,
+      690.91
+    ],
+    "source_text": "2,4,5,7-Tetrakis(methylthio)-1,3-dimethyl-2,3-dihydro-1H-perimidine\n(17). Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried\nround-bottom flask. Freshly distilled over sodium/benzophenone\nbenzene was added (10 mL). The flask was filled with argon and\nclosed with a septa cap. The mixture was kept at 5 °C for 10 min,\nand a 1.6 M solution of n-BuLi in hexanes (2 mL, 3.2 mmol) was\nadded via syringe. The bright-yellow solution was kept at 25 °C for\n24 h. Dimethyl disulfide (420 μL, 4.8 mmol) was added to reaction\nmixture. All further steps were done in the dark as the target\ncompound is light-sensitive. Reaction mixture was kept at room\ntemperature for 48 h and was added to water (100 mL). Organic\nlayer was separated, and remains of the product were extracted\nwith dichloromethane (3×10 mL). Organic layers were combined\nand dried over anhydrous sodium sulfate. The solvent was removed\nin vacuo. The residue was chromatographed on silica using\ndichloromethane as eluent; yellowish fraction (yellow-greenish\nfluorescence) with Rf=0.5 was collected. The solvent was removed\nin vacuo. The residue was chromatographed on alumina using\nbenzene as eluent; yellowish fraction (yellow-greenish fluorescence)\nwith Rf=0.9 was collected. The solvent was removed in vacuo to\ngive 17 as pale-yellow crystals (44 mg, 59%) with mp 88–\n89 °C. 'H NMR (CDCl3, 400 MHz): δ =7.46 (s, 2H), 4.31 (s, 2H), 3.22 (s,\n6H), 2.55 (s, 6H), 2.52 (s, 6H). ¹³C NMR (CDCl3, 100 MHz): δ =140.34,\n130.23, 129.91, 128.89, 125.19, 123.65, 71.43, 43.31, 21.59, 15.85,\nHRMS (ESI): m/z [M + H]⁺ calcd for C17H23N2S4⁺: 383.0739, 384.0772,\n385.0697; found: 383.0731, 384.0739, 385.0699.",
+    "source_line_texts": [
+      "2,4,5,7-Tetrakis(methylthio)-1,3-dimethyl-2,3-dihydro-1H-perimidine",
+      "(17). Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried",
+      "round-bottom flask. Freshly distilled over sodium/benzophenone",
+      "benzene was added (10 mL). The flask was filled with argon and",
+      "closed with a septa cap. The mixture was kept at 5 °C for 10 min,",
+      "and a 1.6 M solution of n-BuLi in hexanes (2 mL, 3.2 mmol) was",
+      "added via syringe. The bright-yellow solution was kept at 25 °C for",
+      "24 h. Dimethyl disulfide (420 μL, 4.8 mmol) was added to reaction",
+      "mixture. All further steps were done in the dark as the target",
+      "compound is light-sensitive. Reaction mixture was kept at room",
+      "temperature for 48 h and was added to water (100 mL). Organic",
+      "layer was separated, and remains of the product were extracted",
+      "with dichloromethane (3×10 mL). Organic layers were combined",
+      "and dried over anhydrous sodium sulfate. The solvent was removed",
+      "in vacuo. The residue was chromatographed on silica using",
+      "dichloromethane as eluent; yellowish fraction (yellow-greenish",
+      "fluorescence) with Rf=0.5 was collected. The solvent was removed",
+      "in vacuo. The residue was chromatographed on alumina using",
+      "benzene as eluent; yellowish fraction (yellow-greenish fluorescence)",
+      "with Rf=0.9 was collected. The solvent was removed in vacuo to",
+      "give 17 as pale-yellow crystals (44 mg, 59%) with mp 88–",
+      "89 °C. 'H NMR (CDCl3, 400 MHz): δ =7.46 (s, 2H), 4.31 (s, 2H), 3.22 (s,",
+      "6H), 2.55 (s, 6H), 2.52 (s, 6H). ¹³C NMR (CDCl3, 100 MHz): δ =140.34,",
+      "130.23, 129.91, 128.89, 125.19, 123.65, 71.43, 43.31, 21.59, 15.85,",
+      "HRMS (ESI): m/z [M + H]⁺ calcd for C17H23N2S4⁺: 383.0739, 384.0772,",
+      "385.0697; found: 383.0731, 384.0739, 385.0699."
+    ],
+    "text_flow": "preserve_lines",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.886,
+          426.444,
+          550.293,
+          436.616
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "2,4,5,7-Tetrakis(methylthio)-1,3-dimethyl-2,3-dihydro-1H-perimidine",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          436.616,
+          550.293,
+          446.788
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "(17). Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          446.788,
+          550.293,
+          456.959
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "round-bottom flask. Freshly distilled over sodium/benzophenone",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          456.959,
+          550.293,
+          467.131
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "benzene was added (10 mL). The flask was filled with argon and",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          467.131,
+          550.293,
+          477.303
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "closed with a septa cap. The mixture was kept at 5 °C for 10 min,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          477.303,
+          550.293,
+          487.475
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and a 1.6 M solution of n-BuLi in hexanes (2 mL, 3.2 mmol) was",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          487.475,
+          550.293,
+          497.646
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "added via syringe. The bright-yellow solution was kept at 25 °C for",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          497.646,
+          550.293,
+          507.818
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "24 h. Dimethyl disulfide (420",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "inline_equation",
+            "content": "μL",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "content": ", 4.8 mmol) was added to reaction",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          507.818,
+          550.293,
+          517.99
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "mixture. All further steps were done in the dark as the target",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          517.99,
+          550.293,
+          528.162
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "compound is light-sensitive. Reaction mixture was kept at room",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          528.162,
+          550.293,
+          538.333
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "temperature for 48 h and was added to water (100 mL). Organic",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          538.333,
+          550.293,
+          548.505
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "layer was separated, and remains of the product were extracted",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          548.505,
+          550.293,
+          558.677
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "with dichloromethane (3×10 mL). Organic layers were combined",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          558.677,
+          550.293,
+          568.849
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and dried over anhydrous sodium sulfate. The solvent was removed",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          568.849,
+          550.293,
+          579.021
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "in vacuo. The residue was chromatographed on silica using",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          579.021,
+          550.293,
+          589.192
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "dichloromethane as eluent; yellowish fraction (yellow-greenish",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          589.192,
+          550.293,
+          599.364
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "fluorescence) with Rf=0.5 was collected. The solvent was removed",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          599.364,
+          550.293,
+          609.536
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "in vacuo. The residue was chromatographed on alumina using",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          609.536,
+          550.293,
+          619.708
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "benzene as eluent; yellowish fraction (yellow-greenish fluorescence)",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          619.708,
+          550.293,
+          629.879
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "with Rf=0.9 was collected. The solvent was removed in vacuo to",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          629.879,
+          550.293,
+          640.051
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "give 17 as pale-yellow crystals (44 mg, 59%) with mp 88–",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          640.051,
+          550.293,
+          650.223
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "89 °C. 'H NMR (CDCl3, 400 MHz): δ =7.46 (s, 2H), 4.31 (s, 2H), 3.22 (s,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          650.223,
+          550.293,
+          660.395
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "6H), 2.55 (s, 6H), 2.52 (s, 6H). ¹³C NMR (CDCl3, 100 MHz): δ =140.34,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          660.395,
+          550.293,
+          670.566
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "130.23, 129.91, 128.89, 125.19, 123.65, 71.43, 43.31, 21.59, 15.85,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          670.566,
+          550.293,
+          680.738
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "HRMS (ESI): m/z [M + H]⁺ calcd for C17H23N2S4⁺: 383.0739, 384.0772,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.886,
+          680.738,
+          550.293,
+          690.91
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "385.0697; found: 383.0731, 384.0739, 385.0699.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-155",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 14,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-155",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 14,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 4,
+    "layout_zone_size": 5,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "2,4,5,7-Tetrakis(methylthio)-1,3-dimethyl-2,3-dihydro-1H-perimidine\n(17). Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried\nround-bottom flask. Freshly distilled over sodium/benzophenone\nbenzene was added (10 mL). The flask was filled with argon and\nclosed with a septa cap. The mixture was kept at 5 °C for 10 min,\nand a 1.6 M solution of n-BuLi in hexanes (2 mL, 3.2 mmol) was\nadded via syringe. The bright-yellow solution was kept at 25 °C for\n24 h. Dimethyl disulfide (420 μL, 4.8 mmol) was added to reaction\nmixture. All further steps were done in the dark as the target\ncompound is light-sensitive. Reaction mixture was kept at room\ntemperature for 48 h and was added to water (100 mL). Organic\nlayer was separated, and remains of the product were extracted\nwith dichloromethane (3×10 mL). Organic layers were combined\nand dried over anhydrous sodium sulfate. The solvent was removed\nin vacuo. The residue was chromatographed on silica using\ndichloromethane as eluent; yellowish fraction (yellow-greenish\nfluorescence) with Rf=0.5 was collected. The solvent was removed\nin vacuo. The residue was chromatographed on alumina using\nbenzene as eluent; yellowish fraction (yellow-greenish fluorescence)\nwith Rf=0.9 was collected. The solvent was removed in vacuo to\ngive 17 as pale-yellow crystals (44 mg, 59%) with mp 88–\n89 °C. 'H NMR (CDCl3, 400 MHz): δ =7.46 (s, 2H), 4.31 (s, 2H), 3.22 (s,\n6H), 2.55 (s, 6H), 2.52 (s, 6H). ¹³C NMR (CDCl3, 100 MHz): δ =140.34,\n130.23, 129.91, 128.89, 125.19, 123.65, 71.43, 43.31, 21.59, 15.85,\nHRMS (ESI): m/z [M + H]⁺ calcd for C17H23N2S4⁺: 383.0739, 384.0772,\n385.0697; found: 383.0731, 384.0739, 385.0699.",
+    "mixed_original_protected_source_text": "2,4,5,7-Tetrakis(methylthio)-1,3-dimethyl-2,3-dihydro-1H-perimidine\n(17). Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried\nround-bottom flask. Freshly distilled over sodium/benzophenone\nbenzene was added (10 mL). The flask was filled with argon and\nclosed with a septa cap. The mixture was kept at 5 °C for 10 min,\nand a 1.6 M solution of n-BuLi in hexanes (2 mL, 3.2 mmol) was\nadded via syringe. The bright-yellow solution was kept at 25 °C for\n24 h. Dimethyl disulfide (420 μL, 4.8 mmol) was added to reaction\nmixture. All further steps were done in the dark as the target\ncompound is light-sensitive. Reaction mixture was kept at room\ntemperature for 48 h and was added to water (100 mL). Organic\nlayer was separated, and remains of the product were extracted\nwith dichloromethane (3×10 mL). Organic layers were combined\nand dried over anhydrous sodium sulfate. The solvent was removed\nin vacuo. The residue was chromatographed on silica using\ndichloromethane as eluent; yellowish fraction (yellow-greenish\nfluorescence) with Rf=0.5 was collected. The solvent was removed\nin vacuo. The residue was chromatographed on alumina using\nbenzene as eluent; yellowish fraction (yellow-greenish fluorescence)\nwith Rf=0.9 was collected. The solvent was removed in vacuo to\ngive 17 as pale-yellow crystals (44 mg, 59%) with mp 88–\n89 °C. 'H NMR (CDCl3, 400 MHz): δ =7.46 (s, 2H), 4.31 (s, 2H), 3.22 (s,\n6H), 2.55 (s, 6H), 2.52 (s, 6H). ¹³C NMR (CDCl3, 100 MHz): δ =140.34,\n130.23, 129.91, 128.89, 125.19, 123.65, 71.43, 43.31, 21.59, 15.85,\nHRMS (ESI): m/z [M + H]⁺ calcd for C17H23N2S4⁺: 383.0739, 384.0772,\n385.0697; found: 383.0731, 384.0739, 385.0699.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p009-b016",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p009-b016"
+    ],
+    "translation_unit_protected_source_text": "2,4,5,7-Tetrakis(methylthio)-1,3-dimethyl-2,3-dihydro-1H-perimidine\n(17). Crystals of 2 (100 mg, 0.19 mmol) were placed in a flame-dried\nround-bottom flask. Freshly distilled over sodium/benzophenone\nbenzene was added (10 mL). The flask was filled with argon and\nclosed with a septa cap. The mixture was kept at 5 °C for 10 min,\nand a 1.6 M solution of n-BuLi in hexanes (2 mL, 3.2 mmol) was\nadded via syringe. The bright-yellow solution was kept at 25 °C for\n24 h. Dimethyl disulfide (420 μL, 4.8 mmol) was added to reaction\nmixture. All further steps were done in the dark as the target\ncompound is light-sensitive. Reaction mixture was kept at room\ntemperature for 48 h and was added to water (100 mL). Organic\nlayer was separated, and remains of the product were extracted\nwith dichloromethane (3×10 mL). Organic layers were combined\nand dried over anhydrous sodium sulfate. The solvent was removed\nin vacuo. The residue was chromatographed on silica using\ndichloromethane as eluent; yellowish fraction (yellow-greenish\nfluorescence) with Rf=0.5 was collected. The solvent was removed\nin vacuo. The residue was chromatographed on alumina using\nbenzene as eluent; yellowish fraction (yellow-greenish fluorescence)\nwith Rf=0.9 was collected. The solvent was removed in vacuo to\ngive 17 as pale-yellow crystals (44 mg, 59%) with mp 88–\n89 °C. 'H NMR (CDCl3, 400 MHz): δ =7.46 (s, 2H), 4.31 (s, 2H), 3.22 (s,\n6H), 2.55 (s, 6H), 2.52 (s, 6H). ¹³C NMR (CDCl3, 100 MHz): δ =140.34,\n130.23, 129.91, 128.89, 125.19, 123.65, 71.43, 43.31, 21.59, 15.85,\nHRMS (ESI): m/z [M + H]⁺ calcd for C17H23N2S4⁺: 383.0739, 384.0772,\n385.0697; found: 383.0731, 384.0739, 385.0699.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "2,4,5,7-四(甲硫基)-1,3-二甲基-2,3-二氢-1H-苝啶（17）。将2的晶体（100 mg，0.19 mmol）置于火焰干燥的圆底烧瓶中。加入新蒸的钠/二苯甲酮苯（10 mL）。烧瓶充入氩气并用隔膜盖密封。混合物在5°C下保持10 min，然后用注射器加入正丁基锂（n-BuLi）的己烷溶液（1.6 M，2 mL，3.2 mmol）。将亮黄色溶液在25°C下保持24 h。向反应混合物中加入二甲基二硫（420 μL，4.8 mmol）。由于目标化合物对光敏感，后续所有步骤均在避光条件下进行。反应混合物在室温下保持48 h，然后加入水（100 mL）。分离有机层，剩余产物用二氯甲烷萃取（3×10 mL）。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物在硅胶柱上以二氯甲烷为洗脱剂进行色谱分离，收集黄色荧光（黄绿色荧光）组分（Rf=0.5）。真空除去溶剂。残留物在氧化铝柱上以苯为洗脱剂进行色谱分离，收集黄色荧光（黄绿色荧光）组分（Rf=0.9）。真空除去溶剂，得到淡黄色晶体17（44 mg，59%），熔点88–89°C。¹H NMR（CDCl₃，400 MHz）：δ = 7.46（s，2H），4.31（s，2H），3.22（s，6H），2.55（s，6H），2.52（s，6H）。¹³C NMR（CDCl₃，100 MHz）：δ = 140.34，130.23，129.91，128.89，125.19，123.65，71.43，43.31，21.59，15.85。HRMS（ESI）：m/z [M + H]⁺ 计算值 C₁₇H₂₃N₂S₄⁺：383.0739，384.0772，385.0697；实测值：383.0731，384.0739，385.0699。",
+    "translation_unit_translated_text": "2,4,5,7-四(甲硫基)-1,3-二甲基-2,3-二氢-1H-苝啶（17）。将2的晶体（100 mg，0.19 mmol）置于火焰干燥的圆底烧瓶中。加入新蒸的钠/二苯甲酮苯（10 mL）。烧瓶充入氩气并用隔膜盖密封。混合物在5°C下保持10 min，然后用注射器加入正丁基锂（n-BuLi）的己烷溶液（1.6 M，2 mL，3.2 mmol）。将亮黄色溶液在25°C下保持24 h。向反应混合物中加入二甲基二硫（420 μL，4.8 mmol）。由于目标化合物对光敏感，后续所有步骤均在避光条件下进行。反应混合物在室温下保持48 h，然后加入水（100 mL）。分离有机层，剩余产物用二氯甲烷萃取（3×10 mL）。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物在硅胶柱上以二氯甲烷为洗脱剂进行色谱分离，收集黄色荧光（黄绿色荧光）组分（Rf=0.5）。真空除去溶剂。残留物在氧化铝柱上以苯为洗脱剂进行色谱分离，收集黄色荧光（黄绿色荧光）组分（Rf=0.9）。真空除去溶剂，得到淡黄色晶体17（44 mg，59%），熔点88–89°C。¹H NMR（CDCl₃，400 MHz）：δ = 7.46（s，2H），4.31（s，2H），3.22（s，6H），2.55（s，6H），2.52（s，6H）。¹³C NMR（CDCl₃，100 MHz）：δ = 140.34，130.23，129.91，128.89，125.19，123.65，71.43，43.31，21.59，15.85。HRMS（ESI）：m/z [M + H]⁺ 计算值 C₁₇H₂₃N₂S₄⁺：383.0739，384.0772，385.0697；实测值：383.0731，384.0739，385.0699。",
+    "protected_translated_text": "2,4,5,7-四(甲硫基)-1,3-二甲基-2,3-二氢-1H-苝啶（17）。将2的晶体（100 mg，0.19 mmol）置于火焰干燥的圆底烧瓶中。加入新蒸的钠/二苯甲酮苯（10 mL）。烧瓶充入氩气并用隔膜盖密封。混合物在5°C下保持10 min，然后用注射器加入正丁基锂（n-BuLi）的己烷溶液（1.6 M，2 mL，3.2 mmol）。将亮黄色溶液在25°C下保持24 h。向反应混合物中加入二甲基二硫（420 μL，4.8 mmol）。由于目标化合物对光敏感，后续所有步骤均在避光条件下进行。反应混合物在室温下保持48 h，然后加入水（100 mL）。分离有机层，剩余产物用二氯甲烷萃取（3×10 mL）。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物在硅胶柱上以二氯甲烷为洗脱剂进行色谱分离，收集黄色荧光（黄绿色荧光）组分（Rf=0.5）。真空除去溶剂。残留物在氧化铝柱上以苯为洗脱剂进行色谱分离，收集黄色荧光（黄绿色荧光）组分（Rf=0.9）。真空除去溶剂，得到淡黄色晶体17（44 mg，59%），熔点88–89°C。¹H NMR（CDCl₃，400 MHz）：δ = 7.46（s，2H），4.31（s，2H），3.22（s，6H），2.55（s，6H），2.52（s，6H）。¹³C NMR（CDCl₃，100 MHz）：δ = 140.34，130.23，129.91，128.89，125.19，123.65，71.43，43.31，21.59，15.85。HRMS（ESI）：m/z [M + H]⁺ 计算值 C₁₇H₂₃N₂S₄⁺：383.0739，384.0772，385.0697；实测值：383.0731，384.0739，385.0699。",
+    "translated_text": "2,4,5,7-四(甲硫基)-1,3-二甲基-2,3-二氢-1H-苝啶（17）。将2的晶体（100 mg，0.19 mmol）置于火焰干燥的圆底烧瓶中。加入新蒸的钠/二苯甲酮苯（10 mL）。烧瓶充入氩气并用隔膜盖密封。混合物在5°C下保持10 min，然后用注射器加入正丁基锂（n-BuLi）的己烷溶液（1.6 M，2 mL，3.2 mmol）。将亮黄色溶液在25°C下保持24 h。向反应混合物中加入二甲基二硫（420 μL，4.8 mmol）。由于目标化合物对光敏感，后续所有步骤均在避光条件下进行。反应混合物在室温下保持48 h，然后加入水（100 mL）。分离有机层，剩余产物用二氯甲烷萃取（3×10 mL）。合并有机层，用无水硫酸钠干燥。真空除去溶剂。残留物在硅胶柱上以二氯甲烷为洗脱剂进行色谱分离，收集黄色荧光（黄绿色荧光）组分（Rf=0.5）。真空除去溶剂。残留物在氧化铝柱上以苯为洗脱剂进行色谱分离，收集黄色荧光（黄绿色荧光）组分（Rf=0.9）。真空除去溶剂，得到淡黄色晶体17（44 mg，59%），熔点88–89°C。¹H NMR（CDCl₃，400 MHz）：δ = 7.46（s，2H），4.31（s，2H），3.22（s，6H），2.55（s，6H），2.52（s，6H）。¹³C NMR（CDCl₃，100 MHz）：δ = 140.34，130.23，129.91，128.89，125.19，123.65，71.43，43.31，21.59，15.85。HRMS（ESI）：m/z [M + H]⁺ 计算值 C₁₇H₂₃N₂S₄⁺：383.0739，384.0772，385.0697；实测值：383.0731，384.0739，385.0699。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p009-b016",
+      "page_idx": 8,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "",
+    "translation_context_after": ""
+  }
+]

@@ -1,0 +1,441 @@
+/* 阅读器顶栏 chrome（默认 react-pdf 共用）：tabs / boot / 关闭回主页
+ * 顶栏动作组 / 下载菜单 / chrome-muted 淡出 → chrome-legacy.css
+ */
+
+.reader-topbar {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  z-index: 35;
+  z-index: var(--z-chrome, 35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(148px, calc(100vw - 48px));
+  width: min(148px, calc(100dvw - 48px));
+  min-height: 36px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color) 10%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transform: translateX(-50%);
+  transition: opacity 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  will-change: opacity, transform;
+}
+
+/* Reader 顶栏只放场景预设；窗格的自由组合由各自的小选择器负责。 */
+.reader-workspace-bar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  padding: 0 72px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--paper) 72%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.reader-workspace-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+.reader-live-translation-toggle {
+  position: absolute;
+  left: clamp(12px, 2.2vw, 28px);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--ink) 58%, var(--muted));
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--shadow-color) 7%, transparent);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease, border-color 140ms ease, transform 100ms ease;
+}
+
+.reader-live-translation-toggle svg {
+  flex: 0 0 auto;
+}
+
+.reader-live-translation-toggle.is-active {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+  border-color: color-mix(in srgb, var(--ink) 16%, transparent);
+}
+
+.reader-live-translation-toggle.is-connecting svg,
+.reader-live-translation-toggle.is-reconnecting svg {
+  animation: reader-live-translation-pulse 1.2s ease-in-out infinite;
+}
+
+.reader-live-translation-toggle.is-unavailable {
+  border-style: dashed;
+}
+
+.reader-live-translation-toggle:hover {
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.reader-live-translation-toggle:active {
+  transform: scale(0.97);
+}
+
+@keyframes reader-live-translation-pulse {
+  0%, 100% { opacity: 0.42; }
+  50% { opacity: 1; }
+}
+
+@media (max-width: 720px) {
+  .reader-live-translation-toggle {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .reader-live-translation-toggle-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+}
+
+.reader-workspace-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: 34px;
+  min-width: 34px;
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: color-mix(in srgb, var(--ink) 62%, var(--muted));
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 130ms ease, color 130ms ease, transform 100ms ease;
+}
+
+.reader-workspace-tab-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.reader-workspace-tab:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  color: var(--ink);
+}
+
+.reader-workspace-tab.is-active {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 2px 7px color-mix(in srgb, var(--ink) 16%, transparent);
+}
+
+.reader-workspace-tab:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.reader-workspace-tab:disabled {
+  opacity: 0.34;
+  cursor: default;
+}
+
+.reader-pane-selector {
+  position: fixed;
+  top: 50%;
+  z-index: 34;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 96px;
+  transform: translateY(-50%);
+}
+
+.reader-pane-selector.is-left {
+  left: 0;
+}
+
+.reader-pane-selector.is-right {
+  right: 0;
+}
+
+.reader-pane-selector-trigger {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 64px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--ink) 36%, var(--muted));
+  background: color-mix(in srgb, var(--paper) 74%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--shadow-color) 7%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  cursor: pointer;
+  transition: width 140ms ease, color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.reader-pane-selector:hover .reader-pane-selector-trigger,
+.reader-pane-selector:focus-within .reader-pane-selector-trigger,
+.reader-pane-selector.is-open .reader-pane-selector-trigger {
+  width: 34px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color) 11%, transparent);
+}
+
+.reader-pane-selector-menu {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  gap: 2px;
+  width: 178px;
+  padding: 5px;
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--paper) 96%, transparent);
+  box-shadow: 0 18px 48px color-mix(in srgb, var(--shadow-color) 16%, transparent);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  transform: translateY(-50%);
+  animation: reader-pane-menu-in 120ms ease-out both;
+}
+
+.reader-pane-selector.is-left .reader-pane-selector-menu {
+  left: calc(100% - 3px);
+}
+
+.reader-pane-selector.is-right .reader-pane-selector-menu {
+  right: calc(100% - 3px);
+}
+
+.reader-pane-selector-menu button {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 9px;
+  color: color-mix(in srgb, var(--ink) 72%, var(--muted));
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 620;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reader-pane-selector-menu button:hover,
+.reader-pane-selector-menu button:focus-visible {
+  outline: 0;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.reader-pane-selector-menu button.is-selected {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.reader-pane-selector-check-space {
+  width: 14px;
+}
+
+@keyframes reader-pane-menu-in {
+  from { opacity: 0; transform: translateY(-50%) scale(0.97); }
+  to { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+@media (max-width: 899px) {
+  .reader-pane-selector {
+    width: 44px;
+    height: 88px;
+  }
+  .reader-pane-selector-menu {
+    width: 160px;
+  }
+}
+
+.reader-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+}
+
+.reader-topbar.is-source-only {
+  width: 44px;
+}
+
+.reader-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  box-shadow: none;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.reader-tab.is-active {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.reader-tab:hover {
+  background: var(--accent-weak);
+  color: var(--ink);
+}
+
+.reader-tab.is-active:hover {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+/* 整页阅读器「关闭 → 主页」（替代旧 iframe 宿主右上角关闭） */
+.reader-close-home-btn {
+  position: fixed;
+  top: 12px;
+  right: clamp(12px, 2.2vw, 28px);
+  z-index: 36;
+  z-index: var(--z-hud, 36);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0 12px 0 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color) 10%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--ink, var(--ink));
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.reader-close-home-btn:hover {
+  background: var(--paper);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--shadow-color) 14%, transparent);
+}
+
+.reader-close-home-btn:active {
+  transform: scale(0.97);
+}
+
+.reader-close-home-icon {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.reader-close-home-label {
+  line-height: 1;
+}
+
+@media (max-width: 520px) {
+  .reader-close-home-btn {
+    padding: 0;
+    width: 36px;
+  }
+
+  .reader-close-home-label {
+    display: none;
+  }
+}
+
+.reader-boot-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  z-index: var(--z-dialog, 40);
+  display: grid;
+  place-items: center;
+  background: var(--reader-page-bg);
+}
+
+.reader-boot-loading.hidden {
+  display: none;
+}
+
+.reader-boot-loading-card {
+  display: grid;
+  gap: 12px;
+  width: min(320px, calc(100vw - 40px));
+  width: min(320px, calc(100dvw - 40px));
+}
+
+.reader-boot-loading-text {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.reader-boot-loading-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.reader-boot-loading-bar {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ink) 0%, var(--ink) 100%);
+  transition: width 0.24s ease;
+}

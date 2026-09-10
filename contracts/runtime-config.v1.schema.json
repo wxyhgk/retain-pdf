@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/runtime-config/v1",
+  "title": "AI Runtime 配置契约",
+  "description": "services/ai 的 GET/PUT /v1/runtime-config 以及 services/api 的透明代理 /api/v1/ai/runtime-config 共用契约。本契约描述 data 载荷；响应只投影脱敏状态，绝不返回原始模型或 Gateway key。",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/v1/runtime-config",
+      "proxy_path": "/api/v1/ai/runtime-config",
+      "output": "RuntimeConfigView"
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/runtime-config",
+      "proxy_path": "/api/v1/ai/runtime-config",
+      "input": "RuntimeConfigUpdate",
+      "output": "RuntimeConfigView"
+    }
+  ],
+  "definitions": {
+    "ConfiguredRuntime": {
+      "type": "string",
+      "enum": ["python", "openai", "fx"]
+    },
+    "AgentConfirmationMode": {
+      "type": "string",
+      "enum": ["explicit", "green_light"]
+    },
+    "ActiveRuntime": {
+      "type": "string",
+      "enum": [
+        "python-retrieval-v1",
+        "openai-compatible-agent-v1",
+        "vercel-fx-acp-v1"
+      ]
+    },
+    "FxGatewayMode": {
+      "type": "string",
+      "enum": ["inherit_env", "official_default", "custom"]
+    },
+    "RestartState": {
+      "type": "string",
+      "enum": ["active", "pending"]
+    },
+    "RuntimeConfigUpdate": {
+      "type": "object",
+      "description": "RuntimeConfigUpdate 的线格式。全部字段可省略；null 表示不修改对应可空输入。agent_runtime 与 agent_confirmation_mode 在服务端 trim + lowercase 后按规范枚举校验。未知字段会被拒绝，避免拼写错误形成返回成功但未生效的静默 no-op。",
+      "additionalProperties": false,
+      "properties": {
+        "expected_revision": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "agent_runtime": {
+          "type": ["string", "null"],
+          "description": "trim + lowercase 后必须是 python、openai 或 fx。"
+        },
+        "agent_confirmation_mode": {
+          "type": ["string", "null"],
+          "description": "trim + lowercase 后必须是 explicit 或 green_light。"
+        },
+        "llm_base_url": {
+          "type": ["string", "null"],
+          "maxLength": 2048,
+          "description": "非 null 时必须是无内嵌凭据的 http(s) 地址。"
+        },
+        "llm_model": {
+          "type": ["string", "null"],
+          "maxLength": 256
+        },
+        "llm_api_key": {
+          "type": ["string", "null"],
+          "maxLength": 8192,
+          "description": "旧版兼容只写字段；响应与日志不得回显。新客户端应使用 llm_credential_ref。"
+        },
+        "llm_credential_ref": {
+          "type": ["string", "null"],
+          "maxLength": 64,
+          "description": "Rust 凭据库中 kind=agent_llm_api_key 的不透明引用；与 llm_api_key 互斥。"
+        },
+        "clear_llm_api_key": {
+          "type": "boolean",
+          "default": false
+        },
+        "fx_gateway_base_url": {
+          "type": ["string", "null"],
+          "maxLength": 2048,
+          "description": "非 null 时按当前 FX 运行时规则验证；空串选择官方默认 Gateway。"
+        },
+        "fx_gateway_api_key": {
+          "type": ["string", "null"],
+          "maxLength": 8192,
+          "description": "旧版兼容只写字段；响应与日志不得回显。新客户端应使用 fx_gateway_credential_ref。"
+        },
+        "fx_gateway_credential_ref": {
+          "type": ["string", "null"],
+          "maxLength": 64,
+          "description": "Rust 凭据库中 kind=fx_gateway_api_key 的不透明引用；与 fx_gateway_api_key 互斥。"
+        },
+        "clear_fx_gateway_api_key": {
+          "type": "boolean",
+          "default": false
+        },
+        "fx_model": {
+          "type": ["string", "null"],
+          "maxLength": 256
+        }
+      }
+    },
+    "RuntimeConfigView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "active_runtime",
+        "configured_runtime",
+        "agent_confirmation_mode",
+        "configured_revision",
+        "active_revision",
+        "restart_state",
+        "llm_base_url",
+        "llm_model",
+        "llm_credential_ref",
+        "llm_api_key_configured",
+        "llm_api_key_masked",
+        "fx_gateway_base_url",
+        "fx_gateway_mode",
+        "fx_gateway_effective_base_url",
+        "fx_gateway_effective_chat_url",
+        "fx_gateway_credential_ref",
+        "fx_gateway_api_key_configured",
+        "fx_gateway_api_key_masked",
+        "fx_model",
+        "restart_required"
+      ],
+      "properties": {
+        "schema": { "const": "retainpdf_ai_runtime_config_view_v1" },
+        "active_runtime": { "$ref": "#/definitions/ActiveRuntime" },
+        "configured_runtime": { "$ref": "#/definitions/ConfiguredRuntime" },
+        "agent_confirmation_mode": { "$ref": "#/definitions/AgentConfirmationMode" },
+        "configured_revision": { "type": "integer", "minimum": 0 },
+        "active_revision": { "type": "integer", "minimum": 0 },
+        "restart_state": { "$ref": "#/definitions/RestartState" },
+        "llm_base_url": { "type": "string" },
+        "llm_model": { "type": "string" },
+        "llm_credential_ref": { "type": "string", "maxLength": 64 },
+        "llm_api_key_configured": { "type": "boolean" },
+        "llm_api_key_masked": { "type": "string" },
+        "fx_gateway_base_url": { "type": "string" },
+        "fx_gateway_mode": { "$ref": "#/definitions/FxGatewayMode" },
+        "fx_gateway_effective_base_url": { "type": "string" },
+        "fx_gateway_effective_chat_url": { "type": "string" },
+        "fx_gateway_credential_ref": { "type": "string", "maxLength": 64 },
+        "fx_gateway_api_key_configured": { "type": "boolean" },
+        "fx_gateway_api_key_masked": { "type": "string" },
+        "fx_model": { "type": "string" },
+        "restart_required": { "type": "boolean" }
+      }
+    }
+  }
+}

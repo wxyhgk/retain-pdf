@@ -1,0 +1,129 @@
+{
+  "schema": "translation_manifest_v1",
+  "schema_version": 1,
+  "pages": [
+    {
+      "page_index": 0,
+      "page_number": 1,
+      "path": "page-001-deepseek.json"
+    },
+    {
+      "page_index": 1,
+      "page_number": 2,
+      "path": "page-002-deepseek.json"
+    },
+    {
+      "page_index": 2,
+      "page_number": 3,
+      "path": "page-003-deepseek.json"
+    },
+    {
+      "page_index": 3,
+      "page_number": 4,
+      "path": "page-004-deepseek.json"
+    },
+    {
+      "page_index": 4,
+      "page_number": 5,
+      "path": "page-005-deepseek.json"
+    },
+    {
+      "page_index": 5,
+      "page_number": 6,
+      "path": "page-006-deepseek.json"
+    },
+    {
+      "page_index": 6,
+      "page_number": 7,
+      "path": "page-007-deepseek.json"
+    },
+    {
+      "page_index": 7,
+      "page_number": 8,
+      "path": "page-008-deepseek.json"
+    },
+    {
+      "page_index": 8,
+      "page_number": 9,
+      "path": "page-009-deepseek.json"
+    },
+    {
+      "page_index": 9,
+      "page_number": 10,
+      "path": "page-010-deepseek.json"
+    }
+  ],
+  "glossary": {
+    "enabled": false,
+    "glossary_id": "",
+    "glossary_name": "",
+    "entry_count": 0,
+    "level_counts": {
+      "preserve": 0,
+      "canonical": 0,
+      "preferred": 0
+    },
+    "resource_entry_count": 0,
+    "inline_entry_count": 0,
+    "overridden_entry_count": 0,
+    "source_hit_entry_count": 0,
+    "target_hit_entry_count": 0,
+    "unused_entry_count": 0,
+    "unapplied_source_hit_entry_count": 0,
+    "preferred_hit_entry_count": 0,
+    "preferred_adoption_rate": 0.0
+  },
+  "math_mode": "direct_typst",
+  "translation_protocol_version": "v2",
+  "status_summary": {
+    "translated": 86,
+    "partially_translated": 0,
+    "kept_origin": 3,
+    "failed": 0
+  },
+  "route_summary": {
+    "block_level": {
+      "count": 89,
+      "success_rate": 0.9663
+    },
+    "direct_typst": {
+      "count": 67,
+      "success_rate": 0.9701
+    },
+    "continuation_group_members": {
+      "count": 20,
+      "success_rate": 1.0
+    },
+    "final_untranslated_recovery": {
+      "count": 2,
+      "success_rate": 0.5
+    },
+    "dead_letter": {
+      "count": 1,
+      "success_rate": 0.0
+    }
+  },
+  "error_summary": {
+    "validation": 1
+  },
+  "formula_route_summary": {},
+  "heavy_block_split_summary": {},
+  "slow_items": [],
+  "dead_letter_items": [
+    {
+      "item_id": "p009-b008",
+      "page_idx": 8,
+      "reason": "final_untranslated_recovery_failed"
+    }
+  ],
+  "dead_letter_count": 1,
+  "unresolved_items": [],
+  "unresolved_translation_count": 0,
+  "review_issue_count": 0,
+  "review_has_errors": false,
+  "invocation": {
+    "stage": "translate",
+    "input_protocol": "stage_spec",
+    "stage_spec_schema_version": "translate.stage.v1"
+  }
+}

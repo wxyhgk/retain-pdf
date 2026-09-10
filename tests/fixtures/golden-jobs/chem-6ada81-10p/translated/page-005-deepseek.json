@@ -1,0 +1,1487 @@
+[
+  {
+    "item_id": "p005-b004",
+    "page_idx": 4,
+    "block_idx": 4,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 4,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      42.484,
+      449.441,
+      529.301,
+      469.939
+    ],
+    "source_text": "Figure 5. Optimized geometries of studied lithiated species – B3LYP–D3/6-311 + + G(d,p). $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ values are given. Hydrogen atoms are omitted for clarity.",
+    "source_line_texts": [
+      "Figure 5. Optimized geometries of studied lithiated species – B3LYP–D3/6-311 + + G(d,p). $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ values are given. Hydrogen atoms are omitted for clarity."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          42.484,
+          449.441,
+          529.301,
+          469.939
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 5. Optimized geometries of studied lithiated species – B3LYP–D3/6-311 + + G(d,p). $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ values are given. Hydrogen atoms are omitted for clarity.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "full",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "full",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-70",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-70",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "full",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "full_width",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 1,
+    "layout_boundary_role": "single",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 5. Optimized geometries of studied lithiated species – B3LYP–D3/6-311 + + G(d,p). $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ values are given. Hydrogen atoms are omitted for clarity.",
+    "mixed_original_protected_source_text": "Figure 5. Optimized geometries of studied lithiated species – B3LYP–D3/6-311 + + G(d,p). $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ values are given. Hydrogen atoms are omitted for clarity.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b004",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b004"
+    ],
+    "translation_unit_protected_source_text": "Figure 5. Optimized geometries of studied lithiated species – B3LYP–D3/6-311 + + G(d,p). $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ values are given. Hydrogen atoms are omitted for clarity.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图5. 所研究锂化物种的优化几何构型 – B3LYP–D3/6-311 + + G(d,p)。给出了 $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ 值。为清晰起见，氢原子已省略。",
+    "translation_unit_translated_text": "图5. 所研究锂化物种的优化几何构型 – B3LYP–D3/6-311 + + G(d,p)。给出了 $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ 值。为清晰起见，氢原子已省略。",
+    "protected_translated_text": "图5. 所研究锂化物种的优化几何构型 – B3LYP–D3/6-311 + + G(d,p)。给出了 $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ 值。为清晰起见，氢原子已省略。",
+    "translated_text": "图5. 所研究锂化物种的优化几何构型 – B3LYP–D3/6-311 + + G(d,p)。给出了 $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ 值。为清晰起见，氢原子已省略。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p005-b004",
+      "page_idx": 4,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "(Figure 5) demonstrates no such coordination – neither in the presence nor the absence of the toluene saturating coordination demands of lithium. Moreover, the visualization of electron localization function (ELF) and NBO-analysis clearly demonstrate that a lone pair of N2 atom is involved in the conjugation with the aromatic system and effectively interact...",
+    "translation_context_after": "Figure 6. Natural bond orbitals (NBO) for 12b·Tol. Overlapping of lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (left), lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (right). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity. / neighboring amino group. This allows its effec..."
+  },
+  {
+    "item_id": "p005-b006",
+    "page_idx": 4,
+    "block_idx": 6,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "caption",
+    "semantic_role": "metadata",
+    "structure_role": "figure_caption",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 6,
+    "raw_block_type": "figure_title",
+    "normalized_sub_type": "figure_caption",
+    "bbox": [
+      43.484,
+      598.422,
+      291.39,
+      636.417
+    ],
+    "source_text": "Figure 6. Natural bond orbitals (NBO) for 12b·Tol. Overlapping of lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (left), lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (right). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "source_line_texts": [
+      "Figure 6. Natural bond orbitals (NBO) for 12b·Tol. Overlapping of lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (left), lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (right). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          598.422,
+          291.39,
+          636.417
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "Figure 6. Natural bond orbitals (NBO) for 12b·Tol. Overlapping of lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (left), lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (right). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-72",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": -1,
+        "confidence": 0.98
+      },
+      "structure_role": "figure_caption",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-72",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": -1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 3,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "Figure 6. Natural bond orbitals (NBO) for 12b·Tol. Overlapping of lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (left), lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (right). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "mixed_original_protected_source_text": "Figure 6. Natural bond orbitals (NBO) for 12b·Tol. Overlapping of lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (left), lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (right). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "p005-b006",
+    "translation_unit_kind": "single",
+    "translation_unit_member_ids": [
+      "p005-b006"
+    ],
+    "translation_unit_protected_source_text": "Figure 6. Natural bond orbitals (NBO) for 12b·Tol. Overlapping of lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (left), lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (right). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "图 6. 12b·Tol 的自然键轨道（NBO）：N2 氮原子的孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道重叠（左），N1 氮原子的孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道重叠（右）。轨道可视化等值面值为 0.02。为清晰起见，省略了甲苯分子。",
+    "translation_unit_translated_text": "图 6. 12b·Tol 的自然键轨道（NBO）：N2 氮原子的孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道重叠（左），N1 氮原子的孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道重叠（右）。轨道可视化等值面值为 0.02。为清晰起见，省略了甲苯分子。",
+    "protected_translated_text": "图 6. 12b·Tol 的自然键轨道（NBO）：N2 氮原子的孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道重叠（左），N1 氮原子的孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道重叠（右）。轨道可视化等值面值为 0.02。为清晰起见，省略了甲苯分子。",
+    "translated_text": "图 6. 12b·Tol 的自然键轨道（NBO）：N2 氮原子的孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道重叠（左），N1 氮原子的孤对电子与 C–C 反键 $ \\sigma^{*} $ 轨道重叠（右）。轨道可视化等值面值为 0.02。为清晰起见，省略了甲苯分子。",
+    "continuation_group": "",
+    "continuation_prev_text": "",
+    "continuation_next_text": "",
+    "continuation_decision": "",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "",
+    "group_translated_text": "",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p005-b006",
+      "page_idx": 4,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated"
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Altogether, the exchange of bromine in ortho-position leads to the formation of 12b and removes steric pressure on the / Figure 5. Optimized geometries of studied lithiated species – B3LYP–D3/6-311 + + G(d,p). $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ values are given. Hydrogen atoms are omitted for clarity.",
+    "translation_context_after": "neighboring amino group. This allows its effective conjugation, which successfully competes with the planarization of the naphthalene ring and the coordination of bromine to lithium in the case of 4b formation. / To our knowledge, this is the first manifestation of this effect in ortho-lithioanilines. The reason is that this effect is generally \"hidden\" beh..."
+  },
+  {
+    "item_id": "p005-b007",
+    "page_idx": 4,
+    "block_idx": 7,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 7,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      663.913,
+      292.39,
+      711.407
+    ],
+    "source_text": "neighboring amino group. This allows its effective conjugation, which successfully competes with the planarization of the naphthalene ring and the coordination of bromine to lithium in the case of 4b formation.",
+    "source_line_texts": [
+      "neighboring amino group. This allows its effective conjugation,",
+      "which successfully competes with the planarization of the",
+      "naphthalene ring and the coordination of bromine to lithium",
+      "in the case of 4b formation."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          663.913,
+          292.39,
+          675.787
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "neighboring amino group. This allows its effective",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          675.787,
+          292.39,
+          687.66
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "conjugation, which successfully competes with",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          687.66,
+          292.39,
+          699.534
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the planarization of the naphthalene ring and",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          699.534,
+          292.39,
+          711.407
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the coordination of bromine to lithium in the case of 4b formation.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-73",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 1,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-73",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 1,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 3,
+    "layout_boundary_role": "middle",
+    "math_mode": "direct_typst",
+    "protected_source_text": "neighboring amino group. This allows its effective conjugation, which successfully competes with the planarization of the naphthalene ring and the coordination of bromine to lithium in the case of 4b formation.",
+    "mixed_original_protected_source_text": "neighboring amino group. This allows its effective conjugation, which successfully competes with the planarization of the naphthalene ring and the coordination of bromine to lithium in the case of 4b formation.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-004-004",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p004-b009",
+      "p005-b007"
+    ],
+    "translation_unit_protected_source_text": "Altogether, the exchange of bromine in ortho-position leads to the formation of 12b and removes steric pressure on the neighboring amino group. This allows its effective conjugation, which successfully competes with the planarization of the naphthalene ring and the coordination of bromine to lithium in the case of 4b formation.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "总之，邻位溴的交换导致12b的形成，并消除了相邻氨基上的空间位阻。这使得其有效共轭成为可能，从而成功与萘环的平面化以及在4b形成情况下溴与锂的配位相竞争。",
+    "translation_unit_translated_text": "总之，邻位溴的交换导致12b的形成，并消除了相邻氨基上的空间位阻。这使得其有效共轭成为可能，从而成功与萘环的平面化以及在4b形成情况下溴与锂的配位相竞争。",
+    "protected_translated_text": "空间位阻。这使得其有效共轭成为可能，从而成功与萘环的平面化以及在4b形成情况下溴与锂的配位相竞争。",
+    "translated_text": "空间位阻。这使得其有效共轭成为可能，从而成功与萘环的平面化以及在4b形成情况下溴与锂的配位相竞争。",
+    "continuation_group": "cg-004-004",
+    "continuation_prev_text": "Altogether, the exchange of bromine in ortho-position leads to the formation of 12b and removes steric pressure on the",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "Altogether, the exchange of bromine in ortho-position leads to the formation of 12b and removes steric pressure on the neighboring amino group. This allows its effective conjugation, which successfully competes with the planarization of the naphthalene ring and the coordination of bromine to lithium in the case of 4b formation.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "总之，邻位溴的交换导致12b的形成，并消除了相邻氨基上的空间位阻。这使得其有效共轭成为可能，从而成功与萘环的平面化以及在4b形成情况下溴与锂的配位相竞争。",
+    "group_translated_text": "总之，邻位溴的交换导致12b的形成，并消除了相邻氨基上的空间位阻。这使得其有效共轭成为可能，从而成功与萘环的平面化以及在4b形成情况下溴与锂的配位相竞争。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p005-b007",
+      "page_idx": 4,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Figure 5. Optimized geometries of studied lithiated species – B3LYP–D3/6-311 + + G(d,p). $ \\theta(C^{4}C^{5}C^{8}C^{9}) $ values are given. Hydrogen atoms are omitted for clarity. / Figure 6. Natural bond orbitals (NBO) for 12b·Tol. Overlapping of lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (left), lone pair of N1 nitrogen and C–C an...",
+    "translation_context_after": "To our knowledge, this is the first manifestation of this effect in ortho-lithioanilines. The reason is that this effect is generally \"hidden\" behind a much stronger coordination of the / directing group to the lithium atom. Thus, according to our quantum chemical calculations, the rotation of the NMe₂ group in 2-lithio-N,N-dimethylaniline complex with tolu..."
+  },
+  {
+    "item_id": "p005-b008",
+    "page_idx": 4,
+    "block_idx": 8,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 8,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      43.484,
+      712.407,
+      292.89,
+      747.902
+    ],
+    "source_text": "To our knowledge, this is the first manifestation of this effect in ortho-lithioanilines. The reason is that this effect is generally \"hidden\" behind a much stronger coordination of the",
+    "source_line_texts": [
+      "To our knowledge, this is the first manifestation of this",
+      "effect in ortho-lithioanilines. The reason is that this",
+      "effect is generally \"hidden\" behind a much stronger coordination of the"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          43.484,
+          712.407,
+          292.89,
+          724.239
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "To our knowledge, this is the first manifestation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          724.239,
+          292.89,
+          736.07
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of this effect in ortho-lithioanilines. The reason",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          43.484,
+          736.07,
+          292.89,
+          747.902
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "is that this effect is generally \"hidden\" behind a much stronger coordination of the",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "left",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "left",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-74",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 2,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-74",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 2,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "left",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "left_column",
+    "layout_zone_rank": 2,
+    "layout_zone_size": 3,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "To our knowledge, this is the first manifestation of this effect in ortho-lithioanilines. The reason is that this effect is generally \"hidden\" behind a much stronger coordination of the",
+    "mixed_original_protected_source_text": "To our knowledge, this is the first manifestation of this effect in ortho-lithioanilines. The reason is that this effect is generally \"hidden\" behind a much stronger coordination of the",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-005-005",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p005-b008",
+      "p005-b009"
+    ],
+    "translation_unit_protected_source_text": "To our knowledge, this is the first manifestation of this effect in ortho-lithioanilines. The reason is that this effect is generally \"hidden\" behind a much stronger coordination of the directing group to the lithium atom. Thus, according to our quantum chemical calculations, the rotation of the NMe₂ group in 2-lithio-N,N-dimethylaniline complex with toluene first leads to a slight increase of the electronic energy with a maximum of +0.6 kcal/mol at approximately 30° (Figure 7). Further rotation leads to the stabilization via coordination of nitrogen to lithium with up to −6.8 kcal/mol at 120°. In total, the loss in conjugation energy is negligibly small and does not affect the halogen–lithium exchange in simple anilines and becomes noticeable only in strained substrates like 12b. Thus, a similar rotation of the N(2)Me group in 12b·Tol leads to the dramatically higher increase of the electronic energy with a maximum of +7.4 kcal/mol at approximately 75° and further coordination to the lithium atom brings a stabilization of only 2.9 kcal/mol at 80° (Figure 8). Further rotation forces the inversion of the N(1)Me group, allowing its effective conjugation with the aromatic core, which noticeably stabilizes the system but nevertheless leaves the process thermodynamically unfavorable.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "据我们所知，这是该效应在邻位锂代苯胺中的首次体现。其原因在于，该效应通常被导向基团与锂原子之间更强的配位作用所“掩盖”。因此，根据我们的量子化学计算，在2-锂代-N,N-二甲基苯胺与甲苯的络合物中，NMe₂ 基团的旋转首先导致电子能量小幅升高，在约 30° 时达到最大值 +0.6 kcal/mol（图 7）。进一步旋转则通过氮与锂的配位产生稳定化作用，在 120° 时稳定化能达 −6.8 kcal/mol。总体而言，共轭能的损失极小，不影响简单苯胺中的卤素–锂交换，仅在类似 12b 这样的张紧底物中才变得显著。例如，在 12b·Tol 中，N(2)Me 基团的类似旋转导致电子能量大幅升高，在约 75° 时达到最大值 +7.4 kcal/mol，而与锂原子的进一步配位仅在 80° 时带来 2.9 kcal/mol 的稳定化（图 8）。继续旋转迫使 N(1)Me 基团发生翻转，使其能够与芳香核心有效共轭，这虽然显著稳定了体系，但仍使该过程在热力学上不利。",
+    "translation_unit_translated_text": "据我们所知，这是该效应在邻位锂代苯胺中的首次体现。其原因在于，该效应通常被导向基团与锂原子之间更强的配位作用所“掩盖”。因此，根据我们的量子化学计算，在2-锂代-N,N-二甲基苯胺与甲苯的络合物中，NMe₂ 基团的旋转首先导致电子能量小幅升高，在约 30° 时达到最大值 +0.6 kcal/mol（图 7）。进一步旋转则通过氮与锂的配位产生稳定化作用，在 120° 时稳定化能达 −6.8 kcal/mol。总体而言，共轭能的损失极小，不影响简单苯胺中的卤素–锂交换，仅在类似 12b 这样的张紧底物中才变得显著。例如，在 12b·Tol 中，N(2)Me 基团的类似旋转导致电子能量大幅升高，在约 75° 时达到最大值 +7.4 kcal/mol，而与锂原子的进一步配位仅在 80° 时带来 2.9 kcal/mol 的稳定化（图 8）。继续旋转迫使 N(1)Me 基团发生翻转，使其能够与芳香核心有效共轭，这虽然显著稳定了体系，但仍使该过程在热力学上不利。",
+    "protected_translated_text": "据我们所知，这是该效应在邻位锂代苯胺中的首次体现。其原因在于，该效应通常被导向基团与锂原子之间更强的配位作",
+    "translated_text": "据我们所知，这是该效应在邻位锂代苯胺中的首次体现。其原因在于，该效应通常被导向基团与锂原子之间更强的配位作",
+    "continuation_group": "cg-005-005",
+    "continuation_prev_text": "",
+    "continuation_next_text": "directing group to the lithium atom. Thus, according to our quantum chemical calculations, the rotation of the NMe₂ group in 2-lithio-N,N-dimethylaniline complex with toluene first leads to a slight increase of the electronic energy with a maximum of +0.6 kcal/mol at approximately 30° (Figure 7). Further rotation leads to the stabilization via coordination of nitrogen to lithium with up to −6.8 kcal/mol at 120°. In total, the loss in conjugation energy is negligibly small and does not affect the halogen–lithium exchange in simple anilines and becomes noticeable only in strained substrates like 12b. Thus, a similar rotation of the N(2)Me group in 12b·Tol leads to the dramatically higher increase of the electronic energy with a maximum of +7.4 kcal/mol at approximately 75° and further coordination to the lithium atom brings a stabilization of only 2.9 kcal/mol at 80° (Figure 8). Further rotation forces the inversion of the N(1)Me group, allowing its effective conjugation with the aromatic core, which noticeably stabilizes the system but nevertheless leaves the process thermodynamically unfavorable.",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "To our knowledge, this is the first manifestation of this effect in ortho-lithioanilines. The reason is that this effect is generally \"hidden\" behind a much stronger coordination of the directing group to the lithium atom. Thus, according to our quantum chemical calculations, the rotation of the NMe₂ group in 2-lithio-N,N-dimethylaniline complex with toluene first leads to a slight increase of the electronic energy with a maximum of +0.6 kcal/mol at approximately 30° (Figure 7). Further rotation leads to the stabilization via coordination of nitrogen to lithium with up to −6.8 kcal/mol at 120°. In total, the loss in conjugation energy is negligibly small and does not affect the halogen–lithium exchange in simple anilines and becomes noticeable only in strained substrates like 12b. Thus, a similar rotation of the N(2)Me group in 12b·Tol leads to the dramatically higher increase of the electronic energy with a maximum of +7.4 kcal/mol at approximately 75° and further coordination to the lithium atom brings a stabilization of only 2.9 kcal/mol at 80° (Figure 8). Further rotation forces the inversion of the N(1)Me group, allowing its effective conjugation with the aromatic core, which noticeably stabilizes the system but nevertheless leaves the process thermodynamically unfavorable.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "据我们所知，这是该效应在邻位锂代苯胺中的首次体现。其原因在于，该效应通常被导向基团与锂原子之间更强的配位作用所“掩盖”。因此，根据我们的量子化学计算，在2-锂代-N,N-二甲基苯胺与甲苯的络合物中，NMe₂ 基团的旋转首先导致电子能量小幅升高，在约 30° 时达到最大值 +0.6 kcal/mol（图 7）。进一步旋转则通过氮与锂的配位产生稳定化作用，在 120° 时稳定化能达 −6.8 kcal/mol。总体而言，共轭能的损失极小，不影响简单苯胺中的卤素–锂交换，仅在类似 12b 这样的张紧底物中才变得显著。例如，在 12b·Tol 中，N(2)Me 基团的类似旋转导致电子能量大幅升高，在约 75° 时达到最大值 +7.4 kcal/mol，而与锂原子的进一步配位仅在 80° 时带来 2.9 kcal/mol 的稳定化（图 8）。继续旋转迫使 N(1)Me 基团发生翻转，使其能够与芳香核心有效共轭，这虽然显著稳定了体系，但仍使该过程在热力学上不利。",
+    "group_translated_text": "据我们所知，这是该效应在邻位锂代苯胺中的首次体现。其原因在于，该效应通常被导向基团与锂原子之间更强的配位作用所“掩盖”。因此，根据我们的量子化学计算，在2-锂代-N,N-二甲基苯胺与甲苯的络合物中，NMe₂ 基团的旋转首先导致电子能量小幅升高，在约 30° 时达到最大值 +0.6 kcal/mol（图 7）。进一步旋转则通过氮与锂的配位产生稳定化作用，在 120° 时稳定化能达 −6.8 kcal/mol。总体而言，共轭能的损失极小，不影响简单苯胺中的卤素–锂交换，仅在类似 12b 这样的张紧底物中才变得显著。例如，在 12b·Tol 中，N(2)Me 基团的类似旋转导致电子能量大幅升高，在约 75° 时达到最大值 +7.4 kcal/mol，而与锂原子的进一步配位仅在 80° 时带来 2.9 kcal/mol 的稳定化（图 8）。继续旋转迫使 N(1)Me 基团发生翻转，使其能够与芳香核心有效共轭，这虽然显著稳定了体系，但仍使该过程在热力学上不利。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p005-b008",
+      "page_idx": 4,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "Figure 6. Natural bond orbitals (NBO) for 12b·Tol. Overlapping of lone pair of N2 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (left), lone pair of N1 nitrogen and C–C antibonding $ \\sigma^{*} $ orbital (right). The isovalue for orbitals visualization is 0.02. Toluene molecules are omitted for clarity. / neighboring amino group. This allows its effec...",
+    "translation_context_after": "directing group to the lithium atom. Thus, according to our quantum chemical calculations, the rotation of the NMe₂ group in 2-lithio-N,N-dimethylaniline complex with toluene first leads to a slight increase of the electronic energy with a maximum of +0.6 kcal/mol at approximately 30° (Figure 7). Further rotation leads to the stabilization via coordination..."
+  },
+  {
+    "item_id": "p005-b009",
+    "page_idx": 4,
+    "block_idx": 9,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 9,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      301.387,
+      495.435,
+      551.293,
+      722.906
+    ],
+    "source_text": "directing group to the lithium atom. Thus, according to our quantum chemical calculations, the rotation of the NMe₂ group in 2-lithio-N,N-dimethylaniline complex with toluene first leads to a slight increase of the electronic energy with a maximum of +0.6 kcal/mol at approximately 30° (Figure 7). Further rotation leads to the stabilization via coordination of nitrogen to lithium with up to −6.8 kcal/mol at 120°. In total, the loss in conjugation energy is negligibly small and does not affect the halogen–lithium exchange in simple anilines and becomes noticeable only in strained substrates like 12b. Thus, a similar rotation of the N(2)Me group in 12b·Tol leads to the dramatically higher increase of the electronic energy with a maximum of +7.4 kcal/mol at approximately 75° and further coordination to the lithium atom brings a stabilization of only 2.9 kcal/mol at 80° (Figure 8). Further rotation forces the inversion of the N(1)Me group, allowing its effective conjugation with the aromatic core, which noticeably stabilizes the system but nevertheless leaves the process thermodynamically unfavorable.",
+    "source_line_texts": [
+      "directing group to the lithium atom. Thus, according to",
+      "our quantum chemical calculations, the rotation of the NMe₂",
+      "group in 2-lithio-N,N-dimethylaniline complex with toluene",
+      "first leads to a slight increase of the electronic energy",
+      "with a maximum of +0.6 kcal/mol at approximately 30° (Figure",
+      "7). Further rotation leads to the stabilization via coordination",
+      "of nitrogen to lithium with up to −6.8 kcal/mol at 120°.",
+      "In total, the loss in conjugation energy is negligibly small",
+      "and does not affect the halogen–lithium exchange in simple",
+      "anilines and becomes noticeable only in strained substrates",
+      "like 12b. Thus, a similar rotation of the N(2)Me group in",
+      "12b·Tol leads to the dramatically higher increase of the",
+      "electronic energy with a maximum of +7.4 kcal/mol at approximately",
+      "75° and further coordination to the lithium atom brings",
+      "a stabilization of only 2.9 kcal/mol at 80° (Figure 8).",
+      "Further rotation forces the inversion of the N(1)Me group, allowing its effective conjugation with the aromatic core, which noticeably stabilizes the system but nevertheless leaves the process thermodynamically unfavorable."
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          301.387,
+          495.435,
+          551.293,
+          506.809
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "directing group to the lithium atom. Thus, according",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          506.809,
+          551.293,
+          518.182
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "to our quantum chemical calculations, the rotation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          518.182,
+          551.293,
+          529.556
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of the NMe₂ group in 2-lithio-N,N-dimethylaniline",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          529.556,
+          551.293,
+          540.929
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "complex with toluene first leads to a slight increase",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          540.929,
+          551.293,
+          552.303
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of the electronic energy with a maximum of +0.6 kcal/mol",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          552.303,
+          551.293,
+          563.676
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "at approximately 30° (Figure 7). Further rotation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          563.676,
+          551.293,
+          575.05
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "leads to the stabilization via coordination of nitrogen",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          575.05,
+          551.293,
+          586.423
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "to lithium with up to −6.8 kcal/mol at 120°. In total,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          586.423,
+          551.293,
+          597.797
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "the loss in conjugation energy is negligibly small",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          597.797,
+          551.293,
+          609.17
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "and does not affect the halogen–lithium exchange",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          609.17,
+          551.293,
+          620.544
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "in simple anilines and becomes noticeable only in",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          620.544,
+          551.293,
+          631.918
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "strained substrates like 12b. Thus, a similar rotation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          631.918,
+          551.293,
+          643.291
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of the N(2)Me group in 12b·Tol leads to the dramatically",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          643.291,
+          551.293,
+          654.665
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "higher increase of the electronic energy with a maximum",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          654.665,
+          551.293,
+          666.038
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of +7.4 kcal/mol at approximately 75° and further",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          666.038,
+          551.293,
+          677.412
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "coordination to the lithium atom brings a stabilization",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          677.412,
+          551.293,
+          688.785
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "of only 2.9 kcal/mol at 80° (Figure 8). Further rotation",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          688.785,
+          551.293,
+          700.159
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "forces the inversion of the N(1)Me group, allowing",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          700.159,
+          551.293,
+          711.532
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "its effective conjugation with the aromatic core,",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "bbox": [
+          301.387,
+          711.532,
+          551.293,
+          722.906
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "which noticeably stabilizes the system but nevertheless leaves the process thermodynamically unfavorable.",
+            "bbox": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-75",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 3,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-75",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 3,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 0,
+    "layout_zone_size": 2,
+    "layout_boundary_role": "head",
+    "math_mode": "direct_typst",
+    "protected_source_text": "directing group to the lithium atom. Thus, according to our quantum chemical calculations, the rotation of the NMe₂ group in 2-lithio-N,N-dimethylaniline complex with toluene first leads to a slight increase of the electronic energy with a maximum of +0.6 kcal/mol at approximately 30° (Figure 7). Further rotation leads to the stabilization via coordination of nitrogen to lithium with up to −6.8 kcal/mol at 120°. In total, the loss in conjugation energy is negligibly small and does not affect the halogen–lithium exchange in simple anilines and becomes noticeable only in strained substrates like 12b. Thus, a similar rotation of the N(2)Me group in 12b·Tol leads to the dramatically higher increase of the electronic energy with a maximum of +7.4 kcal/mol at approximately 75° and further coordination to the lithium atom brings a stabilization of only 2.9 kcal/mol at 80° (Figure 8). Further rotation forces the inversion of the N(1)Me group, allowing its effective conjugation with the aromatic core, which noticeably stabilizes the system but nevertheless leaves the process thermodynamically unfavorable.",
+    "mixed_original_protected_source_text": "directing group to the lithium atom. Thus, according to our quantum chemical calculations, the rotation of the NMe₂ group in 2-lithio-N,N-dimethylaniline complex with toluene first leads to a slight increase of the electronic energy with a maximum of +0.6 kcal/mol at approximately 30° (Figure 7). Further rotation leads to the stabilization via coordination of nitrogen to lithium with up to −6.8 kcal/mol at 120°. In total, the loss in conjugation energy is negligibly small and does not affect the halogen–lithium exchange in simple anilines and becomes noticeable only in strained substrates like 12b. Thus, a similar rotation of the N(2)Me group in 12b·Tol leads to the dramatically higher increase of the electronic energy with a maximum of +7.4 kcal/mol at approximately 75° and further coordination to the lithium atom brings a stabilization of only 2.9 kcal/mol at 80° (Figure 8). Further rotation forces the inversion of the N(1)Me group, allowing its effective conjugation with the aromatic core, which noticeably stabilizes the system but nevertheless leaves the process thermodynamically unfavorable.",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-005-005",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p005-b008",
+      "p005-b009"
+    ],
+    "translation_unit_protected_source_text": "To our knowledge, this is the first manifestation of this effect in ortho-lithioanilines. The reason is that this effect is generally \"hidden\" behind a much stronger coordination of the directing group to the lithium atom. Thus, according to our quantum chemical calculations, the rotation of the NMe₂ group in 2-lithio-N,N-dimethylaniline complex with toluene first leads to a slight increase of the electronic energy with a maximum of +0.6 kcal/mol at approximately 30° (Figure 7). Further rotation leads to the stabilization via coordination of nitrogen to lithium with up to −6.8 kcal/mol at 120°. In total, the loss in conjugation energy is negligibly small and does not affect the halogen–lithium exchange in simple anilines and becomes noticeable only in strained substrates like 12b. Thus, a similar rotation of the N(2)Me group in 12b·Tol leads to the dramatically higher increase of the electronic energy with a maximum of +7.4 kcal/mol at approximately 75° and further coordination to the lithium atom brings a stabilization of only 2.9 kcal/mol at 80° (Figure 8). Further rotation forces the inversion of the N(1)Me group, allowing its effective conjugation with the aromatic core, which noticeably stabilizes the system but nevertheless leaves the process thermodynamically unfavorable.",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "据我们所知，这是该效应在邻位锂代苯胺中的首次体现。其原因在于，该效应通常被导向基团与锂原子之间更强的配位作用所“掩盖”。因此，根据我们的量子化学计算，在2-锂代-N,N-二甲基苯胺与甲苯的络合物中，NMe₂ 基团的旋转首先导致电子能量小幅升高，在约 30° 时达到最大值 +0.6 kcal/mol（图 7）。进一步旋转则通过氮与锂的配位产生稳定化作用，在 120° 时稳定化能达 −6.8 kcal/mol。总体而言，共轭能的损失极小，不影响简单苯胺中的卤素–锂交换，仅在类似 12b 这样的张紧底物中才变得显著。例如，在 12b·Tol 中，N(2)Me 基团的类似旋转导致电子能量大幅升高，在约 75° 时达到最大值 +7.4 kcal/mol，而与锂原子的进一步配位仅在 80° 时带来 2.9 kcal/mol 的稳定化（图 8）。继续旋转迫使 N(1)Me 基团发生翻转，使其能够与芳香核心有效共轭，这虽然显著稳定了体系，但仍使该过程在热力学上不利。",
+    "translation_unit_translated_text": "据我们所知，这是该效应在邻位锂代苯胺中的首次体现。其原因在于，该效应通常被导向基团与锂原子之间更强的配位作用所“掩盖”。因此，根据我们的量子化学计算，在2-锂代-N,N-二甲基苯胺与甲苯的络合物中，NMe₂ 基团的旋转首先导致电子能量小幅升高，在约 30° 时达到最大值 +0.6 kcal/mol（图 7）。进一步旋转则通过氮与锂的配位产生稳定化作用，在 120° 时稳定化能达 −6.8 kcal/mol。总体而言，共轭能的损失极小，不影响简单苯胺中的卤素–锂交换，仅在类似 12b 这样的张紧底物中才变得显著。例如，在 12b·Tol 中，N(2)Me 基团的类似旋转导致电子能量大幅升高，在约 75° 时达到最大值 +7.4 kcal/mol，而与锂原子的进一步配位仅在 80° 时带来 2.9 kcal/mol 的稳定化（图 8）。继续旋转迫使 N(1)Me 基团发生翻转，使其能够与芳香核心有效共轭，这虽然显著稳定了体系，但仍使该过程在热力学上不利。",
+    "protected_translated_text": "用所“掩盖”。因此，根据我们的量子化学计算，在2-锂代-N,N-二甲基苯胺与甲苯的络合物中，NMe₂ 基团的旋转首先导致电子能量小幅升高，在约 30° 时达到最大值 +0.6 kcal/mol（图 7）。进一步旋转则通过氮与锂的配位产生稳定化作用，在 120° 时稳定化能达 −6.8 kcal/mol。总体而言，共轭能的损失极小，不影响简单苯胺中的卤素–锂交换，仅在类似 12b 这样的张紧底物中才变得显著。例如，在 12b·Tol 中，N(2)Me 基团的类似旋转导致电子能量大幅升高，在约 75° 时达到最大值 +7.4 kcal/mol，而与锂原子的进一步配位仅在 80° 时带来 2.9 kcal/mol 的稳定化（图 8）。继续旋转迫使 N(1)Me 基团发生翻转，使其能够与芳香核心有效共轭，这虽然显著稳定了体系，但仍使该过程在热力学上不利。",
+    "translated_text": "用所“掩盖”。因此，根据我们的量子化学计算，在2-锂代-N,N-二甲基苯胺与甲苯的络合物中，NMe₂ 基团的旋转首先导致电子能量小幅升高，在约 30° 时达到最大值 +0.6 kcal/mol（图 7）。进一步旋转则通过氮与锂的配位产生稳定化作用，在 120° 时稳定化能达 −6.8 kcal/mol。总体而言，共轭能的损失极小，不影响简单苯胺中的卤素–锂交换，仅在类似 12b 这样的张紧底物中才变得显著。例如，在 12b·Tol 中，N(2)Me 基团的类似旋转导致电子能量大幅升高，在约 75° 时达到最大值 +7.4 kcal/mol，而与锂原子的进一步配位仅在 80° 时带来 2.9 kcal/mol 的稳定化（图 8）。继续旋转迫使 N(1)Me 基团发生翻转，使其能够与芳香核心有效共轭，这虽然显著稳定了体系，但仍使该过程在热力学上不利。",
+    "continuation_group": "cg-005-005",
+    "continuation_prev_text": "To our knowledge, this is the first manifestation of this effect in ortho-lithioanilines. The reason is that this effect is generally \"hidden\" behind a much stronger coordination of the",
+    "continuation_next_text": "",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "To our knowledge, this is the first manifestation of this effect in ortho-lithioanilines. The reason is that this effect is generally \"hidden\" behind a much stronger coordination of the directing group to the lithium atom. Thus, according to our quantum chemical calculations, the rotation of the NMe₂ group in 2-lithio-N,N-dimethylaniline complex with toluene first leads to a slight increase of the electronic energy with a maximum of +0.6 kcal/mol at approximately 30° (Figure 7). Further rotation leads to the stabilization via coordination of nitrogen to lithium with up to −6.8 kcal/mol at 120°. In total, the loss in conjugation energy is negligibly small and does not affect the halogen–lithium exchange in simple anilines and becomes noticeable only in strained substrates like 12b. Thus, a similar rotation of the N(2)Me group in 12b·Tol leads to the dramatically higher increase of the electronic energy with a maximum of +7.4 kcal/mol at approximately 75° and further coordination to the lithium atom brings a stabilization of only 2.9 kcal/mol at 80° (Figure 8). Further rotation forces the inversion of the N(1)Me group, allowing its effective conjugation with the aromatic core, which noticeably stabilizes the system but nevertheless leaves the process thermodynamically unfavorable.",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "据我们所知，这是该效应在邻位锂代苯胺中的首次体现。其原因在于，该效应通常被导向基团与锂原子之间更强的配位作用所“掩盖”。因此，根据我们的量子化学计算，在2-锂代-N,N-二甲基苯胺与甲苯的络合物中，NMe₂ 基团的旋转首先导致电子能量小幅升高，在约 30° 时达到最大值 +0.6 kcal/mol（图 7）。进一步旋转则通过氮与锂的配位产生稳定化作用，在 120° 时稳定化能达 −6.8 kcal/mol。总体而言，共轭能的损失极小，不影响简单苯胺中的卤素–锂交换，仅在类似 12b 这样的张紧底物中才变得显著。例如，在 12b·Tol 中，N(2)Me 基团的类似旋转导致电子能量大幅升高，在约 75° 时达到最大值 +7.4 kcal/mol，而与锂原子的进一步配位仅在 80° 时带来 2.9 kcal/mol 的稳定化（图 8）。继续旋转迫使 N(1)Me 基团发生翻转，使其能够与芳香核心有效共轭，这虽然显著稳定了体系，但仍使该过程在热力学上不利。",
+    "group_translated_text": "据我们所知，这是该效应在邻位锂代苯胺中的首次体现。其原因在于，该效应通常被导向基团与锂原子之间更强的配位作用所“掩盖”。因此，根据我们的量子化学计算，在2-锂代-N,N-二甲基苯胺与甲苯的络合物中，NMe₂ 基团的旋转首先导致电子能量小幅升高，在约 30° 时达到最大值 +0.6 kcal/mol（图 7）。进一步旋转则通过氮与锂的配位产生稳定化作用，在 120° 时稳定化能达 −6.8 kcal/mol。总体而言，共轭能的损失极小，不影响简单苯胺中的卤素–锂交换，仅在类似 12b 这样的张紧底物中才变得显著。例如，在 12b·Tol 中，N(2)Me 基团的类似旋转导致电子能量大幅升高，在约 75° 时达到最大值 +7.4 kcal/mol，而与锂原子的进一步配位仅在 80° 时带来 2.9 kcal/mol 的稳定化（图 8）。继续旋转迫使 N(1)Me 基团发生翻转，使其能够与芳香核心有效共轭，这虽然显著稳定了体系，但仍使该过程在热力学上不利。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p005-b009",
+      "page_idx": 4,
+      "route_path": [
+        "block_level",
+        "direct_typst"
+      ],
+      "output_mode_path": [
+        "plain_text"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "neighboring amino group. This allows its effective conjugation, which successfully competes with the planarization of the naphthalene ring and the coordination of bromine to lithium in the case of 4b formation. / To our knowledge, this is the first manifestation of this effect in ortho-lithioanilines. The reason is that this effect is generally \"hidden\" beh...",
+    "translation_context_after": "The removal of the repulsion of peri-bromine atoms upon transition to tribromoderivative 13 elevates the impact of / Figure 7. Dependence of relative electronic energy on the dihedral angle of the CCNC for the complex for 2-lithio- $ N,N $-dimethylaniline with toluene, scan along CCNC using the modredundant scheme."
+  },
+  {
+    "item_id": "p005-b010",
+    "page_idx": 4,
+    "block_idx": 10,
+    "block_type": "text",
+    "block_kind": "text",
+    "layout_role": "paragraph",
+    "semantic_role": "body",
+    "structure_role": "body",
+    "policy_translate": true,
+    "asset_id": "",
+    "reading_order": 10,
+    "raw_block_type": "text",
+    "normalized_sub_type": "body",
+    "bbox": [
+      300.887,
+      724.405,
+      551.293,
+      747.902
+    ],
+    "source_text": "The removal of the repulsion of peri-bromine atoms upon transition to tribromoderivative 13 elevates the impact of",
+    "source_line_texts": [
+      "The removal of the repulsion of peri-bromine atoms upon",
+      "transition to tribromoderivative 13 elevates the impact of"
+    ],
+    "text_flow": "flow",
+    "toc_entries": [],
+    "lines": [
+      {
+        "bbox": [
+          300.887,
+          724.405,
+          551.293,
+          747.902
+        ],
+        "spans": [
+          {
+            "type": "text",
+            "content": "The removal of the repulsion of peri-bromine atoms upon transition to tribromoderivative 13 elevates the impact of",
+            "bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "provider_cross_column_merge_suspected": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_text_missing_but_bbox_present": false,
+      "provider_peer_block_absorbed_text": false,
+      "provider_column_layout_mode": "double",
+      "provider_column_index_guess": "right",
+      "provider_suspected_peer_block_id": "",
+      "cross_column_merge_suspected": false,
+      "reading_order_unreliable": false,
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false,
+      "peer_block_absorbed_text": false,
+      "body_repair_applied": false,
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "body_repair_peer_block_id": "",
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "column_layout_mode": "double",
+      "column_index_guess": "right",
+      "continuation_hint": {
+        "source": "provider",
+        "group_id": "provider-paddle-global-76",
+        "role": "single",
+        "scope": "intra_page",
+        "reading_order": 4,
+        "confidence": 0.98
+      },
+      "structure_role": "body",
+      "structure_group": "",
+      "pair_with": ""
+    },
+    "ocr_continuation_source": "provider",
+    "ocr_continuation_group_id": "provider-paddle-global-76",
+    "ocr_continuation_role": "single",
+    "ocr_continuation_scope": "intra_page",
+    "ocr_continuation_reading_order": 4,
+    "ocr_continuation_confidence": 0.98,
+    "provider_cross_column_merge_suspected": false,
+    "provider_reading_order_unreliable": false,
+    "provider_structure_unreliable": false,
+    "provider_text_missing_but_bbox_present": false,
+    "provider_peer_block_absorbed_text": false,
+    "provider_body_repair_applied": false,
+    "provider_body_repair_role": "",
+    "provider_body_repair_strategy": "",
+    "provider_suspected_peer_block_id": "",
+    "provider_continuation_suppressed": false,
+    "provider_continuation_suppressed_reason": "",
+    "provider_column_layout_mode": "double",
+    "provider_column_index_guess": "right",
+    "layout_mode": "double",
+    "layout_split_x": 297.14,
+    "layout_zone": "right_column",
+    "layout_zone_rank": 1,
+    "layout_zone_size": 2,
+    "layout_boundary_role": "tail",
+    "math_mode": "direct_typst",
+    "protected_source_text": "The removal of the repulsion of peri-bromine atoms upon transition to tribromoderivative 13 elevates the impact of",
+    "mixed_original_protected_source_text": "The removal of the repulsion of peri-bromine atoms upon transition to tribromoderivative 13 elevates the impact of",
+    "formula_map": [],
+    "protected_map": [],
+    "classification_label": "",
+    "should_translate": true,
+    "skip_reason": "",
+    "mixed_literal_action": "",
+    "mixed_literal_prefix": "",
+    "translation_unit_id": "__cg__:cg-005-006",
+    "translation_unit_kind": "group",
+    "translation_unit_member_ids": [
+      "p005-b010",
+      "p006-b009"
+    ],
+    "translation_unit_protected_source_text": "The removal of the repulsion of peri-bromine atoms upon transition to tribromoderivative 13 elevates the impact of conjugation on the regioselectivity of the bromine-lithium exchange. Thus, treatment of 13 with 0.9 equiv. of n-BuLi leads only to the formation of ortho-lithioderivatives 14 and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4).",
+    "translation_unit_formula_map": [],
+    "translation_unit_protected_map": [],
+    "translation_unit_protected_translated_text": "在转化为三溴衍生物 13 时，周位溴原子之间的排斥作用被消除，从而增强了共轭效应对溴-锂交换区域选择性的影响。因此，用 0.9 当量的 $n$-BuLi 处理 13 仅生成邻位锂化衍生物 14 和 15，比例为 1:4，而未观察到 16 的生成（Scheme 4）。",
+    "translation_unit_translated_text": "在转化为三溴衍生物 13 时，周位溴原子之间的排斥作用被消除，从而增强了共轭效应对溴-锂交换区域选择性的影响。因此，用 0.9 当量的 $n$-BuLi 处理 13 仅生成邻位锂化衍生物 14 和 15，比例为 1:4，而未观察到 16 的生成（Scheme 4）。",
+    "protected_translated_text": "在转化为三溴衍生物 13 时，周位溴原子之间的排斥作用被消除，从而增强了",
+    "translated_text": "在转化为三溴衍生物 13 时，周位溴原子之间的排斥作用被消除，从而增强了",
+    "continuation_group": "cg-005-006",
+    "continuation_prev_text": "",
+    "continuation_next_text": "conjugation on the regioselectivity of the bromine-lithium exchange. Thus, treatment of 13 with 0.9 equiv. of n-BuLi leads only to the formation of ortho-lithioderivatives 14 and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4).",
+    "continuation_decision": "joined",
+    "continuation_candidate_prev_id": "",
+    "continuation_candidate_next_id": "",
+    "group_protected_source_text": "The removal of the repulsion of peri-bromine atoms upon transition to tribromoderivative 13 elevates the impact of conjugation on the regioselectivity of the bromine-lithium exchange. Thus, treatment of 13 with 0.9 equiv. of n-BuLi leads only to the formation of ortho-lithioderivatives 14 and 15 with the ratio 1:4, while no formation of 16 is observed (Scheme 4).",
+    "group_formula_map": [],
+    "group_protected_map": [],
+    "group_protected_translated_text": "在转化为三溴衍生物 13 时，周位溴原子之间的排斥作用被消除，从而增强了共轭效应对溴-锂交换区域选择性的影响。因此，用 0.9 当量的 $n$-BuLi 处理 13 仅生成邻位锂化衍生物 14 和 15，比例为 1:4，而未观察到 16 的生成（Scheme 4）。",
+    "group_translated_text": "在转化为三溴衍生物 13 时，周位溴原子之间的排斥作用被消除，从而增强了共轭效应对溴-锂交换区域选择性的影响。因此，用 0.9 当量的 $n$-BuLi 处理 13 仅生成邻位锂化衍生物 14 和 15，比例为 1:4，而未观察到 16 的生成（Scheme 4）。",
+    "final_status": "translated",
+    "translation_diagnostics": {
+      "item_id": "p005-b010",
+      "page_idx": 4,
+      "route_path": [
+        "block_level",
+        "continuation_group_members"
+      ],
+      "output_mode_path": [
+        "json",
+        "member_translations"
+      ],
+      "fallback_to": "",
+      "degradation_reason": "",
+      "final_status": "translated",
+      "agent_repair_skipped": true,
+      "agent_repair_skip_reason": "continuation_group_member",
+      "agent_repair_issue_kinds": []
+    },
+    "candidate_pair_prev_id": "",
+    "candidate_pair_next_id": "",
+    "translation_context_mode": "needed",
+    "translation_context_before": "To our knowledge, this is the first manifestation of this effect in ortho-lithioanilines. The reason is that this effect is generally \"hidden\" behind a much stronger coordination of the / directing group to the lithium atom. Thus, according to our quantum chemical calculations, the rotation of the NMe₂ group in 2-lithio-N,N-dimethylaniline complex with tolu...",
+    "translation_context_after": "Figure 7. Dependence of relative electronic energy on the dihedral angle of the CCNC for the complex for 2-lithio- $ N,N $-dimethylaniline with toluene, scan along CCNC using the modredundant scheme. / Figure 8. Dependence of the relative electronic energy on the dihedral angle of the CCNC for 12b·Tol, scan along CCNC using the modredundant scheme."
+  }
+]

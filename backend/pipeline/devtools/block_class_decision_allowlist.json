@@ -1,0 +1,24 @@
+{
+  "schema": "block_class_decision_diff_allowlist_v1",
+  "rules": [
+    {
+      "name": "reviewed-abstract-body-candidate-narrowing",
+      "change_kind": "predicate",
+      "predicate": "body_candidate",
+      "old_value": "true",
+      "new_value": "false",
+      "semantic_role": "abstract",
+      "reason": "Abstract belongs to the broad title class and is not a body-only translation candidate"
+    },
+    {
+      "name": "reviewed-paddle-algorithm-compatibility-gap",
+      "change_kind": "predicate",
+      "predicate": "algorithm",
+      "old_value": "true",
+      "new_value": "false",
+      "provider": "paddle",
+      "raw_label": "algorithm",
+      "reason": "Algorithm remains an explicit legacy compatibility signal until a provider-neutral fine-grained role is introduced"
+    }
+  ]
+}

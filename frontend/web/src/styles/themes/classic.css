@@ -1,0 +1,28 @@
+/* 皮肤 classic：现有黑白灰克制（默认） */
+
+:root,
+[data-theme="classic"] {
+  --bg: #f5f5f7;
+  --paper: #ffffff;
+  --surface: rgba(255, 255, 255, 0.78);
+  --ink: #1d1d1f;
+  --muted: #6e6e73;
+  --line: #e5e5ea;
+
+  --accent: var(--ink);
+  --accent-weak: rgba(29, 29, 31, 0.12);
+  --selection: rgba(29, 29, 31, 0.08);
+
+  --danger: #ff3b30;
+  --danger-weak: rgba(255, 59, 48, 0.12);
+  --ok: #34c759;
+  --ok-weak: rgba(52, 199, 89, 0.12);
+  --warn: #ff9f0a;
+  --warn-weak: rgba(255, 159, 10, 0.14);
+
+  --gold: #b08d3a;
+  --gold-weak: rgba(176, 141, 58, 0.14);
+  --chrome: #1d1d1f;
+  --reader-page: #ffffff;
+  --shadow-color: #0f172a;
+}
