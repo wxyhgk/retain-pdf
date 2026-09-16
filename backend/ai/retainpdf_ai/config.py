@@ -219,6 +219,21 @@ def load_settings() -> Settings:
     fx_gateway_base_url_env = os.environ.get(
         "RETAIN_AI_FX_GATEWAY_BASE_URL", ""
     ).strip()
+    # 只有在没有显式配置 LLM key 时，ATLASCLOUD_API_KEY 才接管默认端点与模型；
+    # 任何 RETAIN_AI_LLM_* 都优先，既有部署不受影响。
+    atlascloud_api_key = os.environ.get("ATLASCLOUD_API_KEY", "").strip()
+    llm_api_key = os.environ.get("RETAIN_AI_LLM_API_KEY", "").strip()
+    use_atlascloud_defaults = bool(atlascloud_api_key and not llm_api_key)
+    default_llm_base_url = (
+        "https://api.atlascloud.ai/v1"
+        if use_atlascloud_defaults
+        else "https://api.deepseek.com/v1"
+    )
+    default_llm_model = (
+        "deepseek-ai/deepseek-v4-pro"
+        if use_atlascloud_defaults
+        else "deepseek-v4-flash"
+    )
     settings = Settings(
         host=os.environ.get("RETAIN_AI_HOST", "127.0.0.1"),
         port=int(os.environ.get("RETAIN_AI_PORT", "41100")),
@@ -229,10 +244,10 @@ def load_settings() -> Settings:
         ).rstrip("/"),
         rust_api_key=os.environ.get("RETAIN_AI_RUST_API_KEY", "").strip(),
         llm_base_url=os.environ.get(
-            "RETAIN_AI_LLM_BASE_URL", "https://api.deepseek.com/v1"
+            "RETAIN_AI_LLM_BASE_URL", default_llm_base_url
         ).rstrip("/"),
-        llm_model=os.environ.get("RETAIN_AI_LLM_MODEL", "deepseek-v4-flash"),
-        llm_api_key=os.environ.get("RETAIN_AI_LLM_API_KEY", "").strip(),
+        llm_model=os.environ.get("RETAIN_AI_LLM_MODEL", default_llm_model),
+        llm_api_key=llm_api_key or atlascloud_api_key,
         llm_credential_ref=os.environ.get("RETAIN_AI_LLM_CREDENTIAL_REF", "").strip(),
         llm_timeout_s=float(os.environ.get("RETAIN_AI_LLM_TIMEOUT_S", "60")),
         max_tool_rounds=int(os.environ.get("RETAIN_AI_MAX_TOOL_ROUNDS", "6")),
