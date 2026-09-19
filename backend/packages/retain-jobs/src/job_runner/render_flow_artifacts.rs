@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Result};
 
-use crate::job_events::persist_runtime_job_with_resources;
+use crate::job_events::cas_persist_job_with_resources;
 use crate::models::domain::{JobArtifacts, JobRuntimeState};
 use crate::storage_paths::build_job_paths;
 
@@ -39,7 +39,20 @@ pub(super) fn prepare_render_job_from_artifacts(
     let artifacts = job.artifacts.get_or_insert_with(JobArtifacts::default);
     artifacts.copy_translation_inputs_from(source_artifacts);
     artifacts.translations_dir = translation_outputs.translations_dir.map(str::to_string);
-    persist_runtime_job_with_resources(deps.db.as_ref(), &deps.data_root, &deps.output_root, &job)?;
+    // 同 `translation_flow_artifacts`：写的是已存在的任务行，而解析源任务产物的
+    // 这段时间里用户可能已经取消。无条件覆盖会把 canceled 复活成 running，
+    // 紧接着就去起渲染进程。
+    let updated = cas_persist_job_with_resources(
+        deps.db.as_ref(),
+        &deps.data_root,
+        &deps.output_root,
+        &job.snapshot(),
+        &["queued", "running"],
+    )?;
+    if !updated {
+        // 这里只是「认领已有产物、准备重跑」，还没有任何副作用，停下就是干净的。
+        anyhow::bail!("job became terminal before the translation artifacts could be adopted");
+    }
 
     Ok((
         job,
@@ -56,7 +69,7 @@ mod tests {
 
     use super::*;
     use crate::db::Db;
-    use crate::models::domain::JobSnapshot;
+    use crate::models::domain::{JobSnapshot, JobStatusKind};
     use crate::models::request::CreateJobInput;
     use crate::storage_paths::TRANSLATION_MANIFEST_FILE_NAME;
 
@@ -109,6 +122,60 @@ mod tests {
         assert_eq!(
             serde_json::to_value(untouched.artifacts).unwrap(),
             serde_json::to_value(source.artifacts).unwrap()
+        );
+        drop(deps);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    /// 渲染任务同样是「认领已有产物、准备重跑」：解析源任务产物期间用户可能取消。
+    ///
+    /// 反证方式：把上面的 CAS 换回 `persist_runtime_job_with_resources`，
+    /// 这个测试必须变红。
+    #[test]
+    fn canceled_job_is_not_revived_while_adopting_translation_artifacts() {
+        let root = std::env::temp_dir().join(format!(
+            "retain-render-artifacts-cas-{}",
+            fastrand::u64(..)
+        ));
+        std::fs::create_dir_all(root.join("source/translated")).unwrap();
+        std::fs::write(root.join("source/source.pdf"), b"source fixture").unwrap();
+        std::fs::write(
+            root.join("source/translated")
+                .join(TRANSLATION_MANIFEST_FILE_NAME),
+            br#"{"pages":[]}"#,
+        )
+        .unwrap();
+        let db = Arc::new(Db::new(root.join("jobs.db"), root.clone()));
+        db.init().unwrap();
+        let deps = JobPersistDeps::new(db, root.clone(), root.join("jobs"));
+        let mut source = JobSnapshot::new("source".into(), CreateJobInput::default(), vec![]);
+        source.artifacts = Some(JobArtifacts {
+            source_pdf: Some("source/source.pdf".into()),
+            translations_dir: Some("source/translated".into()),
+            normalized_document_json: Some("source/document.v1.json".into()),
+            ..Default::default()
+        });
+        deps.db.save_job(&source).unwrap();
+
+        let mut input = CreateJobInput::default();
+        input.source.artifact_job_id = "source".into();
+        let stale = JobSnapshot::new("render".into(), input, vec![]);
+        let mut canceled = stale.clone();
+        canceled.status = JobStatusKind::Canceled;
+        deps.db.save_job(&canceled).unwrap();
+
+        let result = prepare_render_job_from_artifacts(&deps, stale.into_runtime());
+
+        assert!(
+            result.is_err(),
+            "任务已终态时必须停下，不能让调用方接着起渲染进程"
+        );
+        assert!(
+            matches!(
+                deps.db.get_job("render").unwrap().status,
+                JobStatusKind::Canceled
+            ),
+            "取消被 driver 的旧快照覆盖掉了：用户点了取消，任务却接着渲染"
         );
         drop(deps);
         std::fs::remove_dir_all(root).unwrap();

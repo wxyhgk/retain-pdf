@@ -18,9 +18,9 @@
 //! 注：`ocr_stage_succeeded` 本身很宽容（父任务失败也认子任务的 succeeded），
 //! MinerU 也不在排除名单里——卡住复用的只是这个归属缺口。
 
-use super::{create_ocr_child_job, TranslationUploadSource};
+use super::{create_ocr_child_job, mark_parent_ocr_submitting, TranslationUploadSource};
 use crate::job_runner::ProcessRuntimeDeps;
-use crate::models::domain::JobSnapshot;
+use crate::models::domain::{JobSnapshot, JobStatusKind};
 use crate::models::domain::UploadRecord;
 use crate::models::request::CreateJobInput;
 use crate::storage_paths::JobPaths;
@@ -91,5 +91,85 @@ fn ocr_child_job_inherits_document_ownership() {
         "OCR 子任务必须出现在文档任务列表中，否则前端 selectReusableOcrJob 永远挑不到它，\
          表现为「OCR 成功了但重试仍要整本重跑」。当前列表：{:?}",
         jobs.iter().map(|job| job.job_id.as_str()).collect::<Vec<_>>(),
+    );
+}
+
+
+/// driver 手上的 `parent_job` 是阶段开始时的内存快照，永远是 Running；
+/// 用户点取消走的是另一条 CAS 写。这里断言 driver 不能把那次取消盖掉。
+///
+/// 反证方式：把 `mark_parent_ocr_submitting` 里的 CAS 换回
+/// `persist_runtime_job_with_resources`，这个测试必须变红——写会成功、
+/// DB 里的 canceled 变成 running，函数也不再返回 Err。
+#[test]
+fn canceled_parent_is_not_revived_when_submitting_ocr() {
+    let deps = crate::job_runner::process_runner::tests::test_runtime_deps(1);
+    let upload_id = "upload-ocr-submit-canceled";
+    seed_upload(&deps, upload_id, "doc-hash-ocr-submit-canceled");
+
+    let mut stale = JobSnapshot::new(
+        "job-parent-submit-canceled".to_string(),
+        CreateJobInput::default(),
+        vec!["python".to_string()],
+    );
+    stale.upload_id = Some(upload_id.to_string());
+    // 先把「用户已取消」这个事实落库，再拿取消之前的快照去推进阶段。
+    let mut canceled = stale.clone();
+    canceled.status = JobStatusKind::Canceled;
+    deps.db.save_job(&canceled).unwrap();
+    let mut parent = stale.into_runtime();
+
+    let result = mark_parent_ocr_submitting(&deps, &mut parent);
+
+    assert!(
+        result.is_err(),
+        "父任务已终态时必须停下：再往下就是建 OCR 子任务、调付费接口"
+    );
+    assert!(
+        matches!(
+            deps.db.get_job("job-parent-submit-canceled").unwrap().status,
+            JobStatusKind::Canceled
+        ),
+        "取消被 driver 的旧快照覆盖回 running——用户点了取消，最终却看到「失败」，OCR 的钱白花"
+    );
+}
+
+/// 取消也可能恰好卡在「建完子任务、回写父任务」这个窗口里。
+///
+/// 反证方式：把 `create_ocr_child_job` 结尾那次父任务 CAS 换回
+/// `persist_runtime_job_with_resources`，这个测试必须变红。
+#[test]
+fn canceled_parent_is_not_revived_when_creating_the_ocr_child() {
+    let deps = crate::job_runner::process_runner::tests::test_runtime_deps(1);
+    let upload_id = "upload-ocr-child-canceled";
+    seed_upload(&deps, upload_id, "doc-hash-ocr-child-canceled");
+
+    let mut stale = JobSnapshot::new(
+        "job-parent-child-canceled".to_string(),
+        CreateJobInput::default(),
+        vec!["python".to_string()],
+    );
+    stale.upload_id = Some(upload_id.to_string());
+    let mut canceled = stale.clone();
+    canceled.status = JobStatusKind::Canceled;
+    deps.db.save_job(&canceled).unwrap();
+    let mut parent = stale.into_runtime();
+
+    let paths = JobPaths::for_job(&deps.persist.data_root, &parent.job_id);
+    let source = TranslationUploadSource {
+        upload_id: upload_id.to_string(),
+    };
+    let result = create_ocr_child_job(&deps, &mut parent, &paths, &source);
+
+    assert!(
+        result.is_err(),
+        "父任务已终态时必须停下，不能把子任务交给调用方去驱动"
+    );
+    assert!(
+        matches!(
+            deps.db.get_job("job-parent-child-canceled").unwrap().status,
+            JobStatusKind::Canceled
+        ),
+        "回写 artifacts.ocr_job_id 时把 canceled 覆盖成了 running"
     );
 }
