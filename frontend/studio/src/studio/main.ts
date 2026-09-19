@@ -1,11 +1,10 @@
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
-import { LanguageDescription, LanguageSupport, StreamLanguage } from '@codemirror/language';
 import { languages as codeMirrorLanguages } from '@codemirror/language-data';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
 import 'katex/contrib/mhchem';
 import { createArticle, getArticle, listArticles, saveArticle, saveMoleculeView, StudioApiError } from './api/client';
-import { SCIENCE_LANGUAGES } from './editor/nodes/code-block';
+import { scienceBlockPlugins } from './editor/crepe-science-block';
 import { mergeMarkdownBody, parseStudioDocument, replaceStudioDocumentBody, updateStudioFrontmatter } from './document';
 import '../science/browser/molecule-renderer.css';
 import { setMoleculeViewContext } from '../science/browser/molecule-renderer';
@@ -52,18 +51,6 @@ const cancelNewArticleButtons = [
 	document.querySelector<HTMLButtonElement>('#cancel-new-article')!,
 	document.querySelector<HTMLButtonElement>('#cancel-new-article-secondary')!,
 ];
-
-const scienceDataSupport = new LanguageSupport(StreamLanguage.define({
-	token(stream) {
-		stream.skipToEnd();
-		return null;
-	},
-}));
-const scienceDataLanguage = LanguageDescription.of({
-	name: 'Science data',
-	alias: [...SCIENCE_LANGUAGES],
-	support: scienceDataSupport,
-});
 
 const store = new ArticleStore();
 let crepe: Crepe | null = null;
@@ -171,7 +158,7 @@ async function mountEditor(source: string): Promise<string> {
 		},
 		featureConfigs: {
 			[CrepeFeature.CodeMirror]: {
-				languages: [...codeMirrorLanguages, scienceDataLanguage],
+				languages: [...codeMirrorLanguages],
 				copyText: '复制',
 				previewLabel: '预览',
 				previewLoading: '正在渲染…',
@@ -186,6 +173,7 @@ async function mountEditor(source: string): Promise<string> {
 			},
 		},
 	});
+	crepe.editor.use(scienceBlockPlugins);
 	crepe.on((listener) => {
 		listener.markdownUpdated((_ctx, markdown) => updateMarkdown(markdown));
 	});
