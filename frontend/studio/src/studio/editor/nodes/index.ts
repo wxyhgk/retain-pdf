@@ -1,6 +1,7 @@
 export { blockquoteParseSpec, blockquoteSpec, serializeBlockquote } from './blockquote.ts';
 export {
 	codeBlockFenceParseSpec,
+	codeBlockIndentedParseSpec,
 	codeBlockSpec,
 	isScienceLanguage,
 	normalizeInfoString,

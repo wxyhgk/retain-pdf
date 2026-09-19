@@ -12,6 +12,7 @@ import {
 
 import {
 	codeBlockFenceParseSpec,
+	codeBlockIndentedParseSpec,
 	codeBlockSpec,
 	isScienceLanguage,
 	normalizeInfoString,
@@ -23,6 +24,7 @@ const nodes = defaultMarkdownParser.schema.spec.nodes.remove('code_block').appen
 const schema = new Schema({ nodes, marks: defaultMarkdownParser.schema.spec.marks });
 const parser = new MarkdownParser(schema, new MarkdownIt('commonmark'), {
 	...defaultMarkdownParser.tokens,
+	code_block: codeBlockIndentedParseSpec,
 	fence: codeBlockFenceParseSpec,
 });
 const serializer = new MarkdownSerializer(

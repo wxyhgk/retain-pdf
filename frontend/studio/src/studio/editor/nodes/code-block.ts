@@ -28,6 +28,12 @@ export const codeBlockSpec: NodeSpec = {
 	],
 };
 
+/** Markdown indented-code token mapping. Mirrors the library default exactly. */
+export const codeBlockIndentedParseSpec: ParseSpec = {
+	block: 'code_block',
+	noCloseToken: true,
+};
+
 /** Markdown fence token mapping. Mirrors the library default exactly. */
 export const codeBlockFenceParseSpec: ParseSpec = {
 	block: 'code_block',
