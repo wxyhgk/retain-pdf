@@ -5,6 +5,7 @@ import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
 import 'katex/contrib/mhchem';
 import { createArticle, getArticle, listArticles, saveArticle, saveMoleculeView, StudioApiError } from './api/client';
+import { SCIENCE_LANGUAGES } from './editor/nodes/code-block';
 import { mergeMarkdownBody, parseStudioDocument, replaceStudioDocumentBody, updateStudioFrontmatter } from './document';
 import '../science/browser/molecule-renderer.css';
 import { setMoleculeViewContext } from '../science/browser/molecule-renderer';
@@ -60,8 +61,7 @@ const scienceDataSupport = new LanguageSupport(StreamLanguage.define({
 }));
 const scienceDataLanguage = LanguageDescription.of({
 	name: 'Science data',
-	alias: ['smiles', 'sdf', 'mol', 'xyz', 'gjf', 'com', 'pdb', 'mol2', 'cif', 'cube',
-		'sdf-2d', 'mol-2d', 'sdf-3d', 'mol-3d', 'xyz-3d', 'pdb-3d', 'mol2-3d', 'cif-3d', 'cube-3d'],
+	alias: [...SCIENCE_LANGUAGES],
 	support: scienceDataSupport,
 });
 
