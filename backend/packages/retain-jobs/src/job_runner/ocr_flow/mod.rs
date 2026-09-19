@@ -35,7 +35,7 @@ mod support;
 mod transport;
 mod workspace;
 
-use super::cancel_registry::is_cancel_requested_with_registry;
+use super::cancel_registry::is_cancel_requested_any;
 use provider_transport::execute_provider_transport;
 pub use support::sync_parent_with_ocr_child;
 use support::{fail_missing_source_pdf, fail_ocr_transport, save_ocr_job};
@@ -105,7 +105,13 @@ pub async fn execute_ocr_job(
         }
     };
 
-    if is_cancel_requested_with_registry(deps.canceled_jobs.as_ref(), &job.job_id).await {
+    // 也认父任务的取消。
+    //
+    // 取消只登记被点的那个 id,而 book 任务里用户点的是父任务——子任务永远
+    // 看不到信号,于是 OCR 跑到底,结果被丢弃。`extra_cancel_job_ids` 这套机制
+    // 本来就是为此设计的,只是此前所有调用点都传 `&[]`,成了死代码。
+    let parent_cancel_ids: Vec<String> = parent_job_id.iter().cloned().collect();
+    if is_cancel_requested_any(deps.canceled_jobs.as_ref(), &job.job_id, &parent_cancel_ids).await {
         job.status = JobStatusKind::Canceled;
         job.stage = Some("canceled".to_string());
         job.stage_detail = Some("OCR 任务已取消".to_string());
@@ -196,5 +202,39 @@ mod tests {
         assert_eq!(failure.category, "source_pdf_missing");
         assert_eq!(failure.summary, "源 PDF 缺失");
         assert!(!failure.retryable);
+    }
+}
+
+#[cfg(test)]
+mod parent_cancel_contract {
+    /// OCR 子任务的取消检查必须带上父任务 id。
+    ///
+    /// 盯调用点而不是盯 `is_cancel_requested_any` 本身:那个函数一直是对的,
+    /// 错的是所有调用点都传 `&[]`,让整套机制成了死代码。只测那个函数的话,
+    /// 把这里改回 `&[]` 测试照样全绿——实测过。
+    ///
+    /// 真正要挡的场景(book 父任务在 OCR 期间被取消)要跑完整流程才复现得出来,
+    /// 单元测试够不着,所以直接锁调用点的形状。
+    #[test]
+    fn ocr_cancel_checks_include_the_parent_job() {
+        for (file, source) in [
+            ("ocr_flow/mod.rs", include_str!("mod.rs")),
+            (
+                "ocr_flow/provider_transport.rs",
+                include_str!("provider_transport.rs"),
+            ),
+        ] {
+            let call = source
+                .find("is_cancel_requested_any(")
+                .unwrap_or_else(|| panic!("{file}: 取消检查必须走 is_cancel_requested_any"));
+            let tail = &source[call..];
+            let end = tail.find(").await").expect("调用应当被 await");
+            let args = &tail[..end];
+            assert!(
+                args.contains("parent_cancel_ids"),
+                "{file}: 第三个参数必须带上父任务 id。传 &[] 等于子任务看不见\
+                 父任务的取消,OCR 会一路跑到成功然后把产物丢掉"
+            );
+        }
     }
 }
