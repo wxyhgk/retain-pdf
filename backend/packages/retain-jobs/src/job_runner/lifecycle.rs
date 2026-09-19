@@ -153,12 +153,59 @@ fn persist_failed_job(
     Ok(())
 }
 
+/// 取消标记在队列门被消费掉之后,由谁来落终态。
+///
+/// `wait_for_execution_slot` 命中取消标记时会**清掉标记并返回 None**,driver 随即
+/// 退出——它不写任何状态。正常取消路径没事:`cancel_job` 紧接着就会 CAS 写
+/// Canceled。但 `cancel_job(ocr_only = true)` 在 `stage != "queued"` 时**完全不写
+/// DB**(它把落终态的责任交给 runner 的取消检查点,好让 runner 先做 provider 清理),
+/// 于是出现一个没人收尾的空洞:标记没了、driver 走了、DB 行还停在 queued/running,
+/// 而且再没有 driver 会来驱动它。用户看到的是永久转圈,连重跑都点不了——
+/// `rerun` 对 queued/running 直接 conflict。
+///
+/// 这里补上收尾。用 CAS 是因为 runner 的检查点或 `cancel_job` 可能已经抢先写过了,
+/// 那种情况下应当尊重它们写的结果,而不是覆盖。
+fn persist_canceled_job(deps: &ProcessRuntimeDeps, job_id: &str) -> Result<()> {
+    let mut job = deps.db.get_job(job_id)?;
+    if !matches!(
+        job.status,
+        JobStatusKind::Queued | JobStatusKind::Running
+    ) {
+        return Ok(());
+    }
+    job.status = JobStatusKind::Canceled;
+    job.stage = Some("canceled".to_string());
+    job.stage_detail = Some("任务已取消".to_string());
+    job.updated_at = now_iso();
+    job.finished_at = Some(now_iso());
+    job.pid = None;
+    job.sync_runtime_state();
+    job.replace_failure_info(None);
+    let updated = cas_persist_job_with_resources(
+        deps.db.as_ref(),
+        &deps.persist.data_root,
+        &deps.persist.output_root,
+        &job,
+        &["queued", "running"],
+    )?;
+    if updated {
+        let _ = deps
+            .db
+            .finish_latest_pipeline_attempt(&job.job_id, "canceled")?;
+    }
+    Ok(())
+}
+
 async fn run_job<F, Fut>(deps: ProcessRuntimeDeps, job_id: String, workflow: F) -> Result<()>
 where
     F: FnOnce(ProcessRuntimeDeps, JobRuntimeState) -> Fut,
     Fut: std::future::Future<Output = Result<JobRuntimeState>>,
 {
+    // 这里也会消费掉取消标记然后早退,和队列门是同一个洞,只是更早。
+    // `persist_canceled_job` 自带「只在 queued/running 时写」的守卫,所以
+    // 「行已终态」那个分支调用它是安全的空操作。
     if should_skip_job_execution(&deps, &job_id).await? {
+        persist_canceled_job(&deps, &job_id)?;
         return Ok(());
     }
     let mut job = deps.db.get_job(&job_id)?;
@@ -177,7 +224,11 @@ where
     .await?
     {
         Some(permit) => permit,
-        None => return Ok(()),
+        // 队列门已经把取消标记清掉了,这里必须补一次终态,否则任务会挂着没人管。
+        None => {
+            persist_canceled_job(&deps, &job_id)?;
+            return Ok(());
+        }
     };
 
     if should_skip_job_execution(&deps, &job_id).await? {
