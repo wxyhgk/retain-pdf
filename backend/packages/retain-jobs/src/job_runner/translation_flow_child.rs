@@ -93,6 +93,7 @@ pub(super) fn create_ocr_child_job(
     ocr_child.stage = Some("queued".to_string());
     ocr_child.stage_detail = Some("OCR 子任务已创建".to_string());
     sync_runtime_state(&mut ocr_child);
+    // ALLOW-UNCONDITIONAL-JOB-WRITE: 建新行，不是更新。
     // 这一处是**建新行**，不是更新：`ocr_job_id` 刚拼出来，DB 里通常没有这一行。
     // 所以它不参与父任务那场「driver vs 取消」的竞争，CAS 在这里没有可防的东西。
     // 反过来还会有害：父任务重试时 `{parent}-ocr` 可能残留着上一轮的终态行，

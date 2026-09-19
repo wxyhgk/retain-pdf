@@ -1077,6 +1077,41 @@ def check_summary_loaders_boundary(errors: list[str]) -> None:
                 )
 
 
+# 任务行有两个并发写入者：driver（推进阶段）和用户（取消）。`cas_persist_job_*`
+# 是这个仓库的正确原语——"只在当前状态还是我以为的那个时才写"。而
+# `persist_runtime_job_with_resources` 是无条件全行覆盖：driver 拿着几分钟前的
+# 内存快照把整行盖掉，静默抹掉用户刚写的 canceled。这是一个 lost update，
+# 症状是"点了取消却显示失败"，见 PR #100–#103。
+#
+# 合法的例外只有"建新行"：那时 DB 里还没有这一行，CAS 没有可防的东西，反而会在
+# 重试时因为残留的终态行而拒绝写入、把重试卡死。例外必须在调用点上方用下面这个
+# 标记显式声明，写清楚为什么，让它在 review 里可见。
+UNCONDITIONAL_JOB_WRITE = "persist_runtime_job_with_resources("
+UNCONDITIONAL_JOB_WRITE_MARKER = "ALLOW-UNCONDITIONAL-JOB-WRITE:"
+
+
+def check_unconditional_job_writes(errors: list[str]) -> None:
+    for path in scan_rs_files(abs_src(Path("src/job_runner"))):
+        rel_path = rel(path)
+        if path.name.endswith("_tests.rs"):
+            continue
+        text = route_source_without_tests(path)
+        lines = text.split("\n")
+        for index, line in enumerate(lines):
+            if UNCONDITIONAL_JOB_WRITE not in line:
+                continue
+            if line.lstrip().startswith(("//", "///", "//!")):
+                continue
+            window = "\n".join(lines[max(0, index - 8) : index])
+            if UNCONDITIONAL_JOB_WRITE_MARKER in window:
+                continue
+            errors.append(
+                f"{rel_path}:{index + 1}: driver 推进任务行必须用 cas_persist_job_with_resources，"
+                f"否则会把用户的取消覆盖回 running（lost update）。"
+                f"确属建新行的话，在调用点上方加注释 `{UNCONDITIONAL_JOB_WRITE_MARKER} <理由>`"
+            )
+
+
 def check_ocr_flow_boundaries(errors: list[str]) -> None:
     for path in scan_rs_files(OCR_FLOW_ROOT):
         rel_path = rel(path)
@@ -1241,6 +1276,7 @@ def main() -> int:
     check_reader_regions_boundary(errors)
     check_summary_loaders_boundary(errors)
     check_ocr_flow_boundaries(errors)
+    check_unconditional_job_writes(errors)
     check_job_runner_boundary(errors)
     check_worker_command_boundary(errors)
     check_protocol_docs(errors)

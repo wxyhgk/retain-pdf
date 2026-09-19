@@ -10,7 +10,7 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::sync::{Mutex, RwLock};
 
 use crate::db::{PipelineAttemptCursor, PipelineStageObservation, PipelineUnitCommit};
-use crate::job_events::persist_runtime_job_with_resources;
+use crate::job_events::cas_persist_job_with_resources;
 use crate::models::api::{redact_text, sensitive_values};
 use crate::models::domain::{job_user_stage, now_iso, JobRuntimeState};
 
@@ -97,12 +97,22 @@ pub(super) async fn read_stdout(
             break;
         }
         job.updated_at = now_iso();
-        persist_runtime_job_with_resources(
+        // 逐行进度也走 CAS。上面那次取消检查和这次写之间不是原子的,无条件写会把
+        // 期间落库的终态(通常是取消)盖回 running——和 driver 推进阶段是同一个
+        // lost update,只是这里每读一行就有一次机会。
+        //
+        // CAS 失败说明别人已经给这个任务落了终态,继续读它的 stdout 也没有意义,
+        // 和上面命中取消标记时一样 break 出去。
+        let updated = cas_persist_job_with_resources(
             persist.db.as_ref(),
             &persist.data_root,
             &persist.output_root,
-            &job,
+            &job.snapshot(),
+            &["queued", "running"],
         )?;
+        if !updated {
+            break;
+        }
     }
     Ok((out, job))
 }
