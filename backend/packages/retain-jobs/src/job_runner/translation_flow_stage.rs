@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 
 use crate::job_events::{
-    persist_runtime_job_with_resources, record_custom_runtime_event_with_resources,
+    cas_persist_job_with_resources, record_custom_runtime_event_with_resources,
 };
 use crate::models::domain::{
     job_stage_detail, job_stage_str, now_iso, JobRuntimeState, JobStage, JobStatusKind,
@@ -60,14 +60,26 @@ pub(super) async fn run_translation_stage(
     let normalized_path = translate_inputs.normalized_path;
     let source_pdf_path = translate_inputs.source_pdf_path;
     let layout_json_path = translate_inputs.layout_json_path;
-    prepare_translation_stage(
+    if !prepare_translation_stage(
         deps,
         &mut parent_job,
         parent_job_paths,
         &normalized_path,
         &source_pdf_path,
         layout_json_path.as_deref(),
-    )?;
+    )? {
+        // 这一行已经被另一个写入者推进到终态了(绝大多数情况是用户点了取消)。
+        // 必须在这里就停住:再往下就是 spawn worker,而那会让一个已取消的任务
+        // 继续烧钱,最后还被写成 failed。
+        //
+        // 把 DB 的真实状态带上去就够了——四个调用方无一例外只在
+        // `Succeeded` 时才继续跑渲染,于是整条链自然收口。
+        let persisted = deps.persist.db.get_job(&parent_job.job_id)?;
+        return Ok(TranslationStageResult {
+            job: persisted.into_runtime(),
+            source_pdf_path,
+        });
+    }
     // 翻译跑完后面一定还有渲染——四个调用方(book / translate / 两条 artifacts
     // 复用路径)无一例外。所以这一步成功时不能落终态,否则 stage_history 会多出
     // 一条 finished/succeeded 夹在 translating 与 rendering 之间。
@@ -91,7 +103,7 @@ fn prepare_translation_stage(
     normalized_path: &Path,
     source_pdf_path: &Path,
     layout_json_path: Option<&Path>,
-) -> Result<()> {
+) -> Result<bool> {
     let checkpoint_path = parent_job_paths
         .translated_dir
         .join(TRANSLATION_CHECKPOINT_FILE_NAME)
@@ -117,14 +129,20 @@ fn prepare_translation_stage(
     parent_job.progress_total = None;
     parent_job.updated_at = now_iso();
     sync_runtime_state(parent_job);
-    persist_runtime_job_with_resources(
+    // CAS 而不是无条件覆盖写。`parent_job` 是这个 driver 在阶段开始时取的内存
+    // 快照,它一直显示 Running;而取消走的是另一条独立的 CAS 写。整行盖下去就是
+    // 一次 lost update:DB 里的 canceled 被复活成 running,随后 spawn 前那道
+    // 「canceled 不要覆盖」的守卫失效,任务最终被写成 failed——用户点了取消却看到
+    // 「失败」,OCR 的钱还白花了(job 20260919094352-fa6af6)。
+    //
+    // 返回 false 表示这一行已经不归我推进了,由调用方决定怎么收口。
+    cas_persist_job_with_resources(
         deps.persist.db.as_ref(),
         &deps.persist.data_root,
         &deps.persist.output_root,
-        parent_job,
-    )?;
-
-    Ok(())
+        &parent_job.snapshot(),
+        &["queued", "running"],
+    )
 }
 
 pub(super) async fn run_render_stage_after_translation(
@@ -157,14 +175,24 @@ pub(super) async fn run_render_stage_after_translation(
     job.updated_at = now_iso();
     clear_job_failure(&mut job);
     sync_runtime_state(&mut job);
-    persist_runtime_job_with_resources(
+    // 同 `prepare_translation_stage`:翻译与渲染之间同样有取消窗口,而且这里的
+    // `job.status = Running` 是显式赋的,无条件写下去必然把终态抹掉。
+    let updated = cas_persist_job_with_resources(
         deps.persist.db.as_ref(),
         &deps.persist.data_root,
         &deps.persist.output_root,
-        &job,
+        &job.snapshot(),
+        &["queued", "running"],
     )?;
+    if !updated {
+        return Ok(deps.persist.db.get_job(&job.job_id)?.into_runtime());
+    }
     execute_process_job(deps, job, &[]).await
 }
+
+#[cfg(test)]
+#[path = "translation_flow_stage_tests.rs"]
+mod translation_flow_stage_tests;
 
 #[cfg(test)]
 mod stage_kind_contract {

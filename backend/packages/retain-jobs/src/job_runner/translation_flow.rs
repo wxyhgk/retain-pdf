@@ -190,24 +190,10 @@ async fn run_job_with_ocr(
         return Ok(parent_job);
     }
 
-    // OCR 期间用户可能已经取消了父任务。取消走的是独立的 CAS 写,而 `parent_job`
-    // 是这个 driver 在阶段开始时取的内存快照——它会一直显示 Running。
-    //
-    // 不重读就往下走的话:`prepare_translation_stage` 会用一次**无条件覆盖写**
-    // 把 DB 里的 canceled 复活成 running,于是 `spawn_job_with_workflow` 里那道
-    // 「canceled 不要覆盖」的守卫失效,任务最终被写成 failed。用户点了取消,看到
-    // 的却是「失败」外加一条内部错误,而 OCR 的钱已经花掉了。
-    //
-    // 这里重读一次就够:终态就停,把 DB 的真实状态返回上去。
-    // 隔壁 `ocr_flow::support::mirror_parent_ocr_status` 一直是这么做的。
-    let persisted_parent = deps.db.get_job(&parent_job.job_id)?;
-    if matches!(
-        persisted_parent.status,
-        JobStatusKind::Succeeded | JobStatusKind::Failed | JobStatusKind::Canceled
-    ) {
-        return Ok(persisted_parent.into_runtime());
-    }
-
+    // 这里曾有一道「重读 DB 判终态」的守卫(见 98381cbc)。它已经并入
+    // `prepare_translation_stage` 的 CAS 写:那一步只在 DB 里还是 queued/running
+    // 时才落库,否则原样返回 DB 的真实状态,整条链在 spawn 之前收口。
+    // 重读是 check-then-act,两步之间仍有窗口;CAS 是一步,严格更强,所以不再叠一层。
     let translation_stage = run_translation_stage(&deps, parent_job, &parent_job_paths).await?;
     let translated_job = translation_stage.job;
     let source_pdf_path = translation_stage.source_pdf_path;
@@ -223,41 +209,4 @@ async fn run_job_with_ocr(
         &source_pdf_path,
     )
     .await
-}
-
-#[cfg(test)]
-mod terminal_guard_contract {
-    /// OCR 跑完后进翻译之前,必须**重读数据库**判终态,不能看内存快照。
-    ///
-    /// 为什么盯源码而不是写单测:这条守卫真正要挡的场景是「OCR 期间用户取消了
-    /// 父任务」,复现它要完整跑一遍 book 流程(起 OCR 子任务、中途取消、等子任务
-    /// 成功),单元测试够不着。而这里最容易被后人改坏的正是「重读」这个动作——
-    /// 把 `deps.db.get_job(...)` 换成手边的 `parent_job.status`,编译通过、所有
-    /// 单测全绿,但 bug 原样回来:内存快照永远是 Running,于是 canceled 被一次
-    /// 无条件覆盖写复活,任务最后写成 failed。
-    ///
-    /// 参见 job 20260919094352-fa6af6:用户点了取消,结果显示「失败」,OCR 的钱白花。
-    #[test]
-    fn translation_entry_rereads_status_from_db() {
-        let source = include_str!("translation_flow.rs");
-        let anchor = source
-            .find("let translation_stage = run_translation_stage(&deps, parent_job")
-            .expect("run_job_with_ocr 必须调用 run_translation_stage");
-        // 窗口取「finalize_parent_after_ocr 之后、run_translation_stage 之前」,
-        // 避免被文件里别处的 get_job 蒙混过关。按锚点切而不是按字节数退,
-        // 否则会切进中文注释的多字节字符里。
-        let prev = source[..anchor]
-            .rfind("finalize_parent_after_ocr(&mut parent_job")
-            .expect("守卫必须在 finalize_parent_after_ocr 之后");
-        let window = &source[prev..anchor];
-        assert!(
-            window.contains("deps.db.get_job(&parent_job.job_id)"),
-            "进翻译前必须重读数据库:内存里的 parent_job 是阶段开始时的快照,\
-             期间的取消它看不见"
-        );
-        assert!(
-            window.contains("JobStatusKind::Canceled"),
-            "重读之后必须把 Canceled 当成终态停下,否则守卫形同虚设"
-        );
-    }
 }
