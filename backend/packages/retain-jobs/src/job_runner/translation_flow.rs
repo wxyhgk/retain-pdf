@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use crate::job_events::persist_runtime_job_with_resources;
+use crate::job_events::cas_persist_job_with_resources;
 use crate::models::domain::{now_iso, JobRuntimeState, JobStatusKind};
 use crate::storage_paths::build_job_paths;
 
@@ -177,12 +177,26 @@ async fn run_job_with_ocr(
         Some(parent_job.job_id.clone()),
     )
     .await?;
-    persist_runtime_job_with_resources(
-        deps.db.as_ref(),
-        &deps.persist.data_root,
-        &deps.persist.output_root,
-        &ocr_finished,
-    )?;
+    // 子任务收尾也要走 CAS,否则会把 `save_ocr_job` 刚挡下的复活又放回去。
+    //
+    // `ocr_finished` 是 `execute_ocr_job` 返回的**内存**结果。取消若落在子任务
+    // 自查之后,`save_ocr_job` 的 CAS 会拒绝写入、DB 保持 canceled——而这里若是
+    // 无条件写,就会把内存里的 Succeeded 原样盖回去,等于绕过那道保护。
+    let ocr_finished = {
+        let updated = cas_persist_job_with_resources(
+            deps.db.as_ref(),
+            &deps.persist.data_root,
+            &deps.persist.output_root,
+            &ocr_finished.snapshot(),
+            &["queued", "running"],
+        )?;
+        if updated {
+            ocr_finished
+        } else {
+            // 别人已经给子任务落了终态,以 DB 为准往下走。
+            deps.db.get_job(&ocr_finished.job_id)?.into_runtime()
+        }
+    };
     sync_parent_with_ocr_child(&mut parent_job, &ocr_finished);
     record_ocr_child_finished(&deps, &parent_job, &ocr_finished);
 
@@ -209,4 +223,34 @@ async fn run_job_with_ocr(
         &source_pdf_path,
     )
     .await
+}
+
+#[cfg(test)]
+mod ocr_child_persist_contract {
+    /// OCR 子任务收尾的那次写必须走 CAS。
+    ///
+    /// 盯调用点而非结果:这一段在 `run_job_with_ocr` 里,要复现得跑完整的 OCR
+    /// 流程(起子任务、中途取消、等它返回),单测够不着。而最容易被改坏的恰恰是
+    /// 「用 CAS 还是无条件写」这一个选择——退回 `persist_runtime_job_with_resources`
+    /// 编译通过、133 个测试全绿,但 `save_ocr_job` 那道 CAS 刚挡下的复活会被
+    /// 这里原样盖回去,保护形同虚设。
+    #[test]
+    fn ocr_child_result_is_persisted_with_cas() {
+        let source = include_str!("translation_flow.rs");
+        let anchor = source
+            .find("sync_parent_with_ocr_child(&mut parent_job, &ocr_finished);")
+            .expect("OCR 收尾必须调用 sync_parent_with_ocr_child");
+        let prev = source[..anchor]
+            .rfind("let ocr_finished = execute_ocr_job(")
+            .expect("这段之前必须是 execute_ocr_job");
+        let window = &source[prev..anchor];
+        assert!(
+            window.contains("cas_persist_job_with_resources("),
+            "子任务收尾必须走 CAS：无条件写会把 save_ocr_job 挡下的复活放回去"
+        );
+        assert!(
+            !window.contains("persist_runtime_job_with_resources("),
+            "这一段不该再有无条件覆盖写"
+        );
+    }
 }
