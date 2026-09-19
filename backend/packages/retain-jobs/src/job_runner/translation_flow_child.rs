@@ -2,7 +2,8 @@ use anyhow::{anyhow, Result};
 
 use crate::db::Db;
 use crate::job_events::{
-    persist_runtime_job_with_resources, record_custom_runtime_event_with_resources,
+    cas_persist_job_with_resources, persist_runtime_job_with_resources,
+    record_custom_runtime_event_with_resources,
 };
 use crate::models::domain::{now_iso, JobRuntimeState, JobSnapshot, JobStatusKind, WorkflowKind};
 use crate::storage_paths::JobPaths;
@@ -42,12 +43,27 @@ pub(super) fn mark_parent_ocr_submitting(
     parent_job.stage_detail = Some("正在启动 OCR 子任务".to_string());
     clear_job_failure(parent_job);
     sync_runtime_state(parent_job);
-    persist_runtime_job_with_resources(
+    // 父任务行有两个写入者：这个 driver 和点「取消」的用户。`parent_job` 只是
+    // driver 在阶段开始时取的内存快照，永远显示 Running；无条件整行覆盖会把用户
+    // 刚落库的 canceled 又盖回 running，接着白跑一整轮付费 OCR。CAS 把这次推进
+    // 限定在「DB 里还是 queued/running」时才生效。
+    let updated = cas_persist_job_with_resources(
         deps.persist.db.as_ref(),
         &deps.persist.data_root,
         &deps.persist.output_root,
-        parent_job,
+        &parent_job.snapshot(),
+        &["queued", "running"],
     )?;
+    if !updated {
+        // 已经有人把父任务推进到终态了，绝大多数情况是用户取消。下一步就是建
+        // OCR 子任务并调付费接口，一步都不该再走。
+        //
+        // 上抛而不是静默返回：`spawn_job_with_workflow` 见 Canceled 就不会再把
+        // 任务写成 failed，终态由先到的那个写入者说了算。与
+        // `spawn_started_process` 里的 "job is no longer eligible for worker
+        // startup" 是同一套路。
+        anyhow::bail!("parent job is no longer eligible for OCR submission");
+    }
     Ok(())
 }
 
@@ -77,6 +93,10 @@ pub(super) fn create_ocr_child_job(
     ocr_child.stage = Some("queued".to_string());
     ocr_child.stage_detail = Some("OCR 子任务已创建".to_string());
     sync_runtime_state(&mut ocr_child);
+    // 这一处是**建新行**，不是更新：`ocr_job_id` 刚拼出来，DB 里通常没有这一行。
+    // 所以它不参与父任务那场「driver vs 取消」的竞争，CAS 在这里没有可防的东西。
+    // 反过来还会有害：父任务重试时 `{parent}-ocr` 可能残留着上一轮的终态行，
+    // CAS 会以为「有人抢先了」而拒绝写入，把重试卡死。保持无条件写。
     persist_runtime_job_with_resources(
         deps.persist.db.as_ref(),
         &deps.persist.data_root,
@@ -109,12 +129,19 @@ pub(super) fn create_ocr_child_job(
         artifacts.ocr_status = Some(JobStatusKind::Queued);
     }
     sync_runtime_state(parent_job);
-    persist_runtime_job_with_resources(
+    // 同 `mark_parent_ocr_submitting`：写的是已存在的父任务行，用 CAS 顶住取消。
+    let updated = cas_persist_job_with_resources(
         deps.persist.db.as_ref(),
         &deps.persist.data_root,
         &deps.persist.output_root,
-        parent_job,
+        &parent_job.snapshot(),
+        &["queued", "running"],
     )?;
+    if !updated {
+        // 取消恰好卡在建子任务的这个窗口里。子任务行虽然已经落库，但调用方就此
+        // 停下、不会去驱动它，也就不会产生 OCR 调用；下一次重试会原地覆盖它。
+        anyhow::bail!("parent job became terminal while creating the OCR child job");
+    }
     record_custom_runtime_event_with_resources(
         deps.persist.db.as_ref(),
         &deps.persist.data_root,
