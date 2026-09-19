@@ -1006,3 +1006,62 @@ fn stuck_queued_lists_jobs_without_running_attempts() {
         .expect("resume queue");
     assert_eq!(resumable, vec!["job-resumable".to_string()]);
 }
+
+/// OCR 子任务不该出现在任何一条启动恢复列表里。
+///
+/// 子任务由父任务的 driver **内联**执行（`translation_flow.rs` 的
+/// `execute_ocr_job`），而 driver registry 按 **id** 去重——父 driver 注册的是
+/// 父 id，拦不住启动恢复再给 `{parent}-ocr` 起一个独立 driver。两个 driver 同时
+/// 跑同一个子任务，就是两次 OCR 提交、两份钱。
+///
+/// 反证方式：把两条查询里 `AND NOT EXISTS (... parent.job_id || '-ocr')` 删掉，
+/// 这个测试必须变红。
+#[test]
+fn ocr_child_jobs_are_never_listed_for_startup_recovery() {
+    let fx = Fixture::new("ocr-child-exclusion");
+    let queued = |id: &str| {
+        let mut j = JobSnapshot::new(
+            id.to_string(),
+            CreateJobInput::default(),
+            vec!["python".to_string()],
+        );
+        j.status = crate::models::domain::JobStatusKind::Queued;
+        fx.db.save_job(&j).expect("seed");
+    };
+
+    queued("book-parent");
+    queued("book-parent-ocr"); // 子任务：父行存在，必须被排除
+    queued("standalone-ocr"); // 名字里没有 `-ocr` 后缀关系，不受影响
+    queued("orphan-ocr"); // 叫 `-ocr` 但父行 `orphan` 不存在 → 不该被误伤
+
+    // 让「父任务 + 子任务」都带上 running attempt，走 resumable 那条路
+    for id in ["book-parent", "book-parent-ocr"] {
+        fx.db
+            .acquire_pipeline_attempt(id, "worker-a", "ocr", 0)
+            .expect("attempt");
+    }
+
+    let resumable = fx.db.list_resumable_pipeline_job_ids().expect("resumable");
+    assert!(
+        !resumable.iter().any(|id| id == "book-parent-ocr"),
+        "OCR 子任务不该被独立恢复，否则会和父 driver 抢着跑同一个子任务：{resumable:?}"
+    );
+    assert!(
+        resumable.iter().any(|id| id == "book-parent"),
+        "父任务本身必须还在列表里：{resumable:?}"
+    );
+
+    let stuck = fx.db.list_stuck_queued_job_ids().expect("stuck");
+    assert!(
+        !stuck.iter().any(|id| id == "book-parent-ocr"),
+        "stuck 列表同样不该包含 OCR 子任务：{stuck:?}"
+    );
+    assert!(
+        stuck.iter().any(|id| id == "standalone-ocr"),
+        "普通任务不该被误伤：{stuck:?}"
+    );
+    assert!(
+        stuck.iter().any(|id| id == "orphan-ocr"),
+        "父行不存在的 `-ocr` 任务不该被误伤：{stuck:?}"
+    );
+}

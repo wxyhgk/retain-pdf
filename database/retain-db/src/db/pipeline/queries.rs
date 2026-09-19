@@ -63,6 +63,19 @@ impl Db {
             FROM jobs
             JOIN pipeline_attempts ON pipeline_attempts.job_id = jobs.job_id
             WHERE jobs.status_json = ?1 AND pipeline_attempts.status = 'running'
+            -- 排除 OCR 子任务:它由父任务的 driver 内联执行,不该被独立驱动。
+            --
+            -- 子任务 id 是 `{parent}-ocr`(见 translation_flow_child.rs 的
+            -- create_ocr_child_job),而 driver registry 按 **id** 去重——父 driver
+            -- 注册的是父 id,拦不住这里再给子任务起一个 driver。两个 driver 同时
+            -- 跑同一个子任务,就是两次 OCR 提交、两份钱。
+            --
+            -- 只在父任务那一行**确实存在**时才排除:名字碰巧叫 `foo-ocr` 的独立
+            -- OCR 任务不受影响。
+              AND NOT EXISTS (
+                SELECT 1 FROM jobs AS parent
+                WHERE jobs.job_id = parent.job_id || '-ocr'
+              )
             ORDER BY jobs.updated_at, jobs.job_id
             "#,
         )?;
@@ -90,6 +103,19 @@ impl Db {
                 SELECT 1 FROM pipeline_attempts
                 WHERE pipeline_attempts.job_id = jobs.job_id
                   AND pipeline_attempts.status = 'running'
+              )
+            -- 排除 OCR 子任务:它由父任务的 driver 内联执行,不该被独立驱动。
+            --
+            -- 子任务 id 是 `{parent}-ocr`(见 translation_flow_child.rs 的
+            -- create_ocr_child_job),而 driver registry 按 **id** 去重——父 driver
+            -- 注册的是父 id,拦不住这里再给子任务起一个 driver。两个 driver 同时
+            -- 跑同一个子任务,就是两次 OCR 提交、两份钱。
+            --
+            -- 只在父任务那一行**确实存在**时才排除:名字碰巧叫 `foo-ocr` 的独立
+            -- OCR 任务不受影响。
+              AND NOT EXISTS (
+                SELECT 1 FROM jobs AS parent
+                WHERE jobs.job_id = parent.job_id || '-ocr'
               )
             ORDER BY jobs.updated_at, jobs.job_id
             "#,
