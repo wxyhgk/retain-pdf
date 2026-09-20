@@ -41,7 +41,8 @@ pub(super) fn load_translation_debug_index(
     data_root: &Path,
     job: &JobSnapshot,
 ) -> Result<TranslationDebugIndexView, AppError> {
-    if let Some(payload) = read_translation_debug_index_file(data_root, job)? {
+    if let Some(mut payload) = read_translation_debug_index_file(data_root, job)? {
+        normalize_page_numbers(&mut payload.items);
         return Ok(payload);
     }
 
@@ -57,6 +58,23 @@ pub(super) fn load_translation_debug_index(
         schema_version: 1,
         items,
     })
+}
+
+/// 索引文件里只有 0 基的 `page_idx`，没有 1 基的 `page_number`。
+///
+/// Python 侧写这个 artifact 时就没有 `page_number` 这个字段（实测产物 25 个键里
+/// 没有它），而视图字段带 `#[serde(default)]`，于是反序列化出来恒为 0——
+/// `?page=N`（N≥1）永远匹配不上任何条目。下面那条 manifest 兜底路径在
+/// `build_index_item_from_value` 里算了 `page_idx + 1`，两条路径的不变式对不上。
+///
+/// 这里在汇合点补齐，让「从索引文件读」和「从 manifest 重建」产出同一个契约。
+/// 非零值原样保留：哪天 Python 真开始写这个字段，以它为准。
+fn normalize_page_numbers(items: &mut [TranslationDebugListItemView]) {
+    for item in items.iter_mut() {
+        if item.page_number <= 0 {
+            item.page_number = item.page_idx + 1;
+        }
+    }
 }
 
 fn build_index_item_from_value(
