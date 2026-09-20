@@ -120,6 +120,10 @@ def test_formula_normalization_casebook_regressions(source: str, expected_normal
     assert normalize_formula_for_latex_math(source) == expected_normalized
 
 
+# 这条在本机常常「通过」，但那是假象：它靠 data/formula_cache 里上次带 typst
+# 跑出来的 PNG 命中缓存，compile_formula_png 在 `if not png_path.exists()` 就
+# 返回了，根本没解析二进制。干净 checkout（CI）上它会真去编译。
+@pytest.mark.needs_typst
 def test_typst_formula_compilation_handles_prime_and_mathcal_scripts() -> None:
     for formula in (
         r"\alpha _ { t } ^ { \prime }",
