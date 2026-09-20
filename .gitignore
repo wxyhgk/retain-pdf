@@ -84,3 +84,8 @@ VERSION
 # 第三方资料/参考实现的落脚处。解压出来动辄几十万文件、还带 node_modules，
 # 不进版本库。
 research/
+
+# 子 agent 的临时 git worktree。注意只忽略这一层——`.claude/` 下的 skills、
+# launch.json 都是跟踪的。worktree 正常跑完会自己清掉，但进程被打断就会残留，
+# 而它是一整个仓库副本，误 `git add -A` 一次就炸。
+.claude/worktrees/
