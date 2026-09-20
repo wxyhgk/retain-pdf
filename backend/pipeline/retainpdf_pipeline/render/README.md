@@ -30,6 +30,16 @@ Rendering 阶段的正式输入和输出固定为：
 - 如果怀疑翻译内容或术语策略有问题，应该先回到 translation payload，而不是在 rendering 层补翻译逻辑
 - API 凭证不写入 render stage spec；spec 中使用 `credential_ref`，由运行时环境注入真实 key
 
+### 阶段契约副本（stage-contract duplicate）
+
+阶段之间禁止互相 import，边界上共享的读写契约因此是**照抄一份文件**，文件头用
+`Duplicated from retainpdf_pipeline.xxx.yyy` 标出源模块。复制是有意设计，不要合并回去。
+
+改这类文件时**两份都要改**：一边加了字段另一边漏改不会报错，只会让下游永远读不到新字段。
+`devtools/architecture_checks/stage_contract_duplicates.py` 会比对副本与源中同名顶层符号的
+字面量契约（dict 键集合、封闭词表成员、标量常量、正则 pattern），分叉即报错；
+只在一边存在的符号被跳过，所以「故意只抄一部分」的副本仍然合法。
+
 ## 当前目录结构
 
 ```text

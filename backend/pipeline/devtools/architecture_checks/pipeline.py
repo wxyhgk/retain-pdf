@@ -13,6 +13,7 @@ from devtools.architecture_checks.providers import check_ocr_provider_boundaries
 from devtools.architecture_checks.providers import check_pipeline_provider_leaks
 from devtools.architecture_checks.providers import check_service_provider_raw_leaks
 from devtools.architecture_checks.rendering import check_render_pipeline_facade_boundary
+from devtools.architecture_checks.stage_contract_duplicates import check_stage_contract_duplicates
 from devtools.architecture_checks.rendering import check_rendering_internal_boundaries
 from devtools.architecture_checks.translation import check_devtools_translation_internal_usage
 from devtools.architecture_checks.translation import check_translation_internal_boundaries
@@ -45,6 +46,7 @@ def main() -> int:
         check_translation_rendering_separation(errors)
         check_translation_internal_boundaries(errors)
         check_translation_payload_field_writers(errors)
+        check_stage_contract_duplicates(errors)
     except ArchitectureCheckSyntaxError as exc:
         errors.append(str(exc))
     if errors:
