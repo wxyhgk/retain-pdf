@@ -133,6 +133,14 @@ def check_translation_internal_boundaries(errors: list[str]) -> None:
             "import retainpdf_pipeline.translate.workflow",
             "from retainpdf_pipeline.translate.services.policy",
             "import retainpdf_pipeline.translate.services.policy",
+            # provider 是 transport 层,只该知道"怎么跟这家说 HTTP"。编排层
+            # (重试次数、分批、降级路由)反过来依赖 provider,不能倒过来。
+            # 这条原本不在列表里,于是 deepseek/client.py 里一个没人调用的三行
+            # 转发壳靠函数内 import 反向依赖 orchestration,把 llm/ 下 38 个模块
+            # 拧成了一个强连通分量 —— 而且因为 import 在函数体内,加载时不报错,
+            # 靠读代码根本看不出来。
+            "from retainpdf_pipeline.translate.llm.shared.orchestration",
+            "import retainpdf_pipeline.translate.llm.shared.orchestration",
             "from retainpdf_pipeline.render",
             "import retainpdf_pipeline.render",
             "from retainpdf_pipeline.runtime.pipeline",
@@ -141,7 +149,9 @@ def check_translation_internal_boundaries(errors: list[str]) -> None:
         for item in forbidden:
             if item in text:
                 errors.append(
-                    f"{rel_path}: provider modules must stay transport-only and must not import workflow/policy/runtime"
+                    f"{rel_path}: provider modules must stay transport-only and must not import "
+                    f"orchestration/workflow/policy/render/runtime (found {item!r}); "
+                    f"编排层依赖 provider,不能倒过来 —— 哪怕 import 写在函数体内不会报错"
                 )
                 break
 

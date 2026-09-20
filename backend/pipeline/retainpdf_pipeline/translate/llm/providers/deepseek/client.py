@@ -484,20 +484,6 @@ def request_chat_content(
     if last_error is not None:
         raise last_error
     raise RuntimeError("Chat completion failed without an exception.")
-
-
-def translate_batch(
-    batch: list[dict],
-    api_key: str = "",
-    model: str = DEFAULT_MODEL,
-    base_url: str = DEFAULT_BASE_URL,
-    mode: str = "fast",
-) -> dict[str, str]:
-    from retainpdf_pipeline.translate.llm.shared.orchestration.retrying_translator import translate_batch as _translate_batch
-
-    return _translate_batch(batch, api_key=api_key, model=model, base_url=base_url, mode=mode)
-
-
 def get_api_key(explicit_api_key: str = "", env_var: str = DEFAULT_API_KEY_ENV, required: bool = True) -> str:
     from retainpdf_pipeline.translate.llm.shared.executor_context import execution_enabled
     if execution_enabled():
