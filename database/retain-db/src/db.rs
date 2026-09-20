@@ -518,6 +518,8 @@ mod tests {
             raw_error_excerpt: Some("ReadTimeout".to_string()),
             raw_diagnostic: None,
             ai_diagnostic: None,
+            resume_from: None,
+            recovery_hint: None,
         }));
 
         db.save_job(&job).expect("save job");

@@ -651,6 +651,8 @@ print(json.dumps({
             raw_error_excerpt: Some("RuntimeError: boom".to_string()),
             raw_diagnostic: None,
             ai_diagnostic: None,
+            resume_from: None,
+            recovery_hint: None,
         });
         job.artifacts = Some(JobArtifacts {
             job_root: Some(format!("jobs/{}", job.job_id)),

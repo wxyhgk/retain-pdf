@@ -34,6 +34,19 @@ fn contains_http_status(haystack: &str, status: &str) -> bool {
 }
 
 pub fn classify_job_failure(job: &JobSnapshot) -> Option<JobFailureInfo> {
+    classify_job_failure_inner(job).map(with_recovery)
+}
+
+/// 统一在出口补上恢复信息,避免每个检测分支各自记得填一遍——那正是以前
+/// 「三处都要改、漏一处就没提示」的来源。
+fn with_recovery(mut failure: JobFailureInfo) -> JobFailureInfo {
+    let recovery = crate::job_failure_catalogue::recovery_for(&failure.category);
+    failure.resume_from = recovery.resume_from.map(|stage| stage.as_str().to_string());
+    failure.recovery_hint = Some(recovery.hint.to_string());
+    failure
+}
+
+fn classify_job_failure_inner(job: &JobSnapshot) -> Option<JobFailureInfo> {
     if !matches!(job.status, JobStatusKind::Failed) {
         return None;
     }
@@ -392,6 +405,49 @@ mod tests {
     use super::classify_job_failure;
     use crate::models::domain::{JobSnapshot, JobStatusKind};
     use crate::models::request::CreateJobInput;
+
+    /// 分类出来的失败必须带着恢复信息——这是「前端不认具体分类」的前提。
+    ///
+    /// 以前每个检测分支各自决定填不填提示,漏一个分支用户就看到「没有可识别的
+    /// 恢复状态」。现在 `classify_job_failure` 在出口统一查目录,漏不掉。
+    ///
+    /// 反证方式：把 `classify_job_failure` 里的 `.map(with_recovery)` 去掉，
+    /// 这个测试必须变红。
+    #[test]
+    fn every_classified_failure_carries_recovery_info() {
+        // 渲染失败：翻译产物完好，应当只重跑渲染
+        let build = |err: &str, stage: &str| {
+            let mut job = JobSnapshot::new(
+                "job-recovery".to_string(),
+                CreateJobInput::default(),
+                vec!["python".to_string()],
+            );
+            job.status = JobStatusKind::Failed;
+            job.error = Some(err.to_string());
+            job.stage = Some(stage.to_string());
+            job
+        };
+        let job = build("Typst compile failed phase=render_pages code=-1", "rendering");
+        let failure = classify_job_failure(&job).expect("应当被分类");
+        assert_eq!(failure.category, "render_failed");
+        assert_eq!(
+            failure.resume_from.as_deref(),
+            Some("render"),
+            "渲染失败不该让用户重烧 OCR 和翻译的钱"
+        );
+        assert!(
+            failure.recovery_hint.is_some(),
+            "每一种分类都必须有给用户的说明"
+        );
+
+        // 没被目录登记的分类也必须有兜底，不能是 None
+        let unknown = classify_job_failure(&build("something totally unexpected", "translation"))
+            .expect("应当被分类成 unknown");
+        assert!(
+            unknown.recovery_hint.is_some(),
+            "未登记的分类也要有保守兜底文案，不能让前端拿到 None"
+        );
+    }
 
     #[test]
     fn classify_job_failure_maps_placeholder_instability() {

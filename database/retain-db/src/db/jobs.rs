@@ -325,6 +325,8 @@ impl Db {
     ) -> Result<()> {
         let conn = self.connect()?;
         let failed_status_json = serde_json::to_string(&JobStatusKind::Failed)?;
+        // 查目录而不是在这里写死:新增失败类型只该改 job_failure_catalogue 一处。
+        let recovery = retain_core::job_failure_catalogue::recovery_for("worker_process_missing");
         let failure = JobFailureInfo {
             stage: "startup_recovery".to_string(),
             category: "worker_process_missing".to_string(),
@@ -345,6 +347,8 @@ impl Db {
             raw_error_excerpt: Some(detail.to_string()),
             raw_diagnostic: None,
             ai_diagnostic: None,
+            resume_from: recovery.resume_from.map(|s| s.as_str().to_string()),
+            recovery_hint: Some(recovery.hint.to_string()),
         };
         let runtime = JobRuntimeInfo {
             current_stage: Some("failed".to_string()),

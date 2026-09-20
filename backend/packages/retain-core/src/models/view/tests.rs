@@ -439,6 +439,8 @@ fn job_detail_view_exposes_runtime_and_failure_contract() {
         raw_error_excerpt: Some("compile error".to_string()),
         raw_diagnostic: None,
         ai_diagnostic: None,
+            resume_from: None,
+            recovery_hint: None,
     }));
     job.sync_runtime_state();
 

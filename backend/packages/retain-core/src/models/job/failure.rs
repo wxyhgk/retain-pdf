@@ -28,6 +28,15 @@ pub struct JobFailureInfo {
     pub raw_error_excerpt: Option<String>,
     pub raw_diagnostic: Option<JobRawDiagnostic>,
     pub ai_diagnostic: Option<JobAiDiagnostic>,
+    /// 可以从哪个阶段续跑（`translation` / `render`）。`None` = 整个任务重跑。
+    ///
+    /// 由 `job_failure_catalogue` 按 `category` 查表填充,前端据此决定要不要提供
+    /// 「续跑」按钮——而不需要自己认识任何一种具体的失败分类。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resume_from: Option<String>,
+    /// 给用户看的一句话:这次重试会做什么、要不要再花钱。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recovery_hint: Option<String>,
 }
 
 impl JobFailureInfo {
@@ -306,6 +315,8 @@ mod tests {
             raw_error_excerpt: Some("token expired".to_string()),
             raw_diagnostic: None,
             ai_diagnostic: None,
+            resume_from: None,
+            recovery_hint: None,
         }
         .with_formal_fields();
 
@@ -338,6 +349,8 @@ mod tests {
             raw_error_excerpt: None,
             raw_diagnostic: None,
             ai_diagnostic: None,
+            resume_from: None,
+            recovery_hint: None,
         };
 
         let payload = failure.write_formal_fields_into_payload(Some(&json!({
