@@ -598,7 +598,10 @@ fn build_translation_job_snapshot_for_full_pipeline_succeeds() {
     .expect("parse render config");
     assert_eq!(render_config["schema_version"], "render_config.v1");
     assert_eq!(render_config["source"], "rust_api_resolved_job_spec");
-    assert_eq!(render_config["render"]["render_mode"], "typst");
+    // 这个用例不显式给 render_mode,断言的就是默认值。曾经是 "typst",
+    // 和 RENDER_OPTIONS_CONTRACT.md 写的 auto 对不上 —— 也就是说这条断言
+    // 把那个漂移固化住了。
+    assert_eq!(render_config["render"]["render_mode"], "auto");
     assert_eq!(
         render_config["render"]["source_cleanup_strategy"],
         "pikepdf_text_strip"

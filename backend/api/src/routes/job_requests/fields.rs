@@ -99,7 +99,19 @@ pub(super) fn apply_multipart_request_field(
         }
         "font_unify_mode" => request.render.font_unify_mode = value.to_string(),
         "source_cleanup_strategy" => request.render.source_cleanup_strategy = value.to_string(),
-        _ => {}
+        // 这里曾经是 `_ => {}`,任何没命中的字段名被静默丢弃。
+        //
+        // JSON 那条路上 CreateJobInput 带 #[serde(deny_unknown_fields)],多一个键直接
+        // 400;multipart 这条路是手写逐字段分发,于是同一个拼写错误(比如 camelCase 的
+        // batchSize)在 JSON 上报错、在 multipart 上静默降级成默认值,而且没有任何日志。
+        // 两条入口对同一份契约的严格程度不一样,比两条都宽松更难查。
+        //
+        // 文件 part 在 multipart.rs 的 `continue` 处就被取走了,走不到这里。
+        unknown => {
+            return Err(AppError::bad_request(format!(
+                "unknown multipart field: {unknown}"
+            )))
+        }
     }
     Ok(())
 }
@@ -107,6 +119,54 @@ pub(super) fn apply_multipart_request_field(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn apply_multipart_request_field_rejects_unknown_names() {
+        // JSON 那条路上 CreateJobInput 带 deny_unknown_fields,拼错字段名会 400。
+        // multipart 曾经是 `_ => {}`,同一个拼写错误在这条路上静默降级成默认值。
+        // 两条入口对同一份契约的严格程度必须一致。
+        let mut request = CreateJobInput::default();
+        let mut developer_mode = false;
+        for name in ["batchSize", "totally_unknown_field", "api_key_configured"] {
+            let err = apply_multipart_request_field(&mut request, &mut developer_mode, name, "x")
+                .expect_err(&format!("{name} 应该被拒绝"));
+            assert!(
+                format!("{err:?}").contains(name),
+                "报错里要指出是哪个字段: {err:?}"
+            );
+        }
+        // 认识的字段照常生效,别误伤。
+        apply_multipart_request_field(&mut request, &mut developer_mode, "batch_size", "16")
+            .expect("batch_size 是合法字段");
+        assert_eq!(request.translation.batch_size, 16);
+    }
+
+    /// 前端在 multipart 路径上真实会发的字段名,必须全部被认识。
+    ///
+    /// 这份清单取自 `frontend/packages/api/src/jobs-submit.ts` 的 appendFormField 调用。
+    /// `file` 不在内:它在 multipart.rs 的 `continue` 处就被取走,走不到这个函数。
+    #[test]
+    fn every_field_the_frontend_sends_is_recognized() {
+        let mut request = CreateJobInput::default();
+        let mut developer_mode = false;
+        for name in [
+            "cache_tolerance", "data_id", "disable_formula", "disable_table",
+            "extra_formats", "is_ocr", "job_id", "language", "mineru_token",
+            "model_version", "no_cache", "no_output_timeout_seconds",
+            "ocr_credential_ref", "paddle_api_url", "paddle_model", "paddle_token",
+            "page_ranges", "provider", "source_url", "upload_id", "workflow",
+        ] {
+            apply_multipart_request_field(&mut request, &mut developer_mode, name, "1")
+                .unwrap_or_else(|err| panic!("前端会发 {name},但后端不认识: {err:?}"));
+        }
+        // 这两个的值必须是合法 JSON,单独给。
+        apply_multipart_request_field(&mut request, &mut developer_mode, "ocr_options", "{}")
+            .expect("ocr_options");
+        for name in ["poll_interval", "poll_timeout", "timeout_seconds"] {
+            apply_multipart_request_field(&mut request, &mut developer_mode, name, "10")
+                .unwrap_or_else(|err| panic!("前端会发 {name},但后端不认识: {err:?}"));
+        }
+    }
 
     #[test]
     fn apply_multipart_request_field_maps_flat_fields_into_grouped_input() {

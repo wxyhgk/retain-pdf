@@ -14,7 +14,14 @@ pub(crate) fn default_rule_profile_name() -> String {
     "general_sci".to_string()
 }
 pub(crate) fn default_render_mode() -> String {
-    "typst".to_string()
+    // 契约文档 backend/api/RENDER_OPTIONS_CONTRACT.md 写明默认是 auto:
+    // "auto 会由 Python 根据 PDF 可编辑性和页面特征选择实际模式"。
+    //
+    // 代码里曾经是 "typst",而 resolve_effective_render_mode() 对非 auto 一律原样返回,
+    // 于是任何省略 render 段的客户端拿到的是固定 typst、不做文档分析。上传弹窗显式发
+    // "auto" 所以没事,馆藏详情页的「翻译整本」不发 render 段,同一本书两个入口走的是
+    // 两条渲染管线。
+    "auto".to_string()
 }
 pub(crate) fn default_typst_font_family() -> String {
     std::env::var("RETAIN_PDF_TYPST_FONT_FAMILY")
