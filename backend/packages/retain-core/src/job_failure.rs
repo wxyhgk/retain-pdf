@@ -575,6 +575,57 @@ mod tests {
         assert!(hint.contains("TYPST_BIN"), "提示没说清怎么修：{hint}");
     }
 
+    /// 「最近日志」是直接渲染给用户看的（FailurePanel 的 .mono span）。结构化
+    /// 路径调 select_relevant_log_line 时关键词列表是空的，会无条件选中最后一行
+    /// 非空行——而那正是 `structured failure json:`，一整坨含 traceback 的 JSON。
+    #[test]
+    fn relevant_log_line_skips_the_structured_failure_json() {
+        let mut job = JobSnapshot::new(
+            "job-log-line".to_string(),
+            CreateJobInput::default(),
+            vec!["python".to_string()],
+        );
+        job.status = JobStatusKind::Failed;
+        job.stage = Some("rendering".to_string());
+        job.error = Some(format!(
+            "Traceback (most recent call last):\n  File \"x.py\", line 1\n\
+             TypstCompileError: Typst compile failed phase=render_pages stem=bg code=-1\n\
+             structured failure json: {}",
+            r#"{"failure_code":"typst_runtime_failed","failed_stage":"render","summary":"Typst 运行时启动失败","retryable":false,"failure_category":"render"}"#
+        ));
+
+        let failure = classify_job_failure(&job).expect("failure");
+        let line = failure.last_log_line.expect("last_log_line");
+        assert!(
+            !line.starts_with("structured failure json"),
+            "把给分类器解析的 JSON 当成了给人看的日志：{line}"
+        );
+        assert!(line.contains("TypstCompileError"), "选错了行：{line}");
+    }
+
+    /// log_tail 里的同一行也不该被选中。
+    #[test]
+    fn relevant_log_line_skips_structured_json_in_log_tail() {
+        let mut job = JobSnapshot::new(
+            "job-log-tail".to_string(),
+            CreateJobInput::default(),
+            vec!["python".to_string()],
+        );
+        job.status = JobStatusKind::Failed;
+        job.stage = Some("rendering".to_string());
+        // error 必须为空，否则 error 那一轮先返回，根本走不到 log_tail——
+        // 第一版就是这么写的，结果测试绿着却什么都没守住（反证时没转红）。
+        job.error = None;
+        job.log_tail = vec![
+            "typst compile failed: font not found".to_string(),
+            r#"structured failure json: {"failure_code":"render_failed"}"#.to_string(),
+        ];
+
+        let failure = classify_job_failure(&job).expect("failure");
+        let line = failure.last_log_line.expect("last_log_line");
+        assert!(!line.starts_with("structured failure json"), "选错了行：{line}");
+    }
+
     #[test]
     fn classify_job_failure_prefers_structured_python_failure() {
         let mut job = crate::models::JobSnapshot::new(

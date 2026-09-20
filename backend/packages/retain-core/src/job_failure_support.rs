@@ -155,7 +155,10 @@ pub(super) fn select_relevant_log_line(
     let lowered_keywords: Vec<String> = keywords.iter().map(|item| item.to_lowercase()).collect();
     for line in error.lines().rev() {
         let trimmed = line.trim();
-        if trimmed.is_empty() {
+        // 结构化失败那行是给分类器解析的，不是给人看的。它离 stderr 末尾最近，
+        // 关键词列表为空时（结构化路径就是这么调的）会被无条件选中，
+        // 于是「最近日志」变成一整坨含 traceback 的 JSON。
+        if trimmed.is_empty() || trimmed.starts_with(super::STRUCTURED_FAILURE_LABEL) {
             continue;
         }
         if lowered_keywords.is_empty() {
@@ -196,6 +199,10 @@ pub(super) fn select_relevant_log_line(
 }
 
 pub(super) fn is_low_signal_log_line(line: &str) -> bool {
+    // 同上：结构化失败 JSON 也可能出现在 log_tail 里。
+    if line.starts_with(super::STRUCTURED_FAILURE_LABEL) {
+        return true;
+    }
     let lowered = line.to_lowercase();
     lowered.starts_with("image-only compress:")
         || lowered.starts_with("cover page image")
