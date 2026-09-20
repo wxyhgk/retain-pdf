@@ -72,6 +72,8 @@ TRANSLATION_WORKFLOW_SUBPACKAGE_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_pipeline.translate.workflow.pages",
         "retainpdf_pipeline.translate.workflow.page_policies",
         "retainpdf_pipeline.translate.artifacts",
+        # provider 身份判定的唯一真相源;阶段代码只准读它,不准自己嗅 base_url/model。
+        "retainpdf_pipeline.translate.core.provider_identity",
         "retainpdf_pipeline.translate.llm.shared.control_context",
         "retainpdf_pipeline.translate.llm.shared.provider_runtime",
         "retainpdf_pipeline.translate.services.agents",

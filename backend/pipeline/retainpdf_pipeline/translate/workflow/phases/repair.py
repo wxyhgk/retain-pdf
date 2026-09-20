@@ -8,6 +8,7 @@ from retainpdf_pipeline.services.pipeline_shared.events import emit_stage_progre
 from retainpdf_pipeline.services.pipeline_shared.events import emit_stage_transition
 from retainpdf_pipeline.translate.artifacts import TranslationRunDiagnostics
 from retainpdf_pipeline.translate.artifacts import blocking_untranslated_items
+from retainpdf_pipeline.translate.core.provider_identity import is_deepseek_family_provider
 from retainpdf_pipeline.translate.llm.shared.control_context import TranslationControlContext
 from retainpdf_pipeline.translate.llm.shared.provider_runtime import DEFAULT_BASE_URL
 from retainpdf_pipeline.translate.llm.shared.provider_runtime import DEFAULT_MODEL
@@ -134,9 +135,9 @@ def run_garbled_reconstruction_stage(
 
 
 def _is_deepseek_provider(*, model: str, base_url: str) -> bool:
-    normalized_base = normalize_base_url(base_url).lower()
-    model_text = (model or "").strip().lower()
-    return "deepseek" in model_text or "deepseek.com" in normalized_base
+    # 口径收敛到 core.provider_identity;这里只负责先按 transport 语义归一化 base_url
+    # (空 base_url -> 官方默认端点),判定本身不再在调用点嗅字符串。
+    return is_deepseek_family_provider(model=model, base_url=normalize_base_url(base_url))
 
 
 def _garbled_reconstruction_runtime(

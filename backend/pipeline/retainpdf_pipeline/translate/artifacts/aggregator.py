@@ -10,6 +10,9 @@ from dataclasses import field
 from statistics import mean
 from typing import Any, Callable
 
+from retainpdf_pipeline.translate.core.provider_identity import is_deepseek_family_provider
+from retainpdf_pipeline.translate.core.provider_identity import is_deepseek_official_endpoint
+
 from .request_journal import TranslationRequestJournal
 
 
@@ -19,11 +22,16 @@ _REQUEST_REQ_SUFFIX_RE = re.compile(r"\s+req#\d+\b")
 
 
 def classify_provider_family(*, base_url: str, model: str) -> str:
-    normalized_base = (base_url or "").strip().lower()
-    normalized_model = (model or "").strip().lower()
-    if "api.deepseek.com" in normalized_base:
+    """把 provider 归类成诊断产物里的 family 标签。
+
+    判定口径来自 core.provider_identity 这个唯一真相源,本函数只负责映射成标签:
+    这里刻意**不**对 base_url 做 normalize——空 base_url 归一化后会落到官方端点,
+    若在这里归一化,就会把"没配 base_url"的任务标成 deepseek_official,
+    进而打开官方档位的并发/超时。诊断标签描述的是配置里写了什么。
+    """
+    if is_deepseek_official_endpoint(base_url):
         return "deepseek_official"
-    if "deepseek" in normalized_base or normalized_model.startswith("deepseek"):
+    if is_deepseek_family_provider(model=model, base_url=base_url):
         return "deepseek_compatible"
     return "other"
 
