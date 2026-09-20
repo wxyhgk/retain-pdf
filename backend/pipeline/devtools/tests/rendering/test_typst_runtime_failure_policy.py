@@ -108,6 +108,10 @@ def test_missing_typst_binary_is_wrapped_like_a_launch_failure(tmp_path, monkeyp
     assert payload["extra"]["runtime_error_type"] == "ExternalToolNotFound"
     # 解析都没成功，就不该谎报一个用过的二进制路径。
     assert payload["extra"]["typst_bin"] == ""
+    # 但落盘的 command 仍要是一条照着敲能复现的命令行。裸参数列表读起来像在
+    # exec 一个叫 "compile" 的程序，会把看日志的人带沟里。
+    assert payload["command"][0] == "typst"
+    assert payload["command"][1] == "compile"
     assert "未找到 typst" in payload["stderr"]
 
 

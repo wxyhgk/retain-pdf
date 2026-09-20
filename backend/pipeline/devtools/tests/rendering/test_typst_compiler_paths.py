@@ -34,6 +34,7 @@ from retainpdf_pipeline.render.output.typst.book_renderer import _compile_render
 from retainpdf_pipeline.render.output.typst.block_renderer import build_typst_block
 from retainpdf_pipeline.render.output.typst.overlay_ops import overlay_translated_pages_on_doc
 from retainpdf_pipeline.render.output.typst.book_support import prepare_translated_pages_for_render
+from retainpdf_pipeline.render.output.typst import compiler
 from retainpdf_pipeline.render.output.typst.compiler import _resolved_font_paths
 from retainpdf_pipeline.render.output.typst.compiler import _resolved_common_root
 from retainpdf_pipeline.render.output.typst.compiler import TypstCompileError
@@ -68,6 +69,17 @@ from retainpdf_pipeline.render.document.pikepdf_overlay import overlay_page_pdfs
 from retainpdf_pipeline.render.document.pikepdf_pages import extract_pages_with_pikepdf
 from retainpdf_pipeline.render.layout.inline_content.core.markdown import build_direct_typst_passthrough_text
 from devtools.tests.rendering_support.page_specs import sample_page_spec as _page_spec
+
+
+@pytest.fixture(autouse=True)
+def _stub_typst_binary_resolution(monkeypatch: pytest.MonkeyPatch) -> None:
+    """本模块的用例只验证命令构造和异常包装，从不真的执行 typst。
+
+    二进制定位也得 stub 掉：`_run_typst_compile` 现在在 try 内部解析，只 mock
+    `subprocess.run` 不够了。不 stub 的话用例会依赖开发机 PATH 里有没有 typst——
+    而 CI 上 setup-test-typst 永远装了，这种依赖只会在本地 checkout 上炸。
+    """
+    monkeypatch.setattr(compiler, "resolve_typst_bin", lambda: "/fake/typst")
 
 
 def test_first_line_indent_detector_uses_block_ink_projection() -> None:

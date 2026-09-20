@@ -140,6 +140,12 @@ def _run_typst_compile(
             },
         ) from exc
     except (OSError, ExternalToolNotFound) as exc:
+        if not typst_bin:
+            # 解析失败时 command 还没补上可执行文件。诊断会落进 pipeline_summary.json，
+            # 裸参数列表读起来像在 exec 一个叫 "compile" 的程序，补个明确的名字，
+            # 让人照着日志敲一遍能复现同样的失败。extra.typst_bin 仍为空，
+            # 表示"没解析出来"，两者不矛盾。
+            command = ["typst", *command]
         raise TypstCompileError(
             phase=phase,
             stem=stem,

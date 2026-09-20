@@ -11,6 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from retainpdf_pipeline.foundation.config import paths
+from retainpdf_pipeline.foundation.config.external_tools import ExternalToolNotFound
 from retainpdf_pipeline.render.output.typst import compiler, sanitize
 from retainpdf_pipeline.render.output.typst.compiler import TypstCompileError
 from retainpdf_pipeline.render.render_stage import run_render_stage
@@ -58,7 +59,7 @@ def _render_inputs(root: Path) -> tuple[Path, Path]:
     [("overlay", False), ("overlay", True), ("typst", False), ("typst_visual", False), ("dual", False)],
     ids=["whole-book-overlay", "selected-overlay", "typst", "typst-visual", "dual"],
 )
-@pytest.mark.parametrize("failure", ["missing-executable", "timeout"])
+@pytest.mark.parametrize("failure", ["missing-executable", "timeout", "missing-binary"])
 def test_render_stage_does_not_retry_runtime_failures_or_publish_output(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -82,6 +83,18 @@ def test_render_stage_does_not_retry_runtime_failures_or_publish_output(
         raise FileNotFoundError("test Typst executable is unavailable")
 
     monkeypatch.setattr(compiler.subprocess, "run", fail_compile)
+    if failure == "missing-binary":
+        # 连二进制都定位不到：解析发生在 subprocess 之前，所以 fail_compile 根本
+        # 不会被调用。这一档锁的就是「环境问题不许扇出成内容探测」对这条更早的
+        # 失败路径同样成立。
+        def _missing() -> str:
+            raise ExternalToolNotFound("test typst binary is unavailable")
+
+        monkeypatch.setattr(compiler, "resolve_typst_bin", _missing)
+    else:
+        # 定位必须 stub 成功，否则用例会依赖开发机 PATH 里有没有 typst，
+        # 而这里想模拟的是 subprocess 层的失败，不是环境缺失。
+        monkeypatch.setattr(compiler, "resolve_typst_bin", lambda: "/fake/typst")
     with pytest.raises(TypstCompileError) as raised:
         run_render_stage(
             source_pdf_path=source,
@@ -94,11 +107,16 @@ def test_render_stage_does_not_retry_runtime_failures_or_publish_output(
             pdf_compress_dpi=0,
         )
 
-    assert len(commands) == 1, "environment failures must not fan out into content probes"
-    assert raised.value.return_code == -1
-    assert raised.value.extra["runtime_error_type"] == (
-        "TimeoutExpired" if failure == "timeout" else "FileNotFoundError"
+    expected_compile_calls = 0 if failure == "missing-binary" else 1
+    assert len(commands) == expected_compile_calls, (
+        "environment failures must not fan out into content probes"
     )
+    assert raised.value.return_code == -1
+    assert raised.value.extra["runtime_error_type"] == {
+        "timeout": "TimeoutExpired",
+        "missing-executable": "FileNotFoundError",
+        "missing-binary": "ExternalToolNotFound",
+    }[failure]
     assert not output.exists(), "failed rendering must not publish a successful PDF"
     assert all(path.read_bytes() == original for path, original in inputs_before.items())
 
