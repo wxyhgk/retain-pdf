@@ -39,7 +39,7 @@
 - `vector_profile.py` 放 source 层共享的页面 vector drawing 统计 primitive。
 - `vector_text.py` 放 source 层共享的 vector text 检测 primitive；具体删除和
   背景修补由 cleanup/background 执行层决定。
-- `dev_overlay/` 是旧 PyMuPDF 直绘译文路径，仅用于 direct overlay 和单页调试；
-  主渲染路径不要在这里扩展正文排版规则。
+- `dev_overlay/` 是旧 PyMuPDF 直绘译文路径；direct overlay 和单页调试入口都已删除，
+  现在只剩 `text_draw.py` 给单元测试用，主渲染路径不要在这里扩展正文排版规则。
 - 子包之间不要为了共享基础 geometry 互相 import；需要共享时先上移到
   `rects.py`。

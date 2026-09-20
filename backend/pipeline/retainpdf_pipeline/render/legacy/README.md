@@ -6,7 +6,6 @@
 
 ## 对外入口
 
-- `pdf_overlay.py`
 - `typst_page_renderer.py`
 - `background_image_route.py`
 - `pdf_compress.py`

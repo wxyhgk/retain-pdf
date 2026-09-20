@@ -7,7 +7,6 @@
 ## 对外入口
 
 - `executor.py`
-- `direct_overlay.py`
 - `modes.py`
 - `context.py`
 
