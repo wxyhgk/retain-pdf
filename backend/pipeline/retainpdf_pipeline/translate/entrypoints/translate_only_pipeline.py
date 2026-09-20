@@ -83,10 +83,6 @@ def _args_from_spec(spec: TranslateStageSpec) -> SimpleNamespace:
         api_key=resolve_credential_ref(spec.params.credential_ref),
         model=spec.params.model,
         base_url=spec.params.base_url,
-        render_prewarm_output_pdf_path=spec.params.render_prewarm_output_pdf_path,
-        render_prewarm_mode=spec.params.render_prewarm_mode,
-        render_prewarm_pdf_compress_dpi=spec.params.render_prewarm_pdf_compress_dpi,
-        render_prewarm_source_cleanup_strategy=spec.params.render_prewarm_source_cleanup_strategy,
     )
 
 

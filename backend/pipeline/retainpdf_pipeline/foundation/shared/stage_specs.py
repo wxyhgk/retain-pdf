@@ -17,6 +17,22 @@ RENDER_STAGE_SCHEMA_VERSION = "render.stage.v1"
 PROVIDER_STAGE_SCHEMA_VERSION = "provider.stage.v1"
 BOOK_STAGE_SCHEMA_VERSION = "book.stage.v1"
 
+# Rust 侧 `retain-core/src/models/defaults.rs::default_batch_size` 的兜底值。
+#
+# 兜底值只在 key 缺失时生效，所以两边不一致今天不咬人——spec 里这个 key 从来没
+# 缺过。但兜底值存在的意义就是 key 缺失时用：Rust 缺失时用 8，Python 缺失时用 1，
+# 而 1 会禁用批翻译队列（每个文本块单独发一次请求）。同一份 spec 少一个 key，
+# 两边就跑出两种翻译行为，且不会有任何报错。
+#
+# devtools/tests/test_stage_spec_contract.py 直接读 defaults.rs 断言这两个数字
+# 相同；改这里而不改那边（或反过来）会让那条用例转红。
+#
+# 三个 loader 都用 `_int_field` 取这个值，而不是原先的 `get(..., 1) or 1`：
+# 只有「key 缺失 / None / 空串」才走兜底，显式写进 spec 的 0 仍然原样传下去，
+# 由 `translate/workflow` 里那几处 `max(1, batch_size)` 收口——和改之前完全一样。
+# 这次只动兜底值，不顺手改显式值的语义。
+DEFAULT_TRANSLATION_BATCH_SIZE = 8
+
 
 def build_stage_invocation_metadata(
     *,
@@ -190,10 +206,6 @@ class TranslateStageParams:
     model: str
     base_url: str
     credential_ref: str
-    render_prewarm_output_pdf_path: Path | None
-    render_prewarm_mode: str
-    render_prewarm_pdf_compress_dpi: int
-    render_prewarm_source_cleanup_strategy: str
 
 
 @dataclass(frozen=True)
@@ -243,7 +255,9 @@ class TranslateStageSpec:
         params = TranslateStageParams(
             start_page=_int_field(params_payload, "start_page", 0),
             end_page=_int_field(params_payload, "end_page", -1),
-            batch_size=int(params_payload.get("batch_size", 1) or 1),
+            batch_size=_int_field(
+                params_payload, "batch_size", DEFAULT_TRANSLATION_BATCH_SIZE
+            ),
             workers=int(params_payload.get("workers", 1) or 1),
             mode=str(params_payload.get("mode", "sci") or "sci"),
             math_mode=str(
@@ -285,23 +299,6 @@ class TranslateStageSpec:
             model=str(params_payload.get("model", "") or ""),
             base_url=str(params_payload.get("base_url", "") or ""),
             credential_ref=str(params_payload.get("credential_ref", "") or ""),
-            render_prewarm_output_pdf_path=_optional_path(
-                params_payload.get("render_prewarm_output_pdf_path")
-            ),
-            render_prewarm_mode=str(
-                params_payload.get("render_prewarm_mode", "auto") or "auto"
-            ),
-            render_prewarm_pdf_compress_dpi=int(
-                params_payload.get("render_prewarm_pdf_compress_dpi", 0) or 0
-            ),
-            render_prewarm_source_cleanup_strategy=str(
-                params_payload.get(
-                    "render_prewarm_source_cleanup_strategy", "pikepdf_text_strip"
-                )
-                or "pikepdf_text_strip"
-            )
-            .strip()
-            .lower(),
         )
         return cls(
             schema_version=schema_version,
@@ -592,7 +589,9 @@ class ProviderStageSpec:
         translation = ProviderStageTranslationParams(
             start_page=_int_field(translation_payload, "start_page", 0),
             end_page=_int_field(translation_payload, "end_page", -1),
-            batch_size=int(translation_payload.get("batch_size", 1) or 1),
+            batch_size=_int_field(
+                translation_payload, "batch_size", DEFAULT_TRANSLATION_BATCH_SIZE
+            ),
             workers=int(translation_payload.get("workers", 1) or 1),
             mode=str(translation_payload.get("mode", "sci") or "sci"),
             math_mode=str(
@@ -797,7 +796,9 @@ class BookStageSpec:
         translation = BookStageTranslationParams(
             start_page=_int_field(translation_payload, "start_page", 0),
             end_page=_int_field(translation_payload, "end_page", -1),
-            batch_size=int(translation_payload.get("batch_size", 1) or 1),
+            batch_size=_int_field(
+                translation_payload, "batch_size", DEFAULT_TRANSLATION_BATCH_SIZE
+            ),
             workers=int(translation_payload.get("workers", 1) or 1),
             mode=str(translation_payload.get("mode", "sci") or "sci"),
             math_mode=str(

@@ -196,8 +196,19 @@ PYTHONPATH=backend/pipeline uv run --project backend python backend/pipeline/dev
 
 ```bash
 PYTHONPATH=backend/pipeline uv run --project backend python -m pytest backend/pipeline/devtools/tests/document_schema/test_normalize_stage_spec.py -q
-PYTHONPATH=backend/pipeline uv run --project backend python backend/pipeline/devtools/check_stage_specs_contract.py data/jobs
+PYTHONPATH=backend/pipeline uv run --project backend python -m pytest backend/pipeline/devtools/tests/test_stage_spec_contract.py -q
 ```
+
+`check_stage_specs_contract.py` 手动跑可以指一个真实 job 目录：
+
+```bash
+PYTHONPATH=backend/pipeline uv run --project backend python backend/pipeline/devtools/check_stage_specs_contract.py data/jobs --strict
+```
+
+注意 `--strict`：不加的话，扫不到任何 spec（干净 checkout 和 CI 上 `data/jobs` 就是
+空的）直接返回 0，等于什么都没验。CI 里跑的是上面那条 pytest——它用
+`tests/fixtures/golden-jobs/chem-6ada81-10p` 里固化的真实 spec 当输入，并额外断言
+Rust 写出的 params key 集合和 Python loader 的字段集合完全相同。
 
 ## 边界规则
 

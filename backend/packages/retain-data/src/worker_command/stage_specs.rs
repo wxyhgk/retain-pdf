@@ -132,16 +132,12 @@ pub(crate) fn write_translate_stage_spec(
             "model": request.translation.model,
             "base_url": request.translation.base_url,
             "credential_ref": credential_ref,
-            "render_prewarm_output_pdf_path": job_paths.rendered_dir.join(
-                if request.render.translated_pdf_name.trim().is_empty() {
-                    format!("{}-translated.pdf", source_pdf_path.file_stem().and_then(|value| value.to_str()).unwrap_or("translated"))
-                } else {
-                    request.render.translated_pdf_name.clone()
-                }
-            ),
-            "render_prewarm_mode": request.render.render_mode,
-            "render_prewarm_pdf_compress_dpi": request.render.pdf_compress_dpi,
-            "render_prewarm_source_cleanup_strategy": request.render.source_cleanup_strategy,
+            // 这里曾经还写 4 个 render_prewarm_* key（输出路径 / render_mode /
+            // pdf_compress_dpi / source_cleanup_strategy）。阶段解耦之后 render
+            // prewarm 整体挪进了 render 阶段（见 translate_only_pipeline 里那段
+            // "Stage decoupling" 注释），translate 侧从 loader 到 stage 函数一路
+            // 接住却一个都不用——四层死字段。字段已删；params 的 key 集合现在由
+            // stage_specs_keep_python_loader_contract_keys 对齐黄金 fixture 钉死。
         },
     });
     let content = serde_json::to_string_pretty(&payload)?;

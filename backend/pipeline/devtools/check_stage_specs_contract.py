@@ -23,7 +23,7 @@ SPEC_LOADERS: dict[str, Callable[[Path], object]] = {
 }
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Validate RetainPDF stage spec JSON files against the Python stage spec loaders. "
@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Fail when no spec files are found.",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def _iter_spec_files(paths: list[Path]) -> tuple[list[Path], bool]:
@@ -78,8 +78,13 @@ def validate_spec(path: Path) -> tuple[str, str]:
     return "ok", stage
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> int:
+    """`argv` 可显式传入，好让 devtools/tests/test_stage_spec_contract.py 直接调。
+
+    在那条用例之前，这个检查器全仓没有任何调用点——架构门禁只 grep 它的源码，
+    从来没执行过它。
+    """
+    args = parse_args(argv)
     spec_files, has_explicit_file = _iter_spec_files(args.paths)
     if not spec_files:
         message = "no stage spec files found"

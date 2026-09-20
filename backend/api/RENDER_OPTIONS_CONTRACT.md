@@ -53,9 +53,13 @@ Rust 写出的 stage spec 必须包含这些字段：
 - `provider.spec.json.render.source_cleanup_strategy`
 - `book.spec.json.render.source_cleanup_strategy`
 - `render.spec.json.params.source_cleanup_strategy`
-- `translate.spec.json.params.render_prewarm_source_cleanup_strategy`
 
-翻译阶段预热渲染 source 时必须使用和最终渲染一致的 `source_cleanup_strategy`，否则预热 manifest 会因为 fingerprint 不一致而失效。
+`translate.spec.json` 不再带 `render_prewarm_source_cleanup_strategy`。阶段解耦之后
+render prewarm 整体在 render 阶段跑（`render/workflow/prewarm_entry`），translate
+阶段不再预热，自然也不需要这个参数——它在 Rust 写入、Python loader、stage 函数三层
+之间传了一圈，最后没有任何消费者。prewarm 用的 `source_cleanup_strategy` 由
+`render.spec.json.params.source_cleanup_strategy` 提供，和最终渲染天然是同一个值，
+fingerprint 不会再有对不齐的可能。
 
 ## Job 快照
 

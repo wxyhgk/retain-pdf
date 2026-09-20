@@ -228,6 +228,43 @@ mod tests {
         }
     }
 
+    /// translate spec 的 params key 集合以固化的黄金 fixture 为准。
+    ///
+    /// 用 fixture 而不是测试里再抄一份列表，是为了把 Rust 和 Python 串成一条链：
+    /// Rust 改了 params，这条断言先红，逼着更新 fixture；fixture 一更新，
+    /// Python 侧 devtools/tests/test_stage_spec_contract.py 的
+    /// TranslateStageParams 字段比对接着红，逼着 loader 跟上。
+    /// 两边各自抄一份常量的话，谁也拦不住另一边漏改。
+    fn golden_translate_params_keys() -> Vec<String> {
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../tests/fixtures/golden-jobs/chem-6ada81-10p/specs/translate.spec.json");
+        let raw = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("read golden translate spec {}: {e}", path.display()));
+        let payload: serde_json::Value =
+            serde_json::from_str(&raw).expect("golden translate spec is valid json");
+        let mut keys: Vec<String> = payload["params"]
+            .as_object()
+            .expect("golden translate spec params is object")
+            .keys()
+            .cloned()
+            .collect();
+        keys.sort();
+        keys
+    }
+
+    fn assert_object_keys_exactly(value: &serde_json::Value, keys: &[String]) {
+        let object = value.as_object().expect("stage spec section is object");
+        let mut actual: Vec<String> = object.keys().cloned().collect();
+        actual.sort();
+        let mut expected: Vec<String> = keys.to_vec();
+        expected.sort();
+        assert_eq!(
+            actual, expected,
+            "stage spec key set drifted from tests/fixtures/golden-jobs/chem-6ada81-10p; \
+             refresh the fixture and the Python loader together"
+        );
+    }
+
     #[test]
     fn translate_only_command_uses_translation_stage_command() {
         let config = test_config();
@@ -263,16 +300,12 @@ mod tests {
             payload["params"]["credential_ref"],
             format!("env:{TRANSLATION_API_KEY_ENV_NAME}")
         );
-        assert_eq!(payload["params"]["render_prewarm_mode"], "typst");
-        assert_eq!(
-            payload["params"]["render_prewarm_output_pdf_path"]
-                .as_str()
-                .expect("render prewarm output path"),
-            job_paths.rendered_dir.join("out.pdf").to_string_lossy()
-        );
-        assert_eq!(
-            payload["params"]["render_prewarm_source_cleanup_strategy"],
-            "pikepdf_text_strip"
+        // render prewarm 在阶段解耦时整体挪去了 render 阶段，translate spec 不
+        // 应再带 render_prewarm_* ——Python 侧从 loader 到 stage 函数全程接住却
+        // 一个都不用，是纯死字段。
+        assert!(
+            !spec_json.contains("render_prewarm"),
+            "translate spec should no longer carry render_prewarm_* params"
         );
         assert!(!spec_json.contains("sk-test"));
     }
@@ -766,33 +799,7 @@ mod tests {
             &translate["inputs"],
             &["source_json", "source_pdf", "layout_json"],
         );
-        assert_object_has_keys(
-            &translate["params"],
-            &[
-                "start_page",
-                "end_page",
-                "batch_size",
-                "workers",
-                "mode",
-                "math_mode",
-                "skip_title_translation",
-                "classify_batch_size",
-                "rule_profile_name",
-                "custom_rules_text",
-                "glossary_id",
-                "glossary_name",
-                "glossary_resource_entry_count",
-                "glossary_inline_entry_count",
-                "glossary_overridden_entry_count",
-                "glossary_entries",
-                "context_mode",
-                "glossary_mode",
-                "memory_mode",
-                "model",
-                "base_url",
-                "credential_ref",
-            ],
-        );
+        assert_object_keys_exactly(&translate["params"], &golden_translate_params_keys());
 
         let render = read_spec_from_command(&render_command(
             config.as_ref(),
