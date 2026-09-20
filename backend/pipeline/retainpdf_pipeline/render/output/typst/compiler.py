@@ -12,7 +12,7 @@ from retainpdf_pipeline.foundation.config.external_tools import resolve_typst_bi
 from retainpdf_pipeline.foundation.config import paths
 from retainpdf_pipeline.render.layout.model.models import RenderPageSpec
 from retainpdf_pipeline.render.output.typst.emitter import build_typst_source_from_page_specs
-from retainpdf_pipeline.render.output.typst.shared import TYPST_OVERLAY_DIR
+from retainpdf_pipeline.render.output.typst.shared import typst_overlay_dir
 from retainpdf_pipeline.render.output.typst.source_builder import build_typst_book_background_source
 from retainpdf_pipeline.render.output.typst.source_builder import build_typst_book_overlay_source
 from retainpdf_pipeline.render.output.typst.source_builder import build_typst_overlay_source
@@ -240,7 +240,7 @@ def compile_typst_overlay_pdf(
     font_paths: list[Path] | None = None,
     work_dir: Path | None = None,
 ) -> Path:
-    work_dir = work_dir or TYPST_OVERLAY_DIR
+    work_dir = work_dir or typst_overlay_dir()
     work_dir.mkdir(parents=True, exist_ok=True)
     typ_path = work_dir / f"{stem}.typ"
     pdf_path = work_dir / f"{stem}.pdf"
@@ -276,7 +276,7 @@ def compile_typst_book_overlay_pdf(
     work_dir: Path | None = None,
     prebuilt_source_path: Path | None = None,
 ) -> Path:
-    work_dir = work_dir or TYPST_OVERLAY_DIR
+    work_dir = work_dir or typst_overlay_dir()
     work_dir.mkdir(parents=True, exist_ok=True)
     typ_path = work_dir / f"{stem}.typ"
     pdf_path = work_dir / f"{stem}.pdf"
@@ -314,7 +314,7 @@ def compile_typst_book_background_pdf(
     work_dir: Path | None = None,
     prebuilt_source_path: Path | None = None,
 ) -> Path:
-    work_dir = work_dir or TYPST_OVERLAY_DIR
+    work_dir = work_dir or typst_overlay_dir()
     work_dir.mkdir(parents=True, exist_ok=True)
     typ_path = work_dir / f"{stem}.typ"
     pdf_path = work_dir / f"{stem}.pdf"
@@ -356,7 +356,7 @@ def compile_typst_render_pages_pdf(
     work_dir: Path | None = None,
     prebuilt_source_path: Path | None = None,
 ) -> Path:
-    work_dir = work_dir or TYPST_OVERLAY_DIR
+    work_dir = work_dir or typst_overlay_dir()
     work_dir.mkdir(parents=True, exist_ok=True)
     typ_path = work_dir / f"{stem}.typ"
     pdf_path = work_dir / f"{stem}.pdf"

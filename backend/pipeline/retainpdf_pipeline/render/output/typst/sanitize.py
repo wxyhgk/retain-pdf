@@ -8,7 +8,7 @@ from retainpdf_pipeline.foundation.config import fonts
 from retainpdf_pipeline.render.output.typst.compiler import compile_typst_overlay_pdf
 from retainpdf_pipeline.render.output.typst.compiler import TypstCompileError
 from retainpdf_pipeline.render.output.typst.compiler import is_typst_runtime_failure
-from retainpdf_pipeline.render.output.typst.shared import TYPST_OVERLAY_DIR
+from retainpdf_pipeline.render.output.typst.shared import typst_overlay_dir
 from retainpdf_pipeline.render.output.typst.sanitize_steps import find_bad_item_indices
 from retainpdf_pipeline.render.output.typst.sanitize_steps import replace_item_math_tokens_with_plain_text
 from retainpdf_pipeline.render.output.typst.sanitize_steps import item_contains_raw_math
@@ -55,7 +55,7 @@ def sanitize_items_for_typst_compile(
     diagnostics: dict | None = None,
     request_chat_content_fn: TypstRepairRequestFn | None = None,
 ) -> list[dict]:
-    work_dir = work_dir or TYPST_OVERLAY_DIR
+    work_dir = work_dir or typst_overlay_dir()
     if diagnostics is not None:
         diagnostics.setdefault("stem", stem)
         diagnostics.setdefault("work_dir", str(work_dir))
@@ -211,7 +211,7 @@ def compile_overlay_pdf_resilient(
     diagnostics: dict | None = None,
     request_chat_content_fn: TypstRepairRequestFn | None = None,
 ) -> Path:
-    work_dir = work_dir or TYPST_OVERLAY_DIR
+    work_dir = work_dir or typst_overlay_dir()
     sanitized_items = sanitize_items_for_typst_compile(
         page_width,
         page_height,
@@ -252,7 +252,7 @@ def sanitize_page_specs_for_typst_book_background(
     page_indices: set[int] | None = None,
     request_chat_content_fn: TypstRepairRequestFn | None = None,
 ) -> list[tuple[int, float, float, list[dict]]]:
-    work_dir = work_dir or TYPST_OVERLAY_DIR
+    work_dir = work_dir or typst_overlay_dir()
     sanitized_specs: list[tuple[int, float, float, list[dict]]] = []
     for page_index, (source_page_idx, page_width, page_height, translated_items) in enumerate(page_specs):
         if page_indices is not None and page_index not in page_indices:
@@ -296,7 +296,7 @@ def sanitize_page_specs_for_typst_book_overlay(
     overlay_indices: set[int] | None = None,
     request_chat_content_fn: TypstRepairRequestFn | None = None,
 ) -> list[tuple[int, float, float, list[dict], str]]:
-    work_dir = work_dir or TYPST_OVERLAY_DIR
+    work_dir = work_dir or typst_overlay_dir()
     sanitized_specs: list[tuple[int, float, float, list[dict], str]] = []
     total_pages = len(page_specs)
     for page_index, (page_idx, page_width, page_height, translated_items, page_stem) in enumerate(page_specs):

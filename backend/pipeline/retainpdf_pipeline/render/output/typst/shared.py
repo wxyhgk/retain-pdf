@@ -10,7 +10,15 @@ from retainpdf_pipeline.foundation.config import paths
 from retainpdf_pipeline.render.layout.inline_content.fallback.latex_normalizer import aggressively_simplify_formula_for_latex_math
 from retainpdf_pipeline.render.layout.payload.shared import get_render_formula_map
 
-TYPST_OVERLAY_DIR = paths.OUTPUT_DIR / "typst_overlay"
+
+def typst_overlay_dir() -> Path:
+    """没有显式 work_dir 时的 Typst overlay 工作目录；每次调用重新求值。
+
+    和 ``formula_cache_dir()`` 同理：模块级常量会在 import 时就把
+    ``paths.OUTPUT_DIR`` 冻住，之后再改 ``OUTPUT_ROOT`` 或 monkeypatch
+    ``paths.OUTPUT_DIR`` 都不再生效，产物照旧落回仓库的 ``data/``。
+    """
+    return paths.OUTPUT_DIR / "typst_overlay"
 
 
 def escape_typst_string(text: str) -> str:

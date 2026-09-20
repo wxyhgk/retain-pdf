@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from retainpdf_pipeline.foundation.config import paths
 from retainpdf_pipeline.foundation.config.external_tools import ExternalToolNotFound
-from retainpdf_pipeline.render.output.typst import compiler, sanitize
+from retainpdf_pipeline.render.output.typst import compiler
 from retainpdf_pipeline.render.output.typst.compiler import TypstCompileError
 from retainpdf_pipeline.render.render_stage import run_render_stage
 
@@ -72,8 +72,9 @@ def test_render_stage_does_not_retry_runtime_failures_or_publish_output(
     output = tmp_path / "rendered" / "translated.pdf"
     monkeypatch.setenv("RETAINPDF_RENDER_NO_CACHE", "1")
     monkeypatch.setenv("RETAIN_RENDER_TYPST_LLM_REPAIR", "0")
+    # overlay 工作目录现在是惰性求值的，patch 掉 OUTPUT_DIR 就够了；以前还得
+    # 额外 patch sanitize.TYPST_OVERLAY_DIR 那个 import 时冻住的常量。
     monkeypatch.setattr(paths, "OUTPUT_DIR", tmp_path / "fallback")
-    monkeypatch.setattr(sanitize, "TYPST_OVERLAY_DIR", tmp_path / "fallback")
     commands: list[list[str]] = []
 
     def fail_compile(command: list[str], **kwargs: object) -> None:

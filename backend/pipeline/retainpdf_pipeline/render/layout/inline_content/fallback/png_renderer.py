@@ -11,7 +11,18 @@ from retainpdf_pipeline.foundation.config import paths
 from retainpdf_pipeline.render.layout.inline_content.fallback.latex_normalizer import normalize_formula_for_latex_math
 
 
-FORMULA_CACHE_DIR = paths.OUTPUT_DIR / "formula_cache"
+def formula_cache_dir() -> Path:
+    """公式 PNG 缓存目录；每次调用都重新从 ``paths.OUTPUT_DIR`` 求值。
+
+    不缓存到模块级常量：导入时机早于调用时机，缓存会让「先 import 再改
+    ``OUTPUT_ROOT`` / ``paths.OUTPUT_DIR``」的调用方（测试是最典型的一类）继续
+    往上一次求值出来的目录里写。#110 之后 CI 会在干净 checkout 上跑单元测试，
+    而本机 ``data/formula_cache`` 里留着上一次带 typst 跑出来的 PNG，于是
+    ``if not png_path.exists()`` 本机命中缓存、CI 落空——同一个用例两边结论相反。
+    """
+    return paths.OUTPUT_DIR / "formula_cache"
+
+
 # A single-formula compile is small, but Typst can still stall downloading a
 # `@preview/...` package from packages.typst.org over a bad connection, so give it a
 # generous timeout rather than hanging the job forever. Override with
@@ -208,11 +219,12 @@ def convert_latexish_to_typst(expr: str) -> str:
 
 
 def compile_formula_png(formula_text: str) -> tuple[Path, tuple[int, int]]:
-    FORMULA_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    cache_dir = formula_cache_dir()
+    cache_dir.mkdir(parents=True, exist_ok=True)
     typst_expr = convert_latexish_to_typst(formula_text).strip()
     digest = hashlib.sha1(typst_expr.encode("utf-8")).hexdigest()[:16]
-    typ_path = FORMULA_CACHE_DIR / f"{digest}.typ"
-    png_path = FORMULA_CACHE_DIR / f"{digest}.png"
+    typ_path = cache_dir / f"{digest}.typ"
+    png_path = cache_dir / f"{digest}.png"
 
     if not png_path.exists():
         typ_path.write_text(
