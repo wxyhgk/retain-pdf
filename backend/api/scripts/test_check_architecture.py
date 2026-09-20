@@ -457,5 +457,102 @@ mod tests { fn fixture() { let runtime: ProcessRuntimeDeps; } }
                 ))
 
 
+class FailureCatalogueCoverageTests(unittest.TestCase):
+    """恢复目录必须登记 Python 侧发出的每一个 failure code。
+
+    漏登记不会报错、不会崩，只会让用户看到「未识别的失败类型，重试会从头开始」——
+    而这句话通常是假的：恢复按钮并不看分类，照样只重跑渲染。这条门禁存在的意义
+    就是把一个静默的谎言变成一次构建失败。
+    """
+
+    CATALOGUE = (
+        "const CATALOGUE: &[(&str, FailureRecovery)] = &[\n"
+        '    ("render_failed", FailureRecovery {\n'
+        "        resume_from: Some(ResumeFrom::Render),\n"
+        '        hint: "...",\n'
+        "    }),\n"
+        '    ("auth_failed", FailureRecovery {\n'
+        "        resume_from: None,\n"
+        '        hint: "...",\n'
+        "    }),\n"
+        "];\n"
+    )
+
+    PYTHON = (
+        "def classify(exc):\n"
+        "    if a:\n"
+        '        error_type = "render_failed"\n'
+        "    elif b:\n"
+        '        error_type = "auth_failed"\n'
+    )
+
+    def run_check(self, catalogue, python):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            catalogue_path = root / "job_failure_catalogue.rs"
+            python_path = root / "structured_errors.py"
+            catalogue_path.write_text(catalogue, encoding="utf-8")
+            python_path.write_text(python, encoding="utf-8")
+            with patch.object(checks, "FAILURE_CATALOGUE_PATH", catalogue_path), patch.object(
+                checks, "PYTHON_STRUCTURED_ERRORS", python_path
+            ):
+                errors = []
+                checks.check_failure_catalogue_covers_python_codes(errors)
+                return errors
+
+    def test_full_coverage_passes(self):
+        self.assertEqual([], self.run_check(self.CATALOGUE, self.PYTHON))
+
+    def test_unregistered_python_code_is_reported(self):
+        python = self.PYTHON + "    elif c:\n" + '        error_type = "typst_runtime_failed"\n'
+        errors = self.run_check(self.CATALOGUE, python)
+        self.assertEqual(1, len(errors))
+        self.assertIn("typst_runtime_failed", errors[0])
+
+    def test_every_missing_code_is_reported_not_just_the_first(self):
+        python = (
+            self.PYTHON
+            + "    elif c:\n"
+            + '        error_type = "json_decode_failed"\n'
+            + "    elif d:\n"
+            + '        error_type = "upstream_bad_request"\n'
+        )
+        self.assertEqual(2, len(self.run_check(self.CATALOGUE, python)))
+
+    def test_catalogue_only_codes_are_not_reported(self):
+        """Rust 侧也会产生分类（结构化 JSON 缺失时兜底），目录里多出来是正常的。"""
+        extra = (
+            '    ("process_timeout", FailureRecovery {\n'
+            "        resume_from: None,\n"
+            '        hint: "...",\n'
+            "    }),\n];"
+        )
+        self.assertEqual([], self.run_check(self.CATALOGUE.replace("];", extra), self.PYTHON))
+
+    def test_gate_reports_when_it_can_no_longer_parse_the_catalogue(self):
+        """写法变了而门禁没跟上时必须叫出来，而不是静默变成空操作。"""
+        errors = self.run_check("const CATALOGUE: &[Foo] = &[];\n", self.PYTHON)
+        self.assertEqual(1, len(errors))
+        self.assertIn("一条目录项都没解析出来", errors[0])
+
+    def test_gate_reports_when_it_can_no_longer_parse_the_python_source(self):
+        errors = self.run_check(self.CATALOGUE, "FAILURE_CODES = {'a': 1}\n")
+        self.assertEqual(1, len(errors))
+        self.assertIn("一个 error_type", errors[0])
+
+    def test_missing_catalogue_is_reported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            python_path = root / "structured_errors.py"
+            python_path.write_text(self.PYTHON, encoding="utf-8")
+            with patch.object(checks, "FAILURE_CATALOGUE_PATH", root / "gone.rs"), patch.object(
+                checks, "PYTHON_STRUCTURED_ERRORS", python_path
+            ):
+                errors = []
+                checks.check_failure_catalogue_covers_python_codes(errors)
+        self.assertEqual(1, len(errors))
+        self.assertIn("恢复目录不见了", errors[0])
+
+
 if __name__ == "__main__":
     unittest.main()

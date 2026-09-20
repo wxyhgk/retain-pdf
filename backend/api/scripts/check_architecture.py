@@ -26,6 +26,21 @@ _CRATE_OF_MODULE = {
     "job_failure_support": "../packages/retain-core",
 }
 
+# 失败分类由两个地方产生：Python 流水线的 structured_errors.py（worker 打出
+# `structured failure json:`，Rust 解析到就直接返回，本地检测分支一行都不跑）
+# 和 Rust 的 job_failure.rs（结构化 JSON 缺失时才兜底）。恢复目录当初只照着
+# 后者写，于是前者的 7 个取值全在吃「未识别的失败类型，重试会从头开始」——
+# 一句假话：恢复按钮根本不看分类，照样只重跑渲染。这条门禁把两份清单钉在一起。
+FAILURE_CATALOGUE_LABEL = "src/job_failure_catalogue.rs"
+FAILURE_CATALOGUE_PATH = (
+    REPO_ROOT.parent / "packages" / "retain-core" / "src" / "job_failure_catalogue.rs"
+)
+PYTHON_STRUCTURED_ERRORS = (
+    REPO_ROOT.parent / "pipeline" / "retainpdf_pipeline" / "foundation" / "shared" / "structured_errors.py"
+)
+PYTHON_FAILURE_CODE_PATTERN = re.compile(r'^\s*error_type = "([a-z0-9_]+)"', re.MULTILINE)
+CATALOGUE_KEY_PATTERN = re.compile(r'^\s*\("([a-z0-9_]+)", FailureRecovery \{', re.MULTILINE)
+
 ALL_SRC_ROOTS = (
     SRC_ROOT,
     REPO_ROOT.parent.parent / "database" / "retain-db" / "src",
@@ -1090,6 +1105,45 @@ UNCONDITIONAL_JOB_WRITE = "persist_runtime_job_with_resources("
 UNCONDITIONAL_JOB_WRITE_MARKER = "ALLOW-UNCONDITIONAL-JOB-WRITE:"
 
 
+def check_failure_catalogue_covers_python_codes(errors: list[str]) -> None:
+    if not FAILURE_CATALOGUE_PATH.exists():
+        errors.append(f"{FAILURE_CATALOGUE_LABEL}: 恢复目录不见了，失败分类将全部走兜底文案")
+        return
+    if not PYTHON_STRUCTURED_ERRORS.exists():
+        errors.append(
+            f"{FAILURE_CATALOGUE_LABEL}: 找不到 Python 侧的失败分类来源"
+            f"（{PYTHON_STRUCTURED_ERRORS.name}），无法校验恢复目录覆盖率"
+        )
+        return
+
+    catalogue_keys = set(
+        CATALOGUE_KEY_PATTERN.findall(FAILURE_CATALOGUE_PATH.read_text(encoding="utf-8"))
+    )
+    if not catalogue_keys:
+        errors.append(
+            f"{FAILURE_CATALOGUE_LABEL}: 一条目录项都没解析出来——"
+            f"CATALOGUE 的写法变了而这条门禁没跟上，它现在什么都挡不住"
+        )
+        return
+
+    python_codes = set(
+        PYTHON_FAILURE_CODE_PATTERN.findall(PYTHON_STRUCTURED_ERRORS.read_text(encoding="utf-8"))
+    )
+    if not python_codes:
+        errors.append(
+            f"{FAILURE_CATALOGUE_LABEL}: 从 {PYTHON_STRUCTURED_ERRORS.name} 里一个 error_type "
+            f"都没解析出来——赋值写法变了而这条门禁没跟上"
+        )
+        return
+
+    for code in sorted(python_codes - catalogue_keys):
+        errors.append(
+            f'{FAILURE_CATALOGUE_LABEL}: structured_errors.py 会发出 "{code}"，但恢复目录里没有登记。'
+            f"用户会看到「未识别的失败类型，重试会从头开始」——而这句话通常是假的，"
+            f"恢复按钮并不看分类。在 CATALOGUE 里加一行。"
+        )
+
+
 def check_unconditional_job_writes(errors: list[str]) -> None:
     for path in scan_rs_files(abs_src(Path("src/job_runner"))):
         rel_path = rel(path)
@@ -1277,6 +1331,7 @@ def main() -> int:
     check_summary_loaders_boundary(errors)
     check_ocr_flow_boundaries(errors)
     check_unconditional_job_writes(errors)
+    check_failure_catalogue_covers_python_codes(errors)
     check_job_runner_boundary(errors)
     check_worker_command_boundary(errors)
     check_protocol_docs(errors)

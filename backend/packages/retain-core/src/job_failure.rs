@@ -545,6 +545,36 @@ mod tests {
         assert_eq!(failure.upstream_host.as_deref(), Some("packages.typst.org"));
     }
 
+    /// typst 二进制缺失走的是 Python 的结构化 JSON 路径， 被原样
+    /// 当成分类——所以 Rust 侧那些子串分支一行都不跑。这条分类必须在恢复目录里
+    /// 登记，否则用户看到的是「重试会从头开始」，而那是假的：恢复按钮不看分类，
+    /// 「重新渲染」照样出现、照样只重跑渲染。被吓去点 OCR 重试才是真花钱。
+    ///
+    /// JSON 取自真实复现（摘掉 PATH 里的 typst 后跑 _run_typst_compile）。
+    #[test]
+    fn missing_typst_binary_keeps_its_render_resume_hint() {
+        let mut job = JobSnapshot::new(
+            "job-typst-missing".to_string(),
+            CreateJobInput::default(),
+            vec!["python".to_string()],
+        );
+        job.status = JobStatusKind::Failed;
+        job.stage = Some("rendering".to_string());
+        job.error = Some(format!(
+            "Traceback (most recent call last):\n  ...\nstructured failure json: {}",
+            r#"{"failed_stage":"render","failure_code":"typst_runtime_failed","failure_category":"render","provider_stage":"","provider_code":"","suggestion":"检查渲染输入、字体和编译环境。","stage":"render","error_type":"typst_runtime_failed","summary":"Typst 运行时启动失败","detail":"Typst compile failed phase=render_pages stem=book-background-overlay code=-1 typ=/var/folders/ls/l8r8r1f168j7n6g_8y6rrnb80000gn/T/tmpqzh0api9/p.typ\nTypst runtime failed to start: ExternalToolNotFound: 未找到 typst 可执行文件：TYPST_BIN 未设置，PATH 里也没有 typst。桌面端和 Docker 镜像都自带 typst，出现这个错误通常是在本地开发环境里——安装 typst 并加入 PATH，或把 TYPST_BIN 指向可执行文件即可。","retryable":false,"upstream_host":"","provider":"","raw_exception_type":"TypstCompileError","raw_exception_message":"Typst compile failed phase=render_pages stem=book-background-overlay code=-1 typ=/var/folders/ls/l8r8r1f168j7n6g_8y6rrnb80000gn/T/tmpqzh0api9/p.typ\nTypst runtime failed to start: ExternalToolNotFound: 未找到 typst 可执行文件：TYPST_BIN 未设置，PATH 里也没有 typst。桌面端和 Docker 镜像都自带 typst，出现这个错误通常是在本地开发环境里——安装 typst 并加入 PATH，或把 TYPST_BIN 指向可执行文件即可。"}"#
+        ));
+
+        let failure = classify_job_failure(&job).expect("failure");
+        assert_eq!(failure.category, "typst_runtime_failed");
+        assert_eq!(failure.stage, "render");
+        // 这两条是本次修复的实质：翻译产物可复用，且提示不谎称重试会从头开始。
+        assert_eq!(failure.resume_from.as_deref(), Some("render"));
+        let hint = failure.recovery_hint.as_deref().unwrap_or_default();
+        assert!(!hint.contains("从头开始"), "落到了兜底文案：{hint}");
+        assert!(hint.contains("TYPST_BIN"), "提示没说清怎么修：{hint}");
+    }
+
     #[test]
     fn classify_job_failure_prefers_structured_python_failure() {
         let mut job = crate::models::JobSnapshot::new(
