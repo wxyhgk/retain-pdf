@@ -7,10 +7,11 @@ from pathlib import Path
 from typing import Any
 
 from retainpdf_pipeline.foundation.config import fonts
+from retainpdf_pipeline.foundation.config.external_tools import ExternalToolNotFound
+from retainpdf_pipeline.foundation.config.external_tools import resolve_typst_bin
 from retainpdf_pipeline.foundation.config import paths
 from retainpdf_pipeline.render.layout.model.models import RenderPageSpec
 from retainpdf_pipeline.render.output.typst.emitter import build_typst_source_from_page_specs
-from retainpdf_pipeline.render.output.typst.shared import TYPST_BIN
 from retainpdf_pipeline.render.output.typst.shared import TYPST_OVERLAY_DIR
 from retainpdf_pipeline.render.output.typst.source_builder import build_typst_book_background_source
 from retainpdf_pipeline.render.output.typst.source_builder import build_typst_book_overlay_source
@@ -100,7 +101,17 @@ def _run_typst_compile(
     work_dir: Path | None = None,
     extra: dict[str, Any] | None = None,
 ) -> None:
+    """`command` 是不含可执行文件的 typst 参数；二进制在 try 内部解析。
+
+    解析放在这里而不是调用方，是为了让「typst 根本不存在」和「typst 启动失败」
+    走同一条 TypstCompileError 包装路径。下游有十几处靠 is_typst_runtime_failure()
+    判断要不要进入内容修复流程，一个没被包装的异常会让它们把环境问题当成排版
+    问题，对着必然失败的编译反复重试。
+    """
+    typst_bin = ""
     try:
+        typst_bin = resolve_typst_bin()
+        command = [typst_bin, *command]
         proc = subprocess.run(
             command,
             capture_output=True,
@@ -128,7 +139,7 @@ def _run_typst_compile(
                 "timeout_seconds": TYPST_COMPILE_TIMEOUT_SECONDS,
             },
         ) from exc
-    except OSError as exc:
+    except (OSError, ExternalToolNotFound) as exc:
         raise TypstCompileError(
             phase=phase,
             stem=stem,
@@ -142,7 +153,7 @@ def _run_typst_compile(
             extra={
                 **(extra or {}),
                 "runtime_error_type": type(exc).__name__,
-                "typst_bin": command[0] if command else "",
+                "typst_bin": typst_bin,
             },
         ) from exc
     if proc.returncode != 0:
@@ -191,7 +202,7 @@ def _resolved_font_paths(font_paths: list[Path] | None = None) -> list[Path]:
 
 
 def _typst_compile_command(typ_path: Path, pdf_path: Path, font_paths: list[Path] | None = None) -> list[str]:
-    command = [TYPST_BIN, "compile"]
+    command = ["compile"]
     for font_path in _resolved_font_paths(font_paths):
         command.extend(["--font-path", str(font_path)])
     command.extend([str(typ_path), str(pdf_path)])
@@ -309,7 +320,7 @@ def compile_typst_book_background_pdf(
             encoding="utf-8",
         )
     project_root = _resolved_common_root([typ_path, pdf_path, source_pdf_path])
-    command = [TYPST_BIN, "compile", "--root", str(project_root)]
+    command = ["compile", "--root", str(project_root)]
     for font_path in _resolved_font_paths(font_paths):
         command.extend(["--font-path", str(font_path)])
     command.extend([str(typ_path), str(pdf_path)])
@@ -356,7 +367,7 @@ def compile_typst_render_pages_pdf(
             encoding="utf-8",
         )
     project_root = _resolved_common_root([typ_path, pdf_path, background_pdf_path])
-    command = [TYPST_BIN, "compile", "--root", str(project_root)]
+    command = ["compile", "--root", str(project_root)]
     for font_path in _resolved_font_paths(font_paths):
         command.extend(["--font-path", str(font_path)])
     command.extend([str(typ_path), str(pdf_path)])

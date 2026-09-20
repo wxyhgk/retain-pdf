@@ -11,20 +11,6 @@ from retainpdf_pipeline.render.layout.inline_content.fallback.latex_normalizer i
 from retainpdf_pipeline.render.layout.payload.shared import get_render_formula_map
 
 TYPST_OVERLAY_DIR = paths.OUTPUT_DIR / "typst_overlay"
-DEFAULT_TYPST_BIN = "/snap/bin/typst"
-
-
-def _resolve_typst_bin() -> str:
-    explicit = os.environ.get("TYPST_BIN", "").strip()
-    if explicit:
-        return explicit
-    discovered = shutil.which("typst")
-    if discovered:
-        return discovered
-    return DEFAULT_TYPST_BIN
-
-
-TYPST_BIN = _resolve_typst_bin()
 
 
 def escape_typst_string(text: str) -> str:

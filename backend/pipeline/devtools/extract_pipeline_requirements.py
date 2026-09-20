@@ -19,7 +19,7 @@ IMPORT_TO_PACKAGE = {
 }
 
 EXTERNAL_COMMAND_MARKERS = {
-    "typst": ("typst", 'which("typst")', '"/snap/bin/typst"', '"/usr/local/bin/typst"'),
+    "typst": ("typst", 'which("typst")', "resolve_typst_bin"),
     "gs": ('which("gs")', '"gs"'),
 }
 

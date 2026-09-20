@@ -1,18 +1,17 @@
 import hashlib
 import os
 import re
-import shutil
 import subprocess
 from pathlib import Path
 
 from PIL import Image
 
+from retainpdf_pipeline.foundation.config.external_tools import resolve_typst_bin
 from retainpdf_pipeline.foundation.config import paths
 from retainpdf_pipeline.render.layout.inline_content.fallback.latex_normalizer import normalize_formula_for_latex_math
 
 
 FORMULA_CACHE_DIR = paths.OUTPUT_DIR / "formula_cache"
-TYPST_BIN = os.environ.get("TYPST_BIN", "").strip() or shutil.which("typst") or "/snap/bin/typst"
 # A single-formula compile is small, but Typst can still stall downloading a
 # `@preview/...` package from packages.typst.org over a bad connection, so give it a
 # generous timeout rather than hanging the job forever. Override with
@@ -221,7 +220,7 @@ def compile_formula_png(formula_text: str) -> tuple[Path, tuple[int, int]]:
             f"${typst_expr}$\n",
             encoding="utf-8",
         )
-        command = [TYPST_BIN, "compile"]
+        command = [resolve_typst_bin(), "compile"]
         raw_font_dirs = os.environ.get("RETAIN_PDF_TYPST_FONT_DIRS", "").strip()
         if raw_font_dirs:
             for font_dir in raw_font_dirs.split(os.pathsep):

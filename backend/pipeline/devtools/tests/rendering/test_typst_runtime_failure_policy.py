@@ -11,6 +11,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
+from retainpdf_pipeline.foundation.config.external_tools import ExternalToolNotFound
 from retainpdf_pipeline.render.output.typst import book_renderer
 from retainpdf_pipeline.render.output.typst import book_support
 from retainpdf_pipeline.render.output.typst import compiler
@@ -67,19 +68,47 @@ def test_runtime_failure_policy(tmp_path, runtime_error_type, return_code, expec
 
 @pytest.mark.parametrize("failure", [FileNotFoundError("typst"), PermissionError("typst"),
                                     subprocess.TimeoutExpired(["typst"], 600)])
-def test_compiler_preserves_runtime_failure_cause(tmp_path, failure):
+def test_compiler_preserves_runtime_failure_cause(tmp_path, failure, monkeypatch):
+    monkeypatch.setattr(compiler, "resolve_typst_bin", lambda: "/fake/typst")
     with mock.patch.object(compiler.subprocess, "run", side_effect=failure) as run:
         with pytest.raises(compiler.TypstCompileError) as raised:
             compiler._run_typst_compile(
-                command=["typst", "compile"], typ_path=tmp_path / "page.typ",
+                command=["compile"], typ_path=tmp_path / "page.typ",
                 pdf_path=tmp_path / "page.pdf", phase="overlay_page", stem="page",
                 extra={"page_count": 8},
             )
     run.assert_called_once()
+    assert run.call_args.args[0][0] == "/fake/typst"
     assert compiler.is_typst_runtime_failure(raised.value)
     assert raised.value.__cause__ is failure
     assert raised.value.to_dict()["extra"]["runtime_error_type"] == type(failure).__name__
     assert raised.value.to_dict()["extra"]["page_count"] == 8
+
+
+def test_missing_typst_binary_is_wrapped_like_a_launch_failure(tmp_path, monkeypatch):
+    """typst 不存在必须被 is_typst_runtime_failure() 认出来。
+
+    否则 sanitize / book_renderer 等十几处会把它当成内容问题，对着一个必然失败的
+    编译反复做「删元素再试」的修复，最后报出的还是个误导性的排版错误。
+    """
+    def _missing():
+        raise ExternalToolNotFound("未找到 typst 可执行文件")
+
+    monkeypatch.setattr(compiler, "resolve_typst_bin", _missing)
+    with mock.patch.object(compiler.subprocess, "run") as run:
+        with pytest.raises(compiler.TypstCompileError) as raised:
+            compiler._run_typst_compile(
+                command=["compile"], typ_path=tmp_path / "page.typ",
+                pdf_path=tmp_path / "page.pdf", phase="overlay_page", stem="page",
+            )
+    run.assert_not_called()
+    assert compiler.is_typst_runtime_failure(raised.value)
+    assert isinstance(raised.value.__cause__, ExternalToolNotFound)
+    payload = raised.value.to_dict()
+    assert payload["extra"]["runtime_error_type"] == "ExternalToolNotFound"
+    # 解析都没成功，就不该谎报一个用过的二进制路径。
+    assert payload["extra"]["typst_bin"] == ""
+    assert "未找到 typst" in payload["stderr"]
 
 
 def test_sanitize_runtime_failure_does_not_probe_or_repair(tmp_path, runtime_error):
