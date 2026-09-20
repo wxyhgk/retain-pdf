@@ -72,6 +72,8 @@ test("failure recovery maps Paddle 10010 from structured fields", () => {
   assert.equal(model.retryOcr.enabled, true);
   assert.equal(model.retryOcr.body.stage, "ocr");
   assert.equal(model.preservesSourcePdf, true);
+  // 阶段泛化后 OCR 专项文案不许漂移：后端没给 resume_from 时仍按 OCR 阶段算。
+  assert.equal(model.preservationText, "原 PDF 会保留并用于重新 OCR。");
   assert.equal(queueFullTitle(model), "Paddle OCR 队列繁忙");
   assert.equal(retryCountdownSeconds(model, Date.parse("2026-09-01T00:00:20Z")), 20);
 });
@@ -151,4 +153,155 @@ test("copy trace id exposes success and failure outcomes", async () => {
     () => controller.copyTraceId({ ...model, traceId: "" }),
     /未返回 Trace ID/,
   );
+});
+
+// 渲染失败：OCR 和翻译的产物都还在，后端 stage-actions 会给出 translation /
+// render 两个可用阶段。泛化之前这类任务在面板上只剩一句「当前没有可识别的专门
+// 恢复状态。」——本机 15 个失败任务里有 7 个是这种。
+function renderFailureInput(overrides = {}) {
+  return {
+    job: {
+      job_id: "job-render",
+      failure: {
+        failed_stage: "render",
+        failure_code: "render_failed",
+        failure_category: "render_failed",
+        retryable: true,
+        resume_from: "render",
+        recovery_hint: "翻译结果完好，只需重跑渲染，不会重复调用 OCR 或翻译接口。",
+      },
+      provider_trace_id: "trace-render",
+    },
+    diagnostics: {},
+    stageActions: {
+      job_id: "job-render",
+      stages: [
+        {
+          stage: "ocr",
+          label: "重试 OCR",
+          can_retry: false,
+          reason: "source PDF is not available",
+          disabled_reason: "source PDF is not available",
+          will_reuse: ["source_pdf"],
+          will_rerun: ["ocr", "translation", "render"],
+          danger: true,
+        },
+        {
+          stage: "translation",
+          label: "重试翻译",
+          can_retry: true,
+          disabled_reason: "",
+          action: {
+            method: "POST",
+            url: "http://127.0.0.1:41000/api/v1/jobs/job-render/retry-stage",
+            body: { stage: "translation", ambiguous_request_policy: "block" },
+          },
+          will_reuse: ["source_pdf", "ocr_result"],
+          will_rerun: ["translation", "render"],
+          danger: false,
+        },
+        {
+          stage: "render",
+          label: "重新渲染",
+          can_retry: true,
+          disabled_reason: "",
+          action: {
+            method: "POST",
+            url: "http://127.0.0.1:41000/api/v1/jobs/job-render/retry-stage",
+            body: { stage: "render", ambiguous_request_policy: "block" },
+          },
+          will_reuse: ["source_pdf", "ocr_result", "translation_result"],
+          will_rerun: ["render"],
+          danger: false,
+        },
+      ],
+    },
+    ...overrides,
+  };
+}
+
+test("渲染失败渲染后端给的全部阶段，推荐续跑阶段排第一", () => {
+  const model = buildFailureRecoveryModel(renderFailureInput());
+
+  assert.equal(model.kind, "generic");
+  assert.equal(model.resumeFrom, "render");
+  // 后端 resume_from 指向的阶段排第一，其余保持后端顺序。
+  assert.deepEqual(model.stages.map((item) => item.stage), ["render", "ocr", "translation"]);
+
+  const [render, ocr, translation] = model.stages;
+  assert.equal(render.recommended, true);
+  assert.equal(render.label, "重新渲染");
+  assert.equal(render.action.enabled, true);
+  assert.equal(render.action.body.stage, "render");
+  assert.match(render.noteText, /推荐/);
+  assert.match(render.noteText, /translation_result/);
+  assert.match(render.noteText, /将重跑：render。/);
+
+  assert.equal(translation.recommended, false);
+  assert.equal(translation.action.enabled, true);
+  assert.match(translation.noteText, /将重跑：translation、render。/);
+
+  // 不能点的阶段照样列出来，但要说清为什么不能点。
+  assert.equal(ocr.action.available, false);
+  assert.equal(ocr.noteText, "source PDF is not available");
+});
+
+test("阶段恢复的文案与断点产物跟着 resume_from 走，不再只看 OCR", () => {
+  const model = buildFailureRecoveryModel(renderFailureInput());
+
+  assert.equal(model.statusText, "翻译结果完好，只需重跑渲染，不会重复调用 OCR 或翻译接口。");
+  assert.equal(model.recoveryHint, "翻译结果完好，只需重跑渲染，不会重复调用 OCR 或翻译接口。");
+  assert.deepEqual(model.checkpointArtifacts, ["source_pdf", "ocr_result", "translation_result"]);
+  assert.equal(model.preservesSourcePdf, true);
+  assert.match(model.preservationText, /将复用 source_pdf、ocr_result、translation_result/);
+  // OCR 这一条本来就不可用，不该再被当成「后端没给恢复动作」上报。
+  assert.equal(model.retryOcr.available, false);
+  assert.equal(model.backendGaps.includes("stage_actions.action"), false);
+});
+
+test("前端不认识的失败分类，照样渲染后端给的恢复动作", () => {
+  const input = renderFailureInput();
+  input.job.failure.failure_code = "nobody-registered-this-yet";
+  input.job.failure.failure_category = "nobody-registered-this-yet";
+  input.job.failure.resume_from = "translation";
+  input.job.failure.recovery_hint = "OCR 产物完好，从翻译阶段续跑，不会重复调用 OCR。";
+  const model = buildFailureRecoveryModel(input);
+
+  assert.equal(model.statusText, "OCR 产物完好，从翻译阶段续跑，不会重复调用 OCR。");
+  assert.equal(model.stages[0].stage, "translation");
+  assert.equal(model.stages[0].recommended, true);
+  assert.equal(model.stages[0].action.enabled, true);
+  assert.deepEqual(model.checkpointArtifacts, ["source_pdf", "ocr_result"]);
+});
+
+test("阶段重试打到后端指定的阶段上，body 原样透传", async () => {
+  const calls = [];
+  const model = buildFailureRecoveryModel(renderFailureInput());
+  const controller = createFailureRecoveryController({
+    retryStage: async (...args) => {
+      calls.push(args);
+      return { job_id: "job-render-2" };
+    },
+  });
+
+  const result = await controller.retryStageNow("job-render", model, "render");
+  assert.equal(result.job_id, "job-render-2");
+  assert.deepEqual(calls, [["job-render", "render", {
+    stage: "render",
+    ambiguous_request_policy: "block",
+  }]]);
+});
+
+test("不可用的阶段挡在控制器这一层，不会真发请求", async () => {
+  let calls = 0;
+  const model = buildFailureRecoveryModel(renderFailureInput());
+  const controller = createFailureRecoveryController({
+    retryStage: async () => { calls += 1; },
+  });
+
+  await assert.rejects(
+    () => controller.retryStageNow("job-render", model, "ocr"),
+    /source PDF is not available/,
+  );
+  assert.equal(calls, 0);
 });

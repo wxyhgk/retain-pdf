@@ -656,6 +656,20 @@
   }
 }
 
+/* 阶段恢复列表：阶段数量由后端决定，这里只保证多行时行距一致、推荐项显眼。 */
+@utility status-detail-failure-stages {
+  @apply mb-3 grid gap-2;
+
+  & > .status-panel-note {
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+
+  & [data-recommended="true"] .button-link {
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+}
+
 @utility status-detail-technical-details {
   margin-top: 12px;
   border-top: 1px solid var(--line);

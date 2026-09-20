@@ -10,6 +10,7 @@ import {
   queueFullTitle,
   retryCountdownSeconds,
 } from "../../domain/dialog/failure-recovery.js";
+import { FailureStageActions } from "./FailureStageActions.jsx";
 import { OcrReceiptBindingDialog } from "../OcrReceiptBindingDialog.jsx";
 import { FailureLogDialog } from "../FailureLogDialog.jsx";
 import type { OcrReceiptValues } from "../../domain/ocr-ambiguity-recovery.js";
@@ -40,6 +41,8 @@ export function FailurePanel({
   const failure = overview.failure;
   const recovery = overview.failureRecovery;
   const rerun = useRerunAction({ overview, rerunPending, controller });
+  // 老快照（store 初值）里没有 stages 字段，这里兜一层，别让面板炸在缺字段上。
+  const recoveryStages = Array.isArray(recovery.stages) ? recovery.stages : [];
   const [ocrConfirmOpen, setOcrConfirmOpen] = useState(false);
   const [riskConfirmOpen, setRiskConfirmOpen] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
@@ -265,7 +268,15 @@ export function FailurePanel({
               </div>
             </>
           ) : (
-            <div className="failure-action-row status-detail-recovery-actions">
+            <>
+              {/* 后端说得出哪些阶段能续跑，就把它们全渲染出来；说不出时才退回
+                  通用的「从断点恢复」按钮（老行为）。 */}
+              <FailureStageActions
+                hint={recovery.statusText}
+                stages={recoveryStages}
+                retryStage={controller.retryFailureStage}
+              />
+              <div className="failure-action-row status-detail-recovery-actions">
               <button
                 id={ids.failure.rerunButton}
                 type="button"
@@ -279,7 +290,8 @@ export function FailurePanel({
               <span id={ids.failure.rerunStatus} className="status-panel-note">
                 {rerun.status || "失败后如后端允许，可基于已有产物创建恢复任务。"}
               </span>
-            </div>
+              </div>
+            </>
           )}
         </div>
 

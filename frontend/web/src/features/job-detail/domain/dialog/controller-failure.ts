@@ -36,21 +36,35 @@ export function createStatusDetailFailureRecoveryActions({
     copyTrace: copyText,
   });
 
-  async function retryOcrNow(options: { acceptDuplicateRisk?: boolean } = {}) {
+  // 阶段由调用方给：OCR 卡片传 "ocr"，恢复面板传后端 stage-actions 里的阶段名。
+  // 收尾（关窗、提示、轮询新任务）对所有阶段都一样，所以只有一份实现。
+  async function submitStageRetry(
+    stage: string,
+    options: { acceptDuplicateRisk?: boolean },
+    noticeLabel: string,
+  ) {
     const jobId = getCurrentJobId();
     const model = store.getSnapshot().overview.failureRecovery;
-    const payload = await failureRecoveryActions.retryOcrNow(jobId, model, options) as Record<string, unknown>;
+    const payload = await failureRecoveryActions.retryStageNow(jobId, model, stage, options) as Record<string, unknown>;
     const nextJobId = `${payload?.job_id || payload?.id || ""}`.trim();
-    if (!nextJobId) throw new Error("OCR 重试已提交，但响应中没有 job_id。");
+    if (!nextJobId) throw new Error("重试已提交，但响应中没有 job_id。");
     dialogStore.close();
-    setText?.("error-box", `已创建 OCR 恢复任务 ${nextJobId}，开始轮询。`);
+    setText?.("error-box", `已创建${noticeLabel} ${nextJobId}，开始轮询。`);
     startPolling?.(nextJobId);
     return payload;
+  }
+
+  async function retryOcrNow(options: { acceptDuplicateRisk?: boolean } = {}) {
+    return submitStageRetry("ocr", options, " OCR 恢复任务");
+  }
+
+  async function retryFailureStage(stage: string, options: { acceptDuplicateRisk?: boolean } = {}) {
+    return submitStageRetry(stage, options, "恢复任务");
   }
 
   async function copyFailureTraceId() {
     return failureRecoveryActions.copyTraceId(store.getSnapshot().overview.failureRecovery);
   }
 
-  return { retryOcrNow, copyFailureTraceId };
+  return { retryOcrNow, retryFailureStage, copyFailureTraceId };
 }

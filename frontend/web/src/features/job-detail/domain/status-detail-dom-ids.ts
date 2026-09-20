@@ -51,6 +51,13 @@ export const STATUS_DETAIL_DIALOG_IDS = {
     ocrAmbiguityConfirm: "failure-ocr-ambiguity-confirm",
     ocrBindButton: "failure-ocr-bind-btn",
     ocrBindDialog: "failure-ocr-bind-dialog",
+    // 阶段恢复列表（按后端 stage-actions 渲染）。单个阶段的按钮/说明 id 由
+    // `failure-stage-retry-${stage}` / `failure-stage-note-${stage}` 拼出——
+    // 阶段名来自后端，前端不预先枚举。
+    recoveryStages: "failure-recovery-stages",
+    recoveryHint: "failure-recovery-hint",
+    recoveryFeedback: "failure-recovery-feedback",
+    recoveryRiskConfirm: "failure-recovery-risk-confirm",
     queueCard: "failure-queue-card",
     queueCountdown: "failure-queue-countdown",
     retryOcrButton: "failure-retry-ocr-btn",

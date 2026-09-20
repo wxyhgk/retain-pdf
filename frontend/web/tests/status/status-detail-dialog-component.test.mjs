@@ -299,6 +299,74 @@ test("StatusDetailDialog：Paddle QueueFull 提供结构化恢复、Trace 复制
   host.remove();
 });
 
+// 渲染/翻译类失败：后端 stage-actions 给了可续跑的阶段，面板必须把它们渲染出来
+// 并标清会复用什么、重跑什么——而不是像泛化前那样只认 OCR、把这些任务甩给一句
+// 「当前没有可识别的专门恢复状态。」
+test("StatusDetailDialog：失败面板渲染后端给的任意阶段恢复动作并能重试", async () => {
+  const dom = makeDom("?mock=failed");
+  const { services, root, host } = await bootHomeApp(dom);
+  const originalJobId = await openStatusDetailDialog(dom, services);
+  await waitFor(
+    () => services.statusDetail.store.getSnapshot().overview.failure.summary === "任务失败，但这是前端 mock 场景。",
+    "失败概览数据就绪",
+  );
+  click(dom, byId(dom, "detail-tab-failure"));
+  await waitFor(() => byId(dom, "detail-panel-failure").hidden === false, "切到失败 tab");
+  const stageAction = (stage, label, willReuse, willRerun, recommended) => ({
+    stage,
+    label,
+    action: {
+      available: true,
+      enabled: true,
+      method: "POST",
+      url: `mock://jobs/${originalJobId}/retry-stage`,
+      body: { stage, ambiguous_request_policy: "block" },
+      reason: "",
+      requiresDuplicateRisk: false,
+    },
+    willReuse,
+    willRerun,
+    preservesSourcePdf: willReuse.includes("source_pdf"),
+    preservationText: `原 PDF 会保留；恢复时将复用 ${willReuse.join("、")}。`,
+    recommended,
+    noteText: `${recommended ? "推荐：" : ""}原 PDF 会保留；恢复时将复用 ${willReuse.join("、")}。将重跑：${willRerun.join("、")}。`,
+  });
+  services.statusDetail.store.actions.setOverview({
+    failureRecovery: {
+      ...services.statusDetail.store.getSnapshot().overview.failureRecovery,
+      kind: "generic",
+      resumeFrom: "render",
+      recoveryHint: "翻译结果完好，只需重跑渲染，不会重复调用 OCR 或翻译接口。",
+      statusText: "翻译结果完好，只需重跑渲染，不会重复调用 OCR 或翻译接口。",
+      stages: [
+        stageAction("render", "重新渲染", ["source_pdf", "ocr_result", "translation_result"], ["render"], true),
+        stageAction("translation", "重试翻译", ["source_pdf", "ocr_result"], ["translation", "render"], false),
+      ],
+    },
+  });
+
+  await waitFor(() => byId(dom, "failure-stage-retry-render"), "渲染阶段恢复入口出现");
+  assert.match(byId(dom, "failure-recovery-hint").textContent, /只需重跑渲染/);
+  assert.equal(byId(dom, "failure-stage-retry-render").textContent.trim(), "重新渲染");
+  assert.match(byId(dom, "failure-stage-note-render").textContent, /推荐：/);
+  assert.match(byId(dom, "failure-stage-note-render").textContent, /translation_result/);
+  assert.match(byId(dom, "failure-stage-note-render").textContent, /将重跑：render。/);
+  assert.ok(byId(dom, "failure-stage-retry-translation"), "翻译阶段恢复入口一并渲染");
+  assert.match(byId(dom, "failure-stage-note-translation").textContent, /将重跑：translation、render。/);
+
+  click(dom, byId(dom, "failure-stage-retry-render"));
+  await waitFor(() => byId(dom, "status-detail-dialog") === null, "阶段重试后关闭详情");
+  await waitFor(
+    () => services.features.jobRuntimeFeature.currentJobId() !== originalJobId,
+    "阶段重试后轮询新任务",
+  );
+  assert.match(services.features.jobRuntimeFeature.currentJobId(), /^mock-render-retry-/);
+
+  root.unmount();
+  services.dispose();
+  host.remove();
+});
+
 test("StatusDetailDialog：切换 OCR 服务只打开接口设置，不自动修改 provider", async () => {
   const dom = makeDom("?mock=failed");
   const { services, root, host } = await bootHomeApp(dom);

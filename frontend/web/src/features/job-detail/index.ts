@@ -35,6 +35,7 @@ export type {
   FailureRecoveryAction,
   FailureRecoveryKind,
   FailureRecoveryModel,
+  FailureRecoveryStage,
 } from "./domain/dialog/failure-recovery.js";
 export {
   boolLabel,

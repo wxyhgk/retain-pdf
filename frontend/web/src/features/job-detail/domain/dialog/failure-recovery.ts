@@ -1,16 +1,23 @@
-type UnknownRecord = Record<string, unknown>;
+import {
+  buildRetryAction,
+  buildStageRecoveries,
+  firstText,
+  normalizedToken,
+  preservationTextOf,
+  recordOf,
+  stageActionFor,
+  stringList,
+  textOf,
+} from "./failure-recovery-stages.js";
+import type {
+  FailureRecoveryAction,
+  FailureRecoveryStage,
+  UnknownRecord,
+} from "./failure-recovery-stages.js";
+
+export type { FailureRecoveryAction, FailureRecoveryStage };
 
 export type FailureRecoveryKind = "queue_full" | "ocr_ambiguous" | "generic";
-
-export type FailureRecoveryAction = {
-  available: boolean;
-  enabled: boolean;
-  method: "POST" | "";
-  url: string;
-  body: UnknownRecord;
-  reason: string;
-  requiresDuplicateRisk: boolean;
-};
 
 export type FailureRecoveryModel = {
   kind: FailureRecoveryKind;
@@ -22,6 +29,12 @@ export type FailureRecoveryModel = {
   retryAtMs: number | null;
   retryAfterSource: string;
   retryOcr: FailureRecoveryAction;
+  /** 后端 failure.resume_from：可以从哪个阶段续跑，空串表示只能整个重跑。 */
+  resumeFrom: string;
+  /** 后端 failure.recovery_hint：这次重试会做什么、要不要再花钱。 */
+  recoveryHint: string;
+  /** 后端返回的全部阶段恢复入口，前端不筛分类、只排版。 */
+  stages: FailureRecoveryStage[];
   checkpointArtifacts: string[];
   preservesSourcePdf: boolean;
   statusText: string;
@@ -29,36 +42,12 @@ export type FailureRecoveryModel = {
   backendGaps: string[];
 };
 
-function recordOf(value: unknown): UnknownRecord {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as UnknownRecord
-    : {};
-}
-
-function textOf(value: unknown): string {
-  return typeof value === "string" || typeof value === "number"
-    ? `${value}`.trim()
-    : "";
-}
-
-function firstText(...values: unknown[]): string {
-  for (const value of values) {
-    const text = textOf(value);
-    if (text) return text;
-  }
-  return "";
-}
-
 function positiveInteger(...values: unknown[]): number | null {
   for (const value of values) {
     const number = Number(value);
     if (Number.isFinite(number) && number > 0) return Math.floor(number);
   }
   return null;
-}
-
-function normalizedToken(value: unknown): string {
-  return textOf(value).replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/[\s-]+/g, "_").toLowerCase();
 }
 
 function eventItems(eventsPayload: unknown): UnknownRecord[] {
@@ -110,38 +99,6 @@ function structuredRetryAfter(
     }
   }
   return { retryAtMs: null, source: "" };
-}
-
-function stringList(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.map(textOf).filter(Boolean)
-    : [];
-}
-
-function ocrStageAction(stageActions: unknown): UnknownRecord {
-  const stages = recordOf(stageActions).stages;
-  if (!Array.isArray(stages)) return {};
-  return stages.map(recordOf).find((item) => normalizedToken(item.stage) === "ocr") || {};
-}
-
-function buildRetryAction(stageActions: unknown, ambiguity: UnknownRecord): FailureRecoveryAction {
-  const stageAction = ocrStageAction(stageActions);
-  const action = recordOf(stageAction.action);
-  const body = recordOf(action.body);
-  const method = normalizedToken(action.method) === "post" ? "POST" : "";
-  const url = textOf(action.url);
-  const valid = method === "POST" && Boolean(url) && normalizedToken(body.stage) === "ocr";
-  const requiresDuplicateRisk = normalizedToken(ambiguity.status) === "ambiguous"
-    || Boolean(stageAction.danger);
-  return {
-    available: valid,
-    enabled: valid && stageAction.can_retry === true && !requiresDuplicateRisk,
-    method,
-    url,
-    body,
-    reason: firstText(stageAction.disabled_reason, stageAction.reason),
-    requiresDuplicateRisk,
-  };
 }
 
 function queueFull(providerCode: string, ...categories: unknown[]): boolean {
@@ -218,34 +175,43 @@ export function buildFailureRecoveryModel({
     retryPayload.max_attempts,
   );
   const resumePlan = recordOf(resumePlanValue);
-  const retryStage = ocrStageAction(stageActions);
+  // 恢复目录（后端 job_failure_catalogue）的两个字段：能从哪续跑、怎么跟用户说。
+  const resumeFrom = normalizedToken(firstText(failure.resume_from, diagnostics.resume_from));
+  const recoveryHint = firstText(failure.recovery_hint, diagnostics.recovery_hint);
+  const stages = buildStageRecoveries(stageActions, ambiguity, resumeFrom);
+  // 断点信息跟着后端的 resume_from 走；后端没说才退回 OCR 阶段（老行为）。
+  const primaryStage = stageActionFor(stageActions, resumeFrom || "ocr");
   const checkpointArtifacts = Array.from(new Set([
-    ...stringList(retryStage.will_reuse),
+    ...stringList(primaryStage.will_reuse),
     ...stringList(resumePlan.reuses_artifacts),
   ]));
   const preservesSourcePdf = checkpointArtifacts.includes("source_pdf");
-  const retryOcr = buildRetryAction(stageActions, ambiguity);
+  const retryOcr = buildRetryAction(stageActionFor(stageActions, "ocr"), "ocr", ambiguity);
   const backendGaps: string[] = [];
   if (isQueueFull && retryTiming.retryAtMs === null) backendGaps.push("retry_after");
   if (isQueueFull && (attempt === null || maxAttempts === null)) backendGaps.push("attempt/max_attempts");
   if (!traceId) backendGaps.push("trace_id");
-  if (!retryOcr.available && !isAmbiguous) backendGaps.push("stage_actions.ocr.action");
+  // 一个可点的阶段都没有才算缺口：以前只看 OCR，于是「渲染可续跑」的任务也被
+  // 误报成后端没给动作。
+  if (!isAmbiguous && !stages.some((item) => item.action.available)) {
+    backendGaps.push("stage_actions.action");
+  }
 
   const attemptText = attempt !== null && maxAttempts !== null
     ? `（第 ${attempt}/${maxAttempts} 次）`
     : "";
+  // 队列繁忙的文案带重试次数，是 hint 给不出来的信息，所以这一支不让位给 hint；
+  // 其余情况一律优先用后端的 recovery_hint——前端不再自己编分类文案。
   const statusText = isQueueFull
     ? retryTiming.retryAtMs !== null
       ? `OCR 服务队列繁忙，等待自动重试${attemptText}`
       : `OCR 服务队列繁忙，等待服务自动重试；也可立即重试${attemptText}`
     : isAmbiguous
-      ? "OCR 请求结果不明确，需要先确认重复执行风险。"
-      : "当前没有可识别的专门恢复状态。";
-  const preservationText = preservesSourcePdf
-    ? checkpointArtifacts.length > 1
-      ? `原 PDF 会保留；恢复时将复用 ${checkpointArtifacts.join("、")}。`
-      : "原 PDF 会保留并用于重新 OCR。"
-    : "重试不会覆盖当前任务记录；请保留原 PDF，便于安全恢复。";
+      ? recoveryHint || "OCR 请求结果不明确，需要先确认重复执行风险。"
+      : recoveryHint || (stages.length
+        ? "后端提供了以下恢复方式，请选择一个继续。"
+        : "当前没有可识别的专门恢复状态。");
+  const preservationText = preservationTextOf(checkpointArtifacts);
 
   return {
     kind: isQueueFull ? "queue_full" : isAmbiguous ? "ocr_ambiguous" : "generic",
@@ -257,6 +223,9 @@ export function buildFailureRecoveryModel({
     retryAtMs: retryTiming.retryAtMs,
     retryAfterSource: retryTiming.source,
     retryOcr,
+    resumeFrom,
+    recoveryHint,
+    stages,
     checkpointArtifacts,
     preservesSourcePdf,
     statusText,
@@ -281,19 +250,43 @@ export function createFailureRecoveryController({
   retryStage?: (jobId: string, stage: string, payload: UnknownRecord) => Promise<unknown>;
   copyTrace?: (traceId: string) => Promise<unknown>;
 } = {}) {
-  async function retryOcrNow(jobId: string, model: FailureRecoveryModel, options: { acceptDuplicateRisk?: boolean } = {}) {
-    if (!model.retryOcr.available || !model.retryOcr.enabled) {
-      throw new Error(model.retryOcr.reason || "后端当前未开放安全的 OCR 重试操作。");
+  function actionOf(model: FailureRecoveryModel, stage: string): FailureRecoveryAction | undefined {
+    const stages = Array.isArray(model.stages) ? model.stages : [];
+    const found = stages.find((item) => item.stage === stage);
+    if (found) return found.action;
+    // 旧快照（store 初值、测试里手工拼的 model）没有 stages 字段，OCR 仍从
+    // retryOcr 取——队列繁忙卡片那条老路径不该因为新字段而失灵。
+    return stage === "ocr" ? model.retryOcr : undefined;
+  }
+
+  async function retryStageNow(
+    jobId: string,
+    model: FailureRecoveryModel,
+    stage: string,
+    options: { acceptDuplicateRisk?: boolean } = {},
+  ) {
+    const token = normalizedToken(stage);
+    const action = actionOf(model, token);
+    if (!action || !action.available || !action.enabled) {
+      throw new Error(action?.reason || "后端当前未开放安全的重试操作。");
     }
-    if (model.retryOcr.requiresDuplicateRisk && !options.acceptDuplicateRisk) {
+    if (action.requiresDuplicateRisk && !options.acceptDuplicateRisk) {
       throw new Error("该请求可能重复执行，请使用重复风险确认流程。");
     }
-    if (!retryStage) throw new Error("OCR 重试服务不可用。");
-    const body = { ...recordOf(model.retryOcr.body) };
-    if (model.retryOcr.requiresDuplicateRisk && options.acceptDuplicateRisk) {
+    if (!retryStage) throw new Error("阶段重试服务不可用。");
+    const body = { ...recordOf(action.body) };
+    if (action.requiresDuplicateRisk && options.acceptDuplicateRisk) {
       body.ambiguous_request_policy = "accept_duplicate_risk";
     }
-    return retryStage(jobId, "ocr", body);
+    return retryStage(jobId, token, body);
+  }
+
+  async function retryOcrNow(
+    jobId: string,
+    model: FailureRecoveryModel,
+    options: { acceptDuplicateRisk?: boolean } = {},
+  ) {
+    return retryStageNow(jobId, model, "ocr", options);
   }
 
   async function copyTraceId(model: FailureRecoveryModel) {
@@ -303,5 +296,5 @@ export function createFailureRecoveryController({
     return model.traceId;
   }
 
-  return { retryOcrNow, copyTraceId };
+  return { retryOcrNow, retryStageNow, copyTraceId };
 }

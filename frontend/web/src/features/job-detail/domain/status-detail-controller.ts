@@ -154,6 +154,7 @@ export function createStatusDetailController({
     acceptOcrDuplicateRiskAndRecover: ocrRecovery.acceptOcrDuplicateRiskAndRecover,
     bindExistingOcrReceiptAndRecover: ocrRecovery.bindExistingOcrReceiptAndRecover,
     retryOcrNow: failureRecovery.retryOcrNow,
+    retryFailureStage: failureRecovery.retryFailureStage,
     copyFailureTraceId: failureRecovery.copyFailureTraceId,
     syncRerunAction: resume.syncRerunAction,
   };
