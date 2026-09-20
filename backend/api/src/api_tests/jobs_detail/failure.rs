@@ -35,6 +35,8 @@ async fn job_detail_route_prefers_formal_failure_fields() {
         raw_error_excerpt: Some("legacy raw excerpt".to_string()),
         raw_diagnostic: None,
         ai_diagnostic: None,
+            resume_from: None,
+            recovery_hint: None,
     });
     state.db.save_job(&job).expect("save job");
 

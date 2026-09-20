@@ -38,6 +38,8 @@ async fn diagnostics_route_exposes_stable_failure_summary() {
         raw_error_excerpt: None,
         raw_diagnostic: None,
         ai_diagnostic: None,
+            resume_from: None,
+            recovery_hint: None,
     });
     state.db.save_job(&job).expect("save job");
 

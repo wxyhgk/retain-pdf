@@ -446,6 +446,8 @@ mod tests {
             raw_error_excerpt: Some("ReadTimeout".to_string()),
             raw_diagnostic: None,
             ai_diagnostic: None,
+            resume_from: None,
+            recovery_hint: None,
         }));
         current.sync_runtime_state();
 
