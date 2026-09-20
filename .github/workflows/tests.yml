@@ -174,6 +174,22 @@ jobs:
       - name: AI Service Tests
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/ai/tests" -q
 
+      # 这一步必须排在装 typst 之前——它验证的就是「机器上没有 typst 时单元测试
+      # 依然全绿」。#106 把二进制定位移进 try 内之后有 15 个用例悄悄开始依赖
+      # 机器上装没装 typst，本机和 CI 都有，两边同时看不见，直到有人在干净的
+      # checkout 上跑才炸。
+      #
+      # 真需要跑一遍排版的集成用例打 @pytest.mark.needs_typst 排除掉；单元测试
+      # 应当 stub 掉定位函数，而不是靠这个标记逃避。
+      - name: Hermetic pipeline tests (Typst not installed yet)
+        run: |
+          if command -v typst >/dev/null 2>&1 || [ -n "${TYPST_BIN:-}" ]; then
+            echo "::error::这一步必须排在 setup-test-typst 之前，否则它什么都验证不了" >&2
+            exit 1
+          fi
+          uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest \
+            "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/tests" -q -m "not needs_typst"
+
       - name: Setup Typst for offline formula tests
         uses: ./.github/actions/setup-test-typst
 

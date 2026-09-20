@@ -399,6 +399,7 @@ def test_overlay_uses_explicit_visual_cover_pages_for_cover_fallback() -> None:
         assert diagnostics["typst_cover_fallback_pages"] == [0]
 
 
+@pytest.mark.needs_typst
 def test_pikepdf_text_strip_compile_fallback_does_not_reenter_source_overlay() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)

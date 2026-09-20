@@ -63,6 +63,7 @@ def test_dispatch_render_mode_routes_each_mode_through_registry() -> None:
     assert sorted(calls) == ["dual", "overlay", "typst", "typst_visual"]
 
 
+@pytest.mark.needs_typst
 def test_dispatch_overlay_runs_end_to_end_on_single_page(tmp_path: Path) -> None:
     import fitz
 

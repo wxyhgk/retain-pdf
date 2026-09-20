@@ -121,6 +121,7 @@ def test_render_stage_does_not_retry_runtime_failures_or_publish_output(
     assert all(path.read_bytes() == original for path, original in inputs_before.items())
 
 
+@pytest.mark.needs_typst
 @pytest.mark.parametrize("extract_selected_pages", [False, True], ids=["whole-book", "selected-page"])
 def test_render_stage_still_compiles_translations_after_recovery_changes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, extract_selected_pages: bool,
