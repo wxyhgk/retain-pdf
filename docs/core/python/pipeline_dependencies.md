@@ -21,7 +21,7 @@ Regenerate with:
 ## External Commands
 
 - `typst`
-  refs: `devtools/analyze_render_item_composition.py`, `devtools/architecture_checks/rendering.py`, `devtools/architecture_checks/translation_field_writers.py`, `devtools/backfill_typography_memory.py`, `devtools/benchmark_source_cleanup.py`, `devtools/experiments/mineru_content_v2/render_translated.py`
+  refs: `devtools/analyze_render_item_composition.py`, `devtools/architecture_checks/rendering.py`, `devtools/architecture_checks/translation_field_writers.py`, `devtools/architecture_checks/translation_source_readers.py`, `devtools/backfill_typography_memory.py`, `devtools/benchmark_source_cleanup.py`
 - `gs`
   refs: `retainpdf_pipeline/render/source/compression/ghostscript.py`, `retainpdf_pipeline/render/source/preparation/hidden_text_strip.py`
 
