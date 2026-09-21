@@ -48,10 +48,12 @@ fn main() -> Result<()> {
         checkpoint["status"] == "complete",
         "checkpoint is not complete"
     );
-    ensure!(
-        checkpoint["progress"]["pending_item_count"].as_u64() == Some(0),
-        "checkpoint has pending items"
-    );
+    // 死信留在 pending_item_count 里(重翻靠它捞回来)但不阻断发布，所以问的是
+    // blocking_item_count；旧 checkpoint 没有这个字段，退回 pending。
+    let blocking = checkpoint["progress"]["blocking_item_count"]
+        .as_u64()
+        .or_else(|| checkpoint["progress"]["pending_item_count"].as_u64());
+    ensure!(blocking == Some(0), "checkpoint has blocking items");
     let normalized = fs::read(root.join("ocr/normalized/document.v1.json"))?;
     ensure!(
         checkpoint["normalized_document_sha256"].as_str() == Some(hash(&normalized).as_str()),

@@ -16,8 +16,15 @@ def assert_complete_artifacts(root, expected_pages):
     assert {page["page_index"] for page in checkpoint["pages"]} == set(expected_pages)
     assert len(manifest["pages"]) == len(checkpoint["pages"]) == len(expected_pages)
     total = sum(map(len, expected_pages.values()))
+    translated = sum(
+        1
+        for items in pages.values()
+        for item in items
+        if str(item.get("translated_text", "") or "").strip()
+    )
     assert checkpoint["progress"] == {
         "item_count": total, "completed_item_count": total, "pending_item_count": 0,
+        "blocking_item_count": 0, "translated_item_count": translated,
     }
     by_id = {}
     for page_index, expected_ids in expected_pages.items():

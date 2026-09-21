@@ -23,11 +23,19 @@ def _committed_page_hashes(raw: bytes | None, *, manifest_path: Path,
         return {}
     try:
         checkpoint = json.loads(raw)
+        progress = checkpoint.get("progress", {}) or {}
+        # 问的是「还有没有东西挡着收尾」，不是「工作队列空没空」。死信留在
+        # pending_item_count 里(重翻要靠它捞回来)，但它不阻断发布 —— 拿 pending
+        # 当门禁，会让一份带死信的已提交文档在这里读不出来。
+        # 旧 checkpoint 没有这个计数，退回原来那条更严的判断。
+        done_count = progress.get(
+            "blocking_item_count", progress.get("pending_item_count")
+        )
         if (checkpoint.get("schema") != "translation_checkpoint_v1"
                 or checkpoint.get("schema_version") != 1
                 or checkpoint.get("status") != "complete"
                 or checkpoint.get("phase") != "committed"
-                or checkpoint.get("progress", {}).get("pending_item_count") != 0
+                or done_count != 0
                 or checkpoint.get("final_manifest") != manifest_path.name):
             raise ValueError("checkpoint is not a committed publication")
         pages = checkpoint["pages"]

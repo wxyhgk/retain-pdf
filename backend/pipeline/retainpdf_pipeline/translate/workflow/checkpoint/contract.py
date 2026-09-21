@@ -12,6 +12,7 @@ from retainpdf_pipeline.translate.core.payload.parts.fingerprints import (
     translation_item_fingerprint,
 )
 from retainpdf_pipeline.translate.artifacts import (
+    has_translation_artifact,
     is_blocking_untranslated,
     item_final_status,
 )
@@ -125,32 +126,37 @@ def project_progress(
         for item in page_payloads[page_idx]
         if isinstance(item, dict)
     ]
+    # 两个集合，两个问题，别再让一个数同时回答。
+    #
+    # pending_ids 是**工作队列**的口径:只问"该翻吗、有译文吗"。死信(重试与两轮
+    # 补救都用尽、保留原文并隔离)照样算待办 —— 这是对的，重翻正是靠它把死信捞
+    # 回来，整份 checkpoint 的续跑也靠它。这个口径不能动。
+    #
+    # blocking_ids 是**提交门禁**的口径:问"这份文档还能不能收尾"。
+    # artifacts/status.py 早就定了死信不阻断导出(ALLOWED_UNTRANSLATED_REASONS
+    # 里有 dead_letter_queue，理由写在那里:一个块救不回来，不值得让同一份文档里
+    # 其余上百个已成功的块一起作废)。此前这里没有第二个数，
+    # assert_checkpoint_committable 只能拿 pending 凑合，于是 blocking_after=0
+    # 放行了导出，pending_item_count 却还是 2，validating 当场抛 —— 重翻也卡在
+    # 同样那几块。
+    #
+    # 复用 is_blocking_untranslated 而不是再写一份死信判定:它是这件事的唯一真相源。
     pending_ids: set[str] = set()
+    blocking_ids: set[str] = set()
     for unit in pending_translation_items(flat_payload):
-        # pending_translation_items 是**工作队列**的口径:只问"该翻吗、有译文吗",
-        # 所以死信(重试与两轮补救都用尽、保留原文并隔离)照样算待办 —— 这对工作队列
-        # 是对的,重翻要靠它把死信捞回来。
-        #
-        # 但提交门禁问的是另一个问题:"这份文档还能不能收尾"。artifacts/status.py 早就
-        # 定了死信不阻断导出(ALLOWED_UNTRANSLATED_REASONS 里有 dead_letter_queue,
-        # 理由写在那里:一个块救不回来,不值得让同一份文档里其余上百个已成功的块一起作废)。
-        # 这里没跟上,于是 blocking_after=0 放行了导出,pending_item_count 却还是 2,
-        # assert_checkpoint_committable 直接抛,validating 崩掉 —— 而且重翻会卡在同样那几块。
-        #
-        # 复用 is_blocking_untranslated 而不是再写一份死信判定:它是这件事的唯一真相源。
-        if _is_settled_non_blocking(unit, flat_payload):
-            continue
         member_ids = [
             str(item_id or "")
             for item_id in unit.get("translation_unit_member_ids", [])
             if str(item_id or "")
         ]
-        if len(member_ids) > 1:
-            pending_ids.update(member_ids)
-            continue
-        item_id = str(unit.get("item_id", "") or "")
-        if item_id:
-            pending_ids.add(item_id)
+        unit_ids = (
+            set(member_ids)
+            if len(member_ids) > 1
+            else {str(unit.get("item_id", "") or "")} - {""}
+        )
+        pending_ids.update(unit_ids)
+        if not _is_settled_non_blocking(unit, flat_payload):
+            blocking_ids.update(unit_ids)
     pages: list[dict[str, Any]] = []
     completed_total = 0
     item_total = 0
@@ -198,10 +204,18 @@ def project_progress(
                 "last_committed_unit": completed_units[-1] if completed_units else None,
             }
         )
+    translated_total = sum(
+        1 for item in flat_payload if has_translation_artifact(item)
+    )
     return pages, {
         "item_count": item_total,
         "completed_item_count": completed_total,
         "pending_item_count": max(0, item_total - completed_total),
+        # 待办里**真正挡住收尾**的那部分。死信不在其中；从没尝试过的块在。
+        "blocking_item_count": len(blocking_ids),
+        # 真的产出了译文的块数。没有它，「死信不阻断」会把一份 0 成功的文档
+        # 也一路放行成 complete。
+        "translated_item_count": translated_total,
     }
 
 
@@ -347,8 +361,22 @@ def assert_checkpoint_committable(payload: dict[str, Any]) -> None:
     """
     if payload.get("phase") != "validating":
         raise RuntimeError("Translation checkpoint can only commit after validation")
-    if int((payload.get("progress") or {}).get("pending_item_count", -1)) != 0:
+    progress = payload.get("progress") or {}
+    pending = int(progress.get("pending_item_count", -1))
+    if "blocking_item_count" not in progress:
+        # 旧 checkpoint 没有分开的计数，只能退回原来那条更严的判断。
+        if pending != 0:
+            raise RuntimeError("Translation checkpoint cannot commit with pending items")
+        return
+    if int(progress.get("blocking_item_count", -1)) != 0:
         raise RuntimeError("Translation checkpoint cannot commit with pending items")
+    # 死信可以放行，「一个都没译成」不行。pending>0 说明确实有块该翻而没翻成，
+    # translated==0 说明整份文档一点译文都没产出 —— 这种东西冒充 complete 落盘，
+    # load_translated_pages 会照单全收。
+    if pending > 0 and int(progress.get("translated_item_count", 0)) == 0:
+        raise RuntimeError(
+            "Translation checkpoint cannot commit a document with zero translated items"
+        )
 
 
 def commit_checkpoint(payload: dict[str, Any], *, manifest_name: str) -> dict[str, Any]:

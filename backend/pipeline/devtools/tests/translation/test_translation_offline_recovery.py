@@ -226,7 +226,10 @@ def test_repair_matches_frozen_pre_refactor_output_and_preserves_source(tmp_path
     assert checkpoint["fingerprint"] == hashlib.sha256(json.dumps(
         identity, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
     ).encode()).hexdigest()
-    assert checkpoint["progress"] == {"item_count": 2, "completed_item_count": 2, "pending_item_count": 0}
+    assert checkpoint["progress"] == {
+        "item_count": 2, "completed_item_count": 2, "pending_item_count": 0,
+        "blocking_item_count": 0, "translated_item_count": 2,
+    }
     assert checkpoint["committed_pages"] == []
     assert checkpoint["committed_pages_event"] == {
         "producer_generation": 8, "committed_pages": [], "progress": checkpoint["progress"],

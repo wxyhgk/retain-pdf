@@ -85,3 +85,31 @@ def test_publication_change_during_read_is_rejected(tmp_path, monkeypatch, chang
     monkeypatch.setattr(reader, "load_translations", load_then_change)
     with pytest.raises(RuntimeError, match="changed while reading"):
         reader.load_translated_pages(tmp_path)
+
+
+def test_a_commit_with_dead_letters_is_still_readable(tmp_path):
+    """死信留在 pending_item_count 里（重翻靠它捞回来），但它不阻断发布。
+
+    读取侧如果还拿 pending 当门禁，这份已经合法提交的文档就渲染不出来 ——
+    用户看到的是「翻译完成」然后导出报错。
+    """
+    _, _, marker, payload = publication(tmp_path)
+    payload["progress"] = {
+        "item_count": 3, "completed_item_count": 1, "pending_item_count": 2,
+        "blocking_item_count": 0, "translated_item_count": 1,
+    }
+    marker.write_text(json.dumps(payload))
+    assert reader.load_translated_pages(tmp_path)[0][0]["translated_text"] == "译文"
+
+
+def test_blocking_items_are_still_rejected_even_when_pending_reads_zero(tmp_path):
+    """新计数是用来放行死信的，不是用来绕过门禁的。"""
+    _, manifest, marker, payload = publication(tmp_path)
+    payload["progress"] = {
+        "item_count": 3, "completed_item_count": 3, "pending_item_count": 0,
+        "blocking_item_count": 1, "translated_item_count": 3,
+    }
+    marker.write_text(json.dumps(payload))
+    with pytest.raises(RuntimeError, match="not committed or consistent"):
+        reader.load_translated_pages(tmp_path)
+    assert manifest.exists()
