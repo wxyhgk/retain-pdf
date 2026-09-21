@@ -271,6 +271,13 @@ export function createWorkflowViewFeature({
       renderSourceJobId: `${saved.renderSourceJobId || ""}`.trim(),
       model: saved.model || defaults.model,
       baseUrl: saved.baseUrl || defaults.baseUrl,
+      // 与 payload.ts 的 glossary_id 形状相同，含义不同：这里是**表单回填**，
+      // 和相邻的 model/baseUrl 一样，空=「还没值，先显示存过的」。提交载荷里
+      // 空串则是用户选的「不使用术语表」，不能回退（见 payload.ts 的注释）。
+      // 注意：开发者对话框在 96372a37 的 React cutover 里只剩占位标签、没有接线，
+      // 这条目前不可达。真要重新接上时，保存路径（saveDeveloperDialog 会把这里
+      // 的返回值写回 developerConfig）必须区分「选了不使用」和「没选」，否则会
+      // 把遗留 id 重新落盘、变成永久粘住。
       glossaryId: selectedGlossaryId() || `${saved.glossaryId || ""}`.trim(),
       workers: saved.workers ?? defaults.workers,
       batchSize: saved.batchSize ?? defaults.batchSize,

@@ -126,7 +126,18 @@ export function buildTranslationPayload({
     classify_batch_size: developerConfig.classifyBatchSize,
     rule_profile_name: constants.DEFAULT_RULE_PROFILE,
     custom_rules_text: "",
-    glossary_id: selectedGlossaryId || developerConfig.glossaryId || "",
+    // 下拉里「不使用术语表」这个选项的 value 就是空串，所以空串是**用户的选择**，
+    // 不是「没设置过」。这里原本写 `selectedGlossaryId || developerConfig.glossaryId`，
+    // 把两种含义混成一个，造成两个真实缺陷：
+    //   1. 用户选了「不使用」，却被旧版开发者对话框遗留在 localStorage 的
+    //      developerConfig.glossaryId 顶掉，界面上还看不出来；
+    //   2. 那个遗留 id 指向的术语表哪怕已被删除，也照样发出去——直接绕过
+    //      glossary-options.ts 里「已删除术语表的残留 id 不再回退」的守卫。
+    // 「沿用老用户遗留偏好」不归这一层管：glossary-options.ts 拉到术语表列表时
+    // 已经用 developerConfig.glossaryId 预选下拉（且只在该 id 仍存在时才预选），
+    // 首页 applyWorkflowMode() 启动即跑。这里只忠实转发下拉当前值——下拉显示
+    // 什么就发什么。
+    glossary_id: `${selectedGlossaryId || ""}`.trim(),
     glossary_entries: [],
     skip_title_translation: !developerConfig.translateTitles,
   };

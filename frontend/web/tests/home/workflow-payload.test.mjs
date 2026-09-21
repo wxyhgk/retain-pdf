@@ -8,6 +8,8 @@ import {
   buildTranslationPayload,
 } from "../../src/features/ingest/domain/workflow/payload.js";
 import { mountWorkflowFeature } from "../../src/features/ingest/domain/workflow/controller.js";
+import { createGlossaryOptionsLoader } from "../../src/features/ingest/domain/workflow/glossary-options.js";
+import { createWorkflowViewFeature } from "../../src/features/ingest/domain/workflow-view-store.js";
 import {
   createWorkflowConfigPort,
   resolveMockScenario,
@@ -73,16 +75,95 @@ test("buildTranslationPayload uses injected glossary and credential ref without 
   assert.equal(payload.skip_title_translation, false);
 });
 
-test("buildTranslationPayload falls back to developer glossary id", () => {
+// glossary_id 的空串是**用户的选择**：下拉里「不使用术语表」这个选项的 value
+// 就是空串（TranslationOptionsPanel.tsx）。这里曾写成
+// `selectedGlossaryId || developerConfig.glossaryId`，把「选了不使用」和「没设置」
+// 混成一个，于是旧版开发者对话框遗留在 localStorage 的 glossaryId 会把用户刚选的
+// 「不使用」顶掉。四种状态一次钉死，别再靠 `||` 兜。
+test("glossary_id 直传下拉当前值：空串=用户选了「不使用术语表」，不得回退遗留值", () => {
+  const cases = [
+    ["选了具体术语表", "glossary-selected", "glossary-selected"],
+    ["选了「不使用术语表」（下拉 value 就是空串）", "", ""],
+    ["没动过下拉（调用方连字段都没给）", undefined, ""],
+    ["纯空白按空串归一", "   ", ""],
+  ];
+
+  for (const [label, selectedGlossaryId, expected] of cases) {
+    const payload = buildTranslationPayload({
+      // 遗留值在场也不许回退——回退归 glossary-options.ts 的下拉预选逻辑管
+      developerConfig: developerConfig({ glossaryId: "glossary-legacy" }),
+      translationCredentialRef: "cred_translation",
+      selectedGlossaryId,
+      constants,
+    });
+    assert.equal(payload.glossary_id, expected, label);
+  }
+});
+
+test("buildTranslationPayload 仍照常转发 skip_title_translation", () => {
   const payload = buildTranslationPayload({
-    developerConfig: developerConfig({ glossaryId: "glossary-fallback", translateTitles: false }),
+    developerConfig: developerConfig({ translateTitles: false }),
     translationCredentialRef: "cred_translation",
     selectedGlossaryId: "",
     constants,
   });
 
-  assert.equal(payload.glossary_id, "glossary-fallback");
   assert.equal(payload.skip_title_translation, true);
+});
+
+// 老用户那种状态的完整链路：localStorage 里有遗留 developerConfig.glossaryId，
+// 首页启动 applyWorkflowMode() → loadGlossaryOptions() 会用它**预选下拉**，
+// 于是「没动过下拉」照样发遗留值——但这次是用户在界面上看得见的那一个。
+test("遗留术语表偏好经下拉预选生效；用户改选「不使用」立即盖掉它", async () => {
+  const view = createWorkflowViewFeature({});
+  const loader = createGlossaryOptionsLoader({
+    fetchGlossaries: async () => ({ items: [{ glossary_id: "glossary-legacy", name: "旧术语表" }] }),
+    apiPrefix: "/api",
+    setDeveloperGlossaryOptions: view.viewPort.setDeveloperGlossaryOptions,
+    setText: () => {},
+    getDefaultSelectedId: () => "glossary-legacy",
+  });
+
+  const glossaryIdFor = (selectedGlossaryId) => buildTranslationPayload({
+    developerConfig: developerConfig({ glossaryId: "glossary-legacy" }),
+    translationCredentialRef: "cred_translation",
+    selectedGlossaryId,
+    constants,
+  }).glossary_id;
+
+  await loader.loadGlossaryOptions({ force: true, selectedId: "" });
+  assert.equal(view.selectedGlossaryId(), "glossary-legacy", "遗留偏好应可见地预选在下拉里");
+  assert.equal(glossaryIdFor(view.selectedGlossaryId()), "glossary-legacy", "没动过下拉 → 仍发遗留值");
+
+  view.setSelectedGlossaryId("");
+  assert.equal(glossaryIdFor(view.selectedGlossaryId()), "", "选了「不使用」→ 必须发空串");
+});
+
+// 同一条链路的反面：遗留 id 指向的术语表已被删除。glossary-options.ts 明确不回退
+// 死 id，但 payload 层的 `||` 曾把它复活。
+test("遗留术语表已被删除：下拉不预选，载荷也不复活那个死 id", async () => {
+  const view = createWorkflowViewFeature({});
+  const loader = createGlossaryOptionsLoader({
+    fetchGlossaries: async () => ({ items: [{ glossary_id: "glossary-other", name: "别的表" }] }),
+    apiPrefix: "/api",
+    setDeveloperGlossaryOptions: view.viewPort.setDeveloperGlossaryOptions,
+    setText: () => {},
+    getDefaultSelectedId: () => "glossary-legacy",
+  });
+
+  await loader.loadGlossaryOptions({ force: true, selectedId: "" });
+
+  assert.equal(view.selectedGlossaryId(), "", "已删除的 id 不该被预选");
+  assert.equal(
+    buildTranslationPayload({
+      developerConfig: developerConfig({ glossaryId: "glossary-legacy" }),
+      translationCredentialRef: "cred_translation",
+      selectedGlossaryId: view.selectedGlossaryId(),
+      constants,
+    }).glossary_id,
+    "",
+    "载荷不得绕过 glossary-options 的已删除守卫",
+  );
 });
 
 test("buildOcrPayload maps provider token field and paddle api url", () => {
