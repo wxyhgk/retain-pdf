@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const manifest = JSON.parse(readFileSync(resolve("package.json"), "utf8"));
+const generatedCreateJob = readFileSync(resolve("src/create-job.ts"), "utf8");
 const generatedJobStatus = readFileSync(resolve("src/job-status.ts"), "utf8");
 const generatedJobEvents = readFileSync(resolve("src/job-events.ts"), "utf8");
 const generatedLibraryBooks = readFileSync(resolve("src/library-books.ts"), "utf8");
@@ -12,6 +13,7 @@ const RAW_SCHEMA_EXPORTS = [
   "./ai-ask.v1.schema.json",
   "./agent-calculation.v1.schema.json",
   "./ai-conversations.v1.schema.json",
+  "./create-job.v1.schema.json",
   "./job-status.v1.schema.json",
   "./job-events.v2.schema.json",
   "./jobs-control.v1.schema.json",
@@ -25,7 +27,7 @@ const RAW_SCHEMA_EXPORTS = [
 test("package exposes only explicit DTO and raw schema subpaths", () => {
   assert.deepEqual(
     Object.keys(manifest.exports).sort(),
-    ["./job-status", "./job-events", "./library-books", "./reader-data", ...RAW_SCHEMA_EXPORTS].sort(),
+    ["./create-job", "./job-status", "./job-events", "./library-books", "./reader-data", ...RAW_SCHEMA_EXPORTS].sort(),
   );
   assert.equal(Object.hasOwn(manifest.exports, "."), false);
   assert.equal(Object.keys(manifest.exports).some((key) => key.includes("*")), false);
@@ -49,6 +51,17 @@ test("generated DTO entries expose the stable consumer type names", () => {
     "PublicResolvedJobSpec",
   ]) {
     assert.match(generatedJobStatus, new RegExp(`export (?:interface|type) ${typeName}\\b`));
+  }
+  for (const typeName of [
+    "CreateJobInput",
+    "GlossaryEntryInput",
+    "JobSourceInput",
+    "OcrInput",
+    "RenderInput",
+    "RuntimeInput",
+    "TranslationInput",
+  ]) {
+    assert.match(generatedCreateJob, new RegExp(`export (?:interface|type) ${typeName}\\b`));
   }
   for (const typeName of [
     "JobEventListView",

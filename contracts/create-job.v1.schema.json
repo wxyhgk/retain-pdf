@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/create-job/v1",
+  "title": "建任务请求契约（Create Job Request）",
+  "description": "POST /api/v1/jobs 的**请求**体单一真值。消费者是前端的 payload 构造器（frontend/web/src/features/ingest/domain/workflow/payload.ts），生产者是 retain-core models/input/*.rs 的 CreateJobInput 及其五个段。与 job-status.v1 的 PublicResolvedJobSpec / PublicTranslationInput 刻意分开：后者是**响应** DTO（api_key 置空、多一个 *_configured 标记），把它回灌去建任务会被 deny_unknown_fields 以 400 拒掉。每个段都 additionalProperties:false，对应 Rust 侧的 #[serde(deny_unknown_fields)]——这是本契约存在的理由。所有字段在 Rust 侧都带 #[serde(default)]，因此本契约不声明任何 required：请求可以只带需要覆盖的字段。字段集合由 retain-core 的 create_job_contract 测试双向钉住（Rust 多一个或 schema 多一个都会红）。",
+  "base_path": "/api/v1/jobs",
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/jobs",
+      "input": "CreateJobInput",
+      "rust_view": "routes/jobs.rs :: create_job",
+      "ts_consumer": "frontend/web/src/features/ingest/domain/workflow/payload.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ocr/jobs",
+      "input": "CreateJobInput",
+      "note": "WorkflowKind::Ocr 走 /api/v1/ocr/jobs 前缀，请求体形状与 book 一致"
+    }
+  ],
+  "definitions": {
+    "WorkflowKind": {
+      "type": "string",
+      "enum": ["book", "ocr", "translate", "render"]
+    },
+    "JsonValue": {
+      "description": "可安全跨线传输的任意 JSON 值；用于 provider 扩展 options。",
+      "tsType": "null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }",
+      "anyOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string" },
+        { "type": "array", "items": { "$ref": "#/definitions/JsonValue" } },
+        { "type": "object", "additionalProperties": { "$ref": "#/definitions/JsonValue" } }
+      ]
+    },
+    "JobSourceInput": {
+      "type": "object",
+      "description": "models/input/source.rs :: JobSourceInput。三选一：上传件 / 外部 URL / 复用既有任务产物。",
+      "additionalProperties": false,
+      "properties": {
+        "upload_id": { "type": "string" },
+        "source_url": { "type": "string" },
+        "artifact_job_id": { "type": "string" }
+      }
+    },
+    "OcrInput": {
+      "type": "object",
+      "description": "models/input/ocr.rs :: OcrInput。凭据可以用 credential_ref 引用，也可以内联 mineru_token / paddle_token。",
+      "additionalProperties": false,
+      "properties": {
+        "provider": { "type": "string" },
+        "credential_ref": { "type": "string" },
+        "mineru_token": { "type": "string" },
+        "model_version": { "type": "string" },
+        "paddle_token": { "type": "string" },
+        "paddle_api_url": { "type": "string" },
+        "paddle_model": { "type": "string" },
+        "is_ocr": { "type": "boolean" },
+        "disable_formula": { "type": "boolean" },
+        "disable_table": { "type": "boolean" },
+        "language": { "type": "string" },
+        "page_ranges": { "type": "string" },
+        "data_id": { "type": "string" },
+        "no_cache": { "type": "boolean" },
+        "cache_tolerance": { "type": "integer" },
+        "extra_formats": { "type": "string" },
+        "poll_interval": { "type": "integer" },
+        "poll_timeout": { "type": "integer" },
+        "options": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/JsonValue" }
+        }
+      }
+    },
+    "GlossaryEntryInput": {
+      "type": "object",
+      "description": "models/input/translation.rs :: GlossaryEntryInput",
+      "additionalProperties": false,
+      "properties": {
+        "source": { "type": "string" },
+        "target": { "type": "string" },
+        "note": { "type": "string" },
+        "level": { "type": "string" },
+        "match_mode": { "type": "string" },
+        "context": { "type": "string" }
+      }
+    },
+    "ModelConnection": {
+      "type": "object",
+      "description": "model_connection.rs :: ModelConnection。不含明文密钥，只带 credential_ref。",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "provider",
+        "base_url",
+        "model",
+        "credential_ref",
+        "concurrency"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "revision": { "type": "integer", "minimum": 0 },
+        "provider": { "enum": ["qwen", "deepseek", "openai_compatible"] },
+        "base_url": { "type": "string" },
+        "model": { "type": "string" },
+        "credential_ref": {
+          "type": "string",
+          "pattern": "^cred_[a-z0-9_-]+$",
+          "maxLength": 64
+        },
+        "concurrency": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "thinking": { "enum": ["auto", "off", "on"] },
+        "stream": { "type": ["boolean", "null"] },
+        "allow_private_endpoint": { "type": "boolean" },
+        "deadlines": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["queue_ms", "connect_ms", "idle_ms", "total_ms"],
+          "properties": {
+            "queue_ms": { "type": "integer", "minimum": 1, "maximum": 900000 },
+            "connect_ms": { "type": "integer", "minimum": 1, "maximum": 900000 },
+            "idle_ms": { "type": "integer", "minimum": 1, "maximum": 900000 },
+            "total_ms": { "type": "integer", "minimum": 1, "maximum": 900000 }
+          }
+        }
+      }
+    },
+    "TranslationInput": {
+      "type": "object",
+      "description": "models/input/translation.rs :: TranslationInput。与响应侧的 PublicTranslationInput 的差别：这里 api_key 可以带明文，且**没有** api_key_configured —— 那个字段只存在于脱敏后的响应里，带上就会被 deny_unknown_fields 拒掉。",
+      "additionalProperties": false,
+      "properties": {
+        "execution_connection": { "$ref": "#/definitions/ModelConnection" },
+        "mode": { "type": "string" },
+        "math_mode": {
+          "type": "string",
+          "enum": ["direct_typst", "placeholder"],
+          "description": "TRANSLATION_MATH_MODES"
+        },
+        "skip_title_translation": { "type": "boolean" },
+        "classify_batch_size": { "type": "integer" },
+        "rule_profile_name": { "type": "string" },
+        "custom_rules_text": { "type": "string" },
+        "glossary_id": { "type": "string" },
+        "glossary_name": { "type": "string" },
+        "glossary_resource_entry_count": { "type": "integer" },
+        "glossary_inline_entry_count": { "type": "integer" },
+        "glossary_overridden_entry_count": { "type": "integer" },
+        "glossary_entries": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/GlossaryEntryInput" }
+        },
+        "context_mode": {
+          "type": "string",
+          "enum": ["needed", "all", "off"],
+          "description": "TRANSLATION_CONTEXT_MODES"
+        },
+        "glossary_mode": {
+          "type": "string",
+          "enum": ["matched", "all", "off"],
+          "description": "TRANSLATION_GLOSSARY_MODES"
+        },
+        "memory_mode": {
+          "type": "string",
+          "enum": ["matched", "broad", "off"],
+          "description": "TRANSLATION_MEMORY_MODES"
+        },
+        "api_key": { "type": "string" },
+        "credential_ref": { "type": "string" },
+        "model": { "type": "string" },
+        "base_url": { "type": "string" },
+        "start_page": { "type": "integer" },
+        "end_page": { "type": "integer" },
+        "page_ranges": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "显式的一基页码；空数组保持 start_page/end_page 的旧语义。"
+        },
+        "batch_size": { "type": "integer" },
+        "workers": { "type": "integer" },
+        "accepted_ambiguous_request_risk": { "type": "boolean" }
+      }
+    },
+    "RenderInput": {
+      "type": "object",
+      "description": "models/input/render.rs :: RenderInput。默认值的权威来源是 backend/api/RENDER_OPTIONS_CONTRACT.md。",
+      "additionalProperties": false,
+      "properties": {
+        "render_mode": { "type": "string" },
+        "compile_workers": { "type": "integer" },
+        "typst_font_family": { "type": "string" },
+        "pdf_compress_dpi": { "type": "integer" },
+        "translated_pdf_name": { "type": "string" },
+        "body_font_size_factor": { "type": "number" },
+        "body_leading_factor": { "type": "number" },
+        "inner_bbox_shrink_x": { "type": "number" },
+        "inner_bbox_shrink_y": { "type": "number" },
+        "inner_bbox_dense_shrink_x": { "type": "number" },
+        "inner_bbox_dense_shrink_y": { "type": "number" },
+        "font_unify_mode": { "type": "string" },
+        "source_cleanup_strategy": {
+          "type": "string",
+          "enum": ["pikepdf_text_strip", "bbox_text_strip", "legacy", "redact_restore_formulas"],
+          "description": "SOURCE_CLEANUP_STRATEGIES"
+        }
+      }
+    },
+    "RuntimeInput": {
+      "type": "object",
+      "description": "models/input/runtime.rs :: RuntimeInput",
+      "additionalProperties": false,
+      "properties": {
+        "job_id": { "type": "string" },
+        "timeout_seconds": { "type": "integer" },
+        "no_output_timeout_seconds": {
+          "type": "integer",
+          "description": "空闲检测：多久没有 stdout 输出就判定 worker 卡死（秒）。0 表示关闭，也是默认值。与 timeout_seconds 相互独立——后者是整段执行的上限，要按最坏情况给。"
+        },
+        "render_after_translation": {
+          "type": "boolean",
+          "description": "内部执行策略：文档级翻译接口在翻译后还要产出渲染候选。公共 translate 工作流通常翻完即止。"
+        }
+      }
+    },
+    "CreateJobInput": {
+      "type": "object",
+      "description": "models/input/request.rs :: CreateJobInput。六个顶层字段全部可省（Rust 侧都是 #[serde(default)]），但**不认识的字段一律 400**。",
+      "additionalProperties": false,
+      "properties": {
+        "workflow": { "$ref": "#/definitions/WorkflowKind" },
+        "source": { "$ref": "#/definitions/JobSourceInput" },
+        "ocr": { "$ref": "#/definitions/OcrInput" },
+        "translation": { "$ref": "#/definitions/TranslationInput" },
+        "render": { "$ref": "#/definitions/RenderInput" },
+        "runtime": { "$ref": "#/definitions/RuntimeInput" }
+      }
+    }
+  }
+}

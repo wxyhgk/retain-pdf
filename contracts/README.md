@@ -10,6 +10,7 @@
 |------|------|--------|--------|
 | `ai-ask.v1.schema.json` | `/v1/ask` SSE 协议 | `frontend/web/tests/contracts/ai-ask-contract.test.mjs` | `backend/ai/tests/test_contract_schema.py` |
 | `ai-conversations.v1.schema.json` | 会话 CRUD | `frontend/web` 与 `backend/ai` | `backend/api/src/api_tests/conversations_contract.rs` |
+| `create-job.v1.schema.json` | POST /api/v1/jobs 的**请求**体（CreateJobInput 六个顶层字段 + 五个段），每段 additionalProperties:false 对应后端 deny_unknown_fields | `frontend/web` 的 payload 构造器（`features/ingest/domain/workflow/payload.ts`） | `backend/packages/retain-core/src/models/input/request.rs` 的 `contract_tests` |
 | `library-books.v1.schema.json` | 图书馆书架 `/api/v1/library/books` + `/api/v1/jobs` 列表 | `@retainpdf/api`、`frontend/web`、`frontend/web-react` | `backend/packages/retain-core/src/models/view/job_types.rs` |
 | `job-status.v1.schema.json` | 任务详情、脱敏请求参数与阶段进度 | `@retainpdf/api`、`frontend/packages/domain`、`frontend/web`、`frontend/web-react` | `backend/api` public view models |
 | `job-events.v2.schema.json` | 普通/OCR 事件游标分页、稳定事件身份 | `@retainpdf/api`、`frontend/web` | `backend/api` event feed |

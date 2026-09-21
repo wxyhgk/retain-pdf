@@ -8,6 +8,11 @@ const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CHECK_ONLY = process.argv.includes("--check");
 const TARGETS = [
   {
+    input: "create-job.v1.schema.json",
+    output: "src/create-job.ts",
+    rootName: "CreateJobSchema",
+  },
+  {
     input: "job-events.v2.schema.json",
     output: "src/job-events.ts",
     rootName: "JobEventsSchema",

@@ -1,3 +1,9 @@
+import type {
+  JobSourceInput,
+  RenderInput,
+  TranslationInput,
+} from "@retainpdf/contracts/create-job";
+
 import { getOcrProviderDefinition, normalizeOcrProvider } from "@/platform/config/providers.js";
 import { RENDER_FONT_STORAGE_KEY } from "@/platform/config/storage-keys.js";
 
@@ -5,7 +11,9 @@ import { RENDER_FONT_STORAGE_KEY } from "@/platform/config/storage-keys.js";
 export interface WorkflowDeveloperConfig {
   workflow?: string;
   renderSourceJobId?: string;
-  mathMode?: string;
+  // 值域由后端 TRANSLATION_MATH_MODES 封闭（填错会被 400 拒），上游 normalizeMathMode()
+  // 已经归一到这两个值，这里跟着契约类型走，免得在 payload 构造处再 as 一次。
+  mathMode?: TranslationInput["math_mode"];
   model?: string;
   baseUrl?: string;
   glossaryId?: string;
@@ -74,7 +82,7 @@ export function buildSourcePayload({
   developerConfig,
   uploadId,
   workflowNeedsUpload,
-}: BuildSourcePayloadOptions) {
+}: BuildSourcePayloadOptions): JobSourceInput {
   return workflowNeedsUpload(workflow)
     ? { upload_id: uploadId }
     : { artifact_job_id: developerConfig.renderSourceJobId };
@@ -106,13 +114,16 @@ export function buildOcrPayload({
   return payload;
 }
 
+// 返回值标注成契约生成的 TranslationInput（create-job.v1.schema.json →
+// contracts/src/create-job.ts）。后端是 #[serde(deny_unknown_fields)]：写错一个
+// 字段名以前要等真提一次任务才被 400 挡下，现在 tsc 直接报错。
 export function buildTranslationPayload({
   developerConfig,
   translationCredentialRef,
   modelApiKey,
   selectedGlossaryId,
   constants,
-}: BuildTranslationPayloadOptions) {
+}: BuildTranslationPayloadOptions): TranslationInput {
   return {
     mode: constants.DEFAULT_MODE,
     math_mode: developerConfig.mathMode,
@@ -145,7 +156,10 @@ function resolveStoredFontFamily(fallback: unknown): string {
   return fb;
 }
 
-export function buildRenderPayload({ developerConfig, constants }: BuildRenderPayloadOptions) {
+export function buildRenderPayload({
+  developerConfig,
+  constants,
+}: BuildRenderPayloadOptions): RenderInput {
   const cfg = developerConfig as WorkflowDeveloperConfig;
   const cfgFont = `${(cfg.typstFontFamily as string) || (cfg.typst_font_family as string) || ""}`.trim();
   const storedFont = resolveStoredFontFamily(constants.DEFAULT_TYPST_FONT_FAMILY);

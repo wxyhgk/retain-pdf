@@ -11,6 +11,7 @@ The mirrored files are:
 - `ai-ask.v1.schema.json`
 - `agent-calculation.v1.schema.json`
 - `ai-conversations.v1.schema.json`
+- `create-job.v1.schema.json`
 - `job-events.v2.schema.json`
 - `job-status.v1.schema.json`
 - `jobs-control.v1.schema.json`

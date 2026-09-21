@@ -5,6 +5,10 @@
   "description": "RetainPDF versioned JSON Schemas and generated wire DTO types.",
   "type": "module",
   "exports": {
+    "./create-job": {
+      "types": "./dist/create-job.d.ts",
+      "import": "./dist/create-job.js"
+    },
     "./job-events": {
       "types": "./dist/job-events.d.ts",
       "import": "./dist/job-events.js"
@@ -24,6 +28,7 @@
     "./ai-ask.v1.schema.json": "./ai-ask.v1.schema.json",
     "./agent-calculation.v1.schema.json": "./agent-calculation.v1.schema.json",
     "./ai-conversations.v1.schema.json": "./ai-conversations.v1.schema.json",
+    "./create-job.v1.schema.json": "./create-job.v1.schema.json",
     "./job-status.v1.schema.json": "./job-status.v1.schema.json",
     "./job-events.v2.schema.json": "./job-events.v2.schema.json",
     "./jobs-control.v1.schema.json": "./jobs-control.v1.schema.json",
