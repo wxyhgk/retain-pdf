@@ -115,15 +115,25 @@ def restore_cross_page_spans(pages: list[dict]) -> tuple[list[dict], dict]:
         for span in _spans(block):
             if not span.get("cross_page"):
                 continue
-            matches = [
-                entry for entry in physical[_key(span)] if entry[0] > source_page
-            ]
+            # physical[...] 是按 span 逐条 append 的:同一段里出现两个完全一样的
+            # span(同 type、同 content、同 bbox —— 一段里重复出现同一个公式就是
+            # 这样)会塞进两条,但**两条指向同一个 block**。
+            #
+            # 这道检查本意是拦「页面归属不明确」,即同样内容出现在不同页/不同段。
+            # 去重前它分不清这两件事,于是「同段两个一样的公式」被误判成歧义直接抛。
+            # 按目标身份(页号 + preproc 路径)去重之后,只有真正落在不同 block 上
+            # 才算歧义。
+            matches = {
+                (entry[0], entry[1]): entry
+                for entry in physical[_key(span)]
+                if entry[0] > source_page
+            }
             if len(matches) != 1:
                 raise ValueError(
                     f"MinerU cross-page span at {source_path} has {len(matches)} physical matches; "
                     "cannot safely assign its PDF page"
                 )
-            target_page, preproc_path, original = matches[0]
+            target_page, preproc_path, original = next(iter(matches.values()))
             plan = plans.setdefault(
                 preproc_path,
                 {
@@ -166,7 +176,20 @@ def restore_cross_page_spans(pages: list[dict]) -> tuple[list[dict], dict]:
             else Counter()
         )
         expected = Counter(_key(span) for span in _spans(original))
-        if (existing | plan["spans"]) != expected:
+        # 这道检查的名字就是它的语义:**证据有没有覆盖全**。恢复动作是把 target 的
+        # lines 整体换成 original 的,所以不需要「正好等于」,只需要「没有缺口」。
+        #
+        # 原来写的是 `existing | plan["spans"] != expected`(逐键 max)。两种写法各自
+        # 只对一半:
+        #   - 取 max:段落被跨页切开、两半各有一个**完全一样**的 span 时,
+        #     existing=1 / plan=1 → max 仍是 1,而 expected=2 → 误报缺口。
+        #   - 改成相加:目标页已经有完整尾巴的幂等重跑会算成超量 → 同样误报。
+        # 单个 span 时两种写法恰好都对,所以这个分歧只有重复 key 才暴露。
+        #
+        # Counter 减法只保留正数,所以 shortfall 非空 ⟺ 确实有 span 没被任何证据覆盖。
+        # 超量(幂等重跑)不算缺口,被容忍。
+        shortfall = expected - (existing + plan["spans"])
+        if shortfall:
             raise ValueError(
                 f"MinerU cross-page recovery has incomplete span coverage for {preproc_path}"
             )

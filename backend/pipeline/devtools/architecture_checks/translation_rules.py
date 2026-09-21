@@ -65,6 +65,11 @@ TRANSLATION_WORKFLOW_SUBPACKAGE_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_pipeline.translate.core.engine_identity",
         "retainpdf_pipeline.translate.core.payload.parts.fingerprints",
         "retainpdf_pipeline.translate.core.payload.parts.units",
+        # 「这个块算不算跑完、跑完了阻不阻断导出」的唯一真相源。提交门禁必须和
+        # 导出门禁用同一套口径,否则会出现 blocking_after=0 放行了导出、
+        # pending_item_count 却不为零把 validating 崩掉。方向是 workflow -> artifacts,
+        # 与 phases 层已有的那条一致。
+        "retainpdf_pipeline.translate.artifacts",
     ),
     "phases": (
         "retainpdf_pipeline.translate.workflow.phases",

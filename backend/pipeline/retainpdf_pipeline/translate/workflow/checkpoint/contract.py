@@ -11,6 +11,10 @@ from retainpdf_pipeline.translate.core.payload.parts.units import (
 from retainpdf_pipeline.translate.core.payload.parts.fingerprints import (
     translation_item_fingerprint,
 )
+from retainpdf_pipeline.translate.artifacts import (
+    is_blocking_untranslated,
+    item_final_status,
+)
 
 TRANSLATION_CHECKPOINT_FILE_NAME = "translation-checkpoint.v1.json"
 TRANSLATION_CHECKPOINT_SCHEMA = "translation_checkpoint_v1"
@@ -76,6 +80,39 @@ def new_checkpoint(
     return payload
 
 
+def _is_settled_non_blocking(unit: dict[str, Any], flat_payload: list[dict]) -> bool:
+    """这个待办单元是不是「已经尘埃落定、且不阻断导出」。
+
+    分组单元按成员判定:只要还有**任何一个**成员是阻断性未翻译,整组仍算待办。
+    """
+    member_ids = {
+        str(item_id or "")
+        for item_id in unit.get("translation_unit_member_ids", [])
+        if str(item_id or "")
+    }
+    if len(member_ids) > 1:
+        members = [
+            item for item in flat_payload
+            if str(item.get("item_id", "") or "") in member_ids
+        ]
+        if not members:
+            return False
+        return all(not _item_blocks(item) for item in members)
+    return not _item_blocks(unit)
+
+
+def _item_blocks(item: dict[str, Any]) -> bool:
+    diagnostics = dict(item.get("translation_diagnostics") or {})
+    # 先问「跑完了吗」,再问「阻不阻断」。两件事不能合并:
+    # is_blocking_untranslated 回答的是「最终会不会挡住导出」,而一个**还没尝试过**
+    # 的块 final_status 是空的,它一路走到函数末尾 return False —— 不阻断,但它
+    # 当然还是待办。只看 blocking 会把半途的 checkpoint 里所有未翻块算成已完成,
+    # 续跑就再也捞不回来了。
+    if not item_final_status(item, diagnostics):
+        return True
+    return is_blocking_untranslated(item, diagnostics)
+
+
 def project_progress(
     *,
     output_dir: Path,
@@ -90,6 +127,19 @@ def project_progress(
     ]
     pending_ids: set[str] = set()
     for unit in pending_translation_items(flat_payload):
+        # pending_translation_items 是**工作队列**的口径:只问"该翻吗、有译文吗",
+        # 所以死信(重试与两轮补救都用尽、保留原文并隔离)照样算待办 —— 这对工作队列
+        # 是对的,重翻要靠它把死信捞回来。
+        #
+        # 但提交门禁问的是另一个问题:"这份文档还能不能收尾"。artifacts/status.py 早就
+        # 定了死信不阻断导出(ALLOWED_UNTRANSLATED_REASONS 里有 dead_letter_queue,
+        # 理由写在那里:一个块救不回来,不值得让同一份文档里其余上百个已成功的块一起作废)。
+        # 这里没跟上,于是 blocking_after=0 放行了导出,pending_item_count 却还是 2,
+        # assert_checkpoint_committable 直接抛,validating 崩掉 —— 而且重翻会卡在同样那几块。
+        #
+        # 复用 is_blocking_untranslated 而不是再写一份死信判定:它是这件事的唯一真相源。
+        if _is_settled_non_blocking(unit, flat_payload):
+            continue
         member_ids = [
             str(item_id or "")
             for item_id in unit.get("translation_unit_member_ids", [])

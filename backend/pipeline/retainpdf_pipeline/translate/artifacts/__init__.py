@@ -11,6 +11,8 @@ from .models import TranslationDiagnostic
 from .models import TranslationDiagnosticsCollector
 from .models import classify_error_taxonomy
 from .status import blocking_untranslated_items
+from .status import is_blocking_untranslated
+from .status import item_final_status
 from .status import enforce_no_blocking_review_errors
 from .status import enforce_no_blocking_untranslated
 
@@ -26,6 +28,8 @@ __all__ = [
     "TranslationRequestJournal",
     "TRANSLATION_REQUEST_JOURNAL_FILE_NAME",
     "blocking_untranslated_items",
+    "is_blocking_untranslated",
+    "item_final_status",
     "classify_provider_family",
     "get_active_translation_run_diagnostics",
     "enforce_no_blocking_review_errors",
