@@ -6,11 +6,11 @@ from retainpdf_pipeline.translate.core.item_reader import item_content_kind
 from retainpdf_pipeline.translate.core.item_reader import item_is_bodylike
 from retainpdf_pipeline.translate.core.item_reader import item_is_caption_like
 from retainpdf_pipeline.translate.core.item_reader import item_policy_translate
+from retainpdf_pipeline.translate.core.item_reader import item_source_text
 from retainpdf_pipeline.translate.llm.placeholder_transform import has_formula_placeholders
 from retainpdf_pipeline.translate.llm.validation.english_residue import is_direct_math_mode
 from retainpdf_pipeline.translate.llm.validation.english_residue import should_force_translate_body_text
 from retainpdf_pipeline.translate.llm.validation.placeholder_tokens import placeholder_sequence
-from retainpdf_pipeline.translate.core.payload.parts.common import item_source_text
 from retainpdf_pipeline.translate.core.text_rules import looks_like_hard_nontranslatable_metadata
 
 

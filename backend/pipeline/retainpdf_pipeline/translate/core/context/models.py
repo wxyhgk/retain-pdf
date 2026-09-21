@@ -9,6 +9,7 @@ from retainpdf_pipeline.translate.core.item_reader import item_block_kind
 from retainpdf_pipeline.translate.core.item_reader import item_effective_role
 from retainpdf_pipeline.translate.core.item_reader import item_layout_role
 from retainpdf_pipeline.translate.core.item_reader import item_semantic_role
+from retainpdf_pipeline.translate.core.item_reader import item_source_text
 from retainpdf_pipeline.translate.core.item_reader import item_is_reference_compatible, item_is_title_like
 from retainpdf_pipeline.translate.core.text_rules import structure_style_hint
 
@@ -208,13 +209,10 @@ def build_item_context(item: dict[str, Any], *, order: int = 0, page_idx: int | 
         for line in item.get("source_line_texts", [])
         if str(line).strip()
     ]
-    protected_source_text = str(
-        item.get("translation_unit_protected_source_text")
-        or item.get("group_protected_source_text")
-        or item.get("protected_source_text")
-        or source_text
-        or ""
-    )
+    # 与原先手写的 unit_protected -> group_protected -> protected -> source_text 链逐段等价
+    # (原来的最后一段 `or source_text` 就是上面那个局部变量,即 item["source_text"]),
+    # 只是改为走 item_reader 的唯一收口,免得这条链再被单独漂移。
+    protected_source_text = item_source_text(item)
     resolved_page_idx = item.get("page_idx", 0) if page_idx is None else page_idx
     try:
         resolved_page_idx = int(resolved_page_idx)

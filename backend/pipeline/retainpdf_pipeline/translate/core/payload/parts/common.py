@@ -104,16 +104,6 @@ def effective_translation_unit_id(item: dict) -> str:
     return str(item.get("item_id") or unit_id or "")
 
 
-def item_source_text(item: dict) -> str:
-    return str(
-        item.get("translation_unit_protected_source_text")
-        or item.get("group_protected_source_text")
-        or item.get("protected_source_text")
-        or item.get("source_text")
-        or ""
-    )
-
-
 def seed_single_translation_unit(item: dict) -> None:
     item_id = str(item.get("item_id") or "")
     item["translation_unit_id"] = item_id

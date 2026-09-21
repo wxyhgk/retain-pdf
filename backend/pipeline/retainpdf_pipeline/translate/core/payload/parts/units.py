@@ -4,12 +4,12 @@ import re
 
 from retainpdf_pipeline.translate.core.item_reader import item_block_class
 from retainpdf_pipeline.translate.core.item_reader import item_block_kind
+from retainpdf_pipeline.translate.core.item_reader import item_source_text
 
 from .common import (
     effective_translation_unit_id,
     GROUP_ITEM_PREFIX,
     has_item_translation,
-    item_source_text,
     is_group_unit_id,
     seed_group_translation_unit,
 )

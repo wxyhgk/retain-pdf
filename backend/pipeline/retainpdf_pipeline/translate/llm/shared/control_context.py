@@ -256,11 +256,16 @@ class TranslationControlContext:
         }
 
     def term_scope_summary_for_item(self, item: dict) -> dict[str, Any]:
+        # "raw_source_text" / "translation_unit_original_source_text" 曾经也串在这条链里,
+        # 但全仓没有任何 writer 写过它们(payload item 的键集合见
+        # core/payload/template_records.py::build_translation_record),
+        # 所以这两段永远取不到值,是死读,已删。
+        # 剩下的顺序保持原样:这里算的是术语命中统计,要的是**未被占位符替换的可读原文**,
+        # 所以 source_text 打头、protected 系列只做兜底 —— 与 scoped_to_item 里
+        # 「送模型的到底是哪段文本」的取值链不是同一个问题,不要合并。
         source_text = str(
             item.get("source_text")
-            or item.get("raw_source_text")
             or item.get("mixed_original_protected_source_text")
-            or item.get("translation_unit_original_source_text")
             or item.get("translation_unit_protected_source_text")
             or item.get("group_protected_source_text")
             or item.get("protected_source_text")
