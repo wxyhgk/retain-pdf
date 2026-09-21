@@ -6,6 +6,7 @@ use crate::services::glossaries::resolve_task_glossary_request;
 use crate::services::job_validation::{
     validate_mineru_upload_limits, validate_ocr_credential_reference,
     validate_ocr_provider_request, validate_provider_credentials, validate_render_options,
+    validate_translation_modes,
     validate_translation_credential_reference, validate_translation_credentials,
 };
 use crate::services::ocr_artifact_reuse::validate_ocr_artifact_reuse;
@@ -39,6 +40,7 @@ pub(super) fn prepare_full_pipeline_input(
 ) -> Result<PreparedTranslationUpload, AppError> {
     let input = resolve_task_glossary_request(ctx.db, input)?;
     validate_render_options(&input)?;
+    validate_translation_modes(&input)?;
     validate_translation_credential_reference(&input, ctx.config.data_root)?;
     if !input.source.artifact_job_id.trim().is_empty() {
         validate_translation_credentials(&input)?;
@@ -62,6 +64,7 @@ pub(super) fn prepare_translate_only_input(
 ) -> Result<PreparedTranslateOnlyInput, AppError> {
     let input = resolve_task_glossary_request(ctx.db, input)?;
     validate_render_options(&input)?;
+    validate_translation_modes(&input)?;
     validate_translation_credential_reference(&input, ctx.config.data_root)?;
     if input.source.artifact_job_id.trim().is_empty() {
         let _ = require_translation_upload(ctx, &input)?;
@@ -98,6 +101,7 @@ pub(super) fn prepare_render_input(
     })?;
     reject_paddle_cli_artifact(&source_job)?;
     validate_render_options(input)?;
+    validate_translation_modes(input)?;
     let mut spec = ResolvedJobSpec::from_input(input.clone());
     spec.workflow = WorkflowKind::Render;
     Ok(PreparedRenderInput { spec })
@@ -154,6 +158,7 @@ fn require_translation_upload(
     validate_provider_credentials(input)?;
     validate_ocr_credential_reference(input, ctx.config.data_root)?;
     validate_render_options(input)?;
+    validate_translation_modes(input)?;
     let upload = load_upload_or_404(ctx.db, &input.source.upload_id)?;
     validate_mineru_upload_limits(input, &upload, ctx.config.provider_limits)?;
     Ok(upload)

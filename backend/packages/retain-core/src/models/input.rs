@@ -232,3 +232,7 @@ pub use resolved::ResolvedJobSpec;
 pub use runtime::RuntimeInput;
 pub use source::{JobSourceInput, ResolvedSourceSpec};
 pub use translation::{GlossaryEntryInput, TranslationInput};
+pub use translation::{
+    TRANSLATION_CONTEXT_MODES, TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES,
+    TRANSLATION_MEMORY_MODES,
+};

@@ -4,7 +4,10 @@ use axum::http::StatusCode;
 use retain_data::credentials::{resolve_credential, CredentialResolveError};
 use std::path::Path;
 
-use crate::models::domain::{OcrProviderKind, UploadRecord, SOURCE_CLEANUP_STRATEGIES};
+use crate::models::domain::{
+    OcrProviderKind, UploadRecord, SOURCE_CLEANUP_STRATEGIES, TRANSLATION_CONTEXT_MODES,
+    TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES, TRANSLATION_MEMORY_MODES,
+};
 use crate::models::request::CreateJobInput;
 use crate::ocr_provider::{
     is_configured_command_provider, parse_provider_kind, provider_display_name, provider_token,
@@ -134,6 +137,38 @@ pub(crate) fn map_credential_reference_error(error: CredentialResolveError) -> A
             error.to_string(),
         ),
     }
+}
+
+/// 校验 translation 里那几个枚举型字段。
+///
+/// 在此之前 Rust 侧一个都不校验,填错的值会一路走到 Python 被**静默归一化**成默认值：
+/// `context_mode="alll"` 静默变 `needed`、`memory_mode="broad_"` 静默变 `matched`。
+/// 用户以为开了某个开关,实际从没生效,而且没有任何提示 —— 比直接报错难查得多。
+///
+/// 只校验值域封闭的那四个。`mode` 和 `rule_profile_name` 见
+/// `TRANSLATION_MATH_MODES` 上面那段注释。
+pub fn validate_translation_modes(input: &CreateJobInput) -> Result<(), AppError> {
+    validate_allowed_value(
+        "translation.math_mode",
+        &input.translation.math_mode,
+        TRANSLATION_MATH_MODES,
+    )?;
+    validate_allowed_value(
+        "translation.context_mode",
+        &input.translation.context_mode,
+        TRANSLATION_CONTEXT_MODES,
+    )?;
+    validate_allowed_value(
+        "translation.glossary_mode",
+        &input.translation.glossary_mode,
+        TRANSLATION_GLOSSARY_MODES,
+    )?;
+    validate_allowed_value(
+        "translation.memory_mode",
+        &input.translation.memory_mode,
+        TRANSLATION_MEMORY_MODES,
+    )?;
+    Ok(())
 }
 
 pub fn validate_render_options(input: &CreateJobInput) -> Result<(), AppError> {
@@ -707,7 +742,62 @@ mod tests {
         ));
     }
 
+#[test]
+    fn translation_modes_accept_the_defaults_and_every_allowed_value() {
+        let mut input = CreateJobInput::default();
+        validate_translation_modes(&input).expect("默认值必须能过自己的校验");
+        for value in TRANSLATION_CONTEXT_MODES {
+            input.translation.context_mode = value.to_string();
+            validate_translation_modes(&input)
+                .unwrap_or_else(|err| panic!("context_mode={value} 应当合法: {err:?}"));
+        }
+        input.translation.context_mode = "needed".to_string();
+        for value in TRANSLATION_MEMORY_MODES {
+            input.translation.memory_mode = value.to_string();
+            validate_translation_modes(&input)
+                .unwrap_or_else(|err| panic!("memory_mode={value} 应当合法: {err:?}"));
+        }
+    }
+
     #[test]
+    fn translation_modes_reject_typos_instead_of_silently_normalizing() {
+        // 这是这条校验存在的全部理由:在此之前 "alll" 会一路走到 Python 被静默
+        // 归一化成 "needed",用户以为开了某个开关、实际从没生效,且没有任何提示。
+        for (field, value) in [
+            ("context_mode", "alll"),
+            ("glossary_mode", "match"),
+            ("memory_mode", "broad_"),
+            ("math_mode", "typst"),
+        ] {
+            let mut input = CreateJobInput::default();
+            match field {
+                "context_mode" => input.translation.context_mode = value.to_string(),
+                "glossary_mode" => input.translation.glossary_mode = value.to_string(),
+                "memory_mode" => input.translation.memory_mode = value.to_string(),
+                _ => input.translation.math_mode = value.to_string(),
+            }
+            let err = validate_translation_modes(&input)
+                .expect_err(&format!("translation.{field}={value} 应当被拒绝"));
+            let text = format!("{err:?}");
+            assert!(
+                text.contains(field),
+                "报错要指出是哪个字段,实际是: {text}"
+            );
+        }
+    }
+
+    /// `mode` 和 `rule_profile_name` 刻意不校验,别哪天顺手加上去。
+    #[test]
+    fn open_valued_translation_fields_stay_unvalidated() {
+        let mut input = CreateJobInput::default();
+        input.translation.mode = "whatever".to_string();
+        input.translation.rule_profile_name = "a_saved_profile".to_string();
+        validate_translation_modes(&input).expect(
+            "mode 的取值域是开的(Python 只判 == \"sci\");rule_profile_name 有 saved 扩展分支",
+        );
+    }
+
+        #[test]
     fn render_options_accept_current_defaults() {
         let input = CreateJobInput::default();
         assert_eq!(

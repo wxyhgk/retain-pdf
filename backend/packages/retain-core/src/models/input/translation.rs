@@ -2,6 +2,23 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::defaults::*;
 
+/// 这四个字段的允许值。**权威来源是 Python 的 `_normalize_*` 函数**
+/// （`translate/llm/shared/control_context.py`）和 `workflow-config.ts` 的
+/// `normalizeMathMode`；Rust 只是把同一份集合提前到入口校验。
+///
+/// 在此之前 Rust 侧完全不校验，填错的值会一路走到 Python 被**静默归一化**成默认值：
+/// `context_mode="alll"` 静默变 `needed`、`memory_mode="broad_"` 静默变 `matched`，
+/// 用户以为开了某个开关，实际从没生效，且没有任何提示。
+///
+/// `translation.mode` 和 `translation.rule_profile_name` 刻意不在这里：
+/// 前者 Python 只判 `== "sci"`，其余一律走 not-sci 分支，取值域是开的；
+/// 后者 `build_rule_profile_context` 有一条 `load_saved_rule_profile_text` 的
+/// 扩展分支（目前是空桩），上白名单等于把那个口子焊死。
+pub const TRANSLATION_MATH_MODES: &[&str] = &["direct_typst", "placeholder"];
+pub const TRANSLATION_CONTEXT_MODES: &[&str] = &["needed", "all", "off"];
+pub const TRANSLATION_GLOSSARY_MODES: &[&str] = &["matched", "all", "off"];
+pub const TRANSLATION_MEMORY_MODES: &[&str] = &["matched", "broad", "off"];
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct GlossaryEntryInput {
@@ -123,4 +140,73 @@ pub fn default_translation_glossary_mode() -> String {
 
 pub fn default_translation_memory_mode() -> String {
     "matched".to_string()
+}
+
+#[cfg(test)]
+mod allowed_value_tests {
+    use super::*;
+    use std::collections::BTreeSet;
+
+    /// 这四个集合的权威来源在 Python:`_normalize_*` 里那个 `if normalized in {...}`。
+    /// Rust 只是把同一份集合提前到入口校验,两边漂了就等于「Rust 放行 / Python 静默改写」
+    /// 或者反过来「Rust 拒绝一个 Python 明明支持的值」。所以直接读 Python 源码比对。
+    const CONTROL_CONTEXT_PY: &str =
+        include_str!("../../../../../pipeline/retainpdf_pipeline/translate/llm/shared/control_context.py");
+
+    /// 从 `def _normalize_xxx(...)` 的函数体里抠出 `in {"a", "b"}` 的集合。
+    fn python_normalizer_set(fn_name: &str) -> BTreeSet<String> {
+        let start = CONTROL_CONTEXT_PY
+            .find(&format!("def {fn_name}("))
+            .unwrap_or_else(|| panic!("control_context.py 里找不到 {fn_name} —— 函数改名了,这条测试已经失效"));
+        let body = &CONTROL_CONTEXT_PY[start..];
+        let open = body
+            .find(" in {")
+            .unwrap_or_else(|| panic!("{fn_name} 里找不到 `in {{...}}` 集合字面量 —— 写法变了"));
+        let close = body[open..]
+            .find('}')
+            .unwrap_or_else(|| panic!("{fn_name} 的集合字面量没闭合"));
+        let set: BTreeSet<String> = body[open + 5..open + close]
+            .split(',')
+            .map(|item| item.trim().trim_matches('"').to_string())
+            .filter(|item| !item.is_empty())
+            .collect();
+        assert!(!set.is_empty(), "{fn_name} 解析出来是空集 —— 解析写法已失效");
+        set
+    }
+
+    fn rust_set(values: &[&str]) -> BTreeSet<String> {
+        values.iter().map(|value| value.to_string()).collect()
+    }
+
+    #[test]
+    fn mode_allowlists_match_the_python_normalizers() {
+        for (fn_name, rust_values, field) in [
+            ("_normalize_context_mode", TRANSLATION_CONTEXT_MODES, "context_mode"),
+            ("_normalize_glossary_mode", TRANSLATION_GLOSSARY_MODES, "glossary_mode"),
+            ("_normalize_memory_mode", TRANSLATION_MEMORY_MODES, "memory_mode"),
+        ] {
+            assert_eq!(
+                rust_set(rust_values),
+                python_normalizer_set(fn_name),
+                "translation.{field} 的允许值和 Python 的 {fn_name} 对不上"
+            );
+        }
+    }
+
+    /// 每个字段的默认值必须在自己的允许值里,否则「什么都不填」会被自己的校验拒掉。
+    #[test]
+    fn every_default_is_an_allowed_value() {
+        let input = TranslationInput::default();
+        for (value, allowed, field) in [
+            (&input.math_mode, TRANSLATION_MATH_MODES, "math_mode"),
+            (&input.context_mode, TRANSLATION_CONTEXT_MODES, "context_mode"),
+            (&input.glossary_mode, TRANSLATION_GLOSSARY_MODES, "glossary_mode"),
+            (&input.memory_mode, TRANSLATION_MEMORY_MODES, "memory_mode"),
+        ] {
+            assert!(
+                allowed.contains(&value.as_str()),
+                "translation.{field} 的默认值 {value:?} 不在允许值 {allowed:?} 里"
+            );
+        }
+    }
 }

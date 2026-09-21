@@ -8,6 +8,8 @@ pub use super::document_operation::{
 pub use super::glossary::{build_glossary_id, GlossaryRecord};
 pub use super::input::{
     CreateJobInput, ResolvedJobSpec, DEFAULT_SOURCE_CLEANUP_STRATEGY, SOURCE_CLEANUP_STRATEGIES,
+    TRANSLATION_CONTEXT_MODES, TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES,
+    TRANSLATION_MEMORY_MODES,
 };
 pub use super::job::{
     event_progress_unit, job_progress_unit, job_stage_detail, job_stage_rank, job_stage_str,
