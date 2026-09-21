@@ -13,6 +13,7 @@ import {
   type MockDocumentWithMedia,
 } from "@/platform/mock/documents.js";
 import type { JobSubmissionView } from "@/platform/contracts/library-payloads.js";
+import { assertKnownJobPayloadFields } from "./job-payload-contract.js";
 
 /** Document record returned by documents API (media URLs included). */
 export type DocumentRecord = MockDocumentWithMedia;
@@ -111,7 +112,7 @@ export async function translateDocument(
   payload: Record<string, unknown> = {},
 ): Promise<JobSubmissionView> {
   void apiPrefix;
-  void payload;
+  assertKnownJobPayloadFields(payload, { label: "/documents/:id/translate" });
   const normalized = `${documentId || ""}`.trim();
   if (!normalized) {
     throw new Error("缺少 document_id。");
@@ -125,7 +126,7 @@ export async function ocrDocument(
   payload: Record<string, unknown> = {},
 ): Promise<JobSubmissionView> {
   void apiPrefix;
-  void payload;
+  assertKnownJobPayloadFields(payload, { label: "/documents/:id/ocr" });
   const normalized = `${documentId || ""}`.trim();
   if (!normalized) throw new Error("缺少 document_id。");
   return ocrMockDocument(normalized);

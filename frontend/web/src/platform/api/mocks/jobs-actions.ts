@@ -1,4 +1,5 @@
 import { currentMockScenario } from "@/platform/mock/scenario.js";
+import { assertKnownStageOverrides } from "./job-payload-contract.js";
 import {
   buildLiveMockJobPayload,
   registerLiveMockJob,
@@ -104,6 +105,12 @@ export async function retryJobStage(jobId, apiPrefix, stage, payload = {}) {
   if (!normalizedStage) {
     throw new Error("阶段重试失败: 缺少 stage");
   }
+  // 后端对 overrides 的每个段做 serde_json::from_value,同样带 deny_unknown_fields
+  // (stage_retry_overrides.rs)。mock 以前完全无视 overrides,于是「重新翻译」那条
+  // 注入逻辑在 mock 下从未被执行过。
+  assertKnownStageOverrides((payload as Record<string, unknown>)?.overrides, {
+    label: `retry-stage/${normalizedStage}`,
+  });
   // 从指定阶段起跑；务必绑回原 document，否则书架会多一张「job_id 空壳卡」
   const bookMeta = recordOf(payload);
   // snapshot 常缺 document_id：用源 job → 文档表反查

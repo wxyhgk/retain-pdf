@@ -1,5 +1,6 @@
 import { buildJobsEndpoint } from "@retainpdf/api/http";
 import { submitJson, submitUploadRequest } from "./http.js";
+import { assertKnownJobPayloadFields } from "./job-payload-contract.js";
 
 function isObject(value) {
   return value && typeof value === "object" && !Array.isArray(value);
@@ -116,5 +117,6 @@ export async function submitJobRequest(apiPrefix, payload) {
     return submitUploadRequest(buildJobsEndpoint(apiPrefix, "ocr"), form, undefined);
   }
   assertGroupedJobPayload(payload);
+  assertKnownJobPayloadFields(payload);
   return submitJson(buildJobsEndpoint(apiPrefix, "jobs"), payload);
 }

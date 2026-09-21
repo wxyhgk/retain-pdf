@@ -20,10 +20,12 @@ globalThis.XMLHttpRequest = class {
 const { submitJobRequest } = await import("../../src/platform/api/index.ts");
 
 test("composition submitJobRequest keeps book submission on the mock transport", async () => {
+  // 不能带 `mock: true`：那不是 CreateJobInput 的字段，真后端的
+  // deny_unknown_fields 会 400 拒掉整个请求。mock 传输是靠 URL 的
+  // ?mock=succeeded 选中的，跟 payload 无关。
   const payload = await submitJobRequest("/api/v1", {
     workflow: "book",
     source: {},
-    mock: true,
   });
   assert.ok(payload?.job_id);
 });
