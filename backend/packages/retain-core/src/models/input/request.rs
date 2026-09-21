@@ -34,7 +34,7 @@ mod contract_tests {
 
     use std::collections::BTreeSet;
 
-    use serde::Serialize;
+    use serde::{de::DeserializeOwned, Serialize};
 
     use crate::model_connection::{Deadlines, ModelConnection, Provider, Thinking};
     use crate::models::{
@@ -211,6 +211,76 @@ mod contract_tests {
                  Rust 侧是 deny_unknown_fields"
             );
         }
+    }
+
+    /// 往序列化结果里塞一个未知键再读回来，必须失败；把键去掉又必须成功。
+    ///
+    /// 后半段是自保：只断言"失败"的话，哪天 fixture 本身变得读不回来（比如某个字段
+    /// 的 Serialize/Deserialize 不对称），这条会因为**别的原因**失败而显绿。
+    fn rejects_unknown_field<T>(value: &T, name: &str, covered: &mut BTreeSet<String>)
+    where
+        T: Serialize + DeserializeOwned,
+    {
+        const PROBE: &str = "__unknown_field_contract_probe__";
+
+        covered.insert(name.to_string());
+
+        let mut json = serde_json::to_value(value)
+            .unwrap_or_else(|error| panic!("{name} 序列化失败: {error}"));
+        let object = json
+            .as_object_mut()
+            .unwrap_or_else(|| panic!("{name} 序列化出来不是 JSON 对象 —— 解析写法已失效"));
+        assert!(
+            !object.contains_key(PROBE),
+            "{name} 真有一个叫 {PROBE} 的字段 —— 换个探针名"
+        );
+        object.insert(PROBE.to_string(), Value::Null);
+
+        assert!(
+            serde_json::from_value::<T>(json.clone()).is_err(),
+            "{name} 不再拒绝未知字段 —— schema 里的 additionalProperties: false 成了谎话，\
+             frontend/web 的 mock 据此模拟的 400 也跟着变成假的（mocks/job-payload-contract.ts）"
+        );
+
+        json.as_object_mut()
+            .expect("上面刚确认过是对象")
+            .remove(PROBE);
+        serde_json::from_value::<T>(json).unwrap_or_else(|error| {
+            panic!("{name} 去掉探针后反序列化失败: {error} —— 上一条断言是假绿")
+        });
+    }
+
+    /// 反向自保，方向和上面那条相反：上面钉的是"schema 不许比 Rust 宽松"，
+    /// 这条钉的是"Rust 不许悄悄比 schema 宽松"。
+    ///
+    /// 后端哪天去掉某个段的 `deny_unknown_fields`（或换成自定义 `Deserialize`、
+    /// 给结构体加 `#[serde(flatten)]`），它就开始接受未知字段了，而 schema 和
+    /// 由 schema 生成的 mock 白名单还在替它拒绝——前端会在 mock 里被挡下一个
+    /// 真后端其实肯收的 payload。测行为而不是在源码里 grep 属性名，正是因为
+    /// 能让它变宽松的写法不止 `deny_unknown_fields` 这一个。
+    #[test]
+    fn every_pinned_definition_still_rejects_unknown_fields() {
+        let input = create_job_fixture();
+        let mut covered = BTreeSet::new();
+        rejects_unknown_field(&input, "CreateJobInput", &mut covered);
+        rejects_unknown_field(&input.source, "JobSourceInput", &mut covered);
+        rejects_unknown_field(&input.ocr, "OcrInput", &mut covered);
+        rejects_unknown_field(&input.translation, "TranslationInput", &mut covered);
+        rejects_unknown_field(&input.render, "RenderInput", &mut covered);
+        rejects_unknown_field(&input.runtime, "RuntimeInput", &mut covered);
+        rejects_unknown_field(&glossary_entry_fixture(), "GlossaryEntryInput", &mut covered);
+        rejects_unknown_field(&model_connection_fixture(), "ModelConnection", &mut covered);
+
+        // 往 PINNED_DEFINITIONS 里加一个定义、却忘了在这里加一行，就等于那个定义
+        // 只被钉了"schema 侧关死"，没被钉"Rust 侧确实拒绝"。
+        assert_eq!(
+            covered,
+            PINNED_DEFINITIONS
+                .iter()
+                .map(|name| (*name).to_string())
+                .collect::<BTreeSet<_>>(),
+            "这条测试覆盖的定义与 PINNED_DEFINITIONS 对不上"
+        );
     }
 
     /// 六个顶层字段和五个段的每个字段都带 `#[serde(default)]`，所以请求可以只带要

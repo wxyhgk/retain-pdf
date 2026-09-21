@@ -5,40 +5,24 @@
 // `void payload`,什么都不看,于是前端测试在一个比真后端宽松得多的世界里跑,
 // 字段名写错要等到真提一次任务才暴露。
 //
-// 这几张表由 tests/platform/mock-job-payload-contract.test.mjs 直接读
-// backend/packages/retain-core/src/models/input/*.rs 钉住,漂了就红。
-export const JOB_PAYLOAD_TOP_LEVEL_FIELDS = [
-    "workflow", "source", "ocr", "translation", "render", "runtime"
-];
+// 字段名**不在这里维护**。它们从 create-job.v1.schema.json 生成
+// (contracts/scripts/generate-types.mjs => contracts/src/create-job-fields.ts),
+// 和 payload.ts 用的 TS 类型出自同一份 schema。这条链上每一环都有人钉着:
+//
+//   Rust(serde)  <=>  create-job.v1.schema.json  =>  create-job-fields.ts  =>  这里
+//        ^ request.rs 的 contract_tests          ^ contracts 的 generate:check
+//
+// 另外 tests/platform/mock-job-payload-contract.test.mjs 直接读 schema 原文,
+// 再比一次本文件对外暴露的那两张表 —— 确认生成物真的派生自 schema,
+// 而不是哪天又被手抄回来。
+import {
+  CREATE_JOB_SECTION_FIELDS,
+  CREATE_JOB_TOP_LEVEL_FIELDS,
+} from "@retainpdf/contracts/create-job-fields";
 
-export const JOB_PAYLOAD_SECTION_FIELDS = {
-  source: [
-    "artifact_job_id", "source_url", "upload_id"
-  ],
-  ocr: [
-    "cache_tolerance", "credential_ref", "data_id", "disable_formula", "disable_table",
-    "extra_formats", "is_ocr", "language", "mineru_token", "model_version", "no_cache",
-    "options", "paddle_api_url", "paddle_model", "paddle_token", "page_ranges",
-    "poll_interval", "poll_timeout", "provider"
-  ],
-  translation: [
-    "accepted_ambiguous_request_risk", "api_key", "base_url", "batch_size",
-    "classify_batch_size", "context_mode", "credential_ref", "custom_rules_text", "end_page",
-    "execution_connection", "glossary_entries", "glossary_id", "glossary_inline_entry_count",
-    "glossary_mode", "glossary_name", "glossary_overridden_entry_count",
-    "glossary_resource_entry_count", "math_mode", "memory_mode", "mode", "model",
-    "page_ranges", "rule_profile_name", "skip_title_translation", "start_page", "workers"
-  ],
-  render: [
-    "body_font_size_factor", "body_leading_factor", "compile_workers", "font_unify_mode",
-    "inner_bbox_dense_shrink_x", "inner_bbox_dense_shrink_y", "inner_bbox_shrink_x",
-    "inner_bbox_shrink_y", "pdf_compress_dpi", "render_mode", "source_cleanup_strategy",
-    "translated_pdf_name", "typst_font_family"
-  ],
-  runtime: [
-    "job_id", "no_output_timeout_seconds", "render_after_translation", "timeout_seconds"
-  ],
-};
+export const JOB_PAYLOAD_TOP_LEVEL_FIELDS = CREATE_JOB_TOP_LEVEL_FIELDS;
+
+export const JOB_PAYLOAD_SECTION_FIELDS = CREATE_JOB_SECTION_FIELDS;
 
 /** 模拟后端的 deny_unknown_fields:多一个键就抛,和真后端的 400 对齐。 */
 export function assertKnownJobPayloadFields(payload, { label = "/api/v1/jobs" } = {}) {

@@ -9,6 +9,10 @@
       "types": "./dist/create-job.d.ts",
       "import": "./dist/create-job.js"
     },
+    "./create-job-fields": {
+      "types": "./dist/create-job-fields.d.ts",
+      "import": "./dist/create-job-fields.js"
+    },
     "./job-events": {
       "types": "./dist/job-events.d.ts",
       "import": "./dist/job-events.js"

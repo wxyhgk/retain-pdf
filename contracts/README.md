@@ -10,7 +10,7 @@
 |------|------|--------|--------|
 | `ai-ask.v1.schema.json` | `/v1/ask` SSE 协议 | `frontend/web/tests/contracts/ai-ask-contract.test.mjs` | `backend/ai/tests/test_contract_schema.py` |
 | `ai-conversations.v1.schema.json` | 会话 CRUD | `frontend/web` 与 `backend/ai` | `backend/api/src/api_tests/conversations_contract.rs` |
-| `create-job.v1.schema.json` | POST /api/v1/jobs 的**请求**体（CreateJobInput 六个顶层字段 + 五个段），每段 additionalProperties:false 对应后端 deny_unknown_fields | `frontend/web` 的 payload 构造器（`features/ingest/domain/workflow/payload.ts`） | `backend/packages/retain-core/src/models/input/request.rs` 的 `contract_tests` |
+| `create-job.v1.schema.json` | POST /api/v1/jobs 的**请求**体（CreateJobInput 六个顶层字段 + 五个段），每段 additionalProperties:false 对应后端 deny_unknown_fields | `frontend/web` 的 payload 构造器（`features/ingest/domain/workflow/payload.ts`，用生成的 TS 类型）与 mock 层（`platform/api/mocks/job-payload-contract.ts`，用生成的运行期字段名清单） | `backend/packages/retain-core/src/models/input/request.rs` 的 `contract_tests` |
 | `library-books.v1.schema.json` | 图书馆书架 `/api/v1/library/books` + `/api/v1/jobs` 列表 | `@retainpdf/api`、`frontend/web`、`frontend/web-react` | `backend/packages/retain-core/src/models/view/job_types.rs` |
 | `job-status.v1.schema.json` | 任务详情、脱敏请求参数与阶段进度 | `@retainpdf/api`、`frontend/packages/domain`、`frontend/web`、`frontend/web-react` | `backend/api` public view models |
 | `job-events.v2.schema.json` | 普通/OCR 事件游标分页、稳定事件身份 | `@retainpdf/api`、`frontend/web` | `backend/api` event feed |
@@ -31,6 +31,8 @@
 
 本目录发布为 `@retainpdf/contracts`。Wire DTO 从 `@retainpdf/contracts/job-status`、`@retainpdf/contracts/job-events`、`@retainpdf/contracts/library-books` 与 `@retainpdf/contracts/reader-data` 导出；原始 schema 以文件名子路径显式导出。包没有根 DTO 入口、wildcard export 或 runtime dependency。
 
+`@retainpdf/contracts/create-job-fields` 是唯一导出**运行期值**的子路径：`CREATE_JOB_TOP_LEVEL_FIELDS` 与 `CREATE_JOB_SECTION_FIELDS` 是 `create-job.v1.schema.json` 里各 definition 的 `properties` 键。TS 类型在运行期不存在，而 `frontend/web` 的 mock 要模拟后端的 `deny_unknown_fields`（多一个键 => 400），需要的正是一份运行期能读的白名单——以前那份是手抄在 mock 里的第二真相源。生成器只为 `additionalProperties: false` 的 definition 发这张表：定义本身允许额外字段却发一张封闭清单，就是对下游撒谎。
+
 事件 v2 在原有普通/OCR `/events` 路径替换 offset 协议：首次用 `start=tail`（默认）或 `start=head`，后续只传不透明 `cursor`；`limit` 默认 500、限制为 1–500。`has_more` 只追平游标的固定批次上界。410 `error.code=EVENT_CURSOR_EXPIRED` 表示只需重置事件缓存并按原模式重新初始化；其他错误保留已有展示。API 与第一方客户端必须同时升级。翻译 `live-events` SSE 不受此次版本升级影响。
 
 ```bash
@@ -42,4 +44,4 @@ npm --prefix contracts test
 npm --prefix contracts run build
 ```
 
-`src/job-status.ts`、`src/job-events.ts`、`src/library-books.ts` 与 `src/reader-data.ts` 由固定版本的 `json-schema-to-typescript` 生成并入库，禁止手改。`generate:check` 阻止生成漂移；测试还会锁定 `job-status` 与 `library-books` 重复 Job definitions 的结构一致性。`frontend/packages/domain` 保留的是归一化模型，不应替代 wire DTO。
+`src/job-status.ts`、`src/job-events.ts`、`src/library-books.ts` 与 `src/reader-data.ts` 由固定版本的 `json-schema-to-typescript` 生成并入库，禁止手改。`src/create-job.ts` 与 `src/create-job-fields.ts` 同理。`generate:check` 阻止生成漂移；测试还会锁定 `job-status` 与 `library-books` 重复 Job definitions 的结构一致性。`frontend/packages/domain` 保留的是归一化模型，不应替代 wire DTO。

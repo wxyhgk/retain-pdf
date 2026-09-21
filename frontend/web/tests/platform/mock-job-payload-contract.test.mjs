@@ -1,11 +1,31 @@
-// mock 里那几张字段表必须和 Rust 的 CreateJobInput 一模一样。
+// mock 模拟的 deny_unknown_fields 必须和后端认的字段集合一模一样。
 //
 // 真后端五个段全部带 #[serde(deny_unknown_fields)]:多一个键、拼错一个键 => 400。
 // mock 以前对 payload 是 `void payload`,于是前端测试跑在一个比真后端宽松得多的
 // 世界里,字段名写错要等到真提一次任务才暴露。
 //
-// 现在 mock 会模拟 deny_unknown_fields,但那张表是手抄的 —— 手抄就会漂,
-// 所以这里直接读 Rust 源码比对。
+// 这里守的是**最后一环**:mock 暴露的字段表,必须逐字等于
+// contracts/create-job.v1.schema.json 里那几个 definition 的 properties。
+// 它读的是 schema 原文,不读生成物,所以生成物哪天被手改、或者有人又把一张表抄回
+// mock 里,这条都会红。
+//
+// 整条链的分工(改了这里请一起改 mock 文件顶部那段注释):
+//
+//   1. Rust(serde) <=> schema:字段集合双向一致
+//      backend/packages/retain-core/src/models/input/request.rs
+//      :: contract_tests::create_job_input_field_sets_match_the_published_schema
+//      => 后端加/删字段而 schema 没跟上 => cargo test -p retain-core 红
+//
+//   2. schema => contracts/src/create-job-fields.ts:生成物不许落后
+//      contracts 的 `npm run generate:check`(npm test 的第一步)
+//
+//   3. 生成物 => mock:本文件
+//
+//   反向自保(后端把某段改宽松了,mock 不该继续替它拒绝未知字段)由
+//   request.rs :: contract_tests::every_pinned_definition_still_rejects_unknown_fields
+//   守:它真的拿一个带未知键的 JSON 去反序列化,拿不到错误就红。
+//   那条测试比"在 .rs 源码里 grep deny_unknown_fields"结实:它测的是行为,
+//   改成 `#[serde(flatten)]`、换自定义 Deserialize 之类也照样能挡住。
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -20,56 +40,67 @@ import {
 } from "../../src/platform/api/mocks/job-payload-contract.js";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
-const INPUT_DIR = resolve(REPO_ROOT, "backend/packages/retain-core/src/models/input");
+const SCHEMA_PATH = resolve(REPO_ROOT, "contracts/create-job.v1.schema.json");
+const SCHEMA = JSON.parse(readFileSync(SCHEMA_PATH, "utf8"));
 
-const SECTION_STRUCTS = {
-  source: ["source.rs", "JobSourceInput"],
-  ocr: ["ocr.rs", "OcrInput"],
-  translation: ["translation.rs", "TranslationInput"],
-  render: ["render.rs", "RenderInput"],
-  runtime: ["runtime.rs", "RuntimeInput"],
-};
-
-/** 从 .rs 里抠出某个结构体的 `pub <field>:` 名字。 */
-function rustStructFields(file, structName) {
-  const text = readFileSync(resolve(INPUT_DIR, file), "utf8");
-  const head = `pub struct ${structName} {`;
-  const start = text.indexOf(head);
-  assert.ok(start >= 0, `${file} 里找不到 ${structName} —— 结构体改名了，这条测试已经失效`);
-  const body = text.slice(start, text.indexOf("\n}", start));
-  const fields = [...body.matchAll(/^\s*pub (\w+):/gm)].map((m) => m[1]).sort();
-  assert.ok(fields.length > 0, `${structName} 解析出来是空的 —— 解析写法已失效`);
+/** 从 schema 里抠出某个 definition 的 properties 键。解析不出来就直接红。 */
+function schemaFields(definitionName) {
+  const definition = SCHEMA.definitions?.[definitionName];
+  assert.ok(
+    definition,
+    `schema 里没有 definitions.${definitionName} —— 契约结构变了，这条测试已经失效`,
+  );
+  const fields = Object.keys(definition.properties ?? {}).sort();
+  assert.ok(
+    fields.length > 0,
+    `definitions.${definitionName}.properties 解析出来是空的 —— 解析写法已失效`,
+  );
   return fields;
 }
 
-test("mock 的字段表和 Rust 的 CreateJobInput 逐段一致", () => {
-  for (const [section, [file, structName]] of Object.entries(SECTION_STRUCTS)) {
+/** 段名 -> definition 名,同样从 schema 读,不另抄一张映射表。 */
+function schemaSections() {
+  const rootProperties = SCHEMA.definitions.CreateJobInput.properties;
+  const sections = Object.entries(rootProperties)
+    .map(([field, node]) => [field, `${node?.$ref ?? ""}`.replace("#/definitions/", "")])
+    .filter(([, name]) => typeof SCHEMA.definitions?.[name]?.properties === "object");
+  assert.ok(sections.length > 0, "CreateJobInput 没解析出任何段 —— 解析写法已失效");
+  return sections;
+}
+
+test("mock 的顶层字段表逐字等于 schema 的 CreateJobInput.properties", () => {
+  assert.deepEqual(
+    [...JOB_PAYLOAD_TOP_LEVEL_FIELDS].sort(),
+    schemaFields("CreateJobInput"),
+  );
+});
+
+test("mock 的分段字段表逐字等于 schema 对应 definition 的 properties", () => {
+  const sections = schemaSections();
+  // 段的集合本身也要一致:schema 多一个段而 mock 没有,那一段就会被完全放行。
+  assert.deepEqual(
+    Object.keys(JOB_PAYLOAD_SECTION_FIELDS).sort(),
+    sections.map(([field]) => field).sort(),
+    "mock 覆盖的段与 schema 的段对不上",
+  );
+  for (const [section, definitionName] of sections) {
     assert.deepEqual(
       [...JOB_PAYLOAD_SECTION_FIELDS[section]].sort(),
-      rustStructFields(file, structName),
-      `${section} 段的字段表和 ${structName} 对不上`,
+      schemaFields(definitionName),
+      `${section} 段的字段表和 ${definitionName} 对不上`,
     );
   }
 });
 
-test("mock 的顶层字段表和 CreateJobInput 一致", () => {
-  const text = readFileSync(resolve(INPUT_DIR, "request.rs"), "utf8");
-  const start = text.indexOf("pub struct CreateJobInput {");
-  assert.ok(start >= 0, "request.rs 里找不到 CreateJobInput");
-  const body = text.slice(start, text.indexOf("\n}", start));
-  const fields = [...body.matchAll(/^\s*pub (\w+):/gm)].map((m) => m[1]).sort();
-  assert.deepEqual([...JOB_PAYLOAD_TOP_LEVEL_FIELDS].sort(), fields);
-});
-
-test("五个段在 Rust 侧都还带着 deny_unknown_fields", () => {
-  // 哪天后端把某个段改宽松了,mock 就不该再替它报错。
-  for (const [section, [file, structName]] of Object.entries(SECTION_STRUCTS)) {
-    const text = readFileSync(resolve(INPUT_DIR, file), "utf8");
-    const start = text.indexOf(`pub struct ${structName} {`);
-    const head = text.slice(Math.max(0, start - 200), start);
-    assert.ok(
-      head.includes("deny_unknown_fields"),
-      `${structName} 不再带 deny_unknown_fields，mock 不该继续替它拒绝未知字段（${section}）`,
+test("mock 拒绝未知字段,是因为 schema 把这些 definition 关死了", () => {
+  // schema 一旦把某个 definition 放开成默认允许额外字段,mock 就不该继续替它拒绝。
+  // (schema 与 Rust 的这一条对齐由 request.rs 的 contract_tests 守。)
+  for (const definitionName of ["CreateJobInput", ...schemaSections().map(([, name]) => name)]) {
+    assert.equal(
+      SCHEMA.definitions[definitionName].additionalProperties,
+      false,
+      `definitions.${definitionName} 不再是 additionalProperties: false —— `
+        + "mock 不该继续替它拒绝未知字段",
     );
   }
 });
