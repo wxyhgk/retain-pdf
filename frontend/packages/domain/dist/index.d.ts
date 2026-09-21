@@ -3,7 +3,8 @@
  *
  * Shared implementation of the former frontend/web job and job-status domains.
  * No React, no DOM, no fetch — only view-models, adapters, and formatters.
- * Purpose: share job/job-status logic between frontend/web (MPA+React islands) and frontend/web-react (Vite SPA).
+ * Purpose: share job/job-status logic across the frontend workspaces that consume it
+ * (today frontend/web and frontend/packages/reader; frontend/web-react no longer exists).
  *
  * All applications consume the package through its public entry points:
  *   import { buildJobStatusSummaryViewModel } from "@retainpdf/domain";
@@ -28,8 +29,6 @@ export { STATUS_STAGE_FLOW, STATUS_STAGE_LABELS, isSelectableStatusStage, resolv
 export { buildProgressOptions, shouldAnimateRenderPageProgress, } from "./job-status/status-card-progress-view-model.js";
 export { buildRuntimeStatusCardSnapshot } from "./job-status/status-card-runtime-source.js";
 export { buildSubstageViewModel } from "./job-status/substage-view-model.js";
-export { assembleTranslatePayload, friendlyDocumentDeleteError, friendlyTranslateError, shouldPreferTranslateTab, } from "./library/index.js";
-export type { LibraryCardLike, TranslateDocumentPayload } from "./library/index.js";
 export { currentStageProgressViewModel } from "./job-status/stage-progress-view-model.js";
 export { createArtifactRuntimePort, defaultArtifactRuntimePort } from "./job/artifact-runtime-port.js";
 export { createArtifactUrlConfigPort, defaultArtifactUrlConfigPort } from "./job/artifact-url-config.js";

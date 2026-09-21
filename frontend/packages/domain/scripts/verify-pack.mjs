@@ -58,7 +58,7 @@ try {
     [
       '--input-type=module',
       '--eval',
-      "await Promise.all([import('@retainpdf/domain'), import('@retainpdf/domain/job'), import('@retainpdf/domain/job-status'), import('@retainpdf/domain/library')])",
+      "await Promise.all([import('@retainpdf/domain'), import('@retainpdf/domain/job'), import('@retainpdf/domain/job-status'), import('@retainpdf/domain/ai'), import('@retainpdf/domain/session')])",
     ],
     { cwd: consumerRoot, stdio: 'pipe' },
   )

@@ -3,7 +3,8 @@
  *
  * Shared implementation of the former frontend/web job and job-status domains.
  * No React, no DOM, no fetch — only view-models, adapters, and formatters.
- * Purpose: share job/job-status logic between frontend/web (MPA+React islands) and frontend/web-react (Vite SPA).
+ * Purpose: share job/job-status logic across the frontend workspaces that consume it
+ * (today frontend/web and frontend/packages/reader; frontend/web-react no longer exists).
  *
  * All applications consume the package through its public entry points:
  *   import { buildJobStatusSummaryViewModel } from "@retainpdf/domain";
@@ -58,14 +59,16 @@ export {
 export { buildRuntimeStatusCardSnapshot } from "./job-status/status-card-runtime-source.js";
 export { buildSubstageViewModel } from "./job-status/substage-view-model.js";
 
-// — library domain (Phase2 slice, extractable) —
-export {
-  assembleTranslatePayload,
-  friendlyDocumentDeleteError,
-  friendlyTranslateError,
-  shouldPreferTranslateTab,
-} from "./library/index.js";
-export type { LibraryCardLike, TranslateDocumentPayload } from "./library/index.js";
+// — library domain: 已删除，不要再加回来 —
+// 曾经有一个 ./library 入口导出 assembleTranslatePayload / friendlyTranslateError /
+// friendlyDocumentDeleteError / shouldPreferTranslateTab。它是 frontend/web 的过期
+// 快照：assembleTranslatePayload 停留在 mergeTranslatePayload 之前的版本，对
+// 「复用 OCR 产物再翻译」的请求会丢掉 workflow/source 并保留本该删掉的 ocr 段
+// ——一旦有人照文件头注释把 web 侧 alias 过来，复用翻译会退化成整本重新 OCR。
+// 它当时想服务的第二个消费者 frontend/web-react 早已从仓库里移除，所以这份
+// 抽取没有任何去处。这四个函数的唯一归属是
+// frontend/web/src/features/library/domain/documents/。
+// 防回归门禁：frontend/web/tests/architecture/domain-package-duplicate-exports.test.mjs
 
 // — example proof-of-pattern (used in README/tests) —
 export { currentStageProgressViewModel } from "./job-status/stage-progress-view-model.js";

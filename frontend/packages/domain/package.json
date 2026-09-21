@@ -20,10 +20,6 @@
       "types": "./dist/job-status/index.d.ts",
       "import": "./dist/job-status/index.js"
     },
-    "./library": {
-      "types": "./dist/library/index.d.ts",
-      "import": "./dist/library/index.js"
-    },
     "./ai": {
       "types": "./dist/ai/index.d.ts",
       "import": "./dist/ai/index.js"
