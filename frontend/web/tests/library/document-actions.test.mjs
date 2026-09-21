@@ -147,6 +147,51 @@ test("任务动作：cancel 按 workflow 路由；retry 带 document_id 并 prom
   assert.deepEqual(retryCalls[1], ["promote", "doc-1", "job-new"]);
 });
 
+test("重新翻译：只覆盖详情页真能改的字段，不碰原任务的术语表/自定义规则", () => {
+  // 语义分工：「重试」用原任务配置，「重新翻译」用当前配置。但详情页没有术语表
+  // 选择器、也没有自定义规则输入框——buildTranslateConfig 复用的是上传弹窗的
+  // payload 构造器，这三个字段在那里恒为空值。后端 merge_json 是逐键浅覆盖，
+  // 发过去就等于把原任务的术语表静默清空，而用户在这个页面上没被问过。
+  return (async () => {
+    const captured = [];
+    const store = {
+      getState: () => ({ payload: { document_id: "doc-1", title: "t" } }),
+      setJobs: () => {},
+    };
+    const actions = createDocumentJobActions({
+      bookDetailStore: store,
+      buildTranslateConfig: () => ({
+        translation: {
+          model: "deepseek-new",
+          base_url: "https://api.deepseek.com/v1",
+          workers: 42,
+          glossary_id: "",
+          glossary_entries: [],
+          custom_rules_text: "",
+        },
+      }),
+      promoteDocumentToJob: () => {},
+      retryJobStageApi: async (_id, _prefix, _stage, payload) => {
+        captured.push(payload.overrides.translation);
+        return { job_id: "job-new" };
+      },
+    });
+    await actions.retryJobStage("job-old", "translation", {});
+
+    const override = captured[0];
+    // 凭据面板能改的照常覆盖
+    assert.equal(override.model, "deepseek-new");
+    assert.equal(override.workers, 42);
+    // 详情页没有控件的三个字段必须完全不出现——出现即覆盖原任务
+    for (const field of ["glossary_id", "glossary_entries", "custom_rules_text"]) {
+      assert.ok(
+        !(field in override),
+        `override 里不该有 ${field}：详情页没有这个控件，发过去会清掉原任务的值`,
+      );
+    }
+  })();
+});
+
 test("导航：活跃任务打开详情时接管静默进度", () => {
   const opened = [];
   const attached = [];

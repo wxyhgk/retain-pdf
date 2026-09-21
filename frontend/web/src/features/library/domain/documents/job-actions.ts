@@ -17,6 +17,36 @@ import type {
   TranslateDocumentPayload,
 } from "../types.js";
 
+/** 「重新翻译」的 override 里**不能**出现的字段。
+ *
+ * 语义分工:「重试」用原任务配置,「重新翻译」用当前配置。但「当前配置」只能指
+ * **这个页面真让用户改过的东西** —— 馆藏详情页只有凭据面板那条路(model /
+ * base_url / api_key / workers),没有术语表选择器、没有自定义规则输入框。
+ *
+ * buildTranslateConfig 复用的是上传弹窗的 payload 构造器,这三个字段在那里恒为
+ * 空值(`glossary_id` 来自纯内存、不持久化的 selectedGlossaryId,初值 "";
+ * 另两个是字面量)。而后端 stage_retry_overrides.rs 的 merge_json 是**逐键浅
+ * 覆盖**,base 就是原任务的 translation —— 于是详情页点一下「重新翻译」,原任务
+ * 用的术语表被静默清空,而用户在这个页面上压根没被问过这个问题。
+ *
+ * 这几个字段哪天在详情页有了控件,再从这张表里拿掉。
+ */
+const RETRANSLATE_NON_OVERRIDABLE_FIELDS = [
+  "glossary_id",
+  "glossary_entries",
+  "custom_rules_text",
+] as const;
+
+function retranslateOverridableFields(
+  translation: Record<string, unknown>,
+): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...translation };
+  for (const field of RETRANSLATE_NON_OVERRIDABLE_FIELDS) {
+    delete next[field];
+  }
+  return next;
+}
+
 export function createDocumentJobActions({
   bookDetailStore,
   buildTranslateConfig,
@@ -77,7 +107,9 @@ export function createDocumentJobActions({
     const base = (dialogState.payload || {}) as LibraryCardItem;
     const documentId = `${overrides.document_id || base.document_id || ""}`.trim();
     const currentTranslation = normalizedStage === "translation"
-      ? ((buildTranslateConfig?.("") as TranslateDocumentPayload | undefined)?.translation || {})
+      ? retranslateOverridableFields(
+          (buildTranslateConfig?.("") as TranslateDocumentPayload | undefined)?.translation || {},
+        )
       : null;
     const requestedOverrides = overrides.overrides && typeof overrides.overrides === "object"
       ? overrides.overrides as Record<string, unknown>
