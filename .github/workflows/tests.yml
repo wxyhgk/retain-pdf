@@ -166,6 +166,17 @@ jobs:
       - name: Check generated dependency manifests
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python .github/scripts/sync_backend_python_requirements.py --repo-root . --services-root "$RETAIN_PDF_SERVICES_ROOT" --check
 
+      # docs/core/python/ 下那四份扫描产物此前没有任何校验，谁都不会想起重跑，
+      # 于是它带着 retainpdf_pipeline/services/rendering/... 这种早就不存在的
+      # 路径漂了半年。--services-root 必须传仓库相对路径：产物里记着
+      # "services_root": "backend"，传绝对路径会把 runner 的临时目录写进去。
+      - name: Check generated pipeline dependency reports
+        run: |
+          services_relative="${RETAIN_PDF_SERVICES_ROOT#"$GITHUB_WORKSPACE/"}"
+          uv run --project "$RETAIN_PDF_SERVICES_ROOT" python \
+            "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/extract_pipeline_requirements.py" \
+            --services-root "$services_relative" --check
+
       - name: Check installed command contracts
         run: |
           uv run --project "$RETAIN_PDF_SERVICES_ROOT" retainpdf-pipeline --help
