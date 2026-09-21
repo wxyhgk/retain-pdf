@@ -12,6 +12,15 @@ function firstJobIdFromPayload(payload) {
   );
 }
 
+// 注意：@retainpdf/domain/job 另有一份同名实现，「没有恢复计划」时返回
+// 「当前任务暂不可恢复。」。那一份不能拿来替掉这一份，反之亦然，见
+// tests/architecture/domain-package-duplicate-exports.test.mjs 里锁住这条分叉的用例。
+//
+// 这一份只服务下面的 syncRerunAction，而那里的 `||` 需要一个「我没话可说」的信号：
+// plan 为空但 actions.rerunEnabled && actions.rerun 时按钮是可点的，返回非空句子会
+// 把 `||` 短路掉，于是按钮可点、旁边却写着「不可恢复」。空串还让 syncRerunAction 的
+// 两条兜底跟 snapshot.ts 的 buildStatusDetailSnapshot 对齐——同一个 rerun.status
+// 字段有这两个生产者，文案必须逐字相同。
 export function summarizeResumePlan(plan) {
   if (!plan) {
     return "";

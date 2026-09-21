@@ -20,6 +20,15 @@ export function firstJobIdFromPayload(payload: unknown): string {
   );
 }
 
+// 注意：web 侧 features/job-detail/domain/dialog/resume-actions.ts 另有一份同名实现，
+// 「没有恢复计划」时返回空串。那不是过期拷贝，是两个渲染点的要求正好相反，见
+// tests/architecture/domain-package-duplicate-exports.test.mjs 里锁住这条分叉的用例。
+//
+// 这一份服务详情页顶部的 detail-rerun-status 这一行：overview-renderer.ts 把返回值
+// 直接 setText 进去，没有 `||` 兜底，而 DetailApp 的 setText 是 `value ?? "-"`——
+// 空串不是 nullish，会被原样写进 texts，t() 于是认为这个 id 已有值，不再回落到
+// DetailHeader 的静态默认文案。所以这里返回空串 = 那一行直接变空白。
+// 兜底文案要和 DetailHeader.tsx 里同一个 span 的静态默认逐字一致。
 export function summarizeResumePlan(plan: {
   can_resume?: unknown;
   reason?: unknown;

@@ -61,9 +61,15 @@ const REVIEWED_DUPLICATES = {
   },
   summarizeResumePlan: {
     divergentBecause:
-      "已知的第二处分叉，尚未收敛：plan 为空时包里返回「当前任务暂不可恢复。」而 web 返回"
-      + " 空串，不可恢复的兜底文案也差一个「从断点」。两份都在用，收敛前先登记在案，"
-      + "别再加第三份。",
+      "已复核（#125 后）：分叉是有意的，两个渲染点对「没有恢复计划」的要求正好相反，"
+      + "收敛任何一侧都会出文案事故。包里那份进详情页顶部的 detail-rerun-status："
+      + "overview-renderer 直接 setText，没有 `||` 兜底，而 DetailApp 的 setText 是 "
+      + "`value ?? \"-\"`，空串不是 nullish，会让那一行变空白；它的兜底文案跟 "
+      + "DetailHeader.tsx 同一个 span 的静态默认逐字一致。web 那份只进 syncRerunAction，"
+      + "那里的 `||` 需要空串当「我没话可说」：plan 为空但 actions.rerunEnabled && "
+      + "actions.rerun 时按钮可点，换成非空句子就成了「按钮可点 + 文案说不可恢复」；"
+      + "空串还让它的两条兜底跟 snapshot.ts 的 buildStatusDetailSnapshot 逐字对齐"
+      + "（同一个 rerun.status 字段的第二个生产者）。下面有用例把这条分叉钉死。",
   },
 };
 
@@ -173,5 +179,120 @@ test("复用 OCR 的翻译 payload 只有一份实现，且不带 ocr 段", asyn
     import("@retainpdf/domain/library"),
     ({ code }) => code === "ERR_PACKAGE_PATH_NOT_EXPORTED",
     "./library 入口已删除，不要加回来",
+  );
+});
+
+// summarizeResumePlan 的登记写的是「分叉有意」。光写理由是会烂的——下面把理由
+// 钉成断言：两份实现在「可恢复」这条路上必须逐字一致（那一段一旦分叉就是真事故），
+// 而在「没有恢复计划 / 不可恢复」这一段必须各自保持现状，因为两个调用点对它的
+// 要求正好相反。谁想「顺手统一一下」，这条会先红。
+test("summarizeResumePlan：可恢复路径必须一致，空计划路径的分叉是有意的", async () => {
+  const { summarizeResumePlan: fromPackage } = await import("@retainpdf/domain/job");
+  const { summarizeResumePlan: fromWeb, syncRerunAction } = await import(
+    "../../src/features/job-detail/domain/dialog/resume-actions.js"
+  );
+
+  // 1) 有计划可讲的时候，两边不许有任何差别。
+  for (const plan of [
+    { can_resume: true },
+    { can_resume: true, from_stage: "translate" },
+    { can_resume: true, resume_from: "render", resume_workflow: "render" },
+    {
+      can_resume: true,
+      from_stage: "translate",
+      workflow: "book",
+      reruns_stages: ["translation", "rendering"],
+    },
+    // 后端对 can_resume:false 一律带 reason（英文），这条路径也不许分叉。
+    { can_resume: false, reason: "job is queued or running; cancel it before resuming" },
+  ]) {
+    assert.equal(
+      fromWeb(plan),
+      fromPackage(plan),
+      `有 resume plan 时两份实现必须逐字一致：${JSON.stringify(plan)}`,
+    );
+  }
+
+  // 2) 分叉只有这两处，且都落在「没话可说」的那一段。
+  assert.equal(fromPackage(null), "当前任务暂不可恢复。");
+  assert.equal(fromPackage(undefined), "当前任务暂不可恢复。");
+  assert.equal(fromWeb(null), "");
+  assert.equal(fromWeb(undefined), "");
+  assert.equal(fromPackage({ can_resume: false }), "当前任务暂不可恢复。");
+  assert.equal(fromWeb({ can_resume: false }), "当前任务暂不可从断点恢复。");
+
+  // 3) web 那份为什么必须返回空串：plan 为空但后端给了 rerun 入口时按钮是可点的，
+  //    空串让 `||` 落到「后端支持…」。换成包里那份就成了「按钮可点 + 文案说不可恢复」。
+  const written = [];
+  const actionUrl = syncRerunAction({
+    job: { job_id: "job-1" },
+    resumePlan: null,
+    viewPort: { setRerunAction: (options) => written.push(options) },
+    resolveActions: () => ({ rerunEnabled: true, rerun: "/api/v1/jobs/job-1/rerun" }),
+  });
+  assert.equal(actionUrl, "/api/v1/jobs/job-1/rerun");
+  assert.deepEqual(written.at(-1), {
+    enabled: true,
+    status: "后端支持从当前任务产物创建恢复任务。",
+  });
+  // 把包里那份代进同一个 `||`，结果自相矛盾——这就是不许对齐的证据。
+  assert.equal(
+    fromPackage(null) || "后端支持从当前任务产物创建恢复任务。",
+    "当前任务暂不可恢复。",
+    "包里那份返回非空，会短路掉 syncRerunAction 的兜底",
+  );
+  assert.notEqual(
+    fromPackage(null) || "后端支持从当前任务产物创建恢复任务。",
+    written.at(-1).status,
+    "按钮 enabled=true 时文案不许说「不可恢复」",
+  );
+
+  // 4) 不可恢复时 syncRerunAction 的兜底必须和 snapshot.ts 的第二个生产者逐字对齐。
+  const { buildStatusDetailSnapshot } = await import(
+    "../../src/features/job-detail/domain/snapshot/snapshot.js"
+  );
+  written.length = 0;
+  syncRerunAction({
+    job: { job_id: "job-2" },
+    resumePlan: null,
+    viewPort: { setRerunAction: (options) => written.push(options) },
+    resolveActions: () => ({ rerunEnabled: false, rerun: "" }),
+  });
+  assert.deepEqual(
+    written.at(-1),
+    buildStatusDetailSnapshot({ job_id: "job-2", status: "failed" }, null).rerun,
+    "同一个 rerun.status 字段的两个生产者必须给出同样的 enabled/文案",
+  );
+
+  // 5) 包里那份为什么必须返回句子：详情页顶部这一行 setText 没有 `||` 兜底，
+  //    返回空串就是一行空白（DetailApp 的 setText 是 `value ?? "-"`，空串照写）。
+  const { renderJobDetailOverview } = await import(
+    "../../src/features/job-detail/domain/page/overview-renderer.js"
+  );
+  const previousDocument = globalThis.document;
+  const rerunButton = { disabled: false };
+  globalThis.document = {
+    getElementById: (id) => (id === "detail-rerun-btn" ? rerunButton : null),
+  };
+  const fields = {};
+  try {
+    renderJobDetailOverview({
+      diagnosticsPayload: null,
+      job: { job_id: "job-3", status: "failed" },
+      manifestPayload: { items: [] },
+      resumePlan: null,
+      setActionLink: () => {},
+      setEventsStatus: () => {},
+      setText: (id, value) => { fields[id] = value; },
+      state: { markdownImageUrls: [], eventsPayload: null },
+    });
+  } finally {
+    globalThis.document = previousDocument;
+  }
+  assert.notEqual(fields["detail-rerun-status"], "", "详情页顶部这一行不许是空白");
+  assert.equal(
+    fields["detail-rerun-status"],
+    "当前任务暂不可恢复。",
+    "兜底文案要跟 DetailHeader.tsx 同一个 span 的静态默认逐字一致",
   );
 });
