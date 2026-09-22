@@ -12,6 +12,7 @@
 - [OCR / 文档解析 Provider](./paddle_ocr_api/README.md)
 - [Python 后端](./python/README.md)
 - [前端文档](./frontend/README.md)
+- [本地从源码运行（无 Docker / WSL2）](./local-from-source.md)
 
 ## 读法
 
