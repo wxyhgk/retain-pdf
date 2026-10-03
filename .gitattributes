@@ -1,2 +1,6 @@
 contracts/src/job-status.ts text eol=lf
 contracts/src/library-books.ts text eol=lf
+
+# Shell 脚本必须以 LF 进容器：CRLF 会让 shebang 变成 `#!/usr/bin/env sh\r`，
+# Linux 下报 "No such file or directory" 并以 127 退出（entrypoint 起不来）。
+*.sh text eol=lf

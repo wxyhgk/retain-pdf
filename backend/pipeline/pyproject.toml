@@ -33,5 +33,9 @@ include = [
 namespaces = true
 
 [tool.setuptools.package-data]
+"retainpdf_pipeline" = ["*.json", "*.md"]
 "retainpdf_pipeline.translate.prompts" = ["*.txt", "*.md"]
 "retainpdf_pipeline.ocr.document_schema" = ["*.json"]
+# latex_commands.py 用 Path(__file__).with_name("latex_commands.json") 读登记表，
+# 漏声明这一项会让 wheel 丢掉该 json，OCR worker 在 import 期就 FileNotFoundError。
+"retainpdf_pipeline.foundation.shared" = ["*.json"]
