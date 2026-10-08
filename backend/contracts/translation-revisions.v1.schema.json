@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/translation-revisions/v1",
   "title": "Translation Item Revision Contract",
-  "description": "Single-block translation write-back and its revision history. Successful HTTP responses are wrapped in { code, message, data }; this schema describes the request body, data payloads, the revisions.v1.jsonl record and the structured error details. Validation runs the same Python review_translation_item checks used during translation (placeholders, inline math delimiters, English residue, protocol shells, glossary hints); only error-severity issues block a write. A successful write atomically rewrites the page payload, advances translation-checkpoint.v1.json (page_hash, generation, snapshot) and appends one record to translated/revisions.v1.jsonl.",
+  "description": "Single-block translation write-back and its revision history. Successful HTTP responses are wrapped in { code, message, data }; this schema describes the request body, data payloads, the revisions.v1.jsonl record and the structured error details. Validation runs the same Python review_translation_item checks used during translation (placeholders, inline math delimiters, English residue, protocol shells, glossary hints); only error-severity issues block a write. A successful write atomically rewrites the page payload, advances translation-checkpoint.v1.json (page_hash, generation, snapshot) and appends one record to translated/revisions.v1.jsonl. Rust then registers the revised pages in the live-translation read model (pipeline_units) and appends a pipeline_unit_committed event, served as translation_units_committed by live-events; see TranslationRevisionLivePublication.",
   "base_path": "/api/v1",
   "endpoints": [
     {
@@ -162,6 +162,41 @@
         }
       }
     },
+    "TranslationRevisionLivePage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["page_idx", "page_hash", "status", "attempt", "generation"],
+      "properties": {
+        "page_idx": { "type": "integer", "minimum": 0 },
+        "page_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "status": {
+          "type": "string",
+          "enum": ["published", "current", "superseded", "running_attempt", "no_durable_attempt"],
+          "description": "published: this request registered the page and appended a commit event; current: already registered; superseded: a newer revision or translation is already registered; running_attempt: the page belongs to a running pipeline attempt whose worker will commit it; no_durable_attempt: the job has no durable translation record."
+        },
+        "attempt": { "type": ["integer", "null"], "minimum": 0 },
+        "generation": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Live-translation generation of the page row (what the live page snapshot and the commit event carry), not the checkpoint generation."
+        }
+      }
+    },
+    "TranslationRevisionLivePublication": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Registration of the revised pages in the live-translation read model (database). The page files and the checkpoint are authoritative and are never rolled back because registration failed.",
+      "required": ["status", "pages", "error"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["published", "current", "pending", "unavailable", "failed"],
+          "description": "published: at least one page was registered with its new page_hash and a translation_units_committed event was appended; current: nothing left to register; pending: a running attempt owns the page; unavailable: the job has no durable translation record, so live translation cannot show it anyway; failed: registration failed (see error). The write-back already took effect; resending the same request (changed=false) or reopening live translation registers it."
+        },
+        "pages": { "type": "array", "items": { "$ref": "#/definitions/TranslationRevisionLivePage" } },
+        "error": { "type": ["string", "null"] }
+      }
+    },
     "TranslationRevisionView": {
       "type": "object",
       "additionalProperties": false,
@@ -174,6 +209,7 @@
         "validation",
         "revision",
         "page_hashes",
+        "live_publication",
         "rerender",
         "rerender_error"
       ],
@@ -191,6 +227,7 @@
           "type": "object",
           "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
         },
+        "live_publication": { "$ref": "#/definitions/TranslationRevisionLivePublication" },
         "rerender": {
           "type": ["object", "null"],
           "description": "The retry-stage submission (job_id, source_job_id, status, workflow=render, rerun_from_stage, links, ...) when rerender=true and the render was queued; null otherwise."

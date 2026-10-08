@@ -219,10 +219,38 @@ pub struct TranslationRevisionView {
     pub revision: Option<Value>,
     /// 本次改写过的页文件 -> 新 page_hash(与 checkpoint 一致)。
     pub page_hashes: Value,
+    /// 修订登记进实时译文读模型(数据库)的结果。写回不会因登记失败而回滚。
+    pub live_publication: TranslationRevisionLivePublicationView,
     /// `rerender=true` 时的重渲染提交结果;没请求或提交失败时为 null。
     pub rerender: Option<super::RetryStageSubmissionView>,
     /// 写回已成功、但重渲染没能提交时的原因。写回不会因此回滚。
     pub rerender_error: Option<String>,
+}
+
+/// 修订登记进实时译文读模型的结果。
+///
+/// `status`:
+/// - `published`:至少一页登记了新 page_hash,并追加了提交事件;
+/// - `current`:数据库已是最新(没有要登记的,或别的请求已登记);
+/// - `pending`:该页归正在运行的 attempt 所有,由 worker 提交;
+/// - `unavailable`:任务没有持久的翻译记录(老任务),实时译文本来就读不到;
+/// - `failed`:登记失败(`error` 给原因)。写回已生效;重发同一请求或重新打开
+///   实时译文会补登记。
+#[derive(Debug, Clone, Serialize)]
+pub struct TranslationRevisionLivePublicationView {
+    pub status: String,
+    pub pages: Vec<TranslationRevisionLivePageView>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct TranslationRevisionLivePageView {
+    pub page_idx: u32,
+    pub page_hash: String,
+    /// published / current / superseded / running_attempt / no_durable_attempt
+    pub status: String,
+    pub attempt: Option<u32>,
+    pub generation: Option<u64>,
 }
 
 #[derive(Debug, Serialize)]

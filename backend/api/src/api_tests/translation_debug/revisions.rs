@@ -21,9 +21,9 @@ use crate::db::documents::sha256_hex;
 use crate::models::{CreateJobInput, JobArtifacts, JobSnapshot, JobStatusKind, WorkflowKind};
 use crate::test_support::python::project_venv_bin;
 
-const ITEM_ID: &str = "p001-b001";
-const ORIGINAL_TEXT: &str = "谐振子是分子振动的模型体系。";
-const REVISED_TEXT: &str = "谐振子是描述分子振动的模型体系。";
+pub(super) const ITEM_ID: &str = "p001-b001";
+pub(super) const ORIGINAL_TEXT: &str = "谐振子是分子振动的模型体系。";
+pub(super) const REVISED_TEXT: &str = "谐振子是描述分子振动的模型体系。";
 
 fn pipeline_source_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../pipeline")
@@ -50,7 +50,7 @@ fn pipeline_wrapper(root: &Path) -> String {
     wrapper.to_string_lossy().into_owned()
 }
 
-fn state_with_pipeline(name: &str) -> crate::AppState {
+pub(super) fn state_with_pipeline(name: &str) -> crate::AppState {
     let base = test_state(name);
     let config = AppConfig {
         pipeline_command: pipeline_wrapper(&base.config.data_root),
@@ -94,7 +94,7 @@ fn text_item(item_id: &str, order: i64, source: &str, translated: &str) -> Value
 }
 
 /// 一个已提交翻译的任务:页文件、manifest、checkpoint(page_hash 与页文件一致)。
-fn seed_committed_job(state: &crate::AppState, job_id: &str, status: JobStatusKind) -> PathBuf {
+pub(super) fn seed_committed_job(state: &crate::AppState, job_id: &str, status: JobStatusKind) -> PathBuf {
     let job_root = state.config.output_root.join(job_id);
     let translated = job_root.join("translated");
     fs::create_dir_all(&translated).expect("translated dir");
@@ -173,7 +173,7 @@ fn seed_committed_job(state: &crate::AppState, job_id: &str, status: JobStatusKi
     translated
 }
 
-async fn patch_item(
+pub(super) async fn patch_item(
     state: &crate::AppState,
     job_id: &str,
     item_id: &str,
@@ -214,20 +214,20 @@ async fn get_revisions(
     (status, read_json(response).await)
 }
 
-fn checkpoint(translated: &Path) -> Value {
+pub(super) fn checkpoint(translated: &Path) -> Value {
     let bytes = fs::read(translated.join("translation-checkpoint.v1.json")).expect("read checkpoint");
     serde_json::from_slice(&bytes)
         .expect("parse checkpoint")
 }
 
-fn contract() -> Value {
+pub(super) fn contract() -> Value {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../contracts/translation-revisions.v1.schema.json");
     serde_json::from_str(&fs::read_to_string(path).expect("read revisions contract"))
         .expect("parse revisions contract")
 }
 
-fn assert_keys_match(value: &Value, contract: &Value, definition: &str) {
+pub(super) fn assert_keys_match(value: &Value, contract: &Value, definition: &str) {
     let schema = &contract["definitions"][definition];
     let declared: std::collections::BTreeSet<String> = schema["properties"]
         .as_object()
@@ -245,7 +245,7 @@ fn assert_keys_match(value: &Value, contract: &Value, definition: &str) {
 
 /// 渲染侧读取译文用的是 render/translation_loader.py:按 checkpoint 的 page_hash
 /// 校验每一页,对不上直接拒读。这里跑的就是它。
-fn render_loader_text(translated: &Path, item_id: &str) -> String {
+pub(super) fn render_loader_text(translated: &Path, item_id: &str) -> String {
     let output = Command::new(project_venv_bin("python"))
         .env("PYTHONPATH", pipeline_source_root())
         .arg("-c")
@@ -291,6 +291,9 @@ async fn revision_writes_back_and_keeps_page_hash_and_checkpoint_consistent() {
     let contract = contract();
     assert_keys_match(data, &contract, "TranslationRevisionView");
     assert_keys_match(&data["revision"], &contract, "TranslationRevisionRecord");
+    // 这个任务没有持久的 pipeline 记录,实时译文本来就读不到它。
+    assert_eq!(data["live_publication"]["status"], "unavailable");
+    assert_eq!(data["live_publication"]["pages"][0]["status"], "no_durable_attempt");
 
     let page_bytes = fs::read(translated.join("page-001-deepseek.json")).expect("page");
     let page_hash = sha256_hex(&page_bytes);

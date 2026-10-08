@@ -90,6 +90,7 @@ export interface TranslationRevisionView {
     page_hashes: {
         [k: string]: string;
     };
+    live_publication: TranslationRevisionLivePublication;
     /**
      * The retry-stage submission (job_id, source_job_id, status, workflow=render, rerun_from_stage, links, ...) when rerender=true and the render was queued; null otherwise.
      */
@@ -133,4 +134,28 @@ export interface TranslationRevisionIssue {
     message: string;
     retryable: boolean;
     details?: {};
+}
+/**
+ * Registration of the revised pages in the live-translation read model (database). The page files and the checkpoint are authoritative and are never rolled back because registration failed.
+ */
+export interface TranslationRevisionLivePublication {
+    /**
+     * published: at least one page was registered with its new page_hash and a translation_units_committed event was appended; current: nothing left to register; pending: a running attempt owns the page; unavailable: the job has no durable translation record, so live translation cannot show it anyway; failed: registration failed (see error). The write-back already took effect; resending the same request (changed=false) or reopening live translation registers it.
+     */
+    status: "published" | "current" | "pending" | "unavailable" | "failed";
+    pages: TranslationRevisionLivePage[];
+    error: string | null;
+}
+export interface TranslationRevisionLivePage {
+    page_idx: number;
+    page_hash: string;
+    /**
+     * published: this request registered the page and appended a commit event; current: already registered; superseded: a newer revision or translation is already registered; running_attempt: the page belongs to a running pipeline attempt whose worker will commit it; no_durable_attempt: the job has no durable translation record.
+     */
+    status: "published" | "current" | "superseded" | "running_attempt" | "no_durable_attempt";
+    attempt: number | null;
+    /**
+     * Live-translation generation of the page row (what the live page snapshot and the commit event carry), not the checkpoint generation.
+     */
+    generation: number | null;
 }

@@ -11,7 +11,7 @@ use crate::models::api::{
     LiveTranslationCommitEventView, LiveTranslationItemView, LiveTranslationLayoutBlockView,
     LiveTranslationLayoutPageView, LiveTranslationLayoutView, LiveTranslationPageView,
 };
-use crate::models::domain::JobSnapshot;
+use crate::models::domain::{JobSnapshot, JobStatusKind};
 use crate::storage_paths::{resolve_data_path, resolve_job_root, resolve_normalized_document};
 
 const TRANSLATION_STAGE: &str = "translate";
@@ -21,6 +21,13 @@ const CHECKPOINTS_DIR: &str = ".translation-checkpoints";
 mod typography;
 
 use typography::{load_typography_index, TypographyIndex};
+
+#[path = "live_translation/revisions.rs"]
+mod revisions;
+
+pub(super) use revisions::{
+    live_publication_view, prune_superseded_revision_snapshots, publish_translation_revisions,
+};
 
 pub(super) fn load_live_translation_layout(
     data_root: &Path,
@@ -75,35 +82,75 @@ pub(super) fn load_live_translation_layout(
     Ok(LiveTranslationLayoutView { pages })
 }
 
+/// 读取时对账修订登记:写回成功、但当时没登记进数据库的修订(进程崩溃、数据库
+/// 忙……)在打开实时译文时补上。只对不在跑的任务、且译文目录归它自己所有时做;
+/// 从没修订过的任务只多一次 stat。失败只记日志,不影响读取。
+pub(super) fn heal_live_translation_revisions(db: &Db, data_root: &Path, job: &JobSnapshot) {
+    if matches!(job.status, JobStatusKind::Queued | JobStatusKind::Running) {
+        return;
+    }
+    let Ok(translations_dir) = translation_dir(data_root, job) else {
+        return;
+    };
+    let owned = resolve_job_root(job, data_root)
+        .and_then(|root| root.join("translated").canonicalize().ok())
+        .zip(translations_dir.canonicalize().ok())
+        .is_some_and(|(expected, actual)| expected == actual);
+    if !owned {
+        return;
+    }
+    if let Err(error) = publish_translation_revisions(db, &job.job_id, &translations_dir) {
+        tracing::warn!(
+            job_id = %job.job_id,
+            error = %error,
+            "failed to register pending translation revisions for live translation"
+        );
+    }
+}
+
 pub(super) fn load_live_translation_page(
     db: &Db,
     data_root: &Path,
     job: &JobSnapshot,
     page_idx: u32,
 ) -> Result<LiveTranslationPageView, AppError> {
-    let unit = db
-        .latest_pipeline_unit_for_page(&job.job_id, TRANSLATION_STAGE, page_idx)?
-        .ok_or_else(|| {
-            live_error(
-                StatusCode::NOT_FOUND,
-                "LIVE_TRANSLATION_PAGE_NOT_COMMITTED",
-                "该页尚无已提交的翻译",
-            )
-        })?;
-    let translations_dir = translation_dir(data_root, job)?;
-    let bytes = find_committed_page_snapshot(
-        &translations_dir,
-        page_idx,
-        &unit.page_hash,
-        unit.producer_generation,
-    )?
-    .ok_or_else(|| {
+    let not_committed = || {
         live_error(
-            StatusCode::CONFLICT,
-            "LIVE_TRANSLATION_SNAPSHOT_UNAVAILABLE",
-            "已提交的翻译快照暂时不可用",
+            StatusCode::NOT_FOUND,
+            "LIVE_TRANSLATION_PAGE_NOT_COMMITTED",
+            "该页尚无已提交的翻译",
         )
-    })?;
+    };
+    let mut unit = db
+        .latest_pipeline_unit_for_page(&job.job_id, TRANSLATION_STAGE, page_idx)?
+        .ok_or_else(not_committed)?;
+    let translations_dir = translation_dir(data_root, job)?;
+    // 修订登记会推进某页的 page_hash 并在随后清理旧快照。读到旧行之后、读快照之前
+    // 恰好被清理时,重读一次数据库就能拿到新行和它的快照。
+    let mut retried = false;
+    let bytes = loop {
+        match find_committed_page_snapshot(
+            &translations_dir,
+            page_idx,
+            &unit.page_hash,
+            unit.producer_generation,
+        )? {
+            Some(bytes) => break bytes,
+            None if !retried => {
+                retried = true;
+                unit = db
+                    .latest_pipeline_unit_for_page(&job.job_id, TRANSLATION_STAGE, page_idx)?
+                    .ok_or_else(not_committed)?;
+            }
+            None => {
+                return Err(live_error(
+                    StatusCode::CONFLICT,
+                    "LIVE_TRANSLATION_SNAPSHOT_UNAVAILABLE",
+                    "已提交的翻译快照暂时不可用",
+                ))
+            }
+        }
+    };
     let payload: Value = serde_json::from_slice(&bytes).map_err(|_| {
         live_error(
             StatusCode::INTERNAL_SERVER_ERROR,
