@@ -43,7 +43,8 @@ pub use glossary::{
     GlossaryListView, GlossaryRecord, GlossarySummaryView, GlossaryUpsertInput,
 };
 pub use input::{
-    CreateJobInput, GlossaryEntryInput, JobSourceInput, OcrInput, RenderInput, ResolvedJobSpec,
+    normalize_translation_refine_mode, CreateJobInput, GlossaryEntryInput, JobSourceInput,
+    RefineOverride, OcrInput, RenderInput, ResolvedJobSpec,
     ResolvedSourceSpec, RuntimeInput, TranslationInput, DEFAULT_SOURCE_CLEANUP_STRATEGY,
     SOURCE_CLEANUP_STRATEGIES,
     TRANSLATION_CONTEXT_MODES,
@@ -51,6 +52,9 @@ pub use input::{
     TRANSLATION_MATH_MODES,
     TRANSLATION_MEMORY_MODES,
     TRANSLATION_PREPARATION_MODES,
+    TRANSLATION_REFINE_MODES,
+    DEFAULT_TRANSLATION_REFINE_MAX_ITEMS,
+    DEFAULT_TRANSLATION_REFINE_MAX_TOKENS,
 };
 pub use job::{
     event_progress_unit, job_progress_unit, job_stage_detail, job_stage_rank, job_stage_str,
@@ -93,7 +97,7 @@ pub use view::{
     ReaderAiContextView, ReaderAiHistoryMessageView, ReaderAiRectView, ReaderAiSelectionView,
     ReaderAiUsedContextView, ReaderDocumentMetadataView, ReaderMetadataView,
     ReaderPageMetadataView, ReaderRegionBoxView, ReaderRegionItemView, ReaderRegionsView,
-    ResourceLinkView, RetryStageKind, RetryStageRequest, RetryStageSubmissionView,
+    RefineRetryRequest, ResourceLinkView, RetryStageKind, RetryStageRequest, RetryStageSubmissionView,
     StageActionsView, StageRetryActionLinkView, StageRetryActionView, TranslationDebugIndexView,
     TranslationDebugItemView, TranslationDebugListItemView, TranslationDebugListView,
     TranslationDiagnosticsView, TranslationReplayView, TranslationRequestRecoveryView,

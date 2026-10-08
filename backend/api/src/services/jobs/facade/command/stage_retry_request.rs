@@ -11,6 +11,11 @@ pub(super) fn build_retry_request(
         RetryStageKind::Ocr => WorkflowKind::Book,
         RetryStageKind::Translation => WorkflowKind::Book,
         RetryStageKind::Render => WorkflowKind::Render,
+        RetryStageKind::Refine => {
+            return Err(AppError::bad_request(
+                "refine retry runs in place on the source job; set create_new_job=false",
+            ))
+        }
     };
     let mut request = CreateJobInput {
         workflow,
@@ -47,6 +52,7 @@ pub(super) fn build_retry_request(
             require_artifact(artifacts.source_pdf.as_ref(), "source_pdf")?;
             request.source.artifact_job_id = source_job.job_id.clone();
         }
+        RetryStageKind::Refine => unreachable!("refine is rejected above"),
     }
     request.runtime.job_id.clear();
     Ok(request)

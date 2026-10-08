@@ -51,6 +51,16 @@ Current top-level workflow contract:
    `document.v1.json` -> `translated/`
 3. `render.stage.v1`
    translated payloads + source PDF -> `rendered/*.pdf`
+   `params.refine` (always written, all keys present):
+   `{"mode": "off|review_only|review_and_fix", "trigger": "auto|manual", "start_page": null|int, "end_page": null|int, "max_items": int, "max_tokens": int, "reviewer_model": str, "reviewer_base_url": str, "reviewer_credential_ref": "" | "env:RETAIN_REVIEWER_API_KEY"}`.
+   The worker refines committed translations before rendering when `mode != off`.
+   Rust picks the mode: a `retry-stage stage=refine` one-shot override
+   (`specs/refine-override.json`) -> override values with `trigger=manual`; the render
+   that directly follows translation (Book / Translate with render_after_translation,
+   including its durable resume) -> the job's `translation.refine` with `trigger=auto`;
+   every other render (plain re-render, rerun) -> `off`. Pages are 1-based and inclusive.
+   The translation model keeps using `params.model/base_url/credential_ref`; keys only
+   travel as env (`RETAIN_TRANSLATION_API_KEY`, `RETAIN_REVIEWER_API_KEY`).
 
 The Rust layer treats the stage workers as the formal production path.
 For local manual use, use the neutral wrapper names above.

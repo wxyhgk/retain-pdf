@@ -9,4 +9,5 @@ pub mod credentials;
 pub use retain_db::db;
 pub mod job_events;
 pub mod ocr_provider;
+pub mod translation_revisions;
 pub mod worker_command;

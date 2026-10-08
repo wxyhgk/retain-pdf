@@ -1,4 +1,5 @@
 use anyhow::Result;
+use tracing::warn;
 
 use crate::models::domain::{
     job_stage_detail, job_stage_str, now_iso, JobRuntimeState, JobStage, JobStatusKind,
@@ -6,7 +7,8 @@ use crate::models::domain::{
 
 use super::render_flow_artifacts::prepare_render_job_from_artifacts;
 use super::{clear_job_failure, execute_process_job, sync_runtime_state, ProcessRuntimeDeps};
-use crate::worker_command::{build_worker_stage_command, WorkerStageCommand};
+use crate::worker_command::refine_override::{clear_refine_override, load_refine_override};
+use crate::worker_command::{build_worker_stage_command, RenderRefine, WorkerStageCommand};
 
 pub(super) async fn run_render_job_from_artifacts(
     deps: ProcessRuntimeDeps,
@@ -15,6 +17,19 @@ pub(super) async fn run_render_job_from_artifacts(
     let (mut job, render_inputs) = prepare_render_job_from_artifacts(&deps.persist, job)?;
     let job_paths = crate::storage_paths::build_job_paths(&deps.persist.output_root, &job.job_id)?;
 
+    // Render workflow 默认不精修；只有 `retry-stage stage=refine` 写下的一次性覆盖会让
+    // 这次渲染先精修（trigger=manual）。覆盖不在任务快照里，见 refine_override 模块注释。
+    let refine = match load_refine_override(&job_paths) {
+        Ok(Some(value)) => RenderRefine::Manual(value),
+        Ok(None) => RenderRefine::Off,
+        Err(error) => {
+            warn!(
+                "job {}: ignoring unreadable refine override, rendering without refine: {error:#}",
+                job.job_id
+            );
+            RenderRefine::Off
+        }
+    };
     job.command = build_worker_stage_command(
         &deps.worker_command_runtime(),
         &job.request_payload,
@@ -22,6 +37,7 @@ pub(super) async fn run_render_job_from_artifacts(
         WorkerStageCommand::Render {
             source_pdf_path: &render_inputs.source_pdf_path,
             translations_dir: &render_inputs.translations_dir,
+            refine,
         },
     )?;
     job.status = JobStatusKind::Running;
@@ -39,5 +55,11 @@ pub(super) async fn run_render_job_from_artifacts(
     job.progress_total = None;
     clear_job_failure(&mut job);
     sync_runtime_state(&mut job);
-    execute_process_job(deps, job, &[]).await
+    let result = execute_process_job(deps, job, &[]).await;
+    // 一次性覆盖用完即删（成功 / 失败 / 取消都删）。运行时在这之前崩溃或重启时不会走到
+    // 这里，文件留着，恢复续跑的渲染仍然带这次精修。
+    if let Err(error) = clear_refine_override(&job_paths) {
+        warn!("failed to clear refine override after render workflow: {error:#}");
+    }
+    result
 }

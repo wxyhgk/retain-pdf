@@ -31,7 +31,10 @@ POST /api/v1/jobs/{job_id}/retry-stage
 
 - `ocr`: 复用 source PDF，重跑 OCR -> translation -> render。
 - `translation`: 复用 source PDF + OCR 结果，重跑 translation -> render。
-- `render`: 复用 source PDF + OCR 结果 + 翻译结果，只重跑 render。
+- `render`: 复用 source PDF + OCR 结果 + 翻译结果，只重跑 render（不精修）。
+- `refine`: 复用全部产物，原地（只能 `create_new_job=false`，省略时默认就是 false）先精修已提交的译文、再渲染一次。
+  可带 `"refine": {"mode": "review_only" | "review_and_fix", "start_page": 3, "end_page": 5}`，页码 1-based 闭区间，省略 = 全书、`review_and_fix`。
+  这次的精修参数是一次性的，不会写进任务的 `translation.refine`；报告见 `GET /api/v1/jobs/{job_id}/translation/refine-report`。
 
 ## 响应示例
 

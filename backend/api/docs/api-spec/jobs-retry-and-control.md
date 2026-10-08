@@ -62,6 +62,21 @@ Response:
         "will_reuse": ["source_pdf", "ocr_result", "translation_result"],
         "will_rerun": ["render"],
         "danger": false
+      },
+      {
+        "stage": "refine",
+        "label": "精修译文",
+        "can_retry": true,
+        "reason": "",
+        "disabled_reason": "",
+        "action": {
+          "method": "POST",
+          "url": "http://127.0.0.1:41000/api/v1/jobs/20260519010101-abcd12/retry-stage",
+          "body": {"stage": "refine", "create_new_job": false, "ambiguous_request_policy": "block", "refine": {"mode": "review_and_fix"}}
+        },
+        "will_reuse": ["source_pdf", "ocr_result", "translation_result"],
+        "will_rerun": ["refine", "render"],
+        "danger": false
       }
     ]
   }
@@ -76,6 +91,8 @@ Rules:
   expose OCR as disabled until artifact-backed OCR retry is implemented.
 - translation retry requires `source_pdf + normalized_document_json`.
 - render retry requires `source_pdf + translations_dir`.
+- refine retry requires `source_pdf + translations_dir` (committed translations)
+  and is disabled for jobs bound to a Rust model `execution_connection`.
 
 `POST /api/v1/jobs/{job_id}/retry-stage`
 
@@ -123,9 +140,14 @@ Response:
 
 Request fields:
 
-- `stage`: `ocr`, `translation`, or `render`.
+- `stage`: `ocr`, `translation`, `render`, or `refine`.
 - `mode`: optional; currently only `from_stage` is supported.
-- `create_new_job`: optional; defaults to `true`.
+- `create_new_job`: optional; defaults to `true`, except `stage=refine` which
+  defaults to `false` and rejects `true` with `400`.
+- `refine`: optional, only accepted with `stage=refine` (`400` otherwise).
+  `{"mode": "review_only" | "review_and_fix", "start_page": 3, "end_page": 5}`;
+  `mode` defaults to `review_and_fix`; pages are 1-based and inclusive, either
+  may be omitted (omitted = whole book). Unknown keys are rejected.
 - `ambiguous_request_policy`: optional; defaults to `block`. When the request
   journal contains an active ambiguous dispatch, translation retry returns
   `409` until the caller explicitly sends `accept_duplicate_risk`. Generic
@@ -147,8 +169,24 @@ Execution semantics:
 - `stage=render`: reuses source PDF, OCR result, and translation result, reruns
   render, and creates a new `render` job by default.
 - `stage=render` with `create_new_job=false`: reuses the existing job id and
-  replaces render artifacts in place. This is the only in-place retry currently
-  supported.
+  replaces render artifacts in place. A plain render never refines, even when
+  the job was created with `translation.refine` enabled.
+- `stage=refine` (always in place): reuses the committed translations, runs the
+  refine pass (review, then targeted fixes for `review_and_fix`) inside the
+  render stage right before rendering, and renders once. Accepted fixes go
+  through the translation revision history (`source=refine`), so the original
+  text stays revertible; the report is
+  `GET /api/v1/jobs/{job_id}/translation/refine-report`. When the workflow
+  finishes (succeeded, failed or canceled) the revised pages are registered for
+  live translation (`pipeline_unit_committed`, `source=translation_revision`).
+  The refine options are a one-shot override stored in
+  `<job>/specs/refine-override.json`, never in the job's `translation.refine`;
+  it is deleted when the render workflow ends and survives a runtime restart
+  that requeues the job. A queued/running job returns `409`.
+  Refine calls a model, so the job keeps its `translation.credential_ref` /
+  `reviewer_credential_ref` (inline keys are rejected in `overrides`). If an
+  earlier plain re-render already cleared them, pass
+  `overrides.translation.{model, base_url, credential_ref}`; otherwise `400`.
 
 ## Resume Plan, Resume, and Generic Rerun
 

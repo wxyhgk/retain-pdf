@@ -6,7 +6,8 @@ use crate::models::api::{
 };
 use crate::models::domain::JobSnapshot;
 use crate::storage_paths::{
-    resolve_fit_report, resolve_translation_diagnostics, resolve_translation_qa,
+    resolve_fit_report, resolve_refine_report, resolve_translation_diagnostics,
+    resolve_translation_qa,
 };
 
 use super::common::read_json_value;
@@ -42,6 +43,16 @@ pub(crate) fn load_fit_report_view(
 ) -> Result<JobReportView, AppError> {
     let path = resolve_fit_report(job, data_root).ok_or_else(|| {
         AppError::not_found(format!("fit report not found: {}", job.job_id))
+    })?;
+    load_report_view(&path, job)
+}
+
+pub(crate) fn load_refine_report_view(
+    data_root: &Path,
+    job: &JobSnapshot,
+) -> Result<JobReportView, AppError> {
+    let path = resolve_refine_report(job, data_root).ok_or_else(|| {
+        AppError::not_found(format!("refine report not found: {}", job.job_id))
     })?;
     load_report_view(&path, job)
 }

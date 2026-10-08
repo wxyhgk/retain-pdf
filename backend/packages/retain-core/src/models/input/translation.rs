@@ -21,6 +21,42 @@ pub const TRANSLATION_MEMORY_MODES: &[&str] = &["matched", "broad", "off"];
 /// 译前准备（全书术语预扫 + 风格指南）开关。权威来源是 Python 的
 /// `_normalize_preparation_mode`。默认 `off`：不生成产物、prompt 与缓存 key 不变。
 pub const TRANSLATION_PREPARATION_MODES: &[&str] = &["off", "artifacts_only", "terms", "terms+style"];
+/// 精修（挑错 + 定点修改）开关。在渲染阶段、真正渲染之前运行：
+/// `review_only` 只挑错出报告，`review_and_fix` 再对 critical/major 做定点修改。
+/// 默认 `off`：渲染阶段的行为与没有这个字段时完全一致。
+pub const TRANSLATION_REFINE_MODES: &[&str] = &["off", "review_only", "review_and_fix"];
+/// 精修的成本上限默认值（0 = 不限）。Python 侧读 render.spec.json 的 `params.refine`。
+pub const DEFAULT_TRANSLATION_REFINE_MAX_ITEMS: i64 = 300;
+pub const DEFAULT_TRANSLATION_REFINE_MAX_TOKENS: i64 = 400_000;
+
+/// 把任意字符串归一成 [`TRANSLATION_REFINE_MODES`] 之一，未知值 → `off`。
+/// 入口校验已经拒绝非法值；这里是写 stage spec 时的兜底（老任务、手改的快照）。
+pub fn normalize_translation_refine_mode(value: &str) -> &'static str {
+    let normalized = value.trim().to_ascii_lowercase();
+    TRANSLATION_REFINE_MODES
+        .iter()
+        .copied()
+        .find(|mode| *mode == normalized)
+        .unwrap_or("off")
+}
+
+/// `retry-stage stage=refine` 的一次性精修覆盖：只对紧接着的那一次原地渲染生效，
+/// **不**写进任务的 `translation.refine`（否则之后每次普通重渲染都会再精修、再花钱）。
+///
+/// 它落在任务目录的 `specs/refine-override.json`（见 retain-data
+/// `worker_command::refine_override`），由 Render workflow 写 render.spec.json 时读取，
+/// workflow 结束（成功 / 失败 / 取消）后删除；任务运行时重启、任务被恢复续跑时文件还在，
+/// 续跑的渲染仍然带这次精修。页码 1-based、闭区间，`None` = 全书。
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub struct RefineOverride {
+    pub mode: String,
+    #[serde(default)]
+    pub start_page: Option<i64>,
+    #[serde(default)]
+    pub end_page: Option<i64>,
+    #[serde(default)]
+    pub requested_at: String,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -78,6 +114,14 @@ pub struct TranslationInput {
     pub memory_mode: String,
     #[serde(default = "default_translation_preparation_mode")]
     pub preparation: String,
+    #[serde(default = "default_translation_refine_mode")]
+    pub refine: String,
+    /// 最多挑错多少块；0 = 不限。
+    #[serde(default = "default_translation_refine_max_items")]
+    pub refine_max_items: i64,
+    /// 挑错 + 修改的总 token 上限；0 = 不限。
+    #[serde(default = "default_translation_refine_max_tokens")]
+    pub refine_max_tokens: i64,
     #[serde(default)]
     pub api_key: String,
     #[serde(default)]
@@ -133,6 +177,9 @@ impl Default for TranslationInput {
             glossary_mode: default_translation_glossary_mode(),
             memory_mode: default_translation_memory_mode(),
             preparation: default_translation_preparation_mode(),
+            refine: default_translation_refine_mode(),
+            refine_max_items: default_translation_refine_max_items(),
+            refine_max_tokens: default_translation_refine_max_tokens(),
             api_key: String::new(),
             credential_ref: String::new(),
             model: String::new(),
@@ -165,6 +212,18 @@ pub fn default_translation_memory_mode() -> String {
 
 pub fn default_translation_preparation_mode() -> String {
     "off".to_string()
+}
+
+pub fn default_translation_refine_mode() -> String {
+    "off".to_string()
+}
+
+pub fn default_translation_refine_max_items() -> i64 {
+    DEFAULT_TRANSLATION_REFINE_MAX_ITEMS
+}
+
+pub fn default_translation_refine_max_tokens() -> i64 {
+    DEFAULT_TRANSLATION_REFINE_MAX_TOKENS
 }
 
 #[cfg(test)]
@@ -237,6 +296,7 @@ mod allowed_value_tests {
                 TRANSLATION_PREPARATION_MODES,
                 "preparation",
             ),
+            (&input.refine, TRANSLATION_REFINE_MODES, "refine"),
         ] {
             assert!(
                 allowed.contains(&value.as_str()),
