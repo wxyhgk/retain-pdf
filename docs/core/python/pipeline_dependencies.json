@@ -24,6 +24,8 @@
       "devtools/experiments/mineru_content_v2/render_translated.py",
       "devtools/golden_harness.py",
       "devtools/job_debug_runner.py",
+      "devtools/render_compare/rc_report.py",
+      "devtools/render_compare/render_compare.py",
       "devtools/replay_translation_item.py",
       "devtools/run_golden_flow.py",
       "devtools/run_render_speed_bench.py",
@@ -279,7 +281,10 @@
         "retainpdf_pipeline/render/source/compression/image_ops.py",
         "retainpdf_pipeline/render/source/compression/image_pipeline.py"
       ],
-      "devtool_files": [],
+      "devtool_files": [
+        "devtools/render_compare/rc_measure.py",
+        "devtools/render_compare/rc_report.py"
+      ],
       "test_files": [
         "devtools/tests/rendering/test_merge_translated_pdf.py",
         "devtools/tests/rendering/test_page_classifier.py",
@@ -288,7 +293,7 @@
         "devtools/tests/rendering/test_typst_redaction_policy.py"
       ],
       "runtime_required": true,
-      "devtool_required": false
+      "devtool_required": true
     },
     {
       "import_name": "docx",
@@ -433,6 +438,7 @@
         "devtools/benchmark_source_cleanup.py",
         "devtools/experiments/source_cleanup_next/tests/test_source_cleanup_pdf_structure_profile.py",
         "devtools/golden_harness.py",
+        "devtools/render_compare/rc_measure.py",
         "devtools/run_golden_flow.py",
         "devtools/tools/add_retainpdf_footer_typst.py",
         "devtools/verify_bbox_text_strip_parallel.py"
