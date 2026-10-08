@@ -79,6 +79,7 @@ export function createWorkflowPayloadAssembly({
       translationCredentialRef: submitValues.translationCredentialRef,
       modelApiKey: submitValues.modelApiKey,
       selectedGlossaryId: submitValues.selectedGlossaryId,
+      translationQuality: submitValues.translationQuality,
       constants,
     });
   }

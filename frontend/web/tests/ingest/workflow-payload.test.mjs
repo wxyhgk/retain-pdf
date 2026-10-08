@@ -166,6 +166,41 @@ test("遗留术语表已被删除：下拉不预选，载荷也不复活那个�
   );
 });
 
+test("翻译质量：普通档不加任何新字段（请求与以前逐字相同），统一术语档发 preparation=terms+style", () => {
+  const base = { developerConfig: developerConfig(), translationCredentialRef: "cred_translation", selectedGlossaryId: "", constants };
+  const legacy = buildTranslationPayload(base);
+  assert.equal("preparation" in legacy, false);
+  assert.deepEqual(buildTranslationPayload({ ...base, translationQuality: "standard" }), legacy);
+  assert.equal(buildTranslationPayload({ ...base, translationQuality: "terms" }).preparation, "terms+style");
+  // 不认识的档位（例如旧版本存下的值）按普通处理，不发出后端不认识的字段值
+  assert.equal("preparation" in buildTranslationPayload({ ...base, translationQuality: "bogus" }), false);
+});
+
+test("翻译质量档位记在本机，读写失败时退回普通", async () => {
+  const store = new Map();
+  const original = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: (key) => (store.has(key) ? store.get(key) : null),
+    setItem: (key, value) => store.set(key, String(value)),
+  };
+  try {
+    const view = createWorkflowViewFeature();
+    assert.equal(view.translationQuality(), "standard");
+    view.setTranslationQuality("terms");
+    assert.equal(view.translationQuality(), "terms");
+    assert.equal(createWorkflowViewFeature().translationQuality(), "terms", "新开的视图沿用上次的选择");
+    view.setTranslationQuality("whatever");
+    assert.equal(view.translationQuality(), "standard");
+    globalThis.localStorage = { getItem: () => { throw new Error("denied"); }, setItem: () => { throw new Error("denied"); } };
+    const fallback = createWorkflowViewFeature();
+    assert.equal(fallback.translationQuality(), "standard");
+    fallback.setTranslationQuality("terms");
+    assert.equal(fallback.translationQuality(), "terms", "存不下也照样生效于本次");
+  } finally {
+    globalThis.localStorage = original;
+  }
+});
+
 test("buildOcrPayload maps provider token field and paddle api url", () => {
   const payload = buildOcrPayload({
     pageRanges: "1-3",

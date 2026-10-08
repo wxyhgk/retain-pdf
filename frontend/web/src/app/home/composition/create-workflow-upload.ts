@@ -47,6 +47,7 @@ import type {
 
 type WorkflowViewPort = {
   selectedGlossaryId: () => string;
+  translationQuality?: () => string;
   isOcrOnly?: () => boolean;
   viewPort: unknown;
 };
@@ -110,6 +111,7 @@ export function createWorkflowAndUpload({
       translationCredentialRef: credentials?.modelApiKey ? "" : credentials?.translationCredentialRef || "",
       modelApiKey: credentials?.modelApiKey || _modelApiKeyFallback || "",
       selectedGlossaryId: workflowView.selectedGlossaryId(),
+      translationQuality: workflowView.translationQuality?.() || "standard",
     };
   }
 

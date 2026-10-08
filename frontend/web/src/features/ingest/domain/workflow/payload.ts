@@ -69,6 +69,8 @@ export interface BuildTranslationPayloadOptions {
   modelApiKey?: string;
   translationCredentialRef?: string;
   selectedGlossaryId?: string;
+  /** 翻译质量档位，见 workflow-view-store 的 TranslationQuality。缺省按 standard。 */
+  translationQuality?: string;
   constants: WorkflowPayloadConstants;
 }
 
@@ -122,9 +124,11 @@ export function buildTranslationPayload({
   translationCredentialRef,
   modelApiKey,
   selectedGlossaryId,
+  translationQuality,
   constants,
 }: BuildTranslationPayloadOptions): TranslationInput {
   return {
+    ...translationQualityFields(translationQuality),
     mode: constants.DEFAULT_MODE,
     math_mode: developerConfig.mathMode,
     model: developerConfig.model,
@@ -152,6 +156,15 @@ export function buildTranslationPayload({
     glossary_entries: [],
     skip_title_translation: !developerConfig.translateTitles,
   };
+}
+
+/**
+ * 下拉档位 → 后端字段。standard 一个字段都不加：后端缺省就是 preparation=off，
+ * 这样「普通」档发出去的请求和以前逐字相同。
+ */
+export function translationQualityFields(quality: unknown): Pick<TranslationInput, "preparation"> {
+  if (quality === "terms") return { preparation: "terms+style" };
+  return {};
 }
 
 function resolveStoredFontFamily(fallback: unknown): string {

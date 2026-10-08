@@ -14,6 +14,7 @@ export type UploadViewActions = {
 
 export type WorkflowViewActions = {
   setSelectedGlossaryId: (id: string) => unknown;
+  setTranslationQuality: (value: string) => unknown;
   setOcrOnly: (value: boolean) => unknown;
   isOcrOnly: () => boolean;
 };

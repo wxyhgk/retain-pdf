@@ -12,6 +12,7 @@ export interface WorkflowSubmitValues {
   translationCredentialRef?: string;
   modelApiKey?: string;
   selectedGlossaryId?: string;
+  translationQuality?: string;
 }
 
 export interface LoadGlossaryOptionsParams {

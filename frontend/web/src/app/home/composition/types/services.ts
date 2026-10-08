@@ -164,6 +164,7 @@ export type HomeServicesViews = {
   workflowView: {
     store: AppStore;
     setSelectedGlossaryId: (id: string) => unknown;
+    setTranslationQuality: (value: string) => unknown;
     setOcrOnly: (value: boolean) => unknown;
     isOcrOnly: () => boolean;
   };

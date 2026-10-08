@@ -110,6 +110,7 @@ export type HomeUploadViewStoreValue = HomeReadStore & { actions?: any };
 
 export type HomeWorkflowViewActionsValue = {
   setSelectedGlossaryId: (id: string) => unknown;
+  setTranslationQuality: (value: string) => unknown;
   setOcrOnly: (value: boolean) => unknown;
   isOcrOnly: () => boolean;
 };

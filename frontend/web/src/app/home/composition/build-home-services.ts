@@ -142,6 +142,7 @@ export function buildHomeServices({
     uploadDomRefs: views.uploadView.domRefs,
     workflowViewActions: {
       setSelectedGlossaryId: views.workflowView.setSelectedGlossaryId,
+      setTranslationQuality: views.workflowView.setTranslationQuality,
       setOcrOnly: views.workflowView.setOcrOnly,
       isOcrOnly: views.workflowView.isOcrOnly,
     },

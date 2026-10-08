@@ -50,6 +50,39 @@ export type WorkflowDeveloperDialog = {
   [key: string]: unknown;
 };
 
+/**
+ * 翻译质量档位（用户可见的一个下拉，背后映射到 translation.preparation 等字段，见
+ * workflow/payload.ts 的 translationQualityFields）：
+ * - standard：直接翻译，和以前完全一样；
+ * - terms：先通读全书生成术语表和风格指南，再带着它们翻译（preparation=terms+style）。
+ * 后续「精翻」（挑错 + 定点修改）落地后再加一档。
+ */
+export type TranslationQuality = "standard" | "terms";
+export const TRANSLATION_QUALITY_STORAGE_KEY = "retainpdf.translationQuality";
+
+export function normalizeTranslationQuality(value: unknown): TranslationQuality {
+  return value === "terms" ? "terms" : "standard";
+}
+
+// 档位是用户的长期偏好（选了「统一术语」的人通常每本都要），所以记在本机；
+// 读写失败（隐私模式等）就退回 standard，不影响提交。
+function loadTranslationQuality(): TranslationQuality {
+  try {
+    if (typeof localStorage !== "undefined") {
+      return normalizeTranslationQuality(localStorage.getItem(TRANSLATION_QUALITY_STORAGE_KEY));
+    }
+  } catch {}
+  return "standard";
+}
+
+function saveTranslationQuality(value: TranslationQuality) {
+  try {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(TRANSLATION_QUALITY_STORAGE_KEY, value);
+    }
+  } catch {}
+}
+
 export type WorkflowViewState = {
   submitLabel: string;
   submitDisabled: boolean;
@@ -59,6 +92,7 @@ export type WorkflowViewState = {
   jobWarningVisible: boolean;
   glossaries: WorkflowGlossaryOption[];
   selectedGlossaryId: string;
+  translationQuality: TranslationQuality;
   developerDialog: WorkflowDeveloperDialog;
   developerFormState: Record<string, unknown>;
   ocrOnly: boolean;
@@ -106,6 +140,7 @@ export function createWorkflowViewStore(): WorkflowViewStore {
       jobWarningVisible: false,
       glossaries: [],
       selectedGlossaryId: "",
+      translationQuality: loadTranslationQuality(),
       developerDialog: {},
       developerFormState: {},
       ocrOnly: false,
@@ -141,6 +176,16 @@ export function createWorkflowViewFeature({
 
   function setSelectedGlossaryId(value = "") {
     patch({ selectedGlossaryId: `${value || ""}`.trim() });
+  }
+
+  function translationQuality(): TranslationQuality {
+    return normalizeTranslationQuality(store.getSnapshot().translationQuality);
+  }
+
+  function setTranslationQuality(value: unknown = "standard") {
+    const next = normalizeTranslationQuality(value);
+    saveTranslationQuality(next);
+    patch({ translationQuality: next });
   }
 
   function setJobWarningVisible(visible: boolean) {
@@ -315,6 +360,8 @@ export function createWorkflowViewFeature({
     setOcrOnly,
     setJobWarningVisible,
     setSelectedGlossaryId,
+    translationQuality,
+    setTranslationQuality,
     setSubmitBusy,
     setSubmitDisabled,
     store,

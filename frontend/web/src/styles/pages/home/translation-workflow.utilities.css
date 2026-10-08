@@ -313,6 +313,12 @@
     box-shadow: none;
     font-size: 14px;
   }
+
+  & small {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
 }
 
 @utility translation-options-actions {

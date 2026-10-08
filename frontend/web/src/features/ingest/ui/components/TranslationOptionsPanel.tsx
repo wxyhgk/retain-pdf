@@ -3,7 +3,7 @@
 // DOM id "page-range-dialog" / "page-range-title" 为历史契约（测试与样式锚点），保留不改。
 
 import type { FormEvent } from "react";
-import { BookOpen, FileText, SlidersHorizontal, X } from "lucide-react";
+import { BookOpen, FileText, Sparkles, SlidersHorizontal, X } from "lucide-react";
 
 import { Button } from "@/ui/components/button.js";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
@@ -50,7 +50,7 @@ export function TranslationOptionsPanel() {
             <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
             翻译选项
           </h3>
-          <p id="page-range-limit-text">按需设置页码范围和术语表；留空表示处理整份 PDF。</p>
+          <p id="page-range-limit-text">按需设置页码范围、术语表和翻译质量；页码留空表示处理整份 PDF。</p>
         </div>
         <Button
           id="page-range-close-btn"
@@ -124,6 +124,26 @@ export function TranslationOptionsPanel() {
               <option value={selectedId}>{`已删除或不可用: ${selectedId}`}</option>
             ) : null}
           </select>
+        </label>
+
+        <label className="translation-options-glossary" htmlFor="job-translation-quality">
+          <span>
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+            翻译质量
+          </span>
+          <select
+            id="job-translation-quality"
+            value={workflow.translationQuality || "standard"}
+            onChange={(event) => workflowViewActions.setTranslationQuality(event.target.value)}
+          >
+            <option value="standard">普通</option>
+            <option value="terms">统一术语</option>
+          </select>
+          <small id="job-translation-quality-hint">
+            {workflow.translationQuality === "terms"
+              ? "先通读全书定好术语和文风再翻译，译法更一致；模型费用多约 0.4 倍。"
+              : "直接翻译，速度最快、费用最低。"}
+          </small>
         </label>
       </div>
 
