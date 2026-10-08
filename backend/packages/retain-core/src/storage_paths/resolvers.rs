@@ -167,6 +167,22 @@ pub fn resolve_translation_diagnostics(job: &JobSnapshot, data_root: &Path) -> O
     path.exists().then_some(path)
 }
 
+/// `<job>/artifacts/translation_qa.v1.json` —— 确定性翻译 QA 报告（渲染后会带上排版结果重算）。
+pub fn resolve_translation_qa(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {
+    let path = resolve_job_root(job, data_root)?
+        .join(OUTPUT_ARTIFACTS_DIR_NAME)
+        .join("translation_qa.v1.json");
+    path.exists().then_some(path)
+}
+
+/// `<job>/artifacts/fit_report.v1.json` —— 排版 fit 报告（每块最终字号、应急档、溢出）。
+pub fn resolve_fit_report(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {
+    let path = resolve_job_root(job, data_root)?
+        .join(OUTPUT_ARTIFACTS_DIR_NAME)
+        .join("fit_report.v1.json");
+    path.exists().then_some(path)
+}
+
 pub fn resolve_translation_request_journal(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {
     let root = resolve_job_root(job, data_root)?;
     let path = root

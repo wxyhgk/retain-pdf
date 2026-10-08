@@ -143,6 +143,13 @@ pub struct TranslationDiagnosticsView {
     pub summary: Value,
 }
 
+/// 任务产物目录里一份 JSON 报告的原样内容（translation_qa.v1 / fit_report.v1）。
+#[derive(Debug, Serialize)]
+pub struct JobReportView {
+    pub job_id: String,
+    pub report: Value,
+}
+
 #[derive(Debug, Serialize)]
 pub struct TranslationDebugListView {
     pub items: Vec<TranslationDebugListItemView>,

@@ -48,7 +48,7 @@ pub use super::view::{
     ReaderRegionItemView, ReaderRegionsView, RetryStageKind, RetryStageRequest,
     RetryStageSubmissionView, StageActionsView, StageRetryActionLinkView, StageRetryActionView,
     TranslationDebugIndexView, TranslationDebugItemView, TranslationDebugListItemView,
-    TranslationDebugListView, TranslationDiagnosticsView, TranslationReplayView,
+    JobReportView, TranslationDebugListView, TranslationDiagnosticsView, TranslationReplayView,
     ReviseTranslationItemRequest, TranslationRevisionHistoryView, TranslationRevisionSource,
     TranslationRevisionView,
     TranslationRequestRecoveryView,

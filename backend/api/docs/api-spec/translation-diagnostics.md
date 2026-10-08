@@ -48,6 +48,63 @@ Response:
 }
 ```
 
+## Translation QA Report
+
+`GET /api/v1/jobs/{job_id}/translation/qa`
+
+返回 `artifacts/translation_qa.v1.json` 的原样内容（经过和 diagnostics 相同的脱敏）。翻译阶段结束时内联生成一次
+（`generator.mode=inline`，此时还没排版，`checks.layout_fit` 为 skipped），渲染结束后带上排版 fit 报告重算并覆盖
+（`generator.mode=post_render`）。报告不存在时返回 404。
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "job_id": "20261006023250-703433",
+    "report": {
+      "schema": "translation_qa_v1",
+      "generator": {"mode": "post_render"},
+      "checks": {"layout_fit": {"status": "ok", "violation_count": 17}},
+      "summary": {"by_severity": {"critical": 0, "major": 17, "minor": 16}},
+      "violations": [
+        {
+          "id": "qa-00015", "check": "omission", "type": "length_ratio_low", "severity": "major",
+          "location": {"item_id": "p043-b006", "page_number": 43},
+          "evidence": {"length_ratio": 0.0515, "source_excerpt": "…", "translation_excerpt": "…"}
+        }
+      ]
+    }
+  }
+}
+```
+
+## Render Fit Report
+
+`GET /api/v1/jobs/{job_id}/render/fit-report`
+
+返回 `artifacts/fit_report.v1.json` 的原样内容：每块的最终字号、缩小比例、是否进入应急档、是否溢出，以及页级、全书汇总。
+`report.status` 为 `ok` / `failed` / `unavailable`（逐页降级等不走整本 Typst 的渲染路径）。报告不存在时返回 404。
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "job_id": "20261006023250-703433",
+    "report": {
+      "schema": "fit_report_v1",
+      "status": "ok",
+      "summary": {"blocks": 396, "shrunk_blocks": 38, "emergency_blocks": 2, "overflow_blocks": 16},
+      "blocks": [
+        {"item_id": "p040-b004", "page": 40, "final_font_size": 11.08, "base_font_size": 11.08, "scale": 1.0,
+         "tier": "base", "emergency_tier": false, "overflow": true, "overflow_pt": 11.73, "overflow_chars_estimate": 4}
+      ]
+    }
+  }
+}
+```
+
 ## Translation Item Index
 
 `GET /api/v1/jobs/{job_id}/translation/items`
