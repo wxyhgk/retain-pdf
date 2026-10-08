@@ -53,7 +53,8 @@ export interface OcrAmbiguityResolutionView {
   };
 }
 
-export type JobRetryStage = "ocr" | "translation" | "render";
+// refine：在已有译文上挑错 + 定点修改，原地执行、不重翻，完成后自动重渲染一次。
+export type JobRetryStage = "ocr" | "translation" | "render" | "refine";
 
 export interface JobStageRetryActionView {
   stage: JobRetryStage;

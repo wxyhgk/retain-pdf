@@ -117,7 +117,7 @@ export function useBookDetailStageActions({
 
   const currentView = view?.job_id === jobId ? view : stageActionsCache.get(jobId) || null;
   const stageActions = useMemo(() => {
-    const supported = new Set(["translation", "render"]);
+    const supported = new Set(["translation", "render", "refine"]);
     return (currentView?.stages || []).filter(
       (action): action is JobStageRetryActionView => supported.has(`${action?.stage || ""}`),
     );
@@ -138,7 +138,8 @@ export function useBookDetailStageActions({
       // 一键断点恢复优先：失败任务先调 POST /resume，服务端按 resume-plan
       // 自动续跑（render 原地同 id，其余新建）。显式二次确认风险后、
       // 已完成任务重做、或 resume 不可用时，才走 retry-stage(显式 stage)。
-      if (!acceptDuplicateRisk && isResumeCandidate(job)) {
+      // 精修不是「恢复失败任务」：不走 resume，直接 retry-stage(refine)。
+      if (stage !== "refine" && !acceptDuplicateRisk && isResumeCandidate(job)) {
         try {
           const resume = actions.resumeJob
             ? await actions.resumeJob(jobId)
@@ -165,6 +166,8 @@ export function useBookDetailStageActions({
       }
       const result = await actions.retryJobStage(jobId, stage, {
         ...(descriptor.action?.body || {}),
+        // 精修在原任务上原地跑（不新建任务、不重翻），后端默认整本 review_and_fix。
+        ...(stage === "refine" ? { create_new_job: false } : {}),
         ...(acceptDuplicateRisk
           ? { ambiguous_request_policy: "accept_duplicate_risk" }
           : {}),
@@ -174,7 +177,7 @@ export function useBookDetailStageActions({
         onJobSubmitted?.({
           ...result,
           document_id: result.document_id || job?.document_id,
-          workflow: result.workflow || (stage === "render" ? "render" : "book"),
+          workflow: result.workflow || (stage === "render" || stage === "refine" ? "render" : "book"),
         });
       }
       return result;
