@@ -183,6 +183,14 @@ pub fn resolve_fit_report(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf
     path.exists().then_some(path)
 }
 
+/// `<job>/artifacts/refine_report.v1.json` —— 精修（挑错 + 定点修改）报告，由渲染阶段的精修写出。
+pub fn resolve_refine_report(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {
+    let path = resolve_job_root(job, data_root)?
+        .join(OUTPUT_ARTIFACTS_DIR_NAME)
+        .join("refine_report.v1.json");
+    path.exists().then_some(path)
+}
+
 pub fn resolve_translation_request_journal(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {
     let root = resolve_job_root(job, data_root)?;
     let path = root

@@ -79,6 +79,33 @@ Response:
 }
 ```
 
+## Translation Refine Report
+
+`GET /api/v1/jobs/{job_id}/translation/refine-report`
+
+返回 `artifacts/refine_report.v1.json` 的原样内容（经过和 diagnostics 相同的脱敏）。精修（挑错 + 定点修改）在渲染阶段、
+真正渲染之前运行：新任务由 `translation.refine` 决定（默认 `off`，不生成报告）；已完成的任务用
+`POST /api/v1/jobs/{job_id}/retry-stage` 的 `{"stage": "refine", "create_new_job": false}` 原地触发。报告结构见
+`contracts/refine-report.v1.schema.json`（schema `refine_report_v1`）。报告不存在时返回 404。
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "job_id": "20261006023250-703433",
+    "report": {
+      "schema": "refine_report_v1",
+      "mode": "review_and_fix",
+      "trigger": "manual",
+      "scope": {"start_page": 3, "end_page": 5},
+      "review": {"findings": [{"item_id": "p043-b006", "category": "omission", "severity": "critical", "origin": "qa"}]},
+      "fixes": [{"item_id": "p043-b006", "status": "applied", "revision_id": "rev-…"}]
+    }
+  }
+}
+```
+
 ## Render Fit Report
 
 `GET /api/v1/jobs/{job_id}/render/fit-report`

@@ -90,3 +90,39 @@ async fn translation_qa_and_fit_report_routes_are_404_when_missing() {
         StatusCode::NOT_FOUND
     );
 }
+
+#[tokio::test]
+async fn refine_report_route_returns_report_redacted() {
+    let state = test_state("debug-refine-report");
+    seed_translation_debug_job(&state);
+    let artifacts_dir = state.config.output_root.join(JOB_ID).join("artifacts");
+    std::fs::write(
+        artifacts_dir.join("refine_report.v1.json"),
+        r#"{"schema":"refine_report_v1","mode":"review_and_fix","trigger":"manual",
+            "summary":{"findings":2,"applied":1,"rejected":1},
+            "fixes":[{"item_id":"p043-b006","status":"applied","before":"leaks sk-debug-secret","after":"ok"}]}"#,
+    )
+    .expect("refine report");
+
+    let response = get_report(state, "translation/refine-report").await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload = read_json(response).await;
+    assert_eq!(payload["data"]["job_id"], JOB_ID);
+    assert_eq!(payload["data"]["report"]["schema"], "refine_report_v1");
+    assert_eq!(payload["data"]["report"]["summary"]["applied"], 1);
+    assert_eq!(
+        payload["data"]["report"]["fixes"][0]["before"],
+        "leaks [REDACTED]"
+    );
+}
+
+#[tokio::test]
+async fn refine_report_route_is_404_when_missing() {
+    let state = test_state("debug-refine-report-missing");
+    seed_translation_debug_job(&state);
+
+    assert_eq!(
+        get_report(state, "translation/refine-report").await.status(),
+        StatusCode::NOT_FOUND
+    );
+}
