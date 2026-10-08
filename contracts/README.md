@@ -19,6 +19,7 @@
 | `public-document-operation.v1.schema.json` | 浏览器安全的 PDF operation 查询、分页与 CAS action | `frontend/packages/api`、Reader/网页宿主 | `backend/api/src/services/public_document_operations.rs` |
 | `runtime-config.v1.schema.json` | AI runtime 配置更新与受鉴权的本机可见 Key 视图 | `backend/api` 透明代理、设置客户端 | `backend/ai/retainpdf_ai/runtime_config_api.py` |
 | `translation-revisions.v1.schema.json` | 单块译文修订写回 `PATCH /api/v1/jobs/:job_id/translation/items/:item_id`、修订历史 `GET .../revisions`、`translated/revisions.v1.jsonl` 行格式与 409/422 结构化错误 | 前端阅读页编辑、终端 agent | `backend/api/src/api_tests/translation_debug/revisions.rs`、`backend/pipeline/retainpdf_pipeline/translate/workflow/revision.py` |
+| `refine-report.v1.schema.json` | 译后精修报告 `artifacts/refine_report.v1.json` 与 `GET /api/v1/jobs/:job_id/translation/refine-report`（挑错发现、定点修改的采纳/拒绝及原因、token 用量、精修前后 QA 对比） | 终端 agent（`retainpdf-agent translation issues`） | `backend/pipeline/retainpdf_pipeline/translate/workflow/refine.py` |
 | `reader-data.v1.schema.json` | Reader 宿主读模型：产物、Markdown、区域、页面元数据、实时译文布局/快照/SSE | Reader host adapter、后续 `@retainpdf/reader` ports | `backend/api` Reader 查询视图 |
 
 `contracts/*.schema.json` 是 monorepo 上游真值；

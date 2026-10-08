@@ -19,6 +19,7 @@ CONTRACT_NAMES = (
     "library-books.v1.schema.json",
     "pipeline-stdout.v1.schema.json",
     "public-document-operation.v1.schema.json",
+    "refine-report.v1.schema.json",
     "reader-data.v1.schema.json",
     "runtime-config.v1.schema.json",
     "translation-revisions.v1.schema.json",
