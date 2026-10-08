@@ -311,6 +311,112 @@ def test_checkpoint_with_no_translation_change_has_no_page_commit(
     assert records[-1]["payload"]["committed_pages"] == []
 
 
+def _checkpoint_events(capsys) -> list[dict]:
+    return [
+        json.loads(line)["payload"]
+        for line in capsys.readouterr().out.splitlines()
+        if line.startswith("{")
+    ]
+
+
+def test_diagnostics_only_rewrite_of_published_page_is_committed(
+    tmp_path: Path, capsys
+) -> None:
+    # agent repair 跳过块时只写 translation_diagnostics 再整本重存，块指纹不变。
+    # 页字节变了却不上报，数据库就停在旧 page_hash，旧快照又被 prune 掉了。
+    source_json = tmp_path / "document.v1.json"
+    source_json.write_text("{}", encoding="utf-8")
+    output_dir = tmp_path / "job-diagnostics-only" / "translated"
+    page = output_dir / "page-001-deepseek.json"
+    payload = [_item("p001-b0003", "已完成")]
+
+    with TranslationCheckpointSession.acquire(
+        _request(source_json, output_dir), _plan()
+    ) as checkpoint:
+        save_translations(page, payload)
+        checkpoint.update("translating", {0: payload}, {0: page}, {0: {"p001-b0003"}})
+        payload[0]["translation_diagnostics"] = {"agent_repair_skipped": True}
+        save_translations(page, payload)
+        rewritten_hash = hashlib.sha256(page.read_bytes()).hexdigest()
+        checkpoint.update("repairing", {0: payload}, {0: page}, detect_item_changes=True)
+        checkpoint.update("validating", {0: payload}, {0: page}, detect_item_changes=True)
+
+    events = _checkpoint_events(capsys)
+    assert events[-2]["committed_pages"] == [
+        {
+            "unit_key": "page:0",
+            "unit_order": 0,
+            "page_index": 0,
+            "page_hash": rewritten_hash,
+            "changed_item_ids": [],
+        }
+    ]
+    # 报过一次就记下来，下一次字节没变就不再重复报。
+    assert events[-1]["committed_pages"] == []
+    saved = json.loads(
+        (output_dir / TRANSLATION_CHECKPOINT_FILE_NAME).read_text(encoding="utf-8")
+    )
+    assert saved["pages"][0]["published_page_hash"] == rewritten_hash
+
+
+def test_unpublished_page_rewrite_is_not_committed(tmp_path: Path, capsys) -> None:
+    # 译前阶段（preparing/policy_ready）也会整本重存，但这些页还没进数据库，不该提前报。
+    source_json = tmp_path / "document.v1.json"
+    source_json.write_text("{}", encoding="utf-8")
+    output_dir = tmp_path / "job-unpublished" / "translated"
+    page = output_dir / "page-001-deepseek.json"
+    payload = [_item("p001-b0003")]
+
+    with TranslationCheckpointSession.acquire(
+        _request(source_json, output_dir), _plan()
+    ) as checkpoint:
+        save_translations(page, payload)
+        checkpoint.update("preparing", {0: payload}, {0: page})
+        payload[0]["continuation_group"] = "g1"
+        save_translations(page, payload)
+        checkpoint.update("preparing", {0: payload}, {0: page})
+
+    events = _checkpoint_events(capsys)
+    assert all(event["committed_pages"] == [] for event in events)
+    saved = json.loads(
+        (output_dir / TRANSLATION_CHECKPOINT_FILE_NAME).read_text(encoding="utf-8")
+    )
+    assert saved["pages"][0]["published_page_hash"] is None
+
+
+def test_legacy_checkpoint_without_published_hash_reports_byte_changes(
+    tmp_path: Path, capsys
+) -> None:
+    source_json = tmp_path / "document.v1.json"
+    source_json.write_text("{}", encoding="utf-8")
+    output_dir = tmp_path / "job-legacy-published" / "translated"
+    page = output_dir / "page-001-deepseek.json"
+    payload = [_item("p001-b0003", "已完成")]
+    with TranslationCheckpointSession.acquire(
+        _request(source_json, output_dir), _plan()
+    ) as checkpoint:
+        save_translations(page, payload)
+        checkpoint.update("translating", {0: payload}, {0: page}, {0: {"p001-b0003"}})
+
+    checkpoint_path = output_dir / TRANSLATION_CHECKPOINT_FILE_NAME
+    legacy = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+    for page_record in legacy["pages"]:
+        page_record.pop("published_page_hash", None)
+    checkpoint_path.write_text(json.dumps(legacy), encoding="utf-8")
+
+    capsys.readouterr()
+    with TranslationCheckpointSession.acquire(
+        _request(source_json, output_dir), _plan()
+    ) as checkpoint:
+        payload[0]["translation_diagnostics"] = {"agent_repair_skipped": True}
+        save_translations(page, payload)
+        checkpoint.update("repairing", {0: payload}, {0: page}, detect_item_changes=True)
+
+    events = _checkpoint_events(capsys)
+    assert [page["page_index"] for page in events[-1]["committed_pages"]] == [0]
+    assert events[-1]["committed_pages"][0]["changed_item_ids"] == []
+
+
 def test_saved_checkpoint_is_replayed_after_stdout_failure(
     tmp_path: Path, capsys, monkeypatch
 ) -> None:

@@ -20,6 +20,8 @@ from retainpdf_pipeline.translate.artifacts import (
 TRANSLATION_CHECKPOINT_FILE_NAME = "translation-checkpoint.v1.json"
 TRANSLATION_CHECKPOINT_SCHEMA = "translation_checkpoint_v1"
 TRANSLATION_CHECKPOINT_SCHEMA_VERSION = 1
+# 每页最后一次报给 Rust（pipeline_units）的 page_hash；没报过为 None。
+PUBLISHED_PAGE_HASH_KEY = "published_page_hash"
 CHECKPOINT_PHASES = (
     "preparing",
     "policy_ready",
@@ -321,19 +323,60 @@ def changed_item_ids_by_page(
     return changed
 
 
+def published_page_hashes(previous_pages: list[dict[str, Any]]) -> dict[int, str]:
+    """上一次 checkpoint 里，每页最后一次报给 Rust 的 page_hash。
+
+    没报过的页值为 None，不进结果。旧 checkpoint 没有 published_page_hash 字段，
+    退回用 page_hash 近似：宁可多报一次，也别让数据库停在旧哈希上。
+    """
+    published: dict[int, str] = {}
+    for page in previous_pages:
+        if not isinstance(page, dict) or "page_index" not in page:
+            continue
+        if PUBLISHED_PAGE_HASH_KEY in page:
+            value = str(page.get(PUBLISHED_PAGE_HASH_KEY) or "")
+        else:
+            value = str(page.get("page_hash", "") or "")
+        if value:
+            published[int(page["page_index"])] = value
+    return published
+
+
+def stale_published_pages(
+    pages: list[dict[str, Any]],
+    published: dict[int, str],
+) -> set[int]:
+    """报过、但页文件字节已经变了的页。
+
+    译后阶段（agent repair、最终收口）会整本重存页文件，只多写了诊断字段，块指纹
+    不变。只按指纹上报的话，这些页在数据库里永远停在旧 page_hash，而旧快照又已被
+    prune，实时阅读就拿不到这一页了。
+    """
+    return {
+        int(page["page_index"])
+        for page in pages
+        if isinstance(page, dict)
+        and int(page["page_index"]) in published
+        and published[int(page["page_index"])] != str(page.get("page_hash", "") or "")
+    }
+
+
 def committed_pages_for_changes(
     pages: list[dict[str, Any]],
     changed_by_page: dict[int, set[str]],
+    *,
+    stale_pages: set[int] | frozenset[int] = frozenset(),
 ) -> list[dict[str, Any]]:
+    """要提交给 Rust 的页。stale_pages 是只有字节变了的页，changed_item_ids 为空。"""
     page_by_index = {
         int(page["page_index"]): page
         for page in pages
         if isinstance(page, dict) and "page_index" in page
     }
     committed: list[dict[str, Any]] = []
-    for page_idx in sorted(changed_by_page):
-        changed_ids = sorted({str(value) for value in changed_by_page[page_idx] if str(value)})
-        if not changed_ids:
+    for page_idx in sorted(set(changed_by_page) | set(stale_pages)):
+        changed_ids = sorted({str(value) for value in changed_by_page.get(page_idx, ()) if str(value)})
+        if not changed_ids and page_idx not in stale_pages:
             continue
         page = page_by_index.get(int(page_idx))
         if page is None:
