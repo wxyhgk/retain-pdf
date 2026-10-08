@@ -14,7 +14,10 @@ from retainpdf_pipeline.render.workflow.document_analysis import document_analys
 from retainpdf_pipeline.render.workflow.document_analysis import document_analysis_prewarm_hit
 from retainpdf_pipeline.render.workflow.document_analysis import build_sync_workflow_document_analysis
 from retainpdf_pipeline.render.workflow.document_analysis import resolve_cached_workflow_document_analysis
+from retainpdf_pipeline.render.workflow.engine_dispatch import dispatch_with_render_engine
 from retainpdf_pipeline.render.workflow.modes import RENDER_MODE_HANDLERS
+from retainpdf_pipeline.render.workflow.modes import _compress_final_pdf_if_needed
+from retainpdf_pipeline.render.workflow.modes import _should_fast_save
 from retainpdf_pipeline.render.workflow.modes import run_selected_pages_overlay_render
 from retainpdf_pipeline.render.workflow.prewarm_cache import build_full_sync_payload_prewarm
 from retainpdf_pipeline.render.workflow.prewarm_cache import build_sync_payload_prewarm
@@ -103,6 +106,7 @@ def execute_render_plan(
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
     source_cleanup_strategy: str | None = None,
     render_prewarm_manifest_path: Path | None = None,
+    render_engine: str = "typst",
 ) -> int:
     start = max(0, start_page)
     stop = max(render_plan.selected_pages) if end_page < 0 else end_page
@@ -356,6 +360,8 @@ def execute_render_plan(
         ),
         no_cache=no_cache,
         visual_cover_page_indices=cover_fallback_plan.page_indices,
+        render_engine=render_engine,
+        document_path=_document_path_for_render(render_plan.render_inputs.translations_dir),
     )
     prepare_progress.finish()
     render_diagnostics: dict[str, object] = {}
@@ -406,6 +412,32 @@ def _dispatch_render_mode(
     context: RenderExecutionContext,
     extract_selected_pages: bool,
 ) -> tuple[int, dict[str, object]]:
+    return dispatch_with_render_engine(
+        mode=mode,
+        source_pdf_path=source_pdf_path,
+        translated_pages=translated_pages,
+        context=context,
+        extract_selected_pages=extract_selected_pages,
+        typst_dispatch=lambda: _dispatch_typst_render_mode(
+            mode=mode,
+            source_pdf_path=source_pdf_path,
+            translated_pages=translated_pages,
+            context=context,
+            extract_selected_pages=extract_selected_pages,
+        ),
+        compress_final=lambda ctx, label: _compress_final_pdf_if_needed(ctx, mode=label),
+        fast_save=_should_fast_save(context),
+    )
+
+
+def _dispatch_typst_render_mode(
+    *,
+    mode: str,
+    source_pdf_path: Path,
+    translated_pages: dict[int, list[dict]],
+    context: RenderExecutionContext,
+    extract_selected_pages: bool,
+) -> tuple[int, dict[str, object]]:
     if extract_selected_pages:
         return run_selected_pages_overlay_render(
             source_pdf_path=source_pdf_path,
@@ -425,7 +457,9 @@ def _dispatch_render_mode(
     )
 
 
+def _document_path_for_render(translations_dir: Path) -> Path:
+    return Path(translations_dir).parent / "ocr" / "normalized" / "document.v1.json"
+
+
 def _protected_pages_for_render(translations_dir: Path) -> dict[int, list[dict]]:
-    return protected_pages_from_document_path(
-        Path(translations_dir).parent / "ocr" / "normalized" / "document.v1.json"
-    )
+    return protected_pages_from_document_path(_document_path_for_render(translations_dir))

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 from pathlib import Path
@@ -728,30 +729,39 @@ def build_dual_book_pdf(
         source_doc.close()
 
 
-def build_book_typst_background_pdf(
+@dataclass
+class BackgroundRenderPreparation:
+    """typst / typst_visual 整本渲染在「编译」之前的全部产物。
+
+    Typst 路线和 rpr 引擎路线共用这一段：同一份 page_specs、同一张清理后的底图，两条路线
+    的对比才公平。
+    """
+
+    translated_pages: dict[int, list[dict]]
+    page_specs: list[RenderPageSpec]
+    page_map: RenderPageMap
+    cleaned_background_pdf: Path
+    work_dir: Path
+    color_sample_pdf_path: Path
+
+
+def prepare_background_render_pages(
     source_pdf_path: Path,
     output_pdf_path: Path,
     translated_pages: dict[int, list[dict]],
-    api_key: str = "",
-    model: str = "",
-    base_url: str = "",
-    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
-    font_paths: list[Path] | None = None,
+    *,
+    diagnostics: dict[str, object],
     temp_root: Path | None = None,
     redaction_strategy: str | None = None,
     indent_detection_pdf_path: Path | None = None,
     first_line_indent_lookup: dict[str, float] | None = None,
     effective_inner_bbox_lookup: dict[str, list[float]] | None = None,
-    compile_workers: int | None = None,
     source_text_precleaned_page_indices: frozenset[int] = frozenset(),
     prebuilt_page_specs: list[RenderPageSpec] | None = None,
     precomputed_colors_by_item_id: dict[str, dict[str, tuple[float, float, float]]] | None = None,
     visual_profile_path: Path | None = None,
-    fast_save: bool = False,
-    request_chat_content_fn: TypstRepairRequestFn | None = None,
-) -> dict[str, object]:
-    diagnostics: dict[str, object] = {"mode": "typst"}
-    total_started = time.perf_counter()
+    build_cleaned_background: bool = True,
+) -> BackgroundRenderPreparation:
     work_dir = prepare_background_work_dir(output_pdf_path, temp_root)
     color_sample_pdf_path = indent_detection_pdf_path or source_pdf_path
     if prebuilt_page_specs:
@@ -791,6 +801,16 @@ def build_book_typst_background_pdf(
         diagnostics["background_page_specs_elapsed_seconds"] = time.perf_counter() - specs_started
         diagnostics["background_page_specs_prewarm_hit"] = False
     page_map = RenderPageMap.from_page_specs(page_specs)
+    if not build_cleaned_background:
+        # rpr 引擎的 overlay 路线：底图就是去文字层的 source，不做整页清理。
+        return BackgroundRenderPreparation(
+            translated_pages=translated_pages,
+            page_specs=page_specs,
+            page_map=page_map,
+            cleaned_background_pdf=source_pdf_path,
+            work_dir=work_dir,
+            color_sample_pdf_path=color_sample_pdf_path,
+        )
     visual_profile_runtime = load_visual_profile_runtime(visual_profile_path)
     diagnostics["background_visual_profile"] = visual_profile_runtime.diagnostics
     cleanup_started = time.perf_counter()
@@ -827,6 +847,61 @@ def build_book_typst_background_pdf(
         except Exception as exc:
             diagnostics["background_source_cleanup_cache_store_error"] = f"{type(exc).__name__}: {exc}"
     diagnostics["background_source_cleanup_elapsed_seconds"] = time.perf_counter() - cleanup_started
+    return BackgroundRenderPreparation(
+        translated_pages=translated_pages,
+        page_specs=page_specs,
+        page_map=page_map,
+        cleaned_background_pdf=cleaned_background_pdf,
+        work_dir=work_dir,
+        color_sample_pdf_path=color_sample_pdf_path,
+    )
+
+
+def build_book_typst_background_pdf(
+    source_pdf_path: Path,
+    output_pdf_path: Path,
+    translated_pages: dict[int, list[dict]],
+    api_key: str = "",
+    model: str = "",
+    base_url: str = "",
+    font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
+    font_paths: list[Path] | None = None,
+    temp_root: Path | None = None,
+    redaction_strategy: str | None = None,
+    indent_detection_pdf_path: Path | None = None,
+    first_line_indent_lookup: dict[str, float] | None = None,
+    effective_inner_bbox_lookup: dict[str, list[float]] | None = None,
+    compile_workers: int | None = None,
+    source_text_precleaned_page_indices: frozenset[int] = frozenset(),
+    prebuilt_page_specs: list[RenderPageSpec] | None = None,
+    precomputed_colors_by_item_id: dict[str, dict[str, tuple[float, float, float]]] | None = None,
+    visual_profile_path: Path | None = None,
+    fast_save: bool = False,
+    request_chat_content_fn: TypstRepairRequestFn | None = None,
+) -> dict[str, object]:
+    diagnostics: dict[str, object] = {"mode": "typst"}
+    total_started = time.perf_counter()
+    prepared = prepare_background_render_pages(
+        source_pdf_path,
+        output_pdf_path,
+        translated_pages,
+        diagnostics=diagnostics,
+        temp_root=temp_root,
+        redaction_strategy=redaction_strategy,
+        indent_detection_pdf_path=indent_detection_pdf_path,
+        first_line_indent_lookup=first_line_indent_lookup,
+        effective_inner_bbox_lookup=effective_inner_bbox_lookup,
+        source_text_precleaned_page_indices=source_text_precleaned_page_indices,
+        prebuilt_page_specs=prebuilt_page_specs,
+        precomputed_colors_by_item_id=precomputed_colors_by_item_id,
+        visual_profile_path=visual_profile_path,
+    )
+    translated_pages = prepared.translated_pages
+    page_specs = prepared.page_specs
+    page_map = prepared.page_map
+    cleaned_background_pdf = prepared.cleaned_background_pdf
+    work_dir = prepared.work_dir
+    color_sample_pdf_path = prepared.color_sample_pdf_path
     background_pdf, compile_diagnostics = _compile_render_pages_pdf_resilient(
         source_pdf_path=source_pdf_path,
         color_sample_pdf_path=color_sample_pdf_path,

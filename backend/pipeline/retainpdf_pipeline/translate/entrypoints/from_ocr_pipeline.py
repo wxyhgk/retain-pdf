@@ -84,6 +84,7 @@ def _args_from_spec(spec: BookStageSpec) -> SimpleNamespace:
         inner_bbox_dense_shrink_y=spec.render.inner_bbox_dense_shrink_y,
         font_unify_mode=spec.render.font_unify_mode,
         source_cleanup_strategy=spec.render.source_cleanup_strategy,
+        render_engine=spec.render.engine,
     )
 
 
@@ -170,6 +171,7 @@ def main() -> None:
             typst_font_family=args.typst_font_family,
             pdf_compress_dpi=args.pdf_compress_dpi,
             source_cleanup_strategy=args.source_cleanup_strategy,
+            render_engine=getattr(args, "render_engine", "typst"),
             invocation=build_stage_invocation_metadata(
                 stage="book",
                 stage_spec_schema_version=stage_spec_schema_version,

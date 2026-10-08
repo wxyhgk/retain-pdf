@@ -35,3 +35,7 @@ class RenderExecutionContext:
     overlay_source_path: Path | None = None
     no_cache: bool = False
     visual_cover_page_indices: frozenset[int] = frozenset()
+    # render.engine：typst（现有路线）| rpr（自研排版引擎，失败自动回退 typst）
+    render_engine: str = "typst"
+    # OCR 规范化文档（obstacles 的来源）；只有 rpr 路线读它
+    document_path: Path | None = None

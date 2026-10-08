@@ -58,6 +58,7 @@ def run_book_pipeline(
     typst_font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
     source_cleanup_strategy: str = "pikepdf_text_strip",
+    render_engine: str = "typst",
     invocation: dict | None = None,
     render_visual_prewarm_handle: RenderPrewarmHandle | None = None,
     preparation: str = "off",
@@ -187,6 +188,7 @@ def run_book_pipeline(
         source_cleanup_strategy=source_cleanup_strategy,
         render_prewarm_manifest_path=render_prewarm_manifest_path,
         artifacts_dir=output_dir.parent / ARTIFACTS_DIR_NAME,
+        render_engine=render_engine,
     )
     # 翻译阶段生成 QA 时还没排版；渲染完带上 fit 报告再算一次。失败只记日志。
     refresh_translation_qa_after_render(output_dir.parent, translations_dir=output_dir)
@@ -205,6 +207,7 @@ def run_book_pipeline(
         "render_preprocess_elapsed": render_preprocess_elapsed,
         "render_diagnostics": render_summary.get("render_diagnostics", {}),
         "fit_report": render_summary.get("fit_report", {}),
+        "render_engine": render_summary.get("render_engine", {}),
         "total_elapsed": total_elapsed,
         "effective_render_mode": render_summary["effective_render_mode"],
         "translation_diagnostics_path": str(diagnostics_path) if diagnostics_summary else "",

@@ -53,3 +53,26 @@ def extract_pages_with_pikepdf(
             recompress_flate=False,
         )
     return output_pdf_path
+
+
+def extract_page_indices_with_pikepdf(
+    *,
+    source_pdf_path: Path,
+    output_pdf_path: Path,
+    page_indices: list[int],
+) -> Path:
+    """按给定顺序抽页（可不连续），越界的页跳过。"""
+    output_pdf_path.parent.mkdir(parents=True, exist_ok=True)
+    with pikepdf.Pdf.open(source_pdf_path) as source_pdf:
+        output_pdf = pikepdf.Pdf.new()
+        total = len(source_pdf.pages)
+        for page_index in page_indices:
+            if 0 <= int(page_index) < total:
+                output_pdf.pages.append(source_pdf.pages[int(page_index)])
+        output_pdf.save(
+            output_pdf_path,
+            object_stream_mode=pikepdf.ObjectStreamMode.generate,
+            compress_streams=True,
+            recompress_flate=False,
+        )
+    return output_pdf_path

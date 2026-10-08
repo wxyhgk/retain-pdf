@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import contextlib
 import contextvars
+import json
 import math
 import re
 import time
@@ -57,6 +58,8 @@ class FitReportTarget:
     status: str = ""
     summary: dict = field(default_factory=dict)
     elapsed_seconds: float = 0.0
+    # 渲染路线附加说明（例如 rpr 引擎回退到 Typst 的原因），写进报告的 reason
+    reason_note: str = ""
 
 
 _FIT_REPORT_TARGET: contextvars.ContextVar[FitReportTarget | None] = contextvars.ContextVar(
@@ -299,6 +302,8 @@ def empty_fit_report_payload(*, status: str, reason: str, render_path: str = "")
 
 
 def _write_report(target: FitReportTarget, payload: dict, *, elapsed: float) -> dict:
+    if target.reason_note:
+        payload = {**payload, "reason": _join_reason(payload.get("reason", ""), target.reason_note)}
     save_json_atomic(target.path, payload)
     target.recorded = True
     target.status = str(payload.get("status") or "")
@@ -469,6 +474,39 @@ def _record_failure(reason: str, *, render_path: str) -> dict:
         return {}
 
 
+def _join_reason(reason: str, note: str) -> str:
+    parts = [part for part in (str(reason or "").strip(), str(note or "").strip()) if part]
+    return "; ".join(parts)
+
+
+def record_fit_report_payload(payload: dict, *, elapsed: float = 0.0) -> dict:
+    """外部量好的报告（rpr 引擎）直接写进当前作用域。没有作用域时什么都不做。"""
+    target = active_fit_report_target()
+    if target is None:
+        return {}
+    try:
+        return _write_report(target, payload, elapsed=elapsed)
+    except Exception as exc:  # noqa: BLE001
+        print(f"fit report: write failed {type(exc).__name__}: {exc}", flush=True)
+        return {"fit_report_status": FIT_REPORT_STATUS_FAILED, "fit_report_error": f"{type(exc).__name__}: {exc}"}
+
+
+def note_fit_report_reason(note: str) -> None:
+    """给本次渲染的报告 reason 附一句说明。已写出的报告就地改；还没写的，之后写出时带上。"""
+    target = active_fit_report_target()
+    if target is None or not str(note or "").strip():
+        return
+    target.reason_note = _join_reason(target.reason_note, note)
+    if not target.recorded:
+        return
+    try:
+        payload = json.loads(target.path.read_text(encoding="utf-8"))
+        payload["reason"] = _join_reason(payload.get("reason", ""), note)
+        save_json_atomic(target.path, payload)
+    except Exception as exc:  # noqa: BLE001
+        print(f"fit report: annotate failed {type(exc).__name__}: {exc}", flush=True)
+
+
 def finalize_fit_report_target(target: FitReportTarget | None, *, reason: str) -> None:
     """作用域结束时还没写过报告（逐页降级、Word 等不走整本 Typst 的路径），写一份
     status=unavailable 的报告盖掉上一次渲染留下的旧报告，免得下游读到过期数据。"""
@@ -500,6 +538,8 @@ __all__ = [
     "empty_fit_report_payload",
     "finalize_fit_report_target",
     "fit_report_scope",
+    "note_fit_report_reason",
+    "record_fit_report_payload",
     "overlay_fit_probe_work_dir",
     "record_overlay_pages_fit_report",
     "record_render_pages_fit_report",

@@ -126,3 +126,49 @@ def test_render_stage_spec_empty_font_family_uses_default_font(tmp_path: Path) -
     assert spec.params.typst_font_family == fonts.TYPST_DEFAULT_FONT_FAMILY
 
 
+
+
+def _write_minimal_render_spec(tmp_path: Path, params_extra: dict) -> Path:
+    job_root = tmp_path / "20261008-render-engine"
+    ensure_job_dirs(resolve_job_dirs(job_root))
+    source_pdf = tmp_path / "source.pdf"
+    source_pdf.write_bytes(b"%PDF-1.4\n")
+    translations_dir = job_root / "translated"
+    translations_dir.mkdir(parents=True, exist_ok=True)
+    spec_path = job_root / "specs" / "render.spec.json"
+    spec_path.parent.mkdir(parents=True, exist_ok=True)
+    spec_path.write_text(
+        json.dumps(
+            {
+                "schema_version": RENDER_STAGE_SCHEMA_VERSION,
+                "stage": "render",
+                "job": {"job_id": "20261008-render-engine", "job_root": str(job_root), "workflow": "render"},
+                "inputs": {"source_pdf": str(source_pdf), "translations_dir": str(translations_dir)},
+                "params": {"start_page": 0, "end_page": -1, "render_mode": "auto", **params_extra},
+            }
+        ),
+        encoding="utf-8",
+    )
+    return spec_path
+
+
+def test_render_stage_spec_engine_defaults_to_typst(tmp_path: Path) -> None:
+    spec = RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {}))
+    assert spec.params.engine == "typst"
+
+
+def test_render_stage_spec_reads_rpr_engine_and_tolerates_case(tmp_path: Path) -> None:
+    spec = RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {"engine": " RPR"}))
+    assert spec.params.engine == "rpr"
+
+
+def test_render_stage_spec_unknown_engine_falls_back_to_typst(tmp_path: Path) -> None:
+    spec = RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {"engine": "latex"}))
+    assert spec.params.engine == "typst"
+
+
+def test_render_only_passes_engine_to_render_stage(tmp_path: Path) -> None:
+    from retainpdf_pipeline.render.workflow.render_only import _args_from_spec
+
+    spec = RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {"engine": "rpr"}))
+    assert _args_from_spec(spec).render_engine == "rpr"
