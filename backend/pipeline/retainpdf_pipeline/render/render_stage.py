@@ -11,6 +11,8 @@ from retainpdf_pipeline.services.pipeline_shared.events import emit_stage_progre
 from retainpdf_pipeline.services.pipeline_shared.events import emit_stage_transition
 from retainpdf_pipeline.services.pipeline_shared.events import reset_render_page_progress
 from retainpdf_pipeline.render.source.prewarm import prewarm_manifest_path_from_translations_dir
+from retainpdf_pipeline.render.workflow.fit_report import fit_report_result
+from retainpdf_pipeline.render.workflow.fit_report import render_fit_report_scope
 
 
 def render_no_cache_enabled() -> bool:
@@ -142,7 +144,9 @@ def run_render_stage(
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
     source_cleanup_strategy: str | None = None,
     render_prewarm_manifest_path: Path | None = None,
+    artifacts_dir: Path | None = None,
 ) -> dict:
+    """artifacts_dir 给了就在其中写排版 fit 报告（fit_report.v1.json）；报告只读不改排版。"""
     render_plan = build_render_plan(
         source_pdf_path=source_pdf_path,
         output_pdf_path=output_pdf_path,
@@ -172,21 +176,22 @@ def run_render_stage(
             render_plan.render_inputs.translations_dir
         )
     )
-    pages_rendered = execute_render_plan(
-        render_plan=render_plan,
-        output_pdf_path=output_pdf_path,
-        start_page=start_page,
-        end_page=end_page,
-        compile_workers=compile_workers,
-        extract_selected_pages=extract_selected_pages,
-        api_key=api_key,
-        model=model,
-        base_url=base_url,
-        typst_font_family=typst_font_family,
-        pdf_compress_dpi=pdf_compress_dpi,
-        source_cleanup_strategy=source_cleanup_strategy,
-        render_prewarm_manifest_path=prewarm_manifest_path,
-    )
+    with render_fit_report_scope(artifacts_dir) as fit_report_target:
+        pages_rendered = execute_render_plan(
+            render_plan=render_plan,
+            output_pdf_path=output_pdf_path,
+            start_page=start_page,
+            end_page=end_page,
+            compile_workers=compile_workers,
+            extract_selected_pages=extract_selected_pages,
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            typst_font_family=typst_font_family,
+            pdf_compress_dpi=pdf_compress_dpi,
+            source_cleanup_strategy=source_cleanup_strategy,
+            render_prewarm_manifest_path=prewarm_manifest_path,
+        )
     emit_stage_progress(
         stage="rendering",
         message="渲染页面完成",
@@ -200,4 +205,5 @@ def run_render_stage(
         "effective_render_mode": render_plan.effective_render_mode,
         "extract_selected_pages": extract_selected_pages,
         "render_diagnostics": dict(getattr(execute_render_plan, "last_render_diagnostics", {}) or {}),
+        "fit_report": fit_report_result(fit_report_target),
     }

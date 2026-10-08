@@ -177,6 +177,7 @@ def run_book_pipeline(
         pdf_compress_dpi=pdf_compress_dpi,
         source_cleanup_strategy=source_cleanup_strategy,
         render_prewarm_manifest_path=render_prewarm_manifest_path,
+        artifacts_dir=output_dir.parent / ARTIFACTS_DIR_NAME,
     )
     save_elapsed = time.perf_counter() - save_started
     total_elapsed = time.perf_counter() - total_started
@@ -192,6 +193,7 @@ def run_book_pipeline(
         "save_elapsed": save_elapsed,
         "render_preprocess_elapsed": render_preprocess_elapsed,
         "render_diagnostics": render_summary.get("render_diagnostics", {}),
+        "fit_report": render_summary.get("fit_report", {}),
         "total_elapsed": total_elapsed,
         "effective_render_mode": render_summary["effective_render_mode"],
         "translation_diagnostics_path": str(diagnostics_path) if diagnostics_summary else "",

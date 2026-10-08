@@ -32,6 +32,7 @@ from retainpdf_pipeline.render.layout.model.models import RenderPageSpec
 from retainpdf_pipeline.render.layout.page_specs import build_render_page_specs
 from retainpdf_pipeline.render.output.typst.compiler import compile_typst_render_pages_pdf
 from retainpdf_pipeline.render.output.typst.compiler import is_typst_runtime_failure
+from retainpdf_pipeline.render.output.typst.fit_report import record_render_pages_fit_report
 from retainpdf_pipeline.render.output.typst.color_adapt import apply_adaptive_overlay_colors
 from retainpdf_pipeline.render.output.typst.overlay_book import overlay_pages_via_page_fallback
 from retainpdf_pipeline.render.output.typst.overlay_ops import overlay_translated_items_on_page
@@ -357,6 +358,14 @@ def _compile_render_pages_pdf_resilient(
             message=f"整本 Typst 渲染编译完成，共 {len(page_specs)} 页",
             payload={"render_stage": "background_typst_compile_done"},
         )
+        diagnostics.update(
+            record_render_pages_fit_report(
+                page_specs,
+                work_dir=work_dir,
+                font_family=font_family,
+                font_paths=font_paths,
+            )
+        )
         return compiled_path, diagnostics
     except RuntimeError as exc:
         if is_typst_runtime_failure(exc):
@@ -509,6 +518,14 @@ def _compile_render_pages_pdf_resilient(
             total=5,
             message=f"修复后的整本 Typst 渲染编译完成，共 {len(sanitized_render_page_specs)} 页",
             payload={"render_stage": "background_typst_sanitized_compile_done"},
+        )
+        diagnostics.update(
+            record_render_pages_fit_report(
+                sanitized_render_page_specs,
+                work_dir=work_dir,
+                font_family=font_family,
+                font_paths=font_paths,
+            )
         )
         return compiled_path, diagnostics
 

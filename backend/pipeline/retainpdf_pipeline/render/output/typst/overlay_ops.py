@@ -12,6 +12,8 @@ from retainpdf_pipeline.render.document.pikepdf_overlay import overlay_pdf_chunk
 from retainpdf_pipeline.render.document.pikepdf_overlay import overlay_pdf_pages_with_pikepdf
 from retainpdf_pipeline.render.output.typst.compiler import TypstCompileError
 from retainpdf_pipeline.render.output.typst.compiler import is_typst_runtime_failure
+from retainpdf_pipeline.render.output.typst.fit_report import overlay_fit_probe_work_dir
+from retainpdf_pipeline.render.output.typst.fit_report import record_overlay_pages_fit_report
 from retainpdf_pipeline.render.output.typst.book_support import prepare_translated_pages_for_render
 from retainpdf_pipeline.render.output.typst.overlay_book import build_overlay_page_specs
 from retainpdf_pipeline.render.output.typst.overlay_book import overlay_pages_via_page_fallback
@@ -242,6 +244,12 @@ def overlay_translated_pages_on_doc(
                     "chunk_page_count": chunk_result.chunk_page_count,
                 },
             )
+            record_overlay_pages_fit_report(
+                page_specs,
+                work_dir=overlay_fit_probe_work_dir(temp_root),
+                font_family=font_family,
+                font_paths=font_paths,
+            )
             merge_started = time.perf_counter()
             pike_result = overlay_pdf_chunks_with_pikepdf(
                 source_pdf_path=source_base_pdf_path,
@@ -296,6 +304,12 @@ def overlay_translated_pages_on_doc(
             total=4,
             message=f"整本 Typst overlay 编译完成，共 {len(ordered_page_indices)} 页",
             payload={"render_stage": "typst_book_compile_done"},
+        )
+        record_overlay_pages_fit_report(
+            page_specs,
+            work_dir=overlay_fit_probe_work_dir(temp_root),
+            font_family=font_family,
+            font_paths=font_paths,
         )
         page_size_mismatches = overlay_pdf_size_mismatches(doc, ordered_page_indices, overlay_pdf)
         if page_size_mismatches:
@@ -475,6 +489,12 @@ def overlay_translated_pages_on_doc(
                 total=4,
                 message=f"修复后的整本 Typst overlay 编译完成，共 {len(ordered_page_indices)} 页",
                 payload={"render_stage": "typst_sanitized_book_compile_done"},
+            )
+            record_overlay_pages_fit_report(
+                sanitized_page_specs,
+                work_dir=overlay_fit_probe_work_dir(temp_root),
+                font_family=font_family,
+                font_paths=font_paths,
             )
             if (
                 source_base_pdf_path is not None
