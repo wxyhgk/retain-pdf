@@ -84,6 +84,7 @@ pub fn build_jobs_facade_from_state(state: &AppState) -> JobsFacade<'_> {
         &state.config.project_root,
         &state.config.scripts_dir,
         &state.config.python_bin,
+        &state.config.pipeline_command,
         &state.config.data_root,
     );
     build_jobs_facade(

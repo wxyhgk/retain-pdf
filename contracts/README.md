@@ -18,6 +18,7 @@
 | `pipeline-stdout.v1.schema.json` | Python stdout 协议 | `backend/packages/retain-jobs/src/job_runner/stdout_parser/contract_lock.rs` | `backend/pipeline` worker 与对应 contract test |
 | `public-document-operation.v1.schema.json` | 浏览器安全的 PDF operation 查询、分页与 CAS action | `frontend/packages/api`、Reader/网页宿主 | `backend/api/src/services/public_document_operations.rs` |
 | `runtime-config.v1.schema.json` | AI runtime 配置更新与受鉴权的本机可见 Key 视图 | `backend/api` 透明代理、设置客户端 | `backend/ai/retainpdf_ai/runtime_config_api.py` |
+| `translation-revisions.v1.schema.json` | 单块译文修订写回 `PATCH /api/v1/jobs/:job_id/translation/items/:item_id`、修订历史 `GET .../revisions`、`translated/revisions.v1.jsonl` 行格式与 409/422 结构化错误 | 前端阅读页编辑、终端 agent | `backend/api/src/api_tests/translation_debug/revisions.rs`、`backend/pipeline/retainpdf_pipeline/translate/workflow/revision.py` |
 | `reader-data.v1.schema.json` | Reader 宿主读模型：产物、Markdown、区域、页面元数据、实时译文布局/快照/SSE | Reader host adapter、后续 `@retainpdf/reader` ports | `backend/api` Reader 查询视图 |
 
 `contracts/*.schema.json` 是 monorepo 上游真值；
@@ -29,7 +30,7 @@
 
 ## npm 包
 
-本目录发布为 `@retainpdf/contracts`。Wire DTO 从 `@retainpdf/contracts/job-status`、`@retainpdf/contracts/job-events`、`@retainpdf/contracts/library-books` 与 `@retainpdf/contracts/reader-data` 导出；原始 schema 以文件名子路径显式导出。包没有根 DTO 入口、wildcard export 或 runtime dependency。
+本目录发布为 `@retainpdf/contracts`。Wire DTO 从 `@retainpdf/contracts/job-status`、`@retainpdf/contracts/job-events`、`@retainpdf/contracts/library-books`、`@retainpdf/contracts/reader-data` 与 `@retainpdf/contracts/translation-revisions` 导出；原始 schema 以文件名子路径显式导出。包没有根 DTO 入口、wildcard export 或 runtime dependency。
 
 `@retainpdf/contracts/create-job-fields` 是唯一导出**运行期值**的子路径：`CREATE_JOB_TOP_LEVEL_FIELDS` 与 `CREATE_JOB_SECTION_FIELDS` 是 `create-job.v1.schema.json` 里各 definition 的 `properties` 键。TS 类型在运行期不存在，而 `frontend/web` 的 mock 要模拟后端的 `deny_unknown_fields`（多一个键 => 400），需要的正是一份运行期能读的白名单——以前那份是手抄在 mock 里的第二真相源。生成器只为 `additionalProperties: false` 的 definition 发这张表：定义本身允许额外字段却发一张封闭清单，就是对下游撒谎。
 
@@ -44,4 +45,4 @@ npm --prefix contracts test
 npm --prefix contracts run build
 ```
 
-`src/job-status.ts`、`src/job-events.ts`、`src/library-books.ts` 与 `src/reader-data.ts` 由固定版本的 `json-schema-to-typescript` 生成并入库，禁止手改。`src/create-job.ts` 与 `src/create-job-fields.ts` 同理。`generate:check` 阻止生成漂移；测试还会锁定 `job-status` 与 `library-books` 重复 Job definitions 的结构一致性。`frontend/packages/domain` 保留的是归一化模型，不应替代 wire DTO。
+`src/job-status.ts`、`src/job-events.ts`、`src/library-books.ts`、`src/reader-data.ts` 与 `src/translation-revisions.ts` 由固定版本的 `json-schema-to-typescript` 生成并入库，禁止手改。`src/create-job.ts` 与 `src/create-job-fields.ts` 同理。`generate:check` 阻止生成漂移；测试还会锁定 `job-status` 与 `library-books` 重复 Job definitions 的结构一致性。`frontend/packages/domain` 保留的是归一化模型，不应替代 wire DTO。

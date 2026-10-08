@@ -184,3 +184,44 @@ Response:
 ```
 
 These endpoints are intended for local debugging and automated regression fixtures. They are not yet optimized for bulk export or high-throughput replay.
+
+## Revise Translation Item (write-back)
+
+`PATCH /api/v1/jobs/{job_id}/translation/items/{item_id}`
+
+Contract: `contracts/translation-revisions.v1.schema.json`.
+
+Request:
+
+```json
+{
+  "translated_text": "谐振子是描述分子振动的模型体系。",
+  "source": "user",
+  "reason": "措辞",
+  "expected_generation": 48,
+  "rerender": false
+}
+```
+
+- `source` is one of `user` / `agent` / `refine`; `reason`, `expected_generation`, `rerender` are optional.
+- `translated_text` uses the same form as the item's `protected_translated_text` (in `direct_typst` mode: display text with inline math as `$...$`).
+
+Behavior:
+
+- Rust rejects the request with `409 job_running` while the job is queued or running, then runs `retainpdf-pipeline translation-revise`.
+- Python takes the translation checkpoint lock, requires a committed checkpoint whose page hashes match the page files, and validates the revised text with the same `review_translation_item` used during translation. Only error-severity issues block.
+- On success it atomically rewrites the affected page payload(s) (a continuation-group member rebuilds the whole unit, possibly on another page), advances `translation-checkpoint.v1.json` (`page_hash`, `generation + 1`, new generation snapshot) and appends one line to `translated/revisions.v1.jsonl`. Any failure restores the original bytes.
+- Identical text returns `changed: false` without writing anything.
+- `rerender: true` submits the same in-place render as `POST retry-stage {"stage":"render","create_new_job":false}` after the write. When revising several blocks, set it only on the last request (or call retry-stage once). The render source-cleanup cache under `artifacts/render_prewarm` is kept; text-only edits still match it.
+
+Errors (`error.details.reason`):
+
+- `422 TRANSLATION_REVISION_REJECTED`: `validation_failed` (with `details.validation.issues`), `item_not_translatable` (policy keeps the block as original).
+- `409 TRANSLATION_REVISION_CONFLICT`: `job_running`, `checkpoint_locked`, `generation_mismatch` (with `current_generation`), `translation_not_committed`, `publication_inconsistent`, `group_members_missing`, `translations_owned_by_another_job`, `read_only_job`.
+- `422 UNPROCESSABLE_ENTITY`: request body does not match the schema (unknown field, bad `source`).
+
+## Translation Item Revision History
+
+`GET /api/v1/jobs/{job_id}/translation/items/{item_id}/revisions`
+
+Returns `{ job_id, item_id, revisions: [...], total }`, oldest first. Each entry is one `translation_revision_v1` record from `translated/revisions.v1.jsonl`. Unknown items return 404.

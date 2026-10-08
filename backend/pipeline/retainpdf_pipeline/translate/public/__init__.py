@@ -82,6 +82,12 @@ _EXPORTS = {
         "retainpdf_pipeline.translate.workflow.recovery",
         "prepare_relocated_translation_copy",
     ),
+    "RevisionOutcome": ("retainpdf_pipeline.translate.workflow.revision", "RevisionOutcome"),
+    "RevisionRequest": ("retainpdf_pipeline.translate.workflow.revision", "RevisionRequest"),
+    "revise_translation_item": (
+        "retainpdf_pipeline.translate.workflow.revision",
+        "revise_translation_item",
+    ),
 }
 
 __all__ = list(_EXPORTS)

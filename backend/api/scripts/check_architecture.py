@@ -354,7 +354,10 @@ def check_jobs_route_deps_dedup(errors: list[str]) -> None:
     )
     mixed_modules = {
         Path("src/routes/jobs/query/reader"): {"reader_ai_chat"},
-        Path("src/routes/jobs/translation_debug"): {"replay_translation_item_route"},
+        Path("src/routes/jobs/translation_debug"): {
+            "replay_translation_item_route",
+            "revise_translation_item_route",
+        },
     }
     full_capabilities = r"build_jobs_route_deps|build_jobs_facade_from_state|jobs_facade|JobsFacade|JobsRouteDeps"
     for path in scan_rs_files(SRC_ROOT / "routes"):

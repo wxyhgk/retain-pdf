@@ -23,6 +23,7 @@ const RAW_SCHEMA_EXPORTS = [
   "./public-document-operation.v1.schema.json",
   "./reader-data.v1.schema.json",
   "./runtime-config.v1.schema.json",
+  "./translation-revisions.v1.schema.json",
 ];
 
 test("package exposes only explicit DTO and raw schema subpaths", () => {
@@ -35,6 +36,7 @@ test("package exposes only explicit DTO and raw schema subpaths", () => {
       "./job-events",
       "./library-books",
       "./reader-data",
+      "./translation-revisions",
       ...RAW_SCHEMA_EXPORTS,
     ].sort(),
   );
