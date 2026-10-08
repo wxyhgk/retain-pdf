@@ -302,6 +302,7 @@ def engine_blocks_for_layout_block(
     *,
     engine_prefix: str,
     include_fill: bool,
+    box_mode: str = "box",
 ) -> tuple[str, list[dict]]:
     """一个译文块 → (分支名, 引擎块列表)。与 block_renderer.build_typst_block 的分支一一对应。"""
     item_id = item_id_for_block_id(block.block_id)
@@ -456,7 +457,9 @@ def engine_blocks_for_layout_block(
                 inset_top_pt=insets.top_pt,
                 inset_bottom_pt=insets.bottom_pt,
                 fit={
-                    "mode": "box",
+                    # box：typst / typst_visual 的 page-spec helper；box_overlay：overlay 路线的
+                    # helper（低于下限进应急档、行距二分回升）。两者参数相同，只是缩字规则不同。
+                    "mode": box_mode,
                     "min_font_size_pt": _round(fit["fit_min_font"], 3),
                     "max_font_size_pt": _round(fields.font_size, 3),
                     "min_leading_em": _round(fit["fit_min_leading"], 4),
@@ -477,12 +480,23 @@ def engine_blocks_for_layout_block(
     ]
 
 
+@dataclass
+class RprPage:
+    """overlay 路线的一页：与 RenderPageSpec 同名字段，块是已经算好的 RenderBlock。"""
+
+    page_index: int
+    page_width_pt: float
+    page_height_pt: float
+    blocks: list[RenderBlock]
+
+
 def build_rpr_input(
-    page_specs: list[RenderPageSpec],
+    page_specs: list[RenderPageSpec] | list[RprPage],
     *,
     font_family: str,
     include_fill: bool,
     obstacles_by_page: dict[int, list[dict]] | None = None,
+    box_mode: str = "box",
 ) -> RprBuiltInput:
     stats = RprInputStats()
     owners: dict[str, tuple[int, str]] = {}
@@ -492,14 +506,14 @@ def build_rpr_input(
     for page_offset, spec in enumerate(page_specs):
         engine_blocks: list[dict] = []
         for block_index, layout_block in enumerate(spec.blocks):
-            block = layout_block_to_render_block(layout_block)
+            block = layout_block if isinstance(layout_block, RenderBlock) else layout_block_to_render_block(layout_block)
             stats.layout_blocks += 1
             if block.skip_reason:
                 stats.skip_reason_blocks[block.skip_reason] = stats.skip_reason_blocks.get(block.skip_reason, 0) + 1
             # 与 Typst 源码里的 block_id 同一套命名，排查时两边对得上
             engine_prefix = f"rp{page_offset}_{block.block_id}_{block_index}"
             branch, produced = engine_blocks_for_layout_block(
-                block, engine_prefix=engine_prefix, include_fill=include_fill
+                block, engine_prefix=engine_prefix, include_fill=include_fill, box_mode=box_mode
             )
             if not any(entry["text"] for entry in produced):
                 # 没有可排的字：块照样送（Typst 路线也会画底色），分支记成 empty_text
@@ -544,6 +558,7 @@ __all__ = [
     "RPR_INPUT_SCHEMA",
     "RprBuiltInput",
     "RprInputStats",
+    "RprPage",
     "build_rpr_input",
     "engine_blocks_for_layout_block",
     "item_id_for_block_id",

@@ -85,6 +85,8 @@ def dispatch_with_render_engine(
                 prebuilt_page_specs=context.background_render_page_specs,
                 precomputed_colors_by_item_id=context.render_colors_by_item_id,
                 visual_profile_path=context.visual_profile_path,
+                prepared_overlay_pages=context.prepared_overlay_pages,
+                visual_cover_page_indices=context.visual_cover_page_indices,
                 fast_save=fast_save,
             )
             diagnostics["final_image_compressed"] = compress_final(context, f"rpr_{mode}")

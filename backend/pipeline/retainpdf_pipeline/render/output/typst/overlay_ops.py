@@ -14,16 +14,13 @@ from retainpdf_pipeline.render.output.typst.compiler import TypstCompileError
 from retainpdf_pipeline.render.output.typst.compiler import is_typst_runtime_failure
 from retainpdf_pipeline.render.output.typst.fit_report import overlay_fit_probe_work_dir
 from retainpdf_pipeline.render.output.typst.fit_report import record_overlay_pages_fit_report
-from retainpdf_pipeline.render.output.typst.book_support import prepare_translated_pages_for_render
-from retainpdf_pipeline.render.output.typst.overlay_book import build_overlay_page_specs
 from retainpdf_pipeline.render.output.typst.overlay_book import overlay_pages_via_page_fallback
-from retainpdf_pipeline.render.output.typst.overlay_book import prepare_overlay_doc_pages
 from retainpdf_pipeline.render.output.typst.overlay_book import sanitize_overlay_page_specs
 from retainpdf_pipeline.render.output.typst.overlay_chunk_compile import compile_book_overlay_pdf_chunks
 from retainpdf_pipeline.render.output.typst.overlay_chunk_compile import should_use_chunked_overlay_compile
 from retainpdf_pipeline.render.output.typst.overlay_compile import compile_book_overlay_pdf
 from retainpdf_pipeline.render.output.typst.overlay_compile import compile_page_overlay_pdf
-from retainpdf_pipeline.render.output.typst.overlay_color import apply_overlay_page_colors
+from retainpdf_pipeline.render.output.typst.overlay_prepare import prepare_overlay_pages
 from retainpdf_pipeline.render.output.typst.overlay_diagnostics import new_overlay_merge_diagnostics
 from retainpdf_pipeline.render.output.typst.overlay_runtime import can_use_pikepdf_book_overlay
 from retainpdf_pipeline.render.output.typst.overlay_runtime import extract_failed_overlay_indices
@@ -31,7 +28,6 @@ from retainpdf_pipeline.render.output.typst.overlay_runtime import overlay_pdf_s
 from retainpdf_pipeline.render.output.typst.overlay_source_cache import resolve_prebuilt_overlay_source
 from retainpdf_pipeline.render.output.typst.source_page_overlay import apply_source_page_overlay
 from retainpdf_pipeline.render.output.typst.source_page_overlay import overlay_pages_from_single_pdf
-from retainpdf_pipeline.render.visual_profile import merge_visual_profile_colors
 from retainpdf_pipeline.services.pipeline_shared.events import emit_render_compile_progress
 from retainpdf_pipeline.services.pipeline_shared.events import emit_render_page_progress
 
@@ -117,24 +113,24 @@ def overlay_translated_pages_on_doc(
     no_cache: bool = False,
     request_chat_content_fn: TypstRepairRequestFn | None = None,
 ) -> dict[str, object]:
-    prepare_started = time.perf_counter()
-    if prepared_overlay_pages is not None:
-        translated_pages = prepared_overlay_pages
-    else:
-        translated_pages = prepare_translated_pages_for_render(
-            source_pdf_path,
-            translated_pages,
-            first_line_indent_lookup=first_line_indent_lookup,
-            effective_inner_bbox_lookup=effective_inner_bbox_lookup,
-            skip_policy_page_indices=source_text_precleaned_page_indices,
-        )
-    ordered_page_indices, translated_pages = prepare_overlay_doc_pages(doc, translated_pages)
-    cover_fallback_page_indices = frozenset(
-        page_idx
-        for page_idx in ordered_page_indices
-        if page_idx in visual_cover_page_indices and translated_pages.get(page_idx)
+    prepared = prepare_overlay_pages(
+        doc,
+        translated_pages,
+        stem=stem,
+        source_pdf_path=source_pdf_path,
+        first_line_indent_lookup=first_line_indent_lookup,
+        effective_inner_bbox_lookup=effective_inner_bbox_lookup,
+        source_text_precleaned_page_indices=source_text_precleaned_page_indices,
+        color_sample_pdf_path=color_sample_pdf_path,
+        prepared_overlay_pages=prepared_overlay_pages,
+        precomputed_colors_by_item_id=precomputed_colors_by_item_id,
+        visual_profile_path=visual_profile_path,
+        visual_cover_page_indices=visual_cover_page_indices,
     )
-    prepare_elapsed = time.perf_counter() - prepare_started
+    ordered_page_indices = prepared.ordered_page_indices
+    translated_pages = prepared.translated_pages
+    cover_fallback_page_indices = prepared.cover_fallback_page_indices
+    prepare_elapsed = prepared.prepare_elapsed
     if not ordered_page_indices:
         return {
             "compile_elapsed_seconds": 0.0,
@@ -153,37 +149,11 @@ def overlay_translated_pages_on_doc(
             "sanitize_page_diagnostics": [],
         }
 
-    active_colors_by_item_id, visual_profile_diagnostics = merge_visual_profile_colors(
-        visual_profile_path=visual_profile_path,
-        precomputed_colors_by_item_id=precomputed_colors_by_item_id,
-    )
-    color_started = time.perf_counter()
-    if prepared_overlay_pages is not None:
-        color_elapsed = 0.0
-    elif color_sample_pdf_path is not None:
-        sample_doc = fitz.open(color_sample_pdf_path)
-        try:
-            translated_pages = apply_overlay_page_colors(
-                sample_doc,
-                ordered_page_indices,
-                translated_pages,
-                precomputed_colors_by_item_id=active_colors_by_item_id,
-            )
-        finally:
-            sample_doc.close()
-    else:
-        translated_pages = apply_overlay_page_colors(
-            doc,
-            ordered_page_indices,
-            translated_pages,
-            precomputed_colors_by_item_id=active_colors_by_item_id,
-        )
-    if prepared_overlay_pages is None:
-        color_elapsed = time.perf_counter() - color_started
-    specs_started = time.perf_counter()
-    page_specs = build_overlay_page_specs(doc, ordered_page_indices, translated_pages, stem=stem)
+    visual_profile_diagnostics = prepared.visual_profile_diagnostics
+    color_elapsed = prepared.color_elapsed
+    page_specs = prepared.page_specs
     book_specs = [(page_width, page_height, items) for _, page_width, page_height, items, _ in page_specs]
-    specs_elapsed = time.perf_counter() - specs_started
+    specs_elapsed = prepared.specs_elapsed
     include_cover_rect_in_overlay = True
     use_typst_overlay_fill_only = include_cover_rect_in_overlay
     can_merge_whole_overlay_with_pikepdf = (

@@ -56,12 +56,25 @@ def _block(**overrides) -> RenderLayoutBlock:
     return RenderLayoutBlock(**values)
 
 
-def _engine_blocks(layout_block: RenderLayoutBlock, *, include_fill: bool = True):
+def _engine_blocks(layout_block: RenderLayoutBlock, *, include_fill: bool = True, box_mode: str = "box"):
     return engine_blocks_for_layout_block(
         layout_block_to_render_block(layout_block),
         engine_prefix="rp0_x_0",
         include_fill=include_fill,
+        box_mode=box_mode,
     )
+
+
+def test_fit_to_box_block_uses_the_routes_box_mode() -> None:
+    # typst / typst_visual 用 page-spec 的缩字规则（box），overlay 用 overlay 路线的（box_overlay）；
+    # 其余参数完全相同。
+    block = _block(fit_to_box=True, fit_min_font_size_pt=8.0, fit_min_leading_em=0.4)
+    branch_box, (page_spec,) = _engine_blocks(block)
+    branch_overlay, (overlay,) = _engine_blocks(block, box_mode="box_overlay")
+    assert branch_box == branch_overlay == "fit_box"
+    assert page_spec["fit"]["mode"] == "box"
+    assert overlay["fit"]["mode"] == "box_overlay"
+    assert {**overlay["fit"], "mode": "box"} == page_spec["fit"]
 
 
 # ---------------------------------------------------------------- 文本
@@ -647,6 +660,12 @@ def test_rpr_route_end_to_end_with_fake_engine(tmp_path: Path, monkeypatch, mode
     input_payload = json.loads(Path(diagnostics["rpr_work_dir"], "rpr-input.json").read_text(encoding="utf-8"))
     texts = [block["text"] for page in input_payload["pages"] for block in page["blocks"]]
     assert texts and all("$x^2$" in text for text in texts)
+    # overlay 用 overlay 路线自己的缩字规则（可进应急档），typst 系用 page-spec 的；
+    # 块都按译文条目命名（overlay 原本是 item-<序号>）。
+    engine_blocks = [block for page in input_payload["pages"] for block in page["blocks"]]
+    fit_modes = {block["fit"]["mode"] for block in engine_blocks}
+    assert ("box" if mode == "overlay" else "box_overlay") not in fit_modes, fit_modes
+    assert sorted(block["item_id"] for block in engine_blocks) == ["p001-b001", "p002-b001"]
     summary = render_engine_summary(requested="rpr", diagnostics=diagnostics)
     assert summary["effective"] == "rpr" and summary["version"] == FAKE_ENGINE_VERSION
 

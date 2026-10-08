@@ -53,6 +53,14 @@ const RETAIN = Object.freeze({
   SINGLE_LINE_LEADING_EM: 1,
   SINGLE_LINE_EMERGENCY_MIN_PT: 4.2,
   SINGLE_LINE_EMERGENCY_RATIO: 0.55,
+  // box_overlay (retain-pdf's overlay route, _render_block_markdown_fit_helper):
+  // below the minimum size an emergency range, and the leading is bisected
+  // back up as far as the chosen size still fits.
+  OVERLAY_EMERGENCY_MIN_PT: 4.2,
+  OVERLAY_EMERGENCY_RATIO: 0.65,
+  OVERLAY_EMERGENCY_LEADING_FLOOR_EM: 0.2,
+  OVERLAY_EMERGENCY_LEADING_RATIO: 0.75,
+  OVERLAY_LEADING_EPS_EM: 0.01,
   OVERFLOW_TOLERANCE_PT: 0.5
 });
 
@@ -147,7 +155,7 @@ function createRetainFitter(config = {}) {
     if (box.length !== 4 || box.some(value => !Number.isFinite(value))) throw new RangeError(`block ${block.id}: content_box must be [x0, y0, x1, y1]`);
     const fit = block.fit || {};
     const mode = fit.mode || "fixed";
-    if (!["box", "single_line", "fixed"].includes(mode)) throw new RangeError(`block ${block.id}: unknown fit.mode ${JSON.stringify(mode)}`);
+    if (!["box", "box_overlay", "single_line", "fixed"].includes(mode)) throw new RangeError(`block ${block.id}: unknown fit.mode ${JSON.stringify(mode)}`);
     const weight = block.font_weight === "bold" ? "bold" : "regular";
     const align = ["justify", "left", "center", "right"].includes(block.align) ? block.align : "left";
     return {
@@ -204,7 +212,7 @@ function createRetainFitter(config = {}) {
     let available;
     let regionWidth = b.width;
 
-    if (b.mode === "box") {
+    if (b.mode === "box" || b.mode === "box_overlay") {
       tier = "fit";
       // block_fit.py fit_dimensions()
       const minFont = Math.max(RETAIN.MIN_FIT_FONT_SIZE_PT, Math.min(orDefault(b.fit.min_font_size_pt, b.fontSize), b.fontSize));
@@ -214,14 +222,44 @@ function createRetainFitter(config = {}) {
       const allowed = Math.min(regionHeight, target);
       const heightAt = (size, leading) => measure(using, prepared, { fontSize: size, leadingEm: leading, width, align: b.align, linebreaks, indentPt, spacingEm }).height;
       min = minFont;
-      if (heightAt(b.fontSize, b.leadingEm) <= allowed) {
+      const fits = (size, leading) => heightAt(size, leading) <= allowed;
+      if (fits(b.fontSize, b.leadingEm)) {
         fontSize = b.fontSize;
         leadingEm = b.leadingEm;
       }
-      else {
-        fontSize = fitSize(minFont, b.fontSize, RETAIN.FIT_SIZE_EPS_PT, size => heightAt(size, minLeading) <= allowed);
+      else if (b.mode === "box") {
+        // _page_spec_markdown_fit_helper (typst / typst_visual routes).
+        fontSize = fitSize(minFont, b.fontSize, RETAIN.FIT_SIZE_EPS_PT, size => fits(size, minLeading));
         leadingEm = minLeading;
         shrinkTier = "shrink";
+      }
+      else {
+        // _render_block_markdown_fit_helper (overlay route), line for line.
+        const maxLeading = b.leadingEm;
+        const emergencySize = Math.max(RETAIN.OVERLAY_EMERGENCY_MIN_PT, minFont * RETAIN.OVERLAY_EMERGENCY_RATIO);
+        const emergencyLeading = Math.max(RETAIN.OVERLAY_EMERGENCY_LEADING_FLOOR_EM, minLeading * RETAIN.OVERLAY_EMERGENCY_LEADING_RATIO);
+        const chosenLeading = fits(minFont, maxLeading) ? maxLeading : minLeading;
+        if (!fits(minFont, chosenLeading)) {
+          // The helper's fallback bisection runs over [min, min] (it returns
+          // min); only when min at the minimum leading fails does it go below.
+          if (!fits(minFont, minLeading)) {
+            fontSize = fitSize(emergencySize, minFont, RETAIN.FIT_SIZE_EPS_PT, size => fits(size, emergencyLeading));
+            shrinkTier = "emergency";
+          }
+          else {
+            fontSize = minFont;
+            shrinkTier = "shrink";
+          }
+        }
+        else {
+          fontSize = fitSize(minFont, b.fontSize, RETAIN.FIT_SIZE_EPS_PT, size => fits(size, chosenLeading));
+          shrinkTier = "shrink";
+        }
+        const leadingFloor = fits(fontSize, minLeading) ? minLeading : emergencyLeading;
+        const leadingCap = fits(fontSize, maxLeading) ? maxLeading : chosenLeading;
+        leadingEm = fits(fontSize, leadingCap)
+          ? leadingCap
+          : fitSize(leadingFloor, leadingCap, RETAIN.OVERLAY_LEADING_EPS_EM, leading => fits(fontSize, leading));
       }
       needed = heightAt(fontSize, leadingEm);
       available = regionHeight;
