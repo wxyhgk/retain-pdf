@@ -18,6 +18,7 @@ export function createStatusDetailResumeActions({
   store,
   dialogStore,
   rerunJob,
+  retryTranslationWithRisk,
   setText,
   startPolling,
   resolveActions,
@@ -26,6 +27,8 @@ export function createStatusDetailResumeActions({
   store: StatusDetailStore;
   dialogStore: StatusDetailDialogStore;
   rerunJob: (actionUrl: string) => Promise<unknown>;
+  /** 409 翻译歧义被用户二次确认后，改走 retry-stage(translation) + accept_duplicate_risk。 */
+  retryTranslationWithRisk?: (jobId: string) => Promise<unknown>;
   setText?: (id: string, message: string) => void;
   startPolling?: (jobId: string) => void;
   resolveActions: JobActionResolver;
@@ -49,14 +52,24 @@ export function createStatusDetailResumeActions({
     });
   }
 
+  // 「再点一次确认」只对弹出提示的那个任务有效；换了任务就作废，免得把确认带到别的任务上。
+  let duplicateRiskJobId = "";
+
   async function rerunCurrentJob() {
+    const rerunContext = runtimePort.rerunContext();
+    const jobId = `${rerunContext?.job?.job_id || ""}`.trim();
     await rerunCurrentJobAction({
-      rerunContext: runtimePort.rerunContext(),
+      rerunContext,
       rerunJob,
       setText,
       startPolling,
       viewPort: resumeViewPort,
       resolveActions,
+      confirmDuplicateRisk: Boolean(jobId) && duplicateRiskJobId === jobId,
+      retryTranslationWithRisk,
+      onDuplicateRiskPending: (pending: boolean) => {
+        duplicateRiskJobId = pending ? jobId : "";
+      },
     });
   }
 

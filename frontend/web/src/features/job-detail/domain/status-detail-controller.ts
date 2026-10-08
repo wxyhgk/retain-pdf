@@ -83,6 +83,11 @@ export function createStatusDetailController({
     store,
     dialogStore,
     rerunJob,
+    retryTranslationWithRisk: retryJobStage
+      ? (jobId: string) => retryJobStage(jobId, apiPrefix, "translation", {
+        ambiguous_request_policy: "accept_duplicate_risk",
+      })
+      : undefined,
     setText,
     startPolling,
     resolveActions: jobActionResolver,

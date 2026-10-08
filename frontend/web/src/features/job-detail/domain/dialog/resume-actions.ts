@@ -59,6 +59,18 @@ export function syncRerunAction({
   return actions.rerun || "";
 }
 
+// 后端在拿不准某些翻译请求是否已经发出/计费时，会暂停通用重跑并回 409
+// 「translation request outcome is ambiguous」。直接把这串英文报给用户，用户就卡住了
+// （#132）。详情页 page/resume.ts 早有出路：二次确认重复风险后改走
+// retry-stage(translation) + accept_duplicate_risk。弹窗这里给同样的出路。
+export const TRANSLATION_DUPLICATE_RISK_PROMPT =
+  "检测到重复翻译风险：部分翻译请求可能已经计费，重跑可能产生重复费用。再点一次按钮确认仍要从翻译阶段重试。";
+
+export function isAmbiguousTranslationRerunError(error) {
+  const message = `${error?.message || error || ""}`;
+  return /\b409\b/.test(message) && /translation request outcome is ambiguous/i.test(message);
+}
+
 export async function rerunCurrentJob({
   rerunContext,
   rerunJob,
@@ -66,14 +78,37 @@ export async function rerunCurrentJob({
   startPolling,
   viewPort,
   resolveActions = () => ({}),
+  confirmDuplicateRisk = false,
+  retryTranslationWithRisk = null,
+  onDuplicateRiskPending = (_pending: boolean) => {},
 }: any = {}) {
+  const riskRetryJobId = confirmDuplicateRisk && retryTranslationWithRisk
+    ? firstNonEmptyText(rerunContext?.job?.job_id, rerunContext?.job?.id)
+    : "";
   const actionUrl = syncRerunAction({
     ...rerunContext,
-    statusText: "正在提交恢复任务...",
+    statusText: riskRetryJobId ? "已确认风险，正在从翻译阶段重试..." : "正在提交恢复任务...",
     viewPort,
     resolveActions,
   });
   viewPort.setRerunDisabled(true);
+  if (riskRetryJobId) {
+    onDuplicateRiskPending(false);
+    try {
+      const payload = await retryTranslationWithRisk(riskRetryJobId);
+      finishResubmission({ payload, rerunContext, setText, startPolling, viewPort, resolveActions });
+    } catch (error) {
+      syncRerunAction({
+        ...rerunContext,
+        statusText: error.message || String(error),
+        viewPort,
+        resolveActions,
+      });
+    } finally {
+      viewPort.setRerunDisabled(false);
+    }
+    return;
+  }
   if (!actionUrl) {
     syncRerunAction({
       ...rerunContext,
@@ -87,20 +122,18 @@ export async function rerunCurrentJob({
   }
   try {
     const payload = await rerunJob(actionUrl);
-    const nextJobId = firstJobIdFromPayload(payload);
-    if (!nextJobId) {
+    finishResubmission({ payload, rerunContext, setText, startPolling, viewPort, resolveActions });
+  } catch (error) {
+    if (retryTranslationWithRisk && isAmbiguousTranslationRerunError(error)) {
+      onDuplicateRiskPending(true);
       syncRerunAction({
         ...rerunContext,
-        statusText: "恢复任务已提交，但响应中没有 job_id（请刷新后重试，或去详情页确认新任务）。",
+        statusText: TRANSLATION_DUPLICATE_RISK_PROMPT,
         viewPort,
         resolveActions,
       });
       return;
     }
-    viewPort.closeDialog();
-    setText?.("error-box", `已创建恢复任务 ${nextJobId}，开始轮询。`);
-    startPolling?.(nextJobId);
-  } catch (error) {
     syncRerunAction({
       ...rerunContext,
       statusText: error.message || String(error),
@@ -111,4 +144,20 @@ export async function rerunCurrentJob({
     // 失败也恢复可点；成功时对话框已关闭且新轮询接管，解禁无副作用。
     viewPort.setRerunDisabled(false);
   }
+}
+
+function finishResubmission({ payload, rerunContext, setText, startPolling, viewPort, resolveActions }: any) {
+  const nextJobId = firstJobIdFromPayload(payload);
+  if (!nextJobId) {
+    syncRerunAction({
+      ...rerunContext,
+      statusText: "恢复任务已提交，但响应中没有 job_id（请刷新后重试，或去详情页确认新任务）。",
+      viewPort,
+      resolveActions,
+    });
+    return;
+  }
+  viewPort.closeDialog();
+  setText?.("error-box", `已创建恢复任务 ${nextJobId}，开始轮询。`);
+  startPolling?.(nextJobId);
 }
