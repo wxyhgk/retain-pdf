@@ -102,6 +102,9 @@ class TranslationControlContext:
     target_language_name: str = "简体中文"
     domain_guidance: str = ""
     rule_guidance: str = ""
+    # 译前准备产出的风格指南（style-guide.v1.json 渲染出的文本）。空串时
+    # merged/prompt_system/cache 三个 guidance 与没有这个字段时逐字节相同。
+    style_guidance: str = ""
     extra_guidance: str = ""
     request_label: str = ""
     context_mode: str = "needed"
@@ -114,6 +117,11 @@ class TranslationControlContext:
     batch_policy: BatchPolicy = field(default_factory=BatchPolicy)
     engine_profile_name: str = "balanced"
     glossary_entries: list[GlossaryEntry] = field(default_factory=list)
+    # 译前术语预扫抽出的条目（term-base.v1.json 里 origin=extracted 且未被用户术语
+    # 覆盖的那部分，一律 preferred 级）。和用户 glossary_entries 分开放：它们只参与
+    # 命中注入（terms_guidance），不进硬替换、不进审校的 glossary_term_missing、
+    # 不触发术语修复——抽取出来的译法是建议，不是用户锁定的术语。
+    term_base_entries: list[GlossaryEntry] = field(default_factory=list)
     abbreviation_entries: list[AbbreviationEntry] = field(default_factory=list)
     retrieval_entries: list[RetrievalEvidence] = field(default_factory=list)
     term_scope_source_text_count: int = 0
@@ -121,7 +129,10 @@ class TranslationControlContext:
     term_scope_abbreviation_total_count: int = 0
     translation_tail_queue: TranslationTailQueue | None = None
     transport_tail_retry_queue: TranslationTailQueue | None = None
-    _term_scope_cache: dict[tuple[str, ...], tuple[list[GlossaryEntry], list[AbbreviationEntry]]] = field(
+    _term_scope_cache: dict[
+        tuple[str, ...],
+        tuple[list[GlossaryEntry], list[AbbreviationEntry], list[GlossaryEntry]],
+    ] = field(
         default_factory=dict,
         compare=False,
         repr=False,
@@ -129,8 +140,11 @@ class TranslationControlContext:
 
     @property
     def terms_guidance(self) -> str:
+        glossary_entries = self.glossary_entries
+        if self.term_base_entries:
+            glossary_entries = [*self.glossary_entries, *self.term_base_entries]
         return build_terms_guidance(
-            glossary_entries=self.glossary_entries,
+            glossary_entries=glossary_entries,
             abbreviation_entries=self.abbreviation_entries,
         )
 
@@ -154,6 +168,7 @@ class TranslationControlContext:
         for value in (
             self.domain_guidance,
             self.rule_guidance,
+            self.style_guidance,
             self.terms_guidance,
             self.retrieval_guidance,
             self.extra_guidance,
@@ -174,6 +189,7 @@ class TranslationControlContext:
         for value in (
             self.domain_guidance,
             self.rule_guidance,
+            self.style_guidance,
             self.retrieval_guidance,
             self.extra_guidance,
         ):
@@ -188,6 +204,7 @@ class TranslationControlContext:
         for value in (
             self.domain_guidance,
             self.rule_guidance,
+            self.style_guidance,
             self.terms_guidance,
             self.retrieval_guidance,
             self.extra_guidance,
@@ -207,6 +224,7 @@ class TranslationControlContext:
             return replace(
                 self,
                 glossary_entries=[],
+                term_base_entries=[],
                 abbreviation_entries=[],
                 term_scope_source_text_count=len(text_list),
                 term_scope_glossary_total_count=len(self.glossary_entries),
@@ -214,7 +232,7 @@ class TranslationControlContext:
             )
         if glossary_mode == "all":
             return self
-        if not text_list or not (self.glossary_entries or self.abbreviation_entries):
+        if not text_list or not (self.glossary_entries or self.term_base_entries or self.abbreviation_entries):
             return self
         cache_key = tuple(text_list)
         cached_scope = self._term_scope_cache.get(cache_key)
@@ -223,14 +241,20 @@ class TranslationControlContext:
             cached_scope = (
                 matched_glossary_entries(self.glossary_entries, source_text),
                 matched_abbreviation_entries(self.abbreviation_entries, source_text),
+                matched_glossary_entries(self.term_base_entries, source_text) if self.term_base_entries else [],
             )
             self._term_scope_cache[cache_key] = cached_scope
-        matched_glossary, matched_abbreviations = cached_scope
-        if len(matched_glossary) == len(self.glossary_entries) and len(matched_abbreviations) == len(self.abbreviation_entries):
+        matched_glossary, matched_abbreviations, matched_term_base = cached_scope
+        if (
+            len(matched_glossary) == len(self.glossary_entries)
+            and len(matched_abbreviations) == len(self.abbreviation_entries)
+            and len(matched_term_base) == len(self.term_base_entries)
+        ):
             return self
         return replace(
             self,
             glossary_entries=matched_glossary,
+            term_base_entries=matched_term_base,
             abbreviation_entries=matched_abbreviations,
             term_scope_source_text_count=len(text_list),
             term_scope_glossary_total_count=len(self.glossary_entries),
@@ -313,6 +337,8 @@ def build_translation_control_context(
     abbreviation_entries: list[AbbreviationEntry] | None = None,
     retrieval_entries: list[RetrievalEvidence] | None = None,
     engine_profile: EngineProfile | None = None,
+    style_guidance: str = "",
+    term_base_entries: list[GlossaryEntry] | None = None,
 ) -> TranslationControlContext:
     resolved_profile = engine_profile or EngineProfile()
     tail_queue = TranslationTailQueue()
@@ -323,6 +349,7 @@ def build_translation_control_context(
         target_language_name=target_language_name,
         domain_guidance=domain_guidance,
         rule_guidance=rule_guidance,
+        style_guidance=style_guidance,
         extra_guidance=extra_guidance,
         request_label=request_label,
         context_mode=_normalize_context_mode(context_mode),
@@ -334,6 +361,7 @@ def build_translation_control_context(
         batch_policy=resolved_profile.batch_policy,
         engine_profile_name=resolved_profile.name,
         glossary_entries=normalize_glossary_entries(glossary_entries),
+        term_base_entries=normalize_glossary_entries(term_base_entries),
         abbreviation_entries=list(abbreviation_entries or []),
         retrieval_entries=list(retrieval_entries or []),
         translation_tail_queue=tail_queue,
@@ -360,6 +388,21 @@ def _normalize_memory_mode(value: str) -> str:
     if normalized in {"matched", "broad", "off"}:
         return normalized
     return "matched"
+
+
+def _normalize_preparation_mode(value: str) -> str:
+    # 译前准备（全书术语预扫 + 风格指南）的开关。默认 off：不生成产物、不改 prompt、
+    # 不改缓存 key。artifacts_only 只生成并冻结产物、不注入；terms 注入术语库；
+    # terms+style 再把风格指南放进 system 前缀。Rust 侧的 TRANSLATION_PREPARATION_MODES
+    # 由测试直接读这里的集合字面量对齐，改取值要两边一起改。
+    normalized = str(value or "off").strip().lower()
+    if normalized in {"off", "artifacts_only", "terms", "terms+style"}:
+        return normalized
+    return "off"
+
+
+def normalize_preparation_mode(value: str) -> str:
+    return _normalize_preparation_mode(value)
 
 
 def resolve_engine_profile(*, model: str = "", base_url: str = "") -> EngineProfile:

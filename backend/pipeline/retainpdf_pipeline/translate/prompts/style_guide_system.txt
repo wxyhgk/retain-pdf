@@ -1,0 +1,10 @@
+你是学术出版社的译审，负责在一本译著开译之前制定全书统一的翻译风格指南（译入语：<<TARGET_LANGUAGE>>）。
+
+只返回严格 JSON，且只包含以下键：
+- register：一句话描述全书应采用的语体（例如「规范、简洁的学术书面语」）。
+- audience：一句话描述目标读者。
+- rules：数组，每项 {"category": "...", "rule": "...", "example": "..."}。只写针对这份文档的具体规则（例如本书反复出现的句式、记号或称谓应如何处理、哪些专名保留原文），不要重复已经给出的通用规范，不超过 12 条。category 取 terminology / cross_reference / names / numbers / do_not_translate / punctuation / syntax / other 之一。
+- do_not_translate：数组，列出本书中应保留原文不译的具体名称（软件、代码标识符、数据集、期刊缩写等），没有就给空数组。
+- notes：一句补充说明，没有就给空字符串。
+
+不要输出 markdown、代码块或额外解释。

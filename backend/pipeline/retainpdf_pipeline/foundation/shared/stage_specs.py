@@ -175,6 +175,20 @@ def resolve_credential_ref(credential_ref: str) -> str:
     raise RuntimeError(f"unsupported credential_ref: {credential_ref}")
 
 
+def _preparation_and_reviewer_fields(payload: dict[str, Any]) -> dict[str, str]:
+    """三种 spec（translate / provider / book）共用的译前准备与 reviewer 字段。
+
+    preparation 在这里只做 strip/lower，取值归一化（未知值 -> off）由
+    translate 层的 normalize_preparation_mode 负责，与 context_mode 等字段一致。
+    """
+    return {
+        "preparation": str(payload.get("preparation", "off") or "off").strip().lower(),
+        "reviewer_model": str(payload.get("reviewer_model", "") or "").strip(),
+        "reviewer_base_url": str(payload.get("reviewer_base_url", "") or "").strip(),
+        "reviewer_credential_ref": str(payload.get("reviewer_credential_ref", "") or ""),
+    }
+
+
 @dataclass(frozen=True)
 class TranslateStageInputs:
     source_json: Path
@@ -206,6 +220,11 @@ class TranslateStageParams:
     model: str
     base_url: str
     credential_ref: str
+    # 译前准备档位与审校模型配置位。旧 spec 没有这些 key，一律按默认值（off / 空串）读。
+    preparation: str
+    reviewer_model: str
+    reviewer_base_url: str
+    reviewer_credential_ref: str
 
 
 @dataclass(frozen=True)
@@ -299,6 +318,7 @@ class TranslateStageSpec:
             model=str(params_payload.get("model", "") or ""),
             base_url=str(params_payload.get("base_url", "") or ""),
             credential_ref=str(params_payload.get("credential_ref", "") or ""),
+            **_preparation_and_reviewer_fields(params_payload),
         )
         return cls(
             schema_version=schema_version,
@@ -495,6 +515,11 @@ class ProviderStageTranslationParams:
     model: str
     base_url: str
     credential_ref: str
+    # 译前准备档位与审校模型配置位。旧 spec 没有这些 key，一律按默认值（off / 空串）读。
+    preparation: str
+    reviewer_model: str
+    reviewer_base_url: str
+    reviewer_credential_ref: str
 
 
 @dataclass(frozen=True)
@@ -640,6 +665,7 @@ class ProviderStageSpec:
             model=str(translation_payload.get("model", "") or ""),
             base_url=str(translation_payload.get("base_url", "") or ""),
             credential_ref=str(translation_payload.get("credential_ref", "") or ""),
+            **_preparation_and_reviewer_fields(translation_payload),
         )
         render = ProviderStageRenderParams(
             render_mode=str(render_payload.get("render_mode", "typst") or "typst"),
@@ -728,6 +754,11 @@ class BookStageTranslationParams:
     model: str
     base_url: str
     credential_ref: str
+    # 译前准备档位与审校模型配置位。旧 spec 没有这些 key，一律按默认值（off / 空串）读。
+    preparation: str
+    reviewer_model: str
+    reviewer_base_url: str
+    reviewer_credential_ref: str
 
 
 @dataclass(frozen=True)
@@ -847,6 +878,7 @@ class BookStageSpec:
             model=str(translation_payload.get("model", "") or ""),
             base_url=str(translation_payload.get("base_url", "") or ""),
             credential_ref=str(translation_payload.get("credential_ref", "") or ""),
+            **_preparation_and_reviewer_fields(translation_payload),
         )
         render = BookStageRenderParams(
             render_mode=str(render_payload.get("render_mode", "typst") or "typst"),
