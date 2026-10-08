@@ -9,6 +9,9 @@ use crate::models::api::{
 use crate::models::domain::JobStatusKind;
 
 use super::super::super::debug::{replay_translation_item, revise_translation_item};
+use super::super::super::live_translation::{
+    live_publication_view, prune_superseded_revision_snapshots, publish_translation_revisions,
+};
 use super::super::super::query::load_supported_job;
 use super::super::JobsFacade;
 
@@ -51,6 +54,35 @@ impl<'a> JobsFacade<'a> {
             ));
         }
         let outcome = revise_translation_item(&self.query.replay, &job, item_id, &request).await?;
+        // 写回已经落盘;登记进数据库,实时译文、页快照和提交事件才看得到新文本。
+        // `changed=false` 也对账一次:上次写回成功、登记失败时,重发同一请求就能补上。
+        // 登记失败不回滚写回(文件才是权威),由 live_publication 报告,之后的修订或
+        // 打开实时译文时再补登记。
+        let publication =
+            publish_translation_revisions(self.command.db, &job.job_id, &outcome.translations_dir);
+        match &publication {
+            Ok(Some(_)) => {
+                if let Err(error) = prune_superseded_revision_snapshots(
+                    self.command.db,
+                    &job.job_id,
+                    &outcome.translations_dir,
+                ) {
+                    tracing::warn!(
+                        job_id = %job.job_id,
+                        error = %error,
+                        "failed to prune superseded translation snapshots after revision"
+                    );
+                }
+            }
+            Ok(None) => {}
+            Err(error) => tracing::warn!(
+                job_id = %job.job_id,
+                item_id,
+                error = %error,
+                "translation revision was written but could not be registered for live translation"
+            ),
+        }
+        let live_publication = live_publication_view(publication);
         let (rerender, rerender_error) = if request.rerender {
             match self.retry_stage_submission(
                 base_url,
@@ -78,6 +110,7 @@ impl<'a> JobsFacade<'a> {
             validation: outcome.validation,
             revision: outcome.revision,
             page_hashes: outcome.page_hashes,
+            live_publication,
             rerender,
             rerender_error,
         })

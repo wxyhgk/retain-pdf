@@ -39,6 +39,8 @@ pub(crate) struct RevisionOutcome {
     pub(crate) validation: Value,
     pub(crate) revision: Option<Value>,
     pub(crate) page_hashes: Value,
+    /// 本任务自己的 `translated/`;修订登记从这里读 checkpoint 与修订日志。
+    pub(crate) translations_dir: PathBuf,
 }
 
 pub(crate) fn validate_item_id(item_id: &str) -> Result<(), AppError> {
@@ -152,10 +154,13 @@ pub(crate) async fn revise_translation_item(
             stdout.chars().take(240).collect::<String>()
         ))
     })?;
-    outcome_from_payload(payload)
+    outcome_from_payload(payload, job_root.join("translated"))
 }
 
-fn outcome_from_payload(payload: Value) -> Result<RevisionOutcome, AppError> {
+fn outcome_from_payload(
+    payload: Value,
+    translations_dir: PathBuf,
+) -> Result<RevisionOutcome, AppError> {
     let outcome = payload.get("outcome").and_then(Value::as_str).unwrap_or("");
     let reason = payload.get("reason").and_then(Value::as_str).unwrap_or("");
     let message = payload
@@ -181,6 +186,7 @@ fn outcome_from_payload(payload: Value) -> Result<RevisionOutcome, AppError> {
             validation: payload.get("validation").cloned().unwrap_or(Value::Null),
             revision: payload.get("revision").filter(|value| !value.is_null()).cloned(),
             page_hashes: payload.get("page_hashes").cloned().unwrap_or_else(|| json!({})),
+            translations_dir,
         }),
         "rejected" => Err(AppError::translation_revision(
             StatusCode::UNPROCESSABLE_ENTITY,
@@ -262,7 +268,7 @@ mod tests {
 
     #[test]
     fn python_outcomes_map_to_http_statuses() {
-        let status = |payload: Value| match outcome_from_payload(payload) {
+        let status = |payload: Value| match outcome_from_payload(payload, PathBuf::new()) {
             Ok(_) => StatusCode::OK,
             Err(AppError::TranslationRevision { status, .. }) => status,
             Err(AppError::NotFound(_)) => StatusCode::NOT_FOUND,
@@ -283,6 +289,6 @@ mod tests {
         );
         assert_eq!(status(json!({"outcome": "not_found"})), StatusCode::NOT_FOUND);
         assert_eq!(status(json!({"outcome": "invalid"})), StatusCode::BAD_REQUEST);
-        assert!(outcome_from_payload(json!({"outcome": "weird"})).is_err());
+        assert!(outcome_from_payload(json!({"outcome": "weird"}), PathBuf::new()).is_err());
     }
 }

@@ -9,6 +9,7 @@ mod attempts;
 mod dispatches;
 pub(super) mod events;
 mod queries;
+mod revisions;
 mod stages;
 pub(super) mod tx;
 mod units;
@@ -21,6 +22,7 @@ pub(super) use tx::validate_identity;
 
 mod types;
 
+pub use revisions::{RevisedPagePublication, RevisedPageStatus, RevisedTranslationPage};
 pub use types::{
     PipelineAttemptCursor, PipelineCheckpoint, PipelineCommitEventRecord, PipelineDispatchBegin,
     PipelineDispatchIntent, PipelineDispatchRecord, PipelineStageObservation, PipelineStageState,

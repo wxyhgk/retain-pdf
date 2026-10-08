@@ -49,7 +49,7 @@ pub use super::view::{
     RetryStageSubmissionView, StageActionsView, StageRetryActionLinkView, StageRetryActionView,
     TranslationDebugIndexView, TranslationDebugItemView, TranslationDebugListItemView,
     JobReportView, TranslationDebugListView, TranslationDiagnosticsView, TranslationReplayView,
-    ReviseTranslationItemRequest, TranslationRevisionHistoryView, TranslationRevisionSource,
-    TranslationRevisionView,
+    ReviseTranslationItemRequest, TranslationRevisionHistoryView, TranslationRevisionLivePageView,
+    TranslationRevisionLivePublicationView, TranslationRevisionSource, TranslationRevisionView,
     TranslationRequestRecoveryView,
 };

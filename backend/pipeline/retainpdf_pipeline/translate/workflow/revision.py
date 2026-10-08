@@ -455,11 +455,11 @@ def _revise_locked(
             new_snapshot_dir=None if snapshot_preexisted else new_snapshot_dir,
         )
         raise
-    # 旧 generation 的快照**不清理**。Rust 的实时译文读模型按数据库里登记的
-    # page_hash 去 .translation-checkpoints/ 下找快照(services/jobs/live_translation.rs),
-    # 而修订不经过 worker stdout,数据库里登记的仍是修订前的哈希;清掉旧快照,
-    # 被改过的那页在实时译文里就会变成「快照不可用」。快照是硬链接,留着几乎不占
-    # 空间;下一次真正的翻译续跑会照常只保留它自己的 generation。
+    # 旧 generation 的快照这里**不清理**。Rust 的实时译文读模型按数据库里登记的
+    # page_hash 去 .translation-checkpoints/ 下找快照(services/jobs/live_translation.rs);
+    # 修订不经过 worker stdout,要等 Rust 在本命令返回后把新 page_hash 登记进数据库
+    # (live_translation/revisions.rs),登记成功前读模型要的还是旧快照。登记完成后
+    # 由 Rust 清掉不再被引用的旧 generation;登记失败时它们留着,读模型照旧可读。
     return {
         "outcome": "committed",
         "changed": True,
