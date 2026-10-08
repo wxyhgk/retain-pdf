@@ -55,6 +55,38 @@ POST /api/v1/internal/agent/operations/{operation_id}/commit
 POST /api/v1/internal/agent/operations/{operation_id}/cancel
 ```
 
+### Job-scoped capabilities (terminal translation refinement)
+
+The book terminal's host broker mints a second kind of capability that is bound
+to one translation job instead of a conversation and document. The issue
+request carries `job_id` and **no** `conversation_id` / `document_id`; job and
+document actions can never be mixed in one token (400).
+
+```json
+{
+  "schema": "agent_capability_issue_v1",
+  "job_id": "20261006023250-703433",
+  "actions": ["translation.revise"],
+  "ttl_seconds": 60
+}
+```
+
+| action | admitted request |
+|---|---|
+| `translation.read` | `GET /api/v1/jobs/{job_id}/translation/qa`, `/translation/refine-report`, `/render/fit-report`, `/translation/items/{item_id}`, `/translation/items/{item_id}/revisions` |
+| `translation.revise` | `PATCH /api/v1/jobs/{job_id}/translation/items/{item_id}` |
+| `translation.retry` | `POST /api/v1/jobs/{job_id}/retry-stage` |
+| `glossary.read` | `GET /api/v1/glossaries`, `GET /api/v1/glossaries/{glossary_id}` |
+| `glossary.write` | `POST /api/v1/glossaries`, `PUT /api/v1/glossaries/{glossary_id}` |
+
+`{job_id}` in the path must equal the token's `job_id` (403 otherwise). The
+matching CLI commands are `retainpdf-agent translation qa|refine-report|fit-report|item|revisions|revise|retry-stage`
+and `retainpdf-agent glossary list|get|create|update`; each sends exactly one
+request. The agent-facing grammar (`retainpdf-agent translation issues|show|revise|refine|rerender|term-set`)
+lives in the host broker (`backend/ai/retainpdf_ai/agent_translation_*.py`),
+which composes these single-request calls and gates the effectful ones on the
+same explicit / green-light confirmation as operation run/commit.
+
 Create request:
 
 ```json

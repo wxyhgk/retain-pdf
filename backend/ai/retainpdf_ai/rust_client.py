@@ -257,18 +257,29 @@ class RustApiClient:
         document_id: str,
         actions: list[str],
         ttl_seconds: int = 60,
+        job_id: str = "",
     ) -> dict[str, Any]:
-        """Mint one short-lived capability for the host-side agent CLI."""
-        return self._post(
-            "/api/v1/internal/agent/capabilities",
-            {
+        """Mint one short-lived capability for the host-side agent CLI.
+
+        `job_id` 非空时签的是任务级 capability（终端里的译文精修命令）：
+        不绑会话和文档，Rust 侧也只允许任务级动作。
+        """
+        if job_id:
+            payload: dict[str, Any] = {
+                "schema": "agent_capability_issue_v1",
+                "job_id": job_id,
+                "actions": actions,
+                "ttl_seconds": ttl_seconds,
+            }
+        else:
+            payload = {
                 "schema": "agent_capability_issue_v1",
                 "conversation_id": conversation_id,
                 "document_id": document_id,
                 "actions": actions,
                 "ttl_seconds": ttl_seconds,
-            },
-        )
+            }
+        return self._post("/api/v1/internal/agent/capabilities", payload)
 
     def create_agent_calculation(
         self,

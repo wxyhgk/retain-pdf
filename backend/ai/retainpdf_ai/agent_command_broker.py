@@ -23,7 +23,12 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any, Self
 
 from .agent_broker_commands import parse_broker_argv, parse_broker_command
-from .agent_broker_contracts import BrokerCommand, BrokerScope, CapabilityIssuer
+from .agent_broker_contracts import (
+    BrokerCommand,
+    BrokerScope,
+    BrokerUsageError,
+    CapabilityIssuer,
+)
 from .agent_broker_events import safe_operation_event
 from .agent_broker_transport import (
     MAX_BROKER_FRAME_BYTES,
@@ -31,6 +36,7 @@ from .agent_broker_transport import (
     recv_json_line,
     wrapper_source,
 )
+from .agent_translation_runner import CliResult, TranslationCommandRunner
 
 if TYPE_CHECKING:
     from .tools import ToolRegistry
@@ -39,6 +45,9 @@ _MAX_CALLS_PER_TURN = 16
 # shell 命令单独计数。和上面那个刻意不共用:operation 有副作用,16 次/轮是
 # 有意压着的;而终端里 cat/grep/jq 翻几十次很正常,共用会让终端刚打开就没气。
 _MAX_SHELL_CALLS_PER_TURN = 200
+# 终端（PTY）里的 broker 跟着终端活，不是跟着一轮对话。精修一章几十块，
+# 每块 show + revise 两条，16 次/轮的上限在这里没有意义。
+_MAX_TERMINAL_CALLS = 2000
 _CLI_TIMEOUT_SECONDS = 30
 
 # Kept as a compatibility alias for existing tests and integrations importing
@@ -59,6 +68,8 @@ class AgentCommandBroker:
         tool_registry: ToolRegistry | None = None,
         on_tool_event: Callable[[dict[str, Any]], None] | None = None,
         shell_mode: bool = False,
+        job_dir: Path | None = None,
+        terminal_mode: bool = False,
     ) -> None:
         self._state_root = state_root.resolve()
         self._cli_command = cli_command
@@ -89,6 +100,12 @@ class AgentCommandBroker:
         self._call_count = 0
         self._shell_mode = bool(shell_mode)
         self._shell_call_count = 0
+        # 译文精修命令要在宿主侧扫这本书的译文文件（term-set 列受影响的块）。
+        self._job_dir = job_dir.resolve() if job_dir is not None else None
+        # 终端模式：没有 ACP 的 request_permission，wrapper 打进来的命令不经
+        # approve_permission 预批，所以只放行 translation 这一组（其余要会话）。
+        self._terminal_mode = bool(terminal_mode)
+        self._request_seq = 0
 
     @property
     def bin_dir(self) -> Path:
@@ -140,6 +157,25 @@ class AgentCommandBroker:
             "Do not use shell syntax, paths, redirection, substitutions, or other commands. "
             "The host injects document scope, message identity, idempotency keys, and credentials. "
             f"{confirmation}"
+            f"{self._translation_instructions()}"
+        )
+
+    def _translation_instructions(self) -> str:
+        if not self._scope.job_id.strip():
+            return ""
+        return (
+            "\nTranslation refinement for this book (same confirmation rule applies to "
+            "revise/refine/rerender/term-set):\n"
+            "retainpdf-agent translation issues [--pages 3-5] [--severity critical|major|minor] "
+            "[--limit 50]\n"
+            "retainpdf-agent translation show --item-id <id>\n"
+            'retainpdf-agent translation revise --item-id <id> --text "<new>" --reason "<why>"\n'
+            "retainpdf-agent translation refine [--pages 3-5] [--review-only]\n"
+            "retainpdf-agent translation rerender\n"
+            'retainpdf-agent translation term-set --source "<term>" --target "<rendering>"\n'
+            "Keep placeholders such as <f1-e32/> or [[FORMULA_1]] and $...$ math verbatim; "
+            "edit only the faulty span; propose changes and get user approval before revising; "
+            "rerender once after all revisions."
         )
 
     @property
@@ -311,6 +347,8 @@ class AgentCommandBroker:
                 return failure("invalid broker argv")
             public_argv = ("retainpdf-agent", *argv)
             command = parse_broker_argv(public_argv, self._scope)
+            if self._terminal_mode:
+                return self._handle_terminal_command(command)
             with self._approved_lock:
                 if self._approved[command.public_argv] <= 0:
                     return failure("command was not approved")
@@ -321,16 +359,32 @@ class AgentCommandBroker:
                     return failure("broker call limit reached")
                 self._call_count += 1
             return self._execute(command, tool_call_id=tool_call_id)
+        except BrokerUsageError as exc:
+            return failure(f"{exc}\n")
         except (OSError, TypeError, ValueError, json.JSONDecodeError):
             return failure("invalid broker request")
         except Exception:  # noqa: BLE001 - never expose host diagnostics to fx
             return failure("host command execution failed")
+
+    def _handle_terminal_command(self, command: BrokerCommand) -> dict[str, Any]:
+        if not command.action.startswith("translation."):
+            return failure(
+                "这个终端只支持 retainpdf-agent translation 命令；"
+                "文档操作请在阅读页的对话里做。\n"
+            )
+        with self._approved_lock:
+            if self._call_count >= _MAX_TERMINAL_CALLS:
+                return failure("broker call limit reached")
+            self._call_count += 1
+        return self._execute(command)
 
     def _execute(
         self, command: BrokerCommand, *, tool_call_id: str = ""
     ) -> dict[str, Any]:
         if command.action == "tool.call":
             return self._execute_host_tool(command, tool_call_id=tool_call_id)
+        if command.action.startswith("translation."):
+            return self._execute_translation(command, tool_call_id=tool_call_id)
         issued = self._rust.issue_agent_capability(
             conversation_id=self._scope.conversation_id,
             document_id=self._scope.document_id,
@@ -347,12 +401,7 @@ class AgentCommandBroker:
             request_path = self._request_dir / request_name
             _write_json_no_follow(request_path, command.request_payload)
             argv.extend(["--request", f"requests/{request_name}"])
-        env = {
-            "HOME": str(self._root),
-            "PATH": os.defpath,
-            "RETAINPDF_AGENT_API_URL": self._rust_api_url,
-            "RETAINPDF_AGENT_CAPABILITY": capability,
-        }
+        env = self._cli_env(capability)
         try:
             completed = subprocess.run(
                 argv,
@@ -391,6 +440,87 @@ class AgentCommandBroker:
             "completed" if completed.returncode == 0 else "failed",
         )
         return response
+
+    def _execute_translation(
+        self, command: BrokerCommand, *, tool_call_id: str = ""
+    ) -> dict[str, Any]:
+        runner = TranslationCommandRunner(
+            job_id=self._scope.job_id.strip(),
+            job_dir=self._job_dir,
+            call=self._call_job_cli,
+        )
+        response = runner.run(command)
+        self._emit_tool_event(
+            command,
+            tool_call_id,
+            "completed" if response.get("exit_code") == 0 else "failed",
+        )
+        return response
+
+    def _call_job_cli(
+        self,
+        action: str,
+        cli_argv: tuple[str, ...],
+        payload: dict[str, Any] | None,
+    ) -> CliResult:
+        """用一张任务级、单动作的 capability 跑一次真正的 CLI。"""
+        try:
+            issued = self._rust.issue_agent_capability(
+                conversation_id="",
+                document_id="",
+                actions=[action],
+                ttl_seconds=60,
+                job_id=self._scope.job_id.strip(),
+            )
+        except Exception:  # noqa: BLE001 - 不把宿主细节漏给 agent
+            return CliResult(False, None, None, "host could not issue a capability")
+        capability = str(issued.get("capability") or "")
+        if not capability:
+            return CliResult(False, None, None, "host did not issue a capability")
+        argv = [str(_resolve_cli(self._cli_command)), *cli_argv]
+        if payload is not None:
+            with self._approved_lock:
+                self._request_seq += 1
+                request_name = f"job-request-{self._request_seq:04d}.json"
+            _write_json_no_follow(self._request_dir / request_name, payload)
+            argv.extend(["--request", f"requests/{request_name}"])
+        try:
+            completed = subprocess.run(
+                argv,
+                cwd=self._work_dir,
+                env=self._cli_env(capability),
+                stdin=subprocess.DEVNULL,
+                capture_output=True,
+                timeout=_CLI_TIMEOUT_SECONDS,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return CliResult(False, None, None, "retainpdf-agent timed out")
+        raw = completed.stdout if completed.returncode == 0 else completed.stderr
+        text = raw[:MAX_BROKER_FRAME_BYTES].decode("utf-8", errors="replace")
+        text = text.replace(capability, "[REDACTED]")
+        try:
+            envelope = json.loads(text)
+        except json.JSONDecodeError:
+            return CliResult(False, None, None, "retainpdf-agent returned non-JSON output")
+        if not isinstance(envelope, dict):
+            return CliResult(False, None, None, "retainpdf-agent returned an invalid envelope")
+        error = envelope.get("error") if isinstance(envelope.get("error"), dict) else {}
+        status = envelope.get("http_status")
+        return CliResult(
+            ok=completed.returncode == 0 and bool(envelope.get("ok")),
+            http_status=status if isinstance(status, int) else None,
+            response=envelope.get("response"),
+            message=str(error.get("message") or ""),
+        )
+
+    def _cli_env(self, capability: str) -> dict[str, str]:
+        return {
+            "HOME": str(self._root),
+            "PATH": os.defpath,
+            "RETAINPDF_AGENT_API_URL": self._rust_api_url,
+            "RETAINPDF_AGENT_CAPABILITY": capability,
+        }
 
     def _execute_host_tool(
         self, command: BrokerCommand, *, tool_call_id: str = ""
@@ -452,11 +582,12 @@ class AgentCommandBroker:
         from .unified_tools import agent_tool_event
 
         payload = command.request_payload or {}
-        name = (
-            str(payload.get("name") or "")
-            if command.action == "tool.call"
-            else f"document_{command.action.replace('.', '_')}"
-        )
+        if command.action == "tool.call":
+            name = str(payload.get("name") or "")
+        elif command.action.startswith("translation."):
+            name = command.action.replace(".", "_").replace("-", "_")
+        else:
+            name = f"document_{command.action.replace('.', '_')}"
         try:
             self._on_tool_event(agent_tool_event(name, tool_call_id, status))
         except Exception:  # noqa: BLE001,S110 - progress delivery is best effort
@@ -474,6 +605,11 @@ class AgentCommandBroker:
         finally:
             os.close(descriptor)
         wrapper.chmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+
+
+def resolve_agent_cli(command: str) -> Path:
+    """Resolve the real host CLI; raises RuntimeError when it is unusable."""
+    return _resolve_cli(command)
 
 
 def _resolve_cli(command: str) -> Path:
