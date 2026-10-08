@@ -1,3 +1,4 @@
+use self::stage_specs::REVIEWER_API_KEY_ENV_NAME;
 use self::stage_specs::TRANSLATION_API_KEY_ENV_NAME;
 use super::*;
 use crate::config::AppConfig;
@@ -621,6 +622,83 @@ fn translate_only_command_includes_glossary_metadata_and_payload() {
 }
 
 #[test]
+fn translate_spec_defaults_preparation_off_and_reviewer_empty() {
+    let config = test_config();
+    let request = build_request(WorkflowKind::Translate);
+    let job_paths = build_paths(config.as_ref());
+    let cmd = translate_command(
+        config.as_ref(),
+        &request,
+        &job_paths,
+        Path::new("/tmp/document.v1.json"),
+        Path::new("/tmp/source.pdf"),
+        None,
+    );
+    let payload = read_spec_from_command(&cmd);
+    assert_eq!(payload["params"]["preparation"], "off");
+    assert_eq!(payload["params"]["reviewer_model"], "");
+    assert_eq!(payload["params"]["reviewer_base_url"], "");
+    assert_eq!(payload["params"]["reviewer_credential_ref"], "");
+}
+
+#[test]
+fn translate_and_provider_specs_pass_preparation_and_reviewer_as_env_reference() {
+    let config = test_config();
+    let mut request = build_request(WorkflowKind::Book);
+    request.job_id = "job-reviewer-test".to_string();
+    request.ocr.provider = "paddle".to_string();
+    request.ocr.paddle_token = "paddle-secret".to_string();
+    request.translation.preparation = "terms+style".to_string();
+    request.translation.reviewer_model = "reviewer-model".to_string();
+    request.translation.reviewer_base_url = "https://reviewer.example/v1".to_string();
+    request.translation.reviewer_api_key = "sk-reviewer-secret".to_string();
+    let job_paths = build_paths(config.as_ref());
+
+    let translate = read_spec_from_command(&translate_command(
+        config.as_ref(),
+        &request,
+        &job_paths,
+        Path::new("/tmp/document.v1.json"),
+        Path::new("/tmp/source.pdf"),
+        None,
+    ));
+    let provider = read_spec_from_command(&build_legacy_provider_case_command(
+        &config.worker_command_runtime(),
+        Path::new("/tmp/source/job.pdf"),
+        &request,
+        &job_paths,
+    ));
+    for section in [&translate["params"], &provider["translation"]] {
+        assert_eq!(section["preparation"], "terms+style");
+        assert_eq!(section["reviewer_model"], "reviewer-model");
+        assert_eq!(section["reviewer_base_url"], "https://reviewer.example/v1");
+        assert_eq!(
+            section["reviewer_credential_ref"],
+            format!("env:{REVIEWER_API_KEY_ENV_NAME}")
+        );
+    }
+    assert!(!translate.to_string().contains("sk-reviewer-secret"));
+    assert!(!provider.to_string().contains("sk-reviewer-secret"));
+
+    // 只给引用、不给内联 key 时同样只写 env 引用。
+    request.translation.reviewer_api_key.clear();
+    request.translation.reviewer_credential_ref = "cred_reviewer".to_string();
+    let translate = read_spec_from_command(&translate_command(
+        config.as_ref(),
+        &request,
+        &job_paths,
+        Path::new("/tmp/document.v1.json"),
+        Path::new("/tmp/source.pdf"),
+        None,
+    ));
+    assert_eq!(
+        translate["params"]["reviewer_credential_ref"],
+        format!("env:{REVIEWER_API_KEY_ENV_NAME}")
+    );
+    assert!(!translate.to_string().contains("cred_reviewer"));
+}
+
+#[test]
 fn stage_specs_keep_python_loader_contract_keys() {
     let config = test_config();
     let mut request = build_request(WorkflowKind::Book);
@@ -695,6 +773,10 @@ fn stage_specs_keep_python_loader_contract_keys() {
             "model",
             "base_url",
             "credential_ref",
+            "preparation",
+            "reviewer_model",
+            "reviewer_base_url",
+            "reviewer_credential_ref",
         ],
     );
     assert_object_has_keys(

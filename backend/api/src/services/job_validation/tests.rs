@@ -279,6 +279,51 @@ fn translation_modes_accept_the_defaults_and_every_allowed_value() {
         validate_translation_modes(&input)
             .unwrap_or_else(|err| panic!("memory_mode={value} 应当合法: {err:?}"));
     }
+    input.translation.memory_mode = "matched".to_string();
+    assert_eq!(input.translation.preparation, "off", "preparation 默认必须是 off");
+    for value in TRANSLATION_PREPARATION_MODES {
+        input.translation.preparation = value.to_string();
+        validate_translation_modes(&input)
+            .unwrap_or_else(|err| panic!("preparation={value} 应当合法: {err:?}"));
+    }
+}
+
+#[test]
+fn reviewer_settings_follow_the_translation_key_rules() {
+    let mut input = CreateJobInput::default();
+    input.translation.base_url = "https://api.deepseek.com/v1".to_string();
+    input.translation.model = "deepseek-chat".to_string();
+    input.translation.credential_ref = "cred_translation_primary".to_string();
+    // 全部留空 = 回退到翻译模型，合法。
+    assert!(validate_translation_credentials(&input).is_ok());
+
+    input.translation.reviewer_model = "reviewer".to_string();
+    input.translation.reviewer_credential_ref = "cred_reviewer".to_string();
+    assert!(validate_translation_credentials(&input).is_ok());
+
+    input.translation.reviewer_api_key = "sk-reviewer".to_string();
+    let error = validate_translation_credentials(&input)
+        .expect_err("reviewer inline key and reference must be exclusive");
+    assert!(error.to_string().contains("mutually exclusive"));
+
+    input.translation.reviewer_credential_ref.clear();
+    input.translation.reviewer_api_key = "https://api.example.com/v1".to_string();
+    assert!(validate_translation_credentials(&input).is_err());
+
+    input.translation.reviewer_api_key = "sk-reviewer".to_string();
+    input.translation.reviewer_base_url = "api.example.com/v1".to_string();
+    assert!(validate_translation_credentials(&input).is_err());
+}
+
+#[test]
+fn reviewer_credential_reference_must_exist() {
+    let root = std::env::temp_dir().join(format!(
+        "rust-api-missing-reviewer-credential-{:016x}",
+        fastrand::u64(..)
+    ));
+    let mut input = CreateJobInput::default();
+    input.translation.reviewer_credential_ref = "cred_missing_reviewer".to_string();
+    assert!(validate_translation_credential_reference(&input, &root).is_err());
 }
 
 #[test]
@@ -290,12 +335,14 @@ fn translation_modes_reject_typos_instead_of_silently_normalizing() {
         ("glossary_mode", "match"),
         ("memory_mode", "broad_"),
         ("math_mode", "typst"),
+        ("preparation", "terms_style"),
     ] {
         let mut input = CreateJobInput::default();
         match field {
             "context_mode" => input.translation.context_mode = value.to_string(),
             "glossary_mode" => input.translation.glossary_mode = value.to_string(),
             "memory_mode" => input.translation.memory_mode = value.to_string(),
+            "preparation" => input.translation.preparation = value.to_string(),
             _ => input.translation.math_mode = value.to_string(),
         }
         let err = validate_translation_modes(&input)

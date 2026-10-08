@@ -90,10 +90,30 @@ export interface TranslationInput {
      * TRANSLATION_MEMORY_MODES
      */
     memory_mode?: "matched" | "broad" | "off";
+    /**
+     * TRANSLATION_PREPARATION_MODES。译前准备（全书术语预扫 + 风格指南）。off：不生成产物，prompt 与缓存 key 与不带该字段时完全一致；artifacts_only：只生成并冻结 translated/term-base.v1.json、translated/style-guide.v1.json，不注入；terms：按块命中注入术语库（用户术语优先）；terms+style：再把风格指南放进 system 前缀。
+     */
+    preparation?: "off" | "artifacts_only" | "terms" | "terms+style";
     api_key?: string;
     credential_ref?: string;
     model?: string;
     base_url?: string;
+    /**
+     * 审校（挑错）模型。本期只留配置位；留空回退到 model。
+     */
+    reviewer_model?: string;
+    /**
+     * 审校模型的 endpoint；留空回退到 base_url。
+     */
+    reviewer_base_url?: string;
+    /**
+     * 审校模型的内联 key，与 api_key 同样处理：创建任务时导入凭据库换成 reviewer_credential_ref 并清空，不明文落库。与 reviewer_credential_ref 互斥。
+     */
+    reviewer_api_key?: string;
+    /**
+     * 审校模型 key 的凭据引用（kind=translation_api_key）。reviewer_api_key 与它都为空时：reviewer_base_url 为空或与 base_url 相同则回退翻译 key，否则不带 key。
+     */
+    reviewer_credential_ref?: string;
     start_page?: number;
     end_page?: number;
     /**

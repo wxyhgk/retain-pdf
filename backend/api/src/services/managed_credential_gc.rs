@@ -19,6 +19,10 @@ pub(crate) fn cleanup_deleted_job_credentials(
         if !translation_ref.is_empty() {
             credential_refs.insert(translation_ref.to_string());
         }
+        let reviewer_ref = job.request_payload.translation.reviewer_credential_ref.trim();
+        if !reviewer_ref.is_empty() {
+            credential_refs.insert(reviewer_ref.to_string());
+        }
         let ocr_ref = job.request_payload.ocr.credential_ref.trim();
         if !ocr_ref.is_empty() {
             credential_refs.insert(ocr_ref.to_string());
