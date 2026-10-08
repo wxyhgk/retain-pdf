@@ -9,6 +9,7 @@ import pytest
 from retainpdf_pipeline.translate.services.quality.qa import TRANSLATION_QA_FILE_NAME
 from retainpdf_pipeline.translate.services.quality.qa import build_translation_qa
 from retainpdf_pipeline.translate.services.quality.qa import build_translation_qa_for_job
+from retainpdf_pipeline.translate.services.quality.qa import refresh_translation_qa_after_render
 from retainpdf_pipeline.translate.services.quality.qa import translation_qa_enabled
 from retainpdf_pipeline.translate.services.quality.qa import write_translation_qa_for_run
 from retainpdf_pipeline.translate.services.quality.qa import report as qa_report
@@ -876,3 +877,60 @@ def test_fit_report_v1_status_and_measured(tmp_path: Path) -> None:
     assert skipped["checks"]["layout_fit"]["status"] == "skipped"
     assert "unavailable" in skipped["checks"]["layout_fit"]["reason"]
     assert _types(skipped, "layout_fit") == []
+
+
+# ---- 渲染后重算 ------------------------------------------------------------------
+
+
+def _job_with_fit_report(job_root: Path, *, fit_status: str = "ok") -> None:
+    translated = job_root / "translated"
+    artifacts = job_root / "artifacts"
+    translated.mkdir(parents=True)
+    artifacts.mkdir(parents=True)
+    items = [_item("p001-b001", "Text body.", "正文。"), _item("p001-b002", "More text.", "更多。")]
+    (translated / "page-001-test.json").write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
+    blocks = [
+        {"item_id": "p001-b001", "page": 1, "final_font_size": 9.0, "base_font_size": 10.0, "scale": 0.9,
+         "emergency_tier": False, "tier": "shrink", "overflow": True, "overflow_chars_estimate": 3,
+         "overflow_pt": 2.0, "measured": True},
+    ]
+    (artifacts / "fit_report.v1.json").write_text(
+        json.dumps({"status": fit_status, "blocks": blocks, "summary": {}}), encoding="utf-8"
+    )
+
+
+def test_post_render_refresh_overwrites_inline_report_with_layout_results(tmp_path: Path) -> None:
+    job_root = tmp_path / "job"
+    _job_with_fit_report(job_root)
+    inline = job_root / "artifacts" / TRANSLATION_QA_FILE_NAME
+    inline.write_text(json.dumps({"generator": {"mode": "inline"}}), encoding="utf-8")
+
+    path = refresh_translation_qa_after_render(job_root, translations_dir=job_root / "translated")
+
+    assert path == inline
+    report = json.loads(inline.read_text(encoding="utf-8"))
+    assert report["generator"]["mode"] == "post_render"
+    assert report["checks"]["layout_fit"]["status"] == "ok"
+    assert _find(report, "layout_overflow")["location"]["item_id"] == "p001-b001"
+
+
+def test_post_render_refresh_never_raises(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("qa exploded")
+
+    monkeypatch.setattr(qa_report, "build_translation_qa_for_job", boom)
+    assert refresh_translation_qa_after_render(tmp_path) is None
+
+
+def test_post_render_refresh_respects_disable_switch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    job_root = tmp_path / "job"
+    _job_with_fit_report(job_root)
+    monkeypatch.setenv(qa_report.TRANSLATION_QA_ENV, "off")
+    assert refresh_translation_qa_after_render(job_root) is None
+    assert not (job_root / "artifacts" / TRANSLATION_QA_FILE_NAME).exists()
+
+
+def test_render_only_wrapper_tolerates_unreadable_spec(tmp_path: Path) -> None:
+    from retainpdf_pipeline.runtime.pipeline.render_only_pipeline import refresh_translation_qa_for_render_spec
+
+    assert refresh_translation_qa_for_render_spec(tmp_path / "missing.spec.json") is None

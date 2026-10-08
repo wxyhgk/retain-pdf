@@ -55,7 +55,7 @@ def run_translate_only() -> int:
 
 
 def run_render_only() -> int:
-    from retainpdf_pipeline.render.workflow.render_only import main
+    from retainpdf_pipeline.runtime.pipeline.render_only_pipeline import main
 
     return _run_structured(main, default_stage="rendering", provider="rendering")
 

@@ -16,6 +16,7 @@ from retainpdf_pipeline.render.source.prewarm import prewarm_manifest_path_from_
 from retainpdf_pipeline.render.source.prewarm import RenderPrewarmHandle
 from retainpdf_pipeline.render.source.prewarm import RenderPrewarmSpec
 from retainpdf_pipeline.render.source.prewarm import start_render_source_prewarm
+from retainpdf_pipeline.translate.public import refresh_translation_qa_after_render
 from retainpdf_pipeline.translate.public import resolve_page_range
 from retainpdf_pipeline.translate.public import write_translation_debug_index
 from retainpdf_pipeline.translate.public import write_translation_diagnostics
@@ -187,6 +188,8 @@ def run_book_pipeline(
         render_prewarm_manifest_path=render_prewarm_manifest_path,
         artifacts_dir=output_dir.parent / ARTIFACTS_DIR_NAME,
     )
+    # 翻译阶段生成 QA 时还没排版；渲染完带上 fit 报告再算一次。失败只记日志。
+    refresh_translation_qa_after_render(output_dir.parent, translations_dir=output_dir)
     save_elapsed = time.perf_counter() - save_started
     total_elapsed = time.perf_counter() - total_started
     return {

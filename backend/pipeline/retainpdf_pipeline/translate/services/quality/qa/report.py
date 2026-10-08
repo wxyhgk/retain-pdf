@@ -344,7 +344,33 @@ def load_job_glossary_entries(job_root: Path) -> list[dict]:
     return [entry for entry in entries if isinstance(entry, dict)]
 
 
-def build_translation_qa_for_job(job_root: Path, *, translations_dir: Path | None = None) -> dict[str, Any]:
+def refresh_translation_qa_after_render(job_root: Path, *, translations_dir: Path | None = None) -> Path | None:
+    """渲染收尾时调用：带上这次渲染的排版 fit 报告重算一次 QA，覆盖翻译阶段内联生成的那份。
+
+    翻译阶段生成 QA 时还没排版，layout_fit 必然是 skipped；渲染完再算一次才有溢出和应急档。
+    任何异常都只记日志，绝不影响渲染任务本身。
+    """
+    if not translation_qa_enabled():
+        print(f"translation qa: disabled by {TRANSLATION_QA_ENV}", flush=True)
+        return None
+    try:
+        job_root = Path(job_root)
+        output_path = default_translation_qa_path(job_root)
+        payload = build_translation_qa_for_job(job_root, translations_dir=translations_dir, mode="post_render")
+        write_translation_qa(output_path, payload)
+        _log_summary(output_path, payload)
+        return output_path
+    except Exception as exc:  # noqa: BLE001 - QA 只是报告，失败不能拖垮渲染
+        print(f"translation qa: post-render refresh skipped after error {type(exc).__name__}: {exc}", flush=True)
+        return None
+
+
+def build_translation_qa_for_job(
+    job_root: Path,
+    *,
+    translations_dir: Path | None = None,
+    mode: str = "offline",
+) -> dict[str, Any]:
     job_root = Path(job_root)
     translations_dir = Path(translations_dir) if translations_dir else job_root / "translated"
     review_path = job_root / ARTIFACTS_DIR_NAME / TRANSLATION_REVIEW_FILE_NAME
@@ -357,7 +383,7 @@ def build_translation_qa_for_job(job_root: Path, *, translations_dir: Path | Non
         fit_report_path=locate_fit_report(job_root),
         translation_review=translation_review,
         translation_review_source="artifact",
-        mode="offline",
+        mode=mode,
         job_root=job_root,
     )
 
@@ -374,6 +400,7 @@ __all__ = [
     "default_translation_qa_path",
     "load_job_glossary_entries",
     "load_translated_pages_for_qa",
+    "refresh_translation_qa_after_render",
     "translation_qa_enabled",
     "write_translation_qa",
     "write_translation_qa_for_run",
