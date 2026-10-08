@@ -47,6 +47,18 @@ async fn translate_bundle_route_returns_async_job_submission_json() {
         )
         .as_bytes(),
     );
+    for (name, value) in [
+        ("preparation", "terms+style"),
+        ("reviewer_model", "reviewer-model"),
+        ("reviewer_api_key", "sk-reviewer-test"),
+    ] {
+        body.extend_from_slice(
+            format!(
+                "--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n"
+            )
+            .as_bytes(),
+        );
+    }
     body.extend_from_slice(
         format!(
             "--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"input.pdf\"\r\nContent-Type: application/pdf\r\n\r\n"
@@ -110,4 +122,19 @@ async fn translate_bundle_route_returns_async_job_submission_json() {
     )
     .expect("resolve imported translation credential");
     assert_eq!(translation_credential.secret, "sk-test");
+
+    // 审校 key 与翻译 key 同一套处理：导入 vault、只留引用、不明文落库。
+    let translation = &persisted.request_payload.translation;
+    assert_eq!(translation.preparation, "terms+style");
+    assert_eq!(translation.reviewer_model, "reviewer-model");
+    assert!(translation.reviewer_api_key.is_empty());
+    assert!(!persisted_json.contains("sk-reviewer-test"));
+    let reviewer_credential = resolve_credential(
+        &data_root,
+        &translation.reviewer_credential_ref,
+        "translation_api_key",
+    )
+    .expect("resolve imported reviewer credential");
+    assert_eq!(reviewer_credential.secret, "sk-reviewer-test");
+    assert_ne!(translation.reviewer_credential_ref, translation.credential_ref);
 }

@@ -18,6 +18,8 @@ const TRANSLATE_STAGE_SCHEMA_VERSION: &str = "translate.stage.v1";
 const RENDER_STAGE_SCHEMA_VERSION: &str = "render.stage.v1";
 const PROVIDER_STAGE_SCHEMA_VERSION: &str = "provider.stage.v1";
 pub(crate) const TRANSLATION_API_KEY_ENV_NAME: &str = "RETAIN_TRANSLATION_API_KEY";
+/// 审校 key 的 env 名。worker_process 解析出 key 后经它注入；spec 里只写 env 引用。
+pub(crate) const REVIEWER_API_KEY_ENV_NAME: &str = "RETAIN_REVIEWER_API_KEY";
 const OCR_CREDENTIAL_ENV_NAME: &str = "RETAIN_OCR_CREDENTIAL";
 
 fn normalize_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
@@ -34,6 +36,17 @@ fn render_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
 
 fn provider_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
     job_paths.specs_dir.join("provider.spec.json")
+}
+
+/// 审校 key 的 spec 引用：和翻译 key 一样，只在配置了 key 时写 env 引用，绝不写明文。
+fn reviewer_credential_ref_for_stage(request: &ResolvedJobSpec) -> String {
+    if request.translation.reviewer_api_key.trim().is_empty()
+        && request.translation.reviewer_credential_ref.trim().is_empty()
+    {
+        String::new()
+    } else {
+        format!("env:{REVIEWER_API_KEY_ENV_NAME}")
+    }
 }
 
 fn ensure_specs_dir(job_paths: &JobPaths) -> Result<()> {
@@ -132,6 +145,10 @@ pub(crate) fn write_translate_stage_spec(
             "model": request.translation.model,
             "base_url": request.translation.base_url,
             "credential_ref": credential_ref,
+            "preparation": request.translation.preparation,
+            "reviewer_model": request.translation.reviewer_model,
+            "reviewer_base_url": request.translation.reviewer_base_url,
+            "reviewer_credential_ref": reviewer_credential_ref_for_stage(request),
             // 这里曾经还写 4 个 render_prewarm_* key（输出路径 / render_mode /
             // pdf_compress_dpi / source_cleanup_strategy）。阶段解耦之后 render
             // prewarm 整体挪进了 render 阶段（见 translate_only_pipeline 里那段
@@ -273,6 +290,10 @@ pub(crate) fn write_provider_stage_spec(
             "model": request.translation.model,
             "base_url": request.translation.base_url,
             "credential_ref": translation_credential_ref,
+            "preparation": request.translation.preparation,
+            "reviewer_model": request.translation.reviewer_model,
+            "reviewer_base_url": request.translation.reviewer_base_url,
+            "reviewer_credential_ref": reviewer_credential_ref_for_stage(request),
         },
         "render": {
             "render_mode": request.render.render_mode,

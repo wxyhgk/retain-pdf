@@ -40,6 +40,7 @@ mod contract_tests {
     use crate::models::{
         GlossaryEntryInput, SOURCE_CLEANUP_STRATEGIES, TRANSLATION_CONTEXT_MODES,
         TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES, TRANSLATION_MEMORY_MODES,
+        TRANSLATION_PREPARATION_MODES,
     };
 
     /// `create-job.v1.schema.json` 是**请求侧**的契约，前端的 payload 构造器按它生成
@@ -347,6 +348,11 @@ mod contract_tests {
                 TRANSLATION_GLOSSARY_MODES,
             ),
             ("TranslationInput", "memory_mode", TRANSLATION_MEMORY_MODES),
+            (
+                "TranslationInput",
+                "preparation",
+                TRANSLATION_PREPARATION_MODES,
+            ),
         ] {
             assert_eq!(
                 schema_enum(&schema, name, field),

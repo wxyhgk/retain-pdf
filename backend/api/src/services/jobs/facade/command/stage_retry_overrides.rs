@@ -19,6 +19,7 @@ pub(super) fn apply_retry_overrides(
         },
         |patch| {
             let switch = translation_secret_source_switch(&patch);
+            let reviewer_switch = reviewer_secret_source_switch(&patch);
             let patched = merge_json(to_json_value(&input.translation)?, patch)?;
             input.translation = serde_json::from_value(patched).map_err(|err| {
                 AppError::bad_request(format!("invalid translation overrides: {err}"))
@@ -27,6 +28,11 @@ pub(super) fn apply_retry_overrides(
                 &mut input.translation.api_key,
                 &mut input.translation.credential_ref,
                 switch,
+            );
+            apply_translation_secret_source_switch(
+                &mut input.translation.reviewer_api_key,
+                &mut input.translation.reviewer_credential_ref,
+                reviewer_switch,
             );
             Ok(())
         },
@@ -63,6 +69,7 @@ pub(super) fn apply_retry_overrides_to_resolved_spec(
         },
         |patch| {
             let switch = translation_secret_source_switch(&patch);
+            let reviewer_switch = reviewer_secret_source_switch(&patch);
             let patched = merge_json(to_json_value(&spec.translation)?, patch)?;
             spec.translation = serde_json::from_value(patched).map_err(|err| {
                 AppError::bad_request(format!("invalid translation overrides: {err}"))
@@ -71,6 +78,11 @@ pub(super) fn apply_retry_overrides_to_resolved_spec(
                 &mut spec.translation.api_key,
                 &mut spec.translation.credential_ref,
                 switch,
+            );
+            apply_translation_secret_source_switch(
+                &mut spec.translation.reviewer_api_key,
+                &mut spec.translation.reviewer_credential_ref,
+                reviewer_switch,
             );
             Ok(())
         },
@@ -171,25 +183,40 @@ pub(super) fn discard_translation_secret_sources(
 ) {
     translation.api_key.clear();
     translation.credential_ref.clear();
+    translation.reviewer_api_key.clear();
+    translation.reviewer_credential_ref.clear();
 }
 
 fn translation_secret_source_switch(patch: &Value) -> TranslationSecretSourceSwitch {
+    secret_source_switch(patch, "api_key", "credential_ref")
+}
+
+/// 审校 key 那一对（reviewer_api_key / reviewer_credential_ref）与翻译 key 同一套切换规则。
+fn reviewer_secret_source_switch(patch: &Value) -> TranslationSecretSourceSwitch {
+    secret_source_switch(patch, "reviewer_api_key", "reviewer_credential_ref")
+}
+
+fn secret_source_switch(
+    patch: &Value,
+    inline_key: &str,
+    reference_key: &str,
+) -> TranslationSecretSourceSwitch {
     let Some(object) = patch.as_object() else {
         return TranslationSecretSourceSwitch::Keep;
     };
     let inline = object
-        .get("api_key")
+        .get(inline_key)
         .and_then(Value::as_str)
         .is_some_and(|value| !value.trim().is_empty());
     let reference = object
-        .get("credential_ref")
+        .get(reference_key)
         .and_then(Value::as_str)
         .is_some_and(|value| !value.trim().is_empty());
     match (inline, reference) {
-        (true, false) if !object.contains_key("credential_ref") => {
+        (true, false) if !object.contains_key(reference_key) => {
             TranslationSecretSourceSwitch::Inline
         }
-        (false, true) if !object.contains_key("api_key") => {
+        (false, true) if !object.contains_key(inline_key) => {
             TranslationSecretSourceSwitch::Reference
         }
         _ => TranslationSecretSourceSwitch::Keep,

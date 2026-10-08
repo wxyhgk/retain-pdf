@@ -188,6 +188,8 @@ TRANSLATION_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_pipeline.translate.services.agents",
         "retainpdf_pipeline.translate.services.policy",
         "retainpdf_pipeline.translate.services.postprocess",
+        # 译前准备（术语预扫 / 风格指南）在建执行计划时跑一次，产物冻结后注入上下文。
+        "retainpdf_pipeline.translate.services.preparation",
         "retainpdf_pipeline.translate.services.results",
         "retainpdf_pipeline.translate.services.terms",
     ),

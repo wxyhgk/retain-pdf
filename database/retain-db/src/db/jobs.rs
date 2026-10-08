@@ -261,7 +261,7 @@ impl Db {
     }
 
     /// Counts persisted jobs whose replayable request references an opaque
-    /// translation or OCR credential. Historical terminal jobs are deliberately
+    /// translation (including the reviewer key) or OCR credential. Historical terminal jobs are deliberately
     /// included because retry and rerun rebuild work from `request_json`.
     pub fn count_jobs_referencing_credential(&self, credential_ref: &str) -> Result<u64> {
         let conn = self.connect()?;
@@ -272,6 +272,7 @@ impl Db {
             WHERE json_valid(request_json)
               AND (
                 json_extract(request_json, '$.translation.credential_ref') = ?1
+                OR json_extract(request_json, '$.translation.reviewer_credential_ref') = ?1
                 OR json_extract(request_json, '$.ocr.credential_ref') = ?1
               )
             "#,

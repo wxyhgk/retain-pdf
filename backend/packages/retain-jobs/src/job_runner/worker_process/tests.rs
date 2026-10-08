@@ -103,6 +103,7 @@ fn model_worker_uses_capability_without_resolving_translation_key() {
         "DEEPSEEK_API_KEY",
         "OPENAI_API_KEY",
         "DASHSCOPE_API_KEY",
+        "RETAIN_REVIEWER_API_KEY",
     ] {
         assert!(command
             .as_std()
@@ -292,4 +293,52 @@ async fn spawned_worker_process_receives_vault_credential() {
             .expect("read child credential observation"),
         secret
     );
+}
+
+#[test]
+fn reviewer_credential_ref_is_resolved_into_its_own_env() {
+    let root = credential_test_root("reviewer");
+    write_credential_vault(
+        &root,
+        "cred_reviewer",
+        "translation_api_key",
+        "openai_compatible",
+        "reviewer-vault-secret",
+    );
+    let mut input = CreateJobInput::default();
+    input.translation.api_key = "translation-inline-secret".to_string();
+    input.translation.reviewer_credential_ref = "cred_reviewer".to_string();
+    let job = JobSnapshot::new("job-reviewer".to_string(), input, vec!["true".to_string()])
+        .into_runtime();
+    let mut command = Command::new("true");
+
+    let runtime_secrets =
+        apply_job_credentials(&mut command, &root, &job).expect("apply reviewer credential");
+
+    assert_eq!(
+        command_env(&command, "RETAIN_TRANSLATION_API_KEY").as_deref(),
+        Some("translation-inline-secret")
+    );
+    assert_eq!(
+        command_env(&command, "RETAIN_REVIEWER_API_KEY").as_deref(),
+        Some("reviewer-vault-secret")
+    );
+    assert!(runtime_secrets.contains(&"reviewer-vault-secret".to_string()));
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn reviewer_env_is_absent_when_reviewer_is_not_configured() {
+    let root = credential_test_root("reviewer-absent");
+    let mut input = CreateJobInput::default();
+    input.translation.api_key = "translation-inline-secret".to_string();
+    let job = JobSnapshot::new("job-no-reviewer".to_string(), input, vec!["true".to_string()])
+        .into_runtime();
+    let mut command = Command::new("true");
+
+    let runtime_secrets = apply_job_credentials(&mut command, &root, &job).expect("apply");
+
+    assert!(command_env(&command, "RETAIN_REVIEWER_API_KEY").is_none());
+    assert_eq!(runtime_secrets, vec!["translation-inline-secret".to_string()]);
+    let _ = std::fs::remove_dir_all(root);
 }
