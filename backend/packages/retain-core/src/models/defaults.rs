@@ -74,6 +74,9 @@ pub(crate) fn default_font_unify_mode() -> String {
 pub(crate) fn default_source_cleanup_strategy() -> String {
     super::DEFAULT_SOURCE_CLEANUP_STRATEGY.to_string()
 }
+pub(crate) fn default_render_engine() -> String {
+    super::DEFAULT_RENDER_ENGINE.to_string()
+}
 pub(crate) fn default_inner_bbox_shrink_x() -> f64 {
     0.0
 }

@@ -39,6 +39,7 @@ export const CREATE_JOB_SECTION_FIELDS = {
         "body_font_size_factor",
         "body_leading_factor",
         "compile_workers",
+        "engine",
         "font_unify_mode",
         "inner_bbox_dense_shrink_x",
         "inner_bbox_dense_shrink_y",

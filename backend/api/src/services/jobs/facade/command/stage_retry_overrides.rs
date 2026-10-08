@@ -1,7 +1,19 @@
 use serde_json::Value;
 
 use crate::error::AppError;
-use crate::models::domain::{CreateJobInput, ResolvedJobSpec};
+use crate::models::domain::{CreateJobInput, ResolvedJobSpec, RENDER_ENGINES};
+
+/// 重试 overrides 可以改 render.engine（例如同一任务换 rpr 引擎重渲染对比），
+/// 但非法值要和创建任务一样 400，不能写进 spec 再让 Python 静默回退。
+fn validate_render_engine_override(engine: &str) -> Result<(), AppError> {
+    if RENDER_ENGINES.contains(&engine.trim().to_ascii_lowercase().as_str()) {
+        return Ok(());
+    }
+    Err(AppError::bad_request(format!(
+        "render.engine must be one of: {}",
+        RENDER_ENGINES.join(", ")
+    )))
+}
 
 pub(super) fn apply_retry_overrides(
     input: &mut CreateJobInput,
@@ -40,7 +52,7 @@ pub(super) fn apply_retry_overrides(
             let patched = merge_json(to_json_value(&input.render)?, patch)?;
             input.render = serde_json::from_value(patched)
                 .map_err(|err| AppError::bad_request(format!("invalid render overrides: {err}")))?;
-            Ok(())
+            validate_render_engine_override(&input.render.engine)
         },
         |patch| {
             let patched = merge_json(to_json_value(&input.runtime)?, patch)?;
@@ -90,7 +102,7 @@ pub(super) fn apply_retry_overrides_to_resolved_spec(
             let patched = merge_json(to_json_value(&spec.render)?, patch)?;
             spec.render = serde_json::from_value(patched)
                 .map_err(|err| AppError::bad_request(format!("invalid render overrides: {err}")))?;
-            Ok(())
+            validate_render_engine_override(&spec.render.engine)
         },
         |patch| {
             let patched = merge_json(to_json_value(&spec.runtime)?, patch)?;

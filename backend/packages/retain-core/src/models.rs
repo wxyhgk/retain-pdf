@@ -45,8 +45,8 @@ pub use glossary::{
 pub use input::{
     normalize_translation_refine_mode, CreateJobInput, GlossaryEntryInput, JobSourceInput,
     RefineOverride, OcrInput, RenderInput, ResolvedJobSpec,
-    ResolvedSourceSpec, RuntimeInput, TranslationInput, DEFAULT_SOURCE_CLEANUP_STRATEGY,
-    SOURCE_CLEANUP_STRATEGIES,
+    ResolvedSourceSpec, RuntimeInput, TranslationInput, DEFAULT_RENDER_ENGINE,
+    DEFAULT_SOURCE_CLEANUP_STRATEGY, RENDER_ENGINES, SOURCE_CLEANUP_STRATEGIES,
     TRANSLATION_CONTEXT_MODES,
     TRANSLATION_GLOSSARY_MODES,
     TRANSLATION_MATH_MODES,

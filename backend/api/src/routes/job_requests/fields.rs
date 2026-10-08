@@ -113,6 +113,7 @@ pub(super) fn apply_multipart_request_field(
         }
         "font_unify_mode" => request.render.font_unify_mode = value.to_string(),
         "source_cleanup_strategy" => request.render.source_cleanup_strategy = value.to_string(),
+        "engine" => request.render.engine = value.to_string(),
         // 这里曾经是 `_ => {}`,任何没命中的字段名被静默丢弃。
         //
         // JSON 那条路上 CreateJobInput 带 #[serde(deny_unknown_fields)],多一个键直接

@@ -200,6 +200,7 @@ export interface RenderInput {
   inner_bbox_dense_shrink_y: number;
   font_unify_mode: string;
   source_cleanup_strategy: string;
+  engine: string;
 }
 export interface RuntimeInput {
   job_id: string;
