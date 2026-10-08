@@ -193,6 +193,8 @@ TRANSLATION_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_pipeline.translate.services.preparation",
         "retainpdf_pipeline.translate.services.results",
         "retainpdf_pipeline.translate.services.terms",
+        # 翻译收尾生成确定性 QA 报告（translation_qa.v1.json），只读 payload、只写报告。
+        "retainpdf_pipeline.translate.services.quality.qa",
     ),
     "llm": (
         "retainpdf_pipeline.translate.llm",
@@ -380,6 +382,7 @@ DEVTOOLS_TRANSLATION_INTERNAL_IMPORT_ALLOWLIST = {
     Path("inspect_translation_repair_candidates.py"),
     Path("job_debug_runner.py"),
     Path("replay_translation_item.py"),
+    Path("run_translation_qa.py"),
     Path("run_golden_flow.py"),
     Path("translation_repair_runner.py"),
 }

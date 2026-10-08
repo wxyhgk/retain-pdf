@@ -64,6 +64,9 @@ SOURCE_TEXT_READER_ALLOWLIST: dict[str, int] = {
     "retainpdf_pipeline/translate/services/context/windows.py": 3,  # 例外:上下文要可读原文
     # control_context.py 同理:其中一条链算的是术语命中统计,要的也是未被占位符替换的原文。
     "retainpdf_pipeline/translate/llm/shared/control_context.py": 12,  # frozen-debt + 例外混合
+    # 确定性 QA 要按「这一块自己的」原文核对续接组成员,范围本来就比完整链窄:
+    # 走完整链会把整组原文算到单个成员头上(正是 truncated_translation 误报的成因)。
+    "retainpdf_pipeline/translate/services/quality/qa/units.py": 2,  # 例外:块内原文
     # ---- frozen-debt:逐处判断后再收敛,不能无脑替换 ----
     "retainpdf_pipeline/translate/artifacts/debug_index.py": 1,
     "retainpdf_pipeline/translate/core/context/models.py": 3,
