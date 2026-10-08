@@ -163,3 +163,15 @@ fn register_retry_updates_runtime_retry_counters() {
         Some("2026-04-04T00:00:10Z")
     );
 }
+
+/// 渲染阶段里的精修子步骤（Python `substage=refining`）归到 render，进度单位 step。
+#[test]
+fn refining_substage_is_a_render_step() {
+    use crate::models::{
+        event_progress_unit, public_stage_for_raw_stage, public_stage_for_substage,
+    };
+    assert_eq!(public_stage_for_substage(Some("refining")), Some("render"));
+    assert_eq!(public_stage_for_raw_stage(Some("refining")), Some("render"));
+    assert_eq!(event_progress_unit(Some("refining"), "stage_progress"), "step");
+    assert_eq!(event_progress_unit(Some("refining"), "stage_start"), "step");
+}

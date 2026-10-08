@@ -146,8 +146,22 @@ mod tests {
         /// 模拟渲染子进程里的精修写回（Python `revise_translation_item`）：
         /// 页文件、generation-2 快照、checkpoint 和修订日志，**不碰数据库**。
         fn write_refined_page(&self, refined: &[u8]) -> String {
+            self.write_revision(refined, 2, "p001-b003", "rev-refine-1")
+        }
+
+        /// 一次被采纳的修改：checkpoint generation 推到 `generation`，建一个包含全部页的
+        /// 新快照目录，修订日志追加一行。
+        fn write_revision(
+            &self,
+            refined: &[u8],
+            generation: u64,
+            item_id: &str,
+            revision_id: &str,
+        ) -> String {
             let dir = self.translated_dir();
-            let snapshot_dir = dir.join(".translation-checkpoints").join("generation-2");
+            let snapshot_dir = dir
+                .join(".translation-checkpoints")
+                .join(format!("generation-{generation}"));
             fs::create_dir_all(&snapshot_dir).expect("snapshot dir");
             let hash = sha256_hex(refined);
             fs::write(dir.join(PAGE_FILE), refined).expect("page file");
@@ -157,7 +171,7 @@ mod tests {
                 json!({
                     "status": "complete",
                     "phase": "committed",
-                    "generation": 2,
+                    "generation": generation,
                     "pages": [{
                         "page_index": 0,
                         "path": PAGE_FILE,
@@ -168,20 +182,19 @@ mod tests {
                 .to_string(),
             )
             .expect("checkpoint");
-            fs::write(
-                dir.join("revisions.v1.jsonl"),
-                format!(
-                    "{}\n",
-                    json!({
-                        "generation": 2,
-                        "item_id": "p001-b003",
-                        "revision_id": "rev-refine-1",
-                        "source": "refine",
-                        "page_hashes": {PAGE_FILE: hash}
-                    })
-                ),
-            )
-            .expect("revision journal");
+            let journal = dir.join("revisions.v1.jsonl");
+            let mut lines = fs::read_to_string(&journal).unwrap_or_default();
+            lines.push_str(&format!(
+                "{}\n",
+                json!({
+                    "generation": generation,
+                    "item_id": item_id,
+                    "revision_id": revision_id,
+                    "source": "refine",
+                    "page_hashes": {PAGE_FILE: hash}
+                })
+            ));
+            fs::write(journal, lines).expect("revision journal");
             hash
         }
 
@@ -265,6 +278,42 @@ mod tests {
         publish_job_translation_revisions(&fixture.db, &fixture.output_root, JOB_ID);
         assert_eq!(fixture.page_hash(), refined);
         assert_eq!(fixture.revision_events().len(), 1);
+    }
+
+    /// 精修每采纳一处修改 checkpoint generation 就 +1、多一个快照目录。终态登记按最终
+    /// checkpoint 一次登记：同一页的多次修改折成一条提交事件，旧 generation 快照被清掉。
+    #[test]
+    fn several_refine_generations_register_once_against_the_final_checkpoint() {
+        let fixture = Fixture::new("refine-publish-generations");
+        let initial = sha256_hex(b"[\"initial\"]");
+        fixture.commit_initial_translation(&initial);
+        fixture
+            .db
+            .finish_latest_pipeline_attempt(JOB_ID, "succeeded")
+            .expect("finish translation attempt");
+        fixture.write_revision(br#"["fix one"]"#, 2, "p001-b001", "rev-a");
+        fixture.write_revision(br#"["fix one","fix two"]"#, 3, "p001-b002", "rev-b");
+        let last = fixture.write_revision(br#"["fix one","fix two","fix three"]"#, 4, "p001-b003", "rev-c");
+
+        publish_job_translation_revisions(&fixture.db, &fixture.output_root, JOB_ID);
+
+        assert_eq!(fixture.page_hash(), last);
+        let events = fixture.revision_events();
+        assert_eq!(events.len(), 1, "按最终 checkpoint 一次登记");
+        assert_eq!(events[0]["producer_generation"], 4);
+        assert_eq!(
+            events[0]["changed_item_ids"],
+            json!(["p001-b001", "p001-b002", "p001-b003"])
+        );
+        assert_eq!(events[0]["revision_ids"], json!(["rev-a", "rev-b", "rev-c"]));
+        let snapshots = fixture.translated_dir().join(".translation-checkpoints");
+        assert!(snapshots.join("generation-4").is_dir());
+        for stale in [2, 3] {
+            assert!(
+                !snapshots.join(format!("generation-{stale}")).exists(),
+                "登记完成后旧 generation-{stale} 快照应被清理"
+            );
+        }
     }
 
     #[test]

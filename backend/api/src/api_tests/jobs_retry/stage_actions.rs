@@ -15,9 +15,10 @@ async fn stage_actions_route_reports_retryable_stages() {
     let mut source_job = source_job_with_artifacts(
         "job-stage-actions",
         JobArtifacts {
+            job_root: Some("jobs/job-stage-actions".to_string()),
             source_pdf: Some("jobs/source/source/input.pdf".to_string()),
             normalized_document_json: Some("jobs/source/ocr/document.v1.json".to_string()),
-            translations_dir: Some("jobs/source/translated".to_string()),
+            translations_dir: Some("jobs/job-stage-actions/translated".to_string()),
             ..JobArtifacts::default()
         },
     );
