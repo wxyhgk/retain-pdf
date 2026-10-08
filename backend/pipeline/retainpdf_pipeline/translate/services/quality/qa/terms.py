@@ -180,8 +180,10 @@ def build_term_specs(
                 entry=entry,
             )
         )
-    # 术语表条目沿用 glossary 的三级：preserve / canonical 视为锁定（违反记 major），
-    # preferred 是软约束（记 minor）。匹配一律不分大小写：预扫抽出来的是小写词形。
+    # 译前术语表生成后即冻结，全书必须统一：预扫抽出的条目不论 level 都视为锁定（违反记 major）。
+    # 只有来自用户术语表、且用户自己标成 preferred 的条目是软约束（记 minor）。
+    # 匹配一律不分大小写：预扫抽出来的是小写词形。
+    term_base_items = [item for item in term_base_entries if item.get("source") and item.get("target")]
     term_base = normalize_glossary_entries(
         [
             {
@@ -190,21 +192,25 @@ def build_term_specs(
                 "level": item.get("level") or "canonical",
                 "match_mode": "case_insensitive",
             }
-            for item in term_base_entries
+            for item in term_base_items
         ]
     )
+    origin_by_source = {
+        str(item["source"]).casefold(): str(item.get("origin") or "") for item in term_base_items
+    }
     for entry in term_base:
         key = entry.source.casefold()
         if key in seen:
             continue  # 用户术语表优先
         seen.add(key)
+        user_preferred = origin_by_source.get(key) == "user_glossary" and entry.level == "preferred"
         specs.append(
             TermSpec(
                 source=entry.source,
                 target=entry.target,
                 origin=ORIGIN_TERM_BASE,
                 level=entry.level,
-                locked=entry.level in {"preserve", "canonical"},
+                locked=not user_preferred,
                 entry=entry,
             )
         )

@@ -763,7 +763,9 @@ def test_execution_runner_survives_qa_failure(tmp_path: Path, monkeypatch) -> No
 # ---- 与【3】【5】产物的实际格式对齐 ------------------------------------------------
 
 
-def _term_base_v1(path: Path, *, complete: bool, level: str = "preferred") -> None:
+def _term_base_v1(
+    path: Path, *, complete: bool, level: str = "preferred", origin: str = "extracted"
+) -> None:
     path.write_text(
         json.dumps(
             {
@@ -779,7 +781,7 @@ def _term_base_v1(path: Path, *, complete: bool, level: str = "preferred") -> No
                         "frequency": 2,
                         "first_occurrence": {"page_index": 0, "page_number": 1, "item_id": "p001-b001"},
                         "conflict_candidates": [{"target": "简谐振子", "votes": 1}],
-                        "origin": "extracted",
+                        "origin": origin,
                         "votes": 2,
                         "kind": "domain_term",
                         "level": level,
@@ -799,17 +801,24 @@ def test_term_base_v1_levels_and_incomplete_flag(tmp_path: Path) -> None:
         _item("p001-b001", "A harmonic oscillator is studied.", "研究谐振子（harmonic oscillator）。"),
         _item("p001-b002", "The Harmonic Oscillator again.", "简振子再次出现。"),
     ]
+    # 预扫抽出的术语生成后即冻结：哪怕 level 是 preferred，违反也算 major。
     _term_base_v1(term_base, complete=False)
     report = _run(items, term_base_path=term_base)
     assert report["inputs"]["term_base"]["complete"] is False
     assert "不完整" in report["checks"]["terms"]["note"]
-    assert _find(report, "term_preferred_missing")["severity"] == "minor"
-    assert report["summary"]["term_consistency"]["preferred"]["consistency_rate"] == 0.5
+    assert _find(report, "term_violation")["severity"] == "major"
+    assert report["summary"]["term_consistency"]["locked"]["consistency_rate"] == 0.5
 
     _term_base_v1(term_base, complete=True, level="canonical")
     locked = _run(items, term_base_path=term_base)
     assert "note" not in locked["checks"]["terms"]
     assert _find(locked, "term_violation")["severity"] == "major"
+
+    # 只有用户术语表里用户自己标成 preferred 的条目是软约束。
+    _term_base_v1(term_base, complete=True, level="preferred", origin="user_glossary")
+    soft = _run(items, term_base_path=term_base)
+    assert _find(soft, "term_preferred_missing")["severity"] == "minor"
+    assert soft["summary"]["term_consistency"]["preferred"]["consistency_rate"] == 0.5
 
 
 def test_style_guide_qa_rule_is_referenced(tmp_path: Path) -> None:
