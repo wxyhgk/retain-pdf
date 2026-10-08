@@ -37,6 +37,13 @@
 
 const Typeset = require("../typeset");
 
+// Typst lets an inline equation reach this share of the paragraph leading
+// beyond the text's top / bottom edge before it makes the line taller
+// (math/equation.rs, layout_equation_inline: slack = leading * 0.7).
+const FORMULA_SLACK_RATIO = 0.7;
+// Typst's default par(spacing): the gap between paragraphs, replacing leading.
+const PARAGRAPH_SPACING_EM = 1.2;
+
 const RETAIN = Object.freeze({
   MIN_BLOCK_SIZE_PT: 8,
   MIN_FIT_FONT_SIZE_PT: 1,
@@ -90,6 +97,12 @@ function estimateOverflowChars({ textChars, naturalWidth, lineHeight, regionWidt
   return 1;
 }
 
+// Block text -> paragraphs: a blank line ("\n\n", spaces allowed between)
+// separates paragraphs; a single "\n" stays a forced line break inside one.
+function splitParagraphs(text) {
+  return String(text ?? "").split(/\r?\n[ \t]*\r?\n(?:[ \t]*\r?\n)*/).filter(paragraph => paragraph.trim().length > 0);
+}
+
 function createRetainFitter(config = {}) {
   const measurer = config.measurer;
   if (!measurer || typeof measurer.layout !== "function") throw new TypeError("createRetainFitter needs a Text measurer");
@@ -97,19 +110,36 @@ function createRetainFitter(config = {}) {
   const measurerFor = weight => (weight === "bold" && measurers.bold) || measurer;
 
   // Height of the content as Typst lays it out in a block `width` wide:
-  // line boxes from cap height to baseline (formula boxes extend them),
-  // separated by leading.
-  function measure(using, prepared, { fontSize, leadingEm, width, align, linebreaks, indentPt = 0 }) {
-    const capHeight = using.metrics.capHeight;
-    const laid = using.layout(prepared, { fontSize, lineHeight: 1, width, align, linebreaks, firstLineIndent: indentPt });
+  // line boxes from cap height to baseline (an inline formula widens its
+  // line only where it reaches more than 0.7 x leading beyond them, as in
+  // Typst), separated by leading; paragraphs separated by par spacing
+  // (spacingEm) instead. The first-line indent applies to the first
+  // paragraph only (retain-pdf's h() before the content).
+  function measure(using, paragraphs, { fontSize, leadingEm, width, align, linebreaks, indentPt = 0, spacingEm = PARAGRAPH_SPACING_EM }) {
+    const list = Array.isArray(paragraphs) ? paragraphs : [paragraphs];
+    const edges = { topEdge: using.metrics.capHeight * fontSize, bottomEdge: 0, slack: FORMULA_SLACK_RATIO * leadingEm * fontSize };
     let height = 0;
-    laid.lines.forEach((line, index) => {
-      const extent = Typeset.lineExtent(prepared, line.start, line.end, fontSize);
-      const text = extent.text || !extent.boxes;
-      height += Math.max(text ? capHeight * fontSize : 0, extent.top) + Math.max(0, extent.bottom);
-      if (index) height += leadingEm * fontSize;
+    let lines = 0;
+    let started = false;
+    list.forEach((prepared, index) => {
+      const laid = using.layout(prepared, { fontSize, lineHeight: 1, width, align, linebreaks, firstLineIndent: index === 0 ? indentPt : 0 });
+      if (!laid.lines.length) return;
+      if (started) height += spacingEm * fontSize;
+      started = true;
+      laid.lines.forEach((line, n) => {
+        const { frameAbove, frameBelow } = Typeset.lineFrame(prepared, line.start, line.end, fontSize, edges);
+        height += frameAbove + frameBelow;
+        if (n) height += leadingEm * fontSize;
+      });
+      lines += laid.lines.length;
     });
-    return { height, lines: laid.lines.length };
+    return { height, lines };
+  }
+
+  // Widest unwrapped paragraph (Typst box(body)); the indent on the first.
+  function naturalWidth(using, paragraphs, fontSize, indentPt = 0) {
+    return paragraphs.reduce((widest, prepared, index) =>
+      Math.max(widest, using.naturalWidth(prepared, { fontSize, firstLineIndent: index === 0 ? indentPt : 0 })), 0);
   }
 
   function normalize(block) {
@@ -137,17 +167,23 @@ function createRetainFitter(config = {}) {
       indentPt: Math.max(0, num(block.first_line_indent_pt)),
       insetTop: Math.max(0, num(block.inset_top_pt)),
       insetBottom: Math.max(0, num(block.inset_bottom_pt)),
-      shiftUp: Math.max(0, num(block.shift_up_pt))
+      shiftUp: Math.max(0, num(block.shift_up_pt)),
+      spacingEm: Math.max(0, num(block.paragraph_spacing_em, PARAGRAPH_SPACING_EM))
     };
   }
 
-  // block: one rpr_retain_input_v1 block; runs: its Text content runs.
+  // block: one rpr_retain_input_v1 block; content: its paragraphs as Text
+  // content runs ([[run, ...], ...]), or one paragraph's runs.
   // Returns the engine block (sizes decided) and the fit record.
-  function planBlock(block, runs) {
+  function planBlock(block, content) {
     const b = normalize(block);
     const using = measurerFor(b.weight);
     const capHeight = using.metrics.capHeight;
-    const prepared = using.prepare(runs);
+    // An empty paragraph has no line at all (Typst: an empty block is 0 pt tall).
+    const paragraphRuns = (Array.isArray(content) && content.length && Array.isArray(content[0]) ? content : [content || []])
+      .filter(runs => runs.length > 0);
+    const prepared = paragraphRuns.map(runs => using.prepare(runs));
+    const spacingEm = b.spacingEm;
     const linebreaks = b.justify ? "optimized" : "simple";
     const insets = b.insetTop + b.insetBottom;
     // The pad() inside the block: what layout(size => ..) sees.
@@ -176,7 +212,7 @@ function createRetainFitter(config = {}) {
       const maxHeight = Math.min(contentFitHeight, orDefault(b.fit.max_height_pt, contentFitHeight));
       const target = Math.max(RETAIN.MIN_BLOCK_SIZE_PT, Math.min(contentFitHeight, maxHeight));
       const allowed = Math.min(regionHeight, target);
-      const heightAt = (size, leading) => measure(using, prepared, { fontSize: size, leadingEm: leading, width, align: b.align, linebreaks, indentPt }).height;
+      const heightAt = (size, leading) => measure(using, prepared, { fontSize: size, leadingEm: leading, width, align: b.align, linebreaks, indentPt, spacingEm }).height;
       min = minFont;
       if (heightAt(b.fontSize, b.leadingEm) <= allowed) {
         fontSize = b.fontSize;
@@ -206,8 +242,8 @@ function createRetainFitter(config = {}) {
       const allowedHeight = Math.min(regionHeight, fitHeight);
       const single = { leadingEm: RETAIN.SINGLE_LINE_LEADING_EM, align: "left", linebreaks: "simple" };
       const fits = size => {
-        if (using.naturalWidth(prepared, { fontSize: size }) > allowedWidth) return false;
-        return measure(using, prepared, { ...single, fontSize: size, width: UNWRAPPED }).height <= allowedHeight;
+        if (naturalWidth(using, prepared, size) > allowedWidth) return false;
+        return measure(using, prepared, { ...single, fontSize: size, width: UNWRAPPED, spacingEm }).height <= allowedHeight;
       };
       base = maxFont;
       min = minFont;
@@ -225,18 +261,18 @@ function createRetainFitter(config = {}) {
       width = allowedWidth;
       regionWidth = allowedWidth;
       // Drawn in a box as wide as the allowed width: what does not fit wraps.
-      needed = measure(using, prepared, { fontSize, leadingEm, width, align: b.align, linebreaks, indentPt: 0 }).height;
+      needed = measure(using, prepared, { fontSize, leadingEm, width, align: b.align, linebreaks, indentPt: 0, spacingEm }).height;
       available = allowedHeight;
     }
     else {
       tier = "fixed";
       // The fixed-size probe measures the padded block against the full box.
-      needed = measure(using, prepared, { fontSize, leadingEm, width, align: b.align, linebreaks, indentPt }).height + insets;
+      needed = measure(using, prepared, { fontSize, leadingEm, width, align: b.align, linebreaks, indentPt, spacingEm }).height + insets;
       available = b.height;
     }
 
     const overflowPt = Math.max(0, needed - available);
-    const naturalWidth = using.naturalWidth(prepared, { fontSize, firstLineIndent: indentPt });
+    const natural = naturalWidth(using, prepared, fontSize, indentPt);
     Object.assign(fitRecord, {
       tier,
       shrinkTier,
@@ -252,7 +288,7 @@ function createRetainFitter(config = {}) {
       overflow: overflowPt > RETAIN.OVERFLOW_TOLERANCE_PT,
       overflowCharsEstimate: overflowPt > RETAIN.OVERFLOW_TOLERANCE_PT
         ? estimateOverflowChars({
-          textChars, naturalWidth, lineHeight: capHeight * fontSize, regionWidth, regionHeight: available,
+          textChars, naturalWidth: natural, lineHeight: capHeight * fontSize, regionWidth, regionHeight: available,
           neededHeight: needed, leadingPt: leadingEm * fontSize
         })
         : 0
@@ -262,15 +298,19 @@ function createRetainFitter(config = {}) {
     const engineBlock = {
       id: b.id,
       box: [b.x0, top, b.x0 + width, top + b.height],
-      paragraphs: [{ runs }],
+      // Only the first paragraph carries retain-pdf's indent.
+      paragraphs: paragraphRuns.map((runs, index) => ({ runs, firstLineIndent: index === 0 && indentPt > 0 ? indentPt / fontSize : 0 })),
       fontSize,
       lineHeight: capHeight + leadingEm,
+      // Typst replaces the leading by par spacing between paragraphs; the
+      // engine adds paragraphSpacing on top of its line pitch.
+      paragraphSpacing: spacingEm - leadingEm,
+      formulaSlack: FORMULA_SLACK_RATIO * leadingEm,
       firstBaseline: b.insetTop + capHeight * fontSize,
       topEdge: capHeight,
       bottomEdge: 0,
       align: b.align,
       linebreaks,
-      firstLineIndent: indentPt > 0 ? indentPt / fontSize : 0,
       fontWeight: b.weight
     };
     return { block: engineBlock, fit: fitRecord, frame: engineBlock.box.slice() };
@@ -279,4 +319,4 @@ function createRetainFitter(config = {}) {
   return { planBlock, measure: (prepared, options, weight) => measure(measurerFor(weight), prepared, options) };
 }
 
-module.exports = { createRetainFitter, fitSize, visibleChars, estimateOverflowChars, RETAIN };
+module.exports = { createRetainFitter, fitSize, visibleChars, estimateOverflowChars, splitParagraphs, RETAIN, FORMULA_SLACK_RATIO, PARAGRAPH_SPACING_EM };

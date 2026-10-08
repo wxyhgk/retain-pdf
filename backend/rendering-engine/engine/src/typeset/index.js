@@ -26,7 +26,10 @@
 //               line above / below its baseline, for the vertical model only
 //               (Typst's text top-edge / bottom-edge; default the font's
 //               ascender / descender). E.g. Typst's defaults "cap-height" /
-//               "baseline" are topEdge = capHeight, bottomEdge = 0. }
+//               "baseline" are topEdge = capHeight, bottomEdge = 0.
+//               formulaSlack (em, default 0): how far an inline formula may
+//               reach beyond those edges without making its line taller
+//               (Typst: 0.7 x par leading). }
 //   obstacle: { id, box } — content kept from the source page (figures,
 //               formulas, tables, untranslated text) that text must not cover.
 //   runs: Text content runs ({type:"text"}, {type:"math", widthEm, ...}, {type:"break"}).
@@ -40,8 +43,8 @@
 // Vertical model: line n's baseline is firstBaseline + n * lineHeight *
 // fontSize from the box top (plus paragraphSpacing between paragraphs); a
 // line holding an inline formula taller than its line box (topEdge, default
-// the font's ascender) or deeper (bottomEdge, default the descender) pushes
-// itself and everything below down by the difference. Ink of a line spans
+// the font's ascender) or deeper (bottomEdge, default the descender) by more
+// than formulaSlack pushes itself and everything below down by the excess. Ink of a line spans
 // ascender..descender of the font, widened by any formula box.
 // node.frameBottom: page y of the last line's box bottom (its baseline plus
 // the line box below it) — with Typst's edges, where Typst's block ends.
@@ -89,6 +92,17 @@
     return { top, bottom, text, boxes };
   }
 
+  // Extent of a line's box above / below its baseline in the vertical model:
+  // at least the text edges (pt), widened by any formula box reaching more
+  // than `slack` (pt) beyond them.
+  function lineFrame(prepared, start, end, fontSize, { topEdge, bottomEdge, slack = 0 }) {
+    const extent = lineExtent(prepared, start, end, fontSize);
+    return {
+      frameAbove: Math.max(topEdge, extent.top - slack),
+      frameBelow: Math.max(bottomEdge, extent.bottom - slack)
+    };
+  }
+
   function createTypesetter(config = {}) {
     const measurer = config.measurer;
     if (!measurer || typeof measurer.layout !== "function") throw new TypeError("createTypesetter needs a Text measurer");
@@ -112,7 +126,7 @@
       const linebreaks = block.linebreaks === "simple" ? "simple" : "optimized";
       const cap = Number.isFinite(Number(block.justifyCap)) && Number(block.justifyCap) >= 0 ? Number(block.justifyCap) : null;
       const finite = value => value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
-      const edged = finite(block.topEdge) || finite(block.bottomEdge);
+      const slack = Math.max(0, Number(block.formulaSlack) || 0) * fontSize;
       const topEdge = finite(block.topEdge) ? Number(block.topEdge) * fontSize : ascent;
       const bottomEdge = finite(block.bottomEdge) ? Number(block.bottomEdge) * fontSize : descent;
 
@@ -130,17 +144,11 @@
         for (const line of laid.lines) {
           const above = Math.max(ascent, Number(line.ascent) || 0);
           const below = Math.max(descent, Number(line.descent) || 0);
-          // The line box: the font's edges by default; with explicit edges
-          // (Typst's model) text spans topEdge..bottomEdge and a formula box
-          // its own extent.
-          let frameAbove = above;
-          let frameBelow = below;
-          if (edged) {
-            const extent = lineExtent(prepared, line.start, line.end, fontSize);
-            const text = extent.text || !extent.boxes;
-            frameAbove = Math.max(text ? topEdge : 0, extent.top);
-            frameBelow = Math.max(text ? bottomEdge : 0, extent.bottom);
-          }
+          // The line box: text spans topEdge..bottomEdge; an inline formula
+          // box its own extent less formulaSlack on either side (Typst lets
+          // inline math reach 0.7 x leading beyond the text edges before it
+          // makes the line taller).
+          const { frameAbove, frameBelow } = lineFrame(prepared, line.start, line.end, fontSize, { topEdge, bottomEdge, slack });
           // A formula taller than the line box (or one deeper than it on the
           // line above) pushes this line and everything below down.
           const extraAbove = frameAbove - topEdge;
@@ -232,5 +240,5 @@
     return { typeset, setBlock: block => setBlock(block).node };
   }
 
-  return { createTypesetter, lineExtent };
+  return { createTypesetter, lineExtent, lineFrame };
 });

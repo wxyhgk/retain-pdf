@@ -23,7 +23,7 @@ const Typeset = require("../typeset");
 const { MathStore } = require("../output/math-store");
 const { overlayDocument } = require("../output/overlay");
 const { createTypst } = require("../output/typst-runner");
-const { createRetainFitter } = require("./fit");
+const { createRetainFitter, splitParagraphs } = require("./fit");
 
 const INPUT_SCHEMA = "rpr_retain_input_v1";
 const REPORT_SCHEMA = "rpr_retain_report_v1";
@@ -146,10 +146,10 @@ function runRetain(input, options = {}) {
     const blocks = [];
     for (const block of page.blocks || []) {
       const id = String(block.id);
-      const runs = Text.contentFromText(String(block.text ?? ""), { renderMathBox })
-        .map(run => (run.type === "math" ? { ...run, display: false } : run));
+      const paragraphs = splitParagraphs(block.text).map(text => Text.contentFromText(text, { renderMathBox })
+        .map(run => (run.type === "math" ? { ...run, display: false } : run)));
       let plan;
-      try { plan = fitter.planBlock(block, runs); }
+      try { plan = fitter.planBlock(block, paragraphs); }
       catch (error) { throw new InputError(error.message); }
       plans.set(id, { plan, block, page: pageIndex });
       blocks.push(plan.block);

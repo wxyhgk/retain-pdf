@@ -79,7 +79,7 @@ def test_markdown_to_engine_text_keeps_math_and_literal_dollar() -> None:
 def test_markdown_to_engine_text_soft_and_paragraph_breaks() -> None:
     assert markdown_to_engine_text("第一行\n第二行") == "第一行第二行"
     assert markdown_to_engine_text("first line\nsecond") == "first line second"
-    assert markdown_to_engine_text("段一\n\n段二") == "段一\n段二"
+    assert markdown_to_engine_text("段一\n\n段二") == "段一\n\n段二"
     assert markdown_to_engine_text("行一\n行二", preserve_line_breaks=True) == "行一\n行二"
 
 

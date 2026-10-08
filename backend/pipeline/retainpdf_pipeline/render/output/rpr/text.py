@@ -16,7 +16,8 @@ markdown → 纯文本的规则（只作用在公式之外的片段，公式原�
 2. CommonMark 反斜杠转义 ``\\<ASCII 标点>`` 还原成标点本身——渲染侧只会写出 ``\\*``，
    其余是译文里本来就有的；``\\$`` 例外，保留给引擎当字面美元符；
 3. 换行：``preserve_line_breaks`` 的块每个 ``\\n`` 都是强制换行；其余块里空行（段落分隔）
-   折成一个强制换行，单个换行是 cmarker 的软换行——两侧都是中日韩字符时直接删掉（Typst
+   规整成一个空行 ``\\n\\n``（引擎按段落排，段距默认 1.2em，与 Typst par spacing 一致），
+   单个换行是 cmarker 的软换行——两侧都是中日韩字符时直接删掉（Typst
    在 CJK 之间不插空格），否则换成一个空格；
 4. ``$$...$$`` 改写成 ``$...$``（渲染侧本来就把行间公式降成行内），公式内部的换行换成空格
    （引擎的行内公式不跨行）。
@@ -102,7 +103,7 @@ def _fold_line_breaks(text: str, *, preserve_line_breaks: bool) -> str:
         return "\n".join(line for line in lines if line)
     text = _PARAGRAPH_BREAK_RE.sub(" ", text)
     text = _SOFT_BREAK_RE.sub(_soft_break, text)
-    return text.replace(" ", "\n")
+    return text.replace(" ", "\n\n")
 
 
 def _escape_literal_dollars(text: str) -> str:
