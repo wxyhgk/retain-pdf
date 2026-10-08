@@ -194,8 +194,9 @@ def _assert_publication_consistent(translated: Path) -> None:
         assert digest == page["page_hash"]
         snapshot = (translated / page["snapshot_path"]).read_bytes()
         assert hashlib.sha256(snapshot).hexdigest() == page["page_hash"]
-    snapshots = sorted(p.name for p in (translated / ".translation-checkpoints").iterdir())
-    assert snapshots == [f"generation-{checkpoint['generation']}"]
+    # 旧 generation 的快照留着:实时译文按数据库登记的(修订前)哈希去找它。
+    snapshots = {p.name for p in (translated / ".translation-checkpoints").iterdir()}
+    assert {"generation-7", f"generation-{checkpoint['generation']}"} <= snapshots
 
 
 def _items_by_id(translated: Path) -> dict[str, dict]:

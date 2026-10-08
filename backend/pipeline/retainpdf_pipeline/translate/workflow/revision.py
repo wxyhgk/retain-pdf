@@ -11,8 +11,8 @@
   由 checkpoint 的 generation 快照兜底:下次续跑 ``restore_committed_pages``
   会把页文件恢复到 checkpoint 记录的那一版;渲染读取时按 page_hash 校验,
   不会读到半写的状态。
-- checkpoint 的 generation 单调加一,快照目录换成新 generation,旧的在全部
-  落盘之后才清理。
+- checkpoint 的 generation 单调加一,新建这一 generation 的快照目录;旧的快照
+  保留(原因见 ``_revise_locked`` 末尾)。
 """
 
 from __future__ import annotations
@@ -455,8 +455,11 @@ def _revise_locked(
             new_snapshot_dir=None if snapshot_preexisted else new_snapshot_dir,
         )
         raise
-    # 全部落盘之后才清理旧 generation 的快照:在这之前回滚要靠它。
-    store.prune_snapshots(new_generation)
+    # 旧 generation 的快照**不清理**。Rust 的实时译文读模型按数据库里登记的
+    # page_hash 去 .translation-checkpoints/ 下找快照(services/jobs/live_translation.rs),
+    # 而修订不经过 worker stdout,数据库里登记的仍是修订前的哈希;清掉旧快照,
+    # 被改过的那页在实时译文里就会变成「快照不可用」。快照是硬链接,留着几乎不占
+    # 空间;下一次真正的翻译续跑会照常只保留它自己的 generation。
     return {
         "outcome": "committed",
         "changed": True,
