@@ -7,7 +7,7 @@ use std::path::Path;
 use crate::models::domain::{
     OcrProviderKind, UploadRecord, SOURCE_CLEANUP_STRATEGIES, TRANSLATION_CONTEXT_MODES,
     TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES, TRANSLATION_MEMORY_MODES,
-    TRANSLATION_PREPARATION_MODES,
+    TRANSLATION_PREPARATION_MODES, TRANSLATION_REFINE_MODES,
 };
 use crate::models::request::CreateJobInput;
 use crate::ocr_provider::{
@@ -206,6 +206,21 @@ pub fn validate_translation_modes(input: &CreateJobInput) -> Result<(), AppError
         &input.translation.preparation,
         TRANSLATION_PREPARATION_MODES,
     )?;
+    validate_allowed_value(
+        "translation.refine",
+        &input.translation.refine,
+        TRANSLATION_REFINE_MODES,
+    )?;
+    for (field, value) in [
+        ("translation.refine_max_items", input.translation.refine_max_items),
+        ("translation.refine_max_tokens", input.translation.refine_max_tokens),
+    ] {
+        if value < 0 {
+            return Err(AppError::bad_request(format!(
+                "{field} must be >= 0 (0 means unlimited)"
+            )));
+        }
+    }
     Ok(())
 }
 

@@ -17,7 +17,8 @@ mod revision;
 mod tests;
 
 pub(crate) use diagnostics::{
-    load_fit_report_view, load_translation_diagnostics_view, load_translation_qa_view,
+    load_fit_report_view, load_refine_report_view, load_translation_diagnostics_view,
+    load_translation_qa_view,
 };
 pub(crate) use index::load_translation_debug_list_view;
 pub(crate) use item::load_translation_debug_item_view;

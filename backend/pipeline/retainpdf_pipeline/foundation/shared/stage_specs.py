@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -340,6 +340,86 @@ class RenderStageInputs:
     translation_manifest: Path | None
 
 
+RENDER_REFINE_MODES = ("off", "review_only", "review_and_fix")
+RENDER_REFINE_TRIGGERS = ("auto", "manual")
+RENDER_REFINE_DEFAULT_MAX_ITEMS = 300
+RENDER_REFINE_DEFAULT_MAX_TOKENS = 400000
+
+
+def _refine_optional_page(value: Any) -> int | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
+
+
+def _refine_limit(value: Any, default: int) -> int:
+    if value is None or value == "" or isinstance(value, bool):
+        return default
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return default
+    return number if number >= 0 else default
+
+
+@dataclass(frozen=True)
+class RenderStageRefineParams:
+    """渲染前精修（params.refine）。旧 spec 没有这个对象，按 mode=off 读，行为不变。
+
+    mode 非法值归一成 off；trigger 非法值按 auto；页码 1-based 闭区间，null/≤0 = 不限；
+    max_items / max_tokens 为 ≥0 的整数（0 = 不限），缺失或非法用默认值。
+    """
+
+    mode: str = "off"
+    trigger: str = "auto"
+    start_page: int | None = None
+    end_page: int | None = None
+    max_items: int = RENDER_REFINE_DEFAULT_MAX_ITEMS
+    max_tokens: int = RENDER_REFINE_DEFAULT_MAX_TOKENS
+    reviewer_model: str = ""
+    reviewer_base_url: str = ""
+    reviewer_credential_ref: str = ""
+
+    @property
+    def enabled(self) -> bool:
+        return self.mode != "off"
+
+    @classmethod
+    def from_payload(cls, payload: Any) -> "RenderStageRefineParams":
+        if not isinstance(payload, dict):
+            return cls()
+        mode = str(payload.get("mode", "off") or "off").strip().lower()
+        trigger = str(payload.get("trigger", "auto") or "auto").strip().lower()
+        return cls(
+            mode=mode if mode in RENDER_REFINE_MODES else "off",
+            trigger=trigger if trigger in RENDER_REFINE_TRIGGERS else "auto",
+            start_page=_refine_optional_page(payload.get("start_page")),
+            end_page=_refine_optional_page(payload.get("end_page")),
+            max_items=_refine_limit(payload.get("max_items"), RENDER_REFINE_DEFAULT_MAX_ITEMS),
+            max_tokens=_refine_limit(payload.get("max_tokens"), RENDER_REFINE_DEFAULT_MAX_TOKENS),
+            reviewer_model=str(payload.get("reviewer_model", "") or "").strip(),
+            reviewer_base_url=str(payload.get("reviewer_base_url", "") or "").strip(),
+            reviewer_credential_ref=str(payload.get("reviewer_credential_ref", "") or "").strip(),
+        )
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "mode": self.mode,
+            "trigger": self.trigger,
+            "start_page": self.start_page,
+            "end_page": self.end_page,
+            "max_items": self.max_items,
+            "max_tokens": self.max_tokens,
+            "reviewer_model": self.reviewer_model,
+            "reviewer_base_url": self.reviewer_base_url,
+            "reviewer_credential_ref": self.reviewer_credential_ref,
+        }
+
+
 @dataclass(frozen=True)
 class RenderStageParams:
     start_page: int
@@ -360,6 +440,7 @@ class RenderStageParams:
     model: str
     base_url: str
     credential_ref: str
+    refine: RenderStageRefineParams = field(default_factory=RenderStageRefineParams)
 
 
 @dataclass(frozen=True)
@@ -450,6 +531,7 @@ class RenderStageSpec:
             model=str(params_payload.get("model", "") or ""),
             base_url=str(params_payload.get("base_url", "") or ""),
             credential_ref=str(params_payload.get("credential_ref", "") or ""),
+            refine=RenderStageRefineParams.from_payload(params_payload.get("refine")),
         )
         return cls(
             schema_version=schema_version,

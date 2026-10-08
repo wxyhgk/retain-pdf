@@ -3,7 +3,7 @@ use std::path::Path;
 use anyhow::Result;
 
 use crate::config::WorkerCommandRuntimeConfig;
-use crate::models::domain::ResolvedJobSpec;
+use crate::models::domain::{RefineOverride, ResolvedJobSpec};
 use crate::storage_paths::JobPaths;
 
 use super::entrypoints::{
@@ -14,6 +14,17 @@ use super::entrypoints::{
 use super::stage_specs::{
     write_normalize_stage_spec, write_render_stage_spec, write_translate_stage_spec,
 };
+
+/// 这次渲染要不要先精修译文（写进 render.spec.json 的 `params.refine`）。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RenderRefine {
+    /// 不精修（普通重渲染、rerun 恢复出来的渲染）。
+    Off,
+    /// 紧跟翻译的那次渲染：用任务的 `translation.refine`（默认 off），trigger=auto。
+    AfterTranslation,
+    /// `retry-stage stage=refine` 的一次性覆盖，trigger=manual。
+    Manual(RefineOverride),
+}
 
 pub enum WorkerStageCommand<'a> {
     NormalizeOcr {
@@ -31,6 +42,7 @@ pub enum WorkerStageCommand<'a> {
     Render {
         source_pdf_path: &'a Path,
         translations_dir: &'a Path,
+        refine: RenderRefine,
     },
 }
 
@@ -72,12 +84,14 @@ pub fn build_worker_stage_command(
         WorkerStageCommand::Render {
             source_pdf_path,
             translations_dir,
+            refine,
         } => build_render_only_command(
             config,
             request,
             job_paths,
             source_pdf_path,
             translations_dir,
+            &refine,
         ),
     }
 }
@@ -106,8 +120,15 @@ fn build_render_only_command(
     job_paths: &JobPaths,
     source_pdf_path: &Path,
     translations_dir: &Path,
+    refine: &RenderRefine,
 ) -> Result<Vec<String>> {
-    let spec_path = write_render_stage_spec(request, job_paths, source_pdf_path, translations_dir)?;
+    let spec_path = write_render_stage_spec(
+        request,
+        job_paths,
+        source_pdf_path,
+        translations_dir,
+        refine,
+    )?;
     Ok(build_render_only_entrypoint(config, &spec_path))
 }
 

@@ -16,8 +16,19 @@ const MAX_REQUEST_BYTES: u64 = 1024 * 1024;
 #[derive(Debug)]
 enum AgentCommand {
     Version,
-    Get { path: String },
-    Post { path: String, request_file: PathBuf },
+    Get {
+        path: String,
+    },
+    Post {
+        path: String,
+        request_file: PathBuf,
+    },
+    /// 带请求体的非 POST 写操作（译文写回是 PATCH，术语表更新是 PUT）。
+    Send {
+        method: Method,
+        path: String,
+        request_file: PathBuf,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -118,6 +129,14 @@ async fn run() -> Result<(Option<StatusCode>, Value), CliFailure> {
             let body = read_request_file(&request_file)?;
             (Method::POST, path, Some(body))
         }
+        AgentCommand::Send {
+            method,
+            path,
+            request_file,
+        } => {
+            let body = read_request_file(&request_file)?;
+            (method, path, Some(body))
+        }
     };
     let client = Client::builder().no_proxy().build().map_err(|error| {
         CliFailure::local(format!("failed to build local HTTP client: {error}"))
@@ -208,6 +227,8 @@ fn parse_command(args: Vec<String>) -> Result<AgentCommand, CliFailure> {
         }
         "document" => parse_document_command(&args[1..]),
         "operation" => parse_operation_command(&args[1..]),
+        "translation" => parse_translation_command(&args[1..]),
+        "glossary" => parse_glossary_command(&args[1..]),
         "help" | "--help" | "-h" => Err(CliFailure::usage(usage())),
         _ => Err(CliFailure::usage(format!(
             "unknown command area `{area}`\n{}",
@@ -260,6 +281,98 @@ fn parse_operation_command(args: &[String]) -> Result<AgentCommand, CliFailure> 
         }
         _ => Err(CliFailure::usage(format!(
             "unknown operation action `{action}`"
+        ))),
+    }
+}
+
+/// 译文精修用的单请求命令。每条只对应一个 HTTP 请求；组合逻辑（合并 QA 与
+/// 精修报告、术语写入后列受影响的块）在宿主 broker 里，不在这里。
+fn parse_translation_command(args: &[String]) -> Result<AgentCommand, CliFailure> {
+    let Some(action) = args.first().map(String::as_str) else {
+        return Err(CliFailure::usage("translation action is required"));
+    };
+    let flags = parse_flags(&args[1..])?;
+    let report = |suffix: &str| -> Result<AgentCommand, CliFailure> {
+        require_only_flags(&flags, &["--job-id"])?;
+        let job_id = require_identifier(&flags, "--job-id")?;
+        Ok(AgentCommand::Get {
+            path: format!("/api/v1/jobs/{job_id}/{suffix}"),
+        })
+    };
+    match action {
+        "qa" => report("translation/qa"),
+        "refine-report" => report("translation/refine-report"),
+        "fit-report" => report("render/fit-report"),
+        "item" | "revisions" => {
+            require_only_flags(&flags, &["--job-id", "--item-id"])?;
+            let job_id = require_identifier(&flags, "--job-id")?;
+            let item_id = require_identifier(&flags, "--item-id")?;
+            let suffix = if action == "revisions" { "/revisions" } else { "" };
+            Ok(AgentCommand::Get {
+                path: format!("/api/v1/jobs/{job_id}/translation/items/{item_id}{suffix}"),
+            })
+        }
+        "revise" => {
+            require_only_flags(&flags, &["--job-id", "--item-id", "--request"])?;
+            let job_id = require_identifier(&flags, "--job-id")?;
+            let item_id = require_identifier(&flags, "--item-id")?;
+            Ok(AgentCommand::Send {
+                method: Method::PATCH,
+                path: format!("/api/v1/jobs/{job_id}/translation/items/{item_id}"),
+                request_file: require_request_file(&flags)?,
+            })
+        }
+        "retry-stage" => {
+            require_only_flags(&flags, &["--job-id", "--request"])?;
+            let job_id = require_identifier(&flags, "--job-id")?;
+            Ok(AgentCommand::Post {
+                path: format!("/api/v1/jobs/{job_id}/retry-stage"),
+                request_file: require_request_file(&flags)?,
+            })
+        }
+        _ => Err(CliFailure::usage(format!(
+            "unknown translation action `{action}`"
+        ))),
+    }
+}
+
+fn parse_glossary_command(args: &[String]) -> Result<AgentCommand, CliFailure> {
+    let Some(action) = args.first().map(String::as_str) else {
+        return Err(CliFailure::usage("glossary action is required"));
+    };
+    let flags = parse_flags(&args[1..])?;
+    match action {
+        "list" => {
+            require_only_flags(&flags, &[])?;
+            Ok(AgentCommand::Get {
+                path: "/api/v1/glossaries".to_string(),
+            })
+        }
+        "get" => {
+            require_only_flags(&flags, &["--glossary-id"])?;
+            let glossary_id = require_identifier(&flags, "--glossary-id")?;
+            Ok(AgentCommand::Get {
+                path: format!("/api/v1/glossaries/{glossary_id}"),
+            })
+        }
+        "create" => {
+            require_only_flags(&flags, &["--request"])?;
+            Ok(AgentCommand::Post {
+                path: "/api/v1/glossaries".to_string(),
+                request_file: require_request_file(&flags)?,
+            })
+        }
+        "update" => {
+            require_only_flags(&flags, &["--glossary-id", "--request"])?;
+            let glossary_id = require_identifier(&flags, "--glossary-id")?;
+            Ok(AgentCommand::Send {
+                method: Method::PUT,
+                path: format!("/api/v1/glossaries/{glossary_id}"),
+                request_file: require_request_file(&flags)?,
+            })
+        }
+        _ => Err(CliFailure::usage(format!(
+            "unknown glossary action `{action}`"
         ))),
     }
 }
@@ -387,7 +500,7 @@ fn read_request_file(path: &Path) -> Result<Value, CliFailure> {
 }
 
 fn usage() -> &'static str {
-    "usage:\n  retainpdf-agent version\n  retainpdf-agent document inspect --document-id <id>\n  retainpdf-agent operation create --request <relative.json>\n  retainpdf-agent operation get --operation-id <id>\n  retainpdf-agent operation run --operation-id <id> --request <relative.json>\n  retainpdf-agent operation commit --operation-id <id> --request <relative.json>\n  retainpdf-agent operation cancel --operation-id <id> --request <relative.json>"
+    "usage:\n  retainpdf-agent version\n  retainpdf-agent document inspect --document-id <id>\n  retainpdf-agent operation create --request <relative.json>\n  retainpdf-agent operation get --operation-id <id>\n  retainpdf-agent operation run --operation-id <id> --request <relative.json>\n  retainpdf-agent operation commit --operation-id <id> --request <relative.json>\n  retainpdf-agent operation cancel --operation-id <id> --request <relative.json>\n  retainpdf-agent translation qa|refine-report|fit-report --job-id <id>\n  retainpdf-agent translation item|revisions --job-id <id> --item-id <id>\n  retainpdf-agent translation revise --job-id <id> --item-id <id> --request <relative.json>\n  retainpdf-agent translation retry-stage --job-id <id> --request <relative.json>\n  retainpdf-agent glossary list\n  retainpdf-agent glossary get --glossary-id <id>\n  retainpdf-agent glossary create --request <relative.json>\n  retainpdf-agent glossary update --glossary-id <id> --request <relative.json>"
 }
 
 fn print_json(value: &impl Serialize) {
@@ -441,6 +554,65 @@ mod tests {
                 if path.ends_with("/op-safe-1/run")
                     && request_file == Path::new("requests/run.json")
         ));
+    }
+
+    fn args(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| value.to_string()).collect()
+    }
+
+    #[test]
+    fn translation_commands_map_to_one_fixed_request_each() {
+        let qa = parse_command(args(&["translation", "qa", "--job-id", "job-1"])).expect("qa");
+        assert!(matches!(qa, AgentCommand::Get { path } if path == "/api/v1/jobs/job-1/translation/qa"));
+        let refine = parse_command(args(&["translation", "refine-report", "--job-id", "job-1"]))
+            .expect("refine report");
+        assert!(matches!(refine, AgentCommand::Get { path }
+            if path == "/api/v1/jobs/job-1/translation/refine-report"));
+        let fit = parse_command(args(&["translation", "fit-report", "--job-id", "job-1"]))
+            .expect("fit report");
+        assert!(matches!(fit, AgentCommand::Get { path } if path == "/api/v1/jobs/job-1/render/fit-report"));
+        let history = parse_command(args(&[
+            "translation", "revisions", "--job-id", "job-1", "--item-id", "p003-b004",
+        ]))
+        .expect("revisions");
+        assert!(matches!(history, AgentCommand::Get { path }
+            if path == "/api/v1/jobs/job-1/translation/items/p003-b004/revisions"));
+        let revise = parse_command(args(&[
+            "translation", "revise", "--job-id", "job-1", "--item-id", "p003-b004",
+            "--request", "requests/r.json",
+        ]))
+        .expect("revise");
+        assert!(matches!(revise, AgentCommand::Send { method, path, .. }
+            if method == Method::PATCH && path == "/api/v1/jobs/job-1/translation/items/p003-b004"));
+        let retry = parse_command(args(&[
+            "translation", "retry-stage", "--job-id", "job-1", "--request", "requests/r.json",
+        ]))
+        .expect("retry");
+        assert!(matches!(retry, AgentCommand::Post { path, .. } if path == "/api/v1/jobs/job-1/retry-stage"));
+        let update = parse_command(args(&[
+            "glossary", "update", "--glossary-id", "glossary-1", "--request", "requests/g.json",
+        ]))
+        .expect("glossary update");
+        assert!(matches!(update, AgentCommand::Send { method, path, .. }
+            if method == Method::PUT && path == "/api/v1/glossaries/glossary-1"));
+        assert!(matches!(
+            parse_command(args(&["glossary", "list"])).expect("list"),
+            AgentCommand::Get { path } if path == "/api/v1/glossaries"
+        ));
+    }
+
+    #[test]
+    fn translation_commands_reject_traversal_and_unknown_flags() {
+        for bad in [
+            args(&["translation", "qa", "--job-id", "../job"]),
+            args(&["translation", "item", "--job-id", "job-1", "--item-id", "a/b"]),
+            args(&["translation", "revise", "--job-id", "job-1", "--item-id", "p1"]),
+            args(&["translation", "qa", "--job-id", "job-1", "--extra", "x"]),
+            args(&["translation", "delete", "--job-id", "job-1"]),
+            args(&["glossary", "list", "--glossary-id", "g"]),
+        ] {
+            assert!(parse_command(bad.clone()).is_err(), "accepted {bad:?}");
+        }
     }
 
     #[test]

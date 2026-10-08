@@ -53,6 +53,7 @@ TRANSLATION_WORKFLOW_ALLOWED_FILES = {
     "page_range.py",
     "pages.py",
     "recovery.py",
+    "refine.py",
     "revision.py",
     "stages.py",
     "translation_workflow.py",
@@ -195,6 +196,8 @@ TRANSLATION_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_pipeline.translate.services.terms",
         # 翻译收尾生成确定性 QA 报告（translation_qa.v1.json），只读 payload、只写报告。
         "retainpdf_pipeline.translate.services.quality.qa",
+        # 译后精修（workflow/refine.py）：挑错 / 定点修改的纯逻辑，写回仍走 workflow/revision.py。
+        "retainpdf_pipeline.translate.services.refine",
     ),
     "llm": (
         "retainpdf_pipeline.translate.llm",

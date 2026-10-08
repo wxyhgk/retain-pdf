@@ -90,9 +90,10 @@ impl<'a> JobsFacade<'a> {
                 RetryStageRequest {
                     stage: RetryStageKind::Render,
                     mode: "from_stage".to_string(),
-                    create_new_job: false,
+                    create_new_job: Some(false),
                     overrides: Value::Null,
                     ambiguous_request_policy: AmbiguousRequestPolicy::default(),
+                    refine: None,
                 },
             ) {
                 Ok(view) => (Some(view), None),

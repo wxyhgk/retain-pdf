@@ -92,6 +92,10 @@ _EXPORTS = {
         "retainpdf_pipeline.translate.workflow.revision",
         "revise_translation_item",
     ),
+    "run_refine_for_render": (
+        "retainpdf_pipeline.translate.workflow.refine",
+        "run_refine_for_render",
+    ),
 }
 
 __all__ = list(_EXPORTS)

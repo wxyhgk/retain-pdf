@@ -56,6 +56,10 @@ pub(super) fn routes() -> Router<AppState> {
             get(jobs::get_translation_qa),
         )
         .route(
+            "/api/v1/jobs/:job_id/translation/refine-report",
+            get(jobs::get_refine_report),
+        )
+        .route(
             "/api/v1/jobs/:job_id/render/fit-report",
             get(jobs::get_fit_report),
         )

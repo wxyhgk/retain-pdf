@@ -334,6 +334,9 @@ pub enum RetryStageKind {
     Ocr,
     Translation,
     Render,
+    /// 精修已提交的译文（挑错 + 定点修改），然后原地重渲染一次。只支持
+    /// `create_new_job=false`：不新建任务、不重翻；精修参数见 [`RefineRetryRequest`]。
+    Refine,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Default)]
@@ -405,20 +408,44 @@ pub struct RetryStageRequest {
     pub stage: RetryStageKind,
     #[serde(default = "default_retry_stage_mode")]
     pub mode: String,
-    #[serde(default = "default_retry_stage_create_new_job")]
-    pub create_new_job: bool,
+    /// 省略时按 stage 取默认：refine → false（只支持原地），其余 → true。
+    /// 用 [`RetryStageRequest::creates_new_job`] 读取。
+    #[serde(default)]
+    pub create_new_job: Option<bool>,
     #[serde(default)]
     pub overrides: Value,
     #[serde(default)]
     pub ambiguous_request_policy: AmbiguousRequestPolicy,
+    /// 只对 `stage=refine` 有意义：一次性精修覆盖，省略 = 全书 `review_and_fix`。
+    /// 其余 stage 带了它会被拒绝（400），免得以为普通重渲染也会精修。
+    #[serde(default)]
+    pub refine: Option<RefineRetryRequest>,
+}
+
+/// `retry-stage stage=refine` 的 `refine` 对象。页码 1-based、闭区间，可省（= 全书）。
+#[derive(Debug, Deserialize, Default, Clone, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct RefineRetryRequest {
+    /// `review_only` | `review_and_fix`，默认 `review_and_fix`。
+    #[serde(default)]
+    pub mode: Option<String>,
+    #[serde(default)]
+    pub start_page: Option<i64>,
+    #[serde(default)]
+    pub end_page: Option<i64>,
 }
 
 fn default_retry_stage_mode() -> String {
     "from_stage".to_string()
 }
 
-fn default_retry_stage_create_new_job() -> bool {
-    true
+impl RetryStageRequest {
+    /// `create_new_job` 的生效值：显式给了就用，省略时 refine 原地执行、其余新建任务
+    /// （与加 refine 之前「省略 = true」的行为一致）。
+    pub fn creates_new_job(&self) -> bool {
+        self.create_new_job
+            .unwrap_or(!matches!(self.stage, RetryStageKind::Refine))
+    }
 }
 
 #[derive(Debug, Serialize)]

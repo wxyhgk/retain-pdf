@@ -1,0 +1,342 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/refine-report/v1",
+  "title": "Translation Refine Report Contract",
+  "description": "artifacts/refine_report.v1.json, written by the Python render worker when params.refine.mode != off (review_only or review_and_fix). Refinement runs inside the render stage before rendering: the review pass only locates accuracy errors (six categories), QA major/critical violations are merged in with origin=qa, and in review_and_fix mode only critical/major findings are fixed through replace/insert_after edits executed by the program. An edit is accepted only when every deterministic check passes (same validation as write-back, no new QA violation for the block, length budget, not unchanged); otherwise the original translation is kept and the reason is recorded. Accepted edits are written through translation revisions (source=refine), so revisions.v1.jsonl keeps the previous text. API keys are never written to the report. Rust serves the file verbatim wrapped as JobReportView.",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/:job_id/translation/refine-report",
+      "output": "RefineReportView",
+      "errors": {
+        "404": "NOT_FOUND: job does not exist or the job has no refine report yet"
+      },
+      "rust_view": "JobReportView",
+      "ts_consumer": "terminal agent CLI (retainpdf-agent translation issues)"
+    }
+  ],
+  "definitions": {
+    "RefineMode": {
+      "type": "string",
+      "enum": ["review_only", "review_and_fix"],
+      "description": "Mode that produced this report. mode=off never writes a report."
+    },
+    "RefineTrigger": {
+      "type": "string",
+      "enum": ["auto", "manual"],
+      "description": "auto: render right after translation (skipped when this translation attempt already has a report); manual: retry-stage stage=refine."
+    },
+    "RefineStatus": {
+      "type": "string",
+      "enum": ["completed", "stopped", "failed"],
+      "description": "completed: everything in scope was processed; stopped: a limit or an unavailable/failing model stopped it early (see stopped_reason); failed: an unexpected error aborted refinement. Rendering continues in every case."
+    },
+    "RefineStoppedReason": {
+      "type": ["string", "null"],
+      "enum": [null, "max_items", "max_tokens", "llm_unavailable", "llm_error", "error"]
+    },
+    "RefineCategory": {
+      "type": "string",
+      "enum": ["mistranslation", "omission", "addition", "untranslated", "number_unit", "terminology"]
+    },
+    "RefineSeverity": {
+      "type": "string",
+      "enum": ["critical", "major", "minor"],
+      "description": "critical: changes a number, conclusion or logical direction, or drops a whole sentence; major: meaning deviation, locked-term violation, wrong reference or number label; minor: other small accuracy issues (reported, never fixed)."
+    },
+    "RefineScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_page", "end_page", "page_base"],
+      "properties": {
+        "start_page": {"type": ["integer", "null"], "minimum": 1},
+        "end_page": {"type": ["integer", "null"], "minimum": 1},
+        "page_base": {"type": "integer", "const": 1, "description": "Pages are 1-based and the range is inclusive; null means unbounded."}
+      }
+    },
+    "RefineModelInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "base_url", "inherited"],
+      "properties": {
+        "model": {"type": "string"},
+        "base_url": {"type": "string"},
+        "inherited": {"type": "boolean", "description": "true when the reviewer settings all fell back to the translation model."}
+      }
+    },
+    "RefineLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_items", "max_tokens", "review_batch_size", "fix_batch_size", "max_fix_rounds", "length_budget_ratio", "fix_severities"],
+      "properties": {
+        "max_items": {"type": "integer", "minimum": 0, "description": "0 = unlimited."},
+        "max_tokens": {"type": "integer", "minimum": 0, "description": "Review + fix tokens; 0 = unlimited."},
+        "review_batch_size": {"type": "integer", "minimum": 1},
+        "fix_batch_size": {"type": "integer", "minimum": 1},
+        "max_fix_rounds": {"type": "integer", "const": 1},
+        "length_budget_ratio": {"type": "number"},
+        "fix_severities": {"type": "array", "items": {"$ref": "#/definitions/RefineSeverity"}}
+      }
+    },
+    "RefineTranslationIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempt_id", "fingerprint", "generation"],
+      "properties": {
+        "attempt_id": {"type": "string"},
+        "fingerprint": {"type": "string"},
+        "generation": {"type": ["integer", "null"], "description": "translation-checkpoint.v1.json generation; each accepted fix advances it by one."}
+      }
+    },
+    "RefineFindingQaRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["violation_id", "check", "type", "item_ids", "evidence"],
+      "properties": {
+        "violation_id": {"type": "string", "description": "id in translation_qa.v1.json computed at refine start."},
+        "check": {"type": "string"},
+        "type": {"type": "string"},
+        "item_ids": {"type": "array", "items": {"type": "string"}},
+        "evidence": {"type": "object"}
+      }
+    },
+    "RefineFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finding_id", "item_id", "page_number", "category", "severity", "target_span", "source_span", "explanation", "suggestion", "origin"],
+      "properties": {
+        "finding_id": {"type": "string", "pattern": "^rf-[0-9]{5,}$"},
+        "item_id": {"type": "string"},
+        "page_number": {"type": "integer", "minimum": 1},
+        "category": {"$ref": "#/definitions/RefineCategory"},
+        "severity": {"$ref": "#/definitions/RefineSeverity"},
+        "target_span": {"type": "string", "description": "Exact substring of the block's protected translation (origin=review); empty for origin=qa."},
+        "source_span": {"type": "string"},
+        "explanation": {"type": "string"},
+        "suggestion": {"type": "string"},
+        "origin": {"type": "string", "enum": ["review", "qa"]},
+        "qa": {"$ref": "#/definitions/RefineFindingQaRef"}
+      }
+    },
+    "RefineFindingsSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finding_count", "item_count", "by_category", "by_severity", "by_origin", "by_category_and_severity"],
+      "properties": {
+        "finding_count": {"type": "integer", "minimum": 0},
+        "item_count": {"type": "integer", "minimum": 0},
+        "by_category": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "by_severity": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "by_origin": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "by_category_and_severity": {"type": "object", "additionalProperties": {"type": "object", "additionalProperties": {"type": "integer"}}}
+      }
+    },
+    "RefineReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_item_count", "reviewed_item_count", "batch_count", "failed_batch_count", "raw_finding_count", "discarded", "summary", "findings"],
+      "properties": {
+        "candidate_item_count": {"type": "integer", "minimum": 0, "description": "Translated blocks in scope before max_items."},
+        "reviewed_item_count": {"type": "integer", "minimum": 0},
+        "batch_count": {"type": "integer", "minimum": 0},
+        "failed_batch_count": {"type": "integer", "minimum": 0},
+        "raw_finding_count": {"type": "integer", "minimum": 0, "description": "Findings returned by the model before validation."},
+        "discarded": {
+          "type": "object",
+          "description": "Dropped model findings by reason: target_span_not_found, unknown_item, invalid_finding, duplicate.",
+          "additionalProperties": {"type": "integer"}
+        },
+        "summary": {"$ref": "#/definitions/RefineFindingsSummary"},
+        "findings": {"type": "array", "items": {"$ref": "#/definitions/RefineFinding"}}
+      }
+    },
+    "RefineEdit": {
+      "type": "object",
+      "description": "Edit operation as proposed by the model ({op: replace, find, replace} or {op: insert_after, anchor, text}). Rejected proposals are kept verbatim.",
+      "properties": {
+        "op": {"type": "string"},
+        "find": {"type": "string"},
+        "replace": {"type": "string"},
+        "anchor": {"type": "string"},
+        "text": {"type": "string"}
+      }
+    },
+    "RefineFixStatus": {
+      "type": "string",
+      "enum": ["applied", "rejected", "skipped"],
+      "description": "applied: written back through translation revisions; rejected: a deterministic check failed, original kept; skipped: no edit proposed, budget exhausted, model error or block not revisable."
+    },
+    "RefineFix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["item_id", "page_number", "finding_ids", "categories", "status", "reject_reason", "reject_detail", "before", "after", "edits", "note", "revision_id", "length_before", "length_after", "length_budget"],
+      "properties": {
+        "item_id": {"type": "string"},
+        "page_number": {"type": "integer", "minimum": 1},
+        "finding_ids": {"type": "array", "items": {"type": "string"}},
+        "categories": {"type": "array", "items": {"$ref": "#/definitions/RefineCategory"}},
+        "status": {"$ref": "#/definitions/RefineFixStatus"},
+        "reject_reason": {
+          "type": "string",
+          "description": "Empty when applied. rejected: find_not_found, find_not_unique, crosses_protected_token, introduces_placeholder, invalid_edit, too_many_edits, unchanged, same_as_source, length_budget_exceeded, fit_no_growth, validation_failed, qa_new_violation, revision_conflict. skipped: model_returned_no_edit, budget_exhausted, llm_error, llm_unavailable, item_not_translatable, revision_unchanged."
+        },
+        "reject_detail": {"type": "string"},
+        "before": {"type": "string", "description": "protected_translated_text before the fix."},
+        "after": {"type": ["string", "null"], "description": "Text after applying the edits (also for rejected checks); null when edits could not be applied."},
+        "edits": {"type": "array", "items": {"$ref": "#/definitions/RefineEdit"}},
+        "note": {"type": "string"},
+        "revision_id": {"type": ["string", "null"], "pattern": "^rev-[0-9a-f]{32}$"},
+        "generation": {"type": "integer", "minimum": 1, "description": "Checkpoint generation after this revision (applied only)."},
+        "length_before": {"type": "integer", "minimum": 0},
+        "length_after": {"type": ["integer", "null"], "minimum": 0},
+        "length_budget": {"type": ["integer", "null"], "minimum": 0, "description": "floor(len(before) * length_budget_ratio) plus, for omission/untranslated findings, the length of the source span; equals len(before) when the last fit report shows the block overflowing or in the emergency tier."}
+      }
+    },
+    "RefineFixSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["item_count", "applied", "rejected", "skipped", "rejection_rate", "reject_reasons", "skip_reasons"],
+      "properties": {
+        "item_count": {"type": "integer", "minimum": 0},
+        "applied": {"type": "integer", "minimum": 0},
+        "rejected": {"type": "integer", "minimum": 0},
+        "skipped": {"type": "integer", "minimum": 0},
+        "rejection_rate": {"type": ["number", "null"], "description": "rejected / (applied + rejected). A high rate means the reviewer or fixer is over-reporting."},
+        "reject_reasons": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "skip_reasons": {"type": "object", "additionalProperties": {"type": "integer"}}
+      }
+    },
+    "RefineTokenBucket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requests", "prompt_tokens", "completion_tokens", "total_tokens"],
+      "properties": {
+        "requests": {"type": "integer", "minimum": 0},
+        "prompt_tokens": {"type": "integer", "minimum": 0},
+        "completion_tokens": {"type": "integer", "minimum": 0},
+        "total_tokens": {"type": "integer", "minimum": 0}
+      }
+    },
+    "RefineTokenUsage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requests", "requests_with_usage", "estimated_requests", "usage_source", "prompt_tokens", "completion_tokens", "total_tokens", "by_phase"],
+      "properties": {
+        "requests": {"type": "integer", "minimum": 0},
+        "requests_with_usage": {"type": "integer", "minimum": 0},
+        "estimated_requests": {"type": "integer", "minimum": 0, "description": "Requests whose provider reported no usage; counted with a ~2 chars/token estimate."},
+        "usage_source": {"type": "string", "enum": ["none", "provider", "estimated", "mixed"]},
+        "prompt_tokens": {"type": "integer", "minimum": 0},
+        "completion_tokens": {"type": "integer", "minimum": 0},
+        "total_tokens": {"type": "integer", "minimum": 0},
+        "by_phase": {"type": "object", "additionalProperties": {"$ref": "#/definitions/RefineTokenBucket"}}
+      }
+    },
+    "RefineQaSummary": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["violation_count", "by_severity", "by_check", "items_with_violations", "clean_unit_rate"],
+      "properties": {
+        "violation_count": {"type": "integer", "minimum": 0},
+        "by_severity": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "by_check": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "items_with_violations": {"type": "integer", "minimum": 0},
+        "clean_unit_rate": {"type": ["number", "null"]}
+      }
+    },
+    "RefineQaDeltaRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["item_id", "check", "type", "severity", "count"],
+      "properties": {
+        "item_id": {"type": "string"},
+        "check": {"type": "string"},
+        "type": {"type": "string"},
+        "severity": {"type": "string"},
+        "count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "RefineReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "schema_version", "generated_at", "status", "mode", "trigger", "scope", "models", "limits", "stopped_reason", "prompt_versions", "translation", "review", "fixes", "fix_summary", "token_usage", "qa_before", "qa_after", "qa_delta", "errors", "elapsed_ms"],
+      "properties": {
+        "schema": {"type": "string", "const": "refine_report_v1"},
+        "schema_version": {"type": "integer", "const": 1},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "status": {"$ref": "#/definitions/RefineStatus"},
+        "mode": {"$ref": "#/definitions/RefineMode"},
+        "trigger": {"$ref": "#/definitions/RefineTrigger"},
+        "scope": {"$ref": "#/definitions/RefineScope"},
+        "models": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Empty when refinement failed before models were resolved. Never contains credentials.",
+          "properties": {
+            "reviewer": {"$ref": "#/definitions/RefineModelInfo"},
+            "fixer": {"$ref": "#/definitions/RefineModelInfo"}
+          }
+        },
+        "limits": {"$ref": "#/definitions/RefineLimits"},
+        "stopped_reason": {"$ref": "#/definitions/RefineStoppedReason"},
+        "prompt_versions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["review", "fix"],
+          "properties": {"review": {"type": "string"}, "fix": {"type": "string"}}
+        },
+        "translation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["before", "after"],
+          "properties": {
+            "before": {"$ref": "#/definitions/RefineTranslationIdentity"},
+            "after": {
+              "anyOf": [{"$ref": "#/definitions/RefineTranslationIdentity"}, {"type": "null"}]
+            }
+          }
+        },
+        "review": {"$ref": "#/definitions/RefineReview"},
+        "fixes": {"type": "array", "items": {"$ref": "#/definitions/RefineFix"}, "description": "Empty in review_only mode."},
+        "fix_summary": {"$ref": "#/definitions/RefineFixSummary"},
+        "token_usage": {"$ref": "#/definitions/RefineTokenUsage"},
+        "qa_before": {"$ref": "#/definitions/RefineQaSummary"},
+        "qa_after": {"$ref": "#/definitions/RefineQaSummary"},
+        "qa_delta": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["resolved", "introduced"],
+          "description": "QA violations of the fixed blocks that disappeared / appeared between qa_before and qa_after.",
+          "properties": {
+            "resolved": {"type": "array", "items": {"$ref": "#/definitions/RefineQaDeltaRow"}},
+            "introduced": {"type": "array", "items": {"$ref": "#/definitions/RefineQaDeltaRow"}}
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["phase", "message"],
+            "properties": {
+              "phase": {"type": "string"},
+              "batch": {"type": "string"},
+              "message": {"type": "string"}
+            }
+          }
+        },
+        "elapsed_ms": {"type": "integer", "minimum": 0}
+      }
+    },
+    "RefineReportView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["job_id", "report"],
+      "description": "data payload of GET /api/v1/jobs/:job_id/translation/refine-report (JobReportView).",
+      "properties": {
+        "job_id": {"type": "string"},
+        "report": {"$ref": "#/definitions/RefineReport"}
+      }
+    }
+  }
+}

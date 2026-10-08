@@ -70,6 +70,26 @@ retainpdf-agent operation commit --operation-id <id>
 retainpdf-agent operation cancel --operation-id <id> --reason-code <reason>
 ```
 
+When the turn (or the book terminal) is bound to a translation job, the broker
+also admits the translation-refinement grammar. Read commands run directly;
+`revise`, `refine`, `rerender` and `term-set` need the same host confirmation
+(explicit confirmation or green-light mode) as `operation run/commit`:
+
+```text
+retainpdf-agent translation issues [--pages 3-5] [--severity critical|major|minor] [--limit 50]
+retainpdf-agent translation show --item-id <id>
+retainpdf-agent translation revise --item-id <id> --text "<new>" --reason "<why>"
+retainpdf-agent translation refine [--pages 3-5] [--review-only]
+retainpdf-agent translation rerender
+retainpdf-agent translation term-set --source "<term>" --target "<rendering>"
+```
+
+Each is composed by the host from single-request CLI calls, each with its own
+job-scoped, single-action capability. The PTY book terminal starts a host
+broker in terminal mode (no ACP permission round-trip, translation grammar
+only) and writes `.agents/skills/refine-translation/SKILL.md` into the
+workspace; see `retainpdf_ai/fx_skills.py`.
+
 The agent composes PDF behavior from a versioned program or restricted IR.
 Adding a new product operation should not normally require adding another model
 tool.

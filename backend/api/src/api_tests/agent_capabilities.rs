@@ -272,3 +272,123 @@ async fn tampered_capability_is_unauthorized_and_api_key_bootstrap_still_works()
     .await;
     assert_eq!(api_key_request.status(), StatusCode::OK);
 }
+
+async fn issue_for_job(app: axum::Router, payload: Value) -> axum::response::Response {
+    request_json(
+        app,
+        "POST",
+        "/api/v1/internal/agent/capabilities",
+        Some("test-key"),
+        None,
+        Some(payload),
+    )
+    .await
+}
+
+#[tokio::test]
+async fn job_capability_reaches_only_its_own_translation_endpoints() {
+    let state = test_state("agent-capability-job");
+    let (document_id, _conversation_id, _message_id) = seed_scope(&state, 'j');
+    let app = build_app(state);
+    let response = issue_for_job(
+        app.clone(),
+        json!({
+            "schema": "agent_capability_issue_v1",
+            "job_id": "job-a",
+            "actions": ["translation.read", "glossary.read"],
+            "ttl_seconds": 60
+        }),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = read_json(response).await;
+    assert_eq!(body["data"]["job_id"], "job-a");
+    let capability = body["data"]["capability"]
+        .as_str()
+        .expect("issued capability")
+        .to_string();
+
+    // 自己的任务：鉴权放行，交给路由（任务不存在时是 404，不是 401/403）。
+    let own = request_json(
+        app.clone(),
+        "GET",
+        "/api/v1/jobs/job-a/translation/qa",
+        None,
+        Some(&capability),
+        None,
+    )
+    .await;
+    assert!(
+        own.status() != StatusCode::UNAUTHORIZED && own.status() != StatusCode::FORBIDDEN,
+        "own job was rejected: {}",
+        own.status()
+    );
+    let glossaries = request_json(
+        app.clone(),
+        "GET",
+        "/api/v1/glossaries",
+        None,
+        Some(&capability),
+        None,
+    )
+    .await;
+    assert_eq!(glossaries.status(), StatusCode::OK);
+
+    for (method, uri) in [
+        ("GET", "/api/v1/jobs/job-b/translation/qa".to_string()),
+        ("PATCH", "/api/v1/jobs/job-a/translation/items/p1-b1".to_string()),
+        ("POST", "/api/v1/jobs/job-a/retry-stage".to_string()),
+        ("GET", format!("/api/v1/documents/{document_id}")),
+        ("DELETE", "/api/v1/jobs/job-a".to_string()),
+    ] {
+        let response = request_json(
+            app.clone(),
+            method,
+            &uri,
+            None,
+            Some(&capability),
+            if method == "GET" || method == "DELETE" {
+                None
+            } else {
+                Some(json!({}))
+            },
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::FORBIDDEN, "{method} {uri}");
+    }
+}
+
+#[tokio::test]
+async fn job_capability_cannot_be_mixed_with_document_scope() {
+    let state = test_state("agent-capability-job-mixed");
+    let (document_id, conversation_id, _message_id) = seed_scope(&state, 'k');
+    let app = build_app(state);
+    for payload in [
+        json!({
+            "schema": "agent_capability_issue_v1",
+            "job_id": "job-a",
+            "conversation_id": conversation_id,
+            "document_id": document_id,
+            "actions": ["translation.read"]
+        }),
+        json!({
+            "schema": "agent_capability_issue_v1",
+            "job_id": "job-a",
+            "actions": ["document.inspect"]
+        }),
+        json!({
+            "schema": "agent_capability_issue_v1",
+            "conversation_id": conversation_id,
+            "document_id": document_id,
+            "actions": ["translation.revise"]
+        }),
+        json!({
+            "schema": "agent_capability_issue_v1",
+            "job_id": "../job",
+            "actions": ["translation.read"]
+        }),
+    ] {
+        let response = issue_for_job(app.clone(), payload.clone()).await;
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST, "{payload}");
+    }
+}

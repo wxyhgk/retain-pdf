@@ -35,6 +35,7 @@ pub(crate) fn stage_plans(job: &JobSnapshot, data_root: &Path) -> Vec<JobStagePl
         stage_plan(job, RetryStageKind::Ocr, data_root),
         stage_plan(job, RetryStageKind::Translation, data_root),
         stage_plan(job, RetryStageKind::Render, data_root),
+        stage_plan(job, RetryStageKind::Refine, data_root),
     ]
 }
 
@@ -46,6 +47,22 @@ pub(crate) fn stage_plan(
     let availability = StageArtifactAvailability::from_job(job, data_root);
     let running = matches!(job.status, JobStatusKind::Queued | JobStatusKind::Running);
     let mut plan = base_stage_plan(stage, &availability);
+
+    // 精修在 Python 渲染子进程里直接调模型；Rust 模型执行器的任务不允许回落到
+    // Python transport（job_launcher 同一条规则），所以这类任务不提供精修。
+    if matches!(plan.stage, RetryStageKind::Refine)
+        && job
+            .request_payload
+            .translation
+            .execution_connection
+            .is_some()
+    {
+        plan.can_retry = false;
+        plan.disabled_reason =
+            "refine runs model calls inside the Python render worker; jobs bound to a Rust model execution_connection are not supported"
+                .into();
+        return plan;
+    }
 
     if job
         .request_payload
@@ -166,6 +183,7 @@ pub(crate) fn stage_name(stage: &RetryStageKind) -> &'static str {
         RetryStageKind::Ocr => "ocr",
         RetryStageKind::Translation => "translation",
         RetryStageKind::Render => "render",
+        RetryStageKind::Refine => "refine",
     }
 }
 
@@ -228,6 +246,22 @@ fn base_stage_plan(
             retry_workflow: WorkflowKind::Render,
             danger: false,
         },
+        // 精修 = 原地跑一次 Render workflow，渲染阶段在真正渲染之前先精修；译文复用，
+        // 每个被接受的修改走修订历史（可回退），不重翻。
+        RetryStageKind::Refine => JobStagePlan {
+            stage,
+            label: "精修译文".to_string(),
+            can_retry: availability.translations_available,
+            disabled_reason: String::new(),
+            will_reuse: vec![
+                "source_pdf".to_string(),
+                "ocr_result".to_string(),
+                "translation_result".to_string(),
+            ],
+            will_rerun: vec!["refine".to_string(), "render".to_string()],
+            retry_workflow: WorkflowKind::Render,
+            danger: false,
+        },
     }
 }
 
@@ -246,6 +280,10 @@ fn disabled_reason_for_stage(
         }
         RetryStageKind::Render => {
             "need source_pdf and translations_dir to retry render".to_string()
+        }
+        RetryStageKind::Refine => {
+            "need source_pdf and committed translations (translations_dir) to refine; translate the document first"
+                .to_string()
         }
     }
 }
