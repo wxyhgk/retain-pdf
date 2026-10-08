@@ -53,6 +53,11 @@ impl<'a> JobsFacade<'a> {
                 .join("rendered");
             let _ = std::fs::remove_dir_all(&rendered_dir);
             let job = prepare_in_place_render_job(source_job)?;
+            // 续跑出来的渲染不精修：清掉没用完的一次性精修覆盖。
+            super::stage_retry_refine::clear_pending_refine_override(
+                self.command.control.output_root,
+                &job.job_id,
+            )?;
             let job = start_job_execution(&self.command.submit.launcher, job)?;
             return Ok(self.build_submission_view(
                 base_url,

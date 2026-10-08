@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use serde_json::json;
 
-use crate::models::domain::ResolvedJobSpec;
+use crate::models::domain::{normalize_translation_refine_mode, ResolvedJobSpec};
 use crate::ocr_provider::provider_public_definitions;
 use crate::ocr_provider::{
     configured_provider_credential_env, is_configured_command_provider, provider_model_version,
@@ -12,6 +12,8 @@ use crate::ocr_provider::{
 };
 use crate::ocr_provider::{provider_token, provider_token_env_name};
 use crate::storage_paths::JobPaths;
+
+use super::stage_commands::RenderRefine;
 
 const NORMALIZE_STAGE_SCHEMA_VERSION: &str = "normalize.stage.v1";
 const TRANSLATE_STAGE_SCHEMA_VERSION: &str = "translate.stage.v1";
@@ -163,11 +165,47 @@ pub(crate) fn write_translate_stage_spec(
     Ok(spec_path)
 }
 
+/// render.spec.json 的 `params.refine`。mode=off 时也写全字段，Python 侧不用猜默认值。
+///
+/// mode 的决定规则：retry refine 的一次性覆盖 → 覆盖值 + trigger=manual；紧跟翻译的
+/// 那次渲染 → 任务的 `translation.refine` + trigger=auto；其余（普通重渲染等）→ off。
+/// 翻译模型沿用 params 里的 model/base_url/credential_ref；reviewer_* 留空时由 Python
+/// 回退到翻译模型。key 只经 env 注入，这里只写 env 引用。
+fn render_refine_params(request: &ResolvedJobSpec, refine: &RenderRefine) -> serde_json::Value {
+    let (mode, trigger, start_page, end_page) = match refine {
+        RenderRefine::Off => ("off", "auto", None, None),
+        RenderRefine::AfterTranslation => (
+            normalize_translation_refine_mode(&request.translation.refine),
+            "auto",
+            None,
+            None,
+        ),
+        RenderRefine::Manual(value) => (
+            normalize_translation_refine_mode(&value.mode),
+            "manual",
+            value.start_page,
+            value.end_page,
+        ),
+    };
+    json!({
+        "mode": mode,
+        "trigger": trigger,
+        "start_page": start_page,
+        "end_page": end_page,
+        "max_items": request.translation.refine_max_items.max(0),
+        "max_tokens": request.translation.refine_max_tokens.max(0),
+        "reviewer_model": request.translation.reviewer_model,
+        "reviewer_base_url": request.translation.reviewer_base_url,
+        "reviewer_credential_ref": reviewer_credential_ref_for_stage(request),
+    })
+}
+
 pub(crate) fn write_render_stage_spec(
     request: &ResolvedJobSpec,
     job_paths: &JobPaths,
     source_pdf_path: &Path,
     translations_dir: &Path,
+    refine: &RenderRefine,
 ) -> Result<PathBuf> {
     ensure_specs_dir(job_paths)?;
     let spec_path = render_stage_spec_path(job_paths);
@@ -210,6 +248,7 @@ pub(crate) fn write_render_stage_spec(
             "model": request.translation.model,
             "base_url": request.translation.base_url,
             "credential_ref": credential_ref,
+            "refine": render_refine_params(request, refine),
         },
     });
     let content = serde_json::to_string_pretty(&payload)?;

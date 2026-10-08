@@ -133,6 +133,12 @@ export interface PublicTranslationInput {
    * TRANSLATION_PREPARATION_MODES：off / artifacts_only / terms / terms+style。
    */
   preparation?: string;
+  /**
+   * TRANSLATION_REFINE_MODES：off / review_only / review_and_fix。
+   */
+  refine?: string;
+  refine_max_items?: number;
+  refine_max_tokens?: number;
   api_key: string;
   api_key_configured: boolean;
   credential_ref: string;

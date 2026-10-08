@@ -96,6 +96,18 @@ export interface TranslationInput {
    * TRANSLATION_PREPARATION_MODES。译前准备（全书术语预扫 + 风格指南）。off：不生成产物，prompt 与缓存 key 与不带该字段时完全一致；artifacts_only：只生成并冻结 translated/term-base.v1.json、translated/style-guide.v1.json，不注入；terms：按块命中注入术语库（用户术语优先）；terms+style：再把风格指南放进 system 前缀。
    */
   preparation?: "off" | "artifacts_only" | "terms" | "terms+style";
+  /**
+   * TRANSLATION_REFINE_MODES。精修（挑错 + 定点修改），在渲染阶段、真正渲染之前运行，只在翻译之后紧接着的那次渲染里自动跑（普通的重新渲染不会再跑）。off：不挑错不修改，渲染行为与不带该字段时完全一致；review_only：只挑错，写 artifacts/refine_report.v1.json，不改译文；review_and_fix：再对 critical/major 问题做定点修改，经确定性检查通过才写回（走修订历史，可回退）。挑错模型用 reviewer_*，留空回退到翻译模型。
+   */
+  refine?: "off" | "review_only" | "review_and_fix";
+  /**
+   * 精修最多挑错多少块；0 = 不限。超出就停，并在报告里说明。
+   */
+  refine_max_items?: number;
+  /**
+   * 精修（挑错 + 修改）的总 token 上限；0 = 不限。超出就停，并在报告里说明。
+   */
+  refine_max_tokens?: number;
   api_key?: string;
   credential_ref?: string;
   model?: string;

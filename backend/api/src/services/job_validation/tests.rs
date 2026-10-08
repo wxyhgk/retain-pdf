@@ -286,6 +286,33 @@ fn translation_modes_accept_the_defaults_and_every_allowed_value() {
         validate_translation_modes(&input)
             .unwrap_or_else(|err| panic!("preparation={value} 应当合法: {err:?}"));
     }
+    input.translation.preparation = "off".to_string();
+    assert_eq!(input.translation.refine, "off", "refine 默认必须是 off");
+    assert_eq!(input.translation.refine_max_items, 300);
+    assert_eq!(input.translation.refine_max_tokens, 400_000);
+    for value in TRANSLATION_REFINE_MODES {
+        input.translation.refine = value.to_string();
+        validate_translation_modes(&input)
+            .unwrap_or_else(|err| panic!("refine={value} 应当合法: {err:?}"));
+    }
+    // 0 = 不限，合法。
+    input.translation.refine_max_items = 0;
+    input.translation.refine_max_tokens = 0;
+    validate_translation_modes(&input).expect("refine 上限为 0 表示不限");
+}
+
+#[test]
+fn refine_limits_reject_negative_values() {
+    for field in ["refine_max_items", "refine_max_tokens"] {
+        let mut input = CreateJobInput::default();
+        match field {
+            "refine_max_items" => input.translation.refine_max_items = -1,
+            _ => input.translation.refine_max_tokens = -1,
+        }
+        let err = validate_translation_modes(&input)
+            .expect_err(&format!("translation.{field}=-1 应当被拒绝"));
+        assert!(format!("{err:?}").contains(field));
+    }
 }
 
 #[test]
@@ -336,6 +363,7 @@ fn translation_modes_reject_typos_instead_of_silently_normalizing() {
         ("memory_mode", "broad_"),
         ("math_mode", "typst"),
         ("preparation", "terms_style"),
+        ("refine", "review"),
     ] {
         let mut input = CreateJobInput::default();
         match field {
@@ -343,6 +371,7 @@ fn translation_modes_reject_typos_instead_of_silently_normalizing() {
             "glossary_mode" => input.translation.glossary_mode = value.to_string(),
             "memory_mode" => input.translation.memory_mode = value.to_string(),
             "preparation" => input.translation.preparation = value.to_string(),
+            "refine" => input.translation.refine = value.to_string(),
             _ => input.translation.math_mode = value.to_string(),
         }
         let err = validate_translation_modes(&input)

@@ -4,6 +4,8 @@ mod command_builder;
 mod entrypoints;
 #[path = "worker_command/legacy_ocr.rs"]
 mod legacy_ocr;
+#[path = "worker_command/refine_override.rs"]
+pub mod refine_override;
 #[path = "worker_command/stage_commands.rs"]
 mod stage_commands;
 #[path = "worker_command/stage_specs.rs"]
@@ -19,7 +21,7 @@ use crate::storage_paths::JobPaths;
 use std::path::Path;
 
 pub use self::legacy_ocr::build_ocr_command;
-pub use self::stage_commands::{build_worker_stage_command, WorkerStageCommand};
+pub use self::stage_commands::{build_worker_stage_command, RenderRefine, WorkerStageCommand};
 
 #[cfg(test)]
 fn build_legacy_provider_case_command(

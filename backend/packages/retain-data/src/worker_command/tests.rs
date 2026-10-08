@@ -170,6 +170,24 @@ fn render_command(
     source_pdf_path: &Path,
     translations_dir: &Path,
 ) -> Vec<String> {
+    render_command_with_refine(
+        config,
+        request,
+        job_paths,
+        source_pdf_path,
+        translations_dir,
+        super::RenderRefine::Off,
+    )
+}
+
+fn render_command_with_refine(
+    config: &AppConfig,
+    request: &ResolvedJobSpec,
+    job_paths: &JobPaths,
+    source_pdf_path: &Path,
+    translations_dir: &Path,
+    refine: super::RenderRefine,
+) -> Vec<String> {
     build_worker_stage_command(
         &config.worker_command_runtime(),
         request,
@@ -177,6 +195,7 @@ fn render_command(
         WorkerStageCommand::Render {
             source_pdf_path,
             translations_dir,
+            refine,
         },
     )
     .expect("build render command")
@@ -881,4 +900,140 @@ fn stage_specs_keep_python_loader_contract_keys() {
             "credential_ref",
         ],
     );
+}
+
+fn render_spec_with_refine(
+    request: &ResolvedJobSpec,
+    refine: super::RenderRefine,
+) -> serde_json::Value {
+    let config = test_config();
+    let job_paths = build_paths(config.as_ref());
+    read_spec_from_command(&render_command_with_refine(
+        config.as_ref(),
+        request,
+        &job_paths,
+        Path::new("/tmp/source.pdf"),
+        Path::new("/tmp/translated"),
+        refine,
+    ))
+}
+
+const REFINE_PARAM_KEYS: &[&str] = &[
+    "mode",
+    "trigger",
+    "start_page",
+    "end_page",
+    "max_items",
+    "max_tokens",
+    "reviewer_model",
+    "reviewer_base_url",
+    "reviewer_credential_ref",
+];
+
+/// 普通重渲染：即使任务配了 refine，也一律 off —— 不会每次重渲染都重新精修花钱。
+#[test]
+fn render_spec_refine_is_off_for_plain_render_even_if_job_enables_it() {
+    let mut request = build_request(WorkflowKind::Render);
+    request.translation.refine = "review_and_fix".to_string();
+    let payload = render_spec_with_refine(&request, super::RenderRefine::Off);
+    let refine = &payload["params"]["refine"];
+    assert_object_keys_exactly(
+        refine,
+        &REFINE_PARAM_KEYS.iter().map(|key| key.to_string()).collect::<Vec<_>>(),
+    );
+    assert_eq!(refine["mode"], "off");
+    assert_eq!(refine["trigger"], "auto");
+    assert!(refine["start_page"].is_null());
+    assert!(refine["end_page"].is_null());
+    assert_eq!(refine["max_items"], 300);
+    assert_eq!(refine["max_tokens"], 400_000);
+    assert_eq!(refine["reviewer_credential_ref"], "");
+}
+
+/// 紧跟翻译的那次渲染：用任务的 translation.refine，trigger=auto；默认 off。
+#[test]
+fn render_spec_refine_after_translation_follows_job_setting() {
+    let mut request = build_request(WorkflowKind::Book);
+    let payload = render_spec_with_refine(&request, super::RenderRefine::AfterTranslation);
+    assert_eq!(payload["params"]["refine"]["mode"], "off", "默认 off");
+
+    request.translation.refine = " Review_Only ".to_string();
+    request.translation.refine_max_items = 0;
+    request.translation.refine_max_tokens = 1234;
+    request.translation.reviewer_model = "reviewer-model".to_string();
+    request.translation.reviewer_base_url = "https://reviewer.example/v1".to_string();
+    request.translation.reviewer_credential_ref = "cred_reviewer".to_string();
+    let payload = render_spec_with_refine(&request, super::RenderRefine::AfterTranslation);
+    let refine = &payload["params"]["refine"];
+    assert_eq!(refine["mode"], "review_only");
+    assert_eq!(refine["trigger"], "auto");
+    assert_eq!(refine["max_items"], 0);
+    assert_eq!(refine["max_tokens"], 1234);
+    assert_eq!(refine["reviewer_model"], "reviewer-model");
+    assert_eq!(refine["reviewer_base_url"], "https://reviewer.example/v1");
+    assert_eq!(
+        refine["reviewer_credential_ref"],
+        format!("env:{REVIEWER_API_KEY_ENV_NAME}")
+    );
+    assert!(!payload.to_string().contains("cred_reviewer"));
+
+    request.translation.refine = "bogus".to_string();
+    let payload = render_spec_with_refine(&request, super::RenderRefine::AfterTranslation);
+    assert_eq!(payload["params"]["refine"]["mode"], "off", "非法值兜底成 off");
+}
+
+/// retry refine 的一次性覆盖：覆盖值 + trigger=manual，与任务自己的 translation.refine 无关。
+#[test]
+fn render_spec_refine_manual_override_uses_override_values() {
+    let mut request = build_request(WorkflowKind::Render);
+    request.translation.refine = "off".to_string();
+    request.translation.api_key = "sk-translation-secret".to_string();
+    let payload = render_spec_with_refine(
+        &request,
+        super::RenderRefine::Manual(crate::models::domain::RefineOverride {
+            mode: "review_and_fix".to_string(),
+            start_page: Some(3),
+            end_page: Some(5),
+            requested_at: "2026-10-08T00:00:00Z".to_string(),
+        }),
+    );
+    let refine = &payload["params"]["refine"];
+    assert_eq!(refine["mode"], "review_and_fix");
+    assert_eq!(refine["trigger"], "manual");
+    assert_eq!(refine["start_page"], 3);
+    assert_eq!(refine["end_page"], 5);
+    assert_eq!(
+        payload["params"]["credential_ref"],
+        format!("env:{TRANSLATION_API_KEY_ENV_NAME}")
+    );
+    assert!(!payload.to_string().contains("sk-translation-secret"));
+}
+
+#[test]
+fn refine_override_file_round_trips_and_clears() {
+    use super::refine_override::{
+        clear_refine_override, load_refine_override, refine_override_path,
+        write_refine_override,
+    };
+    let config = test_config();
+    let job_paths = build_paths(config.as_ref());
+    clear_refine_override(&job_paths).expect("clear missing override is a no-op");
+    assert!(load_refine_override(&job_paths).expect("load").is_none());
+
+    let value = crate::models::domain::RefineOverride {
+        mode: "review_only".to_string(),
+        start_page: None,
+        end_page: Some(7),
+        requested_at: "2026-10-08T00:00:00Z".to_string(),
+    };
+    let path = write_refine_override(&job_paths, &value).expect("write override");
+    assert_eq!(path, refine_override_path(&job_paths));
+    assert_eq!(load_refine_override(&job_paths).expect("load"), Some(value));
+
+    clear_refine_override(&job_paths).expect("clear override");
+    assert!(!path.exists());
+    assert!(load_refine_override(&job_paths).expect("load").is_none());
+
+    std::fs::write(&path, b"{not json").expect("write corrupt override");
+    assert!(load_refine_override(&job_paths).is_err(), "损坏的覆盖要报出来，由调用方决定降级");
 }

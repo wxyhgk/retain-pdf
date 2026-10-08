@@ -50,6 +50,13 @@ pub(super) fn apply_multipart_request_field(
         "glossary_mode" => request.translation.glossary_mode = value.to_string(),
         "memory_mode" => request.translation.memory_mode = value.to_string(),
         "preparation" => request.translation.preparation = value.to_string(),
+        "refine" => request.translation.refine = value.to_string(),
+        "refine_max_items" => {
+            request.translation.refine_max_items = parse_i64_like(name, value)?
+        }
+        "refine_max_tokens" => {
+            request.translation.refine_max_tokens = parse_i64_like(name, value)?
+        }
         "reviewer_model" => request.translation.reviewer_model = value.to_string(),
         "reviewer_base_url" => request.translation.reviewer_base_url = value.to_string(),
         "reviewer_api_key" => request.translation.reviewer_api_key = value.to_string(),

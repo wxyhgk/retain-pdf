@@ -15,6 +15,7 @@ use super::{
     format_error_chain,
     ocr_flow::execute_ocr_job,
     render_flow::run_render_job_from_artifacts,
+    revision_publication::publish_translation_revisions_after_terminal,
     translation_flow::resume_render_stage_from_durable_state,
     translation_flow::resume_translation_stage_from_durable_state,
     translation_flow::run_translate_only_job_with_ocr,
@@ -149,6 +150,7 @@ fn persist_failed_job(
         let _ = deps
             .db
             .finish_latest_pipeline_attempt(&job.job_id, "failed")?;
+        publish_translation_revisions_after_terminal(deps, &job.job_id);
         maintain_document_after_terminal(
             deps,
             &job.job_id,
@@ -198,6 +200,7 @@ fn persist_canceled_job(deps: &ProcessRuntimeDeps, job_id: &str) -> Result<()> {
         let _ = deps
             .db
             .finish_latest_pipeline_attempt(&job.job_id, "canceled")?;
+        publish_translation_revisions_after_terminal(deps, &job.job_id);
         maintain_document_after_terminal(
             deps,
             &job.job_id,
@@ -256,6 +259,7 @@ where
     )?;
     if !updated {
         // Already terminal (e.g., canceled), do not overwrite with Succeeded/Failed
+        publish_translation_revisions_after_terminal(&deps, &job_id);
         release_document_after_foreign_terminal(&deps, &job_id);
         clear_job_cancel_request(&deps, &job_id).await;
         return Ok(());
@@ -269,6 +273,8 @@ where
     let _ = deps
         .db
         .finish_latest_pipeline_attempt(&job_id, terminal_status)?;
+    // 精修在渲染子进程里写回、绕过了 PATCH：attempt 收尾后把修订登记进实时译文。
+    publish_translation_revisions_after_terminal(&deps, &job_id);
     update_document_after_job(&deps, &finished_job);
     clear_job_cancel_request(&deps, &job_id).await;
     Ok(())
