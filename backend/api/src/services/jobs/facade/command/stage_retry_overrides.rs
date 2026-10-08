@@ -178,15 +178,6 @@ pub(super) fn discard_ocr_secret_sources(ocr: &mut crate::models::request::OcrIn
     }
 }
 
-pub(super) fn discard_translation_secret_sources(
-    translation: &mut crate::models::request::TranslationInput,
-) {
-    translation.api_key.clear();
-    translation.credential_ref.clear();
-    translation.reviewer_api_key.clear();
-    translation.reviewer_credential_ref.clear();
-}
-
 fn translation_secret_source_switch(patch: &Value) -> TranslationSecretSourceSwitch {
     secret_source_switch(patch, "api_key", "credential_ref")
 }

@@ -398,11 +398,12 @@ def _chain(cleanups: list[Callable[[], None]]) -> Callable[[], None]:
 
 
 def terminal_translation_scope(settings: Settings, job_id: str) -> BrokerScope:
-    """终端里精修命令的授权范围：只认这本书，确认方式跟用户的设置走。
+    """终端里精修命令的授权范围：只认这本书；终端是用户自己打开的，视为已授权。
 
-    终端没有「操作卡片」那种逐次确认的入口，所以 `confirmed` 恒为 False：
-    逐次确认模式（explicit）下有副作用的命令会被拒并告诉 agent 怎么开；
-    绿灯模式（green_light）下直接放行。和对话里 operation run/commit 是同一道闸。
+    产品决定（2026-10-08）：终端里改译文不再逐次确认，不跟 agent_confirmation_mode
+    走。理由：终端没有逐次确认的入口，跟设置走的话默认模式下这些命令一律被拒；
+    而改动都可回退（原译留在 revisions.v1.jsonl），「改之前先把方案给用户看」由
+    技能里的流程约束 agent。授权范围仍然只限这一本书。
     """
     return BrokerScope(
         conversation_id="",
@@ -410,7 +411,7 @@ def terminal_translation_scope(settings: Settings, job_id: str) -> BrokerScope:
         request_message_id="",
         intent_summary="",
         job_id=job_id,
-        confirmed=False,
+        confirmed=True,
         green_light=_current_confirmation_mode(settings) == "green_light",
     )
 

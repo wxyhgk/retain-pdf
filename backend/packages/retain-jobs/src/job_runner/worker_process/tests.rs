@@ -342,3 +342,30 @@ fn reviewer_env_is_absent_when_reviewer_is_not_configured() {
     assert_eq!(runtime_secrets, vec!["translation-inline-secret".to_string()]);
     let _ = std::fs::remove_dir_all(root);
 }
+
+/// 原地重渲染保留了翻译凭据引用。引用指向的凭据被删了，渲染也不能因此失败；
+/// 翻译任务遇到同样的情况仍然严格失败。
+#[test]
+fn render_job_tolerates_unresolvable_translation_reference() {
+    let root = credential_test_root("render-dangling-translation-ref");
+    let mut input = CreateJobInput::default();
+    input.workflow = crate::models::domain::WorkflowKind::Render;
+    input.translation.credential_ref = "cred_translation_deleted".to_string();
+    input.translation.reviewer_credential_ref = "cred_reviewer_deleted".to_string();
+    let render_job =
+        JobSnapshot::new("job-render-ref".to_string(), input.clone(), vec!["true".to_string()])
+            .into_runtime();
+    let mut command = Command::new("true");
+
+    let secrets = apply_job_credentials(&mut command, &root, &render_job)
+        .expect("render must not fail on an unresolvable model credential");
+    assert!(secrets.is_empty());
+    assert!(command_env(&command, "RETAIN_TRANSLATION_API_KEY").is_none());
+    assert!(command_env(&command, "RETAIN_REVIEWER_API_KEY").is_none());
+
+    input.workflow = crate::models::domain::WorkflowKind::Book;
+    let book_job = JobSnapshot::new("job-book-ref".to_string(), input, vec!["true".to_string()])
+        .into_runtime();
+    let mut command = Command::new("true");
+    assert!(apply_job_credentials(&mut command, &root, &book_job).is_err());
+}

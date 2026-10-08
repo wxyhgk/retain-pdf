@@ -68,9 +68,8 @@ pub(super) fn validate_refine_request(
 
 /// 把源任务改写成一次原地 Render workflow，并保留精修要用的模型凭据引用。
 ///
-/// 普通原地重渲染会清掉任务上的翻译 / 审校凭据（渲染不调模型）；精修要调模型，所以
-/// 这里把**引用**（credential_ref / reviewer_credential_ref）留下，内联 key 一律清掉。
-/// 任务上的引用若早已被之前的重渲染清掉，调用方可以用
+/// 精修要调模型：保留**引用**（credential_ref / reviewer_credential_ref），内联 key 一律
+/// 清掉（普通原地重渲染现在也保留引用，见 rerun.rs）。任务上没有引用时，调用方可以用
 /// `overrides.translation.credential_ref`（或 reviewer_*）补上；不接受内联 key。
 pub(super) fn prepare_in_place_refine_job(
     source_job: JobSnapshot,
@@ -150,6 +149,6 @@ fn require_refine_model(job: &JobSnapshot) -> Result<(), AppError> {
         return Ok(());
     }
     Err(AppError::bad_request(
-        "refine needs a model credential, but this job no longer has one (for example a previous re-render cleared it); pass overrides.translation.{model, base_url, credential_ref}",
+        "refine needs a model credential, but this job has none (for example it was created without one or the credential was deleted); pass overrides.translation.{model, base_url, credential_ref}",
     ))
 }

@@ -177,12 +177,13 @@ def test_terminal_mode_admits_only_the_translation_grammar(tmp_path):
     assert _log(log) == []
 
 
-def test_terminal_scope_follows_the_confirmation_setting(tmp_path):
+def test_terminal_scope_allows_effects_regardless_of_confirmation_setting(tmp_path):
+    # 终端是用户自己打开的，视为已授权：逐次确认模式下精修命令也不能被拒。
     from retainpdf_ai.config import Settings
 
     explicit = Settings(data_root=tmp_path / "data", agent_confirmation_mode="explicit")
     scope = terminal_translation_scope(explicit, JOB)
-    assert scope.job_id == JOB and scope.effects_allowed is False
+    assert scope.job_id == JOB and scope.effects_allowed is True
     green = Settings(data_root=tmp_path / "data", agent_confirmation_mode="green_light")
     assert terminal_translation_scope(green, JOB).effects_allowed is True
 

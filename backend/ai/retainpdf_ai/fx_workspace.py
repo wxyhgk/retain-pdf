@@ -468,7 +468,8 @@ def _translation_cli_section() -> str:
 
 完整流程和硬规则在技能 **refine-translation** 里（`.agents/skills/refine-translation/SKILL.md`），
 动手改之前先读它。要点：先 issues 和原文 → 给用户看改法、等确认 → revise → 最后 rerender 一次。
-会改东西的命令要用户授权；被拒时把改法列给用户，不要绕过去改文件。
+会改东西的命令执行就生效（系统不再逐次确认），所以先把改法给用户看、用户同意再执行；
+被拒时不要绕过去改文件。
 
 """
 

@@ -14,7 +14,6 @@ use super::ocr_ambiguity::ambiguous_ocr_dispatch;
 use super::rerun::prepare_in_place_render_job;
 use super::stage_retry_overrides::{
     apply_retry_overrides, apply_retry_overrides_to_resolved_spec, discard_ocr_secret_sources,
-    discard_translation_secret_sources,
 };
 use super::stage_retry_refine::{
     clear_pending_refine_override, prepare_in_place_refine_job, validate_refine_request,
@@ -128,7 +127,10 @@ impl<'a> JobsFacade<'a> {
             clear_pending_refine_override(self.command.control.output_root, &job.job_id)?;
             apply_retry_overrides_to_resolved_spec(&mut job.request_payload, &request.overrides)?;
             discard_ocr_secret_sources(&mut job.request_payload.ocr);
-            discard_translation_secret_sources(&mut job.request_payload.translation);
+            // 与 prepare_in_place_render_job 一致：只清内联 key，保留凭据引用，
+            // 之后的原地精修还要用。
+            job.request_payload.translation.api_key.clear();
+            job.request_payload.translation.reviewer_api_key.clear();
             job.request_payload.runtime.job_id = job.job_id.clone();
             job.sync_runtime_state();
             let job = start_job_execution(&self.command.submit.launcher, job)?;

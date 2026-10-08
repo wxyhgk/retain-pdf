@@ -10,9 +10,7 @@ use super::super::super::creation::create_translation_job;
 use super::super::super::query::load_job_or_404;
 use super::super::JobsFacade;
 use super::ocr_ambiguity::ambiguous_ocr_dispatch;
-use super::stage_retry_overrides::{
-    discard_ocr_secret_sources, discard_translation_secret_sources,
-};
+use super::stage_retry_overrides::discard_ocr_secret_sources;
 use crate::services::job_launcher::start_job_execution;
 
 impl<'a> JobsFacade<'a> {
@@ -107,10 +105,15 @@ pub(super) fn prepare_in_place_render_job(mut job: JobSnapshot) -> Result<JobSna
     job.request_payload.source.upload_id.clear();
     job.request_payload.source.source_url.clear();
     job.request_payload.source.artifact_job_id = job.job_id.clone();
-    // Render never contacts OCR or translation providers. Rewriting the same
-    // durable job must not retain historical inline secrets or vault refs.
+    // Render never contacts OCR providers, so OCR secrets and refs are dropped.
+    // Translation/reviewer vault *refs* are kept (inline keys are still
+    // dropped): a later in-place refine needs a model, and a ref is only a
+    // pointer into the vault, not a secret. Product decision 2026-10-08.
+    // A ref that no longer resolves never fails the render; see
+    // retain-jobs worker_process::apply_job_credentials.
     discard_ocr_secret_sources(&mut job.request_payload.ocr);
-    discard_translation_secret_sources(&mut job.request_payload.translation);
+    job.request_payload.translation.api_key.clear();
+    job.request_payload.translation.reviewer_api_key.clear();
     job.request_payload.runtime.job_id = job.job_id.clone();
     job.status = JobStatusKind::Queued;
     job.updated_at = now;
@@ -175,7 +178,8 @@ mod tests {
         assert!(job.request_payload.ocr.credential_ref.is_empty());
         assert!(job.request_payload.ocr.mineru_token.is_empty());
         assert!(!job.request_payload.ocr.options.contains_key("credential"));
-        assert!(job.request_payload.translation.credential_ref.is_empty());
+        // 翻译凭据引用保留（之后原地精修要用），内联 key 照旧清掉。
+        assert_eq!(job.request_payload.translation.credential_ref, "cred_translation_old");
         assert!(job.request_payload.translation.api_key.is_empty());
     }
 }

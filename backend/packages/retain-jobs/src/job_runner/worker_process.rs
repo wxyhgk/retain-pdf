@@ -142,7 +142,7 @@ fn chrono_now_seconds() -> i64 {
 }
 
 use crate::config::WorkerProcessRuntimeConfig;
-use crate::models::domain::JobRuntimeState;
+use crate::models::domain::{JobRuntimeState, WorkflowKind};
 use crate::ocr_provider::{
     configured_provider_credential_env, is_configured_command_provider, provider_token,
     provider_token_env_name, require_supported_provider,
@@ -237,13 +237,21 @@ fn apply_job_credentials(
             command.env_remove(name);
         }
     } else {
-        if let Some(api_key) = resolve_translation_api_key(data_root, job)? {
+        // 渲染任务保留了凭据引用（原地重渲染不再清引用），只为渲染前的精修备用。
+        // 引用解析不了（凭据已被删）时渲染本身不能失败：精修拿不到 key 会在报告里
+        // 记 llm_unavailable，渲染照常进行。翻译任务仍然严格失败。
+        let lenient = matches!(job.request_payload.workflow, WorkflowKind::Render);
+        if let Some(api_key) =
+            tolerate_for_render(lenient, "translation", resolve_translation_api_key(data_root, job))?
+        {
             command.env("RETAIN_TRANSLATION_API_KEY", &api_key);
             runtime_secrets.push(api_key);
         }
         // 审校 key 与翻译 key 走同一套：内联优先，否则解析 vault 引用；只经 env 传给
         // worker，stage spec 里只写 env 引用。没配时不设，Python 侧回退到翻译 key。
-        if let Some(api_key) = resolve_reviewer_api_key(data_root, job)? {
+        if let Some(api_key) =
+            tolerate_for_render(lenient, "reviewer", resolve_reviewer_api_key(data_root, job))?
+        {
             command.env(REVIEWER_API_KEY_ENV_NAME, &api_key);
             runtime_secrets.push(api_key);
         }
@@ -272,6 +280,22 @@ fn apply_job_credentials(
 }
 
 const REVIEWER_API_KEY_ENV_NAME: &str = "RETAIN_REVIEWER_API_KEY";
+
+fn tolerate_for_render(
+    lenient: bool,
+    label: &str,
+    resolved: Result<Option<String>>,
+) -> Result<Option<String>> {
+    match resolved {
+        Err(error) if lenient => {
+            // 只记引用解析失败这件事，不记错误链（里面可能带凭据引用名以外的细节）。
+            tracing::warn!("render job skips unresolvable {label} credential reference");
+            let _ = error;
+            Ok(None)
+        }
+        other => other,
+    }
+}
 
 fn resolve_reviewer_api_key(
     data_root: &std::path::Path,
