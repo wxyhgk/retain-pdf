@@ -21,10 +21,14 @@ ENTRYPOINT_IMPORT_ALLOWLIST: dict[Path, tuple[str, ...]] = {
         "from retainpdf_pipeline.ocr.document_schema.normalize_pipeline import",
         "from retainpdf_pipeline.ocr.ocr_provider.provider_pipeline import",
         "from retainpdf_pipeline.render.workflow.render_only import",
+        "from retainpdf_pipeline.entrypoints.revise_translation_item import",
         "from retainpdf_pipeline.translate.entrypoints.from_ocr_pipeline import",
         "from retainpdf_pipeline.translate.entrypoints.translate_only_pipeline import",
     ),
     Path("diagnose_failure_with_ai.py"): (
+        "from retainpdf_pipeline.translate.public import",
+    ),
+    Path("revise_translation_item.py"): (
         "from retainpdf_pipeline.translate.public import",
     ),
     Path("run_document_operation.py"): (

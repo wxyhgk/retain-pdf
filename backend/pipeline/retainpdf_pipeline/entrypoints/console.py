@@ -66,6 +66,12 @@ def run_document_operation() -> int:
     return main()
 
 
+def run_revise_translation_item() -> int:
+    from retainpdf_pipeline.entrypoints.revise_translation_item import main
+
+    return main()
+
+
 def run_merge_translated_artifacts() -> int:
     from retainpdf_pipeline.render.tools.merge_translated_artifacts import main
 
@@ -114,6 +120,10 @@ COMMANDS: dict[str, tuple[Callable[[], int], str]] = {
     "document-operation": (
         run_document_operation,
         "execute a restricted backend-prepared page program",
+    ),
+    "translation-revise": (
+        run_revise_translation_item,
+        "validate and write back one translated item (stdin JSON request)",
     ),
     "merge-translated-artifacts": (
         run_merge_translated_artifacts,
