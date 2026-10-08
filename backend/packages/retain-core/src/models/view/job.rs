@@ -22,7 +22,7 @@ pub use types::{
     OcrAmbiguityReceiptFieldView, OcrAmbiguityResolutionKind, OcrAmbiguityResolutionRequest,
     OcrAmbiguityResolutionView, OcrAmbiguityView, OcrJobSummaryView, LayoutDocxQuery, PagePreviewQuery,
     ReaderDocumentMetadataView, ReaderMetadataView, ReaderPageMetadataView, ReaderRegionBoxView,
-    ReaderRegionItemView, ReaderRegionsView, ResourceLinkView, RetryStageKind, RetryStageRequest,
+    ReaderRegionItemView, ReaderRegionsView, RefineRetryRequest, ResourceLinkView, RetryStageKind, RetryStageRequest,
     RetryStageSubmissionView, StageActionsView, StageRetryActionLinkView, StageRetryActionView,
     TranslationRequestRecoveryView,
 };

@@ -22,8 +22,11 @@ pub use request::CreateJobInput;
 pub use resolved::ResolvedJobSpec;
 pub use runtime::RuntimeInput;
 pub use source::{JobSourceInput, ResolvedSourceSpec};
-pub use translation::{GlossaryEntryInput, TranslationInput};
+pub use translation::{
+    normalize_translation_refine_mode, GlossaryEntryInput, RefineOverride, TranslationInput,
+};
 pub use translation::{
     TRANSLATION_CONTEXT_MODES, TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES,
-    TRANSLATION_MEMORY_MODES, TRANSLATION_PREPARATION_MODES,
+    TRANSLATION_MEMORY_MODES, TRANSLATION_PREPARATION_MODES, TRANSLATION_REFINE_MODES,
+    DEFAULT_TRANSLATION_REFINE_MAX_ITEMS, DEFAULT_TRANSLATION_REFINE_MAX_TOKENS,
 };

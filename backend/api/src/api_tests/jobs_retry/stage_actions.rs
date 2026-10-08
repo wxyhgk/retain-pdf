@@ -15,9 +15,10 @@ async fn stage_actions_route_reports_retryable_stages() {
     let mut source_job = source_job_with_artifacts(
         "job-stage-actions",
         JobArtifacts {
+            job_root: Some("jobs/job-stage-actions".to_string()),
             source_pdf: Some("jobs/source/source/input.pdf".to_string()),
             normalized_document_json: Some("jobs/source/ocr/document.v1.json".to_string()),
-            translations_dir: Some("jobs/source/translated".to_string()),
+            translations_dir: Some("jobs/job-stage-actions/translated".to_string()),
             ..JobArtifacts::default()
         },
     );
@@ -57,4 +58,18 @@ async fn stage_actions_route_reports_retryable_stages() {
         .expect("render action");
     assert_eq!(render["can_retry"], true);
     assert_eq!(render["will_rerun"], json!(["render"]));
+    let refine = stages
+        .iter()
+        .find(|item| item["stage"] == "refine")
+        .expect("refine action");
+    assert_eq!(refine["label"], "精修译文");
+    assert_eq!(refine["can_retry"], true);
+    assert_eq!(refine["will_rerun"], json!(["refine", "render"]));
+    assert_eq!(
+        refine["will_reuse"],
+        json!(["source_pdf", "ocr_result", "translation_result"])
+    );
+    // 精修只支持原地执行，action body 必须能直接用。
+    assert_eq!(refine["action"]["body"]["create_new_job"], false);
+    assert_eq!(refine["action"]["body"]["refine"]["mode"], "review_and_fix");
 }

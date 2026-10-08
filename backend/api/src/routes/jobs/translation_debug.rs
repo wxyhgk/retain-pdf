@@ -40,6 +40,14 @@ pub async fn get_fit_report(
     Ok(ok_json(deps.jobs.fit_report_view(&job_id)?))
 }
 
+pub async fn get_refine_report(
+    State(state): State<AppState>,
+    ApiPath(job_id): ApiPath<String>,
+) -> Result<Json<ApiResponse<JobReportView>>, AppError> {
+    let deps = build_jobs_query_route_deps(&state);
+    Ok(ok_json(deps.jobs.refine_report_view(&job_id)?))
+}
+
 pub async fn list_translation_items(
     State(state): State<AppState>,
     ApiPath(job_id): ApiPath<String>,

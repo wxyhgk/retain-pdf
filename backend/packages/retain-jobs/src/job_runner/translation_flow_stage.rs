@@ -10,7 +10,7 @@ use crate::models::domain::{
 };
 use crate::storage_paths::JobPaths;
 use crate::storage_paths::TRANSLATION_CHECKPOINT_FILE_NAME;
-use crate::worker_command::{build_worker_stage_command, WorkerStageCommand};
+use crate::worker_command::{build_worker_stage_command, RenderRefine, WorkerStageCommand};
 
 use crate::job_runner::{
     clear_job_failure, execute_process_job, execute_process_job_stage, sync_runtime_state,
@@ -159,6 +159,8 @@ pub(super) async fn run_render_stage_after_translation(
         WorkerStageCommand::Render {
             source_pdf_path,
             translations_dir: &job_paths.translated_dir,
+            // 紧跟翻译的渲染：按任务的 translation.refine 决定是否先精修（默认 off）。
+            refine: RenderRefine::AfterTranslation,
         },
     )?;
     job.status = JobStatusKind::Running;

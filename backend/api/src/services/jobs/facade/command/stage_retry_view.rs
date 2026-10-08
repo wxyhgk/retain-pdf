@@ -58,10 +58,20 @@ fn build_stage_action(
             base_url,
             &format!("/api/v1/jobs/{}/retry-stage", job.job_id),
         ),
-        body: json!({
-            "stage": stage_name(&plan.stage),
-            "ambiguous_request_policy": "block"
-        }),
+        body: if matches!(plan.stage, RetryStageKind::Refine) {
+            // 精修只支持原地执行；body 直接给出能用的默认请求（全书、挑错并修改）。
+            json!({
+                "stage": stage_name(&plan.stage),
+                "create_new_job": false,
+                "ambiguous_request_policy": "block",
+                "refine": {"mode": "review_and_fix"}
+            })
+        } else {
+            json!({
+                "stage": stage_name(&plan.stage),
+                "ambiguous_request_policy": "block"
+            })
+        },
     });
     StageRetryActionView {
         stage: plan.stage,

@@ -6,6 +6,7 @@ import threading
 from collections.abc import Callable
 from contextlib import nullcontext
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from ..agent import referenced_citations, sanitize_answer_text
@@ -228,6 +229,8 @@ class FxAcpRuntime:
                 # 只有 fx 这条 runtime 传 —— openai 那条走结构化 function
                 # calling，没有终端，也就没有「放行 broker 语法之外」这回事。
                 shell_mode=self._settings.fx_shell_mode,
+                # translation term-set 要在宿主侧扫这本书的译文文件。
+                job_dir=_job_dir(self._settings.data_root, job_id),
             )
             if request_message_id
             else nullcontext(None)
@@ -351,3 +354,10 @@ class FxAcpRuntime:
         session_key: str = "",
     ) -> FxAcpClient:
         return start_fx_client(self._settings, broker, session_key=session_key)
+
+
+def _job_dir(data_root: Path, job_id: str) -> Path | None:
+    from ..fx_workspace import resolve_job_workspace
+
+    workspace = resolve_job_workspace(data_root, job_id or "")
+    return workspace.parent if workspace is not None else None

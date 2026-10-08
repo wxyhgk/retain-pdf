@@ -50,9 +50,10 @@ impl<'a> JobsFacade<'a> {
                     RetryStageRequest {
                         stage: RetryStageKind::Ocr,
                         mode: "from_stage".to_string(),
-                        create_new_job: true,
+                        create_new_job: Some(true),
                         overrides: Value::Object(Map::new()),
                         ambiguous_request_policy: AmbiguousRequestPolicy::AcceptDuplicateRisk,
+                        refine: None,
                     },
                 )?
             }

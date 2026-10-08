@@ -132,8 +132,9 @@ pub fn public_stage_for_substage(substage: Option<&str>) -> Option<&'static str>
         | "garbled_repair"
         | "agent_repair"
         | "final_untranslated_recovery" => Some("translation"),
+        // refining：渲染阶段里、真正渲染之前的译文精修（挑错 + 定点修改）。
         "render_prepare" | "render_preprocess" | "render_prewarm" | "render_pages"
-        | "render_compile" => Some("render"),
+        | "render_compile" | "refining" => Some("render"),
         "finished" | "done" | "succeeded" => None,
         _ => None,
     }
@@ -153,7 +154,8 @@ pub fn public_stage_for_raw_stage(stage: Option<&str>) -> Option<&'static str> {
         | "garbled_repair"
         | "agent_repair"
         | "final_untranslated_recovery" => Some("translation"),
-        "render_prepare" | "render_preprocess" | "rendering" | "compile" | "overlay" | "saving" => {
+        "render_prepare" | "render_preprocess" | "rendering" | "refining" | "compile"
+        | "overlay" | "saving" => {
             Some("render")
         }
         "finished" | "done" | "succeeded" => None,
@@ -190,6 +192,7 @@ pub fn event_progress_unit(stage_or_substage: Option<&str>, event: &str) -> &'st
         | "render_preprocess"
         | "render_prewarm"
         | "render_compile"
+        | "refining"
         | "translation_prepare" => "step",
         _ if event == "stage_progress" => "step",
         _ => "none",

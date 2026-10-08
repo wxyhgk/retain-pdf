@@ -14,7 +14,9 @@ use super::ocr_ambiguity::ambiguous_ocr_dispatch;
 use super::rerun::prepare_in_place_render_job;
 use super::stage_retry_overrides::{
     apply_retry_overrides, apply_retry_overrides_to_resolved_spec, discard_ocr_secret_sources,
-    discard_translation_secret_sources,
+};
+use super::stage_retry_refine::{
+    clear_pending_refine_override, prepare_in_place_refine_job, validate_refine_request,
 };
 use super::stage_retry_request::build_retry_request;
 use super::stage_retry_view::{build_retry_stage_submission_view, build_stage_actions_view};
@@ -46,7 +48,27 @@ impl<'a> JobsFacade<'a> {
             )));
         }
 
+        // refine 对象只属于 stage=refine；带在别的 stage 上多半是以为普通重渲染也会精修。
+        if request.refine.is_some() && !matches!(request.stage, RetryStageKind::Refine) {
+            return Err(AppError::bad_request(
+                "refine options are only accepted with stage=refine",
+            ));
+        }
+        let refine_override = if matches!(request.stage, RetryStageKind::Refine) {
+            if request.creates_new_job() {
+                return Err(AppError::bad_request(
+                    "refine retry runs in place on the source job; set create_new_job=false",
+                ));
+            }
+            Some(validate_refine_request(request.refine.as_ref())?)
+        } else {
+            None
+        };
+
         let source_job = load_job_or_404(self.command.db, source_job_id)?;
+        if let Some(refine_override) = refine_override {
+            return self.submit_in_place_refine(base_url, source_job, &request, refine_override);
+        }
         if !matches!(request.stage, RetryStageKind::Render)
             && source_job
                 .request_payload
@@ -96,13 +118,19 @@ impl<'a> JobsFacade<'a> {
             }
         }
 
-        let request_input = if request.create_new_job {
+        let request_input = if request.creates_new_job() {
             build_retry_request(&source_job, &request.stage)?
         } else if matches!(request.stage, RetryStageKind::Render) {
             let mut job = prepare_in_place_render_job(source_job)?;
+            // 普通重渲染永远不精修：清掉上一次精修重试没用完的一次性覆盖（例如运行时
+            // 重启时被判成 failed 的那次），否则这次渲染会意外带上它。
+            clear_pending_refine_override(self.command.control.output_root, &job.job_id)?;
             apply_retry_overrides_to_resolved_spec(&mut job.request_payload, &request.overrides)?;
             discard_ocr_secret_sources(&mut job.request_payload.ocr);
-            discard_translation_secret_sources(&mut job.request_payload.translation);
+            // 与 prepare_in_place_render_job 一致：只清内联 key，保留凭据引用，
+            // 之后的原地精修还要用。
+            job.request_payload.translation.api_key.clear();
+            job.request_payload.translation.reviewer_api_key.clear();
             job.request_payload.runtime.job_id = job.job_id.clone();
             job.sync_runtime_state();
             let job = start_job_execution(&self.command.submit.launcher, job)?;
@@ -118,7 +146,7 @@ impl<'a> JobsFacade<'a> {
             ));
         } else {
             return Err(AppError::bad_request(
-                "create_new_job=false is currently supported only for render retry",
+                "create_new_job=false is currently supported only for render and refine retry",
             ));
         };
 
@@ -153,6 +181,75 @@ impl<'a> JobsFacade<'a> {
             plan.will_reuse,
             plan.will_rerun,
             workflow,
+            request.ambiguous_request_policy,
+        ))
+    }
+
+    /// `stage=refine`：原地跑一次 Render workflow，渲染阶段在真正渲染之前先精修。
+    /// 一次性覆盖落在任务目录的 `specs/refine-override.json`，不写进 `translation.refine`。
+    fn submit_in_place_refine(
+        &self,
+        base_url: &str,
+        source_job: crate::models::domain::JobSnapshot,
+        request: &RetryStageRequest,
+        refine_override: crate::models::domain::RefineOverride,
+    ) -> Result<RetryStageSubmissionView, AppError> {
+        let source_job_id = source_job.job_id.clone();
+        // 先判「在跑」：plan 也会挡，但那条走 400，这里按 rerender 的规则给 409。
+        if matches!(
+            source_job.status,
+            crate::models::domain::JobStatusKind::Queued
+                | crate::models::domain::JobStatusKind::Running
+        ) {
+            return Err(AppError::conflict(
+                "job is already queued or running; cancel it or wait before refining",
+            ));
+        }
+        let plan = stage_plan(
+            &source_job,
+            RetryStageKind::Refine,
+            self.command.control.data_root,
+        );
+        if !plan.can_retry {
+            if source_job
+                .request_payload
+                .translation
+                .execution_connection
+                .is_some()
+            {
+                return Err(AppError::conflict(plan.disabled_reason));
+            }
+            return Err(AppError::bad_request(plan.disabled_reason));
+        }
+        let job = prepare_in_place_refine_job(
+            source_job,
+            &request.overrides,
+            self.command.control.data_root,
+        )?;
+        // 覆盖必须在启动之前写好：start_job_execution 之后运行时随时可能读它。
+        let job_paths = crate::storage_paths::JobPaths::for_job(
+            self.command.control.output_root,
+            &job.job_id,
+        );
+        crate::worker_command::refine_override::write_refine_override(&job_paths, &refine_override)
+            .map_err(|error| {
+                AppError::internal(format!("failed to stage refine override: {error:#}"))
+            })?;
+        let job = match start_job_execution(&self.command.submit.launcher, job) {
+            Ok(job) => job,
+            Err(error) => {
+                let _ = crate::worker_command::refine_override::clear_refine_override(&job_paths);
+                return Err(error);
+            }
+        };
+        Ok(build_retry_stage_submission_view(
+            base_url,
+            &source_job_id,
+            &job,
+            RetryStageKind::Refine,
+            plan.will_reuse,
+            plan.will_rerun,
+            plan.retry_workflow,
             request.ambiguous_request_policy,
         ))
     }

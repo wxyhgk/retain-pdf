@@ -49,3 +49,15 @@ def test_ocr_normalize_help_passthrough() -> None:
     proc = _run_stage("retainpdf_pipeline.ocr", "normalize-ocr", "--help")
     assert proc.returncode == 0
     assert "--spec" in proc.stdout
+
+
+def test_render_stage_main_runs_runtime_orchestrator() -> None:
+    # Rust 起渲染阶段用的是 `python -m retainpdf_pipeline.render`。它必须和
+    # `retainpdf-pipeline render-only` 走同一个 runtime 编排（渲染前精修、渲染后重算 QA），
+    # 直接调 render.workflow.render_only 会把这两步静默跳过。
+    import importlib
+
+    stage_main = importlib.import_module("retainpdf_pipeline.render.__main__")
+    from retainpdf_pipeline.runtime.pipeline import render_only_pipeline
+
+    assert stage_main.main is render_only_pipeline.main

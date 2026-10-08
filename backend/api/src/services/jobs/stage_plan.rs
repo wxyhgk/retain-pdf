@@ -6,7 +6,7 @@ use crate::services::jobs::translation_request_recovery::load_translation_reques
 use crate::services::runtime_gateway::{
     translation_artifacts_are_ready, translation_checkpoint_candidate_is_ready,
 };
-use crate::storage_paths::resolve_data_path;
+use crate::storage_paths::{resolve_data_path, resolve_job_root};
 
 #[derive(Debug, Clone)]
 pub(crate) struct JobStagePlan {
@@ -35,6 +35,7 @@ pub(crate) fn stage_plans(job: &JobSnapshot, data_root: &Path) -> Vec<JobStagePl
         stage_plan(job, RetryStageKind::Ocr, data_root),
         stage_plan(job, RetryStageKind::Translation, data_root),
         stage_plan(job, RetryStageKind::Render, data_root),
+        stage_plan(job, RetryStageKind::Refine, data_root),
     ]
 }
 
@@ -46,6 +47,22 @@ pub(crate) fn stage_plan(
     let availability = StageArtifactAvailability::from_job(job, data_root);
     let running = matches!(job.status, JobStatusKind::Queued | JobStatusKind::Running);
     let mut plan = base_stage_plan(stage, &availability);
+
+    // 精修在 Python 渲染子进程里直接调模型；Rust 模型执行器的任务不允许回落到
+    // Python transport（job_launcher 同一条规则），所以这类任务不提供精修。
+    if matches!(plan.stage, RetryStageKind::Refine)
+        && job
+            .request_payload
+            .translation
+            .execution_connection
+            .is_some()
+    {
+        plan.can_retry = false;
+        plan.disabled_reason =
+            "refine runs model calls inside the Python render worker; jobs bound to a Rust model execution_connection are not supported"
+                .into();
+        return plan;
+    }
 
     if job
         .request_payload
@@ -166,6 +183,7 @@ pub(crate) fn stage_name(stage: &RetryStageKind) -> &'static str {
         RetryStageKind::Ocr => "ocr",
         RetryStageKind::Translation => "translation",
         RetryStageKind::Render => "render",
+        RetryStageKind::Refine => "refine",
     }
 }
 
@@ -228,6 +246,23 @@ fn base_stage_plan(
             retry_workflow: WorkflowKind::Render,
             danger: false,
         },
+        // 精修 = 原地跑一次 Render workflow，渲染阶段在真正渲染之前先精修；译文复用，
+        // 每个被接受的修改走修订历史（可回退），不重翻。
+        RetryStageKind::Refine => JobStagePlan {
+            stage,
+            label: "精修译文".to_string(),
+            can_retry: availability.translations_available
+                && availability.translations_owned_by_job,
+            disabled_reason: String::new(),
+            will_reuse: vec![
+                "source_pdf".to_string(),
+                "ocr_result".to_string(),
+                "translation_result".to_string(),
+            ],
+            will_rerun: vec!["refine".to_string(), "render".to_string()],
+            retry_workflow: WorkflowKind::Render,
+            danger: false,
+        },
     }
 }
 
@@ -246,6 +281,14 @@ fn disabled_reason_for_stage(
         }
         RetryStageKind::Render => {
             "need source_pdf and translations_dir to retry render".to_string()
+        }
+        RetryStageKind::Refine if availability.translations_available => {
+            "refine writes revisions back into this job's own <job_root>/translated, but this job renders translations owned by another job (created with create_new_job=true); refine the source job instead"
+                .to_string()
+        }
+        RetryStageKind::Refine => {
+            "need source_pdf and committed translations (translations_dir) to refine; translate the document first"
+                .to_string()
         }
     }
 }
@@ -266,6 +309,9 @@ struct StageArtifactAvailability {
     ocr_available: bool,
     translation_checkpoint_available: bool,
     translations_available: bool,
+    /// 译文目录就是任务自己的 `<job_root>/translated`。精修只写回这个目录（Python 侧
+    /// 固定），create_new_job=true 派生出来、读源任务译文的任务不能在这里精修。
+    translations_owned_by_job: bool,
     translation_request_journal_available: bool,
     translation_retry_requires_confirmation: bool,
 }
@@ -288,6 +334,16 @@ impl StageArtifactAvailability {
         });
         let translations_available = artifacts
             .is_some_and(|item| translation_artifacts_are_ready(item, data_root, &job.job_id));
+        let translations_owned_by_job = translations_available
+            && artifacts
+                .and_then(|item| item.translations_dir.as_deref())
+                .and_then(|raw| resolve_data_path(data_root, raw).ok())
+                .and_then(|path| path.canonicalize().ok())
+                .zip(
+                    resolve_job_root(job, data_root)
+                        .and_then(|root| root.join("translated").canonicalize().ok()),
+                )
+                .is_some_and(|(actual, expected)| actual == expected);
         let translation_request_recovery = load_translation_request_recovery(job, data_root);
         let translation_request_journal_available = translation_request_recovery.is_some();
         let translation_retry_requires_confirmation =
@@ -299,6 +355,7 @@ impl StageArtifactAvailability {
             ocr_available: source_artifact_available && normalized_document_available,
             translation_checkpoint_available,
             translations_available,
+            translations_owned_by_job,
             translation_request_journal_available,
             translation_retry_requires_confirmation,
         }

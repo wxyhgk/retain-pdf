@@ -32,8 +32,16 @@ from collections.abc import Callable, Container, Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from .config import Settings, fx_gateway_chat_url, normalize_fx_gateway_base_url
+from .agent_broker_contracts import BrokerScope, CapabilityIssuer
+from .agent_command_broker import AgentCommandBroker, resolve_agent_cli
+from .config import (
+    Settings,
+    fx_gateway_chat_url,
+    normalize_agent_confirmation_mode,
+    normalize_fx_gateway_base_url,
+)
 from .fx_openai_bridge import FxOpenAIChatBridge
+from .fx_skills import remove_refine_translation_skill, write_refine_translation_skill
 from .fx_workspace import (
     DEFAULT_DENIED_COMMANDS,
     apply_terminal_permissions,
@@ -223,11 +231,16 @@ def build_terminal_launch(
     session_key: str,
     argv: tuple[str, ...] | None = None,
     busy_session_ids: Container[str] = (),
+    rust: CapabilityIssuer | None = None,
 ) -> TerminalLaunch:
     """组装启动参数。
 
     `argv` 留出注入点：本机不一定装了 fx，测试也不该依赖它 —— PTY 这一层
-    本来就不关心跑的是什么程序。
+    本来就不关心跑的是什么程序。`rust` 同理：签 capability 的那一方，测试注入假的。
+
+    单本书的终端会顺带起一个宿主 broker，把 `retainpdf-agent` 放进 PATH，
+    让 agent 能用 `retainpdf-agent translation ...` 改译文（见 fx_skills）。
+    起不来就不给这组命令，终端照开。
     """
     executable, home, workspace, tmp = prepare_fx_state(
         settings, session_key=session_key, shared_home=True
@@ -241,6 +254,7 @@ def build_terminal_launch(
         else settings.fx_denied_commands
     )
     apply_terminal_permissions(home, denied)
+    broker: AgentCommandBroker | None = None
     # 两种工作区：一本书（jobs/<id>/ai）和一个文件夹（collections/<id>/ai）。
     #
     # 文件夹那条**不建目录**：清单是 Rust 侧物化的，这里建了只会让 agent 落进
@@ -264,12 +278,52 @@ def build_terminal_launch(
         job_workspace = resolve_job_workspace(settings.data_root, session_key)
         if job_workspace is not None:
             job_workspace.mkdir(parents=True, exist_ok=True, mode=0o700)
-            _write_workspace_instructions(
-                job_workspace,
-                build_job_workspace_instructions(job_workspace.parent),
-            )
+            broker = _start_translation_broker(settings, job_workspace.parent, rust)
+            try:
+                _write_workspace_instructions(
+                    job_workspace,
+                    build_job_workspace_instructions(
+                        job_workspace.parent, translation_cli=broker is not None
+                    ),
+                )
+                if broker is not None:
+                    write_refine_translation_skill(job_workspace)
+                else:
+                    remove_refine_translation_skill(job_workspace)
+            except Exception:
+                if broker is not None:
+                    broker.close()
+                raise
             workspace = job_workspace
-    command_path = resolve_fx_command_path(settings, executable, None)
+    try:
+        return _assemble_launch(
+            settings,
+            executable=executable,
+            home=home,
+            workspace=workspace,
+            tmp=tmp,
+            argv=argv,
+            busy_session_ids=busy_session_ids,
+            broker=broker,
+        )
+    except Exception:
+        if broker is not None:
+            broker.close()
+        raise
+
+
+def _assemble_launch(
+    settings: Settings,
+    *,
+    executable: Path,
+    home: Path,
+    workspace: Path,
+    tmp: Path,
+    argv: tuple[str, ...] | None,
+    busy_session_ids: Container[str],
+    broker: AgentCommandBroker | None,
+) -> TerminalLaunch:
+    command_path = resolve_fx_command_path(settings, executable, broker)
     env = {
         "HOME": str(home),
         "TMPDIR": str(tmp),
@@ -290,7 +344,9 @@ def build_terminal_launch(
     #
     # ACP 那条路一直有这个，PTY 这条原来没有 —— 于是有自己端点的用户在终端里
     # 只能去登录 Vercel，而他明明已经配好了一个能用的模型。
-    cleanup: Callable[[], None] | None = None
+    cleanups: list[Callable[[], None]] = []
+    if broker is not None:
+        cleanups.append(broker.close)
     bridge_base_url, bridge_api_key = _terminal_inference_endpoint(settings)
     if bridge_base_url:
         bridge = FxOpenAIChatBridge(
@@ -301,7 +357,7 @@ def build_terminal_launch(
             extra_body=settings.fx_upstream_extra,
             reasoning_efforts=settings.fx_reasoning_efforts,
         ).start()
-        cleanup = bridge.close
+        cleanups.insert(0, bridge.close)
         gateway_api_key = bridge.gateway_api_key
         env["FX_GATEWAY_BASE_URL"] = bridge.gateway_base_url
         env["FX_GATEWAY_CHAT_URL"] = bridge.chat_url
@@ -326,8 +382,84 @@ def build_terminal_launch(
         argv=resolved_argv,
         cwd=workspace,
         env=env,
-        cleanup=cleanup,
+        cleanup=_chain(cleanups) if cleanups else None,
     )
+
+
+def _chain(cleanups: list[Callable[[], None]]) -> Callable[[], None]:
+    def run() -> None:
+        for cleanup in cleanups:
+            try:
+                cleanup()
+            except Exception:  # noqa: BLE001,S110 - 一个收尾失败不能挡住下一个
+                pass
+
+    return run
+
+
+def terminal_translation_scope(settings: Settings, job_id: str) -> BrokerScope:
+    """终端里精修命令的授权范围：只认这本书；终端是用户自己打开的，视为已授权。
+
+    产品决定（2026-10-08）：终端里改译文不再逐次确认，不跟 agent_confirmation_mode
+    走。理由：终端没有逐次确认的入口，跟设置走的话默认模式下这些命令一律被拒；
+    而改动都可回退（原译留在 revisions.v1.jsonl），「改之前先把方案给用户看」由
+    技能里的流程约束 agent。授权范围仍然只限这一本书。
+    """
+    return BrokerScope(
+        conversation_id="",
+        document_id="",
+        request_message_id="",
+        intent_summary="",
+        job_id=job_id,
+        confirmed=True,
+        green_light=_current_confirmation_mode(settings) == "green_light",
+    )
+
+
+def _current_confirmation_mode(settings: Settings) -> str:
+    """读用户**现在**的确认方式。
+
+    终端路由拿到的 settings 是服务启动时的快照；用户在设置里改成绿灯后重开终端
+    就该生效，不该要求重启 AI 服务。读不动就退回快照里的值。
+    """
+    try:
+        from .runtime_credentials import load_runtime_credentials
+
+        stored = load_runtime_credentials(settings.data_root)
+        value = str(stored.get("agent_confirmation_mode") or "")
+        if value:
+            return normalize_agent_confirmation_mode(value)
+    except Exception:  # noqa: BLE001,S110 - 读不到就用启动时的设置
+        pass
+    return settings.agent_confirmation_mode
+
+
+def _start_translation_broker(
+    settings: Settings, job_dir: Path, rust: CapabilityIssuer | None
+) -> AgentCommandBroker | None:
+    """给单本书的终端起宿主 broker。任何一步失败都返回 None —— 终端照开，只是没有精修命令。"""
+    cli_command = settings.agent_cli_command or settings.fx_agent_cli_command
+    try:
+        # 真正的 CLI 不在就别起：说明书里写了命令却跑不了，比不写更糟。
+        resolve_agent_cli(cli_command)
+        issuer = rust
+        if issuer is None:
+            from .rust_client import RustApiClient
+
+            issuer = RustApiClient(settings)
+        broker = AgentCommandBroker(
+            state_root=settings.fx_state_root,
+            cli_command=cli_command,
+            rust_api_url=settings.rust_api_base,
+            rust=issuer,
+            scope=terminal_translation_scope(settings, job_dir.name),
+            job_dir=job_dir,
+            terminal_mode=True,
+        )
+        broker.__enter__()
+    except Exception:  # noqa: BLE001 - 这条路径上没有一种失败值得让终端打不开
+        return None
+    return broker
 
 
 def _terminal_argv(

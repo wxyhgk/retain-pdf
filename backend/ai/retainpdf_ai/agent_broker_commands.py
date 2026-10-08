@@ -11,6 +11,7 @@ import shlex
 from typing import Any
 
 from .agent_broker_contracts import BrokerCommand, BrokerScope
+from .agent_translation_commands import parse_translation_argv
 
 _MAX_COMMAND_CHARS = 16384
 _SAFE_OPERATION_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -56,6 +57,8 @@ def parse_broker_argv(argv: tuple[str, ...], scope: BrokerScope) -> BrokerComman
             action="document.inspect",
             cli_argv=("document", "inspect", "--document-id", scope.document_id),
         )
+    if len(argv) >= 2 and argv[1] == "translation":
+        return parse_translation_argv(argv, scope)
     if len(argv) >= 3 and argv[1:3] == ("tool", "call"):
         return _parse_tool_call(argv)
     if len(argv) >= 3 and argv[1:3] == ("operation", "create"):
