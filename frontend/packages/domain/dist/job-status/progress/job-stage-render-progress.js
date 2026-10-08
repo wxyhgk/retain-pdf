@@ -86,6 +86,59 @@ export function compositeRenderPrewarmProgress(record) {
         indeterminate: Number(record.current) <= 0,
     };
 }
+const REFINE_PHASE_TEXT = {
+    start: "正在准备精修",
+    prepare: "正在准备精修",
+    review: "正在挑错",
+    fix: "正在修改有问题的译文",
+    done: "精修完成",
+};
+export function refinePhaseText(record) {
+    const payload = (record?.payload && typeof record.payload === "object")
+        ? record.payload
+        : {};
+    // 后端把 refine_phase 写在事件自己的 payload 里；归一化后原始事件在 record.item，
+    // record.payload 是重新拼过的展示载荷，几处都认。
+    const item = (record?.item && typeof record.item === "object")
+        ? record.item
+        : {};
+    const itemPayload = (item.payload && typeof item.payload === "object")
+        ? item.payload
+        : {};
+    const phase = `${itemPayload.refine_phase || item.refine_phase || payload.refine_phase || ""}`.trim();
+    return REFINE_PHASE_TEXT[phase] || "正在精修译文";
+}
+/**
+ * 精修排在 render_prepare 之前，而 prepare 占 0–10%。精修要调模型、耗时没法按比例估，
+ * 给它百分比的话进入 prepare 时进度条会倒退，所以精修期间进度条是「不定」状态、
+ * 停在 0，只靠文案说明在挑错还是在改。
+ */
+export function compositeRenderRefineProgress(record) {
+    if (!record) {
+        return null;
+    }
+    const phaseText = refinePhaseText(record);
+    const counted = validProgress(record) && Number(record.total) > 1
+        ? `${phaseText}（${record.current}/${record.total}）`
+        : phaseText;
+    const payload = (record.payload && typeof record.payload === "object")
+        ? record.payload
+        : {};
+    return {
+        ...record,
+        current: 0,
+        total: 100,
+        progressUnit: "percent",
+        displayPercent: 0,
+        progressText: counted,
+        payload: {
+            ...payload,
+            stage_detail: counted,
+            progress_unit: "percent",
+        },
+        indeterminate: true,
+    };
+}
 export function compositeRenderPrepareProgress(record) {
     if (!validProgress(record) || !record) {
         return null;
@@ -114,6 +167,7 @@ function shouldTrackRenderRecord(record, substageKey, progressUnit) {
 }
 function selectRenderProgressRecords(job, eventsPayload, { shouldReplaceCurrentStageProgress, } = {}) {
     const items = Array.isArray(eventsPayload?.items) ? eventsPayload.items : [];
+    let latestRefineProgress = null;
     let latestPrepareProgress = null;
     let latestPrewarmProgress = null;
     let latestPageProgress = null;
@@ -130,6 +184,10 @@ function selectRenderProgressRecords(job, eventsPayload, { shouldReplaceCurrentS
         const next = normalizeProgressRecordFromEventRecord(job, record, itemStage);
         if (!next || next.stageKey !== "render") {
             continue;
+        }
+        if (next.substageKey === "refining"
+            && shouldReplaceCurrentStageProgress(latestRefineProgress, next)) {
+            latestRefineProgress = next;
         }
         if (shouldTrackRenderRecord(next, "render_prepare", "step")
             && shouldReplaceCurrentStageProgress(latestPrepareProgress, next)) {
@@ -148,6 +206,7 @@ function selectRenderProgressRecords(job, eventsPayload, { shouldReplaceCurrentS
         }
     }
     return {
+        refine: latestRefineProgress,
         prepare: latestPrepareProgress,
         prewarm: latestPrewarmProgress,
         pages: latestPageProgress,
@@ -159,6 +218,7 @@ export function compositeRenderProgressFromRecords(records = {}, fallbackProgres
         || compositeRenderPageProgress(records.pages)
         || compositeRenderPrewarmProgress(records.prewarm)
         || compositeRenderPrepareProgress(records.prepare)
+        || compositeRenderRefineProgress(records.refine)
         || records.compile
         || records.pages
         || records.prewarm

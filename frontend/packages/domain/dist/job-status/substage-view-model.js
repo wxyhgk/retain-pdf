@@ -39,6 +39,9 @@ export function collectVisibleSubstages(stageKey, activeKey, selectedProgress = 
             : 0;
         for (let index = firstVisibleIndex; index <= activeIndex; index += 1) {
             const key = known[index]?.key;
+            if (known[index]?.optional) {
+                continue;
+            }
             if (key && !visibleKeys.includes(key)) {
                 visibleKeys.push(key);
             }

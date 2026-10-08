@@ -54,14 +54,14 @@ export type WorkflowDeveloperDialog = {
  * 翻译质量档位（用户可见的一个下拉，背后映射到 translation.preparation 等字段，见
  * workflow/payload.ts 的 translationQualityFields）：
  * - standard：直接翻译，和以前完全一样；
- * - terms：先通读全书生成术语表和风格指南，再带着它们翻译（preparation=terms+style）。
- * 后续「精翻」（挑错 + 定点修改）落地后再加一档。
+ * - terms：先通读全书生成术语表和风格指南，再带着它们翻译（preparation=terms+style）；
+ * - refined：在 terms 基础上，翻译完再让模型挑错、只改有问题的片段（refine=review_and_fix）。
  */
-export type TranslationQuality = "standard" | "terms";
+export type TranslationQuality = "standard" | "terms" | "refined";
 export const TRANSLATION_QUALITY_STORAGE_KEY = "retainpdf.translationQuality";
 
 export function normalizeTranslationQuality(value: unknown): TranslationQuality {
-  return value === "terms" ? "terms" : "standard";
+  return value === "terms" || value === "refined" ? value : "standard";
 }
 
 // 档位是用户的长期偏好（选了「统一术语」的人通常每本都要），所以记在本机；

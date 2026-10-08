@@ -3,6 +3,7 @@ export declare function substageKeyForSnapshot(snapshot?: any): string;
 export declare function collectVisibleSubstages(stageKey: any, activeKey: any, selectedProgress?: any): {
     key: string;
     label: string;
+    optional?: boolean;
 }[];
 export declare function buildSubstageViewModel({ selectedStageKey, selectedIsCurrent, snapshot, selectedProgress, }?: any): {
     activeKey: any;

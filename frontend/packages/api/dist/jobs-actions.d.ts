@@ -39,7 +39,7 @@ export interface OcrAmbiguityResolutionView {
         [key: string]: unknown;
     };
 }
-export type JobRetryStage = "ocr" | "translation" | "render";
+export type JobRetryStage = "ocr" | "translation" | "render" | "refine";
 export interface JobStageRetryActionView {
     stage: JobRetryStage;
     label: string;

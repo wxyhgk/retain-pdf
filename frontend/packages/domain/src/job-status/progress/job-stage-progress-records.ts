@@ -20,6 +20,7 @@ type StageProgressContext = {
   mode: string;
   bySubstage?: Record<string, ProgressRecord | null | undefined>;
   renderRecords?: {
+    refine?: ProgressRecord | null;
     prepare?: ProgressRecord | null;
     prewarm?: ProgressRecord | null;
     pages?: ProgressRecord | null;

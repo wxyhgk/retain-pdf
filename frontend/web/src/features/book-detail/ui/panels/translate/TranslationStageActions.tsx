@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Languages, LoaderCircle, RefreshCw } from "lucide-react";
+import { Languages, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
 import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
 import type {
   JobRetryStage,
@@ -10,13 +10,32 @@ import { btn } from "../ui.jsx";
 function labelOf(action: JobStageRetryActionView) {
   if (action.stage === "translation") return "重新翻译";
   if (action.stage === "render") return "重新渲染";
+  if (action.stage === "refine") return "精修译文";
   return action.label;
 }
 
+// 需要先确认再执行的动作：重新翻译（后端标 danger）和精修（会调模型、产生费用）。
+function needsConfirm(action: JobStageRetryActionView) {
+  return Boolean(action.danger) || action.stage === "refine";
+}
+
+const CONFIRM_COPY: Record<string, { title: string; description: string; confirmLabel: string }> = {
+  translation: {
+    title: "确认重新翻译",
+    description: "将先尝试断点恢复：服务端按恢复计划自动续跑（渲染阶段原地同任务，其余新建任务）。仍需显式重跑时，确认后将复用现有 OCR，重新执行翻译与渲染，可能重复调用翻译接口并产生费用。",
+    confirmLabel: "接受风险并重新翻译",
+  },
+  refine: {
+    title: "精修译文",
+    description: "在现有译文上让模型挑一遍错（漏译、错译、数字和术语），只改有问题的片段，改完自动重新渲染一次。不会重新翻译整本；每处修改都会留下记录，改不好的会保留原译，之后也能退回。会调用模型、产生少量费用，耗时视页数而定。",
+    confirmLabel: "开始精修",
+  },
+};
+
 function StageIcon({ stage }: { stage: JobRetryStage }) {
-  return stage === "translation"
-    ? <Languages className="size-4" aria-hidden="true" />
-    : <RefreshCw className="size-4" aria-hidden="true" />;
+  if (stage === "translation") return <Languages className="size-4" aria-hidden="true" />;
+  if (stage === "refine") return <Sparkles className="size-4" aria-hidden="true" />;
+  return <RefreshCw className="size-4" aria-hidden="true" />;
 }
 
 const LOADING_ACTIONS: JobStageRetryActionView[] = [
@@ -57,6 +76,7 @@ export function TranslationStageActions({
   const checking = loading && !actions.length;
   const visibleActions = checking ? LOADING_ACTIONS : actions;
   const shownError = error || localError;
+  const confirmCopy = CONFIRM_COPY[confirmAction?.stage === "refine" ? "refine" : "translation"];
   if (!visibleActions.length && !shownError) return null;
 
   function describeRetryError(cause: unknown): string {
@@ -83,7 +103,11 @@ export function TranslationStageActions({
   async function confirmRisk() {
     if (!confirmAction) return;
     try {
-      await onRetry(confirmAction.stage, { acceptDuplicateRisk: true });
+      // 精修的确认只是「知道要花钱」，不是接受重复请求风险。
+      await onRetry(
+        confirmAction.stage,
+        confirmAction.stage === "refine" ? undefined : { acceptDuplicateRisk: true },
+      );
       setLocalError("");
       setConfirmAction(null);
     } catch (cause) {
@@ -112,7 +136,7 @@ export function TranslationStageActions({
               disabled={disabled}
               title={!action.can_retry && reason ? reason : undefined}
               onClick={() => {
-                if (action.danger) setConfirmAction(action);
+                if (needsConfirm(action)) setConfirmAction(action);
                 else void runRetry(action.stage);
               }}
             >
@@ -131,11 +155,11 @@ export function TranslationStageActions({
         onOpenChange={(next) => {
           if (!next) setConfirmAction(null);
         }}
-        title="确认重新翻译"
-        description="将先尝试断点恢复：服务端按恢复计划自动续跑（渲染阶段原地同任务，其余新建任务）。仍需显式重跑时，确认后将复用现有 OCR，重新执行翻译与渲染，可能重复调用翻译接口并产生费用。"
-        confirmLabel="接受风险并重新翻译"
+        title={confirmCopy.title}
+        description={confirmCopy.description}
+        confirmLabel={confirmCopy.confirmLabel}
         tone="default"
-        pending={pendingStage === "translation"}
+        pending={Boolean(confirmAction) && pendingStage === confirmAction?.stage}
         onConfirm={confirmRisk}
       />
     </div>

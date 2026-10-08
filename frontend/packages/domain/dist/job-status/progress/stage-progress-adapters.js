@@ -1,6 +1,6 @@
 import { compareProgressEventOrder, } from "../presentation/job-stage-presentation-utils.js";
 import { compositeOcrProgressFromRecord } from "./job-stage-ocr-progress.js";
-import { compositeRenderCompileProgress, compositeRenderPageProgress, compositeRenderPrepareProgress, compositeRenderPrewarmProgress, compositeRenderProgressFromRecords, } from "./job-stage-render-progress.js";
+import { compositeRenderCompileProgress, compositeRenderPageProgress, compositeRenderPrepareProgress, compositeRenderPrewarmProgress, compositeRenderRefineProgress, compositeRenderProgressFromRecords, } from "./job-stage-render-progress.js";
 import { compositeTranslationProgressFromRecord } from "./job-stage-translation-progress.js";
 function baseAdapter() {
     return {
@@ -95,6 +95,10 @@ const renderStageProgressAdapter = {
     record(stageContext, nextProgress, { shouldReplaceCurrentStageProgress, shouldReplaceStageProgress, } = {}) {
         defaultStageProgressAdapter.record(stageContext, nextProgress, { shouldReplaceCurrentStageProgress, shouldReplaceStageProgress });
         const records = stageContext.renderRecords || {};
+        if (nextProgress.substageKey === "refining"
+            && shouldReplaceCurrentStageProgress?.(records.refine, nextProgress)) {
+            records.refine = nextProgress;
+        }
         if (nextProgress.substageKey === "render_prepare"
             && nextProgress.progressUnit === "step"
             && shouldReplaceCurrentStageProgress?.(records.prepare, nextProgress)) {
@@ -128,6 +132,7 @@ const renderStageProgressAdapter = {
         return {
             ...progress,
             bySubstage: {
+                ...(records.refine ? { refining: compositeRenderRefineProgress(records.refine) || records.refine } : {}),
                 ...(records.prepare ? { render_prepare: compositeRenderPrepareProgress(records.prepare) || records.prepare } : {}),
                 ...(records.prewarm ? { render_prewarm: compositeRenderPrewarmProgress(records.prewarm) || records.prewarm } : {}),
                 ...(records.pages ? { render_pages: compositeRenderPageProgress(records.pages) || records.pages } : {}),

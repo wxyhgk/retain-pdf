@@ -85,3 +85,89 @@ test("阶段能力读取期间固定展示重新翻译和重新渲染按钮", as
   root.unmount();
   dom.window.close();
 });
+
+test("精修译文：先弹确认（说明会花钱、可退回），确认后按 refine 提交，不带重复风险标记", async () => {
+  const dom = makeDom();
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { TranslationStageActions } = await import(
+    "../../src/features/book-detail/ui/panels/translate/TranslationStageActions.jsx"
+  );
+  const calls = [];
+  const root = createRoot(dom.window.document.getElementById("root"));
+  root.render(React.createElement(TranslationStageActions, {
+    actions: [
+      { stage: "render", label: "重新渲染", can_retry: true },
+      { stage: "refine", label: "精修译文", can_retry: true },
+    ],
+    onRetry: async (...args) => calls.push(args),
+  }));
+
+  const refineButton = await waitFor(
+    () => dom.window.document.getElementById("book-detail-retry-refine-btn"),
+    "精修按钮",
+  );
+  assert.equal(refineButton.textContent.trim(), "精修译文");
+  click(dom, refineButton);
+  const confirm = await waitFor(
+    () => dom.window.document.getElementById("book-detail-translation-risk-confirm"),
+    "精修确认框",
+  );
+  assert.match(confirm.textContent, /精修译文/);
+  assert.match(confirm.textContent, /不会重新翻译整本/);
+  assert.equal(calls.length, 0, "打开确认框不能直接提交");
+  click(dom, dom.window.document.getElementById("book-detail-translation-risk-confirm-confirm"));
+  await waitFor(() => calls.length === 1, "确认后提交");
+  assert.deepEqual(calls[0], ["refine", undefined]);
+
+  root.unmount();
+  dom.window.close();
+});
+
+test("精修：失败任务也不走断点恢复，直接 retry-stage(refine) 原地执行", async () => {
+  const dom = makeDom();
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { useBookDetailStageActions } = await import(
+    "../../src/features/book-detail/ui/use-book-detail-stage-actions.js"
+  );
+  const calls = [];
+  const submitted = [];
+  let api = null;
+  function Probe() {
+    api = useBookDetailStageActions({
+      open: true,
+      job: { job_id: "job-refine-1", status: "failed", document_id: "doc-1" },
+      actions: {
+        getJobStageActions: async () => ({
+          job_id: "job-refine-1",
+          stages: [{ stage: "refine", label: "精修译文", can_retry: true, action: { body: { stage: "refine" } } }],
+        }),
+        retryJobStage: async (...args) => {
+          calls.push(["retry", ...args]);
+          return { job_id: "job-refine-1", workflow: "render" };
+        },
+        resumeJob: async (...args) => {
+          calls.push(["resume", ...args]);
+          return { job_id: "job-resumed" };
+        },
+      },
+      onJobSubmitted: (job) => submitted.push(job),
+    });
+    return null;
+  }
+  const root = createRoot(dom.window.document.getElementById("root"));
+  root.render(React.createElement(Probe));
+  await waitFor(() => api?.stageActions?.some((action) => action.stage === "refine"), "读到精修能力");
+  await api.retry("refine");
+  assert.deepEqual(calls, [[
+    "retry",
+    "job-refine-1",
+    "refine",
+    { stage: "refine", create_new_job: false, document_id: "doc-1" },
+  ]]);
+  assert.equal(submitted[0].workflow, "render");
+
+  root.unmount();
+  dom.window.close();
+});
