@@ -746,6 +746,10 @@
 
     let height = 0;
     for (const line of lines) {
+      // How far the line can be squeezed (Typst shrinks spaces and CJK
+      // punctuation of an overfull line, nothing else): an overfull line
+      // narrower than its room after squeezing fits; the rest sticks out.
+      line.shrinkable = lineAdjustability(p, line.start, line.end, line.mandatory, lead).shrink * size;
       let top = 0;
       let bottom = 0;
       let text = false;

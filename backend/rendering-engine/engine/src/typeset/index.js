@@ -159,8 +159,15 @@
           let painted = line.width;
           let justified = Boolean(line.justified);
           // A line set wider than its room is drawn shrunk to the room
-          // (Typst shrinks any overfull line, justified or not).
-          if (line.shrunk) { painted = line.available; justified = true; }
+          // (Typst shrinks any overfull line, justified or not) -- but only as
+          // far as its spaces and punctuation allow; what cannot be squeezed
+          // (e.g. a line of formulas) is drawn at its minimum and sticks out
+          // on the right, which overflowRight then reports.
+          if (line.shrunk) {
+            const least = Number.isFinite(line.minWidth) ? line.minWidth : line.available;
+            painted = Math.max(line.available, least);
+            justified = true;
+          }
           else if (justified) {
             const available = Number.isFinite(line.available) ? line.available : line.width;
             painted = available;

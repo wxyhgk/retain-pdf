@@ -155,6 +155,10 @@ class StampStore {
     this.unit = unit; // pt per glyph unit on a stamp page
     this.pages = new Map(); // d -> { page, bbox }
     this.list = [];
+    // Typst draws an SVG's currentColor as black and cannot recolour a PDF
+    // image, so every text colour other than black gets its own copy of the
+    // stamps (same pages, same numbering, filled in that colour).
+    this.colors = new Set();
     this.stats = { formulas: 0, fallbacks: [], draws: 0, rects: 0 };
   }
 
@@ -191,12 +195,29 @@ class StampStore {
     return items;
   }
 
+  // The stamps file for a text colour ("rrggbb"; "" / "000000" = black,
+  // the default file). Registers the colour so writeSources builds it.
+  fileFor(hex) {
+    const color = normalizeHex(hex);
+    if (!color || color === "000000") return this.file;
+    this.colors.add(color);
+    return colorFile(this.file, color);
+  }
+
+  // Every stamps file to build: [{ hex, file }] (black first).
+  targets() {
+    return [{ hex: "", file: this.file }, ...[...this.colors].sort().map(hex => ({ hex, file: colorFile(this.file, hex) }))];
+  }
+
   // Writes one SVG per outline and the Typst source that stacks them into
-  // stamps.pdf; returns the .typ path (relative to outDir) to compile, or ""
-  // when no formula used a stamp.
-  writeSources() {
+  // stamps.pdf (or, given a colour, its coloured copy); returns the .typ path
+  // (relative to outDir) to compile, or "" when no formula used a stamp.
+  writeSources(hex = "") {
     if (!this.list.length) return "";
-    const dir = path.join(this.outDir, path.dirname(this.file), "stamps");
+    const color = normalizeHex(hex);
+    const fill = color && color !== "000000" ? `#${color}` : "currentColor";
+    const suffix = color && color !== "000000" ? `-${color}` : "";
+    const dir = path.join(this.outDir, path.dirname(this.file), `stamps${suffix}`);
     fs.mkdirSync(dir, { recursive: true });
     const lines = [];
     this.list.forEach((entry, index) => {
@@ -205,7 +226,7 @@ class StampStore {
       const name = `s${entry.page}.svg`;
       fs.writeFileSync(path.join(dir, name),
         `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x0} ${-y1} ${w} ${h}" width="${w}" height="${h}">` +
-        `<path fill="currentColor" stroke="none" transform="scale(1,-1)" d="${entry.d}"/></svg>`);
+        `<path fill="${fill}" stroke="none" transform="scale(1,-1)" d="${entry.d}"/></svg>`);
       // Typst pads any page smaller than 3pt to 3pt (the outline would sit
       // in a corner of a larger page and shrink when stretched), so small
       // outlines get a larger scale. Placement uses fractions of the formula
@@ -214,9 +235,9 @@ class StampStore {
       const pw = fmt(w * unit), ph = fmt(h * unit);
       if (index) lines.push("#pagebreak()");
       lines.push(`#set page(width: ${pw}pt, height: ${ph}pt, margin: 0pt)`);
-      lines.push(`#image("stamps/${name}", width: ${pw}pt, height: ${ph}pt)`);
+      lines.push(`#image("stamps${suffix}/${name}", width: ${pw}pt, height: ${ph}pt)`);
     });
-    const typ = path.join(path.dirname(this.file), "stamps.typ");
+    const typ = path.join(path.dirname(this.file), `stamps${suffix}.typ`);
     fs.writeFileSync(path.join(this.outDir, typ), lines.join("\n") + "\n");
     return typ;
   }
@@ -226,10 +247,27 @@ function fmt(value) {
   return Number(value).toFixed(6).replace(/\.?0+$/, "") || "0";
 }
 
+function normalizeHex(hex) {
+  const value = String(hex || "").replace(/^#/, "").toLowerCase();
+  return /^[0-9a-f]{6}$/.test(value) ? value : "";
+}
+
+// math/stamps.pdf -> math/stamps-1a2b3c.pdf
+function colorFile(file, hex) {
+  const ext = path.extname(file);
+  return `${file.slice(0, file.length - ext.length)}-${hex}${ext}`;
+}
+
+// [r, g, b] in 0..1 -> "rrggbb".
+function hexOf(rgb) {
+  if (!Array.isArray(rgb) || rgb.length < 3) return "";
+  return rgb.slice(0, 3).map(v => Math.round(Math.max(0, Math.min(1, Number(v) || 0)) * 255).toString(16).padStart(2, "0")).join("");
+}
+
 // The rpr-math visual for a stamped formula: (stamps: file, items: (...)).
 function stampsValue(file, items) {
   const array = items.map(item => `(${item[0]}, ${item.slice(1).map(fmt).join(", ")})`).join(", ");
   return `(stamps: ${JSON.stringify(file)}, items: (${array}${items.length === 1 ? "," : ""}))`;
 }
 
-module.exports = { flattenFormulaSVG, parseTransform, pathBBox, multiply, StampStore, stampsValue };
+module.exports = { flattenFormulaSVG, parseTransform, pathBBox, multiply, StampStore, stampsValue, hexOf };

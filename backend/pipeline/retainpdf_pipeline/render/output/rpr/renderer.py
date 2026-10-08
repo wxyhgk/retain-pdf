@@ -146,6 +146,10 @@ def build_book_rpr_pdf(
             source_page_indices=list(range(len(page_specs))),
         )
     else:
+        # overlay：和旧 overlay 路线一样，pikepdf 合并结果直接就是成品（底图就是去文字层的
+        # 原件，目录随原件保留）。不再经 PyMuPDF 重存：默认的快速保存不写对象流，会把
+        # 合并后的文件撑大约 20%（fe8d63：8.1MB → 9.8MB）。
+        merged_pdf = output_pdf_path
         merge = overlay_pdf_pages_with_pikepdf(
             source_pdf_path=prepared.cleaned_background_pdf,
             overlay_pdf_path=run.overlay_pdf,
@@ -160,13 +164,14 @@ def build_book_rpr_pdf(
     diagnostics["rpr_merge_elapsed_seconds"] = time.perf_counter() - merge_started
 
     save_started = time.perf_counter()
-    save_background_pdf_to_output(
-        merged_pdf,
-        output_pdf_path,
-        source_pdf_path=source_pdf_path,
-        page_map=prepared.page_map if background_mode else None,
-        fast_save=fast_save,
-    )
+    if background_mode:
+        save_background_pdf_to_output(
+            merged_pdf,
+            output_pdf_path,
+            source_pdf_path=source_pdf_path,
+            page_map=prepared.page_map,
+            fast_save=fast_save,
+        )
     diagnostics["background_save_elapsed_seconds"] = time.perf_counter() - save_started
     emit_render_compile_progress(
         current=3,

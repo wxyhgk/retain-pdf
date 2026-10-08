@@ -34,14 +34,14 @@ function flatten(runs) {
   return { text, boxes };
 }
 
-function mathCall(maths, tex, display, size) {
+function mathCall(maths, tex, display, size, color = "") {
   const entry = maths.get(tex, display);
   const source = display ? `$$${tex}$$` : `$${tex}$`;
   if (!entry.ok) return `rpr-tex-fallback(${typstString(source)})`;
-  return `rpr-math(${mathVisual(entry, maths)}, ${fmt(entry.widthEm * size)}pt, ${fmt(entry.heightEm * size)}pt, ${fmt(entry.depthEm * size)}pt, ${typstString(source)})`;
+  return `rpr-math(${mathVisual(entry, maths, color)}, ${fmt(entry.widthEm * size)}pt, ${fmt(entry.heightEm * size)}pt, ${fmt(entry.depthEm * size)}pt, ${typstString(source)})`;
 }
 
-function lineBody(flat, start, end, maths, size) {
+function lineBody(flat, start, end, maths, size, color = "") {
   const pieces = [];
   let text = "";
   const flush = () => { if (text) pieces.push(typstString(text)); text = ""; };
@@ -50,19 +50,19 @@ function lineBody(flat, start, end, maths, size) {
     if (c === LINE_SEPARATOR) continue;
     if (c !== OBJECT) { text += c; continue; }
     flush();
-    pieces.push(mathCall(maths, flat.boxes.get(i).tex, false, size));
+    pieces.push(mathCall(maths, flat.boxes.get(i).tex, false, size, color));
   }
   flush();
   return pieces.length ? `[#${pieces.join("#")}]` : "[]";
 }
 
 // One typeset line -> a placed, baseline-anchored block.
-function emitLine(node, line, flat, maths) {
+function emitLine(node, line, flat, maths, options = {}) {
   const size = node.fontSize;
   let end = line.end;
   const forced = flat.text[end - 1] === LINE_SEPARATOR || end === flat.text.length;
   if (!forced) while (end > line.start && isSpace(flat.text[end - 1])) end -= 1;
-  const body = lineBody(flat, line.start, end, maths, size);
+  const body = lineBody(flat, line.start, end, maths, size, options.color || "");
   // A line wider than its room (optimized breaking) is shrunk by Typst's own
   // justification, which "simple" breaking never does: it would break it.
   const shrink = Number(line.naturalWidth) > Number(line.width) + 1e-4;
@@ -85,14 +85,15 @@ function emitLine(node, line, flat, maths) {
   return `#place(top + left, dx: ${fmt(line.x)}pt, dy: ${fmt(line.baseline - boxAscent)}pt, { set text(size: ${fmt(size)}pt${weight}, top-edge: "baseline", bottom-edge: "baseline"); ${content} })`;
 }
 
-function emitTextNode(node, maths) {
+// options.color: the node's text colour ("rrggbb"), so its formulas match it.
+function emitTextNode(node, maths, options = {}) {
   const out = [];
   const flats = (node.paragraphs || []).map(paragraph => flatten(paragraph.runs));
   for (const line of node.lines) {
     if (line.toc) continue;
     const flat = flats[line.paragraph];
     if (!flat || line.end <= line.start) continue;
-    out.push(emitLine(node, line, flat, maths));
+    out.push(emitLine(node, line, flat, maths, options));
   }
   return out;
 }

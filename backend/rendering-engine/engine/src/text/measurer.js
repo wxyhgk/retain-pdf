@@ -151,6 +151,9 @@
           // than its room (optimized breaking only) is drawn shrunk to it.
           available,
           shrunk: contentWidth > available + 1e-4,
+          // Narrowest the line can be drawn: squeezing stops at its
+          // shrinkability, so a line of unbreakable formulas stays too wide.
+          minWidth: Math.max(0, contentWidth - (Number(line.shrinkable) || 0)),
           forced: line.mandatory
         });
         maxLineWidth = Math.max(maxLineWidth, x + (justified ? available : contentWidth));

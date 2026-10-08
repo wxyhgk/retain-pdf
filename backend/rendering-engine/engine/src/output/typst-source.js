@@ -37,11 +37,15 @@ const PREAMBLE = `// Each item: (page, x, y, w, h) as fractions of the formula b
 // filled rule (fraction bar, vinculum), page n > 0 is outline n of the stamps PDF.
 // The stamps are decorative (the transparent LaTeX above them is the content),
 // so they are PDF artifacts: no structure element per glyph in tagged output.
-#let rpr-draw(src, w, h) = if type(src) == str { image(src, width: w, height: h) } else { pdf.artifact({
+#let rpr-draw(src, w, h) = if type(src) == str { image(src, width: w, height: h) } else if "svg" in src {
+  // A formula SVG padded so text glyphs taller than MathJax's guess are not
+  // clipped: drawn larger by the pad and shifted back, so the box is unchanged.
+  place(top + left, dx: -w * src.px, dy: -h * src.py, image(src.svg, width: w * (1 + 2 * src.px), height: h * (1 + 2 * src.py)))
+} else { pdf.artifact({
   for (page, x, y, sw, sh) in src.items {
     place(top + left, dx: w * x, dy: h * y, if page > 0 {
       image(src.stamps, page: page, width: w * sw, height: h * sh, fit: "stretch")
-    } else { rect(width: w * sw, height: h * sh, fill: black, stroke: none) })
+    } else { context rect(width: w * sw, height: h * sh, fill: text.fill, stroke: none) })
   }
 }) }
 #let rpr-math(src, w, h, depth, tex) = box(baseline: depth, width: w, height: h, {

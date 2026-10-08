@@ -18,6 +18,7 @@
 
 const { PREAMBLE, DEFAULT_FONT_FAMILY, fmt, rgb, typstString } = require("./typst-source");
 const { emitTextNode } = require("./lines");
+const { hexOf } = require("./math-stamps");
 
 function overlayDocument(result, paint, maths, options = {}) {
   const fontFamily = options.fontFamily || DEFAULT_FONT_FAMILY;
@@ -39,7 +40,8 @@ function overlayDocument(result, paint, maths, options = {}) {
     }
     for (const node of nodes) {
       if (!node.lines || !node.lines.length) continue;
-      out.push(`#[`, `#set text(fill: ${rgb(paint[node.id].text || [0, 0, 0])})`, ...emitTextNode(node, maths), `]`);
+      const textColor = paint[node.id].text || [0, 0, 0];
+      out.push(`#[`, `#set text(fill: ${rgb(textColor)})`, ...emitTextNode(node, maths, { color: hexOf(textColor) }), `]`);
       painted += 1;
     }
     // An empty page still has to exist (and keep its size).
