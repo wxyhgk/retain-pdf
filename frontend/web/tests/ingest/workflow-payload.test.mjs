@@ -172,6 +172,10 @@ test("翻译质量：普通档不加任何新字段（请求与以前逐字相�
   assert.equal("preparation" in legacy, false);
   assert.deepEqual(buildTranslationPayload({ ...base, translationQuality: "standard" }), legacy);
   assert.equal(buildTranslationPayload({ ...base, translationQuality: "terms" }).preparation, "terms+style");
+  assert.equal("refine" in buildTranslationPayload({ ...base, translationQuality: "terms" }), false);
+  const refined = buildTranslationPayload({ ...base, translationQuality: "refined" });
+  assert.equal(refined.preparation, "terms+style");
+  assert.equal(refined.refine, "review_and_fix");
   // 不认识的档位（例如旧版本存下的值）按普通处理，不发出后端不认识的字段值
   assert.equal("preparation" in buildTranslationPayload({ ...base, translationQuality: "bogus" }), false);
 });
@@ -189,6 +193,8 @@ test("翻译质量档位记在本机，读写失败时退回普通", async () =>
     view.setTranslationQuality("terms");
     assert.equal(view.translationQuality(), "terms");
     assert.equal(createWorkflowViewFeature().translationQuality(), "terms", "新开的视图沿用上次的选择");
+    view.setTranslationQuality("refined");
+    assert.equal(view.translationQuality(), "refined");
     view.setTranslationQuality("whatever");
     assert.equal(view.translationQuality(), "standard");
     globalThis.localStorage = { getItem: () => { throw new Error("denied"); }, setItem: () => { throw new Error("denied"); } };

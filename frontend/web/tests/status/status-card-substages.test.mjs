@@ -176,7 +176,7 @@ test("status substage contract centralizes aliases labels and details", () => {
   assert.deepEqual(substageProgressRange("render_pages"), null);
   assert.deepEqual(
     substagesForStage("render").map((item) => item.key),
-    ["render_prepare", "render_prewarm", "render_pages", "render_compile"],
+    ["refining", "render_prepare", "render_prewarm", "render_pages", "render_compile"],
   );
 });
 
@@ -357,4 +357,36 @@ test("completed render compile step hides internal step count", () => {
     }),
     "渲染完成",
   );
+});
+
+test("精修子步骤是可选的：没开精修的任务不显示，开了才显示", () => {
+  const plain = buildSubstageViewModel({
+    selectedStageKey: "render",
+    selectedIsCurrent: true,
+    snapshot: { stageKey: "render", substageKey: "render_pages" },
+    selectedProgress: { substageKey: "render_pages", bySubstage: { render_pages: { current: 3, total: 10 } } },
+  });
+  assert.deepEqual(plain.items.map((item) => item.key), ["render_prepare", "render_prewarm", "render_pages"]);
+
+  const refined = buildSubstageViewModel({
+    selectedStageKey: "render",
+    selectedIsCurrent: true,
+    snapshot: { stageKey: "render", substageKey: "render_pages" },
+    selectedProgress: {
+      substageKey: "render_pages",
+      bySubstage: { refining: { current: 1, total: 1 }, render_pages: { current: 3, total: 10 } },
+    },
+  });
+  assert.deepEqual(
+    refined.items.map((item) => [item.key, item.done]),
+    [["refining", true], ["render_prepare", true], ["render_prewarm", true], ["render_pages", false]],
+  );
+
+  const refining = buildSubstageViewModel({
+    selectedStageKey: "render",
+    selectedIsCurrent: true,
+    snapshot: { stageKey: "render", substageKey: "refining" },
+    selectedProgress: { substageKey: "refining", bySubstage: { refining: { current: 1, total: 4 } } },
+  });
+  assert.deepEqual(refining.items.map((item) => [item.key, item.active]), [["refining", true]]);
 });

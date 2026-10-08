@@ -15,6 +15,12 @@ import {
 } from "@/ui/context/home-services-context.js";
 import type { UploadViewStore } from "../../domain/upload-store.js";
 
+const QUALITY_HINTS: Record<string, string> = {
+  standard: "直接翻译，速度最快、费用最低。",
+  terms: "先通读全书定好术语和文风再翻译，译法更一致；模型费用多约 0.4 倍。",
+  refined: "统一术语之外，翻完再让模型挑错，只改有问题的地方，改不好就保留原译；模型费用约为普通的 2.5 倍，耗时更长。",
+};
+
 export function TranslationOptionsPanel() {
   const uploadViewStore = useHomeUploadViewStore();
   const workflowViewStore = useHomeWorkflowViewStore();
@@ -138,11 +144,10 @@ export function TranslationOptionsPanel() {
           >
             <option value="standard">普通</option>
             <option value="terms">统一术语</option>
+            <option value="refined">精翻</option>
           </select>
           <small id="job-translation-quality-hint">
-            {workflow.translationQuality === "terms"
-              ? "先通读全书定好术语和文风再翻译，译法更一致；模型费用多约 0.4 倍。"
-              : "直接翻译，速度最快、费用最低。"}
+            {QUALITY_HINTS[workflow.translationQuality] || QUALITY_HINTS.standard}
           </small>
         </label>
       </div>

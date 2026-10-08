@@ -162,8 +162,9 @@ export function buildTranslationPayload({
  * 下拉档位 → 后端字段。standard 一个字段都不加：后端缺省就是 preparation=off，
  * 这样「普通」档发出去的请求和以前逐字相同。
  */
-export function translationQualityFields(quality: unknown): Pick<TranslationInput, "preparation"> {
+export function translationQualityFields(quality: unknown): Pick<TranslationInput, "preparation" | "refine"> {
   if (quality === "terms") return { preparation: "terms+style" };
+  if (quality === "refined") return { preparation: "terms+style", refine: "review_and_fix" };
   return {};
 }
 

@@ -8,9 +8,21 @@ export declare function substageDefinitionForKey(key?: string): {
     detail: string;
     progressRange: number[];
     defaultProgressUnit: string;
+    optional?: undefined;
 } | {
     progressRange?: undefined;
     defaultProgressUnit?: undefined;
+    key: string;
+    stageKey: string;
+    aliases: string[];
+    label: string;
+    cardLabel: string;
+    detail: string;
+    optional: boolean;
+} | {
+    progressRange?: undefined;
+    defaultProgressUnit?: undefined;
+    optional?: undefined;
     key: string;
     stageKey: string;
     aliases: string[];
@@ -24,6 +36,7 @@ export declare function substageCardLabel(key?: string): string;
 export declare function substagesForStage(stageKey?: string): {
     key: string;
     label: string;
+    optional?: boolean;
 }[];
 export declare function substageLabelsForStage(stageKey?: string): {
     [k: string]: string;

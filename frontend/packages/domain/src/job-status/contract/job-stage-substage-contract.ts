@@ -140,6 +140,20 @@ const SUBSTAGE_DEFINITIONS = Object.freeze([
     defaultProgressUnit: "step",
   },
   {
+    // 精修（挑错 + 定点修改）：后端把它放在渲染阶段里、真正渲染之前跑，
+    // 进度 stage=rendering、substage=refining、unit=step，payload.refine_phase
+    // 为 start/prepare/review/fix/done。
+    key: "refining",
+    stageKey: "render",
+    aliases: ["refining", "refine"],
+    label: "精修",
+    cardLabel: "精修",
+    detail: "正在精修译文",
+    // 只有开了精修的任务才有这一步：子步骤条只在真的出现过时显示它，
+    // 不因后面的步骤已到达而把它补成「已完成」。
+    optional: true,
+  },
+  {
     key: "render_prepare",
     stageKey: "render",
     aliases: ["render_prepare", "render_preprocess"],
@@ -219,9 +233,10 @@ export function substagesForStage(stageKey = "") {
       }
       return SUBSTAGE_DEFINITIONS.indexOf(left) - SUBSTAGE_DEFINITIONS.indexOf(right);
     })
-    .map((item) => ({
+    .map((item): { key: string; label: string; optional?: boolean } => ({
       key: item.key,
       label: substageCardLabel(item.key),
+      ...("optional" in item && item.optional ? { optional: true } : {}),
     }));
 }
 
