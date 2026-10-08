@@ -77,6 +77,11 @@ def build_translation_identity(
             for entry in plan.glossary_entries
         ],
     }
+    preparation = getattr(plan, "preparation", None)
+    if preparation is not None:
+        # 只有开了译前准备才加这个键：off 时参数集合与改动前逐字节相同，
+        # 旧 checkpoint 照常续跑。冻结产物的哈希进指纹，产物换了就不能拿旧译文续跑。
+        parameters["preparation"] = preparation.identity()
     return build_document_identity(
         normalized_document_path=request.source_json_path,
         parameters_sha256=_sha256_json(parameters),

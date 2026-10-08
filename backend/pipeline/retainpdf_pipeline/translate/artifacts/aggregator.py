@@ -560,22 +560,15 @@ class TranslationRunDiagnostics:
 
     def record_token_usage(self, usage: dict[str, Any]) -> None:
         # Accumulates the provider-reported `usage` block (OpenAI-compatible),
-        # including DeepSeek's prompt cache hit/miss split, so runs can be
-        # costed and cache effectiveness verified from the run summary.
+        # including the prompt cache hit/miss split, so runs can be costed and
+        # cache effectiveness verified from the run summary.
         if not isinstance(usage, dict):
             return
+        normalized = normalize_token_usage(usage)
         with self._lock:
             self._token_usage["requests_with_usage"] += 1
-            for key in (
-                "prompt_tokens",
-                "completion_tokens",
-                "total_tokens",
-                "prompt_cache_hit_tokens",
-                "prompt_cache_miss_tokens",
-            ):
-                value = usage.get(key)
-                if isinstance(value, (int, float)):
-                    self._token_usage[key] += int(value)
+            for key, value in normalized.items():
+                self._token_usage[key] += value
 
     def _remember_slow_request(self, sample: dict[str, Any], limit: int = 12) -> None:
         self._slow_requests.append(sample)
@@ -680,3 +673,36 @@ def _percentile(values: list[int], percentile: int) -> int:
     weight = rank - lower
     interpolated = values[lower] * (1.0 - weight) + values[upper] * weight
     return int(round(interpolated))
+
+
+def _usage_int(value: Any) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return int(value)
+
+
+def normalize_token_usage(usage: dict[str, Any]) -> dict[str, int]:
+    """把各家 OpenAI 兼容接口的 usage 归一成同一组计数。
+
+    缓存命中有两种报法：DeepSeek 用顶层的 prompt_cache_hit_tokens / prompt_cache_miss_tokens；
+    DashScope（Qwen）、OpenAI 等用 prompt_tokens_details.cached_tokens，不报未命中数，
+    按 prompt_tokens - cached_tokens 补上。两种都没有时缓存两项按 0 计。
+    """
+    counts: dict[str, int] = {}
+    for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+        value = _usage_int(usage.get(key))
+        if value is not None:
+            counts[key] = value
+    hit = _usage_int(usage.get("prompt_cache_hit_tokens"))
+    miss = _usage_int(usage.get("prompt_cache_miss_tokens"))
+    if hit is None:
+        details = usage.get("prompt_tokens_details")
+        if isinstance(details, dict):
+            hit = _usage_int(details.get("cached_tokens"))
+        if hit is not None and miss is None and "prompt_tokens" in counts:
+            miss = max(0, counts["prompt_tokens"] - hit)
+    if hit is not None:
+        counts["prompt_cache_hit_tokens"] = hit
+    if miss is not None:
+        counts["prompt_cache_miss_tokens"] = miss
+    return counts

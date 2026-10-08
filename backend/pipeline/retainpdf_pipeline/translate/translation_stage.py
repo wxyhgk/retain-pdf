@@ -37,6 +37,10 @@ def translate_book_pipeline(
     glossary_mode: str = "matched",
     memory_mode: str = "matched",
     invocation: dict | None = None,
+    preparation: str = "off",
+    reviewer_model: str = "",
+    reviewer_base_url: str = "",
+    reviewer_api_key: str = "",
 ) -> dict:
     return execute_translation_request(
         TranslationExecutionRequest(
@@ -66,5 +70,9 @@ def translate_book_pipeline(
             glossary_mode=glossary_mode,
             memory_mode=memory_mode,
             invocation=invocation,
+            preparation=preparation,
+            reviewer_model=reviewer_model,
+            reviewer_base_url=reviewer_base_url,
+            reviewer_api_key=reviewer_api_key,
         )
     )

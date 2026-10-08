@@ -18,6 +18,7 @@ const EXPECTED_SCHEMAS = [
   "public-document-operation.v1.schema.json",
   "reader-data.v1.schema.json",
   "runtime-config.v1.schema.json",
+  "translation-revisions.v1.schema.json",
 ];
 
 function decodePointerSegment(segment) {

@@ -171,3 +171,25 @@ def test_batch_progress_without_checkpoint_keeps_batch_wording(monkeypatch, tmp_
     batch_translation.run_translation_batch_stage(**_stage_args(tmp_path, workers=1, diagnostics=None))
     assert events[0]["message"].startswith("已完成第 2/5 批翻译")
     assert "progress_unit" not in events[0]["payload"]
+
+
+def test_token_usage_counts_cache_hits_from_deepseek_and_dashscope():
+    diagnostics = _diagnostics(1)
+    # DeepSeek：顶层报命中与未命中。
+    diagnostics.record_token_usage({
+        "prompt_tokens": 1000, "completion_tokens": 100, "total_tokens": 1100,
+        "prompt_cache_hit_tokens": 640, "prompt_cache_miss_tokens": 360,
+    })
+    # DashScope（Qwen）：只在 prompt_tokens_details 里报命中数，未命中按差值补。
+    diagnostics.record_token_usage({
+        "prompt_tokens": 2000, "completion_tokens": 200, "total_tokens": 2200,
+        "prompt_tokens_details": {"cached_tokens": 1536},
+    })
+    # 没有任何缓存字段的接口：缓存两项不动。
+    diagnostics.record_token_usage({"prompt_tokens": 10, "completion_tokens": 1, "total_tokens": 11})
+
+    usage = diagnostics._token_usage
+    assert usage["requests_with_usage"] == 3
+    assert usage["prompt_tokens"] == 3010
+    assert usage["prompt_cache_hit_tokens"] == 640 + 1536
+    assert usage["prompt_cache_miss_tokens"] == 360 + 464

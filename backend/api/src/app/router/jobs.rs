@@ -52,12 +52,24 @@ pub(super) fn routes() -> Router<AppState> {
             get(jobs::get_translation_diagnostics),
         )
         .route(
+            "/api/v1/jobs/:job_id/translation/qa",
+            get(jobs::get_translation_qa),
+        )
+        .route(
+            "/api/v1/jobs/:job_id/render/fit-report",
+            get(jobs::get_fit_report),
+        )
+        .route(
             "/api/v1/jobs/:job_id/translation/items",
             get(jobs::list_translation_items),
         )
         .route(
             "/api/v1/jobs/:job_id/translation/items/:item_id",
-            get(jobs::get_translation_item),
+            get(jobs::get_translation_item).patch(jobs::revise_translation_item_route),
+        )
+        .route(
+            "/api/v1/jobs/:job_id/translation/items/:item_id/revisions",
+            get(jobs::get_translation_item_revisions),
         )
         .route(
             "/api/v1/jobs/:job_id/translation/items/:item_id/replay",

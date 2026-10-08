@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "translation_qa.v1.schema.json",
+  "title": "translation_qa.v1",
+  "description": "确定性翻译 QA 报告（artifacts/translation_qa.v1.json）。零 LLM 成本、只出报告；生产者是 retainpdf_pipeline.translate.services.quality.qa。",
+  "type": "object",
+  "required": ["schema", "schema_version", "generated_at", "generator", "config", "inputs", "checks", "summary", "terms", "violations"],
+  "properties": {
+    "schema": { "const": "translation_qa.v1" },
+    "schema_version": { "const": 1 },
+    "generated_at": { "type": "string" },
+    "generator": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["inline", "offline"] },
+        "job_root": { "type": "string" }
+      }
+    },
+    "config": {
+      "type": "object",
+      "required": ["switch_env", "severity_definitions", "thresholds"],
+      "properties": {
+        "switch_env": { "type": "string" },
+        "severity_definitions": {
+          "type": "object",
+          "required": ["critical", "major", "minor"],
+          "additionalProperties": { "type": "string" }
+        },
+        "thresholds": { "type": "object" },
+        "continuation_groups": { "type": "string" }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "required": ["term_base", "glossary_entry_count", "fit_report", "translation_review"],
+      "properties": {
+        "term_base": {
+          "type": "object",
+          "required": ["status"],
+          "properties": {
+            "status": { "enum": ["loaded", "missing", "not_configured", "unreadable", "unrecognized"] }
+          }
+        },
+        "glossary_entry_count": { "type": "integer", "minimum": 0 },
+        "fit_report": {
+          "type": "object",
+          "required": ["status"],
+          "properties": { "status": { "enum": ["ok", "skipped"] } }
+        },
+        "translation_review": {
+          "type": "object",
+          "required": ["status"],
+          "properties": { "status": { "enum": ["inline", "artifact", "missing"] } }
+        },
+        "translation_review_relationship": { "type": "object" }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "required": ["numbers", "references", "placeholders", "terms", "annotations", "english_residue", "omission", "punctuation", "layout_fit"],
+      "additionalProperties": {
+        "type": "object",
+        "required": ["status", "violation_count"],
+        "properties": {
+          "status": { "enum": ["ok", "skipped"] },
+          "reason": { "type": "string" },
+          "violation_count": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "item_count",
+        "checked_item_count",
+        "unit_count",
+        "checked_unit_count",
+        "violation_count",
+        "by_severity",
+        "by_check",
+        "by_type",
+        "clean_unit_rate",
+        "term_consistency",
+        "first_occurrence_annotation",
+        "reference_label_variants",
+        "layout_fit"
+      ],
+      "properties": {
+        "by_severity": {
+          "type": "object",
+          "required": ["critical", "major", "minor"],
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "clean_unit_rate": { "type": ["number", "null"] },
+        "term_consistency": {
+          "type": "object",
+          "required": ["overall_consistency_rate", "locked", "preferred", "derived", "sources"]
+        }
+      }
+    },
+    "terms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "origin", "occurrences", "consistency_rate"],
+        "properties": {
+          "origin": { "enum": ["term_base", "glossary", "derived"] }
+        }
+      }
+    },
+    "violations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "check", "type", "severity", "scope", "message", "location", "evidence"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^qa-\\d{5,}$" },
+          "check": {
+            "enum": ["numbers", "references", "placeholders", "terms", "annotations", "english_residue", "omission", "punctuation", "layout_fit"]
+          },
+          "type": { "type": "string" },
+          "severity": { "enum": ["critical", "major", "minor"] },
+          "scope": { "enum": ["unit", "item", "document"] },
+          "message": { "type": "string" },
+          "location": {
+            "type": "object",
+            "required": ["item_id", "item_ids", "unit_id", "page_number", "block_idx"],
+            "properties": {
+              "item_id": { "type": "string" },
+              "item_ids": { "type": "array", "items": { "type": "string" } },
+              "unit_id": { "type": "string" },
+              "page_number": { "type": "integer" },
+              "block_idx": { "type": "integer" }
+            }
+          },
+          "evidence": { "type": "object" },
+          "translation_review_kinds": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

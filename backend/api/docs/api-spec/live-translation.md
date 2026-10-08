@@ -81,6 +81,13 @@ are present the larger value wins. Authentication remains header-based, so a
 browser client that cannot attach the configured API-key header to native
 `EventSource` must use authenticated streaming `fetch`.
 
+A single-block revision (`PATCH /jobs/{job_id}/translation/items/{item_id}`,
+see translation-diagnostics.md) emits the same event after it registers the
+revised page, also on succeeded, failed and canceled jobs. It reuses the page's
+current `attempt` with a higher `generation`, so a client already showing the
+page simply refetches it. Revisions that were written but not yet registered
+are registered when `layout` is read for a job that is not queued or running.
+
 This ordering is deliberate: atomic page snapshot, durable pipeline unit and
 event commit, SSE notification, then authoritative page read. A disconnect or
 service restart therefore cannot expose translation text that later vanishes.

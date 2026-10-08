@@ -7,6 +7,7 @@ from typing import Any
 
 from retainpdf_pipeline.translate.llm.shared.provider_runtime import DEFAULT_BASE_URL
 from retainpdf_pipeline.translate.llm.shared.provider_runtime import DEFAULT_MODEL
+from retainpdf_pipeline.translate.llm.shared.provider_runtime import normalize_base_url
 from retainpdf_pipeline.translate.services.terms import GlossaryEntry
 from retainpdf_pipeline.translate.workflow.execution_plan import build_translation_execution_plan
 from retainpdf_pipeline.translate.workflow.execution_runner import run_translation_execution_plan
@@ -43,6 +44,43 @@ class TranslationExecutionRequest:
     glossary_mode: str = "matched"
     memory_mode: str = "matched"
     invocation: dict[str, Any] | None = None
+    # 译前准备档位（off / artifacts_only / terms / terms+style），默认 off 与改动前完全一致。
+    preparation: str = "off"
+    # 审校模型配置位：本期不调用，只透传。空值回退到翻译模型，见 resolve_reviewer_connection。
+    reviewer_model: str = ""
+    reviewer_base_url: str = ""
+    reviewer_api_key: str = ""
+
+
+@dataclass(frozen=True)
+class ReviewerConnection:
+    model: str
+    base_url: str
+    api_key: str
+    # 三项是否全部来自翻译模型（即用户没配 reviewer）。
+    inherited: bool
+
+
+def resolve_reviewer_connection(request: TranslationExecutionRequest) -> ReviewerConnection:
+    """审校模型连接：逐项回退到翻译模型。
+
+    key 的回退有一条例外：reviewer_base_url 指向另一家端点、又没给 reviewer key 时，
+    不把翻译 key 发过去——那等于把一家的 key 交给另一家。此时 api_key 留空，由调用方
+    决定报错还是跳过。
+    """
+    model = request.reviewer_model.strip() or request.model
+    reviewer_base_url = request.reviewer_base_url.strip()
+    base_url = reviewer_base_url or request.base_url
+    if request.reviewer_api_key.strip():
+        api_key = request.reviewer_api_key.strip()
+    elif not reviewer_base_url or normalize_base_url(reviewer_base_url) == normalize_base_url(request.base_url):
+        api_key = request.api_key
+    else:
+        api_key = ""
+    inherited = not (
+        request.reviewer_model.strip() or reviewer_base_url or request.reviewer_api_key.strip()
+    )
+    return ReviewerConnection(model=model, base_url=base_url, api_key=api_key, inherited=inherited)
 
 
 def execute_translation_request(request: TranslationExecutionRequest) -> dict:

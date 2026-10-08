@@ -7,17 +7,26 @@ def typst_block_fill_arg(*, fill: str = "") -> str:
     return fill
 
 
+def typst_fit_id_arg(fit_id: str | None) -> str:
+    """fit 报告探针用的 fit_id 实参；正式渲染不传（None），调用串保持原样。"""
+    if fit_id is None:
+        return ""
+    return f', fit_id: "{fit_id}"'
+
+
 def typst_single_line_fit_call(
     markdown_name: str,
     config: SingleLineFitConfig,
     *,
     font_weight: str,
     justify_text: str,
+    fit_id: str | None = None,
 ) -> str:
     return (
         f'pdftr_fit_single_line_markdown({markdown_name}, max_size: {config.max_font_pt}pt, '
         f'min_size: {config.min_font_pt}pt, fit_width: {config.width_pt}pt, '
-        f'fit_height: {config.height_pt}pt, weight: "{font_weight}", justify: {justify_text})'
+        f'fit_height: {config.height_pt}pt, weight: "{font_weight}", justify: {justify_text}'
+        f"{typst_fit_id_arg(fit_id)})"
     )
 
 
@@ -32,12 +41,14 @@ def typst_markdown_fit_call(
     font_weight: str,
     first_line_indent_pt: float,
     justify_text: str,
+    fit_id: str | None = None,
 ) -> str:
     return (
         f'pdftr_fit_markdown({markdown_name}, max_size: {max_font_size_pt}pt, '
         f'min_size: {min_font_size_pt}pt, max_leading: {max_leading_em}em, '
         f'min_leading: {min_leading_em}em, fit_height: {fit_height_pt}pt, '
-        f'weight: "{font_weight}", first_line_indent: {first_line_indent_pt}pt, justify: {justify_text})'
+        f'weight: "{font_weight}", first_line_indent: {first_line_indent_pt}pt, justify: {justify_text}'
+        f"{typst_fit_id_arg(fit_id)})"
     )
 
 
@@ -125,6 +136,35 @@ def typst_preserved_lines_expr(
         f"set text({', '.join(text_args)}); "
         f"set par(leading: {leading_em}em, justify: {justify_text}); "
         f"stack(dir: ttb, spacing: {gap_em}em, ..{lines_name}.map(line => block(line)))"
+    )
+
+
+def typst_fixed_fit_probe(
+    fit_id: str,
+    *,
+    body_expr: str,
+    width_pt: float,
+    height_pt: float,
+    font_size_pt: float,
+    leading_em: float,
+    content_top_inset_pt: float = 0.0,
+    content_bottom_inset_pt: float = 0.0,
+) -> str:
+    """不缩字的块（固定字号）在探针里的度量：同一段内容按块宽自然排版，量出需要的高度。
+
+    只用于 fit 报告探针源码，不进入正式渲染。
+    """
+    if content_top_inset_pt > 0 or content_bottom_inset_pt > 0:
+        body_expr = (
+            f"pad(top: {max(0.0, content_top_inset_pt)}pt, "
+            f"bottom: {max(0.0, content_bottom_inset_pt)}pt)"
+            f"[#{{ {body_expr} }}]"
+        )
+    return (
+        f"#context pdftr_fit_emit(\"{fit_id}\", \"fixed\", {font_size_pt}pt, {font_size_pt}pt, {font_size_pt}pt, "
+        f"{leading_em}em, \"base\", measure(box[#{{ {body_expr} }}]), "
+        f"measure(block(width: {width_pt}pt)[#{{ {body_expr} }}]).height, {height_pt}pt, "
+        f"(width: {width_pt}pt, height: {height_pt}pt))\n"
     )
 
 

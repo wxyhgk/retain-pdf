@@ -125,11 +125,23 @@ export interface PublicTranslationInput {
     context_mode: string;
     glossary_mode: string;
     memory_mode: string;
+    /**
+     * TRANSLATION_PREPARATION_MODES：off / artifacts_only / terms / terms+style。
+     */
+    preparation?: string;
     api_key: string;
     api_key_configured: boolean;
     credential_ref: string;
     model: string;
     base_url: string;
+    reviewer_model?: string;
+    reviewer_base_url?: string;
+    /**
+     * 恒为空，仅暴露 reviewer_api_key_configured。
+     */
+    reviewer_api_key?: string;
+    reviewer_api_key_configured?: boolean;
+    reviewer_credential_ref?: string;
     start_page: number;
     end_page: number;
     page_ranges: number[];

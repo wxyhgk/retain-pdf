@@ -28,6 +28,8 @@ def build_translation_context(
     context_mode: str = "needed",
     glossary_mode: str = "matched",
     memory_mode: str = "matched",
+    style_guidance: str = "",
+    term_base_entries: list[GlossaryEntry] | None = None,
 ) -> TranslationControlContext:
     return build_translation_control_context(
         mode=mode,
@@ -45,6 +47,8 @@ def build_translation_context(
         glossary_mode=glossary_mode,
         memory_mode=memory_mode,
         engine_profile=resolve_engine_profile(model=model, base_url=base_url),
+        style_guidance=style_guidance,
+        term_base_entries=term_base_entries,
     )
 
 
@@ -61,6 +65,8 @@ def build_translation_context_from_policy(
     context_mode: str = "needed",
     glossary_mode: str = "matched",
     memory_mode: str = "matched",
+    style_guidance: str = "",
+    term_base_entries: list[GlossaryEntry] | None = None,
 ) -> TranslationControlContext:
     extra_guidance_parts: list[str] = []
     if extra_guidance.strip():
@@ -86,6 +92,8 @@ def build_translation_context_from_policy(
         context_mode=context_mode,
         glossary_mode=glossary_mode,
         memory_mode=memory_mode,
+        style_guidance=style_guidance,
+        term_base_entries=term_base_entries,
     )
 
 

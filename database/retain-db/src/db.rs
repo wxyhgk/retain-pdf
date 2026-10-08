@@ -123,7 +123,8 @@ pub use model_requests::{
 pub use pipeline::{
     PipelineAttemptCursor, PipelineCheckpoint, PipelineCommitEventRecord, PipelineDispatchBegin,
     PipelineDispatchIntent, PipelineDispatchRecord, PipelineStageObservation, PipelineStageState,
-    PipelineUnitCommit, PipelineUnitRecord,
+    PipelineUnitCommit, PipelineUnitRecord, RevisedPagePublication, RevisedPageStatus,
+    RevisedTranslationPage,
 };
 
 impl Db {

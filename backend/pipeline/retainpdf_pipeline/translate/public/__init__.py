@@ -13,6 +13,10 @@ from importlib import import_module
 _EXPORTS = {
     "write_translation_debug_index": ("retainpdf_pipeline.translate.artifacts", "write_translation_debug_index"),
     "write_translation_diagnostics": ("retainpdf_pipeline.translate.artifacts", "write_translation_diagnostics"),
+    "refresh_translation_qa_after_render": (
+        "retainpdf_pipeline.translate.services.quality.qa",
+        "refresh_translation_qa_after_render",
+    ),
     "blocking_untranslated_items": ("retainpdf_pipeline.translate.artifacts", "blocking_untranslated_items"),
     "enforce_no_blocking_review_errors": ("retainpdf_pipeline.translate.artifacts", "enforce_no_blocking_review_errors"),
     "is_blocking_untranslated": ("retainpdf_pipeline.translate.artifacts.status", "is_blocking_untranslated"),
@@ -81,6 +85,12 @@ _EXPORTS = {
     "prepare_relocated_translation_copy": (
         "retainpdf_pipeline.translate.workflow.recovery",
         "prepare_relocated_translation_copy",
+    ),
+    "RevisionOutcome": ("retainpdf_pipeline.translate.workflow.revision", "RevisionOutcome"),
+    "RevisionRequest": ("retainpdf_pipeline.translate.workflow.revision", "RevisionRequest"),
+    "revise_translation_item": (
+        "retainpdf_pipeline.translate.workflow.revision",
+        "revise_translation_item",
     ),
 }
 

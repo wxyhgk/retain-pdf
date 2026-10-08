@@ -16,6 +16,7 @@ from retainpdf_pipeline.render.source.prewarm import prewarm_manifest_path_from_
 from retainpdf_pipeline.render.source.prewarm import RenderPrewarmHandle
 from retainpdf_pipeline.render.source.prewarm import RenderPrewarmSpec
 from retainpdf_pipeline.render.source.prewarm import start_render_source_prewarm
+from retainpdf_pipeline.translate.public import refresh_translation_qa_after_render
 from retainpdf_pipeline.translate.public import resolve_page_range
 from retainpdf_pipeline.translate.public import write_translation_debug_index
 from retainpdf_pipeline.translate.public import write_translation_diagnostics
@@ -59,6 +60,10 @@ def run_book_pipeline(
     source_cleanup_strategy: str = "pikepdf_text_strip",
     invocation: dict | None = None,
     render_visual_prewarm_handle: RenderPrewarmHandle | None = None,
+    preparation: str = "off",
+    reviewer_model: str = "",
+    reviewer_base_url: str = "",
+    reviewer_api_key: str = "",
 ) -> dict:
     total_started = time.perf_counter()
     translation_summary = translate_book_pipeline(
@@ -88,6 +93,10 @@ def run_book_pipeline(
         glossary_mode=glossary_mode,
         memory_mode=memory_mode,
         invocation=invocation,
+        preparation=preparation,
+        reviewer_model=reviewer_model,
+        reviewer_base_url=reviewer_base_url,
+        reviewer_api_key=reviewer_api_key,
     )
     translate_elapsed = time.perf_counter() - total_started
     diagnostics_path = output_dir.parent / ARTIFACTS_DIR_NAME / "translation_diagnostics.json"
@@ -177,7 +186,10 @@ def run_book_pipeline(
         pdf_compress_dpi=pdf_compress_dpi,
         source_cleanup_strategy=source_cleanup_strategy,
         render_prewarm_manifest_path=render_prewarm_manifest_path,
+        artifacts_dir=output_dir.parent / ARTIFACTS_DIR_NAME,
     )
+    # 翻译阶段生成 QA 时还没排版；渲染完带上 fit 报告再算一次。失败只记日志。
+    refresh_translation_qa_after_render(output_dir.parent, translations_dir=output_dir)
     save_elapsed = time.perf_counter() - save_started
     total_elapsed = time.perf_counter() - total_started
     return {
@@ -192,6 +204,7 @@ def run_book_pipeline(
         "save_elapsed": save_elapsed,
         "render_preprocess_elapsed": render_preprocess_elapsed,
         "render_diagnostics": render_summary.get("render_diagnostics", {}),
+        "fit_report": render_summary.get("fit_report", {}),
         "total_elapsed": total_elapsed,
         "effective_render_mode": render_summary["effective_render_mode"],
         "translation_diagnostics_path": str(diagnostics_path) if diagnostics_summary else "",

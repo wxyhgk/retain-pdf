@@ -134,6 +134,7 @@ def main() -> None:
             pdf_compress_dpi=args.pdf_compress_dpi,
             source_cleanup_strategy=args.source_cleanup_strategy,
             render_prewarm_manifest_path=prewarm_manifest_path_from_artifacts_dir(job_dirs.artifacts_dir),
+            artifacts_dir=job_dirs.artifacts_dir,
         )
         elapsed = time.perf_counter() - started
         save_json(
@@ -151,6 +152,7 @@ def main() -> None:
                 "effective_render_mode": result.get("effective_render_mode", args.render_mode),
                 "pdf_compress_dpi": args.pdf_compress_dpi,
                 "render_diagnostics": result.get("render_diagnostics", {}),
+                "fit_report": result.get("fit_report", {}),
                 "events_jsonl": str(event_writer.path),
                 "invocation": build_stage_invocation_metadata(
                     stage="render",

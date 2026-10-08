@@ -7,6 +7,7 @@ use std::path::Path;
 use crate::models::domain::{
     OcrProviderKind, UploadRecord, SOURCE_CLEANUP_STRATEGIES, TRANSLATION_CONTEXT_MODES,
     TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES, TRANSLATION_MEMORY_MODES,
+    TRANSLATION_PREPARATION_MODES,
 };
 use crate::models::request::CreateJobInput;
 use crate::ocr_provider::{
@@ -38,6 +39,7 @@ pub fn validate_translation_credentials(input: &CreateJobInput) -> Result<(), Ap
             || connection.credential_ref != input.translation.credential_ref
             || connection.concurrency as i64 != input.translation.workers
             || !input.translation.api_key.is_empty()
+            || !input.translation.reviewer_api_key.is_empty()
         {
             return Err(AppError::bad_request("execution_connection must match translation model, endpoint, credential_ref and workers; inline API keys are not allowed"));
         }
@@ -72,6 +74,32 @@ pub fn validate_translation_credentials(input: &CreateJobInput) -> Result<(), Ap
     if input.translation.model.trim().is_empty() {
         return Err(AppError::bad_request("model is required"));
     }
+    validate_reviewer_settings(input)
+}
+
+/// 审校（挑错）模型的配置位。本期只透传，不发请求；全部留空表示回退到翻译模型。
+/// key 的两种来源与翻译 key 同一套规则：内联与引用互斥，内联值不能像 URL。
+fn validate_reviewer_settings(input: &CreateJobInput) -> Result<(), AppError> {
+    let reviewer_base_url = input.translation.reviewer_base_url.trim();
+    if !reviewer_base_url.is_empty()
+        && !(reviewer_base_url.starts_with("http://") || reviewer_base_url.starts_with("https://"))
+    {
+        return Err(AppError::bad_request(
+            "reviewer_base_url must start with http:// or https://",
+        ));
+    }
+    let reviewer_api_key = input.translation.reviewer_api_key.trim();
+    let reviewer_credential_ref = input.translation.reviewer_credential_ref.trim();
+    if !reviewer_api_key.is_empty() && !reviewer_credential_ref.is_empty() {
+        return Err(AppError::bad_request(
+            "translation.reviewer_api_key and translation.reviewer_credential_ref are mutually exclusive",
+        ));
+    }
+    if !reviewer_api_key.is_empty() && looks_like_url(reviewer_api_key) {
+        return Err(AppError::bad_request(
+            "reviewer_api_key looks like a URL, not a model API key; check whether frontend fields were mixed up",
+        ));
+    }
     Ok(())
 }
 
@@ -79,13 +107,18 @@ pub fn validate_translation_credential_reference(
     input: &CreateJobInput,
     data_root: &Path,
 ) -> Result<(), AppError> {
-    let credential_ref = input.translation.credential_ref.trim();
-    if credential_ref.is_empty() {
-        return Ok(());
+    for credential_ref in [
+        input.translation.credential_ref.trim(),
+        input.translation.reviewer_credential_ref.trim(),
+    ] {
+        if credential_ref.is_empty() {
+            continue;
+        }
+        resolve_credential(data_root, credential_ref, "translation_api_key")
+            .map(|_| ())
+            .map_err(map_credential_reference_error)?;
     }
-    resolve_credential(data_root, credential_ref, "translation_api_key")
-        .map(|_| ())
-        .map_err(map_credential_reference_error)
+    Ok(())
 }
 
 pub fn validate_ocr_credential_reference(
@@ -167,6 +200,11 @@ pub fn validate_translation_modes(input: &CreateJobInput) -> Result<(), AppError
         "translation.memory_mode",
         &input.translation.memory_mode,
         TRANSLATION_MEMORY_MODES,
+    )?;
+    validate_allowed_value(
+        "translation.preparation",
+        &input.translation.preparation,
+        TRANSLATION_PREPARATION_MODES,
     )?;
     Ok(())
 }

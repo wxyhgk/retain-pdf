@@ -28,3 +28,65 @@ async fn translation_diagnostics_route_redacts_secrets() {
     assert_eq!(payload["data"]["summary"]["api_key"], "");
     assert_eq!(payload["data"]["summary"]["message"], "contains [REDACTED]");
 }
+
+async fn get_report(state: crate::AppState, path: &str) -> axum::response::Response {
+    build_app(state)
+        .oneshot(
+            Request::builder()
+                .uri(format!("/api/v1/jobs/{JOB_ID}/{path}"))
+                .header("X-API-Key", "test-key")
+                .body(Body::empty())
+                .expect("report request"),
+        )
+        .await
+        .expect("report response")
+}
+
+#[tokio::test]
+async fn translation_qa_and_fit_report_routes_return_reports_redacted() {
+    let state = test_state("debug-qa-fit-report");
+    seed_translation_debug_job(&state);
+    let artifacts_dir = state.config.output_root.join(JOB_ID).join("artifacts");
+    std::fs::write(
+        artifacts_dir.join("translation_qa.v1.json"),
+        r#"{"schema":"translation_qa_v1","summary":{"by_severity":{"major":1}},
+            "violations":[{"type":"length_ratio_low","evidence":{"source_excerpt":"leaks sk-debug-secret"}}]}"#,
+    )
+    .expect("qa report");
+    std::fs::write(
+        artifacts_dir.join("fit_report.v1.json"),
+        r#"{"schema":"fit_report_v1","status":"ok","summary":{"overflow_blocks":16}}"#,
+    )
+    .expect("fit report");
+
+    let qa = get_report(state.clone(), "translation/qa").await;
+    assert_eq!(qa.status(), StatusCode::OK);
+    let qa = read_json(qa).await;
+    assert_eq!(qa["data"]["job_id"], JOB_ID);
+    assert_eq!(qa["data"]["report"]["summary"]["by_severity"]["major"], 1);
+    assert_eq!(
+        qa["data"]["report"]["violations"][0]["evidence"]["source_excerpt"],
+        "leaks [REDACTED]"
+    );
+
+    let fit = get_report(state, "render/fit-report").await;
+    assert_eq!(fit.status(), StatusCode::OK);
+    let fit = read_json(fit).await;
+    assert_eq!(fit["data"]["report"]["status"], "ok");
+    assert_eq!(fit["data"]["report"]["summary"]["overflow_blocks"], 16);
+}
+
+#[tokio::test]
+async fn translation_qa_and_fit_report_routes_are_404_when_missing() {
+    let state = test_state("debug-qa-fit-report-missing");
+    seed_translation_debug_job(&state);
+
+    assert_eq!(
+        get_report(state.clone(), "translation/qa").await.status(),
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(
+        get_report(state, "render/fit-report").await.status(),
+        StatusCode::NOT_FOUND
+    );
+}

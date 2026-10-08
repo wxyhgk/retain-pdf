@@ -400,6 +400,10 @@
         "memory_mode": {
           "type": "string"
         },
+        "preparation": {
+          "type": "string",
+          "description": "TRANSLATION_PREPARATION_MODES：off / artifacts_only / terms / terms+style。"
+        },
         "api_key": {
           "type": "string"
         },
@@ -413,6 +417,22 @@
           "type": "string"
         },
         "base_url": {
+          "type": "string"
+        },
+        "reviewer_model": {
+          "type": "string"
+        },
+        "reviewer_base_url": {
+          "type": "string"
+        },
+        "reviewer_api_key": {
+          "type": "string",
+          "description": "恒为空，仅暴露 reviewer_api_key_configured。"
+        },
+        "reviewer_api_key_configured": {
+          "type": "boolean"
+        },
+        "reviewer_credential_ref": {
           "type": "string"
         },
         "start_page": {

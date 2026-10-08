@@ -9,11 +9,14 @@ from retainpdf_pipeline.translate.artifacts import TranslationRequestJournal
 from retainpdf_pipeline.translate.artifacts import translation_run_diagnostics_scope
 from retainpdf_pipeline.translate.artifacts import classify_provider_family
 from retainpdf_pipeline.translate.llm.shared.control_context import TranslationControlContext
+from retainpdf_pipeline.translate.llm.shared.control_context import normalize_preparation_mode
 from retainpdf_pipeline.translate.core.ocr.json_extractor import get_page_count
 from retainpdf_pipeline.translate.core.ocr.json_extractor import load_ocr_json
 from retainpdf_pipeline.translate.services.policy import TranslationPolicyConfig
 from retainpdf_pipeline.translate.services.policy import build_book_translation_policy_config
 from retainpdf_pipeline.translate.services.context.session_context import build_translation_context_from_policy
+from retainpdf_pipeline.translate.services.preparation import TranslationPreparation
+from retainpdf_pipeline.translate.services.preparation import prepare_translation
 from retainpdf_pipeline.translate.services.terms import GlossaryEntry
 from retainpdf_pipeline.translate.services.terms import normalize_glossary_entries
 from retainpdf_pipeline.translate.workflow.scheduling.allocation import adaptive_floor_limit
@@ -21,6 +24,8 @@ from retainpdf_pipeline.translate.workflow.scheduling.allocation import prefix_c
 from retainpdf_pipeline.translate.workflow.scheduling.allocation import provider_adaptive_initial_limit
 from retainpdf_pipeline.translate.workflow.page_range import resolve_page_range
 from retainpdf_pipeline.translate.workflow.batching.plan import effective_translation_batch_size
+from retainpdf_pipeline.translate.workflow.checkpoint.preparation import PrescanCheckpoint
+from retainpdf_pipeline.translate.workflow.checkpoint.preparation import prescan_checkpoint_path
 
 if TYPE_CHECKING:
     from retainpdf_pipeline.translate.workflow.execution import TranslationExecutionRequest
@@ -36,6 +41,8 @@ class TranslationExecutionPlan:
     translation_context: TranslationControlContext
     run_diagnostics: TranslationRunDiagnostics
     glossary_entries: list[GlossaryEntry]
+    # translation.preparation=off 时为 None：不生成产物、不注入、不进输入指纹。
+    preparation: TranslationPreparation | None = None
 
 
 def build_translation_execution_plan(request: TranslationExecutionRequest) -> TranslationExecutionPlan:
@@ -96,6 +103,14 @@ def _build_translation_execution_plan(request, journals) -> TranslationExecution
 
     glossary_entries = normalize_glossary_entries(request.glossary_entries or [])
 
+    preparation = _run_translation_preparation(
+        request,
+        data=data,
+        page_indices=range(start, stop + 1),
+        policy_config=policy_config,
+        glossary_entries=glossary_entries,
+        run_diagnostics=run_diagnostics,
+    )
     translation_context = build_translation_context_from_policy(
         policy_config,
         glossary_entries=glossary_entries,
@@ -104,6 +119,8 @@ def _build_translation_execution_plan(request, journals) -> TranslationExecution
         context_mode=request.context_mode,
         glossary_mode=request.glossary_mode,
         memory_mode=request.memory_mode,
+        style_guidance=preparation.style_guidance if preparation is not None else "",
+        term_base_entries=preparation.term_base_entries if preparation is not None else None,
     )
     effective_workers = max(1, request.workers)
     initial_concurrency_limit = provider_adaptive_initial_limit(
@@ -136,4 +153,39 @@ def _build_translation_execution_plan(request, journals) -> TranslationExecution
         translation_context=translation_context,
         run_diagnostics=run_diagnostics,
         glossary_entries=glossary_entries,
+        preparation=preparation,
     )
+
+
+def _run_translation_preparation(
+    request,
+    *,
+    data: dict,
+    page_indices: range,
+    policy_config: TranslationPolicyConfig,
+    glossary_entries: list[GlossaryEntry],
+    run_diagnostics: TranslationRunDiagnostics,
+) -> TranslationPreparation | None:
+    mode = normalize_preparation_mode(getattr(request, "preparation", "off"))
+    if mode == "off":
+        return None
+    print(f"translation preparation: mode={mode}", flush=True)
+    checkpoint_path = prescan_checkpoint_path(request.output_dir)
+    with translation_run_diagnostics_scope(run_diagnostics):
+        return prepare_translation(
+            mode=mode,
+            data=data,
+            page_indices=page_indices,
+            output_dir=request.output_dir,
+            source_json_path=request.source_json_path,
+            api_key=request.api_key,
+            model=request.model,
+            base_url=request.base_url,
+            workers=max(1, request.workers),
+            domain_context=dict(policy_config.domain_context or {}),
+            rule_profile_name=policy_config.rule_profile_name,
+            rule_guidance=policy_config.rule_guidance,
+            custom_rules_text=policy_config.custom_rules_text,
+            user_glossary_entries=glossary_entries,
+            batch_store_factory=lambda fingerprint: PrescanCheckpoint(checkpoint_path, fingerprint=fingerprint),
+        )

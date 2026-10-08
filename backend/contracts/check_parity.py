@@ -21,6 +21,7 @@ CONTRACT_NAMES = (
     "public-document-operation.v1.schema.json",
     "reader-data.v1.schema.json",
     "runtime-config.v1.schema.json",
+    "translation-revisions.v1.schema.json",
 )
 
 CONTRACTS_ROOT = Path(__file__).resolve().parent

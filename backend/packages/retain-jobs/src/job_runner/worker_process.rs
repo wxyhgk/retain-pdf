@@ -232,12 +232,21 @@ fn apply_job_credentials(
             "DASHSCOPE_API_KEY",
             "QWEN_API_KEY",
             "RUST_API_KEYS",
+            REVIEWER_API_KEY_ENV_NAME,
         ] {
             command.env_remove(name);
         }
-    } else if let Some(api_key) = resolve_translation_api_key(data_root, job)? {
-        command.env("RETAIN_TRANSLATION_API_KEY", &api_key);
-        runtime_secrets.push(api_key);
+    } else {
+        if let Some(api_key) = resolve_translation_api_key(data_root, job)? {
+            command.env("RETAIN_TRANSLATION_API_KEY", &api_key);
+            runtime_secrets.push(api_key);
+        }
+        // 审校 key 与翻译 key 走同一套：内联优先，否则解析 vault 引用；只经 env 传给
+        // worker，stage spec 里只写 env 引用。没配时不设，Python 侧回退到翻译 key。
+        if let Some(api_key) = resolve_reviewer_api_key(data_root, job)? {
+            command.env(REVIEWER_API_KEY_ENV_NAME, &api_key);
+            runtime_secrets.push(api_key);
+        }
     }
     if let Ok(provider_kind) = require_supported_provider(&job.request_payload.ocr.provider) {
         let referenced_token = resolve_ocr_provider_token(data_root, job)?;
@@ -260,6 +269,25 @@ fn apply_job_credentials(
         }
     }
     Ok(runtime_secrets)
+}
+
+const REVIEWER_API_KEY_ENV_NAME: &str = "RETAIN_REVIEWER_API_KEY";
+
+fn resolve_reviewer_api_key(
+    data_root: &std::path::Path,
+    job: &JobRuntimeState,
+) -> Result<Option<String>> {
+    let inline = job.request_payload.translation.reviewer_api_key.trim();
+    if !inline.is_empty() {
+        return Ok(Some(inline.to_string()));
+    }
+    let credential_ref = job.request_payload.translation.reviewer_credential_ref.trim();
+    if credential_ref.is_empty() {
+        return Ok(None);
+    }
+    let resolved = resolve_credential(data_root, credential_ref, "translation_api_key")
+        .with_context(|| format!("resolve reviewer credential_ref {credential_ref}"))?;
+    Ok(Some(resolved.secret))
 }
 
 fn resolve_translation_api_key(

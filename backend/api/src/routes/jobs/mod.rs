@@ -22,8 +22,8 @@ pub use query::{
     list_ocr_jobs, rerun_job, resolve_ocr_ambiguity, resume_job, retry_stage,
 };
 pub use translation_debug::{
-    get_translation_diagnostics, get_translation_item, list_translation_items,
-    replay_translation_item_route,
+    get_fit_report, get_translation_diagnostics, get_translation_item, get_translation_qa, get_translation_item_revisions,
+    list_translation_items, replay_translation_item_route, revise_translation_item_route,
 };
 
 #[cfg(test)]

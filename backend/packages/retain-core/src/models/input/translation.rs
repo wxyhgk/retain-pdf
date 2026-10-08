@@ -18,6 +18,9 @@ pub const TRANSLATION_MATH_MODES: &[&str] = &["direct_typst", "placeholder"];
 pub const TRANSLATION_CONTEXT_MODES: &[&str] = &["needed", "all", "off"];
 pub const TRANSLATION_GLOSSARY_MODES: &[&str] = &["matched", "all", "off"];
 pub const TRANSLATION_MEMORY_MODES: &[&str] = &["matched", "broad", "off"];
+/// 译前准备（全书术语预扫 + 风格指南）开关。权威来源是 Python 的
+/// `_normalize_preparation_mode`。默认 `off`：不生成产物、prompt 与缓存 key 不变。
+pub const TRANSLATION_PREPARATION_MODES: &[&str] = &["off", "artifacts_only", "terms", "terms+style"];
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -73,6 +76,8 @@ pub struct TranslationInput {
     pub glossary_mode: String,
     #[serde(default = "default_translation_memory_mode")]
     pub memory_mode: String,
+    #[serde(default = "default_translation_preparation_mode")]
+    pub preparation: String,
     #[serde(default)]
     pub api_key: String,
     #[serde(default)]
@@ -81,6 +86,17 @@ pub struct TranslationInput {
     pub model: String,
     #[serde(default)]
     pub base_url: String,
+    /// 审校（挑错）模型的配置位，本期只透传不使用。空值表示回退到翻译模型。
+    #[serde(default)]
+    pub reviewer_model: String,
+    #[serde(default)]
+    pub reviewer_base_url: String,
+    /// 内联审校 key：处理方式与 `api_key` 完全一致，创建任务时导入 vault
+    /// 变成 `reviewer_credential_ref` 并清空，不明文落库。
+    #[serde(default)]
+    pub reviewer_api_key: String,
+    #[serde(default)]
+    pub reviewer_credential_ref: String,
     #[serde(default)]
     pub start_page: i64,
     #[serde(default = "default_end_page")]
@@ -116,10 +132,15 @@ impl Default for TranslationInput {
             context_mode: default_translation_context_mode(),
             glossary_mode: default_translation_glossary_mode(),
             memory_mode: default_translation_memory_mode(),
+            preparation: default_translation_preparation_mode(),
             api_key: String::new(),
             credential_ref: String::new(),
             model: String::new(),
             base_url: String::new(),
+            reviewer_model: String::new(),
+            reviewer_base_url: String::new(),
+            reviewer_api_key: String::new(),
+            reviewer_credential_ref: String::new(),
             start_page: 0,
             end_page: default_end_page(),
             page_ranges: Vec::new(),
@@ -140,6 +161,10 @@ pub fn default_translation_glossary_mode() -> String {
 
 pub fn default_translation_memory_mode() -> String {
     "matched".to_string()
+}
+
+pub fn default_translation_preparation_mode() -> String {
+    "off".to_string()
 }
 
 #[cfg(test)]
@@ -184,6 +209,11 @@ mod allowed_value_tests {
             ("_normalize_context_mode", TRANSLATION_CONTEXT_MODES, "context_mode"),
             ("_normalize_glossary_mode", TRANSLATION_GLOSSARY_MODES, "glossary_mode"),
             ("_normalize_memory_mode", TRANSLATION_MEMORY_MODES, "memory_mode"),
+            (
+                "_normalize_preparation_mode",
+                TRANSLATION_PREPARATION_MODES,
+                "preparation",
+            ),
         ] {
             assert_eq!(
                 rust_set(rust_values),
@@ -202,6 +232,11 @@ mod allowed_value_tests {
             (&input.context_mode, TRANSLATION_CONTEXT_MODES, "context_mode"),
             (&input.glossary_mode, TRANSLATION_GLOSSARY_MODES, "glossary_mode"),
             (&input.memory_mode, TRANSLATION_MEMORY_MODES, "memory_mode"),
+            (
+                &input.preparation,
+                TRANSLATION_PREPARATION_MODES,
+                "preparation",
+            ),
         ] {
             assert!(
                 allowed.contains(&value.as_str()),

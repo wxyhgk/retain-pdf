@@ -18,21 +18,35 @@ def build_translation_review(
     )
     issues: list[dict] = []
     reviewed_item_count = 0
+    unit_translations = _multi_member_unit_translations(translated_pages_map)
+    reviewed_units: set[str] = set()
     for page_idx, items in sorted(translated_pages_map.items()):
         for item in items:
             item_id = str(item.get("item_id", "") or "")
             if not item_id:
                 continue
+            unit_id = _multi_member_unit_id(item)
+            if unit_id:
+                # 续接组的原文按整组取（unit_source_text），译文也必须按整组比；
+                # 拿成员自己那一截去比会报 truncated_translation / formula_commands_dropped 误报。
+                # 整组只审一次，问题挂在组里最先出现的成员上。
+                if unit_id in reviewed_units:
+                    reviewed_item_count += 1
+                    continue
+                reviewed_units.add(unit_id)
+                translated_text = unit_translations.get(unit_id, "")
+            else:
+                translated_text = str(
+                    item.get("translated_text")
+                    or item.get("protected_translated_text")
+                    or item.get("translation_unit_translated_text")
+                    or item.get("translation_unit_protected_translated_text")
+                    or ""
+                )
             result = {
                 item_id: {
                     "decision": str(item.get("decision", "") or "translate"),
-                    "translated_text": str(
-                        item.get("translated_text")
-                        or item.get("protected_translated_text")
-                        or item.get("translation_unit_translated_text")
-                        or item.get("translation_unit_protected_translated_text")
-                        or ""
-                    ),
+                    "translated_text": translated_text,
                     "final_status": str(item.get("final_status", "") or ""),
                     "translation_diagnostics": item.get("translation_diagnostics") or {},
                 }
@@ -41,6 +55,9 @@ def build_translation_review(
             reviewed_item_count += review.reviewed_item_count
             for issue in review.issues:
                 payload = issue.as_dict()
+                if unit_id:
+                    payload.setdefault("translation_unit_id", unit_id)
+                    payload.setdefault("translation_unit_member_ids", list(item.get("translation_unit_member_ids") or []))
                 payload.setdefault("page_idx", int(item.get("page_idx", page_idx) or page_idx))
                 payload.setdefault("page_number", int(item.get("page_idx", page_idx) or page_idx) + 1)
                 payload.setdefault("block_idx", int(item.get("block_idx", -1) or -1))
@@ -66,6 +83,42 @@ def build_translation_review(
         "severity_summary": severity_summary,
         "issues": issues,
     }
+
+def _multi_member_unit_id(item: dict) -> str:
+    members = item.get("translation_unit_member_ids") or []
+    if not isinstance(members, list) or len(members) < 2:
+        return ""
+    return str(item.get("translation_unit_id", "") or "")
+
+
+def _multi_member_unit_translations(translated_pages_map: dict[int, list[dict]]) -> dict[str, str]:
+    """续接组整组的译文：优先用组上记录的整组译文，没有就按成员顺序拼接各成员的那一截。"""
+    unit_text: dict[str, str] = {}
+    member_parts: dict[str, dict[str, str]] = {}
+    member_order: dict[str, list[str]] = {}
+    for _page_idx, items in sorted(translated_pages_map.items()):
+        for item in items:
+            unit_id = _multi_member_unit_id(item)
+            if not unit_id:
+                continue
+            whole = str(
+                item.get("translation_unit_protected_translated_text")
+                or item.get("translation_unit_translated_text")
+                or ""
+            )
+            if whole and unit_id not in unit_text:
+                unit_text[unit_id] = whole
+            member_order.setdefault(unit_id, [str(m) for m in item.get("translation_unit_member_ids") or []])
+            member_parts.setdefault(unit_id, {})[str(item.get("item_id", "") or "")] = str(
+                item.get("protected_translated_text") or item.get("translated_text") or ""
+            )
+    for unit_id, parts in member_parts.items():
+        if unit_id not in unit_text:
+            unit_text[unit_id] = " ".join(
+                parts[member] for member in member_order.get(unit_id, []) if parts.get(member)
+            )
+    return unit_text
+
 
 def _review_policy_state(item: dict) -> dict[str, object]:
     diagnostics = item.get("translation_diagnostics") or {}

@@ -83,6 +83,10 @@ def _args_from_spec(spec: TranslateStageSpec) -> SimpleNamespace:
         api_key=resolve_credential_ref(spec.params.credential_ref),
         model=spec.params.model,
         base_url=spec.params.base_url,
+        preparation=spec.params.preparation,
+        reviewer_model=spec.params.reviewer_model,
+        reviewer_base_url=spec.params.reviewer_base_url,
+        reviewer_api_key=resolve_credential_ref(spec.params.reviewer_credential_ref),
     )
 
 
@@ -155,6 +159,10 @@ def main() -> None:
             context_mode=args.context_mode,
             glossary_mode=args.glossary_mode,
             memory_mode=args.memory_mode,
+            preparation=args.preparation,
+            reviewer_model=args.reviewer_model,
+            reviewer_base_url=args.reviewer_base_url,
+            reviewer_api_key=args.reviewer_api_key,
             invocation=build_stage_invocation_metadata(
                 stage="translate",
                 stage_spec_schema_version=stage_spec_schema_version,

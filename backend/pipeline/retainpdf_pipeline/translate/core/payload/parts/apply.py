@@ -290,6 +290,48 @@ def apply_reconstructed_unit_text(items: list[dict], translated_text: str) -> No
         item["group_translated_text"] = translated_text
 
 
+def apply_revised_member_text(item: dict, protected_text: str, *, single_unit: bool) -> None:
+    # 单块修订写回(人工 / agent / 精修)。输入已经是成品译文、和
+    # protected_translated_text 同形态,所以不做邻段泄漏裁剪,也不拼
+    # mixed_literal 前缀——那些是针对模型逐项输出的机械修补,修订者看到的
+    # 就是最终文本。单块单元同步 translation_unit_*;分组成员的单元字段由
+    # apply_revised_unit_text 统一重建,这里不碰。
+    item["protected_translated_text"] = protected_text
+    item["translated_text"] = restore_protected_tokens(
+        protected_text,
+        item.get("protected_map") or item.get("formula_map", []),
+    )
+    if single_unit:
+        item["translation_unit_protected_translated_text"] = protected_text
+        item["translation_unit_translated_text"] = restore_protected_tokens(
+            protected_text,
+            item.get("translation_unit_protected_map")
+            or item.get("translation_unit_formula_map")
+            or item.get("protected_map")
+            or item.get("formula_map", []),
+        )
+    set_final_status(item, TRANSLATED_STATUS)
+
+
+def apply_revised_unit_text(items: list[dict], unit_protected_text: str) -> None:
+    # 分组单元里某个成员被修订后,整组的 translation_unit_* / group_* 要跟着
+    # 重建(调用方用各成员当前译文拼出 unit_protected_text),否则渲染、
+    # 校验与 checkpoint 指纹会读到修订前的整组译文。
+    for item in items:
+        protected_map = (
+            item.get("translation_unit_protected_map")
+            or item.get("group_protected_map")
+            or item.get("translation_unit_formula_map")
+            or item.get("group_formula_map")
+            or []
+        )
+        restored = restore_protected_tokens(unit_protected_text, protected_map)
+        item["translation_unit_protected_translated_text"] = unit_protected_text
+        item["translation_unit_translated_text"] = restored
+        item["group_protected_translated_text"] = unit_protected_text
+        item["group_translated_text"] = restored
+
+
 def apply_translated_text_map(payload: list[dict], translated: dict) -> None:
     next_item_by_id = {
         str(item.get("item_id", "") or ""): payload[index + 1] if index + 1 < len(payload) else None

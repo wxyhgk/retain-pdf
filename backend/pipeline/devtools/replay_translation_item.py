@@ -22,6 +22,9 @@ from retainpdf_pipeline.translate.core.payload import load_translations
 from retainpdf_pipeline.translate.services.policy import build_translation_policy_config
 from retainpdf_pipeline.translate.services.policy.flow import apply_translation_policies
 from retainpdf_pipeline.translate.services.context.session_context import build_translation_context_from_policy
+from retainpdf_pipeline.translate.public import RevisionOutcome
+from retainpdf_pipeline.translate.public import RevisionRequest
+from retainpdf_pipeline.translate.public import revise_translation_item
 
 
 def _preview_text(text: str, *, limit: int = 220) -> str:
@@ -223,13 +226,60 @@ def _run_replay(
     }
 
 
-def replay_translation_item(job_root: Path, item_id: str) -> dict[str, object]:
+def _with_instruction(custom_rules_text: str, instruction: str) -> str:
+    # 一次性指令(「更口语」「统一用 X 译法」……)当作追加的自定义规则交给同一套
+    # prompt 组装,不另开一条提示词路径。
+    extra = str(instruction or "").strip()
+    if not extra:
+        return custom_rules_text
+    base = str(custom_rules_text or "").rstrip()
+    return f"{base}\n{extra}" if base else extra
+
+
+def _commit_replay_result(
+    job_root: Path,
+    item_id: str,
+    payload: dict[str, object],
+    *,
+    instruction: str,
+    reason: str,
+) -> dict[str, object]:
+    """把重放结果按修订写回(source=refine),走与 PATCH 接口完全相同的校验与落盘。"""
+
+    result = dict(payload.get("replay_result") or {})
+    text = str(result.get("translated_text", "") or "")
+    if payload.get("replay_error") or not text.strip():
+        return {"outcome": "skipped", "reason": "no_replay_translation"}
+    if str(result.get("decision", "translate") or "translate") != "translate":
+        return {"outcome": "skipped", "reason": "replay_kept_origin"}
+    try:
+        return revise_translation_item(
+            job_root,
+            RevisionRequest(
+                item_id=item_id,
+                translated_text=text,
+                source="refine",
+                reason=reason or (f"replay: {instruction}" if instruction else "replay"),
+            ),
+        )
+    except RevisionOutcome as outcome:
+        return outcome.as_dict()
+
+
+def replay_translation_item(
+    job_root: Path,
+    item_id: str,
+    *,
+    instruction: str = "",
+    commit: bool = False,
+    reason: str = "",
+) -> dict[str, object]:
     job_root = Path(job_root).resolve()
     with contextlib.redirect_stdout(sys.stderr):
         spec = _load_translate_spec(job_root)
         _ensure_translation_credential_env(job_root, spec)
         page_idx, payload_path, payload, saved_item = _find_item_payload(job_root, item_id)
-        return _run_replay(
+        replayed = _run_replay(
             item_id=item_id,
             page_idx=page_idx,
             page_path=str(payload_path),
@@ -239,7 +289,7 @@ def replay_translation_item(job_root: Path, item_id: str) -> dict[str, object]:
             math_mode=spec.params.math_mode,
             skip_title_translation=spec.params.skip_title_translation,
             rule_profile_name=spec.params.rule_profile_name,
-            custom_rules_text=spec.params.custom_rules_text,
+            custom_rules_text=_with_instruction(spec.params.custom_rules_text, instruction),
             classify_batch_size=spec.params.classify_batch_size,
             workers=spec.params.workers,
             model=spec.params.model,
@@ -249,6 +299,12 @@ def replay_translation_item(job_root: Path, item_id: str) -> dict[str, object]:
             job_root_label=str(job_root),
             job_id=str(spec.job.job_id or job_root.name),
         )
+        replayed["instruction"] = str(instruction or "").strip()
+        if commit:
+            replayed["commit"] = _commit_replay_result(
+                job_root, item_id, replayed, instruction=replayed["instruction"], reason=reason,
+            )
+        return replayed
 
 
 def replay_translation_case_artifact(case_artifact_path: Path, item_id: str | None = None) -> dict[str, object]:
@@ -307,7 +363,11 @@ def replay_translation_case_artifact(case_artifact_path: Path, item_id: str | No
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Replay a single translated item from a manifest-backed strict-contract job without mutating artifacts."
+        description=(
+            "Replay a single translated item from a manifest-backed strict-contract job. "
+            "Dry-run by default; --commit writes the result back through the same "
+            "validated revision path as PATCH translation/items/:item_id."
+        )
     )
     parser.add_argument(
         "--job-root",
@@ -316,13 +376,31 @@ def parse_args() -> argparse.Namespace:
         help="Absolute job root path or job id under data/jobs. Job must contain translated/translation-manifest.json.",
     )
     parser.add_argument("--item-id", type=str, required=True, help="Translation item id.")
+    parser.add_argument(
+        "--instruction",
+        type=str,
+        default="",
+        help="One-off extra instruction appended to the job's custom rules for this replay only.",
+    )
+    parser.add_argument(
+        "--commit",
+        action="store_true",
+        help="Validate and write the replayed translation back (revision source=refine).",
+    )
+    parser.add_argument("--reason", type=str, default="", help="Revision reason recorded with --commit.")
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output.")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    payload = replay_translation_item(_job_root_from_arg(args.job_root), args.item_id)
+    payload = replay_translation_item(
+        _job_root_from_arg(args.job_root),
+        args.item_id,
+        instruction=args.instruction,
+        commit=args.commit,
+        reason=args.reason,
+    )
     json.dump(payload, sys.stdout, ensure_ascii=False, indent=2 if args.pretty else None)
     sys.stdout.write("\n")
 

@@ -16,6 +16,7 @@ const OCR_CREDENTIAL_KIND: &str = "ocr_provider_token";
 const TRANSLATION_CREDENTIAL_KIND: &str = "translation_api_key";
 const LEGACY_OCR_CREDENTIAL_LABEL: &str = "Imported legacy OCR credential";
 const LEGACY_TRANSLATION_CREDENTIAL_LABEL: &str = "Imported legacy translation credential";
+const LEGACY_REVIEWER_CREDENTIAL_LABEL: &str = "Imported legacy reviewer credential";
 const CONFIGURED_PROVIDER_SECRET_KEYS: [&str; 3] = ["credential", "token", "api_key"];
 
 /// Converts legacy inline provider secrets into vault references before the
@@ -65,6 +66,35 @@ fn secure_translation_job_credential(
         job.request_payload.translation.credential_ref = credential_ref;
     }
     job.request_payload.translation.api_key.clear();
+    secure_reviewer_job_credential(deps, job)
+}
+
+/// 审校 key 与翻译 key 同一套处理：内联值导入 vault 换成引用，然后清空，不明文落库。
+fn secure_reviewer_job_credential(
+    deps: &JobSubmitDeps<'_>,
+    job: &mut JobSnapshot,
+) -> Result<(), AppError> {
+    let translation = &mut job.request_payload.translation;
+    let api_key = translation.reviewer_api_key.trim().to_string();
+    let credential_ref = translation.reviewer_credential_ref.trim().to_string();
+    if !api_key.is_empty() && !credential_ref.is_empty() {
+        return Err(AppError::bad_request(
+            "translation.reviewer_api_key and translation.reviewer_credential_ref are mutually exclusive",
+        ));
+    }
+    if !api_key.is_empty() {
+        let created = get_or_create_managed_credential(
+            deps.snapshot.config.data_root,
+            TRANSLATION_CREDENTIAL_KIND,
+            "openai_compatible",
+            LEGACY_REVIEWER_CREDENTIAL_LABEL,
+            &api_key,
+        )?;
+        translation.reviewer_credential_ref = created.credential.credential_ref;
+    } else {
+        translation.reviewer_credential_ref = credential_ref;
+    }
+    translation.reviewer_api_key.clear();
     Ok(())
 }
 
@@ -106,15 +136,19 @@ pub(super) fn acquire_job_credential_usage_lock(
     job: &JobSnapshot,
 ) -> Result<Option<CredentialUsageLock>, AppError> {
     let translation_ref = job.request_payload.translation.credential_ref.trim();
+    let reviewer_ref = job.request_payload.translation.reviewer_credential_ref.trim();
     let ocr_ref = job.request_payload.ocr.credential_ref.trim();
-    if translation_ref.is_empty() && ocr_ref.is_empty() {
+    if translation_ref.is_empty() && reviewer_ref.is_empty() && ocr_ref.is_empty() {
         return Ok(None);
     }
     let guard = acquire_credential_usage_lock(deps.snapshot.config.data_root)?;
-    if !translation_ref.is_empty() {
+    for reference in [translation_ref, reviewer_ref] {
+        if reference.is_empty() {
+            continue;
+        }
         resolve_credential(
             deps.snapshot.config.data_root,
-            translation_ref,
+            reference,
             TRANSLATION_CREDENTIAL_KIND,
         )
         .map_err(map_credential_reference_error)?;
@@ -155,6 +189,8 @@ fn job_runs_translation(job: &JobSnapshot) -> bool {
 fn clear_translation_secret_sources(job: &mut JobSnapshot) {
     job.request_payload.translation.api_key.clear();
     job.request_payload.translation.credential_ref.clear();
+    job.request_payload.translation.reviewer_api_key.clear();
+    job.request_payload.translation.reviewer_credential_ref.clear();
 }
 
 fn inline_ocr_secret(job: &JobSnapshot) -> Option<String> {
