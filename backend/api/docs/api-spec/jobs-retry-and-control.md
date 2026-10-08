@@ -91,8 +91,12 @@ Rules:
   expose OCR as disabled until artifact-backed OCR retry is implemented.
 - translation retry requires `source_pdf + normalized_document_json`.
 - render retry requires `source_pdf + translations_dir`.
-- refine retry requires `source_pdf + translations_dir` (committed translations)
-  and is disabled for jobs bound to a Rust model `execution_connection`.
+- refine retry requires `source_pdf + translations_dir` (committed translations),
+  and `translations_dir` must be the job's own `<job_root>/translated` (refine
+  writes back there; a render job derived with `create_new_job=true` must refine
+  its source job instead). It is disabled for jobs bound to a Rust model
+  `execution_connection`. Progress shows up as `stage=rendering`,
+  `substage=refining` (display stage `render`, unit `step`).
 
 `POST /api/v1/jobs/{job_id}/retry-stage`
 

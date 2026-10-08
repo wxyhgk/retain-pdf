@@ -31,12 +31,14 @@ fn translation_credential(state: &crate::AppState, label: &str) -> String {
 
 /// 一个已经翻译完成、译文可复用、翻译 key 走 vault 引用的任务。
 fn seed_translated_job(state: &crate::AppState, job_id: &str) -> JobSnapshot {
+    // 译文在任务自己的 <job_root>/translated：精修只写回这个目录。
     let mut job = source_job_with_artifacts(
         job_id,
         JobArtifacts {
+            job_root: Some(format!("jobs/{job_id}")),
             source_pdf: Some("jobs/source/source/input.pdf".to_string()),
             normalized_document_json: Some("jobs/source/ocr/document.v1.json".to_string()),
-            translations_dir: Some("jobs/source/translated".to_string()),
+            translations_dir: Some(format!("jobs/{job_id}/translated")),
             output_pdf: Some("jobs/source/output/old.pdf".to_string()),
             ..JobArtifacts::default()
         },
@@ -333,4 +335,22 @@ async fn plain_render_retry_clears_a_stale_refine_override() {
     .await;
     assert_eq!(response.status(), StatusCode::OK);
     assert!(!path.exists(), "普通重渲染不能带上残留的精修覆盖");
+}
+
+/// create_new_job=true 派生出来的渲染任务读的是源任务的译文目录；精修只写回任务
+/// 自己的 <job_root>/translated，所以这类任务不能精修，要去精修源任务。
+#[tokio::test]
+async fn refine_retry_rejects_jobs_rendering_another_jobs_translations() {
+    let state = test_state("retry-refine-foreign-translations");
+    let id = "job-retry-refine-foreign";
+    let mut job = seed_translated_job(&state, id);
+    let artifacts = job.artifacts.as_mut().expect("artifacts");
+    artifacts.translations_dir = Some("jobs/source/translated".to_string());
+    seed_translation_result_files(&state, &job);
+    state.db.save_job(&job).expect("save job");
+
+    let response = retry(&state, id, json!({"stage": "refine"})).await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert!(read_json(response).await.to_string().contains("source job"));
+    assert!(read_override(&state, id).is_none());
 }

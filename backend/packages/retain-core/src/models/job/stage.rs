@@ -133,8 +133,8 @@ pub fn public_stage_for_substage(substage: Option<&str>) -> Option<&'static str>
         | "agent_repair"
         | "final_untranslated_recovery" => Some("translation"),
         // refining：渲染阶段里、真正渲染之前的译文精修（挑错 + 定点修改）。
-        "refining" | "render_prepare" | "render_preprocess" | "render_prewarm"
-        | "render_pages" | "render_compile" => Some("render"),
+        "render_prepare" | "render_preprocess" | "render_prewarm" | "render_pages"
+        | "render_compile" | "refining" => Some("render"),
         "finished" | "done" | "succeeded" => None,
         _ => None,
     }
@@ -154,7 +154,8 @@ pub fn public_stage_for_raw_stage(stage: Option<&str>) -> Option<&'static str> {
         | "garbled_repair"
         | "agent_repair"
         | "final_untranslated_recovery" => Some("translation"),
-        "render_prepare" | "render_preprocess" | "rendering" | "compile" | "overlay" | "saving" => {
+        "render_prepare" | "render_preprocess" | "rendering" | "refining" | "compile"
+        | "overlay" | "saving" => {
             Some("render")
         }
         "finished" | "done" | "succeeded" => None,
@@ -218,18 +219,5 @@ pub fn job_stage_rank(stage: Option<&str>) -> i32 {
             Some("render") => 3,
             _ => 0,
         },
-    }
-}
-
-#[cfg(test)]
-mod refining_tests {
-    use super::*;
-
-    /// 精修事件是 stage=rendering、substage=refining（Python 精修入口发出），
-    /// 要归到渲染这一大步，进度单位是步，不能落到 "none"。
-    #[test]
-    fn refining_substage_belongs_to_render_with_step_unit() {
-        assert_eq!(public_stage_for_substage(Some("refining")), Some("render"));
-        assert_eq!(event_progress_unit(Some("refining"), "stage_transition"), "step");
     }
 }

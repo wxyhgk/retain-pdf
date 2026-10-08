@@ -30,6 +30,8 @@ async fn job_events_route_classifies_new_pipeline_substages() {
             r#"{"job_id":"job-route-new-pipeline-substages","seq":1,"ts":"2026-04-24T01:00:00Z","level":"info","stage":"agent_repair","substage":"agent_repair","stage_detail":"翻译结果修复完成","event_type":"stage_progress","semantic_event_type":"progress","message":"翻译结果修复完成","progress_current":1,"progress_total":2,"payload":{}}"#,
             "\n",
             r#"{"job_id":"job-route-new-pipeline-substages","seq":2,"ts":"2026-04-24T01:00:01Z","level":"info","stage":"render_preprocess","substage":"render_prewarm","stage_detail":"渲染 payload 预热完成","event_type":"stage_progress","semantic_event_type":"progress","message":"render payload prewarm: ready","progress_current":2,"progress_total":3,"progress_unit":"step","payload":{}}"#,
+            "\n",
+            r#"{"job_id":"job-route-new-pipeline-substages","seq":3,"ts":"2026-04-24T01:00:02Z","level":"info","stage":"rendering","substage":"refining","user_stage":"render","stage_detail":"精修译文：挑错","event_type":"stage_progress","semantic_event_type":"progress","message":"refine review","progress_current":1,"progress_total":4,"progress_unit":"step","payload":{"refine_phase":"review"}}"#,
             "\n"
         ),
     )
@@ -59,4 +61,8 @@ async fn job_events_route_classifies_new_pipeline_substages() {
     assert_eq!(items[1]["lane"], "background");
     assert_eq!(items[1]["substage"], "render_prewarm");
     assert_eq!(items[1]["progress"]["unit"], "step");
+    // 渲染阶段里的精修子步骤：归到 render，进度单位 step。
+    assert_eq!(items[2]["substage"], "refining");
+    assert_eq!(items[2]["display_stage"], "render");
+    assert_eq!(items[2]["progress"]["unit"], "step");
 }
