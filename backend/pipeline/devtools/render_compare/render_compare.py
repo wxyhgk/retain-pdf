@@ -129,6 +129,11 @@ def run_variant(job_root: Path, case_dir: Path, variant: dict, cache_dir: Path, 
         if fit.is_file():
             shutil.copy2(fit, out_dir / "fit_report.v1.json")
         rpr_dir = Path(str((summary.get("render_diagnostics") or {}).get("rpr_work_dir") or ""))
+        for input_name in ("rpr-fit-input.json", "translations.json"):
+            if rpr_dir and (rpr_dir / input_name).is_file():
+                shutil.copy2(rpr_dir / input_name, out_dir / input_name)
+        if rpr_dir and (rpr_dir / "rpr-fit-input.json").is_file() and (rpr_dir / "out" / "report.json").is_file():
+            shutil.copy2(rpr_dir / "out" / "report.json", out_dir / "rpr-fit-report.json")
         if rpr_dir and (rpr_dir / "rpr-input.json").is_file():
             shutil.copy2(rpr_dir / "rpr-input.json", out_dir / "rpr-input.json")
             if (rpr_dir / "out" / "report.json").is_file():

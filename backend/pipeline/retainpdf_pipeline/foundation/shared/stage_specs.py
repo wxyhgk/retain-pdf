@@ -17,7 +17,9 @@ RENDER_STAGE_SCHEMA_VERSION = "render.stage.v1"
 # render.engine：typst = 现有路线；rpr = 自研排版引擎（retain-pdf-rendering）。缺省 / 未知值一律 typst。
 RENDER_ENGINE_TYPST = "typst"
 RENDER_ENGINE_RPR = "rpr"
-RENDER_ENGINES = (RENDER_ENGINE_TYPST, RENDER_ENGINE_RPR)
+# rpr_fit：字号也由 rpr 引擎按测量决定（fit-model 的 retain 规则），不走 retain-pdf 的缩字规则。
+RENDER_ENGINE_RPR_FIT = "rpr_fit"
+RENDER_ENGINES = (RENDER_ENGINE_TYPST, RENDER_ENGINE_RPR, RENDER_ENGINE_RPR_FIT)
 PROVIDER_STAGE_SCHEMA_VERSION = "provider.stage.v1"
 BOOK_STAGE_SCHEMA_VERSION = "book.stage.v1"
 

@@ -12,9 +12,11 @@ pub const SOURCE_CLEANUP_STRATEGIES: &[&str] = &[
 ];
 
 /// 渲染引擎：`typst` = 旧路线（Typst 排版 + 内部缩字），`rpr` = 自研排版引擎
-/// retain-pdf-rendering（实验，可选；不支持时 Python 侧回退 typst 并记 warning）。
+/// retain-pdf-rendering（字号用 retain-pdf 自己的规则），`rpr_fit` = 同一引擎，但字号也由
+/// 引擎按测量决定（fit-model 的 retain 规则）。后两者都是实验、可选；不支持时 Python 侧
+/// 回退 typst 并记 warning。
 pub const DEFAULT_RENDER_ENGINE: &str = "typst";
-pub const RENDER_ENGINES: &[&str] = &["typst", "rpr"];
+pub const RENDER_ENGINES: &[&str] = &["typst", "rpr", "rpr_fit"];
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]

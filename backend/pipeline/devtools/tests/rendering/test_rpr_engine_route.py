@@ -685,3 +685,14 @@ def test_normalize_render_engine() -> None:
     assert normalize_render_engine(None) == "typst"
     assert normalize_render_engine(" RPR ") == "rpr"
     assert normalize_render_engine("bogus") == "typst"
+
+
+def test_markdown_to_engine_text_turns_html_scripts_into_inline_math() -> None:
+    # cmarker（Typst 路线）认 <sup>/<sub>；引擎只认 $...$，不转会把标签原样印出来。
+    assert markdown_to_engine_text("先验<sup>37</sup>相比") == "先验$^{\\text{37}}$相比"
+    assert markdown_to_engine_text("速率 3 s<sup>−1</sup>") == "速率 3 s$^{\\text{−1}}$"
+    assert markdown_to_engine_text("H<sub>2</sub>O") == "H$_{\\text{2}}$O"
+    assert markdown_to_engine_text("x<SUP>a_b</SUP>") == "x$^{\\text{a\\_b}}$"
+    assert markdown_to_engine_text("<sup> </sup>空") == "空"
+    # 公式里的内容不动
+    assert markdown_to_engine_text("$a<sup>b$") == "$a<sup>b$"

@@ -154,9 +154,10 @@ def _engine_version(engine_dir: Path) -> str:
     return f"{version}+{commit}" if version and commit else version
 
 
-def resolve_engine_runtime() -> RprEngineRuntime:
+def resolve_engine_runtime(entry_script: str = "rpr-retain.js") -> RprEngineRuntime:
+    """entry_script：rpr-retain.js（rpr：retain-pdf 定字号）或 rpr-fit.js（rpr_fit：引擎测量定字号）。"""
     engine_dir = resolve_engine_dir()
-    entry = engine_dir / ENGINE_ENTRY_RELATIVE
+    entry = engine_dir / ENGINE_ENTRY_RELATIVE.parent / entry_script
     if not entry.is_file():
         raise RprEngineUnavailable(
             "engine_not_installed",

@@ -1033,6 +1033,10 @@ fn render_spec_carries_render_engine() {
         let payload = render_spec_with_refine(&request, refine);
         assert_eq!(payload["params"]["engine"], "rpr");
     }
+
+    request.render.engine = "rpr_fit".to_string();
+    let payload = render_spec_with_refine(&request, super::RenderRefine::Off);
+    assert_eq!(payload["params"]["engine"], "rpr_fit");
 }
 
 #[test]

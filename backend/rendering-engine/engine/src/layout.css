@@ -1,0 +1,202 @@
+/* retain-pdf-rendering/layout.css
+ *
+ * Stylesheet for the page DOM produced by `render.createRenderer()` and
+ * measured by `fit.createFitter()`. Fitting measures real glyph rectangles,
+ * so these rules are part of the engine contract: load this file before
+ * building or fitting pages.
+ *
+ * The rules below are copied verbatim, in their original order, from
+ * LitMTrans-Zotero `src/workbench.css`. Host contract:
+ * - Declare the font family "LitMTrans Source Han Serif" with @font-face
+ *   (this file deliberately ships no font; see README). Without it the
+ *   stacks fall back to Times New Roman / SimSun / serif.
+ * - Put pages in a container with class `layout-document`. Optional host
+ *   state classes: `.layout-fit-pending` / `.layout-fit-measuring` on that
+ *   container, `body.layout-debug` (inspection view) and
+ *   `body.layout-translated` (translated inline-math sizing).
+ * - `--sans` and `--muted` are host theme variables; the zero-specificity
+ *   defaults below apply only when the host does not define them.
+ */
+:where(:root) {
+  --sans: Inter, "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Noto Sans CJK SC", Arial, sans-serif;
+  --muted: #74746d;
+}
+
+/* Match the Zotero Reader preview's top inset so the facing pages share one baseline. */
+.layout-document { width: 100%; min-height: 100%; padding: 6px 12px 100px; }
+.layout-fit-pending .layout-page-wrap {
+  /* The fitter measures real Range glyph rectangles while this mask is
+     active. visibility:hidden makes getComputedStyle(text).visibility hidden,
+     so the Python-parity walker rejects every text node and grows each group
+     to its maximum font without ever observing a collision. Keep the page in
+     layout and paint it transparently until the atomic fit is complete. */
+  opacity: 0;
+  pointer-events: none;
+  /* `content-visibility:auto` is safe only after fitting.  During the atomic
+     document solve every off-screen page must expose real glyph rectangles,
+     exactly as the original Python preview does. */
+  content-visibility: visible;
+  contain-intrinsic-size: none;
+}
+.layout-fit-measuring .layout-page-wrap {
+  content-visibility: visible;
+  contain-intrinsic-size: none;
+}
+.layout-fit-pending::before { content: "正在完成全文版面适配…"; display: block; padding: 24px 12px; color: var(--muted); font: 13px var(--sans); text-align: center; }
+.layout-page-wrap {
+  position: relative;
+  width: min(100%, 920px);
+  margin: 0 auto 10px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1200px;
+}
+.layout-block.layout-image img.layout-image-unloaded { visibility: hidden; }
+/* Compose in the source PDF coordinate system, exactly like PB_layout.py.
+   The wrapper scales this completed page for the reader viewport; its 920px
+   maximum is a display size and must never become a second layout grid. */
+.layout-page { position: relative; width: var(--layout-canonical-width, 612px); overflow: hidden; background: #fff; color: #111; box-shadow: 0 0 0 1px rgba(0,0,0,.18), 0 7px 24px rgba(0,0,0,.12); transform-origin: top left; }
+.layout-block { position: absolute; z-index: 3; box-sizing: border-box; overflow: visible; color: #111; font-family: "LitMTrans Source Han Serif", "Times New Roman", "SimSun", serif; line-height: 1.12; white-space: normal; overflow-wrap: anywhere; word-break: break-word; text-align: justify; }
+.layout-flow-stream { position: absolute; z-index: 4; box-sizing: border-box; overflow: visible; padding: 0 4px 0 2px; color: #111; font-family: "LitMTrans Source Han Serif", "Times New Roman", "SimSun", serif; text-align: justify; text-justify: auto; overflow-wrap: break-word; word-break: normal; hyphens: auto; }
+.layout-flow-stream .flow-para { position: relative; margin: 0 0 var(--para-gap, .22em); padding: 0; }
+.layout-flow-stream .flow-ref { position: relative; margin: 0 0 var(--para-gap, .14em); padding: 0 0 0 1.1em; text-indent: -1.1em; }
+.layout-flow-stream .flow-para:last-of-type,
+.layout-flow-stream .flow-ref:last-of-type { margin-bottom: 0; }
+.layout-flow-stream.refs { text-align: left; }
+.layout-flow-stream.from-list { text-align: left; }
+.layout-flow-stream.debug-text { text-align: left; }
+.layout-flow-stream.toc-stream {
+  overflow: hidden;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.toc-row {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(12px, 1fr) auto;
+  align-items: baseline;
+  min-width: 0;
+  padding-left: calc(var(--toc-level, 0) * .82em);
+  white-space: nowrap;
+}
+.toc-row.toc-level-0 { font-weight: 700; }
+.toc-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: clip;
+}
+.toc-number { white-space: pre; }
+.toc-leader {
+  min-width: 12px;
+  margin: 0 .34em 0 .40em;
+  border-bottom: 1px dotted currentColor;
+  opacity: .78;
+}
+.toc-page {
+  min-width: 2.1em;
+  text-align: right;
+  font-weight: 400;
+}
+.toc-gap { height: .40em; }
+.toc-unparsed {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.layout-flow-stream.debug-text[data-original-lines="single"] { overflow: visible; text-align: left; }
+.layout-flow-stream.debug-text[data-original-lines="single"] .flow-para { width: max-content; max-width: none; margin: 0; text-indent: 0 !important; white-space: nowrap; }
+.layout-flow-stream.debug-text[data-original-lines="single"][data-single-line-align="center"] .flow-para { position: relative; left: 50%; transform: translateX(-50%); text-align: center; }
+.layout-flow-stream.equation-dense { line-height: 1.04 !important; }
+.layout-debug .layout-flow-stream.layout-overflow { outline: 1px solid #b42318; background: rgba(248,232,230,.42); }
+.layout-line-debug-box { position: absolute; z-index: 5; display: none; pointer-events: none; border: 1px solid rgba(220, 38, 38, .72); background: rgba(250, 204, 21, .08); }
+.layout-debug .layout-line-debug-box { display: block; }
+/* These attributes are transient measurement metadata, never reader content.
+   Expose their labels only in the explicit inspection view. */
+.layout-debug .layout-flow-stream[data-fit-label]::after,
+.layout-debug .layout-block[data-fit-label]::after { content: attr(data-fit-label); position: absolute; z-index: 8; left: 2px; top: 2px; display: block; max-width: calc(100% - 4px); padding: 2px 4px; overflow: hidden; border: 1px solid rgba(37, 99, 235, .85); background: rgba(239, 246, 255, .94); color: #172554; font: 600 9px/1.2 var(--sans); text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+.layout-debug .layout-flow-stream.fit-limiter,
+.layout-debug .layout-block.fit-limiter { outline: 2px solid rgba(220, 38, 38, .92); outline-offset: -1px; }
+
+/* 调试模式：公式外框 bbox（蓝色虚线/溢出缩小时变红虚线）与公式内容（绿色实线）、序号（橙色实线） */
+.layout-debug .layout-block.layout-formula { outline: 1.5px dashed rgba(37, 99, 235, .85); outline-offset: -1px; background: rgba(37, 99, 235, .04); }
+.layout-debug .layout-block.layout-formula .katex,
+.layout-debug .layout-block.layout-formula .litmtrans-math { outline: 1px solid rgba(22, 163, 74, .8); outline-offset: 1px; }
+.layout-debug .layout-block.layout-formula .layout-equation-number { outline: 1.5px solid rgba(217, 119, 6, .9); background: rgba(254, 243, 199, .65); }
+.layout-debug .layout-block.layout-formula.layout-fitted { outline: 1.5px dashed rgba(220, 38, 38, .9); background: rgba(220, 38, 38, .06); }
+.layout-debug .layout-block.layout-formula[data-fit-label]::after { top: -16px; left: 0; max-width: none; border-radius: 2px; }
+.layout-debug .layout-block.layout-formula.layout-fitted[data-fit-label]::after { border-color: rgba(220, 38, 38, .85); background: rgba(254, 242, 242, .96); color: #991b1b; }
+.layout-block.type-title,
+.layout-block.type-header,
+.layout-block.type-page_header,
+.layout-block.type-footer,
+.layout-block.type-page_footer,
+.layout-block.type-page_number { font-family: Arial, "Microsoft YaHei UI", sans-serif; }
+.layout-block.type-title { font-weight: 700; line-height: 1.12; text-align: left; }
+.layout-block.type-title.main-title { text-align: center; }
+.layout-block.type-page_header,
+.layout-block.type-header { font-weight: 600; letter-spacing: .02em; text-align: center; }
+.layout-block.type-footer,
+.layout-block.type-page_footer,
+.layout-block.type-page_footnote { text-align: center; }
+.layout-block.type-page_number { text-align: left; }
+.layout-block.type-text { text-align: justify; }
+.layout-block.type-ref_text { line-height: 1.06; text-align: left; }
+.layout-block.type-table_caption,
+.layout-block.type-table_footnote,
+.layout-block.type-chart_caption,
+.layout-block.type-image_caption {
+  font-family: Arial, "Microsoft YaHei UI", sans-serif;
+  font-style: normal;
+  line-height: 1.2;
+  text-align: left;
+}
+.layout-block.type-table_body,
+.layout-block.type-chart_body,
+.layout-block.type-image_body { padding: 0; }
+.layout-block.layout-title { font-weight: 700; }
+.layout-block.layout-caption { font-style: normal; }
+.layout-block.layout-formula { display: grid; place-items: center; overflow: visible; text-align: center; }
+.layout-block.layout-image img { width: 100%; height: 100%; object-fit: contain; }
+.layout-block.layout-table { overflow: auto; }
+.layout-block .layout-table-wrap { width: 100%; height: 100%; overflow: auto; }
+.layout-code {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 5px 7px;
+  overflow: hidden;
+  border: 0;
+  background: #f1f1f1;
+  color: #4b5563;
+  font: inherit;
+  font-family: "Cascadia Mono", "Consolas", "SFMono-Regular", monospace;
+  line-height: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.layout-code code {
+  font: inherit;
+  white-space: inherit;
+}
+.layout-block .layout-table-wrap table { width: 100%; border-collapse: collapse; font-size: inherit; }
+.layout-block .layout-table-wrap th,
+.layout-block .layout-table-wrap td { padding: 1px 2px; border: 1px solid #777; }
+.layout-formula-target { display: block; width: 100%; cursor: zoom-in; }
+.layout-equation-text { position: relative; width: 100%; height: 100%; overflow: visible; font-family: "Cambria Math", "Times New Roman", serif; }
+.layout-equation-formula { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: visible; }
+.layout-equation-text.has-number .layout-equation-formula { right: 0; justify-content: flex-start; }
+.layout-equation-formula .katex-display { width: 100%; margin: 0; text-align: inherit; }
+.layout-equation-number { position: absolute; left: var(--equation-number-right, 100%); right: auto; top: 50%; transform: translate(-100%, -50%); white-space: nowrap; font-family: "Times New Roman", serif; }
+.layout-block .litmtrans-math-display, .layout-block .litmtrans-display-formula { margin: 0; padding: 0; overflow: visible; }
+.layout-block .katex-display { margin: 0; }
+/* KaTeX uses a 1.21em root scale. Keep formula blocks at the surrounding
+   layout size so captions do not become the limiting group. */
+.layout-flow-stream .katex,
+.layout-block .katex { font-size: 100%; }
+body.layout-translated
+.layout-flow-stream[data-style-kind="body_text"][data-flow-kind="text"]
+.katex:not(.katex-display) { font-size: 92%; }
+body.layout-translated
+.layout-flow-stream.debug-text[data-style-kind="text"][data-flow-kind="text"][data-original-lines="multi"]:not(.toc-stream):not(.from-list)
+.katex:not(.katex-display) { font-size: 88%; }
+.layout-debug .layout-block.layout-overflow { outline: 1px solid #b42318; background: rgba(248,232,230,.55); }
+.layout-awaiting-overlay { position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; justify-items: center; gap: 8px; padding: 28px; background: rgba(255,255,255,.88); color: #343430; text-align: center; font: 13px/1.55 var(--sans); }
+.layout-awaiting-overlay strong { color: #111; font-size: 15px; }
