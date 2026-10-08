@@ -487,7 +487,8 @@
         "inner_bbox_dense_shrink_x",
         "inner_bbox_dense_shrink_y",
         "font_unify_mode",
-        "source_cleanup_strategy"
+        "source_cleanup_strategy",
+        "engine"
       ],
       "additionalProperties": false,
       "properties": {
@@ -528,6 +529,9 @@
           "type": "string"
         },
         "source_cleanup_strategy": {
+          "type": "string"
+        },
+        "engine": {
           "type": "string"
         }
       }

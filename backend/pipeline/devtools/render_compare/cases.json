@@ -1,0 +1,39 @@
+{
+  "jobs_root": "~/Code/retain-pdf/data/jobs",
+  "cases": [
+    {
+      "name": "quantum-chem",
+      "label": "量子化学（公式多，typst_visual）",
+      "job_id": "20261006023250-703433",
+      "alternates": [],
+      "variants": [
+        {"name": "typst", "engine": "typst"},
+        {"name": "rpr", "engine": "rpr"}
+      ],
+      "pairs": [["typst", "rpr"]]
+    },
+    {
+      "name": "scan-paper",
+      "label": "扫描件论文（typst 系）",
+      "job_id": "20260917021616-ade6bc",
+      "alternates": ["20260919094907-0bfcc6", "20260920000013-875ed5"],
+      "variants": [
+        {"name": "typst", "engine": "typst"},
+        {"name": "rpr", "engine": "rpr"}
+      ],
+      "pairs": [["typst", "rpr"]]
+    },
+    {
+      "name": "editable-paper",
+      "label": "普通可编辑论文（overlay）",
+      "job_id": "20260921092508-fe8d63",
+      "alternates": ["20261006142134-91ceaf"],
+      "variants": [
+        {"name": "typst-overlay", "engine": "typst"},
+        {"name": "typst-typstmode", "engine": "typst", "render_mode": "typst"},
+        {"name": "rpr-overlay", "engine": "rpr"}
+      ],
+      "pairs": [["typst-overlay", "rpr-overlay"], ["typst-typstmode", "rpr-overlay"]]
+    }
+  ]
+}

@@ -529,6 +529,29 @@ fn build_translation_job_snapshot_for_full_pipeline_succeeds() {
         render_config["render"]["source_cleanup_strategy"],
         "pikepdf_text_strip"
     );
+    assert_eq!(render_config["render"]["engine"], "typst", "render.engine 缺省 = typst");
+}
+
+#[test]
+fn build_translation_job_snapshot_keeps_rpr_engine_and_rejects_unknown_engine() {
+    let state = test_state("render-engine");
+    let upload = seed_upload(&state, "upload-engine");
+    let mut input = base_translation_input(WorkflowKind::Book);
+    input.source.upload_id = upload.upload_id.clone();
+    input.render.engine = "rpr".to_string();
+    let job = build_translation_job_snapshot(&snapshot_context(&state), &input)
+        .expect("rpr engine is accepted");
+    assert_eq!(job.request_payload.render.engine, "rpr");
+
+    input.render.engine = "bogus".to_string();
+    let err = build_translation_job_snapshot(&snapshot_context(&state), &input)
+        .expect_err("unknown render.engine must be rejected");
+    match err {
+        AppError::BadRequest(message) => {
+            assert!(message.contains("render.engine must be one of"), "{message}")
+        }
+        other => panic!("expected 400 BadRequest, got {other:?}"),
+    }
 }
 
 #[test]

@@ -176,3 +176,18 @@ Useful options:
 - `--all` relaxes the default source and directory filters while still skipping `.git`, binary files, and files larger than 2 MiB.
 
 The default scan skips obvious dependencies, caches, build outputs, temporary data, and job data such as `node_modules/`, `target/`, `dist/`, `build/`, `__pycache__/`, `.venv/`, `data/jobs/`, and `tmp/`.
+
+## Render engine comparison (`render_compare/`)
+
+Renders sample jobs with `render.engine = typst` and `rpr` on copies (refine off, LLM credentials cleared,
+original job dirs hash-checked before/after) and writes side-by-side PNGs, a metrics table
+(`report/metrics.md` + `metrics.json`), line-count agreement and the most divergent blocks with crops.
+Samples / variants live in `render_compare/cases.json`. From the repo root:
+
+```bash
+UV_PROJECT_ENVIRONMENT=$HOME/Code/retain-pdf/backend/.venv \
+  uv run --no-sync --project backend python backend/pipeline/devtools/render_compare/render_compare.py \
+  --workdir <scratch dir> [--cases quantum-chem] [--report-only] [--all-pages]
+```
+
+Needs `backend/rendering-engine/node_modules` (`npm ci --omit=dev --ignore-scripts`), Node ≥ 22.8 and Typst on PATH.

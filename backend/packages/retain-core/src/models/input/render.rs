@@ -11,6 +11,11 @@ pub const SOURCE_CLEANUP_STRATEGIES: &[&str] = &[
     "redact_restore_formulas",
 ];
 
+/// 渲染引擎：`typst` = 旧路线（Typst 排版 + 内部缩字），`rpr` = 自研排版引擎
+/// retain-pdf-rendering（实验，可选；不支持时 Python 侧回退 typst 并记 warning）。
+pub const DEFAULT_RENDER_ENGINE: &str = "typst";
+pub const RENDER_ENGINES: &[&str] = &["typst", "rpr"];
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RenderInput {
@@ -40,6 +45,8 @@ pub struct RenderInput {
     pub font_unify_mode: String,
     #[serde(default = "default_source_cleanup_strategy")]
     pub source_cleanup_strategy: String,
+    #[serde(default = "default_render_engine")]
+    pub engine: String,
 }
 
 impl Default for RenderInput {
@@ -58,6 +65,7 @@ impl Default for RenderInput {
             inner_bbox_dense_shrink_y: default_inner_bbox_dense_shrink_y(),
             font_unify_mode: default_font_unify_mode(),
             source_cleanup_strategy: default_source_cleanup_strategy(),
+            engine: default_render_engine(),
         }
     }
 }
@@ -109,6 +117,7 @@ mod contract_tests {
             input.source_cleanup_strategy,
             documented_default("source_cleanup_strategy")
         );
+        assert_eq!(input.engine, documented_default("engine"));
         assert_eq!(
             input.body_font_size_factor.to_string(),
             documented_default("body_font_size_factor")

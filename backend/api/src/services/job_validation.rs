@@ -5,7 +5,7 @@ use retain_data::credentials::{resolve_credential, CredentialResolveError};
 use std::path::Path;
 
 use crate::models::domain::{
-    OcrProviderKind, UploadRecord, SOURCE_CLEANUP_STRATEGIES, TRANSLATION_CONTEXT_MODES,
+    OcrProviderKind, UploadRecord, RENDER_ENGINES, SOURCE_CLEANUP_STRATEGIES, TRANSLATION_CONTEXT_MODES,
     TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES, TRANSLATION_MEMORY_MODES,
     TRANSLATION_PREPARATION_MODES, TRANSLATION_REFINE_MODES,
 };
@@ -244,6 +244,7 @@ pub fn validate_render_options(input: &CreateJobInput) -> Result<(), AppError> {
         &input.render.source_cleanup_strategy,
         SOURCE_CLEANUP_STRATEGIES,
     )?;
+    validate_allowed_value("render.engine", &input.render.engine, RENDER_ENGINES)?;
     if input.render.compile_workers < 0 {
         return Err(AppError::bad_request(
             "render.compile_workers must be greater than or equal to 0",

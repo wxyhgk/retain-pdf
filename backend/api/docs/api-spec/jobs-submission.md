@@ -127,6 +127,7 @@ Canonical JSON request:
     "body_leading_factor": 1.08,
     "font_unify_mode": "role_min",
     "source_cleanup_strategy": "pikepdf_text_strip",
+    "engine": "typst",
     "inner_bbox_shrink_x": 0.0,
     "inner_bbox_shrink_y": 0.0,
     "inner_bbox_dense_shrink_x": 0.0,
@@ -370,6 +371,7 @@ Render options:
 - `bbox_text_strip` and `legacy` are compatibility aliases for the pikepdf text-strip path
 - `redact_restore_formulas` is a compatibility alias for the current `pikepdf_text_strip` behavior; keep the name only for old configs/spec replay and do not treat it as a separate formula restore strategy
 - `render.inner_bbox_shrink_x`, `render.inner_bbox_shrink_y`, `render.inner_bbox_dense_shrink_x`, and `render.inner_bbox_dense_shrink_y` default to `0.0`
+- `render.engine` defaults to `typst`; `rpr` selects the experimental in-house typesetting engine (retain-pdf-rendering). `dual` mode, a non-Source-Han-Serif font, an unavailable Node (>= 22.8 required) or an engine failure fall back to `typst` with a warning in `pipeline_summary` and `fit_report.reason`; the job does not fail
 
 Validation:
 
@@ -387,7 +389,7 @@ Validation:
 - a supplied `translation.credential_ref` must exist and have kind
   `translation_api_key`; invalid, missing, wrong-kind, or unavailable-vault
   references return structured `CREDENTIAL_*` errors
-- render enum-like options are validated in Rust; unknown `render_mode`, `font_unify_mode`, or `source_cleanup_strategy` values return `400`
+- render enum-like options are validated in Rust; unknown `render_mode`, `font_unify_mode`, `source_cleanup_strategy`, or `engine` values return `400` (also for `retry-stage` `overrides.render.engine`)
 - provider-specific upstream limits apply only to the selected OCR provider, not to the shared `workflow=book` protocol itself
 - Rust API no longer supplies default OCR provider / LLM credentials for `create_job`
 - legacy flat JSON fields such as `upload_id`, `model`, and `api_key` are rejected by `/api/v1/jobs`; flat field mapping only remains in selected multipart helper endpoints

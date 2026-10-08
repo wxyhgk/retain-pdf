@@ -209,6 +209,7 @@ Rust 根据 workflow 选择运行计划：
 - 含义：默认先用 pikepdf 按 bbox 删除原 PDF content-stream text-op，再由 Typst 翻译块自带背景色做视觉覆盖
 - 可选值：`typst_fill | pikepdf_text_strip | bbox_text_strip | legacy | redact_restore_formulas`
 - `pikepdf_text_strip` 表示渲染前用 pikepdf 做路径级 content-stream text-op 删除，再由 Typst 背景块做视觉覆盖；`bbox_text_strip`、`legacy`、`redact_restore_formulas` 当前都是兼容别名，行为等同 `pikepdf_text_strip`
+- `render.engine = "typst"`（默认）| `"rpr"`：`rpr` 走自研排版引擎 retain-pdf-rendering（实验）；`dual` 模式、非思源宋体字体、Node 不可用（需 ≥ 22.8）或引擎失败时自动回退 `typst`，回退原因记进 `pipeline_summary` 的 warning 与 `fit_report.reason`。写进 `render.spec.json.params.engine` 与 `provider.spec.json.render.engine`；原地重渲染 / 精修沿用任务的值，retry-stage `overrides.render.engine` 可切换
 
 ### 第五步：job_runner 进入运行时主链
 

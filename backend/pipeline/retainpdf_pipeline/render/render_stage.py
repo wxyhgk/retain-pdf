@@ -13,6 +13,7 @@ from retainpdf_pipeline.services.pipeline_shared.events import reset_render_page
 from retainpdf_pipeline.render.source.prewarm import prewarm_manifest_path_from_translations_dir
 from retainpdf_pipeline.render.workflow.fit_report import fit_report_result
 from retainpdf_pipeline.render.workflow.fit_report import render_fit_report_scope
+from retainpdf_pipeline.render.workflow.engine_dispatch import render_engine_summary
 
 
 def render_no_cache_enabled() -> bool:
@@ -42,6 +43,7 @@ def build_book_from_translations(
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
     source_cleanup_strategy: str | None = None,
     render_prewarm_manifest_path: Path | None = None,
+    render_engine: str = "typst",
 ) -> int:
     render_plan = build_render_plan(
         source_pdf_path=source_pdf_path,
@@ -73,6 +75,7 @@ def build_book_from_translations(
         pdf_compress_dpi=pdf_compress_dpi,
         source_cleanup_strategy=source_cleanup_strategy,
         render_prewarm_manifest_path=prewarm_manifest_path,
+        render_engine=render_engine,
     )
     build_book_from_translations.last_render_diagnostics = dict(
         getattr(execute_render_plan, "last_render_diagnostics", {}) or {}
@@ -98,6 +101,7 @@ def build_book_pipeline(
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
     source_cleanup_strategy: str | None = None,
     render_prewarm_manifest_path: Path | None = None,
+    render_engine: str = "typst",
 ) -> dict:
     pages_rendered = build_book_from_translations(
         source_pdf_path=source_pdf_path,
@@ -116,6 +120,7 @@ def build_book_pipeline(
         pdf_compress_dpi=pdf_compress_dpi,
         source_cleanup_strategy=source_cleanup_strategy,
         render_prewarm_manifest_path=render_prewarm_manifest_path,
+        render_engine=render_engine,
     )
     return {
         "output_pdf_path": output_pdf_path,
@@ -145,6 +150,7 @@ def run_render_stage(
     source_cleanup_strategy: str | None = None,
     render_prewarm_manifest_path: Path | None = None,
     artifacts_dir: Path | None = None,
+    render_engine: str = "typst",
 ) -> dict:
     """artifacts_dir 给了就在其中写排版 fit 报告（fit_report.v1.json）；报告只读不改排版。"""
     render_plan = build_render_plan(
@@ -191,6 +197,7 @@ def run_render_stage(
             pdf_compress_dpi=pdf_compress_dpi,
             source_cleanup_strategy=source_cleanup_strategy,
             render_prewarm_manifest_path=prewarm_manifest_path,
+            render_engine=render_engine,
         )
     emit_stage_progress(
         stage="rendering",
@@ -206,4 +213,8 @@ def run_render_stage(
         "extract_selected_pages": extract_selected_pages,
         "render_diagnostics": dict(getattr(execute_render_plan, "last_render_diagnostics", {}) or {}),
         "fit_report": fit_report_result(fit_report_target),
+        "render_engine": render_engine_summary(
+            requested=render_engine,
+            diagnostics=getattr(execute_render_plan, "last_render_diagnostics", {}) or {},
+        ),
     }

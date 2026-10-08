@@ -354,3 +354,19 @@ async fn refine_retry_rejects_jobs_rendering_another_jobs_translations() {
     assert!(read_json(response).await.to_string().contains("source job"));
     assert!(read_override(&state, id).is_none());
 }
+
+/// 原地精修 + 重渲染不动 render.engine：rpr 任务精修后仍用 rpr 渲染。
+#[tokio::test]
+async fn refine_retry_keeps_render_engine() {
+    let state = test_state("retry-refine-render-engine");
+    let id = "job-retry-refine-render-engine";
+    let mut source = seed_translated_job(&state, id);
+    source.request_payload.render.engine = "rpr".to_string();
+    state.db.save_job(&source).expect("save rpr job");
+
+    let response = retry(&state, id, json!({"stage": "refine"})).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let job = state.db.get_job(id).expect("refine job");
+    assert_eq!(job.workflow, WorkflowKind::Render);
+    assert_eq!(job.request_payload.render.engine, "rpr");
+}

@@ -274,3 +274,15 @@ python3 backend/pipeline/devtools/run_golden_flow.py \
 - 正式输入边界是 `source_pdf_path + translations_dir/translation_manifest_path`
 - 如果修改渲染输入协议、manifest 读取方式或最终产物命名，必须同步更新 `runtime/pipeline`、调用入口、README 和测试
 - 遇到上游 OCR 或翻译问题，优先把问题退回对应模块修，不要在 rendering 层堆跨层补丁
+
+## 排版引擎开关 render.engine
+
+`render.engine = "typst"`（默认）走上面的 Typst 路线，一字不变；`"rpr"` 走自研排版引擎
+（`backend/rendering-engine`，见那里的 README）：
+
+- 分流在 `workflow/engine_dispatch.py`；实现在 `output/rpr/`（`input_builder.py` 把 page_specs 映射成引擎输入，
+  `text.py` 把 cmarker markdown 还原成纯文本，`obstacles.py` 从 document.v1 取障碍物，`engine_cli.py` 调子进程，
+  `report.py` 把引擎报告转成 fit_report.v1，`renderer.py` 负责合并到底图）。
+- 准备链与 Typst 背景路线共用 `output/typst/book_renderer.py: prepare_background_render_pages`。
+- dual、只抽选中页、非思源宋体、引擎没装 / Node < 22.8 / 引擎失败 → 回退 Typst，原因写进
+  `pipeline_summary.render_engine`、`render_diagnostics` 和 `fit_report.v1.json` 的 reason。

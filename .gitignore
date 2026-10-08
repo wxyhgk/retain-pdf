@@ -103,3 +103,7 @@ research/
 # 本地测试用的 API 配置（含明文 key），绝不进仓库
 .env.local
 .env.*.local
+
+# rpr 排版引擎的复制品（backend/rendering-engine/sync.sh）：上面的 data/、output/ 规则会误伤引擎源码。
+!backend/rendering-engine/engine/data/
+!backend/rendering-engine/engine/src/output/

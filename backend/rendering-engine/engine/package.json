@@ -1,0 +1,43 @@
+{
+  "name": "retain-pdf-rendering",
+  "version": "0.1.0",
+  "description": "Layout restoration, DOM rendering and glyph-measured fitting for translated PDF pages built from MinerU layout output.",
+  "license": "MIT",
+  "main": "src/index.js",
+  "bin": {
+    "rpr-retain": "bin/rpr-retain.js"
+  },
+  "files": [
+    "src",
+    "data",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "test:browser": "node --test \"test/browser/*.test.js\"",
+    "test:typst": "node scripts/test-typst-parity.js",
+    "test:all": "npm test && npm run test:browser",
+    "build:advance-table": "node scripts/build-advance-table.js",
+    "build:uax14": "node scripts/build-uax14-table.js",
+    "test:output": "node experiments/typst/check-output.js"
+  },
+  "engines": {
+    "node": ">=22.8.0"
+  },
+  "devDependencies": {
+    "fontkit": "^2.0.4",
+    "linebreak": "^1.1.0",
+    "mathjax-full": "^3.2.1",
+    "playwright": "^1.64.0"
+  },
+  "peerDependencies": {
+    "mathjax-full": "^3.2.1"
+  },
+  "peerDependenciesMeta": {
+    "mathjax-full": {
+      "optional": true
+    }
+  }
+}

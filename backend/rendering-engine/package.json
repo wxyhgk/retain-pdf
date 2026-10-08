@@ -1,0 +1,12 @@
+{
+  "name": "retainpdf-rendering-engine",
+  "private": true,
+  "description": "rpr 排版引擎（retain-pdf-rendering）在 retain-pdf 里的运行时：engine/ 由 sync.sh 复制，这里只锁运行时 npm 依赖。",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.8.0"
+  },
+  "dependencies": {
+    "mathjax-full": "3.2.1"
+  }
+}

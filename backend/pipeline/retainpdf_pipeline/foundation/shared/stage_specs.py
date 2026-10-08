@@ -14,6 +14,10 @@ from retainpdf_pipeline.ocr.ocr_provider_config import (
 NORMALIZE_STAGE_SCHEMA_VERSION = "normalize.stage.v1"
 TRANSLATE_STAGE_SCHEMA_VERSION = "translate.stage.v1"
 RENDER_STAGE_SCHEMA_VERSION = "render.stage.v1"
+# render.engine：typst = 现有路线；rpr = 自研排版引擎（retain-pdf-rendering）。缺省 / 未知值一律 typst。
+RENDER_ENGINE_TYPST = "typst"
+RENDER_ENGINE_RPR = "rpr"
+RENDER_ENGINES = (RENDER_ENGINE_TYPST, RENDER_ENGINE_RPR)
 PROVIDER_STAGE_SCHEMA_VERSION = "provider.stage.v1"
 BOOK_STAGE_SCHEMA_VERSION = "book.stage.v1"
 
@@ -44,6 +48,11 @@ def build_stage_invocation_metadata(
         "input_protocol": "stage_spec",
         "stage_spec_schema_version": stage_spec_schema_version.strip(),
     }
+
+
+def normalize_render_engine(value: Any) -> str:
+    engine = str(value or "").strip().lower()
+    return engine if engine in RENDER_ENGINES else RENDER_ENGINE_TYPST
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -441,6 +450,7 @@ class RenderStageParams:
     base_url: str
     credential_ref: str
     refine: RenderStageRefineParams = field(default_factory=RenderStageRefineParams)
+    engine: str = RENDER_ENGINE_TYPST
 
 
 @dataclass(frozen=True)
@@ -532,6 +542,7 @@ class RenderStageSpec:
             base_url=str(params_payload.get("base_url", "") or ""),
             credential_ref=str(params_payload.get("credential_ref", "") or ""),
             refine=RenderStageRefineParams.from_payload(params_payload.get("refine")),
+            engine=normalize_render_engine(params_payload.get("engine")),
         )
         return cls(
             schema_version=schema_version,
@@ -619,6 +630,7 @@ class ProviderStageRenderParams:
     inner_bbox_dense_shrink_y: float
     font_unify_mode: str
     source_cleanup_strategy: str
+    engine: str = RENDER_ENGINE_TYPST
 
 
 @dataclass(frozen=True)
@@ -789,6 +801,7 @@ class ProviderStageSpec:
             )
             .strip()
             .lower(),
+            engine=normalize_render_engine(render_payload.get("engine")),
         )
         return cls(
             schema_version=schema_version,
@@ -858,6 +871,7 @@ class BookStageRenderParams:
     inner_bbox_dense_shrink_y: float
     font_unify_mode: str
     source_cleanup_strategy: str
+    engine: str = RENDER_ENGINE_TYPST
 
 
 @dataclass(frozen=True)
@@ -1002,6 +1016,7 @@ class BookStageSpec:
             )
             .strip()
             .lower(),
+            engine=normalize_render_engine(render_payload.get("engine")),
         )
         return cls(
             schema_version=schema_version,

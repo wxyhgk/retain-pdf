@@ -38,7 +38,7 @@ mod contract_tests {
 
     use crate::model_connection::{Deadlines, ModelConnection, Provider, Thinking};
     use crate::models::{
-        GlossaryEntryInput, SOURCE_CLEANUP_STRATEGIES, TRANSLATION_CONTEXT_MODES,
+        GlossaryEntryInput, RENDER_ENGINES, SOURCE_CLEANUP_STRATEGIES, TRANSLATION_CONTEXT_MODES,
         TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES, TRANSLATION_MEMORY_MODES,
         TRANSLATION_PREPARATION_MODES, TRANSLATION_REFINE_MODES,
     };
@@ -354,6 +354,7 @@ mod contract_tests {
                 TRANSLATION_PREPARATION_MODES,
             ),
             ("TranslationInput", "refine", TRANSLATION_REFINE_MODES),
+            ("RenderInput", "engine", RENDER_ENGINES),
         ] {
             assert_eq!(
                 schema_enum(&schema, name, field),

@@ -17,7 +17,10 @@ mod tests;
 mod translation;
 
 pub use ocr::OcrInput;
-pub use render::{RenderInput, DEFAULT_SOURCE_CLEANUP_STRATEGY, SOURCE_CLEANUP_STRATEGIES};
+pub use render::{
+    RenderInput, DEFAULT_RENDER_ENGINE, DEFAULT_SOURCE_CLEANUP_STRATEGY, RENDER_ENGINES,
+    SOURCE_CLEANUP_STRATEGIES,
+};
 pub use request::CreateJobInput;
 pub use resolved::ResolvedJobSpec;
 pub use runtime::RuntimeInput;

@@ -424,6 +424,23 @@ fn render_options_reject_unknown_cleanup_strategy() {
 }
 
 #[test]
+fn render_engine_defaults_to_typst_and_accepts_rpr() {
+    let mut input = CreateJobInput::default();
+    assert_eq!(input.render.engine, "typst");
+    assert!(validate_render_options(&input).is_ok());
+    input.render.engine = "rpr".to_string();
+    assert!(validate_render_options(&input).is_ok());
+}
+
+#[test]
+fn render_options_reject_unknown_engine() {
+    let mut input = CreateJobInput::default();
+    input.render.engine = "latex".to_string();
+    let err = validate_render_options(&input).expect_err("unknown engine should fail");
+    assert!(err.to_string().contains("render.engine must be one of"));
+}
+
+#[test]
 fn render_options_reject_negative_compress_dpi() {
     let mut input = CreateJobInput::default();
     input.render.pdf_compress_dpi = -1;

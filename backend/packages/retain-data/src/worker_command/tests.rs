@@ -814,6 +814,7 @@ fn stage_specs_keep_python_loader_contract_keys() {
             "inner_bbox_dense_shrink_y",
             "font_unify_mode",
             "source_cleanup_strategy",
+            "engine",
         ],
     );
 
@@ -895,6 +896,7 @@ fn stage_specs_keep_python_loader_contract_keys() {
             "inner_bbox_dense_shrink_y",
             "font_unify_mode",
             "source_cleanup_strategy",
+            "engine",
             "model",
             "base_url",
             "credential_ref",
@@ -1007,6 +1009,30 @@ fn render_spec_refine_manual_override_uses_override_values() {
         format!("env:{TRANSLATION_API_KEY_ENV_NAME}")
     );
     assert!(!payload.to_string().contains("sk-translation-secret"));
+}
+
+/// render.engine：缺省写 typst；任务配 rpr 时 render spec 与 provider spec 都原样带上，
+/// 普通重渲染 / 精修覆盖都不改它。
+#[test]
+fn render_spec_carries_render_engine() {
+    let mut request = build_request(WorkflowKind::Render);
+    let payload = render_spec_with_refine(&request, super::RenderRefine::Off);
+    assert_eq!(payload["params"]["engine"], "typst");
+
+    request.render.engine = "rpr".to_string();
+    for refine in [
+        super::RenderRefine::Off,
+        super::RenderRefine::AfterTranslation,
+        super::RenderRefine::Manual(crate::models::domain::RefineOverride {
+            mode: "review_and_fix".to_string(),
+            start_page: None,
+            end_page: None,
+            requested_at: "2026-10-08T00:00:00Z".to_string(),
+        }),
+    ] {
+        let payload = render_spec_with_refine(&request, refine);
+        assert_eq!(payload["params"]["engine"], "rpr");
+    }
 }
 
 #[test]

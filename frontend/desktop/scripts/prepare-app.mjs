@@ -721,6 +721,38 @@ if (!frontendOnly) {
     });
   }
 
+  // rpr 排版引擎（render.engine = "rpr"）：backend/rendering-engine 里的 engine/ 是纯 JS 源码，
+  // 运行时 npm 依赖只有 mathjax-full（纯 JS，与平台无关），整目录连 node_modules 一起打进来。
+  // node 同样用 Electron 自己（RETAINPDF_NODE_BIN + ELECTRON_RUN_AS_NODE=1），位置经
+  // RETAIN_RPR_ENGINE_DIR 告诉后端（见 src/main/backend-env.js）。
+  const rprEngineRoot = path.join(repoRoot, "backend", "rendering-engine");
+  if (!fs.existsSync(path.join(rprEngineRoot, "engine", "bin", "rpr-retain.js"))) {
+    throw new Error(`missing rpr engine at ${rprEngineRoot}/engine; run backend/rendering-engine/sync.sh`);
+  }
+  if (!fs.existsSync(path.join(rprEngineRoot, "node_modules", "mathjax-full", "package.json"))) {
+    const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+    const installed = spawnSync(npmCommand, ["ci", "--omit=dev", "--ignore-scripts"], {
+      cwd: rprEngineRoot,
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    });
+    if (installed.status !== 0) {
+      throw new Error(`npm ci failed in ${rprEngineRoot} (exit ${installed.status})`);
+    }
+  }
+  const rprEngineDst = path.join(outputBackendRoot, "rendering-engine");
+  fs.rmSync(rprEngineDst, { recursive: true, force: true });
+  for (const entry of ["engine", "node_modules", "package.json", "UPSTREAM"]) {
+    fs.cpSync(path.join(rprEngineRoot, entry), path.join(rprEngineDst, entry), {
+      recursive: true,
+      force: true,
+    });
+  }
+  // mathjax-full 里只有 js/ 被 require；浏览器包 es5/、TS 源码 ts/、components/ 不带（省 30MB）。
+  for (const unused of ["es5", "ts", "components"]) {
+    fs.rmSync(path.join(rprEngineDst, "node_modules", "mathjax-full", unused), { recursive: true, force: true });
+  }
+
   // Keep the bundled layout aligned with main.js and RUST_API_SCRIPTS_DIR.
   const pipelineScriptsRoot = servicesPipelineRoot;
   if (!fs.existsSync(path.join(pipelineScriptsRoot, "pyproject.toml"))) {

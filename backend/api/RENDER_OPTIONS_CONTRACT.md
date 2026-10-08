@@ -19,6 +19,7 @@
 | `render.body_leading_factor` | number | `1.08` | `> 0` 且 finite | 正文行间距全局倍率。 |
 | `render.font_unify_mode` | string | `role_min` | `role_min`, `off` | 字体统一策略。`role_min` 按角色统一到稳定下界，`off` 关闭统一但不关闭 fit/碰撞/背景规则。 |
 | `render.source_cleanup_strategy` | string | `pikepdf_text_strip` | `typst_fill`, `pikepdf_text_strip`, `bbox_text_strip`, `legacy`, `redact_restore_formulas` | 原文处理策略。默认先做路径级 text-op 删除，再由 Typst 背景块做视觉覆盖；`typst_fill` 可显式关闭删除。 |
+| `render.engine` | string | `typst` | `typst`, `rpr` | 排版引擎。`typst` 是现有路线；`rpr` 是自研排版引擎 retain-pdf-rendering（实验，可选）：用 retain-pdf 算好的字号/行距上限交给引擎精确排版并输出叠加层，公式走 MathJax。`dual` 模式、非思源宋体字体、Node 不可用（需 ≥ 22.8）或引擎失败时自动回退 `typst`，回退原因写进 `pipeline_summary` 与 `fit_report.reason`，任务不失败。 |
 | `render.inner_bbox_shrink_x` | number | `0.0` | `>= 0` 且 finite | 普通 bbox 横向内缩。 |
 | `render.inner_bbox_shrink_y` | number | `0.0` | `>= 0` 且 finite | 普通 bbox 纵向内缩。 |
 | `render.inner_bbox_dense_shrink_x` | number | `0.0` | `>= 0` 且 finite | 密集 bbox 横向内缩。 |
@@ -53,6 +54,7 @@ Rust 写出的 stage spec 必须包含这些字段：
 - `provider.spec.json.render.source_cleanup_strategy`
 - `book.spec.json.render.source_cleanup_strategy`
 - `render.spec.json.params.source_cleanup_strategy`
+- `render.spec.json.params.engine`（另外 `provider.spec.json.render.engine` / `book.spec.json.render.engine`）
 
 `translate.spec.json` 不再带 `render_prewarm_source_cleanup_strategy`。阶段解耦之后
 render prewarm 整体在 render 阶段跑（`render/workflow/prewarm_entry`），translate

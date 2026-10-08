@@ -245,6 +245,7 @@ pub(crate) fn write_render_stage_spec(
             "inner_bbox_dense_shrink_y": request.render.inner_bbox_dense_shrink_y,
             "font_unify_mode": request.render.font_unify_mode,
             "source_cleanup_strategy": request.render.source_cleanup_strategy,
+            "engine": request.render.engine,
             "model": request.translation.model,
             "base_url": request.translation.base_url,
             "credential_ref": credential_ref,
@@ -348,6 +349,7 @@ pub(crate) fn write_provider_stage_spec(
             "inner_bbox_dense_shrink_y": request.render.inner_bbox_dense_shrink_y,
             "font_unify_mode": request.render.font_unify_mode,
             "source_cleanup_strategy": request.render.source_cleanup_strategy,
+            "engine": request.render.engine,
         },
     });
     let content = serde_json::to_string_pretty(&payload)?;

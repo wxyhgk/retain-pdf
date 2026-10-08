@@ -159,6 +159,21 @@ COPY backend/packages/retainpdf2doc/ ./backend/packages/retainpdf2doc/
 RUN npm run build --workspace retainpdf2doc \
     && test -f backend/packages/retainpdf2doc/dist/cli.mjs
 
+# rpr 排版引擎（render.engine = "rpr"）：engine/ 是 sync.sh 复制进仓库的纯 JS 源码，
+# 运行时 npm 依赖只有 mathjax-full（纯 JS、无安装脚本、与架构无关），所以和 docbuilder 一样
+# 钉在构建机架构上装一次，产物整目录拷进运行时镜像，由下面的 noderuntime 的 node 去跑。
+FROM --platform=$BUILDPLATFORM node:22-bookworm-slim AS rprengine
+WORKDIR /build/rendering-engine
+COPY backend/rendering-engine/package.json backend/rendering-engine/package-lock.json ./
+# mathjax-full 里只有 js/ 被 require；es5/（浏览器包）、ts/（源码）、components/ 删掉省 30MB。
+RUN npm ci --omit=dev --ignore-scripts \
+    && rm -rf node_modules/mathjax-full/es5 node_modules/mathjax-full/ts node_modules/mathjax-full/components
+COPY backend/rendering-engine/engine ./engine
+COPY backend/rendering-engine/UPSTREAM ./UPSTREAM
+RUN test -f engine/bin/rpr-retain.js \
+    && test -f node_modules/mathjax-full/package.json \
+    && node -e 'require("./engine/src/retain/run")'
+
 # 运行时用的 node：按目标架构拉取官方镜像，只取二进制，不在里面执行任何命令。
 FROM node:22-bookworm-slim AS noderuntime
 
@@ -174,6 +189,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PROJECT_ROOT=/app \
     RETAINPDF2DOC_CLI=/app/services/retainpdf2doc/dist/cli.mjs \
+    RETAIN_RPR_ENGINE_DIR=/app/services/rendering-engine \
     RUST_API_ROOT=/app/services/api \
     RUST_API_DATA_ROOT=/data \
     OUTPUT_ROOT=/data/jobs \
@@ -244,6 +260,7 @@ COPY backend/pipeline /app/services/pipeline
 COPY --from=noderuntime /usr/local/bin/node /usr/local/bin/node
 COPY --from=docbuilder /build/backend/packages/retainpdf2doc/dist /app/services/retainpdf2doc/dist
 COPY --from=docbuilder /build/backend/packages/retainpdf2doc/assets /app/services/retainpdf2doc/assets
+COPY --from=rprengine /build/rendering-engine /app/services/rendering-engine
 COPY backend/ai /app/services/ai
 RUN pip install --no-cache-dir --no-deps /app/services/pipeline /app/services/ai
 COPY backend/api/auth.local.example.json /app/services/api/auth.local.example.json

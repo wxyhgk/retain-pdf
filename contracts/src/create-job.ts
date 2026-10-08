@@ -191,6 +191,10 @@ export interface RenderInput {
    */
   source_cleanup_strategy?:
     "pikepdf_text_strip" | "bbox_text_strip" | "legacy" | "redact_restore_formulas";
+  /**
+   * RENDER_ENGINES：typst = 现有路线（默认）；rpr = 自研排版引擎（实验，不支持时回退 typst）
+   */
+  engine?: "typst" | "rpr";
 }
 /**
  * models/input/runtime.rs :: RuntimeInput

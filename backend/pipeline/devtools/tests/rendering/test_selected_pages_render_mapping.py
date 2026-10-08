@@ -10,6 +10,7 @@ import pytest
 
 from retainpdf_pipeline.render.layout.payload import prepare
 from retainpdf_pipeline.render.output.typst import overlay_ops
+from retainpdf_pipeline.render.output.typst import overlay_prepare
 from retainpdf_pipeline.render.visual_profile.io import read_document_visual_profile
 from retainpdf_pipeline.render.visual_profile.io import write_visual_profile_manifest
 from retainpdf_pipeline.render.workflow.context import RenderExecutionContext
@@ -216,8 +217,8 @@ def test_selected_prepared_payload_keeps_prewarmed_colors(tmp_path: Path, monkey
         source_image_compressed=True,
     )
     with (
-        mock.patch.object(overlay_ops, "prepare_translated_pages_for_render", side_effect=AssertionError("reprepared")),
-        mock.patch.object(overlay_ops, "apply_overlay_page_colors", side_effect=AssertionError("resampled")),
+        mock.patch.object(overlay_prepare, "prepare_translated_pages_for_render", side_effect=AssertionError("reprepared")),
+        mock.patch.object(overlay_prepare, "apply_overlay_page_colors", side_effect=AssertionError("resampled")),
     ):
         modes.run_selected_pages_overlay_render(
             source_pdf_path=source, translated_pages={1: [_item(1)]}, context=context
@@ -251,7 +252,7 @@ def test_selected_translation_group_uses_local_page_metrics(tmp_path: Path, monk
         first_line_indent_lookup={},
     )
     with mock.patch.object(
-        overlay_ops, "prepare_translated_pages_for_render", wraps=overlay_ops.prepare_translated_pages_for_render
+        overlay_prepare, "prepare_translated_pages_for_render", wraps=overlay_prepare.prepare_translated_pages_for_render
     ) as preparation:
         modes.run_selected_pages_overlay_render(
             source_pdf_path=source, translated_pages=translated, context=context

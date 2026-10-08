@@ -67,6 +67,7 @@ def _args_from_spec(spec: RenderStageSpec) -> SimpleNamespace:
         inner_bbox_dense_shrink_y=spec.params.inner_bbox_dense_shrink_y,
         font_unify_mode=spec.params.font_unify_mode,
         source_cleanup_strategy=spec.params.source_cleanup_strategy,
+        render_engine=spec.params.engine,
     )
 
 
@@ -135,6 +136,7 @@ def main() -> None:
             source_cleanup_strategy=args.source_cleanup_strategy,
             render_prewarm_manifest_path=prewarm_manifest_path_from_artifacts_dir(job_dirs.artifacts_dir),
             artifacts_dir=job_dirs.artifacts_dir,
+            render_engine=args.render_engine,
         )
         elapsed = time.perf_counter() - started
         save_json(
@@ -153,6 +155,7 @@ def main() -> None:
                 "pdf_compress_dpi": args.pdf_compress_dpi,
                 "render_diagnostics": result.get("render_diagnostics", {}),
                 "fit_report": result.get("fit_report", {}),
+                "render_engine": result.get("render_engine", {}),
                 "events_jsonl": str(event_writer.path),
                 "invocation": build_stage_invocation_metadata(
                     stage="render",
