@@ -194,6 +194,44 @@ mod tests {
         let _ = fs::remove_dir_all(root);
     }
 
+    /// 译后阶段只改了诊断字段、块指纹没变的页,Python 以空的 changed_item_ids 上报,
+    /// 只为把 page_hash 推到新字节。Rust 必须照常提交并推进该页的 page_hash,
+    /// 否则实时阅读按旧哈希找快照会找不到(旧快照已被 prune)。
+    #[test]
+    fn byte_only_page_commit_advances_page_hash() {
+        let (root, db) = fixture_db("byte-only-page-commit");
+        let snapshot = JobSnapshot::new(
+            "job-1".to_string(),
+            CreateJobInput::default(),
+            vec!["python".to_string()],
+        );
+        db.save_job(&snapshot).expect("seed job");
+        let mut cursor = db
+            .acquire_pipeline_attempt("job-1", "worker-a", "translate", 1)
+            .expect("translate attempt");
+        for line in [
+            r#"{"event_type":"pipeline_checkpoint","payload":{"schema":"pipeline_checkpoint_v1","schema_version":1,"stage":"translate","phase":"translating","status":"in_progress","producer_generation":6,"committed_pages":[{"unit_key":"page:0","unit_order":0,"page_index":0,"page_hash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","changed_item_ids":["p001-b1"]}],"progress":{"completed_item_count":1,"item_count":1}}}"#,
+            r#"{"event_type":"pipeline_checkpoint","payload":{"schema":"pipeline_checkpoint_v1","schema_version":1,"stage":"translate","phase":"repairing","status":"in_progress","producer_generation":7,"committed_pages":[{"unit_key":"page:0","unit_order":0,"page_index":0,"page_hash":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","changed_item_ids":[]}],"progress":{"completed_item_count":1,"item_count":1}}}"#,
+        ] {
+            let observation = parse_pipeline_checkpoint_line(line).expect("parse checkpoint");
+            apply_durable_checkpoint(&db, &mut cursor, observation).expect("apply checkpoint");
+        }
+
+        let units = db
+            .list_pipeline_units("job-1", cursor.attempt, "translate")
+            .expect("translation units");
+        assert_eq!(units.len(), 1);
+        assert_eq!(units[0].page_hash, "c".repeat(64));
+        let events = db
+            .list_translation_commit_events_after("job-1", 0, 10)
+            .expect("commit events");
+        assert_eq!(events.len(), 2);
+        // 前端只认当页存在的块 id,page:0 不会让任何块闪「已更新」。
+        assert_eq!(events[1].payload["changed_item_ids"], serde_json::json!(["page:0"]));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
     /// checkpoint 是 durable 提交,不是公开进度来源。
     ///
     /// 旧实现在这里把 `completed_item_count/item_count` 写进 job.progress_* 与

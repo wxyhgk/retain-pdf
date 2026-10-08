@@ -75,7 +75,7 @@
     ],
     "committed_pages_field": {
       "name": "committed_pages",
-      "description": "可选的多页原子提交数组；翻译页使用稳定身份 unit_key=page:<page_index>、unit_order=page_index，每项还包含 page_hash 和精确的 changed_item_ids。不得与顶层 committed_unit_fields 同时出现。Rust 以一个权威 generation 原子提交整批页面。",
+      "description": "可选的多页原子提交数组；翻译页使用稳定身份 unit_key=page:<page_index>、unit_order=page_index，每项还包含 page_hash 和精确的 changed_item_ids；页文件字节变了而块指纹没变（如译后阶段只写了诊断字段）时，该页仍要上报以推进 page_hash，changed_item_ids 为空数组，Rust 以 unit_key 补位。不得与顶层 committed_unit_fields 同时出现。Rust 以一个权威 generation 原子提交整批页面。",
       "item_fields": [
         "unit_key",
         "unit_order",

@@ -7,12 +7,15 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
 
 from .contract import (
+    PUBLISHED_PAGE_HASH_KEY,
     advance_checkpoint,
     assert_checkpoint_committable,
     commit_checkpoint,
     committed_pages_for_changes,
     new_checkpoint,
     project_progress,
+    published_page_hashes,
+    stale_published_pages,
     translation_checkpoint_path,
     validate_checkpoint,
 )
@@ -170,15 +173,25 @@ class TranslationCheckpointSession:
             "change_validation", self._reconcile_changes,
             previous_pages, pages, changed_item_ids_by_page, detect_item_changes,
         )
+        published = published_page_hashes(previous_pages)
+        committed_pages = committed_pages_for_changes(
+            pages,
+            committed_changes,
+            stale_pages=stale_published_pages(pages, published),
+        )
+        reported = {int(page["page_index"]) for page in committed_pages}
+        for page in pages:
+            page_idx = int(page["page_index"])
+            page[PUBLISHED_PAGE_HASH_KEY] = (
+                page["page_hash"] if page_idx in reported else published.get(page_idx)
+            )
         advance_checkpoint(
             self.payload,
             phase=str(phase),
             pages=pages,
             progress=progress,
         )
-        self._persist(
-            committed_pages=committed_pages_for_changes(pages, committed_changes)
-        )
+        self._persist(committed_pages=committed_pages)
 
     def _reconcile_changes(self, previous_pages, pages, changed_item_ids_by_page, detect_item_changes):
         derived_changes = diff_changed_item_ids_by_page(previous_pages, pages)

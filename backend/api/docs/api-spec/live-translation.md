@@ -95,6 +95,11 @@ exist on disk; those page reads deliberately return
 For a multi-page flush, the producer should send the optional
 `committed_pages` array in `pipeline_checkpoint_v1`. Each item contains
 `unit_key`, `unit_order`, `page_index`, `page_hash`, and `changed_item_ids`.
+A page whose bytes changed without any translation-fingerprint change (for
+example post-translation phases that only add `translation_diagnostics` and
+re-save every page) is still reported with an empty `changed_item_ids`, so its
+committed `page_hash` keeps matching the only retained snapshot; Rust fills the
+event's `changed_item_ids` with the page `unit_key`, which clients ignore.
 Rust validates and commits the entire array in one SQLite transaction and one
 authority generation, then creates one durable refresh event per page. The
 legacy top-level unit fields remain accepted for old workers, but they cannot
