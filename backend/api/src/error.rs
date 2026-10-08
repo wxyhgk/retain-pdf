@@ -74,6 +74,18 @@ pub enum AppError {
     /// (包括翻译)时静默失效。
     #[error("{message}")]
     DeleteBlockedByFavorites { message: String, details: Value },
+    /// 单块译文修订写回被拒(422 校验不过 / 409 任务在跑、generation 过期……)。
+    ///
+    /// 结构化:客户端(尤其是 agent)要按 `details.reason` 决定下一步——校验不过就
+    /// 照着 `details.validation.issues` 改了再提交,generation 过期就重读再改,
+    /// 任务在跑就等它结束。从人类可读消息里猜这些不可靠。
+    #[error("{message}")]
+    TranslationRevision {
+        status: StatusCode,
+        code: &'static str,
+        message: String,
+        details: Value,
+    },
 }
 
 #[derive(Serialize)]
@@ -288,6 +300,30 @@ impl AppError {
         }
     }
 
+    /// 修订被拒。`reason` 是稳定的机器可读原因,其余字段并进 `details`。
+    pub fn translation_revision(
+        status: StatusCode,
+        reason: &str,
+        message: impl Into<String>,
+        extra: Value,
+    ) -> Self {
+        let code = if status == StatusCode::UNPROCESSABLE_ENTITY {
+            "TRANSLATION_REVISION_REJECTED"
+        } else {
+            "TRANSLATION_REVISION_CONFLICT"
+        };
+        let mut details = json!({ "reason": reason });
+        if let (Some(target), Value::Object(extra)) = (details.as_object_mut(), extra) {
+            target.extend(extra);
+        }
+        Self::TranslationRevision {
+            status,
+            code,
+            message: message.into(),
+            details,
+        }
+    }
+
     pub fn document_metadata(
         status: StatusCode,
         code: &'static str,
@@ -376,6 +412,23 @@ impl IntoResponse for AppError {
             )
                 .into_response();
         }
+        if let AppError::TranslationRevision {
+            status,
+            code,
+            message,
+            details,
+        } = &self
+        {
+            return (
+                *status,
+                Json(DeleteBlockedByFavoritesErrorBody {
+                    code,
+                    message: message.clone(),
+                    error: StructuredError::with_details(code, *status, details.clone()),
+                }),
+            )
+                .into_response();
+        }
         if let AppError::DeleteBlockedByFavorites { message, details } = &self {
             let status = StatusCode::CONFLICT;
             let code = DELETE_BLOCKED_BY_FAVORITES;
@@ -427,6 +480,7 @@ impl IntoResponse for AppError {
             AppError::LiveTranslation { .. } => unreachable!("handled above"),
             AppError::DocumentMetadata { .. } => unreachable!("handled above"),
             AppError::DeleteBlockedByFavorites { .. } => unreachable!("handled above"),
+            AppError::TranslationRevision { .. } => unreachable!("handled above"),
         };
         let body = ErrorBody {
             code,

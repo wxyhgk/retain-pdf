@@ -57,7 +57,11 @@ pub(super) fn routes() -> Router<AppState> {
         )
         .route(
             "/api/v1/jobs/:job_id/translation/items/:item_id",
-            get(jobs::get_translation_item),
+            get(jobs::get_translation_item).patch(jobs::revise_translation_item_route),
+        )
+        .route(
+            "/api/v1/jobs/:job_id/translation/items/:item_id/revisions",
+            get(jobs::get_translation_item_revisions),
         )
         .route(
             "/api/v1/jobs/:job_id/translation/items/:item_id/replay",

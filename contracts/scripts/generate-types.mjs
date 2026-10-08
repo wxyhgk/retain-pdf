@@ -32,6 +32,11 @@ const TARGETS = [
     output: "src/reader-data.ts",
     rootName: "ReaderDataSchema",
   },
+  {
+    input: "translation-revisions.v1.schema.json",
+    output: "src/translation-revisions.ts",
+    rootName: "TranslationRevisionsSchema",
+  },
 ];
 
 const GENERATOR_OPTIONS = {
