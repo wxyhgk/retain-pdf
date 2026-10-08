@@ -475,8 +475,9 @@ POST /api/v1/ai/ask
 GET/PUT/DELETE /api/v1/internal/agent/runtime-sessions/:conversation_id
 ```
 
-除严格匹配的 `document inspect` 和 operation lifecycle 命令外，broker
-仍全部 fail closed。当前用户消息会在启动 operation-capable runtime 前先写入
+除严格匹配的 `document inspect`、operation lifecycle 命令和书籍终端里的
+`translation issues|show|revise|refine|rerender|term-set`（任务级 capability，见
+`docs/api-spec/agent-document-operations.md`）外，broker 仍全部 fail closed。当前用户消息会在启动 operation-capable runtime 前先写入
 Rust 对话，模型无法伪造 document/conversation/message scope；默认 explicit
 模式下 run/commit/retry 还需要请求级显式确认。
 这使模型可以管理并执行 durable 的受限整页变换，但仍不能直接执行任意 PDF
