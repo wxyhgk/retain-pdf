@@ -3,8 +3,8 @@
 #
 #   backend/rendering-engine/sync.sh [REF] [REPO]
 #
-# REF  默认 feat/retain-overlay-api（可填分支、标签或提交号）
-# REPO 默认 ~/Code/retain-pdf-rendering-api（也可用 RPR_ENGINE_REPO 指定）
+# REF  默认 main（可填分支、标签或提交号）
+# REPO 默认 ~/Code/retain-pdf-rendering（也可用 RPR_ENGINE_REPO 指定）
 #
 # 用 git archive 从指定提交取文件，不碰引擎仓库的工作区。只复制运行时需要的最小集合：
 # bin/rpr-retain.js、src/{text,typeset,output,retain}、data/fonts、package.json、LICENSE。
@@ -14,8 +14,8 @@
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ref="${1:-feat/retain-overlay-api}"
-repo="${2:-${RPR_ENGINE_REPO:-$HOME/Code/retain-pdf-rendering-api}}"
+ref="${1:-main}"
+repo="${2:-${RPR_ENGINE_REPO:-$HOME/Code/retain-pdf-rendering}}"
 paths=(bin/rpr-retain.js src/text src/typeset src/output src/retain data/fonts package.json LICENSE)
 
 if ! git -C "$repo" rev-parse --git-dir >/dev/null 2>&1; then

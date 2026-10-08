@@ -26,7 +26,7 @@ npm ci --omit=dev --ignore-scripts   # 装 mathjax-full 到 ./node_modules（已
 同步新版本引擎：
 
 ```sh
-backend/rendering-engine/sync.sh                      # 默认 ~/Code/retain-pdf-rendering-api 的 feat/retain-overlay-api
+backend/rendering-engine/sync.sh                      # 默认 ~/Code/retain-pdf-rendering 的 main
 backend/rendering-engine/sync.sh <ref> <引擎仓库路径>
 ```
 
