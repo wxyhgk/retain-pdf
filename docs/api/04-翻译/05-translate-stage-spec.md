@@ -67,4 +67,5 @@ Python 可执行文件由 `PYTHON_BIN` 配置，不再回退到旧脚本。
 - `artifacts/translation_diagnostics.json`
 - `artifacts/translation_debug_index.json`
 - `artifacts/translation_review.json`
+- `artifacts/translation_qa.v1.json`：确定性 QA 报告（零 LLM 成本、只出报告）。环境变量 `RETAIN_TRANSLATION_QA=0` 关闭；生成失败只记日志，不影响任务。对已有任务离线重算：`python backend/pipeline/devtools/run_translation_qa.py --job-root <job_dir> [--output <path>]`。字段见 `retainpdf_pipeline/translate/services/quality/qa/translation_qa.v1.schema.json`
 - `artifacts/pipeline_summary.json`

@@ -8,6 +8,7 @@ from retainpdf_pipeline.translate.artifacts import blocking_untranslated_items
 from retainpdf_pipeline.translate.artifacts import translation_run_diagnostics_scope
 from retainpdf_pipeline.translate.artifacts import get_active_translation_run_diagnostics
 from retainpdf_pipeline.translate.services.agents.review_artifact import build_translation_review
+from retainpdf_pipeline.translate.services.quality.qa import write_translation_qa_for_run
 from retainpdf_pipeline.translate.core.payload import write_translation_manifest
 from retainpdf_pipeline.translate.services.terms import summarize_glossary_usage
 from retainpdf_pipeline.translate.workflow.translation_workflow import default_page_translation_name
@@ -124,6 +125,13 @@ def run_translation_execution_plan(
             },
         )
         checkpoint.complete(manifest_path)
+    # 确定性 QA 报告：零 LLM 成本、只出报告；开关与异常兜底都在函数内部，失败只记日志。
+    write_translation_qa_for_run(
+        translations_dir=request.output_dir,
+        translated_pages_map=translated_pages_map,
+        glossary_entries=glossary_entries,
+        translation_review=review_summary,
+    )
     return {
         "output_dir": request.output_dir,
         "start_page": plan.start,
