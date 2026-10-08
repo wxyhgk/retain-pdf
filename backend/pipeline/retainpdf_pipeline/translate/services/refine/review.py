@@ -164,10 +164,32 @@ def build_review_messages(batch: list[dict[str, Any]], *, style_notes: str) -> l
     ]
 
 
+def _strip_code_fence(text: str) -> str:
+    if not text.startswith("```"):
+        return text
+    lines = text.splitlines()[1:]
+    if lines and lines[-1].strip().startswith("```"):
+        lines = lines[:-1]
+    return "\n".join(lines).strip()
+
+
 def parse_json_object(content: str) -> Any:
-    text = str(content or "").strip()
-    if text.startswith("["):
-        return json.loads(text)
+    """先按严格 JSON 解析，失败才退回翻译用的宽松解析。
+
+    宽松解析（``extract_json_text``）会把中文弯引号 “” 一律换成 ASCII 双引号，
+    而挑错 / 修改的 explanation、target_span、edits 里本来就常有中文引号——
+    直接走宽松解析会把合法 JSON 弄坏，整批结果作废。
+    """
+    text = _strip_code_fence(str(content or "").strip())
+    candidates = [text]
+    start, end = text.find("{"), text.rfind("}")
+    if 0 < start < end:
+        candidates.append(text[start : end + 1])
+    for candidate in candidates:
+        try:
+            return json.loads(candidate)
+        except ValueError:
+            continue
     return json.loads(extract_json_text(text))
 
 

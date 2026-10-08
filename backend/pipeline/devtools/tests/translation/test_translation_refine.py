@@ -852,3 +852,26 @@ def test_length_budget_allows_growth_only_for_omissions() -> None:
     assert length_budget(item, [finding("omission", "", "qa")], no_growth=False) == int(base * 1.1) + len(B001_SOURCE)
     assert length_budget(item, [finding("omission", "x" * 20), finding("omission", "", "qa")], no_growth=False) == int(base * 1.1) + 20
     assert length_budget(item, [finding("omission", "x" * 20)], no_growth=True) == base
+
+
+def test_review_and_fix_responses_keep_chinese_curly_quotes() -> None:
+    # 端到端演练时，挑错返回的 explanation 里带了中文引号 “”，宽松解析把它们换成
+    # ASCII 双引号，整批 JSON 解析失败、发现被丢掉。合法 JSON 必须原样解析。
+    from retainpdf_pipeline.translate.services.refine.fix import parse_fix_response
+    from retainpdf_pipeline.translate.services.refine.review import parse_review_findings
+
+    finding = {
+        "item_id": "p043-b006",
+        "category": "omission",
+        "severity": "critical",
+        "target_span": "称为“谐振子”",
+        "explanation": "漏译了“三维谐振子的本征函数和本征值”",
+    }
+    content = json.dumps({"findings": [finding]}, ensure_ascii=False)
+    assert parse_review_findings(content) == [finding]
+    assert parse_review_findings(f"```json\n{content}\n```") == [finding]
+    assert parse_review_findings(f"结果如下：{content}") == [finding]
+
+    edit = {"op": "replace", "find": "“谐振子”", "replace": "“三维谐振子”"}
+    fixes = json.dumps({"fixes": [{"item_id": "p043-b006", "edits": [edit]}]}, ensure_ascii=False)
+    assert parse_fix_response(fixes)["p043-b006"]["edits"] == [edit]
