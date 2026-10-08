@@ -1,0 +1,5 @@
+repo=https://github.com/wxyhgk/retain-pdf-rendering.git
+ref=feat/retain-overlay-api
+commit=b9e6e8c71953b8c326ab49c8573444c02608661d
+synced_at=2026-10-08T14:53:01Z
+paths=bin/rpr-retain.js src/text src/typeset src/output src/retain data/fonts package.json LICENSE

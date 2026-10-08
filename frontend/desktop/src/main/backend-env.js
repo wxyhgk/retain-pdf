@@ -73,6 +73,8 @@ function buildBackendEnv(options = {}) {
     // （配 ELECTRON_RUN_AS_NODE=1，Python 侧会带上），这样不用再往包里塞一个 node。
     RETAINPDF2DOC_CLI: path.join(backendRoot, "retainpdf2doc", "dist", "cli.mjs"),
     RETAINPDF_NODE_BIN: process.execPath,
+    // rpr 排版引擎（render.engine = "rpr"）的位置；node 同样是上面的 Electron。
+    RETAIN_RPR_ENGINE_DIR: path.join(backendRoot, "rendering-engine"),
     RETAIN_PDF_FONT_PATH: bundledFontPath,
     RETAIN_PDF_TITLE_BOLD_FONT_PATH: bundledTitleBoldFontPath,
     RETAIN_PDF_TYPST_FONT_DIRS: bundledTypstFontDir,
