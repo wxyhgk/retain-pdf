@@ -274,6 +274,104 @@ def _read_revision_lines(path: Path) -> bytes:
         return b""
 
 
+@dataclass(frozen=True)
+class RevisionPreview:
+    """在内存里算出的修订结果：没有写任何文件。
+
+    ``revised_payloads`` 是整本书页 payload 的副本（只有 ``changed_pages`` 里的页有变化），
+    ``validation`` 与写回时同一套校验；未通过时 ``revise_translation_item`` 会拒绝。
+    """
+
+    page_idx: int
+    item: dict
+    members: list[tuple[int, dict]]
+    unit_source: str
+    new_text: str
+    previous_text: str
+    revised_payloads: dict[int, list[dict]]
+    revised_item: dict
+    validation: dict[str, Any]
+
+    @property
+    def changed_pages(self) -> list[int]:
+        return sorted({self.page_idx, *(member_page for member_page, _member in self.members)})
+
+
+def _prepare_revision(
+    payloads: dict[int, list[dict]],
+    item_id: str,
+    translated_text: str,
+    glossary_entries: list[dict],
+) -> RevisionPreview:
+    page_idx, item = _find_item(payloads, item_id)
+    if not item.get("should_translate", True):
+        raise RevisionOutcome(
+            "rejected",
+            "item_not_translatable",
+            "This block is kept as original by translation policy and cannot be revised",
+            validation=_validation_summary([]),
+        )
+
+    members = _unit_members(payloads, item)
+    unit_source = item_source_text(item)
+    new_text = _protected_form(item, translated_text, source_text=unit_source)
+    previous_text = str(item.get("protected_translated_text") or item.get("translated_text") or "")
+
+    # 在副本上算出修订后的状态再校验;校验不过就一个字节都不写。
+    revised = copy.deepcopy(payloads)
+    revised_item = _find_item(revised, item_id)[1]
+    apply_revised_member_text(revised_item, new_text, single_unit=not members)
+    if members:
+        revised_members = [_find_item(revised, str(member.get("item_id")))[1] for _idx, member in members]
+        unit_text = _join_unit_text(
+            [str(member.get("protected_translated_text") or "") for member in revised_members]
+        )
+        apply_revised_unit_text(revised_members, unit_text)
+        reviewed_text = unit_text
+    else:
+        reviewed_text = new_text
+    validation = _review(revised_item, reviewed_text, glossary_entries)
+    if not validation["passed"]:
+        raise RevisionOutcome(
+            "rejected",
+            "validation_failed",
+            "Revised translation failed validation: "
+            + ", ".join(sorted({issue["kind"] for issue in validation["issues"] if issue["severity"] == "error"})),
+            validation=validation,
+        )
+    return RevisionPreview(
+        page_idx=page_idx,
+        item=item,
+        members=members,
+        unit_source=unit_source,
+        new_text=new_text,
+        previous_text=previous_text,
+        revised_payloads=revised,
+        revised_item=revised_item,
+        validation=validation,
+    )
+
+
+def preview_translation_revision(
+    job_root: Path,
+    payloads: dict[int, list[dict]],
+    item_id: str,
+    translated_text: str,
+) -> RevisionPreview:
+    """不落盘地预演一次修订：与 ``revise_translation_item`` 同一段代码、同一套校验。
+
+    精修（refine）用它在写回前跑「该块 QA 不新增违规」这类额外检查；校验不过同样抛
+    ``RevisionOutcome``。``payloads`` 不会被修改。
+    """
+
+    request = _normalize_request(
+        RevisionRequest(item_id=item_id, translated_text=translated_text, source="refine")
+    )
+    return _prepare_revision(
+        payloads, request.item_id, request.translated_text, _load_glossary_entries(Path(job_root))
+    )
+
+
 def revise_translation_item(job_root: Path, request: RevisionRequest) -> dict[str, Any]:
     """校验并写回一个块的译文。返回结构化结果;可预期的拒绝抛 ``RevisionOutcome``。"""
 
@@ -312,43 +410,15 @@ def _revise_locked(
     translation_paths = load_translation_manifest(translations_dir)
     original_bytes = {page_idx: path.read_bytes() for page_idx, path in translation_paths.items()}
     payloads = {page_idx: json.loads(raw) for page_idx, raw in original_bytes.items()}
-    page_idx, item = _find_item(payloads, request.item_id)
-    if not item.get("should_translate", True):
-        raise RevisionOutcome(
-            "rejected",
-            "item_not_translatable",
-            "This block is kept as original by translation policy and cannot be revised",
-            validation=_validation_summary([]),
-        )
-
-    members = _unit_members(payloads, item)
-    unit_source = item_source_text(item)
-    new_text = _protected_form(item, request.translated_text, source_text=unit_source)
-    previous_text = str(item.get("protected_translated_text") or item.get("translated_text") or "")
-
-    # 在副本上算出修订后的状态再校验;校验不过就一个字节都不写。
-    revised = copy.deepcopy(payloads)
-    revised_item = _find_item(revised, request.item_id)[1]
-    apply_revised_member_text(revised_item, new_text, single_unit=not members)
-    if members:
-        revised_members = [_find_item(revised, str(member.get("item_id")))[1] for _idx, member in members]
-        unit_text = _join_unit_text(
-            [str(member.get("protected_translated_text") or "") for member in revised_members]
-        )
-        apply_revised_unit_text(revised_members, unit_text)
-        reviewed_text = unit_text
-    else:
-        reviewed_text = new_text
-    glossary_entries = _load_glossary_entries(job_root)
-    validation = _review(revised_item, reviewed_text, glossary_entries)
-    if not validation["passed"]:
-        raise RevisionOutcome(
-            "rejected",
-            "validation_failed",
-            "Revised translation failed validation: "
-            + ", ".join(sorted({issue["kind"] for issue in validation["issues"] if issue["severity"] == "error"})),
-            validation=validation,
-        )
+    prepared = _prepare_revision(payloads, request.item_id, request.translated_text, _load_glossary_entries(job_root))
+    page_idx, item = prepared.page_idx, prepared.item
+    members = prepared.members
+    unit_source = prepared.unit_source
+    new_text = prepared.new_text
+    previous_text = prepared.previous_text
+    revised = prepared.revised_payloads
+    revised_item = prepared.revised_item
+    validation = prepared.validation
 
     item_view = {
         "item_id": request.item_id,
@@ -508,9 +578,11 @@ def load_item_revisions(translations_dir: Path, item_id: str) -> list[dict[str, 
 __all__ = [
     "REVISION_SOURCES",
     "RevisionOutcome",
+    "RevisionPreview",
     "RevisionRequest",
     "TRANSLATION_REVISIONS_FILE_NAME",
     "load_item_revisions",
+    "preview_translation_revision",
     "revise_translation_item",
     "translation_revisions_path",
 ]

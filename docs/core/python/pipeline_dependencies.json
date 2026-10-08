@@ -117,6 +117,7 @@
       "devtools/tests/translation/test_translation_prompt_protocols.py",
       "devtools/tests/translation/test_translation_qa.py",
       "devtools/tests/translation/test_translation_quality_checks.py",
+      "devtools/tests/translation/test_translation_refine.py",
       "devtools/tests/translation/test_translation_revision.py",
       "devtools/tests/translation/test_translation_route_selection.py",
       "devtools/tests/translation/test_translation_transport_fallbacks.py",
@@ -618,6 +619,7 @@
         "devtools/tests/translation/test_translation_preparation.py",
         "devtools/tests/translation/test_translation_publication_consistency.py",
         "devtools/tests/translation/test_translation_qa.py",
+        "devtools/tests/translation/test_translation_refine.py",
         "devtools/tests/translation/test_translation_revision.py",
         "devtools/tests/translation/test_translation_validation_protocols.py",
         "devtools/tests/translation/test_upstream_resilience.py"
