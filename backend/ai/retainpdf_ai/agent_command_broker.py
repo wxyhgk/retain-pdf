@@ -169,7 +169,7 @@ class AgentCommandBroker:
             "retainpdf-agent translation issues [--pages 3-5] [--severity critical|major|minor] "
             "[--limit 50]\n"
             "retainpdf-agent translation show --item-id <id>\n"
-            'retainpdf-agent translation revise --item-id <id> --text "<new>" --reason "<why>"\n'
+            "retainpdf-agent translation revise --item-id <id> --text '<new>' --reason \"<why>\"\n"
             "retainpdf-agent translation refine [--pages 3-5] [--review-only]\n"
             "retainpdf-agent translation rerender\n"
             'retainpdf-agent translation term-set --source "<term>" --target "<rendering>"\n'

@@ -40,7 +40,9 @@ description: 精修这本书的译文。用户说「这段太生硬」「这句�
 ## 先知道的三件事
 
 1. **终端只能跑单条命令**：不能用管道、`&&`、`;`。命令输出已经是整理好的 JSON，直接读。
-2. 参数里的文字用双引号包起来；新译文**写成一行**。文字里本身有双引号时，整段改用单引号包。
+2. **`--text` 一律用单引号包**，新译文写成一行。双引号里的 `$k$`、`$x = l - l_0$` 会被 shell
+   当成变量展开、公式被吃掉，校验再拦下来也白费一轮。译文里本身有单引号（英文撇号）时，
+   把那个单引号写成 `'\\''`。术语、reason 里没有 `$` 时用双引号也行。
 3. 会改东西的命令（revise / term-set / refine / rerender）需要用户授权。没有授权时命令会被拒，
    并提示怎么开；这时把拟好的改法列给用户，不要换别的办法绕过去。
 
@@ -63,7 +65,7 @@ description: 精修这本书的译文。用户说「这段太生硬」「这句�
 
 4. **写回**，一块一条命令，reason 写清楚改了什么、为什么：
 
-       retainpdf-agent translation revise --item-id p003-b004 --text "其中 $k$ 为弹簧的劲度系数。" --reason "force constant 统一译为劲度系数"
+       retainpdf-agent translation revise --item-id p003-b004 --text '其中 $k$ 为弹簧的劲度系数。' --reason "force constant 统一译为劲度系数"
 
    看返回里的 `validation`：被拒（422）就按 `details` 里的问题改好再提交。
 
@@ -102,7 +104,7 @@ description: 精修这本书的译文。用户说「这段太生硬」「这句�
 
     retainpdf-agent translation issues [--pages 3-5] [--severity critical|major|minor] [--limit 50]
     retainpdf-agent translation show --item-id <块 id>
-    retainpdf-agent translation revise --item-id <块 id> --text "<新译文>" --reason "<为什么改>"
+    retainpdf-agent translation revise --item-id <块 id> --text '<新译文>' --reason "<为什么改>"
     retainpdf-agent translation refine [--pages 3-5] [--review-only]
     retainpdf-agent translation rerender
     retainpdf-agent translation term-set --source "<原文术语>" --target "<译法>"

@@ -369,3 +369,11 @@ def test_merged_books_do_not_advertise_the_cli(tmp_path):
     merged_root.mkdir(parents=True)
     text = build_merged_workspace_instructions(document_dir / "ai", merged_root)
     assert "retainpdf-agent" not in text
+
+
+def test_skill_revise_examples_single_quote_the_text():
+    """双引号里的 $k$ 会被 shell 展开，公式直接丢掉。"""
+    revise = [c for c in _skill_commands() if c.startswith("retainpdf-agent translation revise")]
+    assert revise
+    for command in revise:
+        assert "--text '" in command, command
