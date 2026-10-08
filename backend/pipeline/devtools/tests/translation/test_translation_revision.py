@@ -379,3 +379,77 @@ def test_console_subcommand_reports_structured_outcomes(tmp_path, monkeypatch, c
     assert (rejected["outcome"], rejected["reason"]) == ("rejected", "validation_failed")
     invalid = run({"translated_text": "谐振子", "source": "robot"})
     assert (invalid["outcome"], invalid["reason"]) == ("invalid", "invalid_source")
+
+
+def _write_replay_spec(job_root: Path) -> None:
+    source_json = job_root / "ocr" / "normalized" / "document.v1.json"
+    _write_json(source_json, {"pages": []})
+    source_pdf = job_root / "source" / "input.pdf"
+    source_pdf.parent.mkdir(parents=True, exist_ok=True)
+    source_pdf.write_bytes(b"%PDF-1.4\n")
+    _write_json(job_root / "specs" / "translate.spec.json", {
+        "schema_version": "translate.stage.v1",
+        "stage": "translate",
+        "job": {"job_id": "job-replay-commit", "job_root": str(job_root), "workflow": "translate"},
+        "inputs": {
+            "source_json": str(source_json),
+            "source_pdf": str(source_pdf),
+            "layout_json": str(source_json),
+        },
+        "params": {
+            "start_page": 0, "end_page": 0, "batch_size": 1, "workers": 1,
+            "mode": "sci", "math_mode": "direct_typst", "skip_title_translation": False,
+            "classify_batch_size": 12, "rule_profile_name": "general_sci",
+            "custom_rules_text": "保留化学式。", "glossary_id": "", "glossary_name": "",
+            "glossary_resource_entry_count": 0, "glossary_inline_entry_count": 0,
+            "glossary_overridden_entry_count": 0, "glossary_entries": [],
+            "model": "deepseek-chat", "base_url": "https://api.deepseek.com/v1",
+            "credential_ref": "",
+        },
+    })
+
+
+@pytest.mark.parametrize("replayed_text", ["谐振子是分子振动的经典模型。", "谐振子 $x"])
+def test_replay_commit_writes_back_through_the_validated_revision_path(
+    tmp_path, monkeypatch, replayed_text,
+):
+    import devtools.replay_translation_item as replay_module
+
+    translated = _build_job(tmp_path)
+    _write_replay_spec(tmp_path)
+    monkeypatch.setenv("RETAIN_TRANSLATION_API_KEY", "test-key")
+    seen_rules: list[str] = []
+    real_policy_config = replay_module.build_translation_policy_config
+
+    def _policy_config(**kwargs):
+        seen_rules.append(kwargs["custom_rules_text"])
+        return real_policy_config(**kwargs)
+
+    def _fake_translate_batch(batch, **_kwargs):
+        return {batch[0]["item_id"]: {"decision": "translate", "translated_text": replayed_text}}
+
+    monkeypatch.setattr(replay_module, "build_translation_policy_config", _policy_config)
+    monkeypatch.setattr(replay_module, "translate_batch", _fake_translate_batch)
+    before = _snapshot(translated)
+
+    dry_run = replay_module.replay_translation_item(tmp_path, "p001-b001", instruction="更口语一些")
+    assert "commit" not in dry_run
+    assert _snapshot(translated) == before
+    assert seen_rules[-1] == "保留化学式。\n更口语一些"
+
+    result = replay_module.replay_translation_item(
+        tmp_path, "p001-b001", instruction="更口语一些", commit=True,
+    )
+
+    if "$" in replayed_text:
+        assert (result["commit"]["outcome"], result["commit"]["reason"]) == (
+            "rejected", "validation_failed",
+        )
+        assert _snapshot(translated) == before
+        return
+    assert result["commit"]["outcome"] == "committed"
+    [record] = load_item_revisions(translated, "p001-b001")
+    assert (record["source"], record["reason"], record["new_text"]) == (
+        "refine", "replay: 更口语一些", replayed_text,
+    )
+    _assert_publication_consistent(translated)
