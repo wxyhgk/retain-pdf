@@ -10,6 +10,7 @@
     "workflow": "book"
   },
   "params": {
+    "api_protocol": "openai",
     "base_url": "https://api.deepseek.com/v1",
     "body_font_size_factor": 0.95,
     "body_leading_factor": 1.08,
@@ -26,6 +27,7 @@
     "render_mode": "auto",
     "source_cleanup_strategy": "pikepdf_text_strip",
     "start_page": 0,
+    "thinking": "auto",
     "translated_pdf_name": "",
     "typst_font_family": "Source Han Serif SC"
   },

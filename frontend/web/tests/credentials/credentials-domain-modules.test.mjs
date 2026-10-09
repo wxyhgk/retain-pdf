@@ -70,7 +70,14 @@ test("translation profiles：hydrate 恢复存储 profile，缺 apiKey 时回落
       model: "task-model",
       workers: 7,
       translationProfiles: {
-        custom: { apiKey: "stored-key", baseUrl: "https://stored.example", model: "stored-model", workers: 9 },
+        custom: {
+          apiKey: "stored-key",
+          baseUrl: "https://stored.example",
+          model: "stored-model",
+          workers: 9,
+          apiProtocol: "anthropic",
+          thinking: "high",
+        },
       },
     },
   );
@@ -80,6 +87,8 @@ test("translation profiles：hydrate 恢复存储 profile，缺 apiKey 时回落
     baseUrl: "https://stored.example",
     model: "stored-model",
     workers: 9,
+    apiProtocol: "anthropic",
+    thinking: "high",
   });
 
   manager.hydrate(
@@ -96,6 +105,19 @@ test("translation profiles：hydrate 恢复存储 profile，缺 apiKey 时回落
   assert.equal(manager.getCurrentProfile().baseUrl, "https://task.example/v1");
   assert.equal(manager.getCurrentProfile().model, "task-model");
   assert.equal(manager.getCurrentProfile().workers, 3);
+  // 没存过的服务商：协议用服务商自己的默认，思考深度为自动。
+  assert.equal(manager.getCurrentProfile().apiProtocol, "openai");
+  assert.equal(manager.getCurrentProfile().thinking, "auto");
+});
+
+test("translation profiles：Anthropic 默认 Anthropic 协议，非法值回落默认", () => {
+  const manager = createTranslationProfiles({ dialogElementsPort: { elements: () => ({}) } });
+  manager.hydrate({}, {
+    translationProvider: "anthropic",
+    translationProfiles: { anthropic: { apiProtocol: "gemini", thinking: "deep" } },
+  });
+  assert.equal(manager.getCurrentProfile().apiProtocol, "anthropic");
+  assert.equal(manager.getCurrentProfile().thinking, "auto");
 });
 
 test("translation profiles：capture / apply 往返，自定义地址记忆", () => {

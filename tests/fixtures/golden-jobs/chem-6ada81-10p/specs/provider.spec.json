@@ -48,6 +48,7 @@
   },
   "stage": "provider",
   "translation": {
+    "api_protocol": "openai",
     "base_url": "https://api.deepseek.com/v1",
     "batch_size": 1,
     "classify_batch_size": 12,
@@ -67,12 +68,15 @@
     "mode": "sci",
     "model": "deepseek-v4-flash",
     "preparation": "off",
+    "reviewer_api_protocol": "",
     "reviewer_base_url": "",
     "reviewer_credential_ref": "",
     "reviewer_model": "",
+    "reviewer_thinking": "",
     "rule_profile_name": "general_sci",
     "skip_title_translation": false,
     "start_page": 0,
+    "thinking": "auto",
     "workers": 100
   }
 }

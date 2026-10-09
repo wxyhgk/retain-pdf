@@ -7,6 +7,16 @@ use std::process::ExitCode;
 
 use anyhow::Result;
 use retain_config::providers::{model_provider, MODEL_PROVIDERS, OCR_PROVIDERS};
+
+/// 思考深度的选项(与 `providers.<id>.thinking` 一致)。
+const THINKING_OPTIONS: &[(&str, &str)] = &[
+    ("auto", "自动:能关就关,翻译用不着思考"),
+    ("off", "关闭"),
+    ("low", "浅"),
+    ("medium", "中"),
+    ("high", "深"),
+    ("max", "最深"),
+];
 use serde_json::{json, Value};
 
 use crate::context::{BackendState, Ctx};
@@ -33,12 +43,12 @@ fn choose(label: &str, options: &[(&str, &str)], current: &str) -> Result<String
     }
 }
 
-fn check_translation(ctx: &Ctx, base_url: &str, model: &str, api_key: &str, provider: &str) {
+fn check_translation(ctx: &Ctx, base_url: &str, model: &str, api_key: &str, provider: &str, protocol: &str) {
     let BackendState::Running(backend) = &ctx.backend else {
         ui::warn("后端没开,先保存不检测;打开 RetainPDF 后运行 `retainpdf doctor` 检测");
         return;
     };
-    let body = json!({ "api_key": api_key, "base_url": base_url, "model": model });
+    let body = json!({ "api_key": api_key, "base_url": base_url, "model": model, "api_protocol": protocol });
     match backend.post("/api/v1/providers/deepseek/validate-token", Some(&body)) {
         Ok(view) if view.get("ok").and_then(Value::as_bool) == Some(true) => {
             ui::ok(view.get("summary").and_then(Value::as_str).unwrap_or("翻译接口可用"));
@@ -85,9 +95,22 @@ pub fn run(ctx: &Ctx) -> Result<ExitCode> {
     let builtin = model_provider(&provider).expect("chosen from the list");
     let same = provider == current.translation.provider;
     let base = format!("providers.{provider}");
+    // 自定义服务商才问协议;内置服务商用它自己的协议(要改用 `config set providers.<id>.protocol`)。
+    let protocol = if builtin.base_url.is_empty() {
+        let current_protocol = if same { current.translation.protocol.as_str() } else { builtin.protocol };
+        choose(
+            "接口协议",
+            &[("openai", "OpenAI 格式(/chat/completions)"), ("anthropic", "Anthropic 格式(/messages)")],
+            current_protocol,
+        )?
+    } else if same {
+        current.translation.protocol.clone()
+    } else {
+        builtin.protocol.to_string()
+    };
     let base_url = if builtin.base_url.is_empty() {
         let existing = if same { current.translation.base_url.clone() } else { String::new() };
-        ui::ask("接口地址(OpenAI 兼容,如 https://llm.example.com/v1)", &existing)?
+        ui::ask("接口地址(如 https://llm.example.com/v1)", &existing)?
     } else {
         String::new()
     };
@@ -101,6 +124,11 @@ pub fn run(ctx: &Ctx) -> Result<ExitCode> {
             _ => ui::warn(format!("请输入 1 到 {} 的整数", builtin.max_workers)),
         }
     };
+    let thinking = choose(
+        "思考深度",
+        THINKING_OPTIONS,
+        if same { current.translation.thinking.as_str() } else { "auto" },
+    )?;
     let existing_key = ctx.home.settings()?.translation.api_key.filter(|_| same);
     let hint = if existing_key.is_some() { "API Key(回车保留已保存的)" } else { "API Key" };
     let typed = ui::ask_secret(hint)?;
@@ -114,13 +142,17 @@ pub fn run(ctx: &Ctx) -> Result<ExitCode> {
         ctx.home.set(&format!("{base}.model"), &model)?;
     }
     ctx.home.set(&format!("{base}.workers"), &workers.to_string())?;
+    if builtin.base_url.is_empty() {
+        ctx.home.set(&format!("{base}.protocol"), &protocol)?;
+    }
+    ctx.home.set(&format!("{base}.thinking"), &thinking)?;
     if !typed.is_empty() {
         ctx.home.set(&format!("{base}.api_key"), &typed)?;
     }
     match &api_key {
         Some(key) => {
             let effective_url = if base_url.is_empty() { builtin.base_url.to_string() } else { base_url.clone() };
-            check_translation(ctx, &effective_url, &model, key, &provider);
+            check_translation(ctx, &effective_url, &model, key, &provider, &protocol);
         }
         None => ui::warn("还没有翻译 API Key,翻译前要补上:retainpdf config set providers.<服务商>.api_key"),
     }

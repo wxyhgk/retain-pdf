@@ -44,6 +44,8 @@ def refine_config_for_render_spec(spec: RenderStageSpec) -> dict[str, Any]:
         "model": spec.params.model,
         "base_url": spec.params.base_url,
         "credential_ref": spec.params.credential_ref,
+        "api_protocol": spec.params.api_protocol,
+        "thinking": spec.params.thinking,
     }
 
 

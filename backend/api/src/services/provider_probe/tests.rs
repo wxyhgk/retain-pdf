@@ -183,3 +183,65 @@ fn is_model_rejection_ignores_unauthorized_even_when_body_mentions_model() {
         Some("no access to model"),
     ));
 }
+
+/// Anthropic 协议的探针走 `/messages` + x-api-key,不带 Bearer。
+#[tokio::test]
+async fn anthropic_probe_uses_the_messages_api() {
+    use super::deepseek::validate_deepseek_token_view;
+    use super::types::DeepSeekTokenValidationRequest;
+    use crate::config::DeepSeekRuntimeConfig;
+    use axum::http::HeaderMap;
+    use axum::routing::post;
+    use std::sync::{Arc, Mutex};
+
+    let seen: Arc<Mutex<Vec<(Option<String>, Option<String>, Option<String>, serde_json::Value)>>> =
+        Arc::default();
+    let recorder = seen.clone();
+    let router = axum::Router::new().route(
+        "/v1/messages",
+        post(move |headers: HeaderMap, axum::Json(body): axum::Json<serde_json::Value>| {
+            let recorder = recorder.clone();
+            async move {
+                let header = |name: &str| headers.get(name).and_then(|v| v.to_str().ok()).map(str::to_string);
+                recorder.lock().unwrap().push((
+                    header("x-api-key"),
+                    header("anthropic-version"),
+                    header("authorization"),
+                    body,
+                ));
+                axum::Json(serde_json::json!({"content": [{"type": "text", "text": "p"}]}))
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, router).await.unwrap();
+    });
+
+    let view = validate_deepseek_token_view(
+        DeepSeekTokenValidationRequest {
+            api_key: "sk-ant".into(),
+            base_url: format!("http://{addr}/v1"),
+            model: "claude-sonnet-5".into(),
+            api_protocol: "anthropic".into(),
+        },
+        DeepSeekRuntimeConfig {
+            default_base_url: "https://api.deepseek.com/v1".into(),
+            balance_url: String::new(),
+            probe_timeout_secs: 5,
+            allow_private_urls: true,
+        },
+    )
+    .await
+    .unwrap();
+
+    assert!(view.ok, "{}", view.summary);
+    let seen = seen.lock().unwrap();
+    let (key, version, authorization, body) = &seen[0];
+    assert_eq!(key.as_deref(), Some("sk-ant"));
+    assert_eq!(version.as_deref(), Some("2023-06-01"));
+    assert_eq!(authorization, &None);
+    assert_eq!(body["model"], "claude-sonnet-5");
+    assert_eq!(body["max_tokens"], 1);
+}

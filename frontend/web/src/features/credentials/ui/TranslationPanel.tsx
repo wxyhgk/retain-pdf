@@ -2,7 +2,9 @@ import { CREDENTIAL_DOM_IDS } from "./credentials-dom-ids.js";
 import { useCredentialsController } from "./useCredentialsController.js";
 import {
   getTranslationProviderDefinition,
+  TRANSLATION_API_PROTOCOL_OPTIONS,
   TRANSLATION_PROVIDER_DEFINITION,
+  TRANSLATION_THINKING_OPTIONS,
   TRANSLATION_PROVIDER_OPTIONS,
 } from "@/platform/config/providers.js";
 import { validationIcon } from "../domain/validation-icon.js";
@@ -120,7 +122,7 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
             defaultValue=""
             readOnly={fixedBaseUrl}
             aria-readonly={fixedBaseUrl}
-            title={fixedBaseUrl ? `${providerDefinition.label} 官方地址，由服务商选项管理` : "自定义 OpenAI 兼容 API 地址"}
+            title={fixedBaseUrl ? `${providerDefinition.label} 官方地址，由服务商选项管理` : "自定义 API 地址"}
             ref={(node) => { elementsRef.modelBaseUrlInput = node || null; }}
             onInput={() => handlers?.resetDeepSeekValidation?.()}
           />
@@ -165,6 +167,33 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
             defaultValue=""
             ref={(node) => { elementsRef.translationWorkersInput = node || null; }}
           />
+        </label>
+        <label className="credential-translation-protocol-field">
+          <span className="developer-label">接口协议</span>
+          <select
+            id={BROWSER_IDS.translationProtocol}
+            defaultValue={providerDefinition.protocol}
+            title="翻译请求用哪种接口格式。Anthropic 官方默认 Anthropic 格式，其余默认 OpenAI 格式；中转站按它支持的格式选。"
+            ref={(node) => { elementsRef.translationProtocolSelect = node || null; }}
+            onChange={() => handlers?.resetDeepSeekValidation?.()}
+          >
+            {TRANSLATION_API_PROTOCOL_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>{`${option.label}（${option.hint}）`}</option>
+            ))}
+          </select>
+        </label>
+        <label className="credential-translation-thinking-field">
+          <span className="developer-label">思考深度</span>
+          <select
+            id={BROWSER_IDS.translationThinking}
+            defaultValue="auto"
+            title="自动：能关就关，翻译一般用不着思考。调深会更慢、更贵；服务商不支持的档位会自动退回。"
+            ref={(node) => { elementsRef.translationThinkingSelect = node || null; }}
+          >
+            {TRANSLATION_THINKING_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>{option.label}</option>
+            ))}
+          </select>
         </label>
       </div>
       {providerDefinition.id === "custom" ? (

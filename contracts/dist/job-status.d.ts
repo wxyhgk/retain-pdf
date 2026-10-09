@@ -148,6 +148,22 @@ export interface PublicTranslationInput {
     reviewer_api_key?: string;
     reviewer_api_key_configured?: boolean;
     reviewer_credential_ref?: string;
+    /**
+     * TRANSLATION_API_PROTOCOLS：openai / anthropic。
+     */
+    api_protocol?: string;
+    /**
+     * TRANSLATION_THINKING_LEVELS：auto / off / low / medium / high / max。
+     */
+    thinking?: string;
+    /**
+     * 留空沿用 api_protocol。
+     */
+    reviewer_api_protocol?: string;
+    /**
+     * 留空沿用 thinking。
+     */
+    reviewer_thinking?: string;
     start_page: number;
     end_page: number;
     page_ranges: number[];

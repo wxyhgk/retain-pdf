@@ -930,6 +930,8 @@ const REFINE_PARAM_KEYS: &[&str] = &[
     "reviewer_model",
     "reviewer_base_url",
     "reviewer_credential_ref",
+    "reviewer_api_protocol",
+    "reviewer_thinking",
 ];
 
 /// 普通重渲染：即使任务配了 refine，也一律 off —— 不会每次重渲染都重新精修花钱。

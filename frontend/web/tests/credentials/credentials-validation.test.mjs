@@ -147,6 +147,7 @@ test("runDeepSeekConnectivityCheck passes injected apiPrefix and model to DeepSe
       api_key: "sk-test",
       base_url: "https://example.test/v1",
       model: "deepseek-flash",
+      api_protocol: "openai",
     },
   ]]);
 });

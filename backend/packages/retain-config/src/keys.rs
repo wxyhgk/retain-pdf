@@ -7,7 +7,7 @@
 use anyhow::{bail, Result};
 use toml_edit::Value;
 
-use crate::providers::{model_provider, MODEL_PROVIDERS, OCR_PROVIDERS};
+use crate::providers::{model_provider, API_PROTOCOLS, MODEL_PROVIDERS, OCR_PROVIDERS, THINKING_LEVELS};
 
 /// 存在哪个文件。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,6 +66,12 @@ pub fn describe_key(path: &str) -> Option<KeyInfo> {
             "审校用哪个服务商(不填就不审校)",
         ),
         ["translation", "reviewer", "model"] => info(path, Store::Config, KeyKind::Text, "审校模型(不填用该服务商的默认模型)"),
+        ["translation", "reviewer", "thinking"] => info(
+            path,
+            Store::Config,
+            KeyKind::Choice(THINKING_LEVELS.to_vec()),
+            "审校模型的思考深度(不填用该服务商的设置)",
+        ),
         ["providers", id, field] if model_provider(id).is_some() => {
             let provider = model_provider(id).expect("checked");
             match *field {
@@ -74,7 +80,7 @@ pub fn describe_key(path: &str) -> Option<KeyInfo> {
                     path,
                     Store::Config,
                     KeyKind::Url,
-                    if provider.base_url.is_empty() { "接口地址(OpenAI 兼容)" } else { "接口地址(不填用官方地址)" },
+                    if provider.base_url.is_empty() { "接口地址" } else { "接口地址(不填用官方地址)" },
                 ),
                 "workers" => info(
                     path,
@@ -83,6 +89,18 @@ pub fn describe_key(path: &str) -> Option<KeyInfo> {
                     "同时发出的请求数(并发)",
                 ),
                 "api_key" => info(path, Store::Credentials, KeyKind::Secret, &format!("{} 的 API Key", provider.label)),
+                "protocol" => info(
+                    path,
+                    Store::Config,
+                    KeyKind::Choice(API_PROTOCOLS.to_vec()),
+                    "接口协议:openai(/chat/completions)或 anthropic(/messages)",
+                ),
+                "thinking" => info(
+                    path,
+                    Store::Config,
+                    KeyKind::Choice(THINKING_LEVELS.to_vec()),
+                    "思考深度:auto(能关就关) / off / low / medium / high / max",
+                ),
                 _ => return None,
             }
         }
@@ -121,12 +139,13 @@ pub fn known_keys() -> Vec<KeyInfo> {
         "translation.batch_size",
         "translation.reviewer.provider",
         "translation.reviewer.model",
+        "translation.reviewer.thinking",
     ]
     .iter()
     .map(|s| s.to_string())
     .collect();
     for provider in MODEL_PROVIDERS {
-        for field in ["model", "base_url", "workers", "api_key"] {
+        for field in ["model", "base_url", "protocol", "thinking", "workers", "api_key"] {
             paths.push(format!("providers.{}.{field}", provider.id));
         }
     }

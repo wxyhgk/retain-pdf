@@ -54,6 +54,8 @@ export interface RunDeepSeekConnectivityCheckOptions {
   baseUrl?: string;
   /** 翻译真正要调用的模型名。不传则后端只能验 Key，验不到模型。 */
   model?: string;
+  /** openai / anthropic。 */
+  apiProtocol?: string;
   validateDeepSeekToken: (
     apiPrefix: string,
     payload: Record<string, unknown>,
@@ -169,6 +171,7 @@ export async function runDeepSeekConnectivityCheck({
   apiKey,
   baseUrl,
   model,
+  apiProtocol = "openai",
   validateDeepSeekToken,
   setDeepSeekValidationMessage,
   showResult = true,
@@ -190,6 +193,7 @@ export async function runDeepSeekConnectivityCheck({
       api_key: modelApiKey,
       base_url: modelBaseUrl,
       model: modelName,
+      api_protocol: apiProtocol,
     }));
     if (showResult) {
       setDeepSeekValidationMessage(

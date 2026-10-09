@@ -38,6 +38,9 @@ pub struct DeepSeekTokenValidationRequest {
     /// 翻译实际要调用的模型名。为空时探针只能验 Key，不能验模型。
     #[serde(default)]
     pub model: String,
+    /// 接口协议:`openai`(默认)或 `anthropic`。探针按翻译实际用的协议发请求。
+    #[serde(default)]
+    pub api_protocol: String,
 }
 
 #[derive(Debug, Serialize)]

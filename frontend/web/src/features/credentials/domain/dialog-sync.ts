@@ -27,6 +27,8 @@ export function syncCredentialDialogFields({
     modelBaseUrlInput,
     modelNameInput,
     translationWorkersInput,
+    translationProtocolSelect,
+    translationThinkingSelect,
     mathModeSelect,
   } = elementsPort.elements();
 
@@ -48,6 +50,12 @@ export function syncCredentialDialogFields({
   }
   if (translationWorkersInput) {
     translationWorkersInput.value = `${taskOptions.workers || 50}`;
+  }
+  if (translationProtocolSelect) {
+    translationProtocolSelect.value = `${taskOptions.apiProtocol || "openai"}`;
+  }
+  if (translationThinkingSelect) {
+    translationThinkingSelect.value = `${taskOptions.thinking || "auto"}`;
   }
   if (mathModeSelect) {
     mathModeSelect.value = taskOptions.mathMode === "placeholder" ? "placeholder" : "direct_typst";

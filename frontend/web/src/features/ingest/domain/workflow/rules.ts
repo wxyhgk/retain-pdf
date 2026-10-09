@@ -1,3 +1,7 @@
+import {
+  normalizeTranslationApiProtocol,
+  normalizeTranslationThinking,
+} from "@/platform/config/providers.js";
 import type { WorkflowConstants } from "./contracts.js";
 import type { WorkflowConfigDefaults } from "./developer-config.js";
 import type { WorkflowDeveloperConfig } from "./payload.js";
@@ -43,6 +47,8 @@ export function buildDeveloperConfigWithDefaults({
     baseUrl: source.baseUrl || defaultModelBaseUrl(),
     glossaryId: `${source.glossaryId || source.glossary_id || ""}`.trim(),
     workers: positiveInteger(source.workers, defaults.workers),
+    apiProtocol: normalizeTranslationApiProtocol(source.apiProtocol),
+    thinking: normalizeTranslationThinking(source.thinking),
     batchSize: positiveInteger(source.batchSize, defaults.batchSize),
     classifyBatchSize: positiveInteger(source.classifyBatchSize, defaults.classifyBatchSize),
     compileWorkers: positiveInteger(source.compileWorkers, defaults.compileWorkers),

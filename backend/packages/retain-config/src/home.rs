@@ -23,12 +23,16 @@ const CONFIG_TEMPLATE: &str = r#"# RetainPDF 配置。命令行 `retainpdf confi
 provider = "deepseek"
 
 # 各服务商的设置;不写就用内置默认。workers 是同时发出的请求数(并发)。
+# thinking 是思考深度:auto(默认,能关就关) / off / low / medium / high / max。
 # [providers.deepseek]
 # model = "deepseek-flash"
 # workers = 50
+# thinking = "auto"
 #
+# protocol 是接口协议:openai(/chat/completions,默认)或 anthropic(/messages)。
 # [providers.custom]
 # base_url = "https://llm.example.com/v1"
+# protocol = "openai"
 # model = "my-model"
 # workers = 5
 

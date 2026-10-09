@@ -156,6 +156,10 @@ pub(crate) fn write_translate_stage_spec(
             "reviewer_model": request.translation.reviewer_model,
             "reviewer_base_url": request.translation.reviewer_base_url,
             "reviewer_credential_ref": reviewer_credential_ref_for_stage(request),
+            "api_protocol": request.translation.api_protocol,
+            "thinking": request.translation.thinking,
+            "reviewer_api_protocol": request.translation.reviewer_api_protocol,
+            "reviewer_thinking": request.translation.reviewer_thinking,
             // 这里曾经还写 4 个 render_prewarm_* key（输出路径 / render_mode /
             // pdf_compress_dpi / source_cleanup_strategy）。阶段解耦之后 render
             // prewarm 整体挪进了 render 阶段（见 translate_only_pipeline 里那段
@@ -202,6 +206,8 @@ fn render_refine_params(request: &ResolvedJobSpec, refine: &RenderRefine) -> ser
         "reviewer_model": request.translation.reviewer_model,
         "reviewer_base_url": request.translation.reviewer_base_url,
         "reviewer_credential_ref": reviewer_credential_ref_for_stage(request),
+        "reviewer_api_protocol": request.translation.reviewer_api_protocol,
+        "reviewer_thinking": request.translation.reviewer_thinking,
     })
 }
 
@@ -254,6 +260,8 @@ pub(crate) fn write_render_stage_spec(
             "model": request.translation.model,
             "base_url": request.translation.base_url,
             "credential_ref": credential_ref,
+            "api_protocol": request.translation.api_protocol,
+            "thinking": request.translation.thinking,
             "refine": render_refine_params(request, refine),
         },
     });
@@ -377,6 +385,10 @@ pub(crate) fn write_provider_stage_spec(
             "reviewer_model": request.translation.reviewer_model,
             "reviewer_base_url": request.translation.reviewer_base_url,
             "reviewer_credential_ref": reviewer_credential_ref_for_stage(request),
+            "api_protocol": request.translation.api_protocol,
+            "thinking": request.translation.thinking,
+            "reviewer_api_protocol": request.translation.reviewer_api_protocol,
+            "reviewer_thinking": request.translation.reviewer_thinking,
         },
         "render": {
             "render_mode": request.render.render_mode,

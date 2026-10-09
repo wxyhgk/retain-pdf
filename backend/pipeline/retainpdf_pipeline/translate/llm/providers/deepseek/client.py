@@ -12,6 +12,7 @@ import requests
 from retainpdf_pipeline.foundation.shared.local_env import get_secret
 from retainpdf_pipeline.translate.artifacts import get_active_translation_run_diagnostics
 from retainpdf_pipeline.translate.artifacts import infer_stage_from_request_label
+from retainpdf_pipeline.translate.llm.shared import model_wire
 from retainpdf_pipeline.translate.llm.shared import upstream_resilience as _resilience
 from retainpdf_pipeline.translate.llm.providers.deepseek import transport
 from retainpdf_pipeline.translate.llm.shared.prompt_building import build_messages
@@ -76,9 +77,9 @@ def _body_bytes(body: dict[str, Any]) -> int:
     return len(json.dumps(body, ensure_ascii=False).encode("utf-8"))
 
 
-def _request_journal_key(*, base_url: str, body: dict[str, Any]) -> str:
+def _request_journal_key(*, endpoint: str, body: dict[str, Any]) -> str:
     canonical = json.dumps(
-        {"endpoint": chat_completions_url(base_url), "body": body},
+        {"endpoint": endpoint, "body": body},
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
@@ -172,22 +173,8 @@ def _fallback_response_format(response_format: dict[str, Any] | None) -> dict[st
 
 
 def _thinking_policy(*, model: str, base_url: str) -> dict[str, Any]:
-    """翻译不需要思考这一轮额外生成。只对实测验证过的「模型 + 服务商」加字段，其余原样。
-
-    - DashScope 的 qwen3.8-flash 默认思考：`enable_thinking: false` 关掉。
-    - 智谱的 glm-5.3-flash 始终思考、**不能关**（传 `thinking: {type: disabled}` 返回 400
-      「该模型始终思考，不支持关闭思考；请使用 low、high 或 max」），只能调强度。默认是
-      max：4 段论文段落实测每段 6～9 秒、思考 270～513 token；`reasoning_effort: low`
-      下每段 1.6～3.5 秒、思考 token 全为 0，译文同样正确。思考还会吃掉 max_tokens ——
-      给小了直接返回空译文。
-    """
-    name = model.strip().lower()
-    host = _hostname_from_base_url(base_url)
-    if name == "qwen3.8-flash" and host == "dashscope.aliyuncs.com":
-        return {"enable_thinking": False}
-    if name == "glm-5.3-flash" and host == "open.bigmodel.cn":
-        return {"reasoning_effort": "low"}
-    return {}
+    """「自动」档的思考字段（见 ``model_wire._auto_openai_thinking``）。"""
+    return model_wire.openai_thinking_candidates(model=model, base_url=base_url, thinking="auto")[0]
 
 
 def should_use_stream_responses() -> bool:
@@ -290,7 +277,14 @@ def request_chat_content(
     timeout: int = 120,
     request_label: str = "",
     max_attempts: int | None = None,
+    protocol: str | None = None,
+    thinking: str | None = None,
 ) -> str:
+    """发一次对话请求，返回模型输出的文本。
+
+    ``protocol`` / ``thinking`` 不给时按阶段入口登记的连接配置（``model_wire.register_connection``），
+    都没有就是 OpenAI 协议 + 自动思考，和以前完全一样。
+    """
     from retainpdf_pipeline.translate.llm.shared.executor_context import execution_enabled, runtime
     if execution_enabled():
         # Rust owns provider policy, deadlines, concurrency and network retries.
@@ -307,17 +301,41 @@ def request_chat_content(
         active_response_format = _fallback_response_format(active_response_format)
     attempted_schema_fallback = False
     accumulated_rate_limit_wait = 0
-    body: dict[str, Any] = {
-        "model": model,
-        "temperature": temperature,
-        "messages": messages,
-    }
-    body.update(_thinking_policy(model=model, base_url=base_url))
-    use_stream = should_use_stream_responses()
-    if use_stream:
-        body["stream"] = True
-    if active_response_format is not None:
-        body["response_format"] = active_response_format
+    profile = model_wire.resolve_profile(base_url=base_url, model=model, protocol=protocol, thinking=thinking)
+    anthropic = profile.protocol == model_wire.PROTOCOL_ANTHROPIC
+    if anthropic:
+        endpoint = model_wire.anthropic_messages_url(base_url)
+        headers = model_wire.anthropic_headers(api_key)
+        thinking_candidates = model_wire.anthropic_thinking_candidates(profile.thinking)
+        use_stream = False
+    else:
+        endpoint = chat_completions_url(base_url)
+        headers = build_headers(api_key)
+        thinking_candidates = model_wire.openai_thinking_candidates(
+            model=model, base_url=base_url, thinking=profile.thinking
+        )
+        use_stream = should_use_stream_responses()
+    thinking_index = 0
+
+    def build_body() -> dict[str, Any]:
+        thinking_fields = thinking_candidates[thinking_index]
+        if anthropic:
+            return model_wire.anthropic_body(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                response_format=response_format,
+                thinking_fields=thinking_fields,
+            )
+        built: dict[str, Any] = {"model": model, "temperature": temperature, "messages": messages}
+        built.update(thinking_fields)
+        if use_stream:
+            built["stream"] = True
+        if active_response_format is not None:
+            built["response_format"] = active_response_format
+        return built
+
+    body = build_body()
 
     attempt_limit = max(1, int(max_attempts or HTTP_RETRY_ATTEMPTS))
     dns_retry_limit = max(attempt_limit, DNS_RETRY_MIN_ATTEMPTS)
@@ -355,7 +373,7 @@ def request_chat_content(
                 try:
                     diagnostics.record_request_dispatch(
                         diagnostics_request_id,
-                        request_key=_request_journal_key(base_url=base_url, body=body),
+                        request_key=_request_journal_key(endpoint=endpoint, body=body),
                     )
                 except BaseException:  # a request must never leave without its durable dispatch record
                     elapsed_ms = int(round((time.perf_counter() - started) * 1000))
@@ -376,12 +394,12 @@ def request_chat_content(
                     raise
             if request_label:
                 print(
-                    f"{request_label}: http attempt {attempt}/{attempt_limit} -> {model} {chat_completions_url(base_url)} timeout={timeout}s stream={use_stream}",
+                    f"{request_label}: http attempt {attempt}/{attempt_limit} -> {model} {endpoint} timeout={timeout}s stream={use_stream}",
                     flush=True,
                 )
             response = get_session().post(
-                chat_completions_url(base_url),
-                headers=build_headers(api_key),
+                endpoint,
+                headers=headers,
                 json=body,
                 timeout=timeout,
                 stream=use_stream,
@@ -397,6 +415,10 @@ def request_chat_content(
                 content, usage = _read_streaming_chat_content(response)
                 if not content.strip():
                     raise ValueError("Stream response did not contain any content.")
+            elif anthropic:
+                data = response.json()
+                content = model_wire.anthropic_content(data)
+                usage = model_wire.anthropic_usage(data)
             else:
                 data: dict[str, Any] = response.json()
                 content = data["choices"][0]["message"]["content"]
@@ -446,8 +468,34 @@ def request_chat_content(
                     f"{request_label}: http failed attempt {attempt}/{attempt_limit} after {elapsed:.2f}s: {type(exc).__name__}: {exc}",
                     flush=True,
                 )
+            rejected_400 = (
+                isinstance(exc, requests.HTTPError)
+                and exc.response is not None
+                and exc.response.status_code == 400
+            )
+            schema_fallback_possible = (
+                not anthropic
+                and not attempted_schema_fallback
+                and _supports_response_schema_fallback(active_response_format)
+            )
             if (
-                not attempted_schema_fallback
+                rejected_400
+                and thinking_index + 1 < len(thinking_candidates)
+                and (model_wire.looks_like_thinking_rejection(str(exc)) or not schema_fallback_possible)
+            ):
+                # 服务商不认这组思考字段：退到下一组（最后一组是什么都不加）。
+                thinking_index += 1
+                body = build_body()
+                if request_label:
+                    print(
+                        f"{request_label}: thinking fields rejected after 400, retrying with "
+                        f"{json.dumps(thinking_candidates[thinking_index], ensure_ascii=False) or '{}'}",
+                        flush=True,
+                    )
+                continue
+            if (
+                not anthropic
+                and not attempted_schema_fallback
                 and _supports_response_schema_fallback(active_response_format)
                 and isinstance(exc, requests.HTTPError)
                 and exc.response is not None

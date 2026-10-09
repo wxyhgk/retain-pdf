@@ -33,7 +33,12 @@ pub(crate) async fn validate_deepseek_token_view(
         return Err(AppError::bad_request("api_key is required"));
     }
 
-    let base_url = normalize_deepseek_base_url(&payload.base_url, &runtime);
+    let anthropic = payload.api_protocol.trim().eq_ignore_ascii_case("anthropic");
+    let base_url = if anthropic && payload.base_url.trim().is_empty() {
+        ANTHROPIC_DEFAULT_BASE_URL.to_string()
+    } else {
+        normalize_deepseek_base_url(&payload.base_url, &runtime)
+    };
     validate_provider_base_url(&base_url, runtime.allow_private_urls)?;
     let checked_at = now_iso();
     let client = reqwest::Client::builder()
@@ -44,7 +49,9 @@ pub(crate) async fn validate_deepseek_token_view(
     let model = payload.model.trim();
     if model.is_empty() {
         let models_url = format!("{}/models", base_url.trim_end_matches('/'));
-        let response = client.get(&models_url).bearer_auth(api_key).send().await;
+        let request = client.get(&models_url);
+        let request = if anthropic { anthropic_auth(request, api_key) } else { request.bearer_auth(api_key) };
+        let response = request.send().await;
         let view = match response {
             Ok(resp) => classify_deepseek_probe_response(resp, base_url.clone(), checked_at).await,
             Err(err) => classify_deepseek_probe_transport_error(err, base_url.clone(), checked_at),
@@ -52,19 +59,26 @@ pub(crate) async fn validate_deepseek_token_view(
         return Ok(view);
     }
 
-    let chat_url = format!("{}/chat/completions", base_url.trim_end_matches('/'));
-    let body = serde_json::json!({
-        "model": model,
-        "messages": [{"role": "user", "content": "ping"}],
-        "max_tokens": 1,
-        "stream": false,
-    });
-    let response = client
-        .post(&chat_url)
-        .bearer_auth(api_key)
-        .json(&body)
-        .send()
-        .await;
+    // Anthropic Messages API:`/messages` + x-api-key,max_tokens 必填;其余同 OpenAI 的最小请求。
+    let request = if anthropic {
+        let url = format!("{}/messages", base_url.trim_end_matches('/'));
+        let body = serde_json::json!({
+            "model": model,
+            "messages": [{"role": "user", "content": "ping"}],
+            "max_tokens": 1,
+        });
+        anthropic_auth(client.post(&url), api_key).json(&body)
+    } else {
+        let chat_url = format!("{}/chat/completions", base_url.trim_end_matches('/'));
+        let body = serde_json::json!({
+            "model": model,
+            "messages": [{"role": "user", "content": "ping"}],
+            "max_tokens": 1,
+            "stream": false,
+        });
+        client.post(&chat_url).bearer_auth(api_key).json(&body)
+    };
+    let response = request.send().await;
     let view = match response {
         Ok(resp) => {
             classify_deepseek_chat_probe_response(resp, model, base_url.clone(), checked_at).await
@@ -235,6 +249,13 @@ pub(crate) async fn query_deepseek_balance_view(
     };
 
     Ok(view)
+}
+
+const ANTHROPIC_DEFAULT_BASE_URL: &str = "https://api.anthropic.com/v1";
+const ANTHROPIC_VERSION: &str = "2023-06-01";
+
+fn anthropic_auth(request: reqwest::RequestBuilder, api_key: &str) -> reqwest::RequestBuilder {
+    request.header("x-api-key", api_key).header("anthropic-version", ANTHROPIC_VERSION)
 }
 
 fn normalize_deepseek_base_url(raw: &str, runtime: &DeepSeekRuntimeConfig) -> String {

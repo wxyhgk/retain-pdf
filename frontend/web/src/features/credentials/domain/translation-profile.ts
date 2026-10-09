@@ -2,6 +2,10 @@
 
 import {
   getTranslationProviderDefinition,
+  normalizeTranslationApiProtocol,
+  normalizeTranslationThinking,
+  type TranslationApiProtocol,
+  type TranslationThinking,
 } from "@/platform/config/providers.js";
 
 export type TranslationProfile = {
@@ -9,6 +13,9 @@ export type TranslationProfile = {
   baseUrl: string;
   model: string;
   workers: number;
+  /** 接口协议；默认用服务商自己的（Anthropic 是 anthropic，其余 openai）。 */
+  apiProtocol: TranslationApiProtocol;
+  thinking: TranslationThinking;
 };
 
 export function translationConfigError(baseUrl = "", model = "") {
@@ -46,6 +53,8 @@ export function translationProfileDefaults(providerId = "custom"): TranslationPr
     baseUrl: definition.baseUrl || "",
     model: definition.defaultModel || "",
     workers: Number(definition.defaultWorkers) || 5,
+    apiProtocol: normalizeTranslationApiProtocol(definition.protocol),
+    thinking: "auto",
   };
 }
 
@@ -66,6 +75,8 @@ export function normalizeTranslationProfile(
     workers: Number.isInteger(workers) && workers > 0 && workers <= maxWorkers
       ? workers
       : defaults.workers,
+    apiProtocol: normalizeTranslationApiProtocol(candidate.apiProtocol, defaults.apiProtocol),
+    thinking: normalizeTranslationThinking(candidate.thinking),
   };
 }
 

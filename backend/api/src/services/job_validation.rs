@@ -7,7 +7,8 @@ use std::path::Path;
 use crate::models::domain::{
     OcrProviderKind, UploadRecord, RENDER_ENGINES, SOURCE_CLEANUP_STRATEGIES, TRANSLATION_CONTEXT_MODES,
     TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES, TRANSLATION_MEMORY_MODES,
-    TRANSLATION_PREPARATION_MODES, TRANSLATION_REFINE_MODES,
+    TRANSLATION_PREPARATION_MODES, TRANSLATION_REFINE_MODES, TRANSLATION_API_PROTOCOLS,
+    TRANSLATION_THINKING_LEVELS,
 };
 use crate::models::request::CreateJobInput;
 use crate::ocr_provider::{
@@ -211,6 +212,31 @@ pub fn validate_translation_modes(input: &CreateJobInput) -> Result<(), AppError
         &input.translation.refine,
         TRANSLATION_REFINE_MODES,
     )?;
+    validate_allowed_value(
+        "translation.api_protocol",
+        &input.translation.api_protocol,
+        TRANSLATION_API_PROTOCOLS,
+    )?;
+    validate_allowed_value(
+        "translation.thinking",
+        &input.translation.thinking,
+        TRANSLATION_THINKING_LEVELS,
+    )?;
+    // 审校的两项留空表示沿用翻译模型的设置。
+    if !input.translation.reviewer_api_protocol.is_empty() {
+        validate_allowed_value(
+            "translation.reviewer_api_protocol",
+            &input.translation.reviewer_api_protocol,
+            TRANSLATION_API_PROTOCOLS,
+        )?;
+    }
+    if !input.translation.reviewer_thinking.is_empty() {
+        validate_allowed_value(
+            "translation.reviewer_thinking",
+            &input.translation.reviewer_thinking,
+            TRANSLATION_THINKING_LEVELS,
+        )?;
+    }
     for (field, value) in [
         ("translation.refine_max_items", input.translation.refine_max_items),
         ("translation.refine_max_tokens", input.translation.refine_max_tokens),

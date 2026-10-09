@@ -118,8 +118,14 @@ def _coerce_result(value: Any) -> ChatResult:
     return ChatResult(content=str(value or ""), usage=None)
 
 
-def provider_chat_fn(*, model: str, base_url: str, api_key: str) -> ChatFn:
-    """真实模型调用。api_key 只在闭包里，不进报告、不打印。"""
+def provider_chat_fn(
+    *, model: str, base_url: str, api_key: str, protocol: str = "", thinking: str = ""
+) -> ChatFn:
+    """真实模型调用。api_key 只在闭包里，不进报告、不打印。
+
+    ``protocol`` / ``thinking`` 显式传给 ``request_chat_content``：审校和翻译可能是同一个模型、
+    不同思考深度，不能靠按「地址 + 模型」登记的那张表。空串表示按登记表。
+    """
 
     def _call(messages: list[dict[str, str]], *, purpose: str, response_format: dict | None = None) -> ChatResult:
         diagnostics = TranslationRunDiagnostics(
@@ -144,6 +150,8 @@ def provider_chat_fn(*, model: str, base_url: str, api_key: str) -> ChatFn:
                 timeout=REFINE_REQUEST_TIMEOUT_SECS,
                 request_label=f"refine-{purpose}",
                 max_attempts=REFINE_REQUEST_MAX_ATTEMPTS,
+                protocol=protocol or None,
+                thinking=thinking or None,
             )
         usage = dict(diagnostics.build_summary().get("token_usage") or {})
         usage.pop("requests_with_usage", None)

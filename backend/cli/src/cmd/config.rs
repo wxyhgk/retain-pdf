@@ -64,6 +64,8 @@ fn connection_rows(settings: &Settings, prefix: &str, conn: &ModelConnection) ->
             if conn.base_url.is_empty() { "未填".into() } else { conn.base_url.clone() },
             source_label(settings, &format!("{prefix}.base_url")),
         ),
+        (format!("{prefix}.protocol"), conn.protocol.clone(), source_label(settings, &format!("{prefix}.protocol"))),
+        (format!("{prefix}.thinking"), conn.thinking.clone(), source_label(settings, &format!("{prefix}.thinking"))),
         (format!("{prefix}.workers"), conn.workers.to_string(), source_label(settings, &format!("{prefix}.workers"))),
         (format!("{prefix}.api_key"), secret_label(&conn.api_key), source_label(settings, &format!("{prefix}.api_key"))),
     ]

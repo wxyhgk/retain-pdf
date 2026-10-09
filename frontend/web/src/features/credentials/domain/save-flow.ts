@@ -149,6 +149,8 @@ export function createBrowserCredentialSaveFlow({
       baseUrl: values.modelBaseUrl,
       model: values.modelName,
       workers: values.translationWorkers,
+      apiProtocol: values.translationProtocol,
+      thinking: values.translationThinking,
     });
     const nextTaskOptions = {
       ...buildTaskOptionsFromDialogValues({

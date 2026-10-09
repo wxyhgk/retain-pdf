@@ -25,6 +25,11 @@ pub const TRANSLATION_PREPARATION_MODES: &[&str] = &["off", "artifacts_only", "t
 /// `review_only` 只挑错出报告，`review_and_fix` 再对 critical/major 做定点修改。
 /// 默认 `off`：渲染阶段的行为与没有这个字段时完全一致。
 pub const TRANSLATION_REFINE_MODES: &[&str] = &["off", "review_only", "review_and_fix"];
+/// 模型接口协议。权威来源是 Python 的 `model_wire.PROTOCOLS`。
+/// `openai`：`/chat/completions` + Bearer；`anthropic`：`/messages` + x-api-key。
+pub const TRANSLATION_API_PROTOCOLS: &[&str] = &["openai", "anthropic"];
+/// 思考深度。权威来源是 Python 的 `model_wire.THINKING_LEVELS`。`auto` 保持以前的行为。
+pub const TRANSLATION_THINKING_LEVELS: &[&str] = &["auto", "off", "low", "medium", "high", "max"];
 /// 精修的成本上限默认值（0 = 不限）。Python 侧读 render.spec.json 的 `params.refine`。
 pub const DEFAULT_TRANSLATION_REFINE_MAX_ITEMS: i64 = 300;
 pub const DEFAULT_TRANSLATION_REFINE_MAX_TOKENS: i64 = 400_000;
@@ -141,6 +146,18 @@ pub struct TranslationInput {
     pub reviewer_api_key: String,
     #[serde(default)]
     pub reviewer_credential_ref: String,
+    /// 翻译模型接口的协议，见 [`TRANSLATION_API_PROTOCOLS`]。
+    #[serde(default = "default_translation_api_protocol")]
+    pub api_protocol: String,
+    /// 翻译模型的思考深度，见 [`TRANSLATION_THINKING_LEVELS`]。
+    #[serde(default = "default_translation_thinking")]
+    pub thinking: String,
+    /// 审校模型的协议；空 = 沿用 `api_protocol`。
+    #[serde(default)]
+    pub reviewer_api_protocol: String,
+    /// 审校模型的思考深度；空 = 沿用 `thinking`。
+    #[serde(default)]
+    pub reviewer_thinking: String,
     #[serde(default)]
     pub start_page: i64,
     #[serde(default = "default_end_page")]
@@ -188,6 +205,10 @@ impl Default for TranslationInput {
             reviewer_base_url: String::new(),
             reviewer_api_key: String::new(),
             reviewer_credential_ref: String::new(),
+            api_protocol: default_translation_api_protocol(),
+            thinking: default_translation_thinking(),
+            reviewer_api_protocol: String::new(),
+            reviewer_thinking: String::new(),
             start_page: 0,
             end_page: default_end_page(),
             page_ranges: Vec::new(),
@@ -212,6 +233,14 @@ pub fn default_translation_memory_mode() -> String {
 
 pub fn default_translation_preparation_mode() -> String {
     "off".to_string()
+}
+
+pub fn default_translation_api_protocol() -> String {
+    "openai".to_string()
+}
+
+pub fn default_translation_thinking() -> String {
+    "auto".to_string()
 }
 
 pub fn default_translation_refine_mode() -> String {
@@ -282,6 +311,31 @@ mod allowed_value_tests {
         }
     }
 
+    const MODEL_WIRE_PY: &str =
+        include_str!("../../../../../pipeline/retainpdf_pipeline/translate/llm/shared/model_wire.py");
+
+    /// 从 `NAME = ("a", "b")` 抠出元组里的字符串。
+    fn python_tuple(name: &str) -> BTreeSet<String> {
+        let start = MODEL_WIRE_PY
+            .find(&format!("\n{name} = ("))
+            .unwrap_or_else(|| panic!("model_wire.py 里找不到 {name} = (...) —— 写法变了"));
+        let body = &MODEL_WIRE_PY[start + name.len() + 5..];
+        let close = body.find(')').expect("元组没闭合");
+        let set: BTreeSet<String> = body[..close]
+            .split(',')
+            .map(|item| item.trim().trim_matches('"').to_string())
+            .filter(|item| !item.is_empty())
+            .collect();
+        assert!(!set.is_empty(), "{name} 解析出来是空集");
+        set
+    }
+
+    #[test]
+    fn protocol_and_thinking_match_python_model_wire() {
+        assert_eq!(rust_set(TRANSLATION_API_PROTOCOLS), python_tuple("PROTOCOLS"));
+        assert_eq!(rust_set(TRANSLATION_THINKING_LEVELS), python_tuple("THINKING_LEVELS"));
+    }
+
     /// 每个字段的默认值必须在自己的允许值里,否则「什么都不填」会被自己的校验拒掉。
     #[test]
     fn every_default_is_an_allowed_value() {
@@ -297,6 +351,8 @@ mod allowed_value_tests {
                 "preparation",
             ),
             (&input.refine, TRANSLATION_REFINE_MODES, "refine"),
+            (&input.api_protocol, TRANSLATION_API_PROTOCOLS, "api_protocol"),
+            (&input.thinking, TRANSLATION_THINKING_LEVELS, "thinking"),
         ] {
             assert!(
                 allowed.contains(&value.as_str()),

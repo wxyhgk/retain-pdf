@@ -1,3 +1,8 @@
+import {
+  normalizeTranslationApiProtocol,
+  normalizeTranslationThinking,
+} from "@/platform/config/providers.js";
+
 
 /** Values read from the browser credential dialog inputs. */
 export interface CredentialDialogValues {
@@ -7,6 +12,8 @@ export interface CredentialDialogValues {
   modelBaseUrl: string;
   modelName: string;
   translationWorkers: string;
+  translationProtocol?: string;
+  translationThinking?: string;
   mathMode: string;
   ocrCredentialRef?: string;
   translationCredentialRef?: string;
@@ -19,6 +26,8 @@ export interface CredentialDialogElementsLike {
   modelBaseUrlInput?: { value?: string } | null;
   modelNameInput?: { value?: string } | null;
   translationWorkersInput?: { value?: string } | null;
+  translationProtocolSelect?: { value?: string } | null;
+  translationThinkingSelect?: { value?: string } | null;
   mathModeSelect?: { value?: string } | null;
 }
 
@@ -35,7 +44,7 @@ export interface BuildBrowserCredentialConfigOptions {
 }
 
 export interface BuildTaskOptionsFromDialogValuesOptions {
-  values: Pick<CredentialDialogValues, "modelName" | "modelBaseUrl" | "translationWorkers" | "mathMode">;
+  values: Pick<CredentialDialogValues, "modelName" | "modelBaseUrl" | "translationWorkers" | "translationProtocol" | "translationThinking" | "mathMode">;
   defaultModelBaseUrl?: () => string;
 }
 
@@ -49,6 +58,8 @@ export function readCredentialDialogValues({
     modelBaseUrlInput,
     modelNameInput,
     translationWorkersInput,
+    translationProtocolSelect,
+    translationThinkingSelect,
     mathModeSelect,
   } = elementsPort.elements();
   return {
@@ -58,6 +69,8 @@ export function readCredentialDialogValues({
     modelBaseUrl: modelBaseUrlInput?.value?.trim() || "",
     modelName: modelNameInput?.value?.trim() || "",
     translationWorkers: translationWorkersInput?.value?.trim() || "",
+    translationProtocol: translationProtocolSelect?.value || "",
+    translationThinking: translationThinkingSelect?.value || "",
     mathMode: mathModeSelect?.value || "direct_typst",
   };
 }
@@ -85,6 +98,8 @@ export function buildTaskOptionsFromDialogValues({
     model: values.modelName,
     baseUrl: values.modelBaseUrl || defaultModelBaseUrl?.() || "",
     workers: Number(values.translationWorkers),
+    apiProtocol: normalizeTranslationApiProtocol(values.translationProtocol),
+    thinking: normalizeTranslationThinking(values.translationThinking),
     mathMode: values.mathMode,
     translateTitles: true,
   };

@@ -16,7 +16,7 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 
 const MAPPED_TOP_LEVEL = ["ocrProvider", "paddleToken", "mineruToken", "modelApiKey", "model", "baseUrl"];
-const MAPPED_DEVELOPER = ["translationProvider", "translationProfiles", "model", "baseUrl", "workers"];
+const MAPPED_DEVELOPER = ["translationProvider", "translationProfiles", "model", "baseUrl", "workers", "apiProtocol", "thinking"];
 
 function retainpdfHomeDir(env = process.env) {
   const custom = `${env.RETAINPDF_HOME || ""}`.trim();
@@ -58,6 +58,8 @@ function overlayExport(base, exported) {
       baseUrl: provider.base_url || "",
       model: provider.model || "",
       workers: Number(provider.workers) || 1,
+      apiProtocol: provider.protocol || "openai",
+      thinking: provider.thinking || "auto",
     };
   }
   const tokens = exported?.ocr?.tokens || {};
@@ -76,6 +78,8 @@ function overlayExport(base, exported) {
       model: translation.model || "",
       baseUrl: translation.base_url || "",
       workers: Number(translation.workers) || 1,
+      apiProtocol: translation.protocol || "openai",
+      thinking: translation.thinking || "auto",
     },
   };
 }
@@ -96,6 +100,8 @@ function changesFromDesktop(config, known) {
     if (!current.model && (developer.model || config.model)) current.model = developer.model || config.model;
     if (!current.baseUrl && (developer.baseUrl || config.baseUrl)) current.baseUrl = developer.baseUrl || config.baseUrl;
     if (!current.workers && developer.workers) current.workers = developer.workers;
+    if (!current.apiProtocol && developer.apiProtocol) current.apiProtocol = developer.apiProtocol;
+    if (!current.thinking && developer.thinking) current.thinking = developer.thinking;
     profiles[provider] = current;
   }
   for (const [id, profile] of Object.entries(profiles)) {
@@ -103,6 +109,11 @@ function changesFromDesktop(config, known) {
     changes[`providers.${id}.model`] = `${profile.model || ""}`.trim() || null;
     changes[`providers.${id}.workers`] = Number(profile.workers) > 0 ? String(Number(profile.workers)) : null;
     changes[`providers.${id}.api_key`] = `${profile.apiKey || ""}`.trim() || null;
+    // 等于内置默认时 ~/.retainpdf 那边会自己删掉这一项；没填就清掉、回到默认。
+    changes[`providers.${id}.protocol`] = ["openai", "anthropic"].includes(profile.apiProtocol) ? profile.apiProtocol : null;
+    changes[`providers.${id}.thinking`] = ["auto", "off", "low", "medium", "high", "max"].includes(profile.thinking)
+      ? profile.thinking
+      : null;
     if (id === "custom") {
       changes["providers.custom.base_url"] = `${profile.baseUrl || ""}`.trim() || null;
     }

@@ -20,10 +20,16 @@ provider = "deepseek"        # deepseek / qwen / openai / anthropic / zhipu / cu
 [providers.deepseek]         # 每个服务商一张表，不写用内置默认
 model = "deepseek-flash"
 workers = 50                 # 并发
+thinking = "auto"            # 思考深度：auto / off / low / medium / high / max
 
 [providers.custom]
 base_url = "https://llm.example.com/v1"
+protocol = "openai"          # 接口协议：openai（/chat/completions）/ anthropic（/messages）
 model = "my-model"
+
+[translation.reviewer]       # 审校（精修挑错）用的模型，不写就用翻译模型
+provider = "anthropic"
+thinking = "high"            # 可以和翻译用同一家、不同的思考深度
 
 [ocr]
 provider = "paddle"          # paddle / mineru
@@ -45,7 +51,8 @@ paddle_token = "..."
 ```
 
 生效顺序：命令行参数 > 环境变量 > 文件 > 内置默认。环境变量见 `retainpdf config keys`
-（如 `RETAINPDF_TRANSLATION_API_KEY`、`RETAINPDF_TRANSLATION_WORKERS`、`RETAINPDF_DATA_DIR`）。
+（如 `RETAINPDF_TRANSLATION_API_KEY`、`RETAINPDF_TRANSLATION_WORKERS`、`RETAINPDF_TRANSLATION_PROTOCOL`、
+`RETAINPDF_TRANSLATION_THINKING`、`RETAINPDF_DATA_DIR`）。Anthropic 默认用 anthropic 协议，其余服务商默认 openai。
 `retainpdf config show` 列出每一项的生效值和来源，密钥只显示末四位。
 
 能配哪些项、怎么校验、存哪个文件，由 `retain-config` 的配置项表（`keys.rs`）统一决定。
