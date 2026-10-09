@@ -3,7 +3,9 @@ resolver = "2"
 members = [
   "database/retain-db",
   "backend/api",
+  "backend/cli",
   "backend/jobs",
+  "backend/packages/retain-config",
   "backend/packages/retain-core",
   "backend/packages/retain-data",
   "backend/packages/retain-jobs",

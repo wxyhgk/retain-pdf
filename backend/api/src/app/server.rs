@@ -80,6 +80,7 @@ async fn serve_with_shutdown(
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     let simple_listener = tokio::net::TcpListener::bind(simple_addr).await?;
+    let runtime_record = write_runtime_record(&config, listener.local_addr()?);
 
     let shutdown_signal = Arc::new(tokio::sync::Notify::new());
     let shutdown_waiter = shutdown_signal.clone();
@@ -120,7 +121,11 @@ async fn serve_with_shutdown(
     let simple_server = axum::serve(simple_listener, simple_app)
         .with_graceful_shutdown(async move { shutdown_signal.notified().await });
 
-    tokio::try_join!(full_server, simple_server)?;
+    let served = tokio::try_join!(full_server, simple_server);
+    if let Some(home) = runtime_record {
+        let _ = home.clear_backend_runtime(std::process::id());
+    }
+    served?;
     if let Some(handle) = ai_supervisor_handle {
         let _ = handle.await;
     }
@@ -128,6 +133,37 @@ async fn serve_with_shutdown(
         let _ = handle.await;
     }
     Ok(())
+}
+
+/// 记下正在运行的后端(`~/.retainpdf/run/backend.json`),命令行 `retainpdf` 靠它找到后端。
+/// 只在 `RUST_API_WRITE_RUNTIME_FILE=1` 时写(桌面版、开发脚本打开):测试和别的部署起的后端
+/// 不该改用户目录里的东西。
+fn write_runtime_record(config: &AppConfig, bound: SocketAddr) -> Option<retain_config::ConfigHome> {
+    if std::env::var("RUST_API_WRITE_RUNTIME_FILE").as_deref() != Ok("1") {
+        return None;
+    }
+    let home = match retain_config::ConfigHome::locate() {
+        Ok(home) => home,
+        Err(error) => {
+            tracing::warn!("runtime record skipped: {error:#}");
+            return None;
+        }
+    };
+    let host = if bound.ip().is_unspecified() { "127.0.0.1".to_string() } else { bound.ip().to_string() };
+    let record = retain_config::BackendRuntime {
+        api_base: format!("http://{host}:{}", bound.port()),
+        api_key: config.api_keys.iter().min().cloned().unwrap_or_default(),
+        data_dir: config.data_root.to_string_lossy().to_string(),
+        pid: std::process::id(),
+        started_at: crate::models::domain::now_iso(),
+    };
+    match home.write_backend_runtime(&record) {
+        Ok(()) => Some(home),
+        Err(error) => {
+            tracing::warn!("runtime record not written: {error:#}");
+            None
+        }
+    }
 }
 
 pub async fn run_servers(config: AppConfig) -> Result<()> {

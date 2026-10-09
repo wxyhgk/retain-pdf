@@ -12,6 +12,7 @@ build = "build.rs"
 [dependencies]
 retain-core = { path = "../packages/retain-core" }
 retain-data = { path = "../packages/retain-data" }
+retain-config = { path = "../packages/retain-config" }
 retain-jobs = { path = "../packages/retain-jobs" }
 retain-proc = { path = "../packages/retain-proc" }
 axum = { version = "0.7", features = ["multipart", "macros", "ws"] }
