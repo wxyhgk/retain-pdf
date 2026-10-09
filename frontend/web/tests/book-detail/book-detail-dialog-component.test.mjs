@@ -59,8 +59,9 @@ test("馆藏卡打开书籍详情:元数据 + 阅读状态切换 + 翻译/读原
   // 标题默认只读(在左栏),点「编辑信息」才出现输入框
   await waitFor(() => dlg.querySelector(".book-detail-cover-identity h3")?.textContent?.trim(), "标题就位");
   assert.equal(byId("book-detail-title-input"), null, "默认只读,无标题输入框");
-  assert.ok(
-    dlg.querySelector('[data-processing-capability="translation"] .book-detail-status')?.textContent.includes("未翻译"),
+  // 书籍详情是按需加载的，任务列表在弹窗出现之后才到：等它，而不是一出现就断言。
+  await waitFor(
+    () => dlg.querySelector('[data-processing-capability="translation"] .book-detail-status')?.textContent?.includes("未翻译"),
     "馆藏显示未翻译",
   );
   // 未翻译：标题状态 + 紧凑启动行（尚无真实 job，不嵌路线图或完整 StatusCard）

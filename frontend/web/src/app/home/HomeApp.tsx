@@ -13,14 +13,14 @@
 // HomeShell 承载 tabs 本地态 + AppTopBar/BottomBar + home-paper-stage。
 // tabs 切页只改本地 state + URL ?tab=(replaceState,不导航、不碰 store)。
 
-import { useCallback, useEffect, useState } from "react";
-import { BookDetailDialog } from "@/features/book-detail/index.js";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   HomeShellProviders,
   HomeTabsProvider,
   useHomeTabs,
   useHomeAppUpdate,
+  useHomeBookDetail,
   useHomeCollections,
   useHomeCredentials,
   useHomeCredentialsStatePort,
@@ -38,8 +38,6 @@ import {
   RecentJobsLibrary,
 } from "@/features/library/index.js";
 import { AppUpdateBanner } from "@/features/app-update/index.js";
-import { HomeAskView } from "@/features/ask/index.js";
-import { TaskCenter } from "@/features/task-center/index.js";
 import { GlossariesDialog } from "@/features/glossaries/index.js";
 import {
   CredentialsProvider,
@@ -69,6 +67,18 @@ import {
 // 功能静默失效——只有真实浏览器渲染能看出来,jsdom 不会报错)。这里经 composition/external
 // 显式接管注册，避免 pages 层直连 src/js（门禁：home features/pages → external）。
 import "@/features/library/ui/island/index.js";
+
+// ---- 按需加载 ----
+//
+// 这几块只在用户点过去时才出现，代码不该跟着首屏一起下载：
+// - AI 问答：自带一整套 Markdown 流式渲染（markstream-react + stream-markdown-parser，
+//   约 600KB），以前占主页首屏的三分之一，不点 AI 问答一行都用不到；
+// - 任务中心：底部栏点开才显示；
+// - 书籍详情：点开一本书才显示（见 BookDetailDialogSlot）。
+// 三者都只被本文件引用，走各自 index 的动态 import，不破坏「index 是唯一出口」。
+const HomeAskView = lazy(() => import("@/features/ask/index.js").then((m) => ({ default: m.HomeAskView })));
+const TaskCenter = lazy(() => import("@/features/task-center/index.js").then((m) => ({ default: m.TaskCenter })));
+const BookDetailDialog = lazy(() => import("@/features/book-detail/index.js").then((m) => ({ default: m.BookDetailDialog })));
 
 const HOME_TABS = ["library", "categories", "ask"] as const;
 type HomeTab = (typeof HOME_TABS)[number];
@@ -159,6 +169,22 @@ function TaskCenterSlot() {
     />
   );
 }
+// 书籍详情第一次打开时才下载并挂载；之后一直挂着，关闭动画、再次打开都和以前一样。
+function BookDetailDialogSlot() {
+  const { dialogStore } = useHomeBookDetail();
+  const dialogState: any = useDialogState(dialogStore);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    if (dialogState.open) setMounted(true);
+  }, [dialogState.open]);
+  if (!mounted && !dialogState.open) return null;
+  return (
+    <Suspense fallback={null}>
+      <BookDetailDialog />
+    </Suspense>
+  );
+}
+
 function SettingsDialogSlot() {
   const settingsHub = useHomeSettingsHub();
   const glossaries = useHomeGlossaries();
@@ -249,7 +275,9 @@ function HomeShell() {
                   ← 返回
                 </button>
               </div>
-              <TaskCenterSlot />
+              <Suspense fallback={null}>
+                <TaskCenterSlot />
+              </Suspense>
               <AppBottomBar showSearch={false} />
             </>
           ) : isLibraryTab ? (
@@ -265,7 +293,9 @@ function HomeShell() {
             </>
           ) : isAskTab ? (
             // AI 对话不挂底部「上传 / 设置」浮栏，避免压住输入区
-            <HomeAskView />
+            <Suspense fallback={null}>
+              <HomeAskView />
+            </Suspense>
           ) : null}
         </div>
         <button id="open-query-btn" type="button" className="secondary hidden" aria-hidden="true">最近任务</button>
@@ -281,7 +311,7 @@ function HomeShell() {
       {/* 软打开阅读器：全屏层，主页不卸载（关 × 不刷新） */}
       <SoftReaderHost />
       <CollectionDialogSlot />
-      <BookDetailDialog />
+      <BookDetailDialogSlot />
       {/* sonner 全局宿主：DownloadToastHost 内含 <Toaster/>，任务中心取消/重试、
           收藏等处的 toast.success/error 都经它渲染——TaskCenter 不自带 Toaster，
           挂载在 HomeApp 下即接入现有宿主，不另起第二个（sonner 双宿主会重影）。 */}
