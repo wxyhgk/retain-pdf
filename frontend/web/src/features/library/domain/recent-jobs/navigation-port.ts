@@ -29,7 +29,7 @@ export function createRecentJobsNavigationPort({
       return `${jobRuntimePort.currentJobId?.() || currentJobId?.() || ""}`.trim();
     },
 
-    openJob(jobId) {
+    openJob(jobId: unknown) {
       const normalizedJobId = `${jobId || ""}`.trim();
       if (!normalizedJobId) {
         return false;
@@ -38,7 +38,7 @@ export function createRecentJobsNavigationPort({
       return jobRuntimePort.openJob?.(normalizedJobId) !== false;
     },
 
-    openReader(jobId, documentId = "", options: { pinJob?: boolean } = {}) {
+    openReader(jobId: unknown, documentId = "", options: { pinJob?: boolean } = {}) {
       const normalizedJobId = `${jobId || ""}`.trim();
       if (!normalizedJobId) {
         return false;
@@ -46,7 +46,7 @@ export function createRecentJobsNavigationPort({
       return readerPort.openReader?.(normalizedJobId, null, `${documentId || ""}`.trim(), options) !== false;
     },
 
-    recoverJob(jobId) {
+    recoverJob(jobId: unknown) {
       const normalizedJobId = `${jobId || ""}`.trim();
       if (!normalizedJobId) {
         return false;

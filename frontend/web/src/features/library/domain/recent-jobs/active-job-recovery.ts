@@ -1,6 +1,7 @@
+import type { LibraryJobItem } from "./state.js";
 import { isRecentJobActive } from "./card-presenter.js";
 
-export function resolveRecoverableJobId(items = [], {
+export function resolveRecoverableJobId(items: LibraryJobItem[] = [], {
   readActiveJobId = () => "",
 }: { readActiveJobId?: () => string } = {}) {
   const sourceItems = Array.isArray(items) ? items : [];

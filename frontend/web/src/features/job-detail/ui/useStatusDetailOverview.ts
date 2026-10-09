@@ -17,38 +17,10 @@ import type {
   StatusDetailDialogPayload,
   StatusDetailDialogStore,
 } from "../domain/status-detail-dialog-store.js";
-import type {
-  OcrReceiptValues,
-  OcrRecoveryOutcome,
-} from "../domain/ocr-ambiguity-recovery.js";
+import type { StatusDetailController } from "../domain/status-detail-controller.js";
 
-/** controller 表面（JSX 直接调用的方法） */
-export type StatusDetailControllerApi = {
-  openStatusDetailDialog: (tabName?: string) => void;
-  activateDetailTab: (tabName?: string) => void;
-  applyTranslationFilter?: (...args: unknown[]) => unknown;
-  changeTranslationPage?: (...args: unknown[]) => unknown;
-  loadTranslationItem?: (...args: unknown[]) => unknown;
-  selectTranslationItem?: (...args: unknown[]) => unknown;
-  replayTranslationItem?: (...args: unknown[]) => unknown;
-  replayCurrentItem?: (...args: unknown[]) => unknown;
-  rerunCurrentJob?: () => Promise<unknown> | unknown;
-  acceptOcrDuplicateRiskAndRecover?: () => Promise<OcrRecoveryOutcome> | OcrRecoveryOutcome;
-  bindExistingOcrReceiptAndRecover?: (
-    values: OcrReceiptValues,
-  ) => Promise<OcrRecoveryOutcome> | OcrRecoveryOutcome;
-  retryOcrNow?: (options?: { acceptDuplicateRisk?: boolean }) => Promise<unknown> | unknown;
-  retryFailureStage?: (
-    stage: string,
-    options?: { acceptDuplicateRisk?: boolean },
-  ) => Promise<unknown> | unknown;
-  copyFailureTraceId?: () => Promise<unknown> | unknown;
-  ensureOverviewData?: (options?: { force?: boolean }) => Promise<unknown> | unknown;
-  ensureTranslationData?: (options?: { force?: boolean }) => Promise<unknown> | unknown;
-  syncRerunAction?: (statusText?: string) => unknown;
-  buildDetailPageUrl?: (jobId: string) => string;
-  [key: string]: unknown;
-};
+/** controller 表面（JSX 直接调用的方法）——与 createStatusDetailController 的返回值一致 */
+export type StatusDetailControllerApi = StatusDetailController;
 
 export type StatusDetailOverviewHook = {
   open: boolean;

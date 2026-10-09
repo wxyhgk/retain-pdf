@@ -8,7 +8,7 @@
 // 覆盖命令式写入。Markdown 卡片其余文本字段走 setText 适配(React state)。
 
 import { memo } from "react";
-import { MetaRow } from "./JobSummaryCard.jsx";
+import { MetaRow, type DetailText } from "./JobSummaryCard.jsx";
 
 export const ArtifactsSection = memo(function ArtifactsSection() {
   return (
@@ -33,7 +33,7 @@ const MarkdownImageIsland = memo(function MarkdownImageIsland() {
   );
 });
 
-export function MarkdownCard({ t }) {
+export function MarkdownCard({ t }: { t: DetailText }) {
   return (
     <article className="detail-card">
       <div className="detail-trigger-head">

@@ -26,7 +26,7 @@ import type {
 export interface RuntimeJobPatch extends LibraryJobItem {
   progress_current?: number | null;
   progress_total?: number | null;
-  progress_unit?: string | null;
+  progress_unit?: string;
   stage_snapshot?: StageSnapshot | null;
 }
 

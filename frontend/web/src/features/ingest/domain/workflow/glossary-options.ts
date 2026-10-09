@@ -23,7 +23,7 @@ export function createGlossaryOptionsLoader({
 }: CreateGlossaryOptionsLoaderOptions) {
   let glossaryOptions: GlossaryOptionItem[] = [];
   let glossaryOptionsLoaded = false;
-  let glossaryOptionsLoading = null;
+  let glossaryOptionsLoading: Promise<GlossaryOptionItem[]> | null = null;
 
   function currentOptions() {
     return glossaryOptions;

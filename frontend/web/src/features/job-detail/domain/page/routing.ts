@@ -7,10 +7,10 @@ export function getJobIdFromQuery() {
   return parseDetailJobId();
 }
 
-export function buildReaderPageUrl(jobId) {
+export function buildReaderPageUrl(jobId: string | null | undefined) {
   return defaultJobDetailConfigPort.buildReaderPageUrl(jobId);
 }
 
-export function buildDetailPageUrl(jobId) {
+export function buildDetailPageUrl(jobId: string | null | undefined) {
   return defaultJobDetailConfigPort.buildDetailPageUrl(jobId);
 }

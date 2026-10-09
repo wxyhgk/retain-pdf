@@ -20,12 +20,12 @@ export interface AppActionsUploadStatePort {
 }
 
 export interface AppActionsRuntimeEnvPort {
-  isDesktopMode?: () => boolean;
-  isDesktopConfigured?: () => boolean;
+  isDesktopMode: () => boolean;
+  isDesktopConfigured: () => boolean;
 }
 
 export interface AppActionsJobSnapshotPort {
-  syncCurrentJobSnapshot?: (
+  syncCurrentJobSnapshot: (
     payload?: unknown,
     jobId?: unknown,
     meta?: { startedAt?: string; finishedAt?: string },
@@ -33,8 +33,8 @@ export interface AppActionsJobSnapshotPort {
 }
 
 export interface AppActionsViewPort {
-  setSubmitBusyState?: (busy?: boolean) => void;
-  resetMissingUpload?: (options?: {
+  setSubmitBusyState: (busy?: boolean) => void;
+  resetMissingUpload: (options?: {
     state?: unknown;
     uploadStatePort?: AppActionsUploadStatePort;
     resetUploadedFile?: () => void;
@@ -45,8 +45,8 @@ export interface AppActionsViewPort {
 export interface SubmitFlowDeps {
   openSetupDialog?: () => void;
   renderJob?: (payload?: unknown) => void;
-  submitJobRequest?: (apiPrefix?: unknown, payload?: unknown) => Promise<unknown> | unknown;
-  currentWorkflow?: () => string;
+  submitJobRequest: (apiPrefix?: unknown, payload?: unknown) => Promise<unknown> | unknown;
+  currentWorkflow: () => string;
   workflowNeedsCredentials?: (workflow?: string) => boolean | unknown;
   workflowNeedsUpload?: (workflow?: string) => boolean | unknown;
   currentRenderSourceJobId?: () => string | unknown;
@@ -77,11 +77,12 @@ export interface MountAppActionsFeatureOptions {
   viewPort: AppActionsViewPort;
   apiBase?: string | (() => string);
   apiPrefix?: string;
-  buildApiEndpoint?: (prefix?: string, path?: string) => string;
-  setText?: SetTextFn;
-  openDesktopOutputDirectory?: () => Promise<unknown> | unknown;
+  buildApiEndpoint: (prefix?: string, path?: string) => string;
+  setText: SetTextFn;
+  openDesktopOutputDirectory: () => Promise<unknown> | unknown;
   resetUploadedFile?: () => void;
-  submitFlow?: SubmitFlowDeps;
+  /** 提交流程依赖；组装层（create-app-actions）总是整包传入。下面同名的单项可覆盖。 */
+  submitFlow: SubmitFlowDeps;
   openSetupDialog?: () => void;
   renderJob?: (payload?: unknown) => void;
   submitJobRequest?: (apiPrefix?: unknown, payload?: unknown) => Promise<unknown> | unknown;
@@ -117,8 +118,8 @@ export function mountAppActionsFeature({
   submitFlow,
   openSetupDialog = submitFlow?.openSetupDialog,
   renderJob = submitFlow?.renderJob,
-  submitJobRequest = submitFlow?.submitJobRequest,
-  currentWorkflow = submitFlow?.currentWorkflow,
+  submitJobRequest = submitFlow.submitJobRequest,
+  currentWorkflow = submitFlow.currentWorkflow,
   workflowNeedsCredentials = submitFlow?.workflowNeedsCredentials,
   workflowNeedsUpload = submitFlow?.workflowNeedsUpload,
   currentRenderSourceJobId = submitFlow?.currentRenderSourceJobId,
@@ -148,13 +149,13 @@ export function mountAppActionsFeature({
     return uploadState.getSnapshot?.() || {};
   }
 
-  function setSubmitBusyState(busy) {
+  function setSubmitBusyState(busy: boolean) {
     uploadState.setSubmitBusy?.(busy);
     viewPort.setSubmitBusyState(busy);
   }
 
-  function isMissingUploadError(error) {
-    const message = `${error?.message || error || ""}`;
+  function isMissingUploadError(error: unknown) {
+    const message = `${(error as { message?: string } | null | undefined)?.message || error || ""}`;
     return message.includes("upload not found");
   }
 
@@ -162,7 +163,7 @@ export function mountAppActionsFeature({
     viewPort.resetMissingUpload({ state, uploadStatePort: uploadState, resetUploadedFile, setText });
   }
 
-  async function submitForm(event) {
+  async function submitForm(event: Pick<Event, "preventDefault">) {
     event.preventDefault();
     const workflow = currentWorkflow();
     const desktopMode = runtimeEnv.isDesktopMode();

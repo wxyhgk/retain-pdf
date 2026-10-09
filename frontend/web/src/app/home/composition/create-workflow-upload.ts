@@ -1,6 +1,7 @@
 // workflow + upload 特性。
 
 import { API_PREFIX } from "@/platform/config/api-constants.js";
+import type { CredentialGateRequest } from "@/features/ingest/index.js";
 import {
   apiBase,
   defaultModelApiKey,
@@ -149,7 +150,7 @@ export function createWorkflowAndUpload({
       }
       return Boolean(features.browserCredentialsFeature.hasBrowserCredentials());
     },
-    updateCredentialGate: (options?: unknown) => features.browserCredentialsFeature.updateCredentialGate(options),
+    updateCredentialGate: (options: CredentialGateRequest) => features.browserCredentialsFeature.updateCredentialGate(options),
     fetchGlossaries,
     apiPrefix: API_PREFIX,
     setText,

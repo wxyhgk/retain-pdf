@@ -2,6 +2,11 @@ import { firstJobIdFromPayload, firstNonEmpty as firstNonEmptyText } from "@reta
 import { buildDetailPageUrl } from "./routing.js";
 import { retryJobStage } from "@retainpdf/api/jobs-actions";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
+import type { JobDetailPageState } from "./page-state.js";
+import type { DetailSetText } from "./page-ports.js";
+import type { createJobDetailResumePort } from "./resume-port.js";
+
+type JobDetailResumePort = ReturnType<typeof createJobDetailResumePort>;
 
 export { summarizeResumePlan } from "@retainpdf/domain/job";
 
@@ -10,6 +15,11 @@ export function bindRerunButton({
   getJobId,
   resumePort,
   setText,
+}: {
+  detailPageState: JobDetailPageState;
+  getJobId: () => string;
+  resumePort: JobDetailResumePort;
+  setText: DetailSetText;
 }) {
   const button = document.getElementById("detail-rerun-btn") as HTMLButtonElement | null;
   button?.addEventListener("click", async () => {
@@ -38,7 +48,7 @@ export function bindRerunButton({
       setText("detail-rerun-status", `已创建恢复任务 ${nextJobId}，正在跳转...`);
       window.location.href = buildDetailPageUrl(nextJobId);
     } catch (error) {
-      const message = error.message || String(error);
+      const message = (error as { message?: string } | null)?.message || String(error);
       // 409 翻译歧义：通用重跑被后端暂停，直接报死用户就卡住了。
       // 给出路：二次确认重复风险后，用 retry-stage(translation) 显式重跑。
       if (/409|ambiguous/i.test(message)) {
@@ -54,7 +64,15 @@ export function bindRerunButton({
   });
 }
 
-async function retryTranslationWithRisk({ button, jobId, setText }) {
+async function retryTranslationWithRisk({
+  button,
+  jobId,
+  setText,
+}: {
+  button: HTMLButtonElement;
+  jobId: string;
+  setText: DetailSetText;
+}) {
   const clearConfirm = () => { if (button.dataset) button.dataset.confirmRisk = ""; };
   try {
     setText("detail-rerun-status", "已确认风险，正在从翻译阶段重试...");
@@ -72,7 +90,7 @@ async function retryTranslationWithRisk({ button, jobId, setText }) {
     window.location.href = buildDetailPageUrl(retryJobId);
     return;
   } catch (retryError) {
-    setText("detail-rerun-status", retryError.message || String(retryError));
+    setText("detail-rerun-status", (retryError as { message?: string } | null)?.message || String(retryError));
     clearConfirm();
     button.disabled = false;
     return;

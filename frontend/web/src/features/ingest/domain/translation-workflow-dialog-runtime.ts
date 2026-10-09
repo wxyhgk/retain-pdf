@@ -57,7 +57,7 @@ export interface TranslationWorkflowProcessingChoicePort {
 }
 
 export interface CreateTranslationWorkflowDialogRuntimeOptions {
-  dialogStatePort?: TranslationWorkflowDialogStatePort;
+  dialogStatePort: TranslationWorkflowDialogStatePort;
   statusAreaPort?: TranslationWorkflowStatusAreaPort;
   uploadSessionPort?: TranslationWorkflowUploadSessionPort | null;
   processingChoicePort?: TranslationWorkflowProcessingChoicePort | null;
@@ -78,7 +78,7 @@ export function createTranslationWorkflowDialogRuntime({
   uploadSessionPort = null,
   processingChoicePort = null,
   documentRef = globalThis.document,
-}: CreateTranslationWorkflowDialogRuntimeOptions = {}) {
+}: CreateTranslationWorkflowDialogRuntimeOptions) {
   // 3b 修复(实测发现,非预先设计):recent-jobs 的 refresh-environment.js
   // 默认 isWorkflowOpen 读的是 #translation-workflow-dialog 的 data-open
   // 属性(DOM),不是任何 store——而 React 的 DOM 提交相对 store 写入是异步的。

@@ -3,12 +3,12 @@ export {
   isTerminalStatus,
 } from "@retainpdf/domain/job";
 
-export function numberOrNull(value) {
+export function numberOrNull(value: unknown) {
   const num = Number(value);
   return Number.isFinite(num) ? num : null;
 }
 
-export function firstNonEmpty(...values) {
+export function firstNonEmpty(...values: unknown[]) {
   for (const value of values) {
     if (typeof value === "string" && value.trim()) {
       return value.trim();

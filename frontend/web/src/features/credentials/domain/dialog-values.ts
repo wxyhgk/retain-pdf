@@ -23,7 +23,7 @@ export interface CredentialDialogElementsLike {
 }
 
 export interface ReadCredentialDialogValuesOptions {
-  elementsPort?: {
+  elementsPort: {
     elements: () => CredentialDialogElementsLike;
   };
 }
@@ -41,7 +41,7 @@ export interface BuildTaskOptionsFromDialogValuesOptions {
 
 export function readCredentialDialogValues({
   elementsPort,
-}: ReadCredentialDialogValuesOptions = {}): CredentialDialogValues {
+}: ReadCredentialDialogValuesOptions): CredentialDialogValues {
   const {
     paddleInput,
     mineruInput,

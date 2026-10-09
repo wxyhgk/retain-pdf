@@ -5,14 +5,14 @@ import {
   getMockTranslationSummary,
 } from "@/platform/mock/translation.js";
 
-export async function fetchTranslationDiagnostics(jobId, apiPrefix) {
+export async function fetchTranslationDiagnostics(jobId: string, apiPrefix: string) {
   void apiPrefix;
   return getMockTranslationSummary(jobId);
 }
 
 export async function fetchTranslationItems(
-  jobId,
-  apiPrefix,
+  jobId: string,
+  apiPrefix: string,
   {
     limit = 20,
     offset = 0,
@@ -21,6 +21,14 @@ export async function fetchTranslationItems(
     errorType = "",
     route = "",
     q = "",
+  }: {
+    limit?: number;
+    offset?: number;
+    page?: string;
+    finalStatus?: string;
+    errorType?: string;
+    route?: string;
+    q?: string;
   } = {},
 ) {
   void apiPrefix;
@@ -29,12 +37,12 @@ export async function fetchTranslationItems(
   return getMockTranslationItems(jobId, { limit, offset, page, finalStatus, q });
 }
 
-export async function fetchTranslationItem(jobId, itemId, apiPrefix) {
+export async function fetchTranslationItem(jobId: string, itemId: string, apiPrefix: string) {
   void apiPrefix;
   return getMockTranslationItem(jobId, itemId);
 }
 
-export async function replayTranslationItem(jobId, itemId, apiPrefix) {
+export async function replayTranslationItem(jobId: string, itemId: string, apiPrefix: string) {
   void apiPrefix;
   return getMockTranslationReplay(jobId, itemId);
 }

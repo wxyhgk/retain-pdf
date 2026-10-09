@@ -10,17 +10,21 @@ import { messageForErrorBox } from "@/platform/utils/error-diagnostics.js";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { useHomeTextStore } from "@/ui/context/home-services-context.js";
 
-const selectErrorBoxValue = (snapshot) => snapshot?.texts?.["error-box"];
+const selectErrorBoxValue = (snapshot: { texts?: Record<string, unknown> } | null | undefined) =>
+  snapshot?.texts?.["error-box"];
 
 export function InlineErrorBox() {
   const textStore = useHomeTextStore();
   const value = useStoreSnapshot(textStore, selectErrorBoxValue);
   const [copyLabel, setCopyLabel] = useState("复制诊断");
 
-  const summary = messageForErrorBox(value);
+  const summaryValue = messageForErrorBox(value);
+  const summary = summaryValue == null ? undefined : `${summaryValue}`;
   const text = `${summary ?? ""}`.trim();
-  const diagnostic = value && typeof value === "object" && value.kind === "error-diagnostic"
-    ? `${value.diagnostic || ""}`.trim()
+  // 诊断对象的形状由 buildErrorDiagnostic 决定，这里按字段读取。
+  const box = value as { kind?: unknown; diagnostic?: unknown } | null | undefined;
+  const diagnostic = value && typeof value === "object" && box?.kind === "error-diagnostic"
+    ? `${box.diagnostic || ""}`.trim()
     : "";
   const hidden = !text || text === "-";
 

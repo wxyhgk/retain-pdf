@@ -23,10 +23,11 @@
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { useCredentialsServices } from "./credentials-context.jsx";
 import { CREDENTIAL_DOM_IDS } from "./credentials-dom-ids.js";
+import type { CredentialsState } from "../domain/state.js";
 
 const { hidden: HIDDEN_IDS } = CREDENTIAL_DOM_IDS;
 
-function selectCredentials(snapshot) {
+function selectCredentials(snapshot: CredentialsState) {
   return snapshot.credentials;
 }
 

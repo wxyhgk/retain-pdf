@@ -1,6 +1,7 @@
 // job-runtime / recent-jobs / artifact-downloads —— 在 composition 阶段一次挂齐，
 // 不放进 initialize 的 if 懒挂载。
 
+import type { RecentJobsPageFetcher } from "@/features/library/index.js";
 import type { createLibraryDomain } from "./create-library-domain.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import {
@@ -185,7 +186,10 @@ export function createRuntimeFeatures({
 
   // startPolling/openReader 已由 jobRuntimePort/readerPort/navigationPort 注入；签名仍标必填。
   const recentJobsFeature = mountRecentJobsFeature({
-    fetchJobList,
+    // 接口封装返回的是后端生成的 JobListView，书架分页按前端卡片形状读（items / has_more /
+    // invocation_summary 字段同名）。后端视图与前端卡片之间还没有转换层（前端的任务 / 卡片
+    // 类型与后端契约是两套独立定义，要先对齐，单独做），这里先显式收窄。
+    fetchJobList: fetchJobList as unknown as RecentJobsPageFetcher,
     fetchJobPayload,
     fetchLibraryBookList,
     deleteLibraryBook,

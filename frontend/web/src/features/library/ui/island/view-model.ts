@@ -21,7 +21,7 @@ export function highlightSegments(snippet = "") {
   return segments;
 }
 
-export const READING_STATUS_META = Object.freeze({
+export const READING_STATUS_META: Readonly<Record<string, { label: string; order: number }>> = Object.freeze({
   unread: { label: "未读", order: 0 },
   reading: { label: "在读", order: 1 },
   done: { label: "读完", order: 2 },
@@ -29,12 +29,23 @@ export const READING_STATUS_META = Object.freeze({
 
 const READING_STATUS_CYCLE = ["unread", "reading", "done"];
 
-export function nextReadingStatus(status) {
+export function nextReadingStatus(status: string | null | undefined) {
   const index = READING_STATUS_CYCLE.indexOf(`${status || ""}`.trim());
   return READING_STATUS_CYCLE[(index + 1) % READING_STATUS_CYCLE.length];
 }
 
-export function filterDocuments(documents = [], { query = "", readingStatus = "" } = {}) {
+/** 过滤只看这几个字段；泛型让调用方拿回自己的行类型。 */
+export type FilterableDocument = {
+  title?: string;
+  source_filename?: string;
+  reading_status?: string;
+  tags?: string[];
+};
+
+export function filterDocuments<T extends FilterableDocument>(
+  documents: T[] = [],
+  { query = "", readingStatus = "" }: { query?: string; readingStatus?: string } = {},
+): T[] {
   const normalizedQuery = `${query || ""}`.trim().toLowerCase();
   const normalizedStatus = `${readingStatus || ""}`.trim();
   return (Array.isArray(documents) ? documents : []).filter((doc) => {

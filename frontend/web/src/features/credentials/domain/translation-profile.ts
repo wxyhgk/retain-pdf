@@ -71,7 +71,7 @@ export function normalizeTranslationProfile(
 
 type CredentialDialogLike = HTMLDialogElement | HTMLElement | boolean | null;
 
-export function dialogDataset(dialog: CredentialDialogLike): DOMStringMap | undefined {
+export function dialogDataset(dialog: CredentialDialogLike | undefined): DOMStringMap | undefined {
   if (dialog && typeof dialog === "object" && "dataset" in dialog) {
     return (dialog as HTMLElement).dataset;
   }

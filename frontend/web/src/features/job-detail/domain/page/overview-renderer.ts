@@ -4,6 +4,10 @@ import { applyDiagnostics, renderFailureDebugContext } from "./failure.js";
 import { renderJobDetailActionLinks } from "./action-links.js";
 import { renderInitialMarkdownContract } from "./markdown-flow.js";
 import { summarizeResumePlan } from "./resume.js";
+import type { JobLike, JobPayload, ManifestPayload } from "@retainpdf/domain/job";
+import type { ResumePlanLike } from "../dialog/resume-actions.js";
+import type { DetailSetActionLink, DetailSetText } from "./page-ports.js";
+import type { JobDetailPageState } from "./page-state.js";
 import { buildJobDetailStatusViewModel } from "./status-view-model.js";
 import {
   renderJobDetailFailureSummary,
@@ -20,6 +24,15 @@ export function renderJobDetailOverview({
   setEventsStatus,
   setText,
   state,
+}: {
+  diagnosticsPayload?: Record<string, unknown> | null;
+  job: JobLike | JobPayload;
+  manifestPayload?: ManifestPayload | null;
+  resumePlan?: ResumePlanLike | null;
+  setActionLink: DetailSetActionLink;
+  setEventsStatus: (text: string) => void;
+  setText: DetailSetText;
+  state?: JobDetailPageState | null;
 }) {
   if (state) {
     state.job = job;

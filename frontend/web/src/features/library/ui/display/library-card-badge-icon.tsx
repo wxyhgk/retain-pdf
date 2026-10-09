@@ -2,7 +2,9 @@
 // 11px 细线 lucide 路径,和徽标文字同色(currentColor)。name 来自
 // library-card-badge.js 返回的 icon key。
 
-const PATHS = {
+import type { ReactNode } from "react";
+
+const PATHS: Record<string, ReactNode> = {
   // 馆藏:archive(带盖的收纳盒)——"入库存放但未翻译"
   archive: (
     <>
@@ -51,7 +53,7 @@ const PATHS = {
   ),
 };
 
-export function BadgeIcon({ name }) {
+export function BadgeIcon({ name }: { name: string }) {
   const path = PATHS[name];
   if (!path) return null;
   return (

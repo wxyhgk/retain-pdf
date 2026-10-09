@@ -2,7 +2,7 @@ import type { WorkflowConstants } from "./contracts.js";
 import type { WorkflowConfigDefaults } from "./developer-config.js";
 import type { WorkflowDeveloperConfig } from "./payload.js";
 
-export function positiveInteger(value, fallback) {
+export function positiveInteger(value: unknown, fallback: unknown): number {
   const fallbackNumber = Number(fallback);
   const normalizedFallback = Number.isFinite(fallbackNumber) && fallbackNumber > 0
     ? Math.floor(fallbackNumber)
@@ -28,7 +28,7 @@ export function buildDeveloperConfigWithDefaults({
   defaults: WorkflowConfigDefaults;
   defaultModelName: () => string;
   defaultModelBaseUrl: () => string;
-}): WorkflowDeveloperConfig {
+}): WorkflowDeveloperConfig & { workflow: string } {
   const source: Partial<WorkflowDeveloperConfig> = saved || {};
   return {
     workflow: normalizeWorkflow(source.workflow),
@@ -51,19 +51,19 @@ export function buildDeveloperConfigWithDefaults({
   };
 }
 
-export function workflowNeedsUpload(workflow, constants) {
+export function workflowNeedsUpload(workflow: string | undefined, constants: WorkflowConstants) {
   return workflow !== constants.WORKFLOW_RENDER;
 }
 
-export function workflowNeedsCredentials(workflow, constants) {
+export function workflowNeedsCredentials(workflow: string | undefined, constants: WorkflowConstants) {
   return workflow !== constants.WORKFLOW_RENDER;
 }
 
-export function workflowUsesRenderStage(workflow, constants) {
+export function workflowUsesRenderStage(workflow: string | undefined, constants: WorkflowConstants) {
   return workflow === constants.WORKFLOW_BOOK || workflow === constants.WORKFLOW_RENDER;
 }
 
-export function workflowSubmitLabel(workflow, constants) {
+export function workflowSubmitLabel(workflow: string | undefined, constants: WorkflowConstants) {
   // UI 文案：上传弹窗主按钮「直接翻译」；render 仍用「开始渲染」
   switch (workflow) {
     case constants.WORKFLOW_RENDER:
@@ -77,7 +77,7 @@ export function workflowSubmitLabel(workflow, constants) {
   }
 }
 
-export function workflowHeadline(workflow, constants) {
+export function workflowHeadline(workflow: string | undefined, constants: WorkflowConstants) {
   switch (workflow) {
     case constants.WORKFLOW_RENDER:
       return "当前工作流会复用已有任务产物重新生成 PDF。";

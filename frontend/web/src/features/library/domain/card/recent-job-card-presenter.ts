@@ -8,7 +8,7 @@ import type { LibraryCardItem } from "../types.js";
 import { escapeAttribute, truncateDisplayName } from "@/platform/utils/html-formatting.js";
 import { JOB_STATUS_LABELS, isActiveJobStatus, jobStatusLabel, normalizeJobStatus } from "@retainpdf/domain/job";
 
-export function recentJobStatusLabel(status) {
+export function recentJobStatusLabel(status: unknown) {
   return jobStatusLabel(status, { idleLabel: "-" });
 }
 
@@ -53,8 +53,8 @@ export function stageKeyForRecentJobLabel(item: LibraryCardItem = {}) {
   }
 }
 
-export function recentJobStageLabel(item) {
-  switch (stageKeyForRecentJobLabel(item)) {
+export function recentJobStageLabel(item: LibraryCardItem | null | undefined) {
+  switch (stageKeyForRecentJobLabel(item ?? undefined)) {
     case "ocr":
       return "OCR 中";
     case "translate":
@@ -74,7 +74,7 @@ export function recentJobStageLabel(item) {
   }
 }
 
-export function recentJobProgressPercent(item) {
+export function recentJobProgressPercent(item: LibraryCardItem | null | undefined) {
   const progress = item?.runtime_status?.progress && typeof item.runtime_status.progress === "object"
     ? item.runtime_status.progress
     : item?.progress;
@@ -90,7 +90,7 @@ export function recentJobProgressPercent(item) {
   return NaN;
 }
 
-export function isRecentJobActive(item) {
+export function isRecentJobActive(item: LibraryCardItem | null | undefined) {
   if (isActiveJobStatus(item?.status)) {
     return true;
   }
@@ -102,23 +102,23 @@ export function isRecentJobActive(item) {
   return Number.isFinite(percent) && percent > 0 && percent < 100;
 }
 
-export function recentJobTitle(item) {
+export function recentJobTitle(item: LibraryCardItem) {
   return truncateDisplayName(item.title || item.display_name || item.source_file_name || item.job_id || "-");
 }
 
-export function recentJobRawImageUrl(item) {
+export function recentJobRawImageUrl(item: LibraryCardItem | null | undefined) {
   return recentJobRawImageUrls(item)[0] || "";
 }
 
-export function recentJobRawImageUrls(item) {
+export function recentJobRawImageUrls(item: LibraryCardItem | null | undefined) {
   return buildJobImageCandidateUrls(item);
 }
 
-export function recentJobImageUrl(item) {
+export function recentJobImageUrl(item: LibraryCardItem | null | undefined) {
   return escapeAttribute(recentJobRawImageUrl(item));
 }
 
-export function buildReaderUrl(item) {
+export function buildReaderUrl(item: LibraryCardItem | null | undefined) {
   const jobId = [item?.job_id, item?.active_job_id]
     .map((value) => `${value || ""}`.trim())
     .find((value) => value && !value.startsWith("doc:")) || "";

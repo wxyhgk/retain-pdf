@@ -3,8 +3,8 @@ import { defaultJobDetailDataPort } from "./data-port.js";
 /** 恢复端口依赖：重跑（按动作 URL）与断点续跑（按 job_id）两条接口 */
 export interface JobDetailResumePortDeps {
   apiPrefix?: string;
-  rerunJob?: (actionUrl: string) => Promise<unknown>;
-  resumeJob?: (jobId: string, apiPrefix: string) => Promise<unknown>;
+  rerunJob: (actionUrl: string) => Promise<unknown>;
+  resumeJob: (jobId: string, apiPrefix: string) => Promise<unknown>;
 }
 
 export interface JobDetailResumeSubmitOptions {
@@ -16,7 +16,7 @@ export function createJobDetailResumePort({
   apiPrefix = "",
   rerunJob,
   resumeJob,
-}: JobDetailResumePortDeps = {}) {
+}: JobDetailResumePortDeps) {
   return {
     async submit({ actionUrl = "", jobId = "" }: JobDetailResumeSubmitOptions = {}) {
       const resolvedJobId = `${jobId || ""}`.trim();

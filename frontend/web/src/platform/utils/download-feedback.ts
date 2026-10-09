@@ -42,7 +42,7 @@ function clearHideTimer() {
   }
 }
 
-function summarizeProgress(receivedBytes, totalBytes, percent) {
+function summarizeProgress(receivedBytes: number, totalBytes: number, percent: number) {
   const receivedText = formatTransferSize(receivedBytes);
   if (Number.isFinite(totalBytes) && totalBytes > 0) {
     const totalText = formatTransferSize(totalBytes);

@@ -40,7 +40,7 @@ export function handleSubmitReadinessBlock({
   openBrowserCredentialsDialog,
   currentBudgetState,
   setText,
-}: HandleSubmitReadinessBlockOptions = {}) {
+}: HandleSubmitReadinessBlockOptions) {
   switch (readiness?.reason) {
     case SUBMIT_BLOCK_REASONS.DESKTOP_NOT_CONFIGURED:
       openSetupDialog?.();

@@ -8,6 +8,7 @@ import type {
 import type {
   EventsPayload,
 } from "@retainpdf/domain/job-status";
+import type { ResumePlanLike } from "./dialog/resume-actions.js";
 
 // StatusDetailDialog 的 runtimePort(蓝图 §1 数据源铁律:读 job-runtime 保留
 // 引擎的 state,不是 statusCardStore)。
@@ -47,8 +48,9 @@ export function createStatusDetailRuntimePort({
     currentJobFinishedAt() {
       return currentJobPort.finishedAt();
     },
-    currentResumePlan() {
-      return currentJobPort.resumePlan();
+    currentResumePlan(): ResumePlanLike | null {
+      // platform 契约里 resumePlan 回包是 unknown；这里按断点计划结构收窄（缺字段时各读取点都有兜底）。
+      return currentJobPort.resumePlan() as ResumePlanLike | null;
     },
     rerunContext() {
       return {

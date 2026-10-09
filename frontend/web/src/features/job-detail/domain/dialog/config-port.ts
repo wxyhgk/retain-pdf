@@ -3,7 +3,7 @@ import { buildFrontendPageUrl } from "@/platform/config/runtime.js";
 export function createStatusDetailConfigPort({
   buildPageUrl = buildFrontendPageUrl,
 }: { buildPageUrl?: typeof buildFrontendPageUrl } = {}) {
-  function buildDetailPageUrl(jobId) {
+  function buildDetailPageUrl(jobId: string | null | undefined) {
     const normalizedJobId = `${jobId || ""}`.trim();
     if (!normalizedJobId) {
       return "";

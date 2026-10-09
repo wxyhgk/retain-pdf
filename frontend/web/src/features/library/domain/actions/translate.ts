@@ -42,7 +42,7 @@ export function buildTranslateBookCardAction(
     icon: "languages",
     className: "book-card-action book-card-action-translate",
     onClick: (_event, current) => {
-      onTranslate?.(current);
+      if (current) onTranslate?.(current);
     },
   }];
 }

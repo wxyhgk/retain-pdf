@@ -20,7 +20,7 @@ function pageRangeCount(pageRanges = "", uploadedPageCount = 0) {
   return Math.max(0, end - start + 1);
 }
 
-function money(value) {
+function money(value: unknown) {
   const number = Number(value);
   if (!Number.isFinite(number)) {
     return "-";

@@ -8,8 +8,16 @@ import { TranslationFilterPanel } from "./TranslationFilterPanel.jsx";
 import { TranslationItemsPanel } from "./TranslationItemsPanel.jsx";
 import { TranslationItemDetailPanel } from "./TranslationItemDetailPanel.jsx";
 import { STATUS_DETAIL_DIALOG_IDS } from "../domain/status-detail-dom-ids.js";
+import type { StatusDetailTranslation } from "../domain/status-detail-store.js";
+import type { StatusDetailController } from "../domain/status-detail-controller.js";
 
-export function TranslationDebugTab({ translation, controller }) {
+export function TranslationDebugTab({
+  translation,
+  controller,
+}: {
+  translation: StatusDetailTranslation;
+  controller: StatusDetailController;
+}) {
   const ids = STATUS_DETAIL_DIALOG_IDS.translation;
   // 只看 emptyMessage 是不够的：面板 forceMount 常驻，切任务/运行时重置会把
   // translation 打回初始 slice（emptyMessage 为空、summary 为 null、loaded 为

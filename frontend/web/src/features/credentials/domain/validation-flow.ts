@@ -26,13 +26,13 @@ type CredentialAccess = {
 };
 
 type ValidationViewPort = {
-  setOcrValidationMessage?: (message?: string, tone?: string, providerId?: string) => void;
+  setOcrValidationMessage: (message?: string, tone?: string, providerId?: string) => void;
 };
 
 type DeepSeekViewPort = {
-  elements?: () => CredentialDialogElementsLike;
-  setTopUpVisible?: (visible?: boolean) => void;
-  setValidationMessage?: (message?: string, tone?: string) => void;
+  elements: () => CredentialDialogElementsLike;
+  setTopUpVisible: (visible?: boolean) => void;
+  setValidationMessage: (message?: string, tone?: string) => void;
 };
 
 export interface EnsureOcrReadyOptions {
@@ -64,14 +64,14 @@ export function createCredentialValidationFlow({
   deepSeekViewPort: DeepSeekViewPort;
   access: CredentialAccess;
   dialogElementsPort: { elements: () => CredentialDialogElementsLike };
-  validateOcrToken?: RunOcrTokenValidationOptions["validateOcrToken"];
-  validateDeepSeekToken?: RunDeepSeekConnectivityCheckOptions["validateDeepSeekToken"];
+  validateOcrToken: RunOcrTokenValidationOptions["validateOcrToken"];
+  validateDeepSeekToken: RunDeepSeekConnectivityCheckOptions["validateDeepSeekToken"];
   queryDeepSeekBalance?: RunDeepSeekBalanceCheckOptions["queryDeepSeekBalance"];
   defaultPaddleToken?: () => string;
   defaultModelApiKey?: () => string;
   onCredentialStateChange?: () => void;
   credentialsStatePort: CredentialsStatePort;
-  runtimeEnv: { isDesktopMode?: () => boolean };
+  runtimeEnv: { isDesktopMode: () => boolean };
   legacyRuntimePort?: unknown;
   legacyValidationCachePort?: unknown;
 }) {

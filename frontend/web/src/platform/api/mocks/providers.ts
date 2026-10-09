@@ -1,5 +1,5 @@
 // mock-only 适配器:index.ts 的 mockable() 只在 mock 模式调用这些实现。
-export async function validateMineruToken(apiPrefix, payload) {
+export async function validateMineruToken(apiPrefix: string, payload: unknown) {
   void apiPrefix;
   void payload;
   return {
@@ -9,7 +9,7 @@ export async function validateMineruToken(apiPrefix, payload) {
   };
 }
 
-export async function validatePaddleToken(apiPrefix, payload) {
+export async function validatePaddleToken(apiPrefix: string, payload: unknown) {
   void apiPrefix;
   void payload;
   return {
@@ -19,7 +19,7 @@ export async function validatePaddleToken(apiPrefix, payload) {
   };
 }
 
-export async function validateDeepSeekToken(apiPrefix, payload) {
+export async function validateDeepSeekToken(apiPrefix: string, payload: unknown) {
   void apiPrefix;
   void payload;
   return {
@@ -29,7 +29,7 @@ export async function validateDeepSeekToken(apiPrefix, payload) {
   };
 }
 
-export async function queryDeepSeekBalance(apiPrefix, payload) {
+export async function queryDeepSeekBalance(apiPrefix: string, payload: unknown) {
   void apiPrefix;
   void payload;
   return {

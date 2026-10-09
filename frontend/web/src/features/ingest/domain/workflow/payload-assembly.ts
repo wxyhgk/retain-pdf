@@ -14,7 +14,7 @@ import type { WorkflowConstants, WorkflowRunPayload, WorkflowSubmitValues } from
 
 export interface CreateWorkflowPayloadAssemblyOptions {
   constants: WorkflowConstants;
-  developerConfigWithDefaults: () => WorkflowDeveloperConfig;
+  developerConfigWithDefaults: () => WorkflowDeveloperConfig & { workflow: string };
   isOcrOnlyMode: () => boolean;
   currentPageRanges: () => string;
   getUploadState: () => { uploadId?: string; uploadedPageCount?: number };

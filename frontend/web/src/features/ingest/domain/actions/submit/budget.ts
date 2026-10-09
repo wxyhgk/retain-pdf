@@ -22,7 +22,7 @@ export async function ensureDeepSeekBudgetReady({
   refreshDeepSeekBalance,
   setText,
   timeoutMs = DEEPSEEK_BALANCE_CHECK_TIMEOUT_MS,
-}: EnsureDeepSeekBudgetReadyOptions = {}) {
+}: EnsureDeepSeekBudgetReadyOptions) {
   if (!needsDeepSeekBudgetCheck({ workflow, workflowNeedsUpload, currentBudgetState })) {
     return true;
   }

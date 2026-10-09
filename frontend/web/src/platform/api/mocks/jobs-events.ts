@@ -9,7 +9,8 @@ export async function fetchJobEvents(jobId: string, apiPrefix?: string, query: J
   if (typeof query !== "object" || "offset" in query || (query.cursor && query.start)) {
     throw new JobEventsError("Invalid event query", 400, "INVALID_QUERY");
   }
-  const items = getMockJobEvents(jobId).items.map((item: MockJobEvent, index: number) => ({
+  // getMockJobEvents 的 items 在 mock 索引里推断为 unknown[]，这里按 MockJobEvent（events.ts 的同一份快照形状）断言。
+  const items = (getMockJobEvents(jobId).items as MockJobEvent[]).map((item, index) => ({
     ...item, seq: index + 1, event_id: `mock:${jobId}:${index + 1}`,
   }));
   // Mock producers expose snapshots, not an append log. A changed snapshot is
@@ -19,7 +20,8 @@ export async function fetchJobEvents(jobId: string, apiPrefix?: string, query: J
   let position = query.start === "head" ? 0 : Math.max(0, items.length - limit);
   let upper = items.length;
   if (query.cursor) {
-    let cursor;
+    // 游标是本文件自己 btoa 出去的 JSON，解析后按这里的形状读取。
+    let cursor: { jobId: string; version: number; position: number; upper: number; signature: string };
     try { cursor = JSON.parse(decodeURIComponent(atob(query.cursor))); }
     catch { throw new JobEventsError("Invalid cursor", 400, "INVALID_QUERY"); }
     if (cursor.jobId !== jobId || cursor.version !== 2

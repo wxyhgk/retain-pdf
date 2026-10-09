@@ -18,7 +18,7 @@ export function reportSubmitError({
   uploadId?: string;
   currentRenderSourceJobId?: RunSubmitFlowOptions["currentRenderSourceJobId"];
   collectRunPayload?: RunSubmitFlowOptions["collectRunPayload"];
-  setText?: SetTextFn;
+  setText: SetTextFn;
 }) {
   // collectRunPayload 返回 unknown（RunSubmitFlowOptions），这里只读取 workflow 字段。
   const payloadWorkflow = (collectRunPayload?.() as { workflow?: unknown } | undefined)?.workflow;

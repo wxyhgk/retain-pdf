@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { STATUS_DETAIL_DIALOG_IDS } from "../domain/status-detail-dom-ids.js";
+import type { StatusDetailTranslationQuery } from "../domain/status-detail-store.js";
 
 const FINAL_STATUS_OPTIONS = [
   { value: "", label: "全部" },
@@ -13,7 +14,13 @@ const FINAL_STATUS_OPTIONS = [
   { value: "failed", label: "失败" },
 ];
 
-export function TranslationFilterPanel({ query, onApply }) {
+export function TranslationFilterPanel({
+  query,
+  onApply,
+}: {
+  query: StatusDetailTranslationQuery;
+  onApply: (query: { finalStatus: string; q: string }) => void;
+}) {
   const [finalStatus, setFinalStatus] = useState(query.finalStatus || "");
   const [q, setQ] = useState(query.q || "");
   const ids = STATUS_DETAIL_DIALOG_IDS.translation;

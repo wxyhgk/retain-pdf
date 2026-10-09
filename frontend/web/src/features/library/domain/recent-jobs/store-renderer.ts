@@ -1,11 +1,8 @@
 import { defineConnectedComponent } from "@/platform/store/connector.js";
 import type { LibraryJobItem, RecentJobsState, RecentJobsStatePort } from "./state.js";
+import type { RecentJobActionsPort } from "./commit.js";
 
-type RecentJobsStoreRendererActions = {
-  selectJob?: (jobId: string) => unknown;
-  deleteJob?: (jobId: string) => void | Promise<void>;
-  openJobReader?: (jobId: string, ...rest: unknown[]) => unknown;
-};
+type RecentJobsStoreRendererActions = RecentJobActionsPort;
 
 type RecentJobsListPayload = {
   items: LibraryJobItem[];
@@ -38,13 +35,20 @@ export function createRecentJobsStoreRenderer({
     };
   }
 
+  // 上面判断过之后存成常量：内部函数里 TS 不会把那次判断延续过来。
+  const statePort = recentJobsStatePort;
+  const renderListToView = renderRecentJobsList;
   let currentInvocationSummary = invocationSummary;
   const actionSet = new Set((Array.isArray(renderActions) ? renderActions : [])
     .map((action) => `${action || ""}`.trim())
     .filter(Boolean));
 
-  function renderList(viewModel) {
-    renderRecentJobsList({
+  function renderList(viewModel: {
+    items: LibraryJobItem[];
+    invocationSummary?: Record<string, unknown> | null;
+    hasMore: boolean;
+  }) {
+    renderListToView({
       items: viewModel.items,
       allItems: viewModel.items,
       invocationSummary: viewModel.invocationSummary ?? currentInvocationSummary,
@@ -83,7 +87,7 @@ export function createRecentJobsStoreRenderer({
 
   function renderNow({ invocationSummary: nextInvocationSummary = currentInvocationSummary }: { invocationSummary?: Record<string, unknown> | null } = {}) {
     currentInvocationSummary = nextInvocationSummary;
-    const snapshot = recentJobsStatePort.getSnapshot();
+    const snapshot = statePort.getSnapshot();
     renderList({
       items: snapshot.items,
       invocationSummary: snapshot.invocationSummary ?? currentInvocationSummary,

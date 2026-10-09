@@ -4,6 +4,7 @@
 import type { StatusDetailRuntimePort } from "../status-detail-runtime-port.js";
 import type { StatusDetailStore } from "../status-detail-store.js";
 import { buildStatusDetailSnapshot } from "../snapshot/snapshot.js";
+import type { EventsPayload } from "@retainpdf/domain/job-status";
 import {
   buildFailureRecoveryModel,
 } from "./failure-recovery.js";
@@ -85,7 +86,7 @@ export function createStatusDetailOverviewActions({
       },
       failureRecovery,
       job: job as Record<string, unknown>,
-      eventsPayload: eventsPayload as { items?: unknown[]; [key: string]: unknown } | null,
+      eventsPayload: eventsPayload as EventsPayload | null,
       finishedAtFallback,
     });
     syncRerunAction();

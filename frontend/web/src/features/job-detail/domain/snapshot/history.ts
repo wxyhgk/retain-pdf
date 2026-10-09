@@ -9,8 +9,13 @@ import {
   resolveStageHistoryDuration,
   stageHistoryDisplay,
 } from "@retainpdf/domain/job";
+import type { JobDurationOptions } from "@retainpdf/domain/job";
+import type { StatusDetailJobSnapshot } from "@/platform/contracts/status-detail-runtime-contract.js";
 
-export function buildStageHistoryPresentation(job, durationOptions = {}) {
+export function buildStageHistoryPresentation(
+  job: StatusDetailJobSnapshot | undefined,
+  durationOptions: JobDurationOptions = {},
+) {
   const history = resolveStageHistory(job);
   const markup = history.map((entry, index) => {
     const duration = resolveStageHistoryDuration(entry, job, durationOptions);
