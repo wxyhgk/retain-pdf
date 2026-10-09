@@ -4,7 +4,12 @@ import {
 } from "./active-refresh.js";
 import { createRecentJobsLoader } from "./loader.js";
 import { createRecentJobsRuntimePatches } from "./runtime-patches.js";
-import { createRecentJobsNavigationPort } from "./navigation-port.js";
+import {
+  createRecentJobsNavigationPort,
+  type NavigationJobRuntimePort,
+  type NavigationReaderPort,
+  type RecentJobsNavigationPort,
+} from "./navigation-port.js";
 import { createRecentJobsStoreRenderer } from "./store-renderer.js";
 import type { HomeStatePort } from "@/platform/contracts/home-view-contract.js";
 import type {
@@ -28,14 +33,7 @@ export interface RecentJobsRefreshSchedulerRef {
   scheduleAutoLoadIfNeeded?: () => void;
 }
 
-export interface RecentJobsNavigationPort {
-  openJob?: (jobId?: string) => void;
-  openReader?: (jobId?: string) => void;
-  [key: string]: unknown;
-}
-
 export interface RecentJobsRuntimeViewPort extends RecentJobsCommitViewPort {
-  replaceCard?: (item?: LibraryJobItem) => boolean;
   renderList?: (options?: RecentJobsRenderListOptions) => void;
   renderEmpty?: (message?: string, invocationSummary?: RecentJobsInvocationSummary) => void;
   renderError?: (message?: string, options?: { reset?: boolean }) => void;
@@ -59,10 +57,10 @@ export interface CreateRecentJobsRuntimeOptions {
   currentJobId?: () => string;
   /** 详情弹窗是否正持有当前 job 的展示权（见 active-refresh 的说明）。 */
   detailOwnsCurrentJob?: () => boolean;
-  jobRuntimePort?: unknown;
+  jobRuntimePort?: NavigationJobRuntimePort;
   activeJobRecoveryPort?: unknown;
   navigationPort?: RecentJobsNavigationPort;
-  readerPort?: unknown;
+  readerPort?: NavigationReaderPort;
   homeStatePort?: Pick<HomeStatePort, "setRecentJobsLoadingState">;
   recentJobsStatePort?: RecentJobsStatePort;
   libraryBooksResource?: {

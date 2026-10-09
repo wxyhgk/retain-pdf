@@ -13,6 +13,21 @@ import {
   createRecentJobsStatePort,
 } from "./state.js";
 import { createNoopRecentJobsHomeStatePort } from "./loading-state-contract.js";
+import type { CreateRecentJobsRuntimeOptions } from "./runtime.js";
+import type { RecentJobsReactViewPort } from "../types.js";
+
+/** 运行时的选项照搬，外加本层自己装配的几样（事件端口、命令端口、视图端口）。 */
+export type MountRecentJobsFeatureOptions = Omit<
+  CreateRecentJobsRuntimeOptions,
+  "refreshSchedulerRef" | "viewPort" | "libraryBooksResource"
+> & {
+  startPolling?: (jobId: string) => void;
+  openReader?: (jobId: string, anchor: unknown, documentId: string, options: { pinJob?: boolean }) => void;
+  viewPort: RecentJobsReactViewPort;
+  libraryRefreshPort?: ReturnType<typeof createRecentJobsLibraryRefreshPort>;
+  commandPort?: ReturnType<typeof createRecentJobsCommandPort>;
+  libraryBooksResource?: ReturnType<typeof createLibraryBooksResource>;
+};
 
 export function mountRecentJobsFeature({
   fetchJobList,
@@ -43,7 +58,7 @@ export function mountRecentJobsFeature({
     fetchLibraryBookList,
     apiPrefix,
   }),
-}: any) {
+}: MountRecentJobsFeatureOptions) {
   let refreshScheduler = null;
   const runtime = createRecentJobsRuntime({
     fetchJobList,

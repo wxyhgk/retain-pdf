@@ -1,12 +1,28 @@
 import { createRecentJobsReaderPort } from "./reader-port.js";
 import { createRecentJobsRuntimePort } from "./job-runtime-port.js";
 
+/** 导航只用到任务运行端口的这几个方法（createRecentJobsRuntimePort 或调用方自备）。 */
+export type NavigationJobRuntimePort = {
+  currentJobId?: () => string;
+  openJob?: (jobId: string) => unknown;
+  recoverJob?: (jobId: string) => unknown;
+};
+
+export type NavigationReaderPort = {
+  openReader?: (jobId: string, anchor: unknown, documentId: string, options: { pinJob?: boolean }) => unknown;
+};
+
+export type RecentJobsNavigationPort = ReturnType<typeof createRecentJobsNavigationPort>;
+
 export function createRecentJobsNavigationPort({
   currentJobId = () => "",
-  doc = document,
   jobRuntimePort = createRecentJobsRuntimePort({ currentJobId }),
   readerPort = createRecentJobsReaderPort(),
-}: any = {}) {
+}: {
+  currentJobId?: () => string;
+  jobRuntimePort?: NavigationJobRuntimePort;
+  readerPort?: NavigationReaderPort;
+} = {}) {
 
   return {
     currentJobId() {

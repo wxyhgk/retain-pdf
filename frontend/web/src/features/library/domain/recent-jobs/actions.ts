@@ -1,7 +1,29 @@
 import { resolveRecoverableJobId } from "./active-job-recovery.js";
 import { createRecentJobsRuntimePort } from "./job-runtime-port.js";
 import { createRecentJobsReaderPort } from "./reader-port.js";
-import { createRecentJobsNavigationPort } from "./navigation-port.js";
+import {
+  createRecentJobsNavigationPort,
+  type NavigationJobRuntimePort,
+  type NavigationReaderPort,
+  type RecentJobsNavigationPort,
+} from "./navigation-port.js";
+import type { RecentJobsStatePort } from "./state.js";
+
+export type CreateRecentJobActionsOptions = {
+  apiPrefix?: string;
+  deleteLibraryBook?: (apiPrefix: string, jobId: string) => Promise<unknown>;
+  startPolling?: (jobId: string) => void;
+  openReader?: (jobId: string, anchor: unknown, documentId: string, options: { pinJob?: boolean }) => void;
+  currentJobId?: () => string;
+  jobRuntimePort?: NavigationJobRuntimePort;
+  readerPort?: NavigationReaderPort;
+  activeJobRecoveryPort?: { readActiveJobId?: () => string };
+  navigationPort?: Pick<RecentJobsNavigationPort, "currentJobId" | "openJob" | "openReader" | "recoverJob">;
+  renderCurrentRecentJobs: (options?: { reset?: boolean }) => void;
+  renderRecentJobsEmpty: (message?: string) => void;
+  renderRecentJobsError: (message?: string, options?: { reset?: boolean }) => void;
+  statePort: Pick<RecentJobsStatePort, "getSnapshot" | "removeJobFamily">;
+};
 
 export function createRecentJobActions({
   apiPrefix,
@@ -26,7 +48,7 @@ export function createRecentJobActions({
   renderRecentJobsEmpty,
   renderRecentJobsError,
   statePort,
-}: any) {
+}: CreateRecentJobActionsOptions) {
   let activeJobRecoveryAttempted = false;
 
   function selectJob(jobId) {

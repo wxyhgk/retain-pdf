@@ -1,76 +1,26 @@
 // recent-jobs 卡片运行时形状（纯类型，无逻辑）。
+//
+// 书架里「一本书」只有一个类型：platform/contracts/library-payloads 的 LibraryCardItem。
+// 这里以前另抄了一份 LibraryJobItem（连同进度 / 运行时状态 / 阶段快照），字段几乎一样
+// 却互不兼容（background_stages 一边 unknown[]、一边有类型），引擎和界面之间处处要 any。
 
-export interface StageProgress {
-  current?: number | null;
-  total?: number | null;
-  percent?: number | null;
-  unit?: string | null;
-  [key: string]: unknown;
-}
+import type { AdaptedStageSnapshot } from "@retainpdf/domain/job-status";
+import type {
+  LibraryCardItem,
+  LibraryProgress,
+  LibraryRuntimeStatus,
+} from "@/platform/contracts/library-payloads.js";
 
-export interface StageSnapshot {
-  stageKey?: string;
-  source?: string;
-  publicStage?: string;
-  lane?: string;
-  substage?: string;
-  detail?: string;
-  progress?: StageProgress;
-  [key: string]: unknown;
-}
+export type StageProgress = LibraryProgress;
+export type StageSnapshot = LibraryRuntimeStatus;
+export type RuntimeStatus = LibraryRuntimeStatus;
 
-export interface RuntimeStatus {
-  stageKey?: string;
-  publicStage?: string;
-  source?: string;
-  lane?: string;
-  substage?: string;
-  detail?: string;
-  progress?: StageProgress;
-  [key: string]: unknown;
-}
-
-/** 图书馆 / recent-jobs 卡片条目(运行时合并态) */
-export interface LibraryJobItem {
-  job_id?: string;
-  document_id?: string;
-  active_job_id?: string;
-  source_job_id?: string;
-  id?: string;
-  status?: string;
-  stage?: string;
-  display_stage?: string;
-  lane?: string;
-  substage?: string;
-  stage_detail?: string;
-  workflow?: string;
-  job_type?: string;
-  title?: string;
-  display_name?: string;
-  source_file_name?: string;
-  page_count?: number | null;
-  cover_url?: string;
-  thumbnail_url?: string;
-  created_at?: string;
-  updated_at?: string;
-  progress?: StageProgress;
-  runtime_status?: RuntimeStatus;
-  background_stages?: unknown[];
-  stage_snapshot?: StageSnapshot;
-  book_summary?: {
-    source_file_name?: string;
-    page_count?: number | null;
-    [key: string]: unknown;
-  };
-  library_only?: boolean;
-  output_pdf_ready?: boolean;
-  markdown_ready?: boolean;
-  bundle_ready?: boolean;
-  [key: string]: unknown;
-}
+/** 图书馆 / recent-jobs 卡片条目(运行时合并态)——就是 LibraryCardItem。 */
+export type LibraryJobItem = LibraryCardItem;
 
 export interface StageAdapterPort {
-  adaptJobStageSnapshot?: (job: LibraryJobItem) => StageSnapshot | null | undefined;
+  /** 就是 @retainpdf/domain/job-status 的 adaptJobStageSnapshot。 */
+  adaptJobStageSnapshot?: (job: LibraryJobItem) => AdaptedStageSnapshot | null | undefined;
 }
 
 export interface RuntimeItemOptions {

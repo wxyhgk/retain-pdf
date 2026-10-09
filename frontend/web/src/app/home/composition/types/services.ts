@@ -57,6 +57,7 @@ import type {
   WorkflowDialogRuntime,
 } from "./workflow.js";
 import type { IngestWorkflowView } from "@/features/ingest/index.js";
+import type { RecentJobsStatePort } from "@/features/library/index.js";
 
 export type { CredentialsStatePort, HomeStatePort, UploadStatePort };
 
@@ -184,7 +185,7 @@ export type HomeServicesDomains = {
   };
   library: {
     recentJobsViewPort: RecentJobsReactViewPort;
-    recentJobsStatePort: any;
+    recentJobsStatePort: RecentJobsStatePort;
     recentJobActions: RecentJobActions;
     libraryController: LibraryController;
     bookDetailStore: DialogStore<LibraryCardItem | null>;

@@ -45,6 +45,7 @@ export interface RecentJobActionsPort {
 export interface ActiveRefreshLoopPort {
   schedule: (options?: { resetTimer?: boolean }) => void;
   stop: () => void;
+  dispose?: () => void;
 }
 
 export type RecentJobsTimeoutHandle = ReturnType<typeof globalThis.setTimeout>;

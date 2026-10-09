@@ -1,6 +1,7 @@
 // job-runtime / recent-jobs / artifact-downloads —— 在 composition 阶段一次挂齐，
 // 不放进 initialize 的 if 懒挂载。
 
+import type { createLibraryDomain } from "./create-library-domain.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import {
   cancelJob,
@@ -75,31 +76,10 @@ type StatusCardPresenterPort = {
   renderPatch: () => void;
 };
 
-type LibraryEventPort = {
-  requestRefresh?: (opts?: unknown) => void;
-};
-
-type RecentJobsStatePort = {
-  store: unknown;
-  getSnapshot?: () => unknown;
-  removeJobFamily?: (jobId: string) => unknown;
-};
-
-type RecentJobsRuntimePort = {
-  openJob: (jobId: string) => unknown;
-  currentJobId: () => string;
-};
-
-type RecentJobsReaderPort = {
-  openReader: (jobId: string, anchor?: unknown, documentId?: string, options?: { pinJob?: boolean }) => unknown;
-};
-
-type RecentJobsNavigationPort = {
-  openJob: (jobId: string) => unknown;
-  openReader: (jobId: string, documentId?: string, options?: { pinJob?: boolean }) => unknown;
-  recoverJob: (jobId: string) => unknown;
-  currentJobId: () => string;
-};
+// 书架那几个端口都由 createLibraryDomain 造出来，类型直接取它的返回值。
+// 以前这里给每个端口手抄一份结构类型，抄得又不准（导航端口少了返回值、
+// 状态端口只抄了三个字段、列表资源写成 unknown），一调紧就对不上。
+type LibraryDomain = ReturnType<typeof createLibraryDomain>;
 
 type CreateRuntimeFeaturesArgs = {
   features: HomeFeatures;
@@ -107,15 +87,15 @@ type CreateRuntimeFeaturesArgs = {
   jobRuntimeState: Record<string, unknown>;
   statusCardPresenter: StatusCardPresenterPort;
   uploadStatePort: UploadStatePort;
-  libraryEventPort: LibraryEventPort;
+  libraryEventPort: LibraryDomain["libraryEventPort"];
   jobRuntimeShellViewPort: JobRuntimeShellViewPort;
   artifactDownloadsViewPort: ArtifactDownloadsViewPort;
-  recentJobsStatePort: RecentJobsStatePort;
+  recentJobsStatePort: LibraryDomain["recentJobsStatePort"];
   recentJobsViewPort: RecentJobsReactViewPort;
-  recentJobsJobRuntimePort: RecentJobsRuntimePort;
-  recentJobsReaderPort: RecentJobsReaderPort;
-  recentJobsNavigationPort: RecentJobsNavigationPort;
-  documentLibraryResource: unknown;
+  recentJobsJobRuntimePort: LibraryDomain["recentJobsJobRuntimePort"];
+  recentJobsReaderPort: LibraryDomain["recentJobsReaderPort"];
+  recentJobsNavigationPort: LibraryDomain["recentJobsNavigationPort"];
+  documentLibraryResource: LibraryDomain["documentLibraryResource"];
   homeStatePort: HomeStatePort;
   /** 详情弹窗是否正持有当前 job 的展示权（书架单卡轮询据此决定是否排除它）。 */
   detailOwnsCurrentJob?: () => boolean;
