@@ -31,6 +31,13 @@ pub enum ConfigCommand {
         #[arg(long)]
         credentials: bool,
     },
+    /// 整份设置输出成 JSON(桌面版读;--with-secrets 带上密钥原文)
+    Export {
+        #[arg(long)]
+        with_secrets: bool,
+    },
+    /// 从标准输入读 JSON 对象 {"项": "值" | null} 批量写(null 表示删掉;全部校验通过才写)
+    Import,
 }
 
 fn source_label(settings: &Settings, key: &str) -> String {
@@ -179,6 +186,32 @@ pub fn run(ctx: &Ctx, action: ConfigCommand) -> Result<ExitCode> {
                 println!("设置      {}", ctx.home.config_path().display());
                 println!("密钥      {}", ctx.home.credentials_path().display());
                 println!("数据目录  {}", ctx.data_dir.display());
+            }
+        }
+        ConfigCommand::Export { with_secrets } => {
+            ui::print_json(&ctx.home.export(with_secrets)?);
+        }
+        ConfigCommand::Import => {
+            let mut text = String::new();
+            std::io::Read::read_to_string(&mut std::io::stdin(), &mut text)?;
+            let object: serde_json::Map<String, Value> = serde_json::from_str(&text)
+                .map_err(|e| anyhow::anyhow!("标准输入要是一个 JSON 对象:{e}"))?;
+            let changes: Vec<(String, Option<String>)> = object
+                .into_iter()
+                .map(|(key, value)| {
+                    let value = match value {
+                        Value::Null => None,
+                        Value::String(s) => Some(s),
+                        other => Some(other.to_string()),
+                    };
+                    (key, value)
+                })
+                .collect();
+            ctx.home.apply(&changes)?;
+            if ctx.json {
+                ui::print_json(&json!({ "ok": true, "changed": changes.len() }));
+            } else {
+                ui::ok(format!("已写入 {} 项", changes.len()));
             }
         }
         ConfigCommand::Edit { credentials } => {

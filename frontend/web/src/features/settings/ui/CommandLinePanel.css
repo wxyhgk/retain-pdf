@@ -1,0 +1,54 @@
+/* 设置 → 更新 → 命令行工具。
+ *
+ * @owns cli-install */
+
+.cli-install {
+  display: grid;
+  gap: 8px;
+  max-width: 560px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.cli-install-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.cli-install-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.cli-install-hint.is-ok {
+  color: var(--ok);
+}
+
+.cli-install-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.cli-install-button {
+  justify-self: start;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--btn-radius);
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cli-install-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

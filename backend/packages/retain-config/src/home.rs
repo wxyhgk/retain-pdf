@@ -165,6 +165,10 @@ impl ConfigHome {
         write_private(&self.path_of(store), document.to_string().as_bytes(), store == Store::Credentials)
     }
 
+    pub(crate) fn write_document_pub(&self, store: Store, document: &DocumentMut) -> Result<()> {
+        self.write_document(store, document)
+    }
+
     /// 两个文件不存在就写下带注释的默认内容。
     pub fn ensure_files(&self) -> Result<()> {
         for (store, template) in [(Store::Config, CONFIG_TEMPLATE), (Store::Credentials, CREDENTIALS_TEMPLATE)] {

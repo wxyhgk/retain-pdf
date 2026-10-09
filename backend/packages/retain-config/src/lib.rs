@@ -13,6 +13,7 @@
 //! 带注释的默认文件、`config show` 都由它驱动。生效的值由 [`settings`] 合并:
 //! 环境变量 > 文件 > 内置默认(命令行参数由调用方再盖一层)。
 
+pub mod exchange;
 pub mod home;
 pub mod keys;
 pub mod providers;

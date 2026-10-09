@@ -53,6 +53,7 @@
 @import "../../features/ingest/ui/InlineErrorBox.css";
 @import "../../features/sync/ui/SyncSettingsPanel.css";
 @import "../../features/backup/ui/BackupPanel.css";
+@import "../../features/settings/ui/CommandLinePanel.css";
 @import "../pages/home/translation-workflow.utilities.css";
 @import "../pages/home/collections.utilities.css";
 /* 原 status-detail-translation.utilities.css 按组件拆分（顺序与拆分前一致）。 */

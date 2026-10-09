@@ -331,6 +331,34 @@ function resolveAgentBinary() {
   return { path: match || candidates[1] || "", fileName };
 }
 
+// 命令行 retainpdf：桌面版经它读写 ~/.retainpdf/，设置里也能把它装进终端。
+function resolveCliBinary() {
+  const overridePath = process.env.RETAINPDF_CLI_BINARY
+    ? path.resolve(process.env.RETAINPDF_CLI_BINARY)
+    : "";
+  const fileName = targetPlatform === "win32" ? "retainpdf.exe" : "retainpdf";
+  const candidates = [overridePath];
+
+  if (targetPlatform === "win32") {
+    candidates.push(
+      path.join(repoRoot, "target", "x86_64-pc-windows-msvc", "release", fileName),
+      path.join(repoRoot, "target", "i686-pc-windows-msvc", "release", fileName),
+      path.join(repoRoot, "target", "release", fileName),
+    );
+  } else if (targetPlatform === "darwin") {
+    candidates.push(
+      path.join(repoRoot, "target", "release", fileName),
+      path.join(repoRoot, "target", "x86_64-apple-darwin", "release", fileName),
+      path.join(repoRoot, "target", "aarch64-apple-darwin", "release", fileName),
+    );
+  } else {
+    candidates.push(path.join(repoRoot, "target", "release", fileName));
+  }
+
+  const match = candidates.find((candidate) => candidate && fs.existsSync(candidate));
+  return { path: match || candidates[1] || "", fileName };
+}
+
 function hasBundledPosixPython(root) {
   return fs.existsSync(path.join(root, "bin", "python3"))
     || fs.existsSync(path.join(root, "bin", "python"));
@@ -555,6 +583,7 @@ function verifyBundledPythonRuntime(root) {
 const rustApiBinary = resolveRustApiBinary();
 const jobsdBinary = resolveJobsdBinary();
 const agentBinary = resolveAgentBinary();
+const cliBinary = resolveCliBinary();
 if (desktopPackage.version !== releaseVersion) {
   desktopPackage.version = releaseVersion;
   fs.writeFileSync(`${desktopPackagePath}.tmp`, `${JSON.stringify(desktopPackage, null, 2)}\n`, "utf8");
@@ -831,6 +860,12 @@ if (!frontendOnly && fs.existsSync(agentBinary.path)) {
     force: true,
   });
 }
+if (!frontendOnly && fs.existsSync(cliBinary.path)) {
+  fs.mkdirSync(path.join(outputBackendRoot, "bin"), { recursive: true });
+  fs.cpSync(cliBinary.path, path.join(outputBackendRoot, "bin", cliBinary.fileName), {
+    force: true,
+  });
+}
 
 if (!frontendOnly && targetPlatform === "win32" && fs.existsSync(path.join(embeddedPythonRoot, "python.exe"))) {
   const targetPythonRoot = path.join(outputBackendRoot, "python");
@@ -937,6 +972,8 @@ if (!frontendOnly) {
     jobsdBinaryName: jobsdBinary.fileName,
     agentBinaryBundled: fs.existsSync(path.join(outputBackendRoot, "bin", agentBinary.fileName)),
     agentBinaryName: agentBinary.fileName,
+    cliBinaryBundled: fs.existsSync(path.join(outputBackendRoot, "bin", cliBinary.fileName)),
+    cliBinaryName: cliBinary.fileName,
     pipelineCommandBundled: Boolean(resolveBuiltPipelineCommand(outputBackendRoot)),
     pipelineCommand: (() => {
       const built = resolveBuiltPipelineCommand(outputBackendRoot);

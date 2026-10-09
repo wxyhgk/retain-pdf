@@ -37,7 +37,7 @@ if (!fs.existsSync(venvPython)) {
   run("uv", ["sync", "--project", servicesRoot, "--locked", "--all-extras"]);
 }
 
-const requiredBackendBinaries = ["rust_api", "retain-jobsd", "retainpdf-agent"]
+const requiredBackendBinaries = ["rust_api", "retain-jobsd", "retainpdf-agent", "retainpdf"]
   .map((name) => path.join(repoRoot, "target", "release", `${name}${executableSuffix}`));
 if (requiredBackendBinaries.some((candidate) => !fs.existsSync(candidate))) {
   run("cargo", [

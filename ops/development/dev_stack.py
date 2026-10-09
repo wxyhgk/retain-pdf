@@ -428,6 +428,8 @@ def build_runtime_env(
             "RETAIN_PDF_PROJECT_ROOT": str(paths.product),
             "RETAIN_PDF_SERVICES_ROOT": str(paths.services),
             "RUST_API_KEYS": api_keys,
+            # 命令行 retainpdf 靠 ~/.retainpdf/run/backend.json 找到正在运行的后端。
+            "RUST_API_WRITE_RUNTIME_FILE": "1",
             "RUST_API_PROJECT_ROOT": str(paths.product),
             "RUST_API_ROOT": str(paths.api),
             "RUST_API_DATA_ROOT": str(options.data_root),

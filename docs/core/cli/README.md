@@ -74,3 +74,25 @@ retainpdf sync set --folder <文件夹> | --webdav <地址> --user <账号> [--p
 
 后端只在 `RUST_API_WRITE_RUNTIME_FILE=1` 时写运行记录（桌面版、开发脚本打开），测试和别的部署起的后端
 不碰用户目录。
+
+## 桌面版
+
+- **配置的唯一来源是 `~/.retainpdf/`。** 设置页的翻译服务商、各服务商的模型 / 地址 / 并发 / API Key、
+  OCR 与 token 都经命令行读写（`retainpdf config export --with-secrets` / `config import`，见
+  `frontend/desktop/src/main/retainpdf-home.js`）。在终端里改的，应用下次读设置就是新的。
+- **`desktop-config.json` 只留界面状态和其它任务选项**（首次启动、托盘提示、公式模式等），不再存密钥。
+- **第一次启动新版时自动迁移。** 旧文件里的接口设置搬进 `~/.retainpdf/`，原文件先备份成
+  `desktop-config.before-retainpdf-home.json`（0600），然后从旧文件里删掉这些字段。
+- **启动后端时：**
+  - `[backend]`（同时任务数、同步间隔、备份间隔）、`[assistant]`（模型、地址、密钥、工具轮数）作为
+    环境变量的默认值传进去；
+  - `backend.data_dir` 配了就用它当数据目录；
+  - 打开 `RUST_API_WRITE_RUNTIME_FILE`。
+- **命令行没编译时退回旧做法**（全部存在 `desktop-config.json`），开发时不受影响。
+- **设置 → 更新 →「安装命令行工具」：**
+  - 把包里的 `retainpdf` 链接到 `/usr/local/bin`（可写时）或 `~/.local/bin`，后者不在 PATH 里时提示怎么加；
+  - 同名的普通文件不覆盖；
+  - Windows 暂不支持。
+
+AI 助手服务自己的设置（运行方式、模型、密钥，「AI 设置」页管理，存在数据目录里）还没有并进来；
+`[assistant]` 目前只作为它没设置过时的默认值。
