@@ -207,6 +207,35 @@ test("翻译质量档位记在本机，读写失败时退回普通", async () =>
   }
 });
 
+test("排版引擎：默认不发 engine（跟后端默认），选了新引擎 / Typst 才发", () => {
+  const base = { developerConfig: developerConfig(), constants };
+  const legacy = buildRenderPayload(base);
+  assert.equal("engine" in legacy, false);
+  assert.deepEqual(buildRenderPayload({ ...base, renderEngine: "auto" }), legacy);
+  assert.equal(buildRenderPayload({ ...base, renderEngine: "rpr_fit" }).engine, "rpr_fit");
+  assert.equal(buildRenderPayload({ ...base, renderEngine: "typst" }).engine, "typst");
+  assert.equal("engine" in buildRenderPayload({ ...base, renderEngine: "bogus" }), false);
+});
+
+test("排版引擎选择记在本机，不认识的值退回默认", () => {
+  const store = new Map();
+  const original = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: (key) => (store.has(key) ? store.get(key) : null),
+    setItem: (key, value) => store.set(key, String(value)),
+  };
+  try {
+    const view = createWorkflowViewFeature();
+    assert.equal(view.renderEngine(), "auto");
+    view.setRenderEngine("rpr_fit");
+    assert.equal(createWorkflowViewFeature().renderEngine(), "rpr_fit", "新开的视图沿用上次的选择");
+    view.setRenderEngine("rpr");
+    assert.equal(view.renderEngine(), "auto");
+  } finally {
+    globalThis.localStorage = original;
+  }
+});
+
 test("buildOcrPayload maps provider token field and paddle api url", () => {
   const payload = buildOcrPayload({
     pageRanges: "1-3",

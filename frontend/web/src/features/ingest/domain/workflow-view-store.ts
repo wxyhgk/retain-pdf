@@ -1,5 +1,24 @@
 import { createStore } from "@/platform/store/store.js";
 import type { Store } from "@/platform/store/store.js";
+import {
+  loadRenderEngine,
+  loadTranslationQuality,
+  normalizeRenderEngine,
+  normalizeTranslationQuality,
+  saveRenderEngine,
+  saveTranslationQuality,
+  type RenderEngine,
+  type TranslationQuality,
+} from "./workflow-preferences.js";
+
+export {
+  normalizeRenderEngine,
+  normalizeTranslationQuality,
+  RENDER_ENGINE_STORAGE_KEY,
+  TRANSLATION_QUALITY_STORAGE_KEY,
+  type RenderEngine,
+  type TranslationQuality,
+} from "./workflow-preferences.js";
 
 // workflow 域视图 store + React viewPort。
 //
@@ -50,39 +69,6 @@ export type WorkflowDeveloperDialog = {
   [key: string]: unknown;
 };
 
-/**
- * 翻译质量档位（用户可见的一个下拉，背后映射到 translation.preparation 等字段，见
- * workflow/payload.ts 的 translationQualityFields）：
- * - standard：直接翻译，和以前完全一样；
- * - terms：先通读全书生成术语表和风格指南，再带着它们翻译（preparation=terms+style）；
- * - refined：在 terms 基础上，翻译完再让模型挑错、只改有问题的片段（refine=review_and_fix）。
- */
-export type TranslationQuality = "standard" | "terms" | "refined";
-export const TRANSLATION_QUALITY_STORAGE_KEY = "retainpdf.translationQuality";
-
-export function normalizeTranslationQuality(value: unknown): TranslationQuality {
-  return value === "terms" || value === "refined" ? value : "standard";
-}
-
-// 档位是用户的长期偏好（选了「统一术语」的人通常每本都要），所以记在本机；
-// 读写失败（隐私模式等）就退回 standard，不影响提交。
-function loadTranslationQuality(): TranslationQuality {
-  try {
-    if (typeof localStorage !== "undefined") {
-      return normalizeTranslationQuality(localStorage.getItem(TRANSLATION_QUALITY_STORAGE_KEY));
-    }
-  } catch {}
-  return "standard";
-}
-
-function saveTranslationQuality(value: TranslationQuality) {
-  try {
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem(TRANSLATION_QUALITY_STORAGE_KEY, value);
-    }
-  } catch {}
-}
-
 export type WorkflowViewState = {
   submitLabel: string;
   submitDisabled: boolean;
@@ -93,6 +79,7 @@ export type WorkflowViewState = {
   glossaries: WorkflowGlossaryOption[];
   selectedGlossaryId: string;
   translationQuality: TranslationQuality;
+  renderEngine: RenderEngine;
   developerDialog: WorkflowDeveloperDialog;
   developerFormState: Record<string, unknown>;
   ocrOnly: boolean;
@@ -141,6 +128,7 @@ export function createWorkflowViewStore(): WorkflowViewStore {
       glossaries: [],
       selectedGlossaryId: "",
       translationQuality: loadTranslationQuality(),
+      renderEngine: loadRenderEngine(),
       developerDialog: {},
       developerFormState: {},
       ocrOnly: false,
@@ -186,6 +174,16 @@ export function createWorkflowViewFeature({
     const next = normalizeTranslationQuality(value);
     saveTranslationQuality(next);
     patch({ translationQuality: next });
+  }
+
+  function renderEngine(): RenderEngine {
+    return normalizeRenderEngine(store.getSnapshot().renderEngine);
+  }
+
+  function setRenderEngine(value: unknown = "auto") {
+    const next = normalizeRenderEngine(value);
+    saveRenderEngine(next);
+    patch({ renderEngine: next });
   }
 
   function setJobWarningVisible(visible: boolean) {
@@ -362,6 +360,8 @@ export function createWorkflowViewFeature({
     setSelectedGlossaryId,
     translationQuality,
     setTranslationQuality,
+    renderEngine,
+    setRenderEngine,
     setSubmitBusy,
     setSubmitDisabled,
     store,

@@ -84,9 +84,13 @@ export function createWorkflowPayloadAssembly({
     });
   }
 
-  function buildRenderPayload(developerConfig: WorkflowDeveloperConfig) {
+  function buildRenderPayload(
+    developerConfig: WorkflowDeveloperConfig,
+    submitValues: WorkflowSubmitValues = currentWorkflowSubmitValues(),
+  ) {
     return buildRenderPayloadRequest({
       developerConfig,
+      renderEngine: submitValues.renderEngine,
       constants,
     });
   }
@@ -157,7 +161,7 @@ export function createWorkflowPayloadAssembly({
       payload.translation = buildTranslationPayload(developerConfig, submitValues);
     }
     if (workflowUsesRenderStage(workflow)) {
-      payload.render = buildRenderPayload(developerConfig);
+      payload.render = buildRenderPayload(developerConfig, submitValues);
     }
     return payload;
   }

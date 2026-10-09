@@ -143,6 +143,7 @@ export function buildHomeServices({
     workflowViewActions: {
       setSelectedGlossaryId: views.workflowView.setSelectedGlossaryId,
       setTranslationQuality: views.workflowView.setTranslationQuality,
+      setRenderEngine: views.workflowView.setRenderEngine,
       setOcrOnly: views.workflowView.setOcrOnly,
       isOcrOnly: views.workflowView.isOcrOnly,
     },
