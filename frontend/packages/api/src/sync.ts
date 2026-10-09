@@ -18,6 +18,17 @@ export type SyncRun = {
   device_renewed: boolean;
 };
 
+/** 最近一次整理同步文件夹（默认每天最多一次）。 */
+export type SyncMaintenance = {
+  at: string;
+  segments_compacted: number;
+  packs_retired: number;
+  packs_deleted: number;
+  bytes_freed: number;
+  bytes_repacked: number;
+  error: string | null;
+};
+
 export type SyncPendingItem = { kind: string; key: string; reason: string; attempts: number };
 export type SyncPeer = { device_id: string; name: string; segments_read: number };
 
@@ -37,6 +48,7 @@ export type SyncStatus = {
   running: boolean;
   interval_seconds: number;
   last_run: SyncRun | null;
+  last_maintenance: SyncMaintenance | null;
   pending_total: number;
   pending: SyncPendingItem[];
   peers: SyncPeer[];

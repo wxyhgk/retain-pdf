@@ -80,7 +80,9 @@ fn event_uid_is_backfilled_for_legacy_schema_and_migrations_are_idempotent() {
          DROP TABLE sync_cursors;
          DROP TABLE sync_pending;
          DROP TABLE sync_file_cache;
-         DROP TABLE sync_blobs;",
+         DROP TABLE sync_blobs;
+         DROP TABLE sync_own_records;
+         DROP TABLE sync_retired_packs;",
     )
     .unwrap();
     conn.execute_batch(

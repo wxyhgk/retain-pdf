@@ -25,7 +25,7 @@ use retain_data::sync::{SyncEngine, WebDavBackend, WebDavConfig};
 
 use crate::db::Db;
 use crate::models::api::{
-    SyncPeerView, SyncPendingItemView, SyncRunView, SyncSettingsInput, SyncStatusView,
+    SyncMaintenanceView, SyncPeerView, SyncPendingItemView, SyncRunView, SyncSettingsInput, SyncStatusView,
     SyncTestView,
 };
 use crate::models::domain::now_iso;
@@ -39,6 +39,7 @@ const KEY_WEBDAV_PASSWORD: &str = "webdav_password";
 const KEY_DEVICE_NAME: &str = "device_name";
 const KEY_DEVICE_ID: &str = "device_id";
 const KEY_LAST_RUN: &str = "last_run";
+const KEY_LAST_MAINTENANCE: &str = "last_maintenance";
 /// 用户选的文件夹里建的子目录名。
 pub const SYNC_SUBDIR: &str = "RetainPDF-Sync";
 const TRANSPORT_FOLDER: &str = "folder";
@@ -225,6 +226,9 @@ impl SyncService {
             running: self.running.load(Ordering::SeqCst),
             interval_seconds: self.interval.as_secs(),
             last_run: self.last_run.lock().expect("sync last_run poisoned").clone(),
+            last_maintenance: self
+                .get(KEY_LAST_MAINTENANCE)?
+                .and_then(|json| serde_json::from_str(&json).ok()),
             pending_total,
             pending: pending
                 .into_iter()
@@ -388,6 +392,20 @@ impl SyncService {
                 view.rejected = report.rejected;
                 view.folder_changed = report.folder_changed;
                 view.device_renewed = report.device_renewed;
+                if report.maintained || report.maintenance_error.is_some() {
+                    let maintenance = SyncMaintenanceView {
+                        at: now_iso(),
+                        segments_compacted: report.segments_compacted,
+                        packs_retired: report.packs_retired,
+                        packs_deleted: report.packs_deleted,
+                        bytes_freed: report.bytes_freed,
+                        bytes_repacked: report.bytes_repacked,
+                        error: report.maintenance_error.clone(),
+                    };
+                    if let Ok(json) = serde_json::to_string(&maintenance) {
+                        let _ = self.db.sync_state_set(KEY_LAST_MAINTENANCE, &json);
+                    }
+                }
                 *self.peers.lock().expect("sync peers poisoned") = peers
                     .into_iter()
                     .map(|peer| SyncPeerView {

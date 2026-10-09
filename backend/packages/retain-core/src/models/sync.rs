@@ -50,6 +50,20 @@ pub struct SyncRunView {
     pub device_renewed: bool,
 }
 
+/// 一次整理同步文件夹的结果:整理掉旧的改动记录段、停用 / 删掉没人用的包。
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SyncMaintenanceView {
+    pub at: String,
+    pub segments_compacted: usize,
+    pub packs_retired: usize,
+    pub packs_deleted: usize,
+    /// 删掉的包腾出的空间(字节)。
+    pub bytes_freed: u64,
+    /// 为留住还在用的内容重新上传的大小(字节)。
+    pub bytes_repacked: u64,
+    pub error: Option<String>,
+}
+
 /// 等待区里的一条:还在等文件或等相关的书、任务同步过来。
 #[derive(Debug, Clone, Serialize)]
 pub struct SyncPendingItemView {
@@ -84,6 +98,8 @@ pub struct SyncStatusView {
     pub running: bool,
     pub interval_seconds: u64,
     pub last_run: Option<SyncRunView>,
+    /// 最近一次整理同步文件夹(默认每天最多一次)。
+    pub last_maintenance: Option<SyncMaintenanceView>,
     pub pending_total: usize,
     pub pending: Vec<SyncPendingItemView>,
     pub peers: Vec<SyncPeerView>,

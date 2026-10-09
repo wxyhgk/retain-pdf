@@ -15,6 +15,10 @@
 //! 不会让实体复活,比它新的改动(删除之后又改过)会。依赖还没到的改动(文件还没同步
 //! 过来、指向的书或任务还不在)放进等待区,之后每轮重试。
 //!
+//! 同步文件夹只增不减的话会越来越大、新设备要从头读起:每台设备每天看一次要不要整理自己
+//! 的目录(`maintain.rs`,格式 3):旧的改动记录段合并成每个实体一条,没人用的文件包先停用、
+//! 7 天后删,大半没用的包把还在用的内容重新打包。
+//!
 //! 不同步:渲染中间文件(各设备自己重新生成)、还没结束的任务 / AI 计算 / AI 改文档、
 //! AI 对话在本机接着哪个会话(`local_only_columns`)、凭据。本机版本不认识的种类放进
 //! 等待区,升级后再应用。
@@ -26,7 +30,7 @@ mod folder;
 mod store;
 mod webdav;
 
-pub use engine::{SyncEngine, SyncPeer, SyncReport};
+pub use engine::{MaintenancePolicy, SyncEngine, SyncPeer, SyncReport};
 pub use folder::FolderBackend;
 pub use store::{Backend, SYNC_FORMAT, SYNC_FORMAT_VERSION};
 pub use webdav::{WebDavBackend, WebDavConfig};
