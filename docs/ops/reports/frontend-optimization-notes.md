@@ -128,7 +128,7 @@
 问题：
 
 - 存在：
-  - `const DEVELOPER_PASSWORD = "Gk265157!";`
+  - `const DEVELOPER_PASSWORD = "<已删除>";`
 - 这相当于前端公开密码，没有真正安全性。
 
 建议：
