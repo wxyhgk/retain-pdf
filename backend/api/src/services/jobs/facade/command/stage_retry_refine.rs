@@ -20,7 +20,7 @@ use super::rerun::prepare_in_place_render_job;
 use super::stage_retry_overrides::{apply_retry_overrides_to_resolved_spec, discard_ocr_secret_sources};
 
 /// 精修重试允许的模式。`off` 不在里面：不精修的重渲染请用 stage=render。
-const REFINE_RETRY_MODES: &[&str] = &["review_only", "review_and_fix"];
+const REFINE_RETRY_MODES: &[&str] = &["review_only", "review_and_fix", "editorial"];
 const DEFAULT_REFINE_RETRY_MODE: &str = "review_and_fix";
 
 /// 校验 `refine` 对象并归一成要落盘的一次性覆盖。省略 = 全书 review_and_fix。

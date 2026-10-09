@@ -126,11 +126,11 @@ export interface PublicTranslationInput {
     glossary_mode: string;
     memory_mode: string;
     /**
-     * TRANSLATION_PREPARATION_MODES：off / artifacts_only / terms / terms+style。
+     * TRANSLATION_PREPARATION_MODES：off / artifacts_only / terms / terms+style / editorial。
      */
     preparation?: string;
     /**
-     * TRANSLATION_REFINE_MODES：off / review_only / review_and_fix。
+     * TRANSLATION_REFINE_MODES：off / review_only / review_and_fix / editorial。
      */
     refine?: string;
     refine_max_items?: number;

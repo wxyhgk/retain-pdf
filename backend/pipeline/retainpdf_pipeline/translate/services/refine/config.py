@@ -1,7 +1,7 @@
 """精修配置：把渲染 spec 的 ``params.refine``（或一次性覆盖）归一成一份不可变配置。
 
 取值规则（与 Rust 写 spec 的约定一致，见第二期接口约定第 3 节）：
-- ``mode``：off / review_only / review_and_fix，其它值（含缺失）一律 off；
+- ``mode``：off / review_only / review_and_fix / editorial，其它值（含缺失）一律 off；
 - ``trigger``：auto / manual，其它值（含缺失）按 auto（续跑时不重复花钱）；
 - ``start_page`` / ``end_page``：1-based 闭区间，null / 0 / 负数 / 非数字 = 不限；
 - ``max_items`` / ``max_tokens``：≥0 的整数，0 = 不限；缺失或非法用默认值；
@@ -16,7 +16,9 @@ from typing import Any, Mapping
 REFINE_MODE_OFF = "off"
 REFINE_MODE_REVIEW_ONLY = "review_only"
 REFINE_MODE_REVIEW_AND_FIX = "review_and_fix"
-REFINE_MODES = (REFINE_MODE_OFF, REFINE_MODE_REVIEW_ONLY, REFINE_MODE_REVIEW_AND_FIX)
+# 编辑部：审校 + 质检出问题，主编（模型）逐块分流，修订局部改或整块重写，多轮、有台账。
+REFINE_MODE_EDITORIAL = "editorial"
+REFINE_MODES = (REFINE_MODE_OFF, REFINE_MODE_REVIEW_ONLY, REFINE_MODE_REVIEW_AND_FIX, REFINE_MODE_EDITORIAL)
 
 REFINE_TRIGGER_AUTO = "auto"
 REFINE_TRIGGER_MANUAL = "manual"
@@ -88,7 +90,11 @@ class RefineConfig:
 
     @property
     def applies_fixes(self) -> bool:
-        return self.mode == REFINE_MODE_REVIEW_AND_FIX
+        return self.mode in (REFINE_MODE_REVIEW_AND_FIX, REFINE_MODE_EDITORIAL)
+
+    @property
+    def editorial(self) -> bool:
+        return self.mode == REFINE_MODE_EDITORIAL
 
     def page_in_scope(self, page_number: int) -> bool:
         if self.start_page is not None and page_number < self.start_page:
@@ -128,6 +134,7 @@ __all__ = [
     "DEFAULT_REFINE_MAX_TOKENS",
     "REFINE_MODES",
     "REFINE_MODE_OFF",
+    "REFINE_MODE_EDITORIAL",
     "REFINE_MODE_REVIEW_AND_FIX",
     "REFINE_MODE_REVIEW_ONLY",
     "REFINE_TRIGGERS",

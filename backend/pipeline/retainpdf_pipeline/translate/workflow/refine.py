@@ -372,6 +372,34 @@ def _try_fix_item(
         record["edits"] = [edit for edit in proposal["edits"] if isinstance(edit, dict)]
         return _mark(record, fix_rules.FIX_REJECTED, exc.reason, exc.detail)
     record["edits"] = [edit.as_dict() for edit in applied]
+    no_growth = item.item_id in context["fit_constrained"]
+    return accept_candidate(
+        record=record,
+        item=item,
+        findings=findings,
+        after=after,
+        budget=fix_rules.length_budget(item, findings, no_growth=no_growth),
+        no_growth=no_growth,
+        pages=pages,
+        context=context,
+    )
+
+
+def accept_candidate(
+    *,
+    record: dict[str, Any],
+    item: QaItem,
+    findings: list[review_rules.Finding],
+    after: str,
+    budget: int,
+    no_growth: bool,
+    pages: dict[int, list[dict]],
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    """候选译文的验收与写回：局部改（编辑执行之后）和编辑部的整块重写共用这一套。"""
+    before = item.protected_translated
+    record["before"] = before
+    record["length_before"] = len(before)
     record["after"] = after
     record["length_after"] = len(after)
     # 4. 编辑后与编辑前不能相同；也不能退回成原文。
@@ -380,8 +408,6 @@ def _try_fix_item(
     if after.strip() == item.protected_source.strip():
         return _mark(record, fix_rules.FIX_REJECTED, fix_rules.REJECT_SAME_AS_SOURCE, "edited text equals the source")
     # 3. 长度预算。
-    no_growth = item.item_id in context["fit_constrained"]
-    budget = fix_rules.length_budget(item, findings, no_growth=no_growth)
     record["length_budget"] = budget
     if len(after) > budget:
         reason = fix_rules.REJECT_FIT_NO_GROWTH if no_growth else fix_rules.REJECT_LENGTH_BUDGET
@@ -800,8 +826,15 @@ def run_refine_for_render(
             return None
         progress = _Progress(cfg.mode)
         report = _base_report(cfg, translations_dir)
-        progress.transition("start", f"开始精修译文（{cfg.mode}）")
-        _refine(job_root, translations_dir, cfg, report, chat_fn=chat_fn, fix_chat_fn=fix_chat_fn, progress=progress)
+        if cfg.editorial:
+            # 编辑部复用本模块的读取、挑错与验收，这里延迟导入避免循环。
+            from retainpdf_pipeline.translate.workflow.editorial import run_editorial
+
+            progress.transition("start", "编辑部开始处理译文")
+            run_editorial(job_root, translations_dir, cfg, report, chat_fn=chat_fn, fix_chat_fn=fix_chat_fn, progress=progress)
+        else:
+            progress.transition("start", f"开始精修译文（{cfg.mode}）")
+            _refine(job_root, translations_dir, cfg, report, chat_fn=chat_fn, fix_chat_fn=fix_chat_fn, progress=progress)
     except Exception as exc:  # noqa: BLE001 - 精修失败不能拖垮渲染
         print(f"refine: failed {type(exc).__name__}: {exc}", flush=True)
         if report is None:
@@ -848,4 +881,4 @@ def run_refine_for_render(
     return report
 
 
-__all__ = ["REFINE_SUBSTAGE", "run_refine_for_render"]
+__all__ = ["REFINE_SUBSTAGE", "accept_candidate", "run_refine_for_render"]

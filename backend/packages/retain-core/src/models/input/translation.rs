@@ -18,13 +18,14 @@ pub const TRANSLATION_MATH_MODES: &[&str] = &["direct_typst", "placeholder"];
 pub const TRANSLATION_CONTEXT_MODES: &[&str] = &["needed", "all", "off"];
 pub const TRANSLATION_GLOSSARY_MODES: &[&str] = &["matched", "all", "off"];
 pub const TRANSLATION_MEMORY_MODES: &[&str] = &["matched", "broad", "off"];
-/// 译前准备（全书术语预扫 + 风格指南）开关。权威来源是 Python 的
+/// 译前准备（全书术语预扫 + 风格指南；editorial 再加术语专员审定）开关。权威来源是 Python 的
 /// `_normalize_preparation_mode`。默认 `off`：不生成产物、prompt 与缓存 key 不变。
-pub const TRANSLATION_PREPARATION_MODES: &[&str] = &["off", "artifacts_only", "terms", "terms+style"];
+pub const TRANSLATION_PREPARATION_MODES: &[&str] = &["off", "artifacts_only", "terms", "terms+style", "editorial"];
 /// 精修（挑错 + 定点修改）开关。在渲染阶段、真正渲染之前运行：
-/// `review_only` 只挑错出报告，`review_and_fix` 再对 critical/major 做定点修改。
+/// `review_only` 只挑错出报告，`review_and_fix` 再对 critical/major 做定点修改，
+/// `editorial` 是编辑部模式（主编分流、局部改或整块重写、多轮、台账，见 workflow/editorial.py）。
 /// 默认 `off`：渲染阶段的行为与没有这个字段时完全一致。
-pub const TRANSLATION_REFINE_MODES: &[&str] = &["off", "review_only", "review_and_fix"];
+pub const TRANSLATION_REFINE_MODES: &[&str] = &["off", "review_only", "review_and_fix", "editorial"];
 /// 模型接口协议。权威来源是 Python 的 `model_wire.PROTOCOLS`。
 /// `openai`：`/chat/completions` + Bearer；`anthropic`：`/messages` + x-api-key。
 pub const TRANSLATION_API_PROTOCOLS: &[&str] = &["openai", "anthropic"];

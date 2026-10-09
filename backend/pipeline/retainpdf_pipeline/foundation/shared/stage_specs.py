@@ -430,7 +430,7 @@ class RenderStageInputs:
     translation_manifest: Path | None
 
 
-RENDER_REFINE_MODES = ("off", "review_only", "review_and_fix")
+RENDER_REFINE_MODES = ("off", "review_only", "review_and_fix", "editorial")
 RENDER_REFINE_TRIGGERS = ("auto", "manual")
 RENDER_REFINE_DEFAULT_MAX_ITEMS = 300
 RENDER_REFINE_DEFAULT_MAX_TOKENS = 400000

@@ -19,7 +19,7 @@
   "definitions": {
     "RefineMode": {
       "type": "string",
-      "enum": ["review_only", "review_and_fix"],
+      "enum": ["review_only", "review_and_fix", "editorial"],
       "description": "Mode that produced this report. mode=off never writes a report."
     },
     "RefineTrigger": {
@@ -177,6 +177,8 @@
       "required": ["item_id", "page_number", "finding_ids", "categories", "status", "reject_reason", "reject_detail", "before", "after", "edits", "note", "revision_id", "length_before", "length_after", "length_budget"],
       "properties": {
         "origin": {"type": "string", "enum": ["model", "rule"], "description": "model (default when absent): edits proposed by the fixer model; rule: edits produced by a deterministic rule. rejection_rate counts model fixes only."},
+        "action": {"type": "string", "enum": ["patch", "rewrite"], "description": "editorial mode only. patch: minimal edits; rewrite: the reviser rewrote the whole block. Absent in other modes (always patch)."},
+        "round": {"type": "integer", "minimum": 1, "description": "editorial mode only: which editorial round produced this attempt."},
         "item_id": {"type": "string"},
         "page_number": {"type": "integer", "minimum": 1},
         "finding_ids": {"type": "array", "items": {"type": "string"}},
@@ -289,7 +291,12 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["review", "fix"],
-          "properties": {"review": {"type": "string"}, "fix": {"type": "string"}}
+          "properties": {
+            "review": {"type": "string"},
+            "fix": {"type": "string"},
+            "chief": {"type": "string", "description": "editorial mode only."},
+            "rewrite": {"type": "string", "description": "editorial mode only."}
+          }
         },
         "translation": {
           "type": "object",
@@ -330,7 +337,74 @@
             }
           }
         },
-        "elapsed_ms": {"type": "integer", "minimum": 0}
+        "elapsed_ms": {"type": "integer", "minimum": 0},
+        "editorial": {"$ref": "#/definitions/RefineEditorial"}
+      }
+    },
+    "RefineEditorial": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "mode=editorial only: how the chief editor routed each block, disputes, and blocks left for a person. The full trail is in the ledger.",
+      "required": ["ledger_path", "rounds", "max_rounds", "decisions", "disputes", "escalated", "term_review", "models"],
+      "properties": {
+        "ledger_path": {"type": "string", "description": "Relative to the job root: artifacts/editorial/ledger.jsonl."},
+        "run_id": {"type": "string"},
+        "resumed": {"type": "boolean", "description": "true when this run picked up an interrupted run's review from the ledger instead of reviewing again."},
+        "rounds": {"type": "integer", "minimum": 0},
+        "max_rounds": {"type": "integer", "minimum": 1},
+        "decisions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["total", "by_action", "by_source", "overridden"],
+          "properties": {
+            "total": {"type": "integer", "minimum": 0},
+            "by_action": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+            "by_source": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}, "description": "model: decided by the chief editor model; rule: default action (model unavailable, failed, or the item had only one allowed action)."},
+            "overridden": {"type": "integer", "minimum": 0, "description": "Model decisions outside the allowed actions, replaced by the default."}
+          }
+        },
+        "disputes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["item_id", "finding_id", "term_source", "term_target", "ruling", "explanation"],
+            "properties": {
+              "item_id": {"type": "string"},
+              "finding_id": {"type": "string"},
+              "term_source": {"type": "string"},
+              "term_target": {"type": "string"},
+              "ruling": {"type": "string", "enum": ["keep_term_base"]},
+              "explanation": {"type": "string"}
+            }
+          }
+        },
+        "escalated": {
+          "type": "array",
+          "description": "Blocks left for a person: limits reached, or the chief editor escalated them.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["item_id", "page_number", "reason", "finding_ids", "categories", "attempts"],
+            "properties": {
+              "item_id": {"type": "string"},
+              "page_number": {"type": "integer"},
+              "reason": {"type": "string"},
+              "finding_ids": {"type": "array", "items": {"type": "string"}},
+              "categories": {"type": "array", "items": {"$ref": "#/definitions/RefineCategory"}},
+              "attempts": {"type": "array", "items": {"type": "string"}, "description": "action:status per attempt, e.g. patch:rejected/crosses_protected_token."}
+            }
+          }
+        },
+        "term_review": {"type": ["object", "null"], "description": "The term specialist's review summary copied from translated/term-base.v1.json (null when the term base was not reviewed)."},
+        "models": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "chief": {"$ref": "#/definitions/RefineModelInfo"},
+            "rewriter": {"$ref": "#/definitions/RefineModelInfo"}
+          }
+        }
       }
     },
     "RefineReportView": {

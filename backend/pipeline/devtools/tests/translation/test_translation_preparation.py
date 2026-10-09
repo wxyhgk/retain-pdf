@@ -704,3 +704,68 @@ def test_stage_spec_passes_reviewer_through_credential_reference(tmp_path: Path,
 @pytest.fixture(autouse=True)
 def _isolated_unit_cache(monkeypatch, tmp_path):
     monkeypatch.setattr(cache.paths, "TRANSLATION_UNIT_CACHE_DIR", tmp_path / "unit-cache")
+
+
+class EditorialMockLLM(MockLLM):
+    """在 MockLLM 之上回答术语专员的审定请求：谐振子是专业术语，普朗克是人名。"""
+
+    def __init__(self, *, review_fails: bool = False, **kwargs):
+        super().__init__(**kwargs)
+        self.review_calls = 0
+        self.review_fails = review_fails
+
+    def __call__(self, messages, **kwargs):
+        if str(kwargs.get("request_label", "")).startswith("term-review"):
+            self.review_calls += 1
+            if self.review_fails:
+                raise TimeoutError("mock upstream timeout")
+            payload = json.loads(messages[1]["content"])
+            decisions = {
+                "harmonic oscillator": {"category": "technical", "target": "谐振子", "annotate": True},
+                "Max Planck": {"category": "person", "target": "Max Planck", "annotate": True},
+            }
+            return json.dumps(
+                {"terms": [{"source": term["source"], **decisions[term["source"]]} for term in payload["terms"]]},
+                ensure_ascii=False,
+            )
+        return super().__call__(messages, **kwargs)
+
+
+def test_editorial_preparation_reviews_terms_before_freezing(tmp_path: Path) -> None:
+    llm = EditorialMockLLM()
+    preparation = _prepare(tmp_path, "editorial", llm)
+    term_base = json.loads((tmp_path / "translated" / "term-base.v1.json").read_text(encoding="utf-8"))
+    sources = {term["source"]: term for term in term_base["terms"]}
+
+    assert llm.review_calls == 1
+    assert (sources["harmonic oscillator"]["treatment"], sources["harmonic oscillator"]["annotate"]) == ("lock", True)
+    # 人名不锁定、不括注（模型说要括注也不算：只有专业术语才可能括注）。
+    assert (sources["Max Planck"]["treatment"], sources["Max Planck"]["annotate"]) == ("free", False)
+    assert term_base["review"]["status"] == "completed"
+    assert term_base["review"]["by_treatment"] == {"free": 1, "lock": 1}
+    assert {entry.source for entry in preparation.term_base_entries} == {"harmonic oscillator"}
+    assert preparation.style_guidance, "editorial 档同样生成并注入风格指南"
+
+    again = EditorialMockLLM()
+    _prepare(tmp_path, "editorial", again)
+    assert (again.prescan_calls, again.review_calls) == (0, 0), "审定后的术语表冻结复用"
+
+
+def test_editorial_term_base_is_not_reused_by_terms_mode_and_vice_versa(tmp_path: Path) -> None:
+    _prepare(tmp_path, "terms+style", MockLLM())
+    llm = EditorialMockLLM()
+    _prepare(tmp_path, "editorial", llm)
+    assert llm.review_calls == 1, "没审定过的术语表不能当成审定过的复用"
+
+
+def test_failed_term_review_keeps_prescan_behaviour_and_is_not_frozen(tmp_path: Path) -> None:
+    preparation = _prepare(tmp_path, "editorial", EditorialMockLLM(review_fails=True))
+    term_base = json.loads((tmp_path / "translated" / "term-base.v1.json").read_text(encoding="utf-8"))
+    assert term_base["review"]["status"] == "failed"
+    assert term_base["complete"] is False
+    assert term_base["review"]["unreviewed_count"] == 2
+    assert {entry.source for entry in preparation.term_base_entries} == {"harmonic oscillator", "Max Planck"}
+
+    retry = EditorialMockLLM()
+    _prepare(tmp_path, "editorial", retry)
+    assert retry.review_calls == 1, "没审完的术语表下次重新审定"

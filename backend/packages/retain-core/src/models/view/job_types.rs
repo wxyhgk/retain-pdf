@@ -447,7 +447,7 @@ pub struct RetryStageRequest {
 #[derive(Debug, Deserialize, Default, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct RefineRetryRequest {
-    /// `review_only` | `review_and_fix`，默认 `review_and_fix`。
+    /// `review_only` | `review_and_fix` | `editorial`，默认 `review_and_fix`。
     #[serde(default)]
     pub mode: Option<String>,
     #[serde(default)]

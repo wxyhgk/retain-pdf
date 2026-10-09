@@ -93,6 +93,8 @@ class TermSpec:
     occurrences: list[QaUnit] = field(default_factory=list)
     hits: list[QaUnit] = field(default_factory=list)
     misses: list[QaUnit] = field(default_factory=list)
+    # 术语专员审定过的条目只有 annotate=true 的才要求首现括注；没审过的照旧要求。
+    annotate: bool = True
 
     @property
     def expected(self) -> str:
@@ -100,7 +102,7 @@ class TermSpec:
 
     @property
     def expects_annotation(self) -> bool:
-        return self.level != "preserve" and self.target.casefold() != self.source.casefold()
+        return self.annotate and self.level != "preserve" and self.target.casefold() != self.source.casefold()
 
 
 def load_term_base(path: Path | None) -> tuple[dict[str, Any], list[dict[str, str]]]:
@@ -127,13 +129,20 @@ def load_term_base(path: Path | None) -> tuple[dict[str, Any], list[dict[str, st
             continue
         source = _first_text(raw, ("source", "term", "src", "source_term"))
         target = _first_text(raw, ("target", "translation", "tgt", "target_term"))
+        # 术语专员的审定（term_review.py）：人名 / 机构不强制、通用词剔除，都不检查；
+        # 文献与期刊名要求保留原文。没审过的条目照旧当锁定术语。
+        treatment = str(raw.get("treatment", "") or "")
+        if treatment in ("free", "drop"):
+            continue
         if source and target:
+            keep_original = treatment == "keep_original"
             entries.append(
                 {
                     "source": source,
-                    "target": target,
-                    "level": str(raw.get("level") or "canonical"),
+                    "target": source if keep_original else target,
+                    "level": "preserve" if keep_original else str(raw.get("level") or "canonical"),
                     "origin": str(raw.get("origin") or ""),
+                    "annotate": raw.get("annotate") is not False,
                 }
             )
     meta: dict[str, Any] = {"status": "loaded", "path": str(path), "entry_count": len(entries)}
@@ -198,6 +207,9 @@ def build_term_specs(
     origin_by_source = {
         str(item["source"]).casefold(): str(item.get("origin") or "") for item in term_base_items
     }
+    annotate_by_source = {
+        str(item["source"]).casefold(): item.get("annotate") is not False for item in term_base_items
+    }
     for entry in term_base:
         key = entry.source.casefold()
         if key in seen:
@@ -212,6 +224,7 @@ def build_term_specs(
                 level=entry.level,
                 locked=not user_preferred,
                 entry=entry,
+                annotate=annotate_by_source.get(key, True),
             )
         )
     return specs
