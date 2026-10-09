@@ -107,7 +107,10 @@
           width: line.width,
           glyphTop: originY + line.glyphTop,
           glyphBottom: originY + line.glyphBottom,
-          justified: Boolean(line.justified)
+          justified: Boolean(line.justified),
+          // For outputs that place every glyph themselves (measurer.placeLine).
+          forced: Boolean(line.forced),
+          lead: Boolean(line.lead)
         };
         rects.lines.push(record);
         // Line models with a fit band (retain): the overflow test measures the

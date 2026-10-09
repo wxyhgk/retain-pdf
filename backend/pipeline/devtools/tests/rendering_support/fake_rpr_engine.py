@@ -44,6 +44,8 @@ def main(argv):
             args["out_dir"] = argv[index + 1]
         elif key == "--typst":
             args["typst"] = argv[index + 1]
+        elif key == "--output":
+            args["output"] = argv[index + 1]
         elif key == "--font-path":
             args["font_paths"].append(argv[index + 1])
         else:
@@ -145,7 +147,7 @@ def main(argv):
     index = 0
     while index < len(argv):
         key = argv[index]
-        if key in ("--input", "--out-dir", "--typst", "--font-path"):
+        if key in ("--input", "--out-dir", "--typst", "--font-path", "--output"):
             args.setdefault(key, []).append(argv[index + 1])
         else:
             sys.stderr.write(json.dumps({"error": f"unknown argument {key}"}) + "\n")
@@ -244,9 +246,11 @@ def install_fake_rpr_engine(root: Path, monkeypatch=None, *, with_mathjax: bool 
     )
     (root / "UPSTREAM").write_text("repo=fake\ncommit=0123456789abcdef\n", encoding="utf-8")
     if with_mathjax:
-        mathjax = root / "node_modules" / "mathjax-full"
-        mathjax.mkdir(parents=True, exist_ok=True)
-        (mathjax / "package.json").write_text(json.dumps({"name": "mathjax-full", "version": "3.2.2"}), encoding="utf-8")
+        # The runtime npm dependencies the engine check looks for (engine_cli.RUNTIME_PACKAGES).
+        for package, version in (("mathjax-full", "3.2.2"), ("fontkit", "2.0.4")):
+            folder = root / "node_modules" / package
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / "package.json").write_text(json.dumps({"name": package, "version": version}), encoding="utf-8")
     node = root / "fake-node"
     node.write_text(_FAKE_NODE.format(python=sys.executable), encoding="utf-8")
     node.chmod(node.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)

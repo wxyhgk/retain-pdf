@@ -26,8 +26,10 @@
   "engines": {
     "node": ">=22.8.0"
   },
+  "dependencies": {
+    "fontkit": "^2.0.4"
+  },
   "devDependencies": {
-    "fontkit": "^2.0.4",
     "linebreak": "^1.1.0",
     "mathjax-full": "^3.2.1",
     "playwright": "^1.64.0"

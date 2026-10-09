@@ -23,6 +23,8 @@ const Typeset = require("../typeset");
 const { MathStore } = require("../output/math-store");
 const { overlayDocument } = require("../output/overlay");
 const { createTypst } = require("../output/typst-runner");
+const { overlayPdf } = require("../output/pdf/overlay-pdf");
+const { findFamily, findFallbacks, BUNDLED_FONT_DIRS } = require("../output/pdf/fonts");
 const { createRetainFitter, splitParagraphs } = require("./fit");
 
 const INPUT_SCHEMA = "rpr_retain_input_v1";
@@ -114,16 +116,25 @@ function coverRect(frame, cover) {
   return rect[2] > rect[0] && rect[3] > rect[1] ? rect : null;
 }
 
-// options: { outDir (required), typst: { bin, fontPaths, ignoreSystemFonts } }
+// options: { outDir (required), output: "typst" (default) | "pdf",
+//            typst: { bin, fontPaths, ignoreSystemFonts } }
+// output "pdf" writes overlay.pdf directly (output/pdf), no Typst involved:
+// the font files come from typst.fontPaths.
 function runRetain(input, options = {}) {
   const started = performance.now();
   const outDir = options.outDir;
   if (!outDir) throw new InputError("runRetain needs options.outDir");
+  const output = options.output || "typst";
+  if (output !== "typst" && output !== "pdf") throw new InputError(`unknown output ${JSON.stringify(output)} (typst | pdf)`);
   const family = validateInput(input);
   fs.mkdirSync(outDir, { recursive: true });
   const typstOptions = options.typst || {};
-  const fontPaths = typstOptions.fontPaths || [];
-  const typst = createTypst({
+  // The bundled Source Han Serif (data/fonts) after the caller's directories:
+  // the engine renders on its own, and never with whatever the system has.
+  const fontPaths = [...(typstOptions.fontPaths || []), ...BUNDLED_FONT_DIRS.slice(0, 1)];
+  // Fail before any work when the PDF output cannot find its font files.
+  const fonts = output === "pdf" ? { ...findFamily(fontPaths, SUPPORTED_FAMILY), fallbacks: findFallbacks(fontPaths) } : null;
+  const typst = output === "pdf" ? null : createTypst({
     bin: typstOptions.bin || "typst",
     fontPaths,
     // Without font directories the system fonts have to provide the face.
@@ -133,7 +144,7 @@ function runRetain(input, options = {}) {
   const measurer = Text.createMeasurer({ metrics: fontTable("regular") });
   const measurers = { bold: Text.createMeasurer({ metrics: fontTable("bold") }) };
   const fitter = createRetainFitter({ measurer, measurers });
-  const maths = new MathStore(outDir, { stamps: true });
+  const maths = output === "pdf" ? new MathStore(outDir, { files: false }) : new MathStore(outDir, { stamps: true });
   const renderMathBox = (tex, display) => maths.renderMathBox(tex, display);
 
   // Sizes (retain-pdf's policy), then the engine sets every line.
@@ -175,12 +186,20 @@ function runRetain(input, options = {}) {
 
   // Overlay: one transparent page per input page.
   mark = performance.now();
-  const { source } = overlayDocument(result, paint, maths, { fontFamily: SUPPORTED_FAMILY });
-  fs.writeFileSync(path.join(outDir, "overlay.typ"), source);
-  maths.prepareStamps(typst);
-  const compiled = typst.compile("overlay.typ", "overlay.pdf", outDir);
-  if (/unknown font family/i.test(compiled.stderr || "")) {
-    throw new Error(`typst could not find ${JSON.stringify(family)} (pass --font-path): ${compiled.stderr.trim().split("\n")[0]}`);
+  let outputStats = null;
+  if (output === "pdf") {
+    const written = overlayPdf(result, paint, maths, { fonts, measurers: { regular: measurer, bold: measurers.bold } });
+    fs.writeFileSync(path.join(outDir, "overlay.pdf"), written.pdf);
+    outputStats = written.stats;
+  }
+  else {
+    const { source } = overlayDocument(result, paint, maths, { fontFamily: SUPPORTED_FAMILY });
+    fs.writeFileSync(path.join(outDir, "overlay.typ"), source);
+    maths.prepareStamps(typst);
+    const compiled = typst.compile("overlay.typ", "overlay.pdf", outDir);
+    if (/unknown font family/i.test(compiled.stderr || "")) {
+      throw new Error(`typst could not find ${JSON.stringify(family)} (pass --font-path): ${compiled.stderr.trim().split("\n")[0]}`);
+    }
   }
   const compileMs = performance.now() - mark;
 
@@ -231,7 +250,8 @@ function runRetain(input, options = {}) {
       compileMs: Math.round(compileMs),
       totalMs: 0
     },
-    files: { overlay: "overlay.pdf", typst: "overlay.typ", math: "math" }
+    output: output === "pdf" ? { kind: "pdf", stats: outputStats } : { kind: "typst" },
+    files: output === "pdf" ? { overlay: "overlay.pdf" } : { overlay: "overlay.pdf", typst: "overlay.typ", math: "math" }
   };
   report.timings.totalMs = Math.round(performance.now() - started);
   fs.writeFileSync(path.join(outDir, "report.json"), JSON.stringify(report, null, 2));

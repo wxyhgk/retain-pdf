@@ -25,10 +25,13 @@ class MathStore {
   // inlining each formula SVG (math-stamps.js). The caller must run
   // prepareStamps() before compiling or querying a document that uses them.
   // renderer: { texToSVG(tex, display) } (default: mathjax-node).
-  constructor(outDir, { stamps = false, renderer = null } = {}) {
+  // files: write each formula's SVG under math/ (the Typst output draws
+  // them from there); the PDF output only needs entry.svg.
+  constructor(outDir, { stamps = false, renderer = null, files = true } = {}) {
     this.outDir = outDir;
     this.dir = path.join(outDir, "math");
-    fs.mkdirSync(this.dir, { recursive: true });
+    this.files = files;
+    if (files) fs.mkdirSync(this.dir, { recursive: true });
     this.renderer = renderer || defaultRenderer();
     this.stats = { formulas: 0, failed: [], ms: 0 };
     this.written = new Map();
@@ -79,8 +82,11 @@ class MathStore {
     else {
       const name = `${crypto.createHash("sha1").update(key).digest("hex").slice(0, 16)}.svg`;
       const padded = padTextSVG(result.svg);
-      fs.writeFileSync(path.join(this.dir, name), padded.svg);
-      entry = { ok: true, tex, file: `math/${name}`, widthEm: result.widthEm, heightEm: result.heightEm, depthEm: result.depthEm };
+      if (this.files) fs.writeFileSync(path.join(this.dir, name), padded.svg);
+      entry = {
+        ok: true, tex, file: this.files ? `math/${name}` : null, svg: result.svg,
+        widthEm: result.widthEm, heightEm: result.heightEm, depthEm: result.depthEm
+      };
       if (padded.pad) entry.pad = padded.pad;
       if (this.stamps) entry.items = this.stamps.formulaItems(result.svg, tex);
     }

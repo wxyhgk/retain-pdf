@@ -180,6 +180,8 @@
           lines.push({
             paragraph: index, start: line.start, end: line.end,
             x: x0 + line.x, baseline, width: painted, naturalWidth: line.width, justified,
+            // For outputs that place every glyph themselves (measurer.placeLine).
+            forced: Boolean(line.forced), lead: Boolean(line.lead),
             glyphTop: baseline - above, glyphBottom: baseline + below
           });
         }

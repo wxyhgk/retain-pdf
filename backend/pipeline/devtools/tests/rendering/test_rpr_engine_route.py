@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 from unittest import mock
 
@@ -475,7 +476,17 @@ def test_node_on_path_is_used_without_electron_flag(tmp_path: Path, monkeypatch)
     assert runtime.node == str(bin_dir / "node")
 
 
-def test_run_engine_passes_typst_fonts_and_electron_flag(tmp_path: Path, monkeypatch) -> None:
+def test_engine_without_fontkit_is_unavailable(tmp_path: Path, monkeypatch) -> None:
+    # An older node_modules (mathjax-full only) cannot write the PDF.
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    shutil.rmtree(tmp_path / "engine" / "node_modules" / "fontkit")
+    with pytest.raises(engine_cli.RprEngineUnavailable) as excinfo:
+        engine_cli.resolve_engine_runtime()
+    assert excinfo.value.code == "engine_dependencies_missing"
+    assert "fontkit" in str(excinfo.value)
+
+
+def test_run_engine_writes_the_pdf_itself_with_fonts_and_electron_flag(tmp_path: Path, monkeypatch) -> None:
     install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
     runtime = engine_cli.resolve_engine_runtime()
     built = build_rpr_input([_spec([_block()])], font_family="Source Han Serif SC", include_fill=True)
@@ -485,9 +496,24 @@ def test_run_engine_passes_typst_fonts_and_electron_flag(tmp_path: Path, monkeyp
     assert run.overlay_pdf.is_file()
     assert run.report["schema"] == "rpr_retain_report_v1"
     argv = json.loads((tmp_path / "out" / "argv.json").read_text(encoding="utf-8"))
-    assert argv["argv"][argv["argv"].index("--typst") + 1] == "/usr/bin/true"
+    # The engine writes the PDF itself: no Typst involved.
+    assert argv["argv"][argv["argv"].index("--output") + 1] == "pdf"
+    assert "--typst" not in argv["argv"]
     assert "--font-path" in argv["argv"]
     assert argv["electron_run_as_node"] == "1"
+
+
+def test_run_engine_typst_output_for_comparison(tmp_path: Path, monkeypatch) -> None:
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    monkeypatch.setenv(engine_cli.ENGINE_OUTPUT_ENV_VAR, "typst")
+    runtime = engine_cli.resolve_engine_runtime()
+    built = build_rpr_input([_spec([_block()])], font_family="Source Han Serif SC", include_fill=True)
+    input_path = tmp_path / "in.json"
+    input_path.write_text(json.dumps(built.payload), encoding="utf-8")
+    engine_cli.run_engine(runtime, input_path=input_path, out_dir=tmp_path / "out")
+    argv = json.loads((tmp_path / "out" / "argv.json").read_text(encoding="utf-8"))
+    assert argv["argv"][argv["argv"].index("--output") + 1] == "typst"
+    assert argv["argv"][argv["argv"].index("--typst") + 1] == "/usr/bin/true"
 
 
 def test_run_engine_failure_carries_stderr_error(tmp_path: Path, monkeypatch) -> None:

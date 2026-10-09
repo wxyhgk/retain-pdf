@@ -7,7 +7,7 @@
 # REPO 默认 ~/Code/retain-pdf-rendering（也可用 RPR_ENGINE_REPO 指定）
 #
 # 用 git archive 从指定提交取文件，不碰引擎仓库的工作区。只复制运行时需要的最小集合：
-# bin/rpr-retain.js、bin/rpr-fit.js、src/（rpr-fit 要用 fit-model）、data/fonts、package.json、LICENSE。
+# bin/rpr-retain.js、bin/rpr-fit.js、src/（rpr-fit 要用 fit-model）、data/fonts（不含思源宋体）、package.json、LICENSE。
 # 同步完写 UPSTREAM（来源仓库与提交）和 engine/COMMIT（引擎报告里的 engine.commit）。
 # 运行时 npm 依赖只有 mathjax-full（本目录的 package.json 锁版本），之后跑一次：
 #   npm ci --omit=dev
@@ -28,6 +28,9 @@ remote="$(git -C "$repo" config --get remote.origin.url || true)"
 staging="$(mktemp -d)"
 trap 'rm -rf "$staging"' EXIT
 git -C "$repo" archive --format=tar "$commit" -- "${paths[@]}" | tar -x -C "$staging"
+# 引擎自带思源宋体（data/fonts/source-han-serif，46 MB）；retain-pdf 的 resources/fonts 已有同一份，
+# 调用时用 --font-path 传进去，这里不重复带。后备字体（data/fonts/fallback）照常带上。
+rm -rf "$staging/data/fonts/source-han-serif"
 
 rm -rf "$here/engine"
 mkdir -p "$here/engine"

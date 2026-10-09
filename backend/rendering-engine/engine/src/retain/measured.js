@@ -46,6 +46,8 @@ const { defaultFontTable } = require("../index.js");
 const { MathStore } = require("../output/math-store");
 const { overlayDocument } = require("../output/overlay");
 const { createTypst } = require("../output/typst-runner");
+const { overlayPdf } = require("../output/pdf/overlay-pdf");
+const { findFamily, findFallbacks, BUNDLED_FONT_DIRS } = require("../output/pdf/fonts");
 const { buildModel, blockNumber } = require("./job-model");
 const VectorObstacles = require("./vector-obstacles");
 const { outputViolations } = require("./output-checks");
@@ -105,15 +107,22 @@ function median(values) {
 
 const round = (value, digits = 3) => (Number.isFinite(value) ? Number(value.toFixed(digits)) : null);
 
+// options: { outDir, output: "typst" (default) | "pdf", typst: { bin, fontPaths } }
+// output "pdf" writes overlay.pdf directly (output/pdf), without Typst.
 function runMeasured(input, options = {}) {
   validate(input);
+  const output = options.output || "typst";
+  if (output !== "typst" && output !== "pdf") throw new Error(`unknown output ${JSON.stringify(output)} (typst | pdf)`);
   const outDir = path.resolve(options.outDir || "rpr-fit-out");
   fs.mkdirSync(outDir, { recursive: true });
   const started = performance.now();
   const timings = {};
   const job = jobFromInput(input);
+  const fontPaths = (options.typst && options.typst.fontPaths) || [];
+  // Fail before any work when the PDF output cannot find its font files.
+  const fonts = output === "pdf" ? { ...findFamily(fontPaths, "Source Han Serif SC"), fallbacks: findFallbacks(fontPaths) } : null;
 
-  const maths = new MathStore(outDir, { stamps: true });
+  const maths = output === "pdf" ? new MathStore(outDir, { files: false }) : new MathStore(outDir, { stamps: true });
   const renderMathBox = (tex, display) => {
     const entry = maths.get(tex, display);
     // A formula MathJax cannot render stays as plain text in the body font.
@@ -165,19 +174,35 @@ function runMeasured(input, options = {}) {
   timings.fitMs = Math.round(performance.now() - mark - (maths.stats.ms - mathBefore));
 
   mark = performance.now();
-  const { source, painted } = overlayDocument(fitted, paint, maths);
-  fs.writeFileSync(path.join(outDir, "overlay.typ"), source);
-  const typst = createTypst(options.typst || {});
-  const stamped = maths.prepareStamps(typst);
-  timings.stampsCompileMs = stamped ? Math.round(stamped.ms) : 0;
-  const compiled = typst.compile("overlay.typ", "overlay.pdf", outDir);
-  timings.compileMs = Math.round(compiled.ms);
-  timings.emitMs = Math.round(performance.now() - mark) - timings.compileMs - timings.stampsCompileMs;
+  let painted;
+  let outputStats = null;
+  if (output === "pdf") {
+    const written = overlayPdf(fitted, paint, maths, { fonts, measurers: { regular: base, bold } });
+    fs.writeFileSync(path.join(outDir, "overlay.pdf"), written.pdf);
+    painted = written.painted;
+    outputStats = written.stats;
+    timings.stampsCompileMs = 0;
+    timings.compileMs = 0;
+    timings.emitMs = Math.round(performance.now() - mark);
+  }
+  else {
+    const overlay = overlayDocument(fitted, paint, maths);
+    painted = overlay.painted;
+    fs.writeFileSync(path.join(outDir, "overlay.typ"), overlay.source);
+    const typstOptions = options.typst || {};
+    const typst = createTypst({ ...typstOptions, fontPaths: [...fontPaths, ...BUNDLED_FONT_DIRS.slice(0, 1)] });
+    const stamped = maths.prepareStamps(typst);
+    timings.stampsCompileMs = stamped ? Math.round(stamped.ms) : 0;
+    const compiled = typst.compile("overlay.typ", "overlay.pdf", outDir);
+    timings.compileMs = Math.round(compiled.ms);
+    timings.emitMs = Math.round(performance.now() - mark) - timings.compileMs - timings.stampsCompileMs;
+  }
   timings.mathjaxMs = Math.round(maths.stats.ms);
 
   const report = buildReport({ job, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds });
   timings.totalMs = Math.round(performance.now() - started);
   report.timings = timings;
+  report.output = output === "pdf" ? { kind: "pdf", stats: outputStats } : { kind: "typst" };
   fs.writeFileSync(path.join(outDir, "report.json"), JSON.stringify(report, null, 2));
   return { report, overlayPdf: path.join(outDir, "overlay.pdf"), outDir };
 }
