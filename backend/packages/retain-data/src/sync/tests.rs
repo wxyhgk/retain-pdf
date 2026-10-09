@@ -765,3 +765,188 @@ fn dropped_webdav_connections_are_retried_within_the_cycle() {
     assert_eq!(b.text("SELECT title FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("Flaky"));
     fs::remove_dir_all(base).unwrap();
 }
+
+const CONV: &str = "conv-20261001000000-cccccc";
+const CALC: &str = "calc-0000000000000000000000000000000000000001";
+const OP: &str = "op-20261001000000-dddddd";
+
+impl Device {
+    /// 第三期的内容:术语表、收藏截图、AI 对话、AI 计算、AI 改文档(依附于 add_book 的书)。
+    fn add_ai_records(&self, calc_status: &str) -> String {
+        let png = b"\x89PNG screenshot";
+        let asset = super::folder::hex(&<sha2::Sha256 as sha2::Digest>::digest(png));
+        self.write(&format!("assets/{}/{asset}.png", &asset[..2]), png);
+        self.write(&format!("agent-calculations/{CALC}/chart-1.svg"), b"<svg/>");
+        self.write(&format!("operations/{OP}/attempts/0001/outputs/candidate.pdf"), b"%PDF edited");
+        self.write(&format!("operations/{OP}/attempts/0001/program/program.json"), b"{}");
+        let conn = self.conn();
+        conn.execute_batch(&format!(
+            "INSERT INTO glossaries(glossary_id, name, entries_json, created_at, updated_at)
+                 VALUES('glossary-1', '化学', '[{{\"source\":\"ligand\",\"target\":\"配体\"}}]', 't', 't');
+             INSERT INTO assets(asset_id, mime, bytes, created_at) VALUES('{asset}', 'image/png', 15, 't');
+             INSERT INTO favorites(favorite_id, document_id, job_id, page_idx, block_id, kind, quote_text, created_at, updated_at, asset_id)
+                 VALUES('fav-1', '{DOC}', '{JOB}', 0, 'b1', 'image', '', 't', 't', '{asset}');
+             INSERT INTO ai_conversations(conversation_id, title, document_id, created_at, updated_at, head_id,
+                     agent_runtime_id, agent_session_cursor, agent_session_revision, agent_session_updated_at)
+                 VALUES('{CONV}', '问配体', '{DOC}', 't', 't', 'm2', 'fx-a', 'session-on-a', 3, 't');
+             INSERT INTO ai_messages(message_id, conversation_id, seq, role, content, created_at, parent_id)
+                 VALUES('m1', '{CONV}', 1, 'user', '什么是配体?', 't', ''),
+                       ('m2', '{CONV}', 2, 'assistant', '配体是……', 't', 'm1');
+             INSERT INTO agent_calculation_runs(calculation_id, conversation_id, document_id, tool_name, input_refs_json,
+                     input_sha256, status, created_at, updated_at)
+                 VALUES('{CALC}', '{CONV}', '{DOC}', 'generate_chart', '{{}}', '{zero}', '{calc_status}', 't', 't');
+             INSERT INTO agent_calculation_artifacts(artifact_id, calculation_id, kind, sha256, relative_path, mime_type, size_bytes, created_at)
+                 VALUES('chart-1', '{CALC}', 'svg_chart', '{zero}', 'agent-calculations/{CALC}/chart-1.svg', 'image/svg+xml', 6, 't');
+             INSERT INTO document_operations(operation_id, conversation_id, document_id, base_job_id, intent_summary,
+                     status, current_attempt, created_at, updated_at)
+                 VALUES('{OP}', '{CONV}', '{DOC}', '{JOB}', '把图 2 换成中文', 'committed', 1, 't', 't');
+             INSERT INTO document_operation_attempts(operation_id, attempt, dispatch_id, program_sha256, manifest_json,
+                     state_json, status, created_at, updated_at)
+                 VALUES('{OP}', 1, 'dispatch-1', '{zero}', '{{}}', '{{}}', 'committed', 't', 't');
+             INSERT INTO document_versions(version_id, document_id, operation_id, source_job_id, artifact_key,
+                     content_sha256, status, created_at)
+                 VALUES('ver-1', '{DOC}', '{OP}', '{JOB}', 'operations/{OP}/attempts/0001/outputs/candidate.pdf', '{zero}', 'committed', 't');
+             UPDATE documents SET active_version_id = 'ver-1' WHERE document_id = '{DOC}';
+             INSERT INTO document_metadata_suggestions(suggestion_id, document_id, artifact_sha256, candidates_json,
+                     selected_title, created_at, updated_at)
+                 VALUES('sug-1', '{DOC}', '{zero}', '[]', 'Book', 't', 't');",
+            zero = "0".repeat(64),
+        ))
+        .unwrap();
+        asset
+    }
+}
+
+#[test]
+fn conversations_glossaries_screenshots_and_ai_edits_arrive_but_session_cursors_stay_local() {
+    let (base, _folder, devices) = setup(&["a", "b"]);
+    let (a, b) = (&devices[0], &devices[1]);
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    let asset = a.add_ai_records("completed");
+
+    let sent = a.sync();
+    // 上传、书、任务、收藏、术语表、截图、对话、计算、改文档。
+    assert_eq!(sent.exported, 9, "{sent:?}");
+    let got = b.sync();
+    assert_eq!((got.applied, got.pending), (9, 0), "{got:?}");
+    assert_eq!(b.text("SELECT name FROM glossaries WHERE glossary_id = ?1", "glossary-1").as_deref(), Some("化学"));
+    assert_eq!(b.text("SELECT asset_id FROM favorites WHERE favorite_id = ?1", "fav-1"), Some(asset.clone()));
+    assert_eq!(b.count("SELECT COUNT(*) FROM ai_messages"), 2);
+    assert_eq!(b.text("SELECT head_id FROM ai_conversations WHERE conversation_id = ?1", CONV).as_deref(), Some("m2"));
+    assert_eq!(b.count("SELECT COUNT(*) FROM agent_calculation_artifacts"), 1);
+    assert_eq!(b.count("SELECT COUNT(*) FROM document_operation_attempts"), 1);
+    assert_eq!(b.text("SELECT active_version_id FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("ver-1"));
+    assert_eq!(b.count("SELECT COUNT(*) FROM document_metadata_suggestions"), 1);
+    for path in [
+        format!("assets/{}/{asset}.png", &asset[..2]),
+        format!("agent-calculations/{CALC}/chart-1.svg"),
+        format!("operations/{OP}/attempts/0001/outputs/candidate.pdf"),
+        format!("operations/{OP}/attempts/0001/program/program.json"),
+    ] {
+        assert_eq!(fs::read(b.root.join(&path)).unwrap(), fs::read(a.root.join(&path)).unwrap(), "{path}");
+    }
+    // AI 接着哪个会话往下聊只在本机有意义:b 上从对话记录重建。
+    let session = "SELECT agent_runtime_id || '|' || agent_session_cursor || '|' || agent_session_revision FROM ai_conversations WHERE conversation_id = ?1";
+    assert_eq!(b.text(session, CONV).as_deref(), Some("||0"));
+
+    // b 上接着聊(有了自己的会话),a 改了对话标题:b 收到标题,自己的会话不被覆盖;
+    // b 的新消息也回到 a,a 的会话同样不动。
+    b.conn()
+        .execute_batch(&format!(
+            "UPDATE ai_conversations SET agent_runtime_id = 'fx-b', agent_session_cursor = 'session-on-b',
+                 agent_session_revision = 1, head_id = 'm3' WHERE conversation_id = '{CONV}';
+             INSERT INTO ai_messages(message_id, conversation_id, seq, role, content, created_at, parent_id)
+                 VALUES('m3', '{CONV}', 3, 'user', '再举个例子', 't', 'm2');"
+        ))
+        .unwrap();
+    a.conn().execute("UPDATE ai_conversations SET title = '配体' WHERE conversation_id = ?1", params![CONV]).unwrap();
+    // 只改了会话进度:没有要发的。
+    a.conn().execute("UPDATE ai_conversations SET agent_session_revision = 4 WHERE conversation_id = ?1", params![CONV]).unwrap();
+    a.sync();
+    b.sync();
+    a.sync();
+    for device in [a, b] {
+        assert_eq!(device.text("SELECT title FROM ai_conversations WHERE conversation_id = ?1", CONV).as_deref(), Some("配体"));
+        assert_eq!(device.count("SELECT COUNT(*) FROM ai_messages"), 3);
+    }
+    assert_eq!(a.text(session, CONV).as_deref(), Some("fx-a|session-on-a|4"));
+    assert_eq!(b.text(session, CONV).as_deref(), Some("fx-b|session-on-b|1"));
+
+    // 删掉对话:计算随它删掉(文件也删),改文档的操作留着、只是不再指向对话。
+    a.conn().execute("DELETE FROM ai_conversations WHERE conversation_id = ?1", params![CONV]).unwrap();
+    a.sync();
+    b.sync();
+    assert_eq!(b.count("SELECT COUNT(*) FROM ai_conversations"), 0);
+    assert_eq!(b.count("SELECT COUNT(*) FROM agent_calculation_runs"), 0);
+    assert!(!b.root.join(format!("agent-calculations/{CALC}")).exists());
+    assert_eq!(b.text("SELECT conversation_id FROM document_operations WHERE operation_id = ?1", OP), None);
+    assert_eq!(b.count("SELECT COUNT(*) FROM document_versions"), 1);
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn unfinished_calculations_and_ai_edits_are_sent_once_they_end() {
+    let (base, _folder, devices) = setup(&["a", "b"]);
+    let (a, b) = (&devices[0], &devices[1]);
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.add_ai_records("running");
+    a.conn().execute("UPDATE document_operations SET status = 'running' WHERE operation_id = ?1", params![OP]).unwrap();
+    a.sync();
+    b.sync();
+    assert_eq!(b.count("SELECT COUNT(*) FROM agent_calculation_runs"), 0);
+    assert_eq!(b.count("SELECT COUNT(*) FROM document_operations"), 0);
+
+    a.conn().execute("UPDATE agent_calculation_runs SET status = 'completed' WHERE calculation_id = ?1", params![CALC]).unwrap();
+    // 出了结果、等人确认:可以在另一台设备上采用。
+    a.conn().execute("UPDATE document_operations SET status = 'result_ready' WHERE operation_id = ?1", params![OP]).unwrap();
+    a.sync();
+    b.sync();
+    assert_eq!(b.count("SELECT COUNT(*) FROM agent_calculation_runs"), 1);
+    assert_eq!(b.text("SELECT status FROM document_operations WHERE operation_id = ?1", OP).as_deref(), Some("result_ready"));
+    b.conn().execute("UPDATE document_operations SET status = 'committed' WHERE operation_id = ?1", params![OP]).unwrap();
+    b.sync();
+    a.sync();
+    assert_eq!(a.text("SELECT status FROM document_operations WHERE operation_id = ?1", OP).as_deref(), Some("committed"));
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn a_device_that_synced_before_phase_three_sends_its_existing_conversations() {
+    let (base, _folder, devices) = setup(&["a", "b"]);
+    let (a, b) = (&devices[0], &devices[1]);
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.add_ai_records("completed");
+    // 模拟第三期之前:这些表没有触发器(改动没记下),登记标记还是旧写法。
+    a.conn()
+        .execute_batch("DELETE FROM sync_dirty WHERE kind NOT IN ('upload', 'document', 'job', 'favorite');")
+        .unwrap();
+    a.db.sync_state_set("seeded", "1").unwrap();
+    let sent = a.sync();
+    assert_eq!(sent.exported, 9, "{sent:?}");
+    let got = b.sync();
+    assert_eq!((got.applied, got.pending), (9, 0), "{got:?}");
+    assert_eq!(b.count("SELECT COUNT(*) FROM ai_messages"), 2);
+    // 登记过一次就不再重来。
+    assert_eq!(a.sync().exported, 0);
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn a_kind_this_version_does_not_know_waits_instead_of_being_dropped() {
+    let (base, folder, devices) = setup(&["a", "b"]);
+    let b = &devices[1];
+    b.sync();
+    let device = "00000000000000ee";
+    let changes = folder.join("devices").join(device).join("changes");
+    fs::create_dir_all(&changes).unwrap();
+    let future = serde_json::json!({
+        "kind": "reading_note", "key": "note-1", "clock": "1790000000000-000000-00000000000000ee", "device": device,
+        "rows": {"reading_notes": [{"note_id": "note-1"}]}, "files": []
+    });
+    fs::write(changes.join("00000001.jsonl"), format!("{future}\n{{\"segment_end\":1}}\n")).unwrap();
+    let got = b.sync();
+    assert_eq!((got.rejected, got.parked, got.pending), (0, 1, 1), "{got:?}");
+    let (_, pending) = b.db.sync_pending_summary(5).unwrap();
+    assert!(pending[0].reason.contains("newer version"), "{pending:?}");
+    fs::remove_dir_all(base).unwrap();
+}

@@ -16,11 +16,11 @@ use super::store::{Backend, BlobLocation, Segment, SyncStore};
 use super::{ChangeRecord, SyncFileEntry};
 use crate::db::sync::{
     entity_spec, SyncApplyOutcome, SyncDirty, SyncEntityState, SyncEntityUpdate, SyncFileRef,
-    SyncRows,
+    SyncRows, SYNC_SEED_VERSIONS,
 };
 use crate::db::Db;
 
-const DATA_ROOT_TOKEN: &str = "{{data_root}}";
+pub(super) const DATA_ROOT_TOKEN: &str = "{{data_root}}";
 const STATE_DEVICE: &str = "device_id";
 const STATE_CLOCK: &str = "clock";
 const STATE_SEGMENT: &str = "segment";
@@ -140,6 +140,38 @@ fn is_valid_key(key: &str) -> bool {
         && key
             .bytes()
             .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'|'))
+}
+
+/// 看起来像一种实体(只是本机这个版本还不认识):小写字母与下划线。
+fn is_kind_name(kind: &str) -> bool {
+    !kind.is_empty() && kind.len() <= 40 && kind.bytes().all(|b| b.is_ascii_lowercase() || b == b'_')
+}
+
+/// 还没结束的:任务在排队或运行、AI 计算没算完、AI 改文档还没出结果(或结果不确定)。
+/// 不发,结束后会再发;本机这一条还没结束时,收到别的设备的版本也先不覆盖。
+fn in_progress(kind: &str, rows: &SyncRows) -> bool {
+    let root = |table: &str, column: &str| {
+        rows.get(table)
+            .and_then(|r| r.first())
+            .and_then(|row| row.get(column))
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string()
+    };
+    match kind {
+        // 失败的任务也可能已经翻好了一部分。
+        "job" => !matches!(
+            root("jobs", "status_json").as_str(),
+            "\"succeeded\"" | "\"failed\"" | "\"canceled\""
+        ),
+        "calculation" => !matches!(root("agent_calculation_runs", "status").as_str(), "completed" | "failed"),
+        // 出了结果、等人确认采用的(result_ready)也发:可以在另一台设备上采用。
+        "operation" => !matches!(
+            root("document_operations", "status").as_str(),
+            "result_ready" | "committed" | "failed" | "cancelled"
+        ),
+        _ => false,
+    }
 }
 
 fn is_sha256(text: &str) -> bool {
@@ -336,10 +368,7 @@ impl SyncEngine {
             self.store.write_device(&device, &self.device_name)?;
             self.db.sync_state_set(STATE_DEVICE_WRITTEN, &written)?;
         }
-        if self.db.sync_state_get(STATE_SEEDED)?.is_none() {
-            self.db.sync_seed_all()?;
-            self.db.sync_state_set(STATE_SEEDED, "1")?;
-        }
+        self.seed()?;
         let mut report = SyncReport {
             device_id: device.clone(),
             folder_changed,
@@ -357,6 +386,32 @@ impl SyncEngine {
         result?;
         report.pending = self.db.sync_pending()?.len();
         Ok(report)
+    }
+
+    /// 把还没登记过(或登记版本旧了)的种类的现有内容标成待同步。
+    fn seed(&self) -> Result<()> {
+        let mut seeded: BTreeMap<String, u32> = match self.db.sync_state_get(STATE_SEEDED)?.as_deref() {
+            None => BTreeMap::new(),
+            // 第三期之前只记了「登记过」:当时的六种都是第 1 版。
+            Some("1") => ["upload", "document", "collection", "collection_member", "favorite", "job"]
+                .into_iter()
+                .map(|kind| (kind.to_string(), 1))
+                .collect(),
+            Some(json) => serde_json::from_str(json).unwrap_or_default(),
+        };
+        let due: Vec<&str> = SYNC_SEED_VERSIONS
+            .iter()
+            .filter(|(kind, version)| seeded.get(*kind).map_or(true, |done| done < version))
+            .map(|(kind, _)| *kind)
+            .collect();
+        if due.is_empty() {
+            return Ok(());
+        }
+        self.db.sync_seed(&due)?;
+        for (kind, version) in SYNC_SEED_VERSIONS {
+            seeded.insert(kind.to_string(), *version);
+        }
+        self.db.sync_state_set(STATE_SEEDED, &serde_json::to_string(&seeded)?)
     }
 
     // ---------------------------------------------------------------- 导出
@@ -436,17 +491,8 @@ impl SyncEngine {
                 clocks: Clocks::new(),
             }));
         };
-        if item.kind == "job" {
-            // 只同步结束了的任务(成功、失败、取消;失败的也可能已经翻好了一部分);
-            // 排队和运行中的不发,结束后会再发。
-            let status = rows
-                .get("jobs")
-                .and_then(|r| r.first())
-                .and_then(|row| row.get("status_json"))
-                .and_then(Value::as_str);
-            if !matches!(status, Some("\"succeeded\"" | "\"failed\"" | "\"canceled\"")) {
-                return Ok(None);
-            }
+        if in_progress(&item.kind, &rows) {
+            return Ok(None);
         }
         let files = self.local_files(&item.kind, &item.key, &rows)?;
         let digest = digest_of(Some(&rows), &files)?;
@@ -615,6 +661,10 @@ impl SyncEngine {
     }
 
     fn consider(&self, record: &ChangeRecord, hlc: &mut Hlc) -> Result<Considered> {
+        if entity_spec(&record.kind).is_none() && is_kind_name(&record.kind) && is_valid_key(&record.key) {
+            // 新版本才有的种类:留着,升级后再应用(丢掉的话升级后也收不到了)。
+            return Ok(Considered::Parked(format!("{} needs a newer version of the app", record.kind)));
+        }
         if entity_spec(&record.kind).is_none()
             || !is_valid_key(&record.key)
             || Hlc::parse(&record.clock).is_none()
@@ -630,13 +680,12 @@ impl SyncEngine {
             return Ok(Considered::Parked("local changes not sent yet".into()));
         }
         let state = self.db.sync_entity_state(&record.kind, &record.key)?;
-        if record.kind == "job" {
-            if let Some(job) = self.db.sync_read_entity("job", &record.key)?.as_ref().and_then(|r| r.get("jobs")?.first().cloned()) {
-                let status = job.get("status_json").and_then(Value::as_str).unwrap_or("");
-                if matches!(status, "\"queued\"" | "\"running\"") {
-                    return Ok(Considered::Parked("job is running on this device".into()));
-                }
-            }
+        if self
+            .db
+            .sync_read_entity(&record.kind, &record.key)?
+            .is_some_and(|rows| in_progress(&record.kind, &rows))
+        {
+            return Ok(Considered::Parked(format!("{} is still running on this device", record.kind)));
         }
         let target = if record.deleted {
             // 本机最后一次改动(或删除)比它新:不删。
@@ -794,6 +843,8 @@ impl SyncEngine {
                 "job" => Some(self.data_root.join("jobs").join(&record.key)),
                 "document" => Some(self.data_root.join("documents").join(&record.key)),
                 "upload" => Some(self.data_root.join("uploads").join(&record.key)),
+                "calculation" => Some(self.data_root.join("agent-calculations").join(&record.key)),
+                "operation" => Some(self.data_root.join("operations").join(&record.key)),
                 _ => None,
             };
             if let Some(dir) = dir.filter(|d| d.is_dir()) {
