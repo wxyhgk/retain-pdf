@@ -16,6 +16,7 @@ direct_typst 模式让模型直接输出 `$...$` inline LaTeX(渲染时由 mitex
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from retainpdf_pipeline.foundation.shared.latex_commands import mitex_rewrite_database
 from retainpdf_pipeline.foundation.shared.latex_source_repair import (
@@ -34,6 +35,17 @@ def _is_cjk_char(char: str) -> bool:
         return False
     code = ord(char)
     return 0x3400 <= code <= 0x4DBF or 0x4E00 <= code <= 0x9FFF or 0x3000 <= code <= 0x303F or 0xFF00 <= code <= 0xFFEF
+
+
+def is_fullwidth_punctuation(char: str) -> bool:
+    """全角 / 中文标点（，。、；：？！（）「」…）。它们自带字面留白，和公式之间不该再加空格：
+    「， $x$」排出来是一道明显的空隙（31 本书里有 319 块这样）。"""
+    if not char or len(char) != 1:
+        return False
+    code = ord(char)
+    if not (0x3000 <= code <= 0x303F or 0xFF00 <= code <= 0xFFEF):
+        return False
+    return unicodedata.category(char).startswith("P")
 
 
 def _is_escaped(text: str, index: int) -> bool:
@@ -166,19 +178,33 @@ def normalize_direct_typst_translation(text: str) -> str:
     last_end = 0
     prev_span_end = -1
     for start, end, display in spans:
-        chunks.append(source[last_end:start])
+        before = source[last_end:start]
+        # 全角标点和公式之间不留空格：「， $x$」→「，$x$」，「$x$ 。」→「$x$。」。
+        if last_end > 0 and before[:1] in (" ", "\t") and is_fullwidth_punctuation(before.lstrip(" \t")[:1]):
+            before = before.lstrip(" \t")
+        stripped = before.rstrip(" \t")
+        if stripped != before and is_fullwidth_punctuation(stripped[-1:]):
+            before = stripped
+        chunks.append(before)
         expr = _normalize_math_body(source[start:end], display=display)
-        prev_char = source[start - 1] if start > 0 else ""
+        prev_char = before[-1:] if before else (source[start - 1] if start > 0 else "")
         next_char = source[end] if end < len(source) else ""
         # 只修确定是违规的紧贴:跨度紧邻中文正文,或两个公式跨度直接相邻
         # ($a$$b$)。ASCII 相邻不动——译文里可能出现字面 $ 变量(如 $rem),
         # 扫描器会把 `$rem ... $` 误判成跨度,补空格会破坏字面文本。
-        prefix = " " if (_is_cjk_char(prev_char) and prev_char not in _LEFT_NO_SPACE) or start == prev_span_end else ""
-        suffix = " " if _is_cjk_char(next_char) and next_char not in _RIGHT_NO_SPACE else ""
+        prefix = " " if (
+            _is_cjk_char(prev_char) and prev_char not in _LEFT_NO_SPACE and not is_fullwidth_punctuation(prev_char)
+        ) or start == prev_span_end else ""
+        suffix = " " if (
+            _is_cjk_char(next_char) and next_char not in _RIGHT_NO_SPACE and not is_fullwidth_punctuation(next_char)
+        ) else ""
         chunks.append(f"{prefix}{expr}{suffix}")
         last_end = end
         prev_span_end = end
-    chunks.append(source[last_end:])
+    tail = source[last_end:]
+    if tail[:1] in (" ", "\t") and is_fullwidth_punctuation(tail.lstrip(" \t")[:1]):
+        tail = tail.lstrip(" \t")
+    chunks.append(tail)
     return _MULTI_SPACE_RE.sub(" ", "".join(chunks))
 
 
@@ -204,5 +230,6 @@ __all__ = [
     "MITEX_REWRITE_DATABASE",
     "find_mitex_rewrites",
     "has_balanced_unescaped_dollars",
+    "is_fullwidth_punctuation",
     "normalize_direct_typst_translation",
 ]

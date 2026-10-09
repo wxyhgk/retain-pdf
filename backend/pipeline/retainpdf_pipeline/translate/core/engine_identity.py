@@ -12,7 +12,7 @@ TRANSLATION_PROTOCOL_VERSION = "translation_control_v8_compact_prompt"
 TRANSLATION_POLICY_VERSION = "policy_hints_v2_memory_context_v1"
 TRANSLATION_PROMPT_FILES = (
     "translation_system.txt",
-    "translation_system_plain_text.txt",
+    "translation_zh_conventions.txt",
     "translation_task.txt",
     "translation_task_plain_text.txt",
     "translation_direct_typst_guidance.txt",
