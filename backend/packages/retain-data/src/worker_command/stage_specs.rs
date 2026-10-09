@@ -18,6 +18,7 @@ use super::stage_commands::RenderRefine;
 const NORMALIZE_STAGE_SCHEMA_VERSION: &str = "normalize.stage.v1";
 const TRANSLATE_STAGE_SCHEMA_VERSION: &str = "translate.stage.v1";
 const RENDER_STAGE_SCHEMA_VERSION: &str = "render.stage.v1";
+const RENDER_PREPARE_STAGE_SCHEMA_VERSION: &str = "render_prepare.stage.v1";
 const PROVIDER_STAGE_SCHEMA_VERSION: &str = "provider.stage.v1";
 pub(crate) const TRANSLATION_API_KEY_ENV_NAME: &str = "RETAIN_TRANSLATION_API_KEY";
 /// 审校 key 的 env 名。worker_process 解析出 key 后经它注入；spec 里只写 env 引用。
@@ -34,6 +35,10 @@ fn translate_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
 
 fn render_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
     job_paths.specs_dir.join("render.spec.json")
+}
+
+fn render_prepare_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
+    job_paths.specs_dir.join("render-prepare.spec.json")
 }
 
 fn provider_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
@@ -255,6 +260,44 @@ pub(crate) fn write_render_stage_spec(
     let content = serde_json::to_string_pretty(&payload)?;
     fs::write(&spec_path, content)
         .with_context(|| format!("write render stage spec: {}", spec_path.display()))?;
+    Ok(spec_path)
+}
+
+/// 渲染准备阶段（与翻译并行，提前做与译文无关的渲染准备）。参数取自与渲染阶段相同的字段，
+/// 渲染阶段会用指纹核对，所以两边必须同源；不带任何凭据。
+pub(crate) fn write_render_prepare_stage_spec(
+    request: &ResolvedJobSpec,
+    job_paths: &JobPaths,
+    source_json_path: &Path,
+    source_pdf_path: &Path,
+    translations_dir: &Path,
+) -> Result<PathBuf> {
+    ensure_specs_dir(job_paths)?;
+    let spec_path = render_prepare_stage_spec_path(job_paths);
+    let payload = json!({
+        "schema_version": RENDER_PREPARE_STAGE_SCHEMA_VERSION,
+        "stage": "render_prepare",
+        "job": {
+            "job_id": request.job_id,
+            "job_root": job_paths.root,
+            "workflow": request.workflow,
+        },
+        "inputs": {
+            "source_pdf": source_pdf_path,
+            "source_json": source_json_path,
+            "translations_dir": translations_dir,
+        },
+        "params": {
+            "start_page": request.translation.start_page,
+            "end_page": request.translation.end_page,
+            "render_mode": request.render.render_mode,
+            "engine": request.render.engine,
+            "math_mode": request.translation.math_mode,
+        },
+    });
+    let content = serde_json::to_string_pretty(&payload)?;
+    fs::write(&spec_path, content)
+        .with_context(|| format!("write render prepare stage spec: {}", spec_path.display()))?;
     Ok(spec_path)
 }
 

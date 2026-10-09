@@ -9,10 +9,12 @@ use crate::storage_paths::JobPaths;
 use super::entrypoints::{
     normalize_ocr_command as build_normalize_entrypoint,
     render_only_command as build_render_only_entrypoint,
+    render_prepare_command as build_render_prepare_entrypoint,
     translate_only_command as build_translate_only_entrypoint,
 };
 use super::stage_specs::{
-    write_normalize_stage_spec, write_render_stage_spec, write_translate_stage_spec,
+    write_normalize_stage_spec, write_render_prepare_stage_spec, write_render_stage_spec,
+    write_translate_stage_spec,
 };
 
 /// 这次渲染要不要先精修译文（写进 render.spec.json 的 `params.refine`）。
@@ -43,6 +45,12 @@ pub enum WorkerStageCommand<'a> {
         source_pdf_path: &'a Path,
         translations_dir: &'a Path,
         refine: RenderRefine,
+    },
+    /// 与翻译并行的渲染准备（辅助进程，不是任务阶段：不改任务状态，失败不影响任务）。
+    RenderPrepare {
+        source_json_path: &'a Path,
+        source_pdf_path: &'a Path,
+        translations_dir: &'a Path,
     },
 }
 
@@ -93,6 +101,20 @@ pub fn build_worker_stage_command(
             translations_dir,
             &refine,
         ),
+        WorkerStageCommand::RenderPrepare {
+            source_json_path,
+            source_pdf_path,
+            translations_dir,
+        } => {
+            let spec_path = write_render_prepare_stage_spec(
+                request,
+                job_paths,
+                source_json_path,
+                source_pdf_path,
+                translations_dir,
+            )?;
+            Ok(build_render_prepare_entrypoint(config, &spec_path))
+        }
     }
 }
 

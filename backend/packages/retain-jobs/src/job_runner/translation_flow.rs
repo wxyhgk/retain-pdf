@@ -26,7 +26,7 @@ use self::translation_flow_stage::{
 use self::translation_flow_support::finalize_parent_after_ocr;
 use super::attach_job_paths;
 use super::ocr_flow::{execute_ocr_job, sync_parent_with_ocr_child};
-use super::pipeline_plan::PipelinePlan;
+use super::pipeline_plan::{PipelinePlan, PipelineStage};
 use super::ProcessRuntimeDeps;
 use translation_flow_executor::run_after_translation_stage;
 
@@ -36,7 +36,8 @@ pub(super) async fn resume_translation_stage_from_durable_state(
     render_after_translation: bool,
 ) -> Result<JobRuntimeState> {
     let job_paths = build_job_paths(&deps.persist.output_root, &job.job_id)?;
-    let translation_stage = run_translation_stage(&deps, job, &job_paths).await?;
+    let translation_stage =
+        run_translation_stage(&deps, job, &job_paths, render_after_translation).await?;
     let translated_job = translation_stage.job;
     if !matches!(translated_job.status, JobStatusKind::Succeeded) || !render_after_translation {
         return Ok(translated_job);
@@ -118,7 +119,8 @@ async fn run_translate_only_job_from_artifacts(
     )
     .await?;
     let job_paths = build_job_paths(&deps.persist.output_root, &job.job_id)?;
-    let translation_stage = run_translation_stage(&deps, job, &job_paths).await?;
+    let translation_stage =
+        run_translation_stage(&deps, job, &job_paths, render_after_translation).await?;
     let translated_job = translation_stage.job;
     if !render_after_translation || !matches!(translated_job.status, JobStatusKind::Succeeded) {
         return Ok(translated_job);
@@ -150,7 +152,7 @@ async fn run_book_job_from_artifacts(
     )
     .await?;
     let job_paths = build_job_paths(&deps.persist.output_root, &job.job_id)?;
-    let translation_stage = run_translation_stage(&deps, job, &job_paths).await?;
+    let translation_stage = run_translation_stage(&deps, job, &job_paths, true).await?;
     let translated_job = translation_stage.job;
     let source_pdf_path = translation_stage.source_pdf_path;
     if !matches!(translated_job.status, JobStatusKind::Succeeded) {
@@ -218,7 +220,9 @@ async fn run_job_with_ocr(
     // `prepare_translation_stage` 的 CAS 写:那一步只在 DB 里还是 queued/running
     // 时才落库,否则原样返回 DB 的真实状态,整条链在 spawn 之前收口。
     // 重读是 check-then-act,两步之间仍有窗口;CAS 是一步,严格更强,所以不再叠一层。
-    let translation_stage = run_translation_stage(&deps, parent_job, &parent_job_paths).await?;
+    let render_follows = plan.next_after(PipelineStage::Translate) == Some(PipelineStage::Render);
+    let translation_stage =
+        run_translation_stage(&deps, parent_job, &parent_job_paths, render_follows).await?;
     let translated_job = translation_stage.job;
     let source_pdf_path = translation_stage.source_pdf_path;
 

@@ -51,6 +51,14 @@
 脚本入口仅作为未安装包环境的兼容回退；`process_contract` 同时识别两种命令形态，
 因此成功产物校验不会因为启动方式变化而被绕过。
 
+另有一个**辅助进程**（不是 stage，不改任务状态）：`render_prepare.stage.v1`
+（`python -m retainpdf_pipeline.render.workflow.prepare_stage`，spec 为
+`specs/render-prepare.spec.json`）。翻译之后紧接着渲染时，Rust 在启动 translate 的同时拉起它，
+提前做与译文无关的渲染准备（缓存在 `artifacts/render_prepare/`），translate 成功后限时等它收尾
+再进 render；它起不来、失败、超时都只记日志（`logs/render-prepare.log`），render 照常现做。
+参数取自与 `render.stage.v1` 相同的字段，不带凭据。入口代码：
+[render_prepare.rs](../packages/retain-jobs/src/job_runner/render_prepare.rs)。
+
 `provider.stage.v1` 仍保留给 legacy/local `run_provider_case.py` wrapper；当前生产主链的 OCR provider
 transport 由 Rust `ocr_flow` 直接编排，然后只把 normalize 交给 Python worker。
 
@@ -65,7 +73,7 @@ OCR child job
   -> provider transport
   -> normalize
 parent job
-  -> translate
+  -> translate   （并行：render prepare 辅助进程）
   -> render
 ```
 
