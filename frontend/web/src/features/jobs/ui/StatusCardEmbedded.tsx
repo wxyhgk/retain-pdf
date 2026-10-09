@@ -3,8 +3,10 @@
 // - 进度文案行右侧：仅当前选中阶段的「重新 OCR / 翻译 / 渲染」
 //   （动作与导航分离，不挤 pill、不顶乱布局）
 
+import { useState } from "react";
 import { StageFlow } from "./StageFlow.jsx";
 import { LoaderCircle, Square } from "lucide-react";
+import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
 import { buildProgressRenderModel, type ProgressRenderModelInput } from "../domain/progress-model.js";
 import { StatusCardIdsContext } from "./status-card-ids-context.js";
 import {
@@ -95,6 +97,7 @@ export function StatusCardEmbedded({
     stageKeyForFlow,
     selectedForFlow,
     cancelDisabled,
+    cancelError,
     cancelCurrentJob,
     cancel,
     selectedRetry: retry,
@@ -128,6 +131,8 @@ export function StatusCardEmbedded({
     excludeDocPrefix: true,
   });
   const selectedFlow = normalizeStatusCardFlowKey(selectedForFlow || stageKeyForFlow);
+  // 取消要重新跑才能补回来，先问一句。以前点下去就取消，按钮还只是一个带下划线的小字。
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   const rootClass = [
     "bd-job-status-card",
@@ -156,7 +161,7 @@ export function StatusCardEmbedded({
               aria-label="取消任务"
               title={cancel.title}
               disabled={!cancelEnabled || cancelDisabled}
-              onClick={() => cancelCurrentJob?.()}
+              onClick={() => setConfirmCancel(true)}
             >
               {cancel.busy ? (
                 <LoaderCircle className="animate-spin" aria-hidden="true" />
@@ -236,6 +241,12 @@ export function StatusCardEmbedded({
             </div>
           </div>
 
+          {cancelError ? (
+            <p className="bd-job-status-cancel-error" role="alert" data-cancel-error="true">
+              {`取消没有成功：${cancelError}`}
+            </p>
+          ) : null}
+
           <div
             id={ids.stageErrorSummary}
             className={`bd-job-status-error${showError ? "" : " is-empty"}`}
@@ -244,6 +255,20 @@ export function StatusCardEmbedded({
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        id={`${idPrefix}cancel-confirm`}
+        open={confirmCancel}
+        onOpenChange={setConfirmCancel}
+        title="取消这次处理？"
+        description="任务会马上停止。已经完成的步骤会保留，之后可以从停下的地方继续，不用全部重来。"
+        confirmLabel="取消任务"
+        cancelLabel="继续处理"
+        tone="danger"
+        onConfirm={async () => {
+          setConfirmCancel(false);
+          await cancelCurrentJob?.();
+        }}
+      />
     </StatusCardIdsContext.Provider>
   );
 }

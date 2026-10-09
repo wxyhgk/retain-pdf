@@ -5,13 +5,10 @@
 
 import { useEffect } from "react";
 import { ArrowUpRight, Radio } from "lucide-react";
-import {
-  useHomeStatusCard,
-  useHomeStatusDetail,
-} from "@/ui/context/home-services-context.js";
+import { useHomeStatusCard } from "@/ui/context/home-services-context.js";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { StatusCard } from "@/features/jobs/index.js";
-import type { LibraryCardItem, LibraryRuntimeStatus } from "@/features/library/domain.js";
+import type { LibraryCardItem } from "@/features/library/domain.js";
 import {
   isLibraryOnlyItem,
 } from "@/features/library/domain.js";
@@ -57,7 +54,6 @@ export function BookTranslateProgressPanel({
   const library = useLibraryServices();
   const actions = library?.actions;
   const { store: statusCardStore } = useHomeStatusCard();
-  const statusDetail = useHomeStatusDetail();
   const statusCardState = useStoreSnapshot(statusCardStore);
   const cardJobId = `${statusCardState?.snapshot?.jobId || ""}`.trim();
 
@@ -96,31 +92,17 @@ export function BookTranslateProgressPanel({
 
   // 终态不挂完整大卡；WorkflowPanel 会展示紧凑四阶段过程条。
   if (!showDetailedProgress) {
+    // 失败的说法、「查看日志」和「从断点继续」都在失败卡片上（TranslationStoppedCard）。
+    // 这里曾经再画一条「本次翻译失败 · 查看日志」，和卡片说同一件事。只留契约节点。
     if (showFailure) {
-      const snapshot: LibraryRuntimeStatus = item.stage_snapshot || {};
-      const detail = `${snapshot.stage_detail || item.stage_detail || ""}`.trim();
       return (
-        <div
+        <span
           id="book-detail-translate-progress"
-          className="flex items-center justify-between gap-3 rounded-lg border border-foreground/20 bg-muted/30 px-3 py-2.5"
+          className="sr-only"
           data-job-id={jobId}
           data-state="failed"
           data-item-status={itemStatus}
-        >
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-foreground">本次翻译失败</p>
-            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-              {detail && detail !== "任务失败" ? detail : "查看失败原因后可重新提交"}
-            </p>
-          </div>
-          <button
-            type="button"
-            className="shrink-0 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
-            onClick={() => statusDetail.controller.openStatusDetailDialog("failure")}
-          >
-            查看日志
-          </button>
-        </div>
+        />
       );
     }
     return <span id="book-detail-translate-progress" className="sr-only" data-state="succeeded" />;

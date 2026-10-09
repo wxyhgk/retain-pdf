@@ -105,8 +105,8 @@ export function BookTranslationWorkflowPanel({
       className="book-translation-workflow space-y-3"
       data-book-translation-workflow="true"
     >
-      {/* 取消任务只降视觉为文字链：作用域样式覆盖，不动 StatusCardEmbedded 事件/回调/disabled。 */}
-      <style>{`#book-detail-status-section .bd-job-status-btn-cancel{border-color:transparent;background:transparent;box-shadow:none;padding-left:4px;padding-right:4px;text-decoration:underline;text-underline-offset:2px}#book-detail-status-section .bd-job-status-btn-cancel:hover:not(:disabled){background:transparent;color:inherit}#book-detail-status-section .bd-job-status-btn-primary{background:transparent;color:var(--ink)}`}</style>
+      {/* 「详情」降为次按钮；「取消任务」保持正常按钮（以前这里把它压成一行带下划线的小字）。 */}
+      <style>{`#book-detail-status-section .bd-job-status-btn-primary{background:transparent;color:var(--ink)}`}</style>
       {showStatus ? (
         <section
           id="book-detail-status-section"

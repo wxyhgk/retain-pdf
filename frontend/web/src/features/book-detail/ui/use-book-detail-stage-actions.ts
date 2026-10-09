@@ -4,12 +4,9 @@ import type {
   JobStageActionsView,
   JobStageRetryActionView,
 } from "@/platform/api/index.js";
-import { resumeJob as resumeJobRequest } from "@/platform/api/index.js";
 import type { DocumentJobSummary } from "@/features/library/domain.js";
 import type { LibraryController } from "@/features/library/index.js";
 import { isDocumentJobActive } from "./use-document-jobs.js";
-
-type ResumeView = { job_id?: string; id?: string; document_id?: string; workflow?: string };
 
 type RetryBody = Record<string, unknown> & {
   overrides?: Record<string, unknown> & { render?: Record<string, unknown> };
@@ -29,22 +26,6 @@ function rememberStageActions(jobId: string, view: JobStageActionsView) {
   }
 }
 
-// 失败恢复走 POST /resume（服务端按 resume-plan 自动续跑）：
-// render 原地同 job_id，其余新建任务。只有已完成任务的显式重做、
-// 用户二次确认接受重复风险、或 resume 不可用时，才走 retry-stage。
-const RESUME_CANDIDATE_STATUSES = new Set([
-  "failed",
-  "error",
-  "timeout",
-  "dead",
-  "cancelled",
-  "canceled",
-]);
-
-function isResumeCandidate(job?: DocumentJobSummary | null) {
-  return RESUME_CANDIDATE_STATUSES.has(`${job?.status || ""}`.trim().toLowerCase());
-}
-
 function jobIdOf(job?: DocumentJobSummary | null) {
   const id = `${job?.job_id || job?.id || ""}`.trim();
   return id.startsWith("doc:") ? "" : id;
@@ -59,9 +40,7 @@ export function useBookDetailStageActions({
 }: {
   open: boolean;
   job?: DocumentJobSummary | null;
-  actions: Pick<LibraryController, "getJobStageActions" | "retryJobStage"> & {
-    resumeJob?: (jobId: string) => Promise<unknown>;
-  };
+  actions: Pick<LibraryController, "getJobStageActions" | "retryJobStage">;
   onJobSubmitted?: (job: Partial<DocumentJobSummary>) => unknown;
   /** OCR/document authority changed while the translation job stayed the same. */
   refreshKey?: string;
@@ -136,39 +115,13 @@ export function useBookDetailStageActions({
     setPendingStage(stage);
     setError("");
     try {
-      // 一键断点恢复优先：失败任务先调 POST /resume，服务端按 resume-plan
-      // 自动续跑（render 原地同 id，其余新建）。显式二次确认风险后、
-      // 已完成任务重做、或 resume 不可用时，才走 retry-stage(显式 stage)。
-      // 精修不是「恢复失败任务」：不走 resume，直接 retry-stage(refine)。
-      // 重新渲染时指定了引擎也不走 resume：resume 不带 overrides，会悄悄沿用旧引擎。
+      // 清单里的每个按钮只做它写的那件事（显式 retry-stage）。「从断点继续」由失败卡片上的
+      // 主按钮负责（use-book-detail-resume.ts）。以前这里失败任务一律先试 POST /resume：
+      // 那条请求少了接口前缀、一直 404 才被降级成显式重跑；前缀修好之后，点「重新渲染」
+      // 会按续跑计划去重新翻译，和按钮说的不是一回事。
       const engineOverride = stage === "render" && (renderEngine === "rpr_fit" || renderEngine === "typst")
         ? renderEngine
         : "";
-      if (stage !== "refine" && !engineOverride && !acceptDuplicateRisk && isResumeCandidate(job)) {
-        try {
-          const resume = (actions.resumeJob
-            ? await actions.resumeJob(jobId)
-            : await resumeJobRequest(jobId)) as ResumeView | null;
-          const resumedId = `${resume?.job_id || resume?.id || ""}`.trim();
-          if (resumedId || resume) {
-            const nextId = resumedId || jobId;
-            onJobSubmitted?.({
-              ...resume,
-              job_id: nextId,
-              active_job_id: nextId,
-              source_job_id: jobId,
-              document_id: resume?.document_id || job?.document_id,
-              workflow: resume?.workflow
-                || (nextId === jobId ? job?.workflow : undefined)
-                || (stage === "render" ? "render" : "book"),
-              library_only: false,
-            });
-            return resume;
-          }
-        } catch {
-          // resume 不可用（404/不可恢复等）→ 兜底显式 retry-stage。
-        }
-      }
       const body = (descriptor.action?.body || {}) as RetryBody;
       const result = await actions.retryJobStage(jobId, stage, {
         ...body,

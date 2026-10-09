@@ -82,22 +82,155 @@ test("OCR 失败卡片上的重试接到的是 ocr.onOcr", async () => {
   root.unmount(); host.remove();
 });
 
-test("翻译任务失败时，翻译段真的出现失败卡片，重试接到 onTranslate", async () => {
+const resumeState = (plan, extra = {}) => ({
+  plan, loading: false, pending: false, error: "", resume: async () => {}, ...extra,
+});
+const RENDER_PLAN = {
+  can_resume: true, from_stage: "render", reuses_artifacts: ["translations_dir"], reruns_stages: ["rendering"],
+};
+const click = (dom, node) => node.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+
+test("翻译任务失败时，翻译段出现失败卡片；主按钮按续跑计划「从渲染继续」，不是整本重翻", async () => {
   const dom = makeDom();
-  let clicked = 0;
+  let resumed = 0;
+  let translated = 0;
   const translation = failedTranslation();
   const { root, host } = await mountTab(dom, {
     loading: false, ocr: idleOcr,
-    translation: { ...translation, onTranslate() { clicked += 1; } },
+    translation: {
+      ...translation,
+      onTranslate() { translated += 1; },
+      resume: resumeState(RENDER_PLAN, { resume: async () => { resumed += 1; } }),
+    },
   });
   const all = cards(host);
   assert.equal(all.length, 1, "翻译失败没有卡片 —— 一半的失败仍然只有「失败」两个字");
   assert.ok(translationRegion(host)?.contains(all[0]), "翻译的失败卡片没画在翻译段里");
   assert.match(host.textContent, /DeepSeek 返回空译文/, "翻译失败的根因没画出来");
-  host.querySelector("#book-detail-retry-failed-btn")
-    .dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+  const button = host.querySelector("#book-detail-retry-failed-btn");
+  assert.match(button.textContent, /从渲染继续/);
+  assert.match(host.textContent, /不调用模型/, "要说清这一下花不花钱");
+  click(dom, button);
   await wait(50);
-  assert.equal(clicked, 1, "翻译的重试按钮接空了");
+  assert.equal(resumed, 1, "主按钮没接到续跑");
+  assert.equal(translated, 0, "主按钮又接到了「翻译整本」—— 渲染失败会白花一整本的费用");
+  root.unmount(); host.remove();
+});
+
+test("续跑计划还在读时，主按钮转圈占位、点不了", async () => {
+  const dom = makeDom();
+  let translated = 0;
+  const { root, host } = await mountTab(dom, {
+    loading: false, ocr: idleOcr,
+    translation: { ...failedTranslation(), onTranslate() { translated += 1; }, resume: resumeState(null, { loading: true }) },
+  });
+  const button = host.querySelector("#book-detail-retry-failed-btn");
+  assert.ok(button?.disabled, "计划没读到就能点，点下去不知道会发生什么");
+  click(dom, button);
+  await wait(30);
+  assert.equal(translated, 0);
+  root.unmount(); host.remove();
+});
+
+test("OCR 都没成功时，主按钮是「从 OCR 重新开始」，接到重新提交整本", async () => {
+  const dom = makeDom();
+  let translated = 0;
+  const { root, host } = await mountTab(dom, {
+    loading: false, ocr: idleOcr,
+    translation: {
+      ...failedTranslation(OCR_FAILURE),
+      onTranslate() { translated += 1; },
+      resume: resumeState({ can_resume: false, from_stage: null, reason: "no ocr artifacts" }),
+    },
+  });
+  const button = host.querySelector("#book-detail-retry-failed-btn");
+  assert.match(button.textContent, /从 OCR 重新开始/);
+  assert.match(host.textContent, /费用重新计算/, "从头再来要先说会重新付费");
+  click(dom, button);
+  await wait(50);
+  assert.equal(translated, 1);
+  root.unmount(); host.remove();
+});
+
+test("有重复计费风险、不能续跑时，不给主按钮，说明原因", async () => {
+  const dom = makeDom();
+  const { root, host } = await mountTab(dom, {
+    loading: false, ocr: idleOcr,
+    translation: {
+      ...failedTranslation(),
+      resume: resumeState({ can_resume: false, from_stage: "translate", reason: "translation recovery is blocked; consult supported retry policies" }),
+    },
+  });
+  assert.equal(host.querySelector("#book-detail-retry-failed-btn"), null);
+  assert.match(host.textContent, /可能重复计费/);
+  root.unmount(); host.remove();
+});
+
+test("同一次运行的 OCR 失败只说一遍：翻译任务的 -ocr 子任务不再单独出一张卡", async () => {
+  const dom = makeDom();
+  const { root, host } = await mountTab(dom, {
+    loading: false,
+    ocr: { ...idleOcr, job: failedOcrJob(OCR_FAILURE, { job_id: "job-tr-1-ocr" }) },
+    translation: { ...failedTranslation(null), resume: resumeState(null) },
+  });
+  assert.equal(cards(host).length, 1, "同一件事说了两遍");
+  assert.match(host.textContent, /MinerU batch task failed/, "翻译任务没有简报时要用 OCR 那份补上");
+  root.unmount(); host.remove();
+});
+
+test("取消的翻译任务：说明已取消、停在哪一步，给「从断点继续」", async () => {
+  const dom = makeDom();
+  let resumed = 0;
+  const { root, host } = await mountTab(dom, {
+    loading: false, ocr: idleOcr,
+    translation: {
+      ...idleTranslation,
+      item: { job_id: "job-tr-2", workflow: "translate", status: "canceled", stage: "translate", created_at: "2026-10-02T00:00:00Z" },
+      status: { label: "已取消", tone: "muted" },
+      resume: resumeState({ can_resume: true, from_stage: "translate", reuses_artifacts: ["translation_checkpoint_json"] }, {
+        resume: async () => { resumed += 1; },
+      }),
+    },
+  });
+  const card = host.querySelector("[data-job-cancelled]");
+  assert.ok(card, "取消之后什么都不说");
+  assert.match(card.textContent, /任务已取消/);
+  assert.match(card.textContent, /已经翻好的部分/, "要说清续跑会沿用已翻好的部分");
+  click(dom, host.querySelector("#book-detail-resume-cancelled-btn"));
+  await wait(50);
+  assert.equal(resumed, 1);
+  root.unmount(); host.remove();
+});
+
+test("OCR 失败时，没开始的翻译站写「未开始」，不写「失败」", async () => {
+  const dom = makeDom();
+  const { root, host } = await mountTab(dom, {
+    loading: false, ocr: idleOcr,
+    translation: {
+      ...failedTranslation(OCR_FAILURE),
+      item: { ...failedTranslation(OCR_FAILURE).item, stages: { ocr: { state: "failed" } } },
+      resume: resumeState(null),
+    },
+  });
+  const label = (key) => host.querySelector(`[data-stage-key="${key}"] .book-detail-status`)?.textContent || "";
+  assert.equal(label("ocr"), "失败");
+  assert.equal(label("translate"), "未开始");
+  root.unmount(); host.remove();
+});
+
+test("渲染失败时，失败标在渲染站，前面两站打勾", async () => {
+  const dom = makeDom();
+  const { root, host } = await mountTab(dom, {
+    loading: false, ocr: idleOcr,
+    translation: {
+      ...failedTranslation({ ...TRANSLATION_FAILURE, stage: "render", category: "render" }),
+      resume: resumeState(RENDER_PLAN),
+    },
+  });
+  const state = (key) => host.querySelector(`[data-stage-key="${key}"]`)?.getAttribute("data-state");
+  assert.equal(state("ocr"), "done");
+  assert.equal(state("translate"), "done");
+  assert.equal(state("render"), "failed", "渲染失败却没标在渲染站");
   root.unmount(); host.remove();
 });
 

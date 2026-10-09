@@ -32,6 +32,13 @@ type StepState = "pending" | "active" | "done" | "failed" | "cancelled";
 
 type StatusTone = { label?: string; tone?: string };
 
+const STEP_LABELS: Record<string, string> = {
+  done: "已完成",
+  active: "处理中",
+  failed: "失败",
+  cancelled: "已取消",
+};
+
 function toneOf(state: string): string {
   if (state === "done") return "done";
   if (state === "active") return "active";
@@ -109,11 +116,18 @@ export function ProcessingPipelineRail({
     translate: loading ? "读取中…" : translationStatus.label || "未翻译",
     render: "",
   };
-  // 任务在跑时，还没轮到的站写「等待中」。以前它直接拿整本书的状态，OCR 还在跑，
-  // 灰着的翻译站却标着「处理中」。
+  // 有翻译任务时，每站的状态字只看这一站自己：以前直接拿整本书的状态，于是 OCR 失败时
+  // 根本没开始的翻译站也写「失败」，渲染失败时「失败」挂在翻译站、渲染站一个字没有。
+  // 任务在跑：没轮到的站写「等待中」；任务已失败 / 取消：没轮到的站写「未开始」。
   const anyActive = !loading && hasTranslationJob && model.steps.some((entry) => entry.state === "active");
-  const labelOf = (key: StageKey, state: string): string =>
-    anyActive && state === "pending" ? "等待中" : stationLabels[key];
+  const jobEnded = !loading && hasTranslationJob && model.steps.some(
+    (entry) => entry.state === "failed" || entry.state === "cancelled",
+  );
+  const labelOf = (key: StageKey, state: string): string => {
+    if (loading || !hasTranslationJob) return stationLabels[key];
+    if (state === "pending") return anyActive ? "等待中" : jobEnded ? "未开始" : stationLabels[key];
+    return STEP_LABELS[state] || stationLabels[key];
+  };
   const metaOf = (key: StageKey): string => {
     if (loading) return "";
     if (key === "translate" && !hasTranslationJob) return translationDescription;
@@ -155,7 +169,7 @@ export function ProcessingPipelineRail({
               <span className="book-detail-pipeline-copy">
                 <span className="book-detail-pipeline-head">
                   <span className="book-detail-pipeline-label">{label}</span>
-                  {capability ? (
+                  {labelOf(stage.key, step.state) ? (
                     <span className={`book-detail-status book-detail-pipeline-status is-${toneOf(step.state)}`}>
                       {labelOf(stage.key, step.state)}
                     </span>

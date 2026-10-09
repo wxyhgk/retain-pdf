@@ -101,6 +101,7 @@ export type StatusCardModel = {
   stageKeyForFlow: string;
   selectedForFlow: string;
   cancelDisabled: boolean;
+  cancelError: string;
   cancelCurrentJob: (() => unknown) | undefined;
   cancel: StatusCardCancelDescription;
   selectedRetry: StatusCardSelectedRetry | null;

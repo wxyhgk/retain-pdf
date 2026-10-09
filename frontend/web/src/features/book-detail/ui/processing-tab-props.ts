@@ -13,6 +13,7 @@ import type { useDocumentJobs } from "./use-document-jobs.js";
 import type { useBookDetailOcr } from "./use-book-detail-ocr.js";
 import type { useBookDetailTranslate } from "./use-book-detail-translate.js";
 import type { useBookDetailStageActions } from "./use-book-detail-stage-actions.js";
+import type { BookDetailResumeState } from "./use-book-detail-resume.js";
 import { canStartTranslation } from "./use-book-detail-cover.js";
 
 export type ProcessingTabPropsInput = {
@@ -26,6 +27,7 @@ export type ProcessingTabPropsInput = {
   ocrState: ReturnType<typeof useBookDetailOcr>;
   translateState: ReturnType<typeof useBookDetailTranslate>;
   stageActionState: ReturnType<typeof useBookDetailStageActions>;
+  resumeState?: BookDetailResumeState;
   translationStatus: { label: string; tone: string };
   translationActive: boolean;
   translationSucceeded: boolean;
@@ -47,6 +49,7 @@ export function buildProcessingTabProps({
   ocrState,
   translateState,
   stageActionState,
+  resumeState,
   translationStatus,
   translationActive,
   translationSucceeded,
@@ -115,6 +118,7 @@ export function buildProcessingTabProps({
       documentJobIds,
       onOpenLiveReader,
       onRetryStage: stageActionState.retry,
+      resume: resumeState,
     },
   };
 }

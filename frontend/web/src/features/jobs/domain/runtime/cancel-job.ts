@@ -21,7 +21,7 @@ function describeCancelError(cause: unknown): string {
 /** 取消任务依赖：当前任务端口 / 取消按钮端口 / 两条取消接口 / 回拉 */
 export interface CancelCurrentJobDeps {
   currentJobPort: CurrentJobStatePort;
-  shellViewPort: { setCancelDisabled: (disabled: boolean) => void };
+  shellViewPort: { setCancelDisabled: (disabled: boolean) => void; setCancelError?: (message: string) => void };
   setText: (id: string, message: string) => void;
   cancelJob?: (jobId: string, apiPrefix?: string) => Promise<unknown>;
   cancelOcrJob?: (jobId: string, apiPrefix?: string) => Promise<unknown>;
@@ -47,6 +47,7 @@ export function createCancelCurrentJob({
       return;
     }
     shellViewPort.setCancelDisabled(true);
+    shellViewPort.setCancelError?.("");
     try {
       const snapshot: JobLike = currentJobPort.snapshot?.() || {};
       const job = (snapshot?.job && typeof snapshot.job === "object" ? snapshot.job : snapshot) as JobLike;
@@ -81,11 +82,12 @@ export function createCancelCurrentJob({
       // 请求失败/权威回包超时都允许用户重试；成功时保持锁定，直到权威状态变为 canceled。
       shellViewPort.setCancelDisabled(false);
       const message = describeCancelError(err);
-      if ((err as { name?: string } | null)?.name === "CancelFetchTimeoutError") {
-        setText("error-box", `${message}若任务仍在运行，可重试取消。`);
-      } else {
-        setText("error-box", message);
-      }
+      const shown = (err as { name?: string } | null)?.name === "CancelFetchTimeoutError"
+        ? `${message}若任务仍在运行，可重试取消。`
+        : message;
+      // error-box 只在「添加 PDF」弹窗里显示；取消是从书籍详情发起的，原因要落在那张任务卡上。
+      shellViewPort.setCancelError?.(shown);
+      setText("error-box", shown);
     }
   };
 }

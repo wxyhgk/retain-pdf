@@ -89,3 +89,21 @@
   font-size: 11px;
   color: var(--destructive);
 }
+
+/* 主按钮下面那句：沿用什么、重跑什么、花不花钱。点之前就该知道。 */
+.book-detail-failure-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+
+/* 已取消：不是出错，用中性色。 */
+.book-detail-failure-card[data-tone="cancelled"] {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--foreground) 3%, var(--card));
+}
+
+.book-detail-failure-card[data-tone="cancelled"] .book-detail-failure-icon {
+  color: var(--muted-foreground);
+}

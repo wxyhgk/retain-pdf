@@ -143,11 +143,14 @@ export type StatusCardSnapshot = {
 export type StatusCardState = {
   snapshot: StatusCardSnapshot;
   cancelDisabled: boolean;
+  /** 上一次取消失败的原因；换任务或再次取消时清空。在书籍详情的任务卡上就地显示。 */
+  cancelError: string;
 };
 
 export type StatusCardActions = {
   setSnapshot: (state: StatusCardState, snapshot: StatusCardSnapshot) => StatusCardState;
   setCancelDisabled: (state: StatusCardState, disabled?: boolean) => StatusCardState;
+  setCancelError: (state: StatusCardState, message?: string) => StatusCardState;
 };
 
 export type StatusCardStore = Store<StatusCardState, StatusCardActions>;
@@ -221,16 +224,25 @@ export function createStatusCardStore(): StatusCardStore {
     initialState: {
       snapshot: EMPTY_STATUS_CARD_SNAPSHOT,
       cancelDisabled: false,
+      cancelError: "",
     },
     actions: {
       setSnapshot(state, snapshot) {
-        return { ...state, snapshot };
+        // 换了任务，上一个任务的取消失败原因不再相关。
+        const jobChanged = `${snapshot?.jobId || ""}` !== `${state.snapshot?.jobId || ""}`;
+        return jobChanged && state.cancelError
+          ? { ...state, snapshot, cancelError: "" }
+          : { ...state, snapshot };
       },
       setCancelDisabled(state, disabled = false) {
         const next = Boolean(disabled);
         return state.cancelDisabled === next
           ? state
           : { ...state, cancelDisabled: next };
+      },
+      setCancelError(state, message = "") {
+        const next = `${message || ""}`;
+        return state.cancelError === next ? state : { ...state, cancelError: next };
       },
     },
   });

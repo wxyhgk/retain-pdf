@@ -30,6 +30,7 @@ import { useBookDetailDocument } from "./use-book-detail-document.js";
 import { useBookDetailTranslate } from "./use-book-detail-translate.js";
 import { useBookDetailOcr } from "./use-book-detail-ocr.js";
 import { useBookDetailStageActions } from "./use-book-detail-stage-actions.js";
+import { useBookDetailResume } from "./use-book-detail-resume.js";
 import {
   documentJobPresentation,
   isDocumentJobActive,
@@ -143,6 +144,12 @@ export function BookDetailDialog() {
       documentJobs.reusableOcr?.status || "",
       documentJobs.reusableOcr?.updated_at || "",
     ].join(":"),
+  });
+  // 失败 / 取消的最新翻译任务：从断点继续。
+  const resumeState = useBookDetailResume({
+    open,
+    job: latestTranslation,
+    onJobSubmitted: documentJobs.upsert,
   });
   const artifactCenter = useBookDetailArtifactCenter({
     active: open,
@@ -278,6 +285,7 @@ export function BookDetailDialog() {
                 ocrState,
                 translateState,
                 stageActionState,
+                resumeState,
                 translationStatus,
                 translationActive,
                 translationSucceeded,

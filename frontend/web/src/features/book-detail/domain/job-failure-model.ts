@@ -54,12 +54,12 @@ const BY_CATEGORY: Record<string, FailureAdvice> = {
   },
   translation: {
     title: "翻译阶段中断",
-    action: "已翻好的页有 checkpoint，重试会接着跑，不会整本重翻、不会重复付费。",
+    action: "已翻好的部分有断点记录，从断点继续只翻剩下的，不会整本重翻、不会重复付费。",
     retryLikelyHelps: true,
   },
   render: {
     title: "生成最终 PDF 时失败",
-    action: "译文还在，重试只重跑排版这一步。",
+    action: "译文还在，从断点继续只重跑排版这一步，不调用模型。",
     retryLikelyHelps: true,
   },
   internal: {
@@ -98,7 +98,7 @@ const BY_CATEGORY: Record<string, FailureAdvice> = {
 
 const FALLBACK: FailureAdvice = {
   title: "任务失败",
-  action: "可以先重试一次；仍然失败请复制诊断信息。",
+  action: "可以先用下面的按钮再试一次；仍然失败请复制诊断信息。",
   retryLikelyHelps: true,
 };
 

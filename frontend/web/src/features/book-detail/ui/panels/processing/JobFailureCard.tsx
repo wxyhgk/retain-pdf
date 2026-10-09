@@ -14,7 +14,7 @@
  * 列表里那份简报；点「展开」时才去打一次 job 详情端点拿完整错误。
  */
 import { useCallback, useState } from "react";
-import { ChevronDown, Copy, LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react";
+import { ChevronDown, Copy, FileText, LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react";
 
 import { copyText } from "@/platform/utils/clipboard.js";
 import type { JobFailureBrief } from "@/platform/contracts/library-payloads.js";
@@ -25,12 +25,27 @@ import {
 } from "../../../domain/job-failure-model.js";
 import { btn } from "../../panels/ui.js";
 
+/** 卡片上的主动作：翻译任务是「从断点继续」，单独的 OCR 任务是「重新 OCR」。 */
+export type JobFailurePrimaryAction = {
+  label: string;
+  onClick: () => void | Promise<unknown>;
+  pending?: boolean;
+  pendingLabel?: string;
+  /** 按钮下面一句：沿用什么、重跑什么、花不花钱。 */
+  hint?: string;
+};
+
 export type JobFailureCardProps = {
   failure?: JobFailureBrief | null;
   jobId?: string;
-  /** 点「重试」时调用。不给就不画重试按钮 —— 没有实现的按钮比没有按钮更糟。 */
-  onRetry?: () => void | Promise<unknown>;
-  retrying?: boolean;
+  /** 不给就不画主按钮 —— 没有实现的按钮比没有按钮更糟。 */
+  primary?: JobFailurePrimaryAction | null;
+  /** 没有主动作时的说明（例如「OCR 没有完成，只能从 OCR 重新开始」）。 */
+  notice?: string;
+  /** 主动作提交失败的原因，就地显示。 */
+  actionError?: string;
+  /** 打开任务详情的失败日志。 */
+  onOpenLog?: () => void;
   /** 取完整错误（含 traceback）。不给就不画「展开」。 */
   loadDetail?: (jobId: string) => Promise<string>;
 };
@@ -38,8 +53,10 @@ export type JobFailureCardProps = {
 export function JobFailureCard({
   failure,
   jobId,
-  onRetry,
-  retrying,
+  primary = null,
+  notice = "",
+  actionError = "",
+  onOpenLog,
   loadDetail,
 }: JobFailureCardProps) {
   const [detail, setDetail] = useState<string>("");
@@ -89,18 +106,18 @@ export function JobFailureCard({
       ) : null}
 
       <div className="book-detail-failure-actions">
-        {onRetry ? (
+        {primary ? (
           <button
             type="button"
             id="book-detail-retry-failed-btn"
             className={btn(advice.retryLikelyHelps ? "default" : "outline")}
-            disabled={Boolean(retrying)}
-            onClick={() => void onRetry()}
+            disabled={Boolean(primary.pending)}
+            onClick={() => void primary.onClick()}
           >
-            {retrying
+            {primary.pending
               ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
               : <RotateCcw className="size-3.5" aria-hidden="true" />}
-            <span className="ml-1.5">{retrying ? "重试中…" : "重试"}</span>
+            <span className="ml-1.5">{primary.pending ? primary.pendingLabel || "提交中…" : primary.label}</span>
           </button>
         ) : null}
 
@@ -108,6 +125,13 @@ export function JobFailureCard({
           <Copy className="size-3.5" aria-hidden="true" />
           <span className="ml-1.5">{copied ? "已复制" : "复制诊断信息"}</span>
         </button>
+
+        {onOpenLog ? (
+          <button type="button" className={btn("outline")} onClick={onOpenLog}>
+            <FileText className="size-3.5" aria-hidden="true" />
+            <span className="ml-1.5">查看日志</span>
+          </button>
+        ) : null}
 
         {loadDetail && jobId && !expanded ? (
           <button
@@ -123,6 +147,15 @@ export function JobFailureCard({
           </button>
         ) : null}
       </div>
+
+      {primary?.hint ? (
+        <p className="book-detail-failure-hint" data-failure-hint="true">{primary.hint}</p>
+      ) : notice ? (
+        <p className="book-detail-failure-hint" data-failure-notice="true">{notice}</p>
+      ) : null}
+      {actionError ? (
+        <p className="book-detail-failure-detail-error" role="alert" data-failure-action-error="true">{actionError}</p>
+      ) : null}
 
       {detailError ? (
         <p className="book-detail-failure-detail-error" role="alert">{detailError}</p>

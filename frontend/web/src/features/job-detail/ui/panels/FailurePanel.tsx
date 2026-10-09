@@ -285,7 +285,7 @@ export function FailurePanel({
                 title={rerun.disabled ? rerunDisabledReason : undefined}
                 onClick={rerun.run}
               >
-                从断点恢复/重新运行
+                从断点继续
               </button>
               <span id={ids.failure.rerunStatus} className="status-panel-note">
                 {rerun.status || "失败后如后端允许，可基于已有产物创建恢复任务。"}
