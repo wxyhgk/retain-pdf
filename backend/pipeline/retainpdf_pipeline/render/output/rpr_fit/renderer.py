@@ -93,6 +93,38 @@ def _translation_items(translated_pages: dict[int, list[dict]]) -> list[dict]:
     return items
 
 
+def _page_boxes(
+    document_path: Path, items: list[dict], page_indices: list[int]
+) -> tuple[dict[int, list[list[float]]], dict[int, list[list[float]]]]:
+    """每页的译文块框与障碍物框，与引擎（job-model.js）同一个划分：有可排文字的文本块是
+    译文块，其余（图、表、公式、页眉页脚、不翻译或译文为空的块）都是障碍物。"""
+    document = json.loads(Path(document_path).read_text(encoding="utf-8"))
+    has_text = {
+        (int(item["page_idx"]), int(item["block_idx"]))
+        for item in items
+        if item.get("policy_translate") and str(item.get("translated_text") or "").strip()
+        and item.get("block_idx") is not None
+    }
+    wanted = set(page_indices)
+    text_boxes: dict[int, list[list[float]]] = {}
+    obstacle_boxes: dict[int, list[list[float]]] = {}
+    for page in document.get("pages") or []:
+        index = int(page.get("page_index", -1))
+        if index not in wanted:
+            continue
+        for block in page.get("blocks") or []:
+            bbox = [float(value) for value in (block.get("bbox") or [])]
+            if len(bbox) != 4:
+                continue
+            try:
+                number = int(str(block.get("block_id") or "").rsplit("-b", 1)[-1])
+            except ValueError:
+                number = -1
+            translated = block.get("type") == "text" and (index, number) in has_text
+            (text_boxes if translated else obstacle_boxes).setdefault(index, []).append(bbox)
+    return text_boxes, obstacle_boxes
+
+
 def build_book_rpr_fit_pdf(
     *,
     mode: str,
@@ -117,12 +149,15 @@ def build_book_rpr_fit_pdf(
 
     work_dir = prepare_background_work_dir(output_pdf_path, None)
     engine_dir = _reset_dir(work_dir.parent / "rpr-fit-engine")
+    items = _translation_items(translated_pages)
     scan_started = time.perf_counter()
-    drawings = extract_drawings(source_pdf_path, page_indices)
-    diagnostics["rpr_fit_scan_elapsed_seconds"] = round(time.perf_counter() - scan_started, 3)
-    (engine_dir / "translations.json").write_text(
-        json.dumps(_translation_items(translated_pages), ensure_ascii=False), encoding="utf-8"
+    text_boxes, obstacle_boxes = _page_boxes(Path(document_path), items, page_indices)
+    drawings = extract_drawings(
+        source_pdf_path, page_indices, obstacle_boxes=obstacle_boxes, text_boxes=text_boxes
     )
+    diagnostics["rpr_fit_scan_elapsed_seconds"] = round(time.perf_counter() - scan_started, 3)
+    diagnostics["rpr_fit_raster_pages"] = sorted(int(page) for page, data in drawings.items() if data.get("raster"))
+    (engine_dir / "translations.json").write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
     (engine_dir / "drawings.json").write_text(json.dumps(drawings), encoding="utf-8")
     payload = {
         "schema": RPR_FIT_INPUT_SCHEMA,

@@ -128,7 +128,13 @@ function vectorObstacles(page, textBoxes, obstacleBoxes) {
   const fills = [];
   for (const d of page.drawings) {
     if (d.clip && (d.clip[2] - d.clip[0] <= CLIP_EPS || d.clip[3] - d.clip[1] <= CLIP_EPS)) { counts.clippedAway = (counts.clippedAway || 0) + 1; continue; }
-    const rect = d.clip ? clipRect(d.rect, d.clip) : d.rect;
+    // A straight rule's rect has zero height (or width): test what the clip
+    // keeps of it at its stroke width, as obstacleInkBoxes does; clipping the
+    // bare rect dropped every hairline drawn under a clip path (PDFs usually
+    // put one page-sized clip around everything).
+    const stroked = Boolean(d.stroke) && !invisible(d.stroke);
+    const visible = stroked ? widen(d.rect.slice(), Math.max(0.5, Number(d.width) || 1)) : d.rect;
+    const rect = d.clip ? clipRect(visible, d.clip) : visible;
     if (!rect) { counts.clippedAway = (counts.clippedAway || 0) + 1; continue; }
     const before = pieces.length;
     const polylines = d.polylines || [];

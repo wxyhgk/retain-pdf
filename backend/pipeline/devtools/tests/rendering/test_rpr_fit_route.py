@@ -224,3 +224,52 @@ def test_fit_report_conversion_from_engine_report() -> None:
     assert payload["summary"]["obstacle_collisions"] == 3
     assert payload["summary"]["math_failed"] == 1
     assert payload["body_font"]["shared"] == 10.0
+
+
+def test_paths_inside_known_obstacles_collapse_into_one_ink_rect(tmp_path: Path) -> None:
+    # A figure's thousands of paths: the engine only needs "inside an obstacle"
+    # and the obstacle's ink extent, so they become one rect (no polylines).
+    pdf = tmp_path / "figure.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=300, height=400)
+    for k in range(40):
+        page.draw_line((60 + k, 100), (60 + k, 160))
+    page.draw_line((20, 300), (280, 300))
+    doc.save(pdf)
+    doc.close()
+    drawings = extract_drawings(pdf, [0], obstacle_boxes={0: [[50, 90, 120, 170]]}, text_boxes={0: []})["0"]["drawings"]
+    synthetic = [entry for entry in drawings if entry.get("synthetic") == "obstacle-ink"]
+    assert len(synthetic) == 1
+    x0, y0, x1, y1 = synthetic[0]["rect"]
+    assert 59 <= x0 <= 60.5 and x1 >= 99 and y0 <= 100.5 and y1 >= 159.5
+    rules = [entry for entry in drawings if not entry.get("synthetic")]
+    assert len(rules) == 1 and rules[0]["polylines"] == [[[20.0, 300.0], [280.0, 300.0]]]
+
+
+def test_scanned_page_ink_outside_known_boxes_becomes_obstacle_cells(tmp_path: Path) -> None:
+    # A page that is one image: the thin coloured frame line under a text box
+    # exists only as pixels. Cells straddling the text box edge are kept (the
+    # engine cuts away what lies inside the box); cells fully inside are not.
+    pdf = tmp_path / "scan.pdf"
+    pix = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 600, 800), 0)
+    pix.clear_with(255)
+    pix.set_rect(fitz.IRect(60, 422, 540, 424), (230, 120, 40))  # frame line at y = 211-212 pt
+    pix.set_rect(fitz.IRect(100, 300, 300, 330), (20, 20, 20))  # source text inside the box
+    doc = fitz.open()
+    page = doc.new_page(width=300, height=400)
+    page.insert_image(page.rect, pixmap=pix)
+    doc.save(pdf)
+    doc.close()
+    text_box = [40, 140, 280, 211]  # the line sits right at the box's bottom edge
+    page_data = extract_drawings(pdf, [0], obstacle_boxes={0: []}, text_boxes={0: [text_box]})["0"]
+    assert page_data["raster"] is True
+    cells = [entry["rect"] for entry in page_data["drawings"] if entry.get("synthetic") == "raster-ink"]
+    assert any(rect[1] <= 211.5 <= rect[3] and rect[2] - rect[0] > 100 for rect in cells), cells
+    assert not any(rect[1] >= 150 and rect[3] <= 165 for rect in cells), "source text inside the box is skipped"
+
+
+def test_vector_pages_get_no_raster_ink(tmp_path: Path) -> None:
+    source_pdf, _document_path, _translated = _job(tmp_path)
+    page = extract_drawings(source_pdf, [0])["0"]
+    assert page["raster"] is False
+    assert not any(entry.get("synthetic") == "raster-ink" for entry in page["drawings"])
