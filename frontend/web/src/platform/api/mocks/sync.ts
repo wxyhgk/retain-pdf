@@ -12,6 +12,7 @@ const state = {
   running: false,
   interval_seconds: 60,
   last_run: null as Record<string, unknown> | null,
+  last_maintenance: null as Record<string, unknown> | null,
   pending_total: 0,
   pending: [] as unknown[],
   peers: [{ device_id: "fedcba9876543210", name: "办公室的 Mac", segments_read: 12 }],

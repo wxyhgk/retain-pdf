@@ -12,13 +12,18 @@ use sha2::{Digest, Sha256};
 use super::clock::{iso_ms, Hlc};
 use super::files::{checked_relative, entity_files, file_hash, has_content, remove_file};
 use super::folder::{hex, FolderBackend};
-use super::store::{Backend, BlobLocation, Segment, SyncStore};
+use super::store::{Backend, BlobLocation, DeviceState, Segment, SyncStore};
 use super::{ChangeRecord, SyncFileEntry};
 use crate::db::sync::{
     entity_spec, SyncApplyOutcome, SyncDirty, SyncEntityState, SyncEntityUpdate, SyncFileRef,
     SyncRows, SYNC_SEED_VERSIONS,
 };
 use crate::db::Db;
+
+#[path = "maintain.rs"]
+mod maintain;
+
+pub use maintain::MaintenancePolicy;
 
 pub(super) const DATA_ROOT_TOKEN: &str = "{{data_root}}";
 const STATE_DEVICE: &str = "device_id";
@@ -27,6 +32,9 @@ const STATE_SEGMENT: &str = "segment";
 const STATE_SEEDED: &str = "seeded";
 const STATE_FOLDER_ID: &str = "folder_id";
 const STATE_FINGERPRINT: &str = "fingerprint";
+/// 上次读各设备整理状态的时间;各设备的 base(`base:<设备号>`)。
+const STATE_STATES_READ_AT: &str = "states_read_at";
+const STATE_BASE_PREFIX: &str = "base:";
 /// 已经写进同步文件夹的设备说明(设备号 + 名字),没变就不再写。
 const STATE_DEVICE_WRITTEN: &str = "device_written";
 /// 一段改动记录最多放多少条。
@@ -62,6 +70,18 @@ pub struct SyncReport {
     pub folder_changed: bool,
     /// 这一轮发现数据目录是从别处复制来的,换了新设备号。
     pub device_renewed: bool,
+    /// 这一轮整理了同步文件夹里本机的目录(见 `maintain.rs`)。
+    pub maintained: bool,
+    /// 整理掉的改动记录段数。
+    pub segments_compacted: usize,
+    /// 新停用的包、停用期满删掉的包。
+    pub packs_retired: usize,
+    pub packs_deleted: usize,
+    /// 删掉的包腾出的空间、为了留住还在用的内容重新上传的大小。
+    pub bytes_freed: u64,
+    pub bytes_repacked: u64,
+    /// 整理没做完的原因(不影响这一轮同步本身)。
+    pub maintenance_error: Option<String>,
 }
 
 /// 同步文件夹里的另一台设备。
@@ -93,6 +113,7 @@ pub struct SyncEngine {
     data_root: PathBuf,
     store: SyncStore,
     device_name: String,
+    policy: MaintenancePolicy,
 }
 
 /// 一批待写的改动记录与其中新出现的文件。
@@ -222,7 +243,14 @@ impl SyncEngine {
             store: SyncStore::new(backend, work_dir),
             data_root,
             device_name: device_name.to_string(),
+            policy: MaintenancePolicy::default(),
         })
+    }
+
+    /// 改整理的节奏(测试用)。
+    pub fn with_policy(mut self, policy: MaintenancePolicy) -> Self {
+        self.policy = policy;
+        self
     }
 
     /// 连通性测试(能读写删),返回往返耗时(毫秒)。不碰同步数据。
@@ -325,7 +353,7 @@ impl SyncEngine {
 
     /// 跑一轮同步。第一次跑时把本机现有的书库全部放进去。
     pub fn run_cycle(&self) -> Result<SyncReport> {
-        let folder_id = self.store.ensure()?;
+        let (folder_id, format_version) = self.store.ensure_version()?;
         let mut folder_changed = false;
         match self.db.sync_state_get(STATE_FOLDER_ID)? {
             Some(known) if known == folder_id => {}
@@ -357,6 +385,8 @@ impl SyncEngine {
                 let fresh = format!("{:016x}", fastrand::u64(..));
                 self.db.sync_state_set(STATE_DEVICE, &fresh)?;
                 self.db.sync_state_set(STATE_SEGMENT, "0")?;
+                // 旧设备号的记录与整理状态属于原设备,新设备号从头记。
+                self.db.sync_clear_own_records()?;
                 device_renewed = true;
             }
             _ => {}
@@ -376,16 +406,64 @@ impl SyncEngine {
             ..SyncReport::default()
         };
         let mut hlc = self.load_clock()?;
-        let result = (|| -> Result<()> {
+        let result = (|| -> Result<DeviceState> {
+            // 先看各设备停用了哪些包(导出时不再往里引用)、整理到了哪一段(读时跳过)。
+            let states = self.device_states()?;
             self.export(&device, &mut hlc, &mut report)?;
-            self.import(&device, &mut hlc, &mut report)?;
-            Ok(())
+            self.import(&device, &states, &mut hlc, &mut report)?;
+            Ok(states.get(&device).cloned().unwrap_or_default())
         })();
         self.db.sync_state_set(STATE_CLOCK, &hlc.encode())?;
+        if let Ok(own) = &result {
+            if let Err(error) = self.maintain(&device, own.clone(), &folder_id, format_version, &mut report) {
+                tracing::warn!("sync maintenance: {error:#}");
+                report.maintenance_error = Some(format!("{error:#}"));
+            }
+        }
         self.store.end_cycle();
         result?;
         report.pending = self.db.sync_pending()?.len();
         Ok(report)
+    }
+
+    /// 各设备的整理状态;停用的包记进本机(导出、取文件时用)。每台设备一个请求,所以
+    /// 隔一段时间(`refresh_states`,默认十分钟)才重读,其间用记下的:停用的包要等 7 天才删,
+    /// 晚一会儿知道无妨。
+    fn device_states(&self) -> Result<BTreeMap<String, DeviceState>> {
+        let now = chrono::Utc::now();
+        let due = self
+            .db
+            .sync_state_get(STATE_STATES_READ_AT)?
+            .and_then(|t| chrono::DateTime::parse_from_rfc3339(&t).ok())
+            .map_or(true, |t| now - t.with_timezone(&chrono::Utc) >= self.policy.refresh_states);
+        let mut out = BTreeMap::new();
+        for device in self.store.device_ids()? {
+            let state = if due {
+                let state = self.store.device_state(&device)?;
+                self.remember_state(&device, &state)?;
+                state
+            } else {
+                DeviceState {
+                    base: self
+                        .db
+                        .sync_state_get(&format!("{STATE_BASE_PREFIX}{device}"))?
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(0),
+                    retired: self.db.sync_retired_packs(&device)?,
+                }
+            };
+            out.insert(device, state);
+        }
+        if due {
+            self.db.sync_state_set(STATE_STATES_READ_AT, &now.to_rfc3339())?;
+        }
+        Ok(out)
+    }
+
+    /// 记下一台设备的整理状态(本机读到的,或本机自己刚写的)。
+    fn remember_state(&self, device: &str, state: &DeviceState) -> Result<()> {
+        self.db.sync_set_retired_packs(device, &state.retired)?;
+        self.db.sync_state_set(&format!("{STATE_BASE_PREFIX}{device}"), &state.base.to_string())
     }
 
     /// 把还没登记过(或登记版本旧了)的种类的现有内容标成待同步。
@@ -436,7 +514,7 @@ impl SyncEngine {
                 for file in &record.files {
                     if batch.shas.contains(&file.sha256)
                         || fresh.iter().any(|(_, sha): &(PathBuf, String)| sha == &file.sha256)
-                        || self.db.sync_blob_location(&file.sha256)?.is_some()
+                        || self.db.sync_blob_available(&file.sha256)?
                     {
                         continue;
                     }
@@ -547,6 +625,8 @@ impl SyncEngine {
         let (segment, index) = self.store.write_segment(device, last, &records, &batch.blobs)?;
         self.db.sync_state_set(STATE_SEGMENT, &segment.to_string())?;
         self.db.sync_record_blobs(device, segment, &index)?;
+        let entities: Vec<(String, String)> = records.iter().map(|r| (r.kind.clone(), r.key.clone())).collect();
+        self.db.sync_note_own_records(&entities, segment)?;
         report.blobs_uploaded += index.len();
         let items = std::mem::take(&mut batch.items);
         *batch = Batch::default();
@@ -594,18 +674,32 @@ impl SyncEngine {
         }
     }
 
-    fn import(&self, device: &str, hlc: &mut Hlc, report: &mut SyncReport) -> Result<()> {
+    fn import(
+        &self,
+        device: &str,
+        states: &BTreeMap<String, DeviceState>,
+        hlc: &mut Hlc,
+        report: &mut SyncReport,
+    ) -> Result<()> {
         self.retry_pending(hlc, report)?;
-        for other in self.store.device_ids()? {
+        for (other, state) in states {
             if other == device {
                 continue;
             }
-            let mut segment = self.db.sync_cursor(&other)?;
+            let mut segment = self.db.sync_cursor(other)?;
+            if state.base > segment + 1 {
+                // 那台设备整理过:之前的段已经删了,里面还有用的记录都抄进了 base 之后。
+                segment = state.base - 1;
+                self.db.sync_set_cursor(other, segment)?;
+            }
+            let other = other.as_str();
             loop {
-                match self.store.read_segment(&other, segment + 1)? {
-                    Segment::Complete { records, pack } => {
+                match self.store.read_segment(other, segment + 1)? {
+                    Segment::Complete { records, packs } => {
                         // 先记下包里有什么,这一段的改动才找得到自己的文件。
-                        self.db.sync_record_blobs(&other, segment + 1, &pack)?;
+                        for (pack_segment, index) in &packs {
+                            self.db.sync_record_blobs(other, *pack_segment, index)?;
+                        }
                         for record in &records {
                             if record.device != other {
                                 bail!("change record from {} found in {other}'s folder", record.device);
@@ -613,7 +707,7 @@ impl SyncEngine {
                             self.consider_and_count(record, hlc, report, true)?;
                         }
                         segment += 1;
-                        self.db.sync_set_cursor(&other, segment)?;
+                        self.db.sync_set_cursor(other, segment)?;
                     }
                     Segment::Missing | Segment::Incomplete => break,
                 }
@@ -773,7 +867,7 @@ impl SyncEngine {
         // 先确认文件内容都到了,再动磁盘和数据库。
         let mut missing = Vec::new();
         for file in &target.files {
-            if !has_content(&self.db, &self.data_root, file)? && self.db.sync_blob_location(&file.sha256)?.is_none() {
+            if !has_content(&self.db, &self.data_root, file)? && self.db.sync_blob_locations(&file.sha256)?.is_empty() {
                 missing.push(file.path.clone());
             }
         }
@@ -786,11 +880,7 @@ impl SyncEngine {
                 continue;
             }
             let target_path = self.data_root.join(checked_relative(&file.path)?);
-            let Some((device, segment, offset, length)) = self.db.sync_blob_location(&file.sha256)? else {
-                return Ok(Considered::Parked(format!("waiting for 1 file(s), e.g. {}", file.path)));
-            };
-            let location = BlobLocation { device, segment, offset, length };
-            if !self.store.fetch_blob(&location, &file.sha256, &target_path)? {
+            if !self.fetch(&file.sha256, &target_path)? {
                 return Ok(Considered::Parked(format!("waiting for 1 file(s) to download, e.g. {}", file.path)));
             }
             written += 1;
@@ -852,6 +942,29 @@ impl SyncEngine {
             }
         }
         Ok(Considered::Applied { deleted: target.rows.is_none(), written, removed })
+    }
+}
+
+impl SyncEngine {
+    /// 从知道的位置里取出一份内容(没停用的包先试)。停用的包已经被它的设备删了就忘掉那个
+    /// 位置、试下一个;都取不到为 false(还没下载到,或者暂时哪里都没有)。没停用的包不在
+    /// 不算没了:网盘同步文件不分先后,段可能比包先到。
+    fn fetch(&self, sha256: &str, target: &Path) -> Result<bool> {
+        for location in self.db.sync_blob_locations(sha256)? {
+            let at = BlobLocation {
+                device: location.device.clone(),
+                segment: location.segment,
+                offset: location.offset,
+                length: location.length,
+            };
+            if self.store.fetch_blob(&at, sha256, target)? {
+                return Ok(true);
+            }
+            if location.retired && !self.store.pack_exists(&location.device, location.segment)? {
+                self.db.sync_forget_pack(&location.device, location.segment)?;
+            }
+        }
+        Ok(false)
     }
 }
 

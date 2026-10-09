@@ -18,6 +18,15 @@ export type SyncStatusLike = {
   last_run?: SyncRunLike | null;
   pending_total?: number;
   pending?: Array<{ reason?: string }>;
+  last_maintenance?: SyncMaintenanceLike | null;
+};
+
+export type SyncMaintenanceLike = {
+  at?: string;
+  segments_compacted?: number;
+  packs_deleted?: number;
+  bytes_freed?: number;
+  error?: string | null;
 };
 
 /** 「刚刚」「3 分钟前」「2 小时前」「10月8日 14:05」。 */
@@ -76,6 +85,10 @@ export function describePending(status: SyncStatusLike | null): string {
   const reasons = (status?.pending || []).map((item) => `${item.reason || ""}`);
   const waitingFiles = reasons.filter((r) => r.startsWith("waiting for") && r.includes("file")).length;
   const runningHere = reasons.filter((r) => r.includes("running on this device")).length;
+  const newer = reasons.filter((r) => r.includes("needs a newer version")).length;
+  if (newer && newer === reasons.length) {
+    return `有 ${total} 项来自更新版本的 RetainPDF，更新这台电脑上的程序后会自动补上。`;
+  }
   if (runningHere && runningHere === reasons.length) {
     return `有 ${total} 项要等这台电脑上正在运行的任务结束后再合并。`;
   }
@@ -83,4 +96,19 @@ export function describePending(status: SyncStatusLike | null): string {
     return `有 ${total} 项在等网盘把文件下载到这台电脑，下载完会自动补上。`;
   }
   return `有 ${total} 项在等相关的文件或书同步过来，到了会自动补上。`;
+}
+
+/** 最近一次整理同步文件夹的说明;没整理过、或这次没腾出什么时为空串。 */
+export function describeMaintenance(status: SyncStatusLike | null, now: number = Date.now()): string {
+  const done = status?.last_maintenance;
+  if (!done) return "";
+  const when = relativeTime(done.at, now);
+  if (done.error) return `上次整理同步文件夹没做完${when ? `（${when}）` : ""}：${done.error}`;
+  const freed = done.bytes_freed || 0;
+  const compacted = done.segments_compacted || 0;
+  if (!freed && !compacted) return "";
+  const parts: string[] = [];
+  if (compacted) parts.push(`合并了 ${compacted} 段旧的改动记录`);
+  if (freed) parts.push(`腾出 ${freed >= 1024 * 1024 ? `${(freed / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(freed / 1024))} KB`}`);
+  return `上次整理同步文件夹${when ? `（${when}）` : ""}：${parts.join("，")}。`;
 }

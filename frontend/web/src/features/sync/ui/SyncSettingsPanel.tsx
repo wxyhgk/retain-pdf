@@ -15,7 +15,7 @@ import {
 } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import { getDesktopHost } from "@/platform/desktop/host.js";
-import { describePending, describeSyncStatus } from "../domain/describe.js";
+import { describeMaintenance, describePending, describeSyncStatus } from "../domain/describe.js";
 
 type SyncStatus = Awaited<ReturnType<typeof fetchSyncStatusApi>>;
 type SyncSettings = Parameters<typeof updateSyncSettingsApi>[1];
@@ -175,6 +175,7 @@ export function SyncSettingsPanel() {
 
   const summary = describeSyncStatus(status);
   const pending = describePending(status);
+  const maintenance = describeMaintenance(status);
   const enabled = Boolean(status?.enabled);
   const peers = status?.peers || [];
   const view: Transport = transport || "folder";
@@ -192,6 +193,7 @@ export function SyncSettingsPanel() {
           </p>
         ) : null}
         {pending ? <p className="sync-settings-detail">{pending}</p> : null}
+        {maintenance ? <p className="sync-settings-detail">{maintenance}</p> : null}
       </section>
 
       <div className="sync-settings-switch" role="radiogroup" aria-label="同步方式">

@@ -992,3 +992,258 @@ fn restoring_an_old_backup_takes_back_what_was_synced_since_and_does_not_push_ol
     assert_eq!(b.text("SELECT title FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("After restore"));
     fs::remove_dir_all(base).unwrap();
 }
+
+// ---------------------------------------------------------------- 整理同步文件夹
+
+/// 每轮都整理、停用的包下一轮就能删、攒 4 段就整理改动记录(真实默认:每天、7 天、64 段)。
+fn eager() -> super::MaintenancePolicy {
+    super::MaintenancePolicy {
+        every: chrono::Duration::zero(),
+        compact_after_segments: 4,
+        retire_grace: chrono::Duration::zero(),
+        repack_below: 0.5,
+        refresh_states: chrono::Duration::zero(),
+    }
+}
+
+impl Device {
+    fn with_policy(base: &Path, name: &str, folder: &Path, policy: super::MaintenancePolicy) -> Self {
+        let mut device = Self::new(base, name, folder);
+        device.engine = SyncEngine::new(device.db.clone(), &device.root, folder, name).unwrap().with_policy(policy);
+        device
+    }
+
+    fn tidy(base: &Path, name: &str, folder: &Path) -> Self {
+        Self::with_policy(base, name, folder, eager())
+    }
+
+    /// 默认节奏,只是每轮都重读各设备的整理状态(真实情况下最多晚十分钟)。
+    fn watchful(base: &Path, name: &str, folder: &Path) -> Self {
+        let policy = super::MaintenancePolicy { refresh_states: chrono::Duration::zero(), ..Default::default() };
+        Self::with_policy(base, name, folder, policy)
+    }
+
+    fn dir_in(&self, folder: &Path, sub: &str) -> Vec<String> {
+        let dir = folder.join("devices").join(self.engine.device_id().unwrap()).join(sub);
+        let mut names: Vec<String> = fs::read_dir(dir)
+            .map(|d| d.map(|e| e.unwrap().file_name().to_string_lossy().to_string()).collect())
+            .unwrap_or_default();
+        names.sort();
+        names
+    }
+}
+
+fn format_version(folder: &Path) -> (u64, String) {
+    let value: serde_json::Value = serde_json::from_slice(&fs::read(folder.join("format.json")).unwrap()).unwrap();
+    (value["version"].as_u64().unwrap(), value["folder_id"].as_str().unwrap().to_string())
+}
+
+#[test]
+fn compaction_keeps_the_latest_records_and_late_or_new_devices_catch_up_from_the_base() {
+    let (base, folder, devices) = setup(&["b"]);
+    let b = &devices[0];
+    let lagging = &Device::watchful(&base, "lagging", &folder);
+    // 格式 2 的文件夹:整理前照常用,整理时升到 3,文件夹编号不变。
+    fs::write(folder.join("format.json"), br#"{"format":"retain-pdf-sync","version":2,"folder_id":"00000000000000aa"}"#).unwrap();
+    let a = Device::tidy(&base, "a", &folder);
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.sync();
+    lagging.sync();
+    for i in 0..6 {
+        a.conn().execute("UPDATE documents SET title = ?1 WHERE document_id = ?2", params![format!("Title {i}"), DOC]).unwrap();
+        let report = a.sync();
+        if i < 2 {
+            assert!(!report.maintained || report.segments_compacted == 0, "{report:?}");
+        }
+    }
+    let state: serde_json::Value = serde_json::from_slice(
+        &fs::read(folder.join("devices").join(a.engine.device_id().unwrap()).join("state.json")).unwrap(),
+    )
+    .unwrap();
+    let new_base = state["base"].as_u64().unwrap();
+    assert!(new_base > 1, "{state}");
+    assert_eq!(format_version(&folder), (3, "00000000000000aa".to_string()));
+    // 之前的段删了;留下的段里每个实体只有最后一条。
+    let segments = a.dir_in(&folder, "changes");
+    assert!(segments.iter().all(|name| name.as_str() >= format!("{new_base:08}.jsonl").as_str()), "{segments:?}");
+    let records: Vec<String> = segments
+        .iter()
+        .flat_map(|name| {
+            fs::read_to_string(folder.join("devices").join(a.engine.device_id().unwrap()).join("changes").join(name))
+                .unwrap()
+                .lines()
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        })
+        .filter(|line| line.contains("\"kind\""))
+        .collect();
+    assert_eq!(records.iter().filter(|l| l.contains("\"kind\":\"document\"")).count(), 1, "{records:?}");
+
+    // 从没同步过的设备、读到一半的设备都跟得上:书名是最后的,文件都在。
+    for device in [b, lagging] {
+        let got = device.sync();
+        assert_eq!(got.pending, 0, "{got:?}");
+        assert_eq!(device.text("SELECT title FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("Title 5"));
+        assert_eq!(
+            fs::read(device.root.join(format!("jobs/{JOB}/rendered/book-translated.pdf"))).unwrap(),
+            b"%PDF translated"
+        );
+    }
+    // 整理之后照常同步。
+    a.conn().execute("UPDATE documents SET title = 'After compaction' WHERE document_id = ?1", params![DOC]).unwrap();
+    a.sync();
+    b.sync();
+    assert_eq!(b.text("SELECT title FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("After compaction"));
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn a_deleted_books_pack_is_retired_then_deleted_and_space_comes_back() {
+    let (base, folder, devices) = setup(&["b"]);
+    let b = &devices[0];
+    let a = Device::tidy(&base, "a", &folder);
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.sync();
+    b.sync();
+    let packs = a.dir_in(&folder, "packs");
+    assert_eq!(packs.len(), 1);
+
+    let conn = a.conn();
+    conn.execute("DELETE FROM jobs WHERE job_id = ?1", params![JOB]).unwrap();
+    conn.execute("DELETE FROM documents WHERE document_id = ?1", params![DOC]).unwrap();
+    conn.execute("DELETE FROM uploads WHERE upload_id = ?1", params![UPLOAD]).unwrap();
+    let first = a.sync();
+    // 先登记停用,包还在(给别的设备时间看到)。
+    assert_eq!((first.packs_retired, first.packs_deleted), (1, 0), "{first:?}");
+    assert_eq!(a.dir_in(&folder, "packs"), packs);
+    b.sync();
+    assert_eq!(b.count("SELECT COUNT(*) FROM documents"), 0);
+    let second = a.sync();
+    assert_eq!(second.packs_deleted, 1, "{second:?}");
+    assert!(second.bytes_freed > 0);
+    assert!(a.dir_in(&folder, "packs").is_empty());
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn a_device_needing_content_from_a_retired_pack_uploads_its_own_copy() {
+    let (base, folder, devices) = setup(&["c"]);
+    let c = &devices[0];
+    let b = &Device::watchful(&base, "b", &folder);
+    let a = Device::tidy(&base, "a", &folder);
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.sync();
+    b.sync();
+    // a 删了书(包停用);b 又上传了同一个 PDF。
+    let conn = a.conn();
+    conn.execute("DELETE FROM jobs WHERE job_id = ?1", params![JOB]).unwrap();
+    conn.execute("DELETE FROM documents WHERE document_id = ?1", params![DOC]).unwrap();
+    conn.execute("DELETE FROM uploads WHERE upload_id = ?1", params![UPLOAD]).unwrap();
+    assert_eq!(a.sync().packs_retired, 1);
+    let again = "20261001000000-cccccc";
+    b.write(&format!("uploads/{again}/book.pdf"), b"%PDF source");
+    b.conn()
+        .execute(
+            "INSERT INTO uploads(upload_id, filename, stored_path, bytes, page_count, uploaded_at, developer_mode, content_hash)
+             VALUES(?1, 'book.pdf', ?2, 11, 3, '2026-10-02T00:00:00Z', 0, '')",
+            params![again, format!("uploads/{again}/book.pdf")],
+        )
+        .unwrap();
+    let sent = b.sync();
+    // a 的包停用了:不往里引用,自己传一份。
+    assert_eq!(sent.blobs_uploaded, 1, "{sent:?}");
+    // a 删掉旧包;新设备照样拿到这个 PDF。
+    a.sync();
+    assert!(a.dir_in(&folder, "packs").is_empty());
+    let got = c.sync();
+    assert_eq!(got.pending, 0, "{got:?}");
+    assert_eq!(fs::read(c.root.join(format!("uploads/{again}/book.pdf"))).unwrap(), b"%PDF source");
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn a_mostly_unused_pack_is_repacked_and_everyone_still_gets_the_live_files() {
+    let (base, folder, devices) = setup(&["b", "c"]);
+    let (b, c) = (&devices[0], &devices[1]);
+    let a = Device::tidy(&base, "a", &folder);
+    // 成品 PDF 很大:重新渲染后旧的那份占了包的大半。
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.write(&format!("jobs/{JOB}/rendered/book-translated.pdf"), &vec![b'x'; 200_000]);
+    a.sync();
+    b.sync();
+    a.write(&format!("jobs/{JOB}/rendered/book-translated.pdf"), b"%PDF rerendered");
+    a.conn().execute("UPDATE jobs SET updated_at = 'later' WHERE job_id = ?1", params![JOB]).unwrap();
+    let first = a.sync();
+    assert_eq!(first.packs_retired, 1, "{first:?}");
+    assert!(first.bytes_repacked > 0 && first.bytes_repacked < 1_000, "only the small live files: {first:?}");
+    // 读得落后的 b、从没同步过的 c:都拿得到在用的文件。
+    let second = a.sync();
+    assert_eq!(second.packs_deleted, 1, "{second:?}");
+    assert!(second.bytes_freed > 200_000);
+    for device in [b, c] {
+        let got = device.sync();
+        assert_eq!(got.pending, 0, "{got:?}");
+        for path in [
+            format!("uploads/{UPLOAD}/book.pdf"),
+            format!("jobs/{JOB}/ocr/normalized/document.v1.json"),
+            format!("jobs/{JOB}/rendered/book-translated.pdf"),
+        ] {
+            assert_eq!(fs::read(device.root.join(&path)).unwrap(), fs::read(a.root.join(&path)).unwrap(), "{path}");
+        }
+    }
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn a_device_from_before_format_three_compacts_by_reading_its_own_segments() {
+    let (base, folder, devices) = setup(&["b"]);
+    let b = &devices[0];
+    let mut a = Device::new(&base, "a", &folder);
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.sync();
+    for i in 0..5 {
+        a.conn().execute("UPDATE documents SET title = ?1 WHERE document_id = ?2", params![format!("Old {i}"), DOC]).unwrap();
+        a.sync();
+    }
+    // 那时还不记「每个实体最后一条在哪一段」。
+    a.db.sync_clear_own_records().unwrap();
+    a.engine = SyncEngine::new(a.db.clone(), &a.root, &folder, "a").unwrap().with_policy(eager());
+    let report = a.sync();
+    assert!(report.segments_compacted >= 4, "{report:?}");
+    assert_eq!(a.dir_in(&folder, "changes").len(), 1);
+    b.sync();
+    assert_eq!(b.text("SELECT title FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("Old 4"));
+    assert_eq!(b.count("SELECT COUNT(*) FROM jobs"), 1);
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn over_webdav_compaction_and_pack_deletion_work_and_a_new_device_still_gets_everything() {
+    let base = std::env::temp_dir().join(format!("retain-sync-dav-tidy-{:016x}", fastrand::u64(..)));
+    let dav = super::test_dav::TestDav::start(&base.join("server"), "nas-user", "secret");
+    let mut a = Device::webdav(&base, "a", &dav, "secret");
+    a.engine = SyncEngine::with_backend(a.db.clone(), &a.root, webdav_backend(&a.root, &dav, "secret"), "a")
+        .unwrap()
+        .with_policy(eager());
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.write(&format!("jobs/{JOB}/rendered/book-translated.pdf"), &vec![b'x'; 100_000]);
+    a.sync();
+    a.write(&format!("jobs/{JOB}/rendered/book-translated.pdf"), b"%PDF rerendered");
+    a.conn().execute("UPDATE jobs SET updated_at = 'later' WHERE job_id = ?1", params![JOB]).unwrap();
+    for i in 0..5 {
+        a.conn().execute("UPDATE documents SET title = ?1 WHERE document_id = ?2", params![format!("Dav {i}"), DOC]).unwrap();
+        a.sync();
+    }
+    let root = dav.root.join("dav/retainpdf/devices").join(a.engine.device_id().unwrap());
+    let packs: Vec<_> = fs::read_dir(root.join("packs")).unwrap().collect();
+    // 大的旧成品 PDF 所在的包重新打包后删掉了。
+    let total: u64 = packs.iter().map(|p| p.as_ref().unwrap().metadata().unwrap().len()).sum();
+    assert!(total < 50_000, "old pack still there: {total} bytes");
+    let b = Device::webdav(&base, "b", &dav, "secret");
+    let got = b.sync();
+    assert_eq!(got.pending, 0, "{got:?}");
+    assert_eq!(b.text("SELECT title FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("Dav 4"));
+    assert_eq!(fs::read(b.root.join(format!("jobs/{JOB}/rendered/book-translated.pdf"))).unwrap(), b"%PDF rerendered");
+    assert_eq!(fs::read(b.root.join(format!("uploads/{UPLOAD}/book.pdf"))).unwrap(), b"%PDF source");
+    fs::remove_dir_all(base).unwrap();
+}

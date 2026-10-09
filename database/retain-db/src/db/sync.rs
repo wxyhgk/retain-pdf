@@ -24,7 +24,7 @@
 //! 收藏指向的任务还没同步过来),整个实体回滚,由调用方放进等待区以后重试。
 //! 列取两边都有的:旧版本发来的行缺新列就用默认值,新版本多出的列忽略。
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use anyhow::{bail, Result};
 use rusqlite::types::Value as SqlValue;
@@ -174,6 +174,17 @@ pub struct SyncEntityState {
     /// 每个字段的时钟(JSON 对象)。
     pub clocks_json: String,
     pub files: Vec<SyncFileRef>,
+}
+
+/// 一份文件内容在同步文件夹里的一个位置(某台设备某一段的包里)。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SyncBlobLocation {
+    pub device: String,
+    pub segment: u64,
+    pub offset: u64,
+    pub length: u64,
+    /// 所在的包已被它的设备停用(将要删除或已删)。
+    pub retired: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -435,6 +446,8 @@ pub(crate) fn sync_after_restore(conn: &Connection, previous: &[(String, String)
          DELETE FROM sync_cursors;
          DELETE FROM sync_pending;
          DELETE FROM sync_blobs;
+         DELETE FROM sync_own_records;
+         DELETE FROM sync_retired_packs;
          DELETE FROM sync_dirty;
          DELETE FROM sync_apply_guard;",
     )?;
@@ -495,31 +508,41 @@ impl Db {
              DELETE FROM sync_cursors;
              DELETE FROM sync_pending;
              DELETE FROM sync_blobs;
-             DELETE FROM sync_state WHERE key IN ('segment', 'seeded', 'device_written');",
+             DELETE FROM sync_own_records;
+             DELETE FROM sync_retired_packs;
+             DELETE FROM sync_state WHERE key IN ('segment', 'seeded', 'device_written', 'maintained_at', 'states_read_at')
+                 OR key LIKE 'base:%';",
         )?;
         Ok(())
     }
 
-    /// 一份文件内容在哪个包里:(设备号, 段号, 偏移, 长度)。
-    pub fn sync_blob_location(&self, sha256: &str) -> Result<Option<(String, u64, u64, u64)>> {
+    /// 一份文件内容在同步文件夹里的位置:没停用的包在前,同类里新的包在前。
+    pub fn sync_blob_locations(&self, sha256: &str) -> Result<Vec<SyncBlobLocation>> {
         let conn = self.connect()?;
-        Ok(conn
-            .query_row(
-                "SELECT device, segment, offset, length FROM sync_blobs WHERE sha256 = ?1",
-                params![sha256],
-                |row| {
-                    Ok((
-                        row.get::<_, String>(0)?,
-                        row.get::<_, i64>(1)? as u64,
-                        row.get::<_, i64>(2)? as u64,
-                        row.get::<_, i64>(3)? as u64,
-                    ))
-                },
-            )
-            .optional()?)
+        let mut stmt = conn.prepare(
+            "SELECT b.device, b.segment, b.offset, b.length,
+                    EXISTS(SELECT 1 FROM sync_retired_packs r WHERE r.device = b.device AND r.segment = b.segment) AS retired
+             FROM sync_blobs b WHERE b.sha256 = ?1
+             ORDER BY retired, b.segment DESC, b.device",
+        )?;
+        let rows = stmt.query_map(params![sha256], |row| {
+            Ok(SyncBlobLocation {
+                device: row.get(0)?,
+                segment: row.get::<_, i64>(1)? as u64,
+                offset: row.get::<_, i64>(2)? as u64,
+                length: row.get::<_, i64>(3)? as u64,
+                retired: row.get::<_, i64>(4)? != 0,
+            })
+        })?;
+        Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
     }
 
-    /// 记下一个包里有哪些文件(已知位置的不覆盖)。
+    /// 这份内容在没停用的包里有没有(导出时有就不用再传)。
+    pub fn sync_blob_available(&self, sha256: &str) -> Result<bool> {
+        Ok(self.sync_blob_locations(sha256)?.iter().any(|l| !l.retired))
+    }
+
+    /// 记下一个包里有哪些文件。
     pub fn sync_record_blobs(&self, device: &str, segment: u64, index: &[(String, u64, u64)]) -> Result<()> {
         let mut conn = self.connect()?;
         let tx = conn.transaction()?;
@@ -530,6 +553,119 @@ impl Db {
             )?;
         }
         tx.commit()?;
+        Ok(())
+    }
+
+    /// 一个包已经不在了:忘掉它里面的全部位置。
+    pub fn sync_forget_pack(&self, device: &str, segment: u64) -> Result<()> {
+        let conn = self.connect()?;
+        conn.execute(
+            "DELETE FROM sync_blobs WHERE device = ?1 AND segment = ?2",
+            params![device, segment as i64],
+        )?;
+        Ok(())
+    }
+
+    /// 一台设备的各个包里有什么:段号 -> [(sha256, 偏移, 长度)]。
+    pub fn sync_device_packs(&self, device: &str) -> Result<BTreeMap<u64, Vec<(String, u64, u64)>>> {
+        let conn = self.connect()?;
+        let mut stmt = conn.prepare(
+            "SELECT segment, sha256, offset, length FROM sync_blobs WHERE device = ?1 ORDER BY segment, offset",
+        )?;
+        let rows = stmt.query_map(params![device], |row| {
+            Ok((
+                row.get::<_, i64>(0)? as u64,
+                row.get::<_, String>(1)?,
+                row.get::<_, i64>(2)? as u64,
+                row.get::<_, i64>(3)? as u64,
+            ))
+        })?;
+        let mut out: BTreeMap<u64, Vec<(String, u64, u64)>> = BTreeMap::new();
+        for row in rows {
+            let (segment, sha, offset, length) = row?;
+            out.entry(segment).or_default().push((sha, offset, length));
+        }
+        Ok(out)
+    }
+
+    /// 换掉一台设备停用的包的清单:(段号, 从什么时候起)。
+    pub fn sync_set_retired_packs(&self, device: &str, packs: &[(u64, String)]) -> Result<()> {
+        let mut conn = self.connect()?;
+        let tx = conn.transaction()?;
+        tx.execute("DELETE FROM sync_retired_packs WHERE device = ?1", params![device])?;
+        for (segment, since) in packs {
+            tx.execute(
+                "INSERT OR REPLACE INTO sync_retired_packs(device, segment, since) VALUES(?1, ?2, ?3)",
+                params![device, *segment as i64, since],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    pub fn sync_retired_packs(&self, device: &str) -> Result<Vec<(u64, String)>> {
+        let conn = self.connect()?;
+        let mut stmt = conn.prepare(
+            "SELECT segment, since FROM sync_retired_packs WHERE device = ?1 ORDER BY segment",
+        )?;
+        let rows = stmt.query_map(params![device], |row| Ok((row.get::<_, i64>(0)? as u64, row.get(1)?)))?;
+        Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
+    }
+
+    /// 本机现在要用到的全部文件内容:各实体当前的文件,加上等待区里的改动要的文件。
+    pub fn sync_needed_blobs(&self) -> Result<BTreeSet<String>> {
+        let conn = self.connect()?;
+        let mut out = BTreeSet::new();
+        let mut stmt = conn.prepare("SELECT DISTINCT sha256 FROM sync_entity_files")?;
+        for sha in stmt.query_map([], |row| row.get::<_, String>(0))? {
+            out.insert(sha?);
+        }
+        let mut stmt = conn.prepare("SELECT record_json FROM sync_pending")?;
+        for json in stmt.query_map([], |row| row.get::<_, String>(0))? {
+            let value: Value = serde_json::from_str(&json?).unwrap_or(Value::Null);
+            for file in value.get("files").and_then(Value::as_array).into_iter().flatten() {
+                if let Some(sha) = file.get("sha256").and_then(Value::as_str) {
+                    out.insert(sha.to_string());
+                }
+            }
+        }
+        Ok(out)
+    }
+
+    /// 本机哪些文件是这份内容(实体当前的文件清单里记的,相对数据目录)。
+    pub fn sync_paths_with_sha(&self, sha256: &str) -> Result<Vec<String>> {
+        let conn = self.connect()?;
+        let mut stmt = conn.prepare("SELECT DISTINCT path FROM sync_entity_files WHERE sha256 = ?1")?;
+        let rows = stmt.query_map(params![sha256], |row| row.get(0))?;
+        Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
+    }
+
+    /// 本机发出的这些实体的最后一条改动记录在 `segment` 段。
+    pub fn sync_note_own_records(&self, entities: &[(String, String)], segment: u64) -> Result<()> {
+        let mut conn = self.connect()?;
+        let tx = conn.transaction()?;
+        for (kind, key) in entities {
+            tx.execute(
+                "INSERT INTO sync_own_records(kind, entity_key, segment) VALUES(?1, ?2, ?3)
+                 ON CONFLICT(kind, entity_key) DO UPDATE SET segment = excluded.segment",
+                params![kind, key, segment as i64],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// 本机发出的每个实体的最后一条改动记录所在的段:(种类, 键, 段号)。
+    pub fn sync_own_records(&self) -> Result<Vec<(String, String, u64)>> {
+        let conn = self.connect()?;
+        let mut stmt = conn.prepare("SELECT kind, entity_key, segment FROM sync_own_records ORDER BY segment")?;
+        let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get::<_, i64>(2)? as u64)))?;
+        Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
+    }
+
+    pub fn sync_clear_own_records(&self) -> Result<()> {
+        let conn = self.connect()?;
+        conn.execute("DELETE FROM sync_own_records", [])?;
         Ok(())
     }
 
