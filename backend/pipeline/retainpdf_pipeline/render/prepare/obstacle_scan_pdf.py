@@ -1,4 +1,4 @@
-"""从底图 PDF 读矢量图形、图片与文字框，给 rpr_fit 引擎当障碍物。
+"""从 PDF 读矢量图形、图片与文字框，给 rpr_fit 引擎当障碍物（准备步骤 obstacle_scan 的读法）。
 
 产物格式与引擎仓库 experiments/overlay/vector-obstacles.js 的 PyMuPDF 脚本相同（引擎侧的几何
 处理在 src/retain/vector-obstacles.js）：

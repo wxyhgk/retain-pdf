@@ -4,7 +4,7 @@
 引擎（``bin/rpr-fit.js``，fit-model 的 retain 规则）：
 
 - 输入：document.v1（OCR 框、行盒、块类型）、译文条目、visual_profile（底色 / 文字色）、
-  底图的矢量图形（source_scan.py，给引擎当障碍物），以及要渲染的页；
+  原 PDF 的障碍物扫描（准备步骤 obstacle_scan 的产物，由 workflow 层传进来），以及要渲染的页；
 - 引擎：按 retain-pdf 的种子估算与正文 / 标题 / 注释规则，用精确测量定字号（全书共享正文
   字号，排不下的段落单独封顶），带碰撞兜底：文字不压文字、不压保留元素（公式、图、表、
   未翻译文字）和矢量图形；
@@ -31,7 +31,6 @@ from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineRuntime
 from retainpdf_pipeline.render.output.rpr.engine_cli import run_engine
 from retainpdf_pipeline.render.output.rpr.text import markdown_to_engine_text
 from retainpdf_pipeline.render.output.rpr_fit.report import build_rpr_fit_fit_report_payload
-from retainpdf_pipeline.render.output.rpr_fit.source_scan import extract_drawings
 from retainpdf_pipeline.render.output.typst.block_renderer import sanitize_typst_markdown_for_compile
 from retainpdf_pipeline.render.output.typst.book_support import prepare_background_work_dir
 from retainpdf_pipeline.render.output.typst.fit_report import record_fit_report_payload
@@ -93,38 +92,6 @@ def _translation_items(translated_pages: dict[int, list[dict]]) -> list[dict]:
     return items
 
 
-def _page_boxes(
-    document_path: Path, items: list[dict], page_indices: list[int]
-) -> tuple[dict[int, list[list[float]]], dict[int, list[list[float]]]]:
-    """每页的译文块框与障碍物框，与引擎（job-model.js）同一个划分：有可排文字的文本块是
-    译文块，其余（图、表、公式、页眉页脚、不翻译或译文为空的块）都是障碍物。"""
-    document = json.loads(Path(document_path).read_text(encoding="utf-8"))
-    has_text = {
-        (int(item["page_idx"]), int(item["block_idx"]))
-        for item in items
-        if item.get("policy_translate") and str(item.get("translated_text") or "").strip()
-        and item.get("block_idx") is not None
-    }
-    wanted = set(page_indices)
-    text_boxes: dict[int, list[list[float]]] = {}
-    obstacle_boxes: dict[int, list[list[float]]] = {}
-    for page in document.get("pages") or []:
-        index = int(page.get("page_index", -1))
-        if index not in wanted:
-            continue
-        for block in page.get("blocks") or []:
-            bbox = [float(value) for value in (block.get("bbox") or [])]
-            if len(bbox) != 4:
-                continue
-            try:
-                number = int(str(block.get("block_id") or "").rsplit("-b", 1)[-1])
-            except ValueError:
-                number = -1
-            translated = block.get("type") == "text" and (index, number) in has_text
-            (text_boxes if translated else obstacle_boxes).setdefault(index, []).append(bbox)
-    return text_boxes, obstacle_boxes
-
-
 def build_book_rpr_fit_pdf(
     *,
     mode: str,
@@ -135,6 +102,7 @@ def build_book_rpr_fit_pdf(
     font_family: str,
     document_path: Path | None,
     visual_profile_path: Path | None = None,
+    obstacle_scan: dict[str, dict] | None = None,
 ) -> dict[str, object]:
     if mode not in RPR_FIT_SUPPORTED_MODES:
         raise RprEngineFailed("mode_unsupported", f"rpr_fit 引擎不支持渲染模式 {mode!r}")
@@ -150,12 +118,9 @@ def build_book_rpr_fit_pdf(
     work_dir = prepare_background_work_dir(output_pdf_path, None)
     engine_dir = _reset_dir(work_dir.parent / "rpr-fit-engine")
     items = _translation_items(translated_pages)
-    scan_started = time.perf_counter()
-    text_boxes, obstacle_boxes = _page_boxes(Path(document_path), items, page_indices)
-    drawings = extract_drawings(
-        source_pdf_path, page_indices, obstacle_boxes=obstacle_boxes, text_boxes=text_boxes
-    )
-    diagnostics["rpr_fit_scan_elapsed_seconds"] = round(time.perf_counter() - scan_started, 3)
+    # 障碍物扫描（准备步骤 obstacle_scan 的产物，{"<页号>": {...}}）：只取要渲染的页；没有就当
+    # 没有障碍物信息（引擎照常排，只是看不到框外的线条）。
+    drawings = {str(index): (obstacle_scan or {})[str(index)] for index in page_indices if str(index) in (obstacle_scan or {})}
     diagnostics["rpr_fit_raster_pages"] = sorted(int(page) for page, data in drawings.items() if data.get("raster"))
     (engine_dir / "translations.json").write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
     (engine_dir / "drawings.json").write_text(json.dumps(drawings), encoding="utf-8")

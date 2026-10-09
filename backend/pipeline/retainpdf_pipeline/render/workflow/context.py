@@ -39,3 +39,6 @@ class RenderExecutionContext:
     render_engine: str = "typst"
     # OCR 规范化文档（obstacles 的来源）；只有 rpr 路线读它
     document_path: Path | None = None
+    # 渲染准备步骤的缓存目录（<job>/artifacts/render_prepare，见 render/prepare/store.py）；
+    # None = 不跨次缓存（各路线在自己的工作目录里临时做）。
+    prepare_dir: Path | None = None

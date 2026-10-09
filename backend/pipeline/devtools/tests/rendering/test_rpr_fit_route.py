@@ -12,7 +12,7 @@ from devtools.tests.rendering_support.fake_rpr_engine import FAKE_ENGINE_VERSION
 from devtools.tests.rendering_support.fake_rpr_engine import install_fake_rpr_engine
 from retainpdf_pipeline.foundation.shared.stage_specs import normalize_render_engine
 from retainpdf_pipeline.render.output.rpr_fit.report import build_rpr_fit_fit_report_payload
-from retainpdf_pipeline.render.output.rpr_fit.source_scan import extract_drawings
+from retainpdf_pipeline.render.prepare.obstacle_scan_pdf import extract_drawings
 from retainpdf_pipeline.render.output.typst.fit_report import fit_report_scope
 from retainpdf_pipeline.render.workflow.context import RenderExecutionContext
 from retainpdf_pipeline.render.workflow.engine_dispatch import dispatch_with_render_engine
@@ -101,7 +101,7 @@ def test_rpr_fit_is_a_known_engine() -> None:
 def test_rpr_fit_route_end_to_end_with_fake_engine(tmp_path: Path, monkeypatch, mode: str) -> None:
     install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
     source_pdf, document_path, translated = _job(tmp_path, texts=("译文 SHRINK", "第二页 OVERFLOW"))
-    context = _context(tmp_path, document_path=document_path)
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
     report_path = tmp_path / "artifacts" / "fit_report.v1.json"
     with fit_report_scope(report_path):
         pages, diagnostics, calls = _dispatch(context, mode=mode, source_pdf_path=source_pdf, translated_pages=translated)
@@ -155,7 +155,7 @@ def test_rpr_fit_engine_failure_falls_back_to_typst(tmp_path: Path, monkeypatch)
     install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
     monkeypatch.setenv("FAKE_RPR_EXIT", "1")
     source_pdf, document_path, translated = _job(tmp_path)
-    context = _context(tmp_path, document_path=document_path)
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
     pages, diagnostics, calls = _dispatch(context, mode="overlay", source_pdf_path=source_pdf, translated_pages=translated)
     assert calls == ["overlay"]
     assert diagnostics["render_engine"] == "typst"
@@ -167,7 +167,7 @@ def test_rpr_fit_engine_failure_falls_back_to_typst(tmp_path: Path, monkeypatch)
 def test_rpr_fit_needs_the_normalized_document(tmp_path: Path, monkeypatch) -> None:
     install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
     source_pdf, _document_path, translated = _job(tmp_path)
-    context = _context(tmp_path, document_path=tmp_path / "missing.json")
+    context = _context(tmp_path, document_path=tmp_path / "missing.json", indent_detection_pdf_path=source_pdf)
     _pages, diagnostics, calls = _dispatch(context, mode="overlay", source_pdf_path=source_pdf, translated_pages=translated)
     assert calls == ["overlay"]
     assert diagnostics["render_engine_fallback_reason"] == "document_missing"
@@ -177,7 +177,7 @@ def test_rpr_fit_overlay_page_count_mismatch_falls_back(tmp_path: Path, monkeypa
     install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
     monkeypatch.setenv("FAKE_RPR_PAGES_DELTA", "1")
     source_pdf, document_path, translated = _job(tmp_path)
-    context = _context(tmp_path, document_path=document_path)
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
     _pages, diagnostics, calls = _dispatch(context, mode="overlay", source_pdf_path=source_pdf, translated_pages=translated)
     assert calls == ["overlay"]
     assert diagnostics["render_engine_fallback_reason"] == "engine_output_invalid"
@@ -186,7 +186,7 @@ def test_rpr_fit_overlay_page_count_mismatch_falls_back(tmp_path: Path, monkeypa
 def test_dual_mode_falls_back_for_rpr_fit(tmp_path: Path, monkeypatch) -> None:
     install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
     source_pdf, document_path, translated = _job(tmp_path)
-    context = _context(tmp_path, document_path=document_path)
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
     _pages, diagnostics, calls = _dispatch(context, mode="dual", source_pdf_path=source_pdf, translated_pages=translated)
     assert calls == ["dual"]
     assert diagnostics["render_engine_fallback_reason"] == "dual_unsupported"

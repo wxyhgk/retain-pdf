@@ -7,6 +7,8 @@ import time
 from retainpdf_pipeline.foundation.config import fonts
 from retainpdf_pipeline.foundation.config import layout
 from retainpdf_pipeline.foundation.config import runtime
+from retainpdf_pipeline.foundation.config.output_layout import ARTIFACTS_DIR_NAME
+from retainpdf_pipeline.render.prepare.store import PREPARE_DIR_NAME
 from retainpdf_pipeline.render.render_plan import RenderPlan
 from retainpdf_pipeline.render.workflow.context import RenderExecutionContext
 from retainpdf_pipeline.render.workflow.cover_fallback import TypstCoverFallbackPlan
@@ -362,6 +364,11 @@ def execute_render_plan(
         visual_cover_page_indices=cover_fallback_plan.page_indices,
         render_engine=render_engine,
         document_path=_document_path_for_render(render_plan.render_inputs.translations_dir),
+        prepare_dir=(
+            None
+            if no_cache
+            else Path(render_plan.render_inputs.translations_dir).parent / ARTIFACTS_DIR_NAME / PREPARE_DIR_NAME
+        ),
     )
     prepare_progress.finish()
     render_diagnostics: dict[str, object] = {}

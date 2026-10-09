@@ -31,6 +31,9 @@ from retainpdf_pipeline.render.output.rpr.renderer import build_book_rpr_pdf
 from retainpdf_pipeline.render.output.rpr_fit.renderer import RPR_FIT_SUPPORTED_MODES
 from retainpdf_pipeline.render.output.rpr_fit.renderer import build_book_rpr_fit_pdf
 from retainpdf_pipeline.render.output.typst.fit_report import note_fit_report_reason
+from retainpdf_pipeline.render.prepare.obstacle_scan import load_obstacle_scan
+from retainpdf_pipeline.render.prepare.obstacle_scan import run_obstacle_scan
+from retainpdf_pipeline.render.prepare.store import PrepareStore
 from retainpdf_pipeline.render.workflow.context import RenderExecutionContext
 
 RPR_SUPPORTED_FONT_FAMILIES = frozenset({"source han serif sc", "noto serif cjk sc"})
@@ -57,6 +60,18 @@ def _precheck(
     return "", ""
 
 
+def _obstacle_scan(context: RenderExecutionContext, *, fallback_dir: Path):
+    """准备步骤 obstacle_scan：只看原 PDF（不是去文字层的底图）与 OCR 结果，命中缓存直接用。"""
+    if context.document_path is None or not Path(context.document_path).is_file():
+        raise RprEngineFailed("document_missing", f"rpr_fit 需要 document.v1.json：{context.document_path}")
+    if context.indent_detection_pdf_path is None:
+        raise RprEngineFailed("source_missing", "rpr_fit 需要原 PDF 路径")
+    store = PrepareStore(context.prepare_dir if context.prepare_dir is not None else fallback_dir / "render_prepare")
+    return run_obstacle_scan(
+        store, source_pdf_path=Path(context.indent_detection_pdf_path), document_path=Path(context.document_path)
+    )
+
+
 def dispatch_with_render_engine(
     *,
     mode: str,
@@ -78,6 +93,7 @@ def dispatch_with_render_engine(
     if not code and requested == RENDER_ENGINE_RPR_FIT:
         try:
             runtime = resolve_engine_runtime("rpr-fit.js")
+            scan_record = _obstacle_scan(context, fallback_dir=Path(context.output_pdf_path).parent)
             diagnostics = build_book_rpr_fit_pdf(
                 mode=mode,
                 runtime=runtime,
@@ -87,7 +103,10 @@ def dispatch_with_render_engine(
                 font_family=RPR_ENGINE_FONT_FAMILY,
                 document_path=context.document_path,
                 visual_profile_path=context.visual_profile_path,
+                obstacle_scan=load_obstacle_scan(scan_record),
             )
+            diagnostics["rpr_fit_scan_elapsed_seconds"] = round(scan_record.elapsed_seconds, 3)
+            diagnostics["rpr_fit_scan_cache_hit"] = scan_record.hit
             diagnostics["final_image_compressed"] = compress_final(context, f"rpr_fit_{mode}")
             diagnostics.update(
                 {
