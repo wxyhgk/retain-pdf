@@ -1,3 +1,24 @@
+import type { StatusDetailRuntimePort } from "../status-detail-runtime-port.js";
+import type { StatusDetailOverviewRenderContext } from "./controller-types.js";
+
+/** 概览 coordinator 的依赖：运行时端口 + 各路拉取接口 + 渲染回调 */
+export interface StatusDetailOverviewCoordinatorDeps {
+  runtimePort: StatusDetailRuntimePort;
+  apiPrefix?: string;
+  fetchJobPayload?: (jobId: string, options?: { apiPrefix?: string }) => Promise<unknown>;
+  fetchJobEvents?: (
+    jobId: string,
+    apiPrefix: string,
+    query: { limit: number; start: "tail" | "head" },
+  ) => Promise<unknown>;
+  fetchJobDiagnostics?: (jobId: string, apiPrefix: string) => Promise<unknown>;
+  fetchResumePlan?: (jobId: string, apiPrefix: string) => Promise<unknown>;
+  fetchJobStageActions?: (jobId: string, apiPrefix: string) => Promise<unknown>;
+  renderJob?: (context: StatusDetailOverviewRenderContext) => void;
+  renderOverviewSnapshot: (context: StatusDetailOverviewRenderContext) => void;
+  setErrorText?: (message: string) => void;
+}
+
 export function createStatusDetailOverviewCoordinator({
   runtimePort,
   apiPrefix = "",
@@ -9,9 +30,9 @@ export function createStatusDetailOverviewCoordinator({
   renderJob,
   renderOverviewSnapshot,
   setErrorText,
-}: any = {}) {
+}: StatusDetailOverviewCoordinatorDeps = {} as StatusDetailOverviewCoordinatorDeps) {
   const state = {
-    loadingPromise: null,
+    loadingPromise: null as Promise<void> | null,
     loadingJobId: "",
   };
 
@@ -47,7 +68,7 @@ export function createStatusDetailOverviewCoordinator({
     });
   }
 
-  async function ensureLoaded({ force = false }: any = {}) {
+  async function ensureLoaded({ force = false }: { force?: boolean } = {}) {
     const jobId = runtimePort.currentJobId();
     if (!jobId) {
       return;
@@ -66,6 +87,7 @@ export function createStatusDetailOverviewCoordinator({
         if (!renderContext) {
           return;
         }
+        // runtimePort 返回的 events 在 platform 契约里是 unknown，这里按概览上下文收窄。
         renderJob?.(renderContext);
         renderOverviewSnapshot(renderContext);
       } catch (error) {

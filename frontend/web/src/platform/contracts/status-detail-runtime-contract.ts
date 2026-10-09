@@ -7,6 +7,7 @@
 // (app/home/composition/create-status-domain.ts) 从 features/jobs 构造后注入。
 
 import type { JobLike, JobPayload } from "@retainpdf/domain/job";
+import type { EventsPayload } from "@retainpdf/domain/job-status";
 
 /** overview 载荷里允许出现的主任务快照形态。 */
 export type StatusDetailJobSnapshot =
@@ -37,16 +38,16 @@ export interface StatusDetailSecondaryResourcePort {
 }
 
 /** job-runtime render-context 端口的返回上下文。 */
-export interface StatusDetailRenderContext {
+export type StatusDetailRenderContext = {
   job: (JobLike & { diagnostics?: unknown })
     | (JobPayload & { diagnostics?: unknown })
     | Record<string, unknown>
     | null;
   jobId: string;
-  events?: unknown;
+  events?: EventsPayload | null;
   manifest?: unknown;
   stageActions?: unknown;
-}
+};
 
 /** job-runtime render-context 端口在 job-detail 侧用到的面。 */
 export interface StatusDetailJobRenderContextPort {

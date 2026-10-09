@@ -94,9 +94,6 @@ export type HomeBridge = {
   applyWorkflowMode: () => void;
   renderPageRangeSummary: () => void;
   setSubmitBusy: (busy: boolean) => void;
-  setLinearProgress: () => void;
-  updateActionButtons: () => void;
-  resetEventsList: () => void;
   activateDetailTab: (name?: string) => void;
   submitForm: (event?: { preventDefault?: () => void } | null) => unknown;
 };

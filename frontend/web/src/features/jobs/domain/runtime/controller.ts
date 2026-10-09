@@ -1,3 +1,14 @@
+import type { JobLike, JobPayload } from "@retainpdf/domain/job";
+import type { fetchJobEvents as FetchJobEvents } from "@retainpdf/api/jobs-events";
+import type { CurrentJobStatePort } from "./current-job-state.js";
+import type { JobEventsResource } from "./job-events-resource.js";
+import type { JobPresentationPort } from "./job-presentation.js";
+import type { JobRenderContext, JobRenderContextPort } from "./render-context.js";
+import type { JobRuntimeResetStatePort, JobRuntimeResetTarget } from "./reset-state-port.js";
+import type { LibraryEventPort } from "./library-events.js";
+import type { RuntimePollingStatePort } from "./runtime-polling-state.js";
+import type { SecondaryResourcePort, SecondaryResourceSchedulerPort } from "./secondary-resources.js";
+import type { RetryStageDeps } from "./retry-stage.js";
 // job-runtime 的装配根。业务按职责拆到同目录聚焦模块：
 // - poll-engine.ts       轮询状态机（timer / 可见性暂停 / 失败退避 / fetch 编排）
 // - poll-frame-steps.ts  单帧 render / publish / settle 编排步骤
@@ -33,6 +44,48 @@ import { createJobPollEngine } from "./poll-engine.js";
 import { createCancelCurrentJob } from "./cancel-job.js";
 import { createRetryStage } from "./retry-stage.js";
 
+/** 轮询装配根的依赖：composition 注入的接口 / 渲染回调 / 页面端口；可替换的内部端口可缺省 */
+export interface JobRuntimeFeatureDeps {
+  state: JobRuntimeResetTarget;
+  apiPrefix?: string;
+  cancelJob?: (jobId: string, apiPrefix?: string) => Promise<unknown>;
+  cancelOcrJob?: (jobId: string, apiPrefix?: string) => Promise<unknown>;
+  fetchJobPayload: (jobId: string, options: { apiPrefix?: string }) => Promise<unknown>;
+  fetchJobEvents: typeof FetchJobEvents;
+  fetchJobArtifactsManifest: (jobId: string, apiPrefix?: string) => Promise<unknown>;
+  fetchJobStageActions?: (jobId: string, apiPrefix?: string) => Promise<unknown>;
+  retryJobStage: RetryStageDeps["retryJobStage"];
+  renderJob: (context: JobRenderContext) => void;
+  renderJobSecondaryPatch?: (patch: { context: unknown; source: string }) => void;
+  setText: (id: string, message: string) => void;
+  setWorkflowSections: (job: unknown) => void;
+  resetUploadProgress: () => void;
+  resetUploadedFile: () => void;
+  applyWorkflowMode: (mode: string) => void;
+  clearPageRanges: () => void;
+  updateJobWarning: (warning: unknown) => void;
+  activateDetailTab: (tab: string) => void;
+  onReaderDialogSync?: () => void;
+  onReaderDialogClose?: () => void;
+  onJobSucceeded?: (job: JobLike | JobPayload) => unknown;
+  /** 上传态端口只原样转交给 returnJobRuntimeToHome，本文件不读取 */
+  uploadStatePort?: { clearAppliedPageRange?: () => void } | null;
+  libraryEventPort?: LibraryEventPort;
+  shellViewPort?: {
+    closeDialogs: () => void;
+    isReaderOpen: () => boolean;
+    setCancelDisabled: (disabled: boolean) => void;
+  };
+  jobPresentationPort?: JobPresentationPort;
+  jobEventsResource?: JobEventsResource;
+  pollingPort?: RuntimePollingStatePort;
+  currentJobPort?: CurrentJobStatePort;
+  secondaryResourcePort?: SecondaryResourcePort;
+  resetStatePort?: JobRuntimeResetStatePort;
+  renderContextPort?: JobRenderContextPort;
+  secondaryResourceSchedulerPort?: SecondaryResourceSchedulerPort;
+}
+
 export function mountJobRuntimeFeature({
   state,
   apiPrefix,
@@ -53,7 +106,6 @@ export function mountJobRuntimeFeature({
   clearPageRanges,
   updateJobWarning,
   activateDetailTab,
-  resetStatusDetailRuntimeView,
   onReaderDialogSync,
   onReaderDialogClose,
   onJobSucceeded,
@@ -82,7 +134,7 @@ export function mountJobRuntimeFeature({
     renderContextPort,
     jobPresentationPort,
   }),
-}: any) {
+}: JobRuntimeFeatureDeps) {
   const presentation = createJobPresentation({ jobPresentationPort });
   const session = createJobPollSession();
   const frameSteps = createJobPollFrameSteps({
@@ -143,13 +195,10 @@ export function mountJobRuntimeFeature({
       resetUploadedFile,
       applyWorkflowMode,
       clearPageRanges,
-      setText,
       updateJobWarning,
       activateDetailTab,
-      resetStatusDetailRuntimeView,
       uploadStatePort,
       shellViewPort,
-      jobPresentationPort,
     });
   }
 

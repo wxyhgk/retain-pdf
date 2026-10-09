@@ -1,3 +1,6 @@
+import type { JobPayload } from "@retainpdf/domain/job";
+import type { EventsPayload } from "@retainpdf/domain/job-status";
+import type { JobPresentationPort } from "./job-presentation.js";
 import {
   cachedEventsFor,
   cachedManifestFor,
@@ -10,12 +13,29 @@ import {
   syncCurrentJobSnapshot,
 } from "./current-job-state.js";
 
+/** 快照写入输入：payload 是原始任务回包，副资源可缺省 */
+export interface JobRuntimeSnapshotInput {
+  payload?: unknown;
+  eventsPayload?: unknown;
+  manifestPayload?: unknown;
+  stageActionsPayload?: unknown;
+}
+
+/** 副资源写入输入：按 jobId 写入，任务快照已在 state 中 */
+export interface JobRuntimeSecondaryInput {
+  jobId?: string;
+  eventsPayload?: unknown;
+  manifestPayload?: unknown;
+  stageActionsPayload?: unknown;
+}
+
 function resolveElapsedStart(job) {
   return (job?.started_at || job?.created_at || "").trim();
 }
 
-function syncEventsPayload(state, jobId, eventsPayload) {
-  return syncSecondaryResource(state, "events", jobId, eventsPayload);
+function syncEventsPayload(state: object, jobId: unknown, eventsPayload: unknown): EventsPayload | null {
+  // 副资源 store 对 events 的回写类型是 unknown；这里按 EventsPayload 收窄（读取方已按此使用）。
+  return syncSecondaryResource(state, "events", jobId, eventsPayload) as EventsPayload | null;
 }
 
 function syncManifestPayload(state, jobId, manifestPayload) {
@@ -33,8 +53,9 @@ export function applyJobRuntimeSnapshot({
   manifestPayload = null,
   stageActionsPayload = null,
   jobPresentationPort = {},
-}: any) {
-  const normalizeJobPayload = jobPresentationPort.normalizeJobPayload || ((value) => value || {});
+}: JobRuntimeSnapshotInput & { state: object; jobPresentationPort?: JobPresentationPort }) {
+  const normalizeJobPayload: (value: unknown) => JobPayload = jobPresentationPort.normalizeJobPayload
+    || ((value: unknown) => (value || {}) as JobPayload);
   const job = normalizeJobPayload(payload);
   const jobId = job.job_id || currentJobId(state);
   syncCurrentJobSnapshot(state, job, jobId, {
@@ -56,7 +77,7 @@ export function applyJobSecondaryResources({
   eventsPayload = null,
   manifestPayload = null,
   stageActionsPayload = null,
-}: any) {
+}: JobRuntimeSecondaryInput & { state: object }) {
   const resolvedJobId = `${jobId || currentJobId(state) || ""}`.trim();
   const job = currentJobSnapshotFor(state, resolvedJobId);
   if (!job || !resolvedJobId) {
@@ -92,20 +113,23 @@ export function currentJobRenderContextFor(state, jobId) {
   return {
     job,
     jobId: resolvedJobId,
-    events: cachedEventsFor(state, resolvedJobId),
+    events: cachedEventsFor(state, resolvedJobId) as EventsPayload | null,
     manifest: cachedManifestFor(state, resolvedJobId),
     stageActions: cachedStageActionsFor(state, resolvedJobId),
   };
 }
 
-export function createJobRenderContextPort(state, { jobPresentationPort = {} }: any = {}) {
+export function createJobRenderContextPort(
+  state: object,
+  { jobPresentationPort = {} }: { jobPresentationPort?: JobPresentationPort } = {},
+) {
   return Object.freeze({
     applySnapshot({
       payload,
       eventsPayload = null,
       manifestPayload = null,
       stageActionsPayload = null,
-    }) {
+    }: JobRuntimeSnapshotInput) {
       return applyJobRuntimeSnapshot({
         state,
         payload,
@@ -120,7 +144,7 @@ export function createJobRenderContextPort(state, { jobPresentationPort = {} }: 
       eventsPayload = null,
       manifestPayload = null,
       stageActionsPayload = null,
-    }) {
+    }: JobRuntimeSecondaryInput) {
       return applyJobSecondaryResources({
         state,
         jobId,
@@ -137,3 +161,7 @@ export function createJobRenderContextPort(state, { jobPresentationPort = {} }: 
 
 export const syncJobRenderCache = applyJobRuntimeSnapshot;
 export const syncJobSecondaryRenderCache = applyJobSecondaryResources;
+
+/** 渲染端口与其单帧产物类型（poll 帧 / 副资源调度共用） */
+export type JobRenderContextPort = ReturnType<typeof createJobRenderContextPort>;
+export type JobRenderContext = ReturnType<JobRenderContextPort["applySnapshot"]>;

@@ -2,6 +2,7 @@ import {
   buildBrowserCredentialConfig,
   buildTaskOptionsFromDialogValues,
 } from "./dialog-values.js";
+import type { CredentialDialogValues } from "./dialog-values.js";
 
 
 export async function persistDesktopCredentialsFromDialog({
@@ -13,7 +14,19 @@ export async function persistDesktopCredentialsFromDialog({
   checkApiConnectivity,
   values,
   setupModePort,
-}: any) {
+}: {
+  currentOcrProvider: () => string;
+  defaultModelApiKey?: () => string;
+  defaultModelBaseUrl?: () => string;
+  saveTaskOptions?: (options: ReturnType<typeof buildTaskOptionsFromDialogValues>) => unknown;
+  saveDesktopConfig?: (
+    browserConfig?: Record<string, unknown> | unknown,
+    afterSave?: () => unknown,
+  ) => Promise<unknown> | unknown;
+  checkApiConnectivity?: () => Promise<unknown> | unknown;
+  values: CredentialDialogValues;
+  setupModePort: { currentSetupMode?: () => boolean };
+}) {
   const provider = currentOcrProvider();
   const ocrCredentialRef = `${values.ocrCredentialRef || ""}`.trim();
   const translationCredentialRef = `${values.translationCredentialRef || ""}`.trim();

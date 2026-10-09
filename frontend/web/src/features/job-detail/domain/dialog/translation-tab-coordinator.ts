@@ -1,3 +1,22 @@
+import type { TranslationLoadItemsOptions, createStatusDetailTranslationDataPort } from "./translation-data-port.js";
+
+/** 翻译 tab 渲染选项（列表 / 详情共用的 loading / 空态文案） */
+export interface TranslationTabRenderOptions {
+  loading?: boolean;
+  hasItems?: boolean;
+  emptyText?: string;
+}
+
+export interface TranslationTabCoordinatorDeps {
+  dataPort: ReturnType<typeof createStatusDetailTranslationDataPort>;
+  renderEmpty: (text: string) => void;
+  renderSummary: () => void;
+  renderItems: (options?: TranslationTabRenderOptions) => void;
+  renderItemDetail: (options?: TranslationTabRenderOptions) => void;
+  renderReplay: () => void;
+  setReplayLoading?: (state: { hasResult: boolean; status: string }) => void;
+}
+
 export function createStatusDetailTranslationTabCoordinator({
   dataPort,
   renderEmpty,
@@ -6,7 +25,7 @@ export function createStatusDetailTranslationTabCoordinator({
   renderItemDetail,
   renderReplay,
   setReplayLoading,
-}: any) {
+}: TranslationTabCoordinatorDeps) {
   function renderCurrent() {
     renderSummary();
     renderItems();
@@ -28,7 +47,7 @@ export function createStatusDetailTranslationTabCoordinator({
     await loadItem(selection.jobId, selection.selectedItemId);
   }
 
-  async function loadItems(jobId, { selectFirst = false }: any = {}) {
+  async function loadItems(jobId, { selectFirst = false }: TranslationLoadItemsOptions = {}) {
     renderItems({ loading: true });
     const selection = await dataPort.loadItems(jobId, { selectFirst });
     renderItems();
@@ -51,7 +70,7 @@ export function createStatusDetailTranslationTabCoordinator({
     renderItemDetail();
   }
 
-  async function ensureLoaded({ force = false }: any = {}) {
+  async function ensureLoaded({ force = false }: { force?: boolean } = {}) {
     const jobId = dataPort.jobId();
     if (!jobId) {
       dataPort.reset("");

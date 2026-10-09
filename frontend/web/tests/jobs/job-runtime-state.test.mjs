@@ -58,20 +58,10 @@ test("returnJobRuntimeToHome clears page range through upload state port", () =>
       resetUploadedFile: () => calls.push("uploaded-file"),
       applyWorkflowMode: () => calls.push("workflow-mode"),
       clearPageRanges: () => calls.push("page-ranges"),
-      setText: (...args) => calls.push(["text", ...args]),
       updateJobWarning: (value) => calls.push(["warning", value]),
       activateDetailTab: (value) => calls.push(["tab", value]),
-      resetStatusDetailRuntimeView: ({ resetEventsList, activateDetailTab }) => {
-        calls.push("reset-detail-runtime");
-        resetEventsList();
-        activateDetailTab("overview");
-      },
-      jobPresentationPort: {
-        summarizeStatus: (status) => `summary:${status}`,
-      },
       shellViewPort: {
         closeDialogs: () => calls.push("close-dialogs"),
-        resetEvents: () => calls.push("reset-events"),
       },
     });
   } finally {
@@ -83,13 +73,8 @@ test("returnJobRuntimeToHome clears page range through upload state port", () =>
   assert.equal(runtimeState.appliedPageRange, "");
   assert.ok(calls.includes("reset-job"));
   assert.ok(calls.includes("close-dialogs"));
-  assert.ok(calls.includes("reset-events"));
   assert.ok(calls.includes("page-ranges"));
-  assert.ok(calls.some((call) => (
-    call[0] === "text"
-    && call[1] === "job-summary"
-    && call[2] === "summary:idle"
-  )));
+  assert.deepEqual(calls.find((call) => call[0] === "tab"), ["tab", "overview"], "状态详情弹窗回到概览页");
 });
 
 test("elapsed view model owns runtime duration text", () => {

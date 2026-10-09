@@ -6,14 +6,23 @@
 // 也能被 detail/reader 或测试独立挂载。
 
 import { createContext, useContext, type ReactNode } from "react";
+import type { CredentialsState } from "@/features/credentials/domain/state.js";
+import type { mountBrowserCredentialsFeature } from "@/features/credentials/domain/browser.js";
+import type { createCredentialsViewFeature } from "@/features/credentials/domain/credentials-view-store.js";
+
+/** 组件只读取快照并订阅变化，宿主提供满足这两个方法的 store 即可。 */
+export type CredentialsReadStore = {
+  getSnapshot: () => CredentialsState;
+  subscribe: (listener: (snapshot: CredentialsState) => void) => () => void;
+};
 
 export type CredentialsServices = {
   /** browser.ts 的 mount 返回值（保存/校验/打开弹窗等能力）。 */
-  feature: any;
+  feature: ReturnType<typeof mountBrowserCredentialsFeature>;
   /** credentials-view-store 的视图态与 handlersRef/ref 集合。 */
-  view: any;
-  /** 凭据状态 store，组件按切片订阅。 */
-  credentialsStatePort: any;
+  view: ReturnType<typeof createCredentialsViewFeature>;
+  /** 凭据状态 store，组件只做快照读取与订阅（宿主可只提供这两个方法）。 */
+  credentialsStatePort: { store: CredentialsReadStore };
 };
 
 const CredentialsServicesContext = createContext<CredentialsServices | null>(null);

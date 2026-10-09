@@ -47,9 +47,6 @@ export function createBridge({
     applyWorkflowMode: () => features.workflowFeature.applyWorkflowMode(),
     renderPageRangeSummary: () => features.uploadFeature.renderPageRangeSummary(),
     setSubmitBusy: (busy) => workflowView.setSubmitBusy(busy),
-    setLinearProgress: () => {},
-    updateActionButtons: () => {},
-    resetEventsList: () => {},
     activateDetailTab: (name = "overview") => {
       statusDetail.store?.actions?.resetOverview?.();
       statusDetail.store?.actions?.resetTranslation?.();

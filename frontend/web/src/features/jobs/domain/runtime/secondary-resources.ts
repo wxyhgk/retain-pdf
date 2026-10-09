@@ -1,3 +1,10 @@
+import type { JobLike, JobPayload } from "@retainpdf/domain/job";
+import type { fetchJobEvents as FetchJobEvents } from "@retainpdf/api/jobs-events";
+import type { JobEventsResource } from "./job-events-resource.js";
+import type { JobPresentationPort } from "./job-presentation.js";
+import type { JobRenderContextPort } from "./render-context.js";
+import type { RuntimePollingStatePort } from "./runtime-polling-state.js";
+import type { CurrentJobStatePort } from "./current-job-state.js";
 import {
   createCurrentJobStatePort,
 } from "./current-job-state.js";
@@ -17,7 +24,39 @@ import {
   createSecondaryResourceStatePort,
 } from "./secondary-resource-cache.js";
 
-function defaultBuildJobPatchWithDisplayState(job: any = {}) {
+export type SecondaryResourcePort = ReturnType<typeof createSecondaryResourceStatePort>;
+
+/** 副资源调度依赖（scheduler 工厂与单次调度共用） */
+export interface SecondaryResourceFetchDeps {
+  state: object;
+  apiPrefix?: string;
+  fetchJobEvents?: typeof FetchJobEvents;
+  jobEventsResource?: JobEventsResource | null;
+  fetchJobArtifactsManifest: (jobId: string, apiPrefix?: string) => Promise<unknown>;
+  fetchJobStageActions?: (jobId: string, apiPrefix?: string) => Promise<unknown>;
+  renderJobSecondaryPatch?: (patch: { context: unknown; source: string }) => void;
+  notifyLibraryJobUpdated?: (job: JobLike | JobPayload) => void;
+  pollingPort?: RuntimePollingStatePort;
+  currentJobPort?: CurrentJobStatePort;
+  secondaryResourcePort?: SecondaryResourcePort;
+  renderContextPort?: JobRenderContextPort;
+  jobPresentationPort?: JobPresentationPort;
+}
+
+/** 单次调度的参数：依赖 + 本帧任务信息 */
+/** 单帧调度的任务信息 */
+export interface SecondaryResourceScheduleArgs {
+  jobId: string;
+  payload?: unknown;
+  generation: number;
+  terminal: boolean;
+}
+
+export type ScheduleSecondaryResourceFetchesArgs = SecondaryResourceFetchDeps & SecondaryResourceScheduleArgs;
+
+export type SecondaryResourceSchedulerPort = ReturnType<typeof createSecondaryResourceSchedulerPort>;
+
+function defaultBuildJobPatchWithDisplayState(job: JobLike = {}) {
   return job;
 }
 
@@ -39,7 +78,7 @@ export function scheduleSecondaryResourceFetches({
   secondaryResourcePort = createSecondaryResourceStatePort(state),
   renderContextPort = createJobRenderContextPort(state),
   jobPresentationPort = {},
-}: any) {
+}: ScheduleSecondaryResourceFetchesArgs) {
   const buildJobPatchWithDisplayState = jobPresentationPort.buildJobPatchWithDisplayState
     || defaultBuildJobPatchWithDisplayState;
   const cachedManifest = secondaryResourcePort.cachedFor("manifest", jobId);
@@ -145,14 +184,14 @@ export function createSecondaryResourceSchedulerPort({
   secondaryResourcePort = createSecondaryResourceStatePort(state),
   renderContextPort = createJobRenderContextPort(state),
   jobPresentationPort = {},
-}: any) {
+}: SecondaryResourceFetchDeps) {
   return Object.freeze({
     schedule({
       jobId,
       payload,
       generation,
       terminal,
-    }) {
+    }: SecondaryResourceScheduleArgs) {
       return scheduleSecondaryResourceFetches({
         state,
         apiPrefix,

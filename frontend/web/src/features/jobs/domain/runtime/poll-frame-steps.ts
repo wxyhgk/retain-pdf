@@ -1,3 +1,9 @@
+import type { JobLike, JobPayload } from "@retainpdf/domain/job";
+import type { JobPollSession } from "./poll-session.js";
+import type { JobRenderContext, JobRenderContextPort } from "./render-context.js";
+import type { LibraryEventPort } from "./library-events.js";
+import type { RuntimePollingStatePort } from "./runtime-polling-state.js";
+import type { SecondaryResourcePort } from "./secondary-resources.js";
 import { clearActiveJobId } from "./active-job-storage.js";
 import { notifyLibraryJobUpdated } from "./library-events.js";
 import {
@@ -10,6 +16,18 @@ import {
  * publish（按会话模式推书架）、settle（终态收尾）。
  * 依赖全部显式传入；会话可变状态从 session 读写。
  */
+/** 单帧编排依赖：副资源缓存 / 渲染端口 / 书架端口 / 轮询状态 / 会话 */
+export interface JobPollFrameStepsDeps {
+  secondaryResourcePort: SecondaryResourcePort;
+  renderContextPort: JobRenderContextPort;
+  renderJob: (context: JobRenderContext) => void;
+  libraryEventPort?: LibraryEventPort;
+  isJobTerminal: (job: JobLike | JobPayload) => boolean;
+  onJobSucceeded?: (job: JobLike | JobPayload) => unknown;
+  pollingPort: RuntimePollingStatePort;
+  session: JobPollSession;
+}
+
 export function createJobPollFrameSteps({
   secondaryResourcePort,
   renderContextPort,
@@ -19,9 +37,9 @@ export function createJobPollFrameSteps({
   onJobSucceeded,
   pollingPort,
   session,
-}: any) {
+}: JobPollFrameStepsDeps) {
   /** render——读副资源缓存 + applySnapshot + renderJob。 */
-  function renderFetchedFrame(jobId: string, payload: any) {
+  function renderFetchedFrame(jobId: string, payload: unknown) {
     const cachedEvents = secondaryResourcePort.cachedFor("events", jobId);
     const cachedManifest = secondaryResourcePort.cachedFor("manifest", jobId);
     const cachedStageActions = secondaryResourcePort.cachedFor("stageActions", jobId);
@@ -36,7 +54,7 @@ export function createJobPollFrameSteps({
   }
 
   /** publish——主 poll 推书架（全量/终态/状态变化才推）。 */
-  function publishFetchedJob(job: any, terminal: boolean) {
+  function publishFetchedJob(job: JobLike, terminal: boolean) {
     const publishKey = libraryPublishKeyOf(job);
     if (shouldPublishLibrary(
       session.publishLibrary,
@@ -50,7 +68,7 @@ export function createJobPollFrameSteps({
   }
 
   /** 终态收尾——后置副作用 + stop；返回副资源调度代。 */
-  function settleTerminalJob(jobId: string, job: any, generation: number) {
+  function settleTerminalJob(jobId: string, job: JobLike, generation: number) {
     const terminal = isJobTerminal(job);
     if (terminal) {
       if (`${job?.status || ""}`.trim().toLowerCase() === "succeeded") {

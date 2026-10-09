@@ -1,3 +1,4 @@
+import type { MouseEvent, ReactNode } from "react";
 // 详情页 hero 区:标题/分享提示、四个动作链接、断点恢复按钮、任务元信息。
 // DOM 结构与类名照搬旧 detail.html,保证像素平权。
 //
@@ -7,7 +8,23 @@
 
 import { MetaRow } from "./JobSummaryCard.jsx";
 
-function ActionLink({ id, link, onClick, children }: any) {
+/** 动作链接状态（来自 links 映射：是否可用 + 目标地址） */
+export interface DetailActionLinkState {
+  enabled?: boolean;
+  url?: string;
+}
+
+type ProtectedDownloadHandler = (event: MouseEvent<HTMLAnchorElement>) => void;
+/** 受保护下载的工厂：按 job_id 生成下载文件名，返回点击处理器 */
+export type ProtectedDownloadFactory = (fileNameOf: (jobId: string) => string) => ProtectedDownloadHandler;
+type DetailTranslate = (key: string, fallback?: string) => string;
+
+function ActionLink({ id, link, onClick, children }: {
+  id: string;
+  link?: DetailActionLinkState | null;
+  onClick?: ProtectedDownloadHandler;
+  children: ReactNode;
+}) {
   const enabled = Boolean(link?.enabled);
   const href = enabled && link?.url ? link.url : "#";
   return (
@@ -25,7 +42,11 @@ function ActionLink({ id, link, onClick, children }: any) {
   );
 }
 
-export function DetailHeader({ t, links, onProtectedDownload }) {
+export function DetailHeader({ t, links, onProtectedDownload }: {
+  t: DetailTranslate;
+  links: Record<string, DetailActionLinkState | undefined>;
+  onProtectedDownload: ProtectedDownloadFactory;
+}) {
   return (
     <section className="detail-hero">
       <div className="detail-hero-top">

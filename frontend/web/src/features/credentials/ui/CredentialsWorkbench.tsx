@@ -9,15 +9,12 @@ import { useEffect, useRef, useState } from "react";
 import { CREDENTIAL_DOM_IDS } from "./credentials-dom-ids.js";
 import { useCredentialsController } from "./useCredentialsController.js";
 import { OcrPanels, TranslationPanel } from "./ProviderPanels.jsx";
-import { Button as ButtonBase } from "@/ui/Button.jsx";
+import { Button } from "@/ui/Button.jsx";
 import { AgentRuntimeSettingsCard } from "./AgentRuntimeSettingsCard.jsx";
 import { DialogFooter } from "@/ui/components/dialog.js";
 import { FormStatusLine } from "@/ui/components/form-status-line.js";
 import { Check, Save, ScanText } from "lucide-react";
 import { OCR_PROVIDER_DEFINITIONS } from "@/platform/config/providers.js";
-
-// Button.size 在未注解源文件里被推断为必填;unstyled 路径运行时不用 size。
-const Button = ButtonBase as any;
 
 const { browser: BROWSER_IDS } = CREDENTIAL_DOM_IDS;
 

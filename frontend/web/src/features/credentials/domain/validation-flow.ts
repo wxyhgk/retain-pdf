@@ -2,6 +2,11 @@
 // 多为对下层流程的薄转发；集中于此让 browser.ts 只做装配。
 
 import { runOcrTokenValidation } from "./validation.js";
+import type {
+  RunDeepSeekBalanceCheckOptions,
+  RunDeepSeekConnectivityCheckOptions,
+  RunOcrTokenValidationOptions,
+} from "./validation.js";
 import { getOcrProviderDefinition } from "@/platform/config/providers.js";
 import { handleBrowserDeepSeekValidate as runBrowserDeepSeekValidate } from "./deepseek-flow.js";
 import { ensureOcrCredentialValidationReady } from "./ocr-readiness-flow.js";
@@ -9,9 +14,14 @@ import {
   ocrTokenFromDialogValues,
   readCredentialDialogValues,
 } from "./dialog-values.js";
+import type { CredentialDialogElementsLike } from "./dialog-values.js";
+import type {
+  CredentialsFields,
+  CredentialsStatePort,
+} from "./state.js";
 
 type CredentialAccess = {
-  readCurrentCredentials: () => any;
+  readCurrentCredentials: () => CredentialsFields;
   currentOcrProvider: () => string;
 };
 
@@ -20,7 +30,7 @@ type ValidationViewPort = {
 };
 
 type DeepSeekViewPort = {
-  elements?: () => any;
+  elements?: () => CredentialDialogElementsLike;
   setTopUpVisible?: (visible?: boolean) => void;
   setValidationMessage?: (message?: string, tone?: string) => void;
 };
@@ -53,14 +63,14 @@ export function createCredentialValidationFlow({
   viewPort: ValidationViewPort;
   deepSeekViewPort: DeepSeekViewPort;
   access: CredentialAccess;
-  dialogElementsPort: { elements: () => any };
-  validateOcrToken?: (...args: any[]) => any;
-  validateDeepSeekToken?: (...args: any[]) => any;
-  queryDeepSeekBalance?: (...args: any[]) => any;
+  dialogElementsPort: { elements: () => CredentialDialogElementsLike };
+  validateOcrToken?: RunOcrTokenValidationOptions["validateOcrToken"];
+  validateDeepSeekToken?: RunDeepSeekConnectivityCheckOptions["validateDeepSeekToken"];
+  queryDeepSeekBalance?: RunDeepSeekBalanceCheckOptions["queryDeepSeekBalance"];
   defaultPaddleToken?: () => string;
   defaultModelApiKey?: () => string;
   onCredentialStateChange?: () => void;
-  credentialsStatePort: any;
+  credentialsStatePort: CredentialsStatePort;
   runtimeEnv: { isDesktopMode?: () => boolean };
   legacyRuntimePort?: unknown;
   legacyValidationCachePort?: unknown;

@@ -2,7 +2,7 @@ import { buildFrontendPageUrl } from "@/platform/config/runtime.js";
 
 export function createStatusDetailConfigPort({
   buildPageUrl = buildFrontendPageUrl,
-}: any = {}) {
+}: { buildPageUrl?: typeof buildFrontendPageUrl } = {}) {
   function buildDetailPageUrl(jobId) {
     const normalizedJobId = `${jobId || ""}`.trim();
     if (!normalizedJobId) {

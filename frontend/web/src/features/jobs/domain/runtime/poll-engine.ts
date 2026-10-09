@@ -8,6 +8,15 @@ import {
   nextJobPollBackoffDelay,
 } from "./runtime-polling-state.js";
 import { buildPlaceholderJob, libraryPublishKeyOf } from "./poll-placeholder.js";
+import type { JobLike, JobPayload } from "@retainpdf/domain/job";
+import type { CurrentJobStatePort } from "./current-job-state.js";
+import type { JobRuntimeResetStatePort } from "./reset-state-port.js";
+import type { JobRenderContext, JobRenderContextPort } from "./render-context.js";
+import type { LibraryEventPort } from "./library-events.js";
+import type { JobPollSession } from "./poll-session.js";
+import type { RuntimePollingStatePort } from "./runtime-polling-state.js";
+import type { SecondaryResourceSchedulerPort } from "./secondary-resources.js";
+import type { createJobPollFrameSteps } from "./poll-frame-steps.js";
 
 /**
  * 轮询引擎：管理 timer / 可见性暂停 / 失败退避 / generation 围栏，
@@ -17,6 +26,28 @@ import { buildPlaceholderJob, libraryPublishKeyOf } from "./poll-placeholder.js"
  * 会话可变状态由 session 持有；单帧纯编排步骤由 frameSteps 提供。
  * 只暴露 startPolling / fetchJob / stopPolling 三个入口给装配根。
  */
+/** 轮询引擎依赖（装配根 controller 注入） */
+export interface JobPollEngineDeps {
+  state: object;
+  apiPrefix?: string;
+  fetchJobPayload: (jobId: string, options: { apiPrefix?: string }) => Promise<unknown>;
+  pollingPort: RuntimePollingStatePort;
+  currentJobPort: CurrentJobStatePort;
+  resetStatePort: JobRuntimeResetStatePort;
+  shellViewPort: { setCancelDisabled: (disabled: boolean) => void; isReaderOpen: () => boolean };
+  renderContextPort: JobRenderContextPort;
+  renderJob: (context: JobRenderContext) => void;
+  secondaryResourceSchedulerPort: SecondaryResourceSchedulerPort;
+  libraryEventPort?: LibraryEventPort;
+  normalizeJobPayload: (value: unknown) => JobPayload;
+  isJobTerminal: (job: JobLike | JobPayload) => boolean;
+  session: JobPollSession;
+  frameSteps: ReturnType<typeof createJobPollFrameSteps>;
+  setText: (id: string, message: string) => void;
+  setWorkflowSections: (job: unknown) => void;
+  onReaderDialogSync?: () => void;
+}
+
 export function createJobPollEngine({
   state,
   apiPrefix,
@@ -36,7 +67,7 @@ export function createJobPollEngine({
   setText,
   setWorkflowSections,
   onReaderDialogSync,
-}: any) {
+}: JobPollEngineDeps) {
   let detachVisibilityPause: (() => void) | null = null;
 
   function pollDocument(): {
@@ -109,12 +140,13 @@ export function createJobPollEngine({
     };
   }
 
-  function handleFetchFailure(jobId: string, error: any, { recovering = false } = {}) {
+  function handleFetchFailure(jobId: string, error: unknown, { recovering = false } = {}) {
     const currentJobId = `${currentJobPort.jobId?.() || ""}`.trim();
     // A rejected request from an older polling generation must never stop or
     // overwrite the task the user has just opened.
     if (currentJobId && currentJobId !== jobId) return;
-    const missing = Number(error?.status) === 404;
+    const errorInfo = (error ?? {}) as { status?: unknown; message?: string };
+    const missing = Number(errorInfo.status) === 404;
     if (missing) {
       session.failureCount = 0;
       session.errorVisible = false;
@@ -132,12 +164,12 @@ export function createJobPollEngine({
         setText("error-box", "-");
         return;
       }
-      setText("error-box", error?.message || String(error));
+      setText("error-box", errorInfo.message || String(error));
       return;
     }
     session.failureCount += 1;
     session.errorVisible = true;
-    setText("error-box", error?.message || String(error));
+    setText("error-box", errorInfo.message || String(error));
     // 指数退避：重启 timer，下一次按 1s→2s→4s→8s→15s（封顶）拉长。
     schedulePollTick(jobId, nextJobPollBackoffDelay(session.failureCount));
   }
@@ -147,7 +179,7 @@ export function createJobPollEngine({
     if (generation === null || generation === undefined) {
       return;
     }
-    let payload;
+    let payload: unknown;
     let coalesced = false;
     try {
       payload = await fetchJobPayload(jobId, { apiPrefix });

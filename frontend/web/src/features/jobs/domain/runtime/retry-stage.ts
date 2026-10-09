@@ -1,3 +1,5 @@
+import type { JobLike, JobPayload } from "@retainpdf/domain/job";
+import type { CurrentJobStatePort } from "./current-job-state.js";
 /**
  * 阶段重试：解析当前任务快照里的书目元数据，调用重试接口，
  * 成功后以 seedPayload 静默重启轮询（详情 Tab 内重试），否则回拉一次当前任务。
@@ -7,15 +9,15 @@
  * 从 statusCard snapshot 提取书目元数据。
  * snapshot 顶层无 document_id；身份可能在 job / raw_response 里，逐层回落。
  */
-export function resolveRetryBookMeta(prevSnapshot: Record<string, any> = {}) {
+export function resolveRetryBookMeta(prevSnapshot: Record<string, unknown> = {}) {
   const prevJob = (
     (prevSnapshot.job && typeof prevSnapshot.job === "object" ? prevSnapshot.job : null)
     || prevSnapshot
-  ) as Record<string, any>;
+  ) as Record<string, unknown>;
   const prevRaw = (
     (prevJob.raw_response && typeof prevJob.raw_response === "object" ? prevJob.raw_response : null)
     || prevJob
-  ) as Record<string, any>;
+  ) as Record<string, unknown>;
   const pickBook = (...keys: string[]) => {
     for (const key of keys) {
       for (const source of [prevSnapshot, prevJob, prevRaw]) {
@@ -35,6 +37,30 @@ export function resolveRetryBookMeta(prevSnapshot: Record<string, any> = {}) {
   };
 }
 
+/** 阶段重试依赖：重试接口 / 当前任务端口 / 轮询与回拉 / 文案 / 归一化 */
+export interface RetryStageDeps {
+  retryJobStage: (
+    jobId: string,
+    apiPrefix: string | undefined,
+    stage: string,
+    bookMeta: ReturnType<typeof resolveRetryBookMeta>,
+  ) => Promise<JobLike>;
+  apiPrefix?: string;
+  currentJobPort: CurrentJobStatePort;
+  startPolling: (
+    jobId: string,
+    options: {
+      silent?: boolean;
+      showWorkflow?: boolean;
+      publishLibrary?: boolean;
+      seedPayload?: Record<string, unknown>;
+    },
+  ) => void;
+  fetchJob: (jobId: string) => Promise<unknown>;
+  setText: (id: string, message: string) => void;
+  normalizeJobPayload: (value: unknown) => JobPayload;
+}
+
 export function createRetryStage({
   retryJobStage,
   apiPrefix,
@@ -43,7 +69,7 @@ export function createRetryStage({
   fetchJob,
   setText,
   normalizeJobPayload,
-}: any) {
+}: RetryStageDeps) {
   // 口径说明：本执行器不复核 canRetry（按钮层 StageRetry / TranslationStageActions
   // 已按 can_retry 直显禁用；status-card/retry.ts:78 的 `canRetry || failed || succeeded`
   // 只决定是否返回按钮配置）。缺 job/stage 时给明确理由，不静默吞错。

@@ -16,20 +16,13 @@ function createIdleHarness(overrides = {}) {
     calls,
     options: {
       configPort: createAppShellConfigPort({ isMock: () => false }),
-      jobPresentationPort: {
-        normalizeJobPayload: (payload) => ({ ...payload, status: "idle-normalized" }),
-        summarizeStatus: (status) => `summary:${status}`,
-      },
       setText: (id, value) => calls.push(["setText", id, value]),
       setWorkflowSections: (value) => calls.push(["setWorkflowSections", value]),
-      setLinearProgress: (...args) => calls.push(["setLinearProgress", ...args]),
-      updateActionButtons: (payload) => calls.push(["updateActionButtons", payload.status]),
       renderPageRangeSummary: () => calls.push(["renderPageRangeSummary"]),
       resetUploadProgress: () => calls.push(["resetUploadProgress"]),
       resetUploadedFile: () => calls.push(["resetUploadedFile"]),
       applyWorkflowMode: () => calls.push(["applyWorkflowMode"]),
       updateJobWarning: (status) => calls.push(["updateJobWarning", status]),
-      resetEventsList: () => calls.push(["resetEventsList"]),
       activateDetailTab: (name) => calls.push(["activateDetailTab", name]),
       ...overrides,
     },
@@ -50,19 +43,22 @@ test("initializeIdleAppView reads mock mode through app shell config port", () =
   )));
 });
 
-test("initializeIdleAppView reads job presentation through app shell job port", () => {
+test("initializeIdleAppView 只做真正有人看的复位：不再写旧状态卡和弹窗的死文字", () => {
   const { calls, options } = createIdleHarness();
 
   initializeIdleAppView(options);
 
-  assert.deepEqual(
-    calls.find((call) => call[0] === "updateActionButtons"),
-    ["updateActionButtons", "idle-normalized"],
-  );
-  assert.deepEqual(
-    calls.find((call) => call[0] === "setText" && call[1] === "job-summary"),
-    ["setText", "job-summary", "summary:idle"],
-  );
+  assert.deepEqual(calls.map((call) => call[0]), [
+    "setWorkflowSections",
+    "activateDetailTab",
+    "renderPageRangeSummary",
+    "resetUploadProgress",
+    "resetUploadedFile",
+    "applyWorkflowMode",
+    "updateJobWarning",
+  ]);
+  assert.deepEqual(calls.find((call) => call[0] === "activateDetailTab"), ["activateDetailTab", "overview"]);
+  assert.equal(calls.some((call) => call[0] === "setText"), false, "非 mock 时不写文字仓库");
 });
 
 test("workflow visibility view model owns job section state", () => {

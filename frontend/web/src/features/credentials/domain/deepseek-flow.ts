@@ -9,7 +9,14 @@ import {
   runDeepSeekConnectivityCheck,
   summarizeDeepSeekBalance,
 } from "./validation.js";
+import type {
+  ProviderValidationResult,
+  RunDeepSeekBalanceCheckOptions,
+  RunDeepSeekConnectivityCheckOptions,
+} from "./validation.js";
 import { defaultCredentialsStatePort } from "./default-state-port.js";
+import type { CredentialDialogElementsLike } from "./dialog-values.js";
+import type { CredentialsFields, CredentialsStatePort } from "./state.js";
 
 const DEEPSEEK_LOW_BALANCE_THRESHOLD = 2;
 
@@ -26,7 +33,7 @@ function translationApiLabel(baseUrl = "") {
 // 既可能把 1 CNY + 1.5 USD 凑成 2.5 判成余额充足，也可能在只有 USD 时
 // 用美元数额去比人民币阈值。改成只累加 CNY；没有 CNY 档时返回 null，
 // 由调用方跳过阈值判断而不是拿一个错的数去比。
-function deepSeekCnyBalance(result): number | null {
+function deepSeekCnyBalance(result: ProviderValidationResult): number | null {
   const infos = Array.isArray(result?.balance_infos) ? result.balance_infos : [];
   let total = 0;
   let matched = false;
@@ -51,13 +58,28 @@ export async function handleBrowserDeepSeekValidate({
   silent = false,
   credentialsStatePort = defaultCredentialsStatePort,
   viewPort,
-}: any) {
+}: {
+  apiPrefix?: string;
+  state?: unknown;
+  defaultModelApiKey?: () => string;
+  validateDeepSeekToken?: RunDeepSeekConnectivityCheckOptions["validateDeepSeekToken"];
+  queryDeepSeekBalance?: RunDeepSeekBalanceCheckOptions["queryDeepSeekBalance"];
+  onBalanceChange?: () => void;
+  silent?: boolean;
+  credentialsStatePort?: CredentialsStatePort;
+  legacyRuntimePort?: unknown;
+  viewPort: {
+    elements?: () => CredentialDialogElementsLike;
+    setTopUpVisible?: (visible?: boolean) => void;
+    setValidationMessage?: (message?: string, tone?: string) => void;
+  };
+}) {
   const {
     apiKeyInput,
     modelBaseUrlInput,
     modelNameInput,
   } = viewPort.elements();
-  const storedCredentials = credentialsStatePort.getCredentials?.() || {};
+  const storedCredentials: Partial<CredentialsFields> = credentialsStatePort.getCredentials?.() || {};
   const modelApiKey = apiKeyInput?.value?.trim()
     || `${storedCredentials.modelApiKey || ""}`.trim()
     || defaultModelApiKey?.()

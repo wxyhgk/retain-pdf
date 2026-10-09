@@ -52,10 +52,27 @@ function resolveAnimationPathForStage(stageKey = "") {
 // 惰性解析：resolveLottieVendorUrl 依赖 document.baseURI，模块级求值会在无 DOM
 // 的环境（node 测试经传递依赖 import 本模块时）抛 ERR_INVALID_URL。
 const lottieWebPath = () => resolveLottieVendorUrl("build/player/lottie.min.js");
-let lottieLoaderPromise: Promise<any> | null = null;
+/** lottie-web 全局对象里本文件用到的最小面 */
+export interface LottieAnimation {
+  setSpeed?: (speed: number) => void;
+  play?: () => void;
+  destroy?: () => void;
+}
 
-function windowLottie() {
-  return (globalThis.window as any)?.lottie;
+export interface LottieApi {
+  loadAnimation: (options: {
+    container: HTMLElement;
+    renderer: "svg";
+    loop: boolean;
+    autoplay: boolean;
+    path: string;
+  }) => LottieAnimation;
+}
+
+let lottieLoaderPromise: Promise<LottieApi> | null = null;
+
+function windowLottie(): LottieApi | undefined {
+  return (globalThis.window as (Window & { lottie?: LottieApi }) | undefined)?.lottie;
 }
 
 function loadLottieWeb() {
@@ -125,7 +142,7 @@ type ProgressSample = {
 
 export function useLottieStageAnimation(visualStageKey = "", progressSample: ProgressSample = {}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const stageAnimationRef = useRef(null);
+  const stageAnimationRef = useRef<LottieAnimation | null>(null);
   const stageAnimationKeyRef = useRef("");
   const stageAnimationLoadingKeyRef = useRef("");
   const stageAnimationDesiredKeyRef = useRef("");

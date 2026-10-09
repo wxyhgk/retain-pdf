@@ -1,6 +1,59 @@
+import type { JobLike, JobPayload } from "@retainpdf/domain/job";
+import type { StatusDetailResumeViewPort } from "./controller-types.js";
 import {
   firstNonEmptyText,
 } from "./formatters.js";
+
+/** 断点恢复计划（fetchResumePlan 的回包，只读用到的字段） */
+export interface ResumePlanLike {
+  can_resume?: boolean;
+  reason?: string;
+  from_stage?: string;
+  resume_from?: string;
+  resume_workflow?: string;
+  workflow?: string;
+  reruns_stages?: string[];
+}
+
+/** 任务动作里和重跑相关的字段（resolveJobActions 的子集） */
+export interface RerunActionsLike {
+  rerun?: string;
+  rerunEnabled?: boolean;
+}
+
+export type RerunActionResolver = (job: JobLike | JobPayload) => RerunActionsLike;
+
+export interface RerunContext {
+  job?: JobLike | JobPayload | null;
+  resumePlan?: ResumePlanLike | null;
+}
+
+export interface SyncRerunActionOptions extends RerunContext {
+  statusText?: string;
+  viewPort: StatusDetailResumeViewPort;
+  resolveActions?: RerunActionResolver;
+}
+
+export interface RerunCurrentJobOptions {
+  rerunContext?: RerunContext;
+  rerunJob: (actionUrl: string) => Promise<unknown>;
+  setText?: (id: string, message: string) => void;
+  startPolling?: (jobId: string) => void;
+  viewPort: StatusDetailResumeViewPort;
+  resolveActions?: RerunActionResolver;
+  confirmDuplicateRisk?: boolean;
+  retryTranslationWithRisk?: ((jobId: string) => Promise<unknown>) | null;
+  onDuplicateRiskPending?: (pending: boolean) => void;
+}
+
+interface FinishResubmissionOptions {
+  rerunContext?: RerunContext;
+  payload: unknown;
+  setText?: (id: string, message: string) => void;
+  startPolling?: (jobId: string) => void;
+  viewPort: StatusDetailResumeViewPort;
+  resolveActions?: RerunActionResolver;
+}
 
 function firstJobIdFromPayload(payload) {
   return firstNonEmptyText(
@@ -47,8 +100,8 @@ export function syncRerunAction({
   statusText = "",
   viewPort,
   resolveActions = () => ({}),
-}: any = {}) {
-  const actions = job ? resolveActions(job) : {};
+}: SyncRerunActionOptions = {} as SyncRerunActionOptions) {
+  const actions: RerunActionsLike = job ? resolveActions(job) : {};
   const enabled = Boolean(resumePlan?.can_resume || (actions.rerunEnabled && actions.rerun));
   viewPort.setRerunAction({
     enabled,
@@ -81,7 +134,7 @@ export async function rerunCurrentJob({
   confirmDuplicateRisk = false,
   retryTranslationWithRisk = null,
   onDuplicateRiskPending = (_pending: boolean) => {},
-}: any = {}) {
+}: RerunCurrentJobOptions = {} as RerunCurrentJobOptions) {
   const riskRetryJobId = confirmDuplicateRisk && retryTranslationWithRisk
     ? firstNonEmptyText(rerunContext?.job?.job_id, rerunContext?.job?.id)
     : "";
@@ -146,7 +199,7 @@ export async function rerunCurrentJob({
   }
 }
 
-function finishResubmission({ payload, rerunContext, setText, startPolling, viewPort, resolveActions }: any) {
+function finishResubmission({ payload, rerunContext, setText, startPolling, viewPort, resolveActions }: FinishResubmissionOptions) {
   const nextJobId = firstJobIdFromPayload(payload);
   if (!nextJobId) {
     syncRerunAction({

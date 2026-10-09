@@ -1,6 +1,6 @@
 import { clearActiveJobId } from "./active-job-storage.js";
 import { createJobRuntimeShellViewPort } from "./shell-view-port.js";
-import { createJobRuntimeResetStatePort } from "./reset-state-port.js";
+import { createJobRuntimeResetStatePort, type JobRuntimeResetTarget } from "./reset-state-port.js";
 import {
   currentJobId,
 } from "./current-job-state.js";
@@ -16,16 +16,25 @@ export function returnJobRuntimeToHome({
   resetUploadedFile,
   applyWorkflowMode,
   clearPageRanges,
-  setText,
   updateJobWarning,
   activateDetailTab,
-  resetStatusDetailRuntimeView,
   uploadStatePort,
   resetStatePort,
   shellViewPort = createJobRuntimeShellViewPort(),
-  jobPresentationPort = {},
-}: any) {
-  const summarizeStatus = jobPresentationPort.summarizeStatus || ((status) => status);
+}: {
+  state: JobRuntimeResetTarget;
+  onReaderDialogClose?: () => void;
+  setWorkflowSections: (job: unknown) => void;
+  resetUploadProgress: () => void;
+  resetUploadedFile: () => void;
+  applyWorkflowMode: (mode?: string) => void;
+  clearPageRanges: () => void;
+  updateJobWarning: (warning: string) => void;
+  activateDetailTab?: (tab: string) => void;
+  uploadStatePort?: { clearAppliedPageRange?: () => void } | null;
+  resetStatePort?: ReturnType<typeof createJobRuntimeResetStatePort>;
+  shellViewPort?: ReturnType<typeof createJobRuntimeShellViewPort>;
+}) {
   const resetState = resetStatePort || createJobRuntimeResetStatePort(state);
   clearActiveJobId(currentJobId(state));
   stopPolling(state);
@@ -41,16 +50,9 @@ export function returnJobRuntimeToHome({
   resetUploadProgress();
   resetUploadedFile();
   applyWorkflowMode();
-  setText("job-summary", summarizeStatus("idle"));
-  setText("job-stage-detail", "-");
-  setText("job-id", "-");
-  setText("query-job-duration", "-");
-  setText("job-finished-at", "-");
   clearPageRanges();
-  resetStatusDetailRuntimeView?.({
-    setText,
-    resetEventsList: shellViewPort.resetEvents,
-    activateDetailTab,
-  });
+  // 以前这里还往文字仓库写首页旧状态卡的 5 个字段、状态详情弹窗的 18 个字段，
+  // 都没人读（旧状态卡已下线，弹窗由自己的 store 渲染）。弹窗只需要回到概览页。
+  activateDetailTab?.("overview");
   updateJobWarning("idle");
 }

@@ -47,7 +47,7 @@ export function renderJobDetailOverview({
 
   const rerunEnabled = Boolean(resumePlan?.can_resume || (actions.rerunEnabled && actions.rerun));
   if (document.getElementById("detail-rerun-btn")) {
-    (document.getElementById("detail-rerun-btn") as any).disabled = !rerunEnabled;
+    (document.getElementById("detail-rerun-btn") as HTMLButtonElement).disabled = !rerunEnabled;
   }
   setText("detail-rerun-status", summarizeResumePlan(resumePlan));
   renderJobDetailPublicError({ job, setText });

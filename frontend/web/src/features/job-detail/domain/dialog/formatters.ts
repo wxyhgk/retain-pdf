@@ -141,7 +141,13 @@ export function finalStatusClass(value) {
   }
 }
 
-export function summarizeTranslationFilter(query: any = {}) {
+/** 翻译筛选条件（只用到状态与检索词） */
+export interface TranslationFilterQueryLike {
+  finalStatus?: string;
+  q?: string;
+}
+
+export function summarizeTranslationFilter(query: TranslationFilterQueryLike = {}) {
   const finalStatus = `${query.finalStatus || ""}`.trim();
   const statusText = finalStatus ? finalStatusLabel(finalStatus) : "全部";
   const search = `${query.q || ""}`.trim();

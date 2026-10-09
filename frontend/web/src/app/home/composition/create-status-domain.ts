@@ -35,7 +35,6 @@ import type { HomeFeatures, StatusDetailHolder } from "./types.js";
 type CreateStatusDomainArgs = {
   features: HomeFeatures;
   documentRef: Document;
-  bridge: { resetEventsList: () => void };
   setText: (id: string, value?: string) => void;
   statusDetailHolder: StatusDetailHolder;
 };
@@ -43,7 +42,6 @@ type CreateStatusDomainArgs = {
 export function createStatusDomain({
   features,
   documentRef,
-  bridge,
   setText,
   statusDetailHolder,
 }: CreateStatusDomainArgs) {
@@ -105,7 +103,6 @@ export function createStatusDomain({
   const jobRuntimeShellViewPort = {
     closeDialogs: () => statusDetailDialogStore.close(),
     isReaderOpen: () => false,
-    resetEvents: () => bridge.resetEventsList(),
     setCancelDisabled: (disabled: boolean) => statusCardStore.actions.setCancelDisabled(disabled),
   };
 

@@ -4,6 +4,7 @@ import {
 } from "./default-state-port.js";
 import { createCredentialRuntimeEnvPort } from "./runtime-env-port.js";
 import { createCredentialUploadReadinessPort } from "./upload-readiness-port.js";
+import type { UploadReadinessSource } from "./upload-readiness-port.js";
 import { createCredentialAccess } from "./credential-access.js";
 import { createTranslationProfiles } from "./translation-profiles.js";
 import { createCredentialDialogFlow } from "./dialog-flow.js";
@@ -132,12 +133,13 @@ export interface MountBrowserCredentialsFeatureOptions {
     apiPrefix?: unknown,
     payload?: unknown,
   ) => Promise<ProviderValidationResult | unknown> | ProviderValidationResult | unknown;
-  createCredential?: (apiPrefix: string | undefined, payload: Record<string, unknown>) => Promise<any>;
+  // 挂载层只透传、不读取返回值，故返回值保持 unknown。
+  createCredential?: (apiPrefix: string | undefined, payload: Record<string, unknown>) => Promise<unknown>;
   updateCredential?: (
     apiPrefix: string | undefined,
     credentialRef: string,
     payload: Record<string, unknown>,
-  ) => Promise<any>;
+  ) => Promise<unknown>;
   onCredentialStateChange?: () => void;
   uploadStatePort?: CredentialsUploadStatePort;
   credentialsStatePort?: CredentialsStatePort;
@@ -192,7 +194,8 @@ export function mountBrowserCredentialsFeature({
     currentSetupMode: () => Boolean(dialogDataset(viewPort.dialogElements()?.dialog)?.setupMode === "1"),
   },
 }: MountBrowserCredentialsFeatureOptions) {
-  const uploadState = uploadStatePort || createCredentialUploadReadinessPort(state);
+  // state 是调用方传入的宿主态（unknown），这里按上传门禁需要的字段切片读取。
+  const uploadState = uploadStatePort || createCredentialUploadReadinessPort(state as UploadReadinessSource);
   const runtimeEnv = runtimeEnvPort || createCredentialRuntimeEnvPort(state);
   const balanceState = balanceStatePort || {
     resetDeepSeekBalance: () => credentialsStatePort.resetDeepSeekBalance?.(),

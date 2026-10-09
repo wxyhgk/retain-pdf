@@ -7,7 +7,11 @@ import {
   OCR_PROVIDER_DEFINITIONS,
 } from "@/platform/config/providers.js";
 import { savePersistedBrowserStoredConfig } from "@/platform/config/persisted-config.js";
-import type { CredentialsStatePort } from "./state.js";
+import type { CredentialsFields, CredentialsStatePort } from "./state.js";
+import type {
+  CredentialListView,
+  CredentialMutationView,
+} from "@/platform/api/domains/credentials.js";
 
 type RuntimeEnvPort = { isDesktopMode?: () => boolean };
 
@@ -26,16 +30,16 @@ export function createCredentialVault({
   apiPrefix?: string;
   credentialsStatePort: CredentialsStatePort;
   runtimeEnv: RuntimeEnvPort;
-  readCurrentCredentials: () => any;
+  readCurrentCredentials: () => CredentialsFields;
   currentOcrProvider: () => string;
   translationProvider: (baseUrl?: string) => string;
-  listCredentials?: (apiPrefix?: string) => Promise<any>;
-  createCredential?: (apiPrefix: string | undefined, payload: Record<string, unknown>) => Promise<any>;
+  listCredentials?: (apiPrefix?: string) => Promise<CredentialListView>;
+  createCredential?: (apiPrefix: string | undefined, payload: Record<string, unknown>) => Promise<CredentialMutationView>;
   updateCredential?: (
     apiPrefix: string | undefined,
     credentialRef: string,
     payload: Record<string, unknown>,
-  ) => Promise<any>;
+  ) => Promise<CredentialMutationView>;
   saveDesktopConfig?: (
     browserConfig?: Record<string, unknown> | unknown,
     afterSave?: () => unknown,

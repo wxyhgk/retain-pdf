@@ -1,10 +1,12 @@
+import type { JobLike } from "@retainpdf/domain/job";
+
 /**
  * 轮询帧的纯辅助函数：占位首帧构造与书架发布键/发布判定。
  * 无副作用，可直接 import 单测。
  */
 
 /** 组占位首帧（startPolling 用）：重试时强制 running，避免仍显示「已翻译」不转圈。 */
-export function buildPlaceholderJob(jobId: string, startedAt: string, seed: any) {
+export function buildPlaceholderJob(jobId: string, startedAt: string, seed: Record<string, unknown> | null) {
   return seed
     ? {
         ...seed,
@@ -28,7 +30,7 @@ export function buildPlaceholderJob(jobId: string, startedAt: string, seed: any)
 }
 
 /** 书架发布键：job_id | status | stage，用于 silent 模式跳过同态重复 notify。 */
-export function libraryPublishKeyOf(job: any = {}) {
+export function libraryPublishKeyOf(job: JobLike = {}) {
   const status = `${job?.status || ""}`.trim();
   const stage = `${job?.display_stage || job?.stage || ""}`.trim();
   return `${job?.job_id || ""}|${status}|${stage}`;

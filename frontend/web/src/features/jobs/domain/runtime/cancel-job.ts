@@ -1,3 +1,6 @@
+import type { JobLike } from "@retainpdf/domain/job";
+import type { CurrentJobStatePort } from "./current-job-state.js";
+
 /**
  * 取消当前任务：按 workflow 路由到 OCR / 通用取消接口，
  * 请求期间锁取消按钮，失败解锁，成功保持锁定直到权威状态变为 canceled。
@@ -15,6 +18,18 @@ function describeCancelError(cause: unknown): string {
   return `${punctuated}可重试取消，或去详情页确认任务状态。`;
 }
 
+/** 取消任务依赖：当前任务端口 / 取消按钮端口 / 两条取消接口 / 回拉 */
+export interface CancelCurrentJobDeps {
+  currentJobPort: CurrentJobStatePort;
+  shellViewPort: { setCancelDisabled: (disabled: boolean) => void };
+  setText: (id: string, message: string) => void;
+  cancelJob?: (jobId: string, apiPrefix?: string) => Promise<unknown>;
+  cancelOcrJob?: (jobId: string, apiPrefix?: string) => Promise<unknown>;
+  apiPrefix?: string;
+  fetchJob?: (jobId: string) => Promise<unknown>;
+  cancelFetchTimeoutMs?: number;
+}
+
 export function createCancelCurrentJob({
   currentJobPort,
   shellViewPort,
@@ -24,7 +39,7 @@ export function createCancelCurrentJob({
   apiPrefix,
   fetchJob,
   cancelFetchTimeoutMs = CANCEL_FETCH_TIMEOUT_MS,
-}: any) {
+}: CancelCurrentJobDeps) {
   return async function cancelCurrentJob() {
     const jobId = currentJobPort.jobId();
     if (!jobId) {
@@ -33,9 +48,9 @@ export function createCancelCurrentJob({
     }
     shellViewPort.setCancelDisabled(true);
     try {
-      const snapshot = currentJobPort.snapshot?.() || {};
-      const job = snapshot?.job && typeof snapshot.job === "object" ? snapshot.job : snapshot;
-      const raw = job?.raw_response && typeof job.raw_response === "object" ? job.raw_response : job;
+      const snapshot: JobLike = currentJobPort.snapshot?.() || {};
+      const job = (snapshot?.job && typeof snapshot.job === "object" ? snapshot.job : snapshot) as JobLike;
+      const raw = (job?.raw_response && typeof job.raw_response === "object" ? job.raw_response : job) as JobLike;
       const workflow = `${snapshot?.workflow || job?.workflow || raw?.workflow || ""}`.trim();
       const cancel = workflow === "ocr" ? cancelOcrJob : cancelJob;
       if (typeof cancel !== "function") {

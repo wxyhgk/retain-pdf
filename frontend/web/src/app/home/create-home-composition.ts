@@ -211,7 +211,6 @@ export function createHomeComposition({
   const status = createStatusDomain({
     features,
     documentRef,
-    bridge,
     setText: bridge.setText,
     statusDetailHolder,
   });

@@ -6,7 +6,7 @@ import type {
   OcrAmbiguityView,
 } from "@/platform/api/index.js";
 
-type LooseRecord = Record<string, any>;
+type LooseRecord = Record<string, unknown>;
 export type OcrReceiptValues = Partial<Record<OcrAmbiguityReceiptField["name"], string>>;
 export type OcrRecoveryOutcome = { ok: boolean; conflict: boolean };
 
