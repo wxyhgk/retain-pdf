@@ -184,14 +184,14 @@
         "refine_max_items": {
           "type": "integer",
           "minimum": 0,
-          "default": 300,
-          "description": "精修最多挑错多少块；0 = 不限。超出就停，并在报告里说明。"
+          "default": 0,
+          "description": "精修最多挑错多少块；0 = 不限（默认，审全书）。超出就停，报告里写明停在哪一页（review.next_page），可以从那一页接着精修。"
         },
         "refine_max_tokens": {
           "type": "integer",
           "minimum": 0,
-          "default": 400000,
-          "description": "精修（挑错 + 修改）的总 token 上限；0 = 不限。超出就停，并在报告里说明。"
+          "default": 5000000,
+          "description": "精修（挑错 + 修改）的总 token 上限；0 = 不限。默认 500 万是安全上限（约够一万五千块），正常的书碰不到；超出就停，报告里写明停在哪一页。"
         },
         "api_key": { "type": "string" },
         "credential_ref": { "type": "string" },

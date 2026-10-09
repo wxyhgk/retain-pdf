@@ -41,6 +41,11 @@ pub(super) fn validate_refine_request(
             REFINE_RETRY_MODES.join(", ")
         )));
     }
+    for (field, value) in [("refine.max_items", request.max_items), ("refine.max_tokens", request.max_tokens)] {
+        if value.is_some_and(|limit| limit < 0) {
+            return Err(AppError::bad_request(format!("{field} must be >= 0 (0 = no limit)")));
+        }
+    }
     for (field, value) in [
         ("refine.start_page", request.start_page),
         ("refine.end_page", request.end_page),
@@ -62,6 +67,8 @@ pub(super) fn validate_refine_request(
         mode,
         start_page: request.start_page,
         end_page: request.end_page,
+        max_items: request.max_items,
+        max_tokens: request.max_tokens,
         requested_at: now_iso(),
     })
 }

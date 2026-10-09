@@ -56,6 +56,21 @@ export interface OcrAmbiguityResolutionView {
 // refine：在已有译文上挑错 + 定点修改，原地执行、不重翻，完成后自动重渲染一次。
 export type JobRetryStage = "ocr" | "translation" | "render" | "refine";
 
+/** 上次精修的摘要（只在 stage=refine 上，没精修过时没有）。 */
+export interface LastRefineView {
+  /** completed / stopped / failed */
+  status: string;
+  generated_at: string;
+  finding_count: number;
+  applied: number;
+  reviewed_item_count: number;
+  candidate_item_count: number;
+  unreviewed_item_count: number;
+  /** 没审到的第一页（1-based）；全审到为 null。 */
+  next_page: number | null;
+  stopped_reason: string | null;
+}
+
 export interface JobStageRetryActionView {
   stage: JobRetryStage;
   label: string;
@@ -65,6 +80,7 @@ export interface JobStageRetryActionView {
   will_reuse?: string[];
   will_rerun?: string[];
   danger?: boolean;
+  last_refine?: LastRefineView;
   action?: {
     method?: string;
     url?: string;

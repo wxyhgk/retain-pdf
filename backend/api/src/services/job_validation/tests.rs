@@ -288,8 +288,8 @@ fn translation_modes_accept_the_defaults_and_every_allowed_value() {
     }
     input.translation.preparation = "off".to_string();
     assert_eq!(input.translation.refine, "off", "refine 默认必须是 off");
-    assert_eq!(input.translation.refine_max_items, 300);
-    assert_eq!(input.translation.refine_max_tokens, 400_000);
+    assert_eq!(input.translation.refine_max_items, 0, "精修默认审全书");
+    assert_eq!(input.translation.refine_max_tokens, 5_000_000);
     for value in TRANSLATION_REFINE_MODES {
         input.translation.refine = value.to_string();
         validate_translation_modes(&input)

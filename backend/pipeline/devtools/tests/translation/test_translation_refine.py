@@ -20,6 +20,7 @@ from retainpdf_pipeline.translate.services.refine.config import refine_config_fr
 from retainpdf_pipeline.translate.services.refine.edits import EditRejected
 from retainpdf_pipeline.translate.services.refine.edits import apply_edits
 from retainpdf_pipeline.translate.services.refine.llm import ChatResult
+from retainpdf_pipeline.translate.services.refine import report as report_rules
 from retainpdf_pipeline.translate.workflow.checkpoint.contract import project_progress
 from retainpdf_pipeline.translate.workflow.checkpoint.store import CheckpointStore
 
@@ -492,6 +493,38 @@ def test_max_items_limits_review_and_is_reported(tmp_path: Path) -> None:
     assert report["status"] == "stopped"
     assert report["review"]["candidate_item_count"] == 4
     assert report["review"]["reviewed_item_count"] == 2
+    # 没审到的两块从第 1 页的第三块开始:从第 1 页接着精修就能补上。
+    assert report["review"]["unreviewed_item_count"] == 2
+    assert report["review"]["next_page"] == 1
+    message = report_rules.done_message(report)
+    assert "只审到第 1 页之前" in message and "达到块数上限" in message and "2/4" in message
+
+
+def test_by_default_the_whole_book_is_reviewed(tmp_path: Path) -> None:
+    cfg = refine_config_from_mapping({"mode": "review_and_fix"})
+    assert (cfg.max_items, cfg.max_tokens) == (0, 5_000_000)
+    model = MockModel()
+    translated = _build_job(tmp_path)
+    report = run_refine_for_render(tmp_path, translated, {"mode": "review_only", "trigger": "manual", "model": "m"}, chat_fn=model)
+    assert model.review_items() == ["p001-b001", "p001-b002", "p001-b003", "p002-b001"]
+    assert report["status"] == "completed"
+    assert (report["review"]["unreviewed_item_count"], report["review"]["next_page"]) == (0, None)
+    assert report_rules.done_message(report).startswith("精修完成")
+
+
+def test_continuing_from_next_page_and_earlier_reports_are_kept(tmp_path: Path) -> None:
+    translated = _build_job(tmp_path)
+    first = run_refine_for_render(tmp_path, translated, _config(mode="review_only", max_items=3), chat_fn=MockModel())
+    assert first["review"]["next_page"] == 2
+    model = MockModel()
+    second = run_refine_for_render(
+        tmp_path, translated, _config(mode="review_only", start_page=first["review"]["next_page"]), chat_fn=model
+    )
+    assert model.review_items() == ["p002-b001"]
+    assert second["review"]["next_page"] is None
+    history = sorted((tmp_path / "artifacts" / "refine_history").glob("refine_report-*.v1.json"))
+    assert len(history) == 1
+    assert json.loads(history[0].read_text(encoding="utf-8"))["review"]["next_page"] == 2
 
 
 def test_max_tokens_stops_before_the_next_request(tmp_path: Path) -> None:
@@ -528,6 +561,9 @@ def test_llm_errors_are_reported_and_never_raised(tmp_path: Path) -> None:
     report = run_refine_for_render(tmp_path, translated, _config(), chat_fn=model)
 
     assert report["stopped_reason"] == "llm_error"
+    # 调用失败的批不算审过:全部没审到,从第 1 页再来。
+    assert (report["review"]["unreviewed_item_count"], report["review"]["next_page"]) == (4, 1)
+    assert "模型调用都失败了" in report_rules.done_message(report)
     assert {fix["reject_reason"] for fix in report["fixes"]} == {"llm_error"}
     assert any("upstream 500" in error["message"] for error in report["errors"])
     assert _snapshot(translated) == before

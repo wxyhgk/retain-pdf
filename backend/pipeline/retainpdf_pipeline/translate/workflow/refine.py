@@ -228,7 +228,9 @@ def _run_review(
     next_id: _Ids,
     progress: _Progress,
     errors: list[dict[str, str]],
+    reviewed_ids: set[str],
 ) -> tuple[list[review_rules.Finding], str | None]:
+    """挑错。真正审过的块记进 ``reviewed_ids``（失败的批不算），用来算还剩多少没审、从哪页接着。"""
     if chat is None or not candidates:
         return [], None
     neighbors = _neighbors(all_items)
@@ -265,6 +267,7 @@ def _run_review(
             continue
         stats.batch_count += 1
         stats.reviewed_item_count += len(batch)
+        reviewed_ids.update(str(entry.get("item_id", "")) for entry in batch)
         try:
             raw = review_rules.parse_review_findings(content)
         except (ValueError, TypeError) as exc:
@@ -579,6 +582,7 @@ def _refine(
         errors.append({"phase": "fix", "message": "translation model or credential unavailable; fixes skipped"})
 
     stats = review_rules.ReviewStats(candidate_item_count=len(scoped))
+    reviewed_ids: set[str] = set()
     progress.transition("review", f"精修：开始挑错（{len(candidates)} 块）", {"candidate_items": len(candidates)})
     review_findings, review_stopped = _run_review(
         chat=review_chat,
@@ -591,6 +595,7 @@ def _refine(
         next_id=next_id,
         progress=progress,
         errors=errors,
+        reviewed_ids=reviewed_ids,
     )
     if review_chat is None and candidates:
         review_stopped = report_rules.STOP_LLM_UNAVAILABLE
@@ -609,6 +614,7 @@ def _refine(
             "discarded": dict(sorted(stats.discarded.items())),
             "summary": report_rules.findings_summary(finding_rows),
             "findings": finding_rows,
+            **report_rules.coverage(scoped, reviewed_ids),
         }
     )
 
@@ -696,12 +702,9 @@ def run_refine_for_render(
     except Exception as exc:  # noqa: BLE001
         print(f"refine: report write failed {type(exc).__name__}: {exc}", flush=True)
         return report
+    message = report_rules.done_message(report)
     review = report["review"]["summary"]
     fixes = report["fix_summary"]
-    message = (
-        f"精修完成：发现 {review['finding_count']} 处，采纳 {fixes['applied']}，"
-        f"拒绝 {fixes['rejected']}，跳过 {fixes['skipped']}"
-    )
     try:
         emit_stage_transition(
             stage=REFINE_EVENT_STAGE,
@@ -714,6 +717,7 @@ def run_refine_for_render(
                 "refine_mode": cfg.mode,
                 "refine_status": report["status"],
                 "stopped_reason": report["stopped_reason"],
+                "next_page": report["review"].get("next_page"),
                 "report_path": str(path),
             },
         )

@@ -124,8 +124,55 @@ def qa_delta(before: dict[str, Any] | None, after: dict[str, Any] | None, *, ite
     return {"resolved": _rows(before_keys, after_keys), "introduced": _rows(after_keys, before_keys)}
 
 
+REFINE_HISTORY_DIR_NAME = "refine_history"
+
+STOP_LABELS = {
+    STOP_MAX_ITEMS: "达到块数上限",
+    STOP_MAX_TOKENS: "达到用量上限",
+    STOP_LLM_UNAVAILABLE: "没有可用的模型",
+    STOP_LLM_ERROR: "模型调用都失败了",
+    STOP_ERROR: "出错",
+}
+
+
+def coverage(scoped: list[Any], reviewed_ids: set[str]) -> dict[str, Any]:
+    """挑错覆盖了多少：没审到的块数，以及没审到的第一页（1-based；全审到为 None）。
+
+    没审到的包括：超出上限没轮到的、所在的批调用失败的。从 ``next_page`` 接着精修
+    （retry-stage refine 的 start_page）就能补上。
+    """
+    unreviewed = [item for item in scoped if item.item_id not in reviewed_ids]
+    return {
+        "unreviewed_item_count": len(unreviewed),
+        "next_page": unreviewed[0].page_number if unreviewed else None,
+    }
+
+
+def done_message(report: dict[str, Any]) -> str:
+    """进度里给人看的一句结果；没审完时说清楚停在哪、为什么。"""
+    review = report["review"]
+    found = review["summary"]["finding_count"]
+    fixes = report["fix_summary"]
+    tail = f"发现 {found} 处，采纳 {fixes['applied']}，拒绝 {fixes['rejected']}，跳过 {fixes['skipped']}"
+    next_page = review.get("next_page")
+    if report.get("status") == STATUS_FAILED:
+        return f"精修出错，没有做完：{tail}"
+    if next_page:
+        reason = STOP_LABELS.get(report.get("stopped_reason"), "没有审完")
+        total = review.get("candidate_item_count", 0)
+        done = total - review.get("unreviewed_item_count", 0)
+        return f"精修只审到第 {next_page} 页之前（{reason}，审了 {done}/{total} 块），可以从第 {next_page} 页接着精修：{tail}"
+    return f"精修完成：{tail}"
+
+
 def write_refine_report(job_root: Path, payload: dict[str, Any]) -> Path:
+    """写这次的报告；上一次的挪进 refine_history/（接着精修、重复精修时不丢前面的结果）。"""
     path = refine_report_path(job_root)
+    if path.is_file():
+        history = path.parent / REFINE_HISTORY_DIR_NAME
+        history.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+        path.replace(history / f"refine_report-{stamp}.v1.json")
     save_json_atomic(path, payload)
     return path
 

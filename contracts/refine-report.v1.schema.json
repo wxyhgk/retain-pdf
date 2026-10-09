@@ -148,7 +148,9 @@
           "additionalProperties": {"type": "integer"}
         },
         "summary": {"$ref": "#/definitions/RefineFindingsSummary"},
-        "findings": {"type": "array", "items": {"$ref": "#/definitions/RefineFinding"}}
+        "findings": {"type": "array", "items": {"$ref": "#/definitions/RefineFinding"}},
+        "unreviewed_item_count": {"type": "integer", "minimum": 0, "description": "Blocks in scope that were not reviewed: past max_items/max_tokens, or in a batch whose model call failed. Absent in reports written before this field existed."},
+        "next_page": {"type": ["integer", "null"], "minimum": 1, "description": "1-based page of the first block that was not reviewed; null when every block in scope was reviewed. Continue with retry-stage refine start_page = next_page."}
       }
     },
     "RefineEdit": {

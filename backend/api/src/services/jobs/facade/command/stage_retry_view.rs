@@ -1,7 +1,7 @@
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::models::api::{
-    build_job_actions, build_job_links_with_workflow, AmbiguousRequestPolicy, RetryStageKind,
+    build_job_actions, build_job_links_with_workflow, AmbiguousRequestPolicy, LastRefineView, RetryStageKind,
     RetryStageSubmissionView, StageActionsView, StageRetryActionLinkView, StageRetryActionView,
 };
 use crate::models::domain::{JobSnapshot, JobStatusKind, WorkflowKind};
@@ -16,7 +16,14 @@ pub(super) fn build_stage_actions_view(
         job_id: job.job_id.clone(),
         stages: stage_plans(job, data_root)
             .into_iter()
-            .map(|plan| build_stage_action(base_url, job, plan))
+            .map(|plan| {
+                let refine = matches!(plan.stage, RetryStageKind::Refine);
+                let mut view = build_stage_action(base_url, job, plan);
+                if refine {
+                    view.last_refine = last_refine(job, data_root);
+                }
+                view
+            })
             .collect(),
     }
 }
@@ -83,7 +90,31 @@ fn build_stage_action(
         will_reuse: plan.will_reuse,
         will_rerun: plan.will_rerun,
         danger: plan.danger,
+        last_refine: None,
     }
+}
+
+/// 上次精修报告的摘要;没有或读不了为 None(读不了不影响能不能精修)。
+fn last_refine(job: &JobSnapshot, data_root: &Path) -> Option<LastRefineView> {
+    let path = crate::storage_paths::resolve_refine_report(job, data_root)?;
+    let report: Value = serde_json::from_slice(&std::fs::read(path).ok()?).ok()?;
+    let int = |value: &Value| value.as_i64().unwrap_or(0);
+    let review = &report["review"];
+    let candidate = int(&review["candidate_item_count"]);
+    let reviewed = int(&review["reviewed_item_count"]);
+    Some(LastRefineView {
+        status: report["status"].as_str().unwrap_or("").to_string(),
+        generated_at: report["generated_at"].as_str().unwrap_or("").to_string(),
+        finding_count: int(&review["summary"]["finding_count"]),
+        applied: int(&report["fix_summary"]["applied"]),
+        reviewed_item_count: reviewed,
+        candidate_item_count: candidate,
+        unreviewed_item_count: review["unreviewed_item_count"]
+            .as_i64()
+            .unwrap_or((candidate - reviewed).max(0)),
+        next_page: review["next_page"].as_i64(),
+        stopped_reason: report["stopped_reason"].as_str().map(str::to_string),
+    })
 }
 
 fn absolute_url(base_url: &str, path: &str) -> String {

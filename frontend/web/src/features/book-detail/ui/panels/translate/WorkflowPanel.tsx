@@ -46,7 +46,7 @@ export type BookTranslationWorkflowPanelProps = {
   hideStageActions?: boolean;
   onRetryStage: (
     stage: JobRetryStage,
-    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string },
+    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string; refineStartPage?: number },
   ) => Promise<unknown>;
 };
 
