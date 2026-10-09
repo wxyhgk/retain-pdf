@@ -49,5 +49,8 @@ def test_shared_layout_resolves_probes_and_unchanged_baseline():
     # 12 个 direct_typst 用例的消息变了,16 个 placeholder 用例只有 prompt_hash 变。
     # 最近一次:引用规则改成「行内方括号 [n] 原样、原文是上标才输出上标」。同样逐例审阅:
     # 12 个用例的消息变化只落在那一行引用规则上,其余 16 个只有 prompt_hash 变,成员与其它指纹不变。
+    # 2026-10-09:提示词去重并补「术语 / 引用 / 标点」三条中文体例(0b015660)。逐例审阅:28 个用例
+    # 的 system 消息都只变在这几行;9 个 placeholder 用例的 user 消息只变在 task 说明(删去与 system
+    # 重复的要求);prompt_hash 随之变化,成员与其它指纹不变。
     baseline = HERE / "fixtures/refactor_baseline.json"
-    assert hashlib.sha256(baseline.read_bytes()).hexdigest() == "3b0630fde4c88481aa4545af02e4e0bea097eb133bcf7aec5d7c4cf15d36e2b0"
+    assert hashlib.sha256(baseline.read_bytes()).hexdigest() == "5eb61b90d6a3163bc637b0d52422e462f87edee265ae1950930bf9cfcf6a5649"
