@@ -109,3 +109,19 @@ def test_obstacle_scan_covers_every_document_page_and_is_reused(tmp_path: Path) 
     # A new OCR result invalidates the scan.
     os.utime(document, ns=(2, 2))
     assert run_obstacle_scan(store, source_pdf_path=pdf, document_path=document).hit is False
+
+
+def test_page_analysis_is_reused_when_only_the_wording_changes(tmp_path: Path) -> None:
+    from retainpdf_pipeline.render.prepare.page_analysis import run_page_analysis
+
+    pdf, _document = _doc_and_pdf(tmp_path)
+    store = PrepareStore(tmp_path / "render_prepare")
+    item = {"item_id": "p001-b001", "bbox": [10, 30, 280, 80], "translated_text": "旧译文"}
+    first, record = run_page_analysis(store, source_pdf_path=pdf, translated_pages={0: [item]}, start_page=0, end_page=-1)
+    assert record.hit is False and sorted(first.pages) == [0]
+    reworded = {**item, "translated_text": "新译文"}
+    again, record = run_page_analysis(store, source_pdf_path=pdf, translated_pages={0: [reworded]}, start_page=0, end_page=-1)
+    assert record.hit is True
+    assert again == first
+    _, record = run_page_analysis(store, source_pdf_path=pdf, translated_pages={0: [reworded], 1: [item]}, start_page=0, end_page=-1)
+    assert record.hit is False, "another page to analyse is a new input"

@@ -116,6 +116,12 @@ def execute_render_plan(
     no_cache = render_no_cache_enabled()
     if no_cache:
         render_prewarm_manifest_path = None
+    # 渲染准备步骤的缓存（render/prepare）；no_cache 时不读不写。
+    prepare_dir = (
+        None
+        if no_cache
+        else Path(render_plan.render_inputs.translations_dir).parent / ARTIFACTS_DIR_NAME / PREPARE_DIR_NAME
+    )
     render_source_pdf = (
         try_load_prewarmed_render_source_pdf(
             manifest_path=render_prewarm_manifest_path,
@@ -162,6 +168,7 @@ def execute_render_plan(
             translated_pages=render_plan.selected_pages,
             start_page=start,
             end_page=stop,
+            prepare_dir=prepare_dir,
         )
         print(
             "render document analysis: "
@@ -364,11 +371,7 @@ def execute_render_plan(
         visual_cover_page_indices=cover_fallback_plan.page_indices,
         render_engine=render_engine,
         document_path=_document_path_for_render(render_plan.render_inputs.translations_dir),
-        prepare_dir=(
-            None
-            if no_cache
-            else Path(render_plan.render_inputs.translations_dir).parent / ARTIFACTS_DIR_NAME / PREPARE_DIR_NAME
-        ),
+        prepare_dir=prepare_dir,
     )
     prepare_progress.finish()
     render_diagnostics: dict[str, object] = {}
