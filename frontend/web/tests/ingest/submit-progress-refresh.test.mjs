@@ -55,7 +55,6 @@ test("submit while workflow open queues soft fallback and replays once on close"
   const scheduler = createRecentJobsRefreshScheduler({
     loadRecentJobs: (options) => loads.push(options),
     scheduleAutoLoadCheck() {},
-    setDialogOpen() {},
     environment: createRecentJobsRefreshEnvironment({
       now: () => now,
       clearTimeoutFn() {},

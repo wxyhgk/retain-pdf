@@ -12,6 +12,8 @@
 
 import { flattenStageSnapshot } from "@retainpdf/domain/job";
 
+import type { LibraryCardItem } from "../types.js";
+
 export const LIBRARY_ONLY_JOB_PREFIX = "doc:";
 
 export function syntheticLibraryJobId(documentId) {
@@ -19,7 +21,25 @@ export function syntheticLibraryJobId(documentId) {
   return normalized ? `${LIBRARY_ONLY_JOB_PREFIX}${normalized}` : "";
 }
 
-export function isLibraryOnlyItem(item: any = {}) {
+export type LibraryDocumentRecord = {
+  document_id?: string | null;
+  active_job_id?: string | null;
+  title?: string | null;
+  source_filename?: string | null;
+  reading_status?: string | null;
+  tags?: string[] | null;
+  source_pdf_url?: string | null;
+  bytes?: number | null;
+  added_at?: string | null;
+  last_opened_at?: string | null;
+  has_translation?: boolean | null;
+  page_count?: number | null;
+  cover_url?: string | null;
+  thumbnail_url?: string | null;
+  updated_at?: string | null;
+};
+
+export function isLibraryOnlyItem(item: LibraryCardItem = {}) {
   return item?.library_only === true;
 }
 
@@ -70,7 +90,10 @@ function pickCardTitle(bookTitle, document, jobId) {
 //   无 active_job_id 则合成 `doc:<document_id>`(library_only=true),只为穿过
 //   按 job_id 键控的 store/去重,不被解析;
 // - 封面/标题:job 活态优先、文档兜底;book 占位标题(job_id/Mock)改用文档真名。
-export function shapeDocumentCardItem(document: any = {}, jobProjection = null) {
+export function shapeDocumentCardItem(
+  document: LibraryDocumentRecord = {},
+  jobProjection: LibraryCardItem | null = null,
+) {
   const documentId = `${document.document_id || ""}`.trim();
   const activeJobId = `${document.active_job_id || ""}`.trim();
   const sharedDocumentIdentity = {

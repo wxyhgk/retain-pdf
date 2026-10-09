@@ -34,7 +34,7 @@ import { useRecentJobsListDerivation } from "./useRecentJobsListDerivation.js";
 import { useRecentJobsBatchSelection } from "./useRecentJobsBatchSelection.js";
 import { VIEW_TEXT } from "./recent-jobs-library-helpers.js";
 
-export function RecentJobsLibrary({ onBatchModeChange }: any = {}) {
+export function RecentJobsLibrary({ onBatchModeChange }: { onBatchModeChange?: (active: boolean) => void } = {}) {
   const { viewPort, recentJobsStore, actions } = useHomeLibrary();
   const homeStateStore = useHomeHomeStateStore();
   const { controller: collectionsController } = useHomeCollections();

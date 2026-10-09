@@ -1,15 +1,12 @@
-// recent-jobs 引擎的 viewPort 契约 → React 实现(蓝图 §2 features/library/)。
+// recent-jobs 引擎的 viewPort → React 实现(蓝图 §2 features/library/)。
 //
-// 铁律:轮询/补丁/节流引擎(controller/runtime/loader/commit/bindings…)一行不
-// 改;这里只满足 view-port.js 定义的 10 个方法契约,把副作用从"操作 DOM"换成
-// "写 libraryViewStore"。renderList 故意忽略 items 参数——React 组件直接订阅
-// recentJobsStatePort.store 读取列表内容,这里只搬运 hasMore 用于 load-more
-// 按钮可见性。
+// 列表内容由 React 组件直接订阅 recentJobsStatePort.store；引擎经这里只发几个
+// 「瞬态信号」写进 libraryViewStore：加载中、加载更多中、空、出错、hasMore
+// （「加载更多」按钮可见性），以及分页后的自动补拉检查。
 //
-// hasView() 恒 true:loader.js 用它做"host 不存在就跳过加载"的短路判断,React
-// 世界的图书馆视图永远挂载。replaceCard() 恒 true:引擎在 storeDrivenRendering
-// 下不会真正依赖其返回值做条件渲染分支,React 卡片改由 memo 签名比较驱动重渲
-// (见 RecentJobCard.jsx),这里返回 true 只是满足调用方"未失败"的语义。
+// 旧契约里还有 hasView / replaceCard / setDialogOpen 三个方法，以及引擎里配套的
+// storeDrivenRendering 开关与「最近任务弹窗」打开 / 关闭链路：React 里它们要么恒真、
+// 要么什么都不做（DOM 卡片替换、旧弹窗都不存在了），已连同引擎侧的死分支一起删除。
 
 import { createLibraryViewStore } from "./library-view-store.js";
 import type {
@@ -25,15 +22,11 @@ export function createRecentJobsReactViewPort({
 }: RecentJobsReactViewPortOptions = {}): RecentJobsReactViewPort {
   const viewStore: LibraryViewStore = store;
   const handlersRef: { current: RecentJobsViewPortHandlers } = {
-    current: { onOpen: null, onLoadMore: null, onSearch: null, isSuspended: () => false },
+    current: { onLoadMore: null, onSearch: null, isSuspended: () => false },
   };
   const autoLoadCheckerRef: {
     current: null | ((options?: AutoLoadCheckOptions) => void);
   } = { current: null };
-
-  function hasView() {
-    return true;
-  }
 
   function renderLoading() {
     viewStore.actions.setLoading();
@@ -57,17 +50,8 @@ export function createRecentJobsReactViewPort({
     viewStore.actions.setList(hasMore);
   }
 
-  function replaceCard() {
-    return true;
-  }
-
   function setLoadMoreLoading() {
     viewStore.actions.setLoadMoreLoading();
-  }
-
-  function setDialogOpen() {
-    // recent-jobs-dialog 元素形态在主视图不启用(蓝图 §2),契约方法保留为
-    // no-op,避免引擎里任何遗留调用路径抛错。
   }
 
   function scheduleAutoLoadCheck(options?: AutoLoadCheckOptions) {
@@ -88,27 +72,23 @@ export function createRecentJobsReactViewPort({
   }
 
   function bindEvents({
-    onOpen,
     onLoadMore,
     onSearch,
     isSuspended = () => false,
   }: Partial<RecentJobsViewPortHandlers> = {}) {
-    handlersRef.current = { onOpen, onLoadMore, onSearch, isSuspended };
+    handlersRef.current = { onLoadMore, onSearch, isSuspended };
   }
 
   return {
     store: viewStore,
     handlersRef,
     bindEvents,
-    hasView,
     registerAutoLoadChecker,
     renderEmpty,
     renderError,
     renderList,
     renderLoading,
-    replaceCard,
     scheduleAutoLoadCheck,
-    setDialogOpen,
     setLoadMoreLoading,
   };
 }

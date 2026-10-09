@@ -11,6 +11,7 @@ import {
   retryJobStage as defaultRetryJobStage,
 } from "@/platform/api/index.js";
 import type {
+  DocumentJobSummary,
   JobSubmissionView,
   LibraryCardItem,
   LibraryControllerDeps,
@@ -77,7 +78,7 @@ export function createDocumentJobActions({
   async function getDocumentJobs(documentId?: string | null) {
     const normalizedId = `${documentId || ""}`.trim();
     if (!normalizedId) return { items: [] };
-    return fetchDocumentJobs(API_PREFIX, normalizedId) as Promise<any>;
+    return fetchDocumentJobs(API_PREFIX, normalizedId) as Promise<{ items: DocumentJobSummary[] }>;
   }
 
   // 前置条件: jobId 为真实 id(合成 `doc:` 返回 null)。

@@ -4,6 +4,7 @@ import {
   isJobTerminal,
   normalizeRuntimeDisplayStage,
 } from "../recent-jobs/runtime-value-helpers.js";
+import type { LibraryCardItem } from "../types.js";
 import { escapeAttribute, truncateDisplayName } from "@/platform/utils/html-formatting.js";
 import { JOB_STATUS_LABELS, isActiveJobStatus, jobStatusLabel, normalizeJobStatus } from "@retainpdf/domain/job";
 
@@ -19,7 +20,7 @@ function normalizedMergedStage(value = "") {
   return RECENT_JOB_STAGE_KEYS.has(stage) ? stage : "";
 }
 
-function trustedStageSnapshot(item: any = {}) {
+function trustedStageSnapshot(item: LibraryCardItem = {}) {
   const snapshot = item.stage_snapshot && typeof item.stage_snapshot === "object"
     ? item.stage_snapshot
     : null;
@@ -27,7 +28,7 @@ function trustedStageSnapshot(item: any = {}) {
   return snapshot && !IGNORED_SNAPSHOT_SOURCES.has(source) ? snapshot : null;
 }
 
-export function stageKeyForRecentJobLabel(item: any = {}) {
+export function stageKeyForRecentJobLabel(item: LibraryCardItem = {}) {
   const snapshot = trustedStageSnapshot(item);
   const rawStage = normalizedMergedStage(item.display_stage)
     || normalizedMergedStage(item.runtime_status?.publicStage)

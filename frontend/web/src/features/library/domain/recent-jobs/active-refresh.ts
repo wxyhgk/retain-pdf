@@ -1,3 +1,4 @@
+import type { LibraryJobItem } from "./state.js";
 import { isRecentJobActive } from "./card-presenter.js";
 import {
   defaultRecentJobsRefreshEnvironment,
@@ -6,11 +7,14 @@ import {
 export const LIBRARY_ACTIVE_REFRESH_MS = 2500;
 export const LIBRARY_ACTIVE_REFRESH_MAX_CARDS_PER_TICK = 6;
 
+type JobIdSetSource = string | string[] | Set<string> | null | undefined;
+type JobIdSetInput = JobIdSetSource | (() => JobIdSetSource);
+
 export function hasActiveRecentJobs(items = []) {
   return (Array.isArray(items) ? items : []).some(isRecentJobActive);
 }
 
-export function recentJobsEligibleForActiveRefresh(items = [], currentJobId = "", includeJobIds: any = []) {
+export function recentJobsEligibleForActiveRefresh(items = [], currentJobId = "", includeJobIds: JobIdSetInput = []) {
   const activeJobId = `${currentJobId || ""}`.trim();
   const included = normalizeJobIdSet(includeJobIds);
   return (Array.isArray(items) ? items : [])
@@ -30,7 +34,7 @@ export function recentJobsEligibleForActiveRefresh(items = [], currentJobId = ""
     });
 }
 
-function normalizeJobIdSet(source: any) {
+function normalizeJobIdSet(source: JobIdSetInput) {
   const raw = typeof source === "function" ? source() : source;
   const list = raw instanceof Set ? [...raw] : (Array.isArray(raw) ? raw : (raw ? [raw] : []));
   return new Set(
@@ -49,6 +53,19 @@ function normalizeJobIdSet(source: any) {
  *   armed --loading中--> armed（suspend：重约一拍，不发网）
  *   armed --无可轮询卡--> idle（自然熄火）
  */
+type ActiveLibraryRefreshLoopOptions = {
+  getItems: () => LibraryJobItem[];
+  currentJobId?: () => string;
+  fetchJobPayload?: (jobId: string, options: { apiPrefix?: string }) => Promise<unknown>;
+  apiPrefix?: string;
+  updateFromRuntime: (payload: unknown) => void;
+  loadRecentJobs?: unknown;
+  isRecentJobsLoading: () => boolean;
+  environment?: typeof defaultRecentJobsRefreshEnvironment;
+  includeJobIds?: JobIdSetInput;
+  detailOwnsCurrentJob?: () => boolean;
+};
+
 export function createActiveLibraryRefreshLoop({
   getItems,
   currentJobId = () => "",
@@ -74,7 +91,7 @@ export function createActiveLibraryRefreshLoop({
   //
   // 缺省 true = 旧行为，接线方传入真实信号后，关窗即把卡片还给书架。
   detailOwnsCurrentJob = () => true,
-}: any) {
+}: ActiveLibraryRefreshLoopOptions) {
   // 弹窗没开着就当没有「当前 job」——排除规则随之失效，卡片回到书架的 2.5s 覆盖。
   function ownedCurrentJobId() {
     return detailOwnsCurrentJob() ? currentJobId() : "";
@@ -154,7 +171,7 @@ export function createActiveLibraryRefreshLoop({
     }));
   }
 
-  function schedule({ resetTimer = true }: any = {}) {
+  function schedule({ resetTimer = true }: { resetTimer?: boolean } = {}) {
     if (disposed) {
       return;
     }

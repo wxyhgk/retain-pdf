@@ -8,6 +8,17 @@ import type { LibraryJobItem } from "./runtime-item.js";
 
 export const RECENT_JOBS_PAGE_SIZE = 24;
 
+export type RecentJobsPagePayload = {
+  items?: LibraryJobItem[];
+  has_more?: boolean;
+  invocation_summary?: unknown;
+};
+
+export type RecentJobsPageFetcher = (
+  apiPrefix: string,
+  opts: { limit: number; offset: number; q: string },
+) => Promise<RecentJobsPagePayload>;
+
 export function dedupeRecentJobs(
   items: LibraryJobItem[] | null | undefined,
 ): LibraryJobItem[] {
@@ -32,7 +43,15 @@ export async function collectRecentJobsPage({
   pageSize,
   existingJobIds = new Set(),
   query = "",
-}: any) {
+}: {
+  fetchJobList?: RecentJobsPageFetcher;
+  fetchLibraryBookList?: RecentJobsPageFetcher;
+  apiPrefix: string;
+  startOffset: number;
+  pageSize: number;
+  existingJobIds?: Iterable<string> | null;
+  query?: string;
+}) {
   const fetchLimit = Math.max(pageSize, 20);
   const collected = [];
   const seenCardIdentities = new Set(

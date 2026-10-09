@@ -1,6 +1,9 @@
 import {
   defaultRecentJobsRefreshEnvironment,
 } from "./refresh-environment.js";
+import type { AutoLoadCheckOptions } from "../types.js";
+import type { LoadRecentJobsOptions } from "./loader.js";
+import type { RecentJobsRefreshRequest } from "./commands.js";
 
 export const LIBRARY_SEARCH_DEBOUNCE_MS = 260;
 export const LIBRARY_REFRESH_MIN_INTERVAL_MS = 5000;
@@ -8,19 +11,29 @@ export const LIBRARY_REFRESH_DEFAULT_DELAY_MS = 600;
 export const LIBRARY_REFRESH_TERMINAL_DELAY_MS = 400;
 export const LIBRARY_REFRESH_RESUME_DELAY_MS = 300;
 
+export type RecentJobsRefreshSchedulerEnvironment = typeof defaultRecentJobsRefreshEnvironment;
+
+/** environment.setTimeout 的返回值（默认环境是 window.setTimeout，即 number）。 */
+type RecentJobsRefreshTimer = ReturnType<RecentJobsRefreshSchedulerEnvironment["setTimeout"]>;
+
+export type CreateRecentJobsRefreshSchedulerOptions = {
+  loadRecentJobs: (options?: LoadRecentJobsOptions) => Promise<void> | undefined;
+  scheduleAutoLoadCheck: (options?: AutoLoadCheckOptions) => void;
+  environment?: RecentJobsRefreshSchedulerEnvironment;
+};
+
 export function createRecentJobsRefreshScheduler({
   loadRecentJobs,
   scheduleAutoLoadCheck,
-  setDialogOpen,
   environment = defaultRecentJobsRefreshEnvironment,
-}: any) {
-  let refreshTimer = null;
-  let searchTimer = null;
+}: CreateRecentJobsRefreshSchedulerOptions) {
+  let refreshTimer: RecentJobsRefreshTimer | null = null;
+  let searchTimer: RecentJobsRefreshTimer | null = null;
   let query = "";
   let suspended = false;
   let lastRefreshAt = 0;
-  let pendingRefresh = null;
-  let resumeRetryTimer = null;
+  let pendingRefresh: RecentJobsRefreshRequest | null = null;
+  let resumeRetryTimer: RecentJobsRefreshTimer | null = null;
 
   // 状态机：
   //   idle --scheduleRefresh--> armed --timer触发--> idle
@@ -41,11 +54,11 @@ export function createRecentJobsRefreshScheduler({
   }
 
   // 规则1 suspend：非 force 请求在挂起态只入队，不起 timer。
-  function shouldQueueWhileSuspended({ force = false }: any = {}) {
+  function shouldQueueWhileSuspended({ force = false }: { force?: boolean } = {}) {
     return !force && isSuspended();
   }
 
-  function queuePendingRefresh(request: any) {
+  function queuePendingRefresh(request: RecentJobsRefreshRequest) {
     if (pendingRefresh?.force && !request.force) return;
     pendingRefresh = request;
   }
@@ -78,7 +91,7 @@ export function createRecentJobsRefreshScheduler({
     }
   }
 
-  function setSuspended(value) {
+  function setSuspended(value: unknown) {
     const next = Boolean(value);
     const was = suspended;
     suspended = next;
@@ -90,12 +103,12 @@ export function createRecentJobsRefreshScheduler({
   }
 
   // 规则3 bypass：force 跳过 suspend+throttle；bypassThrottle 只跳过 throttle。
-  function shouldBypassThrottle({ force = false, bypassThrottle = false }: any = {}) {
+  function shouldBypassThrottle({ force = false, bypassThrottle = false }: { force?: boolean; bypassThrottle?: boolean } = {}) {
     return Boolean(force || bypassThrottle);
   }
 
   // 规则4 throttle：距上次 armed 不足 MIN_INTERVAL 的普通请求直接丢弃。
-  function shouldDropByThrottle({ force = false, bypassThrottle = false }: any, now: number) {
+  function shouldDropByThrottle({ force = false, bypassThrottle = false }: { force?: boolean; bypassThrottle?: boolean }, now: number) {
     if (shouldBypassThrottle({ force, bypassThrottle })) {
       return false;
     }
@@ -110,7 +123,7 @@ export function createRecentJobsRefreshScheduler({
     }, delay);
   }
 
-  function scheduleRefresh({ delay = LIBRARY_REFRESH_DEFAULT_DELAY_MS, force = false, bypassThrottle = false }: any = {}) {
+  function scheduleRefresh({ delay = LIBRARY_REFRESH_DEFAULT_DELAY_MS, force = false, bypassThrottle = false }: RecentJobsRefreshRequest = {}) {
     const request = { delay, force, bypassThrottle };
     if (shouldQueueWhileSuspended(request)) {
       queuePendingRefresh(request);
@@ -124,22 +137,13 @@ export function createRecentJobsRefreshScheduler({
     armRefreshTimer(delay, now);
   }
 
-  function updateSearch(nextQuery) {
+  function updateSearch(nextQuery: string | null | undefined) {
     query = `${nextQuery || ""}`.trim();
     environment.clearTimeout(searchTimer);
     searchTimer = environment.setTimeout(() => {
       // silent + soft reset：保留旧列表到新结果到达，避免敲搜索整格闪空/LOADING
       void loadRecentJobs({ reset: true, silent: true, query });
     }, LIBRARY_SEARCH_DEBOUNCE_MS);
-  }
-
-  function openDialog() {
-    setDialogOpen(true);
-    loadRecentJobs({ reset: true });
-  }
-
-  function closeDialog() {
-    setDialogOpen(false);
   }
 
   function initialize() {
@@ -161,13 +165,11 @@ export function createRecentJobsRefreshScheduler({
   }
 
   return {
-    closeDialog,
     dispose,
     getQuery,
     hasPendingRefresh,
     initialize,
     isSuspended,
-    openDialog,
     scheduleAutoLoadIfNeeded,
     scheduleRefresh,
     setSuspended,

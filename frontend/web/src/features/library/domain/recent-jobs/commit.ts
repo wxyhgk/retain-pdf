@@ -28,12 +28,10 @@ export interface RecentJobsRenderListOptions {
 
 /** Engine-facing viewPort surface used by commit/loader (subset of React viewPort). */
 export interface RecentJobsCommitViewPort {
-  hasView?: () => boolean;
   renderList?: (options?: RecentJobsRenderListOptions) => void;
   renderEmpty?: (message?: string, invocationSummary?: RecentJobsInvocationSummary) => void;
   renderError?: (message?: string, options?: { reset?: boolean }) => void;
   renderLoading?: () => void;
-  replaceCard?: (item?: LibraryJobItem) => boolean;
   setLoadMoreLoading?: () => void;
 }
 
@@ -77,8 +75,6 @@ export interface CommitRecentJobsPageOptions {
     | "setItems"
   >;
   setTimeoutFn?: RecentJobsSetTimeoutFn;
-  storeDrivenRendering?: boolean;
-  viewPort?: Pick<RecentJobsCommitViewPort, "renderList">;
 }
 
 export interface CommitRecentJobsEmptyOptions {
@@ -86,19 +82,11 @@ export interface CommitRecentJobsEmptyOptions {
   invocationSummary?: RecentJobsInvocationSummary;
   homeStatePort?: Pick<HomeStatePort, "setRecentJobsLoadingState">;
   recentJobsStatePort?: Pick<RecentJobsStatePort, "setItems" | "setHasMore">;
-  storeDrivenRendering?: boolean;
-  /** Legacy unused callback kept for call-site compatibility. */
-  renderEmpty?: (message?: string, invocationSummary?: RecentJobsInvocationSummary) => void;
-  viewPort?: Pick<RecentJobsCommitViewPort, "renderEmpty">;
 }
 
 export interface CommitRecentJobsNoMoreOptions {
   homeStatePort?: Pick<HomeStatePort, "setRecentJobsLoadingState">;
   recentJobsStatePort?: Pick<RecentJobsStatePort, "setHasMore">;
-  storeDrivenRendering?: boolean;
-  /** Legacy unused callback kept for call-site compatibility. */
-  renderError?: (message?: string, options?: { reset?: boolean }) => void;
-  viewPort?: Pick<RecentJobsCommitViewPort, "renderError">;
 }
 
 export interface CommitRecentJobsErrorOptions {
@@ -106,10 +94,6 @@ export interface CommitRecentJobsErrorOptions {
   reset?: boolean;
   homeStatePort?: Pick<HomeStatePort, "setRecentJobsLoadingState">;
   recentJobsStatePort?: Pick<RecentJobsStatePort, "setHasMore">;
-  storeDrivenRendering?: boolean;
-  /** Legacy unused callback kept for call-site compatibility. */
-  renderError?: (message?: string, options?: { reset?: boolean }) => void;
-  viewPort?: Pick<RecentJobsCommitViewPort, "renderError">;
 }
 
 export interface CommitRecentJobsPageResult {
@@ -140,8 +124,6 @@ export function commitRecentJobsPage({
   scheduleAutoLoadIfNeeded,
   recentJobsStatePort,
   setTimeoutFn = defaultSetTimeout,
-  storeDrivenRendering = false,
-  viewPort,
 }: CommitRecentJobsPageOptions = {}): CommitRecentJobsPageResult {
   const latestItems = reset ? [] : recentJobsStatePort.getSnapshot().items;
   const nextItems = runtimePatches.apply(dedupeRecentJobs(reset ? collected : [...latestItems, ...collected]));
@@ -171,18 +153,7 @@ export function commitRecentJobsPage({
   // localStorage 不可用或没有记录时，以首屏服务端列表作为冷启动兜底。
   // recoverActiveJob 内部只执行一次，且使用 silent polling，不会自动打开任务弹窗。
   recentJobActions?.recoverActiveJob?.(nextItems);
-  if (!storeDrivenRendering) {
-    viewPort.renderList({
-      items: renderItems,
-      allItems: nextItems,
-      invocationSummary,
-      reset,
-      hasMore,
-      onSelect: recentJobActions.selectJob,
-      onDelete: recentJobActions.deleteJob,
-      onReader: recentJobActions.openJobReader,
-    });
-  }
+  // 列表由 React 直接订阅 recentJobsStatePort 渲染，这里不再推给 viewPort。
 
   // 服务端已按 query 过滤，首屏不满同样自动补拉；搜索多页不再依赖手点“更多”。
   if (hasMore) {
@@ -197,35 +168,22 @@ export function commitRecentJobsPage({
 
 export function commitRecentJobsEmpty({
   query = "",
-  invocationSummary = null,
   homeStatePort,
   recentJobsStatePort,
-  storeDrivenRendering = false,
-  renderEmpty: _renderEmpty,
-  viewPort,
 }: CommitRecentJobsEmptyOptions = {}): { message: string } {
   recentJobsStatePort.setItems([]);
   recentJobsStatePort.setHasMore(false);
   homeStatePort.setRecentJobsLoadingState(RECENT_JOBS_LOADING_STATES.READY);
   const message = `${query || ""}`.trim() ? "没有匹配的书籍" : "暂无最近任务";
-  if (!storeDrivenRendering) {
-    viewPort.renderEmpty(message, invocationSummary);
-  }
   return { message };
 }
 
 export function commitRecentJobsNoMore({
   homeStatePort,
   recentJobsStatePort,
-  storeDrivenRendering = false,
-  renderError: _renderError,
-  viewPort,
 }: CommitRecentJobsNoMoreOptions = {}): void {
   recentJobsStatePort.setHasMore(false);
   homeStatePort.setRecentJobsLoadingState(RECENT_JOBS_LOADING_STATES.READY);
-  if (!storeDrivenRendering) {
-    viewPort.renderError("", { reset: false });
-  }
 }
 
 export function commitRecentJobsError({
@@ -233,17 +191,11 @@ export function commitRecentJobsError({
   reset = false,
   homeStatePort,
   recentJobsStatePort,
-  storeDrivenRendering = false,
-  renderError: _renderError,
-  viewPort,
 }: CommitRecentJobsErrorOptions = {}): { message: string } {
   const message = error?.message || "读取最近任务失败";
   if (!reset) {
     recentJobsStatePort.setHasMore(false);
   }
   homeStatePort.setRecentJobsLoadingState(RECENT_JOBS_LOADING_STATES.ERROR, message);
-  if (!storeDrivenRendering) {
-    viewPort.renderError(message, { reset });
-  }
   return { message };
 }

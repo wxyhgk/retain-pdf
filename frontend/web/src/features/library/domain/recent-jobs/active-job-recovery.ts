@@ -2,7 +2,7 @@ import { isRecentJobActive } from "./card-presenter.js";
 
 export function resolveRecoverableJobId(items = [], {
   readActiveJobId = () => "",
-}: any = {}) {
+}: { readActiveJobId?: () => string } = {}) {
   const sourceItems = Array.isArray(items) ? items : [];
   const storedJobId = readActiveJobId();
   if (storedJobId) {

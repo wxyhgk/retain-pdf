@@ -20,8 +20,7 @@ function fixture(dependencies) {
     runtimePatches: { apply: (items) => items, applyExisting: (items) => items },
     homeStatePort: { setRecentJobsLoadingState: (value) => loading.push(value) },
     recentJobActions: {}, activeRefreshLoop: () => ({ schedule() {}, stop() {} }),
-    viewPort: { hasView: () => true, renderLoading() {}, setLoadMoreLoading() {} },
-    storeDrivenRendering: true,
+    viewPort: { renderLoading() {}, setLoadMoreLoading() {} },
   });
   return { state, loading, loader };
 }

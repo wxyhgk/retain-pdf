@@ -104,7 +104,6 @@ test("recent jobs feature bindings route ui library and workflow events", () => 
     },
   };
   const refreshScheduler = {
-    openDialog() {},
     scheduleRefresh: (options) => schedulerCalls.push(["schedule", options]),
     setSuspended: (value) => schedulerCalls.push(["suspended", value]),
     isSuspended: () => false,
@@ -302,7 +301,6 @@ test("opening completed book detail does not steal active job polling", () => {
 test("recent jobs navigation port owns workflow reader and recovery side effects", () => {
   const previousCustomEvent = global.CustomEvent;
   const dispatched = [];
-  const closed = [];
   const opened = [];
   const read = [];
   global.CustomEvent = class CustomEvent {
@@ -318,7 +316,6 @@ test("recent jobs navigation port owns workflow reader and recovery side effects
   };
   try {
     const port = createRecentJobsNavigationPort({
-      closeDialog: () => closed.push("close"),
       doc,
       jobRuntimePort: {
         currentJobId: () => "job-current",
@@ -340,19 +337,10 @@ test("recent jobs navigation port owns workflow reader and recovery side effects
     assert.equal(port.openReader(" job-reader "), true);
     assert.equal(port.recoverJob(" job-recover "), true);
     assert.equal(port.openJob(""), false);
-    assert.deepEqual(closed, ["close", "close"]);
-    // 默认 openWorkflowOnSelect=false：网格选任务不弹旧工作流窗
+    // 网格选任务不弹旧工作流窗：进度在书籍详情的「进度」页
     assert.deepEqual(dispatched, []);
     assert.deepEqual(opened, ["job-open", "job-recover"]);
     assert.deepEqual(read, ["job-reader"]);
-
-    const legacy = createRecentJobsNavigationPort({
-      doc,
-      openWorkflowOnSelect: true,
-      jobRuntimePort: { openJob: () => true, currentJobId: () => "" },
-    });
-    legacy.openJob("job-legacy");
-    assert.deepEqual(dispatched, [APP_EVENTS.openTranslationWorkflow]);
   } finally {
     global.CustomEvent = previousCustomEvent;
   }
@@ -362,18 +350,14 @@ test("recent jobs runtime wires loader actions and scheduler callbacks", async (
   const previousDocument = global.document;
   const previousCustomEvent = global.CustomEvent;
   const dispatched = [];
-  // 旧 DOM 直写 viewPort 已随 cutover 删除,改用最小 stub(满足 10 方法契约,
-  // 见 src/app/home/features/library/recent-jobs-react-port.js 的 React 实现)。
+  // 最小 stub，方法集同 src/features/library/domain/recent-jobs-react-port.ts。
   const viewPort = {
     bindEvents() {},
-    hasView: () => true,
     renderEmpty() {},
     renderError() {},
     renderList() {},
     renderLoading() {},
-    replaceCard: () => true,
     scheduleAutoLoadCheck() {},
-    setDialogOpen() {},
     setLoadMoreLoading() {},
   };
   global.document = {
@@ -389,7 +373,6 @@ test("recent jobs runtime wires loader actions and scheduler callbacks", async (
   };
 
   const loadParams = [];
-  const closed = [];
   const opened = [];
   const statePort = createRecentJobsStatePort({
     recentJobsOffset: 0,
@@ -432,7 +415,6 @@ test("recent jobs runtime wires loader actions and scheduler callbacks", async (
     viewPort,
   });
   scheduler = {
-    closeDialog: () => closed.push("close"),
     getQuery: () => "search-term",
     scheduleAutoLoadIfNeeded() {},
   };
@@ -443,7 +425,6 @@ test("recent jobs runtime wires loader actions and scheduler callbacks", async (
 
     assert.equal(loadParams[0].query, "search-term");
     assert.deepEqual(statePort.getSnapshot().items.map((item) => item.job_id), ["job-runtime"]);
-    assert.deepEqual(closed, ["close"]);
     assert.deepEqual(opened, ["job-runtime"]);
     // 进度改在书籍详情 Tab：selectJob 默认不弹 translation-workflow-dialog
     assert.deepEqual(dispatched.map((event) => event.type), []);
@@ -455,7 +436,6 @@ test("recent jobs runtime wires loader actions and scheduler callbacks", async (
 
 test("recent jobs runtime routes list rendering through the view port", async () => {
   const rendered = [];
-  const replaced = [];
   const statePort = createRecentJobsStatePort({
     recentJobsOffset: 0,
     recentJobsHasMore: true,
@@ -494,7 +474,6 @@ test("recent jobs runtime routes list rendering through the view port", async ()
     },
     refreshSchedulerRef: () => scheduler,
     viewPort: {
-      hasView: () => true,
       renderEmpty() {},
       renderError(message) {
         throw new Error(`unexpected recent jobs error render: ${message}`);
@@ -503,15 +482,10 @@ test("recent jobs runtime routes list rendering through the view port", async ()
         rendered.push(payload.items.map((item) => item.job_id));
       },
       renderLoading() {},
-      replaceCard(item) {
-        replaced.push(item.job_id);
-        return true;
-      },
       setLoadMoreLoading() {},
     },
   });
   scheduler = {
-    closeDialog() {},
     getQuery: () => "",
     scheduleAutoLoadIfNeeded() {},
   };
@@ -520,7 +494,6 @@ test("recent jobs runtime routes list rendering through the view port", async ()
   runtime.runtimePatches.update({ job_id: "job-view-port", status: "succeeded" });
 
   assert.deepEqual(rendered.at(-1), ["job-view-port"]);
-  assert.deepEqual(replaced, []);
 });
 
 test("recent job actions use navigation port instead of direct polling", () => {
@@ -544,7 +517,6 @@ test("recent job actions use navigation port instead of direct polling", () => {
         return true;
       },
     },
-    closeRecentJobsDialog: () => {},
     renderCurrentRecentJobs: () => {},
     renderRecentJobsEmpty: () => {},
     renderRecentJobsError: () => {},
@@ -583,7 +555,6 @@ test("recent job actions use navigation port instead of direct reader callback",
         return true;
       },
     },
-    closeRecentJobsDialog: () => {},
     renderCurrentRecentJobs: () => {},
     renderRecentJobsEmpty: () => {},
     renderRecentJobsError: (message) => errors.push(message),

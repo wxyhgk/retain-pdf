@@ -6,7 +6,7 @@ export function isTranslationWorkflowDialogOpen(doc = document) {
 
 export function createRecentJobsWorkflowOpenPort({
   isWorkflowOpen = isTranslationWorkflowDialogOpen,
-}: any = {}) {
+}: { isWorkflowOpen?: () => boolean } = {}) {
   return Object.freeze({
     isWorkflowOpen,
   });

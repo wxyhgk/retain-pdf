@@ -131,7 +131,7 @@ export function isLibraryCardProcessing(item: LibraryCardItem = {}): boolean {
   // 重试后偶发 status 未及时变、但 stage 已回到 ocr/翻译/渲染；
   // 列表投影只有原生 stage（live.rs，无 display_stage），一并看 item.stage。
   const stage = stageKeyForRecentJobLabel(item);
-  const rawStage = `${(item as any).stage || ""}`.trim().toLowerCase();
+  const rawStage = `${item.stage || ""}`.trim().toLowerCase();
   const normRawStage = rawStage === "translation" || rawStage === "translating" ? "translate" : rawStage;
   const effStage = stage || (RUNNING_STAGES.has(normRawStage) ? normRawStage : "");
   // succeeded 先看原生 stage：helper 会把 succeeded 统一收敛成 done，

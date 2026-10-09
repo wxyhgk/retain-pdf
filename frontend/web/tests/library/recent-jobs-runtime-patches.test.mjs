@@ -30,10 +30,7 @@ test("recent jobs runtime patches keep newer event progress over older poll snap
   });
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => true,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
-    storeDrivenRendering: true,
     stageAdapterPort: recentJobsStageAdapterPort,
   });
 
@@ -82,10 +79,7 @@ test("recent jobs runtime patches keep newer progress while accepting newer subs
   });
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => true,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
-    storeDrivenRendering: true,
     stageAdapterPort: recentJobsStageAdapterPort,
   });
 
@@ -145,10 +139,7 @@ test("recent jobs runtime patches keep terminal state over stale running snapsho
   });
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => true,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
-    storeDrivenRendering: true,
     stageAdapterPort: recentJobsStageAdapterPort,
   });
 
@@ -190,10 +181,7 @@ test("recent jobs runtime patches accept new job_id retry after terminal (home c
   });
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => true,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
-    storeDrivenRendering: true,
     stageAdapterPort: recentJobsStageAdapterPort,
   });
 
@@ -245,10 +233,7 @@ test("recent jobs runtime patches do not prepend retry job_id shell after soft r
   });
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => true,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
-    storeDrivenRendering: true,
     stageAdapterPort: recentJobsStageAdapterPort,
   });
 
@@ -300,10 +285,7 @@ test("recent jobs runtime patches keep job-only submit frames out of the documen
   });
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => true,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
-    storeDrivenRendering: true,
     stageAdapterPort: recentJobsStageAdapterPort,
   });
 
@@ -333,7 +315,7 @@ test("recent jobs runtime patches keep job-only submit frames out of the documen
   assert.equal(refreshed[0].status, "running");
 });
 
-test("recent jobs runtime patch rerenders the list when card replacement misses", () => {
+test("recent jobs runtime patch rewrites the item in the store (the list re-renders from the store)", () => {
   const statePort = createRecentJobsStatePort({
     recentJobsOffset: 10,
     recentJobsHasMore: true,
@@ -347,11 +329,8 @@ test("recent jobs runtime patch rerenders the list when card replacement misses"
       },
     ],
   });
-  const renders = [];
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => false,
-    renderCurrentRecentJobs: (options) => renders.push(options),
     scheduleActiveRefresh() {},
     stageAdapterPort: recentJobsStageAdapterPort,
   });
@@ -372,7 +351,6 @@ test("recent jobs runtime patch rerenders the list when card replacement misses"
     percent: 20,
     unit: "batch",
   });
-  assert.deepEqual(renders, [{ reset: true }]);
 });
 
 test("recent jobs runtime patches keep active created jobs across reset refreshes", () => {
@@ -382,8 +360,6 @@ test("recent jobs runtime patches keep active created jobs across reset refreshe
   });
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => false,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
     stageAdapterPort: recentJobsStageAdapterPort,
   });
@@ -477,8 +453,6 @@ test("recent jobs runtime patches keep completed created jobs until backend list
   });
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => false,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
     stageAdapterPort: recentJobsStageAdapterPort,
   });
@@ -530,11 +504,8 @@ test("recent jobs runtime patches drive active cover overlay from created job to
   });
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => true,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
     stageAdapterPort: recentJobsStageAdapterPort,
-    storeDrivenRendering: true,
   });
 
   patches.insert({
@@ -591,11 +562,8 @@ test("recent jobs runtime patches ignore ocr child jobs when inserting created c
   });
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => true,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
     stageAdapterPort: recentJobsStageAdapterPort,
-    storeDrivenRendering: true,
   });
 
   patches.insert({
@@ -619,11 +587,8 @@ test("recent jobs runtime patches insert standalone ocr root jobs", () => {
   });
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => true,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
     stageAdapterPort: recentJobsStageAdapterPort,
-    storeDrivenRendering: true,
   });
 
   patches.insert({
@@ -648,11 +613,8 @@ test("recent jobs runtime patches do not let queued placeholders downgrade creat
   });
   const patches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => true,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
     stageAdapterPort: recentJobsStageAdapterPort,
-    storeDrivenRendering: true,
   });
 
   patches.insert({

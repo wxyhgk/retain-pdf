@@ -30,7 +30,7 @@ export function normalizeRuntimeDisplayStage(value = "") {
 // this guard the recent-jobs card label would jump from "渲染中" straight to
 // "已完成" while the job is still running. Clamp "done" back to "render"
 // unless the job's own status says it's truly succeeded.
-export function clampRuntimeStageKeyForJob(stageKey = "", jobOrStatus: any = {}) {
+export function clampRuntimeStageKeyForJob(stageKey = "", jobOrStatus: string | { status?: string } = {}) {
   if (`${stageKey || ""}`.trim() !== "done") {
     return stageKey;
   }

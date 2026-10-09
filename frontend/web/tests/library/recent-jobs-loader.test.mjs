@@ -13,10 +13,8 @@ import { adaptJobStageSnapshot } from "@retainpdf/domain/job-status";
 const recentJobsStageAdapterPort = { adaptJobStageSnapshot };
 
 test("recent jobs loader preserves runtime patches that arrive during load-more", async () => {
-  // 旧 DOM 直写 viewPort 已随 cutover 删除,改用最小 stub(loader.js 只依赖
-  // hasView/renderLoading/setLoadMoreLoading,渲染结果走下方 items 断言)。
+  // loader 经 viewPort 只发「加载中 / 加载更多中」两个信号，渲染结果走下方 items 断言。
   const viewPort = {
-    hasView: () => true,
     renderLoading() {},
     setLoadMoreLoading() {},
     renderList() {},
@@ -32,8 +30,6 @@ test("recent jobs loader preserves runtime patches that arrive during load-more"
   });
   const runtimePatches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => false,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
   });
   const loader = createRecentJobsLoader({
@@ -93,15 +89,10 @@ test("recent jobs loader preserves runtime patches that arrive during load-more"
 });
 
 test("recent jobs loader does not append runtime-created cards during load-more rendering", async () => {
-  // 旧 DOM 直写 viewPort 已随 cutover 删除,改用最小 stub 直接捕获 renderList。
-  const rendered = [];
   const viewPort = {
-    hasView: () => true,
     renderLoading() {},
     setLoadMoreLoading() {},
-    renderList: ({ items }) => {
-      rendered.push(...items.map((item) => item.job_id));
-    },
+    renderList() {},
     renderEmpty() {},
     renderError() {},
   };
@@ -116,8 +107,6 @@ test("recent jobs loader does not append runtime-created cards during load-more 
   });
   const runtimePatches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => false,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
   });
   runtimePatches.insert({
@@ -126,7 +115,6 @@ test("recent jobs loader does not append runtime-created cards during load-more 
     display_stage: "ocr",
     progress: { current: 1, total: 10, unit: "page" },
   });
-  rendered.length = 0;
 
   const loader = createRecentJobsLoader({
     apiPrefix: "/api/v1",
@@ -163,7 +151,6 @@ test("recent jobs loader does not append runtime-created cards during load-more 
 
   await loader.load({ reset: false });
 
-  assert.deepEqual(rendered, ["job-page-2"]);
   assert.deepEqual(statePort.getSnapshot().items.map((item) => item.job_id), [
     "job-created-active",
     "job-existing",
@@ -256,10 +243,7 @@ test("recent jobs command update refreshes the current card without opening deta
   });
   const runtimePatches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => false,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
-    storeDrivenRendering: true,
     stageAdapterPort: recentJobsStageAdapterPort,
   });
 
@@ -311,7 +295,6 @@ test("recent jobs command update refreshes the current card without opening deta
 test("recent jobs loader dispose drops in-flight response and pending load", async () => {
   const rendered = [];
   const viewPort = {
-    hasView: () => true,
     renderLoading() {},
     setLoadMoreLoading() {},
     renderList: ({ items }) => {

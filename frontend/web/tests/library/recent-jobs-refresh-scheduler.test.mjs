@@ -29,7 +29,6 @@ test("recent jobs refresh scheduler can bypass throttle without forcing suspende
   const scheduler = createRecentJobsRefreshScheduler({
     loadRecentJobs: (options) => loads.push(options),
     scheduleAutoLoadCheck() {},
-    setDialogOpen() {},
     environment,
   });
 
@@ -46,7 +45,6 @@ test("recent jobs refresh scheduler can bypass throttle without forcing suspende
   const suspendedScheduler = createRecentJobsRefreshScheduler({
     loadRecentJobs: (options) => loads.push(options),
     scheduleAutoLoadCheck() {},
-    setDialogOpen() {},
     environment,
   });
   suspendedScheduler.setSuspended(true);
@@ -60,7 +58,6 @@ test("recent jobs refresh scheduler pauses through injected workflow state", () 
   const scheduler = createRecentJobsRefreshScheduler({
     loadRecentJobs() {},
     scheduleAutoLoadCheck() {},
-    setDialogOpen() {},
     environment: createRecentJobsRefreshEnvironment({
       now: () => 10000,
       clearTimeoutFn() {},
@@ -86,7 +83,6 @@ test("recent jobs refresh scheduler keeps force pending when plain request arriv
   const scheduler = createRecentJobsRefreshScheduler({
     loadRecentJobs: (options) => loads.push(options),
     scheduleAutoLoadCheck() {},
-    setDialogOpen() {},
     environment: createRecentJobsRefreshEnvironment({
       now: () => now,
       clearTimeoutFn() {},
@@ -120,7 +116,6 @@ test("submit soft fallback queued while suspended replays exactly once on resume
   const scheduler = createRecentJobsRefreshScheduler({
     loadRecentJobs: (options) => loads.push(options),
     scheduleAutoLoadCheck() {},
-    setDialogOpen() {},
     environment: createRecentJobsRefreshEnvironment({
       now: () => now,
       clearTimeoutFn() {},
@@ -157,7 +152,6 @@ test("resume replay is retried once when workflow DOM still reports open", () =>
   const scheduler = createRecentJobsRefreshScheduler({
     loadRecentJobs: (options) => loads.push(options),
     scheduleAutoLoadCheck() {},
-    setDialogOpen() {},
     environment: createRecentJobsRefreshEnvironment({
       now: () => now,
       clearTimeoutFn() {},
@@ -195,7 +189,6 @@ test("recent jobs refresh scheduler dispose clears timers and drops pending", ()
   const scheduler = createRecentJobsRefreshScheduler({
     loadRecentJobs: (options) => loads.push(options),
     scheduleAutoLoadCheck() {},
-    setDialogOpen() {},
     environment: createRecentJobsRefreshEnvironment({
       now: () => 10000,
       clearTimeoutFn: (timer) => cleared.push(timer),

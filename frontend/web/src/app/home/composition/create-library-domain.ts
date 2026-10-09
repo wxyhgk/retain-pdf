@@ -105,14 +105,13 @@ export function createLibraryDomain({ features, documentRef }: CreateLibraryDoma
   });
 
   const recentJobsNavigationPort = createRecentJobsNavigationPort({
-    closeDialog: () => {},
     currentJobId: () => features.jobRuntimeFeature.currentJobId() || "",
     jobRuntimePort: recentJobsJobRuntimePort,
     readerPort: recentJobsReaderPort,
     doc: documentRef,
   });
 
-  // startPolling/openReader/closeRecentJobsDialog 可由 navigationPort 兜底；签名仍标必填。
+  // startPolling/openReader 可由 navigationPort 兜底；签名仍标必填。
   const recentJobActions = createRecentJobActions({
     apiPrefix: API_PREFIX,
     deleteLibraryBook,

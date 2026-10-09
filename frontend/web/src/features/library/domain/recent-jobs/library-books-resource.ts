@@ -3,6 +3,7 @@ import {
   collectRecentJobsPage,
   RECENT_JOBS_PAGE_SIZE,
 } from "./pagination.js";
+import type { RecentJobsPageFetcher } from "./pagination.js";
 
 function normalizeExistingJobIds(value) {
   if (value instanceof Set) {
@@ -19,7 +20,11 @@ export function createLibraryBooksResource({
   fetchJobList,
   fetchLibraryBookList,
   apiPrefix,
-}: any = {}) {
+}: {
+  fetchJobList?: RecentJobsPageFetcher;
+  fetchLibraryBookList?: RecentJobsPageFetcher;
+  apiPrefix?: string;
+} = {}) {
   return createResource({
     name: "libraryBooks",
     cacheKey: ({

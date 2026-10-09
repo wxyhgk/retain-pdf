@@ -1,19 +1,12 @@
-import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 import { createRecentJobsReaderPort } from "./reader-port.js";
 import { createRecentJobsRuntimePort } from "./job-runtime-port.js";
 
 export function createRecentJobsNavigationPort({
-  closeDialog,
   currentJobId = () => "",
   doc = document,
   jobRuntimePort = createRecentJobsRuntimePort({ currentJobId }),
   readerPort = createRecentJobsReaderPort(),
-  /** 图书馆网格默认 false：进度在书籍详情 Tab，不弹旧工作流窗 */
-  openWorkflowOnSelect = false,
 }: any = {}) {
-  function openWorkflow() {
-    doc?.dispatchEvent?.(new CustomEvent(APP_EVENTS.openTranslationWorkflow));
-  }
 
   return {
     currentJobId() {
@@ -25,10 +18,7 @@ export function createRecentJobsNavigationPort({
       if (!normalizedJobId) {
         return false;
       }
-      closeDialog?.();
-      if (openWorkflowOnSelect) {
-        openWorkflow();
-      }
+      // 进度在书籍详情的「进度」页，不弹旧工作流窗。
       return jobRuntimePort.openJob?.(normalizedJobId) !== false;
     },
 
@@ -37,7 +27,6 @@ export function createRecentJobsNavigationPort({
       if (!normalizedJobId) {
         return false;
       }
-      closeDialog?.();
       return readerPort.openReader?.(normalizedJobId, null, `${documentId || ""}`.trim(), options) !== false;
     },
 

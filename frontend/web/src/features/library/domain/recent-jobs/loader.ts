@@ -80,8 +80,8 @@ export interface CreateRecentJobsLoaderOptions {
     | "setInvocationSummary"
     | "setItems"
   >;
-  storeDrivenRendering?: boolean;
-  viewPort?: RecentJobsCommitViewPort;
+  /** 只剩「加载中 / 加载更多中」两个信号还经 viewPort；列表本身由 React 订阅 store。 */
+  viewPort?: Pick<RecentJobsCommitViewPort, "renderLoading" | "setLoadMoreLoading">;
   libraryBooksResource?: LibraryBooksResourcePort;
 }
 
@@ -102,7 +102,6 @@ export function createRecentJobsLoader({
   scheduleAutoLoadIfNeeded,
   homeStatePort,
   recentJobsStatePort,
-  storeDrivenRendering = false,
   viewPort,
   libraryBooksResource = createLibraryBooksResource({
     fetchJobList,
@@ -171,9 +170,6 @@ export function createRecentJobsLoader({
       };
       return;
     }
-    if (!viewPort.hasView()) {
-      return;
-    }
     loading = true;
     if (!silent) {
       homeStatePort.setRecentJobsLoadingState(RECENT_JOBS_LOADING_STATES.LOADING);
@@ -211,14 +207,6 @@ export function createRecentJobsLoader({
           const items = runtimePatches.applyExisting?.(collected) || collected;
           recentJobsStatePort.setItems(items);
           homeStatePort.setRecentJobsLoadingState(RECENT_JOBS_LOADING_STATES.READY);
-          if (!storeDrivenRendering) {
-            viewPort.renderList({
-              items, allItems: items, reset: true,
-              onSelect: recentJobActions?.selectJob,
-              onDelete: recentJobActions?.deleteJob,
-              onReader: recentJobActions?.openJobReader,
-            });
-          }
         },
       });
 
@@ -231,8 +219,6 @@ export function createRecentJobsLoader({
           invocationSummary: latestInvocationSummary,
           homeStatePort,
           recentJobsStatePort,
-          storeDrivenRendering,
-          viewPort,
         });
         return;
       }
@@ -240,8 +226,6 @@ export function createRecentJobsLoader({
         commitRecentJobsNoMore({
           homeStatePort,
           recentJobsStatePort,
-          storeDrivenRendering,
-          viewPort,
         });
         return;
       }
@@ -258,8 +242,6 @@ export function createRecentJobsLoader({
         activeRefreshLoop,
         scheduleAutoLoadIfNeeded,
         recentJobsStatePort,
-        storeDrivenRendering,
-        viewPort,
       });
       homeStatePort.setRecentJobsLoadingState(RECENT_JOBS_LOADING_STATES.READY);
     } catch (err) {
@@ -268,8 +250,6 @@ export function createRecentJobsLoader({
         reset,
         homeStatePort,
         recentJobsStatePort,
-        storeDrivenRendering,
-        viewPort,
       });
     } finally {
       loading = false;

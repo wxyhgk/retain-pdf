@@ -10,8 +10,15 @@
 // 搜索：query 经 `q` 透传给后端（标题/原始文件名 LIKE，total 已是过滤后计数），
 // 分页照常走 limit/offset，不做客户端过滤或首屏多拉。
 
-import { shapeDocumentsWithBooks } from "./shape-documents-with-books.js";
+import {
+  shapeDocumentsWithBooks,
+} from "./shape-documents-with-books.js";
+import type {
+  JobPayloadFetcher,
+  LibraryBookListFetcher,
+} from "./shape-documents-with-books.js";
 import { shapeDocumentCardItem } from "./document-card-item.js";
+import type { LibraryDocumentRecord } from "./document-card-item.js";
 import {
   libraryCardIdentity,
   libraryCardIdentityAliases,
@@ -29,6 +36,23 @@ function normalizedExistingCardIdentity(value) {
     : `job:${normalized}`;
 }
 
+export type DocumentListPayload = {
+  documents?: LibraryDocumentRecord[];
+  total?: number;
+};
+
+export type DocumentListFetcher = (
+  apiPrefix: string,
+  opts: { limit: number; offset: number; q?: string },
+) => Promise<DocumentListPayload>;
+
+export type DocumentLibraryPreview = {
+  collected: ReturnType<typeof shapeDocumentCardItem>[];
+  hasMore: boolean;
+  nextOffset: number;
+  latestInvocationSummary: null;
+};
+
 export async function collectDocumentLibraryPage({
   fetchDocumentList,
   fetchLibraryBookList,
@@ -39,7 +63,17 @@ export async function collectDocumentLibraryPage({
   existingJobIds = new Set(),
   query = "",
   onPreview,
-}: any) {
+}: {
+  fetchDocumentList: DocumentListFetcher;
+  fetchLibraryBookList?: LibraryBookListFetcher;
+  fetchJobPayload?: JobPayloadFetcher;
+  apiPrefix: string;
+  startOffset?: number;
+  pageSize: number;
+  existingJobIds?: Set<string> | string[];
+  query?: string;
+  onPreview?: (page: DocumentLibraryPreview) => void;
+}) {
   const trimmedQuery = `${query || ""}`.trim();
   const seenCardIdentities = new Set(
     Array.from(existingJobIds instanceof Set

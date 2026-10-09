@@ -1,4 +1,22 @@
 import { defineConnectedComponent } from "@/platform/store/connector.js";
+import type { LibraryJobItem, RecentJobsStatePort } from "./state.js";
+
+type RecentJobsStoreRendererActions = {
+  selectJob?: (jobId: string) => unknown;
+  deleteJob?: (jobId: string) => void | Promise<void>;
+  openJobReader?: (jobId: string, ...rest: unknown[]) => unknown;
+};
+
+type RecentJobsListPayload = {
+  items: LibraryJobItem[];
+  allItems: LibraryJobItem[];
+  invocationSummary: Record<string, unknown> | null;
+  reset: boolean;
+  hasMore: boolean;
+  onSelect?: RecentJobsStoreRendererActions["selectJob"];
+  onDelete?: RecentJobsStoreRendererActions["deleteJob"];
+  onReader?: RecentJobsStoreRendererActions["openJobReader"];
+};
 
 export function createRecentJobsStoreRenderer({
   recentJobsStatePort,
@@ -6,7 +24,13 @@ export function createRecentJobsStoreRenderer({
   actions,
   invocationSummary = null,
   renderActions = ["prependItem", "replaceItem", "removeJobFamily"],
-}: any = {}) {
+}: {
+  recentJobsStatePort?: Pick<RecentJobsStatePort, "store" | "getSnapshot">;
+  renderRecentJobsList?: (payload: RecentJobsListPayload) => void;
+  actions?: RecentJobsStoreRendererActions;
+  invocationSummary?: Record<string, unknown> | null;
+  renderActions?: string[];
+} = {}) {
   if (!recentJobsStatePort?.store || typeof renderRecentJobsList !== "function") {
     return {
       renderNow() {},
@@ -44,7 +68,7 @@ export function createRecentJobsStoreRenderer({
         items: Array.isArray(recentJobs?.items) ? recentJobs.items : [],
       };
     },
-    render(viewModel, { meta = {} }: any = {}) {
+    render(viewModel, { meta = {} }: { meta?: { initial?: boolean; action?: string } } = {}) {
       if (meta.initial) {
         return;
       }
@@ -57,7 +81,7 @@ export function createRecentJobsStoreRenderer({
 
   const mounted = component.mount();
 
-  function renderNow({ invocationSummary: nextInvocationSummary = currentInvocationSummary }: any = {}) {
+  function renderNow({ invocationSummary: nextInvocationSummary = currentInvocationSummary }: { invocationSummary?: Record<string, unknown> | null } = {}) {
     currentInvocationSummary = nextInvocationSummary;
     const snapshot = recentJobsStatePort.getSnapshot();
     renderList({

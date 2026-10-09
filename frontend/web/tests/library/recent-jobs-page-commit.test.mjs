@@ -14,20 +14,10 @@ import { createRecentJobsRuntimePatches } from "../../src/features/library/domai
 import { createRecentJobsStoreRenderer } from "../../src/features/library/domain/recent-jobs/store-renderer.js";
 
 test("recent jobs page commit refreshes cards and silently recovers the active job", () => {
-  // 旧 DOM 直写 viewPort(createRecentJobsViewPort() 默认值)已随 cutover 删除
-  // (controller/runtime/loader/commit/bindings 5 处默认参数改必传;view.js 等
-  // 视图层随之物理删除)。这里改用最小 stub 直接捕获 renderList 的 items,
-  // 不再模拟 document/fragment——断言意图不变(渲染了哪些 job id)。
-  const rendered = [];
+  // 列表由 React 订阅 recentJobsStatePort 渲染，commit 只负责写 store、调度刷新与恢复。
   const recovered = [];
   const refreshCalls = [];
   const autoLoads = [];
-  const viewPort = {
-    renderList: ({ items }) => {
-      rendered.push(...items.map((item) => item.job_id));
-    },
-  };
-
   const statePort = createRecentJobsStatePort({
     recentJobsOffset: 0,
     recentJobsHasMore: true,
@@ -35,8 +25,6 @@ test("recent jobs page commit refreshes cards and silently recovers the active j
   });
   const runtimePatches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => false,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
   });
 
@@ -62,11 +50,10 @@ test("recent jobs page commit refreshes cards and silently recovers the active j
       callback();
       return 1;
     },
-    viewPort,
   });
 
   assert.deepEqual(result.nextItems.map((item) => item.job_id), ["job-running"]);
-  assert.deepEqual(rendered, ["job-running"]);
+  assert.deepEqual(statePort.getSnapshot().items.map((item) => item.job_id), ["job-running"]);
   assert.deepEqual(recovered, [["job-running"]]);
   assert.deepEqual(refreshCalls, ["schedule"]);
   assert.deepEqual(autoLoads, ["auto"]);
@@ -93,12 +80,7 @@ test("recent jobs page commit can delegate page rendering to the store renderer"
   });
   const runtimePatches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => false,
-    renderCurrentRecentJobs() {
-      throw new Error("commit should not use runtime rerender in store-driven mode");
-    },
     scheduleActiveRefresh() {},
-    storeDrivenRendering: true,
   });
   const recentJobActions = {
     recoverActiveJob() {},
@@ -122,7 +104,6 @@ test("recent jobs page commit can delegate page rendering to the store renderer"
       }),
       scheduleAutoLoadIfNeeded() {},
       recentJobsStatePort: statePort,
-      storeDrivenRendering: true,
     });
 
     assert.deepEqual(result.nextItems.map((item) => item.job_id), ["job-store-rendered"]);
@@ -138,56 +119,7 @@ test("recent jobs page commit can delegate page rendering to the store renderer"
   }
 });
 
-test("recent jobs page commit can route rendering through the view port", () => {
-  const statePort = createRecentJobsStatePort({
-    recentJobsOffset: 0,
-    recentJobsHasMore: true,
-    recentJobsItems: [],
-  });
-  const rendered = [];
-  const result = commitRecentJobsPage({
-    reset: true,
-    collected: [{ job_id: "job-view-port-commit", status: "succeeded" }],
-    hasMore: false,
-    nextOffset: 10,
-    recentJobActions: {
-      recoverActiveJob() {},
-      selectJob() {},
-      deleteJob() {},
-      openJobReader() {},
-    },
-    runtimePatches: createRecentJobsRuntimePatches({
-      statePort,
-      replaceRecentJobCard: () => false,
-      renderCurrentRecentJobs() {},
-      scheduleActiveRefresh() {},
-    }),
-    activeRefreshLoop: () => ({
-      schedule() {},
-      stop() {},
-    }),
-    scheduleAutoLoadIfNeeded() {},
-    recentJobsStatePort: statePort,
-    viewPort: {
-      renderList(payload) {
-        rendered.push(payload.items.map((item) => item.job_id));
-      },
-    },
-  });
-
-  assert.deepEqual(result.nextItems.map((item) => item.job_id), ["job-view-port-commit"]);
-  assert.deepEqual(rendered, [["job-view-port-commit"]]);
-});
-
 test("recent jobs page commit appends only collected items while preserving state patches", () => {
-  // 旧 DOM 直写 viewPort 已随 cutover 删除,改用最小 stub 直接捕获渲染 items。
-  const rendered = [];
-  const viewPort = {
-    renderList: ({ items }) => {
-      rendered.push(...items.map((item) => item.job_id));
-    },
-  };
-
   const statePort = createRecentJobsStatePort({
     recentJobsOffset: 24,
     recentJobsHasMore: true,
@@ -198,8 +130,6 @@ test("recent jobs page commit appends only collected items while preserving stat
   });
   const runtimePatches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => false,
-    renderCurrentRecentJobs() {},
     scheduleActiveRefresh() {},
   });
   runtimePatches.insert({
@@ -227,10 +157,8 @@ test("recent jobs page commit appends only collected items while preserving stat
     }),
     scheduleAutoLoadIfNeeded() {},
     recentJobsStatePort: statePort,
-    viewPort,
   });
 
-  assert.deepEqual(rendered, ["job-page-2"]);
   assert.deepEqual(result.nextItems.map((item) => item.job_id), [
     "job-created-active",
     "job-existing",
@@ -240,14 +168,7 @@ test("recent jobs page commit appends only collected items while preserving stat
 });
 
 test("recent jobs empty commit owns empty state and search copy", () => {
-  // 旧 DOM 直写 viewPort 已随 cutover 删除,改用最小 stub 直接捕获 renderEmpty。
   const loadingStates = [];
-  let emptyText = "";
-  const viewPort = {
-    renderEmpty: (message) => {
-      emptyText = message;
-    },
-  };
   const statePort = createRecentJobsStatePort({
     recentJobsItems: [{ job_id: "old" }],
     recentJobsHasMore: true,
@@ -260,49 +181,16 @@ test("recent jobs empty commit owns empty state and search copy", () => {
       setRecentJobsLoadingState: (...args) => loadingStates.push(args),
     },
     recentJobsStatePort: statePort,
-    viewPort,
   });
 
   assert.equal(result.message, "没有匹配的书籍");
   assert.deepEqual(statePort.getSnapshot().items, []);
   assert.equal(statePort.getSnapshot().hasMore, false);
-  assert.equal(emptyText, "没有匹配的书籍");
   assert.deepEqual(loadingStates, [["ready"]]);
-});
-
-test("recent jobs empty commit can delegate rendering to view-state owner", () => {
-  const loadingStates = [];
-  const renders = [];
-  const statePort = createRecentJobsStatePort({
-    recentJobsItems: [{ job_id: "old" }],
-    recentJobsHasMore: true,
-  });
-
-  const result = commitRecentJobsEmpty({
-    query: "",
-    invocationSummary: null,
-    homeStatePort: {
-      setRecentJobsLoadingState: (...args) => loadingStates.push(args),
-    },
-    recentJobsStatePort: statePort,
-    storeDrivenRendering: true,
-    renderEmpty: (...args) => renders.push(args),
-  });
-
-  assert.equal(result.message, "暂无最近任务");
-  assert.deepEqual(statePort.getSnapshot().items, []);
-  assert.equal(statePort.getSnapshot().hasMore, false);
-  assert.deepEqual(loadingStates, [["ready"]]);
-  assert.deepEqual(renders, []);
 });
 
 test("recent jobs no-more and error commits own terminal loading state", () => {
-  // 旧 DOM 直写 viewPort 已随 cutover 删除,改用最小 stub 直接捕获 renderError。
   const loadingStates = [];
-  const renderErrorCalls = [];
-  const viewPort = {
-    renderError: (...args) => renderErrorCalls.push(args),
-  };
   const statePort = createRecentJobsStatePort({
     recentJobsHasMore: true,
     recentJobsItems: [{ job_id: "job-existing" }],
@@ -314,53 +202,16 @@ test("recent jobs no-more and error commits own terminal loading state", () => {
   commitRecentJobsNoMore({
     homeStatePort,
     recentJobsStatePort: statePort,
-    viewPort,
   });
   assert.equal(statePort.getSnapshot().hasMore, false);
   assert.deepEqual(loadingStates, [["ready"]]);
-  assert.deepEqual(renderErrorCalls, [["", { reset: false }]]);
 
   commitRecentJobsError({
     error: new Error("network down"),
     reset: false,
     homeStatePort,
     recentJobsStatePort: statePort,
-    viewPort,
   });
   assert.deepEqual(loadingStates.at(-1), ["error", "network down"]);
 });
 
-test("recent jobs no-more and error commits can delegate rendering", () => {
-  const loadingStates = [];
-  const renders = [];
-  const statePort = createRecentJobsStatePort({
-    recentJobsHasMore: true,
-    recentJobsItems: [{ job_id: "job-existing" }],
-  });
-  const homeStatePort = {
-    setRecentJobsLoadingState: (...args) => loadingStates.push(args),
-  };
-
-  commitRecentJobsNoMore({
-    homeStatePort,
-    recentJobsStatePort: statePort,
-    storeDrivenRendering: true,
-    renderError: (...args) => renders.push(args),
-  });
-
-  commitRecentJobsError({
-    error: new Error("network down"),
-    reset: false,
-    homeStatePort,
-    recentJobsStatePort: statePort,
-    storeDrivenRendering: true,
-    renderError: (...args) => renders.push(args),
-  });
-
-  assert.equal(statePort.getSnapshot().hasMore, false);
-  assert.deepEqual(loadingStates, [
-    ["ready"],
-    ["error", "network down"],
-  ]);
-  assert.deepEqual(renders, []);
-});

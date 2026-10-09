@@ -106,9 +106,6 @@ test("retry job id replacement stays on replaceItem store path", () => {
   statePort.subscribe((_snapshot, meta) => actions.push(meta.action));
   const runtimePatches = createRecentJobsRuntimePatches({
     statePort,
-    replaceRecentJobCard: () => true,
-    renderCurrentRecentJobs() {},
-    storeDrivenRendering: true,
   });
 
   runtimePatches.update({

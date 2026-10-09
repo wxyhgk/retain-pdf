@@ -67,7 +67,6 @@ export function mountRecentJobsFeature({
   refreshScheduler = createRecentJobsRefreshScheduler({
     loadRecentJobs: runtime.loadRecentJobs,
     scheduleAutoLoadCheck: viewPort.scheduleAutoLoadCheck,
-    setDialogOpen: viewPort.setDialogOpen,
   });
 
   const featureEvents = bindRecentJobsFeatureEvents({
@@ -84,8 +83,6 @@ export function mountRecentJobsFeature({
   refreshScheduler.initialize();
 
   return {
-    openRecentJobsDialog: refreshScheduler.openDialog,
-    closeRecentJobsDialog: refreshScheduler.closeDialog,
     loadRecentJobs: runtime.loadRecentJobs,
     initializeLibraryView: refreshScheduler.initialize,
     disposeFeatureEvents: () => featureEvents?.dispose?.(),

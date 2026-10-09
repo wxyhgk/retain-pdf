@@ -16,10 +16,8 @@ export function createRecentJobActions({
   readerPort = createRecentJobsReaderPort({
     openReader,
   }),
-  closeRecentJobsDialog,
   activeJobRecoveryPort,
   navigationPort = createRecentJobsNavigationPort({
-    closeDialog: closeRecentJobsDialog,
     currentJobId,
     jobRuntimePort,
     readerPort,

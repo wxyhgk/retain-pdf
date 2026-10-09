@@ -29,7 +29,7 @@ export function libraryItemDocumentId(item) {
 export function deriveLibraryTags(items) {
   const tagSet = new Set<string>();
   for (const item of items) {
-    (Array.isArray(item.tags) ? item.tags : []).forEach((t: any) => t && tagSet.add(`${t}`));
+    (Array.isArray(item.tags) ? item.tags : []).forEach((t: unknown) => t && tagSet.add(`${t}`));
   }
   return [...tagSet].sort((a: string, b: string) => a.localeCompare(b, "zh-CN"));
 }

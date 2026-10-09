@@ -24,7 +24,6 @@ import type { RecentJobsRuntimePatches } from "./runtime-patches.js";
 import type { RecentJobsStatePort } from "./state.js";
 
 export interface RecentJobsRefreshSchedulerRef {
-  closeDialog?: () => void;
   getQuery?: () => string;
   scheduleAutoLoadIfNeeded?: () => void;
 }
@@ -117,31 +116,17 @@ export function createRecentJobsRuntime({
     return refreshSchedulerRef?.();
   }
 
-  function renderCurrentRecentJobs({
-    reset = true,
-    invocationSummary = null,
-  }: RenderCurrentRecentJobsOptions = {}) {
-    const { items, hasMore } = recentJobsStatePort.getSnapshot();
-    viewPort.renderList({
-      items,
-      allItems: items,
-      invocationSummary,
-      reset,
-      hasMore,
-      onSelect: recentJobActions.selectJob,
-      onDelete: recentJobActions.deleteJob,
-      onReader: recentJobActions.openJobReader,
-    });
+  function renderCurrentRecentJobs(_options: RenderCurrentRecentJobsOptions = {}) {
+    // 列表本身由 React 订阅 recentJobsStatePort；viewPort 只要 hasMore（「加载更多」按钮）。
+    const { hasMore } = recentJobsStatePort.getSnapshot();
+    viewPort.renderList({ hasMore });
   }
 
   let storeRenderer: ReturnType<typeof createRecentJobsStoreRenderer> | null = null;
   const runtimePatches = createRecentJobsRuntimePatches({
-    renderCurrentRecentJobs,
-    replaceRecentJobCard: viewPort.replaceCard,
     scheduleActiveRefresh: (options) => activeRefreshLoop?.schedule(options),
     stageAdapterPort,
     statePort: recentJobsStatePort,
-    storeDrivenRendering: true,
   });
 
   activeRefreshLoop = createActiveLibraryRefreshLoop({
@@ -156,7 +141,6 @@ export function createRecentJobsRuntime({
   });
 
   const recentJobNavigationPort = navigationPort || createRecentJobsNavigationPort({
-    closeDialog: () => refreshScheduler()?.closeDialog?.(),
     currentJobId,
     jobRuntimePort,
     readerPort,
@@ -196,7 +180,6 @@ export function createRecentJobsRuntime({
     homeStatePort,
     recentJobsStatePort,
     libraryBooksResource: libraryBooksResource as CreateRecentJobsLoaderOptions["libraryBooksResource"],
-    storeDrivenRendering: true,
     viewPort,
   });
 

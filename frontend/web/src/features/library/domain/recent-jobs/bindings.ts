@@ -1,6 +1,24 @@
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
-import { bindRecentJobsCommandHandlers } from "./command-handlers.js";
-import { invalidateLibraryBooksResource } from "./library-books-resource.js";
+import { bindRecentJobsCommandHandlers, type BindRecentJobsCommandHandlersOptions } from "./command-handlers.js";
+import type { RecentJobsCommandPort, RecentJobsJobCommandPayload } from "./commands.js";
+import { invalidateLibraryBooksResource, type createLibraryBooksResource } from "./library-books-resource.js";
+import type { createRecentJobsLibraryRefreshPort } from "./library-refresh-port.js";
+import type { createRecentJobsRefreshScheduler } from "./refresh-scheduler.js";
+import type { RecentJobsRuntime } from "./runtime.js";
+import type { RecentJobsReactViewPort } from "../types.js";
+import type { LibraryJobItem } from "./runtime-item.js";
+
+export type BindRecentJobsFeatureEventsOptions = {
+  apiPrefix?: string;
+  commandPort: RecentJobsCommandPort;
+  doc?: Document;
+  fetchJobPayload?: BindRecentJobsCommandHandlersOptions["fetchJobPayload"];
+  libraryBooksResource: ReturnType<typeof createLibraryBooksResource>;
+  libraryRefreshPort: ReturnType<typeof createRecentJobsLibraryRefreshPort>;
+  refreshScheduler: ReturnType<typeof createRecentJobsRefreshScheduler>;
+  runtime: RecentJobsRuntime;
+  viewPort: RecentJobsReactViewPort;
+};
 
 export function bindRecentJobsFeatureEvents({
   apiPrefix,
@@ -12,9 +30,8 @@ export function bindRecentJobsFeatureEvents({
   refreshScheduler,
   runtime,
   viewPort,
-}: any = {}) {
+}: BindRecentJobsFeatureEventsOptions) {
   viewPort.bindEvents({
-    onOpen: refreshScheduler.openDialog,
     onLoadMore: () => runtime.loadRecentJobs({ reset: false }),
     onSearch: refreshScheduler.updateSearch,
     isSuspended: refreshScheduler.isSuspended,
@@ -33,11 +50,12 @@ export function bindRecentJobsFeatureEvents({
     onRefreshRequested: (detail) => {
       void commandPort.requestRefresh(detail);
     },
-    onJobUpdated: ({ job }: any = {}) => {
-      void commandPort.publishJobUpdated(job);
+    // 库事件契约把 job 以 unknown 透传（platform 层未收紧），这里按命令端口约定的 LibraryJobItem 使用。
+    onJobUpdated: ({ job }: { job?: unknown } = {}) => {
+      void commandPort.publishJobUpdated(job as LibraryJobItem);
     },
-    onJobCreated: ({ job }: any = {}) => {
-      void commandPort.publishJobCreated(job);
+    onJobCreated: ({ job }: { job?: unknown } = {}) => {
+      void commandPort.publishJobCreated(job as LibraryJobItem);
     },
   });
 
@@ -75,7 +93,8 @@ export function bindRecentJobsFeatureEvents({
       librarySubscription?.destroy?.();
       refreshScheduler?.dispose?.();
       runtime?.recentJobsLoader?.dispose?.();
-      runtime?.activeRefreshLoop?.dispose?.();
+      // RecentJobsRuntime 的 activeRefreshLoop 类型未声明 dispose（运行时实际有），此处按实际能力收窄。
+      (runtime?.activeRefreshLoop as { dispose?: () => void } | null)?.dispose?.();
     },
   };
 }

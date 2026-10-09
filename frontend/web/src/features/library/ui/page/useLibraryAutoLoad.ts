@@ -14,12 +14,19 @@
 // runtime——保持与"更多"按钮同一条口径,避免出现两条平行的加载入口。
 
 import { useCallback, useEffect } from "react";
+import type { RefObject } from "react";
+import type { RecentJobsReactViewPort } from "../../domain/types.js";
 
 const THRESHOLD_PX = 260;
 const THRESHOLD_RATIO = 0.35;
 
-export function useLibraryAutoLoad({ scrollBodyRef, hasMore, loadMoreLoading, viewPort }: any) {
-  const check = useCallback(({ isSuspended }: any = {}) => {
+export function useLibraryAutoLoad({ scrollBodyRef, hasMore, loadMoreLoading, viewPort }: {
+  scrollBodyRef: RefObject<HTMLElement | null>;
+  hasMore: boolean;
+  loadMoreLoading: boolean;
+  viewPort: RecentJobsReactViewPort;
+}) {
+  const check = useCallback(({ isSuspended }: { isSuspended?: () => boolean } = {}) => {
     if (isSuspended?.() ?? viewPort.handlersRef.current.isSuspended?.()) {
       return;
     }

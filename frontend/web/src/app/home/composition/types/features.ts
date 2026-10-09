@@ -79,8 +79,6 @@ export type JobRuntimeFeature = {
 };
 
 export type RecentJobsFeature = {
-  openRecentJobsDialog: () => void;
-  closeRecentJobsDialog: () => void;
   loadRecentJobs: (options?: unknown) => Promise<unknown> | unknown;
   initializeLibraryView: () => void;
   disposeFeatureEvents?: () => void;

@@ -3,7 +3,12 @@ export async function hydrateCreatedRecentJob({
   apiPrefix,
   fetchJobPayload,
   runtimePatches,
-}: any = {}) {
+}: {
+  job?: { job_id?: string | null } | null;
+  apiPrefix?: string;
+  fetchJobPayload?: (jobId: string, options: { apiPrefix?: string }) => Promise<unknown>;
+  runtimePatches?: { update?: (payload: unknown) => void } | null;
+} = {}) {
   const jobId = `${job?.job_id || ""}`.trim();
   if (!jobId || typeof fetchJobPayload !== "function") {
     return null;

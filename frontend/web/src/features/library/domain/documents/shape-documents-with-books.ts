@@ -11,13 +11,25 @@
 // 各消费方自己的关切,留在调用方)。
 
 import { shapeDocumentCardItem } from "./document-card-item.js";
+import type { LibraryDocumentRecord } from "./document-card-item.js";
+import type { LibraryCardItem } from "../types.js";
+
+export type LibraryBookListFetcher = (
+  apiPrefix: string,
+  opts: { jobIds: string[]; limit: number },
+) => Promise<{ items?: LibraryCardItem[] }>;
+
+export type JobPayloadFetcher = (
+  jobId: string,
+  opts: { apiPrefix?: string },
+) => Promise<unknown>;
 
 function normalizedJobId(value) {
   return `${value || ""}`.trim();
 }
 
 // documents: /documents 返回的文档数组
-// fetchLibraryBookList: (apiPrefix, { jobIds, limit }: any) => { items } 端口(可缺省)
+// fetchLibraryBookList: (apiPrefix, { jobIds, limit }) => { items } 端口(可缺省)
 // fetchJobPayload: (jobId, { apiPrefix }) => job detail; library/books 不投影
 // OCR-only，因此仅对未命中的 active job 做 best-effort 回填。
 // 返回:与 documents 等长、同序的卡片 item 数组(已翻译叠加 book 活态,馆藏走
@@ -30,8 +42,12 @@ function normalizedJobId(value) {
 //    回填(吞错留空),仍保留真实 job_id 等轮询接管,不降级成馆藏合成 id;
 // 3) 馆藏合成 id → 仅由下游 shapeDocumentCardItem 在分支 1) 内生成,本函数不造 id。
 export async function shapeDocumentsWithBooks(
-  documents,
-  { fetchLibraryBookList, fetchJobPayload, apiPrefix }: any = {},
+  documents: LibraryDocumentRecord[],
+  { fetchLibraryBookList, fetchJobPayload, apiPrefix }: {
+    fetchLibraryBookList?: LibraryBookListFetcher;
+    fetchJobPayload?: JobPayloadFetcher;
+    apiPrefix?: string;
+  } = {},
 ) {
   const docs = Array.isArray(documents) ? documents : [];
   const jobIds = Array.from(new Set(

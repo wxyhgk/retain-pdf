@@ -14,12 +14,9 @@ import {
 function makePatches() {
   const statePort = createRecentJobsStatePort();
   return createRecentJobsRuntimePatches({
-    renderCurrentRecentJobs: () => {},
-    replaceRecentJobCard: () => true,
     scheduleActiveRefresh: () => {},
     stageAdapterPort: {},
     statePort,
-    storeDrivenRendering: true,
   });
 }
 

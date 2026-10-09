@@ -5,6 +5,14 @@
 import { createResource } from "@/platform/store/resource.js";
 import { RECENT_JOBS_PAGE_SIZE } from "../recent-jobs/pagination.js";
 import { collectDocumentLibraryPage } from "./document-library-source.js";
+import type {
+  DocumentLibraryPreview,
+  DocumentListFetcher,
+} from "./document-library-source.js";
+import type {
+  JobPayloadFetcher,
+  LibraryBookListFetcher,
+} from "./shape-documents-with-books.js";
 
 function normalizeExistingJobIds(value) {
   if (value instanceof Set) {
@@ -22,7 +30,12 @@ export function createDocumentLibraryResource({
   fetchLibraryBookList,
   fetchJobPayload,
   apiPrefix,
-}: any = {}) {
+}: {
+  fetchDocumentList?: DocumentListFetcher;
+  fetchLibraryBookList?: LibraryBookListFetcher;
+  fetchJobPayload?: JobPayloadFetcher;
+  apiPrefix?: string;
+} = {}) {
   return createResource({
     name: "documentLibrary",
     cacheKey: ({
@@ -41,7 +54,7 @@ export function createDocumentLibraryResource({
       pageSize = RECENT_JOBS_PAGE_SIZE,
       existingJobIds = new Set(),
       query = "",
-      onPreview = undefined as ((page: any) => void) | undefined,
+      onPreview = undefined as ((page: DocumentLibraryPreview) => void) | undefined,
     } = {}) => collectDocumentLibraryPage({
       fetchDocumentList,
       fetchLibraryBookList,

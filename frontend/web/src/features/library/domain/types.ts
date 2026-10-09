@@ -282,7 +282,6 @@ export type LibraryViewActions = {
 export type LibraryViewStore = Store<LibraryViewState, LibraryViewActions>;
 
 export type RecentJobsViewPortHandlers = {
-  onOpen?: ((jobId: string) => void) | null;
   onLoadMore?: (() => void) | null;
   onSearch?: ((query: string) => void) | null;
   isSuspended?: () => boolean;
@@ -293,7 +292,8 @@ export type RecentJobsReactViewPortOptions = {
 };
 
 export type AutoLoadCheckOptions = {
-  isSuspended?: boolean;
+  /** refresh-scheduler 传的是判断函数，不是布尔值（检查时才问「现在暂停了吗」）。 */
+  isSuspended?: () => boolean;
   [key: string]: unknown;
 };
 
@@ -301,7 +301,6 @@ export type RecentJobsReactViewPort = {
   store: LibraryViewStore;
   handlersRef: { current: RecentJobsViewPortHandlers };
   bindEvents: (handlers?: Partial<RecentJobsViewPortHandlers>) => void;
-  hasView: () => boolean;
   registerAutoLoadChecker: (
     checker: ((options?: AutoLoadCheckOptions) => void) | null | undefined,
   ) => () => void;
@@ -309,9 +308,7 @@ export type RecentJobsReactViewPort = {
   renderError: (message?: string, options?: { reset?: boolean }) => void;
   renderList: (options?: { hasMore?: boolean; [key: string]: unknown }) => void;
   renderLoading: () => void;
-  replaceCard: (...args: unknown[]) => boolean;
   scheduleAutoLoadCheck: (options?: AutoLoadCheckOptions) => void;
-  setDialogOpen: (...args: unknown[]) => void;
   setLoadMoreLoading: () => void;
 };
 

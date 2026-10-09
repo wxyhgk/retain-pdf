@@ -34,7 +34,22 @@ function SearchHit({ hit, onOpenReader }) {
   );
 }
 
-function DocumentRow({ doc, onOpenReader, onCycleStatus }) {
+/** 搜索下拉里一本书要用到的字段。文档列表接口给的是 unknown[]，字段都可能缺。 */
+type SearchDocumentRow = {
+  document_id?: string;
+  active_job_id?: string;
+  title?: string;
+  source_filename?: string;
+  page_count?: number;
+  reading_status?: string;
+  tags?: string[];
+};
+
+function DocumentRow({ doc, onOpenReader, onCycleStatus }: {
+  doc: SearchDocumentRow;
+  onOpenReader: (anchor: { document_id?: string; job_id?: string }) => void;
+  onCycleStatus: (doc: SearchDocumentRow) => void;
+}) {
   const meta = READING_STATUS_META[doc.reading_status] || READING_STATUS_META.unread;
   return (
     <div className="lib-search-doc">
@@ -45,7 +60,7 @@ function DocumentRow({ doc, onOpenReader, onCycleStatus }) {
       >
         <span className="lib-search-doc-title">{doc.title || doc.source_filename}</span>
         <span className="lib-search-doc-meta">
-          {doc.page_count} 页{doc.tags.length ? ` · ${doc.tags.join(" / ")}` : ""}
+          {doc.page_count} 页{doc.tags?.length ? ` · ${doc.tags.join(" / ")}` : ""}
         </span>
       </button>
       <button
