@@ -4,6 +4,7 @@
 // `export *` 转出，保证对外导出名与 import 路径不变。
 
 import type { WorkflowPayloadConstants } from "./payload.js";
+import type { WorkflowPreferences } from "../workflow-preferences.js";
 
 export interface WorkflowSubmitValues {
   ocrProvider?: string;
@@ -12,8 +13,8 @@ export interface WorkflowSubmitValues {
   translationCredentialRef?: string;
   modelApiKey?: string;
   selectedGlossaryId?: string;
-  translationQuality?: string;
-  renderEngine?: string;
+  /** 用户偏好整张表（workflow-preferences.ts），按表搬运，不逐个字段列。 */
+  preferences?: Partial<WorkflowPreferences>;
 }
 
 export interface LoadGlossaryOptionsParams {

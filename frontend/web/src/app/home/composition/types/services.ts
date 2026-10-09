@@ -53,13 +53,10 @@ import type {
 import type { HomeReader } from "./reader.js";
 import type {
   DialogStatePort,
-  TextPort,
   UploadDomRefs,
-  UploadPort,
   WorkflowDialogRuntime,
-  WorkflowPort,
-  WorkflowViewActions,
 } from "./workflow.js";
+import type { IngestWorkflowView } from "@/features/ingest/index.js";
 
 export type { CredentialsStatePort, HomeStatePort, UploadStatePort };
 
@@ -130,15 +127,6 @@ export type HomeDomainServices = {
   reader: HomeReader;
 };
 
-/** 窄端口别名（显式暴露，供消费者按需取用，避免直达 stores/feature） */
-export type HomeNarrowPorts = {
-  statusCardPort: StatusCardPort;
-  libraryPort: LibraryPort;
-  uploadPort: UploadPort;
-  textPort: TextPort;
-  workflowPort: WorkflowPort;
-};
-
 // 别名清理：statusCardPort/libraryPort 与 statusCard/library 同对象，
 // uploadPort/textPort/workflowPort 与下方扁平视图别名同对象，均无消费方，已移除。
 /** HomeServices = Core + Domains + 视图帮助（24 字段） */
@@ -146,7 +134,7 @@ export type HomeServices = HomeCoreServices &
   HomeDomainServices & {
     /** text-store 的 selector 帮助函数（配合 useStoreSnapshot） */
     uploadDomRefs: UploadDomRefs;
-    workflowViewActions: WorkflowViewActions;
+    workflowView: IngestWorkflowView;
     workflowDialog: WorkflowDialogRuntime;
   };
 
@@ -161,14 +149,7 @@ export type HomeServicesViews = {
     domRefs: UploadDomRefs;
     patch: (payload: Record<string, unknown>) => unknown;
   };
-  workflowView: {
-    store: AppStore;
-    setSelectedGlossaryId: (id: string) => unknown;
-    setTranslationQuality: (value: string) => unknown;
-    setRenderEngine: (value: string) => unknown;
-    setOcrOnly: (value: boolean) => unknown;
-    isOcrOnly: () => boolean;
-  };
+  workflowView: IngestWorkflowView;
   statusArea: StatusAreaBag;
   workflowDialog: WorkflowDialogRuntime;
 };

@@ -155,7 +155,7 @@ test("弹窗重新以上传态打开时，ocrOnly 回 false 且翻译选项面�
     services.workflowDialog.openUpload();
 
     // 用户在上一次会话里的两个选择
-    services.workflowViewActions.setOcrOnly(true);
+    services.workflowView.setOcrOnly(true);
     services.stores.uploadView.actions.openTranslationOptions({ maxPage: 12 });
     assert.equal(services.stores.workflowView.getSnapshot().ocrOnly, true);
     assert.equal(services.stores.uploadView.getSnapshot().translationOptionsOpen, true);

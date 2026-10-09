@@ -71,3 +71,5 @@ export { IngestDialog } from "./ui/IngestDialog.jsx";
 export { WorkflowPanel } from "./ui/WorkflowPanel.jsx";
 export { TranslationOptionsPanel } from "./ui/components/TranslationOptionsPanel.jsx";
 export { UploadTile } from "./ui/components/UploadTile.jsx";
+export { IngestWorkflowViewProvider, useIngestWorkflowView } from "./ui/workflow-view-context.jsx";
+export type { IngestWorkflowView } from "./ui/workflow-view-context.jsx";

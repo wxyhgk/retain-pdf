@@ -10,9 +10,8 @@ import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import {
   useHomeFeatures,
   useHomeUploadViewStore,
-  useHomeWorkflowViewActions,
-  useHomeWorkflowViewStore,
 } from "@/ui/context/home-services-context.js";
+import { useIngestWorkflowView } from "../workflow-view-context.js";
 import type { UploadViewStore } from "../../domain/upload-store.js";
 
 const QUALITY_HINTS: Record<string, string> = {
@@ -29,11 +28,10 @@ const ENGINE_HINTS: Record<string, string> = {
 
 export function TranslationOptionsPanel() {
   const uploadViewStore = useHomeUploadViewStore();
-  const workflowViewStore = useHomeWorkflowViewStore();
-  const workflowViewActions = useHomeWorkflowViewActions();
+  const workflowView = useIngestWorkflowView();
   const features = useHomeFeatures();
   const upload = useStoreSnapshot(uploadViewStore);
-  const workflow = useStoreSnapshot(workflowViewStore);
+  const workflow = useStoreSnapshot(workflowView.store);
 
   if (!upload.translationOptionsOpen) return null;
 
@@ -123,7 +121,7 @@ export function TranslationOptionsPanel() {
           <select
             id="job-glossary-id"
             value={selectedId}
-            onChange={(event) => workflowViewActions.setSelectedGlossaryId(event.target.value)}
+            onChange={(event) => workflowView.setSelectedGlossaryId(event.target.value)}
           >
             <option value="">不使用术语表</option>
             {workflow.glossaries.map((glossary) => (
@@ -145,15 +143,15 @@ export function TranslationOptionsPanel() {
           </span>
           <select
             id="job-translation-quality"
-            value={workflow.translationQuality || "standard"}
-            onChange={(event) => workflowViewActions.setTranslationQuality(event.target.value)}
+            value={workflow.preferences.translationQuality}
+            onChange={(event) => workflowView.setPreference("translationQuality", event.target.value)}
           >
             <option value="standard">普通</option>
             <option value="terms">统一术语</option>
             <option value="refined">精翻</option>
           </select>
           <small id="job-translation-quality-hint">
-            {QUALITY_HINTS[workflow.translationQuality] || QUALITY_HINTS.standard}
+            {QUALITY_HINTS[workflow.preferences.translationQuality] || QUALITY_HINTS.standard}
           </small>
         </label>
 
@@ -164,15 +162,15 @@ export function TranslationOptionsPanel() {
           </span>
           <select
             id="job-render-engine"
-            value={workflow.renderEngine || "auto"}
-            onChange={(event) => workflowViewActions.setRenderEngine(event.target.value)}
+            value={workflow.preferences.renderEngine}
+            onChange={(event) => workflowView.setPreference("renderEngine", event.target.value)}
           >
             <option value="auto">默认（新引擎）</option>
             <option value="rpr_fit">新引擎</option>
             <option value="typst">Typst（旧）</option>
           </select>
           <small id="job-render-engine-hint">
-            {ENGINE_HINTS[workflow.renderEngine] || ENGINE_HINTS.auto}
+            {ENGINE_HINTS[workflow.preferences.renderEngine] || ENGINE_HINTS.auto}
           </small>
         </label>
       </div>

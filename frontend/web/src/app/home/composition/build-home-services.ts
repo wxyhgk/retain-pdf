@@ -140,13 +140,8 @@ export function buildHomeServices({
     },
     // 视图帮助别名
     uploadDomRefs: views.uploadView.domRefs,
-    workflowViewActions: {
-      setSelectedGlossaryId: views.workflowView.setSelectedGlossaryId,
-      setTranslationQuality: views.workflowView.setTranslationQuality,
-      setRenderEngine: views.workflowView.setRenderEngine,
-      setOcrOnly: views.workflowView.setOcrOnly,
-      isOcrOnly: views.workflowView.isOcrOnly,
-    },
+    // 整个对象交给 ingest 自带的 context（HomeApp 里提供），不再逐个方法对接。
+    workflowView: views.workflowView,
     workflowDialog: views.workflowDialog,
   };
 }

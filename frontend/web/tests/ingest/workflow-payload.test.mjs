@@ -170,14 +170,14 @@ test("翻译质量：普通档不加任何新字段（请求与以前逐字相�
   const base = { developerConfig: developerConfig(), translationCredentialRef: "cred_translation", selectedGlossaryId: "", constants };
   const legacy = buildTranslationPayload(base);
   assert.equal("preparation" in legacy, false);
-  assert.deepEqual(buildTranslationPayload({ ...base, translationQuality: "standard" }), legacy);
-  assert.equal(buildTranslationPayload({ ...base, translationQuality: "terms" }).preparation, "terms+style");
-  assert.equal("refine" in buildTranslationPayload({ ...base, translationQuality: "terms" }), false);
-  const refined = buildTranslationPayload({ ...base, translationQuality: "refined" });
+  assert.deepEqual(buildTranslationPayload({ ...base, preferences: { translationQuality: "standard" } }), legacy);
+  assert.equal(buildTranslationPayload({ ...base, preferences: { translationQuality: "terms" } }).preparation, "terms+style");
+  assert.equal("refine" in buildTranslationPayload({ ...base, preferences: { translationQuality: "terms" } }), false);
+  const refined = buildTranslationPayload({ ...base, preferences: { translationQuality: "refined" } });
   assert.equal(refined.preparation, "terms+style");
   assert.equal(refined.refine, "review_and_fix");
   // 不认识的档位（例如旧版本存下的值）按普通处理，不发出后端不认识的字段值
-  assert.equal("preparation" in buildTranslationPayload({ ...base, translationQuality: "bogus" }), false);
+  assert.equal("preparation" in buildTranslationPayload({ ...base, preferences: { translationQuality: "bogus" } }), false);
 });
 
 test("翻译质量档位记在本机，读写失败时退回普通", async () => {
@@ -189,19 +189,19 @@ test("翻译质量档位记在本机，读写失败时退回普通", async () =>
   };
   try {
     const view = createWorkflowViewFeature();
-    assert.equal(view.translationQuality(), "standard");
-    view.setTranslationQuality("terms");
-    assert.equal(view.translationQuality(), "terms");
-    assert.equal(createWorkflowViewFeature().translationQuality(), "terms", "新开的视图沿用上次的选择");
-    view.setTranslationQuality("refined");
-    assert.equal(view.translationQuality(), "refined");
-    view.setTranslationQuality("whatever");
-    assert.equal(view.translationQuality(), "standard");
+    assert.equal(view.preferences().translationQuality, "standard");
+    view.setPreference("translationQuality", "terms");
+    assert.equal(view.preferences().translationQuality, "terms");
+    assert.equal(createWorkflowViewFeature().preferences().translationQuality, "terms", "新开的视图沿用上次的选择");
+    view.setPreference("translationQuality", "refined");
+    assert.equal(view.preferences().translationQuality, "refined");
+    view.setPreference("translationQuality", "whatever");
+    assert.equal(view.preferences().translationQuality, "standard");
     globalThis.localStorage = { getItem: () => { throw new Error("denied"); }, setItem: () => { throw new Error("denied"); } };
     const fallback = createWorkflowViewFeature();
-    assert.equal(fallback.translationQuality(), "standard");
-    fallback.setTranslationQuality("terms");
-    assert.equal(fallback.translationQuality(), "terms", "存不下也照样生效于本次");
+    assert.equal(fallback.preferences().translationQuality, "standard");
+    fallback.setPreference("translationQuality", "terms");
+    assert.equal(fallback.preferences().translationQuality, "terms", "存不下也照样生效于本次");
   } finally {
     globalThis.localStorage = original;
   }
@@ -211,10 +211,10 @@ test("排版引擎：默认不发 engine（跟后端默认），选了新引擎 
   const base = { developerConfig: developerConfig(), constants };
   const legacy = buildRenderPayload(base);
   assert.equal("engine" in legacy, false);
-  assert.deepEqual(buildRenderPayload({ ...base, renderEngine: "auto" }), legacy);
-  assert.equal(buildRenderPayload({ ...base, renderEngine: "rpr_fit" }).engine, "rpr_fit");
-  assert.equal(buildRenderPayload({ ...base, renderEngine: "typst" }).engine, "typst");
-  assert.equal("engine" in buildRenderPayload({ ...base, renderEngine: "bogus" }), false);
+  assert.deepEqual(buildRenderPayload({ ...base, preferences: { renderEngine: "auto" } }), legacy);
+  assert.equal(buildRenderPayload({ ...base, preferences: { renderEngine: "rpr_fit" } }).engine, "rpr_fit");
+  assert.equal(buildRenderPayload({ ...base, preferences: { renderEngine: "typst" } }).engine, "typst");
+  assert.equal("engine" in buildRenderPayload({ ...base, preferences: { renderEngine: "bogus" } }), false);
 });
 
 test("排版引擎选择记在本机，不认识的值退回默认", () => {
@@ -226,11 +226,13 @@ test("排版引擎选择记在本机，不认识的值退回默认", () => {
   };
   try {
     const view = createWorkflowViewFeature();
-    assert.equal(view.renderEngine(), "auto");
-    view.setRenderEngine("rpr_fit");
-    assert.equal(createWorkflowViewFeature().renderEngine(), "rpr_fit", "新开的视图沿用上次的选择");
-    view.setRenderEngine("rpr");
-    assert.equal(view.renderEngine(), "auto");
+    assert.equal(view.preferences().renderEngine, "auto");
+    view.setPreference("renderEngine", "rpr_fit");
+    assert.equal(createWorkflowViewFeature().preferences().renderEngine, "rpr_fit", "新开的视图沿用上次的选择");
+    view.setPreference("renderEngine", "rpr");
+    assert.equal(view.preferences().renderEngine, "auto");
+    view.setPreference("bogusKey", "x");
+    assert.equal("bogusKey" in view.preferences(), false, "不认识的偏好键忽略");
   } finally {
     globalThis.localStorage = original;
   }

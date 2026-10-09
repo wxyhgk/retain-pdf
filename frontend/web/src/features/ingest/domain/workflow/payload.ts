@@ -3,6 +3,7 @@ import type {
   RenderInput,
   TranslationInput,
 } from "@retainpdf/contracts/create-job";
+import type { WorkflowPreferences } from "../workflow-preferences.js";
 
 import { getOcrProviderDefinition, normalizeOcrProvider } from "@/platform/config/providers.js";
 import { RENDER_FONT_STORAGE_KEY } from "@/platform/config/storage-keys.js";
@@ -69,15 +70,15 @@ export interface BuildTranslationPayloadOptions {
   modelApiKey?: string;
   translationCredentialRef?: string;
   selectedGlossaryId?: string;
-  /** 翻译质量档位，见 workflow-view-store 的 TranslationQuality。缺省按 standard。 */
-  translationQuality?: string;
+  /** 用户偏好（workflow-preferences.ts）。这里用 translationQuality；缺省按 standard。 */
+  preferences?: Partial<WorkflowPreferences>;
   constants: WorkflowPayloadConstants;
 }
 
 export interface BuildRenderPayloadOptions {
   developerConfig: Pick<WorkflowDeveloperConfig, "compileWorkers"> | WorkflowDeveloperConfig;
-  /** 排版引擎，见 workflow-view-store 的 RenderEngine。缺省 / auto 不发 engine。 */
-  renderEngine?: string;
+  /** 用户偏好（workflow-preferences.ts）。这里用 renderEngine；缺省 / auto 不发 engine。 */
+  preferences?: Partial<WorkflowPreferences>;
   constants: WorkflowPayloadConstants;
 }
 
@@ -126,11 +127,11 @@ export function buildTranslationPayload({
   translationCredentialRef,
   modelApiKey,
   selectedGlossaryId,
-  translationQuality,
+  preferences,
   constants,
 }: BuildTranslationPayloadOptions): TranslationInput {
   return {
-    ...translationQualityFields(translationQuality),
+    ...translationQualityFields(preferences?.translationQuality),
     mode: constants.DEFAULT_MODE,
     math_mode: developerConfig.mathMode,
     model: developerConfig.model,
@@ -190,7 +191,7 @@ export function renderEngineFields(engine: unknown): Pick<RenderInput, "engine">
 
 export function buildRenderPayload({
   developerConfig,
-  renderEngine,
+  preferences,
   constants,
 }: BuildRenderPayloadOptions): RenderInput {
   const cfg = developerConfig as WorkflowDeveloperConfig;
@@ -198,7 +199,7 @@ export function buildRenderPayload({
   const storedFont = resolveStoredFontFamily(constants.DEFAULT_TYPST_FONT_FAMILY);
   const typstFont = cfgFont || storedFont || `${constants.DEFAULT_TYPST_FONT_FAMILY || ""}`.trim() || "Source Han Serif SC";
   return {
-    ...renderEngineFields(renderEngine),
+    ...renderEngineFields(preferences?.renderEngine),
     render_mode: constants.DEFAULT_RENDER_MODE,
     compile_workers: developerConfig.compileWorkers,
     typst_font_family: typstFont,

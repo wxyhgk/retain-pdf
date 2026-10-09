@@ -14,8 +14,8 @@ import {
   useHomeLibrary,
   useHomeUploadDomRefs,
   useHomeUploadViewStore,
-  useHomeWorkflowViewStore,
 } from "@/ui/context/home-services-context.js";
+import { useIngestWorkflowView } from "../workflow-view-context.js";
 import type { UploadViewStore } from "../../domain/upload-store.js";
 import { TranslationOptionsPanel } from "./TranslationOptionsPanel.jsx";
 import { ProcessingChoicePanel } from "./upload/ProcessingChoicePanel.jsx";
@@ -29,7 +29,7 @@ import {
 export function HeroUpload() {
   // —— 顶部一次收敛：服务句柄 ——
   const uploadViewStore = useHomeUploadViewStore();
-  const workflowViewStore = useHomeWorkflowViewStore();
+  const workflowView = useIngestWorkflowView();
   const credentialsViewStore = useHomeCredentialsViewStore();
   const features = useHomeFeatures();
   const library = useHomeLibrary();
@@ -39,7 +39,7 @@ export function HeroUpload() {
 
   // —— 顶部一次收敛：store 快照 ——
   const upload = useStoreSnapshot(uploadViewStore);
-  const workflow = useStoreSnapshot(workflowViewStore);
+  const workflow = useStoreSnapshot(workflowView.store);
   const credentialsView = useStoreSnapshot(credentialsViewStore);
 
   // —— 顶部一次收敛：派生视图值 ——

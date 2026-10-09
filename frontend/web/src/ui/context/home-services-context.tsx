@@ -108,14 +108,6 @@ export type HomeArtifactDownloadsValue = {
 /** uploadView 读侧之外 TranslationOptionsPanel 还经 .actions 写页码范围。 */
 export type HomeUploadViewStoreValue = HomeReadStore & { actions?: any };
 
-export type HomeWorkflowViewActionsValue = {
-  setSelectedGlossaryId: (id: string) => unknown;
-  setTranslationQuality: (value: string) => unknown;
-  setRenderEngine: (value: string) => unknown;
-  setOcrOnly: (value: boolean) => unknown;
-  isOcrOnly: () => boolean;
-};
-
 export type HomeUploadDomRefsValue = {
   fileInput: HTMLInputElement | null;
 };
@@ -160,11 +152,9 @@ export type HomeNarrowServices = {
   artifactDownloads: HomeArtifactDownloadsValue;
   textStore: HomeReadStore;
   homeStateStore: HomeReadStore;
-  workflowViewStore: HomeReadStore;
   uploadViewStore: HomeUploadViewStoreValue;
   credentialsViewStore: HomeReadStore;
   features: HomeFeaturesValue;
-  workflowViewActions: HomeWorkflowViewActionsValue;
   uploadDomRefs: HomeUploadDomRefsValue;
   credentialsStatePort: HomeCredentialsStatePortValue;
   uploadStatePort: HomeUploadStatePortValue;
@@ -190,11 +180,9 @@ export const HomeCredentialsContext = createContext<HomeCredentialsValue | null>
 export const HomeArtifactDownloadsContext = createContext<HomeArtifactDownloadsValue | null>(null);
 export const HomeTextStoreContext = createContext<HomeReadStore | null>(null);
 export const HomeHomeStateStoreContext = createContext<HomeReadStore | null>(null);
-export const HomeWorkflowViewStoreContext = createContext<HomeReadStore | null>(null);
 export const HomeUploadViewStoreContext = createContext<HomeUploadViewStoreValue | null>(null);
 export const HomeCredentialsViewStoreContext = createContext<HomeReadStore | null>(null);
 export const HomeFeaturesContext = createContext<HomeFeaturesValue | null>(null);
-export const HomeWorkflowViewActionsContext = createContext<HomeWorkflowViewActionsValue | null>(null);
 export const HomeUploadDomRefsContext = createContext<HomeUploadDomRefsValue | null>(null);
 export const HomeCredentialsStatePortContext = createContext<HomeCredentialsStatePortValue | null>(null);
 export const HomeUploadStatePortContext = createContext<HomeUploadStatePortValue | null>(null);
@@ -288,10 +276,6 @@ export const useHomeHomeStateStore = createNarrowHook(
   HomeHomeStateStoreContext,
   "useHomeHomeStateStore",
 );
-export const useHomeWorkflowViewStore = createNarrowHook(
-  HomeWorkflowViewStoreContext,
-  "useHomeWorkflowViewStore",
-);
 export const useHomeUploadViewStore = createNarrowHook(
   HomeUploadViewStoreContext,
   "useHomeUploadViewStore",
@@ -303,10 +287,6 @@ export const useHomeCredentialsViewStore = createNarrowHook(
 export const useHomeFeatures = createNarrowHook(
   HomeFeaturesContext,
   "useHomeFeatures",
-);
-export const useHomeWorkflowViewActions = createNarrowHook(
-  HomeWorkflowViewActionsContext,
-  "useHomeWorkflowViewActions",
 );
 export const useHomeUploadDomRefs = createNarrowHook(
   HomeUploadDomRefsContext,
@@ -345,11 +325,9 @@ export function HomeShellProviders({ services, children }: { services: HomeNarro
     [HomeArtifactDownloadsContext, services.artifactDownloads],
     [HomeTextStoreContext, services.textStore],
     [HomeHomeStateStoreContext, services.homeStateStore],
-    [HomeWorkflowViewStoreContext, services.workflowViewStore],
     [HomeUploadViewStoreContext, services.uploadViewStore],
     [HomeCredentialsViewStoreContext, services.credentialsViewStore],
     [HomeFeaturesContext, services.features],
-    [HomeWorkflowViewActionsContext, services.workflowViewActions],
     [HomeUploadDomRefsContext, services.uploadDomRefs],
     [HomeCredentialsStatePortContext, services.credentialsStatePort],
     [HomeUploadStatePortContext, services.uploadStatePort],

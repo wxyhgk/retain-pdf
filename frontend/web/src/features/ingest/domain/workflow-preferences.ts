@@ -1,37 +1,23 @@
-// 上传弹窗里用户的长期偏好（翻译质量、排版引擎）：取值规范化 + 本机存取。
-// 读写 localStorage 失败（隐私模式等）一律退回默认，不影响提交。
+// 「添加 PDF」弹窗里用户的长期偏好：一张定义表，每个选项一行（本机存储的键 + 取值校验）。
+//
+// 加一个选项只动三处：这张表加一行、TranslationOptionsPanel 加一个下拉、
+// workflow/payload.ts 把它映射成后端字段。store、提交流程、应用层都是按整张表搬运的，
+// 不用跟着改。（以前加一个「排版引擎」下拉要改 9 个文件。）
+//
+// 选了「统一术语」的人通常每本都要，所以记在本机；读写 localStorage 失败（隐私模式等）
+// 就退回默认值，不影响提交，本次会话里照样生效（值同时在 store 里）。
 
 /**
- * 翻译质量档位（用户可见的一个下拉，背后映射到 translation.preparation 等字段，见
- * workflow/payload.ts 的 translationQualityFields）：
+ * 翻译质量档位（背后映射到 translation.preparation 等字段，见 workflow/payload.ts 的
+ * translationQualityFields）：
  * - standard：直接翻译，和以前完全一样；
  * - terms：先通读全书生成术语表和风格指南，再带着它们翻译（preparation=terms+style）；
  * - refined：在 terms 基础上，翻译完再让模型挑错、只改有问题的片段（refine=review_and_fix）。
  */
 export type TranslationQuality = "standard" | "terms" | "refined";
-export const TRANSLATION_QUALITY_STORAGE_KEY = "retainpdf.translationQuality";
 
 export function normalizeTranslationQuality(value: unknown): TranslationQuality {
   return value === "terms" || value === "refined" ? value : "standard";
-}
-
-// 档位是用户的长期偏好（选了「统一术语」的人通常每本都要），所以记在本机；
-// 读写失败（隐私模式等）就退回 standard，不影响提交。
-export function loadTranslationQuality(): TranslationQuality {
-  try {
-    if (typeof localStorage !== "undefined") {
-      return normalizeTranslationQuality(localStorage.getItem(TRANSLATION_QUALITY_STORAGE_KEY));
-    }
-  } catch {}
-  return "standard";
-}
-
-export function saveTranslationQuality(value: TranslationQuality) {
-  try {
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem(TRANSLATION_QUALITY_STORAGE_KEY, value);
-    }
-  } catch {}
 }
 
 /**
@@ -40,25 +26,45 @@ export function saveTranslationQuality(value: TranslationQuality) {
  * 后端还有一档 rpr（引擎排版、字号沿用旧规则），只用于对比，界面不放。
  */
 export type RenderEngine = "auto" | "rpr_fit" | "typst";
-export const RENDER_ENGINE_STORAGE_KEY = "retainpdf.renderEngine";
 
 export function normalizeRenderEngine(value: unknown): RenderEngine {
   return value === "rpr_fit" || value === "typst" ? value : "auto";
 }
 
-export function loadRenderEngine(): RenderEngine {
-  try {
-    if (typeof localStorage !== "undefined") {
-      return normalizeRenderEngine(localStorage.getItem(RENDER_ENGINE_STORAGE_KEY));
-    }
-  } catch {}
-  return "auto";
+const WORKFLOW_PREFERENCE_SPECS = {
+  translationQuality: { storageKey: "retainpdf.translationQuality", normalize: normalizeTranslationQuality },
+  renderEngine: { storageKey: "retainpdf.renderEngine", normalize: normalizeRenderEngine },
+} as const satisfies Record<string, { storageKey: string; normalize: (value: unknown) => string }>;
+
+type Specs = typeof WORKFLOW_PREFERENCE_SPECS;
+export type WorkflowPreferenceKey = keyof Specs;
+export type WorkflowPreferences = { [K in WorkflowPreferenceKey]: ReturnType<Specs[K]["normalize"]> };
+
+const PREFERENCE_KEYS = Object.keys(WORKFLOW_PREFERENCE_SPECS) as WorkflowPreferenceKey[];
+
+export function isWorkflowPreferenceKey(key: unknown): key is WorkflowPreferenceKey {
+  return typeof key === "string" && Object.hasOwn(WORKFLOW_PREFERENCE_SPECS, key);
 }
 
-export function saveRenderEngine(value: RenderEngine) {
+export function normalizeWorkflowPreference<K extends WorkflowPreferenceKey>(key: K, value: unknown): WorkflowPreferences[K] {
+  return WORKFLOW_PREFERENCE_SPECS[key].normalize(value) as WorkflowPreferences[K];
+}
+
+function readStored(key: WorkflowPreferenceKey): unknown {
   try {
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem(RENDER_ENGINE_STORAGE_KEY, value);
-    }
+    if (typeof localStorage !== "undefined") return localStorage.getItem(WORKFLOW_PREFERENCE_SPECS[key].storageKey);
+  } catch {}
+  return null;
+}
+
+export function loadWorkflowPreferences(): WorkflowPreferences {
+  return Object.fromEntries(
+    PREFERENCE_KEYS.map((key) => [key, normalizeWorkflowPreference(key, readStored(key))]),
+  ) as WorkflowPreferences;
+}
+
+export function saveWorkflowPreference(key: WorkflowPreferenceKey, value: string) {
+  try {
+    if (typeof localStorage !== "undefined") localStorage.setItem(WORKFLOW_PREFERENCE_SPECS[key].storageKey, value);
   } catch {}
 }

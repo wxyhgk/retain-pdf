@@ -180,7 +180,7 @@ function makeAssembly(ocrOnly, extraSubmitValues = {}) {
 }
 
 test("上传弹窗选的排版引擎进 render.engine；默认不发", () => {
-  assert.equal(makeAssembly(false, { renderEngine: "rpr_fit" }).collectRunPayload().render.engine, "rpr_fit");
+  assert.equal(makeAssembly(false, { preferences: { renderEngine: "rpr_fit" } }).collectRunPayload().render.engine, "rpr_fit");
   assert.equal("engine" in makeAssembly(false).collectRunPayload().render, false);
 });
 

@@ -35,20 +35,18 @@ import {
   useHomeBridge,
   useHomeFeatures,
   useHomeUploadViewStore,
-  useHomeWorkflowViewActions,
-  useHomeWorkflowViewStore,
 } from "@/ui/context/home-services-context.js";
+import { useIngestWorkflowView } from "./workflow-view-context.js";
 import type { UploadViewStore } from "../domain/upload-store.js";
 import { HeroUpload } from "./components/UploadTile.jsx";
 import { InlineErrorBox } from "./InlineErrorBox.jsx";
 
 export function WorkflowPanel({ hiddenInputsSlot = null }: { hiddenInputsSlot?: React.ReactNode | null }) {
-  const workflowViewStore = useHomeWorkflowViewStore();
+  const workflowView = useIngestWorkflowView();
   const uploadViewStore = useHomeUploadViewStore();
   const bridge = useHomeBridge();
-  const workflowViewActions = useHomeWorkflowViewActions();
   const features = useHomeFeatures();
-  const workflow = useStoreSnapshot(workflowViewStore);
+  const workflow = useStoreSnapshot(workflowView.store);
   const ocrOnly = Boolean(workflow.ocrOnly);
 
   // [1] 表单校验入口:成功→ bridge.submitForm 接管后续组参/提交/接进度/关框;
@@ -78,7 +76,7 @@ export function WorkflowPanel({ hiddenInputsSlot = null }: { hiddenInputsSlot?: 
     const nextOcrOnly = value === "ocr";
     if (nextOcrOnly === ocrOnly) return;
 
-    workflowViewActions.setOcrOnly(nextOcrOnly);
+    workflowView.setOcrOnly(nextOcrOnly);
     if (nextOcrOnly) {
       (uploadViewStore as unknown as UploadViewStore).actions.closeTranslationOptions();
     }

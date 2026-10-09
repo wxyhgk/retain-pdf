@@ -1,23 +1,20 @@
 import { createStore } from "@/platform/store/store.js";
 import type { Store } from "@/platform/store/store.js";
 import {
-  loadRenderEngine,
-  loadTranslationQuality,
-  normalizeRenderEngine,
-  normalizeTranslationQuality,
-  saveRenderEngine,
-  saveTranslationQuality,
-  type RenderEngine,
-  type TranslationQuality,
+  isWorkflowPreferenceKey,
+  loadWorkflowPreferences,
+  normalizeWorkflowPreference,
+  saveWorkflowPreference,
+  type WorkflowPreferences,
 } from "./workflow-preferences.js";
 
 export {
   normalizeRenderEngine,
   normalizeTranslationQuality,
-  RENDER_ENGINE_STORAGE_KEY,
-  TRANSLATION_QUALITY_STORAGE_KEY,
   type RenderEngine,
   type TranslationQuality,
+  type WorkflowPreferenceKey,
+  type WorkflowPreferences,
 } from "./workflow-preferences.js";
 
 // workflow 域视图 store + React viewPort。
@@ -78,8 +75,8 @@ export type WorkflowViewState = {
   jobWarningVisible: boolean;
   glossaries: WorkflowGlossaryOption[];
   selectedGlossaryId: string;
-  translationQuality: TranslationQuality;
-  renderEngine: RenderEngine;
+  /** 用户的长期偏好（翻译质量、排版引擎……），定义见 workflow-preferences.ts。 */
+  preferences: WorkflowPreferences;
   developerDialog: WorkflowDeveloperDialog;
   developerFormState: Record<string, unknown>;
   ocrOnly: boolean;
@@ -127,8 +124,7 @@ export function createWorkflowViewStore(): WorkflowViewStore {
       jobWarningVisible: false,
       glossaries: [],
       selectedGlossaryId: "",
-      translationQuality: loadTranslationQuality(),
-      renderEngine: loadRenderEngine(),
+      preferences: loadWorkflowPreferences(),
       developerDialog: {},
       developerFormState: {},
       ocrOnly: false,
@@ -166,24 +162,16 @@ export function createWorkflowViewFeature({
     patch({ selectedGlossaryId: `${value || ""}`.trim() });
   }
 
-  function translationQuality(): TranslationQuality {
-    return normalizeTranslationQuality(store.getSnapshot().translationQuality);
+  function preferences(): WorkflowPreferences {
+    return store.getSnapshot().preferences;
   }
 
-  function setTranslationQuality(value: unknown = "standard") {
-    const next = normalizeTranslationQuality(value);
-    saveTranslationQuality(next);
-    patch({ translationQuality: next });
-  }
-
-  function renderEngine(): RenderEngine {
-    return normalizeRenderEngine(store.getSnapshot().renderEngine);
-  }
-
-  function setRenderEngine(value: unknown = "auto") {
-    const next = normalizeRenderEngine(value);
-    saveRenderEngine(next);
-    patch({ renderEngine: next });
+  /** 改一个偏好：校验取值、记到本机、更新 store。不认识的键忽略。 */
+  function setPreference(key: unknown, value: unknown) {
+    if (!isWorkflowPreferenceKey(key)) return;
+    const next = normalizeWorkflowPreference(key, value);
+    saveWorkflowPreference(key, next);
+    patch({ preferences: { ...store.getSnapshot().preferences, [key]: next } });
   }
 
   function setJobWarningVisible(visible: boolean) {
@@ -358,10 +346,8 @@ export function createWorkflowViewFeature({
     setOcrOnly,
     setJobWarningVisible,
     setSelectedGlossaryId,
-    translationQuality,
-    setTranslationQuality,
-    renderEngine,
-    setRenderEngine,
+    preferences,
+    setPreference,
     setSubmitBusy,
     setSubmitDisabled,
     store,

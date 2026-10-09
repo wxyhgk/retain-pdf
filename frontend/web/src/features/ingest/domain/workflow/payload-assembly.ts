@@ -79,7 +79,7 @@ export function createWorkflowPayloadAssembly({
       translationCredentialRef: submitValues.translationCredentialRef,
       modelApiKey: submitValues.modelApiKey,
       selectedGlossaryId: submitValues.selectedGlossaryId,
-      translationQuality: submitValues.translationQuality,
+      preferences: submitValues.preferences,
       constants,
     });
   }
@@ -90,7 +90,7 @@ export function createWorkflowPayloadAssembly({
   ) {
     return buildRenderPayloadRequest({
       developerConfig,
-      renderEngine: submitValues.renderEngine,
+      preferences: submitValues.preferences,
       constants,
     });
   }

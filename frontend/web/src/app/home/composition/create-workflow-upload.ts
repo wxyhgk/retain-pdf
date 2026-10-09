@@ -47,8 +47,8 @@ import type {
 
 type WorkflowViewPort = {
   selectedGlossaryId: () => string;
-  translationQuality?: () => string;
-  renderEngine?: () => string;
+  /** 用户偏好整张表（翻译质量、排版引擎……），由 ingest 给出，这里原样转交。 */
+  preferences?: () => Record<string, string>;
   isOcrOnly?: () => boolean;
   viewPort: unknown;
 };
@@ -112,8 +112,7 @@ export function createWorkflowAndUpload({
       translationCredentialRef: credentials?.modelApiKey ? "" : credentials?.translationCredentialRef || "",
       modelApiKey: credentials?.modelApiKey || _modelApiKeyFallback || "",
       selectedGlossaryId: workflowView.selectedGlossaryId(),
-      translationQuality: workflowView.translationQuality?.() || "standard",
-      renderEngine: workflowView.renderEngine?.() || "auto",
+      preferences: workflowView.preferences?.(),
     };
   }
 
