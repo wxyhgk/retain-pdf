@@ -125,15 +125,18 @@ export {
 export {
   createStatusDetailController,
 } from "./domain/status-detail-controller.js";
+export type { StatusDetailController } from "./domain/status-detail-controller.js";
 export {
   createStatusDetailDialogStore,
 } from "./domain/status-detail-dialog-store.js";
+export type { StatusDetailDialogStore } from "./domain/status-detail-dialog-store.js";
 export {
   createStatusDetailRuntimePort,
 } from "./domain/status-detail-runtime-port.js";
 export {
   createStatusDetailStore,
 } from "./domain/status-detail-store.js";
+export type { StatusDetailStore } from "./domain/status-detail-store.js";
 export {
   StatusDetailDialog,
 } from "./ui/StatusDetailDialog.jsx";

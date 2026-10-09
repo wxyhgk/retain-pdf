@@ -15,16 +15,19 @@ export type { GlossariesFeature, GlossariesViewBag };
 export type CredentialsViewBag = ReturnType<typeof createCredentialsViewFeature>;
 
 export type HomeCredentials = {
-  feature: BrowserCredentialsFeature | undefined;
+  feature: BrowserCredentialsFeature;
   view: CredentialsViewBag;
 };
+
+/** 设置弹窗的打开参数：选中哪个 tab，以及这次是不是首次配置门。 */
+export type SettingsHubDialogPayload = { tab?: string; setupMode?: boolean } | null;
 
 export type HomeSettingsHub = {
   /**
    * payload.tab 选中哪个 tab；payload.setupMode 表示这次是首次配置门。
    * 首配不再另开外壳，就是本弹窗停在 api tab（见 SettingsDialog 的注释）。
    */
-  dialogStore: DialogStore<{ tab?: string; setupMode?: boolean } | null>;
+  dialogStore: DialogStore<SettingsHubDialogPayload>;
 };
 
 export type HomeGlossaries = {

@@ -57,7 +57,7 @@ export function useStageSelection({ jobId = "", currentStageKey = "" } = {}) {
     };
   }, [normalizedJobId, normalizedStageKey, state]);
 
-  const selectStage = useCallback((stageKey) => {
+  const selectStage = useCallback((stageKey: string) => {
     setState(() => {
       const resolved = resolveSelectedStatusStage({
         currentStageKey: normalizedStageKey,

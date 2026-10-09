@@ -7,8 +7,8 @@ export interface GlossaryOptionItem {
 }
 
 export interface CreateGlossaryOptionsLoaderOptions {
-  fetchGlossaries?: (apiPrefix?: string) => Promise<unknown>;
-  apiPrefix?: string;
+  fetchGlossaries?: (apiPrefix: string) => Promise<unknown>;
+  apiPrefix: string;
   setDeveloperGlossaryOptions: (glossaries: GlossaryOptionItem[], selectedId?: string) => void;
   setText?: (id: string, text?: string) => void;
   getDefaultSelectedId?: () => string | undefined;

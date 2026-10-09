@@ -6,8 +6,9 @@ import { useStatusCardIds } from "./status-card-ids-context.js";
 import {
   APP_EVENTS,
 } from "@/platform/contracts/app-contract.js";
+import type { StatusCardStageRetryAction } from "../domain/status-card-store.js";
 
-function dispatchRetryStage(stage) {
+function dispatchRetryStage(stage: string) {
   if (globalThis.document?.dispatchEvent && typeof globalThis.CustomEvent === "function") {
     globalThis.document.dispatchEvent(new globalThis.CustomEvent(APP_EVENTS.retryStage, {
       bubbles: true,
@@ -17,7 +18,13 @@ function dispatchRetryStage(stage) {
   }
 }
 
-export function StageRetry({ selectedStageKey = "", action = null }) {
+export function StageRetry({
+  selectedStageKey = "",
+  action = null,
+}: {
+  selectedStageKey?: string;
+  action?: StatusCardStageRetryAction | null;
+}) {
   const ids = useStatusCardIds();
   const eligible = ["ocr", "translate", "render"].includes(selectedStageKey) && action;
   if (!eligible) {

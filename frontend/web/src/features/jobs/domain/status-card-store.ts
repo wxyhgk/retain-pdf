@@ -1,3 +1,4 @@
+import type { JobLike, JobPayload } from "@retainpdf/domain/job";
 import {
   currentJobFinishedAt,
 } from "./runtime/current-job-state.js";
@@ -68,11 +69,11 @@ export type StatusCardJobRecord = {
   stage?: string;
   stage_detail?: string;
   progress?: {
-    percent?: number;
-    current?: number;
-    total?: number;
+    percent?: number | null;
+    current?: number | null;
+    total?: number | null;
     unit?: string;
-  };
+  } | null;
   progress_percent?: number;
   timestamps?: {
     started_at?: string;
@@ -157,10 +158,11 @@ export type StatusCardPresenter = {
   recompute: () => void;
 };
 
+/** 当前任务 store 的读口（就是 runtime/current-job-state 的 CurrentJobStore，快照是领域任务类型）。 */
 type CurrentJobStoreLike = {
   getSnapshot: () => {
     jobId?: string;
-    snapshot?: StatusCardJobRecord | null;
+    snapshot?: JobLike | JobPayload | null;
   };
 };
 

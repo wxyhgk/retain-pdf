@@ -33,15 +33,15 @@ export interface ResetOcrValidationRuntimeOptions {
 export interface SetOcrValidationRuntimeOptions extends ResetOcrValidationRuntimeOptions {}
 
 export interface RunOcrTokenValidationOptions {
-  apiPrefix?: string;
+  apiPrefix: string;
   state?: unknown;
   credentialsStatePort?: CredentialsStatePortLike | CredentialsStatePort;
   providerId?: string;
   token?: string;
   validateOcrToken: (
-    apiPrefix?: unknown,
-    providerId?: unknown,
-    token?: unknown,
+    apiPrefix: string,
+    providerId: string,
+    token: string,
   ) => Promise<ProviderValidationResult | unknown> | ProviderValidationResult | unknown;
   setOcrValidationMessage: (message?: string, tone?: string, providerId?: string) => void;
   showResult?: boolean;
@@ -49,26 +49,26 @@ export interface RunOcrTokenValidationOptions {
 }
 
 export interface RunDeepSeekConnectivityCheckOptions {
-  apiPrefix?: string;
+  apiPrefix: string;
   apiKey?: string;
   baseUrl?: string;
   /** 翻译真正要调用的模型名。不传则后端只能验 Key，验不到模型。 */
   model?: string;
   validateDeepSeekToken: (
-    apiPrefix?: unknown,
-    payload?: unknown,
+    apiPrefix: string,
+    payload: Record<string, unknown>,
   ) => Promise<ProviderValidationResult | unknown> | ProviderValidationResult | unknown;
   setDeepSeekValidationMessage: (message?: string, tone?: string) => void;
   showResult?: boolean;
 }
 
 export interface RunDeepSeekBalanceCheckOptions {
-  apiPrefix?: string;
+  apiPrefix: string;
   apiKey?: string;
   baseUrl?: string;
   queryDeepSeekBalance?: (
-    apiPrefix?: unknown,
-    payload?: unknown,
+    apiPrefix: string,
+    payload: Record<string, unknown>,
   ) => Promise<ProviderValidationResult | unknown> | ProviderValidationResult | unknown;
 }
 

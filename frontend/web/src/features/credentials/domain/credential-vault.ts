@@ -11,6 +11,8 @@ import type { CredentialsFields, CredentialsStatePort } from "./state.js";
 import type {
   CredentialListView,
   CredentialMutationView,
+  CreateCredentialInput,
+  UpdateCredentialInput,
 } from "@/platform/api/domains/credentials.js";
 
 type RuntimeEnvPort = { isDesktopMode?: () => boolean };
@@ -27,21 +29,21 @@ export function createCredentialVault({
   updateCredential,
   saveDesktopConfig,
 }: {
-  apiPrefix?: string;
+  apiPrefix: string;
   credentialsStatePort: CredentialsStatePort;
   runtimeEnv: RuntimeEnvPort;
   readCurrentCredentials: () => CredentialsFields;
   currentOcrProvider: () => string;
   translationProvider: (baseUrl?: string) => string;
   listCredentials?: (apiPrefix?: string) => Promise<CredentialListView>;
-  createCredential?: (apiPrefix: string | undefined, payload: Record<string, unknown>) => Promise<CredentialMutationView>;
+  createCredential?: (apiPrefix: string | undefined, payload: CreateCredentialInput) => Promise<CredentialMutationView>;
   updateCredential?: (
     apiPrefix: string | undefined,
     credentialRef: string,
-    payload: Record<string, unknown>,
+    payload: UpdateCredentialInput,
   ) => Promise<CredentialMutationView>;
   saveDesktopConfig?: (
-    browserConfig?: Record<string, unknown> | unknown,
+    browserConfig?: Record<string, unknown>,
     afterSave?: () => unknown,
   ) => Promise<unknown> | unknown;
 }) {
@@ -134,7 +136,8 @@ export function createCredentialVault({
     }
     ++referenceRequest;
     const ocrCredentialRevision = existingCredential?.revision;
-    const payload = {
+    // 同一份载荷既可能走新建也可能走更新：expected_credential_revision 只在已有引用（更新）时才带。
+    const payload: CreateCredentialInput & UpdateCredentialInput = {
       kind: "ocr_provider_token",
       provider: normalizedProvider,
       label: `${getOcrProviderDefinition(normalizedProvider).label} OCR`,
@@ -173,7 +176,7 @@ export function createCredentialVault({
       await refreshCredentialReferences({ persist: false });
     }
     existingRef = `${readCurrentCredentials()?.translationCredentialRef || ""}`.trim();
-    const payload = {
+    const payload: CreateCredentialInput & UpdateCredentialInput = {
       kind: "translation_api_key",
       provider: translationProvider(baseUrl),
       label: "翻译 API",

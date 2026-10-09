@@ -33,7 +33,7 @@ export interface AppActionsJobSnapshotPort {
 }
 
 export interface AppActionsViewPort {
-  setSubmitBusyState: (busy?: boolean) => void;
+  setSubmitBusyState: (busy: boolean) => void;
   resetMissingUpload: (options?: {
     state?: unknown;
     uploadStatePort?: AppActionsUploadStatePort;
@@ -45,7 +45,7 @@ export interface AppActionsViewPort {
 export interface SubmitFlowDeps {
   openSetupDialog?: () => void;
   renderJob?: (payload?: unknown) => void;
-  submitJobRequest: (apiPrefix?: unknown, payload?: unknown) => Promise<unknown> | unknown;
+  submitJobRequest: (apiPrefix: string, payload: unknown) => Promise<unknown> | unknown;
   currentWorkflow: () => string;
   workflowNeedsCredentials?: (workflow?: string) => boolean | unknown;
   workflowNeedsUpload?: (workflow?: string) => boolean | unknown;
@@ -55,16 +55,16 @@ export interface SubmitFlowDeps {
   validateBeforeSubmit?: () => boolean | unknown;
   ensureOcrCredentialsReady?: (options?: {
     onMissingToken?: () => void;
-    onInvalidToken?: (result?: OcrCredentialCheckResult) => void;
-  } | unknown) => Promise<boolean | unknown> | boolean | unknown;
+    onInvalidToken?: (result?: OcrCredentialCheckResult | null) => void;
+  }) => Promise<boolean | unknown> | boolean | unknown;
   hasBrowserCredentials?: () => boolean | unknown;
   openBrowserCredentialsDialog?: (options?: unknown) => void;
   refreshDeepSeekBalance?: (options?: {
     silent?: boolean;
-  } | unknown) => Promise<unknown> | unknown;
+  }) => Promise<unknown> | unknown;
   /** provider 预检失败的告知口（预检已改为后台并行，不再挡提交）。 */
   notifyPreflightWarning?: (message: string) => void;
-  startJobPolling?: (jobId?: string) => void;
+  startJobPolling?: (jobId: string) => void;
   libraryEventPort?: LibraryEventPortLike;
   jobSnapshotPort?: AppActionsJobSnapshotPort;
 }
@@ -76,7 +76,7 @@ export interface MountAppActionsFeatureOptions {
   jobSnapshotPort?: AppActionsJobSnapshotPort;
   viewPort: AppActionsViewPort;
   apiBase?: string | (() => string);
-  apiPrefix?: string;
+  apiPrefix: string;
   buildApiEndpoint: (prefix?: string, path?: string) => string;
   setText: SetTextFn;
   openDesktopOutputDirectory: () => Promise<unknown> | unknown;
@@ -85,7 +85,7 @@ export interface MountAppActionsFeatureOptions {
   submitFlow: SubmitFlowDeps;
   openSetupDialog?: () => void;
   renderJob?: (payload?: unknown) => void;
-  submitJobRequest?: (apiPrefix?: unknown, payload?: unknown) => Promise<unknown> | unknown;
+  submitJobRequest?: (apiPrefix: string, payload: unknown) => Promise<unknown> | unknown;
   currentWorkflow?: () => string;
   workflowNeedsCredentials?: (workflow?: string) => boolean | unknown;
   workflowNeedsUpload?: (workflow?: string) => boolean | unknown;
@@ -98,7 +98,7 @@ export interface MountAppActionsFeatureOptions {
   openBrowserCredentialsDialog?: (options?: unknown) => void;
   refreshDeepSeekBalance?: SubmitFlowDeps["refreshDeepSeekBalance"];
   notifyPreflightWarning?: SubmitFlowDeps["notifyPreflightWarning"];
-  startJobPolling?: (jobId?: string) => void;
+  startJobPolling?: (jobId: string) => void;
   libraryEventPort?: LibraryEventPortLike;
   configPort?: AppActionsConfigPort;
 }

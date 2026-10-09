@@ -1,5 +1,22 @@
 // services：Bridge/Core/Domains/Views/Stores 装配面（对外 HomeServices bag）。
+import type {
+  createCredential,
+  createGlossaryApi,
+  deleteGlossaryApi,
+  exportGlossaryCsvApi,
+  fetchGlossariesApi,
+  fetchGlossaryApi,
+  parseGlossaryCsvApi,
+  queryDeepSeekBalance,
+  submitUploadRequestHttp,
+  updateCredential,
+  updateGlossaryApi,
+  validateDeepSeekToken,
+} from "@/platform/api/index.js";
+import type { mountBrowserCredentialsFeature } from "@/features/credentials/index.js";
+import type { fetchLatestGithubRelease } from "@/features/app-update/index.js";
 import type { DialogStore } from "@/platform/store/dialog-store.js";
+import type { SettingsHubDialogPayload } from "./credentials.js";
 import type { HomeStatePort } from "@/platform/contracts/home-view-contract.js";
 import type { CredentialsStatePort } from "@/features/credentials/index.js";
 import type { UploadStatePort } from "@/features/ingest/domain.js";
@@ -15,7 +32,6 @@ import type {
 } from "@/features/library/index.js";
 import type {
   AppStore,
-  AsyncFn,
   ReadOnlyStore,
 } from "./common.js";
 import type {
@@ -86,7 +102,8 @@ export type LibraryPort = HomeLibrary;
 
 /** @deprecated god-object 兼容别名，请改用按域的 Port 类型 */
 export type HomeBridge = {
-  setText: (id: string, value?: string) => void;
+  /** 值多数是文案；error-box 还可能收到错误诊断对象（见 state/text-store.ts）。 */
+  setText: (id: string, value?: unknown) => void;
   setWorkflowSections: (job?: unknown) => void;
   updateJobWarning: (status: unknown) => void;
   resetUploadProgress: () => void;
@@ -157,7 +174,7 @@ export type HomeServicesDomains = {
   credentials: {
     browserCredentialsFeature: BrowserCredentialsFeature;
     credentialsView: CredentialsViewBag;
-    settingsHubDialogStore: DialogStore;
+    settingsHubDialogStore: DialogStore<SettingsHubDialogPayload>;
   };
   glossaries: {
     glossariesFeature: GlossariesFeature;
@@ -193,27 +210,30 @@ export type HomeServicesDomains = {
   };
 };
 
+/** 平台接口函数可被测试替换；类型直接取真实实现，替身按同一签名写。 */
+type CredentialsMountOptions = Parameters<typeof mountBrowserCredentialsFeature>[0];
+
 export type CreateHomeCompositionOptions = {
   documentRef?: Document;
-  fetchGlossaries?: AsyncFn;
-  submitUploadRequest?: AsyncFn;
+  fetchGlossaries?: typeof fetchGlossariesApi;
+  submitUploadRequest?: typeof submitUploadRequestHttp;
   loadPersistedDeveloperConfig?: () => Record<string, unknown>;
   loadPersistedBrowserConfig?: () => Partial<ReturnType<CredentialsStatePort["getCredentials"]>>;
-  validateOcrToken?: AsyncFn | null;
-  validateDeepSeekToken?: AsyncFn;
-  queryDeepSeekBalance?: AsyncFn;
-  createCredential?: AsyncFn;
-  updateCredential?: AsyncFn;
-  checkApiConnectivity?: AsyncFn | null;
-  saveDesktopConfig?: AsyncFn | null;
+  validateOcrToken?: CredentialsMountOptions["validateOcrToken"] | null;
+  validateDeepSeekToken?: typeof validateDeepSeekToken;
+  queryDeepSeekBalance?: typeof queryDeepSeekBalance;
+  createCredential?: typeof createCredential;
+  updateCredential?: typeof updateCredential;
+  checkApiConnectivity?: (() => Promise<unknown>) | null;
+  saveDesktopConfig?: CredentialsMountOptions["saveDesktopConfig"] | null;
   initialDesktopMode?: boolean;
-  fetchGlossary?: AsyncFn;
-  createGlossary?: AsyncFn;
-  updateGlossary?: AsyncFn;
-  deleteGlossary?: AsyncFn;
-  exportGlossaryCsv?: AsyncFn;
-  parseGlossaryCsv?: AsyncFn;
-  fetchLatestRelease?: AsyncFn;
+  fetchGlossary?: typeof fetchGlossaryApi;
+  createGlossary?: typeof createGlossaryApi;
+  updateGlossary?: typeof updateGlossaryApi;
+  deleteGlossary?: typeof deleteGlossaryApi;
+  exportGlossaryCsv?: typeof exportGlossaryCsvApi;
+  parseGlossaryCsv?: typeof parseGlossaryCsvApi;
+  fetchLatestRelease?: typeof fetchLatestGithubRelease;
   appUpdateCachePort?: {
     read: () => { info?: unknown; fresh?: boolean };
     write?: (info: unknown) => void;

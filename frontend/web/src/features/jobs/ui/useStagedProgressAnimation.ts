@@ -18,20 +18,45 @@ import {
   buildProgressOptions,
   shouldAnimateRenderPageProgress,
 } from "@retainpdf/domain/job-status";
+import type {
+  StatusCardProgressSnapshot,
+  StatusCardSelectedProgress,
+} from "@retainpdf/domain/job-status";
 
 const TICK_DELAY_MS = 120;
 
-function progressNumber(value) {
+/** 按阶段记忆的已显示进度（爬升动画的起点） */
+type DisplayedProgress = {
+  current: number | null;
+  total: number | null;
+};
+
+/** 动画帧：只对应 jobId + stageKey 的当前显示数字 */
+type AnimationFrame = {
+  jobId: string;
+  stageKey: string;
+  displayedCurrent: number;
+};
+
+type StagedProgressAnimationInput = {
+  selected?: string;
+  selectedIsCurrent?: boolean;
+  snapshot?: StatusCardProgressSnapshot | null;
+  selectedProgress?: StatusCardSelectedProgress | null;
+  jobId?: string | null;
+};
+
+function progressNumber(value: unknown) {
   if (value === null || value === undefined || value === "") return Number.NaN;
   return Number(value);
 }
 
-export function useStagedProgressAnimation({ selected, selectedIsCurrent, snapshot, selectedProgress, jobId }) {
-  const displayedProgressByStageRef = useRef({});
-  const timerRef = useRef(null);
+export function useStagedProgressAnimation({ selected, selectedIsCurrent, snapshot, selectedProgress, jobId }: StagedProgressAnimationInput) {
+  const displayedProgressByStageRef = useRef<Partial<Record<string, DisplayedProgress>>>({});
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const normalizedJobId = `${jobId || ""}`.trim();
   const normalizedSelected = `${selected || ""}`.trim();
-  const [animationFrame, setAnimationFrame] = useState(null);
+  const [animationFrame, setAnimationFrame] = useState<AnimationFrame | null>(null);
   // embedded 状态卡每次 render 都可能重新组装 snapshot/selectedProgress 对象。
   // effect 只应跟随真正参与进度展示的标量；若依赖对象引用，内部 setState
   // 会再次 render 并拿到新对象，最终触发 React #185（Maximum update depth）。
@@ -42,7 +67,8 @@ export function useStagedProgressAnimation({ selected, selectedIsCurrent, snapsh
   const selectedTotal = progressNumber(selectedProgress?.total);
   const selectedProgressUnit = `${selectedProgress?.progressUnit || ""}`;
   const selectedDisplayPercent = (() => {
-    const raw = selectedProgress?.displayPercent;
+    // 上游可能仍传空串，故显式放宽成 unknown 保留运行时判空
+    const raw: unknown = selectedProgress?.displayPercent;
     if (raw === null || raw === undefined || raw === "") return null;
     const parsed = Number(raw);
     return Number.isFinite(parsed) ? parsed : null;
@@ -77,7 +103,7 @@ export function useStagedProgressAnimation({ selected, selectedIsCurrent, snapsh
     }
   }
 
-  function rememberProgress(stageKey, current, total) {
+  function rememberProgress(stageKey: string, current: number, total: number) {
     displayedProgressByStageRef.current[stageKey] = {
       current: Number.isFinite(current) ? current : null,
       total: Number.isFinite(total) ? total : null,

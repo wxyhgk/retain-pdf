@@ -3,6 +3,7 @@
 // 启动顺序中的位置：composition 内建好（state/view 就绪后、各域之前），
 // 被 lifecycle.initializeIdleView 与各域经端口消费；自身无 initialize/dispose。
 
+import { mountedFeature } from "./feature-registry.js";
 import { buildJobWarningViewModel } from "@retainpdf/domain/job";
 import type { HomeBridge, HomeFeatures, StatusDetailHolder } from "./types.js";
 
@@ -44,8 +45,8 @@ export function createBridge({
       workflowView.setSubmitDisabled(true);
       uploadView.resetUploadedFileView();
     },
-    applyWorkflowMode: () => features.workflowFeature.applyWorkflowMode(),
-    renderPageRangeSummary: () => features.uploadFeature.renderPageRangeSummary(),
+    applyWorkflowMode: () => mountedFeature(features, "workflowFeature").applyWorkflowMode(),
+    renderPageRangeSummary: () => mountedFeature(features, "uploadFeature").renderPageRangeSummary(),
     setSubmitBusy: (busy) => workflowView.setSubmitBusy(busy),
     activateDetailTab: (name = "overview") => {
       statusDetail.store?.actions?.resetOverview?.();
@@ -56,7 +57,7 @@ export function createBridge({
     },
     submitForm: (event) => {
       event?.preventDefault?.();
-      return features.appActionsFeature.submitForm(event);
+      return mountedFeature(features, "appActionsFeature").submitForm(event);
     },
   };
 }

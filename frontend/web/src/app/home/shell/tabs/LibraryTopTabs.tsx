@@ -60,7 +60,7 @@ const TABS = [
   { key: "ask", label: "AI 问答", Icon: IconSparkles },
 ];
 
-export function LibraryTopTabs({ active, onChange }) {
+export function LibraryTopTabs({ active, onChange }: { active: string; onChange: (key: string) => void }) {
   return (
     <TabsPrimitive.Root
       className="library-top-tabs-root"

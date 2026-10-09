@@ -7,7 +7,7 @@
 import { getOcrProviderDefinition, normalizeOcrProvider } from "@/platform/config/providers.js";
 import { syncCredentialDialogFields } from "./dialog-sync.js";
 import { ocrTokenFromCredentials } from "./state-selectors.js";
-import type { UpdateCredentialGateViewOptions } from "./view-contracts.js";
+import type { ProviderChangeEvent, UpdateCredentialGateViewOptions } from "./view-contracts.js";
 import type { CredentialsFields } from "./state.js";
 
 
@@ -195,9 +195,8 @@ export function createCredentialDialogFlow({
     refreshSubmitControls();
   }
 
-  function handleOcrProviderChange(event: Event) {
-    const target = event.currentTarget as HTMLSelectElement | HTMLInputElement | null;
-    const provider = normalizeOcrProvider(target?.value);
+  function handleOcrProviderChange(event: ProviderChangeEvent) {
+    const provider = normalizeOcrProvider(event.currentTarget?.value);
     // A reference belongs to one provider. Clear it before the asynchronous lookup.
     if (provider !== access.currentOcrProvider()) {
       credentialsStatePort.patchCredentials?.({ ocrProvider: provider, ocrCredentialRef: "" });

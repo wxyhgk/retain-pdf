@@ -23,35 +23,11 @@ export type HomeJobRuntime = {
   }>;
 };
 
-export type StatusDetailStoreActions = {
-  resetOverview: () => unknown;
-  resetTranslation: () => unknown;
-  setOverview?: (overview: unknown) => unknown;
-  setTranslation?: (translation: unknown) => unknown;
-  setRerunPending?: (pending: boolean) => unknown;
-};
+// 任务详情的两个 store 直接用 job-detail 导出的真实类型（以前这里手抄了一份，参数全是 unknown，对不上）。
+import type { StatusDetailController, StatusDetailDialogStore, StatusDetailStore } from "@/features/job-detail/index.js";
+export type { StatusDetailDialogStore, StatusDetailStore };
 
-export type StatusDetailStore = ReadOnlyStore & {
-  actions: StatusDetailStoreActions;
-  getSnapshot: () => unknown;
-  subscribe: (listener: (snapshot: unknown, meta?: unknown) => void) => () => void;
-};
-
-export type StatusDetailDialogStore = DialogStore<{ activeTab?: string } | null>;
-
-export type StatusDetailController = {
-  activateDetailTab: (name?: string) => void;
-  openStatusDetailDialog: (tabName?: string) => void;
-  buildDetailPageUrl: (jobId: string) => string;
-  ensureOverviewData: () => Promise<unknown> | unknown;
-  ensureTranslationData: () => Promise<unknown> | unknown;
-  applyTranslationFilter: (...args: unknown[]) => unknown;
-  changeTranslationPage: (...args: unknown[]) => unknown;
-  selectTranslationItem: (...args: unknown[]) => unknown;
-  replayCurrentItem: (...args: unknown[]) => unknown;
-  rerunCurrentJob: () => Promise<unknown> | unknown;
-  syncRerunAction: (statusText?: string) => unknown;
-};
+export type { StatusDetailController };
 
 export type HomeStatusDetail = {
   store: StatusDetailStore;

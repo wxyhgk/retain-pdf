@@ -8,22 +8,29 @@ import {
 // 无 store 的纯快照对象按字段名直读
 const CURRENT_JOB_STORE_KEY = Symbol.for("retainpdf.currentJobStore");
 
-function currentJobId(state) {
-  const snapshot = state?.[CURRENT_JOB_STORE_KEY]?.getSnapshot?.();
+type CurrentJobStateLike = {
+  [CURRENT_JOB_STORE_KEY]?: { getSnapshot?: () => { jobId?: string } | null | undefined };
+  currentJobId?: string;
+} | null | undefined;
+
+function currentJobId(state: unknown) {
+  // state 可能是带 store 的运行时状态，也可能是纯快照对象，只按这两个字段读。
+  const runtimeState = state as CurrentJobStateLike;
+  const snapshot = runtimeState?.[CURRENT_JOB_STORE_KEY]?.getSnapshot?.();
   if (snapshot) {
     return `${snapshot.jobId || ""}`.trim();
   }
-  return `${state?.currentJobId || ""}`.trim();
+  return `${runtimeState?.currentJobId || ""}`.trim();
 }
 
-export function currentJobManifest(state) {
+export function currentJobManifest(state: unknown) {
   return cachedManifestFor(state, currentJobId(state));
 }
 
-export function currentJobStageActions(state) {
+export function currentJobStageActions(state: unknown) {
   return cachedStageActionsFor(state, currentJobId(state));
 }
 
-export function currentJobEventsFor(state, jobId) {
+export function currentJobEventsFor(state: unknown, jobId: unknown) {
   return cachedEventsFor(state, jobId);
 }

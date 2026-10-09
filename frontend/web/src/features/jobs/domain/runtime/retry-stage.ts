@@ -128,7 +128,7 @@ export function createRetryStage({
         await fetchJob(jobId);
       }
     } catch (err) {
-      setText("error-box", err.message || String(err));
+      setText("error-box", (err as { message?: string } | null)?.message || String(err));
     }
   };
 }

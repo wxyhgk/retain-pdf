@@ -1,6 +1,7 @@
 // job-runtime / recent-jobs / artifact-downloads —— 在 composition 阶段一次挂齐，
 // 不放进 initialize 的 if 懒挂载。
 
+import { mountedFeature } from "./feature-registry.js";
 import type { RecentJobsPageFetcher } from "@/features/library/index.js";
 import type { createLibraryDomain } from "./create-library-domain.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
@@ -151,7 +152,7 @@ export function createRuntimeFeatures({
     resetUploadProgress: bridge.resetUploadProgress,
     resetUploadedFile: bridge.resetUploadedFile,
     applyWorkflowMode: bridge.applyWorkflowMode,
-    clearPageRanges: () => features.uploadFeature.clearPageRanges(),
+    clearPageRanges: () => mountedFeature(features, "uploadFeature").clearPageRanges(),
     updateJobWarning: bridge.updateJobWarning,
     activateDetailTab: bridge.activateDetailTab,
     // 主页不再嵌入阅读 iframe；sync/close 保留给 job-runtime 契约，实现为空。

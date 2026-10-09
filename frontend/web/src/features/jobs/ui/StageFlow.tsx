@@ -31,6 +31,9 @@ type StageFlowProps = {
   stageRetries?: Partial<Record<string, StageFlowRetryAction | null | undefined>>;
 };
 
+// 阶段名映射只声明了 ocr/translate/render/done 四个键；按 string 索引时放宽成可缺省的 string 表
+const STAGE_NAME_TEXT: Readonly<Partial<Record<string, string>>> = STATUS_STAGE_LABELS;
+
 export function StageFlow({
   currentStageKey = "",
   selectedStageKey = "",
@@ -71,7 +74,7 @@ export function StageFlow({
               }
             }}
           >
-            <span className="status-stage-step-name">{STATUS_STAGE_LABELS[stageKey]}</span>
+            <span className="status-stage-step-name">{STAGE_NAME_TEXT[stageKey]}</span>
           </button>
         );
       })}

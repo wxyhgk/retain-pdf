@@ -143,14 +143,15 @@ export function createAppUpdateViewFeature() {
       }),
     }),
     // 抄自 view.js:153-166(setUpdateError)
-    setError: (error?: { message?: string } | null) => store.actions.apply({
+    // 检查更新时捕获的错误是 unknown，只读 message。
+    setError: (error?: unknown) => store.actions.apply({
       buttonState: APP_UPDATE_STATES.error,
       hasUpdate: false,
       buttonTitle: "检查更新失败",
       statusText: "检查失败",
       panel: panelOf({
         title: "检查更新失败",
-        body: error?.message || "暂时无法连接 GitHub Releases。",
+        body: (error as { message?: string } | null | undefined)?.message || "暂时无法连接 GitHub Releases。",
       }),
     }),
   };

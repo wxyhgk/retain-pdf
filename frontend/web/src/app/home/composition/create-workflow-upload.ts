@@ -1,5 +1,6 @@
 // workflow + upload 特性。
 
+import { mountedFeature } from "./feature-registry.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import type { CredentialGateRequest } from "@/features/ingest/index.js";
 import {
@@ -39,7 +40,7 @@ import {
   workflowConstants,
 } from "@/features/ingest/domain.js";
 import type {
-  AsyncFn,
+  CreateHomeCompositionOptions,
   CredentialsStatePort,
   HomeFeatures,
   UploadFeature,
@@ -68,9 +69,10 @@ type CreateWorkflowAndUploadArgs = {
   uploadStatePort: UploadStatePort;
   bridge: { resetUploadedFile: () => void; resetUploadProgress: () => void };
   legacyState: Record<string, unknown>;
-  setText: (id: string, value?: string) => void;
-  fetchGlossaries: AsyncFn;
-  submitUploadRequest: AsyncFn;
+  /** 值多数是文案；error-box 还可能收到错误诊断对象（见 state/text-store.ts）。 */
+  setText: (id: string, value?: unknown) => void;
+  fetchGlossaries: NonNullable<CreateHomeCompositionOptions["fetchGlossaries"]>;
+  submitUploadRequest: NonNullable<CreateHomeCompositionOptions["submitUploadRequest"]>;
 };
 
 export function createWorkflowAndUpload({
@@ -138,19 +140,19 @@ export function createWorkflowAndUpload({
     normalizeWorkflow,
     normalizeMathMode,
     constants,
-    currentPageRanges: () => features.uploadFeature.currentPageRanges() || "",
+    currentPageRanges: () => mountedFeature(features, "uploadFeature").currentPageRanges() || "",
     viewPort: workflowView.viewPort as import("@/features/ingest/domain.js").WorkflowViewPortLike,
     readSubmitValues,
-    renderPageRangeSummary: () => features.uploadFeature.renderPageRangeSummary(),
+    renderPageRangeSummary: () => mountedFeature(features, "uploadFeature").renderPageRangeSummary(),
     hasBrowserCredentials: () => {
       if (isOcrOnly()) {
         const credentials = credentialsStatePort.getCredentials();
         const token = credentialsStatePort.getOcrToken({ defaultPaddleToken: () => defaultPaddleToken() }) || "";
         return Boolean(credentials.ocrCredentialRef || token);
       }
-      return Boolean(features.browserCredentialsFeature.hasBrowserCredentials());
+      return Boolean(mountedFeature(features, "browserCredentialsFeature").hasBrowserCredentials());
     },
-    updateCredentialGate: (options: CredentialGateRequest) => features.browserCredentialsFeature.updateCredentialGate(options),
+    updateCredentialGate: (options: CredentialGateRequest) => mountedFeature(features, "browserCredentialsFeature").updateCredentialGate(options),
     fetchGlossaries,
     apiPrefix: API_PREFIX,
     setText,

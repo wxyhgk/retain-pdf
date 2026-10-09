@@ -1,6 +1,7 @@
 // 文件夹内容加载:openFolderId 变化或手动重试时拉取,瞬时失败自动重试一次。
 import { useCallback, useEffect, useState } from "react";
 import type { CollectionsController } from "./types.js";
+import type { LibraryCardItem } from "@/features/library/index.js";
 
 type UseFolderItemsArgs = {
   controller: CollectionsController;
@@ -8,7 +9,7 @@ type UseFolderItemsArgs = {
 };
 
 export function useFolderItems({ controller, openFolderId }: UseFolderItemsArgs) {
-  const [folderItems, setFolderItems] = useState([]);
+  const [folderItems, setFolderItems] = useState<LibraryCardItem[]>([]);
   const [folderLoading, setFolderLoading] = useState(false);
   const [folderError, setFolderError] = useState("");
   // 文件夹内容手动重试:folderRetryTick 进 effect 依赖,+1 即重新拉取。

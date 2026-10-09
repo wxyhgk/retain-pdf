@@ -157,7 +157,9 @@ async function fetchReaderMetadata(jobId: string, apiPrefix?: string) {
 
 
 export const pdfPort: ReaderPdfPort = {
-  fetchProtected: (input, init) => fetchProtected(input, init),
+  // 包端口的入参是 typeof fetch（RequestInfo | URL），宿主 fetchProtected 只接收字符串 URL；
+  // 包内调用方也只传字符串，与 app/reader/adapters/retainpdf.ts 的既有断言口径一致。
+  fetchProtected: (input, init) => fetchProtected(input as string, init),
   resolvePdfjsVendorUrl,
 };
 
@@ -244,11 +246,14 @@ export const sessionDataPort: ReaderSessionDataPort = {
   loadReaderOptionalArtifacts: (jobId) => defaultReaderDataPort.loadReaderOptionalArtifacts(jobId),
   loadJobPayload: (jobId) => defaultReaderDataPort.loadJobPayload(jobId),
   fetchDocumentByJobId: async (apiPrefix, jobId) => fetchDocumentByJobId(apiPrefix, jobId),
-  fetchProtected: (input, init) => fetchProtected(input, init),
+  // 包端口的入参是 typeof fetch（RequestInfo | URL），宿主 fetchProtected 只接收字符串 URL；
+  // 包内调用方也只传字符串，与 app/reader/adapters/retainpdf.ts 的既有断言口径一致。
+  fetchProtected: (input, init) => fetchProtected(input as string, init),
   resolveResourceUrl,
   resolveReaderSourcePdf: (manifestPayload) => resolveReaderSourcePdf(manifestPayload),
   resolveReaderTranslatedPdfUrl: (jobPayload, manifestPayload) => resolveReaderTranslatedPdfUrl(jobPayload, manifestPayload),
-  resolveReaderArtifactUrl: (item) => resolveReaderArtifactUrl(item),
+  // 包端口契约入参为 unknown，宿主实现按 manifest 条目类型处理，这里按实现入参断言。
+  resolveReaderArtifactUrl: (item) => resolveReaderArtifactUrl(item as Parameters<typeof readerData.resolveReaderArtifactUrl>[0]),
 };
 
 export const liveTranslationPort: ReaderLiveTranslationPort = {
@@ -308,7 +313,7 @@ export const createReaderDataPort = (options: ReaderDataPortOptions = {}) =>
     fetchMarkdownRange: fetchJobMarkdownRange,
     loadRegions: fetchReaderRegions,
     loadMetadata: fetchReaderMetadata,
-    fetchProtectedResource: fetchProtected,
+    fetchProtectedResource: fetchProtected as typeof fetch,
     liveTranslation: liveTranslationPort,
     ...options,
   });

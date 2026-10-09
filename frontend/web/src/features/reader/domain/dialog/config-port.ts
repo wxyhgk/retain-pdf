@@ -4,6 +4,7 @@ import {
   mockScenario,
 } from "@/platform/config/runtime.js";
 import { buildReaderParams, parseReaderParams } from "@/platform/navigation/pages.js";
+import type { ReaderAnchor } from "@/platform/navigation/pages.js";
 
 // 注入点签名直接取自 platform 运行时真值，避免 `any` 让宿主错配/漏接静默通过。
 type ReaderDialogConfigPortOptions = {
@@ -27,7 +28,7 @@ export function createReaderDialogConfigPort({
     }
   }
 
-  function buildReaderPageUrl(jobId, anchor = null) {
+  function buildReaderPageUrl(jobId: string, anchor: ReaderAnchor | null = null) {
     const normalizedJobId = `${jobId || ""}`.trim();
     if (!normalizedJobId) {
       return "";
@@ -42,7 +43,7 @@ export function createReaderDialogConfigPort({
   }
 
   // 馆藏文档"读原文":没有 job,用 document_id 打开只读源文档阅读器(F4)。
-  function buildReaderDocumentPageUrl(documentId, anchor = null) {
+  function buildReaderDocumentPageUrl(documentId: string, anchor: ReaderAnchor | null = null) {
     const normalizedId = `${documentId || ""}`.trim();
     if (!normalizedId) {
       return "";
@@ -58,7 +59,7 @@ export function createReaderDialogConfigPort({
     return locationProvider()?.href || "http://127.0.0.1/";
   }
 
-  function buildReaderRouteUrl(jobId) {
+  function buildReaderRouteUrl(jobId: string) {
     const normalizedJobId = `${jobId || ""}`.trim();
     const url = new URL(currentHref());
     if (!normalizedJobId) {
@@ -78,7 +79,7 @@ export function createReaderDialogConfigPort({
     return view === "reader" && jobId ? jobId : "";
   }
 
-  function isTrustedReaderMessage(event, expectedSource = null) {
+  function isTrustedReaderMessage(event: MessageEvent, expectedSource: MessageEventSource | null = null) {
     return trustWindowMessage(event, expectedSource);
   }
 

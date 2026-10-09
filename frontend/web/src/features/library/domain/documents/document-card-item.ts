@@ -93,7 +93,7 @@ function pickCardTitle(bookTitle: unknown, document: LibraryDocumentRecord | nul
 export function shapeDocumentCardItem(
   document: LibraryDocumentRecord = {},
   jobProjection: LibraryCardItem | null = null,
-) {
+): LibraryCardItem {
   const documentId = `${document.document_id || ""}`.trim();
   const activeJobId = `${document.active_job_id || ""}`.trim();
   const sharedDocumentIdentity = {
@@ -109,7 +109,9 @@ export function shapeDocumentCardItem(
   };
 
   if (activeJobId && jobProjection && typeof jobProjection === "object") {
-    const flattenedJobProjection = flattenStageSnapshot(jobProjection);
+    // flattenStageSnapshot 只把 stage_snapshot 摊平到同一条卡片上；领域包把返回值声明成宽松的
+    // JobLike（page_count 等字段是 unknown），这里按卡片类型收回来。
+    const flattenedJobProjection = flattenStageSnapshot(jobProjection) as LibraryCardItem;
     const jobId = `${flattenedJobProjection.job_id || jobProjection.job_id || activeJobId}`.trim();
     return {
       ...flattenedJobProjection,

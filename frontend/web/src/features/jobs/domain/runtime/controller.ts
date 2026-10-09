@@ -61,7 +61,7 @@ export interface JobRuntimeFeatureDeps {
   setWorkflowSections: (job: unknown) => void;
   resetUploadProgress: () => void;
   resetUploadedFile: () => void;
-  applyWorkflowMode: (mode: string) => void;
+  applyWorkflowMode: (mode?: string) => void;
   clearPageRanges: () => void;
   updateJobWarning: (warning: unknown) => void;
   activateDetailTab: (tab: string) => void;

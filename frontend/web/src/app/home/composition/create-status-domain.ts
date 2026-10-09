@@ -35,7 +35,8 @@ import type { HomeFeatures, StatusDetailHolder } from "./types.js";
 type CreateStatusDomainArgs = {
   features: HomeFeatures;
   documentRef: Document;
-  setText: (id: string, value?: string) => void;
+  /** 值多数是文案；error-box 还可能收到错误诊断对象（见 state/text-store.ts）。 */
+  setText: (id: string, value?: unknown) => void;
   statusDetailHolder: StatusDetailHolder;
 };
 

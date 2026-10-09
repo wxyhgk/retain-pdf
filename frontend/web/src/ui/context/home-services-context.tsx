@@ -13,6 +13,8 @@
 // 窄口是唯一来源：曾经的「泛型大包 + pick 回退」兼容口已退役（见下方
 // createNarrowHook 的说明），缺 Provider 直接按名字抛错。
 
+import type { ReaderAnchor } from "@/platform/navigation/pages.js";
+import type { StatusDetailDialogPayload } from "@/platform/contracts/status-detail-runtime-contract.js";
 import { createContext, createElement, useContext } from "react";
 import type { Context, ReactNode } from "react";
 import type { DialogStore } from "@/platform/store/dialog-store.js";
@@ -62,7 +64,7 @@ export type HomeStatusCardValue = {
 
 export type HomeStatusDetailValue = {
   store: HomeReadStore;
-  dialogStore: DialogStore<{ activeTab?: string } | null>;
+  dialogStore: DialogStore<StatusDetailDialogPayload>;
   controller: any;
 };
 
@@ -107,7 +109,7 @@ export type HomeUploadStatePortValue = {
 
 /** 主页阅读入口（跳独立 reader.html）。 */
 export type HomeReaderValue = {
-  openReader: (jobId: string, anchor?: unknown, documentId?: string, options?: { pinJob?: boolean }) => unknown;
+  openReader: (jobId: string, anchor?: ReaderAnchor | null, documentId?: string, options?: { pinJob?: boolean }) => unknown;
 };
 
 /** app 侧映射出的窄口聚合；HomeShellProviders 按此一次灌入全部窄 Context。 */

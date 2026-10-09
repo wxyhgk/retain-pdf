@@ -16,6 +16,7 @@ import { useState } from "react";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { CollectionsFolderView } from "./CollectionsFolderView.jsx";
 import { CollectionsGridView } from "./CollectionsGridView.jsx";
+import type { CollectionRecord } from "../domain/controller.js";
 import { useCollectionPreviews } from "./use-collection-previews.js";
 import { useCollectionsList } from "./use-collections-list.js";
 import { useFolderItems } from "./use-folder-items.js";
@@ -36,7 +37,7 @@ export function CollectionsView(props: CollectionsViewProps) {
   // 桥接:对话框保存成功就 bump 一次,这里订阅到变化就重新拉取列表。
   const { version } = useStoreSnapshot(reloadSignal);
 
-  const [openFolder, setOpenFolder] = useState(null);
+  const [openFolder, setOpenFolder] = useState<CollectionRecord | null>(null);
 
   const { collections, listLoading, listError, reload, resetAutoRetry } =
     useCollectionsList({ controller, version, setOpenFolder });

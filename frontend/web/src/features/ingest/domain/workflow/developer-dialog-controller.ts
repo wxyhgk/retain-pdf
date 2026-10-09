@@ -26,9 +26,9 @@ export interface CreateDeveloperDialogControllerOptions {
   viewPort: WorkflowViewPortLike;
   glossaryOptionsLoader: GlossaryOptionsLoaderLike;
   loadGlossaryOptions: () => void;
-  setDeveloperConfig: (config: unknown) => void;
+  setDeveloperConfig: (config: Record<string, unknown>) => void;
   resetDeveloperConfig: () => void;
-  saveDeveloperStoredConfig: (config?: unknown) => unknown;
+  saveDeveloperStoredConfig: (config?: Record<string, unknown>) => unknown;
   updateDeveloperWorkflowFormState: () => void;
   applyWorkflowMode: () => void;
 }
@@ -70,7 +70,7 @@ export function createDeveloperDialogController({
       normalizeWorkflow,
     }));
     viewPort.setDeveloperDialog(developerConfigWithDefaults());
-    void saveDeveloperStoredConfig(getDeveloperConfig());
+    void saveDeveloperStoredConfig(getDeveloperConfig() ?? undefined);
     applyWorkflowMode();
     viewPort.closeDeveloperDialog();
   }

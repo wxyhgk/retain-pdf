@@ -26,7 +26,8 @@ export function publishSubmitSuccess({
     startedAt: now(),
   });
   renderJob?.(payload);
-  startJobPolling?.(job?.job_id);
+  // 提交成功的回包一定带 job_id；没有就无从轮询。
+  if (job?.job_id) startJobPolling?.(job.job_id);
 
   const EventCtor = documentRef?.defaultView?.CustomEvent || globalThis.CustomEvent;
   const closeWorkflowEvent = typeof EventCtor === "function"

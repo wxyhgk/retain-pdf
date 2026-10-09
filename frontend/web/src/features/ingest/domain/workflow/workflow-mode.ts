@@ -30,7 +30,8 @@ export type CredentialGateRequest = {
 
 export interface CreateWorkflowModeControllerOptions {
   constants: WorkflowConstants;
-  developerConfigWithDefaults: () => WorkflowDeveloperConfig;
+  /** 补过默认值的配置，workflow 一定有值（见 developer-config.ts）。 */
+  developerConfigWithDefaults: () => WorkflowDeveloperConfig & { workflow: string };
   isOcrOnlyMode: () => boolean;
   getDeveloperConfig: () => WorkflowDeveloperConfig | Record<string, unknown> | null | undefined;
   getUploadState: () => { uploadId?: string; uploadedPageCount?: number };

@@ -76,7 +76,7 @@ export function createJobEventsResource({ fetchJobEvents, apiPrefix, mode = "rec
       const requestRevision = revision;
       const current = () => revision === requestRevision && sessions.get(id) === session && isCurrent();
       const initialQuery = { limit: JOB_EVENTS_PAGE_SIZE, start: historyMode === "all" ? "head" : "tail" } as const;
-      const read = (query) => fetchJobEventPages({ fetchPage: fetchJobEvents,
+      const read = (query: Parameters<typeof fetchJobEventPages>[0]["query"]) => fetchJobEventPages({ fetchPage: fetchJobEvents,
         jobId: id, apiPrefix, query, isCurrent: current });
       try {
         let next: JobEventListView;
@@ -85,7 +85,8 @@ export function createJobEventsResource({ fetchJobEvents, apiPrefix, mode = "rec
             ? { limit: JOB_EVENTS_PAGE_SIZE, cursor: session.payload.next_cursor }
             : initialQuery);
         } catch (error) {
-          if (error?.status !== 410 || error?.code !== "EVENT_CURSOR_EXPIRED" || !current()) throw error;
+          const err = error as { status?: number; code?: string } | null;
+          if (err?.status !== 410 || err?.code !== "EVENT_CURSOR_EXPIRED" || !current()) throw error;
           session.payload = null;
           onReset();
           // Reset only this event feed. A second expiry is surfaced with normal backoff.
@@ -97,7 +98,7 @@ export function createJobEventsResource({ fetchJobEvents, apiPrefix, mode = "rec
         session.retryAt = 0;
         return session.payload;
       } catch (error) {
-        if (current() && error?.name !== "AbortError") {
+        if (current() && (error as { name?: string } | null)?.name !== "AbortError") {
           session.failures += 1;
           session.retryAt = now() + Math.min(30_000, 1000 * 2 ** (session.failures - 1));
           session.error = error;
@@ -108,12 +109,12 @@ export function createJobEventsResource({ fetchJobEvents, apiPrefix, mode = "rec
   });
   return Object.freeze({
     ...resource,
-    hasFullHistory(jobId) {
+    hasFullHistory(jobId: string) {
       const session = sessions.get(jobId);
       return session?.mode === "all" && Boolean(session.payload);
     },
-    invalidate(params = null) {
-      if (params) sessions.delete(params.jobId);
+    invalidate(params: JobEventsLoadParams | null = null) {
+      if (params) sessions.delete(params.jobId ?? "");
       else { revision += 1; sessions.clear(); }
       resource.invalidate(params);
     },
