@@ -53,6 +53,8 @@ export interface DesktopHost {
   loadDesktopConfig(): DesktopIpcResult;
   saveDesktopConfig(payload?: DesktopConfigPayload): DesktopIpcResult;
   openOutputDirectory(): DesktopIpcResult;
+  /** 在访达 / 资源管理器里打开数据库备份所在的文件夹。 */
+  openBackupDirectory(): DesktopIpcResult;
   /** 系统的文件夹选择框；取消时为 null。 */
   pickDirectory(options?: { title?: string; defaultPath?: string }): Promise<string | null>;
   onStartupProgress(callback: (event: unknown) => void): () => void;
@@ -115,6 +117,9 @@ function resolveDesktopHost(): DesktopHost | null {
     },
     openOutputDirectory() {
       return invokeAdapter!.invoke("open_output_directory");
+    },
+    openBackupDirectory() {
+      return invokeAdapter!.invoke("open_backup_directory");
     },
     async pickDirectory(options: { title?: string; defaultPath?: string } = {}) {
       const result = await invokeAdapter!.invoke("pick_directory", options);

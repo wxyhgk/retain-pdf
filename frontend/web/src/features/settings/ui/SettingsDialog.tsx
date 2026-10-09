@@ -8,7 +8,7 @@
 //
 // 【测试契约，改版不许破】（credentials/glossaries/app-update component tests）：
 // - #app-settings-dialog / #app-settings-close-btn
-// - [data-settings-tab="api|glossary|sync|appearance|update"] 可点击
+// - [data-settings-tab="api|glossary|sync|backup|appearance|update"] 可点击
 // - [data-settings-panel=…] forceMount + hidden 属性切换（测试断言 .hidden）
 // - #credentials-btn / #glossary-btn 打开对应子对话框
 // - 外观面板 #theme-appearance-panel 与 #theme-option-<id>
@@ -70,6 +70,15 @@ function IconSync(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconArchive(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <rect x="3.5" y="4" width="17" height="4.5" rx="1.2" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M5 8.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M10 12.5h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
 function IconPalette(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
@@ -93,6 +102,7 @@ const TABS = [
   { id: "api", label: "接口设置", Icon: IconKey },
   { id: "glossary", label: "术语表", Icon: IconBook },
   { id: "sync", label: "同步", Icon: IconSync },
+  { id: "backup", label: "备份", Icon: IconArchive },
   { id: "appearance", label: "外观", Icon: IconPalette },
   { id: "update", label: "更新", Icon: IconUpdate },
 ];
@@ -101,6 +111,7 @@ const PANE_HEADS = {
   api: { title: "接口设置", desc: "" },
   glossary: { title: "术语表", desc: "维护术语偏好，翻译时优先使用你的术语。" },
   sync: { title: "同步", desc: "通过一个网盘文件夹，在几台电脑之间同步书库、译文和阅读进度。" },
+  backup: { title: "备份", desc: "书库数据库每天自动备份，出问题时可以恢复到之前的某一天。" },
   appearance: { title: "外观", desc: "选择界面配色，立即生效并记住本机选择。" },
   update: { title: "更新", desc: "查看当前版本，并从 GitHub Releases 重新检查更新。" },
 };
@@ -136,6 +147,8 @@ export type SettingsDialogProps = {
   appUpdateBannerSlot?: React.ReactNode | null;
   /** 「同步」分栏的内容（由 HomeApp 注入 SyncSettingsPanel）。 */
   syncPanelSlot?: React.ReactNode | null;
+  /** 「备份」分栏的内容（由 HomeApp 注入 BackupPanel）。 */
+  backupPanelSlot?: React.ReactNode | null;
 };
 
 export function SettingsDialog({
@@ -146,6 +159,7 @@ export function SettingsDialog({
   apiPaneSetupHintSlot = null,
   appUpdateBannerSlot = null,
   syncPanelSlot = null,
+  backupPanelSlot = null,
 }: SettingsDialogProps) {
 
   const dialogState = useDialogState(dialogStore);
@@ -269,6 +283,17 @@ export function SettingsDialog({
                 >
                   <PaneHead tab="sync" />
                   {activeTab === "sync" ? syncPanelSlot : null}
+                </TabsPrimitive.Content>
+
+                <TabsPrimitive.Content
+                  value="backup"
+                  forceMount
+                  hidden={activeTab !== "backup"}
+                  className={panelClass("backup")}
+                  data-settings-panel="backup"
+                >
+                  <PaneHead tab="backup" />
+                  {activeTab === "backup" ? backupPanelSlot : null}
                 </TabsPrimitive.Content>
 
                 <TabsPrimitive.Content

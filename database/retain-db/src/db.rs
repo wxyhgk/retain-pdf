@@ -9,6 +9,8 @@ use rusqlite::Connection;
 mod agent_calculations;
 #[path = "db/artifacts.rs"]
 mod artifacts;
+#[path = "db/backup.rs"]
+pub mod backup;
 #[path = "db/assets.rs"]
 mod assets;
 #[path = "db/collections.rs"]
@@ -180,6 +182,15 @@ impl Db {
         if *ready {
             return Ok(());
         }
+        // 结构要升级时先存一份备份(只在这个 Db 第一次连上时看一次)。
+        backup::backup_before_upgrade(conn, &self.data_root);
+        Self::apply_schema(conn)?;
+        *ready = true;
+        Ok(())
+    }
+
+    /// 建表、补列、跑版本化迁移(都幂等)。恢复备份后也用它把旧结构补到最新。
+    fn apply_schema(conn: &Connection) -> Result<()> {
         conn.execute_batch(
             r#"
             PRAGMA journal_mode=WAL;
@@ -291,8 +302,7 @@ impl Db {
             ensure_events_column(conn, column, "INTEGER")?;
         }
         // 图书馆表走版本化迁移,随 schema 保证存在(不依赖 init 被调用)
-        run_versioned_migrations(&conn)?;
-        *ready = true;
+        run_versioned_migrations(conn)?;
         Ok(())
     }
 

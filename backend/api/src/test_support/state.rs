@@ -21,6 +21,10 @@ pub(crate) fn assemble_app_state(config: Arc<AppConfig>) -> AppState {
         config.jobs_db_path.clone(),
         config.data_root.clone(),
     ));
+    let sync = Arc::new(crate::services::sync::SyncService::new(
+        db.clone(),
+        config.data_root.clone(),
+    ));
     AppState {
         ai_gateway: Arc::new(
             crate::services::ai::AiGateway::new(
@@ -41,10 +45,8 @@ pub(crate) fn assemble_app_state(config: Arc<AppConfig>) -> AppState {
             },
         )),
         model_executor: None,
-        sync: Arc::new(crate::services::sync::SyncService::new(
-            db.clone(),
-            config.data_root.clone(),
-        )),
+        sync: sync.clone(),
+        backup: Arc::new(crate::services::backup::BackupService::new(db.clone(), sync)),
         config,
         db,
         download_generation: Arc::default(),

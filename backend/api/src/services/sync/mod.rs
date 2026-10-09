@@ -419,6 +419,11 @@ impl SyncService {
     }
 
     /// 后台定时同步;改设置时立即醒来。
+    /// 停住同步(数据库恢复期间):正在跑的一轮先跑完,拿着它期间不开始新的一轮。
+    pub async fn pause(&self) -> tokio::sync::MutexGuard<'_, ()> {
+        self.run_lock.lock().await
+    }
+
     pub fn spawn_loop(self: Arc<Self>, mut shutdown: tokio::sync::watch::Receiver<bool>) -> tokio::task::JoinHandle<()> {
         tokio::spawn(async move {
             // 启动后稍等一会儿再跑第一轮,不跟启动抢资源。

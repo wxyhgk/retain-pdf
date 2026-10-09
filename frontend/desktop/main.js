@@ -606,6 +606,16 @@ ipcMain.handle("desktop:invoke", async (_event, command, args = {}) => {
       }
       return { ok: true, outputDir };
     }
+    case "open_backup_directory": {
+      // 设置 → 备份：数据库备份放在数据目录的 backups/db（见 retain-db 的 backup.rs）。
+      const backupDir = path.join(app.getPath("userData"), "data", "backups", "db");
+      fs.mkdirSync(backupDir, { recursive: true });
+      const result = await shell.openPath(backupDir);
+      if (result) {
+        throw new Error(result);
+      }
+      return { ok: true, backupDir };
+    }
     case "pick_directory": {
       // 同步设置里「选择文件夹」：系统的文件夹选择框，可新建文件夹。取消时返回 path: null。
       const owner = BrowserWindow.getFocusedWindow() || undefined;

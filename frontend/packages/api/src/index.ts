@@ -15,6 +15,7 @@ export type { AgentConfirmationMode } from "./agent-runtime-settings.js";
 export * from "./documents.js";
 export * from "./collections.js";
 export * from "./glossaries.js";
+export * from "./backups.js";
 export * from "./sync.js";
 export * from "./conversations.js";
 export * from "./providers.js";

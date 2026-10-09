@@ -31,6 +31,7 @@ pub struct AppState {
     pub model_executor: Option<Arc<crate::services::model_executor::ModelExecutor>>,
     /// 多设备同步(设置、后台定时同步、状态)。
     pub(crate) sync: Arc<crate::services::sync::SyncService>,
+    pub(crate) backup: Arc<crate::services::backup::BackupService>,
 }
 
 pub fn build_state(config: Arc<AppConfig>) -> Result<AppState> {
@@ -70,6 +71,10 @@ pub fn build_state(config: Arc<AppConfig>) -> Result<AppState> {
     } else {
         None
     };
+    let sync = Arc::new(crate::services::sync::SyncService::new(
+        db.clone(),
+        config.data_root.clone(),
+    ));
     Ok(AppState {
         ai_gateway: Arc::new(crate::services::ai::AiGateway::new(
             &config.ai_proxy,
@@ -87,10 +92,8 @@ pub fn build_state(config: Arc<AppConfig>) -> Result<AppState> {
             },
         )),
         model_executor,
-        sync: Arc::new(crate::services::sync::SyncService::new(
-            db.clone(),
-            config.data_root.clone(),
-        )),
+        sync: sync.clone(),
+        backup: Arc::new(crate::services::backup::BackupService::new(db.clone(), sync)),
         config: config.clone(),
         db,
         download_generation: Arc::default(),

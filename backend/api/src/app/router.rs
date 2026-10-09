@@ -13,6 +13,7 @@ mod credentials;
 mod documents;
 mod fonts;
 mod glossaries;
+mod backups;
 mod sync;
 mod ingestion;
 mod internal_agent;
@@ -65,6 +66,7 @@ fn authenticated_api_routes(state: &AppState) -> Router<AppState> {
         .merge(ingestion::routes())
         .merge(glossaries::routes())
         .merge(sync::routes())
+        .merge(backups::routes())
         .merge(documents::routes())
         .merge(ai::routes())
         .merge(collections::routes())
