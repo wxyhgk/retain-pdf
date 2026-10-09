@@ -3,9 +3,13 @@
 //! # 实体
 //!
 //! 同步的单位是「实体」:一组按同一个键取出的行。键和表的对应见 [`entity_spec`]:
-//! 一本书(documents + 标题状态)、一次上传、一个合集、一条合集成员、一条收藏、
-//! 一个任务(jobs + 产物登记 + 流水线记录 + 事件)。实体的第一张表是根表,其余是挂在它下面的
-//! 子表。
+//! 一本书(documents + 标题状态与标题建议)、一次上传、一个合集、一条合集成员、一条收藏、
+//! 一个任务(jobs + 产物登记 + 流水线记录 + 事件)、一张术语表、一张收藏截图、一段 AI 对话
+//! (含消息)、一次 AI 计算(含产出的图)、一次 AI 改文档的操作(含尝试、事件、产出的版本)。
+//! 实体的第一张表是根表,其余是挂在它下面的子表。
+//!
+//! 只在本机有意义的列不同步(见 [`local_only_columns`]):发出去前去掉,写入时这些列保留
+//! 本机的值(新行用默认值)。
 //!
 //! # 改动从哪来
 //!
@@ -41,7 +45,42 @@ pub const SYNC_KINDS: &[&str] = &[
     "collection_member",
     "favorite",
     "job",
+    "glossary",
+    "asset",
+    "conversation",
+    "calculation",
+    "operation",
 ];
+
+/// 每种实体的登记版本。新增种类、或给已有种类加了表时调高:已经开过同步的设备下一轮把
+/// 这一种的现有内容全部重新登记一遍(没变的内容不会重发)。
+pub const SYNC_SEED_VERSIONS: &[(&str, u32)] = &[
+    ("upload", 1),
+    ("document", 2),
+    ("collection", 1),
+    ("collection_member", 1),
+    ("favorite", 1),
+    ("job", 1),
+    ("glossary", 1),
+    ("asset", 1),
+    ("conversation", 1),
+    ("calculation", 1),
+    ("operation", 1),
+];
+
+/// 只在本机有意义、不同步的列:AI 对话接着哪个本机会话进程往下聊(别的设备上没有这个
+/// 会话,从对话记录重建)。
+pub fn local_only_columns(table: &str) -> &'static [&'static str] {
+    match table {
+        "ai_conversations" => &[
+            "agent_runtime_id",
+            "agent_session_cursor",
+            "agent_session_revision",
+            "agent_session_updated_at",
+        ],
+        _ => &[],
+    }
+}
 
 /// (表, 按哪几列取行)。第一项是根表。
 pub fn entity_spec(kind: &str) -> Option<&'static [(&'static str, &'static [&'static str])]> {
@@ -49,6 +88,7 @@ pub fn entity_spec(kind: &str) -> Option<&'static [(&'static str, &'static [&'st
     const DOCUMENT: &[(&str, &[&str])] = &[
         ("documents", &["document_id"]),
         ("document_title_state", &["document_id"]),
+        ("document_metadata_suggestions", &["document_id"]),
     ];
     const COLLECTION: &[(&str, &[&str])] = &[("collections", &["collection_id"])];
     const MEMBER: &[(&str, &[&str])] =
@@ -65,6 +105,22 @@ pub fn entity_spec(kind: &str) -> Option<&'static [(&'static str, &'static [&'st
         // 任务进度、阶段快照都从事件算出来。
         ("events", &["job_id"]),
     ];
+    const GLOSSARY: &[(&str, &[&str])] = &[("glossaries", &["glossary_id"])];
+    const ASSET: &[(&str, &[&str])] = &[("assets", &["asset_id"])];
+    const CONVERSATION: &[(&str, &[&str])] = &[
+        ("ai_conversations", &["conversation_id"]),
+        ("ai_messages", &["conversation_id"]),
+    ];
+    const CALCULATION: &[(&str, &[&str])] = &[
+        ("agent_calculation_runs", &["calculation_id"]),
+        ("agent_calculation_artifacts", &["calculation_id"]),
+    ];
+    const OPERATION: &[(&str, &[&str])] = &[
+        ("document_operations", &["operation_id"]),
+        ("document_operation_attempts", &["operation_id"]),
+        ("document_operation_events", &["operation_id"]),
+        ("document_versions", &["operation_id"]),
+    ];
     Some(match kind {
         "upload" => UPLOAD,
         "document" => DOCUMENT,
@@ -72,6 +128,11 @@ pub fn entity_spec(kind: &str) -> Option<&'static [(&'static str, &'static [&'st
         "collection_member" => MEMBER,
         "favorite" => FAVORITE,
         "job" => JOB,
+        "glossary" => GLOSSARY,
+        "asset" => ASSET,
+        "conversation" => CONVERSATION,
+        "calculation" => CALCULATION,
+        "operation" => OPERATION,
         _ => return None,
     })
 }
@@ -243,9 +304,13 @@ fn read_rows(
     let names: Vec<String> = stmt.column_names().iter().map(|s| s.to_string()).collect();
     let mut rows = stmt.query(rusqlite::params_from_iter(key.iter()))?;
     let mut out = Vec::new();
+    let local_only = local_only_columns(table);
     while let Some(row) = rows.next()? {
         let mut map = Map::new();
         for (index, name) in names.iter().enumerate() {
+            if local_only.contains(&name.as_str()) {
+                continue;
+            }
             map.insert(name.clone(), json_from_sql(row.get::<_, SqlValue>(index)?));
         }
         out.push(map);
@@ -260,10 +325,11 @@ fn insert_row(
     row: &Map<String, Value>,
     upsert: bool,
 ) -> Result<()> {
+    let local_only = local_only_columns(table);
     let columns: Vec<&String> = info
         .columns
         .iter()
-        .filter(|column| row.contains_key(column.as_str()))
+        .filter(|column| row.contains_key(column.as_str()) && !local_only.contains(&column.as_str()))
         .collect();
     if columns.is_empty() {
         bail!("sync row for {table} has no known columns");
@@ -452,26 +518,23 @@ impl Db {
         Ok(count as usize)
     }
 
-    /// 把本机现有的全部实体标成待同步(第一次开启同步、或要求全量重发时)。
-    pub fn sync_seed_all(&self) -> Result<usize> {
+    /// 把本机现有的这几种实体标成待同步(第一次开启同步、或某一种要重新登记时)。
+    pub fn sync_seed(&self, kinds: &[&str]) -> Result<usize> {
         let conn = self.connect()?;
         let now = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
         let mut total = 0;
-        for (kind, select) in [
-            ("upload", "SELECT upload_id AS k FROM uploads"),
-            ("document", "SELECT document_id AS k FROM documents"),
-            ("collection", "SELECT collection_id AS k FROM collections"),
-            (
-                "collection_member",
-                "SELECT collection_id || '|' || document_id AS k FROM collection_documents",
-            ),
-            ("favorite", "SELECT favorite_id AS k FROM favorites"),
-            ("job", "SELECT job_id AS k FROM jobs"),
-        ] {
+        for kind in kinds {
+            let spec = entity_spec(kind).ok_or_else(|| anyhow::anyhow!("unknown sync kind: {kind}"))?;
+            let (root, columns) = spec[0];
+            let key = columns
+                .iter()
+                .map(|c| format!("\"{c}\""))
+                .collect::<Vec<_>>()
+                .join(" || '|' || ");
             total += conn.execute(
                 &format!(
                     "INSERT OR IGNORE INTO sync_dirty(kind, entity_key, changed_at)
-                     SELECT '{kind}', k, {now} FROM ({select})"
+                     SELECT '{kind}', {key}, {now} FROM \"{root}\""
                 ),
                 [],
             )?;

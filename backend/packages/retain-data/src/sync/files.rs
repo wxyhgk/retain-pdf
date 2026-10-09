@@ -11,13 +11,21 @@ use std::time::UNIX_EPOCH;
 use anyhow::{bail, Result};
 use serde_json::Value;
 
+use super::engine::DATA_ROOT_TOKEN;
 use super::folder::sha256_file;
 use super::SyncFileEntry;
 use crate::db::sync::SyncRows;
 use crate::db::Db;
 
 /// 收到的文件只能放在这些目录下。
-const SYNCED_ROOTS: &[&str] = &["jobs", "uploads", "documents"];
+const SYNCED_ROOTS: &[&str] = &[
+    "jobs",
+    "uploads",
+    "documents",
+    "assets",
+    "agent-calculations",
+    "operations",
+];
 
 /// 任务目录里不带的东西(相对任务目录):渲染中间文件与可随时重新生成的下载。
 /// 登记成产物的单个文件不受此限(比如 Typst 叠加层 PDF)。
@@ -82,8 +90,13 @@ fn relative_string(data_root: &Path, path: &Path) -> Option<String> {
     (!parts.is_empty()).then(|| parts.join("/"))
 }
 
-/// 数据库里记的路径(相对数据目录,或旧记录里的绝对路径)-> 数据目录下的绝对路径。
+/// 数据库里记的路径(相对数据目录,或旧记录里的绝对路径;发出前已换成 `{{data_root}}/…`)
+/// -> 数据目录下的绝对路径。
 fn resolve_stored(data_root: &Path, stored: &str) -> Option<PathBuf> {
+    let stored = stored
+        .strip_prefix(DATA_ROOT_TOKEN)
+        .map(|rest| rest.trim_start_matches('/'))
+        .unwrap_or(stored);
     let path = Path::new(stored);
     let absolute = if path.is_absolute() {
         path.to_path_buf()
@@ -115,6 +128,17 @@ fn text<'a>(rows: &'a SyncRows, table: &str, column: &str) -> Option<&'a str> {
     rows.get(table)?.first()?.get(column)?.as_str()
 }
 
+/// 某张表每一行里记的文件路径(落在数据目录内的)。
+fn stored_paths(data_root: &Path, rows: &SyncRows, table: &str, column: &str) -> Vec<PathBuf> {
+    rows.get(table)
+        .map(Vec::as_slice)
+        .unwrap_or(&[])
+        .iter()
+        .filter_map(|row| row.get(column)?.as_str())
+        .filter_map(|stored| resolve_stored(data_root, stored))
+        .collect()
+}
+
 /// 一个实体现在在磁盘上的文件(绝对路径,排好序、去重)。
 pub(super) fn entity_files(data_root: &Path, kind: &str, key: &str, rows: &SyncRows) -> Result<Vec<PathBuf>> {
     let mut out = Vec::new();
@@ -127,6 +151,33 @@ pub(super) fn entity_files(data_root: &Path, kind: &str, key: &str, rows: &SyncR
             }
         }
         "document" => walk(&data_root.join("documents").join(key), &mut out)?,
+        "asset" => {
+            // assets/<前两位>/<哈希>.<扩展名>(扩展名按类型定,这里不重复那张表)。
+            if key.len() > 2 && key.is_ascii() {
+                let mut found = Vec::new();
+                walk(&data_root.join("assets").join(&key[..2]), &mut found)?;
+                out.extend(found.into_iter().filter(|path| {
+                    path.file_stem().and_then(|stem| stem.to_str()) == Some(key)
+                }));
+            }
+        }
+        "calculation" => {
+            walk(&data_root.join("agent-calculations").join(key), &mut out)?;
+            for path in stored_paths(data_root, rows, "agent_calculation_artifacts", "relative_path") {
+                if path.is_file() {
+                    out.push(path);
+                }
+            }
+        }
+        "operation" => {
+            // 每次尝试的工作目录:原文、改写程序、产出的 PDF、校验结果、日志。
+            walk(&data_root.join("operations").join(key), &mut out)?;
+            for path in stored_paths(data_root, rows, "document_versions", "artifact_key") {
+                if path.is_file() {
+                    out.push(path);
+                }
+            }
+        }
         "job" => {
             let job_dir = data_root.join("jobs").join(key);
             let mut found = Vec::new();
