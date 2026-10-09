@@ -155,3 +155,96 @@ def test_visual_profile_step_is_exact_and_ignores_wording(tmp_path: Path) -> Non
     moved = {**item, "bbox": [15, 35, 210, 60]}
     _, record = run_visual_profile(store, source_pdf_path=pdf, pages={0: [moved]})
     assert record.hit is False
+
+
+def _hidden_text_pdf(path: Path) -> Path:
+    doc = fitz.open()
+    page = doc.new_page(width=300, height=400)
+    # A scanned page: a full-page image with an invisible OCR text layer on top.
+    scan = fitz.Pixmap(fitz.csGRAY, fitz.IRect(0, 0, 150, 200), False)
+    scan.clear_with(230)
+    page.insert_image(page.rect, pixmap=scan)
+    page.insert_text((20, 80), ["invisible OCR layer with enough words"] * 12, fontsize=10, render_mode=3)
+    doc.save(path)
+    doc.close()
+    return path
+
+
+def _hidden_analysis():
+    from retainpdf_pipeline.render.contracts.document_analysis import RenderDocumentAnalysis
+    from types import SimpleNamespace
+
+    analysis = RenderDocumentAnalysis(pages={})
+    return SimpleNamespace(
+        hidden_text_strip_page_indices=frozenset({0}),
+        pikepdf_text_strip_page_indices=frozenset(),
+        pages=analysis.pages,
+    )
+
+
+def _texts(path: Path) -> str:
+    with fitz.open(path) as doc:
+        return doc[0].get_text()
+
+
+def test_source_base_step_is_cached_and_linked_not_moved(tmp_path: Path) -> None:
+    from retainpdf_pipeline.render.prepare.source_base import source_base_builder
+    from retainpdf_pipeline.render.source.render_source import build_render_source_pdf
+
+    source = _hidden_text_pdf(tmp_path / "source.pdf")
+    prepare_dir = tmp_path / "render_prepare"
+    out_dir = tmp_path / "rendered"
+    out_dir.mkdir()
+
+    def render(builder):
+        return build_render_source_pdf(
+            source_pdf_path=source,
+            output_pdf_path=out_dir / "out.pdf",
+            pdf_compress_dpi=0,
+            translated_pages=None,
+            strip_hidden_text=True,
+            document_analysis=_hidden_analysis(),
+            source_base_builder=builder,
+        )
+
+    fresh = render(None)
+    assert "invisible" in _texts(source) and "invisible" not in _texts(fresh.path)
+    assert not list(out_dir.rglob(".render-source-base-*")), "the uncached base leaves no temp dir"
+
+    first = render(source_base_builder(prepare_dir))
+    cache_pdf = prepare_dir / "source_base" / "base.pdf"
+    assert cache_pdf.is_file() and first.path != cache_pdf
+    assert first.path.read_bytes() == fresh.path.read_bytes()
+    # Non-artifact mode deletes its temp copies; the cached base must survive.
+    assert first.path in first.temp_paths
+    for path in first.temp_paths:
+        path.unlink(missing_ok=True)
+    assert cache_pdf.is_file()
+
+    second = render(source_base_builder(prepare_dir))
+    assert second.path.read_bytes() == fresh.path.read_bytes()
+    linked = second.path.read_bytes()
+    # Rebuilding the step with other inputs replaces the cache file; an earlier link keeps the old bytes.
+    from retainpdf_pipeline.render.prepare.source_base import run_source_base
+    from retainpdf_pipeline.render.prepare.store import PrepareStore
+
+    _base, record = run_source_base(
+        PrepareStore(prepare_dir), source_pdf_path=source, strip_hidden_text=True, start_page=0, end_page=0
+    )
+    assert record.hit is False
+    assert second.path.read_bytes() == linked
+
+
+def test_source_base_without_changes_uses_the_source(tmp_path: Path) -> None:
+    from retainpdf_pipeline.render.prepare.source_base import run_source_base
+    from retainpdf_pipeline.render.prepare.store import PrepareStore
+
+    pdf, _document = _doc_and_pdf(tmp_path)
+    base, record = run_source_base(
+        PrepareStore(tmp_path / "render_prepare"), source_pdf_path=pdf, strip_hidden_text=False, start_page=0, end_page=-1
+    )
+    assert base.path is None and base.cached
+    again, record = run_source_base(
+        PrepareStore(tmp_path / "render_prepare"), source_pdf_path=pdf, strip_hidden_text=False, start_page=3, end_page=9
+    )
+    assert record.hit is True, "the page range only matters when hidden text is stripped"

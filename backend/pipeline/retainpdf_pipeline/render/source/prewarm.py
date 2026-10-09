@@ -92,6 +92,7 @@ def _run_render_source_prewarm(spec: RenderPrewarmSpec, manifest_path: Path) -> 
                 source_cleanup_strategy=cleanup_strategy,
                 document_analysis=document_analysis,
                 pdf_structure_profile_path=pdf_structure_profile_path,
+                source_base_builder=spec.source_base_builder,
             )
         payload_prewarm = build_payload_prewarm(
             source_pdf_path=spec.source_pdf_path,

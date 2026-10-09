@@ -8,6 +8,7 @@ from retainpdf_pipeline.foundation.config import fonts
 from retainpdf_pipeline.foundation.config import layout
 from retainpdf_pipeline.foundation.config import runtime
 from retainpdf_pipeline.foundation.config.output_layout import ARTIFACTS_DIR_NAME
+from retainpdf_pipeline.render.prepare.source_base import source_base_builder
 from retainpdf_pipeline.render.prepare.store import PREPARE_DIR_NAME
 from retainpdf_pipeline.render.render_plan import RenderPlan
 from retainpdf_pipeline.render.workflow.context import RenderExecutionContext
@@ -213,6 +214,7 @@ def execute_render_plan(
             source_cleanup_strategy=cleanup_strategy,
             document_analysis=document_analysis,
             pdf_structure_profile_path=pdf_structure_profile_path,
+            source_base_builder=source_base_builder(prepare_dir),
         )
         if not no_cache:
             prepare_progress.step(3)

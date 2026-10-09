@@ -38,6 +38,8 @@ class RenderPrewarmSpec:
     # 取 visual_profile 的函数 (source_pdf_path, pages) -> DocumentVisualProfile；workflow 注入
     # 按准备步骤缓存的版本，None 时现算。
     visual_profile_builder: Callable | None = None
+    # 渲染源底子（修 XObject + 去隐藏文字）的构建函数，同上；None 时现做。
+    source_base_builder: Callable | None = None
 
 
 @dataclass(frozen=True)
