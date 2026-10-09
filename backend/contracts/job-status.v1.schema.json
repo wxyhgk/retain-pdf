@@ -402,11 +402,11 @@
         },
         "preparation": {
           "type": "string",
-          "description": "TRANSLATION_PREPARATION_MODES：off / artifacts_only / terms / terms+style。"
+          "description": "TRANSLATION_PREPARATION_MODES：off / artifacts_only / terms / terms+style / editorial。"
         },
         "refine": {
           "type": "string",
-          "description": "TRANSLATION_REFINE_MODES：off / review_only / review_and_fix。"
+          "description": "TRANSLATION_REFINE_MODES：off / review_only / review_and_fix / editorial。"
         },
         "refine_max_items": {
           "type": "integer"

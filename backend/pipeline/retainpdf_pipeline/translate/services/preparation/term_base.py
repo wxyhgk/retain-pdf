@@ -320,11 +320,16 @@ def term_base_glossary_entries(payload: dict[str, Any] | None) -> list[GlossaryE
         target = str(item.get("target", "") or "").strip()
         if not source or not target:
             continue
+        # 术语专员审定过的：人名 / 机构不强制、通用词剔除；文献与期刊名保留原文。
+        treatment = str(item.get("treatment", "") or "lock")
+        if treatment in ("free", "drop"):
+            continue
+        keep_original = treatment == "keep_original"
         entries.append(
             {
                 "source": source,
-                "target": target,
-                "level": "preferred",
+                "target": source if keep_original else target,
+                "level": "preserve" if keep_original else "preferred",
                 "match_mode": "exact" if _ACRONYM_RE.match(source) else "case_insensitive",
             }
         )

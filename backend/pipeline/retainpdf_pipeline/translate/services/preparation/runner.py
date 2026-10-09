@@ -52,11 +52,18 @@ from retainpdf_pipeline.translate.services.preparation.term_base import write_js
 from retainpdf_pipeline.translate.services.preparation.term_prescan import PRESCAN_PROMPT_VERSION
 from retainpdf_pipeline.translate.services.preparation.term_prescan import PrescanBatchStore
 from retainpdf_pipeline.translate.services.preparation.term_prescan import run_term_prescan
+from retainpdf_pipeline.translate.services.preparation.term_review import INJECTED_TREATMENTS
+from retainpdf_pipeline.translate.services.preparation.term_review import TERM_REVIEW_PROMPT_VERSION
+from retainpdf_pipeline.translate.services.preparation.term_review import review_term_base
+from retainpdf_pipeline.translate.services.preparation.term_review import term_treatment
 
-PREPARATION_MODES_WITH_TERMS = frozenset({"artifacts_only", "terms", "terms+style"})
-PREPARATION_MODES_WITH_STYLE = frozenset({"artifacts_only", "terms+style"})
-PREPARATION_MODES_INJECT_TERMS = frozenset({"terms", "terms+style"})
-PREPARATION_MODES_INJECT_STYLE = frozenset({"terms+style"})
+# editorial：terms+style 之外，预扫之后由术语专员审定分类（见 term_review.py）。
+PREPARATION_MODE_EDITORIAL = "editorial"
+PREPARATION_MODES_WITH_TERMS = frozenset({"artifacts_only", "terms", "terms+style", PREPARATION_MODE_EDITORIAL})
+PREPARATION_MODES_WITH_STYLE = frozenset({"artifacts_only", "terms+style", PREPARATION_MODE_EDITORIAL})
+PREPARATION_MODES_INJECT_TERMS = frozenset({"terms", "terms+style", PREPARATION_MODE_EDITORIAL})
+PREPARATION_MODES_INJECT_STYLE = frozenset({"terms+style", PREPARATION_MODE_EDITORIAL})
+PREPARATION_MODES_REVIEW_TERMS = frozenset({PREPARATION_MODE_EDITORIAL})
 
 
 @dataclass(frozen=True)
@@ -146,22 +153,25 @@ def prepare_translation(
     term_base_path = output_dir / TERM_BASE_FILE_NAME
     term_base_payload: dict[str, Any] | None = None
     if mode in PREPARATION_MODES_WITH_TERMS:
-        term_fingerprint = _sha256_json(
-            {
-                "schema": "term_base_v1",
-                "segmentation_version": SEGMENTATION_VERSION,
-                "prompt_version": PRESCAN_PROMPT_VERSION,
-                "batch_max_tokens": PRESCAN_BATCH_MAX_TOKENS,
-                "batch_max_segments": PRESCAN_BATCH_MAX_SEGMENTS,
-                "model": model.strip(),
-                "base_url": normalize_base_url(base_url),
-                "normalized_document_sha256": document_sha256,
-                "page_indices": page_list,
-                "domain": domain_label,
-                "target_lang": target_lang,
-                "user_glossary": _glossary_identity(user_entries),
-            }
-        )
+        fingerprint_inputs: dict[str, Any] = {
+            "schema": "term_base_v1",
+            "segmentation_version": SEGMENTATION_VERSION,
+            "prompt_version": PRESCAN_PROMPT_VERSION,
+            "batch_max_tokens": PRESCAN_BATCH_MAX_TOKENS,
+            "batch_max_segments": PRESCAN_BATCH_MAX_SEGMENTS,
+            "model": model.strip(),
+            "base_url": normalize_base_url(base_url),
+            "normalized_document_sha256": document_sha256,
+            "page_indices": page_list,
+            "domain": domain_label,
+            "target_lang": target_lang,
+            "user_glossary": _glossary_identity(user_entries),
+        }
+        if mode in PREPARATION_MODES_REVIEW_TERMS:
+            # 审定是术语表的一部分：开了审定的和没开的不能互相复用。只在开审定时加这一项，
+            # 其它档位的指纹与以前逐字节相同（已冻结的术语表照常复用）。
+            fingerprint_inputs["term_review"] = TERM_REVIEW_PROMPT_VERSION
+        term_fingerprint = _sha256_json(fingerprint_inputs)
         existing = load_term_base(term_base_path)
         if _reusable(existing, term_fingerprint):
             print(f"term-base: frozen artifact reused terms={len(existing.get('terms', []))}", flush=True)
@@ -217,6 +227,29 @@ def prepare_translation(
                     "segment_count": len(segments),
                 },
             )
+            if mode in PREPARATION_MODES_REVIEW_TERMS:
+                _emit("术语专员审定术语表", phase="term_review")
+                review_term_base(
+                    term_base_payload,
+                    segments=segments,
+                    api_key=api_key,
+                    model=model,
+                    base_url=base_url,
+                    workers=workers,
+                    domain=domain_label,
+                    target_lang=target_lang,
+                    target_language_name=target_language_name,
+                    request_fn=request_fn,
+                )
+                review = term_base_payload["review"]
+                print(
+                    f"term-review: status={review['status']} by_treatment={review['by_treatment']} "
+                    f"annotate={review['annotate_count']} unreviewed={review['unreviewed_count']}",
+                    flush=True,
+                )
+                if review["status"] != "completed":
+                    # 有批没审完：下次运行重新预扫 + 审定（和预扫失败一样不冻结）。
+                    term_base_payload["complete"] = False
             write_json_atomic(term_base_path, term_base_payload)
             print(
                 f"term-base: written terms={len(terms)} conflicts={term_base_payload['summary']['conflict_count']} "
@@ -230,8 +263,11 @@ def prepare_translation(
     if mode in PREPARATION_MODES_WITH_STYLE:
         key_terms = [
             {"source": str(item.get("source", "")), "target": str(item.get("target", ""))}
-            for item in (term_base_payload or {}).get("terms", [])[:STYLE_GUIDE_KEY_TERMS_LIMIT]
-            if isinstance(item, dict)
+            for item in [
+                term
+                for term in (term_base_payload or {}).get("terms", [])
+                if isinstance(term, dict) and term_treatment(term) in INJECTED_TREATMENTS
+            ][:STYLE_GUIDE_KEY_TERMS_LIMIT]
         ]
         sample_parts: list[str] = []
         sample_chars = 0

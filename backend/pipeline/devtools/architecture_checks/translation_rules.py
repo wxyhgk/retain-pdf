@@ -46,6 +46,7 @@ TRANSLATION_WORKFLOW_ALLOWED_FILES = {
     "batch_plan.py",
     "batch_runner.py",
     "book_flow.py",
+    "editorial.py",
     "execution.py",
     "execution_plan.py",
     "execution_runner.py",
@@ -198,6 +199,8 @@ TRANSLATION_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_pipeline.translate.services.quality.qa",
         # 译后精修（workflow/refine.py）：挑错 / 定点修改的纯逻辑，写回仍走 workflow/revision.py。
         "retainpdf_pipeline.translate.services.refine",
+        # 编辑部（workflow/editorial.py）：台账、主编规则框、整块重写的纯逻辑；写回同样走 revision.py。
+        "retainpdf_pipeline.translate.services.editorial",
     ),
     "llm": (
         "retainpdf_pipeline.translate.llm",

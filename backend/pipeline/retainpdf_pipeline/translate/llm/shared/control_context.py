@@ -396,7 +396,7 @@ def _normalize_preparation_mode(value: str) -> str:
     # terms+style 再把风格指南放进 system 前缀。Rust 侧的 TRANSLATION_PREPARATION_MODES
     # 由测试直接读这里的集合字面量对齐，改取值要两边一起改。
     normalized = str(value or "off").strip().lower()
-    if normalized in {"off", "artifacts_only", "terms", "terms+style"}:
+    if normalized in {"off", "artifacts_only", "terms", "terms+style", "editorial"}:
         return normalized
     return "off"
 
