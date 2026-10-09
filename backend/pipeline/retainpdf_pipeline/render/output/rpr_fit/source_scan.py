@@ -1,11 +1,19 @@
 """从底图 PDF 读矢量图形、图片与文字框，给 rpr_fit 引擎当障碍物。
 
-和引擎仓库 experiments/overlay/vector-obstacles.js 的 PyMuPDF 脚本同一份逻辑（引擎侧的
-几何处理在 src/retain/vector-obstacles.js）：
+产物格式与引擎仓库 experiments/overlay/vector-obstacles.js 的 PyMuPDF 脚本相同（引擎侧的几何
+处理在 src/retain/vector-obstacles.js）：
 
 - drawings：每个路径的外框、类型、线宽、填充 / 描边色、裁剪框（只取 scissor），路径拍平成
   折线（贝塞尔 8 段）；
-- images / words：OCR 障碍物（图、表、公式）按真实墨迹收紧框时用。
+- images / words：OCR 障碍物（图、表、公式）按真实墨迹收紧框时用，扫描页判定也用 images。
+
+读法（为速度）：
+- 路径用 ``get_cdrawings(extended=True)``：和 ``get_drawings`` 同样的内容（含裁剪路径），但在
+  C 里直接生成元组，快约 3.5 倍；落在已知障碍物里的路径不拍平（见 _collapse_into_obstacles），
+  拍平只做在少数框外的路径上。
+- 文字块、图片框用 ``get_bboxlog()``（每个绘制操作的类型 + 外框，C 里算好）。它**不**按裁剪
+  路径裁，所以不拿来读路径——裁掉看不见的路径会被当成障碍物；文字块和图片框只用来收紧障碍物
+  和判定扫描页，不受影响。
 
 只读取要渲染的页。
 """
@@ -24,11 +32,29 @@ def _bezier(p0, p1, p2, p3, n: int = 8) -> list[tuple[float, float]]:
         u = 1 - t
         points.append(
             (
-                u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x,
-                u * u * u * p0.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y,
+                u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0],
+                u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1],
             )
         )
     return points
+
+
+def _segments(items) -> list[list[tuple[float, float]]]:
+    """get_cdrawings 的 items（元组）→ 折线。"""
+    segments: list[list[tuple[float, float]]] = []
+    for item in items or []:
+        op = item[0]
+        if op == "l":
+            segments.append([tuple(item[1]), tuple(item[2])])
+        elif op == "c":
+            segments.append(_bezier(item[1], item[2], item[3], item[4]))
+        elif op == "re":
+            x0, y0, x1, y1 = item[1]
+            segments.append([(x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)])
+        elif op == "qu":
+            ul, ur, ll, lr = item[1]
+            segments.append([tuple(ul), tuple(ur), tuple(lr), tuple(ll), tuple(ul)])
+    return segments
 
 
 def _page_drawings(page: fitz.Page, obstacle_boxes: list[list[float]] | None = None) -> list[dict]:
@@ -38,15 +64,14 @@ def _page_drawings(page: fitz.Page, obstacle_boxes: list[list[float]] | None = N
     entries: list[dict] = []
     # extended=True 同时给出裁剪路径：level 为 L 的 clip 约束其后所有更深的条目，直到出现
     # level <= L 的条目为止。只用裁剪框（scissor）。
-    stack: list[tuple[int, fitz.Rect | None]] = []
-    for drawing in page.get_drawings(extended=True):
+    stack: list[tuple[int, tuple | None]] = []
+    for drawing in page.get_cdrawings(extended=True):
         level = drawing.get("level", 0)
         while stack and stack[-1][0] >= level:
             stack.pop()
         kind = drawing.get("type")
         if kind == "clip":
-            scissor = drawing.get("scissor")
-            stack.append((level, fitz.Rect(scissor) if scissor else None))
+            stack.append((level, drawing.get("scissor")))
             continue
         if kind == "group":
             stack.append((level, None))
@@ -58,16 +83,18 @@ def _page_drawings(page: fitz.Page, obstacle_boxes: list[list[float]] | None = N
         for _, scissor in stack:
             if scissor is None:
                 continue
-            clip = fitz.Rect(scissor) if clip is None else clip & scissor
+            clip = list(scissor) if clip is None else [
+                max(clip[0], scissor[0]), max(clip[1], scissor[1]), min(clip[2], scissor[2]), min(clip[3], scissor[3])
+            ]
         fill = drawing.get("fill")
         color = drawing.get("color")
         entry = {
-            "rect": [rect.x0, rect.y0, rect.x1, rect.y1],
-            "type": drawing.get("type") or "",
+            "rect": list(rect),
+            "type": kind or "",
             "width": drawing.get("width") or 0,
             "fill": list(fill) if fill is not None else None,
             "stroke": list(color) if color is not None else None,
-            "clip": [clip.x0, clip.y0, clip.x1, clip.y1] if clip is not None else None,
+            "clip": clip,
             "fillOpacity": drawing.get("fill_opacity"),
             "polylines": [],
         }
@@ -76,24 +103,24 @@ def _page_drawings(page: fitz.Page, obstacle_boxes: list[list[float]] | None = N
             if visible is not None and any(_contains(box, visible) for box in obstacle_boxes):
                 entries.append(entry)
                 continue
-        segments = []
-        for item in drawing.get("items") or []:
-            op = item[0]
-            if op == "l":
-                segments.append([(item[1].x, item[1].y), (item[2].x, item[2].y)])
-            elif op == "c":
-                segments.append(_bezier(item[1], item[2], item[3], item[4]))
-            elif op == "re":
-                q = item[1]
-                segments.append([(q.x0, q.y0), (q.x1, q.y0), (q.x1, q.y1), (q.x0, q.y1), (q.x0, q.y0)])
-            elif op == "qu":
-                q = item[1]
-                segments.append(
-                    [(q.ul.x, q.ul.y), (q.ur.x, q.ur.y), (q.lr.x, q.lr.y), (q.ll.x, q.ll.y), (q.ul.x, q.ul.y)]
-                )
-        entry["polylines"] = [[[round(x, 2), round(y, 2)] for x, y in segment] for segment in segments]
+        entry["polylines"] = [[[round(x, 2), round(y, 2)] for x, y in segment] for segment in _segments(drawing.get("items"))]
         entries.append(entry)
     return entries
+
+
+def _text_and_image_boxes(page: fitz.Page) -> tuple[list[list[float]], list[list[float]]]:
+    """get_bboxlog：文字块（fill-text / stroke-text）与图片（fill-image）的外框。"""
+    words: list[list[float]] = []
+    images: list[list[float]] = []
+    for kind, rect in page.get_bboxlog():
+        # ignore-text：不可见文字（扫描件的 OCR 文字层）。get_text("words") 也算它，扫描页的障碍物
+        # 靠它按墨迹收紧。
+        if kind in ("fill-text", "stroke-text", "ignore-text"):
+            if rect[2] > rect[0] and rect[3] > rect[1]:
+                words.append([round(rect[0], 2), round(rect[1], 2), round(rect[2], 2), round(rect[3], 2)])
+        elif kind == "fill-image":
+            images.append([rect[0], rect[1], rect[2], rect[3]])
+    return words, images
 
 
 Box = list[float]
@@ -173,11 +200,11 @@ def _collapse_into_obstacles(entries: list[dict], obstacle_boxes: list[Box]) -> 
     return kept
 
 
-def _is_raster_page(page: fitz.Page) -> bool:
+def _is_raster_page(page: fitz.Page, images: list[Box]) -> bool:
     page_area = max(1.0, page.rect.width * page.rect.height)
     largest = 0.0
-    for info in page.get_image_info():
-        rect = fitz.Rect(info["bbox"]) & page.rect
+    for box in images:
+        rect = fitz.Rect(box) & page.rect
         largest = max(largest, rect.width * rect.height)
     return largest >= RASTER_PAGE_IMAGE_RATIO * page_area
 
@@ -244,10 +271,9 @@ def extract_drawings(
             page = doc[int(index)]
             obstacles = list((obstacle_boxes or {}).get(int(index), []))
             texts = list((text_boxes or {}).get(int(index), []))
-            images = [[b[0], b[1], b[2], b[3]] for b in (info["bbox"] for info in page.get_image_info())]
-            words = [[round(w[0], 2), round(w[1], 2), round(w[2], 2), round(w[3], 2)] for w in page.get_text("words")]
+            words, images = _text_and_image_boxes(page)
             drawings = _collapse_into_obstacles(_page_drawings(page, obstacles), obstacles)
-            raster = _is_raster_page(page)
+            raster = _is_raster_page(page, images)
             if raster:
                 drawings.extend(_raster_ink(page, texts + obstacles))
             out[str(int(index))] = {
