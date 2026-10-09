@@ -106,7 +106,15 @@ if (indexHtml.includes("runtime-config.local.js")) {
 // 输入门禁）已经换成了终端里的 agent（「阅读页只留一扇 AI 的门」），阅读器产物里没有任何
 // 监听者，这个事件名被 tree-shake 掉是对的。原来的检查从那以后在 CI 上一直红（9 月 21 日起）。
 // 唯一的监听者是主页 AI 问答（HomeAskView，在 app bundle 里），下面照旧查它。
-const appBundleJs = readFile("dist/app.bundle.js");
+const appEntryJs = readFile("dist/app.bundle.js");
+// AI 问答、任务中心、书籍详情是按需加载的（HomeApp 里 React.lazy），代码在
+// dist/chunks/app/ 的分包里，不在入口文件里。功能标记要在「入口 + 首页分包」里找；
+// 分包随整个 dist/ 一起拷进桌面包（prepare-app 的 desktopFrontendRuntimeEntries）。
+const appChunkFiles = collectFiles(path.join(frontendRoot, "dist", "chunks", "app"), new Set([".js"]));
+if (!appChunkFiles.length) {
+  fail("Desktop frontend is missing home lazy chunks (dist/chunks/app)");
+}
+const appBundleJs = [appEntryJs, ...appChunkFiles.map((file) => fs.readFileSync(file, "utf8"))].join("\n");
 if (!appBundleJs.includes("./vendor/") && !appBundleJs.includes("vendor/pdfjs")) {
   // bundle may inline resolver strings differently; require credentials gate markers
 }
