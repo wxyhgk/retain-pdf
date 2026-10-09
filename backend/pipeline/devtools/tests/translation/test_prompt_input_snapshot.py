@@ -33,13 +33,18 @@ _BUILDERS = [build_single_item_fallback_messages, lambda item: build_messages([i
 #
 # 第二次重录:引用规则从「论文引用统一输出 $^{117}$」改成「行内方括号 [n] 原样、原文是上标才
 # 输出上标」(模型曾把行内 [n] 改上标且只改一部分,同篇混排)。placeholder 那组同样一字未动。
+#
+# 第三次重录：两组都变了，因为改的是两组共用的系统提示——把系统提示和任务说明里重复的规则
+# 合并成一份分节的提示（「半句照翻」原来写了 3 遍），并新增三条有数据支撑的规则：交叉引用
+# 对照（31 本书里 Equation 译「式」360 次、「方程」83 次、「公式」15 次）、中文全角标点、
+# 有通行译名的术语一律译出。公式指引去掉了 mitex 专属的说法（默认渲染已是自研引擎）。
 _DIGESTS = {
-    False: ["92f286faeba1db6ce9a76cf68360a3a3fe1c4806ea528d8258d879677fe7b4c0",
-            "517126bb63dbde134291b00af08c9892b901f623335067179400430a24ecaf27",
-            "5e819e5e3685f7a25bb9d7360d34537933633ab035287c3ed85daaa8e8539a59"],
-    True: ["3f61f097537f0a531d1dc83ce426ddf5c2fc513ff2f50ffc1b350b8cb5adb4c1",
-           "066795e7d9be537822b90d07439ee51f9d69d13652a3cc1e6e51965e6c5aab4f",
-           "5ec0d319f0356da30ddeff0e5440e8dfaea57e192e1f97f1dfecb183efa5bd1a"],
+    False: ["15fe855e02edb5c644061c000df928eb4b7e747c6223dad7de9714fc151fc75a",
+            "e0ff9a772d08d6301c011abcc41d8da089f67345018b17f9da500422dd7bee51",
+            "bc920a23c2fd652a38c1632e23fbd61fbb42e51ca1bdc9cb3a9a70985b1cedd4"],
+    True: ["9863f6136519f08980a4be18c17f4cf1810f5fb7f6286a2df0eda68a4d47d52b",
+           "78167b019b49725e9a30206e228e2640f352bd01bb0c93ecf4aba0f47efefa99",
+           "6e18079c57f2100962c158cba121c12985514580e8ef86141978f9ecb58ea33c"],
 }
 
 

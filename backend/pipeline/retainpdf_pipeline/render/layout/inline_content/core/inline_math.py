@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+from retainpdf_pipeline.services.pipeline_shared.direct_typst_math import is_fullwidth_punctuation
 from retainpdf_pipeline.render.layout.text_analysis import analyze_text
 from retainpdf_pipeline.render.layout.text_analysis import math_token_body
 from retainpdf_pipeline.render.layout.text_analysis import normalize_direct_typst_math_boundaries
@@ -119,20 +120,44 @@ def surround_inline_math_with_spaces(markdown: str) -> str:
     chunks: list[str] = []
     left_no_space = set("([{\"'“‘（【「『")
     right_no_space = set(".,;:!?)]}，。！？；：、（）【】「」『』")
+    after_math = False
     for token in analyze_text(text).tokens:
         if token.kind not in RAW_MATH_TOKEN_KINDS:
             chunks.append(token.value)
+            if after_math and token.value.strip():
+                # 全角标点和公式之间不留空格（「$x$ 。」→「$x$。」）。分词器可能把空格单切一段，
+                # 所以看的是公式之后拼起来的整段，而不是单个片段。
+                tail_index = after_math_index
+                tail = "".join(chunks[tail_index:])
+                if tail[:1] in (" ", "\t") and is_fullwidth_punctuation(tail.lstrip(" \t")[:1]):
+                    chunks[tail_index:] = [tail.lstrip(" \t")]
+                after_math = False
             continue
         expr = token.value
-        prev_char = text[token.start - 1] if token.start > 0 else ""
+        # 同上，公式前面（「， $x$」→「，$x$」）。
+        joined = "".join(chunks)
+        stripped = joined.rstrip(" \t")
+        if stripped != joined and is_fullwidth_punctuation(stripped[-1:]):
+            chunks = [stripped]
+            joined = stripped
+        prev_char = joined[-1:] if joined else ""
         next_char = text[token.end] if token.end < len(text) else ""
         prefix = ""
         suffix = ""
-        if prev_char and not prev_char.isspace() and prev_char not in left_no_space:
+        if (
+            prev_char and not prev_char.isspace() and prev_char not in left_no_space
+            and not is_fullwidth_punctuation(prev_char)
+        ):
             prefix = " "
-        if next_char and not next_char.isspace() and next_char not in right_no_space:
+        next_visible = text[token.end:].lstrip(" \t")[:1]
+        if (
+            next_char and not next_char.isspace() and next_char not in right_no_space
+            and not is_fullwidth_punctuation(next_char)
+        ):
             suffix = " "
         chunks.append(f"{prefix}{expr}{suffix}")
+        after_math = bool(next_visible)
+        after_math_index = len(chunks)
     return re.sub(r"[ \t]{2,}", " ", "".join(chunks)).strip()
 
 

@@ -62,7 +62,8 @@ def test_role_guidance_is_scoped(role, expected, math_mode):
 
 
 def test_compact_templates_keep_safety_rules_and_bounded_size():
-    names = ["translation_system_plain_text.txt", "translation_output_plain_text.txt",
+    # translation_zh_conventions.txt 只在目标语言是中文时拼进系统提示，但默认就是中文，按全量算。
+    names = ["translation_system.txt", "translation_zh_conventions.txt", "translation_output_plain_text.txt",
              "translation_task_plain_text.txt", "translation_direct_typst_guidance.txt"]
     fixed = "\n".join(render_prompt(n, target_language_name="简体中文") for n in names)
     assert len(fixed) < 1200  # Previous fixed templates: 1832 characters.

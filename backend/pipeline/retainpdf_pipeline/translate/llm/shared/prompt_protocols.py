@@ -223,15 +223,17 @@ def build_translation_system_prompt(
     include_sci_decision: bool = False,
     target_language_name: str = DEFAULT_TARGET_LANGUAGE_NAME,
 ) -> str:
+    # 纯文本与结构化输出共用一份系统提示（以前各存一份、逐字相同）；差别只在输出协议。
     system_prompt = render_prompt(
-        "translation_system_plain_text.txt"
-        if response_style == "plain_text"
-        else "translation_system.txt",
+        "translation_system.txt",
         **_prompt_context(target_language_name=target_language_name),
     )
     if response_style != "json":
         system_prompt = system_prompt.replace(JSON_ONLY_INSTRUCTION, "")
         system_prompt = system_prompt.replace(LEGACY_JSON_ONLY_INSTRUCTION_ZH, "").strip()
+    # 中文专属的体例（术语译出、交叉引用对照、全角标点）只在译成中文时加：目标语言可配。
+    if "中文" in _target_language_name(target_language_name):
+        system_prompt = f"{system_prompt}\n{load_prompt('translation_zh_conventions.txt')}".rstrip()
     if domain_guidance.strip():
         system_prompt = f"{system_prompt}\n\nDocument-specific translation guidance:\n{domain_guidance.strip()}"
     if mode == "sci" and include_sci_decision:

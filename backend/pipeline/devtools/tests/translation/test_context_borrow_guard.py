@@ -44,7 +44,6 @@ def test_prompt_templates_forbid_borrowing_for_half_sentence() -> None:
     for name in (
         "translation_task.txt",
         "translation_system.txt",
-        "translation_system_plain_text.txt",
     ):
         assert HALF_SENTENCE_NO_BORROW_GUARD in load_prompt(name), name
 

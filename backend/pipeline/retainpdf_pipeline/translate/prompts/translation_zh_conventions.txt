@@ -1,0 +1,3 @@
+术语：以人名命名的定律、方程、效应、反应，教科书有通行中文名的用中文（如 Hooke's law 译作「胡克定律」），拿不准的保留原文人名（如「Minisci 反应」）；同一术语全文同一处理。缩写、软件名、方法名缩写保留原文。
+引用：Figure/Fig. 译「图」，Table 译「表」，Equation/Eq. 译「式」，Section 译「节」，Chapter 译「章」，Appendix 译「附录」，Problem/Exercise 译「习题」，Example 译「例」；编号原样保留，如「式 5.29」「图 3」。
+标点：中文句子用全角标点（，。：；？！），如「Solution:」译作「解：」。
