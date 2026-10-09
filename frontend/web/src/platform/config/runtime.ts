@@ -63,7 +63,7 @@ export function isFileProtocol() {
   return window.location.protocol === "file:";
 }
 
-export function buildFrontendPageUrl(relativePath, params = {}) {
+export function buildFrontendPageUrl(relativePath: string, params: Record<string, unknown> = {}) {
   const baseHref = typeof window !== "undefined" && window.location?.href
     ? window.location.href
     : "http://127.0.0.1/";
@@ -86,7 +86,7 @@ export function readerMessageTargetOrigin() {
   return isFileProtocol() ? "*" : window.location.origin;
 }
 
-export function isTrustedWindowMessage(event, expectedSource = null) {
+export function isTrustedWindowMessage(event: MessageEvent, expectedSource: MessageEventSource | null = null) {
   if (expectedSource && event.source !== expectedSource) {
     return false;
   }
@@ -178,8 +178,8 @@ export function frontendApiKey() {
   return fromModule || liveRuntimeString("xApiKey");
 }
 
-export function buildApiHeaders(extraHeaders = {}) {
-  const headers = { ...extraHeaders };
+export function buildApiHeaders(extraHeaders: Record<string, string> = {}) {
+  const headers: Record<string, string> = { ...extraHeaders };
   const apiKey = frontendApiKey();
   if (apiKey) {
     headers["X-API-Key"] = apiKey;

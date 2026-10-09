@@ -7,24 +7,29 @@ import { BookCardProcessingOverlay } from "@/features/library/index.js";
 import { Check, Copy, Hash, UserRound } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-/**
- * @param {object} props
- * @param {string} props.coverUrl
- * @param {string} [props.title]
- * @param {string[]} [props.authors]
- * @param {string|number} [props.year]
- * @param {number} [props.pageCount] 保留兼容（页数已迁右栏简介）
- * @param {string} [props.readingStatus] 保留兼容（左栏阅读状态已移除）
- * @param {boolean} props.readerAvailable
- * @param {string} [props.readerActionLabel] 真实 job 的主阅读动作文案
- * @param {string} props.documentId
- * @param {string} [props.jobId] 当前任务 job_id；缺省回退 documentId
- * @param {string|boolean} props.busy
- * @param {boolean} [props.processing] 翻译/重试进行中：封面中央 loading
- * @param {() => void} props.onCompare
- * @param {() => void} props.onReadSource
- * @param {ReactNode} [props.quickDownloadsSlot]
- */
+type CoverActionsPanelProps = {
+  coverUrl: string | null;
+  title?: string | null;
+  authors?: string[];
+  year?: string | number;
+  /** 保留兼容（页数已迁右栏简介） */
+  pageCount?: number;
+  /** 保留兼容（左栏阅读状态已移除） */
+  readingStatus?: string;
+  readerAvailable: boolean;
+  /** 真实 job 的主阅读动作文案 */
+  readerActionLabel?: string;
+  documentId: string;
+  /** 当前任务 job_id；缺省回退 documentId */
+  jobId?: string;
+  busy?: string | boolean;
+  /** 翻译/重试进行中：封面中央 loading */
+  processing?: boolean;
+  onCompare: () => void;
+  onReadSource: () => void;
+  quickDownloadsSlot?: ReactNode;
+};
+
 export function CoverActionsPanel({
   coverUrl,
   title = "",
@@ -41,7 +46,7 @@ export function CoverActionsPanel({
   onCompare,
   onReadSource,
   quickDownloadsSlot,
-}) {
+}: CoverActionsPanelProps) {
   const compareReading = readerActionLabel === "对照阅读";
   const authorText = authors.length ? authors.join("、") : "未知作者";
   const displayJobId = `${jobId || documentId || ""}`.trim();
@@ -85,7 +90,7 @@ export function CoverActionsPanel({
       </div>
       <div className="book-detail-cover-identity">
         {/* 书名前不放图标：h3 是 -webkit-box 两行截断，图标会被挤成单独一行，孤零零悬在书名上方。 */}
-        <h3 title={title}>{title || "未命名文档"}</h3>
+        <h3 title={title ?? undefined}>{title || "未命名文档"}</h3>
         <p title={`${authorText}${year ? ` · ${year}` : ""}`}>
           <UserRound aria-hidden="true" />
           <span>{authorText}{year ? ` · ${year}` : ""}</span>

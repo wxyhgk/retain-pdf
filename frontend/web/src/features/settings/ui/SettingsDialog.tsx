@@ -20,7 +20,7 @@
 // 周期说明见旧版头注释结论：后台自检由 composition 的纯逻辑控制器驱动，
 // 与本组件是否挂载无关。
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type SVGProps } from "react";
 import { Tabs as TabsPrimitive } from "radix-ui";
 import {
   Dialog,
@@ -44,7 +44,7 @@ import { Button } from "@/ui/Button.jsx";
 // settings 域强耦合 credentials 域；现仅依赖 shared/settings-dialog-ids (无状态常量)。
 
 
-function IconKey(props) {
+function IconKey(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
       <path d="M14.5 9.5a4 4 0 1 1-1.2 2.86L5 20.65 3.35 19 11.6 10.7A4 4 0 0 1 14.5 9.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -52,7 +52,7 @@ function IconKey(props) {
     </svg>
   );
 }
-function IconBook(props) {
+function IconBook(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
       <path d="M5.5 5.2A2.2 2.2 0 0 1 7.7 3H19v15.5H7.7a2.2 2.2 0 0 0-2.2 2.2V5.2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
@@ -60,7 +60,7 @@ function IconBook(props) {
     </svg>
   );
 }
-function IconSync(props) {
+function IconSync(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
       <path d="M19.5 9A7.5 7.5 0 0 0 6 6.6L4.5 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -70,7 +70,7 @@ function IconSync(props) {
     </svg>
   );
 }
-function IconPalette(props) {
+function IconPalette(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
       <path d="M12 3a9 9 0 1 0 9 9c0-.5-.04-1-.12-1.48a5 5 0 0 1-6.4-6.4A9 9 0 0 0 12 3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
@@ -80,7 +80,7 @@ function IconPalette(props) {
     </svg>
   );
 }
-function IconUpdate(props) {
+function IconUpdate(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
       <path d="M12 5v2.1M12 16.9V19M5 12h2.1M16.9 12H19M7.05 7.05l1.5 1.5M15.45 15.45l1.5 1.5M16.95 7.05l-1.5 1.5M8.55 15.45l-1.5 1.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
@@ -174,7 +174,7 @@ export function SettingsDialog({
     return () => cancelAnimationFrame(raf);
   }, [open, activeTab, onPrepareCredentialPanels, setupMode]);
 
-  function handleOpenChange(nextOpen) {
+  function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
       dialogStore.close();
     }

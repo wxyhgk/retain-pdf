@@ -26,8 +26,8 @@
 
 import { useEffect, useRef } from "react";
 
-export function useDialogReturnFocus(open) {
-  const previouslyFocusedRef = useRef(null);
+export function useDialogReturnFocus(open: boolean) {
+  const previouslyFocusedRef = useRef<Element | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -35,10 +35,10 @@ export function useDialogReturnFocus(open) {
     }
   }, [open]);
 
-  function onCloseAutoFocus(event) {
+  function onCloseAutoFocus(event: Event) {
     event.preventDefault();
     const target = previouslyFocusedRef.current;
-    if (target && typeof target.focus === "function" && document.contains(target)) {
+    if (target && "focus" in target && typeof target.focus === "function" && document.contains(target)) {
       target.focus();
     }
   }

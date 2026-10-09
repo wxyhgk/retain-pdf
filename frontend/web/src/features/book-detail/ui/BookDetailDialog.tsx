@@ -158,7 +158,7 @@ export function BookDetailDialog() {
     jobs: documentJobs.jobs,
   });
 
-  const handleOpenChange = (next) => {
+  const handleOpenChange = (next: boolean) => {
     if (!next) close();
   };
 

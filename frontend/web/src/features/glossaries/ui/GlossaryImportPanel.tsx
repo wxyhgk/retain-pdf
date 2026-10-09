@@ -4,7 +4,15 @@
 
 import { GLOSSARY_DOM_IDS } from "./glossaries-dom-ids.js";
 
-export function GlossaryImportPanel({ visible, csvText, onCsvTextChange, onApply, onCancel }) {
+export type GlossaryImportPanelProps = {
+  visible: boolean;
+  csvText: string;
+  onCsvTextChange: (value: string) => void;
+  onApply: () => void;
+  onCancel: () => void;
+};
+
+export function GlossaryImportPanel({ visible, csvText, onCsvTextChange, onApply, onCancel }: GlossaryImportPanelProps) {
   return (
     <div id={GLOSSARY_DOM_IDS.importPanel} className={`glossary-import-panel${visible ? "" : " hidden"}`}>
       <textarea

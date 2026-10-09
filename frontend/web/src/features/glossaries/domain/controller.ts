@@ -16,12 +16,29 @@ import type {
   GlossariesViewPort,
 } from "./glossaries-store.js";
 
+/** 下载进度回调的载荷（与 platform 下载工具 emitProgress 的形状一致）。 */
+type GlossaryDownloadProgress = {
+  filename: string;
+  receivedBytes: number;
+  totalBytes: number;
+  percent: number;
+  done?: boolean;
+};
+
 /** 术语表详情：fetchGlossary 的返回值，也是 renderDraft 的入参。 */
 type GlossaryDetail = {
   glossary_id?: string;
   name?: string;
   entries?: Array<Partial<GlossaryEntryRow>>;
 };
+
+/** 取错误文案：优先 message 字段，否则退回 String(err)。 */
+function errorText(err: unknown): string {
+  const message = typeof err === "object" && err !== null && "message" in err && typeof err.message === "string"
+    ? err.message
+    : "";
+  return message || String(err);
+}
 
 export type GlossariesFeature = {
   bindEvents: () => void;
@@ -39,7 +56,7 @@ type GlossaryApiCall = (...args: unknown[]) => Promise<unknown>;
 /** mountGlossariesFeature 的依赖：API 函数 + 视图端口。 */
 export type GlossariesFeatureDeps = {
   apiPrefix?: string;
-  fetchGlossaries?: GlossaryApiCall;
+  fetchGlossaries: GlossaryApiCall;
   fetchGlossary: GlossaryApiCall;
   createGlossary: GlossaryApiCall;
   updateGlossary: GlossaryApiCall;
@@ -107,7 +124,8 @@ export function mountGlossariesFeature({
     return state.items;
   }
 
-  async function selectGlossary(glossaryId) {
+  // 形参取 unknown：bindEvents 的 HandlersBag 以 (...args: unknown[]) 的形态传入。
+  async function selectGlossary(glossaryId: unknown) {
     const normalizedGlossaryId = `${glossaryId || ""}`.trim();
     if (!normalizedGlossaryId) {
       return;
@@ -128,7 +146,7 @@ export function mountGlossariesFeature({
       if (requestSeq !== selectRequestSeq) {
         return;
       }
-      viewPort.setStatus(err.message || String(err), "error");
+      viewPort.setStatus(errorText(err), "error");
     }
   }
 
@@ -139,7 +157,7 @@ export function mountGlossariesFeature({
       await reloadGlossaries();
       viewPort.setStatus("");
     } catch (err) {
-      viewPort.setStatus(err.message || String(err), "error");
+      viewPort.setStatus(errorText(err), "error");
     }
   }
 
@@ -161,27 +179,27 @@ export function mountGlossariesFeature({
 
   async function save() {
     const payload = viewPort.readEditorPayload();
-    if (!payload.name.trim()) {
+    const { skippedMissingTarget, ...savePayload } = payload;
+    if (!savePayload.name.trim()) {
       viewPort.setStatus("请填写术语表名称。", "error");
       return;
     }
-    if (payload.skippedMissingTarget?.length > 0) {
+    if (skippedMissingTarget?.length > 0) {
       viewPort.setStatus("需要填写译文的术语还有空缺。", "error");
       return;
     }
-    delete payload.skippedMissingTarget;
     viewPort.setStatus("正在保存...");
     try {
       const saved = (state.selectedId && !state.draftOnly
-        ? await updateGlossary(apiPrefix, state.selectedId, payload)
-        : await createGlossary(apiPrefix, payload)) as { glossary_id?: string };
+        ? await updateGlossary(apiPrefix, state.selectedId, savePayload)
+        : await createGlossary(apiPrefix, savePayload)) as { glossary_id?: string };
       state.selectedId = saved.glossary_id || state.selectedId;
       state.draftOnly = false;
       await reloadGlossaries();
       await refreshWorkflowGlossaries?.({ force: true, selectedId: state.selectedId });
       viewPort.setStatus("已保存。", "valid");
     } catch (err) {
-      viewPort.setStatus(err.message || String(err), "error");
+      viewPort.setStatus(errorText(err), "error");
     }
   }
 
@@ -200,7 +218,7 @@ export function mountGlossariesFeature({
       await refreshWorkflowGlossaries?.({ force: true, selectedId: "" });
       viewPort.setStatus("已删除。", "valid");
     } catch (err) {
-      viewPort.setStatus(err.message || String(err), "error");
+      viewPort.setStatus(errorText(err), "error");
     }
   }
 
@@ -223,7 +241,7 @@ export function mountGlossariesFeature({
         fetchResponse: () => exportGlossaryCsv(apiPrefix, state.selectedId) as Promise<Response>,
         fallbackName,
         target: downloadTarget,
-        onProgress: ({ filename: progressFilename, receivedBytes, totalBytes, percent, done }) => {
+        onProgress: ({ filename: progressFilename, receivedBytes, totalBytes, percent, done }: GlossaryDownloadProgress) => {
           if (done) {
             completeDownloadToast(progressFilename);
             return;
@@ -233,7 +251,7 @@ export function mountGlossariesFeature({
       });
       viewPort.setStatus(`已导出 ${filename}。`, "valid");
     } catch (err) {
-      const message = err.message || String(err);
+      const message = errorText(err);
       viewPort.setStatus(message, "error");
       failDownloadToast(message);
     }
@@ -256,7 +274,7 @@ export function mountGlossariesFeature({
       viewPort.setImportVisible(false);
       viewPort.setStatus(`已解析 ${Number(payload?.entry_count) || 0} 条。`, "valid");
     } catch (err) {
-      viewPort.setStatus(err.message || String(err), "error");
+      viewPort.setStatus(errorText(err), "error");
     }
   }
 
@@ -264,7 +282,7 @@ export function mountGlossariesFeature({
     viewPort.bindEvents({
       open,
       close,
-      reload: () => reloadGlossaries().catch((err) => viewPort.setStatus(err.message || String(err), "error")),
+      reload: () => reloadGlossaries().catch((err) => viewPort.setStatus(errorText(err), "error")),
       selectGlossary,
       createNew,
       addRow: () => viewPort.addEntryRow(),

@@ -55,7 +55,7 @@ export function useBookDetailOcr({
         });
       }
     } catch (cause) {
-      setError(`${cause?.message || cause || "发起 OCR 失败"}`);
+      setError(`${(cause as { message?: string } | null)?.message || cause || "发起 OCR 失败"}`);
     } finally {
       setPending(false);
     }
@@ -71,7 +71,7 @@ export function useBookDetailOcr({
       await actions.cancelJob?.(id, "ocr");
       await onCancelled?.();
     } catch (cause) {
-      setError(`${cause?.message || cause || "取消 OCR 失败"}`);
+      setError(`${(cause as { message?: string } | null)?.message || cause || "取消 OCR 失败"}`);
     } finally {
       setCancelling(false);
     }

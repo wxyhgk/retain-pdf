@@ -68,7 +68,7 @@ export function AppUpdateBanner({ view, handlersRef }: AppUpdateBannerProps) {
   const [dialogOpen, setDialogOpen] = useAppUpdateDialogOpen();
   const { onCloseAutoFocus } = useDialogReturnFocus(dialogOpen);
 
-  function handleOpenChange(nextOpen) {
+  function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
       setDialogOpen(false);
     }

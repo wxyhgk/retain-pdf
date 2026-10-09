@@ -15,10 +15,12 @@ export function createCommandBus({
     if (!commandName || typeof handler !== "function") {
       return () => {};
     }
-    if (!handlers.has(commandName)) {
-      handlers.set(commandName, new Set());
+    let set = handlers.get(commandName);
+    if (!set) {
+      set = new Set();
+      handlers.set(commandName, set);
     }
-    handlers.get(commandName).add(handler);
+    set.add(handler);
     return () => handlers.get(commandName)?.delete(handler);
   }
 

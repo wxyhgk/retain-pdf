@@ -5,17 +5,18 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
 import { Trash2 } from "lucide-react";
 
-/**
- * @param {object} props
- * @param {string|boolean} props.busy
- * @param {() => void} props.onDelete
- * @param {string} [props.title] 确认框展示的书名
- */
+type DeleteFooterPanelProps = {
+  busy?: string | boolean;
+  onDelete: () => void;
+  /** 确认框展示的书名 */
+  title?: string;
+};
+
 export function DeleteFooterPanel({
   busy,
   onDelete,
   title = "",
-}) {
+}: DeleteFooterPanelProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const bookName = `${title || ""}`.trim();
   return (

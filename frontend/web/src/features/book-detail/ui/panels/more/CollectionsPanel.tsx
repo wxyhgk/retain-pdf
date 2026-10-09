@@ -4,13 +4,14 @@
 
 import { cn } from "@/ui/lib/utils";
 
-/**
- * @param {object} props
- * @param {Array<{ collection_id: string, name: string, member: boolean }>} props.collections
- * @param {string} props.collectionsBusy 当前 busy 的 collection_id
- * @param {(collectionId: string, nextMember: boolean) => void} props.onToggle
- */
-export function CollectionsPanel({ collections, collectionsBusy, onToggle }) {
+type CollectionsPanelProps = {
+  collections: Array<{ collection_id: string; name: string; member: boolean }>;
+  /** 当前 busy 的 collection_id */
+  collectionsBusy: string;
+  onToggle: (collectionId: string, nextMember: boolean) => void;
+};
+
+export function CollectionsPanel({ collections, collectionsBusy, onToggle }: CollectionsPanelProps) {
   if (!collections?.length) {
     return <span className="book-detail-collections-empty">还没有合集</span>;
   }

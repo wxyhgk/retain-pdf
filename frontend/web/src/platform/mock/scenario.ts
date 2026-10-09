@@ -14,6 +14,6 @@ export function currentMockScenario() {
   return ["upload", "ocr", "translate", "render", "done", "failed", "parallel"].includes(normalized) ? normalized : "";
 }
 
-export function isoOffsetMinutes(minutes) {
+export function isoOffsetMinutes(minutes: number) {
   return new Date(Date.now() + minutes * 60_000).toISOString();
 }

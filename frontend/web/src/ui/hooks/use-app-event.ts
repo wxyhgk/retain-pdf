@@ -9,7 +9,11 @@
 
 import { useEffect, useRef } from "react";
 
-export function useAppEvent(eventName, handler, { target = null } = {}) {
+export function useAppEvent(
+  eventName: string | null | undefined,
+  handler: (event: CustomEvent) => void,
+  { target = null }: { target?: EventTarget | null } = {},
+) {
   const handlerRef = useRef(handler);
 
   useEffect(() => {
@@ -24,7 +28,8 @@ export function useAppEvent(eventName, handler, { target = null } = {}) {
     if (!eventTarget?.addEventListener) {
       return undefined;
     }
-    const listener = (event) => handlerRef.current?.(event);
+    // APP_EVENTS 都是 CustomEvent 派发的，handler 按 CustomEvent 收。
+    const listener = (event: Event) => handlerRef.current?.(event as CustomEvent);
     eventTarget.addEventListener(eventName, listener);
     return () => eventTarget.removeEventListener(eventName, listener);
   }, [eventName, target]);

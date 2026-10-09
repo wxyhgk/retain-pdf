@@ -4,21 +4,21 @@
 import { btn } from "../ui.jsx";
 import { Check, X } from "lucide-react";
 
-/**
- * @param {object} props
- * @param {string} props.titleText
- * @param {string} props.busy
- * @param {() => void} props.onCancelEdit
- * @param {() => void} props.onSave
- * @param {(v: string) => void} props.onTitleChange
- */
+type TitleMetaPanelProps = {
+  titleText: string;
+  busy?: string;
+  onCancelEdit: () => void;
+  onSave: () => void;
+  onTitleChange: (value: string) => void;
+};
+
 export function TitleMetaPanel({
   titleText,
   busy,
   onCancelEdit,
   onSave,
   onTitleChange,
-}) {
+}: TitleMetaPanelProps) {
   return (
     <div className="space-y-2.5">
       <div>

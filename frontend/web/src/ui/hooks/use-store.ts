@@ -10,35 +10,58 @@
 
 import { useCallback, useRef, useSyncExternalStore } from "react";
 
-const snapshotCache = new WeakMap();
+/** 读快照 + 订阅所需的最小 store 形状；platform/store 的 Store 与 DialogStore 都满足。 */
+export type SnapshotStore<TState> = {
+  getSnapshot(): TState;
+  // 快照参数可选：部分 store 的订阅回调不带参数，此时缓存写入的是 undefined（与原行为一致）。
+  subscribe(listener: (snapshot?: TState) => void): () => void;
+};
 
-function cachedSnapshot(store) {
+type EqualityFn<T> = (a: T, b: T) => boolean;
+
+const snapshotCache = new WeakMap<object, unknown>();
+
+function cachedSnapshot<TState>(store: SnapshotStore<TState>): TState {
   if (!snapshotCache.has(store)) {
     snapshotCache.set(store, store.getSnapshot());
   }
-  return snapshotCache.get(store);
+  // 缓存只由同一个 store 写入（见下方 subscribe），取出的值必然是该 store 的快照类型。
+  return snapshotCache.get(store) as TState;
 }
 
-export function shallowEqual(a, b) {
+export function shallowEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) {
     return true;
   }
   if (!a || !b || typeof a !== "object" || typeof b !== "object") {
     return false;
   }
-  const keysA = Object.keys(a);
-  const keysB = Object.keys(b);
+  // 上面已确认是对象，这里只把它当成键值记录读取。
+  const recordA = a as Record<string, unknown>;
+  const recordB = b as Record<string, unknown>;
+  const keysA = Object.keys(recordA);
+  const keysB = Object.keys(recordB);
   if (keysA.length !== keysB.length) {
     return false;
   }
-  return keysA.every((key) => Object.is(a[key], b[key]));
+  return keysA.every((key) => Object.is(recordA[key], recordB[key]));
 }
 
-export function useStoreSnapshot(store, selector = null, isEqual = shallowEqual) {
-  const selectionRef = useRef({ store: null, hasValue: false, value: null });
+export function useStoreSnapshot<TState>(store: SnapshotStore<TState>): TState;
+export function useStoreSnapshot<TState, TSelected>(
+  store: SnapshotStore<TState>,
+  selector: (state: TState) => TSelected,
+  isEqual?: EqualityFn<TSelected>,
+): TSelected;
+export function useStoreSnapshot<TState, TSelected>(
+  store: SnapshotStore<TState>,
+  selector: ((state: TState) => TSelected) | null = null,
+  isEqual: EqualityFn<TSelected> = shallowEqual,
+): TState | TSelected {
+  const selectionRef = useRef<{ store: SnapshotStore<TState>; value: TSelected } | null>(null);
 
   const subscribe = useCallback(
-    (onStoreChange) => {
+    (onStoreChange: () => void) => {
       // 订阅建立时先把缓存对齐一次:缓存唯一的写入点在下面的监听回调里,
       // 所以一个 store 的订阅者全部卸载后,对它的写入会走 notify() 空转
       // (listener 集合为空),缓存停在卸载那一刻的旧快照。重新挂载时
@@ -58,7 +81,7 @@ export function useStoreSnapshot(store, selector = null, isEqual = shallowEqual)
     [store],
   );
 
-  const getSnapshot = useCallback(() => {
+  const getSnapshot = useCallback((): TState | TSelected => {
     const snapshot = cachedSnapshot(store);
     if (typeof selector !== "function") {
       return snapshot;
@@ -66,10 +89,10 @@ export function useStoreSnapshot(store, selector = null, isEqual = shallowEqual)
     const next = selector(snapshot);
     const previous = selectionRef.current;
     // 同 hook 位换 store 实例时旧选择失效：新旧结果浅相等也不得返回旧 store 对象。
-    if (previous.hasValue && previous.store === store && isEqual(previous.value, next)) {
+    if (previous && previous.store === store && isEqual(previous.value, next)) {
       return previous.value;
     }
-    selectionRef.current = { store, hasValue: true, value: next };
+    selectionRef.current = { store, value: next };
     return next;
   }, [store, selector, isEqual]);
 

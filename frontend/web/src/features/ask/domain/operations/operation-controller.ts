@@ -13,14 +13,20 @@ import type {
   AgentOperationView,
 } from "./types.js";
 import { AGENT_OPERATION_ACTION_KEY_PREFIX as ACTION_KEY_PREFIX } from "@/platform/config/storage-keys.js";
+import type {
+  AgentOperationCancelInput,
+  AgentOperationCommitInput,
+  AgentOperationRetryInput,
+  AgentOperationRunInput,
+} from "@retainpdf/api/document-operations";
 
 export type AgentOperationApi = {
   list: (options: { conversationId: string }) => Promise<unknown>;
   get: (operationId: string) => Promise<unknown>;
-  run: (operationId: string, input: Record<string, unknown>) => Promise<unknown>;
-  cancel: (operationId: string, input: Record<string, unknown>) => Promise<unknown>;
-  commit: (operationId: string, input: Record<string, unknown>) => Promise<unknown>;
-  retry: (operationId: string, input: Record<string, unknown>) => Promise<unknown>;
+  run: (operationId: string, input: AgentOperationRunInput) => Promise<unknown>;
+  cancel: (operationId: string, input: AgentOperationCancelInput) => Promise<unknown>;
+  commit: (operationId: string, input: AgentOperationCommitInput) => Promise<unknown>;
+  retry: (operationId: string, input: AgentOperationRetryInput) => Promise<unknown>;
 };
 
 type Dispatch = (action: AgentOperationReducerAction) => void;

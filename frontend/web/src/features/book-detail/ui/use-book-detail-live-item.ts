@@ -18,8 +18,8 @@ export function useBookDetailLiveItem(payloadItem: LibraryCardItem = {}) {
   return useMemo(() => {
     const documentId = `${payloadItem.document_id || ""}`.trim();
     const jobId = `${payloadItem.job_id || ""}`.trim();
-    const list = Array.isArray(recentJobs?.items) ? recentJobs.items : [];
-    let live = null;
+    const list: LibraryCardItem[] = Array.isArray(recentJobs?.items) ? recentJobs.items : [];
+    let live: LibraryCardItem | null = null;
     if (documentId) {
       live = list.find((row) => `${row.document_id || ""}`.trim() === documentId) || null;
     }

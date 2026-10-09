@@ -43,7 +43,7 @@ startxref
   return new TextEncoder().encode(pdf);
 }
 
-export async function fetchMockProtected(url) {
+export async function fetchMockProtected(url: string) {
   const raw = `${url || ""}`.trim();
   // @retainpdf/domain/job#resolveJobMarkdownBundleAction (镜像真实后端行为)会给
   // markdown bundle 追加 ?include_job_dir=true 查询串,source_pdf 等其它

@@ -1,11 +1,11 @@
 // 详情右栏 Tab 切换壳：简介 / 处理 / 文件。
 // 页签样式见同目录 BookDetailRightTabs.css（.book-detail-right-tab.is-active）。
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode, type SVGProps } from "react";
 import { Tabs as TabsPrimitive } from "radix-ui";
 import { cn } from "@/ui/lib/utils";
 
-function IconBook(props) {
+function IconBook(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" width="13" height="13" aria-hidden="true" {...props}>
       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" strokeLinecap="round" />
@@ -13,7 +13,7 @@ function IconBook(props) {
     </svg>
   );
 }
-function IconProcessing(props) {
+function IconProcessing(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" width="13" height="13" aria-hidden="true" {...props}>
       <path d="m5 8 6 6" strokeLinecap="round" />
@@ -25,7 +25,7 @@ function IconProcessing(props) {
     </svg>
   );
 }
-function IconFile(props) {
+function IconFile(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" width="13" height="13" aria-hidden="true" {...props}>
       <path d="M6 2h8l4 4v16H6z" strokeLinejoin="round" />

@@ -12,6 +12,17 @@
 //
 // 函数签名与实现逐字保留，未借迁移改写状态模型。
 
+/** 桌面首启流程用到的两个开关。读写口径只约定字段名：调用方有的传强类型对象，有的传 Record<string, unknown>。 */
+type DesktopFlags = {
+  desktopMode?: unknown;
+  desktopConfigured?: unknown;
+};
+
+/** 开发者模型覆盖配置的片段，同上只约定字段名。 */
+type DeveloperSlice = {
+  developerConfig?: unknown;
+};
+
 export function createDesktopState() {
   return {
     desktopMode: false,
@@ -19,19 +30,19 @@ export function createDesktopState() {
   };
 }
 
-export function setDesktopMode(target, value = true) {
+export function setDesktopMode(target: DesktopFlags, value = true) {
   target.desktopMode = Boolean(value);
 }
 
-export function setDesktopConfigured(target, value = false) {
+export function setDesktopConfigured(target: DesktopFlags, value = false) {
   target.desktopConfigured = Boolean(value);
 }
 
-export function isDesktopMode(target) {
+export function isDesktopMode(target: DesktopFlags) {
   return Boolean(target.desktopMode);
 }
 
-export function isDesktopConfigured(target) {
+export function isDesktopConfigured(target: DesktopFlags) {
   return Boolean(target.desktopConfigured);
 }
 
@@ -41,17 +52,18 @@ export function createDeveloperState() {
   };
 }
 
-export function setDeveloperConfig(target, config = {}) {
+export function setDeveloperConfig(target: DeveloperSlice, config: Record<string, unknown> = {}) {
   target.developerConfig = config && typeof config === "object" ? { ...config } : {};
 }
 
-export function resetDeveloperConfig(target) {
+export function resetDeveloperConfig(target: DeveloperSlice) {
   target.developerConfig = {};
 }
 
-export function getDeveloperConfig(target) {
+export function getDeveloperConfig(target: DeveloperSlice): Record<string, unknown> {
+  // 写入侧（setDeveloperConfig）只会放对象，这里按对象读回。
   return target.developerConfig && typeof target.developerConfig === "object"
-    ? target.developerConfig
+    ? (target.developerConfig as Record<string, unknown>)
     : {};
 }
 

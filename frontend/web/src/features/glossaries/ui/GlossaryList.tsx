@@ -3,8 +3,16 @@
 
 import { EmptyState } from "@/ui/icons/EmptyState.jsx";
 import { GLOSSARY_DOM_IDS } from "./glossaries-dom-ids.js";
+import type { GlossaryListItem } from "../domain/glossaries-store.js";
 
-export function GlossaryList({ items, selectedId, onSelect, onCreateNew }) {
+export type GlossaryListProps = {
+  items: GlossaryListItem[];
+  selectedId: string;
+  onSelect: (glossaryId: string) => void;
+  onCreateNew: () => void;
+};
+
+export function GlossaryList({ items, selectedId, onSelect, onCreateNew }: GlossaryListProps) {
   const hasItems = items.length > 0;
   return (
     <aside className="glossary-list-panel">

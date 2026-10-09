@@ -175,11 +175,11 @@ export function isOfficialDeepSeekBaseUrl(value = "") {
   }
 }
 
-export function normalizeOcrProvider(value) {
+export function normalizeOcrProvider(value: unknown) {
   const provider = `${value || ""}`.trim().toLowerCase();
   return OCR_PROVIDER_DEFINITIONS.some((item) => item.id === provider) ? provider : DEFAULT_OCR_PROVIDER;
 }
 
-export function getOcrProviderDefinition(provider) {
+export function getOcrProviderDefinition(provider: unknown) {
   return OCR_PROVIDER_DEFINITIONS.find((item) => item.id === normalizeOcrProvider(provider)) || OCR_PROVIDER_DEFINITIONS[0];
 }

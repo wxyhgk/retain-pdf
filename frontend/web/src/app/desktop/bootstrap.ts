@@ -13,7 +13,7 @@ import {
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 
 export function showDesktopUi() {
-  document.getElementById("open-output-btn").classList.remove("hidden");
+  document.getElementById("open-output-btn")?.classList.remove("hidden");
 }
 
 export function openSetupDialog() {

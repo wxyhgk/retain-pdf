@@ -8,13 +8,13 @@ export const READING_STATUSES = [
   { value: "done", label: "读完" },
 ];
 
-/**
- * @param {object} props
- * @param {string} props.value
- * @param {string} props.busy
- * @param {(value: string) => void} props.onChange
- */
-export function ReadingStatusPanel({ value, busy, onChange }) {
+type ReadingStatusPanelProps = {
+  value: string;
+  busy?: string;
+  onChange: (value: string) => void;
+};
+
+export function ReadingStatusPanel({ value, busy, onChange }: ReadingStatusPanelProps) {
   return (
     <div className="book-detail-reading-status-panel">
       <div className="inline-flex overflow-hidden rounded-md border border-border" role="group" aria-label="阅读状态">

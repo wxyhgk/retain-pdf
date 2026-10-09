@@ -13,7 +13,7 @@
 // artifacts 域的 document 级委托据此拦截点击），任务详情入口走
 // statusDetail.controller.openStatusDetailDialog()。
 
-import { StatusCardEmbedded } from "./StatusCardEmbedded.jsx";
+import { StatusCardEmbedded, type StatusCardEmbeddedProps } from "./StatusCardEmbedded.jsx";
 
 /**
  * @param {object} props
@@ -29,7 +29,7 @@ export function StatusCard({
   rootId,
   className = "",
   fallbackItem = null,
-}) {
+}: StatusCardEmbeddedProps) {
   return (
     <StatusCardEmbedded
       visible={visible}

@@ -3,28 +3,45 @@ import { UPDATE_CHECK_CACHE_STORAGE_KEY as CACHE_KEY } from "@/platform/config/s
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-function isObject(value) {
-  return value && typeof value === "object" && !Array.isArray(value);
+/** 缓存条目：normalizeReleaseInfo 的字段加上检查时间戳（读出与写入共用同一形状）。 */
+export type CachedUpdateInfo = {
+  checkedAt: number;
+  currentVersion: string;
+  latestVersion: string;
+  hasUpdate: boolean;
+  title: string;
+  body: string;
+  htmlUrl: string;
+  publishedAt: string;
+};
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function normalizeCachedInfo(value) {
+/** JSON 解析出的字段只有字符串才采用，其余视为缺失。 */
+function textOf(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function normalizeCachedInfo(value: unknown): CachedUpdateInfo | null {
   if (!isObject(value)) {
     return null;
   }
   const checkedAt = Number(value.checkedAt);
-  const latestVersion = `${value.latestVersion || ""}`.trim();
+  const latestVersion = textOf(value.latestVersion).trim();
   if (!Number.isFinite(checkedAt) || !latestVersion) {
     return null;
   }
   return {
     checkedAt,
-    currentVersion: value.currentVersion || APP_VERSION,
+    currentVersion: textOf(value.currentVersion) || APP_VERSION,
     latestVersion,
     hasUpdate: Boolean(value.hasUpdate),
-    title: value.title || latestVersion,
-    body: value.body || "",
-    htmlUrl: value.htmlUrl || "",
-    publishedAt: value.publishedAt || "",
+    title: textOf(value.title) || latestVersion,
+    body: textOf(value.body),
+    htmlUrl: textOf(value.htmlUrl),
+    publishedAt: textOf(value.publishedAt),
   };
 }
 
@@ -51,20 +68,21 @@ export function createUpdateCachePort({
     }
   }
 
-  function write(info) {
-    if (!info) {
+  // 参数取 unknown：装配层的端口类型是 (info: unknown) => void，这里在入口收窄。
+  function write(info: unknown) {
+    if (!isObject(info)) {
       return;
     }
     try {
       const cached = {
         checkedAt: now(),
-        currentVersion: info.currentVersion || APP_VERSION,
-        latestVersion: info.latestVersion || "",
+        currentVersion: textOf(info.currentVersion) || APP_VERSION,
+        latestVersion: textOf(info.latestVersion),
         hasUpdate: Boolean(info.hasUpdate),
-        title: info.title || "",
-        body: info.body || "",
-        htmlUrl: info.htmlUrl || "",
-        publishedAt: info.publishedAt || "",
+        title: textOf(info.title),
+        body: textOf(info.body),
+        htmlUrl: textOf(info.htmlUrl),
+        publishedAt: textOf(info.publishedAt),
       };
       storage?.setItem(CACHE_KEY, JSON.stringify(cached));
     } catch {
@@ -84,6 +102,6 @@ export function readUpdateCache(now = Date.now()) {
   return createUpdateCachePort({ now: () => now }).read();
 }
 
-export function writeUpdateCache(info, now = Date.now()) {
+export function writeUpdateCache(info: unknown, now = Date.now()) {
   createUpdateCachePort({ now: () => now }).write(info);
 }

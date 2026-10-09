@@ -31,6 +31,15 @@ export type ProtectedLinkEvent = {
   preventDefault: () => void;
 };
 
+/** 下载进度回调的载荷（与 platform 下载工具 emitProgress 的形状一致）。 */
+export type ArtifactDownloadProgress = {
+  filename: string;
+  receivedBytes: number;
+  totalBytes: number;
+  percent: number;
+  done?: boolean;
+};
+
 export type ArtifactDownloadsFeatureDeps = {
   state: unknown;
   fetchProtected: (url: string) => Promise<Response>;
@@ -58,7 +67,7 @@ export function mountArtifactDownloadsFeature({
     return receivedText ? `正在下载 ${receivedText}` : "正在下载...";
   }
 
-  async function handleProtectedArtifactClick(event: ProtectedLinkEvent, matchedLink: HTMLElement | null = null) {
+  async function handleProtectedArtifactClick(event: ProtectedLinkEvent, matchedLink: Element | null = null) {
     // currentTarget 是 EventTarget，这里按调用方约定（事件绑定在 <a> 上）收窄为 HTMLElement。
     const link = (matchedLink || event.currentTarget) as HTMLElement | null;
     if (!link) {
@@ -97,7 +106,7 @@ export function mountArtifactDownloadsFeature({
         fallbackName,
         preferredName: preferSuggestedName ? preferredName : "",
         target: downloadTarget,
-        onProgress: ({ filename, receivedBytes, totalBytes, percent, done }) => {
+        onProgress: ({ filename, receivedBytes, totalBytes, percent, done }: ArtifactDownloadProgress) => {
           if (done) {
             setText("error-box", `已开始保存 ${filename}`);
             viewPort.setLinkBusy(link, true, "已完成");
@@ -118,7 +127,7 @@ export function mountArtifactDownloadsFeature({
           });
         },
       });
-    } catch (err) {
+    } catch (err: unknown) {
       setText("error-box", buildErrorDiagnostic(err, {
         operation: "下载任务产物",
         url,
@@ -128,7 +137,9 @@ export function mountArtifactDownloadsFeature({
           filename: preferredName,
         },
       }));
-      failDownloadToast(err.message || "下载失败");
+      // 非 Error 的抛出值没有 message，沿用兜底文案。
+      const message = err instanceof Error ? err.message : "";
+      failDownloadToast(message || "下载失败");
     } finally {
       viewPort.setLinkBusy(link, false);
     }

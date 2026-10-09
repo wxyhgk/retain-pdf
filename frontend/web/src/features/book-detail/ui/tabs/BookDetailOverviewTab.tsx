@@ -51,13 +51,13 @@ export type BookDetailOverviewTabProps = {
   onOpenProcessing?: () => void;
 };
 
-function formatBytes(bytes) {
+function formatBytes(bytes: unknown) {
   const n = Number(bytes);
   if (!Number.isFinite(n) || n <= 0) return "";
   return n < 1024 * 1024 ? `${(n / 1024).toFixed(0)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function formatDate(value) {
+function formatDate(value: unknown) {
   const raw = `${value || ""}`.trim();
   if (!raw) return "";
   const parsed = new Date(raw);

@@ -31,8 +31,8 @@ export async function loadDocumentPickerOptions(limit = 80): Promise<HomeAskDocS
   const res = await fetchDocumentList(API_PREFIX, { limit, offset: 0 });
   const docs = Array.isArray(res?.documents) ? res.documents : [];
   return docs
-    .map((d) => documentToScope(d))
-    .filter((d) => d.id);
+    .map((d: DocumentRecord) => documentToScope(d))
+    .filter((d: HomeAskDocScope) => d.id);
 }
 
 export async function loadCollectionPickerOptions(): Promise<HomeAskCollectionScope[]> {
@@ -97,7 +97,7 @@ export async function resolveCollectionDocuments(
     collectionId: id,
   });
   const docs = Array.isArray(res?.documents) ? res.documents : [];
-  return docs.map((d) => documentToScope(d)).filter((d) => d.id);
+  return docs.map((d: DocumentRecord) => documentToScope(d)).filter((d: HomeAskDocScope) => d.id);
 }
 
 /** 从 textarea 文本里解析当前 @ 查询 */

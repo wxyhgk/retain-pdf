@@ -8,8 +8,15 @@
 import { X } from "lucide-react";
 import { EmptyState } from "@/ui/icons/EmptyState.jsx";
 import { GLOSSARY_DOM_IDS, ENTRY_LEVEL_OPTIONS, MATCH_MODE_OPTIONS } from "./glossaries-dom-ids.js";
+import type { GlossaryEntryRow } from "../domain/glossaries-store.js";
 
-export function GlossaryEditor({ entries, onFieldChange, onRemoveRow }) {
+export type GlossaryEditorProps = {
+  entries: GlossaryEntryRow[];
+  onFieldChange: (index: number, field: keyof GlossaryEntryRow, value: string) => void;
+  onRemoveRow: (index: number) => void;
+};
+
+export function GlossaryEditor({ entries, onFieldChange, onRemoveRow }: GlossaryEditorProps) {
   const hasEntries = entries.length > 0;
   return (
     <div className="glossary-table-wrap">

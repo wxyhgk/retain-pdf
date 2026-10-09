@@ -12,6 +12,7 @@
 // 用法:
 //   <BookDetailShell open={…} onOpenChange={…} left={…} right={…} />
 
+import type { ReactNode } from "react";
 import {
   Dialog,
   DialogCloseButton,
@@ -20,16 +21,19 @@ import {
   DialogTitle,
 } from "@/ui/components/dialog.js";
 
-/**
- * @param {object} props
- * @param {boolean} props.open
- * @param {(open: boolean) => void} props.onOpenChange
- * @param {(event: Event) => void} [props.onCloseAutoFocus]
- * @param {string} [props.title] 可见标题（书名；默认「书籍详情」）
- * @param {import("react").ReactNode} props.left  左栏（封面、主操作）
- * @param {import("react").ReactNode} props.right 右栏（元数据、翻译、合集…）
- * @param {string} [props.contentClassName]
- */
+type BookDetailShellProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCloseAutoFocus?: (event: Event) => void;
+  /** 可见标题（书名；默认「书籍详情」） */
+  title?: string;
+  /** 左栏（封面、主操作） */
+  left: ReactNode;
+  /** 右栏（元数据、翻译、合集…） */
+  right: ReactNode;
+  contentClassName?: string;
+};
+
 export function BookDetailShell({
   open,
   onOpenChange,
@@ -38,7 +42,7 @@ export function BookDetailShell({
   left,
   right,
   contentClassName = "",
-}) {
+}: BookDetailShellProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent

@@ -273,7 +273,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
     </div>
   ) : null;
   // 翻全了就不画覆盖条：100% 的一排满格什么也没说。没翻全时它说明缺哪几页。
-  const coverageIncomplete = Boolean(coverage?.page_count) && coverage.translated_pages < coverage.page_count;
+  const coverageIncomplete = Boolean(coverage?.page_count) && (coverage?.translated_pages ?? 0) < (coverage?.page_count ?? 0);
 
   return (
     <div

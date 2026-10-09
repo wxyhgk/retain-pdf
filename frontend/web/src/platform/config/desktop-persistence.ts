@@ -1,4 +1,5 @@
 import { getDesktopHost, isDesktopHostAvailable } from "@/platform/desktop/host.js";
+import type { DesktopHost, DesktopInvokeArgs } from "@/platform/desktop/host.js";
 import { runtimeConfig, setRuntimeConfig } from "./runtime.js";
 import {
   buildRuntimeConfig,
@@ -36,6 +37,14 @@ export type DesktopPersistedConfigPatch = Partial<Omit<DesktopPersistedConfig, "
 let desktopPersistedSnapshot: DesktopPersistedConfig | null = null;
 
 const desktopBridge = getDesktopHost();
+
+/** 只在 isDesktopMode() 为真之后调用；宿主缺失时报与 desktopInvoke 相同的错误。 */
+function requireDesktopBridge(): DesktopHost {
+  if (!desktopBridge) {
+    throw new Error("桌面接口不可用");
+  }
+  return desktopBridge;
+}
 
 export function isDesktopMode() {
   return isDesktopHostAvailable();
@@ -116,7 +125,7 @@ async function saveDesktopPersistedConfig(partial: DesktopPersistedConfigPatch =
     developerConfig: merged.developerConfig,
     runtimeConfig: merged.runtimeConfig,
   };
-  const response = await desktopBridge.saveDesktopConfig(savePayload);
+  const response = await requireDesktopBridge().saveDesktopConfig(savePayload);
   desktopPersistedSnapshot = normalizeDesktopPersistedConfig(response, savePayload);
   setRuntimeConfig(desktopPersistedSnapshot.runtimeConfig);
   persistShadowConfig(desktopPersistedSnapshot.browserConfig, desktopPersistedSnapshot.developerConfig);
@@ -152,7 +161,7 @@ export async function loadPersistedConfig() {
       closeToTrayHintShown: false,
     };
   }
-  const payload = await desktopBridge.loadDesktopConfig();
+  const payload = await requireDesktopBridge().loadDesktopConfig();
   desktopPersistedSnapshot = normalizeDesktopPersistedConfig(payload, {
     browserConfig: shadowBrowserConfig,
     developerConfig: shadowDeveloperConfig,
@@ -163,7 +172,7 @@ export async function loadPersistedConfig() {
   return desktopPersistedSnapshot;
 }
 
-export async function savePersistedBrowserConfig(nextBrowserConfig) {
+export async function savePersistedBrowserConfig(nextBrowserConfig: BrowserStoredConfig) {
   if (!isDesktopMode()) {
     return {
       browserConfig: nextBrowserConfig,
@@ -176,7 +185,7 @@ export async function savePersistedBrowserConfig(nextBrowserConfig) {
   return saveDesktopPersistedConfig({ browserConfig: nextBrowserConfig });
 }
 
-export async function savePersistedDeveloperConfig(nextDeveloperConfig) {
+export async function savePersistedDeveloperConfig(nextDeveloperConfig: DeveloperStoredConfig) {
   if (!isDesktopMode()) {
     return {
       browserConfig: normalizeBrowserStoredConfig(readBrowserStoredConfig()),
@@ -189,7 +198,7 @@ export async function savePersistedDeveloperConfig(nextDeveloperConfig) {
   return saveDesktopPersistedConfig({ developerConfig: nextDeveloperConfig });
 }
 
-export async function desktopInvoke(command, args = {}) {
+export async function desktopInvoke(command: string, args: DesktopInvokeArgs = {}) {
   if (!desktopBridge) {
     throw new Error("桌面接口不可用");
   }

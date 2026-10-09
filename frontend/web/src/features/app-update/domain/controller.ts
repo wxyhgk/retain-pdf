@@ -64,7 +64,8 @@ export function mountAppUpdateFeature({
     try {
       const release = await fetchLatestRelease();
       const info = normalizeRelease(release);
-      cachePort.write(info);
+      // write 在端口类型里可选：没有写入能力的端口视为不缓存，与原先的失败静默一致。
+      cachePort.write?.(info);
       applyUpdateInfo(info);
     } catch (error) {
       if (manual) {

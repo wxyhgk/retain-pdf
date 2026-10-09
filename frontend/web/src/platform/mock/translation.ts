@@ -168,7 +168,7 @@ export function getMockTranslationSummary(jobId = "") {
   };
 }
 
-export function getMockTranslationItems(jobId, {
+export function getMockTranslationItems(jobId: string, {
   limit = 20,
   offset = 0,
   page = "",
@@ -198,7 +198,7 @@ export function getMockTranslationItems(jobId, {
   };
 }
 
-export function getMockTranslationItem(jobId, itemId) {
+export function getMockTranslationItem(jobId: string, itemId: string) {
   const item = MOCK_TRANSLATION_ITEMS.find((entry) => entry.item_id === itemId);
   if (!item) {
     throw new Error("未找到该翻译 item，请确认 item_id 是否正确。");
@@ -213,7 +213,7 @@ export function getMockTranslationItem(jobId, itemId) {
   };
 }
 
-export function getMockTranslationReplay(jobId, itemId) {
+export function getMockTranslationReplay(jobId: string, itemId: string) {
   const item = MOCK_TRANSLATION_ITEMS.find((entry) => entry.item_id === itemId) || null;
   return {
     job_id: jobId,

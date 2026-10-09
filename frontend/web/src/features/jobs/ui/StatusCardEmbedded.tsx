@@ -62,7 +62,7 @@ function isRedundantDoneDetail(detail: string, value: string, title: string) {
   return false;
 }
 
-type StatusCardEmbeddedProps = {
+export type StatusCardEmbeddedProps = {
   visible?: boolean;
   idPrefix?: string;
   rootId?: string;

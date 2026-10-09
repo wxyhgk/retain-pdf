@@ -44,7 +44,7 @@ export function useHomeAskSessions({
       const res = await listConversations({ limit: 80 });
       const list = (res.conversations || [])
         .map(recordToSession)
-        .filter((s) => s.id);
+        .filter((s: HomeAskSession) => s.id);
       setSessions(list);
     } catch {
       // 列表失败不挡主流程

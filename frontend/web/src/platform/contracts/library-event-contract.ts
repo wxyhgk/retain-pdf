@@ -68,7 +68,7 @@ export function createLibraryEventPort({ target = document }: CreateLibraryEvent
       }));
     },
 
-    publishJobUpdated(job) {
+    publishJobUpdated(job: unknown) {
       if (!job) {
         return;
       }
@@ -77,7 +77,7 @@ export function createLibraryEventPort({ target = document }: CreateLibraryEvent
       }));
     },
 
-    publishJobCreated(job) {
+    publishJobCreated(job: unknown) {
       if (!job) {
         return;
       }
@@ -92,17 +92,24 @@ export function createLibraryEventPort({ target = document }: CreateLibraryEvent
       onJobCreated,
     }: SubscribeLibraryEventsOptions = {}) {
       const handlers: Array<[string, EventListener]> = [
+        // EventListener 收到的是 Event；这些事件都由 CustomEvent 派发，detail 形状由各自的 normalize 兜底。
         [
           APP_EVENTS.libraryRefreshRequested,
-          (event: CustomEvent) => onRefreshRequested?.(normalizeLibraryRefreshDetail(event.detail)),
+          (event: Event) => {
+            onRefreshRequested?.(normalizeLibraryRefreshDetail((event as CustomEvent<LibraryRefreshDetailInput>).detail));
+          },
         ],
         [
           APP_EVENTS.libraryJobUpdated,
-          (event: CustomEvent) => onJobUpdated?.(normalizeLibraryJobDetail(event.detail)),
+          (event: Event) => {
+            onJobUpdated?.(normalizeLibraryJobDetail((event as CustomEvent<LibraryJobDetailInput>).detail));
+          },
         ],
         [
           APP_EVENTS.libraryJobCreated,
-          (event: CustomEvent) => onJobCreated?.(normalizeLibraryJobDetail(event.detail)),
+          (event: Event) => {
+            onJobCreated?.(normalizeLibraryJobDetail((event as CustomEvent<LibraryJobDetailInput>).detail));
+          },
         ],
       ];
       handlers.forEach(([eventName, handler]) => {
@@ -132,6 +139,7 @@ export function requestThrottledLibraryRefresh(
     return false;
   }
   state.lastLibraryRefreshRequestedAt = now;
-  port.requestRefresh({ delay: terminal ? 200 : 800 });
+  // requestRefresh 可缺省（端口只接发布侧时）：缺省则不刷新，但节流时间戳照常记下。
+  port.requestRefresh?.({ delay: terminal ? 200 : 800 });
   return true;
 }

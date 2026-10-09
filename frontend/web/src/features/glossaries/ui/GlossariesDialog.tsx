@@ -60,7 +60,7 @@ export function GlossariesDialog({ feature, view: viewFeature, open, dialogStore
 
   // 保存/删除/导出进行中才禁用按钮：状态行文本无 tone 语义（"新术语表尚未保存。"
   // 这类提示语也有文案无 tone），不能拿它反推忙态。
-  async function runOp(operation) {
+  async function runOp(operation?: () => unknown) {
     if (opBusy) return;
     setOpBusy(true);
     try {
@@ -70,7 +70,7 @@ export function GlossariesDialog({ feature, view: viewFeature, open, dialogStore
     }
   }
 
-  function handleOpenChange(nextOpen) {
+  function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
       dialogStore.close();
     }

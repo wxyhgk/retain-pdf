@@ -129,12 +129,19 @@ export function createResource<TData = unknown, TParams = Record<string, unknown
         requestId,
       });
     }
-    if (inflight.has(key)) {
-      return inflight.get(key);
+    const running = inflight.get(key);
+    if (running) {
+      return running;
     }
     const requestId = state.requestId + 1;
     setState({ status: "loading", error: null, requestId });
-    const pending = (async () => {
+    // loader 若同步抛错，catch / finally 会在 run() 返回之前就跑完——那时 pending 还没赋值。
+    // 以前 finally 直接读 pending（TDZ）再抛一次，在途条目清不掉，这个 key 之后的 load 永远
+    // 拿到那个失败的请求。现在：finally 只认已登记的 pendingRef；已经结束的请求不登记。
+    // loader 仍然同步调用（调用时机不变）。
+    let settled = false;
+    let pendingRef: Promise<Readonly<ResourceState<TData>>> | null = null;
+    const run = async (): Promise<Readonly<ResourceState<TData>>> => {
       try {
         const data = await loader(params, { resource: name, requestId });
         if (state.requestId !== requestId) {
@@ -152,12 +159,15 @@ export function createResource<TData = unknown, TParams = Record<string, unknown
         }
         return setState({ status: "error", error });
       } finally {
-        if (inflight.get(key) === pending) {
+        settled = true;
+        if (pendingRef && inflight.get(key) === pendingRef) {
           inflight.delete(key);
         }
       }
-    })();
-    inflight.set(key, pending);
+    };
+    const pending = run();
+    pendingRef = pending;
+    if (!settled) inflight.set(key, pending);
     return pending;
   }
 

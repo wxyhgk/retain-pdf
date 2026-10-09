@@ -129,7 +129,7 @@ export function useDocumentJobs({
       return next;
     } catch (cause) {
       if (generation === generationRef.current) {
-        setError(`${cause?.message || cause || "读取任务状态失败"}`);
+        setError(`${(cause as { message?: string } | null)?.message || cause || "读取任务状态失败"}`);
         setLoadedDocumentId(documentId);
       }
       return [];

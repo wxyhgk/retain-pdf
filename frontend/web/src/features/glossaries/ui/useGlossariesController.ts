@@ -19,7 +19,7 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import type { GlossariesFeature } from "../domain/controller.js";
-import type { GlossariesViewFeature } from "../domain/glossaries-store.js";
+import type { GlossariesViewFeature, GlossaryDraft } from "../domain/glossaries-store.js";
 const EMPTY_EDITOR_SNAPSHOT = Object.freeze({
   draft: Object.freeze({ name: "", entries: Object.freeze([]) }),
   csvText: "",
@@ -43,7 +43,7 @@ export function useGlossariesController({ feature, view, open }: GlossariesContr
   const editorState = useSyncExternalStore(
     (onChange) => (editorPort ? editorPort.subscribe(() => onChange()) : () => {}),
     () => (editorPort ? editorPort.getSnapshot() : EMPTY_EDITOR_SNAPSHOT) as {
-      draft: unknown;
+      draft: GlossaryDraft;
       csvText: string;
     },
   );
