@@ -15,12 +15,15 @@ NORMALIZE_STAGE_SCHEMA_VERSION = "normalize.stage.v1"
 TRANSLATE_STAGE_SCHEMA_VERSION = "translate.stage.v1"
 RENDER_STAGE_SCHEMA_VERSION = "render.stage.v1"
 RENDER_PREPARE_STAGE_SCHEMA_VERSION = "render_prepare.stage.v1"
-# render.engine：typst = 现有路线；rpr = 自研排版引擎（retain-pdf-rendering）。缺省 / 未知值一律 typst。
+# render.engine：rpr_fit / rpr = 自研排版引擎（retain-pdf-rendering），typst = 原 Typst 路线。缺省 / 未知值用 DEFAULT_RENDER_ENGINE。
 RENDER_ENGINE_TYPST = "typst"
 RENDER_ENGINE_RPR = "rpr"
 # rpr_fit：字号也由 rpr 引擎按测量决定（fit-model 的 retain 规则），不走 retain-pdf 的缩字规则。
 RENDER_ENGINE_RPR_FIT = "rpr_fit"
 RENDER_ENGINES = (RENDER_ENGINE_TYPST, RENDER_ENGINE_RPR, RENDER_ENGINE_RPR_FIT)
+# 默认排版路线：自研引擎测量定字号、直接写 PDF（与 Rust retain-core DEFAULT_RENDER_ENGINE 一致）。
+# 引擎不可用或失败时照旧回退 Typst 路线。
+DEFAULT_RENDER_ENGINE = RENDER_ENGINE_RPR_FIT
 PROVIDER_STAGE_SCHEMA_VERSION = "provider.stage.v1"
 BOOK_STAGE_SCHEMA_VERSION = "book.stage.v1"
 
@@ -55,7 +58,7 @@ def build_stage_invocation_metadata(
 
 def normalize_render_engine(value: Any) -> str:
     engine = str(value or "").strip().lower()
-    return engine if engine in RENDER_ENGINES else RENDER_ENGINE_TYPST
+    return engine if engine in RENDER_ENGINES else DEFAULT_RENDER_ENGINE
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -519,7 +522,7 @@ class RenderStageParams:
     base_url: str
     credential_ref: str
     refine: RenderStageRefineParams = field(default_factory=RenderStageRefineParams)
-    engine: str = RENDER_ENGINE_TYPST
+    engine: str = DEFAULT_RENDER_ENGINE
 
 
 @dataclass(frozen=True)
@@ -699,7 +702,7 @@ class ProviderStageRenderParams:
     inner_bbox_dense_shrink_y: float
     font_unify_mode: str
     source_cleanup_strategy: str
-    engine: str = RENDER_ENGINE_TYPST
+    engine: str = DEFAULT_RENDER_ENGINE
 
 
 @dataclass(frozen=True)
@@ -940,7 +943,7 @@ class BookStageRenderParams:
     inner_bbox_dense_shrink_y: float
     font_unify_mode: str
     source_cleanup_strategy: str
-    engine: str = RENDER_ENGINE_TYPST
+    engine: str = DEFAULT_RENDER_ENGINE
 
 
 @dataclass(frozen=True)

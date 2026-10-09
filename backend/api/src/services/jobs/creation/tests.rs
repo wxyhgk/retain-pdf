@@ -529,7 +529,7 @@ fn build_translation_job_snapshot_for_full_pipeline_succeeds() {
         render_config["render"]["source_cleanup_strategy"],
         "pikepdf_text_strip"
     );
-    assert_eq!(render_config["render"]["engine"], "typst", "render.engine 缺省 = typst");
+    assert_eq!(render_config["render"]["engine"], "rpr_fit", "render.engine 缺省 = rpr_fit");
 }
 
 #[test]

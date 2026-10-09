@@ -424,9 +424,11 @@ fn render_options_reject_unknown_cleanup_strategy() {
 }
 
 #[test]
-fn render_engine_defaults_to_typst_and_accepts_rpr() {
+fn render_engine_defaults_to_rpr_fit_and_accepts_every_engine() {
     let mut input = CreateJobInput::default();
-    assert_eq!(input.render.engine, "typst");
+    assert_eq!(input.render.engine, "rpr_fit");
+    assert!(validate_render_options(&input).is_ok());
+    input.render.engine = "typst".to_string();
     assert!(validate_render_options(&input).is_ok());
     input.render.engine = "rpr".to_string();
     assert!(validate_render_options(&input).is_ok());

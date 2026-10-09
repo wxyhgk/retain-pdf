@@ -2,6 +2,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
+from retainpdf_pipeline.foundation.shared.stage_specs import DEFAULT_RENDER_ENGINE
 from retainpdf_pipeline.foundation.config import fonts
 from retainpdf_pipeline.foundation.config import runtime
 from retainpdf_pipeline.foundation.config.output_layout import ARTIFACTS_DIR_NAME
@@ -61,7 +62,7 @@ def run_book_pipeline(
     typst_font_family: str = fonts.TYPST_DEFAULT_FONT_FAMILY,
     pdf_compress_dpi: int = runtime.DEFAULT_PDF_COMPRESS_DPI,
     source_cleanup_strategy: str = "pikepdf_text_strip",
-    render_engine: str = "typst",
+    render_engine: str = DEFAULT_RENDER_ENGINE,
     invocation: dict | None = None,
     render_visual_prewarm_handle: RenderPrewarmHandle | None = None,
     preparation: str = "off",

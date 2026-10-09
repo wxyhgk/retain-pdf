@@ -19,7 +19,7 @@
 | `render.body_leading_factor` | number | `1.08` | `> 0` 且 finite | 正文行间距全局倍率。 |
 | `render.font_unify_mode` | string | `role_min` | `role_min`, `off` | 字体统一策略。`role_min` 按角色统一到稳定下界，`off` 关闭统一但不关闭 fit/碰撞/背景规则。 |
 | `render.source_cleanup_strategy` | string | `pikepdf_text_strip` | `typst_fill`, `pikepdf_text_strip`, `bbox_text_strip`, `legacy`, `redact_restore_formulas` | 原文处理策略。默认先做路径级 text-op 删除，再由 Typst 背景块做视觉覆盖；`typst_fill` 可显式关闭删除。 |
-| `render.engine` | string | `typst` | `typst`, `rpr` | 排版引擎。`typst` 是现有路线；`rpr` 是自研排版引擎 retain-pdf-rendering（实验，可选）：用 retain-pdf 算好的字号/行距上限交给引擎精确排版并输出叠加层，公式走 MathJax。`dual` 模式、非思源宋体字体、Node 不可用（需 ≥ 22.8）或引擎失败时自动回退 `typst`，回退原因写进 `pipeline_summary` 与 `fit_report.reason`，任务不失败。 |
+| `render.engine` | string | `rpr_fit` | `rpr_fit`, `rpr`, `typst` | 排版引擎。`rpr_fit`（默认）：自研排版引擎 retain-pdf-rendering 按测量决定字号、排版并直接写出叠加层 PDF（不经过 Typst），公式走 MathJax；`rpr`：同一引擎，字号/行距上限用 retain-pdf 的规则；`typst`：原 Typst 路线。`dual` 模式、非思源宋体字体、Node 不可用（需 ≥ 22.8）、引擎依赖缺失或引擎失败时自动回退 `typst`，回退原因写进 `pipeline_summary` 与 `fit_report.reason`，任务不失败。 |
 | `render.inner_bbox_shrink_x` | number | `0.0` | `>= 0` 且 finite | 普通 bbox 横向内缩。 |
 | `render.inner_bbox_shrink_y` | number | `0.0` | `>= 0` 且 finite | 普通 bbox 纵向内缩。 |
 | `render.inner_bbox_dense_shrink_x` | number | `0.0` | `>= 0` 且 finite | 密集 bbox 横向内缩。 |

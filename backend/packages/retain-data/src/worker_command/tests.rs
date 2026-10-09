@@ -1011,13 +1011,13 @@ fn render_spec_refine_manual_override_uses_override_values() {
     assert!(!payload.to_string().contains("sk-translation-secret"));
 }
 
-/// render.engine：缺省写 typst；任务配 rpr 时 render spec 与 provider spec 都原样带上，
+/// render.engine：缺省写默认路线 rpr_fit；任务配 rpr 时 render spec 与 provider spec 都原样带上，
 /// 普通重渲染 / 精修覆盖都不改它。
 #[test]
 fn render_spec_carries_render_engine() {
     let mut request = build_request(WorkflowKind::Render);
     let payload = render_spec_with_refine(&request, super::RenderRefine::Off);
-    assert_eq!(payload["params"]["engine"], "typst");
+    assert_eq!(payload["params"]["engine"], "rpr_fit");
 
     request.render.engine = "rpr".to_string();
     for refine in [

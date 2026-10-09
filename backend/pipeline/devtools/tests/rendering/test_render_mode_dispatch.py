@@ -17,6 +17,7 @@ def test_render_mode_registry_covers_all_dispatch_modes() -> None:
 
 def test_dispatch_render_mode_rejects_unknown_mode() -> None:
     context = mock.Mock()
+    context.render_engine = "typst"  # 测的是按模式分派，与排版引擎无关
 
     with pytest.raises(ValueError, match="unknown render mode"):
         _dispatch_render_mode(
@@ -30,6 +31,7 @@ def test_dispatch_render_mode_rejects_unknown_mode() -> None:
 
 def test_dispatch_render_mode_routes_each_mode_through_registry() -> None:
     context = mock.Mock()
+    context.render_engine = "typst"  # 测的是按模式分派，与排版引擎无关
     calls: list[str] = []
 
     def _fake(mode: str):

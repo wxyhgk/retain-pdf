@@ -152,9 +152,9 @@ def _write_minimal_render_spec(tmp_path: Path, params_extra: dict) -> Path:
     return spec_path
 
 
-def test_render_stage_spec_engine_defaults_to_typst(tmp_path: Path) -> None:
+def test_render_stage_spec_engine_defaults_to_rpr_fit(tmp_path: Path) -> None:
     spec = RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {}))
-    assert spec.params.engine == "typst"
+    assert spec.params.engine == "rpr_fit"
 
 
 def test_render_stage_spec_reads_rpr_engine_and_tolerates_case(tmp_path: Path) -> None:
@@ -162,9 +162,9 @@ def test_render_stage_spec_reads_rpr_engine_and_tolerates_case(tmp_path: Path) -
     assert spec.params.engine == "rpr"
 
 
-def test_render_stage_spec_unknown_engine_falls_back_to_typst(tmp_path: Path) -> None:
+def test_render_stage_spec_unknown_engine_falls_back_to_the_default(tmp_path: Path) -> None:
     spec = RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {"engine": "latex"}))
-    assert spec.params.engine == "typst"
+    assert spec.params.engine == "rpr_fit"
 
 
 def test_render_only_passes_engine_to_render_stage(tmp_path: Path) -> None:
