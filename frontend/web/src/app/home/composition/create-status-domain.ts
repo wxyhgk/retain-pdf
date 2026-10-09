@@ -105,6 +105,7 @@ export function createStatusDomain({
     closeDialogs: () => statusDetailDialogStore.close(),
     isReaderOpen: () => false,
     setCancelDisabled: (disabled: boolean) => statusCardStore.actions.setCancelDisabled(disabled),
+    setCancelError: (message: string) => statusCardStore.actions.setCancelError(message),
   };
 
   // 取消当前任务的业务内聚到 status 域，不再由 build-home-services 拼闭包

@@ -278,16 +278,27 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  /* 窄屏以前把第一格（取消按钮）整个藏掉了，手机上取消不了任务。改成两行：
+     标题一行，取消 / 详情一行。 */
   .bd-job-status-head {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "title title title"
+      "cancel . detail";
+    row-gap: 8px;
   }
 
   .bd-job-status-head > :first-child {
-    display: none;
+    grid-area: cancel;
   }
 
   .bd-job-status-head-center {
+    grid-area: title;
     text-align: left;
+  }
+
+  .bd-job-status-head > :last-child {
+    grid-area: detail;
   }
 }
 
@@ -302,4 +313,12 @@
 .bd-job-status-main,
 .bd-job-status-error.is-empty {
   display: none;
+}
+
+/* 取消失败的原因：会换行，不受上面单行错误条 18px 的限制。 */
+.bd-job-status-cancel-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.5;
 }

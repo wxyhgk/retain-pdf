@@ -60,6 +60,7 @@ type JobRuntimeShellViewPort = {
   closeDialogs: () => void;
   isReaderOpen: () => boolean;
   setCancelDisabled: (disabled: boolean) => void;
+  setCancelError: (message: string) => void;
 };
 
 /** artifact-downloads viewPort 局部 adapter */

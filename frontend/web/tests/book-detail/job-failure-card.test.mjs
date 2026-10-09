@@ -115,11 +115,25 @@ test("卡片把根因和建议都画出来了", () => {
   assert.match(body.textContent, /MinerU batch task failed/, "没画后端给的根因");
 });
 
-test("没给 onRetry 就不画重试按钮 —— 点了没反应的按钮比没有更糟", () => {
+test("没给主动作就不画主按钮 —— 点了没反应的按钮比没有更糟", () => {
   const without = render({ failure: mineru, jobId: "job-1" });
   assert.equal(without.querySelector("#book-detail-retry-failed-btn"), null);
-  const withRetry = render({ failure: mineru, jobId: "job-1", onRetry() {} });
-  assert.ok(withRetry.querySelector("#book-detail-retry-failed-btn"), "给了 onRetry 却没有按钮");
+  const withPrimary = render({
+    failure: mineru,
+    jobId: "job-1",
+    primary: { label: "从渲染继续", hint: "沿用已有译文，只重新排版。", onClick() {} },
+  });
+  const button = withPrimary.querySelector("#book-detail-retry-failed-btn");
+  assert.ok(button, "给了主动作却没有按钮");
+  assert.match(button.textContent, /从渲染继续/, "按钮要说清从哪一步开始，不是笼统的「重试」");
+  assert.match(withPrimary.textContent, /沿用已有译文/, "按钮下面要说沿用什么、花不花钱");
+});
+
+test("没有主动作时显示原因；主动作提交失败的原因就地显示", () => {
+  const body = render({ failure: mineru, jobId: "job-1", notice: "OCR 没有完成", actionError: "网络断了" });
+  assert.equal(body.querySelector("#book-detail-retry-failed-btn"), null);
+  assert.match(body.textContent, /OCR 没有完成/);
+  assert.match(body.querySelector('[role="alert"]')?.textContent || "", /网络断了/);
 });
 
 test("没给 loadDetail 就不画「展开完整错误」", () => {

@@ -1,7 +1,6 @@
 [
   "src/app/home/state/home-store.ts::let-var::defaultHomeStatePort",
   "src/features/book-detail/ui/use-book-detail-cover.ts::new-collection::RETRYABLE_TRANSLATION_STATUSES",
-  "src/features/book-detail/ui/use-book-detail-stage-actions.ts::new-collection::RESUME_CANDIDATE_STATUSES",
   "src/features/book-detail/ui/use-book-detail-stage-actions.ts::new-collection::stageActionsCache",
   "src/features/book-detail/ui/use-document-job-runtime-owner.ts::new-collection::runtimeJobDocumentCache",
   "src/features/ingest/domain/upload/pdf-page-count.ts::let-var::pdfjsPromise",

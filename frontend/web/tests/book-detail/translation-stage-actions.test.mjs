@@ -172,7 +172,7 @@ test("精修：失败任务也不走断点恢复，直接 retry-stage(refine) �
   dom.window.close();
 });
 
-test("重新渲染：可选排版引擎，选了就带 overrides.render.engine 且不走断点恢复；不选沿用原引擎", async () => {
+test("重新渲染：可选排版引擎，选了就带 overrides.render.engine；不选沿用原引擎；都不偷偷改走断点续跑", async () => {
   const dom = makeDom();
   const React = await import("react");
   const { createRoot } = await import("react-dom/client");
@@ -217,7 +217,13 @@ test("重新渲染：可选排版引擎，选了就带 overrides.render.engine �
 
   click(dom, button);
   await waitFor(() => calls.length === 1, "不选引擎时提交");
-  assert.equal(calls[0][0], "resume", "不选引擎：照旧先断点恢复，沿用原引擎");
+  // 以前失败任务会先试断点续跑；续跑计划可能是「从翻译继续」，和「重新渲染」不是一回事。
+  assert.deepEqual(calls[0], [
+    "retry",
+    "job-render-1",
+    "render",
+    { stage: "render", create_new_job: false, document_id: "doc-1" },
+  ], "不选引擎：直接重新渲染，沿用原引擎");
 
   const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLSelectElement.prototype, "value").set;
   setter.call(select, "typst");

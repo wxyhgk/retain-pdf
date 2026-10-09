@@ -100,15 +100,20 @@ export function translationProcessModel(item: LibraryCardItem = {}) {
   };
   const backendCurrentStage = (["ocr", "translate", "render"] as const).find((key) =>
     ["queued", "in_progress", "failed"].includes(backendStates[key])) || "";
+  const failed = status === "failed";
+  const cancelled = status === "cancelled" || status === "canceled";
+  // 失败任务的阶段字段常被后端清成 failed，认不出停在哪一站；失败简报里的 stage 是准的。
+  // 以前认不出就三站全灰，「失败」两个字却挂在翻译站上（渲染失败也一样）。
+  const failureStage = failed
+    ? normalizedStage((item.failure as { stage?: unknown } | null | undefined)?.stage)
+    : "";
   const currentStage = succeededStatus(status)
     ? "done"
     : backendCurrentStage
       || (ocrReused && !derivedStage && isActiveJobStatus(status)
         ? "translate"
-        : derivedStage);
+        : derivedStage || failureStage);
   const currentIndex = PROCESS_STAGES.findIndex((stage) => stage.key === currentStage);
-  const failed = status === "failed";
-  const cancelled = status === "cancelled" || status === "canceled";
   const succeeded = status === "succeeded";
   const active = status === "queued" || status === "pending" || status === "running";
 

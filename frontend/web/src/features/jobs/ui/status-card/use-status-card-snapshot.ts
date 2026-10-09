@@ -20,6 +20,7 @@ export type StatusCardSnapshotDerivation = {
   flowStageKey: string;
   selection: StatusCardSelection;
   cancelDisabled: boolean;
+  cancelError: string;
   cancelCurrentJob: (() => unknown) | undefined;
 };
 
@@ -37,6 +38,7 @@ export function useStatusCardSnapshot({
     ? mergeSnapshotWithFallback(rawSnapshot, fallbackItem)
     : rawSnapshot) as StatusCardSnapshot;
   const cancelDisabled = stateSnapshot.cancelDisabled;
+  const cancelError = `${stateSnapshot.cancelError || ""}`;
 
   const ids = useMemo(
     () => (embedded ? createPrefixedStatusCardIds(idPrefix) : STATUS_CARD_IDS),
@@ -52,5 +54,5 @@ export function useStatusCardSnapshot({
     currentStageKey: flowStageKey || snapshot.stageKey,
   }) as StatusCardSelection;
 
-  return { snapshot, ids, flowStageKey, selection, cancelDisabled, cancelCurrentJob };
+  return { snapshot, ids, flowStageKey, selection, cancelDisabled, cancelError, cancelCurrentJob };
 }

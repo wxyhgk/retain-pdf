@@ -167,9 +167,12 @@ test("已翻译卡打开书籍详情:有对照阅读,无翻译按钮", async () 
     sourceDocumentId,
     "阶段重试继续绑定原文档",
   );
+  // 重新渲染是渲染任务：各站只说自己——翻译站「已完成」，正在跑的那一站「处理中」。
+  // （以前每站都拿整本书的状态，翻译站也写「处理中」。）
   await waitFor(
-    () => dlg.querySelector('[data-processing-capability="translation"] .book-detail-status')?.textContent?.includes("处理中"),
-    "外层翻译状态立即进入处理中（三步进度重新展开）",
+    () => [...dlg.querySelectorAll('[data-translation-process="true"] .book-detail-status')]
+      .some((node) => node.textContent?.includes("处理中")),
+    "重新渲染后三步进度立即展开，正在跑的那一站处理中",
   );
 
   root.unmount();

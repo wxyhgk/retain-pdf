@@ -30,7 +30,7 @@ function needsConfirm(action: JobStageRetryActionView) {
 const CONFIRM_COPY: Record<string, { title: string; description: string; confirmLabel: string }> = {
   translation: {
     title: "确认重新翻译",
-    description: "将先尝试断点恢复：服务端按恢复计划自动续跑（渲染阶段原地同任务，其余新建任务）。仍需显式重跑时，确认后将复用现有 OCR，重新执行翻译与渲染，可能重复调用翻译接口并产生费用。",
+    description: "复用现有 OCR，重新翻译整本再排版，会重新调用翻译接口并产生费用。只想接着上次没做完的部分，请用失败卡片上的「从断点继续」。",
     confirmLabel: "接受风险并重新翻译",
   },
   refine: {
@@ -113,9 +113,7 @@ export function TranslationStageActions({
     }
   }
 
-  // 一键断点恢复：按钮先调 POST /resume（服务端按 resume-plan 自动续跑，
-  // render 原地同任务、其余新建）；仅二次确认接受重复风险后，才用
-  // retry-stage(显式 stage)兜底。id/disabled/ConfirmDialog 语义保持不变。
+  // 清单里的按钮只做显式的阶段重跑；断点续跑在失败卡片上。确认重新翻译即接受重复计费风险。
   async function confirmRisk() {
     if (!confirmAction) return;
     try {

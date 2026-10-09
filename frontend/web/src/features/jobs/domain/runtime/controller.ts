@@ -75,6 +75,7 @@ export interface JobRuntimeFeatureDeps {
     closeDialogs: () => void;
     isReaderOpen: () => boolean;
     setCancelDisabled: (disabled: boolean) => void;
+    setCancelError: (message: string) => void;
   };
   jobPresentationPort?: JobPresentationPort;
   jobEventsResource?: JobEventsResource;
