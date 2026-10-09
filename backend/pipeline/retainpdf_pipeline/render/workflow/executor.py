@@ -8,7 +8,7 @@ from retainpdf_pipeline.foundation.config import fonts
 from retainpdf_pipeline.foundation.config import layout
 from retainpdf_pipeline.foundation.config import runtime
 from retainpdf_pipeline.foundation.config.output_layout import ARTIFACTS_DIR_NAME
-from retainpdf_pipeline.render.prepare.source_base import source_base_builder
+from retainpdf_pipeline.render.prepare.hooks import prepare_hooks
 from retainpdf_pipeline.render.prepare.store import PREPARE_DIR_NAME
 from retainpdf_pipeline.render.render_plan import RenderPlan
 from retainpdf_pipeline.render.workflow.context import RenderExecutionContext
@@ -123,6 +123,7 @@ def execute_render_plan(
         if no_cache
         else Path(render_plan.render_inputs.translations_dir).parent / ARTIFACTS_DIR_NAME / PREPARE_DIR_NAME
     )
+    hooks = prepare_hooks(prepare_dir)
     render_source_pdf = (
         try_load_prewarmed_render_source_pdf(
             manifest_path=render_prewarm_manifest_path,
@@ -214,7 +215,7 @@ def execute_render_plan(
             source_cleanup_strategy=cleanup_strategy,
             document_analysis=document_analysis,
             pdf_structure_profile_path=pdf_structure_profile_path,
-            source_base_builder=source_base_builder(prepare_dir),
+            prepare_hooks=hooks,
         )
         if not no_cache:
             prepare_progress.step(3)
@@ -228,7 +229,7 @@ def execute_render_plan(
                 translated_pages=render_plan.selected_pages,
                 effective_render_mode=render_plan.effective_render_mode,
                 source_cleanup_strategy=cleanup_strategy,
-                prepare_dir=prepare_dir,
+                prepare_hooks=hooks,
             )
         )
         prepare_progress.step(4)
@@ -273,7 +274,7 @@ def execute_render_plan(
             translated_pages=render_plan.selected_pages,
             effective_render_mode=render_plan.effective_render_mode,
             source_cleanup_strategy=cleanup_strategy,
-            prepare_dir=prepare_dir,
+            prepare_hooks=hooks,
         )
         prepare_progress.step(4)
         merged_sync_payload_prewarm = build_sync_payload_prewarm(

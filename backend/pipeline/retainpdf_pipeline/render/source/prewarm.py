@@ -92,7 +92,7 @@ def _run_render_source_prewarm(spec: RenderPrewarmSpec, manifest_path: Path) -> 
                 source_cleanup_strategy=cleanup_strategy,
                 document_analysis=document_analysis,
                 pdf_structure_profile_path=pdf_structure_profile_path,
-                source_base_builder=spec.source_base_builder,
+                prepare_hooks=spec.prepare_hooks,
             )
         payload_prewarm = build_payload_prewarm(
             source_pdf_path=spec.source_pdf_path,
@@ -105,7 +105,7 @@ def _run_render_source_prewarm(spec: RenderPrewarmSpec, manifest_path: Path) -> 
                 else layout.SOURCE_CLEANUP_TYPST_FILL
             ),
             bbox_text_strip_candidates=prepared.bbox_text_strip_candidates if spec.include_source_cleanup else None,
-            visual_profile_builder=spec.visual_profile_builder,
+            visual_profile_builder=spec.prepare_hooks.visual_profile if spec.prepare_hooks is not None else None,
         )
         manifest = build_prewarm_manifest(
             manifest_path=manifest_path,

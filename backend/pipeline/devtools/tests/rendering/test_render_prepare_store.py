@@ -188,6 +188,7 @@ def _texts(path: Path) -> str:
 
 
 def test_source_base_step_is_cached_and_linked_not_moved(tmp_path: Path) -> None:
+    from retainpdf_pipeline.render.contracts.prepare_hooks import RenderPrepareHooks
     from retainpdf_pipeline.render.prepare.source_base import source_base_builder
     from retainpdf_pipeline.render.source.render_source import build_render_source_pdf
 
@@ -204,7 +205,7 @@ def test_source_base_step_is_cached_and_linked_not_moved(tmp_path: Path) -> None
             translated_pages=None,
             strip_hidden_text=True,
             document_analysis=_hidden_analysis(),
-            source_base_builder=builder,
+            prepare_hooks=RenderPrepareHooks(source_base=builder),
         )
 
     fresh = render(None)
@@ -248,3 +249,71 @@ def test_source_base_without_changes_uses_the_source(tmp_path: Path) -> None:
         PrepareStore(tmp_path / "render_prepare"), source_pdf_path=pdf, strip_hidden_text=False, start_page=3, end_page=9
     )
     assert record.hit is True, "the page range only matters when hidden text is stripped"
+
+
+def _fake_strip(calls: list[dict], *, deadline_pages: frozenset[int] = frozenset()):
+    from retainpdf_pipeline.render.source_cleanup.types import BBoxTextStripResult
+
+    def execute(**kwargs):
+        calls.append(kwargs)
+        out = Path(kwargs["output_pdf_path"])
+        out.write_bytes(b"%PDF stripped " + str(len(calls)).encode())
+        return BBoxTextStripResult(
+            changed=True,
+            output_pdf_path=out,
+            pages_changed=1,
+            changed_page_indices=frozenset({0}),
+            deadline_skipped_page_indices=deadline_pages,
+        )
+
+    return execute
+
+
+def test_text_strip_step_caches_by_plan_and_input_content(tmp_path: Path) -> None:
+    from retainpdf_pipeline.render.prepare.text_strip import text_strip_runner
+
+    source = tmp_path / "base.pdf"
+    source.write_bytes(b"%PDF base")
+    elsewhere = tmp_path / "other-dir" / "same-base.pdf"
+    elsewhere.parent.mkdir()
+    os.link(source, elsewhere)
+    runner = text_strip_runner(tmp_path / "render_prepare")
+    calls: list[dict] = []
+    rects = {0: [fitz.Rect(10, 10, 100, 40)]}
+
+    def run(src: Path, out: Path, page_rects=rects, execute=None):
+        return runner(
+            execute or _fake_strip(calls),
+            source_pdf_path=src,
+            output_pdf_path=out,
+            page_rects=page_rects,
+            page_protected_rects={},
+            candidate_elapsed=1.23,
+            max_elapsed_seconds=30.0,
+        )
+
+    first = run(source, tmp_path / "a" / "out.pdf")
+    assert len(calls) == 1 and first.changed and first.changed_page_indices == frozenset({0})
+    assert first.output_pdf_path == tmp_path / "a" / "out.pdf" and first.output_pdf_path.read_bytes() == b"%PDF stripped 1"
+    # Same plan, same input content behind another link → hit; timing / budget don't matter.
+    second = run(elsewhere, tmp_path / "b" / "out.pdf")
+    assert len(calls) == 1 and second.output_pdf_path.read_bytes() == b"%PDF stripped 1"
+    second.output_pdf_path.unlink()
+    assert (tmp_path / "render_prepare" / "text_strip" / "stripped.pdf").is_file()
+    # Another rect → rebuild; the earlier output keeps its bytes.
+    run(source, tmp_path / "c" / "out.pdf", page_rects={0: [fitz.Rect(10, 10, 100, 41)]})
+    assert len(calls) == 2 and first.output_pdf_path.read_bytes() == b"%PDF stripped 1"
+
+
+def test_text_strip_step_does_not_cache_a_deadline_cut_result(tmp_path: Path) -> None:
+    from retainpdf_pipeline.render.prepare.text_strip import text_strip_runner
+
+    source = tmp_path / "base.pdf"
+    source.write_bytes(b"%PDF base")
+    runner = text_strip_runner(tmp_path / "render_prepare")
+    calls: list[dict] = []
+    kwargs = dict(source_pdf_path=source, page_rects={0: [fitz.Rect(1, 1, 2, 2)]}, page_protected_rects={})
+    cut = runner(_fake_strip(calls, deadline_pages=frozenset({3})), output_pdf_path=tmp_path / "x.pdf", **kwargs)
+    assert cut.deadline_skipped_page_indices == frozenset({3}) and cut.output_pdf_path.read_bytes().startswith(b"%PDF")
+    runner(_fake_strip(calls), output_pdf_path=tmp_path / "y.pdf", **kwargs)
+    assert len(calls) == 2, "an incomplete result is never reused"

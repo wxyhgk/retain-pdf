@@ -17,9 +17,8 @@ from pathlib import Path
 
 from retainpdf_pipeline.services.pipeline_shared.events import emit_stage_progress
 from retainpdf_pipeline.render.prepare.page_analysis import page_analysis
-from retainpdf_pipeline.render.prepare.source_base import source_base_builder
+from retainpdf_pipeline.render.prepare.hooks import prepare_hooks
 from retainpdf_pipeline.render.prepare.store import PREPARE_DIR_NAME
-from retainpdf_pipeline.render.prepare.visual_profile import visual_profile_builder
 from retainpdf_pipeline.render.source.prewarm import RenderPrewarmSpec
 from retainpdf_pipeline.render.source.prewarm import RenderPrewarmHandle
 from retainpdf_pipeline.render.source.prewarm import prewarm_manifest_path_from_artifacts_dir
@@ -120,8 +119,7 @@ def start_ocr_render_preprocess(
             source_cleanup_strategy=source_cleanup_strategy,
             document_analysis=document_analysis,
             include_source_cleanup=False,
-            visual_profile_builder=visual_profile_builder(Path(artifacts_dir) / PREPARE_DIR_NAME),
-            source_base_builder=source_base_builder(Path(artifacts_dir) / PREPARE_DIR_NAME),
+            prepare_hooks=prepare_hooks(Path(artifacts_dir) / PREPARE_DIR_NAME),
         )
     )
 
@@ -171,8 +169,7 @@ def run_post_translation_render_prewarm(
                 source_cleanup_strategy=source_cleanup_strategy,
                 document_analysis=document_analysis,
                 include_source_cleanup=True,
-                visual_profile_builder=visual_profile_builder(Path(artifacts_dir) / PREPARE_DIR_NAME),
-                source_base_builder=source_base_builder(Path(artifacts_dir) / PREPARE_DIR_NAME),
+                prepare_hooks=prepare_hooks(Path(artifacts_dir) / PREPARE_DIR_NAME),
             )
         )
         result_path = handle.wait()

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import replace
+from functools import partial
 from pathlib import Path
 import time
 
@@ -52,6 +54,7 @@ def execute_source_cleanup(request: SourceCleanupRequest) -> SourceCleanupResult
         skip_form_xobject_pages=request.options.skip_form_xobject_pages,
         skip_formula_pages=request.options.skip_formula_pages,
         max_elapsed_seconds=request.options.max_elapsed_seconds,
+        strip_runner=request.strip_runner,
     )
     result = replace(result, candidates=_candidates_with_runtime_metadata(candidates, result))
     return SourceCleanupResult(bbox_text_strip=result)
@@ -68,6 +71,7 @@ def build_bbox_text_stripped_pdf_copy(
     skip_form_xobject_pages: bool = False,
     skip_formula_pages: bool = False,
     max_elapsed_seconds: float | None = None,
+    strip_runner: Callable[..., BBoxTextStripResult] | None = None,
 ) -> BBoxTextStripResult:
     if not translated_pages:
         return BBoxTextStripResult(changed=False)
@@ -108,7 +112,10 @@ def build_bbox_text_stripped_pdf_copy(
             strip_no_effect_page_indices=frozenset(strip_no_effect_page_indices),
         )
 
-    result = strip_bbox_text_rects_from_pdf_copy(
+    execute = strip_bbox_text_rects_from_pdf_copy
+    if strip_runner is not None:
+        execute = partial(strip_runner, strip_bbox_text_rects_from_pdf_copy)
+    result = execute(
         source_pdf_path=source_pdf_path,
         output_pdf_path=output_pdf_path,
         page_rects=page_rects,

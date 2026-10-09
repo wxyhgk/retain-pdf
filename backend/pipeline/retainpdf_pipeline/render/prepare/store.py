@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import tempfile
 import time
 from dataclasses import dataclass
@@ -38,6 +39,26 @@ def file_identity(path: Path | str | None) -> dict[str, Any] | None:
     except OSError:
         return None
     return {"path": str(resolved), "size": int(stat.st_size), "mtime_ns": int(stat.st_mtime_ns)}
+
+
+def content_identity(path: Path | str) -> dict[str, Any]:
+    """文件内容的身份（不含路径）：同一份文件的硬链接相同，文件被替换（新 inode）就不同。
+
+    用在「输入是别的步骤产物的硬链接」时：链接放在哪个目录都不该让缓存失效。
+    """
+    stat = Path(path).stat()
+    return {"dev": int(stat.st_dev), "ino": int(stat.st_ino), "size": int(stat.st_size), "mtime_ns": int(stat.st_mtime_ns)}
+
+
+def link_or_copy(source: Path, target: Path) -> None:
+    """把缓存产物放到调用方要的位置：硬链接（缓存文件之后被替换也不影响它），不行就复制。"""
+    target = Path(target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.unlink(missing_ok=True)
+    try:
+        os.link(source, target)
+    except OSError:
+        shutil.copyfile(source, target)
 
 
 def fingerprint(inputs: dict[str, Any]) -> str:
@@ -139,4 +160,12 @@ class PrepareStore:
         return self.save(step, version, inputs, outputs, elapsed_seconds=time.perf_counter() - started)
 
 
-__all__ = ["PREPARE_DIR_NAME", "PrepareStore", "StepRecord", "file_identity", "fingerprint"]
+__all__ = [
+    "PREPARE_DIR_NAME",
+    "PrepareStore",
+    "StepRecord",
+    "content_identity",
+    "file_identity",
+    "fingerprint",
+    "link_or_copy",
+]

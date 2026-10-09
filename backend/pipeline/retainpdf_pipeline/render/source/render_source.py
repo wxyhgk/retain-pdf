@@ -10,6 +10,7 @@ import time
 
 from retainpdf_pipeline.render.source.compression.pdf_copy import build_image_compressed_pdf_copy
 from retainpdf_pipeline.render.contracts import RenderDocumentAnalysis
+from retainpdf_pipeline.render.contracts.prepare_hooks import RenderPrepareHooks
 from retainpdf_pipeline.render.source.intermediate_paths import intermediate_pdf_path
 from retainpdf_pipeline.render.source_cleanup.types import BBoxTextStripCandidates
 from retainpdf_pipeline.render.source.preparation.hidden_text_strip import build_hidden_text_stripped_pdf_copy
@@ -129,7 +130,7 @@ def build_render_source_pdf(
     source_cleanup_strategy: str = "pikepdf_text_strip",
     document_analysis: RenderDocumentAnalysis | None = None,
     pdf_structure_profile_path: Path | None = None,
-    source_base_builder: "RenderSourceBaseBuilder | None" = None,
+    prepare_hooks: RenderPrepareHooks | None = None,
 ) -> RenderSourcePdf:
     temp_paths: list[Path] = []
     typst_temp_root = default_typst_temp_root(output_pdf_path)
@@ -145,8 +146,9 @@ def build_render_source_pdf(
         "end_page": end_page,
     }
     base_work_dir: Path | None = None
-    if source_base_builder is not None:
-        base = source_base_builder(source_pdf_path, **base_options)
+    hooks = prepare_hooks or RenderPrepareHooks()
+    if hooks.source_base is not None:
+        base = hooks.source_base(source_pdf_path, **base_options)
     else:
         work_root.mkdir(parents=True, exist_ok=True)
         base_work_dir = Path(tempfile.mkdtemp(prefix=".render-source-base-", dir=work_root))
@@ -202,6 +204,7 @@ def build_render_source_pdf(
                         max_elapsed_seconds=source_cleanup_max_seconds(),
                     ),
                     document_analysis=document_analysis,
+                    strip_runner=hooks.text_strip,
                 )
             )
             bbox_text_result = source_cleanup_result.bbox_text_strip

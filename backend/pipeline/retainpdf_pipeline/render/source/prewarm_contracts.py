@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -8,6 +7,7 @@ from pathlib import Path
 
 from retainpdf_pipeline.render.layout.model.models import RenderPageSpec
 from retainpdf_pipeline.render.contracts import RenderDocumentAnalysis
+from retainpdf_pipeline.render.contracts.prepare_hooks import RenderPrepareHooks
 from retainpdf_pipeline.render.source_cleanup.types import BBoxTextStripCandidates
 
 
@@ -35,11 +35,8 @@ class RenderPrewarmSpec:
     source_cleanup_strategy: str = "pikepdf_text_strip"
     document_analysis: RenderDocumentAnalysis | None = None
     include_source_cleanup: bool = True
-    # 取 visual_profile 的函数 (source_pdf_path, pages) -> DocumentVisualProfile；workflow 注入
-    # 按准备步骤缓存的版本，None 时现算。
-    visual_profile_builder: Callable | None = None
-    # 渲染源底子（修 XObject + 去隐藏文字）的构建函数，同上；None 时现做。
-    source_base_builder: Callable | None = None
+    # 准备步骤的注入点（visual_profile / 渲染源底子 / 按框去文字走缓存）；None 时都现做。
+    prepare_hooks: RenderPrepareHooks | None = None
 
 
 @dataclass(frozen=True)

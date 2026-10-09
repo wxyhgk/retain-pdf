@@ -4,8 +4,8 @@
 字色、块类型）和原 PDF——与译文措辞无关，改译文后重渲染直接命中。缓存按原精度存
 （exact），命中时读回的与现算的逐位相同。
 
-prewarm（source 层）不能依赖本层，所以由 workflow 用 visual_profile_builder(prepare_dir) 把
-「按步骤取」的函数注入给它；没有缓存目录时就是原来的现算。
+prewarm（source 层）不能依赖本层：由 prepare.hooks 组装进 RenderPrepareHooks 注入；没有
+缓存目录时就是原来的现算。
 """
 
 from __future__ import annotations
