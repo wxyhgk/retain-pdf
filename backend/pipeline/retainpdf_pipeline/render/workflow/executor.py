@@ -11,6 +11,7 @@ from retainpdf_pipeline.foundation.config.output_layout import ARTIFACTS_DIR_NAM
 from retainpdf_pipeline.render.prepare.hooks import prepare_hooks
 from retainpdf_pipeline.render.prepare.routes import route_prepare_needs
 from retainpdf_pipeline.render.visual_profile.io import visual_profile_path_from_prewarm_manifest
+from retainpdf_pipeline.render.workflow.prepare_stage import document_path_for_render
 from retainpdf_pipeline.render.workflow.route_visual_profile import build_route_visual_profile
 from retainpdf_pipeline.render.prepare.store import PREPARE_DIR_NAME
 from retainpdf_pipeline.render.render_plan import RenderPlan
@@ -496,7 +497,7 @@ def _dispatch_typst_render_mode(
 
 
 def _document_path_for_render(translations_dir: Path) -> Path:
-    return Path(translations_dir).parent / "ocr" / "normalized" / "document.v1.json"
+    return document_path_for_render(translations_dir)
 
 
 def _protected_pages_for_render(translations_dir: Path) -> dict[int, list[dict]]:

@@ -81,6 +81,10 @@ def text_strip_runner(prepare_dir: Path | None) -> Callable[..., BBoxTextStripRe
     def runner(execute: Callable[..., BBoxTextStripResult], **kwargs: Any) -> BBoxTextStripResult:
         output_pdf_path = Path(kwargs["output_pdf_path"])
         inputs = step_inputs(kwargs)
+        with store.lock(STEP):
+            return _run_locked(execute, kwargs, inputs, output_pdf_path)
+
+    def _run_locked(execute, kwargs, inputs, output_pdf_path: Path) -> BBoxTextStripResult:
         record = store.load(STEP, VERSION, inputs)
         if record is None:
             directory = store.step_dir(STEP)

@@ -14,6 +14,7 @@ from retainpdf_pipeline.ocr.ocr_provider_config import (
 NORMALIZE_STAGE_SCHEMA_VERSION = "normalize.stage.v1"
 TRANSLATE_STAGE_SCHEMA_VERSION = "translate.stage.v1"
 RENDER_STAGE_SCHEMA_VERSION = "render.stage.v1"
+RENDER_PREPARE_STAGE_SCHEMA_VERSION = "render_prepare.stage.v1"
 # render.engine：typst = 现有路线；rpr = 自研排版引擎（retain-pdf-rendering）。缺省 / 未知值一律 typst。
 RENDER_ENGINE_TYPST = "typst"
 RENDER_ENGINE_RPR = "rpr"
@@ -342,6 +343,72 @@ class TranslateStageSpec:
     @property
     def job_dirs(self) -> JobDirs:
         return resolve_job_dirs(self.job.job_root)
+
+
+@dataclass(frozen=True)
+class RenderPrepareStageInputs:
+    source_pdf: Path
+    # 翻译还没开始：document.v1 由 OCR 阶段给出，译文目录可能还不存在（只用来定位任务目录）。
+    source_json: Path
+    translations_dir: Path
+
+
+@dataclass(frozen=True)
+class RenderPrepareStageParams:
+    start_page: int
+    end_page: int
+    render_mode: str
+    engine: str
+    math_mode: str
+
+
+@dataclass(frozen=True)
+class RenderPrepareStageSpec:
+    """渲染准备阶段（与翻译并行，提前做与译文无关的渲染准备）。参数与随后的渲染阶段同源。"""
+
+    schema_version: str
+    stage: str
+    job: StageJobRef
+    inputs: RenderPrepareStageInputs
+    params: RenderPrepareStageParams
+
+    @classmethod
+    def load(cls, path: Path) -> RenderPrepareStageSpec:
+        spec_path = path.resolve()
+        if not spec_path.exists():
+            raise RuntimeError(f"stage spec not found: {spec_path}")
+        payload = _load_json(spec_path)
+        schema_version = _require_text(payload, "schema_version")
+        if schema_version != RENDER_PREPARE_STAGE_SCHEMA_VERSION:
+            raise RuntimeError(f"unsupported render_prepare stage schema_version: {schema_version}")
+        stage = _require_text(payload, "stage")
+        if stage != "render_prepare":
+            raise RuntimeError(f"unexpected stage spec kind: {stage}")
+        job_payload = _require_object(payload, "job")
+        inputs_payload = _require_object(payload, "inputs")
+        params_payload = _require_object(payload, "params")
+        job = StageJobRef(
+            job_id=_require_text(job_payload, "job_id"),
+            job_root=Path(_require_text(job_payload, "job_root")).resolve(),
+            workflow=_require_text(job_payload, "workflow"),
+        )
+        inputs = RenderPrepareStageInputs(
+            source_pdf=Path(_require_text(inputs_payload, "source_pdf")).resolve(),
+            source_json=Path(_require_text(inputs_payload, "source_json")).resolve(),
+            translations_dir=Path(_require_text(inputs_payload, "translations_dir")).resolve(),
+        )
+        if not inputs.source_pdf.exists():
+            raise RuntimeError(f"source pdf not found: {inputs.source_pdf}")
+        if not inputs.source_json.exists():
+            raise RuntimeError(f"source json not found: {inputs.source_json}")
+        params = RenderPrepareStageParams(
+            start_page=_int_field(params_payload, "start_page", 0),
+            end_page=_int_field(params_payload, "end_page", -1),
+            render_mode=str(params_payload.get("render_mode", "typst") or "typst"),
+            engine=normalize_render_engine(params_payload.get("engine")),
+            math_mode=str(params_payload.get("math_mode", "") or "").strip() or "direct_typst",
+        )
+        return cls(schema_version=schema_version, stage=stage, job=job, inputs=inputs, params=params)
 
 
 @dataclass(frozen=True)

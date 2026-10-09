@@ -18,6 +18,7 @@ import os
 import shutil
 import tempfile
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from datetime import timezone
@@ -78,6 +79,37 @@ def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
         raise
 
 
+@contextmanager
+def _exclusive_lock(path: Path):
+    """跨进程互斥（渲染准备进程与渲染进程可能同时做同一步）：同一时刻只有一方在做，另一方等它
+    做完再读缓存。锁随文件句柄关闭释放，进程被杀也不会留下死锁。"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "a+b") as handle:
+        if os.name == "nt":  # pragma: no cover - Windows
+            import msvcrt
+
+            handle.seek(0)
+            while True:
+                try:
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+                    break
+                except OSError:
+                    continue
+            try:
+                yield
+            finally:
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
 @dataclass(frozen=True)
 class StepRecord:
     step: str
@@ -103,6 +135,10 @@ class PrepareStore:
 
     def step_dir(self, step: str) -> Path:
         return self.root / step
+
+    def lock(self, step: str):
+        """步骤级互斥锁（with store.lock(step): ...），在 load / build / save 外面包一层。"""
+        return _exclusive_lock(self.root / f".{step}.lock")
 
     def load(self, step: str, version: str, inputs: dict[str, Any]) -> StepRecord | None:
         """指纹一致且产物都在时返回记录，否则 None。"""
@@ -148,16 +184,20 @@ class PrepareStore:
         return StepRecord(step, key, directory, dict(outputs), float(elapsed_seconds), hit=False)
 
     def run(self, step: str, version: str, inputs: dict[str, Any], build) -> StepRecord:
-        """命中缓存就直接返回；否则清空旧产物，调用 build(step_dir) -> {名字: 路径} 后保存。"""
-        cached = self.load(step, version, inputs)
-        if cached is not None:
-            return cached
-        directory = self.step_dir(step)
-        directory.mkdir(parents=True, exist_ok=True)
-        (directory / MANIFEST_NAME).unlink(missing_ok=True)
-        started = time.perf_counter()
-        outputs = build(directory)
-        return self.save(step, version, inputs, outputs, elapsed_seconds=time.perf_counter() - started)
+        """命中缓存就直接返回；否则删掉旧 manifest，调用 build(step_dir) -> {名字: 路径} 后保存。
+
+        整个过程持步骤锁：另一个进程正在做同一步时先等它，做完若指纹一致就直接命中。
+        """
+        with self.lock(step):
+            cached = self.load(step, version, inputs)
+            if cached is not None:
+                return cached
+            directory = self.step_dir(step)
+            directory.mkdir(parents=True, exist_ok=True)
+            (directory / MANIFEST_NAME).unlink(missing_ok=True)
+            started = time.perf_counter()
+            outputs = build(directory)
+            return self.save(step, version, inputs, outputs, elapsed_seconds=time.perf_counter() - started)
 
 
 __all__ = [
