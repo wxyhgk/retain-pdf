@@ -23,6 +23,7 @@ export function useStatusCardModel({
     flowStageKey,
     selection,
     cancelDisabled,
+    cancelError,
     cancelCurrentJob,
   } = useStatusCardSnapshot({ embedded, idPrefix, fallbackItem });
 
@@ -82,6 +83,7 @@ export function useStatusCardModel({
     stageKeyForFlow,
     selectedForFlow,
     cancelDisabled,
+    cancelError,
     cancelCurrentJob,
     cancel,
     selectedRetry,

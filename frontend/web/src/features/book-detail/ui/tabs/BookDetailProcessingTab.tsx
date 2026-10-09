@@ -5,82 +5,26 @@ import { BookTranslationWorkflowPanel } from "../panels/translate/WorkflowPanel.
 import { ProcessingPipelineRail } from "../panels/processing/ProcessingPipelineRail.jsx";
 import { PageSpecInput } from "../panels/PageSpecInput.js";
 import { JobFailureCard } from "../panels/processing/JobFailureCard.js";
+import { TranslationStoppedCard } from "../panels/processing/TranslationStoppedCard.js";
 import { loadJobFailureDetail } from "../../domain/job-failure-detail.js";
 import type { JobFailureBrief } from "@/platform/contracts/library-payloads.js";
-import { ProcessingSummary, type ProcessingSummaryTone } from "../panels/processing/ProcessingSummary.jsx";
+import { ProcessingSummary } from "../panels/processing/ProcessingSummary.jsx";
 import { processingFacts } from "../../domain/translation-coverage.js";
 import { JobHistoryPanel, TranslationCoveragePanel } from "../panels/processing/TranslationCoveragePanel.js";
 import { btn } from "../panels/ui.jsx";
 import { documentJobPresentation, isDocumentJobActive } from "../use-document-jobs.js";
+import { stageDetailWithoutPageCount } from "../../domain/progress-value.js";
 import {
-  countFromProgress,
-  percentFromProgress,
-  stageDetailWithoutPageCount,
-  unitLabelFromProgress,
-} from "../../domain/progress-value.js";
+  liveStageKey,
+  progressOf,
+  summaryToneOf,
+  unifiedHeadline,
+  unifiedPercentOf,
+} from "./processing-summary-model.js";
 import { useState } from "react";
-import type {
-  BookDetailOcrPanelProps,
-  BookDetailProcessingTabProps,
-  BookDetailTranslationPanelProps,
-  ProgressSource,
-} from "./processing-tab-types.js";
+import type { BookDetailProcessingTabProps } from "./processing-tab-types.js";
 import { ChevronDown, LoaderCircle, Square } from "lucide-react";
 import { TranslationStageActions } from "../panels/translate/TranslationStageActions.jsx";
-
-function progressOf(source: ProgressSource): { current?: number; total?: number; percent: number | null; unit: string } {
-  const progress = source?.stage_snapshot?.progress || source?.progress || {};
-  const percent = percentFromProgress(progress);
-  const count = countFromProgress(progress);
-  const unit = unitLabelFromProgress(progress);
-  return count ? { current: count.current, total: count.total, percent, unit } : { percent, unit };
-}
-
-function progressTextOf(source: ProgressSource): string | null {
-  const { current, total, percent, unit } = progressOf(source);
-  const parts: string[] = [];
-  if (current !== undefined && total !== undefined) parts.push(unit ? `${current}/${total} ${unit}` : `${current}/${total}`);
-  if (percent !== null) parts.push(`${Math.round(percent)}%`);
-  return parts.length ? parts.join(" · ") : null;
-}
-
-/** 顶部一行状态：只读传入的真实任务数据，不编假数；OCR 活跃优先，否则跟翻译。 */
-function unifiedHeadline(ocr: BookDetailOcrPanelProps, translation: BookDetailTranslationPanelProps): string {
-  if (ocr && isDocumentJobActive(ocr.job)) {
-    const presentation = documentJobPresentation(ocr.job, "OCR 处理中");
-    const progress = progressTextOf(ocr.job);
-    return progress ? `OCR 处理中 · ${progress}` : `${presentation.label || "OCR 处理中"}`;
-  }
-  if (translation?.isActive) {
-    const progress = progressTextOf(translation.item);
-    return progress ? `翻译中 · ${progress}` : "翻译中";
-  }
-  return `${translation?.status?.label || "未翻译"}`;
-}
-
-/** 统一进度条：只在进行中出现；OCR 活跃跟 OCR，否则跟翻译；无真实数字时不渲染。
- *  完成后不再画一条满格的进度条 —— 它占一大块却什么也没说。 */
-function unifiedPercentOf(ocr: BookDetailOcrPanelProps, translation: BookDetailTranslationPanelProps): number | null {
-  if (ocr && isDocumentJobActive(ocr.job)) return progressOf(ocr.job).percent;
-  if (translation?.isActive) return progressOf(translation?.item).percent;
-  return null;
-}
-
-function summaryToneOf(ocr: BookDetailOcrPanelProps, translation: BookDetailTranslationPanelProps, ocrTone: string, keptOriginBlocks: number): ProcessingSummaryTone {
-  if ((ocr && isDocumentJobActive(ocr.job)) || translation?.isActive) return "active";
-  const tone = `${translation?.status?.tone || ""}`;
-  if (tone === "failed" || (ocrTone === "failed" && tone !== "done")) return "failed";
-  if (tone === "done") return keptOriginBlocks > 0 ? "warn" : "done";
-  return "idle";
-}
-
-/** 翻译任务现在跑到哪一站（OCR / 翻译 / 渲染），给实时说明找位置。认不出就算翻译站。 */
-function liveStageKey(item: ProgressSource): "ocr" | "translate" | "render" {
-  const stage = `${item?.stage_snapshot?.display_stage || item?.stage_snapshot?.stage || item?.stage || ""}`.toLowerCase();
-  if (stage.startsWith("ocr")) return "ocr";
-  if (stage.startsWith("render")) return "render";
-  return "translate";
-}
 
 function ScanIcon() {
   return (
@@ -155,6 +99,16 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   // 在 OCR 段重复画一遍。
   const ocrFailure = ocrJobIsReal ? (ocrJob as { failure?: JobFailureBrief })?.failure ?? null : null;
   const translationFailure = (translationItem as { failure?: JobFailureBrief })?.failure ?? null;
+  // 翻译任务停下了（失败 / 取消）：一张卡说清停在哪、能不能从断点继续，重做的动作收进「重新处理」。
+  const translationStatusKey = `${translationItem.status || ""}`.trim().toLowerCase();
+  const translationFailed = hasTranslationJob && translationStatusKey === "failed";
+  const translationStopped = translationFailed
+    || (hasTranslationJob && (translationStatusKey === "canceled" || translationStatusKey === "cancelled"));
+  // 同一次运行的 OCR 失败（翻译任务的 -ocr 子任务，或翻译任务自己就是死在 OCR）只说一遍：
+  // 以前这种情况上面一张 OCR 失败卡，下面再来一条「本次翻译失败」，说的是同一件事。
+  const ocrFailureCovered = translationFailed && (
+    ocrJobId === `${translationJobId}-ocr` || `${translationFailure?.stage || ""}` === "ocr"
+  );
   // OCR 动作与「翻译整本」同排，避免出现两行能力按钮。
   // 翻译进行中整组不出现：那时按钮只能是灰的（见 ocrBlockedByTranslation），
   // 摆一个点不了的「重新 OCR」只是干扰。
@@ -215,7 +169,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   // 点开才是一张清单（每项一行，自己的设置挨着自己的按钮）。三步进度这时也收起来 ——
   // 全是勾，只占地方。以前这些平铺在页面上：三步进度、四个按钮、OCR 页码勾选框、引擎下拉。
   const reprocessMode = hasTranslationJob
-    && !translation?.canTranslate
+    && (!translation?.canTranslate || translationStopped)
     && !translationActive
     && !ocrActive
     && !bootstrapping
@@ -259,6 +213,26 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
       </div>
     </li>
   );
+  // 停下的任务多一行「从头再来」：OCR 都没成功时，阶段动作全不可用，只剩这条路。
+  const restartRow = translationStopped ? (
+    <li className="book-detail-reprocess-row" data-reprocess-stage="restart">
+      <div className="book-detail-reprocess-copy">
+        <strong>从头翻译整本</strong>
+        <span>重新执行 OCR、翻译和排版，费用重新计算。</span>
+      </div>
+      <div className="book-detail-reprocess-controls">
+        <button
+          id="book-detail-restart-translation-btn"
+          type="button"
+          className={btn("outline")}
+          disabled={Boolean(translation?.busy) || Boolean(ocr?.pending)}
+          onClick={translation?.onTranslate}
+        >
+          <span>{translation?.busy === "translate" ? "提交中…" : "开始"}</span>
+        </button>
+      </div>
+    </li>
+  ) : null;
   const reprocessSheet = reprocessMode && reprocessOpen ? (
     <div id="book-detail-reprocess-sheet">
       <TranslationStageActions
@@ -268,7 +242,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
         pendingStage={translation?.stageActionPending}
         error={translation?.stageActionError}
         onRetry={translation?.onRetryStage}
-        extraRows={ocrRow}
+        extraRows={<>{ocrRow}{restartRow}</>}
       />
     </div>
   ) : null;
@@ -296,7 +270,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
         {reprocessSheet}
 
         {/* 唯一轨道：OCR 是流水线第一站，不再是与翻译并列的能力标题。翻译完成后收起。 */}
-        {reprocessMode ? null : <ProcessingPipelineRail
+        {reprocessMode && !translationStopped ? null : <ProcessingPipelineRail
           item={translationItem}
           hasTranslationJob={hasTranslationJob}
           ocrStatus={{ ...ocrStatus, label: ocrStatusLabel }}
@@ -322,12 +296,16 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
         {/* 失败诊断。OCR 和翻译各占全部失败的一半左右（6 和 4，外加 3 次上传超时
             也记在 OCR 段），所以两段都要能出卡片 —— 只做一边等于一半的失败仍然
             只有「失败」两个字。 */}
-        {ocrFailure ? (
+        {ocrFailure && !ocrFailureCovered ? (
           <JobFailureCard
             failure={ocrFailure}
             jobId={ocrJobIsReal ? ocrJobId : ""}
-            onRetry={ocr?.onOcr}
-            retrying={Boolean(ocr?.pending)}
+            primary={ocr?.onOcr ? {
+              label: "重新 OCR",
+              hint: "重新识别版面和文字。",
+              onClick: ocr.onOcr,
+              pending: Boolean(ocr?.pending),
+            } : null}
             loadDetail={loadJobFailureDetail}
           />
         ) : null}
@@ -336,23 +314,25 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
             唯一的行动行：OCR 按钮与「翻译整本 / 继续翻译」同排。 */}
         {/* 完成态的动作都收进了「重新处理」，这一段只在有话要说时出现（提交中、报错、失败），
             否则它是卡片底部一截空白。 */}
-        {reprocessMode && !translation?.error && !translationFailure && !translation?.stageActionPending && !translation?.busy ? null : (
+        {reprocessMode && !translationStopped && !translation?.error && !translation?.stageActionPending && !translation?.busy ? null : (
         <div className="book-detail-processing-segment" data-processing-region="translation">
           <BookTranslationWorkflowPanel
             {...translation}
             // 首帧未知时「翻译整本」同样不能是可点的确定态：这时 canTranslate
             // 由「还没见过任何任务」推出，点下去可能与在跑的任务撞车。
-            canTranslate={bootstrapping ? false : translation.canTranslate}
+            canTranslate={bootstrapping || reprocessMode ? false : translation.canTranslate}
             ocrActionSlot={reprocessMode ? null : ocrAction}
             ocrOptionsSlot={reprocessMode ? null : ocrOptions}
             hideStageActions={reprocessMode}
           />
-          {translationFailure ? (
-            <JobFailureCard
-              failure={translationFailure}
-              jobId={translationJobId}
-              onRetry={translation?.onTranslate}
-              retrying={Boolean(translation?.busy)}
+          {translationStopped ? (
+            <TranslationStoppedCard
+              item={translationItem}
+              // 死在 OCR 时，OCR 子任务自己那份简报更具体（分类、上游），翻译任务那份常常只有「未知」。
+              failure={(ocrFailureCovered && ocrFailure) || translationFailure}
+              resume={translation?.resume}
+              onRestart={translation?.onTranslate}
+              restarting={translation?.busy === "translate"}
               loadDetail={loadJobFailureDetail}
             />
           ) : null}

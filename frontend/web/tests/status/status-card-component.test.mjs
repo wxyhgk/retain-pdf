@@ -158,13 +158,17 @@ test("StatusCard：阶段选择语义 + 重试 + 取消", async () => {
   await wait(30);
   assert.equal(ocrStep.getAttribute("aria-selected"), "true", "无关的 store 通知不应重置手动选择");
 
-  // ---- 取消:点击后按钮应立即置灰(shellViewPort.setCancelDisabled 同步生效) ----
+  // ---- 取消:先弹确认;确认后按钮应立即置灰(shellViewPort.setCancelDisabled 同步生效) ----
   const cancelButton = byId(dom, `${BD}cancel-btn`);
   assert.ok(cancelButton, "嵌入卡必须提供取消入口");
   assert.equal(cancelButton.getAttribute("aria-label"), "取消任务");
   if (!cancelButton.disabled) {
     click(dom, cancelButton);
-    await waitFor(() => cancelButton.disabled === true, "取消按钮点击后立即禁用");
+    // 取消要重新跑才能补回来:点下去先问,不直接取消。
+    const confirmButton = await waitFor(() => byId(dom, `${BD}cancel-confirm-confirm`), "点取消先弹确认框");
+    assert.equal(cancelButton.disabled, false, "还没确认就已经在取消了");
+    click(dom, confirmButton);
+    await waitFor(() => cancelButton.disabled === true, "确认取消后按钮立即禁用");
     assert.match(cancelButton.textContent, /取消中/, "取消请求中必须反馈状态");
   }
 
