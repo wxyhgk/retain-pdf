@@ -7,6 +7,9 @@ const DEFAULT_BASE_URL = "https://api.deepseek.com/v1";
 
 function createDesktopConfigStore(app, options = {}) {
   const desktopApiKey = options.desktopApiKey || "";
+  // ~/.retainpdf/ 的对接（见 retainpdf-home.js）；不给时全部存在 desktop-config.json（测试、
+  // 还没编译命令行的开发环境）。
+  const retainpdfHome = options.retainpdfHome || null;
   const resolveCredentialSecret = options.resolveCredentialSecret
     || ((credentialRef, expectedKind, expectedProvider) => resolveVaultCredentialSecret(app, credentialRef, expectedKind, expectedProvider));
   // Actual Rust API port chosen at startup (dynamic fallback when the
@@ -41,25 +44,51 @@ function createDesktopConfigStore(app, options = {}) {
     return path.join(app.getPath("userData"), "desktop-config.json");
   }
 
-  function loadDesktopConfig() {
+  function readStoredConfig() {
     const configPath = resolveDesktopConfigPath();
     if (!fs.existsSync(configPath)) {
-      return createDefaultDesktopConfig();
+      return null;
     }
     try {
-      const raw = fs.readFileSync(configPath, "utf8");
-      return normalizeDesktopConfig(JSON.parse(raw));
+      return JSON.parse(fs.readFileSync(configPath, "utf8"));
     } catch (error) {
       console.error(`[desktop] failed to load desktop config: ${error?.message || error}`);
-      return createDefaultDesktopConfig();
+      return null;
+    }
+  }
+
+  function writeStoredConfig(config) {
+    const configPath = resolveDesktopConfigPath();
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  }
+
+  function loadDesktopConfig() {
+    let stored = readStoredConfig();
+    const base = stored ? normalizeDesktopConfig(stored) : createDefaultDesktopConfig();
+    if (!retainpdfHome || !retainpdfHome.available()) {
+      return base;
+    }
+    try {
+      if (stored && retainpdfHome.migrate(stored, resolveDesktopConfigPath())) {
+        stored = retainpdfHome.stripMapped(stored);
+        writeStoredConfig(stored);
+      }
+      return normalizeDesktopConfig(retainpdfHome.overlay(stored ? normalizeDesktopConfig(stored) : base));
+    } catch (error) {
+      console.error(`[desktop] failed to read ~/.retainpdf: ${error?.message || error}`);
+      return base;
     }
   }
 
   function saveDesktopConfig(payload = {}) {
     const nextConfig = mergeDesktopConfig(loadDesktopConfig(), payload);
-    const configPath = resolveDesktopConfigPath();
-    fs.mkdirSync(path.dirname(configPath), { recursive: true });
-    fs.writeFileSync(configPath, `${JSON.stringify(nextConfig, null, 2)}\n`, "utf8");
+    if (retainpdfHome && retainpdfHome.available()) {
+      // 接口设置写进 ~/.retainpdf（不对的值在这里报错，什么都不写）；其余留在桌面文件。
+      writeStoredConfig(retainpdfHome.save(nextConfig));
+      return loadDesktopConfig();
+    }
+    writeStoredConfig(nextConfig);
     return nextConfig;
   }
 

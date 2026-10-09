@@ -24,12 +24,14 @@
 //! 等待区,升级后再应用。
 
 mod clock;
+pub mod control;
 mod engine;
 mod files;
 mod folder;
 mod store;
 mod webdav;
 
+pub use control::{SyncControl, SyncSettingsError, SyncTarget};
 pub use engine::{MaintenancePolicy, SyncEngine, SyncPeer, SyncReport};
 pub use folder::FolderBackend;
 pub use store::{Backend, SYNC_FORMAT, SYNC_FORMAT_VERSION};

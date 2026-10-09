@@ -55,6 +55,10 @@ export interface DesktopHost {
   openOutputDirectory(): DesktopIpcResult;
   /** 在访达 / 资源管理器里打开数据库备份所在的文件夹。 */
   openBackupDirectory(): DesktopIpcResult;
+  /** 命令行工具 retainpdf：包里有没有、装到了哪里。 */
+  cliStatus(): Promise<{ available: boolean; installedAt: string; supported: boolean }>;
+  /** 把 retainpdf 链接到终端找得到的地方。 */
+  installCli(): Promise<{ ok: boolean; path?: string; onPath?: boolean; hint?: string; error?: string }>;
   /** 系统的文件夹选择框；取消时为 null。 */
   pickDirectory(options?: { title?: string; defaultPath?: string }): Promise<string | null>;
   onStartupProgress(callback: (event: unknown) => void): () => void;
@@ -120,6 +124,17 @@ function resolveDesktopHost(): DesktopHost | null {
     },
     openBackupDirectory() {
       return invokeAdapter!.invoke("open_backup_directory");
+    },
+    async cliStatus() {
+      const result = await invokeAdapter!.invoke("cli_status");
+      return {
+        available: Boolean(result?.available),
+        installedAt: typeof result?.installedAt === "string" ? result.installedAt : "",
+        supported: result?.supported !== false,
+      };
+    },
+    async installCli() {
+      return (await invokeAdapter!.invoke("install_cli")) || { ok: false, error: "没有结果" };
     },
     async pickDirectory(options: { title?: string; defaultPath?: string } = {}) {
       const result = await invokeAdapter!.invoke("pick_directory", options);

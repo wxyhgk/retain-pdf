@@ -34,6 +34,7 @@ import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
 import type { DialogStore } from "@/platform/store/dialog-store.js";
 import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { APP_SETTINGS_DIALOG_IDS } from "./settings-dialog-ids.js";
+import { CommandLinePanel } from "./CommandLinePanel.jsx";
 import { ThemeAppearancePanel } from "./ThemeAppearancePanel.jsx";
 import { Button } from "@/ui/Button.jsx";
 
@@ -316,6 +317,7 @@ export function SettingsDialog({
                 >
                   <PaneHead tab="update" />
                   {appUpdateBannerSlot}
+                  {activeTab === "update" ? <CommandLinePanel /> : null}
                 </TabsPrimitive.Content>
               </div>
             </TabsPrimitive.Root>

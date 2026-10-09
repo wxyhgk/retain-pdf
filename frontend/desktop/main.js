@@ -14,6 +14,8 @@ const { createPortAllocator } = require("./src/main/port-allocator");
 const { createLocalGateway } = require("./src/main/local-gateway");
 const { createBackendRuntime } = require("./src/main/backend-runtime");
 const { createDesktopConfigStore } = require("./src/main/desktop-config");
+const { createRetainpdfHome } = require("./src/main/retainpdf-home");
+const { createCliInstaller } = require("./src/main/cli-install");
 const { createDesktopLogger } = require("./src/main/desktop-logging");
 const { createDesktopWindows } = require("./src/main/desktop-windows");
 
@@ -47,7 +49,42 @@ const backendHttp = createBackendHttp({
 const { canReuseExistingBackend } = backendHttp;
 const portOccupant = createPortOccupant({ canConnectToPort, logger: console });
 const { killProcessTreeSync } = portOccupant;
-const desktopConfigStore = createDesktopConfigStore(app, { desktopApiKey: DESKTOP_API_KEY });
+// ~/.retainpdf/ 经命令行 retainpdf 读写：打包后在 backend/bin，开发时用仓库里编译好的。
+const retainpdfHome = createRetainpdfHome({ resolveCli: () => retainpdfHomeCliPath() });
+const desktopConfigStore = createDesktopConfigStore(app, { desktopApiKey: DESKTOP_API_KEY, retainpdfHome });
+
+// 设置 → 更新 →「安装命令行工具」。
+const cliInstaller = createCliInstaller({ resolveSource: () => retainpdfHomeCliPath() });
+
+function retainpdfHomeCliPath() {
+  const fileName = process.platform === "win32" ? "retainpdf.exe" : "retainpdf";
+  const repoRoot = path.join(__dirname, "..", "..");
+  const candidates = [
+    process.env.RETAINPDF_CLI || "",
+    path.join(resolveBackendRoot(), "bin", fileName),
+    ...(app.isPackaged ? [] : [
+      path.join(repoRoot, "target", "release", fileName),
+      path.join(repoRoot, "target", "debug", fileName),
+    ]),
+  ];
+  return candidates.find((candidate) => candidate && fs.existsSync(candidate)) || "";
+}
+
+/** ~/.retainpdf 的设置（命令行不在或读不了时为 null）。 */
+function readRetainpdfSettings() {
+  try {
+    return retainpdfHome.exportSettings();
+  } catch (error) {
+    logDesktopError?.(`[desktop] ~/.retainpdf unreadable: ${error?.message || error}`);
+    return null;
+  }
+}
+
+/** 数据目录：~/.retainpdf 的 backend.data_dir，没配就是应用数据目录下的 data。 */
+function resolveDataRoot() {
+  const configured = readRetainpdfSettings()?.backend?.data_dir;
+  return typeof configured === "string" && configured.trim() ? configured : path.join(app.getPath("userData"), "data");
+}
 const {
   buildDesktopConfigResponse,
   buildDesktopRuntimeConfig,
@@ -161,7 +198,7 @@ async function startBundledBackend() {
   const bundledFontPath = path.join(backendRoot, "fonts", "SourceHanSerifSC-Regular.otf");
   const bundledTitleBoldFontPath = path.join(backendRoot, "fonts", "SourceHanSerifSC-Bold.otf");
   const bundledTypstFontDir = path.join(backendRoot, "fonts");
-  const dataRoot = path.join(app.getPath("userData"), "data");
+  const dataRoot = resolveDataRoot();
   const rustApiRoot = path.join(dataRoot, "rust_api");
   const typstPackagePath = path.join(backendRoot, "typst-packages");
   const typstPackageCachePath = path.join(dataRoot, "typst-package-cache");
@@ -256,6 +293,7 @@ async function startBundledBackend() {
       await waitForPort("127.0.0.1", apiPort, 5000);
       // 仍尝试拉起 AI（若 41100 空闲）；复用的 Rust 会反代到本机 AI
       const reuseEnv = buildBackendEnv({
+        retainpdfSettings: readRetainpdfSettings(),
         apiPort,
         aiServicePort,
         aiServiceRoot,
@@ -327,6 +365,7 @@ const jobsModeForEnv = process.env.RUST_API_JOBS_MODE || (app.isPackaged ? "remo
 const jobsSuperviseForEnv = process.env.RUST_API_JOBS_SUPERVISE || (app.isPackaged ? "1" : "");
 const aiSuperviseForEnv = process.env.RUST_API_AI_SUPERVISE || (app.isPackaged ? "1" : "");
 const env = buildBackendEnv({
+  retainpdfSettings: readRetainpdfSettings(),
   apiPort,
   aiServicePort,
   aiServiceRoot,
@@ -598,7 +637,7 @@ ipcMain.handle("desktop:invoke", async (_event, command, args = {}) => {
       return buildDesktopConfigResponse(config);
     }
     case "open_output_directory": {
-      const outputDir = path.join(app.getPath("userData"), "data", "jobs");
+      const outputDir = path.join(resolveDataRoot(), "jobs");
       fs.mkdirSync(outputDir, { recursive: true });
       const result = await shell.openPath(outputDir);
       if (result) {
@@ -608,7 +647,7 @@ ipcMain.handle("desktop:invoke", async (_event, command, args = {}) => {
     }
     case "open_backup_directory": {
       // 设置 → 备份：数据库备份放在数据目录的 backups/db（见 retain-db 的 backup.rs）。
-      const backupDir = path.join(app.getPath("userData"), "data", "backups", "db");
+      const backupDir = path.join(resolveDataRoot(), "backups", "db");
       fs.mkdirSync(backupDir, { recursive: true });
       const result = await shell.openPath(backupDir);
       if (result) {
@@ -616,6 +655,10 @@ ipcMain.handle("desktop:invoke", async (_event, command, args = {}) => {
       }
       return { ok: true, backupDir };
     }
+    case "cli_status":
+      return cliInstaller.status();
+    case "install_cli":
+      return cliInstaller.install();
     case "pick_directory": {
       // 同步设置里「选择文件夹」：系统的文件夹选择框，可新建文件夹。取消时返回 path: null。
       const owner = BrowserWindow.getFocusedWindow() || undefined;
