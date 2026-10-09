@@ -7,11 +7,11 @@
 //
 // RecentJobsLibrary 仍原样再导出本 hook 保持向后兼容；运行时来源不变。
 
-import { useHomeLibrary } from "@/ui/context/home-services-context.js";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
+import { useLibraryServices } from "../library-services-context.js";
 
 export function useLibrarySearchBinding() {
-  const { viewPort } = useHomeLibrary();
+  const { viewPort } = useLibraryServices();
   const view = useStoreSnapshot(viewPort.store);
 
   function onSearchChange(event: { target: { value: string } }) {

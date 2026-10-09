@@ -25,7 +25,6 @@ import {
   useHomeCredentials,
   useHomeCredentialsStatePort,
   useHomeGlossaries,
-  useHomeLibrary,
   useHomeSettingsHub,
   useHomeWorkflowDialog,
 } from "./home-services-context.js";
@@ -35,7 +34,9 @@ import { AppBottomBar, HOME_TASK_CENTER_OPEN_EVENT } from "./shell/AppBottomBar.
 import { MockModeBanner } from "./shell/MockModeBanner.jsx";
 import { IngestDialog, IngestServicesProvider, IngestWorkflowViewProvider } from "@/features/ingest/index.js";
 import {
+  LibraryServicesProvider,
   RecentJobsLibrary,
+  useLibraryServices,
 } from "@/features/library/index.js";
 import { AppUpdateBanner } from "@/features/app-update/index.js";
 import { GlossariesDialog } from "@/features/glossaries/index.js";
@@ -136,7 +137,7 @@ function AppUpdateBannerSlot() {
 
 function CollectionsViewSlot() {
   const collections = useHomeCollections();
-  const library = useHomeLibrary();
+  const library = useLibraryServices();
   return (
     <CollectionsView
       controller={collections.controller}
@@ -161,11 +162,11 @@ function CollectionDialogSlot() {
 // 任务中心浮层插槽：点任务卡片走同一套书籍详情（job_id 兜底开详情壳，
 // 见 library/domain/documents/navigation-actions），与网格行为一致。
 function TaskCenterSlot() {
-  const library = useHomeLibrary();
+  const library = useLibraryServices();
   return (
     <TaskCenter
       onOpenBookDetail={(input) => {
-        (library.actions.openBookDetail as (item: any) => void)(input);
+        library.actions.openBookDetail(input);
       }}
     />
   );
@@ -173,7 +174,7 @@ function TaskCenterSlot() {
 // 书籍详情第一次打开时才下载并挂载；之后一直挂着，关闭动画、再次打开都和以前一样。
 function BookDetailDialogSlot() {
   const { dialogStore } = useHomeBookDetail();
-  const dialogState: any = useDialogState(dialogStore);
+  const dialogState = useDialogState(dialogStore);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     if (dialogState.open) setMounted(true);
@@ -284,7 +285,7 @@ function HomeShell() {
             </>
           ) : isLibraryTab ? (
             <>
-              <RecentJobsLibrary {...({ onBatchModeChange: setBatchModeActive } as any)} />
+              <RecentJobsLibrary onBatchModeChange={setBatchModeActive} />
               <AppBottomBar showSearch hidden={batchModeActive} />
               <library-search-island></library-search-island>
             </>
@@ -351,11 +352,13 @@ export function HomeApp({ services }: { services: HomeServices }) {
       {/* 「添加 PDF」的用户选项走 ingest 自带的 context，同 CredentialsProviderSlot。 */}
       <IngestWorkflowViewProvider value={services.workflowView}>
         <IngestServicesProvider value={{ uploadViewStore: services.stores.uploadView, features: services.features }}>
-          <HomeTabsRoot>
-            <CredentialsProviderSlot>
-              <HomeShell />
-            </CredentialsProviderSlot>
-          </HomeTabsRoot>
+          <LibraryServicesProvider value={services.library}>
+            <HomeTabsRoot>
+              <CredentialsProviderSlot>
+                <HomeShell />
+              </CredentialsProviderSlot>
+            </HomeTabsRoot>
+          </LibraryServicesProvider>
         </IngestServicesProvider>
       </IngestWorkflowViewProvider>
     </HomeShellProviders>

@@ -61,7 +61,7 @@ export function buildHomeServices({
 
   const libraryPort: LibraryPort = {
     viewPort: library.recentJobsViewPort,
-    recentJobsStore: library.recentJobsStatePort.store as unknown as LibraryPort["recentJobsStore"],
+    recentJobsStore: library.recentJobsStatePort.store,
     actions: {
       ...library.recentJobActions,
       // selectJob 业务已内聚到 LibraryController（findItem 不再由 composition 拼）
@@ -73,7 +73,7 @@ export function buildHomeServices({
       translateDocument: library.libraryController.translateDocument,
       ocrDocument: library.libraryController.ocrDocument,
       // submitDocument 运行时由 controller 拼入，但 LibraryController 类型尚未暴露（见报告）。
-      submitDocument: (library.libraryController as any).submitDocument,
+      submitDocument: library.libraryController.submitDocument,
       getDocumentJobs: library.libraryController.getDocumentJobs,
       getDocumentByJobId: library.libraryController.getDocumentByJobId,
       getJobStageActions: library.libraryController.getJobStageActions,

@@ -4,15 +4,15 @@
 
 import { useMemo } from "react";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
-import { useHomeLibrary } from "@/ui/context/home-services-context.js";
 import { isPollingBootstrapPlaceholder } from "@/features/jobs/index.js";
 import type { LibraryCardItem } from "@/features/library/domain.js";
+import { useLibraryServices } from "@/features/library/index.js";
 
 /**
  * @param {object} payloadItem dialogStore.payload
  */
 export function useBookDetailLiveItem(payloadItem: LibraryCardItem = {}) {
-  const library = useHomeLibrary();
+  const library = useLibraryServices();
   const recentJobs = useStoreSnapshot(library.recentJobsStore);
 
   return useMemo(() => {

@@ -16,6 +16,7 @@
 import { createContext, createElement, useContext } from "react";
 import type { Context, ReactNode } from "react";
 import type { DialogStore } from "@/platform/store/dialog-store.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 
 /** 窄口只暴露 store 读侧；写入仍经 store.actions / 域 action。
  *  subscribe 只建模单参监听（各域 store 的 notify 均为单参），兼容通用 Store
@@ -45,20 +46,23 @@ export type HomeBridgeValue = {
   submitForm: (event?: { preventDefault?: () => void } | null) => unknown;
 };
 
-export type HomeLibraryValue = {
-  actions: any;
-  viewPort: any;
-  recentJobsStore: HomeReadStore;
-};
+
+// ── 下面几样被好几个功能共用，而这些功能之间刻意互不引用 ──
+//
+// jobs 与 job-detail 之间靠 platform/contracts 的中性契约打交道（互相 import 会成环），
+// collections 已经 import 了 library。所以它们不能像书架、上传那样「谁拥有谁提供」，
+// 只能留在 ui 这个中性位置。能精确的已经精确了；controller / store 的值类型定义在各
+// 功能里，ui 层拿不到，消费方在取值处收窄。要彻底去掉，得先把这些状态类型搬进
+// platform/contracts，单独做。
 
 export type HomeStatusCardValue = {
   store: HomeReadStore;
-  cancelCurrentJob: (...args: any[]) => unknown;
+  cancelCurrentJob: () => unknown;
 };
 
 export type HomeStatusDetailValue = {
   store: HomeReadStore;
-  dialogStore: DialogStore<any>;
+  dialogStore: DialogStore<{ activeTab?: string } | null>;
   controller: any;
 };
 
@@ -67,7 +71,7 @@ export type HomeJobRuntimeValue = {
 };
 
 export type HomeBookDetailValue = {
-  dialogStore: DialogStore<any>;
+  dialogStore: DialogStore<LibraryCardItem | null>;
 };
 
 export type HomeCollectionsValue = {
@@ -112,7 +116,6 @@ export type HomeNarrowServices = {
   workflowDialog: HomeWorkflowDialogValue;
   settingsHub: HomeSettingsHubValue;
   bridge: HomeBridgeValue;
-  library: HomeLibraryValue;
   statusCard: HomeStatusCardValue;
   statusDetail: HomeStatusDetailValue;
   jobRuntime: HomeJobRuntimeValue;
@@ -135,7 +138,6 @@ export const HomeDialogStoreContext = createContext<HomeDialogStoreValue | null>
 export const HomeWorkflowDialogContext = createContext<HomeWorkflowDialogValue | null>(null);
 export const HomeSettingsHubContext = createContext<HomeSettingsHubValue | null>(null);
 export const HomeBridgeContext = createContext<HomeBridgeValue | null>(null);
-export const HomeLibraryContext = createContext<HomeLibraryValue | null>(null);
 export const HomeStatusCardContext = createContext<HomeStatusCardValue | null>(null);
 export const HomeStatusDetailContext = createContext<HomeStatusDetailValue | null>(null);
 export const HomeJobRuntimeContext = createContext<HomeJobRuntimeValue | null>(null);
@@ -189,10 +191,6 @@ export const useHomeSettingsHub = createNarrowHook(
 export const useHomeBridge = createNarrowHook(
   HomeBridgeContext,
   "useHomeBridge",
-);
-export const useHomeLibrary = createNarrowHook(
-  HomeLibraryContext,
-  "useHomeLibrary",
 );
 export const useHomeStatusCard = createNarrowHook(
   HomeStatusCardContext,
@@ -250,12 +248,12 @@ export const useHomeReader = createNarrowHook(
 // ── 一次灌入所有窄 Context（app 侧映射 HomeServices → HomeNarrowServices） ──
 
 export function HomeShellProviders({ services, children }: { services: HomeNarrowServices; children: ReactNode }) {
+  // 异构列表：每一项的 Context 与值类型各不相同，Context 又是不变的，只能用 any 收口。
   const providers: Array<[Context<any>, any]> = [
     [HomeDialogStoreContext, services.dialogStore],
     [HomeWorkflowDialogContext, services.workflowDialog],
     [HomeSettingsHubContext, services.settingsHub],
     [HomeBridgeContext, services.bridge],
-    [HomeLibraryContext, services.library],
     [HomeStatusCardContext, services.statusCard],
     [HomeStatusDetailContext, services.statusDetail],
     [HomeJobRuntimeContext, services.jobRuntime],

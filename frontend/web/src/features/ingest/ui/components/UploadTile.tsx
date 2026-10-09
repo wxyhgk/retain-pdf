@@ -10,7 +10,6 @@ import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 import {
   useHomeCredentialsViewStore,
-  useHomeLibrary,
   useHomeUploadDomRefs,
 } from "@/ui/context/home-services-context.js";
 import { useIngestServices, useIngestWorkflowView } from "../workflow-view-context.js";
@@ -22,13 +21,14 @@ import {
   TranslationBudgetNote,
   UploadBudgetSlot,
 } from "./upload/UploadWorkflowNotices.jsx";
+import { useLibraryServices } from "@/features/library/index.js";
 
 export function HeroUpload() {
   // —— 顶部一次收敛：服务句柄 ——
   const { uploadViewStore, features } = useIngestServices();
   const workflowView = useIngestWorkflowView();
   const credentialsViewStore = useHomeCredentialsViewStore();
-  const library = useHomeLibrary();
+  const library = useLibraryServices();
   const uploadFeature = features.uploadFeature;
   const storeOnlyAction = library.actions.storeOnly;
   const uploadDomRefs = useHomeUploadDomRefs();

@@ -15,7 +15,6 @@ import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import {
   useHomeCollections,
   useHomeHomeStateStore,
-  useHomeLibrary,
   useHomeWorkflowDialog,
 } from "@/ui/context/home-services-context.js";
 import { LibraryToolbar } from "./LibraryToolbar.jsx";
@@ -33,9 +32,10 @@ import { RecentJobsLibraryBatchDialogs } from "./RecentJobsLibraryBatchDialogs.j
 import { useRecentJobsListDerivation } from "./useRecentJobsListDerivation.js";
 import { useRecentJobsBatchSelection } from "./useRecentJobsBatchSelection.js";
 import { VIEW_TEXT } from "./recent-jobs-library-helpers.js";
+import { useLibraryServices } from "../library-services-context.js";
 
 export function RecentJobsLibrary({ onBatchModeChange }: { onBatchModeChange?: (active: boolean) => void } = {}) {
-  const { viewPort, recentJobsStore, actions } = useHomeLibrary();
+  const { viewPort, recentJobsStore, actions } = useLibraryServices();
   const homeStateStore = useHomeHomeStateStore();
   const { controller: collectionsController } = useHomeCollections();
   const workflowDialog = useHomeWorkflowDialog();
