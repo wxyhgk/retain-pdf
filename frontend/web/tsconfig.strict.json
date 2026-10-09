@@ -1,0 +1,10 @@
+{
+  // 严格模式棘轮用的配置（见 tests/architecture/strict-ratchet.test.mjs）。
+  // tsconfig.json 迁移时关掉了 strict，并显式写了 noImplicitAny: false——命令行只加
+  // --strict 会被那条显式设置盖掉，所以这里单独一份，把各项明确打开。
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true
+  }
+}
