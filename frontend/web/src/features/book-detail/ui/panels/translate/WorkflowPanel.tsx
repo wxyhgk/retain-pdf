@@ -42,6 +42,8 @@ export type BookTranslationWorkflowPanelProps = {
   onOpenLiveReader?: (jobId: string) => void;
   /** 本书的任务 id，透传给进度区：全局状态卡的任务不属于本书时不跟它。 */
   documentJobIds?: string[];
+  /** 阶段动作由上层收进「重新处理」清单时为 true，这里就不再摆一排按钮。 */
+  hideStageActions?: boolean;
   onRetryStage: (
     stage: JobRetryStage,
     options?: { acceptDuplicateRisk?: boolean; renderEngine?: string },
@@ -77,6 +79,7 @@ export function BookTranslationWorkflowPanel({
   onTranslate,
   onOpenLiveReader,
   documentJobIds = [],
+  hideStageActions = false,
   onRetryStage,
 }: BookTranslationWorkflowPanelProps) {
   const jobId = `${item.job_id || item.active_job_id || ""}`.trim();
@@ -87,7 +90,7 @@ export function BookTranslationWorkflowPanel({
   const showStatus = isActive || status.tone === "failed" || submitting;
   // 黑主按钮只留进度区内的「查看实时译文」，此处两颗均为 btn("outline")。
   const stageActionsNode =
-    hasRealJob && !isActive ? (
+    hasRealJob && !isActive && !hideStageActions ? (
       <TranslationStageActions
         actions={stageActions}
         loading={stageActionsLoading}

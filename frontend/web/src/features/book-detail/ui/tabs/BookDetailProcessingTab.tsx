@@ -18,7 +18,9 @@ import {
   stageDetailWithoutPageCount,
   unitLabelFromProgress,
 } from "../../domain/progress-value.js";
-import { LoaderCircle, Square } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, LoaderCircle, Square } from "lucide-react";
+import { TranslationStageActions } from "../panels/translate/TranslationStageActions.jsx";
 
 function progressOf(source: any): { current?: number; total?: number; percent: number | null; unit: string } {
   const progress: any = source?.stage_snapshot?.progress || source?.progress || {};
@@ -203,6 +205,70 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
     </div>
   ) : null;
 
+  // 书已经翻译完、此刻没有任务在跑：所有「再来一次」的动作收进卡片头的「重新处理」，
+  // 点开才是一张清单（每项一行，自己的设置挨着自己的按钮）。三步进度这时也收起来 ——
+  // 全是勾，只占地方。以前这些平铺在页面上：三步进度、四个按钮、OCR 页码勾选框、引擎下拉。
+  const reprocessMode = hasTranslationJob
+    && !translation?.canTranslate
+    && !translationActive
+    && !ocrActive
+    && !bootstrapping
+    && !ocr?.pending;
+  const [reprocessOpen, setReprocessOpen] = useState(false);
+  const reprocessToggle = reprocessMode ? (
+    <button
+      id="book-detail-reprocess-toggle"
+      type="button"
+      className={btn("outline")}
+      aria-expanded={reprocessOpen}
+      aria-controls="book-detail-reprocess-sheet"
+      onClick={() => setReprocessOpen((open) => !open)}
+    >
+      <span>重新处理</span>
+      <ChevronDown
+        className="ml-1 size-4 transition-transform"
+        style={reprocessOpen ? { transform: "rotate(180deg)" } : undefined}
+        aria-hidden="true"
+      />
+    </button>
+  ) : null;
+  const ocrRow = (
+    <li className="book-detail-reprocess-row" data-reprocess-stage="ocr">
+      <div className="book-detail-reprocess-copy">
+        <strong>重新 OCR</strong>
+        <span>重新识别版面和文字。之后要重新翻译，新结果才会用上。</span>
+        {ocrOptions}
+      </div>
+      <div className="book-detail-reprocess-controls">
+        <button
+          id="book-detail-start-ocr-btn"
+          type="button"
+          className={btn("outline")}
+          disabled={Boolean(ocr?.pending) || Boolean(translation?.busy)}
+          onClick={ocr?.onOcr}
+        >
+          <ScanIcon />
+          <span className="ml-1.5">{ocr?.pending ? "提交中…" : "开始"}</span>
+        </button>
+      </div>
+    </li>
+  );
+  const reprocessSheet = reprocessMode && reprocessOpen ? (
+    <div id="book-detail-reprocess-sheet">
+      <TranslationStageActions
+        variant="sheet"
+        actions={translation?.stageActions}
+        loading={translation?.stageActionsLoading}
+        pendingStage={translation?.stageActionPending}
+        error={translation?.stageActionError}
+        onRetry={translation?.onRetryStage}
+        extraRows={ocrRow}
+      />
+    </div>
+  ) : null;
+  // 翻全了就不画覆盖条：100% 的一排满格什么也没说。没翻全时它说明缺哪几页。
+  const coverageIncomplete = Boolean(coverage?.page_count) && coverage.translated_pages < coverage.page_count;
+
   return (
     <div
       className="book-detail-tab-processing"
@@ -219,10 +285,12 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
           bootstrapping={bootstrapping}
           facts={facts.facts}
           keptOriginBlocks={facts.keptOriginBlocks}
+          action={reprocessToggle}
         />
+        {reprocessSheet}
 
-        {/* 唯一轨道：OCR 是流水线第一站，不再是与翻译并列的能力标题。 */}
-        <ProcessingPipelineRail
+        {/* 唯一轨道：OCR 是流水线第一站，不再是与翻译并列的能力标题。翻译完成后收起。 */}
+        {reprocessMode ? null : <ProcessingPipelineRail
           item={translationItem}
           hasTranslationJob={hasTranslationJob}
           ocrStatus={{ ...ocrStatus, label: ocrStatusLabel }}
@@ -232,7 +300,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
           // 有任务在跑时各站只说现在的事：上一次的「N 块保留原文」不挂（顶部提醒同理）。
           translateWarning={!liveSource && facts.keptOriginBlocks > 0 ? `${facts.keptOriginBlocks} 块未能翻译` : ""}
           loading={bootstrapping}
-        />
+        />}
 
         {/* OCR 段只剩契约占位和错误：进度在顶部，实时说明在流水线的 OCR 站下面。 */}
         <div className="book-detail-processing-segment" data-processing-region="ocr">
@@ -260,14 +328,18 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
 
         {/* 翻译细化：状态卡/阶段动作/选项/发起表单由 WorkflowPanel 承载（轨道已展示阶段）。
             唯一的行动行：OCR 按钮与「翻译整本 / 继续翻译」同排。 */}
+        {/* 完成态的动作都收进了「重新处理」，这一段只在有话要说时出现（提交中、报错、失败），
+            否则它是卡片底部一截空白。 */}
+        {reprocessMode && !translation?.error && !translationFailure && !translation?.stageActionPending && !translation?.busy ? null : (
         <div className="book-detail-processing-segment" data-processing-region="translation">
           <BookTranslationWorkflowPanel
             {...translation}
             // 首帧未知时「翻译整本」同样不能是可点的确定态：这时 canTranslate
             // 由「还没见过任何任务」推出，点下去可能与在跑的任务撞车。
             canTranslate={bootstrapping ? false : translation.canTranslate}
-            ocrActionSlot={ocrAction}
-            ocrOptionsSlot={ocrOptions}
+            ocrActionSlot={reprocessMode ? null : ocrAction}
+            ocrOptionsSlot={reprocessMode ? null : ocrOptions}
+            hideStageActions={reprocessMode}
           />
           {translationFailure ? (
             <JobFailureCard
@@ -279,6 +351,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
             />
           ) : null}
         </div>
+        )}
 
         {/* 结果操作行（下载 / 对照阅读）。原挂在已下线的主页状态卡上，
             契约 id 原样保留——artifacts 域的 document 级委托靠它们接管点击。
@@ -288,7 +361,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
 
       {/* 整本书翻了哪些页（多次范围翻译时由哪几次拼成）、做过哪些任务。和阅读入口同一套
           合并规则，这里说第 7 页来自哪次翻译，阅读器打开时就是那次。 */}
-      <TranslationCoveragePanel coverage={coverage} />
+      {coverageIncomplete ? <TranslationCoveragePanel coverage={coverage} /> : null}
       <JobHistoryPanel coverage={coverage} />
     </div>
   );

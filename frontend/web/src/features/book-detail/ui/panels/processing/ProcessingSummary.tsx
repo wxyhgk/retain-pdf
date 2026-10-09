@@ -9,6 +9,7 @@
 // - 「N 个内容块保留原文」以前只写在任务的 completion_note 里，前端从没读过，
 //   用户看到的是一排绿勾。现在在这里明确说出来。
 
+import type { ReactNode } from "react";
 import { Check, LoaderCircle, TriangleAlert, Languages } from "lucide-react";
 
 export type ProcessingSummaryTone = "active" | "done" | "warn" | "failed" | "idle";
@@ -22,6 +23,8 @@ export type ProcessingSummaryProps = {
   bootstrapping?: boolean;
   facts?: string[];
   keptOriginBlocks?: number;
+  /** 卡片头右侧的动作（「重新处理」开关）。 */
+  action?: ReactNode;
 };
 
 function ToneIcon({ tone }: { tone: ProcessingSummaryTone }) {
@@ -38,6 +41,7 @@ export function ProcessingSummary({
   bootstrapping = false,
   facts = [],
   keptOriginBlocks = 0,
+  action = null,
 }: ProcessingSummaryProps) {
   const shownTone: ProcessingSummaryTone = bootstrapping ? "idle" : tone;
   return (
@@ -58,6 +62,7 @@ export function ProcessingSummary({
             </p>
           ) : null}
         </div>
+        {action ? <div className="book-detail-processing-head-action">{action}</div> : null}
       </header>
 
       {/* 首帧未知时留一条空轨占位：进度条稍后可能出现，先占好位置避免跳变。 */}

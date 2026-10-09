@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Languages, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
 import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
 import type {
@@ -13,6 +13,14 @@ function labelOf(action: JobStageRetryActionView) {
   if (action.stage === "refine") return "精修译文";
   return action.label;
 }
+
+// 清单形态（sheet）里每一项下面的一句话：做什么、花不花钱。顺序按代价从小到大。
+const SHEET_HINTS: Record<string, string> = {
+  render: "用现有译文重新排版，不调用模型、不产生费用。",
+  refine: "让模型挑一遍错，只改有问题的片段，改完自动重新排版。会产生少量费用。",
+  translation: "复用已有 OCR 重新翻译整本，再排版。会产生翻译费用。",
+};
+const SHEET_ORDER: Record<string, number> = { render: 0, refine: 1, translation: 2 };
 
 // 需要先确认再执行的动作：重新翻译（后端标 danger）和精修（会调模型、产生费用）。
 function needsConfirm(action: JobStageRetryActionView) {
@@ -58,9 +66,15 @@ export function TranslationStageActions({
   loading = false,
   pendingStage = "",
   error = "",
+  variant = "inline",
+  extraRows = null,
   onRetry,
 }: {
   actions?: JobStageRetryActionView[];
+  /** inline：一排按钮（失败态和翻译按钮同排）；sheet：「重新处理」展开后的清单，每项一行。 */
+  variant?: "inline" | "sheet";
+  /** sheet 末尾追加的行（「重新 OCR」，它不属于翻译任务的阶段动作）。 */
+  extraRows?: ReactNode;
   loading?: boolean;
   pendingStage?: JobRetryStage | "";
   error?: string;
@@ -118,54 +132,84 @@ export function TranslationStageActions({
     }
   }
 
+  function actionButton(action: JobStageRetryActionView, sheet = false) {
+    const pending = pendingStage === action.stage;
+    const disabled = checking || Boolean(pendingStage) || !action.can_retry;
+    const reason = `${action.disabled_reason || action.reason || ""}`.trim();
+    return (
+      <button
+        key={action.stage}
+        id={`book-detail-retry-${action.stage}-btn`}
+        type="button"
+        className={btn("outline")}
+        disabled={disabled}
+        title={!action.can_retry && reason ? reason : undefined}
+        onClick={() => {
+          if (needsConfirm(action)) setConfirmAction(action);
+          else if (action.stage === "render" && renderEngine) void runRetry("render", { renderEngine });
+          else void runRetry(action.stage);
+        }}
+      >
+        {checking
+          ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+          : <StageIcon stage={action.stage} />}
+        <span className="ml-1.5">{pending ? "提交中…" : sheet ? "开始" : labelOf(action)}</span>
+      </button>
+    );
+  }
+
+  const engineSelect = (
+    <select
+      id="book-detail-render-engine"
+      aria-label="重新渲染用的排版引擎"
+      title="重新渲染用的排版引擎"
+      className="book-detail-render-engine h-9 w-auto rounded-md border border-input bg-background px-2 py-0 text-sm"
+      value={renderEngine}
+      disabled={Boolean(pendingStage)}
+      onChange={(event) => setRenderEngine(event.target.value)}
+    >
+      <option value="">引擎：沿用原来的</option>
+      <option value="rpr_fit">引擎：新引擎</option>
+      <option value="typst">引擎：Typst（旧）</option>
+    </select>
+  );
+
+  const sheet = variant === "sheet";
+  const sheetActions = [...visibleActions].sort(
+    (a, b) => (SHEET_ORDER[a.stage] ?? 9) - (SHEET_ORDER[b.stage] ?? 9),
+  );
+
   return (
     <div
-      className="book-detail-stage-actions"
+      className={sheet ? "book-detail-reprocess-sheet" : "book-detail-stage-actions"}
       data-translation-stage-actions="true"
       aria-busy={checking || undefined}
     >
-      <div className="book-detail-stage-actions-buttons">
-        {visibleActions.map((action) => {
-          const pending = pendingStage === action.stage;
-          const disabled = checking || Boolean(pendingStage) || !action.can_retry;
-          const reason = `${action.disabled_reason || action.reason || ""}`.trim();
-          return (
-            <button
-              key={action.stage}
-              id={`book-detail-retry-${action.stage}-btn`}
-              type="button"
-              className={btn("outline")}
-              disabled={disabled}
-              title={!action.can_retry && reason ? reason : undefined}
-              onClick={() => {
-                if (needsConfirm(action)) setConfirmAction(action);
-                else if (action.stage === "render" && renderEngine) void runRetry("render", { renderEngine });
-                else void runRetry(action.stage);
-              }}
-            >
-              {checking
-                ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
-                : <StageIcon stage={action.stage} />}
-              <span className="ml-1.5">{pending ? "提交中…" : labelOf(action)}</span>
-            </button>
-          );
-        })}
-        {!checking && visibleActions.some((action) => action.stage === "render") ? (
-          <select
-            id="book-detail-render-engine"
-            aria-label="重新渲染用的排版引擎"
-            title="重新渲染用的排版引擎"
-            className="book-detail-render-engine h-9 rounded-md border border-input bg-background px-2 text-sm"
-            value={renderEngine}
-            disabled={Boolean(pendingStage)}
-            onChange={(event) => setRenderEngine(event.target.value)}
-          >
-            <option value="">引擎：沿用原来的</option>
-            <option value="rpr_fit">引擎：新引擎</option>
-            <option value="typst">引擎：Typst（旧）</option>
-          </select>
-        ) : null}
-      </div>
+      {sheet ? (
+        <ul className="book-detail-reprocess-list">
+          {sheetActions.map((action) => {
+            const reason = `${action.disabled_reason || action.reason || ""}`.trim();
+            return (
+              <li key={action.stage} className="book-detail-reprocess-row" data-reprocess-stage={action.stage}>
+                <div className="book-detail-reprocess-copy">
+                  <strong>{labelOf(action)}</strong>
+                  <span>{!action.can_retry && reason && !checking ? reason : SHEET_HINTS[action.stage] || ""}</span>
+                </div>
+                <div className="book-detail-reprocess-controls">
+                  {action.stage === "render" && !checking ? engineSelect : null}
+                  {actionButton(action, true)}
+                </div>
+              </li>
+            );
+          })}
+          {extraRows}
+        </ul>
+      ) : (
+        <div className="book-detail-stage-actions-buttons">
+          {visibleActions.map((action) => actionButton(action))}
+          {!checking && visibleActions.some((action) => action.stage === "render") ? engineSelect : null}
+        </div>
+      )}
       {shownError ? <p className="book-detail-stage-actions-error rounded-md border border-foreground/20 bg-muted/40 px-3 py-2 text-xs text-foreground" role="alert">{shownError}</p> : null}
       <ConfirmDialog
         id="book-detail-translation-risk-confirm"

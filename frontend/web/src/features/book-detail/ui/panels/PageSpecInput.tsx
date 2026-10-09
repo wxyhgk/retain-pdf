@@ -37,7 +37,7 @@ export function PageSpecInput({ value, pageCount, onChange, label = "页码", id
           aria-invalid={preview ? !preview.ok : undefined}
           placeholder="如 1-5, 8, 12-14"
           onChange={(event) => onChange(event.target.value)}
-          className="h-8 w-44 rounded-md border border-input bg-background px-2 text-sm"
+          className="h-8 w-44 rounded-md border border-input bg-background px-2 py-0 text-sm"
           data-page-spec-input="true"
         />
         <span className="text-[11px] text-muted-foreground/70">/ {pageCount || "?"} 页</span>

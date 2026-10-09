@@ -50,6 +50,7 @@
 
 .book-detail-processing-head-copy {
   display: grid;
+  flex: 1 1 auto;
   min-width: 0;
   gap: 4px;
 }
@@ -104,6 +105,79 @@
   line-height: 1.55;
 }
 
+/* 卡片头右侧：「重新处理」开关。 */
+.book-detail-processing-head-action {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.book-detail-processing-head-action button {
+  min-height: 34px;
+  font-size: 12px;
+}
+
+/* 「重新处理」清单：每项一行，左边说做什么、花不花钱，右边是它自己的设置和按钮。 */
+.book-detail-reprocess-list {
+  display: grid;
+  margin: 0;
+  padding: 4px 14px;
+  list-style: none;
+  border-radius: 14px;
+  background: var(--paper);
+}
+
+.book-detail-reprocess-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.book-detail-reprocess-row:first-child {
+  border-top: 0;
+}
+
+.book-detail-reprocess-copy {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 3px;
+}
+
+.book-detail-reprocess-copy strong {
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.book-detail-reprocess-copy > span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.book-detail-reprocess-copy .book-detail-ocr-range {
+  margin-top: 4px;
+}
+
+.book-detail-reprocess-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.book-detail-reprocess-controls button {
+  min-height: 34px;
+  font-size: 12px;
+}
+
+.book-detail-reprocess-controls .book-detail-render-engine {
+  height: 34px;
+  font-size: 12px;
+}
+
 /* 细化区：轨道之下只放当前阶段的进度/动作。 */
 .book-detail-processing-segment {
   display: grid;
@@ -111,6 +185,15 @@
 }
 
 @media (max-width: 719px) {
+  .book-detail-reprocess-row {
+    flex-wrap: wrap;
+  }
+
+  .book-detail-reprocess-controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
   .book-detail-processing-card {
     gap: 10px;
     padding: 12px;

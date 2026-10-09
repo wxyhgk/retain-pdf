@@ -119,8 +119,10 @@
 
 .book-detail-quick-download-btn {
   display: flex;
+  flex-direction: column;
+  gap: 3px;
   width: 100%;
-  height: 34px;
+  height: 46px;
   align-items: center;
   justify-content: center;
   padding: 0;
@@ -158,6 +160,13 @@
 .book-detail-quick-download-btn > svg {
   width: 14px;
   height: 14px;
+}
+
+.book-detail-quick-download-label {
+  font-size: 10px;
+  font-weight: 550;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .book-detail-quick-download-btn > svg.is-spinning {

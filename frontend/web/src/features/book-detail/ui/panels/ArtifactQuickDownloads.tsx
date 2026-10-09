@@ -43,14 +43,16 @@ import {
 } from "../../domain/word-export-settings.js";
 
 const DOWNLOADS = [
-  { id: "source", label: "原始 PDF", Icon: FileDown },
-  { id: "markdown", label: "Markdown", Icon: SquareM },
-  { id: "translated", label: "翻译 PDF", Icon: Languages },
-  { id: "comparison", label: "对照 PDF", Icon: Columns2 },
-  { id: "word", label: "Word 排版稿", Icon: FileType2 },
+  { id: "source", label: "原始 PDF", short: "原文", Icon: FileDown },
+  { id: "markdown", label: "Markdown", short: "MD", Icon: SquareM },
+  { id: "translated", label: "翻译 PDF", short: "译文", Icon: Languages },
+  { id: "comparison", label: "对照 PDF", short: "对照", Icon: Columns2 },
+  { id: "word", label: "Word 排版稿", short: "Word", Icon: FileType2 },
 ] satisfies Array<{
   id: ArtifactQuickDownloadId;
   label: string;
+  /** 图标下面的两三个字：光有图标看不出哪个是哪个。 */
+  short: string;
   Icon: typeof FileDown;
 }>;
 
@@ -100,7 +102,7 @@ export function ArtifactQuickDownloads({
       </header>
       <TooltipProvider delayDuration={220}>
         <div className="book-detail-quick-download-grid">
-          {DOWNLOADS.map(({ id, label, Icon }) => {
+          {DOWNLOADS.map(({ id, label, short, Icon }) => {
             const item = items[id];
             const downloading = Boolean(item && downloadingId === item.id);
             const unavailableLabel = loading ? `正在读取${label}` : `${label}尚未生成`;
@@ -121,6 +123,7 @@ export function ArtifactQuickDownloads({
                       {downloading
                         ? <LoaderCircle className="is-spinning" aria-hidden="true" />
                         : <Icon aria-hidden="true" />}
+                      <span className="book-detail-quick-download-label" aria-hidden="true">{short}</span>
                     </button>
                   </span>
                 </TooltipTrigger>

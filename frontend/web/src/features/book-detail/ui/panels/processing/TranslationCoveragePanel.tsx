@@ -1,4 +1,4 @@
-// 「进度」分区：翻译覆盖条 + 任务记录。纯展示，数据由 BookDetailDialog 取好传进来。
+// 「进度」分区：翻译覆盖条（只在没翻全时出现）+ 任务记录（默认收起）。纯展示，数据由 BookDetailDialog 取好传进来。
 
 import type { TranslationCoverageView } from "@/platform/api/index.js";
 import { coverageCells, coverageHeadline, jobRows } from "../../../domain/translation-coverage.js";
@@ -39,11 +39,12 @@ export function JobHistoryPanel({ coverage }: { coverage: TranslationCoverageVie
   const rows = jobRows(coverage);
   if (!rows.length) return null;
   return (
-    <section className="book-detail-job-history" data-processing-region="history" aria-label="任务记录">
-      <div className="book-detail-processing-section-head">
+    // 默认收起：任务记录是查账用的，平时不需要一直摊开占半页。
+    <details className="book-detail-job-history" data-processing-region="history" aria-label="任务记录">
+      <summary className="book-detail-processing-section-head">
         <span className="book-detail-processing-section-title">任务记录</span>
         <span className="book-detail-processing-section-summary">共 {rows.length} 次</span>
-      </div>
+      </summary>
       <ol className="book-detail-job-history-list">
         {rows.map((row) => (
           <li key={row.jobId} className="book-detail-job-history-row" data-job-id={row.jobId} data-status-tone={row.statusTone}>
@@ -83,6 +84,6 @@ export function JobHistoryPanel({ coverage }: { coverage: TranslationCoverageVie
           </li>
         ))}
       </ol>
-    </section>
+    </details>
   );
 }

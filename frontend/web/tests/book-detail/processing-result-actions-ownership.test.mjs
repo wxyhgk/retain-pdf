@@ -50,7 +50,7 @@ test("进度页结果操作行：全局卡片是另一本书的任务时，不�
   );
   await openProcessingTabOf(dom, services, otherBook);
   await waitFor(
-    () => byId(dom, "book-detail-panel-processing")?.querySelector('[data-processing-capability="translation"] .book-detail-status')?.textContent?.includes("已完成"),
+    () => byId(dom, "book-detail-panel-processing")?.querySelector("[data-processing-unified-status]")?.textContent?.includes("已完成"),
     "本书任务列表已加载",
   );
   await wait(100);

@@ -221,18 +221,16 @@ test("进度 Tab：已有翻译任务时的刷新同样不回占位", async () =
     ocr: idleOcr,
     translation: translated,
   });
-  await waitFor(() => rail(dom), "流水线轨道渲染");
-  const before = rail(dom).getAttribute("data-current-stage");
+  const headline = () => dom.window.document.querySelector("[data-processing-unified-status]")?.textContent;
+  await waitFor(() => headline() === "已完成", "完成态摘要渲染");
+  assert.equal(rail(dom), null, "翻译完成后三步进度收起");
+  assert.ok(dom.window.document.getElementById("book-detail-reprocess-toggle"), "完成态有「重新处理」");
 
   render({ loading: true, ocr: idleOcr, translation: translated });
   await wait(30);
 
-  assert.equal(rail(dom).getAttribute("data-loading"), null, "翻译任务在手时刷新不回占位");
-  assert.equal(
-    rail(dom).getAttribute("data-current-stage"),
-    before,
-    "刷新不应抹掉已知的当前阶段",
-  );
+  assert.equal(headline(), "已完成", "翻译任务在手时刷新不回占位");
+  assert.ok(dom.window.document.getElementById("book-detail-reprocess-toggle"), "刷新不应收掉「重新处理」");
   assert.ok(
     !(host.textContent || "").includes("读取中"),
     "已有数据的刷新不该出现「读取中」占位文案",

@@ -121,24 +121,17 @@ test("已翻译卡打开书籍详情:有对照阅读,无翻译按钮", async () 
     false,
     "打开书籍详情不得自动打开工作流弹窗",
   );
-  // 已完成任务保留紧凑过程条，但不恢复占高的历史流程大卡。
+  // 已完成：一行摘要 +「重新处理」，三步进度和历史流程大卡都不占位置。
   await waitFor(
-    () => dlg.querySelector('[data-processing-capability="translation"] .book-detail-status')?.textContent?.includes("已完成"),
+    () => dlg.querySelector("[data-processing-unified-status]")?.textContent?.includes("已完成"),
     "显示已完成",
-  );
-  assert.match(
-    dlg.querySelector('[data-processing-capability="ocr"]')?.textContent || "",
-    /已完成/,
-    "整本翻译完成同时证明 OCR 已完成，不得显示未执行",
   );
   assert.equal(byId("book-detail-job-status-card"), null, "完成态不展示历史流程大卡");
   assert.equal(byId("book-detail-translate-progress"), null, "完成态不占用进度区域");
-  const completedProcess = dlg.querySelector('[data-translation-process="true"]');
-  assert.ok(completedProcess, "完成态展示紧凑翻译过程");
-  // 「完成」站已去掉：渲染打勾就是完成，它只是多一个勾。
-  assert.equal(completedProcess.querySelectorAll("[data-stage-key]").length, 3, "过程包含 OCR/翻译/渲染");
-  assert.equal(completedProcess.querySelector('[data-stage-key="done"]'), null, "不再有「完成」站");
-  assert.equal(completedProcess.querySelector('[data-stage-key="render"]')?.getAttribute("data-state"), "done");
+  assert.equal(dlg.querySelector('[data-translation-process="true"]'), null, "完成态收起三步进度");
+  const reprocessToggle = await waitFor(() => byId("book-detail-reprocess-toggle"), "「重新处理」开关");
+  assert.equal(byId("book-detail-retry-render-btn"), null, "清单默认收起");
+  click(dom, reprocessToggle);
   // 仍然不得弹工作流
   assert.equal(
     services.stores.dialog.getSnapshot().open,
@@ -175,7 +168,7 @@ test("已翻译卡打开书籍详情:有对照阅读,无翻译按钮", async () 
   );
   await waitFor(
     () => dlg.querySelector('[data-processing-capability="translation"] .book-detail-status')?.textContent?.includes("处理中"),
-    "外层翻译状态立即进入处理中",
+    "外层翻译状态立即进入处理中（三步进度重新展开）",
   );
 
   root.unmount();

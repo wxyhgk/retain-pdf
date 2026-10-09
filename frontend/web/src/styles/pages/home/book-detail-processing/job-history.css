@@ -9,6 +9,36 @@
   background: var(--book-detail-processing-surface);
 }
 
+/* 默认收起：标题行就是开关，右侧一个小三角。 */
+.book-detail-job-history:not([open]) {
+  gap: 0;
+}
+
+.book-detail-job-history > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.book-detail-job-history > summary::-webkit-details-marker {
+  display: none;
+}
+
+.book-detail-job-history > summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  align-self: center;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 160ms ease;
+}
+
+.book-detail-job-history[open] > summary::after {
+  transform: rotate(-135deg) translateY(-1px);
+}
+
 .book-detail-job-history-list {
   display: grid;
   margin: 0;
