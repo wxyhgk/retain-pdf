@@ -124,3 +124,32 @@ def test_unknown_categories_are_ignored_and_annotate_needs_technical() -> None:
     ]}))
     assert "x" not in decisions
     assert decisions["y"]["annotate"] is False
+
+
+def test_harmonize_unifies_variants_and_makes_compounds_follow_the_short_term() -> None:
+    from retainpdf_pipeline.translate.services.preparation.term_review import harmonize_term_base
+
+    def term(source, target, votes=1, conflicts=()):
+        row = _term(source, target)
+        row.update(votes=votes, treatment="lock", conflict_candidates=[{"target": t, "votes": v} for t, v in conflicts])
+        return row
+
+    payload = {"terms": [
+        term("virial theorem", "位力定理", votes=4, conflicts=[("维里定理", 3)]),
+        term("quantum-mechanical virial theorem", "量子力学维里定理"),
+        term("hypervirial theorem", "超维里定理"),
+        term("Cartesian coordinates", "笛卡儿坐标", votes=3, conflicts=[("笛卡尔坐标", 1)]),
+        term("Cartesian coordinate", "笛卡尔坐标", votes=1),
+        {**term("Max Planck", "普朗克"), "treatment": "free"},
+    ]}
+    changes = harmonize_term_base(payload)
+    targets = {row["source"]: row["target"] for row in payload["terms"]}
+
+    assert targets["quantum-mechanical virial theorem"] == "量子力学位力定理"
+    assert targets["hypervirial theorem"] == "超维里定理", "hypervirial 不是 virial theorem 的扩展，不动"
+    assert targets["Cartesian coordinate"] == targets["Cartesian coordinates"] == "笛卡儿坐标"
+    assert {(row["source"], row["reason"]) for row in changes} == {
+        ("quantum-mechanical virial theorem", "compound:virial theorem"),
+        ("Cartesian coordinate", "variant"),
+    }
+    assert payload["terms"][1]["harmonized_from"] == "量子力学维里定理"

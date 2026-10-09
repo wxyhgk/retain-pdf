@@ -157,9 +157,12 @@ def _term_disputes(
     items_by_id: dict[str, QaItem],
     locked_terms,
 ) -> tuple[list[review_rules.Finding], list[dict[str, Any]]]:
-    """审校要改的恰好是术语表锁定的译法（比如把「位力定理」改成「维里定理」）：按术语表裁决，不改。
+    """审校要改掉术语表锁定的译法（比如把「位力定理」改成「维里定理」）：按术语表裁决，不改。
 
-    第一期由规则裁决；审校认为术语表错了，应该向术语专员提改动申请（第二期）。
+    判定：圈出的片段里有锁定译法，而建议的写法里这个译法变少了（被拿掉或换掉）。只是片段里
+    恰好带着锁定译法、建议照样保留它的（比如「量子力学期维里定理」→「量子力学位力定理」），
+    是在维护术语表，不算争议。第一期由规则裁决；审校认为术语表错了，应该向术语专员提改动申请
+    （第二期）。
     """
     kept: list[review_rules.Finding] = []
     disputes: list[dict[str, Any]] = []
@@ -169,9 +172,12 @@ def _term_disputes(
         if finding.origin == review_rules.ORIGIN_REVIEW and finding.category == "terminology" and item is not None:
             for term in review_rules.locked_terms_for(locked_terms, item.protected_source):
                 target = term.get("target", "")
-                # 审校针对的片段里就是锁定译法：它在质疑术语表（建议里含不含这个词都一样，
-                # 比如把「谐振子」改成「简谐振子」）。
-                if target and target != term.get("source") and target in finding.target_span:
+                if (
+                    target
+                    and target != term.get("source")
+                    and target in finding.target_span
+                    and finding.suggestion.count(target) < finding.target_span.count(target)
+                ):
                     conflict = term
                     break
         if conflict is None:

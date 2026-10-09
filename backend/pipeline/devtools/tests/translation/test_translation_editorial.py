@@ -202,7 +202,12 @@ def test_review_against_a_locked_term_is_ruled_in_favour_of_the_term_base(tmp_pa
         review=[{"findings": [{
             "item_id": "p001-b001", "category": "terminology", "severity": "major",
             "target_span": "谐振子", "source_span": "harmonic oscillator",
-            "explanation": "应译为简谐振子", "suggestion": "简谐振子",
+            "explanation": "应译为谐波振荡器", "suggestion": "谐波振荡器",
+        }, {
+            # 片段里带着锁定译法、建议照样保留：是在维护术语表，不是争议。
+            "item_id": "p001-b001", "category": "terminology", "severity": "major",
+            "target_span": "谐振子是分子振动的模型体系", "source_span": "model system for molecular vibrations",
+            "explanation": "「模型体系」应统一为「模型系统」", "suggestion": "谐振子是分子振动的模型系统",
         }]}],
         chief=[_decide(("p001-b001", "escalate"), ("p001-b002", "escalate"))],
     )
@@ -212,8 +217,9 @@ def test_review_against_a_locked_term_is_ruled_in_favour_of_the_term_base(tmp_pa
     assert [(row["item_id"], row["term_target"], row["ruling"]) for row in disputes] == [
         ("p001-b001", "谐振子", "keep_term_base")
     ]
-    chief_issues = [issue["category"] for row in model.payload("chief")["items"] if row["item_id"] == "p001-b001" for issue in row["issues"]]
-    assert "terminology" not in chief_issues, "被裁决的意见不再交给修订"
+    chief_spans = [issue.get("target_span") for row in model.payload("chief")["items"] if row["item_id"] == "p001-b001" for issue in row["issues"]]
+    assert "谐振子" not in chief_spans, "被裁决的意见不再交给修订"
+    assert "谐振子是分子振动的模型体系" in chief_spans, "维护术语表的意见照常处理"
     assert "谐振子" in _item(translated, "p001-b001")["translated_text"]
     assert report["editorial"]["term_review"] == {"status": "completed", "by_treatment": {"lock": 1}}
     kinds = [record["kind"] for record in _ledger(tmp_path)]

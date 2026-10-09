@@ -15,10 +15,19 @@ common          drop             不进术语表的任何用途
 
 用户术语表的条目不审，照旧锁定。模型没回某条、或整批请求失败：该条保持预扫时的行为
 （锁定、要括注），在 ``review.unreviewed_count`` 里如实记下。
+
+审定之后再做一次不调模型的一致化（``harmonize_term_base``），记在 ``review.harmonized``：
+
+1. 只差单复数或连字符的同一个词（Cartesian coordinate / Cartesian coordinates）统一成一个译法，
+   按全部变体上的票数取多的；
+2. 长词条的原文里含有短词条（quantum-mechanical virial theorem ⊃ virial theorem）时，长词条的
+   译法里也要用短词条的译法：长词条译法里出现短词条落选的译法（维里定理），换成锁定的那个
+   （位力定理）。不然翻译、审校和质检会拿着两套互相打架的锁定译法。
 """
 from __future__ import annotations
 
 import json
+import re
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable
@@ -186,6 +195,74 @@ def _apply_decision(term: dict[str, Any], decision: dict[str, Any], *, target_la
         term["target"] = proposed
 
 
+def _term_words(source: str) -> tuple[str, ...]:
+    words = re.sub(r"[-‐–]", " ", str(source).casefold()).split()
+    if words and len(words[-1]) > 3 and words[-1].endswith("s") and not words[-1].endswith("ss"):
+        words[-1] = words[-1][:-1]
+    return tuple(words)
+
+
+def _contains_words(longer: tuple[str, ...], shorter: tuple[str, ...]) -> bool:
+    if len(shorter) >= len(longer):
+        return False
+    return any(longer[i : i + len(shorter)] == shorter for i in range(len(longer) - len(shorter) + 1))
+
+
+def _alternatives(term: dict[str, Any]) -> list[str]:
+    """一条术语落选的译法：预扫的冲突候选、审定前的预扫译法。"""
+    options = [str(row.get("target", "")) for row in term.get("conflict_candidates") or [] if isinstance(row, dict)]
+    if term.get("prescan_target"):
+        options.append(str(term["prescan_target"]))
+    return [option for option in options if option and option != term.get("target")]
+
+
+def harmonize_term_base(payload: dict[str, Any]) -> list[dict[str, str]]:
+    """让锁定的术语之间不互相打架（见模块说明）。返回改动记录，原地改 payload。"""
+    locked = [
+        term
+        for term in payload.get("terms", [])
+        if isinstance(term, dict) and term.get("origin") == "extracted" and term_treatment(term) == TREATMENT_LOCK
+    ]
+    changes: list[dict[str, str]] = []
+
+    def change(term: dict[str, Any], target: str, reason: str) -> None:
+        changes.append({"source": term["source"], "from": term["target"], "to": target, "reason": reason})
+        term.setdefault("harmonized_from", term["target"])
+        term["target"] = target
+
+    # 1. 单复数 / 连字符变体。
+    groups: dict[tuple[str, ...], list[dict[str, Any]]] = {}
+    for term in locked:
+        groups.setdefault(_term_words(term["source"]), []).append(term)
+    for variants in groups.values():
+        if len(variants) < 2:
+            continue
+        votes: dict[str, int] = {}
+        for term in variants:
+            votes[term["target"]] = votes.get(term["target"], 0) + max(1, int(term.get("votes", 0) or 0))
+            for row in term.get("conflict_candidates") or []:
+                if isinstance(row, dict) and row.get("target"):
+                    votes[row["target"]] = votes.get(row["target"], 0) + max(1, int(row.get("votes", 0) or 0))
+        winner = sorted(votes.items(), key=lambda pair: (-pair[1], pair[0]))[0][0]
+        for term in variants:
+            if term["target"] != winner:
+                change(term, winner, "variant")
+
+    # 2. 长词条沿用短词条的译法。
+    by_length = sorted(locked, key=lambda term: len(_term_words(term["source"])))
+    for longer in by_length:
+        long_words = _term_words(longer["source"])
+        for shorter in by_length:
+            short_words = _term_words(shorter["source"])
+            if not _contains_words(long_words, short_words) or shorter["target"] in longer["target"]:
+                continue
+            for alternative in _alternatives(shorter):
+                if alternative in longer["target"]:
+                    change(longer, longer["target"].replace(alternative, shorter["target"]), f"compound:{shorter['source']}")
+                    break
+    return changes
+
+
 def review_term_base(
     payload: dict[str, Any],
     *,
@@ -247,6 +324,7 @@ def review_term_base(
 
     for term in candidates:
         term.setdefault("review_status", "unreviewed")
+    harmonized = harmonize_term_base(payload)
     by_category: dict[str, int] = {}
     by_treatment: dict[str, int] = {}
     for term in payload.get("terms", []):
@@ -269,6 +347,7 @@ def review_term_base(
         "annotate_count": sum(
             1 for term in candidates if term.get("review_status") == "reviewed" and term.get("annotate")
         ),
+        "harmonized": harmonized,
     }
     summary = payload.setdefault("summary", {})
     summary["locked_count"] = by_treatment.get(TREATMENT_LOCK, 0) + by_treatment.get(TREATMENT_KEEP_ORIGINAL, 0)
@@ -285,6 +364,7 @@ __all__ = [
     "TREATMENT_KEEP_ORIGINAL",
     "TREATMENT_LOCK",
     "build_term_review_messages",
+    "harmonize_term_base",
     "parse_term_review_response",
     "review_term_base",
     "term_annotate",
