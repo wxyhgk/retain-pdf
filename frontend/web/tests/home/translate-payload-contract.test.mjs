@@ -142,7 +142,7 @@ test("选页码翻译只发 ocr.page_ranges，不发会错位的 start_page/end_
 // （close 不重置 ocrOnly），之后任何一本书的「翻译整本」都会整段丢掉 translation，
 // 被后端以 "base_url is required" 拒掉——而凭据其实配得好好的。
 
-function makeAssembly(ocrOnly) {
+function makeAssembly(ocrOnly, extraSubmitValues = {}) {
   return createWorkflowPayloadAssembly({
     constants: WORKFLOW_CONSTANTS || { WORKFLOW_BOOK: "book", WORKFLOW_OCR: "ocr", WORKFLOW_RENDER: "render" },
     developerConfigWithDefaults: () => ({
@@ -174,9 +174,15 @@ function makeAssembly(ocrOnly) {
       translationCredentialRef: "",
       modelApiKey: "sk-test",
       selectedGlossaryId: "",
+      ...extraSubmitValues,
     }),
   });
 }
+
+test("上传弹窗选的排版引擎进 render.engine；默认不发", () => {
+  assert.equal(makeAssembly(false, { renderEngine: "rpr_fit" }).collectRunPayload().render.engine, "rpr_fit");
+  assert.equal("engine" in makeAssembly(false).collectRunPayload().render, false);
+});
 
 test("详情页翻译配置始终带 translation 段，不受上传弹窗 OCR Tab 影响", () => {
   for (const ocrOnly of [false, true]) {

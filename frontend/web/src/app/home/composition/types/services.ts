@@ -165,6 +165,7 @@ export type HomeServicesViews = {
     store: AppStore;
     setSelectedGlossaryId: (id: string) => unknown;
     setTranslationQuality: (value: string) => unknown;
+    setRenderEngine: (value: string) => unknown;
     setOcrOnly: (value: boolean) => unknown;
     isOcrOnly: () => boolean;
   };

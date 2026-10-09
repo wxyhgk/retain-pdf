@@ -13,6 +13,7 @@ export interface WorkflowSubmitValues {
   modelApiKey?: string;
   selectedGlossaryId?: string;
   translationQuality?: string;
+  renderEngine?: string;
 }
 
 export interface LoadGlossaryOptionsParams {

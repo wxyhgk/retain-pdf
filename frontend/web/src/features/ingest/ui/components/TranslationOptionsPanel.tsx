@@ -3,7 +3,7 @@
 // DOM id "page-range-dialog" / "page-range-title" 为历史契约（测试与样式锚点），保留不改。
 
 import type { FormEvent } from "react";
-import { BookOpen, FileText, Sparkles, SlidersHorizontal, X } from "lucide-react";
+import { BookOpen, FileText, LayoutTemplate, Sparkles, SlidersHorizontal, X } from "lucide-react";
 
 import { Button } from "@/ui/components/button.js";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
@@ -19,6 +19,12 @@ const QUALITY_HINTS: Record<string, string> = {
   standard: "直接翻译，速度最快、费用最低。",
   terms: "先通读全书定好术语和文风再翻译，译法更一致；模型费用多约 0.4 倍。",
   refined: "统一术语之外，翻完再让模型挑错，只改有问题的地方，改不好就保留原译；模型费用约为普通的 2.5 倍，耗时更长。",
+};
+
+const ENGINE_HINTS: Record<string, string> = {
+  auto: "跟着服务端当前的默认引擎走。",
+  rpr_fit: "自研排版引擎：公式不再转换成 Typst，字号按实际放得下的大小来定，放不下会报告。出问题自动退回 Typst。",
+  typst: "原来的 Typst 排版，公式要先转换一遍，个别公式可能出错。",
 };
 
 export function TranslationOptionsPanel() {
@@ -148,6 +154,25 @@ export function TranslationOptionsPanel() {
           </select>
           <small id="job-translation-quality-hint">
             {QUALITY_HINTS[workflow.translationQuality] || QUALITY_HINTS.standard}
+          </small>
+        </label>
+
+        <label className="translation-options-glossary" htmlFor="job-render-engine">
+          <span>
+            <LayoutTemplate className="h-4 w-4" aria-hidden="true" />
+            排版引擎
+          </span>
+          <select
+            id="job-render-engine"
+            value={workflow.renderEngine || "auto"}
+            onChange={(event) => workflowViewActions.setRenderEngine(event.target.value)}
+          >
+            <option value="auto">默认</option>
+            <option value="rpr_fit">新引擎（试验）</option>
+            <option value="typst">Typst（旧）</option>
+          </select>
+          <small id="job-render-engine-hint">
+            {ENGINE_HINTS[workflow.renderEngine] || ENGINE_HINTS.auto}
           </small>
         </label>
       </div>

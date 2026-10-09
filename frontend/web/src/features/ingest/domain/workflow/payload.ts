@@ -76,6 +76,8 @@ export interface BuildTranslationPayloadOptions {
 
 export interface BuildRenderPayloadOptions {
   developerConfig: Pick<WorkflowDeveloperConfig, "compileWorkers"> | WorkflowDeveloperConfig;
+  /** 排版引擎，见 workflow-view-store 的 RenderEngine。缺省 / auto 不发 engine。 */
+  renderEngine?: string;
   constants: WorkflowPayloadConstants;
 }
 
@@ -181,8 +183,14 @@ function resolveStoredFontFamily(fallback: unknown): string {
   return fb;
 }
 
+/** 下拉 → render.engine。auto 不发字段，跟着后端默认走。 */
+export function renderEngineFields(engine: unknown): Pick<RenderInput, "engine"> {
+  return engine === "rpr_fit" || engine === "typst" ? { engine } : {};
+}
+
 export function buildRenderPayload({
   developerConfig,
+  renderEngine,
   constants,
 }: BuildRenderPayloadOptions): RenderInput {
   const cfg = developerConfig as WorkflowDeveloperConfig;
@@ -190,6 +198,7 @@ export function buildRenderPayload({
   const storedFont = resolveStoredFontFamily(constants.DEFAULT_TYPST_FONT_FAMILY);
   const typstFont = cfgFont || storedFont || `${constants.DEFAULT_TYPST_FONT_FAMILY || ""}`.trim() || "Source Han Serif SC";
   return {
+    ...renderEngineFields(renderEngine),
     render_mode: constants.DEFAULT_RENDER_MODE,
     compile_workers: developerConfig.compileWorkers,
     typst_font_family: typstFont,
