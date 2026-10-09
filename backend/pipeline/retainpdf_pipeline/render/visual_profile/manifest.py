@@ -11,11 +11,12 @@ from retainpdf_pipeline.render.visual_profile.contracts import clamp_color
 from retainpdf_pipeline.render.visual_profile.contracts import clamp_confidence
 
 
-def document_visual_profile_to_manifest(profile: DocumentVisualProfile) -> dict[str, Any]:
+def document_visual_profile_to_manifest(profile: DocumentVisualProfile, *, exact: bool = False) -> dict[str, Any]:
+    """exact=True 不舍入（缓存用：读回后与现算的逐位相同；typst_rgb 是截断取整，舍入会差一级）。"""
     return {
         "algorithm": profile.algorithm,
         "pages": {
-            str(page_index): _page_to_manifest(page)
+            str(page_index): _page_to_manifest(page, exact=exact)
             for page_index, page in sorted(profile.pages.items())
         },
     }
@@ -37,27 +38,27 @@ def document_visual_profile_from_manifest(payload: object) -> DocumentVisualProf
     return DocumentVisualProfile(algorithm=algorithm, pages=pages)
 
 
-def _page_to_manifest(page: PageVisualProfile) -> dict[str, Any]:
+def _page_to_manifest(page: PageVisualProfile, *, exact: bool = False) -> dict[str, Any]:
     return {
-        "background_rgb": _round_color(page.background_rgb),
+        "background_rgb": _round_color(page.background_rgb, exact=exact),
         "warnings": list(page.warnings),
         "items": {
-            item_id: _item_to_manifest(item)
+            item_id: _item_to_manifest(item, exact=exact)
             for item_id, item in sorted(page.items.items())
         },
     }
 
 
-def _item_to_manifest(item: ItemVisualProfile) -> dict[str, Any]:
+def _item_to_manifest(item: ItemVisualProfile, *, exact: bool = False) -> dict[str, Any]:
     return {
         "page_index": item.page_index,
-        "bbox": [round(float(value), 3) for value in item.bbox],
+        "bbox": [float(value) if exact else round(float(value), 3) for value in item.bbox],
         "bbox_space": item.bbox_space,
         "bbox_source": item.bbox_source,
         "source_item_kind": item.source_item_kind,
-        "background_rgb": _round_color(item.background_rgb),
-        "text_rgb": _round_color(item.text_rgb),
-        "confidence": round(float(item.confidence), 4),
+        "background_rgb": _round_color(item.background_rgb, exact=exact),
+        "text_rgb": _round_color(item.text_rgb, exact=exact),
+        "confidence": float(item.confidence) if exact else round(float(item.confidence), 4),
         "method": item.method,
         "warnings": list(item.warnings),
     }
@@ -94,5 +95,5 @@ def _item_from_manifest(item_id: str, payload: object) -> ItemVisualProfile:
     )
 
 
-def _round_color(color: tuple[float, float, float]) -> list[float]:
-    return [round(float(component), 5) for component in color]
+def _round_color(color: tuple[float, float, float], *, exact: bool = False) -> list[float]:
+    return [float(component) if exact else round(float(component), 5) for component in color]

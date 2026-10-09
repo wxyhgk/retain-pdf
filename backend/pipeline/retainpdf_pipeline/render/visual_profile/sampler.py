@@ -218,6 +218,36 @@ def _sample_item_profile(
     )
 
 
+def visual_sampling_signature(pages: dict[int, list[dict]]) -> dict[str, list[list]]:
+    """采样真正看的东西（缓存指纹用）：每页每条的覆盖框、要不要采底色 / 字色、块类型。
+
+    build_page_visual_profile 只用这些（加上原 PDF 的像素），与译文措辞无关。改采样规则时
+    要同步改这里，否则缓存会拿旧结果。
+    """
+    signature: dict[str, list[list]] = {}
+    for page_index, items in sorted(pages.items()):
+        rects = _item_rects(items)
+        rows: list[list] = []
+        for item in items:
+            item_id = str(item.get("item_id") or "")
+            if not item_id:
+                continue
+            rect = rects.get(item_id)
+            needs_background = _item_needs_visual_profile_background(item)
+            rows.append(
+                [
+                    item_id,
+                    None if rect is None else [float(rect.x0), float(rect.y0), float(rect.x1), float(rect.y1)],
+                    needs_background,
+                    _item_needs_span_text_color(item, should_sample_background=needs_background),
+                    _is_document_title(item),
+                    _source_item_kind(item),
+                ]
+            )
+        signature[str(int(page_index))] = rows
+    return signature
+
+
 def _item_rects(items: list[dict]) -> dict[str, fitz.Rect]:
     rects: dict[str, fitz.Rect] = {}
     for item in items:

@@ -226,6 +226,7 @@ def execute_render_plan(
                 translated_pages=render_plan.selected_pages,
                 effective_render_mode=render_plan.effective_render_mode,
                 source_cleanup_strategy=cleanup_strategy,
+                prepare_dir=prepare_dir,
             )
         )
         prepare_progress.step(4)
@@ -270,6 +271,7 @@ def execute_render_plan(
             translated_pages=render_plan.selected_pages,
             effective_render_mode=render_plan.effective_render_mode,
             source_cleanup_strategy=cleanup_strategy,
+            prepare_dir=prepare_dir,
         )
         prepare_progress.step(4)
         merged_sync_payload_prewarm = build_sync_payload_prewarm(

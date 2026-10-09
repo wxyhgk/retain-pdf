@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 import os
 from statistics import median
@@ -50,6 +51,7 @@ def build_payload_prewarm(
     effective_render_mode: str = "",
     source_cleanup_strategy: str = "pikepdf_text_strip",
     bbox_text_strip_candidates: BBoxTextStripCandidates | None = None,
+    visual_profile_builder: Callable[[Path, dict[int, list[dict]]], Any] | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     timings: dict[str, float] = {}
@@ -145,7 +147,7 @@ def build_payload_prewarm(
     if prepared_for_render is not None:
         try:
             color_adapt_started = time.perf_counter()
-            visual_profile = build_document_visual_profile(source_pdf_path, prepared_for_render)
+            visual_profile = (visual_profile_builder or build_document_visual_profile)(source_pdf_path, prepared_for_render)
             visual_profile_path = visual_profile_path_from_prewarm_manifest(manifest_path)
             write_document_visual_profile(visual_profile_path, visual_profile)
             color_adapted_pages = apply_page_color_adapt_for_prewarm(

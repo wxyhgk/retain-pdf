@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from retainpdf_pipeline.render.prepare.visual_profile import visual_profile_builder
 from retainpdf_pipeline.render.source.prewarm_payload import build_payload_prewarm
 from retainpdf_pipeline.render.source.prewarm_fingerprint import build_render_prewarm_fingerprint
 from retainpdf_pipeline.render.source.prewarm_manifest import write_json_atomic
@@ -74,6 +75,7 @@ def build_full_sync_payload_prewarm(
     translated_pages: dict[int, list[dict]],
     effective_render_mode: str,
     source_cleanup_strategy: str,
+    prepare_dir: Path | None = None,
 ) -> dict[str, object]:
     if manifest_path is None:
         return sync_source_payload_prewarm(prepared)
@@ -84,6 +86,7 @@ def build_full_sync_payload_prewarm(
         effective_render_mode=effective_render_mode,
         source_cleanup_strategy=source_cleanup_strategy,
         bbox_text_strip_candidates=getattr(prepared, "bbox_text_strip_candidates", None),
+        visual_profile_builder=visual_profile_builder(prepare_dir),
     )
 
 

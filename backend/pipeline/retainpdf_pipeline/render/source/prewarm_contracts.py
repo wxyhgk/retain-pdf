@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -34,6 +35,9 @@ class RenderPrewarmSpec:
     source_cleanup_strategy: str = "pikepdf_text_strip"
     document_analysis: RenderDocumentAnalysis | None = None
     include_source_cleanup: bool = True
+    # 取 visual_profile 的函数 (source_pdf_path, pages) -> DocumentVisualProfile；workflow 注入
+    # 按准备步骤缓存的版本，None 时现算。
+    visual_profile_builder: Callable | None = None
 
 
 @dataclass(frozen=True)

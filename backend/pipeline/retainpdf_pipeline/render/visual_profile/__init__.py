@@ -13,6 +13,7 @@ from retainpdf_pipeline.render.visual_profile.runtime import load_visual_profile
 from retainpdf_pipeline.render.visual_profile.runtime import merge_visual_profile_colors
 from retainpdf_pipeline.render.visual_profile.sampler import build_document_visual_profile
 from retainpdf_pipeline.render.visual_profile.sampler import build_page_visual_profile
+from retainpdf_pipeline.render.visual_profile.sampler import visual_sampling_signature
 
 __all__ = [
     "DocumentVisualProfile",
@@ -27,5 +28,6 @@ __all__ = [
     "merge_visual_profile_colors",
     "read_document_visual_profile",
     "visual_profile_path_from_prewarm_manifest",
+    "visual_sampling_signature",
     "write_document_visual_profile",
 ]

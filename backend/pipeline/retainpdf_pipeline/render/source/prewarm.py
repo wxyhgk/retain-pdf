@@ -104,6 +104,7 @@ def _run_render_source_prewarm(spec: RenderPrewarmSpec, manifest_path: Path) -> 
                 else layout.SOURCE_CLEANUP_TYPST_FILL
             ),
             bbox_text_strip_candidates=prepared.bbox_text_strip_candidates if spec.include_source_cleanup else None,
+            visual_profile_builder=spec.visual_profile_builder,
         )
         manifest = build_prewarm_manifest(
             manifest_path=manifest_path,

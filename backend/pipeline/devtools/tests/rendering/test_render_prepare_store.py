@@ -125,3 +125,33 @@ def test_page_analysis_is_reused_when_only_the_wording_changes(tmp_path: Path) -
     assert again == first
     _, record = run_page_analysis(store, source_pdf_path=pdf, translated_pages={0: [reworded], 1: [item]}, start_page=0, end_page=-1)
     assert record.hit is False, "another page to analyse is a new input"
+
+
+def test_visual_profile_step_is_exact_and_ignores_wording(tmp_path: Path) -> None:
+    from retainpdf_pipeline.render.prepare.visual_profile import run_visual_profile
+    from retainpdf_pipeline.render.visual_profile import build_document_visual_profile
+
+    pdf = tmp_path / "colored.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=300, height=400)
+    # 1/3 和 161/255 这类颜色舍入成 5 位小数后，typst_rgb 的截断取整会差一级。
+    page.insert_text((20, 50), "Colored title", fontsize=14, color=(1.0, 161 / 255, 1 / 3))
+    doc.save(pdf)
+    doc.close()
+    item = {
+        "item_id": "p001-b000",
+        "bbox": [15, 35, 200, 60],
+        "block_type": "title",
+        "_render_use_cover_fill": True,  # 要采底色 → 也从文字 span 取字色
+        "translated_text": "旧",
+    }
+    store = PrepareStore(tmp_path / "render_prepare")
+    fresh = build_document_visual_profile(pdf, {0: [item]}, max_workers=1)
+    first, record = run_visual_profile(store, source_pdf_path=pdf, pages={0: [item]})
+    assert record.hit is False and first == fresh
+    assert round(fresh.pages[0].items["p001-b000"].text_rgb[1], 5) != fresh.pages[0].items["p001-b000"].text_rgb[1]
+    again, record = run_visual_profile(store, source_pdf_path=pdf, pages={0: [{**item, "translated_text": "新"}]})
+    assert record.hit is True and again == fresh
+    moved = {**item, "bbox": [15, 35, 210, 60]}
+    _, record = run_visual_profile(store, source_pdf_path=pdf, pages={0: [moved]})
+    assert record.hit is False

@@ -13,6 +13,7 @@ from retainpdf_pipeline.render.render_stage import run_render_stage
 from retainpdf_pipeline.translate.translation_stage import translate_book_pipeline
 from retainpdf_pipeline.render.prepare.page_analysis import page_analysis
 from retainpdf_pipeline.render.prepare.store import PREPARE_DIR_NAME
+from retainpdf_pipeline.render.prepare.visual_profile import visual_profile_builder
 from retainpdf_pipeline.render.source.prewarm import prewarm_manifest_path_from_artifacts_dir
 from retainpdf_pipeline.render.source.prewarm import RenderPrewarmHandle
 from retainpdf_pipeline.render.source.prewarm import RenderPrewarmSpec
@@ -166,6 +167,7 @@ def run_book_pipeline(
             source_cleanup_strategy=source_cleanup_strategy,
             document_analysis=render_document_analysis,
             include_source_cleanup=effective_prewarm_render_mode != "overlay",
+            visual_profile_builder=visual_profile_builder(output_dir.parent / ARTIFACTS_DIR_NAME / PREPARE_DIR_NAME),
         )
     )
     render_preprocess_handle.wait()
