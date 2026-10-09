@@ -1,3 +1,8 @@
+import type {
+  CreateCredentialInput,
+  CredentialMutationView,
+  UpdateCredentialInput,
+} from "@/platform/api/domains/credentials.js";
 import { dialogDataset } from "./translation-profile.js";
 import {
   defaultCredentialsStatePort,
@@ -104,41 +109,41 @@ export interface RefreshDeepSeekBalanceOptions {
 }
 
 export interface MountBrowserCredentialsFeatureOptions {
-  apiPrefix?: string;
+  apiPrefix: string;
   state?: unknown;
-  applyHiddenCredentialInputs?: (credentials?: Partial<CredentialsFields> | unknown) => unknown;
+  applyHiddenCredentialInputs?: (credentials?: Partial<CredentialsFields>) => unknown;
   defaultPaddleToken?: () => string;
   defaultModelApiKey?: () => string;
   defaultModelBaseUrl?: () => string;
   getTaskOptions?: () => Record<string, unknown> | unknown;
-  saveTaskOptions?: (options?: Record<string, unknown> | unknown) => unknown;
-  saveBrowserStoredConfig?: (credentials?: CredentialsFields | Record<string, unknown> | unknown) => unknown;
+  saveTaskOptions?: (options?: Record<string, unknown>) => unknown;
+  saveBrowserStoredConfig?: (credentials?: Partial<CredentialsFields>) => unknown;
   readHiddenCredentialInputs?: () => CredentialsFields | Record<string, unknown> | unknown;
   saveDesktopConfig?: (
-    browserConfig?: Record<string, unknown> | unknown,
+    browserConfig?: Record<string, unknown>,
     afterSave?: () => unknown,
   ) => Promise<unknown> | unknown;
   checkApiConnectivity?: () => Promise<unknown> | unknown;
   validateOcrToken: (
-    apiPrefix?: unknown,
-    providerId?: unknown,
-    token?: unknown,
+    apiPrefix: string,
+    providerId: string,
+    token: string,
   ) => Promise<ProviderValidationResult | unknown> | ProviderValidationResult | unknown;
   validateDeepSeekToken: (
-    apiPrefix?: unknown,
-    payload?: unknown,
+    apiPrefix: string,
+    payload: Record<string, unknown>,
   ) => Promise<ProviderValidationResult | unknown> | ProviderValidationResult | unknown;
   queryDeepSeekBalance?: (
-    apiPrefix?: unknown,
-    payload?: unknown,
+    apiPrefix: string,
+    payload: Record<string, unknown>,
   ) => Promise<ProviderValidationResult | unknown> | ProviderValidationResult | unknown;
   // 挂载层只透传、不读取返回值，故返回值保持 unknown。
-  createCredential?: (apiPrefix: string | undefined, payload: Record<string, unknown>) => Promise<unknown>;
+  createCredential?: (apiPrefix: string | undefined, payload: CreateCredentialInput) => Promise<CredentialMutationView>;
   updateCredential?: (
     apiPrefix: string | undefined,
     credentialRef: string,
-    payload: Record<string, unknown>,
-  ) => Promise<unknown>;
+    payload: UpdateCredentialInput,
+  ) => Promise<CredentialMutationView>;
   onCredentialStateChange?: () => void;
   uploadStatePort?: CredentialsUploadStatePort;
   credentialsStatePort?: CredentialsStatePort;

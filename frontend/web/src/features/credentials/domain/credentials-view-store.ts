@@ -13,11 +13,10 @@ import type { DialogStore } from "@/platform/store/dialog-store.js";
 import { createStore } from "@/platform/store/store.js";
 import type { Store } from "@/platform/store/store.js";
 import { inferTranslationProvider } from "@/platform/config/providers.js";
+import type { BindCredentialViewEventsOptions } from "./view-contracts.js";
 
-/** 事件处理函数表（viewPort.bindEvents 写入 handlersRef）。 */
-export type HandlersBag = {
-  [key: string]: ((...args: unknown[]) => unknown) | undefined | null;
-};
+/** 事件处理函数表（viewPort.bindEvents 写入 handlersRef）。就是凭据功能绑定的那组事件。 */
+export type HandlersBag = BindCredentialViewEventsOptions;
 
 /** 凭据弹窗内受控输入的 ref 集合。 */
 export type CredentialsElementsRef = {

@@ -6,9 +6,9 @@
 
 import { createDialogStore, type DialogStore } from "@/platform/store/dialog-store.js";
 
-export type StatusDetailDialogPayload = {
-  activeTab: string;
-};
+import type { StatusDetailDialogPayload } from "@/platform/contracts/status-detail-runtime-contract.js";
+
+export type { StatusDetailDialogPayload };
 
 export type StatusDetailDialogStore = DialogStore<StatusDetailDialogPayload>;
 

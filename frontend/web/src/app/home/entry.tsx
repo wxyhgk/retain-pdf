@@ -4,6 +4,7 @@
 
 import { DecorStage } from "@/ui/decor/DecorStage.jsx";
 import { createHomeComposition } from "./create-home-composition.js";
+import { mountedFeature } from "./composition/feature-registry.js";
 import { HomeApp } from "./HomeApp.jsx";
 import { mountShellPage } from "../shell-boot.js";
 import {
@@ -49,7 +50,7 @@ async function bootHome() {
   (globalThis as Record<string, unknown>).__retainHomeTeardown = teardown;
 
   if (desktopMode) {
-    await services.features.browserCredentialsFeature.ready();
+    await mountedFeature(services.features, "browserCredentialsFeature").ready();
     try {
       await bootstrapDesktop();
     } catch (error) {

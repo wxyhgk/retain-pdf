@@ -29,7 +29,7 @@ const UPLOAD_ANIMATION_PATH = "/src/assets/animations/pdf_upload_Lottie.json";
 const DOWNLOAD_ANIMATION_PATH = "/src/assets/animations/pdf_download_Lottie.json";
 const RENDER_ANIMATION_PATH = "/src/assets/animations/typst_rendering.json";
 
-const STAGE_ANIMATIONS = {
+const STAGE_ANIMATIONS: Readonly<Record<string, string>> = {
   queued: UPLOAD_ANIMATION_PATH,
   ocr_upload: UPLOAD_ANIMATION_PATH,
   ocr: OCR_ANIMATION_PATH,
@@ -83,7 +83,7 @@ function loadLottieWeb() {
   if (lottieLoaderPromise) {
     return lottieLoaderPromise;
   }
-  lottieLoaderPromise = new Promise((resolve, reject) => {
+  lottieLoaderPromise = new Promise<LottieApi>((resolve, reject) => {
     const script = document.createElement("script");
     script.src = lottieWebPath();
     script.async = true;
@@ -97,7 +97,16 @@ function loadLottieWeb() {
   return lottieLoaderPromise;
 }
 
-function speedForProgressDelta(stageKey, previous, next) {
+/** 倍速计算用的进度采样（时间戳毫秒） */
+type SpeedSample = {
+  stageKey: string;
+  current: number;
+  total: number;
+  progressUnit: string;
+  time: number;
+};
+
+function speedForProgressDelta(stageKey: string, previous: SpeedSample | null, next: SpeedSample) {
   if (!["ocr", "translate", "render"].includes(stageKey) || !previous || previous.stageKey !== stageKey || previous.total !== next.total) {
     return 1;
   }
@@ -147,7 +156,7 @@ export function useLottieStageAnimation(visualStageKey = "", progressSample: Pro
   const stageAnimationLoadingKeyRef = useRef("");
   const stageAnimationDesiredKeyRef = useRef("");
   const playbackSpeedRef = useRef(1);
-  const lastProgressSampleRef = useRef(null);
+  const lastProgressSampleRef = useRef<SpeedSample | null>(null);
   const [isFallback, setIsFallback] = useState(false);
 
   const normalized = `${visualStageKey || ""}`.trim();
@@ -168,7 +177,7 @@ export function useLottieStageAnimation(visualStageKey = "", progressSample: Pro
     setIsFallback(false);
   }
 
-  function ensureStageAnimation(stageKey, path) {
+  function ensureStageAnimation(stageKey: string, path: string) {
     const container = containerRef.current;
     if (!container || !path || stageAnimationKeyRef.current === stageKey || stageAnimationLoadingKeyRef.current === stageKey) {
       return;

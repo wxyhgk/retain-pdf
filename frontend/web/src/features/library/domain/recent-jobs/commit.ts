@@ -13,7 +13,8 @@ import type { LibraryJobItem } from "./runtime-item.js";
 import type { RecentJobsRuntimePatches } from "./runtime-patches.js";
 import type { RecentJobsStatePort } from "./state.js";
 
-export type RecentJobsInvocationSummary = Record<string, unknown> | null;
+export type { RecentJobsInvocationSummary } from "./pagination.js";
+import type { RecentJobsInvocationSummary } from "./pagination.js";
 
 export interface RecentJobsRenderListOptions {
   items?: LibraryJobItem[];

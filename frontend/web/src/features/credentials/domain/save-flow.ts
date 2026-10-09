@@ -79,9 +79,9 @@ export function createBrowserCredentialSaveFlow({
   getTaskOptions?: () => Record<string, unknown> | unknown;
   defaultModelBaseUrl?: () => string;
   defaultModelApiKey?: () => string;
-  saveTaskOptions?: (options?: Record<string, unknown> | unknown) => unknown;
+  saveTaskOptions?: (options?: Record<string, unknown>) => unknown;
   saveDesktopConfig?: (
-    browserConfig?: Record<string, unknown> | unknown,
+    browserConfig?: Record<string, unknown>,
     afterSave?: () => unknown,
   ) => Promise<unknown> | unknown;
   checkApiConnectivity?: () => Promise<unknown> | unknown;

@@ -1,3 +1,4 @@
+import type { ArtifactRuntimeState } from "@retainpdf/domain/job";
 import {
   downloadProtectedResponse,
   formatTransferSize,
@@ -22,7 +23,7 @@ import { createArtifactDownloadsRuntimePort, type ArtifactDownloadsRuntimePort }
 export type ArtifactDownloadsViewPort = {
   isLinkDisabled: (link: HTMLElement) => boolean;
   setLinkBusy: (link: HTMLElement, busy: boolean, label?: string) => unknown;
-  bindProtectedLinks: (handler: (event: Event, link: Element) => unknown) => unknown;
+  bindProtectedLinks: (handler: (event: Event, link: Element) => unknown) => (() => void) | void;
 };
 
 /** 点击事件中本模块用到的部分。 */
@@ -41,7 +42,8 @@ export type ArtifactDownloadProgress = {
 };
 
 export type ArtifactDownloadsFeatureDeps = {
-  state: unknown;
+  /** 任务运行时状态（当前任务快照等），下载文件名按它解析。 */
+  state: ArtifactRuntimeState;
   fetchProtected: (url: string) => Promise<Response>;
   setText: (id: string, text?: unknown) => unknown;
   runtimePort?: ArtifactDownloadsRuntimePort;

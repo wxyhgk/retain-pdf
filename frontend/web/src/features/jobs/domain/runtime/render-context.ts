@@ -29,7 +29,7 @@ export interface JobRuntimeSecondaryInput {
   stageActionsPayload?: unknown;
 }
 
-function resolveElapsedStart(job) {
+function resolveElapsedStart(job: { started_at?: string | null; created_at?: string | null } | null | undefined) {
   return (job?.started_at || job?.created_at || "").trim();
 }
 
@@ -38,11 +38,11 @@ function syncEventsPayload(state: object, jobId: unknown, eventsPayload: unknown
   return syncSecondaryResource(state, "events", jobId, eventsPayload) as EventsPayload | null;
 }
 
-function syncManifestPayload(state, jobId, manifestPayload) {
+function syncManifestPayload(state: object, jobId: unknown, manifestPayload: unknown) {
   return syncSecondaryResource(state, "manifest", jobId, manifestPayload);
 }
 
-function syncStageActionsPayload(state, jobId, stageActionsPayload) {
+function syncStageActionsPayload(state: object, jobId: unknown, stageActionsPayload: unknown) {
   return syncSecondaryResource(state, "stageActions", jobId, stageActionsPayload);
 }
 
@@ -98,7 +98,7 @@ export function applyJobSecondaryResources({
   };
 }
 
-export function currentJobRenderContextFor(state, jobId) {
+export function currentJobRenderContextFor(state: object, jobId: unknown) {
   const resolvedJobId = `${jobId || currentJobId(state) || ""}`.trim();
   const job = currentJobSnapshotFor(state, resolvedJobId);
   if (!job || !resolvedJobId) {
@@ -153,7 +153,7 @@ export function createJobRenderContextPort(
         stageActionsPayload,
       });
     },
-    currentFor(jobId) {
+    currentFor(jobId: unknown) {
       return currentJobRenderContextFor(state, jobId);
     },
   });

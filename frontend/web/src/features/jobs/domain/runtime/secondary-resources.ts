@@ -30,7 +30,7 @@ export type SecondaryResourcePort = ReturnType<typeof createSecondaryResourceSta
 export interface SecondaryResourceFetchDeps {
   state: object;
   apiPrefix?: string;
-  fetchJobEvents?: typeof FetchJobEvents;
+  fetchJobEvents: typeof FetchJobEvents;
   jobEventsResource?: JobEventsResource | null;
   fetchJobArtifactsManifest: (jobId: string, apiPrefix?: string) => Promise<unknown>;
   fetchJobStageActions?: (jobId: string, apiPrefix?: string) => Promise<unknown>;

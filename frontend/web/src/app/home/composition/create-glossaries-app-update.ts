@@ -1,5 +1,6 @@
 // glossaries + app-update。
 
+import { mountedFeature } from "./feature-registry.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import {
   createGlossariesViewFeature,
@@ -13,7 +14,6 @@ import {
 import type {
   AppUpdateFeature,
   AppUpdateViewBag,
-  AsyncFn,
   CreateHomeCompositionOptions,
   GlossariesFeature,
   GlossariesViewBag,
@@ -24,16 +24,16 @@ import { createDialogStore } from "@/platform/store/dialog-store.js";
 
 type CreateGlossariesAndAppUpdateArgs = {
   features: HomeFeatures;
-  fetchGlossaries: AsyncFn;
-  fetchGlossary: AsyncFn;
-  createGlossary: AsyncFn;
-  updateGlossary: AsyncFn;
-  deleteGlossary: AsyncFn;
-  exportGlossaryCsv: AsyncFn;
-  parseGlossaryCsv: AsyncFn;
+  fetchGlossaries: NonNullable<CreateHomeCompositionOptions["fetchGlossaries"]>;
+  fetchGlossary: NonNullable<CreateHomeCompositionOptions["fetchGlossary"]>;
+  createGlossary: NonNullable<CreateHomeCompositionOptions["createGlossary"]>;
+  updateGlossary: NonNullable<CreateHomeCompositionOptions["updateGlossary"]>;
+  deleteGlossary: NonNullable<CreateHomeCompositionOptions["deleteGlossary"]>;
+  exportGlossaryCsv: NonNullable<CreateHomeCompositionOptions["exportGlossaryCsv"]>;
+  parseGlossaryCsv: NonNullable<CreateHomeCompositionOptions["parseGlossaryCsv"]>;
   appUpdateAutoCheckEnabled: boolean;
   appUpdateCachePort: NonNullable<CreateHomeCompositionOptions["appUpdateCachePort"]>;
-  fetchLatestRelease: AsyncFn;
+  fetchLatestRelease: NonNullable<CreateHomeCompositionOptions["fetchLatestRelease"]>;
 };
 
 export function createGlossariesAndAppUpdate({
@@ -66,7 +66,7 @@ export function createGlossariesAndAppUpdate({
     deleteGlossary,
     exportGlossaryCsv,
     parseGlossaryCsv,
-    refreshWorkflowGlossaries: (options?: unknown) => features.workflowFeature.loadGlossaryOptions(options),
+    refreshWorkflowGlossaries: (options) => mountedFeature(features, "workflowFeature").loadGlossaryOptions(options),
     viewPort: glossariesView.viewPort,
   }) as GlossariesFeature;
   glossariesFeature.bindEvents();

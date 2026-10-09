@@ -3,13 +3,14 @@ import {
   formatTransferSize,
   prepareDownloadTarget,
 } from "@/platform/utils/downloads.js";
+import type { DownloadProgressPayload } from "@/platform/utils/downloads.js";
 import {
   completeDownloadToast,
   showDownloadPreparing,
   updateDownloadProgress,
 } from "@/platform/utils/download-feedback.js";
 
-export function summarizeDownloadProgress(receivedBytes, totalBytes, percent) {
+export function summarizeDownloadProgress(receivedBytes: number, totalBytes: number, percent: number) {
   const receivedText = formatTransferSize(receivedBytes);
   if (Number.isFinite(totalBytes) && totalBytes > 0) {
     const totalText = formatTransferSize(totalBytes);
@@ -20,12 +21,12 @@ export function summarizeDownloadProgress(receivedBytes, totalBytes, percent) {
 }
 
 export async function downloadProtectedResource(
-  fetchProtected,
-  url,
-  fallbackName,
+  fetchProtected: typeof fetch,
+  url: string,
+  fallbackName: string,
   preferredName = "",
-  onStatus = null,
-  onBusy = null,
+  onStatus: ((status: DownloadProgressPayload) => void) | null = null,
+  onBusy: ((busy: boolean, status?: string) => void) | null = null,
 ) {
   const trimmedName = `${preferredName || ""}`.trim();
   const suggestedName = trimmedName || fallbackName;

@@ -33,7 +33,7 @@ export * from "./contracts.js";
 
 export interface MountWorkflowFeatureOptions {
   configPort?: WorkflowConfigPortLike;
-  saveDeveloperStoredConfig: (config?: unknown) => unknown;
+  saveDeveloperStoredConfig: (config?: Record<string, unknown>) => unknown;
   getDeepSeekBalanceState: () => {
     balanceCny?: number | null;
     balanceChecked?: boolean;
@@ -45,7 +45,7 @@ export interface MountWorkflowFeatureOptions {
   };
   isDesktopMode: () => boolean;
   resetDeveloperConfig: () => void;
-  setDeveloperConfig: (config: unknown) => void;
+  setDeveloperConfig: (config: Record<string, unknown>) => void;
   defaultModelName: () => string;
   defaultModelBaseUrl: () => string;
   defaultPaddleApiUrl: () => string;
@@ -62,8 +62,8 @@ export interface MountWorkflowFeatureOptions {
   renderPageRangeSummary: () => void;
   hasBrowserCredentials?: () => boolean;
   updateCredentialGate?: (options: CredentialGateRequest) => void;
-  fetchGlossaries?: (apiPrefix?: string) => Promise<{ items?: unknown[] } | unknown>;
-  apiPrefix?: string;
+  fetchGlossaries?: (apiPrefix: string) => Promise<{ items?: unknown[] } | unknown>;
+  apiPrefix: string;
   setText?: (id: string, value?: string) => void;
   isOcrOnly?: () => boolean;
 }

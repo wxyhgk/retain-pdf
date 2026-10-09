@@ -39,6 +39,8 @@ export type OpenCredentialDialogOptions = {
   setupMode?: boolean;
 };
 
+export type ProviderChangeEvent = { currentTarget: { value?: string } | null };
+
 export type BindCredentialViewEventsOptions = {
   resetOcrValidation?: () => void;
   resetPaddleValidation?: () => void;
@@ -48,6 +50,7 @@ export type BindCredentialViewEventsOptions = {
   save?: () => void;
   open?: (options?: OpenCredentialDialogOptions) => void;
   activateCredentialTab?: (tabName: string) => void;
-  changeProvider?: (event: Event) => void;
+  /** 只读 currentTarget.value；React 的 ChangeEvent 和原生事件都满足。 */
+  changeProvider?: (event: ProviderChangeEvent) => void;
   changeTranslationProvider?: (providerId: string) => void;
 };

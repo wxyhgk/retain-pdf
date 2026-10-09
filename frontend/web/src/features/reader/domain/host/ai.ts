@@ -46,7 +46,7 @@ readerAi.setReaderAiConfigAdapters({
   defaultModelName,
 } satisfies ReaderAiConfigAdapters);
 readerAi.setAnswerEnhanceAdapters({
-  fetchProtected,
+  fetchProtected: fetchProtected as typeof fetch,
   resolveResourceUrl,
 } satisfies AnswerEnhanceAdapters);
 

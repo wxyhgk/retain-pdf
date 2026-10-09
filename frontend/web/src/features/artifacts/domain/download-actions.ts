@@ -5,17 +5,18 @@ export {
 import {
   DOWNLOAD_ACTION_IDS,
 } from "@/platform/contracts/download-action-contract.js";
+import type { ArtifactRuntimeState } from "@retainpdf/domain/job";
 
 /** 文件名解析器：PDF 类动作按任务状态解析建议文件名。 */
 export type DownloadNameResolver = {
-  resolveSourcePdfName: (state: unknown, fallbackName: string) => string;
-  resolveTranslatedPdfName: (state: unknown, fallbackName: string) => string;
+  resolveSourcePdfName: (state: ArtifactRuntimeState, fallbackName: string) => string;
+  resolveTranslatedPdfName: (state: ArtifactRuntimeState, fallbackName: string) => string;
 };
 
 /** 下载动作描述：fallbackName 必有，preferredName 可选（只有 PDF 类动作会给）。 */
 export type DownloadActionSpec = {
   fallbackName: (jobId: string) => string;
-  preferredName?: (state: unknown, fallbackName: string, resolver: DownloadNameResolver) => string | undefined;
+  preferredName?: (state: ArtifactRuntimeState, fallbackName: string, resolver: DownloadNameResolver) => string | undefined;
   preferSuggestedName?: boolean;
 };
 
@@ -58,7 +59,7 @@ export function resolveDownloadActionTarget({
   nameResolver = defaultDownloadNameResolver,
 }: {
   action: DownloadActionSpec | null | undefined;
-  state: unknown;
+  state: ArtifactRuntimeState;
   jobId?: string;
   nameResolver?: DownloadNameResolver;
 }) {
@@ -82,7 +83,7 @@ export function resolveDownloadActionTargetWithResolver({
   nameResolver = defaultDownloadNameResolver,
 }: {
   action: DownloadActionSpec | null | undefined;
-  state: unknown;
+  state: ArtifactRuntimeState;
   jobId?: string;
   nameResolver?: DownloadNameResolver;
 }) {

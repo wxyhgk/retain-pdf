@@ -9,8 +9,9 @@ import {
   buildElapsedViewModel,
   isTerminalStatus,
 } from "@retainpdf/domain/job";
+import type { JobLike, JobPayload } from "@retainpdf/domain/job";
 
-export function useElapsedTicker(job, { finishedAtFallback = "" } = {}) {
+export function useElapsedTicker(job: JobLike | JobPayload | null | undefined, { finishedAtFallback = "" } = {}) {
   const [tick, setTick] = useState(0);
 
   const status = `${job?.status || ""}`.trim();

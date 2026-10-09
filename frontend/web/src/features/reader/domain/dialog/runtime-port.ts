@@ -9,11 +9,27 @@ import {
   resolveJobActions,
   resolveJobSourcePdfAction,
 } from "@retainpdf/domain/job";
+import type { ArtifactRuntimeState, JobLike, JobPayload } from "@retainpdf/domain/job";
 import {
   currentJobId,
   currentJobSnapshot,
 } from "@/features/jobs/index.js";
 import { cachedManifestFor } from "@/features/jobs/index.js";
+
+// 阅读器下载态：在运行时态上附带阅读器自己的 readerJobId。
+type ReaderDialogRuntimeState = ArtifactRuntimeState & { readerJobId?: string };
+
+// 注入点签名直接取自真实实现，避免 `any` 让宿主错配静默通过。
+type ReaderDialogRuntimePortOptions = {
+  getCurrentJobId?: typeof currentJobId;
+  getCurrentJobSnapshot?: typeof currentJobSnapshot;
+  getCachedManifestFor?: typeof cachedManifestFor;
+  resolveActions?: typeof resolveJobActions;
+  resolveSourceAction?: typeof resolveJobSourcePdfAction;
+  resolveManifestUrl?: typeof resolveManifestArtifactUrl;
+  resolveSourceName?: typeof resolveSourcePdfDownloadName;
+  resolveTranslatedName?: typeof resolveTranslatedPdfDownloadName;
+};
 
 export function createReaderDialogRuntimePort({
   getCurrentJobId = currentJobId,
@@ -24,12 +40,15 @@ export function createReaderDialogRuntimePort({
   resolveManifestUrl = resolveManifestArtifactUrl,
   resolveSourceName = resolveSourcePdfDownloadName,
   resolveTranslatedName = resolveTranslatedPdfDownloadName,
-} = {}) {
-  function currentJobIdFor(state) {
+}: ReaderDialogRuntimePortOptions = {}) {
+  function currentJobIdFor(state: ReaderDialogRuntimeState | null | undefined) {
     return `${getCurrentJobId(state) || ""}`.trim();
   }
 
-  function jobCanUseTranslatedPdfRoute(job, actions) {
+  function jobCanUseTranslatedPdfRoute(
+    job: JobLike | JobPayload | null | undefined,
+    actions: ReturnType<typeof resolveJobActions> | null,
+  ) {
     if (actions?.pdfEnabled) {
       return true;
     }
@@ -40,7 +59,7 @@ export function createReaderDialogRuntimePort({
     return `${job?.status || ""}`.trim().toLowerCase() === "succeeded";
   }
 
-  function currentArtifactUrls(state) {
+  function currentArtifactUrls(state: ReaderDialogRuntimeState) {
     const requestedJobId = `${state?.readerJobId || ""}`.trim();
     const job = getCurrentJobSnapshot(state);
     const jobId = requestedJobId || job?.job_id || currentJobIdFor(state) || "";
@@ -61,7 +80,7 @@ export function createReaderDialogRuntimePort({
     return { sourcePdf, translatedPdf, sideBySidePdf };
   }
 
-  function artifactNameState(state) {
+  function artifactNameState(state: ReaderDialogRuntimeState) {
     const job = getCurrentJobSnapshot(state);
     const jobId = `${state?.readerJobId || ""}`.trim() || job?.job_id || currentJobIdFor(state) || "";
     const manifest = getCachedManifestFor(state, jobId);
@@ -77,7 +96,7 @@ export function createReaderDialogRuntimePort({
   return Object.freeze({
     currentArtifactUrls,
     currentJobId: currentJobIdFor,
-    sourcePdfDownloadName: (state, fallback) => resolveSourceName(artifactNameState(state), fallback),
-    translatedPdfDownloadName: (state, fallback = "") => resolveTranslatedName(artifactNameState(state), fallback),
+    sourcePdfDownloadName: (state: ReaderDialogRuntimeState, fallback: string) => resolveSourceName(artifactNameState(state), fallback),
+    translatedPdfDownloadName: (state: ReaderDialogRuntimeState, fallback = "") => resolveTranslatedName(artifactNameState(state), fallback),
   });
 }

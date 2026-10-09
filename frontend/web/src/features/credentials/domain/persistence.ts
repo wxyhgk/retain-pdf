@@ -20,7 +20,7 @@ export async function persistDesktopCredentialsFromDialog({
   defaultModelBaseUrl?: () => string;
   saveTaskOptions?: (options: ReturnType<typeof buildTaskOptionsFromDialogValues>) => unknown;
   saveDesktopConfig?: (
-    browserConfig?: Record<string, unknown> | unknown,
+    browserConfig?: Record<string, unknown>,
     afterSave?: () => unknown,
   ) => Promise<unknown> | unknown;
   checkApiConnectivity?: () => Promise<unknown> | unknown;

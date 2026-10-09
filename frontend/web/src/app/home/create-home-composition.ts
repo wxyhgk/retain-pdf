@@ -17,6 +17,7 @@
 //   3. features 是唯一可变注册表；晚绑定通过它完成
 //   4. job-runtime / recent-jobs / artifacts 在 composition 阶段一次挂齐
 
+import { mountedFeature } from "./composition/feature-registry.js";
 import {
   loadBrowserStoredConfig,
   loadDeveloperStoredConfig,
@@ -146,7 +147,7 @@ export function createHomeComposition({
       },
     },
     uploadSessionPort: {
-      resetUploadSession: () => features.uploadFeature.resetUploadSession(),
+      resetUploadSession: () => mountedFeature(features, "uploadFeature").resetUploadSession(),
     },
     documentRef,
   });

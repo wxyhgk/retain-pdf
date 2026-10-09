@@ -4,6 +4,7 @@
 // 装配位：末端只读features/domains/views/ports→HomeServices，不写features；
 // 写者见create-home-composition顺序图；敏感读：statusCard.cancel晚绑features.jobRuntime，library.selectJob读libraryController。
 
+import { mountedFeature } from "./feature-registry.js";
 import type {
   HomeBridge,
   HomeFeatures,
@@ -98,7 +99,7 @@ export function buildHomeServices({
     stores: stores as HomeServices["stores"],
     statusArea: views.statusArea,
     credentials: {
-      feature: features.browserCredentialsFeature,
+      feature: mountedFeature(features, "browserCredentialsFeature"),
       view: credentials.credentialsView,
     },
     settingsHub: {

@@ -33,7 +33,7 @@ export interface DeepSeekBalanceCheckResult {
 export interface OcrCredentialCheckResult {
   summary?: string;
   ok?: boolean;
-  status?: string;
+  status?: string | number;
 }
 
 export interface LibraryEventPortLike {
@@ -95,7 +95,7 @@ export interface EnsureOcrCredentialsForSubmitOptions {
   workflowNeedsCredentials?: (workflow?: string) => boolean | unknown;
   ensureOcrCredentialsReady?: (options?: {
     onMissingToken?: () => void;
-    onInvalidToken?: (result?: OcrCredentialCheckResult) => void;
+    onInvalidToken?: (result?: OcrCredentialCheckResult | null) => void;
   }) => Promise<boolean | unknown> | boolean | unknown;
   openBrowserCredentialsDialog?: (options?: unknown) => void;
   setText: SetTextFn;
@@ -111,7 +111,7 @@ export interface PublishSubmitSuccessOptions {
     jobId: string,
     meta?: { startedAt?: string },
   ) => void;
-  startJobPolling?: (jobId?: string) => void;
+  startJobPolling?: (jobId: string) => void;
   libraryEventPort?: LibraryEventPortLike;
   documentRef?: DocumentRefLike | Document | null;
   windowRef?: WindowRefLike | Window | null;
@@ -123,13 +123,13 @@ export interface RunSubmitFlowOptions {
   desktopMode?: boolean;
   configPort?: AppActionsConfigPort;
   state?: unknown;
-  apiPrefix?: string;
+  apiPrefix: string;
   uploadId?: string;
   desktopConfigured?: boolean;
   openSetupDialog?: () => void;
   openBrowserCredentialsDialog?: (options?: unknown) => void;
   setText: SetTextFn;
-  submitJobRequest: (apiPrefix?: unknown, payload?: unknown) => Promise<unknown> | unknown;
+  submitJobRequest: (apiPrefix: string, payload: unknown) => Promise<unknown> | unknown;
   workflowNeedsUpload?: (workflow?: string) => boolean | unknown;
   workflowNeedsCredentials?: (workflow?: string) => boolean | unknown;
   currentRenderSourceJobId?: () => string | unknown;
@@ -144,7 +144,7 @@ export interface RunSubmitFlowOptions {
   notifyPreflightWarning?: (message: string) => void;
   syncCurrentJobSnapshot?: PublishSubmitSuccessOptions["syncCurrentJobSnapshot"];
   renderJob?: (payload?: unknown) => void;
-  startJobPolling?: (jobId?: string) => void;
+  startJobPolling?: (jobId: string) => void;
   libraryEventPort?: LibraryEventPortLike;
   isMissingUploadError?: (error: unknown) => boolean;
   handleMissingUploadError?: () => void;

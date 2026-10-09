@@ -20,7 +20,7 @@ export async function ensureOcrCredentialValidationReady({
   legacyRuntimePort,
   legacyValidationCachePort,
 }: {
-  apiPrefix?: string;
+  apiPrefix: string;
   state?: unknown;
   providerId: string;
   credentials: CredentialsFields;

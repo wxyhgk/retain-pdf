@@ -48,22 +48,20 @@ export type GlossariesFeature = {
 };
 
 /**
- * 装配层以 AsyncFn（返回 Promise<unknown>）注入 API 函数，故这里只约定调用形态；
- * 结果在各调用点按已知形状读取（见 GlossaryDetail / GlossaryListItem 等）。
+ * 术语表接口（签名与 platform/api 的实现一致，测试替身按同一签名写）。
+ * 返回值在各调用点按已知形状读取（见 GlossaryDetail / GlossaryListItem 等）。
  */
-type GlossaryApiCall = (...args: unknown[]) => Promise<unknown>;
-
-/** mountGlossariesFeature 的依赖：API 函数 + 视图端口。 */
 export type GlossariesFeatureDeps = {
-  apiPrefix?: string;
-  fetchGlossaries: GlossaryApiCall;
-  fetchGlossary: GlossaryApiCall;
-  createGlossary: GlossaryApiCall;
-  updateGlossary: GlossaryApiCall;
-  deleteGlossary: GlossaryApiCall;
-  exportGlossaryCsv: GlossaryApiCall;
-  parseGlossaryCsv: GlossaryApiCall;
-  refreshWorkflowGlossaries?: (options?: unknown) => unknown;
+  apiPrefix: string;
+  fetchGlossaries: (apiPrefix: string) => Promise<unknown>;
+  fetchGlossary: (glossaryId: string, apiPrefix?: string) => Promise<unknown>;
+  createGlossary: (apiPrefix: string, payload: unknown) => Promise<unknown>;
+  updateGlossary: (apiPrefix: string, glossaryId: string, payload: unknown) => Promise<unknown>;
+  deleteGlossary: (apiPrefix: string, glossaryId: string) => Promise<unknown>;
+  exportGlossaryCsv: (apiPrefix: string, glossaryId: string) => Promise<unknown>;
+  parseGlossaryCsv: (apiPrefix: string, csvText: string) => Promise<unknown>;
+  /** 术语表增删改后让「添加 PDF」里的术语表下拉跟着刷新（ingest 的 loadGlossaryOptions）。 */
+  refreshWorkflowGlossaries?: (options: { force?: boolean; selectedId?: string }) => unknown;
   view?: unknown;
   viewPort: GlossariesViewPort;
 };

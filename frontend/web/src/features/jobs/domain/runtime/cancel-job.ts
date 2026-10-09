@@ -81,7 +81,7 @@ export function createCancelCurrentJob({
       // 请求失败/权威回包超时都允许用户重试；成功时保持锁定，直到权威状态变为 canceled。
       shellViewPort.setCancelDisabled(false);
       const message = describeCancelError(err);
-      if (err?.name === "CancelFetchTimeoutError") {
+      if ((err as { name?: string } | null)?.name === "CancelFetchTimeoutError") {
         setText("error-box", `${message}若任务仍在运行，可重试取消。`);
       } else {
         setText("error-box", message);

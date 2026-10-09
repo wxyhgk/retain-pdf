@@ -59,7 +59,7 @@ export async function handleBrowserDeepSeekValidate({
   credentialsStatePort = defaultCredentialsStatePort,
   viewPort,
 }: {
-  apiPrefix?: string;
+  apiPrefix: string;
   state?: unknown;
   defaultModelApiKey?: () => string;
   validateDeepSeekToken: RunDeepSeekConnectivityCheckOptions["validateDeepSeekToken"];

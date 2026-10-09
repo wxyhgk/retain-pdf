@@ -64,7 +64,7 @@ export function createUploadViewFeature({
     store.actions.setTileReady(ready);
   }
 
-  function setUploadActionSlotVisible(visible: boolean) {
+  function setUploadActionSlotVisible(visible?: boolean) {
     store.actions.setActionSlotVisible(visible);
   }
 

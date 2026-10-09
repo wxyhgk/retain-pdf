@@ -10,7 +10,7 @@ type UseCollectionsListArgs = {
 };
 
 export function useCollectionsList({ controller, version, setOpenFolder }: UseCollectionsListArgs) {
-  const [collections, setCollections] = useState([]);
+  const [collections, setCollections] = useState<CollectionRecord[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState("");
   const listRequestSeqRef = useRef(0);
@@ -20,7 +20,7 @@ export function useCollectionsList({ controller, version, setOpenFolder }: UseCo
   // 被大任务短暂拖住时,一次失败不该直接把用户拍在错误态——列表与文件夹
   // 内容各自动重试一次(1.5s),仍失败才亮错误 + 手动重试入口。
   const listAutoRetriedRef = useRef(false);
-  const reloadRef = useRef(null);
+  const reloadRef = useRef<(() => Promise<void> | void) | null>(null);
 
   const reload = useCallback((options: { soft?: boolean } = {}) => {
     // soft：version bump / 二次拉取时保留旧列表，不整表切成 loading（分类 tab 闪一下）
@@ -34,7 +34,7 @@ export function useCollectionsList({ controller, version, setOpenFolder }: UseCo
     setListError("");
     return controller
       .listCollections()
-      .then(({ collections: items = [] } = {}) => {
+      .then(({ collections: items = [] }: { collections?: CollectionRecord[] } = {}) => {
         if (requestSeq !== listRequestSeqRef.current) return;
         listAutoRetriedRef.current = false;
         listLoadedRef.current = true;
@@ -44,8 +44,7 @@ export function useCollectionsList({ controller, version, setOpenFolder }: UseCo
           if (!current) {
             return current;
           }
-          const stillExists = items.some((item) => item.collection_id === current.collection_id);
-          return stillExists ? items.find((item) => item.collection_id === current.collection_id) : null;
+          return items.find((item) => item.collection_id === current.collection_id) ?? null;
         });
         setListLoading(false);
       })

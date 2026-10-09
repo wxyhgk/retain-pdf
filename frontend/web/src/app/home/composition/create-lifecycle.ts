@@ -16,6 +16,7 @@
 //   disposeWorkflowDialogEvents → disposeDocumentEvents（解绑 retryStage / returnHome）→
 //   jobRuntimeFeature.stopPolling()。事件生产者/消费者对照见 js/contracts/app-contract.ts。
 
+import { mountedFeature } from "./feature-registry.js";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 import { requestedReaderJobIdFromLocation } from "@/features/reader/domain.js";
 import { readActiveJobId } from "@/features/jobs/index.js";
@@ -69,9 +70,9 @@ export function createLifecycle({
       const detail = hasRecordDetail(event) ? event.detail : {};
       const stage = `${detail.stage || ""}`.trim();
       const jobId = `${detail.jobId || detail.job_id || ""}`.trim();
-      if (stage) features.jobRuntimeFeature.retryStage(stage, jobId ? { jobId } : {});
+      if (stage) mountedFeature(features, "jobRuntimeFeature").retryStage(stage, jobId ? { jobId } : {});
     };
-    const onReturnHome = () => features.jobRuntimeFeature.returnToHome();
+    const onReturnHome = () => mountedFeature(features, "jobRuntimeFeature").returnToHome();
     documentRef.addEventListener(APP_EVENTS.retryStage, onRetryStage);
     documentRef.addEventListener(APP_EVENTS.returnHome, onReturnHome);
     return () => {
@@ -88,7 +89,7 @@ export function createLifecycle({
     if (!jobId) return;
     // 普通首页刷新没有 job_id 查询参数。此时必须从持久化的活动任务恢复
     // currentJobStore，否则后台仍在执行，详情页却会表现成“任务断开”。
-    features.jobRuntimeFeature.startPolling(jobId, fromActiveSession && !fromReader && !fromQuery
+    mountedFeature(features, "jobRuntimeFeature").startPolling(jobId, fromActiveSession && !fromReader && !fromQuery
       ? { silent: true, showWorkflow: false, publishLibrary: false, recovering: true }
       : undefined);
   }

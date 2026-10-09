@@ -13,6 +13,7 @@ import {
   buildApiEndpoint,
   submitJobRequest,
 } from "@/platform/api/index.js";
+import { mountedFeature } from "./feature-registry.js";
 import type {
   AppActionsFeature,
   HomeBridge,
@@ -34,7 +35,7 @@ type StatusCardPresenterPort = {
 };
 
 type LibraryEventPort = {
-  requestRefresh?: (opts?: unknown) => void;
+  requestRefresh?: (opts?: { delay?: number; force?: boolean; bypassThrottle?: boolean }) => void;
 };
 
 type SettingsDialogStore = {
@@ -44,7 +45,8 @@ type SettingsDialogStore = {
 type CreateAppActionsArgs = {
   features: HomeFeatures;
   bridge: Pick<HomeBridge, "resetUploadedFile">;
-  setText: (id: string, value?: string) => void;
+  /** 值多数是文案；error-box 还可能收到错误诊断对象（见 state/text-store.ts）。 */
+  setText: (id: string, value?: unknown) => void;
   workflowView: WorkflowViewPort;
   uploadView: UploadViewPort;
   uploadStatePort: UploadStatePort;
@@ -90,11 +92,11 @@ export function createAppActions({
   };
 
   // credentials / workflow 在本函数调用前已挂到 features
-  const creds = () => features.browserCredentialsFeature;
-  const workflow = () => features.workflowFeature;
-  const upload = () => features.uploadFeature;
-  const jobRuntime = () => features.jobRuntimeFeature;
-  const isOcrOnly = () => Boolean(workflow()?.isOcrOnly?.());
+  const creds = () => mountedFeature(features, "browserCredentialsFeature");
+  const workflow = () => mountedFeature(features, "workflowFeature");
+  const upload = () => mountedFeature(features, "uploadFeature");
+  const jobRuntime = () => mountedFeature(features, "jobRuntimeFeature");
+  const isOcrOnly = () => Boolean(features.workflowFeature?.isOcrOnly?.());
 
   // apiBase 可由 configPort 替代；下层签名仍标成必填。
   const appActionsFeature = mountAppActionsFeature({
@@ -123,7 +125,7 @@ export function createAppActions({
       },
       collectRunPayload: () => workflow().collectRunPayload(),
       validateBeforeSubmit: () => upload().validatePageRanges() ?? true,
-      ensureOcrCredentialsReady: (options?: unknown) => creds().ensureOcrCredentialsReady(options),
+      ensureOcrCredentialsReady: (options) => creds().ensureOcrCredentialsReady(options),
       hasBrowserCredentials: () => {
         if (isOcrOnly()) return creds().hasOcrCredentials();
         return Boolean(creds().hasBrowserCredentials());
@@ -134,7 +136,7 @@ export function createAppActions({
         const opts = (options && typeof options === "object" ? options : {}) as { setupMode?: boolean };
         settingsHubDialogStore?.open?.({ tab: "api", setupMode: Boolean(opts.setupMode) });
       },
-      refreshDeepSeekBalance: (options?: unknown) => creds().refreshDeepSeekBalance(options),
+      refreshDeepSeekBalance: (options) => creds().refreshDeepSeekBalance(options),
       // provider 预检（余额 / OCR Token）已不再挡在提交前面，任务先落盘。
       // 预检结果因此不能再写 error-box（提交成功后弹窗已关、跳到书籍详情），
       // 改用 toast：任务照跑，问题也不至于要等流水线跑到那一步才暴露。

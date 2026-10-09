@@ -3,6 +3,7 @@
 
 import { runOcrTokenValidation } from "./validation.js";
 import type {
+  ProviderValidationResult,
   RunDeepSeekBalanceCheckOptions,
   RunDeepSeekConnectivityCheckOptions,
   RunOcrTokenValidationOptions,
@@ -37,7 +38,7 @@ type DeepSeekViewPort = {
 
 export interface EnsureOcrReadyOptions {
   onMissingToken?: () => void;
-  onInvalidToken?: (result?: { ok?: boolean } | null) => void;
+  onInvalidToken?: (result?: ProviderValidationResult | null) => void;
 }
 
 export function createCredentialValidationFlow({
@@ -58,7 +59,7 @@ export function createCredentialValidationFlow({
   legacyRuntimePort,
   legacyValidationCachePort,
 }: {
-  apiPrefix?: string;
+  apiPrefix: string;
   state?: unknown;
   viewPort: ValidationViewPort;
   deepSeekViewPort: DeepSeekViewPort;

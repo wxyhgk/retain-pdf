@@ -66,3 +66,8 @@ export interface StatusDetailRuntimePorts {
   secondaryResourcePort: StatusDetailSecondaryResourcePort;
   renderContextPort: StatusDetailJobRenderContextPort;
 }
+
+/** 任务详情弹窗的打开参数（job-detail 的 dialog store 与 ui 层 context 共用）。 */
+export type StatusDetailDialogPayload = {
+  activeTab: string;
+};

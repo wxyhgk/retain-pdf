@@ -24,6 +24,8 @@ import {
 import { Button } from "@/ui/Button.jsx";
 
 import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
+import type { DocumentRecord } from "@/platform/api/index.js";
+import type { CollectionRecord } from "../domain/controller.js";
 import type {
   CollectionsController,
   CollectionsDialogStore,
@@ -42,16 +44,16 @@ export function CollectionDialog({
   dialogStore,
   reloadSignal,
 }: CollectionDialogProps) {
-  const dialogState = useDialogState(dialogStore);
+  const dialogState = useDialogState<CollectionRecord | null>(dialogStore);
   const open = Boolean(dialogState.open);
   const editing = dialogState.payload;
   const isCreate = !editing;
   const { onCloseAutoFocus } = useDialogReturnFocus(open);
 
   const [name, setName] = useState("");
-  const [allDocuments, setAllDocuments] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [originalIds, setOriginalIds] = useState([]);
+  const [allDocuments, setAllDocuments] = useState<DocumentRecord[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [originalIds, setOriginalIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -84,7 +86,7 @@ export function CollectionDialog({
         if (cancelled) {
           return;
         }
-        setError(err?.message || "加载书目失败，请稍后重试。");
+        setError((err as { message?: string } | null)?.message || "加载书目失败，请稍后重试。");
       })
       .finally(() => {
         if (cancelled) {
@@ -101,13 +103,13 @@ export function CollectionDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editing?.collection_id]);
 
-  function handleOpenChange(nextOpen) {
+  function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
       dialogStore.close();
     }
   }
 
-  function toggleDocument(documentId) {
+  function toggleDocument(documentId: string) {
     setSelectedIds((prev) => (prev.includes(documentId)
       ? prev.filter((id) => id !== documentId)
       : [...prev, documentId]));
@@ -142,13 +144,17 @@ export function CollectionDialog({
       reloadSignal.actions.bump();
       dialogStore.close();
     } catch (err) {
-      setError(err?.message || (isCreate ? "新建合集失败，请稍后重试。" : "保存失败，请稍后重试。"));
+      setError((err as { message?: string } | null)?.message || (isCreate ? "新建合集失败，请稍后重试。" : "保存失败，请稍后重试。"));
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete() {
+    // 删除按钮只在编辑已有合集时出现，这里仅为收窄类型。
+    if (!editing) {
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -156,7 +162,7 @@ export function CollectionDialog({
       reloadSignal.actions.bump();
       dialogStore.close();
     } catch (err) {
-      setError(err?.message || "删除合集失败，请稍后重试。");
+      setError((err as { message?: string } | null)?.message || "删除合集失败，请稍后重试。");
       setSaving(false);
     } finally {
       setConfirmDeleteOpen(false);
@@ -199,12 +205,12 @@ export function CollectionDialog({
                 ) : (
                   <ul className="collection-doc-list">
                     {allDocuments.map((doc) => (
-                      <li key={doc.document_id}>
+                      <li key={doc.document_id ?? ""}>
                         <label className="collection-doc-item">
                           <input
                             type="checkbox"
-                            checked={selectedIds.includes(doc.document_id)}
-                            onChange={() => toggleDocument(doc.document_id)}
+                            checked={selectedIds.includes(doc.document_id ?? "")}
+                            onChange={() => toggleDocument(doc.document_id ?? "")}
                           />
                           <span className="collection-doc-title" title={doc.title}>{doc.title || doc.source_filename}</span>
                         </label>

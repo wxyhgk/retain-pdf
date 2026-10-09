@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { CollectionsController } from "./types.js";
 import type { CollectionRecord } from "../domain/controller.js";
+import type { LibraryCardItem } from "@/features/library/index.js";
 
 type UseCollectionPreviewsArgs = {
   collections: CollectionRecord[];
@@ -11,7 +12,7 @@ type UseCollectionPreviewsArgs = {
 };
 
 export function useCollectionPreviews({ collections, controller, version }: UseCollectionPreviewsArgs) {
-  const [previews, setPreviews] = useState({});
+  const [previews, setPreviews] = useState<Record<string, LibraryCardItem[]>>({});
 
   const collectionIdsKey = collections.map((item) => item.collection_id).join(",");
   useEffect(() => {

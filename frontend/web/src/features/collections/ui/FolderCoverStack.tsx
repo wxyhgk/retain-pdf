@@ -3,10 +3,11 @@
 // BookCard 同一个 useRecentJobCover hook(同一份 objectURL 缓存,不会
 // 因为这里多渲染一份而重复请求)。
 import { useRecentJobCover } from "@/features/library/index.js";
+import type { LibraryCardItem } from "@/features/library/index.js";
 
 const MAX_STACK = 4;
 
-function FolderCoverStackLayer({ item, index, total }) {
+function FolderCoverStackLayer({ item, index, total }: { item: LibraryCardItem; index: number; total: number }) {
   const coverUrl = useRecentJobCover(item);
   const z = 10 + (total - 1 - index);
   const rot = (index - (total - 1) / 2) * -5;
@@ -36,7 +37,7 @@ function FolderCoverStackLayer({ item, index, total }) {
   );
 }
 
-export function FolderCoverStack({ items }) {
+export function FolderCoverStack({ items }: { items: LibraryCardItem[] | undefined }) {
   const stack = (Array.isArray(items) ? items : []).slice(0, MAX_STACK);
   return (
     <div className="category-card-stack">

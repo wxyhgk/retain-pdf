@@ -284,10 +284,7 @@ export type LibraryActions = RecentJobActions & {
   retryJobStage: LibraryController["retryJobStage"];
   cancelJob: LibraryController["cancelJob"];
   deleteDocument: LibraryController["deleteDocument"];
-  /** 选择集可能是 unknown[]（view state），参数放宽 */
-  deleteDocuments: (
-    documentIds?: Array<string | null | undefined | unknown>,
-  ) => Promise<DeleteDocumentsResult>;
+  deleteDocuments: LibraryController["deleteDocuments"];
   deleteCard: LibraryController["deleteCard"];
   openBookDetail: LibraryController["openBookDetail"];
   updateDocument: LibraryController["updateDocument"];

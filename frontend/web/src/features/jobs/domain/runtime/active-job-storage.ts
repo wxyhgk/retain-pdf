@@ -16,7 +16,7 @@ export function readActiveJobId() {
   }
 }
 
-export function writeActiveJobId(jobId) {
+export function writeActiveJobId(jobId: unknown) {
   const normalized = `${jobId || ""}`.trim();
   try {
     if (normalized) {

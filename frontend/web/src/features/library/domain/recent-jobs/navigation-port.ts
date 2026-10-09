@@ -1,3 +1,4 @@
+import type { ReaderAnchor } from "@/platform/navigation/pages.js";
 import { createRecentJobsReaderPort } from "./reader-port.js";
 import { createRecentJobsRuntimePort } from "./job-runtime-port.js";
 
@@ -9,7 +10,7 @@ export type NavigationJobRuntimePort = {
 };
 
 export type NavigationReaderPort = {
-  openReader?: (jobId: string, anchor: unknown, documentId: string, options: { pinJob?: boolean }) => unknown;
+  openReader?: (jobId: string, anchor: ReaderAnchor | null, documentId: string, options: { pinJob?: boolean }) => unknown;
 };
 
 export type RecentJobsNavigationPort = ReturnType<typeof createRecentJobsNavigationPort>;
