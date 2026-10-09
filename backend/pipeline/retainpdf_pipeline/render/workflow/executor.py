@@ -9,6 +9,9 @@ from retainpdf_pipeline.foundation.config import layout
 from retainpdf_pipeline.foundation.config import runtime
 from retainpdf_pipeline.foundation.config.output_layout import ARTIFACTS_DIR_NAME
 from retainpdf_pipeline.render.prepare.hooks import prepare_hooks
+from retainpdf_pipeline.render.prepare.routes import route_prepare_needs
+from retainpdf_pipeline.render.visual_profile.io import visual_profile_path_from_prewarm_manifest
+from retainpdf_pipeline.render.workflow.route_visual_profile import build_route_visual_profile
 from retainpdf_pipeline.render.prepare.store import PREPARE_DIR_NAME
 from retainpdf_pipeline.render.render_plan import RenderPlan
 from retainpdf_pipeline.render.workflow.context import RenderExecutionContext
@@ -124,6 +127,10 @@ def execute_render_plan(
         else Path(render_plan.render_inputs.translations_dir).parent / ARTIFACTS_DIR_NAME / PREPARE_DIR_NAME
     )
     hooks = prepare_hooks(prepare_dir)
+    # 路线声明：rpr_fit 不要完整版式 payload（⑤），只读不写 prewarm manifest，底色 / 字色单独算。
+    needs = route_prepare_needs(render_engine)
+    lean = not needs.payload_layout and not no_cache and render_prewarm_manifest_path is not None
+    lean_visual_profile_path: Path | None = None
     render_source_pdf = (
         try_load_prewarmed_render_source_pdf(
             manifest_path=render_prewarm_manifest_path,
@@ -187,7 +194,7 @@ def execute_render_plan(
             if payload_prewarm is not None
             else None
         )
-        if pdf_structure_profile_path is None and render_prewarm_manifest_path is not None:
+        if pdf_structure_profile_path is None and render_prewarm_manifest_path is not None and not lean:
             pdf_structure_profile_path, _pdf_structure_profile = ensure_pdf_structure_profile(
                 source_pdf_path=render_plan.render_inputs.source_pdf_path,
                 translated_pages=render_plan.selected_pages,
@@ -220,9 +227,11 @@ def execute_render_plan(
         )
         if not no_cache:
             prepare_progress.step(3)
+        if lean:
+            lean_visual_profile_path = _route_visual_profile(render_plan, prepare_dir, render_prewarm_manifest_path)
         sync_payload_prewarm = (
             {}
-            if no_cache
+            if no_cache or lean
             else build_full_sync_payload_prewarm(
                 manifest_path=render_prewarm_manifest_path,
                 prepared=render_source_pdf,
@@ -236,7 +245,7 @@ def execute_render_plan(
         prepare_progress.step(4)
         merged_sync_payload_prewarm = (
             {}
-            if no_cache
+            if no_cache or lean
             else build_sync_payload_prewarm(
                 manifest_path=render_prewarm_manifest_path,
                 prepared=render_source_pdf,
@@ -245,7 +254,7 @@ def execute_render_plan(
         )
         render_source_sync_cache_written = (
             False
-            if no_cache
+            if no_cache or lean
             else persist_sync_render_source_prewarm(
                 manifest_path=render_prewarm_manifest_path,
                 prepared=render_source_pdf,
@@ -260,11 +269,14 @@ def execute_render_plan(
                 payload_prewarm=merged_sync_payload_prewarm,
             )
         )
-        if payload_prewarm is None and not no_cache:
+        if payload_prewarm is None and not no_cache and not lean:
             payload_prewarm = render_payload_prewarm_from_manifest_payload(
                 merged_sync_payload_prewarm,
                 document_analysis=getattr(render_source_pdf, "document_analysis", None),
             )
+    elif payload_prewarm is None and lean:
+        prepare_progress.step(3)
+        lean_visual_profile_path = _route_visual_profile(render_plan, prepare_dir, render_prewarm_manifest_path)
     elif payload_prewarm is None and not no_cache and render_prewarm_manifest_path is not None:
         prepare_progress.step(3)
         sync_prepare_started = time.perf_counter()
@@ -361,7 +373,7 @@ def execute_render_plan(
         visual_profile_path=(
             payload_prewarm.visual_profile_path
             if payload_prewarm is not None
-            else None
+            else lean_visual_profile_path
         ),
         pdf_structure_profile_path=(
             payload_prewarm.pdf_structure_profile_path
@@ -398,6 +410,7 @@ def execute_render_plan(
             "render_document_analysis_hit": render_document_analysis_hit,
             "render_source_prewarm_manifest": str(render_prewarm_manifest_path or ""),
             "render_source_sync_cache_written": render_source_sync_cache_written,
+            "render_prepare_lean": lean,
             "render_no_cache": no_cache,
             "source_cleanup_strategy": cleanup_strategy,
             "source_text_precleaned_pages": len(render_source_pdf.source_text_precleaned_page_indices),
@@ -418,6 +431,15 @@ def execute_render_plan(
         }
         for temp_source_path in render_source_pdf.temp_paths:
             temp_source_path.unlink(missing_ok=True)
+
+
+def _route_visual_profile(render_plan: RenderPlan, prepare_dir: Path, manifest_path: Path) -> Path | None:
+    return build_route_visual_profile(
+        prepare_dir=prepare_dir,
+        source_pdf_path=render_plan.render_inputs.source_pdf_path,
+        translated_pages=render_plan.selected_pages,
+        target_path=visual_profile_path_from_prewarm_manifest(manifest_path),
+    )
 
 
 def _dispatch_render_mode(

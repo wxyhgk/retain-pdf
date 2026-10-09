@@ -344,3 +344,14 @@ def test_pdf_structure_profile_follows_the_ocr_boxes(tmp_path: Path) -> None:
         source_pdf_path=pdf, translated_pages=moved, manifest_path=manifest_path, prepare_hooks=hooks
     )
     assert fresh.pages[0].item_hits == ()
+
+
+def test_route_declarations() -> None:
+    from retainpdf_pipeline.render.prepare.routes import FULL_PREPARE
+    from retainpdf_pipeline.render.prepare.routes import route_prepare_needs
+
+    assert route_prepare_needs("typst") == FULL_PREPARE
+    assert route_prepare_needs("rpr") == FULL_PREPARE
+    assert route_prepare_needs("") == FULL_PREPARE and route_prepare_needs(None) == FULL_PREPARE
+    lean = route_prepare_needs("rpr_fit")
+    assert not lean.payload_layout and lean.visual_profile and lean.obstacle_scan

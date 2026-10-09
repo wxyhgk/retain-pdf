@@ -56,48 +56,11 @@ def build_payload_prewarm(
 ) -> dict[str, Any]:
     started = time.perf_counter()
     timings: dict[str, float] = {}
-    prepared_pages = seed_pages_for_payload_prewarm(translated_pages)
-    first_line_indent_by_item_id: dict[str, float] = {}
-    effective_inner_bbox_by_item_id: dict[str, list[float]] = {}
-    indent_stats: dict[str, Any] = {
-        "line_hits": 0,
-        "pixmap_candidates": 0,
-        "pixmap_checked": 0,
-        "pixmap_hits": 0,
-        "pixmap_budget_exhausted": 0,
-        "pixmap_disabled_candidates": 0,
-    }
     geometry_started = time.perf_counter()
-    pixmap_indent_deadline = geometry_started + _pixmap_first_line_indent_max_seconds()
-    page_widths = page_widths_by_index(source_pdf_path)
-    with fitz.open(source_pdf_path) as source_doc:
-        pixmap_policy = _pixmap_first_line_indent_policy(page_count=len(source_doc))
-        indent_stats["pixmap_enabled"] = pixmap_policy["enabled"]
-        indent_stats["pixmap_reason"] = pixmap_policy["reason"]
-        indent_stats["pixmap_auto_max_pages"] = PIXMAP_INDENT_AUTO_ENABLE_MAX_PAGES
-        for page_idx, items in prepared_pages.items():
-            page_width = page_widths.get(page_idx)
-            try:
-                metrics = collect_page_seed_metrics(items, page_width=page_width)
-            except Exception as exc:
-                print(f"render payload prewarm: geometry build failed page={page_idx + 1} {type(exc).__name__}: {exc}", flush=True)
-                continue
-            for index, bbox in metrics.effective_inner_bboxes.items():
-                if index < 0 or index >= len(items):
-                    continue
-                item_id = str(items[index].get("item_id", "") or "")
-                if item_id:
-                    effective_inner_bbox_by_item_id[item_id] = [round(float(value), 3) for value in bbox]
-            collect_first_line_indent_lookup(
-                source_doc=source_doc,
-                page_idx=page_idx,
-                items=items,
-                metrics=metrics,
-                sink=first_line_indent_by_item_id,
-                stats=indent_stats,
-                pixmap_deadline=pixmap_indent_deadline,
-                pixmap_policy=pixmap_policy,
-            )
+    prepared_pages, first_line_indent_by_item_id, effective_inner_bbox_by_item_id, indent_stats = build_payload_geometry(
+        source_pdf_path=source_pdf_path,
+        translated_pages=translated_pages,
+    )
     timings["geometry_indent"] = time.perf_counter() - geometry_started
     structure_started = time.perf_counter()
     pdf_structure_profile_path, pdf_structure_profile = ensure_pdf_structure_profile(
@@ -244,6 +207,60 @@ def build_payload_prewarm(
         "prepared_overlay_pages": prepared_overlay_pages_to_manifest(color_adapted_pages or {}),
         "overlay_source_path": "",
     }
+
+
+def build_payload_geometry(
+    *,
+    source_pdf_path: Path,
+    translated_pages: dict[int, list[dict]],
+) -> tuple[dict[int, list[dict]], dict[str, float], dict[str, list[float]], dict[str, Any]]:
+    """版式几何：每块的有效内框与首行缩进（种子估算 + 必要时看像素）。
+
+    返回 (种子化的页面, 首行缩进, 有效内框, 缩进统计)。payload 预热与只要底色 / 字色的路线共用。
+    """
+    prepared_pages = seed_pages_for_payload_prewarm(translated_pages)
+    first_line_indent_by_item_id: dict[str, float] = {}
+    effective_inner_bbox_by_item_id: dict[str, list[float]] = {}
+    indent_stats: dict[str, Any] = {
+        "line_hits": 0,
+        "pixmap_candidates": 0,
+        "pixmap_checked": 0,
+        "pixmap_hits": 0,
+        "pixmap_budget_exhausted": 0,
+        "pixmap_disabled_candidates": 0,
+    }
+    geometry_started = time.perf_counter()
+    pixmap_indent_deadline = geometry_started + _pixmap_first_line_indent_max_seconds()
+    page_widths = page_widths_by_index(source_pdf_path)
+    with fitz.open(source_pdf_path) as source_doc:
+        pixmap_policy = _pixmap_first_line_indent_policy(page_count=len(source_doc))
+        indent_stats["pixmap_enabled"] = pixmap_policy["enabled"]
+        indent_stats["pixmap_reason"] = pixmap_policy["reason"]
+        indent_stats["pixmap_auto_max_pages"] = PIXMAP_INDENT_AUTO_ENABLE_MAX_PAGES
+        for page_idx, items in prepared_pages.items():
+            page_width = page_widths.get(page_idx)
+            try:
+                metrics = collect_page_seed_metrics(items, page_width=page_width)
+            except Exception as exc:
+                print(f"render payload prewarm: geometry build failed page={page_idx + 1} {type(exc).__name__}: {exc}", flush=True)
+                continue
+            for index, bbox in metrics.effective_inner_bboxes.items():
+                if index < 0 or index >= len(items):
+                    continue
+                item_id = str(items[index].get("item_id", "") or "")
+                if item_id:
+                    effective_inner_bbox_by_item_id[item_id] = [round(float(value), 3) for value in bbox]
+            collect_first_line_indent_lookup(
+                source_doc=source_doc,
+                page_idx=page_idx,
+                items=items,
+                metrics=metrics,
+                sink=first_line_indent_by_item_id,
+                stats=indent_stats,
+                pixmap_deadline=pixmap_indent_deadline,
+                pixmap_policy=pixmap_policy,
+            )
+    return prepared_pages, first_line_indent_by_item_id, effective_inner_bbox_by_item_id, indent_stats
 
 
 def ensure_pdf_structure_profile(

@@ -22,11 +22,15 @@ from retainpdf_pipeline.render.visual_profile import build_document_visual_profi
 from retainpdf_pipeline.render.visual_profile import document_visual_profile_from_manifest
 from retainpdf_pipeline.render.visual_profile import document_visual_profile_to_manifest
 from retainpdf_pipeline.render.visual_profile import visual_sampling_signature
+from retainpdf_pipeline.render.visual_profile import write_document_visual_profile
 from retainpdf_pipeline.render.visual_profile.contracts import VISUAL_PROFILE_ALGORITHM_VERSION
+from retainpdf_pipeline.render.visual_profile.io import VISUAL_PROFILE_MANIFEST_NAME
 
 STEP = "visual_profile"
-VERSION = f"1:{VISUAL_PROFILE_ALGORITHM_VERSION}"
+VERSION = f"2:{VISUAL_PROFILE_ALGORITHM_VERSION}"
 OUTPUT = "visual_profile.exact.json"
+# 对外格式（visual_profile.v1.json，颜色 5 位小数）：交给引擎等读文件的下游，与原来 prewarm 写的逐字节相同。
+PUBLIC_OUTPUT = VISUAL_PROFILE_MANIFEST_NAME
 
 VisualProfileBuilder = Callable[[Path, dict[int, list[dict]]], DocumentVisualProfile]
 
@@ -42,7 +46,9 @@ def run_visual_profile(
         profile = build_document_visual_profile(source_pdf_path, pages)
         output = directory / OUTPUT
         output.write_text(json.dumps(document_visual_profile_to_manifest(profile, exact=True)), encoding="utf-8")
-        return {OUTPUT: output}
+        public = directory / PUBLIC_OUTPUT
+        write_document_visual_profile(public, profile)
+        return {OUTPUT: output, PUBLIC_OUTPUT: public}
 
     record = store.run(STEP, VERSION, step_inputs(source_pdf_path=source_pdf_path, pages=pages), build)
     profile = document_visual_profile_from_manifest(json.loads(record.output(OUTPUT).read_text(encoding="utf-8")))
@@ -61,4 +67,4 @@ def visual_profile_builder(prepare_dir: Path | None) -> VisualProfileBuilder:
     return builder
 
 
-__all__ = ["OUTPUT", "STEP", "VERSION", "VisualProfileBuilder", "run_visual_profile", "step_inputs", "visual_profile_builder"]
+__all__ = ["OUTPUT", "PUBLIC_OUTPUT", "STEP", "VERSION", "VisualProfileBuilder", "run_visual_profile", "step_inputs", "visual_profile_builder"]

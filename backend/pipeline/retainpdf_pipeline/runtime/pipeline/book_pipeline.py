@@ -13,6 +13,7 @@ from retainpdf_pipeline.render.render_stage import run_render_stage
 from retainpdf_pipeline.translate.translation_stage import translate_book_pipeline
 from retainpdf_pipeline.render.prepare.page_analysis import page_analysis
 from retainpdf_pipeline.render.prepare.hooks import prepare_hooks
+from retainpdf_pipeline.render.prepare.routes import route_prepare_needs
 from retainpdf_pipeline.render.prepare.store import PREPARE_DIR_NAME
 from retainpdf_pipeline.render.source.prewarm import prewarm_manifest_path_from_artifacts_dir
 from retainpdf_pipeline.render.source.prewarm import RenderPrewarmHandle
@@ -154,23 +155,24 @@ def run_book_pipeline(
         translated_pages_map=translation_summary["translated_pages_map"],
         document_analysis=render_document_analysis,
     )
-    render_preprocess_handle = start_render_source_prewarm(
-        RenderPrewarmSpec(
-            source_pdf_path=source_pdf_path,
-            output_pdf_path=output_pdf_path,
-            artifacts_dir=output_dir.parent / ARTIFACTS_DIR_NAME,
-            translated_pages=translation_summary["translated_pages_map"],
-            render_mode=render_mode,
-            start_page=translation_summary["start_page"],
-            end_page=translation_summary["end_page"],
-            pdf_compress_dpi=pdf_compress_dpi,
-            source_cleanup_strategy=source_cleanup_strategy,
-            document_analysis=render_document_analysis,
-            include_source_cleanup=effective_prewarm_render_mode != "overlay",
-            prepare_hooks=prepare_hooks(output_dir.parent / ARTIFACTS_DIR_NAME / PREPARE_DIR_NAME),
+    # 路线声明：rpr_fit 不要完整版式 payload，不做翻译后的 prewarm，渲染阶段按步骤缓存取所需。
+    if route_prepare_needs(render_engine).payload_layout:
+        _run_post_translation_render_prewarm(
+            RenderPrewarmSpec(
+                source_pdf_path=source_pdf_path,
+                output_pdf_path=output_pdf_path,
+                artifacts_dir=output_dir.parent / ARTIFACTS_DIR_NAME,
+                translated_pages=translation_summary["translated_pages_map"],
+                render_mode=render_mode,
+                start_page=translation_summary["start_page"],
+                end_page=translation_summary["end_page"],
+                pdf_compress_dpi=pdf_compress_dpi,
+                source_cleanup_strategy=source_cleanup_strategy,
+                document_analysis=render_document_analysis,
+                include_source_cleanup=effective_prewarm_render_mode != "overlay",
+                prepare_hooks=prepare_hooks(output_dir.parent / ARTIFACTS_DIR_NAME / PREPARE_DIR_NAME),
+            )
         )
-    )
-    render_preprocess_handle.wait()
     render_preprocess_elapsed = time.perf_counter() - render_preprocess_started
 
     save_started = time.perf_counter()
@@ -225,6 +227,10 @@ def run_book_pipeline(
         "translation_retrying_items": diagnostics_summary.get("retry_summary", {}).get("retrying_request_labels", 0),
         "invocation": translation_summary.get("invocation", invocation or {}),
     }
+
+
+def _run_post_translation_render_prewarm(spec: RenderPrewarmSpec) -> None:
+    start_render_source_prewarm(spec).wait()
 
 
 def _try_build_render_document_analysis(
