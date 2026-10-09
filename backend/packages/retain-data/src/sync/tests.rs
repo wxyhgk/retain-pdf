@@ -26,6 +26,17 @@ impl Device {
         Self { root, db, engine }
     }
 
+    /// 同步文件夹在 WebDAV 上。
+    fn webdav(base: &Path, name: &str, dav: &super::test_dav::TestDav, password: &str) -> Self {
+        let root = base.join(name);
+        fs::create_dir_all(&root).unwrap();
+        let root = fs::canonicalize(&root).unwrap();
+        let db = Db::new(root.join("db").join("jobs.db"), root.clone());
+        db.init().unwrap();
+        let engine = SyncEngine::with_backend(db.clone(), &root, webdav_backend(&root, dav, password), name).unwrap();
+        Self { root, db, engine }
+    }
+
     fn conn(&self) -> Connection {
         let conn = Connection::open(self.root.join("db").join("jobs.db")).unwrap();
         conn.execute_batch("PRAGMA foreign_keys=ON;").unwrap();
@@ -131,6 +142,32 @@ impl Device {
     }
 }
 
+/// 同步文件夹里所有文件包索引里的指纹(每出现一次算一次)。
+fn pack_entries(folder: &Path) -> Vec<String> {
+    let mut out = Vec::new();
+    for device in fs::read_dir(folder.join("devices")).unwrap() {
+        let changes = device.unwrap().path().join("changes");
+        for segment in fs::read_dir(changes).into_iter().flatten() {
+            for line in fs::read_to_string(segment.unwrap().path()).unwrap().lines() {
+                let value: serde_json::Value = serde_json::from_str(line).unwrap();
+                for entry in value.get("pack").and_then(|p| p.as_array()).into_iter().flatten() {
+                    out.push(entry[0].as_str().unwrap().to_string());
+                }
+            }
+        }
+    }
+    out
+}
+
+fn webdav_backend(root: &Path, dav: &super::test_dav::TestDav, password: &str) -> Box<dyn super::Backend> {
+    let config = super::WebDavConfig {
+        url: dav.url.clone(),
+        username: "nas-user".into(),
+        password: password.into(),
+    };
+    Box::new(super::WebDavBackend::new(&config, &root.join("sync-work")).unwrap())
+}
+
 fn setup(devices: &[&str]) -> (PathBuf, PathBuf, Vec<Device>) {
     let base = std::env::temp_dir().join(format!("retain-sync-test-{:016x}", fastrand::u64(..)));
     let folder = base.join("cloud").join("RetainPDF");
@@ -184,9 +221,9 @@ fn a_book_arrives_whole_with_paths_rewritten_and_caches_left_behind() {
     ] {
         assert!(!b.root.join(&path).exists(), "{path} should stay behind");
     }
-    // 同一份原文只存一次。
+    // 同一份原文(上传与任务里各一份)只打包一次。
     let blob = sha256_file(&a.root.join(format!("uploads/{UPLOAD}/book.pdf"))).unwrap();
-    assert!(folder.join("blobs").join(&blob[..2]).join(&blob).is_file());
+    assert_eq!(pack_entries(&folder).iter().filter(|sha| **sha == blob).count(), 1);
 
     // 收到的改动不会被当成本机改动再发出去;再跑也没有新东西。
     assert_eq!(b.count("SELECT COUNT(*) FROM sync_dirty"), 0);
@@ -278,20 +315,23 @@ fn a_change_waits_until_its_files_arrive() {
     let (a, b) = (&devices[0], &devices[1]);
     a.add_book(DOC, JOB, UPLOAD, "succeeded");
     a.sync();
-    // 网盘还没把这份文件搬过来。
-    let sha = sha256_file(&a.root.join(format!("jobs/{JOB}/translated/page-001.json"))).unwrap();
-    let blob = folder.join("blobs").join(&sha[..2]).join(&sha);
-    let hidden = folder.join("hidden-blob");
-    fs::rename(&blob, &hidden).unwrap();
+    // 网盘还没把文件包搬过来(改动记录段已经到了)。
+    let pack = folder
+        .join("devices")
+        .join(a.engine.device_id().unwrap())
+        .join("packs")
+        .join("00000001.pack");
+    let hidden = folder.join("hidden-pack");
+    fs::rename(&pack, &hidden).unwrap();
 
     let first = b.sync();
-    assert_eq!((first.parked, first.pending), (1, 1), "{first:?}");
+    assert_eq!((first.parked, first.pending), (3, 3), "{first:?}");
     assert_eq!(b.count("SELECT COUNT(*) FROM jobs"), 0);
     assert!(!b.root.join(format!("jobs/{JOB}/source/book.pdf")).exists(), "nothing written before all files are there");
 
-    fs::rename(&hidden, &blob).unwrap();
+    fs::rename(&hidden, &pack).unwrap();
     let second = b.sync();
-    assert_eq!((second.applied, second.pending), (1, 0), "{second:?}");
+    assert_eq!((second.applied, second.pending), (3, 0), "{second:?}");
     assert_eq!(b.count("SELECT COUNT(*) FROM jobs"), 1);
     assert!(b.root.join(format!("jobs/{JOB}/translated/page-001.json")).is_file());
     fs::remove_dir_all(base).unwrap();
@@ -597,5 +637,131 @@ fn switching_to_another_sync_folder_sends_the_whole_library_again() {
     assert!(!again.folder_changed);
     assert_eq!(again.exported, 0);
     let _ = folder;
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn over_webdav_a_book_arrives_with_few_requests_and_edits_merge() {
+    let base = std::env::temp_dir().join(format!("retain-sync-dav-{:016x}", fastrand::u64(..)));
+    let dav = super::test_dav::TestDav::start(&base.join("server"), "nas-user", "secret");
+    let a = Device::webdav(&base, "a", &dav, "secret");
+    let b = Device::webdav(&base, "b", &dav, "secret");
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+
+    let before = dav.count();
+    let sent = a.sync();
+    let send_requests = dav.count() - before;
+    assert_eq!(sent.exported, 3, "{sent:?}");
+    // 文件打成一个包:请求数与文件个数无关。
+    assert!(send_requests <= 16, "first send took {send_requests} requests");
+
+    let before = dav.count();
+    let got = b.sync();
+    let receive_requests = dav.count() - before;
+    assert_eq!((got.applied, got.pending), (3, 0), "{got:?}");
+    assert!(receive_requests <= 16, "first receive took {receive_requests} requests");
+    for path in [
+        format!("uploads/{UPLOAD}/book.pdf"),
+        format!("jobs/{JOB}/translated/page-001.json"),
+        format!("jobs/{JOB}/rendered/book-translated.pdf"),
+    ] {
+        assert_eq!(fs::read(b.root.join(&path)).unwrap(), fs::read(a.root.join(&path)).unwrap(), "{path}");
+    }
+    // 下载缓存用完即删。
+    assert!(fs::read_dir(b.root.join("sync-work")).map_or(true, |mut d| d.next().is_none()));
+
+    // 没有变化的一轮只要几个请求。
+    let before = dav.count();
+    let idle = a.sync();
+    assert_eq!((idle.exported, idle.applied), (0, 0));
+    assert!(dav.count() - before <= 4, "idle cycle took {} requests", dav.count() - before);
+
+    a.conn().execute("UPDATE documents SET title = 'Over WebDAV' WHERE document_id = ?1", params![DOC]).unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(5));
+    b.conn().execute("UPDATE documents SET reading_status = 'reading' WHERE document_id = ?1", params![DOC]).unwrap();
+    a.sync();
+    b.sync();
+    a.sync();
+    for device in [&a, &b] {
+        assert_eq!(device.text("SELECT title FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("Over WebDAV"));
+        assert_eq!(device.text("SELECT reading_status FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("reading"));
+    }
+    // 写进 WebDAV 的段文件没有留下临时名。
+    let leftovers: Vec<_> = fs::read_dir(dav.root.join("dav/retainpdf/devices").join(a.engine.device_id().unwrap()).join("changes"))
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().to_string())
+        .filter(|name| name.contains(".tmp-"))
+        .collect();
+    assert!(leftovers.is_empty(), "{leftovers:?}");
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn a_wrong_webdav_password_says_so_and_the_probe_checks_read_write_delete() {
+    let base = std::env::temp_dir().join(format!("retain-sync-dav-{:016x}", fastrand::u64(..)));
+    let dav = super::test_dav::TestDav::start(&base.join("server"), "nas-user", "secret");
+    let wrong = Device::webdav(&base, "wrong", &dav, "not-the-password");
+    let error = wrong.engine.run_cycle().unwrap_err();
+    assert!(format!("{error:#}").contains("账号或密码不对"), "{error:#}");
+    let right = Device::webdav(&base, "right", &dav, "secret");
+    right.engine.probe().unwrap();
+    // 探针不留痕迹。
+    let left: Vec<_> = fs::read_dir(dav.root.join("dav/retainpdf")).unwrap().map(|e| e.unwrap().file_name()).collect();
+    assert!(left.iter().all(|name| !name.to_string_lossy().starts_with(".probe")), "{left:?}");
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn an_interrupted_webdav_download_resumes_instead_of_starting_over() {
+    use std::sync::atomic::Ordering;
+    let base = std::env::temp_dir().join(format!("retain-sync-dav-{:016x}", fastrand::u64(..)));
+    let dav = super::test_dav::TestDav::start(&base.join("server"), "nas-user", "secret");
+    let a = Device::webdav(&base, "a", &dav, "secret");
+    let b = Device::webdav(&base, "b", &dav, "secret");
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.sync();
+
+    // 断一次:同一轮里接着下完。
+    dav.cut_downloads.store(1, Ordering::SeqCst);
+    let got = b.sync();
+    assert_eq!((got.applied, got.pending), (3, 0), "{got:?}");
+    assert_eq!(dav.ranged.load(Ordering::SeqCst), 1, "the retry continued where it stopped");
+
+    // 一直断:这一轮不报错,改动在等待区;下一轮从已下的部分接着下。
+    let c = Device::webdav(&base, "c", &dav, "secret");
+    dav.cut_downloads.store(100, Ordering::SeqCst);
+    let first = c.sync();
+    assert_eq!((first.applied, first.pending), (0, 3), "{first:?}");
+    assert_eq!(c.count("SELECT COUNT(*) FROM jobs"), 0);
+    dav.cut_downloads.store(0, Ordering::SeqCst);
+    let ranged_before = dav.ranged.load(Ordering::SeqCst);
+    let second = c.sync();
+    assert_eq!((second.applied, second.pending), (3, 0), "{second:?}");
+    assert!(dav.ranged.load(Ordering::SeqCst) > ranged_before, "resumed from the partial download");
+    assert_eq!(fs::read(c.root.join(format!("jobs/{JOB}/rendered/book-translated.pdf"))).unwrap(), b"%PDF translated");
+    // 续传用的半截文件下完就清掉。
+    assert!(!c.root.join("sync-work").join("webdav-partial").exists());
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn dropped_webdav_connections_are_retried_within_the_cycle() {
+    use std::sync::atomic::Ordering;
+    let base = std::env::temp_dir().join(format!("retain-sync-dav-{:016x}", fastrand::u64(..)));
+    let dav = super::test_dav::TestDav::start(&base.join("server"), "nas-user", "secret");
+    let a = Device::webdav(&base, "a", &dav, "secret");
+    let b = Device::webdav(&base, "b", &dav, "secret");
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.sync();
+    b.sync();
+    // 之后两轮里,各有几个请求连接直接断开:不影响结果。
+    a.conn().execute("UPDATE documents SET title = 'Flaky' WHERE document_id = ?1", params![DOC]).unwrap();
+    dav.drop_requests.store(2, Ordering::SeqCst);
+    let sent = a.engine.run_cycle().expect("a dropped connection is retried");
+    assert_eq!(sent.exported, 1);
+    dav.drop_requests.store(2, Ordering::SeqCst);
+    let got = b.engine.run_cycle().expect("a dropped connection is retried");
+    assert_eq!(got.applied, 1);
+    assert_eq!(b.text("SELECT title FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("Flaky"));
     fs::remove_dir_all(base).unwrap();
 }

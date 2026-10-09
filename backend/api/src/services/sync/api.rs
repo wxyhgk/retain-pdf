@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use crate::error::AppError;
-use crate::models::api::{SyncSettingsInput, SyncStatusView};
+use crate::models::api::{SyncSettingsInput, SyncStatusView, SyncTestView};
 
 use super::SyncService;
 
@@ -37,4 +37,12 @@ pub async fn run_sync_now_view(deps: &SyncApiDeps) -> Result<SyncStatusView, App
         return Err(AppError::conflict("同步没有开启"));
     }
     Ok(deps.service.status()?)
+}
+
+/// 用填的设置测一次能不能读写(不保存)。
+pub async fn test_sync_target_view(
+    deps: &SyncApiDeps,
+    input: &SyncSettingsInput,
+) -> Result<SyncTestView, AppError> {
+    Ok(deps.service.test(input).await?)
 }

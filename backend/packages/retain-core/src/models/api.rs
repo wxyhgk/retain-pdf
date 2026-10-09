@@ -20,6 +20,7 @@ pub use super::library::{
 pub use super::public_contract::{public_request_payload, PublicResolvedJobSpec};
 pub use super::sync::{
     SyncPeerView, SyncPendingItemView, SyncRunView, SyncSettingsInput, SyncStatusView,
+    SyncTestView,
 };
 pub use super::redaction::{
     redact_json_value, redact_optional_text, redact_text, sensitive_values,

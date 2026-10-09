@@ -1,4 +1,4 @@
-//! 多设备同步的接口视图(GET/PUT /api/v1/sync、POST /api/v1/sync/run)。
+//! 多设备同步的接口视图(GET/PUT /api/v1/sync、POST /api/v1/sync/run、POST /api/v1/sync/test)。
 
 use serde::{Deserialize, Serialize};
 
@@ -10,6 +10,23 @@ pub struct SyncSettingsInput {
     /// `RetainPDF-Sync` 子目录。空串表示清除。
     pub folder: Option<String>,
     pub device_name: Option<String>,
+    /// "folder"(网盘文件夹)或 "webdav"。
+    pub transport: Option<String>,
+    /// WebDAV 上的同步文件夹地址(http:// 或 https://)。
+    pub webdav_url: Option<String>,
+    pub webdav_username: Option<String>,
+    /// 只写:给了就保存(空串清除),状态里只报告有没有。
+    pub webdav_password: Option<String>,
+}
+
+/// 连通性测试的结果。
+#[derive(Debug, Clone, Serialize)]
+pub struct SyncTestView {
+    pub ok: bool,
+    /// 测的是哪里(本机路径或不带账号的 WebDAV 地址)。
+    pub location: String,
+    pub latency_ms: Option<u64>,
+    pub error: Option<String>,
 }
 
 /// 最近一轮同步的结果。
@@ -53,9 +70,14 @@ pub struct SyncPeerView {
 #[derive(Debug, Clone, Serialize)]
 pub struct SyncStatusView {
     pub enabled: bool,
+    /// "folder" 或 "webdav"。
+    pub transport: String,
+    pub webdav_url: Option<String>,
+    pub webdav_username: Option<String>,
+    pub webdav_has_password: bool,
     /// 用户选的文件夹。
     pub folder: Option<String>,
-    /// 实际读写的同步文件夹(folder 本身,或其中的 RetainPDF-Sync)。
+    /// 实际读写的同步文件夹(folder 本身或其中的 RetainPDF-Sync;WebDAV 时是地址)。
     pub sync_root: Option<String>,
     pub device_id: Option<String>,
     pub device_name: String,

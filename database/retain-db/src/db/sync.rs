@@ -386,8 +386,42 @@ impl Db {
              DELETE FROM sync_entity_files;
              DELETE FROM sync_cursors;
              DELETE FROM sync_pending;
-             DELETE FROM sync_state WHERE key IN ('segment', 'seeded');",
+             DELETE FROM sync_blobs;
+             DELETE FROM sync_state WHERE key IN ('segment', 'seeded', 'device_written');",
         )?;
+        Ok(())
+    }
+
+    /// 一份文件内容在哪个包里:(设备号, 段号, 偏移, 长度)。
+    pub fn sync_blob_location(&self, sha256: &str) -> Result<Option<(String, u64, u64, u64)>> {
+        let conn = self.connect()?;
+        Ok(conn
+            .query_row(
+                "SELECT device, segment, offset, length FROM sync_blobs WHERE sha256 = ?1",
+                params![sha256],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, i64>(1)? as u64,
+                        row.get::<_, i64>(2)? as u64,
+                        row.get::<_, i64>(3)? as u64,
+                    ))
+                },
+            )
+            .optional()?)
+    }
+
+    /// 记下一个包里有哪些文件(已知位置的不覆盖)。
+    pub fn sync_record_blobs(&self, device: &str, segment: u64, index: &[(String, u64, u64)]) -> Result<()> {
+        let mut conn = self.connect()?;
+        let tx = conn.transaction()?;
+        for (sha256, offset, length) in index {
+            tx.execute(
+                "INSERT OR IGNORE INTO sync_blobs(sha256, device, segment, offset, length) VALUES(?1, ?2, ?3, ?4, ?5)",
+                params![sha256, device, segment as i64, *offset as i64, *length as i64],
+            )?;
+        }
+        tx.commit()?;
         Ok(())
     }
 

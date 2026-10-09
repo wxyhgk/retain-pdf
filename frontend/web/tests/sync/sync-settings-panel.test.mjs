@@ -33,7 +33,8 @@ test("同步状态的说明文字：关着、同步过、出错、等文件", ()
 
 function fakeBackend() {
   const state = {
-    enabled: false, folder: null, sync_root: null, device_id: "0123456789abcdef",
+    enabled: false, transport: "folder", webdav_url: null, webdav_username: null, webdav_has_password: false,
+    folder: null, sync_root: null, device_id: "0123456789abcdef",
     device_name: "书房的 Mac", running: false, interval_seconds: 60, last_run: null,
     pending_total: 0, pending: [], peers: [],
   };
@@ -50,6 +51,11 @@ function fakeBackend() {
         state.folder = body.folder;
         state.sync_root = `${body.folder}/RetainPDF-Sync`;
       }
+      if (body.transport) state.transport = body.transport;
+      if (typeof body.webdav_url === "string") state.webdav_url = body.webdav_url;
+      if (typeof body.webdav_username === "string") state.webdav_username = body.webdav_username;
+      if (typeof body.webdav_password === "string") state.webdav_has_password = Boolean(body.webdav_password);
+      if (state.transport === "webdav") state.sync_root = state.webdav_url;
       if (typeof body.enabled === "boolean") state.enabled = body.enabled;
       if (typeof body.device_name === "string") state.device_name = body.device_name;
     } else if (path.endsWith("/api/v1/sync/run") && method === "POST") {
@@ -59,6 +65,11 @@ function fakeBackend() {
         folder_changed: false, device_renewed: false,
       };
       state.peers = [{ device_id: "fedcba9876543210", name: "办公室的 Mac", segments_read: 4 }];
+    } else if (path.endsWith("/api/v1/sync/test") && method === "POST") {
+      const ok = body.webdav_password === "right" || (!body.webdav_password && state.webdav_has_password);
+      return reply(200, { code: 0, message: "ok", data: ok
+        ? { ok: true, location: body.webdav_url, latency_ms: 2600, error: null }
+        : { ok: false, location: body.webdav_url, latency_ms: null, error: "WebDAV 账号或密码不对" } });
     } else if (!(path.endsWith("/api/v1/sync") && method === "GET")) {
       return reply(404, { code: 404, message: "not found" });
     }
@@ -121,7 +132,58 @@ test("选文件夹、开启、立即同步：每一步都经后端保存，结�
   assert.deepEqual(saved.map(([m, p]) => `${m} ${p}`), [
     "PUT /api/v1/sync", "PUT /api/v1/sync", "PUT /api/v1/sync", "POST /api/v1/sync/run",
   ]);
+  assert.equal(saved[1][2].transport, "folder");
   assert.deepEqual(saved[2][2], { enabled: true });
+  root.unmount();
+  dom.window.close();
+});
+
+test("WebDAV：填地址账号密码、测试连接、保存；密码只写不读", async () => {
+  const dom = makeDom("", { keys: ["window", "document", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "Event", "MouseEvent", "FocusEvent", "Node", "MutationObserver", "URL"] });
+  const backend = fakeBackend();
+  const { root, host } = await mountPanel(dom);
+  const text = () => host.textContent;
+  await waitFor(() => text().includes("同步未开启"));
+
+  click(dom, host.querySelector('[data-sync-transport="webdav"]'));
+  await waitFor(() => host.querySelector('input[aria-label="WebDAV 地址"]'));
+  const url = host.querySelector('input[aria-label="WebDAV 地址"]');
+  const user = host.querySelector('input[aria-label="WebDAV 账号"]');
+  const password = host.querySelector('input[aria-label="WebDAV 密码"]');
+  assert.equal(password.type, "password");
+  typeInput(dom, url, "http://100.64.0.2:5005/webdav/retainpdf");
+  typeInput(dom, user, "nas-user");
+
+  // 密码错:测试连接说清楚原因。
+  typeInput(dom, password, "wrong");
+  await wait(10);
+  click(dom, host.querySelector('[data-sync-action="test"]'));
+  await waitFor(() => text().includes("账号或密码不对"));
+  typeInput(dom, password, "right");
+  await wait(10);
+  click(dom, host.querySelector('[data-sync-action="test"]'));
+  await waitFor(() => text().includes("连接正常"));
+  assert.match(text(), /2\.6 秒/);
+  assert.equal(backend.state.webdav_url, null, "testing does not save");
+
+  click(dom, host.querySelector('[data-sync-action="save-webdav"]'));
+  await waitFor(() => backend.state.webdav_has_password === true);
+  const put = backend.calls.filter((c) => c.method === "PUT").at(-1).body;
+  assert.deepEqual(put, {
+    transport: "webdav",
+    webdav_url: "http://100.64.0.2:5005/webdav/retainpdf",
+    webdav_username: "nas-user",
+    webdav_password: "right",
+  });
+  // 保存后密码框清空,提示已保存;再保存不带密码(不改)。
+  await waitFor(() => host.querySelector('input[aria-label="WebDAV 密码"]').value === "");
+  assert.equal(host.querySelector('input[aria-label="WebDAV 密码"]').placeholder, "已保存，留空不改");
+  assert.equal(text().includes("right"), false);
+
+  const toggle = host.querySelector('[data-sync-action="toggle"]');
+  await waitFor(() => toggle.disabled === false);
+  click(dom, toggle);
+  await waitFor(() => backend.state.enabled === true);
   root.unmount();
   dom.window.close();
 });

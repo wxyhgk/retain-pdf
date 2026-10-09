@@ -101,3 +101,53 @@ async fn two_backends_share_a_library_through_one_folder() {
     assert_eq!(status, StatusCode::CONFLICT);
     std::fs::remove_dir_all(cloud).ok();
 }
+
+#[tokio::test]
+async fn webdav_settings_are_checked_and_the_password_never_comes_back() {
+    let state = test_state("sync-webdav");
+    for (url, why) in [
+        ("ftp://nas/webdav", "scheme"),
+        ("http://user:pass@nas:5005/webdav", "credentials in the address"),
+        ("not a url", "garbage"),
+    ] {
+        let (status, body) = call(&state, "PUT", "/api/v1/sync", Some(json!({"transport": "webdav", "webdav_url": url}))).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{why}: {body}");
+    }
+    let (status, _) = call(&state, "PUT", "/api/v1/sync", Some(json!({"transport": "smb"}))).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+
+    let (status, body) = call(
+        &state,
+        "PUT",
+        "/api/v1/sync",
+        Some(json!({
+            "transport": "webdav",
+            "webdav_url": "http://127.0.0.1:9/dav/retainpdf",
+            "webdav_username": "nas-user",
+            "webdav_password": "top-secret-123",
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["data"]["transport"], "webdav");
+    assert_eq!(body["data"]["webdav_has_password"], true);
+    assert_eq!(body["data"]["sync_root"], "http://127.0.0.1:9/dav/retainpdf");
+    let (_, status_body) = call(&state, "GET", "/api/v1/sync", None).await;
+    for text in [body.to_string(), status_body.to_string()] {
+        assert!(!text.contains("top-secret-123"), "password leaked: {text}");
+    }
+
+    // 测试连接:连不上时说清楚,不报 500;不改设置。
+    let (status, tested) = call(&state, "POST", "/api/v1/sync/test", Some(json!({}))).await;
+    assert_eq!(status, StatusCode::OK, "{tested}");
+    assert_eq!(tested["data"]["ok"], false);
+    assert!(tested["data"]["error"].as_str().unwrap().contains("连不上 WebDAV"), "{tested}");
+    assert!(!tested.to_string().contains("top-secret-123"));
+
+    // 开启后后台那一轮失败也只记在 last_run 里。
+    let (status, _) = call(&state, "PUT", "/api/v1/sync", Some(json!({"enabled": true}))).await;
+    assert_eq!(status, StatusCode::OK);
+    let (_, ran) = call(&state, "POST", "/api/v1/sync/run", None).await;
+    assert_eq!(ran["data"]["last_run"]["ok"], false, "{ran}");
+    assert!(!ran.to_string().contains("top-secret-123"));
+}
