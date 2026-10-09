@@ -70,7 +70,10 @@ def _variant_row(case_dir: Path, name: str, measures, geom_overlaps) -> dict:
     fit_summary = fit.get("summary") or {}
     engine = summary.get("render_engine") or {}
     pdf = case_dir / name / "output.pdf"
-    is_rpr = (fit.get("source") or {}).get("measurement") == "rpr_engine"
+    measurement = (fit.get("source") or {}).get("measurement")
+    is_rpr = measurement in ("rpr_engine", "rpr_fit_engine")
+    # rpr_fit：碰撞数取引擎的不变量（collisions 只列前 50 个例子）；压住保留元素含矢量图形。
+    invariants = fit.get("invariants") if measurement == "rpr_fit_engine" else None
     math = fit.get("math") if is_rpr else None
     if is_rpr:
         failed = len((math or {}).get("failed") or [])
@@ -97,8 +100,14 @@ def _variant_row(case_dir: Path, name: str, measures, geom_overlaps) -> dict:
         "overflow_blocks": fit_summary.get("overflow_blocks"),
         "shrunk_blocks": fit_summary.get("shrunk_blocks"),
         "emergency_blocks": fit_summary.get("emergency_blocks"),
-        "engine_text_collisions": sum(1 for c in collisions if c.get("kind") == "text") if is_rpr else None,
-        "engine_obstacle_collisions": sum(1 for c in collisions if c.get("kind") == "obstacle") if is_rpr else None,
+        "engine_text_collisions": (
+            int(invariants.get("line_overlaps") or 0) if invariants is not None
+            else (sum(1 for c in collisions if c.get("kind") == "text") if is_rpr else None)
+        ),
+        "engine_obstacle_collisions": (
+            int(invariants.get("obstacle_hits") or 0) + int(invariants.get("vector_hits") or 0) if invariants is not None
+            else (sum(1 for c in collisions if c.get("kind") == "obstacle") if is_rpr else None)
+        ),
         "geom_text_overlaps": len(geom_overlaps),
         "math": math_cell,
         "math_failed": len((math or {}).get("failed") or []) if is_rpr else None,

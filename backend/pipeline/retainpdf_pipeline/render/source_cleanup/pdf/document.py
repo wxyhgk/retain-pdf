@@ -80,13 +80,20 @@ def strip_bbox_text_rects_from_pdf_copy(
     save_elapsed = 0.0
     close_elapsed = 0.0
     skipped_form_xobject_page_indices: frozenset[int] = frozenset()
+    deadline_skipped_page_indices: frozenset[int] = frozenset()
     effective_recurse_forms = True if recurse_forms is None else recurse_forms
     deadline = _deadline_from_budget(max_elapsed_seconds)
     open_started = time.perf_counter()
     pdf = pikepdf.Pdf.open(source_pdf_path)
     open_elapsed = time.perf_counter() - open_started
     try:
-        runtime_page_results, parse_elapsed, runtime_skipped_form_xobject_page_indices, chunk_timings = _strip_pages(
+        (
+            runtime_page_results,
+            parse_elapsed,
+            runtime_skipped_form_xobject_page_indices,
+            chunk_timings,
+            deadline_skipped_page_indices,
+        ) = _strip_pages(
             source_pdf_path=source_pdf_path,
             pdf=pdf,
             page_rects=page_rects,
@@ -122,6 +129,7 @@ def strip_bbox_text_rects_from_pdf_copy(
                 skipped_visual_background_page_indices=frozenset(skipped_visual_background_page_indices),
                 skipped_form_xobject_page_indices=skipped_form_xobject_page_indices,
                 strip_no_effect_page_indices=frozenset(attempted_page_indices | pre_strip_no_effect_page_indices),
+                deadline_skipped_page_indices=deadline_skipped_page_indices,
             )
 
         save_started = time.perf_counter()
@@ -169,6 +177,7 @@ def strip_bbox_text_rects_from_pdf_copy(
         skipped_visual_background_page_indices=frozenset(skipped_visual_background_page_indices),
         skipped_form_xobject_page_indices=skipped_form_xobject_page_indices,
         strip_no_effect_page_indices=strip_no_effect_page_indices,
+        deadline_skipped_page_indices=deadline_skipped_page_indices,
     )
 
 
@@ -283,7 +292,9 @@ def _strip_pages(
     recurse_forms: bool,
     skip_form_xobject_pages: bool,
     deadline: float | None,
-) -> tuple[list[tuple[int, bytes | None, int, int]], float, frozenset[int], list[tuple[int, int, float]]]:
+) -> tuple[
+    list[tuple[int, bytes | None, int, int]], float, frozenset[int], list[tuple[int, int, float]], frozenset[int]
+]:
     if len(page_rects) < BBOX_TEXT_STRIP_PARALLEL_PAGE_THRESHOLD:
         started = time.perf_counter()
         skipped_form_pages: set[int] = set()
@@ -299,7 +310,7 @@ def _strip_pages(
             )
             for page_idx, rects in page_rects.items()
         ]
-        return results, time.perf_counter() - started, frozenset(skipped_form_pages), []
+        return results, time.perf_counter() - started, frozenset(skipped_form_pages), [], frozenset()
 
     worker_count = _parallel_worker_count(len(page_rects))
     if worker_count <= 1:
@@ -317,7 +328,7 @@ def _strip_pages(
             )
             for page_idx, rects in page_rects.items()
         ]
-        return results, time.perf_counter() - started, frozenset(skipped_form_pages), []
+        return results, time.perf_counter() - started, frozenset(skipped_form_pages), [], frozenset()
 
     started = time.perf_counter()
     results_by_page: dict[int, tuple[int, bytes | None, int, int]] = {}
@@ -375,7 +386,7 @@ def _strip_pages(
             f"bbox text strip: deadline skipped pages={sorted(deadline_skipped_pages)}",
             flush=True,
         )
-    return results, time.perf_counter() - started, frozenset(skipped_form_pages), chunk_timings
+    return results, time.perf_counter() - started, frozenset(skipped_form_pages), chunk_timings, frozenset(deadline_skipped_pages)
 
 
 def _strip_page_or_skip_form_page(

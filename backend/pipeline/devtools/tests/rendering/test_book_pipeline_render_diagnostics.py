@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 
 from retainpdf_pipeline.runtime.pipeline import book_pipeline
 
@@ -77,3 +78,64 @@ def test_run_book_pipeline_returns_render_diagnostics(monkeypatch, tmp_path: Pat
     )
 
     assert summary["render_diagnostics"]["typst_cover_fallback_pages"]["count"] == 1
+
+
+@pytest.mark.parametrize(("engine", "prewarm_expected"), [("typst", True), ("rpr", True), ("rpr_fit", False)])
+def test_post_translation_prewarm_follows_the_route_declaration(
+    monkeypatch, tmp_path: Path, engine: str, prewarm_expected: bool
+) -> None:
+    source_json = tmp_path / "document.v1.json"
+    source_pdf = tmp_path / "source.pdf"
+    source_json.write_text("{}", encoding="utf-8")
+    source_pdf.write_bytes(b"%PDF-1.4\n")
+    pages = {0: [{"item_id": "p001-b001", "final_status": "translated", "protected_translated_text": "t"}]}
+    monkeypatch.setattr(
+        book_pipeline,
+        "translate_book_pipeline",
+        lambda **_kwargs: {
+            "page_count": 1,
+            "translated_items": 1,
+            "summaries": [],
+            "translated_pages_map": pages,
+            "start_page": 0,
+            "end_page": 0,
+            "translation_review": {},
+        },
+    )
+    monkeypatch.setattr(book_pipeline, "write_translation_diagnostics", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(book_pipeline, "write_translation_debug_index", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(book_pipeline, "blocking_untranslated_items", lambda _pages: [])
+    monkeypatch.setattr(book_pipeline, "enforce_no_blocking_review_errors", lambda _review: None)
+    prewarms: list[object] = []
+
+    class _Handle:
+        def wait(self):
+            return None
+
+    monkeypatch.setattr(book_pipeline, "start_render_source_prewarm", lambda spec: prewarms.append(spec) or _Handle())
+    rendered: list[str] = []
+    monkeypatch.setattr(
+        book_pipeline,
+        "run_render_stage",
+        lambda **kwargs: rendered.append(kwargs["render_engine"])
+        or {"output_pdf_path": tmp_path / "out.pdf", "effective_render_mode": "typst", "render_diagnostics": {}},
+    )
+    book_pipeline.run_book_pipeline(
+        source_json_path=source_json,
+        source_pdf_path=source_pdf,
+        output_dir=tmp_path / "translated",
+        output_pdf_path=tmp_path / "rendered" / "out.pdf",
+        api_key="",
+        start_page=0,
+        end_page=0,
+        batch_size=1,
+        workers=1,
+        model="model",
+        base_url="",
+        mode="fast",
+        skip_title_translation=False,
+        render_mode="typst",
+        render_engine=engine,
+    )
+    assert rendered == [engine]
+    assert bool(prewarms) is prewarm_expected

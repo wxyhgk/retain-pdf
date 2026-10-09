@@ -722,14 +722,18 @@ if (!frontendOnly) {
   }
 
   // rpr 排版引擎（render.engine = "rpr"）：backend/rendering-engine 里的 engine/ 是纯 JS 源码，
-  // 运行时 npm 依赖只有 mathjax-full（纯 JS，与平台无关），整目录连 node_modules 一起打进来。
+  // 运行时 npm 依赖 mathjax-full 与 fontkit（都是纯 JS，与平台无关），整目录连 node_modules 一起打进来。
   // node 同样用 Electron 自己（RETAINPDF_NODE_BIN + ELECTRON_RUN_AS_NODE=1），位置经
   // RETAIN_RPR_ENGINE_DIR 告诉后端（见 src/main/backend-env.js）。
   const rprEngineRoot = path.join(repoRoot, "backend", "rendering-engine");
   if (!fs.existsSync(path.join(rprEngineRoot, "engine", "bin", "rpr-retain.js"))) {
     throw new Error(`missing rpr engine at ${rprEngineRoot}/engine; run backend/rendering-engine/sync.sh`);
   }
-  if (!fs.existsSync(path.join(rprEngineRoot, "node_modules", "mathjax-full", "package.json"))) {
+  // 任何一个运行时依赖缺了都重装（旧的 node_modules 可能只有 mathjax-full）。
+  const rprEngineDeps = Object.keys(
+    JSON.parse(fs.readFileSync(path.join(rprEngineRoot, "package.json"), "utf8")).dependencies || {},
+  );
+  if (rprEngineDeps.some((dep) => !fs.existsSync(path.join(rprEngineRoot, "node_modules", dep, "package.json")))) {
     const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
     const installed = spawnSync(npmCommand, ["ci", "--omit=dev", "--ignore-scripts"], {
       cwd: rprEngineRoot,

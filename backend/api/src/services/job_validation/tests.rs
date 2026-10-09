@@ -430,6 +430,8 @@ fn render_engine_defaults_to_typst_and_accepts_rpr() {
     assert!(validate_render_options(&input).is_ok());
     input.render.engine = "rpr".to_string();
     assert!(validate_render_options(&input).is_ok());
+    input.render.engine = "rpr_fit".to_string();
+    assert!(validate_render_options(&input).is_ok());
 }
 
 #[test]

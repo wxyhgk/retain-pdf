@@ -20,6 +20,31 @@ class RenderPlan:
         return len(self.selected_pages)
 
 
+def plan_pages(
+    *,
+    source_pdf_path: Path,
+    pages: dict[int, list[dict]],
+    mode_probe_pages: dict[int, list[dict]] | None,
+    start_page: int,
+    end_page: int,
+    render_mode: str,
+) -> tuple[dict[int, list[dict]], str]:
+    """要渲染的页与实际渲染模式。渲染阶段与提前做的渲染准备（翻译前的条目）共用这一份推导。"""
+    effective_render_mode = resolve_effective_render_mode(
+        render_mode=render_mode,
+        source_pdf_path=source_pdf_path,
+        start_page=start_page,
+        end_page=end_page,
+        translated_pages_map=mode_probe_pages,
+    )
+    selected_pages = select_translated_pages(
+        pages,
+        start_page=max(0, start_page),
+        end_page=max(pages) if end_page < 0 else end_page,
+    )
+    return selected_pages, effective_render_mode
+
+
 def build_render_plan(
     *,
     source_pdf_path: Path,
@@ -44,29 +69,22 @@ def build_render_plan(
             render_inputs.translations_dir,
             manifest_path=render_inputs.translation_manifest_path,
         )
-    effective_render_mode = resolve_effective_render_mode(
-        render_mode=render_mode,
-        source_pdf_path=render_inputs.source_pdf_path,
-        start_page=start_page,
-        end_page=end_page,
-        translated_pages_map=auto_pages_map,
-    )
-    if auto_pages_map is not None:
-        selected_pages = select_translated_pages(
-            auto_pages_map,
-            start_page=max(0, start_page),
-            end_page=max(auto_pages_map) if end_page < 0 else end_page,
-        )
-    else:
-        selected_pages = load_translated_pages(
+    pages = (
+        auto_pages_map
+        if auto_pages_map is not None
+        else load_translated_pages(
             render_inputs.translations_dir,
             manifest_path=render_inputs.translation_manifest_path,
         )
-        selected_pages = select_translated_pages(
-            selected_pages,
-            start_page=max(0, start_page),
-            end_page=max(selected_pages) if end_page < 0 else end_page,
-        )
+    )
+    selected_pages, effective_render_mode = plan_pages(
+        source_pdf_path=render_inputs.source_pdf_path,
+        pages=pages,
+        mode_probe_pages=auto_pages_map,
+        start_page=start_page,
+        end_page=end_page,
+        render_mode=render_mode,
+    )
     return RenderPlan(
         render_inputs=render_inputs,
         selected_pages=selected_pages,

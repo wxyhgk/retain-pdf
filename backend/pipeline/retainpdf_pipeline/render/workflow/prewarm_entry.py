@@ -16,7 +16,9 @@ import time
 from pathlib import Path
 
 from retainpdf_pipeline.services.pipeline_shared.events import emit_stage_progress
-from retainpdf_pipeline.render.analysis.document import build_render_document_analysis
+from retainpdf_pipeline.render.prepare.page_analysis import page_analysis
+from retainpdf_pipeline.render.prepare.hooks import prepare_hooks
+from retainpdf_pipeline.render.prepare.store import PREPARE_DIR_NAME
 from retainpdf_pipeline.render.source.prewarm import RenderPrewarmSpec
 from retainpdf_pipeline.render.source.prewarm import RenderPrewarmHandle
 from retainpdf_pipeline.render.source.prewarm import prewarm_manifest_path_from_artifacts_dir
@@ -97,7 +99,8 @@ def start_ocr_render_preprocess(
     )
     if not pages:
         return None
-    document_analysis = build_render_document_analysis(
+    document_analysis = page_analysis(
+        Path(artifacts_dir) / PREPARE_DIR_NAME,
         source_pdf_path=source_pdf_path,
         translated_pages=pages,
         start_page=start_page,
@@ -116,6 +119,7 @@ def start_ocr_render_preprocess(
             source_cleanup_strategy=source_cleanup_strategy,
             document_analysis=document_analysis,
             include_source_cleanup=False,
+            prepare_hooks=prepare_hooks(Path(artifacts_dir) / PREPARE_DIR_NAME),
         )
     )
 
@@ -145,7 +149,8 @@ def run_post_translation_render_prewarm(
         payload={"user_stage": "render", "progress_unit": "step"},
     )
     try:
-        document_analysis = build_render_document_analysis(
+        document_analysis = page_analysis(
+            Path(artifacts_dir) / PREPARE_DIR_NAME,
             source_pdf_path=source_pdf_path,
             translated_pages=translated_pages,
             start_page=start_page,
@@ -164,6 +169,7 @@ def run_post_translation_render_prewarm(
                 source_cleanup_strategy=source_cleanup_strategy,
                 document_analysis=document_analysis,
                 include_source_cleanup=True,
+                prepare_hooks=prepare_hooks(Path(artifacts_dir) / PREPARE_DIR_NAME),
             )
         )
         result_path = handle.wait()

@@ -35,6 +35,7 @@ RENDERING_ALLOWED_ROOT_DIRS = {
     "output",
     "pdf_structure_profile",
     "policy",
+    "prepare",
     "semantics",
     "source",
     "source_cleanup",
@@ -68,6 +69,24 @@ RENDERING_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_pipeline.render.layout",
         "retainpdf_pipeline.render.output",
         "retainpdf_pipeline.render.legacy",
+        "retainpdf_pipeline.render.visual_profile",
+        "retainpdf_pipeline.render.semantics",
+        # Render preparation steps (cached, independently scheduled) are composed here.
+        "retainpdf_pipeline.render.prepare",
+    ),
+    "prepare": (
+        # Preparation steps wrap the lower layers' operations with an explicit
+        # input fingerprint and their own cache; they never compose output.
+        "retainpdf_pipeline.render.prepare",
+        "retainpdf_pipeline.render.analysis",
+        "retainpdf_pipeline.render.contracts",
+        "retainpdf_pipeline.render.document",
+        "retainpdf_pipeline.render.pdf_structure_profile",
+        "retainpdf_pipeline.render.policy",
+        "retainpdf_pipeline.render.render_mode",
+        "retainpdf_pipeline.render.source",
+        "retainpdf_pipeline.render.source_cleanup",
+        "retainpdf_pipeline.render.translation_loader",
         "retainpdf_pipeline.render.visual_profile",
         "retainpdf_pipeline.render.semantics",
     ),

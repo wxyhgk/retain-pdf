@@ -339,6 +339,7 @@
     const spaceL = new Float64Array(n); // CJK–Latin spacing on the left (x_offset)
     const spaceR = new Float64Array(n); // CJK–Latin spacing on the right
     const kernR = new Float64Array(n);  // pair delta toward the following glyph
+    const nat = new Float64Array(n);    // shaped advance before CJK spacing / punctuation compression
     const glyph = new Uint8Array(n);    // 1 where a glyph starts
     const cj = new Uint8Array(n);
     const punct = new Uint8Array(n);    // 1 left-, 2 right-, 3 center-aligned CJK punctuation
@@ -388,7 +389,7 @@
       const run = text.slice(runStart, end);
       const kern = new Float64Array(run.length);
       const shaped = metrics.shape(run, undefined, undefined, kern);
-      for (let i = 0; i < shaped.length; i++) { adv[runStart + i] = shaped[i]; kernR[runStart + i] = kern[i]; }
+      for (let i = 0; i < shaped.length; i++) { adv[runStart + i] = shaped[i]; nat[runStart + i] = shaped[i]; kernR[runStart + i] = kern[i]; }
       shapeRunAdjustments(runStart, end);
     };
     for (let i = 0; i < n; i++) {
@@ -405,7 +406,7 @@
     for (let i = 0; i < n; i++) prefix[i + 1] = prefix[i] + adv[i];
 
     return {
-      text, n, adv, prefix, shrinkL, shrinkR, spaceL, spaceR, kernR, glyph, cj, punct, boxes,
+      text, n, adv, nat, prefix, shrinkL, shrinkR, spaceL, spaceR, kernR, glyph, cj, punct, boxes,
       ascender: metrics.ascender,
       descender: metrics.descender,
       // Break opportunities depend on whether an indent leads the paragraph;
@@ -783,8 +784,106 @@
     return max;
   }
 
+  // Where Typst draws every glyph of one line, so an output that writes the
+  // PDF itself places each glyph exactly where the measured layout put it.
+  // Mirrors Typst's line building (line.rs / shaping.rs): trailing-whitespace
+  // trim, adjust_cj_at_line_start / _end, the pair delta dropped at the break,
+  // and justification -- first the glyphs' stretch (spaces, up to half their
+  // width) or shrink scaled by one ratio, then what is still missing spread
+  // evenly after every justifiable glyph. In em, from the line's left edge:
+  //   { glyphs: [{ index, x, advance }], width }
+  // index: unit index into p.text (a glyph start or a formula box); x: where
+  // the glyph is drawn; advance: the room it takes (after justification).
+  // options: { mandatory, lead, target, justify, overhang } -- target (em) is
+  // the width the line is set to (typeset's painted width); justify: stretch
+  // to it. A line wider than its target shrinks whether justified or not.
+  // overhang (default true): Typst's hanging punctuation at the right edge.
+  // Typst's overhang(c): how much of a line-final glyph may hang into the margin.
+  const OVERHANG = { "–": 0.2, "—": 0.2, "-": 0.55, "\u00ad": 0.55, ".": 0.8, ",": 0.8, ":": 0.3, ";": 0.3, "\u060c": 0.4, "\u06d4": 0.4 };
+
+  function placeLine(p, start, end, options = {}) {
+    const mandatory = Boolean(options.mandatory);
+    const lead = Boolean(options.lead);
+    const e = trimmedEnd(p, start, end, mandatory);
+    const units = [];
+    for (let i = start; i < e; i++) {
+      if (!p.glyph[i]) continue;
+      // Compression already cut part of a punctuation mark's blank half: what
+      // was cut on the left moves the glyph left within its advance.
+      let cutLeft = 0;
+      if (p.punct[i] === 2) cutLeft = p.nat[i] / 2 - p.shrinkL[i];
+      else if (p.punct[i] === 3) cutLeft = p.nat[i] / 4 - p.shrinkL[i];
+      const [, , justifiable] = glyphAdjustability(p, i);
+      const space = isSpace(p.text[i]);
+      units.push({
+        index: i,
+        advance: p.adv[i],
+        offset: p.spaceL[i] - Math.max(0, cutLeft),
+        stretchRight: space ? p.adv[i] * 0.5 : 0,
+        shrinkLeft: space || p.text[i] === OBJECT ? 0 : leftShrink(p, i),
+        shrinkRight: space ? Math.min(p.adv[i] / 3, p.adv[i] * 0.75)
+          : p.text[i] === OBJECT ? 0 : p.shrinkR[i] + (p.spaceR[i] > 0 ? 0.125 : 0),
+        justifiable: Boolean(justifiable)
+      });
+    }
+    if (!units.length) return { glyphs: [], width: 0 };
+    const first = units[0];
+    if (first.index === start && !(lead && start === 0) && !isSpace(p.text[start])
+      && (BEGIN_PUNCT.has(p.text[start]) || p.cj[start])) {
+      let cut = 0;
+      if (p.punct[start] === 2) cut = p.shrinkL[start];
+      else if (p.cj[start] && p.spaceL[start] > 0) cut = p.spaceL[start];
+      first.advance -= cut;
+      first.offset -= cut;
+      first.shrinkLeft = 0;
+    }
+    const last = units[units.length - 1];
+    const endCut = lineEndAdjustEm(p, start, e);
+    if (endCut > 0) {
+      last.advance -= endCut;
+      if (p.punct[last.index] === 1) last.shrinkRight -= p.shrinkR[last.index];
+      else if (p.cj[last.index] && p.spaceR[last.index] > 0) last.shrinkRight -= 0.125;
+    }
+    if (e < p.n) last.advance -= p.kernR[last.index];
+    const natural = units.reduce((sum, unit) => sum + unit.advance, 0);
+    let ratio = 0;
+    let extra = 0;
+    let target = Number(options.target);
+    // Hanging punctuation (Typst text.overhang, on by default): part of a
+    // trailing comma, period, dash ... may hang past the right edge, so the
+    // rest of the line is set that much wider. Breaking ignores it, as Typst's does.
+    if (Number.isFinite(target) && options.overhang !== false && units.length > 1) {
+      target += (OVERHANG[p.text[last.index]] || 0) * last.advance;
+    }
+    if (Number.isFinite(target)) {
+      const { stretch, shrink, justifiables } = lineAdjustability(p, start, end, mandatory, lead);
+      let remaining = target - natural;
+      if (remaining < 0 && shrink > 0) ratio = Math.max(-1, remaining / shrink);
+      else if (remaining > 0 && options.justify) {
+        if (stretch > 0) {
+          ratio = Math.min(1, remaining / stretch);
+          remaining = Math.max(0, remaining - stretch);
+        }
+        if (justifiables > 0 && remaining > 0) extra = remaining / justifiables;
+      }
+    }
+    // A CJ glyph or CJK punctuation ending the line takes no extra space
+    // (lineAdjustability does not count it).
+    if (p.cj[last.index] || p.punct[last.index] > 0) last.justifiable = false;
+    const glyphs = [];
+    let pen = 0;
+    for (const unit of units) {
+      const left = ratio < 0 ? unit.shrinkLeft * ratio : 0;
+      let right = ratio < 0 ? Math.max(0, unit.shrinkRight) * ratio : unit.stretchRight * ratio;
+      if (unit.justifiable) right += extra;
+      glyphs.push({ index: unit.index, x: pen + unit.offset + left, advance: unit.advance + left + right });
+      pen += unit.advance + left + right;
+    }
+    return { glyphs, width: pen };
+  }
+
   return {
     prepare, layout, naturalWidth, lineWidthEm, lineEndAdjustEm, breakOpportunities, uax14Breaks,
-    justifiableGaps, isSpace, OBJECT, LINE_SEPARATOR
+    justifiableGaps, placeLine, isSpace, OBJECT, LINE_SEPARATOR
   };
 });

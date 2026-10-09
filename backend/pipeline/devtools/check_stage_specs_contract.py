@@ -10,6 +10,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 from retainpdf_pipeline.foundation.shared.stage_specs import BookStageSpec
 from retainpdf_pipeline.foundation.shared.stage_specs import NormalizeStageSpec
 from retainpdf_pipeline.foundation.shared.stage_specs import ProviderStageSpec
+from retainpdf_pipeline.foundation.shared.stage_specs import RenderPrepareStageSpec
 from retainpdf_pipeline.foundation.shared.stage_specs import RenderStageSpec
 from retainpdf_pipeline.foundation.shared.stage_specs import TranslateStageSpec
 
@@ -19,6 +20,7 @@ SPEC_LOADERS: dict[str, Callable[[Path], object]] = {
     "normalize": NormalizeStageSpec.load,
     "provider": ProviderStageSpec.load,
     "render": RenderStageSpec.load,
+    "render-prepare": RenderPrepareStageSpec.load,
     "translate": TranslateStageSpec.load,
 }
 

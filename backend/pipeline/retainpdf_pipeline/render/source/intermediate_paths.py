@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import shutil
 from pathlib import Path
 
 
@@ -90,3 +91,17 @@ def _is_safe_path(path: Path, *, work_root: Path) -> bool:
 
 
 __all__ = ["intermediate_pdf_path"]
+
+
+def link_or_copy_file(source: Path, target: Path) -> None:
+    """把（准备步骤缓存里的）文件放到中间文件的位置：硬链接，不行就复制。
+
+    缓存文件之后被替换（新 inode）时这里仍是旧内容；删这里也不伤缓存。
+    """
+    target = Path(target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.unlink(missing_ok=True)
+    try:
+        os.link(source, target)
+    except OSError:
+        shutil.copyfile(source, target)

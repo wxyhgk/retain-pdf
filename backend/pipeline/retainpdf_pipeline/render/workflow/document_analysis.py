@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from retainpdf_pipeline.render.analysis.document import build_render_document_analysis
+from retainpdf_pipeline.render.prepare.page_analysis import page_analysis
 from retainpdf_pipeline.render.contracts import RenderDocumentAnalysis
 
 
@@ -24,8 +24,10 @@ def build_sync_workflow_document_analysis(
     translated_pages: dict[int, list[dict]],
     start_page: int,
     end_page: int,
+    prepare_dir: Path | None = None,
 ) -> RenderDocumentAnalysis:
-    return build_render_document_analysis(
+    return page_analysis(
+        prepare_dir,
         source_pdf_path=source_pdf_path,
         translated_pages=translated_pages,
         start_page=start_page,

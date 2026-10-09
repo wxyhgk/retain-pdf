@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -26,6 +27,8 @@ class SourceCleanupRequest:
     options: SourceCleanupOptions = SourceCleanupOptions()
     candidates: BBoxTextStripCandidates | None = None
     document_analysis: RenderDocumentAnalysis | None = None
+    # 执行删矩形时的包装（缓存）：strip_runner(execute, **参数)，execute 是原本的执行函数。
+    strip_runner: Callable[..., BBoxTextStripResult] | None = None
 
 
 @dataclass(frozen=True)

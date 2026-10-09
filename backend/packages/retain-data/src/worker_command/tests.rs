@@ -1033,6 +1033,10 @@ fn render_spec_carries_render_engine() {
         let payload = render_spec_with_refine(&request, refine);
         assert_eq!(payload["params"]["engine"], "rpr");
     }
+
+    request.render.engine = "rpr_fit".to_string();
+    let payload = render_spec_with_refine(&request, super::RenderRefine::Off);
+    assert_eq!(payload["params"]["engine"], "rpr_fit");
 }
 
 #[test]
@@ -1062,4 +1066,51 @@ fn refine_override_file_round_trips_and_clears() {
 
     std::fs::write(&path, b"{not json").expect("write corrupt override");
     assert!(load_refine_override(&job_paths).is_err(), "损坏的覆盖要报出来，由调用方决定降级");
+}
+
+#[test]
+fn render_prepare_command_writes_spec_shared_with_the_render_stage() {
+    let config = test_config();
+    let request = build_request(WorkflowKind::Book);
+    let job_paths = build_paths(config.as_ref());
+    let cmd = build_worker_stage_command(
+        &config.worker_command_runtime(),
+        &request,
+        &job_paths,
+        WorkerStageCommand::RenderPrepare {
+            source_json_path: Path::new("/tmp/document.v1.json"),
+            source_pdf_path: Path::new("/tmp/source.pdf"),
+            translations_dir: &job_paths.translated_dir,
+        },
+    )
+    .expect("build render prepare command");
+
+    assert_eq!(cmd.get(1).map(String::as_str), Some("-m"));
+    assert_eq!(
+        cmd.get(2).map(String::as_str),
+        Some("retainpdf_pipeline.render.workflow.prepare_stage")
+    );
+    assert!(arg_value(&cmd, "--spec")
+        .expect("spec flag")
+        .ends_with("render-prepare.spec.json"));
+    let spec = read_spec_from_command(&cmd);
+    assert_eq!(spec["schema_version"], "render_prepare.stage.v1");
+    assert_eq!(spec["stage"], "render_prepare");
+    assert_eq!(spec["inputs"]["source_json"], "/tmp/document.v1.json");
+
+    // 渲染阶段用指纹核对提前做的准备，两边的参数必须同源。
+    let render = read_spec_from_command(&render_command(
+        config.as_ref(),
+        &request,
+        &job_paths,
+        Path::new("/tmp/source.pdf"),
+        &job_paths.translated_dir,
+    ));
+    for key in ["start_page", "end_page", "render_mode", "engine"] {
+        assert_eq!(spec["params"][key], render["params"][key], "param {key}");
+    }
+    assert_eq!(spec["inputs"]["source_pdf"], render["inputs"]["source_pdf"]);
+    assert_eq!(spec["inputs"]["translations_dir"], render["inputs"]["translations_dir"]);
+    let raw = serde_json::to_string(&spec).expect("spec json");
+    assert!(!raw.contains("credential"), "render prepare spec must carry no credentials");
 }

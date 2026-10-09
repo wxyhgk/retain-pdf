@@ -7,6 +7,7 @@ from pathlib import Path
 
 from retainpdf_pipeline.render.layout.model.models import RenderPageSpec
 from retainpdf_pipeline.render.contracts import RenderDocumentAnalysis
+from retainpdf_pipeline.render.contracts.prepare_hooks import RenderPrepareHooks
 from retainpdf_pipeline.render.source_cleanup.types import BBoxTextStripCandidates
 
 
@@ -34,6 +35,8 @@ class RenderPrewarmSpec:
     source_cleanup_strategy: str = "pikepdf_text_strip"
     document_analysis: RenderDocumentAnalysis | None = None
     include_source_cleanup: bool = True
+    # 准备步骤的注入点（visual_profile / 渲染源底子 / 按框去文字走缓存）；None 时都现做。
+    prepare_hooks: RenderPrepareHooks | None = None
 
 
 @dataclass(frozen=True)

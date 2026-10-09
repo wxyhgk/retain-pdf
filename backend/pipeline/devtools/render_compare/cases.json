@@ -7,33 +7,103 @@
       "job_id": "20261006023250-703433",
       "alternates": [],
       "variants": [
-        {"name": "typst", "engine": "typst"},
-        {"name": "rpr", "engine": "rpr"}
+        {
+          "name": "typst",
+          "engine": "typst"
+        },
+        {
+          "name": "rpr",
+          "engine": "rpr"
+        },
+        {
+          "name": "rpr-fit",
+          "engine": "rpr_fit"
+        }
       ],
-      "pairs": [["typst", "rpr"]]
+      "pairs": [
+        [
+          "typst",
+          "rpr"
+        ],
+        [
+          "typst",
+          "rpr-fit"
+        ]
+      ]
     },
     {
       "name": "scan-paper",
       "label": "扫描件论文（typst 系）",
       "job_id": "20260917021616-ade6bc",
-      "alternates": ["20260919094907-0bfcc6", "20260920000013-875ed5"],
-      "variants": [
-        {"name": "typst", "engine": "typst"},
-        {"name": "rpr", "engine": "rpr"}
+      "alternates": [
+        "20260919094907-0bfcc6",
+        "20260920000013-875ed5"
       ],
-      "pairs": [["typst", "rpr"]]
+      "variants": [
+        {
+          "name": "typst",
+          "engine": "typst"
+        },
+        {
+          "name": "rpr",
+          "engine": "rpr"
+        },
+        {
+          "name": "rpr-fit",
+          "engine": "rpr_fit"
+        }
+      ],
+      "pairs": [
+        [
+          "typst",
+          "rpr"
+        ],
+        [
+          "typst",
+          "rpr-fit"
+        ]
+      ]
     },
     {
       "name": "editable-paper",
       "label": "普通可编辑论文（overlay）",
       "job_id": "20260921092508-fe8d63",
-      "alternates": ["20261006142134-91ceaf"],
-      "variants": [
-        {"name": "typst-overlay", "engine": "typst"},
-        {"name": "typst-typstmode", "engine": "typst", "render_mode": "typst"},
-        {"name": "rpr-overlay", "engine": "rpr"}
+      "alternates": [
+        "20261006142134-91ceaf"
       ],
-      "pairs": [["typst-overlay", "rpr-overlay"], ["typst-typstmode", "rpr-overlay"]]
+      "variants": [
+        {
+          "name": "typst-overlay",
+          "engine": "typst"
+        },
+        {
+          "name": "typst-typstmode",
+          "engine": "typst",
+          "render_mode": "typst"
+        },
+        {
+          "name": "rpr-overlay",
+          "engine": "rpr"
+        },
+        {
+          "name": "rpr-fit-overlay",
+          "engine": "rpr_fit"
+        }
+      ],
+      "pairs": [
+        [
+          "typst-overlay",
+          "rpr-overlay"
+        ],
+        [
+          "typst-typstmode",
+          "rpr-overlay"
+        ],
+        [
+          "typst-overlay",
+          "rpr-fit-overlay"
+        ]
+      ]
     }
   ]
 }

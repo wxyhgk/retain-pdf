@@ -17,6 +17,7 @@ use crate::job_runner::{
     ProcessRuntimeDeps, ProcessStageKind,
 };
 
+use crate::job_runner::render_prepare::{start_render_prepare, RENDER_PREPARE_FINISH_TIMEOUT};
 use crate::job_runner::stage_contract::{
     ensure_translations_dir_ready, ocr_ready_inputs_for_translation,
 };
@@ -51,10 +52,13 @@ pub(super) fn record_ocr_child_finished(
     );
 }
 
+/// `render_follows`：翻译之后紧接着渲染（整本流程、要求翻译后渲染的流程）。为真时与翻译并行
+/// 拉起渲染准备进程（见 `render_prepare`），翻译结束后限时等它收尾。
 pub(super) async fn run_translation_stage(
     deps: &ProcessRuntimeDeps,
     mut parent_job: JobRuntimeState,
     parent_job_paths: &JobPaths,
+    render_follows: bool,
 ) -> Result<TranslationStageResult> {
     let translate_inputs = ocr_ready_inputs_for_translation(&parent_job, &deps.persist.data_root)?;
     let normalized_path = translate_inputs.normalized_path;
@@ -83,13 +87,31 @@ pub(super) async fn run_translation_stage(
     // 翻译跑完后面一定还有渲染——四个调用方(book / translate / 两条 artifacts
     // 复用路径)无一例外。所以这一步成功时不能落终态,否则 stage_history 会多出
     // 一条 finished/succeeded 夹在 translating 与 rendering 之间。
+    let render_prepare = if render_follows {
+        start_render_prepare(
+            deps,
+            &parent_job,
+            parent_job_paths,
+            &normalized_path,
+            &source_pdf_path,
+        )
+    } else {
+        None
+    };
     let job = execute_process_job_stage(
         deps.clone(),
         parent_job,
         &[],
         ProcessStageKind::Intermediate,
     )
-    .await?;
+    .await;
+    if let Some(process) = render_prepare {
+        if matches!(&job, Ok(job) if matches!(job.status, JobStatusKind::Succeeded)) {
+            process.finish(RENDER_PREPARE_FINISH_TIMEOUT).await;
+        }
+        // 翻译失败 / 被取消：不再等，句柄在这里丢弃，kill_on_drop 结束进程。
+    }
+    let job = job?;
     Ok(TranslationStageResult {
         job,
         source_pdf_path,

@@ -33,6 +33,8 @@ class BBoxTextStripResult:
     skipped_visual_background_page_indices: frozenset[int] = frozenset()
     skipped_form_xobject_page_indices: frozenset[int] = frozenset()
     strip_no_effect_page_indices: frozenset[int] = frozenset()
+    # 时间预算用完、没来得及处理的页（也算在 skipped_form_xobject 里走覆盖兜底）；非空时结果不完整，不能缓存。
+    deadline_skipped_page_indices: frozenset[int] = frozenset()
     candidates: BBoxTextStripCandidates | None = None
 
 

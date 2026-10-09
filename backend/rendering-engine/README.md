@@ -5,8 +5,8 @@
 
 | 文件 | 作用 |
 | --- | --- |
-| `engine/` | 引擎源码最小集合（`bin/rpr-retain.js`、`src/{text,typeset,output,retain}`、`data/fonts`、`package.json`、`LICENSE`）与 `COMMIT` |
-| `package.json` / `package-lock.json` | 运行时 npm 依赖，只有 `mathjax-full`（锁 3.2.1） |
+| `engine/` | 引擎源码最小集合（`bin/rpr-retain.js`、`bin/rpr-fit.js`、`src/`、`data/fonts`（宽度表与后备字体；思源宋体用本仓库 `resources/fonts` 那份，`sync.sh` 不复制）、`package.json`、`LICENSE`）与 `COMMIT` |
+| `package.json` / `package-lock.json` | 运行时 npm 依赖：`mathjax-full`（锁 3.2.1，公式）与 `fontkit`（锁 2.0.4，引擎直接写 PDF 时嵌入、整形字体） |
 | `UPSTREAM` | 来源仓库、ref、提交号、同步时间 |
 | `sync.sh` | 从引擎仓库指定提交重新复制 `engine/` |
 
@@ -14,11 +14,11 @@
 
 ## 开发环境
 
-需要 Node ≥ 22.8 和 Typst 0.15.1（与 Typst 路线同一个）。
+需要 Node ≥ 22.8。引擎自己写 PDF，不需要 Typst（只有设 `RETAIN_RPR_ENGINE_OUTPUT=typst` 对照时才用 Typst 0.15.1）。
 
 ```sh
 cd backend/rendering-engine
-npm ci --omit=dev --ignore-scripts   # 装 mathjax-full 到 ./node_modules（已被 gitignore）
+npm ci --omit=dev --ignore-scripts   # 装 mathjax-full、fontkit 到 ./node_modules（已被 gitignore）
 ```
 
 没装的话 rpr 路线会回退 Typst（`pipeline_summary.render_engine.fallback_reason = engine_dependencies_missing`），任务不失败。
@@ -36,7 +36,8 @@ backend/rendering-engine/sync.sh <ref> <引擎仓库路径>
 
 - 引擎目录：`RETAIN_RPR_ENGINE_DIR`，未设置时用仓库里的本目录；
 - Node：`RETAINPDF_NODE_BIN`（桌面端指向 Electron 本体，配 `ELECTRON_RUN_AS_NODE=1`）→ PATH 里的 `node`；
-- Typst：`TYPST_BIN` → PATH；字体目录与 Typst 路线相同（`RETAIN_PDF_TYPST_FONT_DIRS` 等），用 `--font-path` 传给引擎。
+- 字体：目录与 Typst 路线相同（`RETAIN_PDF_TYPST_FONT_DIRS` 等，含 `resources/fonts` 的思源宋体），用 `--font-path` 传给引擎；引擎再找自带的 `data/fonts/fallback`（Typst 内置的那几个后备字体，授权见其 NOTICE）。
+- 输出：默认 `--output pdf`（引擎直接写 PDF）；`RETAIN_RPR_ENGINE_OUTPUT=typst` 改用引擎的 Typst 输出（需要 `TYPST_BIN` → PATH），只用于对照。
 
 打包：Docker（`ops/deployment/docker/backend/Dockerfile.app` 的 `rprengine` 阶段，拷到
 `/app/services/rendering-engine`）与桌面端（`frontend/desktop/scripts/prepare-app.mjs`，拷到
@@ -45,7 +46,7 @@ backend/rendering-engine/sync.sh <ref> <引擎仓库路径>
 ## CLI 契约
 
 ```
-node engine/bin/rpr-retain.js --input in.json --out-dir DIR [--typst BIN] [--font-path DIR]...
+node engine/bin/rpr-retain.js --input in.json --out-dir DIR [--output pdf|typst] [--typst BIN] [--font-path DIR]...
 ```
 
 输入 `rpr_retain_input_v1`、输出 `DIR/overlay.pdf` + `DIR/report.json`（`rpr_retain_report_v1`），

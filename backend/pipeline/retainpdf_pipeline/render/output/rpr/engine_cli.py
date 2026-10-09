@@ -2,7 +2,10 @@
 
 引擎以子进程 CLI 运行，输入输出走 JSON 文件（契约见 backend/rendering-engine/README.md）：
 
-    node <engine>/bin/rpr-retain.js --input <in.json> --out-dir <DIR> [--typst <bin>] [--font-path <dir>]...
+    node <engine>/bin/rpr-retain.js --input <in.json> --out-dir <DIR> --output pdf [--font-path <dir>]...
+
+引擎自己写 PDF（不经过 Typst）；``RETAIN_RPR_ENGINE_OUTPUT=typst`` 时改用引擎的 Typst 输出
+（对照用，需要 typst）。
 
 退出码 0 = 成功，产物 <DIR>/overlay.pdf 与 <DIR>/report.json；非 0 = 失败，stderr 最后一行
 是 ``{"error": "..."}``。
@@ -36,11 +39,14 @@ from retainpdf_pipeline.render.output.typst.compiler import _resolved_font_paths
 ENGINE_DIR_ENV_VAR = "RETAIN_RPR_ENGINE_DIR"
 NODE_ENV_VAR = "RETAINPDF_NODE_BIN"
 ENGINE_TIMEOUT_ENV_VAR = "RETAIN_RPR_ENGINE_TIMEOUT_SECONDS"
+ENGINE_OUTPUT_ENV_VAR = "RETAIN_RPR_ENGINE_OUTPUT"
+ENGINE_OUTPUTS = ("pdf", "typst")
 MIN_NODE_VERSION = (22, 8, 0)
 DEFAULT_TIMEOUT_SECONDS = 1800
 ENGINE_ENTRY_RELATIVE = Path("engine") / "bin" / "rpr-retain.js"
 ENGINE_PACKAGE_RELATIVE = Path("engine") / "package.json"
-MATHJAX_RELATIVE = Path("node_modules") / "mathjax-full" / "package.json"
+# 运行时 npm 依赖（backend/rendering-engine/package.json）：公式与写 PDF 时的字体。
+RUNTIME_PACKAGES = ("mathjax-full", "fontkit")
 
 # rpr/ → output/ → render/ → retainpdf_pipeline/ → pipeline/ → backend/
 _BACKEND_ROOT = Path(__file__).resolve().parents[5]
@@ -154,18 +160,20 @@ def _engine_version(engine_dir: Path) -> str:
     return f"{version}+{commit}" if version and commit else version
 
 
-def resolve_engine_runtime() -> RprEngineRuntime:
+def resolve_engine_runtime(entry_script: str = "rpr-retain.js") -> RprEngineRuntime:
+    """entry_script：rpr-retain.js（rpr：retain-pdf 定字号）或 rpr-fit.js（rpr_fit：引擎测量定字号）。"""
     engine_dir = resolve_engine_dir()
-    entry = engine_dir / ENGINE_ENTRY_RELATIVE
+    entry = engine_dir / ENGINE_ENTRY_RELATIVE.parent / entry_script
     if not entry.is_file():
         raise RprEngineUnavailable(
             "engine_not_installed",
             f"找不到 rpr 引擎入口 {entry}（{ENGINE_DIR_ENV_VAR} 未设置时用仓库里的 backend/rendering-engine）",
         )
-    if not (engine_dir / MATHJAX_RELATIVE).is_file():
+    missing = [name for name in RUNTIME_PACKAGES if not (engine_dir / "node_modules" / name / "package.json").is_file()]
+    if missing:
         raise RprEngineUnavailable(
             "engine_dependencies_missing",
-            f"rpr 引擎缺运行时依赖 mathjax-full：在 {engine_dir} 下运行 npm ci --omit=dev",
+            f"rpr 引擎缺运行时依赖 {', '.join(missing)}：在 {engine_dir} 下运行 npm ci --omit=dev",
         )
     node, electron_as_node = _resolve_node()
     version_text = _node_version(node, electron_as_node=electron_as_node)
@@ -209,6 +217,12 @@ def _error_from_stderr(stderr: str) -> str:
     return tail[-500:] if tail else "no stderr"
 
 
+def engine_output() -> str:
+    """引擎的输出方式：pdf（默认，引擎自己写 PDF）或 typst（引擎生成 Typst 再编译，对照用）。"""
+    value = os.environ.get(ENGINE_OUTPUT_ENV_VAR, "").strip().lower()
+    return value if value in ENGINE_OUTPUTS else "pdf"
+
+
 def run_engine(
     runtime: RprEngineRuntime,
     *,
@@ -217,11 +231,13 @@ def run_engine(
     font_paths: list[Path] | None = None,
 ) -> RprEngineRun:
     out_dir.mkdir(parents=True, exist_ok=True)
-    command = [runtime.node, str(runtime.entry), "--input", str(input_path), "--out-dir", str(out_dir)]
-    try:
-        command.extend(["--typst", resolve_typst_bin()])
-    except ExternalToolNotFound as exc:
-        raise RprEngineUnavailable("typst_not_found", str(exc)) from exc
+    output = engine_output()
+    command = [runtime.node, str(runtime.entry), "--input", str(input_path), "--out-dir", str(out_dir), "--output", output]
+    if output == "typst":
+        try:
+            command.extend(["--typst", resolve_typst_bin()])
+        except ExternalToolNotFound as exc:
+            raise RprEngineUnavailable("typst_not_found", str(exc)) from exc
     for font_path in _resolved_font_paths(font_paths):
         command.extend(["--font-path", str(font_path)])
     started = time.perf_counter()
@@ -267,12 +283,14 @@ def run_engine(
 
 __all__ = [
     "ENGINE_DIR_ENV_VAR",
+    "ENGINE_OUTPUT_ENV_VAR",
     "MIN_NODE_VERSION",
     "NODE_ENV_VAR",
     "RprEngineFailed",
     "RprEngineRun",
     "RprEngineRuntime",
     "RprEngineUnavailable",
+    "engine_output",
     "resolve_engine_dir",
     "resolve_engine_runtime",
     "run_engine",

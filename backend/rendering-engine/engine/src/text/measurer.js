@@ -154,7 +154,10 @@
           // Narrowest the line can be drawn: squeezing stops at its
           // shrinkability, so a line of unbreakable formulas stays too wide.
           minWidth: Math.max(0, contentWidth - (Number(line.shrinkable) || 0)),
-          forced: line.mandatory
+          forced: line.mandatory,
+          // The paragraph starts with an indent: its first line keeps a
+          // leading opening bracket's blank half (placeLine needs to know).
+          lead: indent > 0 || hang > 0
         });
         maxLineWidth = Math.max(maxLineWidth, x + (justified ? available : contentWidth));
         y = baseline + line.bottom + (last ? 0 : leading);
@@ -282,7 +285,27 @@
       return runs;
     }
 
-    return { metrics: fontMetrics, prepare, layout, fitFontSize, naturalWidth, lineRuns };
+    // Where every glyph of a laid-out line is drawn (Linebreak.placeLine), in
+    // pt from the line's left edge. line: { start, end, forced, lead }; target
+    // (pt): the width the line is set to (justified, or squeezed when overfull).
+    function placeLine(prepared, line, placeOptions = {}) {
+      const fontSize = Number(placeOptions.fontSize);
+      if (!(fontSize > 0)) throw new RangeError("placeLine needs a positive fontSize");
+      const target = Number(placeOptions.target);
+      const placed = Linebreak.placeLine(prepared, line.start, line.end, {
+        mandatory: Boolean(line.forced),
+        lead: Boolean(line.lead),
+        target: Number.isFinite(target) ? target / fontSize : undefined,
+        justify: Boolean(placeOptions.justify),
+        overhang: placeOptions.overhang
+      });
+      return {
+        glyphs: placed.glyphs.map(glyph => ({ index: glyph.index, x: glyph.x * fontSize, advance: glyph.advance * fontSize })),
+        width: placed.width * fontSize
+      };
+    }
+
+    return { metrics: fontMetrics, prepare, layout, fitFontSize, naturalWidth, lineRuns, placeLine };
   }
 
   // ----- TeX math delimiters -----

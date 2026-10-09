@@ -106,6 +106,29 @@ def _fold_line_breaks(text: str, *, preserve_line_breaks: bool) -> str:
     return text.replace(" ", "\n\n")
 
 
+_HTML_SCRIPT_RE = re.compile(r"<(sup|sub)>(.*?)</\1>", re.S | re.I)
+_TEX_TEXT_SPECIALS = {"\\": r"\textbackslash{}", "{": r"\{", "}": r"\}", "$": r"\$", "%": r"\%",
+                      "#": r"\#", "&": r"\&", "_": r"\_", "^": r"\^{}", "~": r"\~{}"}
+
+
+def _html_scripts(text: str) -> str:
+    """HTML 上下标（MinerU / 模型常写 ``<sup>37</sup>``、``<sup>−1</sup>``、``<sub>2</sub>``）→ 行内公式。
+
+    Typst 路线的 cmarker 自己认这两个标签；引擎只认 ``$...$``，不转就会把标签原样印出来。
+    内容放进 ``\text{}``：引用号、脚注字母保持直立（与 HTML 上标一致），TeX 特殊字符转义。
+    """
+
+    def replace(match: re.Match[str]) -> str:
+        body = re.sub(r"\s+", " ", match.group(2)).strip()
+        if not body:
+            return ""
+        escaped = "".join(_TEX_TEXT_SPECIALS.get(char, char) for char in body)
+        mark = "^" if match.group(1).lower() == "sup" else "_"
+        return f"${mark}{{\\text{{{escaped}}}}}$"
+
+    return _HTML_SCRIPT_RE.sub(replace, text)
+
+
 def _escape_literal_dollars(text: str) -> str:
     out: list[str] = []
     for index, char in enumerate(text):
@@ -126,7 +149,7 @@ def markdown_to_engine_text(markdown: str, *, preserve_line_breaks: bool = False
     def flush() -> None:
         if plain:
             segment = "".join(plain)
-            chunks.append(_unescape_markdown_segment(_strip_emphasis(segment)))
+            chunks.append(_html_scripts(_unescape_markdown_segment(_strip_emphasis(segment))))
             plain.clear()
 
     for token in analyze_text(source).tokens:
