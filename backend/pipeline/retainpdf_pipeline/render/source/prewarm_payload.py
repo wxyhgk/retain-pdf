@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from pathlib import Path
 import os
 from statistics import median
@@ -34,6 +33,8 @@ from retainpdf_pipeline.render.source.prewarm_contracts import GEOMETRY_ADJUSTME
 from retainpdf_pipeline.render.source.prewarm_contracts import PAYLOAD_RENDER_ALGORITHM_VERSION
 from retainpdf_pipeline.render.source.prewarm_manifest_io import bbox_candidates_to_manifest
 from retainpdf_pipeline.render.source.prewarm_page_specs import build_background_render_page_specs_manifest
+from retainpdf_pipeline.render.contracts.prepare_hooks import RenderPrepareHooks
+from retainpdf_pipeline.render.source.intermediate_paths import link_or_copy_file
 from retainpdf_pipeline.render.visual_profile import build_document_visual_profile
 from retainpdf_pipeline.render.visual_profile import visual_profile_path_from_prewarm_manifest
 from retainpdf_pipeline.render.visual_profile import write_document_visual_profile
@@ -51,7 +52,7 @@ def build_payload_prewarm(
     effective_render_mode: str = "",
     source_cleanup_strategy: str = "pikepdf_text_strip",
     bbox_text_strip_candidates: BBoxTextStripCandidates | None = None,
-    visual_profile_builder: Callable[[Path, dict[int, list[dict]]], Any] | None = None,
+    prepare_hooks: RenderPrepareHooks | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     timings: dict[str, float] = {}
@@ -103,6 +104,7 @@ def build_payload_prewarm(
         source_pdf_path=source_pdf_path,
         translated_pages=prepared_pages,
         manifest_path=manifest_path,
+        prepare_hooks=prepare_hooks,
     )
     timings["pdf_structure_profile"] = time.perf_counter() - structure_started
     mode = str(effective_render_mode or "").strip()
@@ -147,6 +149,7 @@ def build_payload_prewarm(
     if prepared_for_render is not None:
         try:
             color_adapt_started = time.perf_counter()
+            visual_profile_builder = prepare_hooks.visual_profile if prepare_hooks is not None else None
             visual_profile = (visual_profile_builder or build_document_visual_profile)(source_pdf_path, prepared_for_render)
             visual_profile_path = visual_profile_path_from_prewarm_manifest(manifest_path)
             write_document_visual_profile(visual_profile_path, visual_profile)
@@ -248,8 +251,18 @@ def ensure_pdf_structure_profile(
     source_pdf_path: Path,
     translated_pages: dict[int, list[dict]],
     manifest_path: Path,
+    prepare_hooks: RenderPrepareHooks | None = None,
 ) -> tuple[Path | None, PdfStructureDocumentProfile | None]:
     pdf_structure_profile_path = pdf_structure_profile_path_from_prewarm_manifest(manifest_path)
+    if prepare_hooks is not None and prepare_hooks.pdf_structure_profile is not None:
+        # 准备步骤（有指纹）说了算；文件放到原来的位置给 manifest / 下游读。
+        try:
+            profile, cached_path = prepare_hooks.pdf_structure_profile(source_pdf_path, translated_pages)
+            link_or_copy_file(cached_path, pdf_structure_profile_path)
+            return pdf_structure_profile_path, profile
+        except Exception as exc:
+            print(f"render payload prewarm: pdf structure profile failed {type(exc).__name__}: {exc}", flush=True)
+            return None, None
     if pdf_structure_profile_path.exists():
         profile = read_pdf_structure_profile(pdf_structure_profile_path)
         if profile is not None:

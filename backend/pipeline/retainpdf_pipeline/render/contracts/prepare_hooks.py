@@ -19,6 +19,8 @@ class RenderPrepareHooks:
     source_base: Callable | None = None
     # (execute, **按框去文字的参数) -> BBoxTextStripResult；execute 是原本的执行函数
     text_strip: Callable | None = None
+    # (source_pdf_path, pages) -> (PdfStructureDocumentProfile, json 文件)
+    pdf_structure_profile: Callable | None = None
 
 
 __all__ = ["RenderPrepareHooks"]

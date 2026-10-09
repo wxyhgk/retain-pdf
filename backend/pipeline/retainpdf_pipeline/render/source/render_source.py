@@ -12,6 +12,7 @@ from retainpdf_pipeline.render.source.compression.pdf_copy import build_image_co
 from retainpdf_pipeline.render.contracts import RenderDocumentAnalysis
 from retainpdf_pipeline.render.contracts.prepare_hooks import RenderPrepareHooks
 from retainpdf_pipeline.render.source.intermediate_paths import intermediate_pdf_path
+from retainpdf_pipeline.render.source.intermediate_paths import link_or_copy_file
 from retainpdf_pipeline.render.source_cleanup.types import BBoxTextStripCandidates
 from retainpdf_pipeline.render.source.preparation.hidden_text_strip import build_hidden_text_stripped_pdf_copy
 from retainpdf_pipeline.render.source.preparation.xobject_sanitize import build_invalid_xobject_sanitized_pdf_copy
@@ -106,15 +107,6 @@ def build_render_source_base(
             path.unlink(missing_ok=True)
 
 
-def _link_or_copy(source: Path, target: Path) -> None:
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.unlink(missing_ok=True)
-    try:
-        os.link(source, target)
-    except OSError:
-        shutil.copyfile(source, target)
-
-
 def build_render_source_pdf(
     *,
     source_pdf_path: Path,
@@ -160,7 +152,7 @@ def build_render_source_pdf(
         suffix = ".source-hidden-text-stripped.pdf" if base.hidden_text_stripped else ".source-xobject-sanitized.pdf"
         render_source_path = intermediate_pdf_path(work_root=work_root, output_pdf_path=output_pdf_path, suffix=suffix)
         if base.cached:
-            _link_or_copy(base.path, render_source_path)
+            link_or_copy_file(base.path, render_source_path)
         else:
             os.replace(base.path, render_source_path)
         if not artifact_mode:

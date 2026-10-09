@@ -86,7 +86,7 @@ def build_full_sync_payload_prewarm(
         effective_render_mode=effective_render_mode,
         source_cleanup_strategy=source_cleanup_strategy,
         bbox_text_strip_candidates=getattr(prepared, "bbox_text_strip_candidates", None),
-        visual_profile_builder=prepare_hooks.visual_profile if prepare_hooks is not None else None,
+        prepare_hooks=prepare_hooks,
     )
 
 

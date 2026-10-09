@@ -192,6 +192,7 @@ def execute_render_plan(
                 source_pdf_path=render_plan.render_inputs.source_pdf_path,
                 translated_pages=render_plan.selected_pages,
                 manifest_path=render_prewarm_manifest_path,
+                prepare_hooks=hooks,
             )
         render_source_pdf = build_render_source_pdf(
             source_pdf_path=render_plan.render_inputs.source_pdf_path,

@@ -317,3 +317,30 @@ def test_text_strip_step_does_not_cache_a_deadline_cut_result(tmp_path: Path) ->
     assert cut.deadline_skipped_page_indices == frozenset({3}) and cut.output_pdf_path.read_bytes().startswith(b"%PDF")
     runner(_fake_strip(calls), output_pdf_path=tmp_path / "y.pdf", **kwargs)
     assert len(calls) == 2, "an incomplete result is never reused"
+
+
+def test_pdf_structure_profile_follows_the_ocr_boxes(tmp_path: Path) -> None:
+    from retainpdf_pipeline.render.prepare.hooks import prepare_hooks
+    from retainpdf_pipeline.render.source.prewarm_payload import ensure_pdf_structure_profile
+
+    pdf, _document = _doc_and_pdf(tmp_path)
+    manifest_path = tmp_path / "render_prewarm" / "render_source_prewarm_manifest.json"
+    hooks = prepare_hooks(tmp_path / "render_prepare")
+    over_text = {0: [{"item_id": "p001-b000", "bbox": [15, 35, 120, 60], "translated_text": "旧"}]}
+    path, first = ensure_pdf_structure_profile(
+        source_pdf_path=pdf, translated_pages=over_text, manifest_path=manifest_path, prepare_hooks=hooks
+    )
+    assert path is not None and path.is_file()
+    assert [hit.item_id for hit in first.pages[0].item_hits] == ["p001-b000"]
+    # Rewording keeps the cached profile.
+    reworded = {0: [{**over_text[0][0], "translated_text": "新"}]}
+    _, again = ensure_pdf_structure_profile(
+        source_pdf_path=pdf, translated_pages=reworded, manifest_path=manifest_path, prepare_hooks=hooks
+    )
+    assert again.pages[0].item_hits == first.pages[0].item_hits
+    # A re-run OCR with other boxes must not reuse the old file (the old code did, since the file existed).
+    moved = {0: [{"item_id": "p001-b000", "bbox": [150, 200, 280, 260]}]}
+    _, fresh = ensure_pdf_structure_profile(
+        source_pdf_path=pdf, translated_pages=moved, manifest_path=manifest_path, prepare_hooks=hooks
+    )
+    assert fresh.pages[0].item_hits == ()

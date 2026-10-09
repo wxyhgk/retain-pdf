@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from retainpdf_pipeline.render.contracts.prepare_hooks import RenderPrepareHooks
+from retainpdf_pipeline.render.prepare.pdf_structure_profile import pdf_structure_profile_builder
 from retainpdf_pipeline.render.prepare.source_base import source_base_builder
 from retainpdf_pipeline.render.prepare.text_strip import text_strip_runner
 from retainpdf_pipeline.render.prepare.visual_profile import visual_profile_builder
@@ -18,6 +19,7 @@ def prepare_hooks(prepare_dir: Path | None) -> RenderPrepareHooks | None:
         visual_profile=visual_profile_builder(prepare_dir),
         source_base=source_base_builder(prepare_dir),
         text_strip=text_strip_runner(prepare_dir),
+        pdf_structure_profile=pdf_structure_profile_builder(prepare_dir),
     )
 
 
