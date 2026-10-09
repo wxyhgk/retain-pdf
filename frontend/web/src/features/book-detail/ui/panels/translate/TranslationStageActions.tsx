@@ -66,10 +66,12 @@ export function TranslationStageActions({
   error?: string;
   onRetry: (
     stage: JobRetryStage,
-    options?: { acceptDuplicateRisk?: boolean },
+    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string },
   ) => Promise<unknown>;
 }) {
   const [confirmAction, setConfirmAction] = useState<JobStageRetryActionView | null>(null);
+  // 重新渲染用哪个排版引擎；空串 = 沿用任务原来的。
+  const [renderEngine, setRenderEngine] = useState("");
   // 父级 hook 已把错误写入 error prop；本地兜底覆盖 onRetry 直接抛错
   // 但父级未落 error 的场景（如 mock/装配差异），保证错误仍落到 UI。
   const [localError, setLocalError] = useState("");
@@ -86,7 +88,7 @@ export function TranslationStageActions({
 
   async function runRetry(
     stage: JobRetryStage,
-    options?: { acceptDuplicateRisk?: boolean },
+    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string },
   ) {
     setLocalError("");
     try {
@@ -137,6 +139,7 @@ export function TranslationStageActions({
               title={!action.can_retry && reason ? reason : undefined}
               onClick={() => {
                 if (needsConfirm(action)) setConfirmAction(action);
+                else if (action.stage === "render" && renderEngine) void runRetry("render", { renderEngine });
                 else void runRetry(action.stage);
               }}
             >
@@ -147,6 +150,21 @@ export function TranslationStageActions({
             </button>
           );
         })}
+        {!checking && visibleActions.some((action) => action.stage === "render") ? (
+          <select
+            id="book-detail-render-engine"
+            aria-label="重新渲染用的排版引擎"
+            title="重新渲染用的排版引擎"
+            className="book-detail-render-engine h-9 rounded-md border border-input bg-background px-2 text-sm"
+            value={renderEngine}
+            disabled={Boolean(pendingStage)}
+            onChange={(event) => setRenderEngine(event.target.value)}
+          >
+            <option value="">引擎：沿用原来的</option>
+            <option value="rpr_fit">引擎：新引擎</option>
+            <option value="typst">引擎：Typst（旧）</option>
+          </select>
+        ) : null}
       </div>
       {shownError ? <p className="book-detail-stage-actions-error rounded-md border border-foreground/20 bg-muted/40 px-3 py-2 text-xs text-foreground" role="alert">{shownError}</p> : null}
       <ConfirmDialog

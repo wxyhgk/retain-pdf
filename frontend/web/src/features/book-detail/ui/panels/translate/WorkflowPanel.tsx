@@ -44,7 +44,7 @@ export type BookTranslationWorkflowPanelProps = {
   documentJobIds?: string[];
   onRetryStage: (
     stage: JobRetryStage,
-    options?: { acceptDuplicateRisk?: boolean },
+    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string },
   ) => Promise<unknown>;
 };
 

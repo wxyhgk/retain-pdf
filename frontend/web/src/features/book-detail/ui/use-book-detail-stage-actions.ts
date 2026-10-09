@@ -128,7 +128,7 @@ export function useBookDetailStageActions({
 
   const retry = useCallback(async (
     stage: JobRetryStage,
-    { acceptDuplicateRisk = false } = {},
+    { acceptDuplicateRisk = false, renderEngine = "" }: { acceptDuplicateRisk?: boolean; renderEngine?: string } = {},
   ) => {
     const descriptor = stageActions.find((action) => action.stage === stage);
     if (!descriptor?.can_retry || !actions.retryJobStage || pendingStage) return null;
@@ -139,7 +139,11 @@ export function useBookDetailStageActions({
       // 自动续跑（render 原地同 id，其余新建）。显式二次确认风险后、
       // 已完成任务重做、或 resume 不可用时，才走 retry-stage(显式 stage)。
       // 精修不是「恢复失败任务」：不走 resume，直接 retry-stage(refine)。
-      if (stage !== "refine" && !acceptDuplicateRisk && isResumeCandidate(job)) {
+      // 重新渲染时指定了引擎也不走 resume：resume 不带 overrides，会悄悄沿用旧引擎。
+      const engineOverride = stage === "render" && (renderEngine === "rpr_fit" || renderEngine === "typst")
+        ? renderEngine
+        : "";
+      if (stage !== "refine" && !engineOverride && !acceptDuplicateRisk && isResumeCandidate(job)) {
         try {
           const resume = actions.resumeJob
             ? await actions.resumeJob(jobId)
@@ -164,8 +168,18 @@ export function useBookDetailStageActions({
           // resume 不可用（404/不可恢复等）→ 兜底显式 retry-stage。
         }
       }
+      const body = (descriptor.action?.body || {}) as Record<string, any>;
       const result = await actions.retryJobStage(jobId, stage, {
-        ...(descriptor.action?.body || {}),
+        ...body,
+        // 不指定引擎时沿用任务原来的引擎（后端保留 render.engine）。
+        ...(engineOverride
+          ? {
+            overrides: {
+              ...(body.overrides || {}),
+              render: { ...(body.overrides?.render || {}), engine: engineOverride },
+            },
+          }
+          : {}),
         // 精修在原任务上原地跑（不新建任务、不重翻），后端默认整本 review_and_fix。
         ...(stage === "refine" ? { create_new_job: false } : {}),
         ...(acceptDuplicateRisk

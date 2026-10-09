@@ -22,7 +22,7 @@ const QUALITY_HINTS: Record<string, string> = {
 };
 
 const ENGINE_HINTS: Record<string, string> = {
-  auto: "跟着服务端当前的默认引擎走。",
+  auto: "目前默认用自研排版引擎；以后服务端换默认，这里跟着换。",
   rpr_fit: "自研排版引擎：公式不再转换成 Typst，字号按实际放得下的大小来定，放不下会报告。出问题自动退回 Typst。",
   typst: "原来的 Typst 排版，公式要先转换一遍，个别公式可能出错。",
 };
@@ -167,8 +167,8 @@ export function TranslationOptionsPanel() {
             value={workflow.renderEngine || "auto"}
             onChange={(event) => workflowViewActions.setRenderEngine(event.target.value)}
           >
-            <option value="auto">默认</option>
-            <option value="rpr_fit">新引擎（试验）</option>
+            <option value="auto">默认（新引擎）</option>
+            <option value="rpr_fit">新引擎</option>
             <option value="typst">Typst（旧）</option>
           </select>
           <small id="job-render-engine-hint">

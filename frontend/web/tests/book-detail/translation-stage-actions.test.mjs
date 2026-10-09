@@ -171,3 +171,68 @@ test("精修：失败任务也不走断点恢复，直接 retry-stage(refine) �
   root.unmount();
   dom.window.close();
 });
+
+test("重新渲染：可选排版引擎，选了就带 overrides.render.engine 且不走断点恢复；不选沿用原引擎", async () => {
+  const dom = makeDom();
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { useBookDetailStageActions } = await import(
+    "../../src/features/book-detail/ui/use-book-detail-stage-actions.js"
+  );
+  const { TranslationStageActions } = await import(
+    "../../src/features/book-detail/ui/panels/translate/TranslationStageActions.jsx"
+  );
+  const calls = [];
+  function Probe() {
+    const api = useBookDetailStageActions({
+      open: true,
+      job: { job_id: "job-render-1", status: "failed", document_id: "doc-1" },
+      actions: {
+        getJobStageActions: async () => ({
+          job_id: "job-render-1",
+          stages: [{ stage: "render", label: "重新渲染", can_retry: true, action: { body: { stage: "render", create_new_job: false } } }],
+        }),
+        retryJobStage: async (...args) => {
+          calls.push(["retry", ...args]);
+          return { job_id: "job-render-1", workflow: "render" };
+        },
+        resumeJob: async (...args) => {
+          calls.push(["resume", ...args]);
+          return { job_id: "job-render-1" };
+        },
+      },
+    });
+    return React.createElement(TranslationStageActions, {
+      actions: api.stageActions,
+      loading: api.loading,
+      pendingStage: api.pendingStage,
+      error: api.error,
+      onRetry: api.retry,
+    });
+  }
+  const root = createRoot(dom.window.document.getElementById("root"));
+  root.render(React.createElement(Probe));
+  const select = await waitFor(() => dom.window.document.getElementById("book-detail-render-engine"), "引擎下拉");
+  const button = dom.window.document.getElementById("book-detail-retry-render-btn");
+
+  click(dom, button);
+  await waitFor(() => calls.length === 1, "不选引擎时提交");
+  assert.equal(calls[0][0], "resume", "不选引擎：照旧先断点恢复，沿用原引擎");
+
+  const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLSelectElement.prototype, "value").set;
+  setter.call(select, "typst");
+  select.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+  await waitFor(() => select.value === "typst", "选中 Typst");
+  await waitFor(() => !button.disabled, "按钮恢复可点");
+  click(dom, button);
+  await waitFor(() => calls.length === 2, "选了引擎后提交");
+  assert.deepEqual(calls[1], [
+    "retry",
+    "job-render-1",
+    "render",
+    { stage: "render", create_new_job: false, overrides: { render: { engine: "typst" } }, document_id: "doc-1" },
+  ]);
+
+  root.unmount();
+  dom.window.close();
+});
