@@ -334,8 +334,9 @@ function parseExport(tokens, exportIndex) {
   return null;
 }
 
-/** 抽取一个文件的**值依赖**说明符列表（保持出现顺序，含重复）。 */
-export function extractValueSpecifiers(code) {
+/** 抽取一个文件的**值依赖**说明符列表（保持出现顺序，含重复）。
+ *  includeDynamic=false 时不计动态 import()——用来算「首屏同步加载哪些文件」。 */
+export function extractValueSpecifiers(code, { includeDynamic = true } = {}) {
   const tokens = tokenize(code);
   const out = [];
   for (let i = 0; i < tokens.length; i += 1) {
@@ -345,6 +346,10 @@ export function extractValueSpecifiers(code) {
     if (t.value === "import") dep = parseImport(tokens, i);
     else if (t.value === "export") dep = parseExport(tokens, i);
     if (!dep || dep.typeOnly) continue;
+    if (dep.dynamic && !includeDynamic) {
+      if (dep.end) i = dep.end - 1;
+      continue;
+    }
     out.push(dep.spec);
     if (dep.end) i = dep.end - 1;
   }
@@ -393,15 +398,16 @@ function resolveSpecifier(spec, importerFile, fileSet) {
   return null;
 }
 
-/** 构建文件级依赖图。返回 { files, byFile: Map<abs, abs[]>, external: Map<abs,string[]> }。 */
-export function buildGraph() {
+/** 构建文件级依赖图。返回 { files, byFile: Map<abs, abs[]>, external: Map<abs,string[]> }。
+ *  includeDynamic=false 只连静态 import（首屏同步加载的那张图）。 */
+export function buildGraph({ includeDynamic = true } = {}) {
   const files = listSourceFiles();
   const fileSet = new Set(files);
   const byFile = new Map();
   const external = new Map();
   for (const file of files) {
     const code = readFileSync(file, "utf8");
-    const specs = extractValueSpecifiers(code);
+    const specs = extractValueSpecifiers(code, { includeDynamic });
     const deps = [];
     const ext = [];
     for (const spec of specs) {
