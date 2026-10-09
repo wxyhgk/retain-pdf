@@ -2,6 +2,7 @@
 // 字段从 shapeDocumentCardItem / mergeLibraryJobItem / cardSignatureOf 反推。
 
 import type { DialogStore } from "@/platform/store/dialog-store.js";
+import type { RecentJobsStatePort } from "./recent-jobs/state.js";
 import type {
   Store,
   StoreChangeMeta,
@@ -193,7 +194,7 @@ export type LibraryControllerDeps = {
     },
   ) => void;
   /** 网格状态端口（供 selectJob 的 findItem 内聚到 controller） */
-  recentJobsStatePort?: any | null;
+  recentJobsStatePort?: Pick<RecentJobsStatePort, "getSnapshot"> | null;
 };
 
 export type LibraryController = {

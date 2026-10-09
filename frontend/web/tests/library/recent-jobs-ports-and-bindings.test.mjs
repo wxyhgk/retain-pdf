@@ -316,7 +316,6 @@ test("recent jobs navigation port owns workflow reader and recovery side effects
   };
   try {
     const port = createRecentJobsNavigationPort({
-      doc,
       jobRuntimePort: {
         currentJobId: () => "job-current",
         openJob: (jobId) => {

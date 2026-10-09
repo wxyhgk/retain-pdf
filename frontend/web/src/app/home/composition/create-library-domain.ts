@@ -108,7 +108,6 @@ export function createLibraryDomain({ features, documentRef }: CreateLibraryDoma
     currentJobId: () => features.jobRuntimeFeature.currentJobId() || "",
     jobRuntimePort: recentJobsJobRuntimePort,
     readerPort: recentJobsReaderPort,
-    doc: documentRef,
   });
 
   // startPolling/openReader 可由 navigationPort 兜底；签名仍标必填。

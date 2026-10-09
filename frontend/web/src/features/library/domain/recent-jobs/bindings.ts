@@ -93,8 +93,7 @@ export function bindRecentJobsFeatureEvents({
       librarySubscription?.destroy?.();
       refreshScheduler?.dispose?.();
       runtime?.recentJobsLoader?.dispose?.();
-      // RecentJobsRuntime 的 activeRefreshLoop 类型未声明 dispose（运行时实际有），此处按实际能力收窄。
-      (runtime?.activeRefreshLoop as { dispose?: () => void } | null)?.dispose?.();
+      runtime?.activeRefreshLoop?.dispose?.();
     },
   };
 }

@@ -125,3 +125,4 @@ export {
   getCardRenderCountForTests,
   resetCardRenderCountsForTests,
 } from "./ui/shell/BookCard.jsx";
+export type { RecentJobsStatePort } from "./domain/recent-jobs/state.js";

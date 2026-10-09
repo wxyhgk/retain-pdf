@@ -8,14 +8,11 @@
 // 下沉到这里，`features/library` 侧改为 re-export，消费方无需改动。
 // 型别擦除，运行时零影响。
 
-/** job 进度条（top-level progress 或 runtime_status.progress） */
-export type LibraryProgress = {
-  current?: number | null;
-  total?: number | null;
-  percent?: number | null;
-  unit?: string | null;
-  [key: string]: unknown;
-};
+import type { JobProgress } from "@retainpdf/domain/job";
+
+/** job 进度条（top-level progress 或 runtime_status.progress）。就是 domain 的 JobProgress：
+ *  以前这里另写一份（还多一个任意字段签名），和阶段适配器的返回值对不上。 */
+export type LibraryProgress = JobProgress;
 /** 运行时状态快照（轮询 / stage adapter 写入） */
 export type LibraryRuntimeStatus = {
   stageKey?: string;
@@ -112,6 +109,13 @@ export type LibraryCardItem = {
   book_summary?: LibraryBookSummary;
   workflow?: string;
   job_type?: string;
+  /** 重试 / 重跑出的新任务指回原任务。 */
+  source_job_id?: string;
+
+  // 产物是否就绪（运行时合并时写入）
+  output_pdf_ready?: boolean;
+  markdown_ready?: boolean;
+  bundle_ready?: boolean;
 
   // runtime merge / API 可能附带额外字段
   [key: string]: unknown;
