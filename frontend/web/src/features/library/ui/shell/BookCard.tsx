@@ -20,6 +20,7 @@
 //   - ./book-card/BookCardMediaOverlays.tsx 批量选择与 hover 操作菜单
 
 import { memo } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 import { cn } from "@retainpdf/ui/lib/utils";
 import { isLibraryCardProcessing, libraryCardBadge } from "../../domain/card/library-card-badge.js";
 import { useRecentJobCover } from "../display/useRecentJobCover.js";
@@ -125,15 +126,16 @@ function BookCardImpl({
     if (jobId) onSelect?.(jobId);
   }
 
-  function handleCardClick(event) {
-    if (event.target?.closest?.("button")) return;
+  // EventTarget 类型上没有 closest；点击目标实际都是 Element，这里只做类型收窄，保持原来的可选调用。
+  function handleCardClick(event: MouseEvent<HTMLDivElement>) {
+    if ((event.target as Element | null)?.closest?.("button")) return;
     event.preventDefault();
     openTarget();
   }
 
-  function handleKeyDown(event) {
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key !== "Enter" && event.key !== " ") return;
-    if (event.target?.closest?.("button")) return;
+    if ((event.target as Element | null)?.closest?.("button")) return;
     event.preventDefault();
     openTarget();
   }

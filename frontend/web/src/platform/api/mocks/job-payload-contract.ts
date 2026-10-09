@@ -25,7 +25,7 @@ export const JOB_PAYLOAD_TOP_LEVEL_FIELDS = CREATE_JOB_TOP_LEVEL_FIELDS;
 export const JOB_PAYLOAD_SECTION_FIELDS = CREATE_JOB_SECTION_FIELDS;
 
 /** 模拟后端的 deny_unknown_fields:多一个键就抛,和真后端的 400 对齐。 */
-export function assertKnownJobPayloadFields(payload, { label = "/api/v1/jobs" } = {}) {
+export function assertKnownJobPayloadFields(payload: unknown, { label = "/api/v1/jobs" }: { label?: string } = {}) {
   if (!payload || typeof payload !== "object") return;
   const unknownTop = Object.keys(payload).filter(
     (key) => !JOB_PAYLOAD_TOP_LEVEL_FIELDS.includes(key),
@@ -36,8 +36,10 @@ export function assertKnownJobPayloadFields(payload, { label = "/api/v1/jobs" } 
         + `真后端 CreateJobInput 带 deny_unknown_fields,会直接 400。`,
     );
   }
+  // 上面已确认 payload 是对象；按段名取值时需要索引签名。
+  const record = payload as Record<string, unknown>;
   for (const [section, allowed] of Object.entries(JOB_PAYLOAD_SECTION_FIELDS)) {
-    const value = payload[section];
+    const value = record[section];
     if (!value || typeof value !== "object" || Array.isArray(value)) continue;
     const unknown = Object.keys(value).filter((key) => !allowed.includes(key));
     if (unknown.length > 0) {
@@ -50,10 +52,11 @@ export function assertKnownJobPayloadFields(payload, { label = "/api/v1/jobs" } 
 }
 
 /** 阶段重试的 overrides 走同一份契约:后端对它做 serde_json::from_value。 */
-export function assertKnownStageOverrides(overrides, { label = "retry-stage" } = {}) {
+export function assertKnownStageOverrides(overrides: unknown, { label = "retry-stage" }: { label?: string } = {}) {
   if (!overrides || typeof overrides !== "object") return;
+  const record = overrides as Record<string, unknown>;
   for (const [section, allowed] of Object.entries(JOB_PAYLOAD_SECTION_FIELDS)) {
-    const value = overrides[section];
+    const value = record[section];
     if (!value || typeof value !== "object" || Array.isArray(value)) continue;
     const unknown = Object.keys(value).filter((key) => !allowed.includes(key));
     if (unknown.length > 0) {

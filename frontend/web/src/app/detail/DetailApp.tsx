@@ -12,6 +12,8 @@
 //   modal-bindings.js / events.js 启动器 / downloads.js 的职责)。
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { JobPayload } from "@retainpdf/domain/job";
+import type { EventsPayload } from "@retainpdf/domain/job-status";
 import { fetchJobEventPages } from "@retainpdf/api/jobs-events";
 // 五个展示组件已归入 job-detail 功能（C1）；app 层跨功能引用经其 index 出口。
 import {
@@ -39,6 +41,9 @@ import {
   loadAndRenderMarkdownFlow,
   createJobDetailPageState,
   revokeJobDetailMarkdownImageUrls,
+  type DetailActionLinkState,
+  type JobDetailPageState,
+  type ProtectedDownloadFactory,
 } from "@/features/job-detail/index.js";
 import {
   downloadProtectedResponse,
@@ -51,42 +56,55 @@ import {
   updateDownloadProgress,
 } from "@/platform/utils/download-feedback.js";
 
-function eventsStatusText(payload) {
+function errorMessage(error: unknown) {
+  return (error as { message?: string } | null)?.message;
+}
+
+function eventsStatusText(payload: { items?: unknown[] } | null | undefined) {
   const count = Array.isArray(payload?.items) ? payload.items.length : 0;
   return count > 0 ? `全部事件 · ${count} 条` : "全部事件";
 }
+
+type DetailAppProps = {
+  configPort?: typeof defaultJobDetailConfigPort;
+  dataPort?: typeof defaultJobDetailDataPort;
+  getJobId?: () => string;
+  resumePort?: typeof defaultJobDetailResumePort;
+};
 
 export function DetailApp({
   configPort = defaultJobDetailConfigPort,
   dataPort = defaultJobDetailDataPort,
   getJobId = getJobIdFromQuery,
   resumePort = defaultJobDetailResumePort,
-} = {}) {
-  const pageStateRef = useRef(null);
+}: DetailAppProps = {}) {
+  const pageStateRef = useRef<JobDetailPageState | null>(null);
   if (!pageStateRef.current) {
     pageStateRef.current = createJobDetailPageState();
   }
-  const [texts, setTexts] = useState({});
-  const [links, setLinks] = useState({});
-  const [job, setJob] = useState(null);
+  // 首次渲染就建好、之后不再替换，所以下面的回调直接用这个常量。
+  const pageState: JobDetailPageState = pageStateRef.current;
+  const [texts, setTexts] = useState<Record<string, string>>({});
+  const [links, setLinks] = useState<Record<string, DetailActionLinkState>>({});
+  const [job, setJob] = useState<JobPayload | null>(null);
   const [stageHistoryOpen, setStageHistoryOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
-  const [eventsPayload, setEventsPayload] = useState(null);
+  const [eventsPayload, setEventsPayload] = useState<EventsPayload | null>(null);
   const [eventsStatus, setEventsStatus] = useState("尚未加载");
   const [openEventsText, setOpenEventsText] = useState("按需加载");
 
   // 旧 view.js setDetailText 语义:value ?? "-"
-  const setText = useCallback((id, value) => {
+  const setText = useCallback((id: string, value?: string | null) => {
     setTexts((prev) => ({ ...prev, [id]: value ?? "-" }));
   }, []);
 
   // 旧 view.js setDetailActionLink 语义:href/disabled/aria-disabled 三件套
-  const setActionLink = useCallback((id, url, enabled) => {
+  const setActionLink = useCallback((id: string, url: string | undefined, enabled: boolean) => {
     setLinks((prev) => ({ ...prev, [id]: { url, enabled: Boolean(enabled) } }));
   }, []);
 
   const t = useCallback(
-    (id, fallback = "-") => (Object.hasOwn(texts, id) ? texts[id] : fallback),
+    (id: string, fallback = "-") => (Object.hasOwn(texts, id) ? texts[id] : fallback),
     [texts],
   );
 
@@ -97,7 +115,7 @@ export function DetailApp({
       return;
     }
     startedRef.current = true;
-    const state = pageStateRef.current;
+    const state = pageState;
     window.addEventListener("beforeunload", () => {
       revokeJobDetailMarkdownImageUrls(state);
     }, { once: true });
@@ -147,7 +165,7 @@ export function DetailApp({
       });
     })().catch((error) => {
       // 旧 createPageRuntime onError 语义:初始化异常写入头部提示
-      setText("detail-head-note", error.message || String(error));
+      setText("detail-head-note", errorMessage(error) || String(error));
     });
     // 只在挂载时执行一次;端口在页面生命周期内不变
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -173,7 +191,7 @@ export function DetailApp({
   // 一次 setXxxOpen(false)——已经是 false 的一侧是 no-op,不产生额外渲染或
   // 副作用,两套机制不冲突。
   useEffect(() => {
-    const onKeyDown = (event) => {
+    const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") {
         return;
       }
@@ -198,33 +216,38 @@ export function DetailApp({
 
   // 旧 events.js fetchAllJobEvents + ensureEventsLoaded(分页拉全量 + 页内缓存)
   const ensureEventsLoaded = useCallback(async () => {
-    const state = pageStateRef.current;
+    const state = pageState;
     if (state.eventsPayload) {
       return state.eventsPayload;
     }
-    if (!state.job?.job_id) {
+    const jobId = state.job?.job_id;
+    if (!jobId) {
       throw new Error("缺少 job_id，无法加载事件流。");
     }
     if (!state.eventsLoadingPromise) {
       setEventsStatus("正在加载全部事件...");
       const loadHistory = () => fetchJobEventPages({
         fetchPage: dataPort.fetchJobEvents,
-        jobId: state.job.job_id,
+        jobId,
         apiPrefix: dataPort.apiPrefix,
         query: { limit: 500, start: "head" },
         isCurrent: () => pageStateRef.current === state,
       });
       state.eventsLoadingPromise = loadHistory()
-        .catch((error) => {
-          if (error?.status === 410 && error?.code === "EVENT_CURSOR_EXPIRED") return loadHistory();
+        .catch((error: unknown) => {
+          const err = error as { status?: number; code?: string } | null;
+          if (err?.status === 410 && err?.code === "EVENT_CURSOR_EXPIRED") return loadHistory();
           throw error;
         })
-        .then((payload) => {
+        .then((view) => {
+          // 接口给的是后端生成的 JobEventListView；前端事件类型是另一套独立定义（字段同名），
+          // 两边还没对齐（StageEvent 带索引签名，JobEventRecord 是严格接口），这里显式转换。
+          const payload = view as unknown as EventsPayload;
           state.eventsPayload = payload;
           return payload;
         })
-        .catch((error) => {
-          setEventsStatus(error.message || "读取事件流失败。");
+        .catch((error: unknown) => {
+          setEventsStatus(errorMessage(error) || "读取事件流失败。");
           throw error;
         })
         .finally(() => {
@@ -247,7 +270,7 @@ export function DetailApp({
   }, [ensureEventsLoaded]);
 
   // 旧 downloads.js bindProtectedDownloadLink 的 React 事件重写
-  const handleProtectedDownload = useCallback((fallbackNameFactory) => async (event) => {
+  const handleProtectedDownload: ProtectedDownloadFactory = useCallback((fallbackNameFactory) => async (event) => {
     const link = event.currentTarget;
     const enabled = link?.getAttribute("aria-disabled") !== "true";
     const url = `${link?.href || ""}`.trim();
@@ -256,7 +279,7 @@ export function DetailApp({
       return;
     }
     event.preventDefault();
-    const state = pageStateRef.current;
+    const state = pageState;
     const fallbackName = fallbackNameFactory(state.job?.job_id || "job");
     // 惰性:响应确认成功之后才问保存位置，否则请求失败会在磁盘上留下一个 0 字节文件。
     const downloadTarget = (filename?: string) => prepareDownloadTarget(filename || fallbackName);
@@ -277,8 +300,8 @@ export function DetailApp({
         },
       });
     } catch (error) {
-      setText("detail-head-note", error.message || "下载失败");
-      failDownloadToast(error.message || "下载失败");
+      setText("detail-head-note", errorMessage(error) || "下载失败");
+      failDownloadToast(errorMessage(error) || "下载失败");
     }
   }, [dataPort, setText]);
 

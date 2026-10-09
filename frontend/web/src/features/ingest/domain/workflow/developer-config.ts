@@ -44,7 +44,7 @@ export function createDeveloperConfigResolver({
   defaultModelName,
   defaultModelBaseUrl,
 }: CreateDeveloperConfigResolverOptions) {
-  function developerConfigWithDefaults(): WorkflowDeveloperConfig {
+  function developerConfigWithDefaults(): WorkflowDeveloperConfig & { workflow: string } {
     return buildDeveloperConfigWithDefaults({
       saved: getDeveloperConfig(),
       normalizeWorkflow,

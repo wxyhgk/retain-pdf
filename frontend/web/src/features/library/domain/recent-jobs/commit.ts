@@ -8,6 +8,7 @@ import {
   dedupeRecentJobs,
 } from "./pagination.js";
 import type { HomeStatePort } from "@/platform/contracts/home-view-contract.js";
+import type { createRecentJobActions } from "./actions.js";
 import type { LibraryJobItem } from "./runtime-item.js";
 import type { RecentJobsRuntimePatches } from "./runtime-patches.js";
 import type { RecentJobsStatePort } from "./state.js";
@@ -35,12 +36,9 @@ export interface RecentJobsCommitViewPort {
   setLoadMoreLoading?: () => void;
 }
 
-export interface RecentJobActionsPort {
-  selectJob?: (jobId?: string) => void;
-  deleteJob?: (jobId?: string) => void | Promise<void>;
-  openJobReader?: (jobId?: string) => void;
-  recoverActiveJob?: (items?: LibraryJobItem[]) => void;
-}
+/** 书架动作（createRecentJobActions 的返回值）。各处只用到其中几个，所以都是可选。
+ *  以前提交、列表渲染、加载器各手抄一份签名，三份还不一样。 */
+export type RecentJobActionsPort = Partial<ReturnType<typeof createRecentJobActions>>;
 
 export interface ActiveRefreshLoopPort {
   schedule: (options?: { resetTimer?: boolean }) => void;
@@ -63,10 +61,10 @@ export interface CommitRecentJobsPageOptions {
   invocationSummary?: RecentJobsInvocationSummary;
   query?: string;
   recentJobActions?: RecentJobActionsPort;
-  runtimePatches?: Pick<RecentJobsRuntimePatches, "apply" | "applyExisting">;
-  activeRefreshLoop?: (() => ActiveRefreshLoopPort | null | undefined) | null;
+  runtimePatches: Pick<RecentJobsRuntimePatches, "apply" | "applyExisting">;
+  activeRefreshLoop: () => ActiveRefreshLoopPort | null | undefined;
   scheduleAutoLoadIfNeeded?: (() => void) | null;
-  recentJobsStatePort?: Pick<
+  recentJobsStatePort: Pick<
     RecentJobsStatePort,
     | "batch"
     | "getSnapshot"
@@ -81,20 +79,20 @@ export interface CommitRecentJobsPageOptions {
 export interface CommitRecentJobsEmptyOptions {
   query?: string;
   invocationSummary?: RecentJobsInvocationSummary;
-  homeStatePort?: Pick<HomeStatePort, "setRecentJobsLoadingState">;
-  recentJobsStatePort?: Pick<RecentJobsStatePort, "setItems" | "setHasMore">;
+  homeStatePort: Pick<HomeStatePort, "setRecentJobsLoadingState">;
+  recentJobsStatePort: Pick<RecentJobsStatePort, "setItems" | "setHasMore">;
 }
 
 export interface CommitRecentJobsNoMoreOptions {
-  homeStatePort?: Pick<HomeStatePort, "setRecentJobsLoadingState">;
-  recentJobsStatePort?: Pick<RecentJobsStatePort, "setHasMore">;
+  homeStatePort: Pick<HomeStatePort, "setRecentJobsLoadingState">;
+  recentJobsStatePort: Pick<RecentJobsStatePort, "setHasMore">;
 }
 
 export interface CommitRecentJobsErrorOptions {
   error?: { message?: string } | Error | null;
   reset?: boolean;
-  homeStatePort?: Pick<HomeStatePort, "setRecentJobsLoadingState">;
-  recentJobsStatePort?: Pick<RecentJobsStatePort, "setHasMore">;
+  homeStatePort: Pick<HomeStatePort, "setRecentJobsLoadingState">;
+  recentJobsStatePort: Pick<RecentJobsStatePort, "setHasMore">;
 }
 
 export interface CommitRecentJobsPageResult {
@@ -125,7 +123,7 @@ export function commitRecentJobsPage({
   scheduleAutoLoadIfNeeded,
   recentJobsStatePort,
   setTimeoutFn = defaultSetTimeout,
-}: CommitRecentJobsPageOptions = {}): CommitRecentJobsPageResult {
+}: CommitRecentJobsPageOptions): CommitRecentJobsPageResult {
   const latestItems = reset ? [] : recentJobsStatePort.getSnapshot().items;
   const nextItems = runtimePatches.apply(dedupeRecentJobs(reset ? collected : [...latestItems, ...collected]));
   const renderItems = reset
@@ -171,7 +169,7 @@ export function commitRecentJobsEmpty({
   query = "",
   homeStatePort,
   recentJobsStatePort,
-}: CommitRecentJobsEmptyOptions = {}): { message: string } {
+}: CommitRecentJobsEmptyOptions): { message: string } {
   recentJobsStatePort.setItems([]);
   recentJobsStatePort.setHasMore(false);
   homeStatePort.setRecentJobsLoadingState(RECENT_JOBS_LOADING_STATES.READY);
@@ -182,7 +180,7 @@ export function commitRecentJobsEmpty({
 export function commitRecentJobsNoMore({
   homeStatePort,
   recentJobsStatePort,
-}: CommitRecentJobsNoMoreOptions = {}): void {
+}: CommitRecentJobsNoMoreOptions): void {
   recentJobsStatePort.setHasMore(false);
   homeStatePort.setRecentJobsLoadingState(RECENT_JOBS_LOADING_STATES.READY);
 }
@@ -192,7 +190,7 @@ export function commitRecentJobsError({
   reset = false,
   homeStatePort,
   recentJobsStatePort,
-}: CommitRecentJobsErrorOptions = {}): { message: string } {
+}: CommitRecentJobsErrorOptions): { message: string } {
   const message = error?.message || "读取最近任务失败";
   if (!reset) {
     recentJobsStatePort.setHasMore(false);

@@ -14,8 +14,9 @@ import {
 import {
   normalizedStageEventRecord,
 } from "@retainpdf/domain/job-status";
+import type { EventsPayload, StageEvent } from "@retainpdf/domain/job-status";
 
-function eventBadgeTone(item) {
+function eventBadgeTone(item: StageEvent) {
   if (item.level === "error" || item.event === "failure_classified" || item.event === "job_terminal") {
     return "error";
   }
@@ -25,7 +26,7 @@ function eventBadgeTone(item) {
   return "";
 }
 
-function formatEventPayload(payload) {
+function formatEventPayload(payload: unknown) {
   if (!payload || typeof payload !== "object") {
     return "";
   }
@@ -36,7 +37,7 @@ function formatEventPayload(payload) {
   }
 }
 
-function EventItem({ item }) {
+function EventItem({ item }: { item: StageEvent }) {
   const [payloadOpen, setPayloadOpen] = useState(false);
   const record = normalizedStageEventRecord(item);
   const tone = eventBadgeTone(item);
@@ -65,12 +66,12 @@ function EventItem({ item }) {
   );
 }
 
-export function EventsList({ eventsPayload }) {
+export function EventsList({ eventsPayload }: { eventsPayload: EventsPayload | null | undefined }) {
   const items = Array.isArray(eventsPayload?.items) ? eventsPayload.items : [];
   // 文案承诺"按时间倒序",这里显式排序,不依赖后端返回顺序(照搬 events.js)
   const entries = items
     .map((item) => ({ item, record: normalizedStageEventRecord(item) }))
-    .sort((a, b) => (Date.parse(b.record.timestamp) || 0) - (Date.parse(a.record.timestamp) || 0));
+    .sort((a, b) => (Date.parse(String(b.record.timestamp)) || 0) - (Date.parse(String(a.record.timestamp)) || 0));
   const hasItems = items.length > 0;
   const ids = STATUS_DETAIL_DIALOG_IDS.events;
   return (
@@ -87,7 +88,7 @@ export function EventsList({ eventsPayload }) {
   );
 }
 
-export function eventsStatusText(eventsPayload) {
+export function eventsStatusText(eventsPayload: EventsPayload | null | undefined) {
   const items = Array.isArray(eventsPayload?.items) ? eventsPayload.items : [];
   return items.length > 0 ? `最近 ${items.length} 条` : "暂无事件";
 }

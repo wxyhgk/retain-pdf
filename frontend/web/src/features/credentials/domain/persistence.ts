@@ -25,7 +25,7 @@ export async function persistDesktopCredentialsFromDialog({
   ) => Promise<unknown> | unknown;
   checkApiConnectivity?: () => Promise<unknown> | unknown;
   values: CredentialDialogValues;
-  setupModePort: { currentSetupMode?: () => boolean };
+  setupModePort: { currentSetupMode: () => boolean };
 }) {
   const provider = currentOcrProvider();
   const ocrCredentialRef = `${values.ocrCredentialRef || ""}`.trim();

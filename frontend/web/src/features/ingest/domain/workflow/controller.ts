@@ -11,6 +11,7 @@
 // 本文件只负责：解析顶层参数、建各 factory、拼出对外返回对象。
 // 对外导出名与 import 路径保持不变（domain.ts 仍 `export *` 本文件）。
 
+import type { CredentialGateRequest } from "./workflow-mode.js";
 import { defaultWorkflowConfigPort } from "./config-port.js";
 import { createGlossaryOptionsLoader } from "./glossary-options.js";
 import {
@@ -60,12 +61,7 @@ export interface MountWorkflowFeatureOptions {
   readSubmitValues?: WorkflowViewPortLike["readSubmitValues"];
   renderPageRangeSummary: () => void;
   hasBrowserCredentials?: () => boolean;
-  updateCredentialGate?: (options?: {
-    workflowNeedsCredentials?: () => boolean;
-    workflowNeedsUpload?: () => boolean;
-    hasCredentials?: () => boolean;
-    refreshSubmitControls?: () => void;
-  }) => void;
+  updateCredentialGate?: (options: CredentialGateRequest) => void;
   fetchGlossaries?: (apiPrefix?: string) => Promise<{ items?: unknown[] } | unknown>;
   apiPrefix?: string;
   setText?: (id: string, value?: string) => void;

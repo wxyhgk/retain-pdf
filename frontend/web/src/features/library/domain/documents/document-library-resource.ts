@@ -22,11 +22,11 @@ export function createDocumentLibraryResource({
   fetchJobPayload,
   apiPrefix,
 }: {
-  fetchDocumentList?: DocumentListFetcher;
+  fetchDocumentList: DocumentListFetcher;
   fetchLibraryBookList?: LibraryBookListFetcher;
   fetchJobPayload?: JobPayloadFetcher;
-  apiPrefix?: string;
-} = {}) {
+  apiPrefix: string;
+}) {
   return createResource({
     name: "documentLibrary",
     cacheKey: ({

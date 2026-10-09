@@ -8,7 +8,7 @@ export function createRecentJobsRuntimePort({
   recoverJob?: (jobId: string) => void;
   currentJobId?: () => string;
 } = {}) {
-  function normalizeAndRun(handler, jobId) {
+  function normalizeAndRun(handler: ((jobId: string) => void) | undefined, jobId: unknown) {
     const normalizedJobId = `${jobId || ""}`.trim();
     if (!normalizedJobId) {
       return false;
@@ -22,11 +22,11 @@ export function createRecentJobsRuntimePort({
       return `${currentJobId?.() || ""}`.trim();
     },
 
-    openJob(jobId) {
+    openJob(jobId: unknown) {
       return normalizeAndRun(openJob, jobId);
     },
 
-    recoverJob(jobId) {
+    recoverJob(jobId: unknown) {
       const handler = recoverJob || openJob;
       return normalizeAndRun(handler, jobId);
     },

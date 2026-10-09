@@ -23,6 +23,8 @@ import {
 import {
   persistDesktopCredentialsFromDialog as persistDesktopCredentials,
 } from "./persistence.js";
+import type { CredentialDialogElementsLike } from "./dialog-values.js";
+import type { CredentialsFields } from "./state.js";
 
 /** HH:MM:SS。刻意不走 toLocaleTimeString——它随环境 locale 变，测试会飘。 */
 function formatClockTime(date: Date): string {
@@ -31,14 +33,14 @@ function formatClockTime(date: Date): string {
 }
 
 type SaveFlowViewPort = {
-  setOcrValidationMessage?: (message?: string, tone?: string, providerId?: string) => void;
-  setDeepSeekValidationMessage?: (message?: string, tone?: string) => void;
-  setDialogStatus?: (message?: string, tone?: string) => void;
-  closeDialog?: () => void;
+  setOcrValidationMessage: (message?: string, tone?: string, providerId?: string) => void;
+  setDeepSeekValidationMessage: (message?: string, tone?: string) => void;
+  setDialogStatus: (message?: string, tone?: string) => void;
+  closeDialog: () => void;
 };
 
 type CredentialAccess = {
-  readCurrentCredentials: () => any;
+  readCurrentCredentials: () => CredentialsFields;
   currentOcrProvider: () => string;
 };
 
@@ -83,11 +85,11 @@ export function createBrowserCredentialSaveFlow({
     afterSave?: () => unknown,
   ) => Promise<unknown> | unknown;
   checkApiConnectivity?: () => Promise<unknown> | unknown;
-  setupModePort: { currentSetupMode?: () => boolean };
+  setupModePort: { currentSetupMode: () => boolean };
   onCredentialStateChange?: () => void;
-  dialogElementsPort: { elements: () => any };
+  dialogElementsPort: { elements: () => CredentialDialogElementsLike };
   syncBrowserDialogFromCredentialState: () => void;
-  runtimeEnv: { isDesktopMode?: () => boolean };
+  runtimeEnv: { isDesktopMode: () => boolean };
   /** 注入时钟，保持本模块可预测；UI 用它区分"这次刚存"与"上次的残留"。 */
   now?: () => Date;
 }) {
@@ -220,7 +222,7 @@ export function createBrowserCredentialSaveFlow({
     // "这是一次新的保存"，从而重新播放成功反馈。
     viewPort.setDialogStatus(`已保存 ${formatClockTime(now())}`, "valid");
     // 首次配置弹窗保存后关闭；设置中心内嵌时保持打开以便继续改任务选项
-    if (setupModePort.currentSetupMode?.()) {
+    if (setupModePort.currentSetupMode()) {
       viewPort.closeDialog();
     }
   }

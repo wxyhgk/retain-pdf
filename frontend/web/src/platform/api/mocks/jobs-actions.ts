@@ -17,7 +17,7 @@ function recordOf(value: unknown): Record<string, unknown> {
   return isRecord(value) ? value : {};
 }
 
-export async function fetchJobDiagnostics(jobId, apiPrefix) {
+export async function fetchJobDiagnostics(jobId: string, apiPrefix: string) {
   void apiPrefix;
   // 与 mock/job.js 的 failure 字段保持同源,避免详情弹窗(读 job.failure)
   // 与 detail 页(读本端点)在 mock 下显示不一致
@@ -37,7 +37,7 @@ export async function fetchJobDiagnostics(jobId, apiPrefix) {
   };
 }
 
-export async function fetchResumePlan(jobId, apiPrefix) {
+export async function fetchResumePlan(jobId: string, apiPrefix: string) {
   void apiPrefix;
   return {
     job_id: jobId,
@@ -50,7 +50,7 @@ export async function fetchResumePlan(jobId, apiPrefix) {
   };
 }
 
-export async function resumeJob(jobId, apiPrefix) {
+export async function resumeJob(jobId: string, apiPrefix: string) {
   void jobId;
   void apiPrefix;
   return {
@@ -59,17 +59,17 @@ export async function resumeJob(jobId, apiPrefix) {
   };
 }
 
-export async function cancelJob(jobId, apiPrefix) {
+export async function cancelJob(jobId: string, apiPrefix: string) {
   void apiPrefix;
   return { job_id: jobId, status: "canceled" };
 }
 
-export async function cancelOcrJob(jobId, apiPrefix) {
+export async function cancelOcrJob(jobId: string, apiPrefix: string) {
   void apiPrefix;
   return { job_id: jobId, status: "canceled", workflow: "ocr" };
 }
 
-export async function resolveOcrAmbiguity(jobId, apiPrefix, request) {
+export async function resolveOcrAmbiguity(jobId: string, apiPrefix: string, request?: { resolution?: string } | null) {
   void apiPrefix;
   const live = registerLiveMockJob({ title: "Mock OCR 恢复", pageCount: 12 });
   const snapshot = buildLiveMockJobPayload(live.jobId) || {};
@@ -87,7 +87,7 @@ export async function resolveOcrAmbiguity(jobId, apiPrefix, request) {
   };
 }
 
-export async function fetchJobStageActions(jobId, apiPrefix) {
+export async function fetchJobStageActions(jobId: string, apiPrefix: string) {
   void apiPrefix;
   return {
     job_id: jobId,
@@ -99,7 +99,7 @@ export async function fetchJobStageActions(jobId, apiPrefix) {
   };
 }
 
-export async function retryJobStage(jobId, apiPrefix, stage, payload = {}) {
+export async function retryJobStage(jobId: string, apiPrefix: string, stage: string, payload: Record<string, unknown> = {}) {
   void apiPrefix;
   const normalizedStage = `${stage || ""}`.trim();
   if (!normalizedStage) {
@@ -108,7 +108,7 @@ export async function retryJobStage(jobId, apiPrefix, stage, payload = {}) {
   // 后端对 overrides 的每个段做 serde_json::from_value,同样带 deny_unknown_fields
   // (stage_retry_overrides.rs)。mock 以前完全无视 overrides,于是「重新翻译」那条
   // 注入逻辑在 mock 下从未被执行过。
-  assertKnownStageOverrides((payload as Record<string, unknown>)?.overrides, {
+  assertKnownStageOverrides(payload?.overrides, {
     label: `retry-stage/${normalizedStage}`,
   });
   // 从指定阶段起跑；务必绑回原 document，否则书架会多一张「job_id 空壳卡」
@@ -151,7 +151,7 @@ export async function retryJobStage(jobId, apiPrefix, stage, payload = {}) {
   };
 }
 
-export async function rerunJob(actionUrl) {
+export async function rerunJob(actionUrl: string) {
   void actionUrl;
   return {
     job_id: `mock-rerun-${Date.now()}`,

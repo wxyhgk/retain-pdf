@@ -1,4 +1,4 @@
-export async function copyText(text) {
+export async function copyText(text: unknown) {
   const normalizedText = `${text || ""}`;
   if (!normalizedText) {
     throw new Error("empty_copy_text");

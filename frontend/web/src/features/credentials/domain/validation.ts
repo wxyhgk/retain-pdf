@@ -38,12 +38,12 @@ export interface RunOcrTokenValidationOptions {
   credentialsStatePort?: CredentialsStatePortLike | CredentialsStatePort;
   providerId?: string;
   token?: string;
-  validateOcrToken?: (
+  validateOcrToken: (
     apiPrefix?: unknown,
     providerId?: unknown,
     token?: unknown,
   ) => Promise<ProviderValidationResult | unknown> | ProviderValidationResult | unknown;
-  setOcrValidationMessage?: (message?: string, tone?: string, providerId?: string) => void;
+  setOcrValidationMessage: (message?: string, tone?: string, providerId?: string) => void;
   showResult?: boolean;
   legacyRuntimePort?: unknown;
 }
@@ -54,11 +54,11 @@ export interface RunDeepSeekConnectivityCheckOptions {
   baseUrl?: string;
   /** 翻译真正要调用的模型名。不传则后端只能验 Key，验不到模型。 */
   model?: string;
-  validateDeepSeekToken?: (
+  validateDeepSeekToken: (
     apiPrefix?: unknown,
     payload?: unknown,
   ) => Promise<ProviderValidationResult | unknown> | ProviderValidationResult | unknown;
-  setDeepSeekValidationMessage?: (message?: string, tone?: string) => void;
+  setDeepSeekValidationMessage: (message?: string, tone?: string) => void;
   showResult?: boolean;
 }
 
@@ -210,7 +210,7 @@ export async function runDeepSeekConnectivityCheck({
   }
 }
 
-export function summarizeDeepSeekBalance(result) {
+export function summarizeDeepSeekBalance(result: ProviderValidationResult | null | undefined) {
   const infos = Array.isArray(result?.balance_infos) ? result.balance_infos : [];
   const parts = infos
     .filter((item) => item && item.currency && item.total_balance)

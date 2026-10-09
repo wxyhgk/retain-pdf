@@ -1,4 +1,4 @@
-export function createAppActionsJobSnapshotPort(_targetState) {
+export function createAppActionsJobSnapshotPort(_targetState: unknown) {
   return Object.freeze({
     syncCurrentJobSnapshot: () => {},
   });

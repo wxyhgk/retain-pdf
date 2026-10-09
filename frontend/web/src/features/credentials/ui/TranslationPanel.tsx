@@ -12,7 +12,9 @@ import { SecretInput } from "./SecretInput.js";
 
 const { browser: BROWSER_IDS } = CREDENTIAL_DOM_IDS;
 
-function TranslationProviderMark({ provider, compact = false }) {
+type TranslationProviderDefinition = ReturnType<typeof getTranslationProviderDefinition>;
+
+function TranslationProviderMark({ provider, compact = false }: { provider: TranslationProviderDefinition; compact?: boolean }) {
   if (provider.logoUrl) {
     return (
       <img

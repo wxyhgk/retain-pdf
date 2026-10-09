@@ -2,6 +2,17 @@ import { BookCard, buildDefaultBookCardActions } from "../shell/BookCard.jsx";
 import { BookListRow } from "../shell/BookListRow.jsx";
 import { libraryCardIdentity } from "../../domain/recent-jobs/library-card-identity.js";
 import { libraryItemDocumentId } from "./recent-jobs-library-helpers.js";
+import type { LibraryActions, LibraryCardItem } from "../../domain/types.js";
+
+type RecentJobsLibraryGridProps = {
+  visibleItems: LibraryCardItem[];
+  viewMode: string;
+  mode: string;
+  batchMode: boolean;
+  effectiveSelectedIds: Set<string>;
+  actions: LibraryActions;
+  toggleSelect: (documentId: string) => void;
+};
 
 // 卡片网格/列表渲染(从 RecentJobsLibrary 抽出,保持同一 DOM 结构与 class)。
 export function RecentJobsLibraryGrid({
@@ -12,7 +23,7 @@ export function RecentJobsLibraryGrid({
   effectiveSelectedIds,
   actions,
   toggleSelect,
-}) {
+}: RecentJobsLibraryGridProps) {
   return (
     <div id="library-grid" className={viewMode === "list" ? "" : "recent-jobs-list library-grid"}>
       <div

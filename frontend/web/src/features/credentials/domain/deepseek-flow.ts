@@ -62,16 +62,16 @@ export async function handleBrowserDeepSeekValidate({
   apiPrefix?: string;
   state?: unknown;
   defaultModelApiKey?: () => string;
-  validateDeepSeekToken?: RunDeepSeekConnectivityCheckOptions["validateDeepSeekToken"];
+  validateDeepSeekToken: RunDeepSeekConnectivityCheckOptions["validateDeepSeekToken"];
   queryDeepSeekBalance?: RunDeepSeekBalanceCheckOptions["queryDeepSeekBalance"];
   onBalanceChange?: () => void;
   silent?: boolean;
   credentialsStatePort?: CredentialsStatePort;
   legacyRuntimePort?: unknown;
   viewPort: {
-    elements?: () => CredentialDialogElementsLike;
-    setTopUpVisible?: (visible?: boolean) => void;
-    setValidationMessage?: (message?: string, tone?: string) => void;
+    elements: () => CredentialDialogElementsLike;
+    setTopUpVisible: (visible?: boolean) => void;
+    setValidationMessage: (message?: string, tone?: string) => void;
   };
 }) {
   const {

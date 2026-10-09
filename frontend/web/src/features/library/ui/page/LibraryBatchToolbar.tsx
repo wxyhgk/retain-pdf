@@ -6,16 +6,31 @@
 // LibrarySearchDock,两者不会同时出现)。
 
 import { useEffect, useRef, useState } from "react";
+import type { SVGProps } from "react";
 import { cn } from "@/ui/lib/utils";
+import type { CollectionRecord } from "@/features/collections/index.js";
 
-function IconTrash(props) {
+type LibraryBatchToolbarProps = {
+  count: number;
+  totalSelectable: number;
+  allSelected: boolean;
+  onSelectAll: () => void;
+  onCancel: () => void;
+  onDelete: () => void;
+  collections?: CollectionRecord[];
+  /** 合集 id 取自 CollectionRecord，记录上可能缺省，原样上抛。 */
+  onAddToCollection?: (collectionId: CollectionRecord["collection_id"]) => void;
+  busy?: boolean;
+};
+
+function IconTrash(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14" {...props}>
       <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-9 0 1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
-function IconFolderPlus(props) {
+function IconFolderPlus(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14" {...props}>
       <path d="M3 7a1 1 0 0 1 1-1h4l2 2h10a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z" strokeLinejoin="round" />
@@ -34,18 +49,19 @@ export function LibraryBatchToolbar({
   collections = [],
   onAddToCollection,
   busy = false,
-}) {
+}: LibraryBatchToolbarProps) {
   const [collectionsOpen, setCollectionsOpen] = useState(false);
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!collectionsOpen) return undefined;
-    function onDown(event) {
-      if (ref.current && !ref.current.contains(event.target)) {
+    function onDown(event: MouseEvent) {
+      // mousedown 的 target 必是 Node（或 null），DOM 类型里是 EventTarget，这里收窄到 Node。
+      if (ref.current && !ref.current.contains(event.target as Node | null)) {
         setCollectionsOpen(false);
       }
     }
-    function onKeyDown(event) {
+    function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setCollectionsOpen(false);
     }
     document.addEventListener("mousedown", onDown);

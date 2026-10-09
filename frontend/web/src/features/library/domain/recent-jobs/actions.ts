@@ -7,7 +7,7 @@ import {
   type NavigationReaderPort,
   type RecentJobsNavigationPort,
 } from "./navigation-port.js";
-import type { RecentJobsStatePort } from "./state.js";
+import type { LibraryJobItem, RecentJobsStatePort } from "./state.js";
 
 export type CreateRecentJobActionsOptions = {
   apiPrefix?: string;
@@ -51,7 +51,7 @@ export function createRecentJobActions({
 }: CreateRecentJobActionsOptions) {
   let activeJobRecoveryAttempted = false;
 
-  function selectJob(jobId) {
+  function selectJob(jobId: string) {
     const normalizedJobId = `${jobId || ""}`.trim();
     if (!normalizedJobId) {
       renderRecentJobsError("该任务缺少 job_id，无法打开。", { reset: false });
@@ -61,11 +61,13 @@ export function createRecentJobActions({
   }
 
   // 409 = 删除保护:该 job 被收藏引用,不能自动 force,必须让用户先处理收藏
-  function friendlyDeleteError(error) {
-    const message = `${error?.message || error || ""}`;
-    if (error?.status === 409 || message.includes("(409)")) {
+  function friendlyDeleteError(error: unknown) {
+    // 删除接口抛的错误可能带 HTTP 状态和收藏数（见 platform/api 的删除封装）。
+    const err = error as { message?: string; status?: number; favoriteCount?: number } | null;
+    const message = `${err?.message || error || ""}`;
+    if (err?.status === 409 || message.includes("(409)")) {
       // 结构化 favorite_count 优先；message 正则仅为旧错误源兜底。
-      const structured = Number(error?.favoriteCount);
+      const structured = Number(err?.favoriteCount);
       const count = Number.isFinite(structured) && structured > 0
         ? structured
         : message.match(/\d+/)?.[0];
@@ -76,13 +78,13 @@ export function createRecentJobActions({
     return message || "删除失败";
   }
 
-  async function deleteJob(jobId) {
+  async function deleteJob(jobId: string) {
     const normalizedJobId = `${jobId || ""}`.trim();
     if (!normalizedJobId || !deleteLibraryBook) {
       return;
     }
     try {
-      await deleteLibraryBook(apiPrefix, normalizedJobId);
+      await deleteLibraryBook(apiPrefix || "", normalizedJobId);
     } catch (error) {
       renderRecentJobsError(friendlyDeleteError(error), { reset: false });
       return;
@@ -98,7 +100,7 @@ export function createRecentJobActions({
 
   // options.pinJob：调用方点名要看这个任务（产物「查看」、实时译文），阅读器不按整本改写。
   // 书卡 / 封面「对照阅读」不传，由 ReaderNavigation 问后端这本书该打开哪个任务。
-  function openJobReader(jobId, documentId = "", options: { pinJob?: boolean } = {}) {
+  function openJobReader(jobId: string, documentId = "", options: { pinJob?: boolean } = {}) {
     const normalizedJobId = `${jobId || ""}`.trim();
     if (!normalizedJobId) {
       renderRecentJobsError("该任务缺少 job_id，无法打开对照阅读。", { reset: false });
@@ -107,7 +109,7 @@ export function createRecentJobActions({
     navigationPort.openReader(normalizedJobId, `${documentId || ""}`.trim(), pinJobOptions(options));
   }
 
-  function recoverActiveJob(items = []) {
+  function recoverActiveJob(items: LibraryJobItem[] = []) {
     if (activeJobRecoveryAttempted) {
       return;
     }

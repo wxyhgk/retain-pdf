@@ -48,9 +48,11 @@ function syncSubmitBusy(targetState: UploadStateLike | null | undefined, busy: b
 }
 
 export function createAppActionsUploadStatePort(
-  targetState: UploadStateLike = {},
+  // 宿主态以 unknown 传入，这里按上传态切片读写（与 runtime-env-port 的做法一致）。
+  hostState: unknown = {},
   adapter = defaultUploadStateAdapter,
 ) {
+  const targetState = hostState as UploadStateLike;
   return Object.freeze({
     getSnapshot: () => adapter.getSnapshot(targetState),
     reset: (options = {}) => adapter.reset(targetState, options),

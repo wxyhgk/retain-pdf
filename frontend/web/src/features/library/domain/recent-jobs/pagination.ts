@@ -25,7 +25,7 @@ export function dedupeRecentJobs(
   return dedupeLibraryCards(items);
 }
 
-export function isPrimaryRecentJob(item) {
+export function isPrimaryRecentJob(item: LibraryJobItem | null | undefined) {
   const jobId = `${item?.job_id || ""}`.trim();
   // Translation workflows create a canonical `<parent>-ocr` child. Standalone
   // OCR jobs are document roots and must remain visible in the library.

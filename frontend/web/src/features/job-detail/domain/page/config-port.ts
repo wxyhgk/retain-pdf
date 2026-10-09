@@ -7,7 +7,7 @@ export function createJobDetailConfigPort({
   buildPageUrl = buildFrontendPageUrl,
   isMock = isMockMode,
 } = {}) {
-  function buildReaderPageUrl(jobId) {
+  function buildReaderPageUrl(jobId: string | null | undefined) {
     const normalizedJobId = `${jobId || ""}`.trim();
     if (!normalizedJobId) {
       return "";
@@ -17,7 +17,7 @@ export function createJobDetailConfigPort({
     });
   }
 
-  function buildDetailPageUrl(jobId) {
+  function buildDetailPageUrl(jobId: string | null | undefined) {
     const normalizedJobId = `${jobId || ""}`.trim();
     if (!normalizedJobId) {
       return "";

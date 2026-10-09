@@ -35,7 +35,7 @@ export async function runSubmitFlow({
   windowRef,
   now,
   notifyPreflightWarning,
-}: RunSubmitFlowOptions = {}) {
+}: RunSubmitFlowOptions) {
   // ---- 分支[MOCK]:不做表单校验/组参/预算/凭证,成功→ publishSubmitSuccess→
   // submitted;失败(抛错)→ 上抛由调用方处理,不落 error-box,不关框。 ----
   if (configPort?.isMock?.()) {

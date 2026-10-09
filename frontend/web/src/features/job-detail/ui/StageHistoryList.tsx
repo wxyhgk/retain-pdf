@@ -14,8 +14,21 @@ import {
   resolveStageHistoryDuration,
   stageHistoryDisplay,
 } from "@retainpdf/domain/job";
+import type { JobLike, JobPayload, StageHistoryEntry } from "@retainpdf/domain/job";
 
-function StageHistoryItem({ entry, index, job, finishedAtFallback }) {
+type StageHistoryJob = JobLike | JobPayload | null | undefined;
+
+function StageHistoryItem({
+  entry,
+  index,
+  job,
+  finishedAtFallback,
+}: {
+  entry: StageHistoryEntry;
+  index: number;
+  job: StageHistoryJob;
+  finishedAtFallback: string;
+}) {
   const duration = resolveStageHistoryDuration(entry, job, { finishedAtFallback });
   const enterAt = entry?.enter_at ? formatEventTimestamp(entry.enter_at) : "-";
   const exitAt = entry?.exit_at ? formatEventTimestamp(entry.exit_at) : (isJobTerminal(job) ? "-" : "处理中");
@@ -40,7 +53,13 @@ function StageHistoryItem({ entry, index, job, finishedAtFallback }) {
   );
 }
 
-export function StageHistoryList({ job, finishedAtFallback = "" }) {
+export function StageHistoryList({
+  job,
+  finishedAtFallback = "",
+}: {
+  job: StageHistoryJob;
+  finishedAtFallback?: string;
+}) {
   const history = resolveStageHistory(job);
   const hasItems = history.length > 0;
   const ids = STATUS_DETAIL_DIALOG_IDS.stageHistory;

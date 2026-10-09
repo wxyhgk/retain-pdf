@@ -1,4 +1,5 @@
 import type { LibraryJobItem } from "./state.js";
+import type { RuntimeJobPatch } from "./runtime-patch-merge.js";
 import { isRecentJobActive } from "./card-presenter.js";
 import {
   defaultRecentJobsRefreshEnvironment,
@@ -10,11 +11,11 @@ export const LIBRARY_ACTIVE_REFRESH_MAX_CARDS_PER_TICK = 6;
 type JobIdSetSource = string | string[] | Set<string> | null | undefined;
 type JobIdSetInput = JobIdSetSource | (() => JobIdSetSource);
 
-export function hasActiveRecentJobs(items = []) {
+export function hasActiveRecentJobs(items: LibraryJobItem[] = []) {
   return (Array.isArray(items) ? items : []).some(isRecentJobActive);
 }
 
-export function recentJobsEligibleForActiveRefresh(items = [], currentJobId = "", includeJobIds: JobIdSetInput = []) {
+export function recentJobsEligibleForActiveRefresh(items: LibraryJobItem[] = [], currentJobId = "", includeJobIds: JobIdSetInput = []) {
   const activeJobId = `${currentJobId || ""}`.trim();
   const included = normalizeJobIdSet(includeJobIds);
   return (Array.isArray(items) ? items : [])
@@ -56,9 +57,9 @@ function normalizeJobIdSet(source: JobIdSetInput) {
 type ActiveLibraryRefreshLoopOptions = {
   getItems: () => LibraryJobItem[];
   currentJobId?: () => string;
-  fetchJobPayload?: (jobId: string, options: { apiPrefix?: string }) => Promise<unknown>;
+  fetchJobPayload?: (jobId: string, options: { apiPrefix?: string }) => Promise<RuntimeJobPatch | LibraryJobItem | null | undefined>;
   apiPrefix?: string;
-  updateFromRuntime: (payload: unknown) => void;
+  updateFromRuntime: (payload: RuntimeJobPatch | LibraryJobItem) => void;
   loadRecentJobs?: unknown;
   isRecentJobsLoading: () => boolean;
   environment?: typeof defaultRecentJobsRefreshEnvironment;
@@ -97,7 +98,7 @@ export function createActiveLibraryRefreshLoop({
     return detailOwnsCurrentJob() ? currentJobId() : "";
   }
 
-  let activeLibraryRefreshTimer = null;
+  let activeLibraryRefreshTimer: ReturnType<typeof environment.setTimeout> | null = null;
   let loopGen = 0;
   let stopped = false;
   let disposed = false;
@@ -119,7 +120,7 @@ export function createActiveLibraryRefreshLoop({
   }
 
   // 规则1 bypass/失活：非当前 gen 的在途 fetch 一律丢弃，不写卡。
-  function isCurrentGeneration(gen) {
+  function isCurrentGeneration(gen: number) {
     return gen === loopGen && !isStopped();
   }
 
@@ -139,7 +140,7 @@ export function createActiveLibraryRefreshLoop({
     return recentJobsEligibleForActiveRefresh(getItems(), ownedCurrentJobId(), includeJobIds).length === 0;
   }
 
-  function selectCardsForTick(gen) {
+  function selectCardsForTick(gen: number) {
     if (!isCurrentGeneration(gen)) {
       return [];
     }
@@ -147,7 +148,7 @@ export function createActiveLibraryRefreshLoop({
       .slice(0, LIBRARY_ACTIVE_REFRESH_MAX_CARDS_PER_TICK);
   }
 
-  async function refreshActiveRecentJobDetails(gen) {
+  async function refreshActiveRecentJobDetails(gen: number) {
     if (!fetchJobPayload) {
       return;
     }
@@ -167,7 +168,8 @@ export function createActiveLibraryRefreshLoop({
       if (!isCurrentGeneration(gen)) {
         return;
       }
-      updateFromRuntime(payload);
+      // update 遇到没有 job_id 的值本来就直接返回；这里先判空，类型上也说得通。
+      if (payload) updateFromRuntime(payload);
     }));
   }
 

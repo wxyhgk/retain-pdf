@@ -204,7 +204,7 @@ export function createWorkflowViewFeature({
       submitLabel: `${label ?? ""}` || store.getSnapshot().submitLabel,
       pageRangeButtonVisible: Boolean(pageRangeVisible),
     });
-    uploadTilePort?.setUploadActionSlotVisible(actionVisible);
+    uploadTilePort?.setUploadActionSlotVisible?.(actionVisible);
   }
 
   function renderBudgetNote(budget?: Partial<WorkflowBudgetNote> | null) {
@@ -228,8 +228,8 @@ export function createWorkflowViewFeature({
     submitLabel?: string;
     showPageRangeButton?: boolean;
   } = {}) {
-    uploadTilePort?.setUploadTileLocked({ locked: true, enabled: false });
-    uploadTilePort?.setUploadTileText({
+    uploadTilePort?.setUploadTileLocked?.({ locked: true, enabled: false });
+    uploadTilePort?.setUploadTileText?.({
       label: "Mock 模式",
       labelTitle: "",
       help: `当前为 mock 模式：${mockScenario || "running"}。不会上传文件，也不会请求真实后端。`,
@@ -257,8 +257,8 @@ export function createWorkflowViewFeature({
     headline?: string;
     renderSourceJobId?: string;
   } = {}) {
-    uploadTilePort?.setUploadTileLocked({ locked: !needsUpload, enabled: needsUpload });
-    uploadTilePort?.setUploadTileText({
+    uploadTilePort?.setUploadTileLocked?.({ locked: !needsUpload, enabled: needsUpload });
+    uploadTilePort?.setUploadTileText?.({
       label: !uploadReady ? (needsUpload ? defaultFileLabel : "复用已有任务产物") : "",
       labelTitle: "",
       help: headline,

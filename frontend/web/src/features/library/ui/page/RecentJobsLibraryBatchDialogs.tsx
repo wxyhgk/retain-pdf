@@ -1,4 +1,16 @@
 import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import type { DeleteBlockedDocument } from "../../domain/types.js";
+
+type RecentJobsLibraryBatchDialogsProps = {
+  pendingDeleteIds: string[] | null;
+  pendingBlockedDelete: DeleteBlockedDocument[] | null;
+  blockedFavoriteTotal: number;
+  batchBusy: boolean;
+  onCancelDelete: () => void;
+  onConfirmDelete: () => void;
+  onCancelBlocked: () => void;
+  onConfirmBlocked: () => void;
+};
 
 // 批量删除的两步确认弹窗(从 RecentJobsLibrary 抽出,保持同一 id/文案/回调)。
 export function RecentJobsLibraryBatchDialogs({
@@ -10,7 +22,7 @@ export function RecentJobsLibraryBatchDialogs({
   onConfirmDelete,
   onCancelBlocked,
   onConfirmBlocked,
-}) {
+}: RecentJobsLibraryBatchDialogsProps) {
   return (
     <>
       <ConfirmDialog

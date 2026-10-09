@@ -1,11 +1,12 @@
 // BookCard 封面上的覆盖层：批量选择态、hover 操作菜单。
 // 从 BookCard.tsx 机械拆出，DOM/class 不变。
 
+import type * as React from "react";
 import { cn } from "@retainpdf/ui/lib/utils";
 import { BookCardActionButton } from "./BookCardActionButton.jsx";
 import type { BookCardAction, LibraryCardItem } from "../../../domain/types.js";
 
-function IconCheck(props) {
+function IconCheck(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" width="13" height="13" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="m5 12 5 5L20 7" />

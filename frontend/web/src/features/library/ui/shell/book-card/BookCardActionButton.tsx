@@ -1,10 +1,11 @@
 // BookCard 封面 hover 区的圆形操作钮与图标解析。
 // 从 BookCard.tsx 机械拆出，行为不变。
 
+import type * as React from "react";
 import { cn } from "@retainpdf/ui/lib/utils";
 import type { BookCardAction, LibraryCardItem } from "../../../domain/types.js";
 
-function IconEye(props) {
+function IconEye(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" width="16" height="16" {...props}>
       <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
@@ -12,7 +13,7 @@ function IconEye(props) {
     </svg>
   );
 }
-function IconLanguages(props) {
+function IconLanguages(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="15" height="15" {...props}>
       <path d="m5 8 6 6" />
@@ -24,7 +25,7 @@ function IconLanguages(props) {
     </svg>
   );
 }
-function IconInfo(props) {
+function IconInfo(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="15" height="15" {...props}>
       <circle cx="12" cy="12" r="9" />
@@ -34,7 +35,7 @@ function IconInfo(props) {
   );
 }
 
-function resolveActionIcon(icon) {
+function resolveActionIcon(icon: BookCardAction["icon"]) {
   if (icon == null || icon === "eye") return <IconEye aria-hidden="true" />;
   if (icon === "languages") return <IconLanguages aria-hidden="true" />;
   if (icon === "info") return <IconInfo aria-hidden="true" />;

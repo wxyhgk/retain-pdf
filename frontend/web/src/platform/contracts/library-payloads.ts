@@ -105,7 +105,7 @@ export type LibraryCardItem = {
   progress?: LibraryProgress;
   runtime_status?: LibraryRuntimeStatus;
   background_stages?: LibraryBackgroundStage[];
-  stage_snapshot?: LibraryRuntimeStatus;
+  stage_snapshot?: LibraryRuntimeStatus | null;
   book_summary?: LibraryBookSummary;
   workflow?: string;
   job_type?: string;

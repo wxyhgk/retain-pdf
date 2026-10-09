@@ -15,6 +15,10 @@
 
 import { ensureDeepSeekBudgetReady } from "./budget.js";
 import { ensureOcrCredentialsForSubmit } from "./credentials.js";
+import type {
+  EnsureDeepSeekBudgetReadyOptions,
+  EnsureOcrCredentialsForSubmitOptions,
+} from "./contracts.js";
 
 export type SubmitPreflightOptions = {
   workflow?: string;
@@ -22,8 +26,8 @@ export type SubmitPreflightOptions = {
   workflowNeedsUpload?: (workflow?: string) => boolean | unknown;
   workflowNeedsCredentials?: (workflow?: string) => boolean | unknown;
   currentBudgetState?: (workflow?: string) => unknown;
-  refreshDeepSeekBalance?: (options?: unknown) => unknown;
-  ensureOcrCredentialsReady?: (options?: unknown) => unknown;
+  refreshDeepSeekBalance?: EnsureDeepSeekBudgetReadyOptions["refreshDeepSeekBalance"];
+  ensureOcrCredentialsReady?: EnsureOcrCredentialsForSubmitOptions["ensureOcrCredentialsReady"];
   /** 预检失败时报给用户（composition 接 toast）。不传则静默。 */
   notifyPreflightWarning?: (message: string) => void;
 };

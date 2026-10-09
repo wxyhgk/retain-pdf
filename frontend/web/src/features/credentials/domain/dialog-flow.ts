@@ -8,13 +8,14 @@ import { getOcrProviderDefinition, normalizeOcrProvider } from "@/platform/confi
 import { syncCredentialDialogFields } from "./dialog-sync.js";
 import { ocrTokenFromCredentials } from "./state-selectors.js";
 import type { UpdateCredentialGateViewOptions } from "./view-contracts.js";
+import type { CredentialsFields } from "./state.js";
 
 
-type UpdateCredentialGateOptions = {
-  workflowNeedsCredentials?: () => boolean;
-  workflowNeedsUpload?: () => boolean;
+export type UpdateCredentialGateOptions = {
+  workflowNeedsCredentials: () => boolean;
+  workflowNeedsUpload: () => boolean;
   hasCredentials?: () => boolean;
-  refreshSubmitControls?: () => void;
+  refreshSubmitControls: () => void;
 };
 
 type DialogFlowElements = {
@@ -27,22 +28,21 @@ type DialogFlowElements = {
 };
 
 type DialogFlowViewPort = {
-  activateTab?: (tabName?: string) => void;
-  closeDialog?: () => void;
-  dialogElements?: () => DialogFlowElements;
-  openDialog?: () => void;
-  setDeepSeekTopUpVisible?: (visible?: boolean) => void;
-  setDeepSeekValidationMessage?: (message?: string, tone?: string) => void;
-  setDialogMode?: (options?: {
+  activateTab: (tabName?: string) => void;
+  closeDialog: () => void;
+  dialogElements: () => DialogFlowElements;
+  setDeepSeekTopUpVisible: (visible?: boolean) => void;
+  setDeepSeekValidationMessage: (message?: string, tone?: string) => void;
+  setDialogMode: (options?: {
     setupMode?: boolean;
     activateCredentialTab?: (tabName?: string) => void;
   }) => void;
-  setDialogStatus?: (message?: string, tone?: string) => void;
-  setHiddenOcrProvider?: (providerId?: string) => void;
-  setOcrValidationMessage?: (message?: string, tone?: string, providerId?: string) => void;
-  setTranslationProvider?: (provider?: string) => void;
-  syncOcrProviderControls?: (providerId?: string) => void;
-  updateCredentialGate?: (options?: UpdateCredentialGateViewOptions) => boolean | void;
+  setDialogStatus: (message?: string, tone?: string) => void;
+  setHiddenOcrProvider: (providerId?: string) => void;
+  setOcrValidationMessage: (message?: string, tone?: string, providerId?: string) => void;
+  setTranslationProvider: (provider?: string) => void;
+  syncOcrProviderControls: (providerId?: string) => void;
+  updateCredentialGate: (options?: UpdateCredentialGateViewOptions) => boolean | void;
 };
 
 type TranslationProfileManager = {
@@ -54,7 +54,7 @@ type TranslationProfileManager = {
 };
 
 type CredentialAccess = {
-  readCurrentCredentials: () => any;
+  readCurrentCredentials: () => CredentialsFields;
   currentOcrProvider: () => string;
   hasBrowserCredentials: () => boolean;
 };
@@ -81,13 +81,13 @@ export function createCredentialDialogFlow({
   dialogElementsPort: {
     elements: () => DialogFlowElements;
     syncTranslationProvider?: (baseUrl?: string) => void;
-    syncOcrProviderControls?: (providerId?: string) => void;
+    syncOcrProviderControls: (providerId?: string) => void;
   };
-  balanceState: { resetDeepSeekBalance?: () => unknown };
+  balanceState: { resetDeepSeekBalance: () => unknown };
   translation: TranslationProfileManager;
   access: CredentialAccess;
-  uploadState: { getSnapshot?: () => { uploadId?: string } };
-  runtimeEnv: { isDesktopMode?: () => boolean };
+  uploadState: { getSnapshot: () => { uploadId?: string } };
+  runtimeEnv: { isDesktopMode: () => boolean };
   onCredentialStateChange?: () => void;
 }) {
   function setCredentialDialogMode(setupMode = false) {
@@ -104,7 +104,7 @@ export function createCredentialDialogFlow({
   }
 
   function readUploadState() {
-    return uploadState.getSnapshot?.() || {};
+    return uploadState.getSnapshot() || {};
   }
 
   function syncOcrCredentialFeedback() {

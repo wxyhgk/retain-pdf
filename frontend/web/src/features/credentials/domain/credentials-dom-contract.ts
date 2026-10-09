@@ -52,5 +52,7 @@ export const CREDENTIAL_DOM_SELECTORS = {
 
 export function browserValidationIdForProvider(providerId = "") {
   const normalized = `${providerId || ""}`.trim().toLowerCase();
-  return CREDENTIAL_DOM_IDS.browser.validations[normalized] || "";
+  // 按任意字符串查表，这里显式放宽索引类型。
+  const validationIds: Record<string, string> = CREDENTIAL_DOM_IDS.browser.validations;
+  return validationIds[normalized] || "";
 }

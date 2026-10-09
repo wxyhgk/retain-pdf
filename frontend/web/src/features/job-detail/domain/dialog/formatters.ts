@@ -2,7 +2,14 @@ import { escapeHtml } from "@/platform/utils/html-formatting.js";
 
 export { escapeHtml };
 
-export function stringifyPretty(value) {
+type LooseRecord = Record<string, unknown>;
+
+/** 诊断载荷形状不定，只按字段名读取；非对象一律当空对象（与原先 `value?.x` 的读取结果一致）。 */
+export function asRecord(value: unknown): LooseRecord {
+  return value && typeof value === "object" ? (value as LooseRecord) : {};
+}
+
+export function stringifyPretty(value: unknown) {
   if (value == null || value === "") {
     return "-";
   }
@@ -16,7 +23,7 @@ export function stringifyPretty(value) {
   }
 }
 
-export function boolLabel(value) {
+export function boolLabel(value: unknown) {
   if (value === true) {
     return "true";
   }
@@ -26,7 +33,7 @@ export function boolLabel(value) {
   return "-";
 }
 
-export function previewText(value) {
+export function previewText(value: unknown) {
   const text = `${value ?? ""}`.trim();
   if (!text) {
     return "-";
@@ -37,14 +44,14 @@ export function previewText(value) {
   return `${text.slice(0, 177)}...`;
 }
 
-export function normalizeRoutePath(value) {
+export function normalizeRoutePath(value: unknown) {
   if (Array.isArray(value)) {
     return value.filter(Boolean).join(" -> ");
   }
   return `${value ?? ""}`.trim();
 }
 
-export function firstNonEmptyText(...values) {
+export function firstNonEmptyText(...values: unknown[]) {
   for (const value of values) {
     if (typeof value === "string" && value.trim()) {
       return value.trim();
@@ -53,47 +60,46 @@ export function firstNonEmptyText(...values) {
   return "";
 }
 
-export function diagnosticsOf(value) {
-  const item = value && typeof value === "object" ? value : {};
-  const nested = item.translation_diagnostics;
-  return nested && typeof nested === "object" ? nested : {};
+export function diagnosticsOf(value: unknown): LooseRecord {
+  return asRecord(asRecord(value).translation_diagnostics);
 }
 
-export function pageNumberOf(value, fallback = "-") {
-  const pageNumber = Number(value?.page_number);
+export function pageNumberOf(value: unknown, fallback = "-") {
+  const pageNumber = Number(asRecord(value).page_number);
   if (Number.isFinite(pageNumber) && pageNumber > 0) {
     return `${pageNumber}`;
   }
-  const pageIdx = Number(value?.page_idx);
+  const pageIdx = Number(asRecord(value).page_idx);
   if (Number.isFinite(pageIdx) && pageIdx >= 0) {
     return `${pageIdx + 1}`;
   }
   return fallback;
 }
 
-export function finalStatusOf(value) {
+export function finalStatusOf(value: unknown) {
   const diagnostics = diagnosticsOf(value);
-  return firstNonEmptyText(value?.final_status, diagnostics.final_status);
+  return firstNonEmptyText(asRecord(value).final_status, diagnostics.final_status);
 }
 
-export function fallbackToOf(value) {
+export function fallbackToOf(value: unknown) {
   const diagnostics = diagnosticsOf(value);
-  return firstNonEmptyText(value?.fallback_to, diagnostics.fallback_to);
+  return firstNonEmptyText(asRecord(value).fallback_to, diagnostics.fallback_to);
 }
 
-export function degradationReasonOf(value) {
+export function degradationReasonOf(value: unknown) {
   const diagnostics = diagnosticsOf(value);
-  return firstNonEmptyText(value?.degradation_reason, diagnostics.degradation_reason);
+  return firstNonEmptyText(asRecord(value).degradation_reason, diagnostics.degradation_reason);
 }
 
-export function routePathOf(value) {
+export function routePathOf(value: unknown): unknown {
   const diagnostics = diagnosticsOf(value);
-  return value?.route_path ?? diagnostics.route_path ?? [];
+  return asRecord(value).route_path ?? diagnostics.route_path ?? [];
 }
 
-export function errorTypesOf(value) {
-  if (Array.isArray(value?.error_types) && value.error_types.length) {
-    return value.error_types;
+export function errorTypesOf(value: unknown): unknown[] {
+  const record = asRecord(value);
+  if (Array.isArray(record.error_types) && record.error_types.length) {
+    return record.error_types;
   }
   const diagnostics = diagnosticsOf(value);
   if (Array.isArray(diagnostics.error_types) && diagnostics.error_types.length) {
@@ -101,13 +107,13 @@ export function errorTypesOf(value) {
   }
   if (Array.isArray(diagnostics.error_trace) && diagnostics.error_trace.length) {
     return diagnostics.error_trace
-      .map((entry) => firstNonEmptyText(entry?.type, entry?.error_type))
+      .map((entry: unknown) => firstNonEmptyText(asRecord(entry).type, asRecord(entry).error_type))
       .filter(Boolean);
   }
   return [];
 }
 
-export function finalStatusLabel(value) {
+export function finalStatusLabel(value: unknown) {
   switch (`${value || ""}`.trim()) {
     case "translated":
       return "已翻译";
@@ -124,7 +130,7 @@ export function finalStatusLabel(value) {
   }
 }
 
-export function finalStatusClass(value) {
+export function finalStatusClass(value: unknown) {
   switch (`${value || ""}`.trim()) {
     case "translated":
       return "is-translated";
@@ -154,7 +160,7 @@ export function summarizeTranslationFilter(query: TranslationFilterQueryLike = {
   return `状态 ${statusText}，检索 ${search || "无"}`;
 }
 
-export function renderField(label, value) {
+export function renderField(label: string, value: unknown) {
   return `
     <div class="info-row translation-detail-row">
       <span class="label">${escapeHtml(label)}</span>
@@ -163,7 +169,7 @@ export function renderField(label, value) {
   `;
 }
 
-export function renderTextBlock(label, value) {
+export function renderTextBlock(label: string, value: unknown) {
   return `
     <section class="translation-text-block">
       <div class="translation-debug-subhead">

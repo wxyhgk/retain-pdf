@@ -36,52 +36,51 @@ export interface CredentialDialogElements {
 
 export interface CredentialDialogElementsPort {
   elements: () => CredentialDialogElements;
-  syncOcrProviderControls?: (providerId?: string) => void;
+  syncOcrProviderControls: (providerId?: string) => void;
   syncTranslationProvider?: (baseUrl?: string) => void;
 }
 
 export interface CredentialsViewPort {
-  activateTab?: (tabName?: string) => void;
-  bindEvents?: (handlers: BindCredentialViewEventsOptions) => void;
-  closeDialog?: () => void;
-  dialogElements?: () => CredentialDialogElements;
-  openDialog?: () => void;
-  setDeepSeekTopUpVisible?: (visible?: boolean) => void;
-  setTranslationProvider?: (provider?: string) => void;
-  setDeepSeekValidationMessage?: (message?: string, tone?: string) => void;
-  setDialogMode?: (options?: {
+  activateTab: (tabName?: string) => void;
+  bindEvents: (handlers: BindCredentialViewEventsOptions) => void;
+  closeDialog: () => void;
+  dialogElements: () => CredentialDialogElements;
+  setDeepSeekTopUpVisible: (visible?: boolean) => void;
+  setTranslationProvider: (provider?: string) => void;
+  setDeepSeekValidationMessage: (message?: string, tone?: string) => void;
+  setDialogMode: (options?: {
     setupMode?: boolean;
     activateCredentialTab?: (tabName?: string) => void;
   }) => void;
-  setDialogStatus?: (message?: string, tone?: string) => void;
-  setHiddenOcrProvider?: (providerId?: string) => void;
-  setOcrValidationMessage?: (message?: string, tone?: string, providerId?: string) => void;
-  syncOcrProviderControls?: (providerId?: string) => void;
-  updateCredentialGate?: (options?: UpdateCredentialGateViewOptions) => boolean | void;
+  setDialogStatus: (message?: string, tone?: string) => void;
+  setHiddenOcrProvider: (providerId?: string) => void;
+  setOcrValidationMessage: (message?: string, tone?: string, providerId?: string) => void;
+  syncOcrProviderControls: (providerId?: string) => void;
+  updateCredentialGate: (options?: UpdateCredentialGateViewOptions) => boolean | void;
 }
 
 export interface CredentialsRuntimeEnvPort {
-  isDesktopMode?: () => boolean;
+  isDesktopMode: () => boolean;
 }
 
 export interface CredentialsUploadStatePort {
-  getSnapshot?: () => {
+  getSnapshot: () => {
     uploadId?: string;
   };
 }
 
 export interface CredentialsBalanceStatePort {
-  resetDeepSeekBalance?: () => void;
+  resetDeepSeekBalance: () => void;
 }
 
 export interface CredentialsSetupModePort {
-  currentSetupMode?: () => boolean;
+  currentSetupMode: () => boolean;
 }
 
 export interface DeepSeekViewPort {
-  elements?: () => CredentialDialogElements;
-  setTopUpVisible?: (visible?: boolean) => void;
-  setValidationMessage?: (message?: string, tone?: string) => void;
+  elements: () => CredentialDialogElements;
+  setTopUpVisible: (visible?: boolean) => void;
+  setValidationMessage: (message?: string, tone?: string) => void;
 }
 
 export interface OpenBrowserCredentialsDialogOptions {
@@ -120,12 +119,12 @@ export interface MountBrowserCredentialsFeatureOptions {
     afterSave?: () => unknown,
   ) => Promise<unknown> | unknown;
   checkApiConnectivity?: () => Promise<unknown> | unknown;
-  validateOcrToken?: (
+  validateOcrToken: (
     apiPrefix?: unknown,
     providerId?: unknown,
     token?: unknown,
   ) => Promise<ProviderValidationResult | unknown> | ProviderValidationResult | unknown;
-  validateDeepSeekToken?: (
+  validateDeepSeekToken: (
     apiPrefix?: unknown,
     payload?: unknown,
   ) => Promise<ProviderValidationResult | unknown> | ProviderValidationResult | unknown;
@@ -147,8 +146,8 @@ export interface MountBrowserCredentialsFeatureOptions {
   balanceStatePort?: CredentialsBalanceStatePort;
   legacyRuntimePort?: unknown;
   legacyValidationCachePort?: unknown;
-  viewPort?: CredentialsViewPort;
-  dialogElementsPort?: CredentialDialogElementsPort;
+  viewPort: CredentialsViewPort;
+  dialogElementsPort: CredentialDialogElementsPort;
   deepSeekViewPort?: DeepSeekViewPort;
   setupModePort?: CredentialsSetupModePort;
 }

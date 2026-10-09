@@ -17,7 +17,10 @@ export function createTranslationState() {
   };
 }
 
-export function resetTranslationState(translationState, jobId = "") {
+export function resetTranslationState(
+  translationState: ReturnType<typeof createTranslationState>,
+  jobId = "",
+) {
   translationState.jobId = jobId;
   translationState.loaded = false;
   translationState.summary = null;

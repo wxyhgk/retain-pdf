@@ -1,30 +1,46 @@
 import { APP_VERSION } from "../generated/app-version.js";
 
-function cleanText(value) {
+function cleanText(value: unknown) {
   return `${value ?? ""}`.trim();
 }
 
-function cleanStack(value) {
+function cleanStack(value: unknown) {
   return cleanText(value).split("\n").slice(0, 8).join("\n");
 }
 
-function inferErrorMessage(error) {
+/** 报错对象上可能挂着的诊断字段（都是可选的，读取前需要收窄）。 */
+type ErrorLike = {
+  message?: unknown;
+  statusText?: unknown;
+  status?: unknown;
+  statusCode?: unknown;
+  httpStatus?: unknown;
+  url?: unknown;
+  jobId?: unknown;
+  stack?: unknown;
+} | null;
+
+function inferErrorMessage(error: unknown) {
   if (!error) {
     return "未知错误";
   }
   if (typeof error === "string") {
     return error;
   }
-  return cleanText(error.message) || cleanText(error.statusText) || String(error);
+  // catch 拿到的是 unknown：这里按可选字段读取，和原来的动态属性访问行为一致。
+  const errorLike = error as ErrorLike;
+  return cleanText(errorLike?.message) || cleanText(errorLike?.statusText) || String(error);
 }
 
-function inferHttpStatus(error, context) {
-  const status = context?.status ?? error?.status ?? error?.statusCode ?? error?.httpStatus;
+function inferHttpStatus(error: unknown, context: ErrorDiagnosticContext) {
+  const errorLike = error as ErrorLike;
+  const status = context?.status ?? errorLike?.status ?? errorLike?.statusCode ?? errorLike?.httpStatus;
   return status === undefined || status === null || status === "" ? "" : `${status}`;
 }
 
-function inferUrl(error, context) {
-  return cleanText(context?.url) || cleanText(context?.endpoint) || cleanText(error?.url);
+function inferUrl(error: unknown, context: ErrorDiagnosticContext) {
+  const errorLike = error as ErrorLike;
+  return cleanText(context?.url) || cleanText(context?.endpoint) || cleanText(errorLike?.url);
 }
 
 /** 错误诊断的上下文：调用方按需传入，字段都可缺省。 */
@@ -45,15 +61,16 @@ function normalizeDetails(details: Record<string, unknown> = {}) {
     .filter(([key, value]) => value && !/api[-_]?key|token|secret|password/i.test(key));
 }
 
-export function buildErrorDiagnostic(error, context: ErrorDiagnosticContext = {}) {
+export function buildErrorDiagnostic(error: unknown, context: ErrorDiagnosticContext = {}) {
   const message = inferErrorMessage(error);
   const operation = cleanText(context.operation) || "前端操作";
   const status = inferHttpStatus(error, context);
   const url = inferUrl(error, context);
-  const jobId = cleanText(context.jobId) || cleanText(error?.jobId);
+  const errorLike = error as ErrorLike;
+  const jobId = cleanText(context.jobId) || cleanText(errorLike?.jobId);
   const now = typeof context.now === "function" ? context.now() : new Date().toISOString();
   const details = normalizeDetails(context.details || {});
-  const stack = context.includeStack === false ? "" : cleanStack(error?.stack);
+  const stack = context.includeStack === false ? "" : cleanStack(errorLike?.stack);
 
   const diagnosticLines = [
     "RetainPDF 前端错误诊断",
@@ -76,9 +93,11 @@ export function buildErrorDiagnostic(error, context: ErrorDiagnosticContext = {}
   };
 }
 
-export function messageForErrorBox(value) {
-  if (value && typeof value === "object" && value.kind === "error-diagnostic") {
-    return value.summary || value.diagnostic || "操作失败";
+export function messageForErrorBox<T>(value: T): T | string {
+  // 诊断对象是 buildErrorDiagnostic 的产物；其它值（字符串等）原样返回。
+  const box = value as { kind?: unknown; summary?: string; diagnostic?: string } | null | undefined;
+  if (value && typeof value === "object" && box?.kind === "error-diagnostic") {
+    return box.summary || box.diagnostic || "操作失败";
   }
   return value;
 }

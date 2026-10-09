@@ -16,7 +16,7 @@ export function syncCredentialDialogFields({
   defaultModelApiKey?: () => string;
   elementsPort: {
     elements: () => CredentialDialogElementsLike;
-    syncOcrProviderControls?: (providerId?: string) => void;
+    syncOcrProviderControls: (providerId?: string) => void;
     syncTranslationProvider?: (baseUrl?: string) => void;
   };
 }) {

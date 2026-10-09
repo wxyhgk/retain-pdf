@@ -24,7 +24,7 @@ export type JobPayloadFetcher = (
   opts: { apiPrefix?: string },
 ) => Promise<unknown>;
 
-function normalizedJobId(value) {
+function normalizedJobId(value: unknown) {
   return `${value || ""}`.trim();
 }
 
@@ -46,8 +46,8 @@ export async function shapeDocumentsWithBooks(
   { fetchLibraryBookList, fetchJobPayload, apiPrefix }: {
     fetchLibraryBookList?: LibraryBookListFetcher;
     fetchJobPayload?: JobPayloadFetcher;
-    apiPrefix?: string;
-  } = {},
+    apiPrefix: string;
+  },
 ) {
   const docs = Array.isArray(documents) ? documents : [];
   const jobIds = Array.from(new Set(
