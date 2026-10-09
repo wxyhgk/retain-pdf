@@ -9,7 +9,7 @@
 - publication：期刊名、书名、论文题目、会议名及其缩写，例如 "J. Chem. Phys."、"Electron Distributions and the Chemical Bond"。
 - common：不需要统一的普通词或泛学术词，例如 "result"、"approach"、"energy level diagram" 这类读者一看就懂、不会译歧的说法也算 common。
 
-判断依据是 context：同一个词出现在参考文献条目里通常是 person 或 publication。拿不准是 technical 还是 common 时，看它在本学科里是否有固定译名、不统一是否会造成误解。
+判断依据是 context：同一个词出现在参考文献条目里通常是 person 或 publication。章节标题、小节标题里的短语按它的含义归类（"Dipole Moments"、"Molecular Quantum Mechanics" 作标题时是 technical），不要因为首字母大写就判成 publication；只有明确是在引用某本书、某种期刊、某篇论文时才是 publication。拿不准是 technical 还是 common 时，看它在本学科里是否有固定译名、不统一是否会造成误解。
 
 target：
 - technical：给本学科通行的规范译名（优先全国科学技术名词审定委员会公布的名词）。预扫译法正确就原样返回；不正确就改正。

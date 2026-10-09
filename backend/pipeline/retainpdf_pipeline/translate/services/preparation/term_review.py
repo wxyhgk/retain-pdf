@@ -41,7 +41,7 @@ from retainpdf_pipeline.translate.services.preparation.term_prescan import is_ac
 from retainpdf_pipeline.translate.services.preparation.term_prescan import request_sha256
 
 TERM_REVIEW_PROMPT = "term_review_system.txt"
-TERM_REVIEW_PROMPT_VERSION = "term-review-v1"
+TERM_REVIEW_PROMPT_VERSION = "term-review-v2"
 TERM_REVIEW_BATCH_SIZE = 40
 TERM_REVIEW_MAX_WORKERS = 8
 TERM_REVIEW_TIMEOUT_SECS = 120
