@@ -86,6 +86,10 @@
       "types": "./dist/glossaries.d.ts",
       "import": "./dist/glossaries.js"
     },
+    "./backups": {
+      "types": "./dist/backups.d.ts",
+      "import": "./dist/backups.js"
+    },
     "./sync": {
       "types": "./dist/sync.d.ts",
       "import": "./dist/sync.js"

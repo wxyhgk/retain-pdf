@@ -421,6 +421,48 @@ fn record_entity(tx: &Transaction<'_>, update: &SyncEntityUpdate<'_>) -> Result<
     Ok(())
 }
 
+/// 数据库刚从备份恢复(见 `backup.rs`):`previous` 是恢复前的 sync_state。
+///
+/// 恢复前的同步设置和记账整体放回(备份里那份可能是旧设置、旧文件夹)。恢复出来的书库
+/// 是旧的:它不能当成本机新改动发出去(会盖掉别的设备上更新的内容),所以同步记账全部
+/// 忘掉、待发清空。开过同步的话换一个新设备号、标成已登记,下一轮从头读同步文件夹里
+/// 每台设备的改动——本机原来的设备号也当别的设备读,备份之后已经同步出去的改动都收回来。
+pub(crate) fn sync_after_restore(conn: &Connection, previous: &[(String, String)]) -> Result<()> {
+    conn.execute_batch(
+        "DELETE FROM sync_state;
+         DELETE FROM sync_entities;
+         DELETE FROM sync_entity_files;
+         DELETE FROM sync_cursors;
+         DELETE FROM sync_pending;
+         DELETE FROM sync_blobs;
+         DELETE FROM sync_dirty;
+         DELETE FROM sync_apply_guard;",
+    )?;
+    for (key, value) in previous {
+        conn.execute("INSERT INTO sync_state(key, value) VALUES(?1, ?2)", params![key, value])?;
+    }
+    let joined = previous.iter().any(|(key, _)| key == "device_id");
+    if joined {
+        let seeded: BTreeMap<&str, u32> = SYNC_SEED_VERSIONS.iter().copied().collect();
+        for (key, value) in [
+            ("device_id", format!("{:016x}", fastrand::u64(..))),
+            ("segment", "0".to_string()),
+            ("seeded", serde_json::to_string(&seeded)?),
+        ] {
+            conn.execute(
+                "INSERT INTO sync_state(key, value) VALUES(?1, ?2)
+                 ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                params![key, value],
+            )?;
+        }
+        conn.execute("DELETE FROM sync_state WHERE key IN ('device_written', 'fingerprint')", [])?;
+    } else {
+        // 还没开过同步:以后开启时照常把书库全部登记。
+        conn.execute("DELETE FROM sync_state WHERE key = 'seeded'", [])?;
+    }
+    Ok(())
+}
+
 impl Db {
     pub fn sync_state_get(&self, key: &str) -> Result<Option<String>> {
         let conn = self.connect()?;

@@ -1407,6 +1407,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "fastrand",
+ "flate2",
  "retain-core",
  "rusqlite",
  "serde",

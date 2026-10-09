@@ -1,0 +1,129 @@
+/* 设置 → 备份 分栏：自动备份说明、立即备份、备份列表（恢复 / 删除）。
+ *
+ * @owns backup-settings */
+
+.backup-settings {
+  display: grid;
+  gap: 16px;
+  max-width: 560px;
+}
+
+.backup-settings-field {
+  display: grid;
+  gap: 6px;
+}
+
+.backup-settings-label {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.backup-settings-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.backup-settings-hint.is-ok {
+  color: var(--ok);
+}
+
+.backup-settings-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.backup-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.backup-settings-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--btn-radius);
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.backup-settings-button.is-primary {
+  min-height: 34px;
+  padding: 0 14px;
+  border-color: transparent;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+}
+
+.backup-settings-button.is-danger {
+  border-color: transparent;
+  background: var(--danger);
+  color: #fff;
+}
+
+.backup-settings-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.backup-settings-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.backup-settings-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+}
+
+.backup-settings-item + .backup-settings-item {
+  border-top: 1px solid var(--line);
+}
+
+.backup-settings-item-main {
+  display: grid;
+  gap: 2px;
+}
+
+.backup-settings-item-time {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.backup-settings-item-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.backup-settings-item-actions,
+.backup-settings-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.backup-settings-confirm-text {
+  color: var(--muted);
+  font-size: 12px;
+}

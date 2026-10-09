@@ -35,5 +35,6 @@ pub mod public_document_operations;
 pub mod public_document_operations_api;
 pub(crate) mod query_execution;
 pub mod runtime_gateway;
+pub mod backup;
 pub mod sync;
 pub(crate) mod uploads;

@@ -6,8 +6,8 @@ use rusqlite::{Connection, Transaction, TransactionBehavior};
 /// 现有 ensure_schema 的幂等 DDL 与 ensure_*_column 增量加列继续负责
 /// 任务系统的表;平台新表(documents/favorites/...)从这里走版本化
 /// 迁移,后续破坏性变更只能追加新版本,不允许改历史条目。
-/// 迁移阶梯当前版本数——测试用它做幂等断言，加迁移时无需再手改测试。
-#[cfg(test)]
+/// 迁移阶梯当前版本数——测试用它做幂等断言，加迁移时无需再手改测试；备份据此判断
+/// 结构要不要升级、一份备份是不是来自更新的版本。
 pub(crate) fn versioned_migration_count() -> i64 {
     VERSIONED_MIGRATIONS.len() as i64
 }

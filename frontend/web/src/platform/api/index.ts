@@ -19,6 +19,7 @@ export * from "./domains/documents.js";
 export * from "./domains/collections.js";
 export * from "./domains/providers.js";
 export * from "./domains/glossaries.js";
+export * from "./domains/backups.js";
 export * from "./domains/sync.js";
 export * from "./domains/translation-debug.js";
 export * from "./domains/ai.js";

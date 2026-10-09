@@ -10,6 +10,7 @@ pub mod document_operations;
 pub(crate) mod download_response;
 pub mod fonts;
 pub mod glossaries;
+pub mod backups;
 pub mod sync;
 pub mod health;
 pub mod job_helpers;

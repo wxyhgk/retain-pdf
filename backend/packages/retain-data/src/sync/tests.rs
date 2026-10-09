@@ -950,3 +950,45 @@ fn a_kind_this_version_does_not_know_waits_instead_of_being_dropped() {
     assert!(pending[0].reason.contains("newer version"), "{pending:?}");
     fs::remove_dir_all(base).unwrap();
 }
+
+#[test]
+fn restoring_an_old_backup_takes_back_what_was_synced_since_and_does_not_push_old_content() {
+    let (base, _folder, devices) = setup(&["a", "b"]);
+    let (a, b) = (&devices[0], &devices[1]);
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.sync();
+    b.sync();
+    let backup = a.db.create_backup(crate::db::backup::KIND_MANUAL).unwrap();
+    let old_device = a.engine.device_id().unwrap();
+
+    // 备份之后:a 改了书名(已同步出去),b 改了阅读状态,a 又加了一张术语表(没来得及同步)。
+    a.conn().execute("UPDATE documents SET title = 'Edited after backup' WHERE document_id = ?1", params![DOC]).unwrap();
+    a.sync();
+    b.conn().execute("UPDATE documents SET reading_status = 'reading' WHERE document_id = ?1", params![DOC]).unwrap();
+    b.sync();
+    a.conn()
+        .execute("INSERT INTO glossaries(glossary_id, name, entries_json, created_at, updated_at) VALUES('g-late', 'x', '[]', 't', 't')", [])
+        .unwrap();
+
+    assert_eq!(a.db.restore_backup(&backup.id).unwrap(), Ok(()));
+    assert_eq!(a.text("SELECT title FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("Book"));
+    assert_eq!(a.count("SELECT COUNT(*) FROM sync_dirty"), 0);
+
+    let back = a.sync();
+    // 恢复出来的旧内容一条都不发;换了新设备号,原来的设备号当别的设备从头读。
+    assert_eq!(back.exported, 0, "{back:?}");
+    assert_ne!(a.engine.device_id().unwrap(), old_device);
+    b.sync();
+    for device in [a, b] {
+        assert_eq!(device.text("SELECT title FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("Edited after backup"));
+        assert_eq!(device.text("SELECT reading_status FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("reading"));
+    }
+    // 没同步出去的改动随恢复没了(这就是恢复的意思)。
+    assert_eq!(a.count("SELECT COUNT(*) FROM glossaries"), 0);
+    // 恢复后照常同步:a 的新改动发得出去。
+    a.conn().execute("UPDATE documents SET title = 'After restore' WHERE document_id = ?1", params![DOC]).unwrap();
+    assert_eq!(a.sync().exported, 1);
+    b.sync();
+    assert_eq!(b.text("SELECT title FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("After restore"));
+    fs::remove_dir_all(base).unwrap();
+}

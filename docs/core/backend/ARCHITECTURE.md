@@ -106,6 +106,12 @@ AI 对话（含消息；本机会话进度列不带）、AI 计算、AI 改文�
 `backend/packages/retain-data/src/sync.rs`；调试用 `cargo run -p retain-data --example
 sync_cycle -- <数据目录> <同步文件夹>`。
 
+数据库备份（`retain_db::db::backup`；调度在 `services/backup`，接口见 `docs/api/10-备份`）：
+每天一份 `VACUUM INTO` 快照，gzip 后放在 `<数据目录>/backups/db/`，按种类保留；结构升级前
+（`ensure_schema` 第一次连上、版本落后时）自动存一份。恢复用 SQLite 在线备份接口整体写进
+正在用的库，不用重启；恢复前先存一份、有任务在跑时拒绝、期间停住同步；同步记账按「带着旧数据
+重新加入」重置（`sync_after_restore`），旧内容不会发出去盖掉别的设备。
+
 这套边界允许 API 壳重启而不终止 remote jobsd 中的 worker，也允许服务重启后
 从 durable attempt/unit 与匹配的 translation checkpoint 恢复。未提交的模型
 输出不会被伪装成已完成状态；远程 provider 请求处于不确定状态时仍需显式解决
