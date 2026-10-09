@@ -5,8 +5,8 @@
 //
 // Node-only. The overlay of a typeset document written as a PDF directly --
 // the same pages, covers, lines and formulas as output/overlay.js, without
-// Typst. Every cluster sits where the measured layout put it
-// (measurer.placeLine); which font and glyphs draw it is shaping.js
+// Typst. The PDF is drawn from the layout file alone (layout.js: every
+// cluster where measurer.placeLine put it); which font and glyphs draw it is shaping.js
 // (primary face, canonical decomposition, fallback faces). Formulas are
 // MathJax outlines (svg-pdf.js) with their LaTeX on top as invisible text
 // (text render mode 3), so extraction / copy / search yield the LaTeX.
@@ -21,9 +21,8 @@
 const { PdfFile, name, num } = require("./pdf-file");
 const { PdfFont, hex4 } = require("./pdf-font");
 const { SvgPainter } = require("./svg-pdf");
-const { FontChain, STRONG_SCRIPT } = require("./shaping");
-// The measurer's unit for a formula box and for a forced break (U+2028).
-const { OBJECT, LINE_SEPARATOR } = require("../../text/linebreak");
+const { FontChain } = require("./shaping");
+const { buildLayout, validateLayout } = require("./layout");
 
 // Typst's raw-text fallback for a formula MathJax could not render.
 const FALLBACK_COLOR = [0x8a / 255, 0x1c / 255, 0x1c / 255];
@@ -72,14 +71,13 @@ function showGlyphs(items, size, ops, { invisible = false, hscale = 100 } = {}) 
   }
 }
 
-class OverlayPdfWriter {
+class LayoutPdfWriter {
+  // options: { fonts: { regular, bold, fallbacks } } (fontkit fonts)
   constructor(options) {
-    if (!options || !options.fonts || !options.fonts.regular) throw new Error("overlayPdf needs fonts.regular (a fontkit font)");
-    if (!options.measurers || !options.measurers.regular) throw new Error("overlayPdf needs measurers.regular");
+    if (!options || !options.fonts || !options.fonts.regular) throw new Error("the PDF output needs fonts.regular (a fontkit font)");
     this.pdf = new PdfFile();
     this.chain = new FontChain({ regular: options.fonts.regular, bold: options.fonts.bold || null }, options.fonts.fallbacks || []);
     this.pdfFonts = new Map(); // fontkit font -> PdfFont
-    this.measurers = options.measurers;
     this.painter = new SvgPainter(this.pdf, (text, size) => this.textGlyphs(text, size, false));
     this.stats = { pages: 0, lines: 0, clusters: 0, formulas: 0, fallbackFormulas: 0 };
   }
@@ -149,93 +147,51 @@ class OverlayPdfWriter {
     }
   }
 
-  node(node, paint, pageHeight, maths, ops) {
-    const bold = node.fontWeight === "bold";
-    const measurer = (bold && this.measurers.bold) || this.measurers.regular;
-    const size = Number(node.fontSize);
-    const color = paint.text || [0, 0, 0];
-    const prepared = (node.paragraphs || []).map(paragraph => measurer.prepare(paragraph.runs));
-    // Shaping mode per unit: as prepare() shapes, run by run between formula
-    // boxes and forced breaks.
-    const modes = prepared.map(p => {
-      const out = new Array(p.n);
-      let start = 0;
-      for (let i = 0; i <= p.n; i++) {
-        if (i < p.n && p.text[i] !== OBJECT && p.text[i] !== LINE_SEPARATOR) continue;
-        const mode = STRONG_SCRIPT.test(p.text.slice(start, i)) ? "zh" : "dflt";
-        for (let k = start; k < i; k++) out[k] = mode;
-        start = i + 1;
-      }
-      return out;
-    });
+  // One block of the layout: its lines' clusters and formulas.
+  block(block, pageHeight, maths, ops) {
+    const bold = block.weight === "bold";
+    const size = Number(block.fontSize);
+    const color = block.color || [0, 0, 0];
     ops.push(rgb(color), rgb(color, true));
-    for (const line of node.lines || []) {
-      if (line.toc) continue;
-      const p = prepared[line.paragraph];
-      if (!p || line.end <= line.start) continue;
-      const placed = measurer.placeLine(p, line, {
-        fontSize: size,
-        target: line.justified ? line.width : undefined,
-        justify: Boolean(line.justified)
-      });
-      if (line.justified && Math.abs(placed.width - line.width) > 0.05) {
-        // A justified line that does not end at its width (nothing to stretch,
-        // or a hanging final mark): diagnostics only.
-        this.stats.justifyMismatches = (this.stats.justifyMismatches || 0) + 1;
-        if (!this.stats.justifyExamples) this.stats.justifyExamples = [];
-        if (this.stats.justifyExamples.length < 5) {
-          this.stats.justifyExamples.push({ node: node.id, text: p.text.slice(line.start, line.end), target: line.width, placed: placed.width });
-        }
-      }
-      const baseline = pageHeight - line.baseline;
+    for (const line of block.lines || []) {
+      const baseline = pageHeight - Number(line.baseline);
       let items = [];
       const flush = () => { showGlyphs(items, size, ops); items = []; };
-      for (const glyph of placed.glyphs) {
-        const x = line.x + glyph.x;
-        const unit = p.text[glyph.index];
-        if (unit === OBJECT) {
+      for (const item of line.items || []) {
+        const x = Number(item.x);
+        if (item.tex !== undefined) {
           flush();
-          this.formula(p.boxes.get(glyph.index).run, x, baseline, size, color, maths, ops);
+          this.formula({ tex: item.tex, display: item.display, widthEm: item.w }, x, baseline, size, color, maths, ops);
           continue;
         }
-        if (unit === LINE_SEPARATOR) continue;
-        // The cluster: this glyph start and its zero-advance continuations.
-        let end = glyph.index + 1;
-        while (end < p.n && !p.glyph[end] && p.text[end] !== OBJECT && p.text[end] !== LINE_SEPARATOR) end += 1;
-        this.clusterItems(p.text.slice(glyph.index, end), x, baseline, size, bold, items, modes[line.paragraph][glyph.index]);
+        this.clusterItems(String(item.t), x, baseline, size, bold, items, item.mode === "dflt" ? "dflt" : "zh");
       }
       flush();
       this.stats.lines += 1;
     }
   }
 
-  page(page, paint, maths) {
+  page(page, maths) {
     const ops = [];
     const height = Number(page.height);
-    const nodes = (page.nodes || []).filter(node => paint[node.id]);
-    let painted = 0;
-    // Covers first, then text, so no cover hides another node's overflow.
-    for (const node of nodes) {
-      const { cover, fill } = paint[node.id];
-      if (!cover || !fill || !(cover[2] > cover[0]) || !(cover[3] > cover[1])) continue;
-      ops.push(rgb(fill), `${num(cover[0])} ${num(height - cover[3])} ${num(cover[2] - cover[0])} ${num(cover[3] - cover[1])} re`, "f");
+    // Covers first, then text, so no cover hides another block's overflow.
+    for (const { rect, fill } of page.covers || []) {
+      ops.push(rgb(fill), `${num(rect[0])} ${num(height - rect[3])} ${num(rect[2] - rect[0])} ${num(rect[3] - rect[1])} re`, "f");
     }
-    for (const node of nodes) {
-      if (!node.lines || !node.lines.length) continue;
-      this.node(node, paint[node.id], height, maths, ops);
-      painted += 1;
-    }
+    for (const block of page.blocks || []) this.block(block, height, maths, ops);
     this.stats.pages += 1;
-    return { ops: ops.join("\n"), painted };
+    return { ops: ops.join("\n"), painted: (page.blocks || []).length };
   }
 
-  write(result, paint, maths) {
+  // layout: rpr_layout_v1 (layout.js). The PDF is drawn from it alone.
+  write(layout, maths) {
+    validateLayout(layout);
     const pagesRef = this.pdf.reserve();
     const resourcesRef = this.pdf.reserve();
     const kids = [];
     let painted = 0;
-    for (const page of result.pages) {
-      const drawn = this.page(page, paint, maths);
+    for (const page of layout.pages) {
+      const drawn = this.page(page, maths);
       painted += drawn.painted;
       const contents = this.pdf.add({}, drawn.ops);
       kids.push(this.pdf.add({
@@ -263,8 +219,18 @@ class OverlayPdfWriter {
   }
 }
 
-function overlayPdf(result, paint, maths, options) {
-  return new OverlayPdfWriter(options).write(result, paint, maths);
+// The PDF of a layout file (an edited one too): -> { pdf, painted, stats }.
+function layoutPdf(layout, maths, options) {
+  return new LayoutPdfWriter(options).write(layout, maths);
 }
 
-module.exports = { overlayPdf, OverlayPdfWriter, showGlyphs };
+// A typeset result straight to a PDF, via its layout:
+// -> { pdf, painted, stats, layout } (write formatLayout(layout) next to the PDF).
+function overlayPdf(result, paint, maths, options) {
+  if (!options || !options.measurers || !options.measurers.regular) throw new Error("overlayPdf needs measurers.regular");
+  const built = buildLayout(result, paint, { measurers: options.measurers });
+  const written = layoutPdf(built.layout, maths, options);
+  return { ...written, layout: built.layout, stats: { ...written.stats, layout: built.stats } };
+}
+
+module.exports = { overlayPdf, layoutPdf, LayoutPdfWriter, showGlyphs };

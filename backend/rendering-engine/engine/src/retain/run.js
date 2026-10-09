@@ -24,6 +24,7 @@ const { MathStore } = require("../output/math-store");
 const { overlayDocument } = require("../output/overlay");
 const { createTypst } = require("../output/typst-runner");
 const { overlayPdf } = require("../output/pdf/overlay-pdf");
+const { formatLayout } = require("../output/pdf/layout");
 const { findFamily, findFallbacks, BUNDLED_FONT_DIRS } = require("../output/pdf/fonts");
 const { createRetainFitter, splitParagraphs } = require("./fit");
 
@@ -189,6 +190,9 @@ function runRetain(input, options = {}) {
   let outputStats = null;
   if (output === "pdf") {
     const written = overlayPdf(result, paint, maths, { fonts, measurers: { regular: measurer, bold: measurers.bold } });
+    // The layout file is what the PDF was drawn from: read / diff / edit it,
+    // and redraw with bin/rpr-layout-pdf.js.
+    fs.writeFileSync(path.join(outDir, "layout.json"), formatLayout(written.layout));
     fs.writeFileSync(path.join(outDir, "overlay.pdf"), written.pdf);
     outputStats = written.stats;
   }
@@ -251,7 +255,7 @@ function runRetain(input, options = {}) {
       totalMs: 0
     },
     output: output === "pdf" ? { kind: "pdf", stats: outputStats } : { kind: "typst" },
-    files: output === "pdf" ? { overlay: "overlay.pdf" } : { overlay: "overlay.pdf", typst: "overlay.typ", math: "math" }
+    files: output === "pdf" ? { overlay: "overlay.pdf", layout: "layout.json" } : { overlay: "overlay.pdf", typst: "overlay.typ", math: "math" }
   };
   report.timings.totalMs = Math.round(performance.now() - started);
   fs.writeFileSync(path.join(outDir, "report.json"), JSON.stringify(report, null, 2));

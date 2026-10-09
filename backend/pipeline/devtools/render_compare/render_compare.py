@@ -134,6 +134,9 @@ def run_variant(job_root: Path, case_dir: Path, variant: dict, cache_dir: Path, 
                 shutil.copy2(rpr_dir / input_name, out_dir / input_name)
         if rpr_dir and (rpr_dir / "rpr-fit-input.json").is_file() and (rpr_dir / "out" / "report.json").is_file():
             shutil.copy2(rpr_dir / "out" / "report.json", out_dir / "rpr-fit-report.json")
+        # 引擎直接写 PDF 时的排版结果文件（PDF 只从它画出），两次运行可以直接比对。
+        if rpr_dir and (rpr_dir / "out" / "layout.json").is_file():
+            shutil.copy2(rpr_dir / "out" / "layout.json", out_dir / "layout.json")
         if rpr_dir and (rpr_dir / "rpr-input.json").is_file():
             shutil.copy2(rpr_dir / "rpr-input.json", out_dir / "rpr-input.json")
             if (rpr_dir / "out" / "report.json").is_file():

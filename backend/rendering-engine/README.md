@@ -51,3 +51,18 @@ node engine/bin/rpr-retain.js --input in.json --out-dir DIR [--output pdf|typst]
 
 输入 `rpr_retain_input_v1`、输出 `DIR/overlay.pdf` + `DIR/report.json`（`rpr_retain_report_v1`），
 细节见引擎仓库 README 的「retain-pdf 接入（CLI）」一节。退出码 0 成功；2 输入错误；1 其他，stderr 一行 `{"error": "..."}`。
+
+## 调试：layout.json
+
+引擎直接写 PDF 时，在输出目录（rpr_fit：`rendered/typst/rpr-fit-engine/out/`，rpr：`rendered/typst/rpr-engine/out/`）
+里同时写 `layout.json`（schema `rpr_layout_v1`）：PDF 只从它画出。逐行记录整行文字、基线、每个字簇的
+横坐标与文字、每个公式的 LaTeX 与盒子，坐标单位 pt、原点在页面左上角、y 朝下（与 OCR 框同一坐标系）。
+看、比对或手改它之后重画：
+
+```bash
+node engine/bin/rpr-layout-pdf.js --layout <out>/layout.json --out /tmp/overlay.pdf --font-path resources/fonts
+```
+
+没改过的文件重画出逐字节相同的 PDF。重画的是叠加层；要看成品，把它叠回底图（rpr_fit 的
+`rpr-fit-base.pdf`）即可。
+

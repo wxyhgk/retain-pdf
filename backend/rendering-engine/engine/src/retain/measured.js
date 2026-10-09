@@ -47,6 +47,7 @@ const { MathStore } = require("../output/math-store");
 const { overlayDocument } = require("../output/overlay");
 const { createTypst } = require("../output/typst-runner");
 const { overlayPdf } = require("../output/pdf/overlay-pdf");
+const { formatLayout } = require("../output/pdf/layout");
 const { findFamily, findFallbacks, BUNDLED_FONT_DIRS } = require("../output/pdf/fonts");
 const { buildModel, blockNumber } = require("./job-model");
 const VectorObstacles = require("./vector-obstacles");
@@ -178,6 +179,9 @@ function runMeasured(input, options = {}) {
   let outputStats = null;
   if (output === "pdf") {
     const written = overlayPdf(fitted, paint, maths, { fonts, measurers: { regular: base, bold } });
+    // The layout file is what the PDF was drawn from: read / diff / edit it,
+    // and redraw with bin/rpr-layout-pdf.js.
+    fs.writeFileSync(path.join(outDir, "layout.json"), formatLayout(written.layout));
     fs.writeFileSync(path.join(outDir, "overlay.pdf"), written.pdf);
     painted = written.painted;
     outputStats = written.stats;
@@ -202,7 +206,7 @@ function runMeasured(input, options = {}) {
   const report = buildReport({ job, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds });
   timings.totalMs = Math.round(performance.now() - started);
   report.timings = timings;
-  report.output = output === "pdf" ? { kind: "pdf", stats: outputStats } : { kind: "typst" };
+  report.output = output === "pdf" ? { kind: "pdf", layout: "layout.json", stats: outputStats } : { kind: "typst" };
   fs.writeFileSync(path.join(outDir, "report.json"), JSON.stringify(report, null, 2));
   return { report, overlayPdf: path.join(outDir, "overlay.pdf"), outDir };
 }
