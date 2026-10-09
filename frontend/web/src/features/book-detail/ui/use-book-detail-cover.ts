@@ -13,9 +13,17 @@ import {
   recentJobStageLabel,
   recentJobStatusLabel,
 } from "@/features/library/domain.js";
+import type { LibraryCardItem } from "@/features/library/domain.js";
 import { isActiveJobStatus } from "@retainpdf/domain/job";
 
-function statusOf(item: any) {
+type StatusCardState = {
+  status?: string;
+  jobId?: string;
+  job_id?: string;
+  snapshot?: StatusCardState | null;
+};
+
+function statusOf(item: LibraryCardItem) {
   if (isLibraryOnlyItem(item)) return { label: "未翻译", tone: "muted" };
   if (isRecentJobActive(item)) return { label: recentJobStageLabel(item), tone: "active" };
   const status = `${item.status || ""}`.trim();
@@ -29,8 +37,8 @@ function statusOf(item: any) {
 }
 
 export type UseBookDetailCoverOptions = {
-  item?: any;
-  statusCardState?: any;
+  item?: LibraryCardItem;
+  statusCardState?: StatusCardState | null;
   /** 可选透传：若调用方已算好 isActive 则复用，否则内部重算 */
   isActive?: boolean;
   /** 这本书有没有可读的译文（见 bookDetailHasTranslation）；缺省只看 item.has_translation。 */
@@ -48,7 +56,7 @@ export function bookDetailHasTranslation({
   item = {},
   coverage = null,
 }: {
-  item?: any;
+  item?: LibraryCardItem;
   coverage?: { translated_pages?: number } | null;
 } = {}): boolean {
   return item?.has_translation === true || Number(coverage?.translated_pages || 0) > 0;
@@ -66,7 +74,7 @@ export function deriveBookDetailCoverState({
   isActive: isActiveProp,
   hasTranslation: hasTranslationProp,
 }: UseBookDetailCoverOptions = {}) {
-  const snapshot = statusCardState?.snapshot ?? statusCardState ?? {};
+  const snapshot: StatusCardState = statusCardState?.snapshot ?? statusCardState ?? {};
   const cardStatus = `${snapshot?.status ?? statusCardState?.status ?? ""}`.trim().toLowerCase();
   const cardJobId = `${snapshot?.jobId ?? snapshot?.job_id ?? statusCardState?.jobId ?? ""}`.trim();
   const itemJobId = `${item.job_id || item.active_job_id || ""}`.trim();

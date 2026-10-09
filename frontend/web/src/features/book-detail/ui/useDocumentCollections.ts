@@ -2,13 +2,29 @@
 // 由 useBookDetailDocument 门面组合。
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { CollectionsController, CollectionsReloadSignal } from "@/features/collections/index.js";
+
+type CollectionsCtl = Pick<
+  CollectionsController,
+  "listCollections" | "listCollectionDocumentIds" | "addDocuments" | "removeDocument"
+>;
+
+type CollectionRow = { collection_id: string; name: string };
+
+export type DocumentCollectionsOptions = {
+  open: boolean;
+  documentId: string;
+  collectionsCtl?: CollectionsCtl | null;
+  collectionsReload?: CollectionsReloadSignal | null;
+  setError?: (msg: string) => void;
+};
 
 function createPLimit(concurrency: number) {
   let active = 0;
   const queue: Array<{
-    fn: () => Promise<any>;
-    resolve: (v: any) => void;
-    reject: (e: any) => void;
+    fn: () => Promise<unknown>;
+    resolve: (v: unknown) => void;
+    reject: (e: unknown) => void;
   }> = [];
   const next = () => {
     if (queue.length === 0 || active >= concurrency) return;
@@ -24,7 +40,7 @@ function createPLimit(concurrency: number) {
   };
   return <T>(fn: () => Promise<T>): Promise<T> =>
     new Promise<T>((resolve, reject) => {
-      queue.push({ fn, resolve: resolve as any, reject });
+      queue.push({ fn, resolve: resolve as (v: unknown) => void, reject });
       next();
     });
 }
@@ -43,7 +59,7 @@ export function useDocumentCollections({
   collectionsCtl,
   collectionsReload,
   setError: externalSetError,
-}: any) {
+}: DocumentCollectionsOptions) {
   const [collections, setCollections] = useState<Array<{ collection_id: string; name: string; member: boolean }>>([]);
   const [collectionsBusy, setCollectionsBusy] = useState("");
   const [internalError, setInternalError] = useState("");
@@ -69,11 +85,12 @@ export function useDocumentCollections({
     // 依赖 collectionsCtl，reloadSignal 变化也应重新拉取（若调用方传入 version 则会触发）
     collectionsCtl
       .listCollections()
-      .then(async (list: any) => {
-        const rows: Array<{ collection_id: string; name: string }> = Array.isArray(list?.collections)
-          ? list.collections
+      .then(async (list: unknown) => {
+        const body = list as { collections?: CollectionRow[] } | null | undefined;
+        const rows: CollectionRow[] = Array.isArray(body?.collections)
+          ? body.collections
           : Array.isArray(list)
-            ? list
+            ? (list as CollectionRow[])
             : [];
         if (rows.length === 0) {
           if (!cancelled) setCollections([]);
@@ -88,7 +105,7 @@ export function useDocumentCollections({
               return { collection_id: colId, name: col.name, member: cachedMap.get(colId) as boolean };
             }
             try {
-              const ids: string[] = await collectionsCtl.listCollectionDocumentIds(colId);
+              const ids = await collectionsCtl.listCollectionDocumentIds(colId);
               const member = Array.isArray(ids) ? ids.includes(documentId) : false;
               let m = membershipCacheRef.current.get(documentId);
               if (!m) {
@@ -112,7 +129,7 @@ export function useDocumentCollections({
         // Promise.all + pLimit(3) 限流；用 allSettled 兜底单项失败不影响整体
         const settled = await Promise.allSettled(tasks);
         const withMembership = settled.map((r, idx) => {
-          if (r.status === "fulfilled") return r.value as { collection_id: string; name: string; member: boolean };
+          if (r.status === "fulfilled") return r.value;
           const col = rows[idx];
           return { collection_id: col.collection_id, name: col.name, member: false };
         });
@@ -147,8 +164,8 @@ export function useDocumentCollections({
       }
       m.set(collectionId, nextMember);
       collectionsReload?.actions.bump();
-    } catch (err: any) {
-      setError(err?.message || "更新合集失败");
+    } catch (err) {
+      setError((err as { message?: string } | null)?.message || "更新合集失败");
     } finally {
       setCollectionsBusy("");
     }

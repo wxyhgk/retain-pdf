@@ -1,7 +1,7 @@
 // 详情右栏 Tab 切换壳：简介 / 处理 / 文件。
 // 页签样式见同目录 BookDetailRightTabs.css（.book-detail-right-tab.is-active）。
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Tabs as TabsPrimitive } from "radix-ui";
 import { cn } from "@/ui/lib/utils";
 
@@ -40,16 +40,20 @@ export const BOOK_DETAIL_TABS = Object.freeze([
   { id: "artifacts", label: "文件", title: "文件与产物", Icon: IconFile },
 ]);
 
-/**
- * @param {object} props
- * @param {boolean} props.open
- * @param {string} [props.resetKey]
- * @param {string} [props.defaultTab]
- * @param {import("react").ReactNode | ((ctx: { activeTab: string, selectTab: (tab: string) => void }) => import("react").ReactNode)} props.overviewTab
- * @param {import("react").ReactNode | ((ctx: { activeTab: string, selectTab: (tab: string) => void }) => import("react").ReactNode)} props.processingTab
- * @param {import("react").ReactNode | ((ctx: { activeTab: string, selectTab: (tab: string) => void }) => import("react").ReactNode)} props.artifactsTab
- * @param {(tab: string) => void} [props.onTabChange]
- */
+type TabContext = { activeTab: string; selectTab: (tab: string) => void };
+/** 页签内容：直接给节点，或给一个拿到当前页签上下文再渲染的函数。 */
+type TabSlot = ReactNode | ((ctx: TabContext) => ReactNode);
+
+export type BookDetailRightTabsProps = {
+  open: boolean;
+  resetKey?: string;
+  defaultTab?: string;
+  overviewTab: TabSlot;
+  processingTab: TabSlot;
+  artifactsTab: TabSlot;
+  onTabChange?: (tab: string) => void;
+};
+
 export function BookDetailRightTabs({
   open,
   resetKey = "",
@@ -58,7 +62,7 @@ export function BookDetailRightTabs({
   processingTab,
   artifactsTab,
   onTabChange,
-}: any) {
+}: BookDetailRightTabsProps) {
   const [activeTab, setActiveTab] = useState(defaultTab || "overview");
 
   // open/换文档时回到 defaultTab；同时跟随 defaultTab 变化（例如提交翻译后
@@ -69,7 +73,7 @@ export function BookDetailRightTabs({
     }
   }, [open, resetKey, defaultTab]);
 
-  function handleTabChange(next) {
+  function handleTabChange(next: string) {
     setActiveTab(next);
     onTabChange?.(next);
   }

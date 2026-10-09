@@ -12,7 +12,7 @@ import {
 } from "@/ui/context/home-services-context.js";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { StatusCard } from "@/features/jobs/index.js";
-import type { LibraryCardItem } from "@/features/library/domain.js";
+import type { LibraryCardItem, LibraryRuntimeStatus } from "@/features/library/domain.js";
 import {
   isLibraryOnlyItem,
 } from "@/features/library/domain.js";
@@ -97,7 +97,7 @@ export function BookTranslateProgressPanel({
   // 终态不挂完整大卡；WorkflowPanel 会展示紧凑四阶段过程条。
   if (!showDetailedProgress) {
     if (showFailure) {
-      const snapshot: any = item.stage_snapshot || {};
+      const snapshot: LibraryRuntimeStatus = item.stage_snapshot || {};
       const detail = `${snapshot.stage_detail || item.stage_detail || ""}`.trim();
       return (
         <div

@@ -1,5 +1,11 @@
 import { useState } from "react";
 import { usePageRange } from "./use-page-range.js";
+import type {
+  DocumentJobSummary,
+  JobSubmissionView,
+  LibraryController,
+  OcrDocumentPayload,
+} from "@/features/library/domain.js";
 
 export function useBookDetailOcr({
   open,
@@ -8,14 +14,26 @@ export function useBookDetailOcr({
   actions,
   onStarted,
   onCancelled,
-}: any) {
+}: {
+  open: boolean;
+  documentId: string;
+  pageCount?: number | null;
+  actions: Pick<LibraryController, "cancelJob"> & {
+    submitDocument: (
+      documentId?: string | null,
+      payload?: OcrDocumentPayload,
+    ) => Promise<JobSubmissionView | null>;
+  };
+  onStarted?: (job: Partial<DocumentJobSummary>) => unknown;
+  onCancelled?: () => unknown;
+}) {
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const range = usePageRange({ open, documentId, pageCount });
 
   async function handleOcr() {
-    const payload: any = { workflow: "ocr" };
+    const payload: OcrDocumentPayload = { workflow: "ocr" };
     if (range.rangeOn) {
       const checked = range.validateRange();
       if (!checked.valid) {

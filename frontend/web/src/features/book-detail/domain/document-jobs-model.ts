@@ -84,7 +84,12 @@ export function selectRetryBaseJob(
 }
 
 /** currentJobStore -> documentJobs 共用的当前任务形状。 */
-export function runtimeDocumentJob(runtimeState: any): DocumentJobSummary | null {
+export type RuntimeJobState = {
+  jobId?: string;
+  snapshot?: Record<string, unknown> | null;
+} | null | undefined;
+
+export function runtimeDocumentJob(runtimeState: RuntimeJobState): DocumentJobSummary | null {
   const snapshot = runtimeState?.snapshot && typeof runtimeState.snapshot === "object"
     ? runtimeState.snapshot
     : null;

@@ -1,8 +1,8 @@
 // 详情门面：组合 useDocumentMeta + useDocumentCollections，保持 BookDetailDialog 调用不变。
 // 原 231 行单 hook 已拆分，门面仅做转发与合并以兼容旧 API。
 
-import { useDocumentMeta } from "./useDocumentMeta.js";
-import { useDocumentCollections } from "./useDocumentCollections.js";
+import { useDocumentMeta, type DocumentMetaOptions } from "./useDocumentMeta.js";
+import { useDocumentCollections, type DocumentCollectionsOptions } from "./useDocumentCollections.js";
 
 /**
  * @param {object} options
@@ -22,7 +22,7 @@ export function useBookDetailDocument({
   collectionsCtl,
   collectionsReload,
   onClose,
-}: any) {
+}: DocumentMetaOptions & Pick<DocumentCollectionsOptions, "collectionsCtl" | "collectionsReload">) {
   const meta = useDocumentMeta({ open, documentId, item, actions, onClose });
   const col = useDocumentCollections({
     open,

@@ -6,7 +6,14 @@ import type {
 } from "@/platform/api/index.js";
 import { resumeJob as resumeJobRequest } from "@/platform/api/index.js";
 import type { DocumentJobSummary } from "@/features/library/domain.js";
+import type { LibraryController } from "@/features/library/index.js";
 import { isDocumentJobActive } from "./use-document-jobs.js";
+
+type ResumeView = { job_id?: string; id?: string; document_id?: string; workflow?: string };
+
+type RetryBody = Record<string, unknown> & {
+  overrides?: Record<string, unknown> & { render?: Record<string, unknown> };
+};
 
 // job_id -> stage-actions 视图。跨文档/跨弹窗复用，但必须有上限，避免长会话无限增长。
 const STAGE_ACTIONS_CACHE_LIMIT = 200;
@@ -52,14 +59,8 @@ export function useBookDetailStageActions({
 }: {
   open: boolean;
   job?: DocumentJobSummary | null;
-  actions: {
-    getJobStageActions?: (jobId: string) => Promise<unknown>;
-    retryJobStage?: (
-      jobId: string,
-      stage: JobRetryStage,
-      payload?: Record<string, unknown>,
-    ) => Promise<any>;
-    resumeJob?: (jobId: string) => Promise<any>;
+  actions: Pick<LibraryController, "getJobStageActions" | "retryJobStage"> & {
+    resumeJob?: (jobId: string) => Promise<unknown>;
   };
   onJobSubmitted?: (job: Partial<DocumentJobSummary>) => unknown;
   /** OCR/document authority changed while the translation job stayed the same. */
@@ -145,20 +146,20 @@ export function useBookDetailStageActions({
         : "";
       if (stage !== "refine" && !engineOverride && !acceptDuplicateRisk && isResumeCandidate(job)) {
         try {
-          const resume = actions.resumeJob
+          const resume = (actions.resumeJob
             ? await actions.resumeJob(jobId)
-            : await resumeJobRequest(jobId);
-          const resumedId = `${(resume as any)?.job_id || (resume as any)?.id || ""}`.trim();
+            : await resumeJobRequest(jobId)) as ResumeView | null;
+          const resumedId = `${resume?.job_id || resume?.id || ""}`.trim();
           if (resumedId || resume) {
             const nextId = resumedId || jobId;
             onJobSubmitted?.({
-              ...(resume as object),
+              ...resume,
               job_id: nextId,
               active_job_id: nextId,
               source_job_id: jobId,
-              document_id: (resume as any)?.document_id || (job as any)?.document_id,
-              workflow: (resume as any)?.workflow
-                || (nextId === jobId ? (job as any)?.workflow : undefined)
+              document_id: resume?.document_id || job?.document_id,
+              workflow: resume?.workflow
+                || (nextId === jobId ? job?.workflow : undefined)
                 || (stage === "render" ? "render" : "book"),
               library_only: false,
             });
@@ -168,7 +169,7 @@ export function useBookDetailStageActions({
           // resume 不可用（404/不可恢复等）→ 兜底显式 retry-stage。
         }
       }
-      const body = (descriptor.action?.body || {}) as Record<string, any>;
+      const body = (descriptor.action?.body || {}) as RetryBody;
       const result = await actions.retryJobStage(jobId, stage, {
         ...body,
         // 不指定引擎时沿用任务原来的引擎（后端保留 render.engine）。

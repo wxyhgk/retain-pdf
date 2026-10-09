@@ -19,18 +19,24 @@ import {
   unitLabelFromProgress,
 } from "../../domain/progress-value.js";
 import { useState } from "react";
+import type {
+  BookDetailOcrPanelProps,
+  BookDetailProcessingTabProps,
+  BookDetailTranslationPanelProps,
+  ProgressSource,
+} from "./processing-tab-types.js";
 import { ChevronDown, LoaderCircle, Square } from "lucide-react";
 import { TranslationStageActions } from "../panels/translate/TranslationStageActions.jsx";
 
-function progressOf(source: any): { current?: number; total?: number; percent: number | null; unit: string } {
-  const progress: any = source?.stage_snapshot?.progress || source?.progress || {};
+function progressOf(source: ProgressSource): { current?: number; total?: number; percent: number | null; unit: string } {
+  const progress = source?.stage_snapshot?.progress || source?.progress || {};
   const percent = percentFromProgress(progress);
   const count = countFromProgress(progress);
   const unit = unitLabelFromProgress(progress);
   return count ? { current: count.current, total: count.total, percent, unit } : { percent, unit };
 }
 
-function progressTextOf(source: any): string | null {
+function progressTextOf(source: ProgressSource): string | null {
   const { current, total, percent, unit } = progressOf(source);
   const parts: string[] = [];
   if (current !== undefined && total !== undefined) parts.push(unit ? `${current}/${total} ${unit}` : `${current}/${total}`);
@@ -39,7 +45,7 @@ function progressTextOf(source: any): string | null {
 }
 
 /** 顶部一行状态：只读传入的真实任务数据，不编假数；OCR 活跃优先，否则跟翻译。 */
-function unifiedHeadline(ocr: any, translation: any): string {
+function unifiedHeadline(ocr: BookDetailOcrPanelProps, translation: BookDetailTranslationPanelProps): string {
   if (ocr && isDocumentJobActive(ocr.job)) {
     const presentation = documentJobPresentation(ocr.job, "OCR 处理中");
     const progress = progressTextOf(ocr.job);
@@ -54,13 +60,13 @@ function unifiedHeadline(ocr: any, translation: any): string {
 
 /** 统一进度条：只在进行中出现；OCR 活跃跟 OCR，否则跟翻译；无真实数字时不渲染。
  *  完成后不再画一条满格的进度条 —— 它占一大块却什么也没说。 */
-function unifiedPercentOf(ocr: any, translation: any): number | null {
+function unifiedPercentOf(ocr: BookDetailOcrPanelProps, translation: BookDetailTranslationPanelProps): number | null {
   if (ocr && isDocumentJobActive(ocr.job)) return progressOf(ocr.job).percent;
   if (translation?.isActive) return progressOf(translation?.item).percent;
   return null;
 }
 
-function summaryToneOf(ocr: any, translation: any, ocrTone: string, keptOriginBlocks: number): ProcessingSummaryTone {
+function summaryToneOf(ocr: BookDetailOcrPanelProps, translation: BookDetailTranslationPanelProps, ocrTone: string, keptOriginBlocks: number): ProcessingSummaryTone {
   if ((ocr && isDocumentJobActive(ocr.job)) || translation?.isActive) return "active";
   const tone = `${translation?.status?.tone || ""}`;
   if (tone === "failed" || (ocrTone === "failed" && tone !== "done")) return "failed";
@@ -69,7 +75,7 @@ function summaryToneOf(ocr: any, translation: any, ocrTone: string, keptOriginBl
 }
 
 /** 翻译任务现在跑到哪一站（OCR / 翻译 / 渲染），给实时说明找位置。认不出就算翻译站。 */
-function liveStageKey(item: any): "ocr" | "translate" | "render" {
+function liveStageKey(item: ProgressSource): "ocr" | "translate" | "render" {
   const stage = `${item?.stage_snapshot?.display_stage || item?.stage_snapshot?.stage || item?.stage || ""}`.toLowerCase();
   if (stage.startsWith("ocr")) return "ocr";
   if (stage.startsWith("render")) return "render";
@@ -89,7 +95,7 @@ function ScanIcon() {
 // 取全局服务；那四个按钮要读 statusCard store（useStatusCardModel），一旦直接
 // 写在这里，孤立挂载本组件的组件级测试就会因为缺少 HomeShellProviders 而崩。
 // 真正的注入点在 BookDetailDialog（它本来就在 providers 里）。
-export function BookDetailProcessingTab({ ocr, translation, loading = false, error = "", resultActionsSlot = null, coverage = null }: any) {
+export function BookDetailProcessingTab({ ocr, translation, loading = false, error = "", resultActionsSlot = null, coverage = null }: BookDetailProcessingTabProps) {
   const ocrJob = ocr?.job ?? null;
   const ocrActive = isDocumentJobActive(ocrJob);
   const ocrStatus = documentJobPresentation(ocrJob, "尚未执行");
@@ -108,7 +114,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   const liveSource = ocrActive ? ocrJob : translation?.isActive ? translation?.item : null;
   const liveDetail = liveSource
     ? stageDetailWithoutPageCount(
-      `${(liveSource as any)?.stage_snapshot?.stage_detail || (liveSource as any)?.stage_detail || ""}`,
+      `${liveSource?.stage_snapshot?.stage_detail || liveSource?.stage_detail || ""}`,
       Boolean(progressOf(liveSource).total),
     )
     : "";

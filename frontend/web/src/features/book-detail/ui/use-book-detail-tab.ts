@@ -5,11 +5,12 @@
 // - 暴露 setPreferTranslateTab/markTranslateStarted 供 handleTranslate 复用（与原 onTranslateStarted 双写合并为单源）
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import type { LibraryCardItem } from "@/features/library/domain.js";
 
 export type UseBookDetailTabOptions = {
   open: boolean;
-  payloadItem?: any;
-  item?: any;
+  payloadItem?: LibraryCardItem;
+  item?: LibraryCardItem;
   readerAvailable?: boolean;
   isActive?: boolean;
 };

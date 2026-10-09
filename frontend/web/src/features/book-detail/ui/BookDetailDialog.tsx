@@ -11,6 +11,7 @@ import {
 import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
 import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { useRecentJobCover } from "@/features/library/index.js";
+import type { LibraryCardItem } from "@/features/library/index.js";
 import { BookDetailShell } from "./shell/BookDetailShell.jsx";
 import { CoverActionsPanel } from "./panels/CoverActionsPanel.jsx";
 import { ArtifactQuickDownloads } from "./panels/ArtifactQuickDownloads.js";
@@ -36,7 +37,8 @@ import {
   useDocumentJobs,
 } from "./use-document-jobs.js";
 import { jobIdOf } from "../domain/document-jobs-model.js";
-import { bookDetailHasTranslation, canStartTranslation, useBookDetailCover } from "./use-book-detail-cover.js";
+import { bookDetailHasTranslation, useBookDetailCover } from "./use-book-detail-cover.js";
+import { buildProcessingTabProps } from "./processing-tab-props.js";
 import { useBookDetailTab } from "./use-book-detail-tab.js";
 import { useBookDetailArtifactCenter } from "./use-book-detail-artifact-center.js";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
@@ -50,9 +52,9 @@ export function BookDetailDialog() {
   const collectionsReload = collections?.reloadSignal;
   const { store: statusCardStore } = useHomeStatusCard();
   const { store: jobRuntimeStore } = useHomeJobRuntime();
-  const dialogState: any = useDialogState(dialogStore);
+  const dialogState = useDialogState<LibraryCardItem | null>(dialogStore);
   const open = Boolean(dialogState.open);
-  const payloadItem: any = dialogState.payload || {};
+  const payloadItem: LibraryCardItem = dialogState.payload || {};
   const { onCloseAutoFocus } = useDialogReturnFocus(open);
 
   const item = useBookDetailLiveItem(payloadItem);
@@ -124,22 +126,11 @@ export function BookDetailDialog() {
     onStarted: documentJobs.upsert,
     onCancelled: () => documentJobs.refresh(),
   });
-  const latestTranslation: any = documentJobs.latestTranslation;
+  const latestTranslation = documentJobs.latestTranslation;
   const overviewOcrStatus = documentJobPresentation(documentJobs.ocrStatusJob, "尚未执行");
   const translationActive = isDocumentJobActive(latestTranslation);
   const translationStatus = documentJobPresentation(latestTranslation, "尚未翻译");
   const translationSucceeded = `${latestTranslation?.status || ""}`.toLowerCase() === "succeeded";
-  const translationItem = latestTranslation
-    ? { ...item, ...latestTranslation, library_only: false }
-    : {
-        ...item,
-        job_id: "",
-        active_job_id: "",
-        workflow: "",
-        job_type: "",
-        status: "",
-        library_only: true,
-      };
   const stageActionState = useBookDetailStageActions({
     open,
     // 不是 latestTranslation：最新的是一次重新渲染时，以最新的翻译为底，见 selectRetryBaseJob。
@@ -277,53 +268,25 @@ export function BookDetailDialog() {
               // 长在 HomeShellProviders 内），让「进度」Tab 组件保持纯展示。
               resultActionsSlot={<ProcessingResultActions documentJobIds={documentJobIds} />}
               coverage={coverage}
-              ocr={{
-                job: documentJobs.ocrStatusJob,
-                rangeOn: ocrState.rangeOn,
-                pageSpec: ocrState.pageSpec,
-                pageCount: docState.pageCount,
-                pending: ocrState.pending,
-                cancelling: ocrState.cancelling,
-                error: ocrState.error,
-                onRangeOnChange: ocrState.setRangeOn,
-                onPageSpecChange: ocrState.setPageSpec,
-                onOcr: ocrState.handleOcr,
-                onCancel: ocrState.handleCancel,
-              }}
-              translation={{
-                item: translationItem,
-                status: translationStatus,
-                isActive: translationActive,
-                // OCR 提交待定期间不能同时发起翻译，避免两份任务并发。
-                canTranslate: canStartTranslation({
-                  latestTranslation,
-                  translationActive,
-                  baseCanTranslate: canTranslate,
-                }) && !ocrState.pending,
-                readerAvailable: translationSucceeded || readerAvailable,
-                dialogOpen: open,
-                tabActive: activeTab === "processing",
-                rangeOn: translateState.rangeOn,
-                pageSpec: translateState.pageSpec,
+              {...buildProcessingTabProps({
+                open,
+                activeTab,
+                item,
                 pageCount: docState.pageCount,
                 busy: docState.busy,
                 error: docState.error,
-                stageActions: stageActionState.stageActions,
-                stageActionsLoading: stageActionState.loading,
-                stageActionPending: stageActionState.pendingStage,
-                stageActionError: stageActionState.error,
-                ocrReuse: documentJobs.reusableOcr
-                  ? { jobId: `${documentJobs.reusableOcr.job_id || documentJobs.reusableOcr.id || ""}` }
-                  : null,
-                onRangeOnChange: translateState.setRangeOn,
-                onPageSpecChange: translateState.setPageSpec,
-                onTranslate: async () => {
-                  await translateState.handleTranslate();
-                },
+                documentJobs,
+                ocrState,
+                translateState,
+                stageActionState,
+                translationStatus,
+                translationActive,
+                translationSucceeded,
+                canTranslate,
+                readerAvailable,
                 documentJobIds,
                 onOpenLiveReader: openPinnedJob,
-                onRetryStage: stageActionState.retry,
-              }}
+              })}
             />
           )}
           artifactsTab={() => (

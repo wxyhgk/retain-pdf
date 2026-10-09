@@ -5,6 +5,12 @@ import { usePageRange } from "./use-page-range.js";
 import {
   reusableOcrJobId,
 } from "@/features/library/domain.js";
+import type {
+  DocumentJobSummary,
+  JobSubmissionView,
+  OcrDocumentPayload,
+  TranslateDocumentPayload,
+} from "@/features/library/domain.js";
 
 /**
  * @param {object} options
@@ -27,7 +33,22 @@ export function useBookDetailTranslate({
   onTranslateStarted,
   onJobSubmitted,
   reusableOcrJob,
-}: any) {
+}: {
+  open: boolean;
+  documentId: string;
+  pageCount?: number | null;
+  actions: {
+    submitDocument: (
+      documentId?: string | null,
+      payload?: TranslateDocumentPayload | OcrDocumentPayload,
+    ) => Promise<JobSubmissionView | null>;
+  };
+  withBusy: (key: string, fn: () => Promise<void>, fail: string) => Promise<void>;
+  setError: (message: string) => void;
+  onTranslateStarted?: () => void;
+  onJobSubmitted?: (job: Partial<DocumentJobSummary>) => unknown;
+  reusableOcrJob?: DocumentJobSummary | null;
+}) {
   const {
     rangeOn,
     pageSpec,
@@ -37,7 +58,7 @@ export function useBookDetailTranslate({
   } = usePageRange({ open, documentId, pageCount });
 
   async function handleTranslate() {
-    const payload: any = {};
+    const payload: TranslateDocumentPayload = {};
     const artifactJobId = reusableOcrJobId(reusableOcrJob);
     if (artifactJobId) {
       payload.workflow = "translate";

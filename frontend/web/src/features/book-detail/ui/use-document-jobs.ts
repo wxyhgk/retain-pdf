@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import type { DocumentJobSummary } from "@/features/library/domain.js";
+import type { LibraryController } from "@/features/library/index.js";
 import {
   selectDocumentOcrStatusJob,
   selectReusableOcrJob,
@@ -19,6 +20,7 @@ import {
   workflowCategory,
   workflowOf,
 } from "../domain/document-jobs-model.js";
+import type { RuntimeJobState } from "../domain/document-jobs-model.js";
 import { useDocumentJobRuntimeOwner } from "./use-document-job-runtime-owner.js";
 
 // 保持既有 import 路径可用：纯模型/选择器转发自 domain。
@@ -33,6 +35,11 @@ export {
   upsertDocumentJob,
 } from "../domain/document-jobs-model.js";
 
+type RuntimeJobStore = {
+  getSnapshot: () => RuntimeJobState;
+  subscribe: (listener: () => void) => () => void;
+};
+
 const EMPTY_RUNTIME_STORE = {
   getSnapshot: () => ({ jobId: "", snapshot: null }),
   subscribe: () => () => {},
@@ -46,7 +53,15 @@ export function useDocumentJobs({
   runtimeStore,
   refreshIntervalMs = DOCUMENT_JOBS_REFRESH_INTERVAL_MS,
   onJobSucceeded,
-}: any) {
+}: {
+  open: boolean;
+  documentId: string;
+  actions: Pick<LibraryController, "getDocumentJobs" | "getDocumentByJobId">;
+  initialJob?: Partial<DocumentJobSummary> | null;
+  runtimeStore?: RuntimeJobStore | null;
+  refreshIntervalMs?: number;
+  onJobSucceeded?: (job: DocumentJobSummary) => unknown;
+}) {
   const [jobs, setJobs] = useState<DocumentJobSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadedDocumentId, setLoadedDocumentId] = useState("");

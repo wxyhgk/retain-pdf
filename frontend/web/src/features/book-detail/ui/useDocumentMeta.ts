@@ -2,8 +2,18 @@
 // 由 useBookDetailDocument 门面组合，保持 BookDetailDialog 调用不变。
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { LibraryController, LibraryCardItem } from "@/features/library/index.js";
 import { fetchDocument } from "@/platform/api/index.js";
+import type { DocumentRecord } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
+
+export type DocumentMetaOptions = {
+  open: boolean;
+  documentId: string;
+  item?: LibraryCardItem | null;
+  actions: Pick<LibraryController, "updateDocument" | "deleteDocument">;
+  onClose?: () => void;
+};
 
 function parseAuthors(authorsJson: unknown): string[] {
   try {
@@ -28,8 +38,8 @@ export function useDocumentMeta({
   item,
   actions,
   onClose,
-}: any) {
-  const [doc, setDoc] = useState<any>(null);
+}: DocumentMetaOptions) {
+  const [doc, setDoc] = useState<DocumentRecord | null>(null);
   const [readingStatus, setReadingStatus] = useState("unread");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -49,7 +59,7 @@ export function useDocumentMeta({
 
     const generation = ++requestGenerationRef.current;
     try {
-      const full: any = await fetchDocument(API_PREFIX, scope.documentId);
+      const full = await fetchDocument(API_PREFIX, scope.documentId);
       const currentScope = scopeRef.current;
       if (
         generation !== requestGenerationRef.current
@@ -92,15 +102,15 @@ export function useDocumentMeta({
   }, [open, documentId, refresh]);
 
   const authors = useMemo(() => parseAuthors(doc?.authors_json), [doc?.authors_json]);
-  const pageCount = doc?.page_count || item?.page_count || 0;
+  const pageCount: number = doc?.page_count || item?.page_count || 0;
 
-  async function withBusy(key: string, fn: () => Promise<void>, failMessage: string) {
+  async function withBusy(key: string, fn: () => Promise<unknown>, failMessage: string) {
     setBusy(key);
     setError("");
     try {
       await fn();
-    } catch (err: any) {
-      setError(err?.message || failMessage);
+    } catch (err) {
+      setError((err as { message?: string } | null)?.message || failMessage);
       throw err;
     } finally {
       setBusy("");
@@ -136,7 +146,7 @@ export function useDocumentMeta({
           const updated = await actions.updateDocument(documentId, {
             title: nextTitle || undefined,
           });
-          if (updated) setDoc(updated);
+          if (updated) setDoc(updated as DocumentRecord);
           setEditing(false);
         },
         "保存失败",
@@ -152,8 +162,8 @@ export function useDocumentMeta({
     try {
       await actions.deleteDocument(documentId);
       onClose?.();
-    } catch (err: any) {
-      setError(err?.message || "删除失败");
+    } catch (err) {
+      setError((err as { message?: string } | null)?.message || "删除失败");
     } finally {
       setBusy("");
     }
