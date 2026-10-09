@@ -45,6 +45,8 @@ mod retention;
 mod rows;
 #[path = "db/schema.rs"]
 mod schema;
+#[path = "db/sync.rs"]
+pub mod sync;
 #[path = "db/uploads.rs"]
 mod uploads;
 
