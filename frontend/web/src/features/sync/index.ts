@@ -4,4 +4,4 @@
 // ui/     设置面板
 
 export { SyncSettingsPanel } from "./ui/SyncSettingsPanel.jsx";
-export { describePending, describeSyncStatus, relativeTime } from "./domain/describe.js";
+export { describeMaintenance, describePending, describeSyncStatus, relativeTime } from "./domain/describe.js";

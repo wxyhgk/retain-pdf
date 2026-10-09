@@ -20,7 +20,7 @@ pub use super::library::{
 pub use super::public_contract::{public_request_payload, PublicResolvedJobSpec};
 pub use super::backup::{BackupItemView, BackupRestoreView, BackupStatusView};
 pub use super::sync::{
-    SyncPeerView, SyncPendingItemView, SyncRunView, SyncSettingsInput, SyncStatusView,
+    SyncMaintenanceView, SyncPeerView, SyncPendingItemView, SyncRunView, SyncSettingsInput, SyncStatusView,
     SyncTestView,
 };
 pub use super::redaction::{

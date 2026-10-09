@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { wait, waitFor } from "../helpers/async.mjs";
 import { click, makeDom, typeInput } from "../helpers/dom.mjs";
 
-const { describeSyncStatus, describePending, relativeTime } = await import("../../src/features/sync/domain/describe.js");
+const { describeSyncStatus, describePending, describeMaintenance, relativeTime } = await import("../../src/features/sync/domain/describe.js");
 
 test("同步状态的说明文字：关着、同步过、出错、等文件", () => {
   const now = Date.parse("2026-10-09T10:00:00Z");
@@ -29,6 +29,14 @@ test("同步状态的说明文字：关着、同步过、出错、等文件", ()
   assert.equal(failed.detail, "无法访问同步文件夹");
   assert.match(describePending({ pending_total: 2, pending: [{ reason: "waiting for 3 file(s), e.g. jobs/x" }, { reason: "waiting for 1 file(s), e.g. jobs/y" }] }), /等网盘把文件下载/);
   assert.equal(describePending({ pending_total: 0 }), "");
+  assert.match(describePending({ pending_total: 1, pending: [{ reason: "reading_note needs a newer version of the app" }] }), /更新这台电脑上的程序/);
+  assert.equal(describeMaintenance({ last_maintenance: null }, now), "");
+  assert.equal(describeMaintenance({ last_maintenance: { at: "2026-10-09T08:00:00Z", segments_compacted: 0, bytes_freed: 0 } }, now), "");
+  assert.equal(
+    describeMaintenance({ last_maintenance: { at: "2026-10-09T08:00:00Z", segments_compacted: 70, bytes_freed: 52_428_800 } }, now),
+    "上次整理同步文件夹（2 小时前）：合并了 70 段旧的改动记录，腾出 50.0 MB。",
+  );
+  assert.match(describeMaintenance({ last_maintenance: { at: "2026-10-09T09:59:00Z", error: "无法删除" } }, now), /没做完.*无法删除/);
 });
 
 function fakeBackend() {
