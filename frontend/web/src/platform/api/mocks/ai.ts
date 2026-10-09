@@ -1,44 +1,56 @@
 import { API_PREFIX } from "@/platform/config/api-constants.js";
+import type {
+  AgentConfirmationRequest,
+  AgentConfirmationRequiredEvent,
+  AgentOperationEvent,
+  AgentOperationRef,
+  AgentSessionEvent,
+  AgentToolEvent,
+  AiAskStreamCallbacks,
+  AiAssistantMode,
+} from "@retainpdf/api/ai";
+import type { AgentConfirmationMode } from "@retainpdf/api/agent-runtime-settings";
 
 // 图书馆 AI 问答(POST /api/v1/ai/ask,SSE 流式)。mock-only 适配器:
 // 只保留 readAiAskStream 解析器与 buildMockAskStream 端到端 mock 流。
 
 export class AiAskError extends Error {
   status: number;
-  constructor(message, status = 0) {
+  constructor(message: string, status = 0) {
     super(message);
     this.name = "AiAskError";
     this.status = status;
   }
 }
 
-function normalizeOperationRefs(value) {
+function normalizeOperationRefs(value: unknown): AgentOperationRef[] {
   if (!Array.isArray(value)) {
     return [];
   }
-  return value.filter((item) => {
+  return value.filter((item): item is AgentOperationRef => {
     if (typeof item === "string") {
       return !!item.trim();
     }
-    return !!item && typeof item === "object" && !!`${item.operation_id || ""}`.trim();
+    return !!item && typeof item === "object" && !!`${(item as { operation_id?: unknown }).operation_id || ""}`.trim();
   });
 }
 
-function normalizeConfirmationMode(value) {
+function normalizeConfirmationMode(value: unknown): AgentConfirmationMode | "" {
   return value === "explicit" || value === "green_light" ? value : "";
 }
 
-function normalizeConfirmationRequest(value) {
+function normalizeConfirmationRequest(value: unknown): AgentConfirmationRequest | null {
   if (!value || typeof value !== "object") {
     return null;
   }
-  const operationId = `${value.operation_id || ""}`.trim();
-  const action = `${value.action || ""}`;
-  const status = `${value.status || ""}`;
-  const currentAttempt = Number(value.current_attempt);
-  const latestEventSeq = Number(value.latest_event_seq);
+  const request = value as Record<string, unknown>;
+  const operationId = `${request.operation_id || ""}`.trim();
+  const action = `${request.action || ""}`;
+  const status = `${request.status || ""}`;
+  const currentAttempt = Number(request.current_attempt);
+  const latestEventSeq = Number(request.latest_event_seq);
   if (
-    value.schema !== "retainpdf_agent_confirmation_v1"
+    request.schema !== "retainpdf_agent_confirmation_v1"
     || !operationId
     || !["run", "commit", "retry"].includes(action)
     || !status
@@ -52,19 +64,22 @@ function normalizeConfirmationRequest(value) {
   return {
     schema: "retainpdf_agent_confirmation_v1",
     operation_id: operationId,
-    action,
-    status,
+    // action / status 已分别用 includes 与非空判断校验过，这里收窄为类型要求的字面量。
+    action: action as AgentConfirmationRequest["action"],
+    status: status as AgentConfirmationRequest["status"],
     current_attempt: currentAttempt,
     latest_event_seq: latestEventSeq,
-    requires_risk_acceptance: value.requires_risk_acceptance === true,
+    requires_risk_acceptance: request.requires_risk_acceptance === true,
   };
 }
 
-function normalizeConfirmationRequests(value) {
+function normalizeConfirmationRequests(value: unknown): AgentConfirmationRequest[] {
   if (!Array.isArray(value)) {
     return [];
   }
-  return value.map(normalizeConfirmationRequest).filter(Boolean);
+  return value
+    .map(normalizeConfirmationRequest)
+    .filter((item): item is AgentConfirmationRequest => !!item);
 }
 
 function normalizeDonePayload(payload: Record<string, unknown> = {}) {
@@ -86,7 +101,10 @@ function normalizeDonePayload(payload: Record<string, unknown> = {}) {
   };
 }
 
-function parseSseEvent(line = "") {
+/** SSE 原始事件：按 type 分派，字段形状由后端保证，读取时逐个收窄。 */
+type SseEvent = { type?: unknown; [key: string]: unknown };
+
+function parseSseEvent(line = ""): SseEvent | null {
   const trimmed = `${line}`.replace(/\r$/, "");
   if (!trimmed.startsWith("data:")) {
     return null;
@@ -96,7 +114,7 @@ function parseSseEvent(line = "") {
     return null;
   }
   try {
-    return JSON.parse(jsonText);
+    return JSON.parse(jsonText) as SseEvent;
   } catch (_err) {
     return null;
   }
@@ -104,7 +122,7 @@ function parseSseEvent(line = "") {
 
 // 消费 /ai/ask 的 SSE body:按行切分 `data: {json}`,tool 事件回调,
 // compress 透出给上层做可观测提示,done 事件返回最终结果,error 事件抛 AiAskError。
-async function readAiAskStream(body, {
+async function readAiAskStream(body: ReadableStream<Uint8Array> | null | undefined, {
   onProgressEvent = null,
   onToolEvent = null,
   onAgentToolEvent = null,
@@ -113,19 +131,19 @@ async function readAiAskStream(body, {
   onAgentSessionEvent = null,
   onAnswerDelta = null,
   onCompress = null,
-} = {}) {
+}: AiAskStreamCallbacks = {}) {
   if (!body || typeof body.getReader !== "function") {
     throw new AiAskError("AI 服务响应格式异常,请重试。");
   }
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  let result = null;
+  let result: ReturnType<typeof normalizeDonePayload> | null = null;
   let streamedAnswer = "";
   let streamedAgentRuntime = "";
-  const streamedOperationRefs = [];
+  const streamedOperationRefs: AgentOperationRef[] = [];
 
-  function handleLine(line) {
+  function handleLine(line: string) {
     const event = parseSseEvent(line);
     if (!event || typeof event !== "object") {
       return;
@@ -146,13 +164,14 @@ async function readAiAskStream(body, {
       return;
     }
     if (event.type === "agent_tool") {
-      onAgentToolEvent?.(event);
+      // SSE 原始事件的 type 已按字面量分派，这里补上 canonical 事件类型。
+      onAgentToolEvent?.(event as AgentToolEvent);
       onToolEvent?.(event);
       return;
     }
     if (event.type === "agent_session") {
       streamedAgentRuntime = `${event.agent_runtime || event.runtime || ""}`.trim();
-      onAgentSessionEvent?.(event);
+      onAgentSessionEvent?.(event as AgentSessionEvent);
       return;
     }
     if (event.type === "agent_operation") {
@@ -170,7 +189,8 @@ async function readAiAskStream(body, {
         if (index >= 0) streamedOperationRefs[index] = ref;
         else streamedOperationRefs.push(ref);
       }
-      onAgentOperationEvent?.(event);
+      // operation_id 缺失时上面不进入累积，但原逻辑仍照常回调，这里保持一致。
+      onAgentOperationEvent?.(event as AgentOperationEvent);
       return;
     }
     if (event.type === "agent_confirmation_required") {
@@ -179,7 +199,7 @@ async function readAiAskStream(body, {
         onAgentConfirmationRequiredEvent?.({
           type: "agent_confirmation_required",
           ...confirmation,
-        });
+        } as AgentConfirmationRequiredEvent);
       }
       return;
     }

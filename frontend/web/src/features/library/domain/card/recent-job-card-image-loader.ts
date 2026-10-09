@@ -5,18 +5,20 @@ import { normalizeJobImageUrl } from "@retainpdf/api/job-images";
 // 真实模式行为不变。
 import { fetchProtected } from "@/platform/api/index.js";
 
-const recentJobImageCache = new Map();
+const recentJobImageCache = new Map<string, Promise<string>>();
 
-function cacheKeyForRecentJobImage(url, { cacheVersion = "" } = {}) {
+type RecentJobImageOptions = { cacheVersion?: string };
+
+function cacheKeyForRecentJobImage(url: string, { cacheVersion = "" }: RecentJobImageOptions = {}) {
   const version = `${cacheVersion || ""}`.trim();
   return version ? `${url}#${version}` : url;
 }
 
-export function normalizeRecentJobImageUrl(value) {
+export function normalizeRecentJobImageUrl(value: unknown) {
   return normalizeJobImageUrl(value);
 }
 
-export function clearRecentJobImageCache(rawUrls) {
+export function clearRecentJobImageCache(rawUrls: unknown) {
   for (const rawUrl of Array.isArray(rawUrls) ? rawUrls : [rawUrls]) {
     const url = normalizeRecentJobImageUrl(rawUrl);
     if (url) {
@@ -25,14 +27,15 @@ export function clearRecentJobImageCache(rawUrls) {
   }
 }
 
-export async function loadRecentJobImage(rawUrl, options = {}) {
+export async function loadRecentJobImage(rawUrl: unknown, options: RecentJobImageOptions = {}): Promise<string> {
   const url = normalizeRecentJobImageUrl(rawUrl);
   if (!url) {
     return "";
   }
   const cacheKey = cacheKeyForRecentJobImage(url, options);
-  if (recentJobImageCache.has(cacheKey)) {
-    return recentJobImageCache.get(cacheKey);
+  const cached = recentJobImageCache.get(cacheKey);
+  if (cached) {
+    return cached;
   }
   const request = fetchProtected(url)
     .then((response) => {
@@ -48,7 +51,7 @@ export async function loadRecentJobImage(rawUrl, options = {}) {
   return request;
 }
 
-export async function loadFirstRecentJobImage(rawUrls, options = {}) {
+export async function loadFirstRecentJobImage(rawUrls: unknown, options: RecentJobImageOptions = {}) {
   for (const rawUrl of Array.isArray(rawUrls) ? rawUrls : [rawUrls]) {
     try {
       const objectUrl = await loadRecentJobImage(rawUrl, options);

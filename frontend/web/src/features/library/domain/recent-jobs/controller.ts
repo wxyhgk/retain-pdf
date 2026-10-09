@@ -59,7 +59,8 @@ export function mountRecentJobsFeature({
     apiPrefix,
   }),
 }: MountRecentJobsFeatureOptions) {
-  let refreshScheduler = null;
+  // 调度器依赖 runtime.loadRecentJobs，runtime 又经 refreshSchedulerRef 回读它：先占位，下面赋值。
+  let refreshScheduler: ReturnType<typeof createRecentJobsRefreshScheduler> | null = null;
   const runtime = createRecentJobsRuntime({
     fetchJobList,
     fetchJobPayload,

@@ -1,3 +1,4 @@
+import type { resolveLiveDurations } from "@retainpdf/domain/job";
 import {
   formatEventTimestamp,
   formatJobFinishedAt,
@@ -10,6 +11,10 @@ import {
   summarizeStatus,
 } from "@retainpdf/domain/job";
 import { firstNonEmpty as firstNonEmptyText, summarizeMathMode as renderMathMode } from "@retainpdf/domain/job";
+import type { JobLike, JobPayload } from "@retainpdf/domain/job";
+import type { DetailSetText } from "./page-ports.js";
+import type { buildJobDetailStatusViewModel } from "./status-view-model.js";
+import { asRecord } from "../dialog/formatters.js";
 
 export { summarizeMathMode } from "@retainpdf/domain/job";
 
@@ -18,6 +23,11 @@ export function renderJobDetailRuntimeSummary({
   job,
   setText,
   statusViewModel,
+}: {
+  durations: ReturnType<typeof resolveLiveDurations>;
+  job: JobLike | JobPayload;
+  setText: DetailSetText;
+  statusViewModel: ReturnType<typeof buildJobDetailStatusViewModel>;
 }) {
   setText("detail-status-summary", summarizeStatus(job.status || "idle"));
   setText("detail-stage-detail", statusViewModel.stageDetail);
@@ -30,12 +40,19 @@ export function renderJobDetailRuntimeSummary({
   setText("detail-runtime-terminal-reason", summarizeRuntimeField(job.terminal_reason));
   setText("detail-runtime-input-protocol", summarizeInvocationProtocol(job));
   setText("detail-runtime-stage-spec-version", summarizeInvocationSchemaVersion(job));
-  setText("detail-runtime-math-mode", renderMathMode(job));
+  setText("detail-runtime-math-mode", renderMathMode({ request_payload_math_mode: job.request_payload_math_mode }));
 }
 
-export function renderJobDetailFailureSummary({ job, setText }) {
-  const failure = job.failure || {};
-  const failureDiagnostic = job.failure_diagnostic || {};
+export function renderJobDetailFailureSummary({
+  job,
+  setText,
+}: {
+  job: JobLike | JobPayload;
+  setText: DetailSetText;
+}) {
+  // failure / failure_diagnostic 的形状在后端间不一致，这里按字段名宽松读取。
+  const failure = asRecord(job.failure);
+  const failureDiagnostic = asRecord(job.failure_diagnostic);
   const retryable = failure.retryable ?? failureDiagnostic.retryable;
   const failureLastLogLine = firstNonEmptyText(
     failure.last_log_line,
@@ -64,6 +81,12 @@ export function renderJobDetailFailureSummary({ job, setText }) {
   setText("detail-failure-retryable", typeof retryable === "boolean" ? (retryable ? "是" : "否") : "-");
 }
 
-export function renderJobDetailPublicError({ job, setText }) {
+export function renderJobDetailPublicError({
+  job,
+  setText,
+}: {
+  job: JobLike | JobPayload;
+  setText: DetailSetText;
+}) {
   setText("detail-error-box", summarizePublicError(job));
 }

@@ -1,12 +1,13 @@
 // BookCard 封面区：封面图 / PDF 占位、状态徽标、处理中 loading 与底部进度条。
 // 从 BookCard.tsx 机械拆出，DOM/class 不变。
 
+import type * as React from "react";
 import { cn } from "@retainpdf/ui/lib/utils";
 import { BadgeIcon } from "../../display/library-card-badge-icon.jsx";
 import { BookCardProcessingOverlay } from "../../display/BookCardProcessingOverlay.jsx";
 import type { LibraryCardBadge } from "../../../domain/types.js";
 
-function IconFile(props) {
+function IconFile(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" width="34" height="34" {...props}>
       <path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />

@@ -2,7 +2,18 @@
 // (kept)已经把 enabled/status 算好写进 overview.rerun,这里只做
 // disabled = !enabled || rerunPending 的组合与点击派发,不重复计算。
 
-export function useRerunAction({ overview, rerunPending, controller }) {
+import type { StatusDetailOverview } from "../domain/status-detail-store.js";
+import type { StatusDetailController } from "../domain/status-detail-controller.js";
+
+export function useRerunAction({
+  overview,
+  rerunPending,
+  controller,
+}: {
+  overview: StatusDetailOverview;
+  rerunPending: boolean;
+  controller: StatusDetailController;
+}) {
   const rerun = overview.rerun || { enabled: false, status: "" };
   return {
     enabled: Boolean(rerun.enabled),

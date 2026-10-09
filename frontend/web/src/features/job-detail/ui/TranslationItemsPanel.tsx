@@ -14,8 +14,20 @@ import {
   pageNumberOf,
   previewText,
 } from "../domain/dialog/formatters.js";
+import type {
+  StatusDetailTranslation,
+  StatusDetailTranslationListItem,
+} from "../domain/status-detail-store.js";
 
-function TranslationItemCard({ item, active, onSelect }) {
+function TranslationItemCard({
+  item,
+  active,
+  onSelect,
+}: {
+  item: StatusDetailTranslationListItem;
+  active: boolean;
+  onSelect: (itemId: string) => void;
+}) {
   const finalStatus = finalStatusOf(item);
   const errorTypes = errorTypesOf(item);
   const metaBits = [
@@ -28,7 +40,7 @@ function TranslationItemCard({ item, active, onSelect }) {
       type="button"
       className={`translation-item-card${active ? " is-active" : ""}`}
       data-translation-item-id={item.item_id}
-      onClick={() => onSelect(item.item_id)}
+      onClick={() => onSelect(item.item_id ?? "")}
     >
       <div className="translation-item-card-top">
         <span className="translation-item-id mono">{item.item_id || "-"}</span>
@@ -43,7 +55,15 @@ function TranslationItemCard({ item, active, onSelect }) {
   );
 }
 
-export function TranslationItemsPanel({ translation, onSelect, onChangePage }) {
+export function TranslationItemsPanel({
+  translation,
+  onSelect,
+  onChangePage,
+}: {
+  translation: StatusDetailTranslation;
+  onSelect: (itemId: string) => void;
+  onChangePage: (direction: "prev" | "next") => void;
+}) {
   const list = translation.list || [];
   const offset = Number(translation.query.offset || 0);
   const limit = Number(translation.query.limit || 20);

@@ -25,8 +25,8 @@ export async function ensureOcrCredentialValidationReady({
   providerId: string;
   credentials: CredentialsFields;
   defaultPaddleToken?: () => string;
-  validateOcrToken?: RunOcrTokenValidationOptions["validateOcrToken"];
-  setOcrValidationMessage?: (message?: string, tone?: string, providerId?: string) => void;
+  validateOcrToken: RunOcrTokenValidationOptions["validateOcrToken"];
+  setOcrValidationMessage: (message?: string, tone?: string, providerId?: string) => void;
   showResult: boolean;
   credentialsStatePort?: CredentialsStatePort;
   legacyRuntimePort?: unknown;

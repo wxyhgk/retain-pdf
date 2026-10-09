@@ -1,7 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { DeleteBlockedDocument } from "../../domain/types.js";
+import type { CollectionRecord, CollectionsController } from "@/features/collections/index.js";
+import type {
+  DeleteBlockedDocument,
+  LibraryActions,
+  LibraryCardItem,
+} from "../../domain/types.js";
 import { libraryItemDocumentId } from "./recent-jobs-library-helpers.js";
+
+// 「先清收藏再删除」是收藏功能（2026-09-26 已整体删除，ba3dffa7）的遗留：后端已不再返回
+// DELETE_BLOCKED_BY_FAVORITES，这条分支走不到，LibraryActions 上也早没有 clearFavorites。
+// 待连同确认弹窗、mock 和后端那个没人用的错误类型一起删掉；在那之前只保留原调用形态。
+type ActionsWithClearFavorites = LibraryActions & {
+  clearFavorites: (clearFavoritesPath: string) => Promise<unknown>;
+};
+
+type RecentJobsBatchSelectionOptions = {
+  visibleItems: LibraryCardItem[];
+  onBatchModeChange?: (active: boolean) => void;
+  collectionsController: CollectionsController;
+  actions: LibraryActions;
+};
 
 // 批量选择/删除状态机(#31)。从 RecentJobsLibrary 抽出,行为与回调和
 // 上报通道(onBatchModeChange)保持不变。
@@ -10,7 +29,7 @@ export function useRecentJobsBatchSelection({
   onBatchModeChange,
   collectionsController,
   actions,
-}) {
+}: RecentJobsBatchSelectionOptions) {
   // 批量选择(#31):选中态用 document_id 做 key(和网格主键一致);批量模式
   // 开关经 onBatchModeChange 上报给 HomeApp,由它把底部栏(AppBottomBar)用
   // CSS 隐藏(batchMode 期间让位给这条批量工具栏——两者都固定在底部居中)。
@@ -19,9 +38,9 @@ export function useRecentJobsBatchSelection({
   const [batchBusy, setBatchBusy] = useState(false);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[] | null>(null);
   const [pendingBlockedDelete, setPendingBlockedDelete] = useState<DeleteBlockedDocument[] | null>(null);
-  const [collections, setCollections] = useState([]);
+  const [collections, setCollections] = useState<CollectionRecord[]>([]);
 
-  function setBatchMode(next) {
+  function setBatchMode(next: boolean) {
     setBatchModeState(next);
     if (!next) setSelectedIds(new Set());
     onBatchModeChange?.(next);
@@ -29,7 +48,7 @@ export function useRecentJobsBatchSelection({
   // useCallback:稳定引用——传给每张卡片当 onToggleSelect,不然
   // areCardPropsEqual 里的 onToggleSelect 每次 render 都判不相等,
   // RecentJobsLibrary 一重渲就拖着所有卡片一起重渲(memo 白做)。
-  const toggleSelect = useCallback((documentId) => {
+  const toggleSelect = useCallback((documentId: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(documentId)) next.delete(documentId);
@@ -79,7 +98,7 @@ export function useRecentJobsBatchSelection({
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => effectiveSelectedIds.has(id));
 
   function handleSelectAllToggle() {
-    setSelectedIds(allSelected ? new Set() : new Set(selectableIds));
+    setSelectedIds(allSelected ? new Set<string>() : new Set(selectableIds));
   }
 
   function handleBatchDelete() {
@@ -88,7 +107,7 @@ export function useRecentJobsBatchSelection({
     setPendingDeleteIds(ids);
   }
 
-  function reportBatchDeleteResult(confirmed, failed) {
+  function reportBatchDeleteResult(confirmed: number, failed: number) {
     if (failed === 0) toast.success(`已删除 ${confirmed} 篇`);
     else if (confirmed > 0) toast.warning(`已删除 ${confirmed} 篇，${failed} 篇失败`);
     else toast.error("删除失败，请稍后重试");
@@ -114,7 +133,7 @@ export function useRecentJobsBatchSelection({
       setBatchMode(false);
       setPendingDeleteIds(null);
     } catch (err) {
-      toast.error(err?.message || "删除失败，请稍后重试");
+      toast.error((err as { message?: string } | null)?.message || "删除失败，请稍后重试");
       setPendingDeleteIds(null);
     } finally {
       setBatchBusy(false);
@@ -131,7 +150,7 @@ export function useRecentJobsBatchSelection({
       for (const entry of blocked) {
         if (!entry.clearFavoritesPath || clearedPaths.has(entry.clearFavoritesPath)) continue;
         clearedPaths.add(entry.clearFavoritesPath);
-        await actions.clearFavorites(entry.clearFavoritesPath);
+        await (actions as ActionsWithClearFavorites).clearFavorites(entry.clearFavoritesPath);
       }
       const ids = blocked.map((entry) => entry.documentId);
       const result = await actions.deleteDocuments(ids);
@@ -150,14 +169,14 @@ export function useRecentJobsBatchSelection({
       setPendingBlockedDelete(null);
       setBatchMode(false);
     } catch (err) {
-      toast.error(err?.message || "删除失败，请稍后重试");
+      toast.error((err as { message?: string } | null)?.message || "删除失败，请稍后重试");
       setPendingBlockedDelete(null);
     } finally {
       setBatchBusy(false);
     }
   }
 
-  async function handleBatchAddToCollection(collectionId) {
+  async function handleBatchAddToCollection(collectionId: CollectionRecord["collection_id"]) {
     const ids = [...effectiveSelectedIds];
     if (!ids.length || batchBusy) return;
     setBatchBusy(true);
@@ -166,7 +185,7 @@ export function useRecentJobsBatchSelection({
       toast.success(`已加入合集，共 ${ids.length} 篇`);
       setBatchMode(false);
     } catch (err) {
-      toast.error(err?.message || "加入合集失败，请稍后重试");
+      toast.error((err as { message?: string } | null)?.message || "加入合集失败，请稍后重试");
     } finally {
       setBatchBusy(false);
     }

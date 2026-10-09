@@ -1,7 +1,14 @@
 import { EmptyState } from "@/ui/icons/EmptyState.jsx";
 
+type RecentJobsLibraryEmptyProps = {
+  mode: string;
+  errorMessage?: string;
+  emptyMessage?: string;
+  onUpload: () => void;
+};
+
 // 图书馆空态/加载态/错误态(从 RecentJobsLibrary 抽出,保持同一 DOM 契约)。
-export function RecentJobsLibraryEmpty({ mode, errorMessage, emptyMessage, onUpload }) {
+export function RecentJobsLibraryEmpty({ mode, errorMessage, emptyMessage, onUpload }: RecentJobsLibraryEmptyProps) {
   return (
     <div id="recent-jobs-empty" className={mode === "list" ? "hidden" : undefined}>
       {mode === "loading" ? (

@@ -4,12 +4,25 @@ import {
   renderMarkdownImagePreview,
   resolveMarkdownImagesBaseUrl,
 } from "./artifacts.js";
+import type { JobLike, JobPayload } from "@retainpdf/domain/job";
+import type {
+  DetailFetchProtected,
+  DetailSetActionLink,
+  DetailSetText,
+  MarkdownPayloadLike,
+} from "./page-ports.js";
+import type { JobDetailPageState } from "./page-state.js";
 
 export function renderInitialMarkdownContract({
   job,
   markdownImageUrls,
   setActionLink,
   setText,
+}: {
+  job: JobLike | JobPayload | null | undefined;
+  markdownImageUrls: string[];
+  setActionLink: DetailSetActionLink;
+  setText: DetailSetText;
 }) {
   renderMarkdownContract({
     job,
@@ -29,6 +42,15 @@ export async function loadAndRenderMarkdownFlow({
   setActionLink,
   setText,
   state,
+}: {
+  fetchProtected: DetailFetchProtected;
+  job: JobLike | JobPayload | null | undefined;
+  jobId: string;
+  loadMarkdownPayload: (jobId: string) => Promise<MarkdownPayloadLike | null>;
+  markdownImageUrls: string[];
+  setActionLink: DetailSetActionLink;
+  setText: DetailSetText;
+  state?: JobDetailPageState | null;
 }) {
   try {
     const markdownPayload = await loadMarkdownPayload(jobId);
@@ -60,6 +82,6 @@ export async function loadAndRenderMarkdownFlow({
       setText,
       setActionLink,
     });
-    setText("detail-markdown-status", error.message || "读取 Markdown 失败");
+    setText("detail-markdown-status", (error as { message?: string } | null)?.message || "读取 Markdown 失败");
   }
 }

@@ -2,11 +2,11 @@ import { buildJobsEndpoint } from "@retainpdf/api/http";
 import { submitJson, submitUploadRequest } from "./http.js";
 import { assertKnownJobPayloadFields } from "./job-payload-contract.js";
 
-function isObject(value) {
-  return value && typeof value === "object" && !Array.isArray(value);
+function isObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-function assertGroupedJobPayload(payload) {
+function assertGroupedJobPayload(payload: unknown) {
   if (!isObject(payload)) {
     throw new Error("提交失败: /api/v1/jobs 需要 JSON object 请求体。");
   }
@@ -43,11 +43,11 @@ function assertGroupedJobPayload(payload) {
   }
 }
 
-function isOcrWorkflowPayload(payload) {
+function isOcrWorkflowPayload(payload: unknown) {
   return isObject(payload) && `${payload.workflow || ""}`.trim() === "ocr";
 }
 
-function appendFormField(form, key, value) {
+function appendFormField(form: FormData, key: string, value: unknown) {
   if (value === undefined || value === null) return;
   if (typeof value === "string") {
     // keep empty string as explicit clear? for OCR we skip empty except page_ranges? keep minimal: skip empty trim
@@ -64,15 +64,16 @@ function appendFormField(form, key, value) {
   }
 }
 
-function buildOcrFormData(payload) {
+function buildOcrFormData(payload: Record<string, unknown>) {
   const form = new FormData();
-  const source = isObject(payload.source) ? payload.source : {};
-  const ocr = isObject(payload.ocr) ? payload.ocr : {};
-  const runtime = isObject(payload.runtime) ? payload.runtime : {};
+  const source: Record<string, unknown> = isObject(payload.source) ? payload.source : {};
+  const ocr: Record<string, unknown> = isObject(payload.ocr) ? payload.ocr : {};
+  const runtime: Record<string, unknown> = isObject(payload.runtime) ? payload.runtime : {};
   // file: allow payload.file or payload.__file or source.file (File/Blob)
   const directFile = payload.file || payload.__file || source.file;
   if (directFile instanceof File || directFile instanceof Blob) {
-    const filename = (directFile instanceof File ? directFile.name : "") || source.filename || "upload.pdf";
+    const sourceFilename = typeof source.filename === "string" ? source.filename : "";
+    const filename = (directFile instanceof File ? directFile.name : "") || sourceFilename || "upload.pdf";
     form.append("file", directFile, filename);
   }
   // 后端吸怪：显式透传 workflow，便于日志与校验
@@ -108,7 +109,7 @@ function buildOcrFormData(payload) {
   return form;
 }
 
-export async function submitJobRequest(apiPrefix, payload) {
+export async function submitJobRequest(apiPrefix: string, payload: unknown) {
   if (isOcrWorkflowPayload(payload)) {
     if (!isObject(payload) || !isObject(payload.source)) {
       throw new Error("提交失败: /api/v1/ocr/jobs 需要 grouped JSON，至少包含 workflow=ocr 和 source。");

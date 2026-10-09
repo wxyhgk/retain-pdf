@@ -1,6 +1,7 @@
 import type { JobLike, JobPayload } from "@retainpdf/domain/job";
 import type { StatusDetailResumeViewPort } from "./controller-types.js";
 import {
+  asRecord,
   firstNonEmptyText,
 } from "./formatters.js";
 
@@ -55,13 +56,14 @@ interface FinishResubmissionOptions {
   resolveActions?: RerunActionResolver;
 }
 
-function firstJobIdFromPayload(payload) {
+function firstJobIdFromPayload(payload: unknown) {
+  const item = asRecord(payload);
   return firstNonEmptyText(
-    payload?.job_id,
-    payload?.data?.job_id,
-    payload?.job?.job_id,
-    payload?.job?.id,
-    payload?.id,
+    item.job_id,
+    asRecord(item.data).job_id,
+    asRecord(item.job).job_id,
+    asRecord(item.job).id,
+    item.id,
   );
 }
 
@@ -74,7 +76,7 @@ function firstJobIdFromPayload(payload) {
 // 把 `||` 短路掉，于是按钮可点、旁边却写着「不可恢复」。空串还让 syncRerunAction 的
 // 两条兜底跟 snapshot.ts 的 buildStatusDetailSnapshot 对齐——同一个 rerun.status
 // 字段有这两个生产者，文案必须逐字相同。
-export function summarizeResumePlan(plan) {
+export function summarizeResumePlan(plan: ResumePlanLike | null | undefined) {
   if (!plan) {
     return "";
   }
@@ -119,8 +121,8 @@ export function syncRerunAction({
 export const TRANSLATION_DUPLICATE_RISK_PROMPT =
   "检测到重复翻译风险：部分翻译请求可能已经计费，重跑可能产生重复费用。再点一次按钮确认仍要从翻译阶段重试。";
 
-export function isAmbiguousTranslationRerunError(error) {
-  const message = `${error?.message || error || ""}`;
+export function isAmbiguousTranslationRerunError(error: unknown) {
+  const message = `${(error as { message?: string } | null)?.message || error || ""}`;
   return /\b409\b/.test(message) && /translation request outcome is ambiguous/i.test(message);
 }
 
@@ -145,7 +147,7 @@ export async function rerunCurrentJob({
     resolveActions,
   });
   viewPort.setRerunDisabled(true);
-  if (riskRetryJobId) {
+  if (riskRetryJobId && retryTranslationWithRisk) {
     onDuplicateRiskPending(false);
     try {
       const payload = await retryTranslationWithRisk(riskRetryJobId);
@@ -153,7 +155,7 @@ export async function rerunCurrentJob({
     } catch (error) {
       syncRerunAction({
         ...rerunContext,
-        statusText: error.message || String(error),
+        statusText: (error as { message?: string } | null)?.message || String(error),
         viewPort,
         resolveActions,
       });
@@ -189,7 +191,7 @@ export async function rerunCurrentJob({
     }
     syncRerunAction({
       ...rerunContext,
-      statusText: error.message || String(error),
+      statusText: (error as { message?: string } | null)?.message || String(error),
       viewPort,
       resolveActions,
     });

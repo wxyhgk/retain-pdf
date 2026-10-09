@@ -1,4 +1,4 @@
-export async function fetchGlossaries(apiPrefix) {
+export async function fetchGlossaries(apiPrefix: string) {
   void apiPrefix;
   return {
     items: [
@@ -13,7 +13,7 @@ export async function fetchGlossaries(apiPrefix) {
   };
 }
 
-export async function fetchGlossary(glossaryId, apiPrefix) {
+export async function fetchGlossary(glossaryId: string, apiPrefix: string) {
   const normalizedGlossaryId = `${glossaryId || ""}`.trim();
   if (!normalizedGlossaryId) {
     throw new Error("读取术语表失败: 缺少 glossary_id");
@@ -44,7 +44,7 @@ export async function fetchGlossary(glossaryId, apiPrefix) {
   };
 }
 
-export async function createGlossary(apiPrefix, payload) {
+export async function createGlossary(apiPrefix: string, payload: Record<string, unknown> = {}) {
   void apiPrefix;
   return {
     glossary_id: `mock-glossary-${Date.now()}`,
@@ -53,7 +53,7 @@ export async function createGlossary(apiPrefix, payload) {
   };
 }
 
-export async function updateGlossary(apiPrefix, glossaryId, payload) {
+export async function updateGlossary(apiPrefix: string, glossaryId: string, payload: Record<string, unknown> = {}) {
   const normalizedGlossaryId = `${glossaryId || ""}`.trim();
   if (!normalizedGlossaryId) {
     throw new Error("保存术语表失败: 缺少 glossary_id");
@@ -66,7 +66,7 @@ export async function updateGlossary(apiPrefix, glossaryId, payload) {
   };
 }
 
-export async function deleteGlossary(apiPrefix, glossaryId) {
+export async function deleteGlossary(apiPrefix: string, glossaryId: string) {
   const normalizedGlossaryId = `${glossaryId || ""}`.trim();
   if (!normalizedGlossaryId) {
     throw new Error("删除术语表失败: 缺少 glossary_id");
@@ -75,7 +75,7 @@ export async function deleteGlossary(apiPrefix, glossaryId) {
   return { glossary_id: normalizedGlossaryId, deleted: true };
 }
 
-export async function exportGlossaryCsv(apiPrefix, glossaryId) {
+export async function exportGlossaryCsv(apiPrefix: string, glossaryId: string) {
   const normalizedGlossaryId = `${glossaryId || ""}`.trim();
   if (!normalizedGlossaryId) {
     throw new Error("导出术语表失败: 缺少 glossary_id");
@@ -89,7 +89,7 @@ export async function exportGlossaryCsv(apiPrefix, glossaryId) {
   });
 }
 
-export async function parseGlossaryCsv(apiPrefix, csvText) {
+export async function parseGlossaryCsv(apiPrefix: string, csvText: string) {
   void apiPrefix;
   void csvText;
   return {

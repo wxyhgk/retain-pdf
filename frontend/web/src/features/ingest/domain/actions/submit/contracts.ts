@@ -64,7 +64,7 @@ export interface EnsureDeepSeekBudgetReadyOptions extends NeedsDeepSeekBudgetChe
   refreshDeepSeekBalance?: (options?: {
     silent?: boolean;
   }) => Promise<DeepSeekBalanceCheckResult | null | undefined | unknown> | DeepSeekBalanceCheckResult | null | undefined | unknown;
-  setText?: SetTextFn;
+  setText: SetTextFn;
   timeoutMs?: number;
 }
 
@@ -86,7 +86,7 @@ export interface HandleSubmitReadinessBlockOptions {
   openSetupDialog?: () => void;
   openBrowserCredentialsDialog?: (options?: unknown) => void;
   currentBudgetState?: (workflow?: string) => BudgetStateSnapshot | null | undefined | unknown;
-  setText?: SetTextFn;
+  setText: SetTextFn;
 }
 
 export interface EnsureOcrCredentialsForSubmitOptions {
@@ -98,7 +98,7 @@ export interface EnsureOcrCredentialsForSubmitOptions {
     onInvalidToken?: (result?: OcrCredentialCheckResult) => void;
   }) => Promise<boolean | unknown> | boolean | unknown;
   openBrowserCredentialsDialog?: (options?: unknown) => void;
-  setText?: SetTextFn;
+  setText: SetTextFn;
 }
 
 export interface PublishSubmitSuccessOptions {
@@ -128,8 +128,8 @@ export interface RunSubmitFlowOptions {
   desktopConfigured?: boolean;
   openSetupDialog?: () => void;
   openBrowserCredentialsDialog?: (options?: unknown) => void;
-  setText?: SetTextFn;
-  submitJobRequest?: (apiPrefix?: unknown, payload?: unknown) => Promise<unknown> | unknown;
+  setText: SetTextFn;
+  submitJobRequest: (apiPrefix?: unknown, payload?: unknown) => Promise<unknown> | unknown;
   workflowNeedsUpload?: (workflow?: string) => boolean | unknown;
   workflowNeedsCredentials?: (workflow?: string) => boolean | unknown;
   currentRenderSourceJobId?: () => string | unknown;

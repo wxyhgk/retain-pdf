@@ -79,12 +79,12 @@ export function createRecentJobsRefreshScheduler({
   // resume/force 覆盖，不自旋）。force 的 replay 不受 DOM 影响，不会走到这里。
   function replayPendingRefreshOnResume(was: boolean, next: boolean) {
     if (was && !next && pendingRefresh) {
-      scheduleRefresh(takePendingRefresh());
+      scheduleRefresh(takePendingRefresh() ?? undefined);
       if (pendingRefresh && !suspended && !resumeRetryTimer) {
         resumeRetryTimer = environment.setTimeout(() => {
           resumeRetryTimer = null;
           if (pendingRefresh && !suspended) {
-            scheduleRefresh(takePendingRefresh());
+            scheduleRefresh(takePendingRefresh() ?? undefined);
           }
         }, LIBRARY_REFRESH_RESUME_DELAY_MS);
       }

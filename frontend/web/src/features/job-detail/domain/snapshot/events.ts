@@ -1,7 +1,8 @@
 import { escapeHtml, formatEventTimestamp } from "./utils.js";
 import { normalizedStageEventRecord } from "@retainpdf/domain/job-status";
+import type { EventsPayload, StageEvent } from "@retainpdf/domain/job-status";
 
-function eventBadgeTone(item) {
+function eventBadgeTone(item: StageEvent) {
   if (item.level === "error" || item.event === "failure_classified" || item.event === "job_terminal") {
     return "error";
   }
@@ -11,7 +12,7 @@ function eventBadgeTone(item) {
   return "";
 }
 
-function formatEventPayload(payload) {
+function formatEventPayload(payload: unknown) {
   if (!payload || typeof payload !== "object") {
     return "";
   }
@@ -22,12 +23,12 @@ function formatEventPayload(payload) {
   }
 }
 
-export function buildEventsPresentation(eventsPayload) {
+export function buildEventsPresentation(eventsPayload: EventsPayload | null | undefined) {
   const items = Array.isArray(eventsPayload?.items) ? eventsPayload.items : [];
   // 文案承诺“按时间倒序”,这里显式排序,不依赖后端返回顺序
   const entries = items
     .map((item) => ({ item, record: normalizedStageEventRecord(item) }))
-    .sort((a, b) => (Date.parse(b.record.timestamp) || 0) - (Date.parse(a.record.timestamp) || 0));
+    .sort((a, b) => (Date.parse(String(b.record.timestamp)) || 0) - (Date.parse(String(a.record.timestamp)) || 0));
   const markup = entries.map(({ item, record }) => {
     const tone = eventBadgeTone(item);
     const payloadText = formatEventPayload(item.payload);

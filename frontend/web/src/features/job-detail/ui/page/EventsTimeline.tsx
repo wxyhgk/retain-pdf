@@ -44,10 +44,15 @@ import {
   isJobTerminal,
 } from "@retainpdf/domain/job";
 import { buildJobDetailEventViewModel } from "@retainpdf/domain/job-status";
+import type { EventsPayload, StageEvent } from "@retainpdf/domain/job-status";
+import type { JobLike, JobPayload, StageHistoryEntry } from "@retainpdf/domain/job";
+import type { ReactNode } from "react";
+
+type TimelineJob = JobLike | JobPayload | null | undefined;
 
 // —— 以下三个私有函数照搬旧 events.js,保证耗时/载荷文案逐字节一致 ——
 
-function parseIsoTime(value) {
+function parseIsoTime(value: unknown) {
   const raw = `${value || ""}`.trim();
   if (!raw) {
     return null;
@@ -56,7 +61,7 @@ function parseIsoTime(value) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function resolveStageHistoryDuration(entry, job) {
+function resolveStageHistoryDuration(entry: StageHistoryEntry | undefined, job: TimelineJob) {
   const explicit = Number(entry?.duration_ms);
   if (Number.isFinite(explicit) && explicit >= 0) {
     return explicit;
@@ -68,7 +73,7 @@ function resolveStageHistoryDuration(entry, job) {
   }
   if (enterAt && !exitAt) {
     const endAt = isJobTerminal(job)
-      ? parseIsoTime(job.finished_at || job.updated_at)
+      ? parseIsoTime(job?.finished_at || job?.updated_at)
       : new Date();
     if (endAt) {
       return Math.max(0, endAt.getTime() - enterAt.getTime());
@@ -77,7 +82,7 @@ function resolveStageHistoryDuration(entry, job) {
   return NaN;
 }
 
-function formatEventPayload(payload) {
+function formatEventPayload(payload: unknown) {
   if (!payload || typeof payload !== "object") {
     return "";
   }
@@ -88,7 +93,7 @@ function formatEventPayload(payload) {
   }
 }
 
-export function StageHistoryTriggerCard({ onOpen }) {
+export function StageHistoryTriggerCard({ onOpen }: { onOpen: () => void }) {
   return (
     <article className="detail-card">
       <div className="detail-modal-trigger">
@@ -102,7 +107,13 @@ export function StageHistoryTriggerCard({ onOpen }) {
   );
 }
 
-export function EventsTriggerCard({ buttonText, onOpen }) {
+export function EventsTriggerCard({
+  buttonText,
+  onOpen,
+}: {
+  buttonText: string;
+  onOpen: () => void;
+}) {
   return (
     <article className="detail-card">
       <div className="detail-modal-trigger">
@@ -116,11 +127,29 @@ export function EventsTriggerCard({ buttonText, onOpen }) {
   );
 }
 
-function DetailModal({ modalId, titleId, title, subtitle, closeButtonId, open, onClose, children }) {
+function DetailModal({
+  modalId,
+  titleId,
+  title,
+  subtitle,
+  closeButtonId,
+  open,
+  onClose,
+  children,
+}: {
+  modalId: string;
+  titleId: string;
+  title: string;
+  subtitle: string;
+  closeButtonId: string;
+  open: boolean;
+  onClose: () => void;
+  children: ReactNode;
+}) {
   const { onCloseAutoFocus } = useDialogReturnFocus(open);
 
   // Esc / 背板点击 / 关闭按钮都经这一个回调回写 DetailApp.jsx 的 useState。
-  function handleOpenChange(nextOpen) {
+  function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
       onClose();
     }
@@ -155,7 +184,15 @@ function DetailModal({ modalId, titleId, title, subtitle, closeButtonId, open, o
   );
 }
 
-function StageHistoryItem({ entry, index, job }) {
+function StageHistoryItem({
+  entry,
+  index,
+  job,
+}: {
+  entry: StageHistoryEntry;
+  index: number;
+  job: TimelineJob;
+}) {
   const enterAt = entry?.enter_at ? formatEventTimestamp(entry.enter_at) : "-";
   const exitAt = entry?.exit_at ? formatEventTimestamp(entry.exit_at) : (isJobTerminal(job) ? "-" : "处理中");
   const terminalText = entry?.terminal_status ? ` · ${entry.terminal_status}` : "";
@@ -171,8 +208,16 @@ function StageHistoryItem({ entry, index, job }) {
   );
 }
 
-export function StageHistoryModal({ open, job, onClose }) {
-  const history = Array.isArray(job?.stage_history) ? job.stage_history : [];
+export function StageHistoryModal({
+  open,
+  job,
+  onClose,
+}: {
+  open: boolean;
+  job: TimelineJob;
+  onClose: () => void;
+}) {
+  const history: StageHistoryEntry[] = Array.isArray(job?.stage_history) ? job.stage_history : [];
   const hasItems = history.length > 0;
   return (
     <DetailModal
@@ -194,7 +239,7 @@ export function StageHistoryModal({ open, job, onClose }) {
   );
 }
 
-function EventItem({ item }) {
+function EventItem({ item }: { item: StageEvent }) {
   const viewModel = buildJobDetailEventViewModel(item);
   const payloadText = formatEventPayload(viewModel.payload);
   const metaBits = [
@@ -243,7 +288,17 @@ function EventItem({ item }) {
   );
 }
 
-export function EventsModal({ open, eventsPayload, status, onClose }) {
+export function EventsModal({
+  open,
+  eventsPayload,
+  status,
+  onClose,
+}: {
+  open: boolean;
+  eventsPayload: EventsPayload | null | undefined;
+  status: string;
+  onClose: () => void;
+}) {
   const items = Array.isArray(eventsPayload?.items) ? eventsPayload.items : [];
   const hasItems = items.length > 0;
   return (

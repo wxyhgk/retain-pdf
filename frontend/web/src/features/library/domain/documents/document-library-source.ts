@@ -24,11 +24,11 @@ import {
   libraryCardIdentityAliases,
 } from "../recent-jobs/library-card-identity.js";
 
-function normalizedJobId(value) {
+function normalizedJobId(value: unknown) {
   return `${value || ""}`.trim();
 }
 
-function normalizedExistingCardIdentity(value) {
+function normalizedExistingCardIdentity(value: unknown) {
   const normalized = normalizedJobId(value);
   if (!normalized) return "";
   return normalized.startsWith("document:") || normalized.startsWith("job:")

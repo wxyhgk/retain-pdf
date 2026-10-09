@@ -4,7 +4,7 @@ export function createRecentJobsReaderPort({
   openReader?: (jobId: string, anchor: unknown, documentId: string, options: { pinJob?: boolean }) => void;
 } = {}) {
   return {
-    openReader(jobId, anchor = null, documentId = "", options: { pinJob?: boolean } = {}) {
+    openReader(jobId: string, anchor: unknown = null, documentId = "", options: { pinJob?: boolean } = {}) {
       const normalizedJobId = `${jobId || ""}`.trim();
       if (!normalizedJobId) {
         return false;

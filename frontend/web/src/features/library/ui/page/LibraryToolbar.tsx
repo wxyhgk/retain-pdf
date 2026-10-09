@@ -1,7 +1,19 @@
 // 书架工具栏(照搬 PDF_MD_lib 的 LibraryCollectionContextBar):左侧上下文标签 +
 // 数量;右侧排序下拉 + 网格/列表切换(筛选按钮在后续阶段接)。
 
+import type { ReactNode, SVGProps } from "react";
 import { cn } from "@retainpdf/ui/lib/utils";
+
+type LibraryToolbarProps = {
+  count: number;
+  viewMode: string;
+  setViewMode: (mode: string) => void;
+  sortMode: string;
+  setSortMode: (mode: string) => void;
+  filterSlot?: ReactNode;
+  batchMode?: boolean;
+  onToggleBatchMode?: ((next: boolean) => void) | null;
+};
 
 const SORT_OPTIONS = [
   { value: "updated", label: "最近更新" },
@@ -25,7 +37,7 @@ function IconList() {
     </svg>
   );
 }
-function IconCheckSquare(props) {
+function IconCheckSquare(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" width="14" height="14" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <rect x="3.5" y="3.5" width="17" height="17" rx="3" />
@@ -37,7 +49,7 @@ function IconCheckSquare(props) {
 export function LibraryToolbar({
   count, viewMode, setViewMode, sortMode, setSortMode, filterSlot = null,
   batchMode = false, onToggleBatchMode = null,
-}) {
+}: LibraryToolbarProps) {
   return (
     <div className="mb-4 border-b border-border/10 pb-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

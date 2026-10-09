@@ -7,6 +7,12 @@
 
 import { InfoRow, TextBlock } from "./TranslationInfoBlocks.jsx";
 import { STATUS_DETAIL_DIALOG_IDS } from "../domain/status-detail-dom-ids.js";
+import type {
+  StatusDetailTranslation,
+  StatusDetailTranslationListItem,
+  StatusDetailTranslationReplay,
+  StatusDetailTranslationSelectedItem,
+} from "../domain/status-detail-store.js";
 import {
   boolLabel,
   degradationReasonOf,
@@ -18,8 +24,8 @@ import {
   routePathOf,
 } from "../domain/dialog/formatters.js";
 
-function ItemDetailBody({ payload }) {
-  const item = payload.item || {};
+function ItemDetailBody({ payload }: { payload: NonNullable<StatusDetailTranslationSelectedItem> }) {
+  const item: StatusDetailTranslationListItem = payload.item || {};
   const diagnostics = diagnosticsOf(item);
   const routePath = normalizeRoutePath(routePathOf(item));
   const pageNumber = pageNumberOf(payload, pageNumberOf(item));
@@ -47,7 +53,7 @@ function ItemDetailBody({ payload }) {
   );
 }
 
-function ReplayBody({ replay }) {
+function ReplayBody({ replay }: { replay: NonNullable<StatusDetailTranslationReplay> }) {
   const payload = replay.payload || {};
   return (
     <div className="translation-replay-grid">
@@ -59,7 +65,13 @@ function ReplayBody({ replay }) {
   );
 }
 
-export function TranslationItemDetailPanel({ translation, onReplay }) {
+export function TranslationItemDetailPanel({
+  translation,
+  onReplay,
+}: {
+  translation: StatusDetailTranslation;
+  onReplay: () => void;
+}) {
   const payload = translation.selectedItem;
   const loading = translation.itemDetailLoading;
   const hasItem = Boolean(payload?.item);
@@ -68,7 +80,7 @@ export function TranslationItemDetailPanel({ translation, onReplay }) {
   const meta = loading
     ? "读取中..."
     : hasItem
-      ? `${payload.item_id || payload.item?.item_id || "-"} · 第 ${pageNumberOf(payload, pageNumberOf(payload.item))} 页`
+      ? `${payload?.item_id || payload?.item?.item_id || "-"} · 第 ${pageNumberOf(payload, pageNumberOf(payload?.item))} 页`
       : "-";
   const ids = STATUS_DETAIL_DIALOG_IDS.translation;
 
@@ -77,7 +89,7 @@ export function TranslationItemDetailPanel({ translation, onReplay }) {
   const replayStatus = translation.replayLoading
     ? "重放中..."
     : hasReplayResult
-      ? (replay.payload.replay_error ? "重放返回错误" : "重放完成")
+      ? (replay?.payload?.replay_error ? "重放返回错误" : "重放完成")
       : (translation.replayErrorText || "-");
 
   return (
@@ -87,7 +99,7 @@ export function TranslationItemDetailPanel({ translation, onReplay }) {
         <div id={ids.itemLoading} className={loading ? "events-empty" : "events-empty hidden"}>正在读取条目详情...</div>
         <div id={ids.itemEmpty} className={!loading && !hasItem ? "events-empty" : "events-empty hidden"}>{emptyText}</div>
         <div id={ids.itemDetail} className={!loading && hasItem ? "translation-item-detail" : "translation-item-detail hidden"}>
-          {!loading && hasItem ? <ItemDetailBody payload={payload} /> : null}
+          {!loading && hasItem && payload ? <ItemDetailBody payload={payload} /> : null}
         </div>
       </div>
       <div className="translation-replay-actions">
@@ -95,7 +107,7 @@ export function TranslationItemDetailPanel({ translation, onReplay }) {
         <span id={ids.replayStatus} className="status-panel-note">{replayStatus}</span>
       </div>
       <div id={ids.replayResult} className={hasReplayResult ? "translation-replay-result" : "translation-replay-result hidden"}>
-        {hasReplayResult ? <ReplayBody replay={replay} /> : null}
+        {hasReplayResult && replay ? <ReplayBody replay={replay} /> : null}
       </div>
     </section>
   );

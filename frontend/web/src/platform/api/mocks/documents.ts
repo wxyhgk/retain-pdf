@@ -82,7 +82,7 @@ export async function patchDocument(
 
 // 文档级删除:删掉 document + 名下所有 job/upload/文件(后端 DELETE /documents/:id)。
 // 被收藏引用时后端返回 409(force 可覆盖运行中的 job,不覆盖收藏保护)。
-export async function deleteDocument(apiPrefix, documentId, { force = false } = {}) {
+export async function deleteDocument(apiPrefix: string, documentId: string, { force = false }: { force?: boolean } = {}) {
   void apiPrefix;
   void force;
   const normalized = `${documentId || ""}`.trim();

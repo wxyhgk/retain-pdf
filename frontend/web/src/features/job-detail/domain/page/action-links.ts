@@ -1,6 +1,7 @@
 import type { JobLike, ManifestPayload } from "@retainpdf/domain/job";
 import { hasReadyManifestArtifact, resolveJobActions } from "@retainpdf/domain/job";
 import { buildReaderPageUrl } from "./routing.js";
+import type { DetailSetActionLink } from "./page-ports.js";
 
 /** 详情页动作链接的输入：resolveJobActions 的结果（允许部分字段缺省） */
 type JobDetailActions = Partial<ReturnType<typeof resolveJobActions>>;
@@ -23,7 +24,7 @@ export function isReaderActionEnabled({ actions = {}, job = {}, manifestPayload 
 }
 
 export interface JobDetailActionLinkRenderInput extends JobDetailActionLinkInput {
-  setActionLink: (id: string, href: string, enabled: boolean) => void;
+  setActionLink: DetailSetActionLink;
 }
 
 export function renderJobDetailActionLinks({
@@ -35,5 +36,5 @@ export function renderJobDetailActionLinks({
   const jobId = job?.job_id || "";
   const readerEnabled = isReaderActionEnabled({ actions, job, manifestPayload });
   setActionLink("detail-reader-btn", buildReaderPageUrl(jobId), readerEnabled);
-  setActionLink("detail-pdf-btn", actions.pdf, actions.pdfEnabled && !!actions.pdf);
+  setActionLink("detail-pdf-btn", actions.pdf, Boolean(actions.pdfEnabled) && !!actions.pdf);
 }

@@ -5,7 +5,7 @@ import {
 export function createRecentJobsRefreshEnvironment({
   now = () => Date.now(),
   setTimeoutFn = (callback, delay) => window.setTimeout(callback, delay),
-  clearTimeoutFn = (timer) => window.clearTimeout(timer),
+  clearTimeoutFn = (timer) => window.clearTimeout(timer ?? undefined),
   workflowOpenPort = defaultRecentJobsWorkflowOpenPort,
   isWorkflowOpen = () => workflowOpenPort.isWorkflowOpen(),
 }: {

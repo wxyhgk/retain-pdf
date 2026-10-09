@@ -45,7 +45,8 @@ type CreateCredentialsArgs = {
   credentialsStatePort: CredentialsStatePort;
   uploadStatePort: UploadStatePort;
   validateOcrTokenOverride?: AsyncFn | null;
-  validateDeepSeekTokenOverride?: AsyncFn;
+  /** create-home-composition 总会给（默认就是平台的 validateDeepSeekToken）。 */
+  validateDeepSeekTokenOverride: AsyncFn;
   queryDeepSeekBalanceOverride?: AsyncFn;
   createCredentialOverride?: AsyncFn;
   updateCredentialOverride?: AsyncFn;

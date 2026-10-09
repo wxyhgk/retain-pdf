@@ -1,6 +1,7 @@
 import {
   RECENT_JOBS_LOADING_STATES,
 } from "./loading-state-contract.js";
+import type { RecentJobsPageFetcher } from "./pagination.js";
 import {
   RECENT_JOBS_PAGE_SIZE,
 } from "./pagination.js";
@@ -55,22 +56,16 @@ export interface LibraryBooksResourcePort {
 }
 
 export interface CreateRecentJobsLoaderOptions {
-  fetchJobList?: (
-    apiPrefix?: string,
-    params?: Record<string, unknown>,
-  ) => Promise<unknown>;
-  fetchLibraryBookList?: (
-    apiPrefix?: string,
-    params?: Record<string, unknown>,
-  ) => Promise<unknown>;
-  apiPrefix?: string;
+  fetchJobList?: RecentJobsPageFetcher;
+  fetchLibraryBookList?: RecentJobsPageFetcher;
+  apiPrefix: string;
   getQuery?: () => string;
   recentJobActions?: RecentJobActionsPort;
-  runtimePatches?: RecentJobsRuntimePatches;
-  activeRefreshLoop?: (() => ActiveRefreshLoopPort | null | undefined) | null;
+  runtimePatches: RecentJobsRuntimePatches;
+  activeRefreshLoop: () => ActiveRefreshLoopPort | null | undefined;
   scheduleAutoLoadIfNeeded?: (() => void) | null;
-  homeStatePort?: Pick<HomeStatePort, "setRecentJobsLoadingState">;
-  recentJobsStatePort?: Pick<
+  homeStatePort: Pick<HomeStatePort, "setRecentJobsLoadingState">;
+  recentJobsStatePort: Pick<
     RecentJobsStatePort,
     | "getSnapshot"
     | "resetPagination"
@@ -81,7 +76,7 @@ export interface CreateRecentJobsLoaderOptions {
     | "setItems"
   >;
   /** 只剩「加载中 / 加载更多中」两个信号还经 viewPort；列表本身由 React 订阅 store。 */
-  viewPort?: Pick<RecentJobsCommitViewPort, "renderLoading" | "setLoadMoreLoading">;
+  viewPort: Required<Pick<RecentJobsCommitViewPort, "renderLoading" | "setLoadMoreLoading">>;
   libraryBooksResource?: LibraryBooksResourcePort;
 }
 

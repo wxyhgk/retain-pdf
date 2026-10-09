@@ -130,3 +130,4 @@ export {
 export type { RecentJobsStatePort } from "./domain/recent-jobs/state.js";
 export { LibraryServicesProvider, useLibraryServices } from "./ui/library-services-context.jsx";
 export type { LibraryServices } from "./ui/library-services-context.jsx";
+export type { RecentJobsPageFetcher } from "./domain/recent-jobs/pagination.js";

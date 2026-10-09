@@ -27,7 +27,7 @@ export function applyDefaultCredentialInputs(
 export function bindDefaultHiddenCredentialInputPersistence({
   saveBrowserStoredConfig,
 }: {
-  saveBrowserStoredConfig?: (credentials: CredentialsFields) => void;
+  saveBrowserStoredConfig?: (credentials: CredentialsFields | Partial<CredentialsFields>) => void;
 } = {}) {
   bindHiddenCredentialDomInputPersistence({
     credentialsStatePort: defaultCredentialsStatePort,

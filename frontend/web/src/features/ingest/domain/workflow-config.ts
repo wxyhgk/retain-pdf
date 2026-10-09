@@ -61,7 +61,7 @@ export function workflowConstants() {
   };
 }
 
-export function normalizeWorkflow(value, {
+export function normalizeWorkflow(value: unknown, {
   book = WORKFLOW_BOOK,
   translate = WORKFLOW_TRANSLATE,
   render = WORKFLOW_RENDER,
@@ -73,6 +73,6 @@ export function normalizeWorkflow(value, {
   return book;
 }
 
-export function normalizeMathMode(value) {
+export function normalizeMathMode(value: unknown) {
   return `${value || ""}`.trim() === "placeholder" ? "placeholder" : "direct_typst";
 }

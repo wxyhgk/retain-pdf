@@ -1,4 +1,5 @@
 import { resolveDisplayedStagePresentation } from "@retainpdf/domain/job-status";
+import type { EventsPayload } from "@retainpdf/domain/job-status";
 import { buildEventsPresentation } from "./events.js";
 import { buildStageHistoryPresentation } from "./history.js";
 import { isJobTerminal, jobStatusPresentation } from "@retainpdf/domain/job";
@@ -103,8 +104,9 @@ export function buildFailureLogText(job: StatusDetailJob): string {
     const text = diagnosticValueText(value);
     return text && text !== "-" ? [`${label}: ${text}`] : [];
   });
-  const logTail = Array.isArray(job?.log_tail)
-    ? job.log_tail.map(diagnosticValueText).filter(Boolean)
+  const logTailSource = job?.log_tail;
+  const logTail = Array.isArray(logTailSource)
+    ? logTailSource.map(diagnosticValueText).filter(Boolean)
     : [];
   if (logTail.length) {
     lines.push("", "最近日志", ...logTail);
@@ -135,9 +137,10 @@ function stageIconMarkup(job: StatusDetailJob, stageText: string | undefined): s
 }
 
 function statusDetailNote(job: StatusDetailJob = {}): string {
-  return job.status === "failed"
+  // 类型上允许 null；null 时 status 视为空，落到默认文案（原先直接读 null.status 会抛错）。
+  return job?.status === "failed"
     ? "查看失败原因、建议与事件流"
-    : job.status === "succeeded" && isJobTerminal(job)
+    : job?.status === "succeeded" && isJobTerminal(job)
       ? "任务已完成，可查看概览与事件流"
       : "查看任务概览、失败原因与事件流";
 }
@@ -241,7 +244,7 @@ function buildFailureDetails(job: StatusDetailJob) {
 
 export function buildStatusDetailSnapshot(
   job: StatusDetailJob,
-  eventsPayload: unknown,
+  eventsPayload: EventsPayload | null | undefined,
   {
     durationOptions = {},
   }: StatusDetailSnapshotOptions = {},

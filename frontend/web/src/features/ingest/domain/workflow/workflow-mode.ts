@@ -19,6 +19,15 @@ import type { WorkflowDeveloperConfig } from "./payload.js";
 import type { WorkflowConfigPortLike } from "./contracts.js";
 import type { WorkflowConstants } from "./contracts.js";
 
+
+/** 让凭据功能刷新「上传门禁」时带过去的回调（凭据侧的 UpdateCredentialGateOptions 与之同形）。 */
+export type CredentialGateRequest = {
+  workflowNeedsCredentials: () => boolean;
+  workflowNeedsUpload: () => boolean;
+  hasCredentials?: () => boolean;
+  refreshSubmitControls: () => void;
+};
+
 export interface CreateWorkflowModeControllerOptions {
   constants: WorkflowConstants;
   developerConfigWithDefaults: () => WorkflowDeveloperConfig;
@@ -35,12 +44,7 @@ export interface CreateWorkflowModeControllerOptions {
   defaultFileLabel: string;
   normalizeWorkflow: (value?: unknown) => string;
   hasBrowserCredentials?: () => boolean;
-  updateCredentialGatePort?: (options?: {
-    workflowNeedsCredentials?: () => boolean;
-    workflowNeedsUpload?: () => boolean;
-    hasCredentials?: () => boolean;
-    refreshSubmitControls?: () => void;
-  }) => void;
+  updateCredentialGatePort?: (options: CredentialGateRequest) => void;
   loadGlossaryOptions: () => void;
 }
 

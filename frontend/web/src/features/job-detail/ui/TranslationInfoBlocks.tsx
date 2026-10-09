@@ -7,16 +7,16 @@ import {
 // 都是 markup 拼接,蓝图 §1.1 判死;stringifyPretty 是纯格式化函数,保留
 // 直接 import)。
 
-export function InfoRow({ label, value }) {
+export function InfoRow({ label, value }: { label: string; value: unknown }) {
   return (
     <div className="info-row translation-detail-row">
       <span className="label">{label}</span>
-      <span className="info-value">{value}</span>
+      <span className="info-value">{`${value}`}</span>
     </div>
   );
 }
 
-export function TextBlock({ label, value }) {
+export function TextBlock({ label, value }: { label: string; value: unknown }) {
   return (
     <section className="translation-text-block">
       <div className="translation-debug-subhead">

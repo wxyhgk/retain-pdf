@@ -12,14 +12,14 @@ import type { RecentJobsRuntimePatches } from "./runtime-patches.js";
 
 export interface BindRecentJobsCommandHandlersOptions {
   apiPrefix?: string;
-  commandPort?: Pick<RecentJobsCommandPort, "subscribe">;
+  commandPort: Pick<RecentJobsCommandPort, "subscribe">;
   fetchJobPayload?: (
     jobId: string,
     options?: { apiPrefix?: string } | string,
   ) => Promise<LibraryJobItem | Record<string, unknown> | null | undefined>;
   libraryBooksResource?: { invalidate?: () => void } | null;
-  runtimePatches?: Pick<RecentJobsRuntimePatches, "update" | "insert">;
-  refreshScheduler?: {
+  runtimePatches: Pick<RecentJobsRuntimePatches, "update" | "insert">;
+  refreshScheduler: {
     scheduleRefresh: (options?: RecentJobsRefreshRequest) => void;
   };
 }
@@ -31,7 +31,7 @@ export function bindRecentJobsCommandHandlers({
   libraryBooksResource,
   runtimePatches,
   refreshScheduler,
-}: BindRecentJobsCommandHandlersOptions = {}): RecentJobsCommandSubscription {
+}: BindRecentJobsCommandHandlersOptions): RecentJobsCommandSubscription {
   return commandPort.subscribe({
     onRefreshRequested: ({ delay, force, bypassThrottle = false }: RecentJobsRefreshRequest = {}) => {
       invalidateLibraryBooksResource(libraryBooksResource);
@@ -44,7 +44,8 @@ export function bindRecentJobsCommandHandlers({
     onJobUpdated: ({ job }: RecentJobsJobCommandPayload = {}) => {
       // 运行中只做单卡补丁，不 invalidate / 不整页 refresh。
       // 每拍 invalidate 会让后续任意 soft reload 都打满网、整格重渲。
-      runtimePatches.update(job);
+      // update 对没有 job_id 的值本来就直接返回；先判空只是让类型说得通。
+      if (job) runtimePatches.update(job);
       const status = `${(job as LibraryJobItem | null | undefined)?.status || ""}`.trim();
       if (isTerminalStatus(status)) {
         invalidateLibraryBooksResource(libraryBooksResource);
@@ -55,7 +56,7 @@ export function bindRecentJobsCommandHandlers({
     onJobCreated: ({ job }: RecentJobsJobCommandPayload = {}) => {
       invalidateLibraryBooksResource(libraryBooksResource);
       // insert 内部已按 document_id upsert：已有书就地更新，不会再 prepend 第二张
-      runtimePatches.insert(job);
+      if (job) runtimePatches.insert(job);
       void hydrateCreatedRecentJob({
         job,
         apiPrefix,

@@ -79,3 +79,4 @@ export {
 } from "./ui/workflow-view-context.jsx";
 export type { IngestFeatures, IngestServices, IngestWorkflowView } from "./ui/workflow-view-context.jsx";
 export type { UploadViewStore } from "./domain/upload-store.js";
+export type { CredentialGateRequest } from "./domain/workflow/workflow-mode.js";

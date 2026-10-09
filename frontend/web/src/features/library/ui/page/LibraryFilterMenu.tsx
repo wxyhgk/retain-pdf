@@ -2,8 +2,25 @@
 // 弹窗——满载测试下少一个重型 modal 更稳):按状态 + 标签筛选,客户端过滤已加载项。
 
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@retainpdf/ui/lib/utils";
 import { isOcrOnlyItem } from "../../domain/card/library-card-semantics.js";
+import type { LibraryCardItem } from "../../domain/types.js";
+
+/** 状态归类需要的两个判定，由调用方注入（避免 domain 反向依赖 ui）。 */
+type LibraryStatusDependencies = {
+  isLibraryOnly: (item: LibraryCardItem) => boolean;
+  isActive: (item: LibraryCardItem) => boolean;
+};
+
+type LibraryFilterMenuProps = {
+  statusFilter: string;
+  setStatusFilter: (value: string) => void;
+  tagFilter: string;
+  setTagFilter: (value: string) => void;
+  tags?: string[];
+  statusCounts?: Record<string, number>;
+};
 
 export const STATUS_FILTERS = [
   { value: "all", label: "全部" },
@@ -14,7 +31,7 @@ export const STATUS_FILTERS = [
   { value: "failed", label: "失败" },
 ];
 
-const EMPTY_STATUS_COUNTS = Object.freeze({
+const EMPTY_STATUS_COUNTS: Readonly<Record<string, number>> = Object.freeze({
   done: 0,
   untranslated: 0,
   ocr: 0,
@@ -22,7 +39,7 @@ const EMPTY_STATUS_COUNTS = Object.freeze({
   failed: 0,
 });
 
-export function libraryStatusFilterOf(item, { isLibraryOnly, isActive }) {
+export function libraryStatusFilterOf(item: LibraryCardItem, { isLibraryOnly, isActive }: LibraryStatusDependencies) {
   if (isLibraryOnly(item)) return "untranslated";
   if (isActive(item)) return "active";
 
@@ -32,8 +49,8 @@ export function libraryStatusFilterOf(item, { isLibraryOnly, isActive }) {
   return "";
 }
 
-export function countLibraryStatusFilters(items = [], dependencies) {
-  const counts = { ...EMPTY_STATUS_COUNTS };
+export function countLibraryStatusFilters(items: LibraryCardItem[] = [], dependencies: LibraryStatusDependencies) {
+  const counts: Record<string, number> = { ...EMPTY_STATUS_COUNTS };
   for (const item of Array.isArray(items) ? items : []) {
     const kind = libraryStatusFilterOf(item, dependencies);
     if (kind && Object.hasOwn(counts, kind)) counts[kind] += 1;
@@ -46,19 +63,20 @@ export function LibraryFilterMenu({
   tagFilter, setTagFilter,
   tags = [],
   statusCounts = {},
-}) {
+}: LibraryFilterMenuProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const activeCount = (statusFilter !== "all" ? 1 : 0) + (tagFilter ? 1 : 0);
 
   useEffect(() => {
     if (!open) return undefined;
-    function onDown(event) {
-      if (ref.current && !ref.current.contains(event.target)) {
+    function onDown(event: MouseEvent) {
+      // mousedown 的 target 必是 Node（或 null），DOM 类型里是 EventTarget，这里收窄到 Node。
+      if (ref.current && !ref.current.contains(event.target as Node | null)) {
         setOpen(false);
       }
     }
-    function onKeyDown(event) {
+    function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setOpen(false);
     }
     document.addEventListener("mousedown", onDown);
@@ -69,7 +87,7 @@ export function LibraryFilterMenu({
     };
   }, [open]);
 
-  function Pill({ active, onClick, children }) {
+  function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
     return (
       <button
         type="button"
@@ -145,7 +163,12 @@ export function LibraryFilterMenu({
 }
 
 // 客户端筛选谓词(和 sort 一样只作用已加载项)。
-export function matchesLibraryFilter(item, statusFilter, tagFilter, { isLibraryOnly, isActive }) {
+export function matchesLibraryFilter(
+  item: LibraryCardItem,
+  statusFilter: string,
+  tagFilter: string,
+  { isLibraryOnly, isActive }: LibraryStatusDependencies,
+) {
   if (tagFilter && !(Array.isArray(item.tags) ? item.tags : []).includes(tagFilter)) {
     return false;
   }

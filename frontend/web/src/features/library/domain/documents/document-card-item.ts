@@ -16,7 +16,7 @@ import type { LibraryCardItem } from "../types.js";
 
 export const LIBRARY_ONLY_JOB_PREFIX = "doc:";
 
-export function syntheticLibraryJobId(documentId) {
+export function syntheticLibraryJobId(documentId: unknown) {
   const normalized = `${documentId || ""}`.trim();
   return normalized ? `${LIBRARY_ONLY_JOB_PREFIX}${normalized}` : "";
 }
@@ -43,7 +43,7 @@ export function isLibraryOnlyItem(item: LibraryCardItem = {}) {
   return item?.library_only === true;
 }
 
-function firstUrl(...candidates) {
+function firstUrl(...candidates: unknown[]) {
   for (const candidate of candidates) {
     const url = `${candidate || ""}`.trim();
     if (url) {
@@ -60,7 +60,7 @@ function firstUrl(...candidates) {
  * 原来是任务标题优先、只在它是 job_id / Mock 占位时才换文档名，于是改过名的书在卡片上
  * 还是文件名，和详情对不上。文档没有标题时才用任务标题（占位的除外），最后退回文件名。
  */
-function pickCardTitle(bookTitle, document, jobId) {
+function pickCardTitle(bookTitle: unknown, document: LibraryDocumentRecord | null | undefined, jobId: unknown) {
   const docTitle = `${document?.title || ""}`.trim();
   if (docTitle) {
     return docTitle;

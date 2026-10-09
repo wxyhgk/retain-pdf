@@ -6,8 +6,14 @@ import {
   highlightSegments,
   nextReadingStatus,
 } from "./view-model.js";
+import type {
+  LibrarySearchAnchor,
+  LibrarySearchDocumentRow,
+  LibrarySearchHit,
+  LibrarySearchPorts,
+} from "./index.js";
 
-function Snippet({ text }) {
+function Snippet({ text }: { text?: string }) {
   return (
     <p className="lib-search-snippet">
       {highlightSegments(text).map((segment, index) => (
@@ -19,7 +25,7 @@ function Snippet({ text }) {
   );
 }
 
-function SearchHit({ hit, onOpenReader }) {
+function SearchHit({ hit, onOpenReader }: { hit: LibrarySearchHit; onOpenReader: (anchor: LibrarySearchAnchor) => void }) {
   return (
     <button
       type="button"
@@ -34,23 +40,12 @@ function SearchHit({ hit, onOpenReader }) {
   );
 }
 
-/** 搜索下拉里一本书要用到的字段。文档列表接口给的是 unknown[]，字段都可能缺。 */
-type SearchDocumentRow = {
-  document_id?: string;
-  active_job_id?: string;
-  title?: string;
-  source_filename?: string;
-  page_count?: number;
-  reading_status?: string;
-  tags?: string[];
-};
-
 function DocumentRow({ doc, onOpenReader, onCycleStatus }: {
-  doc: SearchDocumentRow;
+  doc: LibrarySearchDocumentRow;
   onOpenReader: (anchor: { document_id?: string; job_id?: string }) => void;
-  onCycleStatus: (doc: SearchDocumentRow) => void;
+  onCycleStatus: (doc: LibrarySearchDocumentRow) => void;
 }) {
-  const meta = READING_STATUS_META[doc.reading_status] || READING_STATUS_META.unread;
+  const meta = READING_STATUS_META[doc.reading_status ?? ""] || READING_STATUS_META.unread;
   return (
     <div className="lib-search-doc">
       <button
@@ -75,10 +70,10 @@ function DocumentRow({ doc, onOpenReader, onCycleStatus }: {
   );
 }
 
-function LibrarySearchPanel({ ports }) {
+function LibrarySearchPanel({ ports }: { ports: LibrarySearchPorts }) {
   const [query, setQuery] = useState("");
-  const [hits, setHits] = useState([]);
-  const [documents, setDocuments] = useState([]);
+  const [hits, setHits] = useState<LibrarySearchHit[]>([]);
+  const [documents, setDocuments] = useState<LibrarySearchDocumentRow[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -112,7 +107,7 @@ function LibrarySearchPanel({ ports }) {
         setError("");
       } catch (searchError) {
         if (requestSeqRef.current === seq) {
-          setError(searchError?.message || "检索失败");
+          setError((searchError as { message?: string } | null)?.message || "检索失败");
         }
       } finally {
         if (requestSeqRef.current === seq) {
@@ -123,7 +118,7 @@ function LibrarySearchPanel({ ports }) {
     return () => clearTimeout(debounceRef.current);
   }, [query, ports]);
 
-  const cycleStatus = useCallback(async (doc) => {
+  const cycleStatus = useCallback(async (doc: LibrarySearchDocumentRow) => {
     const next = nextReadingStatus(doc.reading_status);
     setDocuments((current) => current.map((item) => (
       item.document_id === doc.document_id ? { ...item, reading_status: next } : item
@@ -189,7 +184,7 @@ function LibrarySearchPanel({ ports }) {
   );
 }
 
-export function mountLibrarySearchApp(host, ports) {
+export function mountLibrarySearchApp(host: HTMLElement, ports: LibrarySearchPorts) {
   const root = createRoot(host);
   root.render(<LibrarySearchPanel ports={ports} />);
   return {

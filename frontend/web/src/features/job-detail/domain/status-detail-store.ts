@@ -5,6 +5,7 @@ import type {
   Store,
 } from "@/platform/store/store.js";
 import type { OcrAmbiguityView } from "@/platform/api/index.js";
+import type { EventsPayload } from "@retainpdf/domain/job-status";
 import type {
   FailureRecoveryModel,
 } from "./dialog/failure-recovery.js";
@@ -71,10 +72,7 @@ export type StatusDetailOcrAmbiguity = {
 export type StatusDetailJobPayload = Record<string, unknown>;
 
 /** 原始 events 载荷（EventsList 直接消费） */
-export type StatusDetailEventsPayload = {
-  items?: unknown[];
-  [key: string]: unknown;
-};
+export type StatusDetailEventsPayload = EventsPayload;
 
 /** overview 段：buildStatusDetailSnapshot + job/events 原始载荷 */
 export type StatusDetailOverview = {

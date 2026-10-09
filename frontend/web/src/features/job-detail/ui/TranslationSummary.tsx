@@ -7,11 +7,12 @@ import { STATUS_DETAIL_DIALOG_IDS } from "../domain/status-detail-dom-ids.js";
 import {
   summarizeTranslationFilter,
 } from "../domain/dialog/formatters.js";
+import type { StatusDetailTranslation } from "../domain/status-detail-store.js";
 
-export function TranslationSummary({ translation }) {
-  const summary = translation.summary?.summary || {};
-  const finalStatusCounts = summary.status_summary || summary.final_status_counts || {};
-  const counts = Object.keys(finalStatusCounts || {}).length ? finalStatusCounts : (summary.counts || {});
+export function TranslationSummary({ translation }: { translation: StatusDetailTranslation }) {
+  const summary: Record<string, unknown> = translation.summary?.summary || {};
+  const finalStatusCounts = (summary.status_summary || summary.final_status_counts || {}) as Record<string, unknown>;
+  const counts = (Object.keys(finalStatusCounts || {}).length ? finalStatusCounts : (summary.counts || {})) as Record<string, unknown>;
   const providerFamily = `${summary.provider_family || summary.provider || ""}`.trim() || "-";
   const filterText = summarizeTranslationFilter(translation.query);
   const ids = STATUS_DETAIL_DIALOG_IDS.translation;
@@ -19,10 +20,10 @@ export function TranslationSummary({ translation }) {
   return (
     <section className="translation-summary-shell">
       <div className="translation-summary-grid">
-        <div className="translation-summary-card"><span className="label">已翻译</span><span id={ids.countTranslated} className="info-value">{counts.translated ?? 0}</span></div>
-        <div className="translation-summary-card"><span className="label">部分翻译</span><span id={ids.countPartiallyTranslated} className="info-value">{counts.partially_translated ?? 0}</span></div>
-        <div className="translation-summary-card"><span className="label">保留原文</span><span id={ids.countKeptOrigin} className="info-value">{counts.kept_origin ?? 0}</span></div>
-        <div className="translation-summary-card"><span className="label">失败</span><span id={ids.countFailed} className="info-value">{counts.failed ?? 0}</span></div>
+        <div className="translation-summary-card"><span className="label">已翻译</span><span id={ids.countTranslated} className="info-value">{`${counts.translated ?? 0}`}</span></div>
+        <div className="translation-summary-card"><span className="label">部分翻译</span><span id={ids.countPartiallyTranslated} className="info-value">{`${counts.partially_translated ?? 0}`}</span></div>
+        <div className="translation-summary-card"><span className="label">保留原文</span><span id={ids.countKeptOrigin} className="info-value">{`${counts.kept_origin ?? 0}`}</span></div>
+        <div className="translation-summary-card"><span className="label">失败</span><span id={ids.countFailed} className="info-value">{`${counts.failed ?? 0}`}</span></div>
         <div className="translation-summary-card"><span className="label">Provider</span><span id={ids.providerFamily} className="info-value">{providerFamily}</span></div>
       </div>
       <div className="translation-summary-notes">

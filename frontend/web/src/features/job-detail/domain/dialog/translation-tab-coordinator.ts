@@ -1,5 +1,13 @@
 import type { TranslationLoadItemsOptions, createStatusDetailTranslationDataPort } from "./translation-data-port.js";
 
+/** dataPort 读写后返回的选中项信息（loadSummaryAndItems / loadItems 的回包形状） */
+type TranslationSelection = {
+  jobId?: string;
+  selectedItemId: string;
+  shouldLoadSelectedItem: boolean;
+  selectionChanged: boolean;
+};
+
 /** 翻译 tab 渲染选项（列表 / 详情共用的 loading / 空态文案） */
 export interface TranslationTabRenderOptions {
   loading?: boolean;
@@ -33,21 +41,22 @@ export function createStatusDetailTranslationTabCoordinator({
     renderReplay();
   }
 
-  function renderSelectionPlaceholder(selection) {
+  function renderSelectionPlaceholder(selection: TranslationSelection) {
     renderItemDetail({
       emptyText: selection?.selectedItemId ? "请选择左侧 item" : "没有可查看的 item",
     });
     renderReplay();
   }
 
-  async function loadSelectedItem(selection) {
-    if (!selection?.shouldLoadSelectedItem) {
+  async function loadSelectedItem(selection: TranslationSelection) {
+    // jobId 在 loadItems 路径由调用方补齐；缺失时不发请求（实际调用点都带 jobId）。
+    if (!selection?.shouldLoadSelectedItem || !selection.jobId) {
       return;
     }
     await loadItem(selection.jobId, selection.selectedItemId);
   }
 
-  async function loadItems(jobId, { selectFirst = false }: TranslationLoadItemsOptions = {}) {
+  async function loadItems(jobId: string, { selectFirst = false }: TranslationLoadItemsOptions = {}) {
     renderItems({ loading: true });
     const selection = await dataPort.loadItems(jobId, { selectFirst });
     renderItems();
@@ -59,7 +68,7 @@ export function createStatusDetailTranslationTabCoordinator({
     return selection;
   }
 
-  async function loadItem(jobId, itemId) {
+  async function loadItem(jobId: string, itemId: string) {
     if (!itemId) {
       return;
     }
@@ -91,11 +100,11 @@ export function createStatusDetailTranslationTabCoordinator({
       await loadSelectedItem(selection);
       dataPort.markLoaded();
     } catch (error) {
-      renderEmpty(error.message || String(error));
+      renderEmpty((error as { message?: string } | null)?.message || String(error));
     }
   }
 
-  async function applyFilter(query) {
+  async function applyFilter(query: Parameters<typeof dataPort.applyQuery>[0]) {
     dataPort.applyQuery(query);
     renderSummary();
     try {
@@ -111,12 +120,12 @@ export function createStatusDetailTranslationTabCoordinator({
       renderItems({
         loading: false,
         hasItems: false,
-        emptyText: error.message || String(error),
+        emptyText: (error as { message?: string } | null)?.message || String(error),
       });
     }
   }
 
-  async function changePage(direction) {
+  async function changePage(direction: Parameters<typeof dataPort.changePage>[0]) {
     const previousOffset = dataPort.state.query.offset;
     if (!dataPort.changePage(direction)) {
       return;
@@ -131,7 +140,7 @@ export function createStatusDetailTranslationTabCoordinator({
       renderItems({
         loading: false,
         hasItems: false,
-        emptyText: error.message || String(error),
+        emptyText: (error as { message?: string } | null)?.message || String(error),
       });
     }
   }

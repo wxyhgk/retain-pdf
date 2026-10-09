@@ -5,12 +5,23 @@ import { resolvePdfjsVendorUrl } from "@/platform/runtime/vendor-url.js";
 // 首次真正用到时再解析，模块加载本身不触碰环境。
 const pdfjsUrl = (path: string) => resolvePdfjsVendorUrl(path);
 
-let pdfjsPromise = null;
+// pdf.js 以运行时 URL 动态加载，这里只声明本模块用到的最小形状。
+type PdfDocumentLike = {
+  numPages?: number;
+  destroy?: () => Promise<void>;
+};
 
-async function loadPdfjs() {
+type PdfjsModuleLike = {
+  GlobalWorkerOptions: { workerSrc: string };
+  getDocument: (params: Record<string, unknown>) => { promise: Promise<PdfDocumentLike> };
+};
+
+let pdfjsPromise: Promise<PdfjsModuleLike> | null = null;
+
+async function loadPdfjs(): Promise<PdfjsModuleLike> {
   if (!pdfjsPromise) {
     pdfjsPromise = import(pdfjsUrl("build/pdf.mjs"))
-      .then((module) => {
+      .then((module: PdfjsModuleLike) => {
         module.GlobalWorkerOptions.workerSrc = pdfjsUrl("build/pdf.worker.mjs");
         return module;
       })
@@ -22,7 +33,7 @@ async function loadPdfjs() {
   return pdfjsPromise;
 }
 
-export async function countPdfPages(file) {
+export async function countPdfPages(file: Blob | null | undefined) {
   if (!file) {
     return 0;
   }

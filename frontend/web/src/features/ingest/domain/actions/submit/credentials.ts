@@ -7,7 +7,7 @@ export async function ensureOcrCredentialsForSubmit({
   ensureOcrCredentialsReady,
   openBrowserCredentialsDialog,
   setText,
-}: EnsureOcrCredentialsForSubmitOptions = {}) {
+}: EnsureOcrCredentialsForSubmitOptions) {
   if (!workflowNeedsCredentials?.(workflow)) {
     return true;
   }
@@ -19,7 +19,7 @@ export async function ensureOcrCredentialsForSubmit({
       }
     },
     onInvalidToken: (result) => {
-      setText("error-box", result.summary || "OCR Provider 凭证校验未通过。");
+      setText("error-box", result?.summary || "OCR Provider 凭证校验未通过。");
       if (!desktopMode) {
         openBrowserCredentialsDialog?.();
       }

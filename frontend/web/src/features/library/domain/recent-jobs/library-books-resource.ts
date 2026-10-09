@@ -31,8 +31,8 @@ export function createLibraryBooksResource({
 }: {
   fetchJobList?: RecentJobsPageFetcher;
   fetchLibraryBookList?: RecentJobsPageFetcher;
-  apiPrefix?: string;
-} = {}) {
+  apiPrefix: string;
+}) {
   return createResource({
     name: "libraryBooks",
     cacheKey: ({

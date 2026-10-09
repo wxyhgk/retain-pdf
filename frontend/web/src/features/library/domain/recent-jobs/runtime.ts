@@ -1,8 +1,10 @@
 import { createRecentJobActions } from "./actions.js";
+import type { RecentJobsPageFetcher } from "./pagination.js";
+import type { RecentJobsReactViewPort } from "../types.js";
 import {
   createActiveLibraryRefreshLoop,
 } from "./active-refresh.js";
-import { createRecentJobsLoader } from "./loader.js";
+import { createRecentJobsLoader, type LibraryBooksResourcePort } from "./loader.js";
 import { createRecentJobsRuntimePatches } from "./runtime-patches.js";
 import {
   createRecentJobsNavigationPort,
@@ -33,43 +35,34 @@ export interface RecentJobsRefreshSchedulerRef {
   scheduleAutoLoadIfNeeded?: () => void;
 }
 
-export interface RecentJobsRuntimeViewPort extends RecentJobsCommitViewPort {
-  renderList?: (options?: RecentJobsRenderListOptions) => void;
-  renderEmpty?: (message?: string, invocationSummary?: RecentJobsInvocationSummary) => void;
-  renderError?: (message?: string, options?: { reset?: boolean }) => void;
-}
+/** 运行时经视图端口发的几个瞬态信号（实现见 ../recent-jobs-react-port.ts）。都是必需的。 */
+export type RecentJobsRuntimeViewPort = Pick<
+  RecentJobsReactViewPort,
+  "renderList" | "renderEmpty" | "renderError" | "renderLoading" | "setLoadMoreLoading"
+>;
 
 export interface CreateRecentJobsRuntimeOptions {
-  fetchJobList?: (
-    apiPrefix?: string,
-    params?: Record<string, unknown>,
-  ) => Promise<unknown>;
+  fetchJobList?: RecentJobsPageFetcher;
   fetchJobPayload?: (
     jobId: string,
     options?: { apiPrefix?: string } | string,
   ) => Promise<LibraryJobItem | Record<string, unknown> | null | undefined>;
-  fetchLibraryBookList?: (
-    apiPrefix?: string,
-    params?: Record<string, unknown>,
-  ) => Promise<unknown>;
+  fetchLibraryBookList?: RecentJobsPageFetcher;
   deleteLibraryBook?: (apiPrefix: string, jobId: string) => Promise<unknown>;
-  apiPrefix?: string;
+  apiPrefix: string;
   currentJobId?: () => string;
   /** 详情弹窗是否正持有当前 job 的展示权（见 active-refresh 的说明）。 */
   detailOwnsCurrentJob?: () => boolean;
   jobRuntimePort?: NavigationJobRuntimePort;
-  activeJobRecoveryPort?: unknown;
+  activeJobRecoveryPort?: { readActiveJobId?: () => string };
   navigationPort?: RecentJobsNavigationPort;
   readerPort?: NavigationReaderPort;
-  homeStatePort?: Pick<HomeStatePort, "setRecentJobsLoadingState">;
-  recentJobsStatePort?: RecentJobsStatePort;
-  libraryBooksResource?: {
-    load?: (...args: unknown[]) => Promise<unknown>;
-    invalidate?: () => void;
-  };
+  homeStatePort: Pick<HomeStatePort, "setRecentJobsLoadingState">;
+  recentJobsStatePort: RecentJobsStatePort;
+  libraryBooksResource?: LibraryBooksResourcePort;
   refreshSchedulerRef?: () => RecentJobsRefreshSchedulerRef | null | undefined;
   stageAdapterPort?: StageAdapterPort;
-  viewPort?: RecentJobsRuntimeViewPort;
+  viewPort: RecentJobsRuntimeViewPort;
 }
 
 export interface RenderCurrentRecentJobsOptions {
@@ -106,7 +99,7 @@ export function createRecentJobsRuntime({
   refreshSchedulerRef,
   stageAdapterPort,
   viewPort,
-}: CreateRecentJobsRuntimeOptions = {}): RecentJobsRuntime {
+}: CreateRecentJobsRuntimeOptions): RecentJobsRuntime {
   let recentJobsLoader: RecentJobsLoader | null = null;
   let activeRefreshLoop: ActiveRefreshLoopPort | null = null;
 
@@ -174,10 +167,10 @@ export function createRecentJobsRuntime({
     recentJobActions,
     runtimePatches,
     activeRefreshLoop: () => activeRefreshLoop,
-    scheduleAutoLoadIfNeeded: () => refreshScheduler()?.scheduleAutoLoadIfNeeded(),
+    scheduleAutoLoadIfNeeded: () => refreshScheduler()?.scheduleAutoLoadIfNeeded?.(),
     homeStatePort,
     recentJobsStatePort,
-    libraryBooksResource: libraryBooksResource as CreateRecentJobsLoaderOptions["libraryBooksResource"],
+    libraryBooksResource,
     viewPort,
   });
 

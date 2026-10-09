@@ -1,29 +1,38 @@
 import { summarizeRuntimeField, firstDefinedValue, stringifyDebugValue } from "@retainpdf/domain/job";
 import { escapeHtml } from "@/platform/utils/html-formatting.js";
+import type { JobLike, JobPayload } from "@retainpdf/domain/job";
+import type { DetailSetText } from "./page-ports.js";
+import { asRecord } from "../dialog/formatters.js";
 
 export { firstDefinedValue, stringifyDebugValue };
 
-export function applyDiagnostics(diagnostics, job, setText) {
+export function applyDiagnostics(
+  diagnostics: Record<string, unknown> | null | undefined,
+  job: JobLike | JobPayload | null | undefined,
+  setText: DetailSetText,
+) {
   if (!diagnostics) {
     return;
   }
-  setText("detail-failure-summary", summarizeRuntimeField(diagnostics.summary || diagnostics.failure_summary || job.final_failure_summary));
-  setText("detail-failure-category", summarizeRuntimeField(diagnostics.category || diagnostics.failure_category || diagnostics.failed_category || job.final_failure_category));
+  setText("detail-failure-summary", summarizeRuntimeField(diagnostics.summary || diagnostics.failure_summary || job?.final_failure_summary));
+  setText("detail-failure-category", summarizeRuntimeField(diagnostics.category || diagnostics.failure_category || diagnostics.failed_category || job?.final_failure_category));
   setText("detail-failure-stage", summarizeRuntimeField(diagnostics.failed_stage || diagnostics.stage || diagnostics.failed_substage));
   setText("detail-failure-root-cause", summarizeRuntimeField(diagnostics.root_cause || diagnostics.detail || diagnostics.raw_excerpt));
   setText("detail-failure-suggestion", summarizeRuntimeField(diagnostics.suggestion));
   setText("detail-failure-retryable", typeof diagnostics.retryable === "boolean" ? (diagnostics.retryable ? "是" : "否") : "-");
 }
 
-export function renderFailureDebugContext(job) {
+export function renderFailureDebugContext(job: JobLike | JobPayload | null | undefined) {
   const container = document.getElementById("detail-failure-debug-context");
   if (!container) {
     return;
   }
-  const failure = job?.failure || {};
-  const diagnostic = job?.failure_diagnostic || {};
-  const rawDiagnostic = failure?.raw_diagnostic || diagnostic?.raw_diagnostic || {};
-  const logTail = Array.isArray(job?.log_tail) ? job.log_tail.filter(Boolean).slice(-8) : [];
+  // failure / failure_diagnostic 的形状在后端间不一致，这里按字段名宽松读取。
+  const failure = asRecord(job?.failure);
+  const diagnostic = asRecord(job?.failure_diagnostic);
+  const rawDiagnostic = asRecord(failure.raw_diagnostic || diagnostic.raw_diagnostic);
+  const logTailSource = job?.log_tail;
+  const logTail = Array.isArray(logTailSource) ? logTailSource.filter(Boolean).slice(-8) : [];
   const rows = [
     ["failed_stage", firstDefinedValue(failure.failed_stage, failure.stage, diagnostic.failed_stage, diagnostic.stage, job?.stage)],
     ["failure_code", firstDefinedValue(failure.failure_code, failure.code, diagnostic.failure_code, diagnostic.code)],

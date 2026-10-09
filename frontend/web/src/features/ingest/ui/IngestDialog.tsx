@@ -87,7 +87,7 @@ export function IngestDialog({
     });
   }
 
-  function handleOpenChange(nextOpen) {
+  function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
       workflowDialog.requestClose();
     }
