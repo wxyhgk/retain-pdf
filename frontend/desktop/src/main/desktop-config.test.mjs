@@ -146,7 +146,14 @@ const fakeExport = {
   translation: { provider: "qwen", model: "qwen3.8-flash", base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1", workers: 30, api_key: "sk-qwen" },
   providers: {
     deepseek: { model: "deepseek-flash", base_url: "https://api.deepseek.com/v1", workers: 50, api_key: null },
-    qwen: { model: "qwen3.8-flash", base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1", workers: 30, api_key: "sk-qwen" },
+    qwen: {
+      model: "qwen3.8-flash",
+      base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      protocol: "openai",
+      thinking: "off",
+      workers: 30,
+      api_key: "sk-qwen",
+    },
     custom: { model: "", base_url: "", workers: 5, api_key: null },
   },
   ocr: { provider: "mineru", tokens: { paddle: null, mineru: "mineru-tok" } },
@@ -167,7 +174,11 @@ test("settings from ~/.retainpdf fill the fields the settings page reads", () =>
     baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     model: "qwen3.8-flash",
     workers: 30,
+    apiProtocol: "openai",
+    thinking: "off",
   });
+  assert.equal(merged.developerConfig.translationProfiles.custom.apiProtocol, "openai", "missing protocol → openai");
+  assert.equal(merged.developerConfig.translationProfiles.custom.thinking, "auto");
 });
 
 test("saving from the settings page becomes ~/.retainpdf changes; legacy top-level keys fill the current profile", () => {
@@ -181,7 +192,14 @@ test("saving from the settings page becomes ~/.retainpdf changes; legacy top-lev
         translationProvider: "deepseek",
         workers: 64,
         translationProfiles: {
-          custom: { apiKey: "", baseUrl: "https://llm.example.com/v1", model: "m1", workers: 4 },
+          custom: {
+            apiKey: "",
+            baseUrl: "https://llm.example.com/v1",
+            model: "m1",
+            workers: 4,
+            apiProtocol: "anthropic",
+            thinking: "nonsense",
+          },
           "made-up": { apiKey: "x" },
         },
       },
@@ -193,6 +211,8 @@ test("saving from the settings page becomes ~/.retainpdf changes; legacy top-lev
   assert.equal(changes["providers.deepseek.workers"], "64");
   assert.equal(changes["providers.custom.base_url"], "https://llm.example.com/v1");
   assert.equal(changes["providers.custom.api_key"], null);
+  assert.equal(changes["providers.custom.protocol"], "anthropic");
+  assert.equal(changes["providers.custom.thinking"], null, "unknown thinking level is cleared back to the default");
   assert.equal(changes["ocr.paddle_token"], "paddle-tok");
   assert.equal(changes["ocr.mineru_token"], null);
   assert.ok(!Object.keys(changes).some((key) => key.includes("made-up")), "unknown providers are ignored");

@@ -76,6 +76,11 @@ class RefineConfig:
     model: str = ""
     base_url: str = ""
     credential_ref: str = ""
+    # 接口协议与思考深度：翻译模型的；审校的留空沿用翻译模型。
+    api_protocol: str = "openai"
+    thinking: str = "auto"
+    reviewer_api_protocol: str = ""
+    reviewer_thinking: str = ""
 
     @property
     def enabled(self) -> bool:
@@ -111,6 +116,10 @@ def refine_config_from_mapping(payload: Mapping[str, Any] | None) -> RefineConfi
         model=_text(data.get("model")),
         base_url=_text(data.get("base_url")),
         credential_ref=_text(data.get("credential_ref")),
+        api_protocol=_text(data.get("api_protocol")) or "openai",
+        thinking=_text(data.get("thinking")) or "auto",
+        reviewer_api_protocol=_text(data.get("reviewer_api_protocol")),
+        reviewer_thinking=_text(data.get("reviewer_thinking")),
     )
 
 

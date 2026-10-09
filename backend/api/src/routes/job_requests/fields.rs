@@ -63,6 +63,10 @@ pub(super) fn apply_multipart_request_field(
         "reviewer_credential_ref" => {
             request.translation.reviewer_credential_ref = value.to_string()
         }
+        "api_protocol" => request.translation.api_protocol = value.to_string(),
+        "thinking" => request.translation.thinking = value.to_string(),
+        "reviewer_api_protocol" => request.translation.reviewer_api_protocol = value.to_string(),
+        "reviewer_thinking" => request.translation.reviewer_thinking = value.to_string(),
         "api_key" => request.translation.api_key = value.to_string(),
         "credential_ref" => request.translation.credential_ref = value.to_string(),
         "model" => request.translation.model = value.to_string(),

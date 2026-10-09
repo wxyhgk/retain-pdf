@@ -21,6 +21,8 @@ type TranslationProfileElements = {
   modelBaseUrlInput?: { value?: string } | null;
   modelNameInput?: { value?: string } | null;
   translationWorkersInput?: { value?: string } | null;
+  translationProtocolSelect?: { value?: string } | null;
+  translationThinkingSelect?: { value?: string } | null;
 };
 
 export function createTranslationProfiles({
@@ -81,6 +83,8 @@ export function createTranslationProfiles({
         baseUrl: elements.modelBaseUrlInput?.value || "",
         model: elements.modelNameInput?.value || "",
         workers: elements.translationWorkersInput?.value || "",
+        apiProtocol: elements.translationProtocolSelect?.value || "",
+        thinking: elements.translationThinkingSelect?.value || "",
       },
     );
     if (currentTranslationProvider === "custom") {
@@ -106,6 +110,8 @@ export function createTranslationProfiles({
     }
     if (elements.modelNameInput) elements.modelNameInput.value = profile.model;
     if (elements.translationWorkersInput) elements.translationWorkersInput.value = `${profile.workers}`;
+    if (elements.translationProtocolSelect) elements.translationProtocolSelect.value = profile.apiProtocol;
+    if (elements.translationThinkingSelect) elements.translationThinkingSelect.value = profile.thinking;
     setTranslationProvider?.(provider);
   }
 

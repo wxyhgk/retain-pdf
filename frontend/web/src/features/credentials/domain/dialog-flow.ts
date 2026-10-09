@@ -24,6 +24,8 @@ type DialogFlowElements = {
   modelBaseUrlInput?: { value?: string } | null;
   modelNameInput?: { value?: string } | null;
   translationWorkersInput?: { value?: string } | null;
+  translationProtocolSelect?: { value?: string } | null;
+  translationThinkingSelect?: { value?: string } | null;
   mathModeSelect?: { value?: string } | null;
 };
 
@@ -129,6 +131,8 @@ export function createCredentialDialogFlow({
         baseUrl: profile.baseUrl,
         model: profile.model,
         workers: profile.workers,
+        apiProtocol: profile.apiProtocol,
+        thinking: profile.thinking,
       },
       defaultModelBaseUrl,
       defaultModelApiKey,

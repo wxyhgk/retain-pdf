@@ -191,8 +191,20 @@ def _connections(cfg: RefineConfig) -> tuple[dict[str, Any], dict[str, Any], str
             reviewer_api_key=reviewer_key,
         )
     )
-    reviewer_info = {"model": reviewer.model, "base_url": reviewer.base_url, "inherited": reviewer.inherited}
-    fixer_info = {"model": cfg.model, "base_url": cfg.base_url, "inherited": False}
+    reviewer_info = {
+        "model": reviewer.model,
+        "base_url": reviewer.base_url,
+        "inherited": reviewer.inherited,
+        "api_protocol": cfg.reviewer_api_protocol or cfg.api_protocol,
+        "thinking": cfg.reviewer_thinking or cfg.thinking,
+    }
+    fixer_info = {
+        "model": cfg.model,
+        "base_url": cfg.base_url,
+        "inherited": False,
+        "api_protocol": cfg.api_protocol,
+        "thinking": cfg.thinking,
+    }
     return reviewer_info, fixer_info, reviewer.api_key, translation_key
 
 
@@ -666,12 +678,25 @@ def _refine(
     else:
         if reviewer_key and reviewer_info["model"]:
             review_chat = RefineChat(
-                provider_chat_fn(model=reviewer_info["model"], base_url=reviewer_info["base_url"], api_key=reviewer_key),
+                provider_chat_fn(
+                    model=reviewer_info["model"],
+                    base_url=reviewer_info["base_url"],
+                    api_key=reviewer_key,
+                    protocol=reviewer_info["api_protocol"],
+                    thinking=reviewer_info["thinking"],
+                ),
                 ledger,
             )
         if translation_key and cfg.model:
             fixer_chat = RefineChat(
-                provider_chat_fn(model=cfg.model, base_url=cfg.base_url, api_key=translation_key), ledger
+                provider_chat_fn(
+                    model=cfg.model,
+                    base_url=cfg.base_url,
+                    api_key=translation_key,
+                    protocol=cfg.api_protocol,
+                    thinking=cfg.thinking,
+                ),
+                ledger,
             )
         if review_chat is None:
             errors.append({"phase": "review", "message": "reviewer model or credential unavailable; LLM review skipped"})

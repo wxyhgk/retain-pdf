@@ -37,6 +37,8 @@ fn is_builtin_default(path: &str, value: &str) -> bool {
         "model" => value == provider.default_model,
         "base_url" => value.trim_end_matches('/') == provider.base_url,
         "workers" => value.parse::<u64>().ok() == Some(provider.default_workers),
+        "protocol" => value == provider.protocol,
+        "thinking" => value == crate::providers::DEFAULT_THINKING,
         _ => false,
     }
 }
@@ -121,6 +123,8 @@ impl ConfigHome {
                 json!({
                     "model": file_text(&config, &format!("{base}.model")).unwrap_or_else(|| provider.default_model.to_string()),
                     "base_url": file_text(&config, &format!("{base}.base_url")).unwrap_or_else(|| provider.base_url.to_string()),
+                    "protocol": file_text(&config, &format!("{base}.protocol")).unwrap_or_else(|| provider.protocol.to_string()),
+                    "thinking": file_text(&config, &format!("{base}.thinking")).unwrap_or_else(|| crate::providers::DEFAULT_THINKING.to_string()),
                     "workers": file_text(&config, &format!("{base}.workers")).and_then(|w| w.parse::<u64>().ok()).unwrap_or(provider.default_workers),
                     "api_key": secret(file_text(&credentials, &format!("{base}.api_key"))),
                 }),
@@ -139,6 +143,8 @@ impl ConfigHome {
                 "provider": settings.translation.provider,
                 "model": settings.translation.model,
                 "base_url": settings.translation.base_url,
+                "protocol": settings.translation.protocol,
+                "thinking": settings.translation.thinking,
                 "workers": settings.translation.workers,
                 "batch_size": settings.translation_batch_size,
                 "api_key": secret(settings.translation.api_key.clone()),
@@ -149,6 +155,8 @@ impl ConfigHome {
                 "provider": settings.assistant.provider,
                 "model": settings.assistant.model,
                 "base_url": settings.assistant.base_url,
+                "protocol": settings.assistant.protocol,
+                "thinking": settings.assistant.thinking,
                 "api_key": secret(settings.assistant.api_key.clone()),
                 "max_tool_rounds": settings.assistant_max_tool_rounds,
             },

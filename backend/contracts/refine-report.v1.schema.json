@@ -62,7 +62,9 @@
       "properties": {
         "model": {"type": "string"},
         "base_url": {"type": "string"},
-        "inherited": {"type": "boolean", "description": "true when the reviewer settings all fell back to the translation model."}
+        "inherited": {"type": "boolean", "description": "true when the reviewer settings all fell back to the translation model."},
+        "api_protocol": {"type": "string", "enum": ["openai", "anthropic"], "description": "Wire protocol used for this model. Absent in reports written before protocols were configurable."},
+        "thinking": {"type": "string", "enum": ["auto", "off", "low", "medium", "high", "max"], "description": "Requested thinking depth. Absent in older reports."}
       }
     },
     "RefineLimits": {

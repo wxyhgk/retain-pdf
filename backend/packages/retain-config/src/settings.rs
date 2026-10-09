@@ -9,7 +9,7 @@ use toml_edit::{DocumentMut, Item};
 
 use crate::home::{expand_home, ConfigHome};
 use crate::keys::{describe_key, parse_value, Store};
-use crate::providers::{model_provider, DEFAULT_MODEL_PROVIDER, DEFAULT_OCR_PROVIDER, OCR_PROVIDERS};
+use crate::providers::{model_provider, DEFAULT_MODEL_PROVIDER, DEFAULT_OCR_PROVIDER, DEFAULT_THINKING, OCR_PROVIDERS};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -25,6 +25,10 @@ pub struct ModelConnection {
     pub provider: String,
     pub base_url: String,
     pub model: String,
+    /// `openai` / `anthropic`。
+    pub protocol: String,
+    /// `auto` / `off` / `low` / `medium` / `high` / `max`。
+    pub thinking: String,
     pub workers: u64,
     #[serde(skip_serializing)]
     pub api_key: Option<String>,
@@ -55,6 +59,8 @@ pub const ENV_OVERRIDES: &[(&str, &str)] = &[
     ("translation.provider", "RETAINPDF_TRANSLATION_PROVIDER"),
     ("translation.model", "RETAINPDF_TRANSLATION_MODEL"),
     ("translation.base_url", "RETAINPDF_TRANSLATION_BASE_URL"),
+    ("translation.protocol", "RETAINPDF_TRANSLATION_PROTOCOL"),
+    ("translation.thinking", "RETAINPDF_TRANSLATION_THINKING"),
     ("translation.workers", "RETAINPDF_TRANSLATION_WORKERS"),
     ("translation.api_key", "RETAINPDF_TRANSLATION_API_KEY"),
     ("ocr.provider", "RETAINPDF_OCR_PROVIDER"),
@@ -138,13 +144,17 @@ impl Resolver<'_> {
         let model = self.or_default(&format!("{prefix}.model"), model, builtin.default_model);
         let base_url = self.pick(&format!("{prefix}.base_url"), &format!("{base}.base_url"))?;
         let base_url = self.or_default(&format!("{prefix}.base_url"), base_url, builtin.base_url);
+        let protocol = self.pick(&format!("{prefix}.protocol"), &format!("{base}.protocol"))?;
+        let protocol = self.or_default(&format!("{prefix}.protocol"), protocol, builtin.protocol).to_ascii_lowercase();
+        let thinking = self.pick(&format!("{prefix}.thinking"), &format!("{base}.thinking"))?;
+        let thinking = self.or_default(&format!("{prefix}.thinking"), thinking, DEFAULT_THINKING).to_ascii_lowercase();
         let workers = self.number(&format!("{prefix}.workers"), &format!("{base}.workers"))?;
         let workers = workers.unwrap_or_else(|| {
             self.sources.insert(format!("{prefix}.workers"), Source::Default);
             builtin.default_workers
         });
         let api_key = self.pick(&format!("{prefix}.api_key"), &format!("{base}.api_key"))?;
-        Ok(ModelConnection { provider: provider.to_string(), base_url, model, workers, api_key })
+        Ok(ModelConnection { provider: provider.to_string(), base_url, model, protocol, thinking, workers, api_key })
     }
 }
 
@@ -167,7 +177,12 @@ impl Settings {
         let reviewer = match r.pick("translation.reviewer.provider", "translation.reviewer.provider")? {
             Some(reviewer_provider) => {
                 let model = r.pick("translation.reviewer.model", "translation.reviewer.model")?;
-                Some(r.connection("translation.reviewer", &reviewer_provider.to_ascii_lowercase(), model)?)
+                let mut reviewer = r.connection("translation.reviewer", &reviewer_provider.to_ascii_lowercase(), model)?;
+                // 审校可以和翻译用同一家、不同的思考深度。
+                if let Some(thinking) = r.pick("translation.reviewer.thinking", "translation.reviewer.thinking")? {
+                    reviewer.thinking = thinking.to_ascii_lowercase();
+                }
+                Some(reviewer)
             }
             None => None,
         };
@@ -273,6 +288,27 @@ mod tests {
         let bad_env = |name: &str| (name == "RETAINPDF_TRANSLATION_WORKERS").then(|| "lots".to_string());
         let error = Settings::resolve(&config, &credentials, &bad_env).unwrap_err().to_string();
         assert!(error.contains("RETAINPDF_TRANSLATION_WORKERS"), "{error}");
+    }
+
+    #[test]
+    fn protocol_and_thinking_have_per_provider_defaults() {
+        let none = |_: &str| None;
+        let empty = doc("");
+        let defaults = Settings::resolve(&empty, &empty, &none).unwrap();
+        assert_eq!((defaults.translation.protocol.as_str(), defaults.translation.thinking.as_str()), ("openai", "auto"));
+
+        let config = doc(
+            "[translation]\nprovider = \"anthropic\"\n[translation.reviewer]\nprovider = \"anthropic\"\nthinking = \"high\"\n[providers.anthropic]\nthinking = \"off\"\n[providers.custom]\nprotocol = \"anthropic\"\n",
+        );
+        let settings = Settings::resolve(&config, &empty, &none).unwrap();
+        assert_eq!(settings.translation.protocol, "anthropic", "Anthropic 默认走原生协议");
+        assert_eq!(settings.translation.thinking, "off");
+        let reviewer = settings.reviewer.unwrap();
+        assert_eq!((reviewer.protocol.as_str(), reviewer.thinking.as_str()), ("anthropic", "high"));
+
+        let env = |name: &str| (name == "RETAINPDF_TRANSLATION_THINKING").then(|| "deep".to_string());
+        let error = Settings::resolve(&config, &empty, &env).unwrap_err().to_string();
+        assert!(error.contains("RETAINPDF_TRANSLATION_THINKING"), "{error}");
     }
 
     #[test]

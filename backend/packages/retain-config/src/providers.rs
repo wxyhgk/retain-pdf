@@ -1,6 +1,6 @@
 //! 内置的服务商(与前端 `platform/config/providers.ts` 一致)。
 
-/// 翻译(以及 AI 助手)用的大模型服务商。都走 OpenAI 兼容接口。
+/// 翻译(以及 AI 助手)用的大模型服务商。`protocol` 是默认的接口协议,可以在配置里改。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ModelProvider {
     pub id: &'static str,
@@ -10,6 +10,8 @@ pub struct ModelProvider {
     pub default_model: &'static str,
     pub default_workers: u64,
     pub max_workers: u64,
+    /// 默认接口协议:`openai`(/chat/completions)或 `anthropic`(/messages)。
+    pub protocol: &'static str,
 }
 
 pub const MODEL_PROVIDERS: &[ModelProvider] = &[
@@ -20,6 +22,7 @@ pub const MODEL_PROVIDERS: &[ModelProvider] = &[
         default_model: "deepseek-flash",
         default_workers: 50,
         max_workers: 100,
+        protocol: "openai",
     },
     ModelProvider {
         id: "qwen",
@@ -28,6 +31,7 @@ pub const MODEL_PROVIDERS: &[ModelProvider] = &[
         default_model: "qwen3.8-flash",
         default_workers: 20,
         max_workers: 50,
+        protocol: "openai",
     },
     ModelProvider {
         id: "openai",
@@ -36,6 +40,7 @@ pub const MODEL_PROVIDERS: &[ModelProvider] = &[
         default_model: "gpt-5.6-luna",
         default_workers: 50,
         max_workers: 100,
+        protocol: "openai",
     },
     ModelProvider {
         id: "anthropic",
@@ -44,6 +49,7 @@ pub const MODEL_PROVIDERS: &[ModelProvider] = &[
         default_model: "claude-sonnet-5",
         default_workers: 50,
         max_workers: 100,
+        protocol: "anthropic",
     },
     ModelProvider {
         id: "zhipu",
@@ -52,6 +58,7 @@ pub const MODEL_PROVIDERS: &[ModelProvider] = &[
         default_model: "GLM-5.3-Flash",
         default_workers: 5,
         max_workers: 50,
+        protocol: "openai",
     },
     ModelProvider {
         id: "custom",
@@ -60,10 +67,16 @@ pub const MODEL_PROVIDERS: &[ModelProvider] = &[
         default_model: "",
         default_workers: 5,
         max_workers: 100,
+        protocol: "openai",
     },
 ];
 
 pub const DEFAULT_MODEL_PROVIDER: &str = "deepseek";
+
+/// 接口协议与思考深度的可选值(与任务契约的 `translation.api_protocol` / `translation.thinking` 一致)。
+pub const API_PROTOCOLS: &[&str] = &["openai", "anthropic"];
+pub const THINKING_LEVELS: &[&str] = &["auto", "off", "low", "medium", "high", "max"];
+pub const DEFAULT_THINKING: &str = "auto";
 
 pub fn model_provider(id: &str) -> Option<&'static ModelProvider> {
     MODEL_PROVIDERS.iter().find(|p| p.id == id)

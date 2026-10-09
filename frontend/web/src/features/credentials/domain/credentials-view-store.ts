@@ -24,6 +24,8 @@ export type CredentialsElementsRef = {
   modelBaseUrlInput: HTMLInputElement | null;
   modelNameInput: HTMLInputElement | null;
   translationWorkersInput: HTMLInputElement | null;
+  translationProtocolSelect: HTMLSelectElement | null;
+  translationThinkingSelect: HTMLSelectElement | null;
   mathModeSelect: HTMLSelectElement | null;
   tokenInputs: Record<string, HTMLInputElement | null | undefined>;
 };
@@ -155,6 +157,8 @@ export function createCredentialsViewFeature({
     modelBaseUrlInput: null,
     modelNameInput: null,
     translationWorkersInput: null,
+    translationProtocolSelect: null,
+    translationThinkingSelect: null,
     mathModeSelect: null,
     tokenInputs: {}, // { [providerId]: HTMLInputElement }
   };
@@ -167,6 +171,8 @@ export function createCredentialsViewFeature({
       modelBaseUrlInput: elementsRef.modelBaseUrlInput,
       modelNameInput: elementsRef.modelNameInput,
       translationWorkersInput: elementsRef.translationWorkersInput,
+      translationProtocolSelect: elementsRef.translationProtocolSelect,
+      translationThinkingSelect: elementsRef.translationThinkingSelect,
       mathModeSelect: elementsRef.mathModeSelect,
     };
   }

@@ -191,7 +191,7 @@ def resolve_credential_ref(credential_ref: str) -> str:
 
 
 def _preparation_and_reviewer_fields(payload: dict[str, Any]) -> dict[str, str]:
-    """三种 spec（translate / provider / book）共用的译前准备与 reviewer 字段。
+    """三种 spec（translate / provider / book）共用的译前准备、reviewer、接口协议与思考深度字段。
 
     preparation 在这里只做 strip/lower，取值归一化（未知值 -> off）由
     translate 层的 normalize_preparation_mode 负责，与 context_mode 等字段一致。
@@ -201,6 +201,11 @@ def _preparation_and_reviewer_fields(payload: dict[str, Any]) -> dict[str, str]:
         "reviewer_model": str(payload.get("reviewer_model", "") or "").strip(),
         "reviewer_base_url": str(payload.get("reviewer_base_url", "") or "").strip(),
         "reviewer_credential_ref": str(payload.get("reviewer_credential_ref", "") or ""),
+        # 接口协议与思考深度。旧 spec 没有：openai / auto（与以前的行为一致）；审校留空沿用翻译模型。
+        "api_protocol": str(payload.get("api_protocol", "openai") or "openai").strip().lower(),
+        "thinking": str(payload.get("thinking", "auto") or "auto").strip().lower(),
+        "reviewer_api_protocol": str(payload.get("reviewer_api_protocol", "") or "").strip().lower(),
+        "reviewer_thinking": str(payload.get("reviewer_thinking", "") or "").strip().lower(),
     }
 
 
@@ -240,6 +245,10 @@ class TranslateStageParams:
     reviewer_model: str
     reviewer_base_url: str
     reviewer_credential_ref: str
+    api_protocol: str
+    thinking: str
+    reviewer_api_protocol: str
+    reviewer_thinking: str
 
 
 @dataclass(frozen=True)
@@ -464,6 +473,9 @@ class RenderStageRefineParams:
     reviewer_model: str = ""
     reviewer_base_url: str = ""
     reviewer_credential_ref: str = ""
+    # 审校模型的协议与思考深度；空 = 沿用翻译模型。
+    reviewer_api_protocol: str = ""
+    reviewer_thinking: str = ""
 
     @property
     def enabled(self) -> bool:
@@ -485,6 +497,8 @@ class RenderStageRefineParams:
             reviewer_model=str(payload.get("reviewer_model", "") or "").strip(),
             reviewer_base_url=str(payload.get("reviewer_base_url", "") or "").strip(),
             reviewer_credential_ref=str(payload.get("reviewer_credential_ref", "") or "").strip(),
+            reviewer_api_protocol=str(payload.get("reviewer_api_protocol", "") or "").strip().lower(),
+            reviewer_thinking=str(payload.get("reviewer_thinking", "") or "").strip().lower(),
         )
 
     def as_dict(self) -> dict[str, Any]:
@@ -498,6 +512,8 @@ class RenderStageRefineParams:
             "reviewer_model": self.reviewer_model,
             "reviewer_base_url": self.reviewer_base_url,
             "reviewer_credential_ref": self.reviewer_credential_ref,
+            "reviewer_api_protocol": self.reviewer_api_protocol,
+            "reviewer_thinking": self.reviewer_thinking,
         }
 
 
@@ -523,6 +539,9 @@ class RenderStageParams:
     credential_ref: str
     refine: RenderStageRefineParams = field(default_factory=RenderStageRefineParams)
     engine: str = DEFAULT_RENDER_ENGINE
+    # 翻译模型的接口协议与思考深度（精修用）。旧 spec 没有：openai / auto。
+    api_protocol: str = "openai"
+    thinking: str = "auto"
 
 
 @dataclass(frozen=True)
@@ -615,6 +634,8 @@ class RenderStageSpec:
             credential_ref=str(params_payload.get("credential_ref", "") or ""),
             refine=RenderStageRefineParams.from_payload(params_payload.get("refine")),
             engine=normalize_render_engine(params_payload.get("engine")),
+            api_protocol=str(params_payload.get("api_protocol", "openai") or "openai").strip().lower(),
+            thinking=str(params_payload.get("thinking", "auto") or "auto").strip().lower(),
         )
         return cls(
             schema_version=schema_version,
@@ -685,6 +706,10 @@ class ProviderStageTranslationParams:
     reviewer_model: str
     reviewer_base_url: str
     reviewer_credential_ref: str
+    api_protocol: str
+    thinking: str
+    reviewer_api_protocol: str
+    reviewer_thinking: str
 
 
 @dataclass(frozen=True)
@@ -926,6 +951,10 @@ class BookStageTranslationParams:
     reviewer_model: str
     reviewer_base_url: str
     reviewer_credential_ref: str
+    api_protocol: str
+    thinking: str
+    reviewer_api_protocol: str
+    reviewer_thinking: str
 
 
 @dataclass(frozen=True)

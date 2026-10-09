@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 from types import SimpleNamespace
 
+from retainpdf_pipeline.translate.llm.shared.model_wire import register_stage_connections
 from retainpdf_pipeline.foundation.shared.stage_specs import DEFAULT_RENDER_ENGINE
 from retainpdf_pipeline.foundation.config import layout
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
@@ -35,6 +36,16 @@ def parse_args() -> argparse.Namespace:
 
 
 def _args_from_spec(spec: BookStageSpec) -> SimpleNamespace:
+    register_stage_connections(
+        model=spec.translation.model,
+        base_url=spec.translation.base_url,
+        api_protocol=spec.translation.api_protocol,
+        thinking=spec.translation.thinking,
+        reviewer_model=spec.translation.reviewer_model,
+        reviewer_base_url=spec.translation.reviewer_base_url,
+        reviewer_api_protocol=spec.translation.reviewer_api_protocol,
+        reviewer_thinking=spec.translation.reviewer_thinking,
+    )
     job_dirs = spec.job_dirs
     return SimpleNamespace(
         job_root=str(job_dirs.root),

@@ -667,7 +667,7 @@ def test_render_spec_refine_is_normalized(tmp_path: Path) -> None:
     assert refine.as_dict() == {
         "mode": "review_and_fix", "trigger": "manual", "start_page": 3, "end_page": None,
         "max_items": 0, "max_tokens": 400000, "reviewer_model": "r", "reviewer_base_url": "",
-        "reviewer_credential_ref": "env:REVIEWER_KEY",
+        "reviewer_credential_ref": "env:REVIEWER_KEY", "reviewer_api_protocol": "", "reviewer_thinking": "",
     }
     bogus = RenderStageRefineParams.from_payload({"mode": "rewrite_everything", "trigger": "sometimes"})
     assert (bogus.mode, bogus.trigger) == ("off", "auto")
@@ -745,7 +745,13 @@ def test_render_spec_refine_runs_end_to_end_with_mock_model(tmp_path: Path) -> N
     report = refine_translation_for_render_spec(spec_path, chat_fn=MockModel())
 
     assert report["mode"] == "review_only"
-    assert report["models"]["reviewer"] == {"model": "m", "base_url": "https://example.invalid/v1", "inherited": True}
+    assert report["models"]["reviewer"] == {
+        "model": "m",
+        "base_url": "https://example.invalid/v1",
+        "inherited": True,
+        "api_protocol": "openai",
+        "thinking": "auto",
+    }
     events = (tmp_path / "logs" / "pipeline_events.jsonl").read_text(encoding="utf-8")
     assert '"substage": "refining"' in events
 
@@ -957,3 +963,23 @@ def test_review_only_never_applies_rule_fixes(tmp_path: Path) -> None:
     report = run_refine_for_render(tmp_path, translated, _config(mode="review_only"), chat_fn=MockModel())
     assert "Eqs. (5) to (7)" in _item(translated, "p002-b002")["translated_text"]
     assert report["fixes"] == []
+
+
+def test_refine_reviewer_inherits_protocol_and_thinking_unless_set() -> None:
+    from retainpdf_pipeline.translate.workflow.refine import _connections
+
+    cfg = refine_config_from_mapping({
+        "mode": "review_only", "model": "m", "base_url": "https://x.test/v1",
+        "api_protocol": "anthropic", "thinking": "off",
+    })
+    reviewer, fixer, _, _ = _connections(cfg)
+    assert (reviewer["api_protocol"], reviewer["thinking"]) == ("anthropic", "off")
+    assert (fixer["api_protocol"], fixer["thinking"]) == ("anthropic", "off")
+
+    cfg = refine_config_from_mapping({
+        "mode": "review_only", "model": "m", "base_url": "https://x.test/v1",
+        "api_protocol": "anthropic", "thinking": "off", "reviewer_thinking": "high",
+    })
+    reviewer, fixer, _, _ = _connections(cfg)
+    assert (reviewer["api_protocol"], reviewer["thinking"]) == ("anthropic", "high")
+    assert fixer["thinking"] == "off"

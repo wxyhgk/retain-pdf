@@ -77,6 +77,7 @@ export const CREATE_JOB_SECTION_FIELDS: Readonly<
   translation: [
     "accepted_ambiguous_request_risk",
     "api_key",
+    "api_protocol",
     "base_url",
     "batch_size",
     "classify_batch_size",
@@ -102,12 +103,15 @@ export const CREATE_JOB_SECTION_FIELDS: Readonly<
     "refine_max_items",
     "refine_max_tokens",
     "reviewer_api_key",
+    "reviewer_api_protocol",
     "reviewer_base_url",
     "reviewer_credential_ref",
     "reviewer_model",
+    "reviewer_thinking",
     "rule_profile_name",
     "skip_title_translation",
     "start_page",
+    "thinking",
     "workers",
   ],
 };

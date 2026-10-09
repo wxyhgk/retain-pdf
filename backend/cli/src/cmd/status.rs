@@ -98,6 +98,7 @@ pub fn run(ctx: &Ctx) -> Result<ExitCode> {
         "backend": backend_summary(ctx),
         "translation": settings.as_ref().ok().map(|s| json!({
             "provider": s.translation.provider, "model": s.translation.model,
+            "protocol": s.translation.protocol, "thinking": s.translation.thinking,
             "workers": s.translation.workers, "api_key": s.translation.api_key.is_some(),
         })),
         "ocr": settings.as_ref().ok().map(|s| json!({ "provider": s.ocr_provider, "token": s.ocr_token.is_some() })),
@@ -134,7 +135,10 @@ pub fn run(ctx: &Ctx) -> Result<ExitCode> {
     match &settings {
         Ok(s) => {
             let key = if s.translation.api_key.is_some() { "已填 API Key" } else { "没填 API Key" };
-            println!("翻译      {} · {} · 并发 {} · {key}", s.translation.provider, s.translation.model, s.translation.workers);
+            println!(
+                "翻译      {} · {} · {} 协议 · 思考 {} · 并发 {} · {key}",
+                s.translation.provider, s.translation.model, s.translation.protocol, s.translation.thinking, s.translation.workers
+            );
             let token = if s.ocr_token.is_some() { "已填 token" } else { "没填 token" };
             println!("OCR       {} · {token}", s.ocr_provider);
         }

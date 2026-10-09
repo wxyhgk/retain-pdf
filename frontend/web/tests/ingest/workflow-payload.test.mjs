@@ -73,6 +73,20 @@ test("buildTranslationPayload uses injected glossary and credential ref without 
   assert.equal(payload.model, "deepseek-chat");
   assert.equal(payload.base_url, "https://api.deepseek.com");
   assert.equal(payload.skip_title_translation, false);
+  // 没设置过时用默认协议和自动思考，和以前发出去的请求等价。
+  assert.equal(payload.api_protocol, "openai");
+  assert.equal(payload.thinking, "auto");
+});
+
+test("buildTranslationPayload sends the configured protocol and thinking depth", () => {
+  const payload = buildTranslationPayload({
+    developerConfig: { ...developerConfig(), apiProtocol: "anthropic", thinking: "high" },
+    translationCredentialRef: "cred_translation",
+    selectedGlossaryId: "",
+    constants,
+  });
+  assert.equal(payload.api_protocol, "anthropic");
+  assert.equal(payload.thinking, "high");
 });
 
 // glossary_id 的空串是**用户的选择**：下拉里「不使用术语表」这个选项的 value

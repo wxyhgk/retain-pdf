@@ -445,6 +445,22 @@
         "reviewer_credential_ref": {
           "type": "string"
         },
+        "api_protocol": {
+          "type": "string",
+          "description": "TRANSLATION_API_PROTOCOLS：openai / anthropic。"
+        },
+        "thinking": {
+          "type": "string",
+          "description": "TRANSLATION_THINKING_LEVELS：auto / off / low / medium / high / max。"
+        },
+        "reviewer_api_protocol": {
+          "type": "string",
+          "description": "留空沿用 api_protocol。"
+        },
+        "reviewer_thinking": {
+          "type": "string",
+          "description": "留空沿用 thinking。"
+        },
         "start_page": {
           "type": "integer"
         },

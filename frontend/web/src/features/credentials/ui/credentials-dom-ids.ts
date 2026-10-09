@@ -34,6 +34,8 @@ export const CREDENTIAL_DOM_IDS = {
     modelBaseUrl: "browser-model-base-url",
     modelName: "browser-model-name",
     translationWorkers: "browser-translation-workers",
+    translationProtocol: "browser-translation-protocol",
+    translationThinking: "browser-translation-thinking",
     mathMode: "browser-job-math-mode",
     deepSeekValidateButton: "browser-deepseek-validate-btn",
     deepSeekTopUpLink: "browser-deepseek-top-up-link",

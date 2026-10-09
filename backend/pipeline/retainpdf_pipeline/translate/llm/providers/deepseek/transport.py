@@ -45,8 +45,10 @@ _TRANSPORT_RETRY_MARKERS = (
     "bad gateway",
     "gateway timeout",
     "too many requests",
+    "overloaded",
 )
-_TRANSPORT_STATUS_CODES = {408, 429, 500, 502, 503, 504}
+# 529：Anthropic 的「服务过载」。
+_TRANSPORT_STATUS_CODES = {408, 429, 500, 502, 503, 504, 529}
 # 400/401/402/403 must fail fast: 402 is quota-exhausted (recharge hint),
 # 401/403 are auth errors, 400 is a bad request. None of them may burn retries.
 _NON_RETRYABLE_STATUS_CODES = frozenset(_resilience.NON_RETRYABLE_STATUS_CODES)
