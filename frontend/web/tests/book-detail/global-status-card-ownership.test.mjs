@@ -21,18 +21,14 @@ function fakeServices(cardSnapshot) {
 async function mountProgressPanel(dom, { cardSnapshot, props }) {
   const { createRoot } = await import("react-dom/client");
   const React = await import("react");
-  const { HomeShellProviders } = await import("../../src/ui/context/home-services-context.js");
+  const { withHomeProviders } = await import("../helpers/home-providers.mjs");
   const { BookTranslateProgressPanel } = await import(
     "../../src/features/book-detail/ui/panels/translate/TranslateProgress.js"
   );
   const host = dom.window.document.createElement("div");
   dom.window.document.body.appendChild(host);
   const root = createRoot(host);
-  root.render(React.createElement(
-    HomeShellProviders,
-    { services: fakeServices(cardSnapshot) },
-    React.createElement(BookTranslateProgressPanel, props),
-  ));
+  root.render(await withHomeProviders(React, fakeServices(cardSnapshot), React.createElement(BookTranslateProgressPanel, props)));
   const button = await waitFor(
     () => host.querySelector(".home-book-live-translation-entry"),
     "「查看实时译文」就位",

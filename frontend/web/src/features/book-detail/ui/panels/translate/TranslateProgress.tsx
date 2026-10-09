@@ -6,7 +6,6 @@
 import { useEffect } from "react";
 import { ArrowUpRight, Radio } from "lucide-react";
 import {
-  useHomeLibrary,
   useHomeStatusCard,
   useHomeStatusDetail,
 } from "@/ui/context/home-services-context.js";
@@ -17,6 +16,7 @@ import {
   isLibraryOnlyItem,
 } from "@/features/library/domain.js";
 import { isActiveJobStatus } from "@retainpdf/domain/job";
+import { useLibraryServices } from "@/features/library/index.js";
 
 
 function resolveJobId(item: LibraryCardItem = {}) {
@@ -54,7 +54,7 @@ export function BookTranslateProgressPanel({
   onOpenLiveReader,
   documentJobIds = [],
 }: BookTranslateProgressPanelProps) {
-  const library = useHomeLibrary();
+  const library = useLibraryServices();
   const actions = library?.actions;
   const { store: statusCardStore } = useHomeStatusCard();
   const statusDetail = useHomeStatusDetail();

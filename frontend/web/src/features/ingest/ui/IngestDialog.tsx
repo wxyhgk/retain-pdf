@@ -31,12 +31,12 @@ import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import {
   useHomeBridge,
   useHomeDialogStore,
-  useHomeLibrary,
   useHomeUploadStatePort,
   useHomeWorkflowDialog,
 } from "@/ui/context/home-services-context.js";
 import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { WorkflowPanel } from "./WorkflowPanel.jsx";
+import { useLibraryServices } from "@/features/library/index.js";
 
 /** 提交表单的结果：status 为 submitted / blocked / 其它失败态。 */
 type SubmitFormResult = {
@@ -53,7 +53,7 @@ export function IngestDialog({
 } = {}) {
   const dialogStore = useHomeDialogStore();
   const uploadStatePort = useHomeUploadStatePort();
-  const library = useHomeLibrary();
+  const library = useLibraryServices();
   const workflowDialog = useHomeWorkflowDialog();
   const bridge = useHomeBridge();
   const dialog = useStoreSnapshot(dialogStore);

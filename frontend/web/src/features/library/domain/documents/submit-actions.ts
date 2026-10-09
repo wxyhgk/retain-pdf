@@ -95,7 +95,7 @@ export function createDocumentSubmitActions({
   // 统一提交入口：仅按 workflow 分流，不改载荷组装。
   async function submitDocument(
     documentId?: string | null,
-    payload: TranslateDocumentPayload & OcrDocumentPayload = {},
+    payload: TranslateDocumentPayload | OcrDocumentPayload = {},
   ): Promise<JobSubmissionView | null> {
     const workflow = `${(payload as { workflow?: string })?.workflow || ""}`.trim().toLowerCase();
     if (workflow === "ocr") {

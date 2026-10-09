@@ -209,6 +209,11 @@ export type LibraryController = {
     documentId?: string | null,
     payload?: OcrDocumentPayload,
   ) => Promise<JobSubmissionView | null>;
+  /** 统一提交入口：payload.workflow==="ocr" 走 ocrDocument，否则 translateDocument。 */
+  submitDocument: (
+    documentId?: string | null,
+    payload?: TranslateDocumentPayload | OcrDocumentPayload,
+  ) => Promise<JobSubmissionView | null>;
   getDocumentJobs: (
     documentId?: string | null,
   ) => Promise<{ items: DocumentJobSummary[] }>;
@@ -256,6 +261,38 @@ export type LibraryController = {
     jobId?: string | null,
     options?: { recovering?: boolean },
   ) => void;
+};
+
+/** 书架动作：网格选任务 / 删除 / 打开阅读器，加上 LibraryController 对外的那些。
+ *  组合根（app/home/composition/create-library-domain）装配，书架上下文下发。 */
+export type RecentJobActions = {
+  selectJob: (jobId: string) => unknown;
+  deleteJob: (jobId: string) => Promise<unknown> | unknown;
+  /** options.pinJob：点名看这个任务，阅读器不按整本改写。看这本书的入口不传。 */
+  openJobReader: (jobId: string, documentId?: string, options?: { pinJob?: boolean }) => unknown;
+  recoverActiveJob: (items?: unknown[]) => unknown;
+};
+
+export type LibraryActions = RecentJobActions & {
+  openSourceReader: LibraryController["openSourceReader"];
+  translateDocument: LibraryController["translateDocument"];
+  ocrDocument: LibraryController["ocrDocument"];
+  submitDocument: LibraryController["submitDocument"];
+  getDocumentJobs: LibraryController["getDocumentJobs"];
+  getDocumentByJobId: LibraryController["getDocumentByJobId"];
+  getJobStageActions: LibraryController["getJobStageActions"];
+  retryJobStage: LibraryController["retryJobStage"];
+  cancelJob: LibraryController["cancelJob"];
+  deleteDocument: LibraryController["deleteDocument"];
+  /** 选择集可能是 unknown[]（view state），参数放宽 */
+  deleteDocuments: (
+    documentIds?: Array<string | null | undefined | unknown>,
+  ) => Promise<DeleteDocumentsResult>;
+  deleteCard: LibraryController["deleteCard"];
+  openBookDetail: LibraryController["openBookDetail"];
+  updateDocument: LibraryController["updateDocument"];
+  storeOnly: LibraryController["storeOnly"];
+  attachJobProgress: LibraryController["attachJobProgress"];
 };
 
 // ─── View store / viewPort ───────────────────────────────────────

@@ -5,12 +5,11 @@ import {
   useHomeBookDetail,
   useHomeCollections,
   useHomeJobRuntime,
-  useHomeLibrary,
   useHomeStatusCard,
 } from "@/ui/context/home-services-context.js";
 import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
 import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
-import { useRecentJobCover } from "@/features/library/index.js";
+import { useRecentJobCover, useLibraryServices } from "@/features/library/index.js";
 import type { LibraryCardItem } from "@/features/library/index.js";
 import { BookDetailShell } from "./shell/BookDetailShell.jsx";
 import { CoverActionsPanel } from "./panels/CoverActionsPanel.jsx";
@@ -45,7 +44,7 @@ import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 
 export function BookDetailDialog() {
   const { dialogStore } = useHomeBookDetail();
-  const library = useHomeLibrary();
+  const library = useLibraryServices();
   const actions = library.actions;
   const collections = useHomeCollections();
   const collectionsCtl = collections?.controller;

@@ -27,42 +27,12 @@ export type {
   UpdateDocumentPayload,
 };
 
-export type RecentJobActions = {
-  selectJob: (jobId: string) => unknown;
-  deleteJob: (jobId: string) => Promise<unknown> | unknown;
-  /** options.pinJob：点名看这个任务，阅读器不按整本改写。看这本书的入口不传。 */
-  openJobReader: (jobId: string, documentId?: string, options?: { pinJob?: boolean }) => unknown;
-  recoverActiveJob: (items?: unknown[]) => unknown;
-};
+// RecentJobActions / LibraryActions 归书架功能所有（features/library/domain/types.ts），这里转出。
+export type { LibraryActions, RecentJobActions } from "@/features/library/index.js";
+import type { LibraryServices } from "@/features/library/index.js";
 
-export type LibraryActions = RecentJobActions & {
-  openSourceReader: LibraryController["openSourceReader"];
-  translateDocument: LibraryController["translateDocument"];
-  ocrDocument: LibraryController["ocrDocument"];
-  /** 统一提交入口（按 workflow 分流到 ocr/translate） */
-  submitDocument: (documentId?: string | null, payload?: unknown) => Promise<unknown>;
-  getDocumentJobs: LibraryController["getDocumentJobs"];
-  getDocumentByJobId: LibraryController["getDocumentByJobId"];
-  getJobStageActions: LibraryController["getJobStageActions"];
-  retryJobStage: LibraryController["retryJobStage"];
-  cancelJob: LibraryController["cancelJob"];
-  deleteDocument: LibraryController["deleteDocument"];
-  /** 选择集可能是 unknown[]（view state），参数放宽 */
-  deleteDocuments: (
-    documentIds?: Array<string | null | undefined | unknown>,
-  ) => Promise<DeleteDocumentsResult>;
-  deleteCard: LibraryController["deleteCard"];
-  openBookDetail: LibraryController["openBookDetail"];
-  updateDocument: LibraryController["updateDocument"];
-  storeOnly: LibraryController["storeOnly"];
-  attachJobProgress: LibraryController["attachJobProgress"];
-};
-
-export type HomeLibrary = {
-  viewPort: RecentJobsReactViewPort;
-  recentJobsStore: ReadOnlyStore<{ items: LibraryCardItem[]; [key: string]: unknown }>;
-  actions: LibraryActions;
-};
+/** 就是书架功能自己的服务类型（LibraryServicesProvider 的值）。 */
+export type HomeLibrary = LibraryServices;
 
 export type HomeBookDetail = {
   dialogStore: DialogStore<LibraryCardItem | null>;

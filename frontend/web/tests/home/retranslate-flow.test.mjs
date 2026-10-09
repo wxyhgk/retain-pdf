@@ -95,9 +95,7 @@ test("详情翻译提交接进度:静默 attach + 状态区占位,不弹上传�
   // 迁移期留的，本文件曾是全仓唯一还靠它活着的地方。窄口下只需给出组件真正
   // 用到的那几个域（TranslateProgress 要 library.actions / statusCard.store /
   // statusDetail.controller），其余域缺席即可——没被调用的 hook 不会取上下文。
-  const { HomeShellProviders } = await import(
-    "../../src/ui/context/home-services-context.js"
-  );
+  const { withHomeProviders } = await import("../helpers/home-providers.mjs");
   const { BookTranslationWorkflowPanel } = await import(
     "../../src/features/book-detail/ui/panels/translate/WorkflowPanel.jsx"
   );
@@ -133,13 +131,7 @@ test("详情翻译提交接进度:静默 attach + 状态区占位,不弹上传�
   const host = dom.window.document.createElement("div");
   dom.window.document.body.appendChild(host);
   const root = createRoot(host);
-  root.render(
-    React.createElement(
-      HomeShellProviders,
-      { services: fakeServices },
-      React.createElement(BookTranslationWorkflowPanel, baseProps),
-    ),
-  );
+  root.render(await withHomeProviders(React, fakeServices, React.createElement(BookTranslationWorkflowPanel, baseProps)));
   await waitFor(
     () => dom.window.document.getElementById("book-detail-status-section"),
     "提交中详情状态区占位",
@@ -156,13 +148,11 @@ test("详情翻译提交接进度:静默 attach + 状态区占位,不弹上传�
   const idleHost = dom.window.document.createElement("div");
   dom.window.document.body.appendChild(idleHost);
   const idleRoot = createRoot(idleHost);
-  idleRoot.render(
-    React.createElement(
-      HomeShellProviders,
-      { services: fakeServices },
-      React.createElement(BookTranslationWorkflowPanel, { ...baseProps, busy: "" }),
-    ),
-  );
+  idleRoot.render(await withHomeProviders(
+    React,
+    fakeServices,
+    React.createElement(BookTranslationWorkflowPanel, { ...baseProps, busy: "" }),
+  ));
   await wait(50);
   assert.equal(
     dom.window.document.getElementById("book-detail-status-section"),

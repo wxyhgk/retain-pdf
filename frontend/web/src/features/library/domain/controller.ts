@@ -130,5 +130,5 @@ export function createLibraryController({
     /** 详情内嵌进度：静默轮询，不弹 #translation-workflow-dialog */
     attachJobProgress,
   };
-  return { ...controller, submitDocument: submit.submitDocument } as LibraryController;
+  return { ...controller, submitDocument: submit.submitDocument } satisfies LibraryController;
 }
