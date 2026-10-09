@@ -45,6 +45,8 @@ mod retention;
 mod rows;
 #[path = "db/schema.rs"]
 mod schema;
+#[path = "db/sync.rs"]
+pub mod sync;
 #[path = "db/uploads.rs"]
 mod uploads;
 
@@ -134,6 +136,11 @@ impl Db {
             data_root,
             schema_ready: Arc::new(Mutex::new(false)),
         }
+    }
+
+    /// 数据库文件路径。
+    pub fn path(&self) -> &std::path::Path {
+        &self.path
     }
 
     /// Opens a connection to the database file.

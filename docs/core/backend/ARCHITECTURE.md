@@ -94,6 +94,16 @@ Docker 使用 `/data`，桌面端传入应用数据目录；`services/data/` 不
 恢复需要数据库状态和匹配的 job/checkpoint 文件，因此备份或迁移必须覆盖整个数据根，
 不能只复制 `jobs.db`。
 
+多设备同步（`retain-data::sync`；应用服务 `services/sync` 在 rust_api 里定时同步，设置在
+「设置 → 同步」，接口见 `docs/api/09-同步`）通过一个
+「同步文件夹」（网盘客户端同步的目录）交换书库，不需要任何一端跑服务。同步的单位是实体：
+上传、书（含标题状态）、合集、合集成员、收藏、结束了的任务（行 + 产物登记 + 流水线记录 +
+事件 + 文件；渲染中间文件与 Word 下载不带，阅读页要用的排版清单带上）。v17 迁移给这些表装了
+触发器，任何进程写库都会记进 `sync_dirty`，业务代码不需要通知同步。合并按字段：每个字段
+各带一个混合逻辑时钟，新的胜出；删除也带时钟，不会被旧改动复活。格式和规则见
+`backend/packages/retain-data/src/sync.rs`；调试用 `cargo run -p retain-data --example
+sync_cycle -- <数据目录> <同步文件夹>`。
+
 这套边界允许 API 壳重启而不终止 remote jobsd 中的 worker，也允许服务重启后
 从 durable attempt/unit 与匹配的 translation checkpoint 恢复。未提交的模型
 输出不会被伪装成已完成状态；远程 provider 请求处于不确定状态时仍需显式解决

@@ -59,6 +59,29 @@ fn event_uid_is_backfilled_for_legacy_schema_and_migrations_are_idempotent() {
     fs.job("legacy", JobStatusKind::Running);
     let conn = fs.db.connect().unwrap();
     insert(&conn, "legacy", 1, &now_iso());
+    // v17 的同步记账:触发器挂在业务表上,不会随同步表一起删掉,逐个撤。
+    let sync_triggers: Vec<String> = conn
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'sync_dirty_%'")
+        .unwrap()
+        .query_map([], |row| row.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    assert!(!sync_triggers.is_empty());
+    for trigger in sync_triggers {
+        conn.execute_batch(&format!("DROP TRIGGER {trigger};")).unwrap();
+    }
+    conn.execute_batch(
+        "DROP TABLE sync_state;
+         DROP TABLE sync_dirty;
+         DROP TABLE sync_apply_guard;
+         DROP TABLE sync_entities;
+         DROP TABLE sync_entity_files;
+         DROP TABLE sync_cursors;
+         DROP TABLE sync_pending;
+         DROP TABLE sync_file_cache;",
+    )
+    .unwrap();
     conn.execute_batch(
         "DROP TRIGGER events_assign_uid;
          DROP TRIGGER events_immutable_uid;

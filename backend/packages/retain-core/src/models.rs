@@ -24,6 +24,8 @@ mod public_contract;
 mod redaction;
 #[path = "models/request.rs"]
 pub mod request;
+#[path = "models/sync.rs"]
+mod sync;
 #[path = "models/view.rs"]
 mod view;
 

@@ -29,6 +29,8 @@ pub struct AppState {
     pub agent_capabilities: Arc<AgentCapabilityAuthority>,
     /// Staged rollout: disabled until worker pause/resume integration is enabled.
     pub model_executor: Option<Arc<crate::services::model_executor::ModelExecutor>>,
+    /// 多设备同步(设置、后台定时同步、状态)。
+    pub(crate) sync: Arc<crate::services::sync::SyncService>,
 }
 
 pub fn build_state(config: Arc<AppConfig>) -> Result<AppState> {
@@ -85,6 +87,10 @@ pub fn build_state(config: Arc<AppConfig>) -> Result<AppState> {
             },
         )),
         model_executor,
+        sync: Arc::new(crate::services::sync::SyncService::new(
+            db.clone(),
+            config.data_root.clone(),
+        )),
         config: config.clone(),
         db,
         download_generation: Arc::default(),

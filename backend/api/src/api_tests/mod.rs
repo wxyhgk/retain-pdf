@@ -7,6 +7,7 @@ mod conversations_contract;
 mod credentials;
 mod document_operations;
 mod glossaries;
+mod sync;
 mod golden_replay;
 mod health;
 mod http_contract;

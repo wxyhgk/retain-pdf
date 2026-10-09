@@ -80,6 +80,7 @@ ALLOWED_APPSTATE_FILES = {
     Path("src/routes/jobs/query.rs"),
     Path("src/routes/jobs/translation_debug.rs"),
     Path("src/routes/providers.rs"),
+    Path("src/routes/sync.rs"),
     Path("src/routes/uploads.rs"),
     Path("src/services/glossaries/tests.rs"),
     Path("src/services/jobs/creation/tests.rs"),
@@ -126,6 +127,7 @@ ROUTE_STATE_RESOURCE_ALLOWLIST = {
     Path("src/routes/common/jobs.rs"),
     Path("src/routes/common/library.rs"),
     Path("src/routes/common/providers.rs"),
+    Path("src/routes/common/sync.rs"),
     Path("src/routes/common/uploads.rs"),
 }
 
@@ -138,6 +140,9 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     ),
     Path("src/routes/glossaries.rs"): (
         "crate::services::glossaries::api::",
+    ),
+    Path("src/routes/sync.rs"): (
+        "crate::services::sync::api::",
     ),
     Path("src/routes/health.rs"): (
         "crate::services::health_api::",
@@ -188,6 +193,9 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     ),
     Path("src/routes/common/glossaries.rs"): (
         "crate::services::glossaries::api::GlossaryApiDeps",
+    ),
+    Path("src/routes/common/sync.rs"): (
+        "crate::services::sync::api::SyncApiDeps",
     ),
     Path("src/routes/common/health.rs"): (
         "crate::services::health_api::HealthApiDeps",

@@ -606,6 +606,16 @@ ipcMain.handle("desktop:invoke", async (_event, command, args = {}) => {
       }
       return { ok: true, outputDir };
     }
+    case "pick_directory": {
+      // 同步设置里「选择文件夹」：系统的文件夹选择框，可新建文件夹。取消时返回 path: null。
+      const owner = BrowserWindow.getFocusedWindow() || undefined;
+      const result = await dialog.showOpenDialog(owner, {
+        title: `${args?.title || "选择文件夹"}`,
+        defaultPath: typeof args?.defaultPath === "string" && args.defaultPath ? args.defaultPath : undefined,
+        properties: ["openDirectory", "createDirectory"],
+      });
+      return { path: result.canceled ? null : (result.filePaths[0] || null) };
+    }
     default:
       throw new Error(`unsupported desktop command: ${command}`);
   }
