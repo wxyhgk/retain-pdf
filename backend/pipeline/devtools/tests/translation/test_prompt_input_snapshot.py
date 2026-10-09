@@ -39,12 +39,12 @@ _BUILDERS = [build_single_item_fallback_messages, lambda item: build_messages([i
 # 对照（31 本书里 Equation 译「式」360 次、「方程」83 次、「公式」15 次）、中文全角标点、
 # 有通行译名的术语一律译出。公式指引去掉了 mitex 专属的说法（默认渲染已是自研引擎）。
 _DIGESTS = {
-    False: ["08de9ab4706cf7e51eda603ddedd873151bdf31b963ca98289f8465e3a0d345f",
-            "3a0a2fb7259d3f50fb40436f1e0ef928e94baf0bc474c98c58f8be2133eaf2ba",
-            "3b590084224ff45e9cf64a3c50d22fc94d8436a1fe3b4eefee85f2188fdaf967"],
-    True: ["0d047272000fd9d4440c09dcb413311fe9b5f26d3a30a9f03f4dd85a288defe2",
-           "63f5b6bcd5ef33873f43bfd084f8659315877c243a9ce478e1cfd89bb89508dd",
-           "f79fab60e64d467f8ea8786a9e1f5e2eacedf09175249f4b86909062c8188176"],
+    False: ["15fe855e02edb5c644061c000df928eb4b7e747c6223dad7de9714fc151fc75a",
+            "e0ff9a772d08d6301c011abcc41d8da089f67345018b17f9da500422dd7bee51",
+            "bc920a23c2fd652a38c1632e23fbd61fbb42e51ca1bdc9cb3a9a70985b1cedd4"],
+    True: ["9863f6136519f08980a4be18c17f4cf1810f5fb7f6286a2df0eda68a4d47d52b",
+           "78167b019b49725e9a30206e228e2640f352bd01bb0c93ecf4aba0f47efefa99",
+           "6e18079c57f2100962c158cba121c12985514580e8ef86141978f9ecb58ea33c"],
 }
 
 
