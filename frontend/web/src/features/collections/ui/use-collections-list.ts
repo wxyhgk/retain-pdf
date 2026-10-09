@@ -1,11 +1,12 @@
 // 合集列表加载：请求序号防竞态 + 版本信号触发软/硬刷新 + 失败静默自动重试一次。
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CollectionsController } from "./types.js";
+import type { CollectionRecord } from "../domain/controller.js";
 
 type UseCollectionsListArgs = {
   controller: CollectionsController;
   version: number;
-  setOpenFolder: (updater: (current: any) => any) => void;
+  setOpenFolder: (updater: (current: CollectionRecord | null) => CollectionRecord | null) => void;
 };
 
 export function useCollectionsList({ controller, version, setOpenFolder }: UseCollectionsListArgs) {

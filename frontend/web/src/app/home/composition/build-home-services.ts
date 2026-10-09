@@ -45,7 +45,7 @@ export function buildHomeServices({
     homeState: ports.homeStatePort.store as unknown as HomeServices["stores"]["homeState"],
     statusArea: views.statusArea.store as unknown as HomeServices["stores"]["statusArea"],
     text: views.textStore.store as unknown as HomeServices["stores"]["text"],
-    uploadView: views.uploadView.store as unknown as HomeServices["stores"]["uploadView"],
+    uploadView: views.uploadView.store,
     workflowView: views.workflowView.store as unknown as HomeServices["stores"]["workflowView"],
     credentialsView: credentials.credentialsView.store as unknown as HomeServices["stores"]["credentialsView"],
   };

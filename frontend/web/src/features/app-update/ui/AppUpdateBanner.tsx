@@ -33,10 +33,8 @@ import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { APP_UPDATE_IDS } from "./app-update-contract.js";
 import { useAppUpdateDialogOpen } from "./useAppUpdateDialogOpen.js";
 import type { AppUpdateReadOnlyStore, HandlersBag } from "../domain/app-update-store.js";
-import { Button as ButtonBase } from "@/ui/Button.jsx";
+import { Button } from "@/ui/Button.jsx";
 
-// Button.size 在未注解源文件里被推断为必填;unstyled 路径运行时不用 size。
-const Button = ButtonBase as any;
 
 // 抄自 src/js/features/app-update/view.js:47-60(formatReleaseNotes)——纯函数,
 // 逐字符保留,拷贝进本组件(蓝图 §5:AppUpdateBanner agent 范围)。

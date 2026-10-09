@@ -139,7 +139,7 @@ export function getMockDocumentJobs(documentId: string) {
   const stage = `${live?.stage || (isOcr ? "queued" : "finished")}`;
   const displayStage = `${live?.display_stage || (isOcr ? "ocr" : "done")}`;
   const stageDetail = `${live?.stage_detail || (isOcr ? "OCR 任务已排队" : "任务完成")}`;
-  const liveProgress: any = live?.progress || {};
+  const liveProgress: { current?: unknown; total?: unknown; percent?: unknown } = live?.progress || {};
   return {
     items: [{
       job_id: jobId,

@@ -23,13 +23,30 @@
 // 所以两套视觉不会打架。
 
 import { useCallback } from "react";
+import type { DetailedHTMLProps, HTMLAttributes } from "react";
 import { toast } from "sonner";
 import { Toaster } from "@retainpdf/ui";
+
+/** 下载 toast 的状态（download-feedback.js 通过 setState 传入）。 */
+export type DownloadToastState = {
+  visible?: boolean;
+  title?: string;
+  status?: string;
+  meta?: string;
+  percent?: number;
+  tone?: string;
+};
+
+/** 占位元素上挂的 setState / hide 方法（见 DownloadToastHost 的 attach）。 */
+type DownloadToastElement = HTMLElement & {
+  setState?: (state: DownloadToastState) => void;
+  hide?: () => void;
+};
 
 declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
-      "download-toast": any;
+      "download-toast": DetailedHTMLProps<HTMLAttributes<DownloadToastElement>, DownloadToastElement>;
     }
   }
 }
@@ -60,7 +77,7 @@ function DownloadToastCard({
   );
 }
 
-function applyToastState(state: any = {}) {
+function applyToastState(state: DownloadToastState = {}) {
   const {
     visible = false,
     title = "下载中",
@@ -80,7 +97,7 @@ function applyToastState(state: any = {}) {
 }
 
 export function DownloadToastHost() {
-  const attach = useCallback((host) => {
+  const attach = useCallback((host: DownloadToastElement | null) => {
     if (!host) {
       return;
     }

@@ -1,7 +1,15 @@
+import type { JobEventRecord } from "@retainpdf/contracts/job-events";
 import { currentMockScenario, isoOffsetMinutes } from "./scenario.js";
 
+/** mock 事件快照：字段取自 JobEventRecord（缺的字段可省略），另带旧版扁平 progress_* 字段。 */
+export type MockJobEvent = Partial<JobEventRecord> & {
+  progress_current?: number;
+  progress_total?: number;
+  progress_unit?: string;
+};
+
 export function buildMockEvents(scenario = currentMockScenario()) {
-  const items: any[] = [
+  const items: MockJobEvent[] = [
     {
       seq: 1,
       ts: isoOffsetMinutes(-10),

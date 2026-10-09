@@ -67,7 +67,7 @@ function normalizeConfirmationRequests(value) {
   return value.map(normalizeConfirmationRequest).filter(Boolean);
 }
 
-function normalizeDonePayload(payload: any = {}) {
+function normalizeDonePayload(payload: Record<string, unknown> = {}) {
   return {
     answer: `${payload?.answer || ""}`,
     citations: Array.isArray(payload?.citations) ? payload.citations : [],

@@ -1,8 +1,17 @@
+import type { WorkflowConfigDefaults } from "./developer-config.js";
+import type { WorkflowDeveloperConfig } from "./payload.js";
+
 export function buildDeveloperConfigFromDialog({
   currentConfig,
+  // 边界：values 来自 WorkflowViewPortLike.readDeveloperDialog，其返回类型在 contracts.ts 中是 unknown，
+  // 收窄需要改 contracts.ts（不在本次范围），所以这里暂留 any。
   values,
   normalizeWorkflow,
-}: any) {
+}: {
+  currentConfig: WorkflowDeveloperConfig;
+  values: any;
+  normalizeWorkflow: (value?: unknown) => string;
+}): WorkflowDeveloperConfig {
   return {
     workflow: normalizeWorkflow(values.workflow),
     renderSourceJobId: values.renderSourceJobId,
@@ -23,7 +32,11 @@ export function defaultDeveloperDialogReadOptions({
   defaultModelName,
   defaultModelBaseUrl,
   defaults,
-}: any) {
+}: {
+  defaultModelName: () => string;
+  defaultModelBaseUrl: () => string;
+  defaults: WorkflowConfigDefaults;
+}) {
   return {
     model: defaultModelName(),
     baseUrl: defaultModelBaseUrl(),

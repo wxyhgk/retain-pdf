@@ -2,7 +2,11 @@ export function createTranslationWorkflowStatusAreaPort({
   isVisible = () => false,
   hide = () => {},
   returnHome = () => {},
-}: any = {}) {
+}: {
+  isVisible?: () => boolean;
+  hide?: () => void;
+  returnHome?: () => void;
+} = {}) {
   return Object.freeze({
     hide,
     isVisible,

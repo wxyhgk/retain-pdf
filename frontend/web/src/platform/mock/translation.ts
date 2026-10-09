@@ -3,6 +3,41 @@ const ROUTES = {
   fallback: "translate/direct_typst/deepseek→placeholder",
 };
 
+/** mock 翻译条目（按 backend translation 落盘形状手写，无共享 view 类型）。 */
+export type MockTranslationItem = {
+  item_id: string;
+  page_idx: number;
+  page_number: number;
+  block_type: string;
+  classification_label: string;
+  math_mode: string;
+  should_translate: boolean;
+  skip_reason: string;
+  final_status: string;
+  route_path: string;
+  fallback_to: string;
+  error_types: string[];
+  degradation_reason: string;
+  source_preview: string;
+  source_text: string;
+  translated_text: string;
+  translation_diagnostics: { attempts: number; last_error?: string; recovered?: boolean };
+};
+
+type MockTranslationItemInput = {
+  index: number;
+  page: number;
+  blockType: string;
+  label: string;
+  finalStatus: string;
+  source: string;
+  translated?: string;
+  skipReason?: string;
+  fallbackTo?: string;
+  errorTypes?: string[];
+  degradationReason?: string;
+};
+
 function buildItem({
   index,
   page,
@@ -15,7 +50,7 @@ function buildItem({
   fallbackTo = "",
   errorTypes = [],
   degradationReason = "",
-}: any) {
+}: MockTranslationItemInput): MockTranslationItem {
   const itemId = `mock-item-${String(index).padStart(3, "0")}`;
   return {
     item_id: itemId,
@@ -40,7 +75,7 @@ function buildItem({
   };
 }
 
-const MOCK_TRANSLATION_ITEMS = [
+const MOCK_TRANSLATION_ITEMS: MockTranslationItem[] = [
   buildItem({
     index: 1, page: 1, blockType: "paragraph", label: "body",
     finalStatus: "translated",
@@ -112,7 +147,7 @@ const MOCK_TRANSLATION_ITEMS = [
 export function getMockTranslationSummary(jobId = "") {
   // 与真实管线落盘形状一致(backend scripts/services/translation/artifacts/io.py):
   // 统计键是 status_summary,状态枚举为 translated/partially_translated/kept_origin/failed
-  const statusSummary = {
+  const statusSummary: Record<string, number> = {
     translated: 0,
     partially_translated: 0,
     kept_origin: 0,
@@ -139,7 +174,7 @@ export function getMockTranslationItems(jobId, {
   page = "",
   finalStatus = "",
   q = "",
-}: any = {}) {
+}: { limit?: number; offset?: number; page?: string | number; finalStatus?: string; q?: string } = {}) {
   let list = MOCK_TRANSLATION_ITEMS;
   if (`${finalStatus}`.trim()) {
     list = list.filter((item) => item.final_status === `${finalStatus}`.trim());

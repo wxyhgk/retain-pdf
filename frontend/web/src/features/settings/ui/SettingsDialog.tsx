@@ -35,7 +35,7 @@ import type { DialogStore } from "@/platform/store/dialog-store.js";
 import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { APP_SETTINGS_DIALOG_IDS } from "./settings-dialog-ids.js";
 import { ThemeAppearancePanel } from "./ThemeAppearancePanel.jsx";
-import { Button as ButtonBase } from "@/ui/Button.jsx";
+import { Button } from "@/ui/Button.jsx";
 
 // Decoupled: settings → credentials / app-update 横向依赖改为经 HomeApp 注入(slot)。
 // - credentialsWorkbenchSlot: 由 HomeApp 传入 <CredentialsWorkbench />
@@ -43,8 +43,6 @@ import { Button as ButtonBase } from "@/ui/Button.jsx";
 // 原先直接 import CredentialsWorkbench / AppUpdateBanner / credentials-dom-ids 导致
 // settings 域强耦合 credentials 域；现仅依赖 shared/settings-dialog-ids (无状态常量)。
 
-// Button.size 在未注解源文件里被推断为必填;unstyled 路径运行时不用 size。
-const Button = ButtonBase as any;
 
 function IconKey(props) {
   return (

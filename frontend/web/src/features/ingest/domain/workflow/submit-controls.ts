@@ -1,5 +1,19 @@
 import { resolveSubmitReadiness } from "@/platform/contracts/submit-readiness-contract.js";
 
+export interface SubmitControlStateOptions {
+  workflow?: string;
+  isMock?: boolean;
+  desktopMode?: boolean;
+  desktopConfigured?: boolean;
+  uploadId?: string;
+  renderSourceJobId?: string;
+  hasBrowserCredentials?: boolean;
+  budgetBlocking?: boolean;
+  workflowNeedsUpload: (workflow?: string) => boolean;
+  workflowNeedsCredentials: (workflow?: string) => boolean;
+  workflowSubmitLabel: (workflow?: string) => string;
+}
+
 export function resolveSubmitControlState({
   workflow,
   isMock,
@@ -12,7 +26,7 @@ export function resolveSubmitControlState({
   workflowNeedsUpload,
   workflowNeedsCredentials,
   workflowSubmitLabel,
-}: any) {
+}: SubmitControlStateOptions) {
   const showPageRangeButton = workflowNeedsUpload(workflow);
   const needsUpload = workflowNeedsUpload(workflow);
   const needsCredentials = workflowNeedsCredentials(workflow);

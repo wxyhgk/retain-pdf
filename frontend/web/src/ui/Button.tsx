@@ -21,10 +21,21 @@
 //   <Button className="app-button" onClick={...}>保存</Button>            // 沿用现状视觉
 //   <Button variant="ghost" size="icon" aria-label="关闭">×</Button>       // 走 shadcn 皮肤
 
+import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@retainpdf/ui/lib/utils";
 import { buttonVariants } from "@retainpdf/ui/components/ui/button";
 
 const SHADCN_VARIANTS = new Set(["default", "destructive", "outline", "secondary", "ghost", "link"]);
+
+/** shadcn buttonVariants 接受的 variant / size 取值（取自 cva 的参数类型）。 */
+type ButtonVariantArgs = NonNullable<Parameters<typeof buttonVariants>[0]>;
+
+export type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> & {
+  variant?: string;
+  size?: string;
+  className?: string;
+  type?: "button" | "reset" | "submit";
+};
 
 export function Button({
   variant = "unstyled",
@@ -32,20 +43,17 @@ export function Button({
   className,
   type = "button",
   ...props
-}: {
-  variant?: string;
-  size?: string;
-  className?: string;
-  type?: "button" | "reset" | "submit";
-  [key: string]: any;
-}) {
+}: ButtonProps) {
   if (!SHADCN_VARIANTS.has(variant)) {
     return <button type={type} className={className} {...props} />;
   }
   return (
     <button
       type={type}
-      className={cn(buttonVariants({ variant: variant as any, size: size as any }), className)}
+      className={cn(buttonVariants({
+        variant: variant as ButtonVariantArgs["variant"],
+        size: size as ButtonVariantArgs["size"],
+      }), className)}
       {...props}
     />
   );

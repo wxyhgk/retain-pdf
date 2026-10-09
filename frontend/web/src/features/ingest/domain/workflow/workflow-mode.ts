@@ -114,7 +114,7 @@ export function createWorkflowModeController({
 
   function currentBudgetState(workflow = currentWorkflow()) {
     if (isOcrOnlyMode()) {
-      return { visible: false, blocking: false, tone: "", message: "", topUpUrl: "" } as any;
+      return { visible: false, blocking: false, tone: "", message: "", topUpUrl: "" };
     }
     const developerConfig = getDeveloperConfig() || {};
     const modelBaseUrl = `${
@@ -123,7 +123,7 @@ export function createWorkflowModeController({
       || ""
     }`;
     if (!isOfficialDeepSeekBaseUrl(modelBaseUrl)) {
-      return { visible: false, blocking: false, tone: "", message: "", topUpUrl: "" } as any;
+      return { visible: false, blocking: false, tone: "", message: "", topUpUrl: "" };
     }
     const uploadState = getUploadState();
     const balanceState = getDeepSeekBalanceState();

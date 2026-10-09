@@ -17,7 +17,8 @@ import { fetchDocumentReading } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import { resolveReadingJobId, type FetchReading } from "../domain/resolve-reading-target.js";
 
-function anchorFromEventDetail(detail: any = {}) {
+/** openReaderRequested 事件 detail 中本组件读取的字段（来源为事件派发方，未收窄前按 unknown 处理）。 */
+function anchorFromEventDetail(detail: { pageIdx?: unknown; blockId?: unknown } = {}) {
   const rawPageIdx = detail.pageIdx;
   const pageIdx = rawPageIdx === null || rawPageIdx === undefined ? NaN : Number(rawPageIdx);
   const blockId = `${detail.blockId || ""}`.trim();

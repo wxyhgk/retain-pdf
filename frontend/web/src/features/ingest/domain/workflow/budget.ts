@@ -28,13 +28,21 @@ function money(value) {
   return number.toFixed(2);
 }
 
+export interface TranslationBudgetStateOptions {
+  pageRanges?: string;
+  uploadedPageCount?: number;
+  balanceCny?: number | null;
+  balanceChecked?: boolean;
+  needsTranslation?: boolean;
+}
+
 export function resolveTranslationBudgetState({
   pageRanges = "",
   uploadedPageCount = 0,
   balanceCny = null,
   balanceChecked = false,
   needsTranslation = true,
-}: any = {}) {
+}: TranslationBudgetStateOptions = {}) {
   const pageCount = pageRangeCount(pageRanges, uploadedPageCount);
   if (!needsTranslation || pageCount <= 0) {
     return {

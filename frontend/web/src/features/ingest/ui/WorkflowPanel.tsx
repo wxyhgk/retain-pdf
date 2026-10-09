@@ -33,19 +33,15 @@ import { Tabs as TabsPrimitive } from "radix-ui";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import {
   useHomeBridge,
-  useHomeFeatures,
-  useHomeUploadViewStore,
 } from "@/ui/context/home-services-context.js";
-import { useIngestWorkflowView } from "./workflow-view-context.js";
-import type { UploadViewStore } from "../domain/upload-store.js";
+import { useIngestServices, useIngestWorkflowView } from "./workflow-view-context.js";
 import { HeroUpload } from "./components/UploadTile.jsx";
 import { InlineErrorBox } from "./InlineErrorBox.jsx";
 
 export function WorkflowPanel({ hiddenInputsSlot = null }: { hiddenInputsSlot?: React.ReactNode | null }) {
   const workflowView = useIngestWorkflowView();
-  const uploadViewStore = useHomeUploadViewStore();
+  const { uploadViewStore, features } = useIngestServices();
   const bridge = useHomeBridge();
-  const features = useHomeFeatures();
   const workflow = useStoreSnapshot(workflowView.store);
   const ocrOnly = Boolean(workflow.ocrOnly);
 
@@ -78,7 +74,7 @@ export function WorkflowPanel({ hiddenInputsSlot = null }: { hiddenInputsSlot?: 
 
     workflowView.setOcrOnly(nextOcrOnly);
     if (nextOcrOnly) {
-      (uploadViewStore as unknown as UploadViewStore).actions.closeTranslationOptions();
+      uploadViewStore.actions.closeTranslationOptions();
     }
     features.workflowFeature?.refreshSubmitControls?.();
     features.workflowFeature?.applyWorkflowMode?.();

@@ -5,9 +5,15 @@ import {
   fetchJobList as _fetchJobList,
   fetchJobPayload as _fetchJobPayload,
 } from "@retainpdf/api/jobs";
+import type { JobDetailView, JobListView } from "@retainpdf/contracts/job-status";
+
+/** fetchJobList 第二个参数（分页 / 筛选项）的类型，取自真实 API 签名。 */
+type FetchJobListOptions = NonNullable<Parameters<typeof _fetchJobList>[1]>;
 
 const jobPayloadDedupe = createInFlightDedupe<any>();
 
+// 返回值暂保留 any：后端的 JobDetailView 与前端运行时用的 JobLike / JobPayload 不重叠
+// （同上，后端生成类型与前端形状没有对齐层），收紧要先补转换层，单独做。
 export const fetchJobPayload = async (jobId: string, options?: { apiPrefix?: string } | string): Promise<any> => {
   let normalizedJobId = jobId;
   let apiPrefix: string | undefined;
@@ -28,14 +34,15 @@ export const fetchJobPayload = async (jobId: string, options?: { apiPrefix?: str
   // apiPrefix 进 key：不同前缀是不同资源，不能互相顶替。
   return jobPayloadDedupe.run(
     `${apiPrefix || ""}|${normalizedJobId}`,
-    () => (_fetchJobPayload as any)(normalizedJobId, apiPrefix ? { apiPrefix } : undefined),
+    () => _fetchJobPayload(normalizedJobId, apiPrefix ? { apiPrefix } : undefined),
   );
 };
 
-export const fetchJobList = async (apiPrefix: string, opts: any = {}): Promise<any> => {
+export const fetchJobList = async (apiPrefix: string, opts: FetchJobListOptions = {}): Promise<JobListView> => {
   if (isMockMode()) {
     const { limit = 20, offset = 0, q = "" } = opts || {};
-    return getMockJobList({ limit, offset, q });
+    // mock 列表项是 JobLike | LibraryCardItem 混合形状，与真实 JobListView 不同，这里保持原行为只做类型断言。
+    return getMockJobList({ limit, offset, q }) as unknown as JobListView;
   }
-  return (_fetchJobList as any)(apiPrefix, opts);
+  return _fetchJobList(apiPrefix, opts);
 };

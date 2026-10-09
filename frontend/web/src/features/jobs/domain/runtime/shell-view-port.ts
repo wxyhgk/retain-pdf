@@ -2,7 +2,11 @@ export function createJobRuntimeShellViewPort({
   closeDialogs = () => {},
   isReaderOpen = () => false,
   setCancelDisabled = () => {},
-}: any = {}) {
+}: {
+  closeDialogs?: () => void;
+  isReaderOpen?: () => boolean;
+  setCancelDisabled?: (disabled: boolean) => void;
+} = {}) {
   return {
     closeDialogs,
     isReaderOpen,

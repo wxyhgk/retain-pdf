@@ -1,10 +1,39 @@
 import {
   fetchLatestGithubRelease,
   normalizeReleaseInfo,
+  type GithubReleasePayload,
 } from "./github-release.js";
 import {
+  createUpdateCachePort,
   defaultUpdateCachePort,
 } from "./state.js";
+
+/** 更新信息（normalizeReleaseInfo 的产物，也是缓存读出的形状）。 */
+type AppUpdateInfo = ReturnType<typeof normalizeReleaseInfo>;
+
+/** 缓存端口：只用 read / write。 */
+export type UpdateCachePortLike = {
+  read: () => { info?: unknown; fresh?: boolean };
+  write?: (info: AppUpdateInfo) => void;
+};
+
+/** 视图端口：由页面注入的更新提示展示面。 */
+export type AppUpdateViewPort = {
+  setReady: () => unknown;
+  setAvailable: (info: AppUpdateInfo) => unknown;
+  setLatest: (info: AppUpdateInfo) => unknown;
+  setChecking: () => unknown;
+  setError: (error: unknown) => unknown;
+  bindButton: (handlers: { onCheck: () => void }) => unknown;
+};
+
+export type AppUpdateFeatureDeps = {
+  enabled?: boolean;
+  cachePort?: UpdateCachePortLike;
+  fetchLatestRelease?: () => Promise<GithubReleasePayload>;
+  normalizeRelease?: typeof normalizeReleaseInfo;
+  viewPort: AppUpdateViewPort;
+};
 
 export function mountAppUpdateFeature({
   enabled = true,
@@ -12,8 +41,8 @@ export function mountAppUpdateFeature({
   fetchLatestRelease = fetchLatestGithubRelease,
   normalizeRelease = normalizeReleaseInfo,
   viewPort,
-}: any = {}) {
-  function applyUpdateInfo(info) {
+}: AppUpdateFeatureDeps) {
+  function applyUpdateInfo(info: AppUpdateInfo | null | undefined) {
     if (!info) {
       viewPort.setReady();
       return;
@@ -25,7 +54,7 @@ export function mountAppUpdateFeature({
     }
   }
 
-  async function checkForUpdates({ manual = false }: any = {}) {
+  async function checkForUpdates({ manual = false }: { manual?: boolean } = {}) {
     if (!enabled) {
       return false;
     }
@@ -59,7 +88,8 @@ export function mountAppUpdateFeature({
   }
 
   const cached = cachePort.read();
-  applyUpdateInfo(cached.info);
+  // 缓存 info 由 state.ts 的 normalizeCachedInfo 产出，形状即 AppUpdateInfo；端口类型在装配层被放宽为 unknown，这里收回。
+  applyUpdateInfo(cached.info as AppUpdateInfo | undefined);
   if (cached.fresh) {
     return {
       checkForUpdates,

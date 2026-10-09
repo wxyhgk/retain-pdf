@@ -94,7 +94,7 @@ export function createAppActions({
   const workflow = () => features.workflowFeature;
   const upload = () => features.uploadFeature;
   const jobRuntime = () => features.jobRuntimeFeature;
-  const isOcrOnly = () => Boolean((workflow() as any)?.isOcrOnly?.());
+  const isOcrOnly = () => Boolean(workflow()?.isOcrOnly?.());
 
   // apiBase 可由 configPort 替代；下层签名仍标成必填。
   const appActionsFeature = mountAppActionsFeature({
@@ -118,8 +118,8 @@ export function createAppActions({
       workflowNeedsUpload: (w?: string) => workflow().workflowNeedsUpload(w),
       currentRenderSourceJobId: () => workflow().currentRenderSourceJobId(),
       currentBudgetState: (w?: string) => {
-        if (isOcrOnly()) return { visible: false, blocking: false, tone: "", message: "", topUpUrl: "" } as any;
-        return workflow().currentBudgetState(w) as any;
+        if (isOcrOnly()) return { visible: false, blocking: false, tone: "", message: "", topUpUrl: "" };
+        return workflow().currentBudgetState(w);
       },
       collectRunPayload: () => workflow().collectRunPayload(),
       validateBeforeSubmit: () => upload().validatePageRanges() ?? true,

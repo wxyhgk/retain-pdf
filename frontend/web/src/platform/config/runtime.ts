@@ -1,5 +1,9 @@
 import { DEFAULT_BASE_URL, DEFAULT_MODEL } from "./model-constants.js";
 import { normalizeOcrProvider } from "./providers.js";
+import type { RuntimeConfig } from "./storage.js";
+
+/** 部署/桌面注入到 window 上的运行时配置（runtime-config.js 写入）。 */
+type FrontRuntimeWindow = Window & { __FRONT_RUNTIME_CONFIG__?: Partial<RuntimeConfig> | null };
 
 export const DEFAULT_FALLBACK_BASE = "http://127.0.0.1:41000";
 const DEFAULT_FALLBACK_PORT = 41000;
@@ -13,7 +17,7 @@ const ENV_X_API_KEY_NAMES = ["RETAIN_PDF_FRONTEND_X_API_KEY", "RETAIN_FRONTEND_X
 
 function readNodeEnv(name: string): string {
   try {
-    const value = (globalThis as any)?.process?.env?.[name];
+    const value = (globalThis as { process?: { env?: Record<string, unknown> } })?.process?.env?.[name];
     return typeof value === "string" ? value.trim() : "";
   } catch {
     return "";
@@ -22,7 +26,7 @@ function readNodeEnv(name: string): string {
 
 function readImportMetaEnv(name: string): string {
   try {
-    const value = (import.meta as any)?.env?.[name];
+    const value = (import.meta as unknown as { env?: Record<string, unknown> })?.env?.[name];
     return typeof value === "string" ? value.trim() : "";
   } catch {
     return "";
@@ -46,8 +50,8 @@ function normalizeApiBase(value: unknown): string {
   return value.trim().replace(/\/+$/, "").replace(new RegExp(`${API_V1_SUFFIX}$`), "");
 }
 
-export let runtimeConfig = {
-  ...((typeof window !== "undefined" ? (window as any).__FRONT_RUNTIME_CONFIG__ : null) || {}),
+export let runtimeConfig: RuntimeConfig = {
+  ...((typeof window !== "undefined" ? (window as FrontRuntimeWindow).__FRONT_RUNTIME_CONFIG__ : null) || {}),
 };
 
 const API_V1_SUFFIX = "/api/v1";
@@ -97,7 +101,7 @@ export function apiBase() {
   if (fromEnv) {
     return fromEnv;
   }
-  const fromSnapshot = normalizeApiBase((runtimeConfig as any)?.apiBase);
+  const fromSnapshot = normalizeApiBase(runtimeConfig?.apiBase);
   if (fromSnapshot) {
     return fromSnapshot;
   }
@@ -160,7 +164,7 @@ function liveRuntimeString(key: string): string {
   if (typeof window === "undefined") {
     return "";
   }
-  const cfg = (window as any).__FRONT_RUNTIME_CONFIG__;
+  const cfg = (window as FrontRuntimeWindow).__FRONT_RUNTIME_CONFIG__;
   const value = cfg?.[key];
   return typeof value === "string" ? value.trim() : "";
 }

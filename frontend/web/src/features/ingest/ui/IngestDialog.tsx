@@ -38,6 +38,13 @@ import {
 import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { WorkflowPanel } from "./WorkflowPanel.jsx";
 
+/** 提交表单的结果：status 为 submitted / blocked / 其它失败态。 */
+type SubmitFormResult = {
+  status?: string;
+  readiness?: { reason?: string } | null;
+  payload?: { job_id?: string; document_id?: string } | null;
+} | null;
+
 // statusCardSlot 已移除：进度不再进本弹窗。
 export function IngestDialog({
   hiddenInputsSlot = null,
@@ -122,11 +129,12 @@ export function IngestDialog({
     if (submittingRef.current) return;
     submittingRef.current = true;
     void (async () => {
-      let result: any = null;
+      let result: SubmitFormResult = null;
       try {
+        // bridge.submitForm 返回 unknown（home-services-context），这里按 submit-flow 的结果形状收窄。
         result = await bridge.submitForm(
           event as unknown as { preventDefault?: () => void },
-        );
+        ) as SubmitFormResult;
       } catch {
         // submit-flow 已落 error-box 行内错误，这里只保对话框不关。
       }

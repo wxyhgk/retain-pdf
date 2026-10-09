@@ -1,16 +1,18 @@
 // 合集网格视图:新建按钮 + loading/error/empty/文件夹卡片网格。
 import { EmptyState } from "@/ui/icons/EmptyState.jsx";
+import type { LibraryCardItem } from "@/features/library/index.js";
 import { FolderCoverStack } from "./FolderCoverStack.jsx";
+import type { CollectionRecord } from "../domain/controller.js";
 
 type CollectionsGridViewProps = {
-  collections: any[];
-  previews: Record<string, any[]>;
+  collections: CollectionRecord[];
+  previews: Record<string, LibraryCardItem[]>;
   loading: boolean;
   error: string;
   onRetry: () => void;
   onCreate: () => void;
-  onOpenFolder: (collection: any) => void;
-  onManage: (collection: any) => void;
+  onOpenFolder: (collection: CollectionRecord) => void;
+  onManage: (collection: CollectionRecord) => void;
 };
 
 export function CollectionsGridView({

@@ -7,12 +7,7 @@ import { BookOpen, FileText, LayoutTemplate, Sparkles, SlidersHorizontal, X } fr
 
 import { Button } from "@/ui/components/button.js";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
-import {
-  useHomeFeatures,
-  useHomeUploadViewStore,
-} from "@/ui/context/home-services-context.js";
-import { useIngestWorkflowView } from "../workflow-view-context.js";
-import type { UploadViewStore } from "../../domain/upload-store.js";
+import { useIngestServices, useIngestWorkflowView } from "../workflow-view-context.js";
 
 const QUALITY_HINTS: Record<string, string> = {
   standard: "直接翻译，速度最快、费用最低。",
@@ -27,9 +22,8 @@ const ENGINE_HINTS: Record<string, string> = {
 };
 
 export function TranslationOptionsPanel() {
-  const uploadViewStore = useHomeUploadViewStore();
+  const { uploadViewStore, features } = useIngestServices();
   const workflowView = useIngestWorkflowView();
-  const features = useHomeFeatures();
   const upload = useStoreSnapshot(uploadViewStore);
   const workflow = useStoreSnapshot(workflowView.store);
 
@@ -42,7 +36,7 @@ export function TranslationOptionsPanel() {
 
   function handlePageInput(source: "start" | "end", event: FormEvent<HTMLInputElement>) {
     const value = event.currentTarget.value;
-    (uploadViewStore as unknown as UploadViewStore).actions.setPageRange(
+    uploadViewStore.actions.setPageRange(
       source === "start" ? { start: value } : { end: value },
     );
     features.uploadFeature?.constrainPageRanges({ source });
@@ -68,7 +62,7 @@ export function TranslationOptionsPanel() {
           variant="ghost"
           size="icon-sm"
           aria-label="收起翻译选项"
-          onClick={() => (uploadViewStore as unknown as UploadViewStore).actions.closeTranslationOptions()}
+          onClick={() => uploadViewStore.actions.closeTranslationOptions()}
         >
           <X aria-hidden="true" />
         </Button>

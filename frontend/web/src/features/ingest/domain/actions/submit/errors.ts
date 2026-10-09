@@ -20,7 +20,9 @@ export function reportSubmitError({
   collectRunPayload?: RunSubmitFlowOptions["collectRunPayload"];
   setText?: SetTextFn;
 }) {
-  const isOcr = `${workflow || (collectRunPayload?.() as any)?.workflow || ""}`.trim() === "ocr";
+  // collectRunPayload 返回 unknown（RunSubmitFlowOptions），这里只读取 workflow 字段。
+  const payloadWorkflow = (collectRunPayload?.() as { workflow?: unknown } | undefined)?.workflow;
+  const isOcr = `${workflow || payloadWorkflow || ""}`.trim() === "ocr";
   setText("error-box", buildErrorDiagnostic(err, {
     operation: "提交 PDF 任务",
     url: `${apiPrefix || ""}${isOcr ? "/ocr/jobs" : "/jobs"}`,

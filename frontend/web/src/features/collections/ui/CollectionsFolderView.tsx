@@ -1,13 +1,14 @@
 // 文件夹展开后的详情视图:返回按钮 + 标题 + loading/error/empty/书目网格。
 import { EmptyState } from "@/ui/icons/EmptyState.jsx";
 import { BookCard, buildDefaultBookCardActions } from "@/features/library/index.js";
+import type { LibraryCardItem } from "@/features/library/index.js";
 import type { CollectionsLibraryActions } from "./types.js";
 
 type CollectionsFolderViewProps = {
   folder: { collection_id?: string; name?: string };
   loading: boolean;
   error: string;
-  items: any[];
+  items: LibraryCardItem[];
   onBack: () => void;
   onRetry: () => void;
   libraryActions: CollectionsLibraryActions;

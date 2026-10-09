@@ -1,11 +1,27 @@
+import type { LoadGlossaryOptionsParams } from "./contracts.js";
+
+/** 术语表下拉项：只读取 glossary_id，其余字段原样透传给 setDeveloperGlossaryOptions。 */
+export interface GlossaryOptionItem {
+  glossary_id?: string;
+  [key: string]: unknown;
+}
+
+export interface CreateGlossaryOptionsLoaderOptions {
+  fetchGlossaries?: (apiPrefix?: string) => Promise<unknown>;
+  apiPrefix?: string;
+  setDeveloperGlossaryOptions: (glossaries: GlossaryOptionItem[], selectedId?: string) => void;
+  setText?: (id: string, text?: string) => void;
+  getDefaultSelectedId?: () => string | undefined;
+}
+
 export function createGlossaryOptionsLoader({
   fetchGlossaries,
   apiPrefix,
   setDeveloperGlossaryOptions,
   setText,
   getDefaultSelectedId,
-}: any) {
-  let glossaryOptions = [];
+}: CreateGlossaryOptionsLoaderOptions) {
+  let glossaryOptions: GlossaryOptionItem[] = [];
   let glossaryOptionsLoaded = false;
   let glossaryOptionsLoading = null;
 
@@ -17,7 +33,7 @@ export function createGlossaryOptionsLoader({
     setDeveloperGlossaryOptions(glossaryOptions, `${selectedId || ""}`.trim());
   }
 
-  async function loadGlossaryOptions({ force = false, selectedId = "" }: any = {}) {
+  async function loadGlossaryOptions({ force = false, selectedId = "" }: LoadGlossaryOptionsParams = {}) {
     if ((!force && glossaryOptionsLoaded) || !fetchGlossaries) {
       const nextSelectedId = `${selectedId || ""}`.trim();
       if (nextSelectedId) {
@@ -30,7 +46,8 @@ export function createGlossaryOptionsLoader({
     }
     glossaryOptionsLoading = fetchGlossaries(apiPrefix)
       .then((payload) => {
-        glossaryOptions = Array.isArray(payload?.items) ? payload.items : [];
+        const items = payload && typeof payload === "object" ? (payload as { items?: unknown }).items : undefined;
+        glossaryOptions = Array.isArray(items) ? items : [];
         glossaryOptionsLoaded = true;
         const requestedSelectedId = `${selectedId || ""}`.trim();
         const fallbackSelectedId = `${getDefaultSelectedId?.() || ""}`.trim();

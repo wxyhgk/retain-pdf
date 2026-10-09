@@ -10,13 +10,10 @@ import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 import {
   useHomeCredentialsViewStore,
-  useHomeFeatures,
   useHomeLibrary,
   useHomeUploadDomRefs,
-  useHomeUploadViewStore,
 } from "@/ui/context/home-services-context.js";
-import { useIngestWorkflowView } from "../workflow-view-context.js";
-import type { UploadViewStore } from "../../domain/upload-store.js";
+import { useIngestServices, useIngestWorkflowView } from "../workflow-view-context.js";
 import { TranslationOptionsPanel } from "./TranslationOptionsPanel.jsx";
 import { ProcessingChoicePanel } from "./upload/ProcessingChoicePanel.jsx";
 import { UploadDropzone } from "./upload/UploadDropzone.jsx";
@@ -28,10 +25,9 @@ import {
 
 export function HeroUpload() {
   // —— 顶部一次收敛：服务句柄 ——
-  const uploadViewStore = useHomeUploadViewStore();
+  const { uploadViewStore, features } = useIngestServices();
   const workflowView = useIngestWorkflowView();
   const credentialsViewStore = useHomeCredentialsViewStore();
-  const features = useHomeFeatures();
   const library = useHomeLibrary();
   const uploadFeature = features.uploadFeature;
   const storeOnlyAction = library.actions.storeOnly;
@@ -43,7 +39,8 @@ export function HeroUpload() {
   const credentialsView = useStoreSnapshot(credentialsViewStore);
 
   // —— 顶部一次收敛：派生视图值 ——
-  const credentialGateVisible = Boolean((credentialsView as any)?.credentialGate?.show);
+  // credentialsViewStore 经 HomeReadStore（默认 any）读出，这里只读取 show 字段。
+  const credentialGateVisible = Boolean((credentialsView as { credentialGate?: { show?: boolean } } | undefined)?.credentialGate?.show);
 
   // —— 具名回调：回填隐藏 file input 的 DOM 引用 ——
   const handleFileInputRef = useCallback((node: HTMLInputElement | null) => {
@@ -73,7 +70,7 @@ export function HeroUpload() {
   // —— 具名回调：翻译选项开/关切换 ——
   function handleToggleTranslationOptions() {
     if (upload.translationOptionsOpen) {
-      (uploadViewStore as unknown as UploadViewStore).actions.closeTranslationOptions();
+      uploadViewStore.actions.closeTranslationOptions();
       return;
     }
     uploadFeature?.openTranslationOptions();

@@ -10,6 +10,9 @@ import { createContext, createElement, useContext } from "react";
 import type { ReactNode } from "react";
 
 import type { createWorkflowViewFeature } from "../domain/workflow-view-store.js";
+import type { UploadViewStore } from "../domain/upload-store.js";
+import type { mountWorkflowFeature } from "../domain/workflow/controller.js";
+import type { mountUploadFeature } from "../domain/upload/controller.js";
 
 export type IngestWorkflowView = ReturnType<typeof createWorkflowViewFeature>;
 
@@ -22,5 +25,33 @@ export function IngestWorkflowViewProvider({ value, children }: { value: IngestW
 export function useIngestWorkflowView(): IngestWorkflowView {
   const value = useContext(IngestWorkflowViewContext);
   if (!value) throw new Error("useIngestWorkflowView 需要外层 IngestWorkflowViewProvider");
+  return value;
+}
+
+// ── 上传视图与两个功能对象，同样只被本功能的组件用 ──
+//
+// 以前走 ui/context 的窄口：上传视图的 store 在 app 层被抹成只读 store，到了这里又得
+// `as unknown as UploadViewStore` 转回来才能调 actions（四处）；功能对象是 any。
+
+/** 功能注册表里本功能的两样。注册表是组合根里的可变对象，组件在调用时才读。 */
+export type IngestFeatures = {
+  workflowFeature?: ReturnType<typeof mountWorkflowFeature>;
+  uploadFeature?: ReturnType<typeof mountUploadFeature>;
+};
+
+export type IngestServices = {
+  uploadViewStore: UploadViewStore;
+  features: IngestFeatures;
+};
+
+const IngestServicesContext = createContext<IngestServices | null>(null);
+
+export function IngestServicesProvider({ value, children }: { value: IngestServices; children: ReactNode }) {
+  return createElement(IngestServicesContext.Provider, { value }, children);
+}
+
+export function useIngestServices(): IngestServices {
+  const value = useContext(IngestServicesContext);
+  if (!value) throw new Error("useIngestServices 需要外层 IngestServicesProvider");
   return value;
 }

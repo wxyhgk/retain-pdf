@@ -42,7 +42,7 @@ import { isMockMode } from "@/platform/config/runtime.js";
 import { resolvePdfjsVendorUrl } from "@/platform/runtime/vendor-url.js";
 import { defaultReaderPdfDocumentConfigPort } from "./config.js";
 
-async function fetchJobPayload(jobId: string, apiPrefix?: string): Promise<any> {
+async function fetchJobPayload(jobId: string, apiPrefix?: string) {
   if (isMockMode()) {
     void apiPrefix;
     return getMockJobPayload(jobId);
@@ -50,7 +50,7 @@ async function fetchJobPayload(jobId: string, apiPrefix?: string): Promise<any> 
   return fetchApiJobPayload(jobId, apiPrefix ? { apiPrefix } : undefined);
 }
 
-async function fetchJobArtifactsManifest(jobId: string, apiPrefix?: string): Promise<any> {
+async function fetchJobArtifactsManifest(jobId: string, apiPrefix?: string) {
   if (isMockMode()) {
     void jobId;
     void apiPrefix;
@@ -59,7 +59,7 @@ async function fetchJobArtifactsManifest(jobId: string, apiPrefix?: string): Pro
   return fetchApiJobArtifactsManifest(jobId, apiPrefix);
 }
 
-async function fetchJobMarkdown(jobId: string, apiPrefix?: string): Promise<any> {
+async function fetchJobMarkdown(jobId: string, apiPrefix?: string) {
   if (isMockMode()) {
     void jobId;
     void apiPrefix;
@@ -137,7 +137,7 @@ async function fetchJobMarkdownRange(
 }
 
 
-async function fetchReaderRegions(jobId: string, apiPrefix?: string): Promise<any> {
+async function fetchReaderRegions(jobId: string, apiPrefix?: string) {
   if (isMockMode()) {
     void jobId;
     void apiPrefix;
@@ -146,7 +146,7 @@ async function fetchReaderRegions(jobId: string, apiPrefix?: string): Promise<an
   return fetchApiReaderRegions(jobId, apiPrefix);
 }
 
-async function fetchReaderMetadata(jobId: string, apiPrefix?: string): Promise<any> {
+async function fetchReaderMetadata(jobId: string, apiPrefix?: string) {
   if (isMockMode()) {
     void jobId;
     void apiPrefix;
@@ -161,13 +161,19 @@ export const pdfPort: ReaderPdfPort = {
   resolvePdfjsVendorUrl,
 };
 
-function asRecord(value: unknown): Record<string, any> {
-  return value && typeof value === "object" ? value as Record<string, any> : {};
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" ? value as Record<string, unknown> : {};
 }
 function normalizedString(value: unknown): string { return `${value ?? ""}`.trim(); }
 function resolveSnapshotDocumentId(payload: unknown): string {
   const record = asRecord(payload);
-  for (const value of [record.document_id, record.documentId, record.document?.document_id, record.book_summary?.document_id, record.request_payload?.source?.document_id]) {
+  for (const value of [
+    record.document_id,
+    record.documentId,
+    asRecord(record.document).document_id,
+    asRecord(record.book_summary).document_id,
+    asRecord(asRecord(record.request_payload).source).document_id,
+  ]) {
     const id = normalizedString(value);
     if (id) return id;
   }
@@ -175,7 +181,7 @@ function resolveSnapshotDocumentId(payload: unknown): string {
 }
 function snapshotTitle(payload: unknown, jobId: string): string {
   const record = asRecord(payload);
-  for (const value of [record.title, record.display_name, record.source_file_name, record.book_summary?.source_file_name]) {
+  for (const value of [record.title, record.display_name, record.source_file_name, asRecord(record.book_summary).source_file_name]) {
     const text = normalizedString(value);
     if (text && text !== jobId && text !== `${jobId}.pdf`) return text.replace(/\.pdf$/i, "");
   }

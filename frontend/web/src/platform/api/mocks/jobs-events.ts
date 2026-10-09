@@ -1,13 +1,15 @@
 import { getMockJobEvents } from "@/platform/mock/index.js";
+import type { MockJobEvent } from "@/platform/mock/events.js";
 import { JobEventsError, type JobEventsQuery } from "@retainpdf/api/jobs-events";
+import type { JobEventListView, JobEventRecord } from "@retainpdf/contracts/job-events";
 
 // mock-only 适配器:index.ts 的 mockable() 只在 mock 模式调用本实现。
-export async function fetchJobEvents(jobId: string, apiPrefix?: string, query: JobEventsQuery = {}) {
+export async function fetchJobEvents(jobId: string, apiPrefix?: string, query: JobEventsQuery = {}): Promise<JobEventListView> {
   void apiPrefix;
   if (typeof query !== "object" || "offset" in query || (query.cursor && query.start)) {
     throw new JobEventsError("Invalid event query", 400, "INVALID_QUERY");
   }
-  const items = getMockJobEvents(jobId).items.map((item: any, index) => ({
+  const items = getMockJobEvents(jobId).items.map((item: MockJobEvent, index: number) => ({
     ...item, seq: index + 1, event_id: `mock:${jobId}:${index + 1}`,
   }));
   // Mock producers expose snapshots, not an append log. A changed snapshot is
@@ -32,7 +34,8 @@ export async function fetchJobEvents(jobId: string, apiPrefix?: string, query: J
   const batch = items.slice(position, Math.min(upper, position + limit));
   position += batch.length;
   return {
-    protocol_version: 2 as const, items: batch, limit, has_more: position < upper,
+    // mock 快照缺 job_id 等字段，这里保持原行为只做类型断言。
+    protocol_version: 2 as const, items: batch as JobEventRecord[], limit, has_more: position < upper,
     next_cursor: btoa(encodeURIComponent(JSON.stringify({ version: 2, jobId, signature, position, upper }))),
   };
 }

@@ -1,5 +1,5 @@
 import { defineConnectedComponent } from "@/platform/store/connector.js";
-import type { LibraryJobItem, RecentJobsStatePort } from "./state.js";
+import type { LibraryJobItem, RecentJobsState, RecentJobsStatePort } from "./state.js";
 
 type RecentJobsStoreRendererActions = {
   selectJob?: (jobId: string) => unknown;
@@ -61,7 +61,7 @@ export function createRecentJobsStoreRenderer({
     sources: {
       recentJobs: recentJobsStatePort.store,
     },
-    mapState({ recentJobs }) {
+    mapState({ recentJobs }: { recentJobs: RecentJobsState | undefined }) {
       return {
         hasMore: Boolean(recentJobs?.hasMore),
         invocationSummary: recentJobs?.invocationSummary ?? null,
@@ -79,7 +79,7 @@ export function createRecentJobsStoreRenderer({
     },
   });
 
-  const mounted = component.mount();
+  const mounted = component.mount({}, {}) || undefined;
 
   function renderNow({ invocationSummary: nextInvocationSummary = currentInvocationSummary }: { invocationSummary?: Record<string, unknown> | null } = {}) {
     currentInvocationSummary = nextInvocationSummary;

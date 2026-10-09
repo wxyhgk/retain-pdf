@@ -8,7 +8,7 @@ import type { Store } from "@/platform/store/store.js";
 export type AppStore = Store;
 
 /** 隐藏 Store 写入能力：仅暴露读侧（配合 useStoreSnapshot）。 */
-export type ReadOnlyStore<T = unknown> = Pick<Store<T, any>, "getSnapshot" | "subscribe">;
+export type ReadOnlyStore<T = unknown> = Pick<Store<T, unknown>, "getSnapshot" | "subscribe">;
 
 /** 便利别名：只读文本/视图等简单快照 */
 export type ReadOnlySelector<T> = ReadOnlyStore<T>;

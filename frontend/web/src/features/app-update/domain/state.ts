@@ -31,7 +31,10 @@ function normalizeCachedInfo(value) {
 export function createUpdateCachePort({
   storage = globalThis.window?.localStorage,
   now = () => Date.now(),
-}: any = {}) {
+}: {
+  storage?: Pick<Storage, "getItem" | "setItem"> | null;
+  now?: () => number;
+} = {}) {
   function read() {
     try {
       const cached = normalizeCachedInfo(JSON.parse(storage?.getItem(CACHE_KEY) || "null"));

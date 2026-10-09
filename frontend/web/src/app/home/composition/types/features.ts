@@ -1,53 +1,17 @@
 // features：Feature 注册表（神对象 CT：10 字段）。
+import type { mountBrowserCredentialsFeature } from "@/features/credentials/index.js";
+import type { mountUploadFeature, mountWorkflowFeature } from "@/features/ingest/index.js";
 import type { GlossariesFeature } from "@/features/glossaries/index.js";
-import type { TranslateDocumentPayload } from "@/features/library/index.js";
 
-export type WorkflowFeature = {
-  applyWorkflowMode: () => void;
-  buildOcrJobConfig: (pageRanges?: string) => Record<string, unknown>;
-  buildTranslateJobConfig: (pageRanges?: string) => TranslateDocumentPayload | Record<string, unknown>;
-  collectRunPayload: () => unknown;
-  currentRenderSourceJobId: () => string;
-  currentWorkflow: () => string;
-  currentBudgetState: (workflow?: string) => unknown;
-  developerConfigWithDefaults: () => Record<string, unknown>;
-  isOcrOnly?: () => boolean;
-  loadGlossaryOptions: (options?: unknown) => unknown;
-  refreshSubmitControls: () => void;
-  resetDeveloperDialog: () => void;
-  saveDeveloperDialog: () => unknown;
-  syncDeveloperDialogFromState: () => void;
-  updateCredentialGate: (options?: unknown) => void;
-  updateDeveloperWorkflowFormState: () => void;
-  workflowNeedsCredentials: (workflow?: string) => boolean;
-  workflowNeedsUpload: (workflow?: string) => boolean;
-};
+/** 就是工作流功能挂载出来的对象（以前手抄一份结构类型，返回值对不上）。 */
+export type WorkflowFeature = ReturnType<typeof mountWorkflowFeature>;
 
-export type UploadFeature = {
-  applyPageRanges: () => void;
-  clearPageRanges: () => void;
-  constrainPageRanges: (options?: { source?: unknown }) => void;
-  currentPageRanges: () => string;
-  handleFileSelected: () => unknown;
-  normalizePageRangeValue: (start?: unknown, end?: unknown) => string;
-  openTranslationOptions: () => void;
-  renderPageRangeSummary: () => void;
-  resetUploadSession: () => void;
-  validatePageRanges: () => boolean;
-};
+/** 就是上传功能挂载出来的对象。 */
+export type UploadFeature = ReturnType<typeof mountUploadFeature>;
 
-export type BrowserCredentialsFeature = {
-  activateCredentialTab: (tabName?: string) => void;
-  ensureOcrCredentialsReady: (options?: unknown) => Promise<boolean> | boolean | unknown;
-  hasBrowserCredentials: () => boolean;
-  hasOcrCredentials: () => boolean;
-  openBrowserCredentialsDialog: (options?: unknown) => void;
-  prepareCredentialsPanels: () => void;
-  ready: () => Promise<unknown>;
-  refreshDeepSeekBalance: (options?: unknown) => Promise<unknown> | unknown;
-  setDialogStatus: (message?: string, tone?: string) => void;
-  updateCredentialGate: (options?: unknown) => void;
-};
+/** 就是凭据功能挂载出来的那个对象。以前这里手抄了一份结构类型，和真实返回值对不上
+ *  （ready 的返回值、prepareCredentialsPanels 的参数），被 ui 窄口的 any 盖住了。 */
+export type BrowserCredentialsFeature = ReturnType<typeof mountBrowserCredentialsFeature>;
 
 export type AppUpdateFeature = {
   checkForUpdates: (options?: { manual?: boolean }) => Promise<unknown> | unknown;

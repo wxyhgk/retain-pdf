@@ -1,3 +1,7 @@
+import type { WorkflowConstants } from "./contracts.js";
+import type { WorkflowConfigDefaults } from "./developer-config.js";
+import type { WorkflowDeveloperConfig } from "./payload.js";
+
 export function positiveInteger(value, fallback) {
   const fallbackNumber = Number(fallback);
   const normalizedFallback = Number.isFinite(fallbackNumber) && fallbackNumber > 0
@@ -17,8 +21,15 @@ export function buildDeveloperConfigWithDefaults({
   defaults,
   defaultModelName,
   defaultModelBaseUrl,
-}: any) {
-  const source = saved || {};
+}: {
+  saved: WorkflowDeveloperConfig | Record<string, unknown> | null | undefined;
+  normalizeWorkflow: (value?: unknown) => string;
+  normalizeMathMode: (value?: unknown) => string;
+  defaults: WorkflowConfigDefaults;
+  defaultModelName: () => string;
+  defaultModelBaseUrl: () => string;
+}): WorkflowDeveloperConfig {
+  const source: Partial<WorkflowDeveloperConfig> = saved || {};
   return {
     workflow: normalizeWorkflow(source.workflow),
     translationProvider: `${source.translationProvider || ""}`.trim(),
@@ -26,7 +37,8 @@ export function buildDeveloperConfigWithDefaults({
       ? source.translationProfiles
       : {},
     renderSourceJobId: `${source.renderSourceJobId || ""}`.trim(),
-    mathMode: normalizeMathMode(source.mathMode),
+    // normalizeMathMode 的上游实现已归一到 TRANSLATION_MATH_MODES 两个值，这里收窄到契约类型。
+    mathMode: normalizeMathMode(source.mathMode) as WorkflowDeveloperConfig["mathMode"],
     model: source.model || defaultModelName(),
     baseUrl: source.baseUrl || defaultModelBaseUrl(),
     glossaryId: `${source.glossaryId || source.glossary_id || ""}`.trim(),

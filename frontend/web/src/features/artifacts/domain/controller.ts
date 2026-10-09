@@ -15,7 +15,30 @@ import {
   defaultDownloadNameResolver,
   resolveDownloadActionTarget,
 } from "./download-actions.js";
-import { createArtifactDownloadsRuntimePort } from "./runtime-port.js";
+import type { DownloadNameResolver } from "./download-actions.js";
+import { createArtifactDownloadsRuntimePort, type ArtifactDownloadsRuntimePort } from "./runtime-port.js";
+
+/** 下载链接的宿主视图端口（由页面注入，操作真实 <a> 的忙碌态与绑定）。 */
+export type ArtifactDownloadsViewPort = {
+  isLinkDisabled: (link: HTMLElement) => boolean;
+  setLinkBusy: (link: HTMLElement, busy: boolean, label?: string) => unknown;
+  bindProtectedLinks: (handler: (event: Event, link: Element) => unknown) => unknown;
+};
+
+/** 点击事件中本模块用到的部分。 */
+export type ProtectedLinkEvent = {
+  currentTarget?: EventTarget | null;
+  preventDefault: () => void;
+};
+
+export type ArtifactDownloadsFeatureDeps = {
+  state: unknown;
+  fetchProtected: (url: string) => Promise<Response>;
+  setText: (id: string, text?: unknown) => unknown;
+  runtimePort?: ArtifactDownloadsRuntimePort;
+  viewPort: ArtifactDownloadsViewPort;
+  downloadNameResolver?: DownloadNameResolver;
+};
 
 export function mountArtifactDownloadsFeature({
   state,
@@ -24,8 +47,8 @@ export function mountArtifactDownloadsFeature({
   runtimePort = createArtifactDownloadsRuntimePort(),
   viewPort,
   downloadNameResolver = defaultDownloadNameResolver,
-}: any) {
-  function summarizeDownloadProgress(receivedBytes, totalBytes, percent) {
+}: ArtifactDownloadsFeatureDeps) {
+  function summarizeDownloadProgress(receivedBytes: number, totalBytes: number, percent: number) {
     const receivedText = formatTransferSize(receivedBytes);
     if (Number.isFinite(totalBytes) && totalBytes > 0) {
       const totalText = formatTransferSize(totalBytes);
@@ -35,8 +58,9 @@ export function mountArtifactDownloadsFeature({
     return receivedText ? `正在下载 ${receivedText}` : "正在下载...";
   }
 
-  async function handleProtectedArtifactClick(event, matchedLink = null) {
-    const link = matchedLink || event.currentTarget;
+  async function handleProtectedArtifactClick(event: ProtectedLinkEvent, matchedLink: HTMLElement | null = null) {
+    // currentTarget 是 EventTarget，这里按调用方约定（事件绑定在 <a> 上）收窄为 HTMLElement。
+    const link = (matchedLink || event.currentTarget) as HTMLElement | null;
     if (!link) {
       return;
     }

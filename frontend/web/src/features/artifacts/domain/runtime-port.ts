@@ -1,8 +1,12 @@
+export type ArtifactDownloadsRuntimePort = {
+  currentJobId: (state: unknown) => string;
+};
+
 export function createArtifactDownloadsRuntimePort({
   currentJobId = () => "",
-}: any = {}) {
+}: { currentJobId?: (state?: unknown) => unknown } = {}): ArtifactDownloadsRuntimePort {
   return Object.freeze({
-    currentJobId(state) {
+    currentJobId(state: unknown) {
       return `${currentJobId(state) || ""}`.trim();
     },
   });

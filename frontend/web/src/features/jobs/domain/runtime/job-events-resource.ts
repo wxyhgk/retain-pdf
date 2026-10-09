@@ -46,6 +46,13 @@ export interface JobEventsResourceOptions {
   now?: () => number;
 }
 
+type JobEventsLoadParams = {
+  jobId?: string;
+  terminal?: boolean;
+  isCurrent?: () => boolean;
+  onReset?: () => void;
+};
+
 export function createJobEventsResource({ fetchJobEvents, apiPrefix, mode = "recent",
   now = () => Date.now() }: JobEventsResourceOptions = {} as JobEventsResourceOptions) {
   // Cursor belongs to a task and a history mode, not the currently selected UI.
@@ -53,15 +60,10 @@ export function createJobEventsResource({ fetchJobEvents, apiPrefix, mode = "rec
   let revision = 0;
   const resource = createResource({
     name: `jobEvents:${mode}`,
-    cacheKey: ({ jobId = "", terminal = false } = {}) => JSON.stringify({
+    cacheKey: ({ jobId = "", terminal = false }: JobEventsLoadParams = {}) => JSON.stringify({
       jobId, mode: terminal || mode === "all" ? "all" : "recent",
     }),
-    loader: async ({ jobId = "", terminal = false, isCurrent = () => true, onReset = () => {} }: {
-      jobId?: string;
-      terminal?: boolean;
-      isCurrent?: () => boolean;
-      onReset?: () => void;
-    } = {}) => {
+    loader: async ({ jobId = "", terminal = false, isCurrent = () => true, onReset = () => {} }: JobEventsLoadParams = {}) => {
       const id = `${jobId}`.trim();
       if (!id) throw new Error("缺少 job_id，无法加载事件流。");
       const historyMode = terminal || mode === "all" ? "all" : "recent";

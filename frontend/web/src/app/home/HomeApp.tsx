@@ -33,7 +33,7 @@ import type { HomeServices } from "./composition/types.js";
 import { AppTopBar } from "./shell/AppTopBar.jsx";
 import { AppBottomBar, HOME_TASK_CENTER_OPEN_EVENT } from "./shell/AppBottomBar.jsx";
 import { MockModeBanner } from "./shell/MockModeBanner.jsx";
-import { IngestDialog, IngestWorkflowViewProvider } from "@/features/ingest/index.js";
+import { IngestDialog, IngestServicesProvider, IngestWorkflowViewProvider } from "@/features/ingest/index.js";
 import {
   RecentJobsLibrary,
 } from "@/features/library/index.js";
@@ -350,11 +350,13 @@ export function HomeApp({ services }: { services: HomeServices }) {
     <HomeShellProviders services={services}>
       {/* 「添加 PDF」的用户选项走 ingest 自带的 context，同 CredentialsProviderSlot。 */}
       <IngestWorkflowViewProvider value={services.workflowView}>
-        <HomeTabsRoot>
-          <CredentialsProviderSlot>
-            <HomeShell />
-          </CredentialsProviderSlot>
-        </HomeTabsRoot>
+        <IngestServicesProvider value={{ uploadViewStore: services.stores.uploadView, features: services.features }}>
+          <HomeTabsRoot>
+            <CredentialsProviderSlot>
+              <HomeShell />
+            </CredentialsProviderSlot>
+          </HomeTabsRoot>
+        </IngestServicesProvider>
       </IngestWorkflowViewProvider>
     </HomeShellProviders>
   );

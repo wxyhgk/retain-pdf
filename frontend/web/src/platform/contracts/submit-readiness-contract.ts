@@ -7,6 +7,23 @@ export const SUBMIT_BLOCK_REASONS = Object.freeze({
   BUDGET_BLOCKING: "budget_blocking",
 });
 
+/**
+ * 提交就绪性判定的输入：全部可选，缺省值与原实现一致。
+ * 调用方传入的多是真假值（来自 features 层，类型仍为 unknown），这里只做 Boolean 判断，故统一用 unknown。
+ */
+export type SubmitReadinessInput = {
+  workflow?: unknown;
+  isMock?: unknown;
+  desktopMode?: unknown;
+  desktopConfigured?: unknown;
+  uploadId?: unknown;
+  renderSourceJobId?: unknown;
+  hasBrowserCredentials?: unknown;
+  needsUpload?: unknown;
+  needsCredentials?: unknown;
+  budgetBlocking?: unknown;
+};
+
 export function resolveSubmitReadiness({
   workflow,
   isMock = false,
@@ -18,7 +35,7 @@ export function resolveSubmitReadiness({
   needsUpload = true,
   needsCredentials = true,
   budgetBlocking = false,
-}: any = {}) {
+}: SubmitReadinessInput = {}) {
   const uploadReady = Boolean(uploadId);
   const renderReady = Boolean(renderSourceJobId);
   const desktopConfigMissing = Boolean(desktopMode) && !desktopConfigured && Boolean(needsCredentials);

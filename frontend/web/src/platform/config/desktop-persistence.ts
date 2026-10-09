@@ -11,8 +11,29 @@ import {
   writeBrowserStoredConfig,
   writeDeveloperStoredConfig,
 } from "./storage.js";
+import type {
+  BrowserStoredConfig,
+  DeveloperStoredConfig,
+  RuntimeConfig,
+} from "./storage.js";
 
-let desktopPersistedSnapshot = null;
+/** 归一化后的桌面持久化配置（desktopPersistedSnapshot 的形状）。 */
+export type DesktopPersistedConfig = {
+  firstRunCompleted: boolean;
+  closeToTrayHintShown: boolean;
+  browserConfig: BrowserStoredConfig;
+  developerConfig: DeveloperStoredConfig;
+  runtimeConfig: RuntimeConfig;
+};
+
+/** 调用方传入的局部配置：各段都可以只带一部分字段。 */
+export type DesktopPersistedConfigPatch = Partial<Omit<DesktopPersistedConfig, "browserConfig" | "developerConfig" | "runtimeConfig">> & {
+  browserConfig?: Partial<BrowserStoredConfig>;
+  developerConfig?: Partial<DeveloperStoredConfig>;
+  runtimeConfig?: Partial<RuntimeConfig>;
+};
+
+let desktopPersistedSnapshot: DesktopPersistedConfig | null = null;
 
 const desktopBridge = getDesktopHost();
 
@@ -24,39 +45,46 @@ export function persistedDesktopSnapshot() {
   return desktopPersistedSnapshot;
 }
 
-function normalizeDesktopPersistedConfig(payload: any = {}, fallback: any = {}) {
-  const source = isObject(payload) ? payload : {};
-  const base = isObject(fallback) ? fallback : {};
+/** isObject 只返回 boolean、不收窄类型，这里统一把对象断言成宽松记录，其余值给空对象。 */
+function asRecord(value: unknown): Record<string, unknown> {
+  return isObject(value) ? (value as Record<string, unknown>) : {};
+}
+
+function normalizeDesktopPersistedConfig(payload: unknown = {}, fallback: unknown = {}): DesktopPersistedConfig {
+  const source = asRecord(payload);
+  const base = asRecord(fallback);
   const runtimeSource = {
-    ...(isObject(base.runtimeConfig) ? base.runtimeConfig : {}),
-    ...(isObject(source.runtimeConfig) ? source.runtimeConfig : {}),
+    ...asRecord(base.runtimeConfig),
+    ...asRecord(source.runtimeConfig),
   };
   const browserConfig = normalizeBrowserStoredConfig({
-    ...(isObject(base.browserConfig) ? base.browserConfig : {}),
+    ...asRecord(base.browserConfig),
     ...desktopRuntimeToBrowserConfig(runtimeSource),
-    ...(isObject(source.browserConfig) ? source.browserConfig : {}),
+    ...asRecord(source.browserConfig),
   });
   const developerConfig = normalizeDeveloperStoredConfig(
-    source.developerConfig
-      ?? runtimeSource.developerConfig
-      ?? base.developerConfig
-      ?? {},
+    asRecord(
+      source.developerConfig
+        ?? runtimeSource.developerConfig
+        ?? base.developerConfig,
+    ),
   );
   return {
-    firstRunCompleted: source.firstRunCompleted ?? base.firstRunCompleted ?? false,
-    closeToTrayHintShown: source.closeToTrayHintShown ?? base.closeToTrayHintShown ?? false,
+    // 持久化 JSON 里的值未经校验，保持原样透传（与历史行为一致）。
+    firstRunCompleted: (source.firstRunCompleted ?? base.firstRunCompleted ?? false) as boolean,
+    closeToTrayHintShown: (source.closeToTrayHintShown ?? base.closeToTrayHintShown ?? false) as boolean,
     browserConfig,
     developerConfig,
     runtimeConfig: buildRuntimeConfig(browserConfig, developerConfig, runtimeSource),
   };
 }
 
-function persistShadowConfig(browserConfig, developerConfig) {
+function persistShadowConfig(browserConfig: BrowserStoredConfig, developerConfig: DeveloperStoredConfig) {
   writeBrowserStoredConfig(browserConfig);
   writeDeveloperStoredConfig(developerConfig);
 }
 
-async function saveDesktopPersistedConfig(partial: any = {}) {
+async function saveDesktopPersistedConfig(partial: DesktopPersistedConfigPatch = {}) {
   const baseline = desktopPersistedSnapshot || normalizeDesktopPersistedConfig({}, {
     browserConfig: readBrowserStoredConfig(),
     developerConfig: readDeveloperStoredConfig(),
@@ -95,7 +123,7 @@ async function saveDesktopPersistedConfig(partial: any = {}) {
   return desktopPersistedSnapshot;
 }
 
-export async function savePersistedDesktopConfig(partial: any = {}) {
+export async function savePersistedDesktopConfig(partial: DesktopPersistedConfigPatch = {}) {
   if (!isDesktopMode()) {
     return {
       browserConfig: normalizeBrowserStoredConfig(partial.browserConfig),

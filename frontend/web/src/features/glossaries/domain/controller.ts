@@ -9,11 +9,46 @@ import {
   prepareDownloadTarget,
 } from "@/platform/utils/downloads.js";
 
+import type {
+  GlossaryEditorPayload,
+  GlossaryEntryRow,
+  GlossaryListItem,
+  GlossariesViewPort,
+} from "./glossaries-store.js";
+
+/** 术语表详情：fetchGlossary 的返回值，也是 renderDraft 的入参。 */
+type GlossaryDetail = {
+  glossary_id?: string;
+  name?: string;
+  entries?: Array<Partial<GlossaryEntryRow>>;
+};
+
 export type GlossariesFeature = {
   bindEvents: () => void;
   open: () => unknown;
   reloadGlossaries: () => unknown;
   save: () => unknown;
+};
+
+/**
+ * 装配层以 AsyncFn（返回 Promise<unknown>）注入 API 函数，故这里只约定调用形态；
+ * 结果在各调用点按已知形状读取（见 GlossaryDetail / GlossaryListItem 等）。
+ */
+type GlossaryApiCall = (...args: unknown[]) => Promise<unknown>;
+
+/** mountGlossariesFeature 的依赖：API 函数 + 视图端口。 */
+export type GlossariesFeatureDeps = {
+  apiPrefix?: string;
+  fetchGlossaries?: GlossaryApiCall;
+  fetchGlossary: GlossaryApiCall;
+  createGlossary: GlossaryApiCall;
+  updateGlossary: GlossaryApiCall;
+  deleteGlossary: GlossaryApiCall;
+  exportGlossaryCsv: GlossaryApiCall;
+  parseGlossaryCsv: GlossaryApiCall;
+  refreshWorkflowGlossaries?: (options?: unknown) => unknown;
+  view?: unknown;
+  viewPort: GlossariesViewPort;
 };
 
 export function mountGlossariesFeature({
@@ -28,8 +63,13 @@ export function mountGlossariesFeature({
   refreshWorkflowGlossaries,
   view = {},
   viewPort,
-}: any): GlossariesFeature {
-  const state = {
+}: GlossariesFeatureDeps): GlossariesFeature {
+  const state: {
+    items: GlossaryListItem[];
+    selectedId: string;
+    currentDetail: GlossaryDetail | null;
+    draftOnly: boolean;
+  } = {
     items: [],
     selectedId: "",
     currentDetail: null,
@@ -42,7 +82,7 @@ export function mountGlossariesFeature({
     viewPort.renderList(state.items, state.selectedId);
   }
 
-  function renderDraft(detail: any = {}) {
+  function renderDraft(detail: GlossaryDetail = {}) {
     state.currentDetail = {
       glossary_id: detail.glossary_id || "",
       name: detail.name || "",
@@ -51,8 +91,8 @@ export function mountGlossariesFeature({
     viewPort.renderEditor(state.currentDetail);
   }
 
-  async function reloadGlossaries({ keepSelection = true }: any = {}) {
-    const payload = await fetchGlossaries(apiPrefix);
+  async function reloadGlossaries({ keepSelection = true }: { keepSelection?: boolean } = {}) {
+    const payload = (await fetchGlossaries(apiPrefix)) as { items?: GlossaryListItem[] } | undefined;
     state.items = Array.isArray(payload?.items) ? payload.items : [];
     if (!keepSelection || !state.items.some((item) => item.glossary_id === state.selectedId)) {
       state.selectedId = state.items[0]?.glossary_id || "";
@@ -78,7 +118,7 @@ export function mountGlossariesFeature({
     renderList();
     viewPort.setStatus("正在读取术语表...");
     try {
-      const detail = await fetchGlossary(normalizedGlossaryId, apiPrefix);
+      const detail = (await fetchGlossary(normalizedGlossaryId, apiPrefix)) as GlossaryDetail;
       if (requestSeq !== selectRequestSeq) {
         return;
       }
@@ -132,9 +172,9 @@ export function mountGlossariesFeature({
     delete payload.skippedMissingTarget;
     viewPort.setStatus("正在保存...");
     try {
-      const saved = state.selectedId && !state.draftOnly
+      const saved = (state.selectedId && !state.draftOnly
         ? await updateGlossary(apiPrefix, state.selectedId, payload)
-        : await createGlossary(apiPrefix, payload);
+        : await createGlossary(apiPrefix, payload)) as { glossary_id?: string };
       state.selectedId = saved.glossary_id || state.selectedId;
       state.draftOnly = false;
       await reloadGlossaries();
@@ -180,7 +220,7 @@ export function mountGlossariesFeature({
     try {
       showDownloadPreparing(fallbackName);
       const filename = await downloadProtectedResponse({
-        fetchResponse: () => exportGlossaryCsv(apiPrefix, state.selectedId),
+        fetchResponse: () => exportGlossaryCsv(apiPrefix, state.selectedId) as Promise<Response>,
         fallbackName,
         target: downloadTarget,
         onProgress: ({ filename: progressFilename, receivedBytes, totalBytes, percent, done }) => {
@@ -207,7 +247,7 @@ export function mountGlossariesFeature({
     }
     viewPort.setStatus("正在解析 CSV...");
     try {
-      const payload = await parseGlossaryCsv(apiPrefix, csvText);
+      const payload = (await parseGlossaryCsv(apiPrefix, csvText)) as { entries?: Array<Partial<GlossaryEntryRow>>; entry_count?: number } | undefined;
       renderDraft({
         ...viewPort.readEditorPayload(),
         entries: Array.isArray(payload?.entries) ? payload.entries : [],

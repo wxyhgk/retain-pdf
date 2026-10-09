@@ -118,7 +118,16 @@ export async function fetchLatestGithubRelease(
   return await resp.json();
 }
 
-export function normalizeReleaseInfo(release: any = {}) {
+/** GitHub latest release 接口的字段子集（只读取这些字段）。 */
+export type GithubReleasePayload = {
+  tag_name?: string;
+  name?: string;
+  body?: string;
+  html_url?: string;
+  published_at?: string;
+};
+
+export function normalizeReleaseInfo(release: GithubReleasePayload = {}) {
   const latestVersion = release.tag_name || release.name || "";
   return {
     currentVersion: APP_VERSION,

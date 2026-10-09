@@ -14,6 +14,9 @@
  * cannot pin a shape (and `actions` remains a string-index map).
  */
 
+// 本文件里剩下的 any 是有意的：它们都在「任意函数 / 任意参数表」的泛型约束里。
+// 函数参数是逆变的，约束写成 (...args: unknown[]) => unknown 会把所有带具体参数的
+// reducer 都拒掉；这是 TypeScript 里给函数类型写上界的标准写法，不是漏掉的类型。
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 /** Action reducer result: the complete next state (whole replacement). */

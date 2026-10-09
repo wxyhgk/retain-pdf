@@ -12,7 +12,7 @@ export async function listCollections(apiPrefix) {
   return getMockCollectionList();
 }
 
-export async function createCollection(apiPrefix, { name, parentId = "" }: any = {}) {
+export async function createCollection(apiPrefix, { name, parentId = "" }: { name?: string; parentId?: string } = {}) {
   void apiPrefix;
   return createMockCollection({ name, parent_id: parentId || null });
 }

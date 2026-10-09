@@ -29,15 +29,8 @@ import type { GlossariesDialogStorePort } from "../domain/glossaries-store.js";
 import { GlossaryList } from "./GlossaryList.jsx";
 import { GlossaryEditor } from "./GlossaryEditor.jsx";
 import { GlossaryImportPanel } from "./GlossaryImportPanel.jsx";
-import { Button as ButtonBase } from "@/ui/Button.jsx";
-import type { ButtonHTMLAttributes, ComponentType } from "react";
+import { Button } from "@/ui/Button.jsx";
 
-// Button.size 在未注解源文件里被推断为必填;unstyled 路径运行时不用 size。
-// GlossariesDialog 未迁移前的旧写法是 `as any`，这里收敛为"结构相同的按钮契约"，
-// 运行时仍是同一个 ButtonBase，行为不变。
-const Button = ButtonBase as unknown as ComponentType<
-  ButtonHTMLAttributes<HTMLButtonElement> & { className?: string }
->;
 
 /**
  * 视图依赖由调用方注入，而不是从页面的服务上下文里自取：

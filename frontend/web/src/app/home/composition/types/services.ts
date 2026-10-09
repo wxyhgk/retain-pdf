@@ -56,7 +56,7 @@ import type {
   UploadDomRefs,
   WorkflowDialogRuntime,
 } from "./workflow.js";
-import type { IngestWorkflowView } from "@/features/ingest/index.js";
+import type { IngestWorkflowView, UploadViewStore } from "@/features/ingest/index.js";
 import type { RecentJobsStatePort } from "@/features/library/index.js";
 
 export type { CredentialsStatePort, HomeStatePort, UploadStatePort };
@@ -74,7 +74,7 @@ export type HomeStores = {
   homeState: ReadOnlyStore;
   statusArea: ReadOnlyStore;
   text: ReadOnlyStore;
-  uploadView: ReadOnlyStore;
+  uploadView: UploadViewStore;
   workflowView: ReadOnlyStore;
   credentialsView: ReadOnlyStore;
 };
@@ -143,7 +143,7 @@ export type HomeServicesViews = {
     setText?: (id: string, value?: string) => void;
   };
   uploadView: {
-    store: AppStore;
+    store: UploadViewStore;
     domRefs: UploadDomRefs;
     patch: (payload: Record<string, unknown>) => unknown;
   };

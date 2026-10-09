@@ -63,8 +63,8 @@ export function startSubmitPreflight({
       workflowNeedsUpload,
       currentBudgetState,
       refreshDeepSeekBalance,
-      setText: captureText as any,
-    } as any))
+      setText: captureText,
+    }))
     .catch(() => false);
 
   const credentials = Promise.resolve()
@@ -76,8 +76,8 @@ export function startSubmitPreflight({
       // 任务已经提交了，这时再把凭据弹窗怼到用户脸上只会打断他；
       // 失败原因由 setText shim 经 notify 报出，用户自己决定什么时候去改。
       openBrowserCredentialsDialog: undefined,
-      setText: captureText as any,
-    } as any))
+      setText: captureText,
+    }))
     .catch(() => false);
 
   return Promise.all([budget, credentials]).then(() => undefined);

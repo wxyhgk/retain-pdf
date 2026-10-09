@@ -150,7 +150,7 @@ export function createLifecycle({
 
 export function createAppShellConfigPort({
   isMock = isMockMode,
-}: any = {}) {
+}: { isMock?: () => boolean } = {}) {
   return {
     isMock,
   };

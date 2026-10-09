@@ -1,3 +1,4 @@
+import type { DocumentJobsView } from "@retainpdf/api/documents";
 import {
   deleteMockDocument,
   getMockDocument,
@@ -127,7 +128,7 @@ export async function fetchDocumentJobs(
   apiPrefix: string,
   documentId: string,
   { limit = 50, offset = 0 }: { limit?: number; offset?: number } = {},
-): Promise<any> {
+): Promise<DocumentJobsView> {
   void apiPrefix;
   const normalized = `${documentId || ""}`.trim();
   if (!normalized) return { items: [] };

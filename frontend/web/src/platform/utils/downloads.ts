@@ -1,6 +1,11 @@
+/** File System Access API 的保存对话框入口（lib.dom 未收录，这里按运行时用到的最小形状声明）。 */
+type WindowWithFilePicker = Window & {
+  showSaveFilePicker?: (options: { suggestedName: string }) => Promise<unknown>;
+};
+
 function canStreamToLocalFile() {
   return typeof window !== "undefined"
-    && typeof (window as any).showSaveFilePicker === "function"
+    && typeof (window as WindowWithFilePicker).showSaveFilePicker === "function"
     && typeof WritableStream !== "undefined";
 }
 
@@ -158,7 +163,7 @@ export async function prepareDownloadTarget(suggestedName) {
     return { kind: "blob" };
   }
   try {
-    const handle = await (window as any).showSaveFilePicker({
+    const handle = await (window as WindowWithFilePicker).showSaveFilePicker({
       suggestedName: sanitizeSuggestedName(suggestedName),
     });
     return { kind: "file-system", handle };
@@ -245,7 +250,7 @@ export async function downloadProtectedResponse({
   const resp = await fetchResponse();
   if (resp.ok === false) {
     const text = await resp.text();
-    const error: any = new Error(`下载失败: ${resp.status} ${text || "unknown error"}`);
+    const error = new Error(`下载失败: ${resp.status} ${text || "unknown error"}`) as Error & { status?: number; url?: string };
     error.status = resp.status;
     error.url = url;
     throw error;

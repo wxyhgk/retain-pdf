@@ -8,22 +8,23 @@ import {
   retryAgentOperation as _canonRetryAgentOperation,
   runAgentOperation as _canonRunAgentOperation,
 } from "@retainpdf/api/document-operations";
+import type { AgentOperationView } from "@retainpdf/api/document-operations";
 import { mockable } from "./_mockable.js";
 
 export const listAgentOperations = mockable(_canonListAgentOperations, () => ({ operations: [] }));
-export const getAgentOperation = async (...args: Parameters<typeof _canonGetAgentOperation>): Promise<any> => (
+export const getAgentOperation = async (...args: Parameters<typeof _canonGetAgentOperation>): Promise<AgentOperationView> => (
   _canonGetAgentOperation(...args)
 );
-export const runAgentOperation = async (...args: Parameters<typeof _canonRunAgentOperation>): Promise<any> => (
+export const runAgentOperation = async (...args: Parameters<typeof _canonRunAgentOperation>): Promise<AgentOperationView> => (
   _canonRunAgentOperation(...args)
 );
-export const cancelAgentOperation = async (...args: Parameters<typeof _canonCancelAgentOperation>): Promise<any> => (
+export const cancelAgentOperation = async (...args: Parameters<typeof _canonCancelAgentOperation>): Promise<AgentOperationView> => (
   _canonCancelAgentOperation(...args)
 );
-export const commitAgentOperation = async (...args: Parameters<typeof _canonCommitAgentOperation>): Promise<any> => (
+export const commitAgentOperation = async (...args: Parameters<typeof _canonCommitAgentOperation>): Promise<AgentOperationView> => (
   _canonCommitAgentOperation(...args)
 );
-export const retryAgentOperation = async (...args: Parameters<typeof _canonRetryAgentOperation>): Promise<any> => (
+export const retryAgentOperation = async (...args: Parameters<typeof _canonRetryAgentOperation>): Promise<AgentOperationView> => (
   _canonRetryAgentOperation(...args)
 );
 export const fetchAgentOperationCandidate = async (

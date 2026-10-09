@@ -116,7 +116,7 @@ export function createWorkflowAndUpload({
     };
   }
 
-  const isOcrOnly = () => Boolean((workflowView as any).isOcrOnly?.() ?? false);
+  const isOcrOnly = () => Boolean(workflowView.isOcrOnly?.() ?? false);
 
   const workflowFeature = mountWorkflowFeature({
     configPort: defaultWorkflowConfigPort,

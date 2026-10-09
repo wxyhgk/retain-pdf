@@ -8,14 +8,14 @@ function defaultSearch() {
 export function resolveMockScenario({
   search = defaultSearch(),
   fallback = "running",
-}: any = {}) {
+}: { search?: string; fallback?: string } = {}) {
   return parseReaderParams(search).mock || fallback;
 }
 
 export function createWorkflowConfigPort({
   isMock = isMockMode,
   search = defaultSearch,
-}: any = {}) {
+}: { isMock?: () => boolean; search?: () => string } = {}) {
   function mockScenario() {
     return resolveMockScenario({ search: search() });
   }
