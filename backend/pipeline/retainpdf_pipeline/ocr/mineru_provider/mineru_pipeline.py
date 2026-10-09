@@ -3,6 +3,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import json
 
+from retainpdf_pipeline.foundation.shared.stage_specs import DEFAULT_RENDER_ENGINE
 from retainpdf_pipeline.foundation.config import layout
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
 from retainpdf_pipeline.foundation.shared.stage_specs import build_stage_invocation_metadata
@@ -166,7 +167,7 @@ def main() -> None:
         typst_font_family=args.typst_font_family,
         pdf_compress_dpi=args.pdf_compress_dpi,
         source_cleanup_strategy=args.source_cleanup_strategy,
-        render_engine=getattr(args, "render_engine", "typst"),
+        render_engine=getattr(args, "render_engine", DEFAULT_RENDER_ENGINE),
         invocation=build_stage_invocation_metadata(
             stage="provider",
             stage_spec_schema_version=stage_spec_schema_version,

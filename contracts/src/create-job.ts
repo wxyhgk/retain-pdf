@@ -192,7 +192,7 @@ export interface RenderInput {
   source_cleanup_strategy?:
     "pikepdf_text_strip" | "bbox_text_strip" | "legacy" | "redact_restore_formulas";
   /**
-   * RENDER_ENGINES：typst = 现有路线（默认）；rpr = 自研排版引擎，字号用 retain-pdf 的规则；rpr_fit = 同一引擎，字号也由引擎按测量决定。后两者为实验，不支持时回退 typst
+   * RENDER_ENGINES：rpr_fit = 自研排版引擎，字号由引擎按测量决定、直接写 PDF（默认）；rpr = 同一引擎，字号用 retain-pdf 的规则；typst = 原 Typst 路线。引擎不可用或失败时回退 typst
    */
   engine?: "typst" | "rpr" | "rpr_fit";
 }

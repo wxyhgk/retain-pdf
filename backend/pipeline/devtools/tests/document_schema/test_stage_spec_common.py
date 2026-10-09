@@ -148,10 +148,10 @@ def test_stage_spec_loaders_preserve_zero_end_page(tmp_path: Path) -> None:
     assert ProviderStageSpec.load(provider_path).render.font_unify_mode == "off"
     assert BookStageSpec.load(book_path).translation.end_page == 0
     assert BookStageSpec.load(book_path).render.font_unify_mode == "off"
-    # render.engine 缺省 = typst（旧 spec 没有这个 key）
-    assert RenderStageSpec.load(render_path).params.engine == "typst"
-    assert ProviderStageSpec.load(provider_path).render.engine == "typst"
-    assert BookStageSpec.load(book_path).render.engine == "typst"
+    # render.engine 缺省 = 默认路线 rpr_fit（旧 spec 没有这个 key）
+    assert RenderStageSpec.load(render_path).params.engine == "rpr_fit"
+    assert ProviderStageSpec.load(provider_path).render.engine == "rpr_fit"
+    assert BookStageSpec.load(book_path).render.engine == "rpr_fit"
 
 
 def test_build_stage_invocation_metadata_is_always_stage_spec() -> None:

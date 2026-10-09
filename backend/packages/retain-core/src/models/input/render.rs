@@ -15,7 +15,9 @@ pub const SOURCE_CLEANUP_STRATEGIES: &[&str] = &[
 /// retain-pdf-rendering（字号用 retain-pdf 自己的规则），`rpr_fit` = 同一引擎，但字号也由
 /// 引擎按测量决定（fit-model 的 retain 规则）。后两者都是实验、可选；不支持时 Python 侧
 /// 回退 typst 并记 warning。
-pub const DEFAULT_RENDER_ENGINE: &str = "typst";
+/// 默认排版路线：自研引擎测量定字号、直接写 PDF；引擎不可用或失败时 pipeline 回退 typst。
+/// 与 Python foundation/shared/stage_specs.DEFAULT_RENDER_ENGINE 一致。
+pub const DEFAULT_RENDER_ENGINE: &str = "rpr_fit";
 pub const RENDER_ENGINES: &[&str] = &["typst", "rpr", "rpr_fit"];
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

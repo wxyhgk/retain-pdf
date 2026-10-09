@@ -277,8 +277,9 @@ python3 backend/pipeline/devtools/run_golden_flow.py \
 
 ## 排版引擎开关 render.engine
 
-`render.engine = "typst"`（默认）走上面的 Typst 路线，一字不变；`"rpr"` 走自研排版引擎
-（`backend/rendering-engine`，见那里的 README）：
+`render.engine = "rpr_fit"`（默认）与 `"rpr"` 走自研排版引擎（`backend/rendering-engine`，见那里的
+README），引擎直接写出叠加层 PDF（不经过 Typst）：`rpr_fit` 的字号由引擎按测量决定（`output/rpr_fit/`），
+`rpr` 用 retain-pdf 的字号规则（`output/rpr/`）。`"typst"` 走上面的 Typst 路线，也是引擎用不了时的回退：
 
 - 分流在 `workflow/engine_dispatch.py`；实现在 `output/rpr/`（`input_builder.py` 把 page_specs 映射成引擎输入，
   `text.py` 把 cmarker markdown 还原成纯文本，`obstacles.py` 从 document.v1 取障碍物，`engine_cli.py` 调子进程，

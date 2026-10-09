@@ -708,9 +708,10 @@ def test_overlay_page_count_mismatch_falls_back(tmp_path: Path, monkeypatch) -> 
 
 
 def test_normalize_render_engine() -> None:
-    assert normalize_render_engine(None) == "typst"
+    assert normalize_render_engine(None) == "rpr_fit"
     assert normalize_render_engine(" RPR ") == "rpr"
-    assert normalize_render_engine("bogus") == "typst"
+    assert normalize_render_engine(" typst ") == "typst"
+    assert normalize_render_engine("bogus") == "rpr_fit"
 
 
 def test_markdown_to_engine_text_turns_html_scripts_into_inline_math() -> None:

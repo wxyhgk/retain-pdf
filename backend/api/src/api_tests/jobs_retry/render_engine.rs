@@ -1,5 +1,5 @@
 //! `render.engine`（typst | rpr）在原地重渲染路径上必须原样保留：rerun、retry-stage render
-//! （含 overrides 切换引擎）都只改 workflow / 凭据，不能把引擎重置回默认 typst。
+//! （含 overrides 切换引擎）都只改 workflow / 凭据，不能把引擎重置回默认值。
 //! render.spec.json 里 params.engine 的写出由 retain-data 的
 //! `render_spec_carries_render_engine` 钉住，这里钉的是落库的任务配置。
 
