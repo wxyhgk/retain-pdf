@@ -12,5 +12,6 @@ export * from "./job-detail-formatters.js";
 export * from "./normalize.js";
 export * from "./stage-history.js";
 export * from "./stage-snapshot-flatten.js";
+export * from "./status-presentation.js";
 export * from "./types.js";
 export * from "./workflow-visibility-view-model.js";

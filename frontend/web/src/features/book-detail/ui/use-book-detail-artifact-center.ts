@@ -20,6 +20,7 @@ import {
   type ArtifactLinks,
   type ArtifactManifest,
 } from "../domain/artifact-center-model.js";
+import { isActiveJobStatus } from "@retainpdf/domain/job";
 
 export function readerCompatibleArtifactLinks(
   job: DocumentJobSummary,
@@ -127,7 +128,7 @@ export function useBookDetailArtifactCenter({
     .filter(({ jobId, status }) => (
       jobId
       && !jobId.startsWith("doc:")
-      && !["queued", "pending", "running", "validating"].includes(status)
+      && !isActiveJobStatus(status)
     )), [jobs]);
   const manifestJobsKey = manifestJobs.map(({ token }) => token).join("\u0000");
 

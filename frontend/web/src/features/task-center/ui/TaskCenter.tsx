@@ -32,8 +32,8 @@ import {
   retryTaskCenterJob,
   TASK_CENTER_MAX_ITEMS,
 } from "../domain/task-center-api.js";
+import { isActiveJobStatus } from "@retainpdf/domain/job";
 
-const ACTIVE_STATUSES = new Set(["queued", "running"]);
 
 const GROUP_ICONS = {
   running: Activity,
@@ -61,7 +61,7 @@ function TaskRow({ job, busyAction, onOpen, onCancel, onRetry }: {
   onRetry: (job: JobListItemView) => void;
 }) {
   const status = `${job.status || ""}`.trim().toLowerCase();
-  const isActive = ACTIVE_STATUSES.has(status);
+  const isActive = isActiveJobStatus(status);
   const progress = taskProgressPercent(job);
   const busy = Boolean(busyAction);
 
@@ -218,7 +218,7 @@ export function TaskCenter({ onOpenBookDetail }: TaskCenterProps) {
     return () => { mountedRef.current = false; generationRef.current += 1; };
   }, [load]);
 
-  const hasActiveTasks = items.some((job) => ACTIVE_STATUSES.has(`${job.status || ""}`.toLowerCase()));
+  const hasActiveTasks = items.some((job) => isActiveJobStatus(job.status));
   useTaskCenterAutoRefresh({
     itemsRef, nextOffsetRef, generationRef, mountedRef, setItems, hasActiveTasks, refreshLive,
     listInFlightRef: requestInFlightRef });

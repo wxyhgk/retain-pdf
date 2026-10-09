@@ -13,6 +13,7 @@ import {
   recentJobStageLabel,
   recentJobStatusLabel,
 } from "@/features/library/domain.js";
+import { isActiveJobStatus } from "@retainpdf/domain/job";
 
 function statusOf(item: any) {
   if (isLibraryOnlyItem(item)) return { label: "未翻译", tone: "muted" };
@@ -83,7 +84,7 @@ export function deriveBookDetailCoverState({
   // 当前任务在跑时藏掉阅读入口，只适用于「还没有任何译文」：有旧译文就照样能读。
   const readerAvailable =
     readPresentation.target === "job" &&
-    (hasTranslation || !(cardMatchesItem && ["running", "queued", "pending"].includes(cardStatus)));
+    (hasTranslation || !(cardMatchesItem && isActiveJobStatus(cardStatus)));
   const canTranslate =
     Boolean(libraryOnly) ||
     itemStatus === "failed" ||
@@ -92,12 +93,12 @@ export function deriveBookDetailCoverState({
     typeof isActiveProp === "boolean"
       ? isActiveProp
       : isRecentJobActive(item)
-        || (cardMatchesItem && ["running", "queued", "pending"].includes(cardStatus));
+        || (cardMatchesItem && isActiveJobStatus(cardStatus));
   // 封面转圈：书架 live 行 + statusCard 正在跑（重试后 payload 可能仍是旧 succeeded）
   const coverProcessing =
     isActive ||
     isLibraryCardProcessing(item) ||
-    (cardMatchesItem && ["running", "queued", "pending"].includes(cardStatus));
+    (cardMatchesItem && isActiveJobStatus(cardStatus));
 
   return {
     status,

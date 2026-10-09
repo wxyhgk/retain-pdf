@@ -4,6 +4,7 @@
 import type { LibraryCardItem } from "@/features/library/domain.js";
 import { translationUsesReusedOcr } from "@/features/library/domain.js";
 import { percentFromProgress } from "./progress-value.js";
+import { isActiveJobStatus } from "@retainpdf/domain/job";
 
 const PROCESS_STAGES = [
   { key: "ocr", label: "OCR" },
@@ -102,7 +103,7 @@ export function translationProcessModel(item: LibraryCardItem = {}) {
   const currentStage = succeededStatus(status)
     ? "done"
     : backendCurrentStage
-      || (ocrReused && !derivedStage && ["queued", "pending", "running"].includes(status)
+      || (ocrReused && !derivedStage && isActiveJobStatus(status)
         ? "translate"
         : derivedStage);
   const currentIndex = PROCESS_STAGES.findIndex((stage) => stage.key === currentStage);

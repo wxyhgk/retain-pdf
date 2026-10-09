@@ -4,8 +4,7 @@
 import type { DocumentJobSummary } from "@/features/library/domain.js";
 import { isPollingBootstrapPlaceholder } from "@/features/jobs/index.js";
 import { isTerminalJobStatus } from "@/platform/contracts/job-status.js";
-
-const ACTIVE_STATUSES = new Set(["queued", "pending", "running", "validating"]);
+import { isActiveJobStatus, jobStatusPresentation } from "@retainpdf/domain/job";
 export const DOCUMENT_JOBS_REFRESH_INTERVAL_MS = 2_000;
 
 export function jobIdOf(job?: Partial<DocumentJobSummary> | null) {
@@ -17,7 +16,7 @@ export function documentIdOf(value?: Record<string, unknown> | null) {
 }
 
 export function isDocumentJobActive(job?: DocumentJobSummary | null) {
-  return ACTIVE_STATUSES.has(`${job?.status || ""}`.trim().toLowerCase());
+  return isActiveJobStatus(job?.status);
 }
 
 export function isDocumentJobTerminal(job?: DocumentJobSummary | null) {
@@ -159,14 +158,12 @@ export function mergeRuntimeDocumentJob(
   return upsertDocumentJob(jobs, runtimeJob, documentId);
 }
 
+// 文字和颜色统一出自 @retainpdf/domain/job 的 jobStatusPresentation。文档任务列表是摘要，
+// 没有完成信号，succeeded 就是完成（见那个文件的文件头）。
 export function documentJobPresentation(job?: DocumentJobSummary | null, idleLabel = "尚未开始") {
   if (!job) return { label: idleLabel, tone: "muted" };
-  const status = `${job.status || ""}`.trim().toLowerCase();
-  if (ACTIVE_STATUSES.has(status)) return { label: "处理中", tone: "active" };
-  if (status === "succeeded") return { label: "已完成", tone: "done" };
-  if (status === "failed") return { label: "失败", tone: "failed" };
-  if (status === "cancelled" || status === "canceled") return { label: "已取消", tone: "muted" };
-  return { label: status || idleLabel, tone: "muted" };
+  const { label, tone } = jobStatusPresentation(job.status, { idleLabel });
+  return { label, tone };
 }
 
 /**

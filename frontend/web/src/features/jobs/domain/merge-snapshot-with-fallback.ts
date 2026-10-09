@@ -6,6 +6,7 @@
 
 import type { StatusCardJobRecord, StatusCardSnapshot } from "./status-card-store.js";
 import { isPollingBootstrapPlaceholder } from "./polling-placeholder.js";
+import { isActiveJobStatus } from "@retainpdf/domain/job";
 
 // 保持向后兼容：旧路径仍可 import isPollingBootstrapPlaceholder（迁移期）
 export { isPollingBootstrapPlaceholder } from "./polling-placeholder.js";
@@ -251,7 +252,7 @@ export function mergeSnapshotWithFallback(
     };
   }
 
-  if (["running", "queued", "pending", "validating"].includes(itemStatus) && snapIsWeak) {
+  if (isActiveJobStatus(itemStatus) && snapIsWeak) {
     return {
       ...isolatedSnapshot!,
       jobId: itemJob,

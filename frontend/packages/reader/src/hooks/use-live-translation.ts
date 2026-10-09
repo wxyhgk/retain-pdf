@@ -14,11 +14,11 @@ import {
   layoutPageMap,
   type LiveTranslationState,
 } from "../shared/data/live-translation-state.js";
+import { isFinishedJobStatus } from "@retainpdf/domain/job";
 
 const LAYOUT_RETRY_MS = [250, 500, 1_000, 2_000, 4_000];
 const SNAPSHOT_RETRY_MS = [80, 160, 320, 640, 1_000, 1_500];
 const STREAM_RETRY_MS = [250, 500, 1_000, 2_000, 4_000, 5_000];
-const TERMINAL_JOB_STATUSES = new Set(["succeeded", "failed", "cancelled", "canceled"]);
 
 function wait(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -110,7 +110,7 @@ export function useLiveTranslation({
 
   const normalizedJobId = `${jobId || ""}`.trim();
   const normalizedJobStatus = `${jobStatus || ""}`.trim().toLowerCase();
-  const terminalStatus = TERMINAL_JOB_STATUSES.has(normalizedJobStatus)
+  const terminalStatus = isFinishedJobStatus(normalizedJobStatus)
     ? normalizedJobStatus
     : "";
 

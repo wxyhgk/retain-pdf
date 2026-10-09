@@ -5,23 +5,10 @@ import {
   normalizeRuntimeDisplayStage,
 } from "../recent-jobs/runtime-value-helpers.js";
 import { escapeAttribute, truncateDisplayName } from "@/platform/utils/html-formatting.js";
+import { JOB_STATUS_LABELS, isActiveJobStatus, jobStatusLabel, normalizeJobStatus } from "@retainpdf/domain/job";
 
 export function recentJobStatusLabel(status) {
-  switch (`${status || ""}`.trim()) {
-    case "queued":
-      return "排队中";
-    case "running":
-      return "处理中";
-    case "succeeded":
-      return "已完成";
-    case "failed":
-      return "失败";
-    case "canceled":
-    case "cancelled":
-      return "已取消";
-    default:
-      return status || "-";
-  }
+  return jobStatusLabel(status, { idleLabel: "-" });
 }
 
 const RECENT_JOB_STAGE_KEYS = new Set(["ocr", "translate", "render", "done", "queued", "failed", "canceled"]);
@@ -51,13 +38,12 @@ export function stageKeyForRecentJobLabel(item: any = {}) {
   if (stageKey) {
     return stageKey;
   }
-  switch (`${item.status || ""}`.trim().toLowerCase()) {
+  switch (normalizeJobStatus(item.status)) {
     case "succeeded":
       return "done";
     case "failed":
       return "failed";
     case "canceled":
-    case "cancelled":
       return "canceled";
     case "queued":
       return "queued";
@@ -75,15 +61,15 @@ export function recentJobStageLabel(item) {
     case "render":
       return "渲染中";
     case "done":
-      return "已完成";
+      return JOB_STATUS_LABELS.succeeded;
     case "queued":
-      return "排队中";
+      return JOB_STATUS_LABELS.queued;
     case "failed":
-      return "失败";
+      return JOB_STATUS_LABELS.failed;
     case "canceled":
-      return "已取消";
+      return JOB_STATUS_LABELS.canceled;
     default:
-      return `${item?.status || ""}`.trim() === "queued" ? "排队中" : "处理中";
+      return normalizeJobStatus(item?.status) === "queued" ? JOB_STATUS_LABELS.queued : JOB_STATUS_LABELS.running;
   }
 }
 
@@ -104,8 +90,7 @@ export function recentJobProgressPercent(item) {
 }
 
 export function isRecentJobActive(item) {
-  const status = `${item?.status || ""}`.trim();
-  if (status === "queued" || status === "running") {
+  if (isActiveJobStatus(item?.status)) {
     return true;
   }
   // isJobTerminal 已覆盖 failed/canceled，无需再手写一份状态集合。

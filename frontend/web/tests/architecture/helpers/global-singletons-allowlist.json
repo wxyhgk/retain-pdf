@@ -1,7 +1,5 @@
 [
   "src/app/home/state/home-store.ts::let-var::defaultHomeStatePort",
-  "src/features/book-detail/domain/document-jobs-model.ts::new-collection::ACTIVE_STATUSES",
-  "src/features/book-detail/ui/panels/translate/TranslateProgress.tsx::new-collection::PROGRESS_STATUSES",
   "src/features/book-detail/ui/use-book-detail-cover.ts::new-collection::RETRYABLE_TRANSLATION_STATUSES",
   "src/features/book-detail/ui/use-book-detail-stage-actions.ts::new-collection::RESUME_CANDIDATE_STATUSES",
   "src/features/book-detail/ui/use-book-detail-stage-actions.ts::new-collection::stageActionsCache",
@@ -27,7 +25,6 @@
   "src/features/library/domain/recent-jobs/state.ts::let-var::defaultRecentJobsStatePort",
   "src/features/library/ui/shell/BookCard.tsx::new-collection::renderCountsForTests",
   "src/features/reader/domain/navigate-to-reader.ts::let-var::navigateImpl",
-  "src/features/task-center/ui/TaskCenter.tsx::new-collection::ACTIVE_STATUSES",
   "src/platform/config/desktop-persistence.ts::let-var::desktopPersistedSnapshot",
   "src/platform/config/runtime.ts::let-var::runtimeConfig",
   "src/platform/contracts/credentials-contract.ts::let-var::_defaultCredentialsStatePort",

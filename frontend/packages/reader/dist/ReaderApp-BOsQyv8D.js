@@ -1,32 +1,33 @@
-var En = (e) => {
+var Mn = (e) => {
   throw TypeError(e);
 };
-var Mn = (e, t, n) => t.has(e) || En("Cannot " + n);
-var Qe = (e, t, n) => (Mn(e, t, "read from private field"), n ? n.call(e) : t.get(e)), An = (e, t, n) => t.has(e) ? En("Cannot add the same private member more than once") : t instanceof WeakSet ? t.add(e) : t.set(e, n), _n = (e, t, n, r) => (Mn(e, t, "write to private field"), r ? r.call(e, n) : t.set(e, n), n);
+var An = (e, t, n) => t.has(e) || Mn("Cannot " + n);
+var Qe = (e, t, n) => (An(e, t, "read from private field"), n ? n.call(e) : t.get(e)), _n = (e, t, n) => t.has(e) ? Mn("Cannot add the same private member more than once") : t instanceof WeakSet ? t.add(e) : t.set(e, n), Ln = (e, t, n, r) => (An(e, t, "write to private field"), r ? r.call(e, n) : t.set(e, n), n);
 import { jsxs as U, jsx as P, Fragment as Qt } from "react/jsx-runtime";
-import { useMemo as K, useState as k, useEffect as j, useCallback as $, useRef as A, useLayoutEffect as De, memo as en, forwardRef as lo, useImperativeHandle as tn, createContext as nn, useContext as rn, useSyncExternalStore as mr, useId as hr, Suspense as uo, lazy as fo } from "react";
-import { requireAdapter as Ze, getReaderAdapters as me, renderReaderBoardSlot as mo } from "./adapters.js";
-import { resolveReaderDownloadName as ho, resolveReaderDownloadUrls as po, READER_PROGRESS_COPY as Se, trimString as wt, READER_DOWNLOAD_ACTIONS as go, disabledReason as bo } from "./runtime/state.js";
+import { useMemo as K, useState as k, useEffect as j, useCallback as $, useRef as A, useLayoutEffect as De, memo as en, forwardRef as uo, useImperativeHandle as tn, createContext as nn, useContext as rn, useSyncExternalStore as hr, useId as pr, Suspense as fo, lazy as mo } from "react";
+import { requireAdapter as Ze, getReaderAdapters as me, renderReaderBoardSlot as ho } from "./adapters.js";
+import { resolveReaderDownloadName as po, resolveReaderDownloadUrls as go, READER_PROGRESS_COPY as Se, trimString as wt, READER_DOWNLOAD_ACTIONS as bo, disabledReason as yo } from "./runtime/state.js";
 import "@retainpdf/api/conversations";
-import { r as yo, b as vo } from "./page-config-Ct7qR5rm.js";
-import { c as So, n as wo, f as kt, j as Ln, a as Po, b as Ro, h as pr, p as on, d as Io, k as kn, i as To } from "./reader-regions-CXmxla3K.js";
-import { isReaderTransportError as Eo, createReaderTransportError as Mo } from "./contracts.js";
-import { toast as jt, Toaster as Ao } from "sonner";
-import { X as gr, Radio as _o, FileText as br, Columns2 as yr, Languages as vr, FileCode2 as Lo, Sparkles as ko, Keyboard as No, Download as Co, ChevronDown as Do } from "lucide-react";
-import { pdfjs as zo, Page as xo, Document as Oo } from "react-pdf";
-import { e as Fo, m as $o, a as jo } from "./markdown-math-XkF5urpn.js";
-const Uo = (...e) => {
+import { r as vo, b as So } from "./page-config-Ct7qR5rm.js";
+import { isFinishedJobStatus as on } from "@retainpdf/domain/job";
+import { c as wo, n as Po, f as kt, j as kn, a as Ro, b as Io, h as gr, p as an, d as To, k as Nn, i as Eo } from "./reader-regions-CXmxla3K.js";
+import { isReaderTransportError as Mo, createReaderTransportError as Ao } from "./contracts.js";
+import { toast as jt, Toaster as _o } from "sonner";
+import { X as br, Radio as Lo, FileText as yr, Columns2 as vr, Languages as Sr, FileCode2 as ko, Sparkles as No, Keyboard as Co, Download as Do, ChevronDown as zo } from "lucide-react";
+import { pdfjs as xo, Page as Oo, Document as Fo } from "react-pdf";
+import { e as $o, m as jo, a as Uo } from "./markdown-math-XkF5urpn.js";
+const Bo = (...e) => {
   var t, n;
   return ((n = (t = me()) == null ? void 0 : t.isMockMode) == null ? void 0 : n.call(t, ...e)) ?? !1;
-}, Bo = "", Ho = Object.freeze({
+}, Ho = "", Wo = Object.freeze({
   progress: "retainpdf-reader-progress"
-}), Wo = (e) => {
+}), Vo = (e) => {
   var t, n;
   return ((n = (t = me()) == null ? void 0 : t.resolveResourceUrl) == null ? void 0 : n.call(t, e)) ?? e;
 }, ll = (...e) => {
   var n;
   return (((n = me()) == null ? void 0 : n.fetchProtected) ?? fetch)(...e);
-}, we = () => Ze("defaultReaderDataPort"), Nn = () => Ze("defaultReaderPageConfigPort"), ul = {
+}, we = () => Ze("defaultReaderDataPort"), Cn = () => Ze("defaultReaderPageConfigPort"), ul = {
   get apiPrefix() {
     return we().apiPrefix;
   },
@@ -40,10 +41,10 @@ const Uo = (...e) => {
   get liveTranslation() {
     return we().liveTranslation;
   }
-}, Sr = {
-  messageTargetOrigin: () => Nn().messageTargetOrigin(),
-  readerJobId: () => Nn().readerJobId()
-}, Vo = () => {
+}, wr = {
+  messageTargetOrigin: () => Cn().messageTargetOrigin(),
+  readerJobId: () => Cn().readerJobId()
+}, Jo = () => {
   var e;
   return ((e = me()) == null ? void 0 : e.liveTranslation) ?? null;
 }, at = () => {
@@ -56,7 +57,7 @@ const Uo = (...e) => {
       return ((r = e == null ? void 0 : e.resolvePdfjsVendorUrl) == null ? void 0 : r.call(e, n)) ?? "";
     }
   };
-}, an = () => {
+}, sn = () => {
   const e = me();
   if (e != null && e.sessionData) return e.sessionData;
   const t = e == null ? void 0 : e.defaultReaderDataPort;
@@ -82,26 +83,26 @@ const Uo = (...e) => {
       return ((r = e.resolveReaderArtifactUrl) == null ? void 0 : r.call(e, n)) ?? "";
     }
   };
-}, Jo = (...e) => {
+}, qo = (...e) => {
   var t, n;
   return ((n = (t = me()) == null ? void 0 : t.resolveReaderAnchor) == null ? void 0 : n.call(t, ...e)) ?? null;
-}, qo = () => {
+}, Go = () => {
   var e, t;
   return ((t = (e = me()) == null ? void 0 : e.resolveReaderDocumentId) == null ? void 0 : t.call(e)) ?? "";
-}, Go = (...e) => {
-  var t, n;
-  return ((n = (t = me()) == null ? void 0 : t.resolveReaderJobId) == null ? void 0 : n.call(t, ...e)) ?? "";
 }, Ko = (...e) => {
   var t, n;
-  return ((n = (t = me()) == null ? void 0 : t.resolveReaderDownloadName) == null ? void 0 : n.call(t, ...e)) ?? ho(...e);
+  return ((n = (t = me()) == null ? void 0 : t.resolveReaderJobId) == null ? void 0 : n.call(t, ...e)) ?? "";
 }, Zo = (...e) => {
   var t, n;
-  return ((n = (t = me()) == null ? void 0 : t.resolveReaderDownloadUrls) == null ? void 0 : n.call(t, ...e)) ?? po(...e);
-}, Yo = (...e) => Ze("downloadProtectedResource")(...e), Xo = (...e) => Ze("failDownloadToast")(...e), dl = (e, t) => Ze("resolveMarkdownAssetUrl")(e, t), Qo = "/api/v1";
-function ea() {
+  return ((n = (t = me()) == null ? void 0 : t.resolveReaderDownloadName) == null ? void 0 : n.call(t, ...e)) ?? po(...e);
+}, Yo = (...e) => {
+  var t, n;
+  return ((n = (t = me()) == null ? void 0 : t.resolveReaderDownloadUrls) == null ? void 0 : n.call(t, ...e)) ?? go(...e);
+}, Xo = (...e) => Ze("downloadProtectedResource")(...e), Qo = (...e) => Ze("failDownloadToast")(...e), dl = (e, t) => Ze("resolveMarkdownAssetUrl")(e, t), ea = "/api/v1";
+function ta() {
   const e = () => {
     var r;
-    return yo(
+    return vo(
       ((r = globalThis.location) == null ? void 0 : r.search) || ""
     );
   }, [t, n] = k(e);
@@ -127,11 +128,11 @@ function ea() {
     };
   }, []), t;
 }
-function ta() {
-  const e = ea(), t = K(() => Go(Sr), [e]), n = K(() => qo(), [e]), r = t || n ? `job:${t}|document:${n}` : `location:${e}`;
+function na() {
+  const e = ta(), t = K(() => Ko(wr), [e]), n = K(() => Go(), [e]), r = t || n ? `job:${t}|document:${n}` : `location:${e}`;
   return { locationKey: e, jobId: t, routeDocumentId: n, sessionIdentity: r };
 }
-function na(e) {
+function ra(e) {
   const {
     routeDocumentId: t,
     jobId: n,
@@ -213,8 +214,7 @@ function na(e) {
     applyIdentityEvent: D
   };
 }
-const ra = /* @__PURE__ */ new Set(["succeeded", "failed", "cancelled", "canceled"]);
-function Cn(e) {
+function Dn(e) {
   return `${(e == null ? void 0 : e.status) || ""}`.trim().toLowerCase();
 }
 function oa(e) {
@@ -233,9 +233,9 @@ function oa(e) {
   }
   return "";
 }
-function Dn(e, t) {
+function zn(e, t) {
   const n = `/api/v1/documents/${encodeURIComponent(e)}/source.pdf`, r = `${t || ""}`.trim();
-  return Wo(r ? `${n}?version=${encodeURIComponent(r)}` : n);
+  return Vo(r ? `${n}?version=${encodeURIComponent(r)}` : n);
 }
 function aa(e, t = "") {
   const n = `${e || ""}`.trim(), r = `${t || ""}`.trim();
@@ -265,12 +265,12 @@ function Ut({
   try {
     (r = window.parent) == null || r.postMessage(
       {
-        type: Ho.progress,
+        type: Wo.progress,
         stage: n,
         percent: e,
         text: t
       },
-      Sr.messageTargetOrigin()
+      wr.messageTargetOrigin()
     );
   } catch {
   }
@@ -292,7 +292,7 @@ function ia(e) {
     sessionJobIdRef: o,
     sessionEpochRef: a,
     closingRef: s
-  } = e, [l, i] = k(null), [c, u] = k(null), [d, m] = k(""), [f, h] = k(0), p = d === n ? l : null, y = d === n ? c : null, b = Cn(p), S = ra.has(b), w = $(() => {
+  } = e, [l, i] = k(null), [c, u] = k(null), [d, m] = k(""), [f, h] = k(0), p = d === n ? l : null, y = d === n ? c : null, b = Dn(p), S = on(b), w = $(() => {
     h((D) => D + 1);
   }, []), g = $((D) => {
     i(D.jobPayload), u(D.manifestPayload), m(D.sessionIdentity);
@@ -301,7 +301,7 @@ function ia(e) {
   }, []), M = A(""), _ = A(""), x = $(async () => {
     const D = o.current;
     if (!D || M.current === D) return;
-    const N = an().loadJobPayload;
+    const N = sn().loadJobPayload;
     if (typeof N != "function") return;
     const R = a.current.value;
     M.current = D;
@@ -309,7 +309,7 @@ function ia(e) {
       const T = await N(D);
       if (s.current || a.current.value !== R || o.current !== D || !T || typeof T != "object")
         return;
-      const I = Cn(T);
+      const I = Dn(T);
       i(T), m(r.current), I === "succeeded" && _.current !== D && (_.current = D, h((E) => E + 1));
     } catch {
     } finally {
@@ -362,14 +362,14 @@ function la(e) {
     document.documentElement.classList.remove("reader-source-only");
   }), [e, t]), { mode: t, setMode: r, setModeState: n, switchSessionMode: o };
 }
-function zn(e) {
+function xn(e) {
   return typeof e == "string" ? e.trim() : `${e ?? ""}`.trim();
 }
 function ua(e) {
   const t = (e == null ? void 0 : e.data) ?? e, n = t && typeof t == "object" ? t : {};
   return {
-    activeJobId: zn(n.active_job_id),
-    activeVersionId: zn(n.active_version_id)
+    activeJobId: xn(n.active_job_id),
+    activeVersionId: xn(n.active_version_id)
   };
 }
 function da(e) {
@@ -407,7 +407,7 @@ function Nt(e) {
   const n = pe.get(t);
   return Ht(t, n), n;
 }
-async function wr(e, t = at().fetchProtected, n = {}) {
+async function Pr(e, t = at().fetchProtected, n = {}) {
   const r = `${e || ""}`.trim();
   if (!r)
     return null;
@@ -445,7 +445,7 @@ function ba(e = "", t = null) {
       return;
     }
     let u = !1;
-    return a(!0), l(""), r(null), wr(i).then((d) => {
+    return a(!0), l(""), r(null), Pr(i).then((d) => {
       u || (r(d), a(!1));
     }).catch((d) => {
       u || (r(null), a(!1), l((d == null ? void 0 : d.message) || String(d)));
@@ -472,7 +472,7 @@ async function Wt(e) {
   if (!t || a.isInactive())
     return null;
   Pt(s, r, n, "download");
-  const l = await wr(t, at().fetchProtected, {
+  const l = await Pr(t, at().fetchProtected, {
     signal: a.signal
   });
   return a.isInactive() ? null : (Pt(s, o, n, "download"), l);
@@ -549,7 +549,7 @@ function Sa(e) {
       sessionEpoch: te
     });
     b.current = Q;
-    const X = an();
+    const X = sn();
     if (y.current)
       return Q.abort(), () => {
         b.current === Q && (b.current = null);
@@ -573,10 +573,10 @@ function Sa(e) {
       }), Ut({ percent: 100, text: Se.ready, stage: "ready" });
     }
     function Oe() {
-      return c != null && c.documentId ? Dn(
+      return c != null && c.documentId ? zn(
         c.documentId,
         c.revision
-      ) : Uo() ? Bo : X.resolveResourceUrl(`/api/v1/documents/${encodeURIComponent(r)}/source.pdf`);
+      ) : Bo() ? Ho : X.resolveResourceUrl(`/api/v1/documents/${encodeURIComponent(r)}/source.pdf`);
     }
     async function Ee() {
       let ne = { activeJobId: "", activeVersionId: "" };
@@ -662,7 +662,7 @@ function Sa(e) {
           ce = ue.linkedDocument;
         else {
           try {
-            ce = await X.fetchDocumentByJobId(Qo, t);
+            ce = await X.fetchDocumentByJobId(ea, t);
           } catch {
           }
           if (re.isInactive()) return;
@@ -690,7 +690,7 @@ function Sa(e) {
         }), f("source");
         return;
       }
-      const Ye = X.resolveReaderSourcePdf(de.manifestPayload), Lt = X.resolveReaderTranslatedPdfUrl(de.jobPayload, de.manifestPayload), Me = typeof Ye == "string" ? Ye : X.resolveReaderArtifactUrl(Ye), Ae = r || Fe, _e = c != null && c.documentId ? Dn(
+      const Ye = X.resolveReaderSourcePdf(de.manifestPayload), Lt = X.resolveReaderTranslatedPdfUrl(de.jobPayload, de.manifestPayload), Me = typeof Ye == "string" ? Ye : X.resolveReaderArtifactUrl(Ye), Ae = r || Fe, _e = c != null && c.documentId ? zn(
         c.documentId,
         c.revision
       ) : Me || (Ae ? X.resolveResourceUrl(`/api/v1/documents/${encodeURIComponent(Ae)}/source.pdf`) : ""), Xe = c ? "" : Lt || "";
@@ -709,7 +709,7 @@ function Sa(e) {
       });
       const L = se ? await se : de;
       if (re.isInactive()) return;
-      if (O(c ? [] : So(L.regionsPayload)), V(c ? { source: null, translated: null } : wo(L.readerMetadata)), F(c ? gt : L.readerErrors ?? gt), !pt) {
+      if (O(c ? [] : wo(L.regionsPayload)), V(c ? { source: null, translated: null } : Po(L.readerMetadata)), F(c ? gt : L.readerErrors ?? gt), !pt) {
         ee(Se.failed, Se.failed);
         return;
       }
@@ -769,13 +769,13 @@ function Sa(e) {
   };
 }
 function wa() {
-  const e = A(!1), t = A(null), { locationKey: n, jobId: r, routeDocumentId: o, sessionIdentity: a } = ta(), s = A({ identity: "", value: 0 });
+  const e = A(!1), t = A(null), { locationKey: n, jobId: r, routeDocumentId: o, sessionIdentity: a } = na(), s = A({ identity: "", value: 0 });
   s.current.identity !== a && (s.current = {
     identity: a,
     value: s.current.value + 1
   }, e.current = !1);
   const l = A(a), i = A(""), c = A(""), u = A(() => {
-  }), d = $(() => u.current(), []), m = na({
+  }), d = $(() => u.current(), []), m = ra({
     routeDocumentId: o,
     jobId: r,
     sessionIdentity: a,
@@ -830,7 +830,7 @@ function wa() {
     e.current = !0, (O = t.current) == null || O.abort();
   }, []), E = K(
     () => ({
-      fetchProtected: an().fetchProtected,
+      fetchProtected: sn().fetchProtected,
       jobId: f,
       jobPayload: v,
       manifestPayload: M,
@@ -958,30 +958,30 @@ function Ma(e, t) {
     rowSyncRevision: N
   };
 }
-const Ge = "data-reader-page", st = "data-reader-pane", sn = "data-natural-height", Aa = "reader-react-root", _a = "reader-react-grid", La = "reader-react-scroll-shell", ka = "reader-react-pdf-pane", Pr = "reader-react-pdf-page", Rt = "reader-react-pdf-page-placeholder", cn = "reader-react-pdf-page-slot";
+const Ge = "data-reader-page", st = "data-reader-pane", cn = "data-natural-height", Aa = "reader-react-root", _a = "reader-react-grid", La = "reader-react-scroll-shell", ka = "reader-react-pdf-pane", Rr = "reader-react-pdf-page", Rt = "reader-react-pdf-page-placeholder", ln = "reader-react-pdf-page-slot";
 function It(e, t) {
   const n = e != null ? `[${Ge}="${e}"]` : `[${Ge}]`;
   return t ? `${n}[${st}="${t}"]` : n;
 }
 function Na() {
-  return `.${cn}[${Ge}]`;
+  return `.${ln}[${Ge}]`;
 }
-function ln(e) {
+function un(e) {
   return Number(e.getAttribute(Ge));
 }
-const Rr = 0.25, Tt = 1, Ca = 0.05, dt = 0.5, Da = 16, za = 8, xa = 720;
+const Ir = 0.25, Tt = 1, Ca = 0.05, dt = 0.5, Da = 16, za = 8, xa = 720;
 function Ve() {
   const e = typeof window > "u" ? NaN : Number(window.innerWidth);
   return Number.isFinite(e) && e > 0 ? e : Number.POSITIVE_INFINITY;
 }
-function Ir(e) {
+function Tr(e) {
   return Number.isFinite(e) && e < xa;
 }
 function He(e, t = Number.POSITIVE_INFINITY) {
-  return Ir(t) && (e === "source" || e === "translated") ? Tt : dt;
+  return Tr(t) && (e === "source" || e === "translated") ? Tt : dt;
 }
 function Mt(e) {
-  return Number.isFinite(e) ? Math.min(Tt, Math.max(Rr, e)) : dt;
+  return Number.isFinite(e) ? Math.min(Tt, Math.max(Ir, e)) : dt;
 }
 function it(e, t) {
   const n = Mt(Number(e) + t * Ca);
@@ -1029,18 +1029,18 @@ const Ua = 8;
 function Ba(e, t) {
   return !Number.isFinite(e) || e < 80 || Math.abs(e - t) < Ua ? "ignore" : !Number.isFinite(t) || t <= 0 ? "immediate" : "settle";
 }
-const Ha = 200, Tr = [
+const Ha = 200, Er = [
   "markdown"
-], Er = [
+], Mr = [
   "terminal"
 ], Wa = [
-  ...Tr,
-  ...Er
+  ...Er,
+  ...Mr
 ];
-function Mr(e) {
+function Ar(e) {
   return Wa.includes(e);
 }
-const Va = "retainpdf:reader:view:v1:", xn = /* @__PURE__ */ new Set([
+const Va = "retainpdf:reader:view:v1:", On = /* @__PURE__ */ new Set([
   "source",
   "translated",
   "markdown",
@@ -1050,7 +1050,7 @@ const Va = "retainpdf:reader:view:v1:", xn = /* @__PURE__ */ new Set([
   "compare",
   "translated"
 ]);
-function Ar() {
+function _r() {
   try {
     return typeof globalThis.localStorage > "u" ? null : globalThis.localStorage;
   } catch {
@@ -1069,7 +1069,7 @@ function qa({
   const r = Vt(t);
   return r ? `job:${r}` : "";
 }
-function _r(e) {
+function Lr(e) {
   const t = Vt(e);
   return t ? `${Va}${t}` : "";
 }
@@ -1086,16 +1086,16 @@ function Ka(e) {
   if (e === null) return null;
   if (!e || typeof e != "object") return;
   const t = `${e.left || ""}`, n = `${e.right || ""}`;
-  if (!(!xn.has(t) || !xn.has(n) || t === n))
+  if (!(!On.has(t) || !On.has(n) || t === n))
     return { left: t, right: n };
 }
 function Za(e) {
-  return e === null ? null : Mr(e) ? e : void 0;
+  return e === null ? null : Ar(e) ? e : void 0;
 }
 function Ya(e) {
   return Ja.has(e) ? e : void 0;
 }
-function Lr(e) {
+function kr(e) {
   if (!e || typeof e != "object") return null;
   const t = e;
   if (t.schema !== "retainpdf_reader_view_v1") return null;
@@ -1110,20 +1110,20 @@ function Lr(e) {
     updatedAt: Number.isFinite(Number(t.updatedAt)) ? Number(t.updatedAt) : 0
   };
 }
-function ye(e, t = Ar()) {
-  const n = _r(e);
+function ye(e, t = _r()) {
+  const n = Lr(e);
   if (!n || !t) return null;
   try {
     const r = t.getItem(n);
-    return r ? Lr(JSON.parse(r)) : null;
+    return r ? kr(JSON.parse(r)) : null;
   } catch {
     return null;
   }
 }
-function At(e, t, n = Ar()) {
-  const r = _r(e);
+function At(e, t, n = _r()) {
+  const r = Lr(e);
   if (!r || !n) return null;
-  const o = ye(e, n), a = Lr({
+  const o = ye(e, n), a = kr({
     schema: "retainpdf_reader_view_v1",
     ...o || {},
     ...t,
@@ -1176,11 +1176,11 @@ function Qa(e) {
     i !== o.current && (s.current(), a.current(i));
   }, []) };
 }
-const un = 48;
-function kr(e, t = un) {
+const dn = 48;
+function Nr(e, t = dn) {
   return e.getBoundingClientRect().top + t;
 }
-function Nr(e, t) {
+function Cr(e, t) {
   if (!e.length)
     return null;
   let n = null, r = -1 / 0;
@@ -1200,22 +1200,22 @@ function Nr(e, t) {
   }
   if (!n)
     return null;
-  const o = ln(n);
+  const o = un(n);
   if (!Number.isFinite(o) || o < 1)
     return null;
   const a = n.getBoundingClientRect(), s = a.height > 0 ? a.height : 1, l = Math.min(1, Math.max(0, (t - a.top) / s));
   return { el: n, page: o, fraction: l };
 }
-function Dt(e, t, n = un) {
+function Dt(e, t, n = dn) {
   if (!e)
     return null;
   const r = It(void 0, t), o = Array.from(e.querySelectorAll(r));
   if (!o.length || e.getBoundingClientRect().height <= 0)
     return null;
-  const s = kr(e, n), l = Nr(o, s);
+  const s = Nr(e, n), l = Cr(o, s);
   return l ? { page: l.page, fraction: l.fraction } : null;
 }
-function dn(e, t, n = "auto", r, o = un) {
+function fn(e, t, n = "auto", r, o = dn) {
   if (!e || !t)
     return !1;
   const a = Math.max(1, Math.floor(Number(t.page) || 1)), s = Math.min(1, Math.max(0, Number(t.fraction) || 0));
@@ -1229,7 +1229,7 @@ function dn(e, t, n = "auto", r, o = un) {
   return n === "auto" ? e.scrollTop = m : e.scrollTo({ top: m, behavior: n }), !0;
 }
 function es(e, t, n = "smooth", r) {
-  return dn(
+  return fn(
     e,
     { page: t, fraction: 0 },
     n,
@@ -1242,7 +1242,7 @@ function Jt(e, t, n) {
   const l = [], i = () => {
     var u;
     if (a) return;
-    dn(
+    fn(
       e(),
       t,
       r,
@@ -1294,7 +1294,7 @@ function ns(e, t, n = !0, r = "", o) {
       const p = Array.from(l.querySelectorAll(d));
       if (!p.length)
         return;
-      const y = kr(l), b = Nr(p, y);
+      const y = Nr(l), b = Cr(p, y);
       b && s(b.page);
     }, f = () => {
       i || (u && cancelAnimationFrame(u), u = requestAnimationFrame(() => {
@@ -1313,13 +1313,13 @@ function ns(e, t, n = !0, r = "", o) {
     };
   }, [e, t, n, r, o]), a;
 }
-const rs = `canvas, .react-pdf__Page, .${Pr}, .${Rt}`, On = /* @__PURE__ */ new WeakMap();
+const rs = `canvas, .react-pdf__Page, .${Rr}, .${Rt}`, Fn = /* @__PURE__ */ new WeakMap();
 function os(e) {
-  const t = Number(e.getAttribute(sn));
+  const t = Number(e.getAttribute(cn));
   if (Number.isFinite(t) && t > 0)
     return t;
-  let n = On.get(e);
-  if ((n == null || !n.isConnected) && (n = e.querySelector(rs), On.set(e, n)), n) {
+  let n = Fn.get(e);
+  if ((n == null || !n.isConnected) && (n = e.querySelector(rs), Fn.set(e, n)), n) {
     const o = n.getBoundingClientRect().height;
     if (Number.isFinite(o) && o > 0)
       return o;
@@ -1336,7 +1336,7 @@ function as(e, t) {
 function ss(e) {
   const t = /* @__PURE__ */ new Map();
   e.querySelectorAll(Na()).forEach((r) => {
-    const o = ln(r);
+    const o = un(r);
     if (!Number.isFinite(o) || o < 1) return;
     const a = os(r);
     if (a <= 0) return;
@@ -1389,7 +1389,7 @@ const cs = [0, 48, 140, 320, 560], ls = 700, us = [80, 200, 400], ds = 500, fs =
   "Spacebar",
   "j",
   "k"
-]), hs = 180, Fn = [0, 48, 140, 320, 700, 1200];
+]), hs = 180, $n = [0, 48, 140, 320, 700, 1200];
 function ps(e, t) {
   var T;
   const {
@@ -1470,12 +1470,12 @@ function ps(e, t) {
       {
         behavior: "auto",
         pane: b.current,
-        delaysMs: Fn,
+        delaysMs: $n,
         onDone: () => v(I)
       }
     ), m.current = setTimeout(() => {
       m.current = null, v(I);
-    }, Math.max(...Fn) + 160), () => S();
+    }, Math.max(...$n) + 160), () => S();
   }, [o, s, a, e, v, S]), j(() => {
     if (u.current === r)
       return;
@@ -1533,7 +1533,7 @@ function ps(e, t) {
     if (!c.current || !i.current)
       return;
     const I = he(i.current);
-    dn(
+    fn(
       e.current,
       I,
       "auto",
@@ -1562,7 +1562,7 @@ function gs(e, t) {
   const r = Math.floor(n) + 1;
   return r >= 1 ? r : null;
 }
-function Cr(e, t, n) {
+function Dr(e, t, n) {
   const r = `${(n == null ? void 0 : n.jobId) || ""}`.trim(), o = `${(n == null ? void 0 : n.documentId) || ""}`.trim(), a = `j:${r}:d:${o}`;
   return t == null ? `${a}:none:${(e == null ? void 0 : e.blockId) || ""}` : `${a}:p:${t}:b:${(e == null ? void 0 : e.blockId) || ""}`;
 }
@@ -1579,7 +1579,7 @@ function Ss(e, t, n) {
     var w, g;
     if (!r || !Number.isFinite(o) || o < 1)
       return;
-    const h = Jo(), p = gs(h, d.current), y = Cr(h, p, { jobId: i, documentId: c });
+    const h = qo(), p = gs(h, d.current), y = Dr(h, p, { jobId: i, documentId: c });
     if (t.current === y)
       return;
     if (p == null) {
@@ -1630,10 +1630,10 @@ function Ps(e, t, n) {
     if (!n || !r || !t.current || !Number.isFinite(o) || o < 1 || m.current === o) return;
     const f = setTimeout(() => {
       var b;
-      const h = ((b = globalThis.location) == null ? void 0 : b.search) || "", p = vo(h, o, u.current);
+      const h = ((b = globalThis.location) == null ? void 0 : b.search) || "", p = So(h, o, u.current);
       if (m.current = o, p === null) return;
       const y = `${new URLSearchParams(p).get("block_id") || ""}`.trim();
-      t.current = Cr(
+      t.current = Dr(
         { blockId: y },
         o,
         { jobId: l, documentId: i }
@@ -1673,20 +1673,20 @@ const et = {
 function Is(e) {
   return new Map(((e == null ? void 0 : e.pages) || []).map((t) => [t.page_idx, t]));
 }
-function $n(e, t) {
+function jn(e, t) {
   return e.attempt !== t.attempt ? e.attempt < t.attempt ? -1 : 1 : e.generation !== t.generation ? e.generation < t.generation ? -1 : 1 : 0;
 }
-function Dr(e, t, n) {
+function zr(e, t, n) {
   if (n.page_idx !== t.page_idx) return "retry";
-  const r = $n(n, t);
+  const r = jn(n, t);
   if (r < 0 || r === 0 && n.page_hash !== t.page_hash) return "retry";
   if (!e) return "accept";
-  const o = $n(n, e);
+  const o = jn(n, e);
   return o < 0 || o === 0 && n.page_hash === e.pageHash ? "ignore" : "accept";
 }
 function Ts(e, t, n) {
   if (t.seq <= e.lastSeq) return e;
-  const r = e.pagesByPage.get(t.page_idx), o = Dr(r, t, n);
+  const r = e.pagesByPage.get(t.page_idx), o = zr(r, t, n);
   if (o === "retry") return e;
   if (o === "ignore")
     return { ...e, lastSeq: t.seq, connection: "live", error: "" };
@@ -1719,7 +1719,7 @@ function Es(e) {
     overlayRenderable: t && r && e.liveTranslationVisible && !e.assistantOpen
   };
 }
-const jn = [250, 500, 1e3, 2e3, 4e3], zt = [80, 160, 320, 640, 1e3, 1500], Un = [250, 500, 1e3, 2e3, 4e3, 5e3], Ms = /* @__PURE__ */ new Set(["succeeded", "failed", "cancelled", "canceled"]);
+const Un = [250, 500, 1e3, 2e3, 4e3], zt = [80, 160, 320, 640, 1e3, 1500], Bn = [250, 500, 1e3, 2e3, 4e3, 5e3];
 function qt(e, t) {
   return new Promise((n, r) => {
     if (t.aborted) {
@@ -1734,21 +1734,21 @@ function qt(e, t) {
     t.addEventListener("abort", o, { once: !0 });
   });
 }
-function fn(e) {
-  return Eo(e) ? `${e.code || ""}`.trim() : "";
+function mn(e) {
+  return Mo(e) ? `${e.code || ""}`.trim() : "";
 }
 function bt(e, t) {
-  const n = fn(e);
+  const n = mn(e);
   return n === "LIVE_TRANSLATION_PAGE_NOT_COMMITTED" ? "尚未收到可显示的页面译文" : n === "LIVE_TRANSLATION_LAYOUT_NOT_READY" ? "正在等待 OCR 版面数据" : `${(e == null ? void 0 : e.message) || ""}`.trim() || t;
 }
-async function As(e, t, n, r, o) {
+async function Ms(e, t, n, r, o) {
   let a = null;
   for (let s = 0; ; s += 1) {
     try {
       const i = await o.fetchPage(e, t.page_idx, { signal: r });
-      if (Dr(n.pagesByPage.get(t.page_idx), t, i) !== "retry")
+      if (zr(n.pagesByPage.get(t.page_idx), t, i) !== "retry")
         return i;
-      a = Mo(
+      a = Ao(
         "Authoritative page snapshot has not reached the event generation",
         409,
         "LIVE_TRANSLATION_SNAPSHOT_UNAVAILABLE"
@@ -1756,7 +1756,7 @@ async function As(e, t, n, r, o) {
     } catch (i) {
       if ((i == null ? void 0 : i.name) === "AbortError") throw i;
       a = i;
-      const c = fn(i);
+      const c = mn(i);
       if (c && ![
         "LIVE_TRANSLATION_PAGE_NOT_COMMITTED",
         "LIVE_TRANSLATION_SNAPSHOT_UNAVAILABLE"
@@ -1766,7 +1766,7 @@ async function As(e, t, n, r, o) {
     if (await qt(l, r), s >= zt.length + 2) throw a;
   }
 }
-function _s({
+function As({
   jobId: e,
   jobStatus: t,
   enabled: n,
@@ -1774,13 +1774,13 @@ function _s({
 }) {
   const [o, a] = k(et), s = A(o), l = A("");
   s.current = o;
-  const i = `${e || ""}`.trim(), c = `${t || ""}`.trim().toLowerCase(), u = Ms.has(c) ? c : "";
+  const i = `${e || ""}`.trim(), c = `${t || ""}`.trim().toLowerCase(), u = on(c) ? c : "";
   return j(() => {
     if (!n || !i) {
       l.current = "", s.current = et, a(et);
       return;
     }
-    const d = r === void 0 ? Vo() : r, m = l.current === i;
+    const d = r === void 0 ? Jo() : r, m = l.current === i;
     if (l.current = i, !d) {
       const w = {
         ...m ? s.current : et,
@@ -1819,7 +1819,7 @@ function _s({
           return;
         } catch (g) {
           if ((g == null ? void 0 : g.name) === "AbortError") return;
-          const v = fn(g);
+          const v = mn(g);
           if (!(v === "LIVE_TRANSLATION_LAYOUT_NOT_READY" || !v)) {
             y((_) => ({
               ..._,
@@ -1843,7 +1843,7 @@ function _s({
             connection: "connecting",
             jobStatus: c,
             error: bt(g, "正在等待 OCR 版面数据")
-          })), await qt(jn[Math.min(w, jn.length - 1)], f.signal).catch(() => {
+          })), await qt(Un[Math.min(w, Un.length - 1)], f.signal).catch(() => {
           }), w += 1;
         }
     };
@@ -1868,7 +1868,7 @@ function _s({
               if (g.seq <= s.current.lastSeq) return;
               let v;
               try {
-                v = await As(
+                v = await Ms(
                   i,
                   g,
                   s.current,
@@ -1915,14 +1915,14 @@ function _s({
           }));
           return;
         }
-        await qt(Un[Math.min(w, Un.length - 1)], f.signal).catch(() => {
+        await qt(Bn[Math.min(w, Bn.length - 1)], f.signal).catch(() => {
         }), w += 1;
       }
     })(), () => f.abort();
   }, [n, r, i, u]), o;
 }
-const Ls = 2e3;
-function ks(e) {
+const _s = 2e3;
+function Ls(e) {
   if (typeof e == "number") {
     const r = Number(e);
     return !Number.isFinite(r) || r < 0 ? null : Math.floor(r) + 1;
@@ -1940,19 +1940,19 @@ function ks(e) {
   }
   return null;
 }
-const Ns = /* @__PURE__ */ new Set(["book", "translate"]);
-function zr(e) {
-  return !!(e.jobId && e.sourceUrl && Ns.has(e.workflow));
+const ks = /* @__PURE__ */ new Set(["book", "translate"]);
+function xr(e) {
+  return !!(e.jobId && e.sourceUrl && ks.has(e.workflow));
 }
-function Cs(e) {
-  return !!(zr(e) && !(e.jobStatus === "succeeded" && e.translatedUrl));
+function Ns(e) {
+  return !!(xr(e) && !(e.jobStatus === "succeeded" && e.translatedUrl));
 }
-function Ds() {
-  const e = wa(), t = zr({
+function Cs() {
+  const e = wa(), t = xr({
     jobId: e.jobId,
     sourceUrl: e.sourceUrl,
     workflow: e.workflow
-  }), n = Cs({
+  }), n = Ns({
     jobId: e.jobId,
     sourceUrl: e.sourceUrl,
     translatedUrl: e.translatedUrl,
@@ -1961,8 +1961,8 @@ function Ds() {
   }), r = A({ jobId: "", running: !1 });
   r.current.jobId !== e.jobId && (r.current = { jobId: e.jobId, running: !1 });
   const o = `${e.jobStatus || ""}`.trim().toLowerCase();
-  o && !["succeeded", "failed", "cancelled", "canceled"].includes(o) && (r.current.running = !0);
-  const a = _s({
+  o && !on(o) && (r.current.running = !0);
+  const a = As({
     jobId: e.jobId,
     jobStatus: e.jobStatus,
     enabled: t && (n || r.current.running)
@@ -2015,18 +2015,18 @@ function Ds() {
     );
     y(C, J, V);
   }, [y, h.hudNumPages, h.primaryNumPages, h.numPagesByPane]), [v, M] = k(null), _ = A(null), x = $((C) => {
-    _.current && clearTimeout(_.current), M(C), C && (_.current = setTimeout(() => M(null), Ls));
+    _.current && clearTimeout(_.current), M(C), C && (_.current = setTimeout(() => M(null), _s));
   }, []);
   j(() => () => {
     _.current && clearTimeout(_.current);
   }, []);
   const D = $((C) => {
     const V = kt(e.regions, C);
-    return V ? Ln(V, h.primaryPane).page : null;
+    return V ? kn(V, h.primaryPane).page : null;
   }, [e.regions, h.primaryPane]), N = $((C, V) => {
-    const J = V || h.primaryPane, F = typeof C == "object" && C ? `${C.block_id || ""}`.trim() : "", z = typeof C == "object" && C ? `${C.image_url || ""}`.trim() : "", B = typeof C == "object" && C ? C.page_idx != null ? Number(C.page_idx) + 1 : C.page != null ? Number(C.page) : null : typeof C == "number" ? C + 1 : null, Q = Po(e.regions, z, B) || kt(e.regions, F) || (typeof C == "object" ? Ro(e.regions, C) : null);
-    let te = Q ? Ln(Q, J).page : null;
-    te == null && (te = ks(C)), !(te == null || te < 1) && (x(Q), g(te, J));
+    const J = V || h.primaryPane, F = typeof C == "object" && C ? `${C.block_id || ""}`.trim() : "", z = typeof C == "object" && C ? `${C.image_url || ""}`.trim() : "", B = typeof C == "object" && C ? C.page_idx != null ? Number(C.page_idx) + 1 : C.page != null ? Number(C.page) : null : typeof C == "number" ? C + 1 : null, Q = Ro(e.regions, z, B) || kt(e.regions, F) || (typeof C == "object" ? Io(e.regions, C) : null);
+    let te = Q ? kn(Q, J).page : null;
+    te == null && (te = Ls(C)), !(te == null || te < 1) && (x(Q), g(te, J));
   }, [x, g, h.primaryPane, e.regions]);
   Rs({
     enabled: !e.boot.loading && !e.boot.failed && e.assetsReady,
@@ -2080,7 +2080,7 @@ function Ds() {
     currentPage: w
   }), [O, w]);
 }
-const zs = [
+const Ds = [
   { action: "mode-source", keys: ["1"], mode: "source" },
   { action: "mode-compare", keys: ["2"], mode: "compare" },
   { action: "mode-translated", keys: ["3"], mode: "translated" },
@@ -2091,7 +2091,7 @@ const zs = [
   { action: "prev-page", keys: ["k", "ArrowUp", "PageUp"], requiresPages: !0 },
   { action: "first-page", keys: ["Home"], requiresPages: !0 },
   { action: "last-page", keys: ["End"], requiresPages: !0 }
-], xs = [
+], zs = [
   {
     title: "翻页",
     items: [
@@ -2118,25 +2118,25 @@ const zs = [
     ]
   }
 ];
-function Os(e) {
+function xs(e) {
   const t = e.length === 1 ? e.toLowerCase() : e;
-  for (const n of zs)
+  for (const n of Ds)
     if (n.keys.some(
       (o) => o.length === 1 ? o === t : o === e
     )) return n;
   return null;
 }
-function Fs(e) {
+function Os(e) {
   if (!(e instanceof HTMLElement))
     return !1;
   const t = e.tagName;
   return t === "INPUT" || t === "TEXTAREA" || t === "SELECT" || e.isContentEditable ? !0 : !!e.closest("input, textarea, select, [contenteditable='true']");
 }
-const $s = ".reader-notes-panel";
-function js(e) {
-  return e instanceof Element ? !!e.closest($s) : !1;
+const Fs = ".reader-notes-panel";
+function $s(e) {
+  return e instanceof Element ? !!e.closest(Fs) : !1;
 }
-function Us(e) {
+function js(e) {
   const {
     mode: t,
     sourceOnly: n,
@@ -2152,9 +2152,9 @@ function Us(e) {
     if (!c)
       return;
     const u = (d) => {
-      if (d.defaultPrevented || d.metaKey || d.ctrlKey || d.altKey || Fs(d.target) || js(d.target))
+      if (d.defaultPrevented || d.metaKey || d.ctrlKey || d.altKey || Os(d.target) || $s(d.target))
         return;
-      const m = d.key, f = Os(m);
+      const m = d.key, f = xs(m);
       if (f) {
         if (f.mode) {
           if (n && f.mode !== "source")
@@ -2201,22 +2201,22 @@ function Us(e) {
     i
   ]);
 }
-const Bs = "retainpdf:soft-reader-close";
-function Hs() {
+const Us = "retainpdf:soft-reader-close";
+function Bs() {
   return new URL("./index.html", window.location.href).href;
 }
-function Ws() {
+function Hs() {
   if (typeof window > "u" || window.self === window.top) return !1;
   try {
     return window.parent.postMessage(
-      { type: Bs },
+      { type: Us },
       window.location.origin
     ), !0;
   } catch {
     return !1;
   }
 }
-function Vs(e, t, n) {
+function Ws(e, t, n) {
   if (n <= 1 || !e) return !1;
   try {
     const r = new URL(t), o = new URL(e, r);
@@ -2225,9 +2225,9 @@ function Vs(e, t, n) {
     return !1;
   }
 }
-function Js() {
-  if (!(typeof window > "u") && !Ws()) {
-    if (Vs(
+function Vs() {
+  if (!(typeof window > "u") && !Hs()) {
+    if (Ws(
       document.referrer,
       window.location.href,
       window.history.length
@@ -2235,10 +2235,10 @@ function Js() {
       window.history.back();
       return;
     }
-    window.location.assign(Hs());
+    window.location.assign(Bs());
   }
 }
-function qs({ onBeforeClose: e } = {}) {
+function Js({ onBeforeClose: e } = {}) {
   return /* @__PURE__ */ U(
     "button",
     {
@@ -2248,31 +2248,31 @@ function qs({ onBeforeClose: e } = {}) {
       "aria-label": "返回主页",
       title: "返回主页",
       onClick: () => {
-        e == null || e(), Js();
+        e == null || e(), Vs();
       },
       children: [
-        /* @__PURE__ */ P(gr, { className: "reader-close-home-icon", size: 18, strokeWidth: 2.25, "aria-hidden": !0 }),
+        /* @__PURE__ */ P(br, { className: "reader-close-home-icon", size: 18, strokeWidth: 2.25, "aria-hidden": !0 }),
         /* @__PURE__ */ P("span", { className: "reader-close-home-label", children: "关闭" })
       ]
     }
   );
 }
-let Bn = !1;
-function Gs() {
-  if (Bn)
+let Hn = !1;
+function qs() {
+  if (Hn)
     return;
   const e = at().resolvePdfjsVendorUrl("build/pdf.worker.mjs");
-  e && (zo.GlobalWorkerOptions.workerSrc = e, Bn = !0);
+  e && (xo.GlobalWorkerOptions.workerSrc = e, Hn = !0);
 }
-const Ks = /* @__PURE__ */ new Set(["text", "formula", "table"]);
-function Zs(e, t, n) {
+const Gs = /* @__PURE__ */ new Set(["text", "formula", "table"]);
+function Ks(e, t, n) {
   return e.flatMap((r) => {
-    if (!Ks.has(pr(r.region))) return [];
-    const o = on(r, t, n);
+    if (!Gs.has(gr(r.region))) return [];
+    const o = an(r, t, n);
     return o ? [{ itemId: r.itemId, highlight: r, rect: o }] : [];
   });
 }
-function Hn(e, t, n) {
+function Wn(e, t, n) {
   let r = null, o = Number.POSITIVE_INFINITY;
   for (const a of e) {
     const { rect: s } = a;
@@ -2283,7 +2283,7 @@ function Hn(e, t, n) {
   }
   return r;
 }
-async function Ys(e) {
+async function Zs(e) {
   var n;
   const t = `${e || ""}`;
   if (!t.trim()) return !1;
@@ -2301,11 +2301,11 @@ async function Ys(e) {
     return !1;
   }
 }
-const Xs = "reader-text-hover-copy", Qs = "reader-text-hover-id", xr = "reader-text-hover-tools", Or = 26, Fr = 190;
-function $r(e) {
-  return e.height < Or * 2 || e.width < Fr;
+const Ys = "reader-text-hover-copy", Xs = "reader-text-hover-id", Or = "reader-text-hover-tools", Fr = 26, $r = 190;
+function jr(e) {
+  return e.height < Fr * 2 || e.width < $r;
 }
-function ei({
+function Qs({
   target: e,
   pane: t = "source"
 }) {
@@ -2317,11 +2317,11 @@ function ei({
       f.forEach((h) => window.clearTimeout(h)), s.current = [];
     };
   }, [l]), !e) return null;
-  const i = Io(e.highlight.region, t), c = pr(e.highlight.region), u = (f, h) => async (p) => {
+  const i = To(e.highlight.region, t), c = gr(e.highlight.region), u = (f, h) => async (p) => {
     p.preventDefault(), p.stopPropagation();
-    const y = await Ys(f);
+    const y = await Zs(f);
     h(y ? "copied" : "failed"), s.current.push(window.setTimeout(() => h("idle"), 1200));
-  }, d = c === "formula" ? "复制 LaTeX" : "复制", m = $r(e.rect);
+  }, d = c === "formula" ? "复制 LaTeX" : "复制", m = jr(e.rect);
   return /* @__PURE__ */ P("div", { className: "reader-text-hover-layer", children: /* @__PURE__ */ P(
     "div",
     {
@@ -2332,14 +2332,14 @@ function ei({
       children: /* @__PURE__ */ U(
         "div",
         {
-          className: xr,
+          className: Or,
           "data-placement": m ? "outside" : "inside",
           children: [
             /* @__PURE__ */ P(
               "button",
               {
                 type: "button",
-                className: Qs,
+                className: Xs,
                 "data-copy-state": o,
                 "aria-label": `复制翻译编号 ${e.itemId}`,
                 title: "翻译编号，点击复制",
@@ -2352,7 +2352,7 @@ function ei({
               "button",
               {
                 type: "button",
-                className: Xs,
+                className: Ys,
                 "data-copy-state": n,
                 "aria-label": t === "translated" ? "复制这段译文" : "复制这段原文",
                 onPointerDown: (f) => f.stopPropagation(),
@@ -2366,7 +2366,7 @@ function ei({
     }
   ) });
 }
-function ti(e, t) {
+function ei(e, t) {
   const n = e.page_idx + 1, r = {
     page: n,
     bbox: t.bbox,
@@ -2390,14 +2390,14 @@ function ti(e, t) {
     pageSize: { page: n, width: e.width, height: e.height }
   };
 }
-function ni(e, t, n, r) {
+function ti(e, t, n, r) {
   if (!e || !t) return [];
   const o = [];
   for (const a of e.blocks) {
     const s = t.itemsById.get(a.item_id);
     if (!(s != null && s.translated_text)) continue;
-    const l = on(
-      ti(e, a),
+    const l = an(
+      ei(e, a),
       n,
       r
     );
@@ -2415,16 +2415,16 @@ function ni(e, t, n, r) {
   }
   return o;
 }
-const ri = '"Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", serif', oi = 256, tt = /* @__PURE__ */ new Map();
-function ai(e) {
+const ni = '"Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", serif', ri = 256, tt = /* @__PURE__ */ new Map();
+function oi(e) {
   return `${e || ""}`.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-function si(e) {
-  const t = `${e || ""}`, { text: n, slots: r } = Fo(t, { bareLatex: !0 }), o = ai(n), a = $o(o, r);
+function ai(e) {
+  const t = `${e || ""}`, { text: n, slots: r } = $o(t, { bareLatex: !0 }), o = oi(n), a = jo(o, r);
   if (!r.length)
     return { fallbackHtml: a, richHtml: Promise.resolve(a), hasMath: !1 };
   let s = tt.get(t);
-  if (!s && (s = jo(o, r), tt.set(t, s), tt.size > oi)) {
+  if (!s && (s = Uo(o, r), tt.set(t, s), tt.size > ri)) {
     const l = tt.keys().next().value;
     l !== void 0 && tt.delete(l);
   }
@@ -2437,7 +2437,7 @@ function Pe(e) {
   const t = Number(e);
   return Number.isFinite(t) && t > 0 ? t : void 0;
 }
-function ii(e, t) {
+function si(e, t) {
   const n = e.typography, r = Pe(t) || 1, o = Pe(n == null ? void 0 : n.font_size_pt), a = Math.max(1, `${e.sourceText || ""}`.split(/\n+/).length), s = e.rect.height / Math.max(1.28, a * 1.18), l = xt(e.kind) ? 24 : /caption|footnote|table/i.test(e.kind) ? 9.5 : 11, i = Math.max(5.5 * r, Math.min(s, l * r)), c = Pe(n == null ? void 0 : n.fit_min_font_size_pt), u = Pe(n == null ? void 0 : n.fit_max_font_size_pt), d = Math.max(3.5, (c || 5.5) * r), m = Math.max(
     d,
     u ? u * r : o ? o * r : i
@@ -2448,7 +2448,7 @@ function ii(e, t) {
     Pe(n == null ? void 0 : n.padding_left_pt) || 0
   ].map((y) => y * r);
   return {
-    fontFamily: `${(n == null ? void 0 : n.font_family) || ""}`.trim() || ri,
+    fontFamily: `${(n == null ? void 0 : n.font_family) || ""}`.trim() || ni,
     fontSizePx: Math.max(d, Math.min(m, f)),
     minFontSizePx: d,
     maxFontSizePx: m,
@@ -2460,7 +2460,7 @@ function ii(e, t) {
     exact: !!o
   };
 }
-function ci(e, t, n, r) {
+function ii(e, t, n, r) {
   const { minFontSizePx: o, maxFontSizePx: a } = r, s = /* @__PURE__ */ new Map(), l = (d) => {
     const m = s.get(d);
     if (m !== void 0) return m;
@@ -2485,7 +2485,7 @@ function ci(e, t, n, r) {
   }
   return Math.max(o, u);
 }
-const li = 512, nt = /* @__PURE__ */ new Map();
+const ci = 512, nt = /* @__PURE__ */ new Map();
 let Gt = 0;
 typeof document < "u" && document.fonts && (document.fonts.ready.then(() => {
   Gt += 1;
@@ -2493,7 +2493,7 @@ typeof document < "u" && document.fonts && (document.fonts.ready.then(() => {
 }), typeof document.fonts.addEventListener == "function" && document.fonts.addEventListener("loadingdone", () => {
   Gt += 1;
 }));
-function ui(e, t, n, r) {
+function li(e, t, n, r) {
   return [
     Gt,
     r.fontFamily,
@@ -2509,12 +2509,12 @@ function ui(e, t, n, r) {
     e
   ].join("");
 }
-function di({ item: e, pageScale: t }) {
+function ui({ item: e, pageScale: t }) {
   const n = A(null), r = K(
-    () => si(e.translatedText),
+    () => ai(e.translatedText),
     [e.translatedText]
   ), [o, a] = k(r.fallbackHtml), s = K(
-    () => ii(e, t),
+    () => si(e, t),
     [e, t]
   );
   j(() => {
@@ -2527,9 +2527,9 @@ function di({ item: e, pageScale: t }) {
   }, [r]), De(() => {
     const d = n.current;
     if (!d) return;
-    const [m, f, h, p] = s.padding, y = Math.max(1, e.rect.width - p - f), b = Math.max(1, e.rect.height - m - h), S = ui(o, y, b, s);
+    const [m, f, h, p] = s.padding, y = Math.max(1, e.rect.width - p - f), b = Math.max(1, e.rect.height - m - h), S = li(o, y, b, s);
     let w = nt.get(S);
-    if (w === void 0 && (w = ci(
+    if (w === void 0 && (w = ii(
       (g) => (d.style.fontSize = `${g}px`, { width: d.scrollWidth, height: d.scrollHeight }),
       y,
       b,
@@ -2539,7 +2539,7 @@ function di({ item: e, pageScale: t }) {
         requestedFontSizePx: s.fontSizePx,
         exact: s.exact
       }
-    ), nt.set(S, w), nt.size > li)) {
+    ), nt.set(S, w), nt.size > ci)) {
       const g = nt.keys().next().value;
       g !== void 0 && nt.delete(g);
     }
@@ -2576,14 +2576,14 @@ function di({ item: e, pageScale: t }) {
     }
   );
 }
-function fi({
+function di({
   layoutPage: e,
   pageState: t,
   width: n,
   height: r
 }) {
   const o = K(
-    () => ni(e, t, n, r),
+    () => ti(e, t, n, r),
     [r, e, t, n]
   );
   return o.length ? /* @__PURE__ */ P(
@@ -2594,7 +2594,7 @@ function fi({
       "data-live-translation-generation": t == null ? void 0 : t.generation,
       "aria-hidden": "true",
       children: o.map((a) => /* @__PURE__ */ P(
-        di,
+        ui,
         {
           item: a,
           pageScale: e != null && e.width ? n / e.width : 1
@@ -2604,8 +2604,8 @@ function fi({
     }
   ) : null;
 }
-const mi = en(fi), jr = 1.414;
-function hi({
+const fi = en(di), Ur = 1.414;
+function mi({
   pageNumber: e,
   width: t,
   devicePixelRatio: n,
@@ -2624,7 +2624,7 @@ function hi({
   liveTranslationPage: p,
   showLiveTranslation: y = r === "source"
 }) {
-  const b = A(l ?? jr), [S, w] = k(b.current);
+  const b = A(l ?? Ur), [S, w] = k(b.current);
   j(() => {
     l != null && Math.abs(l - b.current) >= 1e-3 && (b.current = l, w(l));
   }, [l]);
@@ -2633,8 +2633,8 @@ function hi({
   const v = A((F) => {
     var z;
     (z = g.current) == null || z.call(g, F);
-  }).current, M = Math.max(120, Math.floor(t * S)), _ = Math.max(M, Math.ceil(a || 0)), x = on(u, t, M), D = K(
-    () => Zs(d, t, M),
+  }).current, M = Math.max(120, Math.floor(t * S)), _ = Math.max(M, Math.ceil(a || 0)), x = an(u, t, M), D = K(
+    () => Ks(d, t, M),
     [M, d, t]
   ), [N, R] = k(null), T = typeof f == "function", I = T ? m ?? null : N, E = (F) => {
     T ? F !== (m ?? null) && (f == null || f(F)) : R((z) => z === F ? z : F);
@@ -2648,14 +2648,14 @@ function hi({
       E(null);
       return;
     }
-    if ((ee = (X = F.target) == null ? void 0 : X.closest) != null && ee.call(X, `.${xr}`)) return;
+    if ((ee = (X = F.target) == null ? void 0 : X.closest) != null && ee.call(X, `.${Or}`)) return;
     const z = F.currentTarget.getBoundingClientRect(), B = F.clientX - z.left, Q = F.clientY - z.top, te = O == null ? void 0 : O.rect;
-    if (te && $r(te) && B >= te.left - 4 && B <= te.left + Fr && Q >= te.top - Or && Q <= te.top) return;
-    const re = Hn(D, B, Q);
+    if (te && jr(te) && B >= te.left - 4 && B <= te.left + $r && Q >= te.top - Fr && Q <= te.top) return;
+    const re = Wn(D, B, Q);
     E((re == null ? void 0 : re.itemId) || null);
   }, V = (F) => {
     if (F.pointerType === "mouse") return;
-    const z = F.currentTarget.getBoundingClientRect(), B = Hn(
+    const z = F.currentTarget.getBoundingClientRect(), B = Wn(
       D,
       F.clientX - z.left,
       F.clientY - z.top
@@ -2670,8 +2670,8 @@ function hi({
       ref: v,
       [Ge]: e,
       [st]: r,
-      [sn]: M,
-      className: cn,
+      [cn]: M,
+      className: ln,
       onPointerMoveCapture: C,
       onPointerDown: V,
       onPointerLeave: (F) => {
@@ -2684,14 +2684,14 @@ function hi({
       },
       children: [
         o ? /* @__PURE__ */ P(
-          xo,
+          Oo,
           {
             pageNumber: e,
             width: t,
             devicePixelRatio: n,
             renderTextLayer: !0,
             renderAnnotationLayer: !1,
-            className: Pr,
+            className: Rr,
             loading: /* @__PURE__ */ P(
               "div",
               {
@@ -2732,7 +2732,7 @@ function hi({
           }
         ) : null,
         o && y ? /* @__PURE__ */ P(
-          mi,
+          fi,
           {
             layoutPage: h,
             pageState: p,
@@ -2741,7 +2741,7 @@ function hi({
           }
         ) : null,
         /* @__PURE__ */ P(
-          ei,
+          Qs,
           {
             target: o ? O : null,
             pane: r === "translated" ? "translated" : "source"
@@ -2751,21 +2751,21 @@ function hi({
     }
   );
 }
-const pi = en(hi), Ot = 5, gi = "120% 0px", bi = 120;
-let Wn = 1;
-const Vn = /* @__PURE__ */ new WeakMap();
-function yi(e) {
+const hi = en(mi), Ot = 5, pi = "120% 0px", gi = 120;
+let Vn = 1;
+const Jn = /* @__PURE__ */ new WeakMap();
+function bi(e) {
   if (!e) return 0;
-  const t = Vn.get(e);
+  const t = Jn.get(e);
   if (t) return t;
-  const n = Wn;
-  return Wn += 1, Vn.set(e, n), n;
+  const n = Vn;
+  return Vn += 1, Jn.set(e, n), n;
 }
-function vi() {
+function yi() {
   const e = typeof window < "u" && window.devicePixelRatio || 1;
   return Math.max(1, Math.min(e, 2));
 }
-const Si = lo(
+const vi = uo(
   function({
     pane: t,
     url: n = "",
@@ -2790,13 +2790,13 @@ const Si = lo(
     liveTranslationPendingLabel: v = "",
     paneAction: M
   }, _) {
-    Gs();
-    const { file: x, loading: D, error: N } = ba(n, r), R = `${n}\0${yi(x)}`, T = A(R);
+    qs();
+    const { file: x, loading: D, error: N } = ba(n, r), R = `${n}\0${bi(x)}`, T = A(R);
     T.current = R;
     const I = K(
       () => ha(x),
       [x, n]
-    ), [E, O] = k(0), [C, V] = k(""), [J, F] = k(null), [z, B] = k(480), Q = A(null), te = A(0), re = K(() => vi(), []), X = K(() => ({
+    ), [E, O] = k(0), [C, V] = k(""), [J, F] = k(null), [z, B] = k(480), Q = A(null), te = A(0), re = K(() => yi(), []), X = K(() => ({
       cMapUrl: at().resolvePdfjsVendorUrl("cmaps/"),
       cMapPacked: !0,
       standardFontDataUrl: at().resolvePdfjsVendorUrl("standard_fonts/")
@@ -2858,7 +2858,7 @@ const Si = lo(
         (H) => {
           const G = [], oe = [];
           for (const q of H) {
-            const Y = q.target, ie = ln(Y);
+            const Y = q.target, ie = un(Y);
             Number.isFinite(ie) && (q.isIntersecting ? G : oe).push(ie);
           }
           if ((G.length || oe.length) && mt((q) => {
@@ -2887,9 +2887,9 @@ const Si = lo(
                 const ie = new Set(Y);
                 return ie.delete(q), ie;
               });
-            }, bi));
+            }, gi));
         },
-        { root: l, rootMargin: gi, threshold: 0 }
+        { root: l, rootMargin: pi, threshold: 0 }
       );
       se.current = W;
       for (const H of ae.current.values())
@@ -2928,12 +2928,12 @@ const Si = lo(
       typeof IntersectionObserver < "u" || ne(new Set(Me));
     }, [Me]);
     const Ae = K(
-      () => kn(h, y, t),
+      () => Nn(h, y, t),
       [h, y, t]
     ), _e = K(() => {
       const L = /* @__PURE__ */ new Map();
       for (const W of p) {
-        const H = kn(W, y, t);
+        const H = Nn(W, y, t);
         if (!H) continue;
         const G = L.get(H.box.page) || [];
         G.push(H), L.set(H.box.page, G);
@@ -2981,7 +2981,7 @@ const Si = lo(
           pt && !D ? /* @__PURE__ */ P("div", { className: "reader-empty reader-react-pdf-empty", "data-reader-pdf-empty": t, children: je }) : null,
           D ? /* @__PURE__ */ P("div", { className: "reader-empty reader-react-pdf-loading", "data-reader-pdf-loading": t, children: "正在加载 PDF…" }) : null,
           I && !N ? /* @__PURE__ */ P("div", { className: "reader-viewer-wrap reader-react-pdf-wrap", children: /* @__PURE__ */ P(
-            Oo,
+            Fo,
             {
               file: I,
               loading: null,
@@ -2993,7 +2993,7 @@ const Si = lo(
               children: Me.map((L) => {
                 if (ht.has(L))
                   return /* @__PURE__ */ P(
-                    pi,
+                    hi,
                     {
                       pane: t,
                       pageNumber: L,
@@ -3015,15 +3015,15 @@ const Si = lo(
                     },
                     `${t}-${L}`
                   );
-                const H = ve.get(L) ?? jr, G = Math.max(120, Math.floor(ee * H)), oe = Math.max(G, Math.ceil((c == null ? void 0 : c.get(L)) || 0));
+                const H = ve.get(L) ?? Ur, G = Math.max(120, Math.floor(ee * H)), oe = Math.max(G, Math.ceil((c == null ? void 0 : c.get(L)) || 0));
                 return /* @__PURE__ */ P(
                   "div",
                   {
                     ref: $e(L),
                     [Ge]: L,
                     [st]: t,
-                    [sn]: G,
-                    className: cn,
+                    [cn]: G,
+                    className: ln,
                     style: {
                       width: ee,
                       height: oe,
@@ -3048,19 +3048,19 @@ const Si = lo(
       }
     );
   }
-), Jn = en(Si), Ur = nn(null), Br = nn(null);
-function wi({ value: e, hud: t, children: n }) {
-  return /* @__PURE__ */ P(Ur.Provider, { value: e, children: /* @__PURE__ */ P(Br.Provider, { value: t, children: n }) });
+), qn = en(vi), Br = nn(null), Hr = nn(null);
+function Si({ value: e, hud: t, children: n }) {
+  return /* @__PURE__ */ P(Br.Provider, { value: e, children: /* @__PURE__ */ P(Hr.Provider, { value: t, children: n }) });
 }
 function ft() {
-  return rn(Ur);
-}
-function Pi() {
   return rn(Br);
 }
-const Ri = () => () => {
-}, qn = () => null;
-function Ii({
+function wi() {
+  return rn(Hr);
+}
+const Pi = () => () => {
+}, Gn = () => null;
+function Ri({
   mode: e,
   compareMode: t,
   showSource: n,
@@ -3076,32 +3076,32 @@ function Ii({
     showTranslated: s ? !1 : r
   };
 }
-function Ti(e, t, n = e * 2) {
+function Ii(e, t, n = e * 2) {
   return t ? !Number.isFinite(e) || e <= 0 ? n : e * 2 : e;
 }
-function Ei(e) {
+function Ti(e) {
   return e ? e.connection === "terminal" && e.jobStatus === "failed" ? e.pagesByPage.size > 0 ? `翻译已暂停，已保留 ${e.pagesByPage.size} 页译文` : "翻译已暂停，原始 PDF 仍可阅读" : e.connection === "terminal" && ["cancelled", "canceled"].includes(e.jobStatus) ? e.pagesByPage.size > 0 ? `翻译已取消，已保留 ${e.pagesByPage.size} 页译文` : "翻译已取消，原始 PDF 仍可阅读" : e.pagesByPage.size > 0 ? "" : e.connection === "unavailable" ? e.error || "实时译文暂不可用，原始 PDF 仍可阅读" : e.error ? e.error : e.layoutByPage.size === 0 ? "正在完成 OCR，译文将在这里逐页出现" : "版面已就绪，正在等待首个译文页面" : "";
 }
-function Mi(e) {
+function Ei(e) {
   const t = ft(), {
     markdownSplit: n = !1,
     assistantSplit: r = !1,
     liveTranslation: o,
     paneComposition: a
-  } = e, s = (a == null ? void 0 : a.visibleMode) ?? e.mode ?? "compare", l = (a == null ? void 0 : a.compareMode) ?? e.compareMode ?? s === "compare", i = (a == null ? void 0 : a.showSource) ?? e.showSource ?? !0, c = (a == null ? void 0 : a.showTranslated) ?? e.showTranslated ?? (s === "compare" || s === "translated"), u = (a == null ? void 0 : a.overlayOnSource) ?? e.overlayOnSource ?? !1, d = e.bindShell ?? (t == null ? void 0 : t.bindShell), m = e.shellEl ?? (t == null ? void 0 : t.shellEl) ?? null, f = e.userZoom ?? (t == null ? void 0 : t.userZoom) ?? dt, h = e.shellWidth ?? (t == null ? void 0 : t.shellWidth) ?? 0, p = e.rowHeights ?? (t == null ? void 0 : t.rowHeights), y = e.mountSource ?? (t == null ? void 0 : t.mountSource) ?? !1, b = e.mountTranslated ?? (t == null ? void 0 : t.mountTranslated) ?? !1, S = e.sourceViewOnly ?? (t == null ? void 0 : t.sourceViewOnly) ?? !1, w = e.sourceUrl ?? (t == null ? void 0 : t.sourceUrl) ?? "", g = e.translatedUrl ?? (t == null ? void 0 : t.translatedUrl) ?? "", v = e.sourceFile ?? (t == null ? void 0 : t.sourceFile) ?? null, M = e.translatedFile ?? (t == null ? void 0 : t.translatedFile) ?? null, _ = e.onMetrics ?? (t == null ? void 0 : t.onMetrics), x = e.onNumPagesChange ?? (t == null ? void 0 : t.onNumPagesChange), D = e.activeRegion ?? (t == null ? void 0 : t.activeRegion), N = e.regions ?? (t == null ? void 0 : t.regions) ?? [], R = e.readerMetadata ?? (t == null ? void 0 : t.readerMetadata), T = (t == null ? void 0 : t.regionHover) ?? null, [I, E] = k(null), O = mr(
-    T ? T.subscribe : Ri,
-    T ? () => T.get().itemId : qn,
-    T ? () => T.get().itemId : qn
+  } = e, s = (a == null ? void 0 : a.visibleMode) ?? e.mode ?? "compare", l = (a == null ? void 0 : a.compareMode) ?? e.compareMode ?? s === "compare", i = (a == null ? void 0 : a.showSource) ?? e.showSource ?? !0, c = (a == null ? void 0 : a.showTranslated) ?? e.showTranslated ?? (s === "compare" || s === "translated"), u = (a == null ? void 0 : a.overlayOnSource) ?? e.overlayOnSource ?? !1, d = e.bindShell ?? (t == null ? void 0 : t.bindShell), m = e.shellEl ?? (t == null ? void 0 : t.shellEl) ?? null, f = e.userZoom ?? (t == null ? void 0 : t.userZoom) ?? dt, h = e.shellWidth ?? (t == null ? void 0 : t.shellWidth) ?? 0, p = e.rowHeights ?? (t == null ? void 0 : t.rowHeights), y = e.mountSource ?? (t == null ? void 0 : t.mountSource) ?? !1, b = e.mountTranslated ?? (t == null ? void 0 : t.mountTranslated) ?? !1, S = e.sourceViewOnly ?? (t == null ? void 0 : t.sourceViewOnly) ?? !1, w = e.sourceUrl ?? (t == null ? void 0 : t.sourceUrl) ?? "", g = e.translatedUrl ?? (t == null ? void 0 : t.translatedUrl) ?? "", v = e.sourceFile ?? (t == null ? void 0 : t.sourceFile) ?? null, M = e.translatedFile ?? (t == null ? void 0 : t.translatedFile) ?? null, _ = e.onMetrics ?? (t == null ? void 0 : t.onMetrics), x = e.onNumPagesChange ?? (t == null ? void 0 : t.onNumPagesChange), D = e.activeRegion ?? (t == null ? void 0 : t.activeRegion), N = e.regions ?? (t == null ? void 0 : t.regions) ?? [], R = e.readerMetadata ?? (t == null ? void 0 : t.readerMetadata), T = (t == null ? void 0 : t.regionHover) ?? null, [I, E] = k(null), O = hr(
+    T ? T.subscribe : Pi,
+    T ? () => T.get().itemId : Gn,
+    T ? () => T.get().itemId : Gn
   ), C = T ? O : I, V = $((B) => {
     T ? T.set(B, "pdf") : E(B);
-  }, [T]), J = Ii({
+  }, [T]), J = Ri({
     mode: s,
     compareMode: l,
     showSource: i,
     showTranslated: c,
     markdownSplit: n,
     overlayOnSource: u
-  }), z = Number.isFinite(h) && h > 0 ? Ti(
+  }), z = Number.isFinite(h) && h > 0 ? Ii(
     h,
     n || r,
     typeof document > "u" ? h * 2 : document.documentElement.clientWidth
@@ -3112,7 +3112,7 @@ function Mi(e) {
       ref: d,
       className: La,
       "data-reader-region-count": N.length,
-      "data-reader-structured-region-count": N.filter(To).length,
+      "data-reader-structured-region-count": N.filter(Eo).length,
       "data-reader-metadata-ready": R ? "true" : "false",
       children: /* @__PURE__ */ U(
         "main",
@@ -3121,7 +3121,7 @@ function Mi(e) {
           "data-reader-mode": n ? "markdown-split" : r ? "assistant-split" : s,
           children: [
             y ? /* @__PURE__ */ P(
-              Jn,
+              qn,
               {
                 pane: "source",
                 url: w,
@@ -3141,7 +3141,7 @@ function Mi(e) {
                 onHoverRegion: V,
                 liveTranslation: u ? o : void 0,
                 showLiveTranslation: u,
-                liveTranslationPendingLabel: u ? Ei(o) : "",
+                liveTranslationPendingLabel: u ? Ti(o) : "",
                 paneAction: u ? /* @__PURE__ */ U(Qt, { children: [
                   e.sourcePaneAction,
                   /* @__PURE__ */ P(
@@ -3157,7 +3157,7 @@ function Mi(e) {
               }
             ) : null,
             b ? /* @__PURE__ */ P(
-              Jn,
+              qn,
               {
                 pane: "translated",
                 url: g,
@@ -3185,24 +3185,24 @@ function Mi(e) {
     }
   );
 }
-const Ai = [
-  { id: "source", label: "源文件", Icon: br },
-  { id: "compare", label: "对照", Icon: yr },
-  { id: "translated", label: "翻译文件", Icon: vr }
+const Mi = [
+  { id: "source", label: "源文件", Icon: yr },
+  { id: "compare", label: "对照", Icon: vr },
+  { id: "translated", label: "翻译文件", Icon: Sr }
 ];
-function _i(e) {
+function Ai(e) {
   return e.connection === "live" ? `实时译文 · ${e.pagesByPage.size} 页` : e.connection === "reconnecting" ? "实时译文 · 重连中" : e.connection === "unavailable" ? "实时译文 · 不可用" : e.connection === "terminal" ? e.jobStatus === "failed" ? "实时译文 · 已暂停" : e.jobStatus === "cancelled" || e.jobStatus === "canceled" ? "实时译文 · 已取消" : e.jobStatus === "succeeded" ? "实时译文 · 已完成" : "实时译文 · 已结束" : e.error || "实时译文 · 连接中";
 }
-function Li(e) {
+function _i(e) {
   return e.id === "translated" ? e.sourceViewOnly : e.id === "compare" ? !e.documentReady || e.sourceViewOnly && !e.liveTranslationAvailable : !1;
 }
-function ki(e) {
+function Li(e) {
   const t = ft(), {
     mode: n,
     documentReady: r,
     onModeChange: o,
     liveTranslation: a = null
-  } = e, s = e.sourceViewOnly ?? (t == null ? void 0 : t.sourceViewOnly) ?? !1, l = a ? _i(a.state) : "";
+  } = e, s = e.sourceViewOnly ?? (t == null ? void 0 : t.sourceViewOnly) ?? !1, l = a ? Ai(a.state) : "";
   return /* @__PURE__ */ U("header", { className: "reader-workspace-bar", children: [
     a ? /* @__PURE__ */ U(
       "button",
@@ -3214,13 +3214,13 @@ function ki(e) {
         title: a.state.error || l,
         onClick: a.onToggle,
         children: [
-          /* @__PURE__ */ P(_o, { size: 14, strokeWidth: 2.2, "aria-hidden": !0 }),
+          /* @__PURE__ */ P(Lo, { size: 14, strokeWidth: 2.2, "aria-hidden": !0 }),
           /* @__PURE__ */ P("span", { className: "reader-live-translation-toggle-label", children: l })
         ]
       }
     ) : null,
-    /* @__PURE__ */ P("div", { className: "reader-workspace-tabs", role: "tablist", "aria-label": "阅读工作区", children: Ai.map(({ id: i, label: c, Icon: u }) => {
-      const d = n === i, m = Li({
+    /* @__PURE__ */ P("div", { className: "reader-workspace-tabs", role: "tablist", "aria-label": "阅读工作区", children: Mi.map(({ id: i, label: c, Icon: u }) => {
+      const d = n === i, m = _i({
         id: i,
         documentReady: r,
         sourceViewOnly: s,
@@ -3247,11 +3247,11 @@ function ki(e) {
     }) })
   ] });
 }
-const Ni = {
-  markdown: { label: "Markdown", short: "MD", Icon: Lo, needsJob: !0 }
-}, Ci = Tr.map(
-  (e) => ({ id: e, ...Ni[e] })
-), Di = {
+const ki = {
+  markdown: { label: "Markdown", short: "MD", Icon: ko, needsJob: !0 }
+}, Ni = Er.map(
+  (e) => ({ id: e, ...ki[e] })
+), Ci = {
   // 这个面板叫「AI」而不是「终端」：它是阅读页里**唯一**的 AI 入口。
   //
   // 原来一篇文档有三扇 AI 的门 —— AI 问答面板（自带一套 chunking + retrieval +
@@ -3263,25 +3263,25 @@ const Ni = {
   terminal: {
     label: "AI",
     short: "AI",
-    Icon: ko,
+    Icon: No,
     adapterKey: "renderReaderTerminal",
     slot: "terminal",
     ariaLabel: "AI（agent 终端）",
     keepMounted: !0
   }
-}, Hr = Er.map(
-  (e) => ({ id: e, ...Di[e] })
+}, Wr = Mr.map(
+  (e) => ({ id: e, ...Ci[e] })
 );
-function zi(e) {
+function Di(e) {
   return [
-    ...Ci.map(({ id: t, label: n, short: r, Icon: o, needsJob: a }) => ({
+    ...Ni.map(({ id: t, label: n, short: r, Icon: o, needsJob: a }) => ({
       id: t,
       label: n,
       short: r,
       Icon: o,
       needsJob: a
     })),
-    ...Hr.filter((t) => e(t.adapterKey)).map(({ id: t, label: n, short: r, Icon: o }) => ({
+    ...Wr.filter((t) => e(t.adapterKey)).map(({ id: t, label: n, short: r, Icon: o }) => ({
       id: t,
       label: n,
       short: r,
@@ -3290,14 +3290,14 @@ function zi(e) {
     }))
   ];
 }
-function xi() {
+function zi() {
   const e = me();
-  return zi((t) => typeof (e == null ? void 0 : e[t]) == "function");
+  return Di((t) => typeof (e == null ? void 0 : e[t]) == "function");
 }
-function Oi(e) {
+function xi(e) {
   const t = ft(), { active: n, badges: r } = e, o = e.sourceOnly ?? (t == null ? void 0 : t.sourceOnly) ?? !1, a = e.onSelect ?? (t == null ? void 0 : t.assistant.select) ?? (() => {
   }), s = e.onClose ?? (t == null ? void 0 : t.assistant.close) ?? (() => {
-  }), l = xi();
+  }), l = zi();
   return n ? /* @__PURE__ */ U("header", { className: "reader-assistant-dock-header", children: [
     /* @__PURE__ */ P("div", { className: "reader-assistant-dock-tabs", role: "tablist", "aria-label": "阅读辅助面板", children: l.map(({ id: i, label: c, Icon: u, needsJob: d }) => {
       const m = n === i, f = d && o, h = r == null ? void 0 : r[i];
@@ -3328,7 +3328,7 @@ function Oi(e) {
         "aria-label": "关闭阅读辅助面板",
         title: "关闭辅助面板",
         onClick: s,
-        children: /* @__PURE__ */ P(gr, { size: 16, strokeWidth: 2.25, "aria-hidden": !0 })
+        children: /* @__PURE__ */ P(br, { size: 16, strokeWidth: 2.25, "aria-hidden": !0 })
       }
     )
   ] }) : /* @__PURE__ */ P("nav", { className: "reader-assistant-rail", "aria-label": "阅读辅助工具", children: l.map(({ id: i, label: c, short: u, Icon: d, needsJob: m }) => {
@@ -3352,21 +3352,21 @@ function Oi(e) {
     );
   }) });
 }
-function Fi(e, t) {
+function Oi(e, t) {
   const n = getComputedStyle(e), r = parseFloat(n.fontSize);
   return t * r;
 }
-function $i(e, t) {
+function Fi(e, t) {
   const n = getComputedStyle(e.ownerDocument.documentElement), r = parseFloat(n.fontSize);
   return t * r;
 }
-function ji(e) {
+function $i(e) {
   return e / 100 * window.innerHeight;
 }
-function Ui(e) {
+function ji(e) {
   return e / 100 * window.innerWidth;
 }
-function Bi(e) {
+function Ui(e) {
   switch (typeof e) {
     case "number":
       return [e, "px"];
@@ -3382,7 +3382,7 @@ function rt({
   styleProp: n
 }) {
   let r;
-  const [o, a] = Bi(n);
+  const [o, a] = Ui(n);
   switch (a) {
     case "%": {
       r = o / 100 * e;
@@ -3393,19 +3393,19 @@ function rt({
       break;
     }
     case "rem": {
-      r = $i(t, o);
-      break;
-    }
-    case "em": {
       r = Fi(t, o);
       break;
     }
+    case "em": {
+      r = Oi(t, o);
+      break;
+    }
     case "vh": {
-      r = ji(o);
+      r = $i(o);
       break;
     }
     case "vw": {
-      r = Ui(o);
+      r = ji(o);
       break;
     }
   }
@@ -3487,21 +3487,21 @@ function Z(e, t = "Assertion error") {
 }
 function Zt(e, t) {
   return Array.from(t).sort(
-    e === "horizontal" ? Hi : Wi
+    e === "horizontal" ? Bi : Hi
   );
 }
-function Hi(e, t) {
+function Bi(e, t) {
   const n = e.element.offsetLeft - t.element.offsetLeft;
   return n !== 0 ? n : e.element.offsetWidth - t.element.offsetWidth;
 }
-function Wi(e, t) {
+function Hi(e, t) {
   const n = e.element.offsetTop - t.element.offsetTop;
   return n !== 0 ? n : e.element.offsetHeight - t.element.offsetHeight;
 }
-function Wr(e) {
+function Vr(e) {
   return e !== null && typeof e == "object" && "nodeType" in e && e.nodeType === Node.ELEMENT_NODE;
 }
-function Vr(e, t) {
+function Jr(e, t) {
   return {
     x: e.x >= t.left && e.x <= t.right ? 0 : Math.min(
       Math.abs(e.x - t.left),
@@ -3513,7 +3513,7 @@ function Vr(e, t) {
     )
   };
 }
-function Vi({
+function Wi({
   orientation: e,
   rects: t,
   targetRect: n
@@ -3524,19 +3524,19 @@ function Vi({
   };
   let o, a = Number.MAX_VALUE;
   for (const s of t) {
-    const { x: l, y: i } = Vr(r, s), c = e === "horizontal" ? l : i;
+    const { x: l, y: i } = Jr(r, s), c = e === "horizontal" ? l : i;
     c < a && (a = c, o = s);
   }
   return Z(o, "No rect found"), o;
 }
 let yt;
-function Ji() {
+function Vi() {
   return yt === void 0 && (typeof matchMedia == "function" ? yt = !!matchMedia("(pointer:coarse)").matches : yt = !1), yt;
 }
-function Jr(e) {
+function qr(e) {
   const { element: t, orientation: n, panels: r, separators: o } = e, a = Zt(
     n,
-    Array.from(t.children).filter(Wr).map((h) => ({ element: h }))
+    Array.from(t.children).filter(Vr).map((h) => ({ element: h }))
   ).map(({ element: h }) => h), s = [];
   let l = !1, i = !1, c = -1, u = -1, d = 0, m, f = [];
   {
@@ -3577,7 +3577,7 @@ function Jr(e) {
                   break;
                 }
                 case 1: {
-                  const M = f[0], _ = Vi({
+                  const M = f[0], _ = Wi({
                     orientation: n,
                     rects: [b, S],
                     targetRect: M.element.getBoundingClientRect()
@@ -3609,7 +3609,7 @@ function Jr(e) {
               ];
             for (const g of w) {
               let v = "width" in g ? g : g.element.getBoundingClientRect();
-              const M = Ji() ? e.resizeTargetMinimumSize.coarse : e.resizeTargetMinimumSize.fine;
+              const M = Vi() ? e.resizeTargetMinimumSize.coarse : e.resizeTargetMinimumSize.fine;
               if (v.width < M) {
                 const x = M - v.width;
                 v = new DOMRect(
@@ -3652,9 +3652,9 @@ function Jr(e) {
   return s;
 }
 var Ie;
-class qr {
+class Gr {
   constructor() {
-    An(this, Ie, {});
+    _n(this, Ie, {});
   }
   addListener(t, n) {
     const r = Qe(this, Ie)[t];
@@ -3683,7 +3683,7 @@ class qr {
       }
   }
   removeAllListeners() {
-    _n(this, Ie, {});
+    Ln(this, Ie, {});
   }
   removeListener(t, n) {
     const r = Qe(this, Ie)[t];
@@ -3698,34 +3698,34 @@ let Je = {
   cursorFlags: 0,
   state: "inactive"
 };
-const mn = new qr();
+const hn = new Gr();
 function ke() {
   return Je;
 }
-function qi(e) {
-  return mn.addListener("change", e);
+function Ji(e) {
+  return hn.addListener("change", e);
 }
-function Gi(e) {
+function qi(e) {
   const t = Je, n = { ...Je };
-  n.cursorFlags = e, Je = n, mn.emit("change", {
+  n.cursorFlags = e, Je = n, hn.emit("change", {
     prev: t,
     next: n
   });
 }
 function qe(e) {
   const t = Je;
-  Je = e, mn.emit("change", {
+  Je = e, hn.emit("change", {
     prev: t,
     next: e
   });
 }
-const Ki = (e) => e, Ft = () => {
-}, Gr = 1, Kr = 2, Zr = 4, Yr = 8, Gn = 3, Kn = 12;
+const Gi = (e) => e, Ft = () => {
+}, Kr = 1, Zr = 2, Yr = 4, Xr = 8, Kn = 3, Zn = 12;
 let vt;
-function Zn() {
+function Yn() {
   return vt === void 0 && (vt = !1, typeof window < "u" && (window.navigator.userAgent.includes("Chrome") || window.navigator.userAgent.includes("Firefox")) && (vt = !0)), vt;
 }
-function Zi({
+function Ki({
   cursorFlags: e,
   groups: t,
   state: n
@@ -3751,8 +3751,8 @@ function Zi({
   if (!(r === 0 && o === 0)) {
     switch (n) {
       case "active": {
-        if (e && Zn()) {
-          const a = (e & Gr) !== 0, s = (e & Kr) !== 0, l = (e & Zr) !== 0, i = (e & Yr) !== 0;
+        if (e && Yn()) {
+          const a = (e & Kr) !== 0, s = (e & Zr) !== 0, l = (e & Yr) !== 0, i = (e & Xr) !== 0;
           if (a)
             return l ? "se-resize" : i ? "ne-resize" : "e-resize";
           if (s)
@@ -3765,14 +3765,14 @@ function Zi({
         break;
       }
     }
-    return Zn() ? r > 0 && o > 0 ? "move" : r > 0 ? "ew-resize" : "ns-resize" : r > 0 && o > 0 ? "grab" : r > 0 ? "col-resize" : "row-resize";
+    return Yn() ? r > 0 && o > 0 ? "move" : r > 0 ? "ew-resize" : "ns-resize" : r > 0 && o > 0 ? "grab" : r > 0 ? "col-resize" : "row-resize";
   }
 }
-const Yn = /* @__PURE__ */ new WeakMap();
-function hn(e) {
+const Xn = /* @__PURE__ */ new WeakMap();
+function pn(e) {
   if (e.defaultView === null || e.defaultView === void 0)
     return;
-  let { prevStyle: t, styleSheet: n } = Yn.get(e) ?? {};
+  let { prevStyle: t, styleSheet: n } = Xn.get(e) ?? {};
   n === void 0 && (n = new e.defaultView.CSSStyleSheet(), e.adoptedStyleSheets && (Object.isExtensible(e.adoptedStyleSheets) ? e.adoptedStyleSheets.push(n) : e.adoptedStyleSheets = [
     ...e.adoptedStyleSheets,
     n
@@ -3781,7 +3781,7 @@ function hn(e) {
   switch (r.state) {
     case "active":
     case "hover": {
-      const o = Zi({
+      const o = Ki({
         cursorFlags: r.cursorFlags,
         groups: r.hitRegions.map((s) => s.group),
         state: r.state
@@ -3796,17 +3796,17 @@ function hn(e) {
       break;
     }
   }
-  Yn.set(e, {
+  Xn.set(e, {
     prevStyle: t,
     styleSheet: n
   });
 }
 let be = /* @__PURE__ */ new Map();
-const Xr = new qr();
-function Yi(e) {
+const Qr = new Gr();
+function Zi(e) {
   be = new Map(be), be.delete(e);
 }
-function Xn(e, t) {
+function Qn(e, t) {
   for (const [n] of be)
     if (n.id === e)
       return n;
@@ -3821,21 +3821,21 @@ function Te(e, t) {
 function ze() {
   return be;
 }
-function pn(e, t) {
-  return Xr.addListener("groupChange", (n) => {
+function gn(e, t) {
+  return Qr.addListener("groupChange", (n) => {
     n.group.id === e && t(n);
   });
 }
 function Re(e, t, n) {
   const r = be.get(e);
-  be = new Map(be), be.set(e, t), Xr.emit("groupChange", {
+  be = new Map(be), be.set(e, t), Qr.emit("groupChange", {
     group: e,
     isUserInteraction: (n == null ? void 0 : n.isUserInteraction) === !0,
     prev: r,
     next: t
   });
 }
-function Qr(e) {
+function eo(e) {
   const t = ke();
   let n = !1;
   switch (t.state) {
@@ -3843,7 +3843,7 @@ function Qr(e) {
       qe({
         cursorFlags: 0,
         state: "inactive"
-      }), t.hitRegions.length > 0 && (hn(e), n = !0, t.hitRegions.forEach((r) => {
+      }), t.hitRegions.length > 0 && (pn(e), n = !0, t.hitRegions.forEach((r) => {
         const o = Te(r.group.id, !0);
         Re(r.group, o, {
           isUserInteraction: !0
@@ -3852,16 +3852,16 @@ function Qr(e) {
   }
   return n;
 }
-function Qn(e) {
-  e.defaultPrevented || Qr(e.currentTarget);
+function er(e) {
+  e.defaultPrevented || eo(e.currentTarget);
 }
-function Xi(e, t, n) {
+function Yi(e, t, n) {
   let r, o = {
     x: 1 / 0,
     y: 1 / 0
   };
   for (const a of t) {
-    const s = Vr(n, a.rect);
+    const s = Jr(n, a.rect);
     switch (e) {
       case "horizontal": {
         s.x <= o.x && (r = a, o = s);
@@ -3878,14 +3878,14 @@ function Xi(e, t, n) {
     hitRegion: r
   } : void 0;
 }
-function Qi(e) {
+function Xi(e) {
   return e !== null && typeof e == "object" && "nodeType" in e && e.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
 }
-function ec(e, t) {
+function Qi(e, t) {
   if (e === t) throw new Error("Cannot compare node with itself");
   const n = {
-    a: nr(e),
-    b: nr(t)
+    a: rr(e),
+    b: rr(t)
   };
   let r;
   for (; n.a.at(-1) === n.b.at(-1); )
@@ -3895,8 +3895,8 @@ function ec(e, t) {
     "Stacking order can only be calculated for elements with a common ancestor"
   );
   const o = {
-    a: tr(er(n.a)),
-    b: tr(er(n.b))
+    a: nr(tr(n.a)),
+    b: nr(tr(n.b))
   };
   if (o.a === o.b) {
     const a = r.childNodes, s = {
@@ -3912,75 +3912,75 @@ function ec(e, t) {
   }
   return Math.sign(o.a - o.b);
 }
-const tc = /\b(?:position|zIndex|opacity|transform|webkitTransform|mixBlendMode|filter|webkitFilter|isolation)\b/;
-function nc(e) {
-  const t = getComputedStyle(eo(e) ?? e).display;
+const ec = /\b(?:position|zIndex|opacity|transform|webkitTransform|mixBlendMode|filter|webkitFilter|isolation)\b/;
+function tc(e) {
+  const t = getComputedStyle(to(e) ?? e).display;
   return t === "flex" || t === "inline-flex";
 }
-function rc(e) {
+function nc(e) {
   const t = getComputedStyle(e);
-  return !!(t.position === "fixed" || t.zIndex !== "auto" && (t.position !== "static" || nc(e)) || +t.opacity < 1 || "transform" in t && t.transform !== "none" || "webkitTransform" in t && t.webkitTransform !== "none" || "mixBlendMode" in t && t.mixBlendMode !== "normal" || "filter" in t && t.filter !== "none" || "webkitFilter" in t && t.webkitFilter !== "none" || "isolation" in t && t.isolation === "isolate" || tc.test(t.willChange) || t.webkitOverflowScrolling === "touch");
+  return !!(t.position === "fixed" || t.zIndex !== "auto" && (t.position !== "static" || tc(e)) || +t.opacity < 1 || "transform" in t && t.transform !== "none" || "webkitTransform" in t && t.webkitTransform !== "none" || "mixBlendMode" in t && t.mixBlendMode !== "normal" || "filter" in t && t.filter !== "none" || "webkitFilter" in t && t.webkitFilter !== "none" || "isolation" in t && t.isolation === "isolate" || ec.test(t.willChange) || t.webkitOverflowScrolling === "touch");
 }
-function er(e) {
+function tr(e) {
   let t = e.length;
   for (; t--; ) {
     const n = e[t];
-    if (Z(n, "Missing node"), rc(n)) return n;
+    if (Z(n, "Missing node"), nc(n)) return n;
   }
   return null;
 }
-function tr(e) {
+function nr(e) {
   return e && Number(getComputedStyle(e).zIndex) || 0;
 }
-function nr(e) {
+function rr(e) {
   const t = [];
   for (; e; )
-    t.push(e), e = eo(e);
+    t.push(e), e = to(e);
   return t;
 }
-function eo(e) {
+function to(e) {
   const { parentNode: t } = e;
-  return Qi(t) ? t.host : t;
+  return Xi(t) ? t.host : t;
 }
-function oc(e, t) {
+function rc(e, t) {
   return e.x < t.x + t.width && e.x + e.width > t.x && e.y < t.y + t.height && e.y + e.height > t.y;
 }
-function ac({
+function oc({
   groupElement: e,
   hitRegion: t,
   pointerEventTarget: n
 }) {
-  if (!Wr(n) || n.contains(e) || e.contains(n))
+  if (!Vr(n) || n.contains(e) || e.contains(n))
     return !0;
-  if (ec(n, e) > 0) {
+  if (Qi(n, e) > 0) {
     let r = n;
     for (; r; ) {
       if (r.contains(e))
         return !0;
-      if (oc(r.getBoundingClientRect(), t))
+      if (rc(r.getBoundingClientRect(), t))
         return !1;
       r = r.parentElement;
     }
   }
   return !0;
 }
-function gn(e, t) {
+function bn(e, t) {
   const n = [];
   return t.forEach((r, o) => {
     if (o.disabled)
       return;
-    const a = Jr(o), s = Xi(o.orientation, a, {
+    const a = qr(o), s = Yi(o.orientation, a, {
       x: e.clientX,
       y: e.clientY
     });
-    s && s.distance.x <= 0 && s.distance.y <= 0 && ac({
+    s && s.distance.x <= 0 && s.distance.y <= 0 && oc({
       groupElement: o.element,
       hitRegion: s.hitRegion.rect,
       pointerEventTarget: e.target
     }) && n.push(s.hitRegion);
   }), n;
 }
-function sc(e, t) {
+function ac(e, t) {
   if (e.length !== t.length)
     return !1;
   for (let n = 0; n < e.length; n++)
@@ -4138,7 +4138,7 @@ function ct({
       e < 0 ? p-- : p++;
     }
   }
-  if (sc(i, c))
+  if (ac(i, c))
     return o;
   {
     const p = e < 0 ? d : u, y = l[p];
@@ -4238,7 +4238,7 @@ function Ce({
   const s = Object.keys(e);
   return r.reduce((l, i, c) => (l[s[c]] = i, l), {});
 }
-function to({
+function no({
   groupId: e,
   panelId: t
 }) {
@@ -4367,17 +4367,17 @@ function to({
     }
   };
 }
-function rr(e) {
+function or(e) {
   if (e.defaultPrevented)
     return;
   const t = ze();
-  gn(e, t).forEach((n) => {
+  bn(e, t).forEach((n) => {
     if (n.separator && !n.separator.disableDoubleClick) {
       const r = n.panels.find(
         (o) => o.panelConstraints.defaultSize !== void 0
       );
       if (r) {
-        const o = r.panelConstraints.defaultSize, a = to({
+        const o = r.panelConstraints.defaultSize, a = no({
           groupId: n.group.id,
           panelId: r.id
         });
@@ -4395,7 +4395,7 @@ function St(e) {
       return n;
   throw Error("Could not find parent Group for separator element");
 }
-function no({
+function ro({
   groupId: e
 }) {
   const t = () => {
@@ -4439,7 +4439,7 @@ function Le(e, t) {
   Z(o, "Matching separator not found");
   const a = r.separatorToPanels.get(o);
   Z(a, "Matching panels not found");
-  const s = a.map((u) => n.panels.indexOf(u)), l = no({ groupId: n.id }).getLayout(), i = ct({
+  const s = a.map((u) => n.panels.indexOf(u)), l = ro({ groupId: n.id }).getLayout(), i = ct({
     delta: t,
     initialLayout: l,
     panelConstraints: r.derivedPanelConstraints,
@@ -4466,7 +4466,7 @@ function Le(e, t) {
     { isUserInteraction: !0 }
   );
 }
-function or(e) {
+function ar(e) {
   if (e.defaultPrevented)
     return;
   const t = e.currentTarget, n = St(t);
@@ -4529,10 +4529,10 @@ function or(e) {
       }
     }
 }
-function ar(e) {
+function sr(e) {
   if (e.defaultPrevented || e.pointerType === "mouse" && e.button > 0)
     return;
-  const t = ze(), n = gn(e, t), r = /* @__PURE__ */ new Map();
+  const t = ze(), n = bn(e, t), r = /* @__PURE__ */ new Map();
   let o = !1;
   n.forEach((a) => {
     a.separator && (o || (o = !0, a.separator.element.focus({
@@ -4550,7 +4550,7 @@ function ar(e) {
     state: "active"
   }), n.length && e.preventDefault();
 }
-function ro({
+function oo({
   document: e,
   event: t,
   hitRegions: n,
@@ -4587,11 +4587,11 @@ function ro({
         if (p !== 0 && !h)
           switch (m) {
             case "horizontal": {
-              l |= p < 0 ? Gr : Kr;
+              l |= p < 0 ? Kr : Zr;
               break;
             }
             case "vertical": {
-              l |= p < 0 ? Zr : Yr;
+              l |= p < 0 ? Yr : Xr;
               break;
             }
           }
@@ -4606,13 +4606,13 @@ function ro({
     }
   });
   let i = 0;
-  t.movementX === 0 ? i |= s & Gn : i |= l & Gn, t.movementY === 0 ? i |= s & Kn : i |= l & Kn, Gi(i), hn(e);
+  t.movementX === 0 ? i |= s & Kn : i |= l & Kn, t.movementY === 0 ? i |= s & Zn : i |= l & Zn, qi(i), pn(e);
 }
-function sr(e) {
+function ir(e) {
   const t = ze(), n = ke();
   switch (n.state) {
     case "active":
-      ro({
+      oo({
         document: e.currentTarget,
         event: e,
         hitRegions: n.hitRegions,
@@ -4622,7 +4622,7 @@ function sr(e) {
       });
   }
 }
-function ir(e) {
+function cr(e) {
   var r, o;
   if (e.defaultPrevented)
     return;
@@ -4649,7 +4649,7 @@ function ir(e) {
           const { element: s } = a.separator;
           (r = s.hasPointerCapture) != null && r.call(s, e.pointerId) || ((o = s.setPointerCapture) == null || o.call(s, e.pointerId));
         }
-      ro({
+      oo({
         document: e.currentTarget,
         event: e,
         hitRegions: t.hitRegions,
@@ -4661,7 +4661,7 @@ function ir(e) {
       break;
     }
     default: {
-      const a = gn(e, n);
+      const a = bn(e, n);
       a.length === 0 ? t.state !== "inactive" && qe({
         cursorFlags: 0,
         state: "inactive"
@@ -4669,12 +4669,12 @@ function ir(e) {
         cursorFlags: 0,
         hitRegions: a,
         state: "hover"
-      }), hn(e.currentTarget);
+      }), pn(e.currentTarget);
       break;
     }
   }
 }
-function cr(e) {
+function lr(e) {
   if (e.relatedTarget instanceof HTMLIFrameElement)
     switch (ke().state) {
       case "hover":
@@ -4684,10 +4684,10 @@ function cr(e) {
         });
     }
 }
-function lr(e) {
-  e.defaultPrevented || e.pointerType === "mouse" && e.button > 0 || Qr(e.currentTarget) && e.preventDefault();
-}
 function ur(e) {
+  e.defaultPrevented || e.pointerType === "mouse" && e.button > 0 || eo(e.currentTarget) && e.preventDefault();
+}
+function dr(e) {
   let t = 0, n = 0;
   const r = {};
   for (const a of e)
@@ -4705,7 +4705,7 @@ function ur(e) {
   }
   return r;
 }
-function ic(e, t, n) {
+function sc(e, t, n) {
   if (!n[0])
     return;
   const r = e.panels.find((i) => i.element === t);
@@ -4717,7 +4717,7 @@ function ic(e, t, n) {
   };
   r.mutableValues.prevSize = l, r.onResize(l, r.id, s);
 }
-function cc(e, t) {
+function ic(e, t) {
   if (Object.keys(e).length !== Object.keys(t).length)
     return !1;
   for (const n in e)
@@ -4725,7 +4725,7 @@ function cc(e, t) {
       return !1;
   return !0;
 }
-function lc({
+function cc({
   group: e,
   nextGroupSize: t,
   prevGroupSize: n,
@@ -4774,7 +4774,7 @@ function lc({
   }
   return u;
 }
-function uc(e, t) {
+function lc(e, t) {
   const n = e.map((o) => o.id), r = Object.keys(t);
   if (n.length !== r.length)
     return !1;
@@ -4784,7 +4784,7 @@ function uc(e, t) {
   return !0;
 }
 const Ue = /* @__PURE__ */ new Map();
-function dc(e) {
+function uc(e) {
   let t = !0;
   Z(
     e.element.ownerDocument.defaultView,
@@ -4801,7 +4801,7 @@ function dc(e) {
           const w = Te(e.id);
           if (!w)
             return;
-          const g = Kt(e), v = w.defaultLayoutDeferred ? ur(g) : w.layout, M = lc({
+          const g = Kt(e), v = w.defaultLayoutDeferred ? dr(g) : w.layout, M = cc({
             group: e,
             nextGroupSize: S,
             prevGroupSize: w.groupSize,
@@ -4810,7 +4810,7 @@ function dc(e) {
             layout: M,
             panelConstraints: g
           });
-          if (!w.defaultLayoutDeferred && Ne(w.layout, _) && cc(
+          if (!w.defaultLayoutDeferred && Ne(w.layout, _) && ic(
             w.derivedPanelConstraints,
             g
           ) && w.groupSize === S)
@@ -4824,7 +4824,7 @@ function dc(e) {
           });
         }
       } else
-        ic(e, b, y);
+        sc(e, b, y);
     }
   });
   a.observe(e.element), e.panels.forEach((h) => {
@@ -4835,8 +4835,8 @@ function dc(e) {
   });
   const s = Ke({ group: e }), l = Kt(e), i = e.panels.map(({ id: h }) => h).join(",");
   let c = e.mutableState.defaultLayout;
-  c && (uc(e.panels, c) || (c = void 0));
-  const u = e.mutableState.layouts[i] ?? c ?? ur(l), d = Ce({
+  c && (lc(e.panels, c) || (c = void 0));
+  const u = e.mutableState.layouts[i] ?? c ?? dr(l), d = Ce({
     layout: u,
     panelConstraints: l
   }), m = e.element.ownerDocument;
@@ -4845,7 +4845,7 @@ function dc(e) {
     (Ue.get(m) ?? 0) + 1
   );
   const f = /* @__PURE__ */ new Map();
-  return Jr(e).forEach((h) => {
+  return qr(e).forEach((h) => {
     h.separator && f.set(h.separator, h.panels);
   }), Re(e, {
     defaultLayoutDeferred: s === 0,
@@ -4857,34 +4857,34 @@ function dc(e) {
     Z(
       !o.has(h.id),
       `Separator ids must be unique; id "${h.id}" was used more than once`
-    ), o.add(h.id), h.element.addEventListener("keydown", or);
-  }), Ue.get(m) === 1 && (m.addEventListener("contextmenu", Qn, !0), m.addEventListener("dblclick", rr, !0), m.addEventListener("pointerdown", ar, !0), m.addEventListener("pointerleave", sr), m.addEventListener("pointermove", ir), m.addEventListener("pointerout", cr), m.addEventListener("pointerup", lr, !0)), function() {
+    ), o.add(h.id), h.element.addEventListener("keydown", ar);
+  }), Ue.get(m) === 1 && (m.addEventListener("contextmenu", er, !0), m.addEventListener("dblclick", or, !0), m.addEventListener("pointerdown", sr, !0), m.addEventListener("pointerleave", ir), m.addEventListener("pointermove", cr), m.addEventListener("pointerout", lr), m.addEventListener("pointerup", ur, !0)), function() {
     t = !1, Ue.set(
       m,
       Math.max(0, (Ue.get(m) ?? 0) - 1)
-    ), Yi(e), e.separators.forEach((h) => {
-      h.element.removeEventListener("keydown", or);
+    ), Zi(e), e.separators.forEach((h) => {
+      h.element.removeEventListener("keydown", ar);
     }), Ue.get(m) || (m.removeEventListener(
       "contextmenu",
-      Qn,
+      er,
       !0
     ), m.removeEventListener(
       "dblclick",
-      rr,
+      or,
       !0
     ), m.removeEventListener(
       "pointerdown",
-      ar,
+      sr,
       !0
-    ), m.removeEventListener("pointerleave", sr), m.removeEventListener("pointermove", ir), m.removeEventListener("pointerout", cr), m.removeEventListener("pointerup", lr, !0)), a.disconnect();
+    ), m.removeEventListener("pointerleave", ir), m.removeEventListener("pointermove", cr), m.removeEventListener("pointerout", lr), m.removeEventListener("pointerup", ur, !0)), a.disconnect();
   };
 }
-function fc() {
+function dc() {
   const [e, t] = k({}), n = $(() => t({}), []);
   return [e, n];
 }
-function bn(e) {
-  const t = hr();
+function yn(e) {
+  const t = pr();
   return `${e ?? t}`;
 }
 const xe = typeof window < "u" ? De : j;
@@ -4900,7 +4900,7 @@ function ot(e) {
     [t]
   );
 }
-function yn(...e) {
+function vn(...e) {
   return ot((t) => {
     e.forEach((n) => {
       if (n)
@@ -4917,27 +4917,27 @@ function yn(...e) {
     });
   });
 }
-function vn(e) {
+function Sn(e) {
   const t = A({ ...e });
   return xe(() => {
     for (const n in e)
       t.current[n] = e[n];
   }, [e]), t.current;
 }
-const oo = nn(null);
-function mc(e, t) {
+const ao = nn(null);
+function fc(e, t) {
   const n = A({
     getLayout: () => ({}),
-    setLayout: Ki
+    setLayout: Gi
   });
   tn(t, () => n.current, []), xe(() => {
     Object.assign(
       n.current,
-      no({ groupId: e })
+      ro({ groupId: e })
     );
   });
 }
-function ao({
+function so({
   children: e,
   className: t,
   defaultLayout: n,
@@ -4965,17 +4965,17 @@ function ao({
     (R, T) => {
       Ne(h.current.onLayoutChanged, R) || (h.current.onLayoutChanged = R, c == null || c(R, { isUserInteraction: T }));
     }
-  ), b = bn(l), S = A(null), [w, g] = fc(), v = A({
+  ), b = yn(l), S = A(null), [w, g] = dc(), v = A({
     lastExpandedPanelSizes: {},
     layouts: {},
     panels: [],
     resizeTargetMinimumSize: d,
     separators: []
-  }), M = yn(S, a);
-  mc(b, s);
+  }), M = vn(S, a);
+  fc(b, s);
   const _ = ot(
     (R, T) => {
-      const I = ke(), E = Xn(R), O = Te(R);
+      const I = ke(), E = Qn(R), O = Te(R);
       if (O) {
         let C = !1;
         switch (I.state) {
@@ -4996,7 +4996,7 @@ function ao({
           flexGrow: n == null ? void 0 : n[T]
         };
     }
-  ), x = vn({
+  ), x = Sn({
     defaultLayout: n,
     disableCursor: r
   }), D = K(
@@ -5034,7 +5034,7 @@ function ao({
           (C) => C.id === R
         );
         I && (I.panelConstraints.disabled = T);
-        const E = Xn(b), O = Te(b);
+        const E = Qn(b), O = Te(b);
         E && O && Re(E, {
           ...O,
           derivedPanelConstraints: Kt(E)
@@ -5081,9 +5081,9 @@ function ao({
       separators: T.separators
     };
     N.current = E;
-    const O = dc(E), { defaultLayoutDeferred: C, derivedPanelConstraints: V, layout: J } = Te(E.id, !0);
+    const O = uc(E), { defaultLayoutDeferred: C, derivedPanelConstraints: V, layout: J } = Te(E.id, !0);
     !C && V.length > 0 && (p(J), y(J, !1));
-    const F = pn(b, (z) => {
+    const F = gn(b, (z) => {
       const { defaultLayoutDeferred: B, derivedPanelConstraints: Q, layout: te } = z.next;
       if (B || Q.length === 0)
         return;
@@ -5120,7 +5120,7 @@ function ao({
   ]), j(() => {
     const R = N.current;
     R && (R.mutableState.defaultLayout = n, R.mutableState.disableCursor = !!r);
-  }), /* @__PURE__ */ P(oo.Provider, { value: D, children: /* @__PURE__ */ P(
+  }), /* @__PURE__ */ P(ao.Provider, { value: D, children: /* @__PURE__ */ P(
     "div",
     {
       ...f,
@@ -5147,16 +5147,16 @@ function ao({
     }
   ) });
 }
-ao.displayName = "Group";
-function Sn() {
-  const e = rn(oo);
+so.displayName = "Group";
+function wn() {
+  const e = rn(ao);
   return Z(
     e,
     "Group Context not found; did you render a Panel or Separator outside of a Group?"
   ), e;
 }
-function hc(e, t) {
-  const { id: n } = Sn(), r = A({
+function mc(e, t) {
+  const { id: n } = wn(), r = A({
     collapse: Ft,
     expand: Ft,
     getSize: () => ({
@@ -5169,7 +5169,7 @@ function hc(e, t) {
   tn(t, () => r.current, []), xe(() => {
     Object.assign(
       r.current,
-      to({ groupId: n, panelId: e })
+      no({ groupId: n, panelId: e })
     );
   });
 }
@@ -5190,15 +5190,15 @@ function Yt({
   style: f,
   ...h
 }) {
-  const p = !!i, y = bn(i), b = vn({
+  const p = !!i, y = yn(i), b = Sn({
     disabled: a
-  }), S = A(null), w = yn(S, s), {
+  }), S = A(null), w = vn(S, s), {
     getPanelStyles: g,
     id: v,
     orientation: M,
     registerPanel: _,
     updatePanelProps: x
-  } = Sn(), D = d !== null, N = ot(
+  } = wn(), D = d !== null, N = ot(
     (E, O, C) => {
       d == null || d(E, i, C);
     }
@@ -5242,13 +5242,13 @@ function Yt({
     b
   ]), j(() => {
     x(y, { disabled: a });
-  }, [a, y, x]), hc(y, m);
+  }, [a, y, x]), mc(y, m);
   const R = () => {
     const E = g(v, y);
     if (E)
       return JSON.stringify(E);
-  }, T = mr(
-    (E) => pn(v, E),
+  }, T = hr(
+    (E) => gn(v, E),
     R,
     R
   );
@@ -5267,7 +5267,7 @@ function Yt({
       id: y,
       ref: w,
       style: {
-        ...pc,
+        ...hc,
         display: "flex",
         flexBasis: 0,
         flexShrink: 1,
@@ -5297,7 +5297,7 @@ function Yt({
   );
 }
 Yt.displayName = "Panel";
-const pc = {
+const hc = {
   minHeight: 0,
   maxHeight: "100%",
   height: "auto",
@@ -5309,7 +5309,7 @@ const pc = {
   padding: 0,
   margin: 0
 };
-function gc({
+function pc({
   layout: e,
   panelConstraints: t,
   panelId: n,
@@ -5348,7 +5348,7 @@ function gc({
     valueNow: s
   };
 }
-function so({
+function io({
   children: e,
   className: t,
   disabled: n,
@@ -5358,16 +5358,16 @@ function so({
   style: s,
   ...l
 }) {
-  const i = bn(a), c = vn({
+  const i = yn(a), c = Sn({
     disabled: n,
     disableDoubleClick: r
-  }), [u, d] = k({}), [m, f] = k("inactive"), [h, p] = k(!1), y = A(null), b = yn(y, o), {
+  }), [u, d] = k({}), [m, f] = k("inactive"), [h, p] = k(!1), y = A(null), b = vn(y, o), {
     disableCursor: S,
     id: w,
     orientation: g,
     registerSeparator: v,
     updateSeparatorProps: M
-  } = Sn(), _ = g === "horizontal" ? "vertical" : "horizontal";
+  } = wn(), _ = g === "horizontal" ? "vertical" : "horizontal";
   xe(() => {
     const N = y.current;
     if (N !== null) {
@@ -5376,7 +5376,7 @@ function so({
         disableDoubleClick: c.disableDoubleClick,
         element: N,
         id: i
-      }, T = v(R), I = qi(
+      }, T = v(R), I = Ji(
         (O) => {
           f(
             O.next.state !== "inactive" && O.next.hitRegions.some(
@@ -5384,14 +5384,14 @@ function so({
             ) ? O.next.state : "inactive"
           );
         }
-      ), E = pn(
+      ), E = gn(
         w,
         (O) => {
           const { derivedPanelConstraints: C, layout: V, separatorToPanels: J } = O.next, F = J.get(R);
           if (F) {
             const z = F[0], B = F.indexOf(z);
             d(
-              gc({
+              pc({
                 layout: V,
                 panelConstraints: C,
                 panelId: z.id,
@@ -5455,54 +5455,54 @@ function so({
     }
   );
 }
-so.displayName = "Separator";
-const wn = 30, Pn = 65, lt = 50, bc = 100 - Pn, yc = 100 - wn;
-function vc(e) {
+io.displayName = "Separator";
+const Pn = 30, Rn = 65, lt = 50, gc = 100 - Rn, bc = 100 - Pn;
+function yc(e) {
   const t = Number(e);
-  return Number.isFinite(t) ? Math.min(Pn, Math.max(wn, t)) : lt;
+  return Number.isFinite(t) ? Math.min(Rn, Math.max(Pn, t)) : lt;
 }
-function Rn(e) {
+function In(e) {
   return 100 - e;
 }
 function Be(e) {
   return `${e}%`;
 }
-const In = "reader-document", ut = "reader-assistant", io = "retainpdf.reader.ai-split-layout.v1", Sc = {
-  [In]: Rn(lt),
+const Tn = "reader-document", ut = "reader-assistant", co = "retainpdf.reader.ai-split-layout.v1", vc = {
+  [Tn]: In(lt),
   [ut]: lt
 };
-function Tn(e) {
-  const t = vc(e == null ? void 0 : e[ut]);
+function En(e) {
+  const t = yc(e == null ? void 0 : e[ut]);
   return {
-    [In]: Rn(t),
+    [Tn]: In(t),
     [ut]: t
   };
 }
-function wc() {
+function Sc() {
   try {
-    const e = JSON.parse(localStorage.getItem(io) || "null");
-    return Tn(e);
+    const e = JSON.parse(localStorage.getItem(co) || "null");
+    return En(e);
   } catch {
-    return Sc;
+    return vc;
   }
 }
-function Pc(e) {
+function wc(e) {
   try {
-    localStorage.setItem(io, JSON.stringify(Tn(e)));
+    localStorage.setItem(co, JSON.stringify(En(e)));
   } catch {
   }
 }
 function $t(e, t) {
   const n = e == null ? void 0 : e.closest(".reader-react-root");
   if (!n) return;
-  const r = Tn(t);
+  const r = En(t);
   n.style.setProperty(
     "--reader-ai-split-width",
     `${r[ut]}vw`
   );
 }
-function Rc() {
-  const e = A(null), [t] = k(wc);
+function Pc() {
+  const e = A(null), [t] = k(Sc);
   De(() => {
     const o = e.current;
     return $t(o, t), () => {
@@ -5513,10 +5513,10 @@ function Rc() {
   const n = $((o) => {
     $t(e.current, o);
   }, []), r = $((o, a) => {
-    $t(e.current, o), a.isUserInteraction && Pc(o);
+    $t(e.current, o), a.isUserInteraction && wc(o);
   }, []);
   return /* @__PURE__ */ U(
-    ao,
+    so,
     {
       id: "reader-ai-split",
       className: "reader-ai-split-resizer",
@@ -5530,14 +5530,14 @@ function Rc() {
         /* @__PURE__ */ P(
           Yt,
           {
-            id: In,
-            defaultSize: Be(Rn(lt)),
-            minSize: Be(bc),
-            maxSize: Be(yc)
+            id: Tn,
+            defaultSize: Be(In(lt)),
+            minSize: Be(gc),
+            maxSize: Be(bc)
           }
         ),
         /* @__PURE__ */ P(
-          so,
+          io,
           {
             id: "reader-ai-split-separator",
             className: "reader-ai-split-separator",
@@ -5550,15 +5550,15 @@ function Rc() {
           {
             id: ut,
             defaultSize: Be(lt),
-            minSize: Be(wn),
-            maxSize: Be(Pn)
+            minSize: Be(Pn),
+            maxSize: Be(Rn)
           }
         )
       ]
     }
   );
 }
-function Ic({
+function Rc({
   id: e,
   open: t,
   ariaLabel: n,
@@ -5595,7 +5595,7 @@ function Ic({
     }
   );
 }
-function Tc({
+function Ic({
   regionsFailed: e = !1,
   metadataFailed: t = !1
 }) {
@@ -5625,7 +5625,7 @@ function Tc({
     )
   ] });
 }
-function Ec({
+function Tc({
   loading: e,
   failed: t,
   text: n,
@@ -5633,7 +5633,7 @@ function Ec({
   regionsError: o = !1,
   metadataError: a = !1
 }) {
-  return !e && !t ? /* @__PURE__ */ P(Tc, { regionsFailed: o, metadataFailed: a }) : /* @__PURE__ */ U(Qt, { children: [
+  return !e && !t ? /* @__PURE__ */ P(Ic, { regionsFailed: o, metadataFailed: a }) : /* @__PURE__ */ U(Qt, { children: [
     e ? /* @__PURE__ */ P("div", { className: "reader-boot-loading", "data-reader-boot-loading": "true", children: /* @__PURE__ */ U("div", { className: "reader-boot-loading-card", children: [
       /* @__PURE__ */ P("div", { className: "reader-boot-loading-text", children: n }),
       /* @__PURE__ */ P("div", { className: "reader-boot-loading-track", children: /* @__PURE__ */ P(
@@ -5647,13 +5647,13 @@ function Ec({
     t ? /* @__PURE__ */ P("div", { className: "reader-react-error", role: "alert", children: n }) : null
   ] });
 }
-function Mc(e) {
+function Ec(e) {
   if (!(e instanceof HTMLElement)) return !1;
   const t = e.tagName;
   return t === "INPUT" || t === "TEXTAREA" || t === "SELECT" || e.isContentEditable ? !0 : !!e.closest("input, textarea, select, [contenteditable='true']");
 }
-function Ac() {
-  const [e, t] = k(!1), n = hr(), r = A(null);
+function Mc() {
+  const [e, t] = k(!1), n = pr(), r = A(null);
   return j(() => {
     if (!e) return;
     const o = (s) => {
@@ -5667,7 +5667,7 @@ function Ac() {
     };
   }, [e]), j(() => {
     const o = (a) => {
-      if (a.defaultPrevented || a.metaKey || a.ctrlKey || a.altKey || Mc(a.target)) return;
+      if (a.defaultPrevented || a.metaKey || a.ctrlKey || a.altKey || Ec(a.target)) return;
       const s = a.key;
       if (s === "?" || s === "h" || s === "H" || s === "/") {
         if (s === "/" && !a.shiftKey)
@@ -5687,7 +5687,7 @@ function Ac() {
         "aria-controls": n,
         title: "快捷键（H 或 ?）",
         onClick: () => t((o) => !o),
-        children: /* @__PURE__ */ P(No, { className: "reader-react-shortcuts-icon", size: 16, strokeWidth: 2.25, "aria-hidden": !0 })
+        children: /* @__PURE__ */ P(Co, { className: "reader-react-shortcuts-icon", size: 16, strokeWidth: 2.25, "aria-hidden": !0 })
       }
     ),
     e ? /* @__PURE__ */ U(
@@ -5711,7 +5711,7 @@ function Ac() {
               }
             )
           ] }),
-          /* @__PURE__ */ P("div", { className: "reader-react-shortcuts-body", children: xs.map((o) => /* @__PURE__ */ U("section", { className: "reader-react-shortcuts-group", children: [
+          /* @__PURE__ */ P("div", { className: "reader-react-shortcuts-body", children: zs.map((o) => /* @__PURE__ */ U("section", { className: "reader-react-shortcuts-group", children: [
             /* @__PURE__ */ P("h3", { children: o.title }),
             /* @__PURE__ */ P("ul", { children: o.items.map((a) => /* @__PURE__ */ U("li", { children: [
               /* @__PURE__ */ P("kbd", { children: a.keys }),
@@ -5724,8 +5724,8 @@ function Ac() {
     ) : null
   ] });
 }
-const _c = ["source", "sideBySide", "translated"], Lc = { source: "", translated: "", sideBySide: "" };
-function kc(e) {
+const Ac = ["source", "sideBySide", "translated"], _c = { source: "", translated: "", sideBySide: "" };
+function Lc(e) {
   if (e.sourceOnly || !e.jobId) {
     const t = wt(e.sourceUrl), n = wt(e.translatedUrl);
     return {
@@ -5735,30 +5735,30 @@ function kc(e) {
       sideBySide: ""
     };
   }
-  return Zo({
+  return Yo({
     jobId: e.jobId,
     jobPayload: e.jobPayload,
     manifestPayload: e.manifestPayload
   });
 }
-function Nc(e) {
+function kc(e) {
   const [t, n] = k(() => /* @__PURE__ */ new Set()), r = K(
-    () => e ? kc(e) : Lc,
+    () => e ? Lc(e) : _c,
     [e]
   ), o = K(
-    () => _c.filter((s) => !(e != null && e.sourceOnly && s !== "source")),
+    () => Ac.filter((s) => !(e != null && e.sourceOnly && s !== "source")),
     [e == null ? void 0 : e.sourceOnly]
   ), a = $(async (s) => {
     if (!e) return;
     const l = wt(r[s]);
     if (!(!l || t.has(s)))
       try {
-        const i = e.jobId ? Ko(s, {
+        const i = e.jobId ? Zo(s, {
           jobId: e.jobId,
           jobPayload: e.jobPayload,
           manifestPayload: e.manifestPayload
         }) : `${e.sourceOnly ? "document" : "reader"}-${s}.pdf`;
-        await Yo(
+        await Xo(
           e.fetchProtected,
           l,
           i,
@@ -5771,7 +5771,7 @@ function Nc(e) {
         );
       } catch (i) {
         const c = i instanceof Error ? i.message : "下载失败";
-        Xo(c), n((u) => {
+        Qo(c), n((u) => {
           const d = new Set(u);
           return d.delete(s), d;
         });
@@ -5779,17 +5779,17 @@ function Nc(e) {
   }, [r, t, e]);
   return { urls: r, downloadItems: o, busyActions: t, handleDownload: a };
 }
-const Cc = {
-  source: br,
-  sideBySide: yr,
-  translated: vr
-}, Dc = {
+const Nc = {
+  source: yr,
+  sideBySide: vr,
+  translated: Sr
+}, Cc = {
   source: "原文",
   sideBySide: "对照",
   translated: "译文"
 };
-function zc(e) {
-  const t = ft(), n = e.download ?? (t == null ? void 0 : t.download), { urls: r, downloadItems: o, busyActions: a, handleDownload: s } = Nc(n), l = A(null);
+function Dc(e) {
+  const t = ft(), n = e.download ?? (t == null ? void 0 : t.download), { urls: r, downloadItems: o, busyActions: a, handleDownload: s } = kc(n), l = A(null);
   return j(() => {
     const i = () => {
       var d;
@@ -5804,12 +5804,12 @@ function zc(e) {
     };
   }, []), /* @__PURE__ */ U("details", { ref: l, className: "reader-download-actions", children: [
     /* @__PURE__ */ U("summary", { className: "reader-download-trigger", "aria-label": "下载 PDF", title: "下载 PDF", children: [
-      /* @__PURE__ */ P(Co, { size: 15, strokeWidth: 2.1, "aria-hidden": !0 }),
+      /* @__PURE__ */ P(Do, { size: 15, strokeWidth: 2.1, "aria-hidden": !0 }),
       /* @__PURE__ */ P("span", { className: "reader-download-trigger-label", children: "下载" }),
-      /* @__PURE__ */ P(Do, { size: 13, strokeWidth: 2.2, "aria-hidden": !0, className: "reader-download-trigger-caret" })
+      /* @__PURE__ */ P(zo, { size: 13, strokeWidth: 2.2, "aria-hidden": !0, className: "reader-download-trigger-caret" })
     ] }),
     /* @__PURE__ */ P("div", { className: "reader-download-menu", role: "group", "aria-label": "下载 PDF", children: o.map((i) => {
-      const c = go[i], u = wt(r[i]), d = a.has(i), m = !!u && !d, f = m ? "" : bo(i, r), h = Cc[i];
+      const c = bo[i], u = wt(r[i]), d = a.has(i), m = !!u && !d, f = m ? "" : yo(i, r), h = Nc[i];
       return /* @__PURE__ */ U(
         "button",
         {
@@ -5825,7 +5825,7 @@ function zc(e) {
             /* @__PURE__ */ P(h, { size: 15, strokeWidth: 2.1, "aria-hidden": !0 }),
             /* @__PURE__ */ U("span", { className: "reader-download-action-text", children: [
               /* @__PURE__ */ U("span", { className: "reader-download-action-label", children: [
-                Dc[i],
+                Cc[i],
                 " PDF"
               ] }),
               f ? /* @__PURE__ */ P("span", { className: "reader-download-action-reason", children: f }) : null
@@ -5837,9 +5837,9 @@ function zc(e) {
     }) })
   ] });
 }
-function xc(e) {
-  const t = ft(), n = Pi(), { mode: r = "compare", modeControls: o } = e, a = e.userZoom ?? (t == null ? void 0 : t.userZoom) ?? dt, s = e.onZoomChange ?? (t == null ? void 0 : t.onZoomChange) ?? (() => {
-  }), l = e.currentPage ?? (n == null ? void 0 : n.currentPage) ?? 1, i = e.numPages ?? (n == null ? void 0 : n.numPages) ?? 0, c = e.onGoToPage ?? (t == null ? void 0 : t.goToPage), u = Oa(a), d = a > Rr + 1e-3, m = a < Tt - 1e-3, f = He(r, Ve()), h = f >= Tt ? "100%（铺满阅读区）" : "50%（半屏，对照铺满）", [p, y] = k(!1), [b, S] = k(`${l}`);
+function zc(e) {
+  const t = ft(), n = wi(), { mode: r = "compare", modeControls: o } = e, a = e.userZoom ?? (t == null ? void 0 : t.userZoom) ?? dt, s = e.onZoomChange ?? (t == null ? void 0 : t.onZoomChange) ?? (() => {
+  }), l = e.currentPage ?? (n == null ? void 0 : n.currentPage) ?? 1, i = e.numPages ?? (n == null ? void 0 : n.numPages) ?? 0, c = e.onGoToPage ?? (t == null ? void 0 : t.goToPage), u = Oa(a), d = a > Ir + 1e-3, m = a < Tt - 1e-3, f = He(r, Ve()), h = f >= Tt ? "100%（铺满阅读区）" : "50%（半屏，对照铺满）", [p, y] = k(!1), [b, S] = k(`${l}`);
   j(() => {
     p || S(`${Math.min(Math.max(l, 1), Math.max(i, 1))}`);
   }, [l, i, p]);
@@ -5934,22 +5934,22 @@ function xc(e) {
         }
       )
     ] }),
-    /* @__PURE__ */ P("div", { className: "reader-react-hud-group reader-react-hud-help", "aria-label": "帮助", children: /* @__PURE__ */ P(Ac, {}) })
+    /* @__PURE__ */ P("div", { className: "reader-react-hud-group reader-react-hud-help", "aria-label": "帮助", children: /* @__PURE__ */ P(Mc, {}) })
   ] });
 }
-function dr(e) {
+function fr(e) {
   var t, n;
-  return Mr(e == null ? void 0 : e.assistantPanel) ? e.assistantPanel : ((t = e == null ? void 0 : e.splitLayout) == null ? void 0 : t.left) === "markdown" || ((n = e == null ? void 0 : e.splitLayout) == null ? void 0 : n.right) === "markdown" ? "markdown" : null;
+  return Ar(e == null ? void 0 : e.assistantPanel) ? e.assistantPanel : ((t = e == null ? void 0 : e.splitLayout) == null ? void 0 : t.left) === "markdown" || ((n = e == null ? void 0 : e.splitLayout) == null ? void 0 : n.right) === "markdown" ? "markdown" : null;
 }
-function Oc(e) {
+function xc(e) {
   const [t, n] = k(() => ({
     scope: e,
-    panel: dr(ye(e))
+    panel: fr(ye(e))
   }));
   j(() => {
     n((o) => o.scope === e ? o : {
       scope: e,
-      panel: dr(ye(e))
+      panel: fr(ye(e))
     });
   }, [e]), j(() => {
     t.scope === e && At(t.scope, {
@@ -5967,7 +5967,7 @@ function Oc(e) {
   return { panel: t.panel, scope: t.scope, setPanel: r };
 }
 const Xt = "download-toast";
-function Fc({
+function Oc({
   title: e = "下载中",
   status: t = "正在准备...",
   meta: n = "等待响应...",
@@ -5984,7 +5984,7 @@ function Fc({
     /* @__PURE__ */ P("div", { id: "download-toast-meta", className: "download-toast-meta", children: n })
   ] });
 }
-function $c(e = {}) {
+function Fc(e = {}) {
   const {
     visible: t = !1,
     title: n = "下载中",
@@ -5998,44 +5998,44 @@ function $c(e = {}) {
     return;
   }
   jt.custom(
-    () => /* @__PURE__ */ P(Fc, { title: n, status: r, meta: o, percent: a, tone: s }),
+    () => /* @__PURE__ */ P(Oc, { title: n, status: r, meta: o, percent: a, tone: s }),
     { id: Xt, duration: 1 / 0 }
   );
 }
-function jc() {
+function $c() {
   const e = $((t) => {
-    t && (t.setState = $c, t.hide = () => jt.dismiss(Xt));
+    t && (t.setState = Fc, t.hide = () => jt.dismiss(Xt));
   }, []);
   return /* @__PURE__ */ U(Qt, { children: [
-    /* @__PURE__ */ P(Ao, { position: "bottom-right" }),
+    /* @__PURE__ */ P(_o, { position: "bottom-right" }),
     /* @__PURE__ */ P("download-toast", { style: { display: "none" }, "aria-hidden": "true", ref: e })
   ] });
 }
-function Uc(e) {
-  return e.sourceViewOnly ? { mode: "source", auto: !1 } : e.savedMode ? { mode: e.savedMode, auto: !1 } : Ir(e.viewportWidth) ? { mode: "translated", auto: !0 } : { mode: null, auto: !1 };
+function jc(e) {
+  return e.sourceViewOnly ? { mode: "source", auto: !1 } : e.savedMode ? { mode: e.savedMode, auto: !1 } : Tr(e.viewportWidth) ? { mode: "translated", auto: !0 } : { mode: null, auto: !1 };
 }
-function Bc(e, t) {
+function Uc(e, t) {
   return t === null || e !== t;
 }
-function co(e) {
+function lo(e) {
   const t = A(!1);
   return e && (t.current = !0), t.current;
 }
-function Hc(e, t) {
+function Bc(e, t) {
   const n = e === t;
-  return { open: n, mounted: co(n) };
+  return { open: n, mounted: lo(n) };
 }
-function Wc({
+function Hc({
   panel: e,
   active: t,
   context: n
 }) {
   var i;
-  const r = t === e.id, o = co(r);
+  const r = t === e.id, o = lo(r);
   if (!(e.keepMounted ? o : r)) return null;
   const s = me(), l = (i = s == null ? void 0 : s[e.adapterKey]) == null ? void 0 : i.call(s, { ...n, open: r });
   return l == null ? null : /* @__PURE__ */ P(
-    Ic,
+    Rc,
     {
       id: `reader-${e.id}-panel`,
       open: r,
@@ -6047,15 +6047,15 @@ function Wc({
     }
   );
 }
-const fr = { itemId: null, origin: null };
-function Vc() {
-  let e = fr;
+const mr = { itemId: null, origin: null };
+function Wc() {
+  let e = mr;
   const t = /* @__PURE__ */ new Set();
   return {
     get: () => e,
     set(n, r) {
       if (!(e.itemId === n && (n === null || e.origin === r))) {
-        e = n === null ? fr : { itemId: n, origin: r };
+        e = n === null ? mr : { itemId: n, origin: r };
         for (const o of t) o();
       }
     },
@@ -6066,8 +6066,8 @@ function Vc() {
     }
   };
 }
-const Jc = fo(() => import("./ReaderMarkdownPanel-C9r9KxLF.js").then((e) => ({ default: e.ReaderMarkdownPanel })));
-function qc(e) {
+const Vc = mo(() => import("./ReaderMarkdownPanel-C7Lih_ak.js").then((e) => ({ default: e.ReaderMarkdownPanel })));
+function Jc(e) {
   const t = e.sourceOnly || !e.translatedUrl, n = !!(e.overlayContentAvailable && e.liveTranslationVisible && !e.assistantOpen), o = e.assistantPdfPane || (e.assistantOpen && e.mode === "compare" ? "source" : e.mode), a = !t && (o === "translated" || o === "compare");
   return {
     kind: n ? "live-overlay" : o === "compare" ? "final-compare" : o === "translated" ? "translated-only" : "source-only",
@@ -6080,11 +6080,11 @@ function qc(e) {
     sourceViewOnly: t
   };
 }
-function Gc(e, t) {
+function qc(e, t) {
   return e === "compare" ? t ? !0 : null : !1;
 }
-function Kc() {
-  const e = Ds(), { boot: t, panes: n, sessionFiles: r, session: o } = e, a = Oc(e.viewStateKey), s = a.panel, l = a.setPanel, [i, c] = k(null), [u, d] = k(null), [m, f] = k(!1), h = A(null), p = A(null), y = s !== null, b = e.liveTranslationAvailable || e.liveTranslation.pagesByPage.size > 0, S = qc({
+function Gc() {
+  const e = Cs(), { boot: t, panes: n, sessionFiles: r, session: o } = e, a = xc(e.viewStateKey), s = a.panel, l = a.setPanel, [i, c] = k(null), [u, d] = k(null), [m, f] = k(!1), h = A(null), p = A(null), y = s !== null, b = e.liveTranslationAvailable || e.liveTranslation.pagesByPage.size > 0, S = Jc({
     mode: e.mode,
     sourceOnly: e.sourceOnly,
     translatedUrl: r.translatedUrl,
@@ -6092,7 +6092,7 @@ function Kc() {
     liveTranslationVisible: m,
     assistantOpen: y,
     assistantPdfPane: i
-  }), w = $(() => d(null), []), g = u ? mo({ jobId: o.jobId, name: u, onClose: w }) : null, v = Es({
+  }), w = $(() => d(null), []), g = u ? ho({ jobId: o.jobId, name: u, onClose: w }) : null, v = Es({
     hasOverlayContent: b,
     connection: e.liveTranslation.connection,
     showSource: S.showSource,
@@ -6109,7 +6109,7 @@ function Kc() {
     if (!(t.loading || t.failed)) {
       if (h.current !== e.viewStateKey) {
         h.current = e.viewStateKey;
-        const z = ye(e.viewStateKey), B = Uc({
+        const z = ye(e.viewStateKey), B = jc({
           savedMode: z == null ? void 0 : z.mode,
           sourceViewOnly: M,
           viewportWidth: Ve()
@@ -6117,11 +6117,11 @@ function Kc() {
         p.current = B.auto ? B.mode : null, B.mode && B.mode !== e.mode && e.setModeKeepingPage(B.mode);
         return;
       }
-      Bc(e.mode, p.current) && (p.current = null, At(e.viewStateKey, { mode: e.mode }));
+      Uc(e.mode, p.current) && (p.current = null, At(e.viewStateKey, { mode: e.mode }));
     }
   }, [t.failed, t.loading, e.mode, e.setModeKeepingPage, e.viewStateKey, M]);
-  const x = s || (e.mode === "compare" ? "compare" : "reading"), D = Hc(s, "markdown");
-  Us({
+  const x = s || (e.mode === "compare" ? "compare" : "reading"), D = Bc(s, "markdown");
+  js({
     mode: _,
     sourceOnly: e.sourceOnly,
     setMode: e.setModeKeepingPage,
@@ -6136,7 +6136,7 @@ function Kc() {
     l(null), c(null);
   }, []), R = $((z) => {
     c(null);
-    const B = Gc(z, e.liveTranslationAvailable);
+    const B = qc(z, e.liveTranslationAvailable);
     B !== null && f(B), e.setModeKeepingPage(z);
   }, [e.liveTranslationAvailable, e.setModeKeepingPage]), T = K(() => v.sourcePaneToggle ? /* @__PURE__ */ P(
     "button",
@@ -6169,7 +6169,7 @@ function Kc() {
     pendingInput: null,
     onOpenBoard: d,
     onClose: N
-  }), [N, o.documentId, o.jobId]), [O] = k(Vc), C = $((z) => e.jumpToAnchor({ block_id: z }), [e.jumpToAnchor]), V = K(() => ({
+  }), [N, o.documentId, o.jobId]), [O] = k(Wc), C = $((z) => e.jumpToAnchor({ block_id: z }), [e.jumpToAnchor]), V = K(() => ({
     bindShell: e.shell.bindShell,
     shellEl: e.shell.shellEl,
     shellWidth: e.shell.shellWidth,
@@ -6221,14 +6221,14 @@ function Kc() {
     y ? "is-assistant-open" : "",
     S.overlayOnSource ? "is-live-translation-overlay" : ""
   ].filter(Boolean).join(" ");
-  return /* @__PURE__ */ P(wi, { value: V, hud: J, children: /* @__PURE__ */ U("div", { className: F, "data-reader-engine": "react-pdf", "data-reader-workspace": x, children: [
-    /* @__PURE__ */ P(Ec, { loading: t.loading, failed: t.failed, text: t.text, percent: t.percent, regionsError: !!o.readerErrors.regions, metadataError: !!o.readerErrors.metadata }),
+  return /* @__PURE__ */ P(Si, { value: V, hud: J, children: /* @__PURE__ */ U("div", { className: F, "data-reader-engine": "react-pdf", "data-reader-workspace": x, children: [
+    /* @__PURE__ */ P(Tc, { loading: t.loading, failed: t.failed, text: t.text, percent: t.percent, regionsError: !!o.readerErrors.regions, metadataError: !!o.readerErrors.metadata }),
     /* @__PURE__ */ U("div", { className: "reader-chrome-tray", children: [
-      /* @__PURE__ */ P(zc, {}),
-      /* @__PURE__ */ P(qs, { onBeforeClose: o.prepareClose })
+      /* @__PURE__ */ P(Dc, {}),
+      /* @__PURE__ */ P(Js, { onBeforeClose: o.prepareClose })
     ] }),
     /* @__PURE__ */ P(
-      ki,
+      Li,
       {
         mode: _,
         documentReady: !!o.jobId,
@@ -6241,20 +6241,20 @@ function Kc() {
         } : null
       }
     ),
-    /* @__PURE__ */ P(Oi, { active: s }),
-    y ? /* @__PURE__ */ P(Rc, {}) : null,
-    /* @__PURE__ */ P(Mi, { paneComposition: S, markdownSplit: D.open, assistantSplit: y, liveTranslation: e.liveTranslation, sourcePaneAction: T }),
+    /* @__PURE__ */ P(xi, { active: s }),
+    y ? /* @__PURE__ */ P(Pc, {}) : null,
+    /* @__PURE__ */ P(Ei, { paneComposition: S, markdownSplit: D.open, assistantSplit: y, liveTranslation: e.liveTranslation, sourcePaneAction: T }),
     g,
     e.showHud ? /* @__PURE__ */ P(
-      xc,
+      zc,
       {
         mode: _,
         modeControls: null
       }
     ) : null,
-    /* @__PURE__ */ U(uo, { fallback: null, children: [
-      Hr.map((z) => /* @__PURE__ */ P(
-        Wc,
+    /* @__PURE__ */ U(fo, { fallback: null, children: [
+      Wr.map((z) => /* @__PURE__ */ P(
+        Hc,
         {
           panel: z,
           active: s,
@@ -6262,21 +6262,21 @@ function Kc() {
         },
         z.id
       )),
-      D.mounted ? /* @__PURE__ */ P(Jc, { open: D.open, jobId: o.jobId, sourceOnly: e.sourceOnly, side: "right", onClose: N }) : null
+      D.mounted ? /* @__PURE__ */ P(Vc, { open: D.open, jobId: o.jobId, sourceOnly: e.sourceOnly, side: "right", onClose: N }) : null
     ] }),
-    /* @__PURE__ */ P(jc, {})
+    /* @__PURE__ */ P($c, {})
   ] }) });
 }
 function fl() {
-  return /* @__PURE__ */ P(Kc, {});
+  return /* @__PURE__ */ P(Gc, {});
 }
 export {
   fl as R,
-  Kc as a,
-  Ic as b,
+  Gc as a,
+  Rc as b,
   ul as d,
   ll as f,
   dl as r,
   ft as u
 };
-//# sourceMappingURL=ReaderApp-pMa89j6b.js.map
+//# sourceMappingURL=ReaderApp-BOsQyv8D.js.map

@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 import { ChevronRight, Clock3, FileStack, Languages, Pencil, ScanText, TriangleAlert } from "lucide-react";
 import { TitleMetaPanel } from "../panels/overview/TitleMetaPanel.jsx";
 import { formatZhDate, formatZhDateTime } from "@/platform/utils/datetime.js";
+import { isActiveJobStatus } from "@retainpdf/domain/job";
 
 type OverviewStatus = {
   label: string;
@@ -84,7 +85,7 @@ function jobActivity(job: OverviewJob) {
     ? "已完成"
     : status === "failed"
       ? "失败"
-      : ["queued", "pending", "running", "validating"].includes(status)
+      : isActiveJobStatus(status)
         ? "处理中"
         : status === "cancelled" || status === "canceled"
           ? "已取消"

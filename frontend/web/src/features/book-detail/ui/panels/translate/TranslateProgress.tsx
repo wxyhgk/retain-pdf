@@ -16,8 +16,8 @@ import type { LibraryCardItem } from "@/features/library/domain.js";
 import {
   isLibraryOnlyItem,
 } from "@/features/library/domain.js";
+import { isActiveJobStatus } from "@retainpdf/domain/job";
 
-const PROGRESS_STATUSES = new Set(["queued", "pending", "running", "validating"]);
 
 function resolveJobId(item: LibraryCardItem = {}) {
   const raw = `${item.job_id || item.active_job_id || ""}`.trim();
@@ -67,8 +67,8 @@ export function BookTranslateProgressPanel({
   const itemStatus = `${item.status || ""}`.trim().toLowerCase();
 
   const cardStatus = `${statusCardState?.snapshot?.status || ""}`.trim().toLowerCase();
-  const cardPollingActive = PROGRESS_STATUSES.has(cardStatus);
-  const showDetailedProgress = showProgress && PROGRESS_STATUSES.has(itemStatus);
+  const cardPollingActive = isActiveJobStatus(cardStatus);
+  const showDetailedProgress = showProgress && isActiveJobStatus(itemStatus);
   const showFailure = showProgress && itemStatus === "failed";
   const shouldAttach = showDetailedProgress || showFailure;
 

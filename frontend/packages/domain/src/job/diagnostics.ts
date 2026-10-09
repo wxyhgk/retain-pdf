@@ -2,9 +2,10 @@ import {
   firstDefined,
   firstNonEmpty,
 } from "./core.js";
+import { normalizeJobStatus } from "./status-presentation.js";
 
 export function summarizeStatus(status) {
-  switch (status) {
+  switch (normalizeJobStatus(status) || status) {
     case "queued":
       return "任务已提交，等待后端开始处理。";
     case "running":

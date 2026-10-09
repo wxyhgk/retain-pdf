@@ -24,6 +24,7 @@ import {
 import { readerViewStateScope } from "../shared/state/reader-view-state.js";
 import { useLiveTranslation } from "./use-live-translation.js";
 import type { LiveTranslationState } from "../shared/data/live-translation-state.js";
+import { isFinishedJobStatus } from "@retainpdf/domain/job";
 
 export const CITATION_HIGHLIGHT_MS = 2000;
 
@@ -152,7 +153,7 @@ export function useReaderReactController(): ReaderReactController {
     sawRunningRef.current = { jobId: session.jobId, running: false };
   }
   const normalizedStatus = `${session.jobStatus || ""}`.trim().toLowerCase();
-  if (normalizedStatus && !["succeeded", "failed", "cancelled", "canceled"].includes(normalizedStatus)) {
+  if (normalizedStatus && !isFinishedJobStatus(normalizedStatus)) {
     sawRunningRef.current.running = true;
   }
   const liveTranslation = useLiveTranslation({

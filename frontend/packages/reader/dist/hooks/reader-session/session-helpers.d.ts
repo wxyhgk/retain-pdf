@@ -1,5 +1,4 @@
 import type { BootState } from "./types.js";
-export declare const TERMINAL_JOB_STATUSES: Set<string>;
 export declare function normalizeJobStatus(jobPayload: unknown): string;
 export declare function resolveJobDocumentId(jobPayload: unknown): string;
 export declare function buildCommittedDocumentSourceUrl(documentId: string, revision: string): string;

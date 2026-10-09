@@ -15,6 +15,7 @@ import {
   USER_STAGE_TOTAL,
 } from "./job-status-summary-stage-constants.js";
 import { isJobTerminal } from "../../job/core.js";
+import { JOB_STATUS_LABELS, normalizeJobStatus } from "../../job/status-presentation.js";
 
 function publicStageKeyOf(payload) {
   const canonicalStage = canonicalStageOf(payload);
@@ -67,7 +68,9 @@ function successDetailForWorkflow(payload) {
 
 function userStageFor(payload) {
   const stageKey = stageKeyOf(payload);
-  if (payload.status === "succeeded" && isJobTerminal(payload)) {
+  // 归一后再比：以前只认美式 canceled，后端偶发的英式 cancelled 会落到「等待中」。
+  const status = normalizeJobStatus(payload.status);
+  if (status === "succeeded" && isJobTerminal({ ...payload, status })) {
     return {
       key: "done",
       label: "完成",
@@ -76,32 +79,32 @@ function userStageFor(payload) {
       total: USER_STAGE_TOTAL,
     };
   }
-  if (payload.status === "failed") {
+  if (status === "failed") {
     return {
       key: "failed",
-      label: "失败",
+      label: JOB_STATUS_LABELS.failed,
       detail: "任务失败，请查看详情",
       step: null,
       total: USER_STAGE_TOTAL,
     };
   }
-  if (payload.status === "canceled") {
+  if (status === "canceled") {
     return {
       key: "canceled",
-      label: "已取消",
+      label: JOB_STATUS_LABELS.canceled,
       detail: "任务已取消",
       step: null,
       total: USER_STAGE_TOTAL,
     };
   }
   if (
-    (payload.status === "queued"
+    (status === "queued"
       || stageKey === "queued")
     && !["ocr", "translate", "render"].includes(stageKey)
   ) {
     return {
       key: "queued",
-      label: "排队中",
+      label: JOB_STATUS_LABELS.queued,
       detail: detailForPayload(payload, "等待可用执行槽位"),
       step: null,
       total: USER_STAGE_TOTAL,
@@ -117,10 +120,10 @@ function userStageFor(payload) {
       total: USER_STAGE_TOTAL,
     };
   }
-  if (payload.status === "running") {
+  if (status === "running") {
     return {
       key: "running",
-      label: "处理中",
+      label: JOB_STATUS_LABELS.running,
       detail: detailForPayload(payload, "正在处理任务"),
       step: null,
       total: USER_STAGE_TOTAL,

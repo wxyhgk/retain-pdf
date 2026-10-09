@@ -7,8 +7,8 @@ import {
   defaultReaderPageConfigPort,
 } from "../../external.js";
 import type { BootState } from "./types.js";
+import { isFinishedJobStatus } from "@retainpdf/domain/job";
 
-export const TERMINAL_JOB_STATUSES = new Set(["succeeded", "failed", "cancelled", "canceled"]);
 
 export function normalizeJobStatus(jobPayload: unknown): string {
   return `${(jobPayload as Record<string, unknown> | null)?.status || ""}`.trim().toLowerCase();

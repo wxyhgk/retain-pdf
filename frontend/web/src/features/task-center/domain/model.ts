@@ -1,4 +1,5 @@
 import type { JobListItemView } from "@retainpdf/contracts/job-status";
+import { JOB_STATUS_LABELS, jobStatusLabel, normalizeJobStatus } from "@retainpdf/domain/job";
 
 export type TaskCenterGroupKey = "running" | "queued" | "failed" | "completed";
 
@@ -16,10 +17,10 @@ export const TASK_CENTER_GROUP_ORDER: TaskCenterGroupKey[] = [
 ];
 
 const GROUP_LABELS: Record<TaskCenterGroupKey, string> = {
-  running: "运行中",
-  queued: "排队中",
-  failed: "失败",
-  completed: "已完成",
+  running: JOB_STATUS_LABELS.running,
+  queued: JOB_STATUS_LABELS.queued,
+  failed: JOB_STATUS_LABELS.failed,
+  completed: JOB_STATUS_LABELS.succeeded,
 };
 
 export function taskIdentity(job: Pick<JobListItemView, "job_id">): string {
@@ -40,20 +41,13 @@ export function taskWorkflowLabel(job: Pick<JobListItemView, "workflow">): strin
   }
 }
 
+// 文字统一出自 @retainpdf/domain/job：以前这里把运行中写成「运行中」，别处都是「处理中」。
 export function taskStatusLabel(job: Pick<JobListItemView, "status">): string {
-  switch (`${job.status || ""}`.trim().toLowerCase()) {
-    case "queued": return "排队中";
-    case "running": return "运行中";
-    case "failed": return "失败";
-    case "succeeded": return "已完成";
-    case "cancelled":
-    case "canceled": return "已取消";
-    default: return `${job.status || "未知状态"}`;
-  }
+  return jobStatusLabel(job.status, { idleLabel: "未知状态" });
 }
 
 export function taskGroupKey(job: Pick<JobListItemView, "status">): TaskCenterGroupKey {
-  switch (`${job.status || ""}`.trim().toLowerCase()) {
+  switch (normalizeJobStatus(job.status)) {
     case "running": return "running";
     case "queued": return "queued";
     case "failed": return "failed";
