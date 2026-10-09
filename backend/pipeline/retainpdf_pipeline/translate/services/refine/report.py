@@ -53,7 +53,7 @@ def findings_summary(findings: list[dict[str, Any]]) -> dict[str, Any]:
         "item_count": len({finding["item_id"] for finding in findings}),
         "by_category": {category: by_category.get(category, 0) for category in CATEGORIES},
         "by_severity": {severity: by_severity.get(severity, 0) for severity in SEVERITIES},
-        "by_origin": {origin: by_origin.get(origin, 0) for origin in ("review", "qa")},
+        "by_origin": {origin: by_origin.get(origin, 0) for origin in ("review", "qa", "rule")},
         "by_category_and_severity": matrix,
     }
 
@@ -62,14 +62,16 @@ def fixes_summary(fixes: list[dict[str, Any]]) -> dict[str, Any]:
     by_status = Counter(fix["status"] for fix in fixes)
     reject_reasons = Counter(fix["reject_reason"] for fix in fixes if fix["status"] == "rejected")
     skip_reasons = Counter(fix["reject_reason"] for fix in fixes if fix["status"] == "skipped")
-    attempted = by_status.get("applied", 0) + by_status.get("rejected", 0)
+    # 拒绝率只算模型给的修改；规则修正（origin=rule）不在里面。
+    model_status = Counter(fix["status"] for fix in fixes if fix.get("origin", "model") != "rule")
+    attempted = model_status.get("applied", 0) + model_status.get("rejected", 0)
     return {
         "item_count": len(fixes),
         "applied": by_status.get("applied", 0),
         "rejected": by_status.get("rejected", 0),
         "skipped": by_status.get("skipped", 0),
         # 拒绝率 = 被确定性检查否决的 / 模型真的给了编辑的。高说明挑错或修改在瞎报。
-        "rejection_rate": round(by_status.get("rejected", 0) / attempted, 4) if attempted else None,
+        "rejection_rate": round(model_status.get("rejected", 0) / attempted, 4) if attempted else None,
         "reject_reasons": dict(sorted(reject_reasons.items())),
         "skip_reasons": dict(sorted(skip_reasons.items())),
     }

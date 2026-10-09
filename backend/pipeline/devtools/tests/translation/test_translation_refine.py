@@ -90,9 +90,9 @@ def _write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def _build_job(root: Path) -> Path:
+def _build_job(root: Path, pages: dict[int, list[dict]] | None = None) -> Path:
     translated = root / "translated"
-    pages = _pages()
+    pages = pages or _pages()
     paths = {idx: translated / f"page-{idx + 1:03d}-deepseek.json" for idx in pages}
     for idx, items in pages.items():
         _write_json(paths[idx], items)
@@ -275,7 +275,7 @@ def test_qa_major_and_critical_violations_join_the_fix_list(tmp_path: Path) -> N
         ("p001-b002", "number_unit"),
     }
     assert all(f["qa"]["violation_id"].startswith("qa-") for f in qa_rows)
-    assert report["review"]["summary"]["by_origin"] == {"review": 0, "qa": 3}
+    assert report["review"]["summary"]["by_origin"] == {"review": 0, "qa": 3, "rule": 0}
 
 
 # ---- 定点修改：拒绝 --------------------------------------------------------------
@@ -911,3 +911,49 @@ def test_review_and_fix_responses_keep_chinese_curly_quotes() -> None:
     edit = {"op": "replace", "find": "“谐振子”", "replace": "“三维谐振子”"}
     fixes = json.dumps({"fixes": [{"item_id": "p043-b006", "edits": [edit]}]}, ensure_ascii=False)
     assert parse_fix_response(fixes)["p043-b006"]["edits"] == [edit]
+
+
+# ---- 规则修正：没译的英文交叉引用标签 ------------------------------------------------
+
+
+def _pages_with_untranslated_refs() -> dict[int, list[dict]]:
+    pages = _pages()
+    pages[1].append(
+        _single(
+            "p002-b002", 1, 2,
+            "It depends on its own eigenfunctions [see Eqs. (5) to (7)] and on the result of Prob. 1.2.",
+            "它依赖于自身的本征函数 [见 Eqs. (5) to (7)]，也依赖于 Prob. 1.2 的结果。",
+        )
+    )
+    return pages
+
+
+def test_untranslated_reference_labels_are_fixed_by_rule_without_a_model(tmp_path: Path) -> None:
+    translated = _build_job(tmp_path, _pages_with_untranslated_refs())
+    model = MockModel()
+    report = run_refine_for_render(tmp_path, translated, _config(), chat_fn=model)
+
+    assert _item(translated, "p002-b002")["translated_text"] == "它依赖于自身的本征函数 [见式 (5) 至 (7)]，也依赖于习题 1.2 的结果。"
+    rule = [fix for fix in report["fixes"] if fix.get("origin") == "rule"]
+    assert [(fix["item_id"], fix["status"]) for fix in rule] == [("p002-b002", "applied")]
+    fix_requests = [messages for purpose, messages in model.calls if purpose == "fix"]
+    assert all("p002-b002" not in json.dumps(messages, ensure_ascii=False) for messages in fix_requests), "规则修正不调模型"
+    # 模型挑错看到的已经是修过的译文。
+    reviewed = [
+        item for purpose, messages in model.calls if purpose == "review"
+        for item in json.loads(messages[-1]["content"])["items"] if item["item_id"] == "p002-b002"
+    ]
+    assert reviewed and "Eqs." not in reviewed[0]["translation"]
+    assert not [flag for flag in reviewed[0].get("qa_flags") or [] if flag["type"] == "ref_label_untranslated"], "不再提示已经修好的问题"
+    assert report["review"]["summary"]["by_origin"]["rule"] == 1
+    assert report["fix_summary"]["rejection_rate"] is None, "拒绝率只算模型的修改"
+    assert [revision["source"] for revision in _revisions(translated)] == ["refine"]
+    _assert_checkpoint_consistent(translated)
+    _assert_matches_contract(report)
+
+
+def test_review_only_never_applies_rule_fixes(tmp_path: Path) -> None:
+    translated = _build_job(tmp_path, _pages_with_untranslated_refs())
+    report = run_refine_for_render(tmp_path, translated, _config(mode="review_only"), chat_fn=MockModel())
+    assert "Eqs. (5) to (7)" in _item(translated, "p002-b002")["translated_text"]
+    assert report["fixes"] == []

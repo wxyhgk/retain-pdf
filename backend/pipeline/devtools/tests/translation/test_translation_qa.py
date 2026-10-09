@@ -188,6 +188,11 @@ def test_superscript_citations_inside_math_are_found() -> None:
         ("Equations 5.22 and 5.23 are coupled.", "式 5.22 和式 5.23 是耦合的。"),
         ("This is discussed in Problems 5–6 and 5–7.", "这在习题 5–6 和 5–7 中讨论。"),
         ("EXAMPLE5-1", "例5-1"),
+        # 几个编号共用一个中文标签（真实书里的写法），不算缺标签。
+        ("Corresponding to Eqs. (14.86) to (14.88) for diatomic molecules", "对应于双原子分子的式 (14.86) 至 (14.88)"),
+        ("Sections 14.4 to 14.7 discuss the virial theorem.", "第 14.4 至 14.7 节讨论维里定理。"),
+        ("Hence Eqs. (14.75) and (14.76) hold for every atom.", "因此，方程 (14.75) 和 (14.76) 对任何原子均成立。"),
+        ("using the result of Prob. 14.8, we get", "利用习题 14.8 的结果，得到"),
     ],
 )
 def test_cross_references_preserved(source: str, translated: str) -> None:
@@ -208,6 +213,26 @@ def test_cross_reference_kind_mismatch_and_untranslated_label() -> None:
     assert _find(mismatch, "ref_kind_mismatch")["severity"] == "major"
     untranslated = _run([_item("p001-b001", "As shown in Figure 3.2, the curve rises.", "如 Figure 3.2 所示，曲线上升。")])
     assert _find(untranslated, "ref_label_untranslated")["severity"] == "minor"
+
+
+def test_untranslated_abbreviated_labels_are_found_and_rewritable() -> None:
+    from retainpdf_pipeline.translate.services.quality.qa.references import untranslated_ref_rewrites
+
+    report = _run([_item("p001-b001", "using the result of Prob. 14.8, we get", "利用 Prob. 14.8 的结果，得到")])
+    assert _find(report, "ref_label_untranslated")["evidence"]["ref_kind"] == "problem"
+    # 共用标签的一组里，标签没译时整组还是报出来（由精修的规则修正换掉）。
+    group = _run([_item("p001-b001", "[see Eqs. (14.26) to (14.29)]", "[见 Eqs. (14.26) to (14.29)]")])
+    assert "ref_label_untranslated" in _types(group, "references")
+    assert untranslated_ref_rewrites("[见 Eqs. (14.26) to (14.29)]") == [(" Eqs. (14.26) to (14.29)", "式 (14.26) 至 (14.29)")]
+    assert untranslated_ref_rewrites("详见 Merzbacher, Section 17.4。", equation_label="方程") == [("Section 17.4", "第 17.4 节")]
+    assert untranslated_ref_rewrites("参见 Sections 3.1 and 3.2;") == [(" Sections 3.1 and 3.2", "第 3.1 和 3.2 节")]
+    assert untranslated_ref_rewrites("由 Equations (1), (2) and (3) 得") == [(" Equations (1), (2) and (3)", "式 (1)、(2) 和 (3)")]
+    assert untranslated_ref_rewrites("如图 Fig. 3 所示") == [("Fig. 3", "3")]
+    # 不动的：没有汉字的块、公式里的、同一片段出现两次的、scheme。
+    assert untranslated_ref_rewrites("See Eq. (5).") == []
+    assert untranslated_ref_rewrites("其中 $Eq. 5$ 成立") == []
+    assert untranslated_ref_rewrites("由 Eq. (5) 和 Eq. (5) 得") == []
+    assert untranslated_ref_rewrites("见 Scheme 2") == []
 
 
 def test_citation_brackets_must_survive() -> None:

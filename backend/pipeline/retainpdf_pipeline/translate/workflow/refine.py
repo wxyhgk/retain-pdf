@@ -28,6 +28,8 @@ from retainpdf_pipeline.translate.services.preparation.term_base import load_jso
 from retainpdf_pipeline.translate.services.preparation.term_base import load_term_base
 from retainpdf_pipeline.translate.services.preparation.term_base import term_base_glossary_entries
 from retainpdf_pipeline.translate.services.quality.qa.fit import CHECK_LAYOUT_FIT
+from retainpdf_pipeline.translate.services.quality.qa.references import extract_source_refs
+from retainpdf_pipeline.translate.services.quality.qa.references import untranslated_ref_rewrites
 from retainpdf_pipeline.translate.services.quality.qa.report import build_translation_qa
 from retainpdf_pipeline.translate.services.quality.qa.report import build_translation_qa_for_job
 from retainpdf_pipeline.translate.services.quality.qa.report import load_job_glossary_entries
@@ -485,6 +487,70 @@ def _run_fixes(
     return records, stopped
 
 
+# ---- 规则修正（不调模型） -------------------------------------------------------
+
+RULE_FIX_NOTE = "按体例把没译的英文交叉引用标签换成中文（规则修正，未调用模型）"
+
+
+def _equation_label(qa_payload: dict[str, Any]) -> str:
+    """全书公式引用多数用的叫法（式 / 方程 / 公式）；没统计到用「式」。"""
+    for violation in qa_payload.get("violations") or []:
+        evidence = violation.get("evidence") or {}
+        if violation.get("type") == "ref_label_inconsistent" and evidence.get("ref_kind") == "equation":
+            label = str(evidence.get("majority_label") or "")
+            if label:
+                return label
+    return "式"
+
+
+def _run_rule_fixes(
+    *,
+    pages: dict[int, list[dict]],
+    item_ids: list[str],
+    context: dict[str, Any],
+    equation_label: str,
+    next_id: _Ids,
+) -> tuple[list[review_rules.Finding], list[dict[str, Any]]]:
+    """没译的英文交叉引用标签（Eqs. (5) to (7)、Section 2.3、Prob. 14.8）直接按体例换成中文。
+
+    原文里确实有这处引用才换；换法交给和模型修改同一套执行与验收（编辑执行、写回预演、
+    QA 不新增违规），不过就保留原译。
+    """
+    findings: list[review_rules.Finding] = []
+    records: list[dict[str, Any]] = []
+    for item_id in item_ids:
+        _items, items_by_id = _items_by_id(pages)
+        item = items_by_id.get(item_id)
+        if item is None or not extract_source_refs(item.protected_source):
+            continue
+        rewrites = untranslated_ref_rewrites(item.protected_translated, equation_label=equation_label)
+        if not rewrites:
+            continue
+        finding = review_rules.Finding(
+            finding_id=next_id(),
+            item_id=item.item_id,
+            page_number=item.page_number,
+            category="untranslated",
+            severity="minor",
+            target_span=rewrites[0][0].strip(),
+            source_span="",
+            explanation="交叉引用的英文标签没有译",
+            suggestion=rewrites[0][1],
+            origin=review_rules.ORIGIN_RULE,
+        )
+        record = _fix_record(item, [finding])
+        record["origin"] = "rule"
+        proposal = {
+            "edits": [{"op": "replace", "find": found, "replace": replacement} for found, replacement in rewrites],
+            "note": RULE_FIX_NOTE,
+        }
+        findings.append(finding)
+        records.append(
+            _try_fix_item(record=record, item=item, findings=[finding], proposal=proposal, pages=pages, context=context)
+        )
+    return findings, records
+
+
 # ---- 入口 ----------------------------------------------------------------------
 
 
@@ -547,6 +613,39 @@ def _refine(
     pages = load_translated_pages_for_qa(translations_dir)
     qa_before = build_translation_qa_for_job(job_root, translations_dir=translations_dir, mode="refine_before")
     report["qa_before"] = report_rules.qa_summary(qa_before)
+    user_glossary, locked_terms = _glossary(job_root, translations_dir)
+    next_id = _Ids()
+    context: dict[str, Any] | None = None
+    if cfg.applies_fixes:
+        if translations_dir.resolve() != (job_root / "translated").resolve():
+            errors.append({"phase": "fix", "message": "translations_dir is not <job_root>/translated; fixes skipped"})
+        else:
+            context = {
+                "job_root": job_root,
+                "translations_dir": translations_dir,
+                "user_glossary": user_glossary,
+                "fit_constrained": _fit_constrained_items(qa_before),
+            }
+    rule_findings: list[review_rules.Finding] = []
+    rule_fixes: list[dict[str, Any]] = []
+    if context is not None:
+        # 先做不花钱的规则修正，模型挑错看到的就是修过的译文。
+        rule_scope = [
+            item.item_id
+            for item in _items_by_id(pages)[0]
+            if item.checked and cfg.page_in_scope(item.page_number)
+        ]
+        rule_findings, rule_fixes = _run_rule_fixes(
+            pages=pages,
+            item_ids=rule_scope,
+            context=context,
+            equation_label=_equation_label(qa_before),
+            next_id=next_id,
+        )
+    # 规则修正改过译文的话，挑错用的 QA 标记按改后的重算（报告里的 qa_before 仍是精修前的）。
+    qa_current = qa_before
+    if any(fix["status"] == fix_rules.FIX_APPLIED for fix in rule_fixes):
+        qa_current = build_translation_qa_for_job(job_root, translations_dir=translations_dir, mode="refine_before")
     all_items, items_by_id = _items_by_id(pages)
     scoped = [item for item in all_items if item.checked and cfg.page_in_scope(item.page_number)]
     stopped: str | None = None
@@ -554,9 +653,7 @@ def _refine(
     if cfg.max_items > 0 and len(scoped) > cfg.max_items:
         candidates = scoped[: cfg.max_items]
         stopped = report_rules.STOP_MAX_ITEMS
-    user_glossary, locked_terms = _glossary(job_root, translations_dir)
     scoped_ids = {item.item_id: item for item in candidates}
-    next_id = _Ids()
 
     reviewer_info, fixer_info, reviewer_key, translation_key = _connections(cfg)
     report["models"] = {"reviewer": reviewer_info, "fixer": fixer_info}
@@ -590,7 +687,7 @@ def _refine(
         all_items=all_items,
         locked_terms=locked_terms,
         style_notes=_style_notes(translations_dir),
-        qa_flags=review_rules.qa_flags_by_item(qa_before),
+        qa_flags=review_rules.qa_flags_by_item(qa_current),
         stats=stats,
         next_id=next_id,
         progress=progress,
@@ -600,9 +697,12 @@ def _refine(
     if review_chat is None and candidates:
         review_stopped = report_rules.STOP_LLM_UNAVAILABLE
     stopped = review_stopped or stopped
-    qa_origin = review_rules.qa_findings(qa_before, items_by_id=scoped_ids, next_id=next_id)
+    qa_origin = review_rules.qa_findings(qa_current, items_by_id=scoped_ids, next_id=next_id)
     order = {item.item_id: item.order for item in all_items}
-    findings = sorted([*review_findings, *qa_origin], key=lambda f: (order.get(f.item_id, 0), f.origin != "review", f.finding_id))
+    findings = sorted(
+        [*rule_findings, *review_findings, *qa_origin],
+        key=lambda f: (order.get(f.item_id, 0), f.origin != "review", f.finding_id),
+    )
     finding_rows = [finding.as_dict() for finding in findings]
     report["review"].update(
         {
@@ -618,20 +718,11 @@ def _refine(
         }
     )
 
-    fixes: list[dict[str, Any]] = []
+    fixes: list[dict[str, Any]] = list(rule_fixes)
     if cfg.applies_fixes:
-        same_dir = translations_dir.resolve() == (job_root / "translated").resolve()
-        if not same_dir:
-            errors.append({"phase": "fix", "message": "translations_dir is not <job_root>/translated; fixes skipped"})
-        else:
-            context = {
-                "job_root": job_root,
-                "translations_dir": translations_dir,
-                "user_glossary": user_glossary,
-                "fit_constrained": _fit_constrained_items(qa_before),
-            }
+        if context is not None:
             progress.transition("fix", "精修：开始定点修改")
-            fixes, fix_stopped = _run_fixes(
+            model_fixes, fix_stopped = _run_fixes(
                 chat=fixer_chat,
                 findings=findings,
                 pages=pages,
@@ -641,6 +732,7 @@ def _refine(
                 errors=errors,
                 budget_exhausted=stopped == report_rules.STOP_MAX_TOKENS,
             )
+            fixes.extend(model_fixes)
             stopped = stopped or fix_stopped
     report["fixes"] = fixes
     report["fix_summary"] = report_rules.fixes_summary(fixes)

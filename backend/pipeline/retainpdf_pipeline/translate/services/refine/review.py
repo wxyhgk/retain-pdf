@@ -37,6 +37,8 @@ SEVERITIES = ("critical", "major", "minor")
 FIXABLE_SEVERITIES = ("critical", "major")
 ORIGIN_REVIEW = "review"
 ORIGIN_QA = "qa"
+# 确定性规则找出并直接修的（不调模型），比如没译的英文交叉引用标签。
+ORIGIN_RULE = "rule"
 
 # 确定性 QA 的检查 -> 精修类别。没列出的（占位符、标点、首现注释、排版 fit）不是
 # 「改一个片段就能修」的准确性问题，不进待修清单。
@@ -330,6 +332,7 @@ __all__ = [
     "FIXABLE_SEVERITIES",
     "Finding",
     "ORIGIN_QA",
+    "ORIGIN_RULE",
     "ORIGIN_REVIEW",
     "QA_CHECK_CATEGORY",
     "REVIEW_BATCH_SIZE",
