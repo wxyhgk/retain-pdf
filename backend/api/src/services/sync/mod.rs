@@ -1,14 +1,17 @@
-//! 多设备同步的应用服务:设置、后台定时同步、立即同步、状态。
+//! 多设备同步的应用服务:设置、后台定时同步、立即同步、连通性测试、状态。
 //!
 //! 同步本身在 `retain_data::sync`(格式与合并规则见那里)。这里负责:
-//! - 设置存在数据库 `sync_state` 里(enabled / folder / device_name),跟着数据目录走,
-//!   桌面版、网页版、Docker 都一样;
+//! - 设置存在数据库 `sync_state` 里,跟着数据目录走,桌面版、网页版、Docker 都一样:
+//!   同步方式(网盘文件夹 / WebDAV)、文件夹路径或 WebDAV 地址与账号密码、设备名、开关。
+//!   WebDAV 密码只写不读(状态里只报告有没有),也不进同步数据;
 //! - 后台每隔 `RUST_API_SYNC_INTERVAL_SECS`(默认 60)秒跑一轮,改设置或点「立即同步」
 //!   时马上跑;同一时间只跑一轮;
-//! - 每轮的结果记成 `last_run`(也写进 sync_state,重启后还看得到)。
+//! - 每轮的结果记成 `last_run`(也写进 sync_state,重启后还看得到),其它设备的列表在
+//!   每轮结束时记下:界面查状态不会再去问 NAS。
 //!
-//! 用户选的文件夹里已经是同步文件夹(有 format.json)就直接用,否则在里面建
-//! `RetainPDF-Sync`:选网盘根目录也不会把东西撒在用户自己的文件中间。
+//! 网盘文件夹:用户选的文件夹里已经是同步文件夹(有 format.json)就直接用,否则在里面建
+//! `RetainPDF-Sync`,选网盘根目录也不会把东西撒在用户自己的文件中间。WebDAV 地址就是
+//! 同步文件夹本身(比如 `http://nas:5005/webdav/retainpdf`)。
 
 pub mod api;
 
@@ -18,21 +21,28 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use anyhow::{Context, Result};
-use retain_data::sync::SyncEngine;
+use retain_data::sync::{SyncEngine, WebDavBackend, WebDavConfig};
 
 use crate::db::Db;
 use crate::models::api::{
     SyncPeerView, SyncPendingItemView, SyncRunView, SyncSettingsInput, SyncStatusView,
+    SyncTestView,
 };
 use crate::models::domain::now_iso;
 
 const KEY_ENABLED: &str = "enabled";
+const KEY_TRANSPORT: &str = "transport";
 const KEY_FOLDER: &str = "folder";
+const KEY_WEBDAV_URL: &str = "webdav_url";
+const KEY_WEBDAV_USERNAME: &str = "webdav_username";
+const KEY_WEBDAV_PASSWORD: &str = "webdav_password";
 const KEY_DEVICE_NAME: &str = "device_name";
 const KEY_DEVICE_ID: &str = "device_id";
 const KEY_LAST_RUN: &str = "last_run";
 /// 用户选的文件夹里建的子目录名。
 pub const SYNC_SUBDIR: &str = "RetainPDF-Sync";
+const TRANSPORT_FOLDER: &str = "folder";
+const TRANSPORT_WEBDAV: &str = "webdav";
 
 fn interval_from_env() -> Duration {
     Duration::from_secs(
@@ -67,6 +77,22 @@ pub fn sync_root_for(folder: &Path) -> PathBuf {
     }
 }
 
+/// 同步到哪里。
+#[derive(Clone)]
+enum Target {
+    Folder(PathBuf),
+    WebDav(WebDavConfig),
+}
+
+impl Target {
+    fn location(&self) -> String {
+        match self {
+            Target::Folder(folder) => sync_root_for(folder).to_string_lossy().to_string(),
+            Target::WebDav(config) => config.url.trim().trim_end_matches('/').to_string(),
+        }
+    }
+}
+
 pub struct SyncService {
     db: Arc<Db>,
     data_root: PathBuf,
@@ -75,12 +101,31 @@ pub struct SyncService {
     run_lock: tokio::sync::Mutex<()>,
     running: AtomicBool,
     last_run: Mutex<Option<SyncRunView>>,
+    peers: Mutex<Vec<SyncPeerView>>,
     wake: tokio::sync::Notify,
 }
 
 /// 设置校验失败(给用户看的原因)。
 #[derive(Debug)]
 pub struct SyncSettingsError(pub String);
+
+fn invalid(reason: impl Into<String>) -> SyncSettingsError {
+    SyncSettingsError(reason.into())
+}
+
+fn check_webdav_url(url: &str) -> std::result::Result<(), SyncSettingsError> {
+    let parsed = reqwest::Url::parse(url).map_err(|_| invalid("WebDAV 地址不对，应当像 http://192.168.1.2:5005/webdav/retainpdf"))?;
+    if !matches!(parsed.scheme(), "http" | "https") {
+        return Err(invalid("WebDAV 地址要以 http:// 或 https:// 开头"));
+    }
+    if parsed.host_str().unwrap_or("").is_empty() {
+        return Err(invalid("WebDAV 地址缺少主机名"));
+    }
+    if !parsed.username().is_empty() || parsed.password().is_some() {
+        return Err(invalid("账号密码请填在下面的输入框里，不要写进地址"));
+    }
+    Ok(())
+}
 
 impl SyncService {
     pub fn new(db: Arc<Db>, data_root: PathBuf) -> Self {
@@ -96,24 +141,50 @@ impl SyncService {
             run_lock: tokio::sync::Mutex::new(()),
             running: AtomicBool::new(false),
             last_run: Mutex::new(last_run),
+            peers: Mutex::new(Vec::new()),
             wake: tokio::sync::Notify::new(),
         }
     }
 
-    fn enabled(&self) -> Result<bool> {
-        Ok(self.db.sync_state_get(KEY_ENABLED)?.as_deref() == Some("1"))
+    fn get(&self, key: &str) -> Result<Option<String>> {
+        Ok(self.db.sync_state_get(key)?.filter(|v| !v.is_empty()))
     }
 
-    fn folder(&self) -> Result<Option<PathBuf>> {
-        Ok(self
-            .db
-            .sync_state_get(KEY_FOLDER)?
-            .filter(|f| !f.is_empty())
-            .map(PathBuf::from))
+    fn enabled(&self) -> Result<bool> {
+        Ok(self.get(KEY_ENABLED)?.as_deref() == Some("1"))
+    }
+
+    fn transport(&self) -> Result<String> {
+        Ok(self.get(KEY_TRANSPORT)?.unwrap_or_else(|| TRANSPORT_FOLDER.to_string()))
+    }
+
+    /// 由已保存的设置(叠上 `overlay` 里给了的字段)得到同步目标;没配好为 None。
+    fn target_with(&self, overlay: Option<&SyncSettingsInput>) -> Result<Option<Target>> {
+        let pick = |given: Option<&Option<String>>, key: &str| -> Result<Option<String>> {
+            match given {
+                Some(Some(value)) => Ok(Some(value.trim().to_string()).filter(|v| !v.is_empty())),
+                _ => self.get(key),
+            }
+        };
+        let transport = pick(overlay.map(|o| &o.transport), KEY_TRANSPORT)?
+            .unwrap_or_else(|| TRANSPORT_FOLDER.to_string());
+        if transport == TRANSPORT_WEBDAV {
+            let Some(url) = pick(overlay.map(|o| &o.webdav_url), KEY_WEBDAV_URL)? else {
+                return Ok(None);
+            };
+            let username = pick(overlay.map(|o| &o.webdav_username), KEY_WEBDAV_USERNAME)?.unwrap_or_default();
+            // 密码不去空格(可能本来就含空格);没给就用已保存的。
+            let password = match overlay.and_then(|o| o.webdav_password.clone()) {
+                Some(password) if !password.is_empty() => password,
+                _ => self.get(KEY_WEBDAV_PASSWORD)?.unwrap_or_default(),
+            };
+            return Ok(Some(Target::WebDav(WebDavConfig { url, username, password })));
+        }
+        Ok(pick(overlay.map(|o| &o.folder), KEY_FOLDER)?.map(|f| Target::Folder(PathBuf::from(f))))
     }
 
     fn device_name(&self) -> Result<String> {
-        match self.db.sync_state_get(KEY_DEVICE_NAME)?.filter(|n| !n.trim().is_empty()) {
+        match self.get(KEY_DEVICE_NAME)?.filter(|n| !n.trim().is_empty()) {
             Some(name) => Ok(name),
             None => {
                 let name = default_device_name();
@@ -123,30 +194,33 @@ impl SyncService {
         }
     }
 
-    pub fn status(&self) -> Result<SyncStatusView> {
-        let folder = self.folder()?;
-        let sync_root = folder.as_deref().map(sync_root_for);
-        let (pending_total, pending) = self.db.sync_pending_summary(20)?;
-        let peers = match &sync_root {
-            Some(root) if root.join("format.json").is_file() => {
-                SyncEngine::new((*self.db).clone(), &self.data_root, root, "")
-                    .and_then(|engine| engine.peers())
-                    .unwrap_or_default()
-                    .into_iter()
-                    .map(|peer| SyncPeerView {
-                        device_id: peer.device_id,
-                        name: peer.name,
-                        segments_read: peer.segments_read,
-                    })
-                    .collect()
+    fn engine(&self, target: &Target, device_name: &str) -> Result<SyncEngine> {
+        match target {
+            Target::Folder(folder) => {
+                let root = sync_root_for(folder);
+                std::fs::create_dir_all(&root)
+                    .with_context(|| format!("无法访问同步文件夹 {}", root.display()))?;
+                SyncEngine::new((*self.db).clone(), &self.data_root, &root, device_name)
             }
-            _ => Vec::new(),
-        };
+            Target::WebDav(config) => {
+                let backend = WebDavBackend::new(config, &self.data_root.join("sync-work"))?;
+                SyncEngine::with_backend((*self.db).clone(), &self.data_root, Box::new(backend), device_name)
+            }
+        }
+    }
+
+    pub fn status(&self) -> Result<SyncStatusView> {
+        let (pending_total, pending) = self.db.sync_pending_summary(20)?;
+        let target = self.target_with(None)?;
         Ok(SyncStatusView {
             enabled: self.enabled()?,
-            folder: folder.map(|f| f.to_string_lossy().to_string()),
-            sync_root: sync_root.map(|r| r.to_string_lossy().to_string()),
-            device_id: self.db.sync_state_get(KEY_DEVICE_ID)?,
+            transport: self.transport()?,
+            webdav_url: self.get(KEY_WEBDAV_URL)?,
+            webdav_username: self.get(KEY_WEBDAV_USERNAME)?,
+            webdav_has_password: self.get(KEY_WEBDAV_PASSWORD)?.is_some(),
+            folder: self.get(KEY_FOLDER)?,
+            sync_root: target.as_ref().map(Target::location),
+            device_id: self.get(KEY_DEVICE_ID)?,
             device_name: self.device_name()?,
             running: self.running.load(Ordering::SeqCst),
             interval_seconds: self.interval.as_secs(),
@@ -161,33 +235,59 @@ impl SyncService {
                     attempts: p.attempts,
                 })
                 .collect(),
-            peers,
+            peers: self.peers.lock().expect("sync peers poisoned").clone(),
         })
     }
 
-    /// 改设置。开启时必须已有可用的文件夹。
+    /// 改设置。开启时必须已配好同步目标。
     pub fn update(&self, input: &SyncSettingsInput) -> Result<std::result::Result<(), SyncSettingsError>> {
+        if let Some(transport) = &input.transport {
+            if transport != TRANSPORT_FOLDER && transport != TRANSPORT_WEBDAV {
+                return Ok(Err(invalid("同步方式只能是网盘文件夹或 WebDAV")));
+            }
+        }
         if let Some(folder) = &input.folder {
             let folder = folder.trim();
-            if folder.is_empty() {
-                self.db.sync_state_set(KEY_FOLDER, "")?;
-            } else {
+            if !folder.is_empty() {
                 if let Err(reason) = self.check_folder(Path::new(folder)) {
                     return Ok(Err(reason));
                 }
-                self.db.sync_state_set(KEY_FOLDER, folder)?;
+            }
+        }
+        if let Some(url) = &input.webdav_url {
+            let url = url.trim();
+            if !url.is_empty() {
+                if let Err(reason) = check_webdav_url(url) {
+                    return Ok(Err(reason));
+                }
             }
         }
         if let Some(name) = &input.device_name {
-            let name = name.trim();
-            if name.chars().count() > 64 {
-                return Ok(Err(SyncSettingsError("设备名最多 64 个字".into())));
+            if name.trim().chars().count() > 64 {
+                return Ok(Err(invalid("设备名最多 64 个字")));
             }
-            self.db.sync_state_set(KEY_DEVICE_NAME, name)?;
+        }
+        for (value, key) in [
+            (&input.transport, KEY_TRANSPORT),
+            (&input.folder, KEY_FOLDER),
+            (&input.webdav_url, KEY_WEBDAV_URL),
+            (&input.webdav_username, KEY_WEBDAV_USERNAME),
+            (&input.device_name, KEY_DEVICE_NAME),
+        ] {
+            if let Some(value) = value {
+                self.db.sync_state_set(key, value.trim())?;
+            }
+        }
+        if let Some(password) = &input.webdav_password {
+            self.db.sync_state_set(KEY_WEBDAV_PASSWORD, password)?;
         }
         if let Some(enabled) = input.enabled {
-            if enabled && self.folder()?.is_none() {
-                return Ok(Err(SyncSettingsError("请先选择同步文件夹".into())));
+            if enabled && self.target_with(None)?.is_none() {
+                return Ok(Err(invalid(if self.transport()? == TRANSPORT_WEBDAV {
+                    "请先填写 WebDAV 地址"
+                } else {
+                    "请先选择同步文件夹"
+                })));
             }
             self.db.sync_state_set(KEY_ENABLED, if enabled { "1" } else { "0" })?;
         }
@@ -197,17 +297,17 @@ impl SyncService {
 
     fn check_folder(&self, folder: &Path) -> std::result::Result<(), SyncSettingsError> {
         if !folder.is_absolute() {
-            return Err(SyncSettingsError("请填写完整路径".into()));
+            return Err(invalid("请填写完整路径"));
         }
         let Ok(canonical) = std::fs::canonicalize(folder) else {
-            return Err(SyncSettingsError("文件夹不存在".into()));
+            return Err(invalid("文件夹不存在"));
         };
         if !canonical.is_dir() {
-            return Err(SyncSettingsError("这不是一个文件夹".into()));
+            return Err(invalid("这不是一个文件夹"));
         }
         let data_root = std::fs::canonicalize(&self.data_root).unwrap_or_else(|_| self.data_root.clone());
         if canonical.starts_with(&data_root) || data_root.starts_with(&canonical) {
-            return Err(SyncSettingsError("同步文件夹不能放在 RetainPDF 的数据目录里，也不能包含它".into()));
+            return Err(invalid("同步文件夹不能放在 RetainPDF 的数据目录里，也不能包含它"));
         }
         let root = sync_root_for(&canonical);
         let probe = (|| -> Result<()> {
@@ -217,16 +317,47 @@ impl SyncService {
             std::fs::remove_file(&test)?;
             Ok(())
         })();
-        probe.map_err(|error| SyncSettingsError(format!("无法写入这个文件夹：{error}")))
+        probe.map_err(|error| invalid(format!("无法写入这个文件夹：{error}")))
     }
 
-    /// 跑一轮(已经有一轮在跑就等它跑完,再跑一轮)。开关关着或没设文件夹时不跑,返回 None。
+    /// 用给的设置(没给的用已保存的)测一次能不能读写。不改设置、不碰同步数据。
+    pub async fn test(self: &Arc<Self>, input: &SyncSettingsInput) -> Result<SyncTestView> {
+        if let Some(url) = input.webdav_url.as_deref().map(str::trim).filter(|u| !u.is_empty()) {
+            if let Err(reason) = check_webdav_url(url) {
+                return Ok(SyncTestView { ok: false, location: url.to_string(), latency_ms: None, error: Some(reason.0) });
+            }
+        }
+        let Some(target) = self.target_with(Some(input))? else {
+            return Ok(SyncTestView {
+                ok: false,
+                location: String::new(),
+                latency_ms: None,
+                error: Some("还没有填写同步位置".into()),
+            });
+        };
+        if let Target::Folder(folder) = &target {
+            if let Err(reason) = self.check_folder(folder) {
+                return Ok(SyncTestView { ok: false, location: target.location(), latency_ms: None, error: Some(reason.0) });
+            }
+        }
+        let location = target.location();
+        let device_name = self.device_name()?;
+        let service = self.clone();
+        let outcome = tokio::task::spawn_blocking(move || service.engine(&target, &device_name)?.probe()).await;
+        Ok(match outcome {
+            Ok(Ok(latency)) => SyncTestView { ok: true, location, latency_ms: Some(latency), error: None },
+            Ok(Err(error)) => SyncTestView { ok: false, location, latency_ms: None, error: Some(format!("{error:#}")) },
+            Err(error) => SyncTestView { ok: false, location, latency_ms: None, error: Some(format!("测试中断：{error}")) },
+        })
+    }
+
+    /// 跑一轮(已经有一轮在跑就等它跑完,再跑一轮)。开关关着或没配好时不跑,返回 None。
     pub async fn run_once(self: &Arc<Self>) -> Result<Option<SyncRunView>> {
         let _guard = self.run_lock.lock().await;
         if !self.enabled()? {
             return Ok(None);
         }
-        let Some(folder) = self.folder()? else {
+        let Some(target) = self.target_with(None)? else {
             return Ok(None);
         };
         let device_name = self.device_name()?;
@@ -234,10 +365,10 @@ impl SyncService {
         let started_at = now_iso();
         let service = self.clone();
         let outcome = tokio::task::spawn_blocking(move || {
-            let root = sync_root_for(&folder);
-            std::fs::create_dir_all(&root)
-                .with_context(|| format!("无法访问同步文件夹 {}", root.display()))?;
-            SyncEngine::new((*service.db).clone(), &service.data_root, &root, &device_name)?.run_cycle()
+            let engine = service.engine(&target, &device_name)?;
+            let report = engine.run_cycle()?;
+            let peers = engine.peers().unwrap_or_default();
+            Ok::<_, anyhow::Error>((report, peers))
         })
         .await;
         self.running.store(false, Ordering::SeqCst);
@@ -247,7 +378,7 @@ impl SyncService {
             ..SyncRunView::default()
         };
         match outcome {
-            Ok(Ok(report)) => {
+            Ok(Ok((report, peers))) => {
                 view.ok = true;
                 view.exported = report.exported;
                 view.applied = report.applied;
@@ -257,6 +388,14 @@ impl SyncService {
                 view.rejected = report.rejected;
                 view.folder_changed = report.folder_changed;
                 view.device_renewed = report.device_renewed;
+                *self.peers.lock().expect("sync peers poisoned") = peers
+                    .into_iter()
+                    .map(|peer| SyncPeerView {
+                        device_id: peer.device_id,
+                        name: peer.name,
+                        segments_read: peer.segments_read,
+                    })
+                    .collect();
                 if report.exported + report.applied > 0 {
                     tracing::info!(
                         exported = report.exported,

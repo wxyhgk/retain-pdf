@@ -1,43 +1,28 @@
-//! 同步文件夹的读写(布局见 `sync` 模块说明)。
+//! 「存文件」的本机目录实现:网盘客户端(iCloud、坚果云、Dropbox…)同步的文件夹。
+//!
+//! 先写临时名再改名,网盘客户端看不到写了一半的文件。iCloud 把没下载到本机的文件换成
+//! `.<名字>.icloud` 占位文件:遇到时请系统下载,这一轮当作还没到。
 
 use std::fs::{self, File};
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context, Result};
-use serde_json::{json, Value};
+use anyhow::{Context, Result};
 use sha2::{Digest, Sha256};
 
-use super::ChangeRecord;
+use super::store::{Backend, Fetched};
 
-pub const SYNC_FORMAT: &str = "retain-pdf-sync";
-pub const SYNC_FORMAT_VERSION: u64 = 1;
-
-/// 改动记录段的最后一行。
-const SEGMENT_END: &str = "segment_end";
-
-pub struct SyncFolder {
+pub struct FolderBackend {
     root: PathBuf,
 }
 
-/// 读一个改动记录段的结果。
-pub(super) enum Segment {
-    /// 完整的一段。
-    Complete(Vec<ChangeRecord>),
-    /// 文件不存在(还没有这一段)。
-    Missing,
-    /// 文件在,但还没同步完整(没有结束标记,或 iCloud 只放了占位文件)。
-    Incomplete,
-}
-
-/// iCloud 把没下载到本机的文件换成 `.<名字>.icloud` 占位文件。
+/// iCloud 的占位文件。
 fn placeholder_of(path: &Path) -> PathBuf {
     let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
     path.with_file_name(format!(".{name}.icloud"))
 }
 
-/// 请 iCloud 把文件下载下来(macOS;不等它下完,下一轮再看)。其它网盘客户端没有
-/// 占位文件或读的时候自己下载,不需要。
+/// 请 iCloud 把文件下载下来(macOS;不等它下完,下一轮再看)。
 fn request_download(path: &Path) {
     #[cfg(target_os = "macos")]
     {
@@ -48,26 +33,17 @@ fn request_download(path: &Path) {
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())
             .spawn()
-            .and_then(|mut child| {
+            .map(|mut child| {
                 // 不阻塞同步;子进程自己退出,后台回收。
                 std::thread::spawn(move || child.wait());
-                Ok(())
             });
     }
     #[cfg(not(target_os = "macos"))]
     let _ = path;
 }
 
-fn is_device_id(name: &str) -> bool {
-    name.len() == 16 && name.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
-}
-
-fn is_sha256(text: &str) -> bool {
-    text.len() == 64 && text.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
-}
-
-/// 同目录里先写临时名再改名:别的设备、网盘客户端都看不到写了一半的文件。
-fn temp_path(target: &Path) -> PathBuf {
+/// 同目录里的临时名。
+pub(super) fn temp_path(target: &Path) -> PathBuf {
     let name = target
         .file_name()
         .map(|n| n.to_string_lossy().to_string())
@@ -93,39 +69,6 @@ pub(super) fn write_atomic(target: &Path, bytes: &[u8]) -> Result<()> {
     result.with_context(|| format!("failed to write {}", target.display()))
 }
 
-/// 把 `source` 复制到 `target`(先写临时名),边复制边算指纹;与 `expected` 不符就放弃。
-pub(super) fn copy_verified(source: &Path, target: &Path, expected: &str) -> Result<bool> {
-    if let Some(parent) = target.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let temp = temp_path(target);
-    let result = (|| -> Result<bool> {
-        let mut input = File::open(source)?;
-        let mut output = File::create(&temp)?;
-        let mut hasher = Sha256::new();
-        let mut buffer = vec![0u8; 1 << 20];
-        loop {
-            let read = input.read(&mut buffer)?;
-            if read == 0 {
-                break;
-            }
-            hasher.update(&buffer[..read]);
-            output.write_all(&buffer[..read])?;
-        }
-        output.sync_all()?;
-        let actual = hex(&hasher.finalize());
-        if actual != expected {
-            return Ok(false);
-        }
-        fs::rename(&temp, target)?;
-        Ok(true)
-    })();
-    if !matches!(result, Ok(true)) {
-        let _ = fs::remove_file(&temp);
-    }
-    result.with_context(|| format!("failed to copy {} -> {}", source.display(), target.display()))
-}
-
 pub(super) fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
@@ -144,207 +87,89 @@ pub(super) fn sha256_file(path: &Path) -> Result<String> {
     Ok(hex(&hasher.finalize()))
 }
 
-impl SyncFolder {
+impl FolderBackend {
     pub fn new(root: impl Into<PathBuf>) -> Self {
         Self { root: root.into() }
     }
 
-    pub fn root(&self) -> &Path {
-        &self.root
+    fn path(&self, relative: &str) -> PathBuf {
+        relative.split('/').fold(self.root.clone(), |path, part| path.join(part))
+    }
+}
+
+impl Backend for FolderBackend {
+    fn describe(&self) -> String {
+        self.root.display().to_string()
     }
 
-    /// 第一次用时写下格式说明;已有的检查格式与版本(更新版本的格式不碰)。
-    /// 返回文件夹编号:换了同步文件夹(而不是同一个文件夹换了路径)靠它认出来。
-    pub fn ensure(&self) -> Result<String> {
-        let path = self.root.join("format.json");
+    fn read(&self, relative: &str) -> Result<Fetched> {
+        let path = self.path(relative);
         match fs::read(&path) {
-            Ok(bytes) => {
-                let value: Value = serde_json::from_slice(&bytes)
-                    .with_context(|| format!("{} is not a sync folder description", path.display()))?;
-                if value.get("format").and_then(Value::as_str) != Some(SYNC_FORMAT) {
-                    bail!("{} is not a RetainPDF sync folder", self.root.display());
-                }
-                let version = value.get("version").and_then(Value::as_u64).unwrap_or(0);
-                if version > SYNC_FORMAT_VERSION {
-                    bail!(
-                        "sync folder format {version} is newer than this version supports ({SYNC_FORMAT_VERSION}); update RetainPDF"
-                    );
-                }
-                value
-                    .get("folder_id")
-                    .and_then(Value::as_str)
-                    .map(str::to_string)
-                    .ok_or_else(|| anyhow::anyhow!("{} has no folder_id", path.display()))
-            }
+            Ok(bytes) => Ok(Fetched::Bytes(bytes)),
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
                 if placeholder_of(&path).exists() {
                     request_download(&path);
-                    bail!("the sync folder is still downloading from the cloud; try again shortly");
+                    return Ok(Fetched::Pending);
                 }
-                fs::create_dir_all(&self.root)?;
-                let folder_id = format!("{:016x}", fastrand::u64(..));
-                write_atomic(
-                    &path,
-                    serde_json::to_vec_pretty(&json!({
-                        "format": SYNC_FORMAT,
-                        "version": SYNC_FORMAT_VERSION,
-                        "folder_id": folder_id,
-                    }))?
-                    .as_slice(),
-                )?;
-                Ok(folder_id)
+                Ok(Fetched::Missing)
             }
-            Err(error) => Err(error.into()),
+            Err(error) => Err(error).with_context(|| format!("failed to read {}", path.display())),
         }
     }
 
-    /// 同步文件夹里的设备:(设备号, 设备名)。
-    pub fn devices(&self) -> Result<Vec<(String, String)>> {
+    fn exists(&self, relative: &str) -> Result<bool> {
+        let path = self.path(relative);
+        Ok(path.exists() || placeholder_of(&path).exists())
+    }
+
+    fn write_atomic(&self, relative: &str, bytes: &[u8]) -> Result<()> {
+        write_atomic(&self.path(relative), bytes)
+    }
+
+    fn upload(&self, relative: &str, source: &Path) -> Result<()> {
+        let target = self.path(relative);
+        if let Some(parent) = target.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let temp = temp_path(&target);
+        let result = fs::copy(source, &temp)
+            .map(|_| ())
+            .and_then(|()| fs::rename(&temp, &target));
+        if result.is_err() {
+            let _ = fs::remove_file(&temp);
+        }
+        result.with_context(|| format!("failed to write {}", target.display()))
+    }
+
+    fn list(&self, relative: &str) -> Result<Vec<String>> {
+        let entries = match fs::read_dir(self.path(relative)) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(error) => return Err(error.into()),
+        };
         let mut out = Vec::new();
-        for device in self.other_devices("")? {
-            let name = fs::read(self.device_dir(&device).join("device.json"))
-                .ok()
-                .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
-                .and_then(|v| v.get("name").and_then(Value::as_str).map(str::to_string))
-                .unwrap_or_default();
-            out.push((device, name));
+        for entry in entries {
+            out.push(entry?.file_name().to_string_lossy().to_string());
         }
         Ok(out)
     }
 
-    pub(super) fn blob_path(&self, sha256: &str) -> PathBuf {
-        self.root.join("blobs").join(&sha256[..2]).join(sha256)
-    }
-
-    pub(super) fn has_blob(&self, sha256: &str) -> bool {
-        if !is_sha256(sha256) {
-            return false;
-        }
-        let path = self.blob_path(sha256);
+    fn local_copy(&self, relative: &str) -> Result<Option<PathBuf>> {
+        let path = self.path(relative);
         if path.is_file() {
-            return true;
+            return Ok(Some(path));
         }
         if placeholder_of(&path).exists() {
             request_download(&path);
         }
-        false
+        Ok(None)
     }
 
-    /// 放进一个文件的内容(已有就跳过)。返回是否新写入。
-    pub(super) fn put_blob(&self, source: &Path, sha256: &str) -> Result<bool> {
-        if !is_sha256(sha256) {
-            bail!("invalid content hash {sha256}");
-        }
-        if self.has_blob(sha256) {
-            return Ok(false);
-        }
-        if !copy_verified(source, &self.blob_path(sha256), sha256)? {
-            bail!("{} changed while being copied", source.display());
-        }
-        Ok(true)
-    }
-
-    fn device_dir(&self, device: &str) -> PathBuf {
-        self.root.join("devices").join(device)
-    }
-
-    fn segment_path(&self, device: &str, segment: u64) -> PathBuf {
-        self.device_dir(device)
-            .join("changes")
-            .join(format!("{segment:08}.jsonl"))
-    }
-
-    /// 写下(或更新)设备说明。
-    pub(super) fn ensure_device(&self, device: &str, name: &str) -> Result<()> {
-        let path = self.device_dir(device).join("device.json");
-        let current = fs::read(&path)
-            .ok()
-            .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
-            .and_then(|v| v.get("name").and_then(Value::as_str).map(str::to_string));
-        if current.as_deref() == Some(name) {
-            return Ok(());
-        }
-        write_atomic(
-            &path,
-            serde_json::to_vec_pretty(&json!({ "device_id": device, "name": name, "format": SYNC_FORMAT_VERSION }))?.as_slice(),
-        )
-    }
-
-    /// 同步文件夹里的其它设备。
-    pub(super) fn other_devices(&self, me: &str) -> Result<Vec<String>> {
-        let dir = self.root.join("devices");
-        let mut out = Vec::new();
-        let entries = match fs::read_dir(&dir) {
-            Ok(entries) => entries,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(out),
-            Err(error) => return Err(error.into()),
-        };
-        for entry in entries {
-            let name = entry?.file_name().to_string_lossy().to_string();
-            if is_device_id(&name) && name != me {
-                out.push(name);
-            }
-        }
-        out.sort();
-        Ok(out)
-    }
-
-    /// 写本机的下一段改动记录(段号已被占用就往后找)。返回段号。
-    pub(super) fn write_segment(&self, device: &str, after: u64, records: &[ChangeRecord]) -> Result<u64> {
-        let mut segment = after + 1;
-        while self.segment_path(device, segment).exists() {
-            segment += 1;
-        }
-        let mut bytes = Vec::new();
-        for record in records {
-            serde_json::to_writer(&mut bytes, record)?;
-            bytes.push(b'\n');
-        }
-        serde_json::to_writer(&mut bytes, &json!({ SEGMENT_END: records.len() }))?;
-        bytes.push(b'\n');
-        write_atomic(&self.segment_path(device, segment), &bytes)?;
-        Ok(segment)
-    }
-
-    pub(super) fn read_segment(&self, device: &str, segment: u64) -> Result<Segment> {
-        let path = self.segment_path(device, segment);
-        let file = match File::open(&path) {
-            Ok(file) => file,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                if placeholder_of(&path).exists() {
-                    request_download(&path);
-                    return Ok(Segment::Incomplete);
-                }
-                return Ok(Segment::Missing);
-            }
-            Err(error) => return Err(error.into()),
-        };
-        let mut records = Vec::new();
-        let mut ended = None;
-        for line in BufReader::new(file).lines() {
-            let line = line?;
-            if line.trim().is_empty() {
-                continue;
-            }
-            if ended.is_some() {
-                return Ok(Segment::Incomplete);
-            }
-            let value: Value = match serde_json::from_str(&line) {
-                Ok(value) => value,
-                Err(_) => return Ok(Segment::Incomplete),
-            };
-            if let Some(count) = value.get(SEGMENT_END).and_then(Value::as_u64) {
-                ended = Some(count);
-                continue;
-            }
-            records.push(
-                serde_json::from_value(value)
-                    .with_context(|| format!("invalid change record in {}", path.display()))?,
-            );
-        }
-        match ended {
-            Some(count) if count as usize == records.len() => Ok(Segment::Complete(records)),
-            _ => Ok(Segment::Incomplete),
+    fn remove(&self, relative: &str) -> Result<()> {
+        match fs::remove_file(self.path(relative)) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(error.into()),
         }
     }
 }

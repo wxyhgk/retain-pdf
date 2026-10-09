@@ -1,19 +1,11 @@
-//! 多设备同步:几台设备通过一个「同步文件夹」(网盘客户端同步的目录)交换书库。
+//! 多设备同步:几台设备通过一个「同步文件夹」交换书库。同步文件夹可以是网盘客户端
+//! 同步的本机目录(iCloud、坚果云、Dropbox…,`folder.rs`),也可以在 WebDAV 上(群晖、
+//! 坚果云、Nextcloud…,`webdav.rs`);两者只是「存文件」这一层不同,布局与格式见
+//! `store.rs`:格式说明、每台设备自己的改动记录段,以及每段新增文件打成的包。
 //!
-//! 同步文件夹里只有文件,不需要任何一端跑服务;网盘只负责把文件搬到各台设备上。
-//!
-//! ```text
-//! <同步文件夹>/
-//!   format.json                     格式名与版本
-//!   blobs/<前两位>/<sha256>          文件内容,按内容指纹命名,写了就不再改
-//!   devices/<设备号>/device.json     设备说明
-//!   devices/<设备号>/changes/<序号>.jsonl
-//!                                   这台设备的改动记录,分段追加,每段写完不再改,
-//!                                   最后一行是结束标记(没有就是还没同步完整)
-//! ```
-//!
-//! 每台设备只写自己的 `devices/<设备号>/`,内容文件按指纹命名,所以没有两台设备会写
-//! 同一个文件,网盘不会生成冲突副本。所有文件先写临时名再改名,读的一方看不到半个文件。
+//! 同步文件夹里只有文件,不需要任何一端跑服务。每台设备只写自己的 `devices/<设备号>/`,
+//! 不会有两台设备写同一个文件(网盘不会生成冲突副本);改动记录段先写临时名再改名,读的
+//! 一方看不到半段;文件包先于记录段写好,取出的每个文件都按指纹核对。
 //!
 //! 一条改动记录是一个实体(见 `retain_db::db::sync`)的完整新状态,或它被删除。每个字段
 //! (根表的每一列、每张子表、文件清单)各带一个时钟,只有真正变了的字段换新时钟;收到
@@ -29,9 +21,13 @@ mod clock;
 mod engine;
 mod files;
 mod folder;
+mod store;
+mod webdav;
 
 pub use engine::{SyncEngine, SyncPeer, SyncReport};
-pub use folder::{SyncFolder, SYNC_FORMAT, SYNC_FORMAT_VERSION};
+pub use folder::FolderBackend;
+pub use store::{Backend, SYNC_FORMAT, SYNC_FORMAT_VERSION};
+pub use webdav::{WebDavBackend, WebDavConfig};
 
 use serde::{Deserialize, Serialize};
 
@@ -65,6 +61,9 @@ pub struct ChangeRecord {
     pub clocks: std::collections::BTreeMap<String, String>,
 }
 
+#[cfg(test)]
+#[path = "sync/test_dav.rs"]
+mod test_dav;
 #[cfg(test)]
 #[path = "sync/tests.rs"]
 mod tests;

@@ -142,3 +142,38 @@
   color: var(--danger);
   font-size: 13px;
 }
+
+.sync-settings-switch {
+  display: inline-flex;
+  gap: 2px;
+  justify-self: start;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.sync-settings-switch-option {
+  min-height: 28px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sync-settings-switch-option.is-current {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+}
+
+.sync-settings-grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.sync-settings-hint.is-ok {
+  color: var(--ok);
+}

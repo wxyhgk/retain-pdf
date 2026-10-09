@@ -23,8 +23,14 @@ export type SyncPeer = {
     name: string;
     segments_read: number;
 };
+export type SyncTransport = "folder" | "webdav";
 export type SyncStatus = {
     enabled: boolean;
+    transport: SyncTransport;
+    webdav_url: string | null;
+    webdav_username: string | null;
+    /** 密码只写不读：这里只告诉有没有保存过。 */
+    webdav_has_password: boolean;
     folder: string | null;
     sync_root: string | null;
     device_id: string | null;
@@ -38,9 +44,22 @@ export type SyncStatus = {
 };
 export type SyncSettingsInput = {
     enabled?: boolean;
+    transport?: SyncTransport;
     folder?: string;
     device_name?: string;
+    webdav_url?: string;
+    webdav_username?: string;
+    /** 给了就保存（空串清除）；不给保持原样。 */
+    webdav_password?: string;
+};
+export type SyncTestResult = {
+    ok: boolean;
+    location: string;
+    latency_ms: number | null;
+    error: string | null;
 };
 export declare function fetchSyncStatus(apiPrefix?: string): Promise<SyncStatus>;
 export declare function updateSyncSettings(apiPrefix: string | undefined, payload: SyncSettingsInput): Promise<SyncStatus>;
 export declare function runSyncNow(apiPrefix?: string): Promise<SyncStatus>;
+/** 用填的设置（没给的用已保存的）测一次能不能读写；不保存设置。 */
+export declare function testSyncTarget(apiPrefix: string | undefined, payload: SyncSettingsInput): Promise<SyncTestResult>;

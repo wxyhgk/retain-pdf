@@ -11,7 +11,8 @@ use sha2::{Digest, Sha256};
 
 use super::clock::{iso_ms, Hlc};
 use super::files::{checked_relative, entity_files, file_hash, has_content, remove_file};
-use super::folder::{copy_verified, hex, Segment, SyncFolder};
+use super::folder::{hex, FolderBackend};
+use super::store::{Backend, BlobLocation, Segment, SyncStore};
 use super::{ChangeRecord, SyncFileEntry};
 use crate::db::sync::{
     entity_spec, SyncApplyOutcome, SyncDirty, SyncEntityState, SyncEntityUpdate, SyncFileRef,
@@ -26,8 +27,12 @@ const STATE_SEGMENT: &str = "segment";
 const STATE_SEEDED: &str = "seeded";
 const STATE_FOLDER_ID: &str = "folder_id";
 const STATE_FINGERPRINT: &str = "fingerprint";
+/// 已经写进同步文件夹的设备说明(设备号 + 名字),没变就不再写。
+const STATE_DEVICE_WRITTEN: &str = "device_written";
 /// 一段改动记录最多放多少条。
 const SEGMENT_RECORDS: usize = 200;
+/// 一个文件包大约多大就收尾(单个文件更大时自成一包)。
+const PACK_BYTES: u64 = 32 << 20;
 /// 文件清单的字段名(字段时钟里)。
 const FILES_FIELD: &str = "$files";
 
@@ -86,8 +91,17 @@ struct Target {
 pub struct SyncEngine {
     db: Db,
     data_root: PathBuf,
-    folder: SyncFolder,
+    store: SyncStore,
     device_name: String,
+}
+
+/// 一批待写的改动记录与其中新出现的文件。
+#[derive(Default)]
+struct Batch {
+    items: Vec<(SyncDirty, ChangeRecord)>,
+    blobs: Vec<(PathBuf, String)>,
+    shas: BTreeSet<String>,
+    bytes: u64,
 }
 
 fn digest_of(rows: Option<&SyncRows>, files: &[SyncFileEntry]) -> Result<String> {
@@ -161,16 +175,27 @@ fn max_clock(clocks: &Clocks) -> String {
 }
 
 impl SyncEngine {
-    /// `data_root`:本机数据目录;`folder`:同步文件夹;`device_name`:给人看的设备名。
+    /// `data_root`:本机数据目录;`folder`:同步文件夹(本机目录);`device_name`:给人看的设备名。
     pub fn new(db: Db, data_root: &Path, folder: &Path, device_name: &str) -> Result<Self> {
+        Self::with_backend(db, data_root, Box::new(FolderBackend::new(folder)), device_name)
+    }
+
+    /// 任意「存文件」后端(本机目录、WebDAV)。
+    pub fn with_backend(db: Db, data_root: &Path, backend: Box<dyn Backend>, device_name: &str) -> Result<Self> {
         let data_root = fs::canonicalize(data_root)
             .with_context(|| format!("data root not found: {}", data_root.display()))?;
+        let work_dir = data_root.join("sync-work");
         Ok(Self {
             db,
+            store: SyncStore::new(backend, work_dir),
             data_root,
-            folder: SyncFolder::new(folder),
             device_name: device_name.to_string(),
         })
+    }
+
+    /// 连通性测试(能读写删),返回往返耗时(毫秒)。不碰同步数据。
+    pub fn probe(&self) -> Result<u64> {
+        self.store.probe()
     }
 
     /// 本机设备号(第一次调用时生成)。
@@ -256,7 +281,7 @@ impl SyncEngine {
     pub fn peers(&self) -> Result<Vec<SyncPeer>> {
         let me = self.db.sync_state_get(STATE_DEVICE)?.unwrap_or_default();
         let mut out = Vec::new();
-        for (device_id, name) in self.folder.devices()? {
+        for (device_id, name) in self.store.devices()? {
             if device_id == me {
                 continue;
             }
@@ -268,7 +293,7 @@ impl SyncEngine {
 
     /// 跑一轮同步。第一次跑时把本机现有的书库全部放进去。
     pub fn run_cycle(&self) -> Result<SyncReport> {
-        let folder_id = self.folder.ensure()?;
+        let folder_id = self.store.ensure()?;
         let mut folder_changed = false;
         match self.db.sync_state_get(STATE_FOLDER_ID)? {
             Some(known) if known == folder_id => {}
@@ -306,7 +331,11 @@ impl SyncEngine {
         }
         self.db.sync_state_set(STATE_FINGERPRINT, &fingerprint)?;
         let device = self.device_id()?;
-        self.folder.ensure_device(&device, &self.device_name)?;
+        let written = format!("{device}|{}", self.device_name);
+        if self.db.sync_state_get(STATE_DEVICE_WRITTEN)?.as_deref() != Some(written.as_str()) {
+            self.store.write_device(&device, &self.device_name)?;
+            self.db.sync_state_set(STATE_DEVICE_WRITTEN, &written)?;
+        }
         if self.db.sync_state_get(STATE_SEEDED)?.is_none() {
             self.db.sync_seed_all()?;
             self.db.sync_state_set(STATE_SEEDED, "1")?;
@@ -324,6 +353,7 @@ impl SyncEngine {
             Ok(())
         })();
         self.db.sync_state_set(STATE_CLOCK, &hlc.encode())?;
+        self.store.end_cycle();
         result?;
         report.pending = self.db.sync_pending()?.len();
         Ok(report)
@@ -337,22 +367,43 @@ impl SyncEngine {
             if dirty.is_empty() {
                 return Ok(());
             }
-            let mut batch: Vec<(SyncDirty, ChangeRecord)> = Vec::new();
+            let mut batch = Batch::default();
             let mut progressed = false;
             for item in dirty {
-                match self.export_record(device, hlc, &item, report)? {
-                    Some(record) => batch.push((item, record)),
-                    None => {
-                        self.db.sync_clear_dirty(&item)?;
-                        progressed = true;
+                let Some(record) = self.export_record(device, hlc, &item)? else {
+                    self.db.sync_clear_dirty(&item)?;
+                    progressed = true;
+                    continue;
+                };
+                // 新出现的文件(同步文件夹里还没有的)跟这一段一起打包。
+                let mut fresh = Vec::new();
+                let mut fresh_bytes = 0;
+                for file in &record.files {
+                    if batch.shas.contains(&file.sha256)
+                        || fresh.iter().any(|(_, sha): &(PathBuf, String)| sha == &file.sha256)
+                        || self.db.sync_blob_location(&file.sha256)?.is_some()
+                    {
+                        continue;
                     }
+                    fresh.push((self.data_root.join(checked_relative(&file.path)?), file.sha256.clone()));
+                    fresh_bytes += file.size;
                 }
-                if batch.len() >= SEGMENT_RECORDS {
+                if !batch.items.is_empty() && batch.bytes + fresh_bytes > PACK_BYTES {
+                    self.flush(device, &mut batch, report)?;
+                    progressed = true;
+                }
+                for (path, sha) in fresh {
+                    batch.shas.insert(sha.clone());
+                    batch.blobs.push((path, sha));
+                }
+                batch.bytes += fresh_bytes;
+                batch.items.push((item, record));
+                if batch.items.len() >= SEGMENT_RECORDS || batch.bytes >= PACK_BYTES {
                     self.flush(device, &mut batch, report)?;
                     progressed = true;
                 }
             }
-            if !batch.is_empty() {
+            if !batch.items.is_empty() {
                 self.flush(device, &mut batch, report)?;
                 progressed = true;
             }
@@ -363,13 +414,7 @@ impl SyncEngine {
     }
 
     /// 一条待导出的改动 -> 改动记录(None:不用发,比如没真正变化、任务还没成功)。
-    fn export_record(
-        &self,
-        device: &str,
-        hlc: &mut Hlc,
-        item: &SyncDirty,
-        report: &mut SyncReport,
-    ) -> Result<Option<ChangeRecord>> {
+    fn export_record(&self, device: &str, hlc: &mut Hlc, item: &SyncDirty) -> Result<Option<ChangeRecord>> {
         if entity_spec(&item.kind).is_none() || !is_valid_key(&item.key) {
             return Ok(None);
         }
@@ -434,12 +479,6 @@ impl SyncEngine {
                 clocks.insert(field, clock.clone());
             }
         }
-        for file in &files {
-            let source = self.data_root.join(checked_relative(&file.path)?);
-            if self.folder.put_blob(&source, &file.sha256)? {
-                report.blobs_uploaded += 1;
-            }
-        }
         Ok(Some(ChangeRecord {
             kind: item.kind.clone(),
             key: item.key.clone(),
@@ -452,16 +491,20 @@ impl SyncEngine {
         }))
     }
 
-    fn flush(&self, device: &str, batch: &mut Vec<(SyncDirty, ChangeRecord)>, report: &mut SyncReport) -> Result<()> {
-        let records: Vec<ChangeRecord> = batch.iter().map(|(_, record)| record.clone()).collect();
+    fn flush(&self, device: &str, batch: &mut Batch, report: &mut SyncReport) -> Result<()> {
+        let records: Vec<ChangeRecord> = batch.items.iter().map(|(_, record)| record.clone()).collect();
         let last = self
             .db
             .sync_state_get(STATE_SEGMENT)?
             .and_then(|v| v.parse().ok())
             .unwrap_or(0);
-        let segment = self.folder.write_segment(device, last, &records)?;
+        let (segment, index) = self.store.write_segment(device, last, &records, &batch.blobs)?;
         self.db.sync_state_set(STATE_SEGMENT, &segment.to_string())?;
-        for (item, record) in batch.drain(..) {
+        self.db.sync_record_blobs(device, segment, &index)?;
+        report.blobs_uploaded += index.len();
+        let items = std::mem::take(&mut batch.items);
+        *batch = Batch::default();
+        for (item, record) in items {
             let refs = file_refs(&record.files);
             let (digest, base_json) = match &record.rows {
                 Some(rows) => (digest_of(Some(rows), &record.files)?, serde_json::to_string(rows)?),
@@ -507,11 +550,16 @@ impl SyncEngine {
 
     fn import(&self, device: &str, hlc: &mut Hlc, report: &mut SyncReport) -> Result<()> {
         self.retry_pending(hlc, report)?;
-        for other in self.folder.other_devices(device)? {
+        for other in self.store.device_ids()? {
+            if other == device {
+                continue;
+            }
             let mut segment = self.db.sync_cursor(&other)?;
             loop {
-                match self.folder.read_segment(&other, segment + 1)? {
-                    Segment::Complete(records) => {
+                match self.store.read_segment(&other, segment + 1)? {
+                    Segment::Complete { records, pack } => {
+                        // 先记下包里有什么,这一段的改动才找得到自己的文件。
+                        self.db.sync_record_blobs(&other, segment + 1, &pack)?;
                         for record in &records {
                             if record.device != other {
                                 bail!("change record from {} found in {other}'s folder", record.device);
@@ -676,7 +724,7 @@ impl SyncEngine {
         // 先确认文件内容都到了,再动磁盘和数据库。
         let mut missing = Vec::new();
         for file in &target.files {
-            if !has_content(&self.db, &self.data_root, file)? && !self.folder.has_blob(&file.sha256) {
+            if !has_content(&self.db, &self.data_root, file)? && self.db.sync_blob_location(&file.sha256)?.is_none() {
                 missing.push(file.path.clone());
             }
         }
@@ -689,8 +737,12 @@ impl SyncEngine {
                 continue;
             }
             let target_path = self.data_root.join(checked_relative(&file.path)?);
-            if !copy_verified(&self.folder.blob_path(&file.sha256), &target_path, &file.sha256)? {
-                return Ok(Considered::Parked(format!("file content does not match: {}", file.path)));
+            let Some((device, segment, offset, length)) = self.db.sync_blob_location(&file.sha256)? else {
+                return Ok(Considered::Parked(format!("waiting for 1 file(s), e.g. {}", file.path)));
+            };
+            let location = BlobLocation { device, segment, offset, length };
+            if !self.store.fetch_blob(&location, &file.sha256, &target_path)? {
+                return Ok(Considered::Parked(format!("waiting for 1 file(s) to download, e.g. {}", file.path)));
             }
             written += 1;
         }
