@@ -159,8 +159,8 @@ COPY backend/packages/retainpdf2doc/ ./backend/packages/retainpdf2doc/
 RUN npm run build --workspace retainpdf2doc \
     && test -f backend/packages/retainpdf2doc/dist/cli.mjs
 
-# rpr 排版引擎（render.engine = "rpr"）：engine/ 是 sync.sh 复制进仓库的纯 JS 源码，
-# 运行时 npm 依赖只有 mathjax-full（纯 JS、无安装脚本、与架构无关），所以和 docbuilder 一样
+# rpr 排版引擎（render.engine = "rpr_fit" / "rpr"）：engine/ 是 sync.sh 复制进仓库的纯 JS 源码，
+# 运行时 npm 依赖 mathjax-full 与 fontkit（都是纯 JS、无安装脚本、与架构无关），所以和 docbuilder 一样
 # 钉在构建机架构上装一次，产物整目录拷进运行时镜像，由下面的 noderuntime 的 node 去跑。
 FROM --platform=$BUILDPLATFORM node:22-bookworm-slim AS rprengine
 WORKDIR /build/rendering-engine
@@ -172,7 +172,8 @@ COPY backend/rendering-engine/engine ./engine
 COPY backend/rendering-engine/UPSTREAM ./UPSTREAM
 RUN test -f engine/bin/rpr-retain.js \
     && test -f node_modules/mathjax-full/package.json \
-    && node -e 'require("./engine/src/retain/run")'
+    && test -f node_modules/fontkit/package.json \
+    && node -e 'require("./engine/src/retain/run"); require("./engine/src/retain/measured"); require("fontkit")'
 
 # 运行时用的 node：按目标架构拉取官方镜像，只取二进制，不在里面执行任何命令。
 FROM node:22-bookworm-slim AS noderuntime

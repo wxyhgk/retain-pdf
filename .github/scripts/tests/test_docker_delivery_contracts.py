@@ -451,7 +451,7 @@ def test_release_docker_merge_keeps_the_candidate_identity_contract():
 def test_backend_image_ships_the_rpr_engine():
     """render.engine = "rpr" 的引擎（backend/rendering-engine）要进后端镜像。
 
-    引擎是纯 JS（engine/）加一个运行时 npm 依赖 mathjax-full，同 retainpdf2doc 一样钉在
+    引擎是纯 JS（engine/）加运行时 npm 依赖 mathjax-full 与 fontkit，同 retainpdf2doc 一样钉在
     构建机架构上装一次，整目录拷进运行时镜像，再用 RETAIN_RPR_ENGINE_DIR 告诉流水线；
     node 用 noderuntime 那份。少了任何一环，rpr 路线都会悄悄回退 Typst。
     """
@@ -462,13 +462,16 @@ def test_backend_image_ships_the_rpr_engine():
     assert "COPY backend/rendering-engine/package.json backend/rendering-engine/package-lock.json" in section
     assert "npm ci --omit=dev --ignore-scripts" in section
     assert "COPY backend/rendering-engine/engine ./engine" in section
+    # 构建时自检：两个运行时依赖都装上了，引擎两个入口都能加载（缺 fontkit 会让引擎写 PDF 失败、回退 Typst）。
+    assert "test -f node_modules/fontkit/package.json" in section
+    assert 'require("fontkit")' in section
     copies = [line for line in dockerfile.splitlines() if line.startswith("COPY --from=rprengine ")]
     assert copies == ["COPY --from=rprengine /build/rendering-engine /app/services/rendering-engine"]
     assert "RETAIN_RPR_ENGINE_DIR=/app/services/rendering-engine" in dockerfile
 
 
 def test_rpr_engine_copy_is_pinned_and_complete():
-    """引擎是按提交复制进来的：来源与提交号、运行时最小集合、锁定的 mathjax-full 都要在。"""
+    """引擎是按提交复制进来的：来源与提交号、运行时最小集合、锁定的 mathjax-full 与 fontkit 都要在。"""
     root = REPO_ROOT / "backend" / "rendering-engine"
     upstream = dict(
         line.split("=", 1) for line in (root / "UPSTREAM").read_text(encoding="utf-8").splitlines() if "=" in line
@@ -487,9 +490,15 @@ def test_rpr_engine_copy_is_pinned_and_complete():
     ):
         assert (root / "engine" / relative).exists(), relative
     package = json.loads((root / "package.json").read_text(encoding="utf-8"))
-    assert package["dependencies"] == {"mathjax-full": "3.2.1"}
+    # mathjax-full：公式；fontkit：引擎直接写 PDF 时嵌入、整形字体。
+    assert package["dependencies"] == {"fontkit": "2.0.4", "mathjax-full": "3.2.1"}
     lock = json.loads((root / "package-lock.json").read_text(encoding="utf-8"))
     assert lock["packages"]["node_modules/mathjax-full"]["version"] == "3.2.1"
+    assert lock["packages"]["node_modules/fontkit"]["version"] == "2.0.4"
+    # 后备字体随引擎带上；思源宋体用 resources/fonts 那份（sync.sh 不复制）。
+    assert (root / "engine" / "data" / "fonts" / "fallback" / "LibertinusSerif-Regular.otf").is_file()
+    assert (root / "engine" / "data" / "fonts" / "fallback" / "NOTICE").is_file()
+    assert not (root / "engine" / "data" / "fonts" / "source-han-serif").exists()
     assert (root / "sync.sh").stat().st_mode & 0o111
 
 
@@ -497,6 +506,8 @@ def test_desktop_bundle_ships_the_rpr_engine():
     prepare = _text("frontend/desktop/scripts/prepare-app.mjs")
     assert '"backend", "rendering-engine"' in prepare
     assert '"engine", "node_modules", "package.json", "UPSTREAM"' in prepare
+    # 依赖是否齐全按 package.json 的全部 dependencies 判断（旧 node_modules 可能缺 fontkit）。
+    assert ".dependencies" in prepare and "rprEngineDeps" in prepare
     env = _text("frontend/desktop/src/main/backend-env.js")
     assert 'RETAIN_RPR_ENGINE_DIR: path.join(backendRoot, "rendering-engine")' in env
     assert "RETAINPDF_NODE_BIN" in env
