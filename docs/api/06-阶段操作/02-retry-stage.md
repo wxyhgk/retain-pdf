@@ -33,8 +33,8 @@ POST /api/v1/jobs/{job_id}/retry-stage
 - `translation`: 复用 source PDF + OCR 结果，重跑 translation -> render。
 - `render`: 复用 source PDF + OCR 结果 + 翻译结果，只重跑 render（不精修）。
 - `refine`: 复用全部产物，原地（只能 `create_new_job=false`，省略时默认就是 false）先精修已提交的译文、再渲染一次。
-  可带 `"refine": {"mode": "review_only" | "review_and_fix", "start_page": 3, "end_page": 5, "max_items": 0, "max_tokens": 5000000}`，页码 1-based 闭区间，省略 = 全书、`review_and_fix`。
-  `max_items` / `max_tokens` 是这次精修的上限（`0` = 不限），省略 = 块数不限、token 用默认安全上限；**不沿用**任务里存的
+  可带 `"refine": {"mode": "review_only" | "review_and_fix", "start_page": 3, "end_page": 5, "max_items": 0, "max_tokens": 0}`，页码 1-based 闭区间，省略 = 全书、`review_and_fix`。
+  `max_items` / `max_tokens` 是这次精修的上限（`0` = 不限），省略 = 不限（审全书）；**不沿用**任务里存的
   `refine_max_items` / `refine_max_tokens`。上次精修中途停了的，报告里 `review.next_page` 是没审到的第一页，
   用 `start_page` 从那一页接着精修。
   这次的精修参数是一次性的，不会写进任务的 `translation.refine`；报告见 `GET /api/v1/jobs/{job_id}/translation/refine-report`。

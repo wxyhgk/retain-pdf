@@ -27,11 +27,10 @@ pub const TRANSLATION_PREPARATION_MODES: &[&str] = &["off", "artifacts_only", "t
 pub const TRANSLATION_REFINE_MODES: &[&str] = &["off", "review_only", "review_and_fix"];
 /// 精修的成本上限默认值（0 = 不限）。Python 侧读 render.spec.json 的 `params.refine`。
 ///
-/// 默认审全书（块数不限）：选了「精翻」就该整本精修，只审开头几百块等于没说清楚就打了折。
-/// token 只留一道安全上限：500 万大约够一万五千块（挑错约每块 330 token），正常的书碰不到；
-/// 真碰到了，报告里写明停在哪一页，可以从那一页接着精修。
+/// 默认审全书、不设上限：选了「精翻」就该整本精修，只审开头几百块等于没说清楚就打了折。
+/// 调用方要控制花费时自己给上限；碰到上限时报告里写明停在哪一页，可以从那一页接着精修。
 pub const DEFAULT_TRANSLATION_REFINE_MAX_ITEMS: i64 = 0;
-pub const DEFAULT_TRANSLATION_REFINE_MAX_TOKENS: i64 = 5_000_000;
+pub const DEFAULT_TRANSLATION_REFINE_MAX_TOKENS: i64 = 0;
 
 /// 把任意字符串归一成 [`TRANSLATION_REFINE_MODES`] 之一，未知值 → `off`。
 /// 入口校验已经拒绝非法值；这里是写 stage spec 时的兜底（老任务、手改的快照）。
@@ -58,7 +57,7 @@ pub struct RefineOverride {
     pub start_page: Option<i64>,
     #[serde(default)]
     pub end_page: Option<i64>,
-    /// 这次手动精修的上限；不给 = 块数不限、token 用默认安全上限。手动精修不沿用任务里
+    /// 这次手动精修的上限；不给 = 不限（审全书）。手动精修不沿用任务里
     /// 存的上限（老任务存的是以前的默认 300 块）。
     #[serde(default)]
     pub max_items: Option<i64>,

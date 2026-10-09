@@ -948,7 +948,7 @@ fn render_spec_refine_is_off_for_plain_render_even_if_job_enables_it() {
     assert!(refine["start_page"].is_null());
     assert!(refine["end_page"].is_null());
     assert_eq!(refine["max_items"], 0, "默认审全书");
-    assert_eq!(refine["max_tokens"], 5_000_000);
+    assert_eq!(refine["max_tokens"], 0);
     assert_eq!(refine["reviewer_credential_ref"], "");
 }
 
@@ -1010,7 +1010,7 @@ fn render_spec_refine_manual_override_uses_override_values() {
     assert_eq!(refine["start_page"], 3);
     assert_eq!(refine["end_page"], 5);
     assert_eq!(refine["max_items"], 0);
-    assert_eq!(refine["max_tokens"], 5_000_000);
+    assert_eq!(refine["max_tokens"], 0);
     // 这次请求自己给了上限:用它。
     let payload = render_spec_with_refine(
         &request,

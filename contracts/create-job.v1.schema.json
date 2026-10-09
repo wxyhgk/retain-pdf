@@ -190,8 +190,8 @@
         "refine_max_tokens": {
           "type": "integer",
           "minimum": 0,
-          "default": 5000000,
-          "description": "精修（挑错 + 修改）的总 token 上限；0 = 不限。默认 500 万是安全上限（约够一万五千块），正常的书碰不到；超出就停，报告里写明停在哪一页。"
+          "default": 0,
+          "description": "精修（挑错 + 修改）的总 token 上限；0 = 不限（默认）。给了上限、超出就停，报告里写明停在哪一页（review.next_page）。"
         },
         "api_key": { "type": "string" },
         "credential_ref": { "type": "string" },

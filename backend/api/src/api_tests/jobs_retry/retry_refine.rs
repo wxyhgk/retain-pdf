@@ -424,7 +424,7 @@ async fn stage_actions_show_how_far_the_last_refine_got() {
     assert_eq!(response.status(), StatusCode::OK);
     let staged = read_override(&state, id).expect("override staged");
     assert_eq!((staged["start_page"].as_i64(), staged["max_items"].as_i64()), (Some(24), Some(0)));
-    assert!(staged["max_tokens"].is_null(), "not given: the default safety cap applies when the spec is written");
+    assert!(staged["max_tokens"].is_null(), "not given: no limit (0) when the spec is written");
 }
 
 #[tokio::test]

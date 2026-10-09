@@ -457,7 +457,7 @@ pub struct RefineRetryRequest {
     /// 最多审多少块（0 = 不限）；省略 = 不限。
     #[serde(default)]
     pub max_items: Option<i64>,
-    /// 最多用多少 token（0 = 不限）；省略 = 默认安全上限。
+    /// 最多用多少 token（0 = 不限）；省略 = 不限。
     #[serde(default)]
     pub max_tokens: Option<i64>,
 }

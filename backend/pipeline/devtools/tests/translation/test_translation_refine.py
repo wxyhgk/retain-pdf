@@ -502,7 +502,7 @@ def test_max_items_limits_review_and_is_reported(tmp_path: Path) -> None:
 
 def test_by_default_the_whole_book_is_reviewed(tmp_path: Path) -> None:
     cfg = refine_config_from_mapping({"mode": "review_and_fix"})
-    assert (cfg.max_items, cfg.max_tokens) == (0, 5_000_000)
+    assert (cfg.max_items, cfg.max_tokens) == (0, 0), "默认不设任何上限"
     model = MockModel()
     translated = _build_job(tmp_path)
     report = run_refine_for_render(tmp_path, translated, {"mode": "review_only", "trigger": "manual", "model": "m"}, chat_fn=model)
