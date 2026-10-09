@@ -3,7 +3,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import json
 
-from retainpdf_pipeline.translate.llm.shared.model_wire import register_stage_connections
+from retainpdf_pipeline.translate.public import register_stage_connections
 from retainpdf_pipeline.foundation.shared.stage_specs import DEFAULT_RENDER_ENGINE
 from retainpdf_pipeline.foundation.config import layout
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args

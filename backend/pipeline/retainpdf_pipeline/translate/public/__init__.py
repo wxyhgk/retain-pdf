@@ -73,6 +73,7 @@ _EXPORTS = {
     "get_api_key": ("retainpdf_pipeline.translate.llm.shared.provider_runtime", "get_api_key"),
     "normalize_base_url": ("retainpdf_pipeline.translate.llm.shared.provider_runtime", "normalize_base_url"),
     "request_chat_content": ("retainpdf_pipeline.translate.llm.shared.provider_runtime", "request_chat_content"),
+    "register_stage_connections": ("retainpdf_pipeline.translate.llm.shared.model_wire", "register_stage_connections"),
     "extract_json_text": ("retainpdf_pipeline.translate.llm.shared.response_parsing", "extract_json_text"),
     "TranslationExecutionRequest": ("retainpdf_pipeline.translate.workflow", "TranslationExecutionRequest"),
     "execute_translation_request": ("retainpdf_pipeline.translate.workflow", "execute_translation_request"),

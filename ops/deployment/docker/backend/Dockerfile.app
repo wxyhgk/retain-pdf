@@ -16,7 +16,9 @@ FROM chef AS planner
 COPY Cargo.toml Cargo.lock ./
 COPY database/retain-db ./database/retain-db
 COPY backend/api ./backend/api
+COPY backend/cli ./backend/cli
 COPY backend/jobs ./backend/jobs
+COPY backend/packages/retain-config ./backend/packages/retain-config
 COPY backend/packages/retain-core ./backend/packages/retain-core
 COPY backend/packages/retain-data ./backend/packages/retain-data
 COPY backend/packages/retain-jobs ./backend/packages/retain-jobs
@@ -36,7 +38,9 @@ RUN cargo chef cook --release --locked --workspace --bins --recipe-path recipe.j
 COPY Cargo.toml Cargo.lock ./
 COPY database/retain-db ./database/retain-db
 COPY backend/api ./backend/api
+COPY backend/cli ./backend/cli
 COPY backend/jobs ./backend/jobs
+COPY backend/packages/retain-config ./backend/packages/retain-config
 COPY backend/packages/retain-core ./backend/packages/retain-core
 COPY backend/packages/retain-data ./backend/packages/retain-data
 COPY backend/packages/retain-jobs ./backend/packages/retain-jobs
