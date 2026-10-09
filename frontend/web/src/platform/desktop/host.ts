@@ -53,6 +53,8 @@ export interface DesktopHost {
   loadDesktopConfig(): DesktopIpcResult;
   saveDesktopConfig(payload?: DesktopConfigPayload): DesktopIpcResult;
   openOutputDirectory(): DesktopIpcResult;
+  /** 系统的文件夹选择框；取消时为 null。 */
+  pickDirectory(options?: { title?: string; defaultPath?: string }): Promise<string | null>;
   onStartupProgress(callback: (event: unknown) => void): () => void;
   platform: string;
 }
@@ -113,6 +115,10 @@ function resolveDesktopHost(): DesktopHost | null {
     },
     openOutputDirectory() {
       return invokeAdapter!.invoke("open_output_directory");
+    },
+    async pickDirectory(options: { title?: string; defaultPath?: string } = {}) {
+      const result = await invokeAdapter!.invoke("pick_directory", options);
+      return typeof result?.path === "string" && result.path ? result.path : null;
     },
     onStartupProgress(callback: (event: unknown) => void) {
       if (preferredBridge && typeof preferredBridge.onStartupProgress === "function") {

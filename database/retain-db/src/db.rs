@@ -138,6 +138,11 @@ impl Db {
         }
     }
 
+    /// 数据库文件路径。
+    pub fn path(&self) -> &std::path::Path {
+        &self.path
+    }
+
     /// Opens a connection to the database file.
     ///
     /// This only does cheap, strictly per-connection setup (busy timeout,

@@ -1,0 +1,144 @@
+/* 设置 → 同步 分栏：状态、同步文件夹、设备名、其它设备。
+ *
+ * @owns sync-settings */
+
+.sync-settings {
+  display: grid;
+  gap: 16px;
+  max-width: 560px;
+}
+
+.sync-settings-status {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  align-items: baseline;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.sync-settings-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--muted);
+  transform: translateY(-1px);
+}
+
+.sync-settings-dot.is-ok { background: var(--ok); }
+.sync-settings-dot.is-busy { background: var(--accent); }
+.sync-settings-dot.is-error { background: var(--danger); }
+
+.sync-settings-headline {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.sync-settings-detail {
+  grid-column: 2;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.sync-settings-detail.is-error { color: var(--danger); }
+
+.sync-settings-field {
+  display: grid;
+  gap: 6px;
+}
+
+.sync-settings-label {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.sync-settings-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sync-settings-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--btn-radius);
+  background: var(--input, transparent);
+  color: inherit;
+  font-size: 13px;
+}
+
+.sync-settings-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.sync-settings-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.sync-settings-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--btn-radius);
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sync-settings-button.is-primary {
+  border-color: transparent;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+}
+
+.sync-settings-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.sync-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sync-settings-peers {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.sync-settings-peers li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sync-settings-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}

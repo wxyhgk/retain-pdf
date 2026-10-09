@@ -30,6 +30,34 @@ pub(super) enum Segment {
     Incomplete,
 }
 
+/// iCloud 把没下载到本机的文件换成 `.<名字>.icloud` 占位文件。
+fn placeholder_of(path: &Path) -> PathBuf {
+    let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+    path.with_file_name(format!(".{name}.icloud"))
+}
+
+/// 请 iCloud 把文件下载下来(macOS;不等它下完,下一轮再看)。其它网盘客户端没有
+/// 占位文件或读的时候自己下载,不需要。
+fn request_download(path: &Path) {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = std::process::Command::new("brctl")
+            .arg("download")
+            .arg(path)
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .and_then(|mut child| {
+                // 不阻塞同步;子进程自己退出,后台回收。
+                std::thread::spawn(move || child.wait());
+                Ok(())
+            });
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = path;
+}
+
 fn is_device_id(name: &str) -> bool {
     name.len() == 16 && name.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
 }
@@ -126,7 +154,8 @@ impl SyncFolder {
     }
 
     /// 第一次用时写下格式说明;已有的检查格式与版本(更新版本的格式不碰)。
-    pub fn ensure(&self) -> Result<()> {
+    /// 返回文件夹编号:换了同步文件夹(而不是同一个文件夹换了路径)靠它认出来。
+    pub fn ensure(&self) -> Result<String> {
         let path = self.root.join("format.json");
         match fs::read(&path) {
             Ok(bytes) => {
@@ -141,17 +170,46 @@ impl SyncFolder {
                         "sync folder format {version} is newer than this version supports ({SYNC_FORMAT_VERSION}); update RetainPDF"
                     );
                 }
-                Ok(())
+                value
+                    .get("folder_id")
+                    .and_then(Value::as_str)
+                    .map(str::to_string)
+                    .ok_or_else(|| anyhow::anyhow!("{} has no folder_id", path.display()))
             }
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                if placeholder_of(&path).exists() {
+                    request_download(&path);
+                    bail!("the sync folder is still downloading from the cloud; try again shortly");
+                }
                 fs::create_dir_all(&self.root)?;
+                let folder_id = format!("{:016x}", fastrand::u64(..));
                 write_atomic(
                     &path,
-                    serde_json::to_vec_pretty(&json!({ "format": SYNC_FORMAT, "version": SYNC_FORMAT_VERSION }))?.as_slice(),
-                )
+                    serde_json::to_vec_pretty(&json!({
+                        "format": SYNC_FORMAT,
+                        "version": SYNC_FORMAT_VERSION,
+                        "folder_id": folder_id,
+                    }))?
+                    .as_slice(),
+                )?;
+                Ok(folder_id)
             }
             Err(error) => Err(error.into()),
         }
+    }
+
+    /// 同步文件夹里的设备:(设备号, 设备名)。
+    pub fn devices(&self) -> Result<Vec<(String, String)>> {
+        let mut out = Vec::new();
+        for device in self.other_devices("")? {
+            let name = fs::read(self.device_dir(&device).join("device.json"))
+                .ok()
+                .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
+                .and_then(|v| v.get("name").and_then(Value::as_str).map(str::to_string))
+                .unwrap_or_default();
+            out.push((device, name));
+        }
+        Ok(out)
     }
 
     pub(super) fn blob_path(&self, sha256: &str) -> PathBuf {
@@ -159,7 +217,17 @@ impl SyncFolder {
     }
 
     pub(super) fn has_blob(&self, sha256: &str) -> bool {
-        is_sha256(sha256) && self.blob_path(sha256).is_file()
+        if !is_sha256(sha256) {
+            return false;
+        }
+        let path = self.blob_path(sha256);
+        if path.is_file() {
+            return true;
+        }
+        if placeholder_of(&path).exists() {
+            request_download(&path);
+        }
+        false
     }
 
     /// 放进一个文件的内容(已有就跳过)。返回是否新写入。
@@ -186,9 +254,14 @@ impl SyncFolder {
             .join(format!("{segment:08}.jsonl"))
     }
 
+    /// 写下(或更新)设备说明。
     pub(super) fn ensure_device(&self, device: &str, name: &str) -> Result<()> {
         let path = self.device_dir(device).join("device.json");
-        if path.is_file() {
+        let current = fs::read(&path)
+            .ok()
+            .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
+            .and_then(|v| v.get("name").and_then(Value::as_str).map(str::to_string));
+        if current.as_deref() == Some(name) {
             return Ok(());
         }
         write_atomic(
@@ -238,10 +311,11 @@ impl SyncFolder {
         let file = match File::open(&path) {
             Ok(file) => file,
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                // iCloud 把没下载的文件换成 `.<名字>.icloud` 占位文件。
-                let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
-                let placeholder = path.with_file_name(format!(".{name}.icloud"));
-                return Ok(if placeholder.exists() { Segment::Incomplete } else { Segment::Missing });
+                if placeholder_of(&path).exists() {
+                    request_download(&path);
+                    return Ok(Segment::Incomplete);
+                }
+                return Ok(Segment::Missing);
             }
             Err(error) => return Err(error.into()),
         };

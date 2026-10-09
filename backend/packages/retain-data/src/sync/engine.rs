@@ -24,6 +24,8 @@ const STATE_DEVICE: &str = "device_id";
 const STATE_CLOCK: &str = "clock";
 const STATE_SEGMENT: &str = "segment";
 const STATE_SEEDED: &str = "seeded";
+const STATE_FOLDER_ID: &str = "folder_id";
+const STATE_FINGERPRINT: &str = "fingerprint";
 /// 一段改动记录最多放多少条。
 const SEGMENT_RECORDS: usize = 200;
 /// 文件清单的字段名(字段时钟里)。
@@ -51,6 +53,19 @@ pub struct SyncReport {
     pub pending: usize,
     pub files_written: usize,
     pub files_removed: usize,
+    /// 这一轮发现换了同步文件夹,本机书库全部重新发。
+    pub folder_changed: bool,
+    /// 这一轮发现数据目录是从别处复制来的,换了新设备号。
+    pub device_renewed: bool,
+}
+
+/// 同步文件夹里的另一台设备。
+#[derive(Debug, Clone, Serialize)]
+pub struct SyncPeer {
+    pub device_id: String,
+    pub name: String,
+    /// 已经读完它的多少段改动记录。
+    pub segments_read: u64,
 }
 
 enum Considered {
@@ -223,9 +238,73 @@ impl SyncEngine {
             .unwrap_or_default())
     }
 
+    /// 数据库文件的身份:数据目录 + 文件所在设备与 inode。整个数据目录被复制到别处
+    /// (换电脑时最常见的做法)后它会变,哪怕路径一样。
+    fn fingerprint(&self) -> String {
+        let meta = fs::metadata(self.db.path()).ok();
+        #[cfg(unix)]
+        let id = meta.map(|m| {
+            use std::os::unix::fs::MetadataExt;
+            format!("{}:{}", m.dev(), m.ino())
+        });
+        #[cfg(not(unix))]
+        let id = meta.map(|_| String::new());
+        format!("{}|{}", self.data_root.display(), id.unwrap_or_default())
+    }
+
+    /// 同步文件夹里的其它设备。
+    pub fn peers(&self) -> Result<Vec<SyncPeer>> {
+        let me = self.db.sync_state_get(STATE_DEVICE)?.unwrap_or_default();
+        let mut out = Vec::new();
+        for (device_id, name) in self.folder.devices()? {
+            if device_id == me {
+                continue;
+            }
+            let segments_read = self.db.sync_cursor(&device_id)?;
+            out.push(SyncPeer { device_id, name, segments_read });
+        }
+        Ok(out)
+    }
+
     /// 跑一轮同步。第一次跑时把本机现有的书库全部放进去。
     pub fn run_cycle(&self) -> Result<SyncReport> {
-        self.folder.ensure()?;
+        let folder_id = self.folder.ensure()?;
+        let mut folder_changed = false;
+        match self.db.sync_state_get(STATE_FOLDER_ID)? {
+            Some(known) if known == folder_id => {}
+            Some(_) => {
+                // 换了同步文件夹:新文件夹里没有本机的东西,全部重新发。
+                self.db.sync_forget_folder()?;
+                self.db.sync_state_set(STATE_FOLDER_ID, &folder_id)?;
+                folder_changed = true;
+            }
+            None => self.db.sync_state_set(STATE_FOLDER_ID, &folder_id)?,
+        }
+        let mut device_renewed = false;
+        let fingerprint = self.fingerprint();
+        match self.db.sync_state_get(STATE_FINGERPRINT)? {
+            Some(known) if known != fingerprint => {
+                // 数据目录是复制来的:原设备可能还在用旧设备号,两边不能写同一个设备目录。
+                // 新设备号从第一段写起;旧设备号的改动在本机都已经有了,读到时按旧的跳过。
+                let old = self.db.sync_state_get(STATE_DEVICE)?;
+                // 复制那一刻旧设备号写到的段,本机已经全部包含:记为读过。之后原设备
+                // 再写的段照常读。
+                let written: u64 = self
+                    .db
+                    .sync_state_get(STATE_SEGMENT)?
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0);
+                if let Some(old) = old {
+                    self.db.sync_set_cursor(&old, written)?;
+                }
+                let fresh = format!("{:016x}", fastrand::u64(..));
+                self.db.sync_state_set(STATE_DEVICE, &fresh)?;
+                self.db.sync_state_set(STATE_SEGMENT, "0")?;
+                device_renewed = true;
+            }
+            _ => {}
+        }
+        self.db.sync_state_set(STATE_FINGERPRINT, &fingerprint)?;
         let device = self.device_id()?;
         self.folder.ensure_device(&device, &self.device_name)?;
         if self.db.sync_state_get(STATE_SEEDED)?.is_none() {
@@ -234,6 +313,8 @@ impl SyncEngine {
         }
         let mut report = SyncReport {
             device_id: device.clone(),
+            folder_changed,
+            device_renewed,
             ..SyncReport::default()
         };
         let mut hlc = self.load_clock()?;

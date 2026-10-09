@@ -377,6 +377,47 @@ impl Db {
         Ok(())
     }
 
+    /// 换了同步文件夹:忘掉同步记账(各实体的版本、文件、读取进度、等待区),
+    /// 下一轮把本机书库全部重新发一遍。书库本身不动。
+    pub fn sync_forget_folder(&self) -> Result<()> {
+        let conn = self.connect()?;
+        conn.execute_batch(
+            "DELETE FROM sync_entities;
+             DELETE FROM sync_entity_files;
+             DELETE FROM sync_cursors;
+             DELETE FROM sync_pending;
+             DELETE FROM sync_state WHERE key IN ('segment', 'seeded');",
+        )?;
+        Ok(())
+    }
+
+    /// 等待区里的前几条(给人看:还在等什么)。
+    pub fn sync_pending_summary(&self, limit: usize) -> Result<(usize, Vec<SyncPending>)> {
+        let conn = self.connect()?;
+        let total: i64 = conn.query_row("SELECT COUNT(*) FROM sync_pending", [], |row| row.get(0))?;
+        let mut stmt = conn.prepare(
+            "SELECT kind, entity_key, clock, '', reason, attempts FROM sync_pending ORDER BY clock LIMIT ?1",
+        )?;
+        let rows = stmt.query_map(params![limit as i64], |row| {
+            Ok(SyncPending {
+                kind: row.get(0)?,
+                key: row.get(1)?,
+                clock: row.get(2)?,
+                record_json: row.get(3)?,
+                reason: row.get(4)?,
+                attempts: row.get(5)?,
+            })
+        })?;
+        Ok((total as usize, rows.collect::<std::result::Result<Vec<_>, _>>()?))
+    }
+
+    /// 本机还有多少改动没发出去。
+    pub fn sync_dirty_count(&self) -> Result<usize> {
+        let conn = self.connect()?;
+        let count: i64 = conn.query_row("SELECT COUNT(*) FROM sync_dirty", [], |row| row.get(0))?;
+        Ok(count as usize)
+    }
+
     /// 把本机现有的全部实体标成待同步(第一次开启同步、或要求全量重发时)。
     pub fn sync_seed_all(&self) -> Result<usize> {
         let conn = self.connect()?;

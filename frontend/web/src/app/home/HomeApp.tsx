@@ -46,6 +46,7 @@ import {
 } from "@/features/credentials/index.js";
 import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
 import { SettingsDialog } from "@/features/settings/index.js";
+import { SyncSettingsPanel } from "@/features/sync/index.js";
 import { useAppEvent } from "@/ui/hooks/use-app-event.js";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 import { CREDENTIAL_DOM_IDS } from "@/features/credentials/ui/credentials-dom-ids.js";
@@ -208,6 +209,7 @@ function SettingsDialogSlot() {
         <p id={CREDENTIAL_DOM_IDS.browser.subtitle} className="muted">先配好接口再开始</p>
       }
       appUpdateBannerSlot={<AppUpdateBannerSlot />}
+      syncPanelSlot={<SyncSettingsPanel />}
     />
   );
 }

@@ -30,7 +30,7 @@ mod engine;
 mod files;
 mod folder;
 
-pub use engine::{SyncEngine, SyncReport};
+pub use engine::{SyncEngine, SyncPeer, SyncReport};
 pub use folder::{SyncFolder, SYNC_FORMAT, SYNC_FORMAT_VERSION};
 
 use serde::{Deserialize, Serialize};

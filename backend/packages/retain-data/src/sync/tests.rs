@@ -540,3 +540,62 @@ fn three_devices_converge_whatever_the_order_of_edits_and_syncs() {
         fs::remove_dir_all(base).unwrap();
     }
 }
+
+/// 把整个数据目录复制到另一处(换电脑最常见的做法),在那里打开。
+fn copy_device(from: &Device, base: &Path, name: &str, folder: &Path) -> Device {
+    let root = base.join(name);
+    let status = std::process::Command::new("cp").arg("-R").arg(&from.root).arg(&root).status().unwrap();
+    assert!(status.success());
+    let root = fs::canonicalize(&root).unwrap();
+    let db = Db::new(root.join("db").join("jobs.db"), root.clone());
+    db.init().unwrap();
+    let engine = SyncEngine::new(db.clone(), &root, folder, name).unwrap();
+    Device { root, db, engine }
+}
+
+#[test]
+fn a_copied_data_directory_becomes_a_new_device_and_both_keep_syncing() {
+    let (base, folder, devices) = setup(&["a"]);
+    let a = &devices[0];
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.sync();
+    let a_id = a.engine.device_id().unwrap();
+    let copy = copy_device(a, &base, "a-copy", &folder);
+    // 复制之后原设备又改了一次(写了新的一段)。
+    a.conn().execute("UPDATE documents SET title = 'After copy' WHERE document_id = ?1", params![DOC]).unwrap();
+    a.sync();
+
+    let first = copy.sync();
+    assert!(first.device_renewed, "{first:?}");
+    assert_ne!(copy.engine.device_id().unwrap(), a_id);
+    // 原设备复制之后写的那段照样读到。
+    assert_eq!(copy.text("SELECT title FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("After copy"));
+    // 两台设备各写各的目录,之后的改动互相都收得到。
+    copy.conn().execute("UPDATE documents SET reading_status = 'reading' WHERE document_id = ?1", params![DOC]).unwrap();
+    copy.sync();
+    a.sync();
+    assert_eq!(a.text("SELECT reading_status FROM documents WHERE document_id = ?1", DOC).as_deref(), Some("reading"));
+    assert!(!copy.sync().device_renewed);
+    fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn switching_to_another_sync_folder_sends_the_whole_library_again() {
+    let (base, folder, devices) = setup(&["a"]);
+    let a = &devices[0];
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    assert_eq!(a.sync().exported, 3);
+    let other = base.join("cloud").join("Another");
+    let moved = SyncEngine::new(a.db.clone(), &a.root, &other, "a").unwrap();
+    let report = moved.run_cycle().unwrap();
+    assert!(report.folder_changed);
+    assert_eq!(report.exported, 3, "{report:?}");
+    // 同一个文件夹换了路径(比如网盘目录改了名):不算换文件夹。
+    let renamed = base.join("cloud").join("Renamed");
+    fs::rename(&other, &renamed).unwrap();
+    let again = SyncEngine::new(a.db.clone(), &a.root, &renamed, "a").unwrap().run_cycle().unwrap();
+    assert!(!again.folder_changed);
+    assert_eq!(again.exported, 0);
+    let _ = folder;
+    fs::remove_dir_all(base).unwrap();
+}

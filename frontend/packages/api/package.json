@@ -86,6 +86,10 @@
       "types": "./dist/glossaries.d.ts",
       "import": "./dist/glossaries.js"
     },
+    "./sync": {
+      "types": "./dist/sync.d.ts",
+      "import": "./dist/sync.js"
+    },
     "./conversations": {
       "types": "./dist/conversations.d.ts",
       "import": "./dist/conversations.js"

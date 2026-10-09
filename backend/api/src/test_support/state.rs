@@ -41,6 +41,10 @@ pub(crate) fn assemble_app_state(config: Arc<AppConfig>) -> AppState {
             },
         )),
         model_executor: None,
+        sync: Arc::new(crate::services::sync::SyncService::new(
+            db.clone(),
+            config.data_root.clone(),
+        )),
         config,
         db,
         download_generation: Arc::default(),

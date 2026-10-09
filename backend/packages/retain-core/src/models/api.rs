@@ -18,6 +18,9 @@ pub use super::library::{
     PatchConversationInput, PatchDocumentInput, PatchFavoriteInput, SearchQuery, SearchResultView,
 };
 pub use super::public_contract::{public_request_payload, PublicResolvedJobSpec};
+pub use super::sync::{
+    SyncPeerView, SyncPendingItemView, SyncRunView, SyncSettingsInput, SyncStatusView,
+};
 pub use super::redaction::{
     redact_json_value, redact_optional_text, redact_text, sensitive_values,
 };
