@@ -395,6 +395,27 @@ pub struct StageRetryActionView {
     pub will_reuse: Vec<String>,
     pub will_rerun: Vec<String>,
     pub danger: bool,
+    /// 只在精修这一项上:上次精修的结果(没精修过为空)。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_refine: Option<LastRefineView>,
+}
+
+/// 上次精修的摘要(来自 artifacts/refine_report.v1.json),给「重新处理」里显示、续跑用。
+#[derive(Debug, Serialize, Default, PartialEq, Eq)]
+pub struct LastRefineView {
+    /// completed / stopped / failed
+    pub status: String,
+    pub generated_at: String,
+    pub finding_count: i64,
+    pub applied: i64,
+    /// 审了多少块、范围内一共多少块。
+    pub reviewed_item_count: i64,
+    pub candidate_item_count: i64,
+    /// 没审到的块数与没审到的第一页(1-based);全审到时为 0 / None。老报告没有这两项时按
+    /// 「审了 / 一共」推算块数,页码为 None。
+    pub unreviewed_item_count: i64,
+    pub next_page: Option<i64>,
+    pub stopped_reason: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -433,6 +454,12 @@ pub struct RefineRetryRequest {
     pub start_page: Option<i64>,
     #[serde(default)]
     pub end_page: Option<i64>,
+    /// 最多审多少块（0 = 不限）；省略 = 不限。
+    #[serde(default)]
+    pub max_items: Option<i64>,
+    /// 最多用多少 token（0 = 不限）；省略 = 不限。
+    #[serde(default)]
+    pub max_tokens: Option<i64>,
 }
 
 fn default_retry_stage_mode() -> String {

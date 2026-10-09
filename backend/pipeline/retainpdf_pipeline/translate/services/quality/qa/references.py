@@ -20,6 +20,8 @@ from retainpdf_pipeline.translate.services.quality.qa.models import SEVERITY_CRI
 from retainpdf_pipeline.translate.services.quality.qa.models import SEVERITY_MAJOR
 from retainpdf_pipeline.translate.services.quality.qa.models import SEVERITY_MINOR
 from retainpdf_pipeline.translate.services.quality.qa.models import excerpt
+from retainpdf_pipeline.translate.services.quality.qa.text import CJK_RE
+from retainpdf_pipeline.translate.services.quality.qa.text import MATH_SPAN_RE
 from retainpdf_pipeline.translate.services.quality.qa.text import mask_math
 from retainpdf_pipeline.translate.services.quality.qa.text import normalize_dashes
 from retainpdf_pipeline.translate.services.quality.qa.units import QaUnit
@@ -34,7 +36,7 @@ _EN_LABELS: dict[str, str] = {
     "equation": r"equations?|eqns?\.?|eqs?\.?",
     "section": r"sections?|sec(?:t)?s?\.|§§?",
     "chapter": r"chapters?|chap\.|ch\.",
-    "problem": r"problems?|exercises?",
+    "problem": r"problems?|probs?\.|exercises?",
     "example": r"examples?",
     "appendix": r"appendix|appendices",
     "scheme": r"schemes?",
@@ -210,6 +212,72 @@ _REF_MESSAGES = {
 }
 
 
+# ---- 没译的英文引用标签 → 中文（精修的规则修正用，不调模型） -------------------------
+
+# 中文体例：图 3.2、表 1、式 (5)、习题 14.8、例 3、附录 7、第 2.3 节、第 4 章。scheme 的中文
+# 叫法不固定（流程图 / 方案 / 路线），不自动换。
+_ZH_REWRITE: dict[str, tuple[str, str]] = {
+    "figure": ("图", ""),
+    "table": ("表", ""),
+    "equation": ("式", ""),
+    "problem": ("习题", ""),
+    "example": ("例", ""),
+    "appendix": ("附录", ""),
+    "section": ("第", "节"),
+    "chapter": ("第", "章"),
+}
+_ZH_SEPARATORS = {"to": "至", "through": "至", "and": "和", "&": "和", "or": "或", ",": "、"}
+_SEPARATOR_SPLIT_RE = re.compile(r"(\s*(?:,|and|&|or|to|through)\s*)", re.IGNORECASE)
+
+
+def _zh_numbers(numbers: str) -> str:
+    out = ""
+    for part in _SEPARATOR_SPLIT_RE.split(numbers.strip()):
+        word = part.strip().lower()
+        if word in _ZH_SEPARATORS:
+            zh = _ZH_SEPARATORS[word]
+            out += zh if word == "," else f" {zh} "
+        else:
+            out += part.strip()
+    return out
+
+
+def untranslated_ref_rewrites(translation: str, *, equation_label: str = "式") -> list[tuple[str, str]]:
+    """中文译文里原样留着的英文交叉引用 → [(原片段, 中文片段)]。
+
+    只看中文句子（没有汉字的块不动）；落在公式里的不动；同一片段在块里出现不止一次的不动
+    （定点修改要求片段唯一）。``equation_label``：全书多数用的叫法（式 / 方程 / 公式）。
+    """
+    text = str(translation or "")
+    if not CJK_RE.search(text):
+        return []
+    math_spans = [(match.start(), match.end()) for match in MATH_SPAN_RE.finditer(text)]
+    rewrites: list[tuple[str, str]] = []
+    for match in _REF_RE.finditer(text):
+        if any(start < match.end() and match.start() < end for start, end in math_spans):
+            continue
+        kind = next((name for name in _EN_LABELS if match.group(name)), "")
+        if kind not in _ZH_REWRITE:
+            continue
+        found = match.group(0).rstrip()
+        if text.count(found) != 1:
+            continue
+        numbers = _zh_numbers(match.group("numbers"))
+        prefix, suffix = _ZH_REWRITE[kind]
+        if kind == "equation" and equation_label in _ZH_LABELS["equation"]:
+            prefix = equation_label
+        if not suffix and text[: match.start()].rstrip().endswith(prefix):
+            # 前面已经有中文标签了（「如图 Fig. 3」）：只留编号。
+            prefix = ""
+        replacement = f"{prefix} {numbers} {suffix}".strip()
+        # 紧跟在汉字后面的空格一起换掉：「见 Eqs. (5)」→「见式 (5)」。
+        if prefix and match.start() > 1 and text[match.start() - 1] == " " and CJK_RE.match(text[match.start() - 2]):
+            if text.count(" " + found) == 1:
+                found = " " + found
+        rewrites.append((found, replacement))
+    return rewrites
+
+
 class ReferenceChecker:
     def __init__(self) -> None:
         self.label_variants: dict[str, Counter] = defaultdict(Counter)
@@ -221,13 +289,26 @@ class ReferenceChecker:
         source = unit.source
         translation = _normalized_translation(unit.translated)
         seen: set[tuple[str, str]] = set()
-        for ref in extract_source_refs(source):
+        refs = extract_source_refs(source)
+        outcomes = {id(ref): _classify_reference(translation, ref) for ref in refs}
+        # 同一处引用里的几个编号（Eqs. (5) to (7)、Sections 3.1 and 3.2）中文共用一个标签：
+        # 「式 (5) 至 (7)」「第 3.1 和 3.2 节」。编号都在、其中有一个带着标签，就都算对。
+        groups: dict[tuple[int, int], list[SourceRef]] = defaultdict(list)
+        for ref in refs:
+            groups[(ref.start, ref.end)].append(ref)
+        for members in groups.values():
+            results = [outcomes[id(ref)] for ref in members]
+            shared = next((label for outcome, label in results if outcome == "ok"), "")
+            if len(members) > 1 and shared and all(outcome in ("ok", "label_missing") for outcome, _ in results):
+                for ref in members:
+                    outcomes[id(ref)] = ("ok", shared)
+        for ref in refs:
             key = (ref.kind, ref.number)
             if key in seen:
                 continue
             seen.add(key)
             self.checked_ref_count += 1
-            outcome, label = _classify_reference(translation, ref)
+            outcome, label = outcomes[id(ref)]
             if outcome == "ok":
                 self.label_variants[ref.kind][label] += 1
                 self.label_variant_units[ref.kind][label].append(unit)
@@ -365,6 +446,7 @@ def check_unit_placeholders(unit: QaUnit) -> list[QaViolation]:
 
 
 __all__ = [
+    "untranslated_ref_rewrites",
     "CHECK_PLACEHOLDERS",
     "CHECK_REFERENCES",
     "ReferenceChecker",

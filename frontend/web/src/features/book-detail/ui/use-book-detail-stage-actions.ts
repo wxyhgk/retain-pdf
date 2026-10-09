@@ -108,7 +108,12 @@ export function useBookDetailStageActions({
 
   const retry = useCallback(async (
     stage: JobRetryStage,
-    { acceptDuplicateRisk = false, renderEngine = "" }: { acceptDuplicateRisk?: boolean; renderEngine?: string } = {},
+    { acceptDuplicateRisk = false, renderEngine = "", refineStartPage }: {
+      acceptDuplicateRisk?: boolean;
+      renderEngine?: string;
+      /** 接着精修：从这一页开始（上次精修没审到的第一页）。 */
+      refineStartPage?: number;
+    } = {},
   ) => {
     const descriptor = stageActions.find((action) => action.stage === stage);
     if (!descriptor?.can_retry || !actions.retryJobStage || pendingStage) return null;
@@ -136,6 +141,9 @@ export function useBookDetailStageActions({
           : {}),
         // 精修在原任务上原地跑（不新建任务、不重翻），后端默认整本 review_and_fix。
         ...(stage === "refine" ? { create_new_job: false } : {}),
+        ...(stage === "refine" && refineStartPage
+          ? { refine: { ...((body.refine as Record<string, unknown>) || {}), start_page: refineStartPage } }
+          : {}),
         ...(acceptDuplicateRisk
           ? { ambiguous_request_policy: "accept_duplicate_risk" }
           : {}),

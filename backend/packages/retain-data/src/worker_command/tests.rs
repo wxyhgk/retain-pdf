@@ -947,8 +947,8 @@ fn render_spec_refine_is_off_for_plain_render_even_if_job_enables_it() {
     assert_eq!(refine["trigger"], "auto");
     assert!(refine["start_page"].is_null());
     assert!(refine["end_page"].is_null());
-    assert_eq!(refine["max_items"], 300);
-    assert_eq!(refine["max_tokens"], 400_000);
+    assert_eq!(refine["max_items"], 0, "默认审全书");
+    assert_eq!(refine["max_tokens"], 0);
     assert_eq!(refine["reviewer_credential_ref"], "");
 }
 
@@ -990,12 +990,17 @@ fn render_spec_refine_manual_override_uses_override_values() {
     let mut request = build_request(WorkflowKind::Render);
     request.translation.refine = "off".to_string();
     request.translation.api_key = "sk-translation-secret".to_string();
+    // 老任务里存的是以前的默认上限:手动精修不沿用它。
+    request.translation.refine_max_items = 300;
+    request.translation.refine_max_tokens = 400_000;
     let payload = render_spec_with_refine(
         &request,
         super::RenderRefine::Manual(crate::models::domain::RefineOverride {
             mode: "review_and_fix".to_string(),
             start_page: Some(3),
             end_page: Some(5),
+            max_items: None,
+            max_tokens: None,
             requested_at: "2026-10-08T00:00:00Z".to_string(),
         }),
     );
@@ -1004,6 +1009,22 @@ fn render_spec_refine_manual_override_uses_override_values() {
     assert_eq!(refine["trigger"], "manual");
     assert_eq!(refine["start_page"], 3);
     assert_eq!(refine["end_page"], 5);
+    assert_eq!(refine["max_items"], 0);
+    assert_eq!(refine["max_tokens"], 0);
+    // 这次请求自己给了上限:用它。
+    let payload = render_spec_with_refine(
+        &request,
+        super::RenderRefine::Manual(crate::models::domain::RefineOverride {
+            mode: "review_only".to_string(),
+            start_page: None,
+            end_page: None,
+            max_items: Some(50),
+            max_tokens: Some(1000),
+            requested_at: "2026-10-08T00:00:00Z".to_string(),
+        }),
+    );
+    assert_eq!(payload["params"]["refine"]["max_items"], 50);
+    assert_eq!(payload["params"]["refine"]["max_tokens"], 1000);
     assert_eq!(
         payload["params"]["credential_ref"],
         format!("env:{TRANSLATION_API_KEY_ENV_NAME}")
@@ -1027,6 +1048,8 @@ fn render_spec_carries_render_engine() {
             mode: "review_and_fix".to_string(),
             start_page: None,
             end_page: None,
+            max_items: None,
+            max_tokens: None,
             requested_at: "2026-10-08T00:00:00Z".to_string(),
         }),
     ] {
@@ -1054,6 +1077,8 @@ fn refine_override_file_round_trips_and_clears() {
         mode: "review_only".to_string(),
         start_page: None,
         end_page: Some(7),
+        max_items: Some(120),
+        max_tokens: None,
         requested_at: "2026-10-08T00:00:00Z".to_string(),
     };
     let path = write_refine_override(&job_paths, &value).expect("write override");

@@ -4,7 +4,10 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use serde_json::json;
 
-use crate::models::domain::{normalize_translation_refine_mode, ResolvedJobSpec};
+use crate::models::domain::{
+    normalize_translation_refine_mode, ResolvedJobSpec, DEFAULT_TRANSLATION_REFINE_MAX_ITEMS,
+    DEFAULT_TRANSLATION_REFINE_MAX_TOKENS,
+};
 use crate::ocr_provider::provider_public_definitions;
 use crate::ocr_provider::{
     configured_provider_credential_env, is_configured_command_provider, provider_model_version,
@@ -177,19 +180,27 @@ pub(crate) fn write_translate_stage_spec(
 /// 翻译模型沿用 params 里的 model/base_url/credential_ref；reviewer_* 留空时由 Python
 /// 回退到翻译模型。key 只经 env 注入，这里只写 env 引用。
 fn render_refine_params(request: &ResolvedJobSpec, refine: &RenderRefine) -> serde_json::Value {
-    let (mode, trigger, start_page, end_page) = match refine {
-        RenderRefine::Off => ("off", "auto", None, None),
+    // 翻译之后自动精修用任务里的上限；手动精修用这次请求的上限（没给就审全书，见
+    // RefineOverride），不沿用任务里存的老上限。
+    let job_limits = (request.translation.refine_max_items, request.translation.refine_max_tokens);
+    let (mode, trigger, start_page, end_page, (max_items, max_tokens)) = match refine {
+        RenderRefine::Off => ("off", "auto", None, None, job_limits),
         RenderRefine::AfterTranslation => (
             normalize_translation_refine_mode(&request.translation.refine),
             "auto",
             None,
             None,
+            job_limits,
         ),
         RenderRefine::Manual(value) => (
             normalize_translation_refine_mode(&value.mode),
             "manual",
             value.start_page,
             value.end_page,
+            (
+                value.max_items.unwrap_or(DEFAULT_TRANSLATION_REFINE_MAX_ITEMS),
+                value.max_tokens.unwrap_or(DEFAULT_TRANSLATION_REFINE_MAX_TOKENS),
+            ),
         ),
     };
     json!({
@@ -197,8 +208,8 @@ fn render_refine_params(request: &ResolvedJobSpec, refine: &RenderRefine) -> ser
         "trigger": trigger,
         "start_page": start_page,
         "end_page": end_page,
-        "max_items": request.translation.refine_max_items.max(0),
-        "max_tokens": request.translation.refine_max_tokens.max(0),
+        "max_items": max_items.max(0),
+        "max_tokens": max_tokens.max(0),
         "reviewer_model": request.translation.reviewer_model,
         "reviewer_base_url": request.translation.reviewer_base_url,
         "reviewer_credential_ref": reviewer_credential_ref_for_stage(request),

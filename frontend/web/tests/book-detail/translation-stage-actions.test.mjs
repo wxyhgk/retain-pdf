@@ -168,6 +168,12 @@ test("精修：失败任务也不走断点恢复，直接 retry-stage(refine) �
   ]]);
   assert.equal(submitted[0].workflow, "render");
 
+  // 接着精修：从上次没审到的那一页开始。
+  await api.retry("refine", { refineStartPage: 24 });
+  assert.deepEqual(calls[1][3], {
+    stage: "refine", create_new_job: false, refine: { start_page: 24 }, document_id: "doc-1",
+  });
+
   root.unmount();
   dom.window.close();
 });
@@ -238,6 +244,48 @@ test("重新渲染：可选排版引擎，选了就带 overrides.render.engine�
     "render",
     { stage: "render", create_new_job: false, overrides: { render: { engine: "typst" } }, document_id: "doc-1" },
   ]);
+
+  root.unmount();
+  dom.window.close();
+});
+
+test("上次精修的结果写在精修那一行下面；没审完时可以从没审到的那一页接着精修（先确认）", async () => {
+  const { describeLastRefine, refineContinuePage } = await import("../../src/features/book-detail/domain/last-refine.js");
+  const stopped = {
+    status: "stopped", generated_at: "2026-10-09T05:25:54+00:00", finding_count: 4, applied: 2,
+    reviewed_item_count: 300, candidate_item_count: 330, unreviewed_item_count: 30, next_page: 24,
+    stopped_reason: "max_tokens",
+  };
+  assert.equal(describeLastRefine(stopped), "上次精修只审到第 24 页之前（达到用量上限，还有 30 块没审）：发现 4 处，改了 2 处。");
+  assert.equal(refineContinuePage(stopped), 24);
+  const done = { ...stopped, status: "completed", unreviewed_item_count: 0, next_page: null, stopped_reason: null };
+  assert.equal(describeLastRefine(done), "上次精修审完了全书：发现 4 处，改了 2 处。");
+  assert.equal(refineContinuePage(done), null);
+  assert.equal(describeLastRefine(undefined), "");
+
+  const dom = makeDom();
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { TranslationStageActions } = await import(
+    "../../src/features/book-detail/ui/panels/translate/TranslationStageActions.jsx"
+  );
+  const calls = [];
+  const root = createRoot(dom.window.document.getElementById("root"));
+  root.render(React.createElement(TranslationStageActions, {
+    variant: "sheet",
+    actions: [{ stage: "refine", label: "精修译文", can_retry: true, last_refine: stopped }],
+    onRetry: async (...args) => calls.push(args),
+  }));
+  const resume = await waitFor(() => dom.window.document.querySelector("[data-refine-continue]"), "接着精修按钮");
+  assert.equal(resume.textContent.trim(), "从第 24 页继续");
+  assert.match(dom.window.document.querySelector("[data-last-refine]").textContent, /只审到第 24 页之前/);
+  click(dom, resume);
+  await waitFor(() => dom.window.document.getElementById("book-detail-translation-risk-confirm"), "确认框");
+  assert.match(dom.window.document.body.textContent, /接着精修/);
+  assert.equal(calls.length, 0, "打开确认框不能直接提交");
+  click(dom, dom.window.document.getElementById("book-detail-translation-risk-confirm-confirm"));
+  await waitFor(() => calls.length === 1, "确认后提交");
+  assert.deepEqual(calls[0], ["refine", { refineStartPage: 24 }]);
 
   root.unmount();
   dom.window.close();

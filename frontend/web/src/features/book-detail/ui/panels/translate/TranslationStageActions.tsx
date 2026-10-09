@@ -6,6 +6,7 @@ import type {
   JobStageRetryActionView,
 } from "@/platform/api/index.js";
 import { btn } from "../ui.jsx";
+import { describeLastRefine, refineContinuePage } from "../../../domain/last-refine.js";
 
 function labelOf(action: JobStageRetryActionView) {
   if (action.stage === "translation") return "重新翻译";
@@ -32,6 +33,11 @@ const CONFIRM_COPY: Record<string, { title: string; description: string; confirm
     title: "确认重新翻译",
     description: "复用现有 OCR，重新翻译整本再排版，会重新调用翻译接口并产生费用。只想接着上次没做完的部分，请用失败卡片上的「从断点继续」。",
     confirmLabel: "接受风险并重新翻译",
+  },
+  refineContinue: {
+    title: "接着精修",
+    description: "从上次没审到的那一页接着挑错和修改，前面已经精修过的部分不再重复。改完自动重新渲染一次；会调用模型、产生少量费用。",
+    confirmLabel: "接着精修",
   },
   refine: {
     title: "精修译文",
@@ -80,10 +86,12 @@ export function TranslationStageActions({
   error?: string;
   onRetry: (
     stage: JobRetryStage,
-    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string },
+    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string; refineStartPage?: number },
   ) => Promise<unknown>;
 }) {
   const [confirmAction, setConfirmAction] = useState<JobStageRetryActionView | null>(null);
+  // 「接着精修」：从这一页开始（null = 整本精修）。
+  const [continuePage, setContinuePage] = useState<number | null>(null);
   // 重新渲染用哪个排版引擎；空串 = 沿用任务原来的。
   const [renderEngine, setRenderEngine] = useState("");
   // 父级 hook 已把错误写入 error prop；本地兜底覆盖 onRetry 直接抛错
@@ -92,7 +100,9 @@ export function TranslationStageActions({
   const checking = loading && !actions.length;
   const visibleActions = checking ? LOADING_ACTIONS : actions;
   const shownError = error || localError;
-  const confirmCopy = CONFIRM_COPY[confirmAction?.stage === "refine" ? "refine" : "translation"];
+  const confirmCopy = confirmAction?.stage === "refine"
+    ? CONFIRM_COPY[continuePage ? "refineContinue" : "refine"]
+    : CONFIRM_COPY.translation;
   if (!visibleActions.length && !shownError) return null;
 
   function describeRetryError(cause: unknown): string {
@@ -120,10 +130,13 @@ export function TranslationStageActions({
       // 精修的确认只是「知道要花钱」，不是接受重复请求风险。
       await onRetry(
         confirmAction.stage,
-        confirmAction.stage === "refine" ? undefined : { acceptDuplicateRisk: true },
+        confirmAction.stage === "refine"
+          ? (continuePage ? { refineStartPage: continuePage } : undefined)
+          : { acceptDuplicateRisk: true },
       );
       setLocalError("");
       setConfirmAction(null);
+      setContinuePage(null);
     } catch (cause) {
       // 失败给文案且不吞错：确认框保持打开，允许用户取消或重试。
       setLocalError(describeRetryError(cause));
@@ -143,6 +156,7 @@ export function TranslationStageActions({
         disabled={disabled}
         title={!action.can_retry && reason ? reason : undefined}
         onClick={() => {
+          setContinuePage(null);
           if (needsConfirm(action)) setConfirmAction(action);
           else if (action.stage === "render" && renderEngine) void runRetry("render", { renderEngine });
           else void runRetry(action.stage);
@@ -187,14 +201,31 @@ export function TranslationStageActions({
         <ul className="book-detail-reprocess-list">
           {sheetActions.map((action) => {
             const reason = `${action.disabled_reason || action.reason || ""}`.trim();
+            const lastRefine = action.stage === "refine" ? describeLastRefine(action.last_refine) : "";
+            const resumeAt = action.stage === "refine" ? refineContinuePage(action.last_refine) : null;
             return (
               <li key={action.stage} className="book-detail-reprocess-row" data-reprocess-stage={action.stage}>
                 <div className="book-detail-reprocess-copy">
                   <strong>{labelOf(action)}</strong>
                   <span>{!action.can_retry && reason && !checking ? reason : SHEET_HINTS[action.stage] || ""}</span>
+                  {lastRefine ? <span data-last-refine="true">{lastRefine}</span> : null}
                 </div>
                 <div className="book-detail-reprocess-controls">
                   {action.stage === "render" && !checking ? engineSelect : null}
+                  {resumeAt && action.can_retry ? (
+                    <button
+                      type="button"
+                      className={btn("outline")}
+                      disabled={checking || Boolean(pendingStage)}
+                      data-refine-continue={resumeAt}
+                      onClick={() => {
+                        setContinuePage(resumeAt);
+                        setConfirmAction(action);
+                      }}
+                    >
+                      {`从第 ${resumeAt} 页继续`}
+                    </button>
+                  ) : null}
                   {actionButton(action, true)}
                 </div>
               </li>
@@ -213,7 +244,10 @@ export function TranslationStageActions({
         id="book-detail-translation-risk-confirm"
         open={Boolean(confirmAction)}
         onOpenChange={(next) => {
-          if (!next) setConfirmAction(null);
+          if (!next) {
+            setConfirmAction(null);
+            setContinuePage(null);
+          }
         }}
         title={confirmCopy.title}
         description={confirmCopy.description}

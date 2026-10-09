@@ -603,6 +603,10 @@ def _refine_summary(report: dict[str, Any]) -> dict[str, Any]:
         if report.get(key) is not None
     }
     summary["findings"] = len(findings)
+    # 没审完时停在哪：从 next_page 接着精修（retry-stage refine 的 start_page）。
+    for key in ("unreviewed_item_count", "next_page"):
+        if review.get(key) is not None:
+            summary[key] = review.get(key)
     summary["fixes_by_status"] = dict(Counter(str(fix.get("status")) for fix in fixes))
     rejected = Counter(
         str(fix.get("reject_reason")) for fix in fixes if fix.get("status") == "rejected"

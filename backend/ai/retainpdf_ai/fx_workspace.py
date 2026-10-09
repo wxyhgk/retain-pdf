@@ -352,6 +352,7 @@ omission / punctuation / layout_fit 之一。critical = 改了数值、结论或
 ### `../artifacts/refine_report.v1.json` — 精修报告（跑过精修才有）
 
     mode / trigger / scope / stopped_reason / token_usage / qa_before / qa_after
+    review.unreviewed_item_count / review.next_page  没审完时：还剩几块、从哪页接着精修
     review.findings[] item_id / page_number / category / severity / target_span
                       source_span / explanation / suggestion / origin(review|qa)
     fixes[]           item_id / status(applied|rejected|skipped) / reject_reason

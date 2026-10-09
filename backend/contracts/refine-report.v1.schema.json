@@ -115,7 +115,7 @@
         "source_span": {"type": "string"},
         "explanation": {"type": "string"},
         "suggestion": {"type": "string"},
-        "origin": {"type": "string", "enum": ["review", "qa"]},
+        "origin": {"type": "string", "enum": ["review", "qa", "rule"], "description": "review: found by the reviewer model; qa: merged from deterministic QA (major/critical); rule: found and fixed by a deterministic rule without a model call (untranslated English cross-reference labels)."},
         "qa": {"$ref": "#/definitions/RefineFindingQaRef"}
       }
     },
@@ -148,7 +148,9 @@
           "additionalProperties": {"type": "integer"}
         },
         "summary": {"$ref": "#/definitions/RefineFindingsSummary"},
-        "findings": {"type": "array", "items": {"$ref": "#/definitions/RefineFinding"}}
+        "findings": {"type": "array", "items": {"$ref": "#/definitions/RefineFinding"}},
+        "unreviewed_item_count": {"type": "integer", "minimum": 0, "description": "Blocks in scope that were not reviewed: past max_items/max_tokens, or in a batch whose model call failed. Absent in reports written before this field existed."},
+        "next_page": {"type": ["integer", "null"], "minimum": 1, "description": "1-based page of the first block that was not reviewed; null when every block in scope was reviewed. Continue with retry-stage refine start_page = next_page."}
       }
     },
     "RefineEdit": {
@@ -172,6 +174,7 @@
       "additionalProperties": false,
       "required": ["item_id", "page_number", "finding_ids", "categories", "status", "reject_reason", "reject_detail", "before", "after", "edits", "note", "revision_id", "length_before", "length_after", "length_budget"],
       "properties": {
+        "origin": {"type": "string", "enum": ["model", "rule"], "description": "model (default when absent): edits proposed by the fixer model; rule: edits produced by a deterministic rule. rejection_rate counts model fixes only."},
         "item_id": {"type": "string"},
         "page_number": {"type": "integer", "minimum": 1},
         "finding_ids": {"type": "array", "items": {"type": "string"}},

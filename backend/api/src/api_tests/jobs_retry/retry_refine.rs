@@ -370,3 +370,69 @@ async fn refine_retry_keeps_render_engine() {
     assert_eq!(job.workflow, WorkflowKind::Render);
     assert_eq!(job.request_payload.render.engine, "rpr");
 }
+
+async fn refine_action(state: &crate::AppState, id: &str) -> Value {
+    let actions = build_app(state.clone())
+        .oneshot(
+            Request::builder()
+                .uri(format!("/api/v1/jobs/{id}/stage-actions"))
+                .header("X-API-Key", "test-key")
+                .body(Body::empty())
+                .expect("stage actions request"),
+        )
+        .await
+        .expect("stage actions response");
+    read_json(actions).await["data"]["stages"]
+        .as_array()
+        .expect("stages")
+        .iter()
+        .find(|item| item["stage"] == "refine")
+        .cloned()
+        .expect("refine action")
+}
+
+#[tokio::test]
+async fn stage_actions_show_how_far_the_last_refine_got() {
+    let state = test_state("retry-refine-last");
+    let id = "job-retry-refine-last";
+    seed_translated_job(&state, id);
+    // 还没精修过:没有摘要。
+    assert!(refine_action(&state, id).await.get("last_refine").is_none());
+
+    let report_path = state.config.data_root.join(format!("jobs/{id}/artifacts/refine_report.v1.json"));
+    std::fs::create_dir_all(report_path.parent().unwrap()).unwrap();
+    std::fs::write(
+        &report_path,
+        json!({
+            "status": "stopped", "generated_at": "2026-10-09T05:25:54+00:00", "stopped_reason": "max_tokens",
+            "review": {"candidate_item_count": 330, "reviewed_item_count": 300, "unreviewed_item_count": 30,
+                       "next_page": 24, "summary": {"finding_count": 4}},
+            "fix_summary": {"applied": 2},
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let last = refine_action(&state, id).await["last_refine"].clone();
+    assert_eq!(last["status"], "stopped");
+    assert_eq!(last["next_page"], 24);
+    assert_eq!(last["unreviewed_item_count"], 30);
+    assert_eq!((last["finding_count"].as_i64(), last["applied"].as_i64()), (Some(4), Some(2)));
+    assert_eq!(last["stopped_reason"], "max_tokens");
+
+    // 接着精修:从没审到的那一页开始,上限可以随这次请求给,负数不行。
+    let response = retry(&state, id, json!({"stage": "refine", "refine": {"start_page": 24, "max_items": 0}})).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let staged = read_override(&state, id).expect("override staged");
+    assert_eq!((staged["start_page"].as_i64(), staged["max_items"].as_i64()), (Some(24), Some(0)));
+    assert!(staged["max_tokens"].is_null(), "not given: no limit (0) when the spec is written");
+}
+
+#[tokio::test]
+async fn refine_limits_must_not_be_negative() {
+    let state = test_state("retry-refine-negative");
+    let id = "job-retry-refine-negative";
+    seed_translated_job(&state, id);
+    let response = retry(&state, id, json!({"stage": "refine", "refine": {"max_tokens": -1}})).await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert!(read_json(response).await.to_string().contains("max_tokens"));
+}

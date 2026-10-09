@@ -51,7 +51,7 @@ pub use super::view::{
     ReaderAiHistoryMessageView, ReaderAiRectView, ReaderAiSelectionView, ReaderAiUsedContextView,
     ReaderDocumentMetadataView, ReaderMetadataView, ReaderPageMetadataView, ReaderRegionBoxView,
     ReaderRegionItemView, ReaderRegionsView, RefineRetryRequest, RetryStageKind, RetryStageRequest,
-    RetryStageSubmissionView, StageActionsView, StageRetryActionLinkView, StageRetryActionView,
+    RetryStageSubmissionView, LastRefineView, StageActionsView, StageRetryActionLinkView, StageRetryActionView,
     TranslationDebugIndexView, TranslationDebugItemView, TranslationDebugListItemView,
     JobReportView, TranslationDebugListView, TranslationDiagnosticsView, TranslationReplayView,
     ReviseTranslationItemRequest, TranslationRevisionHistoryView, TranslationRevisionLivePageView,
