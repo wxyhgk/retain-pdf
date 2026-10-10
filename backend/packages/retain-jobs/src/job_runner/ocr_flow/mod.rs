@@ -36,6 +36,8 @@ mod transfer_watch;
 mod transport;
 mod workspace;
 
+pub use page_subset::parse_page_ranges;
+
 use super::cancel_registry::is_cancel_requested_any;
 use provider_transport::execute_provider_transport;
 pub use support::sync_parent_with_ocr_child;

@@ -894,6 +894,59 @@ operation 列表响应包含 `operations`、`total`、`limit`、`offset` 和 `ha
 
 该接口返回 `ApiResponse<JobSubmissionView>`，不会等待 Python OCR / 翻译 / 渲染完成，也不会同步返回 ZIP。
 
+## 13.5 多用户：页数额度
+
+只在多用户模式（`RETAIN_DEPLOYMENT_MODE=multi`）下计费；单机模式、管理员不限额。
+
+计费规则：
+
+- 单位是一次提交**实际选中的页数**（OCR 的 `ocr.page_ranges`，翻译的 `translation.page_ranges`
+  或 `start_page..end_page`）。内部派生的 OCR 子任务、文档翻译拆出的多段不重复计。
+- 提交时预扣，余额不够直接拒绝（不留任务）；任务失败、取消、被删全额退回。
+- 纯 OCR 和翻译各算一次。
+- 只重新渲染（含精修）不计费；源任务失败退过款、再用渲染把它做完的，补扣原来的页数。
+- 新账号 0 页，由管理员发放。
+
+余额不够时 `POST /api/v1/jobs` 等建任务接口返回 **402**：
+
+```json
+{
+  "code": "PAGE_QUOTA_EXCEEDED",
+  "message": "页数额度不够：这次要 12 页，还剩 3 页，请联系管理员",
+  "error": { "code": "PAGE_QUOTA_EXCEEDED", "http_status": 402,
+             "details": { "required_pages": 12, "balance": 3 } }
+}
+```
+
+### `GET /api/v1/account/pages`
+
+自己的剩余页数和最近 50 条账目（新的在前）。单机模式、管理员返回 `unlimited: true`、`balance: null`。
+
+```json
+{
+  "unlimited": false,
+  "balance": 288,
+  "entries": [
+    { "entry_id": 3, "delta": -12, "kind": "charge", "job_id": "20261010…", "note": "",
+      "actor_user_id": "", "created_at": "2026-10-10T12:00:00Z" },
+    { "entry_id": 1, "delta": 300, "kind": "grant", "job_id": "", "note": "内测",
+      "actor_user_id": "u_…", "created_at": "2026-10-10T11:00:00Z" }
+  ]
+}
+```
+
+`kind`：`grant`（管理员发放 / 扣减，`delta` 可正可负）、`charge`（任务预扣，负数）、
+`refund`（退回，正数；`note` 为 `failed` / `canceled` / `deleted` / `submit_failed`）。
+
+### 管理员
+
+- `GET /api/v1/admin/users`：每个账号多一个 `page_balance`（管理员为 `null`）。
+- `GET /api/v1/admin/users/:user_id/pages`：同 `GET /api/v1/account/pages`，看指定账号。
+- `POST /api/v1/admin/users/:user_id/pages`，请求体 `{ "delta": 300, "note": "内测" }`：
+  正数发放、负数扣减，返回 `{ "balance": 300 }`。错误（400）：`INVALID_PAGE_DELTA`（0 或绝对值
+  超过 1000000）、`PAGE_BALANCE_NEGATIVE`（扣完会变负数，`details.balance` 是当前余额）、
+  `NOTE_TOO_LONG`（备注超过 200 字）、`ADMIN_UNLIMITED`（给管理员发放）；账号不存在 404。
+
 ## 14. 存储与所有权
 
 后端是书籍、PDF、产物和封面的唯一真源。前端不持久化真实文件。

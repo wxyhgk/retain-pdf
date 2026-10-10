@@ -230,3 +230,257 @@ async fn wrong_current_password_is_400_not_401_so_the_session_survives() {
     assert_eq!(read_json(response).await["code"], "WRONG_PASSWORD");
     assert_eq!(send(&state, Method::GET, "/api/v1/jobs", Some(&cookie), None).await.status(), StatusCode::OK);
 }
+
+// ---------------------------------------------------------------- 页数额度
+
+async fn create_and_login(
+    state: &crate::AppState,
+    admin: &str,
+    username: &str,
+) -> (String, String) {
+    let created = read_json(
+        send(
+            state,
+            Method::POST,
+            "/api/v1/admin/users",
+            Some(admin),
+            Some(json!({ "username": username })),
+        )
+        .await,
+    )
+    .await;
+    let user_id = created["data"]["user"]["user_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let initial = created["data"]["initial_password"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    (user_id, login(state, username, &initial).await)
+}
+
+#[tokio::test]
+async fn admins_grant_pages_and_users_see_their_balance() {
+    let state = multi_state("pages");
+    let admin = login(&state, "root", ADMIN_PASSWORD).await;
+    let (alice_id, alice) = create_and_login(&state, &admin, "alice").await;
+
+    // 新账号 0 页。
+    let mine = read_json(
+        send(
+            &state,
+            Method::GET,
+            "/api/v1/account/pages",
+            Some(&alice),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        (
+            mine["data"]["unlimited"].as_bool(),
+            mine["data"]["balance"].as_i64()
+        ),
+        (Some(false), Some(0))
+    );
+
+    let grant = send(
+        &state,
+        Method::POST,
+        &format!("/api/v1/admin/users/{alice_id}/pages"),
+        Some(&admin),
+        Some(json!({ "delta": 300, "note": "内测" })),
+    )
+    .await;
+    assert_eq!(grant.status(), StatusCode::OK);
+    assert_eq!(read_json(grant).await["data"]["balance"], 300);
+
+    let mine = read_json(
+        send(
+            &state,
+            Method::GET,
+            "/api/v1/account/pages",
+            Some(&alice),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(mine["data"]["balance"], 300);
+    let entry = &mine["data"]["entries"][0];
+    assert_eq!(
+        (
+            entry["kind"].as_str(),
+            entry["delta"].as_i64(),
+            entry["note"].as_str()
+        ),
+        (Some("grant"), Some(300), Some("内测"))
+    );
+
+    let users = read_json(
+        send(
+            &state,
+            Method::GET,
+            "/api/v1/admin/users",
+            Some(&admin),
+            None,
+        )
+        .await,
+    )
+    .await;
+    let listed: Vec<(String, Value)> = users["data"]["users"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|user| {
+            (
+                user["username"].as_str().unwrap().to_string(),
+                user["page_balance"].clone(),
+            )
+        })
+        .collect();
+    assert!(listed.contains(&("alice".into(), json!(300))), "{listed:?}");
+    assert!(
+        listed.contains(&("root".into(), Value::Null)),
+        "管理员不限额：{listed:?}"
+    );
+
+    let detail = read_json(
+        send(
+            &state,
+            Method::GET,
+            &format!("/api/v1/admin/users/{alice_id}/pages"),
+            Some(&admin),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(detail["data"]["balance"], 300);
+    let admin_view = read_json(
+        send(
+            &state,
+            Method::GET,
+            "/api/v1/account/pages",
+            Some(&admin),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        (
+            admin_view["data"]["unlimited"].as_bool(),
+            admin_view["data"]["balance"].clone()
+        ),
+        (Some(true), Value::Null)
+    );
+}
+
+#[tokio::test]
+async fn page_grants_are_validated_and_admin_only() {
+    let state = multi_state("pages-guard");
+    let admin = login(&state, "root", ADMIN_PASSWORD).await;
+    let (alice_id, alice) = create_and_login(&state, &admin, "alice").await;
+    let uri = format!("/api/v1/admin/users/{alice_id}/pages");
+
+    let by_user = send(
+        &state,
+        Method::POST,
+        &uri,
+        Some(&alice),
+        Some(json!({ "delta": 100 })),
+    )
+    .await;
+    assert_eq!(
+        by_user.status(),
+        StatusCode::FORBIDDEN,
+        "普通账号不能给自己发"
+    );
+    assert_eq!(
+        send(&state, Method::GET, &uri, Some(&alice), None)
+            .await
+            .status(),
+        StatusCode::FORBIDDEN
+    );
+
+    for (body, code) in [
+        (json!({ "delta": 0 }), "INVALID_PAGE_DELTA"),
+        (json!({ "delta": 5_000_000 }), "INVALID_PAGE_DELTA"),
+        (json!({ "delta": -1 }), "PAGE_BALANCE_NEGATIVE"),
+        (
+            json!({ "delta": 1, "note": "长".repeat(201) }),
+            "NOTE_TOO_LONG",
+        ),
+    ] {
+        let response = send(&state, Method::POST, &uri, Some(&admin), Some(body.clone())).await;
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST, "{body}");
+        assert_eq!(read_json(response).await["error"]["code"], code, "{body}");
+    }
+
+    let session = read_json(
+        send(
+            &state,
+            Method::GET,
+            "/api/v1/auth/session",
+            Some(&admin),
+            None,
+        )
+        .await,
+    )
+    .await;
+    let root_id = session["data"]["user"]["user_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let to_admin = send(
+        &state,
+        Method::POST,
+        &format!("/api/v1/admin/users/{root_id}/pages"),
+        Some(&admin),
+        Some(json!({ "delta": 10 })),
+    )
+    .await;
+    assert_eq!(
+        read_json(to_admin).await["error"]["code"],
+        "ADMIN_UNLIMITED"
+    );
+    let missing = send(
+        &state,
+        Method::POST,
+        "/api/v1/admin/users/u_nobody/pages",
+        Some(&admin),
+        Some(json!({ "delta": 10 })),
+    )
+    .await;
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn single_mode_is_unlimited() {
+    let state = test_state("accounts-pages-single");
+    let key = state
+        .config
+        .api_keys
+        .iter()
+        .next()
+        .expect("test api key")
+        .clone();
+    let request = Request::builder()
+        .uri("/api/v1/account/pages")
+        .header("X-API-Key", key)
+        .body(Body::empty())
+        .unwrap();
+    let response = build_app(state.clone()).oneshot(request).await.unwrap();
+    let body = read_json(response).await;
+    assert_eq!(
+        (
+            body["data"]["unlimited"].as_bool(),
+            body["data"]["balance"].clone()
+        ),
+        (Some(true), Value::Null),
+        "{body}"
+    );
+}

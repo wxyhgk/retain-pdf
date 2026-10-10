@@ -15,4 +15,9 @@ pub(super) fn routes() -> Router<AppState> {
         .route("/api/v1/admin/users/:user_id/reset-password", post(accounts::reset_password_route))
         .route("/api/v1/admin/users/:user_id/disable", post(accounts::disable_user_route))
         .route("/api/v1/admin/users/:user_id/enable", post(accounts::enable_user_route))
+        .route(
+            "/api/v1/admin/users/:user_id/pages",
+            get(accounts::user_pages_route).post(accounts::grant_pages_route),
+        )
+        .route("/api/v1/account/pages", get(accounts::my_pages_route))
 }

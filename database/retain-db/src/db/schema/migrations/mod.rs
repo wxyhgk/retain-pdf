@@ -121,6 +121,11 @@ pub(super) const MIGRATIONS: &[Migration] = &[
         name: "data_ownership",
         sql: include_str!("v22_data_ownership.sql"),
     },
+    Migration {
+        version: 23,
+        name: "page_quota",
+        sql: include_str!("v23_page_quota.sql"),
+    },
 ];
 
 #[cfg(test)]

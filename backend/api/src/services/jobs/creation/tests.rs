@@ -19,7 +19,7 @@ use super::submit::create_translation_job;
 use crate::services::jobs::deps::{JobSubmitDeps, SnapshotBuildDeps};
 use crate::services::uploads::UploadedPdfInput;
 
-fn test_state(test_name: &str) -> AppState {
+pub(super) fn test_state(test_name: &str) -> AppState {
     // 服务层测试按服务层的旧约定：python 而非 python3、无 API key。
     let dirs = TestDirs::create(&format!(
         "rust-api-creation-{test_name}-{}",
@@ -37,7 +37,7 @@ fn snapshot_context<'a>(state: &'a AppState) -> SnapshotBuildDeps<'a> {
     SnapshotBuildDeps::new(state.db.as_ref(), state.config.job_snapshot_runtime())
 }
 
-fn submit_context<'a>(state: &'a AppState) -> JobSubmitDeps<'a> {
+pub(super) fn submit_context<'a>(state: &'a AppState) -> JobSubmitDeps<'a> {
     JobSubmitDeps::new(
         snapshot_context(state),
         state.uploads.as_ref(),
@@ -52,7 +52,7 @@ fn submit_context<'a>(state: &'a AppState) -> JobSubmitDeps<'a> {
 
 use crate::test_support::pdf::build_test_pdf_bytes;
 
-fn base_translation_input(workflow: WorkflowKind) -> CreateJobInput {
+pub(super) fn base_translation_input(workflow: WorkflowKind) -> CreateJobInput {
     let mut input = CreateJobInput::default();
     input.workflow = workflow;
     input.translation.api_key = "sk-test".to_string();
