@@ -13,6 +13,7 @@ import {
 } from "../../pdf/reader-zoom.js";
 import { clampPageNumber } from "../../pdf/scroll-to-page.js";
 import { ReaderShortcutsHelp } from "./ReaderShortcutsHelp.js";
+import { ReaderBookmarkControl } from "./ReaderBookmarkControl.js";
 import { useReaderContext, useReaderHudContext } from "./reader-context.js";
 
 export type ReaderZoomHudProps = {
@@ -25,6 +26,8 @@ export type ReaderZoomHudProps = {
   /** 点百分比时重置到该模式默认缩放 */
   mode?: ReaderZoomMode | string;
   modeControls?: ReactNode;
+  /** 书签按这本书存（和阅读位置同一个 scope）；不给就不显示书签。 */
+  bookmarkScope?: string;
 };
 
 export function ReaderZoomHud(props: ReaderZoomHudProps) {
@@ -113,6 +116,15 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
           </button>
         )}
       </div>
+      {props.bookmarkScope ? (
+        <ReaderBookmarkControl
+          scope={props.bookmarkScope}
+          currentPage={currentPage}
+          numPages={numPages}
+          regions={ctx?.regions}
+          onGoToPage={onGoToPage}
+        />
+      ) : null}
       <div className="reader-react-hud-group" aria-label="缩放">
         <button
           type="button"
