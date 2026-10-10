@@ -282,7 +282,7 @@ def _patrol_terms(
         [term_rules.build_term_patrol_messages(batch) for batch in batches],
         response_format=term_rules.TERM_REQUEST_RESPONSE_FORMAT,
         workers=EDITORIAL_WORKERS,
-        on_done=lambda done, total: progress.step("terms", f"编辑部：术语专员巡检 {done}/{total} 批"),
+        on_done=lambda done, total: progress.batch("terms", f"编辑部：术语专员巡检 {done}/{total} 批", done, total),
     )
     proposals: dict[str, dict[str, str]] = {}
     for index, (content, failure) in enumerate(responses, start=1):
@@ -388,7 +388,7 @@ def _settle_term_disputes(
             [term_rules.build_term_request_messages(batch) for batch in batches],
             response_format=term_rules.TERM_REQUEST_RESPONSE_FORMAT,
             workers=EDITORIAL_WORKERS,
-            on_done=lambda done, total: progress.step("terms", f"编辑部：术语专员裁决改动申请 {done}/{total} 批"),
+            on_done=lambda done, total: progress.batch("terms", f"编辑部：术语专员裁决改动申请 {done}/{total} 批", done, total),
         )
         for index, (content, failure) in enumerate(responses, start=1):
             try:
@@ -557,7 +557,7 @@ def _triage(
             [chief_rules.build_chief_messages(batch) for batch in batches],
             response_format=chief_rules.CHIEF_RESPONSE_FORMAT,
             workers=workers,
-            on_done=lambda done, total: progress.step("chief", f"编辑部：主编第 {round_no} 轮分流 {done}/{total} 批"),
+            on_done=lambda done, total: progress.batch("chief", f"编辑部：主编第 {round_no} 轮分流 {done}/{total} 批", done, total),
         )
     for index, (batch, (content, failure)) in enumerate(zip(batches, responses), start=1):
         ids = [entry["item_id"] for entry in batch]
@@ -635,7 +635,7 @@ def _revise(
         [messages for messages, _extra in prepared],
         response_format={"type": "json_object"},
         workers=workers,
-        on_done=lambda done, total: progress.step(phase, f"编辑部：第 {round_no} 轮{label} {done}/{total} 批"),
+        on_done=lambda done, total: progress.batch(phase, f"编辑部：第 {round_no} 轮{label} {done}/{total} 批", done, total),
     )
     for index, (items, (_messages, extra), (content, failure)) in enumerate(zip(batch_items, prepared, responses), start=1):
         batch_records = [base._fix_record(item, open_items[item.item_id]) for item in items]
@@ -820,6 +820,7 @@ def run_editorial(
     section = _editorial_section(_term_review_summary(translations_dir))
     report["editorial"] = section
     progress.total = 1
+    progress.max_rounds = chief_rules.MAX_ROUNDS
     progress.step("prepare", "编辑部：读取译文与质检结果")
     pages = load_translated_pages_for_qa(translations_dir)
     qa_before = build_translation_qa_for_job(job_root, translations_dir=translations_dir, mode="refine_before")
@@ -1020,6 +1021,7 @@ def run_editorial(
     round_no = 0
     while open_items and round_no < chief_rules.MAX_ROUNDS and not budget_hit:
         round_no += 1
+        progress.round = round_no
         _items, items_by_id = base._items_by_id(pages)
         progress.transition("chief", f"编辑部：第 {round_no} 轮，主编分流 {len(open_items)} 块", {"round": round_no})
         decisions, budget_hit = _triage(
