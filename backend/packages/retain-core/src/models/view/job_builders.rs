@@ -435,6 +435,8 @@ pub fn job_to_list_item(
         detail_url: to_absolute_url(base_url, &detail_path),
             // 夹具：这里不构造失败。真实填充在 presentation/listing.rs 与 helpers.rs。
         failure: None,
+        source_artifact_job_id: Some(job.request_payload.source.artifact_job_id.trim().to_string())
+            .filter(|value| !value.is_empty()),
     }
 }
 

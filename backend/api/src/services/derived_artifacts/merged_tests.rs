@@ -327,6 +327,7 @@ fn ranked(job_id: &str, pages: &[u32]) -> crate::services::merge::plan::RankedPa
     crate::services::merge::plan::RankedPages {
         rank: crate::services::merge::plan::Rank {
             producer_created_at: "2026-10-01T00:00:00".to_string(),
+            finished_at: "2026-10-01T00:00:00".to_string(),
             created_at: "2026-10-01T00:00:00".to_string(),
             job_id: job_id.to_string(),
         },

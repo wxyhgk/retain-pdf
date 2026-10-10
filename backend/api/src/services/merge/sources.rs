@@ -97,6 +97,11 @@ pub(crate) fn job_merge_source(
         ranked: RankedPages {
             rank: Rank {
                 producer_created_at: producer_created_at.to_string(),
+                finished_at: job
+                    .finished_at
+                    .clone()
+                    .filter(|value| !value.trim().is_empty())
+                    .unwrap_or_else(|| job.created_at.clone()),
                 created_at: job.created_at.clone(),
                 job_id: job.job_id.clone(),
             },
@@ -268,7 +273,12 @@ mod job_merge_source_tests {
         // 排序：产出者时间用调用方给的，不是自己的 created_at。
         assert_eq!(source.ranked.rank.producer_created_at, "2026-10-01T00:00:00");
         assert_eq!(source.ranked.rank.created_at, "2026-10-03T00:00:00");
+        assert_eq!(source.ranked.rank.finished_at, "2026-10-03T00:00:00", "没有完成时间时退回提交时间");
         assert_eq!(source.ranked.rank.job_id, "reuse-job");
+        let mut finished = job.clone();
+        finished.finished_at = Some("2026-10-04T08:00:00".to_string());
+        let source = job_merge_source(&finished, &root.0, "2026-10-01T00:00:00").expect("该参与合并");
+        assert_eq!(source.ranked.rank.finished_at, "2026-10-04T08:00:00");
         assert_eq!(source.ranked.pages, vec![5], "1 页的输出 PDF 应该是文档第 5 页");
 
         // 构建输入：图片目录来自提供 OCR 的任务。

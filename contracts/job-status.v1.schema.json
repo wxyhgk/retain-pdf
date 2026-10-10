@@ -2132,6 +2132,10 @@
         "detail_url"
       ],
       "properties": {
+        "source_artifact_job_id": {
+          "type": ["string", "null"],
+          "description": "复用了哪个任务的产物（OCR / 译文）；顺着它能找到真正持有译文的任务。没有复用时为 null。"
+        },
         "job_id": {
           "type": "string"
         },

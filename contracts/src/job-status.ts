@@ -556,6 +556,10 @@ export interface JobListView {
  * job_types.rs :: JobListItemView — 列表卡用；关键字段 job_id / display_name / workflow / status / stage_snapshot / progress(经 stage_snapshot.progress) / cover_url 均在契约内。
  */
 export interface JobListItemView {
+  /**
+   * 复用了哪个任务的产物（OCR / 译文）；顺着它能找到真正持有译文的任务。没有复用时为 null。
+   */
+  source_artifact_job_id?: string | null;
   job_id: string;
   display_name: string;
   workflow: WorkflowKind;

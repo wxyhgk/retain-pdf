@@ -581,6 +581,10 @@ pub struct JobListItemView {
     pub updated_at: String,
     pub detail_path: String,
     pub detail_url: String,
+    /// 复用了哪个任务的产物（OCR / 译文）。重新渲染、原地精修过的任务链里，顺着它能找到真正
+    /// 持有译文的任务，不用再逐个打任务详情。没有复用时为 null。
+    #[serde(default)]
+    pub source_artifact_job_id: Option<String>,
     /// 失败时才有。成功/进行中的任务这个字段整个不出现。
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failure: Option<JobFailureBriefView>,

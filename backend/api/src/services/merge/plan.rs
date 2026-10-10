@@ -3,7 +3,7 @@
 //! 输入只有两样：「谁更新」的排序键，和「输出 PDF 第 i 页是文档第几页」。从任务里把这两样
 //! 读出来是 `sources` 的事；拿计划去拼是 `derived_artifacts::merged` 的事。
 
-/// 「谁更新」的排序键，按字段顺序比较：`(产出者提交时间, 自己的提交时间, job_id)`。
+/// 「谁更新」的排序键，按字段顺序比较：`(产出者提交时间, 自己的完成时间, 自己的提交时间, job_id)`。
 ///
 /// 规则的来由见 `merge_plan`。字段顺序就是比较顺序 —— 别调换。
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -11,6 +11,9 @@ pub(crate) struct Rank {
     /// **产出这份译文的那个任务**的提交时间。render 任务（换字体重新排版）没有产出新译文，
     /// 这里是它的产出者的时间，不是它自己的。
     pub producer_created_at: String,
+    /// 自己最后一次跑完的时间（没有记录时退回提交时间）。只在同一份译文的几个任务之间起作用：
+    /// 原地精修、原地重排都会刷新它，最后排出来的那份 PDF 胜出。
+    pub finished_at: String,
     pub created_at: String,
     pub job_id: String,
 }
@@ -39,13 +42,15 @@ pub(crate) enum PageSource {
 ///
 /// # 「最新」的规则
 ///
-/// 每页取覆盖它的任务里排序键最大的那个：`(产出者提交时间, 自己的提交时间, job_id)`。
+/// 每页取覆盖它的任务里排序键最大的那个：`(产出者提交时间, 自己的完成时间, 自己的提交时间, job_id)`。
 ///
 /// - **按产出者的提交时间，不按完成时间**：原地重新排版（`rerun.rs`）会保留 `created_at`
 ///   但清空 `finished_at` 再重写。按完成时间排，调一次字体就会让旧译文盖掉新译文。用户的
 ///   心智模型是「我最后一次发起翻译的那页胜出，重新排版不算重新翻译」。
-/// - **同一份译文的多个任务**（产出者 + 它的 render 任务）里，后提交的胜出 —— 那是更新的
-///   排版。
+/// - **同一份译文的多个任务**（产出者 + 它的 render 任务）里，**后跑完的**胜出 —— 那是更新的
+///   排版。不能按提交时间：在原任务上原地精修（`retry-stage stage=refine`）或原地重排之后，
+///   原任务的提交时间仍是最早的，按提交时间会让精修之前排的那份 PDF 一直赢，用户看不到精修。
+///   完成时间只用在第二位，跨译文仍按产出者的提交时间（见上一条）。
 /// - **job_id 兜底**：`now_iso()` 只精确到秒，混合范围拆成的子任务会在同一秒提交。它们彼此
 ///   不重叠所以不冲突，但排序必须确定。**不用 SQLite rowid**：`jobs` 表没有 INTEGER
 ///   PRIMARY KEY，VACUUM 可能重排 rowid。
@@ -80,6 +85,7 @@ mod tests {
         RankedPages {
             rank: Rank {
                 producer_created_at: created_at.to_string(),
+                finished_at: created_at.to_string(),
                 created_at: created_at.to_string(),
                 job_id: job_id.to_string(),
             },
@@ -155,6 +161,24 @@ mod tests {
         // 而第 1、3 页是同一份译文里更新的排版。
         assert_eq!(plan[0], job("relayout", 0));
         assert_eq!(plan[2], job("relayout", 2));
+    }
+
+    #[test]
+    fn an_in_place_refine_beats_relayouts_that_finished_before_it() {
+        // 原任务翻完后另建过几次重新排版；之后在原任务上原地精修（重写了它的 PDF）。
+        // 同一份译文里按完成时间：原任务最后跑完，阅读必须打开它，不然看不到精修。
+        let mut original = cov("original", "2026-10-06T13:38:13", &[1, 2]);
+        original.rank.finished_at = "2026-10-09T17:00:00".to_string();
+        let mut relayout = cov("relayout", "2026-10-09T06:35:45", &[1, 2]);
+        relayout.rank.producer_created_at = original.rank.producer_created_at.clone();
+        relayout.rank.finished_at = "2026-10-09T06:40:00".to_string();
+        let plan = merge_plan(2, &[relayout.clone(), original.clone()]);
+        assert_eq!(plan, vec![job("original", 0), job("original", 1)]);
+
+        // 精修之后再排一次：那份更新，它胜出。
+        relayout.rank.finished_at = "2026-10-09T18:00:00".to_string();
+        let plan = merge_plan(2, &[relayout, original]);
+        assert_eq!(plan, vec![job("relayout", 0), job("relayout", 1)]);
     }
 
     #[test]
