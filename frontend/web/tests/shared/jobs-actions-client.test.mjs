@@ -22,7 +22,7 @@ function okResponse(data) {
   });
 }
 
-test("jobs actions:普通取消、OCR 取消和 ambiguity 恢复使用各自规范端点", async () => {
+test("jobs actions:普通取消、OCR 取消同一个端点（后端按类型分支），ambiguity 恢复走自己的", async () => {
   const calls = [];
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, options) => {
@@ -46,7 +46,7 @@ test("jobs actions:普通取消、OCR 取消和 ambiguity 恢复使用各自规�
 
   assert.deepEqual(calls.map(({ url }) => url), [
     "http://127.0.0.1:41000/api/v1/jobs/job%20id/cancel",
-    "http://127.0.0.1:41000/api/v1/ocr/jobs/job%20id/cancel",
+    "http://127.0.0.1:41000/api/v1/jobs/job%20id/cancel",
     "http://127.0.0.1:41000/api/v1/jobs/job%20id/ocr/resolve-ambiguity",
   ]);
   for (const { options } of calls) {

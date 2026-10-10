@@ -10,6 +10,7 @@ export function buildApiEndpoint(apiPrefix: string | undefined, relativePath = "
   return buildApiUrl(apiPrefix, relativePath);
 }
 
+// scope="ocr" 只用于创建 OCR 任务（POST /ocr/jobs）。读、取消 OCR 任务都走 /jobs/:id/…。
 export function buildJobsEndpoint(apiPrefix: string | undefined, scope = "jobs"): string {
   return buildApiEndpoint(apiPrefix, scope === "ocr" ? "ocr/jobs" : "jobs");
 }

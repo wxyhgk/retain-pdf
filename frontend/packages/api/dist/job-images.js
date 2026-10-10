@@ -13,27 +13,11 @@ function dedupe(values) {
     }
     return urls;
 }
-function apiPath(apiPrefix, relativePath) {
-    const prefix = `${apiPrefix || API_PREFIX}`.trim().replace(/\/+$/, "");
-    const path = `${relativePath || ""}`.trim().replace(/^\/+/, "");
-    return `${prefix}/${path}`;
-}
-function artifactReady(item, ...keys) {
-    const artifacts = item?.artifacts && typeof item.artifacts === "object" ? item.artifacts : {};
-    const displayItems = Array.isArray(item?.artifacts_display) ? item.artifacts_display : [];
-    return keys.some((key) => Boolean(item?.[`${key}_ready`] || artifacts?.[key]?.ready || artifacts?.[`${key}_ready`] || displayItems.some((d) => d?.ready && (d?.key === key || d?.kind === key))));
-}
-export function buildJobImageCandidateUrls(item = {}, { apiPrefix = API_PREFIX } = {}) {
-    const jobId = `${item?.job_id || item?.id || ""}`.trim();
-    const urls = [item?.thumbnail_url, item?.cover_url];
-    if (jobId) {
-        const encodedJobId = encodeURIComponent(jobId);
-        if (artifactReady(item, "thumbnail"))
-            urls.push(apiPath(apiPrefix, `jobs/${encodedJobId}/thumbnail`), apiPath(apiPrefix, `library/books/${encodedJobId}/thumbnail`));
-        if (artifactReady(item, "cover"))
-            urls.push(apiPath(apiPrefix, `jobs/${encodedJobId}/cover`), apiPath(apiPrefix, `library/books/${encodedJobId}/cover`));
-    }
-    return dedupe(urls);
+// 只用后端给的地址：书架和文档列表现在给同一本书同一个地址（/documents/:id/thumbnail|cover），
+// 不再自己拼 jobs/… 和 library/books/… 的备选——以前同一本书两条地址各下一份，首页 41 本书拉了 82 张图。
+// apiPrefix 参数保留给老调用方，不再使用。
+export function buildJobImageCandidateUrls(item = {}, _options = {}) {
+    return dedupe([item?.thumbnail_url, item?.cover_url]);
 }
 export function normalizeJobImageUrl(value) {
     const raw = `${value || ""}`.trim();

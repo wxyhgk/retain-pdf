@@ -89,6 +89,7 @@ export declare function fetchResumePlan(jobId: string, apiPrefix?: string): Prom
 /** body 可带 `{ overrides: { translation: { api_key | credential_ref } } }`：续跑出来的新任务用这把 key。 */
 export declare function resumeJob(jobId: string, apiPrefix?: string, body?: Record<string, unknown>): Promise<any>;
 export declare function cancelJob(jobId: string, apiPrefix?: string): Promise<any>;
+/** OCR 任务的取消和其它任务同一个地址（后端按任务类型分支）；保留这个名字给老调用方。 */
 export declare function cancelOcrJob(jobId: string, apiPrefix?: string): Promise<any>;
 export declare function resolveOcrAmbiguity(jobId: string, apiPrefix: string | undefined, request: OcrAmbiguityResolutionRequest): Promise<OcrAmbiguityResolutionView>;
 export declare function fetchJobStageActions(jobId: string, apiPrefix?: string): Promise<JobStageActionsView | null>;
