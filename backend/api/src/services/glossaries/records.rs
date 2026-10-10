@@ -54,8 +54,8 @@ pub(crate) fn update_glossary(
     Ok(record)
 }
 
-pub(crate) fn list_glossaries(db: &Db) -> Result<Vec<GlossaryRecord>, AppError> {
-    let mut items = db.list_glossaries()?;
+pub(crate) fn list_glossaries(db: &Db, owner: Option<&str>) -> Result<Vec<GlossaryRecord>, AppError> {
+    let mut items = db.list_glossaries_for_owner(owner)?;
     items.sort_by(|a, b| {
         b.updated_at
             .cmp(&a.updated_at)

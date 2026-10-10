@@ -6,6 +6,7 @@
 use axum::extract::State;
 use axum::Json;
 
+use crate::auth::Principal;
 use crate::error::AppError;
 use crate::models::api::{
     AddCollectionDocumentsInput, ApiResponse, CollectionListView, CollectionMutationResult,
@@ -21,17 +22,19 @@ use crate::AppState;
 
 pub async fn create_collection_route(
     State(state): State<AppState>,
+    principal: Principal,
     ApiJson(payload): ApiJson<CreateCollectionInput>,
 ) -> Result<Json<ApiResponse<CollectionRecord>>, AppError> {
     let deps = build_library_route_deps(&state);
-    Ok(ok_json(create_collection_view(&deps.library, &payload)?))
+    Ok(ok_json(create_collection_view(&deps.library, &payload, principal.owner_id())?))
 }
 
 pub async fn list_collections_route(
     State(state): State<AppState>,
+    principal: Principal,
 ) -> Result<Json<ApiResponse<CollectionListView>>, AppError> {
     let deps = build_library_route_deps(&state);
-    Ok(ok_json(list_collections_view(&deps.library)?))
+    Ok(ok_json(list_collections_view(&deps.library, principal.owner_filter())?))
 }
 
 pub async fn patch_collection_route(

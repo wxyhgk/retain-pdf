@@ -38,8 +38,11 @@ pub fn create_collection(
         .create_collection(&new_collection_id(), name, parent_id)?)
 }
 
-pub fn list_collections(deps: &LibraryDeps<'_>) -> Result<CollectionListView, AppError> {
-    let collections = deps.db.list_collections()?;
+pub fn list_collections(
+    deps: &LibraryDeps<'_>,
+    owner: Option<&str>,
+) -> Result<CollectionListView, AppError> {
+    let collections = deps.db.list_collections_for_owner(owner)?;
     Ok(CollectionListView { collections })
 }
 

@@ -22,7 +22,7 @@ mod reader_llm;
 mod server;
 mod upload;
 
-pub use accounts::{AccountsConfig, DeploymentMode, LOCAL_USERNAME, LOCAL_USER_ID};
+pub use accounts::{AccountsConfig, DeploymentMode, PlatformModels, LOCAL_USERNAME, LOCAL_USER_ID};
 pub use ai_proxy::AiProxyConfig;
 pub use ai_service::AiServiceConfig;
 pub use asset::AssetConfig;

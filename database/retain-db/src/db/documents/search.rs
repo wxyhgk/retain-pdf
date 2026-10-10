@@ -89,81 +89,60 @@ impl Db {
         limit: u32,
         document_id: Option<&str>,
     ) -> Result<Vec<BlockSearchHit>> {
+        self.search_blocks_for_owner(query, limit, document_id, None)
+    }
+
+    /// 同 [`Db::search_blocks`]，`owner` 非空时只搜这个账号的书（多用户模式）。
+    pub fn search_blocks_for_owner(
+        &self,
+        query: &str,
+        limit: u32,
+        document_id: Option<&str>,
+        owner: Option<&str>,
+    ) -> Result<Vec<BlockSearchHit>> {
         let query = query.trim();
         if query.is_empty() {
             return Ok(Vec::new());
         }
         let doc_filter = document_id.map(str::trim).filter(|s| !s.is_empty());
         let conn = self.connect()?;
-        let mut hits = Vec::new();
-        if query.chars().count() >= 3 {
-            let phrase = format!("\"{}\"", query.replace('"', " "));
-            if let Some(doc_id) = doc_filter {
-                let mut stmt = conn.prepare(
-                    r#"
-                    SELECT document_id, job_id, page_idx, block_id,
-                           snippet(blocks_fts, 4, '[', ']', '…', 16),
-                           snippet(blocks_fts, 5, '[', ']', '…', 16)
-                    FROM blocks_fts
-                    WHERE blocks_fts MATCH ?1 AND document_id = ?2
-                    ORDER BY rank
-                    LIMIT ?3
-                    "#,
-                )?;
-                let rows =
-                    stmt.query_map(params![phrase, doc_id, limit as i64], row_to_search_hit)?;
-                for row in rows {
-                    hits.push(row?);
-                }
-            } else {
-                let mut stmt = conn.prepare(
-                    r#"
-                    SELECT document_id, job_id, page_idx, block_id,
-                           snippet(blocks_fts, 4, '[', ']', '…', 16),
-                           snippet(blocks_fts, 5, '[', ']', '…', 16)
-                    FROM blocks_fts
-                    WHERE blocks_fts MATCH ?1
-                    ORDER BY rank
-                    LIMIT ?2
-                    "#,
-                )?;
-                let rows = stmt.query_map(params![phrase, limit as i64], row_to_search_hit)?;
-                for row in rows {
-                    hits.push(row?);
-                }
-            }
-            return Ok(hits);
-        }
-        let pattern = format!("%{}%", query.replace('%', "").replace('_', ""));
-        if let Some(doc_id) = doc_filter {
-            let mut stmt = conn.prepare(
-                r#"
-                SELECT document_id, job_id, page_idx, block_id,
-                       substr(source_text, 1, 120), substr(translated_text, 1, 120)
-                FROM blocks_fts
-                WHERE (source_text LIKE ?1 OR translated_text LIKE ?1)
-                  AND document_id = ?2
-                LIMIT ?3
-                "#,
-            )?;
-            let rows = stmt.query_map(params![pattern, doc_id, limit as i64], row_to_search_hit)?;
-            for row in rows {
-                hits.push(row?);
-            }
+        let fts = query.chars().count() >= 3;
+        let (select, mut conditions, needle) = if fts {
+            (
+                "SELECT document_id, job_id, page_idx, block_id, \
+                 snippet(blocks_fts, 4, '[', ']', '…', 16), snippet(blocks_fts, 5, '[', ']', '…', 16) \
+                 FROM blocks_fts",
+                vec!["blocks_fts MATCH ?1".to_string()],
+                format!("\"{}\"", query.replace('"', " ")),
+            )
         } else {
-            let mut stmt = conn.prepare(
-                r#"
-                SELECT document_id, job_id, page_idx, block_id,
-                       substr(source_text, 1, 120), substr(translated_text, 1, 120)
-                FROM blocks_fts
-                WHERE source_text LIKE ?1 OR translated_text LIKE ?1
-                LIMIT ?2
-                "#,
-            )?;
-            let rows = stmt.query_map(params![pattern, limit as i64], row_to_search_hit)?;
-            for row in rows {
-                hits.push(row?);
-            }
+            (
+                "SELECT document_id, job_id, page_idx, block_id, \
+                 substr(source_text, 1, 120), substr(translated_text, 1, 120) FROM blocks_fts",
+                vec!["(source_text LIKE ?1 OR translated_text LIKE ?1)".to_string()],
+                format!("%{}%", query.replace('%', "").replace('_', "")),
+            )
+        };
+        let mut values: Vec<rusqlite::types::Value> = vec![needle.into()];
+        if let Some(doc_id) = doc_filter {
+            values.push(doc_id.to_string().into());
+            conditions.push(format!("document_id = ?{}", values.len()));
+        }
+        if let Some(owner) = owner {
+            values.push(owner.to_string().into());
+            conditions.push(format!(
+                "document_id IN (SELECT document_id FROM documents WHERE owner_user_id = ?{})",
+                values.len()
+            ));
+        }
+        values.push((limit as i64).into());
+        let order = if fts { " ORDER BY rank" } else { "" };
+        let sql = format!("{select} WHERE {}{order} LIMIT ?{}", conditions.join(" AND "), values.len());
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(rusqlite::params_from_iter(values), row_to_search_hit)?;
+        let mut hits = Vec::new();
+        for row in rows {
+            hits.push(row?);
         }
         Ok(hits)
     }

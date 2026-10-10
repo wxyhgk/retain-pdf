@@ -46,8 +46,16 @@ pub fn document_usage_view(deps: &UsageApiDeps, document_id: &str) -> Result<Usa
 }
 
 /// 现存的全部任务加上助手。删掉的书不再计入。
-pub fn all_usage_view(deps: &UsageApiDeps) -> UsageSummaryView {
+/// `owner` 非空（多用户模式的网站账号）时只算这个账号的任务；助手对网站账号还没开放，不计。
+pub fn all_usage_view(deps: &UsageApiDeps, owner: Option<&str>) -> Result<UsageSummaryView, AppError> {
+    if let Some(owner) = owner {
+        let ids = deps
+            .db
+            .job_ids_for_owner(owner)
+            .map_err(|error| AppError::internal(format!("list owned jobs failed: {error:#}")))?;
+        return Ok(summarize_jobs("all", &deps.output_root, ids.iter().map(String::as_str), Vec::new()));
+    }
     let ids = all_job_ids(&deps.output_root);
     let assistant = read_ledger(&assistant_usage_ledger_path(&deps.data_root));
-    summarize_jobs("all", &deps.output_root, ids.iter().map(String::as_str), assistant)
+    Ok(summarize_jobs("all", &deps.output_root, ids.iter().map(String::as_str), assistant))
 }

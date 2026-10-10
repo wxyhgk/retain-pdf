@@ -17,9 +17,10 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 
 use crate::config::{AccountsConfig, DeploymentMode, LOCAL_USERNAME, LOCAL_USER_ID};
-use crate::db::{Db, UserRecord, UsernameTaken};
+use crate::db::{Db, OwnedKind, UserRecord, UsernameTaken};
 use crate::error::AppError;
 
+pub(crate) mod access;
 pub(crate) mod api;
 
 pub const SESSION_COOKIE: &str = "retain_session";
@@ -81,6 +82,44 @@ impl Principal {
     pub fn is_admin(&self) -> bool {
         self.role == Role::Admin
     }
+
+    /// 列表要不要按归属过滤：只有网站账号（浏览器会话）要；单机、内部服务看全部。
+    pub fn owner_filter(&self) -> Option<&str> {
+        (self.via == AuthVia::Session).then_some(self.user_id.as_str())
+    }
+
+    /// 新建的数据记在谁名下：网站账号记自己；其余记本机用户（多用户模式下网站账号看不见）。
+    pub fn owner_id(&self) -> &str {
+        match self.via {
+            AuthVia::Session => &self.user_id,
+            _ => LOCAL_USER_ID,
+        }
+    }
+
+    /// 上传文件的「指纹」也是书的编号。多用户模式下按账号区分：两个人传同一份 PDF 是两本书，
+    /// 互不可见，也不会共用 OCR 结果。单机模式就是文件字节的 sha256，和以前一样。
+    pub fn scoped_content_hash(&self, plain_sha256: &str) -> String {
+        match self.via {
+            AuthVia::Session => {
+                Sha256::digest(format!("{}:{plain_sha256}", self.user_id).as_bytes())
+                    .iter()
+                    .map(|byte| format!("{byte:02x}"))
+                    .collect()
+            }
+            _ => plain_sha256.to_string(),
+        }
+    }
+}
+
+fn not_found_for(kind: OwnedKind, id: &str) -> AppError {
+    let label = match kind {
+        OwnedKind::Upload => "upload",
+        OwnedKind::Job => "job",
+        OwnedKind::Document => "document",
+        OwnedKind::Glossary => "glossary",
+        OwnedKind::Collection => "collection",
+    };
+    AppError::not_found(format!("{label} not found: {id}"))
 }
 
 // ---------------------------------------------------------------- 视图
@@ -247,6 +286,53 @@ impl AccountsService {
 
     pub fn config(&self) -> &AccountsConfig {
         &self.config
+    }
+
+    /// 资源是不是这个人的。单机 / 内部服务一律放行；网站账号只认自己的（不存在和别人的都回 404）。
+    pub fn require_owned(&self, principal: &Principal, kind: OwnedKind, id: &str) -> Result<(), AppError> {
+        let Some(owner) = principal.owner_filter() else {
+            return Ok(());
+        };
+        // 合并阅读的「任务」编号由书的编号拼成，库里没有这一行：按那本书核。
+        if kind == OwnedKind::Job {
+            if let Some(merged) = crate::storage_paths::MergedJobId::parse(id) {
+                return self.require_owned(principal, OwnedKind::Document, &merged.document_id);
+            }
+        }
+        match self.db.resource_owner(kind, id).map_err(db_error)? {
+            Some(actual) if actual == owner => Ok(()),
+            _ => Err(not_found_for(kind, id)),
+        }
+    }
+
+    /// 一个请求能不能过：路由策略 + 路径里每个有归属的编号。
+    pub fn authorize_route(
+        &self,
+        principal: &Principal,
+        method: &str,
+        template: &str,
+        params: &[(String, String)],
+    ) -> Result<(), AppError> {
+        if principal.owner_filter().is_none() {
+            return Ok(());
+        }
+        match access::route_policy(method, template) {
+            access::RoutePolicy::Closed => return Err(AppError::not_found(format!("route not found: {template}"))),
+            access::RoutePolicy::AdminOnly if !principal.is_admin() => {
+                return Err(AppError::forbidden("administrator only"))
+            }
+            _ => {}
+        }
+        for (name, value) in params {
+            match access::classify_param(name) {
+                access::ParamClass::Owned(kind) => self.require_owned(principal, kind, value)?,
+                access::ParamClass::Nested => {}
+                access::ParamClass::Unknown => {
+                    return Err(AppError::forbidden(format!("path parameter `{name}` is not cleared for accounts")))
+                }
+            }
+        }
+        Ok(())
     }
 
     /// 多用户模式启动时：还没有管理员、又配了初始管理员，就建一个。

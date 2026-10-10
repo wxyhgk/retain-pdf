@@ -185,6 +185,7 @@ pub(super) fn list_jobs_filtered(
             provider: query.provider.as_deref(),
             limit: Some(query.limit.clamp(1, crate::config::limits::MAX_JOB_LIMIT)),
             offset: query.offset,
+            owner: query.owner.as_deref(),
             ..Default::default()
         },
         |_, _| true,

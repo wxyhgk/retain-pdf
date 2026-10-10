@@ -3,6 +3,7 @@ use axum::http::header;
 use axum::response::IntoResponse;
 use axum::Json;
 
+use crate::auth::Principal;
 use crate::error::AppError;
 use crate::models::api::{
     ApiResponse, GlossaryCsvParseInput, GlossaryCsvParseView, GlossaryDetailView, GlossaryListView,
@@ -17,18 +18,20 @@ use crate::AppState;
 
 pub async fn create_glossary_route(
     State(state): State<AppState>,
+    principal: Principal,
     ApiJson(payload): ApiJson<GlossaryUpsertInput>,
 ) -> Result<Json<ApiResponse<GlossaryDetailView>>, AppError> {
     let deps = build_glossary_route_deps(&state);
-    Ok(ok_json(create_glossary_view(&deps, &payload)?))
+    Ok(ok_json(create_glossary_view(&deps, &payload, principal.owner_id())?))
 }
 
 pub async fn list_glossaries_route(
     State(state): State<AppState>,
+    principal: Principal,
     ApiQuery(query): ApiQuery<ListGlossariesQuery>,
 ) -> Result<Json<ApiResponse<GlossaryListView>>, AppError> {
     let deps = build_glossary_route_deps(&state);
-    Ok(ok_json(list_glossaries_view(&deps, &query)?))
+    Ok(ok_json(list_glossaries_view(&deps, &query, principal.owner_filter())?))
 }
 
 pub async fn get_glossary_route(
@@ -62,10 +65,11 @@ pub async fn delete_glossary_route(
 
 pub async fn import_glossary_route(
     State(state): State<AppState>,
+    principal: Principal,
     ApiJson(payload): ApiJson<GlossaryUpsertInput>,
 ) -> Result<Json<ApiResponse<GlossaryDetailView>>, AppError> {
     let deps = build_glossary_route_deps(&state);
-    Ok(ok_json(import_glossary_view(&deps, &payload)?))
+    Ok(ok_json(import_glossary_view(&deps, &payload, principal.owner_id())?))
 }
 
 pub async fn export_glossary_csv_route(

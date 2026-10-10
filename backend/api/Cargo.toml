@@ -47,6 +47,7 @@ sha2 = "0.11.0"
 hmac = "0.13"
 getrandom = "0.2"
 argon2 = "0.5"
+serde_urlencoded = "0.7"
 futures-util = "0.3"
 
 [dev-dependencies]

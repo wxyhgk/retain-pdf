@@ -206,7 +206,7 @@ fn glossary_crud_round_trip() {
         load_glossary_or_404(state.db.as_ref(), &created.glossary_id).expect("load glossary");
     assert_eq!(loaded.name, "semiconductor");
     assert_eq!(
-        list_glossaries(state.db.as_ref())
+        list_glossaries(state.db.as_ref(), None)
             .expect("list glossaries")
             .len(),
         1

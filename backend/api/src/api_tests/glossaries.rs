@@ -30,6 +30,7 @@ async fn export_glossary_csv_route_returns_csv() {
                 context: String::new(),
             }],
         },
+        crate::db::LOCAL_OWNER,
     )
     .expect("create glossary");
 

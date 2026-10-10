@@ -8,6 +8,7 @@ use axum::http::HeaderMap;
 use axum::response::Response;
 use axum::Json;
 
+use crate::auth::Principal;
 use crate::error::AppError;
 use crate::models::api::{
     ApiResponse, ApplyDocumentMetadataSuggestionInput, CreateDocumentMetadataSuggestionInput,
@@ -38,12 +39,13 @@ use crate::AppState;
 
 pub async fn list_documents_route(
     State(state): State<AppState>,
+    principal: Principal,
     headers: HeaderMap,
     ApiQuery(query): ApiQuery<ListDocumentsQuery>,
 ) -> Result<Json<ApiResponse<DocumentListView>>, AppError> {
     let deps = build_library_route_deps(&state);
     let base_url = request_base_url(&headers, deps.default_port, &deps.bind_host);
-    Ok(ok_json(list_documents(&deps.library, &query, &base_url)?))
+    Ok(ok_json(list_documents(&deps.library, &query, &base_url, principal.owner_filter())?))
 }
 
 pub async fn get_document_route(
@@ -269,8 +271,9 @@ pub async fn list_document_jobs_route(
 
 pub async fn search_blocks_route(
     State(state): State<AppState>,
+    principal: Principal,
     ApiQuery(query): ApiQuery<SearchQuery>,
 ) -> Result<Json<ApiResponse<SearchResultView>>, AppError> {
     let deps = build_library_route_deps(&state);
-    Ok(ok_json(search_blocks_view(&deps.library, &query)?))
+    Ok(ok_json(search_blocks_view(&deps.library, &query, principal.owner_filter())?))
 }

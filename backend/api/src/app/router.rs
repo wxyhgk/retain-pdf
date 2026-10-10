@@ -108,6 +108,11 @@ fn authenticated_api_routes(state: &AppState) -> Router<AppState> {
         .merge(fonts::routes())
         .merge(crate::routes::model_requests::launcher_routes())
         .method_not_allowed_fallback(method_not_allowed)
+        // 先挂的在里层、后跑：先认证（require_api_key），再看能不能访问（enforce_access）。
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth::enforce_access,
+        ))
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
             auth::require_api_key,
@@ -117,6 +122,11 @@ fn authenticated_api_routes(state: &AppState) -> Router<AppState> {
 fn authenticated_simple_routes(state: &AppState) -> Router<AppState> {
     simple::routes()
         .method_not_allowed_fallback(method_not_allowed)
+        // 先挂的在里层、后跑：先认证（require_api_key），再看能不能访问（enforce_access）。
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth::enforce_access,
+        ))
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
             auth::require_api_key,

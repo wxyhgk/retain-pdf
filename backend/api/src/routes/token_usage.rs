@@ -3,6 +3,7 @@
 use axum::extract::State;
 use axum::Json;
 
+use crate::auth::Principal;
 use crate::error::AppError;
 use crate::models::api::ApiResponse;
 use crate::routes::common::{build_usage_route_deps, ok_json, ApiPath};
@@ -38,7 +39,9 @@ pub async fn document_usage_route(
 /// GET /api/v1/usage —— 现存的全部任务加上助手。删掉的书不再计入。
 pub async fn all_usage_route(
     State(state): State<AppState>,
+    principal: Principal,
 ) -> Result<Json<ApiResponse<UsageSummaryView>>, AppError> {
     let deps = build_usage_route_deps(&state);
-    Ok(ok_json(blocking(move || Ok(all_usage_view(&deps))).await?))
+    let owner = principal.owner_filter().map(str::to_string);
+    Ok(ok_json(blocking(move || all_usage_view(&deps, owner.as_deref())).await?))
 }

@@ -5,7 +5,9 @@ use axum::response::Response;
 
 use crate::error::AppError;
 use crate::routes::common::{build_auth_route_deps, AuthRouteDeps};
-use crate::services::accounts::api::{Principal, SESSION_COOKIE};
+use crate::services::accounts::api::{json_references, query_references, SESSION_COOKIE};
+/// 路由拿「当前用户」从这里引（路由层不直接碰 services）。
+pub use crate::services::accounts::api::Principal;
 use crate::AppState;
 
 /// 会话 Cookie 里的令牌，放进请求扩展里，退出、改密码时要用。
@@ -111,6 +113,56 @@ pub async fn require_api_key(
     request.extensions_mut().insert(principal);
     Ok(next.run(request).await)
 }
+
+/// 认证之后的第二道：多用户模式下网站账号能不能走这条路由；路径、查询串、JSON 请求体里出现的
+/// 上传 / 任务 / 书 / 术语表 / 文件夹编号是不是自己的。单机模式、内部服务直接放行。
+/// 挂在 require_api_key 里层（route_layer 后挂的先跑，所以它要先挂）。
+pub async fn enforce_access(
+    axum::extract::State(state): axum::extract::State<AppState>,
+    matched: Option<axum::extract::MatchedPath>,
+    params: axum::extract::RawPathParams,
+    request: Request<Body>,
+    next: Next,
+) -> Result<Response, AppError> {
+    let principal = match request.extensions().get::<Principal>() {
+        Some(principal) if principal.owner_filter().is_some() => principal.clone(),
+        _ => return Ok(next.run(request).await),
+    };
+    let Some(template) = matched.as_ref().map(|matched| matched.as_str().to_string()) else {
+        return Ok(next.run(request).await);
+    };
+    let params: Vec<(String, String)> =
+        params.iter().map(|(name, value)| (name.to_string(), value.to_string())).collect();
+    state
+        .accounts
+        .authorize_route(&principal, request.method().as_str(), &template, &params)?;
+
+    let mut references = query_references(&template, request.uri().query().unwrap_or(""));
+    let is_json = request
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.trim_start().to_ascii_lowercase().starts_with("application/json"));
+    let request = if is_json {
+        let (parts, body) = request.into_parts();
+        let bytes = axum::body::to_bytes(body, ACCESS_JSON_BODY_LIMIT)
+            .await
+            .map_err(|_| AppError::payload_too_large("request body too large"))?;
+        if let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+            references.extend(json_references(&template, &value));
+        }
+        Request::from_parts(parts, Body::from(bytes))
+    } else {
+        request
+    };
+    for (kind, id) in references {
+        state.accounts.require_owned(&principal, kind, &id)?;
+    }
+    Ok(next.run(request).await)
+}
+
+/// 网站账号的 JSON 请求体要先读进来核对编号；比这大的不是正常请求。
+const ACCESS_JSON_BODY_LIMIT: usize = 16 * 1024 * 1024;
 
 /// 在处理函数里直接拿「当前用户」：认证中间件已经放进请求扩展里了；没有就是没登录。
 #[axum::async_trait]
