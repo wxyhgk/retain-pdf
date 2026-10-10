@@ -89,6 +89,16 @@ test("buildTranslationPayload sends the configured protocol and thinking depth",
   assert.equal(payload.thinking, "high");
 });
 
+test("buildTranslationPayload 发出 Responses 协议（openai_responses）", () => {
+  const payload = buildTranslationPayload({
+    developerConfig: { ...developerConfig(), apiProtocol: "openai_responses" },
+    translationCredentialRef: "cred_translation",
+    selectedGlossaryId: "",
+    constants,
+  });
+  assert.equal(payload.api_protocol, "openai_responses");
+});
+
 // glossary_id 的空串是**用户的选择**：下拉里「不使用术语表」这个选项的 value
 // 就是空串（TranslationOptionsPanel.tsx）。这里曾写成
 // `selectedGlossaryId || developerConfig.glossaryId`，把「选了不使用」和「没设置」

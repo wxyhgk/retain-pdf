@@ -100,7 +100,11 @@ pub fn run(ctx: &Ctx) -> Result<ExitCode> {
         let current_protocol = if same { current.translation.protocol.as_str() } else { builtin.protocol };
         choose(
             "接口协议",
-            &[("openai", "OpenAI 格式(/chat/completions)"), ("anthropic", "Anthropic 格式(/messages)")],
+            &[
+                ("openai", "OpenAI 格式(/chat/completions)"),
+                ("openai_responses", "OpenAI Responses 格式(/responses)"),
+                ("anthropic", "Anthropic 格式(/messages)"),
+            ],
             current_protocol,
         )?
     } else if same {

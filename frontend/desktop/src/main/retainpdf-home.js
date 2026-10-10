@@ -110,7 +110,7 @@ function changesFromDesktop(config, known) {
     changes[`providers.${id}.workers`] = Number(profile.workers) > 0 ? String(Number(profile.workers)) : null;
     changes[`providers.${id}.api_key`] = `${profile.apiKey || ""}`.trim() || null;
     // 等于内置默认时 ~/.retainpdf 那边会自己删掉这一项；没填就清掉、回到默认。
-    changes[`providers.${id}.protocol`] = ["openai", "anthropic"].includes(profile.apiProtocol) ? profile.apiProtocol : null;
+    changes[`providers.${id}.protocol`] = ["openai", "openai_responses", "anthropic"].includes(profile.apiProtocol) ? profile.apiProtocol : null;
     changes[`providers.${id}.thinking`] = ["auto", "off", "low", "medium", "high", "max"].includes(profile.thinking)
       ? profile.thinking
       : null;

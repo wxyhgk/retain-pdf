@@ -1,4 +1,4 @@
-"""接口协议（OpenAI / Anthropic）与思考深度：请求长什么样、服务商不认时怎么退。"""
+"""接口协议（OpenAI Chat / OpenAI Responses / Anthropic）与思考深度：请求长什么样、服务商不认时怎么退。"""
 from unittest import mock
 
 import pytest
@@ -216,8 +216,167 @@ def test_unrelated_400_still_uses_the_schema_fallback_first():
     assert second["reasoning_effort"] == "high"
 
 
+RESPONSES_OK = {
+    "status": "completed",
+    "output": [
+        {"type": "reasoning", "summary": []},
+        {"type": "message", "role": "assistant", "content": [
+            {"type": "output_text", "text": "译", "annotations": []},
+            {"type": "output_text", "text": "文", "annotations": []},
+        ]},
+    ],
+    "usage": {
+        "input_tokens": 120,
+        "input_tokens_details": {"cached_tokens": 100},
+        "output_tokens": 30,
+        "output_tokens_details": {"reasoning_tokens": 12},
+        "total_tokens": 150,
+    },
+}
+
+
+def _responses_call(responses, **kwargs):
+    kwargs.setdefault("messages", [{"role": "user", "content": "x"}])
+    kwargs.setdefault("api_key", "k")
+    kwargs.setdefault("model", "gpt-5.6-luna")
+    kwargs.setdefault("base_url", "https://api.openai.com/v1")
+    kwargs.setdefault("protocol", "openai_responses")
+    return _call(responses, **kwargs)
+
+
+def test_responses_protocol_uses_the_responses_api():
+    content, session = _responses_call(
+        [_response(payload=RESPONSES_OK)],
+        messages=[
+            {"role": "system", "content": "你是译者。"},
+            {"role": "system", "content": "术语表：……"},
+            {"role": "user", "content": "Translate A"},
+            {"role": "assistant", "content": "译 A"},
+            {"role": "user", "content": "Translate B"},
+        ],
+        thinking="auto",
+    )
+    assert content == "译文"
+    call = session.post.call_args
+    assert call.args[0] == "https://api.openai.com/v1/responses"
+    assert call.kwargs["headers"]["Authorization"] == "Bearer k"
+    assert call.kwargs["stream"] is False
+    body = call.kwargs["json"]
+    assert body["instructions"] == "你是译者。\n\n术语表：……"
+    assert body["input"] == [
+        {"role": "user", "content": "Translate A"},
+        {"role": "assistant", "content": "译 A"},
+        {"role": "user", "content": "Translate B"},
+    ]
+    assert body["store"] is False
+    assert body["temperature"] == 0.2
+    assert "messages" not in body and "reasoning" not in body and "max_output_tokens" not in body
+
+
+@pytest.mark.parametrize("base", [
+    "https://api.openai.com/v1/",
+    "https://api.openai.com/v1/responses",
+    "https://api.openai.com/v1/chat/completions",
+])
+def test_responses_url_accepts_a_full_endpoint(base):
+    assert model_wire.responses_url(base) == "https://api.openai.com/v1/responses"
+
+
+def test_responses_usage_is_recorded_in_openai_shape():
+    diagnostics = mock.Mock()
+    diagnostics.record_request_start.return_value = 1
+    _responses_call([_response(payload=RESPONSES_OK)], diagnostics=diagnostics)
+    diagnostics.record_token_usage.assert_called_once_with({
+        "prompt_tokens": 120,
+        "completion_tokens": 30,
+        "total_tokens": 150,
+        "prompt_cache_hit_tokens": 100,
+        "prompt_cache_miss_tokens": 20,
+        "completion_tokens_details": {"reasoning_tokens": 12},
+    })
+
+
+@pytest.mark.parametrize("thinking,first_effort", [
+    ("off", "none"), ("low", "low"), ("medium", "medium"), ("high", "high"), ("max", "xhigh"),
+])
+def test_responses_thinking_maps_to_reasoning_effort(thinking, first_effort):
+    _, session = _responses_call([_response(payload=RESPONSES_OK)], thinking=thinking)
+    body = session.post.call_args.kwargs["json"]
+    assert body["reasoning"] == {"effort": first_effort}
+    # 推理模型只在不思考（effort=none）时接受 temperature。
+    assert ("temperature" in body) == (first_effort == "none")
+
+
+@pytest.mark.parametrize("base,model,expected", [
+    ("https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen3.8-flash", {"effort": "none"}),
+    ("https://open.bigmodel.cn/api/paas/v4", "glm-5.3-flash", {"effort": "low"}),
+    ("https://api.openai.com/v1", "gpt-5.6-luna", None),
+])
+def test_responses_auto_thinking_reuses_the_tested_chat_rules(base, model, expected):
+    _, session = _responses_call([_response(payload=RESPONSES_OK)], base_url=base, model=model, thinking="auto")
+    assert session.post.call_args.kwargs["json"].get("reasoning") == expected
+
+
+def test_responses_thinking_rejection_steps_down_then_drops_the_field():
+    rejected = _response(400, text='{"error":{"message":"Unsupported value: \'reasoning.effort\' does not support \'xhigh\'"}}')
+    content, session = _responses_call(
+        [rejected, rejected, _response(payload=RESPONSES_OK)],
+        thinking="max",
+    )
+    assert content == "译文"
+    sent = [call.kwargs["json"].get("reasoning") for call in session.post.call_args_list]
+    assert sent == [{"effort": "xhigh"}, {"effort": "high"}, None]
+
+
+def test_responses_temperature_rejection_retries_without_it():
+    rejected = _response(400, text='{"error":{"message":"Unsupported parameter: \'temperature\' is not supported with this model."}}')
+    content, session = _responses_call([rejected, _response(payload=RESPONSES_OK)], thinking="auto")
+    assert content == "译文"
+    first, second = (call.kwargs["json"] for call in session.post.call_args_list)
+    assert first["temperature"] == 0.2
+    assert "temperature" not in second
+
+
+def test_responses_structured_output_goes_to_text_format_and_falls_back():
+    schema = {"type": "object", "properties": {"t": {"type": "string"}}}
+    rejected = _response(400, text='{"error":{"message":"Invalid schema for response_format"}}')
+    _, session = _responses_call(
+        [rejected, _response(payload=RESPONSES_OK)],
+        response_format={"type": "json_schema", "json_schema": {"name": "batch", "schema": schema, "strict": True}},
+    )
+    first, second = (call.kwargs["json"] for call in session.post.call_args_list)
+    assert first["text"] == {"format": {"type": "json_schema", "name": "batch", "schema": schema, "strict": True}}
+    assert second["text"] == {"format": {"type": "json_object"}}
+    assert "response_format" not in first
+
+
+@pytest.mark.parametrize("payload,needle", [
+    ({"status": "incomplete", "incomplete_details": {"reason": "max_output_tokens"},
+      "output": [{"type": "reasoning", "summary": []}]}, "max_output_tokens"),
+    ({"status": "completed", "output": [{"type": "message", "content": [
+        {"type": "refusal", "refusal": "I can't help with that."}]}]}, "refused"),
+    ({"status": "failed", "error": {"code": "server_error", "message": "boom"}, "output": []}, "server_error"),
+])
+def test_responses_without_text_raise(payload, needle):
+    with pytest.raises(ValueError, match=needle):
+        model_wire.responses_content(payload)
+
+
+def test_registered_responses_connection_is_used_without_explicit_arguments():
+    model_wire.register_connection(base_url="https://api.openai.com/v1", model="gpt-5.6-luna",
+                                   protocol="openai_responses", thinking="low")
+    _, session = _call(
+        [_response(payload=RESPONSES_OK)],
+        messages=[{"role": "user", "content": "x"}],
+        api_key="k", model="gpt-5.6-luna", base_url="https://api.openai.com/v1",
+    )
+    assert session.post.call_args.args[0].endswith("/responses")
+    assert session.post.call_args.kwargs["json"]["reasoning"] == {"effort": "low"}
+
+
 def test_normalizers_fall_back_to_defaults():
     assert model_wire.normalize_protocol("Anthropic") == "anthropic"
+    assert model_wire.normalize_protocol("OpenAI_Responses") == "openai_responses"
     assert model_wire.normalize_protocol("gemini") == "openai"
     assert model_wire.normalize_thinking("HIGH") == "high"
     assert model_wire.normalize_thinking("") == "auto"

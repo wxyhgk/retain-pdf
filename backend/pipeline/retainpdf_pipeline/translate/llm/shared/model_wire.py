@@ -1,9 +1,12 @@
 """模型接口的线上格式：用哪种协议发请求、思考开多深。
 
-两种协议：
+三种协议：
 
 - ``openai``：``POST {base_url}/chat/completions`` + ``Authorization: Bearer``。DeepSeek、Qwen、
-  智谱、OpenAI 以及各种中转都走这个。
+  智谱、OpenAI 以及各种中转都走这个，是默认值。
+- ``openai_responses``：``POST {base_url}/responses`` + ``Authorization: Bearer``（OpenAI Responses
+  API）。system 放 ``instructions``、其余消息放 ``input``，思考深度是 ``reasoning.effort``，结构化输出
+  在 ``text.format``，返回的是 ``output`` 条目列表。第三方支持参差不齐，服务商明确支持才切过去。
 - ``anthropic``：``POST {base_url}/messages`` + ``x-api-key``（Anthropic Messages API）。system 单独
   放顶层、必须给 max_tokens、返回的是内容块列表。
 
@@ -28,10 +31,11 @@ from urllib.parse import urlparse
 
 
 PROTOCOL_OPENAI = "openai"
+PROTOCOL_OPENAI_RESPONSES = "openai_responses"
 PROTOCOL_ANTHROPIC = "anthropic"
 # 下面两个元组的取值和 Rust 的 TRANSLATION_API_PROTOCOLS / TRANSLATION_THINKING_LEVELS 由测试对齐，
 # 保持字面量写法。
-PROTOCOLS = ("openai", "anthropic")
+PROTOCOLS = ("openai", "openai_responses", "anthropic")
 
 THINKING_LEVELS = ("auto", "off", "low", "medium", "high", "max")
 
@@ -178,6 +182,162 @@ def openai_thinking_candidates(*, model: str, base_url: str, thinking: str) -> l
         effort = {"off": "none", "max": "high"}.get(level, level)
         candidates = [{"reasoning_effort": effort}]
     return [*candidates, {}]
+
+
+# ---------------------------------------------------------------------------
+# OpenAI Responses 协议
+# ---------------------------------------------------------------------------
+
+
+def responses_url(base_url: str) -> str:
+    """地址填到 ``/v1`` 为止；误填了完整的 ``/responses`` 或 ``/chat/completions`` 也认。"""
+    normalized = str(base_url or "").strip().rstrip("/")
+    for suffix in ("/responses", "/chat/completions"):
+        if normalized.endswith(suffix):
+            normalized = normalized[: -len(suffix)]
+            break
+    return f"{normalized}/responses"
+
+
+def responses_thinking_candidates(*, model: str, base_url: str, thinking: str) -> list[dict[str, Any]]:
+    """``reasoning.effort`` 候选。不同模型认的档位不同（``none`` / ``minimal`` / ``xhigh`` 都不是
+    人人都有），所以 off 和 max 各多给一档退路；最后一个总是「不加字段」。
+
+    ``auto`` 沿用 Chat 协议下实测过的规则（``_auto_openai_thinking``），换成 effort 的写法：
+    DashScope 的 qwen3.8-flash 在 /responses 下同样默认思考，effort=none 实测能关掉（1 秒 vs 3 秒多）。
+    """
+    level = normalize_thinking(thinking)
+    if level == "auto":
+        auto = _auto_openai_thinking(model=model, host=hostname(base_url))
+        if auto.get("enable_thinking") is False:
+            return [{"reasoning": {"effort": "none"}}, {}]
+        if auto.get("reasoning_effort"):
+            return [{"reasoning": {"effort": auto["reasoning_effort"]}}, {}]
+        return [{}]
+    efforts = {
+        "off": ["none", "minimal"],
+        "max": ["xhigh", "high"],
+    }.get(level, [level])
+    return [*({"reasoning": {"effort": effort}} for effort in efforts), {}]
+
+
+def _responses_text_format(response_format: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Chat Completions 的 ``response_format`` → Responses 的 ``text.format``（json_schema 拍平一层）。"""
+    if not isinstance(response_format, dict):
+        return None
+    kind = str(response_format.get("type", "") or "").strip().lower()
+    if kind == "json_object":
+        return {"type": "json_object"}
+    if kind == "json_schema":
+        spec = response_format.get("json_schema") or {}
+        schema = spec.get("schema")
+        if not isinstance(schema, dict):
+            return {"type": "json_object"}
+        fmt: dict[str, Any] = {"type": "json_schema", "name": str(spec.get("name") or "response"), "schema": schema}
+        if "strict" in spec:
+            fmt["strict"] = bool(spec["strict"])
+        return fmt
+    return None
+
+
+def responses_body(
+    *,
+    model: str,
+    messages: list[dict[str, Any]],
+    temperature: float | None,
+    response_format: dict[str, Any] | None,
+    thinking_fields: dict[str, Any],
+) -> dict[str, Any]:
+    """OpenAI 形状的消息 → Responses API 请求体。
+
+    - system 消息合并进 ``instructions``，其余消息原样进 ``input``。
+    - ``store: false``：译文不在服务商那边留存。
+    - 开了思考（effort 不是 none）时不传 temperature：推理模型只在不思考时才接受它。
+      ``temperature=None`` 表示调用方因为服务商拒绝而去掉了它。
+    - 不设 ``max_output_tokens``，和 Chat Completions 一样由服务商默认，免得思考吃掉额度后截断译文。
+    """
+    instructions: list[str] = []
+    turns: list[dict[str, str]] = []
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+        role = str(message.get("role", "") or "")
+        content = str(message.get("content", "") or "")
+        if role == "system":
+            if content.strip():
+                instructions.append(content)
+            continue
+        turns.append({"role": "assistant" if role == "assistant" else "user", "content": content})
+    if not turns:
+        turns.append({"role": "user", "content": "请按系统说明处理。"})
+    body: dict[str, Any] = {"model": model, "input": turns, "store": False}
+    if instructions:
+        body["instructions"] = "\n\n".join(instructions)
+    text_format = _responses_text_format(response_format)
+    if text_format is not None:
+        body["text"] = {"format": text_format}
+    if thinking_fields:
+        body.update(thinking_fields)
+    effort = str((thinking_fields.get("reasoning") or {}).get("effort", "none") or "none")
+    if temperature is not None and effort == "none":
+        body["temperature"] = temperature
+    return body
+
+
+def responses_content(data: dict[str, Any]) -> str:
+    """拼出 ``output`` 里所有 message 的 ``output_text``；拒答、未完成、出错都抛 ValueError（会重试）。"""
+    error = data.get("error")
+    if isinstance(error, dict) and error:
+        raise ValueError(f"Responses API error: {error.get('code') or ''} {error.get('message') or ''}".strip())
+    texts: list[str] = []
+    refusals: list[str] = []
+    for item in data.get("output") or []:
+        if not isinstance(item, dict) or item.get("type") != "message":
+            continue
+        for part in item.get("content") or []:
+            if not isinstance(part, dict):
+                continue
+            if part.get("type") == "output_text":
+                texts.append(str(part.get("text", "") or ""))
+            elif part.get("type") == "refusal":
+                refusals.append(str(part.get("refusal", "") or ""))
+    text = "".join(texts)
+    if text.strip():
+        return text
+    if refusals:
+        raise ValueError(f"Responses API refused: {' '.join(refusals)[:200]}")
+    reason = (data.get("incomplete_details") or {}).get("reason") if isinstance(data.get("incomplete_details"), dict) else None
+    raise ValueError(f"Responses API returned no text (status={data.get('status')}, reason={reason}).")
+
+
+def responses_usage(data: dict[str, Any]) -> dict[str, Any] | None:
+    """Responses 的 usage → OpenAI Chat 形状（用量统计只认这一种）。"""
+    usage = data.get("usage")
+    if not isinstance(usage, dict):
+        return None
+
+    def count(source: Any, key: str) -> int:
+        value = source.get(key) if isinstance(source, dict) else None
+        return int(value) if isinstance(value, (int, float)) else 0
+
+    prompt = count(usage, "input_tokens")
+    completion = count(usage, "output_tokens")
+    cached = count(usage.get("input_tokens_details"), "cached_tokens")
+    mapped: dict[str, Any] = {
+        "prompt_tokens": prompt,
+        "completion_tokens": completion,
+        "total_tokens": count(usage, "total_tokens") or prompt + completion,
+        "prompt_cache_hit_tokens": cached,
+        "prompt_cache_miss_tokens": prompt - cached,
+    }
+    reasoning = count(usage.get("output_tokens_details"), "reasoning_tokens")
+    if reasoning:
+        mapped["completion_tokens_details"] = {"reasoning_tokens": reasoning}
+    return mapped
+
+
+def looks_like_temperature_rejection(response_text: str) -> bool:
+    return "temperature" in (response_text or "").lower()
 
 
 # ---------------------------------------------------------------------------
@@ -329,6 +489,7 @@ __all__ = [
     "PROTOCOLS",
     "PROTOCOL_ANTHROPIC",
     "PROTOCOL_OPENAI",
+    "PROTOCOL_OPENAI_RESPONSES",
     "THINKING_LEVELS",
     "anthropic_body",
     "anthropic_content",
@@ -337,6 +498,7 @@ __all__ = [
     "anthropic_thinking_candidates",
     "anthropic_usage",
     "clear_registered_connections",
+    "looks_like_temperature_rejection",
     "looks_like_thinking_rejection",
     "normalize_protocol",
     "normalize_thinking",
@@ -344,4 +506,9 @@ __all__ = [
     "register_connection",
     "register_stage_connections",
     "resolve_profile",
+    "responses_body",
+    "responses_content",
+    "responses_thinking_candidates",
+    "responses_url",
+    "responses_usage",
 ]

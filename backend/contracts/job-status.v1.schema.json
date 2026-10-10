@@ -447,7 +447,7 @@
         },
         "api_protocol": {
           "type": "string",
-          "description": "TRANSLATION_API_PROTOCOLS：openai / anthropic。"
+          "description": "TRANSLATION_API_PROTOCOLS：openai / openai_responses / anthropic。"
         },
         "thinking": {
           "type": "string",

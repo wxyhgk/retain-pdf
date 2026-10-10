@@ -44,6 +44,13 @@ pub fn validate_translation_credentials(input: &CreateJobInput) -> Result<(), Ap
         {
             return Err(AppError::bad_request("execution_connection must match translation model, endpoint, credential_ref and workers; inline API keys are not allowed"));
         }
+        // Rust 执行器只会发 `/chat/completions`；别的协议交给它会静默走错接口。
+        let protocol = input.translation.api_protocol.trim();
+        if !protocol.is_empty() && protocol != "openai" {
+            return Err(AppError::bad_request(format!(
+                "execution_connection only supports translation.api_protocol=openai (/chat/completions), got {protocol}"
+            )));
+        }
     }
     let base_url = input.translation.base_url.trim();
     if base_url.is_empty() {

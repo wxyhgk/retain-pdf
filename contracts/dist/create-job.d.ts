@@ -127,9 +127,9 @@ export interface TranslationInput {
      */
     reviewer_credential_ref?: string;
     /**
-     * TRANSLATION_API_PROTOCOLS。翻译模型接口的协议。openai：POST {base_url}/chat/completions + Bearer；anthropic：POST {base_url}/messages + x-api-key（Anthropic Messages API）。
+     * TRANSLATION_API_PROTOCOLS。翻译模型接口的协议。openai：POST {base_url}/chat/completions + Bearer；openai_responses：POST {base_url}/responses + Bearer（OpenAI Responses API，服务商明确支持才用）；anthropic：POST {base_url}/messages + x-api-key（Anthropic Messages API）。带 execution_connection 时只能是 openai。
      */
-    api_protocol?: "openai" | "anthropic";
+    api_protocol?: "openai" | "openai_responses" | "anthropic";
     /**
      * TRANSLATION_THINKING_LEVELS。翻译模型的思考深度。auto：只对实测过的模型关掉或压低思考，其余由服务商默认；其余档位按协议与服务商换成对应字段，服务商不认时逐级退回，最后不带思考字段。
      */
@@ -137,7 +137,7 @@ export interface TranslationInput {
     /**
      * 审校模型接口的协议；留空沿用 api_protocol。
      */
-    reviewer_api_protocol?: "" | "openai" | "anthropic";
+    reviewer_api_protocol?: "" | "openai" | "openai_responses" | "anthropic";
     /**
      * 审校模型的思考深度；留空沿用 thinking。
      */

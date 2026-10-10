@@ -120,6 +120,15 @@ test("translation profiles：Anthropic 默认 Anthropic 协议，非法值回落
   assert.equal(manager.getCurrentProfile().thinking, "auto");
 });
 
+test("translation profiles：存过的 Responses 协议（openai_responses）原样保留", () => {
+  const manager = createTranslationProfiles({ dialogElementsPort: { elements: () => ({}) } });
+  manager.hydrate({}, {
+    translationProvider: "qwen",
+    translationProfiles: { qwen: { apiProtocol: "openai_responses" } },
+  });
+  assert.equal(manager.getCurrentProfile().apiProtocol, "openai_responses");
+});
+
 test("translation profiles：capture / apply 往返，自定义地址记忆", () => {
   const applied = [];
   const elements = {

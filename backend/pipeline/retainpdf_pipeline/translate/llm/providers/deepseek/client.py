@@ -303,10 +303,18 @@ def request_chat_content(
     accumulated_rate_limit_wait = 0
     profile = model_wire.resolve_profile(base_url=base_url, model=model, protocol=protocol, thinking=thinking)
     anthropic = profile.protocol == model_wire.PROTOCOL_ANTHROPIC
+    responses = profile.protocol == model_wire.PROTOCOL_OPENAI_RESPONSES
     if anthropic:
         endpoint = model_wire.anthropic_messages_url(base_url)
         headers = model_wire.anthropic_headers(api_key)
         thinking_candidates = model_wire.anthropic_thinking_candidates(profile.thinking)
+        use_stream = False
+    elif responses:
+        endpoint = model_wire.responses_url(base_url)
+        headers = build_headers(api_key)
+        thinking_candidates = model_wire.responses_thinking_candidates(
+            model=model, base_url=base_url, thinking=profile.thinking
+        )
         use_stream = False
     else:
         endpoint = chat_completions_url(base_url)
@@ -316,9 +324,19 @@ def request_chat_content(
         )
         use_stream = should_use_stream_responses()
     thinking_index = 0
+    # Responses 下推理模型可能整个不认 temperature：被 400 拒一次后就不再带。
+    send_temperature = True
 
     def build_body() -> dict[str, Any]:
         thinking_fields = thinking_candidates[thinking_index]
+        if responses:
+            return model_wire.responses_body(
+                model=model,
+                messages=messages,
+                temperature=temperature if send_temperature else None,
+                response_format=active_response_format,
+                thinking_fields=thinking_fields,
+            )
         if anthropic:
             return model_wire.anthropic_body(
                 model=model,
@@ -419,6 +437,10 @@ def request_chat_content(
                 data = response.json()
                 content = model_wire.anthropic_content(data)
                 usage = model_wire.anthropic_usage(data)
+            elif responses:
+                data = response.json()
+                content = model_wire.responses_content(data)
+                usage = model_wire.responses_usage(data)
             else:
                 data: dict[str, Any] = response.json()
                 content = data["choices"][0]["message"]["content"]
@@ -473,6 +495,18 @@ def request_chat_content(
                 and exc.response is not None
                 and exc.response.status_code == 400
             )
+            if (
+                rejected_400
+                and responses
+                and send_temperature
+                and "temperature" in body
+                and model_wire.looks_like_temperature_rejection(str(exc))
+            ):
+                send_temperature = False
+                body = build_body()
+                if request_label:
+                    print(f"{request_label}: temperature rejected after 400, retrying without it", flush=True)
+                continue
             schema_fallback_possible = (
                 not anthropic
                 and not attempted_schema_fallback
@@ -503,10 +537,7 @@ def request_chat_content(
             ):
                 attempted_schema_fallback = True
                 active_response_format = _fallback_response_format(active_response_format)
-                if active_response_format is None:
-                    body.pop("response_format", None)
-                else:
-                    body["response_format"] = active_response_format
+                body = build_body()
                 if request_label:
                     print(f"{request_label}: response_format fallback json_schema -> json_object after 400", flush=True)
                 continue
