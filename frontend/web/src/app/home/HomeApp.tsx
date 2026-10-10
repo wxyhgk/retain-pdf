@@ -13,8 +13,7 @@
 // HomeShell 承载 tabs 本地态 + AppTopBar/BottomBar + home-paper-stage。
 // tabs 切页只改本地 state + URL ?tab=(replaceState,不导航、不碰 store)。
 
-import { Suspense, lazy, useCallback, useEffect, useState } from "react";
-import type { ReactNode } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   HomeShellProviders,
   HomeTabsProvider,
@@ -50,7 +49,8 @@ import { SettingsDialog } from "@/features/settings/index.js";
 import { BackupPanel } from "@/features/backup/index.js";
 import { SyncSettingsPanel } from "@/features/sync/index.js";
 import { UsageSettingsPanel } from "@/features/usage/index.js";
-import { AccountPanel, AdminUsersPanel, AuthSessionProvider, hiddenSettingsTabs, isAdmin, isMultiUser, useAuthSession, useVisibleHomeTab } from "@/features/auth/index.js";
+import { AdminConsoleEntry } from "@/features/admin/index.js";
+import { AccountPanel, AuthSessionProvider, hiddenSettingsTabs, isAdmin, isMultiUser, useAuthSession, useVisibleHomeTab } from "@/features/auth/index.js";
 import type { AuthSessionView } from "@retainpdf/api/auth";
 import { useAppEvent } from "@/ui/hooks/use-app-event.js";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
@@ -221,7 +221,7 @@ function SettingsDialogSlot() {
       backupPanelSlot={<BackupPanel />}
       usagePanelSlot={<UsageSettingsPanel />}
       accountPanelSlot={multi ? <AccountPanel /> : null}
-      adminPanelSlot={multi && admin ? <AdminUsersPanel currentUserId={session.user?.user_id || ""} /> : null}
+      adminPanelSlot={multi && admin ? <AdminConsoleEntry /> : null}
       hiddenTabs={hiddenSettingsTabs(session)}
     />
   );

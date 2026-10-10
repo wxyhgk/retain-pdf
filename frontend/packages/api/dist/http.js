@@ -38,6 +38,37 @@ function summarizeJobRequestContext(payload) {
         parts.push(`source.artifact_job_id=${artifactJobId}`);
     return parts.length > 0 ? ` [${parts.join(", ")}]` : "";
 }
+/** 多用户按页额度：建任务时余额不够，后端回 402 + 这个错误码，message 是给用户看的中文。 */
+export const PAGE_QUOTA_EXCEEDED = "PAGE_QUOTA_EXCEEDED";
+function finiteOrNull(value) {
+    const n = Number(value);
+    return value === null || value === undefined || value === "" || !Number.isFinite(n) ? null : n;
+}
+/**
+ * 错误响应是「页数额度不够」就做成 PageQuotaError：message 直接用后端的中文，不加「提交失败: 402」
+ * 这类前缀，界面原样显示即可。不是就返回 null，调用方走原来的报错。
+ */
+export function pageQuotaErrorFromPayload(status, payload, url) {
+    const p = (isObject(payload) ? payload : {});
+    const structured = isObject(p.error) ? p.error : {};
+    const code = `${structured.code || p.code || ""}`.trim().toUpperCase();
+    if (code !== PAGE_QUOTA_EXCEEDED)
+        return null;
+    const details = isObject(structured.details) ? structured.details : {};
+    const message = `${p.message || structured.message || ""}`.trim() || "页数额度不够，请联系管理员。";
+    const error = new Error(message);
+    error.name = "PageQuotaError";
+    error.code = PAGE_QUOTA_EXCEEDED;
+    error.status = status;
+    error.requiredPages = finiteOrNull(details.required_pages);
+    error.balance = finiteOrNull(details.balance);
+    if (url)
+        error.url = url;
+    return error;
+}
+export function isPageQuotaError(error) {
+    return !!error && typeof error === "object" && error.code === PAGE_QUOTA_EXCEEDED;
+}
 export async function submitJson(url, payload, options = {}) {
     const timeoutMs = Number(options.timeoutMs) || 0;
     // 裸 fetch 没有超时：对端挂起时 promise 永不 settle，调用方的"进行中"状态
@@ -74,6 +105,9 @@ export async function submitJson(url, payload, options = {}) {
         const contentType = resp.headers.get("content-type") || "";
         if (contentType.includes("application/json")) {
             const errorPayload = await resp.json();
+            const quotaError = pageQuotaErrorFromPayload(resp.status, errorPayload, url);
+            if (quotaError)
+                throw quotaError;
             const error = new Error(`提交失败: ${resp.status} ${errorPayload.message || JSON.stringify(errorPayload)}${requestContext}`);
             error.status = resp.status;
             error.url = url;
@@ -117,6 +151,11 @@ export function submitUploadRequest(url, form, onProgress) {
         xhr.addEventListener("load", () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 resolve(unwrapEnvelope(xhr.response));
+                return;
+            }
+            const quotaError = pageQuotaErrorFromPayload(xhr.status, xhr.response, url);
+            if (quotaError) {
+                reject(quotaError);
                 return;
             }
             const message = typeof xhr.response === "object" && xhr.response ? (xhr.response.message || JSON.stringify(xhr.response)) : (xhr.responseText || "");

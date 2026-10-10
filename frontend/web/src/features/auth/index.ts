@@ -7,5 +7,7 @@
 export { hiddenSettingsTabs, resolveAuthGate, isAdmin, isMultiUser, type AuthGate } from "./domain/auth-gate.js";
 export { AuthErrorScreen, ForcedPasswordScreen, LoginScreen } from "./ui/LoginScreen.jsx";
 export { AccountPanel } from "./ui/AccountPanel.jsx";
-export { AdminUsersPanel } from "./ui/AdminUsersPanel.jsx";
+export { PageLedger } from "./ui/PageLedger.jsx";
+export { authErrorText, USERNAME_PATTERN } from "./domain/auth-errors.js";
+export { formatPageDelta, pageAdjustProblem, pageLedgerLabel } from "./domain/page-ledger.js";
 export { AuthSessionProvider, useAuthSession, useHomeTabVisible, useVisibleHomeTab } from "./ui/auth-session-context.jsx";

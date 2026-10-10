@@ -66,6 +66,7 @@ app  ──►  features  ──►  platform
 | `task-center` | 任务中心 |
 | `settings` | 设置外壳、主题外观、开发者选项 |
 | `app-update` | 应用更新 |
+| `admin` | 管理后台 `admin.html`（多用户模式、管理员）：账号、用量、页数、任务 |
 
 每个功能内部固定两层，`index.ts` 是唯一出口：
 

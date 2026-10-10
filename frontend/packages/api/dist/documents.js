@@ -1,7 +1,7 @@
 // documents — pure
 import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
-import { buildApiEndpoint } from "./http.js";
+import { buildApiEndpoint, pageQuotaErrorFromPayload } from "./http.js";
 function documentRequestError(fallback, status, payload) {
     // 通用错误把结构化数据放在 payload.error.details；老接口可能直接在 payload.details/data。
     const structured = payload?.error && typeof payload.error === "object" ? payload.error : null;
@@ -204,7 +204,7 @@ export async function translateDocument(apiPrefix, documentId, payload = {}) {
     });
     if (!resp.ok) {
         const envelope = await resp.json().catch(() => null);
-        throw documentRequestError("发起翻译失败，请稍后重试。", resp.status, envelope);
+        throw pageQuotaErrorFromPayload(resp.status, envelope) ?? documentRequestError("发起翻译失败，请稍后重试。", resp.status, envelope);
     }
     return unwrapEnvelope(await resp.json());
 }
@@ -219,7 +219,7 @@ export async function ocrDocument(apiPrefix, documentId, payload = {}) {
     });
     if (!resp.ok) {
         const envelope = await resp.json().catch(() => null);
-        throw new Error(`${envelope?.message || "发起 OCR 失败，请稍后重试。"}(${resp.status})`);
+        throw pageQuotaErrorFromPayload(resp.status, envelope) ?? new Error(`${envelope?.message || "发起 OCR 失败，请稍后重试。"}(${resp.status})`);
     }
     return unwrapEnvelope(await resp.json());
 }

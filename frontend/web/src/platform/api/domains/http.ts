@@ -10,7 +10,7 @@ import {
   submitUploadRequest as _mockSubmitUploadRequest,
 } from "../mocks/http.js";
 
-export { buildApiEndpoint, buildJobDetailEndpoint } from "@retainpdf/api/http";
+export { buildApiEndpoint, buildJobDetailEndpoint, isPageQuotaError, PAGE_QUOTA_EXCEEDED, type PageQuotaError } from "@retainpdf/api/http";
 
 // Wrap mock-aware http helpers so mock:// and mock job submissions still work in tests
 export const fetchProtected = async (url: string, options: RequestInit = {}): Promise<Response> => {

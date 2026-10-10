@@ -1,0 +1,206 @@
+/* 管理后台（admin.html）· 账号列表与任务列表：表格、排序表头、状态标记、翻页、批量操作条与结果。配色只用主题变量。
+ *
+ * @owns admin
+ * @uses auth-secondary
+ */
+
+/* 勾选后出现的批量操作条 */
+.admin-bulkbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  font-size: 13px;
+}
+
+.admin-bulkbar > span {
+  font-weight: 600;
+}
+
+.admin-danger-link,
+.auth-secondary.admin-danger {
+  color: var(--danger);
+}
+
+.auth-secondary.admin-danger {
+  border-color: color-mix(in srgb, var(--danger) 60%, var(--line));
+}
+
+.admin-muted-link {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.admin-report {
+  display: grid;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--ok) 50%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ok) 8%, var(--paper));
+  font-size: 13px;
+}
+
+.admin-report.is-warn {
+  border-color: color-mix(in srgb, var(--warn) 60%, var(--line));
+  background: color-mix(in srgb, var(--warn) 10%, var(--paper));
+}
+
+.admin-report p,
+.admin-report ul {
+  margin: 0;
+}
+
+.admin-report ul,
+.admin-skipped {
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.admin-bulk-body {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-bulk-body p {
+  margin: 0;
+}
+
+.admin-skipped {
+  margin: 0;
+  max-height: 140px;
+  overflow: auto;
+  color: var(--muted);
+}
+
+/* 表格 */
+.admin-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 10px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.admin-table thead th {
+  border-top: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.admin-table tbody tr:hover {
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+.admin-table tr[aria-selected="true"] {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.admin-table tr[data-status="deleted"] td,
+.admin-table tr[data-status="disabled"] td {
+  color: var(--muted);
+}
+
+.admin-check {
+  width: 32px;
+}
+
+.admin-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 带上表格前缀：.admin-table th/td 的 text-align: left 优先级更高 */
+.admin-table th.admin-num,
+.admin-table td.admin-num {
+  text-align: right;
+}
+
+.admin-sort {
+  display: inline-flex;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.admin-sort:hover {
+  color: var(--ink);
+}
+
+.admin-sort-mark {
+  min-width: 0.8em;
+}
+
+.admin-user-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--ink) 30%, transparent);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.admin-status,
+.admin-badge,
+.admin-job-status {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.admin-status[data-status="disabled"],
+.admin-job-status[data-status="canceled"] {
+  color: var(--muted);
+}
+
+.admin-status[data-status="deleted"],
+.admin-job-status[data-status="failed"] {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.admin-job-status[data-status="succeeded"] {
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+}
+
+.admin-job-status[data-status="running"],
+.admin-job-status[data-status="queued"] {
+  background: color-mix(in srgb, var(--warn) 16%, transparent);
+}
+
+.admin-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}

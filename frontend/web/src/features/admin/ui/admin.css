@@ -1,0 +1,193 @@
+/* 管理后台（admin.html）· 整页外壳：左侧导航、标题、工具条、输入框；按钮和报错沿用 auth.css 的 auth-*。配色只用主题变量。
+ *
+ * @owns admin
+ * @uses auth-error
+ */
+
+
+.admin-body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.admin-app {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100vh;
+  padding: 20px 16px;
+  border-right: 1px solid var(--line);
+  background: var(--paper);
+  box-sizing: border-box;
+}
+
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-nav {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-nav-item {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-nav-item[aria-current="page"] {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  font-weight: 600;
+}
+
+.admin-sidebar-foot {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.admin-main {
+  min-width: 0;
+  padding: 28px 32px 48px;
+}
+
+.admin-section {
+  display: grid;
+  gap: 16px;
+  max-width: 1100px;
+}
+
+.admin-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-section-head h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.admin-sub,
+.admin-empty {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.admin-empty {
+  padding: 24px 0;
+  text-align: center;
+}
+
+.admin-self {
+  margin-left: 4px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* 工具条：搜索 + 筛选；新建账号、批量里的输入也用同一套输入框样式 */
+.admin-toolbar,
+.admin-create {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-toolbar input,
+.admin-toolbar select,
+.admin-create input,
+.admin-create select {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.admin-toolbar input:focus,
+.admin-toolbar select:focus,
+.admin-create input:focus {
+  border-color: var(--ink);
+  outline: none;
+}
+
+.admin-toolbar select,
+.admin-create select {
+  width: auto;
+}
+
+.admin-search {
+  flex: 1 1 220px;
+  width: auto;
+  min-width: 0;
+}
+
+.admin-create input {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.admin-create input.admin-amount {
+  flex: 0 0 96px;
+}
+
+.admin-create .auth-error {
+  flex-basis: 100%;
+}
+
+@media (max-width: 760px) {
+  .admin-app {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    height: auto;
+    padding: 12px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .admin-sidebar-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 0 auto;
+  }
+
+  .admin-main {
+    padding: 20px 16px 40px;
+  }
+}

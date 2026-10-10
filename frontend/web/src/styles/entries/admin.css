@@ -1,0 +1,29 @@
+/* 管理后台 CSS 入口 → dist/css/admin.css
+ * 仅 admin.html 加载（多用户模式、管理员）。
+ *
+ * 边界：只引 auth（复用按钮、报错、初始密码、账目样式）和 admin 自己的样式；
+ * 共享仅限 tokens / base / components* / dialog-shell。
+ */
+@import "tailwindcss";
+@import "../core/tailwind-theme.css";
+
+@source "../../../admin.html";
+@source "../../app/admin/**/*.{ts,tsx}";
+@source "../../features/admin/**/*.{ts,tsx}";
+@source "../../features/auth/**/*.{ts,tsx}";
+@source "../../ui/**/*.{ts,tsx}";
+
+@layer tokens, base, pages;
+
+@import "../tokens.css" layer(tokens);
+@import "../shadcn-theme.css" layer(tokens);
+@import "../base.css" layer(base);
+
+@import "../components.css";
+@import "../components.utilities.css";
+@import "../dialog-shell.css";
+
+@import "../../features/auth/ui/auth.css";
+@import "../../features/admin/ui/admin.css";
+@import "../../features/admin/ui/admin-table.css";
+@import "../../features/admin/ui/admin-detail.css";

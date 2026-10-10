@@ -57,6 +57,11 @@ export function buildHomeUrl(tab: HomeTab | HomeTabKey | string = "library"): st
   return `./index.html?tab=${encodeURIComponent(contract)}`;
 }
 
+/** 管理后台（多用户模式、管理员）。 */
+export function buildAdminUrl(): string {
+  return "./admin.html";
+}
+
 export function parseDetailJobId(search?: string): string {
   const query = search ?? (typeof globalThis.location !== "undefined" ? globalThis.location.search : "");
   try {
