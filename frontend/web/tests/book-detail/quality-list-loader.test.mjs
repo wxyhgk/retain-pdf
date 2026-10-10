@@ -1,7 +1,7 @@
 // 质量明细：各列表对应的取数写法，以及排版「溢出 + 缩得太小」的合并。
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createQualityListLoader } from "../../src/features/book-detail/ui/quality-list-loader.js";
+import { createQualityListLoader, revisionReasonText } from "../../src/features/book-detail/ui/quality-list-loader.js";
 
 function fakeFetch(handler) {
   const calls = [];
@@ -55,4 +55,11 @@ test("留给你确认、自动检查、没翻成：各自的数据集和筛选",
     ["qa_violations", '{"severity":["critical","major"]}'],
     ["translation_items", '{"final_status":"failed"}'],
   ]);
+});
+
+test("修订原因的前缀翻成中文，说明原样保留；不认识的分类原样显示", () => {
+  assert.equal(revisionReasonText("refine[terminology] 术语「fiber」应译为「纤程」"), "术语：术语「fiber」应译为「纤程」");
+  assert.equal(revisionReasonText("refine[omission,terminology] 补译第二句"), "漏译、术语：补译第二句");
+  assert.equal(revisionReasonText("refine[brand_new]"), "brand_new");
+  assert.equal(revisionReasonText("手动修改"), "手动修改");
 });

@@ -41,6 +41,30 @@ function clip(value: unknown, max = 60): string {
   return s.length > max ? `${s.slice(0, max)}…` : s;
 }
 
+// 修订原因的前缀（refine[terminology,omission] …）翻成中文，后面的说明原样保留。
+const REASON_CATEGORY_LABELS: Record<string, string> = {
+  terminology: "术语",
+  mistranslation: "误译",
+  omission: "漏译",
+  addition: "多译",
+  number_unit: "数字与单位",
+  reference: "引用编号",
+  punctuation: "标点",
+  style: "文风",
+  fluency: "通顺",
+  formatting: "格式",
+};
+
+export function revisionReasonText(reason: unknown): string {
+  const raw = text(reason);
+  const match = /^\w+\[([\w_,\s]+)\]\s*/.exec(raw);
+  if (!match) return raw;
+  const labels = match[1].split(",").map((key) => key.trim()).filter(Boolean)
+    .map((key) => REASON_CATEGORY_LABELS[key] || key);
+  const rest = raw.slice(match[0].length).trim();
+  return `${labels.join("、")}${rest ? `：${rest}` : ""}`;
+}
+
 function percent(ratio: number): string {
   return `${Math.round(ratio * 100)}%`;
 }
@@ -75,7 +99,7 @@ export function createQualityListLoader(fetchData: FetchJobData = fetchJobData):
         total: view.total,
         items: rowsOf(view).map((row, i) => ({
           ...base(row, i, "rev"),
-          title: text(row.reason) || "精修改写",
+          title: revisionReasonText(row.reason) || "精修改写",
           detail: `原：${clip(row.previous_text)}\n改：${clip(row.new_text)}`,
         })),
       };
