@@ -1,6 +1,6 @@
 import { firstJobIdFromPayload, firstNonEmpty as firstNonEmptyText } from "@retainpdf/domain/job";
 import { buildDetailPageUrl } from "./routing.js";
-import { retryJobStage } from "@retainpdf/api/jobs-actions";
+import { retryJobStage } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import type { JobDetailPageState } from "./page-state.js";
 import type { DetailSetText } from "./page-ports.js";

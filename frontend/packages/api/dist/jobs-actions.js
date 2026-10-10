@@ -19,8 +19,9 @@ export async function fetchResumePlan(jobId, apiPrefix) {
     }
     return unwrapEnvelope(await resp.json());
 }
-export async function resumeJob(jobId, apiPrefix) {
-    return submitJson(`${buildJobDetailEndpoint(jobId, apiPrefix)}/resume`, {});
+/** body 可带 `{ overrides: { translation: { api_key | credential_ref } } }`：续跑出来的新任务用这把 key。 */
+export async function resumeJob(jobId, apiPrefix, body = {}) {
+    return submitJson(`${buildJobDetailEndpoint(jobId, apiPrefix)}/resume`, body);
 }
 export async function cancelJob(jobId, apiPrefix) {
     return submitJson(`${buildJobDetailEndpoint(jobId, apiPrefix)}/cancel`, {});
@@ -62,6 +63,7 @@ export async function retryJobStage(jobId, apiPrefix, stage, payload = {}) {
         active_job_id: nextJobId,
     };
 }
-export async function rerunJob(actionUrl) {
-    return submitJson(actionUrl, {});
+/** body 同 resumeJob：可带 overrides.translation 换 key，不带时行为不变。 */
+export async function rerunJob(actionUrl, body = {}) {
+    return submitJson(actionUrl, body);
 }
