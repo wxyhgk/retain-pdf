@@ -118,7 +118,8 @@ pub(super) fn prepare_in_place_render_job(mut job: JobSnapshot) -> Result<JobSna
     job.status = JobStatusKind::Queued;
     job.updated_at = now;
     job.started_at = None;
-    job.finished_at = None;
+    // 上一次跑完的时间连同上一份 PDF 一起留着（见 reset_render_artifacts），阅读排序要用。
+    let previous_finished_at = job.finished_at.take();
     job.pid = None;
     job.command.clear();
     job.error = None;
@@ -131,6 +132,11 @@ pub(super) fn prepare_in_place_render_job(mut job: JobSnapshot) -> Result<JobSna
     job.runtime = None;
     job.replace_failure_info(None);
     reset_render_artifacts(&mut job);
+    if let Some(artifacts) = job.artifacts.as_mut() {
+        if artifacts.previous_output_pdf.is_some() {
+            artifacts.previous_finished_at = previous_finished_at;
+        }
+    }
     // Also clear stale OCR child linkage that would otherwise point to a now-orphaned *-ocr job
     if let Some(artifacts) = job.artifacts.as_mut() {
         artifacts.ocr_job_id = None;
@@ -146,7 +152,9 @@ fn reset_render_artifacts(job: &mut JobSnapshot) {
     let Some(artifacts) = job.artifacts.as_mut() else {
         return;
     };
-    artifacts.output_pdf = None;
+    if let Some(previous) = artifacts.output_pdf.take() {
+        artifacts.previous_output_pdf = Some(previous);
+    }
     artifacts.summary = None;
     artifacts.events_jsonl = None;
     artifacts.pages_processed = None;
@@ -181,6 +189,25 @@ mod tests {
         // 翻译凭据引用保留（之后原地精修要用），内联 key 照旧清掉。
         assert_eq!(job.request_payload.translation.credential_ref, "cred_translation_old");
         assert!(job.request_payload.translation.api_key.is_empty());
+    }
+
+    #[test]
+    fn in_place_rerun_keeps_the_previous_pdf_for_reading_until_it_runs() {
+        let mut job = JobSnapshot::new("job-refine-again".to_string(), CreateJobInput::default(), Vec::new());
+        job.status = JobStatusKind::Succeeded;
+        job.finished_at = Some("2026-10-09T17:35:34Z".to_string());
+        job.artifacts = Some(crate::models::domain::JobArtifacts {
+            output_pdf: Some("jobs/job-refine-again/rendered/out.pdf".to_string()),
+            ..Default::default()
+        });
+
+        let job = prepare_in_place_render_job(job).expect("prepare in-place render");
+
+        let artifacts = job.artifacts.as_ref().unwrap();
+        assert_eq!(artifacts.output_pdf, None);
+        assert_eq!(artifacts.previous_output_pdf.as_deref(), Some("jobs/job-refine-again/rendered/out.pdf"));
+        assert_eq!(artifacts.previous_finished_at.as_deref(), Some("2026-10-09T17:35:34Z"));
+        assert_eq!(job.finished_at, None);
     }
 }
 

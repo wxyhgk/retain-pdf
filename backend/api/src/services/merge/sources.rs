@@ -44,7 +44,7 @@ pub(crate) fn covered_pages(
     end_page: i64,
     output_pdf_page_count: Option<usize>,
 ) -> Option<Vec<u32>> {
-    if *status != JobStatusKind::Succeeded || *workflow == WorkflowKind::Ocr {
+    if !matches!(status, JobStatusKind::Succeeded | JobStatusKind::Queued) || *workflow == WorkflowKind::Ocr {
         return None;
     }
     let page_count = output_pdf_page_count?;
@@ -80,7 +80,18 @@ pub(crate) fn job_merge_source(
     producer_created_at: &str,
 ) -> Option<MergeSource> {
     let artifacts = job.artifacts.as_ref()?;
-    let output_pdf = resolve_output_pdf(job, data_root).filter(|path| path.is_file());
+    // 原地重跑（重排 / 精修）还在排队：新 PDF 还没出来，上一份还在磁盘上，就用它。开始跑之后
+    // 它可能被改写，不再参与（covered_pages 只认成功和排队）。
+    let queued_rerun = job.status == JobStatusKind::Queued;
+    let output_pdf = if queued_rerun {
+        artifacts
+            .previous_output_pdf
+            .as_deref()
+            .and_then(|path| resolve_data_path(data_root, path).ok())
+    } else {
+        resolve_output_pdf(job, data_root)
+    }
+    .filter(|path| path.is_file());
     let page_count = output_pdf
         .as_deref()
         .and_then(|path| lopdf::Document::load(path).ok())
@@ -97,9 +108,7 @@ pub(crate) fn job_merge_source(
         ranked: RankedPages {
             rank: Rank {
                 producer_created_at: producer_created_at.to_string(),
-                finished_at: job
-                    .finished_at
-                    .clone()
+                finished_at: if queued_rerun { artifacts.previous_finished_at.clone() } else { job.finished_at.clone() }
                     .filter(|value| !value.trim().is_empty())
                     .unwrap_or_else(|| job.created_at.clone()),
                 created_at: job.created_at.clone(),
@@ -138,11 +147,12 @@ mod tests {
     }
 
     #[test]
-    fn only_succeeded_jobs_cover_anything() {
-        // 部分成功不存在（导出门禁全过或全不过）；取消的即使有 PDF 也不算。
+    fn only_succeeded_and_queued_reruns_cover_anything() {
+        // 部分成功不存在（导出门禁全过或全不过）；取消的即使有 PDF 也不算。排队中的只有原地重跑
+        // 留着上一份 PDF 时才会走到这里（job_merge_source 给出页数），见下面的回归测试。
         let ocr = [1, 2, 3];
+        assert_eq!(covered_pages(&JobStatusKind::Queued, &WorkflowKind::Book, &ocr, 0, -1, None), None);
         for status in [
-            JobStatusKind::Queued,
             JobStatusKind::Running,
             JobStatusKind::Failed,
             JobStatusKind::Canceled,

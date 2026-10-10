@@ -92,3 +92,46 @@ fn reading_opens_the_in_place_refined_original_rather_than_an_earlier_relayout()
     assert_eq!(sources.len(), 2, "两个任务都应参与");
     assert_eq!(single_whole_document_job(&plan), Some("original"), "打开的是精修之前排的旧 PDF");
 }
+
+
+/// 回归：原任务上又提交了一次原地精修（排队中，output_pdf 已清空），阅读仍然打开它上一份 PDF，
+/// 而不是退回更早的重新排版。排序用上一份 PDF 的完成时间。
+#[test]
+fn a_queued_in_place_rerun_keeps_serving_its_previous_pdf() {
+    use crate::api_tests::jobs_common::minimal_pdf_bytes;
+    use crate::models::domain::{JobStatusKind, WorkflowKind};
+
+    let root = std::env::temp_dir().join(format!("retain-reading-queued-{:016x}", fastrand::u64(..)));
+    let job = |job_id: &str, created_at: &str, finished_at: &str| {
+        let rendered = root.join(format!("jobs/{job_id}/rendered"));
+        std::fs::create_dir_all(&rendered).unwrap();
+        std::fs::write(rendered.join("out.pdf"), minimal_pdf_bytes(595, 842)).unwrap();
+        let mut job = snapshot(job_id, created_at, &format!("jobs/{job_id}"), "jobs/original/translated");
+        job.status = JobStatusKind::Succeeded;
+        job.workflow = WorkflowKind::Render;
+        job.finished_at = Some(finished_at.to_string());
+        let artifacts = job.artifacts.as_mut().unwrap();
+        artifacts.output_pdf = Some(format!("jobs/{job_id}/rendered/out.pdf"));
+        artifacts.ocr_page_numbers = vec![1];
+        job
+    };
+    let mut original = job("original", "2026-10-06T13:38:13", "2026-10-09T17:35:34");
+    let relayout = job("relayout", "2026-10-09T15:15:23", "2026-10-09T15:15:27");
+    // 又点了一次精修：排队中，原地重跑把 output_pdf 挪到 previous_output_pdf、完成时间挪到 previous_finished_at。
+    original.status = JobStatusKind::Queued;
+    original.finished_at = None;
+    let artifacts = original.artifacts.as_mut().unwrap();
+    artifacts.previous_output_pdf = artifacts.output_pdf.take();
+    artifacts.previous_finished_at = Some("2026-10-09T17:35:34".to_string());
+
+    let sources = document_merge_sources(&[relayout.clone(), original.clone()], &root);
+    let ranked: Vec<_> = sources.iter().map(|source| source.ranked.clone()).collect();
+    assert_eq!(single_whole_document_job(&merge_plan(1, &ranked)), Some("original"));
+
+    // 开始跑之后上一份 PDF 可能被改写：不再参与，退回重新排版的那份。
+    original.status = JobStatusKind::Running;
+    let sources = document_merge_sources(&[relayout, original], &root);
+    let ranked: Vec<_> = sources.iter().map(|source| source.ranked.clone()).collect();
+    let _ = std::fs::remove_dir_all(&root);
+    assert_eq!(single_whole_document_job(&merge_plan(1, &ranked)), Some("relayout"));
+}

@@ -261,6 +261,11 @@ fn display_progress_event<'a>(
     if progress_unit(selected).as_deref().map(str::trim) == Some("page") {
         return Some(selected);
     }
+    // 渲染之前的精修 / 编辑部（substage=refining）有自己的进度（第几批），这时还没开始排版：
+    // 不能拿上一次渲染留下的页数进度（往往是「34/34 页」）来顶，那样精修期间进度一直是满的、不动。
+    if selected.substage.as_deref().map(str::trim) == Some("refining") {
+        return Some(selected);
+    }
     let selected_stage = selected.stage.as_deref().map(str::trim).unwrap_or("");
     let selected_display_stage = selected
         .display_stage
@@ -341,5 +346,42 @@ mod compact_tests {
                 );
             }
         }
+    }
+
+    fn render_event(seq: i64, ts: &str, substage: Option<&str>, current: i64, total: i64, unit: &str, detail: &str) -> JobEventRecord {
+        let mut event: JobEventRecord = serde_json::from_value(serde_json::json!({
+            "job_id": "refine", "seq": seq, "ts": ts, "created_at": ts, "level": "info",
+            "event": "stage_progress", "message": detail, "stage": "rendering", "substage": substage,
+            "stage_detail": detail, "progress_current": current, "progress_total": total, "progress_unit": unit,
+        }))
+        .unwrap();
+        crate::services::jobs::live_stage::canonicalize_job_event(&mut event, "pipeline");
+        event
+    }
+
+    #[test]
+    fn refining_shows_its_own_progress_not_the_last_render_page_count() {
+        // 上一次渲染：34/34 页。这次原地精修：挑错第 3/14 批，还没开始排版。
+        let history = vec![
+            render_event(1, "2026-10-09T15:15:26Z", None, 34, 34, "page", "排版 34/34 页"),
+            render_event(2, "2026-10-10T00:24:58Z", Some("refining"), 3, 14, "step", "精修：挑错已完成 3/14 批"),
+        ];
+        let snapshot = select_live_stage_snapshot(&history, &JobStatusKind::Running).expect("snapshot");
+        assert_eq!(snapshot.substage.as_deref(), Some("refining"));
+        assert_eq!((snapshot.progress_current, snapshot.progress_total), (Some(3), Some(14)));
+        assert_eq!(snapshot.progress_unit.as_deref(), Some("step"));
+        assert_eq!(snapshot.stage_detail.as_deref(), Some("精修：挑错已完成 3/14 批"));
+        let compacted = compact_stage_basis(&history);
+        assert_eq!(
+            serde_json::to_value(select_live_stage_snapshot(&compacted, &JobStatusKind::Running)).unwrap(),
+            serde_json::to_value(Some(snapshot)).unwrap(),
+            "压缩后的历史给出同样的进度"
+        );
+
+        // 精修完开始排版：回到页数进度。
+        let mut rendering = history;
+        rendering.push(render_event(3, "2026-10-10T00:35:32Z", None, 5, 34, "page", "排版 5/34 页"));
+        let snapshot = select_live_stage_snapshot(&rendering, &JobStatusKind::Running).expect("snapshot");
+        assert_eq!((snapshot.progress_current, snapshot.progress_total), (Some(5), Some(34)));
     }
 }
