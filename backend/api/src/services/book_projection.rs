@@ -45,11 +45,13 @@ pub(crate) fn build_library_book_list_view(
         .iter()
         .map(|job| {
             let upload = upload_id(job).and_then(|id| uploads.get(id));
+            let document_id = book_document_id(db, job, upload);
             build_library_book_list_item(
                 data_root,
                 job,
                 base_url,
                 upload,
+                document_id.as_deref(),
                 &titles,
                 &mut summaries,
                 live_stages.get(&job.job_id),
@@ -68,12 +70,13 @@ pub(crate) fn build_library_book_detail_view(
     let ids: Vec<_> = upload_id(job).into_iter().collect();
     let uploads = db.get_uploads(&ids).unwrap_or_default();
     let upload = upload_id(job).and_then(|id| uploads.get(id));
+    let document_id = book_document_id(db, job, upload);
     let mut summaries = SummaryCache::default();
     let titles = document_titles_for(db, upload);
     let display_name = derive_display_name(upload, job, &titles);
     let summary = build_book_summary(upload, &mut summaries, job, data_root, &display_name)
-        .with_cover_url(library_image_url(job, upload, data_root, base_url, "cover"))
-        .with_thumbnail_url(library_image_url(job, upload, data_root, base_url, "thumbnail"));
+        .with_cover_url(library_image_url(job, document_id.as_deref(), data_root, base_url, "cover"))
+        .with_thumbnail_url(library_image_url(job, document_id.as_deref(), data_root, base_url, "thumbnail"));
     let live = build_live_projection(db, job, data_root);
     let (pdf_ready, markdown_ready, bundle_ready) = job_readiness(job, data_root);
     let artifacts = build_artifact_links(
@@ -108,6 +111,7 @@ fn build_library_book_list_item(
     job: &JobSnapshot,
     base_url: &str,
     upload: Option<&UploadRecord>,
+    document_id: Option<&str>,
     titles: &DocumentTitles,
     summaries: &mut SummaryCache,
     live_stage: Option<&LiveStageSnapshot>,
@@ -127,8 +131,8 @@ fn build_library_book_list_item(
         stage: live.stage,
         stage_detail: live.stage_detail,
         progress: live.progress,
-        cover_url: library_image_url(job, upload, data_root, base_url, "cover"),
-        thumbnail_url: library_image_url(job, upload, data_root, base_url, "thumbnail"),
+        cover_url: library_image_url(job, document_id, data_root, base_url, "cover"),
+        thumbnail_url: library_image_url(job, document_id, data_root, base_url, "thumbnail"),
         output_pdf_ready,
         markdown_ready,
         bundle_ready,
@@ -137,17 +141,26 @@ fn build_library_book_list_item(
     }
 }
 
+/// 书的编号：先看上传记录，没有上传记录的任务（复用别的任务产物建出来的重渲染、续跑）
+/// 再查任务表里补写的 document_id。
+fn book_document_id(db: &Db, job: &JobSnapshot, upload: Option<&UploadRecord>) -> Option<String> {
+    upload
+        .map(|upload| upload.content_hash.trim().to_string())
+        .filter(|id| !id.is_empty())
+        .or_else(|| db.document_id_for_job(&job.job_id).ok().flatten())
+}
+
 /// 封面、缩略图从源 PDF 生成，是书（document）的属性：有书的编号就给 `/documents/:id/…`，
-/// 同一本书的几个任务、书架和文档列表共用一个地址，浏览器只缓存一份。旧上传记录没回填
-/// 编号时退回按任务的地址。
+/// 同一本书的几个任务、书架和文档列表共用一个地址，浏览器只缓存一份。查不到编号时退回
+/// 按任务的地址。
 fn library_image_url(
     job: &JobSnapshot,
-    upload: Option<&UploadRecord>,
+    document_id: Option<&str>,
     data_root: &Path,
     base_url: &str,
     kind: &str,
 ) -> Option<String> {
-    let document_id = upload.map(|upload| upload.content_hash.trim()).filter(|id| !id.is_empty());
+    let document_id = document_id.map(str::trim).filter(|id| !id.is_empty());
     resolve_source_pdf(job, data_root).map(|_| {
         let path = match document_id {
             Some(document_id) => format!("/api/v1/documents/{document_id}/{kind}"),
