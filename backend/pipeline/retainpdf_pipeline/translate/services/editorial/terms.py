@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from datetime import timezone
 from typing import Any
@@ -221,19 +222,141 @@ def _replace_outside(text: str, old: str, new: str) -> str:
     return "".join(out)
 
 
+# ---- 术语巡检：同一个英文词有的地方保留、有的地方译掉了 -------------------------
+
+TERM_PATROL_SYSTEM_PROMPT = "editorial_term_patrol_system.txt"
+TERM_PATROL_PROMPT_VERSION = "editorial_term_patrol.v1"
+TERM_PATROL_BATCH_SIZE = 15
+PATROL_TRANSLATE = "translate"
+PATROL_KEEP_ORIGINAL = "keep_original"
+PATROL_LEAVE = "leave"
+PATROL_DECISIONS = (PATROL_TRANSLATE, PATROL_KEEP_ORIGINAL, PATROL_LEAVE)
+INCONSISTENT_RENDERING = "term_inconsistent_rendering"
+
+
+def build_patrol_requests(qa_payload: dict[str, Any] | None, items_by_id: dict[str, Any]) -> list[dict[str, Any]]:
+    """质检里「全书处理不一致」的词，按词分组成巡检条目（附两种处理各几处的片段）。"""
+    grouped: dict[str, dict[str, Any]] = {}
+    for violation in (qa_payload or {}).get("violations") or []:
+        if not isinstance(violation, dict) or violation.get("type") != INCONSISTENT_RENDERING:
+            continue
+        evidence = violation.get("evidence") or {}
+        source = str(evidence.get("term_source", "") or "").strip()
+        if not source or source.casefold() in grouped:
+            continue
+
+        def examples(ids):
+            rows = []
+            for item_id in list(ids or [])[:MAX_EXAMPLES]:
+                item = items_by_id.get(str(item_id))
+                if item is not None:
+                    rows.append({"source": _excerpt(item.protected_source, source), "translation": _excerpt(item.protected_translated, source)})
+            return rows
+
+        grouped[source.casefold()] = {
+            "term_source": source,
+            "kept_in_english": int(evidence.get("kept_in_english", 0) or 0),
+            "translated": int(evidence.get("translated", 0) or 0),
+            "kept_examples": examples(evidence.get("kept_item_ids")),
+            "translated_examples": examples(evidence.get("translated_item_ids")),
+        }
+    return list(grouped.values())
+
+
+def build_term_patrol_messages(batch: list[dict[str, Any]]) -> list[dict[str, str]]:
+    return [
+        {"role": "system", "content": load_prompt(TERM_PATROL_SYSTEM_PROMPT)},
+        {"role": "user", "content": json.dumps({"terms": batch}, ensure_ascii=False)},
+    ]
+
+
+def settle_patrol(request: dict[str, Any], proposed: dict[str, str] | None, *, target_lang: str) -> tuple[str, str, str]:
+    """（决定, 中文译名, 理由）。没回、不认识、或译名不合格：不统一（leave）。"""
+    if proposed is None:
+        return PATROL_LEAVE, "", "术语专员没有给出决定"
+    decision = proposed["decision"]
+    if decision not in PATROL_DECISIONS:
+        return PATROL_LEAVE, "", f"术语专员给了不认识的决定「{decision}」"
+    if decision != PATROL_TRANSLATE:
+        return decision, "", proposed["reason"]
+    target = proposed["target"]
+    if not target or not is_acceptable_term_target(request["term_source"], target, target_lang=target_lang):
+        return PATROL_LEAVE, "", f"术语专员给的译名不合格「{target}」"
+    return PATROL_TRANSLATE, target, proposed["reason"]
+
+
+def add_term(term_base: dict[str, Any], source: str, target: str, *, treatment: str, reason: str, run_id: str) -> bool:
+    """把巡检定下的词加进术语表。已经在表里的不动（以表为准），返回是否加了。"""
+    if term_record(term_base, source) is not None:
+        return False
+    keep = treatment == "keep_original"
+    term_base.setdefault("terms", []).append(
+        {
+            "source": source,
+            "target": source if keep else target,
+            "frequency": 0,
+            "first_occurrence": None,
+            "conflict_candidates": [],
+            "origin": "extracted",
+            "votes": 0,
+            "kind": "domain_term",
+            "level": "preserve" if keep else "preferred",
+            "category": "technical",
+            "treatment": treatment,
+            "annotate": False,
+            "review_status": "patrol",
+            "revisions": [{"from": "", "to": source if keep else target, "by": "terminologist", "reason": reason, "run_id": run_id, "at": _now()}],
+        }
+    )
+    return True
+
+
+def english_rewrite(translation: str, chunk: str, target: str) -> str | None:
+    """把译文里保留下来的英文词换成中文译名。括注里的（「位力定理（virial theorem）」）和公式里的不动。"""
+    pattern = re.compile(rf"(?<![A-Za-z0-9]){re.escape(chunk)}(?![A-Za-z0-9])", re.IGNORECASE)
+    out: list[str] = []
+    last = 0
+    for match in pattern.finditer(translation):
+        before = translation[: match.start()].rstrip()
+        in_math = translation.count("$", 0, match.start()) % 2 == 1
+        if in_math or before.endswith(("（", "(")):
+            continue
+        out.append(translation[last : match.start()])
+        out.append(target)
+        last = match.end()
+    if not out:
+        return None
+    out.append(translation[last:])
+    rewritten = "".join(out)
+    # 英文两侧原本的空格在中文里不需要：「用 Hermite 多项式」→「用埃尔米特多项式」。
+    rewritten = re.sub(rf"(?<=[\u4e00-\u9fff]) ({re.escape(target)})", r"\1", rewritten)
+    rewritten = re.sub(rf"({re.escape(target)}) (?=[\u4e00-\u9fff])", r"\1", rewritten)
+    return rewritten if rewritten != translation else None
+
+
 __all__ = [
     "RULING_CHANGE",
     "RULING_ESCALATE",
     "RULING_KEEP",
+    "PATROL_KEEP_ORIGINAL",
+    "PATROL_LEAVE",
+    "PATROL_TRANSLATE",
+    "TERM_PATROL_BATCH_SIZE",
+    "TERM_PATROL_PROMPT_VERSION",
     "TERM_REQUEST_BATCH_SIZE",
     "TERM_REQUEST_PROMPT_VERSION",
     "TERM_REQUEST_RESPONSE_FORMAT",
+    "add_term",
     "apply_change",
+    "build_patrol_requests",
+    "build_term_patrol_messages",
+    "english_rewrite",
     "build_requests",
     "build_term_request_messages",
     "changeable",
     "parse_term_request_response",
     "rule_rewrite",
     "settle",
+    "settle_patrol",
     "term_record",
 ]

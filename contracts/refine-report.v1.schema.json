@@ -296,7 +296,8 @@
             "fix": {"type": "string"},
             "chief": {"type": "string", "description": "editorial mode only."},
             "rewrite": {"type": "string", "description": "editorial mode only."},
-            "term_request": {"type": "string", "description": "editorial mode only."}
+            "term_request": {"type": "string", "description": "editorial mode only."},
+            "term_patrol": {"type": "string", "description": "editorial mode only."}
           }
         },
         "translation": {
@@ -390,6 +391,22 @@
           "properties": {
             "item_count": {"type": "integer", "minimum": 0},
             "finding_count": {"type": "integer", "minimum": 0}
+          }
+        },
+        "term_patrol": {
+          "type": "array",
+          "description": "Words the book handled two ways (kept in English in some places, translated in others) and how the term specialist unified them. translate: added to the term base and the English left in blocks was replaced by rule; keep_original: added to the term base as keep-original, the translated places go through QA → chief → reviser; leave: both are fine.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source", "decision", "target", "reason", "applied_item_ids"],
+            "properties": {
+              "source": {"type": "string"},
+              "decision": {"type": "string", "enum": ["translate", "keep_original", "leave"]},
+              "target": {"type": "string"},
+              "reason": {"type": "string"},
+              "applied_item_ids": {"type": "array", "items": {"type": "string"}}
+            }
           }
         },
         "term_changes": {

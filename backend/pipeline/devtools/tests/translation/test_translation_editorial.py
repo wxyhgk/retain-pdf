@@ -508,3 +508,61 @@ def test_a_problem_found_after_the_last_round_is_left_for_a_person(tmp_path: Pat
     assert escalated["p001-b001"]["reason"].startswith(editorial.ESCALATE_RECHECK)
     assert "mistranslation" in escalated["p001-b001"]["categories"]
     _assert_matches_contract(report)
+
+
+def _job_with_inconsistent_term(tmp_path: Path) -> Path:
+    from test_translation_refine import _pages, _single
+
+    pages = _pages()
+    pages[1] += [
+        _single("p002-b002", 1, 2, "The Hermite polynomials appear in the solution.", "Hermite 多项式出现在解中。"),
+        _single("p002-b003", 1, 3, "Hermite polynomials are orthogonal.", "埃尔米特多项式是正交的。"),
+        _single("p002-b004", 1, 4, "We use Hermite polynomials again.", "我们再次使用埃尔米特多项式。"),
+    ]
+    return _build_job(tmp_path, pages)
+
+
+def _patrol(decision: str, target: str = "") -> dict:
+    return {"decisions": [{"term_source": "Hermite", "decision": decision, "target": target, "reason": "测试"}]}
+
+
+def test_patrol_translates_english_left_in_the_book(tmp_path: Path) -> None:
+    translated = _job_with_inconsistent_term(tmp_path)
+    model = EditorialModel(terms=[_patrol("translate", "埃尔米特")], chief=[_decide(("p001-b001", "escalate"), ("p001-b002", "escalate"))])
+    report, translated = _run(tmp_path, model, translated=translated, end_page=2)
+
+    request = model.payload("terms")["terms"][0]
+    assert (request["term_source"], request["kept_in_english"], request["translated"]) == ("Hermite", 1, 2)
+    assert _item(translated, "p002-b002")["translated_text"] == "埃尔米特多项式出现在解中。"
+    term_base = json.loads((translated / "term-base.v1.json").read_text(encoding="utf-8"))
+    hermite = next(term for term in term_base["terms"] if term["source"] == "Hermite")
+    assert (hermite["target"], hermite["treatment"]) == ("埃尔米特", "lock")
+    assert report["editorial"]["term_patrol"] == [
+        {"source": "Hermite", "decision": "translate", "target": "埃尔米特", "reason": "测试", "applied_item_ids": ["p002-b002"]}
+    ]
+    qa = json.loads((tmp_path / "artifacts" / "refine_report.v1.json").read_text(encoding="utf-8"))["qa_after"]
+    assert qa is not None
+    _assert_checkpoint_consistent(translated)
+    _assert_matches_contract(report)
+
+
+def test_patrol_keep_original_sends_translated_places_to_the_chief(tmp_path: Path) -> None:
+    translated = _job_with_inconsistent_term(tmp_path)
+    model = EditorialModel(terms=[_patrol("keep_original")], chief=[{"decisions": []}])
+    report, translated = _run(tmp_path, model, translated=translated, end_page=2)
+
+    chief_items = {row["item_id"] for row in model.payload("chief")["items"]}
+    assert {"p002-b003", "p002-b004"} <= chief_items, "译掉的地方按新术语表成了要修的问题"
+    assert _item(translated, "p002-b002")["translated_text"] == "Hermite 多项式出现在解中。"
+    assert report["editorial"]["term_patrol"][0]["decision"] == "keep_original"
+
+
+def test_patrol_leave_changes_nothing(tmp_path: Path) -> None:
+    translated = _job_with_inconsistent_term(tmp_path)
+    before = (translated / "term-base.v1.json").exists()
+    model = EditorialModel(terms=[_patrol("leave")], chief=[_decide(("p001-b001", "escalate"), ("p001-b002", "escalate"))])
+    report, translated = _run(tmp_path, model, translated=translated, end_page=2)
+
+    assert _item(translated, "p002-b002")["translated_text"] == "Hermite 多项式出现在解中。"
+    assert (translated / "term-base.v1.json").exists() == before
+    assert report["editorial"]["term_patrol"][0]["decision"] == "leave"

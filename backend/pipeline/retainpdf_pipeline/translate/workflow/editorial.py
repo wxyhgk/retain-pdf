@@ -205,6 +205,150 @@ def _term_disputes(
     return kept, disputes
 
 
+def _unify_by_rule(
+    item: QaItem,
+    after: str,
+    *,
+    target_span: str,
+    term_source: str,
+    suggestion: str,
+    explanation: str,
+    ledger: EditorialLedger,
+    pages: dict[int, list[dict]],
+    context: dict[str, Any],
+    next_id: base._Ids,
+) -> tuple[review_rules.Finding, dict[str, Any]]:
+    """术语统一的规则改写（不调模型），走和修订同一套验收；写进台账。"""
+    finding = review_rules.Finding(
+        finding_id=next_id(),
+        item_id=item.item_id,
+        page_number=item.page_number,
+        category="terminology",
+        severity="minor",
+        target_span=target_span,
+        source_span=term_source,
+        explanation=explanation,
+        suggestion=suggestion,
+        origin=review_rules.ORIGIN_RULE,
+    )
+    record = base._fix_record(item, [finding])
+    record["origin"] = "rule"
+    record["action"] = chief_rules.ACTION_PATCH
+    record["note"] = "按术语表统一（规则修正，未调用模型）"
+    no_growth = item.item_id in context["fit_constrained"]
+    budget = len(item.protected_translated) if no_growth else max(
+        len(after), fix_rules.length_budget(item, [finding], no_growth=False)
+    )
+    record = base.accept_candidate(
+        record=record, item=item, findings=[finding], after=after, budget=budget,
+        no_growth=no_growth, pages=pages, context=context,
+    )
+    _open_issue(ledger, finding, actor=ROLE_TERMS)
+    ledger.append(
+        KIND_ISSUE_RESOLVE, actor=ROLE_RULES, refs=[item.item_id], action="rule",
+        status=record["status"], reason=record["reject_reason"], revision_id=record.get("revision_id"), round=0,
+    )
+    return finding, record
+
+
+def _patrol_terms(
+    qa_payload: dict[str, Any],
+    *,
+    chat: RefineChat | None,
+    ledger: EditorialLedger,
+    pages: dict[int, list[dict]],
+    context: dict[str, Any],
+    section: dict[str, Any],
+    next_id: base._Ids,
+    progress: base._Progress,
+    errors: list[dict[str, str]],
+) -> tuple[list[dict[str, Any]], list[review_rules.Finding], bool]:
+    """术语巡检：同一个英文词有的地方保留、有的地方译掉了，由术语专员定全书怎么统一。
+
+    译成中文：进术语表（锁定），保留英文的地方按规则换成中文。保留原文：进术语表（保留原文），
+    译掉的地方交给后面的质检 → 主编 → 修订（质检按新术语表会报出来）。两种都合理：不动。
+    返回（规则修正记录, 问题单, 术语表是否变了）。
+    """
+    all_items, items_by_id = base._items_by_id(pages)
+    requests = term_rules.build_patrol_requests(qa_payload, items_by_id)
+    if not requests or chat is None:
+        return [], [], False
+    size = term_rules.TERM_PATROL_BATCH_SIZE
+    batches = [requests[i : i + size] for i in range(0, len(requests), size)]
+    progress.total += len(batches)
+    responses = base.request_batches(
+        chat,
+        "terms",
+        [term_rules.build_term_patrol_messages(batch) for batch in batches],
+        response_format=term_rules.TERM_REQUEST_RESPONSE_FORMAT,
+        workers=EDITORIAL_WORKERS,
+        on_done=lambda done, total: progress.step("terms", f"编辑部：术语专员巡检 {done}/{total} 批"),
+    )
+    proposals: dict[str, dict[str, str]] = {}
+    for index, (content, failure) in enumerate(responses, start=1):
+        try:
+            if failure is not None:
+                raise failure
+            proposals.update(term_rules.parse_term_request_response(content or ""))
+        except Exception as exc:  # noqa: BLE001 - 这批不统一
+            errors.append({"phase": "terms", "batch": f"patrol.{index}", "message": f"{type(exc).__name__}: {exc}"[:500]})
+    translations_dir: Path = context["translations_dir"]
+    term_base_path = translations_dir / TERM_BASE_FILE_NAME
+    term_base = load_term_base(term_base_path) or {"schema": "term_base_v1", "schema_version": 1, "terms": []}
+    rows: list[dict[str, Any]] = []
+    changed = False
+    for request in requests:
+        decision, target, reason = term_rules.settle_patrol(
+            request, proposals.get(request["term_source"].casefold()), target_lang="zh-CN"
+        )
+        ledger.append(
+            KIND_TERM_DECISION, actor=ROLE_TERMS, to=ROLE_CHIEF, refs=[], patrol=True,
+            term_source=request["term_source"], ruling=decision, target=target, reason=reason,
+        )
+        if decision == term_rules.PATROL_TRANSLATE:
+            changed |= term_rules.add_term(
+                term_base, request["term_source"], target, treatment="lock", reason=reason, run_id=ledger.run_id
+            )
+        elif decision == term_rules.PATROL_KEEP_ORIGINAL:
+            changed |= term_rules.add_term(
+                term_base, request["term_source"], "", treatment="keep_original", reason=reason, run_id=ledger.run_id
+            )
+        rows.append({"source": request["term_source"], "decision": decision, "target": target, "reason": reason, "applied_item_ids": []})
+    if changed:
+        write_json_atomic(term_base_path, term_base)
+    fixes: list[dict[str, Any]] = []
+    findings: list[review_rules.Finding] = []
+    for row in rows:
+        if row["decision"] != term_rules.PATROL_TRANSLATE:
+            continue
+        for item_id in [item.item_id for item in all_items if item.checked]:
+            _all, current = base._items_by_id(pages)
+            item = current[item_id]
+            if row["source"].casefold() not in item.protected_source.casefold():
+                continue
+            after = term_rules.english_rewrite(item.protected_translated, row["source"], row["target"])
+            if after is None:
+                continue
+            finding, record = _unify_by_rule(
+                item,
+                after,
+                target_span=row["source"],
+                term_source=row["source"],
+                suggestion=row["target"],
+                explanation=f"术语专员定「{row['source']}」全书统一译为「{row['target']}」，按规则统一",
+                ledger=ledger,
+                pages=pages,
+                context=context,
+                next_id=next_id,
+            )
+            findings.append(finding)
+            fixes.append(record)
+            if record["status"] == fix_rules.FIX_APPLIED:
+                row["applied_item_ids"].append(item.item_id)
+    section["term_patrol"] = rows
+    return fixes, findings, changed
+
+
 def _settle_term_disputes(
     disputes: list[dict[str, Any]],
     findings_by_id: dict[str, review_rules.Finding],
@@ -302,34 +446,17 @@ def _settle_term_disputes(
             after = term_rules.rule_rewrite(item.protected_source, item.protected_translated, change)
             if after is None:
                 continue
-            finding = review_rules.Finding(
-                finding_id=next_id(),
-                item_id=item.item_id,
-                page_number=item.page_number,
-                category="terminology",
-                severity="minor",
+            finding, record = _unify_by_rule(
+                item,
+                after,
                 target_span=change["from"],
-                source_span=change["source"],
-                explanation=f"术语表把「{change['source']}」改为「{change['to']}」，按规则统一（原「{change['from']}」）",
+                term_source=change["source"],
                 suggestion=change["to"],
-                origin=review_rules.ORIGIN_RULE,
-            )
-            record = base._fix_record(item, [finding])
-            record["origin"] = "rule"
-            record["action"] = chief_rules.ACTION_PATCH
-            record["note"] = "术语表改动后按规则统一（未调用模型）"
-            no_growth = item.item_id in context["fit_constrained"]
-            budget = max(len(after), fix_rules.length_budget(item, [finding], no_growth=no_growth))
-            if no_growth:
-                budget = len(item.protected_translated)
-            record = base.accept_candidate(
-                record=record, item=item, findings=[finding], after=after, budget=budget,
-                no_growth=no_growth, pages=pages, context=context,
-            )
-            _open_issue(ledger, finding, actor=ROLE_TERMS)
-            ledger.append(
-                KIND_ISSUE_RESOLVE, actor=ROLE_RULES, refs=[item.item_id], action="rule",
-                status=record["status"], reason=record["reject_reason"], revision_id=record.get("revision_id"), round=0,
+                explanation=f"术语表把「{change['source']}」改为「{change['to']}」，按规则统一（原「{change['from']}」）",
+                ledger=ledger,
+                pages=pages,
+                context=context,
+                next_id=next_id,
             )
             findings.append(finding)
             fixes.append(record)
@@ -664,6 +791,7 @@ def _editorial_section(term_review: dict[str, Any] | None) -> dict[str, Any]:
         "decisions": {"total": 0, "by_action": {}, "by_source": {}, "overridden": 0},
         "disputes": [],
         "term_changes": [],
+        "term_patrol": [],
         "escalated": [],
         "term_review": term_review,
         "models": {},
@@ -686,6 +814,7 @@ def run_editorial(
             "chief": chief_rules.CHIEF_PROMPT_VERSION,
             "rewrite": rewrite_rules.REWRITE_PROMPT_VERSION,
             "term_request": term_rules.TERM_REQUEST_PROMPT_VERSION,
+            "term_patrol": term_rules.TERM_PATROL_PROMPT_VERSION,
         }
     )
     section = _editorial_section(_term_review_summary(translations_dir))
@@ -821,8 +950,26 @@ def run_editorial(
             all_items, items_by_id = base._items_by_id(pages)
             candidates = [items_by_id.get(item.item_id, item) for item in candidates]
     section["disputes"] = disputes
-    rule_findings = [*rule_findings, *term_findings]
-    rule_fixes = [*rule_fixes, *term_fixes]
+    # 4. 术语巡检：全书处理不一致的词由术语专员定怎么统一。
+    patrol_fixes, patrol_findings, patrol_changed = _patrol_terms(
+        qa_current,
+        chat=chats["terms"],
+        ledger=ledger,
+        pages=pages,
+        context=context,
+        section=section,
+        next_id=next_id,
+        progress=progress,
+        errors=errors,
+    )
+    if patrol_fixes or patrol_changed:
+        user_glossary, locked_terms = base._glossary(job_root, translations_dir)
+        context["user_glossary"] = user_glossary
+        qa_current = build_translation_qa_for_job(job_root, translations_dir=translations_dir, mode="refine_before")
+        all_items, items_by_id = base._items_by_id(pages)
+        candidates = [items_by_id.get(item.item_id, item) for item in candidates]
+    rule_findings = [*rule_findings, *term_findings, *patrol_findings]
+    rule_fixes = [*rule_fixes, *term_fixes, *patrol_fixes]
     scoped_ids = {item.item_id: item for item in candidates}
     qa_origin = review_rules.qa_findings(qa_current, items_by_id=scoped_ids, next_id=next_id)
     for finding in qa_origin:
@@ -847,7 +994,7 @@ def run_editorial(
         }
     )
 
-    # 4. 多轮：主编分流 → 修订 → 验收。
+    # 5. 多轮：主编分流 → 修订 → 验收 → 审校复核。
     open_items: dict[str, list[review_rules.Finding]] = {}
     for finding in [*review_findings, *qa_origin]:
         if finding.fixable and finding.item_id in items_by_id:
@@ -1007,7 +1154,7 @@ def run_editorial(
         "finding_count": len(recheck["findings"]),
     }
 
-    # 5. 报告。
+    # 6. 报告。
     report["fixes"] = fixes
     report["fix_summary"] = report_rules.fixes_summary(fixes)
     report["token_usage"] = tokens.as_dict()
