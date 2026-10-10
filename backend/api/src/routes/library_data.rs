@@ -116,6 +116,7 @@ pub async fn download_document_cover_route(
         Some(&headers),
     )
     .await
+    .map(crate::routes::job_helpers::with_image_cache)
 }
 
 /// GET /api/v1/documents/:id/thumbnail
@@ -133,7 +134,7 @@ pub async fn download_document_thumbnail_route(
         file.download_name,
         Some(&headers),
     )
-    .await
+    .await    .map(crate::routes::job_helpers::with_image_cache)
 }
 
 pub async fn patch_document_route(

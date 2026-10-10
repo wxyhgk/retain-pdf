@@ -53,7 +53,9 @@ pub async fn cover_response(
     headers: &HeaderMap,
     job_id: &str,
 ) -> Result<Response, AppError> {
-    file_download_response(deps.downloads.cover_download(job_id).await?, headers).await
+    file_download_response(deps.downloads.cover_download(job_id).await?, headers)
+        .await
+        .map(crate::routes::job_helpers::with_image_cache)
 }
 
 pub async fn thumbnail_response(
@@ -61,7 +63,9 @@ pub async fn thumbnail_response(
     headers: &HeaderMap,
     job_id: &str,
 ) -> Result<Response, AppError> {
-    file_download_response(deps.downloads.thumbnail_download(job_id).await?, headers).await
+    file_download_response(deps.downloads.thumbnail_download(job_id).await?, headers)
+        .await
+        .map(crate::routes::job_helpers::with_image_cache)
 }
 
 pub async fn side_by_side_pdf_response(

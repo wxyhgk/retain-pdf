@@ -39,6 +39,7 @@ libc = "0.2"
 csv = "1"
 base64 = "0.22"
 url = "2"
+httpdate = "1"
 # fx 终端的 WebSocket 代理：浏览器 → rust_api → ai_service。
 # axum 的 ws 只管服务端那一半，连出去要客户端实现。
 tokio-tungstenite = { version = "0.21", default-features = false, features = ["connect", "handshake"] }

@@ -1692,6 +1692,7 @@ dependencies = [
  "futures-util",
  "getrandom 0.2.17",
  "hmac",
+ "httpdate",
  "libc",
  "lopdf",
  "mime_guess",

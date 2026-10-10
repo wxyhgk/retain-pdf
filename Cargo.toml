@@ -11,3 +11,9 @@ members = [
   "backend/packages/retain-jobs",
   "backend/packages/retain-proc",
 ]
+
+# 调试构建里第三方库（serde_json、sha2、图像 / PDF 处理……）也开优化：开发栈跑的是调试构建，
+# 未优化的 JSON 解析和哈希比发布构建慢十倍，接口实测被拖到几百毫秒。只影响依赖，
+# 我们自己的代码照旧不优化、可调试；代价是第一次全量编译依赖慢一些。
+[profile.dev.package."*"]
+opt-level = 2

@@ -31,12 +31,18 @@ pub(crate) struct JobResumePlan {
 }
 
 pub(crate) fn stage_plans(job: &JobSnapshot, data_root: &Path) -> Vec<JobStagePlan> {
-    vec![
-        stage_plan(job, RetryStageKind::Ocr, data_root),
-        stage_plan(job, RetryStageKind::Translation, data_root),
-        stage_plan(job, RetryStageKind::Render, data_root),
-        stage_plan(job, RetryStageKind::Refine, data_root),
+    // 产物可用性要读译文检查点、逐页译文和请求日志，一次一百多毫秒：四个阶段共用一份，
+    // 别每个阶段各算一遍（stage-actions 以前要 0.4～0.6 秒，书籍详情每次打开都调）。
+    let availability = StageArtifactAvailability::from_job(job, data_root);
+    [
+        RetryStageKind::Ocr,
+        RetryStageKind::Translation,
+        RetryStageKind::Render,
+        RetryStageKind::Refine,
     ]
+    .into_iter()
+    .map(|stage| stage_plan_with(job, stage, &availability))
+    .collect()
 }
 
 pub(crate) fn stage_plan(
@@ -44,9 +50,16 @@ pub(crate) fn stage_plan(
     stage: RetryStageKind,
     data_root: &Path,
 ) -> JobStagePlan {
-    let availability = StageArtifactAvailability::from_job(job, data_root);
+    stage_plan_with(job, stage, &StageArtifactAvailability::from_job(job, data_root))
+}
+
+fn stage_plan_with(
+    job: &JobSnapshot,
+    stage: RetryStageKind,
+    availability: &StageArtifactAvailability,
+) -> JobStagePlan {
     let running = matches!(job.status, JobStatusKind::Queued | JobStatusKind::Running);
-    let mut plan = base_stage_plan(stage, &availability);
+    let mut plan = base_stage_plan(stage, availability);
 
     // 精修在 Python 渲染子进程里直接调模型；Rust 模型执行器的任务不允许回落到
     // Python transport（job_launcher 同一条规则），所以这类任务不提供精修。
@@ -83,7 +96,7 @@ pub(crate) fn stage_plan(
         plan.disabled_reason =
             "job is queued or running; cancel it before retrying a stage".to_string();
     } else if !plan.can_retry {
-        plan.disabled_reason = disabled_reason_for_stage(&plan.stage, &availability);
+        plan.disabled_reason = disabled_reason_for_stage(&plan.stage, availability);
     }
     plan
 }
@@ -367,3 +380,4 @@ fn artifact_is_file(data_root: &Path, raw: Option<&str>) -> bool {
         .and_then(|value| resolve_data_path(data_root, value).ok())
         .is_some_and(|path| path.is_file())
 }
+
