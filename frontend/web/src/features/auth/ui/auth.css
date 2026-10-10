@@ -1,4 +1,5 @@
-/* 商业版多用户：登录 / 强制改密码界面，设置里的「账户」「账号管理」。配色只用主题变量。
+/* 商业版多用户：登录 / 强制改密码界面，设置里的「账户」、页数额度与账目；管理后台也复用这里的
+ * 按钮、报错、初始密码和账目表样式。配色只用主题变量。
  *
  * @owns auth */
 
@@ -48,9 +49,7 @@
   font-size: 12px;
 }
 
-.auth-field input,
-.auth-admin-create input,
-.auth-admin-create select {
+.auth-field input {
   padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -60,8 +59,7 @@
   font-size: 13px;
 }
 
-.auth-field input:focus,
-.auth-admin-create input:focus {
+.auth-field input:focus {
   border-color: var(--ink);
   outline: none;
 }
@@ -80,6 +78,12 @@
 .auth-primary {
   color: var(--paper);
   background: var(--ink);
+}
+
+a.auth-primary,
+a.auth-secondary {
+  display: inline-block;
+  text-decoration: none;
 }
 
 .auth-secondary {
@@ -119,8 +123,7 @@
   font-size: 12px;
 }
 
-.auth-account,
-.auth-admin {
+.auth-account {
   display: grid;
   gap: 16px;
   max-width: 560px;
@@ -128,7 +131,7 @@
 
 .auth-account-facts {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
   margin: 0;
 }
@@ -195,17 +198,6 @@
   user-select: all;
 }
 
-.auth-admin-create {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.auth-admin-create input {
-  flex: 1;
-  min-width: 160px;
-}
-
 .auth-admin-table {
   width: 100%;
   border-collapse: collapse;
@@ -226,12 +218,33 @@
   font-weight: 500;
 }
 
-.auth-admin-table tr[data-status="disabled"] td {
-  color: var(--muted);
+
+/* 页数额度：账目表 */
+.auth-ledger-delta {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
 }
 
-.auth-admin-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
+/* 带上表格前缀：.auth-admin-table th/td 的 text-align: left 优先级更高 */
+.auth-admin-table th.auth-ledger-delta,
+.auth-admin-table td.auth-ledger-delta {
+  text-align: right;
+}
+
+.auth-ledger-delta[data-positive="true"] {
+  color: var(--ok, var(--ink));
+}
+
+.auth-ledger td {
+  vertical-align: top;
+}
+
+.auth-ledger-note {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.auth-ledger .auth-link + .auth-ledger-note {
+  margin-left: 8px;
 }

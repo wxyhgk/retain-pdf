@@ -1,0 +1,91 @@
+/* 管理后台（admin.html）· 单个账号：概况卡片、操作区。配色只用主题变量。
+ *
+ * @owns admin
+ */
+
+/* 单个账号 */
+.admin-badges {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 0;
+}
+
+.admin-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.admin-facts > div {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+}
+
+.admin-facts dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.admin-facts dd {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-facts small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.admin-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+
+.admin-card h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.admin-card h2 small {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.admin-card .admin-table-wrap {
+  border-radius: 8px;
+}
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-job-title {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-charge {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.admin-muted {
+  color: var(--muted);
+}

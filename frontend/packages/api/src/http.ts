@@ -54,6 +54,47 @@ export interface HttpError extends Error {
   timedOut?: boolean;
 }
 
+/** 多用户按页额度：建任务时余额不够，后端回 402 + 这个错误码，message 是给用户看的中文。 */
+export const PAGE_QUOTA_EXCEEDED = "PAGE_QUOTA_EXCEEDED";
+
+export interface PageQuotaError extends HttpError {
+  code: typeof PAGE_QUOTA_EXCEEDED;
+  /** 这次提交要扣的页数；后端没给时为 null。 */
+  requiredPages: number | null;
+  /** 当前剩余页数；后端没给时为 null。 */
+  balance: number | null;
+}
+
+function finiteOrNull(value: unknown): number | null {
+  const n = Number(value);
+  return value === null || value === undefined || value === "" || !Number.isFinite(n) ? null : n;
+}
+
+/**
+ * 错误响应是「页数额度不够」就做成 PageQuotaError：message 直接用后端的中文，不加「提交失败: 402」
+ * 这类前缀，界面原样显示即可。不是就返回 null，调用方走原来的报错。
+ */
+export function pageQuotaErrorFromPayload(status: number, payload: unknown, url?: string): PageQuotaError | null {
+  const p = (isObject(payload) ? payload : {}) as Record<string, any>;
+  const structured: Record<string, any> = isObject(p.error) ? p.error : {};
+  const code = `${structured.code || p.code || ""}`.trim().toUpperCase();
+  if (code !== PAGE_QUOTA_EXCEEDED) return null;
+  const details: Record<string, any> = isObject(structured.details) ? structured.details : {};
+  const message = `${p.message || structured.message || ""}`.trim() || "页数额度不够，请联系管理员。";
+  const error = new Error(message) as PageQuotaError;
+  error.name = "PageQuotaError";
+  error.code = PAGE_QUOTA_EXCEEDED;
+  error.status = status;
+  error.requiredPages = finiteOrNull(details.required_pages);
+  error.balance = finiteOrNull(details.balance);
+  if (url) error.url = url;
+  return error;
+}
+
+export function isPageQuotaError(error: unknown): error is PageQuotaError {
+  return !!error && typeof error === "object" && (error as { code?: unknown }).code === PAGE_QUOTA_EXCEEDED;
+}
+
 export interface SubmitJsonOptions {
   /** 超过该毫秒数就 abort。省略或 <=0 表示不设超时（保持既有调用方行为）。 */
   timeoutMs?: number;
@@ -100,6 +141,8 @@ export async function submitJson(
     const contentType = resp.headers.get("content-type") || "";
     if (contentType.includes("application/json")) {
       const errorPayload: any = await resp.json();
+      const quotaError = pageQuotaErrorFromPayload(resp.status, errorPayload, url);
+      if (quotaError) throw quotaError;
       const error = new Error(`提交失败: ${resp.status} ${errorPayload.message || JSON.stringify(errorPayload)}${requestContext}`) as HttpError;
       error.status = resp.status;
       error.url = url;
@@ -139,6 +182,11 @@ export function submitUploadRequest(url: string, form: FormData, onProgress?: (l
     xhr.addEventListener("load", () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(unwrapEnvelope(xhr.response));
+        return;
+      }
+      const quotaError = pageQuotaErrorFromPayload(xhr.status, xhr.response, url);
+      if (quotaError) {
+        reject(quotaError);
         return;
       }
       const message = typeof xhr.response === "object" && xhr.response ? ((xhr.response as any).message || JSON.stringify(xhr.response)) : ((xhr as any).responseText || "");

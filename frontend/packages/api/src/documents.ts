@@ -1,7 +1,7 @@
 // documents — pure
 import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
-import { buildApiEndpoint } from "./http.js";
+import { buildApiEndpoint, pageQuotaErrorFromPayload } from "./http.js";
 
 export type DocumentRecord = Record<string, any> & {
   document_id?: string;
@@ -402,7 +402,7 @@ export async function translateDocument(
   });
   if (!resp.ok) {
     const envelope: any = await resp.json().catch(() => null);
-    throw documentRequestError("发起翻译失败，请稍后重试。", resp.status, envelope);
+    throw pageQuotaErrorFromPayload(resp.status, envelope) ?? documentRequestError("发起翻译失败，请稍后重试。", resp.status, envelope);
   }
   return unwrapEnvelope<DocumentJobSubmissionView>(await resp.json());
 }
@@ -421,7 +421,7 @@ export async function ocrDocument(
   });
   if (!resp.ok) {
     const envelope: any = await resp.json().catch(() => null);
-    throw new Error(`${envelope?.message || "发起 OCR 失败，请稍后重试。"}(${resp.status})`);
+    throw pageQuotaErrorFromPayload(resp.status, envelope) ?? new Error(`${envelope?.message || "发起 OCR 失败，请稍后重试。"}(${resp.status})`);
   }
   return unwrapEnvelope(await resp.json());
 }
