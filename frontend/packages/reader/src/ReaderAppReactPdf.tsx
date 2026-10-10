@@ -424,6 +424,7 @@ export function ReaderAppReactPdf() {
           <ReaderZoomHud
             mode={visiblePdfMode}
             modeControls={null}
+            bookmarkScope={c.viewStateKey}
           />
         ) : null}
         <Suspense fallback={null}>
