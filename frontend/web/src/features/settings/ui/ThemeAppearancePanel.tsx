@@ -23,6 +23,14 @@ const FALLBACK_FONTS: FontInfo[] = [
   { family: "Source Han Sans SC", files: [], available: true },
 ];
 
+// 和后端 render/workflow/engine_dispatch.py 的 RPR_SUPPORTED_FONT_FAMILIES 一致：新排版引擎只有思源宋体的
+// 字宽表，选别的字体会悄悄退回 Typst。
+const RPR_ENGINE_FONTS: readonly string[] = ["source han serif sc", "noto serif cjk sc"];
+
+export function usesRprEngine(family: string): boolean {
+  return RPR_ENGINE_FONTS.includes(`${family || ""}`.trim().toLowerCase());
+}
+
 function FontSelector() {
   const [fonts, setFonts] = useState<FontInfo[]>(FALLBACK_FONTS);
   const [selected, setSelected] = useState<string>(() => getStoredFontFamily());
@@ -100,7 +108,8 @@ function FontSelector() {
     <div className="font-selector" id="font-selector" data-testid="font-selector">
       <h3 className="theme-appearance-group-title">渲染字体</h3>
       <p className="text-xs text-neutral-500" style={{ margin: "4px 0 8px" }}>
-        用于 Typst 渲染的正文字体族（request.render.typst_font_family），随下次新建任务生效。
+        译文正文用的字体，随下次新建任务生效。目前只有思源宋体能用新的排版引擎；选其它字体会改用旧的
+        Typst 排版，版面效果差一些。
       </p>
       <label htmlFor="typst-font-family-select" className="sr-only">
         渲染字体
@@ -124,6 +133,11 @@ function FontSelector() {
       {loading ? <span className="text-xs text-neutral-400">加载字体列表…</span> : null}
       {error ? <span className="text-xs text-amber-600">字体列表加载失败，已显示本地备选：{error}</span> : null}
       <span className="text-xs text-neutral-400">已选：{selected}</span>
+      {usesRprEngine(selected) ? null : (
+        <span className="text-xs text-amber-600" data-testid="font-legacy-engine-warning">
+          这个字体会让排版退回旧的 Typst 引擎。想用新引擎，请选思源宋体（Source Han Serif SC）。
+        </span>
+      )}
     </div>
   );
 }
