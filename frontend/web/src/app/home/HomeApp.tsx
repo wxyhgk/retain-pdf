@@ -50,7 +50,7 @@ import { SettingsDialog } from "@/features/settings/index.js";
 import { BackupPanel } from "@/features/backup/index.js";
 import { SyncSettingsPanel } from "@/features/sync/index.js";
 import { UsageSettingsPanel } from "@/features/usage/index.js";
-import { AccountPanel, AdminUsersPanel, AuthSessionProvider, hiddenSettingsTabs, isAdmin, isMultiUser, useAuthSession } from "@/features/auth/index.js";
+import { AccountPanel, AdminUsersPanel, AuthSessionProvider, hiddenSettingsTabs, isAdmin, isMultiUser, useAuthSession, useVisibleHomeTab } from "@/features/auth/index.js";
 import type { AuthSessionView } from "@retainpdf/api/auth";
 import { useAppEvent } from "@/ui/hooks/use-app-event.js";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
@@ -242,7 +242,7 @@ function GlossariesDialogSlot() {
 
 function HomeShell() {
   // tabs 来自窄口,不再由 Shell 自持 useState(状态上移到 HomeTabsRoot)。
-  const { activeTab } = useHomeTabs();
+  const activeTab = useVisibleHomeTab(useHomeTabs().activeTab);
   const isLibraryTab = activeTab === "library";
   // 历史契约 key "categories" == 领域 collections（见 LibraryTopTabs/COLLECTIONS_TAB_KEY 映射）
   const isCategoriesTab = activeTab === "categories";

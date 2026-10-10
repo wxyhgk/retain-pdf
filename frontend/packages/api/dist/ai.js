@@ -1,5 +1,6 @@
 // ai — canonical from frontend/web/src/js/api/ai.ts (mock removed, runtime adapted)
 // Uses internal/runtime + http helpers.
+import { apiFetch } from "./internal/runtime.js";
 import { API_PREFIX } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildApiEndpoint } from "./http.js";
@@ -241,7 +242,7 @@ async function extractErrorMessage(resp) {
         return `${text || ""}`.replace(/\s+/g, " ").trim().slice(0, 240);
     }
 }
-export async function askLibraryAi({ question = "", documentId = "", jobId = "", conversationId = "", parentId = "", regenerate = false, userMessageId = "", assistantMessageId = "", onToolEvent = null, onProgressEvent = null, onAgentToolEvent = null, onAgentOperationEvent = null, onAgentConfirmationRequiredEvent = null, onAgentSessionEvent = null, onAnswerDelta = null, onCompress = null, signal = null, apiPrefix = API_PREFIX, fetchImpl = fetch, llmApiKey = "", llmBaseUrl = "", llmModel = "", confirmDocumentOperation = false, assistantMode = "auto", } = {}) {
+export async function askLibraryAi({ question = "", documentId = "", jobId = "", conversationId = "", parentId = "", regenerate = false, userMessageId = "", assistantMessageId = "", onToolEvent = null, onProgressEvent = null, onAgentToolEvent = null, onAgentOperationEvent = null, onAgentConfirmationRequiredEvent = null, onAgentSessionEvent = null, onAnswerDelta = null, onCompress = null, signal = null, apiPrefix = API_PREFIX, fetchImpl = apiFetch, llmApiKey = "", llmBaseUrl = "", llmModel = "", confirmDocumentOperation = false, assistantMode = "auto", } = {}) {
     const trimmed = `${question}`.trim();
     if (!trimmed)
         throw new AiAskError("请输入问题。", 400);

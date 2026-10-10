@@ -5,6 +5,7 @@
 // 图标化:每个 tab 前置语义图标 + 短文字(纯图标伤 wayfinding)。
 // 激活 tab 是纯页面级 UI 态(HomeApp useState),不持久化——刷新回到图书馆。
 
+import { useHomeTabVisible } from "@/features/auth/index.js";
 import { Tabs as TabsPrimitive } from "radix-ui";
 
 // 图书馆:书脊排列在书架上
@@ -61,6 +62,7 @@ const TABS = [
 ];
 
 export function LibraryTopTabs({ active, onChange }: { active: string; onChange: (key: string) => void }) {
+  const visible = useHomeTabVisible();
   return (
     <TabsPrimitive.Root
       className="library-top-tabs-root"
@@ -68,7 +70,7 @@ export function LibraryTopTabs({ active, onChange }: { active: string; onChange:
       onValueChange={onChange}
     >
       <TabsPrimitive.List className="library-top-tabs" aria-label="图书馆视图">
-        {TABS.map((tab) => (
+        {TABS.filter((tab) => visible(tab.key)).map((tab) => (
           <TabsPrimitive.Trigger
             key={tab.key}
             value={tab.key}

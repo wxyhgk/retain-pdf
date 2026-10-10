@@ -88,7 +88,22 @@ test("错误说成人话", () => {
   assert.equal(authErrorText({ code: "ACCOUNT_DISABLED" }), "这个账号已停用，请联系管理员。");
   assert.equal(authErrorText({ code: "TOO_MANY_ATTEMPTS", details: { retry_after_secs: 290 } }), "尝试次数太多，请 5 分钟后再试。");
   assert.equal(authErrorText(new TypeError("Failed to fetch")), "连不上服务器，请稍后再试。");
+  assert.equal(authErrorText({ status: 400, code: "WRONG_PASSWORD", message: "当前密码不对" }), "当前密码不对", "后端的中文说明直接显示");
+  assert.equal(authErrorText({ status: 409, code: "USERNAME_TAKEN", message: "username taken" }), "这个用户名已经有人用了。");
+  assert.equal(authErrorText({ status: 400, code: "WEAK_PASSWORD", details: { min_length: 8 } }), "密码至少 8 位。");
   assert.equal(passwordProblem("short", "short"), "新密码至少 8 位。");
   assert.equal(passwordProblem("longenough1", "longenough2"), "两次输入的新密码不一样。");
   assert.equal(passwordProblem("longenough1", "longenough1"), "");
+});
+
+test("多用户下首页「AI 问答」藏起来，?tab=ask 落回图书馆", async () => {
+  const React = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { AuthSessionProvider, useVisibleHomeTab } = await import("../../src/features/auth/ui/auth-session-context.jsx");
+  let seen = "";
+  function Probe() { seen = useVisibleHomeTab("ask"); return null; }
+  renderToStaticMarkup(React.createElement(AuthSessionProvider, { session: { mode: "multi", authenticated: true, user: { role: "admin" } } }, React.createElement(Probe)));
+  assert.equal(seen, "library");
+  renderToStaticMarkup(React.createElement(AuthSessionProvider, { session: { mode: "single", authenticated: true, user: null } }, React.createElement(Probe)));
+  assert.equal(seen, "ask");
 });

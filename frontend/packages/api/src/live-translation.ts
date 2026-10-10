@@ -1,3 +1,4 @@
+import { apiFetch } from "./internal/runtime.js";
 import {
   API_PREFIX,
   buildApiHeaders,
@@ -69,7 +70,7 @@ async function requestJson<T>(
   path: string,
   options: LiveTranslationRequestOptions = {},
 ): Promise<T> {
-  const fetchImpl = options.fetchImpl || fetch;
+  const fetchImpl = options.fetchImpl || apiFetch;
   const response = await fetchImpl(buildApiUrl(options.apiPrefix || API_PREFIX, path), {
     headers: buildApiHeaders(),
     signal: options.signal,
@@ -169,7 +170,7 @@ export async function streamLiveTranslationEvents(
   jobId: string,
   options: StreamLiveTranslationOptions,
 ): Promise<void> {
-  const fetchImpl = options.fetchImpl || fetch;
+  const fetchImpl = options.fetchImpl || apiFetch;
   const afterSeq = Math.max(0, Math.floor(Number(options.afterSeq) || 0));
   const path = `${jobPath(jobId, "live-events")}?after_seq=${afterSeq}`;
   const response = await fetchImpl(buildApiUrl(options.apiPrefix || API_PREFIX, path), {

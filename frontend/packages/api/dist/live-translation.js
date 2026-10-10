@@ -1,3 +1,4 @@
+import { apiFetch } from "./internal/runtime.js";
 import { API_PREFIX, buildApiHeaders, buildApiUrl, unwrapEnvelope, } from "./internal/runtime.js";
 export class LiveTranslationApiError extends Error {
     status;
@@ -32,7 +33,7 @@ async function responseError(response) {
     return new LiveTranslationApiError(message, response.status, code);
 }
 async function requestJson(path, options = {}) {
-    const fetchImpl = options.fetchImpl || fetch;
+    const fetchImpl = options.fetchImpl || apiFetch;
     const response = await fetchImpl(buildApiUrl(options.apiPrefix || API_PREFIX, path), {
         headers: buildApiHeaders(),
         signal: options.signal,
@@ -113,7 +114,7 @@ function normalizeCommitEvent(frame) {
 }
 /** Authenticated fetch-based SSE reader. Resolves only when the stream closes. */
 export async function streamLiveTranslationEvents(jobId, options) {
-    const fetchImpl = options.fetchImpl || fetch;
+    const fetchImpl = options.fetchImpl || apiFetch;
     const afterSeq = Math.max(0, Math.floor(Number(options.afterSeq) || 0));
     const path = `${jobPath(jobId, "live-events")}?after_seq=${afterSeq}`;
     const response = await fetchImpl(buildApiUrl(options.apiPrefix || API_PREFIX, path), {

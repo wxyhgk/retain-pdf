@@ -1,3 +1,4 @@
+import { apiFetch } from "./internal/runtime.js";
 import { API_PREFIX, buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildApiEndpoint } from "./http.js";
 export class AgentOperationError extends Error {
@@ -25,7 +26,7 @@ async function extractErrorMessage(resp) {
     }
 }
 async function requestAgentOperation(path, init, options = {}) {
-    const fetchImpl = options.fetchImpl || fetch;
+    const fetchImpl = options.fetchImpl || apiFetch;
     const resp = await fetchImpl(buildApiEndpoint(options.apiPrefix || API_PREFIX, path), {
         ...init,
         headers: buildApiHeaders({
@@ -46,7 +47,7 @@ function operationPath(operationId, action = "") {
     const id = requiredId(operationId, "operation_id");
     return `ai/operations/${encodeURIComponent(id)}${action ? `/${action}` : ""}`;
 }
-export async function listAgentOperations({ conversationId, limit, apiPrefix = API_PREFIX, fetchImpl = fetch, signal = null, }) {
+export async function listAgentOperations({ conversationId, limit, apiPrefix = API_PREFIX, fetchImpl = apiFetch, signal = null, }) {
     const conversation = requiredId(conversationId, "conversation_id");
     const params = new URLSearchParams();
     if (limit != null)
@@ -92,7 +93,7 @@ export async function retryAgentOperation(operationId, input, options = {}) {
     }, options);
 }
 export async function fetchAgentOperationCandidate(operationId, options = {}) {
-    const fetchImpl = options.fetchImpl || fetch;
+    const fetchImpl = options.fetchImpl || apiFetch;
     const url = buildAgentOperationCandidateUrl(operationId, options.apiPrefix || API_PREFIX);
     const response = await fetchImpl(url, {
         method: "GET",

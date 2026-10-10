@@ -1,3 +1,4 @@
+import { apiFetch } from "./internal/runtime.js";
 import { API_PREFIX, buildApiHeaders, buildApiUrl, unwrapEnvelope, } from "./internal/runtime.js";
 async function responseError(response) {
     let message = "AI Agent 配置请求失败";
@@ -22,7 +23,7 @@ function parseRuntimeConfig(payload) {
     }
     return view;
 }
-export async function fetchAgentRuntimeConfig({ apiPrefix = API_PREFIX, fetchImpl = fetch, } = {}) {
+export async function fetchAgentRuntimeConfig({ apiPrefix = API_PREFIX, fetchImpl = apiFetch, } = {}) {
     const response = await fetchImpl(buildApiUrl(apiPrefix, "ai/runtime-config"), {
         method: "GET",
         headers: buildApiHeaders(),
@@ -32,7 +33,7 @@ export async function fetchAgentRuntimeConfig({ apiPrefix = API_PREFIX, fetchImp
         throw await responseError(response);
     return parseRuntimeConfig(await response.json());
 }
-export async function updateAgentRuntimeConfig(update, { apiPrefix = API_PREFIX, fetchImpl = fetch, } = {}) {
+export async function updateAgentRuntimeConfig(update, { apiPrefix = API_PREFIX, fetchImpl = apiFetch, } = {}) {
     const response = await fetchImpl(buildApiUrl(apiPrefix, "ai/runtime-config"), {
         method: "PUT",
         headers: buildApiHeaders({ "Content-Type": "application/json" }),

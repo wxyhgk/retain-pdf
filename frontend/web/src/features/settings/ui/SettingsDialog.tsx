@@ -239,7 +239,8 @@ export function SettingsDialog({
                   data-settings-panel="api"
                 >
                   <PaneHead tab="api" subtitle={setupMode ? apiPaneSetupHintSlot : null} />
-                  {credentialsWorkbenchSlot}
+                  {/* 被藏时不放内容：多用户的普通用户不该去读管理员专用的凭据、AI 设置接口。 */}
+                  {hiddenTabs.includes("api") ? null : credentialsWorkbenchSlot}
                 </TabsPrimitive.Content>
 
                 <TabsPrimitive.Content

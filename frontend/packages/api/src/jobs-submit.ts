@@ -1,5 +1,5 @@
 // jobs-submit — pure
-import { buildJobsEndpoint, submitJson, submitUploadRequest } from "./http.js";
+import { buildJobsEndpoint, getApiAuthMode, submitJson, submitUploadRequest } from "./http.js";
 
 function isObject(value: unknown): boolean {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -83,7 +83,22 @@ function buildOcrFormData(payload: unknown): FormData {
   return form;
 }
 
+/** 多用户模式下只做 OCR 的任务走 POST /jobs（JSON，带已上传文件的 upload_id）：/ocr/* 在多用户下整个关闭。
+ * 去掉只在浏览器里有意义的文件对象字段，后端拒收未知字段。 */
+function ocrJobJson(payload: Record<string, unknown>): Record<string, unknown> {
+  const { file: _file, __file: _rawFile, ...rest } = payload as Record<string, unknown> & { file?: unknown; __file?: unknown };
+  const { file: _sourceFile, ...source } = (isObject(rest.source) ? rest.source : {}) as Record<string, unknown> & { file?: unknown };
+  return { ...rest, source };
+}
+
 export async function submitJobRequest(apiPrefix: string, payload: unknown): Promise<any> {
+  if (isOcrWorkflowPayload(payload) && getApiAuthMode() === "multi") {
+    const json = ocrJobJson(payload as Record<string, unknown>);
+    if (!`${(json.source as Record<string, unknown>).upload_id || ""}`.trim()) {
+      throw new Error("提交失败: 请先上传文件再开始 OCR。");
+    }
+    return submitJson(buildJobsEndpoint(apiPrefix, "jobs"), json);
+  }
   if (isOcrWorkflowPayload(payload)) {
     if (!isObject(payload) || !isObject((payload as Record<string, unknown>).source)) {
       throw new Error("提交失败: /api/v1/ocr/jobs 需要 grouped JSON，至少包含 workflow=ocr 和 source。");

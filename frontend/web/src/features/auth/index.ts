@@ -8,4 +8,4 @@ export { hiddenSettingsTabs, resolveAuthGate, isAdmin, isMultiUser, type AuthGat
 export { AuthErrorScreen, ForcedPasswordScreen, LoginScreen } from "./ui/LoginScreen.jsx";
 export { AccountPanel } from "./ui/AccountPanel.jsx";
 export { AdminUsersPanel } from "./ui/AdminUsersPanel.jsx";
-export { AuthSessionProvider, useAuthSession } from "./ui/auth-session-context.jsx";
+export { AuthSessionProvider, useAuthSession, useHomeTabVisible, useVisibleHomeTab } from "./ui/auth-session-context.jsx";
