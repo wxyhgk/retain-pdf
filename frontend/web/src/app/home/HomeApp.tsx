@@ -49,6 +49,7 @@ import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
 import { SettingsDialog } from "@/features/settings/index.js";
 import { BackupPanel } from "@/features/backup/index.js";
 import { SyncSettingsPanel } from "@/features/sync/index.js";
+import { UsageSettingsPanel } from "@/features/usage/index.js";
 import { useAppEvent } from "@/ui/hooks/use-app-event.js";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 import { CREDENTIAL_DOM_IDS } from "@/features/credentials/ui/credentials-dom-ids.js";
@@ -213,6 +214,7 @@ function SettingsDialogSlot() {
       appUpdateBannerSlot={<AppUpdateBannerSlot />}
       syncPanelSlot={<SyncSettingsPanel />}
       backupPanelSlot={<BackupPanel />}
+      usagePanelSlot={<UsageSettingsPanel />}
     />
   );
 }

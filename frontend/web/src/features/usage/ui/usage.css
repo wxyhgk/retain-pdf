@@ -1,0 +1,180 @@
+/* 用量（features/usage）：书籍详情的「用量」卡和设置里的「总用量」共用。配色只用主题变量。
+ *
+ * @owns usage */
+
+.usage-summary {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.usage-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.usage-metric {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+.usage-metric dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.usage-metric dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-metric.is-emphasis {
+  border-color: var(--ink);
+}
+
+.usage-metric-note {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.usage-section {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.usage-section h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 620;
+}
+
+.usage-group {
+  display: grid;
+  gap: 6px;
+}
+
+.usage-group-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.usage-group-head strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.usage-group-head span {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-bars {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.usage-bar-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 32%) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.usage-bar-label {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usage-bar-label small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+}
+
+.usage-bar-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.usage-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ink);
+}
+
+.usage-bar-value {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-notes {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding-left: 16px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.usage-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.usage-retry {
+  margin-left: 8px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.usage-card-sub,
+.usage-settings-sub {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.usage-settings {
+  display: grid;
+  gap: 12px;
+}
+
+.usage-settings-sub {
+  margin: 0;
+}
+
+.usage-settings-foot {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}

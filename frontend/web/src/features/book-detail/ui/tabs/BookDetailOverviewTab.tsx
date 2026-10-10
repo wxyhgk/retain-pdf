@@ -44,6 +44,8 @@ export type BookDetailOverviewTabProps = {
   collectionsSlot?: ReactNode;
   /** 危险操作（DeleteFooterPanel） */
   dangerSlot?: ReactNode;
+  /** 用量卡（BookUsageCard）：这本书花了多少 token。 */
+  usageSlot?: ReactNode;
   error?: string;
   ocrStatus?: OverviewStatus;
   translationStatus?: OverviewStatus;
@@ -113,6 +115,7 @@ export function BookDetailOverviewTab({
   readingSlot,
   collectionsSlot,
   dangerSlot,
+  usageSlot = null,
   error = "",
   ocrStatus = { label: "尚未执行", tone: "muted" },
   translationStatus = { label: "尚未开始", tone: "muted" },
@@ -247,6 +250,8 @@ export function BookDetailOverviewTab({
           <p className="book-detail-overview-empty-activity">任务开始后，进度记录会显示在这里。</p>
         )}
       </section>
+
+      {usageSlot}
 
       {dangerSlot ? (
         <section className="book-detail-overview-danger" aria-label="危险操作">
