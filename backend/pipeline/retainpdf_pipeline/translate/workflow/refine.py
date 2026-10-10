@@ -11,9 +11,8 @@
 from __future__ import annotations
 
 import json
-import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Mapping
@@ -329,30 +328,32 @@ def request_batches(
     调一次 ``on_done(已结束批数, 总批数)``，用来发进度；回调之间串行。
     """
     results: list[tuple[str | None, BaseException | None]] = [(None, None)] * len(messages_list)
-    lock = threading.Lock()
-    finished = 0
+    total = len(messages_list)
 
     def run(index: int) -> None:
-        nonlocal finished
         try:
             results[index] = (chat.request(phase, messages_list[index], response_format=response_format), None)
         except Exception as exc:  # noqa: BLE001 - 交给调用方逐批处理
             results[index] = (None, exc)
-        with lock:
-            finished += 1
-            if on_done is not None:
-                on_done(finished, len(messages_list))
 
-    if workers <= 1 or len(messages_list) <= 1:
-        for index in range(len(messages_list)):
+    if workers <= 1 or total <= 1:
+        for index in range(total):
             run(index)
+            if on_done is not None:
+                on_done(index + 1, total)
             if isinstance(results[index][1], RefineBudgetExceeded):
-                for rest in range(index + 1, len(messages_list)):
+                for rest in range(index + 1, total):
                     results[rest] = (None, RefineBudgetExceeded(phase))
                 break
         return results
-    with ThreadPoolExecutor(max_workers=min(workers, len(messages_list))) as executor:
-        list(executor.map(run, range(len(messages_list))))
+    # on_done 必须在本线程调：进度事件的写入器挂在 ContextVar 上，线程池里的线程拿不到，
+    # 在那边发的事件会被悄悄丢掉（编辑部挑错 55 批跑了 6 分钟，界面一条进度都没有）。
+    with ThreadPoolExecutor(max_workers=min(workers, total)) as executor:
+        futures = [executor.submit(run, index) for index in range(total)]
+        for finished, future in enumerate(as_completed(futures), start=1):
+            future.result()
+            if on_done is not None:
+                on_done(finished, total)
     return results
 
 

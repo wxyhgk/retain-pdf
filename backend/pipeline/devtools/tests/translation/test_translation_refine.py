@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from copy import deepcopy
 from pathlib import Path
 
@@ -608,6 +609,36 @@ def test_edits_never_touch_placeholders() -> None:
 
 
 # ---- 进度事件 ----------------------------------------------------------------------
+
+
+def test_parallel_batches_still_emit_progress_events(tmp_path: Path) -> None:
+    """编辑部 4 路并发挑错时，每批的进度事件都要落进事件流。
+
+    事件写入器挂在 ContextVar 上，线程池里的线程拿不到；回调曾在工作线程里调，55 批进度全被丢掉。
+    """
+    from retainpdf_pipeline.translate.workflow import refine as refine_workflow
+
+    class SlowChat:
+        def request(self, phase, messages, *, response_format=None):
+            time.sleep(0.01)
+            return "{}"
+
+    writer = PipelineEventWriter(job_id="job-1", job_root=tmp_path, logs_dir=tmp_path / "logs", workflow="book")
+    progress = refine_workflow._Progress("editorial")
+    progress.total = 6
+    with pipeline_event_writer_scope(writer):
+        results = refine_workflow.request_batches(
+            SlowChat(),
+            "review",
+            [[{"role": "user", "content": str(index)}] for index in range(6)],
+            response_format=None,
+            workers=4,
+            on_done=lambda done, total: progress.step("review", f"挑错已完成 {done}/{total} 批"),
+        )
+
+    assert [content for content, _ in results] == ["{}"] * 6
+    events = [json.loads(line) for line in (tmp_path / "logs" / "pipeline_events.jsonl").read_text().splitlines()]
+    assert [event["stage_detail"] for event in events] == [f"挑错已完成 {done}/6 批" for done in range(1, 7)]
 
 
 def test_progress_events_use_the_render_refining_substage(tmp_path: Path) -> None:
