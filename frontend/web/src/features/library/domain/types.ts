@@ -183,13 +183,6 @@ export type LibraryControllerDeps = {
   buildOcrConfig?: (
     pageRanges?: string,
   ) => OcrDocumentPayload | Record<string, unknown>;
-  /** 替换 retry-stage 请求（组装层用它带上设置里当前的翻译密钥）；不传就直接发。 */
-  retryJobStageApi?: (
-    jobId: string,
-    apiPrefix: string | undefined,
-    stage: string,
-    payload?: Record<string, unknown>,
-  ) => Promise<any>;
   startPolling?: (
     jobId: string,
     options?: {

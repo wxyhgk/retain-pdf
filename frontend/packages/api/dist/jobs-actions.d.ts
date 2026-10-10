@@ -86,10 +86,12 @@ export interface JobStageActionsView {
 }
 export declare function fetchJobDiagnostics(jobId: string, apiPrefix?: string): Promise<JobDiagnosticsView | null>;
 export declare function fetchResumePlan(jobId: string, apiPrefix?: string): Promise<any>;
-export declare function resumeJob(jobId: string, apiPrefix?: string): Promise<any>;
+/** body 可带 `{ overrides: { translation: { api_key | credential_ref } } }`：续跑出来的新任务用这把 key。 */
+export declare function resumeJob(jobId: string, apiPrefix?: string, body?: Record<string, unknown>): Promise<any>;
 export declare function cancelJob(jobId: string, apiPrefix?: string): Promise<any>;
 export declare function cancelOcrJob(jobId: string, apiPrefix?: string): Promise<any>;
 export declare function resolveOcrAmbiguity(jobId: string, apiPrefix: string | undefined, request: OcrAmbiguityResolutionRequest): Promise<OcrAmbiguityResolutionView>;
 export declare function fetchJobStageActions(jobId: string, apiPrefix?: string): Promise<JobStageActionsView | null>;
 export declare function retryJobStage(jobId: string, apiPrefix: string | undefined, stage: string, payload?: Record<string, unknown>): Promise<any>;
-export declare function rerunJob(actionUrl: string): Promise<any>;
+/** body 同 resumeJob：可带 overrides.translation 换 key，不带时行为不变。 */
+export declare function rerunJob(actionUrl: string, body?: Record<string, unknown>): Promise<any>;

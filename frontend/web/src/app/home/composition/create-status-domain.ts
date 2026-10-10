@@ -14,8 +14,8 @@ import {
   fetchTranslationItem,
   replayTranslationItem,
   resolveOcrAmbiguity,
+  retryJobStage,
 } from "@/platform/api/index.js";
-import { createRetryJobStageWithCurrentKey } from "./retry-with-current-key.js";
 import { copyText } from "@/platform/utils/clipboard.js";
 import {
   createCurrentJobStatePort,
@@ -89,7 +89,7 @@ export function createStatusDomain({
     fetchTranslationItem,
     replayTranslationItem,
     resolveOcrAmbiguity,
-    retryJobStage: createRetryJobStageWithCurrentKey(features),
+    retryJobStage,
     copyText,
     rerunJob,
     renderJob: statusCardPresenter.renderMain,

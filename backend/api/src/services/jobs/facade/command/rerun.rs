@@ -10,14 +10,17 @@ use super::super::super::creation::create_translation_job;
 use super::super::super::query::load_job_or_404;
 use super::super::JobsFacade;
 use super::ocr_ambiguity::ambiguous_ocr_dispatch;
-use super::stage_retry_overrides::discard_ocr_secret_sources;
+use super::stage_retry_overrides::{apply_retry_overrides, discard_ocr_secret_sources};
 use crate::services::job_launcher::start_job_execution;
 
 impl<'a> JobsFacade<'a> {
+    /// `overrides` 只会带换过的模型 key（路由层已校验）：续跑出新任务时替换原任务的旧凭据，
+    /// 照创建任务的规则把明文 key 导入凭据库。原地重渲染不调模型，用不上它。
     pub fn rerun_submission(
         &self,
         base_url: &str,
         source_job_id: &str,
+        overrides: &serde_json::Value,
     ) -> Result<JobSubmissionView, AppError> {
         let source_job = load_job_or_404(self.command.db, source_job_id)?;
         let plan = resume_plan(&source_job, self.command.control.data_root);
@@ -84,7 +87,8 @@ impl<'a> JobsFacade<'a> {
                 "translation request outcome is ambiguous; generic rerun is paused. Use retry-stage with stage=translation and ambiguous_request_policy=accept_duplicate_risk",
             ));
         }
-        let request = build_rerun_request(&source_job, self.command.control.data_root)?;
+        let mut request = build_rerun_request(&source_job, self.command.control.data_root)?;
+        apply_retry_overrides(&mut request, overrides)?;
         let workflow = request.workflow.clone();
         let job = create_translation_job(&self.command.submit, &request)?;
         // 归属（jobs.document_id + 书卡）由 start_job_execution 沿 artifact_job_id 继承。

@@ -12,6 +12,9 @@ use serde_json::Value;
 use crate::error::AppError;
 use crate::models::api::RefineRetryRequest;
 use crate::models::domain::{now_iso, CreateJobInput, JobSnapshot, RefineOverride};
+use crate::services::credentials::{
+    acquire_credential_usage_lock, get_or_create_managed_credential, CredentialUsageLock,
+};
 use crate::services::job_validation::validate_translation_credential_reference;
 use crate::storage_paths::JobPaths;
 use crate::worker_command::refine_override::clear_refine_override;
@@ -73,11 +76,61 @@ pub(super) fn validate_refine_request(
     })
 }
 
+/// 换了 key 之后精修要用新 key：前端设置里多半只有明文 key、没有凭据引用。和创建任务一样，
+/// 把 `overrides.translation.api_key`（及 reviewer_api_key）导入凭据库、换成引用、删掉明文，
+/// 返回改写后的 overrides。与同名引用一起给时按创建任务的规则拒绝（二者互斥）。
+///
+/// 返回的使用锁要一直持有到任务落库：中间凭据被回收的话，任务会引用一个不存在的凭据。
+pub(super) fn import_inline_refine_keys(
+    overrides: &Value,
+    data_root: &Path,
+) -> Result<(Value, Option<CredentialUsageLock>), AppError> {
+    let mut overrides = overrides.clone();
+    let mut imported = Vec::new();
+    if let Some(translation) = overrides.get_mut("translation").and_then(Value::as_object_mut) {
+        for (key, reference, label) in [
+            ("api_key", "credential_ref", "Imported legacy translation credential"),
+            ("reviewer_api_key", "reviewer_credential_ref", "Imported legacy reviewer credential"),
+        ] {
+            let secret = translation.get(key).and_then(Value::as_str).unwrap_or("").trim().to_string();
+            if secret.is_empty() {
+                translation.remove(key);
+                continue;
+            }
+            if translation.get(reference).and_then(Value::as_str).is_some_and(|value| !value.trim().is_empty()) {
+                return Err(AppError::bad_request(format!(
+                    "translation.{key} and translation.{reference} are mutually exclusive"
+                )));
+            }
+            let created = get_or_create_managed_credential(
+                data_root,
+                "translation_api_key",
+                "openai_compatible",
+                label,
+                &secret,
+            )?;
+            translation.remove(key);
+            translation.insert(reference.to_string(), Value::String(created.credential.credential_ref.clone()));
+            imported.push(created.credential.credential_ref);
+        }
+    }
+    if imported.is_empty() {
+        return Ok((overrides, None));
+    }
+    let guard = acquire_credential_usage_lock(data_root)?;
+    for reference in &imported {
+        retain_data::credentials::resolve_credential(data_root, reference, "translation_api_key")
+            .map_err(crate::services::job_validation::map_credential_reference_error)?;
+    }
+    Ok((overrides, Some(guard)))
+}
+
 /// 把源任务改写成一次原地 Render workflow，并保留精修要用的模型凭据引用。
 ///
 /// 精修要调模型：保留**引用**（credential_ref / reviewer_credential_ref），内联 key 一律
-/// 清掉（普通原地重渲染现在也保留引用，见 rerun.rs）。任务上没有引用时，调用方可以用
-/// `overrides.translation.credential_ref`（或 reviewer_*）补上；不接受内联 key。
+/// 清掉（普通原地重渲染现在也保留引用，见 rerun.rs）。调用方可以用
+/// `overrides.translation.credential_ref`（或 reviewer_*）换成别的引用；明文 key 要先经
+/// [`import_inline_refine_keys`] 换成引用，到这里还带明文就拒绝。
 pub(super) fn prepare_in_place_refine_job(
     source_job: JobSnapshot,
     overrides: &Value,

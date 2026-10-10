@@ -38,10 +38,11 @@ pub fn rerun_job_response(
     deps: JobsRouteDeps<'_>,
     headers: &HeaderMap,
     job_id: &str,
+    overrides: &serde_json::Value,
 ) -> Result<Json<ApiResponse<JobSubmissionView>>, AppError> {
     let base_url = request_base_url(headers, deps.default_port, &deps.bind_host);
     Ok(ok_json(
-        jobs_facade(deps).rerun_submission(&base_url, job_id)?,
+        jobs_facade(deps).rerun_submission(&base_url, job_id, overrides)?,
     ))
 }
 
@@ -49,8 +50,9 @@ pub fn resume_job_response(
     deps: JobsRouteDeps<'_>,
     headers: &HeaderMap,
     job_id: &str,
+    overrides: &serde_json::Value,
 ) -> Result<Json<ApiResponse<JobSubmissionView>>, AppError> {
-    rerun_job_response(deps, headers, job_id)
+    rerun_job_response(deps, headers, job_id, overrides)
 }
 
 pub fn retry_stage_response(

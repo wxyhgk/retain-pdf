@@ -179,8 +179,8 @@ async fn refine_retry_rejects_bad_requests() {
             "only accepted with stage=refine",
         ),
         (
-            json!({"stage": "refine", "overrides": {"translation": {"api_key": "sk-inline"}}}),
-            "inline",
+            json!({"stage": "refine", "overrides": {"translation": {"api_key": "sk-inline", "credential_ref": "cred_other"}}}),
+            "mutually exclusive",
         ),
     ] {
         let response = retry(&state, id, body.clone()).await;
@@ -294,6 +294,38 @@ async fn refine_retry_needs_a_model_credential_and_accepts_a_reference_override(
     assert!(read_override(&state, id).is_some());
     let job = state.db.get_job(id).expect("job");
     assert_eq!(job.request_payload.translation.credential_ref, credential_ref);
+}
+
+/// 换了 key 之后精修：前端只有明文新 key。导入凭据库换成新引用，任务上不留明文；
+/// 同一把 key 再精修一次复用同一个引用，不会每次都多一条凭据。
+#[tokio::test]
+async fn refine_retry_imports_a_new_inline_key_instead_of_using_the_old_one() {
+    let state = test_state("retry-refine-new-key");
+    let id = "job-retry-refine-new-key";
+    let source = seed_translated_job(&state, id);
+    let old_ref = source.request_payload.translation.credential_ref.clone();
+
+    let body = json!({"stage": "refine", "overrides": {"translation": {"api_key": "  sk-rotated-key  "}}});
+    let response = retry(&state, id, body.clone()).await;
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let job = state.db.get_job(id).expect("job");
+    let new_ref = job.request_payload.translation.credential_ref.clone();
+    assert!(!new_ref.is_empty() && new_ref != old_ref, "要换成新 key 的引用，不能沿用旧的 {old_ref}");
+    assert!(job.request_payload.translation.api_key.is_empty(), "明文 key 不能落库");
+    let resolved = retain_data::credentials::resolve_credential(&state.config.data_root, &new_ref, "translation_api_key")
+        .expect("new reference resolves");
+    assert_eq!(resolved.secret, "sk-rotated-key");
+    let stored = serde_json::to_string(&job.request_payload).unwrap();
+    assert!(!stored.contains("sk-rotated-key"));
+
+    // 跑完（这里直接标成功）后同一把 key 再精修：复用同一个托管凭据。
+    let mut finished = state.db.get_job(id).expect("job");
+    finished.status = JobStatusKind::Succeeded;
+    state.db.save_job(&finished).expect("save job");
+    let response = retry(&state, id, body).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(state.db.get_job(id).expect("job").request_payload.translation.credential_ref, new_ref);
 }
 
 #[tokio::test]
