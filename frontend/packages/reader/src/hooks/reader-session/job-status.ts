@@ -130,7 +130,9 @@ export function useJobStatusPolling(options: {
 
   useEffect(() => {
     if (!sessionJobId || jobTerminal || !scopedJobPayload) return;
+    // 页面在后台（标签页切走）时不再每秒问任务状态，切回来下一秒接着问。
     const timer = window.setInterval(() => {
+      if (document.visibilityState === "hidden") return;
       void refreshJobStatus();
     }, 1_000);
     return () => window.clearInterval(timer);

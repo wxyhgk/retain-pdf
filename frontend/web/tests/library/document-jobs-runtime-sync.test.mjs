@@ -430,3 +430,41 @@ test("useDocumentJobs：任务都结束后放慢轮询，不再每 2 秒问一�
   root.unmount();
   dom.window.close();
 });
+
+test("useDocumentJobs：页面在后台时跳过轮询，切回前台立刻补问一次", async () => {
+  const dom = new JSDOM("<!doctype html><html><body><div id='root'></div></body></html>", { url: "http://localhost/index.html" });
+  for (const key of ["window", "document", "HTMLElement", "Node", "MutationObserver"]) {
+    Object.defineProperty(globalThis, key, { value: dom.window[key] ?? dom.window, configurable: true, writable: true });
+  }
+  globalThis.IS_REACT_ACT_ENVIRONMENT = false;
+  let visibility = "visible";
+  Object.defineProperty(dom.window.document, "visibilityState", { get: () => visibility, configurable: true });
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  let requestCount = 0;
+  let hookState = null;
+  const actions = {
+    async getDocumentJobs() {
+      requestCount += 1;
+      return { items: [{ job_id: "job-run", document_id: "doc-run", workflow: "translate", status: "running", created_at: "2026-09-02T11:00:00Z" }] };
+    },
+  };
+  function Harness() {
+    hookState = useDocumentJobs({ open: true, documentId: "doc-run", actions, refreshIntervalMs: 10 });
+    return React.createElement("output", null, hookState.latestTranslation?.status || "idle");
+  }
+  const root = createRoot(dom.window.document.getElementById("root"));
+  root.render(React.createElement(Harness));
+  await waitFor(() => hookState?.latestTranslation?.status === "running", "读到在跑的任务");
+  visibility = "hidden";
+  await wait(20);
+  const hiddenAt = requestCount;
+  await wait(80);
+  assert.ok(requestCount - hiddenAt <= 1, `后台时不该每 10ms 再问（多问了 ${requestCount - hiddenAt} 次）`);
+  visibility = "visible";
+  const beforeVisible = requestCount;
+  dom.window.document.dispatchEvent(new dom.window.Event("visibilitychange"));
+  await waitFor(() => requestCount > beforeVisible, "切回前台立刻补问");
+  root.unmount();
+  dom.window.close();
+});

@@ -10,6 +10,7 @@
 // 刻意不走 load()：那会让 generationRef 自增（作废在途的 refreshLive）、亮
 // refreshing 转圈、并把 offset 重置回 0，丢掉用户已经翻过的页。
 
+import { isPageHidden } from "@/platform/utils/page-visibility.js";
 import { useCallback, useEffect, useRef } from "react";
 import type { JobListItemView } from "@retainpdf/contracts/job-status";
 import {
@@ -73,6 +74,7 @@ export function useTaskCenterAutoRefresh({
 
   useEffect(() => {
     const timer = window.setInterval(() => {
+      if (isPageHidden()) return;
       void discoverNewJobs();
       if (hasActiveTasks) void refreshLive();
     }, TASK_CENTER_AUTO_REFRESH_MS);

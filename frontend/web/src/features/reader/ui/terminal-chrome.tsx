@@ -6,6 +6,7 @@
  *
  * 没有登记棘轮豁免 —— 那是把问题往后推，而这个文件本来就该拆。
  */
+import { isPageHidden } from "@/platform/utils/page-visibility.js";
 import { useCallback, useEffect, useState } from "react";
 import { LayoutDashboard } from "lucide-react";
 
@@ -303,7 +304,10 @@ export function TerminalBoardStrip({
       }
     };
     void poll();
-    const timer = setInterval(() => void poll(), 4000);
+    // 页面在后台时不问：画板列表只有看着的时候才有用。
+    const timer = setInterval(() => {
+      if (!isPageHidden()) void poll();
+    }, 4000);
     return () => {
       alive = false;
       abort.abort();
