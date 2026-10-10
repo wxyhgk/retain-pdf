@@ -630,6 +630,32 @@ ETag: "..."
 
 预览图按 job 缓存在 `DATA_ROOT/jobs/{job_id}/artifacts/` 下。前端可先请求第一页预览图实现秒开，再后台加载 PDF.js。
 
+## 7.5 通用取数（读任务里已有的数据，优先用它）
+
+要读任务目录里已有的数据（质检问题、排版块、精修处理、修订记录、术语表、风格规则、事件、用量、
+编辑部台账……），**先看这里，不要再为单个需求加接口**：
+
+- `GET /api/v1/jobs/{job_id}/data`：这个任务有哪些数据集、文件在不在、有哪些字段（能不能筛选）。
+- `GET /api/v1/jobs/{job_id}/data/{dataset}`：按名字取。参数：
+  - `fields=a,b`：只要这些字段；
+  - `<字段>=值[,值…]`：等值筛选，逗号为「或」，只能用登记为可筛选的字段；
+  - `group_by=字段`：按字段计数；`sort=字段` / `sort=-字段`；`offset`、`limit`（1..=1000，默认 200）。
+- 每条记录统一带 `item_id`（三位，改译文用）、`reader_item_id`（四位，阅读页跳转用）、`page`（1 起）。
+- 文件不存在时 `available=false`、不报错；未登记的数据集 404，未登记 / 不能筛选的字段 400。
+
+登记表是契约 `contracts/job-data.v1.schema.json` 的 `datasets`：新的读需求在那里加一条（文件位置、
+记录位置、字段），后端、前端类型、契约测试都照它走。只开放登记过的数据集，路径限定在任务目录里。
+助手也能用：`retainpdf-agent translation data [--dataset 名字 [--query "字段=值&…"]]`（只读，限这本书）。
+
+例：
+
+- 这次精修改了什么：`data/revisions?source=refine&sort=-ts`
+- 阅读页标出改过的块：`data/revisions?group_by=item_id`
+- 第 9 页溢出的块：`data/layout_blocks?page=9&overflow=true`
+- 留给人确认的全部：`data/escalated`
+- 锁定的术语：`data/terms?treatment=lock&sort=-frequency`
+- 最新一条事件：`data/events?sort=-seq&limit=1`
+
 ## 8. 对照阅读辅助接口
 
 阅读区域映射：

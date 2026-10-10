@@ -69,6 +69,7 @@ class TranslationCommandRunner:
         handlers: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
             "translation.issues": self._issues,
             "translation.show": self._show,
+            "translation.data": self._data,
             "translation.revise": self._revise,
             "translation.refine": self._refine,
             "translation.rerender": self._rerender,
@@ -472,6 +473,20 @@ class TranslationCommandRunner:
         return files
 
     # ------------------------------------------------------------------ helpers
+
+    # ------------------------------------------------------------------ data
+
+    def _data(self, params: dict[str, Any]) -> dict[str, Any]:
+        """通用取数，原样返回后端的结果（数据集列表，或筛选后的记录 / 分组 / 对象）。"""
+        extra: list[str] = []
+        if params.get("dataset"):
+            extra += ["--dataset", params["dataset"]]
+            if params.get("query"):
+                extra += ["--query", params["query"]]
+        result = self._read(("translation", "data", *extra))
+        if not result.ok:
+            raise TranslationCommandError("取数失败（检查数据集名和字段名）", result)
+        return result.data if isinstance(result.data, dict) else {}
 
     def _read(self, argv_head: tuple[str, ...]) -> CliResult:
         area, action, *rest = argv_head

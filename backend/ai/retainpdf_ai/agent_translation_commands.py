@@ -23,12 +23,13 @@ from .agent_broker_contracts import BrokerCommand, BrokerScope, BrokerUsageError
 
 #: 有副作用的子命令。名字也是 BrokerCommand.action 的后缀。
 TRANSLATION_EFFECT_SUBCOMMANDS = frozenset({"revise", "refine", "rerender", "term-set"})
-TRANSLATION_READ_SUBCOMMANDS = frozenset({"issues", "show"})
+TRANSLATION_READ_SUBCOMMANDS = frozenset({"issues", "show", "data"})
 TRANSLATION_SUBCOMMANDS = TRANSLATION_READ_SUBCOMMANDS | TRANSLATION_EFFECT_SUBCOMMANDS
 
 SEVERITY_RANK = {"critical": 0, "major": 1, "minor": 2}
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+_DATASET = re.compile(r"^[a-z0-9_]{1,64}$")
 _PAGES = re.compile(r"^(\d{1,5})(?:-(\d{1,5}))?$")
 _MAX_TEXT_CHARS = 20000  # 与 ReviseTranslationItemRequest.translated_text 的上限一致
 _MAX_REASON_CHARS = 2000
@@ -40,6 +41,9 @@ _MAX_ISSUE_LIMIT = 500
 _FLAGS: dict[str, dict[str, bool]] = {
     "issues": {"--pages": True, "--severity": True, "--limit": True},
     "show": {"--item-id": True},
+    # 通用取数：不带 --dataset 列出有哪些数据集；--query 是 `字段=值&…`（逗号为「或」，另有
+    # fields / group_by / sort / offset / limit），后端按登记表校验字段。
+    "data": {"--dataset": True, "--query": True},
     "revise": {"--item-id": True, "--text": True, "--reason": True},
     "refine": {"--pages": True, "--review-only": False},
     "rerender": {},
@@ -55,6 +59,7 @@ USAGE = (
     "用法：\n"
     "  retainpdf-agent translation issues [--pages 3-5] [--severity critical|major|minor] [--limit 50]\n"
     "  retainpdf-agent translation show --item-id <块 id>\n"
+    "  retainpdf-agent translation data [--dataset <名字> [--query \"字段=值&group_by=字段&sort=-字段&limit=50\"]]\n"
     '  retainpdf-agent translation revise --item-id <块 id> --text "<新译文>" --reason "<为什么改>"\n'
     "  retainpdf-agent translation refine [--pages 3-5] [--review-only]\n"
     "  retainpdf-agent translation rerender\n"
@@ -96,6 +101,17 @@ def parse_translation_argv(argv: tuple[str, ...], scope: BrokerScope) -> BrokerC
         params["limit"] = _limit(flags.get("--limit"))
     elif sub == "show":
         params["item_id"] = _item_id(flags["--item-id"])
+    elif sub == "data":
+        dataset = flags.get("--dataset")
+        if dataset is not None and not _DATASET.fullmatch(dataset):
+            raise BrokerUsageError("--dataset 是数据集名字，例如 revisions、qa_violations；先不带 --dataset 看有哪些。")
+        query = flags.get("--query")
+        if query is not None and dataset is None:
+            raise BrokerUsageError("--query 要和 --dataset 一起用。")
+        if query is not None and (len(query) > 2000 or any(ord(ch) < 32 for ch in query)):
+            raise BrokerUsageError("--query 太长或含控制字符。")
+        params["dataset"] = dataset
+        params["query"] = query
     elif sub == "revise":
         params["item_id"] = _item_id(flags["--item-id"])
         text = flags["--text"]

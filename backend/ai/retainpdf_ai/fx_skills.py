@@ -109,6 +109,7 @@ description: 精修这本书的译文。用户说「这段太生硬」「这句�
 
     retainpdf-agent translation issues [--pages 3-5] [--severity critical|major|minor] [--limit 50]
     retainpdf-agent translation show --item-id <块 id>
+    retainpdf-agent translation data [--dataset <名字> [--query "字段=值&group_by=字段&sort=-字段&limit=50"]]
     retainpdf-agent translation revise --item-id <块 id> --text '<新译文>' --reason "<为什么改>"
     retainpdf-agent translation refine [--pages 3-5] [--review-only]
     retainpdf-agent translation rerender
@@ -116,6 +117,11 @@ description: 精修这本书的译文。用户说「这段太生硬」「这句�
 
 - `issues`：合并确定性 QA（origin=qa）和精修报告里的发现（origin=refine_review），
   `--severity major` 表示 major 及更严重的。两个来源都 missing 说明是老任务或还没渲染完。
+- `data`：只读的通用取数。不带 `--dataset` 先列出有哪些数据集和字段（revisions 修订记录、
+  qa_violations 质检、layout_blocks 排版、refine_fixes 精修处理、escalated 留给人的块、terms 术语表、
+  style_rules 风格规则、events 事件、token_usage 用量、editorial_ledger 编辑部台账……）。筛选是
+  「字段=值」、逗号为「或」，`group_by=item_id` 按块计数，`sort=-ts&limit=1` 取最新一条。
+  回答用户「这本书哪些块改过三次以上」「第 9 页哪些块溢出了」这类问题就用它，别去 jq 原始文件。
 - `show`：原文、现译、最近的修订历史。`protected_translated_text` 出现时以它为底稿改。
   有 `note_group` 的块属于跨块连续段，改它会重建整段。
 - `revise`：source 记为 agent，默认不重渲染。`changed=false` 说明和现有译文一样。

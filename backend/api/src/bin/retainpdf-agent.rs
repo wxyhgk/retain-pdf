@@ -305,6 +305,30 @@ fn parse_translation_command(args: &[String]) -> Result<AgentCommand, CliFailure
         })
     };
     match action {
+        // 通用取数：--dataset 不给就列出有哪些数据集；--query 是 `字段=值&…`（逗号为「或」），
+        // 另有 fields / group_by / sort / offset / limit。值在这里做 URL 编码。
+        "data" => {
+            require_only_flags(&flags, &["--job-id", "--dataset", "--query"])?;
+            let job_id = require_identifier(&flags, "--job-id")?;
+            let mut path = format!("/api/v1/jobs/{job_id}/data");
+            if let Some(dataset) = flags.get("--dataset") {
+                if dataset.is_empty()
+                    || dataset.len() > 64
+                    || !dataset.chars().all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '_')
+                {
+                    return Err(CliFailure::usage("--dataset must be a dataset name like `revisions`"));
+                }
+                path.push('/');
+                path.push_str(dataset);
+                if let Some(query) = flags.get("--query").filter(|query| !query.trim().is_empty()) {
+                    path.push('?');
+                    path.push_str(&encode_data_query(query)?);
+                }
+            } else if flags.contains_key("--query") {
+                return Err(CliFailure::usage("--query needs --dataset"));
+            }
+            Ok(AgentCommand::Get { path })
+        }
         "qa" => report("translation/qa"),
         "refine-report" => report("translation/refine-report"),
         "fit-report" => report("render/fit-report"),
@@ -419,6 +443,25 @@ fn require_identifier(flags: &BTreeMap<String, String>, name: &str) -> Result<St
     Ok(value.clone())
 }
 
+/// `a=b&c=d` → URL 编码后的查询串。键只能是字段名那样的字符；值任意（中文术语也行）。
+fn encode_data_query(raw: &str) -> Result<String, CliFailure> {
+    if raw.len() > 2000 || raw.chars().any(char::is_control) {
+        return Err(CliFailure::usage("--query is too long or contains control characters"));
+    }
+    let mut serializer = url::form_urlencoded::Serializer::new(String::new());
+    for pair in raw.split('&').filter(|pair| !pair.trim().is_empty()) {
+        let (key, value) = pair
+            .split_once('=')
+            .ok_or_else(|| CliFailure::usage(format!("--query part `{pair}` must be key=value")))?;
+        let key = key.trim();
+        if key.is_empty() || !key.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_') {
+            return Err(CliFailure::usage(format!("--query key `{key}` is not a field name")));
+        }
+        serializer.append_pair(key, value.trim());
+    }
+    Ok(serializer.finish())
+}
+
 fn require_operation_id(flags: &BTreeMap<String, String>) -> Result<String, CliFailure> {
     require_identifier(flags, "--operation-id")
 }
@@ -505,7 +548,7 @@ fn read_request_file(path: &Path) -> Result<Value, CliFailure> {
 }
 
 fn usage() -> &'static str {
-    "usage:\n  retainpdf-agent version\n  retainpdf-agent document inspect|usage --document-id <id>\n  retainpdf-agent operation create --request <relative.json>\n  retainpdf-agent operation get --operation-id <id>\n  retainpdf-agent operation run --operation-id <id> --request <relative.json>\n  retainpdf-agent operation commit --operation-id <id> --request <relative.json>\n  retainpdf-agent operation cancel --operation-id <id> --request <relative.json>\n  retainpdf-agent translation qa|refine-report|fit-report --job-id <id>\n  retainpdf-agent translation item|revisions --job-id <id> --item-id <id>\n  retainpdf-agent translation revise --job-id <id> --item-id <id> --request <relative.json>\n  retainpdf-agent translation retry-stage --job-id <id> --request <relative.json>\n  retainpdf-agent glossary list\n  retainpdf-agent glossary get --glossary-id <id>\n  retainpdf-agent glossary create --request <relative.json>\n  retainpdf-agent glossary update --glossary-id <id> --request <relative.json>"
+    "usage:\n  retainpdf-agent version\n  retainpdf-agent document inspect|usage --document-id <id>\n  retainpdf-agent operation create --request <relative.json>\n  retainpdf-agent operation get --operation-id <id>\n  retainpdf-agent operation run --operation-id <id> --request <relative.json>\n  retainpdf-agent operation commit --operation-id <id> --request <relative.json>\n  retainpdf-agent operation cancel --operation-id <id> --request <relative.json>\n  retainpdf-agent translation qa|refine-report|fit-report --job-id <id>\n  retainpdf-agent translation data --job-id <id> [--dataset <name> [--query <field=value&...>]]\n  retainpdf-agent translation item|revisions --job-id <id> --item-id <id>\n  retainpdf-agent translation revise --job-id <id> --item-id <id> --request <relative.json>\n  retainpdf-agent translation retry-stage --job-id <id> --request <relative.json>\n  retainpdf-agent glossary list\n  retainpdf-agent glossary get --glossary-id <id>\n  retainpdf-agent glossary create --request <relative.json>\n  retainpdf-agent glossary update --glossary-id <id> --request <relative.json>"
 }
 
 fn print_json(value: &impl Serialize) {
@@ -563,6 +606,26 @@ mod tests {
 
     fn args(values: &[&str]) -> Vec<String> {
         values.iter().map(|value| value.to_string()).collect()
+    }
+
+    #[test]
+    fn translation_data_builds_one_encoded_get() {
+        let catalog = parse_command(args(&["translation", "data", "--job-id", "job-1"])).expect("catalog");
+        assert!(matches!(catalog, AgentCommand::Get { path } if path == "/api/v1/jobs/job-1/data"));
+        let rows = parse_command(args(&[
+            "translation", "data", "--job-id", "job-1", "--dataset", "terms",
+            "--query", "treatment=lock&source=无毛刺性&sort=-frequency&limit=20",
+        ]))
+        .expect("rows");
+        assert!(matches!(rows, AgentCommand::Get { path }
+            if path == "/api/v1/jobs/job-1/data/terms?treatment=lock&source=%E6%97%A0%E6%AF%9B%E5%88%BA%E6%80%A7&sort=-frequency&limit=20"));
+        for bad in [
+            vec!["translation", "data", "--job-id", "job-1", "--dataset", "../secrets"],
+            vec!["translation", "data", "--job-id", "job-1", "--query", "page=1"],
+            vec!["translation", "data", "--job-id", "job-1", "--dataset", "terms", "--query", "a b=1"],
+        ] {
+            assert!(parse_command(args(&bad)).is_err(), "{bad:?}");
+        }
     }
 
     #[test]

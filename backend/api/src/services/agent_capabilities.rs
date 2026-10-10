@@ -479,6 +479,9 @@ fn requested_action<'a>(
             "GET",
             ["api", "v1", "jobs", job_id, "translation", "qa" | "refine-report"]
             | ["api", "v1", "jobs", job_id, "render", "fit-report"]
+            // 通用取数（只读，限这本书）。
+            | ["api", "v1", "jobs", job_id, "data"]
+            | ["api", "v1", "jobs", job_id, "data", _]
             | ["api", "v1", "jobs", job_id, "translation", "items", _]
             | ["api", "v1", "jobs", job_id, "translation", "items", _, "revisions"],
         ) => Some((Action::TranslationRead, RequestScope::Job(*job_id))),
@@ -633,6 +636,14 @@ mod tests {
             ))
         );
         assert!(requested_action("GET", "/api/v1/usage").is_none());
+        for path in ["/api/v1/jobs/job-a/data", "/api/v1/jobs/job-a/data/revisions"] {
+            assert_eq!(
+                requested_action("GET", path),
+                Some((AgentCapabilityAction::TranslationRead, RequestScope::Job("job-a"))),
+                "{path}"
+            );
+        }
+        assert!(requested_action("POST", "/api/v1/jobs/job-a/data/revisions").is_none());
         assert!(requested_action("GET", "/api/v1/jobs/job-a/usage").is_none());
         assert!(
             requested_action("GET", "/api/v1/internal/agent/runtime-sessions/conv-a").is_none()

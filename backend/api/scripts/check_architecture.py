@@ -124,6 +124,7 @@ ROUTE_STATE_RESOURCE_ALLOWLIST = {
     Path("src/routes/common/document_operations.rs"),
     Path("src/routes/common/fonts.rs"),
     Path("src/routes/common/glossaries.rs"),
+    Path("src/routes/common/job_data.rs"),
     Path("src/routes/common/quality.rs"),
     Path("src/routes/common/usage.rs"),
     Path("src/routes/common/health.rs"),
@@ -247,6 +248,12 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     ),
     Path("src/routes/quality.rs"): (
         "crate::services::quality::api::",
+    ),
+    Path("src/routes/job_data.rs"): (
+        "crate::services::job_data::api::",
+    ),
+    Path("src/routes/common/job_data.rs"): (
+        "crate::services::job_data::api::JobDataApiDeps",
     ),
     Path("src/routes/token_usage.rs"): (
         "crate::services::usage::api::",
