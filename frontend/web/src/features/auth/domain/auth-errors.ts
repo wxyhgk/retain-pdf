@@ -11,8 +11,15 @@ export function authErrorText(error: unknown, fallback = "操作失败，请稍�
     const secs = Number(e.details?.retry_after_secs) || 0;
     return secs > 0 ? `尝试次数太多，请 ${Math.max(1, Math.ceil(secs / 60))} 分钟后再试。` : "尝试次数太多，请稍后再试。";
   }
+  // 账号相关的错误后端都给了中文说明（WRONG_PASSWORD「当前密码不对」、SAME_PASSWORD、WEAK_PASSWORD、
+  // INVALID_USERNAME、USERNAME_TAKEN、不能停用自己 / 最后一个管理员……），有就直接显示。
+  if (e.message && /[\u4e00-\u9fff]/.test(e.message)) return e.message;
+  if (code === "USERNAME_TAKEN") return "这个用户名已经有人用了。";
+  if (code === "WRONG_PASSWORD") return "当前密码不对。";
+  if (code === "SAME_PASSWORD") return "新密码不能和当前密码一样。";
+  if (code === "WEAK_PASSWORD") return `密码至少 ${Number(e.details?.min_length) || MIN_PASSWORD_LENGTH} 位。`;
+  if (code === "INVALID_USERNAME") return "用户名 3～32 位，只能用字母、数字、点、下划线、连字符。";
   if (e.status === 403) return "没有权限做这件事。";
-  if (e.status === 409) return e.message || "这个用户名已经有人用了。";
   if (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(`${e.message || ""}`)) {
     return "连不上服务器，请稍后再试。";
   }
