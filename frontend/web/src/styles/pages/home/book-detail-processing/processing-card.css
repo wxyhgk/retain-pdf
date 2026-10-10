@@ -161,6 +161,43 @@
   margin-top: 4px;
 }
 
+.book-detail-refine-escalated {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.book-detail-refine-escalated summary {
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.book-detail-refine-escalated ol {
+  display: grid;
+  gap: 2px;
+  max-height: 180px;
+  margin: 4px 0 0;
+  padding-left: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.book-detail-refine-escalated li {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.book-detail-refine-escalated-page {
+  flex: 0 0 auto;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.book-detail-refine-escalated p {
+  margin: 4px 0 0;
+}
+
 .book-detail-reprocess-controls {
   display: flex;
   flex: 0 0 auto;

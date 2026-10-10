@@ -33,8 +33,9 @@ KIND_ISSUE_RESOLVE = "issue.resolve"
 KIND_ISSUE_ESCALATE = "issue.escalate"
 KIND_DECISION = "decision"
 KIND_DISPUTE = "dispute"
-KIND_RULING = "ruling"
 KIND_REVIEW_DONE = "review.done"
+KIND_TERM_REQUEST = "term.change_request"
+KIND_TERM_DECISION = "term.decision"
 
 
 def now_iso() -> str:
@@ -148,9 +149,10 @@ __all__ = [
     "KIND_ISSUE_OPEN",
     "KIND_ISSUE_RESOLVE",
     "KIND_REVIEW_DONE",
-    "KIND_RULING",
     "KIND_RUN_END",
     "KIND_RUN_START",
+    "KIND_TERM_DECISION",
+    "KIND_TERM_REQUEST",
     "LEDGER_RELATIVE_PATH",
     "ROLE_CHIEF",
     "ROLE_HUMAN",

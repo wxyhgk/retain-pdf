@@ -33,7 +33,7 @@ class EditorialModel:
 
     def __init__(self, **scripts) -> None:
         self.scripts = {"review": [{"findings": []}], "chief": [{"decisions": []}], "fix": [{"fixes": []}],
-                        "rewrite": [{"rewrites": []}], **scripts}
+                        "rewrite": [{"rewrites": []}], "terms": [{"decisions": []}], **scripts}
         self.calls: list[tuple[str, list[dict]]] = []
 
     def __call__(self, messages, *, purpose, response_format=None):
@@ -114,7 +114,9 @@ def test_chief_routes_blocks_and_the_reviser_rewrites_an_omission(tmp_path: Path
     report, translated = _run(tmp_path, model)
 
     assert report["mode"] == "editorial"
-    assert model.purposes() == ["review", "chief", "fix", "rewrite"]
+    # 最后一个 review 是审校复核改过的两块。
+    assert model.purposes() == ["review", "chief", "fix", "rewrite", "review"]
+    assert sorted(item["item_id"] for item in model.payload("review", 1)["items"]) == ["p001-b001", "p001-b002"]
     # 主编只看问题清单，不看全文；拿到的是规则框。
     chief_items = {row["item_id"]: row for row in model.payload("chief")["items"]}
     assert "translation" not in chief_items["p001-b001"] and "source" not in chief_items["p001-b001"]
@@ -210,9 +212,13 @@ def test_review_against_a_locked_term_is_ruled_in_favour_of_the_term_base(tmp_pa
             "explanation": "「模型体系」应统一为「模型系统」", "suggestion": "谐振子是分子振动的模型系统",
         }]}],
         chief=[_decide(("p001-b001", "escalate"), ("p001-b002", "escalate"))],
+        terms=[{"decisions": [{"term_source": "harmonic oscillator", "decision": "keep", "target": "", "reason": "通行译名"}]}],
     )
     report, translated = _run(tmp_path, model, translated=translated)
 
+    request = model.payload("terms")["requests"][0]
+    assert (request["term_source"], request["current_target"]) == ("harmonic oscillator", "谐振子")
+    assert request["suggestions"][0]["suggestion"] == "谐波振荡器"
     disputes = report["editorial"]["disputes"]
     assert [(row["item_id"], row["term_target"], row["ruling"]) for row in disputes] == [
         ("p001-b001", "谐振子", "keep_term_base")
@@ -223,7 +229,7 @@ def test_review_against_a_locked_term_is_ruled_in_favour_of_the_term_base(tmp_pa
     assert "谐振子" in _item(translated, "p001-b001")["translated_text"]
     assert report["editorial"]["term_review"] == {"status": "completed", "by_treatment": {"lock": 1}}
     kinds = [record["kind"] for record in _ledger(tmp_path)]
-    assert "dispute" in kinds and "ruling" in kinds
+    assert "dispute" in kinds and "term.decision" in kinds
     _assert_matches_contract(report)
 
 
@@ -270,7 +276,8 @@ def test_an_interrupted_run_resumes_without_reviewing_again(tmp_path: Path, monk
     )
     report, translated = _run(tmp_path, second, translated=translated)
 
-    assert "review" not in second.purposes(), "续跑复用台账里的问题单，不重复审校"
+    assert second.purposes()[0] == "chief", "续跑复用台账里的问题单，不重复审校"
+    assert second.purposes().count("review") == 1, "只剩复核改过的块"
     assert report["editorial"]["resumed"] is True
     assert report["editorial"]["run_id"] == failed["editorial"]["run_id"]
     assert _item(translated, "p001-b001")["translated_text"] == B001_FULL
@@ -296,3 +303,266 @@ def test_source_text_of_the_omission_reaches_the_rewriter(tmp_path: Path) -> Non
     assert item["source"] == B001_SOURCE
     assert item["max_chars"] >= len(B001_SOURCE), "补整句漏译要给够长度"
     assert item["context_after"].startswith("在 289 K")
+
+
+class ContentAwareModel:
+    """按请求内容作答、不看先后顺序：并发时谁先回来都一样。请求之间随机停顿，打乱完成顺序。"""
+
+    def __init__(self) -> None:
+        import threading
+
+        self.lock = threading.Lock()
+        self.purposes: list[str] = []
+
+    def __call__(self, messages, *, purpose, response_format=None):
+        import random
+        import time
+
+        time.sleep(random.uniform(0, 0.02))
+        with self.lock:
+            self.purposes.append(purpose)
+        items = json.loads(messages[-1]["content"]).get("items", [])
+        if purpose == "review":
+            body = {"findings": []}
+        elif purpose == "chief":
+            body = {"decisions": [{"item_id": row["item_id"], "action": "rewrite" if "rewrite" in row["allowed_actions"] else row["default_action"], "reason": "r", "note": "n"} for row in items]}
+        elif purpose == "rewrite":
+            fixed = {"p001-b001": B001_FULL, "p001-b002": B002_FIXED}
+            body = {"rewrites": [{"item_id": row["item_id"], "translation": fixed[row["item_id"]], "note": ""} for row in items if row["item_id"] in fixed]}
+        else:
+            body = {"fixes": []}
+        return ChatResult(content=json.dumps(body, ensure_ascii=False), usage={"prompt_tokens": 7, "completion_tokens": 3, "total_tokens": 10})
+
+
+def test_concurrent_batches_give_the_same_result_as_one_by_one(tmp_path: Path, monkeypatch) -> None:
+    from retainpdf_pipeline.translate.services.editorial import chief as chief_rules
+    from retainpdf_pipeline.translate.services.editorial import rewrite as rewrite_rules
+
+    monkeypatch.setattr(chief_rules, "CHIEF_BATCH_SIZE", 1)
+    monkeypatch.setattr(rewrite_rules, "REWRITE_BATCH_SIZE", 1)
+    monkeypatch.setattr(editorial, "EDITORIAL_WORKERS", 4)
+    model = ContentAwareModel()
+    report, translated = _run(tmp_path, model)
+
+    assert model.purposes.count("chief") == 2 and model.purposes.count("rewrite") == 2
+    assert _item(translated, "p001-b001")["translated_text"] == B001_FULL
+    assert _item(translated, "p001-b002")["translated_text"] == B002_FIXED
+    assert [fix["item_id"] for fix in report["fixes"]] == ["p001-b001", "p001-b002"], "结果按块的顺序记录"
+    # 审校 1 + 主编 2 + 重写 2 + 复核 1。
+    assert report["token_usage"]["requests"] == 6
+    assert report["token_usage"]["total_tokens"] == 60
+    _assert_checkpoint_consistent(translated)
+    _assert_matches_contract(report)
+
+
+def test_concurrent_provider_calls_keep_their_own_token_usage(monkeypatch) -> None:
+    import threading
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+
+    from retainpdf_pipeline.translate.artifacts.aggregator import get_active_translation_run_diagnostics
+    from retainpdf_pipeline.translate.services.refine import llm
+
+    barrier = threading.Barrier(4)
+
+    def fake_request(messages, **kwargs):
+        size = int(messages[0]["content"])
+        barrier.wait(timeout=5)  # 四个请求同时在途
+        time.sleep(0.01 * (4 - size))
+        get_active_translation_run_diagnostics().record_token_usage(
+            {"prompt_tokens": size, "completion_tokens": size, "total_tokens": 2 * size}
+        )
+        return "ok"
+
+    monkeypatch.setattr(llm, "request_chat_content", fake_request)
+    chat = llm.provider_chat_fn(model="m", base_url="https://x.invalid/v1", api_key="k")
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(lambda n: chat([{"role": "user", "content": str(n)}], purpose="review"), [1, 2, 3, 4]))
+    assert [result.usage["total_tokens"] for result in results] == [2, 4, 6, 8]
+
+
+
+def _job_with_term_base(tmp_path: Path, terms: list[dict]) -> Path:
+    translated = _build_job(tmp_path)
+    (translated / "term-base.v1.json").write_text(json.dumps({
+        "schema": "term_base_v1", "schema_version": 1, "terms": terms,
+    }, ensure_ascii=False), encoding="utf-8")
+    return translated
+
+
+DISPUTE_REVIEW = {"findings": [{
+    "item_id": "p001-b001", "category": "terminology", "severity": "major",
+    "target_span": "谐振子", "source_span": "harmonic oscillator",
+    "explanation": "规范名为简正振子", "suggestion": "简正振子",
+}]}
+
+
+def test_the_term_specialist_can_change_the_term_base_and_unify_the_book(tmp_path: Path) -> None:
+    translated = _job_with_term_base(tmp_path, [
+        {"source": "harmonic oscillator", "target": "谐振子", "origin": "extracted", "treatment": "lock", "votes": 3},
+        {"source": "quantum harmonic oscillator", "target": "量子谐振子", "origin": "extracted", "treatment": "lock"},
+    ])
+    model = EditorialModel(
+        review=[DISPUTE_REVIEW],
+        terms=[{"decisions": [{"term_source": "harmonic oscillator", "decision": "change", "target": "简正振子", "reason": "规范名"}]}],
+        chief=[_decide(("p001-b001", "escalate"), ("p001-b002", "escalate"))],
+    )
+    report, translated = _run(tmp_path, model, translated=translated)
+
+    assert _item(translated, "p001-b001")["translated_text"] == "简正振子是分子振动的模型体系。"
+    term_base = json.loads((translated / "term-base.v1.json").read_text(encoding="utf-8"))
+    terms = {term["source"]: term for term in term_base["terms"]}
+    assert terms["harmonic oscillator"]["target"] == "简正振子"
+    assert terms["harmonic oscillator"]["revisions"][0]["from"] == "谐振子"
+    assert terms["quantum harmonic oscillator"]["target"] == "量子简正振子", "长词条跟着一致化"
+    changes = {row["source"]: row for row in report["editorial"]["term_changes"]}
+    assert changes["harmonic oscillator"]["applied_item_ids"] == ["p001-b001"]
+    assert "quantum harmonic oscillator" in changes
+    assert report["editorial"]["disputes"][0]["ruling"] == "change_term_base"
+    unify = [fix for fix in report["fixes"] if fix.get("origin") == "rule" and fix["item_id"] == "p001-b001"]
+    assert unify and unify[0]["status"] == "applied"
+    kinds = [record["kind"] for record in _ledger(tmp_path)]
+    assert "term.change_request" in kinds and "term.decision" in kinds
+    _assert_checkpoint_consistent(translated)
+    _assert_matches_contract(report)
+
+
+def test_an_undecided_term_dispute_is_left_for_a_person(tmp_path: Path) -> None:
+    translated = _job_with_term_base(tmp_path, [
+        {"source": "harmonic oscillator", "target": "谐振子", "origin": "extracted", "treatment": "lock"},
+    ])
+    model = EditorialModel(
+        review=[DISPUTE_REVIEW],
+        terms=[{"decisions": [{"term_source": "harmonic oscillator", "decision": "escalate", "target": "", "reason": "两种都通行"}]}],
+        chief=[_decide(("p001-b002", "escalate"))],
+    )
+    report, translated = _run(tmp_path, model, translated=translated)
+
+    escalated = {row["item_id"]: row for row in report["editorial"]["escalated"]}
+    assert escalated["p001-b001"]["reason"].startswith("术语有争议，需要人定：harmonic oscillator")
+    assert all(row["item_id"] != "p001-b001" for row in model.payload("chief")["items"]), "交给人的块不再分流"
+    assert "谐振子" in _item(translated, "p001-b001")["translated_text"]
+    _assert_matches_contract(report)
+
+
+def test_user_glossary_terms_are_never_put_up_for_change(tmp_path: Path) -> None:
+    translated = _job_with_term_base(tmp_path, [
+        {"source": "harmonic oscillator", "target": "谐振子", "origin": "user_glossary", "level": "canonical"},
+    ])
+    (tmp_path / "specs" / "translate.spec.json").write_text(json.dumps({"params": {"glossary_entries": [
+        {"source": "harmonic oscillator", "target": "谐振子", "level": "canonical"},
+    ]}}), encoding="utf-8")
+    model = EditorialModel(review=[DISPUTE_REVIEW], chief=[_decide(("p001-b001", "escalate"), ("p001-b002", "escalate"))])
+    report, _ = _run(tmp_path, model, translated=translated)
+
+    assert "terms" not in model.purposes()
+    assert [row["ruling"] for row in report["editorial"]["disputes"]] == ["keep_term_base"]
+
+
+
+def test_problems_the_recheck_finds_go_into_the_next_round(tmp_path: Path) -> None:
+    after_rewrite = B001_FULL
+    model = EditorialModel(
+        review=[
+            {"findings": []},
+            # 复核：重写后的 b001 有一处错译。
+            {"findings": [{
+                "item_id": "p001-b001", "category": "mistranslation", "severity": "major",
+                "target_span": "彼此从不交叉", "source_span": "never cross each other",
+                "explanation": "语气过重", "suggestion": "互不交叉",
+            }]},
+            {"findings": []},
+        ],
+        chief=[_decide(("p001-b001", "rewrite"), ("p001-b002", "escalate")), _decide(("p001-b001", "patch"))],
+        rewrite=[{"rewrites": [{"item_id": "p001-b001", "translation": after_rewrite, "note": ""}]}],
+        fix=[{"fixes": [{"item_id": "p001-b001", "edits": [{"op": "replace", "find": "而且彼此从不交叉", "replace": "且互不交叉"}]}]}],
+    )
+    report, translated = _run(tmp_path, model)
+
+    assert _item(translated, "p001-b001")["translated_text"] == B001_TEXT + "它的能级等间距，且互不交叉。"
+    assert [(fix["round"], fix["action"], fix["status"]) for fix in _fixes(report, "p001-b001")] == [
+        (1, "rewrite", "applied"), (2, "patch", "applied"),
+    ]
+    second_round = model.payload("chief", 1)["items"][0]
+    assert [issue["explanation"] for issue in second_round["issues"]] == ["语气过重"]
+    assert report["editorial"]["recheck"] == {"item_count": 1, "finding_count": 1}
+    assert any(row["explanation"] == "语气过重" for row in report["review"]["findings"])
+    _assert_matches_contract(report)
+
+
+def test_a_problem_found_after_the_last_round_is_left_for_a_person(tmp_path: Path) -> None:
+    bad = {"findings": [{
+        "item_id": "p001-b001", "category": "mistranslation", "severity": "major",
+        "target_span": "彼此从不交叉", "source_span": "never cross", "explanation": "仍不准确", "suggestion": "",
+    }]}
+    model = EditorialModel(
+        # 第一轮局部改没改成，不复核；第二轮重写后复核发现问题。
+        review=[{"findings": []}, bad],
+        chief=[_decide(("p001-b001", "patch"), ("p001-b002", "escalate")), _decide(("p001-b001", "rewrite"))],
+        fix=[{"fixes": []}],
+        rewrite=[{"rewrites": [{"item_id": "p001-b001", "translation": B001_FULL, "note": ""}]}],
+    )
+    report, _ = _run(tmp_path, model)
+
+    escalated = {row["item_id"]: row for row in report["editorial"]["escalated"]}
+    assert escalated["p001-b001"]["reason"].startswith(editorial.ESCALATE_RECHECK)
+    assert "mistranslation" in escalated["p001-b001"]["categories"]
+    _assert_matches_contract(report)
+
+
+def _job_with_inconsistent_term(tmp_path: Path) -> Path:
+    from test_translation_refine import _pages, _single
+
+    pages = _pages()
+    pages[1] += [
+        _single("p002-b002", 1, 2, "The Hermite polynomials appear in the solution.", "Hermite 多项式出现在解中。"),
+        _single("p002-b003", 1, 3, "Hermite polynomials are orthogonal.", "埃尔米特多项式是正交的。"),
+        _single("p002-b004", 1, 4, "We use Hermite polynomials again.", "我们再次使用埃尔米特多项式。"),
+    ]
+    return _build_job(tmp_path, pages)
+
+
+def _patrol(decision: str, target: str = "") -> dict:
+    return {"decisions": [{"term_source": "Hermite", "decision": decision, "target": target, "reason": "测试"}]}
+
+
+def test_patrol_translates_english_left_in_the_book(tmp_path: Path) -> None:
+    translated = _job_with_inconsistent_term(tmp_path)
+    model = EditorialModel(terms=[_patrol("translate", "埃尔米特")], chief=[_decide(("p001-b001", "escalate"), ("p001-b002", "escalate"))])
+    report, translated = _run(tmp_path, model, translated=translated, end_page=2)
+
+    request = model.payload("terms")["terms"][0]
+    assert (request["term_source"], request["kept_in_english"], request["translated"]) == ("Hermite", 1, 2)
+    assert _item(translated, "p002-b002")["translated_text"] == "埃尔米特多项式出现在解中。"
+    term_base = json.loads((translated / "term-base.v1.json").read_text(encoding="utf-8"))
+    hermite = next(term for term in term_base["terms"] if term["source"] == "Hermite")
+    assert (hermite["target"], hermite["treatment"]) == ("埃尔米特", "lock")
+    assert report["editorial"]["term_patrol"] == [
+        {"source": "Hermite", "decision": "translate", "target": "埃尔米特", "reason": "测试", "applied_item_ids": ["p002-b002"]}
+    ]
+    qa = json.loads((tmp_path / "artifacts" / "refine_report.v1.json").read_text(encoding="utf-8"))["qa_after"]
+    assert qa is not None
+    _assert_checkpoint_consistent(translated)
+    _assert_matches_contract(report)
+
+
+def test_patrol_keep_original_sends_translated_places_to_the_chief(tmp_path: Path) -> None:
+    translated = _job_with_inconsistent_term(tmp_path)
+    model = EditorialModel(terms=[_patrol("keep_original")], chief=[{"decisions": []}])
+    report, translated = _run(tmp_path, model, translated=translated, end_page=2)
+
+    chief_items = {row["item_id"] for row in model.payload("chief")["items"]}
+    assert {"p002-b003", "p002-b004"} <= chief_items, "译掉的地方按新术语表成了要修的问题"
+    assert _item(translated, "p002-b002")["translated_text"] == "Hermite 多项式出现在解中。"
+    assert report["editorial"]["term_patrol"][0]["decision"] == "keep_original"
+
+
+def test_patrol_leave_changes_nothing(tmp_path: Path) -> None:
+    translated = _job_with_inconsistent_term(tmp_path)
+    before = (translated / "term-base.v1.json").exists()
+    model = EditorialModel(terms=[_patrol("leave")], chief=[_decide(("p001-b001", "escalate"), ("p001-b002", "escalate"))])
+    report, translated = _run(tmp_path, model, translated=translated, end_page=2)
+
+    assert _item(translated, "p002-b002")["translated_text"] == "Hermite 多项式出现在解中。"
+    assert (translated / "term-base.v1.json").exists() == before
+    assert report["editorial"]["term_patrol"][0]["decision"] == "leave"

@@ -7,7 +7,7 @@ import type {
 } from "@/platform/api/index.js";
 import { btn } from "../ui.jsx";
 import { stageDisabledReasonText } from "../../../domain/stage-disabled-reason.js";
-import { describeLastRefine, refineContinuePage } from "../../../domain/last-refine.js";
+import { describeLastRefine, refineContinuePage, refineEscalations } from "../../../domain/last-refine.js";
 
 function labelOf(action: JobStageRetryActionView) {
   if (action.stage === "translation") return "重新翻译";
@@ -205,12 +205,30 @@ export function TranslationStageActions({
             const reason = stageDisabledReasonText(action.disabled_reason || action.reason);
             const lastRefine = action.stage === "refine" ? describeLastRefine(action.last_refine) : "";
             const resumeAt = action.stage === "refine" ? refineContinuePage(action.last_refine) : null;
+            const escalated = action.stage === "refine" ? refineEscalations(action.last_refine) : [];
+            const escalatedCount = Number(action.last_refine?.escalated_count) || escalated.length;
             return (
               <li key={action.stage} className="book-detail-reprocess-row" data-reprocess-stage={action.stage}>
                 <div className="book-detail-reprocess-copy">
                   <strong>{labelOf(action)}</strong>
                   <span>{!action.can_retry && reason && !checking ? reason : SHEET_HINTS[action.stage] || ""}</span>
                   {lastRefine ? <span data-last-refine="true">{lastRefine}</span> : null}
+                  {escalated.length ? (
+                    <details className="book-detail-refine-escalated" data-refine-escalated={escalatedCount}>
+                      <summary>{`查看留给你确认的 ${escalatedCount} 处`}</summary>
+                      <ol>
+                        {escalated.map((row) => (
+                          <li key={row.item_id} data-escalated-item={row.item_id}>
+                            <span className="book-detail-refine-escalated-page">{`第 ${row.page_number} 页`}</span>
+                            <span>{row.reason}</span>
+                          </li>
+                        ))}
+                      </ol>
+                      {escalatedCount > escalated.length ? (
+                        <p>{`只列出前 ${escalated.length} 处；全部见精修报告。`}</p>
+                      ) : null}
+                    </details>
+                  ) : null}
                 </div>
                 <div className="book-detail-reprocess-controls">
                   {action.stage === "render" && !checking ? engineSelect : null}

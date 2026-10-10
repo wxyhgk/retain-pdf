@@ -613,6 +613,24 @@ def _refine_summary(report: dict[str, Any]) -> dict[str, Any]:
     )
     if rejected:
         summary["rejected_by_reason"] = dict(rejected)
+    editorial = report.get("editorial") if isinstance(report.get("editorial"), dict) else None
+    if editorial is not None:
+        # 编辑部：留给人确认的块、术语表的改动与巡检——这些要拿给用户看、由用户拍板。
+        summary["needs_human"] = [
+            {key: row.get(key) for key in ("item_id", "page_number", "reason", "categories", "attempts")}
+            for row in editorial.get("escalated") or []
+            if isinstance(row, dict)
+        ]
+        summary["term_changes"] = [
+            {key: row.get(key) for key in ("source", "from", "to", "reason")}
+            for row in editorial.get("term_changes") or []
+            if isinstance(row, dict)
+        ]
+        summary["term_patrol"] = [
+            {key: row.get(key) for key in ("source", "decision", "target", "reason")}
+            for row in editorial.get("term_patrol") or []
+            if isinstance(row, dict) and row.get("decision") != "leave"
+        ]
     return summary
 
 

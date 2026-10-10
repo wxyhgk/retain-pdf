@@ -594,3 +594,35 @@ def test_rust_client_requests_a_job_scoped_capability_without_document_scope():
         "actions": ["document.inspect"],
         "ttl_seconds": 60,
     }
+
+
+def test_issues_lists_what_the_editorial_left_for_the_user():
+    report = {
+        **REFINE_REPORT,
+        "mode": "editorial",
+        "editorial": {
+            "escalated": [
+                {"item_id": "p014-b019", "page_number": 14, "reason": "达到修改次数上限，仍未解决",
+                 "finding_ids": ["rf-1"], "categories": ["mistranslation"], "attempts": ["patch:rejected/crosses_protected_token"]},
+            ],
+            "term_changes": [{"source": "Cartesian coordinates", "from": "笛卡尔坐标", "to": "笛卡儿坐标", "reason": "规范名", "applied_item_ids": ["p019-b017"]}],
+            "term_patrol": [
+                {"source": "Hermite", "decision": "translate", "target": "埃尔米特", "reason": "通行译名", "applied_item_ids": []},
+                {"source": "Morse", "decision": "leave", "target": "", "reason": "两种都可以", "applied_item_ids": []},
+            ],
+        },
+    }
+    fake = FakeCli(
+        {
+            ("translation", "qa"): _ok({"job_id": JOB, "report": QA_REPORT}),
+            ("translation", "refine-report"): _ok({"job_id": JOB, "report": report}),
+        }
+    )
+    payload = _stdout(_run(fake, "retainpdf-agent translation issues"))
+    refine = payload["refine"]
+    assert refine["needs_human"] == [{
+        "item_id": "p014-b019", "page_number": 14, "reason": "达到修改次数上限，仍未解决",
+        "categories": ["mistranslation"], "attempts": ["patch:rejected/crosses_protected_token"],
+    }]
+    assert refine["term_changes"] == [{"source": "Cartesian coordinates", "from": "笛卡尔坐标", "to": "笛卡儿坐标", "reason": "规范名"}]
+    assert [row["source"] for row in refine["term_patrol"]] == ["Hermite"], "不统一的不列"

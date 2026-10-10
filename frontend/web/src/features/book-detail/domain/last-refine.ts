@@ -16,9 +16,15 @@ export function refineContinuePage(last: LastRefineView | null | undefined): num
   return Number.isInteger(page) && page >= 1 ? page : null;
 }
 
+/** 编辑部留给人确认的块；没有时为空数组。 */
+export function refineEscalations(last: LastRefineView | null | undefined) {
+  return Array.isArray(last?.escalated) ? last.escalated : [];
+}
+
 export function describeLastRefine(last: LastRefineView | null | undefined): string {
   if (!last) return "";
-  const result = `发现 ${last.finding_count || 0} 处，改了 ${last.applied || 0} 处`;
+  const escalated = Number(last.escalated_count) || 0;
+  const result = `发现 ${last.finding_count || 0} 处，改了 ${last.applied || 0} 处${escalated ? `，${escalated} 处留给你确认` : ""}`;
   if (last.status === "failed") return `上次精修出错，没有做完（${result}）。`;
   const page = refineContinuePage(last);
   if (page) {

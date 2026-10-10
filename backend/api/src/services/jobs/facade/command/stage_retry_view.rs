@@ -1,7 +1,8 @@
 use serde_json::{json, Value};
 
 use crate::models::api::{
-    build_job_actions, build_job_links_with_workflow, AmbiguousRequestPolicy, LastRefineView, RetryStageKind,
+    build_job_actions, build_job_links_with_workflow, AmbiguousRequestPolicy, EscalatedItemView, LastRefineView,
+    RetryStageKind, LAST_REFINE_ESCALATED_LIMIT,
     RetryStageSubmissionView, StageActionsView, StageRetryActionLinkView, StageRetryActionView,
 };
 use crate::models::domain::{JobSnapshot, JobStatusKind, WorkflowKind};
@@ -101,6 +102,7 @@ fn last_refine(job: &JobSnapshot, data_root: &Path) -> Option<LastRefineView> {
     let int = |value: &Value| value.as_i64().unwrap_or(0);
     let review = &report["review"];
     let candidate = int(&review["candidate_item_count"]);
+    let escalated = report["editorial"]["escalated"].as_array().cloned().unwrap_or_default();
     let reviewed = int(&review["reviewed_item_count"]);
     Some(LastRefineView {
         status: report["status"].as_str().unwrap_or("").to_string(),
@@ -114,6 +116,17 @@ fn last_refine(job: &JobSnapshot, data_root: &Path) -> Option<LastRefineView> {
             .unwrap_or((candidate - reviewed).max(0)),
         next_page: review["next_page"].as_i64(),
         stopped_reason: report["stopped_reason"].as_str().map(str::to_string),
+        mode: report["mode"].as_str().unwrap_or("").to_string(),
+        escalated_count: escalated.len() as i64,
+        escalated: escalated
+            .iter()
+            .take(LAST_REFINE_ESCALATED_LIMIT)
+            .map(|row| EscalatedItemView {
+                item_id: row["item_id"].as_str().unwrap_or("").to_string(),
+                page_number: int(&row["page_number"]),
+                reason: row["reason"].as_str().unwrap_or("").to_string(),
+            })
+            .collect(),
     })
 }
 

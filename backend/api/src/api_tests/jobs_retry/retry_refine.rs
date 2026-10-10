@@ -418,6 +418,27 @@ async fn stage_actions_show_how_far_the_last_refine_got() {
     assert_eq!(last["unreviewed_item_count"], 30);
     assert_eq!((last["finding_count"].as_i64(), last["applied"].as_i64()), (Some(4), Some(2)));
     assert_eq!(last["stopped_reason"], "max_tokens");
+    assert_eq!((last["mode"].as_str(), last["escalated_count"].as_i64()), (Some(""), Some(0)), "老报告：没有模式、没有待确认");
+
+    // 编辑部报告：带上留给人确认的块。
+    std::fs::write(
+        &report_path,
+        json!({
+            "status": "completed", "generated_at": "2026-10-09T18:00:00+00:00", "mode": "editorial",
+            "review": {"candidate_item_count": 330, "reviewed_item_count": 330, "summary": {"finding_count": 9}},
+            "fix_summary": {"applied": 5},
+            "editorial": {"escalated": [
+                {"item_id": "p014-b019", "page_number": 14, "reason": "达到修改次数上限，仍未解决", "finding_ids": [], "categories": [], "attempts": []},
+                {"item_id": "p019-b017", "page_number": 19, "reason": "术语有争议，需要人定：Cartesian coordinates（现译「笛卡尔坐标」）", "finding_ids": [], "categories": [], "attempts": []},
+            ]},
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let last = refine_action(&state, id).await["last_refine"].clone();
+    assert_eq!((last["mode"].as_str(), last["escalated_count"].as_i64()), (Some("editorial"), Some(2)));
+    assert_eq!(last["escalated"][1]["page_number"], 19);
+    assert!(last["escalated"][1]["reason"].as_str().unwrap().starts_with("术语有争议"));
 
     // 接着精修:从没审到的那一页开始,上限可以随这次请求给,负数不行。
     let response = retry(&state, id, json!({"stage": "refine", "refine": {"start_page": 24, "max_items": 0}})).await;
