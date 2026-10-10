@@ -1,0 +1,206 @@
+/* 编辑部精修流程图（EditorialFlowPanel）：竖排节点，主编分流 → 修改 → 复核框在一个「第 N 轮」循环里。
+   配色沿用流水线轨道：完成是墨色描边加对勾，进行中是实心墨点并呼吸。 */
+
+.editorial-flow {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+}
+
+.editorial-flow-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.editorial-flow-header strong {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.editorial-flow-header span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.editorial-flow-track {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editorial-flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  padding-bottom: 10px;
+}
+
+/* 节点之间的连接线。 */
+.editorial-flow-node::after {
+  content: "";
+  position: absolute;
+  top: 24px;
+  bottom: 0;
+  left: 10px;
+  width: 2px;
+  background: color-mix(in srgb, var(--line) 78%, transparent);
+}
+
+.editorial-flow-track > .editorial-flow-node:last-child::after {
+  display: none;
+}
+
+.editorial-flow-dot {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--bg);
+}
+
+.editorial-flow-dot svg {
+  width: 12px;
+  height: 12px;
+}
+
+.editorial-flow-mark-idle {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.4;
+}
+
+.editorial-flow-node.is-done .editorial-flow-dot {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.editorial-flow-node.is-active .editorial-flow-dot {
+  border-color: var(--ink);
+  color: var(--paper);
+  background: var(--ink);
+  animation: editorial-flow-pulse 1.6s ease-in-out infinite;
+}
+
+.editorial-flow-node.is-active .editorial-flow-mark-idle {
+  opacity: 1;
+}
+
+.editorial-flow-node.is-stopped .editorial-flow-dot {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+  color: var(--danger);
+}
+
+.editorial-flow-node.is-skipped .editorial-flow-dot {
+  border-style: dashed;
+}
+
+.editorial-flow-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.editorial-flow-title {
+  display: flex;
+  min-height: 22px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.editorial-flow-title strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 620;
+}
+
+.editorial-flow-node.is-pending .editorial-flow-title strong,
+.editorial-flow-node.is-skipped .editorial-flow-title strong {
+  color: var(--muted);
+}
+
+.editorial-flow-role {
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  font-size: 10px;
+}
+
+.editorial-flow-detail {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.editorial-flow-node.is-active .editorial-flow-detail {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* 循环框：主编分流 → 修改 → 复核，最多两轮。 */
+.editorial-flow-loop {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 8px 10px 0;
+  border: 1px dashed color-mix(in srgb, var(--ink) 28%, var(--line));
+  border-radius: 8px;
+}
+
+.editorial-flow-loop-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 620;
+}
+
+.editorial-flow-loop-label svg {
+  width: 12px;
+  height: 12px;
+}
+
+.editorial-flow-loop-hint {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.editorial-flow-summary {
+  margin: 0;
+  color: var(--ink);
+  font-size: 11px;
+}
+
+@keyframes editorial-flow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ink) 28%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--ink) 0%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editorial-flow-node.is-active .editorial-flow-dot {
+    animation: none;
+  }
+}

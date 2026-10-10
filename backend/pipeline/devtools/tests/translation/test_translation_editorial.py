@@ -145,6 +145,33 @@ def test_chief_routes_blocks_and_the_reviser_rewrites_an_omission(tmp_path: Path
     _assert_matches_contract(report)
 
 
+def test_progress_events_carry_round_and_batch_counts_for_the_flow_chart(tmp_path: Path) -> None:
+    """前端流程图靠载荷里的 refine_round / refine_max_rounds / batch_done / batch_total 画，不从文案里抠。"""
+    from retainpdf_pipeline.services.pipeline_shared.events import PipelineEventWriter
+    from retainpdf_pipeline.services.pipeline_shared.events import pipeline_event_writer_scope
+
+    model = EditorialModel(
+        chief=[_decide(("p001-b001", "rewrite"), ("p001-b002", "patch"))],
+        rewrite=[{"rewrites": [{"item_id": "p001-b001", "translation": B001_FULL, "note": "补译第二句"}]}],
+        fix=[{"fixes": [{"item_id": "p001-b002", "edits": [{"op": "replace", "find": "289 K", "replace": "298 K"}]}]}],
+    )
+    writer = PipelineEventWriter(job_id="job-1", job_root=tmp_path, logs_dir=tmp_path / "logs", workflow="book")
+    with pipeline_event_writer_scope(writer):
+        _run(tmp_path, model)
+
+    events = [json.loads(line) for line in (tmp_path / "logs" / "pipeline_events.jsonl").read_text().splitlines()]
+    payloads = [event.get("payload") or {} for event in events]
+    by_phase = {}
+    for payload in payloads:
+        by_phase.setdefault(payload.get("refine_phase"), []).append(payload)
+    assert {"prepare", "review", "chief", "fix", "rewrite", "recheck", "done"} <= set(by_phase)
+    assert all(payload["refine_max_rounds"] == 2 for payload in payloads if payload.get("refine_phase") not in ("start", "done"))
+    assert {payload["refine_round"] for payload in by_phase["chief"]} == {1}
+    assert by_phase["review"][0]["refine_round"] == 0, "挑错在分轮之前"
+    review_batches = [payload for payload in by_phase["review"] if "batch_total" in payload]
+    assert review_batches and review_batches[-1]["batch_done"] == review_batches[-1]["batch_total"]
+
+
 def test_an_action_outside_the_frame_is_replaced_by_the_default(tmp_path: Path) -> None:
     model = EditorialModel(
         chief=[_decide(("p001-b001", "escalate"), ("p001-b002", "keep"))],

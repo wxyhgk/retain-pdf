@@ -50,6 +50,7 @@ Reader 样式只改 `frontend/packages/reader/styles/*`。`src/styles/reader/` �
 | `layout.css` | 分区根布局；**共享变量**（卡片底色 / 圆角、墨色深浅色阶）与小节标题。必须最先引入 |
 | `processing-card.css` | 「处理」卡片：标题、总状态、总进度条、细化区 |
 | `pipeline-rail.css` | OCR / 翻译 / 渲染 / 完成 流水线轨道 |
+| `editorial-flow.css` | 编辑部精修流程图（第几轮、这一步第几批） |
 | `ocr-range.css` | OCR 指定页码 |
 | `translation-controls.css` | 翻译段的摘要、动作行、提示、阶段动作、状态卡容器 |
 | `live-translation-entry.css` | 「实时译文」入口 |

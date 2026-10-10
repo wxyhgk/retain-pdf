@@ -147,6 +147,7 @@
 @import "../pages/home/book-detail-processing/layout.css" layer(pages);
 @import "../pages/home/book-detail-processing/processing-card.css" layer(pages);
 @import "../pages/home/book-detail-processing/pipeline-rail.css" layer(pages);
+@import "../pages/home/book-detail-processing/editorial-flow.css" layer(pages);
 @import "../pages/home/book-detail-processing/ocr-range.css" layer(pages);
 @import "../pages/home/book-detail-processing/translation-controls.css" layer(pages);
 @import "../pages/home/book-detail-processing/live-translation-entry.css" layer(pages);

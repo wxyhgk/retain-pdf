@@ -11,9 +11,8 @@
 from __future__ import annotations
 
 import json
-import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Mapping
@@ -77,15 +76,21 @@ class _Progress:
         self.mode = mode
         self.current = 0
         self.total = 0
+        # 编辑部的多轮：前端流程图靠它们画「第几轮 / 最多几轮」。0 = 不分轮（普通精修）。
+        self.round = 0
+        self.max_rounds = 0
 
     def _payload(self, phase: str, extra: dict[str, Any] | None = None) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "user_stage": "render",
             "progress_unit": "step",
             "refine_phase": phase,
             "refine_mode": self.mode,
-            **(extra or {}),
         }
+        if self.max_rounds:
+            payload["refine_round"] = self.round
+            payload["refine_max_rounds"] = self.max_rounds
+        return {**payload, **(extra or {})}
 
     def transition(self, phase: str, message: str, extra: dict[str, Any] | None = None) -> None:
         emit_stage_transition(
@@ -108,6 +113,10 @@ class _Progress:
             progress_total=self.total,
             payload=self._payload(phase, extra),
         )
+
+    def batch(self, phase: str, message: str, done: int, total: int) -> None:
+        """一步里的第 done/total 批跑完了；批数单独放进载荷，前端不用从文案里抠。"""
+        self.step(phase, message, {"batch_done": done, "batch_total": total})
 
 
 # ---- 读取材料 ------------------------------------------------------------------
@@ -278,7 +287,7 @@ def _run_review(
         [review_rules.build_review_messages(batch, style_notes=style_notes) for batch in batches],
         response_format=review_rules.REVIEW_RESPONSE_FORMAT,
         workers=workers,
-        on_done=lambda done, total: progress.step("review", f"精修：挑错已完成 {done}/{total} 批"),
+        on_done=lambda done, total: progress.batch("review", f"精修：挑错已完成 {done}/{total} 批", done, total),
     )
     for index, (batch, (content, failure)) in enumerate(zip(batches, responses), start=1):
         try:
@@ -329,30 +338,32 @@ def request_batches(
     调一次 ``on_done(已结束批数, 总批数)``，用来发进度；回调之间串行。
     """
     results: list[tuple[str | None, BaseException | None]] = [(None, None)] * len(messages_list)
-    lock = threading.Lock()
-    finished = 0
+    total = len(messages_list)
 
     def run(index: int) -> None:
-        nonlocal finished
         try:
             results[index] = (chat.request(phase, messages_list[index], response_format=response_format), None)
         except Exception as exc:  # noqa: BLE001 - 交给调用方逐批处理
             results[index] = (None, exc)
-        with lock:
-            finished += 1
-            if on_done is not None:
-                on_done(finished, len(messages_list))
 
-    if workers <= 1 or len(messages_list) <= 1:
-        for index in range(len(messages_list)):
+    if workers <= 1 or total <= 1:
+        for index in range(total):
             run(index)
+            if on_done is not None:
+                on_done(index + 1, total)
             if isinstance(results[index][1], RefineBudgetExceeded):
-                for rest in range(index + 1, len(messages_list)):
+                for rest in range(index + 1, total):
                     results[rest] = (None, RefineBudgetExceeded(phase))
                 break
         return results
-    with ThreadPoolExecutor(max_workers=min(workers, len(messages_list))) as executor:
-        list(executor.map(run, range(len(messages_list))))
+    # on_done 必须在本线程调：进度事件的写入器挂在 ContextVar 上，线程池里的线程拿不到，
+    # 在那边发的事件会被悄悄丢掉（编辑部挑错 55 批跑了 6 分钟，界面一条进度都没有）。
+    with ThreadPoolExecutor(max_workers=min(workers, total)) as executor:
+        futures = [executor.submit(run, index) for index in range(total)]
+        for finished, future in enumerate(as_completed(futures), start=1):
+            future.result()
+            if on_done is not None:
+                on_done(finished, total)
     return results
 
 
