@@ -211,6 +211,11 @@ class NumberChecker:
             for part in re.split(r"-", bare) + re.split(r"[-.]", bare):
                 if part and part.replace(".", "", 1).isdigit():
                     ref_numbers.add(_canonical(part))
+                # 三级以上的节号「Section 4.4.2」在原文里整个当引用抹掉了，译文「4.4.2 节」却会被
+                # 数字正则拆成「4.4」（后面的 .2 不再单独成数）——前两级也得算原文有，不然报「多出数字」。
+                levels = part.split(".")
+                if len(levels) >= 3 and all(level.isdigit() for level in levels[:2]):
+                    ref_numbers.add(_canonical(".".join(levels[:2])))
         violations: list[QaViolation] = []
 
         source_sci, source = _sci_values(source)
