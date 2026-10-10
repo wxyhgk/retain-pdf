@@ -29,7 +29,8 @@ provider = "deepseek"
 # workers = 50
 # thinking = "auto"
 #
-# protocol 是接口协议:openai(/chat/completions,默认)或 anthropic(/messages)。
+# protocol 是接口协议:openai(/chat/completions,默认)、openai_responses(/responses)
+# 或 anthropic(/messages)。
 # [providers.custom]
 # base_url = "https://llm.example.com/v1"
 # protocol = "openai"

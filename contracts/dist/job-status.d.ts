@@ -149,7 +149,7 @@ export interface PublicTranslationInput {
     reviewer_api_key_configured?: boolean;
     reviewer_credential_ref?: string;
     /**
-     * TRANSLATION_API_PROTOCOLS：openai / anthropic。
+     * TRANSLATION_API_PROTOCOLS：openai / openai_responses / anthropic。
      */
     api_protocol?: string;
     /**

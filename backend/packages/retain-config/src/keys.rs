@@ -93,7 +93,7 @@ pub fn describe_key(path: &str) -> Option<KeyInfo> {
                     path,
                     Store::Config,
                     KeyKind::Choice(API_PROTOCOLS.to_vec()),
-                    "接口协议:openai(/chat/completions)或 anthropic(/messages)",
+                    "接口协议:openai(/chat/completions)、openai_responses(/responses)或 anthropic(/messages)",
                 ),
                 "thinking" => info(
                     path,

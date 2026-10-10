@@ -245,3 +245,115 @@ async fn anthropic_probe_uses_the_messages_api() {
     assert_eq!(body["model"], "claude-sonnet-5");
     assert_eq!(body["max_tokens"], 1);
 }
+
+/// 起一个本地假服务商:`route` 上记下请求头和请求体,回 `status` + `reply`。
+async fn fake_provider(
+    route: &'static str,
+    status: u16,
+    reply: serde_json::Value,
+) -> (
+    std::net::SocketAddr,
+    std::sync::Arc<std::sync::Mutex<Vec<(Option<String>, serde_json::Value)>>>,
+) {
+    use axum::http::{HeaderMap, StatusCode};
+    use axum::routing::post;
+    use std::sync::{Arc, Mutex};
+
+    let seen: Arc<Mutex<Vec<(Option<String>, serde_json::Value)>>> = Arc::default();
+    let recorder = seen.clone();
+    let router = axum::Router::new().route(
+        route,
+        post(move |headers: HeaderMap, axum::Json(body): axum::Json<serde_json::Value>| {
+            let recorder = recorder.clone();
+            let reply = reply.clone();
+            async move {
+                let authorization =
+                    headers.get("authorization").and_then(|v| v.to_str().ok()).map(str::to_string);
+                recorder.lock().unwrap().push((authorization, body));
+                (StatusCode::from_u16(status).unwrap(), axum::Json(reply))
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, router).await.unwrap();
+    });
+    (addr, seen)
+}
+
+async fn probe_responses(base_url: String) -> super::types::MineruTokenValidationView {
+    super::deepseek::validate_deepseek_token_view(
+        super::types::DeepSeekTokenValidationRequest {
+            api_key: "sk-openai".into(),
+            base_url,
+            model: "gpt-5.6-luna".into(),
+            api_protocol: "openai_responses".into(),
+        },
+        crate::config::DeepSeekRuntimeConfig {
+            default_base_url: "https://api.deepseek.com/v1".into(),
+            balance_url: String::new(),
+            probe_timeout_secs: 5,
+            allow_private_urls: true,
+        },
+    )
+    .await
+    .unwrap()
+}
+
+/// Responses 协议的探针走 `/responses` + Bearer,`input` 代替 `messages`。
+#[tokio::test]
+async fn responses_probe_uses_the_responses_api() {
+    let ok = serde_json::json!({"status": "completed", "output": []});
+    let (addr, seen) = fake_provider("/v1/responses", 200, ok).await;
+
+    let view = probe_responses(format!("http://{addr}/v1")).await;
+
+    assert!(view.ok, "{}", view.summary);
+    let seen = seen.lock().unwrap();
+    let (authorization, body) = &seen[0];
+    assert_eq!(authorization.as_deref(), Some("Bearer sk-openai"));
+    assert_eq!(body["model"], "gpt-5.6-luna");
+    assert_eq!(body["input"], "ping");
+    assert_eq!(body["max_output_tokens"], 16);
+    assert_eq!(body["store"], false);
+    assert!(body.get("messages").is_none());
+}
+
+/// 地址误填成完整的 `/responses` 也认,不会拼出 `/responses/responses`。
+#[test]
+fn responses_url_accepts_a_full_endpoint() {
+    use super::deepseek::responses_url;
+    for base in [
+        "https://api.openai.com/v1",
+        "https://api.openai.com/v1/",
+        "https://api.openai.com/v1/responses",
+        "https://api.openai.com/v1/chat/completions",
+    ] {
+        assert_eq!(responses_url(base), "https://api.openai.com/v1/responses", "{base}");
+    }
+}
+
+/// 只实现了 `/chat/completions` 的服务商:`/responses` 404 时说「不支持这个接口」,不说「模型不可用」。
+#[tokio::test]
+async fn responses_probe_explains_a_missing_endpoint() {
+    let (addr, _) = fake_provider("/v1/other", 200, serde_json::json!({})).await;
+
+    let view = probe_responses(format!("http://{addr}/v1")).await;
+
+    assert!(!view.ok);
+    assert_eq!(view.status, "provider_error");
+    assert!(view.summary.contains("/responses"), "{}", view.summary);
+    assert!(view.operator_hint.unwrap().contains("/chat/completions"));
+}
+
+/// 正文明确提到模型的 404 仍然是模型问题。
+#[tokio::test]
+async fn responses_probe_keeps_model_errors_as_model_errors() {
+    let reply = serde_json::json!({"error": {"message": "The model `gpt-x` does not exist", "code": "model_not_found"}});
+    let (addr, _) = fake_provider("/v1/responses", 404, reply).await;
+
+    let view = probe_responses(format!("http://{addr}/v1")).await;
+
+    assert_eq!(view.status, "model_unavailable", "{}", view.summary);
+}

@@ -219,9 +219,9 @@
         },
         "api_protocol": {
           "type": "string",
-          "enum": ["openai", "anthropic"],
+          "enum": ["openai", "openai_responses", "anthropic"],
           "default": "openai",
-          "description": "TRANSLATION_API_PROTOCOLS。翻译模型接口的协议。openai：POST {base_url}/chat/completions + Bearer；anthropic：POST {base_url}/messages + x-api-key（Anthropic Messages API）。"
+          "description": "TRANSLATION_API_PROTOCOLS。翻译模型接口的协议。openai：POST {base_url}/chat/completions + Bearer；openai_responses：POST {base_url}/responses + Bearer（OpenAI Responses API，服务商明确支持才用）；anthropic：POST {base_url}/messages + x-api-key（Anthropic Messages API）。带 execution_connection 时只能是 openai。"
         },
         "thinking": {
           "type": "string",
@@ -231,7 +231,7 @@
         },
         "reviewer_api_protocol": {
           "type": "string",
-          "enum": ["", "openai", "anthropic"],
+          "enum": ["", "openai", "openai_responses", "anthropic"],
           "default": "",
           "description": "审校模型接口的协议；留空沿用 api_protocol。"
         },

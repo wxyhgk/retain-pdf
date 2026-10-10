@@ -33,7 +33,9 @@ pub(crate) async fn validate_deepseek_token_view(
         return Err(AppError::bad_request("api_key is required"));
     }
 
-    let anthropic = payload.api_protocol.trim().eq_ignore_ascii_case("anthropic");
+    let protocol = payload.api_protocol.trim().to_ascii_lowercase();
+    let anthropic = protocol == "anthropic";
+    let responses = protocol == "openai_responses";
     let base_url = if anthropic && payload.base_url.trim().is_empty() {
         ANTHROPIC_DEFAULT_BASE_URL.to_string()
     } else {
@@ -68,6 +70,16 @@ pub(crate) async fn validate_deepseek_token_view(
             "max_tokens": 1,
         });
         anthropic_auth(client.post(&url), api_key).json(&body)
+    } else if responses {
+        // OpenAI Responses API:`/responses`;max_output_tokens 最小是 16,store=false 不在服务商留存。
+        let url = responses_url(&base_url);
+        let body = serde_json::json!({
+            "model": model,
+            "input": "ping",
+            "max_output_tokens": 16,
+            "store": false,
+        });
+        client.post(&url).bearer_auth(api_key).json(&body)
     } else {
         let chat_url = format!("{}/chat/completions", base_url.trim_end_matches('/'));
         let body = serde_json::json!({
@@ -86,7 +98,7 @@ pub(crate) async fn validate_deepseek_token_view(
         Err(err) => classify_deepseek_probe_transport_error(err, base_url.clone(), checked_at),
     };
 
-    Ok(view)
+    Ok(if responses { explain_missing_responses_endpoint(view) } else { view })
 }
 
 /// 判定一次失败响应是否在拒绝**模型**（而非 Key 或网络）。
@@ -253,6 +265,40 @@ pub(crate) async fn query_deepseek_balance_view(
 
 const ANTHROPIC_DEFAULT_BASE_URL: &str = "https://api.anthropic.com/v1";
 const ANTHROPIC_VERSION: &str = "2023-06-01";
+
+/// 很多 OpenAI 兼容服务只实现了 `/chat/completions`：`/responses` 返回 404/405 且正文不提模型时，
+/// 原样报「模型不可用」会把人引去查模型名，这里改说是接口不支持。
+pub(super) fn explain_missing_responses_endpoint(
+    mut view: MineruTokenValidationView,
+) -> MineruTokenValidationView {
+    let endpoint_missing = matches!(view.provider_code.as_deref(), Some("404") | Some("405"))
+        && !view
+            .provider_message
+            .as_deref()
+            .is_some_and(|message| {
+                let lowered = message.to_lowercase();
+                lowered.contains("model") || message.contains("模型")
+            });
+    if !view.ok && endpoint_missing {
+        view.status = "provider_error";
+        view.summary = "该服务商不支持 Responses 接口（/responses）".to_string();
+        view.operator_hint =
+            Some("请把接口协议改回「OpenAI 格式（/chat/completions）」。".to_string());
+        view.retryable = false;
+    }
+    view
+}
+
+/// 地址填到 `/v1` 为止;误填了完整的 `/responses` 或 `/chat/completions` 也认(与 Python
+/// `model_wire.responses_url` 一致)。
+pub(super) fn responses_url(base_url: &str) -> String {
+    let trimmed = base_url.trim().trim_end_matches('/');
+    let root = trimmed
+        .strip_suffix("/responses")
+        .or_else(|| trimmed.strip_suffix("/chat/completions"))
+        .unwrap_or(trimmed);
+    format!("{root}/responses")
+}
 
 fn anthropic_auth(request: reqwest::RequestBuilder, api_key: &str) -> reqwest::RequestBuilder {
     request.header("x-api-key", api_key).header("anthropic-version", ANTHROPIC_VERSION)

@@ -27,8 +27,9 @@ pub const TRANSLATION_PREPARATION_MODES: &[&str] = &["off", "artifacts_only", "t
 /// 默认 `off`：渲染阶段的行为与没有这个字段时完全一致。
 pub const TRANSLATION_REFINE_MODES: &[&str] = &["off", "review_only", "review_and_fix", "editorial"];
 /// 模型接口协议。权威来源是 Python 的 `model_wire.PROTOCOLS`。
-/// `openai`：`/chat/completions` + Bearer；`anthropic`：`/messages` + x-api-key。
-pub const TRANSLATION_API_PROTOCOLS: &[&str] = &["openai", "anthropic"];
+/// `openai`：`/chat/completions` + Bearer；`openai_responses`：`/responses` + Bearer（OpenAI
+/// Responses API）；`anthropic`：`/messages` + x-api-key。
+pub const TRANSLATION_API_PROTOCOLS: &[&str] = &["openai", "openai_responses", "anthropic"];
 /// 思考深度。权威来源是 Python 的 `model_wire.THINKING_LEVELS`。`auto` 保持以前的行为。
 pub const TRANSLATION_THINKING_LEVELS: &[&str] = &["auto", "off", "low", "medium", "high", "max"];
 /// 精修的成本上限默认值（0 = 不限）。Python 侧读 render.spec.json 的 `params.refine`。

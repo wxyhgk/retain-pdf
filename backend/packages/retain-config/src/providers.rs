@@ -10,7 +10,7 @@ pub struct ModelProvider {
     pub default_model: &'static str,
     pub default_workers: u64,
     pub max_workers: u64,
-    /// 默认接口协议:`openai`(/chat/completions)或 `anthropic`(/messages)。
+    /// 默认接口协议:`openai`(/chat/completions)、`openai_responses`(/responses)或 `anthropic`(/messages)。
     pub protocol: &'static str,
 }
 
@@ -74,7 +74,7 @@ pub const MODEL_PROVIDERS: &[ModelProvider] = &[
 pub const DEFAULT_MODEL_PROVIDER: &str = "deepseek";
 
 /// 接口协议与思考深度的可选值(与任务契约的 `translation.api_protocol` / `translation.thinking` 一致)。
-pub const API_PROTOCOLS: &[&str] = &["openai", "anthropic"];
+pub const API_PROTOCOLS: &[&str] = &["openai", "openai_responses", "anthropic"];
 pub const THINKING_LEVELS: &[&str] = &["auto", "off", "low", "medium", "high", "max"];
 pub const DEFAULT_THINKING: &str = "auto";
 

@@ -25,7 +25,7 @@ pub struct ModelConnection {
     pub provider: String,
     pub base_url: String,
     pub model: String,
-    /// `openai` / `anthropic`。
+    /// `openai` / `openai_responses` / `anthropic`。
     pub protocol: String,
     /// `auto` / `off` / `low` / `medium` / `high` / `max`。
     pub thinking: String,
