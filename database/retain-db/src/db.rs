@@ -49,7 +49,7 @@ mod pipeline;
 mod retention;
 #[path = "db/rows.rs"]
 mod rows;
-#[path = "db/schema.rs"]
+#[path = "db/schema/mod.rs"]
 mod schema;
 #[path = "db/sync.rs"]
 pub mod sync;

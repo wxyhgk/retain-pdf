@@ -17,7 +17,8 @@
 `backend/packages/retain-data/src/db.rs` 及其子模块：
 
 - `db.rs`：`Db` facade，对外提供 job、artifact、event、document、conversation、operation 等持久化能力。
-- `db/schema.rs`：建表、schema 检查和兼容初始化。
+- `db/schema/mod.rs`：编号迁移的执行器，以及老表的幂等加列（`ensure_*_column`）。
+- `db/schema/migrations/`：编号迁移，一个迁移一个 `vNN_<领域>.sql`，说明写在文件开头；清单在 `migrations/mod.rs`。版本号就是清单里的位置，已上线的只能往后追加，不能改、删、调序。
 - `db/rows.rs`：共享数据库行 decode；领域专用 decode 留在对应子模块。
 - `db/documents/*`：文档、收藏、搜索、回填和文档行读取。
 - `db/document_operations/*`：operation、attempt、event、version、恢复与状态迁移。

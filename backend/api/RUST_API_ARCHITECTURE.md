@@ -272,7 +272,7 @@ Rust 侧关键落点：
   只处理文件、artifact key、稳定资源，不解释 provider raw 内部 JSON 结构
 - `db.rs`
   现在也只保留 `Db` facade；row decode 和 schema 检查分别下沉到
-  `../../database/retain-db/src/db/rows.rs`、`../../database/retain-db/src/db/schema.rs`
+  `../../database/retain-db/src/db/rows.rs`、`../../database/retain-db/src/db/schema/`
 - `routes/jobs/download.rs`
   只暴露稳定下载入口，不承诺 provider 私有字段语义
 - `normalized-document` / `normalization-report`
