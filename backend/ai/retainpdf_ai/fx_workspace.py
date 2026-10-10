@@ -469,6 +469,7 @@ def _translation_cli_section() -> str:
 
     retainpdf-agent translation issues --pages 3
     retainpdf-agent translation show --item-id p003-b004
+    retainpdf-agent translation data --dataset revisions --query "group_by=item_id"
     retainpdf-agent translation revise --item-id p003-b004 --text '新译文' --reason "为什么改"
     retainpdf-agent translation term-set --source "force constant" --target "劲度系数"
     retainpdf-agent translation refine --pages 3-5 --review-only

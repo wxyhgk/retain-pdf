@@ -1,0 +1,316 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/job-data/v1",
+  "title": "Job Data Contract",
+  "description": "通用取数接口：任务目录里已有的数据（质检问题、排版块、精修修改、修订记录、术语、事件、用量……）按名字取，不再一个需求开一个接口。datasets 是登记表：前端要读新数据，在这里加一条（文件位置、记录位置、字段），后端照着取，前端照着生成类型，契约测试照着核对。只开放登记过的数据集，路径限定在任务目录里。成功响应包在 { code, message, data } 里。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/:job_id/data",
+      "output": "JobDataCatalogView",
+      "note": "这个任务有哪些数据集、文件在不在、有哪些字段。",
+      "rust_view": "services/job_data :: JobDataCatalogView",
+      "ts_consumer": "@retainpdf/contracts/job-data :: JobDataCatalogView"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/:job_id/data/:dataset",
+      "query": "fields=a,b · <字段>=值[,值…]（等值筛选，逗号为或）· group_by=字段 · sort=字段|-字段 · offset · limit（1..=1000，默认 200）",
+      "output": "JobDataView",
+      "errors": {
+        "400": "BAD_REQUEST：未登记的字段、不能筛选的字段、值类型不对、limit 越界",
+        "404": "NOT_FOUND：任务或数据集不存在"
+      },
+      "note": "文件不存在时 available=false、没有记录，不报错。记录类数据集返回 rows；带 group_by 返回 groups；单对象数据集返回 object。每条记录都带公共字段 item_id（译文条目编号，三位）、reader_item_id（阅读页编号，四位）、page（1 起），取得到才有。",
+      "rust_view": "services/job_data :: JobDataView",
+      "ts_consumer": "@retainpdf/contracts/job-data :: JobDataView"
+    }
+  ],
+  "definitions": {
+    "JsonValue": {
+      "description": "任意 JSON 值。",
+      "tsType": "null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }",
+      "anyOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string" },
+        { "type": "array", "items": { "$ref": "#/definitions/JsonValue" } },
+        { "type": "object", "additionalProperties": { "$ref": "#/definitions/JsonValue" } }
+      ]
+    },
+    "JobDataFieldInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "filter", "description"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["string", "integer", "number", "boolean", "object", "array", "any"] },
+        "filter": { "type": "boolean", "description": "能不能用作 <字段>=值 筛选、group_by。" },
+        "description": { "type": "string" }
+      }
+    },
+    "JobDataDatasetInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "kind", "description", "available", "fields"],
+      "properties": {
+        "name": { "type": "string" },
+        "kind": { "type": "string", "enum": ["rows", "object"] },
+        "description": { "type": "string" },
+        "available": { "type": "boolean", "description": "这个任务的文件在不在。" },
+        "fields": { "type": "array", "items": { "$ref": "#/definitions/JobDataFieldInfo" } }
+      }
+    },
+    "JobDataCatalogView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["job_id", "datasets"],
+      "properties": {
+        "job_id": { "type": "string" },
+        "datasets": { "type": "array", "items": { "$ref": "#/definitions/JobDataDatasetInfo" } }
+      }
+    },
+    "JobDataGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "count"],
+      "properties": {
+        "value": { "$ref": "#/definitions/JsonValue" },
+        "count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "JobDataView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["job_id", "dataset", "kind", "available", "total", "offset", "limit"],
+      "properties": {
+        "job_id": { "type": "string" },
+        "dataset": { "type": "string" },
+        "kind": { "type": "string", "enum": ["rows", "object"] },
+        "available": { "type": "boolean" },
+        "total": { "type": "integer", "minimum": 0, "description": "筛选后的记录数（分组前）。单对象数据集为 0 或 1。" },
+        "offset": { "type": "integer", "minimum": 0 },
+        "limit": { "type": "integer", "minimum": 0 },
+        "rows": { "type": "array", "items": { "type": "object", "additionalProperties": { "$ref": "#/definitions/JsonValue" } } },
+        "groups": { "type": "array", "items": { "$ref": "#/definitions/JobDataGroup" } },
+        "object": { "type": "object", "additionalProperties": { "$ref": "#/definitions/JsonValue" } }
+      }
+    }
+  },
+  "datasets": {
+    "translation_items": {
+      "description": "逐块译文：原文、译文、最终状态（translated / kept_origin / failed）和没翻译的原因。",
+      "source": { "kind": "page_rows", "root": "translated", "glob": "page-*.json" },
+      "identity": { "item_id": "item_id", "page_index": "page_idx" },
+      "fields": {
+        "final_status": { "type": "string", "filter": true, "description": "translated / partially_translated / kept_origin / failed" },
+        "skip_reason": { "type": "string", "filter": true, "description": "没翻译的原因，例如 skip_interline_equation、skip_model_keep_origin" },
+        "block_type": { "type": "string", "filter": true, "description": "OCR 块类型" },
+        "continuation_group": { "type": "string", "filter": true, "description": "跨页 / 跨栏续接组编号" },
+        "source_text": { "type": "string", "description": "原文" },
+        "translated_text": { "type": "string", "description": "译文" }
+      }
+    },
+    "revisions": {
+      "description": "译文修订记录（精修、手改、助手改），一条一次写回。",
+      "source": { "kind": "jsonl", "root": "translated", "file": "revisions.v1.jsonl" },
+      "identity": { "item_id": "item_id", "page_index": "page_idx" },
+      "fields": {
+        "revision_id": { "type": "string", "filter": true, "description": "修订编号，恢复旧版本时用" },
+        "source": { "type": "string", "filter": true, "description": "refine / user / agent" },
+        "reason": { "type": "string", "description": "修改原因" },
+        "ts": { "type": "string", "description": "写回时间（UTC）" },
+        "previous_text": { "type": "string", "description": "改前" },
+        "new_text": { "type": "string", "description": "改后" },
+        "generation": { "type": "integer", "description": "写回后的译文代数" }
+      }
+    },
+    "qa_violations": {
+      "description": "确定性质检发现的问题。",
+      "source": { "kind": "json_rows", "root": "artifacts", "file": "translation_qa.v1.json", "rows": "/violations" },
+      "identity": { "item_id": "location.item_id", "page": "location.page_number" },
+      "fields": {
+        "id": { "type": "string", "filter": true, "description": "问题编号" },
+        "check": { "type": "string", "filter": true, "description": "检查项：numbers / references / terms / annotations / punctuation / english_residue / omission / layout_fit …" },
+        "type": { "type": "string", "filter": true, "description": "问题类型，例如 term_violation、number_missing" },
+        "severity": { "type": "string", "filter": true, "description": "critical / major / minor" },
+        "message": { "type": "string", "description": "说明" },
+        "evidence": { "type": "object", "description": "证据（原文、译文摘录，期望值……）" }
+      }
+    },
+    "layout_blocks": {
+      "description": "排版结果：每块的缩放、字号、是否溢出。",
+      "source": { "kind": "json_rows", "root": "artifacts", "file": "fit_report.v1.json", "rows": "/blocks" },
+      "identity": { "item_id": "item_id", "page": "page" },
+      "fields": {
+        "kind": { "type": "string", "filter": true, "description": "块类别" },
+        "tier": { "type": "string", "filter": true, "description": "base / shrink / emergency …" },
+        "overflow": { "type": "boolean", "filter": true, "description": "是否溢出" },
+        "emergency_tier": { "type": "boolean", "filter": true, "description": "是否进了应急档" },
+        "scale": { "type": "number", "description": "缩放比例（1 = 原字号）" },
+        "final_font_size": { "type": "number", "description": "最终字号（pt）" },
+        "base_font_size": { "type": "number", "description": "原字号（pt）" },
+        "overflow_pt": { "type": "number", "description": "溢出高度（pt）" },
+        "text_chars": { "type": "integer", "description": "译文字数" },
+        "stop_reason": { "type": "string", "filter": true, "description": "排版停在哪一步" }
+      }
+    },
+    "refine_fixes": {
+      "description": "最近一次精修对每块的处理：采纳、拒绝（原因）、跳过。",
+      "source": { "kind": "json_rows", "root": "artifacts", "file": "refine_report.v1.json", "rows": "/fixes" },
+      "identity": { "item_id": "item_id", "page": "page_number" },
+      "fields": {
+        "status": { "type": "string", "filter": true, "description": "applied / rejected / skipped" },
+        "reject_reason": { "type": "string", "filter": true, "description": "拒绝或跳过的原因" },
+        "action": { "type": "string", "filter": true, "description": "patch / rewrite …" },
+        "origin": { "type": "string", "filter": true, "description": "问题来自审校还是质检" },
+        "categories": { "type": "array", "description": "问题类别" },
+        "before": { "type": "string", "description": "改前" },
+        "after": { "type": "string", "description": "改后" },
+        "note": { "type": "string", "description": "说明" },
+        "revision_id": { "type": "string", "filter": true, "description": "采纳时写回的修订编号" }
+      }
+    },
+    "escalated": {
+      "description": "编辑部留给人确认的块（全部，不截断）。",
+      "source": { "kind": "json_rows", "root": "artifacts", "file": "refine_report.v1.json", "rows": "/editorial/escalated" },
+      "identity": { "item_id": "item_id", "page": "page_number" },
+      "fields": {
+        "reason": { "type": "string", "description": "为什么交给人" },
+        "categories": { "type": "array", "description": "问题类别" },
+        "attempts": { "type": "array", "description": "编辑部试过的处理" },
+        "finding_ids": { "type": "array", "description": "相关问题编号" }
+      }
+    },
+    "terms": {
+      "description": "这本书的术语表（译前预扫 + 术语专员审定）。",
+      "source": { "kind": "json_rows", "root": "translated", "file": "term-base.v1.json", "rows": "/terms" },
+      "identity": { "item_id": "first_occurrence.item_id", "page": "first_occurrence.page_number" },
+      "fields": {
+        "source": { "type": "string", "filter": true, "description": "原文术语" },
+        "target": { "type": "string", "description": "译名" },
+        "treatment": { "type": "string", "filter": true, "description": "lock / keep_original / free …" },
+        "kind": { "type": "string", "filter": true, "description": "domain_term / proper_noun …" },
+        "category": { "type": "string", "filter": true, "description": "类别" },
+        "origin": { "type": "string", "filter": true, "description": "extracted / user …" },
+        "level": { "type": "string", "filter": true, "description": "约束强度" },
+        "review_status": { "type": "string", "filter": true, "description": "审定状态" },
+        "annotate": { "type": "boolean", "filter": true, "description": "首次出现是否括注原文" },
+        "frequency": { "type": "integer", "description": "出现次数" },
+        "conflict_candidates": { "type": "array", "description": "其它候选译名与票数" }
+      }
+    },
+    "term_conflicts": {
+      "description": "术语表里有多个候选译名的术语。",
+      "source": { "kind": "json_rows", "root": "translated", "file": "term-base.v1.json", "rows": "/conflicts" },
+      "identity": {},
+      "fields": {
+        "source": { "type": "string", "filter": true, "description": "原文术语" },
+        "target": { "type": "string", "description": "选定的译名" },
+        "conflict_candidates": { "type": "array", "description": "其它候选译名与票数" }
+      }
+    },
+    "style_rules": {
+      "description": "这本书的风格规则（固定规则 + 模型按本书生成的规则）。",
+      "source": { "kind": "json_rows", "root": "translated", "file": "style-guide.v1.json", "rows": "/rules" },
+      "identity": {},
+      "fields": {
+        "id": { "type": "string", "filter": true, "description": "规则编号" },
+        "category": { "type": "string", "filter": true, "description": "类别" },
+        "rule": { "type": "string", "description": "规则" },
+        "example": { "type": "string", "description": "例子" },
+        "apply": { "type": "string", "filter": true, "description": "用在哪：prompt / qa …" },
+        "origin": { "type": "string", "filter": true, "description": "baseline / document" }
+      }
+    },
+    "events": {
+      "description": "任务事件（阶段、进度、精修的轮次和批数在 payload 里）。",
+      "source": { "kind": "jsonl", "root": "logs", "file": "events.jsonl" },
+      "identity": {},
+      "fields": {
+        "seq": { "type": "integer", "description": "序号" },
+        "ts": { "type": "string", "description": "时间（UTC）" },
+        "level": { "type": "string", "filter": true, "description": "info / warning / error" },
+        "stage": { "type": "string", "filter": true, "description": "阶段" },
+        "substage": { "type": "string", "filter": true, "description": "子阶段" },
+        "event_type": { "type": "string", "filter": true, "description": "事件类型" },
+        "message": { "type": "string", "description": "说明" },
+        "stage_detail": { "type": "string", "description": "阶段详情" },
+        "payload": { "type": "object", "description": "附加数据（progress、refine_phase、refine_round …）" }
+      }
+    },
+    "token_usage": {
+      "description": "模型用量台账：每次模型返回一行。",
+      "source": { "kind": "jsonl", "root": "artifacts", "file": "token-usage.v1.jsonl" },
+      "identity": {},
+      "fields": {
+        "ts": { "type": "string", "description": "时间（UTC）" },
+        "stage": { "type": "string", "filter": true, "description": "阶段，例如 translation、refine_review" },
+        "model": { "type": "string", "filter": true, "description": "模型" },
+        "host": { "type": "string", "filter": true, "description": "接口主机" },
+        "input": { "type": "integer", "description": "输入 token" },
+        "output": { "type": "integer", "description": "输出 token" },
+        "cache_hit": { "type": "integer", "description": "缓存命中 token（null = 没报）" },
+        "reasoning": { "type": "integer", "description": "思考 token" },
+        "usage_reported": { "type": "boolean", "filter": true, "description": "服务商有没有报用量" }
+      }
+    },
+    "editorial_ledger": {
+      "description": "编辑部台账：开问题、主编决定、解决、交给人、术语改动……",
+      "source": { "kind": "jsonl", "root": "artifacts", "file": "editorial/ledger.jsonl" },
+      "identity": {},
+      "fields": {
+        "id": { "type": "string", "filter": true, "description": "台账行编号" },
+        "at": { "type": "string", "description": "时间（UTC）" },
+        "kind": { "type": "string", "filter": true, "description": "issue.open / decision / issue.resolve / issue.escalate / dispute / term.decision …" },
+        "from": { "type": "string", "filter": true, "description": "发起角色" },
+        "to": { "type": "string", "filter": true, "description": "接收角色" },
+        "run_id": { "type": "string", "filter": true, "description": "哪一次精修" },
+        "refs": { "type": "array", "description": "关联的块、问题" },
+        "body": { "path": "$", "type": "object", "description": "整行原文（各类行字段不同）" }
+      }
+    },
+    "domain_context": {
+      "description": "领域判断：领域、摘要、翻译指引。",
+      "source": { "kind": "object", "root": "translated", "file": "domain-context.json" },
+      "identity": {},
+      "fields": {
+        "domain": { "type": "string", "description": "领域" },
+        "summary": { "type": "string", "description": "摘要" },
+        "translation_guidance": { "type": "string", "description": "翻译指引" }
+      }
+    },
+    "style_guide": {
+      "description": "风格指南概要（规则本身见 style_rules）。",
+      "source": { "kind": "object", "root": "translated", "file": "style-guide.v1.json" },
+      "identity": {},
+      "fields": {
+        "complete": { "type": "boolean", "description": "是否完整（false = 模型那步失败，退回了固定规则）" },
+        "llm_status": { "type": "string", "description": "ok / failed …" },
+        "register": { "type": "string", "description": "语体" },
+        "audience": { "type": "string", "description": "读者" },
+        "domain": { "type": "string", "description": "领域" },
+        "do_not_translate": { "type": "array", "description": "不翻译的词" },
+        "notes": { "type": "any", "description": "备注" }
+      }
+    },
+    "refine_summary": {
+      "description": "最近一次精修的概要（逐块处理见 refine_fixes）。",
+      "source": { "kind": "object", "root": "artifacts", "file": "refine_report.v1.json" },
+      "identity": {},
+      "fields": {
+        "mode": { "type": "string", "description": "review_only / review_and_fix / editorial" },
+        "status": { "type": "string", "description": "状态" },
+        "stopped_reason": { "type": "string", "description": "停下的原因（null = 跑完）" },
+        "generated_at": { "type": "string", "description": "生成时间" },
+        "scope": { "type": "object", "description": "范围" },
+        "qa_before": { "type": "object", "description": "精修前的质检" },
+        "qa_after": { "type": "object", "description": "精修后的质检" },
+        "fix_summary": { "type": "object", "description": "采纳 / 拒绝 / 跳过统计" },
+        "token_usage": { "type": "object", "description": "精修用量" }
+      }
+    }
+  }
+}

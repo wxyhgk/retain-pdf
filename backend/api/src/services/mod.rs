@@ -21,6 +21,7 @@ pub mod health_api;
 pub mod job_launcher;
 pub mod job_snapshot_factory;
 pub mod job_validation;
+pub mod job_data;
 pub mod jobs;
 pub mod library;
 pub(crate) mod managed_credential_gc;

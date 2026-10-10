@@ -15,6 +15,7 @@ const RAW_SCHEMA_EXPORTS = [
   "./agent-calculation.v1.schema.json",
   "./ai-conversations.v1.schema.json",
   "./create-job.v1.schema.json",
+  "./job-data.v1.schema.json",
   "./job-status.v1.schema.json",
   "./job-events.v2.schema.json",
   "./jobs-control.v1.schema.json",
@@ -34,6 +35,7 @@ test("package exposes only explicit DTO and raw schema subpaths", () => {
     [
       "./create-job",
       "./create-job-fields",
+      "./job-data",
       "./job-status",
       "./job-events",
       "./library-books",

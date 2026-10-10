@@ -46,6 +46,11 @@ def test_each_subcommand_parses_into_a_translation_action():
             {"pages": (3, 5), "min_severity": "major", "limit": 20},
         ),
         "retainpdf-agent translation show --item-id p003-b004": ("translation.show", {"item_id": "p003-b004"}),
+        "retainpdf-agent translation data": ("translation.data", {"dataset": None, "query": None}),
+        'retainpdf-agent translation data --dataset revisions --query "group_by=item_id"': (
+            "translation.data",
+            {"dataset": "revisions", "query": "group_by=item_id"},
+        ),
         'retainpdf-agent translation revise --item-id p003-b004 --text "其中 $k$ 为劲度系数" --reason "术语统一"': (
             "translation.revise",
             {"item_id": "p003-b004", "text": "其中 $k$ 为劲度系数", "reason": "术语统一"},
@@ -74,6 +79,9 @@ def test_each_subcommand_parses_into_a_translation_action():
         "retainpdf-agent translation show --item-id ../p1",
         "retainpdf-agent translation show --item-id p1 --item-id p2",
         "retainpdf-agent translation show p003-b004",
+        "retainpdf-agent translation data --dataset ../secrets",
+        "retainpdf-agent translation data --dataset Revisions",
+        'retainpdf-agent translation data --query "page=9"',
         "retainpdf-agent translation issues --pages 0",
         "retainpdf-agent translation issues --pages 5-3",
         "retainpdf-agent translation issues --pages 3,5",
@@ -626,3 +634,23 @@ def test_issues_lists_what_the_editorial_left_for_the_user():
     }]
     assert refine["term_changes"] == [{"source": "Cartesian coordinates", "from": "笛卡尔坐标", "to": "笛卡儿坐标", "reason": "规范名"}]
     assert [row["source"] for row in refine["term_patrol"]] == ["Hermite"], "不统一的不列"
+
+
+def test_data_lists_datasets_or_queries_one_and_passes_the_result_through():
+    catalog = {"job_id": JOB, "datasets": [{"name": "revisions", "kind": "rows", "available": True}]}
+    rows = {"job_id": JOB, "dataset": "revisions", "total": 2, "groups": [{"value": "p001-b001", "count": 2}]}
+    fake = FakeCli(
+        {
+            ("translation", "data", "--job-id", JOB): _ok(catalog),
+            ("translation", "data", "--job-id", JOB, "--dataset", "revisions", "--query", "group_by=item_id"): _ok(rows),
+        }
+    )
+    assert _stdout(_run(fake, "retainpdf-agent translation data")) == catalog
+    payload = _stdout(_run(fake, 'retainpdf-agent translation data --dataset revisions --query "group_by=item_id"'))
+    assert payload["groups"] == [{"value": "p001-b001", "count": 2}]
+    assert [call[0] for call in fake.calls] == ["translation.read", "translation.read"]
+
+
+def test_data_is_read_only_and_needs_no_confirmation():
+    parsed = _parse("retainpdf-agent translation data --dataset terms", green_light=False)
+    assert parsed.action == "translation.data"

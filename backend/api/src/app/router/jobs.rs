@@ -2,7 +2,7 @@ use axum::routing::{get, post};
 use axum::Router;
 
 use crate::app::AppState;
-use crate::routes::{jobs, quality};
+use crate::routes::{job_data, jobs, quality};
 
 pub(super) fn routes() -> Router<AppState> {
     Router::new()
@@ -62,6 +62,9 @@ pub(super) fn routes() -> Router<AppState> {
         // 质量体检卡与阅读页标注：报告的摘要 + 按块清单，不用把整份报告拉下来。
         .route("/api/v1/jobs/:job_id/quality-summary", get(quality::quality_summary_route))
         .route("/api/v1/jobs/:job_id/quality-items", get(quality::quality_items_route))
+        // 通用取数：登记表在契约 job-data.v1 里，新的读需求加一条登记，不加接口。
+        .route("/api/v1/jobs/:job_id/data", get(job_data::job_data_catalog_route))
+        .route("/api/v1/jobs/:job_id/data/:dataset", get(job_data::job_data_route))
         .route(
             "/api/v1/jobs/:job_id/render/fit-report",
             get(jobs::get_fit_report),
