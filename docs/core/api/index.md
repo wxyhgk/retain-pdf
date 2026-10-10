@@ -940,12 +940,82 @@ operation 列表响应包含 `operations`、`total`、`limit`、`offset` 和 `ha
 
 ### 管理员
 
-- `GET /api/v1/admin/users`：每个账号多一个 `page_balance`（管理员为 `null`）。
+- `GET /api/v1/admin/users`：每个账号多一个 `page_balance`（管理员为 `null`）；搜索筛选排序分页见 13.6。
 - `GET /api/v1/admin/users/:user_id/pages`：同 `GET /api/v1/account/pages`，看指定账号。
 - `POST /api/v1/admin/users/:user_id/pages`，请求体 `{ "delta": 300, "note": "内测" }`：
   正数发放、负数扣减，返回 `{ "balance": 300 }`。错误（400）：`INVALID_PAGE_DELTA`（0 或绝对值
   超过 1000000）、`PAGE_BALANCE_NEGATIVE`（扣完会变负数，`details.balance` 是当前余额）、
   `NOTE_TOO_LONG`（备注超过 200 字）、`ADMIN_UNLIMITED`（给管理员发放）；账号不存在 404。
+
+## 13.6 多用户：管理后台
+
+都在 `/api/v1/admin/users*` 下：只在多用户模式、只给管理员（普通账号 403，单机模式 404）。
+错误都是 `{ code, message（中文）, error: { code, http_status, details } }`。
+
+**账号状态**：`status` 为 `active` / `disabled` / `deleted`。`deleted` 是软删除：不能登录、会话作废、
+不算可用管理员；数据、账目、任务都保留，用户名继续占用；可以恢复（回到删之前的启用 / 停用）。
+删了的账号不能停用 / 启用、重置密码、发页数、改身份（409 `ACCOUNT_DELETED`），要先恢复。
+
+**身份与额度**：升成管理员后不限额（`page_balance` 为 `null`，账本不动）；降回普通账号，余额就是
+账本里原来的数（管理员不能被发放，所以一般是升级前剩下的）。改身份立即生效，不用重新登录。
+
+管理员看得到别人的账号和任务列表，但**打不开别人的任务详情**（`/api/v1/jobs/:id` 这类按数据归属，
+管理员的网站会话也只认自己的数据），前端列任务时不要给链接。
+
+### `GET /api/v1/admin/users`
+
+查询参数都可选；不带参数时和以前一样返回没删的全部账号（按建号时间、再按用户名排）。
+
+| 参数 | 说明 |
+| --- | --- |
+| `q` | 用户名包含这段，不区分大小写 |
+| `status` | `active` / `disabled` / `deleted`；不传 = 没删的（启用 + 停用） |
+| `role` | `admin` / `user` |
+| `sort` | `created_at`（默认）/ `username` / `last_login_at` / `page_balance`（管理员排最后） |
+| `order` | `asc`（默认）/ `desc` |
+| `limit` / `offset` | 分页，`limit` 1～500；不传 `limit` 不分页 |
+
+返回 `{ users: [...], total }`，`total` 是符合条件的总数。每个账号：`user_id`、`username`、`role`、
+`status`、`must_change_password`、`created_at`、`last_login_at`、`deleted_at`（没删为空串）、
+`page_balance`（管理员为 `null`）。参数取值不对：400 `INVALID_QUERY`，`details.param` 是参数名。
+
+### `GET /api/v1/admin/users/:user_id`
+
+删了的也能看。返回 `{ user, page_balance, stats }`，`stats`：
+
+| 字段 | 说明 |
+| --- | --- |
+| `jobs_total`、`jobs_by_status` | 任务总数；按 `queued` / `running` / `succeeded` / `failed` / `canceled` 计数（没有的不出现）。含书籍任务自动派生的 OCR 子任务 |
+| `documents`、`uploads` | 书的数量、上传数 |
+| `upload_bytes` | 上传的原始 PDF 合计字节数（不含任务产物） |
+| `pages_charged` | 实际扣掉的页数：已确认 + 预扣中（退回的不算） |
+| `pages_reserved` | 其中还在预扣中、任务没跑完的 |
+| `last_submitted_at` | 最近一次建任务的时间，没有为 `null` |
+
+### `GET /api/v1/admin/users/:user_id/jobs?limit=&offset=`
+
+新的在前，`limit` 默认 20、最多 200。返回 `{ jobs, total }`，每条：`job_id`、`workflow`、`status`、
+`title`（书名，没有就是上传的文件名）、`document_pages`（源 PDF 总页数）、`charged_pages` 与
+`charge_status`（`reserved` / `settled` / `refunded`；不计费的任务为 `null`）、`created_at`、`finished_at`。
+
+### `POST /api/v1/admin/users/:user_id/role`
+
+请求体 `{ "role": "admin" | "user" }`，返回 `{ user }`。错误（400）：`INVALID_ROLE`、
+`CANNOT_CHANGE_OWN_ROLE`、`LAST_ADMIN`（会让系统没有可用管理员）。
+
+### `DELETE /api/v1/admin/users/:user_id`
+
+软删除，踢掉它所有会话，并**取消它还在排队 / 在跑的任务**（按页数规则全额退回）。返回
+`{ user, canceled_jobs: ["job_id", ...] }`。已经删了的再删原样返回。错误（400）：`CANNOT_DELETE_SELF`、
+`LAST_ADMIN`。
+
+### `POST /api/v1/admin/users/:user_id/restore`
+
+恢复，返回 `{ user }`；没删的原样返回。被删期间取消的任务不会自动恢复。
+
+### 批量操作
+
+没有批量接口：前端逐个调用上面这些（以及发放页数、停用、启用），每个请求各自成功或失败。
 
 ## 14. 存储与所有权
 

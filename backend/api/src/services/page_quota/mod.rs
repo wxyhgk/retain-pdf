@@ -207,6 +207,9 @@ pub fn grant_pages(
         .get_user(target_user_id)
         .map_err(db_error)?
         .ok_or_else(|| AppError::not_found(format!("user not found: {target_user_id}")))?;
+    if user.is_deleted() {
+        return Err(crate::services::accounts::admin::account_deleted());
+    }
     if user.role == "admin" {
         return Err(AppError::account(
             StatusCode::BAD_REQUEST,

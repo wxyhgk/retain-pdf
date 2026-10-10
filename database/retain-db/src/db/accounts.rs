@@ -21,12 +21,20 @@ pub struct UserRecord {
     pub created_at: String,
     pub updated_at: String,
     pub last_login_at: String,
+    /// 软删除的时间（RFC 3339）；空 = 没删。
+    pub deleted_at: String,
 }
 
-const USER_COLUMNS: &str = "user_id, username, role, status, must_change_password, failed_logins, \
-                            locked_until, created_at, updated_at, last_login_at";
+impl UserRecord {
+    pub fn is_deleted(&self) -> bool {
+        !self.deleted_at.is_empty()
+    }
+}
 
-fn row_to_user(row: &Row<'_>) -> rusqlite::Result<UserRecord> {
+pub(super) const USER_COLUMNS: &str = "user_id, username, role, status, must_change_password, failed_logins, \
+                            locked_until, created_at, updated_at, last_login_at, deleted_at";
+
+pub(super) fn row_to_user(row: &Row<'_>) -> rusqlite::Result<UserRecord> {
     Ok(UserRecord {
         user_id: row.get(0)?,
         username: row.get(1)?,
@@ -38,6 +46,7 @@ fn row_to_user(row: &Row<'_>) -> rusqlite::Result<UserRecord> {
         created_at: row.get(7)?,
         updated_at: row.get(8)?,
         last_login_at: row.get(9)?,
+        deleted_at: row.get(10)?,
     })
 }
 
@@ -99,7 +108,7 @@ impl Db {
             .query_row(
                 &format!("SELECT {USER_COLUMNS}, password_hash FROM users WHERE username_key = ?1"),
                 params![username_key(username)],
-                |row| Ok((row_to_user(row)?, row.get::<_, String>(10)?)),
+                |row| Ok((row_to_user(row)?, row.get::<_, String>(11)?)),
             )
             .optional()?)
     }
@@ -111,9 +120,12 @@ impl Db {
             .optional()?)
     }
 
+    /// 没删的账号（删了的要查请用 list_users_page 带 status=deleted）。
     pub fn list_users(&self) -> Result<Vec<UserRecord>> {
         let conn = self.connect()?;
-        let mut stmt = conn.prepare(&format!("SELECT {USER_COLUMNS} FROM users ORDER BY created_at, username_key"))?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {USER_COLUMNS} FROM users WHERE deleted_at = '' ORDER BY created_at, username_key"
+        ))?;
         let rows = stmt.query_map([], row_to_user)?;
         Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
@@ -121,7 +133,7 @@ impl Db {
     pub fn count_active_admins(&self) -> Result<i64> {
         let conn = self.connect()?;
         Ok(conn.query_row(
-            "SELECT COUNT(*) FROM users WHERE role = 'admin' AND status = 'active'",
+            "SELECT COUNT(*) FROM users WHERE role = 'admin' AND status = 'active' AND deleted_at = ''",
             [],
             |row| row.get(0),
         )?)
@@ -145,6 +157,26 @@ impl Db {
         let updated = conn.execute(
             "UPDATE users SET status = ?2, failed_logins = 0, locked_until = '', updated_at = ?3 WHERE user_id = ?1",
             params![user_id, status, now],
+        )?;
+        Ok(updated > 0)
+    }
+
+    pub fn set_user_role(&self, user_id: &str, role: &str, now: &str) -> Result<bool> {
+        if !matches!(role, "admin" | "user") {
+            bail!("invalid role: {role}");
+        }
+        let conn = self.connect()?;
+        let updated =
+            conn.execute("UPDATE users SET role = ?2, updated_at = ?3 WHERE user_id = ?1", params![user_id, role, now])?;
+        Ok(updated > 0)
+    }
+
+    /// 软删除（`deleted_at` 为删除时间）或恢复（空串）。
+    pub fn set_user_deleted_at(&self, user_id: &str, deleted_at: &str, now: &str) -> Result<bool> {
+        let conn = self.connect()?;
+        let updated = conn.execute(
+            "UPDATE users SET deleted_at = ?2, updated_at = ?3 WHERE user_id = ?1",
+            params![user_id, deleted_at, now],
         )?;
         Ok(updated > 0)
     }
@@ -184,7 +216,7 @@ impl Db {
         Ok(())
     }
 
-    /// 会话对应的账号；过期、账号停用的不算（返回 None）。
+    /// 会话对应的账号；过期、账号停用、已删除的不算（返回 None）。
     pub fn session_user(&self, token_hash: &str, now: &str) -> Result<Option<UserRecord>> {
         let conn = self.connect()?;
         let columns = USER_COLUMNS
@@ -196,7 +228,7 @@ impl Db {
             .query_row(
                 &format!(
                     "SELECT {columns} FROM sessions s JOIN users u ON u.user_id = s.user_id \
-                     WHERE s.token_hash = ?1 AND s.expires_at > ?2 AND u.status = 'active'"
+                     WHERE s.token_hash = ?1 AND s.expires_at > ?2 AND u.status = 'active' AND u.deleted_at = ''"
                 ),
                 params![token_hash, now],
                 row_to_user,

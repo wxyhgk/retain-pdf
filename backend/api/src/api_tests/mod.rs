@@ -1,4 +1,5 @@
 mod accounts;
+mod admin_users;
 mod agent_calculations;
 mod agent_capabilities;
 mod agent_runtime_sessions;

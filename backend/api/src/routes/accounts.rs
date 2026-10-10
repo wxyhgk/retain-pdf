@@ -14,13 +14,13 @@ use crate::error::AppError;
 use crate::models::api::ApiResponse;
 use crate::routes::common::{build_accounts_route_deps, ok_json, ApiJson, ApiPath};
 use crate::services::accounts::api::{
-    account_view, admin_view, AccountUserView, AccountsService, AdminUserView, Principal, Role, SessionView,
+    account_view, admin_view, AccountUserView, AccountsService, Principal, Role, SessionView,
     SESSION_COOKIE,
 };
 use crate::services::page_quota::{self, PageQuotaView};
 use crate::AppState;
 
-fn require_multi(accounts: &AccountsService) -> Result<(), AppError> {
+pub(super) fn require_multi(accounts: &AccountsService) -> Result<(), AppError> {
     if accounts.mode().is_multi() {
         Ok(())
     } else {
@@ -28,7 +28,7 @@ fn require_multi(accounts: &AccountsService) -> Result<(), AppError> {
     }
 }
 
-fn require_admin(principal: &Principal) -> Result<(), AppError> {
+pub(super) fn require_admin(principal: &Principal) -> Result<(), AppError> {
     if principal.is_admin() {
         Ok(())
     } else {
@@ -134,39 +134,7 @@ pub async fn change_password_route(
 }
 
 // ---------------------------------------------------------------- 管理员
-
-#[derive(serde::Serialize)]
-pub struct AdminUserListItem {
-    #[serde(flatten)]
-    pub user: AdminUserView,
-    /// 剩余页数；管理员不限额，为 null。
-    pub page_balance: Option<i64>,
-}
-
-#[derive(serde::Serialize)]
-pub struct AdminUserListView {
-    pub users: Vec<AdminUserListItem>,
-}
-
-/// GET /api/v1/admin/users
-pub async fn list_users_route(
-    State(state): State<AppState>,
-    principal: Principal,
-) -> Result<Json<ApiResponse<AdminUserListView>>, AppError> {
-    let accounts = build_accounts_route_deps(&state);
-    require_multi(&accounts)?;
-    require_admin(&principal)?;
-    let balances = state.db.page_balances().map_err(|error| AppError::internal(format!("{error:#}")))?;
-    let users = accounts
-        .list_users()?
-        .iter()
-        .map(|user| AdminUserListItem {
-            page_balance: (user.role != "admin").then(|| balances.get(&user.user_id).copied().unwrap_or(0)),
-            user: admin_view(user),
-        })
-        .collect();
-    Ok(ok_json(AdminUserListView { users }))
-}
+// 账号列表、详情、改身份、删除与恢复在 admin_users.rs（管理后台）。
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
