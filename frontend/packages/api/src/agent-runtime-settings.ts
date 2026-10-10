@@ -1,3 +1,4 @@
+import { apiFetch } from "./internal/runtime.js";
 import {
   API_PREFIX,
   buildApiHeaders,
@@ -73,7 +74,7 @@ function parseRuntimeConfig(payload: unknown): AgentRuntimeConfigView {
 
 export async function fetchAgentRuntimeConfig({
   apiPrefix = API_PREFIX,
-  fetchImpl = fetch,
+  fetchImpl = apiFetch,
 }: {
   apiPrefix?: string;
   fetchImpl?: typeof fetch;
@@ -91,7 +92,7 @@ export async function updateAgentRuntimeConfig(
   update: AgentRuntimeConfigUpdate,
   {
     apiPrefix = API_PREFIX,
-    fetchImpl = fetch,
+    fetchImpl = apiFetch,
   }: {
     apiPrefix?: string;
     fetchImpl?: typeof fetch;

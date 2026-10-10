@@ -1,6 +1,7 @@
 // ai — canonical from frontend/web/src/js/api/ai.ts (mock removed, runtime adapted)
 // Uses internal/runtime + http helpers.
 
+import { apiFetch } from "./internal/runtime.js";
 import { API_PREFIX } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildApiEndpoint } from "./http.js";
@@ -323,7 +324,7 @@ export async function askLibraryAi({
   onCompress = null as ((e:any)=>void)|null,
   signal = null as AbortSignal | null,
   apiPrefix = API_PREFIX,
-  fetchImpl = fetch as typeof fetch,
+  fetchImpl = apiFetch as typeof fetch,
   llmApiKey = "",
   llmBaseUrl = "",
   llmModel = "",

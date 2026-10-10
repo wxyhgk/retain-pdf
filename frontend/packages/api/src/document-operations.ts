@@ -1,3 +1,4 @@
+import { apiFetch } from "./internal/runtime.js";
 import { API_PREFIX, buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildApiEndpoint } from "./http.js";
 
@@ -140,7 +141,7 @@ async function requestAgentOperation<T>(
   init: RequestInit,
   options: AgentOperationRequestOptions = {},
 ): Promise<T> {
-  const fetchImpl = options.fetchImpl || fetch;
+  const fetchImpl = options.fetchImpl || apiFetch;
   const resp = await fetchImpl(buildApiEndpoint(options.apiPrefix || API_PREFIX, path), {
     ...init,
     headers: buildApiHeaders({
@@ -169,7 +170,7 @@ export async function listAgentOperations({
   conversationId,
   limit,
   apiPrefix = API_PREFIX,
-  fetchImpl = fetch,
+  fetchImpl = apiFetch,
   signal = null,
 }: ListAgentOperationsInput): Promise<AgentOperationListView> {
   const conversation = requiredId(conversationId, "conversation_id");
@@ -267,7 +268,7 @@ export async function fetchAgentOperationCandidate(
   operationId: string,
   options: AgentOperationRequestOptions = {},
 ): Promise<Blob> {
-  const fetchImpl = options.fetchImpl || fetch;
+  const fetchImpl = options.fetchImpl || apiFetch;
   const url = buildAgentOperationCandidateUrl(operationId, options.apiPrefix || API_PREFIX);
   const response = await fetchImpl(url, {
     method: "GET",
