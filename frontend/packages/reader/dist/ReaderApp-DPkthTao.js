@@ -321,7 +321,7 @@ function da(e) {
   }, [n]), j(() => {
     if (!t || w || !p) return;
     const D = window.setInterval(() => {
-      x();
+      document.visibilityState !== "hidden" && x();
     }, 1e3);
     return () => window.clearInterval(D);
   }, [w, x, p, t]), {
@@ -6215,7 +6215,7 @@ function nl() {
     }
   };
 }
-const rl = bo(() => import("./ReaderMarkdownPanel-DExDwGIe.js").then((e) => ({ default: e.ReaderMarkdownPanel })));
+const rl = bo(() => import("./ReaderMarkdownPanel-B3aNNku7.js").then((e) => ({ default: e.ReaderMarkdownPanel })));
 function ol(e) {
   const t = e.sourceOnly || !e.translatedUrl, n = !!(e.overlayContentAvailable && e.liveTranslationVisible && !e.assistantOpen), o = e.assistantPdfPane || (e.assistantOpen && e.mode === "compare" ? "source" : e.mode), a = !t && (o === "translated" || o === "compare");
   return {
@@ -6429,4 +6429,4 @@ export {
   Rl as r,
   ft as u
 };
-//# sourceMappingURL=ReaderApp-7Kohvrt8.js.map
+//# sourceMappingURL=ReaderApp-DPkthTao.js.map
