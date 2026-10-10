@@ -295,7 +295,8 @@
             "review": {"type": "string"},
             "fix": {"type": "string"},
             "chief": {"type": "string", "description": "editorial mode only."},
-            "rewrite": {"type": "string", "description": "editorial mode only."}
+            "rewrite": {"type": "string", "description": "editorial mode only."},
+            "term_request": {"type": "string", "description": "editorial mode only."}
           }
         },
         "translation": {
@@ -374,8 +375,26 @@
               "finding_id": {"type": "string"},
               "term_source": {"type": "string"},
               "term_target": {"type": "string"},
-              "ruling": {"type": "string", "enum": ["keep_term_base"]},
+              "ruling": {"type": "string", "enum": ["keep_term_base", "change_term_base", "escalate"], "description": "Decided by the term specialist: keep the term base, change it (new_target), or leave it for a person. User glossary terms are always kept."},
+              "new_target": {"type": "string"},
+              "reason": {"type": "string"},
               "explanation": {"type": "string"}
+            }
+          }
+        },
+        "term_changes": {
+          "type": "array",
+          "description": "Term base changes made by the term specialist in this run (including compound terms that followed), and the blocks unified by rule.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source", "from", "to", "reason", "applied_item_ids"],
+            "properties": {
+              "source": {"type": "string"},
+              "from": {"type": "string"},
+              "to": {"type": "string"},
+              "reason": {"type": "string"},
+              "applied_item_ids": {"type": "array", "items": {"type": "string"}}
             }
           }
         },
@@ -402,7 +421,8 @@
           "additionalProperties": false,
           "properties": {
             "chief": {"$ref": "#/definitions/RefineModelInfo"},
-            "rewriter": {"$ref": "#/definitions/RefineModelInfo"}
+            "rewriter": {"$ref": "#/definitions/RefineModelInfo"},
+            "terminologist": {"$ref": "#/definitions/RefineModelInfo"}
           }
         }
       }

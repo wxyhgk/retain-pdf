@@ -33,7 +33,7 @@ class EditorialModel:
 
     def __init__(self, **scripts) -> None:
         self.scripts = {"review": [{"findings": []}], "chief": [{"decisions": []}], "fix": [{"fixes": []}],
-                        "rewrite": [{"rewrites": []}], **scripts}
+                        "rewrite": [{"rewrites": []}], "terms": [{"decisions": []}], **scripts}
         self.calls: list[tuple[str, list[dict]]] = []
 
     def __call__(self, messages, *, purpose, response_format=None):
@@ -210,9 +210,13 @@ def test_review_against_a_locked_term_is_ruled_in_favour_of_the_term_base(tmp_pa
             "explanation": "「模型体系」应统一为「模型系统」", "suggestion": "谐振子是分子振动的模型系统",
         }]}],
         chief=[_decide(("p001-b001", "escalate"), ("p001-b002", "escalate"))],
+        terms=[{"decisions": [{"term_source": "harmonic oscillator", "decision": "keep", "target": "", "reason": "通行译名"}]}],
     )
     report, translated = _run(tmp_path, model, translated=translated)
 
+    request = model.payload("terms")["requests"][0]
+    assert (request["term_source"], request["current_target"]) == ("harmonic oscillator", "谐振子")
+    assert request["suggestions"][0]["suggestion"] == "谐波振荡器"
     disputes = report["editorial"]["disputes"]
     assert [(row["item_id"], row["term_target"], row["ruling"]) for row in disputes] == [
         ("p001-b001", "谐振子", "keep_term_base")
@@ -223,7 +227,7 @@ def test_review_against_a_locked_term_is_ruled_in_favour_of_the_term_base(tmp_pa
     assert "谐振子" in _item(translated, "p001-b001")["translated_text"]
     assert report["editorial"]["term_review"] == {"status": "completed", "by_treatment": {"lock": 1}}
     kinds = [record["kind"] for record in _ledger(tmp_path)]
-    assert "dispute" in kinds and "ruling" in kinds
+    assert "dispute" in kinds and "term.decision" in kinds
     _assert_matches_contract(report)
 
 
@@ -371,3 +375,81 @@ def test_concurrent_provider_calls_keep_their_own_token_usage(monkeypatch) -> No
     with ThreadPoolExecutor(max_workers=4) as pool:
         results = list(pool.map(lambda n: chat([{"role": "user", "content": str(n)}], purpose="review"), [1, 2, 3, 4]))
     assert [result.usage["total_tokens"] for result in results] == [2, 4, 6, 8]
+
+
+
+def _job_with_term_base(tmp_path: Path, terms: list[dict]) -> Path:
+    translated = _build_job(tmp_path)
+    (translated / "term-base.v1.json").write_text(json.dumps({
+        "schema": "term_base_v1", "schema_version": 1, "terms": terms,
+    }, ensure_ascii=False), encoding="utf-8")
+    return translated
+
+
+DISPUTE_REVIEW = {"findings": [{
+    "item_id": "p001-b001", "category": "terminology", "severity": "major",
+    "target_span": "谐振子", "source_span": "harmonic oscillator",
+    "explanation": "规范名为简正振子", "suggestion": "简正振子",
+}]}
+
+
+def test_the_term_specialist_can_change_the_term_base_and_unify_the_book(tmp_path: Path) -> None:
+    translated = _job_with_term_base(tmp_path, [
+        {"source": "harmonic oscillator", "target": "谐振子", "origin": "extracted", "treatment": "lock", "votes": 3},
+        {"source": "quantum harmonic oscillator", "target": "量子谐振子", "origin": "extracted", "treatment": "lock"},
+    ])
+    model = EditorialModel(
+        review=[DISPUTE_REVIEW],
+        terms=[{"decisions": [{"term_source": "harmonic oscillator", "decision": "change", "target": "简正振子", "reason": "规范名"}]}],
+        chief=[_decide(("p001-b001", "escalate"), ("p001-b002", "escalate"))],
+    )
+    report, translated = _run(tmp_path, model, translated=translated)
+
+    assert _item(translated, "p001-b001")["translated_text"] == "简正振子是分子振动的模型体系。"
+    term_base = json.loads((translated / "term-base.v1.json").read_text(encoding="utf-8"))
+    terms = {term["source"]: term for term in term_base["terms"]}
+    assert terms["harmonic oscillator"]["target"] == "简正振子"
+    assert terms["harmonic oscillator"]["revisions"][0]["from"] == "谐振子"
+    assert terms["quantum harmonic oscillator"]["target"] == "量子简正振子", "长词条跟着一致化"
+    changes = {row["source"]: row for row in report["editorial"]["term_changes"]}
+    assert changes["harmonic oscillator"]["applied_item_ids"] == ["p001-b001"]
+    assert "quantum harmonic oscillator" in changes
+    assert report["editorial"]["disputes"][0]["ruling"] == "change_term_base"
+    unify = [fix for fix in report["fixes"] if fix.get("origin") == "rule" and fix["item_id"] == "p001-b001"]
+    assert unify and unify[0]["status"] == "applied"
+    kinds = [record["kind"] for record in _ledger(tmp_path)]
+    assert "term.change_request" in kinds and "term.decision" in kinds
+    _assert_checkpoint_consistent(translated)
+    _assert_matches_contract(report)
+
+
+def test_an_undecided_term_dispute_is_left_for_a_person(tmp_path: Path) -> None:
+    translated = _job_with_term_base(tmp_path, [
+        {"source": "harmonic oscillator", "target": "谐振子", "origin": "extracted", "treatment": "lock"},
+    ])
+    model = EditorialModel(
+        review=[DISPUTE_REVIEW],
+        terms=[{"decisions": [{"term_source": "harmonic oscillator", "decision": "escalate", "target": "", "reason": "两种都通行"}]}],
+        chief=[_decide(("p001-b002", "escalate"))],
+    )
+    report, translated = _run(tmp_path, model, translated=translated)
+
+    escalated = {row["item_id"]: row for row in report["editorial"]["escalated"]}
+    assert escalated["p001-b001"]["reason"].startswith("术语有争议，需要人定：harmonic oscillator")
+    assert all(row["item_id"] != "p001-b001" for row in model.payload("chief")["items"]), "交给人的块不再分流"
+    assert "谐振子" in _item(translated, "p001-b001")["translated_text"]
+    _assert_matches_contract(report)
+
+
+def test_user_glossary_terms_are_never_put_up_for_change(tmp_path: Path) -> None:
+    translated = _job_with_term_base(tmp_path, [
+        {"source": "harmonic oscillator", "target": "谐振子", "origin": "user_glossary", "level": "canonical"},
+    ])
+    (tmp_path / "specs" / "translate.spec.json").write_text(json.dumps({"params": {"glossary_entries": [
+        {"source": "harmonic oscillator", "target": "谐振子", "level": "canonical"},
+    ]}}), encoding="utf-8")
+    model = EditorialModel(review=[DISPUTE_REVIEW], chief=[_decide(("p001-b001", "escalate"), ("p001-b002", "escalate"))])
+    report, _ = _run(tmp_path, model, translated=translated)
+
+    assert "terms" not in model.purposes()
+    assert [row["ruling"] for row in report["editorial"]["disputes"]] == ["keep_term_base"]

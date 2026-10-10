@@ -20,6 +20,7 @@ from typing import Any
 
 from retainpdf_pipeline.translate.services.editorial import chief as chief_rules
 from retainpdf_pipeline.translate.services.editorial import rewrite as rewrite_rules
+from retainpdf_pipeline.translate.services.editorial import terms as term_rules
 from retainpdf_pipeline.translate.services.editorial.chief import Attempts
 from retainpdf_pipeline.translate.services.editorial.chief import Decision
 from retainpdf_pipeline.translate.services.editorial.ledger import KIND_DECISION
@@ -28,9 +29,10 @@ from retainpdf_pipeline.translate.services.editorial.ledger import KIND_ISSUE_ES
 from retainpdf_pipeline.translate.services.editorial.ledger import KIND_ISSUE_OPEN
 from retainpdf_pipeline.translate.services.editorial.ledger import KIND_ISSUE_RESOLVE
 from retainpdf_pipeline.translate.services.editorial.ledger import KIND_REVIEW_DONE
-from retainpdf_pipeline.translate.services.editorial.ledger import KIND_RULING
 from retainpdf_pipeline.translate.services.editorial.ledger import KIND_RUN_END
 from retainpdf_pipeline.translate.services.editorial.ledger import KIND_RUN_START
+from retainpdf_pipeline.translate.services.editorial.ledger import KIND_TERM_DECISION
+from retainpdf_pipeline.translate.services.editorial.ledger import KIND_TERM_REQUEST
 from retainpdf_pipeline.translate.services.editorial.ledger import LEDGER_RELATIVE_PATH
 from retainpdf_pipeline.translate.services.editorial.ledger import ROLE_CHIEF
 from retainpdf_pipeline.translate.services.editorial.ledger import ROLE_HUMAN
@@ -46,6 +48,7 @@ from retainpdf_pipeline.translate.services.editorial.ledger import new_run_id
 from retainpdf_pipeline.translate.services.editorial.ledger import read_ledger
 from retainpdf_pipeline.translate.services.preparation.term_base import TERM_BASE_FILE_NAME
 from retainpdf_pipeline.translate.services.preparation.term_base import load_term_base
+from retainpdf_pipeline.translate.services.preparation.term_base import write_json_atomic
 from retainpdf_pipeline.translate.services.quality.qa.report import build_translation_qa_for_job
 from retainpdf_pipeline.translate.services.quality.qa.report import load_translated_pages_for_qa
 from retainpdf_pipeline.translate.services.quality.qa.units import QaItem
@@ -89,12 +92,13 @@ def _chats(
         chief_info["thinking"] = CHIEF_DEFAULT_THINKING
     rewriter_info = dict(fixer_info)
     report["models"] = {"reviewer": reviewer_info, "fixer": fixer_info}
-    report["editorial"]["models"] = {"chief": chief_info, "rewriter": rewriter_info}
+    report["editorial"]["models"] = {"chief": chief_info, "rewriter": rewriter_info, "terminologist": dict(fixer_info)}
     if chat_fn is not None:
         fixer = fix_chat_fn or chat_fn
         return {
             "review": RefineChat(chat_fn, ledger),
             "chief": RefineChat(chat_fn, ledger),
+            "terms": RefineChat(chat_fn, ledger),
             "fix": RefineChat(fixer, ledger),
             "rewrite": RefineChat(fixer, ledger),
         }
@@ -118,6 +122,8 @@ def _chats(
         "chief": connect(chief_info, reviewer_key),
         "fix": connect(fixer_info, translation_key),
         "rewrite": connect(rewriter_info, translation_key),
+        # 术语专员和译前准备时一样用翻译模型。
+        "terms": connect(fixer_info, translation_key),
     }
 
 
@@ -160,12 +166,11 @@ def _term_disputes(
     items_by_id: dict[str, QaItem],
     locked_terms,
 ) -> tuple[list[review_rules.Finding], list[dict[str, Any]]]:
-    """审校要改掉术语表锁定的译法（比如把「位力定理」改成「维里定理」）：按术语表裁决，不改。
+    """审校要改掉术语表锁定的译法（比如把「位力定理」改成「维里定理」）：挑出来交给术语专员裁决。
 
     判定：圈出的片段里有锁定译法，而建议的写法里这个译法变少了（被拿掉或换掉）。只是片段里
     恰好带着锁定译法、建议照样保留它的（比如「量子力学期维里定理」→「量子力学位力定理」），
-    是在维护术语表，不算争议。第一期由规则裁决；审校认为术语表错了，应该向术语专员提改动申请
-    （第二期）。
+    是在维护术语表，不算争议。裁决见 ``_settle_term_disputes``。
     """
     kept: list[review_rules.Finding] = []
     disputes: list[dict[str, Any]] = []
@@ -197,6 +202,141 @@ def _term_disputes(
             }
         )
     return kept, disputes
+
+
+def _settle_term_disputes(
+    disputes: list[dict[str, Any]],
+    findings_by_id: dict[str, review_rules.Finding],
+    items_by_id: dict[str, QaItem],
+    *,
+    chat: RefineChat | None,
+    ledger: EditorialLedger,
+    pages: dict[int, list[dict]],
+    context: dict[str, Any],
+    section: dict[str, Any],
+    next_id: base._Ids,
+    progress: base._Progress,
+    errors: list[dict[str, str]],
+) -> tuple[list[dict[str, Any]], list[review_rules.Finding], dict[str, str]]:
+    """术语改动申请：术语专员逐条裁决；改了就改术语表并按规则统一全书。
+
+    返回（规则统一的修改记录, 对应的问题单, 交给人的块 → 原因）。争议的 ruling 原地填好。
+    """
+    translations_dir: Path = context["translations_dir"]
+    term_base_path = translations_dir / TERM_BASE_FILE_NAME
+    term_base = load_term_base(term_base_path)
+    requests = term_rules.build_requests(disputes, findings_by_id, items_by_id, term_base)
+    rulings: dict[str, tuple[str, str, str]] = {}
+    size = term_rules.TERM_REQUEST_BATCH_SIZE
+    batches = [requests[i : i + size] for i in range(0, len(requests), size)]
+    for request in requests:
+        ledger.append(
+            KIND_TERM_REQUEST, actor=ROLE_REVIEWER, to=ROLE_TERMS, refs=request["item_ids"],
+            **term_rules.request_payload(request),
+        )
+    proposals: dict[str, dict[str, str]] = {}
+    if chat is not None and batches:
+        progress.total += len(batches)
+        responses = base.request_batches(
+            chat,
+            "terms",
+            [term_rules.build_term_request_messages(batch) for batch in batches],
+            response_format=term_rules.TERM_REQUEST_RESPONSE_FORMAT,
+            workers=EDITORIAL_WORKERS,
+            on_done=lambda done, total: progress.step("terms", f"编辑部：术语专员裁决改动申请 {done}/{total} 批"),
+        )
+        for index, (content, failure) in enumerate(responses, start=1):
+            try:
+                if failure is not None:
+                    raise failure
+                proposals.update(term_rules.parse_term_request_response(content or ""))
+            except Exception as exc:  # noqa: BLE001 - 这批申请交给人
+                errors.append({"phase": "terms", "batch": str(index), "message": f"{type(exc).__name__}: {exc}"[:500]})
+    target_lang = "zh-CN"
+    changes: list[dict[str, str]] = []
+    for request in requests:
+        key = request["term_source"].casefold()
+        if chat is None:
+            ruling, target, reason = term_rules.RULING_ESCALATE, "", "术语专员模型不可用"
+        else:
+            ruling, target, reason = term_rules.settle(request, proposals.get(key), target_lang=target_lang)
+        rulings[key] = (ruling, target, reason)
+        ledger.append(
+            KIND_TERM_DECISION, actor=ROLE_TERMS, to=ROLE_CHIEF, refs=request["item_ids"],
+            term_source=request["term_source"], ruling=ruling, target=target, reason=reason,
+        )
+        if ruling == term_rules.RULING_CHANGE and term_base is not None:
+            for change in term_rules.apply_change(
+                term_base, request["term_source"], target, reason=reason, run_id=ledger.run_id
+            ):
+                changes.append({**change, "reason": reason if change["source"] == request["term_source"] else "随短词条一致化"})
+    escalations: dict[str, str] = {}
+    for dispute in disputes:
+        ruling, target, reason = rulings.get(
+            dispute["term_source"].casefold(), (term_rules.RULING_KEEP, "", "用户术语表或不可改的条目，维持")
+        )
+        dispute["ruling"] = ruling
+        if target:
+            dispute["new_target"] = target
+        if reason:
+            dispute["reason"] = reason
+        if ruling == term_rules.RULING_ESCALATE:
+            escalations.setdefault(
+                dispute["item_id"],
+                f"术语有争议，需要人定：{dispute['term_source']}（现译「{dispute['term_target']}」）",
+            )
+        ledger.append(KIND_DISPUTE, actor=ROLE_REVIEWER, to=ROLE_TERMS, refs=[dispute["item_id"]], **dispute)
+    fixes: list[dict[str, Any]] = []
+    findings: list[review_rules.Finding] = []
+    if not changes:
+        return fixes, findings, escalations
+    write_json_atomic(term_base_path, term_base)
+    rows: list[dict[str, Any]] = []
+    for change in changes:
+        applied: list[str] = []
+        all_items, current = base._items_by_id(pages)
+        for item_id in [item.item_id for item in all_items if item.checked]:
+            _all, current = base._items_by_id(pages)
+            item = current[item_id]
+            after = term_rules.rule_rewrite(item.protected_source, item.protected_translated, change)
+            if after is None:
+                continue
+            finding = review_rules.Finding(
+                finding_id=next_id(),
+                item_id=item.item_id,
+                page_number=item.page_number,
+                category="terminology",
+                severity="minor",
+                target_span=change["from"],
+                source_span=change["source"],
+                explanation=f"术语表把「{change['source']}」改为「{change['to']}」，按规则统一（原「{change['from']}」）",
+                suggestion=change["to"],
+                origin=review_rules.ORIGIN_RULE,
+            )
+            record = base._fix_record(item, [finding])
+            record["origin"] = "rule"
+            record["action"] = chief_rules.ACTION_PATCH
+            record["note"] = "术语表改动后按规则统一（未调用模型）"
+            no_growth = item.item_id in context["fit_constrained"]
+            budget = max(len(after), fix_rules.length_budget(item, [finding], no_growth=no_growth))
+            if no_growth:
+                budget = len(item.protected_translated)
+            record = base.accept_candidate(
+                record=record, item=item, findings=[finding], after=after, budget=budget,
+                no_growth=no_growth, pages=pages, context=context,
+            )
+            _open_issue(ledger, finding, actor=ROLE_TERMS)
+            ledger.append(
+                KIND_ISSUE_RESOLVE, actor=ROLE_RULES, refs=[item.item_id], action="rule",
+                status=record["status"], reason=record["reject_reason"], revision_id=record.get("revision_id"), round=0,
+            )
+            findings.append(finding)
+            fixes.append(record)
+            if record["status"] == fix_rules.FIX_APPLIED:
+                applied.append(item.item_id)
+        rows.append({**change, "applied_item_ids": applied})
+    section["term_changes"] = rows
+    return fixes, findings, escalations
 
 
 # ---- 主编分流 ------------------------------------------------------------------
@@ -474,6 +614,7 @@ def _editorial_section(term_review: dict[str, Any] | None) -> dict[str, Any]:
         "max_rounds": chief_rules.MAX_ROUNDS,
         "decisions": {"total": 0, "by_action": {}, "by_source": {}, "overridden": 0},
         "disputes": [],
+        "term_changes": [],
         "escalated": [],
         "term_review": term_review,
         "models": {},
@@ -492,7 +633,11 @@ def run_editorial(
 ) -> None:
     errors: list[dict[str, str]] = report["errors"]
     report["prompt_versions"].update(
-        {"chief": chief_rules.CHIEF_PROMPT_VERSION, "rewrite": rewrite_rules.REWRITE_PROMPT_VERSION}
+        {
+            "chief": chief_rules.CHIEF_PROMPT_VERSION,
+            "rewrite": rewrite_rules.REWRITE_PROMPT_VERSION,
+            "term_request": term_rules.TERM_REQUEST_PROMPT_VERSION,
+        }
     )
     section = _editorial_section(_term_review_summary(translations_dir))
     report["editorial"] = section
@@ -599,20 +744,40 @@ def run_editorial(
                 batch_count=stats.batch_count,
                 reviewed_item_ids=sorted(reviewed_ids),
             )
+    # 3. 争议：审校要改术语表锁定的译法 → 术语专员裁决（维持 / 改表 / 交给人）。要在收质检问题之前：
+    #    术语表改了，质检就该按新译法判。
+    findings_by_id = {finding.finding_id: finding for finding in review_findings}
+    review_findings, disputes = _term_disputes(review_findings, items_by_id, locked_terms)
+    term_escalations: dict[str, str] = {}
+    term_fixes: list[dict[str, Any]] = []
+    term_findings: list[review_rules.Finding] = []
+    if disputes:
+        term_fixes, term_findings, term_escalations = _settle_term_disputes(
+            disputes,
+            findings_by_id,
+            items_by_id,
+            chat=chats["terms"],
+            ledger=ledger,
+            pages=pages,
+            context=context,
+            section=section,
+            next_id=next_id,
+            progress=progress,
+            errors=errors,
+        )
+        if term_fixes or section["term_changes"]:
+            user_glossary, locked_terms = base._glossary(job_root, translations_dir)
+            context["user_glossary"] = user_glossary
+            qa_current = build_translation_qa_for_job(job_root, translations_dir=translations_dir, mode="refine_before")
+            all_items, items_by_id = base._items_by_id(pages)
+            candidates = [items_by_id.get(item.item_id, item) for item in candidates]
+    section["disputes"] = disputes
+    rule_findings = [*rule_findings, *term_findings]
+    rule_fixes = [*rule_fixes, *term_fixes]
     scoped_ids = {item.item_id: item for item in candidates}
     qa_origin = review_rules.qa_findings(qa_current, items_by_id=scoped_ids, next_id=next_id)
     for finding in qa_origin:
         _open_issue(ledger, finding, actor=ROLE_QA)
-
-    # 3. 争议：审校要改术语表锁定的译法 → 按术语表裁决。
-    review_findings, disputes = _term_disputes(review_findings, items_by_id, locked_terms)
-    for dispute in disputes:
-        ledger.append(KIND_DISPUTE, actor=ROLE_REVIEWER, to=ROLE_CHIEF, refs=[dispute["item_id"]], **dispute)
-        ledger.append(
-            KIND_RULING, actor=ROLE_CHIEF, to=ROLE_TERMS, refs=[dispute["item_id"]],
-            finding_id=dispute["finding_id"], ruling=RULING_KEEP_TERM_BASE,
-        )
-    section["disputes"] = disputes
     order = {item.item_id: item.order for item in all_items}
     findings = sorted(
         [*rule_findings, *review_findings, *qa_origin],
@@ -651,7 +816,9 @@ def run_editorial(
                     attempts[item_id].record(record["action"], str(record.get("status", "")), str(record.get("reason", "")))
     fixes: list[dict[str, Any]] = list(rule_fixes)
     decisions_all: list[Decision] = []
-    escalated: dict[str, str] = {}
+    escalated: dict[str, str] = dict(term_escalations)
+    for item_id in term_escalations:
+        open_items.pop(item_id, None)
     budget_hit = stopped == report_rules.STOP_MAX_TOKENS
     round_no = 0
     while open_items and round_no < chief_rules.MAX_ROUNDS and not budget_hit:
