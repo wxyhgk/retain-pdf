@@ -2,7 +2,7 @@
 // - poll（翻译任务在跑、进入渲染阶段，精修就在这里跑）：每 3 秒刷新；
 // - 否则只读一次：任务跑完 / 停下后照样画出最后一次精修的最终状态，不能一结束就消失。
 // 读失败保留上一次的结果，不打断界面。
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { fetchJobEvents } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
@@ -14,6 +14,7 @@ export const EDITORIAL_FLOW_POLL_MS = 3_000;
 const TAIL_LIMIT = 500;
 
 type FetchEvents = (jobId: string) => Promise<{ items?: unknown[] } | null | undefined>;
+import type { BookDetailCaches } from "../domain/book-detail-caches.js";
 
 const defaultFetchEvents: FetchEvents = (jobId) =>
   fetchJobEvents(jobId, API_PREFIX, { start: "tail", limit: TAIL_LIMIT });
@@ -24,20 +25,30 @@ export function useEditorialFlow(
     enabled = true,
     poll = false,
     jobActive = false,
+    cache,
     fetchEvents = defaultFetchEvents,
     intervalMs = EDITORIAL_FLOW_POLL_MS,
   }: {
     enabled?: boolean;
     poll?: boolean;
     jobActive?: boolean;
+    /** 不在跑的任务，最后一次精修不会再变：读一次记下来（BookDetailDialog 传入，跨关闭/打开），
+     * 再打开详情不用再拉一遍（尾部 500 条事件约 500 KB）。 */
+    cache?: BookDetailCaches["settledFlows"];
     fetchEvents?: FetchEvents;
     intervalMs?: number;
   } = {},
 ): EditorialFlow | null {
-  const [flow, setFlow] = useState<EditorialFlow | null>(null);
+  const ownCache = useRef<BookDetailCaches["settledFlows"]>(new Map());
+  const settledFlows = cache ?? ownCache.current;
+  const [flow, setFlow] = useState<EditorialFlow | null>(() => (!jobActive && settledFlows.get(jobId)) || null);
   useEffect(() => {
     if (!enabled || !jobId) {
       setFlow(null);
+      return undefined;
+    }
+    if (!poll && !jobActive && settledFlows.has(jobId)) {
+      setFlow(settledFlows.get(jobId) ?? null);
       return undefined;
     }
     let disposed = false;
@@ -45,7 +56,9 @@ export function useEditorialFlow(
     const tick = async () => {
       try {
         const page = await fetchEvents(jobId);
-        if (!disposed) setFlow(editorialFlowModel(page?.items, { jobActive }));
+        const next = editorialFlowModel(page?.items, { jobActive });
+        if (!poll && !jobActive) settledFlows.set(jobId, next);
+        if (!disposed) setFlow(next);
       } catch {
         // 保留上一次的流程图；轮询时下一轮再试。
       }

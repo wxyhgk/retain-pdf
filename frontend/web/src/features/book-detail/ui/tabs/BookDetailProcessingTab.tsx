@@ -41,7 +41,7 @@ function ScanIcon() {
 // 取全局服务；那四个按钮要读 statusCard store（useStatusCardModel），一旦直接
 // 写在这里，孤立挂载本组件的组件级测试就会因为缺少 HomeShellProviders 而崩。
 // 真正的注入点在 BookDetailDialog（它本来就在 providers 里）。
-export function BookDetailProcessingTab({ ocr, translation, loading = false, error = "", resultActionsSlot = null, coverage = null }: BookDetailProcessingTabProps) {
+export function BookDetailProcessingTab({ ocr, translation, loading = false, error = "", resultActionsSlot = null, coverage = null, editorialFlowCache }: BookDetailProcessingTabProps) {
   const ocrJob = ocr?.job ?? null;
   const ocrActive = isDocumentJobActive(ocrJob);
   const ocrStatus = documentJobPresentation(ocrJob, "尚未执行");
@@ -73,10 +73,12 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   const hasTranslationJob = Boolean(translationJobId) && !translationJobId.startsWith("doc:");
   // 精修跑在渲染阶段里：任务在跑且进入渲染时轮询事件流；跑完 / 停下后读一次，照样画出最后一次精修。
   // 是编辑部精修才画，不是就什么都不画。
+  // 只在「进度」页可见时才读事件：这一页和别的页签一起常驻挂载，不能一打开详情就去拉。
   const editorialFlow = useEditorialFlow(translationJobId, {
-    enabled: hasTranslationJob,
+    enabled: hasTranslationJob && translation?.tabActive !== false,
     poll: Boolean(translation?.isActive) && liveStageKey(translationItem) === "render",
     jobActive: Boolean(translation?.isActive),
+    cache: editorialFlowCache,
   });
 
   // 「还不知道」不等于「确定没有」。这一段以前只让 loading 控制一行提示文案，
