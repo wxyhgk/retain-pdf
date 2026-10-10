@@ -41,6 +41,13 @@ function FlowNode({ node }: { node: EditorialFlowNode }) {
   );
 }
 
+function headlineOf(flow: EditorialFlow): string {
+  const stopped = [...flow.before, ...flow.loop].some((node) => node.state === "stopped");
+  if (stopped) return "精修中途停下了";
+  if (!flow.finished) return "几位编辑接力审改译文";
+  return flow.after[0]?.state === "active" ? "精修完成，正在排版" : "精修完成";
+}
+
 export function EditorialFlowPanel({ flow }: { flow: EditorialFlow | null }) {
   if (!flow) return null;
   const loopLabel = flow.round
@@ -50,7 +57,7 @@ export function EditorialFlowPanel({ flow }: { flow: EditorialFlow | null }) {
     <section className="editorial-flow" aria-label="编辑部精修流程" data-editorial-flow="true">
       <header className="editorial-flow-header">
         <strong>编辑部精修</strong>
-        <span>{flow.finished ? "精修完成，正在排版" : "几位编辑接力审改译文"}</span>
+        <span>{headlineOf(flow)}</span>
       </header>
       <ol className="editorial-flow-track">
         {flow.before.map((node) => <FlowNode key={node.key} node={node} />)}
