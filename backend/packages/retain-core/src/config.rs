@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
+mod accounts;
 mod ai_proxy;
 mod ai_service;
 mod asset;
@@ -21,6 +22,7 @@ mod reader_llm;
 mod server;
 mod upload;
 
+pub use accounts::{AccountsConfig, DeploymentMode, LOCAL_USERNAME, LOCAL_USER_ID};
 pub use ai_proxy::AiProxyConfig;
 pub use ai_service::AiServiceConfig;
 pub use asset::AssetConfig;
@@ -134,6 +136,7 @@ pub struct AppConfig {
     pub ai_proxy: AiProxyConfig,
     pub reader_llm: ReaderLlmConfig,
     pub rag: RagConfig,
+    pub accounts: AccountsConfig,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -308,6 +311,7 @@ impl AppConfig {
             ai_proxy: AiProxyConfig::from_env(),
             reader_llm: ReaderLlmConfig::from_env(),
             rag: RagConfig::from_env(),
+            accounts: AccountsConfig::from_env()?,
         })
     }
 }

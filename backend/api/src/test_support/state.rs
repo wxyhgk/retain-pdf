@@ -26,6 +26,10 @@ pub(crate) fn assemble_app_state(config: Arc<AppConfig>) -> AppState {
         config.data_root.clone(),
     ));
     AppState {
+        accounts: Arc::new(crate::services::accounts::AccountsService::new(
+            db.clone(),
+            config.accounts.clone(),
+        )),
         ai_gateway: Arc::new(
             crate::services::ai::AiGateway::new(
                 &config.ai_proxy,

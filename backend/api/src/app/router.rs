@@ -1,12 +1,15 @@
 use axum::middleware;
 use axum::Router;
-use tower_http::cors::CorsLayer;
+use axum::http::HeaderValue;
+use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tower_http::trace::TraceLayer;
 
 use crate::app::AppState;
 use crate::auth;
+use crate::config::AccountsConfig;
 use crate::routes::common::{method_not_allowed, unknown_route};
 
+mod accounts;
 mod ai;
 mod collections;
 mod credentials;
@@ -24,24 +27,51 @@ mod public;
 mod simple;
 
 pub fn build_app(state: AppState) -> Router {
+    // 多用户模式下没有终端：助手终端能在服务器上执行命令，只给单机版。
+    let websocket_routes = if state.config.accounts.mode.is_multi() {
+        Router::new()
+    } else {
+        self_authenticating_websocket_routes()
+    };
     public::routes()
         .merge(authenticated_api_routes(&state))
-        .merge(self_authenticating_websocket_routes())
+        .merge(websocket_routes)
         .merge(crate::routes::model_requests::worker_routes())
         .fallback(unknown_route)
         // 计端点使用量。挂在 CORS/Trace 之下、路由之上,这样能从 `MatchedPath`
         // 拿到路由模板而不是具体 URL。见 `route_usage`：删端点之前先量。
         .layer(middleware::from_fn(super::route_usage::record))
-        .layer(CorsLayer::permissive())
+        .layer(cors_layer(&state.config.accounts))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
+}
+
+/// 单机：任何来源都可以（本机页面、桌面壳、命令行），靠 X-API-Key 认证，不带 Cookie。
+/// 多用户：认证靠 Cookie，跨域只放行配置里列出的来源并允许带凭据；没列就只能同域访问。
+fn cors_layer(accounts: &AccountsConfig) -> CorsLayer {
+    if !accounts.mode.is_multi() {
+        return CorsLayer::permissive();
+    }
+    let origins: Vec<HeaderValue> = accounts
+        .allowed_origins
+        .iter()
+        .filter_map(|origin| HeaderValue::from_str(origin).ok())
+        .collect();
+    if origins.is_empty() {
+        return CorsLayer::new();
+    }
+    CorsLayer::new()
+        .allow_origin(AllowOrigin::list(origins))
+        .allow_credentials(true)
+        .allow_methods(AllowMethods::mirror_request())
+        .allow_headers(AllowHeaders::mirror_request())
 }
 
 pub fn build_simple_app(state: AppState) -> Router {
     public::routes()
         .merge(authenticated_simple_routes(&state))
         .fallback(unknown_route)
-        .layer(CorsLayer::permissive())
+        .layer(cors_layer(&state.config.accounts))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }
@@ -62,6 +92,7 @@ fn self_authenticating_websocket_routes() -> Router<AppState> {
 
 fn authenticated_api_routes(state: &AppState) -> Router<AppState> {
     Router::new()
+        .merge(accounts::routes())
         .merge(credentials::routes())
         .merge(ingestion::routes())
         .merge(glossaries::routes())

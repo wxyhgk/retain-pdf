@@ -5,6 +5,8 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use rusqlite::Connection;
 
+#[path = "db/accounts.rs"]
+mod accounts;
 #[path = "db/agent_calculations.rs"]
 mod agent_calculations;
 #[path = "db/artifacts.rs"]
@@ -51,6 +53,8 @@ mod schema;
 pub mod sync;
 #[path = "db/uploads.rs"]
 mod uploads;
+
+pub use accounts::{username_key, UserRecord, UsernameTaken};
 
 use schema::{
     ensure_events_column, ensure_glossaries_column, ensure_jobs_column,
