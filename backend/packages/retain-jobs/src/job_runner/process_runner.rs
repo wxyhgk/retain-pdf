@@ -209,6 +209,7 @@ pub(super) mod tests {
             ai_proxy: crate::config::AiProxyConfig::default(),
             reader_llm: crate::config::ReaderLlmConfig::default(),
             rag: crate::config::RagConfig::default(),
+            accounts: Default::default(),
         });
 
         let db = Arc::new(Db::new(

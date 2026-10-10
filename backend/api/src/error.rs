@@ -86,6 +86,14 @@ pub enum AppError {
         message: String,
         details: Value,
     },
+    /// 账号、登录、会话的错误（INVALID_CREDENTIALS、ACCOUNT_DISABLED、TOO_MANY_ATTEMPTS……）。
+    #[error("{message}")]
+    Account {
+        status: StatusCode,
+        code: &'static str,
+        message: String,
+        details: Value,
+    },
 }
 
 #[derive(Serialize)]
@@ -243,6 +251,10 @@ impl AppError {
             reason,
             can_fallback_to_ocr: true,
         }
+    }
+
+    pub fn account(status: StatusCode, code: &'static str, message: impl Into<String>, details: Value) -> Self {
+        Self::Account { status, code, message: message.into(), details }
     }
 
     pub fn credential_reference(
@@ -412,6 +424,17 @@ impl IntoResponse for AppError {
             )
                 .into_response();
         }
+        if let AppError::Account { status, code, message, details } = &self {
+            return (
+                *status,
+                Json(DeleteBlockedByFavoritesErrorBody {
+                    code,
+                    message: message.clone(),
+                    error: StructuredError::with_details(code, *status, details.clone()),
+                }),
+            )
+                .into_response();
+        }
         if let AppError::TranslationRevision {
             status,
             code,
@@ -481,6 +504,7 @@ impl IntoResponse for AppError {
             AppError::DocumentMetadata { .. } => unreachable!("handled above"),
             AppError::DeleteBlockedByFavorites { .. } => unreachable!("handled above"),
             AppError::TranslationRevision { .. } => unreachable!("handled above"),
+            AppError::Account { .. } => unreachable!("handled above"),
         };
         let body = ErrorBody {
             code,

@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use tokio::sync::{RwLock, Semaphore};
-use tracing::warn;
+use tracing::{info, warn};
 
 use super::jobs::reconcile_owned_runtime;
 use crate::config::AppConfig;
@@ -32,6 +32,8 @@ pub struct AppState {
     /// 多设备同步(设置、后台定时同步、状态)。
     pub(crate) sync: Arc<crate::services::sync::SyncService>,
     pub(crate) backup: Arc<crate::services::backup::BackupService>,
+    /// 账号、会话（多用户模式）；单机模式下只用来报告模式。
+    pub(crate) accounts: Arc<crate::services::accounts::AccountsService>,
 }
 
 pub fn build_state(config: Arc<AppConfig>) -> Result<AppState> {
@@ -75,7 +77,15 @@ pub fn build_state(config: Arc<AppConfig>) -> Result<AppState> {
         db.clone(),
         config.data_root.clone(),
     ));
+    let accounts = Arc::new(crate::services::accounts::AccountsService::new(
+        db.clone(),
+        config.accounts.clone(),
+    ));
+    if let Some(admin) = accounts.bootstrap_admin().map_err(|error| anyhow::anyhow!("{error}"))? {
+        info!("multi-user mode: created the first administrator `{admin}` from RETAIN_BOOTSTRAP_ADMIN_*");
+    }
     Ok(AppState {
+        accounts,
         ai_gateway: Arc::new(crate::services::ai::AiGateway::new(
             &config.ai_proxy,
             config.ai_service.base_url(),

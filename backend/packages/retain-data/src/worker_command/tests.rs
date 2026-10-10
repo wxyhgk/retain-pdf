@@ -55,6 +55,7 @@ fn test_config() -> Arc<AppConfig> {
         ai_proxy: crate::config::AiProxyConfig::default(),
         reader_llm: crate::config::ReaderLlmConfig::default(),
         rag: crate::config::RagConfig::default(),
+        accounts: Default::default(),
     })
 }
 
