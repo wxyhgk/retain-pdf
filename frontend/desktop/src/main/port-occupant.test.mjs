@@ -166,7 +166,7 @@ test("windows: unknown image with no backend signature stays busy with kill hint
   assert.match(occupant.describeOccupant(41000, result.occupant), /taskkill \/PID 555 \/F/);
 });
 
-test("killProcessTreeSync terminates the tree synchronously", () => {
+test("forceKillProcessSync terminates the tree synchronously on windows", () => {
   const calls = [];
   const occupant = createPortOccupant({
     platform: "win32",
@@ -175,16 +175,16 @@ test("killProcessTreeSync terminates the tree synchronously", () => {
       return "";
     },
   });
-  assert.equal(occupant.killProcessTreeSync(1234), true);
+  assert.equal(occupant.forceKillProcessSync(1234), true);
   assert.deepEqual(calls, [["taskkill", ["/PID", "1234", "/T", "/F"]]]);
 });
 
-test("killProcessTreeSync failure returns false", () => {
+test("forceKillProcessSync failure returns false", () => {
   const occupant = createPortOccupant({
     platform: "win32",
     runCommandSync: () => {
       throw new Error("denied");
     },
   });
-  assert.equal(occupant.killProcessTreeSync(1234), false);
+  assert.equal(occupant.forceKillProcessSync(1234), false);
 });

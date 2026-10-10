@@ -10,6 +10,7 @@ const {
 const { buildBackendEnv } = require("./src/main/backend-env");
 const { createBackendHttp } = require("./src/main/backend-http");
 const { createPortOccupant } = require("./src/main/port-occupant");
+const { stopChildGracefully } = require("./src/main/graceful-stop");
 const { createPortAllocator } = require("./src/main/port-allocator");
 const { createLocalGateway } = require("./src/main/local-gateway");
 const { createBackendRuntime } = require("./src/main/backend-runtime");
@@ -48,7 +49,7 @@ const backendHttp = createBackendHttp({
 });
 const { canReuseExistingBackend } = backendHttp;
 const portOccupant = createPortOccupant({ canConnectToPort, logger: console });
-const { killProcessTreeSync } = portOccupant;
+const { forceKillProcessSync } = portOccupant;
 // ~/.retainpdf/ 经命令行 retainpdf 读写：打包后在 backend/bin，开发时用仓库里编译好的。
 const retainpdfHome = createRetainpdfHome({ resolveCli: () => retainpdfHomeCliPath() });
 const desktopConfigStore = createDesktopConfigStore(app, { desktopApiKey: DESKTOP_API_KEY, retainpdfHome });
@@ -105,6 +106,9 @@ let suppressBackendCrashDialog = false;
 let splashWindow = null;
 let usingExternalBackend = false;
 let isQuitting = false;
+// 退出时子进程的清理进度："idle" → "stopping"（POSIX 上等 SIGTERM 收尾）→ "done"。
+// 防止 before-quit 重入：清理完再调 app.quit() 时直接放行。
+let childShutdownState = "idle";
 const AI_SERVICE_PORT = 41100;
 
 function updateSplashProgress(progress, title, detail) {
@@ -460,7 +464,7 @@ try {
   clearInterval(waitingTimer);
   const conflict = backendStartupDiagnostics.hasExited() && backendStartupDiagnostics.hasBindConflict();
   if (aiServiceChild && !aiServiceChild.killed && aiServiceChild.pid) {
-    killProcessTreeSync(aiServiceChild.pid);
+    forceKillProcessSync(aiServiceChild.pid);
     aiServiceChild = null;
   }
   if (conflict && attempt < 3) {
@@ -608,22 +612,58 @@ app.on("window-all-closed", () => {
   }
 });
 
-app.on("before-quit", () => {
+app.on("before-quit", (event) => {
   isQuitting = true;
   backendStopping = true;
-  // Synchronously terminate whole process trees: plain ChildProcess.kill()
-  // only kills the direct child, leaving supervised grandchildren (jobsd,
-  // ai service, workers) orphaned and holding ports. Never touch foreign
-  // backends: skip rust_api when reusing an external one.
-  if (aiServiceChild && !aiServiceChild.killed && aiServiceChild.pid) {
-    killProcessTreeSync(aiServiceChild.pid);
-    aiServiceChild = null;
-  } else {
-    aiServiceChild = null;
+  if (childShutdownState === "done") {
+    return;
   }
-  if (!usingExternalBackend && backendChild && !backendChild.killed && backendChild.pid) {
-    killProcessTreeSync(backendChild.pid);
+  if (childShutdownState === "stopping") {
+    // 清理还没结束，又按了一次 Cmd+Q / 托盘退出：继续等，结束后会自己 quit。
+    event.preventDefault();
+    return;
   }
+  // Never touch foreign backends: skip rust_api when reusing an external one.
+  const children = [];
+  if (aiServiceChild && aiServiceChild.pid) {
+    children.push({ child: aiServiceChild, label: "retainpdf-ai" });
+  }
+  aiServiceChild = null;
+  if (!usingExternalBackend && backendChild && backendChild.pid) {
+    children.push({ child: backendChild, label: "rust_api" });
+  }
+  if (children.length === 0) {
+    childShutdownState = "done";
+    return;
+  }
+  if (process.platform === "win32") {
+    // Windows 没有可用的 SIGTERM：taskkill /T /F 同步结束整棵进程树。
+    for (const { child } of children) {
+      forceKillProcessSync(child.pid);
+    }
+    childShutdownState = "done";
+    return;
+  }
+  // POSIX：先 SIGTERM 让 rust_api 自己有序回收 jobsd 和 AI 服务，超时再 SIGKILL。
+  // 等待期间先藏起窗口，界面上看起来已经退出。
+  event.preventDefault();
+  childShutdownState = "stopping";
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed()) {
+      window.hide();
+    }
+  }
+  logDesktop(`[desktop] quitting: sending SIGTERM to ${children.map(({ label }) => label).join(", ")}`);
+  Promise.all(
+    children.map(({ child, label }) =>
+      stopChildGracefully(child, { label, logger: console }).then((outcome) => {
+        logDesktop(`[desktop] ${label} stopped (${outcome})`);
+      }),
+    ),
+  ).finally(() => {
+    childShutdownState = "done";
+    app.quit();
+  });
 });
 
 ipcMain.handle("desktop:invoke", async (_event, command, args = {}) => {

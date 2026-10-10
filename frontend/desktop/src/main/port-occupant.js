@@ -135,11 +135,12 @@ function createPortOccupant(options = {}) {
     return await getPosixOccupant(host, port);
   }
 
-  // Synchronous variant for before-quit: Electron cannot await async work
-  // there, and plain ChildProcess.kill() leaves supervised grandchildren
-  // (jobsd, ai service, workers) orphaned holding ports. Only kills the
-  // given PID tree; callers must not pass foreign PIDs.
-  function killProcessTreeSync(pid) {
+  // Force-kill, synchronously. Windows: taskkill /T /F ends the whole tree.
+  // POSIX: SIGKILL to this one PID only — its children are NOT killed here
+  // (jobsd / AI service exit on their own via the rust_api watchdog). For a
+  // clean quit prefer stopChildGracefully (SIGTERM first). Callers must not
+  // pass foreign PIDs.
+  function forceKillProcessSync(pid) {
     try {
       if (platform === "win32") {
         runCommandSync("taskkill", ["/PID", String(pid), "/T", "/F"]);
@@ -148,12 +149,14 @@ function createPortOccupant(options = {}) {
       process.kill(Number(pid), "SIGKILL");
       return true;
     } catch (error) {
-      logger.warn(`[desktop] failed to terminate process tree ${pid}: ${error?.message || error}`);
+      logger.warn(`[desktop] failed to force-kill process ${pid}: ${error?.message || error}`);
       return false;
     }
   }
 
-  async function killProcessTree(pid) {
+  // Async variant of forceKillProcessSync, same semantics: whole tree on
+  // Windows, single PID on POSIX.
+  async function forceKillProcess(pid) {
     try {
       if (platform === "win32") {
         // SIGTERM does not terminate trees on Windows; taskkill /T /F does.
@@ -199,9 +202,9 @@ function createPortOccupant(options = {}) {
     });
   }
 
-  // If the port is held by our own residual backend binary, terminate its
-  // tree and re-probe. Returns { status, occupant } where status is one of
-  // "free" | "reclaimed" | "busy". Never throws: lookup failures degrade to
+  // If the port is held by our own residual backend binary, force-kill it
+  // (whole tree on Windows) and re-probe. Returns { status, occupant } where
+  // status is one of "free" | "reclaimed" | "busy". Never throws: lookup failures degrade to
   // "busy" with a null occupant so callers keep the historical behavior.
   async function reclaimPortIfOwnResidual(host, port) {
     let occupant = null;
@@ -237,9 +240,9 @@ function createPortOccupant(options = {}) {
       }
     }
     logger.warn(
-      `[desktop] port ${port} is held by residual backend ${occupant.image} (PID ${occupant.pid}); terminating its process tree`,
+      `[desktop] port ${port} is held by residual backend ${occupant.image} (PID ${occupant.pid}); force-killing it`,
     );
-    const killed = await killProcessTree(occupant.pid);
+    const killed = await forceKillProcess(occupant.pid);
     if (!killed) {
       return { status: "busy", occupant };
     }
@@ -269,8 +272,8 @@ function createPortOccupant(options = {}) {
     describeOccupant,
     getPortOccupant,
     isOwnResidualBackend,
-    killProcessTree,
-    killProcessTreeSync,
+    forceKillProcess,
+    forceKillProcessSync,
     reclaimPortIfOwnResidual,
   };
 }
