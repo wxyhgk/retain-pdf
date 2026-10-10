@@ -58,3 +58,37 @@ fn a_job_root_that_merely_shares_a_prefix_is_not_the_producer() {
     let job = snapshot("p2", "2026-10-05T00:00:00", "jobs/p2", "jobs/p2/translated");
     assert_eq!(producer_created_at(&job, &[lookalike, job.clone()], data_root), "2026-10-05T00:00:00");
 }
+
+
+/// 回归：原始翻译任务上原地精修（重写了它的 PDF）之后，阅读要打开它，而不是之前另建的
+/// 重新排版任务。几个任务同一份译文、同一个产出者；原任务提交得最早，但最后跑完。
+#[test]
+fn reading_opens_the_in_place_refined_original_rather_than_an_earlier_relayout() {
+    use crate::api_tests::jobs_common::minimal_pdf_bytes;
+    use crate::models::domain::{JobStatusKind, WorkflowKind};
+
+    let root = std::env::temp_dir().join(format!("retain-reading-refine-{:016x}", fastrand::u64(..)));
+    let job = |job_id: &str, created_at: &str, finished_at: &str| {
+        let rendered = root.join(format!("jobs/{job_id}/rendered"));
+        std::fs::create_dir_all(&rendered).unwrap();
+        std::fs::write(rendered.join("out.pdf"), minimal_pdf_bytes(595, 842)).unwrap();
+        let mut job = snapshot(job_id, created_at, &format!("jobs/{job_id}"), "jobs/original/translated");
+        job.status = JobStatusKind::Succeeded;
+        job.workflow = WorkflowKind::Render;
+        job.finished_at = Some(finished_at.to_string());
+        let artifacts = job.artifacts.as_mut().unwrap();
+        artifacts.output_pdf = Some(format!("jobs/{job_id}/rendered/out.pdf"));
+        artifacts.ocr_page_numbers = vec![1];
+        job
+    };
+    let original = job("original", "2026-10-06T13:38:13", "2026-10-09T17:00:00");
+    let relayout = job("relayout", "2026-10-09T06:35:45", "2026-10-09T06:40:00");
+    let jobs = [relayout, original];
+
+    let sources = document_merge_sources(&jobs, &root);
+    let ranked: Vec<_> = sources.iter().map(|source| source.ranked.clone()).collect();
+    let plan = merge_plan(1, &ranked);
+    let _ = std::fs::remove_dir_all(&root);
+    assert_eq!(sources.len(), 2, "两个任务都应参与");
+    assert_eq!(single_whole_document_job(&plan), Some("original"), "打开的是精修之前排的旧 PDF");
+}

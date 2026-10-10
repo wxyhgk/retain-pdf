@@ -306,6 +306,7 @@ fn summarize_list_invocation_counts_stage_spec_and_unknown() {
             detail_path: "/api/v1/jobs/job-1".to_string(),
             detail_url: "https://api.example/api/v1/jobs/job-1".to_string(),
                     failure: None,
+                    source_artifact_job_id: None,
         },
         JobListItemView {
             job_id: "job-2".to_string(),
@@ -337,6 +338,7 @@ fn summarize_list_invocation_counts_stage_spec_and_unknown() {
             detail_path: "/api/v1/jobs/job-2".to_string(),
             detail_url: "https://api.example/api/v1/jobs/job-2".to_string(),
                     failure: None,
+                    source_artifact_job_id: None,
         },
     ];
 
