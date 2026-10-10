@@ -29,6 +29,11 @@ export {
   mountBrowserCredentialsFeature,
   readHiddenCredentialDomInputs,
 } from "./domain.js";
+export {
+  createRetryWithCurrentTranslationSecret,
+  withCurrentTranslationSecret,
+} from "./domain/retry-translation-secret.js";
+export type { CurrentTranslationSecret } from "./domain/retry-translation-secret.js";
 export type {
   BindCredentialViewEventsOptions,
   CredentialUploadTilePort,

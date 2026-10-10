@@ -32,6 +32,7 @@ export function createLibraryController({
   deleteJob,
   buildTranslateConfig,
   buildOcrConfig,
+  retryJobStageApi,
   startPolling,
   recentJobsStatePort,
 }: LibraryControllerDeps = {}): LibraryController {
@@ -95,6 +96,7 @@ export function createLibraryController({
     bookDetailStore,
     buildTranslateConfig,
     promoteDocumentToJob: promote,
+    ...(retryJobStageApi ? { retryJobStageApi } : {}),
   });
   const navigation = createBookDetailNavigation({
     bookDetailStore,
