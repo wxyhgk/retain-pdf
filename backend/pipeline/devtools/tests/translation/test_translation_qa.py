@@ -97,6 +97,19 @@ def test_missing_and_extra_numbers() -> None:
     assert _find(extra, "number_extra")["severity"] == "major"
 
 
+def test_multi_level_section_numbers_are_not_extra() -> None:
+    # 原文「Section 4.4.2」整个当引用抹掉；译文「4.4.2 节」被数字正则拆出「4.4」。曾在一本书里误报 46 处。
+    report = _run([_item(
+        "p001-b001",
+        "Independence grants every other order, which Section 4.4.2 carries to whole traces (Section 3.3.2).",
+        "独立性赋予了所有其他顺序，4.4.2 节将其推广至整个轨迹（第 3.3.2 节）。",
+    )])
+    assert _types(report, "numbers") == []
+    # 真多出来的数字照样报。
+    extra = _run([_item("p001-b001", "Section 4.4.2 extends it.", "4.4.2 节在 300 K 下推广了它。")])
+    assert _find(extra, "number_extra")["evidence"]["extra"] == ["300"]
+
+
 def test_small_numbers_written_in_chinese_are_not_missing() -> None:
     report = _run([_item("p001-b001", "There are 2 masses and 3 springs.", "共有两个质量和三根弹簧。")])
     assert _types(report, "numbers") == []
