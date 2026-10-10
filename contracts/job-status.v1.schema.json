@@ -24,7 +24,7 @@
       "method": "GET",
       "path": "/api/v1/ocr/jobs/:job_id",
       "output": "JobDetailView",
-      "note": "WorkflowKind::Ocr 走 /api/v1/ocr/jobs 前缀，view 形状与 book 一致"
+      "note": "已弃用的别名：OCR 任务的链接现在也走 /api/v1/jobs/:job_id（view 形状一致）。前端改完、路由计数归零后删除。"
     }
   ],
   "definitions": {

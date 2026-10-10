@@ -70,8 +70,24 @@ fn library_projection_uses_library_media_urls() {
         ..JobArtifacts::default()
     });
     assert_eq!(
-        library_image_url(&job, &data_root, "https://api.example", "cover").as_deref(),
-        Some("https://api.example/api/v1/library/books/job-library-projection/cover")
+        library_image_url(&job, None, &data_root, "https://api.example", "cover").as_deref(),
+        Some("https://api.example/api/v1/library/books/job-library-projection/cover"),
+        "旧上传记录没有书的编号：退回按任务的地址"
+    );
+    let upload = UploadRecord {
+        upload_id: "up-1".into(),
+        filename: "a.pdf".into(),
+        stored_path: "uploads/a.pdf".into(),
+        bytes: 1,
+        page_count: 1,
+        uploaded_at: String::new(),
+        developer_mode: false,
+        content_hash: "doc-sha".into(),
+    };
+    assert_eq!(
+        library_image_url(&job, Some(&upload), &data_root, "https://api.example", "thumbnail").as_deref(),
+        Some("https://api.example/api/v1/documents/doc-sha/thumbnail"),
+        "有书的编号：和文档列表同一个地址"
     );
 }
 

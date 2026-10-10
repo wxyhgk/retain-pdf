@@ -72,8 +72,8 @@ pub(crate) fn build_library_book_detail_view(
     let titles = document_titles_for(db, upload);
     let display_name = derive_display_name(upload, job, &titles);
     let summary = build_book_summary(upload, &mut summaries, job, data_root, &display_name)
-        .with_cover_url(library_image_url(job, data_root, base_url, "cover"))
-        .with_thumbnail_url(library_image_url(job, data_root, base_url, "thumbnail"));
+        .with_cover_url(library_image_url(job, upload, data_root, base_url, "cover"))
+        .with_thumbnail_url(library_image_url(job, upload, data_root, base_url, "thumbnail"));
     let live = build_live_projection(db, job, data_root);
     let (pdf_ready, markdown_ready, bundle_ready) = job_readiness(job, data_root);
     let artifacts = build_artifact_links(
@@ -127,8 +127,8 @@ fn build_library_book_list_item(
         stage: live.stage,
         stage_detail: live.stage_detail,
         progress: live.progress,
-        cover_url: library_image_url(job, data_root, base_url, "cover"),
-        thumbnail_url: library_image_url(job, data_root, base_url, "thumbnail"),
+        cover_url: library_image_url(job, upload, data_root, base_url, "cover"),
+        thumbnail_url: library_image_url(job, upload, data_root, base_url, "thumbnail"),
         output_pdf_ready,
         markdown_ready,
         bundle_ready,
@@ -137,17 +137,23 @@ fn build_library_book_list_item(
     }
 }
 
+/// 封面、缩略图从源 PDF 生成，是书（document）的属性：有书的编号就给 `/documents/:id/…`，
+/// 同一本书的几个任务、书架和文档列表共用一个地址，浏览器只缓存一份。旧上传记录没回填
+/// 编号时退回按任务的地址。
 fn library_image_url(
     job: &JobSnapshot,
+    upload: Option<&UploadRecord>,
     data_root: &Path,
     base_url: &str,
     kind: &str,
 ) -> Option<String> {
+    let document_id = upload.map(|upload| upload.content_hash.trim()).filter(|id| !id.is_empty());
     resolve_source_pdf(job, data_root).map(|_| {
-        to_absolute_url(
-            base_url,
-            &format!("/api/v1/library/books/{}/{kind}", job.job_id),
-        )
+        let path = match document_id {
+            Some(document_id) => format!("/api/v1/documents/{document_id}/{kind}"),
+            None => format!("/api/v1/library/books/{}/{kind}", job.job_id),
+        };
+        to_absolute_url(base_url, &path)
     })
 }
 

@@ -18,7 +18,7 @@ use crate::models::api::{
     CreateCollectionInput, CreateConversationInput, CreateDocumentMetadataSuggestionInput,
     DocumentDeleteResultView, DocumentMetadataSuggestionApplyView,
     DocumentMetadataSuggestionListView, DocumentMetadataSuggestionView, JobSubmissionView,
-    LibraryBatchDeleteInput, LibraryBatchDeleteResultView, LibraryBookDetailView,
+    LibraryBookDetailView,
     LibraryBookListView, LibraryDeleteResultView, ListConversationsQuery,
     ListDocumentMetadataSuggestionsQuery, ListJobsQuery, MessageRecord,
     PatchCollectionInput, PatchConversationInput, SearchQuery,
@@ -33,7 +33,7 @@ use super::{
     add_collection_documents, append_message, apply_metadata_suggestion,
     create_collection, create_conversation,
     create_metadata_suggestion, delete_collection, delete_conversation,
-    delete_document, delete_library_book, delete_library_books, document_cover,
+    delete_document, delete_library_book, document_cover,
     document_source_pdf, document_thumbnail, get_conversation, get_library_book, list_collections,
     list_conversations, list_library_books, list_metadata_suggestions, load_asset,
     ocr_document, patch_collection, patch_conversation, remove_collection_document,
@@ -67,13 +67,6 @@ pub fn delete_library_book_view(
     force: bool,
 ) -> Result<LibraryDeleteResultView, AppError> {
     delete_library_book(deps, job_id, force)
-}
-
-pub fn delete_library_books_view(
-    deps: &LibraryDeps<'_>,
-    input: &LibraryBatchDeleteInput,
-) -> Result<LibraryBatchDeleteResultView, AppError> {
-    delete_library_books(deps, input)
 }
 
 // --- documents ---

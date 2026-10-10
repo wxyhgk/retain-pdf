@@ -52,7 +52,6 @@
 - `GET /api/v1/library/books`
 - `GET /api/v1/library/books/{job_id}`
 - `DELETE /api/v1/library/books/{job_id}`
-- `POST /api/v1/library/books/delete`
 - `GET /api/v1/library/books/{job_id}/cover`
 - `GET /api/v1/library/books/{job_id}/thumbnail`
 
@@ -136,7 +135,8 @@ Reader 宿主接入 job/artifact、Markdown、区域、页面元数据和实时�
 
 - `DELETE /api/v1/library/books/{job_id}`
 - `DELETE /api/v1/library/books/{job_id}?force=true`
-- `POST /api/v1/library/books/delete`
+
+批量删除在前端逐本调用单本删除（`POST /api/v1/library/books/delete` 三周零调用，已删）。
 
 删除行为：
 
@@ -685,6 +685,10 @@ PDF 元数据：
 查询和关系接口只返回持久化 ID 与安全投影；客户端不得把本地文件路径作为资源 ID。
 
 ## 9. OCR-only 接口
+
+> 除创建（`POST /api/v1/ocr/jobs`）外，下面这些都是已弃用的别名：OCR 任务的链接现在也走
+> `/api/v1/jobs/{job_id}/…`（详情、事件、产物、取消对 OCR 任务一样能用，取消按任务类型分支）。
+> 前端改完、路由计数归零后删除。
 
 - `POST /api/v1/ocr/jobs`
 - `GET /api/v1/ocr/jobs?limit=20&offset=0&status=&provider=`

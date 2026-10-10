@@ -75,11 +75,8 @@ mod tests {
         );
 
         assert_eq!(view.workflow, WorkflowKind::Ocr);
-        assert_eq!(view.links.self_path, "/api/v1/ocr/jobs/jobs-support-test");
-        assert_eq!(
-            view.actions.open_job.path,
-            "/api/v1/ocr/jobs/jobs-support-test"
-        );
+        assert_eq!(view.links.self_path, "/api/v1/jobs/jobs-support-test");
+        assert_eq!(view.actions.open_job.path, "/api/v1/jobs/jobs-support-test");
         assert!(view.actions.cancel.enabled);
     }
 }
