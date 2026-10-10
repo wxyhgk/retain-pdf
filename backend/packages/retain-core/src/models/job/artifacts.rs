@@ -52,6 +52,13 @@ pub struct JobArtifacts {
     pub translation_checkpoint_json: Option<String>,
     pub translations_dir: Option<String>,
     pub output_pdf: Option<String>,
+    /// 原地重跑（重排 / 精修）排队时清掉了 `output_pdf`，但上一次排好的 PDF 还在磁盘上，直到
+    /// 新的渲染开始覆盖它。记下它的路径，阅读在排队这段时间里继续用它，而不是退回更旧的版本。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub previous_output_pdf: Option<String>,
+    /// 上一份 PDF 排好的时间（原地重跑清掉了 `finished_at`）。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub previous_finished_at: Option<String>,
     #[serde(default)]
     pub cover_image_path: Option<String>,
     #[serde(default)]
