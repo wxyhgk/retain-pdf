@@ -3,6 +3,8 @@
 use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::Mutex;
+use std::time::{Duration, Instant, SystemTime};
 
 use serde::Serialize;
 
@@ -17,9 +19,46 @@ pub struct FontInfo {
 
 const FONT_EXTS: &[&str] = &["otf", "ttf", "ttc", "otc", "woff", "woff2"];
 
+/// 字体列表的缓存：扫描要起一个 fc-list 子进程（七十多毫秒），而前端会反复拉这个列表
+/// （实测三周一万八千次）。字体目录没变、且不超过 [`FONT_CACHE_TTL`] 就直接用上次的结果；
+/// 系统字体装卸不改我们的目录，所以再加一个过期时间兜底。上传字体时清掉。
+const FONT_CACHE_TTL: Duration = Duration::from_secs(600);
+
+struct FontCache {
+    signature: Vec<(PathBuf, Option<SystemTime>)>,
+    scanned_at: Instant,
+    fonts: Vec<FontInfo>,
+}
+
+static FONT_CACHE: Mutex<Option<FontCache>> = Mutex::new(None);
+
+fn dirs_signature(dirs: &[PathBuf]) -> Vec<(PathBuf, Option<SystemTime>)> {
+    dirs.iter()
+        .map(|dir| (dir.clone(), std::fs::metadata(dir).and_then(|meta| meta.modified()).ok()))
+        .collect()
+}
+
 pub(crate) fn list_fonts(project_root: &Path, data_root: &Path) -> Vec<FontInfo> {
     let dirs = resolve_font_dirs(project_root, data_root);
-    scan_fonts(&dirs)
+    let signature = dirs_signature(&dirs);
+    if let Ok(cache) = FONT_CACHE.lock() {
+        if let Some(cached) = cache.as_ref() {
+            if cached.signature == signature && cached.scanned_at.elapsed() < FONT_CACHE_TTL {
+                return cached.fonts.clone();
+            }
+        }
+    }
+    let fonts = scan_fonts(&dirs);
+    if let Ok(mut cache) = FONT_CACHE.lock() {
+        *cache = Some(FontCache { signature, scanned_at: Instant::now(), fonts: fonts.clone() });
+    }
+    fonts
+}
+
+fn invalidate_font_cache() {
+    if let Ok(mut cache) = FONT_CACHE.lock() {
+        *cache = None;
+    }
 }
 
 pub(crate) fn save_uploaded_font(
@@ -53,6 +92,7 @@ pub(crate) fn save_uploaded_font(
         .arg("-f")
         .arg(&data_fonts_dir)
         .output();
+    invalidate_font_cache();
 
     let family =
         family_from_file(&destination).unwrap_or_else(|| family_from_filename(&destination));
@@ -273,4 +313,31 @@ fn scan_fonts(dirs: &[PathBuf]) -> Vec<FontInfo> {
     }
     fonts.sort_by(|left, right| left.family.cmp(&right.family));
     fonts
+}
+
+#[cfg(test)]
+mod cache_tests {
+    use super::*;
+
+    /// 字体目录里多了文件（目录修改时间变了）就重新扫描，不会一直拿旧列表。
+    #[test]
+    fn a_new_font_in_the_data_dir_shows_up_despite_the_cache() {
+        let root = std::env::temp_dir().join(format!("retain-fonts-cache-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let fonts_dir = root.join("data").join("fonts");
+        std::fs::create_dir_all(&fonts_dir).unwrap();
+        std::fs::write(fonts_dir.join("RetainCacheAlpha.ttf"), b"not-a-real-font").unwrap();
+        let families = |fonts: Vec<FontInfo>| -> Vec<String> {
+            fonts.into_iter().map(|font| font.family).filter(|family| family.contains("RetainCache")).collect()
+        };
+
+        let first = families(list_fonts(&root.join("project"), &root.join("data")));
+        assert!(first.iter().any(|family| family.contains("Alpha")), "{first:?}");
+
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        std::fs::write(fonts_dir.join("RetainCacheBeta.ttf"), b"not-a-real-font").unwrap();
+        let second = families(list_fonts(&root.join("project"), &root.join("data")));
+        assert!(second.iter().any(|family| family.contains("Beta")), "{second:?}");
+        let _ = std::fs::remove_dir_all(&root);
+    }
 }
