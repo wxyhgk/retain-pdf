@@ -1,4 +1,5 @@
 // 「进度」页的参数类型。拼装见 ../processing-tab-props.ts，展示见 BookDetailProcessingTab。
+import type { BookDetailCaches } from "../../domain/book-detail-caches.js";
 
 import type { ReactNode } from "react";
 import type { DocumentJobSummary } from "@/features/library/domain.js";
@@ -50,4 +51,6 @@ export type BookDetailProcessingTabProps = {
   error?: string;
   resultActionsSlot?: ReactNode;
   coverage?: TranslationCoverageView | null;
+  /** 编辑部流程图的会话缓存（BookDetailDialog 创建），跑完的任务读一次就记住。 */
+  editorialFlowCache?: BookDetailCaches["settledFlows"];
 };

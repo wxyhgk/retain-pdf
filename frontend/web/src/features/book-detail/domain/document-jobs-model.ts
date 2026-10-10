@@ -6,6 +6,8 @@ import { isPollingBootstrapPlaceholder } from "@/features/jobs/index.js";
 import { isTerminalJobStatus } from "@/platform/contracts/job-status.js";
 import { isActiveJobStatus, jobStatusPresentation } from "@retainpdf/domain/job";
 export const DOCUMENT_JOBS_REFRESH_INTERVAL_MS = 2_000;
+// 没有任务在跑时放慢到 30 秒：只为接住别处（终端、助手）新发起的任务。以前一律 2 秒，书翻完了还一直问。
+export const DOCUMENT_JOBS_IDLE_REFRESH_INTERVAL_MS = 30_000;
 
 export function jobIdOf(job?: Partial<DocumentJobSummary> | null) {
   return `${job?.job_id || job?.id || ""}`.trim();

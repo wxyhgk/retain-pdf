@@ -7,8 +7,10 @@ import {
   selectReusableOcrJob,
 } from "@/features/library/domain.js";
 import {
+  DOCUMENT_JOBS_IDLE_REFRESH_INTERVAL_MS,
   DOCUMENT_JOBS_REFRESH_INTERVAL_MS,
   documentIdOf,
+  isDocumentJobActive as isJobActive,
   isDocumentJobTerminal,
   jobIdOf,
   mergeRuntimeDocumentJob,
@@ -52,6 +54,7 @@ export function useDocumentJobs({
   initialJob,
   runtimeStore,
   refreshIntervalMs = DOCUMENT_JOBS_REFRESH_INTERVAL_MS,
+  idleRefreshIntervalMs = DOCUMENT_JOBS_IDLE_REFRESH_INTERVAL_MS,
   onJobSucceeded,
 }: {
   open: boolean;
@@ -60,6 +63,7 @@ export function useDocumentJobs({
   initialJob?: Partial<DocumentJobSummary> | null;
   runtimeStore?: RuntimeJobStore | null;
   refreshIntervalMs?: number;
+  idleRefreshIntervalMs?: number;
   onJobSucceeded?: (job: DocumentJobSummary) => unknown;
 }) {
   const [jobs, setJobs] = useState<DocumentJobSummary[]>([]);
@@ -154,15 +158,23 @@ export function useDocumentJobs({
       return undefined;
     }
     void refresh();
-    const interval = Number(refreshIntervalMs) > 0
-      ? globalThis.setInterval(() => void refresh({ quiet: true }), Number(refreshIntervalMs))
-      : null;
     return () => {
-      if (interval !== null) globalThis.clearInterval(interval);
       // 让关闭/切文档前发出的 GET 结果失效，不能回写下一本书。
       generationRef.current += 1;
     };
-  }, [documentId, open, refresh, refreshIntervalMs]);
+  }, [documentId, open, refresh]);
+
+  // 轮询单独一个 effect：有任务在跑时快、没有时慢；切换快慢不重新做首次加载（不闪「读取中」）。
+  // 首次加载还没回来时也按快的来：慢速首请求要靠静默轮询接管，不能一等 30 秒。
+  const anyJobActive = jobs.some((job) => isJobActive(job))
+    || Boolean(initialJob && isJobActive(initialJob as DocumentJobSummary) && !jobs.length);
+  const firstLoadPending = loadedDocumentId !== documentId;
+  const pollMs = anyJobActive || firstLoadPending ? Number(refreshIntervalMs) : Number(idleRefreshIntervalMs);
+  useEffect(() => {
+    if (!open || !documentId || !(pollMs > 0)) return undefined;
+    const interval = globalThis.setInterval(() => void refresh({ quiet: true }), pollMs);
+    return () => globalThis.clearInterval(interval);
+  }, [documentId, open, refresh, pollMs]);
 
   const effectiveJobs = useMemo(() => {
     let next = jobs;

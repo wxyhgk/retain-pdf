@@ -1,6 +1,8 @@
 // BookDetailDialog —— 容器：组合 hooks + shell/tabs。
 // 业务状态见 use-book-detail-*.js；UI 见 shell / tabs / panels。
 
+import { useEffect, useState } from "react";
+import { createBookDetailCaches } from "../domain/book-detail-caches.js";
 import {
   useHomeBookDetail,
   useHomeCollections,
@@ -63,6 +65,8 @@ export function BookDetailDialog() {
   const item = useBookDetailLiveItem(payloadItem);
   const statusCardState = useStoreSnapshot(statusCardStore);
   const documentId = `${item.document_id || ""}`.trim();
+  // 弹窗第一次打开后一直挂着：会话缓存跟着它，关掉再打开同一本书直接用。
+  const [caches] = useState(createBookDetailCaches);
   const coverUrl = useRecentJobCover(item);
 
   const close = () => dialogStore.close();
@@ -87,7 +91,13 @@ export function BookDetailDialog() {
       void docState.refreshDocument?.();
     },
   });
-  const coverage = useTranslationCoverage({ open, documentId, jobs: documentJobs.jobs });
+  const coverage = useTranslationCoverage({
+    open,
+    documentId,
+    jobs: documentJobs.jobs,
+    ready: !documentJobs.loading,
+    cache: caches.coverage,
+  });
   // 能不能对照阅读看「有没有任何成功的带译文任务」，不看当前任务：重新翻译 / 重新渲染在跑
   // 或失败时旧译文照样能读（阅读器按全部成功任务合并）。coverage 已经拉了，直接用。
   const {
@@ -109,6 +119,13 @@ export function BookDetailDialog() {
     readerAvailable,
     isActive,
   });
+  // 「重新处理」清单（stage-actions，后端要算 0.6 秒）只在「进度」页用：第一次打开那一页才请求。
+  const [processingSeenFor, setProcessingSeenFor] = useState("");
+  const processingSeen = defaultTab === "processing" || processingSeenFor === documentId;
+  // 关掉就清零：下次打开停在概览时不去拉，点进「进度」再拉（拉的是那时最新的）。
+  useEffect(() => {
+    if (!open) setProcessingSeenFor("");
+  }, [open]);
   const translateState = useBookDetailTranslate({
     open,
     documentId,
@@ -135,7 +152,7 @@ export function BookDetailDialog() {
   const translationStatus = documentJobPresentation(latestTranslation, "尚未翻译");
   const translationSucceeded = `${latestTranslation?.status || ""}`.toLowerCase() === "succeeded";
   const stageActionState = useBookDetailStageActions({
-    open,
+    open: open && processingSeen,
     // 不是 latestTranslation：最新的是一次重新渲染时，以最新的翻译为底，见 selectRetryBaseJob。
     job: documentJobs.retryBaseTranslation || latestTranslation,
     actions,
@@ -156,6 +173,8 @@ export function BookDetailDialog() {
   });
   const artifactCenter = useBookDetailArtifactCenter({
     active: open,
+    ready: !documentJobs.loading,
+    cache: caches.manifests,
     documentId,
     refreshRevision: documentJobs.succeededRevision,
     title: docState.doc?.title || item.title || "",
@@ -229,6 +248,9 @@ export function BookDetailDialog() {
           open={open}
           resetKey={documentId}
           defaultTab={defaultTab}
+          onTabChange={(tab) => {
+            if (tab === "processing") setProcessingSeenFor(documentId);
+          }}
           overviewTab={({ selectTab }) => (
             <BookDetailOverviewTab
               pageCount={docState.pageCount}
@@ -276,6 +298,7 @@ export function BookDetailDialog() {
               // 长在 HomeShellProviders 内），让「进度」Tab 组件保持纯展示。
               resultActionsSlot={<ProcessingResultActions documentJobIds={documentJobIds} />}
               coverage={coverage}
+              editorialFlowCache={caches.settledFlows}
               {...buildProcessingTabProps({
                 open,
                 activeTab,

@@ -21,6 +21,7 @@ import {
   type ArtifactManifest,
 } from "../domain/artifact-center-model.js";
 import { isActiveJobStatus } from "@retainpdf/domain/job";
+import type { BookDetailCaches } from "../domain/book-detail-caches.js";
 
 export function readerCompatibleArtifactLinks(
   job: DocumentJobSummary,
@@ -71,6 +72,8 @@ export function readerCompatibleArtifactLinks(
 
 export function useBookDetailArtifactCenter({
   active,
+  ready = true,
+  cache,
   documentId,
   refreshRevision = 0,
   title = "",
@@ -78,6 +81,11 @@ export function useBookDetailArtifactCenter({
   jobs,
 }: {
   active: boolean;
+  /** 这本书的任务列表已经从后端读回来；没读回来前任务只有卡片上的简略信息，先不拉，免得拉两遍。 */
+  ready?: boolean;
+  /** 已结束任务的产物清单按「任务 id:流程:状态:更新时间」记下（BookDetailDialog 传入，跨关闭/打开）：
+   * 再打开同一本书直接用，不再每次拉两个接口。状态或更新时间一变，键就变了，自然重拉。 */
+  cache?: BookDetailCaches["manifests"];
   documentId: string;
   refreshRevision?: number;
   /** 书名：文件页列表据此写出下载文件名。 */
@@ -96,6 +104,8 @@ export function useBookDetailArtifactCenter({
   const [downloadingId, setDownloadingId] = useState("");
   const generationRef = useRef(0);
   const loadedTokensRef = useRef(new Set<string>());
+  const ownCache = useRef<BookDetailCaches["manifests"]>(new Map());
+  const manifestCache = cache ?? ownCache.current;
 
   useEffect(() => {
     generationRef.current += 1;
@@ -110,6 +120,8 @@ export function useBookDetailArtifactCenter({
   useEffect(() => {
     if (!active || !documentId || !refreshRevision) return;
     generationRef.current += 1;
+    // 任务刚完成时产物可能还没登记全，记下的那份不能再用。
+    for (const token of loadedTokensRef.current) manifestCache.delete(token);
     loadedTokensRef.current.clear();
     setError("");
   }, [active, documentId, refreshRevision]);
@@ -133,8 +145,17 @@ export function useBookDetailArtifactCenter({
   const manifestJobsKey = manifestJobs.map(({ token }) => token).join("\u0000");
 
   useEffect(() => {
-    if (!active || !documentId) return undefined;
-    const missing = manifestJobs.filter(({ token }) => !loadedTokensRef.current.has(token));
+    if (!active || !documentId || !ready) return undefined;
+    const pending = manifestJobs.filter(({ token }) => !loadedTokensRef.current.has(token));
+    const cachedHits = pending.filter(({ token }) => manifestCache.has(token));
+    if (cachedHits.length) {
+      cachedHits.forEach(({ token }) => loadedTokensRef.current.add(token));
+      setManifests((current) => ({
+        ...current,
+        ...Object.fromEntries(cachedHits.map(({ jobId, token }) => [jobId, manifestCache.get(token)!])),
+      }));
+    }
+    const missing = pending.filter(({ token }) => !manifestCache.has(token));
     if (!missing.length) return undefined;
     const generation = ++generationRef.current;
     let cancelled = false;
@@ -162,10 +183,9 @@ export function useBookDetailArtifactCenter({
             linksResult.status === "fulfilled" ? linksResult.value : null,
           );
           if (cancelled || generation !== generationRef.current) return;
-          setManifests((current) => ({
-            ...current,
-            [jobId]: mergeArtifactLinksIntoManifest(job, manifest, links),
-          }));
+          const merged = mergeArtifactLinksIntoManifest(job, manifest, links);
+          manifestCache.set(token, merged);
+          setManifests((current) => ({ ...current, [jobId]: merged }));
           finishedTokens.add(token);
         } catch (cause) {
           if (cancelled || generation !== generationRef.current) return;
@@ -188,7 +208,7 @@ export function useBookDetailArtifactCenter({
         setLoadingJobIds((current) => current.filter((id) => !unfinishedIds.has(id)));
       }
     };
-  }, [active, documentId, manifestJobsKey, refreshRevision]);
+  }, [active, ready, documentId, manifestJobsKey, refreshRevision]);
 
   const sections = useMemo(() => buildArtifactCenterSections({
     documentId,
