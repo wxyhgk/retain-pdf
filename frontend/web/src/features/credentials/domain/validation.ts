@@ -54,7 +54,7 @@ export interface RunDeepSeekConnectivityCheckOptions {
   baseUrl?: string;
   /** 翻译真正要调用的模型名。不传则后端只能验 Key，验不到模型。 */
   model?: string;
-  /** openai / anthropic。 */
+  /** openai / openai_responses / anthropic。 */
   apiProtocol?: string;
   validateDeepSeekToken: (
     apiPrefix: string,

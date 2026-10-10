@@ -132,6 +132,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
 /** 接口协议（与任务契约 translation.api_protocol 一致）。 */
 export const TRANSLATION_API_PROTOCOL_OPTIONS = [
   { id: "openai", label: "OpenAI 格式", hint: "/chat/completions" },
+  { id: "openai_responses", label: "OpenAI Responses 格式", hint: "/responses" },
   { id: "anthropic", label: "Anthropic 格式", hint: "/messages" },
 ] as const;
 
