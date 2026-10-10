@@ -262,6 +262,14 @@ test("上次精修的结果写在精修那一行下面；没审完时可以从�
   assert.equal(describeLastRefine(done), "上次精修审完了全书：发现 4 处，改了 2 处。");
   assert.equal(refineContinuePage(done), null);
   assert.equal(describeLastRefine(undefined), "");
+  const editorial = {
+    ...done, mode: "editorial", escalated_count: 2,
+    escalated: [
+      { item_id: "p014-b019", page_number: 14, reason: "达到修改次数上限，仍未解决" },
+      { item_id: "p019-b017", page_number: 19, reason: "术语有争议，需要人定：Cartesian coordinates（现译「笛卡尔坐标」）" },
+    ],
+  };
+  assert.equal(describeLastRefine(editorial), "上次精修审完了全书：发现 4 处，改了 2 处，2 处留给你确认。");
 
   const dom = makeDom();
   const React = await import("react");
@@ -287,6 +295,41 @@ test("上次精修的结果写在精修那一行下面；没审完时可以从�
   await waitFor(() => calls.length === 1, "确认后提交");
   assert.deepEqual(calls[0], ["refine", { refineStartPage: 24 }]);
 
+  root.unmount();
+  dom.window.close();
+});
+
+test("编辑部留给你确认的块列在精修那一行下面（页码 + 原因）", async () => {
+  const dom = makeDom();
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { TranslationStageActions } = await import(
+    "../../src/features/book-detail/ui/panels/translate/TranslationStageActions.jsx"
+  );
+  const last = {
+    status: "completed", generated_at: "2026-10-09T18:00:00+00:00", finding_count: 9, applied: 5,
+    reviewed_item_count: 330, candidate_item_count: 330, unreviewed_item_count: 0, next_page: null,
+    stopped_reason: null, mode: "editorial", escalated_count: 3,
+    escalated: [
+      { item_id: "p014-b019", page_number: 14, reason: "达到修改次数上限，仍未解决" },
+      { item_id: "p019-b017", page_number: 19, reason: "术语有争议，需要人定：Cartesian coordinates（现译「笛卡尔坐标」）" },
+    ],
+  };
+  const root = createRoot(dom.window.document.getElementById("root"));
+  root.render(React.createElement(TranslationStageActions, {
+    variant: "sheet",
+    actions: [{ stage: "refine", label: "精修译文", can_retry: true, last_refine: last }],
+    onRetry: async () => {},
+  }));
+  const list = await waitFor(() => dom.window.document.querySelector("[data-refine-escalated]"), "待确认清单");
+  assert.equal(list.getAttribute("data-refine-escalated"), "3");
+  assert.equal(list.querySelector("summary").textContent, "查看留给你确认的 3 处");
+  const rows = [...list.querySelectorAll("[data-escalated-item]")].map((row) => row.textContent);
+  assert.deepEqual(rows, [
+    "第 14 页达到修改次数上限，仍未解决",
+    "第 19 页术语有争议，需要人定：Cartesian coordinates（现译「笛卡尔坐标」）",
+  ]);
+  assert.match(list.textContent, /只列出前 2 处/);
   root.unmount();
   dom.window.close();
 });

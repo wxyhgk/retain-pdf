@@ -356,9 +356,16 @@ omission / punctuation / layout_fit 之一。critical = 改了数值、结论或
     review.findings[] item_id / page_number / category / severity / target_span
                       source_span / explanation / suggestion / origin(review|qa)
     fixes[]           item_id / status(applied|rejected|skipped) / reject_reason
-                      before / after / revision_id
+                      before / after / revision_id / action(patch|rewrite) / round
+    editorial         只有 mode=editorial（编辑部）才有：
+      .escalated[]    留给用户确认的块：item_id / page_number / reason / attempts
+      .term_changes[] 术语专员改了术语表：source / from / to / reason
+      .term_patrol[]  术语专员统一了全书处理不一致的词：source / decision / target
+      .disputes[]     审校和术语表冲突时术语专员的裁决
+    ../artifacts/editorial/ledger.jsonl  编辑部台账（每件事一行：问题单、主编决定、修订结果）
 
     jq -c '.fixes[] | {{item_id, status, reject_reason}}' ../artifacts/refine_report.v1.json
+    jq -c '.editorial.escalated[]? | {{page_number, reason}}' ../artifacts/refine_report.v1.json
 
 ### `../translated/revisions.v1.jsonl` — 译文修订历史（一行一条，旧在前）
 

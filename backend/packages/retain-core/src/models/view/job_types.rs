@@ -416,6 +416,23 @@ pub struct LastRefineView {
     pub unreviewed_item_count: i64,
     pub next_page: Option<i64>,
     pub stopped_reason: Option<String>,
+    /// review_only / review_and_fix / editorial;老报告没有时为空串。
+    pub mode: String,
+    /// 编辑部留给人确认的块数(报告 editorial.escalated 的条数);其它模式为 0。
+    pub escalated_count: i64,
+    /// 留给人确认的块,最多 `LAST_REFINE_ESCALATED_LIMIT` 条,按书中顺序。
+    pub escalated: Vec<EscalatedItemView>,
+}
+
+/// 上次精修摘要里最多带几条「留给你确认」(全部见 GET translation/refine-report)。
+pub const LAST_REFINE_ESCALATED_LIMIT: usize = 50;
+
+/// 编辑部留给人确认的一块。
+#[derive(Debug, Serialize, Default, PartialEq, Eq)]
+pub struct EscalatedItemView {
+    pub item_id: String,
+    pub page_number: i64,
+    pub reason: String,
 }
 
 #[derive(Debug, Serialize)]

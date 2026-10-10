@@ -104,7 +104,7 @@ pub use view::{
     ReaderAiUsedContextView, ReaderDocumentMetadataView, ReaderMetadataView,
     ReaderPageMetadataView, ReaderRegionBoxView, ReaderRegionItemView, ReaderRegionsView,
     RefineRetryRequest, ResourceLinkView, RetryStageKind, RetryStageRequest, RetryStageSubmissionView,
-    LastRefineView, StageActionsView, StageRetryActionLinkView, StageRetryActionView, TranslationDebugIndexView,
+    LastRefineView, EscalatedItemView, LAST_REFINE_ESCALATED_LIMIT, StageActionsView, StageRetryActionLinkView, StageRetryActionView, TranslationDebugIndexView,
     TranslationDebugItemView, TranslationDebugListItemView, TranslationDebugListView,
     TranslationDiagnosticsView, TranslationReplayView, TranslationRequestRecoveryView,
 };
