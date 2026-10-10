@@ -53,6 +53,16 @@ export interface LastRefineView {
     /** 没审到的第一页（1-based）；全审到为 null。 */
     next_page: number | null;
     stopped_reason: string | null;
+    /** review_only / review_and_fix / editorial；老后端没有。 */
+    mode?: string;
+    /** 编辑部留给人确认的块数。 */
+    escalated_count?: number;
+    /** 留给人确认的块（最多 50 条，按书中顺序）。 */
+    escalated?: Array<{
+        item_id: string;
+        page_number: number;
+        reason: string;
+    }>;
 }
 export interface JobStageRetryActionView {
     stage: JobRetryStage;
