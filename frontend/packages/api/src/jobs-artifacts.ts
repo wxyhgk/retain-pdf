@@ -2,9 +2,7 @@
 import { API_PREFIX, buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildJobDetailEndpoint } from "./http.js";
 
-function buildOcrJobDetailEndpoint(jobId: string, apiPrefix?: string): string {
-  return buildJobDetailEndpoint(jobId, apiPrefix).replace(/\/jobs\//, "/ocr/jobs/");
-}
+// OCR 任务也走 /jobs/:id/…（后端已统一），不再 404 后退到 /ocr/jobs/ 别名。
 
 export type JobArtifactResourceLink = {
   ready?: boolean;
@@ -50,24 +48,13 @@ export type JobArtifactLinks = {
 export async function fetchJobArtifacts(jobId: string, apiPrefix = API_PREFIX): Promise<JobArtifactLinks | null> {
   const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/artifacts`, { headers: buildApiHeaders() });
   if (resp.ok) return unwrapEnvelope(await resp.json());
-  if (resp.status !== 404) {
-    throw new Error(`读取任务产物失败，请稍后重试。(${resp.status})`);
-  }
-
-  const ocrResp = await fetch(`${buildOcrJobDetailEndpoint(jobId, apiPrefix)}/artifacts`, { headers: buildApiHeaders() });
-  if (ocrResp.ok) return unwrapEnvelope(await ocrResp.json());
-  if (ocrResp.status === 404) return null;
-  throw new Error(`读取 OCR 产物失败，请稍后重试。(${ocrResp.status})`);
+  if (resp.status === 404) return null;
+  throw new Error(`读取任务产物失败，请稍后重试。(${resp.status})`);
 }
 
 export async function fetchJobArtifactsManifest(jobId: string, apiPrefix = API_PREFIX): Promise<any> {
   const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/artifacts-manifest`, { headers: buildApiHeaders() });
   if (!resp.ok) {
-    if (resp.status === 404) {
-      const ocrResp = await fetch(`${buildOcrJobDetailEndpoint(jobId, apiPrefix)}/artifacts-manifest`, { headers: buildApiHeaders() });
-      if (ocrResp.ok) return unwrapEnvelope(await ocrResp.json());
-      if (ocrResp.status === 404) return { items: [] };
-    }
     if (resp.status === 404) return { items: [] };
     throw new Error(`读取产物清单失败，请稍后重试。(${resp.status})`);
   }

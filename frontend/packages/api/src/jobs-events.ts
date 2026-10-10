@@ -53,12 +53,8 @@ export async function fetchJobEvents(
   if (query.cursor !== undefined) params.set("cursor", query.cursor);
   else params.set("start", query.start ?? "tail");
   const endpoint = `${buildJobDetailEndpoint(jobId, apiPrefix)}/events?${params}`;
-  let response = await fetch(endpoint, { headers: buildApiHeaders(), signal: query.signal });
-  if (response.status === 404) {
-    response = await fetch(endpoint.replace(/\/jobs\//, "/ocr/jobs/"), {
-      headers: buildApiHeaders(), signal: query.signal,
-    });
-  }
+  // OCR 任务也走 /jobs/:id/events（后端已统一），不再 404 后退到 /ocr/jobs/ 别名。
+  const response = await fetch(endpoint, { headers: buildApiHeaders(), signal: query.signal });
   if (!response.ok) {
     const error = await response.json().catch(() => null);
     throw new JobEventsError(

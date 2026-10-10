@@ -4,14 +4,12 @@
 import { API_PREFIX, buildApiHeaders, buildApiUrl, unwrapEnvelope } from "./internal/runtime.js";
 import type { JobDetailView, JobListView } from "@retainpdf/contracts/job-status";
 
-function buildJobsEndpoint(apiPrefix: string | undefined, scope = "jobs"): string {
-  return buildApiUrl(apiPrefix, scope === "ocr" ? "ocr/jobs" : "jobs");
+// OCR 任务也走 /jobs（后端已统一）；/ocr/jobs 只剩创建 OCR 任务那一个入口（见 jobs-submit.ts）。
+function buildJobsEndpoint(apiPrefix: string | undefined): string {
+  return buildApiUrl(apiPrefix, "jobs");
 }
-function buildJobDetailEndpoint(jobId: string, apiPrefix: string | undefined, scope = "jobs"): string {
-  return `${buildJobsEndpoint(apiPrefix, scope === "ocr" ? "ocr" : "jobs")}/${encodeURIComponent(jobId)}`;
-}
-function buildOcrJobDetailEndpoint(jobId: string, apiPrefix: string | undefined): string {
-  return buildJobDetailEndpoint(jobId, apiPrefix, "ocr");
+function buildJobDetailEndpoint(jobId: string, apiPrefix: string | undefined): string {
+  return `${buildJobsEndpoint(apiPrefix)}/${encodeURIComponent(jobId)}`;
 }
 
 export type FetchJobPayloadOptions = { apiPrefix?: string };
@@ -64,17 +62,8 @@ export async function fetchJobPayload(a: string, b?: string | FetchJobPayloadOpt
   const { jobId, apiPrefix } = normalizeJobPayloadArgs(a, b);
   const normalizedJobId = `${jobId || ""}`.trim();
   if (!normalizedJobId) throw new Error("读取任务失败: 缺少 job_id");
-  // Try generic endpoint first (covers both translation and OCR; OCR also readable via generic).
-  // If 404, retry OCR-specific endpoint to handle strict OCR-only routing.
-  let resp = await fetch(buildJobDetailEndpoint(normalizedJobId, apiPrefix), { headers: buildApiHeaders() });
-  if (resp.status === 404) {
-    const ocrResp = await fetch(buildOcrJobDetailEndpoint(normalizedJobId, apiPrefix), { headers: buildApiHeaders() });
-    if (ocrResp.ok) return unwrapEnvelope<JobDetailView>(await ocrResp.json());
-    // keep original 404 semantics if both miss
-    if (!ocrResp.ok && ocrResp.status !== 404) {
-      throw new Error(`读取任务失败，请稍后重试。(${ocrResp.status})`);
-    }
-  }
+  // 通用地址同时覆盖翻译与 OCR 任务，不再 404 后退到 /ocr/jobs/ 别名。
+  const resp = await fetch(buildJobDetailEndpoint(normalizedJobId, apiPrefix), { headers: buildApiHeaders() });
   if (!resp.ok) {
     if (resp.status === 404) {
       throw jobRequestError("未找到该任务，请检查 job_id 是否正确。", 404);
@@ -114,7 +103,9 @@ export async function fetchJobList(
   if (provider) params.set("provider", provider);
   if (`${q || ""}`.trim()) params.set("q", `${q || ""}`.trim());
   if (!includeLiveStage) params.set("include_live_stage", "false");
-  const endpoint = buildJobsEndpoint(apiPrefix, scope);
+  // 只看 OCR 任务：在通用列表上按 workflow 过滤，不再走 /ocr/jobs 列表别名。
+  if (scope === "ocr" && !workflow) params.set("workflow", "ocr");
+  const endpoint = buildJobsEndpoint(apiPrefix);
   const resp = await fetch(`${endpoint}?${params.toString()}`, { headers: buildApiHeaders() });
   if (!resp.ok) throw new Error(`读取最近任务失败，请稍后重试。(${resp.status})`);
   return unwrapEnvelope<JobListView>(await resp.json());

@@ -159,7 +159,8 @@ test("recent job covers avoid probing missing image endpoints without readiness"
   );
 });
 
-test("recent job covers include stable fallback image endpoints when ready", () => {
+test("recent job covers only use the server-provided image urls (no self-built fallbacks)", () => {
+  // 书架和文档列表现在给同一本书同一个地址；以前自己再拼 jobs/… 和 library/books/… 两条，同一张图下两份。
   assert.deepEqual(
     recentJobRawImageUrls({
       job_id: "job-cover",
@@ -168,12 +169,7 @@ test("recent job covers include stable fallback image endpoints when ready", () 
         cover: { ready: true },
       },
     }),
-    [
-      "/api/v1/jobs/job-cover/thumbnail",
-      "/api/v1/library/books/job-cover/thumbnail",
-      "/api/v1/jobs/job-cover/cover",
-      "/api/v1/library/books/job-cover/cover",
-    ],
+    [],
   );
 
   assert.deepEqual(
@@ -207,12 +203,7 @@ test("job image API boundary builds and normalizes recent job cover candidates",
       thumbnail_ready: true,
       cover_ready: true,
     }),
-    [
-      "/api/v1/jobs/job%20api/thumbnail",
-      "/api/v1/library/books/job%20api/thumbnail",
-      "/api/v1/jobs/job%20api/cover",
-      "/api/v1/library/books/job%20api/cover",
-    ],
+    [],
   );
   assert.equal(normalizeJobImageUrl("/api/v1/jobs/job-cover/cover"), "/api/v1/jobs/job-cover/cover");
 });

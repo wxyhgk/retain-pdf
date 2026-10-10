@@ -126,9 +126,9 @@ export async function cancelJob(jobId: string, apiPrefix?: string): Promise<any>
   return submitJson(`${buildJobDetailEndpoint(jobId, apiPrefix)}/cancel`, {});
 }
 
+/** OCR 任务的取消和其它任务同一个地址（后端按任务类型分支）；保留这个名字给老调用方。 */
 export async function cancelOcrJob(jobId: string, apiPrefix?: string): Promise<any> {
-  const endpoint = buildJobDetailEndpoint(jobId, apiPrefix).replace(/\/jobs\//, "/ocr/jobs/");
-  return submitJson(`${endpoint}/cancel`, {});
+  return cancelJob(jobId, apiPrefix);
 }
 
 export async function resolveOcrAmbiguity(

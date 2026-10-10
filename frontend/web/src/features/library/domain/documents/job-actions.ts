@@ -140,7 +140,7 @@ export function createDocumentJobActions({
     return result || null;
   }
 
-  // 取消文档下的任务。OCR 走 /ocr/jobs/:id/cancel，其余走 /jobs/:id/cancel。
+  // 取消文档下的任务。都走 /jobs/:id/cancel（后端按任务类型分支）；OCR 仍经 cancelOcrJob，只为保留演示模式的分流。
   async function cancelJob(
     jobId?: string | null,
     workflow?: string | null,
