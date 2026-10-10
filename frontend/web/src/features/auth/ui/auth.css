@@ -1,0 +1,237 @@
+/* 商业版多用户：登录 / 强制改密码界面，设置里的「账户」「账号管理」。配色只用主题变量。
+ *
+ * @owns auth */
+
+.auth-screen {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px 16px;
+  background: var(--bg);
+}
+
+.auth-card {
+  display: grid;
+  gap: 14px;
+  width: min(380px, 100%);
+  padding: 28px 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: 0 18px 48px color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.auth-card h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.auth-sub,
+.auth-foot {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-field {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.auth-field input,
+.auth-admin-create input,
+.auth-admin-create select {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.auth-field input:focus,
+.auth-admin-create input:focus {
+  border-color: var(--ink);
+  outline: none;
+}
+
+.auth-primary,
+.auth-secondary {
+  padding: 8px 14px;
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-primary {
+  color: var(--paper);
+  background: var(--ink);
+}
+
+.auth-secondary {
+  color: var(--ink);
+  background: transparent;
+}
+
+.auth-primary:disabled,
+.auth-secondary:disabled,
+.auth-link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.auth-link {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.auth-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.auth-ok {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.auth-account,
+.auth-admin {
+  display: grid;
+  gap: 16px;
+  max-width: 560px;
+}
+
+.auth-account-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.auth-account-facts div {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.auth-account-facts dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.auth-account-facts dd {
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.auth-account-section {
+  display: grid;
+  gap: 8px;
+}
+
+.auth-account-section h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.auth-issued {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--warn) 60%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--warn) 10%, var(--paper));
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.auth-issued p {
+  margin: 0;
+}
+
+.auth-issued-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-issued-password {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  user-select: all;
+}
+
+.auth-admin-create {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.auth-admin-create input {
+  flex: 1;
+  min-width: 160px;
+}
+
+.auth-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.auth-admin-table th,
+.auth-admin-table td {
+  padding: 8px 6px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  color: var(--ink);
+  text-align: left;
+}
+
+.auth-admin-table th {
+  border-top: 0;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.auth-admin-table tr[data-status="disabled"] td {
+  color: var(--muted);
+}
+
+.auth-admin-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}

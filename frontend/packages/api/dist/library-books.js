@@ -1,5 +1,6 @@
 // Library books API — standalone, typed by @retainpdf/contracts/library-books
 // No frontend/web deps; browser-aware (reads window.__FRONT_RUNTIME_CONFIG__ for apiBase / X-API-Key if present).
+import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, buildApiUrl, unwrapEnvelope } from "./internal/runtime.js";
 import { stripOcrSuffix } from "./utils/strip-ocr.js";
 function buildApiEndpoint(apiPrefix, path) {
@@ -14,7 +15,7 @@ export async function fetchLibraryBookList(apiPrefix, { limit = 40, offset = 0, 
     if (Array.isArray(jobIds) && jobIds.length) {
         params.set("job_ids", jobIds.map((id) => `${id}`.trim()).filter(Boolean).join(","));
     }
-    const resp = await fetch(`${buildApiEndpoint(apiPrefix, "library/books")}?${params.toString()}`, {
+    const resp = await apiFetch(`${buildApiEndpoint(apiPrefix, "library/books")}?${params.toString()}`, {
         headers: buildApiHeaders(),
     });
     if (!resp.ok)
@@ -26,7 +27,7 @@ export async function deleteLibraryBook(apiPrefix, jobId, { force = false } = {}
     if (!normalizedJobId)
         throw new Error("删除失败: 缺少 job_id");
     const params = force ? "?force=true" : "";
-    const resp = await fetch(`${buildApiEndpoint(apiPrefix, `library/books/${encodeURIComponent(normalizedJobId)}`)}${params}`, { method: "DELETE", headers: buildApiHeaders() });
+    const resp = await apiFetch(`${buildApiEndpoint(apiPrefix, `library/books/${encodeURIComponent(normalizedJobId)}`)}${params}`, { method: "DELETE", headers: buildApiHeaders() });
     if (!resp.ok) {
         const envelope = await resp.json().catch(() => null);
         const message = typeof envelope?.message === "string" ? envelope.message : "删除任务失败，请稍后重试。";

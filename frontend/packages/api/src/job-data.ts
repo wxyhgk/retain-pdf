@@ -1,5 +1,6 @@
 // job-data — pure：通用取数接口（契约 job-data.v1）。任务里已有的数据都从这里按数据集名读，
 // 缺哪个数据集请后端在登记表里加一条，不再为每种数据开新接口。
+import { apiFetch } from "./internal/runtime.js";
 import type { JobDataCatalogView, JobDataView } from "@retainpdf/contracts/job-data";
 import { buildApiHeaders, buildJobDetailEndpoint, unwrapEnvelope } from "./http.js";
 
@@ -22,7 +23,7 @@ export type JobDataQuery = {
 };
 
 async function getJson<T>(url: string): Promise<T> {
-  const resp = await fetch(url, { headers: buildApiHeaders() });
+  const resp = await apiFetch(url, { headers: buildApiHeaders() });
   if (!resp.ok) {
     const error = await resp.json().catch(() => null);
     throw new Error(error?.message || `读取任务数据失败，请稍后重试。(${resp.status})`);

@@ -1,4 +1,5 @@
 // jobs-actions — pure (no mock)
+import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildJobDetailEndpoint, submitJson } from "./http.js";
 
@@ -100,7 +101,7 @@ export interface JobStageActionsView {
 }
 
 export async function fetchJobDiagnostics(jobId: string, apiPrefix?: string): Promise<JobDiagnosticsView | null> {
-  const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/diagnostics`, { headers: buildApiHeaders() });
+  const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/diagnostics`, { headers: buildApiHeaders() });
   if (!resp.ok) {
     if (resp.status === 404) return null;
     throw new Error(`读取失败诊断失败，请稍后重试。(${resp.status})`);
@@ -109,7 +110,7 @@ export async function fetchJobDiagnostics(jobId: string, apiPrefix?: string): Pr
 }
 
 export async function fetchResumePlan(jobId: string, apiPrefix?: string): Promise<any> {
-  const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/resume-plan`, { headers: buildApiHeaders() });
+  const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/resume-plan`, { headers: buildApiHeaders() });
   if (!resp.ok) {
     if (resp.status === 404) return null;
     throw new Error(`读取恢复计划失败，请稍后重试。(${resp.status})`);
@@ -143,7 +144,7 @@ export async function resolveOcrAmbiguity(
 }
 
 export async function fetchJobStageActions(jobId: string, apiPrefix?: string): Promise<JobStageActionsView | null> {
-  const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/stage-actions`, { headers: buildApiHeaders() });
+  const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/stage-actions`, { headers: buildApiHeaders() });
   if (!resp.ok) {
     if (resp.status === 404) return null;
     throw new Error(`读取阶段操作失败，请稍后重试。(${resp.status})`);

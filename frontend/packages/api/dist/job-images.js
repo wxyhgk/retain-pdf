@@ -1,5 +1,6 @@
 // job-images — pure (from frontend/web/src/js/api/job-images.ts, mock removed)
 // Builds candidate URLs for thumbnail/cover fallbacks and fetches image blobs.
+import { apiFetch } from "./internal/runtime.js";
 import { API_PREFIX, buildApiHeaders, buildApiUrl } from "./internal/runtime.js";
 function isFileProtocolRuntime() {
     return typeof window !== "undefined" && window.location?.protocol === "file:";
@@ -51,7 +52,7 @@ export async function fetchJobImageBlob(rawUrl) {
     const url = normalizeJobImageUrl(rawUrl);
     if (!url)
         return null;
-    const response = await fetch(url, { headers: buildApiHeaders() });
+    const response = await apiFetch(url, { headers: buildApiHeaders() });
     if (!response.ok)
         throw new Error(`image failed: ${response.status}`);
     return response.blob();

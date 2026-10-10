@@ -1,4 +1,5 @@
 // frontend/packages/api/src/fonts.ts — font discovery + upload (GET /api/v1/fonts)
+import { apiFetch } from "./internal/runtime.js";
 import { API_PREFIX, buildApiHeaders, buildApiUrl, unwrapEnvelope } from "./internal/runtime.js";
 import { buildApiEndpoint } from "./http.js";
 
@@ -10,7 +11,7 @@ export type FontInfo = {
 
 export async function listFonts(apiPrefix: string = API_PREFIX): Promise<FontInfo[]> {
   const endpoint = buildApiEndpoint(apiPrefix, "fonts");
-  const resp = await fetch(endpoint, { headers: buildApiHeaders() });
+  const resp = await apiFetch(endpoint, { headers: buildApiHeaders() });
   if (!resp.ok) throw new Error(`读取字体列表失败，请稍后重试。(${resp.status})`);
   const data = unwrapEnvelope<any>(await resp.json());
   if (Array.isArray(data)) return data as FontInfo[];
@@ -27,7 +28,7 @@ export async function uploadFont(apiPrefix: string = API_PREFIX, file: File | Bl
   // buildApiHeaders adds Content-Type: application/json by default, so strip it.
   const headers = buildApiHeaders() as Record<string, string>;
   delete headers["Content-Type"];
-  const resp = await fetch(endpoint, {
+  const resp = await apiFetch(endpoint, {
     method: "POST",
     headers,
     body: form,

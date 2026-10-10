@@ -1,4 +1,5 @@
 // documents — pure
+import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildApiEndpoint } from "./http.js";
 function documentRequestError(fallback, status, payload) {
@@ -47,7 +48,7 @@ export async function fetchDocumentList(apiPrefix, { limit = 50, offset = 0, rea
         params.set("collection_id", `${collectionId}`.trim());
     if (`${q || ""}`.trim())
         params.set("q", `${q}`.trim());
-    const resp = await fetch(`${buildApiEndpoint(apiPrefix, "documents")}?${params.toString()}`, { headers: buildApiHeaders() });
+    const resp = await apiFetch(`${buildApiEndpoint(apiPrefix, "documents")}?${params.toString()}`, { headers: buildApiHeaders() });
     if (!resp.ok)
         throw new Error(`读取文档库失败，请稍后重试。(${resp.status})`);
     return unwrapEnvelope(await resp.json());
@@ -58,7 +59,7 @@ export async function fetchDocumentByJobId(apiPrefix, jobId) {
         return null;
     const params = new URLSearchParams();
     params.set("job_id", normalized);
-    const resp = await fetch(`${buildApiEndpoint(apiPrefix, "documents")}?${params.toString()}`, { headers: buildApiHeaders() });
+    const resp = await apiFetch(`${buildApiEndpoint(apiPrefix, "documents")}?${params.toString()}`, { headers: buildApiHeaders() });
     if (!resp.ok)
         throw new Error(`按 job 查文档失败，请稍后重试。(${resp.status})`);
     const payload = unwrapEnvelope(await resp.json()) || { documents: [], total: 0, limit: 0, offset: 0 };
@@ -69,7 +70,7 @@ export async function fetchDocument(apiPrefix, documentId) {
     const normalized = `${documentId || ""}`.trim();
     if (!normalized)
         throw new Error("缺少 document_id。");
-    const resp = await fetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}`), { headers: buildApiHeaders() });
+    const resp = await apiFetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}`), { headers: buildApiHeaders() });
     if (!resp.ok)
         throw new Error(`读取文档详情失败，请稍后重试。(${resp.status})`);
     return unwrapEnvelope(await resp.json());
@@ -78,7 +79,7 @@ export async function patchDocument(apiPrefix, documentId, payload = {}) {
     const normalized = `${documentId || ""}`.trim();
     if (!normalized)
         throw new Error("缺少 document_id。");
-    const resp = await fetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}`), {
+    const resp = await apiFetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}`), {
         method: "PATCH",
         headers: { ...buildApiHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -93,7 +94,7 @@ export async function fetchDocumentReading(apiPrefix, documentId) {
     const normalized = `${documentId || ""}`.trim();
     if (!normalized)
         throw new Error("缺少 document_id。");
-    const resp = await fetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/reading`), {
+    const resp = await apiFetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/reading`), {
         headers: buildApiHeaders(),
     });
     if (!resp.ok)
@@ -104,7 +105,7 @@ export async function fetchDocumentTranslationCoverage(apiPrefix, documentId) {
     const normalized = `${documentId || ""}`.trim();
     if (!normalized)
         throw new Error("缺少 document_id。");
-    const resp = await fetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/translation-coverage`), {
+    const resp = await apiFetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/translation-coverage`), {
         headers: buildApiHeaders(),
     });
     if (!resp.ok)
@@ -115,7 +116,7 @@ export async function createDocumentMetadataSuggestion(apiPrefix, documentId, pa
     const normalized = `${documentId || ""}`.trim();
     if (!normalized)
         throw new Error("缺少 document_id。");
-    const resp = await fetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/metadata-suggestions`), {
+    const resp = await apiFetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/metadata-suggestions`), {
         method: "POST",
         headers: { ...buildApiHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -131,7 +132,7 @@ export async function fetchDocumentMetadataSuggestions(apiPrefix, documentId, { 
     if (!normalized)
         return [];
     const params = new URLSearchParams({ limit: `${limit}` });
-    const resp = await fetch(`${buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/metadata-suggestions`)}?${params.toString()}`, { headers: buildApiHeaders() });
+    const resp = await apiFetch(`${buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/metadata-suggestions`)}?${params.toString()}`, { headers: buildApiHeaders() });
     if (!resp.ok) {
         const envelope = await resp.json().catch(() => null);
         throw documentRequestError("读取文档元数据建议失败。", resp.status, envelope);
@@ -146,7 +147,7 @@ export async function applyDocumentMetadataSuggestion(apiPrefix, documentId, sug
         throw new Error("缺少 document_id。");
     if (!normalizedSuggestionId)
         throw new Error("缺少 suggestion_id。");
-    const resp = await fetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalizedDocumentId)}/metadata-suggestions/${encodeURIComponent(normalizedSuggestionId)}/apply`), {
+    const resp = await apiFetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalizedDocumentId)}/metadata-suggestions/${encodeURIComponent(normalizedSuggestionId)}/apply`), {
         method: "POST",
         headers: { ...buildApiHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -162,7 +163,7 @@ export async function deleteDocument(apiPrefix, documentId, { force = false } = 
     if (!normalized)
         throw new Error("缺少 document_id。");
     const params = force ? "?force=true" : "";
-    const resp = await fetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}`) + params, { method: "DELETE", headers: buildApiHeaders() });
+    const resp = await apiFetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}`) + params, { method: "DELETE", headers: buildApiHeaders() });
     if (!resp.ok) {
         const envelope = await resp.json().catch(() => null);
         // 保留结构化 error.code / error.details（收藏保护 409 靠它拿条数和清空路径）
@@ -181,7 +182,7 @@ export async function clearFavorites(apiPrefix, clearFavoritesPath) {
         return 0;
     const prefix = `${apiPrefix || ""}`.replace(/\/+$/, "");
     const relative = prefix && raw.startsWith(prefix) ? raw.slice(prefix.length) : raw;
-    const resp = await fetch(buildApiEndpoint(apiPrefix, relative.replace(/^\/+/, "")), {
+    const resp = await apiFetch(buildApiEndpoint(apiPrefix, relative.replace(/^\/+/, "")), {
         method: "DELETE",
         headers: buildApiHeaders(),
     });
@@ -196,7 +197,7 @@ export async function translateDocument(apiPrefix, documentId, payload = {}) {
     const normalized = `${documentId || ""}`.trim();
     if (!normalized)
         throw new Error("缺少 document_id。");
-    const resp = await fetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/translate`), {
+    const resp = await apiFetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/translate`), {
         method: "POST",
         headers: { ...buildApiHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -211,7 +212,7 @@ export async function ocrDocument(apiPrefix, documentId, payload = {}) {
     const normalized = `${documentId || ""}`.trim();
     if (!normalized)
         throw new Error("缺少 document_id。");
-    const resp = await fetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/ocr`), {
+    const resp = await apiFetch(buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/ocr`), {
         method: "POST",
         headers: { ...buildApiHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -236,7 +237,7 @@ export async function fetchDocumentJobs(apiPrefix, documentId, { limit = 50, off
     const params = new URLSearchParams();
     params.set("limit", `${limit}`);
     params.set("offset", `${offset}`);
-    const resp = await fetch(`${buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/jobs`)}?${params.toString()}`, { headers: buildApiHeaders() });
+    const resp = await apiFetch(`${buildApiEndpoint(apiPrefix, `documents/${encodeURIComponent(normalized)}/jobs`)}?${params.toString()}`, { headers: buildApiHeaders() });
     if (!resp.ok)
         throw new Error(`读取文档任务失败，请稍后重试。(${resp.status})`);
     const payload = unwrapEnvelope(await resp.json());

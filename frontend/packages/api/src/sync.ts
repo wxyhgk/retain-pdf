@@ -1,5 +1,6 @@
 // sync — 多设备同步：状态、设置、立即同步、测试连接
 // （GET/PUT /api/v1/sync、POST /api/v1/sync/run、POST /api/v1/sync/test）。
+import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildApiEndpoint } from "./http.js";
 
@@ -91,12 +92,12 @@ async function readSyncResponse(resp: Response, action: string): Promise<SyncSta
 }
 
 export async function fetchSyncStatus(apiPrefix?: string): Promise<SyncStatus> {
-  const resp = await fetch(buildApiEndpoint(apiPrefix, "sync"), { headers: buildApiHeaders() });
+  const resp = await apiFetch(buildApiEndpoint(apiPrefix, "sync"), { headers: buildApiHeaders() });
   return readSyncResponse(resp, "读取同步状态");
 }
 
 export async function updateSyncSettings(apiPrefix: string | undefined, payload: SyncSettingsInput): Promise<SyncStatus> {
-  const resp = await fetch(buildApiEndpoint(apiPrefix, "sync"), {
+  const resp = await apiFetch(buildApiEndpoint(apiPrefix, "sync"), {
     method: "PUT",
     headers: buildApiHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
@@ -105,7 +106,7 @@ export async function updateSyncSettings(apiPrefix: string | undefined, payload:
 }
 
 export async function runSyncNow(apiPrefix?: string): Promise<SyncStatus> {
-  const resp = await fetch(buildApiEndpoint(apiPrefix, "sync/run"), {
+  const resp = await apiFetch(buildApiEndpoint(apiPrefix, "sync/run"), {
     method: "POST",
     headers: buildApiHeaders(),
   });
@@ -114,7 +115,7 @@ export async function runSyncNow(apiPrefix?: string): Promise<SyncStatus> {
 
 /** 用填的设置（没给的用已保存的）测一次能不能读写；不保存设置。 */
 export async function testSyncTarget(apiPrefix: string | undefined, payload: SyncSettingsInput): Promise<SyncTestResult> {
-  const resp = await fetch(buildApiEndpoint(apiPrefix, "sync/test"), {
+  const resp = await apiFetch(buildApiEndpoint(apiPrefix, "sync/test"), {
     method: "POST",
     headers: buildApiHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(payload),

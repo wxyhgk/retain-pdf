@@ -1,7 +1,8 @@
 // frontend/packages/api/src/http.ts — canonical HTTP primitives (no mock, no window mock branching)
 // Mirrors frontend/web/src/js/api/http.ts but pure: uses internal/runtime for apiBase/header/envelope.
-import { apiBase, buildApiHeaders, buildApiUrl, frontendApiKey, unwrapEnvelope } from "./internal/runtime.js";
+import { apiBase, apiFetch, buildApiHeaders, buildApiUrl, frontendApiKey, getApiAuthMode, unwrapEnvelope } from "./internal/runtime.js";
 export { apiBase, buildApiHeaders, buildApiUrl, frontendApiKey, unwrapEnvelope };
+export { apiFetch, getApiAuthMode, setApiAuthMode, setApiUnauthorizedHandler, } from "./internal/runtime.js";
 export { API_PREFIX } from "./internal/runtime.js";
 export function buildApiEndpoint(apiPrefix, relativePath = "") {
     return buildApiUrl(apiPrefix, relativePath);
@@ -48,7 +49,7 @@ export async function submitJson(url, payload, options = {}) {
         : null;
     let resp;
     try {
-        resp = await fetch(url, {
+        resp = await apiFetch(url, {
             method: "POST",
             headers: buildApiHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify(payload),
@@ -99,7 +100,10 @@ export function submitUploadRequest(url, form, onProgress) {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", url);
         xhr.responseType = "json";
-        const apiKey = frontendApiKey();
+        // 多用户模式靠登录 Cookie：带上凭据、不带部署密钥（和 apiFetch 一致）。
+        const multi = getApiAuthMode() === "multi";
+        xhr.withCredentials = multi;
+        const apiKey = multi ? "" : frontendApiKey();
         if (apiKey)
             xhr.setRequestHeader("X-API-Key", apiKey);
         xhr.upload.addEventListener("progress", (event) => {
@@ -131,5 +135,5 @@ export function submitUploadRequest(url, form, onProgress) {
 }
 export async function fetchProtected(url, options = {}) {
     const headers = buildApiHeaders(options.headers || {});
-    return fetch(url, { ...options, headers });
+    return apiFetch(url, { ...options, headers });
 }

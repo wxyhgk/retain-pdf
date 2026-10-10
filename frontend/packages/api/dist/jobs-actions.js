@@ -1,8 +1,9 @@
 // jobs-actions — pure (no mock)
+import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildJobDetailEndpoint, submitJson } from "./http.js";
 export async function fetchJobDiagnostics(jobId, apiPrefix) {
-    const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/diagnostics`, { headers: buildApiHeaders() });
+    const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/diagnostics`, { headers: buildApiHeaders() });
     if (!resp.ok) {
         if (resp.status === 404)
             return null;
@@ -11,7 +12,7 @@ export async function fetchJobDiagnostics(jobId, apiPrefix) {
     return unwrapEnvelope(await resp.json());
 }
 export async function fetchResumePlan(jobId, apiPrefix) {
-    const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/resume-plan`, { headers: buildApiHeaders() });
+    const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/resume-plan`, { headers: buildApiHeaders() });
     if (!resp.ok) {
         if (resp.status === 404)
             return null;
@@ -34,7 +35,7 @@ export async function resolveOcrAmbiguity(jobId, apiPrefix, request) {
     return submitJson(`${buildJobDetailEndpoint(jobId, apiPrefix)}/ocr/resolve-ambiguity`, request);
 }
 export async function fetchJobStageActions(jobId, apiPrefix) {
-    const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/stage-actions`, { headers: buildApiHeaders() });
+    const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/stage-actions`, { headers: buildApiHeaders() });
     if (!resp.ok) {
         if (resp.status === 404)
             return null;

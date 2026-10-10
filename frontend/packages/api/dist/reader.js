@@ -1,8 +1,9 @@
 // reader — pure
+import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildJobDetailEndpoint } from "./http.js";
 export async function fetchReaderRegions(jobId, apiPrefix) {
-    const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/reader/regions`, { headers: buildApiHeaders() });
+    const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/reader/regions`, { headers: buildApiHeaders() });
     if (!resp.ok) {
         if (resp.status === 404)
             return { items: [] };
@@ -11,7 +12,7 @@ export async function fetchReaderRegions(jobId, apiPrefix) {
     return unwrapEnvelope(await resp.json());
 }
 export async function fetchReaderMetadata(jobId, apiPrefix) {
-    const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/reader/metadata`, { headers: buildApiHeaders() });
+    const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/reader/metadata`, { headers: buildApiHeaders() });
     if (!resp.ok) {
         if (resp.status === 404)
             return null;

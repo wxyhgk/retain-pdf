@@ -96,10 +96,38 @@ export function frontendApiKey() {
 // 对齐 web 侧 legacy 实现 `platform/config/runtime.ts` 的同名函数。
 export function buildApiHeaders(headers = {}) {
     const out = { ...headers };
-    const apiKey = frontendApiKey();
+    // 多用户模式靠登录 Cookie 认证，不再带部署密钥。
+    const apiKey = authMode === "multi" ? "" : frontendApiKey();
     if (apiKey)
         out["X-API-Key"] = apiKey;
     return out;
+}
+let authMode = "single";
+let unauthorizedHandler = null;
+export function setApiAuthMode(mode) {
+    authMode = mode === "multi" ? "multi" : "single";
+}
+export function getApiAuthMode() {
+    return authMode;
+}
+/** 多用户模式下任何请求回 401（登录过期、被管理员踢下线）时调用；登录接口自己的 401 不算。 */
+export function setApiUnauthorizedHandler(handler) {
+    unauthorizedHandler = handler;
+}
+function requestUrl(input) {
+    if (typeof input === "string")
+        return input;
+    if (input instanceof URL)
+        return input.href;
+    return input.url || "";
+}
+/** 本包所有请求都走这里：按当前模式补上 credentials，统一接住 401。 */
+export async function apiFetch(input, init = {}) {
+    const response = await fetch(input, authMode === "multi" ? { ...init, credentials: "include" } : init);
+    if (response.status === 401 && authMode === "multi" && !/\/auth\/(login|session)(\?|$)/.test(requestUrl(input))) {
+        unauthorizedHandler?.();
+    }
+    return response;
 }
 // 与 `@retainpdf/domain` 的同名实现对齐（packages/domain/src/job/core.ts）。
 //

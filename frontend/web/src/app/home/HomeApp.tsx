@@ -50,6 +50,8 @@ import { SettingsDialog } from "@/features/settings/index.js";
 import { BackupPanel } from "@/features/backup/index.js";
 import { SyncSettingsPanel } from "@/features/sync/index.js";
 import { UsageSettingsPanel } from "@/features/usage/index.js";
+import { AccountPanel, AdminUsersPanel, AuthSessionProvider, hiddenSettingsTabs, isAdmin, isMultiUser, useAuthSession } from "@/features/auth/index.js";
+import type { AuthSessionView } from "@retainpdf/api/auth";
 import { useAppEvent } from "@/ui/hooks/use-app-event.js";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 import { CREDENTIAL_DOM_IDS } from "@/features/credentials/ui/credentials-dom-ids.js";
@@ -193,6 +195,9 @@ function SettingsDialogSlot() {
   const settingsHub = useHomeSettingsHub();
   const glossaries = useHomeGlossaries();
   const credentials = useHomeCredentials();
+  const session = useAuthSession();
+  const multi = isMultiUser(session);
+  const admin = isAdmin(session);
 
   // 「打开接口设置」只有这一个落点了。首次配置门曾经另开一个独立弹窗
   // （CredentialsDialog），于是同一件事有两个长得不一样的壳；现在两条路都是
@@ -215,6 +220,9 @@ function SettingsDialogSlot() {
       syncPanelSlot={<SyncSettingsPanel />}
       backupPanelSlot={<BackupPanel />}
       usagePanelSlot={<UsageSettingsPanel />}
+      accountPanelSlot={multi ? <AccountPanel /> : null}
+      adminPanelSlot={multi && admin ? <AdminUsersPanel currentUserId={session.user?.user_id || ""} /> : null}
+      hiddenTabs={hiddenSettingsTabs(session)}
     />
   );
 }
@@ -350,8 +358,9 @@ function CredentialsProviderSlot({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function HomeApp({ services }: { services: HomeServices }) {
+export function HomeApp({ services, authSession = null }: { services: HomeServices; authSession?: AuthSessionView | null }) {
   return (
+    <AuthSessionProvider session={authSession}>
     <HomeShellProviders services={services}>
       {/* 「添加 PDF」的用户选项走 ingest 自带的 context，同 CredentialsProviderSlot。 */}
       <IngestWorkflowViewProvider value={services.workflowView}>
@@ -366,5 +375,6 @@ export function HomeApp({ services }: { services: HomeServices }) {
         </IngestServicesProvider>
       </IngestWorkflowViewProvider>
     </HomeShellProviders>
+    </AuthSessionProvider>
   );
 }

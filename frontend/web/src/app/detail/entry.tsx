@@ -5,5 +5,13 @@
 import { DetailApp } from "./DetailApp.jsx";
 import { parseDetailJobId } from "@/platform/navigation/pages.js";
 import { mountShellPage } from "../shell-boot.js";
+import { resolveAuthGate } from "@/features/auth/index.js";
 
-mountShellPage("detail-root", <DetailApp getJobId={() => parseDetailJobId()} />);
+// 多用户模式下没登录（或要先改密码）就回首页去登录；单机模式照旧直接挂载。
+void resolveAuthGate().then((gate) => {
+  if (gate.kind === "login" || gate.kind === "change_password") {
+    globalThis.location?.replace("./index.html");
+    return;
+  }
+  mountShellPage("detail-root", <DetailApp getJobId={() => parseDetailJobId()} />);
+});
