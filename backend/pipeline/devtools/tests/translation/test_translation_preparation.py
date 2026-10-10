@@ -769,3 +769,56 @@ def test_failed_term_review_keeps_prescan_behaviour_and_is_not_frozen(tmp_path: 
     retry = EditorialMockLLM()
     _prepare(tmp_path, "editorial", retry)
     assert retry.review_calls == 1, "没审完的术语表下次重新审定"
+
+
+# ---------------------------------------------------------------- 回复写坏了：重发一次
+
+
+def _prescan_common():
+    return dict(api_key="", model=MODEL, base_url=BASE_URL, workers=1, target_lang="zh-CN",
+                target_language_name="简体中文", domain="", user_entries=[])
+
+
+def test_prescan_retries_once_when_the_reply_is_not_json(tmp_path: Path) -> None:
+    batches = build_prescan_batches(_segments(["The harmonic oscillator vibrates."]))
+    replies = iter(["抱歉，这是术语：谐振子", '{"terms": [{"source": "harmonic oscillator", "target": "谐振子", "kind": "domain_term"}]}'])
+    calls = []
+
+    def request(messages, **kwargs):
+        calls.append(kwargs["request_label"])
+        return next(replies)
+
+    (result,) = run_term_prescan(batches, store=PrescanCheckpoint(tmp_path / "c.json", fingerprint="f"),
+                                 request_fn=request, **_prescan_common())
+    assert result.ok and [term.target for term in result.terms] == ["谐振子"]
+    assert len(calls) == 2
+
+
+def test_prescan_gives_up_after_two_unparsable_replies(tmp_path: Path) -> None:
+    batches = build_prescan_batches(_segments(["The harmonic oscillator vibrates."]))
+    calls = []
+
+    def request(messages, **kwargs):
+        calls.append(1)
+        return "not json at all"
+
+    (result,) = run_term_prescan(batches, store=PrescanCheckpoint(tmp_path / "c.json", fingerprint="f"),
+                                 request_fn=request, **_prescan_common())
+    assert not result.ok and len(calls) == 2
+
+
+def test_style_guide_retries_once_when_the_reply_is_not_json() -> None:
+    from retainpdf_pipeline.translate.services.preparation.style_guide import request_document_style
+
+    good = json.dumps({"register": "学术", "audience": "研究者", "rules": [{"rule": "引用用“”", "example": ""}],
+                       "do_not_translate": [], "notes": ""}, ensure_ascii=False)
+    replies = iter(["规则如下：……", good])
+    calls = []
+
+    def request(messages, **kwargs):
+        calls.append(1)
+        return next(replies)
+
+    style = request_document_style([{"role": "user", "content": "x"}], digest="d", api_key="", model=MODEL,
+                                   base_url=BASE_URL, request_fn=request)
+    assert len(calls) == 2 and style

@@ -31,6 +31,8 @@ STYLE_GUIDE_MAX_DOCUMENT_RULES = 12
 STYLE_GUIDE_MAX_DO_NOT_TRANSLATE = 40
 STYLE_GUIDE_SAMPLE_MAX_CHARS = 6000
 STYLE_GUIDE_KEY_TERMS_LIMIT = 40
+# 回复解析失败时最多发几次（含第一次）。
+PARSE_ATTEMPTS = 2
 
 STYLE_GUIDE_REFERENCES = (
     "CY/T 123—2015 学术出版规范 中文译著",
@@ -251,19 +253,27 @@ def request_document_style(
     request_fn: RequestFn | None = None,
 ) -> dict[str, Any]:
     request = request_fn or request_chat_content
-    with unit_scope("style_guide", [digest]):
-        content = request(
-            messages,
-            api_key=api_key,
-            model=model,
-            base_url=base_url,
-            temperature=0.0,
-            response_format=STYLE_GUIDE_RESPONSE_SCHEMA,
-            timeout=STYLE_GUIDE_REQUEST_TIMEOUT_SECS,
-            request_label="style-guide",
-            max_attempts=2,
-        )
-    return parse_style_guide_response(content)
+    # 回复解析不出来时重发一次（不是网络错误；网络错误由 max_attempts 管）。
+    for parse_attempt in range(PARSE_ATTEMPTS):
+        with unit_scope("style_guide", [digest, str(parse_attempt)] if parse_attempt else [digest]):
+            content = request(
+                messages,
+                api_key=api_key,
+                model=model,
+                base_url=base_url,
+                temperature=0.0,
+                response_format=STYLE_GUIDE_RESPONSE_SCHEMA,
+                timeout=STYLE_GUIDE_REQUEST_TIMEOUT_SECS,
+                request_label="style-guide",
+                max_attempts=2,
+            )
+        try:
+            return parse_style_guide_response(content)
+        except ValueError as exc:
+            if parse_attempt + 1 >= PARSE_ATTEMPTS:
+                raise
+            print(f"style-guide: unparsable reply, retrying: {exc}", flush=True)
+    raise AssertionError("unreachable")
 
 
 def build_style_guide_payload(

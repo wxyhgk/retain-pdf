@@ -636,6 +636,7 @@
         "devtools/tests/translation/test_formula_math_normalization.py",
         "devtools/tests/translation/test_fullwidth_punctuation_math_spacing.py",
         "devtools/tests/translation/test_garbled_reconstruction_outcomes.py",
+        "devtools/tests/translation/test_json_smart_quotes.py",
         "devtools/tests/translation/test_model_protocol.py",
         "devtools/tests/translation/test_page_local_optimization.py",
         "devtools/tests/translation/test_pipeline_events_protocol.py",
