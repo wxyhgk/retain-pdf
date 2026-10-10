@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
+import { isPageHidden } from "@/platform/utils/page-visibility.js";
 import type { DocumentJobSummary } from "@/features/library/domain.js";
 import type { LibraryController } from "@/features/library/index.js";
 import {
@@ -172,8 +173,18 @@ export function useDocumentJobs({
   const pollMs = anyJobActive || firstLoadPending ? Number(refreshIntervalMs) : Number(idleRefreshIntervalMs);
   useEffect(() => {
     if (!open || !documentId || !(pollMs > 0)) return undefined;
-    const interval = globalThis.setInterval(() => void refresh({ quiet: true }), pollMs);
-    return () => globalThis.clearInterval(interval);
+    // 页面在后台时跳过这一轮；切回来立刻补问一次，不用等下一轮。
+    const interval = globalThis.setInterval(() => {
+      if (!isPageHidden()) void refresh({ quiet: true });
+    }, pollMs);
+    const onVisible = () => {
+      if (!isPageHidden()) void refresh({ quiet: true });
+    };
+    globalThis.document?.addEventListener?.("visibilitychange", onVisible);
+    return () => {
+      globalThis.clearInterval(interval);
+      globalThis.document?.removeEventListener?.("visibilitychange", onVisible);
+    };
   }, [documentId, open, refresh, pollMs]);
 
   const effectiveJobs = useMemo(() => {
