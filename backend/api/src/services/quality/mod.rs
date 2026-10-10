@@ -506,5 +506,7 @@ pub fn quality_items(sources: &QualitySources, query: &QualityItemsQuery) -> Qua
     }
 }
 
+pub(crate) mod api;
+
 #[cfg(test)]
 mod tests;

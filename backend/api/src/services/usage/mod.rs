@@ -377,5 +377,7 @@ pub fn all_job_ids(output_root: &Path) -> Vec<String> {
     ids
 }
 
+pub(crate) mod api;
+
 #[cfg(test)]
 mod tests;
