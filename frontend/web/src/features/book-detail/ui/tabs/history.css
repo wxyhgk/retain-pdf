@@ -1,0 +1,15 @@
+/* 书籍详情 ·「历史」页签（BookDetailHistoryTab）：任务记录展开显示，末尾一行加入书库时间。
+ *
+ * @owns book-detail */
+
+.book-detail-tab-history {
+  display: grid;
+  gap: 12px;
+}
+
+.book-detail-history-empty,
+.book-detail-history-added {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}

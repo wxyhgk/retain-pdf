@@ -12,6 +12,7 @@ import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { useRecentJobCover, useLibraryServices } from "@/features/library/index.js";
 import type { LibraryCardItem } from "@/features/library/index.js";
 import { BookUsageCard } from "@/features/usage/index.js";
+import { QualityPanel } from "./panels/overview/QualityPanel.jsx";
 import { BookDetailShell } from "./shell/BookDetailShell.jsx";
 import { CoverActionsPanel } from "./panels/CoverActionsPanel.jsx";
 import { ArtifactQuickDownloads } from "./panels/ArtifactQuickDownloads.js";
@@ -22,6 +23,7 @@ import {
   BookDetailProcessingTab,
   BookDetailArtifactsTab,
 } from "./tabs/index.js";
+import { BookDetailHistoryTab } from "./tabs/BookDetailHistoryTab.jsx";
 import { ReadingStatusPanel } from "./panels/more/ReadingStatusPanel.jsx";
 import { CollectionsPanel } from "./panels/more/CollectionsPanel.jsx";
 import { DeleteFooterPanel } from "./panels/more/DeleteFooterPanel.jsx";
@@ -238,7 +240,6 @@ export function BookDetailDialog() {
               error={docState.error}
               ocrStatus={overviewOcrStatus}
               translationStatus={translationStatus}
-              jobs={documentJobs.jobs}
               onOpenProcessing={() => selectTab("processing")}
               onStartEdit={docState.startEdit}
               onCancelEdit={() => docState.setEditing(false)}
@@ -258,7 +259,6 @@ export function BookDetailDialog() {
                   onToggle={docState.toggleCollection}
                 />
               )}
-              usageSlot={documentId ? <BookUsageCard documentId={documentId} /> : null}
               dangerSlot={(
                 <DeleteFooterPanel
                   busy={docState.busy}
@@ -305,6 +305,9 @@ export function BookDetailDialog() {
               onOpenJob={openPinnedJob}
             />
           )}
+          qualityTab={jobId ? <QualityPanel jobId={jobId} documentId={documentId} /> : null}
+          historyTab={<BookDetailHistoryTab coverage={coverage} addedAt={docState.doc?.added_at} />}
+          usageTab={documentId ? <BookUsageCard documentId={documentId} /> : null}
         />
       )}
     />
