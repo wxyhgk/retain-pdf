@@ -33,6 +33,7 @@ pub mod provider_api;
 pub(crate) mod provider_probe;
 pub mod public_document_operations;
 pub mod public_document_operations_api;
+pub mod quality;
 pub(crate) mod query_execution;
 pub mod runtime_gateway;
 pub mod backup;
