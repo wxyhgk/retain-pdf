@@ -287,6 +287,30 @@ def test_app_rust_stages_copy_every_workspace_member():
         assert missing == [], f"{stage} 阶段缺工作区成员：{missing}"
 
 
+def test_app_rust_builder_copies_files_embedded_at_compile_time():
+    """发布构建里顶层 `const/static … = include_str!/include_bytes!(…)` 读的文件，builder 阶段必须拷进去。
+
+    2026-10-10 job_data 的登记表在 backend/contracts/ 下，不属于任何工作区成员，本机和 Tests 都编得过，
+    只有发布前的 Docker 构建在编译期找不到文件。测试函数里缩进的 include_str! 不进发布构建，不查。
+    """
+    import re
+
+    builder = _dockerfile_stage_body(_text("ops/deployment/docker/backend/Dockerfile.app"), "builder")
+    copied = [line.split()[1] for line in builder.splitlines() if line.startswith("COPY ") and "--from=" not in line]
+    pattern = re.compile(r'^(?:pub(?:\([^)]*\))?\s+)?(?:const|static)\s.*\binclude_(?:str|bytes)!\("([^"]+)"\)')
+    missing = []
+    for member in _cargo_workspace_members():
+        for source in sorted((REPO_ROOT / member).rglob("*.rs")):
+            for line in source.read_text(encoding="utf-8").splitlines():
+                match = pattern.match(line)
+                if not match:
+                    continue
+                embedded = (source.parent / match.group(1)).resolve().relative_to(REPO_ROOT).as_posix()
+                if not any(embedded == item or embedded.startswith(item.rstrip("/") + "/") for item in copied):
+                    missing.append(f"{source.relative_to(REPO_ROOT)} -> {embedded}")
+    assert missing == [], f"builder 阶段没拷编译期读入的文件：{missing}"
+
+
 def test_app_rust_builder_matches_the_runtime_debian_release():
     """builder 编出来的二进制链接 glibc，Debian 代号必须与运行时镜像一致。"""
     stages = _dockerfile_stages(_text("ops/deployment/docker/backend/Dockerfile.app"))

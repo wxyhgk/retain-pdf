@@ -45,6 +45,8 @@ COPY backend/packages/retain-core ./backend/packages/retain-core
 COPY backend/packages/retain-data ./backend/packages/retain-data
 COPY backend/packages/retain-jobs ./backend/packages/retain-jobs
 COPY backend/packages/retain-proc ./backend/packages/retain-proc
+# 编译期 include_str! 读入的契约文件（job_data 的数据集登记表），不在任何工作区成员目录里。
+COPY backend/contracts/job-data.v1.schema.json ./backend/contracts/job-data.v1.schema.json
 # COPY 保留构建上下文里的 mtime，可能比 cook 产物还旧；touch 一遍保证工作区
 # crate 一定按真实源码重编，而不是沿用 cook 阶段的空壳。
 RUN find database backend -name '*.rs' -exec touch {} + \
