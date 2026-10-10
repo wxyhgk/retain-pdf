@@ -289,3 +289,22 @@ async fn owner_of(fx: &Fixture, cookie: &str) -> String {
     let session = read_json(fx.get(cookie, "/api/v1/auth/session").await).await;
     session["data"]["user"]["user_id"].as_str().unwrap().to_string()
 }
+
+#[tokio::test]
+async fn ocr_only_jobs_go_through_the_jobs_endpoint() {
+    let fx = Fixture::new("ocr-json").await;
+    let a = fx.upload(&fx.alice).await;
+    // 平台没配 OCR：走到了 OCR 的建任务路径（而不是「use /api/v1/ocr/jobs」的 400）。
+    let response = send(
+        &fx.state,
+        Method::POST,
+        "/api/v1/jobs",
+        Some(&fx.alice),
+        Some(json!({ "workflow": "ocr", "source": { "upload_id": a["upload_id"] } })),
+    )
+    .await;
+    let status = response.status();
+    let body = read_json(response).await;
+    assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE, "{body}");
+    assert!(body["message"].as_str().unwrap().contains("平台还没配置 OCR"), "{body}");
+}

@@ -4,7 +4,7 @@ use crate::models::domain::{JobStatusKind, WorkflowKind};
 use crate::models::request::CreateJobInput;
 
 use super::super::super::creation::{
-    create_ocr_job_from_upload, create_translation_bundle_job, create_translation_job,
+    create_ocr_job, create_ocr_job_from_upload, create_translation_bundle_job, create_translation_job,
 };
 use super::super::JobsFacade;
 use crate::services::jobs::deps::BundleBuildDeps;
@@ -17,7 +17,12 @@ impl<'a> JobsFacade<'a> {
         request: &CreateJobInput,
     ) -> Result<JobSubmissionView, AppError> {
         let workflow = request.workflow.clone();
-        let job = create_translation_job(&self.command.submit, request)?;
+        // 只做 OCR 也走 /jobs（已上传的文件）；带文件一起传的旧入口 /ocr/jobs 照旧。
+        let job = if matches!(workflow, WorkflowKind::Ocr) {
+            create_ocr_job(&self.command.submit, request)?
+        } else {
+            create_translation_job(&self.command.submit, request)?
+        };
         Ok(self.build_submission_view(base_url, &job, JobStatusKind::Queued, workflow))
     }
 

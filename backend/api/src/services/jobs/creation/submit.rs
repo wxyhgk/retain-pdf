@@ -59,6 +59,15 @@ pub(crate) fn create_ocr_ambiguity_recovery_job(
     Ok(job)
 }
 
+/// 只做 OCR、源文件已经上传过（JSON 提交 `workflow=ocr` + `source.upload_id`）。
+pub(crate) fn create_ocr_job(deps: &JobSubmitDeps<'_>, input: &CreateJobInput) -> Result<JobSnapshot, AppError> {
+    let input = &platform_input(deps, input)?;
+    let job = build_ocr_job_snapshot(&deps.snapshot, input, None)?;
+    let job = secure_job_credentials(deps, job)?;
+    let _credential_guard = acquire_job_credential_usage_lock(deps, &job)?;
+    start_job_execution(&deps.launcher, job)
+}
+
 pub(crate) async fn create_ocr_job_from_upload(
     deps: &JobSubmitDeps<'_>,
     input: &CreateJobInput,
