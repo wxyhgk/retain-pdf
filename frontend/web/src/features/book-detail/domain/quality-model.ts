@@ -8,7 +8,9 @@
 // - 排版里「缩了字」是正常的（框装不下就缩），只有溢出和缩得太小才算要看的。
 import type { QualitySummaryView } from "@/platform/api/index.js";
 
-export type QualityListKind = "layout" | "escalated" | "untranslated" | "qa";
+export type QualityListKind = "layout" | "escalated" | "untranslated" | "qa" | "revisions";
+
+export type QualityListLink = { kind: QualityListKind; label: string };
 
 export type QualityRow = {
   key: string;
@@ -16,8 +18,8 @@ export type QualityRow = {
   value: string;
   detail: string;
   tone: "ok" | "warn" | "info";
-  /** 有明细可看时，点开按这个 kind 拉 quality-items。 */
-  list?: { kind: QualityListKind; label: string };
+  /** 有明细可看时，每个入口点开按 kind 去通用取数接口拉明细。 */
+  lists?: QualityListLink[];
   breakdown?: Array<{ label: string; value: number }>;
 };
 
@@ -92,7 +94,7 @@ export function qualityModel(summary: QualitySummaryView | null | undefined): Qu
         .filter(([, count]) => n(count))
         .sort((a, b) => n(b[1]) - n(a[1]))
         .map(([check, count]) => ({ label: CHECK_LABELS[check] || check, value: n(count) })),
-      ...(critical + major ? { list: { kind: "qa" as const, label: "看要处理的问题" } } : {}),
+      ...(critical + major ? { lists: [{ kind: "qa" as const, label: "看要处理的问题" }] } : {}),
     });
   }
 
@@ -109,7 +111,10 @@ export function qualityModel(summary: QualitySummaryView | null | undefined): Qu
       detail: [`采纳 ${n(refine.applied)}`, `没采纳 ${n(refine.rejected)}`, n(refine.skipped) ? `跳过 ${n(refine.skipped)}` : "", escalated ? `留给你确认 ${escalated}` : ""]
         .filter(Boolean).join(" · "),
       tone: escalated ? "warn" : "ok",
-      ...(escalated ? { list: { kind: "escalated" as const, label: "看留给你确认的" } } : {}),
+      lists: [
+        ...(n(refine.applied) ? [{ kind: "revisions" as const, label: "看改了哪些" }] : []),
+        ...(escalated ? [{ kind: "escalated" as const, label: "看留给你确认的" }] : []),
+      ],
     });
   }
 
@@ -132,7 +137,7 @@ export function qualityModel(summary: QualitySummaryView | null | undefined): Qu
         ? `${parts.join(" · ")}；最小缩到 ${percent(n(layout.min_scale))}、${n(layout.min_final_font_size)}pt`
         : `${n(layout.shrunk_blocks)} 块缩了字号以装进原位置，都在正常范围`,
       tone: parts.length ? "warn" : "ok",
-      ...(overflow + small ? { list: { kind: "layout" as const, label: "看排不下的块" } } : {}),
+      ...(overflow + small ? { lists: [{ kind: "layout" as const, label: "看排不下的块" }] } : {}),
     });
   }
 
@@ -145,24 +150,9 @@ export function qualityModel(summary: QualitySummaryView | null | undefined): Qu
       value: failed ? `${failed} 块没翻成` : "没有",
       detail: kept ? `另有 ${kept} 块按原样保留（公式、编号、链接等，不需要翻）` : "",
       tone: failed ? "warn" : "ok",
-      ...(failed ? { list: { kind: "untranslated" as const, label: "看没翻成的块" } } : {}),
+      ...(failed ? { lists: [{ kind: "untranslated" as const, label: "看没翻成的块" }] } : {}),
     });
   }
 
   return { empty: false, warnings, rows, attentionCount };
-}
-
-const ITEM_REASON_LABELS: Record<string, string> = {
-  overflow: "溢出",
-  small_scale: "字缩得太小",
-  failed: "翻译失败",
-  formula: "公式",
-  model_kept: "不需翻",
-};
-
-export function qualityItemReason(item: { reason?: string; scale?: number; message?: string; severity?: string }): string {
-  if (item.message) return item.message;
-  const label = ITEM_REASON_LABELS[`${item.reason || ""}`] || `${item.reason || ""}`;
-  if (item.reason === "small_scale" && n(item.scale)) return `${label}（缩到 ${percent(n(item.scale))}）`;
-  return label;
 }

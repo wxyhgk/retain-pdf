@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { waitFor } from "../helpers/async.mjs";
 import { clickWithMouseDown, makeDom as makeDomWith } from "../helpers/dom.mjs";
 
-test("展开「排版」明细，点一条打开阅读页对应的页和块", async () => {
+test("展开「排版」明细（通用取数接口），点一条打开阅读页对应的页和块", async () => {
   const dom = makeDomWith("", {
     html: "<!doctype html><html><body><div id='root'></div></body></html>",
     keys: ["window", "document", "HTMLElement", "HTMLButtonElement", "Element", "SVGElement", "Event", "MouseEvent", "Node", "MutationObserver"],
@@ -13,23 +13,26 @@ test("展开「排版」明细，点一条打开阅读页对应的页和块", as
   const { createRoot } = await import("react-dom/client");
   const { QualityPanel } = await import("../../src/features/book-detail/ui/panels/overview/QualityPanel.jsx");
   const mocks = await import("../../src/platform/api/mocks/quality.js");
+  const jobData = await import("../../src/platform/api/mocks/job-data.js");
+  const { createQualityListLoader } = await import("../../src/features/book-detail/ui/quality-list-loader.js");
   const { setReaderNavigateForTests } = await import("../../src/features/reader/domain.js");
   const opened = [];
   setReaderNavigateForTests((url) => opened.push(url));
   const kinds = [];
+  const loadList = createQualityListLoader(jobData.fetchJobData);
   const root = createRoot(dom.window.document.getElementById("root"));
   root.render(React.createElement(QualityPanel, {
     jobId: "job-1",
     documentId: "doc-1",
     loadSummary: mocks.fetchQualitySummary,
-    loadItems: (jobId, kind) => { kinds.push(kind); return mocks.fetchQualityItems(jobId, undefined, { kind }); },
+    loadItems: (jobId, kind) => { kinds.push(kind); return loadList(jobId, kind); },
   }));
   const doc = dom.window.document;
   await waitFor(() => doc.querySelector('[data-quality-row="layout"]'), "排版一行");
   assert.match(doc.querySelector(".book-detail-quality-attention").textContent, /要看/);
   assert.equal(doc.querySelectorAll(".book-detail-quality-warnings li").length, 2);
 
-  clickWithMouseDown(dom, doc.querySelector('[data-quality-row="layout"] .book-detail-quality-row-toggle'));
+  clickWithMouseDown(dom, doc.querySelector('[data-quality-row="layout"] [data-quality-toggle="layout"]'));
   const first = await waitFor(() => doc.querySelector('[data-quality-list="layout"] .book-detail-quality-list-item'), "明细");
   assert.match(first.textContent, /第 12 页.*溢出/);
   assert.deepEqual(kinds, ["layout"]);

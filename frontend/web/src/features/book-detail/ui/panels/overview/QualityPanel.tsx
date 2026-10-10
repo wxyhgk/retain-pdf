@@ -1,55 +1,58 @@
-// 书籍详情 · 概览里的「译文质量」卡：自动检查、精修、排版、漏翻各一行，要看的可以展开列表，
-// 点一条直接打开阅读页跳到那一块。规则见 domain/quality-model.ts。
+// 书籍详情 ·「质量」页签：自动检查、精修、排版、漏翻各一行，要看的可以展开列表，点一条直接打开
+// 阅读页跳到那一块。总数来自 quality-summary，明细来自通用取数接口（quality-list-loader.ts）。
 import { useEffect, useState } from "react";
 import { ChevronDown, ShieldCheck, TriangleAlert } from "lucide-react";
 
-import { fetchQualityItems, fetchQualitySummary } from "@/platform/api/index.js";
-import type { QualityItem, QualitySummaryView } from "@/platform/api/index.js";
+import { fetchQualitySummary } from "@/platform/api/index.js";
+import type { QualitySummaryView } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import { buildReaderUrl } from "@/platform/navigation/pages.js";
 import { navigateToReader } from "@/features/reader/domain.js";
-import { qualityItemReason, qualityModel, type QualityListKind, type QualityRow } from "../../../domain/quality-model.js";
-
-const LIST_LIMIT = 50;
-
-type LoadItems = (jobId: string, kind: QualityListKind) => Promise<{ total: number; items: QualityItem[] }>;
+import { qualityModel, type QualityListLink } from "../../../domain/quality-model.js";
+import {
+  createQualityListLoader,
+  type LoadQualityList,
+  type QualityList,
+  type QualityListItem,
+} from "../../quality-list-loader.js";
 
 const defaultLoadSummary = (jobId: string) => fetchQualitySummary(jobId, API_PREFIX);
-const defaultLoadItems: LoadItems = (jobId, kind) =>
-  fetchQualityItems(jobId, API_PREFIX, { kind, limit: LIST_LIMIT, ...(kind === "qa" ? { severity: "major" } : {}) });
+const defaultLoadItems: LoadQualityList = createQualityListLoader();
 
-function openInReader(jobId: string, documentId: string, item: QualityItem) {
-  const page = Number(item.page);
+function openInReader(jobId: string, documentId: string, item: QualityListItem) {
   navigateToReader(buildReaderUrl(jobId, {
-    ...(Number.isFinite(page) && page > 0 ? { page: page - 1 } : {}),
-    blockId: item.item_id,
+    ...(item.page > 0 ? { page: item.page - 1 } : {}),
+    ...(item.readerItemId ? { blockId: item.readerItemId } : {}),
   }, { documentId }));
 }
 
-function ItemList({ jobId, documentId, row, loadItems }: { jobId: string; documentId: string; row: QualityRow; loadItems: LoadItems }) {
-  const [state, setState] = useState<{ items: QualityItem[]; total: number; error: string; loading: boolean }>(
+function ItemList({ jobId, documentId, link, loadItems }: { jobId: string; documentId: string; link: QualityListLink; loadItems: LoadQualityList }) {
+  const [state, setState] = useState<QualityList & { error: string; loading: boolean }>(
     { items: [], total: 0, error: "", loading: true },
   );
   useEffect(() => {
     let disposed = false;
-    loadItems(jobId, row.list!.kind)
+    loadItems(jobId, link.kind)
       .then((view) => { if (!disposed) setState({ items: view.items || [], total: view.total || 0, error: "", loading: false }); })
       .catch((err: unknown) => {
         if (!disposed) setState({ items: [], total: 0, loading: false, error: (err as { message?: string } | null)?.message || "读取明细失败。" });
       });
     return () => { disposed = true; };
-  }, [jobId, row.list, loadItems]);
+  }, [jobId, link.kind, loadItems]);
   if (state.loading) return <p className="book-detail-quality-list-note">正在读取…</p>;
   if (state.error) return <p className="book-detail-quality-list-note" role="alert">{state.error}</p>;
   if (!state.items.length) return <p className="book-detail-quality-list-note">没有明细。</p>;
   return (
     <>
-      <ol className="book-detail-quality-list" data-quality-list={row.list!.kind}>
-        {state.items.map((item, index) => (
-          <li key={`${item.id || item.item_id}-${index}`}>
+      <ol className="book-detail-quality-list" data-quality-list={link.kind}>
+        {state.items.map((item) => (
+          <li key={item.key}>
             <button type="button" className="book-detail-quality-list-item" onClick={() => openInReader(jobId, documentId, item)}>
               <span className="book-detail-quality-list-page">第 {item.page} 页</span>
-              <span className="book-detail-quality-list-reason">{qualityItemReason(item)}</span>
+              <span className="book-detail-quality-list-body">
+                <span className="book-detail-quality-list-reason">{item.title}</span>
+                {item.detail ? <span className="book-detail-quality-list-detail">{item.detail}</span> : null}
+              </span>
             </button>
           </li>
         ))}
@@ -70,7 +73,7 @@ export function QualityPanel({
   jobId: string;
   documentId: string;
   loadSummary?: (jobId: string) => Promise<QualitySummaryView>;
-  loadItems?: LoadItems;
+  loadItems?: LoadQualityList;
 }) {
   const [summary, setSummary] = useState<QualitySummaryView | null>(null);
   const [error, setError] = useState("");
@@ -123,20 +126,29 @@ export function QualityPanel({
                   {row.breakdown.map((part) => `${part.label} ${part.value}`).join(" · ")}
                 </span>
               ) : null}
-              {row.list ? (
-                <button
-                  type="button"
-                  className="book-detail-quality-row-toggle"
-                  aria-expanded={openKey === row.key}
-                  onClick={() => setOpenKey((key) => (key === row.key ? "" : row.key))}
-                >
-                  {row.list.label}
-                  <ChevronDown aria-hidden="true" />
-                </button>
+              {row.lists?.length ? (
+                <span className="book-detail-quality-row-toggles">
+                  {row.lists.map((link) => {
+                    const key = `${row.key}:${link.kind}`;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        className="book-detail-quality-row-toggle"
+                        data-quality-toggle={link.kind}
+                        aria-expanded={openKey === key}
+                        onClick={() => setOpenKey((current) => (current === key ? "" : key))}
+                      >
+                        {link.label}
+                        <ChevronDown aria-hidden="true" />
+                      </button>
+                    );
+                  })}
+                </span>
               ) : null}
-              {openKey === row.key && row.list ? (
-                <ItemList jobId={jobId} documentId={documentId} row={row} loadItems={loadItems} />
-              ) : null}
+              {row.lists?.map((link) => (openKey === `${row.key}:${link.kind}` ? (
+                <ItemList key={link.kind} jobId={jobId} documentId={documentId} link={link} loadItems={loadItems} />
+              ) : null))}
             </dd>
           </div>
         ))}

@@ -1,23 +1,53 @@
-// 拉任务事件流的尾部，交给 editorialFlowModel 还原编辑部走到了哪一步。
+// 读这个任务的精修事件（通用取数接口的 pipeline_events），交给 editorialFlowModel 还原编辑部走到了哪一步。
 // - poll（翻译任务在跑、进入渲染阶段，精修就在这里跑）：每 3 秒刷新；
 // - 否则只读一次：任务跑完 / 停下后照样画出最后一次精修的最终状态，不能一结束就消失。
 // 读失败保留上一次的结果，不打断界面。
 import { useEffect, useRef, useState } from "react";
 
-import { fetchJobEvents } from "@/platform/api/index.js";
+import { fetchJobData } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import { editorialFlowModel, type EditorialFlow } from "../domain/editorial-flow-model.js";
 
 export const EDITORIAL_FLOW_POLL_MS = 3_000;
-// 事件接口单页上限 500。一次编辑部精修一两百条事件，之后的排版事件几十到上百条（实测一本书 89 条），
-// 尾部 500 条装得下最后一次精修。
-const TAIL_LIMIT = 500;
+// 通用取数接口单页上限 1000；一次编辑部精修一两百条事件，够用。
+const REFINE_EVENT_LIMIT = 1000;
 
 type FetchEvents = (jobId: string) => Promise<{ items?: unknown[] } | null | undefined>;
 import type { BookDetailCaches } from "../domain/book-detail-caches.js";
 
-const defaultFetchEvents: FetchEvents = (jobId) =>
-  fetchJobEvents(jobId, API_PREFIX, { start: "tail", limit: TAIL_LIMIT });
+type Row = Record<string, unknown>;
+
+/** pipeline_events 的一行（payload 里的精修字段已摊平）→ 流程图模型认的事件形状。 */
+export function refineEventFromDataRow(row: Row) {
+  const payload = (row.payload && typeof row.payload === "object" ? row.payload : {}) as Row;
+  const pick = (key: string) => (row[key] !== undefined && row[key] !== null ? row[key] : payload[key]);
+  return {
+    substage: row.substage,
+    stage_detail: row.stage_detail || row.message,
+    payload: {
+      observation: {
+        refine_phase: pick("refine_phase"),
+        refine_mode: pick("refine_mode"),
+        refine_round: pick("refine_round"),
+        refine_max_rounds: pick("refine_max_rounds"),
+        batch_done: pick("batch_done"),
+        batch_total: pick("batch_total"),
+        round: pick("round"),
+      },
+    },
+  };
+}
+
+// 只取精修的事件（data/pipeline_events?substage=refining&sort=seq），不再拉事件流尾部 500 条（约 540 KB）。
+const defaultFetchEvents: FetchEvents = async (jobId) => {
+  const view = await fetchJobData(jobId, API_PREFIX, "pipeline_events", {
+    filters: { substage: "refining" },
+    sort: "seq",
+    limit: REFINE_EVENT_LIMIT,
+  });
+  const rows: Row[] = Array.isArray(view.rows) ? (view.rows as Row[]) : [];
+  return { items: rows.map((row) => refineEventFromDataRow(row)) };
+};
 
 export function useEditorialFlow(
   jobId: string,

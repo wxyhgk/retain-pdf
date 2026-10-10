@@ -33,6 +33,7 @@ import {
   ReaderTextHoverLayer,
 } from "./ReaderTextHoverLayer.js";
 import { LiveTranslationOverlay } from "./LiveTranslationOverlay.js";
+import { useReaderContext } from "../components/react-pdf/reader-context.js";
 import type { ReaderLiveTranslationLayoutPage as LiveTranslationLayoutPage } from "../contracts/live-translation.js";
 import type { LiveTranslationPageState } from "../shared/data/live-translation-state.js";
 
@@ -85,6 +86,8 @@ function PdfPageSlotInner({
   liveTranslationPage,
   showLiveTranslation = pane === "source",
 }: PdfPageSlotProps) {
+  // 改过的块（来自阅读器上下文；单测里直接渲染时没有，就不画标记）。
+  const revisedBlocks = useReaderContext()?.revisedBlocks;
   const aspectRef = useRef(cachedAspect ?? DEFAULT_ASPECT);
   const [aspect, setAspect] = useState(aspectRef.current);
 
@@ -258,9 +261,22 @@ function PdfPageSlotInner({
           height={naturalHeight}
         />
       ) : null}
+      {active && pane === "translated" && revisedBlocks?.size ? (
+        <div className="reader-revised-markers" aria-hidden="true">
+          {textHoverTargets.filter((target) => revisedBlocks.has(target.itemId)).map((target) => (
+            <span
+              key={target.itemId}
+              className="reader-revised-marker"
+              data-reader-revised-id={target.itemId}
+              style={{ left: target.rect.left, top: target.rect.top, height: target.rect.height }}
+            />
+          ))}
+        </div>
+      ) : null}
       <ReaderTextHoverLayer
         target={active ? hoveredTextTarget : null}
         pane={pane === "translated" ? "translated" : "source"}
+        revisedCount={hoveredTextTarget ? revisedBlocks?.get(hoveredTextTarget.itemId) || 0 : 0}
       />
     </div>
   );

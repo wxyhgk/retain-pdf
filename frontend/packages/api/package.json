@@ -110,6 +110,10 @@
       "types": "./dist/quality.d.ts",
       "import": "./dist/quality.js"
     },
+    "./job-data": {
+      "types": "./dist/job-data.d.ts",
+      "import": "./dist/job-data.js"
+    },
     "./usage": {
       "types": "./dist/usage.d.ts",
       "import": "./dist/usage.js"
