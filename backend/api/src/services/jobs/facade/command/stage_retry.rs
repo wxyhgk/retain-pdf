@@ -16,7 +16,8 @@ use super::stage_retry_overrides::{
     apply_retry_overrides, apply_retry_overrides_to_resolved_spec, discard_ocr_secret_sources,
 };
 use super::stage_retry_refine::{
-    clear_pending_refine_override, prepare_in_place_refine_job, validate_refine_request,
+    clear_pending_refine_override, import_inline_refine_keys, prepare_in_place_refine_job,
+    validate_refine_request,
 };
 use super::stage_retry_request::build_retry_request;
 use super::stage_retry_view::{build_retry_stage_submission_view, build_stage_actions_view};
@@ -221,11 +222,10 @@ impl<'a> JobsFacade<'a> {
             }
             return Err(AppError::bad_request(plan.disabled_reason));
         }
-        let job = prepare_in_place_refine_job(
-            source_job,
-            &request.overrides,
-            self.command.control.data_root,
-        )?;
+        // 换了 key 后带来的明文 key 先导入凭据库；锁持有到 start_job_execution 落库之后。
+        let (overrides, _credential_usage) =
+            import_inline_refine_keys(&request.overrides, self.command.control.data_root)?;
+        let job = prepare_in_place_refine_job(source_job, &overrides, self.command.control.data_root)?;
         // 覆盖必须在启动之前写好：start_job_execution 之后运行时随时可能读它。
         let job_paths = crate::storage_paths::JobPaths::for_job(
             self.command.control.output_root,
