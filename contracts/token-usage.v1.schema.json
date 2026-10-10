@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/token-usage/v1",
+  "title": "Model Token Usage Contract",
+  "description": "模型用量（token）汇总：一个任务、一本书、全部。成功响应包在 { code, message, data } 里，data 是 UsageSummaryView。数据来自任务台账 artifacts/token-usage.v1.jsonl（流水线每次模型返回追加一行）、助手台账 <data_root>/usage/assistant.v1.jsonl，以及有台账之前的旧任务的诊断与精修报告（只折算得出输入输出，没有缓存 / 思考明细，jobs_estimated_from_reports 数出有几个任务是这么折算的）。删除的书连同任务目录一起删掉，不再计入。界面显示用「万」「亿」：不足 1 万显示原数（千分位），1 万到 1 亿显示一位小数加「万」，1 亿以上两位小数加「亿」。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/usage",
+      "output": "UsageSummaryView",
+      "note": "scope=all：现存全部任务加上全部助手用量。",
+      "rust_view": "services/usage :: UsageSummaryView",
+      "ts_consumer": "@retainpdf/contracts/token-usage :: UsageSummaryView"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/documents/:document_id/usage",
+      "output": "UsageSummaryView",
+      "note": "scope=document：这本书的全部任务，加上问这本书时助手花的。助手可以经 retainpdf-agent document usage 读到。",
+      "rust_view": "services/usage :: UsageSummaryView",
+      "ts_consumer": "@retainpdf/contracts/token-usage :: UsageSummaryView"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/:job_id/usage",
+      "output": "UsageSummaryView",
+      "note": "scope=job：单个任务（含它的原地精修、重渲染）。任务不存在时 404。",
+      "rust_view": "services/usage :: UsageSummaryView",
+      "ts_consumer": "@retainpdf/contracts/token-usage :: UsageSummaryView"
+    }
+  ],
+  "definitions": {
+    "UsageBucket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requests",
+        "requests_without_usage",
+        "input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "cache_hit_tokens",
+        "cache_reported_input_tokens",
+        "cache_write_tokens",
+        "reasoning_tokens"
+      ],
+      "properties": {
+        "requests": { "type": "integer", "minimum": 0, "description": "模型请求数。" },
+        "requests_without_usage": { "type": "integer", "minimum": 0, "description": "服务商没报用量的请求数，这些请求的 token 没算进来。" },
+        "input_tokens": { "type": "integer", "minimum": 0, "description": "输入 token，含缓存命中与缓存写入。" },
+        "output_tokens": { "type": "integer", "minimum": 0, "description": "输出 token，含思考。" },
+        "total_tokens": { "type": "integer", "minimum": 0, "description": "input_tokens + output_tokens。" },
+        "cache_hit_tokens": { "type": "integer", "minimum": 0, "description": "缓存命中的输入 token（包含在 input_tokens 里）。" },
+        "cache_reported_input_tokens": { "type": "integer", "minimum": 0, "description": "报了缓存数据的那些请求的输入 token。缓存命中率 = cache_hit_tokens / 它；为 0 表示不知道，界面显示「未报」而不是 0%。" },
+        "cache_write_tokens": { "type": "integer", "minimum": 0, "description": "写入缓存的输入 token（只有 Anthropic 报；包含在 input_tokens 里）。" },
+        "reasoning_tokens": { "type": "integer", "minimum": 0, "description": "思考（推理）token（包含在 output_tokens 里；服务商没报时为 0）。" }
+      }
+    },
+    "UsageStageGroup": {
+      "type": "string",
+      "enum": ["translation", "preparation", "refine", "assistant", "other"],
+      "description": "界面按它分组：翻译 / 译前准备 / 精修与编辑部 / 助手 / 其它。"
+    },
+    "UsageStageView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stage",
+        "label",
+        "group",
+        "requests",
+        "requests_without_usage",
+        "input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "cache_hit_tokens",
+        "cache_reported_input_tokens",
+        "cache_write_tokens",
+        "reasoning_tokens"
+      ],
+      "properties": {
+        "stage": { "type": "string", "description": "translation、term_prescan、refine_review、assistant_ask 等；新阶段会继续增加，未知的按 label 显示。" },
+        "label": { "type": "string", "description": "中文名，例如「审校挑错」。" },
+        "group": { "$ref": "#/definitions/UsageStageGroup" },
+        "requests": { "type": "integer", "minimum": 0 },
+        "requests_without_usage": { "type": "integer", "minimum": 0 },
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "total_tokens": { "type": "integer", "minimum": 0 },
+        "cache_hit_tokens": { "type": "integer", "minimum": 0 },
+        "cache_reported_input_tokens": { "type": "integer", "minimum": 0 },
+        "cache_write_tokens": { "type": "integer", "minimum": 0 },
+        "reasoning_tokens": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "UsageModelView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "host",
+        "requests",
+        "requests_without_usage",
+        "input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "cache_hit_tokens",
+        "cache_reported_input_tokens",
+        "cache_write_tokens",
+        "reasoning_tokens"
+      ],
+      "properties": {
+        "model": { "type": "string", "description": "模型名；旧报告里没有时为空串。" },
+        "host": { "type": "string", "description": "接口地址的主机名，例如 dashscope.aliyuncs.com。" },
+        "requests": { "type": "integer", "minimum": 0 },
+        "requests_without_usage": { "type": "integer", "minimum": 0 },
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "total_tokens": { "type": "integer", "minimum": 0 },
+        "cache_hit_tokens": { "type": "integer", "minimum": 0 },
+        "cache_reported_input_tokens": { "type": "integer", "minimum": 0 },
+        "cache_write_tokens": { "type": "integer", "minimum": 0 },
+        "reasoning_tokens": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "UsageMonthView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "month",
+        "requests",
+        "requests_without_usage",
+        "input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "cache_hit_tokens",
+        "cache_reported_input_tokens",
+        "cache_write_tokens",
+        "reasoning_tokens"
+      ],
+      "properties": {
+        "month": { "type": "string", "pattern": "^\\d{4}-\\d{2}$", "description": "YYYY-MM（UTC）。" },
+        "requests": { "type": "integer", "minimum": 0 },
+        "requests_without_usage": { "type": "integer", "minimum": 0 },
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "total_tokens": { "type": "integer", "minimum": 0 },
+        "cache_hit_tokens": { "type": "integer", "minimum": 0 },
+        "cache_reported_input_tokens": { "type": "integer", "minimum": 0 },
+        "cache_write_tokens": { "type": "integer", "minimum": 0 },
+        "reasoning_tokens": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "UsageSummaryView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "totals",
+        "by_stage",
+        "by_model",
+        "by_month",
+        "jobs_counted",
+        "jobs_estimated_from_reports",
+        "first_at",
+        "last_at"
+      ],
+      "properties": {
+        "scope": { "type": "string", "enum": ["job", "document", "all"] },
+        "totals": { "$ref": "#/definitions/UsageBucket" },
+        "by_stage": { "type": "array", "items": { "$ref": "#/definitions/UsageStageView" }, "description": "按 total_tokens 从大到小。" },
+        "by_model": { "type": "array", "items": { "$ref": "#/definitions/UsageModelView" }, "description": "按 total_tokens 从大到小。" },
+        "by_month": { "type": "array", "items": { "$ref": "#/definitions/UsageMonthView" }, "description": "按月份从早到晚。" },
+        "jobs_counted": { "type": "integer", "minimum": 0, "description": "有用量记录的任务数。" },
+        "jobs_estimated_from_reports": { "type": "integer", "minimum": 0, "description": "其中从旧报告折算的任务数（没有缓存 / 思考明细），界面可以注明「早期任务按报告估算」。" },
+        "first_at": { "type": ["string", "null"], "description": "最早一条用量的时间（UTC，RFC 3339）。" },
+        "last_at": { "type": ["string", "null"], "description": "最近一条用量的时间。" }
+      }
+    }
+  }
+}

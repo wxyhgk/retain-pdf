@@ -71,6 +71,14 @@ function IconSync(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconChart(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M4.5 19.5h15M7.5 16v-4M12 16V8M16.5 16v-6.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function IconArchive(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
@@ -102,6 +110,7 @@ function IconUpdate(props: SVGProps<SVGSVGElement>) {
 const TABS = [
   { id: "api", label: "接口设置", Icon: IconKey },
   { id: "glossary", label: "术语表", Icon: IconBook },
+  { id: "usage", label: "总用量", Icon: IconChart },
   { id: "sync", label: "同步", Icon: IconSync },
   { id: "backup", label: "备份", Icon: IconArchive },
   { id: "appearance", label: "外观", Icon: IconPalette },
@@ -111,6 +120,7 @@ const TABS = [
 const PANE_HEADS = {
   api: { title: "接口设置", desc: "" },
   glossary: { title: "术语表", desc: "维护术语偏好，翻译时优先使用你的术语。" },
+  usage: { title: "总用量", desc: "全部书花掉的模型 token，按月、按模型、按环节。" },
   sync: { title: "同步", desc: "通过一个网盘文件夹，在几台电脑之间同步书库、译文和阅读进度。" },
   backup: { title: "备份", desc: "书库数据库每天自动备份，出问题时可以恢复到之前的某一天。" },
   appearance: { title: "外观", desc: "选择界面配色，立即生效并记住本机选择。" },
@@ -150,6 +160,8 @@ export type SettingsDialogProps = {
   syncPanelSlot?: React.ReactNode | null;
   /** 「备份」分栏的内容（由 HomeApp 注入 BackupPanel）。 */
   backupPanelSlot?: React.ReactNode | null;
+  /** 「总用量」分栏的内容（由 HomeApp 注入 UsageSettingsPanel）。 */
+  usagePanelSlot?: React.ReactNode | null;
 };
 
 export function SettingsDialog({
@@ -161,6 +173,7 @@ export function SettingsDialog({
   appUpdateBannerSlot = null,
   syncPanelSlot = null,
   backupPanelSlot = null,
+  usagePanelSlot = null,
 }: SettingsDialogProps) {
 
   const dialogState = useDialogState(dialogStore);
@@ -295,6 +308,17 @@ export function SettingsDialog({
                 >
                   <PaneHead tab="backup" />
                   {activeTab === "backup" ? backupPanelSlot : null}
+                </TabsPrimitive.Content>
+
+                <TabsPrimitive.Content
+                  value="usage"
+                  forceMount
+                  hidden={activeTab !== "usage"}
+                  className={panelClass("usage")}
+                  data-settings-panel="usage"
+                >
+                  <PaneHead tab="usage" />
+                  {activeTab === "usage" ? usagePanelSlot : null}
                 </TabsPrimitive.Content>
 
                 <TabsPrimitive.Content

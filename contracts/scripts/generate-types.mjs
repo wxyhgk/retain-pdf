@@ -33,6 +33,11 @@ const TARGETS = [
     rootName: "ReaderDataSchema",
   },
   {
+    input: "token-usage.v1.schema.json",
+    output: "src/token-usage.ts",
+    rootName: "TokenUsageSchema",
+  },
+  {
     input: "translation-revisions.v1.schema.json",
     output: "src/translation-revisions.ts",
     rootName: "TranslationRevisionsSchema",

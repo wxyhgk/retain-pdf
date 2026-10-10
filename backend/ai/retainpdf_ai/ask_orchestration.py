@@ -223,6 +223,7 @@ class AskOrchestrator:
                 prepared.settings,
                 on_delta=lambda text: events.put({"type": "answer_delta", "text": text}),
                 request_control=control,
+                usage_document_id=document_id,
             )
         )
 
@@ -470,6 +471,7 @@ class AskOrchestrator:
         return self._build_chat_fn(
             prepared.settings,
             request_control=control,
+            usage_document_id=self._resolve_document_id(payload),
         )
 
     def _build_chat_fn(self, settings: Settings, **kwargs: Any) -> Any:

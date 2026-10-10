@@ -65,6 +65,12 @@ DOCUMENT_AGENT_TOOLS: list[dict[str, Any]] = [
         {"type": "object", "additionalProperties": False, "properties": {}},
     ),
     _function(
+        "retainpdf_document_usage",
+        "读取这本书花了多少模型 token：输入、输出、缓存命中、思考，按阶段和模型分开。"
+        "回答时用「万」「亿」作单位。",
+        {"type": "object", "additionalProperties": False, "properties": {}},
+    ),
+    _function(
         "retainpdf_operation_create",
         "根据受限页面步骤创建 durable PDF operation；创建不会执行或提交。",
         {
@@ -197,6 +203,8 @@ def operation_tool_argv(
 ) -> tuple[str, ...]:
     if name == "retainpdf_document_inspect":
         return ("retainpdf-agent", "document", "inspect")
+    if name == "retainpdf_document_usage":
+        return ("retainpdf-agent", "document", "usage")
     if name == "retainpdf_operation_create":
         program = {
             "schema": "retainpdf_page_program_v1",

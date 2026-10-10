@@ -238,16 +238,21 @@ fn parse_command(args: Vec<String>) -> Result<AgentCommand, CliFailure> {
 }
 
 fn parse_document_command(args: &[String]) -> Result<AgentCommand, CliFailure> {
-    if args.first().map(String::as_str) != Some("inspect") {
-        return Err(CliFailure::usage(
-            "expected `document inspect --document-id <id>`",
-        ));
-    }
+    // inspect：文档元数据；usage：这本书花了多少 token（全部任务加上问这本书时的助手）。
+    let suffix = match args.first().map(String::as_str) {
+        Some("inspect") => "",
+        Some("usage") => "/usage",
+        _ => {
+            return Err(CliFailure::usage(
+                "expected `document inspect|usage --document-id <id>`",
+            ))
+        }
+    };
     let flags = parse_flags(&args[1..])?;
     require_only_flags(&flags, &["--document-id"])?;
     let document_id = require_identifier(&flags, "--document-id")?;
     Ok(AgentCommand::Get {
-        path: format!("/api/v1/documents/{document_id}"),
+        path: format!("/api/v1/documents/{document_id}{suffix}"),
     })
 }
 
@@ -500,7 +505,7 @@ fn read_request_file(path: &Path) -> Result<Value, CliFailure> {
 }
 
 fn usage() -> &'static str {
-    "usage:\n  retainpdf-agent version\n  retainpdf-agent document inspect --document-id <id>\n  retainpdf-agent operation create --request <relative.json>\n  retainpdf-agent operation get --operation-id <id>\n  retainpdf-agent operation run --operation-id <id> --request <relative.json>\n  retainpdf-agent operation commit --operation-id <id> --request <relative.json>\n  retainpdf-agent operation cancel --operation-id <id> --request <relative.json>\n  retainpdf-agent translation qa|refine-report|fit-report --job-id <id>\n  retainpdf-agent translation item|revisions --job-id <id> --item-id <id>\n  retainpdf-agent translation revise --job-id <id> --item-id <id> --request <relative.json>\n  retainpdf-agent translation retry-stage --job-id <id> --request <relative.json>\n  retainpdf-agent glossary list\n  retainpdf-agent glossary get --glossary-id <id>\n  retainpdf-agent glossary create --request <relative.json>\n  retainpdf-agent glossary update --glossary-id <id> --request <relative.json>"
+    "usage:\n  retainpdf-agent version\n  retainpdf-agent document inspect|usage --document-id <id>\n  retainpdf-agent operation create --request <relative.json>\n  retainpdf-agent operation get --operation-id <id>\n  retainpdf-agent operation run --operation-id <id> --request <relative.json>\n  retainpdf-agent operation commit --operation-id <id> --request <relative.json>\n  retainpdf-agent operation cancel --operation-id <id> --request <relative.json>\n  retainpdf-agent translation qa|refine-report|fit-report --job-id <id>\n  retainpdf-agent translation item|revisions --job-id <id> --item-id <id>\n  retainpdf-agent translation revise --job-id <id> --item-id <id> --request <relative.json>\n  retainpdf-agent translation retry-stage --job-id <id> --request <relative.json>\n  retainpdf-agent glossary list\n  retainpdf-agent glossary get --glossary-id <id>\n  retainpdf-agent glossary create --request <relative.json>\n  retainpdf-agent glossary update --glossary-id <id> --request <relative.json>"
 }
 
 fn print_json(value: &impl Serialize) {
@@ -558,6 +563,14 @@ mod tests {
 
     fn args(values: &[&str]) -> Vec<String> {
         values.iter().map(|value| value.to_string()).collect()
+    }
+
+    #[test]
+    fn document_usage_reads_the_book_usage_summary() {
+        let usage = parse_command(args(&["document", "usage", "--document-id", "doc-1"]))
+            .expect("usage");
+        assert!(matches!(usage, AgentCommand::Get { path } if path == "/api/v1/documents/doc-1/usage"));
+        assert!(parse_command(args(&["document", "delete", "--document-id", "doc-1"])).is_err());
     }
 
     #[test]

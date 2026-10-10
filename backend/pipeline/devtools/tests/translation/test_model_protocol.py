@@ -89,6 +89,7 @@ def test_anthropic_usage_is_recorded_in_openai_shape():
         "total_tokens": 160,
         "prompt_cache_hit_tokens": 40,
         "prompt_cache_miss_tokens": 100,
+        "prompt_cache_write_tokens": 0,
     })
 
 

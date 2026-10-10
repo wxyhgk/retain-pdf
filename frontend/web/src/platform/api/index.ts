@@ -25,6 +25,7 @@ export * from "./domains/translation-debug.js";
 export * from "./domains/ai.js";
 export * from "./domains/document-operations.js";
 export * from "./domains/conversations.js";
+export * from "./domains/usage.js";
 
 // search — kept in the barrel (not ./domains) because the architecture gate
 // asserts the canonical `@retainpdf/api/search` wiring is present in this file.

@@ -51,11 +51,12 @@ def parse_broker_command(raw_command: str, scope: BrokerScope) -> BrokerCommand:
 def parse_broker_argv(argv: tuple[str, ...], scope: BrokerScope) -> BrokerCommand:
     if not argv or argv[0] != "retainpdf-agent":
         raise ValueError("unsupported executable")
-    if argv == ("retainpdf-agent", "document", "inspect"):
+    if argv in (("retainpdf-agent", "document", "inspect"), ("retainpdf-agent", "document", "usage")):
+        # usage 也是只读、限于这本书，和 inspect 同一档权限。
         return BrokerCommand(
             public_argv=argv,
             action="document.inspect",
-            cli_argv=("document", "inspect", "--document-id", scope.document_id),
+            cli_argv=("document", argv[2], "--document-id", scope.document_id),
         )
     if len(argv) >= 2 and argv[1] == "translation":
         return parse_translation_argv(argv, scope)

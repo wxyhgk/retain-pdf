@@ -15,10 +15,13 @@ import json
 import threading
 from collections.abc import Mapping
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any, Self
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import ProxyHandler, Request, build_opener
+
+from .usage_ledger import record_assistant_usage
 
 _MAX_REQUEST_BYTES = 4 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 8 * 1024 * 1024
@@ -39,8 +42,11 @@ class FxOpenAIChatBridge:
         timeout_s: float = 120.0,
         extra_body: Mapping[str, Any] | None = None,
         reasoning_efforts: tuple[str, ...] = (),
+        usage_data_root: Path | str | None = None,
     ) -> None:
         self._base_url = _validated_base_url(base_url)
+        # 每次上游返回记一行助手用量（usage_ledger）；不给就不记（测试、独立运行）。
+        self._usage_data_root = usage_data_root
         self._model = model.strip()
         if not self._model:
             raise ValueError("FX OpenAI-compatible model is required")
@@ -220,6 +226,13 @@ class FxOpenAIChatBridge:
             raise RuntimeError(  # noqa: TRY004 - upstream protocol failure
                 "OpenAI-compatible endpoint returned a non-object response"
             )
+        record_assistant_usage(
+            self._usage_data_root,
+            value.get("usage") if isinstance(value.get("usage"), dict) else None,
+            stage="assistant_terminal",
+            model=str(payload.get("model") or self._model),
+            base_url=self._base_url,
+        )
         return value
 
 

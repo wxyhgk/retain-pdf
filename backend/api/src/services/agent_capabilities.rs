@@ -455,7 +455,8 @@ fn requested_action<'a>(
     let segments: Vec<_> = path.trim_matches('/').split('/').collect();
     let document = |action| Some((action, RequestScope::Document(None)));
     match (method, segments.as_slice()) {
-        ("GET", ["api", "v1", "documents", document_id]) => Some((
+        // 读用量和读元数据同一档权限：都只读、都限于这本书。
+        ("GET", ["api", "v1", "documents", document_id] | ["api", "v1", "documents", document_id, "usage"]) => Some((
             Action::DocumentInspect,
             RequestScope::Document(Some(*document_id)),
         )),
@@ -623,6 +624,16 @@ mod tests {
             ))
         );
         assert!(requested_action("DELETE", "/api/v1/documents/doc-a").is_none());
+        // 这本书的用量和元数据同一档：只读、限于这本书；全局用量不放行。
+        assert_eq!(
+            requested_action("GET", "/api/v1/documents/doc-a/usage"),
+            Some((
+                AgentCapabilityAction::DocumentInspect,
+                RequestScope::Document(Some("doc-a"))
+            ))
+        );
+        assert!(requested_action("GET", "/api/v1/usage").is_none());
+        assert!(requested_action("GET", "/api/v1/jobs/job-a/usage").is_none());
         assert!(
             requested_action("GET", "/api/v1/internal/agent/runtime-sessions/conv-a").is_none()
         );

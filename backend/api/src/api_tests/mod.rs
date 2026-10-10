@@ -9,6 +9,7 @@ mod document_operations;
 mod glossaries;
 mod backups;
 mod sync;
+mod token_usage;
 mod golden_replay;
 mod health;
 mod http_contract;

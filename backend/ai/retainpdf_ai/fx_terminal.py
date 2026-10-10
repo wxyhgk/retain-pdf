@@ -356,6 +356,7 @@ def _assemble_launch(
             timeout_s=settings.fx_turn_timeout_s,
             extra_body=settings.fx_upstream_extra,
             reasoning_efforts=settings.fx_reasoning_efforts,
+            usage_data_root=settings.usage_ledger_root,
         ).start()
         cleanups.insert(0, bridge.close)
         gateway_api_key = bridge.gateway_api_key
