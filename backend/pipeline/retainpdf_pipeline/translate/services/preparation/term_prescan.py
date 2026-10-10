@@ -36,6 +36,8 @@ from retainpdf_pipeline.translate.services.preparation.segments import PrescanBa
 
 PRESCAN_PROMPT_VERSION = "term-prescan-v1"
 PRESCAN_REQUEST_TIMEOUT_SECS = 60
+# 回复解析失败时最多发几次（含第一次）。
+PARSE_ATTEMPTS = 2
 PRESCAN_MAX_WORKERS = 8
 PRESCAN_MAX_TERM_WORDS = 6
 
@@ -341,23 +343,28 @@ def run_term_prescan(
         try:
             # 稳定的单元身份 = 请求内容指纹。Rust 执行器按它做幂等，续跑时同一批
             # 不会被当成新请求重复计费。
-            with unit_scope("term_prescan", [digest]):
-                content = request(
-                    messages,
-                    api_key=api_key,
-                    model=model,
-                    base_url=base_url,
-                    temperature=0.0,
-                    response_format=TERM_PRESCAN_RESPONSE_SCHEMA,
-                    timeout=PRESCAN_REQUEST_TIMEOUT_SECS,
-                    request_label=f"term-prescan {batch.batch_id}",
-                    max_attempts=2,
-                )
-            terms = filter_prescan_terms(
-                parse_prescan_response(content),
-                batch_text=batch_text,
-                target_lang=target_lang,
-            )
+            # 回复解析不出来（不是网络错误）时重发一次：模型偶尔写坏 JSON，丢掉整批术语代价更大。
+            for parse_attempt in range(PARSE_ATTEMPTS):
+                with unit_scope("term_prescan", [digest, str(parse_attempt)] if parse_attempt else [digest]):
+                    content = request(
+                        messages,
+                        api_key=api_key,
+                        model=model,
+                        base_url=base_url,
+                        temperature=0.0,
+                        response_format=TERM_PRESCAN_RESPONSE_SCHEMA,
+                        timeout=PRESCAN_REQUEST_TIMEOUT_SECS,
+                        request_label=f"term-prescan {batch.batch_id}",
+                        max_attempts=2,
+                    )
+                try:
+                    parsed = parse_prescan_response(content)
+                    break
+                except ValueError as exc:
+                    if parse_attempt + 1 >= PARSE_ATTEMPTS:
+                        raise
+                    print(f"term-prescan: {batch.batch_id} unparsable reply, retrying: {exc}", flush=True)
+            terms = filter_prescan_terms(parsed, batch_text=batch_text, target_lang=target_lang)
         except Exception as exc:  # noqa: BLE001 - 单批失败只记录，续跑时重试
             print(f"term-prescan: {batch.batch_id} failed: {type(exc).__name__}: {exc}", flush=True)
             result = PrescanBatchResult(batch_id=batch.batch_id, terms=(), error=type(exc).__name__)

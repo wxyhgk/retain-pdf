@@ -39,6 +39,12 @@ def extract_json_text(content: str) -> str:
         if lines and lines[-1].startswith("```"):
             lines = lines[:-1]
         text = "\n".join(lines).strip()
+    # 先原样试：合法 JSON 的字符串里本来就可能有弯引号和全角冒号（「Vue’s」「“效应”」「注：」），
+    # 一律替换会把好好的 JSON 改坏——风格指南、术语预扫、组成员解析曾因此大量失败。
+    # 原样解析不了，才当成「模型用弯引号 / 全角冒号写了 JSON 结构」去替换。
+    verbatim = _verbatim_json_object(text)
+    if verbatim is not None:
+        return verbatim
     text = _normalize_loose_json_text(text)
     start = text.find("{")
     end = text.rfind("}")
@@ -118,6 +124,27 @@ def unwrap_translation_shell(text: str, item_id: str = "") -> str:
                 continue
         return current
     return current
+
+
+def _verbatim_json_object(text: str) -> str | None:
+    """最外层 ``{...}`` 原样能解析（含补 LaTeX 反斜杠之后）就返回它，否则 None。"""
+    from retainpdf_pipeline.translate.llm.shared.structured_output import escape_latex_backslashes
+
+    # 漏了最外层花括号、以 "translations": 开头的回复要先补花括号，不能把里面某一项当成整体。
+    if _JSON_KEY_PREFIX_RE.match((text or "").strip().translate(_JSON_QUOTE_TRANSLATION)):
+        return None
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end < start:
+        return None
+    candidate = text[start : end + 1]
+    for attempt in (candidate, escape_latex_backslashes(candidate)):
+        try:
+            json.loads(attempt)
+        except (ValueError, TypeError):
+            continue
+        return candidate
+    return None
 
 
 def _normalize_loose_json_text(text: str) -> str:
