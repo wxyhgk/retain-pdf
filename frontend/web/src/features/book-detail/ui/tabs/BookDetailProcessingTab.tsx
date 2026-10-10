@@ -25,6 +25,8 @@ import { useState } from "react";
 import type { BookDetailProcessingTabProps } from "./processing-tab-types.js";
 import { ChevronDown, LoaderCircle, Square } from "lucide-react";
 import { TranslationStageActions } from "../panels/translate/TranslationStageActions.jsx";
+import { EditorialFlowPanel } from "../panels/processing/EditorialFlowPanel.jsx";
+import { useEditorialFlow } from "../use-editorial-flow.js";
 
 function ScanIcon() {
   return (
@@ -69,6 +71,11 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   const translationItem = translation?.item || {};
   const translationJobId = `${translationItem.job_id || translationItem.active_job_id || ""}`.trim();
   const hasTranslationJob = Boolean(translationJobId) && !translationJobId.startsWith("doc:");
+  // 精修跑在渲染阶段里：翻译任务进入渲染后拉事件流，是编辑部精修就画流程图，不是就什么都不画。
+  const editorialFlow = useEditorialFlow(
+    translationJobId,
+    hasTranslationJob && Boolean(translation?.isActive) && liveStageKey(translationItem) === "render",
+  );
 
   // 「还不知道」不等于「确定没有」。这一段以前只让 loading 控制一行提示文案，
   // 下面整张流水线照旧渲染，于是 GET /documents/:id/jobs 还在路上的那几百毫秒，
@@ -281,6 +288,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
           translateWarning={!liveSource && facts.keptOriginBlocks > 0 ? `${facts.keptOriginBlocks} 块未能翻译` : ""}
           loading={bootstrapping}
         />}
+        <EditorialFlowPanel flow={editorialFlow} />
 
         {/* OCR 段只剩契约占位和错误：进度在顶部，实时说明在流水线的 OCR 站下面。 */}
         <div className="book-detail-processing-segment" data-processing-region="ocr">
