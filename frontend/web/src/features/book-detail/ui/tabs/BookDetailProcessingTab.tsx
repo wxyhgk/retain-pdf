@@ -71,11 +71,13 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   const translationItem = translation?.item || {};
   const translationJobId = `${translationItem.job_id || translationItem.active_job_id || ""}`.trim();
   const hasTranslationJob = Boolean(translationJobId) && !translationJobId.startsWith("doc:");
-  // 精修跑在渲染阶段里：翻译任务进入渲染后拉事件流，是编辑部精修就画流程图，不是就什么都不画。
-  const editorialFlow = useEditorialFlow(
-    translationJobId,
-    hasTranslationJob && Boolean(translation?.isActive) && liveStageKey(translationItem) === "render",
-  );
+  // 精修跑在渲染阶段里：任务在跑且进入渲染时轮询事件流；跑完 / 停下后读一次，照样画出最后一次精修。
+  // 是编辑部精修才画，不是就什么都不画。
+  const editorialFlow = useEditorialFlow(translationJobId, {
+    enabled: hasTranslationJob,
+    poll: Boolean(translation?.isActive) && liveStageKey(translationItem) === "render",
+    jobActive: Boolean(translation?.isActive),
+  });
 
   // 「还不知道」不等于「确定没有」。这一段以前只让 loading 控制一行提示文案，
   // 下面整张流水线照旧渲染，于是 GET /documents/:id/jobs 还在路上的那几百毫秒，
