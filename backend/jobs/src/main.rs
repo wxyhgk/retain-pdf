@@ -216,8 +216,16 @@ async fn run() -> Result<()> {
     }
 
     tracing::info!("retain-jobsd listening on {bind_host}:{port}");
-    axum::serve(listener, build_router(state))
-        .await
-        .context("serve")?;
+    tokio::select! {
+        served = axum::serve(listener, build_router(state)) => served.context("serve")?,
+        _ = retain_proc::wait_for_supervisor_exit() => {
+            // 监督者（rust_api）被强杀：没人再给我们派活，继续活着只会占住端口，
+            // 让下一次启动绑定失败。与被组杀时的 SIGTERM 同语义——立即退出，
+            // 不等运行时收尾（spawn_blocking 中的任务会让 runtime drop 卡住）。
+            // 残留的 worker 由下次启动的 reconcile_stale_running_jobs 回收。
+            tracing::warn!("supervisor process exited; retain-jobsd shutting down");
+            std::process::exit(0);
+        }
+    }
     Ok(())
 }

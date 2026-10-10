@@ -23,6 +23,12 @@ use anyhow::Result;
 use tokio::process::Command;
 use tokio::time::{sleep, Duration};
 
+mod supervisor_watch;
+pub use supervisor_watch::{
+    mark_supervised_child, supervisor_pid_from_env, wait_for_supervisor_exit, SUPERVISOR_PID_ENV,
+    SUPERVISOR_WATCH_INTERVAL,
+};
+
 #[cfg(unix)]
 pub fn configure_child_process(command: &mut Command) {
     unsafe {

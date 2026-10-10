@@ -6,10 +6,13 @@ import uvicorn
 
 from .app import build_app
 from .config import load_settings
+from .supervisor_watch import start_supervisor_watch
 
 
 def main() -> None:
     settings = load_settings()
+    # 被 rust_api 监督时随它退出,避免它被强杀后本进程成孤儿占着端口。
+    start_supervisor_watch()
     uvicorn.run(
         build_app(settings),
         host=settings.host,

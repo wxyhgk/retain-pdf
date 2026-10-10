@@ -1634,6 +1634,7 @@ dependencies = [
  "retain-core",
  "retain-data",
  "retain-jobs",
+ "retain-proc",
  "serde",
  "serde_json",
  "sha2",

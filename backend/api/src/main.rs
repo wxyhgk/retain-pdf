@@ -27,6 +27,29 @@ async fn run() -> anyhow::Result<()> {
 /// Resolve process termination to the graceful shutdown path so supervised
 /// children (jobsd, ai service, workers) are terminated instead of orphaned.
 /// On Windows this covers Ctrl-C / Ctrl-Break / console Close.
+///
+/// On Unix SIGTERM must be handled too: it is what `docker stop`, systemd and
+/// Electron's `ChildProcess.kill()` send, and its default action kills the
+/// process on the spot, leaving the supervised process groups orphaned.
+#[cfg(unix)]
+async fn shutdown_signal() {
+    use tokio::signal::unix::{signal, SignalKind};
+
+    match signal(SignalKind::terminate()) {
+        Ok(mut terminate) => {
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => {}
+                _ = terminate.recv() => tracing::info!("received SIGTERM, shutting down"),
+            }
+        }
+        Err(error) => {
+            tracing::warn!("failed to install SIGTERM handler: {error}");
+            let _ = tokio::signal::ctrl_c().await;
+        }
+    }
+}
+
+#[cfg(not(unix))]
 async fn shutdown_signal() {
     let _ = tokio::signal::ctrl_c().await;
 }
