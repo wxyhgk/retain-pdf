@@ -65,6 +65,9 @@ ESCALATE_ROUNDS = f"{chief_rules.MAX_ROUNDS} 轮后仍未解决"
 ESCALATE_BUDGET = "token 预算用完，没来得及处理"
 ESCALATE_NO_MODEL = "修订模型不可用"
 RULING_KEEP_TERM_BASE = "keep_term_base"
+# 审校、主编、修订各自同时发出的请求数。写回仍逐块串行。取得保守：小服务商（智谱默认并发 5）
+# 也扛得住，又比一批接一批快数倍。
+EDITORIAL_WORKERS = 4
 # 主编要多想一步：翻译设置是「自动」时，主编用中等思考深度；用户明确设了就照设置。
 CHIEF_DEFAULT_THINKING = "medium"
 
@@ -208,8 +211,9 @@ def _triage(
     progress: base._Progress,
     errors: list[dict[str, str]],
     round_no: int,
+    workers: int = 1,
 ) -> tuple[list[Decision], bool]:
-    """返回（每块的决定, 预算是否用完）。"""
+    """返回（每块的决定, 预算是否用完）。各批并发问主编，结果按批的顺序收。"""
     frames: dict[str, tuple[list[str], str]] = {}
     to_ask: list[dict[str, Any]] = []
     for item_id, findings in open_items.items():
@@ -224,26 +228,34 @@ def _triage(
     proposals: dict[str, dict[str, str]] = {}
     fallback: dict[str, str] = {}
     budget_hit = False
-    batches = [to_ask[i : i + chief_rules.CHIEF_BATCH_SIZE] for i in range(0, len(to_ask), chief_rules.CHIEF_BATCH_SIZE)]
+    size = chief_rules.CHIEF_BATCH_SIZE
+    batches = [to_ask[i : i + size] for i in range(0, len(to_ask), size)]
     progress.total += len(batches)
-    for index, batch in enumerate(batches, start=1):
+    if chat is None:
+        fallback.update({entry["item_id"]: "主编模型不可用，按规则默认处理" for entry in to_ask})
+        responses: list[tuple[str | None, BaseException | None]] = []
+    else:
+        responses = base.request_batches(
+            chat,
+            "chief",
+            [chief_rules.build_chief_messages(batch) for batch in batches],
+            response_format=chief_rules.CHIEF_RESPONSE_FORMAT,
+            workers=workers,
+            on_done=lambda done, total: progress.step("chief", f"编辑部：主编第 {round_no} 轮分流 {done}/{total} 批"),
+        )
+    for index, (batch, (content, failure)) in enumerate(zip(batches, responses), start=1):
         ids = [entry["item_id"] for entry in batch]
-        if chat is None or budget_hit:
-            reason = "token 预算用完，按规则默认处理" if budget_hit else "主编模型不可用，按规则默认处理"
-            fallback.update({item_id: reason for item_id in ids})
-            continue
-        try:
-            content = chat.request(
-                "chief", chief_rules.build_chief_messages(batch), response_format=chief_rules.CHIEF_RESPONSE_FORMAT
-            )
-            proposals.update(chief_rules.parse_chief_response(content))
-        except RefineBudgetExceeded:
+        if isinstance(failure, RefineBudgetExceeded):
             budget_hit = True
             fallback.update({item_id: "token 预算用完，按规则默认处理" for item_id in ids})
+            continue
+        try:
+            if failure is not None:
+                raise failure
+            proposals.update(chief_rules.parse_chief_response(content or ""))
         except Exception as exc:  # noqa: BLE001 - 主编这一批失败：这批按规则默认
             errors.append({"phase": "chief", "batch": f"{round_no}.{index}", "message": f"{type(exc).__name__}: {exc}"[:500]})
             fallback.update({item_id: "主编请求失败，按规则默认处理" for item_id in ids})
-        progress.step("chief", f"编辑部：主编第 {round_no} 轮分流 {index}/{len(batches)} 批")
     decisions = []
     for item_id in open_items:
         allowed, default = frames[item_id]
@@ -265,6 +277,71 @@ def _triage(
 # ---- 修订 ----------------------------------------------------------------------
 
 
+def _revise(
+    chat: RefineChat | None,
+    phase: str,
+    item_ids: list[str],
+    batch_size: int,
+    build_messages,
+    parse_response,
+    accept,
+    *,
+    pages: dict[int, list[dict]],
+    progress: base._Progress,
+    errors: list[dict[str, str]],
+    round_no: int,
+    label: str,
+    workers: int,
+    open_items: dict[str, list[review_rules.Finding]],
+) -> tuple[list[dict[str, Any]], bool]:
+    """局部改与整块重写共用的骨架：各批请求并发发出，答复按批的顺序逐块验收、写回（写回串行）。
+
+    请求是按发出时的译文组装的；同一批前面的块写回后，续接组的兄弟块可能已经变了——验收时
+    按当前页重新取块，对不上的编辑会被拒，和精修一致。
+    """
+    records: list[dict[str, Any]] = []
+    budget_hit = False
+    batches = [item_ids[i : i + batch_size] for i in range(0, len(item_ids), batch_size)]
+    progress.total += len(batches)
+    all_items, items_by_id = base._items_by_id(pages)
+    batch_items = [[items_by_id[item_id] for item_id in ids if item_id in items_by_id] for ids in batches]
+    if chat is None:
+        for items in batch_items:
+            records.extend(
+                base._mark(base._fix_record(item, open_items[item.item_id]), fix_rules.FIX_SKIPPED, fix_rules.SKIP_LLM_UNAVAILABLE)
+                for item in items
+            )
+        return records, False
+    prepared = [build_messages(items, all_items) for items in batch_items]
+    responses = base.request_batches(
+        chat,
+        phase,
+        [messages for messages, _extra in prepared],
+        response_format={"type": "json_object"},
+        workers=workers,
+        on_done=lambda done, total: progress.step(phase, f"编辑部：第 {round_no} 轮{label} {done}/{total} 批"),
+    )
+    for index, (items, (_messages, extra), (content, failure)) in enumerate(zip(batch_items, prepared, responses), start=1):
+        batch_records = [base._fix_record(item, open_items[item.item_id]) for item in items]
+        if isinstance(failure, RefineBudgetExceeded):
+            budget_hit = True
+            records.extend(base._mark(record, fix_rules.FIX_SKIPPED, fix_rules.SKIP_BUDGET) for record in batch_records)
+            continue
+        try:
+            if failure is not None:
+                raise failure
+            proposals = parse_response(content or "")
+        except Exception as exc:  # noqa: BLE001 - 单批失败只记下，这批块保留原译
+            errors.append({"phase": phase, "batch": f"{round_no}.{index}", "message": f"{type(exc).__name__}: {exc}"[:500]})
+            records.extend(base._mark(record, fix_rules.FIX_SKIPPED, fix_rules.SKIP_LLM_ERROR) for record in batch_records)
+            continue
+        for record in batch_records:
+            _items, current = base._items_by_id(pages)
+            item = current[record["item_id"]]
+            records.append(accept(record, item, proposals.get(item.item_id), extra))
+    return records, budget_hit
+
+
 def _patch(
     chat: RefineChat | None,
     item_ids: list[str],
@@ -277,21 +354,11 @@ def _patch(
     progress: base._Progress,
     errors: list[dict[str, str]],
     round_no: int,
+    workers: int = 1,
 ) -> tuple[list[dict[str, Any]], bool]:
-    records: list[dict[str, Any]] = []
-    budget_hit = False
-    batches = [item_ids[i : i + fix_rules.FIX_BATCH_SIZE] for i in range(0, len(item_ids), fix_rules.FIX_BATCH_SIZE)]
-    progress.total += len(batches)
-    for index, batch_ids in enumerate(batches, start=1):
-        _items, items_by_id = base._items_by_id(pages)
-        batch_items = [items_by_id[item_id] for item_id in batch_ids if item_id in items_by_id]
-        batch_records = [base._fix_record(item, open_items[item.item_id]) for item in batch_items]
-        if chat is None or budget_hit:
-            reason = fix_rules.SKIP_BUDGET if budget_hit else fix_rules.SKIP_LLM_UNAVAILABLE
-            records.extend(base._mark(record, fix_rules.FIX_SKIPPED, reason) for record in batch_records)
-            continue
+    def build(items: list[QaItem], _all_items) -> tuple[list[dict[str, str]], None]:
         payloads = []
-        for item in batch_items:
+        for item in items:
             no_growth = item.item_id in context["fit_constrained"]
             payload = fix_rules.fix_item_payload(
                 item,
@@ -303,32 +370,18 @@ def _patch(
             if notes.get(item.item_id):
                 payload["note"] = notes[item.item_id]
             payloads.append(payload)
-        try:
-            content = chat.request("fix", fix_rules.build_fix_messages(payloads), response_format=fix_rules.FIX_RESPONSE_FORMAT)
-            proposals = fix_rules.parse_fix_response(content)
-        except RefineBudgetExceeded:
-            budget_hit = True
-            records.extend(base._mark(record, fix_rules.FIX_SKIPPED, fix_rules.SKIP_BUDGET) for record in batch_records)
-            continue
-        except Exception as exc:  # noqa: BLE001 - 单批失败只记下，这批块保留原译
-            errors.append({"phase": "fix", "batch": f"{round_no}.{index}", "message": f"{type(exc).__name__}: {exc}"[:500]})
-            records.extend(base._mark(record, fix_rules.FIX_SKIPPED, fix_rules.SKIP_LLM_ERROR) for record in batch_records)
-            continue
-        for record in batch_records:
-            _items, items_by_id = base._items_by_id(pages)
-            item = items_by_id[record["item_id"]]
-            records.append(
-                base._try_fix_item(
-                    record=record,
-                    item=item,
-                    findings=open_items[item.item_id],
-                    proposal=proposals.get(item.item_id),
-                    pages=pages,
-                    context=context,
-                )
-            )
-        progress.step("patch", f"编辑部：第 {round_no} 轮局部修改 {index}/{len(batches)} 批")
-    return records, budget_hit
+        return fix_rules.build_fix_messages(payloads), None
+
+    def accept(record, item, proposal, _extra):
+        return base._try_fix_item(
+            record=record, item=item, findings=open_items[item.item_id], proposal=proposal, pages=pages, context=context
+        )
+
+    return _revise(
+        chat, "fix", item_ids, fix_rules.FIX_BATCH_SIZE, build, fix_rules.parse_fix_response, accept,
+        pages=pages, progress=progress, errors=errors, round_no=round_no, label="局部修改",
+        workers=workers, open_items=open_items,
+    )
 
 
 def _rewrite(
@@ -344,24 +397,13 @@ def _rewrite(
     progress: base._Progress,
     errors: list[dict[str, str]],
     round_no: int,
+    workers: int = 1,
 ) -> tuple[list[dict[str, Any]], bool]:
-    records: list[dict[str, Any]] = []
-    budget_hit = False
-    size = rewrite_rules.REWRITE_BATCH_SIZE
-    batches = [item_ids[i : i + size] for i in range(0, len(item_ids), size)]
-    progress.total += len(batches)
-    for index, batch_ids in enumerate(batches, start=1):
-        all_items, items_by_id = base._items_by_id(pages)
+    def build(items: list[QaItem], all_items) -> tuple[list[dict[str, str]], dict[str, int]]:
         neighbors = base._neighbors(all_items)
-        batch_items = [items_by_id[item_id] for item_id in batch_ids if item_id in items_by_id]
-        batch_records = [base._fix_record(item, open_items[item.item_id]) for item in batch_items]
-        if chat is None or budget_hit:
-            reason = fix_rules.SKIP_BUDGET if budget_hit else fix_rules.SKIP_LLM_UNAVAILABLE
-            records.extend(base._mark(record, fix_rules.FIX_SKIPPED, reason) for record in batch_records)
-            continue
         budgets: dict[str, int] = {}
         payloads = []
-        for item in batch_items:
+        for item in items:
             no_growth = item.item_id in context["fit_constrained"]
             budgets[item.item_id] = rewrite_rules.rewrite_length_budget(item, open_items[item.item_id], no_growth=no_growth)
             before, after = neighbors.get(item.item_id, (None, None))
@@ -376,43 +418,28 @@ def _rewrite(
                     context_after=after.protected_translated if after else "",
                 )
             )
-        try:
-            content = chat.request(
-                "rewrite",
-                rewrite_rules.build_rewrite_messages(payloads, style_notes=style_notes),
-                response_format=rewrite_rules.REWRITE_RESPONSE_FORMAT,
-            )
-            proposals = rewrite_rules.parse_rewrite_response(content)
-        except RefineBudgetExceeded:
-            budget_hit = True
-            records.extend(base._mark(record, fix_rules.FIX_SKIPPED, fix_rules.SKIP_BUDGET) for record in batch_records)
-            continue
-        except Exception as exc:  # noqa: BLE001
-            errors.append({"phase": "rewrite", "batch": f"{round_no}.{index}", "message": f"{type(exc).__name__}: {exc}"[:500]})
-            records.extend(base._mark(record, fix_rules.FIX_SKIPPED, fix_rules.SKIP_LLM_ERROR) for record in batch_records)
-            continue
-        for record in batch_records:
-            _items, items_by_id = base._items_by_id(pages)
-            item = items_by_id[record["item_id"]]
-            proposal = proposals.get(item.item_id)
-            if proposal is None:
-                records.append(base._mark(record, fix_rules.FIX_SKIPPED, fix_rules.SKIP_NO_EDIT))
-                continue
-            record["note"] = proposal["note"]
-            records.append(
-                base.accept_candidate(
-                    record=record,
-                    item=item,
-                    findings=open_items[item.item_id],
-                    after=proposal["translation"],
-                    budget=budgets[item.item_id],
-                    no_growth=item.item_id in context["fit_constrained"],
-                    pages=pages,
-                    context=context,
-                )
-            )
-        progress.step("rewrite", f"编辑部：第 {round_no} 轮整块重写 {index}/{len(batches)} 批")
-    return records, budget_hit
+        return rewrite_rules.build_rewrite_messages(payloads, style_notes=style_notes), budgets
+
+    def accept(record, item, proposal, budgets):
+        if proposal is None:
+            return base._mark(record, fix_rules.FIX_SKIPPED, fix_rules.SKIP_NO_EDIT)
+        record["note"] = proposal["note"]
+        return base.accept_candidate(
+            record=record,
+            item=item,
+            findings=open_items[item.item_id],
+            after=proposal["translation"],
+            budget=budgets[item.item_id],
+            no_growth=item.item_id in context["fit_constrained"],
+            pages=pages,
+            context=context,
+        )
+
+    return _revise(
+        chat, "rewrite", item_ids, rewrite_rules.REWRITE_BATCH_SIZE, build, rewrite_rules.parse_rewrite_response, accept,
+        pages=pages, progress=progress, errors=errors, round_no=round_no, label="整块重写",
+        workers=workers, open_items=open_items,
+    )
 
 
 def _still_open_after_change(
@@ -556,6 +583,7 @@ def run_editorial(
             progress=progress,
             errors=errors,
             reviewed_ids=reviewed_ids,
+            workers=EDITORIAL_WORKERS,
         )
         if chats["review"] is None and candidates:
             review_stopped = report_rules.STOP_LLM_UNAVAILABLE
@@ -631,7 +659,8 @@ def run_editorial(
         _items, items_by_id = base._items_by_id(pages)
         progress.transition("chief", f"编辑部：第 {round_no} 轮，主编分流 {len(open_items)} 块", {"round": round_no})
         decisions, budget_hit = _triage(
-            chats["chief"], open_items, attempts, items_by_id, progress=progress, errors=errors, round_no=round_no
+            chats["chief"], open_items, attempts, items_by_id, progress=progress, errors=errors, round_no=round_no,
+            workers=EDITORIAL_WORKERS,
         )
         decisions_all.extend(decisions)
         notes = {decision.item_id: decision.note for decision in decisions}
@@ -653,7 +682,7 @@ def run_editorial(
         if patch_ids:
             patched, hit = _patch(
                 chats["fix"], patch_ids, open_items, notes, pages=pages, locked_terms=locked_terms,
-                context=context, progress=progress, errors=errors, round_no=round_no,
+                context=context, progress=progress, errors=errors, round_no=round_no, workers=EDITORIAL_WORKERS,
             )
             for record in patched:
                 record["action"] = chief_rules.ACTION_PATCH
@@ -663,6 +692,7 @@ def run_editorial(
             rewritten, hit = _rewrite(
                 chats["rewrite"], rewrite_ids, open_items, notes, pages=pages, locked_terms=locked_terms,
                 style_notes=style_notes, context=context, progress=progress, errors=errors, round_no=round_no,
+                workers=EDITORIAL_WORKERS,
             )
             for record in rewritten:
                 record["action"] = chief_rules.ACTION_REWRITE

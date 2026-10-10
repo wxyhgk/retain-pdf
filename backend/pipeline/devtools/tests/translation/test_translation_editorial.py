@@ -296,3 +296,78 @@ def test_source_text_of_the_omission_reaches_the_rewriter(tmp_path: Path) -> Non
     assert item["source"] == B001_SOURCE
     assert item["max_chars"] >= len(B001_SOURCE), "补整句漏译要给够长度"
     assert item["context_after"].startswith("在 289 K")
+
+
+class ContentAwareModel:
+    """按请求内容作答、不看先后顺序：并发时谁先回来都一样。请求之间随机停顿，打乱完成顺序。"""
+
+    def __init__(self) -> None:
+        import threading
+
+        self.lock = threading.Lock()
+        self.purposes: list[str] = []
+
+    def __call__(self, messages, *, purpose, response_format=None):
+        import random
+        import time
+
+        time.sleep(random.uniform(0, 0.02))
+        with self.lock:
+            self.purposes.append(purpose)
+        items = json.loads(messages[-1]["content"]).get("items", [])
+        if purpose == "review":
+            body = {"findings": []}
+        elif purpose == "chief":
+            body = {"decisions": [{"item_id": row["item_id"], "action": "rewrite" if "rewrite" in row["allowed_actions"] else row["default_action"], "reason": "r", "note": "n"} for row in items]}
+        elif purpose == "rewrite":
+            fixed = {"p001-b001": B001_FULL, "p001-b002": B002_FIXED}
+            body = {"rewrites": [{"item_id": row["item_id"], "translation": fixed[row["item_id"]], "note": ""} for row in items if row["item_id"] in fixed]}
+        else:
+            body = {"fixes": []}
+        return ChatResult(content=json.dumps(body, ensure_ascii=False), usage={"prompt_tokens": 7, "completion_tokens": 3, "total_tokens": 10})
+
+
+def test_concurrent_batches_give_the_same_result_as_one_by_one(tmp_path: Path, monkeypatch) -> None:
+    from retainpdf_pipeline.translate.services.editorial import chief as chief_rules
+    from retainpdf_pipeline.translate.services.editorial import rewrite as rewrite_rules
+
+    monkeypatch.setattr(chief_rules, "CHIEF_BATCH_SIZE", 1)
+    monkeypatch.setattr(rewrite_rules, "REWRITE_BATCH_SIZE", 1)
+    monkeypatch.setattr(editorial, "EDITORIAL_WORKERS", 4)
+    model = ContentAwareModel()
+    report, translated = _run(tmp_path, model)
+
+    assert model.purposes.count("chief") == 2 and model.purposes.count("rewrite") == 2
+    assert _item(translated, "p001-b001")["translated_text"] == B001_FULL
+    assert _item(translated, "p001-b002")["translated_text"] == B002_FIXED
+    assert [fix["item_id"] for fix in report["fixes"]] == ["p001-b001", "p001-b002"], "结果按块的顺序记录"
+    assert report["token_usage"]["requests"] == 5
+    assert report["token_usage"]["total_tokens"] == 50
+    _assert_checkpoint_consistent(translated)
+    _assert_matches_contract(report)
+
+
+def test_concurrent_provider_calls_keep_their_own_token_usage(monkeypatch) -> None:
+    import threading
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+
+    from retainpdf_pipeline.translate.artifacts.aggregator import get_active_translation_run_diagnostics
+    from retainpdf_pipeline.translate.services.refine import llm
+
+    barrier = threading.Barrier(4)
+
+    def fake_request(messages, **kwargs):
+        size = int(messages[0]["content"])
+        barrier.wait(timeout=5)  # 四个请求同时在途
+        time.sleep(0.01 * (4 - size))
+        get_active_translation_run_diagnostics().record_token_usage(
+            {"prompt_tokens": size, "completion_tokens": size, "total_tokens": 2 * size}
+        )
+        return "ok"
+
+    monkeypatch.setattr(llm, "request_chat_content", fake_request)
+    chat = llm.provider_chat_fn(model="m", base_url="https://x.invalid/v1", api_key="k")
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(lambda n: chat([{"role": "user", "content": str(n)}], purpose="review"), [1, 2, 3, 4]))
+    assert [result.usage["total_tokens"] for result in results] == [2, 4, 6, 8]

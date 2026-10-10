@@ -11,13 +11,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 from dataclasses import dataclass
 from dataclasses import field
 from typing import Any, Callable
 
 from retainpdf_pipeline.translate.artifacts.aggregator import TranslationRunDiagnostics
 from retainpdf_pipeline.translate.artifacts.aggregator import normalize_token_usage
-from retainpdf_pipeline.translate.artifacts.aggregator import translation_run_diagnostics_scope
+from retainpdf_pipeline.translate.artifacts.aggregator import thread_translation_run_diagnostics_scope
 from retainpdf_pipeline.translate.llm.shared.executor_context import unit_scope
 from retainpdf_pipeline.translate.llm.shared.provider_runtime import request_chat_content
 
@@ -60,6 +61,7 @@ class TokenLedger:
     completion_tokens: int = 0
     total_tokens: int = 0
     by_phase: dict[str, dict[str, int]] = field(default_factory=dict)
+    lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
 
     def would_exceed(self, messages: list[dict[str, str]]) -> bool:
         if self.max_tokens <= 0:
@@ -139,7 +141,7 @@ def provider_chat_fn(
         digest = hashlib.sha256(
             json.dumps([purpose, messages], ensure_ascii=False, sort_keys=True).encode("utf-8")
         ).hexdigest()
-        with translation_run_diagnostics_scope(diagnostics), unit_scope(f"refine_{purpose}", [digest]):
+        with thread_translation_run_diagnostics_scope(diagnostics), unit_scope(f"refine_{purpose}", [digest]):
             content = request_chat_content(
                 messages,
                 api_key=api_key,
@@ -166,6 +168,8 @@ class RefineChat:
     def __init__(self, chat_fn: ChatFn, ledger: TokenLedger) -> None:
         self._chat_fn = chat_fn
         self.ledger = ledger
+        # 编辑部会从多个线程发请求：预算检查和记账要串行（同一本账共用一把锁），请求本身不锁。
+        self._lock = ledger.lock
 
     def request(
         self,
@@ -174,10 +178,12 @@ class RefineChat:
         *,
         response_format: dict | None = None,
     ) -> str:
-        if self.ledger.exhausted or self.ledger.would_exceed(messages):
-            raise RefineBudgetExceeded(phase)
+        with self._lock:
+            if self.ledger.exhausted or self.ledger.would_exceed(messages):
+                raise RefineBudgetExceeded(phase)
         result = _coerce_result(self._chat_fn(messages, purpose=phase, response_format=response_format))
-        self.ledger.record(phase, messages, result.content, result.usage)
+        with self._lock:
+            self.ledger.record(phase, messages, result.content, result.usage)
         return result.content
 
 

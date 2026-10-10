@@ -11,7 +11,9 @@
 from __future__ import annotations
 
 import json
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Mapping
@@ -243,8 +245,12 @@ def _run_review(
     progress: _Progress,
     errors: list[dict[str, str]],
     reviewed_ids: set[str],
+    workers: int = 1,
 ) -> tuple[list[review_rules.Finding], str | None]:
-    """挑错。真正审过的块记进 ``reviewed_ids``（失败的批不算），用来算还剩多少没审、从哪页接着。"""
+    """挑错。真正审过的块记进 ``reviewed_ids``（失败的批不算），用来算还剩多少没审、从哪页接着。
+
+    ``workers`` > 1 时各批的请求并发发出，结果仍按批的顺序逐个处理——报告、编号与顺序执行完全一致。
+    """
     if chat is None or not candidates:
         return [], None
     neighbors = _neighbors(all_items)
@@ -266,10 +272,18 @@ def _run_review(
     seen: set[tuple[str, str, str]] = set()
     findings: list[review_rules.Finding] = []
     stopped: str | None = None
-    for index, batch in enumerate(batches, start=1):
-        messages = review_rules.build_review_messages(batch, style_notes=style_notes)
+    responses = request_batches(
+        chat,
+        "review",
+        [review_rules.build_review_messages(batch, style_notes=style_notes) for batch in batches],
+        response_format=review_rules.REVIEW_RESPONSE_FORMAT,
+        workers=workers,
+        on_done=lambda done, total: progress.step("review", f"精修：挑错已完成 {done}/{total} 批"),
+    )
+    for index, (batch, (content, failure)) in enumerate(zip(batches, responses), start=1):
         try:
-            content = chat.request("review", messages, response_format=review_rules.REVIEW_RESPONSE_FORMAT)
+            if failure is not None:
+                raise failure
         except RefineBudgetExceeded:
             stopped = report_rules.STOP_MAX_TOKENS
             break
@@ -277,7 +291,6 @@ def _run_review(
             stats.batch_count += 1
             stats.failed_batch_count += 1
             errors.append({"phase": "review", "batch": str(index), "message": f"{type(exc).__name__}: {exc}"[:500]})
-            progress.step("review", f"精修：挑错第 {index}/{len(batches)} 批失败")
             continue
         stats.batch_count += 1
         stats.reviewed_item_count += len(batch)
@@ -293,17 +306,54 @@ def _run_review(
                 raw, items_by_id=items_by_id, stats=stats, next_id=next_id, seen=seen
             )
         )
-        progress.step(
-            "review",
-            f"精修：挑错 {index}/{len(batches)} 批，已发现 {len(findings)} 处",
-            {"findings": len(findings)},
-        )
     if stopped is None and stats.batch_count and stats.failed_batch_count == stats.batch_count:
         stopped = report_rules.STOP_LLM_ERROR
     return findings, stopped
 
 
 # ---- 定点修改 ------------------------------------------------------------------
+
+
+def request_batches(
+    chat: RefineChat,
+    phase: str,
+    messages_list: list[list[dict[str, str]]],
+    *,
+    response_format: dict | None,
+    workers: int = 1,
+    on_done: Callable[[int, int], None] | None = None,
+) -> list[tuple[str | None, BaseException | None]]:
+    """按批发请求，返回与输入同序的（内容, 异常）。``workers`` > 1 时并发。
+
+    预算用完（RefineBudgetExceeded）之后的批不再发出，同样记成预算用完。每批请求结束（成败都算）
+    调一次 ``on_done(已结束批数, 总批数)``，用来发进度；回调之间串行。
+    """
+    results: list[tuple[str | None, BaseException | None]] = [(None, None)] * len(messages_list)
+    lock = threading.Lock()
+    finished = 0
+
+    def run(index: int) -> None:
+        nonlocal finished
+        try:
+            results[index] = (chat.request(phase, messages_list[index], response_format=response_format), None)
+        except Exception as exc:  # noqa: BLE001 - 交给调用方逐批处理
+            results[index] = (None, exc)
+        with lock:
+            finished += 1
+            if on_done is not None:
+                on_done(finished, len(messages_list))
+
+    if workers <= 1 or len(messages_list) <= 1:
+        for index in range(len(messages_list)):
+            run(index)
+            if isinstance(results[index][1], RefineBudgetExceeded):
+                for rest in range(index + 1, len(messages_list)):
+                    results[rest] = (None, RefineBudgetExceeded(phase))
+                break
+        return results
+    with ThreadPoolExecutor(max_workers=min(workers, len(messages_list))) as executor:
+        list(executor.map(run, range(len(messages_list))))
+    return results
 
 
 def _fix_record(item: QaItem, findings: list[review_rules.Finding]) -> dict[str, Any]:

@@ -18,6 +18,9 @@ from .request_journal import TranslationRequestJournal
 
 _ACTIVE_RUN_LOCK = threading.RLock()
 _ACTIVE_RUN: "TranslationRunDiagnostics | None" = None
+# 只对当前线程生效的诊断对象：精修 / 编辑部并发发请求时，每个请求要把用量记到自己的对象上，
+# 不能共用进程级的那一个。设了就优先于进程级的。
+_THREAD_RUN = threading.local()
 _REQUEST_REQ_SUFFIX_RE = re.compile(r"\s+req#\d+\b")
 
 
@@ -60,8 +63,22 @@ def infer_stage_from_request_label(request_label: str) -> str:
 
 
 def get_active_translation_run_diagnostics() -> "TranslationRunDiagnostics | None":
+    thread_run = getattr(_THREAD_RUN, "run", None)
+    if thread_run is not None:
+        return thread_run
     with _ACTIVE_RUN_LOCK:
         return _ACTIVE_RUN
+
+
+@contextmanager
+def thread_translation_run_diagnostics_scope(run: "TranslationRunDiagnostics"):
+    """只在当前线程里把 ``run`` 设为活动诊断对象（并发的单次请求记账用）。"""
+    previous = getattr(_THREAD_RUN, "run", None)
+    _THREAD_RUN.run = run
+    try:
+        yield run
+    finally:
+        _THREAD_RUN.run = previous
 
 
 @contextmanager
