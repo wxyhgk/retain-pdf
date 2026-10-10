@@ -149,14 +149,22 @@ impl Db {
 
     pub fn get_job(&self, job_id: &str) -> Result<JobSnapshot> {
         let conn = self.connect()?;
-        let job = conn
-            .query_row(
-                &format!("{JOB_SELECT_SQL} WHERE jobs.job_id = ?1"),
-                params![job_id],
-                row_to_job_snapshot,
-            )
-            .with_context(|| format!("job not found: {job_id}"))?;
-        Ok(job)
+        // 「没有这条记录」和「有记录但读不出来」要分开报：后者通常是进程版本比写入方旧（新任务带了
+        // 它不认识的字段），报成 not found 会让人去查错地方。
+        match conn.query_row(
+            &format!("{JOB_SELECT_SQL} WHERE jobs.job_id = ?1"),
+            params![job_id],
+            row_to_job_snapshot,
+        ) {
+            Ok(job) => Ok(job),
+            // 保留原始错误：调用方按 QueryReturnedNoRows 判 404。
+            Err(error @ rusqlite::Error::QueryReturnedNoRows) => {
+                Err(error).with_context(|| format!("job not found: {job_id}"))
+            }
+            Err(error) => Err(error).with_context(|| {
+                format!("job {job_id} exists but could not be read (is this process older than the one that wrote it?)")
+            }),
+        }
     }
 
     pub fn list_jobs(
