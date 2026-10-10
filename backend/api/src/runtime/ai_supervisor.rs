@@ -19,7 +19,7 @@ use tokio::sync::watch;
 use tokio::task::JoinHandle;
 
 use crate::config::{AiServiceConfig, AppConfig};
-use crate::process::{configure_child_process, terminate_job_process_tree};
+use crate::process::{configure_child_process, mark_supervised_child, terminate_job_process_tree};
 use crate::runtime::probe_client::build_probe_client;
 
 pub const AI_STATUS_DISABLED: u8 = 0;
@@ -79,6 +79,8 @@ fn spawn_child(app: &AppConfig, ai: &AiServiceConfig) -> std::io::Result<Child> 
     // 自成进程组：terminate_job_process_tree 是组杀（kill(-pid)）——不建组
     // 则组杀落空、child.wait 永等（监督器 shutdown 悬挂，集成测试实证）
     configure_child_process(&mut command);
+    // 自成进程组后 rust_api 被 SIGKILL 时信号到不了子进程；靠它自己发现监督者没了而退出
+    mark_supervised_child(&mut command);
     if let Some(cwd) = &ai.cwd {
         command.current_dir(cwd);
     }

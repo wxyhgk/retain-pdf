@@ -12,7 +12,7 @@ use tokio::sync::watch;
 use tokio::task::JoinHandle;
 
 use crate::config::AppConfig;
-use crate::process::{configure_child_process, terminate_job_process_tree};
+use crate::process::{configure_child_process, mark_supervised_child, terminate_job_process_tree};
 use crate::runtime::probe_client::build_probe_client;
 
 pub const JOBSD_STATUS_DISABLED: u8 = 0;
@@ -72,6 +72,8 @@ fn spawn_child(app: &AppConfig) -> std::io::Result<Child> {
         &app.provider_runtime.ocr_provider_config_path,
     );
     configure_child_process(&mut cmd);
+    // 自成进程组后 rust_api 被 SIGKILL 时信号到不了子进程；靠它自己发现监督者没了而退出
+    mark_supervised_child(&mut cmd);
     if let Some(cwd) = &app.jobs_service.cwd {
         cmd.current_dir(cwd);
     }

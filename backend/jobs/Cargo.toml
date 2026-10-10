@@ -11,6 +11,7 @@ path = "src/main.rs"
 retain-core = { path = "../packages/retain-core" }
 retain-data = { path = "../packages/retain-data" }
 retain-jobs = { path = "../packages/retain-jobs" }
+retain-proc = { path = "../packages/retain-proc" }
 anyhow = "1"
 axum = "0.7"
 serde = { version = "1", features = ["derive"] }
