@@ -65,6 +65,7 @@ from retainpdf_pipeline.translate.workflow import refine as base
 
 ESCALATE_LIMIT = "达到修改次数上限，仍未解决"
 ESCALATE_ROUNDS = f"{chief_rules.MAX_ROUNDS} 轮后仍未解决"
+ESCALATE_RECHECK = "改过之后审校复核仍发现问题"
 ESCALATE_BUDGET = "token 预算用完，没来得及处理"
 ESCALATE_NO_MODEL = "修订模型不可用"
 RULING_KEEP_TERM_BASE = "keep_term_base"
@@ -337,6 +338,54 @@ def _settle_term_disputes(
         rows.append({**change, "applied_item_ids": applied})
     section["term_changes"] = rows
     return fixes, findings, escalations
+
+
+def _recheck(
+    chat: RefineChat | None,
+    item_ids: list[str],
+    *,
+    pages: dict[int, list[dict]],
+    locked_terms,
+    style_notes: str,
+    next_id: base._Ids,
+    progress: base._Progress,
+    errors: list[dict[str, str]],
+    round_no: int,
+    ledger: EditorialLedger,
+    recheck: dict[str, Any],
+) -> tuple[list[review_rules.Finding], bool]:
+    """改过的块交回审校复核。只要要修的问题（critical / major）；和术语表冲突的意见丢掉（本轮已裁决过）。"""
+    if chat is None or not item_ids:
+        return [], False
+    all_items, items_by_id = base._items_by_id(pages)
+    candidates = [items_by_id[item_id] for item_id in item_ids if item_id in items_by_id]
+    stats = review_rules.ReviewStats(candidate_item_count=len(candidates))
+    reviewed: set[str] = set()
+    progress.transition("recheck", f"编辑部：审校复核第 {round_no} 轮改过的 {len(candidates)} 块", {"round": round_no})
+    findings, stopped = base._run_review(
+        chat=chat,
+        candidates=candidates,
+        all_items=all_items,
+        locked_terms=locked_terms,
+        style_notes=style_notes,
+        qa_flags={},
+        stats=stats,
+        next_id=next_id,
+        progress=progress,
+        errors=errors,
+        reviewed_ids=reviewed,
+        workers=EDITORIAL_WORKERS,
+    )
+    findings, _disputes = _term_disputes(findings, items_by_id, locked_terms)
+    findings = [finding for finding in findings if finding.fixable]
+    recheck["item_ids"].update(reviewed)
+    recheck["findings"].extend(findings)
+    for finding in findings:
+        ledger.append(
+            KIND_ISSUE_OPEN, actor=ROLE_REVIEWER, to=ROLE_CHIEF, refs=[finding.item_id],
+            finding=finding.as_dict(), recheck_round=round_no,
+        )
+    return findings, stopped == report_rules.STOP_MAX_TOKENS
 
 
 # ---- 主编分流 ------------------------------------------------------------------
@@ -816,6 +865,7 @@ def run_editorial(
                     attempts[item_id].record(record["action"], str(record.get("status", "")), str(record.get("reason", "")))
     fixes: list[dict[str, Any]] = list(rule_fixes)
     decisions_all: list[Decision] = []
+    recheck: dict[str, Any] = {"item_ids": set(), "findings": []}
     escalated: dict[str, str] = dict(term_escalations)
     for item_id in term_escalations:
         open_items.pop(item_id, None)
@@ -885,6 +935,30 @@ def run_editorial(
                     open_items[item_id] = remaining
                 else:
                     open_items.pop(item_id, None)
+            if not budget_hit:
+                # 审校复核：改过的块交回审校再看一遍；新发现的问题进下一轮，最后一轮之后的交给人。
+                new_findings, recheck_hit = _recheck(
+                    chats["review"],
+                    sorted(applied_ids, key=lambda item_id: order.get(item_id, 0)),
+                    pages=pages,
+                    locked_terms=locked_terms,
+                    style_notes=style_notes,
+                    next_id=next_id,
+                    progress=progress,
+                    errors=errors,
+                    round_no=round_no,
+                    ledger=ledger,
+                    recheck=recheck,
+                )
+                budget_hit = budget_hit or recheck_hit
+                for finding in new_findings:
+                    open_items.setdefault(finding.item_id, []).append(finding)
+                    attempts.setdefault(finding.item_id, Attempts())
+                    if round_no >= chief_rules.MAX_ROUNDS:
+                        escalated.setdefault(finding.item_id, f"{ESCALATE_RECHECK}：{finding.explanation[:80]}")
+                if round_no >= chief_rules.MAX_ROUNDS:
+                    for finding in new_findings:
+                        open_items.pop(finding.item_id, None)
         if budget_hit:
             stopped = report_rules.STOP_MAX_TOKENS
     for item_id in list(open_items):
@@ -899,7 +973,7 @@ def run_editorial(
         escalated[item_id] = reason
     _items, items_by_id = base._items_by_id(pages)
     all_findings_by_item: dict[str, list[review_rules.Finding]] = {}
-    for finding in findings:
+    for finding in [*findings, *recheck["findings"]]:
         all_findings_by_item.setdefault(finding.item_id, []).append(finding)
     escalated_rows = []
     for item_id, reason in escalated.items():
@@ -922,6 +996,15 @@ def run_editorial(
         "by_action": dict(sorted(Counter(decision.action for decision in decisions_all).items())),
         "by_source": dict(sorted(Counter(decision.source for decision in decisions_all).items())),
         "overridden": sum(1 for decision in decisions_all if decision.overridden),
+    }
+
+    if recheck["findings"]:
+        finding_rows = [*finding_rows, *(finding.as_dict() for finding in recheck["findings"])]
+        report["review"]["findings"] = finding_rows
+        report["review"]["summary"] = report_rules.findings_summary(finding_rows)
+    section["recheck"] = {
+        "item_count": len(recheck["item_ids"]),
+        "finding_count": len(recheck["findings"]),
     }
 
     # 5. 报告。

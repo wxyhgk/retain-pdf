@@ -382,6 +382,16 @@
             }
           }
         },
+        "recheck": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Blocks changed by the reviser and sent back to the reviewer, and the critical / major problems the re-check found.",
+          "required": ["item_count", "finding_count"],
+          "properties": {
+            "item_count": {"type": "integer", "minimum": 0},
+            "finding_count": {"type": "integer", "minimum": 0}
+          }
+        },
         "term_changes": {
           "type": "array",
           "description": "Term base changes made by the term specialist in this run (including compound terms that followed), and the blocks unified by rule.",

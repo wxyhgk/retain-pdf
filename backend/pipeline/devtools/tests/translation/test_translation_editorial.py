@@ -114,7 +114,9 @@ def test_chief_routes_blocks_and_the_reviser_rewrites_an_omission(tmp_path: Path
     report, translated = _run(tmp_path, model)
 
     assert report["mode"] == "editorial"
-    assert model.purposes() == ["review", "chief", "fix", "rewrite"]
+    # 最后一个 review 是审校复核改过的两块。
+    assert model.purposes() == ["review", "chief", "fix", "rewrite", "review"]
+    assert sorted(item["item_id"] for item in model.payload("review", 1)["items"]) == ["p001-b001", "p001-b002"]
     # 主编只看问题清单，不看全文；拿到的是规则框。
     chief_items = {row["item_id"]: row for row in model.payload("chief")["items"]}
     assert "translation" not in chief_items["p001-b001"] and "source" not in chief_items["p001-b001"]
@@ -274,7 +276,8 @@ def test_an_interrupted_run_resumes_without_reviewing_again(tmp_path: Path, monk
     )
     report, translated = _run(tmp_path, second, translated=translated)
 
-    assert "review" not in second.purposes(), "续跑复用台账里的问题单，不重复审校"
+    assert second.purposes()[0] == "chief", "续跑复用台账里的问题单，不重复审校"
+    assert second.purposes().count("review") == 1, "只剩复核改过的块"
     assert report["editorial"]["resumed"] is True
     assert report["editorial"]["run_id"] == failed["editorial"]["run_id"]
     assert _item(translated, "p001-b001")["translated_text"] == B001_FULL
@@ -345,8 +348,9 @@ def test_concurrent_batches_give_the_same_result_as_one_by_one(tmp_path: Path, m
     assert _item(translated, "p001-b001")["translated_text"] == B001_FULL
     assert _item(translated, "p001-b002")["translated_text"] == B002_FIXED
     assert [fix["item_id"] for fix in report["fixes"]] == ["p001-b001", "p001-b002"], "结果按块的顺序记录"
-    assert report["token_usage"]["requests"] == 5
-    assert report["token_usage"]["total_tokens"] == 50
+    # 审校 1 + 主编 2 + 重写 2 + 复核 1。
+    assert report["token_usage"]["requests"] == 6
+    assert report["token_usage"]["total_tokens"] == 60
     _assert_checkpoint_consistent(translated)
     _assert_matches_contract(report)
 
@@ -453,3 +457,54 @@ def test_user_glossary_terms_are_never_put_up_for_change(tmp_path: Path) -> None
 
     assert "terms" not in model.purposes()
     assert [row["ruling"] for row in report["editorial"]["disputes"]] == ["keep_term_base"]
+
+
+
+def test_problems_the_recheck_finds_go_into_the_next_round(tmp_path: Path) -> None:
+    after_rewrite = B001_FULL
+    model = EditorialModel(
+        review=[
+            {"findings": []},
+            # 复核：重写后的 b001 有一处错译。
+            {"findings": [{
+                "item_id": "p001-b001", "category": "mistranslation", "severity": "major",
+                "target_span": "彼此从不交叉", "source_span": "never cross each other",
+                "explanation": "语气过重", "suggestion": "互不交叉",
+            }]},
+            {"findings": []},
+        ],
+        chief=[_decide(("p001-b001", "rewrite"), ("p001-b002", "escalate")), _decide(("p001-b001", "patch"))],
+        rewrite=[{"rewrites": [{"item_id": "p001-b001", "translation": after_rewrite, "note": ""}]}],
+        fix=[{"fixes": [{"item_id": "p001-b001", "edits": [{"op": "replace", "find": "而且彼此从不交叉", "replace": "且互不交叉"}]}]}],
+    )
+    report, translated = _run(tmp_path, model)
+
+    assert _item(translated, "p001-b001")["translated_text"] == B001_TEXT + "它的能级等间距，且互不交叉。"
+    assert [(fix["round"], fix["action"], fix["status"]) for fix in _fixes(report, "p001-b001")] == [
+        (1, "rewrite", "applied"), (2, "patch", "applied"),
+    ]
+    second_round = model.payload("chief", 1)["items"][0]
+    assert [issue["explanation"] for issue in second_round["issues"]] == ["语气过重"]
+    assert report["editorial"]["recheck"] == {"item_count": 1, "finding_count": 1}
+    assert any(row["explanation"] == "语气过重" for row in report["review"]["findings"])
+    _assert_matches_contract(report)
+
+
+def test_a_problem_found_after_the_last_round_is_left_for_a_person(tmp_path: Path) -> None:
+    bad = {"findings": [{
+        "item_id": "p001-b001", "category": "mistranslation", "severity": "major",
+        "target_span": "彼此从不交叉", "source_span": "never cross", "explanation": "仍不准确", "suggestion": "",
+    }]}
+    model = EditorialModel(
+        # 第一轮局部改没改成，不复核；第二轮重写后复核发现问题。
+        review=[{"findings": []}, bad],
+        chief=[_decide(("p001-b001", "patch"), ("p001-b002", "escalate")), _decide(("p001-b001", "rewrite"))],
+        fix=[{"fixes": []}],
+        rewrite=[{"rewrites": [{"item_id": "p001-b001", "translation": B001_FULL, "note": ""}]}],
+    )
+    report, _ = _run(tmp_path, model)
+
+    escalated = {row["item_id"]: row for row in report["editorial"]["escalated"]}
+    assert escalated["p001-b001"]["reason"].startswith(editorial.ESCALATE_RECHECK)
+    assert "mistranslation" in escalated["p001-b001"]["categories"]
+    _assert_matches_contract(report)
