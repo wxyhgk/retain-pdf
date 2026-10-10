@@ -165,3 +165,4 @@ fn a_changed_file_is_reparsed() {
     assert_eq!(query("job", "revisions", &roots, &params(&[])).unwrap().total, 4);
 }
 
+
