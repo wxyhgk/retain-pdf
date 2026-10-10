@@ -24,6 +24,9 @@
   display: inline-flex;
   width: fit-content;
   max-width: calc(100% - 48px);
+  /* 六个页签在窄屏放不下时横向滑动，不挤压文字。 */
+  overflow-x: auto;
+  scrollbar-width: none;
   gap: 4px;
   padding: 3px;
   border: 1px solid var(--line);

@@ -1,4 +1,4 @@
-/** 「进度」分区的翻译覆盖条和任务记录：页签真的把 coverage 交给了两个面板。 */
+/** 「进度」分区的翻译覆盖条、「历史」页签的任务记录：页签真的把 coverage 交给了面板。 */
 
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -16,6 +16,19 @@ const services = {
 };
 
 const mountTab = (dom, props) => mountProcessingTab(dom, props, services);
+
+// 任务记录搬到了「历史」页签。
+async function mountHistory(dom, coverage) {
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { BookDetailHistoryTab } = await import("../../src/features/book-detail/ui/tabs/BookDetailHistoryTab.jsx");
+  const host = dom.window.document.createElement("div");
+  dom.window.document.body.appendChild(host);
+  const root = createRoot(host);
+  root.render(React.createElement(BookDetailHistoryTab, { coverage, addedAt: "2026-09-30T08:00:00" }));
+  await waitFor(() => host.querySelector("[data-book-detail-tab='history']"), "历史页签");
+  return { root, host };
+}
 
 const COVERAGE = {
   page_count: 6,
@@ -40,12 +53,18 @@ test("有覆盖数据：显示覆盖条（每页一格）和任务记录", async
   const cells = [...host.querySelectorAll(".book-detail-coverage-cell")];
   assert.deepEqual(cells.map((cell) => cell.getAttribute("data-shade")), ["2", "2", "1", "1", "0", "0"]);
   assert.equal(cells[4].getAttribute("title"), "第 5 页 · 未翻译");
-  const rows = [...host.querySelectorAll(".book-detail-job-history-row")];
+  assert.equal(host.querySelector(".book-detail-job-history"), null, "任务记录不在「进度」页");
+  root.unmount(); host.remove();
+
+  const history = await mountHistory(dom, COVERAGE);
+  const rows = [...history.host.querySelectorAll(".book-detail-job-history-row")];
   assert.deepEqual(rows.map((row) => row.getAttribute("data-job-id")), ["redo", "whole"]);
   assert.match(rows[1].textContent, /第 1-3 页/);
   assert.match(rows[1].textContent, /采用 2 页（其余被之后的翻译替换）/);
   assert.match(rows[0].textContent, /glm-5\.3-flash/);
-  root.unmount(); host.remove();
+  assert.equal(history.host.querySelector(".book-detail-job-history").open, true, "「历史」页签里默认展开");
+  assert.match(history.host.textContent, /加入书库/);
+  history.root.unmount(); history.host.remove();
 });
 
 test("没有覆盖数据（接口失败 / mock）：两块都不出现，其余照常", async () => {
@@ -110,7 +129,7 @@ test("失败任务在任务记录里写原因，原始错误收在展开里", as
       ...COVERAGE.jobs,
     ],
   };
-  const { root, host } = await mountTab(dom, { loading: false, ocr: idleOcr, translation: DONE_TRANSLATION, coverage });
+  const { root, host } = await mountHistory(dom, coverage);
   const row = host.querySelector(".book-detail-job-history-row[data-job-id='bad']");
   assert.match(row?.querySelector("[data-job-failure]")?.textContent || "", /外部服务请求超时/);
   const details = row?.querySelector("details");
@@ -153,7 +172,7 @@ test("翻译任务跑在 OCR 阶段：进度只出现一次；OCR 站写实时�
   root.unmount(); host.remove();
 });
 
-test("翻译完成：动作收进「重新处理」，点开是按代价排序的清单；任务记录默认收起", async () => {
+test("翻译完成：动作收进「重新处理」，点开是按代价排序的清单；任务记录不在这一页", async () => {
   const dom = makeDom();
   const stageActions = [
     { stage: "translation", label: "重新翻译", can_retry: true },
@@ -187,9 +206,7 @@ test("翻译完成：动作收进「重新处理」，点开是按代价排序�
   assert.ok(ocrRow.querySelector("#book-detail-start-ocr-btn"));
   assert.ok(ocrRow.querySelector(".book-detail-ocr-range"), "OCR 页码挨着重新 OCR");
 
-  const history = host.querySelector(".book-detail-job-history");
-  assert.equal(history?.tagName, "DETAILS");
-  assert.equal(history.open, false, "任务记录默认收起");
+  assert.equal(host.querySelector(".book-detail-job-history"), null, "任务记录在「历史」页签，不占「进度」页");
   root.unmount(); host.remove();
 });
 
@@ -198,6 +215,8 @@ test("全部翻完时不画覆盖条（100% 一排满格什么也没说）", asy
   const full = { ...COVERAGE, translated_pages: 6, segments: [{ first: 1, last: 6, job_id: "whole" }] };
   const { root, host } = await mountTab(dom, { loading: false, ocr: idleOcr, translation: DONE_TRANSLATION, coverage: full });
   assert.equal(host.querySelector(".book-detail-coverage"), null);
-  assert.ok(host.querySelector(".book-detail-job-history"), "任务记录照常");
   root.unmount(); host.remove();
+  const history = await mountHistory(dom, full);
+  assert.ok(history.host.querySelector(".book-detail-job-history"), "任务记录照常（在「历史」页签）");
+  history.root.unmount(); history.host.remove();
 });

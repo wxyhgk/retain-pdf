@@ -35,12 +35,16 @@ export function TranslationCoveragePanel({ coverage }: { coverage: TranslationCo
   );
 }
 
-export function JobHistoryPanel({ coverage }: { coverage: TranslationCoverageView | null }) {
+export function hasJobHistory(coverage: TranslationCoverageView | null): boolean {
+  return jobRows(coverage).length > 0;
+}
+
+export function JobHistoryPanel({ coverage, defaultOpen = false }: { coverage: TranslationCoverageView | null; defaultOpen?: boolean }) {
   const rows = jobRows(coverage);
   if (!rows.length) return null;
   return (
-    // 默认收起：任务记录是查账用的，平时不需要一直摊开占半页。
-    <details className="book-detail-job-history" data-processing-region="history" aria-label="任务记录">
+    // 「历史」页签里默认展开；别处嵌着用时默认收起，查账用的不必一直摊开。
+    <details className="book-detail-job-history" data-processing-region="history" aria-label="任务记录" open={defaultOpen}>
       <summary className="book-detail-processing-section-head">
         <span className="book-detail-processing-section-title">任务记录</span>
         <span className="book-detail-processing-section-summary">共 {rows.length} 次</span>

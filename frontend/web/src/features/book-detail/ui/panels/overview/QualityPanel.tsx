@@ -91,8 +91,11 @@ export function QualityPanel({
   }, [jobId]);
 
   const model = qualityModel(summary);
-  // 没报告（还没翻译完）就整张卡不出现；读失败给一句，不占大块地方。
-  if (!jobId || (!error && (model.empty || !summary))) return null;
+  if (!jobId) return null;
+  if (!error && !summary) return <p className="book-detail-quality-list-note">正在读取质量检查结果…</p>;
+  if (!error && model.empty) {
+    return <p className="book-detail-quality-list-note" data-book-quality-empty="true">翻译完成后，这里会显示自动检查、精修和排版的结果。</p>;
+  }
 
   return (
     <section className="book-detail-overview-card book-detail-quality-card" aria-label="译文质量" data-book-quality="true">

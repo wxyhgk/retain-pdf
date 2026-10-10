@@ -1,4 +1,6 @@
-// Tab「概览」——一块紧凑信息区 + 最近活动 + 底部危险操作区。
+// Tab「概览」——一块紧凑信息区 + （预留）AI 导读 + 底部危险操作区。
+//
+// 质量、历史、用量各有自己的页签，概览只放「这本书是什么、现在什么状态」。
 //
 // 书名 / 作者已经在弹窗标题和左栏各出现一次，这里不再重复；编辑入口收进信息区的
 // 「编辑信息」按钮。进度和文件本来就是上面的页签，概览不再放跳转大卡，只在
@@ -7,25 +9,15 @@
 // 的危险操作区，不和日常的阅读状态挨在一起。
 
 import type { ReactNode } from "react";
-import { ChevronRight, Clock3, FileStack, Languages, Pencil, ScanText, TriangleAlert } from "lucide-react";
+import { ChevronRight, Pencil, TriangleAlert } from "lucide-react";
 import { TitleMetaPanel } from "../panels/overview/TitleMetaPanel.jsx";
-import { formatZhDate, formatZhDateTime } from "@/platform/utils/datetime.js";
-import { isActiveJobStatus } from "@retainpdf/domain/job";
+import { formatZhDate } from "@/platform/utils/datetime.js";
 
 type OverviewStatus = {
   label: string;
   tone: string;
 };
 
-type OverviewJob = {
-  job_id?: string;
-  id?: string;
-  workflow?: string;
-  job_type?: string;
-  status?: string;
-  updated_at?: string;
-  created_at?: string;
-};
 
 export type BookDetailOverviewTabProps = {
   pageCount?: number | null;
@@ -44,14 +36,13 @@ export type BookDetailOverviewTabProps = {
   collectionsSlot?: ReactNode;
   /** 危险操作（DeleteFooterPanel） */
   dangerSlot?: ReactNode;
-  /** 用量卡（BookUsageCard）：这本书花了多少 token。 */
-  usageSlot?: ReactNode;
-  /** 译文质量卡（QualityPanel）：自动检查、精修、排版、漏翻。 */
-  qualitySlot?: ReactNode;
+  /**
+   * 预留给 AI 导读：摘要、要点、生成的插图等。给了就放在信息区下面，不给就什么都不占。
+   */
+  aiSlot?: ReactNode;
   error?: string;
   ocrStatus?: OverviewStatus;
   translationStatus?: OverviewStatus;
-  jobs?: OverviewJob[];
   onOpenProcessing?: () => void;
 };
 
@@ -69,46 +60,8 @@ function formatDate(value: unknown) {
   return formatZhDate(parsed);
 }
 
-function activityTime(value?: string | null) {
-  const raw = `${value || ""}`.trim();
-  if (!raw) return "";
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return formatZhDateTime(parsed);
-}
 
-function jobActivity(job: OverviewJob) {
-  const workflow = `${job.workflow || job.job_type || ""}`.trim().toLowerCase();
-  const status = `${job.status || ""}`.trim().toLowerCase();
-  const title = workflow === "ocr"
-    ? "OCR 识别"
-    : workflow === "render"
-      ? "生成阅读文件"
-      : "文档翻译";
-  const statusLabel = status === "succeeded"
-    ? "已完成"
-    : status === "failed"
-      ? "失败"
-      : isActiveJobStatus(status)
-        ? "处理中"
-        : status === "cancelled" || status === "canceled"
-          ? "已取消"
-          : status || "已创建";
-  return {
-    key: `${job.job_id || job.id || title}:${job.updated_at || job.created_at || ""}`,
-    title,
-    status: statusLabel,
-    tone: status === "failed" ? "failed" : status === "succeeded" ? "done" : "active",
-    kind: workflow === "ocr" ? "ocr" : workflow === "render" ? "render" : "translation",
-    time: activityTime(job.updated_at || job.created_at),
-  };
-}
 
-function ActivityIcon({ kind }: { kind?: string }) {
-  if (kind === "ocr") return <ScanText aria-hidden="true" />;
-  if (kind === "translation") return <Languages aria-hidden="true" />;
-  return <FileStack aria-hidden="true" />;
-}
 
 export function BookDetailOverviewTab({
   pageCount,
@@ -117,12 +70,10 @@ export function BookDetailOverviewTab({
   readingSlot,
   collectionsSlot,
   dangerSlot,
-  usageSlot = null,
-  qualitySlot = null,
+  aiSlot = null,
   error = "",
   ocrStatus = { label: "尚未执行", tone: "muted" },
   translationStatus = { label: "尚未开始", tone: "muted" },
-  jobs = [],
   onOpenProcessing,
   editing,
   titleText,
@@ -138,21 +89,6 @@ export function BookDetailOverviewTab({
   const translationHint = translationStatus.tone === "muted" && ocrStatus.tone !== "muted"
     ? `OCR ${ocrStatus.label}`
     : "";
-  const activities = jobs
-    .slice()
-    .sort((left, right) => `${right.updated_at || right.created_at || ""}`.localeCompare(`${left.updated_at || left.created_at || ""}`))
-    .slice(0, 2)
-    .map(jobActivity);
-  if (activities.length < 2 && addedAt) {
-    activities.push({
-      key: `added:${addedAt}`,
-      title: "加入书库",
-      status: "原始 PDF 已保存",
-      tone: "done",
-      kind: "file",
-      time: activityTime(addedAt),
-    });
-  }
   return (
     <div
       className="book-detail-tab-overview"
@@ -230,33 +166,7 @@ export function BookDetailOverviewTab({
         </div>
       </section>
 
-      {qualitySlot}
-
-      <section className="book-detail-overview-card book-detail-overview-activity" aria-label="最近活动">
-        <div className="book-detail-overview-card-heading">
-          <h3><Clock3 aria-hidden="true" />最近活动</h3>
-        </div>
-        {activities.length ? (
-          <ol>
-            {activities.map((activity) => (
-              <li key={activity.key}>
-                <span className={`book-detail-overview-activity-icon is-${activity.tone}`}>
-                  <ActivityIcon kind={activity.kind} />
-                </span>
-                <div>
-                  <strong>{activity.title}</strong>
-                  <span>{activity.status}</span>
-                </div>
-                <time>{activity.time}</time>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="book-detail-overview-empty-activity">任务开始后，进度记录会显示在这里。</p>
-        )}
-      </section>
-
-      {usageSlot}
+      {aiSlot ? <div className="book-detail-overview-ai" data-book-detail-section="ai">{aiSlot}</div> : null}
 
       {dangerSlot ? (
         <section className="book-detail-overview-danger" aria-label="危险操作">

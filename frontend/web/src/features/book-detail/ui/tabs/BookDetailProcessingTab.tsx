@@ -10,7 +10,7 @@ import { loadJobFailureDetail } from "../../domain/job-failure-detail.js";
 import type { JobFailureBrief } from "@/platform/contracts/library-payloads.js";
 import { ProcessingSummary } from "../panels/processing/ProcessingSummary.jsx";
 import { processingFacts } from "../../domain/translation-coverage.js";
-import { JobHistoryPanel, TranslationCoveragePanel } from "../panels/processing/TranslationCoveragePanel.js";
+import { TranslationCoveragePanel } from "../panels/processing/TranslationCoveragePanel.js";
 import { btn } from "../panels/ui.jsx";
 import { documentJobPresentation, isDocumentJobActive } from "../use-document-jobs.js";
 import { stageDetailWithoutPageCount } from "../../domain/progress-value.js";
@@ -355,10 +355,9 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
         {bootstrapping ? null : resultActionsSlot}
       </section>
 
-      {/* 整本书翻了哪些页（多次范围翻译时由哪几次拼成）、做过哪些任务。和阅读入口同一套
-          合并规则，这里说第 7 页来自哪次翻译，阅读器打开时就是那次。 */}
+      {/* 整本书翻了哪些页（多次范围翻译时由哪几次拼成）。和阅读入口同一套合并规则，这里说第 7 页
+          来自哪次翻译，阅读器打开时就是那次。每次任务的明细在「历史」页签。 */}
       {coverageIncomplete ? <TranslationCoveragePanel coverage={coverage} /> : null}
-      <JobHistoryPanel coverage={coverage} />
     </div>
   );
 }
