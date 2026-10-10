@@ -9,6 +9,8 @@ use rusqlite::Connection;
 mod accounts;
 #[path = "db/ownership.rs"]
 mod ownership;
+#[path = "db/page_quota.rs"]
+mod page_quota;
 #[path = "db/agent_calculations.rs"]
 mod agent_calculations;
 #[path = "db/artifacts.rs"]
@@ -49,7 +51,7 @@ mod pipeline;
 mod retention;
 #[path = "db/rows.rs"]
 mod rows;
-#[path = "db/schema.rs"]
+#[path = "db/schema/mod.rs"]
 mod schema;
 #[path = "db/sync.rs"]
 pub mod sync;
@@ -58,6 +60,9 @@ mod uploads;
 
 pub use accounts::{username_key, UserRecord, UsernameTaken};
 pub use ownership::OwnedKind;
+pub use page_quota::{
+    BillingSource, PageBalanceWouldGoNegative, PageChargeRecord, PageLedgerEntry, PageReservation,
+};
 
 /// 单机模式的本机用户，也是归属列的默认值。
 pub const LOCAL_OWNER: &str = "local";

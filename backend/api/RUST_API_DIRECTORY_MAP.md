@@ -289,8 +289,8 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在 `services/jobs/de
 - 现在的子边界：
   - `rows.rs`
     SQLite row -> 领域模型解码。
-  - `schema.rs`
-    schema 检查和启动期迁移保护。
+  - `schema/`
+    编号迁移执行器（`mod.rs`）+ 每个迁移一个 `.sql`（`migrations/`）。
   - `db.rs`
     主 `Db` facade 和具体读写用例。
 

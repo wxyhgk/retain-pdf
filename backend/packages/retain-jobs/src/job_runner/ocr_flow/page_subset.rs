@@ -82,7 +82,8 @@ pub(super) fn prepare_uploaded_source_pdf(
     })
 }
 
-fn parse_page_ranges(spec: &str, total_pages: u32) -> Result<Vec<u32>> {
+/// OCR 的页范围（`"1, 3-5"`，从 1 起）解析成页号；空串 = 全部页。按页计费也用它，保证扣的页就是跑的页。
+pub fn parse_page_ranges(spec: &str, total_pages: u32) -> Result<Vec<u32>> {
     if total_pages == 0 {
         return Err(anyhow!("source pdf has no pages"));
     }

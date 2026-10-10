@@ -1,4 +1,5 @@
-//! 账号：会话状态、登录、退出、改密码（/api/v1/auth/*），以及管理员的账号管理（/api/v1/admin/users*）。
+//! 账号：会话状态、登录、退出、改密码（/api/v1/auth/*）、自己的页数额度（/api/v1/account/pages），
+//! 以及管理员的账号管理和发放额度（/api/v1/admin/users*）。
 //! 单机模式下只有 /auth/session 有意义（永远是本机用户），其余返回 404。
 
 use axum::extract::State;
@@ -16,6 +17,7 @@ use crate::services::accounts::api::{
     account_view, admin_view, AccountUserView, AccountsService, AdminUserView, Principal, Role, SessionView,
     SESSION_COOKIE,
 };
+use crate::services::page_quota::{self, PageQuotaView};
 use crate::AppState;
 
 fn require_multi(accounts: &AccountsService) -> Result<(), AppError> {
@@ -134,8 +136,16 @@ pub async fn change_password_route(
 // ---------------------------------------------------------------- 管理员
 
 #[derive(serde::Serialize)]
+pub struct AdminUserListItem {
+    #[serde(flatten)]
+    pub user: AdminUserView,
+    /// 剩余页数；管理员不限额，为 null。
+    pub page_balance: Option<i64>,
+}
+
+#[derive(serde::Serialize)]
 pub struct AdminUserListView {
-    pub users: Vec<AdminUserView>,
+    pub users: Vec<AdminUserListItem>,
 }
 
 /// GET /api/v1/admin/users
@@ -146,7 +156,16 @@ pub async fn list_users_route(
     let accounts = build_accounts_route_deps(&state);
     require_multi(&accounts)?;
     require_admin(&principal)?;
-    Ok(ok_json(AdminUserListView { users: accounts.list_users()?.iter().map(admin_view).collect() }))
+    let balances = state.db.page_balances().map_err(|error| AppError::internal(format!("{error:#}")))?;
+    let users = accounts
+        .list_users()?
+        .iter()
+        .map(|user| AdminUserListItem {
+            page_balance: (user.role != "admin").then(|| balances.get(&user.user_id).copied().unwrap_or(0)),
+            user: admin_view(user),
+        })
+        .collect();
+    Ok(ok_json(AdminUserListView { users }))
 }
 
 #[derive(Debug, Deserialize)]
@@ -214,4 +233,75 @@ pub async fn enable_user_route(
     ApiPath(user_id): ApiPath<String>,
 ) -> Result<Json<ApiResponse<serde_json::Value>>, AppError> {
     set_status(state, principal, user_id, true).await
+}
+
+// ---------------------------------------------------------------- 页数额度
+
+/// GET /api/v1/account/pages：自己的剩余页数和最近账目。单机模式、管理员不限额。
+pub async fn my_pages_route(
+    State(state): State<AppState>,
+    principal: Principal,
+) -> Result<Json<ApiResponse<PageQuotaView>>, AppError> {
+    let accounts = build_accounts_route_deps(&state);
+    if !accounts.mode().is_multi() || principal.is_admin() || principal.owner_filter().is_none() {
+        return Ok(ok_json(PageQuotaView::unlimited()));
+    }
+    let db = state.db.clone();
+    let view = tokio::task::spawn_blocking(move || page_quota::quota_view(&db, &principal.user_id))
+        .await
+        .map_err(|_| AppError::internal("page quota task failed"))??;
+    Ok(ok_json(view))
+}
+
+/// GET /api/v1/admin/users/:user_id/pages
+pub async fn user_pages_route(
+    State(state): State<AppState>,
+    principal: Principal,
+    ApiPath(user_id): ApiPath<String>,
+) -> Result<Json<ApiResponse<PageQuotaView>>, AppError> {
+    let accounts = build_accounts_route_deps(&state);
+    require_multi(&accounts)?;
+    require_admin(&principal)?;
+    let db = state.db.clone();
+    let view = tokio::task::spawn_blocking(move || -> Result<PageQuotaView, AppError> {
+        let user = db
+            .get_user(&user_id)
+            .map_err(|error| AppError::internal(format!("{error:#}")))?
+            .ok_or_else(|| AppError::not_found(format!("user not found: {user_id}")))?;
+        if user.role == "admin" {
+            return Ok(PageQuotaView::unlimited());
+        }
+        page_quota::quota_view(&db, &user_id)
+    })
+    .await
+    .map_err(|_| AppError::internal("page quota task failed"))??;
+    Ok(ok_json(view))
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GrantPagesInput {
+    /// 正数发放，负数扣减。
+    pub delta: i64,
+    #[serde(default)]
+    pub note: String,
+}
+
+/// POST /api/v1/admin/users/:user_id/pages：给普通账号发放或扣减页数。
+pub async fn grant_pages_route(
+    State(state): State<AppState>,
+    principal: Principal,
+    ApiPath(user_id): ApiPath<String>,
+    ApiJson(input): ApiJson<GrantPagesInput>,
+) -> Result<Json<ApiResponse<serde_json::Value>>, AppError> {
+    let accounts = build_accounts_route_deps(&state);
+    require_multi(&accounts)?;
+    require_admin(&principal)?;
+    let db = state.db.clone();
+    let balance = tokio::task::spawn_blocking(move || {
+        page_quota::grant_pages(&db, &principal.user_id, &user_id, input.delta, &input.note)
+    })
+    .await
+    .map_err(|_| AppError::internal("page quota task failed"))??;
+    Ok(ok_json(json!({ "balance": balance })))
 }

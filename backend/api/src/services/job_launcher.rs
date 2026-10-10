@@ -16,6 +16,8 @@ pub struct JobLaunchDeps<'a> {
     pub runtime: JobRuntimeLauncher,
     /// 多用户模式：所有任务改用平台的模型和 OCR（见 [`apply_platform_models`]）。单机模式为 None。
     pub platform: Option<&'a PlatformModels>,
+    /// 多用户模式：新任务开跑前按页预扣（见 [`crate::services::page_quota`]）。单机模式为 false。
+    pub page_quota: bool,
 }
 
 impl<'a> JobLaunchDeps<'a> {
@@ -31,11 +33,17 @@ impl<'a> JobLaunchDeps<'a> {
             output_root,
             runtime,
             platform: None,
+            page_quota: false,
         }
     }
 
     pub fn with_platform(mut self, platform: Option<&'a PlatformModels>) -> Self {
         self.platform = platform;
+        self
+    }
+
+    pub fn with_page_quota(mut self, enabled: bool) -> Self {
+        self.page_quota = enabled;
         self
     }
 }
@@ -133,7 +141,15 @@ pub fn start_job_execution(
     {
         return Err(AppError::ServiceUnavailable("Rust model worker rollout is not enabled; execution_connection will not fall back to Python transport".into()));
     }
-    persist_job_with_resources(deps.db, deps.data_root, deps.output_root, &job)?;
+    // 所有「建任务即开跑」的入口都经过这里（内部派生的 OCR 子任务、OCR 歧义恢复不经过，正好不计费）。
+    // 预扣放在落库之前：余额不够就不留下任务行。
+    let reserved = deps.page_quota && crate::services::page_quota::reserve_for_job(deps.db, &job)?;
+    if let Err(error) = persist_job_with_resources(deps.db, deps.data_root, deps.output_root, &job) {
+        if reserved {
+            crate::services::page_quota::release_for_job(deps.db, &job.job_id);
+        }
+        return Err(error.into());
+    }
     link_new_job_to_document(deps.db, &job, None);
     deps.runtime.launch(job.job_id.clone());
     Ok(job)

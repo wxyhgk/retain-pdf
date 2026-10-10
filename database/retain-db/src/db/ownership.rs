@@ -1,5 +1,5 @@
 //! 数据归属（多用户模式）。每张根表一列 owner_user_id，默认 'local'（单机模式的本机用户）。
-//! 任务和书的归属由触发器在插入时继承（见 schema.rs 对应迁移）；这里提供查归属、改归属，
+//! 任务和书的归属由触发器在插入时继承（见 schema/migrations/v22_data_ownership.sql）；这里提供查归属、改归属，
 //! 以及按归属过滤的列表。
 
 use anyhow::Result;

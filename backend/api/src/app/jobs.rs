@@ -78,7 +78,8 @@ pub fn build_jobs_facade_from_state(state: &AppState) -> JobsFacade<'_> {
             .mode
             .is_multi()
             .then_some(&state.config.accounts.platform),
-    );
+    )
+    .with_page_quota(state.config.accounts.mode.is_multi());
     let snapshot = SnapshotBuildDeps::new(state.db.as_ref(), state.config.job_snapshot_runtime());
     let submit = JobSubmitDeps::new(snapshot, state.uploads.as_ref(), launcher);
     let control = ControlDeps::new(
