@@ -171,7 +171,8 @@ export function buildTranslationPayload({
  */
 export function translationQualityFields(quality: unknown): Pick<TranslationInput, "preparation" | "refine"> {
   if (quality === "terms") return { preparation: "terms+style" };
-  if (quality === "refined") return { preparation: "terms+style", refine: "review_and_fix" };
+  // 精翻 = 编辑部：术语专员审定术语表，翻完由审校挑错、主编分派局部改或整块重写，最多两轮。
+  if (quality === "refined") return { preparation: "editorial", refine: "editorial" };
   return {};
 }
 

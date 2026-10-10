@@ -188,8 +188,8 @@ test("翻译质量：普通档不加任何新字段（请求与以前逐字相�
   assert.equal(buildTranslationPayload({ ...base, preferences: { translationQuality: "terms" } }).preparation, "terms+style");
   assert.equal("refine" in buildTranslationPayload({ ...base, preferences: { translationQuality: "terms" } }), false);
   const refined = buildTranslationPayload({ ...base, preferences: { translationQuality: "refined" } });
-  assert.equal(refined.preparation, "terms+style");
-  assert.equal(refined.refine, "review_and_fix");
+  assert.equal(refined.preparation, "editorial");
+  assert.equal(refined.refine, "editorial");
   // 不认识的档位（例如旧版本存下的值）按普通处理，不发出后端不认识的字段值
   assert.equal("preparation" in buildTranslationPayload({ ...base, preferences: { translationQuality: "bogus" } }), false);
 });
