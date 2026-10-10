@@ -4,6 +4,7 @@ import type { ReaderMode, ReaderSessionState } from "./use-reader-session.js";
 import type { ProtectedPdfFile } from "../pdf/useProtectedPdfFile.js";
 import type { ReaderPaneModel } from "./use-reader-pane-model.js";
 import { type ReaderRegion } from "../shared/data/reader-regions.js";
+import { type RevisedBlocks } from "./use-reader-revised-blocks.js";
 import type { LiveTranslationState } from "../shared/data/live-translation-state.js";
 export declare const CITATION_HIGHLIGHT_MS = 2000;
 /**
@@ -53,6 +54,8 @@ export type ReaderReactController = {
     viewStateKey: string;
     liveTranslation: LiveTranslationState;
     liveTranslationAvailable: boolean;
+    /** 改过的块（阅读页块编号 → 改过几次），译文栏画标记用。 */
+    revisedBlocks: RevisedBlocks;
 };
 export declare function shouldTrackLiveTranslation(input: {
     jobId: string;

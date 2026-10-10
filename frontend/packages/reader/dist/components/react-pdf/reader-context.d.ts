@@ -28,6 +28,8 @@ export type ReaderContextValue = {
     regionHover?: RegionHoverStore;
     /** 滚到这一块所在的页并闪一下红框（和 AI 引用回跳同一条路）。 */
     jumpToBlock?: (itemId: string) => void;
+    /** 改过的块（阅读页块编号 → 改过几次）：译文栏画小标记，悬停写「改过 N 次」。 */
+    revisedBlocks?: ReadonlyMap<string, number>;
     /**
      * 真源语义 =「无 job」：判断 Markdown / AI / 收藏等需要任务的能力。
      * 仅 FAB 工具禁用等「无 job」场景取用；不要用它判断能否并排。

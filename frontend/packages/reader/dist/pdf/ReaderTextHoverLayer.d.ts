@@ -29,8 +29,10 @@ export declare function hoverToolsOutside(rect: ReaderRegionRect): boolean;
  * 右栏复制译文 —— 这是 4.1.x 旧引擎里最常用的那个交互，React 引擎替换时丢了。
  * 只有这一种块级交互：双击 / 三击留给浏览器选词选段（以前双击会整块复制，把选词弄坏了）。
  */
-export declare function ReaderTextHoverLayer({ target, pane, }: {
+export declare function ReaderTextHoverLayer({ target, pane, revisedCount, }: {
     target: ReaderTextHoverTarget | null;
     pane?: "source" | "translated";
+    /** 这一块改过几次（精修、手改、助手改）；只在译文栏提示。 */
+    revisedCount?: number;
 }): import("react").JSX.Element;
 //# sourceMappingURL=ReaderTextHoverLayer.d.ts.map
